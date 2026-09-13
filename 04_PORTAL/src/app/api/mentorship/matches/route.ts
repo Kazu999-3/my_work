@@ -11,9 +11,11 @@ export interface MatchMeta {
   durationKey: string;
   durationLabel: string;
   durationDays: number;
+  commStyle?: string;
   autoRenew: boolean;
   message: string;
   fromDiscordId: string;
+  cancelReason?: string;
 }
 
 export function parseNotesMeta(notes: string | null): MatchMeta {
@@ -21,6 +23,7 @@ export function parseNotesMeta(notes: string | null): MatchMeta {
     durationKey: '14_DAYS',
     durationLabel: '🔥 2週間育成コース（14日・推奨）',
     durationDays: 14,
+    commStyle: 'VC_ACTIVE',
     autoRenew: true,
     message: '',
     fromDiscordId: '',
@@ -35,7 +38,7 @@ export function parseNotesMeta(notes: string | null): MatchMeta {
     }
   } catch (_) {}
 
-  // 構造化タグ文字列のパース: [FROM:xxx][DURATION:14_DAYS][AUTORENEW:true] message
+  // 構造化タグ文字列のパース
   const fromMatch = notes.match(/\[FROM:([^\]]+)\]/);
   const durMatch = notes.match(/\[DURATION:([^\]]+)\]/);
   const renewMatch = notes.match(/\[AUTORENEW:([^\]]+)\]/);
@@ -52,6 +55,7 @@ export function parseNotesMeta(notes: string | null): MatchMeta {
     durationKey: durKey,
     durationLabel: durationInfo.label,
     durationDays: durationInfo.days,
+    commStyle: 'VC_ACTIVE',
     autoRenew: renewMatch ? renewMatch[1] === 'true' : true,
     message: cleanMsg,
     fromDiscordId: fromMatch ? fromMatch[1] : '',
@@ -65,11 +69,45 @@ export function encodeNotesMeta(meta: Partial<MatchMeta>): string {
     durationKey: durKey,
     durationLabel: durInfo.label,
     durationDays: durInfo.days,
+    commStyle: meta.commStyle || 'VC_ACTIVE',
     autoRenew: meta.autoRenew !== undefined ? meta.autoRenew : true,
     message: meta.message || '',
     fromDiscordId: meta.fromDiscordId || '',
+    cancelReason: meta.cancelReason || '',
   };
   return JSON.stringify(fullMeta);
+}
+
+/**
+ * Discord への師弟ペア結成速報の通知ヘルパー
+ */
+async function sendDiscordPairAnnounce(mentorName: string, pupilName: string, durationLabel: string) {
+  const webhookUrl = process.env.DISCORD_WEBHOOK_URL || process.env.DISCORD_RECRUIT_WEBHOOK_URL;
+  if (!webhookUrl) return;
+
+  try {
+    const payload = {
+      embeds: [
+        {
+          title: '🎉 【KTM師弟ハブ】新たな師弟ペアが結成されました！',
+          description: `👑 **師匠:** ${mentorName}\n🌱 **弟子:** ${pupilName}\n⏱️ **活動期間:** ${durationLabel}\n\nお互いに楽しく上達していきましょう！キックオフガイドに沿ってまずは挨拶からスタート🤝`,
+          color: 0x10b981, // エメラルドグリーン
+          timestamp: new Date().toISOString(),
+          footer: {
+            text: 'KTM 師弟マッチング ＆ 自己紹介ハブ',
+          },
+        },
+      ],
+    };
+
+    await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    console.warn('[mentorship/matches] Discord announce error:', err);
+  }
 }
 
 /**
@@ -155,7 +193,7 @@ export async function GET() {
 }
 
 /**
- * POST: 師弟マッチング操作 (APPLY / ACCEPT / REJECT / EXTEND / COMPLETE / TOGGLE_RENEW)
+ * POST: 師弟マッチング操作 (APPLY / ACCEPT / REJECT / EXTEND / COMPLETE / CANCEL)
  */
 export async function POST(request: Request) {
   try {
@@ -174,9 +212,12 @@ export async function POST(request: Request) {
       matchId,
       message = '',
       durationKey = '14_DAYS',
+      commStyle = 'VC_ACTIVE',
       autoRenew = true,
       extendDays,
+      reason = '円満解散（スケジュール都合・合意済み）',
     } = body;
+
 
     // ==========================================
     // 1. 期間延長 / そのまま実行 (EXTEND)
@@ -279,7 +320,52 @@ export async function POST(request: Request) {
     }
 
     // ==========================================
-    // 3. 申請承諾 (ACCEPT)
+    // 3. 円満解散・リセット (CANCEL / DISBAND)
+    // ==========================================
+    if (action === 'CANCEL') {
+      if (!matchId) {
+        return NextResponse.json({ ok: false, error: '対象のマッチIDが必要です。' }, { status: 400 });
+      }
+
+      const { data: match, error: mErr } = await supabase
+        .from('mentorship_matches')
+        .select('*')
+        .eq('id', matchId)
+        .single();
+
+      if (mErr || !match) {
+        return NextResponse.json({ ok: false, error: 'マッチが見つかりません。' }, { status: 404 });
+      }
+
+      const currentMeta = parseNotesMeta(match.notes);
+      const newMeta: MatchMeta = {
+        ...currentMeta,
+        cancelReason: reason,
+      };
+
+      await supabase
+        .from('mentorship_matches')
+        .update({
+          status: 'CANCELLED',
+          completed_at: new Date().toISOString(),
+          notes: JSON.stringify(newMeta),
+        })
+        .eq('id', matchId);
+
+      // プロフィールステータスを OPEN に戻す（即座に再募集可能）
+      await supabase
+        .from('mentorship_profiles')
+        .update({ status: 'OPEN' })
+        .in('id', [match.mentor_profile_id, match.pupil_profile_id]);
+
+      return NextResponse.json({
+        ok: true,
+        message: '🍃 師弟ペアを円満解散しました。プロフィールが再公開され、新たな相手を探せます。',
+      });
+    }
+
+    // ==========================================
+    // 4. 申請承諾 (ACCEPT)
     // ==========================================
     if (action === 'ACCEPT') {
       if (!matchId) {
@@ -288,7 +374,11 @@ export async function POST(request: Request) {
 
       const { data: match, error: mErr } = await supabase
         .from('mentorship_matches')
-        .select('*')
+        .select(`
+          *,
+          mentor:mentorship_profiles!mentorship_matches_mentor_profile_id_fkey(*),
+          pupil:mentorship_profiles!mentorship_matches_pupil_profile_id_fkey(*)
+        `)
         .eq('id', matchId)
         .single();
 
@@ -329,11 +419,19 @@ export async function POST(request: Request) {
         console.warn('[mentorship/matches] Coin reward warning:', coinErr);
       }
 
+      // Discord通知を非同期送信
+      const meta = parseNotesMeta(match.notes);
+      sendDiscordPairAnnounce(
+        match.mentor?.player_name || '師匠',
+        match.pupil?.player_name || '弟子',
+        meta.durationLabel
+      ).catch(() => {});
+
       return NextResponse.json({ ok: true, message: '師弟ペアが正式に成立しました！(+300コイン付与)' });
     }
 
     // ==========================================
-    // 4. 申請辞退 (REJECT)
+    // 5. 申請辞退 (REJECT)
     // ==========================================
     if (action === 'REJECT') {
       if (!matchId) {
@@ -349,8 +447,9 @@ export async function POST(request: Request) {
     }
 
     // ==========================================
-    // 5. 申請送信 (APPLY)
+    // 6. 申請送信 (APPLY)
     // ==========================================
+
     if (!targetProfileId) {
       return NextResponse.json({ ok: false, error: '相手のプロフィールIDが必要です。' }, { status: 400 });
     }
@@ -423,6 +522,7 @@ export async function POST(request: Request) {
       durationKey,
       durationLabel: durObj.label,
       durationDays: durObj.days,
+      commStyle,
       autoRenew: !!autoRenew,
       message: message.trim() || 'よろしくお願いします！',
       fromDiscordId: session.discordId,
@@ -453,4 +553,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
 }
+
 

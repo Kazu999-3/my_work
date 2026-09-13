@@ -5,8 +5,11 @@ import { MentorshipProfile } from '../api/mentorship/profiles/route';
 import { MentorshipCard } from './MentorshipCard';
 import { MentorshipProfileModal } from './MentorshipProfileModal';
 import { MentorshipRequestModal } from './MentorshipRequestModal';
+import { MentorshipKickoffModal } from './MentorshipKickoffModal';
+import { MentorshipGuidelinesModal } from './MentorshipGuidelinesModal';
+import { DISBAND_REASONS } from '../../lib/mentorshipConstants';
 import { toast } from '../../components/Toaster';
-import { HeartHandshake, Sparkles, Plus, Search, Shield, Award, Users, Swords } from 'lucide-react';
+import { HeartHandshake, Sparkles, Plus, Search, Shield, Award, Users, Swords, BookOpen, MessageSquare, Rocket, Leaf } from 'lucide-react';
 
 const LANE_FILTERS = [
   { id: 'ALL', label: '🌐 全て' },
@@ -35,6 +38,14 @@ export default function MentorshipHubPanel() {
   // 申請送信モーダル管理
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [targetRequestProfile, setTargetRequestProfile] = useState<MentorshipProfile | null>(null);
+
+  // 🚀 キックオフガイドモーダル管理
+  const [isKickoffModalOpen, setIsKickoffModalOpen] = useState(false);
+  const [selectedKickoffMatch, setSelectedKickoffMatch] = useState<any | null>(null);
+
+  // 📜 師弟心得モーダル管理
+  const [isGuidelinesModalOpen, setIsGuidelinesModalOpen] = useState(false);
+
 
   // プロフィール一覧の取得
   const fetchProfiles = async () => {
@@ -186,8 +197,15 @@ export default function MentorshipHubPanel() {
         } catch (_) {}
 
         toast.success(`🎉 師弟ペアが成立しました！(+300コイン獲得)`);
-        fetchProfiles();
-        fetchMatches();
+        await fetchProfiles();
+        await fetchMatches();
+
+        // 成立したマッチを取得してキックオフガイドを自動表示
+        const currentMatch = matches.find((m) => m.id === matchId);
+        if (currentMatch) {
+          setSelectedKickoffMatch(currentMatch);
+          setIsKickoffModalOpen(true);
+        }
       } else {
         toast.error(data.error || '承諾に失敗しました');
       }
@@ -279,6 +297,44 @@ export default function MentorshipHubPanel() {
       toast.error('エラーが発生しました');
     }
   };
+
+  // 🍃 円満解散（活動終了・リセット）
+  const handleCancelMatch = async (matchId: string) => {
+    const reasonPrompt = prompt(
+      '円満解散（活動終了）を行いますか？\nお互いのカードが再公開され、ペナルティなく新しい相手を探せます。\n\n理由を選択/入力してください:',
+      '🗓️ スケジュール・活動時間の都合'
+    );
+    if (!reasonPrompt) return;
+
+    try {
+      const res = await fetch('/api/mentorship/matches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'CANCEL',
+          matchId,
+          reason: reasonPrompt,
+        }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        toast.success(data.message || '🍃 師弟ペアを円満解散しました。');
+        fetchProfiles();
+        fetchMatches();
+      } else {
+        toast.error(data.error || '解散処理に失敗しました');
+      }
+    } catch (err) {
+      toast.error('エラーが発生しました');
+    }
+  };
+
+  // 💬 Discord 連絡案内トースト
+  const handleContactDiscord = (partnerName: string) => {
+    navigator.clipboard.writeText(`@${partnerName}`).catch(() => {});
+    toast.success(`💬 「@${partnerName}」をコピーしました！Discordでメンションして挨拶しましょう。`);
+  };
+
 
   const myProfile = profiles.find((p) => p.discord_id === myDiscordId);
 
@@ -376,19 +432,31 @@ export default function MentorshipHubPanel() {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              setEditingProfile(myProfile || null);
-              setIsModalOpen(true);
-            }}
-            className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition shadow-md flex items-center gap-1.5 shrink-0 cursor-pointer"
-          >
-            <Plus size={15} />
-            <span>{myProfile ? '自分のカードを編集' : '自己紹介カードを投稿'}</span>
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setIsGuidelinesModalOpen(true)}
+              className="px-3.5 py-2.5 rounded-xl bg-white border border-stone-200 hover:bg-stone-100 text-stone-700 font-bold text-xs transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
+            >
+              <BookOpen size={14} className="text-amber-600" />
+              <span>📜 師弟の心得</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setEditingProfile(myProfile || null);
+                setIsModalOpen(true);
+              }}
+              className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition shadow-md flex items-center gap-1.5 shrink-0 cursor-pointer"
+            >
+              <Plus size={15} />
+              <span>{myProfile ? '自分のカードを編集' : '自己紹介カードを投稿'}</span>
+            </button>
+          </div>
         </div>
       </div>
+
 
       {/* タブ切り替えバー */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white/90 p-4 rounded-2xl border border-stone-200/90 shadow-2xs">
@@ -704,13 +772,48 @@ export default function MentorshipHubPanel() {
                   </div>
                 </div>
 
-                {/* 自分のペアである場合のアクション（そのまま実行・期間延長 / 卒業完了） */}
+                {/* 自分のペアである場合のアクション（そのまま実行・期間延長 / 卒業完了 / キックオフ / Discord連絡 / 円満解散） */}
                 {isMyMatch && !isCompleted && (
-                  <div className="pt-2 border-t border-stone-200/80 flex flex-wrap items-center justify-between gap-2">
-                    <div className="text-[11px] font-bold text-stone-600">
-                      ペア管理アクション:
+                  <div className="pt-2.5 border-t border-stone-200/80 space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedKickoffMatch(match);
+                            setIsKickoffModalOpen(true);
+                          }}
+                          className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-stone-100 hover:bg-stone-200 text-stone-800 transition flex items-center gap-1 cursor-pointer border border-stone-200"
+                        >
+                          <Rocket size={13} className="text-emerald-600" />
+                          <span>🚀 スタートガイド</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const partner = match.mentor_discord_id === myDiscordId ? match.pupil : match.mentor;
+                            handleContactDiscord(partner?.player_name || '相手');
+                          }}
+                          className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-800 transition flex items-center gap-1 cursor-pointer border border-indigo-200"
+                        >
+                          <MessageSquare size={13} className="text-indigo-600" />
+                          <span>💬 Discord連絡</span>
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleCancelMatch(match.id)}
+                        className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-stone-100 hover:bg-rose-50 text-stone-500 hover:text-rose-700 transition flex items-center gap-1 cursor-pointer"
+                        title="お互いに合意の上でペナルティなく解散・再募集に戻します"
+                      >
+                        <Leaf size={12} />
+                        <span>🍃 円満解散</span>
+                      </button>
                     </div>
-                    <div className="flex items-center gap-2">
+
+                    <div className="flex items-center justify-end gap-2 pt-1">
                       <button
                         type="button"
                         onClick={() => handleExtendMatch(match.id, 14)}
@@ -792,7 +895,24 @@ export default function MentorshipHubPanel() {
         targetProfile={targetRequestProfile}
         onSubmit={handleSendRequest}
       />
+
+      {/* 🚀 キックオフガイドモーダル */}
+      <MentorshipKickoffModal
+        isOpen={isKickoffModalOpen}
+        onClose={() => {
+          setIsKickoffModalOpen(false);
+          setSelectedKickoffMatch(null);
+        }}
+        match={selectedKickoffMatch}
+      />
+
+      {/* 📜 師弟心得モーダル */}
+      <MentorshipGuidelinesModal
+        isOpen={isGuidelinesModalOpen}
+        onClose={() => setIsGuidelinesModalOpen(false)}
+      />
     </div>
   );
 }
+
 

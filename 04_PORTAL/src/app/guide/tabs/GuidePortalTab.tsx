@@ -193,44 +193,46 @@ export default function GuidePortalTab() {
               </span>
             </div>
             <h3 className="text-base md:text-lg font-black text-stone-900">
-              師弟マッチングハブ（AI相性分析・期間設定 ＆ そのまま継続）
+              師弟マッチングハブ（AI相性分析・キックオフ3ステップ ＆ 安心制度）
             </h3>
             <p className="text-stone-600 text-xs leading-relaxed">
-              教えたい師匠（Mentor）と学びたい弟子（Pupil）を繋ぐ公式掲示板です。AIがプレイスタイルから相性を算出し、メッセージ付きの申請・承諾フローで安心ペア結成。期間満了後は「⚡ そのまま実行（継続）」や「🎓 卒業完了（ボーナス獲得）」がワンクリックで行えます。
+              教えたい師匠（Mentor）と学びたい弟子（Pupil）を繋ぐ公式掲示板です。AI相性分析や安心の申請・承諾フローに加え、迷わず始められる「キックオフ3ステップ」や「師弟の心得」、気まずくならずにリセットできる「円満解散」機能を完備しています。
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-1">
               <div className="bg-stone-50 rounded-2xl p-3 border border-stone-200/80 text-xs text-stone-700 space-y-1">
                 <div className="font-bold text-stone-900 flex items-center gap-1 text-[11px]">
-                  <span>🎯</span> AI相性マッチング
+                  <span>🎯</span> AI相性 ＆ 5大専門指導
                 </div>
                 <p className="text-[11px] text-stone-600">
-                  得意レーン・使用チャンプ・課題タグから相性スコア（60〜98%）をリアルタイム算出。
+                  相性スコア（60〜98%）自動算出。カイト、エンゲージ、ピール、ウェーブ管理などを体系化。
                 </p>
               </div>
               <div className="bg-stone-50 rounded-2xl p-3 border border-stone-200/80 text-xs text-stone-700 space-y-1">
                 <div className="font-bold text-stone-900 flex items-center gap-1 text-[11px]">
-                  <span>⚔️</span> 5大専門指導テーマ
+                  <span>🚀</span> キックオフ 3ステップ
                 </div>
                 <p className="text-[11px] text-stone-600">
-                  カイト、エンゲージ、ピール、ウェーブ管理、JG周回など実戦に直結する指導項目を選択可能。
+                  ①挨拶＆OP.GG共有 ➔ ②目標を1つ決める ➔ ③ノーマル/カスタム1戦で迷わずスタート！
                 </p>
               </div>
               <div className="bg-stone-50 rounded-2xl p-3 border border-stone-200/80 text-xs text-stone-700 space-y-1">
                 <div className="font-bold text-stone-900 flex items-center gap-1 text-[11px]">
-                  <span>⏱️</span> 期間＆そのまま実行
+                  <span>🍃</span> 期間延長 ＆ 円満解散
                 </div>
                 <p className="text-[11px] text-stone-600">
-                  1週間/2週間/1ヶ月等を選択。期間終了後は「⚡ そのまま実行」で即時延長または自動継続！
+                  「⚡ そのまま実行」で即時延長、「🎓 卒業(+200🪙)」、合意の上での「🍃 円満解散」もワンクリック。
                 </p>
               </div>
-              <div className="bg-stone-50 rounded-2xl p-3 border border-stone-200/80 text-xs text-stone-700 space-y-1">
-                <div className="font-bold text-stone-900 flex items-center gap-1 text-[11px]">
-                  <span>🪙</span> コインボーナス
-                </div>
-                <p className="text-[11px] text-stone-600">
-                  カード登録で <strong className="text-amber-800">+500🪙</strong>、成立で <strong className="text-amber-800">+300🪙</strong>、目標達成卒業で <strong className="text-amber-800">+200🪙</strong> 獲得！
-                </p>
+            </div>
+
+            <div className="p-3 bg-amber-50/70 rounded-2xl border border-amber-200/80 text-xs text-stone-800 space-y-1">
+              <div className="font-black text-amber-950 flex items-center gap-1.5 text-[11px]">
+                <span>📜</span> 師弟の心得（ポジティブ指導文化）
               </div>
+              <p className="text-[11px] text-stone-700 leading-relaxed font-medium">
+                ・<strong>師匠:</strong> ダメ出しではなく良い所を褒める／1試合の課題は1つに絞る／優しく理由を伝える<br />
+                ・<strong>弟子:</strong> 感謝を伝える／分からない事は遠慮なく質問する／1つずつ意識して実践する
+              </p>
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between">
