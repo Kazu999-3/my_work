@@ -103,7 +103,8 @@ function MobileNavItem({ item, active, pending, onClick }: { item: MenuItem; act
 }
 
 const MENU_ITEMS: MenuItem[] = [
-  { id: 'mypage', label: 'マイページ / 師弟設定', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
+  { id: 'mypage', label: 'マイページ / 希望レーン', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
+  { id: 'mentorship', label: '師弟自己紹介掲示板', shortLabel: '師弟掲示板', icon: HeartHandshake, href: '/mentorship', color: 'text-emerald-500', activeBg: 'bg-emerald-500/15' },
   { id: 'balancer', label: 'チーム分け', shortLabel: 'チーム', icon: Swords, href: '/balancer', color: 'text-rose-600', activeBg: 'bg-rose-500/15' },
   { id: 'casino', label: '勝敗予想', shortLabel: 'カジノ', icon: Coins, href: '/casino', color: 'text-amber-600', activeBg: 'bg-amber-500/15' },
   { id: 'leaderboard', label: '順位表 ＆ 名簿', shortLabel: '順位・名簿', icon: Trophy, href: '/leaderboard', color: 'text-yellow-600', activeBg: 'bg-yellow-500/15' },
@@ -113,7 +114,8 @@ const MENU_ITEMS: MenuItem[] = [
 
 const ADMIN_ONLY_MENU_ITEMS: MenuItem[] = [
   // ── 👤 ユーザー ──
-  { id: 'mypage', label: 'マイページ / 師弟設定', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-amber-500', activeBg: 'bg-amber-500/15', section: 'ユーザー' },
+  { id: 'mypage', label: 'マイページ / 希望レーン', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-amber-500', activeBg: 'bg-amber-500/15', section: 'ユーザー' },
+  { id: 'mentorship', label: '師弟自己紹介掲示板', shortLabel: '師弟掲示板', icon: HeartHandshake, href: '/mentorship', color: 'text-emerald-500', activeBg: 'bg-emerald-500/15', section: 'ユーザー' },
   // ── 🏆 大会 ＆ 試合 ──
   { id: 'balancer', label: 'チーム分け', shortLabel: 'チーム', icon: Swords, href: '/balancer', color: 'text-rose-600', activeBg: 'bg-rose-500/15', section: '大会 ＆ 試合' },
   { id: 'casino', label: '勝敗予想', shortLabel: 'カジノ', icon: Coins, href: '/casino', color: 'text-amber-600', activeBg: 'bg-amber-500/15', section: '大会 ＆ 試合' },
@@ -131,7 +133,8 @@ const ADMIN_ONLY_MENU_ITEMS: MenuItem[] = [
 ];
 
 const ADMIN_GENERAL_MENU_ITEMS: MenuItem[] = [
-  { id: 'mypage', label: 'マイページ / 師弟設定', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
+  { id: 'mypage', label: 'マイページ / 希望レーン', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
+  { id: 'mentorship', label: '師弟自己紹介掲示板', shortLabel: '師弟掲示板', icon: HeartHandshake, href: '/mentorship', color: 'text-emerald-500', activeBg: 'bg-emerald-500/15' },
   { id: 'balancer', label: 'チーム分け', shortLabel: 'チーム', icon: Swords, href: '/balancer', color: 'text-rose-600', activeBg: 'bg-rose-500/15' },
   { id: 'casino', label: '勝敗予想', shortLabel: 'カジノ', icon: Coins, href: '/casino', color: 'text-amber-600', activeBg: 'bg-amber-500/15' },
   { id: 'leaderboard', label: '順位表 ＆ 名簿', shortLabel: '順位・名簿', icon: Trophy, href: '/leaderboard', color: 'text-yellow-600', activeBg: 'bg-yellow-500/15' },

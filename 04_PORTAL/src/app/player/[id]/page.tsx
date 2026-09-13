@@ -78,7 +78,7 @@ export default function PlayerMyPage() {
   const [syncingSoloq, setSyncingSoloq] = useState(false);
   
   // タブ管理用のステートを追加
-  const [activeTab, setActiveTab] = useState<'summary' | 'lanes' | 'chemistry' | 'champions' | 'history' | 'settings' | 'mentorship'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'summary' | 'lanes' | 'chemistry' | 'champions' | 'history' | 'settings'>(initialTab);
 
   // 🎁 デイリーボーナス関連ステート
   const [claimingDaily, setClaimingDaily] = useState(false);
@@ -656,14 +656,13 @@ export default function PlayerMyPage() {
     (player?.name && (player.name === currentUser.displayName || player.name === currentUser.username))
   );
 
-  // タブアイテム定義（自分の場合は設定タブおよび師弟掲示板を統合）
+  // タブアイテム定義（自分の場合は設定タブを統合）
   const tabItems = [
     { id: "summary", name: "総合分析", icon: <Activity className="w-4 h-4" /> },
     { id: "lanes", name: "レーン別戦績", icon: <Swords className="w-4 h-4" /> },
     { id: "chemistry", name: "相性＆好敵手", icon: <Users className="w-4 h-4" /> },
     { id: "champions", name: "魂のキャラ", icon: <Star className="w-4 h-4" /> },
     { id: "history", name: "試合履歴", icon: <Clock className="w-4 h-4" /> },
-    { id: "mentorship", name: "🥋 師弟掲示板", icon: <HeartHandshake className="w-4 h-4 text-emerald-600" /> },
     ...(isMe ? [{ id: "settings", name: "⚙️ 希望・師弟設定", icon: <Settings className="w-4 h-4 text-amber-500" /> }] : []),
   ] as const;
 
@@ -1973,14 +1972,7 @@ export default function PlayerMyPage() {
                 </div>
               )}
 
-              {/* 6. 師弟掲示板タブ */}
-              {activeTab === 'mentorship' && (
-                <div className="space-y-6">
-                  <MentorshipHubPanel />
-                </div>
-              )}
-
-              {/* 7. 希望・師弟設定タブ (自分自身のみ表示) */}
+              {/* 6. 希望・師弟設定タブ (自分自身のみ表示) */}
               {activeTab === 'settings' && isMe && (
                 <div className="space-y-6">
                   <PlayerSettingsPanel 
