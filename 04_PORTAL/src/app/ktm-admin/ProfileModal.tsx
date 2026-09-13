@@ -85,11 +85,29 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                 </span>
                 {(() => {
                   const totalG = player.total_games ?? player.games ?? player.metadata?.games ?? stats?.totalMatches ?? 0;
-                  const label = totalG === 0 ? '🔰 初参加' : totalG <= 5 ? '🌱 ライト' : '👑 常連';
-                  const color = totalG === 0 ? 'bg-emerald-100 text-emerald-900 border-emerald-300' : totalG <= 5 ? 'bg-teal-100 text-teal-900 border-teal-300' : 'bg-amber-100 text-amber-900 border-amber-300';
+                  const daysAgo = player.days_since_last_match;
+                  let label = '👑 常連';
+                  let color = 'bg-amber-100 text-amber-900 border-amber-300';
+
+                  if (totalG === 0) {
+                    label = '🔰 初参加';
+                    color = 'bg-emerald-100 text-emerald-900 border-emerald-300';
+                  } else if (totalG <= 4) {
+                    label = '🌱 ライト';
+                    color = 'bg-teal-100 text-teal-900 border-teal-300';
+                  } else if (daysAgo !== null && daysAgo > 30) {
+                    if (daysAgo >= 60) {
+                      label = '⏳ 復帰勢';
+                      color = 'bg-purple-100 text-purple-900 border-purple-300';
+                    } else {
+                      label = '🎖️ 経験者';
+                      color = 'bg-sky-100 text-sky-900 border-sky-300';
+                    }
+                  }
+
                   return (
                     <span className={`px-2 py-0.5 rounded text-xs font-black border ${color}`}>
-                      {label} (通算{totalG}戦)
+                      {label} (通算{totalG}戦{daysAgo !== null && daysAgo > 30 ? ` / ${daysAgo}日前` : ''})
                     </span>
                   );
                 })()}

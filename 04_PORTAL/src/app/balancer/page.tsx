@@ -235,16 +235,54 @@ export default function BalancerPage() {
     }
   };
 
-  // 参加者の経験度（新規・ライト・常連）判定
+  // 参加者の経験度（新規・ライト・常連・復帰勢）判定
   const getPlayerExperienceBadge = (p: any) => {
     const totalG = p.total_games ?? p.games ?? p.metadata?.games ?? 0;
+    const recent30d = p.recent_games_30d ?? (p.days_since_last_match !== null && p.days_since_last_match <= 30 ? 1 : 0);
+    const daysAgo = p.days_since_last_match;
+
+    // 1. 初参加（通算0戦）
     if (totalG === 0) {
-      return { label: '🔰 初参加', color: 'bg-emerald-100 text-emerald-900 border-emerald-300', tip: '通算0戦：初参加のプレイヤーです！大歓迎✨' };
+      return { 
+        tier: 'new',
+        label: '🔰 初参加', 
+        color: 'bg-emerald-100 text-emerald-900 border-emerald-300', 
+        tip: '通算0戦：初参加のプレイヤーです！大歓迎✨' 
+      };
     }
-    if (totalG <= 5) {
-      return { label: '🌱 ライト', color: 'bg-teal-100 text-teal-900 border-teal-300', tip: `通算${totalG}戦：参加回数5戦以内のライトプレイヤーです` };
+    // 2. ライト層（通算1〜4戦）
+    if (totalG <= 4) {
+      return { 
+        tier: 'light',
+        label: '🌱 ライト', 
+        color: 'bg-teal-100 text-teal-900 border-teal-300', 
+        tip: `通算${totalG}戦：参加経験が浅いライトプレイヤーです` 
+      };
     }
-    return { label: '👑 常連', color: 'bg-amber-100 text-amber-900 border-amber-300', tip: `通算${totalG}戦：コミュニティの頼もしいレギュラーメンバーです` };
+    // 3. 通算5戦以上だが直近参加がない（30日以上ブランク）
+    if (daysAgo !== null && daysAgo > 30) {
+      if (daysAgo >= 60) {
+        return { 
+          tier: 'returning',
+          label: '⏳ 復帰勢', 
+          color: 'bg-purple-100 text-purple-900 border-purple-300', 
+          tip: `通算${totalG}戦（最終参加: ${daysAgo}日前）：久しぶりの参加となる復帰プレイヤーです！大歓迎✨` 
+        };
+      }
+      return { 
+        tier: 'returning',
+        label: '🎖️ 経験者', 
+        color: 'bg-sky-100 text-sky-900 border-sky-300', 
+        tip: `通算${totalG}戦（最終参加: ${daysAgo}日前）：久しぶりに参加の経験者プレイヤーです` 
+      };
+    }
+    // 4. 直近も定期参加している現役常連
+    return { 
+      tier: 'regular',
+      label: '👑 常連', 
+      color: 'bg-amber-100 text-amber-900 border-amber-300', 
+      tip: `通算${totalG}戦（直近30日: ${recent30d}戦）：定期的に参加しているアクティブ常連メンバーです` 
+    };
   };
 
   useEffect(() => {
@@ -1395,17 +1433,15 @@ export default function BalancerPage() {
 
       {/* 👥 参加者層サマリー ＆ 🔊 Discord VC進行状況のワンクリック更新バー */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-        {/* 参加者層（新規・ライト・常連）集計サマリー */}
+        {/* 参加者層（新規・ライト・常連・復帰）集計サマリー */}
         {(() => {
           const activePlayers = players.filter(p => p.is_active && !p.is_spectator_fixed);
           const totalActive = activePlayers.length;
-          const newPlayers = activePlayers.filter(p => (p.total_games ?? p.games ?? p.metadata?.games ?? 0) === 0);
-          const lightPlayers = activePlayers.filter(p => {
-            const g = p.total_games ?? p.games ?? p.metadata?.games ?? 0;
-            return g >= 1 && g <= 5;
-          });
-          const regularPlayers = activePlayers.filter(p => (p.total_games ?? p.games ?? p.metadata?.games ?? 0) > 5);
-          const newLightRatio = totalActive > 0 ? Math.round(((newPlayers.length + lightPlayers.length) / totalActive) * 100) : 0;
+          const newPlayers = activePlayers.filter(p => getPlayerExperienceBadge(p).tier === 'new');
+          const lightPlayers = activePlayers.filter(p => getPlayerExperienceBadge(p).tier === 'light');
+          const returningPlayers = activePlayers.filter(p => getPlayerExperienceBadge(p).tier === 'returning');
+          const regularPlayers = activePlayers.filter(p => getPlayerExperienceBadge(p).tier === 'regular');
+          const newLightRatio = totalActive > 0 ? Math.round(((newPlayers.length + lightPlayers.length + returningPlayers.length) / totalActive) * 100) : 0;
 
           return (
             <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/30 flex flex-col justify-between gap-2 shadow-xs">
@@ -1418,7 +1454,7 @@ export default function BalancerPage() {
                   </div>
                 </div>
                 <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-500 text-stone-950">
-                  新規・ライト層 {newLightRatio}%
+                  新規・ライト・復帰層 {newLightRatio}%
                 </span>
               </div>
 
@@ -1429,6 +1465,11 @@ export default function BalancerPage() {
                 <span className="inline-flex items-center gap-1 font-bold text-teal-900 bg-teal-100/80 px-2 py-0.5 rounded-md text-[11px]">
                   🌱 ライト: <strong>{lightPlayers.length}名</strong>
                 </span>
+                {returningPlayers.length > 0 && (
+                  <span className="inline-flex items-center gap-1 font-bold text-purple-900 bg-purple-100/80 px-2 py-0.5 rounded-md text-[11px]">
+                    ⏳ 復帰勢: <strong>{returningPlayers.length}名</strong>
+                  </span>
+                )}
                 <span className="inline-flex items-center gap-1 font-bold text-amber-900 bg-amber-100/80 px-2 py-0.5 rounded-md text-[11px]">
                   👑 常連: <strong>{regularPlayers.length}名</strong>
                 </span>
