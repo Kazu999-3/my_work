@@ -24,6 +24,15 @@ const AVAILABLE_LANES = [
 
 const RANKS = ['IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'EMERALD', 'DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER', 'UNRANKED'];
 
+const TARGET_STUDENT_RANKS = [
+  '全ランク・初心者歓迎',
+  'アイアン〜シルバー歓迎',
+  'ゴールド以下歓迎',
+  'プラチナ以下歓迎',
+  'エメラルド以下歓迎',
+  'ダイヤ以下歓迎',
+];
+
 // カテゴリ別タグ定義
 const TAG_CATEGORIES_PUPIL = [
   {
@@ -42,6 +51,10 @@ const TAG_CATEGORIES_PUPIL = [
 
 const TAG_CATEGORIES_MENTOR = [
   {
+    category: '👥 歓迎する生徒の帯域',
+    tags: ['全ランク・初心者歓迎', 'アイアン〜シルバー歓迎', 'ゴールド以下歓迎', 'プラチナ以下歓迎', 'エメラルド以下歓迎'],
+  },
+  {
     category: '🔊 指導・通話スタイル',
     tags: ['VC指導対応', '聞き専生徒OK', 'テキスト添削可能', '優しく丁寧に教えます'],
   },
@@ -51,7 +64,7 @@ const TAG_CATEGORIES_MENTOR = [
   },
   {
     category: '💡 得意な指導テーマ',
-    tags: ['ウェーブ管理・ラインコントロール', '対面マッチアップ勝ち方', 'マクロ・ローテーション', '集団戦ポジショニング', 'ジャングルルート・ガンク判断', '初心者・アイアン〜シルバー歓迎'],
+    tags: ['ウェーブ管理・ラインコントロール', '対面マッチアップ勝ち方', 'マクロ・ローテーション', '集団戦ポジショニング', 'ジャングルルート・ガンク判断'],
   },
 ];
 
@@ -195,7 +208,7 @@ export function MentorshipProfileModal({
         lanes,
         champions: selectedChampions,
         current_rank: currentRank,
-        target_rank: roleType === 'PUPIL' ? targetRank : undefined,
+        target_rank: targetRank || undefined,
         tags: selectedTags,
         bio,
         active_hours: activeHours,
@@ -316,6 +329,12 @@ export function MentorshipProfileModal({
                   {roleType === 'PUPIL' && targetRank && (
                     <div className="text-xs text-emerald-700 font-bold flex items-center gap-1">
                       <span>🎯 目標ランク:</span>
+                      <span className="font-black underline">{targetRank}</span>
+                    </div>
+                  )}
+                  {roleType === 'MENTOR' && targetRank && (
+                    <div className="text-xs text-amber-800 font-bold flex items-center gap-1">
+                      <span>👥 歓迎生徒:</span>
                       <span className="font-black underline">{targetRank}</span>
                     </div>
                   )}
@@ -505,9 +524,17 @@ export function MentorshipProfileModal({
                       <span className="w-4.5 h-4.5 rounded-full bg-amber-500 text-white text-[11px] flex items-center justify-center font-black">👥</span>
                       歓迎する生徒の帯域
                     </label>
-                    <div className="text-xs text-stone-600 bg-stone-50 border border-stone-200 rounded-xl p-2.5 font-bold">
-                      全ランク歓迎 / 初心者歓迎
-                    </div>
+                    <select
+                      value={targetRank || '全ランク・初心者歓迎'}
+                      onChange={(e) => setTargetRank(e.target.value)}
+                      className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2.5 text-stone-900 text-xs font-bold focus:border-amber-500 focus:bg-white focus:outline-hidden"
+                    >
+                      {TARGET_STUDENT_RANKS.map((r) => (
+                        <option key={r} value={r}>
+                          {r}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 )}
               </div>

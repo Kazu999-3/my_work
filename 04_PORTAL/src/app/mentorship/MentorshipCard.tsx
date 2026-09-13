@@ -128,6 +128,11 @@ export function MentorshipCard({
                   ➔ 目標: {profile.target_rank}
                 </span>
               )}
+              {profile.target_rank && isMentor && (
+                <span className="text-[11px] text-amber-800 font-bold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                  👥 歓迎: {profile.target_rank}
+                </span>
+              )}
             </div>
           </div>
         </div>
