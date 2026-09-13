@@ -29,6 +29,9 @@ export function createRecruitEmbed(metadata, tierLine) {
   }
 
   const ownerName = metadata.names[metadata.owner] || "不明";
+  const customGuide = isCustom
+    ? `\n\n💡 **1戦だけのスポット参加も大歓迎！途中抜け・交代も自由です**`
+    : '';
   const visibleFooter = `モード: ${metadata.mode} | 募集主: ${ownerName}`;
   const progressBar = renderProgressBar(currentCount, maxCount);
 
@@ -43,7 +46,7 @@ export function createRecruitEmbed(metadata, tierLine) {
       : `✅ **5名揃いました！フルパーティーで出発できます🎮**\n\n`;
   } else if (isAlmostFull) {
     bannerText = isCustom
-      ? `⚡ **あと少しで10名確定！飛び入り参加・初参加大歓迎です！**\n進捗: \`${progressBar}\` (あと**${remaining}**名)\n\n`
+      ? `⚡ **あと少しで10名確定！飛び入り参加・1戦のみの参加も大歓迎です！**\n進捗: \`${progressBar}\` (あと**${remaining}**名)\n\n`
       : `⚡ **あと【${remaining}名】で満員（5人）！気軽に参加ボタンを押してください！**\n進捗: \`${progressBar}\` (あと**${remaining}**名)\n\n`;
   } else {
     bannerText = `進捗: \`${progressBar}\` (あと**${remaining}**名募集中)\n\n`;
@@ -52,7 +55,7 @@ export function createRecruitEmbed(metadata, tierLine) {
   return {
     title,
     author: { name: `👤 募集主: ${ownerName}` },
-    description: bannerText + renderRoles(metadata) + (tierLine ? `\n\n${tierLine}` : ''),
+    description: bannerText + renderRoles(metadata) + (tierLine ? `\n\n${tierLine}` : '') + customGuide,
     color: isFull ? RECRUITMENT_COLORS.confirmed : (isAlmostFull ? 0xe67e22 : RECRUITMENT_COLORS.recruiting),
     thumbnail: { url: pixelUrl },
     footer: { text: visibleFooter },

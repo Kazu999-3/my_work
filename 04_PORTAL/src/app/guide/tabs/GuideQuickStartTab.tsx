@@ -164,10 +164,28 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-1.5">
             <h4 className="text-xs font-black text-stone-900 flex items-center gap-1.5">
+              <span>💡</span> 1戦だけのスポット参加や途中抜けはできますか？
+            </h4>
+            <p className="text-[11px] text-stone-600 leading-relaxed">
+              大歓迎です！「1戦だけプレイしたい」「時間が合えば途中まで」という場合でも気軽に参加ボタンを押してください。交代や途中抜けも自由に行えます。
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-1.5">
+            <h4 className="text-xs font-black text-stone-900 flex items-center gap-1.5">
+              <span>🔲</span> シルバー以下のピック形式やルールはどうなっていますか？
+            </h4>
+            <p className="text-[11px] text-stone-600 leading-relaxed">
+              シルバー以下カスタムは「ブラインドピック」を採用しています！BANや相手のカウンターを気にせず、自分の使いたいチャンピオンで気楽に対戦を楽しめます。
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-1.5">
+            <h4 className="text-xs font-black text-stone-900 flex items-center gap-1.5">
               <span>❓</span> 初心者やランクの低い人でも楽しめますか？
             </h4>
             <p className="text-[11px] text-stone-600 leading-relaxed">
-              はい！KTMのチーム分けAIは各プレイヤーのロール別MMRや過去戦績を考慮し、チーム全体の戦力が互角になるよう最適化します。さらに格差がある場合は「ハンデ縛り（案E）」なども適用されます。
+              はい！ゴルプラ帯とシルバー以下帯は完全に部屋を分けて開催されます。また、20:00時点で10名集まらなかった場合はカスタムを中止し、ノーマルやメイヘムでワイワイ遊ぶ形式へ切り替わります。
             </p>
           </div>
 
@@ -176,16 +194,16 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
               <span>🪙</span> コインはどうやって増やすのですか？
             </h4>
             <p className="text-[11px] text-stone-600 leading-relaxed">
-              ログインするだけで毎日 +100コイン、カスタム参加で +100コイン、勝利で +150コインが手に入ります！貯めたコインは勝敗予想ベットやショップ特権（第一希望確約など）で使えます。
+              マイページで毎日受取できるデイリーボーナス（+100コイン）、カスタム参加で +100コイン、勝利で +150コインが手に入ります！貯めたコインは勝敗予想ベットやショップ特権で使えます。
             </p>
           </div>
 
           <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-1.5">
             <h4 className="text-xs font-black text-stone-900 flex items-center gap-1.5">
-              <span>🪑</span> 10人を超えてしまったらどうなりますか？
+              <span>🔁</span> 連戦時（BO3形式）のチーム分けはどうなりますか？
             </h4>
             <p className="text-[11px] text-stone-600 leading-relaxed">
-              待機枠（見学）に回ったプレイヤーには「観戦Pity」が付与され、次回のチーム分けで優先的に対戦メンバーに選ばれる救済システムが働きます。
+              バランサー画面の「BO3（チーム維持）」機能により、同じメンバー構成のままサイドを交代して第2戦・第3戦を行うことができます。
             </p>
           </div>
 

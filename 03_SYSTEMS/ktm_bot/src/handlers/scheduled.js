@@ -450,25 +450,25 @@ async function postWeeklyRecruitment(env) {
     };
 
     // 2部屋統合 Embed (プログレスバー付き初期状態)
-    const initialStatusText = `🔥 **【定期カスタム募集中！合計 0/20名】**\n🛡️ **シルバー以下**: \`[□□□□□□□□□□] 0/10名\` (あと**10**名)\n👑 **ゴルプラ**: \`[□□□□□□□□□□] 0/10名\` (あと**10**名)`;
+    const initialStatusText = `🔥 **【定期カスタム募集中！合計 0/20名】**\n🛡️ **シルバー以下 (ブラインド)**: \`[□□□□□□□□□□] 0/10名\` (あと**10**名)\n👑 **ゴルプラ (ドラフト)**: \`[□□□□□□□□□□] 0/10名\` (あと**10**名)\n※20:00時点で10名未満の部門は中止（ノーマル/メイヘム再募集）となります`;
 
     const embed = {
       title: `⚔️ KTM 定期カスタム開催告知 [${dateLabel} 21:00]`,
-      description: `${initialStatusText}\n\n毎週末恒例の定期カスタム戦です！\n下のボタンを押すだけで参加エントリーできます（部門は名簿の代表MMRから自動振り分けされます）。\n\n💡 **希望レーンに変更がある方は、ポータルの「マイページ」より変更をお願いします！**`,
+      description: `${initialStatusText}\n\n毎週末恒例の定期カスタム戦です！\n下のボタンを押すだけで参加エントリーできます（部門は名簿の代表MMRから自動振り分けされます）。\n\n💡 **1戦だけのスポット参加も大歓迎！途中抜け・交代も気軽に行えます。**\n💡 **希望レーンに変更がある方は、ポータルの「マイページ」より変更をお願いします！**`,
       color: 0xc89b3c, // 琥珀色
       fields: [
         {
-          name: `🛡️ 【シルバー以下部門】 (0/10名)`,
-          value: `▫ 参加者: なし\n※対象: 初心者〜シルバーレベル`,
+          name: `🛡️ 【シルバー以下部門】 (0/10名) 🔲 ブラインドピック`,
+          value: `▫ 参加者: なし\n※対象: 初心者〜シルバーレベル（気軽に参加OK！）`,
           inline: false
         },
         {
-          name: `👑 【ゴルプラ部門】 (0/10名)`,
-          value: `▫ 参加者: なし\n※対象: ゴールド〜プラチナレベル`,
+          name: `👑 【ゴルプラ部門】 (0/10名) ⚔️ ドラフトピック`,
+          value: `▫ 参加者: なし\n※対象: ゴールド〜プラチナレベル（MMR変動あり）`,
           inline: false
         }
       ],
-      footer: { text: `日時: ${dateLabel} 21:00〜 | 主催: KTM運営` },
+      footer: { text: `日時: ${dateLabel} 21:00〜 | 主催: KTM運営 | 1戦のみ参加OK` },
       timestamp: new Date().toISOString()
     };
 
@@ -734,15 +734,22 @@ async function sendEventUsersNotification(env, options = {}) {
     const recruitLink = targetMessageId ? `\n\n👉 [元の募集メッセージを開く](https://discord.com/channels/${guildId}/${channelId}/${targetMessageId})` : '';
     const laneNote = `\n\n💡 **希望レーンに変更がある方は、ポータルの「マイページ」より事前に変更をお願いします！**`;
 
-    // 片方の部門が単独で10名到達(通常カスタム確定)と、部門をまたいだ合計で10名到達
-    // (混合カスタムなら組める)を区別する(#①)。
+    // 新方針: ゴルプラとシルバー以下は完全分離（混合は行わない）。20:00時点で10名未満は中止。
+    const isAllReady = recruitStatus.isAllReady;
+    const isSilverReady = recruitStatus.isSilverReady;
+    const isGoldReady = recruitStatus.isGoldReady;
     const isConfirmed = recruitStatus.isConfirmed;
-    const isMixedReady = recruitStatus.isMixedReady;
-    const statusMessage = isConfirmed
-      ? `🔥 **開催確定！** 現在 **シルバー: ${silverCount}名 / ゴルプラ: ${goldCount}名** (合計${totalJoined}名) エントリー済みです！このまま開催します。${laneNote}${recruitLink}`
-      : isMixedReady
-      ? `🟡 **混合カスタムで開催可能！** 現在 **シルバー: ${silverCount}名 / ゴルプラ: ${goldCount}名** (合計${totalJoined}名) 、部門をまたいだ混合カスタムが組めます。${laneNote}${recruitLink}`
-      : `⚠️ **メンバー募集中！** 現在 **シルバー: ${silverCount}名 / ゴルプラ: ${goldCount}名** (合計${totalJoined}名) です。\n▫ シルバー以下: あと **${silverShortfall}名**\n▫ ゴルプラ: あと **${goldShortfall}名**\n下のボタンからエントリーしてください！${laneNote}${recruitLink}`;
+
+    let statusMessage = '';
+    if (isAllReady) {
+      statusMessage = `🎉 **両部門ともに開催確定！** 現在 **シルバー以下: ${silverCount}名 (ブラインド) / ゴルプラ: ${goldCount}名 (ドラフト)** エントリー済みです！このまま開催します。${laneNote}${recruitLink}`;
+    } else if (isSilverReady && !isGoldReady) {
+      statusMessage = `⚡ **シルバー以下部門 開催確定！** (10名達成 / ブラインドピック)\n👑 **ゴルプラ**: あと **${goldShortfall}名** (※20:00時点で10名未満の場合はゴルプラのみ中止しノーマル/メイヘムへ)${laneNote}${recruitLink}`;
+    } else if (!isSilverReady && isGoldReady) {
+      statusMessage = `⚡ **ゴルプラ部門 開催確定！** (10名達成 / ドラフトピック)\n🛡️ **シルバー以下**: あと **${silverShortfall}名** (※20:00時点で10名未満の場合はシルバー以下のみ中止しノーマル/メイヘムへ)${laneNote}${recruitLink}`;
+    } else {
+      statusMessage = `⚠️ **定期カスタム募集中！** 現在 **シルバー: ${silverCount}名 / ゴルプラ: ${goldCount}名** です。\n▫ 🛡️ シルバー以下 (ブラインド): あと **${silverShortfall}名**\n▫ 👑 ゴルプラ (ドラフト): あと **${goldShortfall}名**\n💡 **1戦だけのスポット参加も大歓迎！**\n※20:00時点で10名未満の部門はカスタム中止（ノーマル/メイヘム再募集）となります。${laneNote}${recruitLink}`;
+    }
     const embedColor = recruitStatus.color;
 
     const embed = {

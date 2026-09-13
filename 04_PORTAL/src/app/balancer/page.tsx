@@ -1100,11 +1100,27 @@ export default function BalancerPage() {
           <div className="bg-white border border-stone-300 rounded-2xl w-full max-w-4xl shadow-2xl my-4">
             {/* モーダルヘッダー */}
             <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-stone-200 px-4 md:px-6 py-3 flex items-center justify-between rounded-t-2xl">
-              <h2 className="text-lg md:text-xl font-black text-stone-900 flex items-center gap-2">
-                <Globe className="h-5 w-5 text-orange-700" />
-                マッチング結果
-                <span className="hidden md:inline text-xs font-mono text-stone-500 ml-2">MMR差: <span className="text-stone-900 font-bold">{balanceResult.mmrDiff}</span></span>
-              </h2>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-lg md:text-xl font-black text-stone-900 flex items-center gap-2">
+                  <Globe className="h-5 w-5 text-orange-700" />
+                  マッチング結果
+                  <span className="hidden md:inline text-xs font-mono text-stone-500 ml-2">MMR差: <span className="text-stone-900 font-bold">{balanceResult.mmrDiff}</span></span>
+                </h2>
+                {/* ピック形式バッジ */}
+                {(() => {
+                  const avgMMR = ((balanceResult.teamBlueMMR || 0) + (balanceResult.teamRedMMR || 0)) / 10;
+                  const isSilverTier = avgMMR < 1350 || selectedTable?.label?.includes('シルバー');
+                  return isSilverTier ? (
+                    <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-cyan-100 text-cyan-900 border border-cyan-300 flex items-center gap-1 shadow-xs">
+                      🔲 ピック形式: <strong>ブラインドピック</strong>
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 shadow-xs">
+                      ⚔️ ピック形式: <strong>ドラフトピック (MMRあり)</strong>
+                    </span>
+                  );
+                })()}
+              </div>
               <div className="flex items-center gap-2">
                 {proposals.length > 1 && (
                   <button onClick={handleSendProposals} disabled={sendingProposals}
@@ -1469,26 +1485,68 @@ export default function BalancerPage() {
                 </div>
               )}
 
-              {/* 試合結果記録 & ドラフトシミュレータ直結 */}
-              <div className="pt-3 border-t border-stone-200">
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              {/* 試合結果記録 & BO3 / ドラフトシミュレータ直結 */}
+              <div className="pt-3 border-t border-stone-200 space-y-2">
+                <div className="flex flex-wrap items-center justify-center gap-2.5">
                   <button
                     onClick={handleRecordNavigate}
                     disabled={savingPending}
                     type="button"
-                    className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 text-white px-6 py-3 rounded-xl font-black transition flex items-center justify-center gap-2 shadow-lg cursor-pointer text-xs sm:text-sm"
+                    className="flex-1 min-w-[200px] bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 text-white px-5 py-3 rounded-xl font-black transition flex items-center justify-center gap-2 shadow-lg cursor-pointer text-xs sm:text-sm"
                   >
                     <Trophy className="h-4 w-4" />
                     {savingPending ? '一時保存中...' : 'この編成で試合結果を記録 🏆'}
                   </button>
 
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!balanceResult) return;
+                      setBalanceResult({
+                        ...balanceResult,
+                        teamBlue: balanceResult.teamRed,
+                        teamRed: balanceResult.teamBlue,
+                        teamBlueMMR: balanceResult.teamRedMMR,
+                        teamRedMMR: balanceResult.teamBlueMMR,
+                      });
+                      setMessage({ type: 'success', text: '🔄 BLUE ⇄ RED の陣営を入れ替えました！' });
+                    }}
+                    className="bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-800 px-4 py-3 rounded-xl font-bold transition flex items-center justify-center gap-1.5 cursor-pointer text-xs sm:text-sm"
+                    title="BLUEとREDの陣営を丸ごと入れ替えます"
+                  >
+                    <Shuffle className="h-4 w-4 text-indigo-600" />
+                    サイド交代 (BLUE ⇄ RED)
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!balanceResult) return;
+                      // 陣営を交代
+                      setBalanceResult({
+                        ...balanceResult,
+                        teamBlue: balanceResult.teamRed,
+                        teamRed: balanceResult.teamBlue,
+                        teamBlueMMR: balanceResult.teamRedMMR,
+                        teamRedMMR: balanceResult.teamBlueMMR,
+                      });
+                      setMessage({ type: 'success', text: '🔁 【BO3 / チーム維持】サイドを交代して第2戦の準備が完了しました！' });
+                      alert('🔁 【BO3 / チーム維持】\n同じメンバー構成のままサイドを交代しました！\n第2戦・第3戦をプレイ後、同様に「試合結果を記録」を行ってください。');
+                    }}
+                    className="bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 px-4 py-3 rounded-xl font-black transition flex items-center justify-center gap-1.5 cursor-pointer text-xs sm:text-sm"
+                    title="同じメンバーで連戦を行う場合のBO3モード（サイド交代して次戦へ）"
+                  >
+                    <RefreshCw className="h-4 w-4 text-amber-700" />
+                    BO3 (チーム維持して第2戦へ)
+                  </button>
+
                   <Link
                     href="/coach?tab=live"
-                    className="w-full sm:w-auto bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white px-6 py-3 rounded-xl font-black transition flex items-center justify-center gap-2 shadow-lg cursor-pointer text-xs sm:text-sm"
+                    className="bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white px-5 py-3 rounded-xl font-black transition flex items-center justify-center gap-2 shadow-lg cursor-pointer text-xs sm:text-sm"
                     title="コーチ画面の5v5シミュレータ・勝ち筋診断へ直結"
                   >
                     <Sparkles className="h-4 w-4" />
-                    5v5ドラフト・勝ち筋診断を開始 🎯
+                    5v5ドラフト診断 🎯
                   </Link>
                 </div>
               </div>
@@ -1575,6 +1633,24 @@ export default function BalancerPage() {
               <span className="text-xl font-black text-stone-400">{inactiveCount}</span>
               <span className="text-xs opacity-60">人</span>
             </div>
+
+            {/* 📢 KTMカスタム新方針・ルール案内チップ */}
+            <div className="w-full flex flex-wrap items-center gap-2 text-xs bg-amber-50/80 border border-amber-200/80 rounded-xl p-2.5 text-amber-950">
+              <span className="font-black flex items-center gap-1 text-amber-900">
+                <Info className="h-3.5 w-3.5 text-amber-700" />
+                カスタム方針:
+              </span>
+              <span className="bg-white border border-amber-300/60 px-2 py-0.5 rounded-md font-bold text-[11px] text-cyan-900">
+                🛡️ シルバー以下: <strong>ブラインドピック</strong>
+              </span>
+              <span className="bg-white border border-amber-300/60 px-2 py-0.5 rounded-md font-bold text-[11px] text-amber-900">
+                👑 ゴルプラ: <strong>ドラフトピック (MMRあり)</strong>
+              </span>
+              <span className="text-[11px] text-stone-600 ml-auto font-medium">
+                💡 1戦だけの参加も大歓迎！途中抜け・交代はチェックを外すだけでOK
+              </span>
+            </div>
+
             <div className="flex items-center gap-2 ml-auto flex-wrap">
               {/* 一括参加切り替えボタン */}
               <button
