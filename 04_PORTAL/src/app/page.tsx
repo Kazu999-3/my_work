@@ -155,7 +155,7 @@ export default function HomePage() {
 
           {/* 4. 対戦履歴 */}
           <Link
-            href="/history"
+            href="/ktm-admin?tab=history"
             className="group relative bg-white/90 backdrop-blur-md border border-stone-200/90 hover:border-purple-400 p-6 rounded-3xl transition-all duration-300 shadow-xs hover:shadow-lg hover:shadow-purple-500/10 flex flex-col justify-between space-y-6"
           >
             <div className="space-y-3">

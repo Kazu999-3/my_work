@@ -1090,7 +1090,7 @@ function CustomRecordPageContent() {
             {/* 3大ネクストアクション分岐 */}
             <div className="space-y-2.5 pt-2">
               <Link
-                href="/history"
+                href="/ktm-admin?tab=history"
                 className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-black text-xs sm:text-sm shadow-md transition group"
               >
                 <div className="flex items-center gap-2.5">

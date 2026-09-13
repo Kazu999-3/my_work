@@ -108,7 +108,7 @@ const MENU_ITEMS: MenuItem[] = [
   { id: 'balancer', label: 'チーム分け', shortLabel: 'チーム', icon: Swords, href: '/balancer', color: 'text-rose-600', activeBg: 'bg-rose-500/15' },
   { id: 'casino', label: '勝敗予想', shortLabel: 'カジノ', icon: Coins, href: '/casino', color: 'text-amber-600', activeBg: 'bg-amber-500/15' },
   { id: 'leaderboard', label: '順位表 ＆ 名簿', shortLabel: '順位・名簿', icon: Trophy, href: '/leaderboard', color: 'text-yellow-600', activeBg: 'bg-yellow-500/15' },
-  { id: 'history', label: '試合履歴', shortLabel: '履歴', icon: History, href: '/history', color: 'text-purple-600', activeBg: 'bg-purple-500/15' },
+  { id: 'ktm-admin', label: 'KTM大会管理', shortLabel: '大会管理', icon: Shield, href: '/ktm-admin', color: 'text-indigo-600', activeBg: 'bg-indigo-500/15' },
   { id: 'guide', label: '使い方 ＆ 更新情報', shortLabel: 'ガイド', icon: BookOpen, href: '/guide', color: 'text-emerald-600', activeBg: 'bg-emerald-500/15' },
 ];
 
@@ -119,7 +119,6 @@ const ADMIN_ONLY_MENU_ITEMS: MenuItem[] = [
   // ── 🏆 大会 ＆ 試合 ──
   { id: 'balancer', label: 'チーム分け', shortLabel: 'チーム', icon: Swords, href: '/balancer', color: 'text-rose-600', activeBg: 'bg-rose-500/15', section: '大会 ＆ 試合' },
   { id: 'casino', label: '勝敗予想', shortLabel: 'カジノ', icon: Coins, href: '/casino', color: 'text-amber-600', activeBg: 'bg-amber-500/15', section: '大会 ＆ 試合' },
-  { id: 'history', label: '試合履歴', shortLabel: '履歴', icon: History, href: '/history', color: 'text-purple-600', activeBg: 'bg-purple-500/15', section: '大会 ＆ 試合' },
   { id: 'ktm-admin', label: 'KTM大会管理', shortLabel: '大会管理', icon: Shield, href: '/ktm-admin', color: 'text-indigo-600', activeBg: 'bg-indigo-500/15', section: '大会 ＆ 試合' },
   // ── 👥 コミュニティ ＆ 戦績 ──
   { id: 'leaderboard', label: '順位表 ＆ 名簿', shortLabel: '順位・名簿', icon: Trophy, href: '/leaderboard', color: 'text-yellow-600', activeBg: 'bg-yellow-500/15', section: 'コミュニティ ＆ 戦績' },
@@ -138,7 +137,7 @@ const ADMIN_GENERAL_MENU_ITEMS: MenuItem[] = [
   { id: 'balancer', label: 'チーム分け', shortLabel: 'チーム', icon: Swords, href: '/balancer', color: 'text-rose-600', activeBg: 'bg-rose-500/15' },
   { id: 'casino', label: '勝敗予想', shortLabel: 'カジノ', icon: Coins, href: '/casino', color: 'text-amber-600', activeBg: 'bg-amber-500/15' },
   { id: 'leaderboard', label: '順位表 ＆ 名簿', shortLabel: '順位・名簿', icon: Trophy, href: '/leaderboard', color: 'text-yellow-600', activeBg: 'bg-yellow-500/15' },
-  { id: 'history', label: '試合履歴', shortLabel: '履歴', icon: History, href: '/history', color: 'text-purple-600', activeBg: 'bg-purple-500/15' },
+  { id: 'ktm-admin', label: 'KTM大会管理', shortLabel: '大会管理', icon: Shield, href: '/ktm-admin', color: 'text-indigo-600', activeBg: 'bg-indigo-500/15' },
   { id: 'guide', label: '使い方 ＆ 更新情報', shortLabel: 'ガイド', icon: BookOpen, href: '/guide', color: 'text-emerald-600', activeBg: 'bg-emerald-500/15' },
 ];
 

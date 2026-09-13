@@ -231,6 +231,26 @@ export default function KtmAdminPage() {
   
   const [activeTab, setActiveTab] = useState<'players' | 'history'>('players');
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // URLクエリ（?tab=history / ?tab=players）の同期
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam === 'history' || tabParam === 'players') {
+        setActiveTab(tabParam);
+      }
+    }
+  }, []);
+
+  const handleTabChange = (tab: 'players' | 'history') => {
+    setActiveTab(tab);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', tab);
+      window.history.replaceState({}, '', url.toString());
+    }
+  };
   
   const [syncingDiscord, setSyncingDiscord] = useState(false);
   const [syncData, setSyncData] = useState<any>(null);
@@ -876,7 +896,7 @@ export default function KtmAdminPage() {
         {/* Tabs */}
         <div className="flex border-b border-border mb-6">
           <button
-            onClick={() => setActiveTab('players')}
+            onClick={() => handleTabChange('players')}
             className={`px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 cursor-pointer ${
               activeTab === 'players' 
                 ? 'border-amber-500 text-amber-700 bg-amber-500/5' 
@@ -886,7 +906,7 @@ export default function KtmAdminPage() {
             <Users className="h-4 w-4" /> 👥 プレイヤー名簿・MMR編集 ({players.length}名)
           </button>
           <button
-            onClick={() => setActiveTab('history')}
+            onClick={() => handleTabChange('history')}
             className={`px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 cursor-pointer ${
               activeTab === 'history' 
                 ? 'border-emerald-500 text-emerald-700 bg-emerald-500/5' 

@@ -505,7 +505,7 @@ export default function AdminDashboardPage() {
                   <Trophy size={14} className="text-amber-600" />
                   カスタム大会 試合数
                 </span>
-                <Link href="/history" className="text-[11px] font-bold text-amber-600 hover:underline">
+                <Link href="/ktm-admin?tab=history" className="text-[11px] font-bold text-amber-600 hover:underline">
                   履歴 →
                 </Link>
               </div>
