@@ -545,35 +545,35 @@ export default function CasinoPage() {
   return (
     <div className="min-h-screen pb-16 bg-[#eae4d4] text-[#201c2b]">
       {/* ヒーローセクション */}
-      <div className="bg-gradient-to-b from-stone-900 via-stone-850 to-stone-900 text-stone-100 py-10 px-6 relative overflow-hidden border-b border-black/10">
+      <div className="bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-amber-500/15 text-stone-900 py-10 px-6 relative overflow-hidden border-b border-amber-500/30">
         <div className="max-w-4xl mx-auto relative z-10 text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-black tracking-wider border border-amber-500/30">
-            <Sparkles size={14} />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-900 text-xs font-black tracking-wider border border-amber-500/30">
+            <Sparkles size={14} className="text-amber-600" />
             KTM Sovereign Casino & Shop
           </div>
-          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white flex items-center justify-center gap-3">
-            <Coins className="text-amber-400" size={32} />
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-stone-900 flex items-center justify-center gap-3">
+            <Coins className="text-amber-600" size={32} />
             勝敗予想 ＆ KTMショップ ＆ 長者番付
           </h1>
-          <p className="text-stone-300 text-xs md:text-sm max-w-xl mx-auto font-medium">
+          <p className="text-stone-700 text-xs md:text-sm max-w-xl mx-auto font-medium">
             勝敗予想でコインを増やし、特権チケットやバラエティ権と交換しよう🔥
           </p>
 
           {/* ジャックポット金庫バナー */}
-          <div className="mt-4 inline-flex flex-col items-center justify-center gap-1.5 px-4 md:px-6 py-2.5 rounded-2xl bg-amber-950/80 border-2 border-amber-500/40 text-amber-200 text-xs font-black text-center max-w-full shadow-lg">
+          <div className="mt-4 inline-flex flex-col items-center justify-center gap-1.5 px-4 md:px-6 py-2.5 rounded-2xl bg-amber-100/90 border-2 border-amber-400/60 text-amber-950 text-xs font-black text-center max-w-full shadow-sm">
             <div className="flex flex-wrap items-center justify-center gap-2">
               <span className="text-base animate-bounce">💎</span>
               <span>サーバー共有ジャックポット金庫:</span>
-              <span className="text-amber-400 font-mono text-base font-black">
+              <span className="text-amber-700 font-mono text-base font-black">
                 {(betStats.jackpot?.amount ?? 12800).toLocaleString()} コイン
               </span>
-              <span className="text-[10px] text-amber-300/80 font-bold bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30">
+              <span className="text-[10px] text-amber-800 font-bold bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-500/30">
                 🔥 ペンタキルで総取り！
               </span>
             </div>
             {betStats.jackpot?.lastWinner && (
-              <div className="text-[10px] text-stone-400 font-medium">
-                👑 直近の総取り当選者: <strong className="text-amber-300">{betStats.jackpot.lastWinner}</strong> さん（+{betStats.jackpot.lastPayout.toLocaleString()}🪙）
+              <div className="text-[10px] text-stone-600 font-medium">
+                👑 直近の総取り当選者: <strong className="text-amber-700">{betStats.jackpot.lastWinner}</strong> さん（+{betStats.jackpot.lastPayout.toLocaleString()}🪙）
               </div>
             )}
           </div>
@@ -583,7 +583,7 @@ export default function CasinoPage() {
       <div className="max-w-[1200px] w-full mx-auto px-4 md:px-8 py-8 space-y-6">
 
         {/* 2大機能タブナビゲーション */}
-        <div className="flex items-center justify-center gap-2 p-1.5 rounded-2xl bg-stone-900 text-white max-w-sm mx-auto shadow-lg">
+        <div className="flex items-center justify-center gap-2 p-1.5 rounded-2xl bg-stone-200/80 text-stone-700 max-w-sm mx-auto shadow-sm border border-stone-300">
           {[
             { id: 'bet', label: '🎯 勝敗予想', desc: '試合予想 ＆ 長者番付' },
             { id: 'shop', label: '🛒 KTMショップ', desc: '特権交換' },
@@ -593,8 +593,8 @@ export default function CasinoPage() {
               onClick={() => setActiveTab(tab.id as any)}
               className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap text-center ${
                 activeTab === tab.id
-                  ? 'bg-amber-500 text-stone-950 shadow-md scale-102'
-                  : 'text-stone-400 hover:text-white hover:bg-stone-800/60'
+                  ? 'bg-white text-stone-900 shadow-sm scale-102 border border-stone-200'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-white/50'
               }`}
             >
               {tab.label}
@@ -780,27 +780,27 @@ export default function CasinoPage() {
             {activeMatch ? (
               <div className="space-y-6">
                 {/* 📊 リアルタイム投票比率バー */}
-                <div className="p-4 rounded-2xl bg-stone-900 text-white space-y-2 border border-stone-800 shadow-md">
+                <div className="p-4 rounded-2xl bg-white/95 text-stone-900 space-y-2 border border-stone-200 shadow-sm">
                   <div className="flex items-center justify-between text-xs font-black">
-                    <span className="text-indigo-400 flex items-center gap-1">
+                    <span className="text-indigo-600 flex items-center gap-1">
                       <span>🟦 BLUE:</span>
                       <span className="font-mono">{betStats.blueRatio}%</span>
-                      <span className="text-[10px] text-stone-400 font-normal">({betStats.blueAmount.toLocaleString()}pt / {betStats.blueCount}人)</span>
+                      <span className="text-[10px] text-stone-500 font-normal">({betStats.blueAmount.toLocaleString()}pt / {betStats.blueCount}人)</span>
                     </span>
-                    <span className="text-amber-400 font-mono text-[11px]">
+                    <span className="text-amber-700 font-mono text-[11px] font-black">
                       総プール: {betStats.totalAmount.toLocaleString()}pt
                     </span>
-                    <span className="text-rose-400 flex items-center gap-1">
-                      <span className="text-[10px] text-stone-400 font-normal">({betStats.redAmount.toLocaleString()}pt / {betStats.redCount}人)</span>
+                    <span className="text-rose-600 flex items-center gap-1">
+                      <span className="text-[10px] text-stone-500 font-normal">({betStats.redAmount.toLocaleString()}pt / {betStats.redCount}人)</span>
                       <span className="font-mono">{betStats.redRatio}%</span>
                       <span>:RED 🟥</span>
                     </span>
                   </div>
                   {/* プログレスバー */}
-                  <div className="w-full h-3 bg-stone-800 rounded-full overflow-hidden flex border border-stone-700">
+                  <div className="w-full h-3 bg-stone-200 rounded-full overflow-hidden flex border border-stone-300">
                     <div
                       style={{ width: `${betStats.blueRatio}%` }}
-                      className="h-full bg-gradient-to-r from-indigo-600 to-indigo-400 transition-all duration-500"
+                      className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 transition-all duration-500"
                     ></div>
                     <div
                       style={{ width: `${betStats.redRatio}%` }}
@@ -810,16 +810,16 @@ export default function CasinoPage() {
                 </div>
 
                 {/* 対戦カード表示 */}
-                <div className="p-5 rounded-3xl bg-stone-900 text-white space-y-4 border border-stone-800 shadow-md">
+                <div className="p-5 rounded-3xl bg-white/95 text-stone-900 space-y-4 border border-stone-200 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="flex h-2.5 w-2.5 relative">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
                       </span>
-                      <span className="text-xs font-black text-rose-400 tracking-wider">LIVE MATCH 受付中</span>
+                      <span className="text-xs font-black text-rose-600 tracking-wider">LIVE MATCH 受付中</span>
                     </div>
-                    <div className="text-xs font-bold text-amber-300 font-mono">
+                    <div className="text-xs font-bold text-amber-700 font-mono">
                       勝率予想: 🟦 {activeMatch.blueWinRate ? `${Math.round(activeMatch.blueWinRate * 100)}%` : '50%'} vs 🟥 {activeMatch.blueWinRate ? `${Math.round((1 - activeMatch.blueWinRate) * 100)}%` : '50%'}
                     </div>
                   </div>
@@ -827,32 +827,32 @@ export default function CasinoPage() {
                   {/* 5v5 対戦メンバー */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                     {/* BLUE TEAM */}
-                    <div className="p-3.5 rounded-2xl bg-indigo-950/60 border-2 border-indigo-500/40 space-y-2">
-                      <div className="flex items-center justify-between border-b border-indigo-500/20 pb-1.5">
-                        <span className="text-xs font-black text-indigo-400">🟦 BLUE TEAM</span>
-                        <span className="text-[10px] font-mono text-indigo-300">MMR: {activeMatch.teamBlue ? Math.round(activeMatch.teamBlue.reduce((s: number, p: any) => s + (p.mmr || 1200), 0) / activeMatch.teamBlue.length) : '-'}</span>
+                    <div className="p-3.5 rounded-2xl bg-indigo-50/80 border-2 border-indigo-200 space-y-2">
+                      <div className="flex items-center justify-between border-b border-indigo-200 pb-1.5">
+                        <span className="text-xs font-black text-indigo-700">🟦 BLUE TEAM</span>
+                        <span className="text-[10px] font-mono text-indigo-600 font-bold">MMR: {activeMatch.teamBlue ? Math.round(activeMatch.teamBlue.reduce((s: number, p: any) => s + (p.mmr || 1200), 0) / activeMatch.teamBlue.length) : '-'}</span>
                       </div>
                       <div className="space-y-1.5 text-xs">
                         {(activeMatch.teamBlue || []).map((p: any, i: number) => (
                           <div key={i} className="flex items-center justify-between text-[11px]">
-                            <span className="font-bold text-stone-200 truncate">{p.assignedRole || p.role || `P${i+1}`}: {p.name}</span>
-                            <span className="text-[9px] text-stone-400 font-mono shrink-0">{p.rank || p.highestRank || ''}</span>
+                            <span className="font-bold text-stone-800 truncate">{p.assignedRole || p.role || `P${i+1}`}: {p.name}</span>
+                            <span className="text-[9px] text-stone-500 font-mono shrink-0">{p.rank || p.highestRank || ''}</span>
                           </div>
                         ))}
                       </div>
                     </div>
 
                     {/* RED TEAM */}
-                    <div className="p-3.5 rounded-2xl bg-rose-950/60 border-2 border-rose-500/40 space-y-2">
-                      <div className="flex items-center justify-between border-b border-rose-500/20 pb-1.5">
-                        <span className="text-xs font-black text-rose-400">🟥 RED TEAM</span>
-                        <span className="text-[10px] font-mono text-rose-300">MMR: {activeMatch.teamRed ? Math.round(activeMatch.teamRed.reduce((s: number, p: any) => s + (p.mmr || 1200), 0) / activeMatch.teamRed.length) : '-'}</span>
+                    <div className="p-3.5 rounded-2xl bg-rose-50/80 border-2 border-rose-200 space-y-2">
+                      <div className="flex items-center justify-between border-b border-rose-200 pb-1.5">
+                        <span className="text-xs font-black text-rose-700">🟥 RED TEAM</span>
+                        <span className="text-[10px] font-mono text-rose-600 font-bold">MMR: {activeMatch.teamRed ? Math.round(activeMatch.teamRed.reduce((s: number, p: any) => s + (p.mmr || 1200), 0) / activeMatch.teamRed.length) : '-'}</span>
                       </div>
                       <div className="space-y-1.5 text-xs">
                         {(activeMatch.teamRed || []).map((p: any, i: number) => (
                           <div key={i} className="flex items-center justify-between text-[11px]">
-                            <span className="font-bold text-stone-200 truncate">{p.assignedRole || p.role || `P${i+1}`}: {p.name}</span>
-                            <span className="text-[9px] text-stone-400 font-mono shrink-0">{p.rank || p.highestRank || ''}</span>
+                            <span className="font-bold text-stone-800 truncate">{p.assignedRole || p.role || `P${i+1}`}: {p.name}</span>
+                            <span className="text-[9px] text-stone-500 font-mono shrink-0">{p.rank || p.highestRank || ''}</span>
                           </div>
                         ))}
                       </div>
@@ -863,32 +863,32 @@ export default function CasinoPage() {
                 {/* ベットフォーム */}
                 {user ? (
                   isParticipant ? (
-                    <div className="p-5 md:p-6 rounded-3xl bg-gradient-to-br from-indigo-950/90 via-slate-900 to-indigo-950 text-white border-2 border-indigo-500/30 shadow-xl space-y-4 text-center">
-                      <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center mx-auto text-2xl">
+                    <div className="p-5 md:p-6 rounded-3xl bg-gradient-to-br from-indigo-50 via-white to-indigo-50 text-stone-900 border-2 border-indigo-200 shadow-md space-y-4 text-center">
+                      <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-700 border border-indigo-200 flex items-center justify-center mx-auto text-2xl">
                         ⚔️
                       </div>
                       <div className="space-y-1">
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-black border border-indigo-500/30">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-100 text-indigo-800 text-xs font-black border border-indigo-200">
                           🛡️ 出場選手（プレイヤー）として参加中
                         </div>
-                        <h4 className="text-base font-black text-white pt-2">
+                        <h4 className="text-base font-black text-stone-900 pt-2">
                           あなたは現在このカスタム対戦の選手です
                         </h4>
-                        <p className="text-xs text-slate-300 leading-relaxed max-w-md mx-auto">
-                          試合の公平性・八百長防止のため、<strong className="text-indigo-300">出場選手本人は勝敗予想ベットを行うことができません。</strong><br />
+                        <p className="text-xs text-stone-600 leading-relaxed max-w-md mx-auto">
+                          試合の公平性・八百長防止のため、<strong className="text-indigo-700">出場選手本人は勝敗予想ベットを行うことができません。</strong><br />
                           勝敗予想は観戦者・コミュニティメンバー限定の機能となります。
                         </p>
                       </div>
 
-                      <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between text-left text-xs">
+                      <div className="p-3.5 rounded-2xl bg-white border border-stone-200 flex items-center justify-between text-left text-xs shadow-xs">
                         <div className="flex items-center gap-2.5">
                           <span className="text-xl">🏆</span>
                           <div>
-                            <div className="font-black text-white">選手勝利ボーナス</div>
-                            <div className="text-[10px] text-slate-400">試合に勝利すると自動でポイントが付与されます</div>
+                            <div className="font-black text-stone-900">選手勝利ボーナス</div>
+                            <div className="text-[10px] text-stone-500">試合に勝利すると自動でポイントが付与されます</div>
                           </div>
                         </div>
-                        <span className="font-mono font-black text-amber-400 text-sm bg-amber-400/10 border border-amber-400/20 px-3 py-1 rounded-xl">
+                        <span className="font-mono font-black text-amber-700 text-sm bg-amber-100 border border-amber-300 px-3 py-1 rounded-xl">
                           +250 pt
                         </span>
                       </div>
@@ -1209,64 +1209,64 @@ export default function CasinoPage() {
         )}
 
         {/* 🪙 コインの貯め方ガイド（5大ルート一覧） */}
-        <div className="bg-stone-900 text-stone-100 rounded-3xl p-6 md:p-8 border border-white/10 shadow-xl space-y-6">
-          <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xl font-bold">
+        <div className="bg-white/95 text-stone-800 rounded-3xl p-6 md:p-8 border border-stone-200 shadow-sm space-y-6">
+          <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
+            <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 border border-amber-300 flex items-center justify-center text-xl font-bold">
               🪙
             </div>
             <div>
-              <h3 className="text-base md:text-lg font-black text-white">コインを自動で貯める 5つの方法</h3>
-              <p className="text-xs text-stone-400">試合に出る人も、観戦する人も全員がコインを獲得できます！</p>
+              <h3 className="text-base md:text-lg font-black text-stone-900">コインを自動で貯める 5つの方法</h3>
+              <p className="text-xs text-stone-500">試合に出る人も、観戦する人も全員がコインを獲得できます！</p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-amber-400">① 初回ログイン</span>
-                <span className="text-xs font-mono font-black text-emerald-400">+1,000 pt</span>
+                <span className="text-xs font-black text-amber-700">① 初回ログイン</span>
+                <span className="text-xs font-mono font-black text-emerald-600">+1,000 pt</span>
               </div>
-              <p className="text-[11px] text-stone-300 leading-relaxed">
+              <p className="text-[11px] text-stone-600 leading-relaxed">
                 Discordで初めてログインすると、全員に初期所持金として自動付与！
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-amber-400">② 試合に参加</span>
-                <span className="text-xs font-mono font-black text-emerald-400">+100 pt</span>
+                <span className="text-xs font-black text-amber-700">② 試合に参加</span>
+                <span className="text-xs font-mono font-black text-emerald-600">+100 pt</span>
               </div>
-              <p className="text-[11px] text-stone-300 leading-relaxed">
+              <p className="text-[11px] text-stone-600 leading-relaxed">
                 カスタム試合に参加するだけで、勝敗に関係なく全員に参加賞を付与！
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-amber-400">③ 試合に勝利</span>
-                <span className="text-xs font-mono font-black text-emerald-400">+150 pt (計250)</span>
+                <span className="text-xs font-black text-amber-700">③ 試合に勝利</span>
+                <span className="text-xs font-mono font-black text-emerald-600">+150 pt (計250)</span>
               </div>
-              <p className="text-[11px] text-stone-300 leading-relaxed">
+              <p className="text-[11px] text-stone-600 leading-relaxed">
                 試合に勝利したチームのメンバー全員に勝利ボーナスを追加付与！
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5">
+            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-amber-400">④ 募集を主催</span>
-                <span className="text-xs font-mono font-black text-emerald-400">+200 pt</span>
+                <span className="text-xs font-black text-amber-700">④ 募集を主催</span>
+                <span className="text-xs font-mono font-black text-emerald-600">+200 pt</span>
               </div>
-              <p className="text-[11px] text-stone-300 leading-relaxed">
+              <p className="text-[11px] text-stone-600 leading-relaxed">
                 Discordで `/recruit` を打って募集を立てた主催者に感謝ボーナス！
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-1.5 sm:col-span-2 lg:col-span-2">
+            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-1.5 sm:col-span-2 lg:col-span-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-amber-400">⑤ 勝敗予想が的中</span>
-                <span className="text-xs font-mono font-black text-amber-300">賭け金 × 2倍 配当</span>
+                <span className="text-xs font-black text-amber-700">⑤ 勝敗予想が的中</span>
+                <span className="text-xs font-mono font-black text-amber-600">賭け金 × 2倍 配当</span>
               </div>
-              <p className="text-[11px] text-stone-300 leading-relaxed">
+              <p className="text-[11px] text-stone-600 leading-relaxed">
                 カスタムの勝利チームを予想して的中すると、賭けたコインがザクザク倍増して戻ってきます！
               </p>
             </div>

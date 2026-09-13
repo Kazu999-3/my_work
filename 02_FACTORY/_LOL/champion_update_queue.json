@@ -1,6 +1,6 @@
 {
   "patch_version": "26.18",
-  "updated_at": "2026-09-11T02:06:17.485294+00:00",
+  "updated_at": "2026-09-13T08:54:45.006218+00:00",
   "status": "suspended",
   "queue": {
     "Aatrox": {
@@ -29,74 +29,74 @@
     },
     "Alistar": {
       "name": "アリスター",
-      "status": "pending",
-      "updated_at": "2026-09-07T03:47:45.741882+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-11T08:06:25.396224+00:00",
       "error": null
     },
     "Ambessa": {
       "name": "アンベッサ",
-      "status": "pending",
-      "updated_at": "2026-09-07T03:48:32.452772+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-11T08:07:13.293547+00:00",
       "error": null
     },
     "Amumu": {
       "name": "アムム",
-      "status": "pending",
-      "updated_at": "2026-09-07T03:49:18.958410+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-11T08:08:00.006170+00:00",
       "error": null
     },
     "Anivia": {
       "name": "アニビア",
-      "status": "pending",
-      "updated_at": "2026-09-07T03:50:05.545814+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-11T08:08:45.804056+00:00",
       "error": null
     },
     "Annie": {
       "name": "アニー",
-      "status": "pending",
-      "updated_at": "2026-09-07T03:50:52.789264+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-12T08:33:58.645860+00:00",
       "error": null
     },
     "Aphelios": {
       "name": "アフェリオス",
-      "status": "pending",
-      "updated_at": "2026-09-07T03:51:39.292653+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-12T08:34:47.531690+00:00",
       "error": null
     },
     "Ashe": {
       "name": "アッシュ",
-      "status": "pending",
-      "updated_at": "2026-09-07T03:52:25.599536+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-12T08:35:38.118959+00:00",
       "error": null
     },
     "AurelionSol": {
       "name": "オレリオン・ソル",
-      "status": "pending",
-      "updated_at": "2026-09-07T03:53:11.734246+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-12T08:36:27.337452+00:00",
       "error": null
     },
     "Aurora": {
       "name": "オーロラ",
-      "status": "pending",
-      "updated_at": "2026-09-07T03:53:58.035680+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-13T08:23:58.952059+00:00",
       "error": null
     },
     "Azir": {
       "name": "アジール",
-      "status": "pending",
-      "updated_at": "2026-09-07T03:54:44.737195+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-13T08:24:48.982992+00:00",
       "error": null
     },
     "Bard": {
       "name": "バード",
-      "status": "pending",
-      "updated_at": "2026-09-07T03:55:31.484785+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-13T08:25:36.130069+00:00",
       "error": null
     },
     "Belveth": {
       "name": "ベル＝ヴェス",
-      "status": "pending",
-      "updated_at": "2026-09-07T03:56:19.021940+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-13T08:26:25.561299+00:00",
       "error": null
     },
     "Blitzcrank": {

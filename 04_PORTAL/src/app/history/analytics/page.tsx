@@ -13,20 +13,20 @@ export default function MatchAnalyticsRedirectPage() {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-stone-900 text-stone-100 flex items-center justify-center p-4">
-      <div className="text-center max-w-md bg-stone-850 border border-stone-700 rounded-3xl p-8 shadow-2xl space-y-4">
-        <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-2xl mx-auto">
+    <div className="min-h-screen bg-[#eae4d4] text-[#201c2b] flex items-center justify-center p-4">
+      <div className="text-center max-w-md bg-white/95 border border-stone-200/80 rounded-3xl p-8 shadow-xl space-y-4">
+        <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-2xl mx-auto">
           👑
         </div>
-        <h1 className="text-base font-black text-white">
+        <h1 className="text-base font-black text-stone-900">
           集団戦ディープアナリティクス統合ハブへ移動中...
         </h1>
-        <p className="text-xs text-stone-400 leading-relaxed">
+        <p className="text-xs text-stone-600 leading-relaxed">
           集団戦・序盤15分メトリクス・リコール逆再生・1分振り返りカルテは、すべて「試合後アナリティクスハブ」に一本化されました。
         </p>
         <Link
           href="/coach?tab=postgame"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xs transition"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-black text-xs transition shadow-sm"
         >
           <span>ディープアナリティクスを開く</span>
           <ArrowRight className="h-4 w-4" />

@@ -3133,17 +3133,17 @@ export default function BalancerPage() {
         </details>
 
         {/* ★ スティッキー下部クイックアクションバー */}
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[95%] max-w-4xl bg-stone-900/90 text-white backdrop-blur-md border border-stone-700/80 rounded-2xl p-3 px-5 shadow-2xl flex items-center justify-between gap-4">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[95%] max-w-4xl bg-white/95 text-stone-900 backdrop-blur-md border border-stone-300 rounded-2xl p-3 px-5 shadow-2xl flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
-              <Users className="w-4 h-4 text-amber-400" />
-              <span className="text-xs text-stone-300 font-bold">参加:</span>
-              <strong className={`font-mono text-xs sm:text-sm px-2 py-0.5 rounded-lg ${canBalance ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'}`}>
+              <Users className="w-4 h-4 text-amber-600" />
+              <span className="text-xs text-stone-600 font-bold">参加:</span>
+              <strong className={`font-mono text-xs sm:text-sm px-2 py-0.5 rounded-lg ${canBalance ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-rose-100 text-rose-800 border border-rose-300'}`}>
                 {activeCount} / 10 人 {canBalance ? '✅' : `(あと${10 - activeCount}人)`}
               </strong>
             </div>
             {spectatorCount > 0 && (
-              <span className="text-[11px] text-stone-400 hidden sm:inline">
+              <span className="text-[11px] text-stone-500 hidden sm:inline">
                 (見学: {spectatorCount}人)
               </span>
             )}
@@ -3153,9 +3153,9 @@ export default function BalancerPage() {
             {balanceResult && (
               <button
                 onClick={() => setShowResultModal(true)}
-                className="px-3 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-300 font-bold text-xs border border-stone-700 transition flex items-center gap-1.5 cursor-pointer"
+                className="px-3 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs border border-stone-300 transition flex items-center gap-1.5 cursor-pointer"
               >
-                <Globe className="w-3.5 h-3.5" /> <span className="hidden sm:inline">結果表示</span>
+                <Globe className="w-3.5 h-3.5 text-amber-600" /> <span className="hidden sm:inline">結果表示</span>
               </button>
             )}
             <button
@@ -3164,7 +3164,7 @@ export default function BalancerPage() {
               disabled={balancing || !canBalance}
               className={`px-3 py-2 rounded-xl font-black text-xs flex items-center gap-1.5 transition cursor-pointer shadow-md border ${
                 balancing || !canBalance
-                  ? 'bg-stone-800 text-stone-500 border-stone-700 cursor-not-allowed opacity-50'
+                  ? 'bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed opacity-50'
                   : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white border-purple-400 shadow-purple-500/20'
               }`}
               title="完全ランダムでお祭りチーム分け（MMRなし）"
@@ -3177,7 +3177,7 @@ export default function BalancerPage() {
               disabled={balancing || !canBalance}
               className={`px-4 sm:px-5 py-2 rounded-xl font-black text-xs sm:text-sm flex items-center gap-2 transition cursor-pointer shadow-lg ${
                 balancing || !canBalance
-                  ? 'bg-stone-700 text-stone-500 cursor-not-allowed opacity-50'
+                  ? 'bg-stone-200 text-stone-400 cursor-not-allowed opacity-50'
                   : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 shadow-amber-500/30'
               }`}
             >

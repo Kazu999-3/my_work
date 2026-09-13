@@ -38,9 +38,66 @@ class CoolDownButton(QPushButton):
     def set_max_cd(self, new_cd: int):
         self.max_cd = new_cd
 
-    def trigger_cooldown(self):
+    def trigger_cooldown(self, copy_to_clipboard: bool = True):
         self.ready_time = time.time() + self.max_cd
         self.update_appearance(ready=False)
+
+        # 形式A（例: mid f 1835 / top tp 1920）でクリップボードに自動コピー
+        if copy_to_clipboard:
+            try:
+                from PyQt6.QtWidgets import QApplication
+                parent_col = self.parent()
+                role_str = "mid"
+                if parent_col and hasattr(parent_col, "role"):
+                    role_str = format_role_short(parent_col.role).lower()
+
+                spell_code = "f"
+                if self.spell_type == "ULT":
+                    spell_code = "r"
+                elif "flash" in self.spell_name.lower():
+                    spell_code = "f"
+                elif "teleport" in self.spell_name.lower():
+                    spell_code = "tp"
+                elif "ignite" in self.spell_name.lower():
+                    spell_code = "ign"
+                elif "ghost" in self.spell_name.lower():
+                    spell_code = "gh"
+                elif "heal" in self.spell_name.lower():
+                    spell_code = "heal"
+                elif "barrier" in self.spell_name.lower():
+                    spell_code = "barr"
+                elif "exhaust" in self.spell_name.lower():
+                    spell_code = "exh"
+                elif "cleanse" in self.spell_name.lower():
+                    spell_code = "cln"
+                elif "smite" in self.spell_name.lower():
+                    spell_code = "sm"
+                else:
+                    spell_code = self.spell_name[:2].lower()
+
+                # ゲーム内時間を探索
+                game_time_sec = 0.0
+                curr = parent_col
+                while curr is not None:
+                    if hasattr(curr, "current_game_time") and curr.current_game_time > 0:
+                        game_time_sec = curr.current_game_time
+                        break
+                    curr = curr.parent()
+
+                target_sec = int(game_time_sec + self.max_cd)
+                if target_sec > 0:
+                    m = target_sec // 60
+                    s = target_sec % 60
+                    time_str = f"{m:02d}{s:02d}"
+                else:
+                    time_str = f"{self.max_cd}s"
+
+                chat_text = f"{role_str} {spell_code} {time_str}"
+                cb = QApplication.clipboard()
+                if cb:
+                    cb.setText(chat_text)
+            except Exception as e:
+                pass
 
     def reset_cooldown(self):
         self.ready_time = 0.0
@@ -490,6 +547,8 @@ class SpellTrackerWidget(QWidget):
     def update_data(self, state: dict):
         if not state or not state.get("active"):
             return
+
+        self.current_game_time = float(state.get("game_time", 0.0) or 0.0)
 
         # 1. マクロ経済 & CS
         gold_str = state.get("gold_diff_str", "互角 🟡")

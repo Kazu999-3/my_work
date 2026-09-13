@@ -268,18 +268,18 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
   };
 
   return (
-    <div className="bg-[#2b2620]/90 border border-amber-500/20 rounded-2xl p-6 sm:p-8 shadow-xl space-y-8">
+    <div className="bg-white/95 border border-stone-200/90 rounded-2xl p-6 sm:p-8 shadow-sm space-y-8 text-stone-900">
       
       {/* ヘッダー ＆ モード選択 */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-800 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200 pb-5">
         <div>
-          <h2 className="text-xl font-black text-white flex items-center gap-2">
-            <Shuffle className="w-5 h-5 text-amber-400" />
+          <h2 className="text-xl font-black text-stone-900 flex items-center gap-2">
+            <Shuffle className="w-5 h-5 text-amber-600" />
             <span>🔄 10人以上 お祭り・ARAM公平ローテーション ＆ 観戦シャッフル</span>
           </h2>
-          <p className="text-xs sm:text-sm text-stone-400 mt-1 leading-relaxed">
+          <p className="text-xs sm:text-sm text-stone-600 mt-1 leading-relaxed">
             大人数が集まった時に、毎試合自動で観戦者をスタメン交代させながら全員が均等にプレイできます。
-            <strong className="text-amber-400"> 観戦したメンバーは次の試合で100%スタメン出場します。</strong>
+            <strong className="text-amber-700"> 観戦したメンバーは次の試合で100%スタメン出場します。</strong>
           </p>
         </div>
 
@@ -289,7 +289,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
             <button
               type="button"
               onClick={() => setShowRuleManager(true)}
-              className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-black flex items-center gap-1.5 transition cursor-pointer"
+              className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-800 text-xs font-black flex items-center gap-1.5 transition cursor-pointer"
               title="お祭りカスタムの縛りルールを追加・管理"
             >
               <Settings className="w-3.5 h-3.5" />
@@ -301,20 +301,20 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
             <button
               type="button"
               onClick={handleReset}
-              className="px-4 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
             >
               <RotateCcw className="w-4 h-4" />
               <span>メンバーを選び直す</span>
             </button>
           ) : (
-            <div className="flex items-center gap-2 bg-stone-900/80 border border-stone-800 p-1 rounded-xl">
+            <div className="flex items-center gap-2 bg-stone-100 border border-stone-300 p-1 rounded-xl">
               <button
                 type="button"
                 onClick={() => setCustomMode('party_chaos')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
                   customMode === 'party_chaos'
-                    ? 'bg-amber-500 text-stone-950 shadow'
-                    : 'text-stone-400 hover:text-stone-200'
+                    ? 'bg-white text-stone-900 shadow-xs border border-stone-200'
+                    : 'text-stone-500 hover:text-stone-800'
                 }`}
               >
                 🎲 カオス縛りルーレット付き
@@ -324,8 +324,8 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                 onClick={() => setCustomMode('aram')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
                   customMode === 'aram'
-                    ? 'bg-amber-500 text-stone-950 shadow'
-                    : 'text-stone-400 hover:text-stone-200'
+                    ? 'bg-white text-stone-900 shadow-xs border border-stone-200'
+                    : 'text-stone-500 hover:text-stone-800'
                 }`}
               >
                 ❄️ 通常 ARAM
@@ -339,14 +339,14 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
       {!currentRound ? (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <div className="text-xs font-bold text-stone-300 uppercase tracking-wider flex items-center gap-2">
-              <Users className="w-4 h-4 text-amber-400" />
+            <div className="text-xs font-bold text-stone-700 uppercase tracking-wider flex items-center gap-2">
+              <Users className="w-4 h-4 text-amber-600" />
               <span>参加者を選択 ({selectedIds.length}名 選択中)</span>
             </div>
             <button
               type="button"
               onClick={selectAll}
-              className="text-xs text-amber-400 hover:text-amber-300 font-bold transition cursor-pointer"
+              className="text-xs text-amber-700 hover:text-amber-600 font-bold transition cursor-pointer"
             >
               {selectedIds.length === availablePlayers.length ? "選択解除" : "全員選択"}
             </button>
@@ -362,13 +362,13 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                   onClick={() => togglePlayer(p)}
                   className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                     isSelected
-                      ? "bg-amber-500/15 border-amber-500/60 text-white shadow-md shadow-amber-500/10 scale-[1.02]"
-                      : "bg-stone-900/60 border-stone-800/80 text-stone-400 hover:border-stone-700 hover:text-stone-300"
+                      ? "bg-amber-500/15 border-amber-500/60 text-amber-950 font-bold shadow-xs scale-[1.02]"
+                      : "bg-stone-50 border-stone-200 text-stone-600 hover:border-stone-400 hover:text-stone-900"
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black truncate">{p.name}</span>
-                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-stone-800 text-stone-400 font-mono">
+                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-stone-200 text-stone-700 font-mono font-bold">
                       {p.highest_rank || "UNR"}
                     </span>
                   </div>
@@ -436,14 +436,14 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
           )}
 
           {/* ラウンド表示 ＆ アクション */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-stone-900/60 border border-stone-800 rounded-xl p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-stone-50 border border-stone-200 rounded-xl p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 font-black text-lg">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-800 font-black text-lg">
                 #{roundNumber}
               </div>
               <div>
-                <h3 className="text-base font-black text-white">第 {roundNumber} 試合</h3>
-                <p className="text-xs text-stone-400">
+                <h3 className="text-base font-black text-stone-900">第 {roundNumber} 試合</h3>
+                <p className="text-xs text-stone-600">
                   総参加者: {rotationPool.length}名 (スタメン10名 / 観戦{currentRound.benchedPlayers.length}名)
                 </p>
               </div>
@@ -453,16 +453,16 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
               <button
                 type="button"
                 onClick={copyDiscordFormat}
-                className="px-4 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+                className="px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
               >
-                {copied ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                {copied ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
                 <span>{copied ? "コピー完了！" : "Discord用にコピー"}</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleNextGame}
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 text-xs font-black flex items-center gap-1.5 shadow-md shadow-amber-500/20 transition cursor-pointer"
+                className="px-6 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-black flex items-center gap-1.5 shadow-sm transition cursor-pointer"
               >
                 <span>試合終了 ➔ 次の試合へ</span>
                 <ArrowRight className="w-4 h-4" />
@@ -474,10 +474,10 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
             {/* BLUE TEAM */}
-            <div className="bg-blue-950/20 border border-blue-500/30 rounded-2xl p-5 space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-blue-500/20">
-                <span className="text-xs font-black text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+            <div className="bg-blue-50/70 border border-blue-200 rounded-2xl p-5 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-blue-200">
+                <span className="text-xs font-black text-blue-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
                   BLUE TEAM (5人)
                 </span>
               </div>
@@ -485,20 +485,20 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                 {currentRound.blueTeam.map((p) => (
                   <div
                     key={p.id}
-                    className="p-2.5 rounded-xl bg-blue-900/20 border border-blue-500/20 flex items-center justify-between"
+                    className="p-2.5 rounded-xl bg-white border border-blue-200/80 flex items-center justify-between shadow-2xs"
                   >
-                    <span className="text-xs font-bold text-blue-200">{p.name}</span>
-                    <span className="text-[10px] text-blue-400/80 font-mono">出場: {p.gamesPlayed}回</span>
+                    <span className="text-xs font-bold text-blue-950">{p.name}</span>
+                    <span className="text-[10px] text-blue-600 font-mono font-bold">出場: {p.gamesPlayed}回</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* RED TEAM */}
-            <div className="bg-rose-950/20 border border-rose-500/30 rounded-2xl p-5 space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-rose-500/20">
-                <span className="text-xs font-black text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+            <div className="bg-rose-50/70 border border-rose-200 rounded-2xl p-5 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-rose-200">
+                <span className="text-xs font-black text-rose-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-600" />
                   RED TEAM (5人)
                 </span>
               </div>
@@ -506,10 +506,10 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                 {currentRound.redTeam.map((p) => (
                   <div
                     key={p.id}
-                    className="p-2.5 rounded-xl bg-rose-900/20 border border-rose-500/20 flex items-center justify-between"
+                    className="p-2.5 rounded-xl bg-white border border-rose-200/80 flex items-center justify-between shadow-2xs"
                   >
-                    <span className="text-xs font-bold text-rose-200">{p.name}</span>
-                    <span className="text-[10px] text-rose-400/80 font-mono">出場: {p.gamesPlayed}回</span>
+                    <span className="text-xs font-bold text-rose-950">{p.name}</span>
+                    <span className="text-[10px] text-rose-600 font-mono font-bold">出場: {p.gamesPlayed}回</span>
                   </div>
                 ))}
               </div>
@@ -518,13 +518,13 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
 
           {/* 観戦・待機枠 */}
           {currentRound.benchedPlayers.length > 0 && (
-            <div className="bg-stone-900/80 border border-amber-500/30 rounded-2xl p-5 space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-stone-800">
-                <span className="text-xs font-black text-amber-400 uppercase tracking-wider flex items-center gap-2">
-                  <Eye className="w-4 h-4 text-amber-400" />
+            <div className="bg-amber-50/70 border border-amber-200 rounded-2xl p-5 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-amber-200">
+                <span className="text-xs font-black text-amber-800 uppercase tracking-wider flex items-center gap-2">
+                  <Eye className="w-4 h-4 text-amber-700" />
                   <span>👀 観戦・待機枠 ({currentRound.benchedPlayers.length}名)</span>
                 </span>
-                <span className="text-[11px] text-amber-300 font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                <span className="text-[11px] text-amber-900 font-bold bg-amber-200/60 px-2 py-0.5 rounded border border-amber-300">
                   次戦 100% スタメン確定出場
                 </span>
               </div>
@@ -533,10 +533,10 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                 {currentRound.benchedPlayers.map((p) => (
                   <div
                     key={p.id}
-                    className="p-3 rounded-xl bg-[#2b2620] border border-amber-500/30 flex flex-col justify-between"
+                    className="p-3 rounded-xl bg-white border border-amber-300/80 flex flex-col justify-between shadow-2xs"
                   >
-                    <span className="text-xs font-black text-white">{p.name}</span>
-                    <span className="text-[10px] text-stone-400 mt-1">待機: {p.benchedCount}回</span>
+                    <span className="text-xs font-black text-stone-900">{p.name}</span>
+                    <span className="text-[10px] text-stone-500 mt-1">待機: {p.benchedCount}回</span>
                   </div>
                 ))}
               </div>
@@ -544,8 +544,8 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
           )}
 
           {/* 全員の参加ステータス一覧 */}
-          <div className="bg-stone-900/40 border border-stone-800 rounded-xl p-4">
-            <h4 className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-3">
+          <div className="bg-stone-50 border border-stone-200 rounded-xl p-4">
+            <h4 className="text-xs font-bold text-stone-700 uppercase tracking-wider mb-3">
               📊 全員の出場バランス
             </h4>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
@@ -556,12 +556,12 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                     key={p.id}
                     className={`p-2 rounded-lg border text-xs ${
                       isPlaying
-                        ? "bg-stone-800/80 border-stone-700 text-stone-200"
-                        : "bg-amber-950/20 border-amber-500/30 text-amber-200"
+                        ? "bg-white border-stone-200 text-stone-800"
+                        : "bg-amber-100/60 border-amber-300 text-amber-900"
                     }`}
                   >
                     <div className="font-bold truncate">{p.name}</div>
-                    <div className="text-[10px] text-stone-400 mt-0.5">
+                    <div className="text-[10px] text-stone-500 mt-0.5">
                       {p.gamesPlayed}試合 / 待機{p.benchedCount}
                     </div>
                   </div>
@@ -576,22 +576,22 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
       {/* 🛠️ 管理者限定：縛りルール管理モーダル */}
       {showRuleManager && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto"
           onClick={(e) => { if (e.target === e.currentTarget) setShowRuleManager(false); }}
         >
-          <div className="bg-[#1c1917] border border-amber-500/40 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden animate-fade-in my-6">
+          <div className="bg-white border border-stone-300 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden animate-fade-in my-6 text-stone-900">
             {/* モーダルヘッダー */}
-            <div className="p-4 sm:p-5 bg-[#2b2620] border-b border-stone-800 flex items-center justify-between">
+            <div className="p-4 sm:p-5 bg-stone-50 border-b border-stone-200 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Settings className="w-5 h-5 text-amber-400" />
-                <h3 className="text-base font-black text-white">
+                <Settings className="w-5 h-5 text-amber-600" />
+                <h3 className="text-base font-black text-stone-900">
                   お祭りカスタム 縛りルール管理 (管理者専用)
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setShowRuleManager(false)}
-                className="p-1 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-400 hover:text-white transition"
+                className="p-1 rounded-lg bg-stone-200 hover:bg-stone-300 text-stone-600 hover:text-stone-900 transition"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -603,37 +603,37 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
               {actionMessage && (
                 <div className={`p-3 rounded-xl border text-xs font-bold ${
                   actionMessage.type === 'success'
-                    ? 'bg-emerald-950/40 border-emerald-500 text-emerald-200'
-                    : 'bg-rose-950/40 border-rose-500 text-rose-200'
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                    : 'bg-rose-50 border-rose-300 text-rose-900'
                 }`}>
                   {actionMessage.text}
                 </div>
               )}
 
               {/* ➕ 新規ルール追加フォーム */}
-              <form onSubmit={handleAddRule} className="bg-stone-900/80 border border-stone-800 rounded-xl p-4 space-y-3">
-                <div className="text-xs font-black text-amber-300 flex items-center gap-1.5">
-                  <Plus className="w-4 h-4" />
+              <form onSubmit={handleAddRule} className="bg-stone-50 border border-stone-200 rounded-xl p-4 space-y-3">
+                <div className="text-xs font-black text-stone-900 flex items-center gap-1.5">
+                  <Plus className="w-4 h-4 text-amber-600" />
                   <span>新しい縛りルールを追加</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <div className="sm:col-span-2">
-                    <label className="block text-[10px] font-bold text-stone-400 mb-1">ルール名</label>
+                    <label className="block text-[10px] font-bold text-stone-600 mb-1">ルール名</label>
                     <input
                       type="text"
                       value={newTitle}
                       onChange={(e) => setNewTitle(e.target.value)}
                       placeholder="例: ⚡ 全員ゴースト＋イグナイト戦"
-                      className="w-full bg-[#1c1917] border border-stone-700 rounded-lg px-3 py-1.5 text-xs text-stone-200 placeholder:text-stone-600 focus:outline-none focus:border-amber-500"
+                      className="w-full bg-white border border-stone-300 rounded-lg px-3 py-1.5 text-xs text-stone-800 placeholder:text-stone-400 focus:outline-none focus:border-amber-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-stone-400 mb-1">タグ</label>
+                    <label className="block text-[10px] font-bold text-stone-600 mb-1">タグ</label>
                     <select
                       value={newTag}
                       onChange={(e) => setNewTag(e.target.value)}
-                      className="w-full bg-[#1c1917] border border-stone-700 rounded-lg px-3 py-1.5 text-xs text-stone-200 focus:outline-none focus:border-amber-500"
+                      className="w-full bg-white border border-stone-300 rounded-lg px-3 py-1.5 text-xs text-stone-800 focus:outline-none focus:border-amber-500"
                     >
                       {TAG_OPTIONS.map((t) => (
                         <option key={t} value={t}>{t}</option>
@@ -643,13 +643,13 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-stone-400 mb-1">ルール説明・達成条件</label>
+                  <label className="block text-[10px] font-bold text-stone-600 mb-1">ルール説明・達成条件</label>
                   <textarea
                     value={newDesc}
                     onChange={(e) => setNewDesc(e.target.value)}
                     rows={2}
                     placeholder="例: フラッシュ禁止！全員サモナースペルをゴーストとイグナイトに統一して戦おう！"
-                    className="w-full bg-[#1c1917] border border-stone-700 rounded-lg px-3 py-1.5 text-xs text-stone-200 placeholder:text-stone-600 focus:outline-none focus:border-amber-500 resize-none"
+                    className="w-full bg-white border border-stone-300 rounded-lg px-3 py-1.5 text-xs text-stone-800 placeholder:text-stone-400 focus:outline-none focus:border-amber-500 resize-none"
                   />
                 </div>
 
@@ -657,7 +657,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                   <button
                     type="submit"
                     disabled={submittingRule}
-                    className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xs flex items-center gap-1.5 shadow transition disabled:opacity-40"
+                    className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-black text-xs flex items-center gap-1.5 shadow transition disabled:opacity-40"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>{submittingRule ? '追加中...' : 'ルールを追加する'}</span>
@@ -668,13 +668,13 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
               {/* 📜 登録済みルール一覧 */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="text-xs font-bold text-stone-400 uppercase tracking-wider">
+                  <div className="text-xs font-bold text-stone-700 uppercase tracking-wider">
                     登録済みルール一覧 ({partyRules.length}件)
                   </div>
                   <button
                     type="button"
                     onClick={handleResetRules}
-                    className="text-[11px] text-stone-500 hover:text-stone-300 transition cursor-pointer flex items-center gap-1"
+                    className="text-[11px] text-stone-500 hover:text-stone-800 transition cursor-pointer flex items-center gap-1"
                   >
                     <RotateCcw className="w-3 h-3" />
                     <span>デフォルト初期化</span>
@@ -685,27 +685,27 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                   {partyRules.map((rule) => (
                     <div
                       key={rule.id}
-                      className="p-3 rounded-xl bg-stone-900/60 border border-stone-800 flex items-start justify-between gap-3 group hover:border-stone-700 transition"
+                      className="p-3 rounded-xl bg-stone-50 border border-stone-200 flex items-start justify-between gap-3 group hover:border-stone-400 transition"
                     >
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="px-2 py-0.2 rounded bg-stone-800 border border-stone-700 text-amber-300 text-[10px] font-bold">
+                          <span className="px-2 py-0.2 rounded bg-stone-200 border border-stone-300 text-stone-800 text-[10px] font-bold">
                             {rule.tag}
                           </span>
-                          <span className="text-xs font-black text-white">{rule.title}</span>
+                          <span className="text-xs font-black text-stone-900">{rule.title}</span>
                           {rule.isCustom && (
-                            <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 text-[9px] font-mono">
+                            <span className="px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 text-[9px] font-mono font-bold">
                               CUSTOM
                             </span>
                           )}
                         </div>
-                        <p className="text-[11px] text-stone-400 leading-relaxed">{rule.desc}</p>
+                        <p className="text-[11px] text-stone-600 leading-relaxed">{rule.desc}</p>
                       </div>
 
                       <button
                         type="button"
                         onClick={() => handleDeleteRule(rule.id)}
-                        className="p-1.5 rounded-lg bg-stone-800 hover:bg-rose-900/40 text-stone-500 hover:text-rose-400 border border-transparent hover:border-rose-500/40 transition cursor-pointer shrink-0"
+                        className="p-1.5 rounded-lg bg-stone-200 hover:bg-rose-100 text-stone-500 hover:text-rose-600 border border-transparent hover:border-rose-300 transition cursor-pointer shrink-0"
                         title="このルールを削除"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
