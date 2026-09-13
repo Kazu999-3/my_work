@@ -49,13 +49,13 @@ export function buildStatusBanner(status) {
   const goldBar = renderProgressBar(status.goldCount, 10);
 
   if (status.isAllReady) {
-    return `🎉 **【全部門10名達成！満員御礼】**\n🛡️ **シルバー以下 (ブラインド)**: \`${silverBar}\` ✅開催確定\n👑 **ゴルプラ (ドラフト)**: \`${goldBar}\` ✅開催確定`;
+    return `🎉 **【全部門10名達成！満員御礼】**\n🛡️ **シルバー以下 (ブラインド/MMRあり)**: \`${silverBar}\` ✅開催確定\n👑 **ゴルプラ (ドラフト/MMRあり)**: \`${goldBar}\` ✅開催確定`;
   }
   if (status.isSilverReady && !status.isGoldReady) {
-    return `⚡ **【シルバー以下 10名達成！開催確定】**\n🛡️ **シルバー以下 (ブラインド)**: \`${silverBar}\` ✅確定\n👑 **ゴルプラ (ドラフト)**: \`${goldBar}\` (あと**${status.goldRem}**名 ※20:00締切)`;
+    return `⚡ **【シルバー以下 10名達成！開催確定】**\n🛡️ **シルバー以下 (ブラインド/MMRあり)**: \`${silverBar}\` ✅確定\n👑 **ゴルプラ (ドラフト/MMRあり)**: \`${goldBar}\` (あと**${status.goldRem}**名 ※20:00締切)`;
   }
   if (!status.isSilverReady && status.isGoldReady) {
-    return `⚡ **【ゴルプラ 10名達成！開催確定】**\n🛡️ **シルバー以下 (ブラインド)**: \`${silverBar}\` (あと**${status.silverRem}**名 ※20:00締切)\n👑 **ゴルプラ (ドラフト)**: \`${goldBar}\` ✅確定`;
+    return `⚡ **【ゴルプラ 10名達成！開催確定】**\n🛡️ **シルバー以下 (ブラインド/MMRあり)**: \`${silverBar}\` (あと**${status.silverRem}**名 ※20:00締切)\n👑 **ゴルプラ (ドラフト/MMRあり)**: \`${goldBar}\` ✅確定`;
   }
-  return `🔥 **【定期カスタム募集中！合計 ${status.totalJoined}/20名】**\n🛡️ **シルバー以下 (ブラインド)**: \`${silverBar}\` (あと**${status.silverRem}**名)\n👑 **ゴルプラ (ドラフト)**: \`${goldBar}\` (あと**${status.goldRem}**名)\n※20:00時点で10名未満の部門はカスタム中止（ノーマル/メイヘム再募集）となります`;
+  return `🔥 **【定期カスタム募集中！合計 ${status.totalJoined}/20名】**\n🛡️ **シルバー以下 (ブラインド/MMRあり)**: \`${silverBar}\` (あと**${status.silverRem}**名)\n👑 **ゴルプラ (ドラフト/MMRあり)**: \`${goldBar}\` (あと**${status.goldRem}**名)\n※20:00時点で10名未満の部門はカスタム中止（ノーマル/メイヘム再募集）となります`;
 }

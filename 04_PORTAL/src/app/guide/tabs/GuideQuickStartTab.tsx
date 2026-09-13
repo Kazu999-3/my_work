@@ -176,7 +176,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
               <span>🔲</span> シルバー以下のピック形式やルールはどうなっていますか？
             </h4>
             <p className="text-[11px] text-stone-600 leading-relaxed">
-              シルバー以下カスタムは「ブラインドピック」を採用しています！BANや相手のカウンターを気にせず、自分の使いたいチャンピオンで気楽に対戦を楽しめます。
+              シルバー以下カスタムは「ブラインドピック（MMR変動あり）」を採用しています！BANや相手のカウンターを気にせず、自分の使いたい得意チャンピオンで気楽に対戦しながらMMR勝負を楽しめます。
             </p>
           </div>
 

@@ -1112,7 +1112,7 @@ export default function BalancerPage() {
                   const isSilverTier = avgMMR < 1350 || selectedTable?.label?.includes('シルバー');
                   return isSilverTier ? (
                     <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-cyan-100 text-cyan-900 border border-cyan-300 flex items-center gap-1 shadow-xs">
-                      🔲 ピック形式: <strong>ブラインドピック</strong>
+                      🔲 ピック形式: <strong>ブラインドピック (MMRあり)</strong>
                     </span>
                   ) : (
                     <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 shadow-xs">
@@ -1641,7 +1641,7 @@ export default function BalancerPage() {
                 カスタム方針:
               </span>
               <span className="bg-white border border-amber-300/60 px-2 py-0.5 rounded-md font-bold text-[11px] text-cyan-900">
-                🛡️ シルバー以下: <strong>ブラインドピック</strong>
+                🛡️ シルバー以下: <strong>ブラインドピック (MMRあり)</strong>
               </span>
               <span className="bg-white border border-amber-300/60 px-2 py-0.5 rounded-md font-bold text-[11px] text-amber-900">
                 👑 ゴルプラ: <strong>ドラフトピック (MMRあり)</strong>
