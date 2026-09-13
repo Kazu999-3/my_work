@@ -545,23 +545,46 @@ export default function BalancerPage() {
   const fetchPlayers = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("ktm_players")
-        .select("*")
-        .order("name", { ascending: true });
+      let data: any[] = [];
+      try {
+        const res = await fetch('/api/players/list', { cache: 'no-store' });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.players && Array.isArray(json.players) && json.players.length > 0) {
+            data = json.players;
+          }
+        }
+      } catch (apiErr) {
+        console.warn('[balancer] /api/players/list fetch failed, falling back to direct supabase:', apiErr);
+      }
 
-      if (error) throw error;
+      if (data.length === 0) {
+        const { data: sbData, error } = await supabase
+          .from("ktm_players")
+          .select("*")
+          .order("name", { ascending: true });
+
+        if (error) throw error;
+        data = sbData || [];
+      }
       
       // No順にソートして保持。ローカル用フラグ is_fixed も初期化
       const playersWithNo = (data || []).sort((a: any, b: any) => {
         const timeA = a.metadata?.joined_at ? new Date(a.metadata.joined_at).getTime() : Infinity;
         const timeB = b.metadata?.joined_at ? new Date(b.metadata.joined_at).getTime() : Infinity;
         return timeA - timeB;
-      }).map((p: any, index: number) => ({ ...p, no: index + 1, is_fixed: false, is_spectator_fixed: false }));
+      }).map((p: any, index: number) => ({
+        ...p,
+        name: p.name || p.ign || `Player-${index + 1}`,
+        no: index + 1,
+        is_fixed: false,
+        is_spectator_fixed: false
+      }));
 
       setPlayers(playersWithNo);
     } catch (err: any) {
-      setMessage({ type: "error", text: err.message });
+      console.error("fetchPlayers error:", err);
+      setMessage({ type: "error", text: "プレイヤーデータ読み込みエラー: " + err.message });
     } finally {
       setLoading(false);
     }
@@ -1247,8 +1270,10 @@ export default function BalancerPage() {
 
   // ★ フィルター適用 (名前検索、希望ロール、アクティブ状態)
   const filteredPlayers = sortedPlayers.filter(p => {
+    if (!p) return false;
+    const pName = (p.name || p.ign || '').toLowerCase();
     const prefs = p.role_preferences || { primary: 'ALL', secondary: '-' };
-    if (searchQuery && !p.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+    if (searchQuery && !pName.includes(searchQuery.trim().toLowerCase())) {
       return false;
     }
     if (roleFilter && prefs.primary !== roleFilter) {
