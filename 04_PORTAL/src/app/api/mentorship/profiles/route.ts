@@ -57,20 +57,23 @@ export async function GET(request: Request) {
       return NextResponse.json({ ok: true, profiles: [] });
     }
 
-    // セッション情報があれば自分のプロフィールIDも判定できるように返す
+    // セッション情報があれば自分のプロフィールIDおよび管理者権限も返す
     const session = await getAuthSession();
     const myDiscordId = session?.discordId || null;
+    const isAdmin = !!session?.isAdmin;
 
     return NextResponse.json({
       ok: true,
       profiles: profiles || [],
       myDiscordId,
+      isAdmin,
     });
   } catch (err: any) {
     console.error('[mentorship/profiles] GET error:', err);
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
 }
+
 
 /**
  * POST: 自分の自己紹介プロフィールの作成または更新
@@ -213,7 +216,7 @@ export async function POST(request: Request) {
 }
 
 /**
- * DELETE: 自分のプロフィールを削除
+ * DELETE: プロフィールを削除（本人のカードまたは管理者は全カード削除可能）
  */
 export async function DELETE(request: Request) {
   try {
@@ -223,8 +226,9 @@ export async function DELETE(request: Request) {
     const paramDiscordId = searchParams.get('discordId');
 
     const effectiveDiscordId = session?.discordId || paramDiscordId;
+    const isAdmin = !!session?.isAdmin;
 
-    if (!effectiveDiscordId) {
+    if (!effectiveDiscordId && !isAdmin) {
       return NextResponse.json({ ok: false, error: '認証が必要です。' }, { status: 401 });
     }
 
@@ -232,17 +236,24 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ ok: false, error: 'Profile ID is required' }, { status: 400 });
     }
 
-    const { error } = await supabase
+    let deleteQuery = supabase
       .from('mentorship_profiles')
       .delete()
-      .eq('id', id)
-      .eq('discord_id', effectiveDiscordId);
+      .eq('id', id);
+
+    // 管理者でない場合は本人のカードのみ削除可能に制限
+    if (!isAdmin && effectiveDiscordId) {
+      deleteQuery = deleteQuery.eq('discord_id', effectiveDiscordId);
+    }
+
+    const { error } = await deleteQuery;
 
     if (error) throw error;
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, message: 'カードを削除しました。' });
   } catch (err: any) {
     console.error('[mentorship/profiles] DELETE error:', err);
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
 }
+

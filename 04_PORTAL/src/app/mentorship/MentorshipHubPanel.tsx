@@ -29,6 +29,7 @@ export default function MentorshipHubPanel() {
   const [pendingReceived, setPendingReceived] = useState<any[]>([]);
   const [pendingSent, setPendingSent] = useState<any[]>([]);
   const [myDiscordId, setMyDiscordId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // プロフィール編集・作成モーダル管理
@@ -56,6 +57,9 @@ export default function MentorshipHubPanel() {
       if (data.ok) {
         setProfiles(data.profiles || []);
         setMyDiscordId(data.myDiscordId || null);
+        if (data.isAdmin !== undefined) {
+          setIsAdmin(Boolean(data.isAdmin));
+        }
       }
     } catch (err) {
       console.error('Failed to fetch mentorship profiles:', err);
@@ -73,6 +77,9 @@ export default function MentorshipHubPanel() {
         setMatches(data.matches || []);
         setPendingReceived(data.pendingReceived || []);
         setPendingSent(data.pendingSent || []);
+        if (data.isAdmin !== undefined) {
+          setIsAdmin(Boolean(data.isAdmin));
+        }
       }
     } catch (err) {
       console.error('Failed to fetch matches:', err);
@@ -83,6 +90,28 @@ export default function MentorshipHubPanel() {
     fetchProfiles();
     fetchMatches();
   }, []);
+
+  // 🛠️ 管理者専用: 任意の師弟マッチ・申請を強制削除
+  const handleAdminDeleteMatch = async (matchId: string) => {
+    if (!confirm('【管理者操作】この師弟マッチ（または申請）をデータベースから完全に削除しますか？\n進行中の場合は両者のカードがOPENに戻ります。')) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/mentorship/matches?id=${matchId}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (data.ok) {
+        toast.success('🛠️ 【管理者権限】マッチ/申請を強制削除しました');
+        fetchProfiles();
+        fetchMatches();
+      } else {
+        toast.error(data.error || '削除に失敗しました');
+      }
+    } catch (err) {
+      toast.error('エラーが発生しました');
+    }
+  };
 
   // プロフィールの保存
   const handleSaveProfile = async (profileData: Partial<MentorshipProfile>) => {
@@ -649,7 +678,8 @@ export default function MentorshipHubPanel() {
                     <MentorshipCard
                       key={`rec-${p.id}`}
                       profile={p}
-                      isMine={false}
+                      isMine={p.discord_id === myDiscordId}
+                      isAdmin={isAdmin}
                       matchScore={score}
                       matchReason={reason}
                       isPendingSent={isPendingSent}
@@ -733,20 +763,34 @@ export default function MentorshipHubPanel() {
                       </span>
                     </div>
 
-                    {/* ステータスバッジ */}
-                    {isCompleted ? (
-                      <span className="text-[11px] font-bold text-stone-600 bg-stone-200 px-2.5 py-0.5 rounded-full">
-                        🎓 卒業完了
-                      </span>
-                    ) : isExpired ? (
-                      <span className="text-[11px] font-black text-amber-800 bg-amber-200 px-2.5 py-0.5 rounded-full animate-pulse">
-                        ⚠️ 期間満了
-                      </span>
-                    ) : (
-                      <span className="text-[11px] font-black text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">
-                        🔥 残り {remainingDays} 日
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {/* ステータスバッジ */}
+                      {isCompleted ? (
+                        <span className="text-[11px] font-bold text-stone-600 bg-stone-200 px-2.5 py-0.5 rounded-full">
+                          🎓 卒業完了
+                        </span>
+                      ) : isExpired ? (
+                        <span className="text-[11px] font-black text-amber-800 bg-amber-200 px-2.5 py-0.5 rounded-full animate-pulse">
+                          ⚠️ 期間満了
+                        </span>
+                      ) : (
+                        <span className="text-[11px] font-black text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">
+                          🔥 残り {remainingDays} 日
+                        </span>
+                      )}
+
+                      {/* 🛠️ 管理者専用: ペア強制削除ボタン */}
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => handleAdminDeleteMatch(match.id)}
+                          className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 transition cursor-pointer"
+                          title="管理者権限でこの師弟ペアを強制解散・削除します"
+                        >
+                          🗑️ 管理者削除
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* ペア名 */}
@@ -856,6 +900,7 @@ export default function MentorshipHubPanel() {
                 key={p.id}
                 profile={p}
                 isMine={p.discord_id === myDiscordId}
+                isAdmin={isAdmin}
                 matchScore={matchInfo.score}
                 matchReason={matchInfo.reason}
                 isPendingSent={isPendingSent}

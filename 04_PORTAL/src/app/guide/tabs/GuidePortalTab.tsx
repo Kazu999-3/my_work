@@ -217,10 +217,10 @@ export default function GuidePortalTab() {
               </div>
               <div className="bg-stone-50 rounded-2xl p-3 border border-stone-200/80 text-xs text-stone-700 space-y-1">
                 <div className="font-bold text-stone-900 flex items-center gap-1 text-[11px]">
-                  <span>🍃</span> 期間延長 ＆ 円満解散
+                  <span>🍃</span> 期間延長 ＆ 円満解散・管理
                 </div>
                 <p className="text-[11px] text-stone-600">
-                  「⚡ そのまま実行」で即時延長、「🎓 卒業(+200🪙)」、合意の上での「🍃 円満解散」もワンクリック。
+                  「⚡ そのまま実行」で即時延長、「🎓 卒業(+200🪙)」、「🍃 円満解散」、管理者による不正・不要カードの削除管理も完備。
                 </p>
               </div>
             </div>

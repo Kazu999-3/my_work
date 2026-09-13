@@ -185,12 +185,71 @@ export async function GET() {
       pendingReceived,
       pendingSent,
       myDiscordId: myDiscordId || null,
+      isAdmin: !!session?.isAdmin,
     });
   } catch (err: any) {
     console.error('[mentorship/matches] GET error:', err);
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
 }
+
+/**
+ * DELETE: 師弟ペア・申請の削除（管理者専用または本人による申請キャンセル）
+ */
+export async function DELETE(request: Request) {
+  try {
+    const session = await getAuthSession();
+    if (!session) {
+      return NextResponse.json({ ok: false, error: '認証が必要です。' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const matchId = searchParams.get('id');
+
+    if (!matchId) {
+      return NextResponse.json({ ok: false, error: 'Match IDが必要です。' }, { status: 400 });
+    }
+
+    const { data: match, error: mErr } = await supabase
+      .from('mentorship_matches')
+      .select('*')
+      .eq('id', matchId)
+      .single();
+
+    if (mErr || !match) {
+      return NextResponse.json({ ok: false, error: 'マッチが見つかりません。' }, { status: 404 });
+    }
+
+    const isMine = match.mentor_discord_id === session.discordId || match.pupil_discord_id === session.discordId;
+
+    // 管理者または関係者本人のみ削除可能
+    if (!session.isAdmin && !isMine) {
+      return NextResponse.json({ ok: false, error: '削除権限がありません。' }, { status: 403 });
+    }
+
+    // マッチを削除
+    const { error } = await supabase
+      .from('mentorship_matches')
+      .delete()
+      .eq('id', matchId);
+
+    if (error) throw error;
+
+    // もしペア中だった場合はプロフィールステータスを OPEN に戻す
+    if (match.status === 'ACTIVE') {
+      await supabase
+        .from('mentorship_profiles')
+        .update({ status: 'OPEN' })
+        .in('id', [match.mentor_profile_id, match.pupil_profile_id]);
+    }
+
+    return NextResponse.json({ ok: true, message: '師弟ペア/申請を削除しました。' });
+  } catch (err: any) {
+    console.error('[mentorship/matches] DELETE error:', err);
+    return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
+  }
+}
+
 
 /**
  * POST: 師弟マッチング操作 (APPLY / ACCEPT / REJECT / EXTEND / COMPLETE / CANCEL)

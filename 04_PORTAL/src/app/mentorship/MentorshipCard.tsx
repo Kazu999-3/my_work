@@ -9,6 +9,7 @@ import { Clock, Shield, Sparkles, UserCheck } from 'lucide-react';
 interface MentorshipCardProps {
   profile: MentorshipProfile;
   isMine: boolean;
+  isAdmin?: boolean;
   onOffer: (profile: MentorshipProfile) => void;
   onEdit?: (profile: MentorshipProfile) => void;
   onDelete?: (profileId: string) => void;
@@ -28,6 +29,7 @@ const LANE_ICONS: Record<string, string> = {
 export function MentorshipCard({
   profile,
   isMine,
+  isAdmin,
   onOffer,
   onEdit,
   onDelete,
@@ -87,10 +89,10 @@ export function MentorshipCard({
             )}
           </div>
 
-          {/* 編集・削除ボタン（自分の場合） */}
-          {isMine && (
+          {/* 編集・削除ボタン（本人または管理者の場合） */}
+          {(isMine || isAdmin) && (
             <div className="flex items-center gap-1 bg-stone-100 p-0.5 rounded-lg border border-stone-200">
-              {onEdit && (
+              {isMine && onEdit && (
                 <button
                   onClick={() => onEdit(profile)}
                   className="px-2 py-1 text-xs text-stone-600 hover:text-stone-900 hover:bg-white rounded transition cursor-pointer"
@@ -102,15 +104,17 @@ export function MentorshipCard({
               {onDelete && (
                 <button
                   onClick={() => onDelete(profile.id)}
-                  className="px-2 py-1 text-xs text-rose-600 hover:text-rose-800 hover:bg-white rounded transition cursor-pointer"
-                  title="削除"
+                  className="px-2 py-1 text-xs text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded transition cursor-pointer flex items-center gap-0.5"
+                  title={isAdmin && !isMine ? '管理者権限で削除' : '削除'}
                 >
-                  🗑️
+                  <span>🗑️</span>
+                  {isAdmin && !isMine && <span className="text-[10px] font-black text-rose-700">管理</span>}
                 </button>
               )}
             </div>
           )}
         </div>
+
 
         {/* プレイヤー情報 */}
         <div className="flex items-center gap-3">
