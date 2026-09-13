@@ -1,8 +1,9 @@
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { fetchPuuidByRiotId, fetchChampionMasteryByPuuid, fetchRiotIdByPuuid, fetchLeagueByPuuid } from '../../../../lib/riot';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
-import { higherRank } from '../../../../lib/mmr';
+import { higherRank, rankScore } from '../../../../lib/mmr';
+import { sendRankUpgradeNotification } from '../../../../lib/discordNotify';
 
 export async function POST(request: Request) {
   try {
@@ -41,6 +42,7 @@ export async function POST(request: Request) {
 
     let updatedCount = 0;
     const errors = [];
+    const promotions: Array<{ name: string; oldRank: string; newRank: string; ign?: string }> = [];
 
     // 2. プレイヤーごとに同期処理 (レートリミットを考慮して直列で実行)
     for (const player of players) {
@@ -49,9 +51,6 @@ export async function POST(request: Request) {
         let currentIgn = player.ign;
 
         // (A) puuid がない場合は RiotID から取得
-        // 旧実装は summoner_id (encryptedSummonerId) の有無でも分岐していたが、
-        // Riotが2025年6月20日にsummoner-v4のby-puuidレスポンスから`id`フィールド自体を
-        // 削除したため、summonerIdは常にundefinedになり事実上意味を失っていた。
         if (!puuid) {
           if (!currentIgn || !currentIgn.includes('#')) continue;
           const [gameName, tagLine] = currentIgn.split('#');
@@ -70,12 +69,7 @@ export async function POST(request: Request) {
           }
         }
 
-        // (B) ランク同期を復旧。旧実装はby-summonerエンドポイント廃止による403/404を
-        // 「APIキーエラー」と誤認し、ランク同期機能自体を丸ごと無効化していた。
-        // 正しくはby-puuidエンドポイントに切り替えるだけで解決する。
-        // highest_rank は「これまでの最高」を保持する。現在ランクで上書きして下げないよう、
-        // 既存値と現在ランクの高い方を採用する（未ランク時に既存の実ランクを消さない）。
-        // ディビジョン(I/II/III/IV)は不要とのユーザー判断のため、ティア名のみ保存する。
+        // (B) ランク同期
         let highestRank = player.highest_rank || 'UNRANKED';
         try {
           const leagues = await fetchLeagueByPuuid(puuid, apiKey);
@@ -87,6 +81,24 @@ export async function POST(request: Request) {
           console.warn(`[Riot Sync] ランク取得に失敗しました (${currentIgn}): ${rankErr.message}`);
         }
 
+        // 🏆 最高ランクの更新（昇格）を検知してDiscordに速報通知！
+        const oldRank = player.highest_rank || 'UNRANKED';
+        if (rankScore(highestRank) > rankScore(oldRank)) {
+          promotions.push({
+            name: player.name,
+            oldRank,
+            newRank: highestRank,
+            ign: currentIgn,
+          });
+          sendRankUpgradeNotification({
+            playerName: player.name,
+            discordId: player.discord_id,
+            oldRank,
+            newRank: highestRank,
+            ign: currentIgn,
+          }).catch((notifyErr) => console.warn('[Riot Sync] Rank upgrade notify error:', notifyErr));
+        }
+
         // (C) チャンピオンマスタリー (得意チャンピオンTOP3) を取得
         const masteries = await fetchChampionMasteryByPuuid(puuid, apiKey, 3);
         const topChampions = masteries.map((m: any) => ({
@@ -96,7 +108,6 @@ export async function POST(request: Request) {
         }));
 
         // DBを更新 (ign, puuid, highest_rank, main_champions)
-        // summoner_idはRiotのAPI廃止でもう取得できないため更新対象から除外（既存値はそのまま残す）
         const updateData: any = {
           ign: currentIgn,
           puuid,
@@ -119,8 +130,6 @@ export async function POST(request: Request) {
         console.error(`Player ${player.ign} sync error:`, err);
         errors.push(`[${player.ign}] ${err.message}`);
 
-        // APIキーの無効（403）またはレートリミット（429）を検知した場合は、
-        // ループを早期脱出して後続のAPI乱打によるクラッシュやIP BANを防ぐ（安全停止）
         const errMsg = err.message || '';
         if (errMsg.includes('403') || errMsg.includes('429') || errMsg.includes('Forbidden') || errMsg.includes('Too Many Requests')) {
           console.warn("⚠️ [Riot Sync] APIキーのエラー (403/429) を検知したため、同期処理を安全に中断します。");
@@ -133,6 +142,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ 
       success: true, 
       message: `${updatedCount} 人のプレイヤーのRiot情報を同期しました。`,
+      promotions: promotions.length > 0 ? promotions : undefined,
       errors: errors.length > 0 ? errors : undefined
     });
 

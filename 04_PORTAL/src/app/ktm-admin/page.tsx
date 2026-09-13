@@ -620,6 +620,7 @@ export default function KtmAdminPage() {
   const runRiotSyncInChunks = async (playerIds: number[], onProgress: (msg: string) => void) => {
     const chunkSize = 5;
     const allErrors: string[] = [];
+    const allPromotions: Array<{ name: string; oldRank: string; newRank: string; ign?: string }> = [];
     let totalUpdated = 0;
 
     for (let i = 0; i < playerIds.length; i += chunkSize) {
@@ -635,6 +636,10 @@ export default function KtmAdminPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Riot同期処理に失敗しました');
 
+      if (data.promotions && Array.isArray(data.promotions)) {
+        allPromotions.push(...data.promotions);
+      }
+
       if (data.errors && data.errors.length > 0) {
         allErrors.push(...data.errors);
       }
@@ -643,7 +648,8 @@ export default function KtmAdminPage() {
 
     return {
       message: `${totalUpdated} 人のプレイヤーのRiot情報を同期しました。`,
-      errors: allErrors
+      errors: allErrors,
+      promotions: allPromotions
     };
   };
 
@@ -658,13 +664,19 @@ export default function KtmAdminPage() {
         setMessage({ type: "info", text: msg });
       });
       
+      let promoMsg = '';
+      if (data.promotions && data.promotions.length > 0) {
+        const promoList = data.promotions.map(p => `・${p.name} さん: ${p.oldRank} ➜ 🏆 ${p.newRank}`).join('\n');
+        promoMsg = `\n\n🎉 【最高ランク更新速報】Discordにお祝い通知を送信しました！\n${promoList}`;
+      }
+
       if (data.errors && data.errors.length > 0) {
         console.warn("Riot Sync Errors:", data.errors);
         const errorDetails = data.errors.join('\n');
-        setMessage({ type: "error", text: `⚠️ ${data.message} ただし ${data.errors.length}件のエラーが発生しました。\n\n【失敗リスト】\n${errorDetails}` });
+        setMessage({ type: "error", text: `⚠️ ${data.message}${promoMsg} ただし ${data.errors.length}件のエラーが発生しました。\n\n【失敗リスト】\n${errorDetails}` });
         parseRiotErrors(data.errors);
       } else {
-        setMessage({ type: "success", text: data.message });
+        setMessage({ type: "success", text: `${data.message}${promoMsg}` });
         setRiotSyncErrors([]);
       }
 

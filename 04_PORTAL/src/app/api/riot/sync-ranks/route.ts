@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { fetchPuuidByRiotId, fetchLeagueByPuuid } from '../../../../lib/riot';
-import { higherRank } from '../../../../lib/mmr';
+import { higherRank, rankScore } from '../../../../lib/mmr';
+import { sendRankUpgradeNotification } from '../../../../lib/discordNotify';
 import { verifyBotSecret } from '../../../../lib/botAuth';
 
 export async function POST(req: Request) {
@@ -21,7 +22,7 @@ export async function POST(req: Request) {
     // DBからプレイヤー取得
     const { data: player, error } = await supabase
       .from('ktm_players')
-      .select('id, ign, highest_rank')
+      .select('id, name, ign, discord_id, highest_rank')
       .eq('name', discordName)
       .single();
 
@@ -43,6 +44,8 @@ export async function POST(req: Request) {
     const currentRank = soloQ ? soloQ.tier : null;
     // 既存(highest)と現在ランクの高い方を保持する。現在未ランクなら既存をそのまま維持。
     const rankStr = higherRank(player.highest_rank, currentRank);
+    const oldRank = player.highest_rank || 'UNRANKED';
+    const isPromoted = rankScore(rankStr) > rankScore(oldRank);
 
     // DB更新（変化がある時だけでも良いが、冪等なので常時更新）
     const { error: updateError } = await supabase
@@ -52,10 +55,22 @@ export async function POST(req: Request) {
 
     if (updateError) throw new Error(`DB Update failed: ${updateError.message}`);
 
+    // 🏆 最高ランク昇格通知を送信
+    if (isPromoted) {
+      sendRankUpgradeNotification({
+        playerName: player.name || discordName,
+        discordId: player.discord_id,
+        oldRank,
+        newRank: rankStr,
+        ign: player.ign,
+      }).catch((e) => console.warn('[sync-ranks] Notification send failed:', e));
+    }
+
     return NextResponse.json({
       status: "SUCCESS",
+      promoted: isPromoted,
       message: currentRank
-        ? `ランク情報を同期しました（現在: ${currentRank} / 最高: ${rankStr}）`
+        ? `ランク情報を同期しました（現在: ${currentRank} / 最高: ${rankStr}${isPromoted ? ' 🎉 最高ランク更新！' : ''}）`
         : `今季は未ランクのため、最高ランク（${rankStr}）を維持しました。`
     });
   } catch (err: any) {

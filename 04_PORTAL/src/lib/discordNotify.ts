@@ -61,3 +61,52 @@ export async function sendShopNotification(payload: {
 
   return false;
 }
+
+/**
+ * 🏆 最高ランク更新（昇格）時の祝賀通知をDiscordへ送信
+ */
+export async function sendRankUpgradeNotification(params: {
+  playerName: string;
+  discordId?: string | null;
+  oldRank?: string | null;
+  newRank: string;
+  ign?: string | null;
+}): Promise<boolean> {
+  const { playerName, discordId, oldRank, newRank, ign } = params;
+  const oldRankDisplay = oldRank || 'UNRANKED';
+
+  const mention = discordId ? `<@${discordId}>` : `**${playerName}**`;
+  const content = `🎉 **【最高ランク更新速報！】** ${mention} さんが最高ランクを更新しました！`;
+
+  const embed = {
+    title: '🏆 最高ランク更新（昇格）おめでとうございます！',
+    description: `${mention} さんのSoloQ最高ランクが **${newRank}** に到達しました！✨\n次回カスタムでのキャリー・大活躍に期待しています！`,
+    color: 0xF59E0B, // Amber/Gold
+    fields: [
+      { name: '👤 プレイヤー', value: playerName, inline: true },
+      { name: '📈 ランク変動', value: `\`${oldRankDisplay}\` ➔ **🔥 ${newRank}**`, inline: true },
+      ...(ign ? [{ name: '🎮 Riot ID', value: `\`${ign}\``, inline: true }] : []),
+    ],
+    footer: { text: 'KTM ポータル | ランク自動同期' },
+    timestamp: new Date().toISOString(),
+  };
+
+  // 1. 試合速報/メインWebhook
+  const webhookUrl = process.env.DISCORD_KTM_WEBHOOK_URL || process.env.DISCORD_WEBHOOK_URL || process.env.DISCORD_SHOP_WEBHOOK_URL;
+  if (webhookUrl) {
+    try {
+      const res = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content, embeds: [embed] }),
+      });
+      if (res.ok) return true;
+    } catch (e) {
+      console.warn('[discordNotify] Rank upgrade webhook send failed:', e);
+    }
+  }
+
+  // 2. Bot経由（もしWebhookが無ければショップ/速報チャンネルへ）
+  return sendShopNotification({ content, embeds: [embed] });
+}
+

@@ -59,7 +59,21 @@ export async function POST(req: Request) {
       // 既存プレイヤーの更新
       const updateData: any = { ign, puuid };
       if (rankTier) {
-        updateData.highest_rank = rankTier;
+        const { higherRank, rankScore } = await import('../../../../lib/mmr');
+        const oldRank = existing.highest_rank || 'UNRANKED';
+        const newRank = higherRank(oldRank, rankTier);
+        updateData.highest_rank = newRank;
+
+        if (rankScore(newRank) > rankScore(oldRank)) {
+          const { sendRankUpgradeNotification } = await import('../../../../lib/discordNotify');
+          sendRankUpgradeNotification({
+            playerName: existing.name,
+            discordId: existing.discord_id,
+            oldRank,
+            newRank,
+            ign,
+          }).catch((notifyErr) => console.warn('[update-puuid] Rank upgrade notify error:', notifyErr));
+        }
       }
       const { error } = await supabase
         .from('ktm_players')
