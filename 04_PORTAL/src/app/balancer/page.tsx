@@ -738,6 +738,71 @@ export default function BalancerPage() {
     }
   };
 
+  // 🎪 日曜お祭り用: 完全ランダム・闇鍋シャッフル（MMR計算なし / 公式勝敗除外）
+  const handleFestivalRandomBalance = () => {
+    const allActive = players.filter((p: any) => p.is_active && !p.is_spectator_fixed);
+    const activePlayers = selectedTable
+      ? allActive.filter(p => selectedTable.ids.includes(p.id))
+      : allActive;
+    if (activePlayers.length < 10) {
+      setMessage({ type: "error", text: `お祭りシャッフルには最低10人のActiveプレイヤーが必要です。(現在 ${activePlayers.length}人)` });
+      return;
+    }
+
+    try { localStorage.setItem('balancer_active_ids', JSON.stringify(activePlayers.map(p => p.id))); } catch {}
+
+    // Fisher-Yates で完全シャッフル
+    const shuffled = [...activePlayers];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    const roles = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
+    const teamBlue = shuffled.slice(0, 5).map((p, idx) => ({
+      name: p.name,
+      currentRole: roles[idx],
+      mainLane: p.role_preferences?.primary || 'ALL',
+      subLane: p.role_preferences?.secondary || '-',
+      mmr: p.mmr || 1200,
+    }));
+    const teamRed = shuffled.slice(5, 10).map((p, idx) => ({
+      name: p.name,
+      currentRole: roles[idx],
+      mainLane: p.role_preferences?.primary || 'ALL',
+      subLane: p.role_preferences?.secondary || '-',
+      mmr: p.mmr || 1200,
+    }));
+    const spectators = [
+      ...players.filter((p: any) => p.is_spectator_fixed).map(p => p.name),
+      ...shuffled.slice(10).map(p => p.name),
+    ];
+
+    const blueMmr = teamBlue.reduce((s, p) => s + p.mmr, 0);
+    const redMmr = teamRed.reduce((s, p) => s + p.mmr, 0);
+
+    const festivalResult = {
+      teamBlue,
+      teamRed,
+      spectators,
+      teamBlueMMR: blueMmr,
+      teamRedMMR: redMmr,
+      totalMmrBlue: blueMmr,
+      totalMmrRed: redMmr,
+      mmrDiff: Math.abs(blueMmr - redMmr),
+      diff: Math.abs(blueMmr - redMmr),
+      predictedBlueWinProb: 0.5,
+      isFestivalMode: true,
+      title: '🎪 日曜お祭りカスタム（完全ランダム / MMR変動なし）'
+    };
+
+    setProposals([festivalResult]);
+    setSelectedProposalIdx(0);
+    setBalanceResult(festivalResult);
+    setShowResultModal(true);
+    setMessage({ type: "success", text: "🎉 【日曜お祭り】完全ランダムシャッフルを実行しました！（全員同室VCでワイワイ対戦推奨です）" });
+  };
+
   // 4案すべてをDiscordへ投稿(#77)。メンバーはリアクションで希望表明。
   const [sendingProposals, setSendingProposals] = useState(false);
   const handleSendProposals = async () => {
@@ -1140,6 +1205,13 @@ export default function BalancerPage() {
                 </h2>
                 {/* ピック形式バッジ */}
                 {(() => {
+                  if (balanceResult.isFestivalMode) {
+                    return (
+                      <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-purple-100 text-purple-900 border border-purple-300 flex items-center gap-1 shadow-xs">
+                        🎪 ピック形式: <strong>日曜お祭り (完全ランダム / MMRなし / 全員同室VC推奨)</strong>
+                      </span>
+                    );
+                  }
                   const avgMMR = ((balanceResult.teamBlueMMR || 0) + (balanceResult.teamRedMMR || 0)) / 10;
                   const isSilverTier = avgMMR < 1350 || selectedTable?.label?.includes('シルバー');
                   return isSilverTier ? (
@@ -1770,6 +1842,21 @@ export default function BalancerPage() {
                 <RefreshCw className={`h-3.5 w-3.5 ${fetchingDiscord ? 'animate-spin' : ''}`} />
                 {fetchingDiscord ? '取得中...' : 'Discord参加者取得'}
               </button>
+              {/* 🎪 日曜お祭りランダムシャッフル */}
+              <button
+                type="button"
+                onClick={handleFestivalRandomBalance}
+                disabled={balancing || !canBalance}
+                className={`flex items-center justify-center gap-1.5 px-3 py-2 md:px-4 md:py-2.5 rounded-xl font-black transition text-xs md:text-sm border ${
+                  balancing || !canBalance
+                    ? 'bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white border-purple-400 shadow-md shadow-purple-500/20 cursor-pointer'
+                }`}
+                title="MMRやレーン希望に関係なく、10名を完全ランダムにBlue/Redへ振り分けます（公式MMR変動なし）"
+              >
+                <span>🎲 お祭りランダム</span>
+              </button>
+
               <button onClick={handleBalance} disabled={balancing || !canBalance}
                 className={`flex items-center justify-center gap-2 px-5 py-2.5 md:px-8 md:py-3 rounded-xl font-black transition text-sm md:text-base ${
                   balancing || !canBalance ? 'bg-stone-100 text-stone-500 cursor-not-allowed' : 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow-[0_0_20px_rgba(217,119,6,0.4)]'
@@ -2541,6 +2628,20 @@ export default function BalancerPage() {
                 <Globe className="w-3.5 h-3.5" /> <span className="hidden sm:inline">結果表示</span>
               </button>
             )}
+            <button
+              type="button"
+              onClick={handleFestivalRandomBalance}
+              disabled={balancing || !canBalance}
+              className={`px-3 py-2 rounded-xl font-black text-xs flex items-center gap-1.5 transition cursor-pointer shadow-md border ${
+                balancing || !canBalance
+                  ? 'bg-stone-800 text-stone-500 border-stone-700 cursor-not-allowed opacity-50'
+                  : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white border-purple-400 shadow-purple-500/20'
+              }`}
+              title="完全ランダムでお祭りチーム分け（MMRなし）"
+            >
+              <span>🎲 お祭り</span>
+            </button>
+
             <button
               onClick={handleBalance}
               disabled={balancing || !canBalance}

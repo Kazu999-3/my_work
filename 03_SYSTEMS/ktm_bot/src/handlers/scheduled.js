@@ -463,7 +463,7 @@ async function postWeeklyRecruitment(env) {
         },
         {
           name: `🎪 【日曜・お祭り部門】 (0/10名) 🎲 ランク不問 (MMRなし)`,
-          value: `▫ 参加者: なし\n※対象: 全員OK！特殊ルール/ランダム/メイヘム等（MMR変動なし）`,
+          value: `▫ 参加者: なし\n※対象: 全員OK！全員同室VCで雑談しながら対戦！特殊ルール/オフメタ大歓迎（MMR変動なし）`,
           inline: false
         }
       ],
