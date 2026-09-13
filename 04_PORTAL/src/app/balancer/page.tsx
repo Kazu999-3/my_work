@@ -166,14 +166,59 @@ export default function BalancerPage() {
   };
 
   // 🔊 Discord VCチャンネル名・進行状況の動的更新
+  const DEFAULT_VC_PRESETS = [
+    '🔊 カスタム【1戦目進行中・途中交代歓迎】',
+    '🔊 カスタム【2戦目進行中・途中交代歓迎】',
+    '🔊 カスタム【3戦目進行中・最終決戦】',
+    '🔊 🎮カスタムVC',
+  ];
+
+  const [vcPresets, setVcPresets] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('ktm_vc_custom_presets');
+      if (saved) {
+        try { return JSON.parse(saved); } catch {}
+      }
+    }
+    return DEFAULT_VC_PRESETS;
+  });
+
+  const [newPresetText, setNewPresetText] = useState('');
   const [updatingVc, setUpdatingVc] = useState(false);
-  const handleUpdateVcStatus = async (status: 'game1' | 'game2' | 'game3' | 'reset') => {
+
+  // プリセット追加
+  const handleAddVcPreset = () => {
+    const text = newPresetText.trim();
+    if (!text) return;
+    if (vcPresets.includes(text)) {
+      alert('同じチャンネル名が既に登録されています');
+      return;
+    }
+    const next = [...vcPresets, text];
+    setVcPresets(next);
+    localStorage.setItem('ktm_vc_custom_presets', JSON.stringify(next));
+    setNewPresetText('');
+  };
+
+  // プリセット削除
+  const handleDeleteVcPreset = (target: string) => {
+    if (vcPresets.length <= 1) {
+      alert('最低1つのプリセットが必要です');
+      return;
+    }
+    const next = vcPresets.filter(p => p !== target);
+    setVcPresets(next);
+    localStorage.setItem('ktm_vc_custom_presets', JSON.stringify(next));
+  };
+
+  // VCステータス更新
+  const handleUpdateVcStatus = async (statusOrName: string) => {
     setUpdatingVc(true);
     try {
       const res = await fetch('/api/discord/vc-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
+        body: JSON.stringify({ status: statusOrName })
       });
       const data = await res.json();
       if (res.ok && data.success) {
@@ -1367,50 +1412,82 @@ export default function BalancerPage() {
           );
         })()}
 
-        {/* 🔊 Discord VCチャンネル名・進行状況のワンクリック更新 */}
-        <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent border border-indigo-500/30 flex flex-col justify-between gap-2 shadow-xs">
+        {/* 🔊 Discord VCチャンネル名・進行状況の動的更新（プリセット追加・保存対応） */}
+        <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent border border-indigo-500/30 flex flex-col justify-between gap-3 shadow-xs">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-lg">🔊</span>
               <div>
-                <h4 className="text-xs font-black text-indigo-950">Discord VC進行状況の動的更新</h4>
-                <p className="text-[10px] text-stone-600">VC名をワンクリックで更新し、途中参加者に状況を伝えます</p>
+                <h4 className="text-xs font-black text-indigo-950">Discord VCチャンネル名の動的更新</h4>
+                <p className="text-[10px] text-stone-600">登録したチャンネル名をクリックしてVC名を即座に変更できます</p>
               </div>
             </div>
             {updatingVc && <span className="text-[10px] font-bold text-indigo-700 animate-pulse">更新中...</span>}
           </div>
 
-          <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-indigo-500/20">
-            <button
-              type="button"
-              disabled={updatingVc}
-              onClick={() => handleUpdateVcStatus('game1')}
-              className="px-2.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[11px] transition shadow-xs cursor-pointer disabled:opacity-50"
-              title="VC名を「1戦目進行中・途中交代歓迎」に更新"
-            >
-              ⚔️ 1戦目 (交代OK)
-            </button>
-
-            <button
-              type="button"
-              disabled={updatingVc}
-              onClick={() => handleUpdateVcStatus('game2')}
-              className="px-2.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-[11px] transition shadow-xs cursor-pointer disabled:opacity-50"
-              title="VC名を「2戦目進行中・途中交代歓迎」に更新"
-            >
-              ⚔️ 2戦目 (交代OK)
-            </button>
-
-            <button
-              type="button"
-              disabled={updatingVc}
-              onClick={() => handleUpdateVcStatus('reset')}
-              className="px-2.5 py-1.5 rounded-xl bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold text-[11px] transition cursor-pointer disabled:opacity-50"
-              title="VC名を通常名に戻す"
-            >
-              🏁 本日終了 (リセット)
-            </button>
+          {/* 登録済みプリセット一覧 */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {vcPresets.map((preset, idx) => (
+              <div key={idx} className="inline-flex items-center rounded-xl bg-white/90 border border-indigo-200 shadow-2xs overflow-hidden group">
+                <button
+                  type="button"
+                  disabled={updatingVc}
+                  onClick={() => handleUpdateVcStatus(preset)}
+                  className="px-2.5 py-1.5 text-[11px] font-black text-indigo-950 hover:bg-indigo-50 transition cursor-pointer disabled:opacity-50"
+                  title={`VC名を「${preset}」に変更`}
+                >
+                  {preset}
+                </button>
+                {vcPresets.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteVcPreset(preset)}
+                    className="px-1.5 py-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 border-l border-indigo-100 text-[10px] transition cursor-pointer"
+                    title="このプリセットを削除"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
+
+          {/* 新しいチャンネル名の追加・即時送信フォーム */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleAddVcPreset();
+            }}
+            className="flex items-center gap-1.5 pt-2 border-t border-indigo-500/20"
+          >
+            <input
+              type="text"
+              value={newPresetText}
+              onChange={(e) => setNewPresetText(e.target.value)}
+              placeholder="例: 🔊 カスタム【お祭りマッチ開催中！】"
+              className="flex-1 bg-white/90 border border-indigo-200 text-stone-900 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-indigo-500 shadow-inner"
+            />
+            <button
+              type="submit"
+              disabled={!newPresetText.trim()}
+              className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs transition shadow-xs cursor-pointer disabled:opacity-40"
+              title="新しいチャンネル名をプリセットに保存"
+            >
+              ＋ 追加保存
+            </button>
+            <button
+              type="button"
+              disabled={!newPresetText.trim() || updatingVc}
+              onClick={() => {
+                const text = newPresetText.trim();
+                if (text) handleUpdateVcStatus(text);
+              }}
+              className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-xs transition shadow-xs cursor-pointer disabled:opacity-40"
+              title="入力した名前で今すぐVC名を更新"
+            >
+              即時更新
+            </button>
+          </form>
         </div>
       </div>
 
