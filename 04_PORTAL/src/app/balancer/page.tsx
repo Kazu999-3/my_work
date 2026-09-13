@@ -165,6 +165,43 @@ export default function BalancerPage() {
     setMessage({ type: 'success', text: 'BO3シリーズを終了しました。' });
   };
 
+  // 🔊 Discord VCチャンネル名・進行状況の動的更新
+  const [updatingVc, setUpdatingVc] = useState(false);
+  const handleUpdateVcStatus = async (status: 'game1' | 'game2' | 'game3' | 'reset') => {
+    setUpdatingVc(true);
+    try {
+      const res = await fetch('/api/discord/vc-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setMessage({ type: 'success', text: `🔊 ${data.message}` });
+        alert(`🔊 ${data.message}`);
+      } else {
+        setMessage({ type: 'error', text: `⚠️ ${data.error || 'VCステータスの更新に失敗しました'}` });
+        alert(data.error || 'VCステータスの更新に失敗しました');
+      }
+    } catch (err: any) {
+      setMessage({ type: 'error', text: '通信エラーが発生しました' });
+    } finally {
+      setUpdatingVc(false);
+    }
+  };
+
+  // 参加者の経験度（新規・ライト・常連）判定
+  const getPlayerExperienceBadge = (p: any) => {
+    const totalG = p.total_games ?? p.games ?? p.metadata?.games ?? 0;
+    if (totalG === 0) {
+      return { label: '🔰 初参加', color: 'bg-emerald-100 text-emerald-900 border-emerald-300', tip: '通算0戦：初参加のプレイヤーです！大歓迎✨' };
+    }
+    if (totalG <= 5) {
+      return { label: '🌱 ライト', color: 'bg-teal-100 text-teal-900 border-teal-300', tip: `通算${totalG}戦：参加回数5戦以内のライトプレイヤーです` };
+    }
+    return { label: '👑 常連', color: 'bg-amber-100 text-amber-900 border-amber-300', tip: `通算${totalG}戦：コミュニティの頼もしいレギュラーメンバーです` };
+  };
+
   useEffect(() => {
     fetch("/api/auth/verify", { method: "POST", credentials: "include" })
       .then((res) => setIsAdmin(res.ok))
@@ -1264,27 +1301,118 @@ export default function BalancerPage() {
 
       {/* 🔰 チーム分けツールの使い方ガイド */}
       <div className="bg-amber-500/10 border border-amber-300/60 rounded-2xl p-3.5 text-stone-900 shadow-xs">
-            <button
-              onClick={() => setIsGuideOpen(!isGuideOpen)}
-              className="w-full flex items-center justify-between font-bold text-xs text-amber-900 hover:text-amber-950 transition cursor-pointer"
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-base">⚡</span>
-                <span className="font-black text-xs sm:text-sm">3秒でわかるチーム分け手順</span>
+        <button
+          onClick={() => setIsGuideOpen(!isGuideOpen)}
+          className="w-full flex items-center justify-between font-bold text-xs text-amber-900 hover:text-amber-950 transition cursor-pointer"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-base">⚡</span>
+            <span className="font-black text-xs sm:text-sm">3秒でわかるチーム分け手順</span>
+          </div>
+          <span className="text-[10px] bg-amber-200/80 px-2 py-0.5 rounded-full font-black">
+            {isGuideOpen ? '閉じる ▲' : '見る ▼'}
+          </span>
+        </button>
+
+        {isGuideOpen && (
+          <div className="mt-2.5 pt-2.5 border-t border-amber-300/40 text-xs text-stone-800 space-y-1.5 leading-relaxed animate-fade-in font-bold">
+            <p>① 参加するメンバーにチェックを入れる（10人〜）</p>
+            <p>② 希望レーン（TOP/JG/MID/ADC/SUP）を選ぶ</p>
+            <p>③ 下の「⚔️ チーム分け実行」を押すだけ！</p>
+          </div>
+        )}
+      </div>
+
+      {/* 👥 参加者層サマリー ＆ 🔊 Discord VC進行状況のワンクリック更新バー */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+        {/* 参加者層（新規・ライト・常連）集計サマリー */}
+        {(() => {
+          const activePlayers = players.filter(p => p.is_active && !p.is_spectator_fixed);
+          const totalActive = activePlayers.length;
+          const newPlayers = activePlayers.filter(p => (p.total_games ?? p.games ?? p.metadata?.games ?? 0) === 0);
+          const lightPlayers = activePlayers.filter(p => {
+            const g = p.total_games ?? p.games ?? p.metadata?.games ?? 0;
+            return g >= 1 && g <= 5;
+          });
+          const regularPlayers = activePlayers.filter(p => (p.total_games ?? p.games ?? p.metadata?.games ?? 0) > 5);
+          const newLightRatio = totalActive > 0 ? Math.round(((newPlayers.length + lightPlayers.length) / totalActive) * 100) : 0;
+
+          return (
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/30 flex flex-col justify-between gap-2 shadow-xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🔰</span>
+                  <div>
+                    <h4 className="text-xs font-black text-emerald-950">参加メンバーの経験層分析</h4>
+                    <p className="text-[10px] text-stone-600">初心者・初参加の方も安心して参加できる環境です</p>
+                  </div>
+                </div>
+                <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-500 text-stone-950">
+                  新規・ライト層 {newLightRatio}%
+                </span>
               </div>
-              <span className="text-[10px] bg-amber-200/80 px-2 py-0.5 rounded-full font-black">
-                {isGuideOpen ? '閉じる ▲' : '見る ▼'}
-              </span>
+
+              <div className="flex items-center gap-2 flex-wrap text-xs pt-1 border-t border-emerald-500/20">
+                <span className="inline-flex items-center gap-1 font-bold text-emerald-900 bg-emerald-100/80 px-2 py-0.5 rounded-md text-[11px]">
+                  🔰 初参加: <strong>{newPlayers.length}名</strong>
+                </span>
+                <span className="inline-flex items-center gap-1 font-bold text-teal-900 bg-teal-100/80 px-2 py-0.5 rounded-md text-[11px]">
+                  🌱 ライト: <strong>{lightPlayers.length}名</strong>
+                </span>
+                <span className="inline-flex items-center gap-1 font-bold text-amber-900 bg-amber-100/80 px-2 py-0.5 rounded-md text-[11px]">
+                  👑 常連: <strong>{regularPlayers.length}名</strong>
+                </span>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* 🔊 Discord VCチャンネル名・進行状況のワンクリック更新 */}
+        <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent border border-indigo-500/30 flex flex-col justify-between gap-2 shadow-xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">🔊</span>
+              <div>
+                <h4 className="text-xs font-black text-indigo-950">Discord VC進行状況の動的更新</h4>
+                <p className="text-[10px] text-stone-600">VC名をワンクリックで更新し、途中参加者に状況を伝えます</p>
+              </div>
+            </div>
+            {updatingVc && <span className="text-[10px] font-bold text-indigo-700 animate-pulse">更新中...</span>}
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-indigo-500/20">
+            <button
+              type="button"
+              disabled={updatingVc}
+              onClick={() => handleUpdateVcStatus('game1')}
+              className="px-2.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[11px] transition shadow-xs cursor-pointer disabled:opacity-50"
+              title="VC名を「1戦目進行中・途中交代歓迎」に更新"
+            >
+              ⚔️ 1戦目 (交代OK)
             </button>
 
-            {isGuideOpen && (
-              <div className="mt-2.5 pt-2.5 border-t border-amber-300/40 text-xs text-stone-800 space-y-1.5 leading-relaxed animate-fade-in font-bold">
-                <p>① 参加するメンバーにチェックを入れる（10人〜）</p>
-                <p>② 希望レーン（TOP/JG/MID/ADC/SUP）を選ぶ</p>
-                <p>③ 下の「⚔️ チーム分け実行」を押すだけ！</p>
-              </div>
-            )}
+            <button
+              type="button"
+              disabled={updatingVc}
+              onClick={() => handleUpdateVcStatus('game2')}
+              className="px-2.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-[11px] transition shadow-xs cursor-pointer disabled:opacity-50"
+              title="VC名を「2戦目進行中・途中交代歓迎」に更新"
+            >
+              ⚔️ 2戦目 (交代OK)
+            </button>
+
+            <button
+              type="button"
+              disabled={updatingVc}
+              onClick={() => handleUpdateVcStatus('reset')}
+              className="px-2.5 py-1.5 rounded-xl bg-stone-200 hover:bg-stone-300 text-stone-800 font-bold text-[11px] transition cursor-pointer disabled:opacity-50"
+              title="VC名を通常名に戻す"
+            >
+              🏁 本日終了 (リセット)
+            </button>
           </div>
+        </div>
+      </div>
 
       {/* ★ チーム分け結果モーダル */}
       {balanceResult && showResultModal && (
@@ -1336,6 +1464,15 @@ export default function BalancerPage() {
                   className="flex items-center gap-1.5 bg-[#5865F2] hover:bg-[#4752C4] text-white px-3 py-1.5 rounded-lg font-bold transition text-xs md:text-sm">
                   {sendingDiscord ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <MessageSquare className="h-3.5 w-3.5" />}
                   Discord通知
+                </button>
+                <button
+                  type="button"
+                  disabled={updatingVc}
+                  onClick={() => handleUpdateVcStatus('game1')}
+                  className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg font-bold transition text-xs md:text-sm cursor-pointer disabled:opacity-50"
+                  title="DiscordのVCチャンネル名を「1戦目進行中・途中交代歓迎」に更新"
+                >
+                  <span>🔊 VC更新 (1戦目)</span>
                 </button>
                 <button
                   type="button"
@@ -2590,8 +2727,19 @@ export default function BalancerPage() {
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <button onClick={() => setSelectedPlayer(p)} className="text-amber-700 hover:text-stone-900 p-0.5 hover:bg-stone-100 rounded transition flex-shrink-0" title="プロフィール">
                               <Info className="w-3.5 h-3.5" /></button>
-                            <span className="font-extrabold">{p.name}</span>
-                            
+                            {/* 🔰/🌱/👑 参加者層バッジ */}
+                            {(() => {
+                              const exp = getPlayerExperienceBadge(p);
+                              return (
+                                <span
+                                  className={`text-[9px] font-black px-1.5 py-0.2 rounded border shadow-2xs ${exp.color}`}
+                                  title={exp.tip}
+                                >
+                                  {exp.label}
+                                </span>
+                              );
+                            })()}
+
                             {/* ⏱️/🌙 参加スタイルバッジ */}
                             {p.participation_style && (
                               <button
