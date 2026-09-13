@@ -864,7 +864,13 @@ async function sendEventUsersNotification(env, options = {}) {
       if (silverShortfall > 0) shortText.push(`土曜シルバー あと${silverShortfall}名`);
       if (goldShortfall > 0) shortText.push(`土曜ゴルプラ あと${goldShortfall}名`);
       if (sundayShortfall > 0) shortText.push(`日曜お祭り あと${sundayShortfall}名`);
-      messageBody.content = `<@&${roleId}> 📢 **【${shortText.join(' / ')}】で週末カスタム開催です！** 参加できる方は下のボタンからエントリーをお願いします！`;
+
+      let helperCall = "";
+      if ((silverShortfall <= 2 && silverShortfall > 0) || (goldShortfall <= 2 && goldShortfall > 0) || (sundayShortfall <= 2 && sundayShortfall > 0)) {
+        helperCall = "\n💡 **「21:00からの第1試合だけなら参加できる！」という1戦のみ助っ人も大歓迎です！**";
+      }
+
+      messageBody.content = `<@&${roleId}> 📢 **【${shortText.join(' / ')}】で週末カスタム開催です！** 参加できる方は下のボタンからエントリーをお願いします！${helperCall}`;
       messageBody.allowed_mentions = { roles: [roleId] };
     }
 
@@ -936,27 +942,92 @@ export async function checkCustomStatusAt2000(env) {
     const goldLines = (embed.fields[1]?.value || '').split('\n').filter(l => l.startsWith('- '));
     const sundayLines = (embed.fields[2]?.value || '').split('\n').filter(l => l.startsWith('- '));
 
-    // 1戦目稼働可能者（フル + 1戦のみ）の人数
+    // 1戦目稼働可能者（フル + 1戦のみ）の人数と途中参加者人数
     const countFirstMatch = (lines) => lines.filter(l => !l.includes('🌙途中参加')).length;
-    const silverReady = countFirstMatch(silverLines) >= 10;
-    const goldReady = countFirstMatch(goldLines) >= 10;
-    const sundayReady = countFirstMatch(sundayLines) >= 10;
+    const countLate = (lines) => lines.filter(l => l.includes('🌙途中参加')).length;
+
+    const silverFirst = countFirstMatch(silverLines);
+    const goldFirst = countFirstMatch(goldLines);
+    const sundayFirst = countFirstMatch(sundayLines);
+
+    const silverLate = countLate(silverLines);
+    const goldLate = countLate(goldLines);
+    const sundayLate = countLate(sundayLines);
+
+    const silverReady = silverFirst >= 10;
+    const goldReady = goldFirst >= 10;
+    const sundayReady = sundayFirst >= 10;
 
     let cancelDepartments = [];
     let confirmedDepartments = [];
+    let urgentHelpDepartments = []; // ピンポイント助っ人募集部門（あと1〜2名 & 途中参加あり）
 
     if (isSaturday) {
-      if (!silverReady) cancelDepartments.push(`🛡️ シルバー以下部門 (${countFirstMatch(silverLines)}/10名)`);
-      else confirmedDepartments.push(`🛡️ シルバー以下部門 (${countFirstMatch(silverLines)}名 開催！)`);
+      if (silverReady) {
+        confirmedDepartments.push(`🛡️ シルバー以下部門 (${silverFirst}名 開催！)`);
+      } else if (silverFirst >= 8 && silverLate >= 1) {
+        urgentHelpDepartments.push({ name: 'シルバー以下', shortfall: 10 - silverFirst, late: silverLate, customId: 'join_periodic_auto:single' });
+      } else {
+        cancelDepartments.push(`🛡️ シルバー以下部門 (${silverFirst}/10名)`);
+      }
 
-      if (!goldReady) cancelDepartments.push(`👑 ゴルプラ部門 (${countFirstMatch(goldLines)}/10名)`);
-      else confirmedDepartments.push(`👑 ゴルプラ部門 (${countFirstMatch(goldLines)}名 開催！)`);
+      if (goldReady) {
+        confirmedDepartments.push(`👑 ゴルプラ部門 (${goldFirst}名 開催！)`);
+      } else if (goldFirst >= 8 && goldLate >= 1) {
+        urgentHelpDepartments.push({ name: 'ゴルプラ', shortfall: 10 - goldFirst, late: goldLate, customId: 'join_periodic_auto:single' });
+      } else {
+        cancelDepartments.push(`👑 ゴルプラ部門 (${goldFirst}/10名)`);
+      }
     } else {
-      if (!sundayReady) cancelDepartments.push(`🎪 日曜お祭り部門 (${countFirstMatch(sundayLines)}/10名)`);
-      else confirmedDepartments.push(`🎪 日曜お祭り部門 (${countFirstMatch(sundayLines)}名 開催！)`);
+      if (sundayReady) {
+        confirmedDepartments.push(`🎪 日曜お祭り部門 (${sundayFirst}名 開催！)`);
+      } else if (sundayFirst >= 8 && sundayLate >= 1) {
+        urgentHelpDepartments.push({ name: '日曜お祭り', shortfall: 10 - sundayFirst, late: sundayLate, customId: 'join_periodic_sunday:single' });
+      } else {
+        cancelDepartments.push(`🎪 日曜お祭り部門 (${sundayFirst}/10名)`);
+      }
     }
 
-    // 中止部門がある場合、自動代替募集メッセージを投稿
+    // A. ピンポイント助っ人募集がある場合（ラストチャンス告知）
+    if (urgentHelpDepartments.length > 0) {
+      const helpTexts = urgentHelpDepartments.map(d =>
+        `・**${d.name}**: 第1試合（21:00〜）があと **${d.shortfall}名** 不足！（2戦目からは途中参加の方が ${d.late}名 合流予定✨）`
+      ).join('\n');
+
+      const helpComponents = [
+        {
+          type: 1,
+          components: urgentHelpDepartments.map(d => ({
+            type: 2,
+            label: `⏱️ 【助っ人急募】${d.name}に1戦だけ参加する！ (あと${d.shortfall}名)`,
+            style: 1, // Primary
+            custom_id: d.customId
+          }))
+        }
+      ];
+
+      const content = `🚨 <@&${CONFIG.NOTIFICATION_ROLE_ID}> **【21:00開始の第1試合 助っ人をピンポイント募集中！】**\n\n` +
+        `${helpTexts}\n\n` +
+        `💡 **「21:00から1試合だけならできる！」という方はいませんか？**\n` +
+        `下のボタンから1戦だけ助っ人エントリーをお願いします！あと1〜2名揃えばカスタム開催決定となります🎮`;
+
+      await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bot ${env.DISCORD_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          content,
+          components: helpComponents,
+          allowed_mentions: { roles: [CONFIG.NOTIFICATION_ROLE_ID] }
+        })
+      });
+      console.log(`[Check2000] ピンポイント助っ人募集メッセージを投稿しました`);
+      return;
+    }
+
+    // B. 中止部門がある場合、自動代替募集メッセージを投稿
     if (cancelDepartments.length > 0) {
       const cancelText = cancelDepartments.join('、');
       const substituteComponents = [
