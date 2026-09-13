@@ -137,37 +137,47 @@ export async function GET() {
     }
 
     // 3. 参加者リストはBotがメッセージ内（例: メンション文字列やEmbedのフィールド）に記録していると想定
-    // ここでは一番確実な、BotがEmbed内またはメッセージ本文に <@DiscordID> 形式で並べているものを抽出する
-    // Embedのフィールドを舐めてメンションを探す
     const embed = targetMsg.embeds[0];
-    
-    const extractMentions = (text: string) => {
+    const userStyles = new Map<string, 'full' | 'single' | 'late'>();
+
+    const extractMentionsAndStyles = (text: string) => {
       if (!text) return;
-      const regex = /<@!?(\d+)>/g;
-      let match;
-      while ((match = regex.exec(text)) !== null) {
-        activeDiscordIds.add(match[1]);
+      const lines = text.split('\n');
+      for (const line of lines) {
+        const regex = /<@!?(\d+)>/g;
+        let match;
+        while ((match = regex.exec(line)) !== null) {
+          const id = match[1];
+          activeDiscordIds.add(id);
+
+          let style: 'full' | 'single' | 'late' = 'full';
+          if (line.includes('1戦のみ') || line.includes('⏱️')) {
+            style = 'single';
+          } else if (line.includes('途中参加') || line.includes('🌙')) {
+            style = 'late';
+          }
+          userStyles.set(id, style);
+        }
       }
     };
 
     // 説明文 (description) に参加者リストが書かれている
-    extractMentions(embed.description);
+    extractMentionsAndStyles(embed.description);
 
     // フィールドにもあれば抽出
     embed.fields?.forEach((f: any) => {
-      extractMentions(f.value);
+      extractMentionsAndStyles(f.value);
     });
 
     // もし本文側にもあれば抽出
-    extractMentions(targetMsg.content);
+    extractMentionsAndStyles(targetMsg.content);
 
     // 抽出したID群から最新の表示名を取得する。
-    // 管理ダッシュボード(/api/discord/members)と同じく「サーバーニックネーム優先」で解決し、
-    // 両ページで名前が一致するようにする（ニックネーム → global_name → username）。
     const guildIdForNames = process.env.DISCORD_GUILD_ID;
     const participantIds = Array.from(activeDiscordIds);
     const participants = await Promise.all(
       participantIds.map(async (id) => {
+        const style = userStyles.get(id) || 'full';
         try {
           // まずギルドメンバーとして取得（nick が取れる）
           if (guildIdForNames) {
@@ -176,7 +186,7 @@ export async function GET() {
             });
             if (memRes.ok) {
               const m = await memRes.json();
-              return { id, name: resolveDisplayName(m) };
+              return { id, name: resolveDisplayName(m), style };
             }
           }
           // フォールバック: グローバルユーザー
@@ -185,12 +195,12 @@ export async function GET() {
           });
           if (userRes.ok) {
             const userData = await userRes.json();
-            return { id, name: userData.global_name || userData.username || "Unknown" };
+            return { id, name: userData.global_name || userData.username || "Unknown", style };
           }
         } catch (e) {
           console.error(`Failed to fetch member/user ${id}`, e);
         }
-        return { id: id, name: "Unknown" }; // 取得失敗時のフォールバック
+        return { id: id, name: "Unknown", style }; // 取得失敗時のフォールバック
       })
     );
 

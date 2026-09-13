@@ -388,7 +388,7 @@ export default function BalancerPage() {
   };
 
   const handleFetchDiscordReactions = async () => {
-    if (!confirm("Discordの募集チャンネルから「カスタム募集」の参加者を取得し、チェックを自動入力しますか？")) return;
+    if (!confirm("Discordの募集チャンネルから「カスタム募集」の参加者を取得し、チェックを自動入力しますか？\n※途中参加(2戦目〜)の方は1戦目では自動的に待機(チェックOFF)となります。")) return;
     
     setFetchingDiscord(true);
     setMessage({ type: "", text: "" });
@@ -407,16 +407,21 @@ export default function BalancerPage() {
         throw new Error("募集メッセージに参加者が見つかりませんでした。");
       }
 
-      // 取得したDiscord IDの配列で is_active のみ更新する。
-      // 【重要】名前はここでは上書きしない。以前はDiscordから取った名前をDBへ自動保存していたが、
-      // ギルド情報の取得に失敗するとグローバル名(旧名)にフォールバックし、改名後の名前が
-      // 定期的に旧名へ巻き戻るバグの原因になっていた。名前の正は管理ダッシュボードの同期に一本化。
+      const participantStyleMap = new Map<string, 'full' | 'single' | 'late'>();
+      (data.participants || []).forEach((p: any) => {
+        if (p.id) participantStyleMap.set(p.id, p.style || 'full');
+      });
+
+      // 取得したDiscord IDの配列で is_active と participation_style を更新する。
+      // 1戦目用として、'late' (途中参加) は初期状態で is_active: false に設定
       setPlayers(prevPlayers => {
         const nextPlayers = prevPlayers.map(p => {
           if (p.discord_id && data.activeDiscordIds.includes(p.discord_id)) {
-            return { ...p, is_active: true };
+            const style = participantStyleMap.get(p.discord_id) || 'full';
+            const isActive = style !== 'late'; // 途中参加は1戦目は待機
+            return { ...p, is_active: isActive, participation_style: style };
           }
-          return { ...p, is_active: false };
+          return { ...p, is_active: false, participation_style: undefined };
         });
 
         // 自動保存処理をトリガー
@@ -428,8 +433,7 @@ export default function BalancerPage() {
         return nextPlayers;
       });
 
-      // 名簿未登録の参加者を警告する。未登録だとMMR1200のデフォルト扱いで
-      // チーム分けに混ざり、バランスが崩れる原因になるため。
+      // 名簿未登録の参加者を警告する。
       const knownIds = new Set(players.filter((p: any) => p.discord_id).map((p: any) => p.discord_id));
       const unknown = (data.participants || []).filter((dp: any) => !knownIds.has(dp.id));
       if (unknown.length > 0) {
@@ -441,13 +445,41 @@ export default function BalancerPage() {
             + '。未登録のままだとMMR未設定でチーム分けに反映されません。管理ダッシュボードで「Discord & Riot同期」を実行してください。',
         });
       } else {
-        setMessage({ type: "success", text: `✅ Discordからカスタム募集の参加者 ${data.activeDiscordIds.length} 人を自動チェックしました！` });
+        setMessage({ type: "success", text: `✅ Discordから参加者 ${data.activeDiscordIds.length} 人を取得しました！（途中参加メンバーは2戦目待機として設定）` });
       }
     } catch (err: any) {
       setMessage({ type: "error", text: "❌ " + err.message });
     } finally {
       setFetchingDiscord(false);
     }
+  };
+
+  // 🔄 2戦目へのメンバー交代（1戦のみ抜け ➔ 途中参加メンバー参戦）
+  const handleSwitchToMatch2 = () => {
+    let singleCount = 0;
+    let lateCount = 0;
+
+    const updated = players.map(p => {
+      if (p.participation_style === 'single') {
+        singleCount++;
+        return { ...p, is_active: false, is_fixed: false };
+      }
+      if (p.participation_style === 'late') {
+        lateCount++;
+        return { ...p, is_active: true };
+      }
+      return p;
+    });
+
+    setPlayers(updated);
+    try {
+      localStorage.setItem('balancer_active_ids', JSON.stringify(updated.filter(p => p.is_active).map(p => p.id)));
+    } catch {}
+
+    setMessage({
+      type: "success",
+      text: `🔄 2戦目メンバーに交代しました！（1戦のみ ${singleCount}名を待機にし、途中参加 ${lateCount}名を参加ONにしました）`
+    });
   };
 
   const handleInputChange = (uid: string, field: string, value: any) => {
@@ -1646,12 +1678,31 @@ export default function BalancerPage() {
               <span className="bg-white border border-amber-300/60 px-2 py-0.5 rounded-md font-bold text-[11px] text-amber-900">
                 👑 ゴルプラ: <strong>ドラフトピック (MMRあり)</strong>
               </span>
-              <span className="text-[11px] text-stone-600 ml-auto font-medium">
-                💡 1戦だけの参加も大歓迎！途中抜け・交代はチェックを外すだけでOK
-              </span>
+              {/* スタイル別集計チップ */}
+              <div className="flex items-center gap-1.5 ml-auto text-[11px] font-bold">
+                <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-md">
+                  🟢 フル: {players.filter(p => p.participation_style === 'full').length}名
+                </span>
+                <span className="bg-cyan-100 text-cyan-800 border border-cyan-300 px-2 py-0.5 rounded-md">
+                  ⏱️ 1戦のみ: {players.filter(p => p.participation_style === 'single').length}名
+                </span>
+                <span className="bg-purple-100 text-purple-800 border border-purple-300 px-2 py-0.5 rounded-md">
+                  🌙 途中参加: {players.filter(p => p.participation_style === 'late').length}名
+                </span>
+              </div>
             </div>
 
             <div className="flex items-center gap-2 ml-auto flex-wrap">
+              {/* 🔄 2戦目移行ボタン */}
+              <button
+                type="button"
+                onClick={handleSwitchToMatch2}
+                className="px-3 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-xs transition flex items-center gap-1"
+                title="1戦のみのメンバーを待機にし、途中参加メンバーを参加ONに一括交代します"
+              >
+                🔄 2戦目メンバーへ交代
+              </button>
+
               {/* 一括参加切り替えボタン */}
               <button
                 type="button"
@@ -2231,6 +2282,27 @@ export default function BalancerPage() {
                               <Info className="w-3.5 h-3.5" /></button>
                             <span className="font-extrabold">{p.name}</span>
                             
+                            {/* ⏱️/🌙 参加スタイルバッジ */}
+                            {p.participation_style && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const nextStyle = p.participation_style === 'full' ? 'single' : (p.participation_style === 'single' ? 'late' : 'full');
+                                  handleInputChange(p.id, 'participation_style', nextStyle);
+                                }}
+                                className={`text-[10px] font-black px-1.5 py-0.5 rounded border transition-transform hover:scale-105 cursor-pointer shadow-2xs ${
+                                  p.participation_style === 'single'
+                                    ? 'bg-cyan-100 text-cyan-900 border-cyan-300'
+                                    : p.participation_style === 'late'
+                                    ? 'bg-purple-100 text-purple-900 border-purple-300'
+                                    : 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                                }`}
+                                title="クリックで参加スタイルを切り替え (フル ➔ 1戦のみ ➔ 途中参加)"
+                              >
+                                {p.participation_style === 'single' ? '⏱️ 1戦のみ' : p.participation_style === 'late' ? '🌙 途中参加' : '🟢 フル'}
+                              </button>
+                            )}
+
                             {/* 🪙 所持コイン */}
                             {(p.coins > 0 || (p.metadata?.coins && p.metadata.coins > 0)) && (
                               <span className="text-[10px] font-mono font-black bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.2 rounded-full flex items-center gap-0.5 shadow-2xs" title={`所持コイン: ${p.coins || p.metadata?.coins}枚`}>

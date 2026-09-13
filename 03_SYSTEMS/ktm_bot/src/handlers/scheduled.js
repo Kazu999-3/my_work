@@ -19,7 +19,11 @@ export async function handleScheduledEvent(event, env, ctx) {
   } else if (cronExpression.includes("0 0 * * 2") || mode === "weekly_report") {
     // 毎週月曜 9:00 JST (UTC 0:00 月曜=Cloudflare基準dow=2): 個人週間レポート配信
     await sendWeeklyReports(env);
-  } else if (mode === "event_notify" || cronExpression.includes("0 3 * * 4") || cronExpression.includes("0 10 * * 6") || cronExpression.includes("0 11 * *")) {
+  } else if (cronExpression.includes("0 11 * * 7") || cronExpression.includes("0 11 * * 1") || mode === "check_2000") {
+    // 毎週土日 20:00 JST (UTC 11:00 土曜=dow 7, 日曜=dow 1): 開催可否判定 ＆ 中止時クイック代替募集
+    console.log("[Scheduled] Executing 20:00 Custom Check & Substitute Handler...");
+    await checkCustomStatusAt2000(env);
+  } else if (mode === "event_notify" || cronExpression.includes("0 3 * * 4") || cronExpression.includes("0 10 * * 6")) {
     // 毎週水曜 12:00 JST (UTC 3:00 水曜=dow 4) & 金曜 19:00 JST (UTC 10:00 金曜=dow 6):
     // 参加状況・同期アナウンス通知
     await sendEventUsersNotification(env, { lookaheadHours: 72 });
@@ -467,22 +471,51 @@ async function postWeeklyRecruitment(env) {
       timestamp: new Date().toISOString()
     };
 
-    // 参加ボタン（土曜参加 / 日曜参加の2ボタン）
+    // 参加ボタン（土曜: フル/1戦のみ/途中参加、日曜: フル/1戦のみ/途中参加）
     const components = [
       {
-        type: 1, // Action Row
+        type: 1, // Action Row 1: 土曜部門
         components: [
           {
             type: 2,
-            label: "🎮 土曜カスタムに参加 (自動振り分け)",
+            label: "🎮 土曜フル参加 (自動振分)",
             style: 1, // Primary (Blue)
-            custom_id: "join_periodic_auto"
+            custom_id: "join_periodic_auto:full"
           },
           {
             type: 2,
-            label: "🎪 日曜お祭りカスタムに参加",
+            label: "⏱️ 土曜 1戦のみ",
+            style: 2, // Secondary (Gray)
+            custom_id: "join_periodic_auto:single"
+          },
+          {
+            type: 2,
+            label: "🌙 土曜 途中参加(2戦目〜)",
+            style: 2, // Secondary (Gray)
+            custom_id: "join_periodic_auto:late"
+          }
+        ]
+      },
+      {
+        type: 1, // Action Row 2: 日曜部門
+        components: [
+          {
+            type: 2,
+            label: "🎪 日曜フル参加",
             style: 3, // Success (Green)
-            custom_id: "join_periodic_sunday"
+            custom_id: "join_periodic_sunday:full"
+          },
+          {
+            type: 2,
+            label: "⏱️ 日曜 1戦のみ",
+            style: 2, // Secondary (Gray)
+            custom_id: "join_periodic_sunday:single"
+          },
+          {
+            type: 2,
+            label: "🌙 日曜 途中参加(2戦目〜)",
+            style: 2, // Secondary (Gray)
+            custom_id: "join_periodic_sunday:late"
           }
         ]
       }
@@ -772,25 +805,54 @@ async function sendEventUsersNotification(env, options = {}) {
       console.warn('[EventNotify] 二重投稿チェックに失敗（送信は続行）:', dupErr);
     }
 
-    // 5. メッセージ ＆ ワンタップ「参加する」ボタンの作成
+    // 5. メッセージ ＆ ワンタップ「参加する」ボタンの作成（2段構成）
     const roleId = CONFIG.NOTIFICATION_ROLE_ID;
     const messageBody = {
       embeds: [embed],
       components: [
         {
-          type: 1, // Action Row
+          type: 1, // Action Row 1: 土曜
           components: [
             {
               type: 2,
-              label: "🎮 土曜カスタムに参加 (自動振り分け)",
+              label: "🎮 土曜フル参加 (自動振分)",
               style: 1, // Primary (Blue)
-              custom_id: "join_periodic_auto"
+              custom_id: "join_periodic_auto:full"
             },
             {
               type: 2,
-              label: "🎪 日曜お祭りカスタムに参加",
+              label: "⏱️ 土曜 1戦のみ",
+              style: 2,
+              custom_id: "join_periodic_auto:single"
+            },
+            {
+              type: 2,
+              label: "🌙 土曜 途中参加",
+              style: 2,
+              custom_id: "join_periodic_auto:late"
+            }
+          ]
+        },
+        {
+          type: 1, // Action Row 2: 日曜
+          components: [
+            {
+              type: 2,
+              label: "🎪 日曜フル参加",
               style: 3, // Success (Green)
-              custom_id: "join_periodic_sunday"
+              custom_id: "join_periodic_sunday:full"
+            },
+            {
+              type: 2,
+              label: "⏱️ 日曜 1戦のみ",
+              style: 2,
+              custom_id: "join_periodic_sunday:single"
+            },
+            {
+              type: 2,
+              label: "🌙 日曜 途中参加",
+              style: 2,
+              custom_id: "join_periodic_sunday:late"
             }
           ]
         }
@@ -823,5 +885,134 @@ async function sendEventUsersNotification(env, options = {}) {
 
   } catch (err) {
     console.error("Error in sendEventUsersNotification:", err);
+  }
+}
+
+/**
+ * 当日 20:00 (JST) 開催可否判定 ＆ 中止時の自動代替募集トリガー
+ * - 土曜日: シルバー以下 / ゴルプラ それぞれ10名以上集まっているか判定。
+ * - 日曜日: お祭り部門が10名以上集まっているか判定。
+ * - 10名未満の場合: 「中止」を自動告知し、その場で「🎮 ノーマル行く人！ / 🔥 ARAM・メイヘム行く人！」の代替募集ボタンを提示。
+ */
+export async function checkCustomStatusAt2000(env) {
+  try {
+    const channelId = env.DISCORD_KTM_CHANNEL_ID;
+    if (!channelId) return;
+
+    // 現在のJST曜日を取得 (0=日, 6=土)
+    const nowJst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+    const dayOfWeek = nowJst.getUTCDay();
+    const isSaturday = dayOfWeek === 6;
+    const isSunday = dayOfWeek === 0;
+
+    if (!isSaturday && !isSunday) {
+      console.log('[Check2000] 土日ではないためスキップ');
+      return;
+    }
+
+    const targetDayName = isSaturday ? '土曜カスタム' : '日曜お祭りカスタム';
+
+    // 最新の open な定期カスタム募集を取得
+    const rows = await fetchSupabase(
+      env,
+      'recruitments',
+      `mode=eq.${encodeURIComponent('定期カスタム')}&status=eq.open&discord_channel_id=eq.${channelId}&select=discord_message_id,id&order=created_at.desc&limit=1`
+    );
+    if (!rows || rows.length === 0) {
+      console.log('[Check2000] 対象の定期カスタム募集が見つかりません');
+      return;
+    }
+
+    const msgRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages/${rows[0].discord_message_id}`, {
+      headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
+    });
+    if (!msgRes.ok) return;
+    const msg = await msgRes.json();
+    const embed = msg.embeds?.[0];
+    if (!embed || !embed.fields) return;
+
+    // 参加者集計
+    const silverLines = (embed.fields[0]?.value || '').split('\n').filter(l => l.startsWith('- '));
+    const goldLines = (embed.fields[1]?.value || '').split('\n').filter(l => l.startsWith('- '));
+    const sundayLines = (embed.fields[2]?.value || '').split('\n').filter(l => l.startsWith('- '));
+
+    // 1戦目稼働可能者（フル + 1戦のみ）の人数
+    const countFirstMatch = (lines) => lines.filter(l => !l.includes('🌙途中参加')).length;
+    const silverReady = countFirstMatch(silverLines) >= 10;
+    const goldReady = countFirstMatch(goldLines) >= 10;
+    const sundayReady = countFirstMatch(sundayLines) >= 10;
+
+    let cancelDepartments = [];
+    let confirmedDepartments = [];
+
+    if (isSaturday) {
+      if (!silverReady) cancelDepartments.push(`🛡️ シルバー以下部門 (${countFirstMatch(silverLines)}/10名)`);
+      else confirmedDepartments.push(`🛡️ シルバー以下部門 (${countFirstMatch(silverLines)}名 開催！)`);
+
+      if (!goldReady) cancelDepartments.push(`👑 ゴルプラ部門 (${countFirstMatch(goldLines)}/10名)`);
+      else confirmedDepartments.push(`👑 ゴルプラ部門 (${countFirstMatch(goldLines)}名 開催！)`);
+    } else {
+      if (!sundayReady) cancelDepartments.push(`🎪 日曜お祭り部門 (${countFirstMatch(sundayLines)}/10名)`);
+      else confirmedDepartments.push(`🎪 日曜お祭り部門 (${countFirstMatch(sundayLines)}名 開催！)`);
+    }
+
+    // 中止部門がある場合、自動代替募集メッセージを投稿
+    if (cancelDepartments.length > 0) {
+      const cancelText = cancelDepartments.join('、');
+      const substituteComponents = [
+        {
+          type: 1, // Action Row
+          components: [
+            {
+              type: 2,
+              label: "🎮 ノーマル行く人！ (1/5)",
+              style: 1, // Primary
+              custom_id: "quick_substitute_normal"
+            },
+            {
+              type: 2,
+              label: "🔥 ARAM / メイヘムやる人！ (1/5)",
+              style: 3, // Success
+              custom_id: "quick_substitute_aram"
+            }
+          ]
+        }
+      ];
+
+      const content = `⚠️ **【本日20:00 判定結果: ${targetDayName}】**\n\n` +
+        `誠に残念ながら、${cancelText} は20:00時点で10名に達しなかったため、**定期カスタムとしては中止**となります。\n` +
+        (confirmedDepartments.length > 0 ? `※${confirmedDepartments.join('、')} は21:00より予定通り開催いたします！\n` : '') +
+        `\n💡 **せっかく集まったので別のゲームで遊びませんか？**\n` +
+        `下のボタンからワンクリックで「ノーマル」または「ARAM / メイヘム」のクイック募集に合流できます！`;
+
+      await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bot ${env.DISCORD_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          content,
+          components: substituteComponents
+        })
+      });
+      console.log(`[Check2000] 中止告知＆代替募集ボタンを投稿しました: ${cancelText}`);
+    } else {
+      // 全て開催確定
+      await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bot ${env.DISCORD_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          content: `🎉 **【本日20:00 判定: 開催確定！】**\n${confirmedDepartments.join('、')} はすべて10名集まりました！21:00より開始いたします。ポータルのバランサーにてチーム分けを実施します。`
+        })
+      });
+      console.log(`[Check2000] 全部門開催確定通知を投稿しました`);
+    }
+
+  } catch (err) {
+    console.error('[Check2000] 20:00 判定処理でエラー:', err);
   }
 }

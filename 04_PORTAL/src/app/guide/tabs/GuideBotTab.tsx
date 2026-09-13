@@ -260,27 +260,37 @@ export default function GuideBotTab() {
                   <li>・<strong className="text-stone-800">毎週月曜 12:00:</strong> 土日分の募集カードが自動投下されます。</li>
                   <li>・<strong className="text-stone-800">毎週水曜 12:00:</strong> 中間人数アナウンス（あと◯名で確定）。</li>
                   <li>・<strong className="text-stone-800">毎週金曜 19:00:</strong> 前日最終アナウンス（土曜開催の直前確認）。</li>
+                  <li>・<strong className="text-stone-800">当日 20:00:</strong> 開催可否の最終判定。10名未満の部門は自動中止となり、ワンクリックで「ノーマル」「ARAM/メイヘム」の代替募集へ切り替わります。</li>
                 </ul>
               </div>
 
               <div>
-                <h4 className="text-xs font-black text-stone-900 mb-2">🔘 週末定期募集の2つの参加ボタン</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <h4 className="text-xs font-black text-stone-900 mb-2">🔘 柔軟な参加スタイル（フル / 1戦のみ / 途中参加）</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200 space-y-1.5">
                     <div className="font-black text-xs text-blue-900 flex items-center gap-1.5">
-                      <span>🎮</span> 土曜カスタムに参加 (自動振り分け)
+                      <span>🟢</span> フル参加 (21:00〜)
                     </div>
                     <p className="text-[11px] text-blue-800 leading-relaxed">
-                      代表MMRに応じて「シルバー以下 (ブラインド/MMRあり)」または「ゴルプラ (ドラフト/MMRあり)」に自動でエントリーされます。土曜20:00時点で10名未満の部門は中止となり、ノーマルやメイヘム募集へ切り替わります。
+                      開始から最後まで通して参加します。
                     </p>
                   </div>
 
-                  <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-1.5">
-                    <div className="font-black text-xs text-emerald-900 flex items-center gap-1.5">
-                      <span>🎪</span> 日曜お祭りカスタムに参加
+                  <div className="p-3.5 rounded-2xl bg-cyan-50/70 border border-cyan-200 space-y-1.5">
+                    <div className="font-black text-xs text-cyan-900 flex items-center gap-1.5">
+                      <span>⏱️</span> 1戦のみ参加 (21:00〜1戦)
                     </div>
-                    <p className="text-[11px] text-emerald-800 leading-relaxed">
-                      ランク・MMR不問！誰でも参加できる完全お遊び枠です。特殊ルールやランダム、メイヘムなどでワイワイ対戦します（公式MMRの変動はありません）。
+                    <p className="text-[11px] text-cyan-800 leading-relaxed">
+                      第1試合のみ参加して退出します。2戦目以降は途中参加者とスムーズに交代できます。
+                    </p>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-purple-50/70 border border-purple-200 space-y-1.5">
+                    <div className="font-black text-xs text-purple-900 flex items-center gap-1.5">
+                      <span>🌙</span> 途中参加 (2戦目〜 / 21:45頃)
+                    </div>
+                    <p className="text-[11px] text-purple-800 leading-relaxed">
+                      21時には間に合わない方向け！2戦目開始時にバランサー側で自動合流できます。
                     </p>
                   </div>
                 </div>

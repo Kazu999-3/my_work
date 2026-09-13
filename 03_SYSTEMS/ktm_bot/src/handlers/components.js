@@ -166,11 +166,74 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     return Response.json({ type: 5, data: { flags: 64 } });
   }
 
-  if (customId.startsWith('join_periodic:') || customId === 'join_periodic_auto' || customId === 'join_periodic_sunday') {
-    // join_periodic_auto: 土曜カスタム（代表MMRからシルバー以下/ゴルプラへ自動振り分け）
-    // join_periodic_sunday: 日曜お祭りカスタム（ランク不問/MMR変動なし）
-    const isSundayMode = customId === 'join_periodic_sunday';
-    const isAutoMode = customId === 'join_periodic_auto';
+  // 代替クイック募集ボタン（ノーマル / ARAM・メイヘム）
+  if (customId === 'quick_substitute_normal' || customId === 'quick_substitute_aram') {
+    const isNormal = customId === 'quick_substitute_normal';
+    const modeLabel = isNormal ? '🎮 代替ノーマル' : '🔥 代替ARAM/メイヘム';
+    const userMention = `<@${userId}>`;
+
+    ctx.waitUntil((async () => {
+      try {
+        const msgId = interaction.message.id;
+        const channelId = interaction.channel_id;
+
+        const msgRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${msgId}`, {
+          headers: { "Authorization": `Bot ${botToken}` }
+        });
+        if (!msgRes.ok) return;
+        const msg = await msgRes.json();
+        let content = msg.content || '';
+
+        let targetLines = content.split('\n');
+        const userLineIdx = targetLines.findIndex(l => l.includes(userMention));
+
+        if (userLineIdx >= 0) {
+          // 既にエントリーしている場合は解除
+          targetLines = targetLines.filter(l => !l.includes(userMention));
+        } else {
+          // エントリー追加
+          targetLines.push(`- ${userMention} (${modeLabel})`);
+        }
+
+        const count = targetLines.filter(l => l.startsWith('- <@')).length;
+        const updatedContent = targetLines.join('\n');
+
+        // ボタンのラベルを更新（現在の参加人数）
+        const components = msg.components?.map(row => ({
+          ...row,
+          components: row.components.map(btn => {
+            if (btn.custom_id === customId) {
+              return { ...btn, label: isNormal ? `🎮 ノーマル行く人！ (${count}/5)` : `🔥 ARAM / メイヘムやる人！ (${count}/5)` };
+            }
+            return btn;
+          })
+        })) || msg.components;
+
+        await sendDiscordMessage(`channels/${channelId}/messages/${msgId}`, botToken, "PATCH", {
+          content: updatedContent,
+          components
+        });
+      } catch (e) {
+        console.error('quick_substitute error:', e);
+      }
+    })());
+
+    return Response.json({ type: 5, data: { flags: 64 } });
+  }
+
+  if (customId.startsWith('join_periodic:') || customId.startsWith('join_periodic_auto') || customId.startsWith('join_periodic_sunday')) {
+    // join_periodic_auto:style : 土曜カスタム（代表MMRからシルバー以下/ゴルプラへ自動振り分け）
+    // join_periodic_sunday:style : 日曜お祭りカスタム（ランク不問/MMR変動なし）
+    // style: 'full' | 'single' | 'late'
+    const parts = customId.split(':');
+    const isSundayMode = customId.startsWith('join_periodic_sunday');
+    const isAutoMode = customId.startsWith('join_periodic_auto');
+    const participationStyle = parts.length > 1 ? parts[1] : 'full'; // 'full' | 'single' | 'late'
+
+    let styleBadge = " 🟢フル";
+    if (participationStyle === 'single') styleBadge = " ⏱️1戦のみ";
+    else if (participationStyle === 'late') styleBadge = " 🌙途中参加(2戦目〜)";
+
     const userMention = `<@${userId}>`;
 
     ctx.waitUntil((async () => {
@@ -195,7 +258,7 @@ export async function handleButtonInteraction(interaction, env, ctx) {
           const tier = getKtmRank(mmr ?? 0);
           roomType = tier.min >= 1350 ? 'gold' : 'silver';
         } else {
-          roomType = customId.split(':')[1]; // silver or gold
+          roomType = parts[0].split(':')[1] || 'silver'; // silver or gold
         }
 
         if (!msgRes.ok) throw new Error("メッセージ取得失敗");
@@ -214,7 +277,9 @@ export async function handleButtonInteraction(interaction, env, ctx) {
 
         const targetFieldIdx = roomType === 'sunday' ? 2 : (roomType === 'silver' ? 0 : 1);
         const targetText = targetEmbed.fields[targetFieldIdx]?.value || "";
-        const isAlreadyInTarget = targetText.includes(userMention);
+        const existingLine = targetText.split('\n').find(l => l.includes(userMention));
+        const isAlreadyInTarget = !!existingLine;
+        const isSameStyle = existingLine && existingLine.includes(styleBadge);
 
         // レーン希望文字列の作成
         let lanePrefStr = "";
@@ -233,17 +298,19 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         }
 
         if (isSundayMode) {
-          // 日曜部門のトグル（土曜のフィールド0, 1には触らない）
+          // 日曜部門のトグル/スタイル変更（土曜のフィールド0, 1には触らない）
           let fLines = (targetEmbed.fields[2].value || "").split('\n');
           fLines = fLines.filter(l => !l.includes(userMention) && !l.includes('▫ 参加者: なし'));
-          if (!isAlreadyInTarget) {
-            fLines.push(`- ${userMention}${lanePrefStr}`);
+
+          if (!isAlreadyInTarget || !isSameStyle) {
+            // 未参加、またはスタイル変更の場合は新しい行を追加
+            fLines.push(`- ${userMention}${styleBadge}${lanePrefStr}`);
           }
           const count = fLines.filter(l => l.startsWith('- ')).length;
           targetEmbed.fields[2].name = `🎪 【日曜・お祭り部門】 (${count}/10名) 🎲 ランク不問 (MMRなし)`;
           targetEmbed.fields[2].value = fLines.length > 0 ? fLines.join('\n') : "▫ 参加者: なし";
         } else {
-          // 土曜部門のトグル（0と1の間で排他トグル、日曜の2には触らない）
+          // 土曜部門のトグル/スタイル変更（0と1の間で排他処理、日曜の2には触らない）
           [0, 1].forEach(idx => {
             let fLines = (targetEmbed.fields[idx].value || "").split('\n');
             fLines = fLines.filter(l => !l.includes(userMention) && !l.includes('▫ 参加者: なし'));
@@ -254,11 +321,11 @@ export async function handleButtonInteraction(interaction, env, ctx) {
             targetEmbed.fields[idx].value = fLines.length > 0 ? fLines.join('\n') : "▫ 参加者: なし";
           });
 
-          if (!isAlreadyInTarget) {
+          if (!isAlreadyInTarget || !isSameStyle) {
             let fLines = targetEmbed.fields[targetFieldIdx].value === "▫ 参加者: なし"
               ? []
               : targetEmbed.fields[targetFieldIdx].value.split('\n');
-            fLines.push(`- ${userMention}${lanePrefStr}`);
+            fLines.push(`- ${userMention}${styleBadge}${lanePrefStr}`);
             const count = fLines.filter(l => l.startsWith('- ')).length;
             const rName = targetFieldIdx === 0 ? '🛡️ 【土曜・シルバー以下部門】' : '👑 【土曜・ゴルプラ部門】';
             const rType = targetFieldIdx === 0 ? '🔲 ブラインド (MMRあり)' : '⚔️ ドラフト (MMRあり)';
