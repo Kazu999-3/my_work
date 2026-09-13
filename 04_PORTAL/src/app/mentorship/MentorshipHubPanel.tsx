@@ -1,0 +1,312 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { MentorshipProfile } from '../api/mentorship/profiles/route';
+import { MentorshipCard } from './MentorshipCard';
+import { MentorshipProfileModal } from './MentorshipProfileModal';
+import { toast } from '../../components/Toaster';
+import { HeartHandshake, Sparkles, Plus, Search, Shield, Award, Users, Swords } from 'lucide-react';
+
+const LANE_FILTERS = [
+  { id: 'ALL', label: '🌐 全レーン' },
+  { id: 'TOP', label: '🛡️ TOP' },
+  { id: 'JUNGLE', label: '🌲 JG' },
+  { id: 'MID', label: '⚡ MID' },
+  { id: 'BOT', label: '🏹 BOT' },
+  { id: 'SUPPORT', label: '💖 SUP' },
+];
+
+export default function MentorshipHubPanel() {
+  const [activeTab, setActiveTab] = useState<'PUPIL' | 'MENTOR' | 'MATCHES'>('PUPIL');
+  const [laneFilter, setLaneFilter] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [profiles, setProfiles] = useState<MentorshipProfile[]>([]);
+  const [matches, setMatches] = useState<any[]>([]);
+  const [myDiscordId, setMyDiscordId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // モーダル管理
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProfile, setEditingProfile] = useState<MentorshipProfile | null>(null);
+
+  // プロフィール一覧の取得
+  const fetchProfiles = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/mentorship/profiles?status=ALL');
+      const data = await res.json();
+      if (data.ok) {
+        setProfiles(data.profiles || []);
+        setMyDiscordId(data.myDiscordId || null);
+      }
+    } catch (err) {
+      console.error('Failed to fetch mentorship profiles:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // マッチ一覧の取得
+  const fetchMatches = async () => {
+    try {
+      const res = await fetch('/api/mentorship/matches');
+      const data = await res.json();
+      if (data.ok) {
+        setMatches(data.matches || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch matches:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchProfiles();
+    fetchMatches();
+  }, []);
+
+  // プロフィールの保存
+  const handleSaveProfile = async (profileData: Partial<MentorshipProfile>) => {
+    try {
+      const res = await fetch('/api/mentorship/profiles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profileData),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        toast.success('🪪 自己紹介カードを公開・更新しました！');
+        fetchProfiles();
+      } else {
+        toast.error(data.error || '保存に失敗しました');
+      }
+    } catch (err) {
+      toast.error('エラーが発生しました');
+    }
+  };
+
+  // プロフィールの削除
+  const handleDeleteProfile = async (profileId: string) => {
+    if (!confirm('この自己紹介カードを削除しますか？')) return;
+    try {
+      const res = await fetch(`/api/mentorship/profiles?id=${profileId}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (data.ok) {
+        toast.success('カードを削除しました');
+        fetchProfiles();
+      } else {
+        toast.error(data.error || '削除に失敗しました');
+      }
+    } catch (err) {
+      toast.error('エラーが発生しました');
+    }
+  };
+
+  const handleOffer = (targetProfile: MentorshipProfile) => {
+    toast.success(`📢 ${targetProfile.player_name} さんへのアプローチ機能は準備中です！Discordで直接メンションしてみましょう。`);
+  };
+
+  // フィルタリング処理
+  const filteredProfiles = profiles.filter((p) => {
+    if (activeTab !== 'MATCHES' && p.role_type !== activeTab) return false;
+    if (laneFilter !== 'ALL' && !(p.lanes || []).includes(laneFilter)) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const matchName = (p.player_name || '').toLowerCase().includes(q);
+      const matchBio = (p.bio || '').toLowerCase().includes(q);
+      const matchChampions = p.champions && p.champions.some((c) => c.toLowerCase().includes(q));
+      const matchTags = p.tags && p.tags.some((t) => t.toLowerCase().includes(q));
+      if (!matchName && !matchBio && !matchChampions && !matchTags) return false;
+    }
+    return true;
+  });
+
+  const myProfile = profiles.find((p) => p.discord_id === myDiscordId);
+
+  return (
+    <div className="space-y-6">
+      {/* ヒーローバナー */}
+      <div className="bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-emerald-500/15 border border-emerald-500/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-xs">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/20 text-emerald-800 text-xs font-black border border-emerald-500/30">
+              <HeartHandshake size={14} className="text-emerald-600" />
+              KTM 師弟マッチング ＆ 自己紹介ハブ
+            </div>
+            <h2 className="text-xl md:text-2xl font-black text-stone-900">
+              弟子入り ＆ メンター自己紹介掲示板
+            </h2>
+            <p className="text-stone-700 text-xs md:text-sm max-w-2xl font-medium leading-relaxed">
+              「もっと上手くなりたい弟子」と「優しく教えたい師匠（メンター）」を結ぶ掲示板です。自己紹介カードを公開してバディを見つけよう！
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setEditingProfile(myProfile || null);
+              setIsModalOpen(true);
+            }}
+            className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition shadow-md flex items-center gap-1.5 shrink-0 cursor-pointer"
+          >
+            <Plus size={15} />
+            <span>{myProfile ? '自分のカードを編集' : '自己紹介カードを投稿'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* タブ切り替えバー */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white/90 p-4 rounded-2xl border border-stone-200/90 shadow-2xs">
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setActiveTab('PUPIL')}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'PUPIL'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+            }`}
+          >
+            <span>🌱 弟子募集・希望者</span>
+            <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded-full">
+              {profiles.filter((p) => p.role_type === 'PUPIL').length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('MENTOR')}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'MENTOR'
+                ? 'bg-amber-600 text-white shadow-xs'
+                : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+            }`}
+          >
+            <span>👑 師匠（メンター）一覧</span>
+            <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded-full">
+              {profiles.filter((p) => p.role_type === 'MENTOR').length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('MATCHES')}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'MATCHES'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+            }`}
+          >
+            <span>🤝 成立した師弟ペア</span>
+            <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded-full">
+              {matches.length}
+            </span>
+          </button>
+        </div>
+
+        {/* 検索窓 */}
+        {activeTab !== 'MATCHES' && (
+          <div className="relative w-full md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 w-3.5 h-3.5" />
+            <input
+              type="text"
+              placeholder="名前・チャンプ・コメント検索..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-stone-50 border border-stone-200 rounded-xl pl-8 pr-3 py-1.5 text-xs font-bold text-stone-900 focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* レーンフィルター */}
+      {activeTab !== 'MATCHES' && (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          {LANE_FILTERS.map((lane) => (
+            <button
+              key={lane.id}
+              type="button"
+              onClick={() => setLaneFilter(lane.id)}
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 ${
+                laneFilter === lane.id
+                  ? 'bg-stone-800 text-white'
+                  : 'bg-white border border-stone-200 hover:bg-stone-100 text-stone-600'
+              }`}
+            >
+              {lane.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* コンテンツ一覧 */}
+      {isLoading ? (
+        <div className="py-12 text-center text-xs font-bold text-stone-500 animate-pulse">
+          自己紹介カードを読み込み中...
+        </div>
+      ) : activeTab === 'MATCHES' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {matches.map((match) => (
+            <div
+              key={match.id}
+              className="bg-white rounded-2xl p-5 border border-indigo-200 shadow-xs flex items-center justify-between"
+            >
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🤝</span>
+                  <span className="text-xs font-black text-indigo-900">師弟ペア成立</span>
+                  <span className="text-[10px] text-stone-500 font-mono">
+                    {new Date(match.matched_at).toLocaleDateString('ja-JP')}
+                  </span>
+                </div>
+                <div className="text-sm font-black text-stone-900">
+                  👑 {match.mentor_name || '師匠'} × 🌱 {match.pupil_name || '弟子'}
+                </div>
+              </div>
+              <div className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                共闘中 🔥
+              </div>
+            </div>
+          ))}
+
+          {matches.length === 0 && (
+            <div className="col-span-full py-12 text-center text-stone-400 text-xs font-bold bg-white rounded-2xl border border-stone-200">
+              まだ成立した師弟ペアはありません。掲示板で相手を探してみましょう！
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filteredProfiles.map((p) => (
+            <MentorshipCard
+              key={p.id}
+              profile={p}
+              isMine={p.discord_id === myDiscordId}
+              onOffer={handleOffer}
+              onEdit={() => {
+                setEditingProfile(p);
+                setIsModalOpen(true);
+              }}
+              onDelete={() => handleDeleteProfile(p.id)}
+            />
+          ))}
+
+          {filteredProfiles.length === 0 && (
+            <div className="col-span-full py-12 text-center text-stone-400 text-xs font-bold bg-white rounded-2xl border border-stone-200">
+              該当する自己紹介カードが見つかりませんでした。
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* モーダル */}
+      <MentorshipProfileModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        initialProfile={editingProfile}
+        onSave={handleSaveProfile}
+      />
+    </div>
+  );
+}

@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { MentorshipProfile } from '@/app/api/mentorship/profiles/route';
-import { getKtmRank, RANKS } from '@/lib/mmr';
+import { MentorshipProfile } from '../api/mentorship/profiles/route';
+import { getKtmRank, RANKS } from '../../lib/mmr';
 
 interface MentorshipCardProps {
   profile: MentorshipProfile;

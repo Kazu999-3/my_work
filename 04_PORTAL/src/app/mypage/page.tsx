@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { User, AlertTriangle, RefreshCw, Sparkles } from "lucide-react";
 
-export default function MyPageRedirect() {
+function MyPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,8 +19,8 @@ export default function MyPageRedirect() {
         const data = await res.json();
         if (res.ok && data.ok && data.player) {
           const playerName = data.player.name || data.player.discord_id;
-          // 名簿カルテと完全に統一された自分自身のカルテ（設定タブ）へ即時遷移
-          router.replace(`/player/${encodeURIComponent(playerName)}?tab=settings`);
+          const targetTab = searchParams.get("tab") || "settings";
+          router.replace(`/player/${encodeURIComponent(playerName)}?tab=${targetTab}`);
         } else {
           setError(data.error || "ログインが必要です。");
           setLoading(false);
@@ -30,7 +31,7 @@ export default function MyPageRedirect() {
       }
     }
     fetchAndRedirect();
-  }, [router]);
+  }, [router, searchParams]);
 
   if (loading) {
     return (
@@ -52,7 +53,7 @@ export default function MyPageRedirect() {
         <div>
           <h2 className="text-xl font-black text-white mb-2">マイページのご利用にはログインが必要です</h2>
           <p className="text-xs text-stone-400 leading-relaxed">
-            Discordでログインすると、あなた専用の公式カルテ（通算戦績・プレイスタイル診断・相性分析・希望レーン設定・師弟募集）をすべて確認・変更できます。
+            Discordでログインすると、あなた専用の公式カルテ（通算戦績・プレイスタイル診断・相性分析・希望レーン設定・師弟募集・🎁 デイリーボーナス）をすべて確認・利用できます。
           </p>
         </div>
         <Link
@@ -64,5 +65,17 @@ export default function MyPageRedirect() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function MyPageRedirect() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#1c1917] flex items-center justify-center">
+        <RefreshCw className="w-8 h-8 text-amber-500 animate-spin" />
+      </div>
+    }>
+      <MyPageContent />
+    </Suspense>
   );
 }

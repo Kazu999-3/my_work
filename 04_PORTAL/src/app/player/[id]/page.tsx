@@ -3,9 +3,11 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useCurrentUser } from "../../../hooks/useCurrentUser";
 import PlayerSettingsPanel from "../PlayerSettingsPanel";
 import ScoutingReport from "../../../components/ScoutingReport";
+import MentorshipHubPanel from "../../mentorship/MentorshipHubPanel";
+import confetti from "canvas-confetti";
 import { 
   Activity, 
   Shield, 
@@ -17,12 +19,15 @@ import {
   CheckCircle2, 
   TrendingUp, 
   Users, 
-  Clock,
-  Sparkles,
-  Trophy,
-  Flame,
-  Award,
-  Settings
+  Clock, 
+  Sparkles, 
+  Trophy, 
+  Flame, 
+  Award, 
+  Settings,
+  HeartHandshake,
+  Gift,
+  Coins
 } from "lucide-react";
 import Image from "next/image";
 import { getChampIcon, getChampNameById, getChampSplash } from "../../../lib/ddragonClient";
@@ -73,7 +78,57 @@ export default function PlayerMyPage() {
   const [syncingSoloq, setSyncingSoloq] = useState(false);
   
   // タブ管理用のステートを追加
-  const [activeTab, setActiveTab] = useState<'summary' | 'lanes' | 'chemistry' | 'champions' | 'history' | 'settings'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'summary' | 'lanes' | 'chemistry' | 'champions' | 'history' | 'settings' | 'mentorship'>(initialTab);
+
+  // 🎁 デイリーボーナス関連ステート
+  const [claimingDaily, setClaimingDaily] = useState(false);
+  const [dailyBonusMsg, setDailyBonusMsg] = useState<string | null>(null);
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const claimedDailyToday = player?.role_preferences?.lastDailyClaim === todayStr;
+
+  const handleClaimDaily = async () => {
+    if (claimingDaily || claimedDailyToday) return;
+    setClaimingDaily(true);
+    try {
+      const res = await fetch('/api/bet', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          discordId: currentUser?.discordId,
+          playerName: player?.name,
+          type: 'daily'
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setDailyBonusMsg(data.message || '🎁 デイリーボーナス +100コイン を獲得しました！');
+        try {
+          confetti({
+            particleCount: 70,
+            spread: 60,
+            origin: { y: 0.6 },
+            colors: ['#f59e0b', '#10b981', '#3b82f6', '#ec4899']
+          });
+        } catch {}
+        // プレイヤーのコイン＆最終受取日を即時更新
+        setPlayer((prev: any) => ({
+          ...prev,
+          coins: data.remainingCoins,
+          role_preferences: {
+            ...(prev?.role_preferences || {}),
+            lastDailyClaim: todayStr
+          }
+        }));
+      } else {
+        alert(data.error || 'デイリーボーナスの受取に失敗しました');
+      }
+    } catch (err: any) {
+      alert('通信エラーが発生しました');
+    } finally {
+      setClaimingDaily(false);
+    }
+  };
 
   // グラフの表示期間フィルタ（#49）: 直近10 / 30 / 全部
   const [chartPeriod, setChartPeriod] = useState<10 | 30 | 0>(0);
@@ -601,13 +656,14 @@ export default function PlayerMyPage() {
     (player?.name && (player.name === currentUser.displayName || player.name === currentUser.username))
   );
 
-  // タブアイテム定義（自分の場合は設定タブを統合）
+  // タブアイテム定義（自分の場合は設定タブおよび師弟掲示板を統合）
   const tabItems = [
     { id: "summary", name: "総合分析", icon: <Activity className="w-4 h-4" /> },
     { id: "lanes", name: "レーン別戦績", icon: <Swords className="w-4 h-4" /> },
     { id: "chemistry", name: "相性＆好敵手", icon: <Users className="w-4 h-4" /> },
     { id: "champions", name: "魂のキャラ", icon: <Star className="w-4 h-4" /> },
     { id: "history", name: "試合履歴", icon: <Clock className="w-4 h-4" /> },
+    { id: "mentorship", name: "🥋 師弟掲示板", icon: <HeartHandshake className="w-4 h-4 text-emerald-600" /> },
     ...(isMe ? [{ id: "settings", name: "⚙️ 希望・師弟設定", icon: <Settings className="w-4 h-4 text-amber-500" /> }] : []),
   ] as const;
 
@@ -619,36 +675,70 @@ export default function PlayerMyPage() {
 
       <div className="max-w-[1600px] w-full mx-auto space-y-6">
         
-        {/* 👑 ログイン中の自分自身のカルテを開いている場合のマイページ案内バナー */}
+        {/* 👑 ログイン中の自分自身のカルテを開いている場合のマイページ案内 ＆ デイリーボーナスバナー */}
         {isMe && (
-          <div className="bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent border border-amber-400/50 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md animate-fade-in">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500 text-stone-950 flex items-center justify-center font-black text-lg shadow">
+          <div className="bg-gradient-to-r from-amber-500/20 via-orange-500/10 to-transparent border border-amber-400/50 rounded-3xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-md animate-fade-in">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500 text-stone-950 flex items-center justify-center font-black text-2xl shadow-sm shrink-0">
                 👑
               </div>
-              <div>
-                <h4 className="text-sm font-black text-amber-950 flex items-center gap-1.5">
-                  <span>これはあなたの個人カルテ（マイページ）です</span>
-                  <span className="text-[10px] px-2 py-0.2 rounded-full bg-amber-400 text-stone-950 font-bold">YOU</span>
-                </h4>
-                <p className="text-xs text-stone-600 mt-0.5">
-                  希望レーン・NGレーン設定や、師弟バディ企画の参加設定を下の「⚙️ 希望・師弟設定」タブから変更できます。
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="text-sm font-black text-amber-950">
+                    あなたのマイページ（公式カルテ）
+                  </h4>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-400 text-stone-950 font-black">YOU</span>
+                  <span className="text-xs font-bold text-amber-800 flex items-center gap-1 bg-amber-100/80 px-2.5 py-0.5 rounded-lg">
+                    <Coins size={13} className="text-amber-600" />
+                    <span>所持コイン: <strong>{(player.coins ?? 1000).toLocaleString()}</strong> pt</span>
+                  </span>
+                </div>
+                <p className="text-xs text-stone-600">
+                  希望レーン設定・師弟募集・所持コインの確認が可能です。
                 </p>
+                {dailyBonusMsg && (
+                  <p className="text-xs font-black text-emerald-700 animate-pulse mt-1">
+                    {dailyBonusMsg}
+                  </p>
+                )}
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab('settings')}
-              className={`px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 shadow transition self-stretch sm:self-auto justify-center cursor-pointer shrink-0 ${
-                activeTab === 'settings'
-                  ? 'bg-amber-600 text-white'
-                  : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950'
-              }`}
-            >
-              <Settings className="w-4 h-4" />
-              <span>希望・師弟設定を変更する ➔</span>
-            </button>
+            <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto shrink-0">
+              {/* 🎁 デイリーボーナス受取ボタン */}
+              <button
+                type="button"
+                onClick={handleClaimDaily}
+                disabled={claimingDaily || claimedDailyToday}
+                className={`px-4 py-2.5 rounded-2xl font-black text-xs transition-all shadow-sm flex items-center gap-1.5 cursor-pointer ${
+                  claimedDailyToday
+                    ? 'bg-stone-200 text-stone-500 border border-stone-300 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-stone-950 shadow-amber-500/20 hover:scale-102 active:scale-98 animate-pulse'
+                }`}
+              >
+                <Gift size={16} className={claimedDailyToday ? 'text-stone-400' : 'text-amber-900'} />
+                <span>
+                  {claimingDaily
+                    ? '受取中...'
+                    : claimedDailyToday
+                    ? '本日デイリー受取済み (+100pt)'
+                    : '🎁 今日のボーナス受取 (+100pt)'}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('settings')}
+                className={`px-4 py-2.5 rounded-2xl text-xs font-black flex items-center gap-1.5 transition border cursor-pointer ${
+                  activeTab === 'settings'
+                    ? 'bg-stone-900 text-white border-stone-800'
+                    : 'bg-white/90 hover:bg-white text-stone-800 border-stone-300'
+                }`}
+              >
+                <Settings size={14} />
+                <span>⚙️ 希望・師弟設定</span>
+              </button>
+            </div>
           </div>
         )}
 
@@ -1883,7 +1973,14 @@ export default function PlayerMyPage() {
                 </div>
               )}
 
-              {/* 6. 希望・師弟設定タブ (自分自身のみ表示) */}
+              {/* 6. 師弟掲示板タブ */}
+              {activeTab === 'mentorship' && (
+                <div className="space-y-6">
+                  <MentorshipHubPanel />
+                </div>
+              )}
+
+              {/* 7. 希望・師弟設定タブ (自分自身のみ表示) */}
               {activeTab === 'settings' && isMe && (
                 <div className="space-y-6">
                   <PlayerSettingsPanel 

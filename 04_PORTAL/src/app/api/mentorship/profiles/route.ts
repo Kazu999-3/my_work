@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin';
-import { getAuthSession } from '@/lib/authGuard';
-import { findOrCreatePlayer } from '@/lib/playerCoins';
+import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
+import { getAuthSession } from '../../../../lib/authGuard';
+import { findOrCreatePlayer } from '../../../../lib/playerCoins';
 
 export const dynamic = 'force-dynamic';
 

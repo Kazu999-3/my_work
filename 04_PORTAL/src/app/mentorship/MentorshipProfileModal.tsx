@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MentorshipProfile } from '@/app/api/mentorship/profiles/route';
+import { MentorshipProfile } from '../api/mentorship/profiles/route';
 
 interface MentorshipProfileModalProps {
   isOpen: boolean;

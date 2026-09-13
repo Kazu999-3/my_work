@@ -103,48 +103,39 @@ function MobileNavItem({ item, active, pending, onClick }: { item: MenuItem; act
 }
 
 const MENU_ITEMS: MenuItem[] = [
-  { id: 'mypage', label: 'マイページ / 希望レーン', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
-  { id: 'mentorship', label: '師弟自己紹介掲示板', shortLabel: '師弟掲示板', icon: HeartHandshake, href: '/mentorship', color: 'text-emerald-500', activeBg: 'bg-emerald-500/15' },
+  { id: 'mypage', label: 'マイページ / 師弟設定', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
   { id: 'balancer', label: 'チーム分け', shortLabel: 'チーム', icon: Swords, href: '/balancer', color: 'text-rose-600', activeBg: 'bg-rose-500/15' },
   { id: 'casino', label: '勝敗予想', shortLabel: 'カジノ', icon: Coins, href: '/casino', color: 'text-amber-600', activeBg: 'bg-amber-500/15' },
+  { id: 'leaderboard', label: '順位表 ＆ 名簿', shortLabel: '順位・名簿', icon: Trophy, href: '/leaderboard', color: 'text-yellow-600', activeBg: 'bg-yellow-500/15' },
   { id: 'history', label: '試合履歴', shortLabel: '履歴', icon: History, href: '/history', color: 'text-purple-600', activeBg: 'bg-purple-500/15' },
-  { id: 'leaderboard', label: '順位表', shortLabel: '順位', icon: Trophy, href: '/leaderboard', color: 'text-yellow-600', activeBg: 'bg-yellow-500/15' },
-  { id: 'synergy', label: 'チームシナジー', shortLabel: '相性', icon: HeartHandshake, href: '/synergy', color: 'text-fuchsia-600', activeBg: 'bg-fuchsia-500/15' },
-  { id: 'player', label: 'プレイヤー名簿', shortLabel: '名簿', icon: Users, href: '/player', color: 'text-indigo-600', activeBg: 'bg-indigo-500/15' },
   { id: 'guide', label: '使い方 ＆ 更新情報', shortLabel: 'ガイド', icon: BookOpen, href: '/guide', color: 'text-emerald-600', activeBg: 'bg-emerald-500/15' },
 ];
 
 const ADMIN_ONLY_MENU_ITEMS: MenuItem[] = [
   // ── 👤 ユーザー ──
-  { id: 'mypage', label: 'マイページ / 希望レーン', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-amber-500', activeBg: 'bg-amber-500/15', section: 'ユーザー' },
-  { id: 'mentorship', label: '師弟自己紹介掲示板', shortLabel: '師弟掲示板', icon: HeartHandshake, href: '/mentorship', color: 'text-emerald-500', activeBg: 'bg-emerald-500/15', section: 'ユーザー' },
-  // ── ⚙️ システム ＆ 分析 ──
-  { id: 'dashboard', label: 'システム運用', shortLabel: '設定', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-stone-800', activeBg: 'bg-black/10', section: 'システム ＆ 分析' },
-  { id: 'analytics', label: 'note分析', shortLabel: '分析', icon: TrendingUp, href: '/admin/analytics', color: 'text-teal-600', activeBg: 'bg-teal-500/15', section: 'システム ＆ 分析' },
+  { id: 'mypage', label: 'マイページ / 師弟設定', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-amber-500', activeBg: 'bg-amber-500/15', section: 'ユーザー' },
   // ── 🏆 大会 ＆ 試合 ──
   { id: 'balancer', label: 'チーム分け', shortLabel: 'チーム', icon: Swords, href: '/balancer', color: 'text-rose-600', activeBg: 'bg-rose-500/15', section: '大会 ＆ 試合' },
   { id: 'casino', label: '勝敗予想', shortLabel: 'カジノ', icon: Coins, href: '/casino', color: 'text-amber-600', activeBg: 'bg-amber-500/15', section: '大会 ＆ 試合' },
   { id: 'history', label: '試合履歴', shortLabel: '履歴', icon: History, href: '/history', color: 'text-purple-600', activeBg: 'bg-purple-500/15', section: '大会 ＆ 試合' },
   { id: 'ktm-admin', label: 'KTM大会管理', shortLabel: '大会管理', icon: Shield, href: '/ktm-admin', color: 'text-indigo-600', activeBg: 'bg-indigo-500/15', section: '大会 ＆ 試合' },
   // ── 👥 コミュニティ ＆ 戦績 ──
-  { id: 'leaderboard', label: '順位表', shortLabel: '順位', icon: Trophy, href: '/leaderboard', color: 'text-yellow-600', activeBg: 'bg-yellow-500/15', section: 'コミュニティ ＆ 戦績' },
-  { id: 'synergy', label: 'チームシナジー', shortLabel: '相性', icon: HeartHandshake, href: '/synergy', color: 'text-fuchsia-600', activeBg: 'bg-fuchsia-500/15', section: 'コミュニティ ＆ 戦績' },
-  { id: 'player', label: 'プレイヤー名簿', shortLabel: '名簿', icon: Users, href: '/player', color: 'text-sky-600', activeBg: 'bg-sky-500/15', section: 'コミュニティ ＆ 戦績' },
+  { id: 'leaderboard', label: '順位表 ＆ 名簿', shortLabel: '順位・名簿', icon: Trophy, href: '/leaderboard', color: 'text-yellow-600', activeBg: 'bg-yellow-500/15', section: 'コミュニティ ＆ 戦績' },
   // ── 🎮 プレイ ＆ コーチ ──
   { id: 'coach', label: 'パーソナルコーチ', shortLabel: 'コーチ', icon: Sparkles, href: '/coach', color: 'text-amber-600', activeBg: 'bg-amber-500/15', section: 'プレイ ＆ コーチ' },
   { id: 'champions', label: 'チャンピオン攻略辞典', shortLabel: '辞典', icon: BookHeart, href: '/champions', color: 'text-[#c89b3c]', activeBg: 'bg-[#c89b3c]/15', section: 'プレイ ＆ コーチ' },
   { id: 'guide', label: '使い方 ＆ 更新情報', shortLabel: 'ガイド', icon: BookOpen, href: '/guide', color: 'text-emerald-600', activeBg: 'bg-emerald-500/15', section: 'プレイ ＆ コーチ' },
+  // ── ⚙️ システム ＆ 分析 ──
+  { id: 'dashboard', label: 'システム運用', shortLabel: '設定', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-stone-800', activeBg: 'bg-black/10', section: 'システム ＆ 分析' },
+  { id: 'analytics', label: 'note分析', shortLabel: '分析', icon: TrendingUp, href: '/admin/analytics', color: 'text-teal-600', activeBg: 'bg-teal-500/15', section: 'システム ＆ 分析' },
 ];
 
 const ADMIN_GENERAL_MENU_ITEMS: MenuItem[] = [
-  { id: 'mypage', label: 'マイページ / 希望レーン', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
-  { id: 'mentorship', label: '師弟自己紹介掲示板', shortLabel: '師弟掲示板', icon: HeartHandshake, href: '/mentorship', color: 'text-emerald-500', activeBg: 'bg-emerald-500/15' },
+  { id: 'mypage', label: 'マイページ / 師弟設定', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
   { id: 'balancer', label: 'チーム分け', shortLabel: 'チーム', icon: Swords, href: '/balancer', color: 'text-rose-600', activeBg: 'bg-rose-500/15' },
   { id: 'casino', label: '勝敗予想', shortLabel: 'カジノ', icon: Coins, href: '/casino', color: 'text-amber-600', activeBg: 'bg-amber-500/15' },
+  { id: 'leaderboard', label: '順位表 ＆ 名簿', shortLabel: '順位・名簿', icon: Trophy, href: '/leaderboard', color: 'text-yellow-600', activeBg: 'bg-yellow-500/15' },
   { id: 'history', label: '試合履歴', shortLabel: '履歴', icon: History, href: '/history', color: 'text-purple-600', activeBg: 'bg-purple-500/15' },
-  { id: 'leaderboard', label: '順位表', shortLabel: '順位', icon: Trophy, href: '/leaderboard', color: 'text-yellow-600', activeBg: 'bg-yellow-500/15' },
-  { id: 'synergy', label: 'チームシナジー', shortLabel: '相性', icon: HeartHandshake, href: '/synergy', color: 'text-fuchsia-600', activeBg: 'bg-fuchsia-500/15' },
-  { id: 'player', label: 'プレイヤー名簿', shortLabel: '名簿', icon: Users, href: '/player', color: 'text-indigo-600', activeBg: 'bg-indigo-500/15' },
   { id: 'guide', label: '使い方 ＆ 更新情報', shortLabel: 'ガイド', icon: BookOpen, href: '/guide', color: 'text-emerald-600', activeBg: 'bg-emerald-500/15' },
 ];
 

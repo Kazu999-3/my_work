@@ -1,14 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Spinner } from '../../components/Feedback';
 import Image from 'next/image';
 import { getChampIcon } from '../../lib/ddragonClient';
+import WinrateMatrixPanel from './WinrateMatrixPanel';
+import CoinsRankingPanel from './CoinsRankingPanel';
+import RosterPanel from './RosterPanel';
+import SynergyPanel from './SynergyPanel';
+import { Trophy, Activity, Info, Coins, Users, HeartHandshake, Sparkles, Sliders } from 'lucide-react';
 
-// ==========================================
-// Types
-// ==========================================
 type Role = 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP';
 const ROLES: Role[] = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
 
@@ -29,24 +32,38 @@ interface LeaderboardData {
   SUP: PlayerStats[];
 }
 
-import WinrateMatrixPanel from './WinrateMatrixPanel';
-import CoinsRankingPanel from './CoinsRankingPanel';
-import { Trophy, Activity, Info, Coins } from 'lucide-react';
+function LeaderboardContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams.get('tab') as any) || 'ranking';
 
-export default function LeaderboardPage() {
   const [data, setData] = useState<LeaderboardData>({
     TOP: [], JG: [], MID: [], ADC: [], SUP: []
   });
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'ranking' | 'winrate' | 'meta' | 'coins'>('ranking');
+  const [activeTab, setActiveTab] = useState<'ranking' | 'coins' | 'roster' | 'synergy' | 'meta'>(
+    ['ranking', 'coins', 'roster', 'synergy', 'meta'].includes(initialTab) ? initialTab : 'ranking'
+  );
 
-  // KTM内メタ統計(#80): チャンピオン別のピック数・勝率・平均KDA
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['ranking', 'coins', 'roster', 'synergy', 'meta'].includes(tabParam)) {
+      setActiveTab(tabParam as any);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (tab: 'ranking' | 'coins' | 'roster' | 'synergy' | 'meta') => {
+    setActiveTab(tab);
+    router.replace(`/leaderboard?tab=${tab}`, { scroll: false });
+  };
+
+  // メタ統計
   const [metaData, setMetaData] = useState<any[] | null>(null);
   const [metaLoading, setMetaLoading] = useState(false);
   const [metaMinGames, setMetaMinGames] = useState(2);
-  // メタ統計のソート機能(2026-08-08追加: ピック数順固定でソートできなかった要望に対応)
   const [metaSortKey, setMetaSortKey] = useState<'games' | 'winRate' | 'avgKda'>('games');
   const [metaSortDir, setMetaSortDir] = useState<'asc' | 'desc'>('desc');
+
   const toggleMetaSort = (key: 'games' | 'winRate' | 'avgKda') => {
     if (metaSortKey === key) {
       setMetaSortDir(d => d === 'desc' ? 'asc' : 'desc');
@@ -55,10 +72,12 @@ export default function LeaderboardPage() {
       setMetaSortDir('desc');
     }
   };
+
   const sortedMetaData = (rows: any[]) => {
     const sorted = [...rows].sort((a, b) => (a[metaSortKey] - b[metaSortKey]));
     return metaSortDir === 'desc' ? sorted.reverse() : sorted;
   };
+
   useEffect(() => {
     if (activeTab !== 'meta' || metaData !== null || metaLoading) return;
     (async () => {
@@ -76,8 +95,9 @@ export default function LeaderboardPage() {
       }
     })();
   }, [activeTab, metaData, metaLoading]);
+
   const [minGames, setMinGames] = useState<number>(1);
-  const [search, setSearch] = useState(''); // プレイヤー名検索(L-03)
+  const [search, setSearch] = useState('');
   const [sortMetric, setSortMetric] = useState<'mmr' | 'winRate' | 'games'>('mmr');
 
   const getSortedRows = (rows: PlayerStats[]) => {
@@ -87,6 +107,7 @@ export default function LeaderboardPage() {
       return b.mmr - a.mmr;
     });
   };
+
   const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   useEffect(() => {
@@ -117,277 +138,287 @@ export default function LeaderboardPage() {
 
   return (
     <div className="min-h-screen bg-background py-6 md:py-10 px-4 sm:px-6 lg:px-10 text-stone-800">
-      <div className="max-w-[1680px] w-full mx-auto space-y-4">
+      <div className="max-w-[1680px] w-full mx-auto space-y-5">
 
         {/* ヘッダー */}
         <div className="bg-white/80 backdrop-blur-sm border border-stone-200/90 rounded-2xl p-5 shadow-xs text-center">
           <h1 className="text-2xl md:text-3xl font-black text-stone-900 tracking-tight flex items-center justify-center gap-2">
-            <span className="text-amber-500">🏆</span> KTM 最強ランキング
+            <span className="text-amber-500">🏆</span> KTM 順位表 ＆ コミュニティ名簿
           </h1>
           <p className="text-xs text-stone-500 font-bold mt-1">
-            各ロールの頂点を目指せ👑 レーン別MMR ＆ 勝率ランキング
+            ロール別ランキング・🪙 コイン長者番付・名簿一覧・相性シミュレーター統合ハブ
           </p>
         </div>
 
         {/* タブナビゲーション */}
-        <div className="flex justify-center mb-6 px-2">
+        <div className="flex justify-center mb-4 px-2">
           <div className="inline-flex flex-wrap justify-center gap-1.5 bg-white/90 rounded-2xl p-1.5 border border-stone-200/90 shadow-2xs max-w-full">
             <button
-              onClick={() => setActiveTab('ranking')}
-              className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-black transition-all whitespace-nowrap cursor-pointer ${
+              onClick={() => handleTabChange('ranking')}
+              className={`flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all whitespace-nowrap cursor-pointer ${
                 activeTab === 'ranking'
                   ? 'bg-amber-600 text-white shadow-xs scale-102'
                   : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
               }`}
             >
-              <Trophy size={16} />
-              MMRランキング
+              <Trophy className="w-4 h-4" />
+              <span>ロール別順位</span>
             </button>
             <button
-              onClick={() => setActiveTab('coins')}
-              className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-black transition-all whitespace-nowrap cursor-pointer ${
+              onClick={() => handleTabChange('coins')}
+              className={`flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all whitespace-nowrap cursor-pointer ${
                 activeTab === 'coins'
-                  ? 'bg-amber-500 text-stone-950 shadow-xs scale-102 font-extrabold'
+                  ? 'bg-amber-600 text-white shadow-xs scale-102'
                   : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
               }`}
             >
-              <Coins size={16} className="text-amber-500" />
-              🪙 コイン長者番付
+              <Coins className="w-4 h-4 text-amber-500" />
+              <span>🪙 コイン番付</span>
             </button>
             <button
-              onClick={() => setActiveTab('winrate')}
-              className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-black transition-all whitespace-nowrap cursor-pointer ${
-                activeTab === 'winrate'
-                  ? 'bg-emerald-600 text-white shadow-xs scale-102'
+              onClick={() => handleTabChange('roster')}
+              className={`flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all whitespace-nowrap cursor-pointer ${
+                activeTab === 'roster'
+                  ? 'bg-amber-600 text-white shadow-xs scale-102'
                   : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
               }`}
             >
-              <Activity size={16} />
-              レーン別勝率
+              <Users className="w-4 h-4" />
+              <span>👥 名簿一覧</span>
             </button>
             <button
-              onClick={() => setActiveTab('meta')}
-              className={`flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-black transition-all whitespace-nowrap cursor-pointer ${
+              onClick={() => handleTabChange('synergy')}
+              className={`flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all whitespace-nowrap cursor-pointer ${
+                activeTab === 'synergy'
+                  ? 'bg-amber-600 text-white shadow-xs scale-102'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+              }`}
+            >
+              <HeartHandshake className="w-4 h-4" />
+              <span>🤝 相性分析</span>
+            </button>
+            <button
+              onClick={() => handleTabChange('meta')}
+              className={`flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all whitespace-nowrap cursor-pointer ${
                 activeTab === 'meta'
                   ? 'bg-amber-600 text-white shadow-xs scale-102'
                   : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
               }`}
             >
-              🏆 メタ統計
+              <Activity className="w-4 h-4" />
+              <span>📊 メタ統計</span>
             </button>
           </div>
         </div>
 
-        {activeTab === 'coins' ? (
-          <CoinsRankingPanel />
-        ) : activeTab === 'meta' ? (
-          /* KTM内メタ統計(#80) */
-          <div className="max-w-4xl mx-auto">
-            <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
-              <p className="text-sm text-stone-400 font-bold">KTMカスタム内のチャンピオン使用状況（ピック数順）</p>
-              <div className="flex items-center gap-2 bg-surface border border-border rounded-xl px-3 py-1.5">
-                <span className="text-xs text-stone-400 font-bold">最小試合数:</span>
-                <select value={metaMinGames} onChange={(e) => setMetaMinGames(Number(e.target.value))}
-                  className="bg-black/5 text-stone-900 text-xs font-bold rounded-lg border border-border px-2 py-1 focus:outline-none">
-                  <option value={1}>1+</option><option value={2}>2+</option><option value={3}>3+</option><option value={5}>5+</option>
-                </select>
+        {/* コイン長者番付タブ */}
+        {activeTab === 'coins' && <CoinsRankingPanel />}
+
+        {/* プレイヤー名簿タブ */}
+        {activeTab === 'roster' && <RosterPanel />}
+
+        {/* チーム相性タブ */}
+        {activeTab === 'synergy' && <SynergyPanel />}
+
+        {/* メタ統計タブ */}
+        {activeTab === 'meta' && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-white/90 p-4 rounded-2xl border border-stone-200/90 shadow-2xs">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-stone-600">最低ピック数:</span>
+                {[1, 2, 3, 5].map((cnt) => (
+                  <button
+                    key={cnt}
+                    onClick={() => setMetaMinGames(cnt)}
+                    className={`px-3 py-1 rounded-xl text-xs font-black transition cursor-pointer ${
+                      metaMinGames === cnt
+                        ? 'bg-amber-600 text-white'
+                        : 'bg-stone-100 hover:bg-stone-200 text-stone-600'
+                    }`}
+                  >
+                    {cnt}回以上
+                  </button>
+                ))}
               </div>
+              <span className="text-xs text-stone-500 font-bold">
+                ※ KTMカスタム内での実戦集計データ
+              </span>
             </div>
-            {metaLoading || metaData === null ? (
-              <Spinner label="メタ統計を集計中..." />
+
+            {metaLoading ? (
+              <div className="py-12 text-center text-xs font-bold text-stone-500 animate-pulse">
+                メタ統計を集計中...
+              </div>
+            ) : !metaData || metaData.length === 0 ? (
+              <div className="py-12 text-center text-xs font-bold text-stone-400 bg-white rounded-2xl border border-stone-200">
+                集計対象の試合データがありません
+              </div>
             ) : (
-              <div className="bg-surface rounded-2xl border border-border overflow-hidden">
-                <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 border-b border-border text-[10px] font-bold text-stone-500">
-                  <span className="w-5 sm:w-6 shrink-0" />
-                  <span className="w-7 sm:w-8 shrink-0" />
-                  <span className="flex-1 min-w-0">チャンピオン</span>
-                  <button onClick={() => toggleMetaSort('games')}
-                    className={`w-9 sm:w-16 text-right shrink-0 hover:text-stone-900 transition ${metaSortKey === 'games' ? 'text-amber-600' : ''}`}>
-                    試合数{metaSortKey === 'games' ? (metaSortDir === 'desc' ? ' ↓' : ' ↑') : ''}
-                  </button>
-                  <button onClick={() => toggleMetaSort('winRate')}
-                    className={`w-10 sm:w-14 text-right shrink-0 hover:text-stone-900 transition ${metaSortKey === 'winRate' ? 'text-amber-600' : ''}`}>
-                    勝率{metaSortKey === 'winRate' ? (metaSortDir === 'desc' ? ' ↓' : ' ↑') : ''}
-                  </button>
-                  <button onClick={() => toggleMetaSort('avgKda')}
-                    className={`hidden sm:block w-20 text-right shrink-0 hover:text-stone-900 transition ${metaSortKey === 'avgKda' ? 'text-amber-600' : ''}`}>
-                    KDA{metaSortKey === 'avgKda' ? (metaSortDir === 'desc' ? ' ↓' : ' ↑') : ''}
-                  </button>
-                </div>
-                <div className="divide-y divide-stone-800">
-                  {sortedMetaData(metaData.filter(m => m.games >= metaMinGames)).map((m, idx) => (
-                    <div key={m.name} className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 hover:bg-black/5">
-                      <span className="w-5 sm:w-6 text-center text-xs font-black text-stone-500 shrink-0">{idx + 1}</span>
-                      <Image src={getChampIcon(m.name)} alt={m.name} width={32} height={32} className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-border shrink-0"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                      <span className="flex-1 min-w-0 font-bold text-stone-900 text-sm truncate">{m.name}</span>
-                      <span className="text-xs text-stone-400 w-9 sm:w-16 text-right shrink-0">{m.games}戦</span>
-                      <span className={`text-sm font-black w-10 sm:w-14 text-right shrink-0 ${m.winRate >= 55 ? 'text-emerald-700' : m.winRate <= 45 ? 'text-rose-700' : 'text-stone-800'}`}>{m.winRate}%</span>
-                      <span className="hidden sm:block text-xs font-mono text-stone-400 w-20 text-right shrink-0">KDA {m.avgKda}</span>
-                    </div>
-                  ))}
-                  {metaData.filter(m => m.games >= metaMinGames).length === 0 && (
-                    <p className="text-center text-stone-500 text-sm py-10">条件に合うチャンピオンがいません</p>
-                  )}
+              <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-xs">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-stone-100/80 text-stone-700 border-b border-stone-200 font-black">
+                        <th className="p-3">チャンピオン</th>
+                        <th className="p-3 cursor-pointer hover:text-amber-700" onClick={() => toggleMetaSort('games')}>
+                          ピック数 {metaSortKey === 'games' && (metaSortDir === 'desc' ? '▼' : '▲')}
+                        </th>
+                        <th className="p-3 cursor-pointer hover:text-amber-700" onClick={() => toggleMetaSort('winRate')}>
+                          勝率 {metaSortKey === 'winRate' && (metaSortDir === 'desc' ? '▼' : '▲')}
+                        </th>
+                        <th className="p-3 cursor-pointer hover:text-amber-700" onClick={() => toggleMetaSort('avgKda')}>
+                          平均KDA {metaSortKey === 'avgKda' && (metaSortDir === 'desc' ? '▼' : '▲')}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-stone-100 text-stone-700">
+                      {sortedMetaData(metaData.filter(r => r.games >= metaMinGames)).map((row) => (
+                        <tr key={row.champion} className="hover:bg-stone-50 transition">
+                          <td className="p-3 font-black text-stone-900 flex items-center gap-2">
+                            <img
+                              src={getChampIcon(row.champion)}
+                              alt={row.champion}
+                              className="w-7 h-7 rounded-lg border border-stone-200"
+                            />
+                            <span>{row.champion}</span>
+                          </td>
+                          <td className="p-3 font-bold">{row.games}試合</td>
+                          <td className="p-3 font-black">
+                            <span className={row.winRate >= 60 ? 'text-emerald-600' : row.winRate <= 40 ? 'text-rose-600' : 'text-stone-800'}>
+                              {row.winRate}%
+                            </span>
+                          </td>
+                          <td className="p-3 font-mono font-bold">{row.avgKda}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )}
           </div>
-        ) : activeTab === 'winrate' ? (
-          <WinrateMatrixPanel />
-        ) : (
-          <>
-            <div className="bg-amber-100 border border-amber-300 rounded-lg p-4 mb-8 flex items-start gap-3 max-w-3xl mx-auto">
-              <Info className="h-5 w-5 text-amber-700 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-amber-700">
-                <p className="font-bold text-amber-700 mb-1">ランキングの集計仕様について</p>
-                <p>このリーダーボードは現在の「希望レーン」ではなく、<strong>過去の試合でそのレーンを担当した実績</strong>に基づいて自動集計されています。試合数フィルターを使用することで、未出場者や出場回数の少ないプレイヤーを除外できます。</p>
-              </div>
-            </div>
+        )}
 
-            {/* 試合数フィルター・検索コントロール */}
-            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-6 sm:mb-8">
-              <div className="flex items-center gap-2 bg-surface border border-border rounded-xl px-3 sm:px-4 py-2 text-xs">
-                <span className="text-stone-400 font-bold">最小試合:</span>
-                <select
-                  value={minGames}
-                  onChange={(e) => setMinGames(Number(e.target.value))}
-                  className="bg-black/5 text-stone-900 text-xs font-bold rounded-lg border border-border px-2 py-1 focus:outline-none focus:border-amber-500"
-                >
-                  <option value={1}>1試合以上 (全実績者)</option>
-                  <option value={3}>3試合以上</option>
-                  <option value={5}>5試合以上</option>
-                  <option value={10}>10試合以上</option>
-                </select>
-              </div>
-              <div className="flex items-center gap-2 bg-surface border border-border rounded-xl px-3 sm:px-4 py-2 flex-1 sm:flex-initial min-w-[200px]">
-                <span className="text-xs text-stone-400 font-bold">🔍</span>
-                <input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="プレイヤー名検索..."
-                  className="bg-black/5 text-stone-900 text-xs font-bold rounded-lg border border-border px-2 py-1 focus:outline-none focus:border-amber-500 w-full sm:w-40"
-                />
-                {search && <button onClick={() => setSearch('')} className="text-stone-500 hover:text-stone-900 text-xs">✕</button>}
-              </div>
-
-              {/* 並び替えソートボタン群 */}
-              <div className="flex items-center gap-1 bg-surface border border-border rounded-xl px-2.5 sm:px-3 py-1.5 text-xs font-bold flex-wrap">
-                <span className="text-stone-400 mr-1 text-[11px]">並替:</span>
-                {[
-                  { id: 'mmr', label: '🏆 MMR' },
-                  { id: 'winRate', label: '📈 勝率' },
-                  { id: 'games', label: '⚔️ 試合数' },
-                ].map((s) => (
+        {/* ロール別ランキングタブ */}
+        {activeTab === 'ranking' && (
+          <div className="space-y-4">
+            {/* コントロールバー */}
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-white/90 p-4 rounded-2xl border border-stone-200/90 shadow-2xs">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-stone-600">最低試合数:</span>
+                {[1, 3, 5, 10].map((cnt) => (
                   <button
-                    key={s.id}
-                    onClick={() => setSortMetric(s.id as any)}
-                    className={`px-2 py-1 rounded-lg text-[11px] sm:text-xs font-bold transition ${
-                      sortMetric === s.id
-                        ? 'bg-amber-600 text-stone-900 shadow'
-                        : 'text-stone-400 hover:text-stone-900 hover:bg-black/5'
+                    key={cnt}
+                    onClick={() => setMinGames(cnt)}
+                    className={`px-3 py-1 rounded-xl text-xs font-black transition cursor-pointer ${
+                      minGames === cnt
+                        ? 'bg-amber-600 text-white'
+                        : 'bg-stone-100 hover:bg-stone-200 text-stone-600'
                     }`}
                   >
-                    {s.label}
+                    {cnt}戦以上
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-stone-600">ソート:</span>
+                {(['mmr', 'winRate', 'games'] as const).map((metric) => (
+                  <button
+                    key={metric}
+                    onClick={() => setSortMetric(metric)}
+                    className={`px-3 py-1 rounded-xl text-xs font-black transition cursor-pointer ${
+                      sortMetric === metric
+                        ? 'bg-stone-800 text-white'
+                        : 'bg-stone-100 hover:bg-stone-200 text-stone-600'
+                    }`}
+                  >
+                    {metric === 'mmr' ? 'MMR順' : metric === 'winRate' ? '勝率順' : '試合数順'}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-              {ROLES.map(role => {
-                const rows = (data[role] || []).filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()));
-                const sortedRows = getSortedRows(rows);
+            {/* 5レーングリッド */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+              {ROLES.map((role) => {
+                const rows = getSortedRows(data[role] || []);
                 return (
-                <div key={role} className="bg-surface rounded-2xl shadow-xl border border-border overflow-hidden">
-                  <div className="bg-black/5 px-4 py-3 border-b border-border">
-                    <h2 className="text-lg font-bold text-stone-900 text-center flex items-center justify-center gap-2">
-                      <span className="text-xl">
-                        {role === 'TOP' && '🪓'}
-                        {role === 'JG' && '🌲'}
-                        {role === 'MID' && '🔥'}
-                        {role === 'ADC' && '🏹'}
-                        {role === 'SUP' && '🛡️'}
+                  <div
+                    key={role}
+                    className="bg-white rounded-2xl border border-stone-200/90 overflow-hidden shadow-xs flex flex-col"
+                  >
+                    <div className="bg-stone-50 border-b border-stone-200 p-3 flex items-center justify-between">
+                      <span className="font-black text-xs text-stone-900 tracking-wider uppercase">
+                        {role}
                       </span>
-                      {role}
-                    </h2>
-                  </div>
-                  
-                  <div className="divide-y divide-stone-800">
-                    {sortedRows.length === 0 ? (
-                      <div className="p-8 text-center text-stone-500 text-sm">
-                        {search ? '該当なし' : 'データがありません'}
-                      </div>
-                    ) : (
-                      sortedRows.map((player, idx) => (
-                        <div 
-                          key={player.name} 
-                          className="p-3 sm:p-4 hover:bg-stone-100/60 transition-colors flex items-center justify-between relative group gap-2"
+                      <span className="text-[10px] font-bold text-stone-500">
+                        {rows.length}名
+                      </span>
+                    </div>
+
+                    <div className="divide-y divide-stone-100 flex-1 overflow-y-auto max-h-[600px]">
+                      {rows.map((player, idx) => (
+                        <Link
+                          key={player.name + idx}
+                          href={`/player/${encodeURIComponent(player.name)}`}
+                          className="p-3 flex items-center justify-between gap-2 hover:bg-stone-50 transition group"
                         >
-                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                            <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-black flex-shrink-0
-                              ${idx === 0 ? 'bg-amber-400 text-amber-950 shadow-xs' : 
-                                idx === 1 ? 'bg-stone-300 text-stone-800' : 
-                                idx === 2 ? 'bg-amber-700 text-white' : 
-                                'bg-stone-200/80 text-stone-600'}`}>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${
+                              idx === 0 ? 'bg-amber-500 text-white' :
+                              idx === 1 ? 'bg-stone-400 text-white' :
+                              idx === 2 ? 'bg-amber-700 text-white' : 'bg-stone-100 text-stone-600'
+                            }`}>
                               {idx + 1}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <Link 
-                                href={`/player/${encodeURIComponent(player.discordId || player.name)}`} 
-                                className="font-extrabold text-stone-900 hover:text-amber-600 truncate block transition text-xs cursor-pointer" 
-                                title={`${player.name} の詳細を見る`}
-                              >
+                            </span>
+                            <div className="min-w-0">
+                              <div className="text-xs font-black text-stone-900 truncate group-hover:text-amber-800 transition">
                                 {player.name}
-                              </Link>
-                              <div className="text-[10px] text-stone-500 font-bold whitespace-nowrap">
-                                {player.games}戦 (<span className={parseFloat(player.winRate) >= 60 ? 'text-emerald-700 font-extrabold' : parseFloat(player.winRate) <= 45 ? 'text-rose-700' : 'text-stone-700'}>{player.winRate}%</span>)
                               </div>
-                            </div>
-                          </div>
-                          
-                          <div className="text-right shrink-0">
-                            <div 
-                              className={`text-[9px] sm:text-[10px] font-extrabold px-1.5 sm:px-2 py-0.5 rounded-md border border-current/20 inline-block whitespace-nowrap mb-0.5 ${player.rankBadge.bg} ${player.rankBadge.color}`}
-                            >
-                              {player.rankBadge.name}
-                            </div>
-                            <div className="text-xs font-black text-stone-800 whitespace-nowrap">
-                              {player.mmr.toLocaleString()} <span className="text-[9px] font-bold text-stone-400">MMR</span>
+                              <div className="text-[10px] text-stone-500 font-medium">
+                                {player.games}戦 {player.winRate}%
+                              </div>
                             </div>
                           </div>
 
-                          {/* クイックカルテ (ホバーポップオーバー) */}
-                          <div className="hidden group-hover:block absolute z-30 bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 p-3 bg-white border border-stone-200 rounded-2xl shadow-xl pointer-events-none text-left animate-in fade-in">
-                            <div className="text-xs font-extrabold text-stone-900 mb-1 flex items-center justify-between">
-                              <span>{player.name}</span>
-                              <span className="text-[10px] text-stone-400">{role} 実績</span>
+                          <div className="text-right shrink-0">
+                            <div className="text-xs font-black font-mono text-amber-700">
+                              {player.mmr}
                             </div>
-                            <div className="grid grid-cols-2 gap-1.5 text-center text-[10px] bg-stone-50 p-2 rounded-xl border border-stone-200/60 mb-1.5">
-                              <div>
-                                <span className="text-stone-400 block">勝率</span>
-                                <strong className="text-stone-800">{player.winRate}%</strong>
-                              </div>
-                              <div>
-                                <span className="text-stone-400 block">試合数</span>
-                                <strong className="text-stone-800">{player.games}戦</strong>
-                              </div>
-                            </div>
-                            <div className="text-[10px] text-stone-500 text-center font-bold">
-                              タップで個人カルテへ移動 ➔
+                            <div className="text-[9px] font-bold text-stone-400">
+                              {player.rankBadge?.name || 'UNRANKED'}
                             </div>
                           </div>
+                        </Link>
+                      ))}
+
+                      {rows.length === 0 && (
+                        <div className="p-8 text-center text-stone-400 text-xs font-bold">
+                          対象データなし
                         </div>
-                      ))
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
                 );
               })}
             </div>
-          </>
+          </div>
         )}
+
       </div>
     </div>
+  );
+}
+
+export default function LeaderboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Spinner label="リーダーボードを読み込み中..." />
+      </div>
+    }>
+      <LeaderboardContent />
+    </Suspense>
   );
 }
