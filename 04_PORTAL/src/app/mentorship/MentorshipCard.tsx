@@ -14,6 +14,7 @@ interface MentorshipCardProps {
   onDelete?: (profileId: string) => void;
   matchScore?: number;
   matchReason?: string;
+  isPendingSent?: boolean;
 }
 
 const LANE_ICONS: Record<string, string> = {
@@ -32,6 +33,7 @@ export function MentorshipCard({
   onDelete,
   matchScore,
   matchReason,
+  isPendingSent,
 }: MentorshipCardProps) {
   const isMentor = profile.role_type === 'MENTOR';
   const rankKey = (profile.current_rank || 'UNRANKED').toUpperCase().split(' ')[0];
@@ -226,7 +228,13 @@ export function MentorshipCard({
         {isMine ? (
           <span className="text-xs text-stone-500 font-bold">（あなたのカード）</span>
         ) : profile.status === 'MATCHED' ? (
-          <span className="text-xs text-purple-700 font-bold">ペア結成中</span>
+          <span className="text-xs text-purple-700 font-bold bg-purple-50 px-2.5 py-1 rounded-xl border border-purple-200">
+            🤝 ペア結成中
+          </span>
+        ) : isPendingSent ? (
+          <span className="text-xs text-amber-800 font-bold bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 flex items-center gap-1">
+            ⏳ 申請中（返答待ち）
+          </span>
         ) : (
           <button
             onClick={() => onOffer(profile)}

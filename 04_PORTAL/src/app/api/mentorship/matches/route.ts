@@ -6,29 +6,59 @@ import { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } fro
 export const dynamic = 'force-dynamic';
 
 /**
- * GET: 成立済みペア一覧の取得
+ * GET: 成立済みペア一覧 ＆ ログインユーザーの申請一覧（受信/送信）の取得
  */
 export async function GET() {
   try {
-    const { data: matches, error } = await supabase
+    const session = await getAuthSession();
+    const myDiscordId = session?.discordId;
+
+    // 1. 成立済みペア一覧 (ACTIVE)
+    const { data: rawMatches } = await supabase
       .from('mentorship_matches')
       .select(`
         *,
         mentor:mentorship_profiles!mentorship_matches_mentor_profile_id_fkey(*),
         pupil:mentorship_profiles!mentorship_matches_pupil_profile_id_fkey(*)
       `)
+      .eq('status', 'ACTIVE')
       .order('started_at', { ascending: false });
 
-    if (error) {
-      // フォールバック
-      const { data: rawMatches } = await supabase
+    // 2. ログインユーザー宛の受信申請 (PENDING)
+    let pendingReceived: any[] = [];
+    let pendingSent: any[] = [];
+
+    if (myDiscordId) {
+      const { data: received } = await supabase
         .from('mentorship_matches')
-        .select('*')
-        .order('started_at', { ascending: false });
-      return NextResponse.json({ ok: true, matches: rawMatches || [] });
+        .select(`
+          *,
+          mentor:mentorship_profiles!mentorship_matches_mentor_profile_id_fkey(*),
+          pupil:mentorship_profiles!mentorship_matches_pupil_profile_id_fkey(*)
+        `)
+        .eq('status', 'PENDING')
+        .or(`mentor_discord_id.eq.${myDiscordId},pupil_discord_id.eq.${myDiscordId}`);
+
+      if (received) {
+        // 自分が受信者か送信者かを判定
+        // notes 内に applicant_id があるか、または mentor/pupil で判定
+        pendingReceived = received.filter((m: any) => {
+          const isSender = (m.notes?.includes(`[FROM:${myDiscordId}]`));
+          return !isSender;
+        });
+        pendingSent = received.filter((m: any) => {
+          const isSender = (m.notes?.includes(`[FROM:${myDiscordId}]`));
+          return isSender;
+        });
+      }
     }
 
-    return NextResponse.json({ ok: true, matches: matches || [] });
+    return NextResponse.json({
+      ok: true,
+      matches: rawMatches || [],
+      pendingReceived,
+      pendingSent,
+    });
   } catch (err: any) {
     console.error('[mentorship/matches] GET error:', err);
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
@@ -36,7 +66,7 @@ export async function GET() {
 }
 
 /**
- * POST: 師弟コンビ成立（マッチング成立）
+ * POST: 師弟マッチング操作 (APPLY: 申請 / ACCEPT: 承諾 / REJECT: 辞退)
  */
 export async function POST(request: Request) {
   try {
@@ -49,8 +79,84 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { targetProfileId, message = '' } = body;
+    const { action = 'APPLY', targetProfileId, matchId, message = '' } = body;
 
+    // ==========================================
+    // 1. 申請承諾 (ACCEPT)
+    // ==========================================
+    if (action === 'ACCEPT') {
+      if (!matchId) {
+        return NextResponse.json({ ok: false, error: '承諾するマッチIDが必要です。' }, { status: 400 });
+      }
+
+      // マッチ情報を取得
+      const { data: match, error: mErr } = await supabase
+        .from('mentorship_matches')
+        .select('*')
+        .eq('id', matchId)
+        .single();
+
+      if (mErr || !match) {
+        return NextResponse.json({ ok: false, error: '申請が見つかりません。' }, { status: 404 });
+      }
+
+      // ステータスを ACTIVE に更新
+      await supabase
+        .from('mentorship_matches')
+        .update({
+          status: 'ACTIVE',
+          started_at: new Date().toISOString(),
+        })
+        .eq('id', matchId);
+
+      // 両プロフィールのステータスを MATCHED に更新
+      await supabase
+        .from('mentorship_profiles')
+        .update({ status: 'MATCHED' })
+        .in('id', [match.mentor_profile_id, match.pupil_profile_id]);
+
+      // 両者に成立ボーナス (+300コイン) を付与
+      try {
+        const mentorPlayer = await findOrCreatePlayer({ discordId: match.mentor_discord_id });
+        const pupilPlayer = await findOrCreatePlayer({ discordId: match.pupil_discord_id });
+        if (mentorPlayer) {
+          await updatePlayerCoinsAndInventory({
+            player: mentorPlayer,
+            newCoins: getPlayerCoins(mentorPlayer) + 300,
+          });
+        }
+        if (pupilPlayer) {
+          await updatePlayerCoinsAndInventory({
+            player: pupilPlayer,
+            newCoins: getPlayerCoins(pupilPlayer) + 300,
+          });
+        }
+      } catch (coinErr) {
+        console.warn('[mentorship/matches] Coin reward warning:', coinErr);
+      }
+
+      return NextResponse.json({ ok: true, message: '師弟ペアが正式に成立しました！(+300コイン付与)' });
+    }
+
+    // ==========================================
+    // 2. 申請辞退 (REJECT)
+    // ==========================================
+    if (action === 'REJECT') {
+      if (!matchId) {
+        return NextResponse.json({ ok: false, error: '辞退するマッチIDが必要です。' }, { status: 400 });
+      }
+
+      await supabase
+        .from('mentorship_matches')
+        .update({ status: 'REJECTED' })
+        .eq('id', matchId);
+
+      return NextResponse.json({ ok: true, message: '申請を見送りました。' });
+    }
+
+    // ==========================================
+    // 3. 申請送信 (APPLY)
+    // ==========================================
     if (!targetProfileId) {
       return NextResponse.json({ ok: false, error: '相手のプロフィールIDが必要です。' }, { status: 400 });
     }
@@ -64,6 +170,10 @@ export async function POST(request: Request) {
 
     if (tErr || !targetProfile) {
       return NextResponse.json({ ok: false, error: '対象のプロフィールが見つかりません。' }, { status: 404 });
+    }
+
+    if (targetProfile.discord_id === session.discordId) {
+      return NextResponse.json({ ok: false, error: '自分自身のカードには申請できません。' }, { status: 400 });
     }
 
     // 自分のプロフィールを取得（相手と逆のロール）
@@ -101,7 +211,26 @@ export async function POST(request: Request) {
     const mentorDiscord = targetProfile.role_type === 'MENTOR' ? targetProfile.discord_id : session.discordId;
     const pupilDiscord = targetProfile.role_type === 'PUPIL' ? targetProfile.discord_id : session.discordId;
 
-    // マッチを作成
+    // 既に PENDING または ACTIVE な関係があるかチェック
+    const { data: existingMatch } = await supabase
+      .from('mentorship_matches')
+      .select('*')
+      .eq('mentor_profile_id', mentorId)
+      .eq('pupil_profile_id', pupilId)
+      .in('status', ['PENDING', 'ACTIVE'])
+      .maybeSingle();
+
+    if (existingMatch) {
+      return NextResponse.json(
+        { ok: false, error: '既に申請中またはペアが成立しています。' },
+        { status: 400 }
+      );
+    }
+
+    // 申請（PENDING）を作成
+    const cleanMsg = message.trim() || 'よろしくお願いします！';
+    const notesPayload = `[FROM:${session.discordId}] ${cleanMsg}`;
+
     const { data: match, error: mErr } = await supabase
       .from('mentorship_matches')
       .insert({
@@ -109,41 +238,19 @@ export async function POST(request: Request) {
         pupil_profile_id: pupilId,
         mentor_discord_id: mentorDiscord,
         pupil_discord_id: pupilDiscord,
-        status: 'ACTIVE',
-        notes: message || 'Webポータルからの申請により成立',
+        status: 'PENDING',
+        notes: notesPayload,
       })
       .select()
       .single();
 
     if (mErr) throw mErr;
 
-    // プロフィールのステータスを MATCHED に更新
-    await supabase
-      .from('mentorship_profiles')
-      .update({ status: 'MATCHED' })
-      .in('id', [mentorId, pupilId]);
-
-    // 両者にボーナスコイン (+300コイン) を付与
-    try {
-      const mentorPlayer = await findOrCreatePlayer({ discordId: mentorDiscord });
-      const pupilPlayer = await findOrCreatePlayer({ discordId: pupilDiscord });
-      if (mentorPlayer) {
-        await updatePlayerCoinsAndInventory({
-          player: mentorPlayer,
-          newCoins: getPlayerCoins(mentorPlayer) + 300,
-        });
-      }
-      if (pupilPlayer) {
-        await updatePlayerCoinsAndInventory({
-          player: pupilPlayer,
-          newCoins: getPlayerCoins(pupilPlayer) + 300,
-        });
-      }
-    } catch (coinErr) {
-      console.warn('[mentorship/matches] Coin reward warning:', coinErr);
-    }
-
-    return NextResponse.json({ ok: true, match });
+    return NextResponse.json({
+      ok: true,
+      message: `${targetProfile.player_name} さんへ申請を送信しました！相手が承諾すると正式にペア結成となります。`,
+      match,
+    });
   } catch (err: any) {
     console.error('[mentorship/matches] POST error:', err);
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
