@@ -12,6 +12,11 @@ interface MentorshipProfileModalProps {
   onClose: () => void;
   onSave: (profileData: Partial<MentorshipProfile>) => Promise<void>;
   initialProfile?: MentorshipProfile | null;
+  defaultRole?: 'PUPIL' | 'MENTOR';
+  myProfiles?: {
+    PUPIL?: MentorshipProfile | null;
+    MENTOR?: MentorshipProfile | null;
+  };
 }
 
 const AVAILABLE_LANES = [
@@ -120,10 +125,12 @@ export function MentorshipProfileModal({
   onClose,
   onSave,
   initialProfile,
+  defaultRole = 'PUPIL',
+  myProfiles,
 }: MentorshipProfileModalProps) {
   const { user } = useCurrentUser();
 
-  const [roleType, setRoleType] = useState<'PUPIL' | 'MENTOR'>('PUPIL');
+  const [roleType, setRoleType] = useState<'PUPIL' | 'MENTOR'>(defaultRole);
   const [lanes, setLanes] = useState<string[]>([]);
   const [selectedChampions, setSelectedChampions] = useState<string[]>([]);
   const [champSearchQuery, setChampSearchQuery] = useState('');
@@ -140,32 +147,50 @@ export function MentorshipProfileModal({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // 初期値のロード（ログインユーザー情報があれば自動補完）
-  useEffect(() => {
-    if (initialProfile) {
-      setRoleType(initialProfile.role_type || 'PUPIL');
-      setLanes(initialProfile.lanes || []);
-      setSelectedChampions(initialProfile.champions || []);
-      setCurrentRank(initialProfile.current_rank || 'SILVER');
-      setTargetRank(initialProfile.target_rank || 'GOLD');
-      setSelectedTags(initialProfile.tags || []);
-      setBio(initialProfile.bio || '');
-      setActiveHours(initialProfile.active_hours || '');
+  // プロフィールデータをフォーム状態に反映するヘルパー
+  const loadProfileData = (targetRole: 'PUPIL' | 'MENTOR', profile?: MentorshipProfile | null) => {
+    setRoleType(targetRole);
+    if (profile) {
+      setLanes(profile.lanes || []);
+      setSelectedChampions(profile.champions || []);
+      setCurrentRank(profile.current_rank || 'SILVER');
+      setTargetRank(profile.target_rank || (targetRole === 'PUPIL' ? 'GOLD' : '全ランク・初心者歓迎'));
+      setSelectedTags(profile.tags || []);
+      setBio(profile.bio || '');
+      setActiveHours(profile.active_hours || '');
     } else {
       // 新規作成時の自動プリセット
       const userRank = user?.rank ? user.rank.toUpperCase().split(' ')[0] : 'SILVER';
       const userLane = (user as any)?.role && (user as any).role !== 'ALL' ? [(user as any).role] : ['MID'];
       
-      setRoleType('PUPIL');
       setLanes(userLane);
       setSelectedChampions([]);
       setCurrentRank(RANKS.includes(userRank) ? userRank : 'SILVER');
-      setTargetRank('GOLD');
-      setSelectedTags(['VC可能', '画面共有ライブ指導', 'レーン戦トレード']);
+      setTargetRank(targetRole === 'PUPIL' ? 'GOLD' : '全ランク・初心者歓迎');
+      setSelectedTags(
+        targetRole === 'PUPIL'
+          ? ['VC可能', '画面共有ライブ指導', 'トレード・キルライン見極め']
+          : ['VC指導対応', '優しく丁寧に教えます', '画面共有ライブコーチング']
+      );
       setBio('');
       setActiveHours('平日 21:00〜24:00 / 休日');
     }
-  }, [initialProfile, isOpen, user]);
+  };
+
+  // 初期値のロード
+  useEffect(() => {
+    if (!isOpen) return;
+    const targetRole = initialProfile?.role_type || defaultRole;
+    const targetProf = initialProfile || (myProfiles ? myProfiles[targetRole] : null);
+    loadProfileData(targetRole, targetProf);
+  }, [initialProfile, isOpen, defaultRole]);
+
+  // 役割（弟子 ⇄ 師匠）を切り替えたときの連動
+  const handleRoleChange = (newRole: 'PUPIL' | 'MENTOR') => {
+    if (newRole === roleType) return;
+    const existing = myProfiles ? myProfiles[newRole] : null;
+    loadProfileData(newRole, existing);
+  };
 
   // チャンピオン検索のフィルタリング (日本語名 / 英語名 / 読み)
   const filteredChampions = ALL_CHAMPIONS.filter((id) => {
@@ -433,7 +458,7 @@ export function MentorshipProfileModal({
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
-                    onClick={() => setRoleType('PUPIL')}
+                    onClick={() => handleRoleChange('PUPIL')}
                     className={`p-3.5 rounded-2xl border text-left transition relative overflow-hidden cursor-pointer ${
                       roleType === 'PUPIL'
                         ? 'bg-emerald-50 border-emerald-500 text-emerald-950 ring-2 ring-emerald-500/30 shadow-md'
@@ -453,7 +478,7 @@ export function MentorshipProfileModal({
 
                   <button
                     type="button"
-                    onClick={() => setRoleType('MENTOR')}
+                    onClick={() => handleRoleChange('MENTOR')}
                     className={`p-3.5 rounded-2xl border text-left transition relative overflow-hidden cursor-pointer ${
                       roleType === 'MENTOR'
                         ? 'bg-amber-50 border-amber-500 text-amber-950 ring-2 ring-amber-500/30 shadow-md'

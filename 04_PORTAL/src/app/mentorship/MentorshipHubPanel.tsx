@@ -365,11 +365,15 @@ export default function MentorshipHubPanel() {
   };
 
 
-  const myProfile = profiles.find((p) => p.discord_id === myDiscordId);
+  // 自分の弟子カード & 師匠カードの個別取得（1ユーザーが両方持てる）
+  const myPupilProfile = profiles.find((p) => p.discord_id === myDiscordId && p.role_type === 'PUPIL');
+  const myMentorProfile = profiles.find((p) => p.discord_id === myDiscordId && p.role_type === 'MENTOR');
+  const currentTabMyProfile = activeTab === 'PUPIL' ? myPupilProfile : activeTab === 'MENTOR' ? myMentorProfile : (myPupilProfile || myMentorProfile);
 
-  // 🎯 AI相性スコアの算出ロジック
+  // 🎯 AI相性スコアの算出ロジック（現在のタブのプロフィールを基準に算出）
   const calculateMatchScore = (target: MentorshipProfile): { score: number; reason: string } => {
-    if (!myProfile || target.discord_id === myProfile.discord_id) {
+    const baseMyProfile = target.role_type === 'MENTOR' ? myPupilProfile : myMentorProfile;
+    if (!baseMyProfile || target.discord_id === baseMyProfile.discord_id) {
       return { score: 0, reason: '' };
     }
 
@@ -377,22 +381,22 @@ export default function MentorshipHubPanel() {
     const reasons: string[] = [];
 
     // 1. 役割の補完性 (弟子×師匠)
-    if (myProfile.role_type !== target.role_type) {
+    if (baseMyProfile.role_type !== target.role_type) {
       score += 20;
     }
 
     // 2. レーン適合度
-    const sharedLanes = (myProfile.lanes || []).filter((l) => (target.lanes || []).includes(l));
+    const sharedLanes = (baseMyProfile.lanes || []).filter((l) => (target.lanes || []).includes(l));
     if (sharedLanes.length > 0) {
       score += 20;
       reasons.push(`${sharedLanes.join('/')}専`);
     } else {
       // BOT x SUP や MID x JG などのシナジー
       const isDuoSynergy =
-        (myProfile.lanes?.includes('BOT') && target.lanes?.includes('SUPPORT')) ||
-        (myProfile.lanes?.includes('SUPPORT') && target.lanes?.includes('BOT')) ||
-        (myProfile.lanes?.includes('MID') && target.lanes?.includes('JUNGLE')) ||
-        (myProfile.lanes?.includes('JUNGLE') && target.lanes?.includes('MID'));
+        (baseMyProfile.lanes?.includes('BOT') && target.lanes?.includes('SUPPORT')) ||
+        (baseMyProfile.lanes?.includes('SUPPORT') && target.lanes?.includes('BOT')) ||
+        (baseMyProfile.lanes?.includes('MID') && target.lanes?.includes('JUNGLE')) ||
+        (baseMyProfile.lanes?.includes('JUNGLE') && target.lanes?.includes('MID'));
       if (isDuoSynergy) {
         score += 15;
         reasons.push('相性抜群のレーンシナジー');
@@ -400,14 +404,14 @@ export default function MentorshipHubPanel() {
     }
 
     // 3. 得意チャンピオンの共通性
-    const sharedChamps = (myProfile.champions || []).filter((c) => (target.champions || []).includes(c));
+    const sharedChamps = (baseMyProfile.champions || []).filter((c) => (target.champions || []).includes(c));
     if (sharedChamps.length > 0) {
       score += 10;
       reasons.push('共通チャンプあり');
     }
 
     // 4. 指導・学習スタイルのタグ共通性
-    const sharedTags = (myProfile.tags || []).filter((t) => (target.tags || []).includes(t));
+    const sharedTags = (baseMyProfile.tags || []).filter((t) => (target.tags || []).includes(t));
     if (sharedTags.length > 0) {
       score += Math.min(sharedTags.length * 4, 12);
       if (reasons.length < 2) reasons.push(sharedTags[0]);
@@ -434,9 +438,10 @@ export default function MentorshipHubPanel() {
   });
 
   // おすすめピックアップ（相性スコア上位2名）
-  const recommendedProfiles = myProfile
+  const baseProfileForRecommendation = activeTab === 'PUPIL' ? myPupilProfile : activeTab === 'MENTOR' ? myMentorProfile : null;
+  const recommendedProfiles = baseProfileForRecommendation
     ? profiles
-        .filter((p) => p.discord_id !== myDiscordId && p.role_type !== myProfile.role_type)
+        .filter((p) => p.discord_id !== myDiscordId && p.role_type !== baseProfileForRecommendation.role_type)
         .map((p) => ({ profile: p, ...calculateMatchScore(p) }))
         .filter((item) => item.score >= 75)
         .sort((a, b) => b.score - a.score)
@@ -457,7 +462,7 @@ export default function MentorshipHubPanel() {
               弟子入り ＆ メンター自己紹介掲示板
             </h2>
             <p className="text-stone-700 text-xs md:text-sm max-w-2xl font-medium leading-relaxed">
-              「もっと上手くなりたい弟子」と「優しく教えたい師匠（メンター）」を結ぶ掲示板です。自己紹介カードを公開してバディを見つけよう！
+              「もっと上手くなりたい弟子」と「優しく教えたい師匠（メンター）」を結ぶ掲示板です。弟子用・師匠用でそれぞれ自己紹介カードを登録できます！
             </p>
           </div>
 
@@ -474,13 +479,25 @@ export default function MentorshipHubPanel() {
             <button
               type="button"
               onClick={() => {
-                setEditingProfile(myProfile || null);
+                setEditingProfile(currentTabMyProfile || null);
                 setIsModalOpen(true);
               }}
               className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition shadow-md flex items-center gap-1.5 shrink-0 cursor-pointer"
             >
               <Plus size={15} />
-              <span>{myProfile ? '自分のカードを編集' : '自己紹介カードを投稿'}</span>
+              <span>
+                {activeTab === 'PUPIL'
+                  ? myPupilProfile
+                    ? '🌱 自分の弟子カードを編集'
+                    : '🌱 弟子として自己紹介'
+                  : activeTab === 'MENTOR'
+                  ? myMentorProfile
+                    ? '👑 自分の師匠カードを編集'
+                    : '👑 師匠として自己紹介'
+                  : (myPupilProfile || myMentorProfile)
+                  ? '自分のカードを編集'
+                  : '自己紹介カードを投稿'}
+              </span>
             </button>
           </div>
         </div>
@@ -654,7 +671,7 @@ export default function MentorshipHubPanel() {
 
       {/* 🎯 AI相性マッチング・おすすめバディセクション */}
       {activeTab !== 'MATCHES' && (
-        myProfile ? (
+        baseProfileForRecommendation ? (
           recommendedProfiles.length > 0 && (
             <div className="p-5 rounded-3xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border-2 border-amber-400/40 shadow-sm space-y-3">
               <div className="flex items-center justify-between">
@@ -703,10 +720,12 @@ export default function MentorshipHubPanel() {
               </div>
               <div className="space-y-0.5 text-center sm:text-left">
                 <h4 className="text-xs font-black text-stone-900">
-                  あなたの自己紹介カードを登録して、AI相性マッチングを体験しよう！
+                  {activeTab === 'PUPIL'
+                    ? '弟子としての自己紹介カードを登録して、相性の良い師匠を探そう！'
+                    : '師匠としての自己紹介カードを登録して、教えたい弟子を募集しよう！'}
                 </h4>
                 <p className="text-[11px] text-stone-600 font-medium">
-                  得意チャンプや目標を登録すると、あなたにぴったりの師匠・弟子が自動表示されます（初回ボーナス +500コイン🎁）。
+                  得意チャンプや目標を登録すると、あなたにぴったりのバディが自動表示されます（初回ボーナス +500コイン🎁）。
                 </p>
               </div>
             </div>
@@ -720,7 +739,7 @@ export default function MentorshipHubPanel() {
               className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition shadow-sm shrink-0 flex items-center gap-1.5 cursor-pointer active:scale-95"
             >
               <Plus size={14} />
-              <span>カードを登録する</span>
+              <span>{activeTab === 'PUPIL' ? '弟子カードを登録' : '師匠カードを登録'}</span>
             </button>
           </div>
         )
@@ -927,6 +946,11 @@ export default function MentorshipHubPanel() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         initialProfile={editingProfile}
+        defaultRole={activeTab === 'MENTOR' ? 'MENTOR' : 'PUPIL'}
+        myProfiles={{
+          PUPIL: myPupilProfile,
+          MENTOR: myMentorProfile,
+        }}
         onSave={handleSaveProfile}
       />
 
