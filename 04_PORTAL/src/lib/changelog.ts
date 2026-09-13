@@ -13,13 +13,46 @@
 export interface ChangelogEntry {
   date: string;
   title: string;
+  tag?: string;
   items: string[];
+}
+
+export function formatChangelogForDiscord(entry: ChangelogEntry, baseUrl: string = 'https://ktm-portal.vercel.app'): string {
+  const url = `${baseUrl}/guide?tab=updates`;
+  const bulletItems = entry.items.map(item => `・${item}`).join('\n');
+  return `📢 **【KTM アップデート情報】** (${entry.date})\n` +
+    `✨ **${entry.title}**\n\n` +
+    `${bulletItems}\n\n` +
+    `📖 **詳しい機能説明・使い方はポータルでチェック！**\n` +
+    `👉 ${url}`;
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    date: '2026-09-13',
+    title: '📖 使い方説明 ＆ アップデート統合ハブ（/guide）オープン！',
+    tag: 'NEW',
+    items: [
+      '📖 【総合ガイドハブ新設】「使い方がわからない」を一発解消！初心者向け3ステップ登録・Discord Bot操作・ポータル全機能を網羅した説明ページを開設しました。',
+      '🤖 【Bot完全図解】/recruit（募集と全ボタンの役割）、/lane（希望レーン・こだわり度）、/balance（チーム分け）、/tip（投げ銭）などの操作手順をわかりやすく整理しました。',
+      '🌐 【ポータル機能ガイド】マイページ、コイン＆ショップ、デュオ相性・宿敵分析、バランサーの使い方を図解カードで解説。',
+      '📋 【Discord告知文コピー】各アップデートの要約をワンクリックでコピーしてDiscordにそのまま共有できる便利機能を搭載しました。',
+    ],
+  },
+  {
+    date: '2026-09-07',
+    title: '🪙 コイン長者番付（ランキング）、初期コイン自動付与、新規参加者サポート強化！',
+    tag: 'UPDATE',
+    items: [
+      '🪙 【コイン長者番付】リーダーボードに「🪙 コイン長者番付」タブが登場！TOP 3の表彰台と全メンバーの所持コインランキングがひと目で分かります。',
+      '🎁 【新規登録時1,000pt自動付与】Discordログイン時に名簿未登録の方でも、初期1,000コインが自動的にウォレットにセットされるよう改善しました。',
+      '🛒 【ショップ購入の安定化】特権チケットの購入やデイリーボーナスの受取がよりスムーズ＆高速になりました。',
+    ],
+  },
+  {
     date: '2026-09-02',
     title: '🎪 お祭りカスタム（完全戦績保護）、動的オッズ連動、特権チケット発動の大型強化！',
+    tag: 'UPDATE',
     items: [
       '🎪 【お祭りカスタム（完全戦績保護）】オフメタやキャラランダムなどのバラエティ対決時に、公式勝率・ロール別MMR変動を一切変動させない「完全ノーカウント保護」トグルを新設！安心して全力で遊べます。',
       '🎰 【リアルタイム投票オッズ連動】勝敗予想で賭け金のプール比率（BLUE vs RED）に応じてオッズがリアルタイムに自動変動（パリミュチュエル方式）！大穴狙いの逆張りベットが一段と熱くなりました。',
