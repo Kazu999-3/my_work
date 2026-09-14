@@ -192,42 +192,18 @@ export function createRecruitButtons(metadata) {
   return comps;
 }
 
-export function getWelcomeEmbed() {
-  return {
-    title: "👑 KTM LoL部へようこそ！",
-    description: "カスタムマッチやノーマル募集に公平・快適に参加するための初期設定です。\nまずは下のボタンから**【サモナー名＆希望レーン登録】**を行ってください！（未登録の方も自動で名簿登録されます）\n\n1️⃣ **🎮 サモナー名 ＆ 希望レーン登録**\nあなたのLoLアカウント（`名前#JP1`）と希望レーン（TOP/JG/MID/ADC/SUP/ALL）を一括登録します。\n※Riot APIと自動連携してランクが同期され、チーム分けAIが希望を最優先配置します！\n\n2️⃣ **⚔️ カスタム・募集に参加**\n募集メッセージの「✋ 参加する」ボタンを押すだけで誰でも即エントリーできます！\n\n3️⃣ **📖 詳しい機能・使い方はこちら**\nWebポータルで個人スタッツ、リーダーボード、師弟ハブ、初心者ガイドを確認できます。",
-    color: 0xc2650f, // KTMブランドのアンバー/ゴールド調
-    fields: [
-      { name: "💡 初めての方へ", value: "登録完了後、募集メッセージのボタンを押すだけで誰でもカスタムに参加できます！", inline: false }
-    ],
-    footer: { text: "KTM Sovereign OS | 新規メンバー案内" },
-    timestamp: new Date().toISOString()
-  };
-}
-
-export function getWelcomeComponents(portalUrl = CONFIG.PORTAL_URL) {
-  const row1 = [
-    { type: 2, label: "🎮 サモナー名 ＆ 希望レーン登録", style: 3, custom_id: "portal_register" }
-  ];
-
-  const row2 = [
-    { type: 2, label: "📖 詳しい機能・使い方はこちら", style: 5, url: `${portalUrl}/guide` }
-  ];
-
-  return [
-    { type: 1, components: row1 },
-    { type: 1, components: row2 }
-  ];
-}
-
 export function getPortalEmbed() { 
   return { 
-    title: "🛡️ KTM コマンドセンター ＆ プレイヤーズハブ", 
-    description: "ボタンを押すだけでワンタップで操作できます！\n\n1️⃣ **🎮 サモナー名 ＆ 希望レーン登録**\n未登録の方もサモナー名(Riot ID)・ランク同期・希望レーンを一括設定できます！\n\n2️⃣ **⚔️ メンバー募集開始**\nカスタム(10人)・ノーマル(5人)・ARAMの募集パネルを作成します。\n\n3️⃣ **⚡ クイック即募集**\n5人/10人の募集を1タップで即座に投下できます。", 
+    title: "👑 KTM プレイヤーズハブ ＆ コントロールパネル", 
+    description: "仕事終わりのLoLに「心地よい熱狂」と「大人の語らい」を。\nボタンを押すだけで、初期設定から募集作成・便利機能までワンタップで利用できます！\n\n1️⃣ **🎮 サモナー名 ＆ 希望レーン登録**\nあなたのLoLアカウント（`名前#JP1`）と希望ポジションを一括登録！（未登録の方も自動で名簿作成＆ランク同期されます）\n\n2️⃣ **⚔️ メンバー募集開始**\nカスタム(10人)・ノーマル(5人)・ARAMの募集を自由に設定して作成！\n\n3️⃣ **⚡ クイック即募集**\n「ノーマル5人」「カスタム10人」の募集をワンタップで即座に投下！\n\n4️⃣ **📖 Webポータル ＆ ガイド**\n個人スタッツ、リーダーボード、初心者ガイド、師弟ハブはこちらから。", 
     color: 0xc2650f, 
-    footer: { text: "KTM Sovereign OS | コマンドパネル" },
+    footer: { text: "KTM Sovereign OS | プレイヤーズハブ" },
     timestamp: new Date().toISOString()
   }; 
+}
+
+export function getWelcomeEmbed() {
+  return getPortalEmbed();
 }
 
 export function getPortalComponents(userId, portalUrl = CONFIG.PORTAL_URL) {
@@ -236,11 +212,10 @@ export function getPortalComponents(userId, portalUrl = CONFIG.PORTAL_URL) {
     { type: 2, label: "⚔️ メンバー募集開始", style: 1, custom_id: "portal_recruit" }
   ];
 
-  // 即募集 & エンタメ機能 (ルーレット)
+  // 即募集 (ノーマル5 / カスタム10)
   const rowQuick = [
     { type: 2, label: "⚡ ノーマル5 即募集", style: 2, custom_id: "quick_recruit:ノーマル:5" },
-    { type: 2, label: "⚡ カスタム10 即募集", style: 2, custom_id: "quick_recruit:カスタム:10" },
-    { type: 2, label: "🎲 ルーレット", style: 2, custom_id: "portal_roulette" }
+    { type: 2, label: "⚡ カスタム10 即募集", style: 2, custom_id: "quick_recruit:カスタム:10" }
   ];
 
   const row2 = [
@@ -253,6 +228,10 @@ export function getPortalComponents(userId, portalUrl = CONFIG.PORTAL_URL) {
     { type: 1, components: rowQuick },
     { type: 1, components: row2 }
   ];
+}
+
+export function getWelcomeComponents(portalUrl = CONFIG.PORTAL_URL) {
+  return getPortalComponents(null, portalUrl);
 }
 
 export function handleHelpPage() {
