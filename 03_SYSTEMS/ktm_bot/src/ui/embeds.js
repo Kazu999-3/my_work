@@ -195,10 +195,10 @@ export function createRecruitButtons(metadata) {
 export function getWelcomeEmbed() {
   return {
     title: "👑 KTM LoL部へようこそ！",
-    description: "カスタムマッチやノーマル募集に公平・快適に参加するための初期設定です。\nまずは下のボタンから**【3ステップ】**を完了させてください！\n\n1️⃣ **サモナー名登録 (Riot ID)**\nあなたのLoLアカウント（`名前#JP1` 等）を紐付けます。\n※未登録の方もこのボタンを押せば即座に名簿登録されます！\n\n2️⃣ **希望レーン・NG設定**\nメイン/サブレーンやNGレーンを設定します。\nチーム分け時に希望が最大限考慮されます。\n\n3️⃣ **マイ戦績 / Webポータル**\nWebポータルで個人スタッツや初心者ガイドをチェックできます。",
+    description: "カスタムマッチやノーマル募集に公平・快適に参加するための初期設定です。\nまずは下のボタンから**【サモナー名＆希望レーン登録】**を行ってください！（未登録の方も自動で名簿登録されます）\n\n1️⃣ **🎮 サモナー名 ＆ 希望レーン登録**\nあなたのLoLアカウント（`名前#JP1`）と希望レーン（TOP/JG/MID/ADC/SUP/ALL）を一括登録します。\n※Riot APIと自動連携してランクが同期され、チーム分けAIが希望を最優先配置します！\n\n2️⃣ **⚔️ カスタム・募集に参加**\n募集メッセージの「✋ 参加する」ボタンを押すだけで誰でも即エントリーできます！\n\n3️⃣ **📖 詳しい機能・使い方はこちら**\nWebポータルで個人スタッツ、リーダーボード、師弟ハブ、初心者ガイドを確認できます。",
     color: 0xc2650f, // KTMブランドのアンバー/ゴールド調
     fields: [
-      { name: "💡 初めての方へ", value: "登録完了後、募集メッセージの「✋ 参加する」を押すだけで誰でもカスタムに参加できます！", inline: false }
+      { name: "💡 初めての方へ", value: "登録完了後、募集メッセージのボタンを押すだけで誰でもカスタムに参加できます！", inline: false }
     ],
     footer: { text: "KTM Sovereign OS | 新規メンバー案内" },
     timestamp: new Date().toISOString()
@@ -207,14 +207,11 @@ export function getWelcomeEmbed() {
 
 export function getWelcomeComponents(portalUrl = CONFIG.PORTAL_URL) {
   const row1 = [
-    { type: 2, label: "📝 サモナー名登録", style: 3, custom_id: "portal_ign" },
-    { type: 2, label: "📍 希望レーン設定", style: 1, custom_id: "portal_lane" }
+    { type: 2, label: "🎮 サモナー名 ＆ 希望レーン登録", style: 3, custom_id: "portal_register" }
   ];
 
   const row2 = [
-    { type: 2, label: "📊 マイ戦績確認", style: 2, custom_id: "portal_stats" },
-    { type: 2, label: "🔰 スタートガイド", style: 5, url: `${portalUrl}/guide` },
-    { type: 2, label: "🌐 Webポータル", style: 5, url: `${portalUrl}/balancer` }
+    { type: 2, label: "📖 詳しい機能・使い方はこちら", style: 5, url: `${portalUrl}/guide` }
   ];
 
   return [

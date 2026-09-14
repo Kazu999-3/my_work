@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ status: 'ERROR', message: authResult.error }, { status: 401 });
   }
   // =================================
-    const { discordId, discordName, ign } = await req.json();
+    const { discordId, discordName, ign, main, sub, ng1, ng2, weight } = await req.json();
 
     if (!discordId || !ign) {
       return NextResponse.json({ status: "ERROR", message: "Missing discordId or ign" }, { status: 400 });
@@ -58,6 +58,22 @@ export async function POST(req: Request) {
     if (existing) {
       // 既存プレイヤーの更新
       const updateData: any = { ign, puuid };
+      const currentPrefs = existing.role_preferences || {};
+      const updatedPrefs = {
+        ...currentPrefs,
+        primary: main || currentPrefs.primary || 'ALL',
+        secondary: (sub !== undefined && sub !== null) ? sub : (currentPrefs.secondary || '-'),
+        coins: typeof currentPrefs.coins === 'number' ? currentPrefs.coins : 1000,
+        inventory: Array.isArray(currentPrefs.inventory) ? currentPrefs.inventory : [],
+      };
+      updateData.role_preferences = updatedPrefs;
+      if (ng1 !== undefined) updateData.ng_lane_1 = ng1;
+      if (ng2 !== undefined) updateData.ng_lane_2 = ng2;
+      if (weight !== undefined && weight !== null && weight !== '') {
+        const w = parseInt(String(weight));
+        if (!Number.isNaN(w)) updateData.weight = w;
+      }
+
       if (rankTier) {
         const { higherRank, rankScore } = await import('../../../../lib/mmr');
         const oldRank = existing.highest_rank || 'UNRANKED';
@@ -83,9 +99,16 @@ export async function POST(req: Request) {
       if (error) throw error;
     } else {
       // 新規プレイヤーの自動作成 (Upsert)
-      const defaultName = discordName || gameName || 'NewPlayer';
+      const defaultName = discordName || gameName || `User_${String(discordId).slice(-4)}`;
       const tierKey = (rankTier || 'UNRANKED').toUpperCase();
       const initialMmr = (await import('../../../../lib/mmr')).RANKS[tierKey] || 1200;
+
+      const newPrefs = {
+        primary: main || 'ALL',
+        secondary: sub || '-',
+        coins: 1000,
+        inventory: [],
+      };
 
       const newPlayerData: any = {
         discord_id: discordId,
@@ -94,7 +117,8 @@ export async function POST(req: Request) {
         puuid: puuid,
         is_active: true,
         highest_rank: rankTier || 'UNRANKED',
-        role_preferences: { primary: 'ALL', secondary: '-', coins: 1000, inventory: [] },
+        role_preferences: newPrefs,
+        mmr: initialMmr,
         mmr_top: initialMmr,
         mmr_jg: initialMmr,
         mmr_mid: initialMmr,
@@ -120,14 +144,35 @@ export async function POST(req: Request) {
         }
       };
 
+      if (ng1) newPlayerData.ng_lane_1 = ng1;
+      if (ng2) newPlayerData.ng_lane_2 = ng2;
+      if (weight !== undefined && weight !== null && weight !== '') {
+        const w = parseInt(String(weight));
+        if (!Number.isNaN(w)) newPlayerData.weight = w;
+      }
+
       const { error } = await supabase
         .from('ktm_players')
-        .upsert(newPlayerData, { onConflict: 'discord_id' });
+        .insert(newPlayerData);
 
-      if (error) throw error;
+      if (error) {
+        console.warn('[update-puuid] standard insert failed, retrying minimal insert:', error.message);
+        const fallbackData = {
+          discord_id: discordId,
+          name: defaultName,
+          ign: ign,
+          puuid: puuid,
+          is_active: true,
+          highest_rank: rankTier || 'UNRANKED',
+          mmr: initialMmr,
+          role_preferences: newPrefs,
+        };
+        const { error: fbErr } = await supabase.from('ktm_players').insert(fallbackData);
+        if (fbErr) throw fbErr;
+      }
     }
 
-    return NextResponse.json({ status: "SUCCESS", puuid, rankTier });
+    return NextResponse.json({ status: "SUCCESS", puuid, rankTier, ign });
   } catch (err: any) {
     console.error("Update PUUID Error:", err);
     return NextResponse.json({ status: "ERROR", message: err.message }, { status: 500 });

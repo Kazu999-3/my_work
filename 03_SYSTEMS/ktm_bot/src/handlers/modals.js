@@ -46,6 +46,64 @@ export async function handleModalSubmit(interaction, env, ctx) {
     return Response.json({ type: 4, data: { content: "✅ **募集を #募集板 に投下しました！**", flags: 64 } });
   }
 
+  if (customId === 'portal_register_modal') {
+    const getVal = (cid) => {
+      const row = interaction.data.components.find(c => c.components[0].custom_id === cid);
+      return row ? row.components[0].value.trim() : "";
+    };
+    const ign = getVal('ign');
+    let main = getVal('main').toUpperCase();
+    let sub = getVal('sub').toUpperCase();
+    if (main === 'ALL') sub = '-';
+    const weightRaw = getVal('weight');
+    const weight = weightRaw ? parseInt(weightRaw) : undefined;
+    const ng1 = getVal('ng1').toUpperCase();
+
+    const discordName = interaction.member?.nick || interaction.member?.user?.global_name || interaction.member?.user?.username;
+    const appId = interaction.application_id;
+    const token = interaction.token;
+
+    ctx.waitUntil((async () => {
+      try {
+        const { fetchPortalAPI, patchInteractionResponse } = await import('../utils/api.js');
+        // サモナー名(Riot ID)と希望レーンを一括で名簿作成・更新
+        const data = await fetchPortalAPI(env, '/api/player/update-puuid', {
+          discordId: userId,
+          discordName: discordName,
+          ign: ign,
+          main: main,
+          sub: sub || undefined,
+          ng1: ng1 || undefined,
+          weight: weight,
+        });
+
+        if (data.status === "SUCCESS") {
+          const rankMsg = data.rankTier ? ` (現在のランク: **${data.rankTier}** を同期)` : '';
+          await patchInteractionResponse(appId, token, {
+            content: `🎉 **初期プレイヤー登録が完了しました！**\n\n👤 **サモナー名**: \`${ign}\`${rankMsg}\n📍 **希望レーン**: メイン: \`${main}\` / サブ: \`${sub || 'なし'}\`${ng1 ? ` / NG: \`${ng1}\`` : ''}\n\n👉 これでカスタム対戦や募集にそのまま参加できます！チーム分け時にあなたの希望が最大限考慮されます 🎮`
+          });
+        } else {
+          await patchInteractionResponse(appId, token, {
+            content: `⚠️ **登録中にエラーが発生しました**: ${data.message}\n※サモナー名の形式（例: \`名前#JP1\`）をご確認の上、再度お試しください。`
+          });
+        }
+      } catch (err) {
+        console.error("Modal Register Error:", err);
+        try {
+          const { patchInteractionResponse } = await import('../utils/api.js');
+          await patchInteractionResponse(appId, token, {
+            content: `❌ **登録に失敗しました**: ${err.message}\n👉 サモナー名（\`名前#Tag\`）が正しいかご確認の上、再度お試しください。`
+          });
+        } catch (e2) {}
+      }
+    })());
+
+    return Response.json({
+      type: 4,
+      data: { content: "⌛ Riot API と連携してプレイヤー登録＆希望レーンを設定しています。少々お待ちください...", flags: 64 }
+    });
+  }
+
   if (customId === 'portal_ign_modal') {
     const ign = interaction.data.components.find(c => c.components[0].custom_id === 'ign').components[0].value;
     const discordName = interaction.member.user.global_name || interaction.member.user.username;
