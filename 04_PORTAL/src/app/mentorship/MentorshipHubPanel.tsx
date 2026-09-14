@@ -7,9 +7,11 @@ import { MentorshipProfileModal } from './MentorshipProfileModal';
 import { MentorshipRequestModal } from './MentorshipRequestModal';
 import { MentorshipKickoffModal } from './MentorshipKickoffModal';
 import { MentorshipGuidelinesModal } from './MentorshipGuidelinesModal';
+import { MentorshipReviewModal } from './MentorshipReviewModal';
+import { MentorshipReviewSummary } from '../api/mentorship/reviews/route';
 import { DISBAND_REASONS } from '../../lib/mentorshipConstants';
 import { toast } from '../../components/Toaster';
-import { HeartHandshake, Sparkles, Plus, Search, Shield, Award, Users, Swords, BookOpen, MessageSquare, Rocket, Leaf } from 'lucide-react';
+import { HeartHandshake, Sparkles, Plus, Search, Shield, Award, Users, Swords, BookOpen, MessageSquare, Rocket, Leaf, Star } from 'lucide-react';
 
 const LANE_FILTERS = [
   { id: 'ALL', label: '🌐 全て' },
@@ -28,6 +30,7 @@ export default function MentorshipHubPanel() {
   const [matches, setMatches] = useState<any[]>([]);
   const [pendingReceived, setPendingReceived] = useState<any[]>([]);
   const [pendingSent, setPendingSent] = useState<any[]>([]);
+  const [reviewSummaries, setReviewSummaries] = useState<Record<string, MentorshipReviewSummary>>({});
   const [myDiscordId, setMyDiscordId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,6 +49,10 @@ export default function MentorshipHubPanel() {
 
   // 📜 師弟心得モーダル管理
   const [isGuidelinesModalOpen, setIsGuidelinesModalOpen] = useState(false);
+
+  // ⭐ 匿名レビューモーダル管理
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [selectedReviewMatch, setSelectedReviewMatch] = useState<any | null>(null);
 
 
   // プロフィール一覧の取得
@@ -86,9 +93,23 @@ export default function MentorshipHubPanel() {
     }
   };
 
+  // 匿名レビュー集計の取得
+  const fetchReviewSummaries = async () => {
+    try {
+      const res = await fetch('/api/mentorship/reviews');
+      const data = await res.json();
+      if (data.ok) {
+        setReviewSummaries(data.summaries || {});
+      }
+    } catch (err) {
+      console.error('Failed to fetch review summaries:', err);
+    }
+  };
+
   useEffect(() => {
     fetchProfiles();
     fetchMatches();
+    fetchReviewSummaries();
   }, []);
 
   // 🛠️ 管理者専用: 任意の師弟マッチ・申請を強制削除
@@ -691,12 +712,14 @@ export default function MentorshipHubPanel() {
                   const isPendingSent = pendingSent.some(
                     (s) => s.mentor_profile_id === p.id || s.pupil_profile_id === p.id
                   );
+                  const revKey = `${p.discord_id}_${p.role_type}`;
                   return (
                     <MentorshipCard
                       key={`rec-${p.id}`}
                       profile={p}
                       isMine={p.discord_id === myDiscordId}
                       isAdmin={isAdmin}
+                      reviewSummary={reviewSummaries[revKey] || null}
                       matchScore={score}
                       matchReason={reason}
                       isPendingSent={isPendingSent}
@@ -835,65 +858,86 @@ export default function MentorshipHubPanel() {
                   </div>
                 </div>
 
-                {/* 自分のペアである場合のアクション（そのまま実行・期間延長 / 卒業完了 / キックオフ / Discord連絡 / 円満解散） */}
-                {isMyMatch && !isCompleted && (
+                {/* 自分のペアである場合のアクション（レビュー送信 / 期間延長 / 卒業完了 / キックオフ / Discord連絡 / 円満解散） */}
+                {isMyMatch && (
                   <div className="pt-2.5 border-t border-stone-200/80 space-y-2">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {/* ⭐ 匿名レビューボタン */}
                         <button
                           type="button"
                           onClick={() => {
-                            setSelectedKickoffMatch(match);
-                            setIsKickoffModalOpen(true);
+                            setSelectedReviewMatch(match);
+                            setIsReviewModalOpen(true);
                           }}
-                          className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-stone-100 hover:bg-stone-200 text-stone-800 transition flex items-center gap-1 cursor-pointer border border-stone-200"
+                          className="px-2.5 py-1.5 rounded-xl font-black text-xs bg-amber-50 hover:bg-amber-100 text-amber-900 transition flex items-center gap-1 cursor-pointer border border-amber-300 shadow-2xs"
                         >
-                          <Rocket size={13} className="text-emerald-600" />
-                          <span>🚀 スタートガイド</span>
+                          <Star size={13} className="text-amber-600 fill-amber-400" />
+                          <span>⭐ 匿名評価を送る (+100🪙)</span>
                         </button>
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const partner = match.mentor_discord_id === myDiscordId ? match.pupil : match.mentor;
-                            handleContactDiscord(partner?.player_name || '相手');
-                          }}
-                          className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-800 transition flex items-center gap-1 cursor-pointer border border-indigo-200"
-                        >
-                          <MessageSquare size={13} className="text-indigo-600" />
-                          <span>💬 Discord連絡</span>
-                        </button>
+                        {!isCompleted && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedKickoffMatch(match);
+                                setIsKickoffModalOpen(true);
+                              }}
+                              className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-stone-100 hover:bg-stone-200 text-stone-800 transition flex items-center gap-1 cursor-pointer border border-stone-200"
+                            >
+                              <Rocket size={13} className="text-emerald-600" />
+                              <span>🚀 ガイド</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const partner = match.mentor_discord_id === myDiscordId ? match.pupil : match.mentor;
+                                handleContactDiscord(partner?.player_name || '相手');
+                              }}
+                              className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-800 transition flex items-center gap-1 cursor-pointer border border-indigo-200"
+                            >
+                              <MessageSquare size={13} className="text-indigo-600" />
+                              <span>💬 連絡</span>
+                            </button>
+                          </>
+                        )}
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleCancelMatch(match.id)}
-                        className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-stone-100 hover:bg-rose-50 text-stone-500 hover:text-rose-700 transition flex items-center gap-1 cursor-pointer"
-                        title="お互いに合意の上でペナルティなく解散・再募集に戻します"
-                      >
-                        <Leaf size={12} />
-                        <span>🍃 円満解散</span>
-                      </button>
+                      {!isCompleted && (
+                        <button
+                          type="button"
+                          onClick={() => handleCancelMatch(match.id)}
+                          className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-stone-100 hover:bg-rose-50 text-stone-500 hover:text-rose-700 transition flex items-center gap-1 cursor-pointer"
+                          title="お互いに合意の上でペナルティなく解散・再募集に戻します"
+                        >
+                          <Leaf size={12} />
+                          <span>🍃 円満解散</span>
+                        </button>
+                      )}
                     </div>
 
-                    <div className="flex items-center justify-end gap-2 pt-1">
-                      <button
-                        type="button"
-                        onClick={() => handleExtendMatch(match.id, 14)}
-                        className="px-3 py-1.5 rounded-xl font-black text-xs bg-amber-600 hover:bg-amber-500 text-white shadow-xs transition flex items-center gap-1 cursor-pointer"
-                        title="現在の期間をさらに14日間そのまま延長します"
-                      >
-                        <span>⚡ そのまま実行（+14日延長）</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleCompleteMatch(match.id)}
-                        className="px-3 py-1.5 rounded-xl font-black text-xs bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition flex items-center gap-1 cursor-pointer"
-                        title="目標達成として円満卒業し、両者に+200コインを付与します"
-                      >
-                        <span>🎓 卒業・完了 (+200🪙)</span>
-                      </button>
-                    </div>
+                    {!isCompleted && (
+                      <div className="flex items-center justify-end gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => handleExtendMatch(match.id, 14)}
+                          className="px-3 py-1.5 rounded-xl font-black text-xs bg-amber-600 hover:bg-amber-500 text-white shadow-xs transition flex items-center gap-1 cursor-pointer"
+                          title="現在の期間をさらに14日間そのまま延長します"
+                        >
+                          <span>⚡ そのまま実行（+14日延長）</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleCompleteMatch(match.id)}
+                          className="px-3 py-1.5 rounded-xl font-black text-xs bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition flex items-center gap-1 cursor-pointer"
+                          title="目標達成として円満卒業し、両者に+200コインを付与します"
+                        >
+                          <span>🎓 卒業・完了 (+200🪙)</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -913,6 +957,7 @@ export default function MentorshipHubPanel() {
             const isPendingSent = pendingSent.some(
               (s) => s.mentor_profile_id === p.id || s.pupil_profile_id === p.id
             );
+            const revKey = `${p.discord_id}_${p.role_type}`;
 
             return (
               <MentorshipCard
@@ -920,6 +965,7 @@ export default function MentorshipHubPanel() {
                 profile={p}
                 isMine={p.discord_id === myDiscordId}
                 isAdmin={isAdmin}
+                reviewSummary={reviewSummaries[revKey] || null}
                 matchScore={matchInfo.score}
                 matchReason={matchInfo.reason}
                 isPendingSent={isPendingSent}
@@ -979,6 +1025,18 @@ export default function MentorshipHubPanel() {
       <MentorshipGuidelinesModal
         isOpen={isGuidelinesModalOpen}
         onClose={() => setIsGuidelinesModalOpen(false)}
+      />
+
+      {/* ⭐ 匿名レビューモーダル */}
+      <MentorshipReviewModal
+        isOpen={isReviewModalOpen}
+        onClose={() => {
+          setIsReviewModalOpen(false);
+          setSelectedReviewMatch(null);
+        }}
+        match={selectedReviewMatch}
+        myDiscordId={myDiscordId}
+        onSubmitted={() => fetchReviewSummaries()}
       />
     </div>
   );

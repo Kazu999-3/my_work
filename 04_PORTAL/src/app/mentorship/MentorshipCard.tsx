@@ -6,10 +6,13 @@ import { getKtmRank, RANKS } from '../../lib/mmr';
 import { CHAMPION_JA } from '../../components/ChampSelect';
 import { Clock, Shield, Sparkles, UserCheck } from 'lucide-react';
 
+import { MentorshipReviewSummary } from '../api/mentorship/reviews/route';
+
 interface MentorshipCardProps {
   profile: MentorshipProfile;
   isMine: boolean;
   isAdmin?: boolean;
+  reviewSummary?: MentorshipReviewSummary | null;
   onOffer: (profile: MentorshipProfile) => void;
   onEdit?: (profile: MentorshipProfile) => void;
   onDelete?: (profileId: string) => void;
@@ -30,6 +33,7 @@ export function MentorshipCard({
   profile,
   isMine,
   isAdmin,
+  reviewSummary,
   onOffer,
   onEdit,
   onDelete,
@@ -76,6 +80,14 @@ export function MentorshipCard({
               <span>{isMentor ? '👨‍🏫' : '🔰'}</span>
               <span>{isMentor ? '師匠 (Mentor)' : '弟子 (Pupil)'}</span>
             </div>
+
+            {/* ⭐ 匿名レビュー評価バッジ */}
+            {reviewSummary && reviewSummary.totalReviews > 0 ? (
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-50 text-amber-900 border border-amber-300 flex items-center gap-1 shadow-2xs">
+                <span>⭐ {reviewSummary.averageRating}</span>
+                <span className="text-[10px] text-stone-500 font-normal">({reviewSummary.totalReviews}件)</span>
+              </span>
+            ) : null}
 
             {/* ステータスバッジ */}
             {profile.status === 'MATCHED' ? (
@@ -142,6 +154,26 @@ export function MentorshipCard({
             </div>
           </div>
         </div>
+
+        {/* 🌟 匿名レビュー上位推薦タグ */}
+        {reviewSummary && reviewSummary.topTags && reviewSummary.topTags.length > 0 && (
+          <div className="p-2.5 bg-amber-50/70 rounded-2xl border border-amber-200/80 space-y-1">
+            <div className="text-[10px] font-black text-amber-950 flex items-center gap-1">
+              <span>✨</span>
+              <span>バディからの推薦ポイント:</span>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {reviewSummary.topTags.map((t) => (
+                <span
+                  key={t.tag}
+                  className="px-2 py-0.5 rounded-lg bg-white border border-amber-300 text-[10px] font-bold text-amber-950 shadow-2xs"
+                >
+                  {t.tag} <strong className="text-amber-600">×{t.count}</strong>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* レーンピル一覧 */}
         {profile.lanes && profile.lanes.length > 0 && (
