@@ -134,7 +134,7 @@ export default {
           const { handleTipCommand } = await import('./handlers/bet.js');
           return await handleTipCommand(interaction, context, ctx);
         }
-        if (name === 'panel' || name === 'portal' || name === 'command') {
+        if (name === 'panel' || name === 'portal' || name === 'command' || name === 'ktm_portal') {
           return await handlePortalPanel(interaction, context, ctx);
         }
       }
