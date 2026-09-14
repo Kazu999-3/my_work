@@ -47,33 +47,43 @@ async function main() {
 - 社会人としての良識を持って楽しくプレイ
 - 試合後は「次はどうすれば楽しく勝てるか」を建設的に！`;
 
+  // 全ボタン網羅版コンポーネント (Row 1〜4)
   const components = [
     {
       type: 1,
       components: [
         { type: 2, label: "🎮 サモナー名 ＆ 希望レーン登録", style: 3, custom_id: "portal_register" },
-        { type: 2, label: "⚔️ メンバー募集開始", style: 1, custom_id: "portal_recruit" }
+        { type: 2, label: "⚔️ メンバー募集開始", style: 1, custom_id: "portal_recruit" },
+        { type: 2, label: "📊 マイ戦績確認", style: 2, custom_id: "portal_stats" }
       ]
     },
     {
       type: 1,
       components: [
         { type: 2, label: "⚡ ノーマル5 即募集", style: 2, custom_id: "quick_recruit:ノーマル:5" },
-        { type: 2, label: "⚡ カスタム10 即募集", style: 2, custom_id: "quick_recruit:カスタム:10" }
+        { type: 2, label: "⚡ カスタム10 即募集", style: 2, custom_id: "quick_recruit:カスタム:10" },
+        { type: 2, label: "🎲 ルーレット", style: 2, custom_id: "portal_roulette" }
       ]
     },
     {
       type: 1,
       components: [
-        { type: 2, label: "🔔 募集通知 (ON/OFF)", style: 2, custom_id: "toggle_recruit_notification" },
-        { type: 2, label: "📖 詳しい機能・使い方はこちら", style: 5, url: `${portalUrl}/guide` }
+        { type: 2, label: "📝 サモナー名変更", style: 2, custom_id: "portal_ign" },
+        { type: 2, label: "📍 レーン設定変更", style: 2, custom_id: "portal_lane" },
+        { type: 2, label: "🔔 募集通知 (ON/OFF)", style: 2, custom_id: "toggle_recruit_notification" }
+      ]
+    },
+    {
+      type: 1,
+      components: [
+        { type: 2, label: "📖 初心者・機能ガイド", style: 5, url: `${portalUrl}/guide` },
+        { type: 2, label: "🌐 Webポータル (バランサー)", style: 5, url: `${portalUrl}/balancer` }
       ]
     }
   ];
 
-  console.log(`Updating message in #はじめに (${welcomeChannelId}) ...`);
+  console.log(`Updating message with all control panel buttons in #はじめに (${welcomeChannelId}) ...`);
   
-  // まず直前のメッセージを編集更新してみる
   let res = await fetch(`https://discord.com/api/v10/channels/${welcomeChannelId}/messages/${lastMessageId}`, {
     method: 'PATCH',
     headers: {
@@ -87,9 +97,8 @@ async function main() {
   });
 
   if (res.ok) {
-    console.log(`SUCCESS: Message edited successfully (Message ID: ${lastMessageId})`);
+    console.log(`SUCCESS: Message updated successfully with all buttons (Message ID: ${lastMessageId})`);
   } else {
-    // 編集できなかった場合は新規投稿
     console.log(`Patch failed (${res.status}), posting as new message...`);
     res = await fetch(`https://discord.com/api/v10/channels/${welcomeChannelId}/messages`, {
       method: 'POST',

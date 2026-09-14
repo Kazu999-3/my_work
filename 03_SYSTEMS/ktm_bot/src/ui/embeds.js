@@ -207,26 +207,38 @@ export function getWelcomeEmbed() {
 }
 
 export function getPortalComponents(userId, portalUrl = CONFIG.PORTAL_URL) {
+  // Row 1: メインアクション（一括登録・募集作成・マイ戦績）
   const row1 = [
     { type: 2, label: "🎮 サモナー名 ＆ 希望レーン登録", style: 3, custom_id: "portal_register" },
-    { type: 2, label: "⚔️ メンバー募集開始", style: 1, custom_id: "portal_recruit" }
+    { type: 2, label: "⚔️ メンバー募集開始", style: 1, custom_id: "portal_recruit" },
+    { type: 2, label: "📊 マイ戦績確認", style: 2, custom_id: "portal_stats" }
   ];
 
-  // 即募集 (ノーマル5 / カスタム10)
+  // Row 2: 即募集 & エンタメ
   const rowQuick = [
     { type: 2, label: "⚡ ノーマル5 即募集", style: 2, custom_id: "quick_recruit:ノーマル:5" },
-    { type: 2, label: "⚡ カスタム10 即募集", style: 2, custom_id: "quick_recruit:カスタム:10" }
+    { type: 2, label: "⚡ カスタム10 即募集", style: 2, custom_id: "quick_recruit:カスタム:10" },
+    { type: 2, label: "🎲 ルーレット", style: 2, custom_id: "portal_roulette" }
   ];
 
-  const row2 = [
-    { type: 2, label: "🔔 募集通知 (ON/OFF)", style: 2, custom_id: "toggle_recruit_notification" },
-    { type: 2, label: "📖 詳しい機能・使い方はこちら", style: 5, url: `${portalUrl}/guide` }
+  // Row 3: 個別設定・通知
+  const rowSettings = [
+    { type: 2, label: "📝 サモナー名変更", style: 2, custom_id: "portal_ign" },
+    { type: 2, label: "📍 レーン設定変更", style: 2, custom_id: "portal_lane" },
+    { type: 2, label: "🔔 募集通知 (ON/OFF)", style: 2, custom_id: "toggle_recruit_notification" }
+  ];
+
+  // Row 4: Webポータルリンク
+  const rowWeb = [
+    { type: 2, label: "📖 初心者・機能ガイド", style: 5, url: `${portalUrl}/guide` },
+    { type: 2, label: "🌐 Webポータル (バランサー)", style: 5, url: `${portalUrl}/balancer` }
   ];
 
   return [
     { type: 1, components: row1 },
     { type: 1, components: rowQuick },
-    { type: 1, components: row2 }
+    { type: 1, components: rowSettings },
+    { type: 1, components: rowWeb }
   ];
 }
 
