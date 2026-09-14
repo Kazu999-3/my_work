@@ -28,6 +28,7 @@ async function main() {
 3️⃣ **カスタム・募集に参加する**
    - **都度募集**: <#1485995531434987541> にて自由に募集・参加OK！
    - **週末定期カスタム**: 毎週土日 21:00〜 <#1528646515533287497> にて開催！
+   ※募集時の通知（メンション）を受け取りたい/止めたい場合は、下の **「🔔 募集通知 (ON/OFF)」** ボタンでいつでもワンタップ切替可能です。
 
 ---
 
@@ -83,7 +84,7 @@ async function main() {
     }
   ];
 
-  console.log(`Updating message with flexible participation note in #はじめに (${welcomeChannelId}) ...`);
+  console.log(`Updating message with notification button note in #はじめに (${welcomeChannelId}) ...`);
   
   let res = await fetch(`https://discord.com/api/v10/channels/${welcomeChannelId}/messages/${lastMessageId}`, {
     method: 'PATCH',
