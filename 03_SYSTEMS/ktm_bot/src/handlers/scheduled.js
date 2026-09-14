@@ -553,7 +553,6 @@ async function postWeeklyRecruitment(env) {
       const { fetchPortalAPI } = await import('../utils/api.js');
       await fetchPortalAPI(env, '/api/push/notify-recruit', { mode: '定期カスタム', time: `${satLabel} 21:00` }).catch(() => {});
     } catch (e) {}
-    } catch (e) {}
   } catch (err) {
     console.error('[WeeklyRecruit] error:', err);
   }
