@@ -9,6 +9,7 @@ async function main() {
   }
 
   const welcomeChannelId = '1485646544043642964'; // 📍はじめに
+  const lastMessageId = '1549113148248817666'; // 直前の投稿
   const portalUrl = 'https://ktm-portal.vercel.app';
 
   const content = `# 👑 KTM LoL部 へようこそ！
@@ -21,38 +22,23 @@ async function main() {
 1️⃣ **自己紹介をする**
    まずは <#1485646578621616209> でテンプレに沿って挨拶をお願いします！（確認次第、全チャンネルが開放されます）
 
-2️⃣ **サモナー名 ＆ レーン希望を登録する**
-   下のボタンから **「🎮 サモナー名 ＆ 希望レーン登録」** を行います。（チーム分けAIが希望を考慮）
+2️⃣ **サモナー名 ＆ 希望レーンを登録する**
+   下の **「🎮 サモナー名 ＆ 希望レーン登録」** ボタンから一括設定！（未登録の方も自動で名簿作成・初期MMR・ランク同期が行われます）
 
 3️⃣ **カスタム・募集に参加する**
-   - **いつでも都度募集**: <#1485995531434987541> にて自由に募集・参加OK！
-   - **定期カスタム**: 毎週土曜 21:00〜 <#1528646515533287497>（または画面上部「📅 イベント」）にて開催！
+   - **都度募集**: <#1485995531434987541> にて自由に募集・参加OK！
+   - **週末定期カスタム**: 毎週土日 21:00〜 <#1528646515533287497> にて開催！
 
 ---
 
-### ⚔️ 定期カスタムの開催基準（毎週土曜 21:00〜）
-基本は **【シルバー以下】** と **【ゴルプラ】** の2グループに分けて募集します。
-
-・**両方10人以上**: それぞれのランク帯で同時開催します。
-・**片方のみ10人以上**: 集まったランク帯のみ開催します。
-・**両方合わせて10人の場合**:
-  👉 ゴルプラが多い場合：通常通りミックスでカスタムを開催。
-  👉 シルバー以下が多い場合：ゴルプラの人に「苦手レーン」を担当してもらい開催。
-
-※10人を超えた場合も、交代しながら全員で回しますので、人数を気にせず気軽にご参加ください！
-
----
-
-### 🎮 Bot機能・ボタンの使い方
-#### ◆ メンバー募集（「⚔️ メンバー募集開始」または /recruit）
-<#1485995531434987541> で \`/recruit\` または下の「⚔️ メンバー募集開始」ボタンで募集を作成。
-開始時刻やメモ、人数（カスタム10人 / ノマ・ARAM 5人）を自由に指定できます。
-メンバーは「✋ 参加する」ボタンを押すだけでエントリー完了！
-
-#### ◆ レーン設定（「🎮 サモナー名 ＆ 希望レーン登録」または /lane）
-下の「🎮 サモナー名 ＆ 希望レーン登録」ボタンから、サモナー名と希望ポジションを一括設定。
-未登録の方も自動で名簿登録・ランク同期が行われます。
-※一度設定すれば保存され、チーム分けAIが自動で希望を最優先配置します。
+### ⚔️ 週末定期カスタム（毎週土日 21:00〜）
+- 🛡️ **土曜日（真剣勝負 / MMRあり）**
+  【開催＆人数ルール】
+  ・**20名〜**: 上位/下位の2部屋同時開催
+  ・**10〜19名**: 1ティア差の10名で開催（他は観戦/2戦目交代）
+  ・**当日19時時点で7名以下**: 中止
+- 🎪 **日曜日（お祭りカスタム / MMR変動なし）**
+  ランク不問・初心者歓迎！1戦だけのスポット参加や途中抜けも自由です。
 
 ---
 
@@ -85,9 +71,11 @@ async function main() {
     }
   ];
 
-  console.log(`Posting to channel ${welcomeChannelId} ...`);
-  const res = await fetch(`https://discord.com/api/v10/channels/${welcomeChannelId}/messages`, {
-    method: 'POST',
+  console.log(`Updating message in #はじめに (${welcomeChannelId}) ...`);
+  
+  // まず直前のメッセージを編集更新してみる
+  let res = await fetch(`https://discord.com/api/v10/channels/${welcomeChannelId}/messages/${lastMessageId}`, {
+    method: 'PATCH',
     headers: {
       Authorization: `Bot ${token}`,
       'Content-Type': 'application/json'
@@ -99,10 +87,23 @@ async function main() {
   });
 
   if (res.ok) {
-    const msg = await res.json();
-    console.log(`SUCCESS: Message posted to #はじめに (Message ID: ${msg.id})`);
+    console.log(`SUCCESS: Message edited successfully (Message ID: ${lastMessageId})`);
   } else {
-    console.error(`ERROR: ${res.status} ${await res.text()}`);
+    // 編集できなかった場合は新規投稿
+    console.log(`Patch failed (${res.status}), posting as new message...`);
+    res = await fetch(`https://discord.com/api/v10/channels/${welcomeChannelId}/messages`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bot ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        content: content,
+        components: components
+      })
+    });
+    const msg = await res.json();
+    console.log(`SUCCESS: New message posted (Message ID: ${msg.id})`);
   }
 }
 
