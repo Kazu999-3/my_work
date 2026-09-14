@@ -13,7 +13,8 @@ import {
   AlertCircle,
   HelpCircle,
   RefreshCw,
-  Zap
+  Zap,
+  Users
 } from 'lucide-react';
 
 export default function GuideRulesTab() {
@@ -38,32 +39,90 @@ export default function GuideRulesTab() {
         </div>
       </div>
 
-      {/* 1. 週末定期カスタムの基本フォーマット */}
-      <div className="bg-white/80 border border-stone-200/90 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
-        <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
-          <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-700">
+      {/* 1. 定期カスタム 人数決め ＆ 開催優先度ルール */}
+      <div className="bg-white/80 dark:bg-[#2b2d31]/80 border border-stone-200/90 dark:border-[#3f4147] rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+        <div className="flex items-center gap-3 border-b border-stone-100 dark:border-[#3f4147] pb-4">
+          <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-400">
+            <Users size={22} />
+          </div>
+          <div>
+            <h3 className="text-lg font-black text-stone-900 dark:text-white">1. 定期カスタム 開催＆人数決め優先度ルール</h3>
+            <p className="text-xs text-stone-500 dark:text-stone-400">参加人数に応じた部屋分け・選出基準・開催判断の公式ガイドライン</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* ① 20人揃えば2部屋開催 */}
+          <div className="p-5 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/80 dark:border-emerald-800/40 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-xs font-black">
+                ① 20名以上
+              </span>
+              <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">🎉 2部屋同時開催</span>
+            </div>
+            <h4 className="text-sm font-black text-stone-900 dark:text-white">👑 上位10名 ＆ 下位10名 スプリット</h4>
+            <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+              MMR上位10名（上級部屋）とMMR下位10名（初中級部屋）に綺麗に分かれて同時開催！実力差が離れず、両部屋とも最高に白熱するマッチになります。
+            </p>
+          </div>
+
+          {/* ② 10名以上の場合は1ティア差グループ */}
+          <div className="p-5 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-800/40 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="px-2.5 py-1 rounded-lg bg-amber-500 text-stone-950 text-xs font-black">
+                ② 10名〜19名
+              </span>
+              <span className="text-xs font-bold text-amber-800 dark:text-amber-300">⚔️ 1部屋 開催</span>
+            </div>
+            <h4 className="text-sm font-black text-stone-900 dark:text-white">🎯 1ティア差グループで10名選出</h4>
+            <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+              参加者の中で最も実力差が密集している（1ティア差以内の）10名を自動選出！<br />
+              <span className="font-bold text-amber-900 dark:text-amber-200">※選考外となった方は「観戦・配信応援」または「2戦目に最優先で交代参加」となります。</span>
+            </p>
+          </div>
+
+          {/* ③ 当日19時までに7名以下なら中止 */}
+          <div className="p-5 rounded-2xl bg-stone-50/80 dark:bg-stone-800/30 border border-stone-200/80 dark:border-stone-700/50 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="px-2.5 py-1 rounded-lg bg-stone-500 text-white text-xs font-black">
+                ③ 7名以下
+              </span>
+              <span className="text-xs font-bold text-stone-600 dark:text-stone-400">💤 開催見送り（中止）</span>
+            </div>
+            <h4 className="text-sm font-black text-stone-900 dark:text-white">⏰ 当日19:00で確定判断</h4>
+            <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+              当日19:00の時点で参加希望が7名以下の場合は開催中止とし、参加予定の方がソロキューや他の予定に切り替えられるようにします。
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. 週末定期カスタムの基本フォーマット */}
+      <div className="bg-white/80 dark:bg-[#2b2d31]/80 border border-stone-200/90 dark:border-[#3f4147] rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+        <div className="flex items-center gap-3 border-b border-stone-100 dark:border-[#3f4147] pb-4">
+          <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-400">
             <Swords size={22} />
           </div>
           <div>
-            <h3 className="text-lg font-black text-stone-900">1. 週末定期カスタム（土曜・日曜）</h3>
-            <p className="text-xs text-stone-500">毎週土日 21:00〜 開催されるコミュニティ恒例マッチ</p>
+            <h3 className="text-lg font-black text-stone-900 dark:text-white">2. 週末定期カスタム（土曜・日曜）</h3>
+            <p className="text-xs text-stone-500 dark:text-stone-400">毎週土日 21:00〜 開催されるコミュニティ恒例マッチ</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* 土曜: ランク別・ガチカスタム */}
-          <div className="p-5 rounded-2xl bg-amber-50/50 border border-amber-200/80 space-y-3">
+          <div className="p-5 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-800/40 space-y-3">
             <div className="flex items-center justify-between">
               <span className="px-2.5 py-1 rounded-lg bg-amber-500 text-stone-950 text-xs font-black">
                 土曜日 21:00〜
               </span>
-              <span className="text-xs font-bold text-amber-800">⚔️ ランク別ガチ勝負</span>
+              <span className="text-xs font-bold text-amber-800 dark:text-amber-300">⚔️ ランク別ガチ勝負</span>
             </div>
-            <h4 className="text-sm font-black text-stone-900">👑 土曜：バランス重視・実力伯仲カスタム</h4>
-            <p className="text-xs text-stone-600 leading-relaxed">
+            <h4 className="text-sm font-black text-stone-900 dark:text-white">👑 土曜：バランス重視・実力伯仲カスタム</h4>
+            <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
               KTM独自のMMRアルゴリズムに基づき、両チームの戦力が最も均等になるようにチーム分けを実施します。日頃の練習の成果を発揮する熱いバトルが楽しめます！
             </p>
-            <ul className="text-xs text-stone-600 space-y-1 pt-1">
+            <ul className="text-xs text-stone-600 dark:text-stone-300 space-y-1 pt-1">
               <li className="flex items-center gap-1.5 font-bold">
                 <CheckCircle2 size={14} className="text-amber-600 shrink-0" />
                 <span>MMR自動均等分け（ロール適性・得意チャンピオン考慮）</span>
@@ -76,18 +135,18 @@ export default function GuideRulesTab() {
           </div>
 
           {/* 日曜: お祭りカスタム */}
-          <div className="p-5 rounded-2xl bg-purple-50/50 border border-purple-200/80 space-y-3">
+          <div className="p-5 rounded-2xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200/80 dark:border-purple-800/40 space-y-3">
             <div className="flex items-center justify-between">
               <span className="px-2.5 py-1 rounded-lg bg-purple-600 text-white text-xs font-black">
                 日曜日 21:00〜
               </span>
-              <span className="text-xs font-bold text-purple-700">🎪 ランク無差別・お祭り</span>
+              <span className="text-xs font-bold text-purple-700 dark:text-purple-300">🎪 ランク無差別・お祭り</span>
             </div>
-            <h4 className="text-sm font-black text-stone-900">🎲 日曜：完全ランダム・お祭りカスタム</h4>
-            <p className="text-xs text-stone-600 leading-relaxed">
+            <h4 className="text-sm font-black text-stone-900 dark:text-white">🎲 日曜：完全ランダム・お祭りカスタム</h4>
+            <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
               ランク・MMR・レート差を完全無視！ランダムシャッフルでチーム分けを行い、初心者から上級者までワイワイ盛り上がるお祭りナイトです。
             </p>
-            <ul className="text-xs text-stone-600 space-y-1 pt-1">
+            <ul className="text-xs text-stone-600 dark:text-stone-300 space-y-1 pt-1">
               <li className="flex items-center gap-1.5 font-bold">
                 <CheckCircle2 size={14} className="text-purple-600 shrink-0" />
                 <span>MMR変動なし（完全カジュアル）</span>
