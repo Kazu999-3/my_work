@@ -338,6 +338,20 @@ export async function handleWelcomePanel(interaction, env, ctx) {
   });
 }
 
+export async function handlePortalPanel(interaction, env, ctx) {
+  const { getPortalEmbed, getPortalComponents } = await import('../ui/embeds.js');
+  const portalUrl = getPortalUrl(env);
+  const userId = interaction.member?.user?.id || interaction.user?.id;
+
+  return Response.json({
+    type: 4,
+    data: {
+      embeds: [getPortalEmbed()],
+      components: getPortalComponents(userId, portalUrl)
+    }
+  });
+}
+
 
 
 export async function handleMemoCommand(interaction, env, ctx) {

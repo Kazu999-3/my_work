@@ -1,5 +1,5 @@
 import { verifySignature } from './utils/security.js';
-import { handleAnnounceMatch, handleLaneCommand, handleRecruitDirect, handleSetIgn, handleStatsCommand, handleMemoCommand, handleWelcomePanel } from './handlers/commands.js';
+import { handleAnnounceMatch, handleLaneCommand, handleRecruitDirect, handleSetIgn, handleStatsCommand, handleMemoCommand, handleWelcomePanel, handlePortalPanel } from './handlers/commands.js';
 import { handleRouletteCommand, handleRouletteButton } from './handlers/roulette.js';
 import { handleButtonInteraction } from './handlers/components.js';
 import { handleModalSubmit } from './handlers/modals.js';
@@ -134,15 +134,8 @@ export default {
           const { handleTipCommand } = await import('./handlers/bet.js');
           return await handleTipCommand(interaction, context, ctx);
         }
-        if (name === 'panel') {
-          return Response.json({
-            type: 4,
-            data: {
-              content: "🎛️ **KTM 総合コントロールパネル**\n使いたい機能のボタンを押してください。",
-              embeds: [],
-              components: (await import('./ui/embeds.js')).getPortalComponents(interaction.member?.user?.id || interaction.user?.id)
-            }
-          });
+        if (name === 'panel' || name === 'portal' || name === 'command') {
+          return await handlePortalPanel(interaction, context, ctx);
         }
       }
 

@@ -222,32 +222,30 @@ export function getWelcomeComponents(portalUrl = CONFIG.PORTAL_URL) {
 
 export function getPortalEmbed() { 
   return { 
-    title: "🛡️ KTM 司令塔: ポータルOS", 
-    description: "ドロップダウンから操作を選択してください。", 
-    color: 0x34495e, 
-    footer: { text: "KTM Sovereign OS v3.0 Portal" } 
+    title: "🛡️ KTM コマンドセンター ＆ プレイヤーズハブ", 
+    description: "ボタンを押すだけでワンタップで操作できます！\n\n1️⃣ **🎮 サモナー名 ＆ 希望レーン登録**\n未登録の方もサモナー名(Riot ID)・ランク同期・希望レーンを一括設定できます！\n\n2️⃣ **⚔️ メンバー募集開始**\nカスタム(10人)・ノーマル(5人)・ARAMの募集パネルを作成します。\n\n3️⃣ **⚡ クイック即募集**\n5人/10人の募集を1タップで即座に投下できます。", 
+    color: 0xc2650f, 
+    footer: { text: "KTM Sovereign OS | コマンドパネル" },
+    timestamp: new Date().toISOString()
   }; 
 }
 
-export function getPortalComponents(userId) {
+export function getPortalComponents(userId, portalUrl = CONFIG.PORTAL_URL) {
   const row1 = [
-    { type: 2, label: "⚔️ 募集開始", style: 3, custom_id: "portal_recruit" },
-    { type: 2, label: "📊 マイ戦績", style: 1, custom_id: "portal_stats" },
-    { type: 2, label: "📍 レーン設定", style: 2, custom_id: "portal_lane" },
-    { type: 2, label: "📝 サモナー名登録", style: 2, custom_id: "portal_ign" }
+    { type: 2, label: "🎮 サモナー名 ＆ 希望レーン登録", style: 3, custom_id: "portal_register" },
+    { type: 2, label: "⚔️ メンバー募集開始", style: 1, custom_id: "portal_recruit" }
   ];
 
   // 即募集 & エンタメ機能 (ルーレット)
   const rowQuick = [
     { type: 2, label: "⚡ ノーマル5 即募集", style: 2, custom_id: "quick_recruit:ノーマル:5" },
     { type: 2, label: "⚡ カスタム10 即募集", style: 2, custom_id: "quick_recruit:カスタム:10" },
-    { type: 2, label: "🎲 ルーレット", style: 1, custom_id: "portal_roulette" }
+    { type: 2, label: "🎲 ルーレット", style: 2, custom_id: "portal_roulette" }
   ];
 
   const row2 = [
     { type: 2, label: "🔔 募集通知 (ON/OFF)", style: 2, custom_id: "toggle_recruit_notification" },
-    { type: 2, label: "🔰 スタートガイド", style: 5, url: `${CONFIG.PORTAL_URL}/guide` },
-    { type: 2, label: "🌐 Webポータルへアクセス", style: 5, url: `${CONFIG.PORTAL_URL}/leaderboard` }
+    { type: 2, label: "📖 詳しい機能・使い方はこちら", style: 5, url: `${portalUrl}/guide` }
   ];
 
   return [
