@@ -32,13 +32,15 @@ async function main() {
 ---
 
 ### ⚔️ 週末定期カスタム（毎週土日 21:00〜）
+💡 **土日ともに1戦のみのスポット参加・途中参加・途中抜けOK！**（10名を超えた場合も交代しながら全員で回します）
+
 - 🛡️ **土曜日（真剣勝負 / MMRあり）**
   【開催＆人数ルール】
   ・**20名〜**: 上位/下位の2部屋同時開催
   ・**10〜19名**: 1ティア差の10名で開催（他は観戦/2戦目交代）
   ・**当日19時時点で7名以下**: 中止
 - 🎪 **日曜日（お祭りカスタム / MMR変動なし）**
-  ランク不問・初心者歓迎！1戦だけのスポット参加や途中抜けも自由です。
+  ランク不問・初心者歓迎！VCでワイワイ楽しむカジュアルカスタム。
 
 ---
 
@@ -47,7 +49,7 @@ async function main() {
 - 社会人としての良識を持って楽しくプレイ
 - 試合後は「次はどうすれば楽しく勝てるか」を建設的に！`;
 
-  // ルーレット削除版コンポーネント (Row 1〜4)
+  // コンポーネント (Row 1〜4)
   const components = [
     {
       type: 1,
@@ -81,7 +83,7 @@ async function main() {
     }
   ];
 
-  console.log(`Updating message (roulette removed) in #はじめに (${welcomeChannelId}) ...`);
+  console.log(`Updating message with flexible participation note in #はじめに (${welcomeChannelId}) ...`);
   
   let res = await fetch(`https://discord.com/api/v10/channels/${welcomeChannelId}/messages/${lastMessageId}`, {
     method: 'PATCH',
