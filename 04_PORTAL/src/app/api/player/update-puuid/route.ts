@@ -94,8 +94,7 @@ export async function POST(req: Request) {
         puuid: puuid,
         is_active: true,
         highest_rank: rankTier || 'UNRANKED',
-        coins: 1000, // 初期KTMコイン
-        role_preferences: { primary: 'ALL', secondary: '-' },
+        role_preferences: { primary: 'ALL', secondary: '-', coins: 1000, inventory: [] },
         mmr_top: initialMmr,
         mmr_jg: initialMmr,
         mmr_mid: initialMmr,

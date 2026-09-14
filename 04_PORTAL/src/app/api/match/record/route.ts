@@ -359,7 +359,15 @@ export async function POST(request: Request) {
         .eq('name', r.name);
 
       if (uError) {
-        throw new Error(`Player ${r.name} の更新エラー: ${uError.message}`);
+        console.warn(`[match/record] Player ${r.name} full update failed (${uError.message}), retrying without direct coins column:`);
+        delete baseUpdate.coins;
+        const retryRes = await supabase
+          .from('ktm_players')
+          .update(baseUpdate)
+          .eq('name', r.name);
+        if (retryRes.error) {
+          throw new Error(`Player ${r.name} の更新エラー: ${retryRes.error.message}`);
+        }
       }
     }
 

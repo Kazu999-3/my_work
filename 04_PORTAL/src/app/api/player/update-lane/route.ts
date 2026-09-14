@@ -75,12 +75,11 @@ export async function POST(req: Request) {
       player.allow_higher = (allowHigher === 'true' || allowHigher === true);
     }
 
-    // 書き込み（既存はupdate、新規はupsert）: 有効なDBカラムのみを安全に抽出
+    // 書き込み（既存はupdate、新規はupsert）: DBに確実に存在するカラムのみで安全に構成
     const safePayload: any = {
       name: player.name,
       discord_id: player.discord_id,
       role_preferences: player.role_preferences,
-      coins: player.coins ?? player.role_preferences.coins ?? 1000,
       highest_rank: player.highest_rank || 'UNRANKED',
       is_active: player.is_active ?? true,
     };
@@ -96,7 +95,16 @@ export async function POST(req: Request) {
     } else {
       ({ error } = await supabase.from('ktm_players').upsert(safePayload, { onConflict: 'discord_id' }));
     }
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.warn('[update-lane] standard update failed, trying minimal role_preferences update:', error.message);
+      // カラムエラー時でも role_preferences の更新を確実に成功させるフォールバック
+      if (player.id) {
+        ({ error } = await supabase.from('ktm_players').update({ role_preferences: player.role_preferences }).eq('id', player.id));
+      } else {
+        ({ error } = await supabase.from('ktm_players').upsert({ discord_id: player.discord_id, name: player.name, role_preferences: player.role_preferences }, { onConflict: 'discord_id' }));
+      }
+      if (error) throw new Error(error.message);
+    }
 
     return NextResponse.json({ status: 'SUCCESS' });
   } catch (e: any) {
