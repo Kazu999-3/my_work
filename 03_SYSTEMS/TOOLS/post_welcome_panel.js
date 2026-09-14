@@ -10,7 +10,7 @@ async function main() {
 
   const welcomeChannelId = '1485646544043642964'; // 📍はじめに
   const lastMessageId = '1549113148248817666'; // 直前の投稿
-  const portalUrl = 'https://ktm-portal.vercel.app';
+  const portalUrl = 'https://my-work-8jbd.vercel.app';
 
   const content = `# 👑 KTM LoL部 へようこそ！
 > 仕事終わりのLoLに「心地よい熱狂」と「大人の語らい」を。
@@ -47,7 +47,7 @@ async function main() {
 - 社会人としての良識を持って楽しくプレイ
 - 試合後は「次はどうすれば楽しく勝てるか」を建設的に！`;
 
-  // 全ボタン網羅版コンポーネント (Row 1〜4)
+  // ルーレット削除版コンポーネント (Row 1〜4)
   const components = [
     {
       type: 1,
@@ -61,8 +61,7 @@ async function main() {
       type: 1,
       components: [
         { type: 2, label: "⚡ ノーマル5 即募集", style: 2, custom_id: "quick_recruit:ノーマル:5" },
-        { type: 2, label: "⚡ カスタム10 即募集", style: 2, custom_id: "quick_recruit:カスタム:10" },
-        { type: 2, label: "🎲 ルーレット", style: 2, custom_id: "portal_roulette" }
+        { type: 2, label: "⚡ カスタム10 即募集", style: 2, custom_id: "quick_recruit:カスタム:10" }
       ]
     },
     {
@@ -82,7 +81,7 @@ async function main() {
     }
   ];
 
-  console.log(`Updating message with all control panel buttons in #はじめに (${welcomeChannelId}) ...`);
+  console.log(`Updating message (roulette removed) in #はじめに (${welcomeChannelId}) ...`);
   
   let res = await fetch(`https://discord.com/api/v10/channels/${welcomeChannelId}/messages/${lastMessageId}`, {
     method: 'PATCH',
@@ -97,7 +96,7 @@ async function main() {
   });
 
   if (res.ok) {
-    console.log(`SUCCESS: Message updated successfully with all buttons (Message ID: ${lastMessageId})`);
+    console.log(`SUCCESS: Message updated successfully (Message ID: ${lastMessageId})`);
   } else {
     console.log(`Patch failed (${res.status}), posting as new message...`);
     res = await fetch(`https://discord.com/api/v10/channels/${welcomeChannelId}/messages`, {

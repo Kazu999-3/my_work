@@ -214,11 +214,10 @@ export function getPortalComponents(userId, portalUrl = CONFIG.PORTAL_URL) {
     { type: 2, label: "📊 マイ戦績確認", style: 2, custom_id: "portal_stats" }
   ];
 
-  // Row 2: 即募集 & エンタメ
+  // Row 2: 即募集
   const rowQuick = [
     { type: 2, label: "⚡ ノーマル5 即募集", style: 2, custom_id: "quick_recruit:ノーマル:5" },
-    { type: 2, label: "⚡ カスタム10 即募集", style: 2, custom_id: "quick_recruit:カスタム:10" },
-    { type: 2, label: "🎲 ルーレット", style: 2, custom_id: "portal_roulette" }
+    { type: 2, label: "⚡ カスタム10 即募集", style: 2, custom_id: "quick_recruit:カスタム:10" }
   ];
 
   // Row 3: 個別設定・通知
