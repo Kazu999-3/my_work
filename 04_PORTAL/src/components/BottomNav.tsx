@@ -66,7 +66,7 @@ export default function BottomNav() {
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-stone-200 px-2 py-1.5 shadow-2xl safe-area-bottom">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-[#1e1f22]/95 backdrop-blur-md border-t border-stone-200 dark:border-[#3f4147] px-2 py-1.5 shadow-2xl safe-area-bottom">
       <div className="flex items-center justify-around max-w-md mx-auto">
         {navItems.map((item) => {
           const isActive = pathname === item.href || (item.href.startsWith('/player') && pathname.startsWith('/player'));
@@ -78,8 +78,8 @@ export default function BottomNav() {
               href={item.href}
               className={`relative flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all ${
                 isActive
-                  ? 'text-amber-600 font-black scale-105'
-                  : 'text-stone-500 hover:text-stone-900 font-medium'
+                  ? 'text-amber-600 dark:text-amber-400 font-black scale-105'
+                  : 'text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 font-medium'
               }`}
             >
               {item.badge && !isActive && (
@@ -87,8 +87,8 @@ export default function BottomNav() {
                   {item.badge}
                 </span>
               )}
-              <div className={`p-1 rounded-xl transition-colors ${isActive ? 'bg-amber-500/15' : ''}`}>
-                <Icon size={20} className={isActive ? 'text-amber-600' : 'text-stone-400'} />
+              <div className={`p-1 rounded-xl transition-colors ${isActive ? 'bg-amber-500/15 dark:bg-amber-500/25' : ''}`}>
+                <Icon size={20} className={isActive ? 'text-amber-600 dark:text-amber-400' : 'text-stone-400 dark:text-stone-500'} />
               </div>
               <span className="text-[10px] tracking-tight mt-0.5">
                 {item.label}

@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-background: #eae4d4;
   --color-foreground: #201c2b;
@@ -37,8 +39,8 @@ html,
 body {
   max-width: 100vw;
   overflow-x: clip;
-  background-color: #eae4d4;
-  color: #201c2b;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -46,6 +48,33 @@ body {
     radial-gradient(circle at 15% 50%, rgba(194, 101, 15, 0.05) 0%, transparent 50%),
     radial-gradient(circle at 85% 30%, rgba(169, 118, 15, 0.05) 0%, transparent 50%);
   background-attachment: fixed;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* 🌙 Discord・スレート調ダークモードスタイル */
+html.dark {
+  --color-background: #1e1f22;
+  --color-foreground: #f2f3f5;
+  --color-surface: #2b2d31;
+  --color-surface-hover: #35373c;
+  --color-border: #3f4147;
+  --color-muted: #949ba4;
+  --color-primary: #e07a1e;
+  --color-primary-glow: rgba(224, 122, 30, 0.35);
+  --color-accent: #f59e0b;
+  --color-gold: #d4af37;
+  --color-gold-glow: rgba(212, 175, 55, 0.35);
+
+  background-color: #1e1f22 !important;
+  color: #f2f3f5 !important;
+  background-image:
+    radial-gradient(circle at 15% 50%, rgba(224, 122, 30, 0.04) 0%, transparent 50%),
+    radial-gradient(circle at 85% 30%, rgba(99, 102, 241, 0.04) 0%, transparent 50%) !important;
+}
+
+html.dark body {
+  background-color: #1e1f22 !important;
+  color: #f2f3f5 !important;
 }
 
 @layer utilities {
@@ -55,6 +84,15 @@ body {
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(32, 28, 43, 0.1);
     box-shadow: 0 4px 20px rgba(32, 28, 43, 0.06);
+    transition: background 0.25s ease, border-color 0.25s ease;
+  }
+
+  html.dark .glass-panel {
+    background: rgba(43, 45, 49, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(63, 65, 71, 0.8);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
   }
 
   @media (max-width: 768px) {
@@ -64,6 +102,14 @@ body {
       background: linear-gradient(135deg, rgba(253, 252, 249, 0.98) 0%, rgba(245, 241, 230, 0.98) 100%) !important;
       border: 1px solid rgba(194, 101, 15, 0.15) !important;
       box-shadow: inset 0 0 12px rgba(194, 101, 15, 0.04), 0 4px 16px rgba(32, 28, 43, 0.08) !important;
+    }
+
+    html.dark .glass-panel {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      background: linear-gradient(135deg, rgba(43, 45, 49, 0.98) 0%, rgba(30, 31, 34, 0.98) 100%) !important;
+      border: 1px solid rgba(63, 65, 71, 0.9) !important;
+      box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.25), 0 4px 16px rgba(0, 0, 0, 0.4) !important;
     }
   }
 
@@ -76,8 +122,20 @@ body {
     box-shadow: 0 4px 20px rgba(169, 118, 15, 0.15);
   }
 
+  html.dark .glass-panel-hover:hover {
+    background: rgba(53, 55, 60, 0.95);
+    border-color: rgba(212, 175, 55, 0.45);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  }
+
   .gold-gradient-text {
     background: linear-gradient(135deg, #8a5a10 0%, #a9760f 50%, #7a4e0c 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  html.dark .gold-gradient-text {
+    background: linear-gradient(135deg, #f59e0b 0%, #d4af37 50%, #fbbf24 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
@@ -87,11 +145,22 @@ body {
     box-shadow: 0 0 12px rgba(169, 118, 15, 0.2);
   }
 
+  html.dark .gold-border-glow {
+    border-color: rgba(212, 175, 55, 0.5);
+    box-shadow: 0 0 14px rgba(212, 175, 55, 0.3);
+  }
+
   .cyber-grid {
     background-size: 40px 40px;
     background-image:
       linear-gradient(to right, rgba(32, 28, 43, 0.03) 1px, transparent 1px),
       linear-gradient(to bottom, rgba(32, 28, 43, 0.03) 1px, transparent 1px);
+  }
+
+  html.dark .cyber-grid {
+    background-image:
+      linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
   }
 
   @keyframes bounceShort {

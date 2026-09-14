@@ -5,6 +5,10 @@ import Sidebar from "../components/Sidebar";
 import PwaRegister from "../components/PwaRegister";
 import Toaster from "../components/Toaster";
 import BackButton from "../components/BackButton";
+import BackToTop from "../components/BackToTop";
+import OfflineNotifier from "../components/OfflineNotifier";
+import BottomNav from "../components/BottomNav";
+import { ThemeProvider } from "../context/ThemeContext";
 
 export const metadata: Metadata = {
   title: {
@@ -29,14 +33,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#eae4d4",
+  themeColor: "#1e1f22",
 };
-
-import BackToTop from "../components/BackToTop";
-
-import OfflineNotifier from "../components/OfflineNotifier";
-
-import BottomNav from "../components/BottomNav";
 
 export default function RootLayout({
   children,
@@ -44,7 +42,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja">
+    <html lang="ja" suppressHydrationWarning>
       <head>
         {/* 
           beforeinstallprompt を React hydration 前にグローバルキャッチ。
@@ -58,17 +56,39 @@ export default function RootLayout({
             window.__pwaPrompt = e;
           });
         `}</Script>
+
+        {/* 🌙 FOUC (フラッシュ・オブ・ホワイト) 防止: React実行前に即時テーマを適用 */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                var savedTheme = localStorage.getItem('ktm-theme');
+                var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                var isDark = savedTheme === 'dark' || (savedTheme !== 'light' && prefersDark);
+                if (isDark) {
+                  document.documentElement.classList.add('dark');
+                  document.documentElement.style.colorScheme = 'dark';
+                } else {
+                  document.documentElement.classList.remove('dark');
+                  document.documentElement.style.colorScheme = 'light';
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
       </head>
       <body className="antialiased bg-background text-foreground flex min-h-screen">
-        <PwaRegister />
-        <Toaster />
-        <OfflineNotifier />
-        <Sidebar />
-        <div className="flex-1 min-w-0 overflow-x-hidden pb-20 md:pb-0">
-          <BackButton />
-          {children}
-        </div>
-        <BackToTop />
+        <ThemeProvider>
+          <PwaRegister />
+          <Toaster />
+          <OfflineNotifier />
+          <Sidebar />
+          <div className="flex-1 min-w-0 overflow-x-hidden pb-20 md:pb-0">
+            <BackButton />
+            {children}
+          </div>
+          <BackToTop />
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { 
   Shield, Trees, Zap, Target, Heart, Shuffle, Ban, 
-  Save, CheckCircle2, AlertTriangle, RefreshCw, GraduationCap, Award
+  Save, CheckCircle2, AlertTriangle, RefreshCw, GraduationCap, Award, Moon, Sun, Laptop
 } from "lucide-react";
+import ThemeToggle from "../../components/ThemeToggle";
 
 interface MentorshipPref {
   isStudent?: boolean;
@@ -399,7 +400,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-black text-amber-950 mb-1">
+                  <label className="block text-[11px] font-black text-amber-950 dark:text-amber-200 mb-1">
                     💬 教えられること・指導スタイル（一言アピール）
                   </label>
                   <input
@@ -407,7 +408,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
                     value={mentorComment}
                     onChange={(e) => setMentorComment(e.target.value)}
                     placeholder="例: サポートの視界管理やレーン戦の仕掛け方を教えられます！"
-                    className="w-full bg-white border border-amber-300 rounded-xl px-3.5 py-2 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-amber-500 shadow-xs"
+                    className="w-full bg-white dark:bg-[#1e1f22] border border-amber-300 dark:border-[#3f4147] rounded-xl px-3.5 py-2 text-xs text-stone-900 dark:text-white placeholder:text-stone-400 focus:outline-none focus:border-amber-500 shadow-xs"
                   />
                 </div>
               </div>
@@ -416,8 +417,24 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
         </div>
       </div>
 
+      {/* 🌙 外観・ダークモード設定 */}
+      <div className="bg-stone-50/80 dark:bg-[#2b2d31]/80 border border-stone-200/80 dark:border-[#3f4147] rounded-3xl p-6 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-2xl bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-black">
+              <Moon size={18} />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-stone-900 dark:text-white">外観・テーマ設定</h3>
+              <p className="text-[11px] text-stone-500 dark:text-stone-400">ライトモード・スレート調ダークモード・OS自動連動を切り替えられます</p>
+            </div>
+          </div>
+          <ThemeToggle variant="full" />
+        </div>
+      </div>
+
       {/* 保存ボタン & 通知 */}
-      <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-stone-200">
+      <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-stone-200 dark:border-[#3f4147]">
         <div>
           {saveSuccess && (
             <div className="flex items-center gap-2 text-emerald-700 text-xs font-black animate-fade-in">

@@ -8,6 +8,7 @@ import FavoritesPanel from './FavoritesPanel';
 import PushOptIn from './PushOptIn';
 import NotificationBell from './NotificationBell';
 import TaskStatusDrawer from './TaskStatusDrawer';
+import ThemeToggle from './ThemeToggle';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 
 function UserAuthWidget({ collapsed }: { collapsed?: boolean }) {
@@ -209,36 +210,39 @@ export default function Sidebar() {
   return (
     <>
       <aside
-        className={`hidden md:flex flex-col h-screen sticky top-0 bg-[#f7f5f0] border-r border-stone-200/80 transition-all duration-300 z-30 ${isCollapsed ? 'w-20' : 'w-64'
+        className={`hidden md:flex flex-col h-screen sticky top-0 bg-[#f7f5f0] dark:bg-[#1e1f22] border-r border-stone-200/80 dark:border-[#3f4147] transition-all duration-300 z-30 ${isCollapsed ? 'w-20' : 'w-64'
           }`}
       >
-        <div className="flex items-center justify-between p-4 border-b border-stone-200/80">
+        <div className="flex items-center justify-between p-4 border-b border-stone-200/80 dark:border-[#3f4147]">
           {!isCollapsed && (
             <Link href="/" className="flex items-center gap-2">
-              <span className="font-extrabold text-lg text-stone-900 tracking-tight">SOVEREIGN</span>
+              <span className="font-extrabold text-lg text-stone-900 dark:text-white tracking-tight">SOVEREIGN</span>
             </Link>
           )}
-          <button
-            onClick={toggleSidebar}
-            className="p-2 rounded-xl hover:bg-stone-200/60 text-stone-600 transition"
-          >
-            {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-          </button>
+          <div className="flex items-center gap-1">
+            {!isCollapsed && <ThemeToggle variant="compact" />}
+            <button
+              onClick={toggleSidebar}
+              className="p-2 rounded-xl hover:bg-stone-200/60 dark:hover:bg-[#35373c] text-stone-600 dark:text-stone-300 transition cursor-pointer"
+            >
+              {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+            </button>
+          </div>
         </div>
 
         {showAdminToggle && !isCollapsed && (
-          <div className="p-3 border-b border-stone-200/80">
-            <div className="flex bg-stone-200/60 p-1 rounded-xl">
+          <div className="p-3 border-b border-stone-200/80 dark:border-[#3f4147]">
+            <div className="flex bg-stone-200/60 dark:bg-[#2b2d31] p-1 rounded-xl">
               <button
                 onClick={() => handleTabChange('admin')}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${activeTab === 'admin' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-600 hover:text-stone-900'
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${activeTab === 'admin' ? 'bg-white dark:bg-[#1e1f22] text-stone-900 dark:text-white shadow-sm' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'
                   }`}
               >
                 管理者
               </button>
               <button
                 onClick={() => handleTabChange('general')}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${activeTab === 'general' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-600 hover:text-stone-900'
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${activeTab === 'general' ? 'bg-white dark:bg-[#1e1f22] text-stone-900 dark:text-white shadow-sm' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'
                   }`}
               >
                 一般
@@ -256,13 +260,13 @@ export default function Sidebar() {
             return (
               <React.Fragment key={item.id}>
                 {showSection && (
-                  <div className="px-3 pt-4 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-stone-400">
+                  <div className="px-3 pt-4 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-stone-400 dark:text-stone-500">
                     {item.section}
                   </div>
                 )}
                 <Link
                   href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition ${isActive ? `${item.activeBg} ${item.color}` : 'text-stone-600 hover:bg-stone-200/50 hover:text-stone-900'
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition ${isActive ? `${item.activeBg} ${item.color}` : 'text-stone-600 dark:text-stone-300 hover:bg-stone-200/50 dark:hover:bg-[#2b2d31] hover:text-stone-900 dark:hover:text-white'
                     }`}
                   title={isCollapsed ? item.label : undefined}
                 >
@@ -274,7 +278,13 @@ export default function Sidebar() {
           })}
         </div>
 
-        <div className="p-3 border-t border-stone-200/80 space-y-2">
+        <div className="p-3 border-t border-stone-200/80 dark:border-[#3f4147] space-y-2">
+          {/* 折りたたみ時のテーマ切替 */}
+          {isCollapsed && (
+            <div className="flex justify-center pb-1">
+              <ThemeToggle variant="compact" />
+            </div>
+          )}
           {/* Discord ユーザープロフィール / ログイン */}
           <UserAuthWidget collapsed={isCollapsed} />
           {showAdminToggle && (
@@ -288,7 +298,7 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#f7f5f0]/95 backdrop-blur-md border-t border-stone-200 z-40 px-2 py-2 min-h-[52px] flex items-center justify-around">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#f7f5f0]/95 dark:bg-[#1e1f22]/95 backdrop-blur-md border-t border-stone-200 dark:border-[#3f4147] z-40 px-2 py-2 min-h-[52px] flex items-center justify-around">
         {primaryMobileItems.map((item) => (
           <MobileNavItem
             key={item.id}
@@ -301,7 +311,7 @@ export default function Sidebar() {
         {overflowMobileItems.length > 0 && (
           <button
             onClick={() => setShowMobileMore(true)}
-            className="flex flex-col items-center justify-center min-w-[3.75rem] px-2 py-2 rounded-xl text-stone-600 active:bg-black/10 touch-manipulation select-none"
+            className="flex flex-col items-center justify-center min-w-[3.75rem] px-2 py-2 rounded-xl text-stone-600 dark:text-stone-300 active:bg-black/10 touch-manipulation select-none"
           >
             <MoreHorizontal size={20} className="mb-0.5" />
             <span className="text-[10px] font-extrabold tracking-wider truncate w-full text-center">その他</span>
@@ -310,13 +320,16 @@ export default function Sidebar() {
       </nav>
 
       {showMobileMore && (
-        <div className="md:hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex flex-col justify-end">
-          <div className="bg-[#f7f5f0] rounded-t-3xl p-5 border-t border-stone-200 max-h-[80vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4 pb-2 border-b border-stone-200">
-              <h3 className="font-extrabold text-sm text-stone-900">メニュー</h3>
-              <button onClick={() => setShowMobileMore(false)} className="p-1.5 rounded-full hover:bg-stone-200">
-                <XIcon size={18} />
-              </button>
+        <div className="md:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex flex-col justify-end">
+          <div className="bg-[#f7f5f0] dark:bg-[#1e1f22] rounded-t-3xl p-5 border-t border-stone-200 dark:border-[#3f4147] max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4 pb-2 border-b border-stone-200 dark:border-[#3f4147]">
+              <h3 className="font-extrabold text-sm text-stone-900 dark:text-white">メニュー</h3>
+              <div className="flex items-center gap-2">
+                <ThemeToggle variant="compact" />
+                <button onClick={() => setShowMobileMore(false)} className="p-1.5 rounded-full hover:bg-stone-200 dark:hover:bg-[#2b2d31] text-stone-600 dark:text-stone-300">
+                  <XIcon size={18} />
+                </button>
+              </div>
             </div>
 
             {/* スマホ用 ユーザー認証 / プロフィール */}
@@ -326,11 +339,11 @@ export default function Sidebar() {
 
             {/* スマホ用 管理者 / 一般 切り替えタブ */}
             {showAdminToggle && (
-              <div className="flex bg-stone-200/60 p-1 rounded-xl mb-4">
+              <div className="flex bg-stone-200/60 dark:bg-[#2b2d31] p-1 rounded-xl mb-4">
                 <button
                   onClick={() => handleTabChange('admin')}
                   className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
-                    activeTab === 'admin' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-600 hover:text-stone-900'
+                    activeTab === 'admin' ? 'bg-white dark:bg-[#1e1f22] text-stone-900 dark:text-white shadow-sm' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'
                   }`}
                 >
                   管理者
@@ -338,7 +351,7 @@ export default function Sidebar() {
                 <button
                   onClick={() => handleTabChange('general')}
                   className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
-                    activeTab === 'general' ? 'bg-white text-stone-900 shadow-sm' : 'text-stone-600 hover:text-stone-900'
+                    activeTab === 'general' ? 'bg-white dark:bg-[#1e1f22] text-stone-900 dark:text-white shadow-sm' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'
                   }`}
                 >
                   一般
@@ -360,7 +373,7 @@ export default function Sidebar() {
                     key={item.id}
                     href={item.href}
                     onClick={() => setShowMobileMore(false)}
-                    className={`flex flex-col items-center p-3 rounded-2xl border text-center transition ${isActive ? `${item.activeBg} ${item.color} border-current` : 'bg-white border-stone-200 text-stone-700'
+                    className={`flex flex-col items-center p-3 rounded-2xl border text-center transition ${isActive ? `${item.activeBg} ${item.color} border-current` : 'bg-white dark:bg-[#2b2d31] border-stone-200 dark:border-[#3f4147] text-stone-700 dark:text-stone-200'
                       }`}
                   >
                     <Icon size={20} className="mb-1.5" />
