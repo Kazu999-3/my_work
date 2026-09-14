@@ -391,26 +391,82 @@ export default function MentorshipHubPanel() {
   const myMentorProfile = profiles.find((p) => p.discord_id === myDiscordId && p.role_type === 'MENTOR');
   const currentTabMyProfile = activeTab === 'PUPIL' ? myPupilProfile : activeTab === 'MENTOR' ? myMentorProfile : (myPupilProfile || myMentorProfile);
 
-  // 🎯 AI相性スコアの算出ロジック（現在のタブのプロフィールを基準に算出）
+  // ランクの強さ序列定義
+  const RANK_ORDER: Record<string, number> = {
+    IRON: 1,
+    BRONZE: 2,
+    SILVER: 3,
+    GOLD: 4,
+    PLATINUM: 5,
+    EMERALD: 6,
+    DIAMOND: 7,
+    MASTER: 8,
+    GRANDMASTER: 9,
+    CHALLENGER: 10,
+    UNRANKED: 2,
+  };
+
+  // 🎯 AI相性スコアの厳格算出ロジック（ベース0点・適正条件が揃わないと高スコアにならない超厳格査定）
   const calculateMatchScore = (target: MentorshipProfile): { score: number; reason: string } => {
     const baseMyProfile = target.role_type === 'MENTOR' ? myPupilProfile : myMentorProfile;
     if (!baseMyProfile || target.discord_id === baseMyProfile.discord_id) {
       return { score: 0, reason: '' };
     }
 
-    let score = 50; // ベーススコア
-    const reasons: string[] = [];
-
-    // 1. 役割の補完性 (弟子×師匠)
-    if (baseMyProfile.role_type !== target.role_type) {
-      score += 20;
+    // 役割が同じ同士（弟子×弟子、師匠×師匠）はマッチ不可
+    if (baseMyProfile.role_type === target.role_type) {
+      return { score: 0, reason: '' };
     }
 
-    // 2. レーン適合度
-    const sharedLanes = (baseMyProfile.lanes || []).filter((l) => (target.lanes || []).includes(l));
+    let score = 0; // 厳格化: 0点スタート
+    const reasons: string[] = [];
+
+    const mentorProf = target.role_type === 'MENTOR' ? target : baseMyProfile;
+    const pupilProf = target.role_type === 'PUPIL' ? target : baseMyProfile;
+
+    // 1. ランク適性・実力差の厳格判定（配点: 最大35点 / 逆転時は -40点）
+    const mentorRankKey = (mentorProf.current_rank || 'UNRANKED').toUpperCase().split(' ')[0];
+    const pupilRankKey = (pupilProf.current_rank || 'UNRANKED').toUpperCase().split(' ')[0];
+    const mentorTier = RANK_ORDER[mentorRankKey] || 3;
+    const pupilTier = RANK_ORDER[pupilRankKey] || 3;
+
+    if (mentorTier > pupilTier) {
+      const tierDiff = mentorTier - pupilTier;
+      if (tierDiff >= 1 && tierDiff <= 3) {
+        // 最も成長効果が高い適正ランク差（1〜3ティア上）
+        score += 35;
+        reasons.push('最適な実力差（1〜3ティア上）');
+      } else if (tierDiff >= 4) {
+        // 実力差が開きすぎている場合
+        score += 15;
+        reasons.push('ハイレベル師匠');
+      }
+    } else if (mentorTier === pupilTier) {
+      score += 5; // 同格（切磋琢磨）
+    } else {
+      // 弟子の方が師匠より高ランクの場合は大幅減点
+      score -= 40;
+    }
+
+    // 師匠側の歓迎帯域の照合（配点: 最大10点）
+    const welcomeText = mentorProf.target_rank || '';
+    if (
+      (welcomeText.includes('シルバー') && pupilTier <= 3) ||
+      (welcomeText.includes('ゴールド') && pupilTier <= 4) ||
+      (welcomeText.includes('プラチナ') && pupilTier <= 5) ||
+      (welcomeText.includes('エメラルド') && pupilTier <= 6)
+    ) {
+      score += 10;
+      reasons.push('募集対象ランク帯合致');
+    } else if (welcomeText.includes('全ランク') || welcomeText.includes('初心者歓迎')) {
+      score += 5;
+    }
+
+    // 2. レーン適合度（配点: 最大35点 / 完全不一致は -10点）
+    const sharedLanes = (baseMyProfile.lanes || []).filter((l: string) => (target.lanes || []).includes(l));
     if (sharedLanes.length > 0) {
-      score += 20;
-      reasons.push(`${sharedLanes.join('/')}専`);
+      score += 35;
+      reasons.push(`同レーン（${sharedLanes.join('/')}）専攻`);
     } else {
       // BOT x SUP や MID x JG などのシナジー
       const isDuoSynergy =
@@ -420,26 +476,48 @@ export default function MentorshipHubPanel() {
         (baseMyProfile.lanes?.includes('JUNGLE') && target.lanes?.includes('MID'));
       if (isDuoSynergy) {
         score += 15;
-        reasons.push('相性抜群のレーンシナジー');
+        reasons.push('連携レーンシナジー');
+      } else {
+        // レーンに全く関係性がない場合は減点
+        score -= 10;
       }
     }
 
-    // 3. 得意チャンピオンの共通性
-    const sharedChamps = (baseMyProfile.champions || []).filter((c) => (target.champions || []).includes(c));
-    if (sharedChamps.length > 0) {
-      score += 10;
-      reasons.push('共通チャンプあり');
+    // 3. 得意・練習中チャンピオンの合致（配点: 最大25点）
+    const sharedChamps = (baseMyProfile.champions || []).filter((c: string) => (target.champions || []).includes(c));
+    if (sharedChamps.length >= 2) {
+      score += 25;
+      reasons.push(`得意チャンプ複数合致(${sharedChamps.slice(0, 2).join(', ')})`);
+    } else if (sharedChamps.length === 1) {
+      score += 15;
+      reasons.push(`「${sharedChamps[0]}」指導可能`);
     }
 
-    // 4. 指導・学習スタイルのタグ共通性
-    const sharedTags = (baseMyProfile.tags || []).filter((t) => (target.tags || []).includes(t));
+    // 4. 指導・学習スタイルのタグ共通性（配点: 最大12点）
+    const sharedTags = (baseMyProfile.tags || []).filter((t: string) => (target.tags || []).includes(t));
     if (sharedTags.length > 0) {
       score += Math.min(sharedTags.length * 4, 12);
       if (reasons.length < 2) reasons.push(sharedTags[0]);
     }
 
-    const finalScore = Math.min(Math.max(score, 60), 98);
-    const reasonText = reasons.length > 0 ? reasons.join(' ＆ ') : 'プレイスタイルが適合';
+    // 5. 活動時間帯の親和性（配点: 最大10点）
+    if (baseMyProfile.active_hours && target.active_hours) {
+      const myHours = baseMyProfile.active_hours.toLowerCase();
+      const targetHours = target.active_hours.toLowerCase();
+      const timeMatch =
+        (myHours.includes('平日') && targetHours.includes('平日')) ||
+        (myHours.includes('休日') && targetHours.includes('休日')) ||
+        (myHours.includes('夜') && targetHours.includes('夜')) ||
+        (myHours.includes('昼') && targetHours.includes('昼'));
+      if (timeMatch) {
+        score += 10;
+        if (reasons.length < 3) reasons.push('活動時間帯一致');
+      }
+    }
+
+    // 厳格なスコア範囲補正（最小5%〜最大99%）
+    const finalScore = Math.min(Math.max(score, 5), 99);
+    const reasonText = reasons.length > 0 ? reasons.slice(0, 2).join(' ＆ ') : '条件が一部のみ合致';
     return { score: finalScore, reason: reasonText };
   };
 
@@ -458,13 +536,13 @@ export default function MentorshipHubPanel() {
     return true;
   });
 
-  // おすすめピックアップ（相性スコア上位2名）
+  // おすすめピックアップ（厳格化: 80点以上の真の相性抜群のみ抽出）
   const baseProfileForRecommendation = activeTab === 'PUPIL' ? myPupilProfile : activeTab === 'MENTOR' ? myMentorProfile : null;
   const recommendedProfiles = baseProfileForRecommendation
     ? profiles
         .filter((p) => p.discord_id !== myDiscordId && p.role_type !== baseProfileForRecommendation.role_type)
         .map((p) => ({ profile: p, ...calculateMatchScore(p) }))
-        .filter((item) => item.score >= 75)
+        .filter((item) => item.score >= 80)
         .sort((a, b) => b.score - a.score)
         .slice(0, 2)
     : [];
