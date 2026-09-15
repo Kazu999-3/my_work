@@ -106,15 +106,45 @@ export const RADAR_HISTORY_TIMELINE: RadarHistoryPoint[] = [
   },
 ];
 
+export interface VisionMetrics {
+  visionScorePerMin: number;       // 分間視界スコア (例: 1.62)
+  visionRankPercentile: number;    // 上位% (例: 18%)
+  controlWardsPerGame: number;     // 1試合平均ピンクワード購入数 (例: 2.4本)
+  controlWardAvgLifetimeSec: number; // ピンクワード平均生存秒数 (例: 184秒)
+  wardsPlacedPerMin: number;       // 分間ワード設置数 (例: 0.65)
+  wardsClearedPerMin: number;      // 分間ワード破壊数 (例: 0.38)
+  deepWardRatioPercent: number;    // 敵陣ディープ視界比率% (例: 24%)
+  defensiveWardRatioPercent: number;// 自陣・防衛視界比率% (例: 76%)
+  visionScoreTier: string;         // 'A (エメラルド級)'
+  strengthsSummary: string;
+  bottleneckSummary: string;
+  actionAdvice: string;
+}
+
+export const KAZURIN_VISION_METRICS: VisionMetrics = {
+  visionScorePerMin: 1.62,
+  visionRankPercentile: 18, // 上位18% (同ランク平均 1.18 に対して大幅先行)
+  controlWardsPerGame: 2.4,
+  controlWardAvgLifetimeSec: 184,
+  wardsPlacedPerMin: 0.65,
+  wardsClearedPerMin: 0.38,
+  deepWardRatioPercent: 24,
+  defensiveWardRatioPercent: 76,
+  visionScoreTier: 'A (エメラルド水準)',
+  strengthsSummary: '防衛視界・オブジェクト周りの視界確保（上位18%）が非常に優秀。ピンクワード平均2.4本購入と長寿命（184秒）が、被デス3.46という驚異的な生存率を支える基盤となっています。',
+  bottleneckSummary: '設置ワードの76%が自陣・リバー防衛に偏っており、敵ジャングル深部（ディープワード）への設置が24%に留まっています。これが「敵JGのガンク位置察知の遅れ（KP@15低下）」の要因の1つです。',
+  actionAdvice: '3:30フルクリア後やリコール直後、敵ラプター裏・青バフ横のブッシュに「ディープワード」を1本刺すだけで、敵JGのガンクルートを30秒前に察知できます。',
+};
+
 /** AIプロンプト（事前アドバイス・事後振り返り）へ注入するパーソナルコンテキスト文 */
 export function getPlayerStylePromptContext(): string {
   return `【プレイヤー固有のプレイスタイル特性・弱点カルテ（your.gg実戦データ連動）】
 ・プレイヤー名: ${KAZURIN_STYLE_PROFILE.summonerName}（メイン: JG）
-・最大の強み: 🛡️ 生存能力 A+（平均デス${KAZURIN_STYLE_PROFILE.avgDeaths} / 上位${KAZURIN_STYLE_PROFILE.survivalRankPercentile}%）、🌾 15分CS差 +${KAZURIN_STYLE_PROFILE.csd15}（上位${KAZURIN_STYLE_PROFILE.csdRankPercentile}%）。無駄死にが極端に少なくファームが正確。
-・最大のボトルネック（敗因の核）: ⚠️ 序盤15分の戦闘関与率（KP@15）がわずか ${KAZURIN_STYLE_PROFILE.earlyKp15}%（下位3%）。
+・最大の強み: 🛡️ 生存能力 A+（平均デス${KAZURIN_STYLE_PROFILE.avgDeaths} / 上位${KAZURIN_STYLE_PROFILE.survivalRankPercentile}%）、🌾 15分CS差 +${KAZURIN_STYLE_PROFILE.csd15}（上位${KAZURIN_STYLE_PROFILE.csdRankPercentile}%）、👁️ 分間視界スコア ${KAZURIN_VISION_METRICS.visionScorePerMin}/分（上位${KAZURIN_VISION_METRICS.visionRankPercentile}%）。防衛視界とファームが極めて正確。
+・最大のボトルネック（敗因の核）: ⚠️ 序盤15分の戦闘関与率（KP@15）がわずか ${KAZURIN_STYLE_PROFILE.earlyKp15}%（下位3%）。視界の76%が防衛寄りで、敵陣ディープ視界（24%）が少ないため敵JGの初動察知が後手に回りやすい。
 ・典型的負けパターン: 「自分は高CS・低デス（KDA 6.0+）で育っているが、敵JGが能動的にガンクして味方レーンが崩壊し、15分以降にオブジェクトや集団戦で押し切られる」。
 ・AIコーチへの特別添削指示:
-  1. 単に「CSが多い」「デスが少なくて良い」と褒めるだけで終わらせず、「序盤に敵JGが仕掛けた際、カウンターアクション（逆サイドジャングル荒らし、対角タワー圧力、カウンターガンク）が取れていたか」を厳格に評価すること。
-  2. 改善アクションには必ず「1周目ファーム完了後の1回のレーン干渉または敵陣侵入」を含めること。`;
+  1. 単に「CSが多い」「デスが少なくて良い」と褒めるだけで終わらせず、「序盤に敵JGが仕掛けた際、カウンターアクション（逆サイドジャングル荒らし、対角タワー圧力、カウンターガンク、ディープ視界設置）」が取れていたかを厳格に評価すること。
+  2. 改善アクションには必ず「1周目ファーム完了後の1回のレーン干渉または敵陣ディープワード侵入」を含めること。`;
 }
 

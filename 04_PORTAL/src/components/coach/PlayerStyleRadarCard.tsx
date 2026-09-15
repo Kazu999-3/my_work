@@ -16,7 +16,8 @@ import {
   CheckCircle2,
   HelpCircle,
 } from 'lucide-react';
-import { KAZURIN_STYLE_PROFILE, RADAR_HISTORY_TIMELINE, RadarHistoryPoint } from '../../lib/playerStyleProfile';
+import { KAZURIN_STYLE_PROFILE, RADAR_HISTORY_TIMELINE, KAZURIN_VISION_METRICS, RadarHistoryPoint } from '../../lib/playerStyleProfile';
+import { Eye, ShieldCheck, MapPin } from 'lucide-react';
 
 // プレイスタイルの4大タイプ
 const PLAY_STYLE_TYPES = [
@@ -69,7 +70,8 @@ const PLAY_STYLE_TYPES = [
 export default function PlayerStyleRadarCard() {
   const p = KAZURIN_STYLE_PROFILE;
   const history = RADAR_HISTORY_TIMELINE;
-  const [activeTab, setActiveTab] = useState<'profile' | 'timeline' | 'types'>('profile');
+  const vision = KAZURIN_VISION_METRICS;
+  const [activeTab, setActiveTab] = useState<'profile' | 'timeline' | 'vision' | 'types'>('profile');
   const [selectedPeriodIdx, setSelectedPeriodIdx] = useState<number>(history.length - 1);
 
   const selectedPeriod = history[selectedPeriodIdx];
@@ -99,7 +101,7 @@ export default function PlayerStyleRadarCard() {
           <button
             type="button"
             onClick={() => setActiveTab('profile')}
-            className={`px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+            className={`px-2 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
               activeTab === 'profile' ? 'bg-white text-stone-900 shadow-2xs' : 'text-stone-500 hover:text-stone-800'
             }`}
           >
@@ -108,7 +110,7 @@ export default function PlayerStyleRadarCard() {
           <button
             type="button"
             onClick={() => setActiveTab('timeline')}
-            className={`px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+            className={`px-2 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
               activeTab === 'timeline' ? 'bg-white text-stone-900 shadow-2xs text-amber-700' : 'text-stone-500 hover:text-stone-800'
             }`}
           >
@@ -116,8 +118,17 @@ export default function PlayerStyleRadarCard() {
           </button>
           <button
             type="button"
+            onClick={() => setActiveTab('vision')}
+            className={`px-2 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+              activeTab === 'vision' ? 'bg-white text-indigo-700 font-black shadow-2xs' : 'text-stone-500 hover:text-stone-800'
+            }`}
+          >
+            👁️ 視界解析
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab('types')}
-            className={`px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+            className={`px-2 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
               activeTab === 'types' ? 'bg-white text-stone-900 shadow-2xs' : 'text-stone-500 hover:text-stone-800'
             }`}
           >
@@ -450,7 +461,147 @@ export default function PlayerStyleRadarCard() {
       )}
 
       {/* ========================================================================= */}
-      {/* 3. 4大スタイル比較タブ */}
+      {/* 3. 👁️ 視界・コントロール解析タブ */}
+      {/* ========================================================================= */}
+      {activeTab === 'vision' && (
+        <div className="space-y-4 animate-in fade-in">
+          {/* 視界総合評価バナー */}
+          <div className="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4 flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">👁️</span>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-black text-indigo-950">
+                    視界総合評価: {vision.visionScoreTier}
+                  </span>
+                  <span className="text-[10px] font-black px-2 py-0.5 bg-indigo-200 text-indigo-900 rounded-md">
+                    上位 {vision.visionRankPercentile}%
+                  </span>
+                </div>
+                <p className="text-xs text-stone-700 leading-relaxed font-medium">
+                  {vision.strengthsSummary}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* 4大 視界客観メトリクスグリッド */}
+          <div className="grid grid-cols-2 gap-2.5">
+            {/* 分間視界スコア */}
+            <div className="p-3 bg-white rounded-2xl border border-stone-200 shadow-2xs space-y-1">
+              <div className="text-[10px] font-bold text-stone-500 flex items-center justify-between">
+                <span>分間視界スコア (VS/m)</span>
+                <span className="text-indigo-600 font-bold">上位18%</span>
+              </div>
+              <div className="text-base font-black text-stone-900">
+                {vision.visionScorePerMin} <span className="text-xs font-normal text-stone-400">/分</span>
+              </div>
+              <div className="text-[10px] text-emerald-700 font-bold">
+                同帯平均 (1.18) 対比 +37%
+              </div>
+            </div>
+
+            {/* コントロールワード */}
+            <div className="p-3 bg-white rounded-2xl border border-stone-200 shadow-2xs space-y-1">
+              <div className="text-[10px] font-bold text-stone-500 flex items-center justify-between">
+                <span>ピンクワード購入</span>
+                <span className="text-emerald-600 font-bold">高水準</span>
+              </div>
+              <div className="text-base font-black text-stone-900">
+                {vision.controlWardsPerGame} <span className="text-xs font-normal text-stone-400">本 / 試合</span>
+              </div>
+              <div className="text-[10px] text-stone-500 font-bold">
+                平均生存: {vision.controlWardAvgLifetimeSec}秒
+              </div>
+            </div>
+
+            {/* ワード設置 */}
+            <div className="p-3 bg-white rounded-2xl border border-stone-200 shadow-2xs space-y-1">
+              <div className="text-[10px] font-bold text-stone-500 flex items-center justify-between">
+                <span>分間ワード設置</span>
+                <span className="text-stone-400">Placing</span>
+              </div>
+              <div className="text-base font-black text-stone-900">
+                {vision.wardsPlacedPerMin} <span className="text-xs font-normal text-stone-400">個 / 分</span>
+              </div>
+              <div className="text-[10px] text-stone-500">
+                1試合 約20〜25個
+              </div>
+            </div>
+
+            {/* 敵ワード破壊 */}
+            <div className="p-3 bg-white rounded-2xl border border-stone-200 shadow-2xs space-y-1">
+              <div className="text-[10px] font-bold text-stone-500 flex items-center justify-between">
+                <span>分間ワード破壊</span>
+                <span className="text-stone-400">Clearing</span>
+              </div>
+              <div className="text-base font-black text-stone-900">
+                {vision.wardsClearedPerMin} <span className="text-xs font-normal text-stone-400">個 / 分</span>
+              </div>
+              <div className="text-[10px] text-stone-500">
+                レンズ・植物活用
+              </div>
+            </div>
+          </div>
+
+          {/* 視界配置バランス（ディープ 24% vs 防衛 76%） */}
+          <div className="p-4 bg-white rounded-2xl border border-stone-200 shadow-2xs space-y-3">
+            <div className="flex items-center justify-between text-xs font-black text-stone-800">
+              <span className="flex items-center gap-1.5">
+                <MapPin size={13} className="text-amber-600" />
+                <span>視界配置バランス ＆ 侵入深度</span>
+              </span>
+              <span className="text-[10px] text-stone-500">
+                自陣防衛 {vision.defensiveWardRatioPercent}% / 敵陣ディープ {vision.deepWardRatioPercent}%
+              </span>
+            </div>
+
+            {/* 2色スプリットプログレスバー */}
+            <div className="space-y-1.5">
+              <div className="h-3 w-full rounded-full bg-stone-100 flex overflow-hidden">
+                <div
+                  className="h-full bg-emerald-500"
+                  style={{ width: `${vision.defensiveWardRatioPercent}%` }}
+                  title={`自陣・リバー防衛視界: ${vision.defensiveWardRatioPercent}%`}
+                />
+                <div
+                  className="h-full bg-amber-500"
+                  style={{ width: `${vision.deepWardRatioPercent}%` }}
+                  title={`敵ジャングル深部ディープ視界: ${vision.deepWardRatioPercent}%`}
+                />
+              </div>
+              <div className="flex items-center justify-between text-[11px] font-bold">
+                <span className="text-emerald-700 flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  自陣・ドラゴン防衛視界 ({vision.defensiveWardRatioPercent}%)
+                </span>
+                <span className="text-amber-700 flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-amber-500" />
+                  敵陣ディープ視界 ({vision.deepWardRatioPercent}%)
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs text-stone-600 leading-relaxed font-medium bg-stone-50 p-2.5 rounded-xl border border-stone-200/60">
+              {vision.bottleneckSummary}
+            </p>
+          </div>
+
+          {/* 視界アクションアドバイス */}
+          <div className="rounded-2xl border border-amber-300 bg-amber-50/70 p-3.5 space-y-1">
+            <div className="text-xs font-black text-amber-950 flex items-center gap-1.5">
+              <Sparkles size={13} className="text-amber-600" />
+              <span>客観データから導く「視界の急所アクション」:</span>
+            </div>
+            <p className="text-xs text-stone-800 font-bold leading-relaxed">
+              {vision.actionAdvice}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 4. 4大スタイル比較タブ */}
       {/* ========================================================================= */}
       {activeTab === 'types' && (
         <div className="space-y-3 animate-in fade-in">
