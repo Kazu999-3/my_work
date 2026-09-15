@@ -78,8 +78,14 @@ export default function PlayerMyPage() {
   const [playstyleSource, setPlaystyleSource] = useState<'custom' | 'soloq'>('custom');
   const [syncingSoloq, setSyncingSoloq] = useState(false);
   
-  // タブ管理用のステートを追加
-  const [activeTab, setActiveTab] = useState<'summary' | 'lanes' | 'chemistry' | 'champions' | 'history' | 'settings'>(initialTab);
+  // タブ管理用のステートを追加 (旧lanes, 旧championsをanalyticsに統合)
+  const rawTab = (searchParams.get("tab") as string) || "summary";
+  const normalizeTab = (t: string): 'summary' | 'analytics' | 'chemistry' | 'history' | 'settings' => {
+    if (t === 'lanes' || t === 'champions') return 'analytics';
+    if (['summary', 'analytics', 'chemistry', 'history', 'settings'].includes(t)) return t as any;
+    return 'summary';
+  };
+  const [activeTab, setActiveTab] = useState<'summary' | 'analytics' | 'chemistry' | 'history' | 'settings'>(normalizeTab(rawTab));
 
   // 🎁 デイリーボーナス関連ステート
   const [claimingDaily, setClaimingDaily] = useState(false);
@@ -664,14 +670,13 @@ export default function PlayerMyPage() {
     (player?.name && (player.name === currentUser.displayName || player.name === currentUser.username))
   );
 
-  // タブアイテム定義（自分の場合は設定タブを統合）
+  // タブアイテム定義（レーンとチャンプを「レーン＆チャンプ戦績」に統合）
   const tabItems = [
-    { id: "summary", name: "総合分析", icon: <Activity className="w-4 h-4" /> },
-    { id: "lanes", name: "レーン別戦績", icon: <Swords className="w-4 h-4" /> },
+    { id: "summary", name: "総合カルテ", icon: <Activity className="w-4 h-4" /> },
+    { id: "analytics", name: "レーン＆チャンプ戦績", icon: <Swords className="w-4 h-4" /> },
     { id: "chemistry", name: "相性＆好敵手", icon: <Users className="w-4 h-4" /> },
-    { id: "champions", name: "魂のキャラ", icon: <Star className="w-4 h-4" /> },
     { id: "history", name: "試合履歴", icon: <Clock className="w-4 h-4" /> },
-    ...(isMe ? [{ id: "settings", name: "⚙️ 希望・師弟設定", icon: <Settings className="w-4 h-4 text-amber-500" /> }] : []),
+    ...(isMe ? [{ id: "settings", name: "⚙️ 希望設定", icon: <Settings className="w-4 h-4 text-amber-500" /> }] : []),
   ] as const;
 
   return (
@@ -1654,261 +1659,200 @@ export default function PlayerMyPage() {
                 </div>
               )}
 
-              {/* 2. レーン別戦績タブ */}
-              {activeTab === 'lanes' && (
-                <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-black/10 pb-3">
-                    <h3 className="text-lg font-black flex items-center gap-2">
-                      <Swords className="w-5 h-5 text-emerald-600" />
-                      <span>KTM レーン別戦績詳細</span>
-                    </h3>
+              {/* 2. レーン ＆ チャンプ戦績タブ（旧lanes + 旧championsを統合） */}
+              {activeTab === 'analytics' && (
+                <div className="space-y-6">
+                  {/* レーン別戦績詳細 */}
+                  <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-black/10 pb-3">
+                      <h3 className="text-lg font-black flex items-center gap-2">
+                        <Swords className="w-5 h-5 text-emerald-600" />
+                        <span>KTM レーン別戦績詳細</span>
+                      </h3>
 
-                    {/* ソート切り替えボタン */}
-                    <div className="flex items-center gap-1.5 bg-black/5 p-1.5 rounded-2xl border border-black/10 text-xs">
-                      <span className="text-[10px] text-gray-500 font-bold px-1.5">並び替え:</span>
-                      {([
-                        ['winRate', '勝率順'],
-                        ['games', '試合数順'],
-                        ['kda', 'KDA順'],
-                        ['default', 'デフォルト']
-                      ] as const).map(([k, label]) => (
-                        <button
-                          key={k}
-                          type="button"
-                          onClick={() => setLaneSortKey(k)}
-                          className={`px-3 py-1 rounded-xl text-xs font-black transition-all ${
-                            laneSortKey === k
-                              ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-black shadow-md shadow-emerald-500/20'
-                              : 'text-stone-500 hover:text-stone-900 hover:bg-black/5'
-                          }`}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {stats && Object.keys(stats).some(k => stats[k] !== null) ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {sortedLaneRoles.map(role => {
-                        const s = stats[role];
-                        if (!s) return null;
-                        
-                        return (
-                          <div 
-                            key={role} 
-                            className="bg-black/5 border border-black/10 rounded-2xl p-5 hover:border-black/10 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg relative overflow-hidden group"
+                      {/* ソート切り替えボタン */}
+                      <div className="flex items-center gap-1.5 bg-black/5 p-1.5 rounded-2xl border border-black/10 text-xs">
+                        <span className="text-[10px] text-gray-500 font-bold px-1.5">並び替え:</span>
+                        {([
+                          ['winRate', '勝率順'],
+                          ['games', '試合数順'],
+                          ['kda', 'KDA順'],
+                          ['default', 'デフォルト']
+                        ] as const).map(([k, label]) => (
+                          <button
+                            key={k}
+                            type="button"
+                            onClick={() => setLaneSortKey(k)}
+                            className={`px-3 py-1 rounded-xl text-xs font-black transition-all ${
+                              laneSortKey === k
+                                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-black shadow-md shadow-emerald-500/20'
+                                : 'text-stone-500 hover:text-stone-900 hover:bg-black/5'
+                            }`}
                           >
-                            {/* ホバー時のバックグラウンド発光 */}
-                            <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-cyan-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                            
-                            <div className="flex justify-between items-center mb-3.5">
-                              <div className="flex items-center gap-2.5">
-                                <div className="p-1.5 bg-black/5 rounded-lg">
-                                  {roleIcons[role]}
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {stats && Object.keys(stats).some(k => stats[k] !== null) ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {sortedLaneRoles.map(role => {
+                          const s = stats[role];
+                          if (!s) return null;
+                          
+                          return (
+                            <div 
+                              key={role} 
+                              className="bg-black/5 border border-black/10 rounded-2xl p-5 hover:border-black/10 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg relative overflow-hidden group"
+                            >
+                              {/* ホバー時のバックグラウンド発光 */}
+                              <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-cyan-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                              
+                              <div className="flex justify-between items-center mb-3.5">
+                                <div className="flex items-center gap-2.5">
+                                  <div className="p-1.5 bg-black/5 rounded-lg">
+                                    {roleIcons[role]}
+                                  </div>
+                                  <span className="font-black text-lg tracking-wider text-stone-800">{role}</span>
                                 </div>
-                                <span className="font-black text-lg tracking-wider text-stone-800">{role}</span>
-                              </div>
-                              <span className="text-[10px] text-cyan-700 font-bold bg-cyan-100 border border-cyan-200 px-2 py-0.5 rounded-full">
-                                MMR {player[`mmr_${role.toLowerCase()}`] || 1000}
-                              </span>
-                            </div>
-                            
-                            <div className="space-y-1.5">
-                              <div className="flex justify-between text-xs text-gray-400 font-bold">
-                                <span>{s.totalGames}戦 {s.totalWins}勝</span>
-                                <span className={s.winRate >= 50 ? 'text-emerald-600' : 'text-rose-600'}>
-                                  {s.winRate}%
+                                <span className="text-[10px] text-cyan-700 font-bold bg-cyan-100 border border-cyan-200 px-2 py-0.5 rounded-full">
+                                  MMR {player[`mmr_${role.toLowerCase()}`] || 1000}
                                 </span>
                               </div>
-                              <div className="w-full bg-black/10 rounded-full h-2.5 shadow-inner overflow-hidden border border-black/10">
-                                <div 
-                                  className={`h-full rounded-full ${s.winRate >= 50 ? 'bg-gradient-to-r from-emerald-500 to-teal-400 shadow-[0_0_8px_rgba(16,185,129,0.3)]' : 'bg-gradient-to-r from-rose-500 to-pink-400 shadow-[0_0_8px_rgba(244,63,94,0.3)]'}`} 
-                                  style={{ width: `${s.winRate}%` }}
-                                ></div>
+                              
+                              <div className="space-y-1.5">
+                                <div className="flex justify-between text-xs text-gray-400 font-bold">
+                                  <span>{s.totalGames}戦 {s.totalWins}勝</span>
+                                  <span className={s.winRate >= 50 ? 'text-emerald-600' : 'text-rose-600'}>
+                                    {s.winRate}%
+                                  </span>
+                                </div>
+                                <div className="w-full bg-black/10 rounded-full h-2.5 shadow-inner overflow-hidden border border-black/10">
+                                  <div 
+                                    className={`h-full rounded-full ${s.winRate >= 50 ? 'bg-gradient-to-r from-emerald-500 to-teal-400 shadow-[0_0_8px_rgba(16,185,129,0.3)]' : 'bg-gradient-to-r from-rose-500 to-pink-400 shadow-[0_0_8px_rgba(244,63,94,0.3)]'}`} 
+                                    style={{ width: `${s.winRate}%` }}
+                                  ></div>
+                                </div>
                               </div>
-                            </div>
 
-                            <div className="space-y-2 mt-5 pt-4 border-t border-black/10">
-                              <div className="text-[10px] text-gray-500 font-black uppercase tracking-wider mb-2 flex items-center gap-1">
-                                <Sparkles className="w-3 h-3 text-amber-600" />
-                                <span>使用率の高いキャラ</span>
-                              </div>
-                              {s.topChampions.map((champ: any, cIdx: number) => {
-                                if (champ.name === 'Unknown') {
+                              <div className="space-y-2 mt-5 pt-4 border-t border-black/10">
+                                <div className="text-[10px] text-gray-500 font-black uppercase tracking-wider mb-2 flex items-center gap-1">
+                                  <Sparkles className="w-3 h-3 text-amber-600" />
+                                  <span>使用率の高いキャラ</span>
+                                </div>
+                                {s.topChampions.map((champ: any, cIdx: number) => {
+                                  if (champ.name === 'Unknown') {
+                                    return (
+                                      <div key={cIdx} className="flex items-center gap-3 bg-black/5 p-2 rounded-xl border border-black/10">
+                                        <div className="w-8 h-8 rounded-full bg-black/5 flex items-center justify-center text-gray-500 text-xs border border-black/10">?</div>
+                                        <div className="flex-1 font-bold text-gray-500 italic text-xs truncate">記録なし</div>
+                                        <div className="text-xs font-semibold text-gray-600">
+                                          {champ.wins}W - {champ.games - champ.wins}L
+                                        </div>
+                                      </div>
+                                    );
+                                  }
                                   return (
-                                    <div key={cIdx} className="flex items-center gap-3 bg-black/5 p-2 rounded-xl border border-black/10">
-                                      <div className="w-8 h-8 rounded-full bg-black/5 flex items-center justify-center text-gray-500 text-xs border border-black/10">?</div>
-                                      <div className="flex-1 font-bold text-gray-500 italic text-xs truncate">記録なし</div>
-                                      <div className="text-xs font-semibold text-gray-600">
-                                        {champ.wins}W - {champ.games - champ.wins}L
+                                    <div key={cIdx} className="flex items-center gap-3 bg-black/5 p-2 rounded-xl border border-black/10 hover:border-black/10 transition-colors">
+                                      <Image
+                                        src={getChampIcon(champ.name)}
+                                        alt={champ.name}
+                                        width={32}
+                                        height={32}
+                                        className="w-8 h-8 rounded-full border border-black/10 shadow-sm"
+                                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                                      />
+                                      <div className="flex-1 font-bold text-stone-700 text-xs truncate">{champ.name}</div>
+                                      <div className="text-xs font-bold text-gray-400">
+                                        <span className={champ.winRate >= 50 ? 'text-emerald-600' : 'text-gray-400'}>{champ.wins}W</span>
+                                        <span className="text-gray-600 mx-1">-</span>
+                                        <span className="text-gray-500">{champ.games - champ.wins}L</span>
                                       </div>
                                     </div>
                                   );
-                                }
-                                return (
-                                  <div key={cIdx} className="flex items-center gap-3 bg-black/5 p-2 rounded-xl border border-black/10 hover:border-black/10 transition-colors">
-                                    <Image
-                                      src={getChampIcon(champ.name)}
-                                      alt={champ.name}
-                                      width={32}
-                                      height={32}
-                                      className="w-8 h-8 rounded-full border border-black/10 shadow-sm"
-                                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                                    />
-                                    <div className="flex-1 font-bold text-stone-700 text-xs truncate">{champ.name}</div>
-                                    <div className="text-xs font-bold text-gray-400">
-                                      <span className={champ.winRate >= 50 ? 'text-emerald-600' : 'text-gray-400'}>{champ.wins}W</span>
-                                      <span className="text-gray-600 mx-1">-</span>
-                                      <span className="text-gray-500">{champ.games - champ.wins}L</span>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-center text-gray-500 py-12 border border-dashed border-black/10 rounded-2xl">
-                      まだKTMでの試合記録がありません。内戦に参加してデータを集めましょう！
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* 3. 相性・好敵手タブ */}
-              {activeTab === 'chemistry' && (
-                <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl space-y-6">
-                  <h3 className="text-lg font-black flex items-center gap-2 border-b border-black/10 pb-3">
-                    <Users className="w-5 h-5 text-cyan-600" />
-                    <span>相性 ＆ ライバル分析</span>
-                  </h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* 味方相性 (Chemistry) */}
-                    <div className="space-y-4">
-                      <h4 className="text-xs font-black text-emerald-600 uppercase tracking-wider border-b border-black/10 pb-2 flex items-center gap-1.5">
-                        <Trophy className="w-4 h-4 text-emerald-600" />
-                        <span>🤝 最高の相棒 (味方時の勝率が高い)</span>
-                      </h4>
-                      <div className="space-y-2.5 max-h-96 overflow-y-auto pr-1">
-                        {chemistry.length > 0 ? (
-                          chemistry.slice(0, 5).map((c, idx) => (
-                            <div key={idx} className="flex justify-between items-center bg-black/5 p-3.5 rounded-2xl border border-black/10 hover:border-black/10 transition-colors">
-                              <span className="font-bold text-stone-800 text-sm">{c.name}</span>
-                              <div className="text-right">
-                                <span className="text-emerald-600 font-black text-sm">{c.winRate}%</span>
-                                <span className="text-[10px] text-gray-500 block font-medium mt-0.5">{c.wins}勝 - {c.games - c.wins}敗</span>
+                                })}
                               </div>
                             </div>
-                          ))
-                        ) : (
-                          <div className="text-gray-500 text-xs py-8 text-center border border-dashed border-black/10 rounded-2xl">
-                            まだ十分な味方データがありません
-                          </div>
-                        )}
+                          );
+                        })}
                       </div>
-                    </div>
-
-                    {/* 課題の相性 (Challenging Synergies) */}
-                    <div className="space-y-4">
-                      <h4 className="text-xs font-black text-amber-600 uppercase tracking-wider border-b border-black/10 pb-2 flex items-center gap-1.5">
-                        <Flame className="w-4 h-4 text-amber-600" />
-                        <span>⚠️ 課題の相性 (味方時の勝率が低め・伸びしろ)</span>
-                      </h4>
-                      <div className="space-y-2.5 max-h-96 overflow-y-auto pr-1">
-                        {challengingTeammates.length > 0 ? (
-                          challengingTeammates.map((c, idx) => (
-                            <div key={idx} className="flex justify-between items-center bg-black/5 p-3.5 rounded-2xl border border-black/10 hover:border-black/10 transition-colors">
-                              <span className="font-bold text-stone-800 text-sm">{c.name}</span>
-                              <div className="text-right">
-                                <span className="text-amber-600 font-black text-sm">{c.winRate}%</span>
-                                <span className="text-[10px] text-gray-500 block font-medium mt-0.5">{c.wins}勝 - {c.games - c.wins}敗</span>
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="text-gray-500 text-xs py-8 text-center border border-dashed border-black/10 rounded-2xl">
-                            まだ十分なデータがありません
-                          </div>
-                        )}
+                    ) : (
+                      <div className="text-center text-gray-500 py-12 border border-dashed border-black/10 rounded-2xl">
+                        まだKTMでの試合記録がありません。内戦に参加してデータを集めましょう！
                       </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 4. 魂のキャラ ＆ 対面勝率タブ */}
-              {activeTab === 'champions' && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* 魂のチャンピオン */}
-                  <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
-                    <h3 className="text-lg font-black flex items-center gap-2 mb-6 border-b border-black/10 pb-3">
-                      <Star className="w-5 h-5 text-amber-600" />
-                      <span>魂のチャンピオン (マスタリー)</span>
-                    </h3>
-                    <div className="space-y-3">
-                      {riotMasteries.length > 0 ? riotMasteries.map((m, idx) => (
-                        <div key={idx} className="flex items-center gap-4 bg-black/5 p-3.5 rounded-2xl border border-black/10 hover:border-black/10 transition-colors">
-                          <Image
-                            src={m.iconUrl}
-                            alt={m.name}
-                            width={48}
-                            height={48}
-                            className="w-12 h-12 rounded-full border border-black/10 shadow-md"
-                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                          />
-                          <div className="space-y-1">
-                            <div className="font-black text-base text-stone-900">{m.name === 'Unknown' ? `ID:${m.championId}` : m.name}</div>
-                            <div className="text-[10px] text-gray-400 font-bold bg-black/5 px-2 py-0.5 rounded border border-black/10 inline-block">
-                              マスタリーLv {m.championLevel} ({m.championPoints.toLocaleString()} pt)
-                            </div>
-                          </div>
-                        </div>
-                      )) : (
-                        <div className="text-gray-500 text-sm py-8 text-center border border-dashed border-black/10 rounded-2xl">
-                          データがありません
-                        </div>
-                      )}
-                    </div>
+                    )}
                   </div>
 
-                  {/* 对面マッチアップ勝率 */}
-                  <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
-                    <h3 className="text-lg font-black flex items-center gap-2 mb-6 border-b border-black/10 pb-3">
-                      <Crosshair className="w-5 h-5 text-rose-500" />
-                      <span>⚔️ 対面マッチアップ勝率</span>
-                    </h3>
-                    <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
-                      {matchups.length > 0 ? matchups.map((m, idx) => (
-                        <div key={idx} className="flex items-center justify-between bg-black/5 p-3 rounded-2xl border border-black/10 hover:border-black/10 transition-colors">
-                          <div className="flex items-center gap-3">
+                  {/* 魂のチャンピオン ＆ 対面マッチアップ勝率 */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* 魂のチャンピオン */}
+                    <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
+                      <h3 className="text-lg font-black flex items-center gap-2 mb-6 border-b border-black/10 pb-3">
+                        <Star className="w-5 h-5 text-amber-600" />
+                        <span>魂のチャンピオン (マスタリー)</span>
+                      </h3>
+                      <div className="space-y-3">
+                        {riotMasteries.length > 0 ? riotMasteries.map((m, idx) => (
+                          <div key={idx} className="flex items-center gap-4 bg-black/5 p-3.5 rounded-2xl border border-black/10 hover:border-black/10 transition-colors">
                             <Image
-                              src={getChampIcon(m.opponentChampion)}
-                              alt={m.opponentChampion}
-                              width={36}
-                              height={36}
-                              className="w-9 h-9 rounded-full border border-black/10 shadow-sm"
+                              src={m.iconUrl}
+                              alt={m.name}
+                              width={48}
+                              height={48}
+                              className="w-12 h-12 rounded-full border border-black/10 shadow-md"
                               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                             />
-                            <div className="font-bold text-stone-700 text-sm w-32 truncate">vs {m.opponentChampion}</div>
-                          </div>
-                          <div className="text-right">
-                            <div className={`font-black text-sm ${m.winRate >= 50 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                              {m.winRate}%
-                            </div>
-                            <div className="text-[9px] text-gray-500 font-bold mt-0.5">
-                              {m.wins}W - {m.games - m.wins}L
+                            <div className="space-y-1">
+                              <div className="font-black text-base text-stone-900">{m.name === 'Unknown' ? `ID:${m.championId}` : m.name}</div>
+                              <div className="text-[10px] text-gray-400 font-bold bg-black/5 px-2 py-0.5 rounded border border-black/10 inline-block">
+                                マスタリーLv {m.championLevel} ({m.championPoints.toLocaleString()} pt)
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )) : (
-                        <div className="text-gray-500 text-sm py-12 text-center border border-dashed border-black/10 rounded-2xl">
-                          まだ対面データがありません
-                        </div>
-                      )}
+                        )) : (
+                          <div className="text-gray-500 text-sm py-8 text-center border border-dashed border-black/10 rounded-2xl">
+                            データがありません
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 対面マッチアップ勝率 */}
+                    <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
+                      <h3 className="text-lg font-black flex items-center gap-2 mb-6 border-b border-black/10 pb-3">
+                        <Crosshair className="w-5 h-5 text-rose-500" />
+                        <span>⚔️ 対面マッチアップ勝率</span>
+                      </h3>
+                      <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+                        {matchups.length > 0 ? matchups.map((m, idx) => (
+                          <div key={idx} className="flex items-center justify-between bg-black/5 p-3 rounded-2xl border border-black/10 hover:border-black/10 transition-colors">
+                            <div className="flex items-center gap-3">
+                              <Image
+                                src={getChampIcon(m.opponentChampion)}
+                                alt={m.opponentChampion}
+                                width={36}
+                                height={36}
+                                className="w-9 h-9 rounded-full border border-black/10 shadow-sm"
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                              />
+                              <div className="font-bold text-stone-700 text-sm w-32 truncate">vs {m.opponentChampion}</div>
+                            </div>
+                            <div className="text-right">
+                              <div className={`font-black text-sm ${m.winRate >= 50 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                {m.winRate}%
+                              </div>
+                              <div className="text-[9px] text-gray-500 font-bold mt-0.5">
+                                {m.wins}W - {m.games - m.wins}L
+                              </div>
+                            </div>
+                          </div>
+                        )) : (
+                          <div className="text-gray-500 text-sm py-12 text-center border border-dashed border-black/10 rounded-2xl">
+                            まだ対面データがありません
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

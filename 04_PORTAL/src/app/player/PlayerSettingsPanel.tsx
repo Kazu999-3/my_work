@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { 
   Shield, Trees, Zap, Target, Heart, Shuffle, Ban, 
   Save, CheckCircle2, AlertTriangle, RefreshCw, GraduationCap, Award, Moon, Sun, Laptop
@@ -254,167 +255,34 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
           })}
         </div>
         {ngRoles.length > 0 && (
-          <p className="text-[11px] text-rose-600 font-bold">
+          <p className="text-[11px] text-rose-600 dark:text-rose-400 font-bold">
             現在設定中のNGレーン: {ngRoles.join(", ")}
           </p>
         )}
       </div>
 
-      {/* 🎓 師弟バディ企画 参加希望設定 */}
-      <div className="space-y-4 pt-4 border-t border-stone-200">
-        <div>
-          <label className="block text-xs font-black text-amber-800 uppercase tracking-wider flex items-center justify-between">
-            <span className="flex items-center gap-1.5">
-              <GraduationCap className="w-4 h-4 text-amber-600" />
-              <span>🎓 師弟バディ企画 参加希望 (Sovereign Mentorship)</span>
-            </span>
-            <span className="text-[11px] text-amber-700 font-mono font-bold">同時選択可能</span>
-          </label>
-          <p className="text-xs text-stone-500 font-medium mt-1 leading-relaxed">
-            サーバー内の参加者同士で「師匠」と「弟子」のペアを作り、VCや画面共有でアドバイスを受けながら成長を目指す企画です。
-            <strong className="text-stone-800">「MIDは弟子として教わりたいが、得意なSUPは師匠として教えたい」といった同時登録も可能です！</strong>
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* 🛡️ 弟子希望カード */}
-          <div className={`rounded-2xl border p-5 transition-all ${
-            isStudent
-              ? 'bg-emerald-50/80 border-emerald-400 shadow-md'
-              : 'bg-stone-50/60 border-stone-200 opacity-85 hover:opacity-100'
-          }`}>
-            <div className="flex items-center justify-between mb-3">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isStudent}
-                  onChange={(e) => setIsStudent(e.target.checked)}
-                  className="w-4 h-4 rounded text-emerald-600 bg-white border-stone-300 focus:ring-emerald-500"
-                />
-                <div className="flex items-center gap-1.5">
-                  <Shield className="w-4 h-4 text-emerald-600" />
-                  <span className="text-sm font-black text-emerald-900">🛡️ 弟子として参加（師匠募集！）</span>
-                </div>
-              </label>
-              <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full ${
-                isStudent ? 'bg-emerald-200 text-emerald-900' : 'bg-stone-200 text-stone-500'
-              }`}>
-                {isStudent ? '参加中' : '未選択'}
-              </span>
-            </div>
-
-            {isStudent && (
-              <div className="space-y-3 pt-3 border-t border-emerald-200 animate-fade-in">
-                <div>
-                  <label className="block text-[11px] font-black text-emerald-900 mb-1.5">
-                    🎯 教わりたい希望レーン
-                  </label>
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
-                    {[{ id: 'ALL', name: '全般' }, ...ROLES.filter(r => r.id !== 'FILL')].map((r) => {
-                      const isSel = studentLane === r.id;
-                      return (
-                        <button
-                          key={`student-lane-${r.id}`}
-                          type="button"
-                          onClick={() => setStudentLane(r.id)}
-                          className={`py-1.5 px-2 rounded-xl border text-[11px] font-bold text-center transition-all cursor-pointer ${
-                            isSel
-                              ? 'bg-emerald-600 border-emerald-700 text-white font-black shadow-xs'
-                              : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50'
-                          }`}
-                        >
-                          {r.name}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-black text-emerald-900 mb-1">
-                    💬 学びたいこと・悩み（一言アピール）
-                  </label>
-                  <input
-                    type="text"
-                    value={studentComment}
-                    onChange={(e) => setStudentComment(e.target.value)}
-                    placeholder="例: ウェーブ管理やガンク合わせの判断を学びたいです！"
-                    className="w-full bg-white border border-emerald-300 rounded-xl px-3.5 py-2 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-emerald-500 shadow-xs"
-                  />
-                </div>
-              </div>
-            )}
+      {/* 🤝 師弟自己紹介掲示板 連携案内 */}
+      <div className="p-4.5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-emerald-500/10 border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xl shrink-0">
+            🤝
           </div>
-
-          {/* 👑 師匠希望カード */}
-          <div className={`rounded-2xl border p-5 transition-all ${
-            isMentor
-              ? 'bg-amber-50/80 border-amber-400 shadow-md'
-              : 'bg-stone-50/60 border-stone-200 opacity-85 hover:opacity-100'
-          }`}>
-            <div className="flex items-center justify-between mb-3">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={isMentor}
-                  onChange={(e) => setIsMentor(e.target.checked)}
-                  className="w-4 h-4 rounded text-amber-600 bg-white border-stone-300 focus:ring-amber-500"
-                />
-                <div className="flex items-center gap-1.5">
-                  <Award className="w-4 h-4 text-amber-600" />
-                  <span className="text-sm font-black text-amber-950">👑 師匠として参加（弟子募集！）</span>
-                </div>
-              </label>
-              <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full ${
-                isMentor ? 'bg-amber-200 text-amber-950' : 'bg-stone-200 text-stone-500'
-              }`}>
-                {isMentor ? '参加中' : '未選択'}
-              </span>
+          <div>
+            <div className="text-xs font-black text-stone-900 dark:text-white flex items-center gap-1.5">
+              <span>師弟マッチング ＆ 自己紹介カード</span>
+              <span className="text-[10px] bg-emerald-500 text-white px-2 py-0.2 rounded-full font-black">専用掲示板</span>
             </div>
-
-            {isMentor && (
-              <div className="space-y-3 pt-3 border-t border-amber-200 animate-fade-in">
-                <div>
-                  <label className="block text-[11px] font-black text-amber-950 mb-1.5">
-                    📖 教えたい得意レーン
-                  </label>
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
-                    {[{ id: 'ALL', name: '全般' }, ...ROLES.filter(r => r.id !== 'FILL')].map((r) => {
-                      const isSel = mentorLane === r.id;
-                      return (
-                        <button
-                          key={`mentor-lane-${r.id}`}
-                          type="button"
-                          onClick={() => setMentorLane(r.id)}
-                          className={`py-1.5 px-2 rounded-xl border text-[11px] font-bold text-center transition-all cursor-pointer ${
-                            isSel
-                              ? 'bg-amber-500 border-amber-600 text-stone-950 font-black shadow-xs'
-                              : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50'
-                          }`}
-                        >
-                          {r.name}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-black text-amber-950 dark:text-amber-200 mb-1">
-                    💬 教えられること・指導スタイル（一言アピール）
-                  </label>
-                  <input
-                    type="text"
-                    value={mentorComment}
-                    onChange={(e) => setMentorComment(e.target.value)}
-                    placeholder="例: サポートの視界管理やレーン戦の仕掛け方を教えられます！"
-                    className="w-full bg-white dark:bg-[#1e1f22] border border-amber-300 dark:border-[#3f4147] rounded-xl px-3.5 py-2 text-xs text-stone-900 dark:text-white placeholder:text-stone-400 focus:outline-none focus:border-amber-500 shadow-xs"
-                  />
-                </div>
-              </div>
-            )}
+            <p className="text-[11px] text-stone-600 dark:text-stone-300 font-medium mt-0.5">
+              師匠・弟子の自己紹介カード投稿、相性診断、オファーの送受信は「師弟掲示板」で行えます。
+            </p>
           </div>
         </div>
+        <Link
+          href="/mentorship"
+          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition shadow-sm shrink-0 cursor-pointer"
+        >
+          師弟掲示板を開く ↗
+        </Link>
       </div>
 
       {/* 🌙 外観・ダークモード設定 */}
