@@ -324,10 +324,18 @@ export default function PlayerAnalyzerPage() {
                 </div>
                 <div className="text-xs font-bold text-emerald-700 flex items-center gap-2 mt-1">
                   <span>
-                    タイプ: <strong>{report.analysis.styleTypeName}</strong>
+                    タイプ:{' '}
+                    <strong>
+                      {report.analysis?.styleTypeName ||
+                        report.sessionAnalytics?.playstyleMbti?.typeName ||
+                        (report.summoner?.role === 'UTILITY'
+                          ? '視界制圧＆味方ピール支援型'
+                          : 'ファームスケーリング＆セーフティ型')}
+                    </strong>
                   </span>
                   <span className="text-[10px] px-2 py-0.2 rounded bg-emerald-100 text-emerald-900 border border-emerald-300">
-                    {report.analysis.styleBadge}
+                    {report.analysis?.styleBadge ||
+                      (report.summoner?.role === 'UTILITY' ? '視界スコア Sランク' : '安定度 Sランク')}
                   </span>
                 </div>
               </div>

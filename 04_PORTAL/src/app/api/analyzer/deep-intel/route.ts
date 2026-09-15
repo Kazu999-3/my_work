@@ -322,17 +322,36 @@ ${isSupportRole ? '※重要: このプレイヤーは【サポート (Support)�
     } catch (e) {
       console.warn('Gemini AI synthesis fallback:', e);
       aiResult = {
-        visionAnalysis: `自陣防衛視界は万全ですが、敵陣ディープ視界（目標 ${calculatedSessionAnalytics.targetRankGap.benchmark.deepWardRatio}%）を増やすことで敵JGの位置を事前特定できます。`,
-        actionPlan: `1周目ファーム完了後の3:30〜4:00に敵ラプター裏へディープワードを刺し、プッシュされているレーンへカウンター介入を1回必ず行うこと。`,
+        styleTypeName: isSupportRole ? '視界制圧＆味方ピール支援型' : 'ファームスケーリング＆セーフティ型',
+        styleBadge: isSupportRole ? '視界スコア Sランク' : '安定度 Sランク',
+        coreDiagnosis: isSupportRole
+          ? `平均被デス${avgDeaths}と分間視界${avgVisionPerMin}は既に【${targetTier}水準】に到達しています。昇格への最大の鍵は、ドラゴン湧き60秒前の先制視界奪取と集団戦でのピール参加率をさらに高めることです。`
+          : `平均被デス${avgDeaths}と分間CS ${avgCsPerMin}は既に【${targetTier}水準】に到達しています。昇格への最大の鍵は、序盤15分の戦闘関与（KP@15）を目標値の${calculatedSessionAnalytics.targetRankGap.benchmark.kp15}%へ引き上げることです。`,
+        strengths: isSupportRole
+          ? [
+              `平均被デス ${avgDeaths} による【${targetTier}級】の安全な視界展開`,
+              `分間視界 ${avgVisionPerMin} による視界制圧網の維持`,
+              `キル関与率 ${avgKpPercent}% による高いチーム貢献度`,
+            ]
+          : [
+              `平均被デス ${avgDeaths} による【${targetTier}級】の安全な立ち回り`,
+              `分間CS ${avgCsPerMin} の高いリソース回収精度`,
+              `分間視界 ${avgVisionPerMin} による防衛網の維持`,
+            ],
+        coreBottleNeck: isSupportRole
+          ? `敵陣ディープ視界（目標 ${calculatedSessionAnalytics.targetRankGap.benchmark.deepWardRatio}%）の展開が不足しており、敵JGのロームを察知しきれずADCが被ガンク死するケースが最大の負け筋です。`
+          : `キル関与率（${avgKpPercent}%）が目標基準（${calculatedSessionAnalytics.targetRankGap.benchmark.kp15}%）を下回っており、味方レーンの序盤崩壊に干渉しきれていない点が昇格のボトルネックです。`,
+        visionAnalysis: `自陣防衛視界は万全ですが、敵陣ディープ視界（目標 ${calculatedSessionAnalytics.targetRankGap.benchmark.deepWardRatio}%）を増やすことで敵の位置を事前特定できます。`,
+        actionPlan: calculatedSessionAnalytics.roleConfig.defaultActionGuideline,
         goldenDeepWard: {
-          spot: '敵ラプター裏ブッシュ',
-          timing: '3:30〜4:00 (1周目フルクリア直後)',
-          reason: '敵JGの進行ルートを30秒前に完全察知し、味方崩壊を防ぐため',
+          spot: isSupportRole ? '敵トライブッシュ＆ドラゴン裏' : '敵ラプター裏ブッシュ',
+          timing: isSupportRole ? 'オブジェクト湧き60秒前' : '3:30〜4:00 (1周目フルクリア直後)',
+          reason: '敵の進行ルートを30秒前に完全察知し、味方崩壊を防ぐため',
         },
         championDetails: calculatedChamps.map((c) => ({
           id: c.id,
           powerSpikes: {
-            earlyLvl1to5: '最速フルクリアからのオブジェクト安全確保。',
+            earlyLvl1to5: '安全な視界確保とレーン主導権維持。',
             mid1to2Core: '1〜2コア完成時の集団戦・小規模戦。',
             late3CorePlus: '集団戦でのポジショニングとゾーン制圧力。',
           },
@@ -345,7 +364,7 @@ ${isSupportRole ? '※重要: このプレイヤーは【サポート (Support)�
             { enemy: 'XinZhao', winRate: 38, counterPlay: '序盤のタイマンを避け、逆サイドフルクリア徹底。' },
           ],
           winVsLossDiffs: {
-            cs15Diff: '勝利時: CS +15.0 / 敗北時: +3.0',
+            cs15Diff: '勝利時: チーム有利 / 敗北時: チーム不利',
             deathsDiff: `勝利時: 低デス / 敗北時: 高デス`,
             visionDiff: '勝利時: ピンクワード 2本以上 / 敗北時: 0〜1本',
             firstCoreTime: '勝利時: 11分00秒 / 敗北時: 13分45秒',
@@ -353,6 +372,21 @@ ${isSupportRole ? '※重要: このプレイヤーは【サポート (Support)�
           aiTacticsGuide: `【${targetTier}到達の鍵】パワースパイクを逃さず、味方の仕掛けに合わせてゾーンを展開してください。`,
         })),
       };
+    }
+
+    // 万が一AIの返答で特定キーが欠落していた場合のフォールバック合成
+    if (!aiResult.styleTypeName) {
+      aiResult.styleTypeName = isSupportRole ? '視界制圧＆味方ピール支援型' : 'ファームスケーリング＆セーフティ型';
+    }
+    if (!aiResult.styleBadge) {
+      aiResult.styleBadge = isSupportRole ? '視界スコア Sランク' : '安定度 Sランク';
+    }
+    if (!aiResult.strengths || !Array.isArray(aiResult.strengths)) {
+      aiResult.strengths = [
+        `平均被デス ${avgDeaths} による【${targetTier}級】の安全な立ち回り`,
+        `分間CS ${avgCsPerMin} の高いリソース回収精度`,
+        `分間視界 ${avgVisionPerMin} による防衛網の維持`,
+      ];
     }
 
     const mergedChampionProfiles = calculatedChamps.map((c) => {
