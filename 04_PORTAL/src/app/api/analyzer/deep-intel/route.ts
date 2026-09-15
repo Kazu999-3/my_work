@@ -247,7 +247,7 @@ export async function POST(request: NextRequest) {
     });
 
     // 4. 実測タイムスタンプからのコンディション・心理DNA・目標ランクギャップ自動計算
-    const calculatedSessionAnalytics = calculateRealSessionAnalytics(rawMatches, targetTier);
+    const calculatedSessionAnalytics = calculateRealSessionAnalytics(rawMatches, targetTier, role);
 
     // 5. Gemini AIによる動的総合診断 ＆ 目標ランク到達処方箋の生成
     const aiPrompt = `あなたはLoL（League of Legends）の最高峰データアナリスト兼パーソナルコーチです。

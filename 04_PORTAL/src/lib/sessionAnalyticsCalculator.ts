@@ -2,7 +2,8 @@
  * 実測マッチデータから「時間帯別勝率」「連戦疲労度」「即キュー・ティルト」
  * 4大プロ機能（序盤因果・致命的デス・展開4分類・プール診断）
  * 5大心理・行動DNA分析（MBTI・ティルトトリガー・銭勘定・逆境耐性・悪癖）
- * および 目標ランク基準ギャップ診断 (Target Rank Benchmark Gap) を自動計算する計算エンジン
+ * 目標ランク基準ギャップ診断 (Target Rank Benchmark Gap)
+ * および 5大ロール（TOP / JUNGLE / MID / ADC / SUPPORT）完全特化型指標を自動計算する計算エンジン
  */
 
 export interface RawMatchRecord {
@@ -23,6 +24,114 @@ export interface RawMatchRecord {
   playerDamage: number;
   teamKills: number;
   goldEarned?: number;
+}
+
+// ==========================================
+// 🛡️ ロール（レーン）別 特化設定
+// ==========================================
+
+export interface RoleConfig {
+  roleId: string;
+  roleName: string;
+  roleIcon: string;
+  radarLabels: [string, string, string, string, string];
+  visionLabelA: string;
+  visionLabelB: string;
+  specialMetricName: string;
+  defaultActionGuideline: string;
+}
+
+export const ROLE_CONFIGS: { [role: string]: RoleConfig } = {
+  JUNGLE: {
+    roleId: 'JUNGLE',
+    roleName: 'ジャングル (JUNGLE)',
+    roleIcon: '🌲',
+    radarLabels: [
+      '① 生存力・被デス回避',
+      '② ファーム効率 (CS/分)',
+      '③ 15分キル関与 (KP@15)',
+      '④ オブジェクト確保 (Obj Control)',
+      '⑤ 集団戦ポジショニング',
+    ],
+    visionLabelA: '🛡️ 自陣・リバー防衛視界',
+    visionLabelB: '⚡ 敵陣ディープ視界',
+    specialMetricName: '1周目フルクリア ＆ 敵JG察知',
+    defaultActionGuideline: '3:30フルクリア後に即リコールせず、敵ラプター裏へディープワードを刺してプッシュレーンへのカウンター介入を挟むこと。',
+  },
+  MIDDLE: {
+    roleId: 'MIDDLE',
+    roleName: 'ミッド (MID)',
+    roleIcon: '🧙',
+    radarLabels: [
+      '① 生存力・被ガンク回避',
+      '② CS精度 ＆ プッシュ主導権',
+      '③ ローム・サイド介入率',
+      '④ リバー・オブジェクト主導権',
+      '⑤ 集団戦DPS ＆ バースト',
+    ],
+    visionLabelA: '🛡️ 川・自陣側防衛視界',
+    visionLabelB: '⚡ 敵側ブッシュ・対角ディープ視界',
+    specialMetricName: 'サイドレーンローム関与率',
+    defaultActionGuideline: 'ウェーブを押し込んだ直後に留まらず、川の視界確保またはBOT/TOPへのローム圧力をかけること。',
+  },
+  TOP: {
+    roleId: 'TOP',
+    roleName: 'トップ (TOP)',
+    roleIcon: '🛡️',
+    radarLabels: [
+      '① タイマン生存・被ソロキル回避',
+      '② CS精度 ＆ ウェーブ管理',
+      '③ TP・集団戦合流力',
+      '④ スプリットプッシュ圧力',
+      '⑤ フロントライン耐久 ＆ エンゲージ',
+    ],
+    visionLabelA: '🛡️ レーン防衛視界',
+    visionLabelB: '⚡ 敵側トライブッシュ・ディープ視界',
+    specialMetricName: 'サイドタワー圧力 ＆ TPタイミング',
+    defaultActionGuideline: 'スプリットプッシュ時は敵のマップ消失を確認して引き際を見極め、オブジェクト湧きにTPを温存すること。',
+  },
+  BOTTOM: {
+    roleId: 'BOTTOM',
+    roleName: 'ボット・マークスマン (ADC)',
+    roleIcon: '🏹',
+    radarLabels: [
+      '① 集団戦ポジショニング・低デス',
+      '② 分間CS・リソース回収',
+      '③ 20分以降DPS占有率',
+      '④ オブジェクトバースト力',
+      '⑤ 被ガンク・被ダイブ回避',
+    ],
+    visionLabelA: '🛡️ レーン防衛・リバー視界',
+    visionLabelB: '⚡ 青ワード長距離索敵視界',
+    specialMetricName: '20分以降の集団戦DPSシェア',
+    defaultActionGuideline: '集団戦では「最も近い安全な敵」から確実に攻撃し、視界のないサイドファームで単独死しないこと。',
+  },
+  UTILITY: {
+    roleId: 'UTILITY',
+    roleName: 'サポート (SUPPORT)',
+    roleIcon: '👁️',
+    radarLabels: [
+      '① 視界支配・ピンクワード購入',
+      '② ローム・他レーン支援力',
+      '③ 集団戦CC・キャリー防衛(ピール)',
+      '④ オブジェクト先制視界管理',
+      '⑤ 低被デス・生存ポジショニング',
+    ],
+    visionLabelA: '🛡️ 自陣・レーン防衛視界',
+    visionLabelB: '⚡ オブジェクト前ディープ視界',
+    specialMetricName: '分間視界 ＆ デワード数 (除去数)',
+    defaultActionGuideline: 'オブジェクト湧き1分前にリコールしてピンクワードを補充し、敵より先に視界ラインを押し上げること。',
+  },
+};
+
+export function getRoleConfig(lane: string): RoleConfig {
+  const upper = lane.toUpperCase();
+  if (upper === 'JUNGLE' || upper === 'JG') return ROLE_CONFIGS.JUNGLE;
+  if (upper === 'MIDDLE' || upper === 'MID') return ROLE_CONFIGS.MIDDLE;
+  if (upper === 'TOP') return ROLE_CONFIGS.TOP;
+  if (upper === 'BOTTOM' || upper === 'BOT' || upper === 'ADC') return ROLE_CONFIGS.BOTTOM;
+  if (upper === 'UTILITY' || upper === 'SUPPORT' || upper === 'SUP') return ROLE_CONFIGS.UTILITY;
+  return ROLE_CONFIGS.JUNGLE;
 }
 
 // ==========================================
@@ -96,7 +205,7 @@ export interface TargetRankGapAnalysis {
     visionDiff: { value: number; passed: boolean; label: string };
     deepWardDiff: { value: number; passed: boolean; label: string };
   };
-  targetReadinessScore: number; // 0〜100%
+  targetReadinessScore: number;
   keyActionToPromote: string[];
 }
 
@@ -119,7 +228,7 @@ export function calculateTargetRankGap(
   const visionDiffVal = Number((actual.visionScorePerMin - benchmark.visionScorePerMin).toFixed(2));
   const deepWardDiffVal = Math.round(actual.deepWardRatio - benchmark.deepWardRatio);
 
-  const deathsPassed = deathsDiffVal <= 0.3; // 被デスは基準以下ならクリア
+  const deathsPassed = deathsDiffVal <= 0.3;
   const csPassed = csDiffVal >= -0.2;
   const kpPassed = kpDiffVal >= -3;
   const visionPassed = visionDiffVal >= -0.1;
@@ -136,13 +245,13 @@ export function calculateTargetRankGap(
 
   const keyActions: string[] = [];
   if (!kpPassed) {
-    keyActions.push(`【最優先課題】15分キル関与率（現在 ${actual.kp15}% ➔ 目標 ${benchmark.kp15}%）: 1周目フルクリア後に即リコールせず、プッシュされているレーンへカウンターガンクまたは逆サイド侵入を1回必ず挟むこと。`);
+    keyActions.push(`【最優先課題】15分戦闘関与率（現在 ${actual.kp15}% ➔ 目標 ${benchmark.kp15}%）: 序盤のレーン主導権・カウンターアクションを1回必ず増やすこと。`);
   }
   if (!deepWardPassed) {
-    keyActions.push(`【視界課題】敵陣ディープ視界比率（現在 ${actual.deepWardRatio}% ➔ 目標 ${benchmark.deepWardRatio}%）: 3:30〜4:00に敵ラプター裏・青バフ横へディープワードを1本刺して敵JGの進行を30秒前に察知すること。`);
+    keyActions.push(`【視界課題】敵陣ディープ視界比率（現在 ${actual.deepWardRatio}% ➔ 目標 ${benchmark.deepWardRatio}%）: オブジェクト前や敵陣深部へ事前視界を1本刺して敵の進行を察知すること。`);
   }
   if (!csPassed) {
-    keyActions.push(`【ファーム課題】分間CS（現在 ${actual.csPerMin} ➔ 目標 ${benchmark.csPerMin}）: 中盤サイドレーンの無駄なミニオンウェーブ回収効率を向上させること。`);
+    keyActions.push(`【リソース課題】分間CS（現在 ${actual.csPerMin} ➔ 目標 ${benchmark.csPerMin}）: 中盤サイドレーンのウェーブ回収効率を向上させること。`);
   }
   if (keyActions.length === 0) {
     keyActions.push(`主要スタッツは既に【${targetTier}基準】を完全にクリアしています！連戦を3〜4戦で抑え、メンタルを維持して試合数を重ねるだけで昇格可能です。`);
@@ -185,10 +294,10 @@ export function calculateTargetRankGap(
 }
 
 export interface EarlyTimelineImpact {
-  firstBloodRate: number;      // %
-  firstDeathAvgMinute: string; // 例: "7分15秒"
-  voidgrubWinRate: number;     // グラブ獲得時勝率%
-  voidgrubLossWinRate: number; // グラブ喪失時勝率%
+  firstBloodRate: number;
+  firstDeathAvgMinute: string;
+  voidgrubWinRate: number;
+  voidgrubLossWinRate: number;
   plateGoldImpact: string;
 }
 
@@ -299,19 +408,17 @@ export interface CalculatedSessionAnalytics {
     playerPoolType: string;
   }>;
   goldenSessionRules: string[];
-  // 4大プロ機能
   earlyTimelineImpact: EarlyTimelineImpact;
   fatalDeathAnalytics: FatalDeathAnalytics;
   gameOutcomeBreakdown: GameOutcomeBreakdown;
   championPoolDiagnosis: ChampionPoolDiagnosis;
-  // 5大心理・行動DNA
   playstyleMbti: PlaystyleMbti;
   tiltTriggerMatrix: TiltTriggerMatrix;
   goldEfficiency: GoldEfficiency;
   adversityBehavior: AdversityBehavior;
   cognitiveBiases: CognitiveBiases;
-  // 目標ランク基準ギャップ診断
   targetRankGap: TargetRankGapAnalysis;
+  roleConfig: RoleConfig;
 }
 
 /**
@@ -319,16 +426,19 @@ export interface CalculatedSessionAnalytics {
  */
 export function calculateRealSessionAnalytics(
   matches: RawMatchRecord[],
-  targetTier: string = 'Emerald IV'
+  targetTier: string = 'Emerald IV',
+  detectedRole: string = 'JUNGLE'
 ): CalculatedSessionAnalytics {
+  const roleConfig = getRoleConfig(detectedRole);
+
   if (!matches || matches.length === 0) {
-    return getFallbackSessionAnalytics(targetTier);
+    return getFallbackSessionAnalytics(targetTier, detectedRole);
   }
 
   const sorted = [...matches].sort((a, b) => a.gameStartTimestamp - b.gameStartTimestamp);
   const totalG = Math.max(1, sorted.length);
 
-  // 1. 時間帯別パフォーマンス (JST換算) - 完全実測
+  // 1. 時間帯別パフォーマンス (JST換算)
   const timeBuckets: { [key: string]: { wins: number; total: number; kills: number; deaths: number; assists: number } } = {
     golden: { wins: 0, total: 0, kills: 0, deaths: 0, assists: 0 },
     daytime: { wins: 0, total: 0, kills: 0, deaths: 0, assists: 0 },
@@ -385,7 +495,7 @@ export function calculateRealSessionAnalytics(
     formatBucket('midnight', '⚠️ 深夜帯 (疲労蓄積・注意)', '00:00 - 05:59', '脳の疲労により判断がコンマ数秒遅れやすく、トロール遭遇率も上がるため連戦は非推奨。'),
   ];
 
-  // 2. 連戦疲労度 - 完全実測
+  // 2. 連戦疲労度
   const fatigueBuckets = {
     early: { wins: 0, total: 0, deaths: 0 },
     mid: { wins: 0, total: 0, deaths: 0 },
@@ -451,7 +561,7 @@ export function calculateRealSessionAnalytics(
     },
   ];
 
-  // 3. 即キュー・ティルト判定 - 完全実測
+  // 3. 即キュー・ティルト判定
   let immediateLossWins = 0;
   let immediateLossTotal = 0;
   let restedLossWins = 0;
@@ -519,14 +629,12 @@ export function calculateRealSessionAnalytics(
     },
   ];
 
-  // 5. 黄金プレイルール自動導出
   const goldenSessionRules = [
     `【黄金律1】1セッションは最大3〜4試合で必ず打ち切る（疲労による無意識の判断ミスを防止）。`,
     `【黄金律2】敗北後は「即キュー」を押さず、最低5分間の休憩を義務化（平常心リセット）。`,
     `【黄金律3】実測で勝率が安定している夜のゴールデンタイム（19:00〜23:59）にランク戦を集中させる。`,
   ];
 
-  // 6. 4大プロ機能の実測計算
   const earlyTimelineImpact: EarlyTimelineImpact = {
     firstBloodRate: 38,
     firstDeathAvgMinute: '7分40秒 (序盤の安全性高)',
@@ -577,9 +685,9 @@ export function calculateRealSessionAnalytics(
       : '終盤の集団戦ポジショニングやオブジェクト周りのピックアップが勝敗の分かれ目となっています。',
   };
 
-  const apChamps = ['Zyra', 'Shyvana', 'Karthus', 'Evelynn', 'Lillia', 'Elise', 'Nidalee', 'Fiddlesticks', 'Ekko', 'Diana', 'Taliyah', 'Gragas'];
-  const adChamps = ['Viego', 'LeeSin', 'XinZhao', 'JarvanIV', 'Kayn', 'KhaZix', 'Hecarim', 'Briar', 'MasterYi', 'Vi', 'Nocturne', 'Warwick'];
-  const tankChamps = ['Sejuani', 'Amumu', 'Zac', 'Rammus', 'Skarner', 'Nunu', 'Maokai', 'Poppy', 'Volibear'];
+  const apChamps = ['Zyra', 'Shyvana', 'Karthus', 'Evelynn', 'Lillia', 'Elise', 'Nidalee', 'Fiddlesticks', 'Ekko', 'Diana', 'Taliyah', 'Gragas', 'Ahri', 'Syndra', 'Orianna', 'LeBlanc', 'Viktor', 'Lux', 'Xerath', 'Vex', 'Hwei', 'Morgana', 'Lulu', 'Nami', 'Janna'];
+  const adChamps = ['Viego', 'LeeSin', 'XinZhao', 'JarvanIV', 'Kayn', 'KhaZix', 'Hecarim', 'Briar', 'MasterYi', 'Vi', 'Nocturne', 'Warwick', 'Yasuo', 'Yone', 'Zed', 'Talon', 'Jinx', 'Kaisa', 'Caitlyn', 'Ezreal', 'Lucian', 'Jhin', 'Vayne', 'Draven', 'Samira', 'Aatrox', 'Darius', 'Garen', 'Riven', 'Fiora', 'Jax', 'Renekton', 'Camille'];
+  const tankChamps = ['Sejuani', 'Amumu', 'Zac', 'Rammus', 'Skarner', 'Nunu', 'Maokai', 'Poppy', 'Volibear', 'Malphite', 'Ornn', 'Sion', 'K\'Sante', 'Nautilus', 'Leona', 'Braum', 'Alistar', 'Thresh'];
 
   let apCount = 0;
   let adCount = 0;
@@ -604,27 +712,20 @@ export function calculateRealSessionAnalytics(
     missingPiece: apRatioPercent >= 55 ? 'ADファイター / 序盤ガンク・エンゲージ役' : 'APメイジ / ゾーンコントロール役',
     recommendedAdditions: [
       {
-        championName: 'Xin Zhao (シン・ジャオ)',
-        role: 'JUNGLE',
-        archetype: 'AD序盤アグレッシブ＆イニシエート',
-        synergyReason: '苦手な「15分キル関与率（KP@15）」を自ら仕掛けて引き上げ、味方がAP過多の際の強力なAD主砲として機能。',
+        championName: detectedRole === 'MIDDLE' ? 'Ahri (アーリ)' : detectedRole === 'TOP' ? 'Renekton (レネクトン)' : detectedRole === 'BOTTOM' ? 'Jinx (ジンクス)' : detectedRole === 'UTILITY' ? 'Nautilus (ノーチラス)' : 'Xin Zhao (シン・ジャオ)',
+        role: detectedRole,
+        archetype: detectedRole === 'MIDDLE' ? '万能ロームメイジ' : detectedRole === 'TOP' ? '序盤レーン圧倒ファイター' : detectedRole === 'BOTTOM' ? 'ハイパースケーリングADC' : detectedRole === 'UTILITY' ? '確定フック・エンゲージ' : 'AD序盤アグレッシブ＆イニシエート',
+        synergyReason: `現在のプレイスタイルにおける弱点を補完し、【${detectedRole}】としての影響力を最大化する推奨ピック。`,
       },
       {
-        championName: 'Jarvan IV (ジャーヴァンIV)',
-        role: 'JUNGLE',
-        archetype: 'ADエンゲージ＆ガンクマシン',
-        synergyReason: 'Lv2〜3からの確定ガンクとUltの天変地異により、味方メイジの範囲スキルを最大限に活かす構成の要になれる。',
-      },
-      {
-        championName: 'Sejuani (セジュアニ)',
-        role: 'JUNGLE',
-        archetype: '高耐久フロントライン＆確定CC',
-        synergyReason: 'チームにタンクがいない際の安定したピック。被デス回避の高い立ち回りと最高のシナジーを発揮。',
+        championName: detectedRole === 'MIDDLE' ? 'Orianna (オリアナ)' : detectedRole === 'TOP' ? 'Ornn (オーン)' : detectedRole === 'BOTTOM' ? 'Kai\'Sa (カイ＝サ)' : detectedRole === 'UTILITY' ? 'Lulu (ルル)' : 'Jarvan IV (ジャーヴァンIV)',
+        role: detectedRole,
+        archetype: '集団戦ゾーンコントロール＆エンゲージ',
+        synergyReason: '味方のスキルと最高峰のシナジーを生み出すチーム構成の要。',
       },
     ],
   };
 
-  // 7. 5大心理・行動DNA
   const avgDeathsOverall = sorted.reduce((sum, m) => sum + m.deaths, 0) / totalG;
   const safetyScore = Math.min(96, Math.max(30, Math.round(100 - avgDeathsOverall * 12)));
   const riskScore = 100 - safetyScore;
@@ -632,11 +733,11 @@ export function calculateRealSessionAnalytics(
   const playstyleMbti: PlaystyleMbti = {
     typeCode: safetyScore >= 70 ? 'ISG' : 'EAI',
     typeName: safetyScore >= 70 ? '🏰 鉄壁の城主・スケーリングアーキテクト' : '⚡ 電光石火のイニシエーター',
-    tagline: safetyScore >= 70 ? '「自分の城（自陣）にいる限り絶対に崩れない」精密ファームの達人' : '「自ら仕掛けて戦況を切り開く」アグレッシブファイター',
+    tagline: safetyScore >= 70 ? '「自分の城（自陣・レーン）にいる限り絶対に崩れない」精密ファームの達人' : '「自ら仕掛けて戦況を切り開く」アグレッシブファイター',
     axes: {
       safetyVsRisk: { safetyPercent: safetyScore, riskPercent: riskScore, label: 'リスク選好: セーフティ計算型' },
       scaleVsEnabler: { scalePercent: 78, enablerPercent: 22, label: 'リソース配分: 自己スケーリング重視' },
-      guardianVsInvader: { guardianPercent: 76, invaderPercent: 24, label: '空間支配: 自陣テリトリー防衛型' },
+      guardianVsInvader: { guardianPercent: 76, invaderPercent: 24, label: '空間支配: 自陣・レーン防衛型' },
       deliberateVsReflex: { deliberatePercent: 82, reflexPercent: 18, label: '意思決定: 慎重観察型' },
     },
     personalityAnalysis: safetyScore >= 70
@@ -645,18 +746,18 @@ export function calculateRealSessionAnalytics(
   };
 
   const tiltTriggerMatrix: TiltTriggerMatrix = {
-    invadeResistanceRating: 'Sランク (自陣荒らしにも動じず対角ファームで冷静に対処)',
-    teammateDeathResistance: 'Bランク (味方序盤崩壊時にやや焦りが生じる傾向)',
+    invadeResistanceRating: 'Sランク (荒らしや不利対面にも動じず冷静に対処)',
+    teammateDeathResistance: 'Bランク (他レーン崩壊時にやや焦りが生じる傾向)',
     snowballDeathAvoidanceRate: 88,
     mentalResilienceScore: 84,
-    tiltInsight: '自身がデスした直後に熱くなって2デス目を重ねるリスクはわずか12%と極めて優秀。最大のメンタルトリガーは「序盤の味方レーン崩壊」であり、ここへのカウンターアクションを身につけることで完全無欠になります。',
+    tiltInsight: '自身がデスした直後に熱くなって2デス目を重ねるリスクはわずか12%と極めて優秀。最大のメンタルトリガーは「序盤の他レーン崩壊」であり、ここへのカウンターアクションを身につけることで完全無欠になります。',
   };
 
   const goldEfficiency: GoldEfficiency = {
     damagePerGoldRating: 'Aランク (1Gあたり0.58ダメージ / 安定水準)',
-    goldStashRating: 'やや抱え込み傾向 (1300G超を所持したまま川に長居する癖あり)',
+    goldStashRating: 'やや抱え込み傾向 (1300G超を所持したまま長居する癖あり)',
     spikeUtilizationPercent: 74,
-    efficiencyVerdict: 'ファームで獲得したゴールドのアイテム変換は順調ですが、1300G前後でリコールを1回挟んでパワースパイクを確定させると、小規模戦の勝率がさらに+12%跳ね上がります。',
+    efficiencyVerdict: 'ファームで獲得したゴールドのアイテム変換は順調ですが、コアアイテム完成の直前でリコールを1回挟んでパワースパイクを確定させると、小規模戦の勝率がさらに+12%跳ね上がります。',
   };
 
   const adversityBehavior: AdversityBehavior = {
@@ -667,12 +768,11 @@ export function calculateRealSessionAnalytics(
   };
 
   const cognitiveBiases: CognitiveBiases = {
-    recallHabitBias: '【リコール遅延バイアス】「あと1キャンプ掘ってから帰ろう」と欲張った瞬間に敵JGに視界を取られる傾向。',
-    mapAttentionBias: '【BOT偏重バイアス】BOT・ドラゴンへの意識は完璧だが、TOPレーンの孤立フリーズ状況を見落としがち。',
-    actionPrescription: '「3:30秒フルクリア後は即座にリコールするか、敵ラプター裏へディープワードを刺して即退避する」を機械的に徹底すること。',
+    recallHabitBias: '【リコール遅延バイアス】「あと1ウェーブ/キャンプ掘ってから帰ろう」と欲張った瞬間に敵に視界を取られる傾向。',
+    mapAttentionBias: '【特定レーン偏重バイアス】自身から遠い反対サイドの孤立フリーズ状況を見落としがち。',
+    actionPrescription: roleConfig.defaultActionGuideline,
   };
 
-  // 8. 目標ランク基準ギャップ診断の計算
   const totalDurationMin = sorted.reduce((sum, m) => sum + m.gameDuration, 0) / 60;
   const totalCs = sorted.reduce((sum, m) => sum + m.totalMinionsKilled + m.neutralMinionsKilled, 0);
   const totalVision = sorted.reduce((sum, m) => sum + m.visionScore, 0);
@@ -718,10 +818,12 @@ export function calculateRealSessionAnalytics(
     adversityBehavior,
     cognitiveBiases,
     targetRankGap,
+    roleConfig,
   };
 }
 
-function getFallbackSessionAnalytics(targetTier: string = 'Emerald IV'): CalculatedSessionAnalytics {
+function getFallbackSessionAnalytics(targetTier: string = 'Emerald IV', detectedRole: string = 'JUNGLE'): CalculatedSessionAnalytics {
+  const roleConfig = getRoleConfig(detectedRole);
   const targetRankGap = calculateTargetRankGap(
     {
       avgDeaths: 3.46,
@@ -899,8 +1001,9 @@ function getFallbackSessionAnalytics(targetTier: string = 'Emerald IV'): Calcula
     cognitiveBiases: {
       recallHabitBias: '【リコール遅延バイアス】「あと1キャンプ掘ってから帰ろう」と欲張った瞬間に敵JGに視界を取られる傾向。',
       mapAttentionBias: '【BOT偏重バイアス】BOT・ドラゴンへの意識は完璧だが、TOPレーンの孤立フリーズ状況を見落としがち。',
-      actionPrescription: '「3:30秒フルクリア後は即座にリコールするか、敵ラプター裏へディープワードを刺して即退避する」を機械的に徹底すること。',
+      actionPrescription: roleConfig.defaultActionGuideline,
     },
     targetRankGap,
+    roleConfig,
   };
 }

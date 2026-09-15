@@ -624,22 +624,30 @@ export default function PlayerAnalyzerPage() {
                 <div className="lg:col-span-7 flex flex-col gap-6">
                   {/* 5大レーダー解析スコアカード */}
                   <div className="rounded-3xl border border-stone-200 bg-white p-5 md:p-6 shadow-xs space-y-4">
-                    <div className="flex items-center justify-between border-b border-stone-100 pb-3">
-                      <h3 className="font-black text-sm text-stone-900 flex items-center gap-2">
+                    <div className="flex items-center justify-between border-b border-stone-100 pb-3 flex-wrap gap-2">
+                      <div className="flex items-center gap-2">
                         <TrendingUp size={16} className="text-amber-600" />
-                        <span>プレイスタイル 5大レーダー客観解析</span>
-                      </h3>
+                        <h3 className="font-black text-sm text-stone-900">
+                          プレイスタイル 5大レーダー客観解析
+                        </h3>
+                        {report.sessionAnalytics?.roleConfig && (
+                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                            {report.sessionAnalytics.roleConfig.roleIcon} {report.sessionAnalytics.roleConfig.roleName} 特化診断
+                          </span>
+                        )}
+                      </div>
                       <span className="text-[10px] font-bold text-stone-400">
                         Riot API実測値 ＆ 目標【{targetTier}】基準
                       </span>
                     </div>
 
                     <div className="space-y-3.5">
-                      {/* 生存率 */}
+                      {/* 軸① */}
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs font-bold">
                           <span className="text-emerald-700 flex items-center gap-1">
-                            <Shield size={13} /> ① 生存率・デス回避
+                            <Shield size={13} />{' '}
+                            {report.sessionAnalytics?.roleConfig?.radarLabels?.[0] || '① 生存率・デス回避'}
                           </span>
                           <span className="text-stone-900 font-black">
                             {report.metrics.survival.score}点{' '}
@@ -656,11 +664,12 @@ export default function PlayerAnalyzerPage() {
                         </div>
                       </div>
 
-                      {/* ファーム力 */}
+                      {/* 軸② */}
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs font-bold">
                           <span className="text-sky-700 flex items-center gap-1">
-                            <Zap size={13} /> ② ファーム効率 ＆ リソース確保
+                            <Zap size={13} />{' '}
+                            {report.sessionAnalytics?.roleConfig?.radarLabels?.[1] || '② ファーム効率 ＆ リソース確保'}
                           </span>
                           <span className="text-stone-900 font-black">
                             {report.metrics.farm.score}点{' '}
@@ -677,11 +686,12 @@ export default function PlayerAnalyzerPage() {
                         </div>
                       </div>
 
-                      {/* キル関与率 */}
+                      {/* 軸③ */}
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs font-bold">
                           <span className="text-rose-700 flex items-center gap-1">
-                            <AlertTriangle size={13} /> ③ キル関与率 (KP)
+                            <AlertTriangle size={13} />{' '}
+                            {report.sessionAnalytics?.roleConfig?.radarLabels?.[2] || '③ キル関与率 (KP)'}
                             {report.metrics.combat.score < 50 && (
                               <span className="text-[10px] bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded font-black">
                                 改善余地あり
@@ -701,11 +711,12 @@ export default function PlayerAnalyzerPage() {
                         </div>
                       </div>
 
-                      {/* オブジェクト確保 */}
+                      {/* 軸④ */}
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs font-bold">
                           <span className="text-amber-700 flex items-center gap-1">
-                            <Target size={13} /> ④ オブジェクト確保 (Obj Control)
+                            <Target size={13} />{' '}
+                            {report.sessionAnalytics?.roleConfig?.radarLabels?.[3] || '④ オブジェクト確保 (Obj Control)'}
                           </span>
                           <span className="text-stone-900 font-black">
                             {report.metrics.objectives.score}点{' '}
@@ -720,11 +731,12 @@ export default function PlayerAnalyzerPage() {
                         </div>
                       </div>
 
-                      {/* 集団戦ポジショニング */}
+                      {/* 軸⑤ */}
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs font-bold">
                           <span className="text-indigo-700 flex items-center gap-1">
-                            <Crosshair size={13} /> ⑤ 集団戦ポジショニング (Teamfight)
+                            <Crosshair size={13} />{' '}
+                            {report.sessionAnalytics?.roleConfig?.radarLabels?.[4] || '⑤ 集団戦ポジショニング (Teamfight)'}
                           </span>
                           <span className="text-stone-900 font-black">
                             {report.metrics.teamfight.score}点{' '}
@@ -817,7 +829,9 @@ export default function PlayerAnalyzerPage() {
                       <div className="flex justify-between text-xs font-bold text-stone-700">
                         <span>視界侵入深度バランス:</span>
                         <span>
-                          自陣防衛 {report.metrics.vision.defensiveWardPercent}% / 敵陣ディープ{' '}
+                          {report.sessionAnalytics?.roleConfig?.visionLabelA || '自陣防衛'}{' '}
+                          {report.metrics.vision.defensiveWardPercent}% /{' '}
+                          {report.sessionAnalytics?.roleConfig?.visionLabelB || '敵陣ディープ'}{' '}
                           {report.metrics.vision.deepWardPercent}%
                         </span>
                       </div>
@@ -825,20 +839,20 @@ export default function PlayerAnalyzerPage() {
                         <div
                           className="h-full bg-emerald-500"
                           style={{ width: `${report.metrics.vision.defensiveWardPercent}%` }}
-                          title={`自陣・リバー防衛視界: ${report.metrics.vision.defensiveWardPercent}%`}
+                          title={`${report.sessionAnalytics?.roleConfig?.visionLabelA || '自陣防衛'}: ${report.metrics.vision.defensiveWardPercent}%`}
                         />
                         <div
                           className="h-full bg-amber-500"
                           style={{ width: `${report.metrics.vision.deepWardPercent}%` }}
-                          title={`敵陣ディープ視界: ${report.metrics.vision.deepWardPercent}%`}
+                          title={`${report.sessionAnalytics?.roleConfig?.visionLabelB || '敵陣ディープ'}: ${report.metrics.vision.deepWardPercent}%`}
                         />
                       </div>
                       <div className="flex items-center justify-between text-[11px] font-bold">
                         <span className="text-emerald-700">
-                          🛡️ 自陣防衛 ({report.metrics.vision.defensiveWardPercent}%) - 低被デスの源泉
+                          {report.sessionAnalytics?.roleConfig?.visionLabelA || '🛡️ 自陣防衛'} ({report.metrics.vision.defensiveWardPercent}%)
                         </span>
                         <span className="text-amber-700">
-                          ⚡ 敵陣ディープ ({report.metrics.vision.deepWardPercent}%) - 今後の伸び代
+                          {report.sessionAnalytics?.roleConfig?.visionLabelB || '⚡ 敵陣ディープ'} ({report.metrics.vision.deepWardPercent}%)
                         </span>
                       </div>
                     </div>
