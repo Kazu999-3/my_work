@@ -7,7 +7,6 @@ import Toaster from "../components/Toaster";
 import BackButton from "../components/BackButton";
 import BackToTop from "../components/BackToTop";
 import OfflineNotifier from "../components/OfflineNotifier";
-import BottomNav from "../components/BottomNav";
 import { ThemeProvider } from "../context/ThemeContext";
 
 export const metadata: Metadata = {
