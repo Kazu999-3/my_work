@@ -76,6 +76,14 @@ export async function sendRankUpgradeNotification(params: {
   ign?: string | null;
 }): Promise<boolean> {
   const { playerName, discordId, oldRank, newRank, ign } = params;
+
+  // 新規登録時（oldRankが未設定またはUNRANKED）および newRankがUNRANKEDの場合は通知しない
+  const cleanOld = (oldRank || '').toUpperCase().trim();
+  const cleanNew = (newRank || '').toUpperCase().trim();
+  if (!cleanOld || cleanOld === 'UNRANKED' || !cleanNew || cleanNew === 'UNRANKED') {
+    return false;
+  }
+
   const oldRankDisplay = oldRank || 'UNRANKED';
 
   const mention = discordId ? `<@${discordId}>` : `**${playerName}**`;

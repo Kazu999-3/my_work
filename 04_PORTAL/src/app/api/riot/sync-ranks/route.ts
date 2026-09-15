@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     // 既存(highest)と現在ランクの高い方を保持する。現在未ランクなら既存をそのまま維持。
     const rankStr = higherRank(player.highest_rank, currentRank);
     const oldRank = player.highest_rank || 'UNRANKED';
-    const isPromoted = rankScore(rankStr) > rankScore(oldRank);
+    const isPromoted = oldRank !== 'UNRANKED' && rankStr !== 'UNRANKED' && rankScore(rankStr) > rankScore(oldRank);
 
     // DB更新（変化がある時だけでも良いが、冪等なので常時更新）
     const { error: updateError } = await supabase

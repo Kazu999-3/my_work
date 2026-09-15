@@ -80,7 +80,7 @@ export async function POST(req: Request) {
         const newRank = higherRank(oldRank, rankTier);
         updateData.highest_rank = newRank;
 
-        if (rankScore(newRank) > rankScore(oldRank)) {
+        if (oldRank !== 'UNRANKED' && newRank !== 'UNRANKED' && rankScore(newRank) > rankScore(oldRank)) {
           const { sendRankUpgradeNotification } = await import('../../../../lib/discordNotify');
           sendRankUpgradeNotification({
             playerName: existing.name,

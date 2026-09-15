@@ -83,7 +83,7 @@ export async function POST(request: Request) {
 
         // 🏆 最高ランクの更新（昇格）を検知してDiscordに速報通知！
         const oldRank = player.highest_rank || 'UNRANKED';
-        if (rankScore(highestRank) > rankScore(oldRank)) {
+        if (oldRank !== 'UNRANKED' && highestRank !== 'UNRANKED' && rankScore(highestRank) > rankScore(oldRank)) {
           promotions.push({
             name: player.name,
             oldRank,
