@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search,
   Globe,
@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   ArrowRight,
   HelpCircle,
+  Lock,
 } from 'lucide-react';
 import MultiSiteLauncherCard from '../../components/analyzer/MultiSiteLauncherCard';
 import StatsTextImporterCard from '../../components/analyzer/StatsTextImporterCard';
@@ -23,12 +24,20 @@ import VisionAnalyticsCard from '../../components/coach/VisionAnalyticsCard';
 import PlayerStyleRadarCard from '../../components/coach/PlayerStyleRadarCard';
 
 export default function PlayerAnalyzerPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [currentSummoner, setCurrentSummoner] = useState({
     name: 'Kazurin',
     tag: '4036',
   });
 
   const [activeTab, setActiveTab] = useState<'single' | 'team' | 'import'>('single');
+
+  useEffect(() => {
+    fetch('/api/auth/verify', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
+      .then((res) => res.json())
+      .then((data) => setIsAuthenticated(!!data.valid))
+      .catch(() => setIsAuthenticated(false));
+  }, []);
 
   // 5人スカウティング用の入力
   const [teamRosterText, setTeamRosterText] = useState(
@@ -79,6 +88,39 @@ PlayerD#JP1 (SUP)`
 
     setTeamAnalysisList(parsed);
   };
+
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center gap-3">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-stone-300 border-t-amber-600" />
+        <p className="text-xs font-bold text-stone-500">認証ステータスを確認中...</p>
+      </div>
+    );
+  }
+
+  if (isAuthenticated === false) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 font-sans bg-stone-50">
+        <div className="text-center max-w-sm rounded-3xl border border-stone-200/90 bg-white p-8 shadow-xl space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center text-2xl mx-auto shadow-2xs">
+            🔑
+          </div>
+          <div>
+            <h2 className="text-lg font-black text-stone-900 mb-1.5">管理者認証が必要です</h2>
+            <p className="text-xs text-stone-500 leading-relaxed font-medium">
+              プレイヤー深層アナライザー (Deep Intel Hub) は現在、管理者専用機能として運用されています。管理者パスコードまたはDiscord管理者アカウントでログインしてください。
+            </p>
+          </div>
+          <a
+            href="/login"
+            className="inline-block w-full py-3 bg-amber-600 hover:bg-amber-500 text-white font-black text-xs rounded-xl shadow-xs transition"
+          >
+            ログインページへ
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen px-4 py-6 md:px-8 space-y-6 max-w-7xl mx-auto font-sans">

@@ -107,16 +107,15 @@ interface MenuItem {
   adminOnly?: boolean;
 }
 
-// 🌐 一般ユーザー向けメニュー（8大機能）
+// 🌐 一般ユーザー向けメニュー（7大機能）
 const GENERAL_MENU_ITEMS: MenuItem[] = [
   // メイン
   { id: 'home', label: 'ホーム / トップ', shortLabel: 'ホーム', icon: Home, href: '/', color: 'text-amber-500', activeBg: 'bg-amber-500/15', section: 'メイン' },
   // ユーザー・師弟
   { id: 'mypage', label: 'マイページ / 希望レーン', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-amber-500', activeBg: 'bg-amber-500/15', section: 'ユーザー' },
   { id: 'mentorship', label: '師弟自己紹介掲示板', shortLabel: '師弟掲示板', icon: HeartHandshake, href: '/mentorship', color: 'text-emerald-500', activeBg: 'bg-emerald-500/15', section: 'ユーザー' },
-  // 対戦・大会・スカウト
+  // 対戦・大会
   { id: 'balancer', label: 'チーム分けバランサー', shortLabel: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-rose-600', activeBg: 'bg-rose-500/15', section: '対戦 ＆ 大会' },
-  { id: 'analyzer', label: 'プレイヤー外部分析', shortLabel: '外部解析', icon: Globe, href: '/analyzer', color: 'text-sky-600', activeBg: 'bg-sky-500/15', section: '対戦 ＆ 大会' },
   { id: 'casino', label: '勝敗予想 (カジノ)', shortLabel: '勝敗予想', icon: Coins, href: '/casino', color: 'text-amber-600', activeBg: 'bg-amber-500/15', section: '対戦 ＆ 大会' },
   // コミュニティ・戦績
   { id: 'leaderboard', label: '順位表 ＆ 名簿', shortLabel: '順位・名簿', icon: Trophy, href: '/leaderboard', color: 'text-yellow-600', activeBg: 'bg-yellow-500/15', section: 'コミュニティ' },
@@ -124,10 +123,11 @@ const GENERAL_MENU_ITEMS: MenuItem[] = [
   { id: 'guide', label: '使い方 ＆ 更新情報', shortLabel: 'ガイド', icon: BookOpen, href: '/guide', color: 'text-emerald-600', activeBg: 'bg-emerald-500/15', section: 'ガイド' },
 ];
 
-// 🛡️ 管理者向け追加メニュー（攻略辞典・パーソナルコーチ・大会管理・運用）
+// 🛡️ 管理者向け追加メニュー（攻略辞典・パーソナルコーチ・外部分析・大会管理・運用）
 const ADMIN_EXTRA_ITEMS: MenuItem[] = [
   { id: 'champions', label: 'チャンピオン攻略辞典', shortLabel: '攻略辞典', icon: BookHeart, href: '/champions', color: 'text-amber-600', activeBg: 'bg-amber-500/15', section: '管理者専用', adminOnly: true },
   { id: 'coach', label: 'パーソナルコーチ', shortLabel: 'コーチ', icon: Sparkles, href: '/coach', color: 'text-purple-600', activeBg: 'bg-purple-500/15', section: '管理者専用', adminOnly: true },
+  { id: 'analyzer', label: 'プレイヤー外部分析', shortLabel: '外部解析', icon: Globe, href: '/analyzer', color: 'text-sky-600', activeBg: 'bg-sky-500/15', section: '管理者専用', adminOnly: true },
   { id: 'ktm-admin', label: 'KTM大会管理', shortLabel: '大会管理', icon: Shield, href: '/ktm-admin', color: 'text-indigo-600', activeBg: 'bg-indigo-500/15', section: '管理者専用', adminOnly: true },
   { id: 'dashboard', label: 'システム運用', shortLabel: '運用設定', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-stone-800 dark:text-stone-200', activeBg: 'bg-black/10 dark:bg-white/10', section: '管理者専用', adminOnly: true },
   { id: 'analytics', label: 'note分析', shortLabel: 'note分析', icon: TrendingUp, href: '/admin/analytics', color: 'text-teal-600', activeBg: 'bg-teal-500/15', section: '管理者専用', adminOnly: true },
