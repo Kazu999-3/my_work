@@ -15,6 +15,7 @@ import Collapsible from '../../components/Collapsible';
 import FocusStickyBar from '../../components/coach/FocusStickyBar';
 import JgMatchupPredictor from '../../components/coach/JgMatchupPredictor';
 import PlayerStyleRadarCard from '../../components/coach/PlayerStyleRadarCard';
+import VisionAnalyticsCard from '../../components/coach/VisionAnalyticsCard';
 import ChampionQuickSelector from '../../components/coach/ChampionQuickSelector';
 import MatchupSmartCard from './MatchupSmartCard';
 import MatchFightsAnalyticsCard from './MatchFightsAnalyticsCard';
@@ -1642,6 +1643,8 @@ function CoachPageContent() {
                 onMyChampionChange={setSharedChampion}
                 onEnemyChampionChange={setSharedEnemyChampion}
               />
+              {/* 視界・マップコントロール客観解析カード */}
+              <VisionAnalyticsCard />
             </div>
 
             {/* 右側: プレイスタイル深層カルテ (常時オープン・タブ閉じ不要) */}
