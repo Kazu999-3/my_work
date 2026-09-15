@@ -41,8 +41,7 @@ import {
 
 export default function PlayerAnalyzerPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [gameName, setGameName] = useState('Kazurin');
-  const [tagLine, setTagLine] = useState('4036');
+  const [summonerInput, setSummonerInput] = useState('Kazurin#4036');
   const [queueType, setQueueType] = useState<'solo' | 'all'>('solo');
   const [targetTier, setTargetTier] = useState<string>('Emerald IV');
   const [loading, setLoading] = useState(false);
@@ -50,6 +49,14 @@ export default function PlayerAnalyzerPage() {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'overview' | 'champions' | 'session' | 'psychology'>('overview');
   const [selectedChampId, setSelectedChampId] = useState<string>('');
+
+  // サモナー名とタグのパース
+  const parseSummonerInput = (raw: string) => {
+    const parts = raw.trim().split('#');
+    const name = parts[0]?.trim() || '';
+    const tag = parts[1]?.trim() || (name.toLowerCase() === 'kazurin' ? '4036' : 'JP1');
+    return { name, tag };
+  };
 
   // 認証チェック
   useEffect(() => {
@@ -66,17 +73,16 @@ export default function PlayerAnalyzerPage() {
 
   // 統合解析の実行
   const handleRunAnalysis = async (
-    targetName?: string,
-    targetTag?: string,
+    targetRawInput?: string,
     targetQ?: 'solo' | 'all',
     targetT?: string
   ) => {
-    const n = targetName !== undefined ? targetName : gameName;
-    const t = targetTag !== undefined ? targetTag : tagLine;
+    const raw = targetRawInput !== undefined ? targetRawInput : summonerInput;
+    const { name, tag } = parseSummonerInput(raw);
     const q = targetQ !== undefined ? targetQ : queueType;
     const tier = targetT !== undefined ? targetT : targetTier;
 
-    if (!n.trim()) return;
+    if (!name.trim()) return;
 
     setLoading(true);
     setError('');
@@ -85,7 +91,7 @@ export default function PlayerAnalyzerPage() {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameName: n, tagLine: t, queueType: q, targetTier: tier }),
+        body: JSON.stringify({ gameName: name, tagLine: tag, queueType: q, targetTier: tier }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '解析に失敗しました');
@@ -103,7 +109,7 @@ export default function PlayerAnalyzerPage() {
   // 初回ロード時に自動読み込み
   useEffect(() => {
     if (isAuthenticated) {
-      handleRunAnalysis('Kazurin', '4036', 'solo', 'Emerald IV');
+      handleRunAnalysis('Kazurin#4036', 'solo', 'Emerald IV');
     }
   }, [isAuthenticated]);
 
@@ -171,31 +177,17 @@ export default function PlayerAnalyzerPage() {
           }}
           className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3"
         >
-          {/* サモナー名 */}
+          {/* サモナー名#タグ 統合入力ボックス */}
           <div className="relative flex-1">
             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400">
               <Search size={16} />
             </div>
             <input
               type="text"
-              value={gameName}
-              onChange={(e) => setGameName(e.target.value)}
-              placeholder="サモナー名 / Riot ID (例: Kazurin, Agurin, Hide on bush)"
+              value={summonerInput}
+              onChange={(e) => setSummonerInput(e.target.value)}
+              placeholder="サモナー名#タグ (例: Kazurin#4036, Hide on bush#KR1, Agurin#EUW)"
               className="w-full pl-10 pr-3 py-2.5 bg-stone-50 border border-stone-200 rounded-2xl text-xs font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-amber-500 focus:bg-white transition"
-            />
-          </div>
-
-          {/* タグ */}
-          <div className="w-full sm:w-28 relative">
-            <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-stone-400 text-xs font-mono font-bold">
-              #
-            </span>
-            <input
-              type="text"
-              value={tagLine}
-              onChange={(e) => setTagLine(e.target.value)}
-              placeholder="タグ (4036, JP1)"
-              className="w-full pl-7 pr-3 py-2.5 bg-stone-50 border border-stone-200 rounded-2xl text-xs font-mono font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-amber-500 focus:bg-white transition"
             />
           </div>
 
@@ -205,7 +197,7 @@ export default function PlayerAnalyzerPage() {
               type="button"
               onClick={() => {
                 setQueueType('solo');
-                handleRunAnalysis(gameName, tagLine, 'solo', targetTier);
+                handleRunAnalysis(summonerInput, 'solo', targetTier);
               }}
               className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${
                 queueType === 'solo'
@@ -219,7 +211,7 @@ export default function PlayerAnalyzerPage() {
               type="button"
               onClick={() => {
                 setQueueType('all');
-                handleRunAnalysis(gameName, tagLine, 'all', targetTier);
+                handleRunAnalysis(summonerInput, 'all', targetTier);
               }}
               className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${
                 queueType === 'all'
@@ -238,7 +230,7 @@ export default function PlayerAnalyzerPage() {
               value={targetTier}
               onChange={(e) => {
                 setTargetTier(e.target.value);
-                handleRunAnalysis(gameName, tagLine, queueType, e.target.value);
+                handleRunAnalysis(summonerInput, queueType, e.target.value);
               }}
               className="bg-transparent text-xs font-black text-stone-900 focus:outline-none cursor-pointer"
             >
@@ -273,17 +265,16 @@ export default function PlayerAnalyzerPage() {
         <div className="flex items-center gap-1.5 flex-wrap text-[11px] pt-1 border-t border-stone-100">
           <span className="text-stone-400 font-bold">サンプル分析:</span>
           {[
-            { name: 'Kazurin', tag: '4036', label: 'Kazurin#4036' },
-            { name: 'Hide on bush', tag: 'KR1', label: 'Faker (KR1)' },
-            { name: 'Agurin', tag: 'EUW', label: 'Agurin (EUW)' },
+            { raw: 'Kazurin#4036', label: 'Kazurin#4036' },
+            { raw: 'Hide on bush#KR1', label: 'Faker (KR1)' },
+            { raw: 'Agurin#EUW', label: 'Agurin (EUW)' },
           ].map((p) => (
             <button
-              key={p.name + p.tag}
+              key={p.raw}
               type="button"
               onClick={() => {
-                setGameName(p.name);
-                setTagLine(p.tag);
-                handleRunAnalysis(p.name, p.tag, queueType, targetTier);
+                setSummonerInput(p.raw);
+                handleRunAnalysis(p.raw, queueType, targetTier);
               }}
               className="px-2.5 py-1 rounded-xl bg-stone-100 hover:bg-amber-100/80 hover:text-amber-900 text-stone-700 font-bold border border-stone-200/80 transition cursor-pointer"
             >
