@@ -305,7 +305,8 @@ export async function runPostGameReview(opts: { matchId?: string; focus?: string
   if (me.deaths >= 7) weaknesses.push(`デス数 ${me.deaths} (要改善)`);
   if (kda !== 'Perfect' && parseFloat(kda) < 2.0) weaknesses.push(`KDA ${kda} (目標: 2.0以上)`);
 
-  const enemyLaner = match.participants.find((p: any) => p.teamId !== me.teamId && (p.lane === me.lane || (lane === 'JUNGLE' && (p.lane === 'JUNGLE' || p.role === 'JUNGLE' || p.individualPosition === 'JUNGLE'))));
+  const myPosition = me.lane || lane;
+  const enemyLaner = match.participants.find((p: any) => p.teamId !== me.teamId && p.lane === myPosition);
 
   const deathTimeline: string[] = [];
   const deathEvents: { min: number; phase: string; killer: string; teamGoldDiffAtDeath: number | null; nearbyFightKills: number }[] = [];

@@ -250,21 +250,24 @@ export async function POST(request: NextRequest) {
     const calculatedSessionAnalytics = calculateRealSessionAnalytics(rawMatches, targetTier, role);
 
     // 5. Gemini AIによる動的総合診断 ＆ 目標ランク到達処方箋の生成
+    const isSupportRole = role === 'UTILITY' || role === 'SUPPORT';
     const aiPrompt = `あなたはLoL（League of Legends）の最高峰データアナリスト兼パーソナルコーチです。
-プレイヤー「${cleanName}#${cleanTag}」（現在ランク: ${tier}）は、目標ランク【${targetTier}】への昇格を目指しています。
-以下の実測スタッツおよび目標ランク基準値とのギャップをもとに、【目標ランク到達処方箋レポート】を作成してください。
+プレイヤー「${cleanName}#${cleanTag}」（メインロール: ${calculatedSessionAnalytics.roleConfig.roleName}、現在ランク: ${tier}）は、目標ランク【${targetTier}】への昇格を目指しています。
+以下の実測スタッツおよびロール特化の目標ランク基準値とのギャップをもとに、【目標ランク到達処方箋レポート】を作成してください。
+${isSupportRole ? '※重要: このプレイヤーは【サポート (Support)】です。CSは取らないのが正解（1.5以下が適正）ですので、CSを求めるアドバイスは絶対にせず、分間視界スコア・ピンクワード購入・戦闘関与率（KP）・味方キャリーのピール/エンゲージを評価・指南してください。' : ''}
 
 【プレイヤー実測スタッツ vs 目標ランク（${targetTier}）基準値】
+・ロール: ${calculatedSessionAnalytics.roleConfig.roleName}
 ・生存力（平均被デス）: 実測 ${avgDeaths} (目標基準: ${calculatedSessionAnalytics.targetRankGap.benchmark.avgDeaths})
-・ファーム効率 (分間CS): 実測 ${avgCsPerMin} (目標基準: ${calculatedSessionAnalytics.targetRankGap.benchmark.csPerMin})
+・ファーム効率 (分間CS): 実測 ${avgCsPerMin} (目標基準: ${calculatedSessionAnalytics.targetRankGap.benchmark.csPerMin}${isSupportRole ? ' ※サポートのため低CSで適正' : ''})
 ・キル関与率 (KP@15): 実測 ${avgKpPercent}% (目標基準: ${calculatedSessionAnalytics.targetRankGap.benchmark.kp15}%)
 ・分間視界スコア: 実測 ${avgVisionPerMin}/分 (目標基準: ${calculatedSessionAnalytics.targetRankGap.benchmark.visionScorePerMin})
 ・目標到達度スコア: ${calculatedSessionAnalytics.targetRankGap.targetReadinessScore}%
 
 以下のJSONフォーマットのみを返してください（コードブロックなしの純粋なJSON）:
 {
-  "styleTypeName": "（プレイヤーのプレイスタイル名、例: ファームスケーリング＆セーフティ型）",
-  "styleBadge": "（強みバッジ、例: 生存力 Sランク）",
+  "styleTypeName": "（プレイヤーのプレイスタイル名、例: 視界制圧＆味方ピール支援型）",
+  "styleBadge": "（強みバッジ、例: 視界スコア Sランク）",
   "coreDiagnosis": "（現状と目標ランク【${targetTier}】に向けた客観総括 2〜3文）",
   "strengths": ["実測データに基づく強み1", "実測データに基づく強み2", "実測データに基づく強み3"],
   "coreBottleNeck": "（目標ランク到達を阻んでいる最大のボトルネック・負け筋 1〜2文）",
@@ -304,9 +307,10 @@ export async function POST(request: NextRequest) {
       )
       .join(',\n    ')}
   ]
-}`;
+}
+`;
 
-    let aiResult: any = null;
+    let aiResult: any;
     try {
       const responseText = await callGeminiWithRetry(aiPrompt, {
         model: 'gemini-3.1-flash-lite',
@@ -318,15 +322,6 @@ export async function POST(request: NextRequest) {
     } catch (e) {
       console.warn('Gemini AI synthesis fallback:', e);
       aiResult = {
-        styleTypeName: 'ファームスケーリング＆セーフティ型',
-        styleBadge: '安定度 Sランク',
-        coreDiagnosis: `平均被デス${avgDeaths}と分間CS ${avgCsPerMin}は既に【${targetTier}水準】に到達しています。昇格への最大の鍵は、序盤15分の戦闘関与（KP@15）を目標値の${calculatedSessionAnalytics.targetRankGap.benchmark.kp15}%へ引き上げることです。`,
-        strengths: [
-          `平均被デス ${avgDeaths} による【${targetTier}級】の安全な立ち回り`,
-          `分間CS ${avgCsPerMin} の高いリソース回収精度`,
-          `分間視界 ${avgVisionPerMin} による防衛網の維持`,
-        ],
-        coreBottleNeck: `キル関与率（${avgKpPercent}%）が目標基準（${calculatedSessionAnalytics.targetRankGap.benchmark.kp15}%）を下回っており、味方レーンの序盤崩壊に干渉しきれていない点が昇格のボトルネックです。`,
         visionAnalysis: `自陣防衛視界は万全ですが、敵陣ディープ視界（目標 ${calculatedSessionAnalytics.targetRankGap.benchmark.deepWardRatio}%）を増やすことで敵JGの位置を事前特定できます。`,
         actionPlan: `1周目ファーム完了後の3:30〜4:00に敵ラプター裏へディープワードを刺し、プッシュされているレーンへカウンター介入を1回必ず行うこと。`,
         goldenDeepWard: {

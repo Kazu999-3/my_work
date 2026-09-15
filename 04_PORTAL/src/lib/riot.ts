@@ -116,6 +116,50 @@ export async function fetchMatchDetails(matchId: string, apiKey: string): Promis
   const gameDuration = data.info.gameDuration;
   const gameStartTimestamp = data.info.gameStartTimestamp || data.info.gameCreation;
 
+  const SUPPORT_ITEM_IDS = new Set([
+    3865, 3866, 3867, 3869, 3870, 3871, 3876, 3877, // S14 World Atlas & upgrades
+    3850, 3851, 3853, 3854, 3855, 3857, 3858, 3859, 3860, // S13 Supp items
+    3301, 3302, 3303, // Legacy
+  ]);
+
+  const detectPosition = (p: any): string => {
+    // 1. Smite (ID 11) 所持なら100% ジャングル
+    if (p.summoner1Id === 11 || p.summoner2Id === 11) {
+      return 'JUNGLE';
+    }
+
+    // 2. teamPosition / individualPosition の正規化
+    const rawPos = (p.teamPosition || p.individualPosition || '').toUpperCase();
+    if (rawPos === 'TOP') return 'TOP';
+    if (rawPos === 'JUNGLE' || rawPos === 'JUG') return 'JUNGLE';
+    if (rawPos === 'MIDDLE' || rawPos === 'MID') return 'MIDDLE';
+    if (rawPos === 'BOTTOM' || rawPos === 'BOT' || rawPos === 'ADC') return 'BOTTOM';
+    if (rawPos === 'UTILITY' || rawPos === 'SUPPORT' || rawPos === 'SUP') return 'UTILITY';
+
+    // 3. サポートアイテム所持チェック
+    const items = [p.item0, p.item1, p.item2, p.item3, p.item4, p.item5, p.item6];
+    const hasSupportItem = items.some((it) => SUPPORT_ITEM_IDS.has(it));
+    if (hasSupportItem || p.role === 'SUPPORT') {
+      return 'UTILITY';
+    }
+
+    // 4. lane と role のフォールバック
+    const rawLane = (p.lane || '').toUpperCase();
+    if (rawLane === 'TOP') return 'TOP';
+    if (rawLane === 'JUNGLE') return 'JUNGLE';
+    if (rawLane === 'MIDDLE' || rawLane === 'MID') return 'MIDDLE';
+    if (rawLane === 'BOTTOM' || rawLane === 'BOT') {
+      return p.role === 'SUPPORT' ? 'UTILITY' : 'BOTTOM';
+    }
+
+    // 5. ニュートラルCS多ければジャングル
+    if ((p.neutralMinionsKilled || 0) > 40) {
+      return 'JUNGLE';
+    }
+
+    return 'MIDDLE';
+  };
+
   const participants: ParticipantStats[] = data.info.participants.map((p: any) => ({
     puuid: p.puuid,
     riotIdName: p.riotIdGameName || p.summonerName,
@@ -135,7 +179,7 @@ export async function fetchMatchDetails(matchId: string, apiKey: string): Promis
     damageSelfMitigated: p.damageSelfMitigated || 0,
     goldEarned: p.goldEarned || 0,
     win: p.win,
-    lane: p.teamPosition || p.lane // TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY
+    lane: detectPosition(p) // TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY
   }));
 
   return {
