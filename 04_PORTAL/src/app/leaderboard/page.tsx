@@ -63,6 +63,7 @@ function LeaderboardContent() {
   const [metaMinGames, setMetaMinGames] = useState(2);
   const [metaSortKey, setMetaSortKey] = useState<'games' | 'winRate' | 'avgKda'>('games');
   const [metaSortDir, setMetaSortDir] = useState<'asc' | 'desc'>('desc');
+  const [showMetaPlayers, setShowMetaPlayers] = useState(true);
 
   const toggleMetaSort = (key: 'games' | 'winRate' | 'avgKda') => {
     if (metaSortKey === key) {
@@ -224,22 +225,42 @@ function LeaderboardContent() {
         {activeTab === 'meta' && (
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3 bg-white/90 p-4 rounded-2xl border border-stone-200/90 shadow-2xs">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-stone-600">最低ピック数:</span>
-                {[1, 2, 3, 5].map((cnt) => (
-                  <button
-                    key={cnt}
-                    onClick={() => setMetaMinGames(cnt)}
-                    className={`px-3 py-1 rounded-xl text-xs font-black transition cursor-pointer ${
-                      metaMinGames === cnt
-                        ? 'bg-amber-600 text-white'
-                        : 'bg-stone-100 hover:bg-stone-200 text-stone-600'
-                    }`}
-                  >
-                    {cnt}回以上
-                  </button>
-                ))}
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-stone-600">最低ピック数:</span>
+                  {[1, 2, 3, 5].map((cnt) => (
+                    <button
+                      key={cnt}
+                      onClick={() => setMetaMinGames(cnt)}
+                      className={`px-3 py-1 rounded-xl text-xs font-black transition cursor-pointer ${
+                        metaMinGames === cnt
+                          ? 'bg-amber-600 text-white'
+                          : 'bg-stone-100 hover:bg-stone-200 text-stone-600'
+                      }`}
+                    >
+                      {cnt}回以上
+                    </button>
+                  ))}
+                </div>
+
+                <div className="h-4 w-px bg-stone-300 hidden sm:block"></div>
+
+                {/* 使用プレイヤー情報の切り替えトグル */}
+                <button
+                  type="button"
+                  onClick={() => setShowMetaPlayers(!showMetaPlayers)}
+                  className={`px-3 py-1 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer ${
+                    showMetaPlayers
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'bg-stone-100 hover:bg-stone-200 text-stone-600'
+                  }`}
+                  title="各チャンピオンを誰が使用したかを表示/非表示に切り替えます"
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  <span>{showMetaPlayers ? '👤 使用者を表示中' : '👤 使用者を非表示'}</span>
+                </button>
               </div>
+
               <span className="text-xs text-stone-500 font-bold">
                 ※ KTMカスタム内での実戦集計データ
               </span>
@@ -260,35 +281,61 @@ function LeaderboardContent() {
                     <thead>
                       <tr className="bg-stone-100/80 text-stone-700 border-b border-stone-200 font-black">
                         <th className="p-3">チャンピオン</th>
-                        <th className="p-3 cursor-pointer hover:text-amber-700" onClick={() => toggleMetaSort('games')}>
+                        <th className="p-3 cursor-pointer hover:text-amber-700 whitespace-nowrap" onClick={() => toggleMetaSort('games')}>
                           ピック数 {metaSortKey === 'games' && (metaSortDir === 'desc' ? '▼' : '▲')}
                         </th>
-                        <th className="p-3 cursor-pointer hover:text-amber-700" onClick={() => toggleMetaSort('winRate')}>
+                        <th className="p-3 cursor-pointer hover:text-amber-700 whitespace-nowrap" onClick={() => toggleMetaSort('winRate')}>
                           勝率 {metaSortKey === 'winRate' && (metaSortDir === 'desc' ? '▼' : '▲')}
                         </th>
-                        <th className="p-3 cursor-pointer hover:text-amber-700" onClick={() => toggleMetaSort('avgKda')}>
+                        <th className="p-3 cursor-pointer hover:text-amber-700 whitespace-nowrap" onClick={() => toggleMetaSort('avgKda')}>
                           平均KDA {metaSortKey === 'avgKda' && (metaSortDir === 'desc' ? '▼' : '▲')}
                         </th>
+                        {showMetaPlayers && (
+                          <th className="p-3 min-w-[200px]">主な使用者 (試合数・勝率)</th>
+                        )}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-stone-100 text-stone-700">
                       {sortedMetaData(metaData.filter(r => r.games >= metaMinGames)).map((row) => (
                         <tr key={row.champion} className="hover:bg-stone-50 transition">
-                          <td className="p-3 font-black text-stone-900 flex items-center gap-2">
+                          <td className="p-3 font-black text-stone-900 flex items-center gap-2 whitespace-nowrap">
                             <img
                               src={getChampIcon(row.champion)}
                               alt={row.champion}
-                              className="w-7 h-7 rounded-lg border border-stone-200"
+                              className="w-7 h-7 rounded-lg border border-stone-200 shrink-0"
                             />
                             <span>{row.champion}</span>
                           </td>
-                          <td className="p-3 font-bold">{row.games}試合</td>
-                          <td className="p-3 font-black">
+                          <td className="p-3 font-bold whitespace-nowrap">{row.games}試合</td>
+                          <td className="p-3 font-black whitespace-nowrap">
                             <span className={row.winRate >= 60 ? 'text-emerald-600' : row.winRate <= 40 ? 'text-rose-600' : 'text-stone-800'}>
                               {row.winRate}%
                             </span>
                           </td>
-                          <td className="p-3 font-mono font-bold">{row.avgKda}</td>
+                          <td className="p-3 font-mono font-bold whitespace-nowrap">{row.avgKda}</td>
+                          {showMetaPlayers && (
+                            <td className="p-3">
+                              {row.players && row.players.length > 0 ? (
+                                <div className="flex flex-wrap gap-1.5 items-center">
+                                  {row.players.map((p: any) => (
+                                    <Link
+                                      key={p.name}
+                                      href={`/player/${encodeURIComponent(p.name)}`}
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-stone-100 hover:bg-amber-100 hover:border-amber-300 border border-stone-200 text-stone-800 text-[11px] transition-colors"
+                                      title={`${p.name} のカルテを見る`}
+                                    >
+                                      <span className="font-bold">{p.name}</span>
+                                      <span className="text-[10px] text-stone-500 font-mono">
+                                        ({p.wins}W{p.games - p.wins}L / {p.winRate}%)
+                                      </span>
+                                    </Link>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-stone-400 text-[10px]">-</span>
+                              )}
+                            </td>
+                          )}
                         </tr>
                       ))}
                     </tbody>
