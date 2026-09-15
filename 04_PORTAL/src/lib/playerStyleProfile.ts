@@ -42,6 +42,70 @@ export const KAZURIN_STYLE_PROFILE: PlayerStyleMetrics = {
   actionGuideline: '3:30のフルクリア後に即リコールせず、プッシュされているレーンへの「チラ見・カウンターガンク」または「敵JG逆サイド荒らし」を1回必ず挟むこと。',
 };
 
+export interface RadarHistoryPoint {
+  period: string;
+  label: string;
+  gamesCount: number;
+  survival: number;       // 生存スコア (0-100)
+  farm: number;           // 15分CSリードスコア (0-100)
+  combat: number;         // 15分キル関与スコア (0-100)
+  objectives: number;     // オブジェクト確保スコア (0-100)
+  teamfight: number;      // 集団戦ポジショニングスコア (0-100)
+  avgDeaths: number;
+  csd15: number;
+  kp15: number;           // %
+  avgKda: number;
+  summary: string;
+}
+
+export const RADAR_HISTORY_TIMELINE: RadarHistoryPoint[] = [
+  {
+    period: '2026-07 (2ヶ月前)',
+    label: '7月スプリット序盤',
+    gamesCount: 38,
+    survival: 92,
+    farm: 82,
+    combat: 26,
+    objectives: 68,
+    teamfight: 78,
+    avgDeaths: 3.8,
+    csd15: 11.2,
+    kp15: 28,
+    avgKda: 4.8,
+    summary: '完全ファーム専念期。被デスは少ないが味方レーン崩壊への干渉が極めて少なかった時期。',
+  },
+  {
+    period: '2026-08 (1ヶ月前)',
+    label: '8月スプリット中盤',
+    gamesCount: 45,
+    survival: 94,
+    farm: 85,
+    combat: 31,
+    objectives: 71,
+    teamfight: 80,
+    avgDeaths: 3.6,
+    csd15: 12.5,
+    kp15: 32,
+    avgKda: 5.4,
+    summary: 'ドラゴン・ヴォイドグラブ意識が向上。1周目のカウンターアクションを意識し始めた時期。',
+  },
+  {
+    period: '2026-09 (現在 / 直近)',
+    label: '9月最新 (直近20戦)',
+    gamesCount: 20,
+    survival: 96,
+    farm: 88,
+    combat: 35,
+    objectives: 74,
+    teamfight: 82,
+    avgDeaths: 3.46,
+    csd15: 13.88,
+    kp15: 35,
+    avgKda: 6.8,
+    summary: 'ファーム効率・生存率はエメラルド上位級へ到達。弱点だった15分キル関与も35%へ着実に上昇中。',
+  },
+];
+
 /** AIプロンプト（事前アドバイス・事後振り返り）へ注入するパーソナルコンテキスト文 */
 export function getPlayerStylePromptContext(): string {
   return `【プレイヤー固有のプレイスタイル特性・弱点カルテ（your.gg実戦データ連動）】
@@ -53,3 +117,4 @@ export function getPlayerStylePromptContext(): string {
   1. 単に「CSが多い」「デスが少なくて良い」と褒めるだけで終わらせず、「序盤に敵JGが仕掛けた際、カウンターアクション（逆サイドジャングル荒らし、対角タワー圧力、カウンターガンク）が取れていたか」を厳格に評価すること。
   2. 改善アクションには必ず「1周目ファーム完了後の1回のレーン干渉または敵陣侵入」を含めること。`;
 }
+

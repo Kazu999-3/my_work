@@ -16,7 +16,7 @@ import {
   CheckCircle2,
   HelpCircle,
 } from 'lucide-react';
-import { KAZURIN_STYLE_PROFILE } from '../../lib/playerStyleProfile';
+import { KAZURIN_STYLE_PROFILE, RADAR_HISTORY_TIMELINE, RadarHistoryPoint } from '../../lib/playerStyleProfile';
 
 // プレイスタイルの4大タイプ
 const PLAY_STYLE_TYPES = [
@@ -68,7 +68,12 @@ const PLAY_STYLE_TYPES = [
 
 export default function PlayerStyleRadarCard() {
   const p = KAZURIN_STYLE_PROFILE;
-  const [activeTab, setActiveTab] = useState<'profile' | 'types'>('profile');
+  const history = RADAR_HISTORY_TIMELINE;
+  const [activeTab, setActiveTab] = useState<'profile' | 'timeline' | 'types'>('profile');
+  const [selectedPeriodIdx, setSelectedPeriodIdx] = useState<number>(history.length - 1);
+
+  const selectedPeriod = history[selectedPeriodIdx];
+  const prevPeriod = selectedPeriodIdx > 0 ? history[selectedPeriodIdx - 1] : null;
 
   return (
     <div className="rounded-3xl border border-stone-200/90 bg-white/95 p-5 shadow-xs space-y-4">
@@ -98,7 +103,16 @@ export default function PlayerStyleRadarCard() {
               activeTab === 'profile' ? 'bg-white text-stone-900 shadow-2xs' : 'text-stone-500 hover:text-stone-800'
             }`}
           >
-            📈 現在のカルテ
+            📈 現在
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('timeline')}
+            className={`px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+              activeTab === 'timeline' ? 'bg-white text-stone-900 shadow-2xs text-amber-700' : 'text-stone-500 hover:text-stone-800'
+            }`}
+          >
+            📊 5大推移
           </button>
           <button
             type="button"
@@ -107,7 +121,7 @@ export default function PlayerStyleRadarCard() {
               activeTab === 'types' ? 'bg-white text-stone-900 shadow-2xs' : 'text-stone-500 hover:text-stone-800'
             }`}
           >
-            🧭 4大スタイル比較
+            🧭 4大比較
           </button>
         </div>
       </div>
@@ -231,7 +245,212 @@ export default function PlayerStyleRadarCard() {
       )}
 
       {/* ========================================================================= */}
-      {/* 2. 4大スタイル比較タブ */}
+      {/* 2. 📊 5大推移トレンドタブ */}
+      {/* ========================================================================= */}
+      {activeTab === 'timeline' && (
+        <div className="space-y-4 animate-in fade-in">
+          {/* 期間選択ピル */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs font-bold text-stone-700">
+              <span className="flex items-center gap-1.5">
+                <TrendingUp size={14} className="text-amber-600" />
+                <span>時系列スコア推移（過去スプリット比較）</span>
+              </span>
+              <span className="text-[10px] text-stone-400 font-medium">
+                期間をタップして比較
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              {history.map((pt, idx) => {
+                const isSelected = selectedPeriodIdx === idx;
+                return (
+                  <button
+                    key={pt.period}
+                    type="button"
+                    onClick={() => setSelectedPeriodIdx(idx)}
+                    className={`p-2.5 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between gap-1 ${
+                      isSelected
+                        ? 'border-amber-500 bg-amber-50/80 shadow-xs ring-2 ring-amber-400/40'
+                        : 'border-stone-200 bg-stone-50/70 hover:bg-stone-100 hover:border-stone-300'
+                    }`}
+                  >
+                    <div className="text-[10px] font-bold text-stone-500 truncate">
+                      {pt.period}
+                    </div>
+                    <div className="text-xs font-black text-stone-900 truncate">
+                      {pt.label}
+                    </div>
+                    <div className="flex items-center gap-1 text-[10px] font-bold text-amber-700">
+                      <span>{pt.gamesCount}戦</span>
+                      <span>• KDA {pt.avgKda}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 選択期間の推移ハイライトサマリー */}
+          <div className="rounded-2xl border border-stone-200 bg-stone-50/60 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">📌</span>
+                <div>
+                  <div className="text-xs font-black text-stone-900">
+                    {selectedPeriod.label} の特性 ＆ 総括
+                  </div>
+                  <div className="text-[10px] text-stone-500">
+                    {selectedPeriod.period} ({selectedPeriod.gamesCount}試合)
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-xs font-black text-emerald-700">
+                  平均被デス {selectedPeriod.avgDeaths}
+                </div>
+                <div className="text-[10px] font-bold text-stone-500">
+                  CS差 +{selectedPeriod.csd15} / KP {selectedPeriod.kp15}%
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-stone-600 leading-relaxed font-medium bg-white/80 p-2.5 rounded-xl border border-stone-200/70">
+              {selectedPeriod.summary}
+            </p>
+          </div>
+
+          {/* 5大指標の推移バー ＆ 変化差分 */}
+          <div className="rounded-2xl border border-stone-200 bg-white p-4 space-y-3.5 shadow-2xs">
+            <div className="text-xs font-black text-stone-800 flex items-center justify-between border-b border-stone-100 pb-2">
+              <span>📊 5大指標スコアの変化</span>
+              {prevPeriod && (
+                <span className="text-[10px] text-stone-500 font-bold">
+                  （前期間 {prevPeriod.label} との比較）
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              {/* ① 生存率 */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-emerald-700 flex items-center gap-1">
+                    <Shield size={12} /> ① 生存率・デス回避
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {prevPeriod && (
+                      <span className={`text-[10px] font-black ${selectedPeriod.survival >= prevPeriod.survival ? 'text-emerald-600' : 'text-rose-500'}`}>
+                        {selectedPeriod.survival >= prevPeriod.survival ? `▲ +${selectedPeriod.survival - prevPeriod.survival}` : `▼ -${prevPeriod.survival - selectedPeriod.survival}`}
+                      </span>
+                    )}
+                    <span className="text-stone-900 font-black">{selectedPeriod.survival}点</span>
+                  </div>
+                </div>
+                <div className="h-2 w-full rounded-full bg-stone-100 overflow-hidden">
+                  <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${selectedPeriod.survival}%` }} />
+                </div>
+              </div>
+
+              {/* ② 15分CSリード */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-sky-700 flex items-center gap-1">
+                    <Zap size={12} /> ② 15分CSリード (CSD@15)
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {prevPeriod && (
+                      <span className={`text-[10px] font-black ${selectedPeriod.farm >= prevPeriod.farm ? 'text-emerald-600' : 'text-rose-500'}`}>
+                        {selectedPeriod.farm >= prevPeriod.farm ? `▲ +${selectedPeriod.farm - prevPeriod.farm}` : `▼ -${prevPeriod.farm - selectedPeriod.farm}`}
+                      </span>
+                    )}
+                    <span className="text-stone-900 font-black">{selectedPeriod.farm}点</span>
+                  </div>
+                </div>
+                <div className="h-2 w-full rounded-full bg-stone-100 overflow-hidden">
+                  <div className="h-full bg-sky-500 rounded-full transition-all duration-500" style={{ width: `${selectedPeriod.farm}%` }} />
+                </div>
+              </div>
+
+              {/* ③ 15分キル関与 (弱点克服の焦点) */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-rose-700 flex items-center gap-1">
+                    <AlertTriangle size={12} /> ③ 15分キル関与 (KP@15)
+                    <span className="text-[10px] bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded font-black">重点克服</span>
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {prevPeriod && (
+                      <span className={`text-[10px] font-black ${selectedPeriod.combat >= prevPeriod.combat ? 'text-emerald-600' : 'text-rose-500'}`}>
+                        {selectedPeriod.combat >= prevPeriod.combat ? `▲ +${selectedPeriod.combat - prevPeriod.combat} (改善中!)` : `▼ -${prevPeriod.combat - selectedPeriod.combat}`}
+                      </span>
+                    )}
+                    <span className="text-rose-600 font-black">{selectedPeriod.combat}点 ({selectedPeriod.kp15}%)</span>
+                  </div>
+                </div>
+                <div className="h-2 w-full rounded-full bg-stone-100 overflow-hidden">
+                  <div className="h-full bg-rose-500 rounded-full transition-all duration-500" style={{ width: `${selectedPeriod.combat}%` }} />
+                </div>
+              </div>
+
+              {/* ④ オブジェクト確保 */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-amber-700 flex items-center gap-1">
+                    <Target size={12} /> ④ オブジェクト確保 (Obj Control)
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {prevPeriod && (
+                      <span className={`text-[10px] font-black ${selectedPeriod.objectives >= prevPeriod.objectives ? 'text-emerald-600' : 'text-rose-500'}`}>
+                        {selectedPeriod.objectives >= prevPeriod.objectives ? `▲ +${selectedPeriod.objectives - prevPeriod.objectives}` : `▼ -${prevPeriod.objectives - selectedPeriod.objectives}`}
+                      </span>
+                    )}
+                    <span className="text-stone-900 font-black">{selectedPeriod.objectives}点</span>
+                  </div>
+                </div>
+                <div className="h-2 w-full rounded-full bg-stone-100 overflow-hidden">
+                  <div className="h-full bg-amber-500 rounded-full transition-all duration-500" style={{ width: `${selectedPeriod.objectives}%` }} />
+                </div>
+              </div>
+
+              {/* ⑤ 集団戦ポジショニング */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-indigo-700 flex items-center gap-1">
+                    <Crosshair size={12} /> ⑤ 集団戦ポジショニング (Teamfight)
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {prevPeriod && (
+                      <span className={`text-[10px] font-black ${selectedPeriod.teamfight >= prevPeriod.teamfight ? 'text-emerald-600' : 'text-rose-500'}`}>
+                        {selectedPeriod.teamfight >= prevPeriod.teamfight ? `▲ +${selectedPeriod.teamfight - prevPeriod.teamfight}` : `▼ -${prevPeriod.teamfight - selectedPeriod.teamfight}`}
+                      </span>
+                    )}
+                    <span className="text-stone-900 font-black">{selectedPeriod.teamfight}点</span>
+                  </div>
+                </div>
+                <div className="h-2 w-full rounded-full bg-stone-100 overflow-hidden">
+                  <div className="h-full bg-indigo-500 rounded-full transition-all duration-500" style={{ width: `${selectedPeriod.teamfight}%` }} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 成長トレンドの総括バナー */}
+          <div className="rounded-2xl border border-emerald-300 bg-emerald-50/70 p-3.5 flex items-start gap-2.5">
+            <span className="text-xl">📈</span>
+            <div className="space-y-0.5 text-xs text-stone-700">
+              <div className="font-black text-emerald-950">
+                克服トレンドの成果: 15分キル関与率 +7%（28% ➔ 35%）
+              </div>
+              <p className="leading-relaxed font-medium">
+                「1周目ファーム完了後のレーン干渉・逆サイド荒らし」の意識付けにより、生存率（96点）とCSリード（88点）の圧倒的な強みを維持したまま、序盤のレーン崩壊防止力が着実に向上しています。
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 3. 4大スタイル比較タブ */}
       {/* ========================================================================= */}
       {activeTab === 'types' && (
         <div className="space-y-3 animate-in fade-in">
