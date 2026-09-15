@@ -6,7 +6,6 @@ import {
   fetchRecentMatchIds,
   fetchMatchDetails,
   fetchLeagueByPuuid,
-  fetchChampionMasteryByPuuid,
 } from '../../../../lib/riot';
 import {
   RawMatchRecord,
@@ -25,7 +24,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { gameName = 'Kazurin', tagLine = '4036' } = body;
+    const {
+      gameName = 'Kazurin',
+      tagLine = '4036',
+      queueType = 'solo', // 'solo' | 'all'
+      targetTier = 'Emerald IV',
+    } = body;
 
     const cleanName = String(gameName).trim();
     const cleanTag = String(tagLine).trim().replace(/^#/, '');
@@ -37,7 +41,7 @@ export async function POST(request: NextRequest) {
     let rawMatches: RawMatchRecord[] = [];
     let puuid = '';
 
-    // 1. Riot APIからPUUID・ランク・マッチ履歴を取得
+    // 1. Riot APIからPUUID・ランク・マッチ履歴を取得 (最大50試合)
     if (apiKey && cleanName) {
       try {
         puuid = await fetchPuuidByRiotId(cleanName, cleanTag, apiKey);
@@ -51,21 +55,26 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          // ソロQ優先で直近マッチを取得（不足時は一般ノーマル等も含める）
-          let matchIds = await fetchRankedSoloMatchIds(puuid, apiKey, 20);
-          if (matchIds.length < 5) {
-            const allMatchIds = await fetchRecentMatchIds(puuid, apiKey, 20);
-            matchIds = Array.from(new Set([...matchIds, ...allMatchIds])).slice(0, 20);
+          // キュー選択に応じたマッチID取得 (最大50件)
+          let matchIds: string[] = [];
+          if (queueType === 'solo') {
+            matchIds = await fetchRankedSoloMatchIds(puuid, apiKey, 50);
+            // ソロQが少なければ全マッチで補完
+            if (matchIds.length === 0) {
+              matchIds = await fetchRecentMatchIds(puuid, apiKey, 30);
+            }
+          } else {
+            matchIds = await fetchRecentMatchIds(puuid, apiKey, 50);
           }
 
-          // 各マッチの詳細を取得し、RawMatchRecord を構築
-          const matchDetailPromises = matchIds.slice(0, 15).map(async (mId) => {
+          // 各マッチの詳細を取得し、RawMatchRecord を構築 (最大25件の詳細を並行取得)
+          const targetIds = matchIds.slice(0, 25);
+          const matchDetailPromises = targetIds.map(async (mId) => {
             try {
               const detail = await fetchMatchDetails(mId, apiKey);
               const p = detail.participants.find((part) => part.puuid === puuid);
               if (!p) return null;
 
-              // チーム全体の総キル数と総ダメージを計算（KP%用）
               const teamMembers = detail.participants.filter((part) => part.teamId === p.teamId);
               const teamKills = teamMembers.reduce((sum, m) => sum + m.kills, 0);
               const teamDamage = teamMembers.reduce((sum, m) => sum + m.damageDealtToChampions, 0);
@@ -91,6 +100,7 @@ export async function POST(request: NextRequest) {
                 teamDamage: teamDamage || 1,
                 playerDamage: p.damageDealtToChampions || 0,
                 teamKills: teamKills || 1,
+                goldEarned: p.goldEarned || 0,
               };
               return record;
             } catch (e) {
@@ -106,12 +116,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 2. 実測マッチデータからの集計（マッチがない場合のフォールバック付き）
-    const matchCount = rawMatches.length > 0 ? rawMatches.length : 15;
+    // 2. 実測マッチデータからの集計
     const totalWins = rawMatches.filter((m) => m.win).length;
     const overallWinRate = rawMatches.length > 0 ? Math.round((totalWins / rawMatches.length) * 100) : 53;
 
-    // ロール判定 (最多レーン)
+    // ロール判定
     if (rawMatches.length > 0) {
       const laneCounts: { [key: string]: number } = {};
       rawMatches.forEach((m) => {
@@ -122,7 +131,6 @@ export async function POST(request: NextRequest) {
       if (topLane) role = topLane[0];
     }
 
-    // 5大レーダースタッツの集計
     let avgDeaths = 3.5;
     let avgKills = 5.8;
     let avgAssists = 8.4;
@@ -153,14 +161,13 @@ export async function POST(request: NextRequest) {
       avgKpPercent = Math.round(totalKp / rawMatches.length);
     }
 
-    // スコア計算 (0〜100に正規化)
     const survivalScore = Math.max(20, Math.min(100, Math.round(100 - avgDeaths * 14)));
     const farmScore = Math.max(30, Math.min(100, Math.round(avgCsPerMin * 11.5)));
     const combatScore = Math.max(20, Math.min(100, Math.round(avgKpPercent * 1.3)));
     const objScore = Math.min(95, Math.max(50, Math.round(60 + (overallWinRate - 50) * 0.8)));
     const teamfightScore = Math.min(98, Math.max(40, Math.round(avgKda * 12)));
 
-    // 3. チャンピオン別実測集計（直近マッチでプレイされた上位3体）
+    // 3. チャンピオン別実測集計
     const champStatsMap: {
       [name: string]: {
         name: string;
@@ -204,7 +211,6 @@ export async function POST(request: NextRequest) {
       .sort((a, b) => b.gamesCount - a.gamesCount)
       .slice(0, 3);
 
-    // 試合履歴からチャンピオンが抽出できない場合の安全なデフォルト
     if (topChampions.length === 0) {
       topChampions = [
         { name: 'Zyra', gamesCount: 12, wins: 7, kills: 60, deaths: 24, assists: 110, cs: 1400, durationMin: 360, vision: 420 },
@@ -240,37 +246,33 @@ export async function POST(request: NextRequest) {
       };
     });
 
-    // 4. 実測タイムスタンプからのコンディション・連戦・ティルト自動計算
-    const calculatedSessionAnalytics = calculateRealSessionAnalytics(rawMatches);
+    // 4. 実測タイムスタンプからのコンディション・心理DNA・目標ランクギャップ自動計算
+    const calculatedSessionAnalytics = calculateRealSessionAnalytics(rawMatches, targetTier);
 
-    // 5. Gemini AIによる動的総合診断 ＆ チャンピオン深掘り情報の生成
-    const aiPrompt = `あなたはLoL（League of Legends）の最高峰データアナリストです。
-以下の客観実測データ（Riot API、your.gg、League of Graphs集計）をもとに、プレイヤー「${cleanName}#${cleanTag}」の【プレイスタイル深層統合レポート】を作成してください。
+    // 5. Gemini AIによる動的総合診断 ＆ 目標ランク到達処方箋の生成
+    const aiPrompt = `あなたはLoL（League of Legends）の最高峰データアナリスト兼パーソナルコーチです。
+プレイヤー「${cleanName}#${cleanTag}」（現在ランク: ${tier}）は、目標ランク【${targetTier}】への昇格を目指しています。
+以下の実測スタッツおよび目標ランク基準値とのギャップをもとに、【目標ランク到達処方箋レポート】を作成してください。
 
-【プレイヤー客観データ】
-・メインロール: ${role}
-・ランク: ${tier}
-・5大レーダー解析スコア:
-  - 生存率・デス回避: ${survivalScore}点 (平均被デス ${avgDeaths} / 同ランク比較)
-  - 15分CS・ファーム力: ${farmScore}点 (分間CS ${avgCsPerMin})
-  - キル関与率 (KP): ${combatScore}点 (${avgKpPercent}%)
-  - オブジェクト確保: ${objScore}点
-  - 集団戦ポジショニング: ${teamfightScore}点 (KDA ${avgKda})
-・視界客観データ: 分間視界 ${avgVisionPerMin}/分
-・直近最多使用チャンピオン3体: ${calculatedChamps.map((c) => `${c.name} (${c.gamesCount}戦 勝率${c.winRate}% KDA ${c.kda})`).join(', ')}
+【プレイヤー実測スタッツ vs 目標ランク（${targetTier}）基準値】
+・生存力（平均被デス）: 実測 ${avgDeaths} (目標基準: ${calculatedSessionAnalytics.targetRankGap.benchmark.avgDeaths})
+・ファーム効率 (分間CS): 実測 ${avgCsPerMin} (目標基準: ${calculatedSessionAnalytics.targetRankGap.benchmark.csPerMin})
+・キル関与率 (KP@15): 実測 ${avgKpPercent}% (目標基準: ${calculatedSessionAnalytics.targetRankGap.benchmark.kp15}%)
+・分間視界スコア: 実測 ${avgVisionPerMin}/分 (目標基準: ${calculatedSessionAnalytics.targetRankGap.benchmark.visionScorePerMin})
+・目標到達度スコア: ${calculatedSessionAnalytics.targetRankGap.targetReadinessScore}%
 
 以下のJSONフォーマットのみを返してください（コードブロックなしの純粋なJSON）:
 {
-  "styleTypeName": "（プレイヤーの特性を表す二つ名、例: ファームスケーリング＆セーフティ型）",
+  "styleTypeName": "（プレイヤーのプレイスタイル名、例: ファームスケーリング＆セーフティ型）",
   "styleBadge": "（強みバッジ、例: 生存力 Sランク）",
-  "coreDiagnosis": "（強みとプレイスタイルの客観総括 2〜3文）",
-  "strengths": ["客観データに基づく強み1", "客観データに基づく強み2", "客観データに基づく強み3"],
-  "coreBottleNeck": "（最大の敗因・ボトルネックとなる典型的負け筋 1〜2文）",
-  "visionAnalysis": "（視界確保状況とディープ視界に関する客観評価）",
-  "actionPlan": "（次戦で実行すべき具体的急所アクション）",
+  "coreDiagnosis": "（現状と目標ランク【${targetTier}】に向けた客観総括 2〜3文）",
+  "strengths": ["実測データに基づく強み1", "実測データに基づく強み2", "実測データに基づく強み3"],
+  "coreBottleNeck": "（目標ランク到達を阻んでいる最大のボトルネック・負け筋 1〜2文）",
+  "visionAnalysis": "（防衛視界と敵陣ディープ視界の評価）",
+  "actionPlan": "（【${targetTier}】昇格のために次戦から変えるべき具体的急所アクション）",
   "goldenDeepWard": {
-    "spot": "（推奨ワード場所、例: 敵ラプター裏ブッシュ）",
-    "timing": "（推奨タイミング、例: 3:30〜4:00 1周目フルクリア直後）",
+    "spot": "（推奨ワード場所）",
+    "timing": "（推奨タイミング）",
     "reason": "（理由）"
   },
   "championDetails": [
@@ -279,13 +281,13 @@ export async function POST(request: NextRequest) {
         (c) => `{
       "id": "${c.id}",
       "powerSpikes": {
-        "earlyLvl1to5": "（Lv1〜5序盤のパワースパイク解説）",
-        "mid1to2Core": "（1〜2コア完成時の中盤スパイク解説）",
-        "late3CorePlus": "（3コア以降終盤のスパイク解説）"
+        "earlyLvl1to5": "（Lv1〜5序盤スパイク解説）",
+        "mid1to2Core": "（1〜2コア中盤スパイク解説）",
+        "late3CorePlus": "（3コア終盤スパイク解説）"
       },
       "favoredMatchups": [
-        { "enemy": "（有利な敵JG/対面1）", "winRate": 68, "reason": "（有利な理由）" },
-        { "enemy": "（有利な敵JG/対面2）", "winRate": 64, "reason": "（有利な理由）" }
+        { "enemy": "（有利な相手1）", "winRate": 68, "reason": "（有利な理由）" },
+        { "enemy": "（有利な相手2）", "winRate": 64, "reason": "（有利な理由）" }
       ],
       "hardMatchups": [
         { "enemy": "（苦手な天敵1）", "winRate": 34, "counterPlay": "（具体的な対抗立ち回り）" },
@@ -297,7 +299,7 @@ export async function POST(request: NextRequest) {
         "visionDiff": "勝利時: 視界 +35% / 敗北時: 基準値",
         "firstCoreTime": "勝利時: 10分50秒 / 敗北時: 13分30秒"
       },
-      "aiTacticsGuide": "（このプレイヤーが${c.name}で勝率を最大化するための専属指南）"
+      "aiTacticsGuide": "（このプレイヤーが${c.name}で【${targetTier}】に通用するための専属指南）"
     }`
       )
       .join(',\n    ')}
@@ -318,47 +320,46 @@ export async function POST(request: NextRequest) {
       aiResult = {
         styleTypeName: 'ファームスケーリング＆セーフティ型',
         styleBadge: '安定度 Sランク',
-        coreDiagnosis: `平均被デス${avgDeaths}という安定した生存率と、分間CS ${avgCsPerMin}の正確なリソース管理が光る安定重視型プレイヤーです。`,
+        coreDiagnosis: `平均被デス${avgDeaths}と分間CS ${avgCsPerMin}は既に【${targetTier}水準】に到達しています。昇格への最大の鍵は、序盤15分の戦闘関与（KP@15）を目標値の${calculatedSessionAnalytics.targetRankGap.benchmark.kp15}%へ引き上げることです。`,
         strengths: [
-          `平均被デス ${avgDeaths} による無理のないデス回避とセーフティな立ち回り`,
-          `分間CS ${avgCsPerMin} の正確なファーム巡回効率`,
-          `分間視界 ${avgVisionPerMin} による防衛ラインの維持`,
+          `平均被デス ${avgDeaths} による【${targetTier}級】の安全な立ち回り`,
+          `分間CS ${avgCsPerMin} の高いリソース回収精度`,
+          `分間視界 ${avgVisionPerMin} による防衛網の維持`,
         ],
-        coreBottleNeck: `キル関与率（${avgKpPercent}%）がやや控えめで、序盤に敵の能動的な仕掛けによって味方レーンが崩壊した際に押し切られる傾向があります。`,
-        visionAnalysis: `自陣・川周りの防衛視界は安定していますが、敵陣深部へのディープワードが刺さると敵の初動察知がさらに早くなります。`,
-        actionPlan: `1周目ファーム完了後の3:30〜4:00に、敵ラプター裏または青バフ横へディープワードを1本刺して敵の進行ルートを早期察知すること。`,
+        coreBottleNeck: `キル関与率（${avgKpPercent}%）が目標基準（${calculatedSessionAnalytics.targetRankGap.benchmark.kp15}%）を下回っており、味方レーンの序盤崩壊に干渉しきれていない点が昇格のボトルネックです。`,
+        visionAnalysis: `自陣防衛視界は万全ですが、敵陣ディープ視界（目標 ${calculatedSessionAnalytics.targetRankGap.benchmark.deepWardRatio}%）を増やすことで敵JGの位置を事前特定できます。`,
+        actionPlan: `1周目ファーム完了後の3:30〜4:00に敵ラプター裏へディープワードを刺し、プッシュされているレーンへカウンター介入を1回必ず行うこと。`,
         goldenDeepWard: {
           spot: '敵ラプター裏ブッシュ',
           timing: '3:30〜4:00 (1周目フルクリア直後)',
-          reason: '敵JGの周回ルートとガンク先を30秒前に察知できるため',
+          reason: '敵JGの進行ルートを30秒前に完全察知し、味方崩壊を防ぐため',
         },
         championDetails: calculatedChamps.map((c) => ({
           id: c.id,
           powerSpikes: {
             earlyLvl1to5: '最速フルクリアからのオブジェクト安全確保。',
-            mid1to2Core: '【最大スパイク】1〜2コア完成時の集団戦・小規模戦。',
+            mid1to2Core: '1〜2コア完成時の集団戦・小規模戦。',
             late3CorePlus: '集団戦でのポジショニングとゾーン制圧力。',
           },
           favoredMatchups: [
-            { enemy: 'Sejuani', winRate: 68, reason: '継続的なハラスと距離管理で接近を完封可能。' },
+            { enemy: 'Sejuani', winRate: 68, reason: 'ハラスと距離管理で接近を完封可能。' },
             { enemy: 'Amumu', winRate: 64, reason: 'ファーム速度差と序盤のカウンターアクションで圧倒。' },
           ],
           hardMatchups: [
-            { enemy: 'Nocturne', winRate: 34, counterPlay: 'Ult暗転時に即座に足元へCCを敷き、防衛アイテムを優先購入する。' },
-            { enemy: 'XinZhao', winRate: 38, counterPlay: '序盤のタイマンを避け、逆サイドスタートでフルクリアを徹底。' },
+            { enemy: 'Nocturne', winRate: 34, counterPlay: 'Ult暗転時に即座に足元へCCを敷き防衛アイテムを優先。' },
+            { enemy: 'XinZhao', winRate: 38, counterPlay: '序盤のタイマンを避け、逆サイドフルクリア徹底。' },
           ],
           winVsLossDiffs: {
             cs15Diff: '勝利時: CS +15.0 / 敗北時: +3.0',
-            deathsDiff: `勝利時: 平均 ${(c.avgDeaths * 0.5).toFixed(1)}デス / 敗北時: 平均 ${(c.avgDeaths * 1.5).toFixed(1)}デス`,
+            deathsDiff: `勝利時: 低デス / 敗北時: 高デス`,
             visionDiff: '勝利時: ピンクワード 2本以上 / 敗北時: 0〜1本',
             firstCoreTime: '勝利時: 11分00秒 / 敗北時: 13分45秒',
           },
-          aiTacticsGuide: '無理な突入を避け、味方のCCに合わせてスキルを展開し、生存を最優先に立ち回るのが勝率を高める鍵。',
+          aiTacticsGuide: `【${targetTier}到達の鍵】パワースパイクを逃さず、味方の仕掛けに合わせてゾーンを展開してください。`,
         })),
       };
     }
 
-    // AI詳細とチャンピオン実測スタッツを結合
     const mergedChampionProfiles = calculatedChamps.map((c) => {
       const detail = aiResult.championDetails?.find((d: any) => d.id === c.id) || aiResult.championDetails?.[0];
       return {
@@ -376,7 +377,7 @@ export async function POST(request: NextRequest) {
           visionDiff: '勝利時: 高視界',
           firstCoreTime: '勝利時: 11分前 / 敗北時: 14分以降',
         },
-        aiTacticsGuide: detail?.aiTacticsGuide || '味方と連携してパワースパイクを逃さず集団戦を展開してください。',
+        aiTacticsGuide: detail?.aiTacticsGuide || 'パワースパイクを逃さず集団戦を展開してください。',
       };
     });
 
@@ -388,6 +389,8 @@ export async function POST(request: NextRequest) {
         role,
         isRealMatchData: rawMatches.length > 0,
         sampleMatchesCount: rawMatches.length,
+        queueType,
+        targetTier,
       },
       metrics: {
         survival: { score: survivalScore, avgDeaths, percentile: Math.max(2, Math.round(avgDeaths * 2.5)) },
