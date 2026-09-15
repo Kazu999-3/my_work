@@ -21,7 +21,8 @@ import {
   Coins,
   LogIn,
   LogOut,
-  UserCheck
+  UserCheck,
+  Home
 } from 'lucide-react';
 import FavoritesPanel from './FavoritesPanel';
 import PushOptIn from './PushOptIn';
@@ -105,8 +106,10 @@ interface MenuItem {
   adminOnly?: boolean;
 }
 
-// 🌐 一般ユーザー向けメニュー（6大機能）
+// 🌐 一般ユーザー向けメニュー（7大機能）
 const GENERAL_MENU_ITEMS: MenuItem[] = [
+  // メイン
+  { id: 'home', label: 'ホーム / トップ', shortLabel: 'ホーム', icon: Home, href: '/', color: 'text-amber-500', activeBg: 'bg-amber-500/15', section: 'メイン' },
   // ユーザー・師弟
   { id: 'mypage', label: 'マイページ / 希望レーン', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-amber-500', activeBg: 'bg-amber-500/15', section: 'ユーザー' },
   { id: 'mentorship', label: '師弟自己紹介掲示板', shortLabel: '師弟掲示板', icon: HeartHandshake, href: '/mentorship', color: 'text-emerald-500', activeBg: 'bg-emerald-500/15', section: 'ユーザー' },
@@ -343,9 +346,16 @@ export default function Sidebar() {
             
             {/* ドロワーヘッダー */}
             <div className="flex justify-between items-center mb-4 pb-3 border-b border-stone-200 dark:border-[#3f4147]">
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-base text-stone-900 dark:text-white">KTM ポータル メニュー</span>
-              </div>
+              <Link
+                href="/"
+                onClick={() => setShowMobileDrawer(false)}
+                className="flex items-center gap-2 group cursor-pointer"
+              >
+                <span className="text-lg">👑</span>
+                <span className="font-extrabold text-base text-stone-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition">
+                  KTM ポータル
+                </span>
+              </Link>
               <div className="flex items-center gap-2">
                 <ThemeToggle variant="compact" />
                 <button
