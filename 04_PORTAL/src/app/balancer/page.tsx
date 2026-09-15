@@ -531,7 +531,6 @@ export default function BalancerPage() {
   // 未保存のローカル編集を丸ごと上書きしてしまうのを防ぐためのガード。
   const dirtyPlayerIdsRef = useRef<Set<any>>(new Set());
 
-  const [fetchingDiscord, setFetchingDiscord] = useState(false);
 
   // ★ ESCキーでモーダルを閉じる
   useEffect(() => {
@@ -628,72 +627,6 @@ export default function BalancerPage() {
     }
   };
 
-  const handleFetchDiscordReactions = async () => {
-    if (!confirm("Discordの募集チャンネルから「カスタム募集」の参加者を取得し、チェックを自動入力しますか？\n※途中参加(2戦目〜)の方は1戦目では自動的に待機(チェックOFF)となります。")) return;
-    
-    setFetchingDiscord(true);
-    setMessage({ type: "", text: "" });
-    try {
-      // APIキャッシュを確実にバイパスするためのクエリとオプション
-      const res = await fetch(`/api/discord/participants?_t=${Date.now()}`, {
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache'
-        }
-      });
-      const data = await res.json();
-      
-      if (!res.ok) throw new Error(data.error || 'Discordからの取得に失敗しました');
-      if (!data.activeDiscordIds || data.activeDiscordIds.length === 0) {
-        throw new Error("募集メッセージに参加者が見つかりませんでした。");
-      }
-
-      const participantStyleMap = new Map<string, 'full' | 'single' | 'late'>();
-      (data.participants || []).forEach((p: any) => {
-        if (p.id) participantStyleMap.set(p.id, p.style || 'full');
-      });
-
-      // 取得したDiscord IDの配列で is_active と participation_style を更新する。
-      // 1戦目用として、'late' (途中参加) は初期状態で is_active: false に設定
-      setPlayers(prevPlayers => {
-        const nextPlayers = prevPlayers.map(p => {
-          if (p.discord_id && data.activeDiscordIds.includes(p.discord_id)) {
-            const style = participantStyleMap.get(p.discord_id) || 'full';
-            const isActive = style !== 'late'; // 途中参加は1戦目は待機
-            return { ...p, is_active: isActive, participation_style: style };
-          }
-          return { ...p, is_active: false, participation_style: undefined };
-        });
-
-        // 自動保存処理をトリガー
-        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-        saveTimeoutRef.current = setTimeout(() => {
-          handleSave(nextPlayers);
-        }, 1500);
-
-        return nextPlayers;
-      });
-
-      // 名簿未登録の参加者を警告する。
-      const knownIds = new Set(players.filter((p: any) => p.discord_id).map((p: any) => p.discord_id));
-      const unknown = (data.participants || []).filter((dp: any) => !knownIds.has(dp.id));
-      if (unknown.length > 0) {
-        const names = unknown.map((u: any) => u.name).filter((n: string) => n && n !== 'Unknown');
-        setMessage({
-          type: 'error',
-          text: `⚠️ 参加者 ${data.activeDiscordIds.length} 人を取得しましたが、${unknown.length}名が名簿に未登録です`
-            + (names.length > 0 ? `（${names.join(', ')}）` : '')
-            + '。未登録のままだとMMR未設定でチーム分けに反映されません。管理ダッシュボードで「Discord & Riot同期」を実行してください。',
-        });
-      } else {
-        setMessage({ type: "success", text: `✅ Discordから参加者 ${data.activeDiscordIds.length} 人を取得しました！（途中参加メンバーは2戦目待機として設定）` });
-      }
-    } catch (err: any) {
-      setMessage({ type: "error", text: "❌ " + err.message });
-    } finally {
-      setFetchingDiscord(false);
-    }
-  };
 
   // 🔄 2戦目へのメンバー交代（1戦のみ抜け ➔ 途中参加メンバー参戦）
   const handleSwitchToMatch2 = () => {
@@ -2338,13 +2271,6 @@ export default function BalancerPage() {
                 <option value={100}>⚖️ 標準</option>
                 <option value={200}>🔬 精密</option>
               </select>
-              <button onClick={handleFetchDiscordReactions} disabled={fetchingDiscord}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg font-bold transition border text-xs ${
-                  fetchingDiscord ? 'bg-[#404eed]/50 border-[#404eed]/50 text-stone-400 cursor-not-allowed' : 'bg-[#5865F2]/20 border-[#5865F2] text-[#5865F2] hover:bg-[#5865F2] hover:text-stone-900'
-                }`}>
-                <RefreshCw className={`h-3.5 w-3.5 ${fetchingDiscord ? 'animate-spin' : ''}`} />
-                {fetchingDiscord ? '取得中...' : 'Discord参加者取得'}
-              </button>
               {/* 🎪 日曜お祭りランダムシャッフル */}
               <button
                 type="button"
