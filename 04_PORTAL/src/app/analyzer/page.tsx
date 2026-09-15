@@ -31,6 +31,11 @@ import {
   Timer,
   Puzzle,
   Lightbulb,
+  HeartHandshake,
+  Coins,
+  Compass,
+  AlertOctagon,
+  ShieldAlert,
 } from 'lucide-react';
 
 export default function PlayerAnalyzerPage() {
@@ -40,7 +45,7 @@ export default function PlayerAnalyzerPage() {
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState<any>(null);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'overview' | 'champions' | 'session'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'champions' | 'session' | 'psychology'>('overview');
   const [selectedChampId, setSelectedChampId] = useState<string>('');
 
   // 認証チェック
@@ -142,7 +147,7 @@ export default function PlayerAnalyzerPage() {
           </h1>
           <p className="text-stone-700 text-xs md:text-sm max-w-3xl font-medium leading-relaxed">
             任意のサモナー名を入力するだけで、<strong>Riot APIの実測マッチ履歴・タイムスタンプ</strong>を自動解析！<br className="hidden sm:inline" />
-            5大レーダースタッツ、試合展開4タイプ（エース負け等）、致命的デス分析、プール穴診断、即キューティルト判定までを一画面に集約します。
+            5大レーダー、試合展開4分類、チャンプ深掘り、連戦疲労度、そして**プレイスタイルMBTI・心理行動DNA**までを完全可視化します。
           </p>
         </div>
       </div>
@@ -296,7 +301,7 @@ export default function PlayerAnalyzerPage() {
               }`}
             >
               <TrendingUp size={14} />
-              <span>1. 📊 5大レーダー ＆ 試合因果解析</span>
+              <span>1. 📊 5大レーダー ＆ 展開4分類</span>
             </button>
 
             <button
@@ -324,14 +329,27 @@ export default function PlayerAnalyzerPage() {
               <Brain size={14} />
               <span>3. 🧠 実測コンディション ＆ ティルト分析</span>
             </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('psychology')}
+              className={`px-4 py-2 rounded-2xl font-black text-xs transition cursor-pointer flex items-center gap-1.5 ${
+                activeTab === 'psychology'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-white text-indigo-700 hover:bg-indigo-50 border border-indigo-200'
+              }`}
+            >
+              <Compass size={14} />
+              <span>4. 🧬 プレイヤー心理DNA ＆ メンタルカルテ (MBTI)</span>
+            </button>
           </div>
 
           {/* ========================================================================= */}
-          {/* タブ 1: 📊 5大レーダー ＆ 試合因果解析 */}
+          {/* タブ 1: 📊 5大レーダー ＆ 展開4分類 */}
           {/* ========================================================================= */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
-              {/* 試合展開4タイプ分類（キャリー度 ＆ エース負け率） */}
+              {/* 試合展開4タイプ分類 */}
               {report.sessionAnalytics?.gameOutcomeBreakdown && (
                 <div className="rounded-3xl border border-stone-200 bg-white p-5 md:p-6 shadow-xs space-y-4">
                   <div className="flex items-center justify-between border-b border-stone-100 pb-3">
@@ -506,7 +524,6 @@ export default function PlayerAnalyzerPage() {
 
                   {/* 致命的デス (Throw) ＆ 序盤タイムライン因果 */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* 致命的デス分析 */}
                     {report.sessionAnalytics?.fatalDeathAnalytics && (
                       <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-xs space-y-2.5">
                         <div className="text-xs font-black text-stone-900 flex items-center gap-1.5 border-b border-stone-100 pb-2">
@@ -536,7 +553,6 @@ export default function PlayerAnalyzerPage() {
                       </div>
                     )}
 
-                    {/* 序盤タイムライン因果 */}
                     {report.sessionAnalytics?.earlyTimelineImpact && (
                       <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-xs space-y-2.5">
                         <div className="text-xs font-black text-stone-900 flex items-center gap-1.5 border-b border-stone-100 pb-2">
@@ -704,7 +720,6 @@ export default function PlayerAnalyzerPage() {
 
               {/* チャンピオン詳細カード */}
               <div className="rounded-3xl border border-stone-200 bg-white p-6 md:p-8 shadow-xs space-y-6">
-                {/* チャンピオンヘッダー */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-stone-100 gap-3">
                   <div>
                     <div className="flex items-center gap-2">
@@ -760,7 +775,6 @@ export default function PlayerAnalyzerPage() {
 
                 {/* 2. 得意・天敵 相性マトリクス */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                  {/* 得意な相手 */}
                   <div className="space-y-3">
                     <h4 className="font-black text-xs text-emerald-900 flex items-center gap-1.5">
                       <CheckCircle2 size={14} className="text-emerald-600" />
@@ -782,7 +796,6 @@ export default function PlayerAnalyzerPage() {
                     </div>
                   </div>
 
-                  {/* 苦手な相手・天敵 */}
                   <div className="space-y-3">
                     <h4 className="font-black text-xs text-rose-900 flex items-center gap-1.5">
                       <AlertTriangle size={14} className="text-rose-600" />
@@ -863,7 +876,6 @@ export default function PlayerAnalyzerPage() {
                     </span>
                   </div>
 
-                  {/* ダメージ属性比率バー */}
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-xs font-bold text-stone-700">
                       <span>手持ちプールの属性バランス:</span>
@@ -892,7 +904,6 @@ export default function PlayerAnalyzerPage() {
                     </div>
                   </div>
 
-                  {/* 不足ピース ＆ 推奨チャンプリスト */}
                   <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200 space-y-3">
                     <div className="text-xs font-bold text-indigo-950 flex items-center gap-1.5">
                       <Lightbulb size={15} className="text-indigo-600 shrink-0" />
@@ -969,7 +980,6 @@ export default function PlayerAnalyzerPage() {
 
               {/* 2. 連戦疲労度 ＆ 即キューティルト判定 */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                {/* 連戦疲労度 (7カラム) */}
                 <div className="lg:col-span-7 rounded-3xl border border-stone-200 bg-white p-6 shadow-xs space-y-4">
                   <div className="border-b border-stone-100 pb-3">
                     <h3 className="font-black text-sm text-stone-900 flex items-center gap-2">
@@ -1013,7 +1023,6 @@ export default function PlayerAnalyzerPage() {
                   </div>
                 </div>
 
-                {/* 即キュー vs 休憩後勝率 (5カラム) */}
                 <div className="lg:col-span-5 rounded-3xl border border-amber-200 bg-amber-50/60 p-6 shadow-xs space-y-4">
                   <div className="border-b border-amber-200/70 pb-3">
                     <h3 className="font-black text-sm text-amber-950 flex items-center gap-2">
@@ -1056,7 +1065,7 @@ export default function PlayerAnalyzerPage() {
                 </div>
               </div>
 
-              {/* 3. 黄金プレイルール ＆ 曜日別傾向 */}
+              {/* 3. 黄金プレイルール */}
               <div className="rounded-3xl border border-indigo-200 bg-indigo-50/70 p-6 shadow-xs space-y-4">
                 <h3 className="font-black text-sm text-indigo-950 flex items-center gap-2">
                   <Award size={16} className="text-indigo-600" />
@@ -1070,6 +1079,230 @@ export default function PlayerAnalyzerPage() {
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* タブ 4: 🧬 プレイヤー心理DNA ＆ メンタルカルテ (MBTI) */}
+          {/* ========================================================================= */}
+          {activeTab === 'psychology' && report.sessionAnalytics?.playstyleMbti && (
+            <div className="space-y-6">
+              {/* 1. プレイスタイルMBTI メインカード */}
+              <div className="rounded-3xl border border-indigo-300 bg-gradient-to-br from-indigo-50/90 via-white to-purple-50/80 p-6 md:p-8 shadow-xs space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-indigo-100 gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-14 h-14 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-2xl font-black shadow-md shrink-0">
+                      🧬
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-900 border border-indigo-200 font-mono">
+                          TYPE: {report.sessionAnalytics.playstyleMbti.typeCode}
+                        </span>
+                        <h3 className="text-lg md:text-xl font-black text-stone-900">
+                          {report.sessionAnalytics.playstyleMbti.typeName}
+                        </h3>
+                      </div>
+                      <p className="text-xs text-indigo-900 font-bold mt-1">
+                        {report.sessionAnalytics.playstyleMbti.tagline}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="text-right shrink-0">
+                    <span className="text-[10px] font-mono text-stone-400 font-bold">意思決定DNAアルゴリズム</span>
+                    <div className="text-xs font-black text-indigo-700">深層パーソナリティ判定完了</div>
+                  </div>
+                </div>
+
+                {/* 4軸スライダー */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* リスク選好 */}
+                  <div className="p-4 rounded-2xl bg-white border border-indigo-100 space-y-1.5 shadow-2xs">
+                    <div className="flex justify-between text-xs font-bold text-stone-800">
+                      <span>🛡️ セーフティ計算型 ({report.sessionAnalytics.playstyleMbti.axes.safetyVsRisk.safetyPercent}%)</span>
+                      <span className="text-stone-400">ハイリスク型 ({report.sessionAnalytics.playstyleMbti.axes.safetyVsRisk.riskPercent}%)</span>
+                    </div>
+                    <div className="h-2.5 w-full rounded-full bg-stone-100 overflow-hidden flex">
+                      <div className="h-full bg-indigo-600" style={{ width: `${report.sessionAnalytics.playstyleMbti.axes.safetyVsRisk.safetyPercent}%` }} />
+                      <div className="h-full bg-rose-400" style={{ width: `${report.sessionAnalytics.playstyleMbti.axes.safetyVsRisk.riskPercent}%` }} />
+                    </div>
+                  </div>
+
+                  {/* リソース志向 */}
+                  <div className="p-4 rounded-2xl bg-white border border-indigo-100 space-y-1.5 shadow-2xs">
+                    <div className="flex justify-between text-xs font-bold text-stone-800">
+                      <span>🌾 自己スケール重視 ({report.sessionAnalytics.playstyleMbti.axes.scaleVsEnabler.scalePercent}%)</span>
+                      <span className="text-stone-400">献身サポート ({report.sessionAnalytics.playstyleMbti.axes.scaleVsEnabler.enablerPercent}%)</span>
+                    </div>
+                    <div className="h-2.5 w-full rounded-full bg-stone-100 overflow-hidden flex">
+                      <div className="h-full bg-amber-500" style={{ width: `${report.sessionAnalytics.playstyleMbti.axes.scaleVsEnabler.scalePercent}%` }} />
+                      <div className="h-full bg-emerald-400" style={{ width: `${report.sessionAnalytics.playstyleMbti.axes.scaleVsEnabler.enablerPercent}%` }} />
+                    </div>
+                  </div>
+
+                  {/* 空間支配 */}
+                  <div className="p-4 rounded-2xl bg-white border border-indigo-100 space-y-1.5 shadow-2xs">
+                    <div className="flex justify-between text-xs font-bold text-stone-800">
+                      <span>🏰 自陣テリトリー防衛 ({report.sessionAnalytics.playstyleMbti.axes.guardianVsInvader.guardianPercent}%)</span>
+                      <span className="text-stone-400">敵陣侵略 ({report.sessionAnalytics.playstyleMbti.axes.guardianVsInvader.invaderPercent}%)</span>
+                    </div>
+                    <div className="h-2.5 w-full rounded-full bg-stone-100 overflow-hidden flex">
+                      <div className="h-full bg-emerald-600" style={{ width: `${report.sessionAnalytics.playstyleMbti.axes.guardianVsInvader.guardianPercent}%` }} />
+                      <div className="h-full bg-rose-500" style={{ width: `${report.sessionAnalytics.playstyleMbti.axes.guardianVsInvader.invaderPercent}%` }} />
+                    </div>
+                  </div>
+
+                  {/* 意思決定 */}
+                  <div className="p-4 rounded-2xl bg-white border border-indigo-100 space-y-1.5 shadow-2xs">
+                    <div className="flex justify-between text-xs font-bold text-stone-800">
+                      <span>🧠 慎重観察型 ({report.sessionAnalytics.playstyleMbti.axes.deliberateVsReflex.deliberatePercent}%)</span>
+                      <span className="text-stone-400">直感即断型 ({report.sessionAnalytics.playstyleMbti.axes.deliberateVsReflex.reflexPercent}%)</span>
+                    </div>
+                    <div className="h-2.5 w-full rounded-full bg-stone-100 overflow-hidden flex">
+                      <div className="h-full bg-purple-600" style={{ width: `${report.sessionAnalytics.playstyleMbti.axes.deliberateVsReflex.deliberatePercent}%` }} />
+                      <div className="h-full bg-orange-400" style={{ width: `${report.sessionAnalytics.playstyleMbti.axes.deliberateVsReflex.reflexPercent}%` }} />
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-xs text-stone-700 leading-relaxed font-medium bg-white/90 p-4 rounded-2xl border border-indigo-100">
+                  {report.sessionAnalytics.playstyleMbti.personalityAnalysis}
+                </p>
+              </div>
+
+              {/* 2. ティルト誘発トリガー ＆ 銭勘定ゴールド効率 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* ティルト誘発トリガー */}
+                {report.sessionAnalytics.tiltTriggerMatrix && (
+                  <div className="rounded-3xl border border-rose-200 bg-rose-50/60 p-6 shadow-xs space-y-4">
+                    <div className="flex items-center justify-between border-b border-rose-200 pb-3">
+                      <h4 className="font-black text-xs text-rose-950 flex items-center gap-1.5">
+                        <Flame size={15} className="text-rose-600" />
+                        <span>メンタル耐久度 ＆ ティルト誘発トリガー</span>
+                      </h4>
+                      <span className="text-xs font-black text-rose-700 font-mono">
+                        耐性指数: {report.sessionAnalytics.tiltTriggerMatrix.mentalResilienceScore}点
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 text-xs text-stone-800">
+                      <div className="p-3 bg-white rounded-2xl border border-rose-100 space-y-1">
+                        <div className="text-[10px] text-stone-400 font-bold">自陣インベード荒らし耐性</div>
+                        <div className="font-bold text-stone-900">{report.sessionAnalytics.tiltTriggerMatrix.invadeResistanceRating}</div>
+                      </div>
+                      <div className="p-3 bg-white rounded-2xl border border-rose-100 space-y-1">
+                        <div className="text-[10px] text-stone-400 font-bold">味方序盤崩壊時のメンタル</div>
+                        <div className="font-bold text-stone-900">{report.sessionAnalytics.tiltTriggerMatrix.teammateDeathResistance}</div>
+                      </div>
+                      <div className="p-3 bg-white rounded-2xl border border-rose-100 space-y-1">
+                        <div className="text-[10px] text-stone-400 font-bold">雪だるま連続デス防止率</div>
+                        <div className="font-bold text-emerald-700">
+                          {report.sessionAnalytics.tiltTriggerMatrix.snowballDeathAvoidanceRate}% (デス後も冷静さを維持)
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-[11px] text-stone-600 leading-relaxed font-medium">
+                      💡 {report.sessionAnalytics.tiltTriggerMatrix.tiltInsight}
+                    </p>
+                  </div>
+                )}
+
+                {/* 銭勘定 ＆ ゴールド変換効率 */}
+                {report.sessionAnalytics.goldEfficiency && (
+                  <div className="rounded-3xl border border-amber-200 bg-amber-50/60 p-6 shadow-xs space-y-4">
+                    <div className="flex items-center justify-between border-b border-amber-200 pb-3">
+                      <h4 className="font-black text-xs text-amber-950 flex items-center gap-1.5">
+                        <Coins size={15} className="text-amber-600" />
+                        <span>銭勘定 ＆ ゴールド変換効率 (Gold-to-Impact)</span>
+                      </h4>
+                      <span className="text-xs font-black text-amber-900">
+                        {report.sessionAnalytics.goldEfficiency.damagePerGoldRating}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 text-xs text-stone-800">
+                      <div className="p-3 bg-white rounded-2xl border border-amber-100 space-y-1">
+                        <div className="text-[10px] text-stone-400 font-bold">ゴールド死蔵率 (リコール遅延)</div>
+                        <div className="font-bold text-stone-900">{report.sessionAnalytics.goldEfficiency.goldStashRating}</div>
+                      </div>
+                      <div className="p-3 bg-white rounded-2xl border border-amber-100 space-y-1">
+                        <div className="text-[10px] text-stone-400 font-bold">1コア完成直後のアクション率</div>
+                        <div className="font-bold text-amber-800">
+                          {report.sessionAnalytics.goldEfficiency.spikeUtilizationPercent}% (完成直後に即戦力化)
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-[11px] text-stone-700 leading-relaxed font-medium bg-white p-3 rounded-2xl border border-amber-200/80">
+                      {report.sessionAnalytics.goldEfficiency.efficiencyVerdict}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* 3. 逆境・ビハインド時の行動特性 ＆ 悪癖処方箋 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* 逆境・ビハインド時の行動特性 */}
+                {report.sessionAnalytics.adversityBehavior && (
+                  <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-xs space-y-3">
+                    <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                      <h4 className="font-black text-xs text-stone-900 flex items-center gap-1.5">
+                        <ShieldAlert size={15} className="text-indigo-600" />
+                        <span>逆境・ビハインド時の人間性</span>
+                      </h4>
+                      <span className="text-xs font-black text-indigo-700">
+                        逆境勝率 {report.sessionAnalytics.adversityBehavior.behindComebackWinRate}%
+                      </span>
+                    </div>
+
+                    <div className="p-3.5 bg-indigo-50/60 rounded-2xl border border-indigo-100 space-y-1">
+                      <div className="text-xs font-black text-indigo-950">
+                        行動タイプ: {report.sessionAnalytics.adversityBehavior.archetype}
+                      </div>
+                      <p className="text-xs text-stone-700 leading-relaxed font-medium">
+                        {report.sessionAnalytics.adversityBehavior.behaviorVerdict}
+                      </p>
+                    </div>
+
+                    <p className="text-xs text-stone-600 leading-relaxed font-medium">
+                      🎯 <strong>逆転の鍵:</strong> {report.sessionAnalytics.adversityBehavior.recommendedMindset}
+                    </p>
+                  </div>
+                )}
+
+                {/* 無意識の悪癖特定 ＆ 処方箋 */}
+                {report.sessionAnalytics.cognitiveBiases && (
+                  <div className="rounded-3xl border border-purple-200 bg-purple-50/60 p-6 shadow-xs space-y-3">
+                    <div className="flex items-center justify-between border-b border-purple-200 pb-3">
+                      <h4 className="font-black text-xs text-purple-950 flex items-center gap-1.5">
+                        <AlertOctagon size={15} className="text-purple-600" />
+                        <span>無意識の悪癖・認知バイアス特定</span>
+                      </h4>
+                    </div>
+
+                    <div className="space-y-2 text-xs">
+                      <div className="p-3 bg-white rounded-2xl border border-purple-100">
+                        <div className="font-bold text-stone-900">{report.sessionAnalytics.cognitiveBiases.recallHabitBias}</div>
+                      </div>
+                      <div className="p-3 bg-white rounded-2xl border border-purple-100">
+                        <div className="font-bold text-stone-900">{report.sessionAnalytics.cognitiveBiases.mapAttentionBias}</div>
+                      </div>
+                    </div>
+
+                    <div className="p-3.5 bg-white rounded-2xl border border-purple-200 space-y-1">
+                      <div className="text-xs font-black text-purple-950 flex items-center gap-1">
+                        <Sparkles size={13} className="text-purple-600" />
+                        <span>矯正処方箋:</span>
+                      </div>
+                      <p className="text-xs text-stone-800 leading-relaxed font-bold">
+                        {report.sessionAnalytics.cognitiveBiases.actionPrescription}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

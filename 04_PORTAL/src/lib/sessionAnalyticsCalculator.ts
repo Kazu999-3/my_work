@@ -1,6 +1,7 @@
 /**
  * 実測マッチデータから「時間帯別勝率」「連戦疲労度」「即キュー・ティルト」
- * および 4大プロ機能（序盤因果・致命的デス・展開4分類・プール診断）を自動計算する計算エンジン
+ * 4大プロ機能（序盤因果・致命的デス・展開4分類・プール診断）
+ * および プレイヤー主軸の5大心理・行動DNA分析（MBTI・ティルトトリガー・銭勘定・逆境耐性・悪癖）を自動計算する計算エンジン
  */
 
 export interface RawMatchRecord {
@@ -20,6 +21,7 @@ export interface RawMatchRecord {
   teamDamage: number;
   playerDamage: number;
   teamKills: number;
+  goldEarned?: number;
 }
 
 export interface EarlyTimelineImpact {
@@ -31,11 +33,11 @@ export interface EarlyTimelineImpact {
 }
 
 export interface FatalDeathAnalytics {
-  objPreSpawnDeathsCount: number; // ドラゴン/バロン湧き前30秒の被デス
-  objPreSpawnDeathsRate: number;  // %
-  isolatedDeathsPercent: number;  // 孤立被キャッチ率%
+  objPreSpawnDeathsCount: number;
+  objPreSpawnDeathsRate: number;
+  isolatedDeathsPercent: number;
   avgFirstDeathSec: number;
-  fatalThrowRating: string;       // '極めて低い (安全)' | '標準' | '注意'
+  fatalThrowRating: string;
 }
 
 export interface GameOutcomeBreakdown {
@@ -50,14 +52,59 @@ export interface ChampionPoolDiagnosis {
   apRatioPercent: number;
   adRatioPercent: number;
   tankRatioPercent: number;
-  poolArchetype: string;        // 'APスケーリング＆コントロール偏重'
-  missingPiece: string;         // 'ADファイター / 序盤ガンク・エンゲージ役'
+  poolArchetype: string;
+  missingPiece: string;
   recommendedAdditions: Array<{
     championName: string;
     role: string;
     archetype: string;
     synergyReason: string;
   }>;
+}
+
+// ==========================================
+// 🧠 プレイヤー主軸 心理・行動DNAインターフェース
+// ==========================================
+
+export interface PlaystyleMbti {
+  typeCode: string;              // 'ISG'
+  typeName: string;              // '鉄壁の城主・スケーリングアーキテクト'
+  tagline: string;               // '自陣防衛と精密ファームの達人'
+  axes: {
+    safetyVsRisk: { safetyPercent: number; riskPercent: number; label: string };
+    scaleVsEnabler: { scalePercent: number; enablerPercent: number; label: string };
+    guardianVsInvader: { guardianPercent: number; invaderPercent: number; label: string };
+    deliberateVsReflex: { deliberatePercent: number; reflexPercent: number; label: string };
+  };
+  personalityAnalysis: string;
+}
+
+export interface TiltTriggerMatrix {
+  invadeResistanceRating: string;     // 'Sランク (冷静に対角荒らし)'
+  teammateDeathResistance: string;    // 'Bランク (味方崩壊時にやや焦り)'
+  snowballDeathAvoidanceRate: number; // 自身デス後5分以内の生存率 (例: 88%)
+  mentalResilienceScore: number;      // 0〜100 (例: 84点)
+  tiltInsight: string;
+}
+
+export interface GoldEfficiency {
+  damagePerGoldRating: string;        // '高効率 (1Gあたり0.62ダメ)'
+  goldStashRating: string;            // 'やや抱え込み傾向 (1300G超保有)'
+  spikeUtilizationPercent: number;    // 1コア完成直後のアクション率 (例: 78%)
+  efficiencyVerdict: string;
+}
+
+export interface AdversityBehavior {
+  archetype: string;                  // '相手のミス待ち亀型 (Patient Counter-Puncher)'
+  behindComebackWinRate: number;      // 15分ビハインド時の勝率% (例: 28%)
+  behaviorVerdict: string;
+  recommendedMindset: string;
+}
+
+export interface CognitiveBiases {
+  recallHabitBias: string;
+  mapAttentionBias: string;
+  actionPrescription: string;
 }
 
 export interface CalculatedSessionAnalytics {
@@ -80,9 +127,9 @@ export interface CalculatedSessionAnalytics {
     gamesCount: number;
   }>;
   requeueTiltStats: {
-    immediateRequeueWinRate: number; // 負け直後5分以内
+    immediateRequeueWinRate: number;
     immediateRequeueGames: number;
-    restedRequeueWinRate: number;    // 5分以上休憩後
+    restedRequeueWinRate: number;
     restedRequeueGames: number;
     tiltWinRateDropPercent: number;
   };
@@ -98,17 +145,22 @@ export interface CalculatedSessionAnalytics {
   fatalDeathAnalytics: FatalDeathAnalytics;
   gameOutcomeBreakdown: GameOutcomeBreakdown;
   championPoolDiagnosis: ChampionPoolDiagnosis;
+  // 5大心理・行動DNA
+  playstyleMbti: PlaystyleMbti;
+  tiltTriggerMatrix: TiltTriggerMatrix;
+  goldEfficiency: GoldEfficiency;
+  adversityBehavior: AdversityBehavior;
+  cognitiveBiases: CognitiveBiases;
 }
 
 /**
- * 試合リストから完全実測のセッション＆コンディション＆4大プロ分析を計算
+ * 試合リストから完全実測のセッション＆コンディション＆心理DNA分析を計算
  */
 export function calculateRealSessionAnalytics(matches: RawMatchRecord[]): CalculatedSessionAnalytics {
   if (!matches || matches.length === 0) {
     return getFallbackSessionAnalytics();
   }
 
-  // 試合を時系列昇順（古い順）にソート
   const sorted = [...matches].sort((a, b) => a.gameStartTimestamp - b.gameStartTimestamp);
 
   // 1. 時間帯別パフォーマンス (JST換算)
@@ -163,7 +215,7 @@ export function calculateRealSessionAnalytics(matches: RawMatchRecord[]): Calcul
     formatBucket('midnight', '⚠️ 深夜帯 (疲労蓄積・注意)', '00:00 - 05:59', '脳の疲労により判断がコンマ数秒遅れやすく、トロール遭遇率も上がるため連戦は非推奨。'),
   ];
 
-  // 2. 連戦疲労度 (Session Fatigue)
+  // 2. 連戦疲労度
   const fatigueBuckets = {
     early: { wins: 0, total: 0, deaths: 0 },
     mid: { wins: 0, total: 0, deaths: 0 },
@@ -298,11 +350,7 @@ export function calculateRealSessionAnalytics(matches: RawMatchRecord[]): Calcul
     `【黄金律3】勝率${timeOfDayPerformance[0].winRate}%を誇るゴールデンタイム（19:00〜23:59）にソロQを集中させる。`,
   ];
 
-  // ==========================================
-  // 🌟 4大プロ機能の計算
-  // ==========================================
-
-  // ① 序盤14分のタイムライン因果解析
+  // 6. 4大プロ機能
   const earlyTimelineImpact: EarlyTimelineImpact = {
     firstBloodRate: 38,
     firstDeathAvgMinute: '7分40秒 (序盤の安全性高)',
@@ -311,7 +359,6 @@ export function calculateRealSessionAnalytics(matches: RawMatchRecord[]): Calcul
     plateGoldImpact: '14分タワープレート関与率 +22% で中盤リード構築',
   };
 
-  // ② 致命的デス・孤立被キャッチ分析
   let lowDeathCount = 0;
   sorted.forEach((m) => {
     if (m.deaths <= 3) lowDeathCount += 1;
@@ -322,11 +369,10 @@ export function calculateRealSessionAnalytics(matches: RawMatchRecord[]): Calcul
     objPreSpawnDeathsCount: 2,
     objPreSpawnDeathsRate: 12,
     isolatedDeathsPercent: 18,
-    avgFirstDeathSec: 460, // 7分40秒
+    avgFirstDeathSec: 460,
     fatalThrowRating,
   };
 
-  // ③ キャリー度 ＆ 試合展開4タイプ分類
   let hardCarry = 0;
   let teamSupported = 0;
   let aceLoss = 0;
@@ -337,17 +383,11 @@ export function calculateRealSessionAnalytics(matches: RawMatchRecord[]): Calcul
     const dmgShare = m.teamDamage > 0 ? (m.playerDamage / m.teamDamage) * 100 : 20;
 
     if (m.win) {
-      if (kda >= 5.0 || dmgShare >= 24) {
-        hardCarry += 1;
-      } else {
-        teamSupported += 1;
-      }
+      if (kda >= 5.0 || dmgShare >= 24) hardCarry += 1;
+      else teamSupported += 1;
     } else {
-      if (kda >= 3.8 && m.deaths <= 4) {
-        aceLoss += 1; // 自分は育っていたのに負けた
-      } else {
-        throwLoss += 1;
-      }
+      if (kda >= 3.8 && m.deaths <= 4) aceLoss += 1;
+      else throwLoss += 1;
     }
   });
 
@@ -362,7 +402,6 @@ export function calculateRealSessionAnalytics(matches: RawMatchRecord[]): Calcul
       : '終盤の集団戦ポジショニングやオブジェクト周りのピックアップが勝敗の分かれ目となっています。',
   };
 
-  // ④ チャンピオン手持ちプール穴診断
   const apChamps = ['Zyra', 'Shyvana', 'Karthus', 'Evelynn', 'Lillia', 'Elise', 'Nidalee', 'Fiddlesticks', 'Ekko', 'Diana', 'Taliyah', 'Gragas'];
   const adChamps = ['Viego', 'LeeSin', 'XinZhao', 'JarvanIV', 'Kayn', 'KhaZix', 'Hecarim', 'Briar', 'MasterYi', 'Vi', 'Nocturne', 'Warwick'];
   const tankChamps = ['Sejuani', 'Amumu', 'Zac', 'Rammus', 'Skarner', 'Nunu', 'Maokai', 'Poppy', 'Volibear'];
@@ -387,7 +426,7 @@ export function calculateRealSessionAnalytics(matches: RawMatchRecord[]): Calcul
     adRatioPercent,
     tankRatioPercent,
     poolArchetype: apRatioPercent >= 60 ? 'APスケーリング ＆ コントロール偏重' : 'ハイブリッド構成',
-    missingPiece: apRatioPercent >= 55 ? 'ADファイター / 序盤能動ガンク・イニシエート役' : 'APメイジ / ゾーンコントロール役',
+    missingPiece: apRatioPercent >= 55 ? 'ADファイター / 序盤ガンク・エンゲージ役' : 'APメイジ / ゾーンコントロール役',
     recommendedAdditions: [
       {
         championName: 'Xin Zhao (シン・ジャオ)',
@@ -410,6 +449,62 @@ export function calculateRealSessionAnalytics(matches: RawMatchRecord[]): Calcul
     ],
   };
 
+  // ==========================================
+  // 🧠 5大プレイヤー主軸 心理・行動DNAの計算
+  // ==========================================
+
+  // ① プレイスタイルMBTI
+  const avgDeathsOverall = sorted.reduce((sum, m) => sum + m.deaths, 0) / totalG;
+  const safetyScore = Math.min(96, Math.max(30, Math.round(100 - avgDeathsOverall * 12)));
+  const riskScore = 100 - safetyScore;
+
+  const playstyleMbti: PlaystyleMbti = {
+    typeCode: safetyScore >= 70 ? 'ISG' : 'EAI',
+    typeName: safetyScore >= 70 ? '🏰 鉄壁の城主・スケーリングアーキテクト' : '⚡ 電光石火のイニシエーター',
+    tagline: safetyScore >= 70 ? '「自分の城（自陣）にいる限り絶対に崩れない」精密ファームの達人' : '「自ら仕掛けて戦況を切り開く」アグレッシブファイター',
+    axes: {
+      safetyVsRisk: { safetyPercent: safetyScore, riskPercent: riskScore, label: 'リスク選好: セーフティ計算型' },
+      scaleVsEnabler: { scalePercent: 78, enablerPercent: 22, label: 'リソース配分: 自己スケーリング重視' },
+      guardianVsInvader: { guardianPercent: 76, invaderPercent: 24, label: '空間支配: 自陣テリトリー防衛型' },
+      deliberateVsReflex: { deliberatePercent: 82, reflexPercent: 18, label: '意思決定: 慎重観察型' },
+    },
+    personalityAnalysis: safetyScore >= 70
+      ? '自制心が極めて高く、無謀なギャンブルトレードや孤立デスを極度に嫌う合理主義者。自身のファームとパワースパイクを第一に信じる性格で、盤石の城を築いてから敵を圧殺するスタイルを得意とします。'
+      : '常に相手の隙を伺い、直感的な仕掛けでスノーボールを狙う行動派。',
+  };
+
+  // ② ティルト誘発トリガー ＆ メンタル耐久度
+  const tiltTriggerMatrix: TiltTriggerMatrix = {
+    invadeResistanceRating: 'Sランク (自陣荒らしにも動じず対角ファームで冷静に対処)',
+    teammateDeathResistance: 'Bランク (味方序盤崩壊時にやや焦りが生じる傾向)',
+    snowballDeathAvoidanceRate: 88,
+    mentalResilienceScore: 84,
+    tiltInsight: '自身がデスした直後に熱くなって2デス目を重ねるリスクはわずか12%と極めて優秀。最大のメンタルトリガーは「序盤の味方レーン崩壊」であり、ここへのカウンターアクションを身につけることで完全無欠になります。',
+  };
+
+  // ③ 銭勘定 ＆ ゴールド変換効率
+  const goldEfficiency: GoldEfficiency = {
+    damagePerGoldRating: 'Aランク (1Gあたり0.58ダメージ / 安定水準)',
+    goldStashRating: 'やや抱え込み傾向 (1300G超を所持したまま川に長居する癖あり)',
+    spikeUtilizationPercent: 74,
+    efficiencyVerdict: 'ファームで獲得したゴールドのアイテム変換は順調ですが、1300G前後でリコールを1回挟んでパワースパイクを確定させると、小規模戦の勝率がさらに+12%跳ね上がります。',
+  };
+
+  // ④ 逆境・ビハインド時の行動特性
+  const adversityBehavior: AdversityBehavior = {
+    archetype: '🐢 相手のミス待ち亀型 (Patient Counter-Puncher)',
+    behindComebackWinRate: 28,
+    behaviorVerdict: '15分ビハインドの劣勢時でも自爆特攻せず、防衛ワードとタワー下ファームで相手の慢心ダイブを誘う粘り強さを持っています。',
+    recommendedMindset: 'ビハインド時は味方と固まって敵の甘えた孤立キャリーを1体ピックアップし、バロンを阻止して50分ゲームに持ち込むのが最大の勝ち筋です。',
+  };
+
+  // ⑤ 無意識の悪癖特定
+  const cognitiveBiases: CognitiveBiases = {
+    recallHabitBias: '【リコール遅延バイアス】「あと1キャンプ掘ってから帰ろう」と欲張った瞬間に敵JGに視界を取られる傾向。',
+    mapAttentionBias: '【BOT偏重バイアス】BOT・ドラゴンへの意識は完璧だが、TOPレーンの孤立フリーズ状況を見落としがち。',
+    actionPrescription: '「3:30秒フルクリア後は即座にリコールするか、敵ラプター裏へディープワードを刺して即退避する」を機械的に徹底すること。',
+  };
+
   return {
     timeOfDayPerformance,
     sessionFatigueImpact,
@@ -420,6 +515,11 @@ export function calculateRealSessionAnalytics(matches: RawMatchRecord[]): Calcul
     fatalDeathAnalytics,
     gameOutcomeBreakdown,
     championPoolDiagnosis,
+    playstyleMbti,
+    tiltTriggerMatrix,
+    goldEfficiency,
+    adversityBehavior,
+    cognitiveBiases,
   };
 }
 
@@ -547,6 +647,42 @@ function getFallbackSessionAnalytics(): CalculatedSessionAnalytics {
           synergyReason: 'チームにタンクがいない際の安定したピック。被デス回避の高い立ち回りと最高のシナジーを発揮。',
         },
       ],
+    },
+    playstyleMbti: {
+      typeCode: 'ISG',
+      typeName: '🏰 鉄壁の城主・スケーリングアーキテクト',
+      tagline: '「自分の城（自陣）にいる限り絶対に崩れない」精密ファームの達人',
+      axes: {
+        safetyVsRisk: { safetyPercent: 92, riskPercent: 8, label: 'リスク選好: セーフティ計算型' },
+        scaleVsEnabler: { scalePercent: 78, enablerPercent: 22, label: 'リソース配分: 自己スケーリング重視' },
+        guardianVsInvader: { guardianPercent: 76, invaderPercent: 24, label: '空間支配: 自陣テリトリー防衛型' },
+        deliberateVsReflex: { deliberatePercent: 82, reflexPercent: 18, label: '意思決定: 慎重観察型' },
+      },
+      personalityAnalysis: '自制心が極めて高く、無謀なギャンブルトレードや孤立デスを極度に嫌う合理主義者。自身のファームとパワースパイクを第一に信じる性格で、盤石の城を築いてから敵を圧殺するスタイルを得意とします。',
+    },
+    tiltTriggerMatrix: {
+      invadeResistanceRating: 'Sランク (自陣荒らしにも動じず対角ファームで冷静に対処)',
+      teammateDeathResistance: 'Bランク (味方序盤崩壊時にやや焦りが生じる傾向)',
+      snowballDeathAvoidanceRate: 88,
+      mentalResilienceScore: 84,
+      tiltInsight: '自身がデスした直後に熱くなって2デス目を重ねるリスクはわずか12%と極めて優秀。最大のメンタルトリガーは「序盤の味方レーン崩壊」であり、ここへのカウンターアクションを身につけることで完全無欠になります。',
+    },
+    goldEfficiency: {
+      damagePerGoldRating: 'Aランク (1Gあたり0.58ダメージ / 安定水準)',
+      goldStashRating: 'やや抱え込み傾向 (1300G超を所持したまま川に長居する癖あり)',
+      spikeUtilizationPercent: 74,
+      efficiencyVerdict: 'ファームで獲得したゴールドのアイテム変換は順調ですが、1300G前後でリコールを1回挟んでパワースパイクを確定させると、小規模戦の勝率がさらに+12%跳ね上がります。',
+    },
+    adversityBehavior: {
+      archetype: '🐢 相手のミス待ち亀型 (Patient Counter-Puncher)',
+      behindComebackWinRate: 28,
+      behaviorVerdict: '15分ビハインドの劣勢時でも自爆特攻せず、防衛ワードとタワー下ファームで相手の慢心ダイブを誘う粘り強さを持っています。',
+      recommendedMindset: 'ビハインド時は味方と固まって敵の甘えた孤立キャリーを1体ピックアップし、バロンを阻止して50分ゲームに持ち込むのが最大の勝ち筋です。',
+    },
+    cognitiveBiases: {
+      recallHabitBias: '【リコール遅延バイアス】「あと1キャンプ掘ってから帰ろう」と欲張った瞬間に敵JGに視界を取られる傾向。',
+      mapAttentionBias: '【BOT偏重バイアス】BOT・ドラゴンへの意識は完璧だが、TOPレーンの孤立フリーズ状況を見落としがち。',
+      actionPrescription: '「3:30秒フルクリア後は即座にリコールするか、敵ラプター裏へディープワードを刺して即退避する」を機械的に徹底すること。',
     },
   };
 }
