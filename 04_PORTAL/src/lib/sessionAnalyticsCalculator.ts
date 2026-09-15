@@ -149,17 +149,26 @@ export interface RankBenchmark {
 }
 
 export const RANK_BENCHMARKS: { [tier: string]: RankBenchmark } = {
+  'Gold IV': {
+    tierName: 'Gold IV (ゴールド)',
+    avgDeaths: 4.8,
+    csPerMin: 6.2,
+    kp15: 40,
+    visionScorePerMin: 1.15,
+    deepWardRatio: 20,
+    kda: 2.8,
+  },
   'Platinum IV': {
-    tierName: 'Platinum IV',
+    tierName: 'Platinum IV (プラチナ)',
     avgDeaths: 4.2,
     csPerMin: 7.0,
     kp15: 46,
     visionScorePerMin: 1.40,
     deepWardRatio: 26,
-    kda: 3.2,
+    kda: 3.4,
   },
   'Emerald IV': {
-    tierName: 'Emerald IV (推奨目標)',
+    tierName: 'Emerald IV (エメラルド / 推奨目標)',
     avgDeaths: 3.6,
     csPerMin: 7.5,
     kp15: 50,
@@ -168,7 +177,7 @@ export const RANK_BENCHMARKS: { [tier: string]: RankBenchmark } = {
     kda: 3.8,
   },
   'Diamond IV': {
-    tierName: 'Diamond IV',
+    tierName: 'Diamond IV (ダイヤモンド)',
     avgDeaths: 3.0,
     csPerMin: 8.0,
     kp15: 55,
@@ -177,7 +186,7 @@ export const RANK_BENCHMARKS: { [tier: string]: RankBenchmark } = {
     kda: 4.5,
   },
   'Master': {
-    tierName: 'Master (頂点)',
+    tierName: 'Master (マスター)',
     avgDeaths: 2.6,
     csPerMin: 8.6,
     kp15: 58,

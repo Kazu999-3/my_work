@@ -162,7 +162,7 @@ export default function PlayerAnalyzerPage() {
             プレイヤー深層統合アナライザー (Universal Deep Intel Hub)
           </h1>
           <p className="text-stone-700 text-xs md:text-sm max-w-3xl font-medium leading-relaxed">
-            現状維持の比較ではなく、<strong>「目標ランク（Emerald/Diamond等）」</strong>の基準値とのスタッツ差分（ギャップ）を逆算診断！<br className="hidden sm:inline" />
+            現状維持の比較ではなく、<strong>「目標ランク（ゴールド / プラチナ / エメラルド）」</strong>の基準値とのスタッツ差分（ギャップ）を逆算診断！<br className="hidden sm:inline" />
             ソロQ実測マッチ・タイムスタンプ連動により、昇格のために変えるべき急所アクションを完全可視化します。
           </p>
         </div>
@@ -234,10 +234,9 @@ export default function PlayerAnalyzerPage() {
               }}
               className="bg-transparent text-xs font-black text-stone-900 focus:outline-none cursor-pointer"
             >
-              <option value="Platinum IV">Platinum IV</option>
-              <option value="Emerald IV">Emerald IV (推奨目標)</option>
-              <option value="Diamond IV">Diamond IV</option>
-              <option value="Master">Master</option>
+              <option value="Gold IV">🥇 Gold IV (ゴールド)</option>
+              <option value="Platinum IV">🥈 Platinum IV (プラチナ)</option>
+              <option value="Emerald IV">💎 Emerald IV (エメラルド / 推奨)</option>
             </select>
           </div>
 
