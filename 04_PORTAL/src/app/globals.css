@@ -65,16 +65,110 @@ html.dark {
   --color-gold: #d4af37;
   --color-gold-glow: rgba(212, 175, 55, 0.35);
 
-  background-color: #1e1f22 !important;
-  color: #f2f3f5 !important;
+  background-color: #1e1f22;
+  color: #f2f3f5;
   background-image:
     radial-gradient(circle at 15% 50%, rgba(224, 122, 30, 0.04) 0%, transparent 50%),
-    radial-gradient(circle at 85% 30%, rgba(99, 102, 241, 0.04) 0%, transparent 50%) !important;
+    radial-gradient(circle at 85% 30%, rgba(99, 102, 241, 0.04) 0%, transparent 50%);
 }
 
 html.dark body {
-  background-color: #1e1f22 !important;
-  color: #f2f3f5 !important;
+  background-color: #1e1f22;
+  color: #f2f3f5;
+}
+
+/* 🌙 ダークモード時の入力フォーム・セレクト・テキストエリアの視認性保証 */
+html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="submit"]):not([type="button"]),
+html.dark textarea,
+html.dark select {
+  background-color: #2b2d31;
+  color: #f2f3f5;
+  border-color: #3f4147;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #949ba4;
+  opacity: 0.8;
+}
+
+/* 🌙 ダークモード時の白背景コンポーネントの自動ダークサーフェス適応 */
+html.dark .bg-white {
+  background-color: #2b2d31;
+  color: #f2f3f5;
+}
+
+html.dark .bg-stone-50,
+html.dark .bg-stone-100 {
+  background-color: #1e1f22;
+  color: #dbdee1;
+}
+
+html.dark .bg-stone-150,
+html.dark .bg-stone-200 {
+  background-color: #35373c;
+  color: #f2f3f5;
+}
+
+html.dark .border-stone-200,
+html.dark .border-stone-300 {
+  border-color: #3f4147;
+}
+
+html.dark .text-stone-900,
+html.dark .text-stone-800 {
+  color: #f2f3f5;
+}
+
+html.dark .text-stone-700,
+html.dark .text-stone-600 {
+  color: #dbdee1;
+}
+
+html.dark .text-stone-500,
+html.dark .text-stone-400 {
+  color: #949ba4;
+}
+
+/* 🌙 ダークモード時の色付きバッジ・アクセントの視認性最適化 */
+html.dark .bg-amber-100 {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+html.dark .text-amber-900,
+html.dark .text-amber-950,
+html.dark .text-amber-800,
+html.dark .text-amber-700 {
+  color: #fbbf24;
+}
+html.dark .border-amber-300,
+html.dark .border-amber-400 {
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+html.dark .bg-emerald-100,
+html.dark .bg-emerald-50 {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
+html.dark .text-emerald-900,
+html.dark .text-emerald-800,
+html.dark .text-emerald-700 {
+  color: #34d399;
+}
+html.dark .border-emerald-200,
+html.dark .border-emerald-300 {
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+html.dark .bg-indigo-100 {
+  background-color: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+}
+html.dark .text-indigo-900,
+html.dark .text-indigo-800,
+html.dark .text-indigo-700 {
+  color: #a5b4fc;
 }
 
 @layer utilities {
