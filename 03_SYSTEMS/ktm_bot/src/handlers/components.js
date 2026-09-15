@@ -749,6 +749,19 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     ctx.waitUntil((async () => {
       try {
         await markRecruitmentStatus(env, interaction.message.id, 'deleted');
+        const targetIds = [...new Set([metadata.owner, ...(metadata.joined || [])])].filter(Boolean);
+        if (targetIds.length > 0) {
+          const mentions = targetIds.map(id => `<@${id}>`).join(" ");
+          const channelId = interaction.channel_id || interaction.channel?.id;
+          const notifyContent = `🗑️ **【募集終了】募集主により募集が削除（解散）されました。**\n参加者の皆様、エントリーありがとうございました。\n通知: ${mentions}`;
+          if (channelId && botToken) {
+            await sendDiscordMessage(`channels/${channelId}/messages`, botToken, "POST", {
+              content: notifyContent,
+              message_reference: { message_id: interaction.message.id },
+              allowed_mentions: { users: targetIds }
+            }).catch(e => console.error("募集削除通知の送信に失敗:", e));
+          }
+        }
       } catch (e) {
         console.error("recruitments テーブルの削除反映に失敗:", e);
       }
@@ -766,6 +779,19 @@ export async function handleButtonInteraction(interaction, env, ctx) {
           { type: 1, components: [{ type: 4, custom_id: "time", label: "開始予定時刻", style: 1, value: metadata.time || "", required: false }] },
           { type: 1, components: [{ type: 4, custom_id: "max", label: "最大人数", style: 1, value: metadata.maxCount.toString(), required: false }] },
           { type: 1, components: [{ type: 4, custom_id: "memo", label: "一言メモ", style: 2, value: metadata.memo || "", required: false }] }
+        ]
+      }
+    });
+  }
+
+  if (customId.startsWith('proxy_add_init')) {
+    if (!canManageRecruitment) return Response.json({ type: 4, data: { content: "⚠️ 募集主または管理者のみ代理追加可能です。", flags: 64 } });
+    return Response.json({
+      type: 9, data: {
+        title: "➕ メンバーの代理追加", custom_id: `proxy_add_modal:${metadata.owner}`,
+        components: [
+          { type: 1, components: [{ type: 4, custom_id: "player_name", label: "プレイヤー名（または Discord 表示名）", style: 1, placeholder: "例: 助っ人A / たろう", required: true }] },
+          { type: 1, components: [{ type: 4, custom_id: "role", label: "参加ロール（任意: TOP/JG/MID/ADC/SUP）", style: 1, placeholder: "空欄なら「指定なし」", required: false }] }
         ]
       }
     });
@@ -839,12 +865,34 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     }
     Object.keys(metadata.roles).forEach(r => { if (metadata.roles[r] === userId) metadata.roles[r] = null; });
   } else if (customId.startsWith('close')) {
-    // 募集終了→ボタンなしで閉じる（返信メンションで一括連絡してください）
+    // 募集終了→ボタンなしで閉じる（参加者に解散通知メッセージを送信）
     // recruitmentsテーブルのstatusも'closed'に反映し、ポータル側が古い募集を
     // 「進行中」として拾い続けないようにする。
     ctx.waitUntil((async () => {
       try {
         await markRecruitmentStatus(env, interaction.message.id, 'closed');
+        const targetIds = [...new Set([metadata.owner, ...(metadata.joined || [])])].filter(Boolean);
+        if (targetIds.length > 0) {
+          const mentions = targetIds.map(id => `<@${id}>`).join(" ");
+          const isFull = (metadata.joined || []).length >= (metadata.maxCount || 5);
+          const channelId = interaction.channel_id || interaction.channel?.id;
+          const notifyContent = isFull
+            ? `🏁 **【募集終了】** 募集が締め切られました。\n通知: ${mentions}`
+            : `⚠️ **【募集終了】人が集まらなかったため、この募集は終了（解散）となりました。**\n参加者の皆様、エントリーありがとうございました！またの機会にご参加ください。\n通知: ${mentions}`;
+          
+          if (channelId && botToken) {
+            await sendDiscordMessage(`channels/${channelId}/messages`, botToken, "POST", {
+              content: notifyContent,
+              message_reference: { message_id: interaction.message.id },
+              allowed_mentions: { users: targetIds }
+            }).catch(e => console.error("募集終了通知の送信に失敗:", e));
+          } else {
+            await sendInteractionFollowup(appId, token, {
+              content: notifyContent,
+              allowed_mentions: { users: targetIds }
+            }).catch(e => console.error("募集終了Followup送信に失敗:", e));
+          }
+        }
       } catch (e) {
         console.error("recruitments テーブルの終了反映に失敗:", e);
       }
