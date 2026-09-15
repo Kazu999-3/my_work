@@ -25,9 +25,16 @@ export interface PlayerRecord {
  */
 export function getPlayerCoins(player: any): number {
   if (!player) return 1000;
-  if (typeof player.coins === 'number') return player.coins;
-  if (typeof player.role_preferences?.coins === 'number') return player.role_preferences.coins;
-  if (typeof player.metadata?.coins === 'number') return player.metadata.coins;
+  const colCoins = typeof player.coins === 'number' ? player.coins : null;
+  const prefCoins = typeof player.role_preferences?.coins === 'number' ? player.role_preferences.coins : null;
+  const metaCoins = typeof player.metadata?.coins === 'number' ? player.metadata.coins : null;
+
+  // colCoins が 1000 以外で存在する場合はカラムの最新値を優先
+  if (colCoins !== null && colCoins !== 1000) return colCoins;
+  // 過去のJSONにコイン記録（デイリー報酬やベット等）がある場合はそれを優先
+  if (prefCoins !== null) return prefCoins;
+  if (metaCoins !== null) return metaCoins;
+  if (colCoins !== null) return colCoins;
   return 1000;
 }
 
