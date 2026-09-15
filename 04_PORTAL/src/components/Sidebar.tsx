@@ -22,7 +22,8 @@ import {
   LogIn,
   LogOut,
   UserCheck,
-  Home
+  Home,
+  Globe
 } from 'lucide-react';
 import FavoritesPanel from './FavoritesPanel';
 import PushOptIn from './PushOptIn';
@@ -106,15 +107,16 @@ interface MenuItem {
   adminOnly?: boolean;
 }
 
-// 🌐 一般ユーザー向けメニュー（7大機能）
+// 🌐 一般ユーザー向けメニュー（8大機能）
 const GENERAL_MENU_ITEMS: MenuItem[] = [
   // メイン
   { id: 'home', label: 'ホーム / トップ', shortLabel: 'ホーム', icon: Home, href: '/', color: 'text-amber-500', activeBg: 'bg-amber-500/15', section: 'メイン' },
   // ユーザー・師弟
   { id: 'mypage', label: 'マイページ / 希望レーン', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-amber-500', activeBg: 'bg-amber-500/15', section: 'ユーザー' },
   { id: 'mentorship', label: '師弟自己紹介掲示板', shortLabel: '師弟掲示板', icon: HeartHandshake, href: '/mentorship', color: 'text-emerald-500', activeBg: 'bg-emerald-500/15', section: 'ユーザー' },
-  // 対戦・大会
+  // 対戦・大会・スカウト
   { id: 'balancer', label: 'チーム分けバランサー', shortLabel: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-rose-600', activeBg: 'bg-rose-500/15', section: '対戦 ＆ 大会' },
+  { id: 'analyzer', label: 'プレイヤー外部分析', shortLabel: '外部解析', icon: Globe, href: '/analyzer', color: 'text-sky-600', activeBg: 'bg-sky-500/15', section: '対戦 ＆ 大会' },
   { id: 'casino', label: '勝敗予想 (カジノ)', shortLabel: '勝敗予想', icon: Coins, href: '/casino', color: 'text-amber-600', activeBg: 'bg-amber-500/15', section: '対戦 ＆ 大会' },
   // コミュニティ・戦績
   { id: 'leaderboard', label: '順位表 ＆ 名簿', shortLabel: '順位・名簿', icon: Trophy, href: '/leaderboard', color: 'text-yellow-600', activeBg: 'bg-yellow-500/15', section: 'コミュニティ' },
