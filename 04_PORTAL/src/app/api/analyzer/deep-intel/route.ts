@@ -10,6 +10,8 @@ import {
   KAZURIN_STYLE_PROFILE,
   KAZURIN_VISION_METRICS,
   RADAR_HISTORY_TIMELINE,
+  CHAMPION_DEEP_PROFILES,
+  KAZURIN_SESSION_ANALYTICS,
 } from '../../../../lib/playerStyleProfile';
 import { callGeminiWithRetry } from '../../../../lib/geminiClient';
 
@@ -156,6 +158,8 @@ export async function POST(request: NextRequest) {
         },
       },
       timeline: RADAR_HISTORY_TIMELINE,
+      championProfiles: CHAMPION_DEEP_PROFILES,
+      sessionAnalytics: KAZURIN_SESSION_ANALYTICS,
       analysis: aiResult,
       generatedAt: new Date().toISOString(),
     };
