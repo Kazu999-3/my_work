@@ -26,6 +26,11 @@ import {
   Brain,
   Info,
   Check,
+  PieChart,
+  Skull,
+  Timer,
+  Puzzle,
+  Lightbulb,
 } from 'lucide-react';
 
 export default function PlayerAnalyzerPage() {
@@ -137,7 +142,7 @@ export default function PlayerAnalyzerPage() {
           </h1>
           <p className="text-stone-700 text-xs md:text-sm max-w-3xl font-medium leading-relaxed">
             任意のサモナー名を入力するだけで、<strong>Riot APIの実測マッチ履歴・タイムスタンプ</strong>を自動解析！<br className="hidden sm:inline" />
-            5大レーダースタッツ、直近プレイ上位チャンピオンの動的深掘り、連戦疲労度・即キューティルト判定までを完全客観レポートとして集約します。
+            5大レーダースタッツ、試合展開4タイプ（エース負け等）、致命的デス分析、プール穴診断、即キューティルト判定までを一画面に集約します。
           </p>
         </div>
       </div>
@@ -291,7 +296,7 @@ export default function PlayerAnalyzerPage() {
               }`}
             >
               <TrendingUp size={14} />
-              <span>1. 📊 5大レーダー ＆ 客観スタッツ統合</span>
+              <span>1. 📊 5大レーダー ＆ 試合因果解析</span>
             </button>
 
             <button
@@ -304,7 +309,7 @@ export default function PlayerAnalyzerPage() {
               }`}
             >
               <Award size={14} />
-              <span>2. 👑 直近上位チャンピオン深掘り ({report.championProfiles?.length || 0}体)</span>
+              <span>2. 👑 上位チャンプ深掘り ＆ プール穴診断</span>
             </button>
 
             <button
@@ -322,233 +327,343 @@ export default function PlayerAnalyzerPage() {
           </div>
 
           {/* ========================================================================= */}
-          {/* タブ 1: 📊 5大レーダー ＆ 客観スタッツ統合 */}
+          {/* タブ 1: 📊 5大レーダー ＆ 試合因果解析 */}
           {/* ========================================================================= */}
           {activeTab === 'overview' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-              {/* 左側 (7カラム): 5大レーダー ＆ 視界客観データ */}
-              <div className="lg:col-span-7 flex flex-col gap-6">
-                {/* 5大レーダー解析スコアカード */}
+            <div className="space-y-6">
+              {/* 試合展開4タイプ分類（キャリー度 ＆ エース負け率） */}
+              {report.sessionAnalytics?.gameOutcomeBreakdown && (
                 <div className="rounded-3xl border border-stone-200 bg-white p-5 md:p-6 shadow-xs space-y-4">
                   <div className="flex items-center justify-between border-b border-stone-100 pb-3">
                     <h3 className="font-black text-sm text-stone-900 flex items-center gap-2">
-                      <TrendingUp size={16} className="text-amber-600" />
-                      <span>プレイスタイル 5大レーダー客観解析</span>
+                      <PieChart size={16} className="text-amber-600" />
+                      <span>⚖️ 試合展開4タイプ自動分類 (Carry vs ACE Loss Index)</span>
                     </h3>
-                    <span className="text-[10px] font-bold text-stone-400">
-                      Riot API実測値 ＆ 同ランク比較
-                    </span>
+                    <span className="text-[10px] font-bold text-stone-400">実戦ログ分類</span>
                   </div>
 
-                  <div className="space-y-3.5">
-                    {/* 生存率 */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs font-bold">
-                        <span className="text-emerald-700 flex items-center gap-1">
-                          <Shield size={13} /> ① 生存率・デス回避
-                        </span>
-                        <span className="text-stone-900 font-black">
-                          {report.metrics.survival.score}点{' '}
-                          <span className="text-[10px] text-emerald-600 font-normal">
-                            (平均被デス {report.metrics.survival.avgDeaths})
-                          </span>
-                        </span>
-                      </div>
-                      <div className="h-2.5 w-full rounded-full bg-stone-100 overflow-hidden">
-                        <div
-                          className="h-full bg-emerald-500 rounded-full"
-                          style={{ width: `${report.metrics.survival.score}%` }}
-                        />
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                    <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200 space-y-1">
+                      <div className="text-[10px] font-black text-amber-900">👑 ハードキャリー勝利</div>
+                      <div className="text-lg font-black text-amber-950 font-mono">
+                        {report.sessionAnalytics.gameOutcomeBreakdown.hardCarryWins.percent}%{' '}
+                        <span className="text-[10px] font-normal">({report.sessionAnalytics.gameOutcomeBreakdown.hardCarryWins.count}戦)</span>
                       </div>
                     </div>
-
-                    {/* ファーム力 */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs font-bold">
-                        <span className="text-sky-700 flex items-center gap-1">
-                          <Zap size={13} /> ② ファーム効率 ＆ リソース確保
-                        </span>
-                        <span className="text-stone-900 font-black">
-                          {report.metrics.farm.score}点{' '}
-                          <span className="text-[10px] text-sky-600 font-normal">
-                            (分間CS {report.metrics.farm.csPerMin})
-                          </span>
-                        </span>
-                      </div>
-                      <div className="h-2.5 w-full rounded-full bg-stone-100 overflow-hidden">
-                        <div
-                          className="h-full bg-sky-500 rounded-full"
-                          style={{ width: `${report.metrics.farm.score}%` }}
-                        />
+                    <div className="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200 space-y-1">
+                      <div className="text-[10px] font-black text-emerald-900">🛡️ チーム協調勝利</div>
+                      <div className="text-lg font-black text-emerald-950 font-mono">
+                        {report.sessionAnalytics.gameOutcomeBreakdown.teamSupportedWins.percent}%{' '}
+                        <span className="text-[10px] font-normal">({report.sessionAnalytics.gameOutcomeBreakdown.teamSupportedWins.count}戦)</span>
                       </div>
                     </div>
+                    <div className="p-3.5 rounded-2xl bg-indigo-50/80 border border-indigo-200 space-y-1">
+                      <div className="text-[10px] font-black text-indigo-900">😭 エース敗北 (味方崩壊型)</div>
+                      <div className="text-lg font-black text-indigo-950 font-mono">
+                        {report.sessionAnalytics.gameOutcomeBreakdown.aceLosses.percent}%{' '}
+                        <span className="text-[10px] font-normal">({report.sessionAnalytics.gameOutcomeBreakdown.aceLosses.count}戦)</span>
+                      </div>
+                    </div>
+                    <div className="p-3.5 rounded-2xl bg-rose-50/80 border border-rose-200 space-y-1">
+                      <div className="text-[10px] font-black text-rose-900">⚠️ 集団戦・逆転負け</div>
+                      <div className="text-lg font-black text-rose-950 font-mono">
+                        {report.sessionAnalytics.gameOutcomeBreakdown.throwLosses.percent}%{' '}
+                        <span className="text-[10px] font-normal">({report.sessionAnalytics.gameOutcomeBreakdown.throwLosses.count}戦)</span>
+                      </div>
+                    </div>
+                  </div>
 
-                    {/* キル関与率 */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs font-bold">
-                        <span className="text-rose-700 flex items-center gap-1">
-                          <AlertTriangle size={13} /> ③ キル関与率 (KP)
-                          {report.metrics.combat.score < 50 && (
-                            <span className="text-[10px] bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded font-black">
-                              改善余地あり
+                  <p className="text-xs text-stone-700 leading-relaxed font-medium bg-stone-50 p-3 rounded-2xl border border-stone-200/60">
+                    💡 <strong>展開診断:</strong> {report.sessionAnalytics.gameOutcomeBreakdown.dominantOutcomeSummary}
+                  </p>
+                </div>
+              )}
+
+              {/* 2カラムHUDグリッド */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                {/* 左側 (7カラム): 5大レーダー ＆ 視界客観データ */}
+                <div className="lg:col-span-7 flex flex-col gap-6">
+                  {/* 5大レーダー解析スコアカード */}
+                  <div className="rounded-3xl border border-stone-200 bg-white p-5 md:p-6 shadow-xs space-y-4">
+                    <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                      <h3 className="font-black text-sm text-stone-900 flex items-center gap-2">
+                        <TrendingUp size={16} className="text-amber-600" />
+                        <span>プレイスタイル 5大レーダー客観解析</span>
+                      </h3>
+                      <span className="text-[10px] font-bold text-stone-400">
+                        Riot API実測値 ＆ 同ランク比較
+                      </span>
+                    </div>
+
+                    <div className="space-y-3.5">
+                      {/* 生存率 */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs font-bold">
+                          <span className="text-emerald-700 flex items-center gap-1">
+                            <Shield size={13} /> ① 生存率・デス回避
+                          </span>
+                          <span className="text-stone-900 font-black">
+                            {report.metrics.survival.score}点{' '}
+                            <span className="text-[10px] text-emerald-600 font-normal">
+                              (平均被デス {report.metrics.survival.avgDeaths})
                             </span>
-                          )}
-                        </span>
-                        <span className="text-rose-600 font-black">
-                          {report.metrics.combat.score}点{' '}
-                          <span className="text-[10px] font-normal">({report.metrics.combat.kpPercent}%)</span>
-                        </span>
-                      </div>
-                      <div className="h-2.5 w-full rounded-full bg-stone-100 overflow-hidden">
-                        <div
-                          className="h-full bg-rose-500 rounded-full"
-                          style={{ width: `${report.metrics.combat.score}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* オブジェクト確保 */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs font-bold">
-                        <span className="text-amber-700 flex items-center gap-1">
-                          <Target size={13} /> ④ オブジェクト確保 (Obj Control)
-                        </span>
-                        <span className="text-stone-900 font-black">
-                          {report.metrics.objectives.score}点{' '}
-                          <span className="text-[10px] text-amber-700 font-normal">(安定水準)</span>
-                        </span>
-                      </div>
-                      <div className="h-2.5 w-full rounded-full bg-stone-100 overflow-hidden">
-                        <div
-                          className="h-full bg-amber-500 rounded-full"
-                          style={{ width: `${report.metrics.objectives.score}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* 集団戦ポジショニング */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs font-bold">
-                        <span className="text-indigo-700 flex items-center gap-1">
-                          <Crosshair size={13} /> ⑤ 集団戦ポジショニング (Teamfight)
-                        </span>
-                        <span className="text-stone-900 font-black">
-                          {report.metrics.teamfight.score}点{' '}
-                          <span className="text-[10px] text-indigo-600 font-normal">
-                            (KDA {report.metrics.teamfight.avgKda})
                           </span>
-                        </span>
-                      </div>
-                      <div className="h-2.5 w-full rounded-full bg-stone-100 overflow-hidden">
-                        <div
-                          className="h-full bg-indigo-500 rounded-full"
-                          style={{ width: `${report.metrics.teamfight.score}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 視界客観データ */}
-                <div className="rounded-3xl border border-stone-200 bg-white p-5 md:p-6 shadow-xs space-y-4">
-                  <div className="flex items-center justify-between border-b border-stone-100 pb-3">
-                    <h3 className="font-black text-sm text-stone-900 flex items-center gap-2">
-                      <Eye size={16} className="text-indigo-600" />
-                      <span>視界・コントロール客観解析 (League of Graphs / Riot API連動)</span>
-                    </h3>
-                    <span className="text-xs font-black text-indigo-700">
-                      分間視界 {report.metrics.vision.visionScorePerMin}/分
-                    </span>
-                  </div>
-
-                  {/* 視界スプリットバー */}
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between text-xs font-bold text-stone-700">
-                      <span>視界侵入深度バランス:</span>
-                      <span>
-                        自陣防衛 {report.metrics.vision.defensiveWardPercent}% / 敵陣ディープ{' '}
-                        {report.metrics.vision.deepWardPercent}%
-                      </span>
-                    </div>
-                    <div className="h-3.5 w-full rounded-full bg-stone-100 flex overflow-hidden shadow-inner">
-                      <div
-                        className="h-full bg-emerald-500"
-                        style={{ width: `${report.metrics.vision.defensiveWardPercent}%` }}
-                        title={`自陣・リバー防衛視界: ${report.metrics.vision.defensiveWardPercent}%`}
-                      />
-                      <div
-                        className="h-full bg-amber-500"
-                        style={{ width: `${report.metrics.vision.deepWardPercent}%` }}
-                        title={`敵陣ディープ視界: ${report.metrics.vision.deepWardPercent}%`}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between text-[11px] font-bold">
-                      <span className="text-emerald-700">
-                        🛡️ 自陣防衛 ({report.metrics.vision.defensiveWardPercent}%) - 低被デスの源泉
-                      </span>
-                      <span className="text-amber-700">
-                        ⚡ 敵陣ディープ ({report.metrics.vision.deepWardPercent}%) - 今後の伸び代
-                      </span>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-stone-600 leading-relaxed font-medium bg-stone-50 p-3 rounded-2xl border border-stone-200/60">
-                    {report.analysis.visionAnalysis}
-                  </p>
-                </div>
-              </div>
-
-              {/* 右側 (5カラム): AI総合深層診断・最大の敗因・アクション */}
-              <div className="lg:col-span-5 flex flex-col gap-6 lg:sticky lg:top-4">
-                {/* 3大強み */}
-                <div className="rounded-3xl border border-emerald-200 bg-emerald-50/60 p-5 shadow-xs space-y-2.5">
-                  <div className="text-xs font-black text-emerald-950 flex items-center gap-1.5">
-                    <span>🌟</span>
-                    <span>実測データから導かれた「3大強み」</span>
-                  </div>
-                  <ul className="space-y-1.5 text-xs text-stone-700 font-medium">
-                    {report.analysis.strengths.map((s: string, idx: number) => (
-                      <li key={idx} className="flex items-start gap-1.5">
-                        <CheckCircle2 size={13} className="text-emerald-600 shrink-0 mt-0.5" />
-                        <span>{s}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* 最大の敗因・ボトルネック */}
-                <div className="rounded-3xl border border-amber-300 bg-amber-50/80 p-5 shadow-xs space-y-2.5">
-                  <div className="text-xs font-black text-amber-950 flex items-center gap-1.5">
-                    <span className="p-1 rounded-md bg-amber-200 text-amber-900">⚠️</span>
-                    <span>最大の敗因ボトルネック（典型的負け筋）</span>
-                  </div>
-                  <p className="text-xs text-stone-800 leading-relaxed font-medium bg-white p-3 rounded-2xl border border-amber-200">
-                    {report.analysis.coreBottleNeck}
-                  </p>
-                </div>
-
-                {/* 決定版・次戦の具体的急所アクション */}
-                <div className="rounded-3xl border border-indigo-300 bg-indigo-50/80 p-5 shadow-xs space-y-3">
-                  <div className="text-xs font-black text-indigo-950 flex items-center gap-1.5">
-                    <Sparkles size={14} className="text-indigo-600" />
-                    <span>勝率を跳ね上げる「決定版アクション」</span>
-                  </div>
-
-                  <div className="bg-white p-3.5 rounded-2xl border border-indigo-200 space-y-2">
-                    <div className="text-xs font-bold text-stone-900 leading-relaxed">
-                      {report.analysis.actionPlan}
-                    </div>
-
-                    {report.analysis.goldenDeepWard && (
-                      <div className="pt-2 border-t border-indigo-100 text-[11px] text-stone-600 space-y-1">
-                        <div className="font-bold text-indigo-900 flex items-center gap-1">
-                          <MapPin size={12} className="text-indigo-600" />
-                          <span>推奨: {report.analysis.goldenDeepWard.spot}</span>
                         </div>
-                        <div>⏰ {report.analysis.goldenDeepWard.timing}</div>
-                        <div className="text-stone-500">{report.analysis.goldenDeepWard.reason}</div>
+                        <div className="h-2.5 w-full rounded-full bg-stone-100 overflow-hidden">
+                          <div
+                            className="h-full bg-emerald-500 rounded-full"
+                            style={{ width: `${report.metrics.survival.score}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* ファーム力 */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs font-bold">
+                          <span className="text-sky-700 flex items-center gap-1">
+                            <Zap size={13} /> ② ファーム効率 ＆ リソース確保
+                          </span>
+                          <span className="text-stone-900 font-black">
+                            {report.metrics.farm.score}点{' '}
+                            <span className="text-[10px] text-sky-600 font-normal">
+                              (分間CS {report.metrics.farm.csPerMin})
+                            </span>
+                          </span>
+                        </div>
+                        <div className="h-2.5 w-full rounded-full bg-stone-100 overflow-hidden">
+                          <div
+                            className="h-full bg-sky-500 rounded-full"
+                            style={{ width: `${report.metrics.farm.score}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* キル関与率 */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs font-bold">
+                          <span className="text-rose-700 flex items-center gap-1">
+                            <AlertTriangle size={13} /> ③ キル関与率 (KP)
+                            {report.metrics.combat.score < 50 && (
+                              <span className="text-[10px] bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded font-black">
+                                改善余地あり
+                              </span>
+                            )}
+                          </span>
+                          <span className="text-rose-600 font-black">
+                            {report.metrics.combat.score}点{' '}
+                            <span className="text-[10px] font-normal">({report.metrics.combat.kpPercent}%)</span>
+                          </span>
+                        </div>
+                        <div className="h-2.5 w-full rounded-full bg-stone-100 overflow-hidden">
+                          <div
+                            className="h-full bg-rose-500 rounded-full"
+                            style={{ width: `${report.metrics.combat.score}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* オブジェクト確保 */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs font-bold">
+                          <span className="text-amber-700 flex items-center gap-1">
+                            <Target size={13} /> ④ オブジェクト確保 (Obj Control)
+                          </span>
+                          <span className="text-stone-900 font-black">
+                            {report.metrics.objectives.score}点{' '}
+                            <span className="text-[10px] text-amber-700 font-normal">(安定水準)</span>
+                          </span>
+                        </div>
+                        <div className="h-2.5 w-full rounded-full bg-stone-100 overflow-hidden">
+                          <div
+                            className="h-full bg-amber-500 rounded-full"
+                            style={{ width: `${report.metrics.objectives.score}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* 集団戦ポジショニング */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs font-bold">
+                          <span className="text-indigo-700 flex items-center gap-1">
+                            <Crosshair size={13} /> ⑤ 集団戦ポジショニング (Teamfight)
+                          </span>
+                          <span className="text-stone-900 font-black">
+                            {report.metrics.teamfight.score}点{' '}
+                            <span className="text-[10px] text-indigo-600 font-normal">
+                              (KDA {report.metrics.teamfight.avgKda})
+                            </span>
+                          </span>
+                        </div>
+                        <div className="h-2.5 w-full rounded-full bg-stone-100 overflow-hidden">
+                          <div
+                            className="h-full bg-indigo-500 rounded-full"
+                            style={{ width: `${report.metrics.teamfight.score}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 致命的デス (Throw) ＆ 序盤タイムライン因果 */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* 致命的デス分析 */}
+                    {report.sessionAnalytics?.fatalDeathAnalytics && (
+                      <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-xs space-y-2.5">
+                        <div className="text-xs font-black text-stone-900 flex items-center gap-1.5 border-b border-stone-100 pb-2">
+                          <Skull size={14} className="text-rose-600" />
+                          <span>致命的デス (Throw) 検知</span>
+                        </div>
+                        <div className="space-y-1.5 text-xs text-stone-700">
+                          <div className="flex justify-between font-bold">
+                            <span>Obj直前デス:</span>
+                            <span className="font-mono text-stone-900">
+                              {report.sessionAnalytics.fatalDeathAnalytics.objPreSpawnDeathsCount}回 ({report.sessionAnalytics.fatalDeathAnalytics.objPreSpawnDeathsRate}%)
+                            </span>
+                          </div>
+                          <div className="flex justify-between font-bold">
+                            <span>孤立被キャッチ率:</span>
+                            <span className="font-mono text-stone-900">
+                              {report.sessionAnalytics.fatalDeathAnalytics.isolatedDeathsPercent}%
+                            </span>
+                          </div>
+                          <div className="flex justify-between font-bold pt-1 border-t border-stone-100">
+                            <span>スロー危険度:</span>
+                            <span className="font-black text-emerald-700">
+                              {report.sessionAnalytics.fatalDeathAnalytics.fatalThrowRating}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     )}
+
+                    {/* 序盤タイムライン因果 */}
+                    {report.sessionAnalytics?.earlyTimelineImpact && (
+                      <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-xs space-y-2.5">
+                        <div className="text-xs font-black text-stone-900 flex items-center gap-1.5 border-b border-stone-100 pb-2">
+                          <Timer size={14} className="text-amber-600" />
+                          <span>序盤14分 タイムライン因果</span>
+                        </div>
+                        <div className="space-y-1.5 text-xs text-stone-700">
+                          <div className="flex justify-between font-bold">
+                            <span>初デス平均時間:</span>
+                            <span className="font-mono text-stone-900">
+                              {report.sessionAnalytics.earlyTimelineImpact.firstDeathAvgMinute}
+                            </span>
+                          </div>
+                          <div className="flex justify-between font-bold">
+                            <span>グラブ獲得時勝率:</span>
+                            <span className="font-mono text-emerald-700">
+                              {report.sessionAnalytics.earlyTimelineImpact.voidgrubWinRate}%
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-stone-500 pt-1 border-t border-stone-100 font-medium">
+                            {report.sessionAnalytics.earlyTimelineImpact.plateGoldImpact}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 視界客観データ */}
+                  <div className="rounded-3xl border border-stone-200 bg-white p-5 md:p-6 shadow-xs space-y-4">
+                    <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                      <h3 className="font-black text-sm text-stone-900 flex items-center gap-2">
+                        <Eye size={16} className="text-indigo-600" />
+                        <span>視界・コントロール客観解析 (League of Graphs / Riot API連動)</span>
+                      </h3>
+                      <span className="text-xs font-black text-indigo-700">
+                        分間視界 {report.metrics.vision.visionScorePerMin}/分
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-xs font-bold text-stone-700">
+                        <span>視界侵入深度バランス:</span>
+                        <span>
+                          自陣防衛 {report.metrics.vision.defensiveWardPercent}% / 敵陣ディープ{' '}
+                          {report.metrics.vision.deepWardPercent}%
+                        </span>
+                      </div>
+                      <div className="h-3.5 w-full rounded-full bg-stone-100 flex overflow-hidden shadow-inner">
+                        <div
+                          className="h-full bg-emerald-500"
+                          style={{ width: `${report.metrics.vision.defensiveWardPercent}%` }}
+                          title={`自陣・リバー防衛視界: ${report.metrics.vision.defensiveWardPercent}%`}
+                        />
+                        <div
+                          className="h-full bg-amber-500"
+                          style={{ width: `${report.metrics.vision.deepWardPercent}%` }}
+                          title={`敵陣ディープ視界: ${report.metrics.vision.deepWardPercent}%`}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] font-bold">
+                        <span className="text-emerald-700">
+                          🛡️ 自陣防衛 ({report.metrics.vision.defensiveWardPercent}%) - 低被デスの源泉
+                        </span>
+                        <span className="text-amber-700">
+                          ⚡ 敵陣ディープ ({report.metrics.vision.deepWardPercent}%) - 今後の伸び代
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-stone-600 leading-relaxed font-medium bg-stone-50 p-3 rounded-2xl border border-stone-200/60">
+                      {report.analysis.visionAnalysis}
+                    </p>
+                  </div>
+                </div>
+
+                {/* 右側 (5カラム): AI総合深層診断・最大の敗因・アクション */}
+                <div className="lg:col-span-5 flex flex-col gap-6 lg:sticky lg:top-4">
+                  {/* 3大強み */}
+                  <div className="rounded-3xl border border-emerald-200 bg-emerald-50/60 p-5 shadow-xs space-y-2.5">
+                    <div className="text-xs font-black text-emerald-950 flex items-center gap-1.5">
+                      <span>🌟</span>
+                      <span>実測データから導かれた「3大強み」</span>
+                    </div>
+                    <ul className="space-y-1.5 text-xs text-stone-700 font-medium">
+                      {report.analysis.strengths?.map((s: string, idx: number) => (
+                        <li key={idx} className="flex items-start gap-1.5">
+                          <CheckCircle2 size={13} className="text-emerald-600 shrink-0 mt-0.5" />
+                          <span>{s}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* 最大の敗因・ボトルネック */}
+                  <div className="rounded-3xl border border-amber-300 bg-amber-50/80 p-5 shadow-xs space-y-2.5">
+                    <div className="text-xs font-black text-amber-950 flex items-center gap-1.5">
+                      <span className="p-1 rounded-md bg-amber-200 text-amber-900">⚠️</span>
+                      <span>最大の敗因ボトルネック（典型的負け筋）</span>
+                    </div>
+                    <p className="text-xs text-stone-800 leading-relaxed font-medium bg-white p-3 rounded-2xl border border-amber-200">
+                      {report.analysis.coreBottleNeck}
+                    </p>
+                  </div>
+
+                  {/* 決定版・次戦の具体的急所アクション */}
+                  <div className="rounded-3xl border border-indigo-300 bg-indigo-50/80 p-5 shadow-xs space-y-3">
+                    <div className="text-xs font-black text-indigo-950 flex items-center gap-1.5">
+                      <Sparkles size={14} className="text-indigo-600" />
+                      <span>勝率を跳ね上げる「決定版アクション」</span>
+                    </div>
+
+                    <div className="bg-white p-3.5 rounded-2xl border border-indigo-200 space-y-2">
+                      <div className="text-xs font-bold text-stone-900 leading-relaxed">
+                        {report.analysis.actionPlan}
+                      </div>
+
+                      {report.analysis.goldenDeepWard && (
+                        <div className="pt-2 border-t border-indigo-100 text-[11px] text-stone-600 space-y-1">
+                          <div className="font-bold text-indigo-900 flex items-center gap-1">
+                            <MapPin size={12} className="text-indigo-600" />
+                            <span>推奨: {report.analysis.goldenDeepWard.spot}</span>
+                          </div>
+                          <div>⏰ {report.analysis.goldenDeepWard.timing}</div>
+                          <div className="text-stone-500">{report.analysis.goldenDeepWard.reason}</div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -556,7 +671,7 @@ export default function PlayerAnalyzerPage() {
           )}
 
           {/* ========================================================================= */}
-          {/* タブ 2: 👑 直近上位チャンピオン深掘り */}
+          {/* タブ 2: 👑 上位チャンプ深掘り ＆ プール穴診断 */}
           {/* ========================================================================= */}
           {activeTab === 'champions' && selectedChampion && (
             <div className="space-y-6">
@@ -734,6 +849,72 @@ export default function PlayerAnalyzerPage() {
                   </div>
                 </div>
               </div>
+
+              {/* 🧩 チャンピオン手持ちプール穴診断 ＆ AI補完レコメンド */}
+              {report.sessionAnalytics?.championPoolDiagnosis && (
+                <div className="rounded-3xl border border-indigo-200 bg-white p-6 shadow-xs space-y-4">
+                  <div className="flex items-center justify-between border-b border-indigo-100 pb-3">
+                    <h3 className="font-black text-sm text-indigo-950 flex items-center gap-2">
+                      <Puzzle size={16} className="text-indigo-600" />
+                      <span>🧩 チャンピオン手持ちプール穴診断 ＆ AI補完処方箋</span>
+                    </h3>
+                    <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-900 border border-indigo-200">
+                      {report.sessionAnalytics.championPoolDiagnosis.poolArchetype}
+                    </span>
+                  </div>
+
+                  {/* ダメージ属性比率バー */}
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-xs font-bold text-stone-700">
+                      <span>手持ちプールの属性バランス:</span>
+                      <span>
+                        AP {report.sessionAnalytics.championPoolDiagnosis.apRatioPercent}% / AD{' '}
+                        {report.sessionAnalytics.championPoolDiagnosis.adRatioPercent}% / タンク{' '}
+                        {report.sessionAnalytics.championPoolDiagnosis.tankRatioPercent}%
+                      </span>
+                    </div>
+                    <div className="h-3.5 w-full rounded-full bg-stone-100 flex overflow-hidden shadow-inner">
+                      <div
+                        className="h-full bg-indigo-500"
+                        style={{ width: `${report.sessionAnalytics.championPoolDiagnosis.apRatioPercent}%` }}
+                        title={`AP比率: ${report.sessionAnalytics.championPoolDiagnosis.apRatioPercent}%`}
+                      />
+                      <div
+                        className="h-full bg-amber-500"
+                        style={{ width: `${report.sessionAnalytics.championPoolDiagnosis.adRatioPercent}%` }}
+                        title={`AD比率: ${report.sessionAnalytics.championPoolDiagnosis.adRatioPercent}%`}
+                      />
+                      <div
+                        className="h-full bg-emerald-500"
+                        style={{ width: `${report.sessionAnalytics.championPoolDiagnosis.tankRatioPercent}%` }}
+                        title={`タンク比率: ${report.sessionAnalytics.championPoolDiagnosis.tankRatioPercent}%`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* 不足ピース ＆ 推奨チャンプリスト */}
+                  <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200 space-y-3">
+                    <div className="text-xs font-bold text-indigo-950 flex items-center gap-1.5">
+                      <Lightbulb size={15} className="text-indigo-600 shrink-0" />
+                      <span>
+                        <strong>不足しているピース:</strong> {report.sessionAnalytics.championPoolDiagnosis.missingPiece}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {report.sessionAnalytics.championPoolDiagnosis.recommendedAdditions?.map((rec: any, idx: number) => (
+                        <div key={idx} className="p-3.5 bg-white rounded-2xl border border-indigo-200/80 space-y-1 shadow-2xs">
+                          <div className="text-xs font-black text-stone-900">{rec.championName}</div>
+                          <div className="text-[10px] font-bold text-indigo-700">{rec.archetype}</div>
+                          <p className="text-[11px] text-stone-600 font-medium leading-relaxed pt-1 border-t border-stone-100">
+                            {rec.synergyReason}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
