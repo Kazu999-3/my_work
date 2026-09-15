@@ -25,6 +25,7 @@ import {
   ChevronRight,
   Brain,
   Info,
+  Check,
 } from 'lucide-react';
 
 export default function PlayerAnalyzerPage() {
@@ -35,7 +36,7 @@ export default function PlayerAnalyzerPage() {
   const [report, setReport] = useState<any>(null);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'overview' | 'champions' | 'session'>('overview');
-  const [selectedChampId, setSelectedChampId] = useState<string>('Zyra');
+  const [selectedChampId, setSelectedChampId] = useState<string>('');
 
   // 認証チェック
   useEffect(() => {
@@ -69,6 +70,9 @@ export default function PlayerAnalyzerPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '解析に失敗しました');
       setReport(data.report);
+      if (data.report?.championProfiles?.length > 0) {
+        setSelectedChampId(data.report.championProfiles[0].id);
+      }
     } catch (e: any) {
       setError(e.message || 'エラーが発生しました');
     } finally {
@@ -76,7 +80,7 @@ export default function PlayerAnalyzerPage() {
     }
   };
 
-  // 初回ロード時に Kazurin#4036 の統合レポートを自動読み込み
+  // 初回ロード時に自動読み込み
   useEffect(() => {
     if (isAuthenticated) {
       handleRunAnalysis('Kazurin', '4036');
@@ -102,7 +106,7 @@ export default function PlayerAnalyzerPage() {
           <div>
             <h2 className="text-lg font-black text-stone-900 mb-1.5">管理者認証が必要です</h2>
             <p className="text-xs text-stone-500 leading-relaxed font-medium">
-              プレイヤー深層アナライザー (Deep Intel Hub) は管理者専用です。管理者パスコードまたはDiscord管理者アカウントでログインしてください。
+              プレイヤー深層アナライザー (Universal Deep Intel Hub) は管理者専用です。管理者パスコードまたはDiscord管理者アカウントでログインしてください。
             </p>
           </div>
           <a
@@ -116,7 +120,8 @@ export default function PlayerAnalyzerPage() {
     );
   }
 
-  const selectedChampion = report?.championProfiles?.find((c: any) => c.id === selectedChampId) || report?.championProfiles?.[0];
+  const selectedChampion =
+    report?.championProfiles?.find((c: any) => c.id === selectedChampId) || report?.championProfiles?.[0];
 
   return (
     <div className="min-h-screen px-4 py-6 md:px-8 space-y-6 max-w-7xl mx-auto font-sans">
@@ -125,14 +130,14 @@ export default function PlayerAnalyzerPage() {
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-900 text-xs font-black border border-amber-500/30">
             <Globe size={14} className="text-amber-600" />
-            マルチ分析サイト統合エンジン (your.gg ＆ League of Graphs 連動)
+            全プレイヤー対応 ＆ リアルタイム実測マッチ解析エンジン
           </div>
           <h1 className="text-2xl md:text-3xl font-black text-stone-900 tracking-tight">
-            プレイヤー深層統合アナライザー (Deep Intel Hub)
+            プレイヤー深層統合アナライザー (Universal Deep Intel Hub)
           </h1>
           <p className="text-stone-700 text-xs md:text-sm max-w-3xl font-medium leading-relaxed">
-            <strong>your.gg / OP.GG / League of Graphs / Riot API</strong> の各客観データを自動収集・統合！<br className="hidden sm:inline" />
-            5大レーダー解析、チャンピオン相性・パワースパイク深掘り、プレイ時間帯・連戦疲労度・即キューティルト判定までを一画面に集約します。
+            任意のサモナー名を入力するだけで、<strong>Riot APIの実測マッチ履歴・タイムスタンプ</strong>を自動解析！<br className="hidden sm:inline" />
+            5大レーダースタッツ、直近プレイ上位チャンピオンの動的深掘り、連戦疲労度・即キューティルト判定までを完全客観レポートとして集約します。
           </p>
         </div>
       </div>
@@ -154,7 +159,7 @@ export default function PlayerAnalyzerPage() {
               type="text"
               value={gameName}
               onChange={(e) => setGameName(e.target.value)}
-              placeholder="サモナー名 / Riot ID (例: Kazurin)"
+              placeholder="サモナー名 / Riot ID (例: Kazurin, Agurin, Hide on bush)"
               className="w-full pl-10 pr-3 py-2.5 bg-stone-50 border border-stone-200 rounded-2xl text-xs font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-amber-500 focus:bg-white transition"
             />
           </div>
@@ -168,7 +173,7 @@ export default function PlayerAnalyzerPage() {
                 type="text"
                 value={tagLine}
                 onChange={(e) => setTagLine(e.target.value)}
-                placeholder="タグ (4036)"
+                placeholder="タグ (4036, JP1, KR1)"
                 className="w-full pl-7 pr-3 py-2.5 bg-stone-50 border border-stone-200 rounded-2xl text-xs font-mono font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-amber-500 focus:bg-white transition"
               />
             </div>
@@ -181,12 +186,12 @@ export default function PlayerAnalyzerPage() {
               {loading ? (
                 <>
                   <RefreshCw size={13} className="animate-spin" />
-                  <span>各サイトデータ統合中...</span>
+                  <span>実測マッチ解析中...</span>
                 </>
               ) : (
                 <>
                   <Sparkles size={13} />
-                  <span>⚡ 統合深層解析を実行</span>
+                  <span>⚡ 実測深層解析を実行</span>
                 </>
               )}
             </button>
@@ -195,9 +200,9 @@ export default function PlayerAnalyzerPage() {
 
         {/* クイック選択 */}
         <div className="flex items-center gap-1.5 flex-wrap text-[11px] pt-1 border-t border-stone-100">
-          <span className="text-stone-400 font-bold">クイック分析:</span>
+          <span className="text-stone-400 font-bold">サンプル分析:</span>
           {[
-            { name: 'Kazurin', tag: '4036', label: 'Kazurin#4036 (JG)' },
+            { name: 'Kazurin', tag: '4036', label: 'Kazurin#4036' },
             { name: 'Hide on bush', tag: 'KR1', label: 'Faker (KR1)' },
             { name: 'Agurin', tag: 'EUW', label: 'Agurin (EUW)' },
           ].map((p) => (
@@ -247,9 +252,16 @@ export default function PlayerAnalyzerPage() {
                   <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-200">
                     {report.summoner.role} メイン
                   </span>
+                  {report.summoner.sampleMatchesCount > 0 && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300">
+                      Riot API実測 {report.summoner.sampleMatchesCount}試合連動
+                    </span>
+                  )}
                 </div>
                 <div className="text-xs font-bold text-emerald-700 flex items-center gap-2 mt-1">
-                  <span>タイプ: <strong>{report.analysis.styleTypeName}</strong></span>
+                  <span>
+                    タイプ: <strong>{report.analysis.styleTypeName}</strong>
+                  </span>
                   <span className="text-[10px] px-2 py-0.2 rounded bg-emerald-100 text-emerald-900 border border-emerald-300">
                     {report.analysis.styleBadge}
                   </span>
@@ -259,16 +271,16 @@ export default function PlayerAnalyzerPage() {
 
             <div className="text-right shrink-0">
               <div className="text-[10px] text-stone-400 font-mono">
-                統合データソース: your.gg / OP.GG / League of Graphs
+                統合データソース: Riot API / your.gg / League of Graphs
               </div>
               <div className="text-xs font-bold text-stone-600 mt-0.5">
-                AI総合解析完了 (リアルタイム)
+                AI深層実測解析完了 (リアルタイム)
               </div>
             </div>
           </div>
 
           {/* ナビゲーションタブ */}
-          <div className="flex items-center gap-2 border-b border-stone-200 pb-2">
+          <div className="flex items-center gap-2 border-b border-stone-200 pb-2 flex-wrap">
             <button
               type="button"
               onClick={() => setActiveTab('overview')}
@@ -292,7 +304,7 @@ export default function PlayerAnalyzerPage() {
               }`}
             >
               <Award size={14} />
-              <span>2. 👑 チャンピオン別深掘りドリルダウン</span>
+              <span>2. 👑 直近上位チャンピオン深掘り ({report.championProfiles?.length || 0}体)</span>
             </button>
 
             <button
@@ -305,7 +317,7 @@ export default function PlayerAnalyzerPage() {
               }`}
             >
               <Brain size={14} />
-              <span>3. 🧠 ゲーム外・コンディション分析</span>
+              <span>3. 🧠 実測コンディション ＆ ティルト分析</span>
             </button>
           </div>
 
@@ -324,7 +336,7 @@ export default function PlayerAnalyzerPage() {
                       <span>プレイスタイル 5大レーダー客観解析</span>
                     </h3>
                     <span className="text-[10px] font-bold text-stone-400">
-                      your.gg 同ランク帯比較
+                      Riot API実測値 ＆ 同ランク比較
                     </span>
                   </div>
 
@@ -338,46 +350,60 @@ export default function PlayerAnalyzerPage() {
                         <span className="text-stone-900 font-black">
                           {report.metrics.survival.score}点{' '}
                           <span className="text-[10px] text-emerald-600 font-normal">
-                            (上位{report.metrics.survival.percentile}% / 平均被デス {report.metrics.survival.avgDeaths})
+                            (平均被デス {report.metrics.survival.avgDeaths})
                           </span>
                         </span>
                       </div>
                       <div className="h-2.5 w-full rounded-full bg-stone-100 overflow-hidden">
-                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${report.metrics.survival.score}%` }} />
+                        <div
+                          className="h-full bg-emerald-500 rounded-full"
+                          style={{ width: `${report.metrics.survival.score}%` }}
+                        />
                       </div>
                     </div>
 
-                    {/* 15分CSリード */}
+                    {/* ファーム力 */}
                     <div className="space-y-1">
                       <div className="flex justify-between text-xs font-bold">
                         <span className="text-sky-700 flex items-center gap-1">
-                          <Zap size={13} /> ② 15分CSリード (CSD@15)
+                          <Zap size={13} /> ② ファーム効率 ＆ リソース確保
                         </span>
                         <span className="text-stone-900 font-black">
                           {report.metrics.farm.score}点{' '}
                           <span className="text-[10px] text-sky-600 font-normal">
-                            (上位{report.metrics.farm.percentile}% / +{report.metrics.farm.csd15} CS)
+                            (分間CS {report.metrics.farm.csPerMin})
                           </span>
                         </span>
                       </div>
                       <div className="h-2.5 w-full rounded-full bg-stone-100 overflow-hidden">
-                        <div className="h-full bg-sky-500 rounded-full" style={{ width: `${report.metrics.farm.score}%` }} />
+                        <div
+                          className="h-full bg-sky-500 rounded-full"
+                          style={{ width: `${report.metrics.farm.score}%` }}
+                        />
                       </div>
                     </div>
 
-                    {/* 15分キル関与 (ボトルネック) */}
+                    {/* キル関与率 */}
                     <div className="space-y-1">
                       <div className="flex justify-between text-xs font-bold">
                         <span className="text-rose-700 flex items-center gap-1">
-                          <AlertTriangle size={13} /> ③ 15分キル関与 (KP@15)
-                          <span className="text-[10px] bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded font-black">最重要課題</span>
+                          <AlertTriangle size={13} /> ③ キル関与率 (KP)
+                          {report.metrics.combat.score < 50 && (
+                            <span className="text-[10px] bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded font-black">
+                              改善余地あり
+                            </span>
+                          )}
                         </span>
                         <span className="text-rose-600 font-black">
-                          {report.metrics.combat.score}点 <span className="text-[10px] font-normal">(下位3% / {report.metrics.combat.kp15}%)</span>
+                          {report.metrics.combat.score}点{' '}
+                          <span className="text-[10px] font-normal">({report.metrics.combat.kpPercent}%)</span>
                         </span>
                       </div>
                       <div className="h-2.5 w-full rounded-full bg-stone-100 overflow-hidden">
-                        <div className="h-full bg-rose-500 rounded-full" style={{ width: `${report.metrics.combat.score}%` }} />
+                        <div
+                          className="h-full bg-rose-500 rounded-full"
+                          style={{ width: `${report.metrics.combat.score}%` }}
+                        />
                       </div>
                     </div>
 
@@ -388,11 +414,15 @@ export default function PlayerAnalyzerPage() {
                           <Target size={13} /> ④ オブジェクト確保 (Obj Control)
                         </span>
                         <span className="text-stone-900 font-black">
-                          {report.metrics.objectives.score}点 <span className="text-[10px] text-amber-700 font-normal">(安定水準)</span>
+                          {report.metrics.objectives.score}点{' '}
+                          <span className="text-[10px] text-amber-700 font-normal">(安定水準)</span>
                         </span>
                       </div>
                       <div className="h-2.5 w-full rounded-full bg-stone-100 overflow-hidden">
-                        <div className="h-full bg-amber-500 rounded-full" style={{ width: `${report.metrics.objectives.score}%` }} />
+                        <div
+                          className="h-full bg-amber-500 rounded-full"
+                          style={{ width: `${report.metrics.objectives.score}%` }}
+                        />
                       </div>
                     </div>
 
@@ -403,25 +433,31 @@ export default function PlayerAnalyzerPage() {
                           <Crosshair size={13} /> ⑤ 集団戦ポジショニング (Teamfight)
                         </span>
                         <span className="text-stone-900 font-black">
-                          {report.metrics.teamfight.score}点 <span className="text-[10px] text-indigo-600 font-normal">(KDA {report.metrics.teamfight.avgKda})</span>
+                          {report.metrics.teamfight.score}点{' '}
+                          <span className="text-[10px] text-indigo-600 font-normal">
+                            (KDA {report.metrics.teamfight.avgKda})
+                          </span>
                         </span>
                       </div>
                       <div className="h-2.5 w-full rounded-full bg-stone-100 overflow-hidden">
-                        <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${report.metrics.teamfight.score}%` }} />
+                        <div
+                          className="h-full bg-indigo-500 rounded-full"
+                          style={{ width: `${report.metrics.teamfight.score}%` }}
+                        />
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* 視界客観データ ＆ 侵入深度バランス */}
+                {/* 視界客観データ */}
                 <div className="rounded-3xl border border-stone-200 bg-white p-5 md:p-6 shadow-xs space-y-4">
                   <div className="flex items-center justify-between border-b border-stone-100 pb-3">
                     <h3 className="font-black text-sm text-stone-900 flex items-center gap-2">
                       <Eye size={16} className="text-indigo-600" />
-                      <span>視界・コントロール客観解析 (League of Graphs連動)</span>
+                      <span>視界・コントロール客観解析 (League of Graphs / Riot API連動)</span>
                     </h3>
                     <span className="text-xs font-black text-indigo-700">
-                      分間視界 {report.metrics.vision.visionScorePerMin}/分 (上位{report.metrics.vision.percentile}%)
+                      分間視界 {report.metrics.vision.visionScorePerMin}/分
                     </span>
                   </div>
 
@@ -429,7 +465,10 @@ export default function PlayerAnalyzerPage() {
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-xs font-bold text-stone-700">
                       <span>視界侵入深度バランス:</span>
-                      <span>自陣防衛 {report.metrics.vision.defensiveWardPercent}% / 敵陣ディープ {report.metrics.vision.deepWardPercent}%</span>
+                      <span>
+                        自陣防衛 {report.metrics.vision.defensiveWardPercent}% / 敵陣ディープ{' '}
+                        {report.metrics.vision.deepWardPercent}%
+                      </span>
                     </div>
                     <div className="h-3.5 w-full rounded-full bg-stone-100 flex overflow-hidden shadow-inner">
                       <div
@@ -444,8 +483,12 @@ export default function PlayerAnalyzerPage() {
                       />
                     </div>
                     <div className="flex items-center justify-between text-[11px] font-bold">
-                      <span className="text-emerald-700">🛡️ 自陣防衛 ({report.metrics.vision.defensiveWardPercent}%) - 低被デスの源泉</span>
-                      <span className="text-amber-700">⚡ 敵陣ディープ ({report.metrics.vision.deepWardPercent}%) - 今後の伸び代</span>
+                      <span className="text-emerald-700">
+                        🛡️ 自陣防衛 ({report.metrics.vision.defensiveWardPercent}%) - 低被デスの源泉
+                      </span>
+                      <span className="text-amber-700">
+                        ⚡ 敵陣ディープ ({report.metrics.vision.deepWardPercent}%) - 今後の伸び代
+                      </span>
                     </div>
                   </div>
 
@@ -461,7 +504,7 @@ export default function PlayerAnalyzerPage() {
                 <div className="rounded-3xl border border-emerald-200 bg-emerald-50/60 p-5 shadow-xs space-y-2.5">
                   <div className="text-xs font-black text-emerald-950 flex items-center gap-1.5">
                     <span>🌟</span>
-                    <span>客観データから導かれた「3大強み」</span>
+                    <span>実測データから導かれた「3大強み」</span>
                   </div>
                   <ul className="space-y-1.5 text-xs text-stone-700 font-medium">
                     {report.analysis.strengths.map((s: string, idx: number) => (
@@ -513,7 +556,7 @@ export default function PlayerAnalyzerPage() {
           )}
 
           {/* ========================================================================= */}
-          {/* タブ 2: 👑 チャンピオン別深掘りドリルダウン */}
+          {/* タブ 2: 👑 直近上位チャンピオン深掘り */}
           {/* ========================================================================= */}
           {activeTab === 'champions' && selectedChampion && (
             <div className="space-y-6">
@@ -525,7 +568,7 @@ export default function PlayerAnalyzerPage() {
                     type="button"
                     onClick={() => setSelectedChampId(champ.id)}
                     className={`px-4 py-2 rounded-2xl font-black text-xs transition cursor-pointer flex items-center gap-2 border ${
-                      selectedChampId === champ.id
+                      selectedChampion.id === champ.id
                         ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
                         : 'bg-white text-stone-700 hover:bg-stone-50 border-stone-200'
                     }`}
@@ -533,10 +576,12 @@ export default function PlayerAnalyzerPage() {
                     <span>{champ.name}</span>
                     <span
                       className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
-                        selectedChampId === champ.id ? 'bg-amber-800/80 text-white' : 'bg-stone-100 text-stone-600'
+                        selectedChampion.id === champ.id
+                          ? 'bg-amber-800/80 text-white'
+                          : 'bg-stone-100 text-stone-600'
                       }`}
                     >
-                      勝率 {champ.winRate}% (KDA {champ.kda})
+                      {champ.gamesCount}戦 勝率 {champ.winRate}% (KDA {champ.kda})
                     </span>
                   </button>
                 ))}
@@ -554,7 +599,8 @@ export default function PlayerAnalyzerPage() {
                       </span>
                     </div>
                     <p className="text-xs text-stone-500 font-medium mt-0.5">
-                      実戦サンプル: {selectedChampion.gamesCount}試合 | 分間CS: {selectedChampion.csPerMin} | 平均K/D/A: {selectedChampion.avgKills} / {selectedChampion.avgDeaths} / {selectedChampion.avgAssists}
+                      実戦サンプル: {selectedChampion.gamesCount}試合 | 分間CS: {selectedChampion.csPerMin} | 平均K/D/A:{' '}
+                      {selectedChampion.avgKills} / {selectedChampion.avgDeaths} / {selectedChampion.avgAssists}
                     </p>
                   </div>
 
@@ -562,7 +608,8 @@ export default function PlayerAnalyzerPage() {
                     <div className="text-right">
                       <div className="text-[10px] text-stone-400 font-bold">勝率 / KDA</div>
                       <div className="text-lg font-black text-stone-900 font-mono">
-                        {selectedChampion.winRate}% <span className="text-xs font-normal text-stone-500">({selectedChampion.kda})</span>
+                        {selectedChampion.winRate}%{' '}
+                        <span className="text-xs font-normal text-stone-500">({selectedChampion.kda})</span>
                       </div>
                     </div>
                   </div>
@@ -605,8 +652,11 @@ export default function PlayerAnalyzerPage() {
                       <span>カモにできる相手 (有利マッチアップ)</span>
                     </h4>
                     <div className="space-y-2">
-                      {selectedChampion.favoredMatchups.map((fav: any, idx: number) => (
-                        <div key={idx} className="p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-200 space-y-1">
+                      {selectedChampion.favoredMatchups?.map((fav: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-200 space-y-1"
+                        >
                           <div className="flex justify-between items-center text-xs font-black text-emerald-950">
                             <span>vs {fav.enemy}</span>
                             <span className="font-mono text-emerald-700 font-bold">勝率 {fav.winRate}%</span>
@@ -624,8 +674,11 @@ export default function PlayerAnalyzerPage() {
                       <span>天敵・警戒マッチアップ ＆ 対処法</span>
                     </h4>
                     <div className="space-y-2">
-                      {selectedChampion.hardMatchups.map((hard: any, idx: number) => (
-                        <div key={idx} className="p-3.5 rounded-2xl bg-rose-50/60 border border-rose-200 space-y-1">
+                      {selectedChampion.hardMatchups?.map((hard: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="p-3.5 rounded-2xl bg-rose-50/60 border border-rose-200 space-y-1"
+                        >
                           <div className="flex justify-between items-center text-xs font-black text-rose-950">
                             <span>vs {hard.enemy}</span>
                             <span className="font-mono text-rose-700 font-bold">勝率 {hard.winRate}%</span>
@@ -648,19 +701,27 @@ export default function PlayerAnalyzerPage() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                     <div className="p-3 bg-white rounded-2xl border border-stone-200/80">
                       <div className="text-[10px] text-stone-400 font-bold">15分CS差</div>
-                      <div className="font-black text-stone-900 mt-0.5">{selectedChampion.winVsLossDiffs.cs15Diff}</div>
+                      <div className="font-black text-stone-900 mt-0.5">
+                        {selectedChampion.winVsLossDiffs?.cs15Diff}
+                      </div>
                     </div>
                     <div className="p-3 bg-white rounded-2xl border border-stone-200/80">
                       <div className="text-[10px] text-stone-400 font-bold">平均被デス</div>
-                      <div className="font-black text-stone-900 mt-0.5">{selectedChampion.winVsLossDiffs.deathsDiff}</div>
+                      <div className="font-black text-stone-900 mt-0.5">
+                        {selectedChampion.winVsLossDiffs?.deathsDiff}
+                      </div>
                     </div>
                     <div className="p-3 bg-white rounded-2xl border border-stone-200/80">
                       <div className="text-[10px] text-stone-400 font-bold">視界・コントロール</div>
-                      <div className="font-black text-stone-900 mt-0.5">{selectedChampion.winVsLossDiffs.visionDiff}</div>
+                      <div className="font-black text-stone-900 mt-0.5">
+                        {selectedChampion.winVsLossDiffs?.visionDiff}
+                      </div>
                     </div>
                     <div className="p-3 bg-white rounded-2xl border border-stone-200/80">
                       <div className="text-[10px] text-stone-400 font-bold">第1コア完成時間</div>
-                      <div className="font-black text-stone-900 mt-0.5">{selectedChampion.winVsLossDiffs.firstCoreTime}</div>
+                      <div className="font-black text-stone-900 mt-0.5">
+                        {selectedChampion.winVsLossDiffs?.firstCoreTime}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -677,7 +738,7 @@ export default function PlayerAnalyzerPage() {
           )}
 
           {/* ========================================================================= */}
-          {/* タブ 3: 🧠 ゲーム外・コンディション分析 */}
+          {/* タブ 3: 🧠 実測コンディション ＆ ティルト分析 */}
           {/* ========================================================================= */}
           {activeTab === 'session' && report.sessionAnalytics && (
             <div className="space-y-6">
@@ -686,13 +747,13 @@ export default function PlayerAnalyzerPage() {
                 <div className="flex items-center justify-between border-b border-stone-100 pb-3">
                   <h3 className="font-black text-sm text-stone-900 flex items-center gap-2">
                     <Clock size={16} className="text-amber-600" />
-                    <span>時間帯別勝率カーブ ＆ 集中力ピーク</span>
+                    <span>時間帯別勝率カーブ ＆ 集中力ピーク (実測タイムスタンプ集計)</span>
                   </h3>
-                  <span className="text-[10px] font-bold text-stone-400">実戦ログ統計</span>
+                  <span className="text-[10px] font-bold text-stone-400">JST実測ログ</span>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {report.sessionAnalytics.timeOfDayPerformance.map((slot: any, idx: number) => (
+                  {report.sessionAnalytics.timeOfDayPerformance?.map((slot: any, idx: number) => (
                     <div
                       key={idx}
                       className={`p-5 rounded-3xl border space-y-2 ${
@@ -706,11 +767,15 @@ export default function PlayerAnalyzerPage() {
                       <div className="flex justify-between items-start">
                         <div>
                           <div className="text-xs font-black text-stone-900">{slot.label}</div>
-                          <div className="text-[11px] font-mono text-stone-500 font-bold mt-0.5">{slot.timeSlot}</div>
+                          <div className="text-[11px] font-mono text-stone-500 font-bold mt-0.5">
+                            {slot.timeSlot}
+                          </div>
                         </div>
                         <div className="text-right font-mono">
                           <div className="text-lg font-black text-stone-900">{slot.winRate}%</div>
-                          <div className="text-[10px] text-stone-500">KDA {slot.kda} ({slot.gamesCount}戦)</div>
+                          <div className="text-[10px] text-stone-500">
+                            KDA {slot.kda} ({slot.gamesCount}戦)
+                          </div>
                         </div>
                       </div>
                       <p className="text-xs text-stone-700 font-medium leading-relaxed pt-2 border-t border-stone-200/50">
@@ -728,23 +793,32 @@ export default function PlayerAnalyzerPage() {
                   <div className="border-b border-stone-100 pb-3">
                     <h3 className="font-black text-sm text-stone-900 flex items-center gap-2">
                       <Activity size={16} className="text-indigo-600" />
-                      <span>連続試合数による疲労度・勝率低下分析</span>
+                      <span>連続試合数による疲労度・勝率低下分析 (実測セッション)</span>
                     </h3>
                   </div>
 
                   <div className="space-y-3">
-                    {report.sessionAnalytics.sessionFatigueImpact.map((f: any, idx: number) => (
+                    {report.sessionAnalytics.sessionFatigueImpact?.map((f: any, idx: number) => (
                       <div key={idx} className="p-4 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-1.5">
                         <div className="flex justify-between items-center text-xs font-bold">
-                          <span className="text-stone-900 font-black">{f.gameNumberInSession} - {f.label}</span>
+                          <span className="text-stone-900 font-black">
+                            {f.gameNumberInSession} - {f.label}
+                          </span>
                           <span className="font-mono text-stone-800 font-black">
-                            勝率 {f.winRate}% <span className="text-[10px] text-stone-400 font-normal">(平均 {f.avgDeaths}デス)</span>
+                            勝率 {f.winRate}%{' '}
+                            <span className="text-[10px] text-stone-400 font-normal">
+                              (平均 {f.avgDeaths}デス / {f.gamesCount}戦)
+                            </span>
                           </span>
                         </div>
                         <div className="h-2 w-full rounded-full bg-stone-200 overflow-hidden">
                           <div
                             className={`h-full rounded-full ${
-                              f.winRate >= 60 ? 'bg-emerald-500' : f.winRate >= 50 ? 'bg-amber-500' : 'bg-rose-500'
+                              f.winRate >= 60
+                                ? 'bg-emerald-500'
+                                : f.winRate >= 50
+                                ? 'bg-amber-500'
+                                : 'bg-rose-500'
                             }`}
                             style={{ width: `${f.winRate}%` }}
                           />
@@ -763,21 +837,27 @@ export default function PlayerAnalyzerPage() {
                   <div className="border-b border-amber-200/70 pb-3">
                     <h3 className="font-black text-sm text-amber-950 flex items-center gap-2">
                       <Flame size={16} className="text-rose-600" />
-                      <span>即キュー・ティルト判定 (Tilt Detector)</span>
+                      <span>即キュー・ティルト判定 (実測インターバル)</span>
                     </h3>
                   </div>
 
                   <div className="p-4 rounded-2xl bg-white border border-amber-200 space-y-3">
                     <div className="flex items-center justify-between">
-                      <div className="text-xs font-bold text-stone-700">負け直後 1分以内即キュー</div>
+                      <div className="text-xs font-bold text-stone-700">負け直後 5分以内即キュー</div>
                       <div className="text-sm font-black text-rose-600 font-mono">
-                        勝率 {report.sessionAnalytics.requeueTiltStats.immediateRequeueWinRate}%
+                        勝率 {report.sessionAnalytics.requeueTiltStats.immediateRequeueWinRate}%{' '}
+                        <span className="text-[10px] text-stone-400 font-normal">
+                          ({report.sessionAnalytics.requeueTiltStats.immediateRequeueGames}試合)
+                        </span>
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="text-xs font-bold text-stone-700">5分以上休憩後のマッチ</div>
                       <div className="text-sm font-black text-emerald-600 font-mono">
-                        勝率 {report.sessionAnalytics.requeueTiltStats.restedRequeueWinRate}%
+                        勝率 {report.sessionAnalytics.requeueTiltStats.restedRequeueWinRate}%{' '}
+                        <span className="text-[10px] text-stone-400 font-normal">
+                          ({report.sessionAnalytics.requeueTiltStats.restedRequeueGames}試合)
+                        </span>
                       </div>
                     </div>
                     <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs font-black">
@@ -789,7 +869,8 @@ export default function PlayerAnalyzerPage() {
                   </div>
 
                   <p className="text-xs text-stone-700 leading-relaxed font-medium">
-                    負けた直後は無意識に焦りや苛立ちが残り、マップ確認の頻度が低下します。<strong>「負けたら必ず5分席を外す」</strong>だけで勝率が+24%回復します。
+                    負けた直後は無意識に焦りや苛立ちが残り、マップ確認の頻度が低下します。
+                    <strong>「負けたら必ず5分席を外す」</strong>だけで勝率が大幅に改善します。
                   </p>
                 </div>
               </div>
@@ -798,11 +879,11 @@ export default function PlayerAnalyzerPage() {
               <div className="rounded-3xl border border-indigo-200 bg-indigo-50/70 p-6 shadow-xs space-y-4">
                 <h3 className="font-black text-sm text-indigo-950 flex items-center gap-2">
                   <Award size={16} className="text-indigo-600" />
-                  <span>パーソナル黄金プレイルール 3箇条（勝率最大化）</span>
+                  <span>実測データに基づく黄金プレイルール 3箇条</span>
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {report.sessionAnalytics.goldenSessionRules.map((rule: string, idx: number) => (
+                  {report.sessionAnalytics.goldenSessionRules?.map((rule: string, idx: number) => (
                     <div key={idx} className="p-4 bg-white rounded-2xl border border-indigo-200 space-y-1 shadow-2xs">
                       <div className="text-xs font-bold text-stone-800 leading-relaxed">{rule}</div>
                     </div>
