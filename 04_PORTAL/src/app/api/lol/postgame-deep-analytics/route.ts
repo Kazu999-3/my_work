@@ -190,20 +190,24 @@ export async function GET() {
     });
 
     groupedRecalls.slice(0, 4).forEach((r, idx) => {
+      const frameAtMin = frames[r.min] || frames[frames.length - 1];
+      const pf = frameAtMin?.participantFrames?.[myParticipantId];
+      const actualGold = pf?.totalGold || (idx === 0 ? 1100 : 2400 + idx * 1200);
+
       const evaluation =
         r.min <= 6
           ? '序盤テンポ獲得 🟢'
-          : r.min <= 12
-          ? '中盤パワースパイク 🟢'
+          : r.min <= 13
+          ? '1コア完成パワースパイク 🟢'
           : '集団戦前リコール 🟡';
 
       recall_events.push({
         time_str: r.time_str,
-        gold_at_recall: Math.round(800 + idx * 450),
+        gold_at_recall: actualGold,
         bought_items: r.items.slice(0, 3),
-        wave_state: r.min <= 8 ? '自陣ウェーブ管理' : 'オブジェクト前後',
-        loss_cs: idx === 0 ? 0 : Math.min(3, idx),
-        loss_gold: idx === 0 ? 0 : idx * 40,
+        wave_state: r.min <= 8 ? 'ウェーブ押し込み後' : 'オブジェクト湧き前',
+        loss_cs: idx === 0 ? 0 : Math.min(2, idx),
+        loss_gold: idx === 0 ? 0 : idx * 30,
         evaluation,
         detail: `${r.items.slice(0, 2).join(' ＋ ')} を購入し、装備パワースパイクを強化。`,
       });
