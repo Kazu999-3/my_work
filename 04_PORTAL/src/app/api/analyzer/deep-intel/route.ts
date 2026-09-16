@@ -465,12 +465,12 @@ ${isSupportRole ? '※重要: このプレイヤーは【サポート (Support)�
         "late3CorePlus": "（3コア終盤スパイク: ${c.name}の集団戦ポジショニング解説）"
       },
       "favoredMatchups": [
-        { "enemy": "（同レーンの有利な相手1）", "winRate": 68, "reason": "（有利な理由）" },
-        { "enemy": "（同レーンの有利な相手2）", "winRate": 64, "reason": "（有利な理由）" }
+        { "enemy": "（同レーンの有利な相手1）", "reason": "（有利な理由）" },
+        { "enemy": "（同レーンの有利な相手2）", "reason": "（有利な理由）" }
       ],
       "hardMatchups": [
-        { "enemy": "（同レーンの苦手な相手1）", "winRate": 34, "counterPlay": "（具体的な対抗立ち回り）" },
-        { "enemy": "（同レーンの苦手な相手2）", "winRate": 38, "counterPlay": "（具体的な対抗立ち回り）" }
+        { "enemy": "（同レーンの苦手な相手1）", "counterPlay": "（具体的な対抗立ち回り）" },
+        { "enemy": "（同レーンの苦手な相手2）", "counterPlay": "（具体的な対抗立ち回り）" }
       ],
       "aiTacticsGuide": "（このプレイヤーが${c.name}で【${targetTier}】に通用するための専属指南）"
     }`

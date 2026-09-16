@@ -1101,7 +1101,9 @@ export default function PlayerAnalyzerPage() {
                         >
                           <div className="flex justify-between items-center text-xs font-black text-emerald-950">
                             <span>vs {fav.enemy}</span>
-                            <span className="font-mono text-emerald-700 font-bold">勝率 {fav.winRate}%</span>
+                            <span className="text-[11px] px-2 py-0.5 rounded-md bg-emerald-100/80 text-emerald-800 font-bold border border-emerald-200/60">
+                              有利相性
+                            </span>
                           </div>
                           <p className="text-xs text-stone-700 font-medium leading-relaxed">{fav.reason}</p>
                         </div>
@@ -1122,7 +1124,9 @@ export default function PlayerAnalyzerPage() {
                         >
                           <div className="flex justify-between items-center text-xs font-black text-rose-950">
                             <span>vs {hard.enemy}</span>
-                            <span className="font-mono text-rose-700 font-bold">勝率 {hard.winRate}%</span>
+                            <span className="text-[11px] px-2 py-0.5 rounded-md bg-rose-100/80 text-rose-800 font-bold border border-rose-200/60">
+                              要警戒
+                            </span>
                           </div>
                           <p className="text-xs text-stone-700 font-medium leading-relaxed">
                             <strong className="text-rose-900">対策:</strong> {hard.counterPlay}
@@ -1402,9 +1406,12 @@ export default function PlayerAnalyzerPage() {
                     )}
                   </div>
 
-                  <p className="text-xs text-stone-700 leading-relaxed font-medium">
-                    負けた直後は無意識に焦りや苛立ちが残り、マップ確認の頻度が低下します。
-                    <strong>「負けたら必ず5分席を外す」</strong>だけで勝率が大幅に改善します。
+                  <p className="text-xs text-stone-700 leading-relaxed font-medium bg-white/70 p-3 rounded-xl border border-amber-200/50">
+                    💡 <strong>実測インサイト:</strong>{' '}
+                    {report.sessionAnalytics.requeueTiltStats.insight ||
+                      (report.sessionAnalytics.requeueTiltStats.immediateRequeueGames < 3
+                        ? `直近の即キューは${report.sessionAnalytics.requeueTiltStats.immediateRequeueGames}試合のみとサンプル数が少なく、感情的な連戦を自制できています。`
+                        : '敗北後は感情に流されず、冷静にセッションを管理できています。')}
                   </p>
                 </div>
               </div>

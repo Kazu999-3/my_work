@@ -655,6 +655,7 @@ export interface CalculatedSessionAnalytics {
     restedRequeueGames: number;
     tiltWinRateDropPercent: number;
     hasData: boolean;
+    insight?: string;
   };
   dayOfWeekVariance: Array<{
     day: string;
@@ -855,6 +856,19 @@ export function calculateRealSessionAnalytics(
   const restedWinRate = hasRestedData ? Math.round((restedLossWins / restedLossTotal) * 100) : 0;
   const tiltDrop = hasImmediateData && hasRestedData ? Math.max(0, restedWinRate - immediateWinRate) : 0;
 
+  let tiltInsight = '敗北時は感情に流されず、平常心を保って次戦に臨みましょう。';
+  if (immediateLossTotal === 0) {
+    tiltInsight = '敗北後に5分以内ですぐキューを入れるケースは0件でした。感情に任せた連戦を避け、極めて冷静にセッションを管理できています。';
+  } else if (immediateLossTotal < 3) {
+    tiltInsight = `直近の即キューは${immediateLossTotal}試合（勝率${immediateWinRate}%）のみと実測サンプル数が少なく、感情的な即キューを自制できています。`;
+  } else if (tiltDrop >= 10) {
+    tiltInsight = `負け直後の5分以内即キューは勝率${immediateWinRate}%（休憩後勝率${restedWinRate}%より${tiltDrop}%低下）と急落傾向です。「負けたら必ず5分席を外す」ことで勝率改善が期待できます。`;
+  } else if (immediateWinRate >= restedWinRate) {
+    tiltInsight = `負け直後の即キューでも勝率${immediateWinRate}%（${immediateLossTotal}試合）を維持しており、ティルトによる崩壊が起きていません。平常心の維持が強みです。`;
+  } else {
+    tiltInsight = `負け直後の即キュー勝率は${immediateWinRate}%（${immediateLossTotal}試合）、5分以上休憩後は勝率${restedWinRate}%（${restedLossTotal}試合）です。`;
+  }
+
   const requeueTiltStats = {
     immediateRequeueWinRate: immediateWinRate,
     immediateRequeueGames: immediateLossTotal,
@@ -862,6 +876,7 @@ export function calculateRealSessionAnalytics(
     restedRequeueGames: restedLossTotal,
     tiltWinRateDropPercent: tiltDrop,
     hasData: hasImmediateData || hasRestedData,
+    insight: tiltInsight,
   };
 
   // 4. 曜日別
