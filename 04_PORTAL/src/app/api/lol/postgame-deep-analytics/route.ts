@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import {
   fetchPuuidByRiotId,
@@ -35,12 +35,16 @@ async function getItemNamesMap(): Promise<Map<number, string>> {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const apiKey = process.env.RIOT_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: 'RIOT_API_KEY が未設定です。' }, { status: 500 });
     }
+
+    const { searchParams } = new URL(request.url);
+    const requestedMatchId = searchParams.get('matchId') || '';
+    const matchIndex = Math.max(0, parseInt(searchParams.get('index') || '0', 10));
 
     // 1. 対象プレイヤーの PUUID を特定（Kazurin / かずき / 環境変数）
     let puuid = process.env.KAZURIN_PUUID || '';
@@ -63,23 +67,84 @@ export async function GET() {
       return NextResponse.json({ error: '対象プレイヤーの PUUID が見つかりませんでした。' }, { status: 404 });
     }
 
-    // 2. 直近のランクソロ試合（または直近マッチ）を取得
-    let matchIds = await fetchRankedSoloMatchIds(puuid, apiKey, 3);
+    // 2. 直近のランクソロ試合（または直近マッチ）を最大8件取得
+    let matchIds = await fetchRankedSoloMatchIds(puuid, apiKey, 8);
     if (matchIds.length === 0) {
-      matchIds = await fetchRecentMatchIds(puuid, apiKey, 3);
+      matchIds = await fetchRecentMatchIds(puuid, apiKey, 8);
     }
     if (matchIds.length === 0) {
       return NextResponse.json({ error: '直近の試合履歴が見つかりませんでした。' }, { status: 404 });
     }
 
-    const matchId = matchIds[0];
+    // 対象の matchId を決定
+    let targetMatchId = requestedMatchId && matchIds.includes(requestedMatchId)
+      ? requestedMatchId
+      : matchIds[matchIndex] || matchIds[0];
 
-    // 3. 試合詳細とタイムラインを並列取得
-    const [matchDetails, timelineData, itemMap] = await Promise.all([
-      fetchMatchDetails(matchId, apiKey),
-      fetchMatchTimeline(matchId, apiKey).catch(() => null),
+    // 3. 直近複数試合の詳細メタデータと、選択試合のタイムラインを並列取得
+    const targetIds = matchIds.slice(0, 6);
+    const [allDetailsList, targetTimelineData, itemMap] = await Promise.all([
+      Promise.all(
+        targetIds.map(async (mId) => {
+          try {
+            return await fetchMatchDetails(mId, apiKey);
+          } catch {
+            return null;
+          }
+        })
+      ),
+      fetchMatchTimeline(targetMatchId, apiKey).catch(() => null),
       getItemNamesMap(),
     ]);
+
+    // 直近マッチ一覧の整形（UIのセレクター用）
+    const recentMatches = targetIds.map((mId, idx) => {
+      const d = allDetailsList[idx];
+      if (!d) return null;
+      const me = d.participants.find((p) => p.puuid === puuid);
+      if (!me) return null;
+      const enemy = d.participants.find((p) => p.teamId !== me.teamId && p.lane === me.lane) ||
+        d.participants.find((p) => p.teamId !== me.teamId);
+
+      const durM = Math.floor(d.gameDuration / 60);
+      const durS = d.gameDuration % 60;
+      const durStr = `${durM}:${String(durS).padStart(2, '0')}`;
+      const startTs = d.gameStartTimestamp || Date.now();
+
+      return {
+        matchId: mId,
+        championName: me.championName,
+        enemyChampionName: enemy?.championName || 'Unknown',
+        lane: me.lane || 'JUNGLE',
+        isWin: me.win,
+        kdaStr: `${me.kills}/${me.deaths}/${me.assists}`,
+        kills: me.kills,
+        deaths: me.deaths,
+        assists: me.assists,
+        cs: me.totalMinionsKilled + me.neutralMinionsKilled,
+        visionScore: me.visionScore,
+        gameDurationStr: durStr,
+        gameDurationSec: d.gameDuration,
+        gameStartTimestamp: startTs,
+      };
+    }).filter(Boolean);
+
+    // 選択された試合の詳細特定
+    const targetIdx = targetIds.indexOf(targetMatchId);
+    let matchDetails = targetIdx >= 0 ? allDetailsList[targetIdx] : null;
+    if (!matchDetails) {
+      try {
+        matchDetails = await fetchMatchDetails(targetMatchId, apiKey);
+      } catch (e) {
+        matchDetails = allDetailsList[0];
+        targetMatchId = matchIds[0];
+      }
+    }
+    if (!matchDetails) {
+      return NextResponse.json({ error: '選択された試合詳細を取得できませんでした。' }, { status: 404 });
+    }
+
+    const timelineData = targetTimelineData;
 
     // 自分の participant と対面 participant を特定
     const myParticipant = matchDetails.participants.find((p) => p.puuid === puuid);
@@ -278,8 +343,38 @@ export async function GET() {
       };
     }
 
+    // 複数試合の横断サマリー計算 (Cross-Match Summary)
+    const validMatches = recentMatches.filter((m) => m !== null);
+    const totalValid = validMatches.length;
+    const winsCount = validMatches.filter((m) => m.isWin).length;
+    const multiWinRate = totalValid > 0 ? Math.round((winsCount / totalValid) * 100) : (isWin ? 100 : 0);
+    const totalKills = validMatches.reduce((acc, m) => acc + m.kills, 0);
+    const totalDeaths = validMatches.reduce((acc, m) => acc + m.deaths, 0);
+    const totalAssists = validMatches.reduce((acc, m) => acc + m.assists, 0);
+    const avgK = totalValid > 0 ? (totalKills / totalValid).toFixed(1) : myParticipant.kills.toString();
+    const avgD = totalValid > 0 ? (totalDeaths / totalValid).toFixed(1) : myParticipant.deaths.toString();
+    const avgA = totalValid > 0 ? (totalAssists / totalValid).toFixed(1) : myParticipant.assists.toString();
+    const avgKdaStr = `${avgK} / ${avgD} / ${avgA}`;
+    const avgCs = totalValid > 0 ? Math.round(validMatches.reduce((acc, m) => acc + m.cs, 0) / totalValid) : myParticipant.totalMinionsKilled;
+    const avgVision = totalValid > 0 ? Number((validMatches.reduce((acc, m) => acc + m.visionScore, 0) / totalValid).toFixed(1)) : myParticipant.visionScore;
+
+    const cross_match_summary = {
+      total_matches: totalValid,
+      win_rate: multiWinRate,
+      avg_kda: avgKdaStr,
+      avg_deaths: Number(avgD),
+      avg_total_cs: avgCs,
+      avg_vision_score: avgVision,
+      summary_text: `直近${totalValid}試合の実測成績: 勝率${multiWinRate}% (${winsCount}勝${totalValid - winsCount}敗)・平均KDA ${avgKdaStr}。${
+        Number(avgD) <= 4 ? '低被デスを維持して安定した立ち回り' : '中盤以降の孤立デス削減が昇格の急所'
+      }。`,
+    };
+
     return NextResponse.json({
       success: true,
+      selected_match_id: targetMatchId,
+      recent_matches: recentMatches,
+      cross_match_summary,
       my_champion: myChamp,
       enemy_champion: enemyChamp,
       is_win: isWin,
