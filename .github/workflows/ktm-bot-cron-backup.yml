@@ -10,10 +10,11 @@ name: KTM Bot Cron Backup
 #   KTM_TRIGGER_KEY : /trigger-scheduled の key（未設定ならデフォルト値を使用）
 
 on:
-  # schedule:
-  #   - cron: '15 3 * * 1'     # 月 12:15 JST (UTC 03:15) → 週末定期カスタム募集投稿のバックアップ
-  #   - cron: '15 3 * * 3'     # 水 12:15 JST (UTC 03:15) → 水曜中間アナウンスのバックアップ
-  #   - cron: '15 10 * * 5'    # 金 19:15 JST (UTC 10:15) → 金曜前日アナウンスのバックアップ
+  schedule:
+    - cron: '15 3 * * 3'     # 水 12:15 JST (UTC 03:15) → 週末定期カスタム募集投稿のバックアップ
+    - cron: '15 10 * * 5'    # 金 19:15 JST (UTC 10:15) → 金曜中間アナウンスのバックアップ
+    - cron: '15 8 * * 6'     # 土 17:15 JST (UTC 08:15) → 土曜中間アナウンスのバックアップ
+    - cron: '15 8 * * 0'     # 日 17:15 JST (UTC 08:15) → 日曜中間アナウンスのバックアップ
   workflow_dispatch:
     inputs:
       mode:
@@ -38,9 +39,9 @@ jobs:
 
           MODE="${{ github.event.inputs.mode }}"
           if [ "${{ github.event_name }}" = "schedule" ]; then
-            if [ "${{ github.event.schedule }}" = "15 3 * * 1" ]; then
+            if [ "${{ github.event.schedule }}" = "15 3 * * 3" ]; then
               MODE="weekly_recruit"
-            elif [ "${{ github.event.schedule }}" = "15 3 * * 3" ] || [ "${{ github.event.schedule }}" = "15 10 * * 5" ]; then
+            elif [ "${{ github.event.schedule }}" = "15 10 * * 5" ] || [ "${{ github.event.schedule }}" = "15 8 * * 6" ] || [ "${{ github.event.schedule }}" = "15 8 * * 0" ]; then
               MODE="event_notify"
             else
               MODE=""

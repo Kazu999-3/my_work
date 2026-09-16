@@ -12,20 +12,28 @@ export async function handleScheduledEvent(event, env, ctx) {
   const cronExpression = (event.cron || "").trim();
   const mode = event.mode || "";
 
-  // 1. 毎週月曜 12:00 JST (月曜 UTC 3:00 / Cloudflare dow=2): 週末定期カスタム募集（土日分）自動投稿
-  if (cronExpression.includes("0 3 * * 2") || mode === "weekly_recruit") {
-    console.log("[Scheduled] Executing weekly recruitment posting (Monday 12:00 JST)...");
+  // 1. 毎週水曜 12:00 JST (水曜 UTC 3:00 / dow=3): 週末定期カスタム募集（土日分）自動投稿
+  if (cronExpression.includes("0 3 * * 3") || cronExpression.includes("0 3 * * WED") || mode === "weekly_recruit") {
+    console.log("[Scheduled] Executing weekly recruitment posting (Wednesday 12:00 JST)...");
     await postWeeklyRecruitment(env);
-  } else if (cronExpression.includes("0 0 * * 2") || mode === "weekly_report") {
-    // 毎週月曜 9:00 JST (UTC 0:00 月曜=Cloudflare基準dow=2): 個人週間レポート配信
+  } else if (cronExpression.includes("0 0 * * 1") || cronExpression.includes("0 0 * * MON") || mode === "weekly_report") {
+    // 毎週月曜 9:00 JST (UTC 0:00 月曜=dow 1): 個人週間レポート配信
     await sendWeeklyReports(env);
-  } else if (cronExpression.includes("0 11 * * 7") || cronExpression.includes("0 11 * * 1") || mode === "check_2000") {
-    // 毎週土日 20:00 JST (UTC 11:00 土曜=dow 7, 日曜=dow 1): 開催可否判定 ＆ 中止時クイック代替募集
+  } else if (
+    cronExpression.includes("0 11 * * 6,7") || cronExpression.includes("0 11 * * 6") || 
+    cronExpression.includes("0 11 * * 7") || cronExpression.includes("0 11 * * 0") || 
+    mode === "check_2000"
+  ) {
+    // 毎週土日 20:00 JST (UTC 11:00 土日=dow 6,7): 開催可否判定 ＆ 中止時クイック代替募集
     console.log("[Scheduled] Executing 20:00 Custom Check & Substitute Handler...");
     await checkCustomStatusAt2000(env);
-  } else if (mode === "event_notify" || cronExpression.includes("0 3 * * 4") || cronExpression.includes("0 10 * * 6")) {
-    // 毎週水曜 12:00 JST (UTC 3:00 水曜=dow 4) & 金曜 19:00 JST (UTC 10:00 金曜=dow 6):
-    // 参加状況・同期アナウンス通知
+  } else if (
+    mode === "event_notify" || 
+    cronExpression.includes("0 10 * * 5") || cronExpression.includes("0 10 * * FRI") || // 金曜 19:00 JST (UTC 10:00)
+    cronExpression.includes("0 8 * * 6,7") || cronExpression.includes("0 8 * * 6") || cronExpression.includes("0 8 * * 7") // 土曜・日曜 17:00 JST (UTC 08:00)
+  ) {
+    // 金曜 19:00 JST, 土曜 17:00 JST, 日曜 17:00 JST: 中間アナウンス＆リマインド通知
+    console.log("[Scheduled] Executing intermediate custom reminder & status notification...");
     await sendEventUsersNotification(env, { lookaheadHours: 72 });
   } else if (cronExpression.includes("0 3 1 * *") || mode === "monthly_award") {
     // 毎月1日 12:00 JST (UTC 3:00 毎月1日): 月間アワード表彰の自動投稿
