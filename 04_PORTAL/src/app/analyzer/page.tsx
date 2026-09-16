@@ -42,7 +42,6 @@ import {
 export default function PlayerAnalyzerPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [summonerInput, setSummonerInput] = useState('Kazurin#4036');
-  const [queueType, setQueueType] = useState<'solo' | 'all'>('solo');
   const [targetTier, setTargetTier] = useState<string>('Emerald IV');
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState<any>(null);
@@ -74,12 +73,10 @@ export default function PlayerAnalyzerPage() {
   // 統合解析の実行
   const handleRunAnalysis = async (
     targetRawInput?: string,
-    targetQ?: 'solo' | 'all',
     targetT?: string
   ) => {
     const raw = targetRawInput !== undefined ? targetRawInput : summonerInput;
     const { name, tag } = parseSummonerInput(raw);
-    const q = targetQ !== undefined ? targetQ : queueType;
     const tier = targetT !== undefined ? targetT : targetTier;
 
     if (!name.trim()) return;
@@ -91,7 +88,7 @@ export default function PlayerAnalyzerPage() {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gameName: name, tagLine: tag, queueType: q, targetTier: tier }),
+        body: JSON.stringify({ gameName: name, tagLine: tag, targetTier: tier }),
       });
 
       const text = await res.text();
@@ -109,53 +106,53 @@ export default function PlayerAnalyzerPage() {
       if (!res.ok || !data.success) {
         throw new Error(data.error || '解析に失敗しました');
       }
+
       setReport(data.report);
       if (data.report?.championProfiles?.length > 0) {
         setSelectedChampId(data.report.championProfiles[0].id);
       }
-    } catch (e: any) {
-      setError(e.message || 'エラーが発生しました');
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'データ解析の取得中にエラーが発生しました');
     } finally {
       setLoading(false);
     }
   };
 
-  // 初回ロード時に自動読み込み
+  // 初回自動解析
   useEffect(() => {
     if (isAuthenticated) {
-      handleRunAnalysis('Kazurin#4036', 'solo', 'Emerald IV');
+      handleRunAnalysis();
     }
   }, [isAuthenticated]);
 
   if (isAuthenticated === null) {
     return (
-      <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center gap-3 font-sans">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-stone-300 border-t-amber-600" />
-        <p className="text-xs font-bold text-stone-500">認証ステータスを確認中...</p>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-3 text-stone-500 font-bold text-sm">
+          <RefreshCw size={24} className="animate-spin text-amber-600" />
+          <span>管理権限を確認中...</span>
+        </div>
       </div>
     );
   }
 
-  if (isAuthenticated === false) {
+  if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 font-sans bg-stone-50">
-        <div className="text-center max-w-sm rounded-3xl border border-stone-200/90 bg-white p-8 shadow-xl space-y-4">
-          <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center text-2xl mx-auto shadow-2xs">
-            🔑
-          </div>
-          <div>
-            <h2 className="text-lg font-black text-stone-900 mb-1.5">管理者認証が必要です</h2>
-            <p className="text-xs text-stone-500 leading-relaxed font-medium">
-              プレイヤー深層アナライザー (Universal Deep Intel Hub) は管理者専用です。管理者パスコードまたはDiscord管理者アカウントでログインしてください。
-            </p>
-          </div>
-          <a
-            href="/login"
-            className="inline-block w-full py-3 bg-amber-600 hover:bg-amber-500 text-white font-black text-xs rounded-xl shadow-xs transition"
-          >
-            ログインページへ
-          </a>
+      <div className="max-w-md mx-auto my-16 p-8 bg-white border border-stone-200 rounded-3xl shadow-sm text-center space-y-4">
+        <div className="w-12 h-12 bg-amber-100 text-amber-800 rounded-2xl flex items-center justify-center mx-auto text-xl font-black">
+          🔒
         </div>
+        <h2 className="text-lg font-black text-stone-900">管理者ログインが必要です</h2>
+        <p className="text-xs text-stone-500 font-medium">
+          LoLディープアナライザーは管理者限定の統合診断ツールです。ログインしてください。
+        </p>
+        <a
+          href="/ktm-admin"
+          className="inline-flex items-center justify-center px-6 py-2.5 bg-stone-900 text-white font-bold text-xs rounded-xl hover:bg-stone-800 transition"
+        >
+          管理者ログインへ
+        </a>
       </div>
     );
   }
@@ -164,34 +161,34 @@ export default function PlayerAnalyzerPage() {
     report?.championProfiles?.find((c: any) => c.id === selectedChampId) || report?.championProfiles?.[0];
 
   return (
-    <div className="min-h-screen px-4 py-6 md:px-8 space-y-6 max-w-7xl mx-auto font-sans">
-      {/* イントロバナー */}
-      <div className="bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-indigo-500/15 border border-amber-500/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-xs">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-900 text-xs font-black border border-amber-500/30">
-            <Globe size={14} className="text-amber-600" />
-            目標ランク逆算 ＆ リアルタイム実測マッチ解析エンジン
+    <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+      {/* ページタイトル ＆ コンセプトバナー */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-stone-900 via-stone-800 to-amber-950 p-6 md:p-8 text-white shadow-xl border border-stone-800">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-xs font-black">
+              <Sparkles size={14} className="text-amber-400" />
+              <span>Riot API 実測マッチ履歴連動・完全自動アナライズ</span>
+            </div>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3">
+              <span>LoL パーソナル深層アナライザー</span>
+            </h1>
+            <p className="text-xs md:text-sm text-stone-300 font-medium max-w-2xl leading-relaxed">
+              定型文を完全排除。直近の実測マッチデータから「強み・致命的ボトルネック・実測パワースパイク・勝敗分岐点」を完全客観診断。
+            </p>
           </div>
-          <h1 className="text-2xl md:text-3xl font-black text-stone-900 tracking-tight">
-            プレイヤー深層統合アナライザー (Universal Deep Intel Hub)
-          </h1>
-          <p className="text-stone-700 text-xs md:text-sm max-w-3xl font-medium leading-relaxed">
-            現状維持の比較ではなく、<strong>「目標ランク（ゴールド / プラチナ / エメラルド）」</strong>の基準値とのスタッツ差分（ギャップ）を逆算診断！<br className="hidden sm:inline" />
-            ソロQ実測マッチ・タイムスタンプ連動により、昇格のために変えるべき急所アクションを完全可視化します。
-          </p>
         </div>
       </div>
 
-      {/* 検索・条件設定コントロールバー */}
-      <div className="rounded-3xl border border-stone-200/90 bg-white/95 p-5 md:p-6 shadow-xs space-y-4">
+      {/* サモナー検索バー ＆ 条件指定 */}
+      <div className="rounded-3xl border border-stone-200 bg-white p-4 md:p-5 shadow-xs space-y-3">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleRunAnalysis();
           }}
-          className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3"
+          className="flex flex-col md:flex-row items-stretch md:items-center gap-3"
         >
-          {/* サモナー名#タグ 統合入力ボックス */}
           <div className="relative flex-1">
             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400">
               <Search size={16} />
@@ -200,41 +197,9 @@ export default function PlayerAnalyzerPage() {
               type="text"
               value={summonerInput}
               onChange={(e) => setSummonerInput(e.target.value)}
-              placeholder="サモナー名#タグ (例: Kazurin#4036, Hide on bush#KR1, Agurin#EUW)"
+              placeholder="サモナー名#タグ (例: Kazurin#4036, yukizo#7867, Hide on bush#KR1)"
               className="w-full pl-10 pr-3 py-2.5 bg-stone-50 border border-stone-200 rounded-2xl text-xs font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-amber-500 focus:bg-white transition"
             />
-          </div>
-
-          {/* キュー選択トグル */}
-          <div className="flex items-center bg-stone-100 p-1 rounded-2xl border border-stone-200 shrink-0">
-            <button
-              type="button"
-              onClick={() => {
-                setQueueType('solo');
-                handleRunAnalysis(summonerInput, 'solo', targetTier);
-              }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${
-                queueType === 'solo'
-                  ? 'bg-amber-600 text-white shadow-2xs'
-                  : 'text-stone-600 hover:text-stone-900'
-              }`}
-            >
-              🎯 ソロQのみ
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setQueueType('all');
-                handleRunAnalysis(summonerInput, 'all', targetTier);
-              }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer ${
-                queueType === 'all'
-                  ? 'bg-amber-600 text-white shadow-2xs'
-                  : 'text-stone-600 hover:text-stone-900'
-              }`}
-            >
-              🌐 全試合 (含むノーマル)
-            </button>
           </div>
 
           {/* 目標ランクセレクター */}
@@ -244,13 +209,14 @@ export default function PlayerAnalyzerPage() {
               value={targetTier}
               onChange={(e) => {
                 setTargetTier(e.target.value);
-                handleRunAnalysis(summonerInput, queueType, e.target.value);
+                handleRunAnalysis(summonerInput, e.target.value);
               }}
               className="bg-transparent text-xs font-black text-stone-900 focus:outline-none cursor-pointer"
             >
               <option value="Gold IV">🥇 Gold IV (ゴールド)</option>
               <option value="Platinum IV">🥈 Platinum IV (プラチナ)</option>
-              <option value="Emerald IV">💎 Emerald IV (エメラルド / 推奨)</option>
+              <option value="Emerald IV">💎 Emerald IV (エメラルド)</option>
+              <option value="Diamond IV">💠 Diamond IV (ダイアモンド)</option>
             </select>
           </div>
 
@@ -258,7 +224,7 @@ export default function PlayerAnalyzerPage() {
           <button
             type="submit"
             disabled={loading}
-            className="px-5 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-black text-xs rounded-2xl shadow-xs transition flex items-center justify-center gap-1.5 shrink-0 cursor-pointer disabled:opacity-50 hover:scale-105"
+            className="px-6 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-black text-xs rounded-2xl shadow-xs transition flex items-center justify-center gap-1.5 shrink-0 cursor-pointer disabled:opacity-50"
           >
             {loading ? (
               <>
@@ -268,7 +234,7 @@ export default function PlayerAnalyzerPage() {
             ) : (
               <>
                 <Sparkles size={13} />
-                <span>⚡ 実測深層解析</span>
+                <span>⚡ 実行</span>
               </>
             )}
           </button>
@@ -278,7 +244,8 @@ export default function PlayerAnalyzerPage() {
         <div className="flex items-center gap-1.5 flex-wrap text-[11px] pt-1 border-t border-stone-100">
           <span className="text-stone-400 font-bold">サンプル分析:</span>
           {[
-            { raw: 'Kazurin#4036', label: 'Kazurin#4036' },
+            { raw: 'Kazurin#4036', label: 'Kazurin#4036 (JG)' },
+            { raw: 'yukizo#7867', label: 'yukizo#7867 (SUP)' },
             { raw: 'Hide on bush#KR1', label: 'Faker (KR1)' },
             { raw: 'Agurin#EUW', label: 'Agurin (EUW)' },
           ].map((p) => (
@@ -287,7 +254,7 @@ export default function PlayerAnalyzerPage() {
               type="button"
               onClick={() => {
                 setSummonerInput(p.raw);
-                handleRunAnalysis(p.raw, queueType, targetTier);
+                handleRunAnalysis(p.raw, targetTier);
               }}
               className="px-2.5 py-1 rounded-xl bg-stone-100 hover:bg-amber-100/80 hover:text-amber-900 text-stone-700 font-bold border border-stone-200/80 transition cursor-pointer"
             >
@@ -339,7 +306,7 @@ export default function PlayerAnalyzerPage() {
                   </span>
                   {report.summoner.sampleMatchesCount > 0 && (
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 border border-stone-200">
-                      Riot API実測 {report.summoner.sampleMatchesCount}試合連動 ({queueType === 'solo' ? 'ソロQ' : '全試合'})
+                      Riot API実測 {report.summoner.sampleMatchesCount}試合連動
                     </span>
                   )}
                 </div>

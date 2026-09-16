@@ -56,22 +56,11 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          // キュー選択に応じたマッチID取得 (最新25件を高速取得)
-          let matchIds: string[] = [];
-          if (queueType === 'solo') {
-            matchIds = await fetchRankedSoloMatchIds(puuid, apiKey, 25);
-            if (matchIds.length === 0) {
-              matchIds = await fetchRecentMatchIds(puuid, apiKey, 25, 420);
-            }
-            if (matchIds.length === 0) {
-              matchIds = await fetchRecentMatchIds(puuid, apiKey, 25);
-            }
-          } else {
-            matchIds = await fetchRecentMatchIds(puuid, apiKey, 25);
-          }
+          // 直近の最新マッチIDを確実に30件取得 (全モード対応)
+          const matchIds = await fetchRecentMatchIds(puuid, apiKey, 30);
 
           // 各マッチの詳細を確実に取得 (5件ずつバッチ制御で429レート制限を完全回避)
-          const targetIds = matchIds.slice(0, 25);
+          const targetIds = matchIds.slice(0, 30);
           const rawMatchResults: RawMatchRecord[] = [];
           const chunkSize = 5;
 
