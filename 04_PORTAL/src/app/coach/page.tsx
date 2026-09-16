@@ -22,6 +22,7 @@ import MatchFightsAnalyticsCard from './MatchFightsAnalyticsCard';
 import MatchupBlueprintCard from './MatchupBlueprintCard';
 import PostGameDeepAnalyticsDashboard from './PostGameDeepAnalyticsDashboard';
 import OverlayLauncherButton from './OverlayLauncherButton';
+import SoloQDeepIntelSyncCard from '../../components/coach/SoloQDeepIntelSyncCard';
 
 // ============================
 // 型定義
@@ -1647,8 +1648,12 @@ function CoachPageContent() {
               <VisionAnalyticsCard />
             </div>
 
-            {/* 右側: プレイスタイル深層カルテ (常時オープン・タブ閉じ不要) */}
+            {/* 右側: プレイスタイル深層カルテ ＆ 実測アナライザー昇格処方箋 */}
             <div className="lg:col-span-5 xl:col-span-5 flex flex-col gap-5 lg:sticky lg:top-4">
+              <SoloQDeepIntelSyncCard
+                selectedChampion={sharedChampion}
+                summonerName="Kazurin#4036"
+              />
               <PlayerStyleRadarCard />
             </div>
           </div>
