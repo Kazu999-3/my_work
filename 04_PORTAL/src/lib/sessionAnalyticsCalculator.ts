@@ -1109,27 +1109,100 @@ export function calculateRealSessionAnalytics(
   const adRatioPercent = Math.round((adCount / totalG) * 100);
   const tankRatioPercent = Math.round((tankCount / totalG) * 100);
 
-  const championPoolDiagnosis: ChampionPoolDiagnosis = {
-    apRatioPercent,
-    adRatioPercent,
-    tankRatioPercent,
-    poolArchetype: apRatioPercent >= 60 ? 'APスケーリング ＆ コントロール偏重' : 'ハイブリッド構成',
-    missingPiece: apRatioPercent >= 55 ? 'ADファイター / 序盤ガンク・エンゲージ役' : 'APメイジ / ゾーンコントロール役',
-    recommendedAdditions: [
-      {
-        championName: detectedRole === 'MIDDLE' ? 'Ahri (アーリ)' : detectedRole === 'TOP' ? 'Renekton (レネクトン)' : detectedRole === 'BOTTOM' ? 'Jinx (ジンクス)' : detectedRole === 'UTILITY' ? 'Nautilus (ノーチラス)' : 'Xin Zhao (シン・ジャオ)',
-        role: detectedRole,
-        archetype: detectedRole === 'MIDDLE' ? '万能ロームメイジ' : detectedRole === 'TOP' ? '序盤レーン圧倒ファイター' : detectedRole === 'BOTTOM' ? 'ハイパースケーリングADC' : detectedRole === 'UTILITY' ? '確定フック・エンゲージ' : 'AD序盤アグレッシブ＆イニシエート',
-        synergyReason: `現在のプレイスタイルにおける弱点を補完し、【${detectedRole}】としての影響力を最大化する推奨ピック。`,
-      },
-      {
-        championName: detectedRole === 'MIDDLE' ? 'Orianna (オリアナ)' : detectedRole === 'TOP' ? 'Ornn (オーン)' : detectedRole === 'BOTTOM' ? 'Kai\'Sa (カイ＝サ)' : detectedRole === 'UTILITY' ? 'Lulu (ルル)' : 'Jarvan IV (ジャーヴァンIV)',
-        role: detectedRole,
-        archetype: '集団戦ゾーンコントロール＆エンゲージ',
-        synergyReason: '味方のスキルと最高峰のシナジーを生み出すチーム構成の要。',
-      },
-    ],
-  };
+  const championPoolDiagnosis: ChampionPoolDiagnosis = (() => {
+    let poolArchetype = 'ハイブリッドバランス構成';
+    let missingPiece = '状況に応じたカウンターピック';
+    let additions: Array<{ championName: string; role: string; archetype: string; synergyReason: string }> = [];
+
+    const normRole = (detectedRole || 'JUNGLE').toUpperCase();
+
+    if (normRole === 'UTILITY' || normRole === 'SUPPORT') {
+      if (tankRatioPercent >= 60) {
+        poolArchetype = '確定エンゲージ ＆ タンク偏重構成';
+        missingPiece = 'エンチャンター（ピール＆ヒール・シールド） / ポークメイジ';
+        additions = [
+          { championName: 'Lulu (ルル)', role: 'SUPPORT', archetype: '変身＆シールドピールマスター', synergyReason: '敵アサシンの飛び込みをW変身で無力化し、味方ハイパーキャリーを無敵化可能。' },
+          { championName: 'Karma (カルマ)', role: 'SUPPORT', archetype: '序盤レーン圧殺＆全体加速シールド', synergyReason: '序盤RQポークでレーンを圧倒し、集団戦マントラEで味方全員を加速防衛。' },
+          { championName: 'Nami (ナミ)', role: 'SUPPORT', archetype: '万能サステイン＆広域カウンターCC', synergyReason: 'ADCの通常攻撃強化とR津波による敵エンゲージの完全シャットアウト。' },
+        ];
+      } else if (apRatioPercent >= 60) {
+        poolArchetype = 'APメイジ ＆ エンチャンター偏重構成';
+        missingPiece = '確定ハードCC / 高耐久イニシエーター';
+        additions = [
+          { championName: 'Nautilus (ノーチラス)', role: 'SUPPORT', archetype: '確定必中CC＆フロントライン', synergyReason: '必中R爆雷とQフックにより、敵キャリーを逃さず確定でキャッチ可能。' },
+          { championName: 'Leona (レオナ)', role: 'SUPPORT', archetype: '超高耐久オールインイニシエーター', synergyReason: 'Lv2から圧倒的耐久でタワーダイブを主導し、序盤からスノーボールを量産。' },
+          { championName: 'Rell (レル)', role: 'SUPPORT', archetype: '広域磁気誘導＆シールド破壊', synergyReason: '集団戦でのフラッシュR+Wコンボで敵5人を一網打尽にできる最強の破壊力。' },
+        ];
+      } else {
+        poolArchetype = 'バランス型サポートプール';
+        missingPiece = 'フックによる試合決定力 / 暗殺ローム';
+        additions = [
+          { championName: 'Thresh (スレッシュ)', role: 'SUPPORT', archetype: '万能フック＆ランタン救出', synergyReason: '攻防一体のスキルセットであらゆるマッチアップに柔軟対応可能。' },
+          { championName: 'Blitzcrank (ブリッツクランク)', role: 'SUPPORT', archetype: '1本フックでの試合破壊', synergyReason: 'オブジェクト前の視界外1フックで即座に数的有利を作り出せる。' },
+          { championName: 'Braum (ブラウム)', role: 'SUPPORT', archetype: '飛び道具完全遮断＆守護神', synergyReason: 'E不破の盾で敵主要スキルを吸い尽くし、ADCを完璧に生かし切る。' },
+        ];
+      }
+    } else if (normRole === 'JUNGLE') {
+      if (apRatioPercent >= 60) {
+        poolArchetype = 'APスケーリング ＆ ファーム偏重構成';
+        missingPiece = 'ADファイター / 序盤能動ガンク・エンゲージ役';
+        additions = [
+          { championName: 'Xin Zhao (シン・ジャオ)', role: 'JUNGLE', archetype: 'AD序盤アグレッシブ＆イニシエート', synergyReason: '苦手な15分キル関与率（KP@15）を自ら仕掛けて引き上げ、AP過多時の主砲として機能。' },
+          { championName: 'Jarvan IV (ジャーヴァンIV)', role: 'JUNGLE', archetype: 'ADエンゲージ＆ガンクマシン', synergyReason: 'Lv2〜3からの確定EQガンクとUlt天変地異で味方メイジの範囲スキルを最大限に活かす。' },
+          { championName: 'Sejuani (セジュアニ)', role: 'JUNGLE', archetype: '高耐久フロントライン＆確定CC', synergyReason: 'チームにタンクがいない際の安定ピック。被デス回避の高い立ち回りと最高峰のシナジー。' },
+        ];
+      } else if (adRatioPercent >= 60) {
+        poolArchetype = 'ADアサシン / ファイター偏重構成';
+        missingPiece = 'APメイジ / ゾーンコントロール役';
+        additions = [
+          { championName: 'Zyra (ザイラ)', role: 'JUNGLE', archetype: '超高速フルクリア＆ゾーン支配', synergyReason: '3:15秒最速フルクリアとチョークポイントでのE+Rによる集団戦壊滅力。' },
+          { championName: 'Lillia (リリア)', role: 'JUNGLE', archetype: '高機動APスケーリング＆広域睡眠', synergyReason: '圧倒的移動速度で敵タンクを割合ダメージで溶かし、R集団睡眠で逆転を生む。' },
+          { championName: 'Amumu (アムム)', role: 'JUNGLE', archetype: '確定ダブル包帯＆広域スタン', synergyReason: '序盤から確実なガンクを決め、ドラゴン前の集団戦をR一本で決定づける。' },
+        ];
+      } else {
+        poolArchetype = 'ハイブリッドジャングルプール';
+        missingPiece = '確定イニシエーター / スケーリングキャリー';
+        additions = [
+          { championName: 'Lee Sin (リー・シン)', role: 'JUNGLE', archetype: '序盤主導権＆インセクキック', synergyReason: '序盤3キャンプからの能動アクションでゲームを動かす王道JG。' },
+          { championName: 'Viego (ヴィエゴ)', role: 'JUNGLE', archetype: '憑依リセット＆ハイパーキャリー', synergyReason: '集団戦での1キルからの憑依無双で試合をキャリーする爆発力。' },
+          { championName: 'Nocturne (ノクターン)', role: 'JUNGLE', archetype: 'R暗転確定キル＆マップ支配', synergyReason: 'Lv6以降の確定キルガンクにより、確実にサイドレーンを崩壊させられる。' },
+        ];
+      }
+    } else if (normRole === 'BOTTOM' || normRole === 'BOT' || normRole === 'ADC') {
+      poolArchetype = 'マークスマン主軸構成';
+      missingPiece = '対アサシン自衛力 / ハイパースケーリング';
+      additions = [
+        { championName: 'Jinx (ジンクス)', role: 'ADC', archetype: 'ハイパースケーリング＆超加速', synergyReason: 'パッシブ超エキサイト発動時の集団戦掃討力で終盤を完全制圧。' },
+        { championName: 'Kai\'Sa (カイ＝サ)', role: 'ADC', archetype: '高機動ダイブ＆ハイブリッド火力', synergyReason: '味方のCCにRで即座に合わせ、孤立した敵を暗殺可能。' },
+        { championName: 'Ezreal (エズリアル)', role: 'ADC', archetype: '万能自衛ポーク＆長距離狙撃', synergyReason: 'Eブリンクによる絶対的生存力で、サポートがロームしても安全にファーム可能。' },
+      ];
+    } else if (normRole === 'MIDDLE' || normRole === 'MID') {
+      poolArchetype = apRatioPercent >= 60 ? 'APメイジ偏重構成' : 'ADアサシン / ファイター構成';
+      missingPiece = apRatioPercent >= 60 ? 'ADロームアサシン' : '集団戦コントロールメイジ';
+      additions = [
+        { championName: 'Ahri (アーリ)', role: 'MID', archetype: '万能ロームメイジ＆ピックアップ', synergyReason: '3段Rブリンクによる機動力でサイドレーンを破壊し、Eチャームで敵をキャッチ。' },
+        { championName: 'Orianna (オリアナ)', role: 'MID', archetype: '集団戦ゾーンコントロール', synergyReason: 'ボール配置による敵の進行拒否と、味方エンゲージに合わせるR衝撃波。' },
+        { championName: 'Zed (ゼド)', role: 'MID', archetype: '確定暗殺＆サイドスプリット', synergyReason: '敵ADC/メイジをR死の刻印で消滅させ、サイドプッシュで人数差を強要。' },
+      ];
+    } else {
+      poolArchetype = 'トップレーンプール';
+      missingPiece = '高耐久フロントライン / スプリットデュエリスト';
+      additions = [
+        { championName: 'Renekton (レネクトン)', role: 'TOP', archetype: '序盤レーン圧倒ファイター', synergyReason: '強化Wスタンによる序盤のトレード完勝と、タワーダイブ主導力。' },
+        { championName: 'Aatrox (エートロックス)', role: 'TOP', archetype: '集団戦前線破壊＆大回復', synergyReason: 'Q3段先端ヒットとR世界の終わりによる集団戦フロントラインの崩壊。' },
+        { championName: 'Ornn (オーン)', role: 'TOP', archetype: '味方アイテム強化＆広域エンゲージ', synergyReason: '味方の神話アイテムを無料アップグレードし、超長距離Rで集団戦を制覇。' },
+      ];
+    }
+
+    return {
+      apRatioPercent,
+      adRatioPercent,
+      tankRatioPercent,
+      poolArchetype,
+      missingPiece,
+      recommendedAdditions: additions,
+    };
+  })();
 
   // 3. 心理DNA（MBTIの4軸パーセントを実測データから完全動的算出）
   const safetyScore = Math.min(96, Math.max(20, Math.round(100 - avgDeathsOverall * 12)));
@@ -1208,10 +1281,10 @@ export function calculateRealSessionAnalytics(
 
   const goldEfficiency: GoldEfficiency = {
     damagePerGoldRating: `${dmgRating} (1Gあたり${dmgPerGold}ダメージ)`,
-    goldStashRating: csPerMinActual >= 7.0 ? 'やや抱え込み傾向 (1300G超を所持したまま長居する癖あり)' : '適正リコール循環',
+    goldStashRating: isSup ? '視界アイテム＆ピンクワード優先循環' : (csPerMinActual >= 7.0 ? 'やや抱え込み傾向 (1300G超を所持したまま長居する癖あり)' : '適正リコール循環'),
     spikeUtilizationPercent: Math.min(92, Math.max(55, Math.round(60 + kdaActual * 2.5))),
     efficiencyVerdict: isSup
-      ? `視界アイテムとサポート神話・コアアイテムの購入タイミングが勝率に直結しています。1リコール毎のピンクワード補充を徹底しましょう。`
+      ? `視界アイテムとサポートコアアイテムの購入タイミングが勝率に直結しています。1リコール毎のピンクワード2本補充を徹底しましょう。`
       : `ファームで獲得したゴールドのアイテム変換は順調です（1Gあたり${dmgPerGold}ダメージ）。コア完成直前のリコールでパワースパイクを確定させると勝率が跳ね上がります。`,
   };
 
@@ -1228,13 +1301,43 @@ export function calculateRealSessionAnalytics(
       : 'ビハインド時は味方と固まって敵の甘えた孤立キャリーを1体ピックアップし、バロンを阻止してレイトゲームに持ち込むのが最大の勝ち筋です。',
   };
 
-  const cognitiveBiases: CognitiveBiases = {
-    recallHabitBias: isSup
-      ? '【視界設置過信バイアス】「もう1箇所だけワードを刺してから帰ろう」と敵陣深くに入った瞬間にキャッチされる傾向。'
-      : '【リコール遅延バイアス】「あと1ウェーブ/キャンプ掘ってから帰ろう」と欲張った瞬間に敵に視界を取られる傾向。',
-    mapAttentionBias: '【特定レーン偏重バイアス】自身から遠い反対サイドの孤立フリーズ状況を見落としがち。',
-    actionPrescription: roleConfig.defaultActionGuideline,
-  };
+  // 7. 認知バイアス（ロール別特化）
+  const cognitiveBiases: CognitiveBiases = (() => {
+    const normRole = (detectedRole || 'JUNGLE').toUpperCase();
+    if (normRole === 'UTILITY' || normRole === 'SUPPORT') {
+      return {
+        recallHabitBias: '【視界設置過信バイアス】「もう1箇所だけワードを刺してから帰ろう」と単独で敵陣深くに入った瞬間にキャッチされる傾向。',
+        mapAttentionBias: '【ADC依存バイアス】BOTレーンに張り付きすぎ、MIDの孤立やヘラルド/グラブ戦への合流を見落としがち。',
+        actionPrescription: 'オブジェクト湧き60秒前にリコールしてピンクワードを補充し、敵より先に視界ラインを押し上げること。',
+      };
+    }
+    if (normRole === 'JUNGLE') {
+      return {
+        recallHabitBias: '【リコール遅延バイアス】「あと1キャンプ掘ってから帰ろう」と1300G以上抱え込み、パワースパイクが遅れる傾向。',
+        mapAttentionBias: '【対角アクション放棄バイアス】敵JGが反対サイドでガンクを決めた際に対角の敵キャンプ奪取や逆オブジェクトを逃しがち。',
+        actionPrescription: '3:30フルクリア後に即リコールせず、敵ラプター裏へディープワードを刺してプッシュレーンへのカウンター介入を挟むこと。',
+      };
+    }
+    if (normRole === 'BOTTOM' || normRole === 'BOT' || normRole === 'ADC') {
+      return {
+        recallHabitBias: '【孤立サイドファーム欲張りバイアス】「もう1ウェーブ食える」と視界のないサイドを押し、敵アサシンに捕殺される傾向。',
+        mapAttentionBias: '【トンネルビジョンバイアス】敵前衛との殴り合いに夢中になり、側面から忍び寄る敵フックやフランクを見落としがち。',
+        actionPrescription: '集団戦では「最も近い安全な敵」から確実に攻撃し、視界のないサイドファームで単独死しないこと。',
+      };
+    }
+    if (normRole === 'MIDDLE' || normRole === 'MID') {
+      return {
+        recallHabitBias: '【レーン居座りバイアス】ウェーブをプッシュした後にタワー下で待機し、川の視界確保やサイドロームを逃す傾向。',
+        mapAttentionBias: '【敵JG位置無警戒バイアス】敵JGの位置がマップに見えていない状態で不用意に相手タワー下へハラスしに行く傾向。',
+        actionPrescription: 'ウェーブを押し込んだ直後に留まらず、川の視界確保またはBOT/TOPへのローム圧力をかけること。',
+      };
+    }
+    return {
+      recallHabitBias: '【TP抱え落ちバイアス】テレポートを温存しすぎてBOTやドラゴンの重要集団戦に合流できない傾向。',
+      mapAttentionBias: '【スプリット深追いバイアス】敵のマップ消失を確認せずサイドレーンを押し続け、2〜3人に囲まれる傾向。',
+      actionPrescription: 'スプリットプッシュ時は敵のマップ消失を確認して引き際を見極め、オブジェクト湧きにTPを温存すること。',
+    };
+  })();
 
   const targetRankGap = calculateTargetRankGap(
     {

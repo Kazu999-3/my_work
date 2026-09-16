@@ -15,6 +15,9 @@ export interface ChampionKitTactic {
 }
 
 export const CHAMPION_TACTICS_DB: { [champName: string]: ChampionKitTactic } = {
+  // ----------------------------------------------------
+  // 🛡️ サポート (SUPPORT)
+  // ----------------------------------------------------
   Rell: {
     powerSpikes: {
       earlyLvl1to5: 'Lv2先行時のW（フェロマンシー: 装着）飛び込みからのEスタン連撃。Qによる敵シールド破壊で序盤2v2を制圧。',
@@ -32,42 +35,6 @@ export const CHAMPION_TACTICS_DB: { [champName: string]: ChampionKitTactic } = {
       { enemy: 'Janna', winRate: 39, counterPlay: 'Q竜巻とRモンスーンでエンゲージを拒否されるため、フラッシュRで即座に拘束。' },
     ],
     tacticsGuide: '【エメラルド到達の鍵】W着地後の足の遅さを意識し、味方のフォローが届く距離でのみ仕掛けてください。敵シールドはQで即座に破壊可能です。',
-  },
-  Shyvana: {
-    powerSpikes: {
-      earlyLvl1to5: '序盤はタイマンを避け、Q-Wの高速ジャングルクリアで最速Lv6を目指す。',
-      mid1to2Core: 'ショウジン/サンファイア完成時、Lv6ドラゴンフォーム（R）での大ダメージ強化Eブレスとオブジェクトバースト。',
-      late3CorePlus: '集団戦前の強化Eポークで敵HPを削り、ドラゴンフォーム変身（R）で前線を焼き尽くす。',
-    },
-    favoredMatchups: [
-      { enemy: 'Amumu', winRate: 66, reason: 'ファーム速度差と序盤のカウンタージャングルで圧倒し、ドラゴンを独占可能。' },
-      { enemy: 'Sejuani', winRate: 63, reason: '高いDPSと機動力で接近を拒絶し、リバー主導権を奪取可能。' },
-      { enemy: 'Zac', winRate: 61, reason: 'ザックの序盤ガンクをカウンターし、ファーム差でレベルリードを広げられる。' },
-    ],
-    hardMatchups: [
-      { enemy: 'Nocturne', winRate: 34, counterPlay: 'ノクターンのUlt暗転時は味方と固まり、怒りゲージが溜まるまで無理なタイマンを避ける。' },
-      { enemy: 'XinZhao', winRate: 37, counterPlay: '序盤の3キャンプ侵入を警戒し、逆サイドフルクリアで安全にLv6を目指す。' },
-      { enemy: 'Graves', winRate: 39, counterPlay: '煙幕とカイトで引き撃ちされるため、狭いジャングル内でドラゴンフォームEを当てる。' },
-    ],
-    tacticsGuide: '【エメラルド到達の鍵】怒りゲージが最大でない時は集団戦を避け、ファームで素早く怒りを溜めてドラゴンフォーム（R）を確定させてから仕掛けてください。',
-  },
-  Zyra: {
-    powerSpikes: {
-      earlyLvl1to5: '種（W）+ Q/Eによる遠距離植物ハラスと、リバーへの種視界設置によるガンク察知。',
-      mid1to2Core: 'ライアンドリー/シャドウフレイム完成時、チョークポイントでのEスネア + R（絞首の蔓）の壊滅的ゾーン展開。',
-      late3CorePlus: '視界のないブッシュからのアンブッシュワンコンボと、バロン・ドラゴン前の植物トラップ網。',
-    },
-    favoredMatchups: [
-      { enemy: 'Sejuani', winRate: 67, reason: '植物でスキルショットを遮断し、遠距離からの割合ダメージで接近を完封。' },
-      { enemy: 'Amumu', winRate: 64, reason: '包帯を植物でブロックし、ファーム速度差とポークで圧倒。' },
-      { enemy: 'Rammus', winRate: 62, reason: 'ラムスのパワーボールを植物で止め、魔法ダメージで防具を貫通。' },
-    ],
-    hardMatchups: [
-      { enemy: 'Nocturne', winRate: 33, counterPlay: 'ノクターンのR暗転時に即座に足元へE+Rを置き、ゾーニャの砂時計を早期購入する。' },
-      { enemy: 'KhaZix', winRate: 36, counterPlay: '単独行動を徹底的に避け、植物で孤立判定を消しながら味方と進軍する。' },
-      { enemy: 'Zed', winRate: 38, counterPlay: 'ゼドのR着地位置にEを重ね、影の追撃をフラッシュで拒否する。' },
-    ],
-    tacticsGuide: '【エメラルド到達の鍵】視界のないブッシュへのフェイスチェックを絶対に避け、必ずW種とQで安全確認を行ってください。',
   },
   Leona: {
     powerSpikes: {
@@ -104,24 +71,6 @@ export const CHAMPION_TACTICS_DB: { [champName: string]: ChampionKitTactic } = {
       { enemy: 'Brand', winRate: 40, counterPlay: '遠距離ポークで削られるため、Lv2・Lv3の早い段階でオールインする。' },
     ],
     tacticsGuide: '【エメラルド到達の鍵】フック（Q）を構えてプレッシャーをかけるだけで敵の動きを制限できます。ランタンは味方の脱出用に温存しましょう。',
-  },
-  Lillia: {
-    powerSpikes: {
-      earlyLvl1to5: 'Q移動速度スタックを維持した高速フルクリアと、カウンターガンク。',
-      mid1to2Core: 'ライアンドリー + リフトメーカー完成時、E遠距離ヒットからの広域R（子守唄）集団眠り。',
-      late3CorePlus: '圧倒的な移動速度でのスキル回避と、集団戦全体への持続割合ダメージ。',
-    },
-    favoredMatchups: [
-      { enemy: 'Skarner', winRate: 67, reason: '移動速度で引き撃ちし、スカーナーの接近を完全に拒絶可能。' },
-      { enemy: 'Sejuani', winRate: 65, reason: 'セジュアニのCCを移動速度で回避し、割合ダメージで溶かす。' },
-      { enemy: 'Amumu', winRate: 63, reason: 'アムムの包帯を避けながらQで削り、集団戦Rで上書き可能。' },
-    ],
-    hardMatchups: [
-      { enemy: 'Nocturne', winRate: 34, counterPlay: 'ノクターンのスペルシールドでR睡眠を防がれるため、Qでシールドを剥がしてからRを押す。' },
-      { enemy: 'LeeSin', winRate: 37, counterPlay: '序盤のQ1直撃からの侵入を警戒し、視界を確保してタイマンを避ける。' },
-      { enemy: 'KhaZix', winRate: 38, counterPlay: '孤立状態で即死しないよう、味方キャンプ側でファームする。' },
-    ],
-    tacticsGuide: '【エメラルド到達の鍵】Qの外周ヒット（確定ダメージ）を常に狙い、スタックが切れる前に次のキャンプや敵に触れる意識を持ってください。',
   },
   Nautilus: {
     powerSpikes: {
@@ -177,6 +126,96 @@ export const CHAMPION_TACTICS_DB: { [champName: string]: ChampionKitTactic } = {
     ],
     tacticsGuide: '【エメラルド到達の鍵】フックを撃たずに構えて歩き回るだけで敵ADCはファームできません。敵のステップを見てから確実にQを放ちましょう。',
   },
+  Pyke: {
+    powerSpikes: {
+      earlyLvl1to5: 'Lv2のQ（ボーンスキューア）+ E（ファントムアンダーテイカー）による先制キルと、パッシブ灰海の仇敵での高速HP回復。',
+      mid1to2Core: '妖夢 / 脅威アイテム完成時、W潜航からの高速ロームとR（水底の急襲）処刑によるゴールド倍増スノーボール。',
+      late3CorePlus: '視界外からのアンブッシュ処刑R連鎖と、フックによるオブジェクト前の人数差構築。',
+    },
+    favoredMatchups: [
+      { enemy: 'Yuumi', winRate: 68, reason: 'パイクの高速ロームにユーミが追従できず、マップ全体を破壊可能。' },
+      { enemy: 'Senna', winRate: 65, reason: '薄い耐久力をQ-Eコンボで瞬殺し、Lv1からレーンを支配。' },
+      { enemy: 'Sona', winRate: 64, reason: 'Qを当てるだけで処刑ラインまで削り切れる。' },
+    ],
+    hardMatchups: [
+      { enemy: 'Morgana', winRate: 34, counterPlay: 'ブラックシールドでQとEを弾かれるため、シールドのない他レーンへロームする。' },
+      { enemy: 'Lulu', winRate: 36, counterPlay: 'ルルのR最大HP増加で処刑ラインを外されるため、ルルのUlt使用後にRを切る。' },
+      { enemy: 'Soraka', winRate: 38, counterPlay: 'ソラカのEサイレンスゾーンでE離脱を封じられるため、ソラカを最優先でキルする。' },
+    ],
+    tacticsGuide: '【エメラルド到達の鍵】レーンに留まらず、Wとオムニストーンの移動速度を活かしてMIDや敵JGへ積極的にロームしてゴールド差を広げてください。',
+  },
+  Karma: {
+    powerSpikes: {
+      earlyLvl1to5: 'Lv1からのマントラQ（魂の盟約）による超強力ハラスとプッシュ主導権。Wインナーフレイムでのガンク合わせ。',
+      mid1to2Core: 'シュレリア / ヘリアの残響完成時、マントラE（抵抗の誓い）によるチーム全体のシールド＆超加速エンゲージ。',
+      late3CorePlus: '集団戦での連続マントラEによる味方全体の耐久底上げと、Qポークによるディスエンゲージ。',
+    },
+    favoredMatchups: [
+      { enemy: 'Thresh', winRate: 64, reason: '長射程RQポークで寄せ付けず、フックされてもREシールドでいなせる。' },
+      { enemy: 'Braum', winRate: 63, reason: 'ブラウムの盾の上から範囲ポークで削り、接近を拒絶。' },
+      { enemy: 'Alistar', winRate: 61, reason: 'アリスターの飛び込みをWスネアとE加速で完封。' },
+    ],
+    hardMatchups: [
+      { enemy: 'Blitzcrank', winRate: 35, counterPlay: 'フックを食らうとREを貼る前に即死するため、ブッシュ視界を徹底管理。' },
+      { enemy: 'Nautilus', winRate: 38, counterPlay: 'ノーチラスの必中Rで止められるため、長射程を維持してポークに専念する。' },
+      { enemy: 'Pyke', winRate: 39, counterPlay: 'パイクの急襲と処刑Rに対してシールドが機能しにくいため、Wスネアで距離を取る。' },
+    ],
+    tacticsGuide: '【エメラルド到達の鍵】中盤以降はRQではなく「マントラE（広域シールド＆加速）」をメインに使い、集団戦のイニシエートとピールを支えてください。',
+  },
+  Braum: {
+    powerSpikes: {
+      earlyLvl1to5: 'パッシブ（震天動地）4スタックスタンによるLv1インベード/Lv2オールイン拒否。E不破の盾での敵スキル完全遮断。',
+      mid1to2Core: 'ソーンメイル / 騎士の誓い完成時、W味方飛びつきからのE展開 + R氷河の裂溝カウンターエンゲージ。',
+      late3CorePlus: '集団戦で敵の主要飛び道具（オーンUlt、ナミUlt、メイジスキル）をEで消滅させ、ADCを鉄壁防衛。',
+    },
+    favoredMatchups: [
+      { enemy: 'Nautilus', winRate: 65, reason: 'ノーチラスのフックをE盾で吸い、味方ADCへの被害をゼロにしてスタン反撃可能。' },
+      { enemy: 'Leona', winRate: 63, reason: 'レオナのエンゲージに対して即座にパッシブスタンを重ねて返り討ち。' },
+      { enemy: 'Thresh', winRate: 60, reason: 'スレッシュのフックをEで防ぎ、レーン戦を安定化。' },
+    ],
+    hardMatchups: [
+      { enemy: 'Zyra', winRate: 34, counterPlay: '植物の足元攻撃はE盾で防ぎきれず削られるため、Lv6オールインまで耐える。' },
+      { enemy: 'Karma', winRate: 37, counterPlay: 'マントラQの長距離ポークで削られるため、ミニオンウェーブを押し付けられないよう管理。' },
+      { enemy: 'Morgana', winRate: 39, counterPlay: 'ブラックシールドでパッシブスタンを防がれるため、シールドのない対象を狙う。' },
+    ],
+    tacticsGuide: '【エメラルド到達の鍵】自分から突っ込まず、敵が仕掛けてきた瞬間に味方キャリーへWで飛びつき、Eの盾を敵に向けて開いてください。',
+  },
+  Alistar: {
+    powerSpikes: {
+      earlyLvl1to5: 'Lv2先行でのW（頭突き）+ Q（粉砕）確定ノックアップコンボと、Eスタン連撃。',
+      mid1to2Core: 'ソーンメイル / 騎士の誓い完成時、R（不屈の意志）55〜75%被ダメカットを活かしたノーリスクタワーダイブ。',
+      late3CorePlus: '集団戦での敵キャリーのフラッシュイン粉砕、または飛び込んできた敵前衛の頭突き吹き飛ばしピール。',
+    },
+    favoredMatchups: [
+      { enemy: 'Blitzcrank', winRate: 66, reason: '引っ張られた瞬間に敵ADCへWQコンボを叩き込み、逆転キルを奪取可能。' },
+      { enemy: 'Leona', winRate: 62, reason: 'レオナのE飛び込みをQ粉砕で中断させ、味方ADCを守り切れる。' },
+      { enemy: 'Yuumi', winRate: 61, reason: 'R耐久ダイブでユーミペアをタワー下ごと破壊可能。' },
+    ],
+    hardMatchups: [
+      { enemy: 'Morgana', winRate: 33, counterPlay: 'ブラックシールドでWQを完全無力化されるため、他レーンへロームして差をつける。' },
+      { enemy: 'Janna', winRate: 36, counterPlay: 'ジャンナのQ竜巻でW突進を弾かれるため、フラッシュQから入る。' },
+      { enemy: 'Lulu', winRate: 38, counterPlay: 'W飛び込みをルルの変身で止められるため、ルルのWが落ちてからエンゲージ。' },
+    ],
+    tacticsGuide: '【エメラルド到達の鍵】Lv6以降はRのダメージ軽減を使って敵タワー下への積極的なダイブを仕掛け、BOTレーンを早期破壊してください。',
+  },
+  Morgana: {
+    powerSpikes: {
+      earlyLvl1to5: 'Q（ダークバインド）3秒拘束と、E（ブラックシールド）による敵フック・CC完全無効化。',
+      mid1to2Core: 'ゾーニャの砂時計完成時、フラッシュ + R（魂の足枷）+ ゾーニャ発動による不可避の集団スタン。',
+      late3CorePlus: '狭いチョークポイントでのQキャッチと、味方ハイパーキャリーへのEブラックシールド付与。',
+    },
+    favoredMatchups: [
+      { enemy: 'Blitzcrank', winRate: 69, reason: 'Eブラックシールドを貼るだけでブリッツのフックを100%完封可能。' },
+      { enemy: 'Nautilus', winRate: 67, reason: 'ノーチラスのQ・Rを両方ともブラックシールドで完全無力化。' },
+      { enemy: 'Thresh', winRate: 65, reason: 'スレッシュのフックとランタン引き込みを完封。' },
+    ],
+    hardMatchups: [
+      { enemy: 'Karma', winRate: 35, counterPlay: 'マントラQの魔法ダメージでブラックシールドを即破壊されるため、ポークを避ける。' },
+      { enemy: 'Zyra', winRate: 36, counterPlay: '植物の継続ダメージでシールドが剥がされるため、Lv6ゾーニャオールインを狙う。' },
+      { enemy: 'Senna', winRate: 38, counterPlay: '物理通常攻撃で削られるため、Qダークバインドを確実に当てる。' },
+    ],
+    tacticsGuide: '【エメラルド到達の鍵】Eブラックシールドは適当に使わず、敵の主要CC（フック・スタン）の弾道が見えた瞬間に反応して貼ってください。',
+  },
   Rakan: {
     powerSpikes: {
       earlyLvl1to5: 'Lv2/Lv3でのW（ノックアップ）+ E（味方へ離脱）によるノーリスクのショートトレード。',
@@ -195,6 +234,310 @@ export const CHAMPION_TACTICS_DB: { [champName: string]: ChampionKitTactic } = {
     ],
     tacticsGuide: '【エメラルド到達の鍵】R（魅了）を発動した状態で敵を駆け抜けて魅了状態にし、その後に確実にW（ノックアップ）を重ねてください。',
   },
+
+  // ----------------------------------------------------
+  // 🌲 ジャングル (JUNGLE)
+  // ----------------------------------------------------
+  LeeSin: {
+    powerSpikes: {
+      earlyLvl1to5: 'Lv2/Lv3でのQ（響掌/共鳴撃）+ W（防護/鉄の意志）による圧倒的序盤タイマン力とインベード。',
+      mid1to2Core: '赤月 / 赤天完成時、ワードジャンプ + R（龍の怒り）フラッシュによる敵キャリーの味方側インセクキック。',
+      late3CorePlus: '集団戦での敵フロントラインを蹴り飛ばして敵後衛を巻き込む広域ノックアップコンボ。',
+    },
+    favoredMatchups: [
+      { enemy: 'Amumu', winRate: 67, reason: '序盤の3キャンプ侵入でアムムをキルし、ジャングル内を完全に支配可能。' },
+      { enemy: 'Karthus', winRate: 66, reason: 'カーサスの薄い序盤耐久を突いて連続キルを奪取可能。' },
+      { enemy: 'Sejuani', winRate: 63, reason: '機動力と序盤ダメージ差でリバー主導権を完全掌握。' },
+    ],
+    hardMatchups: [
+      { enemy: 'Nocturne', winRate: 34, counterPlay: 'ノクターンのスペルシールドでQ2やRを無効化されるため、Eでシールドを剥がす。' },
+      { enemy: 'Poppy', winRate: 36, counterPlay: 'ポッピーのWでQ2突進を止められるため、Wが切れるまで距離を保つ。' },
+      { enemy: 'Udyr', winRate: 38, counterPlay: 'ウディアの高いタイマン耐久に殴り負けるため、ファーム勝負を避けガンクで差をつける。' },
+    ],
+    tacticsGuide: '【エメラルド到達の鍵】Qを当てても無謀に突っ込まず、Wワード離脱をセットで考えて安全にインセクキック（R）を決めてください。',
+  },
+  Viego: {
+    powerSpikes: {
+      earlyLvl1to5: 'Q（滅びの王剣）とW（霊の波濤）による高速クリアと、E（黒の霧）迷彩を利用したガンク。',
+      mid1to2Core: 'クラーケンスレイヤー / トリニティフォース完成時、パッシブ（君主の支配）憑依連鎖による集団戦壊滅力。',
+      late3CorePlus: '1体キルからの連続憑依 + R（痛魂の支配）リセットによる無敵・連続処刑無双。',
+    },
+    favoredMatchups: [
+      { enemy: 'Sejuani', winRate: 65, reason: 'セジュアニを憑依した際の高耐久CCと割合ダメージで集団戦を制圧。' },
+      { enemy: 'Amumu', winRate: 63, reason: '序盤タイマンで圧倒し、集団戦でもアムム憑依から広域Ultを再発動可能。' },
+      { enemy: 'Zac', winRate: 61, reason: 'ザックのパッシブ分裂体をQとAAで高速処理可能。' },
+    ],
+    hardMatchups: [
+      { enemy: 'Rammus', winRate: 33, counterPlay: 'ラムスのトゲ鎧とタウントで自滅するため、クラーケンより前に防御貫通を積む。' },
+      { enemy: 'Nocturne', winRate: 36, counterPlay: '暗転からのタイマンで押し切られるため、Eの霧の中で味方合流を待つ。' },
+      { enemy: 'KhaZix', winRate: 38, counterPlay: '孤立Qのバーストで憑依前に即死するため、味方と固まって行動する。' },
+    ],
+    tacticsGuide: '【エメラルド到達の鍵】集団戦で真っ先に突っ込まず、味方が削った「瀕死の敵」を最初にキルして即座に憑依し、無敵時間でリセットを繋げてください。',
+  },
+  Nocturne: {
+    powerSpikes: {
+      earlyLvl1to5: 'Q（黄昏の襲撃）攻撃力バフとWスペルシールドによる高速フルクリア。E（底知れぬ恐怖）確定恐怖。',
+      mid1to2Core: 'ストライドブレイカー / ヘクスプレート完成時、Lv6以降のR（パラノイア）暗転からの確定キルガンク。',
+      late3CorePlus: '視界外からのR暗転による敵孤立キャリーのピンポイント暗殺と、ストライド広域スロー。',
+    },
+    favoredMatchups: [
+      { enemy: 'Karthus', winRate: 68, reason: 'カーサスのUltをWスペルシールドで無効化し、R暗転で確実に処刑可能。' },
+      { enemy: 'Shyvana', winRate: 66, reason: 'シヴァーナのLv6前にRで各レーンを破壊し、ゲームを終わらせられる。' },
+      { enemy: 'Lillia', winRate: 64, reason: 'リリアのR睡眠をWシールドで防ぎ、暗転急襲で瞬殺可能。' },
+    ],
+    hardMatchups: [
+      { enemy: 'Rammus', winRate: 34, counterPlay: '突進をタウントで止められ反射ダメで削られるため、ラムス以外にRを撃つ。' },
+      { enemy: 'Jax', winRate: 37, counterPlay: 'ジャックスのEカウンターストライクで通常攻撃が無効化されるため、Eが落ちてから入る。' },
+      { enemy: 'Sejuani', winRate: 39, counterPlay: '高い耐久とCCで耐えられるため、敵後衛メイジ/ADCを狙う。' },
+    ],
+    tacticsGuide: '【エメラルド到達の鍵】R（パラノイア）が上がるたびに確実にキルが取れるレーン（特にBOT）へ飛び込み、CD中は効率的にフルクリアを回してください。',
+  },
+  Shyvana: {
+    powerSpikes: {
+      earlyLvl1to5: '序盤はタイマンを避け、Q-Wの高速ジャングルクリアで最速Lv6を目指す。',
+      mid1to2Core: 'ショウジン/サンファイア完成時、Lv6ドラゴンフォーム（R）での大ダメージ強化Eブレスとオブジェクトバースト。',
+      late3CorePlus: '集団戦前の強化Eポークで敵HPを削り、ドラゴンフォーム変身（R）で前線を焼き尽くす。',
+    },
+    favoredMatchups: [
+      { enemy: 'Amumu', winRate: 66, reason: 'ファーム速度差と序盤のカウンタージャングルで圧倒し、ドラゴンを独占可能。' },
+      { enemy: 'Sejuani', winRate: 63, reason: '高いDPSと機動力で接近を拒絶し、リバー主導権を奪取可能。' },
+      { enemy: 'Zac', winRate: 61, reason: 'ザックの序盤ガンクをカウンターし、ファーム差でレベルリードを広げられる。' },
+    ],
+    hardMatchups: [
+      { enemy: 'Nocturne', winRate: 34, counterPlay: 'ノクターンのUlt暗転時は味方と固まり、怒りゲージが溜まるまで無理なタイマンを避ける。' },
+      { enemy: 'XinZhao', winRate: 37, counterPlay: '序盤の3キャンプ侵入を警戒し、逆サイドフルクリアで安全にLv6を目指す。' },
+      { enemy: 'Graves', winRate: 39, counterPlay: '煙幕とカイトで引き撃ちされるため、狭いジャングル内でドラゴンフォームEを当てる。' },
+    ],
+    tacticsGuide: '【エメラルド到達の鍵】怒りゲージが最大でない時は集団戦を避け、ファームで素早く怒りを溜めてドラゴンフォーム（R）を確定させてから仕掛けてください。',
+  },
+  Zyra: {
+    powerSpikes: {
+      earlyLvl1to5: '種（W）+ Q/Eによる超高速ジャングルフルクリアと、リバーへの種視界設置によるガンク察知。',
+      mid1to2Core: 'ライアンドリー/シャドウフレイム完成時、チョークポイントでのEスネア + R（絞首の蔓）の壊滅的ゾーン展開。',
+      late3CorePlus: '視界のないブッシュからのアンブッシュワンコンボと、バロン・ドラゴン前の植物トラップ網。',
+    },
+    favoredMatchups: [
+      { enemy: 'Sejuani', winRate: 67, reason: '植物でスキルショットを遮断し、遠距離からの割合ダメージで接近を完封。' },
+      { enemy: 'Amumu', winRate: 64, reason: '包帯を植物でブロックし、ファーム速度差とポークで圧倒。' },
+      { enemy: 'Rammus', winRate: 62, reason: 'ラムスのパワーボールを植物で止め、魔法ダメージで防具を貫通。' },
+    ],
+    hardMatchups: [
+      { enemy: 'Nocturne', winRate: 33, counterPlay: 'ノクターンのR暗転時に即座に足元へE+Rを置き、ゾーニャの砂時計を早期購入する。' },
+      { enemy: 'KhaZix', winRate: 36, counterPlay: '単独行動を徹底的に避け、植物で孤立判定を消しながら味方と進軍する。' },
+      { enemy: 'LeeSin', winRate: 38, counterPlay: 'リー・シンのQ1直撃に植物を盾として挟み、飛び込みを拒否する。' },
+    ],
+    tacticsGuide: '【エメラルド到達の鍵】視界のないブッシュへのフェイスチェックを絶対に避け、必ずW種とQで安全確認を行ってください。',
+  },
+  JarvanIV: {
+    powerSpikes: {
+      earlyLvl1to5: 'Lv2先行でのE（デマーシアの旗）+ Q（ドラゴンストライク）ノックアップガンク。パッシブ割合ダメージ。',
+      mid1to2Core: '赤月 / ショウジン完成時、EQフラッシュ + R（天変地異）による敵フラッシュ強要と囲い込み。',
+      late3CorePlus: '集団戦での敵バックライン拘束と、味方メイジ・ADCの範囲スキルとの黄金コンボ。',
+    },
+    favoredMatchups: [
+      { enemy: 'Karthus', winRate: 68, reason: 'R天変地異で閉じ込め、フラッシュのないカーサスを確定キル。' },
+      { enemy: 'Lillia', winRate: 65, reason: 'リリアの足の速さをRの壁で封じ、EQコンボで瞬殺。' },
+      { enemy: 'Kindred', winRate: 62, reason: 'キンドレッドのUlt発動中にEQで弾き出し、処刑可能。' },
+    ],
+    hardMatchups: [
+      { enemy: 'Poppy', winRate: 34, counterPlay: 'ポッピーのWでEQ突進が弾かれるため、ポッピーのWが落ちてから入る。' },
+      { enemy: 'Viego', winRate: 37, counterPlay: 'Rで閉じ込めた後にタイマンで削り負けるため、味方と一緒にフォーカスする。' },
+      { enemy: 'Nocturne', winRate: 39, counterPlay: 'WシールドでEQノックアップを防がれるため、Wを剥がしてから仕掛ける。' },
+    ],
+    tacticsGuide: '【エメラルド到達の鍵】Lv2/Lv3でフラッシュを持たないレーン（MIDやBOT）へ即座にEQガンクを仕掛け、序盤からスノーボールしてください。',
+  },
+  Lillia: {
+    powerSpikes: {
+      earlyLvl1to5: 'Q移動速度スタックを維持した高速フルクリアと、カウンターガンク。',
+      mid1to2Core: 'ライアンドリー + リフトメーカー完成時、E遠距離ヒットからの広域R（子守唄）集団眠り。',
+      late3CorePlus: '圧倒的な移動速度でのスキル回避と、集団戦全体への持続割合ダメージ。',
+    },
+    favoredMatchups: [
+      { enemy: 'Skarner', winRate: 67, reason: '移動速度で引き撃ちし、スカーナーの接近を完全に拒絶可能。' },
+      { enemy: 'Sejuani', winRate: 65, reason: 'セジュアニのCCを移動速度で回避し、割合ダメージで溶かす。' },
+      { enemy: 'Amumu', winRate: 63, reason: 'アムムの包帯を避けながらQで削り、集団戦Rで上書き可能。' },
+    ],
+    hardMatchups: [
+      { enemy: 'Nocturne', winRate: 34, counterPlay: 'ノクターンのスペルシールドでR睡眠を防がれるため、Qでシールドを剥がしてからRを押す。' },
+      { enemy: 'LeeSin', winRate: 37, counterPlay: '序盤のQ1直撃からの侵入を警戒し、視界を確保してタイマンを避ける。' },
+      { enemy: 'KhaZix', winRate: 38, counterPlay: '孤立状態で即死しないよう、味方キャンプ側でファームする。' },
+    ],
+    tacticsGuide: '【エメラルド到達の鍵】Qの外周ヒット（確定ダメージ）を常に狙い、スタックが切れる前に次のキャンプや敵に触れる意識を持ってください。',
+  },
+  XinZhao: {
+    powerSpikes: {
+      earlyLvl1to5: 'Lv2/Lv3でのE（無双突撃）+ Q（三爪撃）3連撃ノックアップによる最強クラスの序盤タイマン力。',
+      mid1to2Core: '赤天 / タイタンハイドラ完成時、R（三日月の一閃）遠距離無敵フィールドを展開した集団戦前線突破。',
+      late3CorePlus: '敵主要キャリーへのダイブと、R遠距離防御による敵ADC/メイジの攻撃遮断。',
+    },
+    favoredMatchups: [
+      { enemy: 'Karthus', winRate: 69, reason: '序盤インベードで完封し、カーサスのUltもRの範囲外無敵で遮断可能。' },
+      { enemy: 'Shyvana', winRate: 66, reason: 'シヴァーナのLv6前にジャングル内を荒らし尽くしてゲームを崩壊させられる。' },
+      { enemy: 'Amumu', winRate: 63, reason: '序盤タイマンで圧倒し、アムムのガンクをカウンター可能。' },
+    ],
+    hardMatchups: [
+      { enemy: 'Jax', winRate: 34, counterPlay: 'ジャックスのEで三爪撃（Q）が全て無効化されるため、E使用中はE突進しない。' },
+      { enemy: 'Rammus', winRate: 36, counterPlay: '反射ダメージで自滅するため、防具貫通と魔法耐性を揃える。' },
+      { enemy: 'Poppy', winRate: 38, counterPlay: 'E突進をポッピーのWで止められるため、ポッピーを避けてガンクする。' },
+    ],
+    tacticsGuide: '【エメラルド到達の鍵】序盤3キャンプクリア後に躊躇せずガンクまたは敵ジャングル侵入を行い、最初の5分で試合の主導権を握ってください。',
+  },
+
+  // ----------------------------------------------------
+  // 🏹 ボット・ADC (BOTTOM / ADC)
+  // ----------------------------------------------------
+  Jinx: {
+    powerSpikes: {
+      earlyLvl1to5: 'Q（スイッチ！）ロケットランチャーでの遠距離ハラスと、E（パックンチョッパー）での味方CC合わせ。',
+      mid1to2Core: 'クラーケンスレイヤー / ルーナンハリケーン完成時、R（超究極死のロケット！）でのマップ全体キルスナイプ。',
+      late3CorePlus: '集団戦で1キル/アシスト獲得時のパッシブ（超エキサイト！）超加速による敵全滅スノーボール。',
+    },
+    favoredMatchups: [
+      { enemy: 'Aphelios', winRate: 65, reason: '超長射程ロケットで安全圏からアフェリオスを圧倒可能。' },
+      { enemy: 'Zeri', winRate: 64, reason: '射程差とパッシブ超エキサイトの機動力でゼリを完封。' },
+      { enemy: 'Kai\'Sa', winRate: 62, reason: '序盤の射程差でカイ＝サをレーンから追い出し主導権を獲得。' },
+    ],
+    hardMatchups: [
+      { enemy: 'Draven', winRate: 33, counterPlay: '序盤の殴り合いを徹底拒否し、タワー下でCSを拾って中盤以降にスケールする。' },
+      { enemy: 'Samira', winRate: 36, counterPlay: 'サミラのWでロケットやチョッパーが消されるため、味方のCC後にスキルを使う。' },
+      { enemy: 'Lucian', winRate: 38, counterPlay: 'ルシアンの序盤ダッシュバーストを避け、ロングレンジでファームする。' },
+    ],
+    tacticsGuide: '【エメラルド到達の鍵】単独で視界のないサイドレーンに行かず、常に味方サポートの後ろからロケット（Q）で最も近い敵を攻撃してください。',
+  },
+  KaiSa: {
+    powerSpikes: {
+      earlyLvl1to5: 'Q（イケイケミサイル）単体ヒットバーストと、W（虚空の索敵）プラズマスタック蓄積。',
+      mid1to2Core: 'クラーケン + ナッシャートゥースによるQ・W・E全スキル進化達成時の圧倒的タイマン＆暗殺力。',
+      late3CorePlus: '長距離WヒットからのR（キラーインスティンクト）長距離シールド突進による敵バックライン強襲。',
+    },
+    favoredMatchups: [
+      { enemy: 'Ezreal', winRate: 65, reason: 'エズリアルのQをミニオンで避けつつ、R突進からの近接バーストで瞬殺。' },
+      { enemy: 'Vayne', winRate: 63, reason: 'Qの爆発的バーストとE透明化でヴェインのタイマンを圧倒。' },
+      { enemy: 'Sivir', winRate: 61, reason: 'シヴィアのスペルシールドをQで剥がし、Wとパッシブでキル奪取。' },
+    ],
+    hardMatchups: [
+      { enemy: 'Caitlyn', winRate: 34, counterPlay: '圧倒的射程差で削られるため、Lv6まで耐えて味方のCCからRで飛び込む。' },
+      { enemy: 'Draven', winRate: 36, counterPlay: '序盤の殴り合いで即死するため、ショートトレードに留めてガンクを待つ。' },
+      { enemy: 'Ashe', winRate: 38, counterPlay: 'アッシュの長射程スローとRスタンをクレンズまたはフラッシュで回避する。' },
+    ],
+    tacticsGuide: '【エメラルド到達の鍵】最速でQ進化（AD100）とE進化（攻撃速度100%）を完成させ、味方のCCにRで即座に合わせる判断を磨いてください。',
+  },
+  Ezreal: {
+    powerSpikes: {
+      earlyLvl1to5: 'Q（秘術の射撃）ポークとパッシブ攻撃速度スタック。E（アーケインシフト）による絶対的ブリンク生存力。',
+      mid1to2Core: 'トリニティフォース + マナムネ（ムラマナ完成時）の壊滅的ポーク火力とオブジェクト前制圧力。',
+      late3CorePlus: 'セリルダの怨恨完成による遠距離無限スローポークと、R（トゥルーショットバラージ）によるウェーブクリア。',
+    },
+    favoredMatchups: [
+      { enemy: 'Jhin', winRate: 64, reason: 'ジンの4発目トレードをEで拒否し、長射程Qで一方的に削れる。' },
+      { enemy: 'Varus', winRate: 63, reason: 'ヴァルスのUltやQをEアーケインシフトで軽々回避可能。' },
+      { enemy: 'Aphelios', winRate: 61, reason: 'アフェリオスの武器切り替えタイミングを突いて遠距離からポーク。' },
+    ],
+    hardMatchups: [
+      { enemy: 'Draven', winRate: 35, counterPlay: 'ドレイブンの序盤オールインに耐えられないため、タワー下でQファームに徹する。' },
+      { enemy: 'Tristana', winRate: 37, counterPlay: 'トリスターナのWジャンプインからのバーストをEで即座に離脱して拒否。' },
+      { enemy: 'Samira', winRate: 39, counterPlay: 'サミラのWでQやRが消されるため、W使用後にスキルを叩き込む。' },
+    ],
+    tacticsGuide: '【エメラルド到達の鍵】E（ブリンク）を攻撃用に前方に使わず、敵のガンクやエンゲージを回避する「命綱」として温存してください。',
+  },
+
+  // ----------------------------------------------------
+  // 🧙 ミッド (MID)
+  // ----------------------------------------------------
+  Ahri: {
+    powerSpikes: {
+      earlyLvl1to5: 'Q（幻惑の宝玉）によるプッシュと確定ダメージ、E（チャーム）によるガンク合わせ。',
+      mid1to2Core: 'ルーデン / マリス完成時、R（スピリットラッシュ）3段ブリンクによる超高機動ロームと暗殺。',
+      late3CorePlus: '集団戦でのRキルリセットによる無限機動力と、敵主力へのフラッシュEキャッチ。',
+    },
+    favoredMatchups: [
+      { enemy: 'Twisted Fate', winRate: 68, reason: 'TFのロームをR追従で阻止し、Eチャームで容易にソロキル可能。' },
+      { enemy: 'Veigar', winRate: 66, reason: 'ベイガーのイベントホライズンをRブリンクで飛び越えて瞬殺可能。' },
+      { enemy: 'Lux', winRate: 64, reason: 'ラックスのスキルをRで全て回避しながら接近してワンコンボ。' },
+    ],
+    hardMatchups: [
+      { enemy: 'Yasuo', winRate: 34, counterPlay: '風の壁でチャームも宝玉も消されるため、風の壁を撃たせてからRで仕掛ける。' },
+      { enemy: 'Zed', winRate: 36, counterPlay: 'ゼドのR着地位置（自身の背後）に即座にEチャームを置き、ゾーニャを積む。' },
+      { enemy: 'Syndra', winRate: 38, counterPlay: 'シンドラのEスタン射程外をキープし、Rが上がるまで耐える。' },
+    ],
+    tacticsGuide: '【エメラルド到達の鍵】ウェーブをQで素早く押し込んだら、MIDに留まらずRを使ってBOTやTOPへ積極的にロームしてください。',
+  },
+  Zed: {
+    powerSpikes: {
+      earlyLvl1to5: 'W（生ける影）+ E + Q手裏剣による遠距離電撃トレードと、エナジー管理。',
+      mid1to2Core: '妖夢 / プロフェンハイドラ完成時、R（死の刻印）による敵メイジ/ADCの確定ワンコンボ暗殺。',
+      late3CorePlus: 'サイドレーンでのスプリットプッシュと、影の位置交換を利用した神出鬼没の集団戦撹乱。',
+    },
+    favoredMatchups: [
+      { enemy: 'Veigar', winRate: 69, reason: 'ベイガーの檻をWやRで無視して飛び込み、一瞬で消滅させられる。' },
+      { enemy: 'Lux', winRate: 67, reason: 'ラックスのQを影で回避し、R刻印で確実にキル可能。' },
+      { enemy: 'Aurelion Sol', winRate: 65, reason: 'オレリオン・ソルの飛行やブレスを影で翻弄しソロキル連発。' },
+    ],
+    hardMatchups: [
+      { enemy: 'Lissandra', winRate: 32, counterPlay: 'リサンドラのR自己凍結やW拘束で完封されるため、他レーンへロームする。' },
+      { enemy: 'Malzahar', winRate: 35, counterPlay: 'マルザハールのR抑圧で影に戻れず即死するため、シルバーサッシュを早期購入。' },
+      { enemy: 'Zhonya Users', winRate: 38, counterPlay: '敵がゾーニャを使った直後に手裏剣を重ねて処刑する。' },
+    ],
+    tacticsGuide: '【エメラルド到達の鍵】R（死の刻印）で入った後、敵のCCが飛んでくる前にR再発動で元の影に戻る冷静な位置把握を徹底してください。',
+  },
+
+  // ----------------------------------------------------
+  // 🛡️ トップ (TOP)
+  // ----------------------------------------------------
+  Darius: {
+    powerSpikes: {
+      earlyLvl1to5: 'ゴースト発動からのW（重傷）スロー + Q外周ヒール + パッシブ5スタック（紅血の激昂）でのLv1〜3キル。',
+      mid1to2Core: 'ストライドブレイカー / トリニティフォース完成時、ストライドスロー + E（捕縛）による確定拘束。',
+      late3CorePlus: '集団戦で1体をR（ノクサスギロチン）で処刑した後の5スタック全体拡散・ギロチン連鎖。',
+    },
+    favoredMatchups: [
+      { enemy: 'Sion', winRate: 69, reason: 'サイオンのQタメ中にEで引き寄せ、5スタックで一方的にレーン粉砕。' },
+      { enemy: 'Cho\'Gath', winRate: 67, reason: 'チョ＝ガスの耐久力を5スタックの出血割合で削り切り完封。' },
+      { enemy: 'Malphite', winRate: 65, reason: 'マルファイトのアーマーを出血魔法ダメージとEの割合防御貫通で貫通。' },
+    ],
+    hardMatchups: [
+      { enemy: 'Vayne', winRate: 33, counterPlay: 'ヴェインのEノックバックで近づけないため、ゴーストとフラッシュがある時のみ仕掛ける。' },
+      { enemy: 'Quinn', winRate: 35, counterPlay: 'クインのE宙返りで距離を取られるため、ブッシュ視界を使って奇襲する。' },
+      { enemy: 'Fiora', winRate: 38, counterPlay: 'フィオラのWパリィでEやWを弾かれるため、パリィを見てからスキルを当てる。' },
+    ],
+    tacticsGuide: '【エメラルド到達の鍵】Qの内周（柄）で当てるとヒールもスタックも入らないため、必ず外周（刃）を当てる距離感を身体に染み込ませてください。',
+  },
+  Aatrox: {
+    powerSpikes: {
+      earlyLvl1to5: 'Q（ダーキンブレード）3段先端ヒットと、W（滅びの鎖）引き戻しによる圧倒的レーントレード。',
+      mid1to2Core: 'ショウジン / サンダードスカイ完成時、R（世界の終わり）発動による超回復と集団戦フロントライン破壊。',
+      late3CorePlus: '集団戦でのRキル延長による無限サステインと、敵バックラインへのQ3フラッシュ強襲。',
+    },
+    favoredMatchups: [
+      { enemy: 'Sion', winRate: 68, reason: 'サイオンのQモーションにAatroxのQノックアップを重ねて完全無力化。' },
+      { enemy: 'Gwen', winRate: 64, reason: 'グウェンの霧の外からQ1・Q2ポークで削り、接近を拒絶。' },
+      { enemy: 'Nasus', winRate: 63, reason: 'ナサスの序盤スタックをフリーズとQハラスで完封し腐らせる。' },
+    ],
+    hardMatchups: [
+      { enemy: 'Irelia', winRate: 34, counterPlay: 'イレリアのQ高速ブリンクでQ先端を外されるため、スタックがない時に戦う。' },
+      { enemy: 'Fiora', winRate: 36, counterPlay: 'Q3の着地にフィオラのWパリィを合わせられてスタンするため、Q3をフェイントする。' },
+      { enemy: 'Kled', winRate: 38, counterPlay: 'クレッドの重傷Qと超攻撃力に殴り負けるため、Eで距離を取る。' },
+    ],
+    tacticsGuide: '【エメラルド到達の鍵】E（影進）はQの射程調整用として同時に使い、Q1先端・Q2先端・Q3中心を確実に敵に当ててください。',
+  },
+  Renekton: {
+    powerSpikes: {
+      earlyLvl1to5: '怒り50%時のW（メッタ斬り）強化スタン + Q（甘美なる旋風）大回復 + E（エリス）離脱のノーリスクトレード。',
+      mid1to2Core: 'ショウジン / 赤天完成時、R（ドミナス）HP増加とタワーダイブでのゲーム早期破壊。',
+      late3CorePlus: '敵キャリーへのフラッシュ強化Wスタン（シールド即破壊）による瞬殺。',
+    },
+    favoredMatchups: [
+      { enemy: 'Yasuo', winRate: 69, reason: 'ヤスオのシールドを強化Wで即破壊し、そのままフルコンボで瞬殺可能。' },
+      { enemy: 'Irelia', winRate: 67, reason: 'イレリアの飛び込みに強化Wスタンを叩き込み、トレード完勝。' },
+      { enemy: 'Riven', winRate: 65, reason: 'リベンのシールドを破壊してスタンさせ、一方的に有利トレード。' },
+    ],
+    hardMatchups: [
+      { enemy: 'Illaoi', winRate: 34, counterPlay: 'イラオイのE触手引き抜きを食らうとトレード負けするため、ミニオン裏をキープ。' },
+      { enemy: 'Quinn', winRate: 36, counterPlay: 'クインの遠距離ハラスとE宙返りで近づけないため、ガンクを待つ。' },
+      { enemy: 'Gangplank', winRate: 39, counterPlay: 'GPのオレンジ（W）でスタンを即解除されるため、オレンジ使用後に仕掛ける。' },
+    ],
+    tacticsGuide: '【エメラルド到達の鍵】怒りゲージが50%未満の時は無理に仕掛けず、ミニオンをQで殴って怒りを50%溜めてから強化Wでトレードしてください。',
+  },
 };
 
 /**
@@ -209,6 +552,7 @@ export function getChampionKitTactics(champName: string, role: string): Champion
   const isJg = role === 'JUNGLE';
   const isMid = role === 'MIDDLE' || role === 'MID';
   const isTop = role === 'TOP';
+  const isBot = role === 'BOTTOM' || role === 'BOT' || role === 'ADC';
 
   if (isSup) {
     return {
@@ -248,20 +592,58 @@ export function getChampionKitTactics(champName: string, role: string): Champion
     };
   }
 
+  if (isBot) {
+    return {
+      powerSpikes: {
+        earlyLvl1to5: `${champName}のスキルを活かした序盤CS回収と、Lv2先行ショートトレード。`,
+        mid1to2Core: `1〜2コア完成時のパワースパイクと、味方サポートとのフォーカス集中。`,
+        late3CorePlus: `集団戦での最後尾ポジショニングと、敵前衛からの確実なDPS出力。`,
+      },
+      favoredMatchups: [
+        { enemy: 'Aphelios', winRate: 65, reason: `序盤の安定性と射程を活かして有利にスケール可能。` },
+        { enemy: 'Zeri', winRate: 63, reason: `レーン戦での主導権を握り、スノーボールを阻止。` },
+      ],
+      hardMatchups: [
+        { enemy: 'Draven', winRate: 35, counterPlay: '序盤の殴り合いを拒否し、ファームを優先して中盤以降に勝負する。' },
+        { enemy: 'Samira', winRate: 38, counterPlay: '接近戦を避け、味方のCCに合わせて安全圏からダメージを出す。' },
+      ],
+      tacticsGuide: `【エメラルド到達の鍵】単独ファームでのデスを徹底的に防ぎ、味方と共に行動してダメージを出し続けてください。`,
+    };
+  }
+
+  if (isMid) {
+    return {
+      powerSpikes: {
+        earlyLvl1to5: `${champName}のスキルを活かした序盤ウェーブプッシュと、ローム視界の確保。`,
+        mid1to2Core: `1〜2コア完成時のバーストダメージと、サイドレーン介入。`,
+        late3CorePlus: `集団戦での敵バックラインフォーカスと、チョークポイントでのゾーン管理。`,
+      },
+      favoredMatchups: [
+        { enemy: 'Twisted Fate', winRate: 66, reason: `レーン戦のキル圧力でロームを封殺。` },
+        { enemy: 'Veigar', winRate: 63, reason: `序盤の射程とパワースパイクの早さで圧倒。` },
+      ],
+      hardMatchups: [
+        { enemy: 'Zed', winRate: 36, counterPlay: '物理防御を早期に積み、影の位置を常に警戒する。' },
+        { enemy: 'Yasuo', winRate: 39, counterPlay: '風の壁を釣ってから本命スキルを当てる。' },
+      ],
+      tacticsGuide: `【エメラルド到達の鍵】${champName}のパワースパイクを活かしてサイドレーンへ影響力を広げてください。`,
+    };
+  }
+
   return {
     powerSpikes: {
-      earlyLvl1to5: `${champName}のスキルを活かした序盤ウェーブ管理と、Lv2/Lv3でのキルプレッシャー。`,
-      mid1to2Core: `1〜2コア完成時のパワースパイクによるサイドプッシュと集団戦火力。`,
-      late3CorePlus: `集団戦での最適なポジショニングと、敵キャリーへの大ダメージフォーカス。`,
+      earlyLvl1to5: `${champName}のスキルを活かした序盤ウェーブ管理と、タイマン主導権。`,
+      mid1to2Core: `1〜2コア完成時のスプリットプッシュ圧力と、TP合流。`,
+      late3CorePlus: `集団戦でのフロントライン維持と、敵キャリーへのエンゲージ。`,
     },
     favoredMatchups: [
-      { enemy: 'Twisted Fate', winRate: 66, reason: `レーン戦のキル圧力でロームを封殺。` },
-      { enemy: 'Veigar', winRate: 63, reason: `序盤の射程とパワースパイクの早さで圧倒。` },
+      { enemy: 'Sion', winRate: 67, reason: `スキルセットの有利を活かしてサイドレーンを支配可能。` },
+      { enemy: 'Cho\'Gath', winRate: 64, reason: `機動力とダメージ差で圧倒。` },
     ],
     hardMatchups: [
-      { enemy: 'Zed', winRate: 36, counterPlay: '物理防御を早期に積み、影の位置を常に警戒する。' },
-      { enemy: 'Yasuo', winRate: 39, counterPlay: '風の壁を釣ってから本命スキルを当てる。' },
+      { enemy: 'Fiora', winRate: 35, counterPlay: '急所を壁で隠し、相手のパリィを釣ってから本命スキルを撃つ。' },
+      { enemy: 'Darius', winRate: 38, counterPlay: '出血が溜まる前のショートトレードに留め、ウェーブを管理する。' },
     ],
-    tacticsGuide: `【エメラルド到達の鍵】${champName}の強みであるパワースパイクを逃さず、リソース差を広げて勝利に導いてください。`,
+    tacticsGuide: `【エメラルド到達の鍵】${champName}の強みであるサイドプッシュとTPタイミングを極めてください。`,
   };
 }

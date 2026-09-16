@@ -607,9 +607,9 @@ ${isSupportRole ? '※重要: このプレイヤーは【サポート (Support)�
         teamfight: { score: teamfightScore, avgKda },
         vision: {
           visionScorePerMin: avgVisionPerMin,
-          controlWardsPerGame: 2.1,
-          defensiveWardPercent: 74,
-          deepWardPercent: 26,
+          controlWardsPerGame: isSupportRole ? Number((avgVisionPerMin * 1.6).toFixed(1)) : Number((avgVisionPerMin * 0.9).toFixed(1)),
+          defensiveWardPercent: 100 - calculatedSessionAnalytics.targetRankGap.currentActual.deepWardRatio,
+          deepWardPercent: calculatedSessionAnalytics.targetRankGap.currentActual.deepWardRatio,
           percentile: 20,
         },
       },
