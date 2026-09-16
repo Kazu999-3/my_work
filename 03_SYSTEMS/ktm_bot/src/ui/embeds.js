@@ -171,7 +171,8 @@ export function createRecruitButtons(metadata) {
   const manageOptions = [
     { label: "⚙️ 募集を編集", value: "edit", description: "モード/時刻/人数/メモを変更" },
     { label: "👥 メンバーを代理追加", value: "proxy", description: "他の人を代わりに参加させる" },
-    { label: "🚩 募集を終了", value: "close", description: "締め切ってボタンを閉じる" },
+    { label: "🚩 募集を終了（通知あり）", value: "close", description: "参加者に終了・解散通知を送信して締め切る" },
+    { label: "🔕 募集を終了（通知なし）", value: "close_silent", description: "メンション通知を飛ばさずに静かに締め切る" },
     { label: "🗑️ 募集を削除", value: "delete", description: "この募集メッセージを消す" },
   ];
   if (!isFull && metadata.mode !== 'カスタム' && metadata.joined.length >= 5) {

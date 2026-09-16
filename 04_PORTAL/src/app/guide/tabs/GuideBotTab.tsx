@@ -216,9 +216,14 @@ export default function GuideBotTab() {
                         <td className="p-2.5">参加者全員へ一括でメンション連絡を送信します。</td>
                       </tr>
                       <tr>
-                        <td className="p-2.5 font-bold text-stone-900">🚩 募集終了</td>
+                        <td className="p-2.5 font-bold text-stone-900">🚩 募集終了（通知あり）</td>
                         <td className="p-2.5">募集主のみ</td>
-                        <td className="p-2.5">募集を締め切ります。</td>
+                        <td className="p-2.5">参加者全員にメンションで締切・解散通知を送信して締め切ります。</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2.5 font-bold text-stone-900">🔕 募集終了（通知なし）</td>
+                        <td className="p-2.5">募集主のみ</td>
+                        <td className="p-2.5">メンション通知を飛ばさずに静かに募集パネルを締め切ります。</td>
                       </tr>
                     </tbody>
                   </table>

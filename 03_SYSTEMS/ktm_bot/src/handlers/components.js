@@ -18,7 +18,7 @@ export async function handleButtonInteraction(interaction, env, ctx) {
   if (customId.startsWith('recruit_manage:') && Array.isArray(interaction.data.values) && interaction.data.values.length > 0) {
     const owner = customId.split(':')[1];
     const val = interaction.data.values[0];
-    const map = { edit: 'edit_recruit_init', upgrade: 'upgrade_to_10', proxy: 'proxy_add_init', close: 'close', delete: 'delete_recruit' };
+    const map = { edit: 'edit_recruit_init', upgrade: 'upgrade_to_10', proxy: 'proxy_add_init', close: 'close', close_silent: 'close_silent', delete: 'delete_recruit' };
     if (map[val]) customId = `${map[val]}:${owner}`;
   } else if (customId.startsWith('recruit_manage:')) {
     // 何も選ばれずに閉じられた場合は募集メッセージをそのまま維持
@@ -864,40 +864,47 @@ export async function handleButtonInteraction(interaction, env, ctx) {
       metadata.spectating = metadata.spectating.filter(id => id !== userId);
     }
     Object.keys(metadata.roles).forEach(r => { if (metadata.roles[r] === userId) metadata.roles[r] = null; });
-  } else if (customId.startsWith('close')) {
-    // 募集終了→ボタンなしで閉じる（参加者に解散通知メッセージを送信）
+  } else if (customId.startsWith('close_silent') || customId.startsWith('close')) {
+    if (!canManageRecruitment) return Response.json({ type: 4, data: { content: "⚠️ 募集主または管理者のみ募集終了可能です。", flags: 64 } });
+    const isSilent = customId.startsWith('close_silent');
+
+    // 募集終了→ボタンなしで閉じる（サイレント以外は参加者に解散・締切通知メッセージを送信）
     // recruitmentsテーブルのstatusも'closed'に反映し、ポータル側が古い募集を
     // 「進行中」として拾い続けないようにする。
     ctx.waitUntil((async () => {
       try {
         await markRecruitmentStatus(env, interaction.message.id, 'closed');
-        const targetIds = [...new Set([metadata.owner, ...(metadata.joined || [])])].filter(Boolean);
-        if (targetIds.length > 0) {
-          const mentions = targetIds.map(id => `<@${id}>`).join(" ");
-          const isFull = (metadata.joined || []).length >= (metadata.maxCount || 5);
-          const channelId = interaction.channel_id || interaction.channel?.id;
-          const notifyContent = isFull
-            ? `🏁 **【募集終了】** 募集が締め切られました。\n通知: ${mentions}`
-            : `⚠️ **【募集終了】人が集まらなかったため、この募集は終了（解散）となりました。**\n参加者の皆様、エントリーありがとうございました！またの機会にご参加ください。\n通知: ${mentions}`;
-          
-          if (channelId && botToken) {
-            await sendDiscordMessage(`channels/${channelId}/messages`, botToken, "POST", {
-              content: notifyContent,
-              message_reference: { message_id: interaction.message.id },
-              allowed_mentions: { users: targetIds }
-            }).catch(e => console.error("募集終了通知の送信に失敗:", e));
-          } else {
-            await sendInteractionFollowup(appId, token, {
-              content: notifyContent,
-              allowed_mentions: { users: targetIds }
-            }).catch(e => console.error("募集終了Followup送信に失敗:", e));
+        if (!isSilent) {
+          const targetIds = [...new Set([metadata.owner, ...(metadata.joined || [])])].filter(Boolean);
+          if (targetIds.length > 0) {
+            const mentions = targetIds.map(id => `<@${id}>`).join(" ");
+            const isFull = (metadata.joined || []).length >= (metadata.maxCount || 5);
+            const channelId = interaction.channel_id || interaction.channel?.id;
+            const notifyContent = isFull
+              ? `🏁 **【募集終了】** 募集が締め切られました。\n通知: ${mentions}`
+              : `⚠️ **【募集終了】人が集まらなかったため、この募集は終了（解散）となりました。**\n参加者の皆様、エントリーありがとうございました！またの機会にご参加ください。\n通知: ${mentions}`;
+            
+            if (channelId && botToken) {
+              await sendDiscordMessage(`channels/${channelId}/messages`, botToken, "POST", {
+                content: notifyContent,
+                message_reference: { message_id: interaction.message.id },
+                allowed_mentions: { users: targetIds }
+              }).catch(e => console.error("募集終了通知の送信に失敗:", e));
+            } else {
+              await sendInteractionFollowup(appId, token, {
+                content: notifyContent,
+                allowed_mentions: { users: targetIds }
+              }).catch(e => console.error("募集終了Followup送信に失敗:", e));
+            }
           }
         }
       } catch (e) {
         console.error("recruitments テーブルの終了反映に失敗:", e);
       }
     })());
-    const embed = createRecruitEmbed(metadata); embed.title = "🚨 募集終了"; embed.color = 0xff0000;
+    const embed = createRecruitEmbed(metadata);
+    embed.title = isSilent ? "🔕 募集終了" : "🚨 募集終了";
+    embed.color = 0xff0000;
     return Response.json({ type: 7, data: { content: createMessageContent(metadata), embeds: [embed], components: [] } });
   }
 
