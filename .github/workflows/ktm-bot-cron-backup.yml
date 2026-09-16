@@ -10,10 +10,10 @@ name: KTM Bot Cron Backup
 #   KTM_TRIGGER_KEY : /trigger-scheduled の key（未設定ならデフォルト値を使用）
 
 on:
-  schedule:
-    - cron: '15 3 * * 1'     # 月 12:15 JST (UTC 03:15) → 週末定期カスタム募集投稿のバックアップ
-    - cron: '15 3 * * 3'     # 水 12:15 JST (UTC 03:15) → 水曜中間アナウンスのバックアップ
-    - cron: '15 10 * * 5'    # 金 19:15 JST (UTC 10:15) → 金曜前日アナウンスのバックアップ
+  # schedule:
+  #   - cron: '15 3 * * 1'     # 月 12:15 JST (UTC 03:15) → 週末定期カスタム募集投稿のバックアップ
+  #   - cron: '15 3 * * 3'     # 水 12:15 JST (UTC 03:15) → 水曜中間アナウンスのバックアップ
+  #   - cron: '15 10 * * 5'    # 金 19:15 JST (UTC 10:15) → 金曜前日アナウンスのバックアップ
   workflow_dispatch:
     inputs:
       mode:
