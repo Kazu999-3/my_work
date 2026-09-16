@@ -757,23 +757,23 @@ function generateCountersForJg(enemyChamp: string) {
   const lowercaseChamp = enemyChamp.toLowerCase();
   if (lowercaseChamp.includes('lee') || lowercaseChamp.includes('sin')) {
     return [
-      { championName: "Graves", winRate: 53.5, reason: "Lee Sin の射程外から高火力の物理バーストを出せ、序盤の機動力勝負で有利を取れます。" },
-      { championName: "Jax", winRate: 52.8, reason: "スキル『反撃の風暴』で Lee Sin のQの追加ダメージや通常攻撃を完全に無効化でき、インベイドへの強力な抑止力になります。" }
+      { championName: "Graves", reason: "Lee Sin の射程外から高火力の物理バーストを出せ、序盤の機動力勝負で有利を取れます。" },
+      { championName: "Jax", reason: "スキル『反撃の風暴』で Lee Sin のQの追加ダメージや通常攻撃を完全に無効化でき、インベイドへの強力な抑止力になります。" }
     ];
   } else if (lowercaseChamp.includes('khazix') || lowercaseChamp.includes('khal')) {
     return [
-      { championName: "Nidalee", winRate: 52.1, reason: "トラップによる視界確保で孤立無援パッシブの発動を防ぎ、圧倒的なクリア速度で森の主導権を握れます。" },
-      { championName: "JarvanIV", winRate: 51.5, reason: "Khazixのジャンプ（E）の後にアルティメットで安全に拘束でき、高い防御ステータスで暗殺を完全に封じ込めます。" }
+      { championName: "Nidalee", reason: "トラップによる視界確保で孤立無援パッシブの発動を防ぎ、圧倒的なクリア速度で森の主導権を握れます。" },
+      { championName: "JarvanIV", reason: "Khazixのジャンプ（E）の後にアルティメットで安全に拘束でき、高い防御ステータスで暗殺を完全に封じ込めます。" }
     ];
   } else if (lowercaseChamp.includes('grave')) {
     return [
-      { championName: "Khazix", winRate: 53.0, reason: "Gravesがリロードする隙に孤立パッシブを乗せたバーストダメージで一撃暗殺が可能です。" },
-      { championName: "Nunu", winRate: 52.2, reason: "凄まじい回復力と継続的なスロウで、Gravesの引き撃ち（カイト）を完全に無力化できます。" }
+      { championName: "Khazix", reason: "Gravesがリロードする隙に孤立パッシブを乗せたバーストダメージで一撃暗殺が可能です。" },
+      { championName: "Nunu", reason: "凄まじい回復力と継続的なスロウで、Gravesの引き撃ち（カイト）を完全に無力化できます。" }
     ];
   } else {
     return [
-      { championName: "Graves", winRate: 52.0, reason: "安定したクリア速度と後半のスケーリング力で、あらゆるマッチアップに対応可能です。" },
-      { championName: "LeeSin", winRate: 51.5, reason: "序盤 of 小規模戦における対応力が極めて高く、味方レーナーを早期に育てるテンポを作れます。" }
+      { championName: "Graves", reason: "安定したクリア速度と後半のスケーリング力で、あらゆるマッチアップに対応可能です。" },
+      { championName: "LeeSin", reason: "序盤 of 小規模戦における対応力が極めて高く、味方レーナーを早期に育てるテンポを作れます。" }
     ];
   }
 }

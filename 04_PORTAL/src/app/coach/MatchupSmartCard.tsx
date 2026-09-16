@@ -200,9 +200,6 @@ export default function MatchupSmartCard({ champion, enemyChampion, onSelectCham
               <Compass className="w-4 h-4 text-emerald-700" />
               5分オブジェクト方針: <strong className="text-emerald-800 text-xs">{objectiveData.focusTitle}</strong>
             </span>
-            <span className="text-[10px] font-black text-emerald-800 bg-emerald-200/60 px-2 py-0.5 rounded-full border border-emerald-300">
-              信頼度 {objectiveData.confidenceScore || 85}%
-            </span>
           </div>
 
           <p className="text-xs font-bold text-stone-800 leading-relaxed bg-white/70 p-2 rounded-lg border border-emerald-200">

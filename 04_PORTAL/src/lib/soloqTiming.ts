@@ -128,7 +128,7 @@ export function buildPlayRecommendation(
     }
   }
 
-  const expectedWinRate = streakInfo?.afterLossWinRate ?? timing.winRate ?? (level === 'red' ? 35 : level === 'yellow' ? 45 : 55);
+  const expectedWinRate = streakInfo?.afterLossWinRate ?? timing.winRate ?? null;
 
   const label =
     level === 'red' ? '🛑 今は一旦離れてクールダウン推奨' :

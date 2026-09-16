@@ -161,11 +161,18 @@ export default function TiltDiagnosisPopup({ isOpen, isWin, onClose, onProceedTo
                 </div>
 
                 <p className="text-xs text-red-100 leading-relaxed">
-                  JGの判断ミスは全レーンに波及します。連敗中の連続プレイは期待勝率が
-                  <strong className="text-white underline ml-1">
-                    {rec?.expectedWinRate ? `${rec.expectedWinRate}%` : '約35%'} に低下
-                  </strong>
-                  します。
+                  JGの判断ミスは全レーンに波及します。
+                  {rec?.expectedWinRate ? (
+                    <>
+                      連敗中の連続プレイは次戦の実測期待勝率が
+                      <strong className="text-white underline ml-1 font-mono">
+                        {rec.expectedWinRate}%
+                      </strong>{' '}
+                      に低下する傾向にあります。
+                    </>
+                  ) : (
+                    '連敗中の連続プレイは無意識の焦りから判断力低下リスクが極めて高くなります。'
+                  )}
                 </p>
 
                 {/* クールダウンタイマー */}

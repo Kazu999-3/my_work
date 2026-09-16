@@ -663,8 +663,8 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                                   />
                                   <span className="text-xs font-black text-amber-700">{c.championName}</span>
                                 </div>
-                                <span className="text-[10px] font-mono font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200">
-                                  対面勝率 {c.winRate}%
+                                <span className="text-[10px] font-black text-emerald-800 bg-emerald-100/90 px-2 py-0.5 rounded border border-emerald-200/80">
+                                  有利カウンター
                                 </span>
                               </div>
                               <p className="text-[10px] text-stone-700 leading-relaxed font-medium">
