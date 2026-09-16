@@ -168,13 +168,13 @@ export default function PlayerAnalyzerPage() {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-xs font-black">
               <Sparkles size={14} className="text-amber-400" />
-              <span>Riot API 実測マッチ履歴連動・完全自動アナライズ</span>
+              <span>ソロキュー（ランク戦）実測マッチ履歴連動・深層アナライズ</span>
             </div>
             <h1 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-3">
-              <span>LoL パーソナル深層アナライザー</span>
+              <span>LoL パーソナル深層アナライザー (SoloQ専属)</span>
             </h1>
             <p className="text-xs md:text-sm text-stone-300 font-medium max-w-2xl leading-relaxed">
-              定型文を完全排除。直近の実測マッチデータから「強み・致命的ボトルネック・実測パワースパイク・勝敗分岐点」を完全客観診断。
+              ノーマルやカスタムを完全排除。ソロキュー（ランク戦）の実測マッチデータのみから「実力・ボトルネック・実測パワースパイク・勝敗分岐点」を完全客観診断。
             </p>
           </div>
         </div>
@@ -306,7 +306,7 @@ export default function PlayerAnalyzerPage() {
                   </span>
                   {report.summoner.sampleMatchesCount > 0 && (
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 border border-stone-200">
-                      Riot API実測 {report.summoner.sampleMatchesCount}試合連動
+                      SoloQ実測 {report.summoner.sampleMatchesCount}試合連動
                     </span>
                   )}
                 </div>

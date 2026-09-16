@@ -56,11 +56,15 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          // 直近の最新マッチIDを確実に30件取得 (全モード対応)
-          const matchIds = await fetchRecentMatchIds(puuid, apiKey, 30);
+          // ソロキュー（Ranked Solo 5v5 / queue=420）のマッチIDを最新35件取得
+          let matchIds = await fetchRankedSoloMatchIds(puuid, apiKey, 35);
+          if (matchIds.length === 0) {
+            // ソロキュー未プレイ時のみフォールバック
+            matchIds = await fetchRecentMatchIds(puuid, apiKey, 30);
+          }
 
           // 各マッチの詳細を確実に取得 (5件ずつバッチ制御で429レート制限を完全回避)
-          const targetIds = matchIds.slice(0, 30);
+          const targetIds = matchIds.slice(0, 35);
           const rawMatchResults: RawMatchRecord[] = [];
           const chunkSize = 5;
 
