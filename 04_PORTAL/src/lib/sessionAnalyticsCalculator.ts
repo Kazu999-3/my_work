@@ -445,14 +445,33 @@ export function calculateTargetRankGap(
   const visionPassed = visionDiffVal >= -0.15;
   const deepWardPassed = deepWardDiffVal >= -4;
 
-  let passedCount = 0;
-  if (deathsPassed) passedCount++;
-  if (csPassed) passedCount++;
-  if (kpPassed) passedCount++;
-  if (visionPassed) passedCount++;
-  if (deepWardPassed) passedCount++;
+  // 🎯 各項目の目標到達率（0〜100%）を連続・精密に算出（目標ランクの難易度に応じてダイナミックに変化）
+  const deathsRate = actual.avgDeaths <= benchmark.avgDeaths
+    ? 100
+    : Math.max(30, Math.round(100 - (actual.avgDeaths - benchmark.avgDeaths) * 22));
 
-  const targetReadinessScore = Math.round((passedCount / 5) * 100);
+  const csRate = isSupport
+    ? (actual.csPerMin <= 1.5 ? 100 : Math.max(40, Math.round(100 - (actual.csPerMin - 1.5) * 35)))
+    : Math.max(30, Math.min(100, Math.round((actual.csPerMin / benchmark.csPerMin) * 100)));
+
+  const kpRate = Math.max(30, Math.min(100, Math.round((actual.kp15 / benchmark.kp15) * 100)));
+  const visionRate = Math.max(30, Math.min(100, Math.round((actual.visionScorePerMin / benchmark.visionScorePerMin) * 100)));
+  const deepWardRate = Math.max(30, Math.min(100, Math.round((actual.deepWardRatio / benchmark.deepWardRatio) * 100)));
+
+  // 重み付け総合到達度スコア（Gold/Plat/Emeraldで明確に難易度差が出る設計）
+  const targetReadinessScore = Math.min(
+    100,
+    Math.max(
+      20,
+      Math.round(
+        deathsRate * 0.25 +
+        csRate * 0.20 +
+        kpRate * 0.25 +
+        visionRate * 0.15 +
+        deepWardRate * 0.15
+      )
+    )
+  );
 
   const keyActions: string[] = [];
   if (!kpPassed) {
