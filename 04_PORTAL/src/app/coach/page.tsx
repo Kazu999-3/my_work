@@ -1452,6 +1452,9 @@ function CoachPageContent() {
     if (roster && roster.length === 10) setLiveRoster(roster);
   };
 
+  // 試合後ディープアナリティクス ＆ 集団戦ディープレビューの同期用選択 matchId ('all' | matchId)
+  const [selectedDeepMatchId, setSelectedDeepMatchId] = useState<string>('all');
+
   // 「今日のチェック」ボタン。試合を始める前に見る3項目(事前分析・目標・ティルト)を
   // まとめて起動する。値をインクリメントするたびに各タブのuseEffectが反応する。
   const [dailyCheckTrigger, setDailyCheckTrigger] = useState(0);
@@ -1758,10 +1761,16 @@ function CoachPageContent() {
           {postGameSubTab === 'instant' && (
             <div className="space-y-4 animate-in">
               {/* 5大ディープアナリティクス (序盤15分メトリクス・リコール逆再生・ビルド監査・教訓同期) */}
-              <PostGameDeepAnalyticsDashboard />
+              <PostGameDeepAnalyticsDashboard
+                controlledMatchId={selectedDeepMatchId}
+                onSelectMatchId={setSelectedDeepMatchId}
+              />
 
               {/* 集団戦ディープアナリティクス (勝因・敗因・タイムライン実測レビュー) */}
-              <MatchFightsAnalyticsCard />
+              <MatchFightsAnalyticsCard
+                controlledMatchId={selectedDeepMatchId}
+                onSelectMatchId={setSelectedDeepMatchId}
+              />
 
               {/* 1分振り返り ＆ 反省カルテ記録 */}
               <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs space-y-3">

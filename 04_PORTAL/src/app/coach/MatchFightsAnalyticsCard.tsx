@@ -42,12 +42,22 @@ interface MatchAnalyticsResponse {
   fights: FightData[];
 }
 
-export default function MatchFightsAnalyticsCard() {
+interface MatchFightsAnalyticsCardProps {
+  controlledMatchId?: string;
+  onSelectMatchId?: (mId: string) => void;
+}
+
+export default function MatchFightsAnalyticsCard({
+  controlledMatchId,
+  onSelectMatchId,
+}: MatchFightsAnalyticsCardProps = {}) {
   const [data, setData] = useState<MatchAnalyticsResponse | null>(null);
-  const [selectedMatchId, setSelectedMatchId] = useState<string>('all');
+  const [internalMatchId, setInternalMatchId] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [switching, setSwitching] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
+
+  const currentMatchId = controlledMatchId !== undefined ? controlledMatchId : internalMatchId;
 
   const fetchFights = async (mId: string) => {
     try {
@@ -65,13 +75,15 @@ export default function MatchFightsAnalyticsCard() {
   };
 
   useEffect(() => {
-    fetchFights('all');
-  }, []);
+    fetchFights(currentMatchId || 'all');
+  }, [currentMatchId]);
 
   const handleSelectMatch = (mId: string) => {
-    if (selectedMatchId === mId && !switching) return;
-    setSelectedMatchId(mId);
-    fetchFights(mId);
+    if (onSelectMatchId) {
+      onSelectMatchId(mId);
+    } else {
+      setInternalMatchId(mId);
+    }
   };
 
   if (loading) {
@@ -102,7 +114,7 @@ export default function MatchFightsAnalyticsCard() {
             onClick={() => handleSelectMatch('all')}
             disabled={switching}
             className={`px-3 py-1.5 rounded-xl text-xs font-black transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 shrink-0 ${
-              selectedMatchId === 'all'
+              currentMatchId === 'all'
                 ? 'bg-amber-600 text-white shadow-xs'
                 : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
             }`}
@@ -112,7 +124,7 @@ export default function MatchFightsAnalyticsCard() {
           </button>
 
           {recentMatches.map((m, idx) => {
-            const isSelected = selectedMatchId === m.matchId;
+            const isSelected = currentMatchId === m.matchId;
             return (
               <button
                 key={m.matchId}
@@ -150,7 +162,7 @@ export default function MatchFightsAnalyticsCard() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-200 rounded-md text-[10px] font-black uppercase tracking-wider">
-              {selectedMatchId === 'all' ? 'Multi-Match Deep Analytics' : 'Match Deep Analytics'}
+              {currentMatchId === 'all' ? 'Multi-Match Deep Analytics' : 'Match Deep Analytics'}
             </span>
             <span className="text-stone-500 text-xs font-mono flex items-center gap-1 font-bold">
               <Clock className="w-3.5 h-3.5 text-stone-400" /> {data.match_duration}
@@ -170,7 +182,7 @@ export default function MatchFightsAnalyticsCard() {
           </div>
           <div className="bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-center">
             <div className="text-[10px] text-stone-500 font-bold">
-              {selectedMatchId === 'all' ? '全試合 交戦総火力' : '交戦総火力'}
+              {currentMatchId === 'all' ? '全試合 交戦総火力' : '交戦総火力'}
             </div>
             <div className="text-sm font-black text-amber-700 font-mono">{data.total_fight_damage.toLocaleString()}</div>
           </div>
@@ -184,6 +196,7 @@ export default function MatchFightsAnalyticsCard() {
           </button>
         </div>
       </div>
+
 
       {/* 切替時ローディング */}
       {switching && (

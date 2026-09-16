@@ -111,35 +111,38 @@ interface PostGameData {
   };
 }
 
-export default function PostGameDeepAnalyticsDashboard() {
+interface PostGameDashboardProps {
+  controlledMatchId?: string;
+  onSelectMatchId?: (mId: string) => void;
+}
+
+export default function PostGameDeepAnalyticsDashboard({
+  controlledMatchId,
+  onSelectMatchId,
+}: PostGameDashboardProps = {}) {
   const [data, setData] = useState<PostGameData | null>(null);
-  const [selectedMatchId, setSelectedMatchId] = useState<string>('');
+  const [internalMatchId, setInternalMatchId] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [switching, setSwitching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [synced, setSynced] = useState(false);
 
-  const fetchAnalytics = async (matchId?: string) => {
-    if (matchId) {
-      setSwitching(true);
-    } else {
-      setLoading(true);
-    }
+  const currentMatchId = controlledMatchId !== undefined ? controlledMatchId : internalMatchId;
+
+  const fetchAnalytics = async (matchId: string) => {
+    setSwitching(true);
     setError(null);
     try {
-      const url = matchId
-        ? `/api/lol/postgame-deep-analytics?matchId=${matchId}`
-        : '/api/lol/postgame-deep-analytics';
+      const url = matchId === 'all'
+        ? '/api/lol/postgame-deep-analytics?matchId=all'
+        : `/api/lol/postgame-deep-analytics?matchId=${matchId}`;
       const res = await fetch(url);
       const d = await res.json();
       if (!res.ok || !d.success) {
         throw new Error(d.error || '解析データの取得に失敗しました');
       }
       setData(d);
-      if (d.selected_match_id) {
-        setSelectedMatchId(d.selected_match_id);
-      }
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'データ取得エラー');
@@ -150,8 +153,16 @@ export default function PostGameDeepAnalyticsDashboard() {
   };
 
   useEffect(() => {
-    fetchAnalytics();
-  }, []);
+    fetchAnalytics(currentMatchId || 'all');
+  }, [currentMatchId]);
+
+  const handleSelect = (mId: string) => {
+    if (onSelectMatchId) {
+      onSelectMatchId(mId);
+    } else {
+      setInternalMatchId(mId);
+    }
+  };
 
   const handleSyncFeedback = async () => {
     if (!data || syncing || synced) return;
@@ -203,7 +214,7 @@ export default function PostGameDeepAnalyticsDashboard() {
           {error || '直近のランク戦タイムラインデータが見つかりませんでした。ソロQをプレイ後に再度お試しください。'}
         </p>
         <button
-          onClick={() => fetchAnalytics()}
+          onClick={() => fetchAnalytics(currentMatchId)}
           className="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-bold transition inline-flex items-center gap-1.5"
         >
           <RefreshCw size={12} />
@@ -230,15 +241,10 @@ export default function PostGameDeepAnalyticsDashboard() {
             {/* 🌟 先頭: 直近全試合 統合ディープ分析ボタン */}
             <button
               type="button"
-              onClick={() => {
-                if (selectedMatchId !== 'all') {
-                  setSelectedMatchId('all');
-                  fetchAnalytics('all');
-                }
-              }}
+              onClick={() => handleSelect('all')}
               disabled={switching}
               className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5 relative overflow-hidden ${
-                (selectedMatchId === 'all' || data.selected_match_id === 'all')
+                currentMatchId === 'all'
                   ? 'bg-gradient-to-br from-amber-500/20 via-amber-100 to-amber-50 border-amber-500 shadow-xs ring-2 ring-amber-400/60'
                   : 'bg-stone-50/80 border-stone-200 hover:bg-amber-50/50 hover:border-amber-300'
               }`}
@@ -265,7 +271,7 @@ export default function PostGameDeepAnalyticsDashboard() {
 
             {/* 個別試合カード一覧 */}
             {data.recent_matches.map((m, idx) => {
-              const isSelected = selectedMatchId !== 'all' && (selectedMatchId || data.selected_match_id) === m.matchId;
+              const isSelected = currentMatchId === m.matchId;
               const dateObj = new Date(m.gameStartTimestamp);
               const timeStr = `${dateObj.getMonth() + 1}/${dateObj.getDate()} ${dateObj.getHours()}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
 
@@ -273,17 +279,14 @@ export default function PostGameDeepAnalyticsDashboard() {
                 <button
                   key={m.matchId || idx}
                   type="button"
-                  onClick={() => {
-                    if (m.matchId !== selectedMatchId) {
-                      setSelectedMatchId(m.matchId);
-                      fetchAnalytics(m.matchId);
-                    }
-                  }}
+                  onClick={() => handleSelect(m.matchId)}
                   disabled={switching}
                   className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5 relative overflow-hidden ${
                     isSelected
-                      ? 'bg-amber-50/90 border-amber-500 shadow-xs ring-2 ring-amber-400/50'
-                      : 'bg-stone-50/70 border-stone-200 hover:bg-stone-100/80 hover:border-stone-300'
+                      ? 'bg-stone-900 text-white border-stone-900 shadow-xs ring-2 ring-stone-700'
+                      : m.isWin
+                      ? 'bg-emerald-50/70 border-emerald-200/80 hover:bg-emerald-100/60 hover:border-emerald-300'
+                      : 'bg-rose-50/70 border-rose-200/80 hover:bg-rose-100/60 hover:border-rose-300'
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -350,11 +353,11 @@ export default function PostGameDeepAnalyticsDashboard() {
       <div className="flex items-center justify-between border-b border-stone-100 pb-3 flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <span className="px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 rounded-md text-[10px] font-black uppercase tracking-wider">
-            {selectedMatchId === 'all' || data.selected_match_id === 'all' ? 'Multi-Match Aggregate' : 'Match Deep Dive'}
+            {currentMatchId === 'all' || data.selected_match_id === 'all' ? 'Multi-Match Aggregate' : 'Match Deep Dive'}
           </span>
           <h3 className="text-base font-black text-stone-900 flex items-center gap-1.5">
             <span>
-              {selectedMatchId === 'all' || data.selected_match_id === 'all'
+              {currentMatchId === 'all' || data.selected_match_id === 'all'
                 ? `⚡ 直近${data.recent_matches?.length || ''}戦 統合ディープアナリティクス`
                 : '⚡ 選択マッチの精密ディープアナリティクス'}
             </span>
@@ -367,14 +370,14 @@ export default function PostGameDeepAnalyticsDashboard() {
         </div>
         <div className="flex items-center gap-2 text-xs font-mono font-bold text-stone-600 flex-wrap">
           <span className={`px-2 py-0.5 rounded text-[10px] font-black text-white ${data.is_win ? 'bg-emerald-600' : 'bg-rose-600'}`}>
-            {selectedMatchId === 'all' || data.selected_match_id === 'all'
+            {currentMatchId === 'all' || data.selected_match_id === 'all'
               ? `勝率 ${data.cross_match_summary?.win_rate || 0}%`
               : data.is_win
               ? 'VICTORY'
               : 'DEFEAT'}
           </span>
           <span className="bg-stone-100 px-2 py-0.5 rounded border border-stone-200 text-stone-800 flex items-center gap-1.5">
-            {selectedMatchId !== 'all' && (
+            {currentMatchId !== 'all' && (
               <Image
                 src={getChampIcon(data.my_champion)}
                 alt={data.my_champion}
@@ -384,14 +387,14 @@ export default function PostGameDeepAnalyticsDashboard() {
                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
               />
             )}
-            {data.my_champion} {selectedMatchId !== 'all' && `vs ${data.enemy_champion}`}
+            {data.my_champion} {currentMatchId !== 'all' && `vs ${data.enemy_champion}`}
           </span>
           <span>•</span>
           <span>KDA: {data.kda_str}</span>
           <span>•</span>
           <span>{data.match_duration_str}</span>
           <button
-            onClick={() => fetchAnalytics(selectedMatchId)}
+            onClick={() => fetchAnalytics(currentMatchId)}
             title="最新の試合を再読み込み"
             className="p-1 rounded-lg hover:bg-stone-100 text-stone-500 hover:text-stone-900 transition ml-1"
           >
