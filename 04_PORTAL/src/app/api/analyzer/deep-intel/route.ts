@@ -70,62 +70,84 @@ export async function POST(request: NextRequest) {
             matchIds = await fetchRecentMatchIds(puuid, apiKey, 25);
           }
 
-          // 各マッチの詳細を高速並列取得 (最大25件)
+          // 各マッチの詳細を確実に取得 (5件ずつバッチ制御で429レート制限を完全回避)
           const targetIds = matchIds.slice(0, 25);
-          const chunkPromises = targetIds.map(async (mId) => {
-            try {
-              const detail = await fetchMatchDetails(mId, apiKey);
-              const p = detail.participants.find((part) => part.puuid === puuid);
-              if (!p) return null;
+          const rawMatchResults: RawMatchRecord[] = [];
+          const chunkSize = 5;
 
-              const teamMembers = detail.participants.filter((part) => part.teamId === p.teamId);
-              const teamKills = teamMembers.reduce((sum, m) => sum + m.kills, 0);
-              const teamDamage = teamMembers.reduce((sum, m) => sum + m.damageDealtToChampions, 0);
+          for (let i = 0; i < targetIds.length; i += chunkSize) {
+            const chunk = targetIds.slice(i, i + chunkSize);
+            const chunkPromises = chunk.map(async (mId) => {
+              for (let attempt = 0; attempt < 3; attempt++) {
+                try {
+                  const detail = await fetchMatchDetails(mId, apiKey);
+                  const p = detail.participants.find((part) => part.puuid === puuid);
+                  if (!p) return null;
 
-              const startTs = detail.gameStartTimestamp || Date.now();
-              const durSec = detail.gameDuration || 1800;
-              const endTs = startTs + durSec * 1000;
+                  const teamMembers = detail.participants.filter((part) => part.teamId === p.teamId);
+                  const teamKills = teamMembers.reduce((sum, m) => sum + m.kills, 0);
+                  const teamDamage = teamMembers.reduce((sum, m) => sum + m.damageDealtToChampions, 0);
 
-              const myTeam = detail.teams?.find((t: any) => t.teamId === p.teamId);
-              const enemyTeam = detail.teams?.find((t: any) => t.teamId !== p.teamId);
-              const teamHordeKills = myTeam?.objectives?.horde?.kills || 0;
-              const teamDragonKills = myTeam?.objectives?.dragon?.kills || 0;
-              const enemyHordeKills = enemyTeam?.objectives?.horde?.kills || 0;
-              const enemyDragonKills = enemyTeam?.objectives?.dragon?.kills || 0;
-              const firstDragon = myTeam?.objectives?.dragon?.first || false;
+                  const startTs = detail.gameStartTimestamp || Date.now();
+                  const durSec = detail.gameDuration || 1800;
+                  const endTs = startTs + durSec * 1000;
 
-              const record: RawMatchRecord = {
-                matchId: mId,
-                gameStartTimestamp: startTs,
-                gameDuration: durSec,
-                gameEndTimestamp: endTs,
-                win: p.win,
-                kills: p.kills,
-                deaths: p.deaths,
-                assists: p.assists,
-                championName: p.championName,
-                lane: p.lane || 'JUNGLE',
-                visionScore: p.visionScore || 0,
-                totalMinionsKilled: p.totalMinionsKilled || 0,
-                neutralMinionsKilled: p.neutralMinionsKilled || 0,
-                teamDamage: teamDamage || 1,
-                playerDamage: p.damageDealtToChampions || 0,
-                teamKills: teamKills || 1,
-                goldEarned: p.goldEarned || 0,
-                teamHordeKills,
-                teamDragonKills,
-                enemyHordeKills,
-                enemyDragonKills,
-                firstDragon,
-              };
-              return record;
-            } catch (e: any) {
+                  const myTeam = detail.teams?.find((t: any) => t.teamId === p.teamId);
+                  const enemyTeam = detail.teams?.find((t: any) => t.teamId !== p.teamId);
+                  const teamHordeKills = myTeam?.objectives?.horde?.kills || 0;
+                  const teamDragonKills = myTeam?.objectives?.dragon?.kills || 0;
+                  const enemyHordeKills = enemyTeam?.objectives?.horde?.kills || 0;
+                  const enemyDragonKills = enemyTeam?.objectives?.dragon?.kills || 0;
+                  const firstDragon = myTeam?.objectives?.dragon?.first || false;
+
+                  const record: RawMatchRecord = {
+                    matchId: mId,
+                    gameStartTimestamp: startTs,
+                    gameDuration: durSec,
+                    gameEndTimestamp: endTs,
+                    win: p.win,
+                    kills: p.kills,
+                    deaths: p.deaths,
+                    assists: p.assists,
+                    championName: p.championName,
+                    lane: p.lane || 'JUNGLE',
+                    visionScore: p.visionScore || 0,
+                    totalMinionsKilled: p.totalMinionsKilled || 0,
+                    neutralMinionsKilled: p.neutralMinionsKilled || 0,
+                    teamDamage: teamDamage || 1,
+                    playerDamage: p.damageDealtToChampions || 0,
+                    teamKills: teamKills || 1,
+                    goldEarned: p.goldEarned || 0,
+                    teamHordeKills,
+                    teamDragonKills,
+                    enemyHordeKills,
+                    enemyDragonKills,
+                    firstDragon,
+                  };
+                  return record;
+                } catch (e: any) {
+                  if (attempt < 2 && (e?.name === 'RiotRateLimitError' || String(e).includes('429'))) {
+                    const waitMs = e?.retryAfterSec ? (e.retryAfterSec + 1) * 1000 : 1000 * (attempt + 1);
+                    await new Promise((resolve) => setTimeout(resolve, waitMs));
+                    continue;
+                  }
+                  return null;
+                }
+              }
               return null;
-            }
-          });
+            });
 
-          const results = await Promise.all(chunkPromises);
-          rawMatches = results.filter((r): r is RawMatchRecord => r !== null);
+            const chunkResults = await Promise.all(chunkPromises);
+            chunkResults.forEach((r) => {
+              if (r) rawMatchResults.push(r);
+            });
+
+            if (i + chunkSize < targetIds.length) {
+              await new Promise((resolve) => setTimeout(resolve, 600));
+            }
+          }
+
+          rawMatches = rawMatchResults;
         }
       } catch (e) {
         console.warn('Riot API stats fetch failed, falling back to dynamic estimate:', e);
@@ -261,26 +283,23 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    // 実際にプレイしたチャンピオンを試合数順に最大5体抽出
     let topChampions = Object.values(champStatsMap)
       .sort((a, b) => b.gamesCount - a.gamesCount)
       .slice(0, 5);
 
+    // 万が一マッチが0件の場合のみフォールバック
     if (topChampions.length === 0) {
       if (role === 'UTILITY' || role === 'SUPPORT') {
         topChampions = [
-          { name: 'Thresh', gamesCount: 18, wins: 11, kills: 22, deaths: 64, assists: 240, cs: 320, durationMin: 540, vision: 980, winCount: 11, winDeaths: 28, winCs: 210, winDurationMin: 330, winVision: 650, lossCount: 7, lossDeaths: 36, lossCs: 110, lossDurationMin: 210, lossVision: 330 },
-          { name: 'Nautilus', gamesCount: 14, wins: 9, kills: 18, deaths: 52, assists: 190, cs: 280, durationMin: 420, vision: 760, winCount: 9, winDeaths: 26, winCs: 190, winDurationMin: 270, winVision: 520, lossCount: 5, lossDeaths: 26, lossCs: 90, lossDurationMin: 150, lossVision: 240 },
-          { name: 'Lulu', gamesCount: 10, wins: 6, kills: 8, deaths: 30, assists: 160, cs: 150, durationMin: 300, vision: 620, winCount: 6, winDeaths: 12, winCs: 95, winDurationMin: 180, winVision: 400, lossCount: 4, lossDeaths: 18, lossCs: 55, lossDurationMin: 120, lossVision: 220 },
+          { name: 'Rell', gamesCount: 18, wins: 11, kills: 22, deaths: 64, assists: 240, cs: 320, durationMin: 540, vision: 980, winCount: 11, winDeaths: 28, winCs: 210, winDurationMin: 330, winVision: 650, lossCount: 7, lossDeaths: 36, lossCs: 110, lossDurationMin: 210, lossVision: 330 },
           { name: 'Leona', gamesCount: 8, wins: 5, kills: 12, deaths: 35, assists: 110, cs: 180, durationMin: 240, vision: 480, winCount: 5, winDeaths: 16, winCs: 120, winDurationMin: 150, winVision: 320, lossCount: 3, lossDeaths: 19, lossCs: 60, lossDurationMin: 90, lossVision: 160 },
-          { name: 'Blitzcrank', gamesCount: 6, wins: 4, kills: 10, deaths: 28, assists: 85, cs: 120, durationMin: 180, vision: 360, winCount: 4, winDeaths: 14, winCs: 85, winDurationMin: 120, winVision: 250, lossCount: 2, lossDeaths: 14, lossCs: 35, lossDurationMin: 60, lossVision: 110 },
+          { name: 'Rakan', gamesCount: 3, wins: 2, kills: 4, deaths: 12, assists: 45, cs: 60, durationMin: 90, vision: 160, winCount: 2, winDeaths: 6, winCs: 40, winDurationMin: 60, winVision: 110, lossCount: 1, lossDeaths: 6, lossCs: 20, lossDurationMin: 30, lossVision: 50 },
         ];
       } else {
         topChampions = [
-          { name: 'Zyra', gamesCount: 18, wins: 11, kills: 90, deaths: 42, assists: 160, cs: 2100, durationMin: 540, vision: 680, winCount: 11, winDeaths: 18, winCs: 1400, winDurationMin: 330, winVision: 450, lossCount: 7, lossDeaths: 24, lossCs: 700, lossDurationMin: 210, lossVision: 230 },
-          { name: 'Shyvana', gamesCount: 14, wins: 8, kills: 84, deaths: 40, assists: 130, cs: 2200, durationMin: 420, vision: 440, winCount: 8, winDeaths: 16, winCs: 1400, winDurationMin: 240, winVision: 280, lossCount: 6, lossDeaths: 24, lossCs: 800, lossDurationMin: 180, lossVision: 160 },
-          { name: 'Viego', gamesCount: 10, wins: 6, kills: 68, deaths: 36, assists: 75, cs: 1400, durationMin: 300, vision: 280, winCount: 6, winDeaths: 15, winCs: 900, winDurationMin: 180, winVision: 180, lossCount: 4, lossDeaths: 21, lossCs: 500, lossDurationMin: 120, lossVision: 100 },
-          { name: 'LeeSin', gamesCount: 8, wins: 5, kills: 52, deaths: 30, assists: 60, cs: 1100, durationMin: 240, vision: 260, winCount: 5, winDeaths: 14, winCs: 750, winDurationMin: 150, winVision: 170, lossCount: 3, lossDeaths: 16, lossCs: 350, lossDurationMin: 90, lossVision: 90 },
-          { name: 'Nocturne', gamesCount: 6, wins: 4, kills: 42, deaths: 22, assists: 50, cs: 850, durationMin: 180, vision: 210, winCount: 4, winDeaths: 10, winCs: 600, winDurationMin: 120, winVision: 150, lossCount: 2, lossDeaths: 12, lossCs: 250, lossDurationMin: 60, lossVision: 60 },
+          { name: 'Zyra', gamesCount: 12, wins: 8, kills: 60, deaths: 30, assists: 110, cs: 1400, durationMin: 360, vision: 450, winCount: 8, winDeaths: 14, winCs: 960, winDurationMin: 240, winVision: 310, lossCount: 4, lossDeaths: 16, lossCs: 440, lossDurationMin: 120, lossVision: 140 },
+          { name: 'Shyvana', gamesCount: 10, wins: 6, kills: 55, deaths: 28, assists: 90, cs: 1550, durationMin: 300, vision: 320, winCount: 6, winDeaths: 12, winCs: 980, winDurationMin: 180, winVision: 200, lossCount: 4, lossDeaths: 16, lossCs: 570, lossDurationMin: 120, lossVision: 120 },
         ];
       }
     }
@@ -534,24 +553,46 @@ ${isSupportRole ? '※重要: このプレイヤーは【サポート (Support)�
       ];
     }
 
+    // チャンピオン名正規化ヘルパー (MonkeyKing -> Wukong 等)
+    const normalizeChampKey = (name: string) => {
+      const lower = (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (lower === 'monkeyking') return 'wukong';
+      return lower;
+    };
+
     const mergedChampionProfiles = calculatedChamps.map((c) => {
-      const detail = aiResult.championDetails?.find((d: any) => d.id === c.id) || aiResult.championDetails?.[0];
+      const cNorm = normalizeChampKey(c.name);
+      // AIの返答から対応するチャンピオンを柔軟に探索 (ID, name, normalized name)
+      const detail = aiResult.championDetails?.find((d: any) => {
+        if (!d) return false;
+        const dIdNorm = normalizeChampKey(d.id || '');
+        const dNameNorm = normalizeChampKey(d.name || '');
+        return dIdNorm === cNorm || dNameNorm === cNorm || d.id === c.id || d.name === c.name;
+      });
+
       const kit = getChampionKitTactics(c.name, role);
 
-      // AIの返答が定型文や空文字でないかチェックし、高品質な固有データでマージ
-      const powerSpikes = (detail?.powerSpikes?.earlyLvl1to5 && !detail.powerSpikes.earlyLvl1to5.includes('Lv1〜5序盤スパイク'))
+      // AIの返答が有効でプレースホルダーでない場合のみ採用し、それ以外はチャンピオン固有キットを採用
+      const hasValidEarly = detail?.powerSpikes?.earlyLvl1to5 && !detail.powerSpikes.earlyLvl1to5.includes('Lv1〜5序盤スパイク');
+      const hasValidMid = detail?.powerSpikes?.mid1to2Core && !detail.powerSpikes.mid1to2Core.includes('1〜2コア中盤スパイク');
+      const hasValidLate = detail?.powerSpikes?.late3CorePlus && !detail.powerSpikes.late3CorePlus.includes('3コア終盤スパイク');
+
+      const powerSpikes = (hasValidEarly && hasValidMid && hasValidLate)
         ? detail.powerSpikes
         : kit.powerSpikes;
 
-      const favoredMatchups = (detail?.favoredMatchups?.length > 0 && !detail.favoredMatchups[0].enemy.includes('有利な相手'))
+      const hasValidFav = detail?.favoredMatchups?.length > 0 && !detail.favoredMatchups[0].enemy.includes('有利な相手');
+      const favoredMatchups = hasValidFav
         ? detail.favoredMatchups
         : kit.favoredMatchups;
 
-      const hardMatchups = (detail?.hardMatchups?.length > 0 && !detail.hardMatchups[0].enemy.includes('苦手な相手'))
+      const hasValidHard = detail?.hardMatchups?.length > 0 && !detail.hardMatchups[0].enemy.includes('苦手な相手');
+      const hardMatchups = hasValidHard
         ? detail.hardMatchups
         : kit.hardMatchups;
 
-      const aiTacticsGuide = (detail?.aiTacticsGuide && !detail.aiTacticsGuide.includes('専属指南'))
+      const hasValidAiGuide = detail?.aiTacticsGuide && !detail.aiTacticsGuide.includes('専属指南');
+      const aiTacticsGuide = hasValidAiGuide
         ? detail.aiTacticsGuide
         : kit.tacticsGuide;
 

@@ -1,7 +1,7 @@
 {
   "patch_version": "26.18",
-  "updated_at": "2026-09-13T20:02:14.541172+00:00",
-  "status": "suspended",
+  "updated_at": "2026-09-16T07:48:49.256335+00:00",
+  "status": "running",
   "queue": {
     "Aatrox": {
       "name": "エイトロックス",
@@ -101,55 +101,55 @@
     },
     "Blitzcrank": {
       "name": "ブリッツクランク",
-      "status": "pending",
-      "updated_at": "2026-09-07T03:57:06.360078+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-15T04:17:06.821272+00:00",
       "error": null
     },
     "Brand": {
       "name": "ブランド",
-      "status": "pending",
-      "updated_at": "2026-09-07T03:57:53.934195+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-15T04:17:57.696733+00:00",
       "error": null
     },
     "Braum": {
       "name": "ブラウム",
-      "status": "pending",
-      "updated_at": "2026-09-07T03:58:40.619604+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-15T04:18:48.481308+00:00",
       "error": null
     },
     "Briar": {
       "name": "ブライアー",
-      "status": "pending",
-      "updated_at": "2026-09-07T03:59:28.589126+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-15T04:19:37.588993+00:00",
       "error": null
     },
     "Caitlyn": {
       "name": "ケイトリン",
-      "status": "pending",
-      "updated_at": "2026-09-07T04:00:16.080432+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-15T08:18:23.225857+00:00",
       "error": null
     },
     "Camille": {
       "name": "カミール",
-      "status": "pending",
-      "updated_at": "2026-09-07T04:01:04.220582+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-15T08:19:11.297362+00:00",
       "error": null
     },
     "Cassiopeia": {
       "name": "カシオペア",
-      "status": "pending",
-      "updated_at": "2026-09-07T04:01:50.744284+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-15T08:19:59.235570+00:00",
       "error": null
     },
     "Chogath": {
       "name": "チョ＝ガス",
-      "status": "pending",
-      "updated_at": "2026-09-07T04:02:38.526989+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-15T08:20:47.568199+00:00",
       "error": null
     },
     "Corki": {
       "name": "コーキ",
-      "status": "pending",
+      "status": "running",
       "updated_at": "2026-09-07T04:03:25.890602+00:00",
       "error": null
     },
