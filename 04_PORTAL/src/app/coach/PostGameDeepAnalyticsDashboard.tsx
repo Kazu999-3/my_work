@@ -226,9 +226,46 @@ export default function PostGameDeepAnalyticsDashboard() {
             <span className="text-[10px] text-stone-400 font-bold">クリックで各試合の深層解析に即時切り替え</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-2">
+            {/* 🌟 先頭: 直近全試合 統合ディープ分析ボタン */}
+            <button
+              type="button"
+              onClick={() => {
+                if (selectedMatchId !== 'all') {
+                  setSelectedMatchId('all');
+                  fetchAnalytics('all');
+                }
+              }}
+              disabled={switching}
+              className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5 relative overflow-hidden ${
+                (selectedMatchId === 'all' || data.selected_match_id === 'all')
+                  ? 'bg-gradient-to-br from-amber-500/20 via-amber-100 to-amber-50 border-amber-500 shadow-xs ring-2 ring-amber-400/60'
+                  : 'bg-stone-50/80 border-stone-200 hover:bg-amber-50/50 hover:border-amber-300'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-amber-600 text-white font-mono">
+                  ALL
+                </span>
+                <span className="text-[9px] font-black text-amber-900">統合分析</span>
+              </div>
+
+              <div className="flex items-center gap-1.5 my-0.5">
+                <div className="w-6 h-6 rounded-full bg-amber-500 text-white flex items-center justify-center text-[10px] font-black shrink-0 shadow-2xs">
+                  ★
+                </div>
+                <span className="text-[11px] font-black text-amber-950 truncate">全{data.recent_matches.length}戦 統合</span>
+              </div>
+
+              <div className="flex items-center justify-between text-[10px] text-stone-600 font-mono font-bold">
+                <span className="text-amber-800 font-bold">勝率 {data.cross_match_summary?.win_rate || 0}%</span>
+                <span>平均合算</span>
+              </div>
+            </button>
+
+            {/* 個別試合カード一覧 */}
             {data.recent_matches.map((m, idx) => {
-              const isSelected = (selectedMatchId || data.selected_match_id) === m.matchId;
+              const isSelected = selectedMatchId !== 'all' && (selectedMatchId || data.selected_match_id) === m.matchId;
               const dateObj = new Date(m.gameStartTimestamp);
               const timeStr = `${dateObj.getMonth() + 1}/${dateObj.getDate()} ${dateObj.getHours()}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
 
@@ -313,10 +350,14 @@ export default function PostGameDeepAnalyticsDashboard() {
       <div className="flex items-center justify-between border-b border-stone-100 pb-3 flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <span className="px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 rounded-md text-[10px] font-black uppercase tracking-wider">
-            Match Deep Dive
+            {selectedMatchId === 'all' || data.selected_match_id === 'all' ? 'Multi-Match Aggregate' : 'Match Deep Dive'}
           </span>
           <h3 className="text-base font-black text-stone-900 flex items-center gap-1.5">
-            <span>⚡ 選択マッチの精密ディープアナリティクス</span>
+            <span>
+              {selectedMatchId === 'all' || data.selected_match_id === 'all'
+                ? `⚡ 直近${data.recent_matches?.length || ''}戦 統合ディープアナリティクス`
+                : '⚡ 選択マッチの精密ディープアナリティクス'}
+            </span>
           </h3>
           {switching && (
             <span className="text-xs text-amber-600 font-bold flex items-center gap-1 animate-pulse ml-2">
@@ -326,23 +367,29 @@ export default function PostGameDeepAnalyticsDashboard() {
         </div>
         <div className="flex items-center gap-2 text-xs font-mono font-bold text-stone-600 flex-wrap">
           <span className={`px-2 py-0.5 rounded text-[10px] font-black text-white ${data.is_win ? 'bg-emerald-600' : 'bg-rose-600'}`}>
-            {data.is_win ? 'VICTORY' : 'DEFEAT'}
+            {selectedMatchId === 'all' || data.selected_match_id === 'all'
+              ? `勝率 ${data.cross_match_summary?.win_rate || 0}%`
+              : data.is_win
+              ? 'VICTORY'
+              : 'DEFEAT'}
           </span>
           <span className="bg-stone-100 px-2 py-0.5 rounded border border-stone-200 text-stone-800 flex items-center gap-1.5">
-            <Image
-              src={getChampIcon(data.my_champion)}
-              alt={data.my_champion}
-              width={16}
-              height={16}
-              className="w-4 h-4 rounded-full"
-              onError={(e) => { e.currentTarget.style.display = 'none'; }}
-            />
-            {data.my_champion} vs {data.enemy_champion}
+            {selectedMatchId !== 'all' && (
+              <Image
+                src={getChampIcon(data.my_champion)}
+                alt={data.my_champion}
+                width={16}
+                height={16}
+                className="w-4 h-4 rounded-full"
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              />
+            )}
+            {data.my_champion} {selectedMatchId !== 'all' && `vs ${data.enemy_champion}`}
           </span>
           <span>•</span>
           <span>KDA: {data.kda_str}</span>
           <span>•</span>
-          <span>時間: {data.match_duration_str}</span>
+          <span>{data.match_duration_str}</span>
           <button
             onClick={() => fetchAnalytics(selectedMatchId)}
             title="最新の試合を再読み込み"
