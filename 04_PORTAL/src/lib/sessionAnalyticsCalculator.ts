@@ -877,29 +877,81 @@ export function calculateRealSessionAnalytics(
   const dayOfWeekVariance = [
     {
       day: '火〜木 (平日夜)',
-      winRate: Math.round(((dayStats[2].wins + dayStats[3].wins + dayStats[4].wins) / Math.max(1, dayStats[2].total + dayStats[3].total + dayStats[4].total)) * 100) || 58,
+      winRate: (dayStats[2].total + dayStats[3].total + dayStats[4].total) > 0
+        ? Math.round(((dayStats[2].wins + dayStats[3].wins + dayStats[4].wins) / (dayStats[2].total + dayStats[3].total + dayStats[4].total)) * 100)
+        : 0,
       gamesCount: dayStats[2].total + dayStats[3].total + dayStats[4].total,
       playerPoolType: '落ち着いたソロプレイヤー多め (勝ちやすい)',
     },
     {
       day: '金曜夜〜土曜',
-      winRate: Math.round(((dayStats[5].wins + dayStats[6].wins) / Math.max(1, dayStats[5].total + dayStats[6].total)) * 100) || 47,
+      winRate: (dayStats[5].total + dayStats[6].total) > 0
+        ? Math.round(((dayStats[5].wins + dayStats[6].wins) / (dayStats[5].total + dayStats[6].total)) * 100)
+        : 0,
       gamesCount: dayStats[5].total + dayStats[6].total,
       playerPoolType: '飲酒・パーティー・トロール多め (ブレが大きい)',
     },
     {
       day: '日曜〜月曜',
-      winRate: Math.round(((dayStats[0].wins + dayStats[1].wins) / Math.max(1, dayStats[0].total + dayStats[1].total)) * 100) || 53,
+      winRate: (dayStats[0].total + dayStats[1].total) > 0
+        ? Math.round(((dayStats[0].wins + dayStats[1].wins) / (dayStats[0].total + dayStats[1].total)) * 100)
+        : 0,
       gamesCount: dayStats[0].total + dayStats[1].total,
       playerPoolType: '週末ランク追い込み・落ち着いた雰囲気',
     },
   ];
 
-  const goldenSessionRules = [
-    `【黄金律1】1セッションは最大3〜4試合で必ず打ち切る（疲労による無意識の判断ミスを防止）。`,
-    `【黄金律2】敗北後は「即キュー」を押さず、最低5分間の休憩を義務化（平常心リセット）。`,
-    `【黄金律3】実測で勝率が安定している夜のゴールデンタイム（19:00〜23:59）にランク戦を集中させる。`,
-  ];
+  // 🎯 実測データ連動型「黄金プレイルール 3箇条」の完全動的生成 (実成績完全一致)
+  const lateFatigue = sessionFatigueImpact.find((f) => f.gameNumberInSession === '5試合目以降');
+  const earlyFatigue = sessionFatigueImpact.find((f) => f.gameNumberInSession === '1〜2試合目');
+  const midFatigue = sessionFatigueImpact.find((f) => f.gameNumberInSession === '3〜4試合目');
+
+  // 黄金律1: セッション・連戦疲労
+  let rule1 = '【黄金律1: セッション管理】集中力の持続に合わせて1セッションを区切り、安定したプレイを維持すること。';
+  if (lateFatigue && lateFatigue.hasData && lateFatigue.gamesCount >= 3 && lateFatigue.winRate < (earlyFatigue?.winRate || 50) - 5) {
+    rule1 = `【黄金律1: 5連戦以上の疲労管理】実測で5戦目以降は勝率が${lateFatigue.winRate}% (平均${lateFatigue.avgDeaths}デス) に低下（1〜2戦目: ${earlyFatigue?.winRate || 0}%）。1セッション最大${midFatigue?.hasData && midFatigue.winRate > lateFatigue.winRate ? '3〜4' : '2〜3'}戦で小休止を入れるのが最も効率的。`;
+  } else if (midFatigue && midFatigue.hasData && midFatigue.gamesCount >= 3 && midFatigue.winRate >= (earlyFatigue?.winRate || 50)) {
+    rule1 = `【黄金律1: 3〜4戦目ピーク型】実測で3〜4戦目が勝率${midFatigue.winRate}% (平均${midFatigue.avgDeaths}デス) と最も覚醒。ウォーミングアップ後のこの時間帯に集中して連勝を狙うこと。`;
+  } else if (earlyFatigue && earlyFatigue.hasData && earlyFatigue.winRate >= 55) {
+    rule1 = `【黄金律1: 立ち上がり集中型】実測で1〜2戦目が勝率${earlyFatigue.winRate}% (平均${earlyFatigue.avgDeaths}デス) と最も安定。疲労のない初戦〜2戦目に全力を注ぎ、無理な連戦は避ける。`;
+  } else if (lateFatigue && !lateFatigue.hasData) {
+    rule1 = `【黄金律1: 短時間集中プレイの維持】1セッション1〜4戦以内でプレイしており、連戦疲労を完璧に回避（1〜2戦目勝率${earlyFatigue?.winRate || 0}%）。この健康的なセッション規律を維持すること。`;
+  } else if (earlyFatigue && earlyFatigue.hasData) {
+    rule1 = `【黄金律1: セッションペース維持】1〜2戦目勝率${earlyFatigue.winRate}%、3〜4戦目勝率${midFatigue?.hasData ? midFatigue.winRate + '%' : 'データなし'}と安定。連戦時も集中力を切らさずプレイすること。`;
+  }
+
+  // 黄金律2: 敗北後即キュー・メンタル管理
+  let rule2 = '【黄金律2: メンタルリセット】敗北時は感情に流されず、平常心を保って次戦に臨むこと。';
+  if (requeueTiltStats.hasData && requeueTiltStats.immediateRequeueGames >= 2 && requeueTiltStats.tiltWinRateDropPercent >= 8) {
+    rule2 = `【黄金律2: 敗北後即キュー厳禁】負けた直後の5分以内即キューは実測勝率${requeueTiltStats.immediateRequeueWinRate}% (${requeueTiltStats.tiltWinRateDropPercent}%低下 / 計${requeueTiltStats.immediateRequeueGames}試合) と急落。敗北後は必ず5分画面を離れて深呼吸すること。`;
+  } else if (requeueTiltStats.hasData && requeueTiltStats.immediateRequeueGames >= 2 && requeueTiltStats.immediateRequeueWinRate >= requeueTiltStats.restedRequeueWinRate) {
+    rule2 = `【黄金律2: 連戦メンタルの安定】敗北直後の即キューでも勝率${requeueTiltStats.immediateRequeueWinRate}% (計${requeueTiltStats.immediateRequeueGames}試合) を維持しており、ティルトによる崩壊が起きていない。平常心の維持が強み。`;
+  } else if (requeueTiltStats.immediateRequeueGames <= 1) {
+    rule2 = `【黄金律2: 敗北時クールダウンの徹底】敗北後の即キューが実測${requeueTiltStats.immediateRequeueGames}回のみと、感情に任せた連戦を自制できている。連敗ドロ沼を防ぐこの規律を今後も徹底すること。`;
+  } else {
+    rule2 = `【黄金律2: 連敗ストッパー】敗北直後の即キュー勝率${requeueTiltStats.immediateRequeueWinRate}% (休憩後${requeueTiltStats.restedRequeueWinRate}%)。連敗時は2連敗でその日のランクを切り上げるルールを推奨。`;
+  }
+
+  // 黄金律3: 時間帯・環境最適化
+  let rule3 = '【黄金律3: 環境最適化】自身のコンディションが最も良い時間帯に集中してプレイすること。';
+  const validTimeSlots = timeOfDayPerformance.filter((t) => t.hasData).sort((a, b) => b.winRate - a.winRate);
+  if (validTimeSlots.length >= 2) {
+    const bestSlot = validTimeSlots[0];
+    const worstSlot = validTimeSlots[validTimeSlots.length - 1];
+    const bestSlotName = bestSlot.label.replace(/^[^\s]+\s/, '');
+    const worstSlotName = worstSlot.label.replace(/^[^\s]+\s/, '');
+    if (bestSlot.winRate > worstSlot.winRate + 10) {
+      rule3 = `【黄金律3: 覚醒時間帯の集中】実測で最高パフォーマンスを誇る「${bestSlot.timeSlot} (${bestSlotName} / 勝率${bestSlot.winRate}%・${bestSlot.gamesCount}戦)」が最大の勝ち場。逆に苦戦傾向の「${worstSlot.timeSlot} (${worstSlotName} / 勝率${worstSlot.winRate}%)」は避けること。`;
+    } else {
+      rule3 = `【黄金律3: 主戦場での勝率維持】最多プレイ時間帯「${bestSlot.timeSlot} (${bestSlotName} / 勝率${bestSlot.winRate}%・${bestSlot.gamesCount}戦)」で安定した成果。コンディションの良い時間帯を固定化すること。`;
+    }
+  } else if (validTimeSlots.length === 1) {
+    const bestSlot = validTimeSlots[0];
+    const bestSlotName = bestSlot.label.replace(/^[^\s]+\s/, '');
+    rule3 = `【黄金律3: 集中時間帯のプレイ】実測最多の「${bestSlot.timeSlot} (${bestSlotName} / 勝率${bestSlot.winRate}%・${bestSlot.gamesCount}戦)」に集中してランクを回すこと。`;
+  }
+
+  const goldenSessionRules = [rule1, rule2, rule3];
 
   // 序盤因果・被デス傾向・ゴールド効率の実測動的計算
   const totalDurationMin = sorted.reduce((sum, m) => sum + m.gameDuration, 0) / 60;
