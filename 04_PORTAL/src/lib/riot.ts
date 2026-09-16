@@ -43,6 +43,7 @@ interface MatchResult {
   gameDuration: number; // seconds
   gameStartTimestamp: number; // epoch ms (UTC)
   participants: ParticipantStats[];
+  teams?: any[];
   queueId?: number;
   gameType?: string;
 }
@@ -187,6 +188,7 @@ export async function fetchMatchDetails(matchId: string, apiKey: string): Promis
     gameDuration,
     gameStartTimestamp,
     participants,
+    teams: data.info.teams,
     queueId: data.info.queueId,
     gameType: data.info.gameType
   };

@@ -83,6 +83,14 @@ export async function POST(request: NextRequest) {
               const durSec = detail.gameDuration || 1800;
               const endTs = startTs + durSec * 1000;
 
+              const myTeam = detail.teams?.find((t: any) => t.teamId === p.teamId);
+              const enemyTeam = detail.teams?.find((t: any) => t.teamId !== p.teamId);
+              const teamHordeKills = myTeam?.objectives?.horde?.kills || 0;
+              const teamDragonKills = myTeam?.objectives?.dragon?.kills || 0;
+              const enemyHordeKills = enemyTeam?.objectives?.horde?.kills || 0;
+              const enemyDragonKills = enemyTeam?.objectives?.dragon?.kills || 0;
+              const firstDragon = myTeam?.objectives?.dragon?.first || false;
+
               const record: RawMatchRecord = {
                 matchId: mId,
                 gameStartTimestamp: startTs,
@@ -101,6 +109,11 @@ export async function POST(request: NextRequest) {
                 playerDamage: p.damageDealtToChampions || 0,
                 teamKills: teamKills || 1,
                 goldEarned: p.goldEarned || 0,
+                teamHordeKills,
+                teamDragonKills,
+                enemyHordeKills,
+                enemyDragonKills,
+                firstDragon,
               };
               return record;
             } catch (e) {

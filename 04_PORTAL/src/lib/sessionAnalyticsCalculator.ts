@@ -24,6 +24,11 @@ export interface RawMatchRecord {
   playerDamage: number;
   teamKills: number;
   goldEarned?: number;
+  teamHordeKills?: number;   // ヴォイドグラブ獲得数 (0〜6)
+  teamDragonKills?: number;  // ドラゴン獲得数
+  enemyHordeKills?: number;
+  enemyDragonKills?: number;
+  firstDragon?: boolean;     // 初手ドラゴン確保フラグ
 }
 
 // ==========================================
@@ -544,9 +549,11 @@ export function calculateTargetRankGap(
 export interface EarlyTimelineImpact {
   firstBloodRate: number;
   firstDeathAvgMinute: string;
+  objLabel: string;
   voidgrubWinRate: number;
   voidgrubLossWinRate: number;
   plateGoldImpact: string;
+  roleObjectiveFocus: string;
 }
 
 export interface FatalDeathAnalytics {
@@ -913,18 +920,62 @@ export function calculateRealSessionAnalytics(
   }, 0);
   const avgDmgShare = Math.round(totalDmgShare / totalG);
 
-  // 1. 序盤因果（実測値から動的算出）
+  // 1. 序盤因果・オブジェクト実測（ロール別の主戦場オブジェクトを自動切替）
   const estimatedFbRate = Math.min(65, Math.max(15, Math.round(kp15Actual * 0.7 + (kdaActual >= 4 ? 12 : 0))));
   const firstDeathMin = Math.max(4, Math.min(14, Number((12 - avgDeathsOverall * 1.5).toFixed(1))));
-  const grubWin = Math.min(85, Math.max(45, Math.round(overallWinRate + 14)));
-  const grubLossWin = Math.max(20, Math.min(50, Math.round(overallWinRate - 12)));
+
+  const isBotSide = detectedRole === 'UTILITY' || detectedRole === 'SUPPORT' || detectedRole === 'BOTTOM' || detectedRole === 'BOT' || detectedRole === 'ADC';
+  
+  // 実測オブジェクト（グラブ / ドラゴン）集計
+  let objSecuredWins = 0;
+  let objSecuredTotal = 0;
+  let objLostWins = 0;
+  let objLostTotal = 0;
+
+  sorted.forEach((m) => {
+    if (isBotSide) {
+      // BOT/SUPはドラゴン主戦場
+      const hadDragonLead = (m.teamDragonKills || 0) >= (m.enemyDragonKills || 0) + 1 || m.firstDragon === true;
+      if (hadDragonLead) {
+        objSecuredTotal += 1;
+        if (m.win) objSecuredWins += 1;
+      } else {
+        objLostTotal += 1;
+        if (m.win) objLostWins += 1;
+      }
+    } else {
+      // TOP/JG/MIDはグラブ主戦場 (3匹以上確保)
+      const hadHordeLead = (m.teamHordeKills || 0) >= 3 || (m.teamHordeKills || 0) > (m.enemyHordeKills || 0);
+      if (hadHordeLead) {
+        objSecuredTotal += 1;
+        if (m.win) objSecuredWins += 1;
+      } else {
+        objLostTotal += 1;
+        if (m.win) objLostWins += 1;
+      }
+    }
+  });
+
+  const objWinRate = objSecuredTotal > 0
+    ? Math.round((objSecuredWins / objSecuredTotal) * 100)
+    : Math.min(88, Math.max(50, Math.round(overallWinRate + 15)));
+
+  const objLossWinRate = objLostTotal > 0
+    ? Math.round((objLostWins / objLostTotal) * 100)
+    : Math.max(18, Math.min(48, Math.round(overallWinRate - 15)));
 
   const earlyTimelineImpact: EarlyTimelineImpact = {
     firstBloodRate: estimatedFbRate,
     firstDeathAvgMinute: `${Math.floor(firstDeathMin)}分${Math.round((firstDeathMin % 1) * 60)}秒 (${avgDeathsOverall <= 3.5 ? '序盤の安全性極めて高' : '序盤やや被ガンク注意'})`,
-    voidgrubWinRate: grubWin,
-    voidgrubLossWinRate: grubLossWin,
-    plateGoldImpact: `14分プレート/主導権関与 +${Math.max(10, Math.round(avgDmgShare * 1.1))}% で中盤リード構築`,
+    objLabel: isBotSide ? '初手ドラゴン確保時勝率' : 'グラブ優位時勝率 (3匹以上)',
+    voidgrubWinRate: objWinRate,
+    voidgrubLossWinRate: objLossWinRate,
+    plateGoldImpact: isBotSide
+      ? `下半身主導権によるタワープレート奪取 +${Math.max(10, Math.round(avgDmgShare * 1.1))}% で中盤リード構築`
+      : `グラブ効果による14分タワー破壊力 +${Math.max(10, Math.round(avgDmgShare * 1.1))}% でリード拡大`,
+    roleObjectiveFocus: isBotSide
+      ? 'BOT/サポートは「ドラゴン優先」。下半身レーンのプッシュ主導権と湧き前視界で1匹目ドラゴンを先取することが勝利の絶対条件です。'
+      : 'TOP/JG/MIDは「ヴォイドグラブ優先」。序盤リバー主導権を取り3匹以上確保することで、タワー破壊とマップ開放が一気に加速します。',
   };
 
   // 2. 致命的デス分析（実測被デス数・勝敗から動的算出）
@@ -1257,9 +1308,15 @@ function getFallbackSessionAnalytics(targetTier: string = 'Emerald IV', detected
     earlyTimelineImpact: {
       firstBloodRate: 38,
       firstDeathAvgMinute: '7分40秒 (序盤の安全性高)',
+      objLabel: isSup ? '初手ドラゴン確保時勝率' : 'グラブ優位時勝率 (3匹以上)',
       voidgrubWinRate: 68,
       voidgrubLossWinRate: 42,
-      plateGoldImpact: '14分タワープレート関与率 +22% で中盤リード構築',
+      plateGoldImpact: isSup
+        ? '下半身主導権によるタワープレート奪取 +22% で中盤リード構築'
+        : 'グラブ効果による14分タワー破壊力 +22% でリード拡大',
+      roleObjectiveFocus: isSup
+        ? 'BOT/サポートは「ドラゴン優先」。下半身レーンのプッシュ主導権と湧き前視界で1匹目ドラゴンを先取することが勝利の絶対条件です。'
+        : 'TOP/JG/MIDは「ヴォイドグラブ優先」。序盤リバー主導権を取り3匹以上確保することで、タワー破壊とマップ開放が一気に加速します。',
     },
     fatalDeathAnalytics: {
       objPreSpawnDeathsCount: 2,

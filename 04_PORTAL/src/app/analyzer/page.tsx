@@ -814,7 +814,7 @@ export default function PlayerAnalyzerPage() {
                             </span>
                           </div>
                           <div className="flex justify-between font-bold">
-                            <span>グラブ獲得時勝率:</span>
+                            <span>{report.sessionAnalytics.earlyTimelineImpact.objLabel || '序盤オブジェクト獲得時勝率'}:</span>
                             <span className="font-mono text-emerald-700">
                               {report.sessionAnalytics.earlyTimelineImpact.voidgrubWinRate}%
                             </span>
@@ -822,6 +822,11 @@ export default function PlayerAnalyzerPage() {
                           <div className="text-[11px] text-stone-500 pt-1 border-t border-stone-100 font-medium">
                             {report.sessionAnalytics.earlyTimelineImpact.plateGoldImpact}
                           </div>
+                          {report.sessionAnalytics.earlyTimelineImpact.roleObjectiveFocus && (
+                            <div className="text-[10.5px] text-indigo-700 bg-indigo-50/70 p-2 rounded-xl font-medium leading-relaxed">
+                              🎯 {report.sessionAnalytics.earlyTimelineImpact.roleObjectiveFocus}
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
