@@ -593,7 +593,12 @@ export default function PlayerAnalyzerPage() {
                       <PieChart size={16} className="text-amber-600" />
                       <span>⚖️ 試合展開4タイプ自動分類 (Carry vs ACE Loss Index)</span>
                     </h3>
-                    <span className="text-[10px] font-bold text-stone-400">実戦ログ分類</span>
+                    <span className="text-[11px] font-black text-amber-800 bg-amber-100/80 px-2.5 py-0.5 rounded-lg font-mono">
+                      実戦 {report.sessionAnalytics.gameOutcomeBreakdown.hardCarryWins.count +
+                        report.sessionAnalytics.gameOutcomeBreakdown.teamSupportedWins.count +
+                        report.sessionAnalytics.gameOutcomeBreakdown.aceLosses.count +
+                        report.sessionAnalytics.gameOutcomeBreakdown.throwLosses.count}試合 抽出解析
+                    </span>
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">

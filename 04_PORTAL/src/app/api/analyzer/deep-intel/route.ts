@@ -55,74 +55,99 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          // キュー選択に応じたマッチID取得 (最大50件)
+          // キュー選択に応じたマッチID取得 (ソロQ=420で厳密に50件取得)
           let matchIds: string[] = [];
           if (queueType === 'solo') {
             matchIds = await fetchRankedSoloMatchIds(puuid, apiKey, 50);
-            // ソロQが少なければ全マッチで補完
             if (matchIds.length === 0) {
-              matchIds = await fetchRecentMatchIds(puuid, apiKey, 30);
+              matchIds = await fetchRecentMatchIds(puuid, apiKey, 50, 420);
+            }
+            // 万が一ソロQが0件の場合は全体マッチで補完
+            if (matchIds.length === 0) {
+              matchIds = await fetchRecentMatchIds(puuid, apiKey, 50);
             }
           } else {
             matchIds = await fetchRecentMatchIds(puuid, apiKey, 50);
           }
 
-          // 各マッチの詳細を取得し、RawMatchRecord を構築 (最大50件の詳細を並行取得)
+          // 各マッチの詳細を取得し、RawMatchRecord を構築 (429レート制限を回避する10件バッチ並列＋リトライ)
           const targetIds = matchIds.slice(0, 50);
-          const matchDetailPromises = targetIds.map(async (mId) => {
-            try {
-              const detail = await fetchMatchDetails(mId, apiKey);
-              const p = detail.participants.find((part) => part.puuid === puuid);
-              if (!p) return null;
+          const rawMatchResults: RawMatchRecord[] = [];
+          const chunkSize = 10;
 
-              const teamMembers = detail.participants.filter((part) => part.teamId === p.teamId);
-              const teamKills = teamMembers.reduce((sum, m) => sum + m.kills, 0);
-              const teamDamage = teamMembers.reduce((sum, m) => sum + m.damageDealtToChampions, 0);
+          for (let i = 0; i < targetIds.length; i += chunkSize) {
+            const chunk = targetIds.slice(i, i + chunkSize);
+            const chunkPromises = chunk.map(async (mId) => {
+              for (let attempt = 0; attempt < 3; attempt++) {
+                try {
+                  const detail = await fetchMatchDetails(mId, apiKey);
+                  const p = detail.participants.find((part) => part.puuid === puuid);
+                  if (!p) return null;
 
-              const startTs = detail.gameStartTimestamp || Date.now();
-              const durSec = detail.gameDuration || 1800;
-              const endTs = startTs + durSec * 1000;
+                  const teamMembers = detail.participants.filter((part) => part.teamId === p.teamId);
+                  const teamKills = teamMembers.reduce((sum, m) => sum + m.kills, 0);
+                  const teamDamage = teamMembers.reduce((sum, m) => sum + m.damageDealtToChampions, 0);
 
-              const myTeam = detail.teams?.find((t: any) => t.teamId === p.teamId);
-              const enemyTeam = detail.teams?.find((t: any) => t.teamId !== p.teamId);
-              const teamHordeKills = myTeam?.objectives?.horde?.kills || 0;
-              const teamDragonKills = myTeam?.objectives?.dragon?.kills || 0;
-              const enemyHordeKills = enemyTeam?.objectives?.horde?.kills || 0;
-              const enemyDragonKills = enemyTeam?.objectives?.dragon?.kills || 0;
-              const firstDragon = myTeam?.objectives?.dragon?.first || false;
+                  const startTs = detail.gameStartTimestamp || Date.now();
+                  const durSec = detail.gameDuration || 1800;
+                  const endTs = startTs + durSec * 1000;
 
-              const record: RawMatchRecord = {
-                matchId: mId,
-                gameStartTimestamp: startTs,
-                gameDuration: durSec,
-                gameEndTimestamp: endTs,
-                win: p.win,
-                kills: p.kills,
-                deaths: p.deaths,
-                assists: p.assists,
-                championName: p.championName,
-                lane: p.lane || 'JUNGLE',
-                visionScore: p.visionScore || 0,
-                totalMinionsKilled: p.totalMinionsKilled || 0,
-                neutralMinionsKilled: p.neutralMinionsKilled || 0,
-                teamDamage: teamDamage || 1,
-                playerDamage: p.damageDealtToChampions || 0,
-                teamKills: teamKills || 1,
-                goldEarned: p.goldEarned || 0,
-                teamHordeKills,
-                teamDragonKills,
-                enemyHordeKills,
-                enemyDragonKills,
-                firstDragon,
-              };
-              return record;
-            } catch (e) {
+                  const myTeam = detail.teams?.find((t: any) => t.teamId === p.teamId);
+                  const enemyTeam = detail.teams?.find((t: any) => t.teamId !== p.teamId);
+                  const teamHordeKills = myTeam?.objectives?.horde?.kills || 0;
+                  const teamDragonKills = myTeam?.objectives?.dragon?.kills || 0;
+                  const enemyHordeKills = enemyTeam?.objectives?.horde?.kills || 0;
+                  const enemyDragonKills = enemyTeam?.objectives?.dragon?.kills || 0;
+                  const firstDragon = myTeam?.objectives?.dragon?.first || false;
+
+                  const record: RawMatchRecord = {
+                    matchId: mId,
+                    gameStartTimestamp: startTs,
+                    gameDuration: durSec,
+                    gameEndTimestamp: endTs,
+                    win: p.win,
+                    kills: p.kills,
+                    deaths: p.deaths,
+                    assists: p.assists,
+                    championName: p.championName,
+                    lane: p.lane || 'JUNGLE',
+                    visionScore: p.visionScore || 0,
+                    totalMinionsKilled: p.totalMinionsKilled || 0,
+                    neutralMinionsKilled: p.neutralMinionsKilled || 0,
+                    teamDamage: teamDamage || 1,
+                    playerDamage: p.damageDealtToChampions || 0,
+                    teamKills: teamKills || 1,
+                    goldEarned: p.goldEarned || 0,
+                    teamHordeKills,
+                    teamDragonKills,
+                    enemyHordeKills,
+                    enemyDragonKills,
+                    firstDragon,
+                  };
+                  return record;
+                } catch (e: any) {
+                  if (attempt < 2 && (e?.name === 'RiotRateLimitError' || String(e).includes('429'))) {
+                    const waitMs = e?.retryAfterSec ? e.retryAfterSec * 1000 : 600 * (attempt + 1);
+                    await new Promise((resolve) => setTimeout(resolve, waitMs));
+                    continue;
+                  }
+                  return null;
+                }
+              }
               return null;
-            }
-          });
+            });
 
-          const results = await Promise.all(matchDetailPromises);
-          rawMatches = results.filter((r): r is RawMatchRecord => r !== null);
+            const chunkResults = await Promise.all(chunkPromises);
+            chunkResults.forEach((r) => {
+              if (r) rawMatchResults.push(r);
+            });
+
+            if (i + chunkSize < targetIds.length) {
+              await new Promise((resolve) => setTimeout(resolve, 150));
+            }
+          }
+
+          rawMatches = rawMatchResults;
         }
       } catch (e) {
         console.warn('Riot API stats fetch failed, falling back to dynamic estimate:', e);
