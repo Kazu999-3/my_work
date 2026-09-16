@@ -196,12 +196,12 @@ export default function Sidebar() {
     ? (activeTab === 'admin' ? [...GENERAL_MENU_ITEMS, ...ADMIN_EXTRA_ITEMS] : GENERAL_MENU_ITEMS)
     : GENERAL_MENU_ITEMS;
 
-  // スマホ用ボトムバー固定5項目（主要画面）
+  // スマホ用ボトムバー固定項目（主要画面）
   const mobileBottomBarItems: MenuItem[] = [
+    { id: 'home', label: 'ホーム', shortLabel: 'ホーム', icon: Home, href: '/', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
     { id: 'mypage', label: 'マイページ', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
     { id: 'mentorship', label: '師弟掲示板', shortLabel: '師弟掲示板', icon: HeartHandshake, href: '/mentorship', color: 'text-emerald-500', activeBg: 'bg-emerald-500/15' },
     { id: 'balancer', label: 'チーム分け', shortLabel: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-rose-600', activeBg: 'bg-rose-500/15' },
-    { id: 'leaderboard', label: '順位表', shortLabel: '順位・名簿', icon: Trophy, href: '/leaderboard', color: 'text-yellow-600', activeBg: 'bg-yellow-500/15' },
   ];
 
   return (
