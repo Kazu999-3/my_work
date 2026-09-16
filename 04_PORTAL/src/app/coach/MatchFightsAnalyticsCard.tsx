@@ -19,8 +19,20 @@ interface FightData {
   feedback: string;
 }
 
+interface RecentMatchItem {
+  matchId: string;
+  championName: string;
+  isWin: boolean;
+  kdaStr: string;
+  damage: number;
+  gameDurationStr: string;
+  gameStartTimestamp: number;
+}
+
 interface MatchAnalyticsResponse {
   success: boolean;
+  selected_match_id?: string;
+  recent_matches?: RecentMatchItem[];
   champion: string;
   match_duration: string;
   total_fights: number;
@@ -32,21 +44,35 @@ interface MatchAnalyticsResponse {
 
 export default function MatchFightsAnalyticsCard() {
   const [data, setData] = useState<MatchAnalyticsResponse | null>(null);
+  const [selectedMatchId, setSelectedMatchId] = useState<string>('all');
   const [loading, setLoading] = useState(true);
+  const [switching, setSwitching] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
 
+  const fetchFights = async (mId: string) => {
+    try {
+      setSwitching(true);
+      const url = mId === 'all' ? '/api/lol/match-fights?matchId=all' : `/api/lol/match-fights?matchId=${mId}`;
+      const res = await fetch(url);
+      const json = await res.json();
+      setData(json);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSwitching(false);
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetch('/api/lol/match-fights')
-      .then((res) => res.json())
-      .then((d) => {
-        setData(d);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setLoading(false);
-      });
+    fetchFights('all');
   }, []);
+
+  const handleSelectMatch = (mId: string) => {
+    if (selectedMatchId === mId && !switching) return;
+    setSelectedMatchId(mId);
+    fetchFights(mId);
+  };
 
   if (loading) {
     return (
@@ -63,16 +89,68 @@ export default function MatchFightsAnalyticsCard() {
     return null;
   }
 
-  const winRate = Math.round((data.victory_fights / data.total_fights) * 100);
+  const winRate = data.total_fights > 0 ? Math.round((data.victory_fights / data.total_fights) * 100) : 0;
+  const recentMatches = data.recent_matches || [];
 
   return (
     <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs text-stone-900 space-y-4">
+      {/* 複数試合セレクターバー */}
+      {recentMatches.length > 0 && (
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin border-b border-stone-100">
+          <button
+            type="button"
+            onClick={() => handleSelectMatch('all')}
+            disabled={switching}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 shrink-0 ${
+              selectedMatchId === 'all'
+                ? 'bg-amber-600 text-white shadow-xs'
+                : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+            }`}
+          >
+            <span>🌟</span>
+            <span>全{recentMatches.length}試合 統合集団戦レビュー</span>
+          </button>
+
+          {recentMatches.map((m, idx) => {
+            const isSelected = selectedMatchId === m.matchId;
+            return (
+              <button
+                key={m.matchId}
+                type="button"
+                onClick={() => handleSelectMatch(m.matchId)}
+                disabled={switching}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 shrink-0 border ${
+                  isSelected
+                    ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
+                    : m.isWin
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
+                    : 'bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100'
+                }`}
+              >
+                <span>#{idx + 1}</span>
+                <span>{m.championName}</span>
+                <span className={`text-[10px] font-black px-1.5 py-0.2 rounded ${
+                  isSelected 
+                    ? 'bg-stone-700 text-white' 
+                    : m.isWin 
+                    ? 'bg-emerald-200 text-emerald-900' 
+                    : 'bg-rose-200 text-rose-900'
+                }`}>
+                  {m.isWin ? 'WIN' : 'LOSE'}
+                </span>
+                <span className="font-mono text-[11px] opacity-80">{m.kdaStr}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* ヘッダー行 */}
       <div className="flex items-center justify-between gap-3 border-b border-stone-100 pb-3 flex-wrap">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-200 rounded-md text-[10px] font-black uppercase tracking-wider">
-              Deep Analytics
+              {selectedMatchId === 'all' ? 'Multi-Match Deep Analytics' : 'Match Deep Analytics'}
             </span>
             <span className="text-stone-500 text-xs font-mono flex items-center gap-1 font-bold">
               <Clock className="w-3.5 h-3.5 text-stone-400" /> {data.match_duration}
@@ -91,7 +169,9 @@ export default function MatchFightsAnalyticsCard() {
             <div className="text-sm font-black text-emerald-600 font-mono">{winRate}%</div>
           </div>
           <div className="bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-center">
-            <div className="text-[10px] text-stone-500 font-bold">交戦総火力</div>
+            <div className="text-[10px] text-stone-500 font-bold">
+              {selectedMatchId === 'all' ? '全試合 交戦総火力' : '交戦総火力'}
+            </div>
             <div className="text-sm font-black text-amber-700 font-mono">{data.total_fight_damage.toLocaleString()}</div>
           </div>
           <button
@@ -105,8 +185,16 @@ export default function MatchFightsAnalyticsCard() {
         </div>
       </div>
 
+      {/* 切替時ローディング */}
+      {switching && (
+        <div className="flex items-center justify-center py-6 gap-2 text-xs font-bold text-stone-500">
+          <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+          <span>試合データを解析中...</span>
+        </div>
+      )}
+
       {/* ファイト一覧（展開時） */}
-      {isExpanded && (
+      {!switching && isExpanded && (
         <div className="space-y-3">
           {data.fights.map((fight, idx) => {
             const isVictory = fight.result === 'VICTORY';
@@ -196,3 +284,4 @@ export default function MatchFightsAnalyticsCard() {
     </div>
   );
 }
+
