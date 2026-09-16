@@ -588,12 +588,17 @@ export default function PlayerAnalyzerPage() {
               {/* 試合展開4タイプ分類 */}
               {report.sessionAnalytics?.gameOutcomeBreakdown && (
                 <div className="rounded-3xl border border-stone-200 bg-white p-5 md:p-6 shadow-xs space-y-4">
-                  <div className="flex items-center justify-between border-b border-stone-100 pb-3">
-                    <h3 className="font-black text-sm text-stone-900 flex items-center gap-2">
-                      <PieChart size={16} className="text-amber-600" />
-                      <span>⚖️ 試合展開4タイプ自動分類 (Carry vs ACE Loss Index)</span>
-                    </h3>
-                    <span className="text-[11px] font-black text-amber-800 bg-amber-100/80 px-2.5 py-0.5 rounded-lg font-mono">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-stone-100 pb-3 gap-2">
+                    <div>
+                      <h3 className="font-black text-sm text-stone-900 flex items-center gap-2">
+                        <PieChart size={16} className="text-amber-600" />
+                        <span>⚖️ 試合展開4タイプ自動分類 (Carry vs ACE Loss Index)</span>
+                      </h3>
+                      <p className="text-[11px] text-stone-500 font-medium mt-0.5">
+                        直近の全試合を「自力勝利」「味方連携」「不運な負け」「防げた負け」の4パターンに客観分類
+                      </p>
+                    </div>
+                    <span className="text-[11px] font-black text-amber-800 bg-amber-100/80 px-2.5 py-1 rounded-xl font-mono self-start sm:self-auto">
                       実戦 {report.sessionAnalytics.gameOutcomeBreakdown.hardCarryWins.count +
                         report.sessionAnalytics.gameOutcomeBreakdown.teamSupportedWins.count +
                         report.sessionAnalytics.gameOutcomeBreakdown.aceLosses.count +
@@ -601,72 +606,96 @@ export default function PlayerAnalyzerPage() {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 text-xs">
                     {/* 1. ハードキャリー勝利 */}
-                    <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200/90 flex flex-col justify-between space-y-2.5 shadow-2xs">
-                      <div>
+                    <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200/90 flex flex-col justify-between space-y-3 shadow-2xs">
+                      <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-black text-amber-900">👑 ハードキャリー勝利</span>
-                          <span className="text-[10px] font-bold text-amber-700/80 bg-amber-200/60 px-1.5 py-0.5 rounded">自力主導</span>
+                          <span className="text-[11px] font-black text-amber-950 flex items-center gap-1">
+                            👑 ハードキャリー勝利
+                          </span>
+                          <span className="text-[9.5px] font-black text-amber-800 bg-amber-200/70 px-1.5 py-0.5 rounded">自力主導</span>
                         </div>
-                        <div className="text-xl font-black text-amber-950 font-mono mt-1">
+                        <div className="text-2xl font-black text-amber-950 font-mono">
                           {report.sessionAnalytics.gameOutcomeBreakdown.hardCarryWins.percent}%{' '}
-                          <span className="text-[11px] font-normal text-amber-800">({report.sessionAnalytics.gameOutcomeBreakdown.hardCarryWins.count}戦)</span>
+                          <span className="text-xs font-bold text-amber-800">({report.sessionAnalytics.gameOutcomeBreakdown.hardCarryWins.count}戦)</span>
                         </div>
+                        <p className="text-[11px] text-amber-950 font-medium leading-relaxed">
+                          <strong>【どういう試合？】</strong> 自身が高いキル・大ダメージ・CCで試合を動かし、圧倒的なリードを作って自らチームを勝利に導いた試合。
+                        </p>
                       </div>
-                      <div className="pt-2 border-t border-amber-200/60 text-[11px] text-amber-900 leading-relaxed font-medium">
-                        高KDA（5.0+）や高いダメージシェアで、自ら試合を動かし圧倒した勝利。
+                      <div className="pt-2 border-t border-amber-200/70 text-[10px] text-amber-900/80 space-y-0.5">
+                        <div>📊 <strong>判定基準:</strong> 勝利 ＋ KDA 5.0以上 または ダメージシェア24%以上</div>
+                        <div>💡 <strong>意味:</strong> あなたの勝ちパターン。再現性を高めることが昇格の最短ルート。</div>
                       </div>
                     </div>
 
                     {/* 2. チーム協調勝利 */}
-                    <div className="p-4 rounded-2xl bg-emerald-50/90 border border-emerald-200/90 flex flex-col justify-between space-y-2.5 shadow-2xs">
-                      <div>
+                    <div className="p-4 rounded-2xl bg-emerald-50/90 border border-emerald-200/90 flex flex-col justify-between space-y-3 shadow-2xs">
+                      <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-black text-emerald-900">🛡️ チーム協調勝利</span>
-                          <span className="text-[10px] font-bold text-emerald-700/80 bg-emerald-200/60 px-1.5 py-0.5 rounded">堅実連携</span>
+                          <span className="text-[11px] font-black text-emerald-950 flex items-center gap-1">
+                            🛡️ チーム協調勝利
+                          </span>
+                          <span className="text-[9.5px] font-black text-emerald-800 bg-emerald-200/70 px-1.5 py-0.5 rounded">堅実連携</span>
                         </div>
-                        <div className="text-xl font-black text-emerald-950 font-mono mt-1">
+                        <div className="text-2xl font-black text-emerald-950 font-mono">
                           {report.sessionAnalytics.gameOutcomeBreakdown.teamSupportedWins.percent}%{' '}
-                          <span className="text-[11px] font-normal text-emerald-800">({report.sessionAnalytics.gameOutcomeBreakdown.teamSupportedWins.count}戦)</span>
+                          <span className="text-xs font-bold text-emerald-800">({report.sessionAnalytics.gameOutcomeBreakdown.teamSupportedWins.count}戦)</span>
                         </div>
+                        <p className="text-[11px] text-emerald-950 font-medium leading-relaxed">
+                          <strong>【どういう試合？】</strong> 無理なキルを追わず低デスを維持。視界管理・味方キャリーの防衛（ピール）・オブジェクト確保で手堅く掴んだ勝利。
+                        </p>
                       </div>
-                      <div className="pt-2 border-t border-emerald-200/60 text-[11px] text-emerald-900 leading-relaxed font-medium">
-                        無駄なデスを抑え、視界・ファーム・味方キャリーとの連携で手堅く掴んだ勝利。
+                      <div className="pt-2 border-t border-emerald-200/70 text-[10px] text-emerald-900/80 space-y-0.5">
+                        <div>📊 <strong>判定基準:</strong> 勝利 ＋ 安定した低被デス・視界貢献・アシスト中心</div>
+                        <div>💡 <strong>意味:</strong> 「自分が育たなくても勝てる」高い安定性とチーム貢献力の証拠。</div>
                       </div>
                     </div>
 
                     {/* 3. エース敗北 */}
-                    <div className="p-4 rounded-2xl bg-indigo-50/90 border border-indigo-200/90 flex flex-col justify-between space-y-2.5 shadow-2xs">
-                      <div>
+                    <div className="p-4 rounded-2xl bg-indigo-50/90 border border-indigo-200/90 flex flex-col justify-between space-y-3 shadow-2xs">
+                      <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-black text-indigo-900">😭 エース敗北 (味方崩壊)</span>
-                          <span className="text-[10px] font-bold text-indigo-700/80 bg-indigo-200/60 px-1.5 py-0.5 rounded">不運・奮闘</span>
+                          <span className="text-[11px] font-black text-indigo-950 flex items-center gap-1">
+                            😭 エース敗北 (味方崩壊)
+                          </span>
+                          <span className="text-[9.5px] font-black text-indigo-800 bg-indigo-200/70 px-1.5 py-0.5 rounded">不運・奮闘</span>
                         </div>
-                        <div className="text-xl font-black text-indigo-950 font-mono mt-1">
+                        <div className="text-2xl font-black text-indigo-950 font-mono">
                           {report.sessionAnalytics.gameOutcomeBreakdown.aceLosses.percent}%{' '}
-                          <span className="text-[11px] font-normal text-indigo-800">({report.sessionAnalytics.gameOutcomeBreakdown.aceLosses.count}戦)</span>
+                          <span className="text-xs font-bold text-indigo-800">({report.sessionAnalytics.gameOutcomeBreakdown.aceLosses.count}戦)</span>
                         </div>
+                        <p className="text-[11px] text-indigo-950 font-medium leading-relaxed">
+                          <strong>【どういう試合？】</strong> 自身は好調（低デス・高KDA）で有利を作っていたが、他レーンの大量崩壊や味方のミスで押し切られた悔しい敗北。
+                        </p>
                       </div>
-                      <div className="pt-2 border-t border-indigo-200/60 text-[11px] text-indigo-900 leading-relaxed font-medium">
-                        自身は低デス（4以下）で好調だったが、他レーンの崩壊により押し切られた試合。
+                      <div className="pt-2 border-t border-indigo-200/70 text-[10px] text-indigo-900/80 space-y-0.5">
+                        <div>📊 <strong>判定基準:</strong> 敗北 ＋ 自身はKDA 3.8以上 ＆ 低被デス（4デス以下）</div>
+                        <div>💡 <strong>意味:</strong> あなた自身に大きな非はない「不運な負け」。引きずらず割り切るべき試合。</div>
                       </div>
                     </div>
 
                     {/* 4. 集団戦・逆転負け */}
-                    <div className="p-4 rounded-2xl bg-rose-50/90 border border-rose-200/90 flex flex-col justify-between space-y-2.5 shadow-2xs">
-                      <div>
+                    <div className="p-4 rounded-2xl bg-rose-50/90 border border-rose-200/90 flex flex-col justify-between space-y-3 shadow-2xs">
+                      <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-black text-rose-900">⚠️ 集団戦・逆転負け</span>
-                          <span className="text-[10px] font-bold text-rose-700/80 bg-rose-200/60 px-1.5 py-0.5 rounded">要改善</span>
+                          <span className="text-[11px] font-black text-rose-950 flex items-center gap-1">
+                            ⚠️ 集団戦・逆転負け
+                          </span>
+                          <span className="text-[9.5px] font-black text-rose-800 bg-rose-200/70 px-1.5 py-0.5 rounded">要改善</span>
                         </div>
-                        <div className="text-xl font-black text-rose-950 font-mono mt-1">
+                        <div className="text-2xl font-black text-rose-950 font-mono">
                           {report.sessionAnalytics.gameOutcomeBreakdown.throwLosses.percent}%{' '}
-                          <span className="text-[11px] font-normal text-rose-800">({report.sessionAnalytics.gameOutcomeBreakdown.throwLosses.count}戦)</span>
+                          <span className="text-xs font-bold text-rose-800">({report.sessionAnalytics.gameOutcomeBreakdown.throwLosses.count}戦)</span>
                         </div>
+                        <p className="text-[11px] text-rose-950 font-medium leading-relaxed">
+                          <strong>【どういう試合？】</strong> 自身のデスが嵩んだり、終盤のオブジェクト前や視界のない場所での孤立被キャッチから形勢を逆転されてしまった敗北。
+                        </p>
                       </div>
-                      <div className="pt-2 border-t border-rose-200/60 text-[11px] text-rose-900 leading-relaxed font-medium">
-                        終盤の孤立デスやオブジェクト前の集団戦ポジショニングミスから逆転された試合。
+                      <div className="pt-2 border-t border-rose-200/70 text-[10px] text-rose-900/80 space-y-0.5">
+                        <div>📊 <strong>判定基準:</strong> 敗北 ＋ 被デス5回以上 または 終盤の重要局面でのデス</div>
+                        <div>💡 <strong>意味:</strong> 最も改善価値の高い「防げた負け筋」。このデスの原因を無くせば即昇格。</div>
                       </div>
                     </div>
                   </div>
