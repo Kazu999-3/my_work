@@ -93,8 +93,22 @@ export default function PlayerAnalyzerPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ gameName: name, tagLine: tag, queueType: q, targetTier: tier }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || '解析に失敗しました');
+
+      const text = await res.text();
+      let data: any;
+      try {
+        data = JSON.parse(text);
+      } catch (jsonErr) {
+        throw new Error(
+          res.status === 504 || res.status === 408
+            ? 'サーバーがタイムアウトしました。もう一度実行してください。'
+            : `サーバー通信エラー (${res.status}): しばらく待ってから再試行してください。`
+        );
+      }
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || '解析に失敗しました');
+      }
       setReport(data.report);
       if (data.report?.championProfiles?.length > 0) {
         setSelectedChampId(data.report.championProfiles[0].id);
