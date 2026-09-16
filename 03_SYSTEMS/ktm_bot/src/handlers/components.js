@@ -437,8 +437,8 @@ export async function handleButtonInteraction(interaction, env, ctx) {
             }
           }
 
-          targetEmbed.fields[0].name = `⚔️ 【土曜・本戦カスタム】 (${count}/10名) 🎯 基準: ${dominantTierName}`;
-          targetEmbed.fields[0].value = fLines.length > 0 ? fLines.join('\n') : "▫ 参加者: なし\n※対象: 全員エントリーOK！最も集まったランク帯を基準に実力均等チーム分け";
+          targetEmbed.fields[0].name = `⚔️ 【土曜・本戦カスタム】 (${count}/10名) 🎯 基準: ${dominantTierName} (※MMR基準)`;
+          targetEmbed.fields[0].value = fLines.length > 0 ? fLines.join('\n') : "▫ 参加者: なし\n※対象: 全員エントリーOK！最も集まったKTM内戦MMR帯を基準に実力均等チーム分け";
         }
 
         // 3. 最新の参加人数とステータスバナー作成

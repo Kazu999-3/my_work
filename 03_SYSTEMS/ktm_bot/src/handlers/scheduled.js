@@ -460,8 +460,8 @@ async function postWeeklyRecruitment(env) {
       color: 0xc89b3c, // 琥珀色
       fields: [
         {
-          name: `⚔️ 【土曜・本戦カスタム】 (0/10名) 🎯 基準: 未定 (最多帯自動編成)`,
-          value: `▫ 参加者: なし\n※対象: 全員エントリーOK！最も集まったランク帯を基準に実力均等チーム分け`,
+          name: `⚔️ 【土曜・本戦カスタム】 (0/10名) 🎯 基準: 未定 (※MMR基準)`,
+          value: `▫ 参加者: なし\n※対象: 全員エントリーOK！最も集まったKTM内戦MMR帯を基準に実力均等チーム分け`,
           inline: false
         },
         {
