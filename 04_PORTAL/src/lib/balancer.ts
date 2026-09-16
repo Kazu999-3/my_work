@@ -135,32 +135,58 @@ function getPermutations(arr: number[]): number[][] {
   return result;
 }
 
-// 10名を選ぶPity選抜ロジック
+// 10名を選ぶ最多ランク帯基準・外れ値除外（観戦枠）選抜ロジック
 export function selectPlayersWithPity(allPlayers: Player[]): { selected: Player[]; spectators: Player[] } {
   if (allPlayers.length <= 10) {
     return { selected: allPlayers, spectators: [] };
   }
 
-  const fixedPlayers = allPlayers.filter(p => p.isFixed);
-  const candidatesPool = allPlayers.filter(p => !p.isFixed);
+  const fixedPlayers = allPlayers.filter(p => p.isFixed && !p.isSpectatorFixed);
+  const candidatesPool = allPlayers.filter(p => !p.isFixed && !p.isSpectatorFixed);
 
-  // 抽選用の情報を付与
-  const candidateInfo = candidatesPool.map(p => ({
-    player: p,
-    pity: p.pity || 0,
-    spectator_pity: p.spectator_pity || 0,
-    rand: Math.random()
-  }));
+  // 1. 各プレイヤーの代表MMRを算出
+  const getPlayerRepresentativeMmr = (p: Player) => {
+    const mainRole = p.pref1 as Role;
+    if (mainRole && ROLES.includes(mainRole) && p.rates[mainRole]) {
+      return p.rates[mainRole];
+    }
+    const vals = Object.values(p.rates || {});
+    return vals.length > 0 ? vals.reduce((s, v) => s + v, 0) / vals.length : 1200;
+  };
 
-  // Spectator Pity降順（最優先） > レーンPity降順 > ランダム
+  // 全参加者のMMR中央値 (Median: 最多ランク帯の中心レート) を算出
+  const mmrs = allPlayers.map(p => getPlayerRepresentativeMmr(p)).sort((a, b) => a - b);
+  const medianMmr = mmrs[Math.floor(mmrs.length / 2)] || 1200;
+
+  // 2. 候補プールに基準レート乖離度・Pity情報を付与
+  const candidateInfo = candidatesPool.map(p => {
+    const mmr = getPlayerRepresentativeMmr(p);
+    const diffFromMedian = Math.abs(mmr - medianMmr);
+    return {
+      player: p,
+      diffFromMedian,
+      pity: p.pity || 0,
+      spectator_pity: p.spectator_pity || 0,
+      rand: Math.random()
+    };
+  });
+
+  // 3. 選抜順序:
+  // ① 基準レートからの近接度（ボリュームゾーンに近い人を優先選抜）
+  // ② 同等レート帯内では Spectator Pity > レーンPity > ランダム
+  // ※ これにより、ゴールド中心の部屋で1人だけシルバーやダイヤが混ざった場合、外れ値が自動で観戦枠に回る。
   candidateInfo.sort((a, b) => {
+    const diffGap = Math.abs(a.diffFromMedian - b.diffFromMedian);
+    if (diffGap > 180) {
+      return a.diffFromMedian - b.diffFromMedian; // 基準レートに近い順
+    }
     if (b.spectator_pity !== a.spectator_pity) {
       return b.spectator_pity - a.spectator_pity;
     }
     if (b.pity !== a.pity) {
       return b.pity - a.pity;
     }
-    return b.rand - a.rand;
+    return a.diffFromMedian - b.diffFromMedian;
   });
 
   const needed = Math.max(0, 10 - fixedPlayers.length);
