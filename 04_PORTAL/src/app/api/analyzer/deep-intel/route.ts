@@ -11,6 +11,7 @@ import {
   RawMatchRecord,
   calculateRealSessionAnalytics,
 } from '../../../../lib/sessionAnalyticsCalculator';
+import { getChampionKitTactics } from '../../../../lib/championKitTactics';
 import { callGeminiWithRetry } from '../../../../lib/geminiClient';
 
 export const dynamic = 'force-dynamic';
@@ -436,10 +437,11 @@ export async function POST(request: NextRequest) {
 以下の実測スタッツおよびロール特化の目標ランク基準値とのギャップをもとに、【目標ランク到達処方箋レポート】を作成してください。
 ${isSupportRole ? '※重要: このプレイヤーは【サポート (Support)】です。CSは取らないのが正解（1.5以下が適正）ですので、CSを求めるアドバイスは絶対にせず、分間視界スコア・ピンクワード購入・戦闘関与率（KP）・味方キャリーのピール/エンゲージを評価・指南してください。' : ''}
 
-【マッチアップ生成の厳格ルール】
-各チャンピオンの「favoredMatchups（得意な相手）」と「hardMatchups（苦手な相手）」には、**必ずそのチャンピオンと同じロール（レーン）の対面チャンピオン**を指定してください。
-・サポートキャラ（Thresh, Nautilus, Lulu等）の対面は【Blitzcrank, Morgana, Leona, Yuumi, Sona, Pyke】などのサポートキャラにすること。JGやTOPのキャラを絶対に混ぜないこと。
-・ジャングルキャラ（Zyra JG, Shyvana, Viego等）の対面は【LeeSin, Nocturne, XinZhao, Amumu, Sejuani】などのジャングルキャラにすること。
+【マッチアップ ＆ パワースパイク生成の厳格ルール】
+1. 各チャンピオンの「favoredMatchups（得意な相手）」と「hardMatchups（苦手な相手）」には、**必ずそのチャンピオンと同じロール（レーン）の対面チャンピオン**を指定してください。
+・サポートキャラ（Rell, Leona, Thresh, Nautilus, Lulu等）の対面は【Blitzcrank, Morgana, Leona, Yuumi, Sona, Pyke, Janna】などのサポートキャラにすること。JGやTOPのキャラを絶対に混ぜないこと。
+・ジャングルキャラ（Zyra JG, Shyvana, Viego, Lillia等）の対面は【LeeSin, Nocturne, XinZhao, Amumu, Sejuani, Graves】などのジャングルキャラにすること。
+2. 「powerSpikes」は、各チャンピオン固有のスキル名（例: RellのWフェロマンシー/R磁気誘導、ShyvanaのLv6ドラゴンフォーム/Eブレス、LeonaのEゼニス/Rソーラーフレアなど）を含め、具体的かつ実戦的な時間軸立ち回りを記述してください。抽象的・定型的な文言は禁止です。
 
 【プレイヤー実測スタッツ vs 目標ランク（${targetTier}）基準値】
 ・ロール: ${calculatedSessionAnalytics.roleConfig.roleName}
@@ -469,9 +471,9 @@ ${isSupportRole ? '※重要: このプレイヤーは【サポート (Support)�
         (c) => `{
       "id": "${c.id}",
       "powerSpikes": {
-        "earlyLvl1to5": "（Lv1〜5序盤スパイク解説）",
-        "mid1to2Core": "（1〜2コア中盤スパイク解説）",
-        "late3CorePlus": "（3コア終盤スパイク解説）"
+        "earlyLvl1to5": "（Lv1〜5序盤スパイク: ${c.name}の固有スキルを交えた解説）",
+        "mid1to2Core": "（1〜2コア中盤スパイク: ${c.name}の1〜2コア完成時コンボ解説）",
+        "late3CorePlus": "（3コア終盤スパイク: ${c.name}の集団戦ポジショニング解説）"
       },
       "favoredMatchups": [
         { "enemy": "（同レーンの有利な相手1）", "winRate": 68, "reason": "（有利な理由）" },
@@ -493,15 +495,15 @@ ${isSupportRole ? '※重要: このプレイヤーは【サポート (Support)�
     try {
       const responseText = await callGeminiWithRetry(aiPrompt, {
         model: 'gemini-3.1-flash-lite',
-        temperature: 0.5,
-        maxOutputTokens: 2048,
+        temperature: 0.4,
+        maxOutputTokens: 4096,
       });
       const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
       aiResult = JSON.parse(cleanJson);
     } catch (e) {
       console.warn('Gemini AI synthesis fallback:', e);
       aiResult = {
-        styleTypeName: isSupportRole ? '視界制圧＆味方ピール支援型' : 'ファームスケーリング＆セーフティ型',
+        styleTypeName: isSupportRole ? '視界制圧＆味方ピール守護神' : 'ファームスケーリング＆セーフティ型',
         styleBadge: isSupportRole ? '視界スコア Sランク' : '安定度 Sランク',
         coreDiagnosis: isSupportRole
           ? `平均被デス${avgDeaths}と分間視界${avgVisionPerMin}は既に【${targetTier}水準】に到達しています。昇格への最大の鍵は、ドラゴン湧き60秒前の先制視界奪取と集団戦でのピール参加率をさらに高めることです。`
@@ -527,23 +529,22 @@ ${isSupportRole ? '※重要: このプレイヤーは【サポート (Support)�
           timing: isSupportRole ? 'オブジェクト湧き60秒前' : '3:30〜4:00 (1周目フルクリア直後)',
           reason: '敵の進行ルートを30秒前に完全察知し、味方崩壊を防ぐため',
         },
-        championDetails: calculatedChamps.map((c) => ({
-          id: c.id,
-          powerSpikes: {
-            earlyLvl1to5: isSupportRole ? 'レーン主導権維持とLv2・Lv3での先制仕掛け。' : '1周目安全フルクリアとレーン状況確認。',
-            mid1to2Core: isSupportRole ? '1コア完成後のロームとドラゴン前視界制圧。' : '1〜2コア完成時の小規模戦キャリー。',
-            late3CorePlus: isSupportRole ? '集団戦でのADC防衛ピールとゾーン管理。' : '集団戦でのポジショニングと敵キャリー排除。',
-          },
-          favoredMatchups: defaultMatchup.favored,
-          hardMatchups: defaultMatchup.hard,
-          aiTacticsGuide: `【${targetTier}到達の鍵】${c.name}のパワースパイクを活かし、チームの仕掛けに合わせて適切なポジショニングを取ってください。`,
-        })),
+        championDetails: calculatedChamps.map((c) => {
+          const kit = getChampionKitTactics(c.name, role);
+          return {
+            id: c.id,
+            powerSpikes: kit.powerSpikes,
+            favoredMatchups: kit.favoredMatchups,
+            hardMatchups: kit.hardMatchups,
+            aiTacticsGuide: kit.tacticsGuide,
+          };
+        }),
       };
     }
 
     // 万が一AIの返答で特定キーが欠落していた場合のフォールバック合成
     if (!aiResult.styleTypeName) {
-      aiResult.styleTypeName = isSupportRole ? '視界制圧＆味方ピール支援型' : 'ファームスケーリング＆セーフティ型';
+      aiResult.styleTypeName = isSupportRole ? '視界制圧＆味方ピール守護神' : 'ファームスケーリング＆セーフティ型';
     }
     if (!aiResult.styleBadge) {
       aiResult.styleBadge = isSupportRole ? '視界スコア Sランク' : '安定度 Sランク';
@@ -558,17 +559,32 @@ ${isSupportRole ? '※重要: このプレイヤーは【サポート (Support)�
 
     const mergedChampionProfiles = calculatedChamps.map((c) => {
       const detail = aiResult.championDetails?.find((d: any) => d.id === c.id) || aiResult.championDetails?.[0];
+      const kit = getChampionKitTactics(c.name, role);
+
+      // AIの返答が定型文や空文字でないかチェックし、高品質な固有データでマージ
+      const powerSpikes = (detail?.powerSpikes?.earlyLvl1to5 && !detail.powerSpikes.earlyLvl1to5.includes('Lv1〜5序盤スパイク'))
+        ? detail.powerSpikes
+        : kit.powerSpikes;
+
+      const favoredMatchups = (detail?.favoredMatchups?.length > 0 && !detail.favoredMatchups[0].enemy.includes('有利な相手'))
+        ? detail.favoredMatchups
+        : kit.favoredMatchups;
+
+      const hardMatchups = (detail?.hardMatchups?.length > 0 && !detail.hardMatchups[0].enemy.includes('苦手な相手'))
+        ? detail.hardMatchups
+        : kit.hardMatchups;
+
+      const aiTacticsGuide = (detail?.aiTacticsGuide && !detail.aiTacticsGuide.includes('専属指南'))
+        ? detail.aiTacticsGuide
+        : kit.tacticsGuide;
+
       return {
         ...c,
-        powerSpikes: detail?.powerSpikes || {
-          earlyLvl1to5: isSupportRole ? 'レーン主導権維持と安全な視界確保' : '序盤フルクリアと安全なリソース確保',
-          mid1to2Core: '1〜2コア完成時のスパイク',
-          late3CorePlus: '集団戦でのゾーンコントロール',
-        },
-        favoredMatchups: detail?.favoredMatchups || defaultMatchup.favored,
-        hardMatchups: detail?.hardMatchups || defaultMatchup.hard,
+        powerSpikes,
+        favoredMatchups,
+        hardMatchups,
         winVsLossDiffs: c.winVsLossDiffs, // 100%実測計算値を直接使用
-        aiTacticsGuide: detail?.aiTacticsGuide || `【${targetTier}到達の鍵】パワースパイクを逃さず集団戦を展開してください。`,
+        aiTacticsGuide,
       };
     });
 
