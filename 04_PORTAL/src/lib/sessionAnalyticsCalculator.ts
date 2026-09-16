@@ -717,17 +717,30 @@ export function calculateRealSessionAnalytics(
     timeBuckets[bucket].assists += m.assists;
   });
 
-  const formatBucket = (key: string, label: string, slotStr: string, defaultInsight: string) => {
+  const formatBucket = (key: string, label: string, slotStr: string, defaultSlotDesc: string) => {
     const b = timeBuckets[key];
     const hasData = b.total > 0;
     const winRate = hasData ? Math.round((b.wins / b.total) * 100) : 0;
+    const avgD = hasData ? Number((b.deaths / b.total).toFixed(1)) : 0;
     const kda = hasData && b.deaths > 0 ? Number(((b.kills + b.assists) / b.deaths).toFixed(2)) : hasData ? b.kills + b.assists : 0;
+    
     let conditionRating = 'データなし (直近プレイなし)';
+    let dynamicInsight = '直近のプレイ履歴が0試合のため、疲労蓄積のない健全な状態です。';
+
     if (hasData) {
-      if (winRate >= 60) conditionRating = 'Sランク (最高パフォーマンス)';
-      else if (winRate >= 50) conditionRating = 'Aランク (良好)';
-      else if (winRate <= 40) conditionRating = 'Dランク (要注意)';
-      else conditionRating = 'Bランク (標準的)';
+      if (winRate >= 60) {
+        conditionRating = 'Sランク (最高パフォーマンス)';
+        dynamicInsight = `実測${b.total}試合で勝率${winRate}%・KDA ${kda}・平均${avgD}デスを記録。判断速度とマップ把握が研ぎ澄まされており、最も安定してLPを獲得できている覚醒時間帯です。`;
+      } else if (winRate >= 50) {
+        conditionRating = 'Aランク (良好・安定巡航)';
+        dynamicInsight = `実測${b.total}試合で勝率${winRate}% (KDA ${kda} / 平均${avgD}デス)。大崩れせず基本通りの動きが活きており、安定した戦績を維持できています。`;
+      } else if (winRate <= 40) {
+        conditionRating = 'Dランク (要注意・ティルト警戒)';
+        dynamicInsight = `実測${b.total}試合で勝率${winRate}% (平均${avgD}デス)。他の時間帯と比べて被デスが増加傾向にあり、判断の遅れや集中力低下が生じやすいため連戦は非推奨です。`;
+      } else {
+        conditionRating = 'Bランク (標準的)';
+        dynamicInsight = `実測${b.total}試合で勝率${winRate}% (KDA ${kda})。周囲の味方・対戦相手の当たり外れの影響を受けやすい時間帯です。`;
+      }
     }
 
     return {
@@ -737,17 +750,15 @@ export function calculateRealSessionAnalytics(
       kda,
       gamesCount: b.total,
       conditionRating,
-      insight: hasData
-        ? `実測${b.total}試合で勝率${winRate}% (KDA ${kda})。${defaultInsight}`
-        : `直近のプレイ履歴が0試合のため健全な状態です。`,
+      insight: dynamicInsight,
       hasData,
     };
   };
 
   const timeOfDayPerformance = [
-    formatBucket('golden', '🌟 ゴールデンタイム (集中力MAX)', '19:00 - 23:59', '反射神経とマップ把握が研ぎ澄まされ、最も安定した勝率を記録しています。'),
-    formatBucket('daytime', '☀️ 昼間・夕方 (標準稼働)', '11:00 - 18:59', '比較的落ち着いたプレイ環境。ファームとオブジェクトの基本通りの動きが活きます。'),
-    formatBucket('midnight', '⚠️ 深夜帯 (疲労蓄積・注意)', '00:00 - 05:59', '脳の疲労により判断がコンマ数秒遅れやすく、トロール遭遇率も上がるため連戦は非推奨。'),
+    formatBucket('golden', '🌟 ゴールデンタイム (集中力MAX)', '19:00 - 23:59', '夜間ゴールデンタイム'),
+    formatBucket('daytime', '☀️ 昼間・夕方 (標準稼働)', '11:00 - 18:59', '日中・夕方稼働'),
+    formatBucket('midnight', '⚠️ 深夜帯 (疲労蓄積・注意)', '00:00 - 05:59', '深夜帯'),
   ];
 
   // 2. 連戦疲労度
