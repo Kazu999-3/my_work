@@ -451,22 +451,17 @@ async function postWeeklyRecruitment(env) {
       names: { [ownerId]: 'KTM定期カスタム' }
     };
 
-    // 3部屋統合 Embed (プログレスバー付き初期状態)
-    const initialStatusText = `🔥 **【週末定期カスタム募集中！合計 0/30名】**\n🛡️ **土曜・シルバー以下 (ブラインド/MMRあり)**: \`[□□□□□□□□□□] 0/10名\` (あと**10**名)\n👑 **土曜・ゴルプラ (ドラフト/MMRあり)**: \`[□□□□□□□□□□] 0/10名\` (あと**10**名)\n🎪 **日曜・お祭りカスタム (ランク不問/MMRなし)**: \`[□□□□□□□□□□] 0/10名\` (あと**10**名)\n※土曜は当日20:00時点で10名未満の部門は中止（ノーマル/メイヘム再募集）となります`;
+    // 2部屋統合 Embed (プログレスバー付き初期状態)
+    const initialStatusText = `🔥 **【週末定期カスタム募集中！合計 0/20名】**\n⚔️ **土曜・本戦カスタム (自動マッチング)**: \`[□□□□□□□□□□] 0/10名\` (あと**10**名)\n🎪 **日曜・お祭りカスタム (ランク不問/MMRなし)**: \`[□□□□□□□□□□] 0/10名\` (あと**10**名)\n※当日20:00時点で10名未満の日は中止（ノーマル/ARAM再募集）となります`;
 
     const embed = {
       title: `⚔️ KTM 週末定期カスタム開催告知 [${satLabel}・${sunLabel} 21:00〜]`,
-      description: `${initialStatusText}\n\n毎週末恒例の定期カスタム戦です！\n下のボタンから参加したいカスタムにエントリーしてください（土曜は代表MMRから自動振り分け、日曜は誰でも参加OK！）。\n\n💡 **1戦だけのスポット参加・途中抜けも大歓迎！**\n💡 **希望レーンに変更がある方は、ポータルの「マイページ」より変更をお願いします！**`,
+      description: `${initialStatusText}\n\n毎週末恒例の定期カスタム戦です！\n下のボタンからエントリーしてください（土曜は集まったメンバーの最多ランク帯を基準に自動マッチング、日曜は誰でも参加OK！）。\n\n💡 **1戦だけのスポット参加・途中抜けも大歓迎！**\n💡 **希望レーンに変更がある方は、ポータルの「マイページ」より変更をお願いします！**`,
       color: 0xc89b3c, // 琥珀色
       fields: [
         {
-          name: `🛡️ 【土曜・シルバー以下部門】 (0/10名) 🔲 ブラインド (MMRあり)`,
-          value: `▫ 参加者: なし\n※対象: 初心者〜シルバーレベル（MMR変動あり / 気軽に参加OK！）`,
-          inline: false
-        },
-        {
-          name: `👑 【土曜・ゴルプラ部門】 (0/10名) ⚔️ ドラフト (MMRあり)`,
-          value: `▫ 参加者: なし\n※対象: ゴールド〜プラチナレベル（MMR変動あり）`,
+          name: `⚔️ 【土曜・本戦カスタム】 (0/10名) 🎯 基準: 未定 (最多帯自動編成)`,
+          value: `▫ 参加者: なし\n※対象: 全員エントリーOK！最も集まったランク帯を基準に実力均等チーム分け`,
           inline: false
         },
         {
@@ -683,27 +678,23 @@ async function sendEventUsersNotification(env, options = {}) {
     } catch (dbErr) {
       console.warn("Recruitment fetch warning:", dbErr);
     }
-    let silverCount = 0;
-    let goldCount = 0;
-    let sundayCount = 0;
+    let satCount = 0;
+    let sunCount = 0;
 
     if (activeEmbed && activeEmbed.fields) {
       activeEmbed.fields.forEach(f => {
         const matches = (f.value || "").match(/- <@\d+>/g) || [];
-        if (f.name.includes("シルバー")) {
-          silverCount = matches.length;
-        } else if (f.name.includes("ゴルプラ")) {
-          goldCount = matches.length;
+        if (f.name.includes("土曜") || f.name.includes("本戦")) {
+          satCount = matches.length;
         } else if (f.name.includes("お祭り") || f.name.includes("日曜")) {
-          sundayCount = matches.length;
+          sunCount = matches.length;
         }
       });
     }
 
-    const recruitStatus = computeRecruitmentStatus(silverCount, goldCount, sundayCount);
-    const silverShortfall = recruitStatus.silverRem;
-    const goldShortfall = recruitStatus.goldRem;
-    const sundayShortfall = recruitStatus.sundayRem;
+    const recruitStatus = computeRecruitmentStatus(satCount, sunCount);
+    const satShortfall = recruitStatus.satRem;
+    const sunShortfall = recruitStatus.sunRem;
     const totalJoined = recruitStatus.totalJoined;
 
     // 4. アナウンス Embed の作成（募集カードを完全同期 ＆ 参加者の希望レーンを自動付与）
@@ -766,9 +757,8 @@ async function sendEventUsersNotification(env, options = {}) {
     
     if (!syncFields || syncFields.length === 0) {
       syncFields = [
-        { name: "🛡️ 【土曜・シルバー以下部門】 (0/10名)", value: "▫ 参加者: なし", inline: false },
-        { name: "👑 【土曜・ゴルプラ部門】 (0/10名)", value: "▫ 参加者: なし", inline: false },
-        { name: "🎪 【日曜・お祭り部門】 (0/10名)", value: "▫ 参加者: なし", inline: false }
+        { name: "⚔️ 【土曜・本戦カスタム】 (0/10名) 🎯 基準: 未定 (最多帯自動編成)", value: "▫ 参加者: なし", inline: false },
+        { name: "🎪 【日曜・お祭り部門】 (0/10名) 🎲 ランク不問 (MMRなし)", value: "▫ 参加者: なし", inline: false }
       ];
     }
 
@@ -778,9 +768,9 @@ async function sendEventUsersNotification(env, options = {}) {
     const isAllReady = recruitStatus.isAllReady;
     let statusMessage = '';
     if (isAllReady) {
-      statusMessage = `🎉 **週末の全3部門ともに開催確定！** 土曜（シルバー・ゴルプラ）＆ 日曜（お祭り）すべて10名達成しました！${laneNote}${recruitLink}`;
+      statusMessage = `🎉 **週末の全カスタムともに開催確定！** 土曜（本戦）・日曜（お祭り）すべて10名達成しました！${laneNote}${recruitLink}`;
     } else {
-      statusMessage = `⚠️ **週末定期カスタム募集中！** 現在 **土曜シルバー: ${silverCount}名 / 土曜ゴルプラ: ${goldCount}名 / 日曜お祭り: ${sundayCount}名** です。\n▫ 🛡️ 土曜・シルバー以下 (ブラインド/MMRあり): あと **${silverShortfall}名**\n▫ 👑 土曜・ゴルプラ (ドラフト/MMRあり): あと **${goldShortfall}名**\n▫ 🎪 日曜・お祭りカスタム (ランク不問/MMRなし): あと **${sundayShortfall}名**\n💡 **1戦だけのスポット参加も大歓迎！**\n下のボタンからエントリーしてください！${laneNote}${recruitLink}`;
+      statusMessage = `⚠️ **週末定期カスタム募集中！** 現在 **土曜本戦: ${satCount}名 / 日曜お祭り: ${sunCount}名** です。\n▫ ⚔️ 土曜・本戦カスタム (自動マッチング): あと **${satShortfall}名**\n▫ 🎪 日曜・お祭りカスタム (ランク不問/MMRなし): あと **${sunShortfall}名**\n💡 **1戦だけのスポット参加も大歓迎！**\n下のボタンからエントリーしてください！${laneNote}${recruitLink}`;
     }
     const embedColor = recruitStatus.color;
 
@@ -945,53 +935,50 @@ export async function checkCustomStatusAt2000(env) {
     if (!embed || !embed.fields) return;
 
     // 参加者集計
-    const silverLines = (embed.fields[0]?.value || '').split('\n').filter(l => l.startsWith('- '));
-    const goldLines = (embed.fields[1]?.value || '').split('\n').filter(l => l.startsWith('- '));
-    const sundayLines = (embed.fields[2]?.value || '').split('\n').filter(l => l.startsWith('- '));
+    let satLines = [];
+    let sunLines = [];
+
+    embed.fields.forEach(f => {
+      const lines = (f.value || '').split('\n').filter(l => l.startsWith('- '));
+      if (f.name.includes("土曜") || f.name.includes("本戦")) {
+        satLines = lines;
+      } else if (f.name.includes("日曜") || f.name.includes("お祭り")) {
+        sunLines = lines;
+      }
+    });
 
     // 1戦目稼働可能者（フル + 1戦のみ）の人数と途中参加者人数
     const countFirstMatch = (lines) => lines.filter(l => !l.includes('🌙途中参加')).length;
     const countLate = (lines) => lines.filter(l => l.includes('🌙途中参加')).length;
 
-    const silverFirst = countFirstMatch(silverLines);
-    const goldFirst = countFirstMatch(goldLines);
-    const sundayFirst = countFirstMatch(sundayLines);
+    const satFirst = countFirstMatch(satLines);
+    const sunFirst = countFirstMatch(sunLines);
 
-    const silverLate = countLate(silverLines);
-    const goldLate = countLate(goldLines);
-    const sundayLate = countLate(sundayLines);
+    const satLate = countLate(satLines);
+    const sunLate = countLate(sunLines);
 
-    const silverReady = silverFirst >= 10;
-    const goldReady = goldFirst >= 10;
-    const sundayReady = sundayFirst >= 10;
+    const satReady = satFirst >= 10;
+    const sunReady = sunFirst >= 10;
 
     let cancelDepartments = [];
     let confirmedDepartments = [];
     let urgentHelpDepartments = []; // ピンポイント助っ人募集部門（あと1〜2名 & 途中参加あり）
 
     if (isSaturday) {
-      if (silverReady) {
-        confirmedDepartments.push(`🛡️ シルバー以下部門 (${silverFirst}名 開催！)`);
-      } else if (silverFirst >= 8 && silverLate >= 1) {
-        urgentHelpDepartments.push({ name: 'シルバー以下', shortfall: 10 - silverFirst, late: silverLate, customId: 'join_periodic_auto:single' });
+      if (satReady) {
+        confirmedDepartments.push(`⚔️ 土曜本戦カスタム (${satFirst}名 開催確定！)`);
+      } else if (satFirst >= 8 && satLate >= 1) {
+        urgentHelpDepartments.push({ name: '土曜本戦カスタム', shortfall: 10 - satFirst, late: satLate, customId: 'join_periodic_auto:single' });
       } else {
-        cancelDepartments.push(`🛡️ シルバー以下部門 (${silverFirst}/10名)`);
-      }
-
-      if (goldReady) {
-        confirmedDepartments.push(`👑 ゴルプラ部門 (${goldFirst}名 開催！)`);
-      } else if (goldFirst >= 8 && goldLate >= 1) {
-        urgentHelpDepartments.push({ name: 'ゴルプラ', shortfall: 10 - goldFirst, late: goldLate, customId: 'join_periodic_auto:single' });
-      } else {
-        cancelDepartments.push(`👑 ゴルプラ部門 (${goldFirst}/10名)`);
+        cancelDepartments.push(`⚔️ 土曜本戦カスタム (${satFirst}/10名)`);
       }
     } else {
-      if (sundayReady) {
-        confirmedDepartments.push(`🎪 日曜お祭り部門 (${sundayFirst}名 開催！)`);
-      } else if (sundayFirst >= 8 && sundayLate >= 1) {
-        urgentHelpDepartments.push({ name: '日曜お祭り', shortfall: 10 - sundayFirst, late: sundayLate, customId: 'join_periodic_sunday:single' });
+      if (sunReady) {
+        confirmedDepartments.push(`🎪 日曜お祭りカスタム (${sunFirst}名 開催確定！)`);
+      } else if (sunFirst >= 8 && sunLate >= 1) {
+        urgentHelpDepartments.push({ name: '日曜お祭りカスタム', shortfall: 10 - sunFirst, late: sunLate, customId: 'join_periodic_sunday:single' });
       } else {
-        cancelDepartments.push(`🎪 日曜お祭り部門 (${sundayFirst}/10名)`);
+        cancelDepartments.push(`🎪 日曜お祭りカスタム (${sunFirst}/10名)`);
       }
     }
 

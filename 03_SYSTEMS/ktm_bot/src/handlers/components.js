@@ -352,18 +352,26 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         const targetEmbed = { ...embeds[0] };
         targetEmbed.fields = targetEmbed.fields ? [...targetEmbed.fields] : [];
 
-        // フィールド0: 土曜シルバー以下, フィールド1: 土曜ゴルプラ, フィールド2: 日曜お祭り
-        if (!targetEmbed.fields[0]) targetEmbed.fields[0] = { name: "🛡️ 【土曜・シルバー以下部門】 (0/10名) 🔲 ブラインド (MMRあり)", value: "▫ 参加者: なし", inline: false };
-        if (!targetEmbed.fields[1]) targetEmbed.fields[1] = { name: "👑 【土曜・ゴルプラ部門】 (0/10名) ⚔️ ドラフト (MMRあり)", value: "▫ 参加者: なし", inline: false };
-        if (!targetEmbed.fields[2]) targetEmbed.fields[2] = { name: "🎪 【日曜・お祭り部門】 (0/10名) 🎲 ランク不問 (MMRなし)", value: "▫ 参加者: なし", inline: false };
+        // フィールド0: 土曜本戦カスタム (最多ランク基準自動マッチング), フィールド1: 日曜お祭りカスタム
+        if (!targetEmbed.fields[0]) targetEmbed.fields[0] = { name: "⚔️ 【土曜・本戦カスタム】 (0/10名) 🎯 基準: 未定 (最多帯自動編成)", value: "▫ 参加者: なし", inline: false };
+        if (!targetEmbed.fields[1]) targetEmbed.fields[1] = { name: "🎪 【日曜・お祭り部門】 (0/10名) 🎲 ランク不問 (MMRなし)", value: "▫ 参加者: なし", inline: false };
 
-        const targetFieldIdx = roomType === 'sunday' ? 2 : (roomType === 'silver' ? 0 : 1);
+        const targetFieldIdx = isSundayMode ? 1 : 0;
         const targetText = targetEmbed.fields[targetFieldIdx]?.value || "";
         const existingLine = targetText.split('\n').find(l => l.includes(userMention));
         const isAlreadyInTarget = !!existingLine;
         const isSameStyle = existingLine && existingLine.includes(styleBadge);
 
-        // レーン希望文字列の作成
+        // ランク＆レーン希望文字列の作成
+        let rankStr = "";
+        if (playerRow) {
+          const mmr = getHighestLaneMmr(playerRow);
+          const tier = getKtmRank(mmr ?? 0);
+          if (tier && tier.name) {
+            rankStr = `【${tier.name}】`;
+          }
+        }
+
         let lanePrefStr = "";
         try {
           let pref = playerRow?.role_preferences;
@@ -379,50 +387,59 @@ export async function handleButtonInteraction(interaction, env, ctx) {
           console.warn("role_preferences parse error:", e);
         }
 
+        const fullEntryBadge = `${rankStr}${lanePrefStr}`;
+
         if (isSundayMode) {
-          // 日曜部門のトグル/スタイル変更（土曜のフィールド0, 1には触らない）
-          let fLines = (targetEmbed.fields[2].value || "").split('\n');
+          // 日曜部門のトグル/スタイル変更（土曜には触らない）
+          let fLines = (targetEmbed.fields[1].value || "").split('\n');
           fLines = fLines.filter(l => !l.includes(userMention) && !l.includes('▫ 参加者: なし'));
 
           if (!isAlreadyInTarget || !isSameStyle) {
-            // 未参加、またはスタイル変更の場合は新しい行を追加
             fLines.push(`- ${userMention}${styleBadge}${lanePrefStr}`);
           }
           const count = fLines.filter(l => l.startsWith('- ')).length;
-          targetEmbed.fields[2].name = `🎪 【日曜・お祭り部門】 (${count}/10名) 🎲 ランク不問 (MMRなし)`;
-          targetEmbed.fields[2].value = fLines.length > 0 ? fLines.join('\n') : "▫ 参加者: なし";
+          targetEmbed.fields[1].name = `🎪 【日曜・お祭り部門】 (${count}/10名) 🎲 ランク不問 (MMRなし)`;
+          targetEmbed.fields[1].value = fLines.length > 0 ? fLines.join('\n') : "▫ 参加者: なし";
         } else {
-          // 土曜部門のトグル/スタイル変更（0と1の間で排他処理、日曜の2には触らない）
-          [0, 1].forEach(idx => {
-            let fLines = (targetEmbed.fields[idx].value || "").split('\n');
-            fLines = fLines.filter(l => !l.includes(userMention) && !l.includes('▫ 参加者: なし'));
-            const count = fLines.filter(l => l.startsWith('- ')).length;
-            const rName = idx === 0 ? '🛡️ 【土曜・シルバー以下部門】' : '👑 【土曜・ゴルプラ部門】';
-            const rType = idx === 0 ? '🔲 ブラインド (MMRあり)' : '⚔️ ドラフト (MMRあり)';
-            targetEmbed.fields[idx].name = `${rName} (${count}/10名) ${rType}`;
-            targetEmbed.fields[idx].value = fLines.length > 0 ? fLines.join('\n') : "▫ 参加者: なし";
-          });
+          // 土曜本戦カスタムのトグル/スタイル変更
+          let fLines = (targetEmbed.fields[0].value || "").split('\n');
+          fLines = fLines.filter(l => !l.includes(userMention) && !l.includes('▫ 参加者: なし'));
 
           if (!isAlreadyInTarget || !isSameStyle) {
-            let fLines = targetEmbed.fields[targetFieldIdx].value === "▫ 参加者: なし"
-              ? []
-              : targetEmbed.fields[targetFieldIdx].value.split('\n');
-            fLines.push(`- ${userMention}${styleBadge}${lanePrefStr}`);
-            const count = fLines.filter(l => l.startsWith('- ')).length;
-            const rName = targetFieldIdx === 0 ? '🛡️ 【土曜・シルバー以下部門】' : '👑 【土曜・ゴルプラ部門】';
-            const rType = targetFieldIdx === 0 ? '🔲 ブラインド (MMRあり)' : '⚔️ ドラフト (MMRあり)';
-            targetEmbed.fields[targetFieldIdx].name = `${rName} (${count}/10名) ${rType}`;
-            targetEmbed.fields[targetFieldIdx].value = fLines.join('\n');
+            fLines.push(`- ${userMention}${styleBadge}${fullEntryBadge}`);
           }
+          const count = fLines.filter(l => l.startsWith('- ')).length;
+
+          // 参加者全体のランク分布と最多ランク帯（ボリュームゾーン）を集計
+          let dominantTierName = "未定";
+          if (count > 0) {
+            const tierCounts = {};
+            fLines.forEach(line => {
+              const match = line.match(/【([アイアン|ブロンズ|シルバー|ゴールド|プラチナ|エメラルド|ダイヤ|マスター]+)/);
+              const t = match ? match[1] : "シルバー";
+              tierCounts[t] = (tierCounts[t] || 0) + 1;
+            });
+            let maxCount = 0;
+            for (const [t, c] of Object.entries(tierCounts)) {
+              if (c > maxCount) {
+                maxCount = c;
+                dominantTierName = `${t}帯(${c}名)`;
+              }
+            }
+          }
+
+          targetEmbed.fields[0].name = `⚔️ 【土曜・本戦カスタム】 (${count}/10名) 🎯 基準: ${dominantTierName}`;
+          targetEmbed.fields[0].value = fLines.length > 0 ? fLines.join('\n') : "▫ 参加者: なし";
         }
 
         // 3. 最新の参加人数とステータスバナー作成
-        const silverCount = (targetEmbed.fields[0]?.value || "").split('\n').filter(l => l.startsWith('- ')).length;
-        const goldCount = (targetEmbed.fields[1]?.value || "").split('\n').filter(l => l.startsWith('- ')).length;
-        const sundayCount = (targetEmbed.fields[2]?.value || "").split('\n').filter(l => l.startsWith('- ')).length;
+        const satCount = (targetEmbed.fields[0]?.value || "").split('\n').filter(l => l.startsWith('- ')).length;
+        const sunCount = (targetEmbed.fields[1]?.value || "").split('\n').filter(l => l.startsWith('- ')).length;
 
-        const recruitStatus = computeRecruitmentStatus(silverCount, goldCount, sundayCount);
-        const statusBanner = buildStatusBanner(recruitStatus);
+        const recruitStatus = computeRecruitmentStatus(satCount, sunCount);
+        const dominantMatch = (targetEmbed.fields[0]?.name || "").match(/🎯 基準: (.+)$/);
+        const dominantTierText = dominantMatch ? dominantMatch[1] : '';
+        const statusBanner = buildStatusBanner(recruitStatus, dominantTierText);
         targetEmbed.color = recruitStatus.color;
 
         const BANNER_PATTERN = /(?:[🚨🔥🟡✅⚡]\s*)?\*\*【(?:シルバー以下\s*あと\d+名|定期カスタム募集中|週末定期カスタム募集中|開催確定部門あり|合計\d+名到達|全枠10名満員御礼|全部門10名達成)[^】]*】\*\*(?:\n[^\n]+){1,5}/;
