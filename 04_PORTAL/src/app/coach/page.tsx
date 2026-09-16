@@ -1621,7 +1621,7 @@ function CoachPageContent() {
         {/* ========================================================================= */}
         {/* 1. 🎯 試合前 (バンピック・対面対策・5分作戦) */}
         {/* ========================================================================= */}
-        <div className={activeStepTab === 'pregame' ? 'space-y-5 animate-in' : 'hidden'}>
+        <div className={activeStepTab === 'pregame' ? 'space-y-4 animate-in' : 'hidden'}>
           {/* 爆速チャンピオン高速セレクター (ワンタップ & 日本語検索 & ライブ連動) */}
           <ChampionQuickSelector
             myChampion={sharedChampion}
@@ -1634,59 +1634,70 @@ function CoachPageContent() {
             }}
           />
 
-          {/* 2カラムHUDグリッド: ドラフト1画面集約 */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          {/* 2カラムHUDグリッド: ドラフト1画面集約（即座に判断できる重要情報） */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
             {/* 左側: 即死ライン・3段階手順書・推奨ルーン・JG警戒 (完全1画面集約) */}
-            <div className="lg:col-span-7 xl:col-span-7 flex flex-col gap-5">
+            <div className="lg:col-span-7 xl:col-span-7 flex flex-col gap-4">
               <MatchupBlueprintCard
                 myChampion={sharedChampion}
                 enemyChampion={sharedEnemyChampion}
                 onMyChampionChange={setSharedChampion}
                 onEnemyChampionChange={setSharedEnemyChampion}
               />
-              {/* 視界・マップコントロール客観解析カード */}
-              <VisionAnalyticsCard />
             </div>
 
-            {/* 右側: プレイスタイル深層カルテ ＆ 実測アナライザー昇格処方箋 */}
-            <div className="lg:col-span-5 xl:col-span-5 flex flex-col gap-5 lg:sticky lg:top-4">
+            {/* 右側: 実測アナライザーSoloQ深層インテル ＆ 勝敗境界線・昇格処方箋 */}
+            <div className="lg:col-span-5 xl:col-span-5 flex flex-col gap-4 lg:sticky lg:top-4">
               <SoloQDeepIntelSyncCard
                 selectedChampion={sharedChampion}
                 summonerName="Kazurin#4036"
               />
-              <PlayerStyleRadarCard />
             </div>
+          </div>
+
+          {/* サブカルテ（視界・プレイスタイル詳細）: 必要な時だけワンクリック展開 */}
+          <div className="pt-2">
+            <Collapsible title="📊 詳細カルテ ＆ 視界マップ分析を展開" defaultOpen={false}>
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 pt-3 items-start">
+                <div className="lg:col-span-7">
+                  <VisionAnalyticsCard />
+                </div>
+                <div className="lg:col-span-5">
+                  <PlayerStyleRadarCard />
+                </div>
+              </div>
+            </Collapsible>
           </div>
         </div>
 
         {/* ========================================================================= */}
         {/* 2. 🧭 試合中 (ライブ偵察・構成勝ち筋診断) */}
         {/* ========================================================================= */}
-        <div className={activeStepTab === 'live' ? 'space-y-5 animate-in' : 'hidden'}>
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-            {/* 左側: リアルタイム偵察 ＆ インゲームHUD連携ガイド */}
-            <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-5">
-              {/* インゲームHUD連携ステータスバナー */}
-              <div className="bg-gradient-to-r from-stone-900 to-stone-800 text-white rounded-2xl p-4 shadow-sm border border-stone-700/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-lg shrink-0">
-                    👑
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-black text-xs text-amber-400">Sovereign HUD 連動ガイド</span>
-                      <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-bold px-1.5 py-0.2 rounded">
-                        自動同期中
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-stone-300 mt-0.5">
-                      ⌨️ <span className="text-amber-300 font-bold">TABキー</span>で対面キルライン＆対面ゴールド差表示 / 💬 チャットから敵スペル・Ult自動検知 (デスクトップ版常駐)
-                    </p>
-                  </div>
-                </div>
+        <div className={activeStepTab === 'live' ? 'space-y-4 animate-in' : 'hidden'}>
+          {/* インゲームHUD連携ステータスバナー */}
+          <div className="bg-gradient-to-r from-stone-900 to-stone-800 text-white rounded-2xl p-3.5 shadow-sm border border-stone-700/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-base shrink-0">
+                👑
               </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-black text-xs text-amber-400">Sovereign HUD 自動同期中</span>
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-bold px-1.5 py-0.2 rounded">
+                    接続完了
+                  </span>
+                </div>
+                <p className="text-[11px] text-stone-300 mt-0.5">
+                  ⌨️ <span className="text-amber-300 font-bold">TABキー</span>で対面キルライン表示 / チャットから敵スペル・Ult自動検知
+                </p>
+              </div>
+            </div>
+          </div>
 
-              <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+            {/* 左側: リアルタイム偵察 */}
+            <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-4">
+              <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs space-y-3">
                 <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
                   <span>🧭</span> リアルタイム偵察 (敵10人スキャン ＆ ガンク優先ターゲット)
                 </h3>
@@ -1695,8 +1706,8 @@ function CoachPageContent() {
             </div>
 
             {/* 右側: 統合 チーム構成 ＆ 勝ち筋シミュレーター */}
-            <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-5 lg:sticky lg:top-4">
-              <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
+            <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-4 lg:sticky lg:top-4">
+              <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs space-y-3">
                 <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
                   <span>⚔️</span> チーム構成 ＆ 勝ち筋シミュレーター
                 </h3>
@@ -1707,7 +1718,7 @@ function CoachPageContent() {
         </div>
 
         {/* ========================================================================= */}
-        {/* 3. 📈 試合後 (1画面クイックデトックス ＆ 長期カルテ) */}
+        {/* 3. 📈 試合後 (1分振り返り ＆ カルテ) */}
         {/* ========================================================================= */}
         <div className={activeStepTab === 'postgame' ? 'space-y-4 animate-in' : 'hidden'}>
           {/* 試合後 2分割サブナビゲーション */}
@@ -1723,7 +1734,7 @@ function CoachPageContent() {
                 }`}
               >
                 <span>⚡</span>
-                <span>直近試合クイックデトックス (5大分析 ＆ 振り返り)</span>
+                <span>直近試合クイックデトックス (1分モード)</span>
               </button>
               <button
                 type="button"
@@ -1739,21 +1750,21 @@ function CoachPageContent() {
               </button>
             </div>
             <span className="text-[11px] font-bold text-stone-400 hidden sm:inline pr-2">
-              {postGameSubTab === 'instant' ? '試合終了直後1分モード' : '長期分析・ダッシュボード'}
+              {postGameSubTab === 'instant' ? '試合終了直後の反省' : '蓄積データ分析'}
             </span>
           </div>
 
           {/* サブビュー1: 直近試合クイックデトックス (1画面完結) */}
           {postGameSubTab === 'instant' && (
-            <div className="space-y-5 animate-in">
-              {/* 5大ディープアナリティクス (序盤15分メトリクス・リコール逆再生・ビルド監査・ダイヤ帯ギャップ・教訓同期) */}
+            <div className="space-y-4 animate-in">
+              {/* 5大ディープアナリティクス (序盤15分メトリクス・リコール逆再生・ビルド監査・教訓同期) */}
               <PostGameDeepAnalyticsDashboard />
 
-              {/* 集団戦ディープアナリティクス (勝因・敗因・タイムラインレビュー) */}
+              {/* 集団戦ディープアナリティクス (勝因・敗因・タイムライン実測レビュー) */}
               <MatchFightsAnalyticsCard />
 
               {/* 1分振り返り ＆ 反省カルテ記録 */}
-              <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
+              <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs space-y-3">
                 <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
                   <span>⚡</span> 1分ソロQ振り返り ＆ 反省カルテ記録
                 </h3>
@@ -1764,37 +1775,37 @@ function CoachPageContent() {
 
           {/* サブビュー2: 過去カルテ・長期傾向・練習メニュー */}
           {postGameSubTab === 'archive' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start animate-in">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start animate-in">
               {/* 左側: マイソロQダッシュボード ＆ AI練習メニュー */}
-              <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-5">
-                <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
+              <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-4">
+                <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs space-y-3">
                   <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5 border-b border-stone-100 pb-2">
                     <span>📊</span> マイソロQダッシュボード (過去全ログ ＆ 成績一覧)
                   </h3>
                   <MySoloQDashboard refreshSignal={reflectionRefreshSignal} />
                 </div>
 
-                <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
+                <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs space-y-3">
                   <PracticeMenuTab />
                 </div>
               </div>
 
               {/* 右側: 傾向分析・目標管理・ティルト判定・勝率ヒートマップ */}
-              <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-5 lg:sticky lg:top-4">
-                <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
+              <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-4 lg:sticky lg:top-4">
+                <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs space-y-3">
                   <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
                     <span>📈</span> 傾向分析・目標管理・ティルト判定
                   </h3>
                   <TrendsTab active={activeStepTab === 'postgame' && postGameSubTab === 'archive'} />
-                  <div className="border-t border-stone-200 pt-4">
+                  <div className="border-t border-stone-200 pt-3">
                     <GoalTab triggerSignal={dailyCheckTrigger} />
                   </div>
-                  <div className="border-t border-stone-200 pt-4">
+                  <div className="border-t border-stone-200 pt-3">
                     <TiltTab triggerSignal={dailyCheckTrigger} />
                   </div>
                 </div>
 
-                <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
+                <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs space-y-3">
                   <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5 border-b border-stone-100 pb-2">
                     <span>🗓️</span> 曜日×時間帯 勝率ヒートマップ
                   </h3>
