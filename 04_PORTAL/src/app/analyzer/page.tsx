@@ -314,7 +314,14 @@ export default function PlayerAnalyzerPage() {
                     目標: <strong>{targetTier}</strong>
                   </span>
                   <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-200">
-                    {report.summoner.role} メイン
+                    {(() => {
+                      const r = (report.summoner.role || '').toUpperCase();
+                      if (r === 'UTILITY' || r === 'SUPPORT') return 'SUPPORT (サポート)';
+                      if (r === 'MIDDLE' || r === 'MID') return 'MID (ミッド)';
+                      if (r === 'BOTTOM' || r === 'ADC') return 'ADC (ボット)';
+                      if (r === 'TOP') return 'TOP (トップ)';
+                      return 'JUNGLE (ジャングル)';
+                    })()} メイン
                   </span>
                   {report.summoner.sampleMatchesCount > 0 && (
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 border border-stone-200">

@@ -67,8 +67,8 @@ export async function POST(request: NextRequest) {
             matchIds = await fetchRecentMatchIds(puuid, apiKey, 50);
           }
 
-          // 各マッチの詳細を取得し、RawMatchRecord を構築 (最大25件の詳細を並行取得)
-          const targetIds = matchIds.slice(0, 25);
+          // 各マッチの詳細を取得し、RawMatchRecord を構築 (最大50件の詳細を並行取得)
+          const targetIds = matchIds.slice(0, 50);
           const matchDetailPromises = targetIds.map(async (mId) => {
             try {
               const detail = await fetchMatchDetails(mId, apiKey);
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
       avgKills = Number((totalKills / rawMatches.length).toFixed(1));
       avgAssists = Number((totalAssists / rawMatches.length).toFixed(1));
       avgKda = totalDeaths > 0 ? Number(((totalKills + totalAssists) / totalDeaths).toFixed(2)) : totalKills + totalAssists;
-      avgCsPerMin = totalDurationMin > 0 ? Number((totalCs / totalDurationMin).toFixed(1)) : 6.5;
+      avgCsPerMin = totalDurationMin > 0 ? Number((totalCs / totalDurationMin).toFixed(1)) : (role === 'UTILITY' || role === 'SUPPORT' ? 1.2 : 6.5);
       avgVisionPerMin = totalDurationMin > 0 ? Number((totalVision / totalDurationMin).toFixed(2)) : 1.35;
 
       const totalKp = rawMatches.reduce((sum, m) => {
@@ -162,7 +162,9 @@ export async function POST(request: NextRequest) {
     }
 
     const survivalScore = Math.max(20, Math.min(100, Math.round(100 - avgDeaths * 14)));
-    const farmScore = Math.max(30, Math.min(100, Math.round(avgCsPerMin * 11.5)));
+    const farmScore = (role === 'UTILITY' || role === 'SUPPORT')
+      ? Math.max(40, Math.min(100, Math.round(avgCsPerMin <= 1.8 ? 95 : 100 - (avgCsPerMin - 1.8) * 20)))
+      : Math.max(30, Math.min(100, Math.round(avgCsPerMin * 11.5)));
     const combatScore = Math.max(20, Math.min(100, Math.round(avgKpPercent * 1.3)));
     const objScore = Math.min(95, Math.max(50, Math.round(60 + (overallWinRate - 50) * 0.8)));
     const teamfightScore = Math.min(98, Math.max(40, Math.round(avgKda * 12)));
@@ -209,14 +211,26 @@ export async function POST(request: NextRequest) {
 
     let topChampions = Object.values(champStatsMap)
       .sort((a, b) => b.gamesCount - a.gamesCount)
-      .slice(0, 3);
+      .slice(0, 5);
 
     if (topChampions.length === 0) {
-      topChampions = [
-        { name: 'Zyra', gamesCount: 12, wins: 7, kills: 60, deaths: 24, assists: 110, cs: 1400, durationMin: 360, vision: 420 },
-        { name: 'Shyvana', gamesCount: 8, wins: 4, kills: 48, deaths: 22, assists: 75, cs: 1200, durationMin: 240, vision: 240 },
-        { name: 'Viego', gamesCount: 5, wins: 3, kills: 35, deaths: 18, assists: 32, cs: 700, durationMin: 150, vision: 130 },
-      ];
+      if (role === 'UTILITY' || role === 'SUPPORT') {
+        topChampions = [
+          { name: 'Thresh', gamesCount: 18, wins: 11, kills: 22, deaths: 64, assists: 240, cs: 320, durationMin: 540, vision: 980 },
+          { name: 'Nautilus', gamesCount: 14, wins: 9, kills: 18, deaths: 52, assists: 190, cs: 280, durationMin: 420, vision: 760 },
+          { name: 'Lulu', gamesCount: 10, wins: 6, kills: 8, deaths: 30, assists: 160, cs: 150, durationMin: 300, vision: 620 },
+          { name: 'Leona', gamesCount: 8, wins: 5, kills: 12, deaths: 35, assists: 110, cs: 180, durationMin: 240, vision: 480 },
+          { name: 'Blitzcrank', gamesCount: 6, wins: 4, kills: 10, deaths: 28, assists: 85, cs: 120, durationMin: 180, vision: 360 },
+        ];
+      } else {
+        topChampions = [
+          { name: 'Zyra', gamesCount: 18, wins: 11, kills: 90, deaths: 42, assists: 160, cs: 2100, durationMin: 540, vision: 680 },
+          { name: 'Shyvana', gamesCount: 14, wins: 8, kills: 84, deaths: 40, assists: 130, cs: 2200, durationMin: 420, vision: 440 },
+          { name: 'Viego', gamesCount: 10, wins: 6, kills: 68, deaths: 36, assists: 75, cs: 1400, durationMin: 300, vision: 280 },
+          { name: 'LeeSin', gamesCount: 8, wins: 5, kills: 52, deaths: 30, assists: 60, cs: 1100, durationMin: 240, vision: 260 },
+          { name: 'Nocturne', gamesCount: 6, wins: 4, kills: 42, deaths: 22, assists: 50, cs: 850, durationMin: 180, vision: 210 },
+        ];
+      }
     }
 
     const calculatedChamps = topChampions.map((c) => {
