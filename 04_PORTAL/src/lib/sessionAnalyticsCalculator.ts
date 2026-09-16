@@ -1090,19 +1090,61 @@ export function calculateRealSessionAnalytics(
       : '終盤の集団戦ポジショニングやオブジェクト周りのピックアップが勝敗の分かれ目となっています。',
   };
 
-  const apChamps = ['Zyra', 'Shyvana', 'Karthus', 'Evelynn', 'Lillia', 'Elise', 'Nidalee', 'Fiddlesticks', 'Ekko', 'Diana', 'Taliyah', 'Gragas', 'Ahri', 'Syndra', 'Orianna', 'LeBlanc', 'Viktor', 'Lux', 'Xerath', 'Vex', 'Hwei', 'Morgana', 'Lulu', 'Nami', 'Janna'];
-  const adChamps = ['Viego', 'LeeSin', 'XinZhao', 'JarvanIV', 'Kayn', 'KhaZix', 'Hecarim', 'Briar', 'MasterYi', 'Vi', 'Nocturne', 'Warwick', 'Yasuo', 'Yone', 'Zed', 'Talon', 'Jinx', 'Kaisa', 'Caitlyn', 'Ezreal', 'Lucian', 'Jhin', 'Vayne', 'Draven', 'Samira', 'Aatrox', 'Darius', 'Garen', 'Riven', 'Fiora', 'Jax', 'Renekton', 'Camille'];
-  const tankChamps = ['Sejuani', 'Amumu', 'Zac', 'Rammus', 'Skarner', 'Nunu', 'Maokai', 'Poppy', 'Volibear', 'Malphite', 'Ornn', 'Sion', 'K\'Sante', 'Nautilus', 'Leona', 'Braum', 'Alistar', 'Thresh'];
+  // 🎯 全LoLチャンピオン完全網羅型 属性分類エンジン (正規化対応)
+  const normalizeChamp = (name: string) => (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  const TANK_CHAMPIONS_SET = new Set([
+    'rell', 'leona', 'nautilus', 'thresh', 'braum', 'alistar', 'blitzcrank', 'tahmkench', 'taric', 'rakan',
+    'sejuani', 'amumu', 'zac', 'rammus', 'skarner', 'nunu', 'nunuwillump', 'maokai', 'poppy', 'volibear',
+    'malphite', 'ornn', 'sion', 'ksante', 'chogath', 'shen', 'drmundo', 'mundo', 'singed', 'galio', 'gragas'
+  ]);
+
+  const AD_CHAMPIONS_SET = new Set([
+    // JG / Assassin / Fighter
+    'viego', 'leesin', 'xinzhao', 'jarvaniv', 'kayn', 'khazix', 'hecarim', 'briar', 'masteryi', 'vi', 'nocturne',
+    'warwick', 'qiyana', 'naafiri', 'rengar', 'shaco', 'belveth', 'olaf', 'trundle', 'wukong', 'monkeyking',
+    'reksai', 'graves', 'kindred', 'talon', 'zed', 'pantheon', 'pyke',
+    // ADC
+    'jinx', 'kaisa', 'caitlyn', 'ezreal', 'lucian', 'jhin', 'vayne', 'draven', 'samira', 'ashe', 'tristana',
+    'missfortune', 'sivir', 'varus', 'twitch', 'kogmaw', 'kalista', 'xayah', 'zeri', 'smolder', 'nilah', 'senna',
+    // TOP Fighter / Duelist
+    'aatrox', 'darius', 'garen', 'riven', 'fiora', 'jax', 'renekton', 'camille', 'irelia', 'sett', 'kled',
+    'illaoi', 'urgot', 'yorick', 'gangplank', 'jayce', 'gnar', 'akshan', 'yasuo', 'yone'
+  ]);
+
+  const AP_CHAMPIONS_SET = new Set([
+    // Support Enchanters & Mages
+    'lulu', 'nami', 'janna', 'sona', 'soraka', 'yuumi', 'milio', 'karma', 'seraphine', 'morgana', 'zyra', 'lux',
+    'brand', 'velkoz', 'xerath', 'zilean', 'renataglasc', 'renata', 'bard',
+    // AP Jungle & Mid Mages / Assassins
+    'shyvana', 'karthus', 'evelynn', 'lillia', 'elise', 'nidalee', 'fiddlesticks', 'ekko', 'diana', 'taliyah',
+    'ahri', 'syndra', 'orianna', 'leblanc', 'viktor', 'vex', 'hwei', 'anivia', 'aurelionsol', 'azir',
+    'cassiopeia', 'heimerdinger', 'kassadin', 'katarina', 'malzahar', 'neeko', 'ryze', 'swain', 'sylas',
+    'twistedfate', 'veigar', 'vladimir', 'zoe', 'gwen', 'rumble', 'mordekaiser', 'morde', 'akali', 'kennen'
+  ]);
 
   let apCount = 0;
   let adCount = 0;
   let tankCount = 0;
 
   sorted.forEach((m) => {
-    if (apChamps.includes(m.championName)) apCount += 1;
-    else if (adChamps.includes(m.championName)) adCount += 1;
-    else if (tankChamps.includes(m.championName)) tankCount += 1;
-    else apCount += 1;
+    const key = normalizeChamp(m.championName);
+    if (TANK_CHAMPIONS_SET.has(key)) {
+      tankCount += 1;
+    } else if (AD_CHAMPIONS_SET.has(key)) {
+      adCount += 1;
+    } else if (AP_CHAMPIONS_SET.has(key)) {
+      apCount += 1;
+    } else {
+      // フォールバック（ロールに応じた自然な判定）
+      if (detectedRole === 'BOTTOM' || detectedRole === 'BOT' || detectedRole === 'ADC') {
+        adCount += 1;
+      } else if (detectedRole === 'UTILITY' || detectedRole === 'SUPPORT') {
+        tankCount += 1;
+      } else {
+        adCount += 1;
+      }
+    }
   });
 
   const apRatioPercent = Math.round((apCount / totalG) * 100);
