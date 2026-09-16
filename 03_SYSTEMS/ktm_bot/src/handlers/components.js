@@ -363,12 +363,20 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         const isSameStyle = existingLine && existingLine.includes(styleBadge);
 
         // ランク＆レーン希望文字列の作成
+        const RANK_JP_MAP = {
+          CHALLENGER: 'チャレンジャー', GRANDMASTER: 'グランドマスター', MASTER: 'マスター',
+          DIAMOND: 'ダイヤ', EMERALD: 'エメラルド', PLATINUM: 'プラチナ',
+          GOLD: 'ゴールド', SILVER: 'シルバー', BRONZE: 'ブロンズ', IRON: 'アイアン',
+          UNRANKED: '未ランク'
+        };
+
         let rankStr = "";
         if (playerRow) {
           const mmr = getHighestLaneMmr(playerRow);
           const tier = getKtmRank(mmr ?? 0);
           if (tier && tier.name) {
-            rankStr = `【${tier.name}】`;
+            const jpName = RANK_JP_MAP[tier.name] || tier.name;
+            rankStr = ` 【${jpName}】`;
           }
         }
 
@@ -392,32 +400,33 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         if (isSundayMode) {
           // 日曜部門のトグル/スタイル変更（土曜には触らない）
           let fLines = (targetEmbed.fields[1].value || "").split('\n');
-          fLines = fLines.filter(l => !l.includes(userMention) && !l.includes('▫ 参加者: なし'));
+          fLines = fLines.filter(l => l.startsWith('- ') && !l.includes(userMention));
 
           if (!isAlreadyInTarget || !isSameStyle) {
             fLines.push(`- ${userMention}${styleBadge}${lanePrefStr}`);
           }
-          const count = fLines.filter(l => l.startsWith('- ')).length;
+          const count = fLines.length;
           targetEmbed.fields[1].name = `🎪 【日曜・お祭り部門】 (${count}/10名) 🎲 ランク不問 (MMRなし)`;
-          targetEmbed.fields[1].value = fLines.length > 0 ? fLines.join('\n') : "▫ 参加者: なし";
+          targetEmbed.fields[1].value = fLines.length > 0 ? fLines.join('\n') : "▫ 参加者: なし\n※対象: 全員OK！特殊ルール/ランダム/オフメタ等大歓迎（MMR変動なし）";
         } else {
           // 土曜本戦カスタムのトグル/スタイル変更
           let fLines = (targetEmbed.fields[0].value || "").split('\n');
-          fLines = fLines.filter(l => !l.includes(userMention) && !l.includes('▫ 参加者: なし'));
+          fLines = fLines.filter(l => l.startsWith('- ') && !l.includes(userMention));
 
           if (!isAlreadyInTarget || !isSameStyle) {
             fLines.push(`- ${userMention}${styleBadge}${fullEntryBadge}`);
           }
-          const count = fLines.filter(l => l.startsWith('- ')).length;
+          const count = fLines.length;
 
           // 参加者全体のランク分布と最多ランク帯（ボリュームゾーン）を集計
           let dominantTierName = "未定";
           if (count > 0) {
             const tierCounts = {};
             fLines.forEach(line => {
-              const match = line.match(/【([アイアン|ブロンズ|シルバー|ゴールド|プラチナ|エメラルド|ダイヤ|マスター]+)/);
-              const t = match ? match[1] : "シルバー";
-              tierCounts[t] = (tierCounts[t] || 0) + 1;
+              const match = line.match(/【(アイアン|ブロンズ|シルバー|ゴールド|プラチナ|エメラルド|ダイヤ|マスター|チャレンジャー|グランドマスター|IRON|BRONZE|SILVER|GOLD|PLATINUM|EMERALD|DIAMOND|MASTER)/i);
+              const rawT = match ? match[1].toUpperCase() : "SILVER";
+              const jpT = RANK_JP_MAP[rawT] || match?.[1] || "シルバー";
+              tierCounts[jpT] = (tierCounts[jpT] || 0) + 1;
             });
             let maxCount = 0;
             for (const [t, c] of Object.entries(tierCounts)) {
@@ -429,7 +438,7 @@ export async function handleButtonInteraction(interaction, env, ctx) {
           }
 
           targetEmbed.fields[0].name = `⚔️ 【土曜・本戦カスタム】 (${count}/10名) 🎯 基準: ${dominantTierName}`;
-          targetEmbed.fields[0].value = fLines.length > 0 ? fLines.join('\n') : "▫ 参加者: なし";
+          targetEmbed.fields[0].value = fLines.length > 0 ? fLines.join('\n') : "▫ 参加者: なし\n※対象: 全員エントリーOK！最も集まったランク帯を基準に実力均等チーム分け";
         }
 
         // 3. 最新の参加人数とステータスバナー作成
