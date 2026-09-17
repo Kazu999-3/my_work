@@ -4,6 +4,7 @@ import { getAuthSession } from '../../../../lib/authGuard';
 import { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } from '../../../../lib/playerCoins';
 import { MENTORSHIP_DURATIONS } from '../../../../lib/mentorshipConstants';
 import { sendDiscordDirectMessage, sendErrorNotification } from '../../../../lib/discordNotify';
+import { syncMentorshipDashboard } from '../../../../lib/discordMentorship';
 
 export const dynamic = 'force-dynamic';
 
@@ -466,11 +467,15 @@ export async function POST(request: Request) {
         console.warn('[mentorship/matches] Complete bonus coin warning:', coinErr);
       }
 
+      syncMentorshipDashboard().catch(() => {});
+
       return NextResponse.json({
         ok: true,
         message: '🎓 師弟ペアの目標達成・円満卒業が完了しました！(+200コイン獲得)',
       });
     }
+
+
 
     // ==========================================
     // 3. 円満解散・リセット (CANCEL / DISBAND)
@@ -510,6 +515,8 @@ export async function POST(request: Request) {
         .from('mentorship_profiles')
         .update({ status: 'OPEN' })
         .in('id', [match.mentor_profile_id, match.pupil_profile_id]);
+
+      syncMentorshipDashboard().catch(() => {});
 
       return NextResponse.json({
         ok: true,
@@ -601,6 +608,8 @@ export async function POST(request: Request) {
         match.mentor_discord_id,
         match.pupil_discord_id
       ).catch(() => {});
+
+      syncMentorshipDashboard().catch(() => {});
 
       return NextResponse.json({ ok: true, message: '師弟ペアが正式に成立しました！(+300コイン付与)' });
     }

@@ -3,6 +3,7 @@ import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { getAuthSession } from '../../../../lib/authGuard';
 import { findOrCreatePlayer } from '../../../../lib/playerCoins';
 import { sendErrorNotification } from '../../../../lib/discordNotify';
+import { notifyNewMentorshipProfile, syncMentorshipDashboard } from '../../../../lib/discordMentorship';
 
 export const dynamic = 'force-dynamic';
 
@@ -283,6 +284,14 @@ export async function POST(request: Request) {
       }
     }
 
+    // 📢 Discord連携（新着速報カード送信 ＆ 常駐ダッシュボード自動同期）
+    notifyNewMentorshipProfile({ profile: resultData, isUpdate: !!existing?.id }).catch((e) =>
+      console.warn('[mentorship/profiles] Discord notify failed:', e)
+    );
+    syncMentorshipDashboard().catch((e) =>
+      console.warn('[mentorship/profiles] Discord dashboard sync failed:', e)
+    );
+
     return NextResponse.json({
       ok: true,
       profile: resultData,
@@ -340,6 +349,11 @@ export async function DELETE(request: Request) {
     const { error } = await deleteQuery;
 
     if (error) throw error;
+
+    // 📢 Discord連携（削除後の常駐ダッシュボード自動同期）
+    syncMentorshipDashboard().catch((e) =>
+      console.warn('[mentorship/profiles] Discord dashboard sync on delete failed:', e)
+    );
 
     return NextResponse.json({ ok: true, message: 'カードを削除しました。' });
   } catch (err: any) {

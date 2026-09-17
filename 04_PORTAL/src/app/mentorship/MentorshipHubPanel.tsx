@@ -9,9 +9,9 @@ import { MentorshipKickoffModal } from './MentorshipKickoffModal';
 import { MentorshipGuidelinesModal } from './MentorshipGuidelinesModal';
 import { MentorshipReviewModal } from './MentorshipReviewModal';
 import { MentorshipReviewSummary } from '../api/mentorship/reviews/route';
-import { DISBAND_REASONS } from '../../lib/mentorshipConstants';
 import { toast } from '../../components/Toaster';
-import { HeartHandshake, Sparkles, Plus, Search, Shield, Award, Users, Swords, BookOpen, MessageSquare, Rocket, Leaf, Star } from 'lucide-react';
+import { HeartHandshake, Sparkles, Plus, Search, Shield, Award, Users, Swords, BookOpen, MessageSquare, Rocket, Leaf, Star, ExternalLink, RefreshCw } from 'lucide-react';
+
 
 const LANE_FILTERS = [
   { id: 'ALL', label: '🌐 全て' },
@@ -53,6 +53,27 @@ export default function MentorshipHubPanel() {
   // ⭐ 匿名レビューモーダル管理
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [selectedReviewMatch, setSelectedReviewMatch] = useState<any | null>(null);
+
+  // 💬 Discord同期ステート
+  const [isSyncingDiscord, setIsSyncingDiscord] = useState(false);
+
+  // Discord募集板の即時同期
+  const handleSyncDiscord = async () => {
+    setIsSyncingDiscord(true);
+    try {
+      const res = await fetch('/api/mentorship/sync-discord', { method: 'POST' });
+      const data = await res.json();
+      if (data.ok) {
+        toast.success('💬 Discordの師弟募集板を最新状態に同期しました！');
+      } else {
+        toast.error(data.error || 'Discord同期に失敗しました');
+      }
+    } catch {
+      toast.error('通信エラーが発生しました');
+    } finally {
+      setIsSyncingDiscord(false);
+    }
+  };
 
 
   // プロフィール一覧の取得
@@ -566,6 +587,29 @@ export default function MentorshipHubPanel() {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
+            <a
+              href="https://discord.com/channels/1485636149379858567/1550159520687325205"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-2.5 rounded-xl bg-[#5865F2]/10 hover:bg-[#5865F2]/20 text-[#5865F2] font-bold text-xs transition border border-[#5865F2]/30 flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            >
+              <ExternalLink size={13} />
+              <span>💬 Discord募集板</span>
+            </a>
+
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={handleSyncDiscord}
+                disabled={isSyncingDiscord}
+                className="px-2.5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition border border-stone-200 flex items-center gap-1 cursor-pointer disabled:opacity-50 shadow-2xs"
+                title="Discordの常駐ダッシュボードを即座に再同期します"
+              >
+                <RefreshCw size={13} className={isSyncingDiscord ? 'animate-spin text-indigo-600' : ''} />
+                <span className="hidden sm:inline">Discord同期</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => setIsGuidelinesModalOpen(true)}
