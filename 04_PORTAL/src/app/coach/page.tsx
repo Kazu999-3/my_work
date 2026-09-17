@@ -22,7 +22,7 @@ function CoachPageContent() {
 
   // 認証チェック
   useEffect(() => {
-    fetch('/api/admin/auth/check')
+    fetch('/api/auth/verify', { method: 'POST', credentials: 'include' })
       .then((res) => {
         setIsAuthenticated(res.ok);
       })
