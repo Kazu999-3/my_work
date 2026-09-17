@@ -147,7 +147,7 @@ export function MentorshipCard({
   };
 
   return (
-    <div className={`relative rounded-3xl border transition-all duration-200 overflow-hidden flex flex-col justify-between bg-white/95 backdrop-blur-sm shadow-md ${
+    <div className={`relative rounded-3xl border transition-all duration-200 overflow-hidden flex flex-col justify-between bg-white/95 dark:bg-[#2b2d31] dark:border-[#3f4147] backdrop-blur-sm shadow-md ${
       matchScore && matchScore >= 80
         ? 'ring-2 ring-amber-400 shadow-lg scale-[1.01]'
         : ''
@@ -195,8 +195,8 @@ export function MentorshipCard({
             {/* 役職バッジ */}
             <div className={`px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase flex items-center gap-1.5 ${
               isMentor
-                ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                ? 'bg-amber-100 dark:bg-amber-950/50 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
+                : 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-900 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700'
             }`}>
               <span>{isMentor ? '👨‍🏫' : '🔰'}</span>
               <span>{isMentor ? '師匠 (Mentor)' : '弟子 (Pupil)'}</span>
@@ -205,7 +205,7 @@ export function MentorshipCard({
             {/* コース希望バッジ */}
             {preferredDuration && MENTORSHIP_DURATIONS[preferredDuration] && (
               <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black border shadow-2xs ${
-                MENTORSHIP_DURATIONS[preferredDuration].badgeColor || 'bg-stone-100 text-stone-800 border-stone-300'
+                MENTORSHIP_DURATIONS[preferredDuration].badgeColor || 'bg-stone-100 dark:bg-[#1e1f22] text-stone-800 dark:text-stone-200 border-stone-300 dark:border-[#3f4147]'
               }`}>
                 {MENTORSHIP_DURATIONS[preferredDuration].shortLabel}
               </span>
@@ -213,36 +213,36 @@ export function MentorshipCard({
 
             {/* ⭐ 匿名レビュー評価バッジ */}
             {reviewSummary && reviewSummary.totalReviews > 0 ? (
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-50 text-amber-900 border border-amber-300 flex items-center gap-1 shadow-2xs">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700 flex items-center gap-1 shadow-2xs">
                 <span>⭐ {reviewSummary.averageRating}</span>
-                <span className="text-[10px] text-stone-500 font-normal">({reviewSummary.totalReviews}件)</span>
+                <span className="text-[10px] text-stone-500 dark:text-stone-400 font-normal">({reviewSummary.totalReviews}件)</span>
               </span>
             ) : null}
 
             {/* ステータスバッジ（師匠は受入枠数を表示） */}
             {isMentor ? (
               (profile.active_pupils_count || 0) >= (profile.max_pupils || 3) ? (
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200 flex items-center gap-1">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-950/50 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800 flex items-center gap-1">
                   <span>🈵</span>
                   <span>弟子枠満員 ({profile.active_pupils_count}/{profile.max_pupils || 3}人)</span>
                 </span>
               ) : (profile.active_pupils_count || 0) > 0 ? (
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 flex items-center gap-1">
                   <span>👥</span>
-                  <span>弟子枠: {profile.active_pupils_count}/{profile.max_pupils || 3}人 (空き{(profile.max_pupils || 3) - (profile.active_pupils_count || 0)}枠)</span>
+                  <span>弟子枠: {profile.active_pupil_names?.length || profile.active_pupils_count}/{profile.max_pupils || 3}人 (空き{(profile.max_pupils || 3) - (profile.active_pupils_count || 0)}枠)</span>
                 </span>
               ) : (
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700 flex items-center gap-1">
                   <span>🟢</span>
                   <span>弟子募集中 (最大{profile.max_pupils || 3}人)</span>
                 </span>
               )
             ) : profile.status === 'MATCHED' ? (
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-950/50 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
                 🤝 ペア結成中
               </span>
             ) : (
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-700">
                 🟢 募集中
               </span>
             )}
@@ -250,11 +250,11 @@ export function MentorshipCard({
 
           {/* 編集・削除ボタン（本人または管理者の場合） */}
           {(isMine || isAdmin) && (
-            <div className="flex items-center gap-1 bg-stone-100 p-0.5 rounded-lg border border-stone-200">
+            <div className="flex items-center gap-1 bg-stone-100 dark:bg-[#1e1f22] p-0.5 rounded-lg border border-stone-200 dark:border-[#3f4147]">
               {isMine && onEdit && (
                 <button
                   onClick={() => onEdit(profile)}
-                  className="px-2 py-1 text-xs text-stone-600 hover:text-stone-900 hover:bg-white rounded transition cursor-pointer"
+                  className="px-2 py-1 text-xs text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#2b2d31] rounded transition cursor-pointer"
                   title="編集"
                 >
                   ✏️
@@ -263,11 +263,11 @@ export function MentorshipCard({
               {onDelete && (
                 <button
                   onClick={() => onDelete(profile.id)}
-                  className="px-2 py-1 text-xs text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded transition cursor-pointer flex items-center gap-0.5"
+                  className="px-2 py-1 text-xs text-rose-600 hover:text-rose-800 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded transition cursor-pointer flex items-center gap-0.5"
                   title={isAdmin && !isMine ? '管理者権限で削除' : '削除'}
                 >
                   <span>🗑️</span>
-                  {isAdmin && !isMine && <span className="text-[10px] font-black text-rose-700">管理</span>}
+                  {isAdmin && !isMine && <span className="text-[10px] font-black text-rose-700 dark:text-rose-400">管理</span>}
                 </button>
               )}
             </div>
@@ -284,7 +284,7 @@ export function MentorshipCard({
             {profile.player_name.slice(0, 1).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="text-base font-black text-stone-900 truncate flex items-center gap-2">
+            <h3 className="text-base font-black text-stone-900 dark:text-stone-100 truncate flex items-center gap-2">
               {profile.player_name}
             </h3>
             <div className="flex items-center gap-2 text-xs mt-0.5 flex-wrap">
@@ -292,12 +292,12 @@ export function MentorshipCard({
                 {rankInfo.name} ({profile.current_rank})
               </span>
               {profile.target_rank && !isMentor && (
-                <span className="text-[11px] text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                <span className="text-[11px] text-emerald-700 dark:text-emerald-300 font-bold bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
                   ➔ 目標: {profile.target_rank}
                 </span>
               )}
               {profile.target_rank && isMentor && (
-                <span className="text-[11px] text-amber-800 font-bold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                <span className="text-[11px] text-amber-800 dark:text-amber-300 font-bold bg-amber-50 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800">
                   👥 歓迎: {profile.target_rank}
                 </span>
               )}
@@ -306,14 +306,14 @@ export function MentorshipCard({
             {/* 師匠が現在指導中の弟子（兄弟弟子）一覧 */}
             {isMentor && profile.active_pupil_names && profile.active_pupil_names.length > 0 && (
               <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                <span className="text-[10px] font-bold text-stone-500 flex items-center gap-0.5">
+                <span className="text-[10px] font-bold text-stone-500 dark:text-stone-400 flex items-center gap-0.5">
                   <span>🤝</span>
                   <span>指導中:</span>
                 </span>
                 {profile.active_pupil_names.map((name, idx) => (
                   <span
                     key={`${name}-${idx}`}
-                    className="text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 px-1.5 py-0.2 rounded-md"
+                    className="text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 px-1.5 py-0.2 rounded-md"
                   >
                     🌱 {name}
                   </span>
@@ -325,8 +325,8 @@ export function MentorshipCard({
 
         {/* 🌟 匿名レビュー上位推薦タグ */}
         {reviewSummary && reviewSummary.topTags && reviewSummary.topTags.length > 0 && (
-          <div className="p-2.5 bg-amber-50/70 rounded-2xl border border-amber-200/80 space-y-1">
-            <div className="text-[10px] font-black text-amber-950 flex items-center gap-1">
+          <div className="p-2.5 bg-amber-50/70 dark:bg-amber-950/20 rounded-2xl border border-amber-200/80 dark:border-amber-800/40 space-y-1">
+            <div className="text-[10px] font-black text-amber-950 dark:text-amber-200 flex items-center gap-1">
               <span>✨</span>
               <span>バディからの推薦ポイント:</span>
             </div>
@@ -334,9 +334,9 @@ export function MentorshipCard({
               {reviewSummary.topTags.map((t) => (
                 <span
                   key={t.tag}
-                  className="px-2 py-0.5 rounded-lg bg-white border border-amber-300 text-[10px] font-bold text-amber-950 shadow-2xs"
+                  className="px-2 py-0.5 rounded-lg bg-white dark:bg-[#1e1f22] border border-amber-300 dark:border-amber-700 text-[10px] font-bold text-amber-950 dark:text-amber-200 shadow-2xs"
                 >
-                  {t.tag} <strong className="text-amber-600">×{t.count}</strong>
+                  {t.tag} <strong className="text-amber-600 dark:text-amber-400">×{t.count}</strong>
                 </span>
               ))}
             </div>
@@ -349,7 +349,7 @@ export function MentorshipCard({
             {profile.lanes.map((lane) => (
               <span
                 key={lane}
-                className="px-2.5 py-1 bg-stone-100 border border-stone-200 rounded-lg text-xs font-bold text-stone-700"
+                className="px-2.5 py-1 bg-stone-100 dark:bg-[#1e1f22] border border-stone-200 dark:border-[#3f4147] rounded-lg text-xs font-bold text-stone-700 dark:text-stone-200"
               >
                 {LANE_ICONS[lane] || lane}
               </span>
@@ -360,7 +360,7 @@ export function MentorshipCard({
         {/* チャンピオンアイコン一覧 */}
         {profile.champions && profile.champions.length > 0 && (
           <div className="space-y-1.5">
-            <span className="text-[11px] font-bold text-stone-500">
+            <span className="text-[11px] font-bold text-stone-500 dark:text-stone-400">
               {isMentor ? '⚔️ 指導可能チャンピオン:' : '🎯 練習中・得意チャンピオン:'}
             </span>
             <div className="flex flex-wrap gap-1.5 items-center">
@@ -370,7 +370,7 @@ export function MentorshipCard({
                 return (
                   <div
                     key={champName}
-                    className="flex items-center gap-1.5 px-2 py-1 bg-stone-50 border border-stone-200/90 rounded-xl text-xs font-bold text-stone-800 shadow-2xs"
+                    className="flex items-center gap-1.5 px-2 py-1 bg-stone-50 dark:bg-[#1e1f22] border border-stone-200/90 dark:border-[#3f4147] rounded-xl text-xs font-bold text-stone-800 dark:text-stone-200 shadow-2xs"
                   >
                     <img
                       src={iconUrl}
@@ -396,10 +396,10 @@ export function MentorshipCard({
                 key={tag}
                 className={`px-2.5 py-0.5 rounded-lg text-xs font-semibold border ${
                   tag.includes('1試合') || tag.includes('リプレイ') || tag.includes('お試し')
-                    ? 'bg-sky-50 text-sky-900 border-sky-300 font-bold'
+                    ? 'bg-sky-50 dark:bg-sky-950/40 text-sky-900 dark:text-sky-300 border-sky-300 dark:border-sky-800 font-bold'
                     : isMentor
-                      ? 'bg-amber-50 text-amber-900 border-amber-200'
-                      : 'bg-emerald-50 text-emerald-900 border-emerald-200'
+                      ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                      : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
                 }`}
               >
                 #{tag}
@@ -410,17 +410,17 @@ export function MentorshipCard({
 
         {/* 自己紹介文 */}
         {profile.bio && (
-          <div className="p-3.5 bg-stone-50/90 rounded-2xl border border-stone-200 text-xs text-stone-800 leading-relaxed whitespace-pre-wrap font-medium">
+          <div className="p-3.5 bg-stone-50/90 dark:bg-[#1e1f22] rounded-2xl border border-stone-200 dark:border-[#3f4147] text-xs text-stone-800 dark:text-stone-100 leading-relaxed whitespace-pre-wrap font-medium">
             {profile.bio}
           </div>
         )}
 
         {/* 活動時間帯 */}
         {profile.active_hours && (
-          <div className="flex items-center gap-1.5 text-xs text-stone-600 bg-stone-100/70 p-2 rounded-xl border border-stone-200/60">
-            <Clock size={13} className="text-amber-600" />
-            <span className="font-bold text-stone-500">活動時間:</span>
-            <span className="font-bold text-stone-800">{profile.active_hours}</span>
+          <div className="flex items-center gap-1.5 text-xs text-stone-600 dark:text-stone-300 bg-stone-100/70 dark:bg-[#1e1f22] p-2 rounded-xl border border-stone-200/60 dark:border-[#3f4147]">
+            <Clock size={13} className="text-amber-600 dark:text-amber-400" />
+            <span className="font-bold text-stone-500 dark:text-stone-400">活動時間:</span>
+            <span className="font-bold text-stone-800 dark:text-stone-100">{profile.active_hours}</span>
           </div>
         )}
 
@@ -428,20 +428,20 @@ export function MentorshipCard({
         <div className="pt-1">
           <button
             onClick={handleToggleComments}
-            className="w-full py-1.5 px-3 rounded-xl bg-stone-100 hover:bg-stone-200/80 text-stone-700 text-xs font-bold transition flex items-center justify-between cursor-pointer border border-stone-200/80"
+            className="w-full py-1.5 px-3 rounded-xl bg-stone-100 dark:bg-[#1e1f22] hover:bg-stone-200/80 dark:hover:bg-[#35373c] text-stone-700 dark:text-stone-200 text-xs font-bold transition flex items-center justify-between cursor-pointer border border-stone-200/80 dark:border-[#3f4147]"
           >
             <span className="flex items-center gap-1.5">
-              <MessageSquare size={13} className="text-sky-600" />
+              <MessageSquare size={13} className="text-sky-600 dark:text-sky-400" />
               <span>💬 ワンポイント相談 / 応援コメント</span>
             </span>
-            <span className="text-[11px] font-semibold bg-white px-2 py-0.5 rounded-full border border-stone-200">
+            <span className="text-[11px] font-semibold bg-white dark:bg-[#2b2d31] text-stone-700 dark:text-stone-300 px-2 py-0.5 rounded-full border border-stone-200 dark:border-[#3f4147]">
               {showComments ? '閉じる ▲' : '見る・書く ▼'}
             </span>
           </button>
 
           {/* コメントアコーディオン内側 */}
           {showComments && (
-            <div className="mt-2.5 p-3 rounded-2xl bg-stone-50/90 border border-stone-200 space-y-3 animate-in fade-in duration-200">
+            <div className="mt-2.5 p-3 rounded-2xl bg-stone-50/90 dark:bg-[#1e1f22] border border-stone-200 dark:border-[#3f4147] space-y-3 animate-in fade-in duration-200">
               {isLoadingComments ? (
                 <div className="text-center py-2 text-xs text-stone-500 font-medium">
                   コメントを読み込み中...

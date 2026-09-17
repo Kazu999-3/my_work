@@ -87,27 +87,38 @@ html.dark select {
 }
 
 
-/* 🌙 ダークモード時の白背景コンポーネントの自動ダークサーフェス適応 */
-html.dark .bg-white {
-  background-color: #2b2d31;
+/* 🌙 ダークモード時の白・淡色背景コンポーネントの自動ダークサーフェス適応 */
+/* bg-white/95 などの透明度バリアントも確実にダークサーフェス（#2b2d31）に変換 */
+html.dark .bg-white,
+html.dark [class*="bg-white/"],
+html.dark [class*="bg-white\\/"] {
+  background-color: #2b2d31 !important;
   color: #f2f3f5;
 }
 
 html.dark .bg-stone-50,
-html.dark .bg-stone-100 {
-  background-color: #1e1f22;
+html.dark [class*="bg-stone-50/"],
+html.dark [class*="bg-stone-50\\/"],
+html.dark .bg-stone-100,
+html.dark [class*="bg-stone-100/"],
+html.dark [class*="bg-stone-100\\/"] {
+  background-color: #1e1f22 !important;
   color: #dbdee1;
 }
 
 html.dark .bg-stone-150,
-html.dark .bg-stone-200 {
-  background-color: #35373c;
+html.dark .bg-stone-200,
+html.dark [class*="bg-stone-200/"],
+html.dark [class*="bg-stone-200\\/"] {
+  background-color: #35373c !important;
   color: #f2f3f5;
 }
 
 html.dark .border-stone-200,
-html.dark .border-stone-300 {
-  border-color: #3f4147;
+html.dark [class*="border-stone-200"],
+html.dark .border-stone-300,
+html.dark [class*="border-stone-300"] {
+  border-color: #3f4147 !important;
 }
 
 /* ☀️ ライトモード専用（羊皮紙調背景 #eae4d4 / カード #fdfcf9）での文字コントラスト最適化 */

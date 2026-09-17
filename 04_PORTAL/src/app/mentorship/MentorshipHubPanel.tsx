@@ -799,11 +799,11 @@ export default function MentorshipHubPanel() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-amber-600 animate-bounce" />
-                  <h3 className="text-sm font-black text-stone-900">
+                  <h3 className="text-sm font-black text-stone-900 dark:text-stone-100">
                     🎯 あなたと相性抜群のバディ（AI相性分析）
                   </h3>
                 </div>
-                <span className="text-[10px] font-bold bg-white/90 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold bg-white/90 dark:bg-[#2b2d31] text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700 px-2 py-0.5 rounded-full">
                   リアルタイムマッチング
                 </span>
               </div>
