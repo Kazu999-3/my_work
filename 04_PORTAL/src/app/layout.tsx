@@ -7,7 +7,6 @@ import Toaster from "../components/Toaster";
 import BackButton from "../components/BackButton";
 import BackToTop from "../components/BackToTop";
 import OfflineNotifier from "../components/OfflineNotifier";
-import MobileBottomNav from "../components/MobileBottomNav";
 import { ThemeProvider } from "../context/ThemeContext";
 
 export const metadata: Metadata = {
@@ -88,7 +87,6 @@ export default function RootLayout({
             {children}
           </div>
           <BackToTop />
-          <MobileBottomNav />
         </ThemeProvider>
       </body>
     </html>

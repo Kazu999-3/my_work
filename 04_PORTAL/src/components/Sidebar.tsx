@@ -25,7 +25,8 @@ import {
   Home,
   Globe,
   Gift,
-  Check
+  Check,
+  History
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import FavoritesPanel from './FavoritesPanel';
@@ -186,6 +187,7 @@ const GENERAL_MENU_ITEMS: MenuItem[] = [
   // 対戦・大会
   { id: 'balancer', label: 'チーム分けバランサー', shortLabel: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-rose-600', activeBg: 'bg-rose-500/15', section: '対戦 ＆ 大会' },
   { id: 'casino', label: '勝敗予想 (カジノ)', shortLabel: '勝敗予想', icon: Coins, href: '/casino', color: 'text-amber-600', activeBg: 'bg-amber-500/15', section: '対戦 ＆ 大会' },
+  { id: 'history', label: '過去戦績・試合履歴', shortLabel: '試合履歴', icon: History, href: '/history', color: 'text-blue-600', activeBg: 'bg-blue-500/15', section: '対戦 ＆ 大会' },
   // コミュニティ・戦績
   { id: 'leaderboard', label: '順位表 ＆ 名簿', shortLabel: '順位・名簿', icon: Trophy, href: '/leaderboard', color: 'text-yellow-600', activeBg: 'bg-yellow-500/15', section: 'コミュニティ' },
   // ガイド
