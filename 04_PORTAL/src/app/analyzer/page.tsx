@@ -41,19 +41,65 @@ import {
 
 export default function PlayerAnalyzerPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [summonerInput, setSummonerInput] = useState('Kazurin#4036');
+  const [summonerInput, setSummonerInput] = useState('');
   const [targetTier, setTargetTier] = useState<string>('Emerald IV');
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState<any>(null);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'overview' | 'champions' | 'session' | 'psychology'>('overview');
   const [selectedChampId, setSelectedChampId] = useState<string>('');
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+
+  // 検索履歴のロード
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('lol_analyzer_recent_searches');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setRecentSearches(parsed);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  // 検索履歴の保存ヘルパー
+  const saveRecentSearch = (raw: string) => {
+    try {
+      const trimmed = raw.trim();
+      if (!trimmed) return;
+      const filtered = recentSearches.filter((s) => s.toLowerCase() !== trimmed.toLowerCase());
+      const updated = [trimmed, ...filtered].slice(0, 8);
+      setRecentSearches(updated);
+      localStorage.setItem('lol_analyzer_recent_searches', JSON.stringify(updated));
+    } catch {
+      // ignore
+    }
+  };
+
+  const removeRecentSearch = (e: React.MouseEvent, target: string) => {
+    e.stopPropagation();
+    try {
+      const updated = recentSearches.filter((s) => s !== target);
+      setRecentSearches(updated);
+      localStorage.setItem('lol_analyzer_recent_searches', JSON.stringify(updated));
+    } catch {
+      // ignore
+    }
+  };
+
+  const clearAllRecents = () => {
+    setRecentSearches([]);
+    localStorage.removeItem('lol_analyzer_recent_searches');
+  };
 
   // サモナー名とタグのパース
   const parseSummonerInput = (raw: string) => {
     const parts = raw.trim().split('#');
     const name = parts[0]?.trim() || '';
-    const tag = parts[1]?.trim() || (name.toLowerCase() === 'kazurin' ? '4036' : 'JP1');
+    const tag = parts[1]?.trim() || 'JP1';
     return { name, tag };
   };
 
@@ -108,6 +154,7 @@ export default function PlayerAnalyzerPage() {
       }
 
       setReport(data.report);
+      saveRecentSearch(`${name}#${tag}`);
       if (data.report?.championProfiles?.length > 0) {
         setSelectedChampId(data.report.championProfiles[0].id);
       }
@@ -119,10 +166,17 @@ export default function PlayerAnalyzerPage() {
     }
   };
 
-  // 初回自動解析
+  // URLクエリパラメータがある場合のみ初回自動解析（なければ待機）
   useEffect(() => {
-    if (isAuthenticated) {
-      handleRunAnalysis();
+    if (isAuthenticated && typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const queryName = params.get('name') || params.get('summoner');
+      const queryTag = params.get('tag') || 'JP1';
+      if (queryName) {
+        const full = `${queryName}#${queryTag}`;
+        setSummonerInput(full);
+        handleRunAnalysis(full);
+      }
     }
   }, [isAuthenticated]);
 
@@ -240,27 +294,65 @@ export default function PlayerAnalyzerPage() {
           </button>
         </form>
 
-        {/* クイック選択 */}
-        <div className="flex items-center gap-1.5 flex-wrap text-[11px] pt-1 border-t border-stone-100">
-          <span className="text-stone-400 font-bold">サンプル分析:</span>
-          {[
-            { raw: 'Kazurin#4036', label: 'Kazurin#4036 (JG)' },
-            { raw: 'yukizo#7867', label: 'yukizo#7867 (SUP)' },
-            { raw: 'Hide on bush#KR1', label: 'Faker (KR1)' },
-            { raw: 'Agurin#EUW', label: 'Agurin (EUW)' },
-          ].map((p) => (
-            <button
-              key={p.raw}
-              type="button"
-              onClick={() => {
-                setSummonerInput(p.raw);
-                handleRunAnalysis(p.raw, targetTier);
-              }}
-              className="px-2.5 py-1 rounded-xl bg-stone-100 hover:bg-amber-100/80 hover:text-amber-900 text-stone-700 font-bold border border-stone-200/80 transition cursor-pointer"
-            >
-              {p.label}
-            </button>
-          ))}
+        {/* 入力補助（最近検索したサモナー履歴 ＆ サンプル候補） */}
+        <div className="space-y-2 pt-2 border-t border-stone-100">
+          {recentSearches.length > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
+              <span className="text-stone-500 font-bold flex items-center gap-1">
+                <Clock size={12} className="text-amber-600" />
+                <span>最近検索したサモナー:</span>
+              </span>
+              {recentSearches.map((rec) => (
+                <div
+                  key={rec}
+                  onClick={() => {
+                    setSummonerInput(rec);
+                    handleRunAnalysis(rec, targetTier);
+                  }}
+                  className="group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-950 font-bold border border-amber-200/80 transition cursor-pointer shadow-2xs"
+                >
+                  <span>{rec}</span>
+                  <button
+                    type="button"
+                    onClick={(e) => removeRecentSearch(e, rec)}
+                    className="text-stone-400 hover:text-rose-600 transition p-0.5 rounded-full hover:bg-white/80"
+                    title="履歴から削除"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={clearAllRecents}
+                className="text-[10px] text-stone-400 hover:text-rose-600 transition underline cursor-pointer ml-1"
+              >
+                履歴クリア
+              </button>
+            </div>
+          )}
+
+          <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
+            <span className="text-stone-400 font-bold">サンプル候補:</span>
+            {[
+              { raw: 'Kazurin#4036', label: 'Kazurin#4036 (JG)' },
+              { raw: 'yukizo#7867', label: 'yukizo#7867 (SUP)' },
+              { raw: 'Hide on bush#KR1', label: 'Faker (KR1)' },
+              { raw: 'Agurin#EUW', label: 'Agurin (EUW)' },
+            ].map((p) => (
+              <button
+                key={p.raw}
+                type="button"
+                onClick={() => {
+                  setSummonerInput(p.raw);
+                  handleRunAnalysis(p.raw, targetTier);
+                }}
+                className="px-2.5 py-0.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-600 hover:text-stone-900 font-medium text-[10.5px] border border-stone-200/70 transition cursor-pointer"
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -269,6 +361,44 @@ export default function PlayerAnalyzerPage() {
         <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl text-xs font-bold flex items-center gap-2">
           <AlertTriangle size={15} className="shrink-0" />
           <span>{error}</span>
+        </div>
+      )}
+
+      {/* 未検索時のウェルカム・ガイド表示 */}
+      {!report && !loading && !error && (
+        <div className="rounded-3xl border border-stone-200 bg-white p-8 md:p-12 text-center space-y-4 shadow-xs">
+          <div className="w-16 h-16 rounded-3xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto text-2xl shadow-inner">
+            🔍
+          </div>
+          <div className="space-y-1.5 max-w-md mx-auto">
+            <h3 className="text-base font-black text-stone-900">
+              サモナー名を入力して深層アナライズを開始
+            </h3>
+            <p className="text-xs text-stone-500 font-medium leading-relaxed">
+              上の検索バーに「サモナー名#タグ」を入力して実行してください。一度検索したサモナーは入力補助履歴に自動保存され、ワンクリックで再解析できます。
+            </p>
+          </div>
+          {recentSearches.length > 0 && (
+            <div className="pt-4 max-w-md mx-auto">
+              <div className="text-xs font-bold text-stone-400 mb-2">最近検索したサモナーから再開:</div>
+              <div className="flex items-center justify-center gap-2 flex-wrap">
+                {recentSearches.map((rec) => (
+                  <button
+                    key={rec}
+                    type="button"
+                    onClick={() => {
+                      setSummonerInput(rec);
+                      handleRunAnalysis(rec, targetTier);
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 font-black text-xs border border-amber-300/60 transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Sparkles size={12} className="text-amber-600" />
+                    <span>{rec}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
