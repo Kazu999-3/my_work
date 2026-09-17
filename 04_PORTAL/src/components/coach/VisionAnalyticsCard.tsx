@@ -11,6 +11,10 @@ import {
   Compass,
   CheckCircle2,
   HelpCircle,
+  ShoppingBag,
+  Clock,
+  Shield,
+  Coins,
 } from 'lucide-react';
 import { KAZURIN_VISION_METRICS, KAZURIN_STYLE_PROFILE } from '../../lib/playerStyleProfile';
 
@@ -236,6 +240,134 @@ export default function VisionAnalyticsCard() {
           <p className="text-xs text-stone-800 font-medium leading-relaxed">
             {DEEP_WARD_SPOTS[selectedSpot].benefit}
           </p>
+        </div>
+      </div>
+
+      {/* 🔴 コントロールワード（ピンクワード）最適購入タイミング＆運用黄金ルール */}
+      <div className="p-4 md:p-5 bg-rose-50/40 rounded-3xl border border-rose-200/80 space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-2 border-b border-rose-100 pb-2.5">
+          <div className="flex items-center gap-2">
+            <span className="w-7 h-7 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-black text-xs shadow-2xs">
+              🔴
+            </span>
+            <div>
+              <h4 className="text-xs sm:text-sm font-black text-stone-900 flex items-center gap-1.5">
+                <span>コントロールワード 最適購入タイミング ＆ 運用黄金ルール</span>
+                <span className="text-[10px] font-bold px-1.5 py-0.2 bg-rose-100 text-rose-800 rounded">
+                  75Gの投資対効果最大化
+                </span>
+              </h4>
+              <p className="text-[11px] text-stone-500 font-medium">
+                「いつ買い、いつ買ってはいけないか」の明確な基準
+              </p>
+            </div>
+          </div>
+          <span className="text-[10px] font-mono font-bold text-rose-700 bg-white px-2 py-0.5 rounded-full border border-rose-200">
+            常時1本所持推奨
+          </span>
+        </div>
+
+        {/* 4つのベスト購入タイミング */}
+        <div className="space-y-2">
+          <span className="text-[11px] font-black text-stone-700 flex items-center gap-1">
+            <Coins size={13} className="text-amber-600" />
+            <span>ベストな購入タイミング（迷わず買う瞬間）:</span>
+          </span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="p-3 bg-white rounded-2xl border border-stone-200 shadow-2xs space-y-1">
+              <div className="flex items-center justify-between text-[11px] font-black">
+                <span className="text-rose-700 flex items-center gap-1">
+                  <Clock size={12} /> 1. 1stリコール時 (4:00〜5:30)
+                </span>
+                <span className="text-[10px] text-stone-400 font-normal">余剰75G〜150G時</span>
+              </div>
+              <p className="text-[11px] text-stone-600 leading-relaxed font-medium">
+                素材アイテムや靴を買った後に75G以上余ったら即1本購入。敵ラプター裏やヴォイドグラブ連絡路に刺すことで、敵JGの初動を完全制圧できます。
+              </p>
+            </div>
+
+            <div className="p-3 bg-white rounded-2xl border border-stone-200 shadow-2xs space-y-1">
+              <div className="flex items-center justify-between text-[11px] font-black">
+                <span className="text-rose-700 flex items-center gap-1">
+                  <Clock size={12} /> 2. 主要オブジェクト湧き1分前
+                </span>
+                <span className="text-[10px] text-stone-400 font-normal">ドラゴン / グラブ / バロン前</span>
+              </div>
+              <p className="text-[11px] text-stone-600 leading-relaxed font-medium">
+                湧き45秒〜1分前のリコールで必ず1〜2本確保。敵の視界を消滅（デニス）させて相手フェイスチェックを誘い、先制エンゲージの起点を作ります。
+              </p>
+            </div>
+
+            <div className="p-3 bg-white rounded-2xl border border-stone-200 shadow-2xs space-y-1">
+              <div className="flex items-center justify-between text-[11px] font-black">
+                <span className="text-rose-700 flex items-center gap-1">
+                  <Clock size={12} /> 3. 1コア完成パワースパイク直後
+                </span>
+                <span className="text-[10px] text-stone-400 font-normal">サイドプッシュ準備</span>
+              </div>
+              <p className="text-[11px] text-stone-600 leading-relaxed font-medium">
+                第1コア完成のお釣りで購入。強い時間帯にサイドレーンを押し込む際、敵JGの裏回りルートに置くことで1v1でのキルチャンスと安全を両立できます。
+              </p>
+            </div>
+
+            <div className="p-3 bg-white rounded-2xl border border-stone-200 shadow-2xs space-y-1">
+              <div className="flex items-center justify-between text-[11px] font-black">
+                <span className="text-rose-700 flex items-center gap-1">
+                  <Clock size={12} /> 4. 20分以降のバロンセットアップ
+                </span>
+                <span className="text-[10px] text-stone-400 font-normal">チーム全員で暗黒化</span>
+              </div>
+              <p className="text-[11px] text-stone-600 leading-relaxed font-medium">
+                サポートだけに任せず、チーム全員でピンクワードを1本ずつ持ち寄りバロンピット周囲を完全暗黒化。敵が視界を取りに来た瞬間をキャッチして試合を決定づけます。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ⚠️ 買ってはいけないNGタイミング ＆ ロール別基準 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
+          {/* 買ってはいけないNGタイミング */}
+          <div className="p-3 bg-amber-50/80 rounded-2xl border border-amber-200 space-y-1.5">
+            <span className="text-xs font-black text-amber-950 flex items-center gap-1">
+              <AlertTriangle size={13} className="text-amber-700" />
+              <span>⚠️ 買ってはいけないNGタイミング（テンポロス）</span>
+            </span>
+            <ul className="text-[11px] text-stone-700 space-y-1 font-medium">
+              <li className="flex items-start gap-1">
+                <span className="text-amber-600 font-bold">•</span>
+                <span><strong>コアアイテム完成が75G遅れる時:</strong> 次のパワースパイク（例: ロストチャプターや完成品）があと75Gで届く場合は、ピンクワードを我慢して装備完成を最優先。</span>
+              </li>
+              <li className="flex items-start gap-1">
+                <span className="text-amber-600 font-bold">•</span>
+                <span><strong>置く場所・目的が決まっていない時:</strong> 買ったままインベントリで5分間放置されるピンクワードは「75Gの死に金」。置く予定のブッシュを頭に描いてから購入すること。</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* ロール別推奨購入目安 */}
+          <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200 space-y-1.5">
+            <span className="text-xs font-black text-stone-900 flex items-center gap-1">
+              <Shield size={13} className="text-indigo-600" />
+              <span>ロール別 1試合あたりの推奨購入目安</span>
+            </span>
+            <div className="grid grid-cols-3 gap-1.5 text-center text-[10px] pt-0.5">
+              <div className="p-1.5 bg-white rounded-xl border border-stone-200">
+                <span className="text-stone-400 font-bold block">TOP / BOT</span>
+                <span className="text-stone-900 font-black text-xs">2〜3本</span>
+                <span className="text-[9px] text-stone-500 block">リバー防衛</span>
+              </div>
+              <div className="p-1.5 bg-white rounded-xl border border-stone-200">
+                <span className="text-stone-400 font-bold block">JG / MID</span>
+                <span className="text-indigo-700 font-black text-xs">4〜6本</span>
+                <span className="text-[9px] text-stone-500 block">ディープ・オブジェクト</span>
+              </div>
+              <div className="p-1.5 bg-white rounded-xl border border-stone-200">
+                <span className="text-stone-400 font-bold block">SUPPORT</span>
+                <span className="text-emerald-700 font-black text-xs">6〜10本</span>
+                <span className="text-[9px] text-stone-500 block">常時2本所持・デニス</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

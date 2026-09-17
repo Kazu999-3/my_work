@@ -135,11 +135,12 @@ export async function GET(request: NextRequest) {
       const durStr = `${durM}:${String(durS).padStart(2, '0')}`;
       const startTs = d.gameStartTimestamp || Date.now();
 
+      const detectedPos = (((me as any).teamPosition || (me as any).individualPosition || me.lane || 'UNKNOWN') as string).toUpperCase();
       return {
         matchId: mId,
         championName: me.championName,
         enemyChampionName: enemy?.championName || 'Unknown',
-        lane: me.lane || 'JUNGLE',
+        lane: detectedPos,
         isWin: me.win,
         kdaStr: `${me.kills}/${me.deaths}/${me.assists}`,
         kills: me.kills,
@@ -375,6 +376,8 @@ export async function GET(request: NextRequest) {
         ],
         radar_metrics,
         biggest_bottleneck,
+        my_position: validMatches[0]?.lane || 'JUNGLE',
+        is_jungle: validMatches.some((m: any) => (m.lane || '').toUpperCase().includes('JUNGLE')),
       });
     }
 
@@ -417,6 +420,9 @@ export async function GET(request: NextRequest) {
     const durationSec = matchDetails.gameDuration % 60;
     const match_duration_str = `${durationMin}:${String(durationSec).padStart(2, '0')}`;
     const kda_str = `${myParticipant.kills}/${myParticipant.deaths}/${myParticipant.assists}`;
+
+    const myPosition = ((((myParticipant as any).teamPosition || (myParticipant as any).individualPosition || myParticipant.lane || '') as string)).toUpperCase();
+    const isJungle = myPosition === 'JUNGLE' || myParticipant.lane === 'JUNGLE';
 
     // 4. タイムラインの解析
     const frames = timelineData?.info?.frames || [];
@@ -519,15 +525,21 @@ export async function GET(request: NextRequest) {
           ? '1コア完成パワースパイク 🟢'
           : '集団戦前リコール 🟡';
 
+      const wave_state = isJungle
+        ? (r.min <= 6 ? '1周目キャンプクリア後' : r.min <= 13 ? 'オブジェクト前リセット' : '集団戦準備')
+        : (r.min <= 8 ? 'ウェーブ押し込み後' : 'オブジェクト湧き前');
+
       recall_events.push({
         time_str: r.time_str,
         gold_at_recall: actualGold,
         bought_items: r.items.slice(0, 3),
-        wave_state: r.min <= 8 ? 'ウェーブ押し込み後' : 'オブジェクト湧き前',
-        loss_cs: idx === 0 ? 0 : Math.min(2, idx),
-        loss_gold: idx === 0 ? 0 : idx * 30,
+        wave_state,
+        loss_cs: isJungle ? 0 : (idx === 0 ? 0 : Math.min(2, idx)),
+        loss_gold: isJungle ? 0 : (idx === 0 ? 0 : idx * 30),
         evaluation,
-        detail: `${r.items.slice(0, 2).join(' ＋ ')} を購入し、装備パワースパイクを強化。`,
+        detail: isJungle
+          ? `${r.items.slice(0, 2).join(' ＋ ')} を購入。ジャングル周回とガンクテンポを維持。`
+          : `${r.items.slice(0, 2).join(' ＋ ')} を購入し、装備パワースパイクを強化。`,
       });
     });
 
@@ -623,6 +635,8 @@ export async function GET(request: NextRequest) {
       timing_scaling,
       radar_metrics,
       biggest_bottleneck,
+      my_position: myPosition || (isJungle ? 'JUNGLE' : 'LANE'),
+      is_jungle: isJungle,
     });
   } catch (error: any) {
     console.error('[postgame-deep-analytics] Error:', error);

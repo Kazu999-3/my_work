@@ -146,8 +146,19 @@ export default function ChampionQuickSelector({
     setDetectingLive(true);
     setLiveDetectMessage(null);
     try {
-      const res = await fetch('/api/riot/live-game');
+      const savedRiotId = typeof window !== 'undefined'
+        ? localStorage.getItem('scout_own_riot_id') || localStorage.getItem('coach_own_riot_id') || ''
+        : '';
+      const url = savedRiotId
+        ? `/api/riot/live-game?riotId=${encodeURIComponent(savedRiotId)}`
+        : '/api/riot/live-game';
+
+      const res = await fetch(url);
       const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || '試合情報の取得に失敗しました');
+      }
+
       if (data && data.success && data.liveMatch) {
         const myDetected = data.liveMatch.myChampion || '';
         const enemyDetected = data.liveMatch.enemyChampion || '';
@@ -156,7 +167,7 @@ export default function ChampionQuickSelector({
         setLiveDetectMessage(`✅ 進行中の試合を検出: ${myDetected} vs ${enemyDetected}`);
         if (onLiveMatchDetected) onLiveMatchDetected(myDetected, enemyDetected);
       } else {
-        setLiveDetectMessage('⚠️ 進行中の試合（Active Game）が見つかりませんでした。');
+        setLiveDetectMessage(data.message || '⚠️ 進行中の試合（Active Game）が見つかりませんでした。');
       }
     } catch (e: any) {
       setLiveDetectMessage(`❌ 検出エラー: ${e.message || '通信失敗'}`);

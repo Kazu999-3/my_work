@@ -231,28 +231,82 @@ export async function GET(request: NextRequest) {
         const ally_kills = f.kills.filter((k) => k.isAllyKill).length;
         const enemy_kills = f.kills.filter((k) => !k.isAllyKill).length;
         const myInvolved = f.kills.some((k) => k.isMyParticipation);
-        const hasAllyObj = f.objs.some((o) => o.isAllyObj);
-        const hasEnemyObj = f.objs.some((o) => !o.isAllyObj);
 
-        const objNames = f.objs.map((o) => {
-          const type = o.monsterType.replace(/_/g, ' ');
-          return o.isAllyObj ? `味方獲得: ${type}` : `敵獲得: ${type}`;
-        });
+        // モンスター名の日本語化マッピング
+        const formatMonsterName = (rawType: string): string => {
+          const t = rawType.toUpperCase();
+          if (t.includes('HORDE')) return 'ヴォイドグラブ';
+          if (t.includes('RIFTHERALD') || t.includes('HERALD')) return 'リフトヘラルド';
+          if (t.includes('BARON')) return 'バロン';
+          if (t.includes('ELDER')) return 'エルダー・ドラゴン';
+          if (t.includes('ATAKHAN')) return 'アタハン';
+          if (t.includes('DRAGON')) {
+            if (t.includes('CHEMTECH')) return 'ケミテック・ドラゴン';
+            if (t.includes('HEXTECH')) return 'ヘックステック・ドラゴン';
+            if (t.includes('INFERNAL')) return 'インフェルナル・ドラゴン';
+            if (t.includes('MOUNTAIN')) return 'マウンテン・ドラゴン';
+            if (t.includes('OCEAN')) return 'オーシャン・ドラゴン';
+            if (t.includes('CLOUD')) return 'クラウド・ドラゴン';
+            return 'ドラゴン';
+          }
+          return rawType.replace(/_/g, ' ');
+        };
+
+        // オブジェクトの重複集約（例: ヴォイドグラブ3匹なら「ヴォイドグラブ x3」）
+        const summarizeObjs = (objs: ObjEv[], isAllyFilter: boolean) => {
+          const counts = new Map<string, number>();
+          objs.filter((o) => o.isAllyObj === isAllyFilter).forEach((o) => {
+            const name = formatMonsterName(o.monsterType);
+            counts.set(name, (counts.get(name) || 0) + 1);
+          });
+          return Array.from(counts.entries()).map(([name, count]) =>
+            count > 1 ? `${name} x${count}` : name
+          );
+        };
+
+        const allyObjSummaries = summarizeObjs(f.objs, true);
+        const enemyObjSummaries = summarizeObjs(f.objs, false);
+        const hasAllyObj = allyObjSummaries.length > 0;
+        const hasEnemyObj = enemyObjSummaries.length > 0;
 
         const isVictory = ally_kills > enemy_kills || (ally_kills === enemy_kills && hasAllyObj);
         if (isVictory) vic++;
         else def++;
 
-        const objContext = objNames.length > 0 ? ` (${objNames.join(', ')})` : '';
+        // タイトル用のオブジェクトコンテキスト
+        let objContext = '';
+        if (hasAllyObj && hasEnemyObj) {
+          objContext = ` (味方: ${allyObjSummaries.join(', ')} / 敵: ${enemyObjSummaries.join(', ')})`;
+        } else if (hasAllyObj) {
+          objContext = ` (味方獲得: ${allyObjSummaries.join(', ')})`;
+        } else if (hasEnemyObj) {
+          objContext = ` (敵獲得: ${enemyObjSummaries.join(', ')})`;
+        }
+
         const matchPrefix = matchIndexLabel ? `[${matchIndexLabel}] ` : '';
         const title = `${matchPrefix}${time_str} ${m <= 14 ? '序盤リバー小規模戦' : m <= 22 ? 'ドラゴン/タワー攻防戦' : 'バロン/インヒビター決戦'}${objContext}`;
         const dmgContrib = myInvolved
           ? Math.round((totalDmg / Math.max(1, significant.length)) * (isVictory ? 1.2 : 0.8))
           : 0;
 
+        // 正確なオブジェクト獲得サマリー文
+        let objSentence = '';
+        if (isVictory) {
+          if (hasAllyObj) objSentence = `味方チームが（${allyObjSummaries.join(', ')}）を奪取。`;
+          if (hasEnemyObj) objSentence += `（敵に ${enemyObjSummaries.join(', ')} を許すも交戦制圧）`;
+        } else {
+          if (hasEnemyObj && hasAllyObj) {
+            objSentence = `味方は（${allyObjSummaries.join(', ')}）を確保したものの、敵に（${enemyObjSummaries.join(', ')}）を奪取されました。`;
+          } else if (hasEnemyObj) {
+            objSentence = `敵に（${enemyObjSummaries.join(', ')}）を奪取されました。`;
+          } else if (hasAllyObj) {
+            objSentence = `味方は（${allyObjSummaries.join(', ')}）を確保しましたが、キル差で敵に主導権を許しました。`;
+          }
+        }
+
         const summary = isVictory
-          ? `⚔️ 【${time_str} 交戦勝利】 味方チームが ${ally_kills}キル を獲得し、主導権を確保。${objNames.length > 0 ? `（${objNames.join(', ')}）を奪取。` : ''}`
-          : `⚠️ 【${time_str} 交戦敗北】 敵に ${enemy_kills}キル を許しました。${objNames.length > 0 ? `敵に（${objNames.join(', ')}）を奪取されました。` : ''}`;
+          ? `⚔️ 【${time_str} 交戦勝利】 味方チームが ${ally_kills}キル を獲得し、主導権を確保。${objSentence ? `${objSentence}` : ''}`
+          : `⚠️ 【${time_str} 交戦敗北】 敵に ${enemy_kills}キル を許しました。${objSentence ? `${objSentence}` : ''}`;
 
         // 🌟 状況・チャンピオンに応じた動的レビューテキスト生成
         let key_factor = '';
@@ -265,7 +319,7 @@ export async function GET(request: NextRequest) {
               key_factor = `${myChamp} の素早いリバー・レーン寄りにより、序盤の人数有利を活かして敵を撃破。`;
               feedback = `🔥 序盤のアクション大成功: 推定 ${dmgContrib.toLocaleString()} dmg。この有利をもとにドラゴン・ヴォイドグラブへ繋げましょう。`;
             } else if (hasAllyObj) {
-              key_factor = `${myChamp} が前線でプレッシャーを与え、敵の妨害を排除してオブジェクト（${objNames.join(', ')}）獲得を確定させました。`;
+              key_factor = `${myChamp} が前線でプレッシャーを与え、敵の妨害を排除してオブジェクト（${allyObjSummaries.join(', ')}）獲得を確定させました。`;
               feedback = `👑 オブジェクト戦勝利: 前線でのゾーンコントロールとフォーカスが機能しました。`;
             } else {
               key_factor = `${myChamp} のスキル回転とダメージフォーカスが成立し、敵キャリー陣を崩壊させました。`;
@@ -274,8 +328,11 @@ export async function GET(request: NextRequest) {
           } else {
             // 敗北時
             if (hasEnemyObj) {
-              key_factor = `オブジェクト（${objNames.join(', ')}）周りの視界確保で敵に先手を打たれ、狭い地形でダメージを受け切りました。`;
+              key_factor = `オブジェクト（${enemyObjSummaries.join(', ')}）周りの視界確保で敵に先手を打たれ、狭い地形でダメージを受け切りました。`;
               feedback = `💡 改善点: 視界のない暗闇フェイスチェックを避け、味方のCCやULTに合わせてカウンターエンゲージを狙いましょう。`;
+            } else if (hasAllyObj) {
+              key_factor = `味方がオブジェクト（${allyObjSummaries.join(', ')}）を確保した直後、体制を立て直す前に敵の追撃を受けました。`;
+              feedback = `🎯 リソース管理: オブジェクト獲得後は深追いせず、ピンを出して安全に撤退するコールを心がけましょう。`;
             } else if (m <= 14) {
               key_factor = `序盤の小規模戦で敵の寄りが1テンポ早く、人数差または体力差の不利を背負って交戦しました。`;
               feedback = `⚠️ 序盤の注意: レーンのプッシュ主導権がない時は無理に争わず、ピンを出して自陣ファームを優先しましょう。`;
@@ -287,10 +344,10 @@ export async function GET(request: NextRequest) {
         } else {
           // 戦闘不参加時（別アクション中など）
           if (hasAllyObj) {
-            key_factor = `${myChamp} が別サイドでオブジェクト獲得またはファームを進行中。本隊が上手く時間を稼ぎました。`;
+            key_factor = `${myChamp} が別サイドでオブジェクト獲得（${allyObjSummaries.join(', ')}）またはファームを進行中。本隊が上手く時間を稼ぎました。`;
             feedback = `🎯 クロスプレイ成功: 戦闘不参加でもマップ逆側でリソースを獲得し、チーム全体の損害を最小限に抑えました。`;
           } else if (hasEnemyObj) {
-            key_factor = `オブジェクト（${objNames.join(', ')}）周りの本隊と離れており、4v5の人数不利を突かれて交戦・オブジェクト奪取を許しました。`;
+            key_factor = `オブジェクト（${enemyObjSummaries.join(', ')}）周りの本隊と離れており、4v5の人数不利を突かれて交戦・オブジェクト奪取を許しました。`;
             feedback = `💡 重要改善ポイント: オブジェクト湧き30秒前にはファームを切り上げ、${myChamp} のULTや強みを活かして陣形を組みましょう。`;
           } else if (m <= 14) {
             key_factor = `マップ反対側のレーンで小規模戦が発生。距離が遠く合流が物理的に困難なシチュエーションでした。`;
@@ -323,7 +380,10 @@ export async function GET(request: NextRequest) {
           result_badge: isVictory ? '勝利 🟢' : '敗北 🔴',
           ally_kills,
           enemy_kills,
-          objectives: objNames,
+          objectives: [
+            ...allyObjSummaries.map((s) => `味方獲得: ${s}`),
+            ...enemyObjSummaries.map((s) => `敵獲得: ${s}`),
+          ],
           my_damage_dealt: dmgContrib,
           gold_swing: (ally_kills - enemy_kills) * 400 + (f.objs.some((o) => o.isAllyObj) ? 600 : -600),
           summary,

@@ -57,6 +57,8 @@ interface PostGameData {
   my_champion: string;
   enemy_champion: string;
   is_win?: boolean;
+  is_jungle?: boolean;
+  my_position?: string;
   match_duration_str: string;
   kda_str: string;
   early_game_metrics: {
@@ -523,12 +525,22 @@ export default function PostGameDeepAnalyticsDashboard({
           <div className="flex items-center justify-between flex-wrap gap-2">
             <span className="text-xs font-black text-stone-900 flex items-center gap-1.5">
               <Clock className="w-4 h-4 text-purple-600" />
-              <span>3. テンポロス逆再生 (タイムラインリコール監査)</span>
+              <span>
+                {data.is_jungle
+                  ? '3. ジャングル周回 ＆ リコールテンポ監査'
+                  : '3. テンポロス逆再生 (タイムラインリコール監査)'}
+              </span>
             </span>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 font-mono">
-                総損失: -{data.recall_efficiency.total_loss_gold}G
-              </span>
+              {data.is_jungle ? (
+                <span className="text-[10px] font-black text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-mono">
+                  🌿 JG専任 (レーンウェーブ損失免除)
+                </span>
+              ) : (
+                <span className="text-[10px] font-black text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 font-mono">
+                  総損失: -{data.recall_efficiency.total_loss_gold}G
+                </span>
+              )}
               <span className="text-[10px] font-bold text-stone-500 font-mono hidden sm:inline">
                 {data.recall_efficiency.rating}
               </span>
@@ -627,13 +639,21 @@ export default function PostGameDeepAnalyticsDashboard({
                     {/* ウェーブ状況＆損失メトリクス */}
                     <div className="grid grid-cols-2 gap-2 text-[10px] pt-1">
                       <div className="bg-stone-50 p-1.5 rounded border border-stone-200">
-                        <span className="text-stone-400 font-bold block">帰還時ウェーブ:</span>
-                        <span className="font-black text-stone-800">{activeEv.wave_state || 'ウェーブ押し込み後'}</span>
+                        <span className="text-stone-400 font-bold block">
+                          {data.is_jungle ? '帰還時周回状況:' : '帰還時ウェーブ:'}
+                        </span>
+                        <span className="font-black text-stone-800">{activeEv.wave_state || (data.is_jungle ? 'キャンプ周回後' : 'ウェーブ押し込み後')}</span>
                       </div>
                       <div className="bg-stone-50 p-1.5 rounded border border-stone-200">
-                        <span className="text-stone-400 font-bold block">テンポ損失:</span>
+                        <span className="text-stone-400 font-bold block">
+                          {data.is_jungle ? '周回テンポ損失:' : 'テンポ損失:'}
+                        </span>
                         <span className={`font-mono font-black ${(activeEv.loss_gold || 0) > 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
-                          {(activeEv.loss_gold || 0) > 0 ? `-${activeEv.loss_gold}G (ミニオン${activeEv.loss_cs || 0}体損)` : '損失なし (適格帰還)'}
+                          {data.is_jungle
+                            ? '中立キャンプ損失なし (良好) 🟢'
+                            : (activeEv.loss_gold || 0) > 0
+                            ? `-${activeEv.loss_gold}G (ミニオン${activeEv.loss_cs || 0}体損)`
+                            : '損失なし (適格帰還)'}
                         </span>
                       </div>
                     </div>
