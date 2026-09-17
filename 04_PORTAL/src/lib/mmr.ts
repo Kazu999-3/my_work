@@ -89,6 +89,25 @@ export function getKtmRank(mmr: number): { name: string; color: string; bg: stri
   return tier ? { name: tier.name, color: tier.color, bg: tier.bg } : { name: 'UNRANKED', color: 'text-gray-400', bg: 'bg-gray-800' };
 }
 
+/**
+ * 登録ランク（PLATINUM, GOLD IV 等）から直接バッジ配色を取得する共通関数
+ */
+export function getRankBadgeStyle(rank?: string | null): { bg: string; color: string; border: string } {
+  const r = (rank || '').toUpperCase().trim();
+  if (r.includes('CHALLENGER')) return { bg: 'bg-sky-500/10', color: 'text-sky-600 dark:text-sky-400', border: 'border-sky-500/30' };
+  if (r.includes('GRANDMASTER')) return { bg: 'bg-red-500/10', color: 'text-red-600 dark:text-red-400', border: 'border-red-500/30' };
+  if (r.includes('MASTER')) return { bg: 'bg-purple-500/10', color: 'text-purple-600 dark:text-purple-400', border: 'border-purple-500/30' };
+  if (r.includes('DIAMOND')) return { bg: 'bg-blue-500/10', color: 'text-blue-600 dark:text-blue-400', border: 'border-blue-500/30' };
+  if (r.includes('EMERALD')) return { bg: 'bg-emerald-500/10', color: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-500/30' };
+  if (r.includes('PLATINUM')) return { bg: 'bg-teal-500/10', color: 'text-teal-600 dark:text-teal-400', border: 'border-teal-500/30' };
+  if (r.includes('GOLD')) return { bg: 'bg-yellow-500/10', color: 'text-yellow-700 dark:text-yellow-400', border: 'border-yellow-500/30' };
+  if (r.includes('SILVER')) return { bg: 'bg-slate-400/10', color: 'text-slate-600 dark:text-slate-300', border: 'border-slate-400/30' };
+  if (r.includes('BRONZE')) return { bg: 'bg-amber-800/10', color: 'text-amber-800 dark:text-amber-600', border: 'border-amber-800/30' };
+  if (r.includes('IRON')) return { bg: 'bg-zinc-500/10', color: 'text-zinc-600 dark:text-zinc-400', border: 'border-zinc-500/30' };
+  return { bg: 'bg-stone-500/10', color: 'text-stone-600 dark:text-stone-400', border: 'border-stone-500/30' };
+}
+
+
 export interface RolePreferences {
   primary?: string;
   secondary?: string;

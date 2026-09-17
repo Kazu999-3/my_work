@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { MentorshipProfile } from '../api/mentorship/profiles/route';
-import { getKtmRank, RANKS } from '../../lib/mmr';
+import { getRankBadgeStyle } from '../../lib/mmr';
 import { CHAMPION_JA } from '../../components/ChampSelect';
 import { Clock, MessageSquare, Send, Sparkles, Trash2, Zap } from 'lucide-react';
 import { MentorshipReviewSummary } from '../api/mentorship/reviews/route';
@@ -56,9 +56,8 @@ export function MentorshipCard({
   isPendingSent,
 }: MentorshipCardProps) {
   const isMentor = profile.role_type === 'MENTOR';
-  const rankKey = (profile.current_rank || 'UNRANKED').toUpperCase().split(' ')[0];
-  const mmr = RANKS[rankKey] || 1200;
-  const rankInfo = getKtmRank(mmr);
+  const rankBadge = getRankBadgeStyle(profile.current_rank);
+
 
   // コメント機能用のステート
   const [showComments, setShowComments] = useState(false);
@@ -288,8 +287,8 @@ export function MentorshipCard({
               {profile.player_name}
             </h3>
             <div className="flex items-center gap-2 text-xs mt-0.5 flex-wrap">
-              <span className={`px-2 py-0.5 rounded-md text-[11px] font-black ${rankInfo.bg} ${rankInfo.color} border border-current/20 shadow-2xs`}>
-                {rankInfo.name} ({profile.current_rank})
+              <span className={`px-2 py-0.5 rounded-md text-[11px] font-black ${rankBadge.bg} ${rankBadge.color} border ${rankBadge.border} shadow-2xs`}>
+                {profile.current_rank || 'UNRANKED'}
               </span>
               {profile.target_rank && !isMentor && (
                 <span className="text-[11px] text-emerald-700 dark:text-emerald-300 font-bold bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
