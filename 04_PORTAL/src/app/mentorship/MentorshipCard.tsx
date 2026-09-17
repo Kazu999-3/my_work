@@ -219,8 +219,25 @@ export function MentorshipCard({
               </span>
             ) : null}
 
-            {/* ステータスバッジ */}
-            {profile.status === 'MATCHED' ? (
+            {/* ステータスバッジ（師匠は受入枠数を表示） */}
+            {isMentor ? (
+              (profile.active_pupils_count || 0) >= (profile.max_pupils || 3) ? (
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200 flex items-center gap-1">
+                  <span>🈵</span>
+                  <span>弟子枠満員 ({profile.active_pupils_count}/{profile.max_pupils || 3}人)</span>
+                </span>
+              ) : (profile.active_pupils_count || 0) > 0 ? (
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                  <span>👥</span>
+                  <span>弟子枠: {profile.active_pupils_count}/{profile.max_pupils || 3}人 (空き{(profile.max_pupils || 3) - (profile.active_pupils_count || 0)}枠)</span>
+                </span>
+              ) : (
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                  <span>🟢</span>
+                  <span>弟子募集中 (最大{profile.max_pupils || 3}人)</span>
+                </span>
+              )
+            ) : profile.status === 'MATCHED' ? (
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">
                 🤝 ペア結成中
               </span>
@@ -285,6 +302,24 @@ export function MentorshipCard({
                 </span>
               )}
             </div>
+
+            {/* 師匠が現在指導中の弟子（兄弟弟子）一覧 */}
+            {isMentor && profile.active_pupil_names && profile.active_pupil_names.length > 0 && (
+              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                <span className="text-[10px] font-bold text-stone-500 flex items-center gap-0.5">
+                  <span>🤝</span>
+                  <span>指導中:</span>
+                </span>
+                {profile.active_pupil_names.map((name, idx) => (
+                  <span
+                    key={`${name}-${idx}`}
+                    className="text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 px-1.5 py-0.2 rounded-md"
+                  >
+                    🌱 {name}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -495,9 +530,13 @@ export function MentorshipCard({
 
         {isMine ? (
           <span className="text-xs text-stone-500 font-bold">（あなたのカード）</span>
-        ) : profile.status === 'MATCHED' ? (
+        ) : !isMentor && profile.status === 'MATCHED' ? (
           <span className="text-xs text-purple-700 font-bold bg-purple-50 px-2.5 py-1 rounded-xl border border-purple-200">
             🤝 ペア結成中
+          </span>
+        ) : isMentor && (profile.active_pupils_count || 0) >= (profile.max_pupils || 3) ? (
+          <span className="text-xs text-purple-700 font-bold bg-purple-50 px-2.5 py-1 rounded-xl border border-purple-200">
+            🈵 弟子枠満員 ({profile.max_pupils || 3}人)
           </span>
         ) : isPendingSent ? (
           <span className="text-xs text-amber-800 font-bold bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 flex items-center gap-1">

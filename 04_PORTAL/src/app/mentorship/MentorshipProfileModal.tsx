@@ -157,6 +157,7 @@ export function MentorshipProfileModal({
   const [customTag, setCustomTag] = useState('');
   const [bio, setBio] = useState('');
   const [activeHours, setActiveHours] = useState('');
+  const [maxPupils, setMaxPupils] = useState<number>(3);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
 
@@ -174,6 +175,7 @@ export function MentorshipProfileModal({
       setSelectedTags(profile.tags || []);
       setBio(profile.bio || '');
       setActiveHours(profile.active_hours || '');
+      setMaxPupils(profile.max_pupils || 3);
     } else {
       // 新規作成時の自動プリセット
       const userRank = user?.rank ? user.rank.toUpperCase().split(' ')[0] : 'SILVER';
@@ -190,6 +192,7 @@ export function MentorshipProfileModal({
       );
       setBio('');
       setActiveHours('平日 21:00〜24:00 / 休日');
+      setMaxPupils(3);
     }
   };
 
@@ -274,6 +277,7 @@ export function MentorshipProfileModal({
         bio,
         active_hours: activeHours,
         status: 'OPEN',
+        max_pupils: roleType === 'MENTOR' ? maxPupils : 1,
         discord_id: user?.discordId,
         player_name: user?.displayName || user?.username,
       });
@@ -599,6 +603,40 @@ export function MentorshipProfileModal({
                   </div>
                 )}
               </div>
+
+              {/* 師匠専用: 同時受入可能人数 (1〜3人) */}
+              {roleType === 'MENTOR' && (
+                <div className="p-3.5 bg-amber-50/70 border border-amber-300/80 rounded-2xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black text-amber-950 flex items-center gap-1.5">
+                      <span>👥</span>
+                      <span>同時に受け入れ可能な弟子の人数</span>
+                    </label>
+                    <span className="text-[11px] font-black text-amber-700 bg-white px-2 py-0.5 rounded-md border border-amber-300">
+                      現在設定: 最大 {maxPupils} 人まで
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    {[1, 2, 3].map((num) => (
+                      <button
+                        key={num}
+                        type="button"
+                        onClick={() => setMaxPupils(num)}
+                        className={`flex-1 py-2 rounded-xl text-xs font-black border transition cursor-pointer ${
+                          maxPupils === num
+                            ? 'bg-amber-600 text-white border-amber-600 shadow-xs scale-[1.02]'
+                            : 'bg-white text-stone-700 border-amber-200 hover:bg-amber-100/50'
+                        }`}
+                      >
+                        {num === 1 ? '👤 1人（専任）' : num === 2 ? '👥 2人（兄弟弟子）' : '✨ 3人（ゼミ型・推奨）'}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-amber-900/80 leading-relaxed font-medium">
+                    ※ 単発やリプレイ添削を受ける場合、2〜3人に設定しておくと枠が埋まらずスムーズに教えられます。
+                  </p>
+                </div>
+              )}
 
               {/* 4. チャンピオン選択 (日本語インクリメンタル検索＆チップ) */}
               <div className="space-y-2">

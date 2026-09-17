@@ -489,10 +489,30 @@ export async function POST(request: Request) {
         })
         .eq('id', matchId);
 
+      // 弟子側は1対1専任のため MATCHED に更新
       await supabase
         .from('mentorship_profiles')
         .update({ status: 'MATCHED' })
-        .in('id', [match.mentor_profile_id, match.pupil_profile_id]);
+        .eq('id', match.pupil_profile_id);
+
+      // 師匠側は受入枠上限（max_pupils）をチェック
+      const mentorMaxPupils = match.mentor?.max_pupils !== undefined && match.mentor?.max_pupils !== null
+        ? match.mentor.max_pupils
+        : 3;
+
+      const { count: activeMentorMatchesCount } = await supabase
+        .from('mentorship_matches')
+        .select('id', { count: 'exact', head: true })
+        .eq('mentor_profile_id', match.mentor_profile_id)
+        .eq('status', 'ACTIVE');
+
+      const currentMentorActive = activeMentorMatchesCount || 1;
+      const newMentorStatus = currentMentorActive >= mentorMaxPupils ? 'MATCHED' : 'OPEN';
+
+      await supabase
+        .from('mentorship_profiles')
+        .update({ status: newMentorStatus })
+        .eq('id', match.mentor_profile_id);
 
       // 両者に成立ボーナス (+300コイン) を付与
       try {

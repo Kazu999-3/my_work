@@ -19,6 +19,9 @@ export interface MentorshipProfile {
   bio: string;
   active_hours: string;
   status: 'OPEN' | 'MATCHED' | 'PAUSED';
+  max_pupils?: number; // 師匠の最大受入人数（デフォルト: 3）
+  active_pupils_count?: number; // 現在進行中の弟子数
+  active_pupil_names?: string[]; // 現在進行中の弟子たちの名前
   created_at: string;
   updated_at: string;
   avatar_url?: string;
@@ -49,13 +52,48 @@ export async function GET(request: Request) {
       query = query.contains('lanes', [lane]);
     }
 
-    const { data: profiles, error } = await query;
+    const { data: rawProfiles, error } = await query;
 
     if (error) {
       // テーブル未作成時などのフォールバック
       console.warn('[mentorship/profiles] select error:', error);
       return NextResponse.json({ ok: true, profiles: [] });
     }
+
+    // 進行中（ACTIVE）のマッチを取得して各師匠の弟子数・名前を集計
+    const { data: activeMatches } = await supabase
+      .from('mentorship_matches')
+      .select(`
+        mentor_profile_id,
+        pupil:mentorship_profiles!mentorship_matches_pupil_profile_id_fkey(player_name)
+      `)
+      .eq('status', 'ACTIVE');
+
+    const mentorActiveMap: Record<string, string[]> = {};
+    if (activeMatches) {
+      activeMatches.forEach((m: any) => {
+        if (m.mentor_profile_id) {
+          if (!mentorActiveMap[m.mentor_profile_id]) {
+            mentorActiveMap[m.mentor_profile_id] = [];
+          }
+          const pName = m.pupil?.player_name;
+          if (pName) {
+            mentorActiveMap[m.mentor_profile_id].push(pName);
+          }
+        }
+      });
+    }
+
+    const profiles: MentorshipProfile[] = (rawProfiles || []).map((p: any) => {
+      const activePupils = mentorActiveMap[p.id] || [];
+      const maxPupils = p.max_pupils !== undefined && p.max_pupils !== null ? p.max_pupils : 3;
+      return {
+        ...p,
+        max_pupils: maxPupils,
+        active_pupils_count: activePupils.length,
+        active_pupil_names: activePupils,
+      };
+    });
 
     // セッション情報があれば自分のプロフィールIDおよび管理者権限も返す
     const session = await getAuthSession();
@@ -64,7 +102,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       ok: true,
-      profiles: profiles || [],
+      profiles,
       myDiscordId,
       isAdmin,
     });
@@ -92,6 +130,7 @@ export async function POST(request: Request) {
       bio = '',
       active_hours = '',
       status = 'OPEN',
+      max_pupils = 3,
       discord_id: bodyDiscordId,
       player_name: bodyPlayerName,
     } = body;
@@ -121,6 +160,7 @@ export async function POST(request: Request) {
 
     const playerName = effectivePlayerName || player?.name || 'Player';
     const finalCurrentRank = current_rank || player?.highest_rank || 'UNRANKED';
+    const finalMaxPupils = role_type === 'MENTOR' ? Math.min(Math.max(Number(max_pupils) || 3, 1), 5) : 1;
 
     // 既存のプロフィール（同一role_type）があるか確認
     const { data: existing } = await supabase
@@ -148,6 +188,7 @@ export async function POST(request: Request) {
           bio,
           active_hours,
           status,
+          max_pupils: finalMaxPupils,
           updated_at: new Date().toISOString(),
         })
         .eq('id', existing.id)
@@ -181,6 +222,7 @@ export async function POST(request: Request) {
           bio,
           active_hours,
           status,
+          max_pupils: finalMaxPupils,
         })
         .select()
         .single();
