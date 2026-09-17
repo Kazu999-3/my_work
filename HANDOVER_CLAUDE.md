@@ -167,6 +167,9 @@ Claude Code CLI で実施した最終セッションの到達点です。詳細�
 - **Dependabot脆弱性解消 ＆ 依存関係修復**:
   - `04_PORTAL`: `npm audit fix` により Next.js (Critical含む), sharp, fast-uri 等の脆弱性5件を0件に解消。全36件の単体テストおよび型チェック（`tsc --noEmit`）の全パスを確認。
   - `03_SYSTEMS/ktm_bot`: `npm audit fix` により hono 等の脆弱性6件を0件に解消。Cloudflare Workerドライラン（`dry_run_recruitment_status.mjs`）の正常パスを確認。
+- **YouTube解析キュー エラー動画73件の再試行リセット**:
+  - `scripts/clean_youtube_queue.py --retry-failed --apply` を実行し、エラー停止していた73件の動画を安全に `pending`（リトライ0）へ戻して自動解析パイプラインへ復帰完了。
+
 
 ---
 

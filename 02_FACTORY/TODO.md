@@ -63,9 +63,13 @@
   - `package.json` の `test` コマンドをWindowsのglob不具合に影響されない明示的パス指定に修正し、全36テスト（チーム分け、MMR計算、Discord名解決）が **20秒で全件一発パス (36 pass / 0 fail)** することを確認。
 - [x] **ファクトチェックキュー整理 ＆ 滞留リセット**
   - `scripts/sync_dict_health.py --reset-pending` を実行し、長期間滞留していた古いpendingキュー47件をクリーンアップして0件にリセット完了。
+- [x] **YouTube解析キュー エラー動画73件の再試行リセット**
+  - `scripts/clean_youtube_queue.py --retry-failed --apply` を実行し、未解決だったエラー動画73件（error_generation 42件, failed 31件）を安全に `pending`（リトライ回数0）へ戻して再解析パイプラインへ復帰完了。
 - [x] **Dependabot脆弱性解消 ＆ 依存関係修復**
   - `04_PORTAL`: `npm audit fix` により Next.js (Critical含む), sharp, fast-uri 等の脆弱性5件を0件に解消。全36件の単体テストおよび型チェック（`tsc --noEmit`）の全パスを確認。
   - `03_SYSTEMS/ktm_bot`: `npm audit fix` により hono 等の脆弱性6件を0件に解消。Cloudflare Workerドライラン（`dry_run_recruitment_status.mjs`）の正常パスを確認。
+
+
 
 ---
 
