@@ -174,26 +174,46 @@ export async function POST(request: Request) {
     let isFirstTimeBonus = false;
     let updatedCoins = 1000;
 
+    const basePayload: Record<string, any> = {
+      player_name: playerName,
+      lanes,
+      champions,
+      current_rank: finalCurrentRank,
+      target_rank: role_type === 'PUPIL' ? target_rank : null,
+      tags,
+      bio,
+      active_hours,
+      status,
+    };
+
     if (existing?.id) {
-      // 更新
-      const { data, error } = await supabase
+      // 更新（まず max_pupils カラムを含めて実行）
+      let { data, error } = await supabase
         .from('mentorship_profiles')
         .update({
-          player_name: playerName,
-          lanes,
-          champions,
-          current_rank: finalCurrentRank,
-          target_rank: role_type === 'PUPIL' ? target_rank : null,
-          tags,
-          bio,
-          active_hours,
-          status,
+          ...basePayload,
           max_pupils: finalMaxPupils,
           updated_at: new Date().toISOString(),
         })
         .eq('id', existing.id)
         .select()
         .single();
+
+      // DB側に max_pupils カラムが未追加の場合の自動フォールバック
+      if (error && (error.message?.includes('max_pupils') || error.code === 'PGRST204')) {
+        console.warn('[mentorship/profiles] max_pupils カラム未検出のため除外して再試行:', error.message);
+        const retry = await supabase
+          .from('mentorship_profiles')
+          .update({
+            ...basePayload,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existing.id)
+          .select()
+          .single();
+        data = retry.data;
+        error = retry.error;
+      }
 
       if (error) throw error;
       resultData = data;
@@ -206,26 +226,34 @@ export async function POST(request: Request) {
 
       const isFirstCreationEver = (count || 0) === 0;
 
-      // 新規作成
-      const { data, error } = await supabase
+      // 新規作成（まず max_pupils カラムを含めて実行）
+      const insertBase: Record<string, any> = {
+        player_id: player?.id || null,
+        discord_id: effectiveDiscordId,
+        role_type,
+        ...basePayload,
+      };
+
+      let { data, error } = await supabase
         .from('mentorship_profiles')
         .insert({
-          player_id: player?.id || null,
-          discord_id: effectiveDiscordId,
-          player_name: playerName,
-          role_type,
-          lanes,
-          champions,
-          current_rank: finalCurrentRank,
-          target_rank: role_type === 'PUPIL' ? target_rank : null,
-          tags,
-          bio,
-          active_hours,
-          status,
+          ...insertBase,
           max_pupils: finalMaxPupils,
         })
         .select()
         .single();
+
+      // DB側に max_pupils カラムが未追加の場合の自動フォールバック
+      if (error && (error.message?.includes('max_pupils') || error.code === 'PGRST204')) {
+        console.warn('[mentorship/profiles] max_pupils カラム未検出のため除外して再試行:', error.message);
+        const retry = await supabase
+          .from('mentorship_profiles')
+          .insert(insertBase)
+          .select()
+          .single();
+        data = retry.data;
+        error = retry.error;
+      }
 
       if (error) throw error;
       resultData = data;
