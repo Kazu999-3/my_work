@@ -958,7 +958,7 @@ export function calculateRealSessionAnalytics(
     insight: tiltInsight,
   };
 
-  // 4. 曜日別
+  // 4. 曜日別（実測勝率に基づく動的プレイヤー環境評価）
   const dayNames = ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'];
   const dayStats = dayNames.map(() => ({ wins: 0, total: 0 }));
   sorted.forEach((m) => {
@@ -968,30 +968,44 @@ export function calculateRealSessionAnalytics(
     if (m.win) dayStats[day].wins += 1;
   });
 
+  const getDayInsight = (groupName: string, wins: number, total: number) => {
+    if (total === 0) return 'データなし (直近プレイなし)';
+    const wr = Math.round((wins / total) * 100);
+    if (wr >= 60) return `勝率${wr}% (得意曜日・高い集中力と勝率を維持)`;
+    if (wr >= 50) return `勝率${wr}% (標準・安定したマッチング環境)`;
+    return `勝率${wr}% (要注意・環境や自身の疲労による勝率低下傾向)`;
+  };
+
+  const midWeekTotal = dayStats[2].total + dayStats[3].total + dayStats[4].total;
+  const midWeekWins = dayStats[2].wins + dayStats[3].wins + dayStats[4].wins;
+  const midWeekWr = midWeekTotal > 0 ? Math.round((midWeekWins / midWeekTotal) * 100) : 0;
+
+  const weekendTotal = dayStats[5].total + dayStats[6].total;
+  const weekendWins = dayStats[5].wins + dayStats[6].wins;
+  const weekendWr = weekendTotal > 0 ? Math.round((weekendWins / weekendTotal) * 100) : 0;
+
+  const sunMonTotal = dayStats[0].total + dayStats[1].total;
+  const sunMonWins = dayStats[0].wins + dayStats[1].wins;
+  const sunMonWr = sunMonTotal > 0 ? Math.round((sunMonWins / sunMonTotal) * 100) : 0;
+
   const dayOfWeekVariance = [
     {
       day: '火〜木 (平日夜)',
-      winRate: (dayStats[2].total + dayStats[3].total + dayStats[4].total) > 0
-        ? Math.round(((dayStats[2].wins + dayStats[3].wins + dayStats[4].wins) / (dayStats[2].total + dayStats[3].total + dayStats[4].total)) * 100)
-        : 0,
-      gamesCount: dayStats[2].total + dayStats[3].total + dayStats[4].total,
-      playerPoolType: '落ち着いたソロプレイヤー多め (勝ちやすい)',
+      winRate: midWeekWr,
+      gamesCount: midWeekTotal,
+      playerPoolType: getDayInsight('平日夜', midWeekWins, midWeekTotal),
     },
     {
-      day: '金曜夜〜土曜',
-      winRate: (dayStats[5].total + dayStats[6].total) > 0
-        ? Math.round(((dayStats[5].wins + dayStats[6].wins) / (dayStats[5].total + dayStats[6].total)) * 100)
-        : 0,
-      gamesCount: dayStats[5].total + dayStats[6].total,
-      playerPoolType: '飲酒・パーティー・トロール多め (ブレが大きい)',
+      day: '金曜夜〜土曜 (週末)',
+      winRate: weekendWr,
+      gamesCount: weekendTotal,
+      playerPoolType: getDayInsight('週末', weekendWins, weekendTotal),
     },
     {
-      day: '日曜〜月曜',
-      winRate: (dayStats[0].total + dayStats[1].total) > 0
-        ? Math.round(((dayStats[0].wins + dayStats[1].wins) / (dayStats[0].total + dayStats[1].total)) * 100)
-        : 0,
-      gamesCount: dayStats[0].total + dayStats[1].total,
-      playerPoolType: '週末ランク追い込み・落ち着いた雰囲気',
+      day: '日曜〜月曜 (週替わり)',
+      winRate: sunMonWr,
+      gamesCount: sunMonTotal,
+      playerPoolType: getDayInsight('週替わり', sunMonWins, sunMonTotal),
     },
   ];
 
@@ -1252,82 +1266,97 @@ export function calculateRealSessionAnalytics(
 
     const normRole = (detectedRole || 'JUNGLE').toUpperCase();
 
+    // ユーザーが実際にプレイしたチャンピオンのセット
+    const playedChampsSet = new Set(sorted.map((m) => normalizeChamp(m.championName)));
+
+    const filterAdditions = (candidates: Array<{ championName: string; role: string; archetype: string; synergyReason: string }>) => {
+      const filtered = candidates.filter((c) => !playedChampsSet.has(normalizeChamp(c.championName.split(' ')[0])));
+      return filtered.length >= 2 ? filtered.slice(0, 3) : candidates.slice(0, 3);
+    };
+
     if (normRole === 'UTILITY' || normRole === 'SUPPORT') {
       if (tankRatioPercent >= 60) {
         poolArchetype = '確定エンゲージ ＆ タンク偏重構成';
         missingPiece = 'エンチャンター（ピール＆ヒール・シールド） / ポークメイジ';
-        additions = [
+        additions = filterAdditions([
           { championName: 'Lulu (ルル)', role: 'SUPPORT', archetype: '変身＆シールドピールマスター', synergyReason: '敵アサシンの飛び込みをW変身で無力化し、味方ハイパーキャリーを無敵化可能。' },
           { championName: 'Karma (カルマ)', role: 'SUPPORT', archetype: '序盤レーン圧殺＆全体加速シールド', synergyReason: '序盤RQポークでレーンを圧倒し、集団戦マントラEで味方全員を加速防衛。' },
           { championName: 'Nami (ナミ)', role: 'SUPPORT', archetype: '万能サステイン＆広域カウンターCC', synergyReason: 'ADCの通常攻撃強化とR津波による敵エンゲージの完全シャットアウト。' },
-        ];
+          { championName: 'Janna (ジャンナ)', role: 'SUPPORT', archetype: '絶対的ディスエンゲージ＆シールド', synergyReason: '敵の飛び込みをQ竜巻とRモンスーンで完全拒絶し、集団戦の安全を確保。' },
+        ]);
       } else if (apRatioPercent >= 60) {
         poolArchetype = 'APメイジ ＆ エンチャンター偏重構成';
         missingPiece = '確定ハードCC / 高耐久イニシエーター';
-        additions = [
+        additions = filterAdditions([
           { championName: 'Nautilus (ノーチラス)', role: 'SUPPORT', archetype: '確定必中CC＆フロントライン', synergyReason: '必中R爆雷とQフックにより、敵キャリーを逃さず確定でキャッチ可能。' },
           { championName: 'Leona (レオナ)', role: 'SUPPORT', archetype: '超高耐久オールインイニシエーター', synergyReason: 'Lv2から圧倒的耐久でタワーダイブを主導し、序盤からスノーボールを量産。' },
           { championName: 'Rell (レル)', role: 'SUPPORT', archetype: '広域磁気誘導＆シールド破壊', synergyReason: '集団戦でのフラッシュR+Wコンボで敵5人を一網打尽にできる最強の破壊力。' },
-        ];
+          { championName: 'Braum (ブラウム)', role: 'SUPPORT', archetype: '飛び道具完全遮断＆守護神', synergyReason: 'E不破の盾で敵主要スキルを吸い尽くし、ADCを完璧に生かし切る。' },
+        ]);
       } else {
         poolArchetype = 'バランス型サポートプール';
         missingPiece = 'フックによる試合決定力 / 暗殺ローム';
-        additions = [
+        additions = filterAdditions([
           { championName: 'Thresh (スレッシュ)', role: 'SUPPORT', archetype: '万能フック＆ランタン救出', synergyReason: '攻防一体のスキルセットであらゆるマッチアップに柔軟対応可能。' },
           { championName: 'Blitzcrank (ブリッツクランク)', role: 'SUPPORT', archetype: '1本フックでの試合破壊', synergyReason: 'オブジェクト前の視界外1フックで即座に数的有利を作り出せる。' },
           { championName: 'Braum (ブラウム)', role: 'SUPPORT', archetype: '飛び道具完全遮断＆守護神', synergyReason: 'E不破の盾で敵主要スキルを吸い尽くし、ADCを完璧に生かし切る。' },
-        ];
+        ]);
       }
     } else if (normRole === 'JUNGLE') {
       if (apRatioPercent >= 60) {
         poolArchetype = 'APスケーリング ＆ ファーム偏重構成';
         missingPiece = 'ADファイター / 序盤能動ガンク・エンゲージ役';
-        additions = [
+        additions = filterAdditions([
           { championName: 'Xin Zhao (シン・ジャオ)', role: 'JUNGLE', archetype: 'AD序盤アグレッシブ＆イニシエート', synergyReason: '苦手な15分キル関与率（KP@15）を自ら仕掛けて引き上げ、AP過多時の主砲として機能。' },
           { championName: 'Jarvan IV (ジャーヴァンIV)', role: 'JUNGLE', archetype: 'ADエンゲージ＆ガンクマシン', synergyReason: 'Lv2〜3からの確定EQガンクとUlt天変地異で味方メイジの範囲スキルを最大限に活かす。' },
           { championName: 'Sejuani (セジュアニ)', role: 'JUNGLE', archetype: '高耐久フロントライン＆確定CC', synergyReason: 'チームにタンクがいない際の安定ピック。被デス回避の高い立ち回りと最高峰のシナジー。' },
-        ];
+          { championName: 'Vi (ヴァイ)', role: 'JUNGLE', archetype: '確定ロックオン暗殺イニシエート', synergyReason: '逃げ足の速い敵キャリーをRで必中キャッチし、一気に勝負を決める。' },
+        ]);
       } else if (adRatioPercent >= 60) {
         poolArchetype = 'ADアサシン / ファイター偏重構成';
         missingPiece = 'APメイジ / ゾーンコントロール役';
-        additions = [
+        additions = filterAdditions([
           { championName: 'Zyra (ザイラ)', role: 'JUNGLE', archetype: '超高速フルクリア＆ゾーン支配', synergyReason: '3:15秒最速フルクリアとチョークポイントでのE+Rによる集団戦壊滅力。' },
           { championName: 'Lillia (リリア)', role: 'JUNGLE', archetype: '高機動APスケーリング＆広域睡眠', synergyReason: '圧倒的移動速度で敵タンクを割合ダメージで溶かし、R集団睡眠で逆転を生む。' },
           { championName: 'Amumu (アムム)', role: 'JUNGLE', archetype: '確定ダブル包帯＆広域スタン', synergyReason: '序盤から確実なガンクを決め、ドラゴン前の集団戦をR一本で決定づける。' },
-        ];
+          { championName: 'Diana (ダイアナ)', role: 'JUNGLE', archetype: '広域吸い込みAPバースト', synergyReason: '集団戦でのR月下星景により敵陣形を瞬時に壊滅させる。' },
+        ]);
       } else {
         poolArchetype = 'ハイブリッドジャングルプール';
         missingPiece = '確定イニシエーター / スケーリングキャリー';
-        additions = [
+        additions = filterAdditions([
           { championName: 'Lee Sin (リー・シン)', role: 'JUNGLE', archetype: '序盤主導権＆インセクキック', synergyReason: '序盤3キャンプからの能動アクションでゲームを動かす王道JG。' },
           { championName: 'Viego (ヴィエゴ)', role: 'JUNGLE', archetype: '憑依リセット＆ハイパーキャリー', synergyReason: '集団戦での1キルからの憑依無双で試合をキャリーする爆発力。' },
           { championName: 'Nocturne (ノクターン)', role: 'JUNGLE', archetype: 'R暗転確定キル＆マップ支配', synergyReason: 'Lv6以降の確定キルガンクにより、確実にサイドレーンを崩壊させられる。' },
-        ];
+        ]);
       }
     } else if (normRole === 'BOTTOM' || normRole === 'BOT' || normRole === 'ADC') {
       poolArchetype = 'マークスマン主軸構成';
       missingPiece = '対アサシン自衛力 / ハイパースケーリング';
-      additions = [
+      additions = filterAdditions([
         { championName: 'Jinx (ジンクス)', role: 'ADC', archetype: 'ハイパースケーリング＆超加速', synergyReason: 'パッシブ超エキサイト発動時の集団戦掃討力で終盤を完全制圧。' },
         { championName: 'Kai\'Sa (カイ＝サ)', role: 'ADC', archetype: '高機動ダイブ＆ハイブリッド火力', synergyReason: '味方のCCにRで即座に合わせ、孤立した敵を暗殺可能。' },
         { championName: 'Ezreal (エズリアル)', role: 'ADC', archetype: '万能自衛ポーク＆長距離狙撃', synergyReason: 'Eブリンクによる絶対的生存力で、サポートがロームしても安全にファーム可能。' },
-      ];
+        { championName: 'Ashe (アッシュ)', role: 'ADC', archetype: '長距離エンゲージ＆視界索敵', synergyReason: '超長距離Rクリスタルアローでイニシエートし、Eホークショットで敵JG位置を常時補足。' },
+      ]);
     } else if (normRole === 'MIDDLE' || normRole === 'MID') {
       poolArchetype = apRatioPercent >= 60 ? 'APメイジ偏重構成' : 'ADアサシン / ファイター構成';
       missingPiece = apRatioPercent >= 60 ? 'ADロームアサシン' : '集団戦コントロールメイジ';
-      additions = [
+      additions = filterAdditions([
         { championName: 'Ahri (アーリ)', role: 'MID', archetype: '万能ロームメイジ＆ピックアップ', synergyReason: '3段Rブリンクによる機動力でサイドレーンを破壊し、Eチャームで敵をキャッチ。' },
         { championName: 'Orianna (オリアナ)', role: 'MID', archetype: '集団戦ゾーンコントロール', synergyReason: 'ボール配置による敵の進行拒否と、味方エンゲージに合わせるR衝撃波。' },
         { championName: 'Zed (ゼド)', role: 'MID', archetype: '確定暗殺＆サイドスプリット', synergyReason: '敵ADC/メイジをR死の刻印で消滅させ、サイドプッシュで人数差を強要。' },
-      ];
+        { championName: 'Syndra (シンドラ)', role: 'MID', archetype: '長距離スタン＆単体消滅バースト', synergyReason: 'QEコンボによる長距離CCと、育った敵キャリーをRで消滅させるバースト力。' },
+      ]);
     } else {
       poolArchetype = 'トップレーンプール';
       missingPiece = '高耐久フロントライン / スプリットデュエリスト';
-      additions = [
+      additions = filterAdditions([
         { championName: 'Renekton (レネクトン)', role: 'TOP', archetype: '序盤レーン圧倒ファイター', synergyReason: '強化Wスタンによる序盤のトレード完勝と、タワーダイブ主導力。' },
         { championName: 'Aatrox (エートロックス)', role: 'TOP', archetype: '集団戦前線破壊＆大回復', synergyReason: 'Q3段先端ヒットとR世界の終わりによる集団戦フロントラインの崩壊。' },
         { championName: 'Ornn (オーン)', role: 'TOP', archetype: '味方アイテム強化＆広域エンゲージ', synergyReason: '味方の神話アイテムを無料アップグレードし、超長距離Rで集団戦を制覇。' },
-      ];
+        { championName: 'Jax (ジャックス)', role: 'TOP', archetype: 'スプリット無双＆後半タイマン最強', synergyReason: 'Eカウンターストライクによる通常攻撃無効化とサイドレーン破壊力。' },
+      ]);
     }
 
     return {

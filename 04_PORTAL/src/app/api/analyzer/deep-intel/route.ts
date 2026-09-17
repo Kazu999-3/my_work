@@ -545,18 +545,20 @@ ${isSupportRole ? '※重要: このプレイヤーは【サポート (Support)�
       };
     }
 
-    // 万が一AIの返答で特定キーが欠落していた場合のフォールバック合成
+    // 万が一AIの返答で特定キーが欠落していた場合のフォールバック合成（実測アナリティクスと完全一致）
     if (!aiResult.styleTypeName) {
-      aiResult.styleTypeName = isSupportRole ? '視界制圧＆味方ピール守護神' : 'ファームスケーリング＆セーフティ型';
+      aiResult.styleTypeName = calculatedSessionAnalytics.playstyleMbti.typeName;
     }
     if (!aiResult.styleBadge) {
-      aiResult.styleBadge = isSupportRole ? '視界スコア Sランク' : '安定度 Sランク';
+      aiResult.styleBadge = `${calculatedSessionAnalytics.playstyleMbti.typeCode} 型`;
     }
     if (!aiResult.strengths || !Array.isArray(aiResult.strengths)) {
       aiResult.strengths = [
-        `平均被デス ${avgDeaths} による【${targetTier}級】の安全な立ち回り`,
-        `分間CS ${avgCsPerMin} の高いリソース回収精度`,
-        `分間視界 ${avgVisionPerMin} による防衛網の維持`,
+        `平均被デス ${avgDeaths} (安全性 ${calculatedSessionAnalytics.playstyleMbti.axes.safetyVsRisk.safetyPercent}%) による安定した立ち回り`,
+        isSupportRole
+          ? `分間視界スコア ${avgVisionPerMin} によるマップ防衛網の維持`
+          : `分間CS ${avgCsPerMin} のリソース回収力`,
+        `キル関与率 ${avgKpPercent}% によるチーム貢献`,
       ];
     }
 
