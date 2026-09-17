@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Coins, Trophy, Flame, Swords, CheckCircle2, TrendingUp, Sparkles, Shield, ArrowRight, ShoppingBag, Heart, Gift, Target, Dices, Ticket, LogIn, LogOut, UserCheck, Send, MessageSquare } from 'lucide-react';
+import { Coins, Trophy, Flame, Swords, CheckCircle2, TrendingUp, Sparkles, Shield, ArrowRight, ShoppingBag, Heart, Gift, Target, Dices, Ticket, LogIn, LogOut, UserCheck, Send, MessageSquare, Timer, Clock, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import confetti from 'canvas-confetti';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
@@ -159,6 +159,49 @@ export default function CasinoPage() {
 
   // 実効プレイヤー名（ログインユーザー優先）
   const activePlayerName = user?.displayName || '';
+
+  // ⏱️ 勝敗予想締め切りカウントダウン（試合確定から15分 = 900秒）
+  const BET_DEADLINE_MINUTES = 15;
+  const [timeLeftSeconds, setTimeLeftSeconds] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!activeMatch?.createdAt) {
+      setTimeLeftSeconds(null);
+      return;
+    }
+
+    const calculateRemaining = () => {
+      const matchCreatedAtMs = new Date(activeMatch.createdAt).getTime();
+      const deadlineMs = matchCreatedAtMs + BET_DEADLINE_MINUTES * 60 * 1000;
+      const remainingMs = deadlineMs - Date.now();
+      return Math.max(0, Math.floor(remainingMs / 1000));
+    };
+
+    setTimeLeftSeconds(calculateRemaining());
+
+    const timer = setInterval(() => {
+      const remaining = calculateRemaining();
+      setTimeLeftSeconds(remaining);
+      if (remaining <= 0) {
+        clearInterval(timer);
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [activeMatch?.createdAt]);
+
+  const formatTimeLeft = (sec: number) => {
+    const mins = Math.floor(sec / 60);
+    const secs = sec % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const isBetLocked = useMemo(() => {
+    if (!activeMatch) return true;
+    if (activeMatch.isLocked || activeMatch.status === 'IN_PROGRESS') return true;
+    if (timeLeftSeconds !== null && timeLeftSeconds <= 0) return true;
+    return false;
+  }, [activeMatch, timeLeftSeconds]);
 
   useEffect(() => {
     fetchBetData();
@@ -421,6 +464,10 @@ export default function CasinoPage() {
     e.preventDefault();
     if (!activePlayerName.trim() && !user?.discordId) {
       alert('Discordでログインするか、お名前を選択してください。');
+      return;
+    }
+    if (isBetLocked) {
+      alert('勝敗予想の受付はすでに締め切られています。試合終了をお待ちください。');
       return;
     }
     if (betAmount <= 0) {
@@ -809,15 +856,86 @@ export default function CasinoPage() {
                   </div>
                 </div>
 
+                {/* ⏱️ 受付カウントダウン・ステータスバナー */}
+                <div className={`p-4 rounded-3xl border-2 flex flex-wrap items-center justify-between gap-3 shadow-xs transition-all ${
+                  isBetLocked
+                    ? 'bg-stone-100 border-stone-300 text-stone-700'
+                    : (timeLeftSeconds !== null && timeLeftSeconds <= 180)
+                    ? 'bg-rose-50 border-rose-300 text-rose-950 shadow-[0_0_15px_rgba(244,63,94,0.15)]'
+                    : 'bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border-emerald-300 text-emerald-950 shadow-[0_0_15px_rgba(16,185,129,0.12)]'
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 shadow-xs ${
+                      isBetLocked
+                        ? 'bg-stone-200 text-stone-600'
+                        : (timeLeftSeconds !== null && timeLeftSeconds <= 180)
+                        ? 'bg-rose-500 text-white animate-bounce'
+                        : 'bg-emerald-500 text-white'
+                    }`}>
+                      {isBetLocked ? '🔒' : (timeLeftSeconds !== null && timeLeftSeconds <= 180) ? '🔥' : '⏳'}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`text-[11px] font-black tracking-wider uppercase px-2 py-0.5 rounded-lg ${
+                          isBetLocked
+                            ? 'bg-stone-300 text-stone-800'
+                            : (timeLeftSeconds !== null && timeLeftSeconds <= 180)
+                            ? 'bg-rose-600 text-white'
+                            : 'bg-emerald-600 text-white'
+                        }`}>
+                          {isBetLocked ? '締切済み' : (timeLeftSeconds !== null && timeLeftSeconds <= 180) ? '締切直前' : '予想受付中'}
+                        </span>
+                        <span className="text-xs sm:text-sm font-black text-stone-900">
+                          {isBetLocked
+                            ? '勝敗予想の受付は締め切られました（試合進行中）'
+                            : (timeLeftSeconds !== null && timeLeftSeconds <= 180)
+                            ? '🔥 まもなく投票締め切り！投票を急いでください！'
+                            : 'LIVE MATCH 投票受付中'}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-stone-500 font-medium mt-0.5">
+                        {isBetLocked
+                          ? '試合終了後に勝敗が記録されると自動で配当コインが精算されます。観戦をお楽しみください！'
+                          : '試合開始と同時に受付終了となります。どちらが勝つか予想して投票しよう！'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* カウントダウンタイマー表示 */}
+                  {!isBetLocked && timeLeftSeconds !== null && (
+                    <div className={`flex items-center gap-2 px-4 py-2 rounded-2xl border shadow-xs ml-auto ${
+                      timeLeftSeconds <= 180
+                        ? 'bg-rose-100 border-rose-300 text-rose-800 animate-pulse'
+                        : 'bg-white border-emerald-200 text-emerald-900'
+                    }`}>
+                      <Clock size={16} className={timeLeftSeconds <= 180 ? 'text-rose-600' : 'text-emerald-600'} />
+                      <span className="text-xs font-black text-stone-600">締切目安:</span>
+                      <span className={`font-mono text-base sm:text-lg font-black tracking-wider ${
+                        timeLeftSeconds <= 180 ? 'text-rose-600' : 'text-stone-900'
+                      }`}>
+                        {formatTimeLeft(timeLeftSeconds)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
                 {/* 対戦カード表示 */}
                 <div className="p-5 rounded-3xl bg-white/95 text-stone-900 space-y-4 border border-stone-200 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="flex h-2.5 w-2.5 relative">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+                        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                          isBetLocked ? 'bg-stone-400' : (timeLeftSeconds !== null && timeLeftSeconds <= 180) ? 'bg-rose-400' : 'bg-emerald-400'
+                        }`}></span>
+                        <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                          isBetLocked ? 'bg-stone-500' : (timeLeftSeconds !== null && timeLeftSeconds <= 180) ? 'bg-rose-500' : 'bg-emerald-500'
+                        }`}></span>
                       </span>
-                      <span className="text-xs font-black text-rose-600 tracking-wider">LIVE MATCH 受付中</span>
+                      <span className={`text-xs font-black tracking-wider ${
+                        isBetLocked ? 'text-stone-500' : (timeLeftSeconds !== null && timeLeftSeconds <= 180) ? 'text-rose-600' : 'text-emerald-700'
+                      }`}>
+                        {isBetLocked ? 'LOCK 試合進行中' : 'LIVE MATCH 受付中'}
+                      </span>
                     </div>
                     <div className="text-xs font-bold text-amber-700 font-mono">
                       勝率予想: 🟦 {activeMatch.blueWinRate ? `${Math.round(activeMatch.blueWinRate * 100)}%` : '50%'} vs 🟥 {activeMatch.blueWinRate ? `${Math.round((1 - activeMatch.blueWinRate) * 100)}%` : '50%'}
@@ -895,7 +1013,7 @@ export default function CasinoPage() {
                     </div>
                   ) : (
                     <form onSubmit={handlePlaceBet} className="space-y-5">
-                      {activeMatch.status === 'IN_PROGRESS' || activeMatch.isLocked ? (
+                      {isBetLocked ? (
                         <div className="p-4 rounded-2xl bg-amber-500/10 border-2 border-amber-500/30 text-amber-900 flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <span className="text-lg">🔒</span>

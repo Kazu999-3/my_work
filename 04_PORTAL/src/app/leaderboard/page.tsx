@@ -100,9 +100,15 @@ function LeaderboardContent() {
   const [minGames, setMinGames] = useState<number>(1);
   const [search, setSearch] = useState('');
   const [sortMetric, setSortMetric] = useState<'mmr' | 'winRate' | 'games'>('mmr');
+  const [mobileRole, setMobileRole] = useState<Role | 'ALL'>('ALL');
 
   const getSortedRows = (rows: PlayerStats[]) => {
-    return [...rows].sort((a, b) => {
+    let filtered = rows;
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      filtered = rows.filter(p => p.name.toLowerCase().includes(q));
+    }
+    return [...filtered].sort((a, b) => {
       if (sortMetric === 'winRate') return parseFloat(b.winRate) - parseFloat(a.winRate);
       if (sortMetric === 'games') return b.games - a.games;
       return b.mmr - a.mmr;
@@ -351,7 +357,7 @@ function LeaderboardContent() {
           <div className="space-y-4">
             {/* コントロールバー */}
             <div className="flex flex-wrap items-center justify-between gap-3 bg-white/90 p-4 rounded-2xl border border-stone-200/90 shadow-2xs">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-bold text-stone-600">最低試合数:</span>
                 {[1, 3, 5, 10].map((cnt) => (
                   <button
@@ -366,6 +372,25 @@ function LeaderboardContent() {
                     {cnt}戦以上
                   </button>
                 ))}
+              </div>
+
+              {/* プレイヤー名検索 */}
+              <div className="flex items-center gap-2 min-w-[200px] max-w-xs flex-1">
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="プレイヤー名で絞り込み..."
+                  className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs font-bold text-stone-800 placeholder-stone-400 focus:outline-none focus:border-amber-500 focus:bg-white transition"
+                />
+                {search && (
+                  <button
+                    onClick={() => setSearch('')}
+                    className="text-stone-400 hover:text-stone-700 text-xs px-2 py-1 rounded-lg bg-stone-100 cursor-pointer"
+                  >
+                    クリア
+                  </button>
+                )}
               </div>
 
               <div className="flex items-center gap-2">
@@ -386,63 +411,103 @@ function LeaderboardContent() {
               </div>
             </div>
 
+            {/* スマホ用ロール切り替えピル（md以上では非表示） */}
+            <div className="flex md:hidden items-center gap-1.5 overflow-x-auto pb-1">
+              <button
+                type="button"
+                onClick={() => setMobileRole('ALL')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-black shrink-0 transition ${
+                  mobileRole === 'ALL'
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : 'bg-white border border-stone-200 text-stone-600'
+                }`}
+              >
+                🌐 全レーン並列
+              </button>
+              {ROLES.map((role) => (
+                <button
+                  key={role}
+                  type="button"
+                  onClick={() => setMobileRole(role)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black shrink-0 transition ${
+                    mobileRole === role
+                      ? 'bg-amber-600 text-white shadow-xs'
+                      : 'bg-white border border-stone-200 text-stone-600'
+                  }`}
+                >
+                  {role} ({getSortedRows(data[role] || []).length})
+                </button>
+              ))}
+            </div>
+
             {/* 5レーングリッド */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-              {ROLES.map((role) => {
+              {ROLES.filter((role) => mobileRole === 'ALL' || mobileRole === role).map((role) => {
                 const rows = getSortedRows(data[role] || []);
                 return (
                   <div
                     key={role}
                     className="bg-white rounded-2xl border border-stone-200/90 overflow-hidden shadow-xs flex flex-col"
                   >
-                    <div className="bg-stone-50 border-b border-stone-200 p-3 flex items-center justify-between">
-                      <span className="font-black text-xs text-stone-900 tracking-wider uppercase">
+                    <div className="bg-gradient-to-r from-stone-50 to-stone-100/60 border-b border-stone-200 p-3.5 flex items-center justify-between">
+                      <span className="font-black text-sm text-stone-900 tracking-wider uppercase flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-amber-500"></span>
                         {role}
                       </span>
-                      <span className="text-[10px] font-bold text-stone-500">
+                      <span className="text-[11px] font-black px-2 py-0.5 rounded-full bg-stone-200/70 text-stone-600">
                         {rows.length}名
                       </span>
                     </div>
 
-                    <div className="divide-y divide-stone-100 flex-1 overflow-y-auto max-h-[600px]">
-                      {rows.map((player, idx) => (
-                        <Link
-                          key={player.name + idx}
-                          href={`/player/${encodeURIComponent(player.name)}`}
-                          className="p-3 flex items-center justify-between gap-2 hover:bg-stone-50 transition group"
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${
-                              idx === 0 ? 'bg-amber-500 text-white' :
-                              idx === 1 ? 'bg-stone-400 text-white' :
-                              idx === 2 ? 'bg-amber-700 text-white' : 'bg-stone-100 text-stone-600'
-                            }`}>
-                              {idx + 1}
-                            </span>
-                            <div className="min-w-0">
-                              <div className="text-xs font-black text-stone-900 truncate group-hover:text-amber-800 transition">
-                                {player.name}
-                              </div>
-                              <div className="text-[10px] text-stone-500 font-medium">
-                                {player.games}戦 {player.winRate}%
+                    <div className="divide-y divide-stone-100 flex-1 overflow-y-auto max-h-[650px]">
+                      {rows.map((player, idx) => {
+                        const winRateNum = parseFloat(player.winRate);
+                        return (
+                          <Link
+                            key={player.name + idx}
+                            href={`/player/${encodeURIComponent(player.name)}`}
+                            className={`p-3 flex items-center justify-between gap-2 hover:bg-amber-50/40 transition group ${
+                              idx === 0 ? 'bg-amber-50/30' : ''
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${
+                                idx === 0 ? 'bg-amber-500 text-white shadow-xs' :
+                                idx === 1 ? 'bg-stone-400 text-white' :
+                                idx === 2 ? 'bg-amber-700 text-white' : 'bg-stone-100 text-stone-600 border border-stone-200'
+                              }`}>
+                                {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}
+                              </span>
+                              <div className="min-w-0">
+                                <div className="text-xs sm:text-sm font-black text-stone-900 truncate group-hover:text-amber-700 transition">
+                                  {player.name}
+                                </div>
+                                <div className="text-[10px] text-stone-500 font-medium flex items-center gap-1.5">
+                                  <span>{player.games}戦</span>
+                                  <span className={`font-bold ${
+                                    winRateNum >= 60 ? 'text-emerald-600' : winRateNum <= 40 ? 'text-rose-600' : 'text-stone-600'
+                                  }`}>
+                                    {player.winRate}%
+                                  </span>
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          <div className="text-right shrink-0">
-                            <div className="text-xs font-black font-mono text-amber-700">
-                              {player.mmr}
+                            <div className="text-right shrink-0">
+                              <div className="text-xs sm:text-sm font-black font-mono text-amber-800">
+                                {player.mmr}
+                              </div>
+                              <div className="text-[9px] font-bold text-stone-400">
+                                {player.rankBadge?.name || 'UNRANKED'}
+                              </div>
                             </div>
-                            <div className="text-[9px] font-bold text-stone-400">
-                              {player.rankBadge?.name || 'UNRANKED'}
-                            </div>
-                          </div>
-                        </Link>
-                      ))}
+                          </Link>
+                        );
+                      })}
 
                       {rows.length === 0 && (
                         <div className="p-8 text-center text-stone-400 text-xs font-bold">
-                          対象データなし
+                          {search ? '一致するプレイヤーはいません' : '対象データなし'}
                         </div>
                       )}
                     </div>

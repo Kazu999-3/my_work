@@ -36,12 +36,23 @@ export async function GET() {
       .map((s) => s.trim());
     const isAdmin = adminIds.includes(sessionData.discordId) || sessionData.discordId === '697220229964759130' || sessionData.username === 'kazuki' || player?.name?.includes('かずき');
 
+    // 日本時間基準で今日のデイリーボーナス受取状況を判定
+    const todayStr = new Intl.DateTimeFormat('ja-JP', {
+      timeZone: 'Asia/Tokyo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(new Date()).replace(/\//g, '-');
+    const claimedDaily = player?.role_preferences?.lastDailyClaim === todayStr;
+
     const user = {
       ...sessionData,
       displayName: player?.name || player?.ign || sessionData.displayName,
+      playerName: player?.name || sessionData.displayName || sessionData.username,
       coins: player ? getPlayerCoins(player) : (sessionData.coins ?? 1000),
       rank: player?.highest_rank || sessionData.rank || 'UNRANKED',
       isAdmin,
+      claimedDaily,
     };
 
     return NextResponse.json({ user });

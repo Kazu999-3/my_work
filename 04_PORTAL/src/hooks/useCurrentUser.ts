@@ -6,10 +6,12 @@ export interface CurrentUser {
   discordId: string;
   username: string;
   displayName: string;
+  playerName?: string;
   avatar: string;
   coins: number;
   rank: string;
   isAdmin?: boolean;
+  claimedDaily?: boolean;
 }
 
 export function useCurrentUser() {

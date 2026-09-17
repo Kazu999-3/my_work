@@ -11,6 +11,8 @@ import MatchRecordPanel from "../ktm-admin/MatchRecordPanel";
 import AramRotationPanel from "./AramRotationPanel";
 import { BalancerVcManager, updateVcStatus } from "./components/BalancerVcManager";
 import { BalancerBo3Manager } from "./components/BalancerBo3Manager";
+import BalancerStadiumView from "./components/BalancerStadiumView";
+import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { Spinner } from "../../components/Feedback";
 
 
@@ -53,6 +55,7 @@ function getGroup(p: any): number {
 
 export default function BalancerPage() {
   const router = useRouter();
+  const { user: currentUser } = useCurrentUser();
   const [players, setPlayers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [modeTab, setModeTab] = useState<'standard' | 'aram_rotation'>('standard');
@@ -222,6 +225,16 @@ export default function BalancerPage() {
     fetch("/api/auth/verify", { method: "POST", credentials: "include" })
       .then((res) => setIsAdmin(res.ok))
       .catch(() => setIsAdmin(false));
+
+    // 一般ユーザー向けに最新の進行中チーム分けを自動ロード
+    fetch("/api/balancer/pending")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.balanceResult) {
+          setBalanceResult((prev: any) => prev || data.balanceResult);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const checkIntegrity = async () => {
@@ -1842,6 +1855,18 @@ export default function BalancerPage() {
           (約256px)や余白を差し引くと1440px前後の画面でも収まりきらず、常に横スクロール
           が発生していた。ワイドモニタでは表がしっかり収まるよう広げる(2026-08-15)。 */}
       <div className="max-w-[1900px] mx-auto p-3 md:p-6 space-y-4">
+
+        {/* 🏟️ 観戦スタジアムビュー (確定した最新マッチがある場合) */}
+        {balanceResult && (
+          <div className="mb-2">
+            <BalancerStadiumView
+              result={balanceResult}
+              currentUserName={currentUser?.playerName || currentUser?.displayName}
+              isAdmin={isAdmin}
+              onOpenAdminModal={() => setShowResultModal(true)}
+            />
+          </div>
+        )}
 
         {/* ヘッダー */}
         <div className="flex flex-col gap-3 border-b border-stone-200 pb-4">

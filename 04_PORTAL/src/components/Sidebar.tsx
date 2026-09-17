@@ -23,8 +23,11 @@ import {
   LogOut,
   UserCheck,
   Home,
-  Globe
+  Globe,
+  Gift,
+  Check
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import FavoritesPanel from './FavoritesPanel';
 import PushOptIn from './PushOptIn';
 import NotificationBell from './NotificationBell';
@@ -33,14 +36,52 @@ import ThemeToggle from './ThemeToggle';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 
 function UserAuthWidget({ collapsed, inDrawer }: { collapsed?: boolean; inDrawer?: boolean }) {
-  const { user, loading, loginWithDiscord, logout } = useCurrentUser();
+  const { user, loading, loginWithDiscord, logout, refreshUser } = useCurrentUser();
+  const [claiming, setClaiming] = useState(false);
+
+  const handleQuickDailyClaim = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user || user.claimedDaily || claiming) return;
+
+    setClaiming(true);
+    try {
+      const res = await fetch('/api/bet', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          discordId: user.discordId,
+          playerName: user.playerName || user.displayName,
+          type: 'daily'
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        try {
+          confetti({
+            particleCount: 60,
+            spread: 55,
+            origin: { y: 0.7 },
+            colors: ['#f59e0b', '#10b981', '#3b82f6', '#ec4899']
+          });
+        } catch {}
+        refreshUser();
+      } else {
+        alert(data.error || '受取に失敗しました');
+      }
+    } catch {
+      alert('通信エラーが発生しました');
+    } finally {
+      setClaiming(false);
+    }
+  };
 
   if (loading) return null;
 
   if (user) {
     return (
       <div
-        className={`p-2.5 rounded-2xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/20 flex items-center gap-2.5 transition ${
+        className={`p-2.5 rounded-2xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/20 flex items-center gap-2 transition ${
           collapsed && !inDrawer ? 'justify-center' : ''
         }`}
       >
@@ -62,6 +103,34 @@ function UserAuthWidget({ collapsed, inDrawer }: { collapsed?: boolean; inDrawer
             </div>
           )}
         </Link>
+
+        {/* 🎁 デイリーボーナス ワンタップ受取ボタン */}
+        {!user.claimedDaily && (!collapsed || inDrawer) && (
+          <button
+            type="button"
+            onClick={handleQuickDailyClaim}
+            disabled={claiming}
+            className="px-2 py-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black text-[10px] rounded-xl shadow-xs transition-all animate-pulse flex items-center gap-1 cursor-pointer shrink-0 border border-amber-400"
+            title="本日のデイリーボーナス (+100pt) を受け取る"
+          >
+            <Gift size={12} className="shrink-0" />
+            <span>{claiming ? '...' : '+100'}</span>
+          </button>
+        )}
+
+        {/* 折りたたみ時のコンパクト受取バッジ */}
+        {!user.claimedDaily && collapsed && !inDrawer && (
+          <button
+            type="button"
+            onClick={handleQuickDailyClaim}
+            disabled={claiming}
+            className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-stone-950 rounded-full flex items-center justify-center text-[9px] font-black border border-white animate-pulse"
+            title="本日のデイリーボーナス受取可能！"
+          >
+            🎁
+          </button>
+        )}
+
         {(!collapsed || inDrawer) && (
           <button
             type="button"
@@ -71,7 +140,7 @@ function UserAuthWidget({ collapsed, inDrawer }: { collapsed?: boolean; inDrawer
               logout();
             }}
             title="ログアウト"
-            className="p-1.5 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-500/10 transition"
+            className="p-1.5 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-500/10 transition shrink-0"
           >
             <LogOut size={15} />
           </button>

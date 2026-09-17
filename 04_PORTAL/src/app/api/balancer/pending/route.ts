@@ -123,8 +123,13 @@ export async function GET(request: Request) {
       return NextResponse.json({
         success: true,
         pendingId: latestTask.id,
+        createdAt: latestTask.created_at,
         balanceResult: latestTask.payload?.balanceResult,
-        activeMatch: latestTask.payload?.balanceResult,
+        activeMatch: {
+          ...(latestTask.payload?.balanceResult || {}),
+          createdAt: latestTask.created_at,
+          pendingId: latestTask.id,
+        },
       });
     }
 
