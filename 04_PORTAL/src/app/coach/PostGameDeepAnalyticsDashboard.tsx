@@ -121,28 +121,41 @@ export default function PostGameDeepAnalyticsDashboard({
   onSelectMatchId,
 }: PostGameDashboardProps = {}) {
   const [data, setData] = useState<PostGameData | null>(null);
-  const [internalMatchId, setInternalMatchId] = useState<string>('all');
+  const [internalMatchId, setInternalMatchId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [switching, setSwitching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [synced, setSynced] = useState(false);
 
-  const currentMatchId = controlledMatchId !== undefined ? controlledMatchId : internalMatchId;
+  // メモ編集用の状態
+  const [memoText, setMemoText] = useState<string>('');
+  const [savingMemo, setSavingMemo] = useState(false);
+  const [memoSaved, setMemoSaved] = useState(false);
 
-  const fetchAnalytics = async (matchId: string) => {
+  const currentMatchId = controlledMatchId || internalMatchId;
+
+  const fetchAnalytics = async (matchId?: string) => {
     setSwitching(true);
     setError(null);
     try {
-      const url = matchId === 'all'
-        ? '/api/lol/postgame-deep-analytics?matchId=all'
-        : `/api/lol/postgame-deep-analytics?matchId=${matchId}`;
+      const url = matchId && matchId !== 'all'
+        ? `/api/lol/postgame-deep-analytics?matchId=${matchId}`
+        : '/api/lol/postgame-deep-analytics';
       const res = await fetch(url);
       const d = await res.json();
       if (!res.ok || !d.success) {
         throw new Error(d.error || '解析データの取得に失敗しました');
       }
       setData(d);
+      if (!internalMatchId && d.selected_match_id) {
+        setInternalMatchId(d.selected_match_id);
+      }
+      // メモを取得
+      const mId = matchId || d.selected_match_id;
+      if (mId) {
+        fetchMemo(mId);
+      }
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'データ取得エラー');
@@ -152,8 +165,48 @@ export default function PostGameDeepAnalyticsDashboard({
     }
   };
 
+  const fetchMemo = async (mId: string) => {
+    try {
+      const res = await fetch(`/api/lol/match-memo?matchId=${mId}`);
+      const d = await res.json();
+      if (d.success) {
+        setMemoText(d.memo || '');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleSaveMemo = async () => {
+    const targetId = currentMatchId || data?.selected_match_id;
+    if (!targetId) return;
+    setSavingMemo(true);
+    try {
+      const res = await fetch('/api/lol/match-memo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          matchId: targetId,
+          memo: memoText,
+          champion: data?.my_champion,
+          enemyChampion: data?.enemy_champion,
+          isWin: data?.is_win,
+        }),
+      });
+      const d = await res.json();
+      if (d.success) {
+        setMemoSaved(true);
+        setTimeout(() => setMemoSaved(false), 2500);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSavingMemo(false);
+    }
+  };
+
   useEffect(() => {
-    fetchAnalytics(currentMatchId || 'all');
+    fetchAnalytics(currentMatchId);
   }, [currentMatchId]);
 
   const handleSelect = (mId: string) => {
@@ -237,41 +290,10 @@ export default function PostGameDeepAnalyticsDashboard({
             <span className="text-[10px] text-stone-400 font-bold">クリックで各試合の深層解析に即時切り替え</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-2">
-            {/* 🌟 先頭: 直近全試合 統合ディープ分析ボタン */}
-            <button
-              type="button"
-              onClick={() => handleSelect('all')}
-              disabled={switching}
-              className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5 relative overflow-hidden ${
-                currentMatchId === 'all'
-                  ? 'bg-gradient-to-br from-amber-500/20 via-amber-100 to-amber-50 border-amber-500 shadow-xs ring-2 ring-amber-400/60'
-                  : 'bg-stone-50/80 border-stone-200 hover:bg-amber-50/50 hover:border-amber-300'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-amber-600 text-white font-mono">
-                  ALL
-                </span>
-                <span className="text-[9px] font-black text-amber-900">統合分析</span>
-              </div>
-
-              <div className="flex items-center gap-1.5 my-0.5">
-                <div className="w-6 h-6 rounded-full bg-amber-500 text-white flex items-center justify-center text-[10px] font-black shrink-0 shadow-2xs">
-                  ★
-                </div>
-                <span className="text-[11px] font-black text-amber-950 truncate">全{data.recent_matches.length}戦 統合</span>
-              </div>
-
-              <div className="flex items-center justify-between text-[10px] text-stone-600 font-mono font-bold">
-                <span className="text-amber-800 font-bold">勝率 {data.cross_match_summary?.win_rate || 0}%</span>
-                <span>平均合算</span>
-              </div>
-            </button>
-
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
             {/* 個別試合カード一覧 */}
             {data.recent_matches.map((m, idx) => {
-              const isSelected = currentMatchId === m.matchId;
+              const isSelected = currentMatchId === m.matchId || (!currentMatchId && idx === 0);
               const dateObj = new Date(m.gameStartTimestamp);
               const timeStr = `${dateObj.getMonth() + 1}/${dateObj.getDate()} ${dateObj.getHours()}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
 
@@ -297,7 +319,9 @@ export default function PostGameDeepAnalyticsDashboard({
                     >
                       {m.isWin ? 'WIN' : 'LOSS'}
                     </span>
-                    <span className="text-[9px] text-stone-400 font-mono">{timeStr}</span>
+                    <span className={`text-[9px] font-mono ${isSelected ? 'text-stone-300' : 'text-stone-400'}`}>
+                      #{idx + 1}
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-1.5 my-0.5">
@@ -309,10 +333,10 @@ export default function PostGameDeepAnalyticsDashboard({
                       className="w-6 h-6 rounded-full border border-stone-300 shadow-2xs shrink-0"
                       onError={(e) => { e.currentTarget.style.display = 'none'; }}
                     />
-                    <span className="text-[11px] font-black text-stone-900 truncate">{m.championName}</span>
+                    <span className="text-[11px] font-black truncate">{m.championName}</span>
                   </div>
 
-                  <div className="flex items-center justify-between text-[10px] text-stone-500 font-mono">
+                  <div className={`flex items-center justify-between text-[10px] font-mono ${isSelected ? 'text-stone-300' : 'text-stone-500'}`}>
                     <span className="font-bold">{m.kdaStr}</span>
                     <span>{m.gameDurationStr}</span>
                   </div>
@@ -320,6 +344,7 @@ export default function PostGameDeepAnalyticsDashboard({
               );
             })}
           </div>
+
         </div>
       )}
 
@@ -542,6 +567,40 @@ export default function PostGameDeepAnalyticsDashboard({
               {data.biggest_bottleneck.advice}
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* 📝 この試合の気づき・反省メモ（後からいつでも追加・編集・保存可能） */}
+      <div className="bg-stone-50 border border-stone-200 rounded-xl p-4 space-y-3 shadow-2xs">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-black text-stone-900 flex items-center gap-1.5">
+            <span>📝</span>
+            <span>この試合の反省・気づきメモ（後からいつでも編集可能）</span>
+          </span>
+          {memoSaved && (
+            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md animate-pulse">
+              ✅ 保存完了！
+            </span>
+          )}
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input
+            type="text"
+            value={memoText}
+            onChange={(e) => setMemoText(e.target.value)}
+            placeholder="例: レベル3ガンク時の寄り遅れを反省 / 敵JGの位置予測が当たってテンポ取れた"
+            className="flex-1 px-3.5 py-2.5 bg-white border border-stone-300 rounded-xl text-xs font-medium text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+          />
+          <button
+            type="button"
+            onClick={handleSaveMemo}
+            disabled={savingMemo}
+            className="px-4 py-2.5 bg-amber-700 hover:bg-amber-800 disabled:opacity-50 text-white rounded-xl text-xs font-black transition whitespace-nowrap cursor-pointer shadow-xs flex items-center justify-center gap-1.5 shrink-0"
+          >
+            <span>💾</span>
+            <span>{savingMemo ? '保存中...' : 'メモを保存'}</span>
+          </button>
         </div>
       </div>
 

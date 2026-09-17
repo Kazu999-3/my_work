@@ -109,22 +109,8 @@ export default function MatchFightsAnalyticsCard({
       {/* 複数試合セレクターバー */}
       {recentMatches.length > 0 && (
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin border-b border-stone-100">
-          <button
-            type="button"
-            onClick={() => handleSelectMatch('all')}
-            disabled={switching}
-            className={`px-3 py-1.5 rounded-xl text-xs font-black transition whitespace-nowrap cursor-pointer flex items-center gap-1.5 shrink-0 ${
-              currentMatchId === 'all'
-                ? 'bg-amber-600 text-white shadow-xs'
-                : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
-            }`}
-          >
-            <span>🌟</span>
-            <span>全{recentMatches.length}試合 統合集団戦レビュー</span>
-          </button>
-
           {recentMatches.map((m, idx) => {
-            const isSelected = currentMatchId === m.matchId;
+            const isSelected = currentMatchId === m.matchId || (!currentMatchId && idx === 0);
             return (
               <button
                 key={m.matchId}
@@ -162,7 +148,7 @@ export default function MatchFightsAnalyticsCard({
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-200 rounded-md text-[10px] font-black uppercase tracking-wider">
-              {currentMatchId === 'all' ? 'Multi-Match Deep Analytics' : 'Match Deep Analytics'}
+              Fight Review
             </span>
             <span className="text-stone-500 text-xs font-mono flex items-center gap-1 font-bold">
               <Clock className="w-3.5 h-3.5 text-stone-400" /> {data.match_duration}
@@ -181,11 +167,10 @@ export default function MatchFightsAnalyticsCard({
             <div className="text-sm font-black text-emerald-600 font-mono">{winRate}%</div>
           </div>
           <div className="bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-center">
-            <div className="text-[10px] text-stone-500 font-bold">
-              {currentMatchId === 'all' ? '全試合 交戦総火力' : '交戦総火力'}
-            </div>
+            <div className="text-[10px] text-stone-500 font-bold">交戦総火力</div>
             <div className="text-sm font-black text-amber-700 font-mono">{data.total_fight_damage.toLocaleString()}</div>
           </div>
+
           <button
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
