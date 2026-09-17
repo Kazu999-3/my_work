@@ -56,6 +56,7 @@ scratch/
 02_FACTORY/sns_assets/
 02_FACTORY/sns_promotions/
 02_FACTORY/PRODUCTS/
+03_SYSTEMS/v2_CORE/_LOL/overlay/cache/
 
 # Wrangler / Cloudflare temporary files
 .wrangler/

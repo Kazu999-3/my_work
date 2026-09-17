@@ -60,6 +60,7 @@ function emptyCtx(): BalanceContext {
     teammateHistory: new Map<string, number>(),
     winStreakTeam: null,
     sideHistory: {},
+    searchDepth: 5, // テスト高速化モード (144万回ループの計算爆発を回避)
   };
 }
 

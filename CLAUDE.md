@@ -31,7 +31,16 @@
 
 `.claude/skills/`（プロジェクト直下）と `04_PORTAL/.claude/skills/`（ポータル固有）配下のスキルはネイティブのSkill機構で自動検出されるため、ここで手動リストアップする必要はありません。タスク内容に応じて自発的に該当スキルを読み込み、その手順・制約に従ってください。
 
-現存する主なスキル: `ghost-writer`（AI臭さ排除の校正）、`ghost-tactics`（YouTube動画からの戦術自動抽出）、`lol-data-collector`（統計収集）、`lol-deep-research`（チャンピオン深掘りリサーチ）、`pro-build-tracker`（プロビルド追跡）、`sovereign-factory`（戦術バイブル/SNS/画像プロンプト量産）、`lexicon-editor`（辞典編纂）、`style-auditor`（文章のAI臭さ監査）、`article-review`（note記事の6観点レビュー＆改善ループ）、`note-article-drafter`（note記事ドラフト生成）、`note-production`（note量産の一気通貫フロー、Worker/Reviewerループ内蔵）、`notification-designer`（Discord/Web通知のUXライティング）、`find-skills`（外部スキルエコシステムの発見）、`ktm-admin`（KTM大会運営・MMR計算・チーム分け）、`skill-creator`（スキルの新規作成・検証）、`canvas-design`（画像/ポスター生成）、`supabase-table-security`（04_PORTAL固有、新規テーブル/APIルートのセキュリティチェックリスト）、`gemini-model-health-check`（Geminiモデルの実クォータ実測）、`known-regression-patterns`（既知の再発バグパターン・チェックリスト）、`ktm-recruitment-status-dryrun`（KTM Bot募集カード色ロジックの無投稿検証）、`session-handover-update`（HANDOVER/TODOへのセッション記録更新）、`supabase-migration-lint`（Supabaseマイグレーションの既知の罠スキャン）、`handover-staleness-check`（HANDOVER/TODO記録漏れの検知）、`skill-usage-audit`（スキル使用実績の棚卸し）。
+現存する常設スキル（2026-09棚卸し済み・少数精鋭化）:
+- `gemini-model-health-check`（Geminiモデルの実クォータ実測・障害防止）
+- `known-regression-patterns`（既知の再発バグ5大パターンのチェックリスト）
+- `supabase-migration-lint`（Supabaseマイグレーションの罠検知）
+- `session-handover-update`（HANDOVER/TODOへのセッション記録更新）
+- `skill-usage-audit`（スキル使用実績の定期棚卸しスクリプト）
+- `ghost-writer`（note記事・文章のAI臭さ排除）
+- `supabase-table-security`（04_PORTAL固有、新規テーブル/APIルートのセキュリティチェックリスト）
+
+※過去の未使用スキル17件は `99_ARCHIVE/skills/` に安全退避済み（必要に応じて復元可能）。
 
 `d:/my_work/.agent/skills/`・`.agent/workflows/` の旧スキル・ワークフローは2026-08-04に棚卸し完了。実際に使われている/価値のあるものは全て`.claude/skills/`へ移行済みで、残りは削除済み（`.agent/agents`・`.agent/rules`等の他ディレクトリは対象外・未調査）。
 
@@ -58,6 +67,7 @@
 @.claude/rules/writing-tone.md
 @.claude/rules/database.md
 @.claude/rules/ui-conventions.md
+@.claude/rules/llm-health.md
 
 **`04_PORTAL` (Next.js) 固有のルール（インポートパス制限等）は `04_PORTAL/CLAUDE.md` を参照してください。** 04_PORTAL内で作業する際は自動的に読み込まれます。
 

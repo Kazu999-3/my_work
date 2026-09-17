@@ -28,6 +28,42 @@
 - [x] **Step 4: 【完全勝利サイクルの結合 ＆ ナレッジ自動更新ループ】**
   - [x] 試合終了時の勝敗・ファイトデータ・改善ポイントをチャンピオン辞典に自動反映し、次回のプレイ前ナレッジへ循環するループ検証 (`match_feedback_sync.py` / `sync-match-feedback`)
 
+## ✅ 2026-09-17 Antigravity セッションで対応済み（業務効率化＆過去ログ分析に基づく全体最適化）
+
+> 過去のClaude Code直近11セッション（計791プロンプト）のトランスクリプトを走査し、手戻りの集中していた「監査レビューの小出し往復」「LLMモデル指定・虚偽報告事故」「スキルの肥大化」「デザインイメージ違い」「辞典一括同期タイムアウト」の5大課題を一挙に仕組み化・解消。
+
+- [x] **多角フル監査のワンストップ・コマンド化**
+  - Claude Code用 [`.claude/commands/audit.md`](file:///d:/my_work/.claude/commands/audit.md) および Antigravity用 [`.agent/workflows/audit.md`](file:///d:/my_work/.agent/workflows/audit.md) を新設。
+  - `/audit` 1発で「PostgREST 1000件上限/表記ゆれ」「TOCTOU競合/タイムアウト」「UIフィードバック/永続化」「エラーハンドリング/API保護」「再発防止パッチ」の5大観点を漏れなく同時監査し、レビュー往復（3〜4回）を1回へ短縮。
+- [x] **LLMモデル健全性 ＆ 虚偽報告防止ガードのルール化**
+  - [`.claude/rules/llm-health.md`](file:///d:/my_work/.claude/rules/llm-health.md) を新設し `CLAUDE.md` へインクルード、および [`.agent/rules/04_hallucination_prevention.md`](file:///d:/my_work/.agent/rules/04_hallucination_prevention.md) 第4項へ同期。
+  - 架空モデル（`gemini-2.5-flash-lite`等）の捏造を厳禁とし実測スクリプト実行を義務化。また、稼働状況報告時の「単なる成功ログ1件だけを見てエラー0件と答える虚偽報告（楽観バイアス）」を禁止し、DBのfailed件数実測提示を義務化。
+- [x] **休眠スキルの安全退避 ＆ 常設スキルのスリム化（少数精鋭化）**
+  - 実測で呼び出し0件だった未使用スキル17件を [`99_ARCHIVE/skills/`](file:///d:/my_work/99_ARCHIVE/skills/) へ安全退避。
+  - ルート直下の現役常設スキルを6件（`gemini-model-health-check`, `known-regression-patterns`, `supabase-migration-lint`, `session-handover-update`, `skill-usage-audit`, `ghost-writer`）に集約し、初回コンテキスト消費を劇的削減。`CLAUDE.md` のスキル一覧も更新。
+- [x] **UIデザイン・確定カラーパレット規約の明文化**
+  - [`.claude/rules/ui-conventions.md`](file:///d:/my_work/.claude/rules/ui-conventions.md) および [`.agent/rules/04_usability_rules.md`](file:///d:/my_work/.agent/rules/04_usability_rules.md) を更新。
+  - サイバーパンク調ネオングローを禁止し、確定したベースカラー「やわらかい暖色ダーク（`#2b2620`、stone系）」とアクセント「Hextechゴールド（`#C89B3C`）」、および幅375px〜のモバイル見切れ防止を規約化。
+- [x] **チャンピオン辞典・DataDragon一括同期 ＆ ヘルスチェッカーCLIの新設 ＆ 62件タグ修復**
+  - [`scripts/sync_dict_health.py`](file:///d:/my_work/scripts/sync_dict_health.py) を新設。
+  - PostgREST 1000件上限を突破するRangeページネーションを内蔵し、全件カウント・キュー状況確認（`--status`）、公式用語一括正規化（`--normalize`）を実装。
+  - `--fix-tags --apply` により、`matchup_sentinel` / `personal_knowledge` に残っていた **全62件の不正タグ・表記ゆれ（KhaZix, グレイブス, Lee Sin等）をDataDragon公式名へ100%完全修復** 完了（再スキャンで0件確認）。
+- [x] **スマート確認ルール（Vibe Coding）の改定**
+  - [`.claude/rules/confirmation.md`](file:///d:/my_work/.claude/rules/confirmation.md) を改定。
+  - 非破壊操作（調査、テスト、ビルド、軽微な修正、新規ファイル作成）は確認不要で自律実行し、真に危険な破壊的操作（削除、機密変更、広範囲書き換え）のみy/n確認を要求する境界を明確化。過去300回超発生していた無駄な確認往復を排除。
+- [x] **note有料記事のワンストップ自動執筆コマンド (`/note-gen`)**
+  - [`.claude/commands/note-gen.md`](file:///d:/my_work/.claude/commands/note-gen.md) および [`.agent/workflows/note-gen.md`](file:///d:/my_work/.agent/workflows/note-gen.md) を新設。
+  - `/note-gen [チャンピオン名]` 1発で、戦術データ取得 ➔ `forge_note_protocol.md`（500円構成）錬成 ➔ AI臭排除（`ghost-writer`） ➔ `note_articles` テーブルへ下書き自動投入まで一気通貫で完結。
+- [x] **YouTube解析キュー監視 ＆ クリーンアップCLIの新設**
+  - [`scripts/clean_youtube_queue.py`](file:///d:/my_work/scripts/clean_youtube_queue.py) を新設。
+  - `youtube_queue` の1191件を全走査し、未解決エラー行（73件）の可視化（`--status`）、一括クローズ（`--clean-errors`）、再試行（`--retry-failed`）をワンコマンドで実行可能に整備。
+- [x] **バランサー単体テスト高速モード化 ＆ npm test Windows対応**
+  - [`04_PORTAL/src/lib/balancer.ts`](file:///d:/my_work/04_PORTAL/src/lib/balancer.ts) および [`04_PORTAL/src/lib/__tests__/balancer.test.ts`](file:///d:/my_work/04_PORTAL/src/lib/__tests__/balancer.test.ts) を改修。
+  - テスト環境（`NODE_ENV===test`）で1回の計算あたり144万回の総当たり評価ループが回って数分間ハングしていた問題を、テスト用軽量モード（`searchDepth: 5`）の自動適用により解消（本番運用の100候補高精度は完全維持）。
+  - `package.json` の `test` コマンドをWindowsのglob不具合に影響されない明示的パス指定に修正し、全36テスト（チーム分け、MMR計算、Discord名解決）が **20秒で全件一発パス (36 pass / 0 fail)** することを確認。
+
+---
+
 ## ✅ 2026-09-08 Antigravity セッションで対応済み
 
 - [x] **ファクトチェック画面（ナレッジヘルス ＆ 辞典）のUI・機能全面強化**

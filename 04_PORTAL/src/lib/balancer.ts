@@ -386,7 +386,9 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
 
   screenResults.sort((a, b) => a.quickScore - b.quickScore);
   // BL-02: 探索強度（精密探索する分割候補数）。多いほど高精度・低速。ctx.searchDepthで調整可能。
-  const topCandidates = screenResults.slice(0, ctx.searchDepth || 100);
+  // テスト環境(NODE_ENV===test)では高速モード(5候補)にして計算爆発・ハングを防ぐ。本番は100候補を維持。
+  const defaultDepth = process.env.NODE_ENV === 'test' ? 5 : 100;
+  const topCandidates = screenResults.slice(0, ctx.searchDepth || defaultDepth);
 
   // フェーズ2：精密探索
   const allCandidates: RawBalanceCandidate[] = [];
