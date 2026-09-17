@@ -325,6 +325,9 @@ export async function notifyPortalError(params: PortalErrorLogParams): Promise<b
   return false;
 }
 
+// 互換エイリアス
+export const sendErrorNotification = notifyPortalError;
+
 /**
  * 📩 Discord Bot Token を使用して対象ユーザーへ個別ダイレクトメッセージ (DM) を送信
  */

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { getAuthSession } from '../../../../lib/authGuard';
 import { findOrCreatePlayer } from '../../../../lib/playerCoins';
+import { sendErrorNotification } from '../../../../lib/discordNotify';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +32,7 @@ export interface MentorshipProfile {
  * GET: 師弟プロフィールの取得（ロール・レーン別絞り込み対応）
  */
 export async function GET(request: Request) {
+  let myDiscordId: string | undefined = undefined;
   try {
     const { searchParams } = new URL(request.url);
     const roleType = searchParams.get('roleType'); // 'PUPIL' | 'MENTOR' | null
@@ -97,17 +99,25 @@ export async function GET(request: Request) {
 
     // セッション情報があれば自分のプロフィールIDおよび管理者権限も返す
     const session = await getAuthSession();
-    const myDiscordId = session?.discordId || null;
+    myDiscordId = session?.discordId;
     const isAdmin = !!session?.isAdmin;
 
     return NextResponse.json({
       ok: true,
       profiles,
-      myDiscordId,
+      myDiscordId: myDiscordId || null,
       isAdmin,
     });
   } catch (err: any) {
     console.error('[mentorship/profiles] GET error:', err);
+    sendErrorNotification({
+      source: 'API',
+      path: '/api/mentorship/profiles',
+      method: 'GET',
+      error: err,
+      statusCode: 500,
+      userId: myDiscordId,
+    }).catch(() => {});
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
 }
@@ -117,8 +127,9 @@ export async function GET(request: Request) {
  * POST: 自分の自己紹介プロフィールの作成または更新
  */
 export async function POST(request: Request) {
+  let session: any = null;
   try {
-    const session = await getAuthSession();
+    session = await getAuthSession();
     const body = await request.json();
     const {
       role_type,
@@ -281,6 +292,15 @@ export async function POST(request: Request) {
     });
   } catch (err: any) {
     console.error('[mentorship/profiles] POST error:', err);
+    sendErrorNotification({
+      source: 'API',
+      path: '/api/mentorship/profiles',
+      method: 'POST',
+      error: err,
+      statusCode: 500,
+      userId: session?.discordId,
+      userName: session?.displayName,
+    }).catch(() => {});
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
 }
@@ -289,8 +309,9 @@ export async function POST(request: Request) {
  * DELETE: プロフィールを削除（本人のカードまたは管理者は全カード削除可能）
  */
 export async function DELETE(request: Request) {
+  let session: any = null;
   try {
-    const session = await getAuthSession();
+    session = await getAuthSession();
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     const paramDiscordId = searchParams.get('discordId');
@@ -323,6 +344,15 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ ok: true, message: 'カードを削除しました。' });
   } catch (err: any) {
     console.error('[mentorship/profiles] DELETE error:', err);
+    sendErrorNotification({
+      source: 'API',
+      path: '/api/mentorship/profiles',
+      method: 'DELETE',
+      error: err,
+      statusCode: 500,
+      userId: session?.discordId,
+      userName: session?.displayName,
+    }).catch(() => {});
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
 }

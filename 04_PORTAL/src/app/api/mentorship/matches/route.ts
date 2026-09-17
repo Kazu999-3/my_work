@@ -3,7 +3,7 @@ import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { getAuthSession } from '../../../../lib/authGuard';
 import { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } from '../../../../lib/playerCoins';
 import { MENTORSHIP_DURATIONS } from '../../../../lib/mentorshipConstants';
-import { sendDiscordDirectMessage } from '../../../../lib/discordNotify';
+import { sendDiscordDirectMessage, sendErrorNotification } from '../../../../lib/discordNotify';
 
 export const dynamic = 'force-dynamic';
 
@@ -187,9 +187,10 @@ async function sendDiscordOfferNotification(
  * GET: 成立済みペア一覧 ＆ ログインユーザーの申請一覧（受信/送信）の取得
  */
 export async function GET() {
+  let myDiscordId: string | undefined = undefined;
   try {
     const session = await getAuthSession();
-    const myDiscordId = session?.discordId;
+    myDiscordId = session?.discordId;
 
     // 1. 成立済み・卒業済みペア一覧 (ACTIVE or COMPLETED)
     const { data: rawMatches } = await supabase
@@ -262,6 +263,14 @@ export async function GET() {
     });
   } catch (err: any) {
     console.error('[mentorship/matches] GET error:', err);
+    sendErrorNotification({
+      source: 'API',
+      path: '/api/mentorship/matches',
+      method: 'GET',
+      error: err,
+      statusCode: 500,
+      userId: myDiscordId,
+    }).catch(() => {});
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
 }
@@ -270,8 +279,9 @@ export async function GET() {
  * DELETE: 師弟ペア・申請の削除（管理者専用または本人による申請キャンセル）
  */
 export async function DELETE(request: Request) {
+  let session: any = null;
   try {
-    const session = await getAuthSession();
+    session = await getAuthSession();
     if (!session) {
       return NextResponse.json({ ok: false, error: '認証が必要です。' }, { status: 401 });
     }
@@ -319,6 +329,15 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ ok: true, message: '師弟ペア/申請を削除しました。' });
   } catch (err: any) {
     console.error('[mentorship/matches] DELETE error:', err);
+    sendErrorNotification({
+      source: 'API',
+      path: '/api/mentorship/matches',
+      method: 'DELETE',
+      error: err,
+      statusCode: 500,
+      userId: session?.discordId,
+      userName: session?.displayName,
+    }).catch(() => {});
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
 }
@@ -328,8 +347,10 @@ export async function DELETE(request: Request) {
  * POST: 師弟マッチング操作 (APPLY / ACCEPT / REJECT / EXTEND / COMPLETE / CANCEL)
  */
 export async function POST(request: Request) {
+  let session: any = null;
+  let body: any = null;
   try {
-    const session = await getAuthSession();
+    session = await getAuthSession();
     if (!session || !session.discordId) {
       return NextResponse.json(
         { ok: false, error: 'オファーを行うにはDiscordログインが必要です。' },
@@ -337,7 +358,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = await request.json();
+    body = await request.json();
     const {
       action = 'APPLY',
       targetProfileId,
@@ -763,6 +784,18 @@ export async function POST(request: Request) {
 
   } catch (err: any) {
     console.error('[mentorship/matches] POST error:', err);
+    sendErrorNotification({
+      source: 'API',
+      path: '/api/mentorship/matches',
+      method: 'POST',
+      error: err,
+      statusCode: 500,
+      userId: session?.discordId,
+      userName: session?.displayName,
+      context: {
+        body: body || undefined,
+      },
+    }).catch(() => {});
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
 }
