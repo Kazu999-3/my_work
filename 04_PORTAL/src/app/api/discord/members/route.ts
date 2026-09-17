@@ -77,7 +77,7 @@ export async function GET(request: Request) {
         toAdd.push({
           discord_id: discordId,
           name: displayName,
-          ign: `${m.user.username}#...`, // ダミー
+          ign: "", // 未連携（ダミー文字を廃止）
           role_preferences: { primary: "ALL", secondary: "-", ignore_role: "-" },
           metadata: { joined_at: m.joined_at }
         });

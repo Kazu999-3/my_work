@@ -649,6 +649,17 @@ ${isSupportRole ? '※重要: このプレイヤーは【サポート (Support)�
     return NextResponse.json({ success: true, report });
   } catch (err: any) {
     console.error('Universal Deep intel error:', err);
-    return NextResponse.json({ error: err.message || '深層解析エラー' }, { status: 500 });
+    const msg = String(err?.message || '');
+    let friendlyError = '深層解析エラーが発生しました。';
+    if (msg.includes('404') || msg.includes('not found')) {
+      friendlyError = '指定されたプレイヤーが見つかりませんでした。Riot ID（サモナー名#タグ）が正しいかご確認ください。';
+    } else if (msg.includes('403') || msg.includes('Forbidden')) {
+      friendlyError = 'Riot APIキーが無効または期限切れです。管理画面からAPIキーをご確認ください。';
+    } else if (msg.includes('429') || msg.includes('Rate limit')) {
+      friendlyError = 'Riot APIの呼び出し制限に達しました。少し時間を置いてから再度お試しください。';
+    } else if (msg) {
+      friendlyError = `解析エラー: ${msg}`;
+    }
+    return NextResponse.json({ error: friendlyError }, { status: 500 });
   }
 }

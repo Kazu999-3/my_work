@@ -571,7 +571,13 @@ CS/min: 直近${agg.csTrend.recent} / 以前${agg.csTrend.older}　Vision/min: �
         // 1勝約+22LP/1敗約-18LPと仮定した必要勝利数の目安（純増4LP/試合ではなく、勝敗差で概算）
         const netPerWin = 20;
         const gamesNeeded = Math.ceil(gap / netPerWin);
-        projection = { reached: false, days, reachDate, gamesNeeded };
+        projection = {
+          reached: false,
+          days,
+          reachDate,
+          gamesNeeded,
+          note: '※標準的なLP増減（約+20LP/勝）を仮定した試算目安です。'
+        };
       } else {
         projection = { reached: false, insufficientTrend: true };
       }

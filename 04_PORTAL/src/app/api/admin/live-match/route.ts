@@ -371,15 +371,11 @@ export async function POST(req: Request) {
       console.warn("敵ジャングラーの過去戦績分析に失敗しました:", err);
     }
 
-    // 敵の過去戦績が取得できなかった場合のプレースホルダー。以前はこの固定値を
-    // 本物のように表示していたため、何人スカウトしても同じ数値になる「ダミーデータ
-    // っぽさ」の主因になっていた。dataInsufficient フラグを立てて、フロント側で
-    // 「推定値」であることを明示できるようにする。
     if (!enemyPlaystyle) {
       enemyPlaystyle = {
-        sliders: { aggressive: 55, farming: 45, supportive: 40 },
-        tags: [{ id: 'balanced-player', name: 'バランス型', description: '標準的なプレイスタイル。', reason: 'データ制限のため' }],
-        diffs: { goldDiff: 50, xpDiff: 20, csDiff: 0.8 },
+        sliders: { aggressive: 0, farming: 0, supportive: 0 },
+        tags: [{ id: 'insufficient-data', name: 'データ未計測', description: '直近の戦績データが非公開または不足しています。', reason: 'データ制限のため' }],
+        diffs: { goldDiff: 0, xpDiff: 0, csDiff: 0 },
         lastUpdated: new Date().toISOString(),
         dataInsufficient: true,
       };
@@ -427,13 +423,13 @@ export async function POST(req: Request) {
         const isEnemy = p.teamId !== myTeamId;
         const role = p.puuid === enemyJg.puuid ? 'JG' : (p.teamId === myTeamId ? (p.puuid === myPuuid ? 'JG' : 'LANER') : 'LANER');
         
-        let winRate = 50;
+        let winRate: number | null = null;
         let pIsOtp = false;
         let pOtpChamp = "";
         let pConsecutiveLosses = 0;
         let pIsTilted = false;
         let isVulnerable = false;
-        let fbRate = 10;
+        let fbRate: number | null = null;
         // 実データが1件も取れずwinRate/fbRateが固定値のままの場合に立てる。
         // 以前はこの状態でも「勝率50%」「特記事項なし」を本物のように表示していた。
         let dataInsufficient = false;
@@ -502,17 +498,17 @@ export async function POST(req: Request) {
               dataInsufficient = true;
             }
           } catch {
-            winRate = 50;
+            winRate = null;
             pIsTilted = false;
             isVulnerable = false;
-            fbRate = 20;
+            fbRate = null;
             dataInsufficient = true;
           }
         } else if (isEnemy) {
-          winRate = 50;
+          winRate = null;
           pIsTilted = false;
           isVulnerable = false;
-          fbRate = 20;
+          fbRate = null;
           dataInsufficient = true;
         }
 
@@ -649,7 +645,18 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     console.error('Live Match API Error:', error);
-    return NextResponse.json({ error: error.message || 'ライブゲームのロードに失敗しました。' }, { status: 500 });
+    const msg = String(error?.message || '');
+    let friendlyError = 'ライブゲームのロードに失敗しました。';
+    if (msg.includes('404') || msg.includes('Data not found')) {
+      friendlyError = '現在進行中のライブゲームが見つかりませんでした。試合のローディング画面または開始後に再実行してください。';
+    } else if (msg.includes('403') || msg.includes('Forbidden')) {
+      friendlyError = 'Riot APIキーが無効または期限切れです。最新のキーを設定してください。';
+    } else if (msg.includes('429') || msg.includes('Rate limit')) {
+      friendlyError = 'Riot APIのリクエスト上限に達しました。1〜2分待ってから再度お試しください。';
+    } else if (msg) {
+      friendlyError = `エラー: ${msg}`;
+    }
+    return NextResponse.json({ error: friendlyError }, { status: 500 });
   }
 }
 
@@ -726,33 +733,31 @@ function generateCountersForJg(enemyChamp: string) {
       { championName: "Nunu", reason: "凄まじい回復力と継続的なスロウで、Gravesの引き撃ち（カイト）を完全に無力化できます。" }
     ];
   } else {
-    return [
-      { championName: "Graves", reason: "安定したクリア速度と後半のスケーリング力で、あらゆるマッチアップに対応可能です。" },
-      { championName: "LeeSin", reason: "序盤 of 小規模戦における対応力が極めて高く、味方レーナーを早期に育てるテンポを作れます。" }
-    ];
+    // 固定チャンピオン(Graves/LeeSin)の決め打ちを廃止し、未登録であることを正直に返す
+    return [];
   }
 }
 
 function generateLiveAnalysis(champ: string, tag: any) {
   const isEarlyJg = ['LeeSin', 'Khazix', 'JarvanIV', 'Shaco', 'Vi'].includes(champ);
-  const isBrawler = tag.id === 'early-brawler';
+  const isBrawler = tag?.id === 'early-brawler';
 
-  let startBuff = '赤バフ (RED Side) スタート予測';
-  let firstGank = 'ボットレーン (下側) レーン関与';
+  let startBuff = '標準周回ルート（味方の配置やマッチアップに応じて変動）';
+  let firstGank = 'レーン状況に応じた関与（またはLv4スカトル・オブジェクト）';
   let tips = '';
 
   if (isEarlyJg) {
     startBuff = '青バフ (バフ3キャンプ速攻) スタート予測';
     firstGank = 'トップまたはミッドへのLV3早期Gank';
-    tips = '相手は序盤が非常に強力なチャンピオンです。LV2またはLV3の早い段階でプレッシャーをかけてくるため、サイドレーンは開始3分前後にリバーの視界を確保してください。自軍ジャングルへのインベイドにも注意し、孤立した戦闘を避けましょう。';
+    tips = '相手は序盤が非常に強力なチャンピオンです。LV2またはLV3の早い段階でプレッシャーをかけてくる傾向があるため、サイドレーンは開始3分前後にリバーの視界を確保してください。自軍ジャングルへのインベイドにも注意し、孤立した戦闘を避けましょう。';
   } else if (isBrawler) {
-    startBuff = 'ボット側リーシュあり赤バフスタート';
+    startBuff = 'ボット側リーシュあり赤バフスタート予測';
     firstGank = '対面レーンでのLV3小規模戦の発生';
-    tips = '相手プレイヤーは戦闘意欲が極めて高い戦闘狂タグを持っています。フルクリアよりも遭遇戦や強引なガンクを好むため、相手ジャングルの位置が割れるまではレーンでの深追いは禁物です。味方ジャングラーはカウンターガンクの意識を強めましょう。';
+    tips = '相手プレイヤーは戦闘意欲が極めて高い戦闘狂タグを持っています。フルクリアよりも遭遇戦や強引なガンクを好む傾向があるため、相手ジャングルの位置が割れるまではレーンでの深追いは禁物です。味方ジャングラーはカウンターガンクの意識を強めましょう。';
   } else {
-    startBuff = '赤バフ (フルクリア周回) スタート';
+    startBuff = '赤バフまたは青バフ（フルクリア周回目安・リーシュ依存）';
     firstGank = 'LV4以降のスカトル（川のカニ）争い、または最初のオブジェクト';
-    tips = '相手はファームを重視して周回速度を優先する傾向があります。序盤のアクションは控えめですが、中盤以降CSと装備差でキャリーしてくるため、こちらはレーンへのGankを決めてテンポ差を作るか、相手のキャンプへディープワードを置いて位置を特定し続けましょう。';
+    tips = '特定の早期強襲チャンピオン以外の一般的な周回パターンです。レーンのプッシュ状況や味方のリーシュ位置によってスタート位置が変わるため、開始直後の敵レーナーの登場タイミングでスタート地点を特定してください。';
   }
 
   return { startBuff, firstGank, tips };

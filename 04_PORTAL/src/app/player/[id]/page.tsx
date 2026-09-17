@@ -416,13 +416,7 @@ export default function PlayerMyPage() {
   const hextechRadarData = useMemo(() => {
     const totalG = history?.length || 0;
     if (totalG === 0) {
-      return [
-        { subject: 'キャリー力', value: 3.0, fullMark: 5.0 },
-        { subject: '集団戦', value: 3.0, fullMark: 5.0 },
-        { subject: '安定度', value: 3.0, fullMark: 5.0 },
-        { subject: 'プール広さ', value: 3.0, fullMark: 5.0 },
-        { subject: '勝負強さ', value: 3.0, fullMark: 5.0 },
-      ];
+      return null;
     }
 
     const wins = history.filter(m => m.isWin).length;
@@ -1087,7 +1081,7 @@ export default function PlayerMyPage() {
                           </span>
                         </div>
                         <span className="text-[10px] font-bold text-stone-400">
-                          {victoryBlueprint ? 'AI適性判定完了' : '未判定'}
+                          {victoryBlueprint ? 'スタッツ適性判定完了' : '未判定'}
                         </span>
                       </div>
 
@@ -1261,33 +1255,42 @@ export default function PlayerMyPage() {
                           平均 3.0 基準 (1〜5)
                         </span>
                       </h3>
-                      <div className="w-full h-56 relative">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <RadarChart cx="50%" cy="50%" outerRadius="70%" data={hextechRadarData}>
-                            <PolarGrid stroke="rgba(0, 0, 0, 0.08)" />
-                            <PolarAngleAxis dataKey="subject" stroke="#6b7280" tick={{ fill: '#374151', fontSize: 11, fontWeight: 'bold' }} />
-                            <PolarRadiusAxis angle={30} domain={[0, 5]} stroke="none" />
-                            <Radar name={player.name} dataKey="value" stroke="#06b6d4" fill="#06b6d4" fillOpacity={0.4} />
-                          </RadarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-[10px] pt-2 border-t border-black/10 text-gray-500 font-bold">
-                      {hextechRadarData.map((d, index) => (
-                        <div
-                          key={d.subject}
-                          className={`flex justify-between items-center bg-black/5 px-2.5 py-1.5 rounded-xl border border-black/5 ${
-                            index === 4 ? 'col-span-2' : ''
-                          }`}
-                        >
-                          <span className="text-stone-600">{d.subject}:</span>
-                          <span className={`font-black text-xs ${
-                            d.value >= 4.0 ? 'text-cyan-700' : d.value >= 3.0 ? 'text-stone-900' : 'text-rose-600'
-                          }`}>
-                            {d.value} <span className="text-[9px] font-normal text-stone-400">/ 5.0</span>
-                          </span>
+                      {hextechRadarData ? (
+                        <>
+                          <div className="w-full h-56 relative">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <RadarChart cx="50%" cy="50%" outerRadius="70%" data={hextechRadarData}>
+                                <PolarGrid stroke="rgba(0, 0, 0, 0.08)" />
+                                <PolarAngleAxis dataKey="subject" stroke="#6b7280" tick={{ fill: '#374151', fontSize: 11, fontWeight: 'bold' }} />
+                                <PolarRadiusAxis angle={30} domain={[0, 5]} stroke="none" />
+                                <Radar name={player.name} dataKey="value" stroke="#06b6d4" fill="#06b6d4" fillOpacity={0.4} />
+                              </RadarChart>
+                            </ResponsiveContainer>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-[10px] pt-2 border-t border-black/10 text-gray-500 font-bold">
+                            {hextechRadarData.map((d, index) => (
+                              <div
+                                key={d.subject}
+                                className={`flex justify-between items-center bg-black/5 px-2.5 py-1.5 rounded-xl border border-black/5 ${
+                                  index === 4 ? 'col-span-2' : ''
+                                }`}
+                              >
+                                <span className="text-stone-600">{d.subject}:</span>
+                                <span className={`font-black text-xs ${
+                                  d.value >= 4.0 ? 'text-cyan-700' : d.value >= 3.0 ? 'text-stone-900' : 'text-rose-600'
+                                }`}>
+                                  {d.value} <span className="text-[9px] font-normal text-stone-400">/ 5.0</span>
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="h-56 flex flex-col items-center justify-center text-center p-4 text-stone-400 text-xs">
+                          <Activity className="w-8 h-8 mb-2 opacity-40 text-stone-500" />
+                          <span>カスタム試合データが不足しているため、能力パラメーターは未計測です。</span>
                         </div>
-                      ))}
+                      )}
                     </div>
                   </div>
 
@@ -1323,11 +1326,11 @@ export default function PlayerMyPage() {
                     </div>
                   )}
 
-                  {/* 🤖 週刊 AI アナリストプロファイル */}
+                  {/* 📋 週刊スタッツ・スカウティングレポート */}
                   <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl lg:col-span-3">
                     <h3 className="text-base font-black flex items-center gap-2 mb-4 border-b border-black/10 pb-3">
                       <Sparkles className="w-5 h-5 text-purple-600 animate-pulse" />
-                      <span>週刊 AI アナリストプロファイル (KTM Weekly Analyst)</span>
+                      <span>週刊スタッツ・スカウティングレポート (KTM Weekly Scouting)</span>
                     </h3>
                     <ScoutingReport stats={stats} mmr={player.mmr || 1000} />
                   </div>

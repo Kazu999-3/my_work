@@ -84,7 +84,7 @@ export function calculatePlaystyle(matches: any[], opts?: CalculatePlaystyleOpti
 
     // ファーストブラッド判定（CS/FBが信頼できるデータソースの場合のみ）
     if (reliableCsAndFb) {
-      const isFB = m.first_blood || m.firstBlood || (kills > 0 && Math.random() < 0.15); // ダミー確率
+      const isFB = Boolean(m.first_blood || m.firstBlood);
       if (isFB) firstBloodCount++;
     }
   });

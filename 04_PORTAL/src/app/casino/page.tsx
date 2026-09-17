@@ -1038,14 +1038,6 @@ export default function CasinoPage() {
                     <ArrowRight size={14} />
                   </Link>
 
-                  <button
-                    type="button"
-                    onClick={handleCreateMockMatch}
-                    className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-black text-xs transition-all shadow-md hover:shadow-lg cursor-pointer transform active:scale-95"
-                  >
-                    <Dices size={16} />
-                    🎮 模擬カスタム対戦を生成して今すぐベットを試す
-                  </button>
                 </div>
               </div>
             )}
