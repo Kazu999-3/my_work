@@ -4,6 +4,8 @@ import { handleRouletteCommand, handleRouletteButton } from './handlers/roulette
 import { handleButtonInteraction } from './handlers/components.js';
 import { handleModalSubmit } from './handlers/modals.js';
 import { handleScheduledEvent } from './handlers/scheduled.js';
+import { notifyAdminError } from './utils/alert.js';
+
 
 export default {
   async fetch(request, env, ctx) {
@@ -164,9 +166,22 @@ export default {
 
     } catch (err) {
       console.error("Interaction Error:", err);
+      // 管理者へアラート通知
+      try {
+        const interactionData = interaction?.data;
+        const context = {
+          command: interactionData?.name,
+          customId: interactionData?.custom_id,
+          userId: interaction?.member?.user?.id || interaction?.user?.id
+        };
+        ctx?.waitUntil?.(notifyAdminError(env, err, context));
+      } catch (alertErr) {
+        console.error("Alert dispatch failed:", alertErr);
+      }
+
       const errBody = JSON.stringify({ 
         type: 4, 
-        data: { content: `⚠️ **緊急エラー**: ${err.message}\n\`\`\`${err.stack}\`\`\``, flags: 64 } 
+        data: { content: `⚠️ **システムエラーが発生しました**: ${err.message}\n管理者に自動通知されました。時間をおいてもう一度お試しください。`, flags: 64 } 
       });
       return new Response(errBody, { headers: { 'Content-Type': 'application/json' } });
     }
@@ -178,6 +193,12 @@ export default {
   },
 
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(handleScheduledEvent(event, env, ctx));
+    try {
+      ctx.waitUntil(handleScheduledEvent(event, env, ctx));
+    } catch (err) {
+      console.error("Scheduled Event Error:", err);
+      ctx.waitUntil(notifyAdminError(env, err, { action: 'scheduled', cron: event.cron }));
+    }
   }
 };
+

@@ -9,7 +9,10 @@ import { getColorFromRankName, calculateBlueWinProbability } from "../../lib/mmr
 import ProfileModal from "../ktm-admin/ProfileModal";
 import MatchRecordPanel from "../ktm-admin/MatchRecordPanel";
 import AramRotationPanel from "./AramRotationPanel";
+import { BalancerVcManager, updateVcStatus } from "./components/BalancerVcManager";
+import { BalancerBo3Manager } from "./components/BalancerBo3Manager";
 import { Spinner } from "../../components/Feedback";
+
 
 const RoleIcon = ({ role, className = "w-3.5 h-3.5" }: { role: string; className?: string }) => {
   const r = role.toUpperCase();
@@ -163,76 +166,6 @@ export default function BalancerPage() {
     if (!confirm('BO3シリーズを終了してリセットしますか？')) return;
     setBo3State(null);
     setMessage({ type: 'success', text: 'BO3シリーズを終了しました。' });
-  };
-
-  // 🔊 Discord VCチャンネル名・進行状況の動的更新
-  const DEFAULT_VC_PRESETS = [
-    '🔊 カスタム【1戦目進行中・途中交代歓迎】',
-    '🔊 カスタム【2戦目進行中・途中交代歓迎】',
-    '🔊 カスタム【3戦目進行中・最終決戦】',
-    '🔊 🎮カスタムVC',
-  ];
-
-  const [vcPresets, setVcPresets] = useState<string[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('ktm_vc_custom_presets');
-      if (saved) {
-        try { return JSON.parse(saved); } catch {}
-      }
-    }
-    return DEFAULT_VC_PRESETS;
-  });
-
-  const [newPresetText, setNewPresetText] = useState('');
-  const [updatingVc, setUpdatingVc] = useState(false);
-
-  // プリセット追加
-  const handleAddVcPreset = () => {
-    const text = newPresetText.trim();
-    if (!text) return;
-    if (vcPresets.includes(text)) {
-      alert('同じチャンネル名が既に登録されています');
-      return;
-    }
-    const next = [...vcPresets, text];
-    setVcPresets(next);
-    localStorage.setItem('ktm_vc_custom_presets', JSON.stringify(next));
-    setNewPresetText('');
-  };
-
-  // プリセット削除
-  const handleDeleteVcPreset = (target: string) => {
-    if (vcPresets.length <= 1) {
-      alert('最低1つのプリセットが必要です');
-      return;
-    }
-    const next = vcPresets.filter(p => p !== target);
-    setVcPresets(next);
-    localStorage.setItem('ktm_vc_custom_presets', JSON.stringify(next));
-  };
-
-  // VCステータス更新
-  const handleUpdateVcStatus = async (statusOrName: string) => {
-    setUpdatingVc(true);
-    try {
-      const res = await fetch('/api/discord/vc-status', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: statusOrName })
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setMessage({ type: 'success', text: `🔊 ${data.message}` });
-        alert(`🔊 ${data.message}`);
-      } else {
-        setMessage({ type: 'error', text: `⚠️ ${data.error || 'VCステータスの更新に失敗しました'}` });
-        alert(data.error || 'VCステータスの更新に失敗しました');
-      }
-    } catch (err: any) {
-      setMessage({ type: 'error', text: '通信エラーが発生しました' });
-    } finally {
-      setUpdatingVc(false);
-    }
   };
 
   // 参加者の経験度（新規・ライト・常連・復帰勢）判定
@@ -1412,83 +1345,9 @@ export default function BalancerPage() {
         })()}
 
         {/* 🔊 Discord VCチャンネル名・進行状況の動的更新（プリセット追加・保存対応） */}
-        <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-transparent border border-indigo-500/30 flex flex-col justify-between gap-3 shadow-xs">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">🔊</span>
-              <div>
-                <h4 className="text-xs font-black text-indigo-950">Discord VCチャンネル名の動的更新</h4>
-                <p className="text-[10px] text-stone-600">登録したチャンネル名をクリックしてVC名を即座に変更できます</p>
-              </div>
-            </div>
-            {updatingVc && <span className="text-[10px] font-bold text-indigo-700 animate-pulse">更新中...</span>}
-          </div>
-
-          {/* 登録済みプリセット一覧 */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {vcPresets.map((preset, idx) => (
-              <div key={idx} className="inline-flex items-center rounded-xl bg-white/90 border border-indigo-200 shadow-2xs overflow-hidden group">
-                <button
-                  type="button"
-                  disabled={updatingVc}
-                  onClick={() => handleUpdateVcStatus(preset)}
-                  className="px-2.5 py-1.5 text-[11px] font-black text-indigo-950 hover:bg-indigo-50 transition cursor-pointer disabled:opacity-50"
-                  title={`VC名を「${preset}」に変更`}
-                >
-                  {preset}
-                </button>
-                {vcPresets.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteVcPreset(preset)}
-                    className="px-1.5 py-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 border-l border-indigo-100 text-[10px] transition cursor-pointer"
-                    title="このプリセットを削除"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* 新しいチャンネル名の追加・即時送信フォーム */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleAddVcPreset();
-            }}
-            className="flex items-center gap-1.5 pt-2 border-t border-indigo-500/20"
-          >
-            <input
-              type="text"
-              value={newPresetText}
-              onChange={(e) => setNewPresetText(e.target.value)}
-              placeholder="例: 🔊 カスタム【お祭りマッチ開催中！】"
-              className="flex-1 bg-white/90 border border-indigo-200 text-stone-900 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-indigo-500 shadow-inner"
-            />
-            <button
-              type="submit"
-              disabled={!newPresetText.trim()}
-              className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs transition shadow-xs cursor-pointer disabled:opacity-40"
-              title="新しいチャンネル名をプリセットに保存"
-            >
-              ＋ 追加保存
-            </button>
-            <button
-              type="button"
-              disabled={!newPresetText.trim() || updatingVc}
-              onClick={() => {
-                const text = newPresetText.trim();
-                if (text) handleUpdateVcStatus(text);
-              }}
-              className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-xs transition shadow-xs cursor-pointer disabled:opacity-40"
-              title="入力した名前で今すぐVC名を更新"
-            >
-              即時更新
-            </button>
-          </form>
-        </div>
+        <BalancerVcManager onMessage={setMessage} />
       </div>
+
 
       {/* ★ チーム分け結果モーダル */}
       {balanceResult && showResultModal && (
@@ -1543,13 +1402,21 @@ export default function BalancerPage() {
                 </button>
                 <button
                   type="button"
-                  disabled={updatingVc}
-                  onClick={() => handleUpdateVcStatus('game1')}
-                  className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg font-bold transition text-xs md:text-sm cursor-pointer disabled:opacity-50"
+                  onClick={async () => {
+                    const res = await updateVcStatus('game1');
+                    if (res.success) {
+                      setMessage({ type: 'success', text: `🔊 ${res.message}` });
+                      alert(`🔊 ${res.message}`);
+                    } else {
+                      alert(`VC更新エラー: ${res.error}`);
+                    }
+                  }}
+                  className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg font-bold transition text-xs md:text-sm cursor-pointer"
                   title="DiscordのVCチャンネル名を「1戦目進行中・途中交代歓迎」に更新"
                 >
                   <span>🔊 VC更新 (1戦目)</span>
                 </button>
+
                 <button
                   type="button"
                   onClick={handleCopyResultText}
@@ -1901,98 +1768,14 @@ export default function BalancerPage() {
               )}
 
               {/* 🏆 BO3 シリーズスコアボード (アクティブ時) */}
-              {bo3State && (
-                <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border-2 border-amber-300 shadow-md space-y-3">
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-base">🏆</span>
-                      <strong className="text-stone-900 text-sm font-black">
-                        BO3 シリーズ進行中 — 第{bo3State.gameNumber}戦
-                      </strong>
-                      {bo3State.gameNumber === 3 && (
-                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-600 text-white animate-pulse">
-                          🔥 1-1 運命の最終決戦！
-                        </span>
-                      )}
-                      {bo3State.isFinished && (
-                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-600 text-white">
-                          🎉 シリーズ決着！
-                        </span>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleResetBo3}
-                      className="text-[11px] font-bold text-stone-500 hover:text-stone-800 underline cursor-pointer"
-                    >
-                      BO3を終了
-                    </button>
-                  </div>
+              <BalancerBo3Manager
+                bo3State={bo3State}
+                onStartBo3={handleStartBo3}
+                onRecordBo3Win={handleRecordBo3Win}
+                onNextBo3Game={handleNextBo3Game}
+                onResetBo3={handleResetBo3}
+              />
 
-                  {/* チーム別スコア比較 */}
-                  <div className="grid grid-cols-2 gap-3 bg-white p-3 rounded-xl border border-amber-200">
-                    {/* BLUEチーム */}
-                    <div className="text-center space-y-1">
-                      <span className="text-[11px] font-extrabold text-blue-700 block">
-                        🔵 BLUE: {bo3State.team1IsCurrentlyBlue ? bo3State.team1Name : bo3State.team2Name}
-                      </span>
-                      <div className="flex items-center justify-center gap-1.5 text-lg font-black">
-                        <span className={`w-3.5 h-3.5 rounded-full border ${ (bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 1 ? 'bg-blue-600 border-blue-600' : 'bg-stone-200 border-stone-300' }`} />
-                        <span className={`w-3.5 h-3.5 rounded-full border ${ (bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 2 ? 'bg-blue-600 border-blue-600' : 'bg-stone-200 border-stone-300' }`} />
-                        <span className="text-sm font-mono ml-1 text-blue-900">
-                          ({bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins}勝)
-                        </span>
-                      </div>
-                      {!bo3State.isFinished && (
-                        <button
-                          type="button"
-                          onClick={() => handleRecordBo3Win('BLUE')}
-                          className="mt-1 px-2.5 py-1 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-900 font-bold text-[11px] border border-blue-300 transition cursor-pointer"
-                        >
-                          🔵 この試合 Blue勝利
-                        </button>
-                      )}
-                    </div>
-
-                    {/* REDチーム */}
-                    <div className="text-center space-y-1 border-l border-stone-200">
-                      <span className="text-[11px] font-extrabold text-rose-700 block">
-                        🔴 RED: {!bo3State.team1IsCurrentlyBlue ? bo3State.team1Name : bo3State.team2Name}
-                      </span>
-                      <div className="flex items-center justify-center gap-1.5 text-lg font-black">
-                        <span className={`w-3.5 h-3.5 rounded-full border ${ (!bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 1 ? 'bg-rose-600 border-rose-600' : 'bg-stone-200 border-stone-300' }`} />
-                        <span className={`w-3.5 h-3.5 rounded-full border ${ (!bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 2 ? 'bg-rose-600 border-rose-600' : 'bg-stone-200 border-stone-300' }`} />
-                        <span className="text-sm font-mono ml-1 text-rose-900">
-                          ({!bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins}勝)
-                        </span>
-                      </div>
-                      {!bo3State.isFinished && (
-                        <button
-                          type="button"
-                          onClick={() => handleRecordBo3Win('RED')}
-                          className="mt-1 px-2.5 py-1 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-900 font-bold text-[11px] border border-rose-300 transition cursor-pointer"
-                        >
-                          🔴 この試合 Red勝利
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* 次戦へ進むボタン */}
-                  {!bo3State.isFinished && (
-                    <div className="flex justify-center">
-                      <button
-                        type="button"
-                        onClick={handleNextBo3Game}
-                        className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white px-4 py-2.5 rounded-xl font-black text-xs transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
-                      >
-                        <RefreshCw className="w-3.5 h-3.5" />
-                        第{bo3State.gameNumber + 1}戦へ進む (陣営サイド交代)
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
 
               {/* 試合結果記録 & BO3 / ドラフトシミュレータ直結 */}
               <div className="pt-3 border-t border-stone-200 space-y-2">

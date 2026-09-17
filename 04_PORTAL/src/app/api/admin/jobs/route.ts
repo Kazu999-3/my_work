@@ -86,12 +86,13 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: '無効なジョブ名です。' }, { status: 400 });
       }
 
-      const lockPath = path.join(WORKSPACE_DIR, config.lock);
-      const logPath  = path.join(WORKSPACE_DIR, config.log);
-      const isRunning = fs.existsSync(lockPath);
+      const lockPath = path.join(/*turbopackIgnore: true*/ WORKSPACE_DIR, config.lock);
+      const logPath  = path.join(/*turbopackIgnore: true*/ WORKSPACE_DIR, config.log);
+      const isRunning = fs.existsSync(/*turbopackIgnore: true*/ lockPath);
 
       let logs = '';
-      if (fs.existsSync(logPath)) {
+      if (fs.existsSync(/*turbopackIgnore: true*/ logPath)) {
+
         const fileContent = fs.readFileSync(logPath, 'utf-8');
         logs = fileContent.split('\n').slice(-100).join('\n');
       } else {
@@ -151,17 +152,17 @@ export async function POST(req: NextRequest) {
     }
 
     const config     = JOBS[job];
-    const scriptPath = path.join(WORKSPACE_DIR, config.script);
-    const lockPath   = path.join(WORKSPACE_DIR, config.lock);
-    const logPath    = path.join(WORKSPACE_DIR, config.log);
+    const scriptPath = path.join(/*turbopackIgnore: true*/ WORKSPACE_DIR, config.script);
+    const lockPath   = path.join(/*turbopackIgnore: true*/ WORKSPACE_DIR, config.lock);
+    const logPath    = path.join(/*turbopackIgnore: true*/ WORKSPACE_DIR, config.log);
 
     // デバッグ用：パスを確認
     console.log(`[Jobs API] WORKSPACE_DIR: ${WORKSPACE_DIR}`);
     console.log(`[Jobs API] scriptPath: ${scriptPath}`);
-    console.log(`[Jobs API] exists: ${fs.existsSync(scriptPath)}`);
+    console.log(`[Jobs API] exists: ${fs.existsSync(/*turbopackIgnore: true*/ scriptPath)}`);
 
     // スクリプトの存在チェック
-    if (!fs.existsSync(scriptPath)) {
+    if (!fs.existsSync(/*turbopackIgnore: true*/ scriptPath)) {
       return NextResponse.json(
         {
           error: `スクリプトファイルが存在しません: ${config.script}`,
@@ -172,12 +173,13 @@ export async function POST(req: NextRequest) {
     }
 
     // 二重起動防止
-    if (fs.existsSync(lockPath)) {
+    if (fs.existsSync(/*turbopackIgnore: true*/ lockPath)) {
       return NextResponse.json({ error: `ジョブ「${config.name}」はすでに実行中です。` }, { status: 400 });
     }
 
     // ロックファイルとログディレクトリの作成
-    fs.mkdirSync(path.dirname(lockPath), { recursive: true });
+    fs.mkdirSync(/*turbopackIgnore: true*/ path.dirname(lockPath), { recursive: true });
+
     fs.writeFileSync(lockPath, String(process.pid), 'utf-8');
 
     fs.mkdirSync(path.dirname(logPath), { recursive: true });

@@ -169,6 +169,11 @@ Claude Code CLI で実施した最終セッションの到達点です。詳細�
   - `03_SYSTEMS/ktm_bot`: `npm audit fix` により hono 等の脆弱性6件を0件に解消。Cloudflare Workerドライラン（`dry_run_recruitment_status.mjs`）の正常パスを確認。
 - **YouTube解析キュー エラー動画73件の再試行リセット**:
   - `scripts/clean_youtube_queue.py --retry-failed --apply` を実行し、エラー停止していた73件の動画を安全に `pending`（リトライ0）へ戻して自動解析パイプラインへ復帰完了。
+- **ポータル ＆ KTM Bot 安定性・パフォーマンス改善（課題1, 2, 3）**:
+  - **ビルド警告解消**: `api/overlay/route.ts` および `api/admin/jobs/route.ts` に `process.env.VERCEL` ガードと TurbopackIgnore を付与し、プロジェクト全体のトレース警告（サーバーレス関数の肥大化）を解消。
+  - **KTM Bot 管理者エラー通知**: [`03_SYSTEMS/ktm_bot/src/utils/alert.js`](file:///d:/my_work/03_SYSTEMS/ktm_bot/src/utils/alert.js) を新設し、Workers内の未処理例外や非同期処理の失敗時に管理者（Webhook/チャンネル）へDiscord Embedで即時自動アラートを送信する仕組みを導入。
+  - **バランサー画面のサブコンポーネント分割**: 3,125行の超巨大ファイル [`04_PORTAL/src/app/balancer/page.tsx`](file:///d:/my_work/04_PORTAL/src/app/balancer/page.tsx) から `BalancerVcManager.tsx` と `BalancerBo3Manager.tsx` を外出し・`React.memo` 化し、描画パフォーマンスと保守性を向上。
+
 
 
 ---

@@ -6,6 +6,11 @@ import fs from 'fs';
 let overlayProcess: any = null;
 
 function findPythonAndScript() {
+  // クラウド環境（Vercel）ではローカルパス探索を行わない
+  if (process.env.VERCEL) {
+    return { venvPython: null, scriptPath: null, logsDir: null };
+  }
+
   const possibleRoots = [
     process.cwd(),
     path.resolve(process.cwd(), '..'),
@@ -19,15 +24,15 @@ function findPythonAndScript() {
 
   for (const root of possibleRoots) {
     const py = path.resolve(root, '.venv', 'Scripts', 'python.exe');
-    if (!venvPython && fs.existsSync(py)) {
+    if (!venvPython && fs.existsSync(/*turbopackIgnore: true*/ py)) {
       venvPython = py;
     }
     const sc = path.resolve(root, '03_SYSTEMS', 'v2_CORE', '_LOL', 'overlay', 'run_overlay.py');
-    if (!scriptPath && fs.existsSync(sc)) {
+    if (!scriptPath && fs.existsSync(/*turbopackIgnore: true*/ sc)) {
       scriptPath = sc;
     }
     const logPath = path.resolve(root, '00_LOGS');
-    if (!logsDir && fs.existsSync(logPath)) {
+    if (!logsDir && fs.existsSync(/*turbopackIgnore: true*/ logPath)) {
       logsDir = logPath;
     }
   }
@@ -41,15 +46,26 @@ function findPythonAndScript() {
 }
 
 function getStartupShortcutPath() {
+  if (process.env.VERCEL) return null;
   const appData = process.env.APPDATA || '';
   if (!appData) return null;
   return path.join(appData, 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup', 'Sovereign_HUD_Overlay.lnk');
 }
 
 export async function GET() {
+  if (process.env.VERCEL) {
+    return NextResponse.json({
+      running: false,
+      pid: null,
+      autostartEnabled: false,
+      isCloud: true,
+      message: 'オーバーレイはデスクトップ環境専用機能です。'
+    });
+  }
+
   const isRunning = overlayProcess !== null && !overlayProcess.killed;
   const shortcutPath = getStartupShortcutPath();
-  const autostartEnabled = shortcutPath ? fs.existsSync(shortcutPath) : false;
+  const autostartEnabled = shortcutPath ? fs.existsSync(/*turbopackIgnore: true*/ shortcutPath) : false;
 
   return NextResponse.json({
     running: isRunning,
@@ -58,8 +74,13 @@ export async function GET() {
   });
 }
 
+
 export async function POST(req: NextRequest) {
   try {
+    if (process.env.VERCEL) {
+      return NextResponse.json({ error: 'オーバーレイはデスクトップ環境専用機能です。' }, { status: 400 });
+    }
+
     const body = await req.json().catch(() => ({}));
     const action = body.action || 'start';
 
@@ -70,10 +91,13 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'APPDATA環境変数が見つかりません。' }, { status: 500 });
       }
       const { scriptPath } = findPythonAndScript();
+      if (!scriptPath) {
+        return NextResponse.json({ error: 'スクリプトが見つかりません。' }, { status: 500 });
+      }
       const baseDir = path.dirname(path.dirname(path.dirname(path.dirname(scriptPath)))); // D:/my_work
       const vbsPath = path.resolve(baseDir, '03_SYSTEMS', 'start_overlay_silent.vbs');
 
-      if (!fs.existsSync(vbsPath)) {
+      if (!fs.existsSync(/*turbopackIgnore: true*/ vbsPath)) {
         return NextResponse.json({ error: `ランチャーファイルが見つかりません: ${vbsPath}` }, { status: 500 });
       }
 
@@ -91,7 +115,7 @@ export async function POST(req: NextRequest) {
     // スタートアップ自動起動の無効化
     if (action === 'disable_autostart') {
       const shortcutPath = getStartupShortcutPath();
-      if (shortcutPath && fs.existsSync(shortcutPath)) {
+      if (shortcutPath && fs.existsSync(/*turbopackIgnore: true*/ shortcutPath)) {
         fs.unlinkSync(shortcutPath);
       }
       return NextResponse.json({
@@ -116,10 +140,10 @@ export async function POST(req: NextRequest) {
 
       const { venvPython, scriptPath, logsDir } = findPythonAndScript();
 
-      if (!fs.existsSync(venvPython)) {
+      if (!venvPython || !fs.existsSync(/*turbopackIgnore: true*/ venvPython)) {
         return NextResponse.json({ error: `Python実行環境が見つかりません: ${venvPython}` }, { status: 500 });
       }
-      if (!fs.existsSync(scriptPath)) {
+      if (!scriptPath || !fs.existsSync(/*turbopackIgnore: true*/ scriptPath)) {
         return NextResponse.json({ error: `オーバーレイスクリプトが見つかりません: ${scriptPath}` }, { status: 500 });
       }
 
@@ -129,19 +153,21 @@ export async function POST(req: NextRequest) {
       }
 
       // ログファイルへのリダイレクト
-      if (!fs.existsSync(logsDir)) {
-        fs.mkdirSync(logsDir, { recursive: true });
+      if (logsDir && !fs.existsSync(/*turbopackIgnore: true*/ logsDir)) {
+        fs.mkdirSync(/*turbopackIgnore: true*/ logsDir, { recursive: true });
       }
-      const logFile = path.resolve(logsDir, 'overlay.log');
+      const logFile = logsDir ? path.resolve(logsDir, 'overlay.log') : 'overlay.log';
       const outLog = fs.openSync(logFile, 'a');
+
 
       const workingDir = path.dirname(path.dirname(path.dirname(scriptPath))); // D:/my_work
 
-      overlayProcess = spawn(venvPython, args, {
+      overlayProcess = spawn(/*turbopackIgnore: true*/ venvPython, args, {
         cwd: workingDir,
         detached: true,
         stdio: ['ignore', outLog, outLog]
       });
+
 
       overlayProcess.on('error', (err: any) => {
         console.error('オーバーレイプロセス起動エラー:', err);
