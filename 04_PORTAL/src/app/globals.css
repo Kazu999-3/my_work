@@ -86,11 +86,6 @@ html.dark select {
   border-color: #3f4147;
 }
 
-html.dark input::placeholder,
-html.dark textarea::placeholder {
-  color: #949ba4;
-  opacity: 0.8;
-}
 
 /* 🌙 ダークモード時の白背景コンポーネントの自動ダークサーフェス適応 */
 html.dark .bg-white {
@@ -115,19 +110,71 @@ html.dark .border-stone-300 {
   border-color: #3f4147;
 }
 
+/* ☀️ ライトモード（羊皮紙調背景 #eae4d4 / カード #fdfcf9）での文字コントラスト最適化 */
+/* デフォルトの stone-400 (#a8a29e) ではコントラスト比が 1.8:1 と極端に低いため、
+   視認性の高い濃色 (#57534e: 4.5:1以上) へ引き上げてかすれを解消 */
+.text-stone-400 {
+  color: #57534e !important;
+}
+.text-stone-500 {
+  color: #44403c !important;
+}
+.text-stone-300 {
+  color: #78716c !important;
+}
+.text-gray-400,
+.text-slate-400,
+.text-zinc-400 {
+  color: #52525b !important;
+}
+.text-gray-500,
+.text-slate-500,
+.text-zinc-500 {
+  color: #3f3f46 !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #78716c !important;
+  opacity: 0.9 !important;
+}
+
+/* 🌙 ダークモード時の色調整（暗いカード背景上でもくっきり読めるように最適化） */
 html.dark .text-stone-900,
 html.dark .text-stone-800 {
-  color: #f2f3f5;
+  color: #f2f3f5 !important;
 }
 
 html.dark .text-stone-700,
 html.dark .text-stone-600 {
-  color: #dbdee1;
+  color: #e2e5e9 !important;
 }
 
 html.dark .text-stone-500,
 html.dark .text-stone-400 {
-  color: #949ba4;
+  color: #c4c9ce !important;
+}
+
+html.dark .text-stone-300 {
+  color: #dbdee1 !important;
+}
+
+html.dark .text-gray-400,
+html.dark .text-slate-400,
+html.dark .text-zinc-400 {
+  color: #c4c9ce !important;
+}
+
+html.dark .text-gray-500,
+html.dark .text-slate-500,
+html.dark .text-zinc-500 {
+  color: #dbdee1 !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #a6adb7 !important;
+  opacity: 0.9 !important;
 }
 
 /* 🌙 ダークモード時の色付きバッジ・アクセントの視認性最適化 */
