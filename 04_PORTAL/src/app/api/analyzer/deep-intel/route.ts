@@ -26,125 +26,149 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const {
-      gameName = 'Kazurin',
-      tagLine = '4036',
+      gameName,
+      tagLine,
       queueType = 'solo', // 'solo' | 'all'
       targetTier = 'Emerald IV',
     } = body;
 
-    const cleanName = String(gameName).trim();
-    const cleanTag = String(tagLine).trim().replace(/^#/, '');
+    const cleanName = String(gameName || '').trim();
+    const cleanTag = String(tagLine || '').trim().replace(/^#/, '');
+
+    if (!cleanName) {
+      return NextResponse.json({ error: 'プレイヤー名を入力してください。' }, { status: 400 });
+    }
 
     const apiKey = process.env.RIOT_API_KEY || '';
+    if (!apiKey) {
+      return NextResponse.json({ error: 'RIOT_API_KEY が設定されていません。' }, { status: 500 });
+    }
 
-    let tier = 'Gold 3';
+    let tier = 'UNRANKED';
     let role = 'JUNGLE';
     let rawMatches: RawMatchRecord[] = [];
     let puuid = '';
 
-    // 1. Riot APIからPUUID・ランク・マッチ履歴を取得 (最大50試合)
-    if (apiKey && cleanName) {
-      try {
-        puuid = await fetchPuuidByRiotId(cleanName, cleanTag, apiKey);
-        if (puuid) {
-          // ランク情報の取得
-          const leagues = await fetchLeagueByPuuid(puuid, apiKey);
-          if (Array.isArray(leagues)) {
-            const soloLeague = leagues.find((l: any) => l.queueType === 'RANKED_SOLO_5x5') || leagues[0];
-            if (soloLeague && soloLeague.tier) {
-              tier = `${soloLeague.tier} ${soloLeague.rank} (${soloLeague.leaguePoints} LP)`;
-            }
-          }
+    // 1. Riot APIからPUUID・ランク・マッチ履歴を取得 (最大35試合)
+    try {
+      puuid = await fetchPuuidByRiotId(cleanName, cleanTag || 'JP1', apiKey);
+      if (!puuid) {
+        return NextResponse.json({
+          error: `プレイヤー「${cleanName}#${cleanTag || 'JP1'}」が見つかりませんでした。Riot ID（名前#タグ）をご確認ください。`,
+        }, { status: 404 });
+      }
 
-          // ソロキュー（Ranked Solo 5v5 / queue=420）のマッチIDを最新35件取得
-          let matchIds = await fetchRankedSoloMatchIds(puuid, apiKey, 35);
-          if (matchIds.length === 0) {
-            // ソロキュー未プレイ時のみフォールバック
-            matchIds = await fetchRecentMatchIds(puuid, apiKey, 30);
-          }
+      // ランク情報の取得
+      const leagues = await fetchLeagueByPuuid(puuid, apiKey);
+      if (Array.isArray(leagues) && leagues.length > 0) {
+        const soloLeague = leagues.find((l: any) => l.queueType === 'RANKED_SOLO_5x5') || leagues[0];
+        if (soloLeague && soloLeague.tier) {
+          tier = `${soloLeague.tier} ${soloLeague.rank} (${soloLeague.leaguePoints} LP)`;
+        }
+      }
 
-          // 各マッチの詳細を確実に取得 (5件ずつバッチ制御で429レート制限を完全回避)
-          const targetIds = matchIds.slice(0, 35);
-          const rawMatchResults: RawMatchRecord[] = [];
-          const chunkSize = 5;
+      // ソロキュー（Ranked Solo 5v5 / queue=420）のマッチIDを最新35件取得
+      let matchIds = await fetchRankedSoloMatchIds(puuid, apiKey, 35);
+      if (matchIds.length === 0) {
+        // ソロキュー未プレイ時は直近ノーマル・全キューを取得
+        matchIds = await fetchRecentMatchIds(puuid, apiKey, 30);
+      }
 
-          for (let i = 0; i < targetIds.length; i += chunkSize) {
-            const chunk = targetIds.slice(i, i + chunkSize);
-            const chunkPromises = chunk.map(async (mId) => {
-              for (let attempt = 0; attempt < 3; attempt++) {
-                try {
-                  const detail = await fetchMatchDetails(mId, apiKey);
-                  const p = detail.participants.find((part) => part.puuid === puuid);
-                  if (!p) return null;
+      if (matchIds.length === 0) {
+        return NextResponse.json({
+          error: `「${cleanName}#${cleanTag || 'JP1'}」の直近試合履歴が見つかりませんでした。直近で試合をプレイしているか確認してください。`,
+        }, { status: 404 });
+      }
 
-                  const teamMembers = detail.participants.filter((part) => part.teamId === p.teamId);
-                  const teamKills = teamMembers.reduce((sum, m) => sum + m.kills, 0);
-                  const teamDamage = teamMembers.reduce((sum, m) => sum + m.damageDealtToChampions, 0);
+      // 各マッチの詳細を確実に取得 (5件ずつバッチ制御で429レート制限を完全回避)
+      const targetIds = matchIds.slice(0, 35);
+      const rawMatchResults: RawMatchRecord[] = [];
+      const chunkSize = 5;
 
-                  const startTs = detail.gameStartTimestamp || Date.now();
-                  const durSec = detail.gameDuration || 1800;
-                  const endTs = startTs + durSec * 1000;
+      for (let i = 0; i < targetIds.length; i += chunkSize) {
+        const chunk = targetIds.slice(i, i + chunkSize);
+        const chunkPromises = chunk.map(async (mId) => {
+          for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+              const detail = await fetchMatchDetails(mId, apiKey);
+              const p = detail.participants.find((part) => part.puuid === puuid);
+              if (!p) return null;
 
-                  const myTeam = detail.teams?.find((t: any) => t.teamId === p.teamId);
-                  const enemyTeam = detail.teams?.find((t: any) => t.teamId !== p.teamId);
-                  const teamHordeKills = myTeam?.objectives?.horde?.kills || 0;
-                  const teamDragonKills = myTeam?.objectives?.dragon?.kills || 0;
-                  const enemyHordeKills = enemyTeam?.objectives?.horde?.kills || 0;
-                  const enemyDragonKills = enemyTeam?.objectives?.dragon?.kills || 0;
-                  const firstDragon = myTeam?.objectives?.dragon?.first || false;
+              const teamMembers = detail.participants.filter((part) => part.teamId === p.teamId);
+              const teamKills = teamMembers.reduce((sum, m) => sum + m.kills, 0);
+              const teamDamage = teamMembers.reduce((sum, m) => sum + m.damageDealtToChampions, 0);
 
-                  const record: RawMatchRecord = {
-                    matchId: mId,
-                    gameStartTimestamp: startTs,
-                    gameDuration: durSec,
-                    gameEndTimestamp: endTs,
-                    win: p.win,
-                    kills: p.kills,
-                    deaths: p.deaths,
-                    assists: p.assists,
-                    championName: p.championName,
-                    lane: p.lane || 'JUNGLE',
-                    visionScore: p.visionScore || 0,
-                    totalMinionsKilled: p.totalMinionsKilled || 0,
-                    neutralMinionsKilled: p.neutralMinionsKilled || 0,
-                    teamDamage: teamDamage || 1,
-                    playerDamage: p.damageDealtToChampions || 0,
-                    teamKills: teamKills || 1,
-                    goldEarned: p.goldEarned || 0,
-                    teamHordeKills,
-                    teamDragonKills,
-                    enemyHordeKills,
-                    enemyDragonKills,
-                    firstDragon,
-                  };
-                  return record;
-                } catch (e: any) {
-                  if (attempt < 2 && (e?.name === 'RiotRateLimitError' || String(e).includes('429'))) {
-                    const waitMs = e?.retryAfterSec ? (e.retryAfterSec + 1) * 1000 : 1000 * (attempt + 1);
-                    await new Promise((resolve) => setTimeout(resolve, waitMs));
-                    continue;
-                  }
-                  return null;
-                }
+              const startTs = detail.gameStartTimestamp || Date.now();
+              const durSec = detail.gameDuration || 1800;
+              const endTs = startTs + durSec * 1000;
+
+              const myTeam = detail.teams?.find((t: any) => t.teamId === p.teamId);
+              const enemyTeam = detail.teams?.find((t: any) => t.teamId !== p.teamId);
+              const teamHordeKills = myTeam?.objectives?.horde?.kills || 0;
+              const teamDragonKills = myTeam?.objectives?.dragon?.kills || 0;
+              const enemyHordeKills = enemyTeam?.objectives?.horde?.kills || 0;
+              const enemyDragonKills = enemyTeam?.objectives?.dragon?.kills || 0;
+              const firstDragon = myTeam?.objectives?.dragon?.first || false;
+
+              const record: RawMatchRecord = {
+                matchId: mId,
+                gameStartTimestamp: startTs,
+                gameDuration: durSec,
+                gameEndTimestamp: endTs,
+                win: p.win,
+                kills: p.kills,
+                deaths: p.deaths,
+                assists: p.assists,
+                championName: p.championName,
+                lane: (p as any).individualPosition || p.lane || 'JUNGLE',
+                visionScore: p.visionScore || 0,
+                totalMinionsKilled: p.totalMinionsKilled || 0,
+                neutralMinionsKilled: p.neutralMinionsKilled || 0,
+                teamDamage: teamDamage || 1,
+                playerDamage: p.damageDealtToChampions || 0,
+                teamKills: teamKills || 1,
+                goldEarned: p.goldEarned || 0,
+                teamHordeKills,
+                teamDragonKills,
+                enemyHordeKills,
+                enemyDragonKills,
+                firstDragon,
+              };
+              return record;
+            } catch (e: any) {
+              if (attempt < 2 && (e?.name === 'RiotRateLimitError' || String(e).includes('429'))) {
+                const waitMs = e?.retryAfterSec ? (e.retryAfterSec + 1) * 1000 : 1000 * (attempt + 1);
+                await new Promise((resolve) => setTimeout(resolve, waitMs));
+                continue;
               }
               return null;
-            });
-
-            const chunkResults = await Promise.all(chunkPromises);
-            chunkResults.forEach((r) => {
-              if (r) rawMatchResults.push(r);
-            });
-
-            if (i + chunkSize < targetIds.length) {
-              await new Promise((resolve) => setTimeout(resolve, 600));
             }
           }
+          return null;
+        });
 
-          rawMatches = rawMatchResults;
+        const chunkResults = await Promise.all(chunkPromises);
+        chunkResults.forEach((r) => {
+          if (r) rawMatchResults.push(r);
+        });
+
+        if (i + chunkSize < targetIds.length) {
+          await new Promise((resolve) => setTimeout(resolve, 600));
         }
-      } catch (e) {
-        console.warn('Riot API stats fetch failed, falling back to dynamic estimate:', e);
       }
+
+      rawMatches = rawMatchResults;
+    } catch (e: any) {
+      console.error('Riot API stats fetch failed:', e);
+      return NextResponse.json({
+        error: `Riot API 通信エラー: ${e.message || 'プレイヤーデータの取得に失敗しました'}`,
+      }, { status: 502 });
+    }
+
+    if (rawMatches.length === 0) {
+      return NextResponse.json({
+        error: `「${cleanName}#${cleanTag || 'JP1'}」のマッチ詳細データを取得できませんでした。時間をおいて再試行してください。`,
+      }, { status: 404 });
     }
 
     // 2. 実測マッチデータからの集計
@@ -281,20 +305,10 @@ export async function POST(request: NextRequest) {
       .sort((a, b) => b.gamesCount - a.gamesCount)
       .slice(0, 5);
 
-    // 万が一マッチが0件の場合のみフォールバック
     if (topChampions.length === 0) {
-      if (role === 'UTILITY' || role === 'SUPPORT') {
-        topChampions = [
-          { name: 'Rell', gamesCount: 18, wins: 11, kills: 22, deaths: 64, assists: 240, cs: 320, durationMin: 540, vision: 980, winCount: 11, winDeaths: 28, winCs: 210, winDurationMin: 330, winVision: 650, lossCount: 7, lossDeaths: 36, lossCs: 110, lossDurationMin: 210, lossVision: 330 },
-          { name: 'Leona', gamesCount: 8, wins: 5, kills: 12, deaths: 35, assists: 110, cs: 180, durationMin: 240, vision: 480, winCount: 5, winDeaths: 16, winCs: 120, winDurationMin: 150, winVision: 320, lossCount: 3, lossDeaths: 19, lossCs: 60, lossDurationMin: 90, lossVision: 160 },
-          { name: 'Rakan', gamesCount: 3, wins: 2, kills: 4, deaths: 12, assists: 45, cs: 60, durationMin: 90, vision: 160, winCount: 2, winDeaths: 6, winCs: 40, winDurationMin: 60, winVision: 110, lossCount: 1, lossDeaths: 6, lossCs: 20, lossDurationMin: 30, lossVision: 50 },
-        ];
-      } else {
-        topChampions = [
-          { name: 'Zyra', gamesCount: 12, wins: 8, kills: 60, deaths: 30, assists: 110, cs: 1400, durationMin: 360, vision: 450, winCount: 8, winDeaths: 14, winCs: 960, winDurationMin: 240, winVision: 310, lossCount: 4, lossDeaths: 16, lossCs: 440, lossDurationMin: 120, lossVision: 140 },
-          { name: 'Shyvana', gamesCount: 10, wins: 6, kills: 55, deaths: 28, assists: 90, cs: 1550, durationMin: 300, vision: 320, winCount: 6, winDeaths: 12, winCs: 980, winDurationMin: 180, winVision: 200, lossCount: 4, lossDeaths: 16, lossCs: 570, lossDurationMin: 120, lossVision: 120 },
-        ];
-      }
+      return NextResponse.json({
+        error: `「${cleanName}#${cleanTag || 'JP1'}」のプレイ済みチャンピオン統計が取得できませんでした。`,
+      }, { status: 404 });
     }
 
     const isSupportRole = role === 'UTILITY' || role === 'SUPPORT';

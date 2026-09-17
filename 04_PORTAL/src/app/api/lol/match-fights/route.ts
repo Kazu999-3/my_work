@@ -21,9 +21,22 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const requestedMatchId = searchParams.get('matchId') || '';
     const matchIndex = Math.max(0, parseInt(searchParams.get('index') || '0', 10));
+    const requestedSummoner = searchParams.get('summoner') || '';
+    const requestedPuuid = searchParams.get('puuid') || '';
 
     // 1. 対象プレイヤーの PUUID を特定
-    let puuid = process.env.KAZURIN_PUUID || '';
+    let puuid = requestedPuuid;
+    if (!puuid && requestedSummoner) {
+      const parts = requestedSummoner.split('#');
+      const gName = parts[0]?.trim() || '';
+      const tLine = parts[1]?.trim() || 'JP1';
+      puuid = await fetchPuuidByRiotId(gName, tLine, apiKey);
+    }
+
+    if (!puuid) {
+      puuid = process.env.KAZURIN_PUUID || '';
+    }
+
     if (!puuid) {
       const { data: player } = await supabase
         .from('ktm_players')
@@ -182,20 +195,23 @@ export async function GET(request: NextRequest) {
         objs: ObjEv[];
       }
       const clusters: Cluster[] = [];
+      const TIME_WINDOW_MS = 25000;
+
       killEvents.forEach((k) => {
-        const existing = clusters.find((c) => Math.abs(c.endTime - k.timestamp) <= 50000 || Math.abs(c.startTime - k.timestamp) <= 50000);
-        if (existing) {
-          existing.kills.push(k);
-          existing.startTime = Math.min(existing.startTime, k.timestamp);
-          existing.endTime = Math.max(existing.endTime, k.timestamp);
+        const last = clusters[clusters.length - 1];
+        if (last && k.timestamp - last.endTime <= TIME_WINDOW_MS) {
+          last.endTime = Math.max(last.endTime, k.timestamp);
+          last.kills.push(k);
         } else {
           clusters.push({ startTime: k.timestamp, endTime: k.timestamp, kills: [k], objs: [] });
         }
       });
       objEvents.forEach((obj) => {
-        const near = clusters.find((c) => Math.abs(c.startTime - obj.timestamp) <= 60000);
-        if (near) {
-          near.objs.push(obj);
+        const matched = clusters.find(
+          (c) => Math.abs(c.startTime - obj.timestamp) <= 30000 || Math.abs(c.endTime - obj.timestamp) <= 30000
+        );
+        if (matched) {
+          matched.objs.push(obj);
         } else {
           clusters.push({ startTime: obj.timestamp, endTime: obj.timestamp, kills: [], objs: [obj] });
         }
@@ -215,12 +231,15 @@ export async function GET(request: NextRequest) {
         const ally_kills = f.kills.filter((k) => k.isAllyKill).length;
         const enemy_kills = f.kills.filter((k) => !k.isAllyKill).length;
         const myInvolved = f.kills.some((k) => k.isMyParticipation);
+        const hasAllyObj = f.objs.some((o) => o.isAllyObj);
+        const hasEnemyObj = f.objs.some((o) => !o.isAllyObj);
+
         const objNames = f.objs.map((o) => {
           const type = o.monsterType.replace(/_/g, ' ');
           return o.isAllyObj ? `味方獲得: ${type}` : `敵獲得: ${type}`;
         });
 
-        const isVictory = ally_kills > enemy_kills || (ally_kills === enemy_kills && f.objs.some((o) => o.isAllyObj));
+        const isVictory = ally_kills > enemy_kills || (ally_kills === enemy_kills && hasAllyObj);
         if (isVictory) vic++;
         else def++;
 
@@ -235,13 +254,66 @@ export async function GET(request: NextRequest) {
           ? `⚔️ 【${time_str} 交戦勝利】 味方チームが ${ally_kills}キル を獲得し、主導権を確保。${objNames.length > 0 ? `（${objNames.join(', ')}）を奪取。` : ''}`
           : `⚠️ 【${time_str} 交戦敗北】 敵に ${enemy_kills}キル を許しました。${objNames.length > 0 ? `敵に（${objNames.join(', ')}）を奪取されました。` : ''}`;
 
-        const key_factor = myInvolved
-          ? `${myChamp} の積極的な戦闘関与により、${isVictory ? '味方のダメージフォーカスが成立しました。' : '奮闘しましたが人数差で押し切られました。'}`
-          : `味方本隊との合流タイミングがズレており、別アクション中でした。`;
+        // 🌟 状況・チャンピオンに応じた動的レビューテキスト生成
+        let key_factor = '';
+        let feedback = '';
 
-        const feedback = myInvolved
-          ? `🔥 ${myChamp} の交戦貢献: 推定 ${dmgContrib.toLocaleString()} dmg (${isVictory ? '前線でのダメージ・CC貢献' : '孤立を避け味方と足並みを揃えましょう'})`
-          : `💡 改善ポイント: オブジェクト湧き30秒前にはウェーブを押し切り、味方と合流して陣形を整えましょう。`;
+        if (myInvolved) {
+          // 戦闘参加時
+          if (isVictory) {
+            if (m <= 14) {
+              key_factor = `${myChamp} の素早いリバー・レーン寄りにより、序盤の人数有利を活かして敵を撃破。`;
+              feedback = `🔥 序盤のアクション大成功: 推定 ${dmgContrib.toLocaleString()} dmg。この有利をもとにドラゴン・ヴォイドグラブへ繋げましょう。`;
+            } else if (hasAllyObj) {
+              key_factor = `${myChamp} が前線でプレッシャーを与え、敵の妨害を排除してオブジェクト（${objNames.join(', ')}）獲得を確定させました。`;
+              feedback = `👑 オブジェクト戦勝利: 前線でのゾーンコントロールとフォーカスが機能しました。`;
+            } else {
+              key_factor = `${myChamp} のスキル回転とダメージフォーカスが成立し、敵キャリー陣を崩壊させました。`;
+              feedback = `⚔️ 集団戦制圧: 推定 ${dmgContrib.toLocaleString()} dmg。味方との足並みが揃った理想的なエンゲージでした。`;
+            }
+          } else {
+            // 敗北時
+            if (hasEnemyObj) {
+              key_factor = `オブジェクト（${objNames.join(', ')}）周りの視界確保で敵に先手を打たれ、狭い地形でダメージを受け切りました。`;
+              feedback = `💡 改善点: 視界のない暗闇フェイスチェックを避け、味方のCCやULTに合わせてカウンターエンゲージを狙いましょう。`;
+            } else if (m <= 14) {
+              key_factor = `序盤の小規模戦で敵の寄りが1テンポ早く、人数差または体力差の不利を背負って交戦しました。`;
+              feedback = `⚠️ 序盤の注意: レーンのプッシュ主導権がない時は無理に争わず、ピンを出して自陣ファームを優先しましょう。`;
+            } else {
+              key_factor = `${myChamp} も戦闘に関与しましたが、敵の集中フォーカスまたはCCチェーンを受け、ダメージを出し切る前に前線が崩壊しました。`;
+              feedback = `🛡️ 立ち位置改善: 敵の主要CCやULTの吐き出しを確認してから、2手目で飛び込む意識を持ちましょう。`;
+            }
+          }
+        } else {
+          // 戦闘不参加時（別アクション中など）
+          if (hasAllyObj) {
+            key_factor = `${myChamp} が別サイドでオブジェクト獲得またはファームを進行中。本隊が上手く時間を稼ぎました。`;
+            feedback = `🎯 クロスプレイ成功: 戦闘不参加でもマップ逆側でリソースを獲得し、チーム全体の損害を最小限に抑えました。`;
+          } else if (hasEnemyObj) {
+            key_factor = `オブジェクト（${objNames.join(', ')}）周りの本隊と離れており、4v5の人数不利を突かれて交戦・オブジェクト奪取を許しました。`;
+            feedback = `💡 重要改善ポイント: オブジェクト湧き30秒前にはファームを切り上げ、${myChamp} のULTや強みを活かして陣形を組みましょう。`;
+          } else if (m <= 14) {
+            key_factor = `マップ反対側のレーンで小規模戦が発生。距離が遠く合流が物理的に困難なシチュエーションでした。`;
+            feedback = `🧭 マクロ判断: 遠方の戦闘時は自レーンのミニオンを押し切ってタワープレートや相手ジャングルを荒らすのがベストです。`;
+          } else {
+            if (isVictory) {
+              key_factor = `味方4人が的確な連携で敵を圧倒。${myChamp} はサイドレーンのプッシュアドバンテージを維持しました。`;
+              feedback = `✨ 本隊の勝利: サイドレーンをさらに深くまで押し込んで敵タワーへのプレッシャーをかけましょう。`;
+            } else {
+              key_factor = `サイドレーン進行中に味方本隊が敵の強襲を受けました。敵のエンゲージ射程に対して味方の警戒が遅れました。`;
+              feedback = `⚠️ スプリット時の注意: 本隊に『引いて時間を稼ぐ』ピンを鳴らし、敵の姿が消えたら即座に後退またはTP・合流の準備を。`;
+            }
+          }
+        }
+
+        // チャンピオン個別フレーバー
+        if (myChamp === 'Shyvana') {
+          if (!myInvolved && hasEnemyObj) {
+            feedback = `💡 シヴァーナ戦術: ドラゴン獲得はパッシブ防御力アップに直結します。フューリーゲージ（ULT）を満タンにしてドラゴン周りに待機しましょう。`;
+          } else if (myInvolved && isVictory) {
+            feedback += ` 🐉 ドラゴンフォーム（ULT）の範囲ダメージが決定打となりました。`;
+          }
+        }
 
         return {
           fight_id: idx + 1,
