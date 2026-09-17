@@ -110,70 +110,76 @@ html.dark .border-stone-300 {
   border-color: #3f4147;
 }
 
-/* ☀️ ライトモード（羊皮紙調背景 #eae4d4 / カード #fdfcf9）での文字コントラスト最適化 */
-/* デフォルトの stone-400 (#a8a29e) ではコントラスト比が 1.8:1 と極端に低いため、
-   視認性の高い濃色 (#57534e: 4.5:1以上) へ引き上げてかすれを解消 */
-.text-stone-400 {
+/* ☀️ ライトモード専用（羊皮紙調背景 #eae4d4 / カード #fdfcf9）での文字コントラスト最適化 */
+/* html:not(.dark) でスコープを限定し、ダークモード側に黒文字が波及するのを完全に防止 */
+html:not(.dark) .text-stone-400 {
   color: #57534e !important;
 }
-.text-stone-500 {
+html:not(.dark) .text-stone-500 {
   color: #44403c !important;
 }
-.text-stone-300 {
+html:not(.dark) .text-stone-300 {
   color: #78716c !important;
 }
-.text-gray-400,
-.text-slate-400,
-.text-zinc-400 {
+html:not(.dark) .text-gray-400,
+html:not(.dark) .text-slate-400,
+html:not(.dark) .text-zinc-400 {
   color: #52525b !important;
 }
-.text-gray-500,
-.text-slate-500,
-.text-zinc-500 {
+html:not(.dark) .text-gray-500,
+html:not(.dark) .text-slate-500,
+html:not(.dark) .text-zinc-500 {
   color: #3f3f46 !important;
 }
 
-input::placeholder,
-textarea::placeholder {
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder {
   color: #78716c !important;
   opacity: 0.9 !important;
 }
 
-/* 🌙 ダークモード時の色調整（暗いカード背景上でもくっきり読めるように最適化） */
+/* 🌙 ダークモード専用（暗色背景 #1e1f22 / カード #2b2d31）での文字コントラスト最適化 */
+/* 暗い背景上でも全文字が明るくハッキリ読める高コントラスト設定 */
 html.dark .text-stone-900,
-html.dark .text-stone-800 {
-  color: #f2f3f5 !important;
-}
-
+html.dark .text-stone-800,
 html.dark .text-stone-700,
-html.dark .text-stone-600 {
-  color: #e2e5e9 !important;
+html.dark .text-gray-900,
+html.dark .text-gray-800,
+html.dark .text-gray-700,
+html.dark .text-slate-900,
+html.dark .text-slate-800,
+html.dark .text-slate-700,
+html.dark .text-zinc-900,
+html.dark .text-zinc-800,
+html.dark .text-zinc-700 {
+  color: #f8fafc !important; /* 鮮明なホワイト */
 }
 
+html.dark .text-stone-600,
 html.dark .text-stone-500,
-html.dark .text-stone-400 {
-  color: #c4c9ce !important;
-}
-
-html.dark .text-stone-300 {
-  color: #dbdee1 !important;
-}
-
-html.dark .text-gray-400,
-html.dark .text-slate-400,
-html.dark .text-zinc-400 {
-  color: #c4c9ce !important;
-}
-
+html.dark .text-gray-600,
 html.dark .text-gray-500,
+html.dark .text-slate-600,
 html.dark .text-slate-500,
+html.dark .text-zinc-600,
 html.dark .text-zinc-500 {
-  color: #dbdee1 !important;
+  color: #e2e8f0 !important; /* 明るいライトスレート */
+}
+
+html.dark .text-stone-400,
+html.dark .text-stone-300,
+html.dark .text-gray-400,
+html.dark .text-gray-300,
+html.dark .text-slate-400,
+html.dark .text-slate-300,
+html.dark .text-zinc-400,
+html.dark .text-zinc-300 {
+  color: #cbd5e1 !important; /* はっきり読めるシルバーグレー */
 }
 
 html.dark input::placeholder,
 html.dark textarea::placeholder {
-  color: #a6adb7 !important;
+  color: #94a3b8 !important;
   opacity: 0.9 !important;
 }
 
