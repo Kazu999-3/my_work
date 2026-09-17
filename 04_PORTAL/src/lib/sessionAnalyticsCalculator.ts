@@ -1262,40 +1262,66 @@ export function calculateRealSessionAnalytics(
   })();
 
   // 3. 心理DNA（MBTIの4軸パーセントを実測データから完全動的算出）
-  const safetyScore = Math.min(96, Math.max(20, Math.round(100 - avgDeathsOverall * 12)));
+  const safetyScore = Math.min(96, Math.max(15, Math.round(100 - avgDeathsOverall * 11)));
   const riskScore = 100 - safetyScore;
 
   // scale (ファーム・個人キャリー) vs enabler (味方支援・KP)
   const isSup = detectedRole === 'UTILITY' || detectedRole === 'SUPPORT';
   const scaleScore = isSup
-    ? Math.max(15, Math.min(45, Math.round(csPerMinActual * 15)))
-    : Math.max(30, Math.min(95, Math.round((csPerMinActual / 8.5) * 55 + (avgDmgShare > 22 ? 25 : 10))));
+    ? Math.max(10, Math.min(45, Math.round(csPerMinActual * 12 + (avgDmgShare > 15 ? 15 : 5))))
+    : Math.max(25, Math.min(95, Math.round((csPerMinActual / 8.5) * 55 + (avgDmgShare > 22 ? 25 : 10))));
   const enablerScore = 100 - scaleScore;
 
   // guardian (自陣・視界・防衛) vs invader (敵陣・キル関与)
-  const guardianScore = Math.min(92, Math.max(25, Math.round(visionPerMinActual * 28 + (avgDeathsOverall <= 3.5 ? 20 : 5))));
+  const guardianScore = Math.min(92, Math.max(20, Math.round(visionPerMinActual * 26 + (avgDeathsOverall <= 3.5 ? 20 : 5))));
   const invaderScore = 100 - guardianScore;
 
   // deliberate (慎重・KDA) vs reflex (直感・ダメージ関与)
-  const deliberateScore = Math.min(95, Math.max(25, Math.round(kdaActual * 10 + (lowDeathCount / totalG) * 30)));
+  const deliberateScore = Math.min(95, Math.max(20, Math.round(kdaActual * 10 + (lowDeathCount / totalG) * 30)));
   const reflexScore = 100 - deliberateScore;
 
-  const typeCode = `${safetyScore >= 60 ? 'I' : 'E'}${scaleScore >= 50 ? 'S' : 'E'}${guardianScore >= 50 ? 'G' : 'I'}`;
-  const typeName = safetyScore >= 70
-    ? (isSup ? '🛡️ 鉄壁の防衛守護神・ピールマスター' : '🏰 鉄壁の城主・スケーリングアーキテクト')
-    : (isSup ? '⚡ 先陣を切る電撃エンゲージャー' : '⚡ 電光石火のイニシエーター');
+  const letter1 = safetyScore >= 55 ? 'I' : 'E'; // Introvert (慎重・防衛) vs Extrovert (能動・攻撃)
+  const letter2 = scaleScore >= 50 ? 'S' : 'A';  // Scale (育成・主導) vs Align (味方連動・支援)
+  const letter3 = guardianScore >= 50 ? 'G' : 'V'; // Guardian (視界守備) vs Void/Invader (敵陣侵入)
+  const letter4 = deliberateScore >= 50 ? 'D' : 'R'; // Deliberate (計画計略) vs Reflex (直感ミクロ)
+  const typeCode = `${letter1}${letter2}${letter3}${letter4}`;
+
+  // 16タイプ × ロール × 実測スタッツ連動の称号・タグライン生成
+  const rolePrefix = detectedRole === 'TOP' ? 'トップ' : detectedRole === 'JUNGLE' ? 'ジャングル' : detectedRole === 'MIDDLE' || detectedRole === 'MID' ? 'ミッド' : detectedRole === 'BOTTOM' || detectedRole === 'BOT' || detectedRole === 'ADC' ? 'ADC' : 'サポート';
+  
+  const mbtiArchetypes: Record<string, { title: string; tag: string }> = {
+    'ISGD': { title: '🏰 盤石の要塞・精密ストラテジスト', tag: `「失点を最小化し、実測CS ${csPerMinActual}/分から確実に差を広げる」計算された王道スタイル` },
+    'ISGR': { title: '🛡️ 冷徹なる迎撃デュエリスト', tag: `「自陣の守りを固め、相手のミスを直感的なミクロで一閃する」カウンターマスター` },
+    'ISVD': { title: '🦅 静寂のインベイダー・リソースハンター', tag: `「被デスを抑えつつ敵の隙を突き、的確に敵陣リソースを奪取する」知性派ハンター` },
+    'ISVR': { title: '🗡️ 影潜む暗殺スナイパー', tag: `「単独で敵の死角に侵入し、電光石火のキルをもぎ取る」奇襲フィニッシャー` },
+    'IAGD': { title: '🕊️ 慈愛のガーディアン・戦術指揮官', tag: `「徹底した視界支配（分間${visionPerMinActual}）とピールで味方キャリーを絶対防衛する」守護神` },
+    'IAGR': { title: '⚡ 電撃カバー・レスキューマスター', tag: `「味方のピンチに瞬時に駆けつけ、驚異のミクロで形勢を逆転させる` },
+    'IAVD': { title: '🌐 広域マップコントローラー', tag: `「高いキル関与率（${kp15Actual}%）で戦場全域にプレッシャーを与え続ける」戦術的キーマン` },
+    'IAVR': { title: '🎯 乱戦の仕掛人・遊撃スペシャリスト', tag: `「敵陣深くで乱戦を作り出し、味方のキルチャンスを最大化する」トリックスター` },
+    'ESGD': { title: '⚔️ 陣地前進型ウォーロード', tag: `「味方を鼓舞して前線を押し上げ、タワーと視界を制圧する」前線リーダー` },
+    'ESGR': { title: '💥 剛腕のフロントライン・ブレイカー', tag: `「圧倒的なフィジカルとトレード力で対面を粉砕し主導権を握る」重戦車スタイル` },
+    'ESVD': { title: '🌪️ 敵陣制圧型ハイパーキャリー', tag: `「自ら敵陣へ切り込み、実測${avgDmgShare}%のダメージを叩き出す」絶対的エース` },
+    'ESVR': { title: '🔥 狂乱のバーサーカー・撃破特化型', tag: `「恐れを知らぬ連続ダイブと猛攻で敵陣形を崩壊させる」アグレッシブアタッカー` },
+    'EAGD': { title: '👑 盤面制覇のイニシエーター', tag: `「最適な集団戦タイミングを自ら作り出し、チームを勝利へ導く」司令塔` },
+    'EAGR': { title: '⚡ 先陣突撃のフラッシュスターター', tag: `「躊躇のない直感エンゲージで敵の虚を突く」電撃の切込隊長` },
+    'EAVD': { title: '🐉 狂瀾怒濤のプレイメイカー', tag: `「敵ジャングルや他レーンを絶え間なく荒らし尽くす」アクティブインパクター` },
+    'EAVR': { title: '💣 最前線クラッシャー・乱戦の覇者', tag: `「全レーンに顔を出し、圧倒的プレッシャーで敵を圧倒する」プレイヤブルタイフーン` },
+  };
+
+  const selectedArchetype = mbtiArchetypes[typeCode] || {
+    title: safetyScore >= 60 ? `🛡️ 盤石の${rolePrefix}マスター` : `⚡ 強襲の${rolePrefix}イニシエーター`,
+    tag: `実測被デス${avgDeathsOverall.toFixed(1)}・分間CS ${csPerMinActual} を武器に戦況を支配するプレイスタイル`,
+  };
 
   const playstyleMbti: PlaystyleMbti = {
     typeCode,
-    typeName,
-    tagline: safetyScore >= 70
-      ? (isSup ? '「味方キャリーを絶対に死なせない」視界とピールの守護神' : '「自分の城（自陣・レーン）にいる限り絶対に崩れない」精密ファームの達人')
-      : '「自ら仕掛けて戦況を切り開く」アグレッシブファイター',
+    typeName: selectedArchetype.title,
+    tagline: selectedArchetype.tag,
     axes: {
       safetyVsRisk: {
         safetyPercent: safetyScore,
         riskPercent: riskScore,
-        label: `リスク選好: ${safetyScore >= 60 ? 'セーフティ計算型' : 'リスクテイク攻撃型'} (${safetyScore}% / ${riskScore}%)`,
+        label: `リスク選好: ${safetyScore >= 55 ? 'セーフティ計算型' : 'リスクテイク攻撃型'} (${safetyScore}% / ${riskScore}%)`,
       },
       scaleVsEnabler: {
         scalePercent: scaleScore,
@@ -1310,89 +1336,120 @@ export function calculateRealSessionAnalytics(
       deliberateVsReflex: {
         deliberatePercent: deliberateScore,
         reflexPercent: reflexScore,
-        label: `意思決定: ${deliberateScore >= 50 ? '慎重観察型' : '反射直感型'} (${deliberateScore}% / ${reflexScore}%)`,
+        label: `意思決定: ${deliberateScore >= 50 ? '慎重観察・マクロ型' : '反射直感・ミクロ型'} (${deliberateScore}% / ${reflexScore}%)`,
       },
     },
-    personalityAnalysis: safetyScore >= 70
-      ? (isSup
-          ? `平均被デス${avgDeathsOverall.toFixed(1)}・分間視界${visionPerMinActual}の極めて高い自制心を持ち、無謀なデスを避けて味方を守り抜くスタイル。集団戦でのピール精度が際立っています。`
-          : `自制心が極めて高く、無謀なギャンブルトレードや孤立デスを極度に嫌う合理主義者。分間CS ${csPerMinActual} を基盤に盤石の城を築いてから敵を圧殺するスタイルを得意とします。`)
-      : `積極的に仕掛けてゲームの主導権を握るアグレッシブ型。キル関与率 ${kp15Actual}% の行動力でチームを牽引します。`,
+    personalityAnalysis: `【実測スタッツ診断】平均被デス ${avgDeathsOverall.toFixed(1)}（安全性${safetyScore}%）、分間CS ${csPerMinActual}、キル関与率 ${kp15Actual}%、分間視界 ${visionPerMinActual} を記録。${
+      safetyScore >= 60
+        ? `無駄なデスを極度に嫌う高い自制心を持ち、${scaleScore >= 50 ? '確実なリソース管理で有利を広げる' : '味方のカバーや陣形維持に長けた'}プレイスタイルです。`
+        : `積極的に仕掛けてゲームの主導権を握る攻撃的スタイルで、${guardianScore < 50 ? '敵陣へのディーププレッシャー' : '前線でのエンゲージ'}から勝機を切り開きます。`
+    }${deliberateScore >= 55 ? '冷静な状況判断とKDA管理が強みです。' : '直感的な反応速度とフィジカルトレードで対面を圧倒します。'}`,
   };
 
-  // 4. メンタル・ティルトトリガー
-  const snowballAvoidRate = Math.min(95, Math.max(50, Math.round(100 - avgDeathsOverall * 8)));
-  const mentalScore = Math.min(98, Math.max(55, Math.round(safetyScore * 0.5 + snowballAvoidRate * 0.5)));
+  // 4. メンタル・ティルトトリガー（実測即キュー勝率差・連敗時スタッツから動的算出）
+  const snowballAvoidRate = Math.min(95, Math.max(35, Math.round(100 - avgDeathsOverall * 8.5)));
+  const tiltWinRateImpact = requeueTiltStats.tiltWinRateDropPercent;
+  const isTiltProne = requeueTiltStats.hasData && requeueTiltStats.immediateRequeueGames >= 2 && requeueTiltStats.tiltWinRateDropPercent >= 8;
+  const mentalScore = Math.min(98, Math.max(40, Math.round(
+    safetyScore * 0.4 + snowballAvoidRate * 0.4 + (isTiltProne ? 0 : 20)
+  )));
+
+  const tiltInsightText = requeueTiltStats.hasData && requeueTiltStats.immediateRequeueGames >= 1
+    ? (isTiltProne
+        ? `即キュー時に勝率が${tiltWinRateImpact}%低下（通常 ${requeueTiltStats.restedRequeueWinRate}% ➔ 即キュー ${requeueTiltStats.immediateRequeueWinRate}%）。連敗後に感情的なリベンジキューが実測されています。敗北後は必ず5〜10分のインターバルを挟むことで大幅なLP防衛が可能です。`
+        : requeueTiltStats.immediateRequeueWinRate >= requeueTiltStats.restedRequeueWinRate
+          ? `即キュー時勝率 ${requeueTiltStats.immediateRequeueWinRate}%（休憩後勝率 ${requeueTiltStats.restedRequeueWinRate}% に対し +${requeueTiltStats.immediateRequeueWinRate - requeueTiltStats.restedRequeueWinRate}%）。連戦でも集中力と冷静さを保てており、リズムに乗った連勝を作りやすいメンタルタフネスを持っています。`
+          : `即キュー時勝率 ${requeueTiltStats.immediateRequeueWinRate}%・休憩後勝率 ${requeueTiltStats.restedRequeueWinRate}%。即キューによる大きなティルト崩れは見られず、平均被デス ${avgDeathsOverall.toFixed(1)} と安定した精神状態を維持できています。`)
+    : `平均被デス ${avgDeathsOverall.toFixed(1)}・デス連続発生率の抑制率 ${snowballAvoidRate}%。安定したメンタル自制心を維持できています。`;
 
   const tiltTriggerMatrix: TiltTriggerMatrix = {
-    invadeResistanceRating: avgDeathsOverall <= 3.8 ? 'Sランク (荒らしや不利対面にも動じず冷静に対処)' : 'Aランク (標準的)',
-    teammateDeathResistance: kp15Actual >= 45 ? 'Aランク (他レーンの動きに柔軟に追従)' : 'Bランク (他レーン崩壊時にやや孤立する傾向)',
+    invadeResistanceRating: avgDeathsOverall <= 3.5 ? 'Sランク (不利対面や荒らしにも動じず冷静に対処)' : avgDeathsOverall <= 5.0 ? 'Aランク (標準的・安定)' : 'Bランク (連続ガンク時にやや被デスが増加)',
+    teammateDeathResistance: kp15Actual >= 45 ? 'Aランク (味方の動きに柔軟に追従)' : 'Bランク (他レーン崩壊時に孤立しやすい傾向)',
     snowballDeathAvoidanceRate: snowballAvoidRate,
     mentalResilienceScore: mentalScore,
-    tiltInsight: `自身がデスした直後に熱くなってデスを重ねるリスクはわずか${100 - snowballAvoidRate}%と極めて優秀。実測被デス${avgDeathsOverall.toFixed(1)}が示す通り、高いメンタル自制心を維持できています。`,
+    tiltInsight: tiltInsightText,
   };
 
   // 5. 銭勘定（ゴールド効率）
   const dmgPerGold = totalGold > 0 ? Number((totalPlayerDmg / totalGold).toFixed(2)) : 0.55;
-  const dmgRating = dmgPerGold >= 0.7 ? 'Sランク (超高効率火力)' : dmgPerGold >= 0.5 ? 'Aランク (安定水準)' : 'Bランク (サポート/ユーティリティ配分)';
+  const dmgRating = dmgPerGold >= 0.75 ? 'Sランク (超高効率火力)' : dmgPerGold >= 0.55 ? 'Aランク (安定水準)' : 'Bランク (サポート/ユーティリティ配分)';
 
   const goldEfficiency: GoldEfficiency = {
     damagePerGoldRating: `${dmgRating} (1Gあたり${dmgPerGold}ダメージ)`,
-    goldStashRating: isSup ? '視界アイテム＆ピンクワード優先循環' : (csPerMinActual >= 7.0 ? 'やや抱え込み傾向 (1300G超を所持したまま長居する癖あり)' : '適正リコール循環'),
-    spikeUtilizationPercent: Math.min(92, Math.max(55, Math.round(60 + kdaActual * 2.5))),
+    goldStashRating: isSup
+      ? '視界アイテム＆ピンクワード優先循環'
+      : (csPerMinActual >= 7.5 ? '高ファーム維持（1300G〜1500Gでの計画的パワースパイク帰還を推奨）' : csPerMinActual >= 6.0 ? '適正リコール循環' : 'ファーム機会損失警戒（リコール時のウェーブ管理要調整）'),
+    spikeUtilizationPercent: Math.min(92, Math.max(50, Math.round(55 + kdaActual * 2.8 + (dmgPerGold * 20)))),
     efficiencyVerdict: isSup
-      ? `視界アイテムとサポートコアアイテムの購入タイミングが勝率に直結しています。1リコール毎のピンクワード2本補充を徹底しましょう。`
-      : `ファームで獲得したゴールドのアイテム変換は順調です（1Gあたり${dmgPerGold}ダメージ）。コア完成直前のリコールでパワースパイクを確定させると勝率が跳ね上がります。`,
+      ? `実測1Gあたり${dmgPerGold}ダメージ。視界アイテムとサポートコアの完成タイミングが勝率に直結しています。毎リコールでのピンクワード補充を徹底しましょう。`
+      : `実測1Gあたり${dmgPerGold}ダメージ（${dmgRating}）。獲得したゴールドのアイテム変換効率は${dmgPerGold >= 0.6 ? '極めて良好' : '改善の余地あり'}です。コアアイテム完成直前のリコールでパワースパイクを確定させると集団戦勝率が向上します。`,
   };
 
   // 6. 逆境耐性
-  const behindWinRateEst = Math.max(15, Math.min(45, Math.round(overallWinRate * 0.55)));
+  const behindWinRateEst = Math.max(12, Math.min(48, Math.round(overallWinRate * 0.52)));
   const adversityBehavior: AdversityBehavior = {
     archetype: safetyScore >= 60 ? '🐢 相手のミス待ち亀型 (Patient Counter-Puncher)' : '🦅 逆転ワンチャンス強襲型 (Opportunistic Punisher)',
     behindComebackWinRate: behindWinRateEst,
     behaviorVerdict: safetyScore >= 60
-      ? `劣勢時でも自爆特攻せず、防衛ワードとタワー下ファームで相手の慢心ダイブを誘う粘り強さを持っています（逆転勝率 実測推計${behindWinRateEst}%）。`
-      : `劣勢時でも積極的なキャッチを狙い、ワンチャンスの集団戦勝利から巻き返す勝負強さを持っています。`,
+      ? `劣勢時でも自爆特攻を避け、防衛ワードとタワー下ファームで相手の慢心ダイブを誘う粘り強さを持っています（逆転勝率 実測推計${behindWinRateEst}%）。`
+      : `劣勢時でも積極的なキャッチや奇襲を狙い、ワンチャンスの集団戦勝利から巻き返す勝負強さを持っています（逆転勝率 実測推計${behindWinRateEst}%）。`,
     recommendedMindset: isSup
       ? 'ビハインド時は敵陣への単独ワードを避け、味方タワー周囲の防衛視界を固めて敵の甘えたダイブをカウンターするのが最大の勝ち筋です。'
-      : 'ビハインド時は味方と固まって敵の甘えた孤立キャリーを1体ピックアップし、バロンを阻止してレイトゲームに持ち込むのが最大の勝ち筋です。',
+      : (detectedRole === 'JUNGLE'
+          ? 'ビハインド時は無理なドラゴンコンテストを避け、対角の敵キャンプ奪取と味方タワー防衛でレイトゲームに持ち込みましょう。'
+          : 'ビハインド時は孤立ファームを控え、味方と固まって敵の甘えた孤立キャリーを1体ピックアップしてからオブジェクトを狙いましょう。'),
   };
 
-  // 7. 認知バイアス（ロール別特化）
+  // 7. 認知バイアス（プレイヤー実測スタッツから個別の弱点バイアスを完全動的診断）
   const cognitiveBiases: CognitiveBiases = (() => {
     const normRole = (detectedRole || 'JUNGLE').toUpperCase();
-    if (normRole === 'UTILITY' || normRole === 'SUPPORT') {
-      return {
-        recallHabitBias: '【視界設置過信バイアス】「もう1箇所だけワードを刺してから帰ろう」と単独で敵陣深くに入った瞬間にキャッチされる傾向。',
-        mapAttentionBias: '【ADC依存バイアス】BOTレーンに張り付きすぎ、MIDの孤立やヘラルド/グラブ戦への合流を見落としがち。',
-        actionPrescription: 'オブジェクト湧き60秒前にリコールしてピンクワードを補充し、敵より先に視界ラインを押し上げること。',
-      };
+    
+    // 実測データに基づく個別バイアスの動的診断
+    let recallHabitBias = '';
+    let mapAttentionBias = '';
+    let actionPrescription = '';
+
+    // リコール・リソースに関するバイアス判定
+    if (csPerMinActual >= 7.5 && kp15Actual < 42) {
+      recallHabitBias = '【無限ファーム・スプリット偏重バイアス】「もう1ウェーブ食ってから」とサイドに残り続け、本隊の重要オブジェクト戦への合流が遅れる傾向。';
+    } else if (isTiltProne) {
+      recallHabitBias = `【即座リベンジ・ティルトバイアス】敗北直後の感情的な即キューにより、通常時より勝率が${requeueTiltStats.tiltWinRateDropPercent}%低下する悪循環。`;
+    } else if (avgDeathsOverall >= 5.5) {
+      recallHabitBias = '【リスク過小評価バイアス】「まだ生き残れる」「あと1発殴れる」と敵のスキルクールダウンや援軍を見誤り、限界を超えて前線に残りすぎる傾向。';
+    } else if (normRole === 'UTILITY' || normRole === 'SUPPORT') {
+      recallHabitBias = '【視界設置過信バイアス】「もう1箇所だけワードを刺してから帰ろう」と単独で敵陣深くに入った瞬間にキャッチされる傾向。';
+    } else {
+      recallHabitBias = '【リコール遅延・ゴールド抱え込みバイアス】アイテム完成用の所持ゴールドが溜まっているにもかかわらず、リコールを先延ばしにしてパワースパイクを逃す傾向。';
     }
-    if (normRole === 'JUNGLE') {
-      return {
-        recallHabitBias: '【リコール遅延バイアス】「あと1キャンプ掘ってから帰ろう」と1300G以上抱え込み、パワースパイクが遅れる傾向。',
-        mapAttentionBias: '【対角アクション放棄バイアス】敵JGが反対サイドでガンクを決めた際に対角の敵キャンプ奪取や逆オブジェクトを逃しがち。',
-        actionPrescription: '3:30フルクリア後に即リコールせず、敵ラプター裏へディープワードを刺してプッシュレーンへのカウンター介入を挟むこと。',
-      };
+
+    // マップ・意識に関するバイアス判定
+    if (visionPerMinActual < 0.6 && normRole !== 'SUPPORT' && normRole !== 'UTILITY') {
+      mapAttentionBias = `【暗黒レーン盲信バイアス】分間視界スコア ${visionPerMinActual}。周辺の視界が取れていない状態で敵JGやMIDのロームを警戒せず前線を押し引きする傾向。`;
+    } else if (kp15Actual < 40) {
+      mapAttentionBias = `【トンネルビジョン・孤立バイアス】キル関与率 ${kp15Actual}%。自身の目の前のミニオンや対面に集中するあまり、川や隣レーンで発生した小規模戦への意識が薄れがち。`;
+    } else if (normRole === 'JUNGLE') {
+      mapAttentionBias = '【対角アクション放棄バイアス】敵JGが反対サイドでアクションを起こした際に対角の敵キャンプ奪取や逆オブジェクトを逃しがち。';
+    } else if (normRole === 'UTILITY' || normRole === 'SUPPORT') {
+      mapAttentionBias = '【ADC依存バイアス】BOTレーンに張り付きすぎ、MIDの孤立やヘラルド/グラブ戦への合流を見落としがち。';
+    } else {
+      mapAttentionBias = '【敵消失無警戒バイアス】敵のマップ消失を確認せず不用意に相手タワー下へハラスやプッシュを継続する傾向。';
     }
-    if (normRole === 'BOTTOM' || normRole === 'BOT' || normRole === 'ADC') {
-      return {
-        recallHabitBias: '【孤立サイドファーム欲張りバイアス】「もう1ウェーブ食える」と視界のないサイドを押し、敵アサシンに捕殺される傾向。',
-        mapAttentionBias: '【トンネルビジョンバイアス】敵前衛との殴り合いに夢中になり、側面から忍び寄る敵フックやフランクを見落としがち。',
-        actionPrescription: '集団戦では「最も近い安全な敵」から確実に攻撃し、視界のないサイドファームで単独死しないこと。',
-      };
+
+    // 個別処方箋の動的生成
+    if (isTiltProne) {
+      actionPrescription = `敗北後は即キューを禁止し、5分間のインターバル（水分補給・リプレイ1分確認）を徹底して勝率${requeueTiltStats.restedRequeueWinRate}%の集中状態を取り戻すこと。`;
+    } else if (avgDeathsOverall >= 5.0) {
+      actionPrescription = `集団戦開始直後に真っ先に飛び込まず、敵の主要CC（スタン・フック）が吐き出された「2秒後」にエントリーして被デスを激減させること。`;
+    } else if (visionPerMinActual < 0.8) {
+      actionPrescription = `リコール毎に必ずコントロールワードを1本購入し、川の重要ブッシュやオブジェクト周辺の視界ラインを先行確保すること。`;
+    } else {
+      actionPrescription = `オブジェクト湧き45秒前にウェーブを押し切ってリコールし、アイテム完成状態（パワースパイク）で味方と合流して陣形を整えること。`;
     }
-    if (normRole === 'MIDDLE' || normRole === 'MID') {
-      return {
-        recallHabitBias: '【レーン居座りバイアス】ウェーブをプッシュした後にタワー下で待機し、川の視界確保やサイドロームを逃す傾向。',
-        mapAttentionBias: '【敵JG位置無警戒バイアス】敵JGの位置がマップに見えていない状態で不用意に相手タワー下へハラスしに行く傾向。',
-        actionPrescription: 'ウェーブを押し込んだ直後に留まらず、川の視界確保またはBOT/TOPへのローム圧力をかけること。',
-      };
-    }
+
     return {
-      recallHabitBias: '【TP抱え落ちバイアス】テレポートを温存しすぎてBOTやドラゴンの重要集団戦に合流できない傾向。',
-      mapAttentionBias: '【スプリット深追いバイアス】敵のマップ消失を確認せずサイドレーンを押し続け、2〜3人に囲まれる傾向。',
-      actionPrescription: 'スプリットプッシュ時は敵のマップ消失を確認して引き際を見極め、オブジェクト湧きにTPを温存すること。',
+      recallHabitBias,
+      mapAttentionBias,
+      actionPrescription,
     };
   })();
 

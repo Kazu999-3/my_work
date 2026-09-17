@@ -1368,14 +1368,20 @@ export default function PlayerAnalyzerPage() {
                   <div className="p-4 rounded-2xl bg-white border border-amber-200 space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="text-xs font-bold text-stone-700">負け直後 5分以内即キュー</div>
-                      <div className="text-sm font-black text-rose-600 font-mono">
+                      <div className="text-sm font-black font-mono">
                         {report.sessionAnalytics.requeueTiltStats.immediateRequeueGames > 0 ? (
-                          <>
+                          <span className={
+                            report.sessionAnalytics.requeueTiltStats.immediateRequeueWinRate >= 55
+                              ? 'text-emerald-600'
+                              : report.sessionAnalytics.requeueTiltStats.immediateRequeueWinRate >= 45
+                              ? 'text-amber-600'
+                              : 'text-rose-600'
+                          }>
                             勝率 {report.sessionAnalytics.requeueTiltStats.immediateRequeueWinRate}%{' '}
                             <span className="text-[10px] text-stone-400 font-normal">
                               ({report.sessionAnalytics.requeueTiltStats.immediateRequeueGames}試合)
                             </span>
-                          </>
+                          </span>
                         ) : (
                           <span className="text-emerald-700 text-xs font-bold">0試合 (即キューなし・良好)</span>
                         )}
@@ -1383,14 +1389,20 @@ export default function PlayerAnalyzerPage() {
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="text-xs font-bold text-stone-700">5分以上休憩後のマッチ</div>
-                      <div className="text-sm font-black text-emerald-600 font-mono">
+                      <div className="text-sm font-black font-mono">
                         {report.sessionAnalytics.requeueTiltStats.restedRequeueGames > 0 ? (
-                          <>
+                          <span className={
+                            report.sessionAnalytics.requeueTiltStats.restedRequeueWinRate >= 55
+                              ? 'text-emerald-600'
+                              : report.sessionAnalytics.requeueTiltStats.restedRequeueWinRate >= 45
+                              ? 'text-amber-600'
+                              : 'text-rose-600'
+                          }>
                             勝率 {report.sessionAnalytics.requeueTiltStats.restedRequeueWinRate}%{' '}
                             <span className="text-[10px] text-stone-400 font-normal">
                               ({report.sessionAnalytics.requeueTiltStats.restedRequeueGames}試合)
                             </span>
-                          </>
+                          </span>
                         ) : (
                           <span className="text-stone-400 text-xs font-normal">0試合</span>
                         )}
@@ -1401,6 +1413,14 @@ export default function PlayerAnalyzerPage() {
                         <span className="text-amber-900">ティルトによる勝率低下</span>
                         <span className="text-rose-600 bg-rose-100 px-2 py-0.5 rounded font-mono">
                           -{report.sessionAnalytics.requeueTiltStats.tiltWinRateDropPercent}% ドロップ
+                        </span>
+                      </div>
+                    )}
+                    {report.sessionAnalytics.requeueTiltStats.tiltWinRateDropPercent < 0 && (
+                      <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs font-black">
+                        <span className="text-amber-900">即キュー時の勢い維持</span>
+                        <span className="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded font-mono">
+                          +{Math.abs(report.sessionAnalytics.requeueTiltStats.tiltWinRateDropPercent)}% 勝率アップ
                         </span>
                       </div>
                     )}
