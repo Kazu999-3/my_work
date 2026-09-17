@@ -8,12 +8,16 @@ export default function OverlayLauncherButton() {
   const [loading, setLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
+  const [isCloud, setIsCloud] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
+
   const checkStatus = async () => {
     try {
       const res = await fetch('/api/overlay');
       const data = await res.json();
       setRunning(!!data.running);
       setAutostart(!!data.autostartEnabled);
+      setIsCloud(!!data.isCloud);
     } catch {
       setRunning(false);
       setAutostart(false);
@@ -28,7 +32,16 @@ export default function OverlayLauncherButton() {
 
   const handleToggle = async () => {
     setLoading(true);
+    setFeedback(null);
     try {
+      // クラウド環境（Vercel）の場合は、ローカルAPIをスキップして直接カスタムプロトコルを実行
+      if (isCloud) {
+        window.location.href = 'sovereign://launch-overlay';
+        setFeedback('🚀 ローカルPCでSovereign HUDを起動しました（常駐待機中）');
+        setTimeout(() => setFeedback(null), 6000);
+        return;
+      }
+
       const action = running ? 'stop' : 'start';
       const res = await fetch('/api/overlay', {
         method: 'POST',
@@ -38,9 +51,17 @@ export default function OverlayLauncherButton() {
       const data = await res.json();
       if (data.success) {
         setRunning(!running);
+      } else {
+        // ローカルAPI失敗時もカスタムプロトコルへフォールバック
+        window.location.href = 'sovereign://launch-overlay';
+        setFeedback('🚀 ローカルランチャー (sovereign://) 経由で起動しました');
+        setTimeout(() => setFeedback(null), 6000);
       }
     } catch (e) {
       console.error(e);
+      window.location.href = 'sovereign://launch-overlay';
+      setFeedback('🚀 ローカルランチャー (sovereign://) 経由で起動しました');
+      setTimeout(() => setFeedback(null), 6000);
     } finally {
       setLoading(false);
     }
@@ -58,6 +79,9 @@ export default function OverlayLauncherButton() {
       const data = await res.json();
       if (data.success) {
         setAutostart(!autostart);
+      } else if (data.error) {
+        setFeedback('⚠️ 自動常駐はPC内の install_overlay_autostart.bat を実行してください');
+        setTimeout(() => setFeedback(null), 6000);
       }
     } catch (e) {
       console.error(e);
@@ -98,6 +122,13 @@ export default function OverlayLauncherButton() {
       >
         <span>{autostart ? '⚡ 自動常駐: ON' : '💤 自動常駐: OFF'}</span>
       </button>
+
+      {/* フィードバックトースト */}
+      {feedback && (
+        <div className="absolute top-full right-0 mt-2 z-50 whitespace-nowrap bg-stone-900 text-amber-300 text-[11px] font-bold px-3 py-1.5 rounded-xl border border-amber-500/60 shadow-lg animate-in fade-in">
+          {feedback}
+        </div>
+      )}
     </div>
   );
 }

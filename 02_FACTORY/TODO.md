@@ -74,6 +74,8 @@
   - **バランサー画面のサブコンポーネント分割**: 3,125行の超巨大ファイル [`04_PORTAL/src/app/balancer/page.tsx`](file:///d:/my_work/04_PORTAL/src/app/balancer/page.tsx) から `BalancerVcManager.tsx` と `BalancerBo3Manager.tsx` を外出し・`React.memo` 化し、描画パフォーマンスと保守性を向上。
   - **チャンピオン辞典検索入力の超サクサク化**: [`04_PORTAL/src/app/champions/tabs/DictionaryTab.tsx`](file:///d:/my_work/04_PORTAL/src/app/champions/tabs/DictionaryTab.tsx) に `useDeferredValue`（全173体＋対面検索の重いあいまい正規化をバックグラウンド化）およびURL同期の350msデバウンスタイマーを導入。タイピング時のカクつきとルーター再描画連打を根絶。
   - **即死キルライン境界メーターのWeb UI統合**: [`04_PORTAL/src/app/api/lol/matchup-blueprint/route.ts`](file:///d:/my_work/04_PORTAL/src/app/api/lol/matchup-blueprint/route.ts) および [`04_PORTAL/src/app/coach/MatchupBlueprintCard.tsx`](file:///d:/my_work/04_PORTAL/src/app/coach/MatchupBlueprintCard.tsx) を改修。デスクトップHUDで動作していた数学的確定即死計算エンジンをWeb APIへ移植し、カラーグラデーションHPゲージバー・即死ゾーン%・安全HP閾値・Phase 3（Lv6〜）への即死トリガー注記を完全統合。実戦マッチ（Kazurin#4036 / Yorick vs K'Sante）の確定データ検証済み。
+  - **リコール逆再生のタイムラインルーラー視覚化**: [`04_PORTAL/src/app/coach/PostGameDeepAnalyticsDashboard.tsx`](file:///d:/my_work/04_PORTAL/src/app/coach/PostGameDeepAnalyticsDashboard.tsx) を改修。全リコールの発生分秒・損失ゴールド・購入アイテムを試合時間軸上にピン留めした横型タイムラインルーラーと詳細インスペクターを新設。
+  - **Sovereign HUD ワンクリック起動 (sovereign:// プロトコル連携)**: [`03_SYSTEMS/register_sovereign_protocol.bat`](file:///d:/my_work/03_SYSTEMS/register_sovereign_protocol.bat) を新設してWindowsレジストリへ登録し、[`04_PORTAL/src/app/coach/OverlayLauncherButton.tsx`](file:///d:/my_work/04_PORTAL/src/app/coach/OverlayLauncherButton.tsx) からクラウド環境（Vercel）問わずブラウザのボタン1タップでローカルHUDを起動可能に整備。
 
 
 

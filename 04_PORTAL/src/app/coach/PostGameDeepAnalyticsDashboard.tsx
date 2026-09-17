@@ -137,6 +137,9 @@ export default function PostGameDeepAnalyticsDashboard({
   const [savingMemo, setSavingMemo] = useState(false);
   const [memoSaved, setMemoSaved] = useState(false);
 
+  // リコール逆再生タイムライン選択インデックス
+  const [selectedRecallIdx, setSelectedRecallIdx] = useState<number>(0);
+
   const currentMatchId = controlledMatchId || internalMatchId;
 
   const fetchAnalytics = async (matchId?: string) => {
@@ -515,29 +518,134 @@ export default function PostGameDeepAnalyticsDashboard({
           </div>
         </div>
 
-        {/* 3: リコール＆ウェーブ テンポロス逆再生 */}
-        <div className="bg-stone-50/70 border border-stone-200 rounded-xl p-4 space-y-3 shadow-2xs">
-          <div className="flex items-center justify-between">
+        {/* 3: リコール＆ウェーブ テンポロス逆再生 (インタラクティブ・タイムライン視覚化) */}
+        <div className="bg-stone-50/70 border border-stone-200 rounded-xl p-4 space-y-3.5 shadow-2xs">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <span className="text-xs font-black text-stone-900 flex items-center gap-1.5">
               <Clock className="w-4 h-4 text-purple-600" />
-              3. 実戦リコール＆アイテム購入履歴
+              <span>3. テンポロス逆再生 (タイムラインリコール監査)</span>
             </span>
-            <span className="text-[10px] font-bold text-stone-500 font-mono">
-              {data.recall_efficiency.rating}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 font-mono">
+                総損失: -{data.recall_efficiency.total_loss_gold}G
+              </span>
+              <span className="text-[10px] font-bold text-stone-500 font-mono hidden sm:inline">
+                {data.recall_efficiency.rating}
+              </span>
+            </div>
           </div>
 
-          <div className="space-y-1.5 text-[11px]">
-            {data.recall_efficiency.events.map((ev, idx) => (
-              <div key={idx} className="bg-white p-2 rounded-lg border border-stone-200 space-y-1">
-                <div className="flex items-center justify-between font-mono text-[10px]">
-                  <span className="font-bold text-purple-800 bg-purple-50 px-1.5 py-0.5 rounded">{ev.time_str} 購入/帰還</span>
-                  <span className="font-bold text-stone-700">{ev.evaluation}</span>
-                </div>
-                <p className="text-[10px] text-stone-600">{ev.detail}</p>
+          {/* 橫型タイムラインルーラー (各リコール地点のピン留め) */}
+          {data.recall_efficiency.events.length > 0 && (
+            <div className="space-y-2 bg-white p-3 rounded-xl border border-stone-200">
+              <div className="flex items-center justify-between text-[10px] text-stone-400 font-mono px-0.5">
+                <span>00:00 (開始)</span>
+                <span className="text-purple-700 font-bold">全 {data.recall_efficiency.events.length} 回のリコール</span>
+                <span>{data.match_duration_str || '試合終了'}</span>
               </div>
-            ))}
-          </div>
+
+              {/* タイムライントラック */}
+              <div className="relative w-full h-3 bg-stone-100 rounded-full my-3 border border-stone-200">
+                {/* 各リコールのピン */}
+                {data.recall_efficiency.events.map((ev, idx) => {
+                  // 分秒からパーセンテージ位置を計算（基準: 最大時間または25分）
+                  const parts = ev.time_str.split(':').map(Number);
+                  const sec = (parts[0] || 0) * 60 + (parts[1] || 0);
+                  const durParts = (data.match_duration_str || '25:00').split(':').map(Number);
+                  const totalSec = Math.max(1200, (durParts[0] || 25) * 60 + (durParts[1] || 0));
+                  const pct = Math.min(96, Math.max(4, Math.round((sec / totalSec) * 100)));
+
+                  const isSelected = selectedRecallIdx === idx;
+                  const hasLoss = (ev.loss_gold || 0) > 0;
+
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setSelectedRecallIdx(idx)}
+                      style={{ left: `${pct}%` }}
+                      className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 transition-all cursor-pointer flex flex-col items-center group ${
+                        isSelected ? 'z-20 scale-125' : 'z-10 hover:scale-110'
+                      }`}
+                      title={`リコール #${idx + 1} (${ev.time_str})`}
+                    >
+                      <span
+                        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center text-[9px] font-black shadow-xs ${
+                          isSelected
+                            ? 'bg-purple-600 text-white border-white ring-2 ring-purple-400'
+                            : hasLoss
+                            ? 'bg-amber-500 text-stone-950 border-white'
+                            : 'bg-emerald-500 text-white border-white'
+                        }`}
+                      >
+                        {idx + 1}
+                      </span>
+                      <span
+                        className={`text-[9px] font-mono font-bold mt-1 whitespace-nowrap px-1 rounded transition-colors ${
+                          isSelected ? 'bg-purple-100 text-purple-900' : 'text-stone-400 group-hover:text-stone-700'
+                        }`}
+                      >
+                        {ev.time_str}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* 選択中のリコール詳細インスペクター */}
+              {(() => {
+                const activeEv = data.recall_efficiency.events[selectedRecallIdx] || data.recall_efficiency.events[0];
+                if (!activeEv) return null;
+                return (
+                  <div className="mt-4 pt-3 border-t border-stone-100 space-y-2 animate-in fade-in">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[11px] font-black bg-purple-100 text-purple-950 px-2 py-0.5 rounded border border-purple-200">
+                          リコール #{selectedRecallIdx + 1} ({activeEv.time_str})
+                        </span>
+                        <span className="text-[10px] font-black text-stone-700 bg-stone-100 px-2 py-0.5 rounded">
+                          所持G: {activeEv.gold_at_recall ? `${activeEv.gold_at_recall}G` : '未記録'}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-bold text-stone-800">
+                        {activeEv.evaluation}
+                      </span>
+                    </div>
+
+                    {/* 購入アイテム一覧 */}
+                    {activeEv.bought_items && activeEv.bought_items.length > 0 && (
+                      <div className="flex items-center gap-1 flex-wrap pt-0.5">
+                        <span className="text-[10px] font-bold text-stone-400">購入:</span>
+                        {activeEv.bought_items.map((item, i) => (
+                          <span key={i} className="text-[10px] font-bold bg-stone-100 text-stone-800 px-1.5 py-0.2 rounded border border-stone-200">
+                            🛒 {item}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* ウェーブ状況＆損失メトリクス */}
+                    <div className="grid grid-cols-2 gap-2 text-[10px] pt-1">
+                      <div className="bg-stone-50 p-1.5 rounded border border-stone-200">
+                        <span className="text-stone-400 font-bold block">帰還時ウェーブ:</span>
+                        <span className="font-black text-stone-800">{activeEv.wave_state || 'ウェーブ押し込み後'}</span>
+                      </div>
+                      <div className="bg-stone-50 p-1.5 rounded border border-stone-200">
+                        <span className="text-stone-400 font-bold block">テンポ損失:</span>
+                        <span className={`font-mono font-black ${(activeEv.loss_gold || 0) > 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
+                          {(activeEv.loss_gold || 0) > 0 ? `-${activeEv.loss_gold}G (ミニオン${activeEv.loss_cs || 0}体損)` : '損失なし (適格帰還)'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="text-[11px] text-stone-600 leading-relaxed font-medium bg-purple-50/50 p-2 rounded-lg border border-purple-100">
+                      💬 <span className="font-bold text-purple-950">判定:</span> {activeEv.detail}
+                    </p>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
         </div>
 
         {/* 4: レーダー多角形指標 */}
