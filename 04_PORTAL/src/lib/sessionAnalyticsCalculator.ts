@@ -762,7 +762,7 @@ export function calculateRealSessionAnalytics(
     formatBucket('midnight', '⚠️ 深夜帯 (疲労蓄積・注意)', '00:00 - 05:59', '深夜帯'),
   ];
 
-  // 2. 連戦疲労度
+  // 2. 連戦疲労度（実測セッション数・勝率・被デスから完全動的算出）
   const fatigueBuckets = {
     early: { wins: 0, total: 0, deaths: 0 },
     mid: { wins: 0, total: 0, deaths: 0 },
@@ -795,36 +795,115 @@ export function calculateRealSessionAnalytics(
     }
   });
 
+  const calcBucketAnalysis = (
+    stage: 'early' | 'mid' | 'late',
+    bucket: { wins: number; total: number; deaths: number }
+  ) => {
+    const hasData = bucket.total > 0;
+    const winRate = hasData ? Math.round((bucket.wins / bucket.total) * 100) : 0;
+    const avgDeaths = hasData ? Number((bucket.deaths / bucket.total).toFixed(1)) : 0;
+
+    if (!hasData) {
+      return {
+        winRate: 0,
+        avgDeaths: 0,
+        focusScore: 0,
+        fatigueLevel: stage === 'late' ? 'データなし (5連戦なし・健全)' : 'データなし',
+        label: stage === 'early' ? 'セッション初動' : stage === 'mid' ? 'セッション中盤' : 'セッション終盤',
+        hasData: false,
+      };
+    }
+
+    // 集中力スコアを実測（勝率 + 低被デス）から動的計算 (0〜100)
+    const deathPenalty = Math.min(40, Math.max(0, Math.round((avgDeaths - 2.5) * 8)));
+    const winScore = Math.min(50, Math.max(10, Math.round((winRate / 100) * 50)));
+    const focusScore = Math.min(98, Math.max(25, Math.round(50 + winScore - deathPenalty)));
+
+    // 状態（疲労度・コンディション）の動的判定
+    let fatigueLevel = '軽度 (安定)';
+    if (focusScore >= 80) {
+      fatigueLevel = 'ゼロ (ピーク快調・高集中)';
+    } else if (focusScore >= 65) {
+      fatigueLevel = '軽度 (安定巡航)';
+    } else if (focusScore >= 45) {
+      fatigueLevel = '中度 (疲労・やや判断低下)';
+    } else {
+      fatigueLevel = '重度 (要終了・ティルト警戒)';
+    }
+
+    // 動的ラベルの生成
+    let label = '';
+    if (stage === 'early') {
+      if (winRate >= 55) {
+        label = '⚡ 初動ピーク・立ち上がり快調';
+      } else if (winRate <= 42) {
+        label = '🔄 ウォーミングアップ期 (スロースターター)';
+      } else {
+        label = '🎯 ウォーミングアップ ＆ 初動集中';
+      }
+    } else if (stage === 'mid') {
+      if (winRate >= 55) {
+        label = '🔥 覚醒・最盛期ゾーン (集中力MAX)';
+      } else if (winRate <= 42) {
+        label = '⚠️ 集中力低下ゾーン (注意)';
+      } else {
+        label = '✨ 安定巡航ゾーン';
+      }
+    } else {
+      // 5試合目以降
+      if (winRate >= 55) {
+        label = '💪 驚異のスタミナゾーン (長期戦維持)';
+      } else if (winRate <= 42) {
+        label = '🚨 無自覚な疲労 ＆ 集中力低下ゾーン';
+      } else {
+        label = '⏳ セッション終盤・疲労警戒ゾーン';
+      }
+    }
+
+    return {
+      winRate,
+      avgDeaths,
+      focusScore,
+      fatigueLevel,
+      label,
+      hasData: true,
+    };
+  };
+
+  const earlyRes = calcBucketAnalysis('early', fatigueBuckets.early);
+  const midRes = calcBucketAnalysis('mid', fatigueBuckets.mid);
+  const lateRes = calcBucketAnalysis('late', fatigueBuckets.late);
+
   const sessionFatigueImpact = [
     {
       gameNumberInSession: '1〜2試合目',
-      label: 'ウォーミングアップ ＆ ピーク集中',
-      winRate: fatigueBuckets.early.total > 0 ? Math.round((fatigueBuckets.early.wins / fatigueBuckets.early.total) * 100) : 0,
-      avgDeaths: fatigueBuckets.early.total > 0 ? Number((fatigueBuckets.early.deaths / fatigueBuckets.early.total).toFixed(1)) : 0,
-      focusScore: fatigueBuckets.early.total > 0 ? 95 : 0,
-      fatigueLevel: fatigueBuckets.early.total > 0 ? 'ゼロ (快調)' : 'データなし',
+      label: earlyRes.label,
+      winRate: earlyRes.winRate,
+      avgDeaths: earlyRes.avgDeaths,
+      focusScore: earlyRes.focusScore,
+      fatigueLevel: earlyRes.fatigueLevel,
       gamesCount: fatigueBuckets.early.total,
-      hasData: fatigueBuckets.early.total > 0,
+      hasData: earlyRes.hasData,
     },
     {
       gameNumberInSession: '3〜4試合目',
-      label: '安定巡航ゾーン',
-      winRate: fatigueBuckets.mid.total > 0 ? Math.round((fatigueBuckets.mid.wins / fatigueBuckets.mid.total) * 100) : 0,
-      avgDeaths: fatigueBuckets.mid.total > 0 ? Number((fatigueBuckets.mid.deaths / fatigueBuckets.mid.total).toFixed(1)) : 0,
-      focusScore: fatigueBuckets.mid.total > 0 ? 80 : 0,
-      fatigueLevel: fatigueBuckets.mid.total > 0 ? '軽度 (安定)' : 'データなし (連戦なし)',
+      label: midRes.label,
+      winRate: midRes.winRate,
+      avgDeaths: midRes.avgDeaths,
+      focusScore: midRes.focusScore,
+      fatigueLevel: midRes.fatigueLevel,
       gamesCount: fatigueBuckets.mid.total,
-      hasData: fatigueBuckets.mid.total > 0,
+      hasData: midRes.hasData,
     },
     {
       gameNumberInSession: '5試合目以降',
-      label: '無自覚な疲労 ＆ 集中力低下ゾーン',
-      winRate: fatigueBuckets.late.total > 0 ? Math.round((fatigueBuckets.late.wins / fatigueBuckets.late.total) * 100) : 0,
-      avgDeaths: fatigueBuckets.late.total > 0 ? Number((fatigueBuckets.late.deaths / fatigueBuckets.late.total).toFixed(1)) : 0,
-      focusScore: fatigueBuckets.late.total > 0 ? 50 : 0,
-      fatigueLevel: fatigueBuckets.late.total > 0 ? '重度 (要終了)' : 'データなし (5連戦なし・健全)',
+      label: lateRes.label,
+      winRate: lateRes.winRate,
+      avgDeaths: lateRes.avgDeaths,
+      focusScore: lateRes.focusScore,
+      fatigueLevel: lateRes.fatigueLevel,
       gamesCount: fatigueBuckets.late.total,
-      hasData: fatigueBuckets.late.total > 0,
+      hasData: lateRes.hasData,
     },
   ];
 

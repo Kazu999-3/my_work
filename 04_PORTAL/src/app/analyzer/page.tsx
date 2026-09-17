@@ -1537,9 +1537,21 @@ export default function PlayerAnalyzerPage() {
                             />
                           </div>
                         )}
-                        <div className="flex justify-between text-[10px] text-stone-500">
-                          <span>{f.hasData ? `集中力スコア: ${f.focusScore}点` : '直近データなし'}</span>
-                          <span>状態: {f.fatigueLevel}</span>
+                        <div className="flex justify-between items-center text-[11px]">
+                          <span className={f.hasData ? (f.focusScore >= 80 ? 'text-emerald-700 font-black' : f.focusScore >= 60 ? 'text-amber-700 font-bold' : 'text-rose-700 font-bold') : 'text-stone-400'}>
+                            {f.hasData ? `集中力スコア: ${f.focusScore}点` : '直近データなし'}
+                          </span>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            !f.hasData
+                              ? 'bg-stone-100 text-stone-500'
+                              : f.focusScore >= 80
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                              : f.focusScore >= 60
+                              ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                              : 'bg-rose-100 text-rose-800 border border-rose-300'
+                          }`}>
+                            状態: {f.fatigueLevel}
+                          </span>
                         </div>
                       </div>
                     ))}
