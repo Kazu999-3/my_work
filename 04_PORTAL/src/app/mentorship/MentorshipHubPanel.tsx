@@ -604,65 +604,88 @@ export default function MentorshipHubPanel() {
 
 
       {/* タブ切り替えバー */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white/90 p-4 rounded-2xl border border-stone-200/90 shadow-2xs">
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => setActiveTab('PUPIL')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'PUPIL'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
-            }`}
-          >
-            <span>🌱 弟子募集・希望者</span>
-            <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded-full">
-              {profiles.filter((p) => p.role_type === 'PUPIL').length}
-            </span>
-          </button>
+      <div className="space-y-3 bg-white/90 p-4 rounded-2xl border border-stone-200/90 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+            <button
+              type="button"
+              onClick={() => setActiveTab('PUPIL')}
+              className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 ${
+                activeTab === 'PUPIL'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+              }`}
+            >
+              <span>🌱 弟子募集・希望者</span>
+              <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded-full">
+                {profiles.filter((p) => p.role_type === 'PUPIL').length}
+              </span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('MENTOR')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'MENTOR'
-                ? 'bg-amber-600 text-white shadow-xs'
-                : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
-            }`}
-          >
-            <span>👑 師匠（メンター）一覧</span>
-            <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded-full">
-              {profiles.filter((p) => p.role_type === 'MENTOR').length}
-            </span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('MENTOR')}
+              className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 ${
+                activeTab === 'MENTOR'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+              }`}
+            >
+              <span>👑 師匠（メンター）一覧</span>
+              <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded-full">
+                {profiles.filter((p) => p.role_type === 'MENTOR').length}
+              </span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('MATCHES')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'MATCHES'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
-            }`}
-          >
-            <span>🤝 師弟ペア・活動状況</span>
-            <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded-full">
-              {matches.length}
-            </span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('MATCHES')}
+              className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 ${
+                activeTab === 'MATCHES'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+              }`}
+            >
+              <span>🤝 師弟ペア・活動状況</span>
+              <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded-full">
+                {matches.length}
+              </span>
+            </button>
+          </div>
+
+          {/* 検索窓 */}
+          {activeTab !== 'MATCHES' && (
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 w-3.5 h-3.5" />
+              <input
+                type="text"
+                placeholder="名前・チャンプ・コメント検索..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-stone-50 border border-stone-200 rounded-xl pl-8 pr-3 py-1.5 text-xs font-bold text-stone-900 focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+          )}
         </div>
 
-        {/* 検索窓 */}
+        {/* 🎯 レーン別クイックフィルターピル */}
         {activeTab !== 'MATCHES' && (
-          <div className="relative w-full md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 w-3.5 h-3.5" />
-            <input
-              type="text"
-              placeholder="名前・チャンプ・コメント検索..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-stone-50 border border-stone-200 rounded-xl pl-8 pr-3 py-1.5 text-xs font-bold text-stone-900 focus:outline-none focus:border-emerald-500"
-            />
+          <div className="flex items-center gap-1.5 overflow-x-auto pt-1 border-t border-stone-100 scrollbar-none">
+            <span className="text-[11px] font-bold text-stone-400 shrink-0 mr-1">レーン:</span>
+            {LANE_FILTERS.map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setLaneFilter(f.id)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-black transition shrink-0 cursor-pointer ${
+                  laneFilter === f.id
+                    ? 'bg-stone-900 text-white shadow-xs'
+                    : 'bg-stone-100 hover:bg-stone-200 text-stone-600'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
           </div>
         )}
       </div>

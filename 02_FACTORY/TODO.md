@@ -30,23 +30,19 @@
 
 ## ✅ 2026-09-17 Antigravity セッションで対応済み（業務効率化＆一般ユーザー向けポータル大幅改善）
 
-- [x] **一般ユーザー向けポータル改善（課題 1, 2, 4, 5）**
-  - **1. ⚔️ バランサー観戦スタジアムビュー（`/balancer`）**:
-    - [`BalancerStadiumView.tsx`](file:///d:/my_work/04_PORTAL/src/app/balancer/components/BalancerStadiumView.tsx) を新設。
-    - 運営者でなくても直近の確定マッチを最上部で観戦可能に。5レーン対面比較・本人の所属枠ハイライト・待機観戦者一覧・勝敗予想（`/casino`）直通リンクを配置。
-    - `api/balancer/pending` からの自動復元機能と連携。
-  - **2. 🎁 デイリーボーナス（毎日コイン）のワンタップ受取導線**:
-    - [`Sidebar.tsx`](file:///d:/my_work/04_PORTAL/src/components/Sidebar.tsx) に未受取時に光る「🎁 +100pt」ワンタップボタンを新設。
-    - クリック時に即座に `/api/bet`（PUT）を実行して紙吹雪（`canvas-confetti`）を飛ばし、即座にコイン残高を再取得。
-    - [`/api/auth/me`](file:///d:/my_work/04_PORTAL/src/app/api/auth/me/route.ts) および [`useCurrentUser.ts`](file:///d:/my_work/04_PORTAL/src/hooks/useCurrentUser.ts) で `claimedDaily` を連携。
-  - **4. 📱 順位表（`/leaderboard`）のスマホカード型レスポンシブ最適化**:
-    - スマホ向けに `[🌐 全レーン並列] [TOP] [JG] [MID] [ADC] [SUP]` の水平ロール切り替えピルを新設。
-    - プレイヤー名によるリアルタイム絞り込み検索入力欄を追加。
-    - 1〜3位のメダルハイライト（🥇 🥈 🥉）および高勝率（60%以上/40%以下）の色分け最適化。
-  - **5. 🪙 勝敗予想（`/casino`）の投票締め切りカウントダウン・受付状態視覚化**:
-    - チーム確定時刻（`createdAt`）から15分のリアルタイムカウントダウンタイマー（`Clock`）を新設。
-    - 残り3分以内の締切直前パルスアニメーション（🔥）および締切後の即時フォームロック（🔒）を実装。
-    - 締切後の投票リクエストをフロント/バックエンド双方でガード。
+- [x] **一般ユーザー向けポータル改善 第2弾（課題 1, 2, 3, 4 全部完了）**
+  - **1. 📜 一般向け「過去の試合履歴・戦績ビュー」の解放（`/history`）**:
+    - [`history/page.tsx`](file:///d:/my_work/04_PORTAL/src/app/history/page.tsx) を `/ktm-admin` リダイレクトから直接閲覧できる独立ページへ刷新。
+    - [`MatchHistoryPanel.tsx`](file:///d:/my_work/04_PORTAL/src/app/ktm-admin/MatchHistoryPanel.tsx) の管理者認証チェック（`isAdmin`）をオプショナル化し、非管理者でも過去30試合のスコア・KDA・勝敗・MMR変動を自由閲覧可能に。編集・削除ボタンは管理者のみに表示。
+  - **2. 👤 選手カルテ（`/player/[id]`）の「直近の調子（連勝バッジ）＆ 天敵・相棒ハイライト」**:
+    - 直近5戦の勝敗アイコン列（`[W][W][W][L][W]`）および現在の連勝/連敗バッジ（`🔥 3連勝中` / `❄️ 2連敗中`）をファーストビューに配置。
+    - 「🏆 名コンビ（最高勝率の相棒）」と「⚔️ 最大の天敵（苦戦中のライバル）」の直感的なミニカードをトップにピン留め表示。
+  - **3. 📱 スマホ固定「ボトムナビゲーションバー（Mobile App Bar）」**:
+    - [`MobileBottomNav.tsx`](file:///d:/my_work/04_PORTAL/src/components/MobileBottomNav.tsx) を新設し、[`layout.tsx`](file:///d:/my_work/04_PORTAL/src/app/layout.tsx) に配置（`md:hidden`）。
+    - `[👑 ホーム] [⚔️ バランサー] [🎯 予想] [🏆 順位表] [👤 マイカルテ]` の親指1本操作UIを実現。現在のアクティブページをゴールド＆インジケーターでハイライト。
+  - **4. 🤝 師弟掲示板（`/mentorship`）のレーン別絞り込み ＆ スマホ横スクロール最適化**:
+    - [`MentorshipHubPanel.tsx`](file:///d:/my_work/04_PORTAL/src/app/mentorship/MentorshipHubPanel.tsx) に `[🌐 全て] [🛡️ TOP] [🌲 JG] [⚡ MID] [🏹 BOT] [💖 SUP]` のクイックピルフィルターを新設。
+    - タブバーをスマホ時でも折り返さず綺麗に横スクロールできるレスポンシブデザインに改修。
 
 > 過去のClaude Code直近11セッション（計791プロンプト）のトランスクリプトを走査し、手戻りの集中していた「監査レビューの小出し往復」「LLMモデル指定・虚偽報告事故」「スキルの肥大化」「デザインイメージ違い」「辞典一括同期タイムアウト」の5大課題を一挙に仕組み化・解消。
 

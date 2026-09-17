@@ -977,6 +977,134 @@ export default function PlayerMyPage() {
           </div>
         </div>
 
+        {/* 🔥 直近の調子・連勝バッジ ＆ 🏆相棒・⚔️天敵ハイライト */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+          {/* 直近の調子・勝敗ストリーク */}
+          <div className="bg-white/90 border border-stone-200/90 rounded-2xl p-4 shadow-xs flex flex-col justify-between gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black text-stone-400 uppercase tracking-wider flex items-center gap-1.5">
+                <span>🔥 直近の調子 ＆ モメンタム</span>
+              </span>
+              {recentForm && (
+                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${
+                  recentForm.streak >= 3 && recentForm.streakWin
+                    ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                    : recentForm.streak >= 2 && !recentForm.streakWin
+                    ? 'bg-rose-100 text-rose-800 border-rose-300'
+                    : 'bg-stone-100 text-stone-700 border-stone-200'
+                }`}>
+                  {recentForm.streakWin ? `🔥 ${recentForm.streak}連勝中` : `❄️ ${recentForm.streak}連敗中`}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between gap-2 pt-1">
+              {recentForm && recentForm.seq && recentForm.seq.length > 0 ? (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {recentForm.seq.slice(0, 5).map((isWin: boolean, idx: number) => (
+                    <span
+                      key={idx}
+                      className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black font-mono shadow-2xs ${
+                        isWin
+                          ? 'bg-emerald-500 text-white shadow-emerald-500/20'
+                          : 'bg-rose-500 text-white shadow-rose-500/20'
+                      }`}
+                      title={`直近 ${idx + 1} 試合前: ${isWin ? '勝利 (WIN)' : '敗北 (LOSS)'}`}
+                    >
+                      {isWin ? 'W' : 'L'}
+                    </span>
+                  ))}
+                  <span className="text-[11px] font-bold text-stone-500 ml-1">
+                    (直近10戦 {recentForm.last10Wins}勝{recentForm.last10Games - recentForm.last10Wins}敗)
+                  </span>
+                </div>
+              ) : (
+                <span className="text-xs text-stone-400 font-bold">試合データ収集中</span>
+              )}
+            </div>
+          </div>
+
+          {/* 🏆 名コンビ（最高勝率の相棒） */}
+          <div className="bg-white/90 border border-stone-200/90 rounded-2xl p-4 shadow-xs flex flex-col justify-between gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black text-stone-400 uppercase tracking-wider flex items-center gap-1.5">
+                <span>🤝 名コンビ（最高勝率の相棒）</span>
+              </span>
+              <span className="text-[9px] font-bold text-stone-400">同チーム時</span>
+            </div>
+
+            <div className="pt-0.5">
+              {synergyPair?.best ? (
+                <Link
+                  href={`/player/${encodeURIComponent(synergyPair.best.name)}`}
+                  className="flex items-center justify-between group p-1.5 rounded-xl hover:bg-emerald-50/60 transition"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-black">
+                      🥇
+                    </div>
+                    <div>
+                      <div className="text-xs font-black text-stone-900 group-hover:text-emerald-700 transition">
+                        {synergyPair.best.name}
+                      </div>
+                      <div className="text-[10px] text-stone-500 font-medium">
+                        {synergyPair.best.games}試合 共にプレイ
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right font-mono">
+                    <span className="text-xs font-black text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                      {synergyPair.best.winRate}%
+                    </span>
+                  </div>
+                </Link>
+              ) : (
+                <div className="text-xs text-stone-400 font-bold py-1">相性データ収集中（3戦以上）</div>
+              )}
+            </div>
+          </div>
+
+          {/* ⚔️ 最大の天敵（苦戦中のライバル） */}
+          <div className="bg-white/90 border border-stone-200/90 rounded-2xl p-4 shadow-xs flex flex-col justify-between gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black text-stone-400 uppercase tracking-wider flex items-center gap-1.5">
+                <span>⚔️ 最大の天敵（対戦ライバル）</span>
+              </span>
+              <span className="text-[9px] font-bold text-stone-400">敵対時</span>
+            </div>
+
+            <div className="pt-0.5">
+              {matchupExtremes?.worst && matchupExtremes.worst.length > 0 ? (
+                <Link
+                  href={`/player/${encodeURIComponent(matchupExtremes.worst[0].name || matchupExtremes.worst[0].champion)}`}
+                  className="flex items-center justify-between group p-1.5 rounded-xl hover:bg-rose-50/60 transition"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center text-xs font-black">
+                      ⚠️
+                    </div>
+                    <div>
+                      <div className="text-xs font-black text-stone-900 group-hover:text-rose-700 transition">
+                        {matchupExtremes.worst[0].name || matchupExtremes.worst[0].champion}
+                      </div>
+                      <div className="text-[10px] text-stone-500 font-medium">
+                        {matchupExtremes.worst[0].games}試合 対戦
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right font-mono">
+                    <span className="text-xs font-black text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-md">
+                      勝率 {matchupExtremes.worst[0].winRate}%
+                    </span>
+                  </div>
+                </Link>
+              ) : (
+                <div className="text-xs text-stone-400 font-bold py-1">対戦データ収集中（3戦以上）</div>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* 🌟 メンバーの匿名評判 ＆ KTM 栄誉カード */}
         <PlayerReputationCard
           playerName={player.name}

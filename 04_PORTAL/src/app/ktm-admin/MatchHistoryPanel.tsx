@@ -27,7 +27,23 @@ interface Participant {
 
 const ROLES = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
 
-export default function MatchHistoryPanel() {
+interface MatchHistoryPanelProps {
+  isAdmin?: boolean;
+}
+
+export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistoryPanelProps = {}) {
+  const [isAdmin, setIsAdmin] = useState(propIsAdmin ?? false);
+
+  useEffect(() => {
+    if (propIsAdmin !== undefined) {
+      setIsAdmin(propIsAdmin);
+      return;
+    }
+    fetch('/api/auth/verify', { method: 'POST', credentials: 'include' })
+      .then(res => setIsAdmin(res.ok))
+      .catch(() => setIsAdmin(false));
+  }, [propIsAdmin]);
+
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -270,22 +286,24 @@ export default function MatchHistoryPanel() {
                     <Calendar className="h-4 w-4" />
                     {dateStr}
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => setEditingMatch(JSON.parse(JSON.stringify(match)))}
-                      className="p-1.5 bg-black/5 hover:bg-black/8 border border-border text-orange-700 hover:text-stone-900 rounded transition"
-                      title="試合履歴を編集"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteMatch(match.id)}
-                      className="p-1.5 bg-black/5 hover:bg-red-100 border border-border text-red-700 hover:text-stone-900 rounded transition"
-                      title="試合履歴を削除"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
+                  {isAdmin && (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => setEditingMatch(JSON.parse(JSON.stringify(match)))}
+                        className="p-1.5 bg-black/5 hover:bg-black/8 border border-border text-orange-700 hover:text-stone-900 rounded transition cursor-pointer"
+                        title="試合履歴を編集"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteMatch(match.id)}
+                        className="p-1.5 bg-black/5 hover:bg-red-100 border border-border text-red-700 hover:text-stone-900 rounded transition cursor-pointer"
+                        title="試合履歴を削除"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
