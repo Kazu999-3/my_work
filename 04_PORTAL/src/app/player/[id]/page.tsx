@@ -8,6 +8,7 @@ import PlayerSettingsPanel from "../PlayerSettingsPanel";
 import ScoutingReport from "../../../components/ScoutingReport";
 import MentorshipHubPanel from "../../mentorship/MentorshipHubPanel";
 import PlayerReputationCard from "../PlayerReputationCard";
+import MentorshipProgressCard from "../MentorshipProgressCard";
 import confetti from "canvas-confetti";
 import { 
   Activity, 
@@ -1149,6 +1150,15 @@ export default function PlayerMyPage() {
               {/* 1. 総合分析タブ */}
               {activeTab === 'summary' && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* 🤝 あなたの師弟関係 ＆ 目標ランク進捗レポート */}
+                  <div className="lg:col-span-3">
+                    <MentorshipProgressCard
+                      discordId={player?.discord_id}
+                      playerName={player?.name || ''}
+                      isCurrentUser={Boolean(isMe)}
+                    />
+                  </div>
+
                   {/* 通算戦績サマリーカード (全体勝率 / 試合数 / KDA) */}
                   <div className="lg:col-span-3 bg-white/70 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl relative overflow-hidden">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/10 pb-4 mb-6">

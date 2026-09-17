@@ -390,3 +390,29 @@ KTMポータルのメニュー表示およびページアクセス権限は、�
   - 管理者判定は「Discord ID（`697220229964759130`）」「OAuthセッション（`user.isAdmin`）」「`/api/auth/verify` 認証」のみに基づいて厳格に判定する。
   - パスやURL踏みによる誤判定・権限昇格を一切排除し、一般ユーザーの画面には管理者専用項目・タブを一切表示しないこと。
 
+---
+
+## 🤝 師弟マッチングDM通知 ＆ 弟子進捗レポート憲法 (Mentorship DM & Growth Report)
+
+### 1. 目的・ターゲット・利用シーン
+- **目的**: 師弟掲示板（`/mentorship`）でのオファー見逃しをゼロにし、成立後のコーチング・目標達成サイクルをマイページで持続させる。
+- **ターゲット**: KTMポータルを利用する全メンバー（師匠・弟子）。
+- **利用シーン**: 
+  1. 弟子入り（または師匠依頼）の申請が送られた瞬間、相手のDiscordにBotから直接DMが届く。
+  2. 承諾されてペアが結成されたら、申請者へも成立DMが届く。
+  3. マイページ（`/mypage`）の専用セクションで、目標ランクまでの進捗バーと指導・反省メモをいつでも確認・更新できる。
+
+### 2. MVPの範囲 (段階的開発)
+- **Step 1 (MVP)**:
+  1. Discord Bot Token による相手へのダイレクトDM通知機能（申請時・承諾時）。
+  2. マイページ（`/mypage`）に「あなたの師匠 / 弟子」カードを新設。
+  3. 現在ランク ➔ 目標ランクの進捗バー、および指導反省メモの表示・編集機能。
+- **Step 2 (拡張)**:
+  - 試合終了後の戦績・反省データの自動カルテ蓄積（案1との連携）。
+
+### 3. 技術スタック
+- **通知**: Discord REST API v10 (`/users/@me/channels`, `/channels/{channel_id}/messages`)、フォールバックWebhook
+- **フロントエンド**: Next.js 16 (App Router), React, Tailwind CSS, Lucide Icons
+- **バックエンド/DB**: Next.js API Routes (`/api/mentorship/matches`), Supabase (`mentorship_matches`, `mentorship_profiles`)
+
+

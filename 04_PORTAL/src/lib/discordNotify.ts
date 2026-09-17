@@ -325,5 +325,64 @@ export async function notifyPortalError(params: PortalErrorLogParams): Promise<b
   return false;
 }
 
+/**
+ * 📩 Discord Bot Token を使用して対象ユーザーへ個別ダイレクトメッセージ (DM) を送信
+ */
+export async function sendDiscordDirectMessage(
+  discordId: string,
+  payload: {
+    content?: string;
+    embeds?: any[];
+  }
+): Promise<boolean> {
+  const botToken = process.env.DISCORD_BOT_TOKEN;
+  if (!botToken || !discordId) {
+    console.warn('[discordNotify] Bot token or target discordId is missing for DM.');
+    return false;
+  }
+
+  try {
+    // 1. 対象ユーザーとのDMチャンネルを作成/取得
+    const dmChannelRes = await fetch('https://discord.com/api/v10/users/@me/channels', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bot ${botToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ recipient_id: discordId }),
+    });
+
+    if (!dmChannelRes.ok) {
+      const errText = await dmChannelRes.text();
+      console.warn(`[discordNotify] Failed to open DM channel with ${discordId} (${dmChannelRes.status}):`, errText);
+      return false;
+    }
+
+    const dmChannel = await dmChannelRes.json();
+    const channelId = dmChannel.id;
+
+    // 2. DMチャンネルへメッセージを送信
+    const sendRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bot ${botToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (sendRes.ok) {
+      return true;
+    } else {
+      const sendErrText = await sendRes.text();
+      console.warn(`[discordNotify] DM message send failed (${sendRes.status}):`, sendErrText);
+      return false;
+    }
+  } catch (err) {
+    console.warn('[discordNotify] Exception during sendDiscordDirectMessage:', err);
+    return false;
+  }
+}
+
 
 

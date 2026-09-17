@@ -3,6 +3,7 @@ import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { getAuthSession } from '../../../../lib/authGuard';
 import { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } from '../../../../lib/playerCoins';
 import { MENTORSHIP_DURATIONS } from '../../../../lib/mentorshipConstants';
+import { sendDiscordDirectMessage } from '../../../../lib/discordNotify';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +17,8 @@ export interface MatchMeta {
   message: string;
   fromDiscordId: string;
   cancelReason?: string;
+  progressNotes?: string;
+  targetRank?: string;
 }
 
 export function parseNotesMeta(notes: string | null): MatchMeta {
@@ -27,6 +30,8 @@ export function parseNotesMeta(notes: string | null): MatchMeta {
     autoRenew: true,
     message: '',
     fromDiscordId: '',
+    progressNotes: '',
+    targetRank: '',
   };
 
   if (!notes) return defaultMeta;
@@ -59,6 +64,8 @@ export function parseNotesMeta(notes: string | null): MatchMeta {
     autoRenew: renewMatch ? renewMatch[1] === 'true' : true,
     message: cleanMsg,
     fromDiscordId: fromMatch ? fromMatch[1] : '',
+    progressNotes: '',
+    targetRank: '',
   };
 }
 
@@ -74,36 +81,50 @@ export function encodeNotesMeta(meta: Partial<MatchMeta>): string {
     message: meta.message || '',
     fromDiscordId: meta.fromDiscordId || '',
     cancelReason: meta.cancelReason || '',
+    progressNotes: meta.progressNotes || '',
+    targetRank: meta.targetRank || '',
   };
   return JSON.stringify(fullMeta);
 }
 
 /**
- * Discord への師弟ペア結成速報の通知ヘルパー
+ * Discord への師弟ペア結成速報の通知ヘルパー（DM ＋ チャンネル通知）
  */
-async function sendDiscordPairAnnounce(mentorName: string, pupilName: string, durationLabel: string) {
+async function sendDiscordPairAnnounce(
+  mentorName: string,
+  pupilName: string,
+  durationLabel: string,
+  mentorDiscordId?: string,
+  pupilDiscordId?: string
+) {
+  const portalUrl = 'https://ktm-portal.vercel.app/mypage';
+  const embed = {
+    title: '🎉 【KTM師弟ハブ】師弟ペアが結成されました！',
+    description: `👑 **師匠:** ${mentorName}\n🌱 **弟子:** ${pupilName}\n⏱️ **活動期間:** ${durationLabel}\n\nお互いに楽しく上達していきましょう！キックオフガイドに沿ってまずは挨拶からスタート🤝\nマイページで目標ランク進捗と指導メモを共有できます。\n👉 **[マイページで確認する](${portalUrl})**`,
+    color: 0x10b981, // エメラルドグリーン
+    timestamp: new Date().toISOString(),
+    footer: {
+      text: 'KTM 師弟マッチング ＆ 自己紹介ハブ',
+    },
+  };
+
+  // 1. 師匠・弟子の双方へDM送信
+  if (mentorDiscordId) {
+    sendDiscordDirectMessage(mentorDiscordId, { embeds: [embed] }).catch(() => {});
+  }
+  if (pupilDiscordId) {
+    sendDiscordDirectMessage(pupilDiscordId, { embeds: [embed] }).catch(() => {});
+  }
+
+  // 2. 募集・活動チャンネルへもアナウンス
   const webhookUrl = process.env.DISCORD_WEBHOOK_URL || process.env.DISCORD_RECRUIT_WEBHOOK_URL;
   if (!webhookUrl) return;
 
   try {
-    const payload = {
-      embeds: [
-        {
-          title: '🎉 【KTM師弟ハブ】新たな師弟ペアが結成されました！',
-          description: `👑 **師匠:** ${mentorName}\n🌱 **弟子:** ${pupilName}\n⏱️ **活動期間:** ${durationLabel}\n\nお互いに楽しく上達していきましょう！キックオフガイドに沿ってまずは挨拶からスタート🤝`,
-          color: 0x10b981, // エメラルドグリーン
-          timestamp: new Date().toISOString(),
-          footer: {
-            text: 'KTM 師弟マッチング ＆ 自己紹介ハブ',
-          },
-        },
-      ],
-    };
-
     await fetch(webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ embeds: [embed] }),
     });
   } catch (err) {
     console.warn('[mentorship/matches] Discord announce error:', err);
@@ -111,27 +132,43 @@ async function sendDiscordPairAnnounce(mentorName: string, pupilName: string, du
 }
 
 /**
- * Discord へのオファー着信速報通知ヘルパー（案3）
+ * Discord へのオファー着信速報通知ヘルパー（DM直接通知 ＋ フォールバック）
  */
-async function sendDiscordOfferNotification(fromName: string, toName: string, toDiscordId: string, durationLabel: string, message: string) {
+async function sendDiscordOfferNotification(
+  fromName: string,
+  toName: string,
+  toDiscordId: string,
+  durationLabel: string,
+  message: string
+) {
+  const portalUrl = 'https://ktm-portal.vercel.app/mentorship';
+  const embed = {
+    title: '📩 【KTM師弟ハブ】新たな師弟オファーが届きました！',
+    description: `👤 **申請者:** ${fromName}\n🎯 **対象:** ${toName}\n⏱️ **希望コース:** ${durationLabel}\n💬 **メッセージ:**\n> ${message}\n\nポータル画面を開いて [承諾] すると正式にペア結成となります！\n👉 **[ポータルで確認・承諾する](${portalUrl})**`,
+    color: 0x3b82f6, // ブルー
+    timestamp: new Date().toISOString(),
+    footer: {
+      text: 'KTM 師弟マッチング ＆ 自己紹介ハブ',
+    },
+  };
+
+  // 1. まず相手本人へBot経由でDM送信を試行
+  if (toDiscordId) {
+    const dmSuccess = await sendDiscordDirectMessage(toDiscordId, { embeds: [embed] });
+    if (dmSuccess) {
+      console.log(`[mentorship/matches] Successfully sent DM offer notification to ${toDiscordId}`);
+      return;
+    }
+  }
+
+  // 2. DMが拒否設定等の場合はWebhook（チャンネル通知）へフォールバック
   const webhookUrl = process.env.DISCORD_WEBHOOK_URL || process.env.DISCORD_RECRUIT_WEBHOOK_URL;
   if (!webhookUrl) return;
 
   try {
-    const portalUrl = 'https://ktm-portal.vercel.app/mentorship';
     const payload = {
       content: toDiscordId ? `<@${toDiscordId}> 宛てに師弟オファーが届きました！` : undefined,
-      embeds: [
-        {
-          title: '📩 【KTM師弟ハブ】新たな師弟オファーが届きました！',
-          description: `👤 **申請者:** ${fromName}\n🎯 **対象:** ${toName}\n⏱️ **希望コース:** ${durationLabel}\n💬 **メッセージ:**\n> ${message}\n\nポータル画面を開いて [承諾] すると正式にペア結成となります！\n👉 **[ポータルで確認・承諾する](${portalUrl})**`,
-          color: 0x3b82f6, // ブルー
-          timestamp: new Date().toISOString(),
-          footer: {
-            text: 'KTM 師弟マッチング ＆ 自己紹介ハブ',
-          },
-        },
-      ],
+      embeds: [embed],
     };
 
     await fetch(webhookUrl, {
@@ -534,19 +571,70 @@ export async function POST(request: Request) {
         console.warn('[mentorship/matches] Coin reward warning:', coinErr);
       }
 
-      // Discord通知を非同期送信
+      // Discord通知を非同期送信（師匠・弟子の双方へDM + 募集チャンネル）
       const meta = parseNotesMeta(match.notes);
       sendDiscordPairAnnounce(
         match.mentor?.player_name || '師匠',
         match.pupil?.player_name || '弟子',
-        meta.durationLabel
+        meta.durationLabel,
+        match.mentor_discord_id,
+        match.pupil_discord_id
       ).catch(() => {});
 
       return NextResponse.json({ ok: true, message: '師弟ペアが正式に成立しました！(+300コイン付与)' });
     }
 
     // ==========================================
-    // 5. 申請辞退 (REJECT)
+    // 5. 指導メモ・進捗更新 (UPDATE_PROGRESS)
+    // ==========================================
+    if (action === 'UPDATE_PROGRESS') {
+      if (!matchId) {
+        return NextResponse.json({ ok: false, error: '対象のマッチIDが必要です。' }, { status: 400 });
+      }
+
+      const { data: match, error: mErr } = await supabase
+        .from('mentorship_matches')
+        .select('*')
+        .eq('id', matchId)
+        .single();
+
+      if (mErr || !match) {
+        return NextResponse.json({ ok: false, error: 'マッチが見つかりません。' }, { status: 404 });
+      }
+
+      // 本人確認 (mentor または pupil または admin)
+      const isParticipant =
+        match.mentor_discord_id === session.discordId ||
+        match.pupil_discord_id === session.discordId ||
+        session.isAdmin;
+
+      if (!isParticipant) {
+        return NextResponse.json({ ok: false, error: '参加者のみがメモを更新できます。' }, { status: 403 });
+      }
+
+      const currentMeta = parseNotesMeta(match.notes);
+      const newMeta: MatchMeta = {
+        ...currentMeta,
+        progressNotes: body.progressNotes !== undefined ? body.progressNotes : currentMeta.progressNotes,
+        targetRank: body.targetRank !== undefined ? body.targetRank : currentMeta.targetRank,
+      };
+
+      await supabase
+        .from('mentorship_matches')
+        .update({
+          notes: JSON.stringify(newMeta),
+        })
+        .eq('id', matchId);
+
+      return NextResponse.json({
+        ok: true,
+        message: '📝 指導メモ・目標進捗を更新しました！',
+        meta: newMeta,
+      });
+    }
+
+    // ==========================================
+    // 6. 申請辞退 (REJECT)
     // ==========================================
     if (action === 'REJECT') {
       if (!matchId) {
