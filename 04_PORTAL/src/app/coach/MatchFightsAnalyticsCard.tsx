@@ -45,11 +45,15 @@ interface MatchAnalyticsResponse {
 interface MatchFightsAnalyticsCardProps {
   controlledMatchId?: string;
   onSelectMatchId?: (mId: string) => void;
+  summonerName?: string;
+  puuid?: string;
 }
 
 export default function MatchFightsAnalyticsCard({
   controlledMatchId,
   onSelectMatchId,
+  summonerName,
+  puuid,
 }: MatchFightsAnalyticsCardProps = {}) {
   const [data, setData] = useState<MatchAnalyticsResponse | null>(null);
   const [internalMatchId, setInternalMatchId] = useState<string>('all');
@@ -62,7 +66,12 @@ export default function MatchFightsAnalyticsCard({
   const fetchFights = async (mId: string) => {
     try {
       setSwitching(true);
-      const url = mId === 'all' ? '/api/lol/match-fights?matchId=all' : `/api/lol/match-fights?matchId=${mId}`;
+      const params = new URLSearchParams();
+      params.set('matchId', mId || 'all');
+      if (summonerName) params.set('summoner', summonerName);
+      if (puuid) params.set('puuid', puuid);
+
+      const url = `/api/lol/match-fights?${params.toString()}`;
       const res = await fetch(url);
       const json = await res.json();
       setData(json);
@@ -76,7 +85,7 @@ export default function MatchFightsAnalyticsCard({
 
   useEffect(() => {
     fetchFights(currentMatchId || 'all');
-  }, [currentMatchId]);
+  }, [currentMatchId, summonerName, puuid]);
 
   const handleSelectMatch = (mId: string) => {
     if (onSelectMatchId) {

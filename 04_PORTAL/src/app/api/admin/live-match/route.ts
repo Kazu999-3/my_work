@@ -200,9 +200,6 @@ export async function POST(req: Request) {
               );
             } catch (aiErr) {}
           }
-          if (coachAdvice.length === 0) {
-            coachAdvice = generateMockCoachAdvice(favChamp, myPlaystyle.tags[0] || { name: "バランス型" });
-          }
 
           // プレマッチ用の簡易分析および推奨カウンターを算出
           const analysis = generateLiveAnalysis(favChamp, myPlaystyle.tags[0] || { name: "バランス型" });
@@ -613,8 +610,6 @@ export async function POST(req: Request) {
         geminiApiKey,
         knowledgeData
       );
-    } else {
-      coachAdvice = generateMockCoachAdvice(enemyChampName, enemyPlaystyleTag);
     }
 
     // startBuff/firstGankはそもそも「試合前に確定させようのない予測」なので
@@ -699,11 +694,6 @@ JSONの出力フォーマットは必ず以下の通りにしてください。�
 ]
 `;
 
-    // 共通クライアント経由（429時は指数バックオフでリトライ、同一champ×tagは24hキャッシュ）。
-    // 'gemini-2.5-flash' はこのAPIキーで日次上限を大幅に超過していた(RPD 55/20)ため、
-    // 最もクォータに余裕のある 'gemini-3.1-flash-lite'（15 RPM / 500 RPD）に変更。
-    // /coach ページと同じ GEMINI_API_KEY を共有しているため、リトライ導入だけでは
-    // クォータ枯渇そのものは解決しない点に注意（.env の GEMINI_API_KEY_BATCH 分離とセットで運用すること）。
     const text = await callGeminiWithRetry(prompt, {
       model: "gemini-3.1-flash-lite",
       temperature: 0.3,
@@ -713,43 +703,8 @@ JSONの出力フォーマットは必ず以下の通りにしてください。�
     });
     return JSON.parse(text.trim());
   } catch (e) {
-    console.error("Gemini API call failed for coach advice (falling back to mock):", e);
-  }
-  return generateMockCoachAdvice(champ, tag);
-}
-
-function generateMockCoachAdvice(champ: string, tag: any): any[] {
-  const isEarlyJg = ['LeeSin', 'Khazix', 'JarvanIV', 'Shaco', 'Vi'].includes(champ);
-  if (isEarlyJg) {
-    return [
-      {
-        title: "1. LV3の早期インベイドを厳密に警戒せよ",
-        detail: `相手は ${champ} を使用し、${tag.name} の傾向があります。LV3時点でこちらのジャングルに侵入して小規模戦を仕掛けてくる可能性が高いため、味方にリバーの視界を置かせなさい。`
-      },
-      {
-        title: "2. レーンへの早期Gankルートを予測しカウンターを狙え",
-        detail: "相手は開始3分前後にトップまたはミッドへ仕掛けてきます。自軍のクリア速度を調整し、相手の仕掛けの瞬間にカバーが入れる位置をキープしなさい。"
-      },
-      {
-        title: "3. リバーでの孤立したタイマンは絶対に避けよ",
-        detail: "序盤のタイマンは相手に分があります。スカトル争いは味方レーナーのプッシュ状況を確認し、寄りの早い側が勝つと心得て動きなさい。"
-      }
-    ];
-  } else {
-    return [
-      {
-        title: "1. 相手のフルクリア周回にカウンターを合わせよ",
-        detail: `相手は成長優先のファーム型です。こちらのジャングルを素早くクリアし、相手がファームしている隙に反対側のレーンへ仕掛けてテンポ差を作りなさい。`
-      },
-      {
-        title: "2. ディープワードで敵キャンプを特定し続けよ",
-        detail: "相手の位置が分かればレーナーは安全にプッシュできます。敵ジャングルのラプターやウルフの前に視界を残し、居場所を露にし続けなさい。"
-      },
-      {
-        title: "3. 中盤以降のオブジェクト争いに備えよ",
-        detail: "相手は装備が揃うと集団戦でキャリーします。最初のヴォイドグラブやドラゴンはフリーで渡さず、レーンの優位をオブジェクトに還元しなさい。"
-      }
-    ];
+    console.error("Gemini API call failed for coach advice:", e);
+    return [];
   }
 }
 

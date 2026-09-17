@@ -45,9 +45,22 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const requestedMatchId = searchParams.get('matchId') || '';
     const matchIndex = Math.max(0, parseInt(searchParams.get('index') || '0', 10));
+    const requestedSummoner = searchParams.get('summoner') || '';
+    const requestedPuuid = searchParams.get('puuid') || '';
 
-    // 1. 対象プレイヤーの PUUID を特定（Kazurin / かずき / 環境変数）
-    let puuid = process.env.KAZURIN_PUUID || '';
+    // 1. 対象プレイヤーの PUUID を特定
+    let puuid = requestedPuuid;
+    if (!puuid && requestedSummoner) {
+      const parts = requestedSummoner.split('#');
+      const gName = parts[0]?.trim() || '';
+      const tLine = parts[1]?.trim() || 'JP1';
+      puuid = await fetchPuuidByRiotId(gName, tLine, apiKey);
+    }
+
+    if (!puuid) {
+      puuid = process.env.KAZURIN_PUUID || '';
+    }
+
     if (!puuid) {
       const { data: player } = await supabase
         .from('ktm_players')

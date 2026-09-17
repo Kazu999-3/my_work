@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'matchId is required' }, { status: 400 });
     }
 
-    let puuid = process.env.KAZURIN_PUUID || '';
+    let puuid = body.puuid || process.env.KAZURIN_PUUID || '';
     if (!puuid) {
       const { data: player } = await supabase
         .from('ktm_players')

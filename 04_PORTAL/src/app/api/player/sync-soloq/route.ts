@@ -40,27 +40,7 @@ export async function POST(req: Request) {
 
     const apiKey = process.env.RIOT_API_KEY;
     if (!apiKey) {
-      // APIキーがない場合は、テスト・動作確認用にダミーデータを生成してキャッシュに保存する（開発用フォールバック）
-      console.warn("⚠️ RIOT_API_KEY が未設定のため、デモ用モックデータを生成します。");
-      const mockSoloqPlaystyle = generateMockPlaystyle();
-      const updatedMetadata = {
-        ...(dbPlayer.metadata as any || {}),
-        playstyle_cache: {
-          ...((dbPlayer.metadata as any)?.playstyle_cache || {}),
-          soloq: mockSoloqPlaystyle
-        }
-      };
-
-      await supabase
-        .from('ktm_players')
-        .update({ metadata: updatedMetadata })
-        .eq('id', dbPlayer.id);
-
-      return NextResponse.json({
-        success: true,
-        message: 'Riot APIキー未設定のため、デモ用モックデータを生成しました。',
-        playstyle: mockSoloqPlaystyle
-      });
+      return NextResponse.json({ error: 'RIOT_API_KEY が未設定です。サーバー環境変数をご確認ください。' }, { status: 500 });
     }
 
     const puuid = dbPlayer.puuid;
@@ -192,47 +172,4 @@ export async function POST(req: Request) {
     console.error('Soloq Playstyle Sync Error:', error);
     return NextResponse.json({ error: error.message || '同期処理中にエラーが発生しました。' }, { status: 500 });
   }
-}
-
-/**
- * ダミーモックデータの生成（APIキーがない環境での開発・検証用）
- */
-function generateMockPlaystyle() {
-  const isBrawler = Math.random() > 0.4;
-  const isFarmer = Math.random() > 0.5;
-
-  const aggressive = isBrawler ? Math.floor(Math.random() * 20) + 70 : Math.floor(Math.random() * 30) + 30;
-  const farming = isFarmer ? Math.floor(Math.random() * 20) + 68 : Math.floor(Math.random() * 30) + 40;
-  const supportive = Math.floor(Math.random() * 40) + 30;
-
-  const tags = [];
-  if (aggressive >= 65) {
-    tags.push({
-      id: 'early-brawler',
-      name: '序盤の戦闘狂 (Early Brawler) [デモ]',
-      description: 'デモデータ判定。序盤のキル関与やインベイド率が高く算出されています。',
-      reason: '平均キル 6.8回、ファーストブラッド率 32% (モック判定)'
-    });
-  }
-  if (farming >= 65) {
-    tags.push({
-      id: 'speed-demon',
-      name: '神速の周回魔 (Speed Demon) [デモ]',
-      description: 'デモデータ判定。CS（クリープスコア）の伸び率が極めて高く算出されています。',
-      reason: '平均CS 7.2/min、周回タイム安定 (モック判定)'
-    });
-  } else {
-    tags.push({
-      id: 'balanced-player',
-      name: 'バランス型 (All-Rounder) [デモ]',
-      description: 'デモデータ判定。ファームと戦闘のバランスが非常に良いです。',
-      reason: 'Aggressive/Farming ともに標準レンジ (モック判定)'
-    });
-  }
-
-  return {
-    sliders: { aggressive, farming, supportive },
-    tags,
-    lastUpdated: new Date().toISOString()
-  };
 }

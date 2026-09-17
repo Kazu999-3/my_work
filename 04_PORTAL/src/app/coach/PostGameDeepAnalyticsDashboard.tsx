@@ -114,11 +114,15 @@ interface PostGameData {
 interface PostGameDashboardProps {
   controlledMatchId?: string;
   onSelectMatchId?: (mId: string) => void;
+  summonerName?: string;
+  puuid?: string;
 }
 
 export default function PostGameDeepAnalyticsDashboard({
   controlledMatchId,
   onSelectMatchId,
+  summonerName,
+  puuid,
 }: PostGameDashboardProps = {}) {
   const [data, setData] = useState<PostGameData | null>(null);
   const [internalMatchId, setInternalMatchId] = useState<string>('');
@@ -139,20 +143,23 @@ export default function PostGameDeepAnalyticsDashboard({
     setSwitching(true);
     setError(null);
     try {
-      const url = matchId && matchId !== 'all'
-        ? `/api/lol/postgame-deep-analytics?matchId=${matchId}`
-        : '/api/lol/postgame-deep-analytics';
+      const params = new URLSearchParams();
+      if (matchId && matchId !== 'all') params.set('matchId', matchId);
+      if (summonerName) params.set('summoner', summonerName);
+      if (puuid) params.set('puuid', puuid);
+
+      const url = `/api/lol/postgame-deep-analytics?${params.toString()}`;
       const res = await fetch(url);
-      const d = await res.json();
-      if (!res.ok || !d.success) {
-        throw new Error(d.error || '解析データの取得に失敗しました');
+      const json = await res.json();
+      if (!res.ok || json.error || !json.success) {
+        throw new Error(json.error || '解析データの取得に失敗しました');
       }
-      setData(d);
-      if (!internalMatchId && d.selected_match_id) {
-        setInternalMatchId(d.selected_match_id);
+      setData(json);
+      if (!internalMatchId && json.selected_match_id) {
+        setInternalMatchId(json.selected_match_id);
       }
       // メモを取得
-      const mId = matchId || d.selected_match_id;
+      const mId = matchId || json.selected_match_id;
       if (mId) {
         fetchMemo(mId);
       }
