@@ -167,17 +167,25 @@ export default function MatchupSmartCard({ champion, enemyChampion, onSelectCham
       )}
 
       {/* ② 推奨ルーン ＆ 初手アイテム ＆ 序盤対策 */}
-      {counterData && (
+      {counterData ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-amber-50/60 border border-amber-200/80 rounded-xl p-3.5 text-xs">
           <div>
             <span className="font-extrabold text-amber-900 flex items-center gap-1 text-[11px] mb-1">
               <span>💎</span> 推奨キーストーン & 初手
             </span>
             <p className="text-stone-800 font-bold">
-              {counterData.recommendedRune?.keystone || '征服者'} ({counterData.recommendedRune?.primaryTree} / {counterData.recommendedRune?.secondaryTree})
+              {counterData.recommendedRune?.keystone ? (
+                `${counterData.recommendedRune.keystone} (${counterData.recommendedRune?.primaryTree || '-'} / ${counterData.recommendedRune?.secondaryTree || '-'})`
+              ) : (
+                <span className="text-stone-400 font-normal">ルーン診断データ未取得</span>
+              )}
             </p>
             <p className="text-[11px] text-stone-600 mt-0.5">
-              📦 初手: <strong className="text-stone-900">{counterData.starterItem || 'ドランブレード'}</strong>
+              📦 初手: {counterData.starterItem ? (
+                <strong className="text-stone-900">{counterData.starterItem}</strong>
+              ) : (
+                <span className="text-stone-400">未取得</span>
+              )}
             </p>
           </div>
 
@@ -186,11 +194,16 @@ export default function MatchupSmartCard({ champion, enemyChampion, onSelectCham
               <span>⚡</span> Lv1〜Lv3 初動攻略の核心
             </span>
             <p className="text-[11px] text-stone-700 font-medium leading-relaxed">
-              {counterData.earlyLaningTip || '序盤は相手の主力スキル発動後の隙にダメージトレードを行いましょう。'}
+              {counterData.earlyLaningTip || '序盤の有利なスキルタイミングを見極めてショートトレードを行いましょう。'}
             </p>
           </div>
         </div>
-      )}
+      ) : !loading && enemyChampion ? (
+        <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 text-xs text-rose-700 flex items-center gap-2">
+          <span>⚠️</span>
+          <span>対面マッチアップ診断の取得に失敗しました。再試行してください。</span>
+        </div>
+      ) : null}
 
       {/* ③ 5分オブジェクト診断（ヴォイドグラブ vs ドラゴン方針） */}
       {objectiveData && (

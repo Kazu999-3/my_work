@@ -24,12 +24,12 @@ export async function GET(request: Request) {
       const prefs = p.initial_prefs || p.role_preferences || { primary: 'ALL', secondary: '-' };
       const memObj = {
         id: p.id, name: p.name, discord_id: p.discord_id || null, highest_rank: p.highest_rank, role_preferences: prefs,
-        currentTop: p.mmr_top || 1000,
-        currentJg: p.mmr_jg || 1000,
-        currentMid: p.mmr_mid || 1000,
-        currentAdc: p.mmr_adc || 1000,
-        currentSup: p.mmr_sup || 1000,
-        currentTotal: p.mmr || 1000,
+        currentTop: p.mmr_top || 1200,
+        currentJg: p.mmr_jg || 1200,
+        currentMid: p.mmr_mid || 1200,
+        currentAdc: p.mmr_adc || 1200,
+        currentSup: p.mmr_sup || 1200,
+        currentTotal: p.mmr || 1200,
         expectedTop: calculateInitialMmr(p.highest_rank, 'TOP', prefs),
         expectedJg: calculateInitialMmr(p.highest_rank, 'JG', prefs),
         expectedMid: calculateInitialMmr(p.highest_rank, 'MID', prefs),

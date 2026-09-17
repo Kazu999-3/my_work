@@ -687,7 +687,7 @@ export default function PlayerAnalyzerPage() {
               }`}
             >
               <Compass size={14} />
-              <span>4. 🧬 プレイヤー心理DNA ＆ メンタルカルテ (MBTI)</span>
+              <span>4. 🧬 プレイスタイル特性タイプ診断（独自スタッツ分析）</span>
             </button>
           </div>
 
@@ -899,7 +899,7 @@ export default function PlayerAnalyzerPage() {
                             {
                               label: '④ オブジェクト先制視界管理',
                               score: report.metrics.objectives.score,
-                              valueText: `${report.sessionAnalytics?.earlyTimelineImpact?.objLabel || 'ドラゴン確保時勝率'}: ${report.sessionAnalytics?.earlyTimelineImpact?.voidgrubWinRate || 50}%`,
+                              valueText: `${report.sessionAnalytics?.earlyTimelineImpact?.objLabel || 'ドラゴン確保時勝率'}: ${report.sessionAnalytics?.earlyTimelineImpact?.voidgrubWinRate != null ? `${report.sessionAnalytics.earlyTimelineImpact.voidgrubWinRate}%` : '未計測'}`,
                               barBg: 'bg-amber-500',
                               textColor: 'text-amber-700',
                               subTextColor: 'text-amber-700',
@@ -948,7 +948,7 @@ export default function PlayerAnalyzerPage() {
                             {
                               label: '④ オブジェクト確保 (Obj Control)',
                               score: report.metrics.objectives.score,
-                              valueText: `グラブ/ドラゴン優位時勝率 ${report.sessionAnalytics?.earlyTimelineImpact?.voidgrubWinRate || 50}%`,
+                              valueText: `グラブ/ドラゴン優位時勝率 ${report.sessionAnalytics?.earlyTimelineImpact?.voidgrubWinRate != null ? `${report.sessionAnalytics.earlyTimelineImpact.voidgrubWinRate}%` : '未計測'}`,
                               barBg: 'bg-amber-500',
                               textColor: 'text-amber-700',
                               subTextColor: 'text-amber-700',
@@ -997,7 +997,7 @@ export default function PlayerAnalyzerPage() {
                             {
                               label: '④ リバー・オブジェクト主導権',
                               score: report.metrics.objectives.score,
-                              valueText: `オブジェクト優位時勝率 ${report.sessionAnalytics?.earlyTimelineImpact?.voidgrubWinRate || 50}%`,
+                              valueText: `オブジェクト優位時勝率 ${report.sessionAnalytics?.earlyTimelineImpact?.voidgrubWinRate != null ? `${report.sessionAnalytics.earlyTimelineImpact.voidgrubWinRate}%` : '未計測'}`,
                               barBg: 'bg-amber-500',
                               textColor: 'text-amber-700',
                               subTextColor: 'text-amber-700',
@@ -1046,7 +1046,7 @@ export default function PlayerAnalyzerPage() {
                             {
                               label: '④ オブジェクトバースト力',
                               score: report.metrics.objectives.score,
-                              valueText: `ドラゴン確保時勝率 ${report.sessionAnalytics?.earlyTimelineImpact?.voidgrubWinRate || 50}%`,
+                              valueText: `ドラゴン確保時勝率 ${report.sessionAnalytics?.earlyTimelineImpact?.voidgrubWinRate != null ? `${report.sessionAnalytics.earlyTimelineImpact.voidgrubWinRate}%` : '未計測'}`,
                               barBg: 'bg-amber-500',
                               textColor: 'text-amber-700',
                               subTextColor: 'text-amber-700',
@@ -1096,7 +1096,7 @@ export default function PlayerAnalyzerPage() {
                             {
                               label: '④ スプリットプッシュ圧力 ＆ グラブ確保',
                               score: report.metrics.objectives.score,
-                              valueText: `グラブ確保時勝率 ${report.sessionAnalytics?.earlyTimelineImpact?.voidgrubWinRate || 50}%`,
+                              valueText: `グラブ確保時勝率 ${report.sessionAnalytics?.earlyTimelineImpact?.voidgrubWinRate != null ? `${report.sessionAnalytics.earlyTimelineImpact.voidgrubWinRate}%` : '未計測'}`,
                               barBg: 'bg-amber-500',
                               textColor: 'text-amber-700',
                               subTextColor: 'text-amber-700',
@@ -1194,11 +1194,16 @@ export default function PlayerAnalyzerPage() {
                           <div className="flex justify-between font-bold">
                             <span>{report.sessionAnalytics.earlyTimelineImpact.objLabel || '序盤オブジェクト獲得時勝率'}:</span>
                             <span className="font-mono text-emerald-700">
-                              {report.sessionAnalytics.earlyTimelineImpact.voidgrubWinRate}%
+                              {report.sessionAnalytics.earlyTimelineImpact.voidgrubWinRate != null
+                                ? `${report.sessionAnalytics.earlyTimelineImpact.voidgrubWinRate}%`
+                                : '未計測 (データ不足)'}
                             </span>
                           </div>
-                          <div className="text-[11px] text-stone-500 pt-1 border-t border-stone-100 font-medium">
-                            {report.sessionAnalytics.earlyTimelineImpact.plateGoldImpact}
+                          <div className="text-[11px] text-stone-500 pt-1 border-t border-stone-100 font-medium space-y-1">
+                            <div>{report.sessionAnalytics.earlyTimelineImpact.plateGoldImpact}</div>
+                            <div className="text-[10px] text-stone-400">
+                              ※試合優位チームがオブジェクトを確保しやすい相関を含みます
+                            </div>
                           </div>
                           {report.sessionAnalytics.earlyTimelineImpact.roleObjectiveFocus && (
                             <div className="text-[10.5px] text-indigo-700 bg-indigo-50/70 p-2 rounded-xl font-medium leading-relaxed">
@@ -1786,7 +1791,7 @@ export default function PlayerAnalyzerPage() {
           )}
 
           {/* ========================================================================= */}
-          {/* タブ 4: 🧬 プレイヤー心理DNA ＆ メンタルカルテ (MBTI) */}
+          {/* タブ 4: 🧬 プレイスタイル特性タイプ診断（独自スタッツ分析） */}
           {/* ========================================================================= */}
           {activeTab === 'psychology' && report.sessionAnalytics?.playstyleMbti && (
             <div className="space-y-6">
@@ -1808,11 +1813,14 @@ export default function PlayerAnalyzerPage() {
                       <p className="text-xs text-indigo-900 font-bold mt-1">
                         {report.sessionAnalytics.playstyleMbti.tagline}
                       </p>
+                      <p className="text-[10px] text-stone-500 font-medium mt-0.5">
+                        ※LoLの実測スタッツ（KDA・CS・被デス・視界）から算出した独自の4軸プレイスタイル分類です
+                      </p>
                     </div>
                   </div>
 
                   <div className="text-right shrink-0">
-                    <span className="text-[10px] font-mono text-stone-400 font-bold">意思決定DNAアルゴリズム</span>
+                    <span className="text-[10px] font-mono text-stone-400 font-bold">意思決定スタッツ分類</span>
                     <div className="text-xs font-black text-indigo-700">深層パーソナリティ判定完了</div>
                   </div>
                 </div>

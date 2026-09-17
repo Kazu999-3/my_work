@@ -880,17 +880,11 @@ ${enemyKnowledge.text || `${enemy} の基本データ`}
         const jsonEnd = cleaned.lastIndexOf('}');
         if (jsonStart >= 0 && jsonEnd > jsonStart) cleaned = cleaned.slice(jsonStart, jsonEnd + 1);
         parsed = JSON.parse(cleaned);
-      } catch {
-        parsed = {
-          enemy,
-          myChampion: myChamp,
-          recommendedRunes: '征服者 / 凱旋 / 迅速 / 背水の陣 (不撓不屈 / 息継ぎ)',
-          runeReason: `${enemy}とのトレードで持続火力を最大化しつつ、耐久力を補強します。`,
-          recommendedItems: 'ドランブレード / ドランシールド ➔ 1stコア ➔ 状況別防御靴',
-          itemReason: '相手のダメージ属性（物理/魔法）に合わせて靴を選択し、1stコア完成を最優先。',
-          tips: `${enemy}の主要スキルのクールダウン中を狙ってショートトレードを仕掛けましょう。`,
-          counters: []
-        };
+      } catch (err) {
+        console.error('Failed to parse Gemini counter_pick response:', err, raw);
+        return NextResponse.json({
+          error: '対面マッチアップ診断の生成に失敗しました。時間をおいて再試行してください。'
+        }, { status: 502 });
       }
 
       return NextResponse.json({

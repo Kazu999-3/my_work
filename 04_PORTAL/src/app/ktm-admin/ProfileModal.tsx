@@ -81,7 +81,7 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                   {player.highest_rank || "UNRANKED"}
                 </span>
                 <span className="bg-orange-100 text-orange-700 border border-orange-200 px-2 py-0.5 rounded text-xs font-bold">
-                  MMR: {player.mmr || 1000}
+                  MMR: {player.mmr || 1200}
                 </span>
                 {(() => {
                   const totalG = player.total_games ?? player.games ?? player.metadata?.games ?? stats?.totalMatches ?? 0;
@@ -172,7 +172,7 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                 {/* プレイスタイル・AI分析 */}
                 <div className="bg-white/60 border border-border rounded-lg p-4 flex flex-col md:flex-row gap-6 items-center">
                   <div className="w-full md:w-1/3">
-                    <ScoutingReport stats={stats} mmr={player.mmr || 1000} />
+                    <ScoutingReport stats={stats} mmr={player.mmr || 1200} />
                   </div>
                   <div className="w-full md:w-2/3 space-y-3">
                     <h4 className="text-lg font-bold text-stone-900 flex items-center gap-2">

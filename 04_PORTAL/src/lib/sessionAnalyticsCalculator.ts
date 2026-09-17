@@ -550,8 +550,8 @@ export interface EarlyTimelineImpact {
   firstBloodRate: number;
   firstDeathAvgMinute: string;
   objLabel: string;
-  voidgrubWinRate: number;
-  voidgrubLossWinRate: number;
+  voidgrubWinRate: number | null;
+  voidgrubLossWinRate: number | null;
   plateGoldImpact: string;
   roleObjectiveFocus: string;
 }
@@ -1129,11 +1129,11 @@ export function calculateRealSessionAnalytics(
 
   const objWinRate = objSecuredTotal > 0
     ? Math.round((objSecuredWins / objSecuredTotal) * 100)
-    : Math.min(88, Math.max(50, Math.round(overallWinRate + 15)));
+    : null;
 
   const objLossWinRate = objLostTotal > 0
     ? Math.round((objLostWins / objLostTotal) * 100)
-    : Math.max(18, Math.min(48, Math.round(overallWinRate - 15)));
+    : null;
 
   const earlyTimelineImpact: EarlyTimelineImpact = {
     firstBloodRate: estimatedFbRate,

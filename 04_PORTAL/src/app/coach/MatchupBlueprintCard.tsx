@@ -379,10 +379,10 @@ export default function MatchupBlueprintCard({
                     <span>{myChamp} 推奨ルーン構成</span>
                   </div>
                   <div className="text-xs font-black text-amber-950 bg-amber-100/70 p-2.5 rounded-lg border border-amber-300">
-                    {counterData.recommendedRunes || '征服者 / 凱旋 / 迅速 / 背水の陣'}
+                    {counterData.recommendedRunes || '推奨ルーンデータ未取得（再読み込みしてください）'}
                   </div>
                   <p className="text-[11px] text-stone-600 leading-relaxed font-medium">
-                    {counterData.runeReason || '対面とのダメージトレードにおいて持続火力と耐久性を両立します。'}
+                    {counterData.runeReason || '対面マッチアップに応じたルーンの選定理由が未取得です。'}
                   </p>
                 </div>
 
@@ -393,10 +393,10 @@ export default function MatchupBlueprintCard({
                     <span>初手アイテム ＆ 対策コアビルド</span>
                   </div>
                   <div className="text-xs font-black text-emerald-950 bg-emerald-100/70 p-2.5 rounded-lg border border-emerald-300">
-                    {counterData.recommendedItems || 'スタートアイテム ➔ 1stコア ➔ 防御靴'}
+                    {counterData.recommendedItems || '推奨ビルドデータ未取得（再読み込みしてください）'}
                   </div>
                   <p className="text-[11px] text-stone-600 leading-relaxed font-medium">
-                    {counterData.itemReason || `${enemyChamp} の攻撃属性に対応したアイテム選択を行い、パワースパイクを早めます。`}
+                    {counterData.itemReason || `${enemyChamp} に対するアイテム選定理由が未取得です。`}
                   </p>
                 </div>
               </div>

@@ -481,17 +481,18 @@ export async function POST(req: Request) {
             if (total > 0) {
               winRate = Math.round((wins / total) * 100);
               pConsecutiveLosses = recentLosses;
-              pIsTilted = pConsecutiveLosses >= 2;
+              pIsTilted = pConsecutiveLosses >= 3;
 
               const topCh = Object.entries(chCounts).sort((a, b) => b[1] - a[1])[0];
-              if (topCh && topCh[1] >= 3) {
+              if (topCh && topCh[1] >= 4) {
                 pIsOtp = true;
                 pOtpChamp = topCh[0];
               }
 
-              if (losses >= 3 || winRate <= 40) {
+              if (losses >= 3 || winRate <= 35) {
                 isVulnerable = true;
-                fbRate = 40 + (losses * 10);
+                // 実測FBデータがない場合は架空パーセントを捏造せずnullを保持
+                fbRate = null;
               }
             } else {
               // 直近5戦の詳細が1件も取れなかった（新規アカウント・API制限等）

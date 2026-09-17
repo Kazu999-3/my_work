@@ -232,10 +232,10 @@ export default function PlayerMyPage() {
   }, [mmrChartData]);
 
   const currentLaneMmr = useMemo(() => {
-    if (!player) return 1000;
-    if (activeLane === 'TOTAL') return player.mmr || 1000;
+    if (!player) return 1200;
+    if (activeLane === 'TOTAL') return player.mmr || 1200;
     const key = `mmr_${activeLane.toLowerCase()}`;
-    return player[key] || 1000;
+    return player[key] || 1200;
   }, [player, activeLane]);
 
   // レーン別戦績のソートキー (勝率順/試合数順/KDA順/デフォルト)
@@ -270,7 +270,7 @@ export default function PlayerMyPage() {
   useEffect(() => {
     if (!player || !id) return;
     try {
-      const currentTier = getKtmRank(player.mmr || 1000).name;
+      const currentTier = getKtmRank(player.mmr || 1200).name;
       const key = `ktm_last_tier_${id}`;
       const prevTier = localStorage.getItem(key);
       if (prevTier && prevTier !== currentTier) {
@@ -317,9 +317,9 @@ export default function PlayerMyPage() {
 
   // 味方プレイヤー別の勝率集計（シナジー計算用）。
   // /api/player/chemistry が ktm_match_participants を正しくJOINして集計済みなので、
-  // それをそのまま使う（2戦以上のペアに絞り込むだけ）。
+  // それをそのまま使う（3戦以上のペアに絞り込んで偏りを防止）。
   const qualifiedChemistry = useMemo(() => {
-    return (chemistry || []).filter((t: any) => t.games >= 2);
+    return (chemistry || []).filter((t: any) => t.games >= 3);
   }, [chemistry]);
 
   // チームシナジー分析 (最強のチーム相性 vs 課題のあるチーム相性)
@@ -340,9 +340,9 @@ export default function PlayerMyPage() {
       .slice(0, 5);
   }, [qualifiedChemistry]);
 
-  // 対面別の得意/苦手（2戦以上の相手のみ）
+  // 対面別の得意/苦手（3戦以上の相手のみ）
   const matchupExtremes = useMemo(() => {
-    const qualified = (matchups || []).filter((m: any) => m.games >= 2);
+    const qualified = (matchups || []).filter((m: any) => m.games >= 3);
     // 勝率50%以上を得意候補、50%未満を苦手候補に明確分離
     const bestCandidates = qualified.filter((m: any) => m.winRate >= 50);
     const worstCandidates = qualified.filter((m: any) => m.winRate < 50);
@@ -796,7 +796,7 @@ export default function PlayerMyPage() {
                       最高: <span className="text-cyan-600 font-extrabold">{player.highest_rank || "UNRANKED"}</span>
                     </span>
                     <span className="bg-cyan-100 border border-cyan-200 px-2.5 py-0.5 rounded-full text-xs font-bold text-cyan-700 backdrop-blur-md">
-                      総合MMR: <span className="text-stone-900 font-black">{player.mmr || 1000}</span>
+                      総合MMR: <span className="text-stone-900 font-black">{player.mmr || 1200}</span>
                     </span>
                     {overallStats.total > 0 && (
                       <span className={`px-2.5 py-0.5 rounded-full text-xs font-black border backdrop-blur-md flex items-center gap-1 ${
@@ -900,9 +900,9 @@ export default function PlayerMyPage() {
               <div>
                 <div className="text-[10px] font-black text-stone-400 uppercase tracking-wider">KTM内戦レート ＆ Tier</div>
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="text-xl font-black font-mono text-stone-900">{player.mmr || 1000}</span>
+                  <span className="text-xl font-black font-mono text-stone-900">{player.mmr || 1200}</span>
                   <span className="text-xs font-black text-amber-800 bg-amber-100 px-2 py-0.5 rounded border border-amber-200">
-                    {getKtmRank(player.mmr || 1000).name}
+                    {getKtmRank(player.mmr || 1200).name}
                   </span>
                 </div>
               </div>
@@ -1176,7 +1176,7 @@ export default function PlayerMyPage() {
                           </div>
                         </div>
                       ) : (
-                        <p className="text-sm text-gray-500 py-4">対面データがまだ足りません（各相手2戦以上で表示）</p>
+                        <p className="text-sm text-gray-500 py-4">対面データがまだ足りません（各相手3戦以上で表示）</p>
                       )}
                     </div>
                   </div>
@@ -1218,13 +1218,16 @@ export default function PlayerMyPage() {
                               <Users className="w-5 h-5 text-indigo-600" />
                               <span>チーム相性 ＆ シナジー分析</span>
                             </span>
-                            <span className="text-[9px] text-gray-500 font-medium">(味方同チーム・2戦以上)</span>
+                            <span className="text-[9px] text-gray-500 font-medium">(味方同チーム・3戦以上)</span>
                           </h3>
                           <div className="grid grid-cols-2 gap-4 text-center">
                             <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
                               <p className="text-[10px] text-emerald-700 font-black mb-1">🏆 最強のシナジー (高勝率)</p>
                               <p className="text-lg font-black text-stone-900 truncate">{synergyPair.best.name}</p>
                               <p className="text-xs text-stone-500">同チーム{synergyPair.best.games}戦・勝率<span className="text-emerald-700 font-bold ml-1">{synergyPair.best.winRate}%</span></p>
+                              {synergyPair.best.games <= 3 && (
+                                <p className="text-[9px] text-stone-400 mt-0.5">※参考データ（3戦）</p>
+                              )}
                             </div>
                             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
                               <p className="text-[10px] text-amber-700 font-black mb-1">⚠️ 課題のシナジー (伸びしろ)</p>
@@ -1232,6 +1235,9 @@ export default function PlayerMyPage() {
                                 <>
                                   <p className="text-lg font-black text-stone-900 truncate">{synergyPair.challenging.name}</p>
                                   <p className="text-xs text-stone-500">同チーム{synergyPair.challenging.games}戦・勝率<span className="text-amber-700 font-bold ml-1">{synergyPair.challenging.winRate}%</span></p>
+                                  {synergyPair.challenging.games <= 3 && (
+                                    <p className="text-[9px] text-stone-400 mt-0.5">※参考データ（3戦）</p>
+                                  )}
                                 </>
                               ) : (
                                 <p className="text-xs text-stone-500 py-3">十分な対戦データがありません</p>
@@ -1332,7 +1338,7 @@ export default function PlayerMyPage() {
                       <Sparkles className="w-5 h-5 text-purple-600 animate-pulse" />
                       <span>週刊スタッツ・スカウティングレポート (KTM Weekly Scouting)</span>
                     </h3>
-                    <ScoutingReport stats={stats} mmr={player.mmr || 1000} />
+                    <ScoutingReport stats={stats} mmr={player.mmr || 1200} />
                   </div>
 
                   {/* MMRグラフ */}
@@ -1720,7 +1726,7 @@ export default function PlayerMyPage() {
                                   <span className="font-black text-lg tracking-wider text-stone-800">{role}</span>
                                 </div>
                                 <span className="text-[10px] text-cyan-700 font-bold bg-cyan-100 border border-cyan-200 px-2 py-0.5 rounded-full">
-                                  MMR {player[`mmr_${role.toLowerCase()}`] || 1000}
+                                  MMR {player[`mmr_${role.toLowerCase()}`] || 1200}
                                 </span>
                               </div>
                               

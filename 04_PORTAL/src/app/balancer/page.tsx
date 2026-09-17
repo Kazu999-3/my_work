@@ -1032,12 +1032,12 @@ export default function BalancerPage() {
     const roles = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
     const blueLines = roles.map(r => {
       const p = balanceResult.teamBlue.find((x: any) => x.currentRole === r);
-      return p ? `  ${r.padEnd(3, ' ')}: ${p.name} (${p.mmr || 1000})` : `  ${r.padEnd(3, ' ')}: -`;
+      return p ? `  ${r.padEnd(3, ' ')}: ${p.name} (${p.mmr || 1200})` : `  ${r.padEnd(3, ' ')}: -`;
     }).join('\n');
 
     const redLines = roles.map(r => {
       const p = balanceResult.teamRed.find((x: any) => x.currentRole === r);
-      return p ? `  ${r.padEnd(3, ' ')}: ${p.name} (${p.mmr || 1000})` : `  ${r.padEnd(3, ' ')}: -`;
+      return p ? `  ${r.padEnd(3, ' ')}: ${p.name} (${p.mmr || 1200})` : `  ${r.padEnd(3, ' ')}: -`;
     }).join('\n');
 
     const specText = (balanceResult.spectators && balanceResult.spectators.length > 0)
@@ -1775,7 +1775,7 @@ export default function BalancerPage() {
                   const offB = pB && pB.mainLane !== 'ALL' && pB.mainLane !== '-' && pB.currentRole !== pB.mainLane;
                   const offR = pR && pR.mainLane !== 'ALL' && pR.mainLane !== '-' && pR.currentRole !== pR.mainLane;
                   const bKey = `teamBlue-${role}`, rKey = `teamRed-${role}`;
-                  const bMMR = pB?.mmr || 1000, rMMR = pR?.mmr || 1000, diff = bMMR - rMMR;
+                  const bMMR = pB?.mmr || 1200, rMMR = pR?.mmr || 1200, diff = bMMR - rMMR;
                   return (
                     <div key={role} className="grid grid-cols-1 md:grid-cols-11 gap-2 items-center bg-black/[0.03] p-2 md:p-3 rounded-2xl border border-black/5">
                       <div draggable={!!pB?.name} onDragStart={e => handleDragStart(e,'teamBlue',role,pB?.name||'')} onDragOver={e => handleDragOver(e,bKey)} onDragLeave={handleDragLeave} onDrop={e => handleDropPlayer(e,'teamBlue',role)}

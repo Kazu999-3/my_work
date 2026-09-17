@@ -25,7 +25,9 @@ export default function EarlyJunglePathingCard({
   // 1. スカトル勝率・戦闘力判定 (Lv3時点)
   const isEarlyStronger = mySpikeEarly > enemySpikeEarly;
   const isEarlyWeaker = mySpikeEarly < enemySpikeEarly;
-  const isFasterClear = (myFastestClearSec || 205) < (enemyFastestClearSec || 205);
+  // 双方ともにクリアタイム実測がない場合は速度差で争奪を決め打ちしない
+  const hasBothClearTimes = myFastestClearSec != null && enemyFastestClearSec != null;
+  const isFasterClear = hasBothClearTimes ? (myFastestClearSec < enemyFastestClearSec) : false;
 
   // 2. 推奨プラン判定
   let planType: 'contest' | 'avoid' | 'gank_first' = 'contest';
@@ -57,7 +59,7 @@ export default function EarlyJunglePathingCard({
     step3Text = `スカトル確保後、HP8割以上ならガンク、削られていれば即リコール。`;
   }
 
-  const fmtSec = (sec?: number | null) => (sec ? `${Math.floor(sec / 60)}分${String(sec % 60).padStart(2, '0')}秒` : '約3分15秒');
+  const fmtSec = (sec?: number | null) => (sec ? `${Math.floor(sec / 60)}分${String(sec % 60).padStart(2, '0')}秒` : '約3分15秒（目安推測）');
 
   return (
     <div className="bg-gradient-to-br from-stone-900 to-stone-950 text-white rounded-2xl p-4 border border-stone-800 space-y-3 shadow-md">

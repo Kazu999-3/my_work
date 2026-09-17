@@ -49,8 +49,8 @@ export async function POST(request: Request) {
     const matchupsText = ['TOP', 'JG', 'MID', 'ADC', 'SUP'].map(formatMatchup).join('\n\n');
     
     // MMRの平均を計算
-    const blueAvgMmr = Math.round(teamBlue.reduce((s: number, p: any) => s + (p.mmr || 1000), 0) / 5);
-    const redAvgMmr = Math.round(teamRed.reduce((s: number, p: any) => s + (p.mmr || 1000), 0) / 5);
+    const blueAvgMmr = Math.round(teamBlue.reduce((s: number, p: any) => s + (p.mmr || 1200), 0) / 5);
+    const redAvgMmr = Math.round(teamRed.reduce((s: number, p: any) => s + (p.mmr || 1200), 0) / 5);
 
     // 勝利予想(#79): balancer/pending と同じElo式
     const pBlue = 1 / (1 + Math.pow(10, (redAvgMmr - blueAvgMmr) / 400));

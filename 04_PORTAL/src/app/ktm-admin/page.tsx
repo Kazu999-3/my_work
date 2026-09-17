@@ -538,34 +538,34 @@ export default function KtmAdminPage() {
         discord_id: p.discord_id,
         name: p.name,
         ign: p.ign,
-        mmr: parseInt(p.mmr) || 1000,
+        mmr: parseInt(p.mmr) || 1200,
         role_preferences: p.role_preferences,
         is_active: p.is_active,
         ng_lane_1: p.ng_lane_1 || null,
         ng_lane_2: p.ng_lane_2 || null,
         highest_rank: p.highest_rank || null,
-        mmr_top: parseInt(p.mmr_top) || 1000,
-        mmr_jg: parseInt(p.mmr_jg) || 1000,
-        mmr_mid: parseInt(p.mmr_mid) || 1000,
-        mmr_adc: parseInt(p.mmr_adc) || 1000,
-        mmr_sup: parseInt(p.mmr_sup) || 1000,
+        mmr_top: parseInt(p.mmr_top) || 1200,
+        mmr_jg: parseInt(p.mmr_jg) || 1200,
+        mmr_mid: parseInt(p.mmr_mid) || 1200,
+        mmr_adc: parseInt(p.mmr_adc) || 1200,
+        mmr_sup: parseInt(p.mmr_sup) || 1200,
         metadata: p.metadata,
       }));
       const inserts = targetPlayers.filter(p => !p.id).map(p => ({
         discord_id: (p.discord_id && p.discord_id.startsWith('new-')) ? '' : p.discord_id,
         name: p.name,
         ign: p.ign,
-        mmr: parseInt(p.mmr) || 1000,
+        mmr: parseInt(p.mmr) || 1200,
         role_preferences: p.role_preferences,
         is_active: p.is_active,
         ng_lane_1: p.ng_lane_1 || null,
         ng_lane_2: p.ng_lane_2 || null,
         highest_rank: p.highest_rank || null,
-        mmr_top: parseInt(p.mmr_top) || 1000,
-        mmr_jg: parseInt(p.mmr_jg) || 1000,
-        mmr_mid: parseInt(p.mmr_mid) || 1000,
-        mmr_adc: parseInt(p.mmr_adc) || 1000,
-        mmr_sup: parseInt(p.mmr_sup) || 1000,
+        mmr_top: parseInt(p.mmr_top) || 1200,
+        mmr_jg: parseInt(p.mmr_jg) || 1200,
+        mmr_mid: parseInt(p.mmr_mid) || 1200,
+        mmr_adc: parseInt(p.mmr_adc) || 1200,
+        mmr_sup: parseInt(p.mmr_sup) || 1200,
         metadata: p.metadata || { notes: "" },
       }));
 
@@ -1608,7 +1608,7 @@ export default function KtmAdminPage() {
                           <Info className="w-4 h-4" />
                         </button>
                         <span className="text-xs font-mono font-black text-amber-900 bg-amber-100 px-2 py-0.5 rounded-lg border border-amber-200">
-                          MMR {p.mmr || 1000}
+                          MMR {p.mmr || 1200}
                         </span>
                       </div>
                     </div>
@@ -1799,7 +1799,7 @@ export default function KtmAdminPage() {
                         </td>
                         <td className="px-2 py-1.5 text-center text-xs font-bold">
                           <div className="flex items-center justify-center gap-1.5">
-                            <span>{p.mmr || 1000}</span>
+                            <span>{p.mmr || 1200}</span>
                             <button
                               type="button"
                               onClick={() => togglePlayerDetails(uid)}
@@ -1854,7 +1854,7 @@ export default function KtmAdminPage() {
                               <div className="flex flex-wrap items-center gap-4 text-xs">
                                 {['TOP', 'JG', 'MID', 'ADC', 'SUP'].map(role => {
                                   const mmrKey = `mmr_${role.toLowerCase()}` as keyof typeof p;
-                                  const val = p[mmrKey] as number || 1000;
+                                  const val = p[mmrKey] as number || 1200;
                                   return (
                                     <div key={role} className="flex items-center gap-2 bg-surface px-2 py-1.5 rounded border border-border hover:border-border transition">
                                       <RoleIcon role={role} />
@@ -1870,7 +1870,7 @@ export default function KtmAdminPage() {
                                 <div className="flex items-center gap-2 bg-surface px-2 py-1.5 rounded border border-amber-200 ml-4">
                                   <span className="font-bold text-amber-700 w-12 text-center">平均MMR</span>
                                   <MmrBadgeInput
-                                    value={p.mmr || 1000}
+                                    value={p.mmr || 1200}
                                     onChange={(v) => handleInputSave(uid, "mmr", v)}
                                   />
                                 </div>

@@ -430,21 +430,24 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                         const scoredEnemies = enemies.map((e: any) => {
                           let score = 50;
                           const reasons: string[] = [];
-                          if (e.isTilted || (e.consecutiveLosses && e.consecutiveLosses >= 2)) {
+                          if (e.isTilted || (e.consecutiveLosses && e.consecutiveLosses >= 3)) {
                             score += 35;
-                            reasons.push(`${e.consecutiveLosses || 2}連敗中(ティルト気味)`);
+                            reasons.push(`${e.consecutiveLosses || 3}連敗中(ティルト警戒)`);
                           }
-                          if (e.isVulnerable || (e.fbRate && e.fbRate >= 25)) {
+                          if (e.fbRate && e.fbRate >= 25) {
                             score += 30;
-                            reasons.push(`被ファーストブラッド率高(${e.fbRate || 30}%)`);
+                            reasons.push(`被ファーストブラッド率高(${e.fbRate}%)`);
+                          } else if (e.isVulnerable) {
+                            score += 25;
+                            reasons.push(`直近戦績不調(狙い目)`);
                           }
-                          if (e.winRate && e.winRate <= 45) {
+                          if (e.winRate && e.winRate <= 40) {
                             score += 20;
-                            reasons.push(`勝率低迷(${e.winRate}%)`);
+                            reasons.push(`直近勝率低迷(${e.winRate}%)`);
                           }
                           if (e.isOtp) {
                             score -= 30;
-                            reasons.push(`OTP熟練者(${e.otpChampion || e.championName})`);
+                            reasons.push(`直近ピック集中(${e.otpChampion || e.championName})`);
                           }
                           return { ...e, gankScore: score, reasons };
                         }).sort((a: any, b: any) => b.gankScore - a.gankScore);
@@ -586,7 +589,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                                       )}
                                       {p.isVulnerable && (
                                         <span className="inline-block text-[9px] text-rose-700 bg-rose-100 px-2 py-0.5 rounded border border-rose-200 font-black ml-1 animate-pulse">
-                                          🎯 集中Gank推奨 (被FB: {p.fbRate}%)
+                                          🎯 集中Gank推奨 ({p.fbRate ? `被FB: ${p.fbRate}%` : '直近不調'})
                                         </span>
                                       )}
                                       {p.dataInsufficient && !p.isOtp && !p.isTilted && !p.isVulnerable && (
