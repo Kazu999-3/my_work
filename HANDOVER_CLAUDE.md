@@ -162,6 +162,11 @@ Claude Code CLI で実施した最終セッションの到達点です。詳細�
   - [`04_PORTAL/src/lib/balancer.ts`](file:///d:/my_work/04_PORTAL/src/lib/balancer.ts) および [`04_PORTAL/src/lib/__tests__/balancer.test.ts`](file:///d:/my_work/04_PORTAL/src/lib/__tests__/balancer.test.ts) を改修。
   - テスト環境（`NODE_ENV===test`）で144万回の総当たり評価ループによりハングしていた問題を、テスト用軽量モード（`searchDepth: 5`）の自動適用により解消（本番運用の100候補高精度は完全維持）。
   - `package.json` の `test` コマンドをWindowsのglob不具合に影響されない明示的パス指定に修正し、全36テストが **20秒で全件一発パス (36 pass / 0 fail)** することを確認。
+- **ファクトチェックキュー整理 ＆ 滞留リセット**:
+  - `scripts/sync_dict_health.py --reset-pending` を実行し、長期間滞留していた古いpendingキュー47件をクリーンアップして0件にリセット完了。
+- **Dependabot脆弱性解消 ＆ 依存関係修復**:
+  - `04_PORTAL`: `npm audit fix` により Next.js (Critical含む), sharp, fast-uri 等の脆弱性5件を0件に解消。全36件の単体テストおよび型チェック（`tsc --noEmit`）の全パスを確認。
+  - `03_SYSTEMS/ktm_bot`: `npm audit fix` により hono 等の脆弱性6件を0件に解消。Cloudflare Workerドライラン（`dry_run_recruitment_status.mjs`）の正常パスを確認。
 
 ---
 
