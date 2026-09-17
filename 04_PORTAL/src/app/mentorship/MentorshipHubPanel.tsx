@@ -57,6 +57,9 @@ export default function MentorshipHubPanel() {
   // 💬 Discord同期ステート
   const [isSyncingDiscord, setIsSyncingDiscord] = useState(false);
 
+  // 🤝 承諾処理中ステート（二重クリック・多重送信完全防止）
+  const [acceptingMatchId, setAcceptingMatchId] = useState<string | null>(null);
+
   // Discord募集板の即時同期
   const handleSyncDiscord = async () => {
     setIsSyncingDiscord(true);
@@ -246,6 +249,8 @@ export default function MentorshipHubPanel() {
 
   // 届いた申請を承諾
   const handleAcceptRequest = async (matchId: string) => {
+    if (acceptingMatchId) return; // 二重クリック・連打完全防止
+    setAcceptingMatchId(matchId);
     try {
       const res = await fetch('/api/mentorship/matches', {
         method: 'POST',
@@ -282,6 +287,8 @@ export default function MentorshipHubPanel() {
       }
     } catch (err) {
       toast.error('エラーが発生しました');
+    } finally {
+      setAcceptingMatchId(null);
     }
   };
 
@@ -795,17 +802,30 @@ export default function MentorshipHubPanel() {
                   <div className="flex items-center justify-end gap-2 pt-1 border-t border-stone-100">
                     <button
                       type="button"
+                      disabled={Boolean(acceptingMatchId)}
                       onClick={() => handleRejectRequest(req.id)}
-                      className="px-3 py-1.5 text-xs font-bold text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-xl transition cursor-pointer"
+                      className="px-3 py-1.5 text-xs font-bold text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-xl transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       見送る
                     </button>
                     <button
                       type="button"
+                      disabled={Boolean(acceptingMatchId)}
                       onClick={() => handleAcceptRequest(req.id)}
-                      className="px-4 py-1.5 rounded-xl font-black text-xs bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition flex items-center gap-1.5 cursor-pointer"
+                      className={`px-4 py-1.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 ${
+                        acceptingMatchId === req.id
+                          ? 'bg-stone-400 text-white cursor-not-allowed'
+                          : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm cursor-pointer disabled:opacity-50'
+                      }`}
                     >
-                      <span>🤝 承諾してペア結成 (+300🪙)</span>
+                      {acceptingMatchId === req.id ? (
+                        <>
+                          <RefreshCw size={13} className="animate-spin" />
+                          <span>成立処理中...</span>
+                        </>
+                      ) : (
+                        <span>🤝 承諾してペア結成 (+300🪙)</span>
+                      )}
                     </button>
                   </div>
                 </div>

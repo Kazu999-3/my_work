@@ -503,6 +503,11 @@ export async function POST(request: Request) {
         return NextResponse.json({ ok: false, error: 'マッチが見つかりません。' }, { status: 404 });
       }
 
+      // 既に完了済みの場合は二重処理をスキップ
+      if (match.status === 'COMPLETED') {
+        return NextResponse.json({ ok: true, message: '既に卒業・指導完了済みです。' });
+      }
+
       await supabase
         .from('mentorship_matches')
         .update({
@@ -624,6 +629,11 @@ export async function POST(request: Request) {
 
       if (mErr || !match) {
         return NextResponse.json({ ok: false, error: '申請が見つかりません。' }, { status: 404 });
+      }
+
+      // 既に成立済みの場合は二重処理（多重DM・多重コイン付与）を完全にスキップ
+      if (match.status === 'ACTIVE') {
+        return NextResponse.json({ ok: true, message: '既に師弟ペアが成立しています。' });
       }
 
       await supabase
