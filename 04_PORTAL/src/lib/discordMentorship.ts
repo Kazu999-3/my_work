@@ -5,6 +5,7 @@ const DISCORD_GUILD_ID = process.env.DISCORD_GUILD_ID;
 const GAME_CATEGORY_ID = '1485646715716632787'; // 🎮 【Game】 カスタム・ゲーム
 const CHANNEL_NAME = '🤝師弟募集';
 export const DEFAULT_MENTORSHIP_CHANNEL_ID = '1550159520687325205';
+export const DEFAULT_MENTORSHIP_FORUM_CHANNEL_ID = '1524740558550073496';
 const PORTAL_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://ktm-portal.vercel.app';
 
 const DASHBOARD_TITLE = '🎯 KTM 師弟募集リアルタイム掲示板';
@@ -311,3 +312,136 @@ export async function notifyNewMentorshipProfile(params: {
     return false;
   }
 }
+
+export interface CreateMentorshipThreadParams {
+  mentorName: string;
+  pupilName: string;
+  durationLabel: string;
+  mentorDiscordId?: string;
+  pupilDiscordId?: string;
+  lanes?: string[];
+  commStyle?: string;
+}
+
+export interface MentorshipThreadResult {
+  threadId: string;
+  threadUrl: string;
+}
+
+/**
+ * 🎓 指定のフォーラムチャンネル (1524740558550073496 / 🎓コーチング・質問) に師弟専用指導スレッドを作成
+ */
+export async function createMentorshipForumThread(
+  params: CreateMentorshipThreadParams
+): Promise<MentorshipThreadResult | null> {
+  const forumChannelId = process.env.DISCORD_MENTORSHIP_FORUM_CHANNEL_ID || DEFAULT_MENTORSHIP_FORUM_CHANNEL_ID;
+  if (!DISCORD_BOT_TOKEN || !forumChannelId) {
+    console.warn('[discordMentorship] BOT Token or Forum Channel ID is missing');
+    return null;
+  }
+
+  const {
+    mentorName,
+    pupilName,
+    durationLabel,
+    mentorDiscordId,
+    pupilDiscordId,
+    lanes = [],
+    commStyle = 'VC_ACTIVE',
+  } = params;
+
+  // タグ決定: 「🟢 質問・相談」はデフォルトで付与
+  const appliedTags: string[] = ['1524740838419202130'];
+  const laneTagMap: Record<string, string> = {
+    TOP: '1524740905125544047',
+    JG: '1524740942815297546',
+    MID: '1524740992132186172',
+    ADC: '1524741033831960587',
+    SUP: '1524741097857745016',
+    SUPPORT: '1524741097857745016',
+    BOT: '1524741033831960587',
+  };
+
+  for (const l of lanes) {
+    const upper = (l || '').toUpperCase();
+    if (laneTagMap[upper] && !appliedTags.includes(laneTagMap[upper])) {
+      appliedTags.push(laneTagMap[upper]);
+    }
+  }
+
+  const threadTitle = `【師弟指導】${mentorName}(師匠) × ${pupilName}(弟子)`.slice(0, 100);
+
+  const mentorMention = mentorDiscordId ? `<@${mentorDiscordId}>` : `**${mentorName}**`;
+  const pupilMention = pupilDiscordId ? `<@${pupilDiscordId}>` : `**${pupilName}**`;
+
+  const commStyleText =
+    commStyle === 'VC_ACTIVE'
+      ? '🎙️ VC重視（通話しながらのリアルタイム指導歓迎）'
+      : commStyle === 'TEXT_ONLY'
+      ? '💬 テキストチャット重視（空き時間の質問・添削中心）'
+      : '⚖️ VC・テキスト柔軟対応';
+
+  const embed = {
+    title: '🤝 師弟専用指導ルームへようこそ！',
+    description:
+      `師弟マッチングの成立、おめでとうございます！🎉\n` +
+      `こちらは **${mentorName} 師匠** と **${pupilName} 弟子** の専用指導チャットです。\n` +
+      `日々の質問やアドバイス、試合の振り返り、VC予定の調整などにご自由にお使いください！\n\n` +
+      `⏱️ **活動期間:** ${durationLabel}\n` +
+      `🗣️ **希望スタイル:** ${commStyleText}\n\n` +
+      `🎯 **おすすめのキックオフ手順:**\n` +
+      `1. まずはご挨拶 ＆ プレイ可能時間帯のすり合わせ 🤝\n` +
+      `2. 目標ランクや克服したい課題（CS精度、リコール判断、視界、集団戦等）のヒアリング 📝\n` +
+      `3. Discord画面共有でのリプレイ鑑賞やKTMカスタムでの同チーム参加 🎮\n\n` +
+      `🔗 **便利なポータルツール:**\n` +
+      `• [マイページ（目標進捗・指導メモ共有）](${PORTAL_BASE_URL}/mypage)\n` +
+      `• [戦績コーチング・リプレイ監査](${PORTAL_BASE_URL}/coach)`,
+    color: 0x10b981, // エメラルドグリーン
+    fields: [
+      { name: '👑 師匠', value: `${mentorName} (${mentorMention})`, inline: true },
+      { name: '🌱 弟子', value: `${pupilName} (${pupilMention})`, inline: true },
+    ],
+    footer: {
+      text: 'KTM 師弟マッチングシステム | 🎓コーチング・質問',
+    },
+    timestamp: new Date().toISOString(),
+  };
+
+  const payload = {
+    name: threadTitle,
+    auto_archive_duration: 10080, // 7日間 (最大)
+    applied_tags: appliedTags,
+    message: {
+      content: `${mentorMention} ${pupilMention} 🎉 **師弟マッチングが成立しました！** お二人の専用指導チャットが作成されました！`,
+      embeds: [embed],
+    },
+  };
+
+  try {
+    const res = await fetch(`https://discord.com/api/v10/channels/${forumChannelId}/threads`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.warn(`[discordMentorship] Forum thread create failed (${res.status}):`, errText);
+      return null;
+    }
+
+    const threadData = await res.json();
+    const threadId = threadData.id;
+    const guildId = threadData.guild_id || DISCORD_GUILD_ID || '1485636149379858567';
+    const threadUrl = `https://discord.com/channels/${guildId}/${threadId}`;
+
+    return { threadId, threadUrl };
+  } catch (err) {
+    console.error('[discordMentorship] Exception in createMentorshipForumThread:', err);
+    return null;
+  }
+}
+

@@ -59,6 +59,35 @@ export default function MentorshipHubPanel() {
 
   // 🤝 承諾処理中ステート（二重クリック・多重送信完全防止）
   const [acceptingMatchId, setAcceptingMatchId] = useState<string | null>(null);
+  // 🎓 フォーラム専用スレッド作成中ステート
+  const [creatingThreadMatchId, setCreatingThreadMatchId] = useState<string | null>(null);
+
+  // 専用Discordスレッドの作成
+  const handleCreateThread = async (matchId: string) => {
+    setCreatingThreadMatchId(matchId);
+    try {
+      const res = await fetch('/api/mentorship/matches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'CREATE_THREAD',
+          matchId,
+        }),
+      });
+      const data = await res.json();
+      if (data.ok && data.threadUrl) {
+        toast.success('🎓 専用指導チャット（フォーラムスレッド）を作成しました！');
+        window.open(data.threadUrl, '_blank');
+        fetchMatches();
+      } else {
+        toast.error(data.error || 'スレッド作成に失敗しました');
+      }
+    } catch {
+      toast.error('通信エラーが発生しました');
+    } finally {
+      setCreatingThreadMatchId(null);
+    }
+  };
 
   // Discord募集板の即時同期
   const handleSyncDiscord = async () => {
@@ -1022,6 +1051,20 @@ export default function MentorshipHubPanel() {
                       </span>
                     )}
                   </div>
+
+                  {match.meta?.threadUrl && (
+                    <div className="pt-0.5">
+                      <a
+                        href={match.meta.threadUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-black text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition"
+                      >
+                        <MessageSquare size={12} className="text-indigo-600" />
+                        <span>💬 🎓コーチング専用スレッドを開く ➔</span>
+                      </a>
+                    </div>
+                  )}
                 </div>
 
                 {/* 自分のペアである場合のアクション（レビュー送信 / 期間延長 / 卒業完了 / キックオフ / Discord連絡 / 円満解散） */}
@@ -1056,16 +1099,40 @@ export default function MentorshipHubPanel() {
                               <span>🚀 ガイド</span>
                             </button>
 
+                            {match.meta?.threadUrl ? (
+                              <a
+                                href={match.meta.threadUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-2.5 py-1.5 rounded-xl font-black text-xs bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center gap-1 cursor-pointer shadow-2xs"
+                                title="Discordの専用指導スレッドを開く"
+                              >
+                                <MessageSquare size={13} />
+                                <span>💬 専用チャット</span>
+                              </a>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleCreateThread(match.id)}
+                                disabled={creatingThreadMatchId === match.id}
+                                className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-800 transition flex items-center gap-1 cursor-pointer border border-indigo-200 disabled:opacity-50"
+                                title="Discord (🎓コーチング・質問) に専用指導スレッドを作成"
+                              >
+                                <MessageSquare size={13} className="text-indigo-600" />
+                                <span>{creatingThreadMatchId === match.id ? '作成中...' : '💬 チャット作成'}</span>
+                              </button>
+                            )}
+
                             <button
                               type="button"
                               onClick={() => {
                                 const partner = match.mentor_discord_id === myDiscordId ? match.pupil : match.mentor;
                                 handleContactDiscord(partner?.player_name || '相手');
                               }}
-                              className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-800 transition flex items-center gap-1 cursor-pointer border border-indigo-200"
+                              className="px-2 py-1.5 rounded-xl font-bold text-xs bg-stone-100 hover:bg-stone-200 text-stone-700 transition flex items-center gap-1 cursor-pointer border border-stone-200"
+                              title="相手のDiscord名を表示"
                             >
-                              <MessageSquare size={13} className="text-indigo-600" />
-                              <span>💬 連絡</span>
+                              <span>DM</span>
                             </button>
                           </>
                         )}

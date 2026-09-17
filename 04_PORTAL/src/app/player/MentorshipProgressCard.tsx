@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -70,6 +70,38 @@ export default function MentorshipProgressCard({
   const [editTargetRank, setEditTargetRank] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [creatingThreadMatchId, setCreatingThreadMatchId] = useState<string | null>(null);
+
+  const handleCreateThread = async (matchId: string) => {
+    setCreatingThreadMatchId(matchId);
+    try {
+      const res = await fetch('/api/mentorship/matches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'CREATE_THREAD',
+          matchId,
+        }),
+      });
+      const data = await res.json();
+      if (data.ok && data.threadUrl) {
+        window.open(data.threadUrl, '_blank');
+        setMatches((prev) =>
+          prev.map((m) =>
+            m.id === matchId
+              ? { ...m, meta: { ...m.meta, threadUrl: data.threadUrl } }
+              : m
+          )
+        );
+      } else {
+        alert(data.error || 'スレッド作成に失敗しました');
+      }
+    } catch {
+      alert('通信エラーが発生しました');
+    } finally {
+      setCreatingThreadMatchId(null);
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -249,15 +281,42 @@ export default function MentorshipProgressCard({
                 </div>
               </div>
 
-              {/* 期間カウントダウン */}
-              <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400 self-end sm:self-center">
-                <Calendar className="w-3.5 h-3.5 text-stone-400" />
-                <span>
-                  残り <strong className="text-emerald-600 dark:text-emerald-400">{Math.max(0, match.remainingDays || 0)}</strong> 日
-                </span>
+              {/* 期間カウントダウン & 専用チャットボタン */}
+              <div className="flex flex-wrap items-center gap-2.5 text-xs text-stone-500 dark:text-stone-400 self-end sm:self-center">
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-stone-400" />
+                  <span>
+                    残り <strong className="text-emerald-600 dark:text-emerald-400">{Math.max(0, match.remainingDays || 0)}</strong> 日
+                  </span>
+                </div>
+
+                {match.meta?.threadUrl ? (
+                  <a
+                    href={match.meta.threadUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-3 py-1 rounded-xl text-xs font-black bg-indigo-600 hover:bg-indigo-500 text-white shadow-2xs transition cursor-pointer"
+                    title="Discordの専用指導スレッド（🎓コーチング・質問）を開く"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>専用チャット</span>
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleCreateThread(match.id)}
+                    disabled={creatingThreadMatchId === match.id}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 transition cursor-pointer disabled:opacity-50"
+                    title="Discord (🎓コーチング・質問) に専用指導チャットを作成"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>{creatingThreadMatchId === match.id ? '作成中...' : 'チャット作成'}</span>
+                  </button>
+                )}
+
                 <Link
                   href="/mentorship"
-                  className="text-xs text-amber-600 dark:text-amber-400 hover:underline font-bold ml-2"
+                  className="text-xs text-amber-600 dark:text-amber-400 hover:underline font-bold"
                 >
                   掲示板 ➔
                 </Link>

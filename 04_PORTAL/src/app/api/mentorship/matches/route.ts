@@ -4,7 +4,7 @@ import { getAuthSession } from '../../../../lib/authGuard';
 import { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } from '../../../../lib/playerCoins';
 import { MENTORSHIP_DURATIONS } from '../../../../lib/mentorshipConstants';
 import { sendDiscordDirectMessage, sendErrorNotification } from '../../../../lib/discordNotify';
-import { syncMentorshipDashboard } from '../../../../lib/discordMentorship';
+import { syncMentorshipDashboard, createMentorshipForumThread } from '../../../../lib/discordMentorship';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +20,8 @@ export interface MatchMeta {
   cancelReason?: string;
   progressNotes?: string;
   targetRank?: string;
+  threadId?: string;
+  threadUrl?: string;
 }
 
 export function parseNotesMeta(notes: string | null): MatchMeta {
@@ -33,6 +35,8 @@ export function parseNotesMeta(notes: string | null): MatchMeta {
     fromDiscordId: '',
     progressNotes: '',
     targetRank: '',
+    threadId: '',
+    threadUrl: '',
   };
 
   if (!notes) return defaultMeta;
@@ -84,24 +88,31 @@ export function encodeNotesMeta(meta: Partial<MatchMeta>): string {
     cancelReason: meta.cancelReason || '',
     progressNotes: meta.progressNotes || '',
     targetRank: meta.targetRank || '',
+    threadId: meta.threadId || '',
+    threadUrl: meta.threadUrl || '',
   };
   return JSON.stringify(fullMeta);
 }
 
 /**
- * Discord への師弟ペア結成速報の通知ヘルパー（DM ＋ チャンネル通知）
+ * Discord への師弟ペア結成速報の通知ヘルパー（DM ＋ チャンネル通知 ＋ 専用チャットリンク）
  */
 async function sendDiscordPairAnnounce(
   mentorName: string,
   pupilName: string,
   durationLabel: string,
   mentorDiscordId?: string,
-  pupilDiscordId?: string
+  pupilDiscordId?: string,
+  threadUrl?: string
 ) {
   const portalUrl = 'https://ktm-portal.vercel.app/mypage';
+  const threadLinkText = threadUrl
+    ? `\n\n💬 **[🎓 Discord専用指導チャットはこちら](${threadUrl})**`
+    : '';
+
   const embed = {
     title: '🎉 【KTM師弟ハブ】師弟ペアが結成されました！',
-    description: `👑 **師匠:** ${mentorName}\n🌱 **弟子:** ${pupilName}\n⏱️ **活動期間:** ${durationLabel}\n\nお互いに楽しく上達していきましょう！キックオフガイドに沿ってまずは挨拶からスタート🤝\nマイページで目標ランク進捗と指導メモを共有できます。\n👉 **[マイページで確認する](${portalUrl})**`,
+    description: `👑 **師匠:** ${mentorName}\n🌱 **弟子:** ${pupilName}\n⏱️ **活動期間:** ${durationLabel}\n\nお互いに楽しく上達していきましょう！キックオフガイドに沿ってまずは挨拶からスタート🤝\nマイページで目標ランク進捗と指導メモを共有できます。${threadLinkText}\n👉 **[マイページで確認する](${portalUrl})**`,
     color: 0x10b981, // エメラルドグリーン
     timestamp: new Date().toISOString(),
     footer: {
@@ -689,19 +700,107 @@ export async function POST(request: Request) {
         console.warn('[mentorship/matches] Coin reward warning:', coinErr);
       }
 
-      // Discord通知を非同期送信（師匠・弟子の双方へDM + 募集チャンネル）
+      // 🎓 指定のフォーラムチャンネル (1524740558550073496) に専用指導スレッドを作成
       const meta = parseNotesMeta(match.notes);
+      let threadResult: { threadId: string; threadUrl: string } | null = null;
+      try {
+        threadResult = await createMentorshipForumThread({
+          mentorName: match.mentor?.player_name || '師匠',
+          pupilName: match.pupil?.player_name || '弟子',
+          durationLabel: meta.durationLabel,
+          mentorDiscordId: match.mentor_discord_id,
+          pupilDiscordId: match.pupil_discord_id,
+          lanes: [
+            ...(Array.isArray(match.mentor?.lanes) ? match.mentor.lanes : []),
+            ...(Array.isArray(match.pupil?.lanes) ? match.pupil.lanes : []),
+          ],
+          commStyle: meta.commStyle,
+        });
+      } catch (thErr) {
+        console.warn('[mentorship/matches] Failed to create mentorship forum thread:', thErr);
+      }
+
+      if (threadResult) {
+        meta.threadId = threadResult.threadId;
+        meta.threadUrl = threadResult.threadUrl;
+        await supabase
+          .from('mentorship_matches')
+          .update({ notes: JSON.stringify(meta) })
+          .eq('id', matchId);
+      }
+
+      // Discord通知を非同期送信（師匠・弟子の双方へDM + 募集チャンネル）
       sendDiscordPairAnnounce(
         match.mentor?.player_name || '師匠',
         match.pupil?.player_name || '弟子',
         meta.durationLabel,
         match.mentor_discord_id,
-        match.pupil_discord_id
+        match.pupil_discord_id,
+        threadResult?.threadUrl
       ).catch(() => {});
 
       syncMentorshipDashboard().catch(() => {});
 
-      return NextResponse.json({ ok: true, message: '師弟ペアが正式に成立しました！(+300コイン付与)' });
+      return NextResponse.json({
+        ok: true,
+        message: '師弟ペアが正式に成立しました！専用指導チャットを作成しました(+300コイン付与)',
+        threadUrl: threadResult?.threadUrl,
+      });
+    }
+
+    // ==========================================
+    // 4.5 専用Discordスレッド作成 (CREATE_THREAD)
+    // ==========================================
+    if (action === 'CREATE_THREAD') {
+      if (!matchId) {
+        return NextResponse.json({ ok: false, error: '対象のマッチIDが必要です。' }, { status: 400 });
+      }
+
+      const { data: match, error: mErr } = await supabase
+        .from('mentorship_matches')
+        .select(`
+          *,
+          mentor:mentorship_profiles!mentorship_matches_mentor_profile_id_fkey(*),
+          pupil:mentorship_profiles!mentorship_matches_pupil_profile_id_fkey(*)
+        `)
+        .eq('id', matchId)
+        .single();
+
+      if (mErr || !match) {
+        return NextResponse.json({ ok: false, error: 'マッチが見つかりません。' }, { status: 404 });
+      }
+
+      const meta = parseNotesMeta(match.notes);
+      const threadResult = await createMentorshipForumThread({
+        mentorName: match.mentor?.player_name || '師匠',
+        pupilName: match.pupil?.player_name || '弟子',
+        durationLabel: meta.durationLabel,
+        mentorDiscordId: match.mentor_discord_id,
+        pupilDiscordId: match.pupil_discord_id,
+        lanes: [
+          ...(Array.isArray(match.mentor?.lanes) ? match.mentor.lanes : []),
+          ...(Array.isArray(match.pupil?.lanes) ? match.pupil.lanes : []),
+        ],
+        commStyle: meta.commStyle,
+      });
+
+      if (!threadResult) {
+        return NextResponse.json({ ok: false, error: 'スレッド作成に失敗しました。' }, { status: 500 });
+      }
+
+      meta.threadId = threadResult.threadId;
+      meta.threadUrl = threadResult.threadUrl;
+
+      await supabase
+        .from('mentorship_matches')
+        .update({ notes: JSON.stringify(meta) })
+        .eq('id', matchId);
+
+      return NextResponse.json({
+        ok: true,
+        message: '専用指導スレッドを作成しました！',
+        threadUrl: threadResult.threadUrl,
+      });
     }
 
     // ==========================================
