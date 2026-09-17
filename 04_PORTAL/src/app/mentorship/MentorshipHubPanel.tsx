@@ -797,6 +797,7 @@ export default function MentorshipHubPanel() {
                       profile={p}
                       isMine={p.discord_id === myDiscordId}
                       isAdmin={isAdmin}
+                      currentUserId={myDiscordId}
                       reviewSummary={reviewSummaries[revKey] || null}
                       matchScore={score}
                       matchReason={reason}
@@ -1043,6 +1044,7 @@ export default function MentorshipHubPanel() {
                 profile={p}
                 isMine={p.discord_id === myDiscordId}
                 isAdmin={isAdmin}
+                currentUserId={myDiscordId}
                 reviewSummary={reviewSummaries[revKey] || null}
                 matchScore={matchInfo.score}
                 matchReason={matchInfo.reason}

@@ -1,17 +1,29 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { MentorshipProfile } from '../api/mentorship/profiles/route';
 import { getKtmRank, RANKS } from '../../lib/mmr';
 import { CHAMPION_JA } from '../../components/ChampSelect';
-import { Clock, Shield, Sparkles, UserCheck } from 'lucide-react';
-
+import { Clock, MessageSquare, Send, Sparkles, Trash2, Zap } from 'lucide-react';
 import { MentorshipReviewSummary } from '../api/mentorship/reviews/route';
+import { MENTORSHIP_DURATIONS } from '../../lib/mentorshipConstants';
+
+export interface MentorshipComment {
+  id: string;
+  profile_id: string;
+  author_id: string;
+  author_name: string;
+  author_avatar?: string | null;
+  content: string;
+  created_at: string;
+}
 
 interface MentorshipCardProps {
   profile: MentorshipProfile;
   isMine: boolean;
   isAdmin?: boolean;
+  currentUserId?: string | null;
+  currentUserName?: string | null;
   reviewSummary?: MentorshipReviewSummary | null;
   onOffer: (profile: MentorshipProfile) => void;
   onEdit?: (profile: MentorshipProfile) => void;
@@ -33,6 +45,8 @@ export function MentorshipCard({
   profile,
   isMine,
   isAdmin,
+  currentUserId,
+  currentUserName,
   reviewSummary,
   onOffer,
   onEdit,
@@ -46,16 +60,123 @@ export function MentorshipCard({
   const mmr = RANKS[rankKey] || 1200;
   const rankInfo = getKtmRank(mmr);
 
+  // コメント機能用のステート
+  const [showComments, setShowComments] = useState(false);
+  const [comments, setComments] = useState<MentorshipComment[]>([]);
+  const [commentsCount, setCommentsCount] = useState<number>(0);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [commentInput, setCommentInput] = useState('');
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
+  // ライトコース（1試合、リプレイ、3日間）判定
+  const preferredDuration = (profile as any).preferred_duration;
+  const is1Match = preferredDuration === '1_MATCH' || profile.tags?.some(t => t.includes('1試合') || t.includes('カスタム') || t.includes('単発'));
+  const isReplay = preferredDuration === 'REPLAY' || profile.tags?.some(t => t.includes('リプレイ') || t.includes('添削'));
+  const is3Days = preferredDuration === '3_DAYS' || profile.tags?.some(t => t.includes('3日') || t.includes('お試し'));
+  const isLightCourse = is1Match || isReplay || is3Days;
+
+  // コメント一覧の取得
+  const loadComments = async () => {
+    setIsLoadingComments(true);
+    try {
+      const res = await fetch(`/api/mentorship/comments?profileId=${profile.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setComments(data.comments || []);
+        setCommentsCount(data.comments ? data.comments.length : 0);
+      }
+    } catch (e) {
+      console.error('Failed to load comments:', e);
+    } finally {
+      setIsLoadingComments(false);
+    }
+  };
+
+  const handleToggleComments = () => {
+    if (!showComments && comments.length === 0) {
+      loadComments();
+    }
+    setShowComments(!showComments);
+  };
+
+  const handlePostComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commentInput.trim() || isSubmittingComment) return;
+
+    setIsSubmittingComment(true);
+    try {
+      const res = await fetch('/api/mentorship/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          profileId: profile.id,
+          content: commentInput.trim(),
+        }),
+      });
+
+      if (res.ok) {
+        setCommentInput('');
+        loadComments();
+      } else {
+        const err = await res.json();
+        alert(`コメント投稿に失敗しました: ${err.error || '不明なエラー'}`);
+      }
+    } catch (e) {
+      console.error('Failed to post comment:', e);
+      alert('通信エラーが発生しました');
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!confirm('このコメントを削除しますか？')) return;
+    try {
+      const res = await fetch(`/api/mentorship/comments?id=${commentId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setComments(prev => prev.filter(c => c.id !== commentId));
+        setCommentsCount(prev => Math.max(0, prev - 1));
+      } else {
+        alert('コメント削除に失敗しました');
+      }
+    } catch (e) {
+      console.error('Failed to delete comment:', e);
+    }
+  };
+
   return (
-    <div className={`relative rounded-3xl border transition-all duration-200 overflow-hidden flex flex-col justify-between bg-white/95 backdrop-blur-sm ${
+    <div className={`relative rounded-3xl border transition-all duration-200 overflow-hidden flex flex-col justify-between bg-white/95 backdrop-blur-sm shadow-md ${
       matchScore && matchScore >= 80
         ? 'ring-2 ring-amber-400 shadow-lg scale-[1.01]'
         : ''
     } ${
-      isMentor
-        ? 'border-amber-400/40 hover:border-amber-500 shadow-md shadow-amber-900/5 hover:shadow-lg'
-        : 'border-emerald-400/40 hover:border-emerald-500 shadow-md shadow-emerald-900/5 hover:shadow-lg'
+      isLightCourse
+        ? 'border-sky-400/60 ring-1 ring-sky-300/40 hover:border-sky-500 shadow-sky-900/5 hover:shadow-xl'
+        : isMentor
+          ? 'border-amber-400/40 hover:border-amber-500 shadow-amber-900/5 hover:shadow-lg'
+          : 'border-emerald-400/40 hover:border-emerald-500 shadow-emerald-900/5 hover:shadow-lg'
     }`}>
+      {/* 🚀 案1: 1試合・単発・ライトコースのアイキャッチ強調バナー（パッと見でわかるデザイン） */}
+      {isLightCourse && (
+        <div className="bg-gradient-to-r from-sky-500 via-cyan-500 to-indigo-500 text-white px-3.5 py-1.5 flex items-center justify-between text-xs font-black shadow-inner tracking-tight">
+          <div className="flex items-center gap-1.5">
+            <Zap size={14} className="text-yellow-300 animate-pulse fill-yellow-300" />
+            <span>
+              {is1Match
+                ? '🎮 1試合カスタム完結OK！ 気軽なお試し歓迎'
+                : isReplay
+                  ? '📺 1試合リプレイ添削！ 気軽にアドバイス'
+                  : '☕ 3日間お試しバディ！ 初心者・単発歓迎'}
+            </span>
+          </div>
+          <span className="bg-white/20 backdrop-blur-xs text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+            Light Course
+          </span>
+        </div>
+      )}
+
       {/* AI相性おすすめリボン */}
       {matchScore !== undefined && matchScore > 0 && (
         <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 text-stone-950 px-3 py-1 flex items-center justify-between text-[11px] font-black tracking-tight">
@@ -80,6 +201,15 @@ export function MentorshipCard({
               <span>{isMentor ? '👨‍🏫' : '🔰'}</span>
               <span>{isMentor ? '師匠 (Mentor)' : '弟子 (Pupil)'}</span>
             </div>
+
+            {/* コース希望バッジ */}
+            {preferredDuration && MENTORSHIP_DURATIONS[preferredDuration] && (
+              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black border shadow-2xs ${
+                MENTORSHIP_DURATIONS[preferredDuration].badgeColor || 'bg-stone-100 text-stone-800 border-stone-300'
+              }`}>
+                {MENTORSHIP_DURATIONS[preferredDuration].shortLabel}
+              </span>
+            )}
 
             {/* ⭐ 匿名レビュー評価バッジ */}
             {reviewSummary && reviewSummary.totalReviews > 0 ? (
@@ -127,10 +257,13 @@ export function MentorshipCard({
           )}
         </div>
 
-
         {/* プレイヤー情報 */}
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-100 to-amber-200 border border-amber-300/80 flex items-center justify-center text-xl font-black text-amber-900 shrink-0 shadow-2xs">
+          <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center text-xl font-black shrink-0 shadow-2xs ${
+            isLightCourse
+              ? 'bg-gradient-to-br from-sky-100 to-indigo-100 border-sky-300 text-sky-900'
+              : 'bg-gradient-to-br from-amber-100 to-amber-200 border-amber-300/80 text-amber-900'
+          }`}>
             {profile.player_name.slice(0, 1).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
@@ -227,9 +360,11 @@ export function MentorshipCard({
               <span
                 key={tag}
                 className={`px-2.5 py-0.5 rounded-lg text-xs font-semibold border ${
-                  isMentor
-                    ? 'bg-amber-50 text-amber-900 border-amber-200'
-                    : 'bg-emerald-50 text-emerald-900 border-emerald-200'
+                  tag.includes('1試合') || tag.includes('リプレイ') || tag.includes('お試し')
+                    ? 'bg-sky-50 text-sky-900 border-sky-300 font-bold'
+                    : isMentor
+                      ? 'bg-amber-50 text-amber-900 border-amber-200'
+                      : 'bg-emerald-50 text-emerald-900 border-emerald-200'
                 }`}
               >
                 #{tag}
@@ -253,6 +388,103 @@ export function MentorshipCard({
             <span className="font-bold text-stone-800">{profile.active_hours}</span>
           </div>
         )}
+
+        {/* 💬 案4: ワンポイント相談・コメント開閉ボタン */}
+        <div className="pt-1">
+          <button
+            onClick={handleToggleComments}
+            className="w-full py-1.5 px-3 rounded-xl bg-stone-100 hover:bg-stone-200/80 text-stone-700 text-xs font-bold transition flex items-center justify-between cursor-pointer border border-stone-200/80"
+          >
+            <span className="flex items-center gap-1.5">
+              <MessageSquare size={13} className="text-sky-600" />
+              <span>💬 ワンポイント相談 / 応援コメント</span>
+            </span>
+            <span className="text-[11px] font-semibold bg-white px-2 py-0.5 rounded-full border border-stone-200">
+              {showComments ? '閉じる ▲' : '見る・書く ▼'}
+            </span>
+          </button>
+
+          {/* コメントアコーディオン内側 */}
+          {showComments && (
+            <div className="mt-2.5 p-3 rounded-2xl bg-stone-50/90 border border-stone-200 space-y-3 animate-in fade-in duration-200">
+              {isLoadingComments ? (
+                <div className="text-center py-2 text-xs text-stone-500 font-medium">
+                  コメントを読み込み中...
+                </div>
+              ) : comments.length === 0 ? (
+                <div className="text-center py-2 text-xs text-stone-500 font-medium">
+                  まだコメントはありません。気軽に「このチャンプ教えられます！」「1試合だけやりませんか？」と書き込んでみましょう！
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {comments.map((comment) => {
+                    const isMyComment = currentUserId === comment.author_id;
+                    return (
+                      <div
+                        key={comment.id}
+                        className="p-2.5 rounded-xl bg-white border border-stone-200/80 text-xs space-y-1 shadow-2xs"
+                      >
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="font-bold text-stone-900 flex items-center gap-1">
+                            <span>💬</span>
+                            <span>{comment.author_name}</span>
+                            {isMyComment && (
+                              <span className="text-[9px] bg-stone-100 text-stone-600 px-1 rounded font-normal">
+                                あなた
+                              </span>
+                            )}
+                          </span>
+                          <div className="flex items-center gap-1.5 text-stone-400">
+                            <span>
+                              {new Date(comment.created_at).toLocaleDateString('ja-JP', {
+                                month: 'numeric',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </span>
+                            {(isMyComment || isAdmin) && (
+                              <button
+                                onClick={() => handleDeleteComment(comment.id)}
+                                className="text-rose-500 hover:text-rose-700 p-0.5 cursor-pointer"
+                                title="コメントを削除"
+                              >
+                                <Trash2 size={11} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-stone-700 leading-relaxed whitespace-pre-wrap">
+                          {comment.content}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* コメント投稿フォーム */}
+              <form onSubmit={handlePostComment} className="flex gap-1.5 pt-1">
+                <input
+                  type="text"
+                  value={commentInput}
+                  onChange={(e) => setCommentInput(e.target.value)}
+                  placeholder="質問・アドバイス・一言応援を書く..."
+                  maxLength={300}
+                  className="flex-1 px-3 py-1.5 text-xs rounded-xl border border-stone-300 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500 text-stone-800 placeholder-stone-400"
+                />
+                <button
+                  type="submit"
+                  disabled={!commentInput.trim() || isSubmittingComment}
+                  className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 disabled:bg-stone-300 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:cursor-not-allowed shadow-2xs shrink-0"
+                >
+                  <Send size={12} />
+                  <span>送信</span>
+                </button>
+              </form>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 下部アクションボタン */}
@@ -287,3 +519,4 @@ export function MentorshipCard({
     </div>
   );
 }
+

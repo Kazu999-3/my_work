@@ -3,13 +3,54 @@
  */
 
 // 期間設定
-export const MENTORSHIP_DURATIONS: Record<string, { label: string; days: number }> = {
-  '1_DAY': { label: '⚡ スポット1回指導（1日）', days: 1 },
-  '7_DAYS': { label: '⏱️ 1週間集中コース（7日）', days: 7 },
-  '14_DAYS': { label: '🔥 2週間育成コース（14日・推奨）', days: 14 },
-  '30_DAYS': { label: '🏆 1ヶ月ガチ特訓コース（30日）', days: 30 },
-  'INDEFINITE': { label: '♾️ 目標達成まで（期限なし）', days: 90 },
+export const MENTORSHIP_DURATIONS: Record<string, { label: string; shortLabel: string; days: number; isLight?: boolean; badgeColor?: string }> = {
+  '1_MATCH': {
+    label: '🎮 1試合だけカスタム対面練習（1回完結）',
+    shortLabel: '🎮 1試合カスタム',
+    days: 1,
+    isLight: true,
+    badgeColor: 'bg-sky-100 text-sky-900 border-sky-300',
+  },
+  'REPLAY': {
+    label: '📺 1試合リプレイ添削（1回完結）',
+    shortLabel: '📺 リプレイ添削',
+    days: 1,
+    isLight: true,
+    badgeColor: 'bg-purple-100 text-purple-900 border-purple-300',
+  },
+  '3_DAYS': {
+    label: '☕ 3日間お試しバディ（3日）',
+    shortLabel: '☕ 3日間お試し',
+    days: 3,
+    isLight: true,
+    badgeColor: 'bg-amber-100 text-amber-900 border-amber-300',
+  },
+  '7_DAYS': {
+    label: '⏱️ 1週間集中コース（7日）',
+    shortLabel: '⏱️ 1週間集中',
+    days: 7,
+    badgeColor: 'bg-blue-100 text-blue-900 border-blue-300',
+  },
+  '14_DAYS': {
+    label: '🔥 2週間育成コース（14日・推奨）',
+    shortLabel: '🔥 2週間育成',
+    days: 14,
+    badgeColor: 'bg-rose-100 text-rose-900 border-rose-300',
+  },
+  '30_DAYS': {
+    label: '🏆 1ヶ月ガチ特訓コース（30日）',
+    shortLabel: '🏆 1ヶ月特訓',
+    days: 30,
+    badgeColor: 'bg-amber-100 text-amber-900 border-amber-400',
+  },
+  'INDEFINITE': {
+    label: '♾️ 目標達成まで（期限なし）',
+    shortLabel: '♾️ 期限なし',
+    days: 90,
+    badgeColor: 'bg-stone-100 text-stone-900 border-stone-300',
+  },
 };
+
 
 // 🎙️ 通話・コミュニケーションスタイル
 export const COMMUNICATION_STYLES: Record<string, { label: string; icon: string; desc: string }> = {

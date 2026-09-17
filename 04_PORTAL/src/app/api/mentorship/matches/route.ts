@@ -111,6 +111,42 @@ async function sendDiscordPairAnnounce(mentorName: string, pupilName: string, du
 }
 
 /**
+ * Discord へのオファー着信速報通知ヘルパー（案3）
+ */
+async function sendDiscordOfferNotification(fromName: string, toName: string, toDiscordId: string, durationLabel: string, message: string) {
+  const webhookUrl = process.env.DISCORD_WEBHOOK_URL || process.env.DISCORD_RECRUIT_WEBHOOK_URL;
+  if (!webhookUrl) return;
+
+  try {
+    const portalUrl = 'https://ktm-portal.vercel.app/mentorship';
+    const payload = {
+      content: toDiscordId ? `<@${toDiscordId}> 宛てに師弟オファーが届きました！` : undefined,
+      embeds: [
+        {
+          title: '📩 【KTM師弟ハブ】新たな師弟オファーが届きました！',
+          description: `👤 **申請者:** ${fromName}\n🎯 **対象:** ${toName}\n⏱️ **希望コース:** ${durationLabel}\n💬 **メッセージ:**\n> ${message}\n\nポータル画面を開いて [承諾] すると正式にペア結成となります！\n👉 **[ポータルで確認・承諾する](${portalUrl})**`,
+          color: 0x3b82f6, // ブルー
+          timestamp: new Date().toISOString(),
+          footer: {
+            text: 'KTM 師弟マッチング ＆ 自己紹介ハブ',
+          },
+        },
+      ],
+    };
+
+    await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    console.warn('[mentorship/matches] Discord offer notification error:', err);
+  }
+}
+
+
+
+/**
  * GET: 成立済みペア一覧 ＆ ログインユーザーの申請一覧（受信/送信）の取得
  */
 export async function GET() {
@@ -602,11 +638,21 @@ export async function POST(request: Request) {
 
     if (mErr) throw mErr;
 
+    // Discordへオファー速報を非同期送信（案3）
+    sendDiscordOfferNotification(
+      session.displayName || session.username || 'メンバー',
+      targetProfile.player_name,
+      targetProfile.discord_id,
+      durObj.label,
+      message.trim() || 'よろしくお願いします！'
+    ).catch(() => {});
+
     return NextResponse.json({
       ok: true,
       message: `${targetProfile.player_name} さんへ「${durObj.label}」の申請を送信しました！相手が承諾すると正式にペア結成となります。`,
       match,
     });
+
   } catch (err: any) {
     console.error('[mentorship/matches] POST error:', err);
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });

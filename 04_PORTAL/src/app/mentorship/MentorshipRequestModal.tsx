@@ -105,32 +105,75 @@ export function MentorshipRequestModal({
           </div>
 
           {/* 期間設定 (Duration) */}
-          <div className="space-y-2">
-            <label className="block text-xs font-black text-stone-700 flex items-center gap-1.5">
-              <Clock size={14} className="text-amber-600" />
-              <span>希望するペア活動・指導の期間</span>
+          <div className="space-y-2.5">
+            <label className="block text-xs font-black text-stone-700 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Clock size={14} className="text-amber-600" />
+                <span>希望するペア活動・指導の期間</span>
+              </span>
+              <span className="text-[10px] text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                1試合だけでも大歓迎！
+              </span>
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {Object.entries(MENTORSHIP_DURATIONS).map(([key, item]) => {
-                const isSelected = durationKey === key;
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setDurationKey(key)}
-                    className={`p-2.5 rounded-xl text-left border text-xs font-bold transition flex items-center justify-between cursor-pointer ${
-                      isSelected
-                        ? 'bg-amber-50 border-amber-400 text-amber-950 shadow-2xs'
-                        : 'bg-stone-50 border-stone-200 text-stone-700 hover:bg-stone-100'
-                    }`}
-                  >
-                    <span>{item.label}</span>
-                    {isSelected && <span className="text-amber-600 text-xs">✓</span>}
-                  </button>
-                );
-              })}
+
+            {/* 気軽な1回・お試しコース */}
+            <div className="space-y-1">
+              <span className="text-[10px] font-black text-stone-500 uppercase tracking-wider">✨ 気軽な1回・お試しコース</span>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+                {Object.entries(MENTORSHIP_DURATIONS)
+                  .filter(([_, item]) => item.isLight)
+                  .map(([key, item]) => {
+                    const isSelected = durationKey === key;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setDurationKey(key)}
+                        className={`p-2.5 rounded-xl text-left border text-xs font-bold transition flex flex-col justify-between gap-1 cursor-pointer ${
+                          isSelected
+                            ? 'bg-gradient-to-br from-sky-50 to-amber-50 border-sky-400 text-stone-900 shadow-2xs ring-2 ring-sky-300'
+                            : 'bg-stone-50 border-stone-200 text-stone-700 hover:bg-sky-50/50 hover:border-sky-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-extrabold">{item.shortLabel}</span>
+                          {isSelected && <span className="text-sky-600 text-xs font-black">✓</span>}
+                        </div>
+                        <span className="text-[10px] text-stone-500 font-medium leading-tight">{item.label.split('（')[0]}</span>
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
+
+            {/* しっかり継続コース */}
+            <div className="space-y-1 pt-1">
+              <span className="text-[10px] font-black text-stone-500 uppercase tracking-wider">🔥 しっかり継続コース</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                {Object.entries(MENTORSHIP_DURATIONS)
+                  .filter(([_, item]) => !item.isLight)
+                  .map(([key, item]) => {
+                    const isSelected = durationKey === key;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setDurationKey(key)}
+                        className={`p-2 rounded-xl text-left border text-xs font-bold transition flex items-center justify-between cursor-pointer ${
+                          isSelected
+                            ? 'bg-amber-50 border-amber-400 text-amber-950 shadow-2xs'
+                            : 'bg-stone-50 border-stone-200 text-stone-700 hover:bg-stone-100'
+                        }`}
+                      >
+                        <span>{item.label}</span>
+                        {isSelected && <span className="text-amber-600 text-xs">✓</span>}
+                      </button>
+                    );
+                  })}
+              </div>
             </div>
           </div>
+
 
           {/* 期間切れ後の自動継続（そのまま実行）設定 */}
           <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200 flex items-center justify-between gap-3">
