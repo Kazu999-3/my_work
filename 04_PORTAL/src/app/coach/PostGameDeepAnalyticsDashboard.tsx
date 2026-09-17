@@ -111,6 +111,21 @@ interface PostGameData {
     metric: string;
     advice: string;
   };
+  control_ward_audit?: {
+    total_purchased: number;
+    target_benchmark: number;
+    score: number;
+    grade: string;
+    purchases: {
+      time_str: string;
+      minute: number;
+      timing_tag: string;
+      audit: string;
+      reason: string;
+    }[];
+    missed_timings: string[];
+    verdict: string;
+  };
 }
 
 interface PostGameDashboardProps {
@@ -667,6 +682,81 @@ export default function PostGameDeepAnalyticsDashboard({
             </div>
           )}
         </div>
+
+        {/* 3.5: コントロールワード（ピンクワード）実戦購入タイミング監査 */}
+        {data.control_ward_audit && (
+          <div className="bg-rose-50/40 border border-rose-200/80 rounded-xl p-4 space-y-3.5 shadow-2xs">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <span className="text-xs font-black text-stone-900 flex items-center gap-1.5">
+                <Eye className="w-4 h-4 text-rose-600" />
+                <span>3.5 コントロールワード 実戦購入タイミング監査</span>
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black text-rose-800 bg-rose-100 px-2 py-0.5 rounded border border-rose-200 font-mono">
+                  {data.control_ward_audit.total_purchased}本購入 (目標: {data.control_ward_audit.target_benchmark}本)
+                </span>
+                <span className={`text-[10px] font-black px-2 py-0.5 rounded font-mono ${
+                  data.control_ward_audit.grade === 'S' || data.control_ward_audit.grade === 'A'
+                    ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                    : 'bg-amber-100 text-amber-900 border border-amber-300'
+                }`}>
+                  評価: {data.control_ward_audit.grade} ({data.control_ward_audit.score}点)
+                </span>
+              </div>
+            </div>
+
+            {/* 実戦購入イベント一覧 */}
+            {data.control_ward_audit.purchases.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {data.control_ward_audit.purchases.map((p, pIdx) => (
+                  <div key={pIdx} className="bg-white p-2.5 rounded-xl border border-rose-200/70 space-y-1 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-black text-rose-700 flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-rose-500" /> {p.time_str}
+                      </span>
+                      <span className="text-[9px] font-black bg-emerald-50 text-emerald-800 px-1.5 py-0.2 rounded border border-emerald-200">
+                        {p.audit}
+                      </span>
+                    </div>
+                    <div className="text-[10px] font-bold text-stone-800">
+                      {p.timing_tag}
+                    </div>
+                    <p className="text-[9px] text-stone-500 leading-relaxed">
+                      {p.reason}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white p-3 rounded-xl border border-rose-200 text-center space-y-1">
+                <span className="text-xs font-bold text-rose-700">⚠️ 試合中のコントロールワード購入が 0本 でした</span>
+                <p className="text-[10px] text-stone-500">
+                  リコール時に余った75Gで常に1本所持し、オブジェクト前の先制視界取りを意識しましょう。
+                </p>
+              </div>
+            )}
+
+            {/* 逃したタイミング（改善ポイント） */}
+            {data.control_ward_audit.missed_timings.length > 0 && (
+              <div className="bg-amber-50/80 p-2.5 rounded-xl border border-amber-200 space-y-1">
+                <span className="text-[10px] font-bold text-amber-950 flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                  <span>逃した購入・配置タイミング（勝率向上の急所）:</span>
+                </span>
+                <ul className="text-[10px] text-stone-700 space-y-0.5 pl-4 list-disc font-medium">
+                  {data.control_ward_audit.missed_timings.map((miss, mIdx) => (
+                    <li key={mIdx}>{miss}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* 総評テキスト */}
+            <p className="text-[11px] text-stone-700 leading-relaxed font-medium bg-white p-2.5 rounded-xl border border-stone-200">
+              💬 <span className="font-bold text-stone-900">コーチ総評:</span> {data.control_ward_audit.verdict}
+            </p>
+          </div>
+        )}
 
         {/* 4: レーダー多角形指標 */}
         <div className="bg-stone-50/70 border border-stone-200 rounded-xl p-4 space-y-3 shadow-2xs">

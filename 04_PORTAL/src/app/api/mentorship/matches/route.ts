@@ -133,6 +133,72 @@ async function sendDiscordPairAnnounce(
 }
 
 /**
+ * Discord への師弟卒業・指導完了速報の通知ヘルパー（DM ＋ #🤝師弟募集チャンネル）
+ */
+async function sendDiscordGraduationAnnounce(
+  mentorName: string,
+  pupilName: string,
+  durationLabel: string,
+  mentorDiscordId?: string,
+  pupilDiscordId?: string
+) {
+  const portalUrl = 'https://ktm-portal.vercel.app/mentorship';
+  const embed = {
+    title: '🎓 【祝・師弟卒業】指導期間が無事に修了しました！🎉',
+    description: `👑 **師匠:** ${mentorName}\n🌱 **弟子:** ${pupilName}\n⏱️ **完走コース:** ${durationLabel}\n\n特訓完走おめでとうございます！✨\n両名に卒業ボーナス **+200コイン** を進呈しました！🪙\n引き続きKTMカスタムやソロキューで切磋琢磨していきましょう！\n\n👉 **[師弟ハブで新たな仲間を探す](${portalUrl})**`,
+    color: 0xf59e0b, // Hextechゴールド
+    timestamp: new Date().toISOString(),
+    footer: {
+      text: 'KTM 師弟マッチング ＆ 自己紹介ハブ',
+    },
+  };
+
+  // 1. 師匠・弟子へ個別祝賀DM
+  if (mentorDiscordId) {
+    sendDiscordDirectMessage(mentorDiscordId, { embeds: [embed] }).catch(() => {});
+  }
+  if (pupilDiscordId) {
+    sendDiscordDirectMessage(pupilDiscordId, { embeds: [embed] }).catch(() => {});
+  }
+
+  // 2. #🤝師弟募集 チャンネルへBot直接投稿 (優先) または Webhook
+  const botToken = process.env.DISCORD_BOT_TOKEN;
+  const mentorshipChannelId = process.env.DISCORD_MENTORSHIP_CHANNEL_ID || '1550159520687325205';
+
+  if (botToken && mentorshipChannelId) {
+    try {
+      await fetch(`https://discord.com/api/v10/channels/${mentorshipChannelId}/messages`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bot ${botToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: `🎓 **【祝・師弟卒業】** <@${mentorDiscordId}> 師匠 ＆ <@${pupilDiscordId}> 弟子ペアが指導を完走しました！お疲れ様でした！✨`,
+          embeds: [embed],
+        }),
+      });
+      return;
+    } catch (e) {
+      console.warn('[mentorship/matches] Bot channel graduation announce failed:', e);
+    }
+  }
+
+  const webhookUrl = process.env.DISCORD_WEBHOOK_URL || process.env.DISCORD_RECRUIT_WEBHOOK_URL;
+  if (webhookUrl) {
+    try {
+      await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ embeds: [embed] }),
+      });
+    } catch (err) {
+      console.warn('[mentorship/matches] Discord graduation announce error:', err);
+    }
+  }
+}
+
+/**
  * Discord へのオファー着信速報通知ヘルパー（DM直接通知 ＋ フォールバック）
  */
 async function sendDiscordOfferNotification(
@@ -425,7 +491,11 @@ export async function POST(request: Request) {
 
       const { data: match, error: mErr } = await supabase
         .from('mentorship_matches')
-        .select('*')
+        .select(`
+          *,
+          mentor:mentorship_profiles!mentorship_matches_mentor_profile_id_fkey(*),
+          pupil:mentorship_profiles!mentorship_matches_pupil_profile_id_fkey(*)
+        `)
         .eq('id', matchId)
         .single();
 
@@ -466,6 +536,16 @@ export async function POST(request: Request) {
       } catch (coinErr) {
         console.warn('[mentorship/matches] Complete bonus coin warning:', coinErr);
       }
+
+      // Discordへ卒業祝賀アナウンス送信 (#🤝師弟募集 ＆ 双方DM)
+      const meta = parseNotesMeta(match.notes);
+      sendDiscordGraduationAnnounce(
+        match.mentor?.player_name || '師匠',
+        match.pupil?.player_name || '弟子',
+        meta.durationLabel,
+        match.mentor_discord_id,
+        match.pupil_discord_id
+      ).catch(() => {});
 
       syncMentorshipDashboard().catch(() => {});
 
