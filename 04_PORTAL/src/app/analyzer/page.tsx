@@ -715,116 +715,305 @@ export default function PlayerAnalyzerPage() {
                     </div>
 
                     <div className="space-y-3.5">
-                      {/* 軸① */}
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-xs font-bold">
-                          <span className="text-emerald-700 flex items-center gap-1">
-                            <Shield size={13} />{' '}
-                            {report.sessionAnalytics?.roleConfig?.radarLabels?.[0] || '① 生存率・デス回避'}
-                          </span>
-                          <span className="text-stone-900 font-black">
-                            {report.metrics.survival.score}点{' '}
-                            <span className="text-[10px] text-emerald-600 font-normal">
-                              (平均被デス {report.metrics.survival.avgDeaths})
-                            </span>
-                          </span>
-                        </div>
-                        <div className="h-2.5 w-full rounded-full bg-stone-100 overflow-hidden">
-                          <div
-                            className="h-full bg-emerald-500 rounded-full"
-                            style={{ width: `${report.metrics.survival.score}%` }}
-                          />
-                        </div>
-                      </div>
+                      {(() => {
+                        const role = (report.summoner?.role || report.sessionAnalytics?.roleConfig?.roleId || 'JUNGLE').toUpperCase();
+                        const isSup = role === 'UTILITY' || role === 'SUPPORT' || role === 'SUP';
+                        const isJg = role === 'JUNGLE' || role === 'JG';
+                        const isMid = role === 'MIDDLE' || role === 'MID';
+                        const isBot = role === 'BOTTOM' || role === 'BOT' || role === 'ADC';
 
-                      {/* 軸② */}
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-xs font-bold">
-                          <span className="text-sky-700 flex items-center gap-1">
-                            <Zap size={13} />{' '}
-                            {report.sessionAnalytics?.roleConfig?.radarLabels?.[1] || '② ファーム効率 ＆ リソース確保'}
-                          </span>
-                          <span className="text-stone-900 font-black">
-                            {report.metrics.farm.score}点{' '}
-                            <span className="text-[10px] text-sky-600 font-normal">
-                              (分間CS {report.metrics.farm.csPerMin})
-                            </span>
-                          </span>
-                        </div>
-                        <div className="h-2.5 w-full rounded-full bg-stone-100 overflow-hidden">
-                          <div
-                            className="h-full bg-sky-500 rounded-full"
-                            style={{ width: `${report.metrics.farm.score}%` }}
-                          />
-                        </div>
-                      </div>
+                        let radarItems: Array<{
+                          label: string;
+                          score: number;
+                          valueText: string;
+                          barBg: string;
+                          textColor: string;
+                          subTextColor: string;
+                          icon: any;
+                          badge?: string;
+                        }> = [];
 
-                      {/* 軸③ */}
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-xs font-bold">
-                          <span className="text-rose-700 flex items-center gap-1">
-                            <AlertTriangle size={13} />{' '}
-                            {report.sessionAnalytics?.roleConfig?.radarLabels?.[2] || '③ キル関与率 (KP)'}
-                            {report.metrics.combat.score < 50 && (
-                              <span className="text-[10px] bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded font-black">
-                                改善余地あり
-                              </span>
-                            )}
-                          </span>
-                          <span className="text-rose-600 font-black">
-                            {report.metrics.combat.score}点{' '}
-                            <span className="text-[10px] font-normal">({report.metrics.combat.kpPercent}%)</span>
-                          </span>
-                        </div>
-                        <div className="h-2.5 w-full rounded-full bg-stone-100 overflow-hidden">
-                          <div
-                            className="h-full bg-rose-500 rounded-full"
-                            style={{ width: `${report.metrics.combat.score}%` }}
-                          />
-                        </div>
-                      </div>
+                        if (isSup) {
+                          // サポート特化 5大項目
+                          const visionScore = Math.min(100, Math.max(20, Math.round((report.metrics.vision.visionScorePerMin / 2.3) * 75)));
+                          radarItems = [
+                            {
+                              label: '① 視界支配・ピンクワード購入',
+                              score: visionScore,
+                              valueText: `分間視界 ${report.metrics.vision.visionScorePerMin}/分 (ピンク推計 ${report.metrics.vision.controlWardsPerGame}本/試合)`,
+                              barBg: 'bg-emerald-500',
+                              textColor: 'text-emerald-700',
+                              subTextColor: 'text-emerald-600',
+                              icon: Eye,
+                              badge: visionScore < 50 ? '要改善' : undefined,
+                            },
+                            {
+                              label: '② 序盤ローム・他レーン支援力',
+                              score: report.metrics.combat.score,
+                              valueText: `キル関与率 ${report.metrics.combat.kpPercent}%`,
+                              barBg: 'bg-sky-500',
+                              textColor: 'text-sky-700',
+                              subTextColor: 'text-sky-600',
+                              icon: Zap,
+                              badge: report.metrics.combat.score < 50 ? '改善余地あり' : undefined,
+                            },
+                            {
+                              label: '③ 集団戦CC・キャリー防衛 (ピール)',
+                              score: report.metrics.teamfight.score,
+                              valueText: `KDA ${report.metrics.teamfight.avgKda}`,
+                              barBg: 'bg-indigo-500',
+                              textColor: 'text-indigo-700',
+                              subTextColor: 'text-indigo-600',
+                              icon: Shield,
+                            },
+                            {
+                              label: '④ オブジェクト先制視界管理',
+                              score: report.metrics.objectives.score,
+                              valueText: `${report.sessionAnalytics?.earlyTimelineImpact?.objLabel || 'ドラゴン確保時勝率'}: ${report.sessionAnalytics?.earlyTimelineImpact?.voidgrubWinRate || 50}%`,
+                              barBg: 'bg-amber-500',
+                              textColor: 'text-amber-700',
+                              subTextColor: 'text-amber-700',
+                              icon: Target,
+                            },
+                            {
+                              label: '⑤ 低被デス・生存ポジショニング',
+                              score: report.metrics.survival.score,
+                              valueText: `平均被デス ${report.metrics.survival.avgDeaths}`,
+                              barBg: 'bg-rose-500',
+                              textColor: 'text-rose-700',
+                              subTextColor: 'text-rose-600',
+                              icon: Crosshair,
+                            },
+                          ];
+                        } else if (isJg) {
+                          radarItems = [
+                            {
+                              label: '① 生存力・被デス回避',
+                              score: report.metrics.survival.score,
+                              valueText: `平均被デス ${report.metrics.survival.avgDeaths}`,
+                              barBg: 'bg-emerald-500',
+                              textColor: 'text-emerald-700',
+                              subTextColor: 'text-emerald-600',
+                              icon: Shield,
+                            },
+                            {
+                              label: '② ファーム効率 (CS/分)',
+                              score: report.metrics.farm.score,
+                              valueText: `分間CS ${report.metrics.farm.csPerMin}`,
+                              barBg: 'bg-sky-500',
+                              textColor: 'text-sky-700',
+                              subTextColor: 'text-sky-600',
+                              icon: Zap,
+                            },
+                            {
+                              label: '③ 15分キル関与 (KP@15)',
+                              score: report.metrics.combat.score,
+                              valueText: `キル関与率 ${report.metrics.combat.kpPercent}%`,
+                              barBg: 'bg-rose-500',
+                              textColor: 'text-rose-700',
+                              subTextColor: 'text-rose-600',
+                              icon: AlertTriangle,
+                              badge: report.metrics.combat.score < 50 ? '改善余地あり' : undefined,
+                            },
+                            {
+                              label: '④ オブジェクト確保 (Obj Control)',
+                              score: report.metrics.objectives.score,
+                              valueText: `グラブ/ドラゴン優位時勝率 ${report.sessionAnalytics?.earlyTimelineImpact?.voidgrubWinRate || 50}%`,
+                              barBg: 'bg-amber-500',
+                              textColor: 'text-amber-700',
+                              subTextColor: 'text-amber-700',
+                              icon: Target,
+                            },
+                            {
+                              label: '⑤ 集団戦ポジショニング (Teamfight)',
+                              score: report.metrics.teamfight.score,
+                              valueText: `KDA ${report.metrics.teamfight.avgKda}`,
+                              barBg: 'bg-indigo-500',
+                              textColor: 'text-indigo-700',
+                              subTextColor: 'text-indigo-600',
+                              icon: Crosshair,
+                            },
+                          ];
+                        } else if (isMid) {
+                          radarItems = [
+                            {
+                              label: '① 生存力・被ガンク回避',
+                              score: report.metrics.survival.score,
+                              valueText: `平均被デス ${report.metrics.survival.avgDeaths}`,
+                              barBg: 'bg-emerald-500',
+                              textColor: 'text-emerald-700',
+                              subTextColor: 'text-emerald-600',
+                              icon: Shield,
+                            },
+                            {
+                              label: '② CS精度 ＆ プッシュ主導権',
+                              score: report.metrics.farm.score,
+                              valueText: `分間CS ${report.metrics.farm.csPerMin}`,
+                              barBg: 'bg-sky-500',
+                              textColor: 'text-sky-700',
+                              subTextColor: 'text-sky-600',
+                              icon: Zap,
+                            },
+                            {
+                              label: '③ ローム・サイド介入率 (KP)',
+                              score: report.metrics.combat.score,
+                              valueText: `キル関与率 ${report.metrics.combat.kpPercent}%`,
+                              barBg: 'bg-rose-500',
+                              textColor: 'text-rose-700',
+                              subTextColor: 'text-rose-600',
+                              icon: AlertTriangle,
+                              badge: report.metrics.combat.score < 50 ? '改善余地あり' : undefined,
+                            },
+                            {
+                              label: '④ リバー・オブジェクト主導権',
+                              score: report.metrics.objectives.score,
+                              valueText: `オブジェクト優位時勝率 ${report.sessionAnalytics?.earlyTimelineImpact?.voidgrubWinRate || 50}%`,
+                              barBg: 'bg-amber-500',
+                              textColor: 'text-amber-700',
+                              subTextColor: 'text-amber-700',
+                              icon: Target,
+                            },
+                            {
+                              label: '⑤ 集団戦DPS ＆ KDA',
+                              score: report.metrics.teamfight.score,
+                              valueText: `KDA ${report.metrics.teamfight.avgKda}`,
+                              barBg: 'bg-indigo-500',
+                              textColor: 'text-indigo-700',
+                              subTextColor: 'text-indigo-600',
+                              icon: Crosshair,
+                            },
+                          ];
+                        } else if (isBot) {
+                          radarItems = [
+                            {
+                              label: '① 集団戦ポジショニング・低デス',
+                              score: report.metrics.survival.score,
+                              valueText: `平均被デス ${report.metrics.survival.avgDeaths}`,
+                              barBg: 'bg-emerald-500',
+                              textColor: 'text-emerald-700',
+                              subTextColor: 'text-emerald-600',
+                              icon: Shield,
+                            },
+                            {
+                              label: '② 分間CS ＆ リソース回収',
+                              score: report.metrics.farm.score,
+                              valueText: `分間CS ${report.metrics.farm.csPerMin}`,
+                              barBg: 'bg-sky-500',
+                              textColor: 'text-sky-700',
+                              subTextColor: 'text-sky-600',
+                              icon: Zap,
+                            },
+                            {
+                              label: '③ 終盤DPS占有 ＆ キル関与 (KP)',
+                              score: report.metrics.combat.score,
+                              valueText: `キル関与率 ${report.metrics.combat.kpPercent}%`,
+                              barBg: 'bg-rose-500',
+                              textColor: 'text-rose-700',
+                              subTextColor: 'text-rose-600',
+                              icon: AlertTriangle,
+                              badge: report.metrics.combat.score < 50 ? '改善余地あり' : undefined,
+                            },
+                            {
+                              label: '④ オブジェクトバースト力',
+                              score: report.metrics.objectives.score,
+                              valueText: `ドラゴン確保時勝率 ${report.sessionAnalytics?.earlyTimelineImpact?.voidgrubWinRate || 50}%`,
+                              barBg: 'bg-amber-500',
+                              textColor: 'text-amber-700',
+                              subTextColor: 'text-amber-700',
+                              icon: Target,
+                            },
+                            {
+                              label: '⑤ KDA ＆ キャリー力',
+                              score: report.metrics.teamfight.score,
+                              valueText: `KDA ${report.metrics.teamfight.avgKda}`,
+                              barBg: 'bg-indigo-500',
+                              textColor: 'text-indigo-700',
+                              subTextColor: 'text-indigo-600',
+                              icon: Crosshair,
+                            },
+                          ];
+                        } else {
+                          // TOP
+                          radarItems = [
+                            {
+                              label: '① タイマン生存・被ソロキル回避',
+                              score: report.metrics.survival.score,
+                              valueText: `平均被デス ${report.metrics.survival.avgDeaths}`,
+                              barBg: 'bg-emerald-500',
+                              textColor: 'text-emerald-700',
+                              subTextColor: 'text-emerald-600',
+                              icon: Shield,
+                            },
+                            {
+                              label: '② CS精度 ＆ ウェーブ管理',
+                              score: report.metrics.farm.score,
+                              valueText: `分間CS ${report.metrics.farm.csPerMin}`,
+                              barBg: 'bg-sky-500',
+                              textColor: 'text-sky-700',
+                              subTextColor: 'text-sky-600',
+                              icon: Zap,
+                            },
+                            {
+                              label: '③ TP・集団戦合流力 (KP)',
+                              score: report.metrics.combat.score,
+                              valueText: `キル関与率 ${report.metrics.combat.kpPercent}%`,
+                              barBg: 'bg-rose-500',
+                              textColor: 'text-rose-700',
+                              subTextColor: 'text-rose-600',
+                              icon: AlertTriangle,
+                              badge: report.metrics.combat.score < 50 ? '改善余地あり' : undefined,
+                            },
+                            {
+                              label: '④ スプリットプッシュ圧力 ＆ グラブ確保',
+                              score: report.metrics.objectives.score,
+                              valueText: `グラブ確保時勝率 ${report.sessionAnalytics?.earlyTimelineImpact?.voidgrubWinRate || 50}%`,
+                              barBg: 'bg-amber-500',
+                              textColor: 'text-amber-700',
+                              subTextColor: 'text-amber-700',
+                              icon: Target,
+                            },
+                            {
+                              label: '⑤ フロントライン耐久 ＆ KDA',
+                              score: report.metrics.teamfight.score,
+                              valueText: `KDA ${report.metrics.teamfight.avgKda}`,
+                              barBg: 'bg-indigo-500',
+                              textColor: 'text-indigo-700',
+                              subTextColor: 'text-indigo-600',
+                              icon: Crosshair,
+                            },
+                          ];
+                        }
 
-                      {/* 軸④ */}
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-xs font-bold">
-                          <span className="text-amber-700 flex items-center gap-1">
-                            <Target size={13} />{' '}
-                            {report.sessionAnalytics?.roleConfig?.radarLabels?.[3] || '④ オブジェクト確保 (Obj Control)'}
-                          </span>
-                          <span className="text-stone-900 font-black">
-                            {report.metrics.objectives.score}点{' '}
-                            <span className="text-[10px] text-amber-700 font-normal">(安定水準)</span>
-                          </span>
-                        </div>
-                        <div className="h-2.5 w-full rounded-full bg-stone-100 overflow-hidden">
-                          <div
-                            className="h-full bg-amber-500 rounded-full"
-                            style={{ width: `${report.metrics.objectives.score}%` }}
-                          />
-                        </div>
-                      </div>
-
-                      {/* 軸⑤ */}
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-xs font-bold">
-                          <span className="text-indigo-700 flex items-center gap-1">
-                            <Crosshair size={13} />{' '}
-                            {report.sessionAnalytics?.roleConfig?.radarLabels?.[4] || '⑤ 集団戦ポジショニング (Teamfight)'}
-                          </span>
-                          <span className="text-stone-900 font-black">
-                            {report.metrics.teamfight.score}点{' '}
-                            <span className="text-[10px] text-indigo-600 font-normal">
-                              (KDA {report.metrics.teamfight.avgKda})
-                            </span>
-                          </span>
-                        </div>
-                        <div className="h-2.5 w-full rounded-full bg-stone-100 overflow-hidden">
-                          <div
-                            className="h-full bg-indigo-500 rounded-full"
-                            style={{ width: `${report.metrics.teamfight.score}%` }}
-                          />
-                        </div>
-                      </div>
+                        return radarItems.map((item, idx) => {
+                          const IconComp = item.icon;
+                          return (
+                            <div key={idx} className="space-y-1">
+                              <div className="flex justify-between text-xs font-bold">
+                                <span className={`${item.textColor} flex items-center gap-1`}>
+                                  <IconComp size={13} /> {item.label}
+                                  {item.badge && (
+                                    <span className="text-[10px] bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded font-black">
+                                      {item.badge}
+                                    </span>
+                                  )}
+                                </span>
+                                <span className="text-stone-900 font-black">
+                                  {item.score}点{' '}
+                                  <span className={`text-[10px] ${item.subTextColor} font-normal`}>
+                                    ({item.valueText})
+                                  </span>
+                                </span>
+                              </div>
+                              <div className="h-2.5 w-full rounded-full bg-stone-100 overflow-hidden">
+                                <div
+                                  className={`h-full ${item.barBg} rounded-full`}
+                                  style={{ width: `${Math.min(100, Math.max(5, item.score))}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        });
+                      })()}
                     </div>
                   </div>
 
