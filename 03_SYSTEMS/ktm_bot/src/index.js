@@ -193,12 +193,14 @@ export default {
   },
 
   async scheduled(event, env, ctx) {
-    try {
-      ctx.waitUntil(handleScheduledEvent(event, env, ctx));
-    } catch (err) {
-      console.error("Scheduled Event Error:", err);
-      ctx.waitUntil(notifyAdminError(env, err, { action: 'scheduled', cron: event.cron }));
-    }
+    ctx.waitUntil((async () => {
+      try {
+        await handleScheduledEvent(event, env, ctx);
+      } catch (err) {
+        console.error("Scheduled Event Error:", err);
+        await notifyAdminError(env, err, { action: 'scheduled', cron: event?.cron });
+      }
+    })());
   }
 };
 

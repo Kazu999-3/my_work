@@ -14,6 +14,7 @@ export const CONFIG = {
   STATS_CHANNEL_ID: "1489910822368186468",
   CUSTOM_VC_CHANNEL_ID: "1548675524086472796",
   NOTIFICATION_ROLE_ID: "1513531261950492833",
+  ERROR_LOG_CHANNEL_ID: "1550118540038774865",
   // ポータルURLのフォールバック値。以前は複数ファイルにバラバラの値
   // (my-work-8jbd.vercel.app / ktm-portal.vercel.app) がハードコードされており、
   // env.PORTAL_API_URL未設定時にファイルごとに違うドメインへ飛ぶ不整合があった。

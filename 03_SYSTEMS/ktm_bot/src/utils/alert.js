@@ -1,4 +1,4 @@
-﻿import { sendDiscordMessage } from './api.js';
+import { sendDiscordMessage } from './api.js';
 import { CONFIG } from '../config.js';
 
 /**
@@ -61,12 +61,14 @@ export async function notifyAdminError(env, error, context = {}) {
       return;
     }
 
-    // 2. 管理用チャンネルIDが設定されている場合はチャンネルへ送信
-    const channelId = env?.ADMIN_LOG_CHANNEL_ID;
-    if (channelId && env?.DISCORD_TOKEN) {
-      await sendDiscordMessage(`channels/${channelId}/messages`, env.DISCORD_TOKEN, 'POST', {
+    // 2. 指定のエラー管理用チャンネル (1550118540038774865) へ直接送信
+    const channelId = env?.ADMIN_LOG_CHANNEL_ID || CONFIG.ERROR_LOG_CHANNEL_ID || "1550118540038774865";
+    const token = env?.DISCORD_TOKEN;
+    if (channelId && token) {
+      await sendDiscordMessage(`channels/${channelId}/messages`, token, 'POST', {
         embeds: [embed]
       });
+      return;
     }
   } catch (notifyErr) {
     // アラート送信自体の失敗で本体をクラッシュさせない
