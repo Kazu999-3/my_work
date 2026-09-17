@@ -229,6 +229,7 @@ my_work/
    - **KTM Bot 管理者エラー通知**: [`03_SYSTEMS/ktm_bot/src/utils/alert.js`](file:///d:/my_work/03_SYSTEMS/ktm_bot/src/utils/alert.js) を新設し、Workers内の未処理例外発生時にDiscord Embedで即時自動アラートを送信。
    - **バランサー画面のサブコンポーネント分割**: 3,125行の超巨大ファイル [`balancer/page.tsx`](file:///d:/my_work/04_PORTAL/src/app/balancer/page.tsx) から `BalancerVcManager.tsx` と `BalancerBo3Manager.tsx` を外出し・`React.memo` 化。
    - **チャンピオン辞典検索入力の超サクサク化**: [`DictionaryTab.tsx`](file:///d:/my_work/04_PORTAL/src/app/champions/tabs/DictionaryTab.tsx) に `useDeferredValue`（全173体＋対面検索の重いあいまい正規化をバックグラウンド化）およびURL同期の350msデバウンスタイマーを導入。タイピング時のカクつきとルーター再描画連打を根絶。
+   - **即死キルライン境界メーターのWeb UI統合**: [`api/lol/matchup-blueprint/route.ts`](file:///d:/my_work/04_PORTAL/src/app/api/lol/matchup-blueprint/route.ts) および [`MatchupBlueprintCard.tsx`](file:///d:/my_work/04_PORTAL/src/app/coach/MatchupBlueprintCard.tsx) を改修。デスクトップHUDで先行稼働していた数学的確定即死計算エンジンを移植し、カラーグラデーションHPゲージバー・即死ゾーン%・安全HP閾値・Phase 3（Lv6〜）への即死トリガー注記を完全統合。実戦マッチ（Kazurin#4036 / Yorick vs K'Sante）の確定データ検証済み。
 2. **Dependabot脆弱性解消**: `04_PORTAL`（5件）および `03_SYSTEMS/ktm_bot`（6件）の脆弱性を `npm audit fix` により 0件 に完全解消。
 3. **バランサー単体テスト高速モード化**: テスト実行時の144万回総当たりループをテスト専用深度に制御し、全36テストが20秒で一発パスする環境を整備。
 4. **ファクトチェック ＆ YouTubeキューのクリーンアップ**: 滞留pendingキュー47件および未解決エラー動画73件の再試行・リセットを完了。

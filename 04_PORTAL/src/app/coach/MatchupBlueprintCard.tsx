@@ -13,10 +13,26 @@ interface Phase {
   badge: string;
 }
 
+interface KillLineData {
+  enemy_champion: string;
+  enemy_level: number;
+  has_ignite: boolean;
+  total_lethal_damage: number;
+  raw_burst_damage: number;
+  ignite_damage: number;
+  kill_hp_percent: number;
+  my_max_hp: number;
+  safe_hp_threshold: number;
+  danger_badge: string;
+  danger_color: string;
+  advice: string;
+}
+
 interface BlueprintResponse {
   success: boolean;
   my_champion: string;
   enemy_champion: string;
+  kill_line?: KillLineData;
   blueprint: {
     phases: Phase[];
   };
@@ -285,6 +301,69 @@ export default function MatchupBlueprintCard({
           </div>
         </div>
 
+        {/* 💀 即死キルライン境界メーター (数学的確定計算) */}
+        {data?.kill_line && (
+          <div className="bg-stone-900 text-white rounded-xl p-3.5 border border-stone-700/80 shadow-sm space-y-2.5">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                <span className="text-base">💀</span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black text-amber-400">即死キルライン境界メーター</span>
+                    <span
+                      className="text-[10px] font-black px-2 py-0.5 rounded-full border shadow-2xs"
+                      style={{
+                        backgroundColor: `${data.kill_line.danger_color}25`,
+                        color: data.kill_line.danger_color,
+                        borderColor: `${data.kill_line.danger_color}60`
+                      }}
+                    >
+                      {data.kill_line.danger_badge}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-stone-400 font-medium">
+                    対面Lv6フルコンボ{data.kill_line.has_ignite ? ' ＋ イグナイト' : ''} 確定ダメージ（自防御力軽減済み）
+                  </p>
+                </div>
+              </div>
+              <div className="text-right font-mono">
+                <span className="text-[10px] text-stone-400">確定最大火力: </span>
+                <span className="text-sm font-black text-rose-400">{data.kill_line.total_lethal_damage} DMG</span>
+              </div>
+            </div>
+
+            {/* HPゲージバー */}
+            <div className="space-y-1">
+              <div className="relative w-full h-5 bg-stone-800 rounded-lg overflow-hidden border border-stone-700/80 flex">
+                {/* 即死ゾーン */}
+                <div
+                  className="h-full bg-gradient-to-r from-rose-600 to-red-500 flex items-center justify-center text-[10px] font-black text-white px-2 transition-all duration-500"
+                  style={{ width: `${data.kill_line.kill_hp_percent}%` }}
+                >
+                  {data.kill_line.kill_hp_percent >= 25 && `即死ゾーン: HP ${data.kill_line.kill_hp_percent}%`}
+                </div>
+                {/* 安全ゾーン */}
+                <div
+                  className="h-full bg-stone-800/90 flex items-center justify-end text-[10px] font-black text-emerald-400 px-2 transition-all duration-500 flex-1"
+                >
+                  {data.kill_line.kill_hp_percent < 80 && `安全域: > ${data.kill_line.safe_hp_threshold} HP`}
+                </div>
+              </div>
+              <div className="flex justify-between text-[10px] text-stone-400 font-mono px-0.5">
+                <span>0 HP</span>
+                <span className="text-rose-400 font-bold">即死境界: {data.kill_line.total_lethal_damage} HP ({data.kill_line.kill_hp_percent}%)</span>
+                <span>最大 {data.kill_line.my_max_hp} HP</span>
+              </div>
+            </div>
+
+            {/* アドバイス処方箋 */}
+            <div className="bg-stone-800/90 border border-stone-700/60 p-2 rounded-lg text-xs font-bold text-amber-200 flex items-start gap-1.5">
+              <span className="shrink-0 text-amber-400">⚠️</span>
+              <span className="leading-snug">{data.kill_line.advice}</span>
+            </div>
+          </div>
+        )}
+
         {/* 2大タブ切替 */}
         <div className="flex items-center gap-1.5 pt-1">
           <button
@@ -345,8 +424,16 @@ export default function MatchupBlueprintCard({
                   </p>
                 </div>
 
-                <div className="pt-2 border-t border-stone-200/70 text-[10px] text-emerald-800 font-bold bg-emerald-50/80 p-1.5 rounded">
-                  🎯 クリア条件: {p.win_trigger}
+                <div className="pt-2 border-t border-stone-200/70 space-y-1.5">
+                  <div className="text-[10px] text-emerald-800 font-bold bg-emerald-50/80 p-1.5 rounded">
+                    🎯 クリア条件: {p.win_trigger}
+                  </div>
+                  {idx === 2 && data?.kill_line && (
+                    <div className="text-[10px] font-bold text-rose-800 bg-rose-50/80 px-2 py-1 rounded border border-rose-200/80 flex items-center justify-between">
+                      <span>💀 敵Lv6即死境界:</span>
+                      <span className="font-mono font-black">{data.kill_line.total_lethal_damage} DMG (HP {data.kill_line.kill_hp_percent}%)</span>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
