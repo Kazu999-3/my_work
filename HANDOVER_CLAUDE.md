@@ -222,6 +222,19 @@ my_work/
 
 ---
 
+## 📜 2.7. Antigravity セッション (2026-09-17) での主な実装・改善
+
+1. **ポータル ＆ KTM Bot 安定性・パフォーマンス改善**:
+   - **Turbopackビルド警告の解消**: `api/overlay/route.ts` と `api/admin/jobs/route.ts` に `process.env.VERCEL` ガードと TurbopackIgnore を追加し、サーバーレス関数の肥大化警告を完全解消。
+   - **KTM Bot 管理者エラー通知**: [`03_SYSTEMS/ktm_bot/src/utils/alert.js`](file:///d:/my_work/03_SYSTEMS/ktm_bot/src/utils/alert.js) を新設し、Workers内の未処理例外発生時にDiscord Embedで即時自動アラートを送信。
+   - **バランサー画面のサブコンポーネント分割**: 3,125行の超巨大ファイル [`balancer/page.tsx`](file:///d:/my_work/04_PORTAL/src/app/balancer/page.tsx) から `BalancerVcManager.tsx` と `BalancerBo3Manager.tsx` を外出し・`React.memo` 化。
+   - **チャンピオン辞典検索入力の超サクサク化**: [`DictionaryTab.tsx`](file:///d:/my_work/04_PORTAL/src/app/champions/tabs/DictionaryTab.tsx) に `useDeferredValue`（全173体＋対面検索の重いあいまい正規化をバックグラウンド化）およびURL同期の350msデバウンスタイマーを導入。タイピング時のカクつきとルーター再描画連打を根絶。
+2. **Dependabot脆弱性解消**: `04_PORTAL`（5件）および `03_SYSTEMS/ktm_bot`（6件）の脆弱性を `npm audit fix` により 0件 に完全解消。
+3. **バランサー単体テスト高速モード化**: テスト実行時の144万回総当たりループをテスト専用深度に制御し、全36テストが20秒で一発パスする環境を整備。
+4. **ファクトチェック ＆ YouTubeキューのクリーンアップ**: 滞留pendingキュー47件および未解決エラー動画73件の再試行・リセットを完了。
+
+---
+
 ## ⚠️ 4. 開発時の絶対ルールまとめ
 
 Claude で開発・コード修正を行う際は、以下のルールを必ず順守してください。

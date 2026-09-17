@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef, Suspense } from 'react';
+import { useEffect, useState, useMemo, useRef, useDeferredValue, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -25,7 +25,10 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   // (2026-08-05発覚)。多数のフィルタを設定した後に別チャンピオン詳細を見て戻る、
   // という操作を頻繁に行う画面のため、URLクエリに保持して復元できるようにする。
   const [search, setSearch] = useState(() => searchParams.get('q') || '');
+  // 入力タイピングの即時反応を維持しつつ、全173体のあいまい検索・正規表現置換の負荷を逃がす遅延値
+  const deferredSearch = useDeferredValue(search);
   const [sortOrder, setSortOrder] = useState(() => searchParams.get('sort') || 'updated_desc');
+
   const [roleFilter, setRoleFilter] = useState<string>(() => searchParams.get('role') || 'ALL');
 
   // 略称・通称・エイリアス辞書
@@ -114,19 +117,27 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
   // 現在のフィルタ・ソート状態をURLクエリへ反映する。チャンピオン詳細を開いている
   // 間(selected有り)は一覧側のクエリを書き換えない。
+  // テキスト検索(search)の入力中は毎キーストロークでrouter.replaceが走ると
+  // 著しい入力ラグが発生するため、350msのデバウンスを適用する。
   useEffect(() => {
     if (selected) return;
-    const params = new URLSearchParams();
-    if (search) params.set('q', search);
-    if (sortOrder !== 'updated_desc') params.set('sort', sortOrder);
-    if (roleFilter !== 'ALL') params.set('role', roleFilter);
-    if (typeFilter !== 'ALL') params.set('type', typeFilter);
-    if (pickFilter !== 'ALL') params.set('pick', pickFilter);
-    if (showFavoritesOnly) params.set('fav', '1');
-    const qs = params.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+
+    const timer = setTimeout(() => {
+      const params = new URLSearchParams();
+      if (search) params.set('q', search);
+      if (sortOrder !== 'updated_desc') params.set('sort', sortOrder);
+      if (roleFilter !== 'ALL') params.set('role', roleFilter);
+      if (typeFilter !== 'ALL') params.set('type', typeFilter);
+      if (pickFilter !== 'ALL') params.set('pick', pickFilter);
+      if (showFavoritesOnly) params.set('fav', '1');
+      const qs = params.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    }, 350);
+
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, sortOrder, roleFilter, typeFilter, pickFilter, showFavoritesOnly, selected]);
+
 
   // 相対時間フォーマット関数
   const getRelativeTimeString = (timestampSec?: number) => {
@@ -245,11 +256,13 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   };
 
   const [matchupSearch, setMatchupSearch] = useState('');
+  const deferredMatchupSearch = useDeferredValue(matchupSearch);
   const filteredMatchupsList = useMemo(() => {
-    if (!matchupSearch.trim()) return matchupsList;
-    const q = matchupSearch.toLowerCase();
+    if (!deferredMatchupSearch.trim()) return matchupsList;
+    const q = deferredMatchupSearch.toLowerCase();
     return matchupsList.filter((m) => m.enemy?.toLowerCase().includes(q) || m.title?.toLowerCase().includes(q));
-  }, [matchupsList, matchupSearch]);
+  }, [matchupsList, deferredMatchupSearch]);
+
 
   // トレンド取得中の経過秒数を1秒ごとに更新（「本当に動いているか」を見えるようにする）
   useEffect(() => {
@@ -817,8 +830,8 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   const filtered = useMemo(() => {
     let result = champions;
     // 超強力テキストあいまい検索（略称・ひらがな・カタカナ・長音・スペース無視全対応）
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
+    if (deferredSearch.trim()) {
+      const q = deferredSearch.trim().toLowerCase();
       const hira = q.replace(/[\u30a1-\u30f6]/g, m => String.fromCharCode(m.charCodeAt(0) - 0x60));
       const kata = q.replace(/[\u3041-\u3096]/g, m => String.fromCharCode(m.charCodeAt(0) + 0x60));
       const noChoonHira = hira.replace(/ー/g, '');
@@ -930,7 +943,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
       }
       return a.name.localeCompare(b.name);
     });
-  }, [champions, search, sortOrder, champDates, showPendingOnly, champPending, roleFilter, showFavoritesOnly, favoriteChamps, typeFilter, pickFilter, champJgStyles, champLaneRoles]);
+  }, [champions, deferredSearch, sortOrder, champDates, showPendingOnly, champPending, roleFilter, showFavoritesOnly, favoriteChamps, typeFilter, pickFilter, champJgStyles, champLaneRoles]);
 
   const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.02 } } };
   const itemVariants = { hidden: { scale: 0.9, opacity: 0 }, visible: { scale: 1, opacity: 1 } };

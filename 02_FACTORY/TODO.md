@@ -72,6 +72,7 @@
   - **ビルド警告解消**: `api/overlay/route.ts` および `api/admin/jobs/route.ts` に `process.env.VERCEL` ガードと TurbopackIgnore を付与し、プロジェクト全体のトレース警告（サーバーレス関数の肥大化）を解消。
   - **KTM Bot 管理者エラー通知**: [`03_SYSTEMS/ktm_bot/src/utils/alert.js`](file:///d:/my_work/03_SYSTEMS/ktm_bot/src/utils/alert.js) を新設し、Workers内の未処理例外や非同期処理の失敗時に管理者（Webhook/チャンネル）へDiscord Embedで即時自動アラートを送信する仕組みを導入。
   - **バランサー画面のサブコンポーネント分割**: 3,125行の超巨大ファイル [`04_PORTAL/src/app/balancer/page.tsx`](file:///d:/my_work/04_PORTAL/src/app/balancer/page.tsx) から `BalancerVcManager.tsx` と `BalancerBo3Manager.tsx` を外出し・`React.memo` 化し、描画パフォーマンスと保守性を向上。
+  - **チャンピオン辞典検索入力の超サクサク化**: [`04_PORTAL/src/app/champions/tabs/DictionaryTab.tsx`](file:///d:/my_work/04_PORTAL/src/app/champions/tabs/DictionaryTab.tsx) に `useDeferredValue`（全173体＋対面検索の重いあいまい正規化をバックグラウンド化）およびURL同期の350msデバウンスタイマーを導入。タイピング時のカクつきとルーター再描画連打を根絶。
 
 
 
