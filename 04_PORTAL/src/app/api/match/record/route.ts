@@ -425,7 +425,7 @@ export async function POST(request: Request) {
 
     // (4.6) 勝敗予想ベットの自動精算（的中者へのコイン払い戻し）
     // 4. 勝敗予想（ベット）の自動精算 ＆ 的中配当払い戻し
-    const payoutWinners: Array<{ name: string; payout: number; multiplier: number }> = [];
+    const payoutWinners: Array<{ name: string; payout: number; multiplier: number; streak?: number }> = [];
     try {
       const { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } = await import('../../../../lib/playerCoins');
       const { data: openBetTasks } = await supabase
@@ -441,21 +441,51 @@ export async function POST(request: Request) {
           let payout = 0;
           let multiplier = Number(bet.odds) > 0 ? Number(bet.odds) : 2.0;
 
-          if (won) {
-            payout = Math.floor((bet.amount || 0) * multiplier);
-            payoutWinners.push({ name: bet.player_name, payout, multiplier });
+          const pPlayer = await findOrCreatePlayer({
+            discordId: bet.discord_id,
+            name: bet.player_name,
+            autoCreate: true,
+          });
 
-            const pPlayer = await findOrCreatePlayer({
-              discordId: bet.discord_id,
-              name: bet.player_name,
-              autoCreate: true,
-            });
+          let streakBonusPercent = 0;
+          let currentStreak = 0;
+
+          if (won) {
+            currentStreak = (Number(pPlayer?.role_preferences?.betStreak) || 0) + 1;
+            const maxStreak = Math.max(currentStreak, Number(pPlayer?.role_preferences?.maxBetStreak) || currentStreak);
+
+            // 🔥 連勝ボーナス (5連勝以上:+20%, 3連勝以上:+10%, 2連勝:+5%)
+            if (currentStreak >= 5) {
+              streakBonusPercent = 20;
+            } else if (currentStreak >= 3) {
+              streakBonusPercent = 10;
+            } else if (currentStreak >= 2) {
+              streakBonusPercent = 5;
+            }
+
+            const effectiveMultiplier = multiplier * (1 + streakBonusPercent / 100);
+            payout = Math.floor((bet.amount || 0) * effectiveMultiplier);
+            payoutWinners.push({ name: bet.player_name, payout, multiplier: Number(effectiveMultiplier.toFixed(2)), streak: currentStreak });
 
             if (pPlayer) {
               const cur = getPlayerCoins(pPlayer);
               await updatePlayerCoinsAndInventory({
                 player: pPlayer,
                 newCoins: cur + payout,
+                rolePreferencesUpdate: {
+                  betStreak: currentStreak,
+                  maxBetStreak: maxStreak,
+                },
+              });
+            }
+          } else {
+            // 不的中：連勝リセット
+            if (pPlayer) {
+              await updatePlayerCoinsAndInventory({
+                player: pPlayer,
+                rolePreferencesUpdate: {
+                  betStreak: 0,
+                },
               });
             }
           }
@@ -468,6 +498,8 @@ export async function POST(request: Request) {
                 won,
                 payout,
                 multiplier,
+                streak: currentStreak,
+                streakBonusPercent,
                 settled_at: new Date().toISOString()
               },
               updated_at: new Date().toISOString()

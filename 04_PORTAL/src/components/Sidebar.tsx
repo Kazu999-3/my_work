@@ -66,6 +66,9 @@ function UserAuthWidget({ collapsed, inDrawer }: { collapsed?: boolean; inDrawer
             colors: ['#f59e0b', '#10b981', '#3b82f6', '#ec4899']
           });
         } catch {}
+        if (data.message) {
+          alert(data.message);
+        }
         refreshUser();
       } else {
         alert(data.error || '受取に失敗しました');

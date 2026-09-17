@@ -39,6 +39,8 @@ export async function GET(req: Request) {
     let userCoins = 1000;
     let lastClaimDate: string | null = null;
     let lastRescueMonth: string | null = null;
+    let userStreak = 0;
+    let userMaxStreak = 0;
 
     if (discordId || name) {
       const player = await findOrCreatePlayer({
@@ -51,6 +53,8 @@ export async function GET(req: Request) {
         userCoins = getPlayerCoins(player);
         lastClaimDate = player.role_preferences?.lastDailyClaim || null;
         lastRescueMonth = player.role_preferences?.lastRescueMonth || null;
+        userStreak = Number(player.role_preferences?.betStreak) || 0;
+        userMaxStreak = Number(player.role_preferences?.maxBetStreak) || userStreak;
       }
     }
 
@@ -89,6 +93,8 @@ export async function GET(req: Request) {
       ranking,
       lastClaimDate,
       lastRescueMonth,
+      userStreak,
+      userMaxStreak,
       jackpot,
       betStats: {
         blueAmount,
@@ -142,13 +148,53 @@ export async function PUT(req: Request) {
 
     const currentMonth = todayStr.slice(0, 7); // 'YYYY-MM'
 
+    let omikujiData: {
+      tier: '大大吉' | '大吉' | '中吉' | '小吉';
+      coins: number;
+      icon: string;
+      comment: string;
+    } | null = null;
+
     if (type === 'daily') {
       const lastClaim = player.role_preferences?.lastDailyClaim;
       if (lastClaim === todayStr) {
         return NextResponse.json({ error: '本日のデイリーボーナスは受取済みです！明日またお越しください🎁' }, { status: 400 });
       }
-      addedCoins = 100;
-      successMessage = '🎁 デイリーボーナス +100コイン を受け取りました！';
+
+      // 🎰 デイリーおみくじ抽選 (大大吉:10%, 大吉:25%, 中吉:40%, 小吉:25%)
+      const rand = Math.random() * 100;
+      if (rand < 10) {
+        omikujiData = {
+          tier: '大大吉',
+          coins: 300,
+          icon: '👑',
+          comment: '超絶豪運！本日のカスタムで無双キャリー確定！？',
+        };
+      } else if (rand < 35) {
+        omikujiData = {
+          tier: '大吉',
+          coins: 200,
+          icon: '🌟',
+          comment: '大幸運！ここぞという場面の判断が冴え渡る予感！',
+        };
+      } else if (rand < 75) {
+        omikujiData = {
+          tier: '中吉',
+          coins: 150,
+          icon: '🎯',
+          comment: '好調！チームプレイと連携が光る充実の1日！',
+        };
+      } else {
+        omikujiData = {
+          tier: '小吉',
+          coins: 100,
+          icon: '🍀',
+          comment: '堅実！コツコツ貯めて勝負どころに備えよう！',
+        };
+      }
+
+      addedCoins = omikujiData.coins;
+      successMessage = `${omikujiData.icon} 【${omikujiData.tier}】+${addedCoins}コイン を獲得しました！ ${omikujiData.comment}`;
     } else if (type === 'rescue') {
       const lastRescue = player.role_preferences?.lastRescueMonth;
       if (lastRescue === currentMonth) {
@@ -182,7 +228,8 @@ export async function PUT(req: Request) {
     return NextResponse.json({
       success: true,
       remainingCoins: newCoins,
-      message: successMessage
+      message: successMessage,
+      omikuji: omikujiData,
     });
   } catch (error: any) {
     console.error('Bonus claim error:', error);

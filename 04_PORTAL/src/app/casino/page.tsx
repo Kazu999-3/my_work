@@ -6,6 +6,7 @@ import Link from 'next/link';
 import confetti from 'canvas-confetti';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { supabase } from '../../lib/supabaseClient';
+import OmikujiModal, { OmikujiData } from './components/OmikujiModal';
 
 interface RankingPlayer {
   name: string;
@@ -119,6 +120,14 @@ export default function CasinoPage() {
   const [inventory, setInventory] = useState<Array<{ id: string; name: string; icon: string; boughtAt: string }>>([]);
   const [lastClaimDate, setLastClaimDate] = useState<string | null>(null);
   const [lastRescueMonth, setLastRescueMonth] = useState<string | null>(null);
+
+  // 🎰 おみくじモーダル用ステート
+  const [isOmikujiOpen, setIsOmikujiOpen] = useState<boolean>(false);
+  const [omikujiData, setOmikujiData] = useState<OmikujiData | null>(null);
+
+  // 🔥 予想的中連勝ストリーク
+  const [userStreak, setUserStreak] = useState<number>(0);
+  const [userMaxStreak, setUserMaxStreak] = useState<number>(0);
   
   // 🪙 チップ送金モーダル用ステート
   const [isTipModalOpen, setIsTipModalOpen] = useState<boolean>(false);
@@ -394,6 +403,8 @@ export default function CasinoPage() {
         }
         if (data.lastClaimDate) setLastClaimDate(data.lastClaimDate);
         if (data.lastRescueMonth) setLastRescueMonth(data.lastRescueMonth);
+        if (data.userStreak !== undefined) setUserStreak(Number(data.userStreak) || 0);
+        if (data.userMaxStreak !== undefined) setUserMaxStreak(Number(data.userMaxStreak) || 0);
       }
     } catch (e) {
       console.error('Failed to fetch bet data:', e);
@@ -419,8 +430,13 @@ export default function CasinoPage() {
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        triggerCelebration();
-        alert(data.message);
+        if (type === 'daily' && data.omikuji) {
+          setOmikujiData(data.omikuji);
+          setIsOmikujiOpen(true);
+        } else {
+          triggerCelebration();
+          alert(data.message);
+        }
         fetchBetData();
         refreshUser();
       } else {
@@ -679,11 +695,11 @@ export default function CasinoPage() {
                 <button
                   type="button"
                   onClick={() => handleClaimBonus('daily')}
-                  className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-black text-xs shadow transition flex items-center gap-1.5 cursor-pointer"
-                  title="1日1回ログインボーナスを受け取ります"
+                  className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-stone-950 font-black text-xs shadow transition flex items-center gap-1.5 cursor-pointer transform active:scale-95"
+                  title="1日1回おみくじを引いてボーナスを獲得します（最大+300pt）"
                 >
-                  <span className="text-sm">🎁</span>
-                  <span>デイリーボーナス (+100pt)</span>
+                  <span className="text-sm">🎰</span>
+                  <span>デイリーおみくじ (最大+300pt)</span>
                 </button>
 
                 {(user.coins ?? 1000) < 100 && (
@@ -729,6 +745,36 @@ export default function CasinoPage() {
                 >
                   ログアウト
                 </button>
+              </div>
+            </div>
+
+            {/* 🔥 勝敗予想 連勝ストリークバナー */}
+            <div className="pt-3 border-t border-amber-500/20 flex items-center justify-between flex-wrap gap-2 text-xs">
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className={`px-2.5 py-1 rounded-xl flex items-center gap-1.5 font-black ${
+                  userStreak >= 5
+                    ? 'bg-gradient-to-r from-rose-500 to-amber-500 text-white animate-pulse shadow-md'
+                    : userStreak >= 3
+                      ? 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/40'
+                      : userStreak >= 1
+                        ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40'
+                        : 'bg-stone-200/60 dark:bg-[#1e1f22] text-stone-500 dark:text-stone-400'
+                }`}>
+                  <Flame size={14} className={userStreak > 0 ? 'text-amber-400 animate-bounce' : ''} />
+                  <span>{userStreak > 0 ? `🔥 予想 ${userStreak} 連勝中！` : '連勝ストリーク: 0戦'}</span>
+                </div>
+
+                {userStreak > 0 && (
+                  <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300">
+                    次回的中: <strong>{userStreak >= 4 ? '+20%' : userStreak >= 2 ? '+10%' : '+5%'}</strong> 配当ボーナス！
+                  </span>
+                )}
+              </div>
+
+              <div className="text-[11px] font-bold text-stone-500 dark:text-stone-400 flex items-center gap-1.5">
+                <span>👑 自己ベスト:</span>
+                <strong className="text-amber-600 dark:text-amber-400">{userMaxStreak}連勝</strong>
+                <span className="text-[10px] text-stone-400 dark:text-stone-500 font-normal">（2連勝:+5% / 3連勝:+10% / 5連勝:+20%）</span>
               </div>
             </div>
 
@@ -1512,6 +1558,17 @@ export default function CasinoPage() {
           </div>
         </div>
       )}
+
+      {/* 🎰 デイリーおみくじ演出モーダル */}
+      <OmikujiModal
+        isOpen={isOmikujiOpen}
+        onClose={() => setIsOmikujiOpen(false)}
+        omikujiData={omikujiData}
+        onClaimFinished={() => {
+          fetchBetData();
+          refreshUser();
+        }}
+      />
     </div>
   );
 }
