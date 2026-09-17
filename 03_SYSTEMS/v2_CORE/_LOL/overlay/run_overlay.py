@@ -85,7 +85,26 @@ def create_tray_icon() -> QIcon:
         return QIcon(pixmap)
 
 
+# 多重起動防止 (ポート 59124 の単一インスタンスロック)
+_single_instance_socket = None
+
+def ensure_single_instance() -> bool:
+    global _single_instance_socket
+    try:
+        import socket
+        _single_instance_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        _single_instance_socket.bind(('127.0.0.1', 59124))
+        _single_instance_socket.listen(1)
+        return True
+    except OSError:
+        return False
+
+
 def main():
+    if not ensure_single_instance():
+        print("⚠️ Sovereign HUD はすでにバックグラウンドで起動・待機中です。多重起動を防止しました。")
+        sys.exit(0)
+
     parser = argparse.ArgumentParser(description="Sovereign HUD Overlay")
     parser.add_argument("--mock", action="store_true", help="モックデータを使用してUIテストを実行")
     parser.add_argument("--demo", action="store_true", help="リアルタイム試合シミュレーション(デモモード)を実行")
@@ -202,6 +221,14 @@ def main():
     tray_icon.activated.connect(on_tray_icon_activated)
     tray_icon.setContextMenu(tray_menu)
     tray_icon.show()
+
+    # 👑 フローティングステータスバッジ（画面最上部に常駐し、起動待機・試合中を即座に視覚化）
+    status_pill = MiniStatusPillWidget(
+        on_toggle_hud=toggle_manual_visibility,
+        on_quit=app.quit
+    )
+    status_pill.move(int((screen_w - 240) / 2), 8)
+    status_pill.show()
 
     # 画面上部にウェルカムトーストを表示（起動を視覚的に通知）
     toast_alert.show()
@@ -346,9 +373,11 @@ def main():
                 print(f"\n🟢 [インゲーム自動連動成功！] 試合時間: {t_str} | {my_champ} vs {enemy_champ} | {g_str}")
                 print("💡 オーバーレイが自動表示されました！（TABキーで対面手順書＆レーン優勢度が出現）\n")
                 last_reported_status = "in_game"
+                status_pill.set_status(True, my_champ)
             elif tick_count % 10 == 0:
                 print(f"⏱️ [In-Game] {t_str} | {my_champ} vs {enemy_champ} | CS: {state.get('my_cs', 0)} ({state.get('cs_per_min', 0)}/m) | {g_str}")
                 status_action.setText(f"⚔️ 試合中: {my_champ} vs {enemy_champ} ({t_str})")
+                status_pill.set_status(True, my_champ)
 
             game_state_tracker["was_in_game"] = True
             game_state_tracker["last_active_state"] = state
@@ -363,6 +392,7 @@ def main():
                 print("⏳ [LoL起動監視中...] サモナーズリフト（League of Legends.exe）の開始を待機しています...")
                 status_action.setText("⏳ 状態: LoL起動監視中 (待機)")
                 last_reported_status = "waiting"
+                status_pill.set_status(False)
 
             if game_state_tracker["was_in_game"]:
                 game_state_tracker["was_in_game"] = False

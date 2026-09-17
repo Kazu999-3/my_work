@@ -254,6 +254,32 @@ export default function Sidebar() {
     };
   }, [showMobileDrawer]);
 
+  // 師弟募集中のプロフィール数（リアルタイムバッジ用）
+  const [mentorshipCount, setMentorshipCount] = useState<number>(0);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchMentorshipCount = async () => {
+      try {
+        const res = await fetch('/api/mentorship/profiles?status=OPEN');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (isMounted && data.ok && Array.isArray(data.profiles)) {
+          setMentorshipCount(data.profiles.length);
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    fetchMentorshipCount();
+    const timer = setInterval(fetchMentorshipCount, 45000);
+    return () => {
+      isMounted = false;
+      clearInterval(timer);
+    };
+  }, []);
+
   const toggleSidebar = () => {
     const nextState = !isCollapsed;
     setIsCollapsed(nextState);
@@ -333,6 +359,7 @@ export default function Sidebar() {
             const Icon = item.icon;
             const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
             const showSection = !isCollapsed && item.section && (idx === 0 || desktopItems[idx - 1]?.section !== item.section);
+            const isMentorship = item.id === 'mentorship';
 
             return (
               <React.Fragment key={item.id}>
@@ -346,10 +373,27 @@ export default function Sidebar() {
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition ${
                     isActive ? `${item.activeBg} ${item.color}` : 'text-stone-600 dark:text-stone-300 hover:bg-stone-200/50 dark:hover:bg-[#2b2d31] hover:text-stone-900 dark:hover:text-white'
                   }`}
-                  title={isCollapsed ? item.label : undefined}
+                  title={isCollapsed ? (isMentorship && mentorshipCount > 0 ? `${item.label} (${mentorshipCount}名募集中)` : item.label) : undefined}
                 >
-                  <Icon size={18} className="shrink-0" />
-                  {!isCollapsed && <span className="truncate">{item.label}</span>}
+                  <div className="relative shrink-0 flex items-center justify-center">
+                    <Icon size={18} />
+                    {isCollapsed && isMentorship && mentorshipCount > 0 && (
+                      <span className="absolute -top-1.5 -right-2 px-1 text-[9px] font-black rounded-full bg-emerald-500 text-white min-w-[15px] h-[15px] flex items-center justify-center shadow-xs">
+                        {mentorshipCount}
+                      </span>
+                    )}
+                  </div>
+                  {!isCollapsed && (
+                    <>
+                      <span className="truncate">{item.label}</span>
+                      {isMentorship && mentorshipCount > 0 && (
+                        <span className="ml-auto px-2 py-0.5 text-[10px] font-black rounded-full bg-emerald-500/15 dark:bg-emerald-500/25 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1 shrink-0 animate-pulse">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          <span>{mentorshipCount}名募集中</span>
+                        </span>
+                      )}
+                    </>
+                  )}
                 </Link>
               </React.Fragment>
             );
@@ -380,6 +424,7 @@ export default function Sidebar() {
         {mobileBottomBarItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+          const isMentorship = item.id === 'mentorship';
           return (
             <Link
               key={item.id}
@@ -390,8 +435,13 @@ export default function Sidebar() {
                   : 'text-stone-500 dark:text-stone-400 active:bg-black/5 dark:active:bg-white/5 font-medium'
               }`}
             >
-              <div className={`p-1 rounded-xl transition-colors ${isActive ? item.activeBg : ''}`}>
+              <div className={`relative p-1 rounded-xl transition-colors ${isActive ? item.activeBg : ''}`}>
                 <Icon size={20} className={isActive ? item.color : 'text-stone-400 dark:text-stone-500'} />
+                {isMentorship && mentorshipCount > 0 && (
+                  <span className="absolute -top-0.5 -right-1 px-1 text-[9px] font-black rounded-full bg-emerald-500 text-white min-w-[14px] h-[14px] flex items-center justify-center shadow-xs">
+                    {mentorshipCount}
+                  </span>
+                )}
               </div>
               <span className="text-[10px] tracking-tight mt-0.5 leading-none">{item.shortLabel || item.label}</span>
             </Link>
@@ -483,6 +533,7 @@ export default function Sidebar() {
                   {GENERAL_MENU_ITEMS.map((item) => {
                     const Icon = item.icon;
                     const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+                    const isMentorship = item.id === 'mentorship';
                     return (
                       <Link
                         key={item.id}
@@ -494,10 +545,18 @@ export default function Sidebar() {
                             : 'bg-white dark:bg-[#2b2d31] border-stone-200/80 dark:border-[#3f4147] text-stone-700 dark:text-stone-200 hover:border-amber-500/40 font-bold'
                         }`}
                       >
-                        <div className={`p-1.5 rounded-xl ${isActive ? 'bg-white/20' : item.activeBg}`}>
+                        <div className={`p-1.5 rounded-xl shrink-0 ${isActive ? 'bg-white/20' : item.activeBg}`}>
                           <Icon size={18} className={item.color} />
                         </div>
-                        <span className="text-xs truncate">{item.label}</span>
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <span className="text-xs truncate">{item.label}</span>
+                          {isMentorship && mentorshipCount > 0 && (
+                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-black flex items-center gap-1 mt-0.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              <span>{mentorshipCount}名募集中</span>
+                            </span>
+                          )}
+                        </div>
                       </Link>
                     );
                   })}

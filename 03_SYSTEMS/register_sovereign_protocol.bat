@@ -17,9 +17,7 @@ if not exist "%VBS_PATH%" (
 )
 
 echo [1/2] HKCUレジストリに sovereign:// プロトコルを登録中...
-reg add "HKCU\Software\Classes\sovereign" /ve /t REG_SZ /d "URL:Sovereign Protocol" /f > nul
-reg add "HKCU\Software\Classes\sovereign" /v "URL Protocol" /t REG_SZ /d "" /f > nul
-reg add "HKCU\Software\Classes\sovereign\shell\open\command" /ve /t REG_SZ /d "wscript.exe \"%VBS_PATH%\"" /f > nul
+powershell -NoProfile -Command "Set-ItemProperty -Path 'HKCU:\Software\Classes\sovereign' -Name '(default)' -Value 'URL:Sovereign Protocol' -Force; Set-ItemProperty -Path 'HKCU:\Software\Classes\sovereign' -Name 'URL Protocol' -Value '' -Force; New-Item -Path 'HKCU:\Software\Classes\sovereign\shell\open\command' -Force | Out-Null; Set-ItemProperty -Path 'HKCU:\Software\Classes\sovereign\shell\open\command' -Name '(default)' -Value 'wscript.exe \"%VBS_PATH%\" \"%%1\"' -Force"
 
 if %ERRORLEVEL% EQU 0 (
     echo [成功] sovereign:// プロトコルの登録が完了しました！

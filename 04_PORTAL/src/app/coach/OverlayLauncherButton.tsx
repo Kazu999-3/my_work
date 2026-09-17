@@ -30,38 +30,48 @@ export default function OverlayLauncherButton() {
     return () => clearInterval(interval);
   }, []);
 
+  const launchSovereignProtocol = () => {
+    try {
+      const a = document.createElement('a');
+      a.href = 'sovereign://launch-overlay';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        try {
+          if (document.body.contains(a)) document.body.removeChild(a);
+        } catch {}
+      }, 1500);
+    } catch {
+      window.location.href = 'sovereign://launch-overlay';
+    }
+  };
+
   const handleToggle = async () => {
     setLoading(true);
     setFeedback(null);
-    try {
-      // クラウド環境（Vercel）の場合は、ローカルAPIをスキップして直接カスタムプロトコルを実行
-      if (isCloud) {
-        window.location.href = 'sovereign://launch-overlay';
-        setFeedback('🚀 ローカルPCでSovereign HUDを起動しました（常駐待機中）');
-        setTimeout(() => setFeedback(null), 6000);
-        return;
-      }
 
-      const action = running ? 'stop' : 'start';
-      const res = await fetch('/api/overlay', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setRunning(!running);
-      } else {
-        // ローカルAPI失敗時もカスタムプロトコルへフォールバック
-        window.location.href = 'sovereign://launch-overlay';
-        setFeedback('🚀 ローカルランチャー (sovereign://) 経由で起動しました');
-        setTimeout(() => setFeedback(null), 6000);
+    // 1. 直ちにカスタムプロトコル (sovereign://) を直接発火（User Gestureを維持してブラウザのブロックを回避）
+    launchSovereignProtocol();
+    setFeedback('🚀 Sovereign HUD 起動シグナル送信完了！（画面上部に👑バッジが出現）');
+    setTimeout(() => setFeedback(null), 7000);
+
+    try {
+      // 2. ローカルサーバーが存在する場合はAPI経由でも状態確認・プロセス管理を実行
+      if (!isCloud) {
+        const action = running ? 'stop' : 'start';
+        const res = await fetch('/api/overlay', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          setRunning(!running);
+        }
       }
     } catch (e) {
-      console.error(e);
-      window.location.href = 'sovereign://launch-overlay';
-      setFeedback('🚀 ローカルランチャー (sovereign://) 経由で起動しました');
-      setTimeout(() => setFeedback(null), 6000);
+      console.warn('API overlay fallback:', e);
     } finally {
       setLoading(false);
     }
