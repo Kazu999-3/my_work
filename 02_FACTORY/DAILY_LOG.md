@@ -80,6 +80,11 @@
     52. `generate_tactics_bible.py` への主要JG（Graves, Kindred, Amumu, Khazix）マスターデータ追加および新規バイブル配備（計17体へプール拡大）
     53. `04_PORTAL/src/app/api/champions/tactics/route.ts` および `ChampionVisualDashboard.tsx` への `macro` 表示UI連動（画面内で敵JGトラッキング・Prio判断がヘクステックブルーで可視化）
     54. 実機バッチ抽出テスト実証（`amumu_tactics_bible.md` へ敵Lee Sinトラッキング・Prio・逆サイドクロスを含むチャレンジャー級実演クリップの自動マウント成功）
+  - **追加整備 (第16弾: シチュエーション別ビルドの動的生成化 ＆ Aatroxハードコード完全撤廃)**:
+    55. `ChampionVisualDashboard.tsx` において、ザイラ等のAPメイジを含む全チャンピオンでAatrox用のADファイタービルド（赤月の刃/黒斧/征服者）が表示されていたバグを根本解決。
+    56. チャンピオンのロール・タグ・ダメージ特性・実戦テキストを網羅判定する `detectChampionArchetype`（APメイジ、APアサシン、ADアサシン、耐久タンク、マークスマン、サポート、ADファイター）を新設配備。
+    57. `getPresetBuildDetails` を配備し、標準コア、対タンク（貫通・割合DMG）、対バースト（無敵・高耐久・シールド）の3大シチュエーションに応じた適正アイテム・ルーン・解説を動的生成。
+    58. 画面上にアーキタイプバッジ（「⚡ APメイジ」「🛡️ 耐久タンク」等）を追加し、ビルド選択の理由（Why）を可視化。
 
 ### 🔄 判断の経緯 ＆ 落とした選択肢 (Decisions & Rejected Options)
 - **採用**: タイムスタンプ圧縮（[MM:SS]）＋LoL戦術キーワードスマートフィルタリング（B案）。
