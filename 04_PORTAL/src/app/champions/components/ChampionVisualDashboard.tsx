@@ -23,6 +23,7 @@ export default function ChampionVisualDashboard({
 }: ChampionVisualDashboardProps) {
   const [activeTab, setActiveTab] = useState<'build' | 'matchup' | 'bible' | 'video'>('build');
   const [buildPreset, setBuildPreset] = useState<'standard' | 'tank' | 'burst'>('standard');
+  const [activeVideoPlayer, setActiveVideoPlayer] = useState<{ videoId: string; startSeconds: number; title: string } | null>(null);
   const [tacticsData, setTacticsData] = useState<{
     exists: boolean;
     traps: string[];
@@ -541,50 +542,96 @@ export default function ChampionVisualDashboard({
             </span>
           </div>
 
+          {/* 📺 インラインYouTubeプレイヤー（該当秒数から直接再生） */}
+          {activeVideoPlayer && (
+            <div className="rounded-2xl overflow-hidden border border-rose-500/40 bg-black shadow-xl space-y-2 p-2">
+              <div className="flex items-center justify-between px-2 pt-1 text-xs">
+                <span className="text-white font-bold truncate flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                  再生中: {activeVideoPlayer.title} ({Math.floor(activeVideoPlayer.startSeconds / 60)}:{(activeVideoPlayer.startSeconds % 60).toString().padStart(2, '0')}〜)
+                </span>
+                <button
+                  onClick={() => setActiveVideoPlayer(null)}
+                  className="text-stone-400 hover:text-white text-xs px-2 py-0.5 rounded bg-white/10 transition-colors"
+                >
+                  ✕ 閉じる
+                </button>
+              </div>
+              <div className="relative w-full pb-[56.25%] h-0 rounded-xl overflow-hidden">
+                <iframe
+                  src={`https://www.youtube-nocookie.com/embed/${activeVideoPlayer.videoId}?start=${activeVideoPlayer.startSeconds}&autoplay=1`}
+                  title={activeVideoPlayer.title}
+                  className="absolute top-0 left-0 w-full h-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            </div>
+          )}
+
           <div className="space-y-3 text-xs">
             {tacticsData?.videoClips && tacticsData.videoClips.length > 0 ? (
-              tacticsData.videoClips.map((clip, idx) => (
-                <div key={idx} className="p-3.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700 space-y-2">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-200/60 dark:border-stone-700/60 pb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded-md bg-rose-500 text-white font-black text-[11px] shadow-2xs">
-                        {clip.timestamp}
-                      </span>
-                      <span className="font-black text-stone-900 dark:text-white text-xs">
-                        {clip.title}
-                      </span>
-                    </div>
-                    <a
-                      href={clip.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-500 hover:bg-rose-600 text-white font-bold text-[11px] transition-all self-start sm:self-auto shadow-2xs"
-                    >
-                      <span>該当秒数を観る</span>
-                      <ArrowUpRight size={13} />
-                    </a>
-                  </div>
+              tacticsData.videoClips.map((clip, idx) => {
+                // 秒数・ID抽出
+                const idMatch = clip.url.match(/(?:youtu\.be\/|v=)([\w-]+)/);
+                const vid = idMatch ? idMatch[1] : '';
+                const tMatch = clip.url.match(/[?&]t=(\d+)/);
+                const startSec = tMatch ? parseInt(tMatch[1], 10) : 0;
 
-                  {clip.why && (
-                    <p className="text-stone-700 dark:text-stone-300 text-[11px] leading-relaxed">
-                      <span className="font-bold text-amber-600 dark:text-amber-400 mr-1">💡 理由:</span>
-                      {clip.why}
-                    </p>
-                  )}
-                  {clip.how && (
-                    <p className="text-stone-700 dark:text-stone-300 text-[11px] leading-relaxed">
-                      <span className="font-bold text-emerald-600 dark:text-emerald-400 mr-1">🎯 コツ:</span>
-                      {clip.how}
-                    </p>
-                  )}
-                  {clip.rejected && (
-                    <p className="text-rose-600 dark:text-rose-400 text-[11px] leading-relaxed">
-                      <span className="font-bold mr-1">🚫 没理由:</span>
-                      {clip.rejected}
-                    </p>
-                  )}
-                </div>
-              ))
+                return (
+                  <div key={idx} className="p-3.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700 space-y-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-200/60 dark:border-stone-700/60 pb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-md bg-rose-500 text-white font-black text-[11px] shadow-2xs">
+                          {clip.timestamp}
+                        </span>
+                        <span className="font-black text-stone-900 dark:text-white text-xs">
+                          {clip.title}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 self-start sm:self-auto">
+                        {vid && (
+                          <button
+                            onClick={() => setActiveVideoPlayer({ videoId: vid, startSeconds: startSec, title: clip.title })}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-500 hover:bg-rose-600 text-white font-bold text-[11px] transition-all shadow-2xs cursor-pointer"
+                          >
+                            <Play size={12} fill="currentColor" />
+                            <span>ここで再生</span>
+                          </button>
+                        )}
+                        <a
+                          href={clip.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-stone-200 dark:bg-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-300 font-bold text-[11px] transition-all"
+                          title="YouTube別タブで開く"
+                        >
+                          <ExternalLink size={12} />
+                        </a>
+                      </div>
+                    </div>
+
+                    {clip.why && (
+                      <p className="text-stone-700 dark:text-stone-300 text-[11px] leading-relaxed">
+                        <span className="font-bold text-amber-600 dark:text-amber-400 mr-1">💡 理由:</span>
+                        {clip.why}
+                      </p>
+                    )}
+                    {clip.how && (
+                      <p className="text-stone-700 dark:text-stone-300 text-[11px] leading-relaxed">
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400 mr-1">🎯 コツ:</span>
+                        {clip.how}
+                      </p>
+                    )}
+                    {clip.rejected && (
+                      <p className="text-rose-600 dark:text-rose-400 text-[11px] leading-relaxed">
+                        <span className="font-bold mr-1">🚫 没理由:</span>
+                        {clip.rejected}
+                      </p>
+                    )}
+                  </div>
+                );
+              })
             ) : (
               <div className="text-center py-8 space-y-3">
                 <p className="text-stone-400 text-xs">

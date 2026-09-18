@@ -61,6 +61,10 @@
     37. `aatrox_tactics_bible.md` へのプロ実演クリップ自動マウント実証（`[03:25]`, `[08:15]`, `[14:40]` 等の秒数リンク、Why/How/Rejected完備）
     38. `04_PORTAL/src/app/api/champions/tactics/route.ts` への `videoClips` パース統合
     39. `ChampionVisualDashboard.tsx` タブ4の動的描画化（ブラウザから直接該当秒数へジャンプ可能に）
+  - **追加整備 (第12弾: 全結合シナプス C案完成 ＆ YouTubeインライン直接再生 ＆ 既存プロ動画一括バッチマウント配備)**:
+    40. `ChampionVisualDashboard.tsx` への「YouTube直接インライン埋め込みプレイヤー」実装（画面遷移なしでカード内の「ここで再生」ボタンから即座に該当秒数で動画視聴可能）
+    41. `scripts/extract_video_tactics.py` への `--batch` 一括抽出モード追加配備（既存のプロ動画キュー・字幕から対象チャンピオンのバイブルへ実演クリップを自動抽出・マウント）
+    42. 既存プロ動画（Agurin選手等）からのバッチ抽出テスト実証（`nocturne_tactics_bible.md` への秒数リンク・Why/How/Rejected自動追記・連携成功確認）
 
 ### 🔄 判断の経緯 ＆ 落とした選択肢 (Decisions & Rejected Options)
 - **採用**: タイムスタンプ圧縮（[MM:SS]）＋LoL戦術キーワードスマートフィルタリング（B案）。

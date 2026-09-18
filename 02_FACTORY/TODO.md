@@ -66,6 +66,7 @@
   - **32. 📢 Discord Bot Token による特定チャンネルID直接配信**: [`scripts/notify_discord.py`](file:///d:/my_work/scripts/notify_discord.py) に `--channel-id` を追加。ご指定のチャンネル `1550333564556546048` へのリザルト送信疎通に成功。
   - **33. 👑 チャンピオン辞典の実戦即応ビジュアル戦略ダッシュボード大改造**: [`ChampionVisualDashboard.tsx`](file:///d:/my_work/04_PORTAL/src/app/champions/components/ChampionVisualDashboard.tsx) および [`api/champions/tactics`](file:///d:/my_work/04_PORTAL/src/app/api/champions/tactics/route.ts) を新設。スキルHUD先行順、シチュエーション別ビルド、カモ/天敵相性マトリクス、実戦バイブル・罠アイテム、プロ動画クリップタブを統合。
   - **34. 🎬 新世代動画アクション抽出エンジン (B案) ＆ 秒数リンク自動生成**: [`scripts/extract_video_tactics.py`](file:///d:/my_work/scripts/extract_video_tactics.py) を新設。VTTタイムスタンプ保持とスマート戦術フィルタ（90%トークン削減）により前回のトークン切れを完全克服し、`[03:25](https://youtu.be/...t=205)` 形式のプロ実演手順をバイブル＆ポータルへ自動マウント完了。
+  - **35. ⚡ 全結合シナプス (C案完成) ＆ YouTubeインライン直接再生 ＆ 一括バッチマウント配備**: [`ChampionVisualDashboard.tsx`](file:///d:/my_work/04_PORTAL/src/app/champions/components/ChampionVisualDashboard.tsx) にYouTubeインライン埋め込みプレイヤーを配備。ポータル画面内で秒数ジャンプ再生を完結させ、既存プロ動画の一括バッチ抽出モード（`extract_video_tactics.py --batch`）を完全稼働。
 
 
 
