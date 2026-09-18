@@ -10,6 +10,7 @@ audit_knowledge_links.py - ナレッジリンク整合性 ＆ 孤立ファイル
 import os
 import sys
 import re
+from urllib.parse import unquote
 from pathlib import Path
 
 # Windows cp932対策
@@ -82,13 +83,13 @@ def parse_markdown_links(file_path):
         # file:/// スキームの処理
         if target.startswith("file:///"):
             clean_target = target.replace("file:///", "").replace("file://", "")
-            clean_target = clean_target.split("#")[0] # アンカー除去
+            clean_target = unquote(clean_target.split("#")[0]) # アンカー除去 & URLデコード
             # Windows パス修復 (d:/my_work/... -> D:\my_work\...)
             clean_target = clean_target.replace("/", "\\")
             target_path = Path(clean_target)
         else:
             # 相対パス
-            clean_target = target.split("#")[0] # アンカー除去
+            clean_target = unquote(target.split("#")[0]) # アンカー除去 & URLデコード
             if not clean_target:
                 continue
             target_path = (file_path.parent / clean_target).resolve()

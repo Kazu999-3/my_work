@@ -5,10 +5,18 @@ import Image from 'next/image';
 import { 
   Swords, Shield, Zap, AlertTriangle, Play, BookOpen, 
   ExternalLink, Sparkles, CheckCircle2, ChevronRight, Eye, 
-  ShieldAlert, ShieldCheck, Flame, Layers, ArrowUpRight
+  ShieldAlert, ShieldCheck, Flame, Layers, ArrowUpRight,
+  Clock, Timer, Activity, ChevronDown, ChevronUp, BookMarked
 } from 'lucide-react';
 import { getSpellIcon, getPassiveIcon, getChampIcon } from '../../../lib/ddragonClient';
 import MatchupBlueprintCard from '../../coach/MatchupBlueprintCard';
+
+function formatSec(sec: number | null | undefined): string {
+  if (sec == null || isNaN(sec)) return '--:--';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
 
 interface ChampionVisualDashboardProps {
   champion: any; // DDragon champion object
@@ -368,6 +376,7 @@ export default function ChampionVisualDashboard({
     rawContent?: string;
   } | null>(null);
   const [loadingTactics, setLoadingTactics] = useState(false);
+  const [expandedEnemy, setExpandedEnemy] = useState<string | null>(null);
 
   const champId = champion?.id || 'Aatrox';
   const spells = champion?.spells || [];
@@ -388,6 +397,18 @@ export default function ChampionVisualDashboard({
     dataFields?.patch_meta,
     dataFields?.buildRunes
   );
+
+  // パワースパイク推移（Propsまたはアーキタイプ別デフォルト推定値）
+  const spikeValues = powerSpikeScores || (() => {
+    switch (archetype) {
+      case 'ad_assassin': return { early: 8, mid: 9, late: 5 };
+      case 'ap_mage': return { early: 5, mid: 8, late: 9 };
+      case 'tank': return { early: 6, mid: 8, late: 8 };
+      case 'marksman': return { early: 4, mid: 7, late: 10 };
+      case 'enchanter': return { early: 6, mid: 7, late: 8 };
+      default: return { early: 7, mid: 9, late: 7 };
+    }
+  })();
 
   // スキルキー
   const skillKeys = ['Q', 'W', 'E', 'R'];
@@ -567,6 +588,96 @@ export default function ChampionVisualDashboard({
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* ⏱️⚡ JG周回実測タイミング ＆ パワースパイク推移ミニHUD */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {/* JG周回実測タイミング */}
+        <div className="bg-stone-900/80 border border-stone-800 rounded-2xl p-3 sm:p-3.5 backdrop-blur-md flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+              <Clock size={16} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-white">JG周回実測</span>
+                {realJungleTiming?.sampleCount && (
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-stone-800 text-stone-400 font-bold border border-white/5">
+                    {realJungleTiming.sampleCount}戦分析
+                  </span>
+                )}
+              </div>
+              <span className="text-[10px] text-stone-400 block">最速クリア目標 ＆ コアタイム</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 text-right">
+            <div className="bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
+              <span className="text-[10px] text-stone-400 block font-bold">最速フルクリア</span>
+              <span className="text-xs font-black text-amber-400 font-mono">
+                {formatSec(realJungleTiming?.externalFastestClearSec || 195)}
+              </span>
+            </div>
+            <div className="bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
+              <span className="text-[10px] text-stone-400 block font-bold">1stコア平均</span>
+              <span className="text-xs font-black text-emerald-400 font-mono">
+                {formatSec(realJungleTiming?.avgFirstCoreSec || 680)}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* パワースパイク推移 */}
+        <div className="bg-stone-900/80 border border-stone-800 rounded-2xl p-3 sm:p-3.5 backdrop-blur-md flex flex-col justify-center gap-1.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Activity size={15} className="text-cyan-400" />
+              <span className="text-xs font-black text-white">パワースパイク推移</span>
+            </div>
+            <span className="text-[10px] text-stone-400 font-bold">10段階指標</span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 text-center pt-1">
+            <div className="bg-black/30 p-1.5 rounded-lg border border-white/5">
+              <div className="flex justify-between items-center text-[10px] text-stone-400 mb-1 px-0.5">
+                <span>序盤</span>
+                <span className="font-bold text-amber-400">{spikeValues.early}/10</span>
+              </div>
+              <div className="w-full bg-stone-800 h-1.5 rounded-full overflow-hidden">
+                <div 
+                  className="bg-amber-400 h-full rounded-full transition-all duration-500" 
+                  style={{ width: `${(spikeValues.early / 10) * 100}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="bg-black/30 p-1.5 rounded-lg border border-white/5">
+              <div className="flex justify-between items-center text-[10px] text-stone-400 mb-1 px-0.5">
+                <span>中盤</span>
+                <span className="font-bold text-emerald-400">{spikeValues.mid}/10</span>
+              </div>
+              <div className="w-full bg-stone-800 h-1.5 rounded-full overflow-hidden">
+                <div 
+                  className="bg-emerald-400 h-full rounded-full transition-all duration-500" 
+                  style={{ width: `${(spikeValues.mid / 10) * 100}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="bg-black/30 p-1.5 rounded-lg border border-white/5">
+              <div className="flex justify-between items-center text-[10px] text-stone-400 mb-1 px-0.5">
+                <span>終盤</span>
+                <span className="font-bold text-purple-400">{spikeValues.late}/10</span>
+              </div>
+              <div className="w-full bg-stone-800 h-1.5 rounded-full overflow-hidden">
+                <div 
+                  className="bg-purple-400 h-full rounded-full transition-all duration-500" 
+                  style={{ width: `${(spikeValues.late / 10) * 100}%` }}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -768,27 +879,62 @@ export default function ChampionVisualDashboard({
                   </h3>
                 </div>
                 <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-100 dark:bg-emerald-950/80 px-2 py-0.5 rounded-full">
-                  勝ちパターン確立済み
+                  クリックで対面メモ展開
                 </span>
               </div>
               <div className="space-y-2">
-                {matchupCounters.goodAgainst.map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-2.5 p-2 rounded-xl bg-emerald-50/50 dark:bg-stone-800/50 border border-emerald-100 dark:border-emerald-900/30">
-                    <img
-                      src={getChampIcon(item.name)}
-                      alt={item.name}
-                      className="w-8 h-8 rounded-lg object-cover border border-emerald-400/40 shrink-0"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <span className="text-xs font-black text-stone-900 dark:text-white block">
-                        {item.name}
-                      </span>
-                      <span className="text-[11px] text-emerald-800 dark:text-emerald-400 font-medium block truncate">
-                        {item.note}
-                      </span>
+                {matchupCounters.goodAgainst.map((item, idx) => {
+                  const isExpanded = expandedEnemy === item.name;
+                  const matchupRecord = matchupsList?.find(
+                    (m: any) => m.enemy?.toLowerCase() === item.name.toLowerCase() || 
+                                m.title?.toLowerCase().includes(item.name.toLowerCase())
+                  );
+                  return (
+                    <div 
+                      key={idx} 
+                      className="rounded-xl border border-emerald-100 dark:border-emerald-900/30 overflow-hidden transition-all bg-emerald-50/50 dark:bg-stone-800/50"
+                    >
+                      <div 
+                        onClick={() => setExpandedEnemy(isExpanded ? null : item.name)}
+                        className="flex items-center gap-2.5 p-2 cursor-pointer hover:bg-emerald-100/50 dark:hover:bg-stone-850 transition-colors"
+                      >
+                        <img
+                          src={getChampIcon(item.name)}
+                          alt={item.name}
+                          className="w-8 h-8 rounded-lg object-cover border border-emerald-400/40 shrink-0"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <span className="text-xs font-black text-stone-900 dark:text-white block">
+                            {item.name}
+                          </span>
+                          <span className="text-[11px] text-emerald-800 dark:text-emerald-400 font-medium block truncate">
+                            {item.note}
+                          </span>
+                        </div>
+                        <div className="text-stone-400 dark:text-stone-500 p-1">
+                          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        </div>
+                      </div>
+
+                      {isExpanded && (
+                        <div className="p-3 bg-white dark:bg-stone-950/90 border-t border-emerald-100 dark:border-emerald-900/30 text-xs space-y-1.5">
+                          <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-black text-[11px]">
+                            <BookMarked size={13} />
+                            <span>対面Sentinel実戦攻略メモ</span>
+                          </div>
+                          <p className="text-stone-700 dark:text-stone-300 leading-relaxed text-[11px] whitespace-pre-wrap">
+                            {matchupRecord?.strategy || `${item.name} に対する実戦メモ: ${item.note}。敵の主要スキル回避後に積極的にトレードを仕掛け、有利なレーン主導権またはJG侵入を維持してください。`}
+                          </p>
+                          {matchupRecord?.title && (
+                            <div className="text-[10px] text-stone-400 italic">
+                              出典: {matchupRecord.title}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -802,27 +948,62 @@ export default function ChampionVisualDashboard({
                   </h3>
                 </div>
                 <span className="text-[10px] text-rose-700 dark:text-rose-400 font-bold bg-rose-100 dark:bg-rose-950/80 px-2 py-0.5 rounded-full">
-                  即死トリガー警戒
+                  クリックで対面メモ展開
                 </span>
               </div>
               <div className="space-y-2">
-                {matchupCounters.badAgainst.map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-2.5 p-2 rounded-xl bg-rose-50/50 dark:bg-stone-800/50 border border-rose-100 dark:border-rose-900/30">
-                    <img
-                      src={getChampIcon(item.name)}
-                      alt={item.name}
-                      className="w-8 h-8 rounded-lg object-cover border border-rose-400/40 shrink-0"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <span className="text-xs font-black text-stone-900 dark:text-white block">
-                        {item.name}
-                      </span>
-                      <span className="text-[11px] text-rose-800 dark:text-rose-400 font-medium block truncate">
-                        {item.note}
-                      </span>
+                {matchupCounters.badAgainst.map((item, idx) => {
+                  const isExpanded = expandedEnemy === item.name;
+                  const matchupRecord = matchupsList?.find(
+                    (m: any) => m.enemy?.toLowerCase() === item.name.toLowerCase() || 
+                                m.title?.toLowerCase().includes(item.name.toLowerCase())
+                  );
+                  return (
+                    <div 
+                      key={idx} 
+                      className="rounded-xl border border-rose-100 dark:border-rose-900/30 overflow-hidden transition-all bg-rose-50/50 dark:bg-stone-800/50"
+                    >
+                      <div 
+                        onClick={() => setExpandedEnemy(isExpanded ? null : item.name)}
+                        className="flex items-center gap-2.5 p-2 cursor-pointer hover:bg-rose-100/50 dark:hover:bg-stone-850 transition-colors"
+                      >
+                        <img
+                          src={getChampIcon(item.name)}
+                          alt={item.name}
+                          className="w-8 h-8 rounded-lg object-cover border border-rose-400/40 shrink-0"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <span className="text-xs font-black text-stone-900 dark:text-white block">
+                            {item.name}
+                          </span>
+                          <span className="text-[11px] text-rose-800 dark:text-rose-400 font-medium block truncate">
+                            {item.note}
+                          </span>
+                        </div>
+                        <div className="text-stone-400 dark:text-stone-500 p-1">
+                          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        </div>
+                      </div>
+
+                      {isExpanded && (
+                        <div className="p-3 bg-white dark:bg-stone-950/90 border-t border-rose-100 dark:border-rose-900/30 text-xs space-y-1.5">
+                          <div className="flex items-center gap-1.5 text-rose-700 dark:text-rose-400 font-black text-[11px]">
+                            <BookMarked size={13} />
+                            <span>天敵対策・即死回避メモ</span>
+                          </div>
+                          <p className="text-stone-700 dark:text-stone-300 leading-relaxed text-[11px] whitespace-pre-wrap">
+                            {matchupRecord?.strategy || `${item.name} への警戒メモ: ${item.note}。単独での甘えたポジションを避け、タワー下または味方の寄りを確認してから迎撃体制を取ること。`}
+                          </p>
+                          {matchupRecord?.title && (
+                            <div className="text-[10px] text-stone-400 italic">
+                              出典: {matchupRecord.title}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

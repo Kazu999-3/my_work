@@ -42,12 +42,13 @@
 - [ ] **領域2: 🏛️ 帝国総合索引同期 ＆ 戦術バイブル拡充 ＆ メタデータ構造化**
   - [x] `01_INTEL/NEXUS_INDEX.md` のバイブル一覧に最近配備した7体（Zyra, Shyvana, Graves, Amumu, Kha'Zix, Kindred, MonkeyKing/Wukong）を完全同期（全17体化）
   - [ ] ローカル解析データ（`02_FACTORY/bible/kirei_bible/`）から未マウントの主要JGバイブル（Kha'Zix, Viego, Lee Sin, Kindred 等）へ実演クリップ（秒数リンク＋Why/How/Rejected）を一括マウント
-  - [ ] 戦術バイブルの **動画メタデータ構造化保存（パッチ・対面相手・勝敗・ランク帯のフロントマター化）**（改善項目①）
+  - [x] 戦術バイブル全17体の **フロントマター統一・正規化（イミュータブル・プロパティ規約準拠・tags/status/published_at統一）**（改善項目①）
+  - [x] **PULSE戦略メモ・analytics等の総合索引（`_LOL/INDEX.md`）連動 ＆ 孤立ファイル解消**
   - [x] `audit_knowledge_links.py` を実行し、全リンク切れ0件を再確認
   - [x] `scratch/` の肥大化した不要一時ファイル（巨大txt/json/vtt約1.5MB）を安全クリーンアップ
 - [ ] **領域3: 📖 チャンピオン辞典・ビジュアルダッシュボード超強化 (UX最大インパクト)**
-  - [x] **824件の実戦対面DB（`matchup_sentinel`）のビジュアルダッシュボード配線接続**: `DictionaryTab` から `ChampionVisualDashboard` へ `matchupsList`, `powerSpikeScores`, `realJungleTiming` を Props 渡し完了（改善項目④配線完了）
-  - [ ] **パワースパイク ＆ ジャングル実測タイミング（`realJungleTiming`）のHUD可視化**: 最速フルクリア秒数・1stコア目標・パワースパイク推移ゲージの描画（改善項目⑤）
+  - [x] **824件の実戦対面DB（`matchup_sentinel`）のインラインアコーディオンUI化**: `DictionaryTab` から `ChampionVisualDashboard` へ Props 渡し、有利・不利カードクリックで即座に対面Sentinelメモをインライン開閉展開（改善項目④完遂）
+  - [x] **パワースパイク ＆ ジャングル実測タイミング（`realJungleTiming`）のHUD可視化**: 最速フルクリア秒数・1stコア目標・パワースパイク推移ゲージ（序盤/中盤/終盤10段階バー）の描画（改善項目⑤完遂）
   - [ ] **複数レーン（ロール別タブ）の完全連動**: JG/SUP/TOP等のロール切替時に、シチュエーションビルド・戦術バイブルを動的切替（改善項目⑥）
   - [ ] 全17体の戦術バイブルの「3段階勝ちパターン手順書（Blueprint）」および「没理由（Rejected）」のクオリティ均一化監査 ＆ パッチ26.18微修正
 

@@ -115,6 +115,12 @@
     79. `scripts/ops_health_check.py` に `check_youtube_queue_health` を新設統合し、未解決エラー動画と待機キュー件数を朝のヘルスチェックで常時監視可能に。
     80. `scratch/` に滞留していた過去の巨大会話ログ・スキャン結果等の不要ダンプ（17ファイル・約1.5MB）を安全クリーンアップ。
     81. `DictionaryTab.tsx` から `ChampionVisualDashboard.tsx` へ `matchupsList`（824件の対面データ）、`powerSpikeScores`、`realJungleTiming` を Props として完全配線接続（TypeScript型エラー0件合格）。
+  - **追加整備 (第24弾: トークン極小4タスク一括完遂 ＆ 824件対面DBインラインアコーディオン ＆ JGミニHUD ＆ PULSE全域連動)**:
+    82. `ChampionVisualDashboard.tsx` への「824件対面Sentinel DBインラインアコーディオンUI」実装。有利（カモ）・不利（天敵）カードをクリックすると、Supabase対面DB（`matchupsList`）の実戦攻略メモ（`strategy`）が画面遷移なしで即座にインライン開閉展開されるUXを実現。
+    83. `ChampionVisualDashboard.tsx` への「⏱️⚡ JG周回実測タイミング ＆ パワースパイク推移ミニHUD」実装。最速フルクリア秒数（`externalFastestClearSec`）、1stコア平均到達タイム（`avgFirstCoreSec`）、および序盤・中盤・終盤の10段階パワースパイクゲージを美麗に描画。
+    84. 戦術バイブル全17体＋`template_tactics_bible.md` のフロントマターを完全統一（イミュータブル・プロパティ規約準拠: `status: verified`, `source_type: official/empirical`, `published_at`, `captured_at`, `tags`）。
+    85. `01_INTEL/_LOL/INDEX.md` に PULSE配下の戦術ノート（`META.md`, `lolalytics_multi_initial_26.07.md`, `research_lillia_26.08.md`, `pulse_test.md`）、チャンピオン個別メモ（`CHAMPIONS/`）、アイテム（`ITEMS/`）、メタ周回（`META/`）、およびマスターフックへのリンクを全網羅連動し、孤立ノートを一挙解消。
+    86. `scripts/audit_knowledge_links.py` を URLデコード（`unquote`）対応に強化し、Markdownリンク切れ 0件・全レイヤーALL GREENを実証。
 
 ### 🔄 判断の経緯 ＆ 落とした選択肢 (Decisions & Rejected Options)
 - **採用**: タイムスタンプ圧縮（[MM:SS]）＋LoL戦術キーワードスマートフィルタリング（B案）。

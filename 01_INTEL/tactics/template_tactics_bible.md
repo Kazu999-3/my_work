@@ -1,3 +1,12 @@
+---
+title: "[チャンピオン名] 対面戦術バイブル"
+status: verified # verified（実戦確定）| experimenting（検証中）| deprecated（旧仕様）
+source_type: official # official（公式SSoT）| empirical（実戦実測）| ai_derived（AI派生）
+published_at: 2026-XX-XX
+captured_at: 2026-XX-XX
+tags: ['LoL', 'Tactics', '[Role]', '[ChampName]']
+---
+
 # 📖 戦術バイブル ＆ 対面メモ 制式テンプレート (template_tactics_bible.md)
 
 本テンプレートは、note 10記事のナレッジ原則（特にCoupen氏・Blooming氏の「判断の経緯・捨てた案の保存」「上書き禁止」）に基づき策定された、チャンピオン戦術および対面インテルの標準フォーマットです。
