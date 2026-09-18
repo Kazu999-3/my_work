@@ -28,7 +28,19 @@
 - [x] **Step 4: 【完全勝利サイクルの結合 ＆ ナレッジ自動更新ループ】**
   - [x] 試合終了時の勝敗・ファイトデータ・改善ポイントをチャンピオン辞典に自動反映し、次回のプレイ前ナレッジへ循環するループ検証 (`match_feedback_sync.py` / `sync-match-feedback`)
 
+## ✅ 2026-09-18 Antigravity セッションで対応済み（ナレッジマネジメント7大原則の全域反映）
+
+- [x] **note 10記事のディープリサーチに基づく「ナレッジマネジメント7大核心原則」のSovereign OS全域反映**
+  - **1. 📅 デイリー作業ログの入口化 ＆ 3行ナレッジ自動抽出**: [`02_FACTORY/DAILY_LOG.md`](file:///d:/my_work/02_FACTORY/DAILY_LOG.md) を新設。作業終了時にAIが自動追記し、翌朝AIが真っ先に読み直す立ち上がり循環を確立。
+  - **2. 🏷️ ルール適用範囲（コンテキストタグ）の厳格化**: [`01_base_style.md`](file:///d:/my_work/.agent/rules/01_base_style.md) に「適用場面・非適用場面」の明記を義務化。「結論先行」による読者向け文章の淡白化事故を根本遮断（べっぱん原則）。
+  - **3. 📜 SSoT確定 ＆ ナレッジ更新後スモークテスト ＆ 正本派生分離**: [`04_hallucination_prevention.md`](file:///d:/my_work/.agent/rules/04_hallucination_prevention.md) に第5〜7項を追加。更新日の新しさに惑わされず確定資料を特定、更新後1問スモークテスト義務化、生データ不変保持＆派生データ再生成のアーキテクチャを明文化（AIで仕事と心NOTE/Blooming原則）。
+  - **4. ❌ 戦術バイブル・対面メモへの「不採用・没理由」ブロック新設**: [`01_INTEL/tactics/template_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/template_tactics_bible.md) を新設。推奨ビルドだけでなく「なぜこのアイテムは罠なのか」を必須化（Coupen原則）。
+  - **5. ✍️ note執筆プロトコル ＆ 骨格テンプレートの全面改訂**: [`forge_note_protocol.md`](file:///d:/my_work/02_FACTORY/03_ASSETS/forge_note_protocol.md) および [`template_note_skeleton.md`](file:///d:/my_work/02_FACTORY/03_ASSETS/template_note_skeleton.md) を改訂。確定パッチ・集計期間のメタデータ欄、読者の痛みに訴求する導入、不採用ビルド暴露、読後3大行動チェックリストを統合。
+  - **6. 🏛️ 帝国総合索引のPARA構造再編**: [`NEXUS_INDEX.md`](file:///d:/my_work/01_INTEL/NEXUS_INDEX.md) の先頭にデイリーログ入口とナレッジ憲章を配置。
+  - **7. 🧠 AI家庭教師スキル (`knowledge-drill`) の新設**: [`.agent/skills/knowledge-drill/SKILL.md`](file:///d:/my_work/.agent/skills/knowledge-drill/SKILL.md) を新設。外部情報インプットの3大完了条件（自分の言葉で説明・実戦適用・次の一歩）とクイズによる定着支援を実現（honkoma原則）。
+
 ## ✅ 2026-09-17 Antigravity セッションで対応済み（業務効率化＆一般ユーザー向けポータル大幅改善）
+
 
 - [x] **一般ユーザー向けポータル改善 第2弾（課題 1, 2, 3, 4 全部完了）**
   - **1. 📜 一般向け「過去の試合履歴・戦績ビュー」の解放（`/history`）**:
