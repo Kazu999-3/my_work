@@ -40,6 +40,10 @@
     20. `/admin/knowledge` への「📮 指摘インボックス（Feedback Inbox）」Web連動UIおよびAPI（`api/admin/feedback-inbox`）
     21. `MatchupBlueprintCard.tsx` への「⚠️ 実戦の罠・不採用ビルド（Rejected）」3大タブ表示
     22. `/admin/dashboard` への「🛡️ Sovereign OS ナレッジ＆システム全系健全性」ヘルスバー表示およびAPI（`api/admin/health`）
+  - **追加整備 (第8弾: 主力対面バイブル量産 ＆ ゲーム中HUDリアルタイム警告)**:
+    23. `scripts/generate_tactics_bible.py`（主力プール10体＋全168体対応の戦術バイブル量産CLI）
+    24. 主力10体（JarvanIV, Lillia, Viego, LeeSin, Aatrox, Darius, Jax, XinZhao, Nocturne, Fiora）の実戦戦術バイブルを `01_INTEL/tactics/` へ制式配備
+    25. `matchup_blueprint_engine.py` への没理由・罠データ統合 ＆ `matchup_card_widget.py` への「🚫 罠アイテム・NG行動警告 (FORBIDDEN / TRAP)」リアルタイム描画
 
 ### 🔄 判断の経緯 ＆ 落とした選択肢 (Decisions & Rejected Options)
 - **採用**: ルールファイルへの「コンテキストタグ（適用場面・非適用場面）」の1行追加。
@@ -52,6 +56,8 @@
   - *理由*: スクリプト間でモジュールインポートを行う際、`io.TextIOWrapper` が `sys.stdout` を二重にラップして `ValueError: I/O operation on closed file` が発生するクラッシュを恒久的に防ぐため。
 - **採用**: ポータルからのナレッジ訂正インボックスの直接操作（API＋UI）。
   - *理由*: スマホやWebブラウザから1タップで違和感を投函できないと、気づきが忘れ去られてナレッジが腐敗するため（AIで仕事と心NOTE原則）。
+- **採用**: 主力10体の段階的バイブル配備（MVP原則）。
+  - *理由*: 168体を一度に機械量産すると中身が薄い形骸化バイブルになる。高頻度プールに確定知見（即死ライン・罠アイテム・NG行動）を濃縮し、残りは実戦遭遇時に自動同期で拡充させる。
 - **落とした選択肢**: 旧アーカイブ（`imperial_archive`）のMarkdownファイル物理削除。
   - *理由*: 過去の歴史的ドラフトや経緯資産を削除すると再利用・復元できなくなるため、物理削除ではなくリンター除外フィルタによる隔離＆リンク表記適正化を選択。
 - **落とした選択肢**: テーマ別フォルダの細分化。
@@ -64,5 +70,6 @@
 4. **Pythonで標準出力をUTF-8化する際は、モジュール間インポート時の二重ラップ（`ValueError: I/O operation on closed file`）を防ぐため属性チェックフラグを付与する。**
 5. **外部通知スクリプトは、Webhook URL未設定環境でも例外で落ちず、親切な案内を出してexit code 0で安全終了させる（ドライラン対応）。**
 6. **管理ダッシュボードに「ナレッジの健全性・未処理指摘数」をリアルタイム表示することで、ドキュメントの腐敗を常時可視化・抑止する。**
+7. **戦術バイブルは全量を一度にでっち上げず、主力プールから濃密に確定させ、実戦同期（`sync_last_match_to_intel`）で生き物のように自己増殖させる（Coupen/つくラボAI原則）。**
 
 - **🎮 実戦対面知見 (Yorick vs KSante / WIN)**: Lv1~2は無理に突っ込まずQスタック蓄積を徹底。Lv3で霧の乙女召喚からEヒット時のバーストでキルライン到達 (※罠: 対面が防具積む前の強引なタワーダイブは被ノックバックで即死するため禁止)

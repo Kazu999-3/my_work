@@ -255,6 +255,36 @@ class MatchupCardWidget(QWidget):
 
         card_layout.addWidget(self.counter_frame)
 
+        # 4.6 🚫 セクション: 実戦の罠・NG行動警告 (没理由連動)
+        self.trap_frame = QFrame(self.card_frame)
+        self.trap_frame.setStyleSheet("""
+            QFrame {
+                background-color: rgba(45, 15, 25, 0.55);
+                border: 1px solid rgba(244, 63, 94, 0.60);
+                border-radius: 6px;
+            }
+        """)
+        trap_layout = QVBoxLayout(self.trap_frame)
+        trap_layout.setContentsMargins(8, 6, 8, 6)
+        trap_layout.setSpacing(3)
+
+        trap_header = QHBoxLayout()
+        self.trap_title = QLabel("🚫 罠アイテム ＆ NG行動警告", self.trap_frame)
+        self.trap_title.setStyleSheet("color: #FB7185; font-size: 12px; font-weight: 900; background: transparent; border: none;")
+        trap_header.addWidget(self.trap_title)
+
+        self.trap_badge = QLabel("FORBIDDEN", self.trap_frame)
+        self.trap_badge.setStyleSheet("color: #FDA4AF; font-size: 9.5px; font-weight: 900; background: transparent; border: none;")
+        trap_header.addWidget(self.trap_badge, alignment=Qt.AlignmentFlag.AlignRight)
+        trap_layout.addLayout(trap_header)
+
+        self.trap_desc_label = QLabel("・× 防具前のタワーダイブ禁止 (CC即死トリガー)", self.trap_frame)
+        self.trap_desc_label.setStyleSheet("color: #FFE4E6; font-size: 11px; font-weight: 600; line-height: 1.3; background: transparent; border: none;")
+        self.trap_desc_label.setWordWrap(True)
+        trap_layout.addWidget(self.trap_desc_label)
+
+        card_layout.addWidget(self.trap_frame)
+
         # 5. 🧭 劣勢逆転コンパスフレーム (劣勢時のみ表示)
         self.compass_frame = QFrame(self.card_frame)
         self.compass_frame.setStyleSheet("""
@@ -399,6 +429,21 @@ class MatchupCardWidget(QWidget):
             self.counter_frame.setVisible(True)
         else:
             self.counter_frame.setVisible(False)
+
+        # 3.6 🚫 実戦の罠・NG行動警告 (没理由連動)
+        rejected = state.get("rejected_options") or {}
+        trap_items = rejected.get("trap_items", "")
+        forbidden_moves = rejected.get("forbidden_moves", "")
+        if trap_items or forbidden_moves:
+            lines = []
+            if trap_items:
+                lines.append(f"🚫 罠ビルド: {trap_items}")
+            if forbidden_moves:
+                lines.append(f"❌ NG行動: {forbidden_moves}")
+            self.trap_desc_label.setText("\n".join(lines))
+            self.trap_frame.setVisible(True)
+        else:
+            self.trap_frame.setVisible(False)
 
         # 4. 劣勢逆転コンパス
         compass = state.get("comeback_compass")

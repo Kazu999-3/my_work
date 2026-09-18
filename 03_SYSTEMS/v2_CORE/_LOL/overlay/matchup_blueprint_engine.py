@@ -1,8 +1,8 @@
 """
-Sovereign HUD / Portal - レーン戦3段階勝ちパターン手順書エンジン (Matchup Blueprint Engine)
+Sovereign HUD / Portal - レーン戦3段階勝ちパターン手順書 ＆ 没理由エンジン (Matchup Blueprint Engine)
 ========================================================================================
-【最上位誓約準拠】: Supabase（matchup_sentinel / champion_notes）に蓄積された実戦対面データから
-「Lv1〜2」「Lv3〜5」「Lv6以降」の3段階アクションプラン（手順書）を自動生成する。
+【最上位誓約準拠】: 確定戦術バイブル（01_INTEL/tactics/）に蓄積された実戦対面データから
+「Lv1〜2」「Lv3〜5」「Lv6以降」の3段階アクションプランおよび「⚠️ 罠・NG行動（没理由）」を自動抽出・提供する。
 """
 
 from typing import Dict, Any, List
@@ -31,7 +31,9 @@ DEFAULT_BLUEPRINTS: Dict[str, Dict[str, Any]] = {
                 "win_trigger": "ソロキル ＋ プレート2枚でレーン完全勝利",
                 "badge": "破壊 👑"
             }
-        ]
+        ],
+        "trap_items": "移動速度（MS）のないビルド（カイトされて1スタックも溜まらず死ぬ）",
+        "forbidden_moves": "相手のCCやフラッシュが残っている状態での無謀なタワーダイブ"
     },
     "Zed": {
         "phases": [
@@ -56,7 +58,9 @@ DEFAULT_BLUEPRINTS: Dict[str, Dict[str, Any]] = {
                 "win_trigger": "タワーダイブを返り討ちにしてMID主導権確立",
                 "badge": "迎撃 🛡️"
             }
-        ]
+        ],
+        "trap_items": "防具なしのフル火力積み（Lv6のRバーストで即死）",
+        "forbidden_moves": "W（分身）の影の位置を確認せずに接近すること"
     },
     "Fiora": {
         "phases": [
@@ -81,17 +85,100 @@ DEFAULT_BLUEPRINTS: Dict[str, Dict[str, Any]] = {
                 "win_trigger": "Ultの回復フィールドを不発にさせて競り勝つ",
                 "badge": "防衛 🛡️"
             }
-        ]
+        ],
+        "trap_items": "集団戦用のフルタンクビルド（急所Trueダメージで溶かされる）",
+        "forbidden_moves": "主要CCスキルをパリィの構えが見えている正面から撃ち込むこと"
+    },
+    "JarvanIV": {
+        "phases": [
+            {
+                "phase": "Phase 1 (Lv1〜2)",
+                "title": "Lv2先行即ガンクの警戒 ＆ EQ回避",
+                "action": "J4のEQノックアップを横移動で回避。EQが外れたJ4は無防備なので反撃。",
+                "win_trigger": "最序盤ガンクを回避しレーン主導権維持",
+                "badge": "回避 🏃"
+            },
+            {
+                "phase": "Phase 2 (Lv3〜5)",
+                "title": "カウンターガンクでEQ後のJ4をフォーカス",
+                "action": "J4が味方にEQで飛び込んだ直後にカウンターガンク。ブリンクの切れたJ4を集中砲火。",
+                "win_trigger": "2v2小規模戦でファーストキル奪取",
+                "badge": "迎撃 ⚔️"
+            },
+            {
+                "phase": "Phase 3 (Lv6〜)",
+                "title": "Rの檻からの脱出フラッシュ確保",
+                "action": "R（天崩地裂）に閉じ込められた際の脱出スキルまたはフラッシュを温存。砂時計も有効。",
+                "win_trigger": "Rを空振りさせて集団戦を逆転勝利",
+                "badge": "脱出 🛡️"
+            }
+        ],
+        "trap_items": "フラッシュなし・ブリンクなし構成でのガラスキャノンビルド",
+        "forbidden_moves": "J4のEQの軌道上に直線的に逃げること（必ず横ステップ）"
+    },
+    "LeeSin": {
+        "phases": [
+            {
+                "phase": "Phase 1 (Lv1〜2)",
+                "title": "ミニオンの影に隠れてQ直撃を遮断",
+                "action": "音波（Q）をミニオンで防ぐ。Qが当たらない限りリーシンは仕掛けられない。",
+                "win_trigger": "序盤インベード・ガンクを無力化",
+                "badge": "遮断 🛡️"
+            },
+            {
+                "phase": "Phase 2 (Lv3〜5)",
+                "title": "Q2の飛びつき着地点にCCを合わせる",
+                "action": "敵がQ2で飛びついてきた瞬間にスタン・ノックバックを合わせて空中で止める。",
+                "win_trigger": "飛び込みを返り討ちにしてキル奪取",
+                "badge": "迎撃 🎯"
+            },
+            {
+                "phase": "Phase 3 (Lv6〜)",
+                "title": "インセク蹴りの死角をワードで潰す",
+                "action": "背後からのワードジャンプRを警戒し、視界のないブッシュに近づかない。",
+                "win_trigger": "ピールを徹底し自陣ADCを守り切る",
+                "badge": "警戒 👁️"
+            }
+        ],
+        "trap_items": "物理防御（AR）なしの初手フル火力積み（Q-R-Qで瞬殺）",
+        "forbidden_moves": "Qが直撃した状態で味方密集地点に逃げて巻き込みRを食らうこと"
+    },
+    "Aatrox": {
+        "phases": [
+            {
+                "phase": "Phase 1 (Lv1〜2)",
+                "title": "Q1先端のスイートスポットを避けてファーム",
+                "action": "Q1・Q2の外周先端を歩きで避ける。Q3は懐（内側）に飛び込むとスイートスポットを回避可能。",
+                "win_trigger": "HPを削られずに安定してLv3到達",
+                "badge": "ポジショニング 📍"
+            },
+            {
+                "phase": "Phase 2 (Lv3〜5)",
+                "title": "重傷800G（忘却のオーブ/処刑人）早期購入",
+                "action": "パッシブとEの回復を重傷で半減させ、リコール後のショートトレードで圧倒。",
+                "win_trigger": "重傷を付与してトレード勝利",
+                "badge": "対策 ⚔️"
+            },
+            {
+                "phase": "Phase 3 (Lv6〜)",
+                "title": "R発動時のキルリセット（延長）を阻止",
+                "action": "エイトロックスがRを発動したら味方とフォーカスを合わせ即座にバーストで落とし切る。",
+                "win_trigger": "Rリセットを許さずに集団戦勝利",
+                "badge": "制圧 👑"
+            }
+        ],
+        "trap_items": "重傷（回復阻害）なしの初手コアビルド（殴り合いで絶対に勝てなくなる）",
+        "forbidden_moves": "W（縄）に捕まった際に後方に直線移動して引き戻されること（斜め横に脱出）"
     }
 }
 
 class MatchupBlueprintEngine:
     @staticmethod
     def get_blueprint(my_champ: str, enemy_champ: str) -> Dict[str, Any]:
-        """対面チャンピオンに対する3段階勝ちパターン手順書を取得"""
+        """対面チャンピオンに対する3段階勝ちパターン手順書 ＆ 没理由（罠・NG行動）を取得"""
         data = DEFAULT_BLUEPRINTS.get(enemy_champ)
         if not data:
-            # 汎用3段階手順
+            # 汎用3段階手順 ＆ 汎用罠
             phases = [
                 {
                     "phase": "Phase 1 (Lv1〜2)",
@@ -115,12 +202,20 @@ class MatchupBlueprintEngine:
                     "badge": "勝利 👑"
                 }
             ]
+            trap_items = "思考停止の初手フル火力積み（対面の防具やバーストで失速）"
+            forbidden_moves = "敵のCCやフラッシュが残っている状態での無謀なタワーダイブ"
         else:
             phases = data["phases"]
+            trap_items = data.get("trap_items", "思考停止の初手フル火力積み（対面防具で失速）")
+            forbidden_moves = data.get("forbidden_moves", "防具完成前の無謀なタワーダイブ")
 
         return {
             "my_champion": my_champ,
             "enemy_champion": enemy_champ,
             "phases": phases,
-            "total_phases": len(phases)
+            "total_phases": len(phases),
+            "rejected": {
+                "trap_items": trap_items,
+                "forbidden_moves": forbidden_moves
+            }
         }

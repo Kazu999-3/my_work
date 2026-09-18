@@ -59,6 +59,8 @@
   - **25. 📮 ポータル管理画面への「誤り訂正インボックス」Web連動UIの統合**: [`FeedbackInboxPanel.tsx`](file:///d:/my_work/04_PORTAL/src/app/admin/knowledge/FeedbackInboxPanel.tsx) および [`api/admin/feedback-inbox`](file:///d:/my_work/04_PORTAL/src/app/api/admin/feedback-inbox/route.ts) を新設。ブラウザ上で違和感の投函・完了トグルが可能に。
   - **26. ⚠️ 対面カードへの「実戦の罠・不採用ビルド（Rejected）」3大タブ可視化**: [`MatchupBlueprintCard.tsx`](file:///d:/my_work/04_PORTAL/src/app/coach/MatchupBlueprintCard.tsx) に「⚠️ 実戦の罠・不採用ビルド」タブを新設。対面ごとの罠アイテムや即死トリガーを明示（Coupen原則）。
   - **27. 🛡️ ポータルダッシュボードへの「全系ヘルスステータス」バッジ表示**: [`AdminDashboardPage`](file:///d:/my_work/04_PORTAL/src/app/admin/dashboard/page.tsx) および [`api/admin/health`](file:///d:/my_work/04_PORTAL/src/app/api/admin/health/route.ts) を新設。リンク切れ・デイリー鮮度・未処理指摘をヘッダー直下でリアルタイム監視。
+  - **28. 📖 主力対面戦術バイブル量産CLIの配備 ＆ 10大バイブル制式格納**: [`scripts/generate_tactics_bible.py`](file:///d:/my_work/scripts/generate_tactics_bible.py) を新設。JarvanIV, Lillia, Viego, LeeSin, Aatrox, Darius, Jax, XinZhao, Nocturne, Fiora の10大戦術バイブルを配備し、全168体拡張に対応（Coupen/つくラボAI原則）。
+  - **29. 🚫 ゲーム内HUDへの「罠アイテム・NG行動警告 (FORBIDDEN / TRAP)」リアルタイム描画**: [`matchup_blueprint_engine.py`](file:///d:/my_work/03_SYSTEMS/v2_CORE/_LOL/overlay/matchup_blueprint_engine.py) および [`matchup_card_widget.py`](file:///d:/my_work/03_SYSTEMS/v2_CORE/_LOL/overlay/matchup_card_widget.py) に没理由DBを連動。TABキー押下時に相手の地雷トリガーをオーバーレイ表示。
 
 
 

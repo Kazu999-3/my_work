@@ -810,6 +810,7 @@ class HudStateEngine:
             # 案B: 現在フェーズ手順 ＆ 勝ちパターン手順書
             "current_phase": current_phase,
             "matchup_blueprint": blueprint_data,
+            "rejected_options": blueprint_data.get("rejected", {}),
             # 案C: 劣勢時逆転コンパス
             "comeback_compass": comeback_compass,
         }
