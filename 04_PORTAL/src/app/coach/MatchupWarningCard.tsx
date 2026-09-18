@@ -39,6 +39,14 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
     tier?: string;
   } | null>(null);
 
+  const [myJungleTiming, setMyJungleTiming] = useState<{
+    sampleCount?: number;
+    avgFirstCoreSec?: number | null;
+    avgSecondCoreSec?: number | null;
+    externalFastestClearSec?: number | null;
+    tier?: string;
+  } | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [isHudOpen, setIsHudOpen] = useState(false);
   const [todayFocus, setTodayFocus] = useState('');
@@ -56,6 +64,7 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
       setWarning(null);
       setCounterIntel(null);
       setEnemyJungleTiming(null);
+      setMyJungleTiming(null);
       return;
     }
 
@@ -63,9 +72,9 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        // 1. 過去の警告メモ取得
+        // 1. 戦績・危険度情報の取得
         if (champion) {
-          const res = await fetch('/api/soloq/matchup-warning', {
+          const res = await fetch('/api/coach/matchup-warning', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ champion, enemyChampion }),
@@ -74,9 +83,14 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
           if (requestIdRef.current === myRequestId) setWarning(data.warning || null);
         }
 
-        // 2. SSOT正本から対面チャンピオンの弱点・カウンター情報およびジャングルタイミングを取得
-        const detailRes = await fetch(`/api/champions/detail?champion=${encodeURIComponent(enemyChampion)}`);
-        const detailData = await detailRes.json();
+        // 2. SSOT正本から対面および自陣の弱点・ジャングルタイミングを並列取得
+        const [enemyDetailRes, myDetailRes] = await Promise.all([
+          fetch(`/api/champions/detail?champion=${encodeURIComponent(enemyChampion)}`),
+          champion ? fetch(`/api/champions/detail?champion=${encodeURIComponent(champion)}`) : Promise.resolve(null),
+        ]);
+        const detailData = await enemyDetailRes.json();
+        const myDetailData = myDetailRes ? await myDetailRes.json() : null;
+
         if (requestIdRef.current === myRequestId) {
           if (detailData.dataFields) {
             setCounterIntel(detailData.dataFields);
@@ -85,6 +99,13 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
           }
           if (detailData.realJungleTiming) {
             setEnemyJungleTiming(detailData.realJungleTiming);
+          } else {
+            setEnemyJungleTiming(null);
+          }
+          if (myDetailData?.realJungleTiming) {
+            setMyJungleTiming(myDetailData.realJungleTiming);
+          } else {
+            setMyJungleTiming(null);
           }
         }
       } catch {
@@ -92,6 +113,7 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
           setWarning(null);
           setCounterIntel(null);
           setEnemyJungleTiming(null);
+          setMyJungleTiming(null);
         }
       } finally {
         if (requestIdRef.current === myRequestId) setLoading(false);
@@ -215,22 +237,58 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
           </p>
         )}
 
-        {/* ⏱️ 敵JGテンポ・初動予測カード */}
+        {/* 🦀 2026年 JGテンポ ＆ カニ争奪シミュレーター */}
         {enemyJungleTiming && (
-          <div className="mt-3 pt-3 border-t border-stone-200 bg-stone-50/80 p-3 rounded-xl space-y-2">
+          <div className="mt-3 pt-3 border-t border-stone-200 bg-stone-50/80 p-3.5 rounded-xl space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-black text-amber-700 flex items-center gap-1.5">
-                <span>⏱️</span> 敵JGテンポ・初動予測（{enemyChampion}）
+              <span className="text-[11px] font-black text-amber-800 flex items-center gap-1.5">
+                <span>🦀</span> 2026年 JGテンポ ＆ カニ争奪シミュレーター（vs {enemyChampion}）
               </span>
-              <span className="text-[9px] text-stone-500">
-                2:55スカトル / 5:00初代ドラゴン
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-bold border border-amber-300">
+                2:55カニ / 5:00グラブ湧き基準
               </span>
             </div>
 
+            {/* カニ遭遇危険度バナー（自陣JGと敵JGの両方のタイムが揃っている場合） */}
+            {myJungleTiming?.externalFastestClearSec && enemyJungleTiming.externalFastestClearSec && (() => {
+              const myClear = myJungleTiming.externalFastestClearSec;
+              const enemyClear = enemyJungleTiming.externalFastestClearSec;
+              const diff = enemyClear - myClear; // 正: 自陣が早い(リード), 負: 敵が早い(ビハインド)
+
+              const isAdvantage = diff >= 8;
+              const isDanger = diff <= -8;
+
+              return (
+                <div className={`p-2.5 rounded-lg border text-xs ${
+                  isAdvantage ? 'bg-emerald-50 border-emerald-300 text-emerald-900' :
+                  isDanger ? 'bg-rose-50 border-rose-300 text-rose-900' :
+                  'bg-amber-50 border-amber-300 text-amber-900'
+                }`}>
+                  <div className="flex items-center justify-between font-black text-[11px] mb-1">
+                    <span className="flex items-center gap-1">
+                      {isAdvantage ? '⚡ 【テンポ優位】リバー先制掌握 ＆ カニ先狩り可能' :
+                       isDanger ? '⚠️ 【交戦危険】カニ直接鉢合わせ禁止 ＆ 逆サイド迂回推奨' :
+                       '⚔️ 【互角接敵】リバー2v2/3v3寄りの速さ勝負'}
+                    </span>
+                    <span className="font-mono text-xs">
+                      {diff > 0 ? `+${diff}秒リード` : diff < 0 ? `${diff}秒遅延` : '同時着'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] leading-relaxed opacity-90">
+                    {isAdvantage
+                      ? `自陣(${champion} ${Math.floor(myClear/60)}:${String(myClear%60).padStart(2,'0')})が敵(${enemyChampion} ${Math.floor(enemyClear/60)}:${String(enemyClear%60).padStart(2,'0')})より${diff}秒早くフルクリア可能。先にリバー視界を取り、同サイドカニまたは敵逆サイド森へのインベードが極めて有効。`
+                      : isDanger
+                      ? `敵(${enemyChampion} ${Math.floor(enemyClear/60)}:${String(enemyClear%60).padStart(2,'0')})が自陣より${Math.abs(diff)}秒早く森を空にしてリバーに入ります。同じカニへ向かうと孤立デスする危険が高いため、逆サイドカニへ迂回するかレーナーの寄りを確認してください。`
+                      : `自陣と敵のクリア完了時刻がほぼ同時（${Math.abs(diff)}秒差）です。2:55のカニ湧きで正面衝突するため、ミッド・サイドレーンのプッシュ状況（主導権）がない場合は無理に争奪せず引く判断が必要です。`}
+                  </p>
+                </div>
+              );
+            })()}
+
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-center text-xs">
               <div className="bg-white p-2 rounded-lg border border-stone-200">
-                <div className="text-[10px] text-stone-500 font-bold">最速フルクリア基準</div>
-                <div className="text-xs font-black text-amber-700 mt-0.5">
+                <div className="text-[10px] text-stone-500 font-bold">敵の最速フルクリア</div>
+                <div className="text-xs font-black text-amber-700 mt-0.5 font-mono">
                   {enemyJungleTiming.externalFastestClearSec
                     ? `${Math.floor(enemyJungleTiming.externalFastestClearSec / 60)}分${String(enemyJungleTiming.externalFastestClearSec % 60).padStart(2, '0')}秒`
                     : 'データ収集中'}
@@ -238,20 +296,20 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
               </div>
 
               <div className="bg-white p-2 rounded-lg border border-stone-200">
-                <div className="text-[10px] text-stone-500 font-bold">1stコア平均完成</div>
-                <div className="text-xs font-black text-stone-800 mt-0.5">
-                  {enemyJungleTiming.avgFirstCoreSec
-                    ? `${Math.floor(enemyJungleTiming.avgFirstCoreSec / 60)}分${String(enemyJungleTiming.avgFirstCoreSec % 60).padStart(2, '0')}秒`
-                    : '約11〜12分'}
+                <div className="text-[10px] text-stone-500 font-bold">自陣の最速フルクリア</div>
+                <div className="text-xs font-black text-emerald-700 mt-0.5 font-mono">
+                  {myJungleTiming?.externalFastestClearSec
+                    ? `${Math.floor(myJungleTiming.externalFastestClearSec / 60)}分${String(myJungleTiming.externalFastestClearSec % 60).padStart(2, '0')}秒`
+                    : 'レーナー/未選択'}
                 </div>
               </div>
 
               <div className="bg-white p-2 rounded-lg border border-stone-200 col-span-2 sm:col-span-1">
-                <div className="text-[10px] text-stone-500 font-bold">初動ガンク・接敵目安</div>
-                <div className="text-xs font-black text-emerald-600 mt-0.5">
-                  {enemyJungleTiming.externalFastestClearSec && enemyJungleTiming.externalFastestClearSec <= 200
-                    ? '⚡ 最速スカトル到達型'
-                    : '🛡️ フルファーム先行型'}
+                <div className="text-[10px] text-stone-500 font-bold">敵のカニ(2:55)先行差</div>
+                <div className="text-xs font-black text-stone-800 mt-0.5 font-mono">
+                  {enemyJungleTiming.externalFastestClearSec
+                    ? `${175 - enemyJungleTiming.externalFastestClearSec >= 0 ? '+' : ''}${175 - enemyJungleTiming.externalFastestClearSec}秒`
+                    : '-'}
                 </div>
               </div>
             </div>
