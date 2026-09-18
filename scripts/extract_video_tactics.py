@@ -164,6 +164,8 @@ def extract_tactics_from_bible_or_url(target_input):
     if path_obj.exists() and path_obj.is_file():
         content = path_obj.read_text(encoding="utf-8", errors="replace")
         video_id = path_obj.stem
+        # VTTファイル名の言語サフィックス(.en, .ja等)を除去して純粋なvideo_idにする
+        video_id = re.sub(r'\.(en|ja|ko|zh|de|fr|es|pt|ru)$', '', video_id)
 
         # タイトル抽出
         t_match = re.search(r"#\s+([^\n]+)", content)
