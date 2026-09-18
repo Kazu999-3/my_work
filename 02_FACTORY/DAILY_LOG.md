@@ -91,6 +91,11 @@
     61. `zyra_tactics_bible.md` のダミーURL（`youtu.be/dummy?t=...`）3件を撤廃し、Agurin実動画（YBZdHBTCZGU）から5シーンの実演クリップ（インベード、ダイブ、カウンターJG、ドラゴン判断、分断タワー破壊）を正式マウント。
     62. `ChampionVisualDashboard.tsx` の対面相性デフォルトフォールバックを、アーキタイプ別（APメイジ→アサシン天敵、タンク→割合ダメージ天敵等）のインテリジェントな推定値に置換。
     63. `ops_health_check.py` の `check_feedback_inbox()` がコードブロック内の `- [ ]` を誤カウントしていた偽陽性バグを修正。
+  - **追加整備 (第18弾: Lillia & Graves 戦術バイブル実演クリップ配備 ＆ Gemini多重モデルフォールバック ＆ URL自動サニタイズ)**:
+    64. `scripts/extract_video_tactics.py` に Gemini 多重モデルフォールバック（`gemini-2.5-flash` → `gemini-1.5-flash` → `gemini-2.0-flash`）を配備し、503過負荷エラー耐性を確立。
+    65. AIの出力揺らぎ（`youtu.be=` や言語サフィックス汚染）を自動修復するURLサニタイズ機構を新設。
+    66. `lillia_tactics_bible.md` へCoach Kirei実動画（`ayqhHJc0pPY`）から「J4のRをWで回避するカウンターメカニクス」を含むプロ実演3シーンを正式マウント。
+    67. `graves_tactics_bible.md` へCoach Kirei実動画（`V6NalLt74D4`）から「タワー裏奇襲ガンク」「ドラゴン前Prio＆トラッキング」「ヘラルド集団戦カウンター」を含むプロ実演3シーンを正式マウント。
 
 ### 🔄 判断の経緯 ＆ 落とした選択肢 (Decisions & Rejected Options)
 - **採用**: タイムスタンプ圧縮（[MM:SS]）＋LoL戦術キーワードスマートフィルタリング（B案）。

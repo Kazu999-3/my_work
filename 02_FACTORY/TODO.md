@@ -39,6 +39,10 @@
   - `zyra_tactics_bible.md` のダミーURL→Agurin実動画5シーンに差替え。
   - 対面相性デフォルトをアーキタイプ別インテリジェント推定に改善。
   - `ops_health_check.py` のインボックス誤検知修正。
+- [x] **Lillia & Graves 戦術バイブル実演クリップ配備 ＆ Gemini多重モデルフォールバック配備**:
+  - `extract_video_tactics.py` にGemini多重モデルフォールバック（2.5-flash→1.5-flash→2.0-flash）およびURL自動サニタイズ配備。
+  - `lillia_tactics_bible.md` へCoach Kirei実動画（J4対面特化）から実演3シーンをマウント。
+  - `graves_tactics_bible.md` へCoach Kirei実動画から実演3シーン（タワー裏奇襲/ドラゴン前Prio/ヘラルド集団戦）をマウント。
 - [x] **note 10記事のディープリサーチに基づく「ナレッジマネジメント7大核心原則」のSovereign OS全域反映**
   - **1. 📅 デイリー作業ログの入口化 ＆ 3行ナレッジ自動抽出**: [`02_FACTORY/DAILY_LOG.md`](file:///d:/my_work/02_FACTORY/DAILY_LOG.md) を新設。作業終了時にAIが自動追記し、翌朝AIが真っ先に読み直す立ち上がり循環を確立。
   - **2. 🏷️ ルール適用範囲（コンテキストタグ）の厳格化**: [`01_base_style.md`](file:///d:/my_work/.agent/rules/01_base_style.md) に「適用場面・非適用場面」の明記を義務化。「結論先行」による読者向け文章の淡白化事故を根本遮断（べっぱん原則）。
