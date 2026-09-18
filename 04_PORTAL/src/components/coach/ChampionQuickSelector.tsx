@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Sparkles, RefreshCw, X, ArrowLeftRight, Check, Search } from 'lucide-react';
+import { Sparkles, RefreshCw, X, ArrowLeftRight, Check, Search, Edit3 } from 'lucide-react';
 import { CHAMPION_NAME_MAP, normalizeChampionName } from '../../lib/championNames';
 
 interface ChampionQuickSelectorProps {
@@ -84,8 +84,51 @@ export default function ChampionQuickSelector({
   const [detectingLive, setDetectingLive] = useState(false);
   const [liveDetectMessage, setLiveDetectMessage] = useState<string | null>(null);
 
+  // 🎮 Riot ID 管理ステート (自動補完 & ワンタップ変更)
+  const [currentRiotId, setCurrentRiotId] = useState<string>('');
+  const [isEditingRiotId, setIsEditingRiotId] = useState(false);
+  const [tempRiotId, setTempRiotId] = useState('');
+
   const myRef = useRef<HTMLDivElement>(null);
   const enemyRef = useRef<HTMLDivElement>(null);
+
+  // Riot ID の初期化（localStorage ➔ なければ /api/auth/me から自動取得）
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const saved = localStorage.getItem('coach_own_riot_id') || localStorage.getItem('scout_own_riot_id') || '';
+    if (saved) {
+      setCurrentRiotId(saved);
+      return;
+    }
+
+    // ログイン中のユーザー情報をフェッチして自動補完
+    fetch('/api/auth/me')
+      .then((r) => r.json())
+      .then((data) => {
+        const u = data?.user;
+        const autoId = u?.ign || (u?.displayName && u.displayName.includes('#') ? u.displayName : '') || 'Kazurin#4036';
+        if (autoId) {
+          setCurrentRiotId(autoId);
+          localStorage.setItem('coach_own_riot_id', autoId);
+        }
+      })
+      .catch(() => {
+        setCurrentRiotId('Kazurin#4036');
+      });
+  }, []);
+
+  const handleSaveRiotId = () => {
+    const trimmed = tempRiotId.trim();
+    if (trimmed) {
+      setCurrentRiotId(trimmed);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('coach_own_riot_id', trimmed);
+        localStorage.setItem('scout_own_riot_id', trimmed);
+      }
+    }
+    setIsEditingRiotId(false);
+  };
 
   useEffect(() => {
     setMyQuery(myChampion);
@@ -146,11 +189,9 @@ export default function ChampionQuickSelector({
     setDetectingLive(true);
     setLiveDetectMessage(null);
     try {
-      const savedRiotId = typeof window !== 'undefined'
-        ? localStorage.getItem('scout_own_riot_id') || localStorage.getItem('coach_own_riot_id') || ''
-        : '';
-      const url = savedRiotId
-        ? `/api/riot/live-game?riotId=${encodeURIComponent(savedRiotId)}`
+      const targetId = currentRiotId.trim();
+      const url = targetId
+        ? `/api/riot/live-game?riotId=${encodeURIComponent(targetId)}`
         : '/api/riot/live-game';
 
       const res = await fetch(url);
@@ -164,16 +205,16 @@ export default function ChampionQuickSelector({
         const enemyDetected = data.liveMatch.enemyChampion || '';
         if (myDetected) onMyChampionChange(myDetected);
         if (enemyDetected) onEnemyChampionChange(enemyDetected);
-        setLiveDetectMessage(`✅ 進行中の試合を検出: ${myDetected} vs ${enemyDetected}`);
+        setLiveDetectMessage(`✅ 進行中の試合を検出 (${targetId}): ${myDetected} vs ${enemyDetected}`);
         if (onLiveMatchDetected) onLiveMatchDetected(myDetected, enemyDetected);
       } else {
-        setLiveDetectMessage(data.message || '⚠️ 進行中の試合（Active Game）が見つかりませんでした。');
+        setLiveDetectMessage(data.message || `⚠️ 進行中の試合（Active Game）が見つかりませんでした (${targetId || ' Kazurin#4036'})`);
       }
     } catch (e: any) {
       setLiveDetectMessage(`❌ 検出エラー: ${e.message || '通信失敗'}`);
     } finally {
       setDetectingLive(false);
-      setTimeout(() => setLiveDetectMessage(null), 5000);
+      setTimeout(() => setLiveDetectMessage(null), 6000);
     }
   };
 
@@ -197,15 +238,60 @@ export default function ChampionQuickSelector({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleDetectLiveMatch}
-          disabled={detectingLive}
-          className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white shadow-sm transition-all disabled:opacity-50 shrink-0 cursor-pointer"
-        >
-          <RefreshCw size={13} className={detectingLive ? 'animate-spin' : ''} />
-          <span>{detectingLive ? '試合スキャン中...' : '🔴 進行中の試合から自動取得'}</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
+          {/* 🎮 Riot ID 管理チップ */}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-stone-100 border border-stone-200 text-stone-700">
+            <span className="text-stone-400 font-medium">対象ID:</span>
+            {isEditingRiotId ? (
+              <div className="flex items-center gap-1">
+                <input
+                  type="text"
+                  value={tempRiotId}
+                  onChange={(e) => setTempRiotId(e.target.value)}
+                  placeholder="Name#TAG"
+                  className="px-1.5 py-0.5 text-xs bg-white border border-amber-400 rounded outline-none w-28 text-stone-900 font-mono"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveRiotId();
+                    if (e.key === 'Escape') setIsEditingRiotId(false);
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={handleSaveRiotId}
+                  className="px-2 py-0.5 bg-amber-600 hover:bg-amber-500 text-white rounded text-[10px] font-black cursor-pointer"
+                >
+                  保存
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <strong className="text-stone-900 font-mono text-[11px]">{currentRiotId || 'Kazurin#4036'}</strong>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTempRiotId(currentRiotId || 'Kazurin#4036');
+                    setIsEditingRiotId(true);
+                  }}
+                  className="p-1 hover:bg-stone-200 rounded text-stone-400 hover:text-amber-700 transition cursor-pointer"
+                  title="スキャン対象のRiot IDを変更"
+                >
+                  <Edit3 size={12} />
+                </button>
+              </div>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={handleDetectLiveMatch}
+            disabled={detectingLive}
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white shadow-sm transition-all disabled:opacity-50 shrink-0 cursor-pointer"
+          >
+            <RefreshCw size={13} className={detectingLive ? 'animate-spin' : ''} />
+            <span>{detectingLive ? '試合スキャン中...' : '🔴 進行中の試合から自動取得'}</span>
+          </button>
+        </div>
       </div>
 
       {liveDetectMessage && (

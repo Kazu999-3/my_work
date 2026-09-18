@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Zap, Shield, Sparkles, AlertTriangle, CheckCircle2, Swords } from 'lucide-react';
+import { Zap, Shield, Sparkles, AlertTriangle, CheckCircle2, Swords, Eye } from 'lucide-react';
 import Image from 'next/image';
 import { getChampIcon } from '../../lib/ddragonClient';
+import { getVisionAlertRule } from '../../lib/visionAlertRules';
 
 interface Phase {
   phase: string;
@@ -179,6 +180,64 @@ export default function MatchupBlueprintCard({
           )}
         </div>
       )}
+
+      {/* 👁️ コントロールワード警戒アラート（対面・敵ステルス・奇襲特性連動） */}
+      {(() => {
+        const visionRule = getVisionAlertRule(enemyChamp);
+        if (!visionRule) return null;
+
+        const isCritical = visionRule.threatLevel === 'CRITICAL';
+        const isHigh = visionRule.threatLevel === 'HIGH';
+
+        const bgClass = isCritical
+          ? 'bg-gradient-to-r from-rose-500/15 via-red-500/10 to-rose-500/15 border-2 border-rose-500/60'
+          : isHigh
+          ? 'bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border-2 border-amber-500/60'
+          : 'bg-gradient-to-r from-blue-500/10 via-indigo-500/5 to-blue-500/10 border border-blue-500/40';
+
+        const iconColor = isCritical ? 'text-rose-600' : isHigh ? 'text-amber-600' : 'text-blue-600';
+        const badgeBg = isCritical ? 'bg-rose-100 text-rose-900 border-rose-200' : isHigh ? 'bg-amber-100 text-amber-900 border-amber-200' : 'bg-blue-100 text-blue-900 border-blue-200';
+
+        return (
+          <div className={`${bgClass} rounded-xl p-3.5 shadow-2xs space-y-2.5 animate-in`}>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 text-xs font-black text-stone-900">
+                <Eye className={`w-4 h-4 ${iconColor} ${isCritical ? 'animate-pulse' : ''}`} />
+                <span>【視界警戒アラート】 vs {enemyChamp} コントロールワード対策</span>
+              </div>
+              <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${badgeBg}`}>
+                {visionRule.badgeLabel}
+              </span>
+            </div>
+
+            <div className="bg-white/95 rounded-lg p-2.5 border border-stone-200/80 space-y-1.5 text-xs">
+              <p className="font-black text-stone-900 flex items-center gap-1">
+                <span>🎯</span>
+                <span>{visionRule.title}</span>
+              </p>
+              <p className="text-[11px] text-stone-600 leading-relaxed">
+                {visionRule.reason}
+              </p>
+              <div className="pt-1 border-t border-stone-100 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                <div className="flex items-start gap-1">
+                  <span className="font-bold text-amber-800 shrink-0">⏱️ 購入基準:</span>
+                  <span className="text-stone-700 font-medium">{visionRule.timingAdvice}</span>
+                </div>
+                <div className="flex items-start gap-1">
+                  <span className="font-bold text-emerald-800 shrink-0">📍 配置場所:</span>
+                  <span className="text-stone-700 font-medium">{visionRule.placementAdvice}</span>
+                </div>
+              </div>
+              {visionRule.recommendedItem && (
+                <div className="pt-1 text-[11px] font-bold text-indigo-700 flex items-center gap-1">
+                  <span>🎒 推奨装備:</span>
+                  <span>{visionRule.recommendedItem}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ヘッダー: ドラフト即応セレクター ＆ 対戦カード */}
       <div className="border-b border-stone-100 pb-3.5 space-y-3">
