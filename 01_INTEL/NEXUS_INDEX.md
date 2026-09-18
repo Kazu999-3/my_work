@@ -29,10 +29,14 @@
   - YouTube動画の文字起こしからAIが自動生成した、チャンピオン毎の戦術データがここに格納されています。
 - **[LoL 戦略・環境分析インデックス (_LOL/INDEX.md)](file:///d:/my_work/01_INTEL/_LOL/INDEX.md)**: DNA（思考哲学）・PULSE（リアルタイム環境・Lolalytics）の総合書庫。
 - **[戦術インテルライブラリ](file:///d:/my_work/01_INTEL/tactics/)**:
-  - **実戦バイブル (主力プール)**:
-    - [`jarvaniv_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/jarvaniv_tactics_bible.md) / [`lillia_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/lillia_tactics_bible.md) / [`viego_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/viego_tactics_bible.md) / [`leesin_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/leesin_tactics_bible.md)
-    - [`aatrox_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/aatrox_tactics_bible.md) / [`darius_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/darius_tactics_bible.md) / [`jax_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/jax_tactics_bible.md) / [`xinzhao_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/xinzhao_tactics_bible.md)
-    - [`nocturne_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/nocturne_tactics_bible.md) / [`fiora_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/fiora_tactics_bible.md) / [`yorick_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/yorick_tactics_bible.md)
+  - **実戦バイブル (主力プール・全17体配備完了)**:
+    - **🌲 JG主力 (実演クリップ搭載)**:
+      - [`jarvaniv_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/jarvaniv_tactics_bible.md) / [`zyra_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/zyra_tactics_bible.md) / [`lillia_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/lillia_tactics_bible.md) / [`graves_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/graves_tactics_bible.md)
+      - [`amumu_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/amumu_tactics_bible.md) / [`shyvana_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/shyvana_tactics_bible.md) / [`nocturne_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/nocturne_tactics_bible.md) / [`wukong_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/wukong_tactics_bible.md) ([`monkeyking`](file:///d:/my_work/01_INTEL/tactics/monkeyking_tactics_bible.md))
+    - **⚔️ JG/TOP主力 (戦術展開中)**:
+      - [`viego_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/viego_tactics_bible.md) / [`leesin_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/leesin_tactics_bible.md) / [`khazix_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/khazix_tactics_bible.md) / [`kindred_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/kindred_tactics_bible.md)
+      - [`xinzhao_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/xinzhao_tactics_bible.md) / [`aatrox_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/aatrox_tactics_bible.md) / [`darius_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/darius_tactics_bible.md) / [`jax_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/jax_tactics_bible.md)
+      - [`fiora_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/fiora_tactics_bible.md) / [`yorick_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/yorick_tactics_bible.md)
   - [`template_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/template_tactics_bible.md): 没理由・イミュータブル履歴を備えた制式戦術雛形。
   - `generate_tactics_bible.py`: 主力プール・全168体対応のバイブル量産CLI。
 

@@ -35,15 +35,15 @@
 ### 🧹 Phase 1: ナレッジ ＆ キュー先行整理 ＆ 辞典超強化
 
 - [ ] **領域1: 📹 YouTubeキュー整合化 ＆ 429完全防御**
-  - [ ] 完了済み動画のステータス同期（Zyra `YBZdHBTCZGU`、Lillia `ayqhHJc0pPY` 等を `completed` に更新）
+  - [x] 完了済み動画のステータス同期（Zyra `YBZdHBTCZGU`、Lillia `ayqhHJc0pPY` 等を `completed` に更新）
   - [ ] `clean_youtube_queue.py` によるエラー58件（`failed` 30件, `error_generation` 28件）の精密仕分け（字幕ありはリトライ、欠落・非公開は安全クローズ）
-  - [ ] `extract_video_tactics.py` への **YouTube 429完全防御（`android_vr` クライアント偽装 ＆ cookies 統合）** の配備（改善項目②）
+  - [x] `extract_video_tactics.py` への **YouTube 429完全防御（`android_vr` クライアント偽装 ＆ cookies 統合）** の配備（改善項目②）
   - [ ] キュー整合性チェックを `ops_health_check.py` に連動させ放置エラーを常時監視
 - [ ] **領域2: 🏛️ 帝国総合索引同期 ＆ 戦術バイブル拡充 ＆ メタデータ構造化**
-  - [ ] `01_INTEL/NEXUS_INDEX.md` のバイブル一覧に最近配備した7体（Zyra, Shyvana, Graves, Amumu, Kha'Zix, Kindred, MonkeyKing/Wukong）を完全同期（全17体化）
+  - [x] `01_INTEL/NEXUS_INDEX.md` のバイブル一覧に最近配備した7体（Zyra, Shyvana, Graves, Amumu, Kha'Zix, Kindred, MonkeyKing/Wukong）を完全同期（全17体化）
   - [ ] ローカル解析データ（`02_FACTORY/bible/kirei_bible/`）から未マウントの主要JGバイブル（Kha'Zix, Viego, Lee Sin, Kindred 等）へ実演クリップ（秒数リンク＋Why/How/Rejected）を一括マウント
   - [ ] 戦術バイブルの **動画メタデータ構造化保存（パッチ・対面相手・勝敗・ランク帯のフロントマター化）**（改善項目①）
-  - [ ] `audit_knowledge_links.py` を実行し、全リンク切れ0件を再確認
+  - [x] `audit_knowledge_links.py` を実行し、全リンク切れ0件を再確認
 - [ ] **領域3: 📖 チャンピオン辞典・ビジュアルダッシュボード超強化 (UX最大インパクト)**
   - [ ] **824件の実戦対面DB（`matchup_sentinel`）のビジュアルダッシュボード直結**: `DictionaryTab` から `matchupsList` を Props 渡し、相性カード（対面チャンプ）クリックで実戦メモ・立ち回りをインラインアコーディオン展開（改善項目④）
   - [ ] **パワースパイク ＆ ジャングル実測タイミング（`realJungleTiming`）のHUD可視化**: 最速フルクリア秒数・1stコア目標・パワースパイク推移ゲージの描画（改善項目⑤）

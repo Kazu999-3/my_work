@@ -204,6 +204,12 @@ def extract_tactics_from_bible_or_url(target_input):
             'outtmpl': str(scratch_dir / '%(id)s.%(ext)s'),
             'quiet': True,
             'no_warnings': True,
+            # 429レート制限・bot判定回避のためのandroid_vrクライアント偽装（#88踏襲）
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['android_vr', 'android', 'web']
+                }
+            },
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(

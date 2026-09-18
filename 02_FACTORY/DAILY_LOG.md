@@ -105,6 +105,11 @@
   - **追加整備 (第21弾: ナレッジ・動画解析・辞典の全8大改善項目の完全タスク化 ＆ 3段階ロードマップ確定)**:
     72. ユーザー指示に基づき、コードベース・DB監査で判明した全8大改善項目（①メタデータ構造化、②429完全防御android_vr偽装、③Whisper音声認識フォールバック、④824件matchup_sentinel対面DB直結、⑤実測タイミングHUD可視化、⑥複数レーン動的連動、⑦実戦リザルト自動逆流、⑧戦術概念RAG検索）を完全タスク化。
     73. `TODO.md` を「Phase 1: ナレッジ・キュー先行整理 ＆ 辞典超強化」「Phase 2: 動画解析インフラ進化 ＆ 再解析」「Phase 3: 自律ナレッジループ ＆ セマンティック検索」の3大フェーズに体系化。
+  - **追加整備 (第22弾: トークン極小4タスクのワンストップ完遂 ＆ 429完全防御配備)**:
+    74. `01_INTEL/NEXUS_INDEX.md` に全17体の戦術バイブル（実演クリップ搭載8体 ＋ 戦術展開中9体）を完全同期し、孤立ノート（`monkeyking`等）の参照導線を確立。
+    75. `youtube_queue` において、マウント完了済みの `YBZdHBTCZGU`（ザイラ）および `ayqhHJc0pPY`（リリア）を `error_generation` から `completed` へ正式更新（エラー動画 58件 ➔ 56件へ減少、完了 1061件達成）。
+    76. `scripts/extract_video_tactics.py` に `android_vr` クライアント偽装（`--extractor-args youtube:player_client=android_vr,android,web`）を統合し、YouTube側からのIP制限（429）を物理遮断。
+    77. `scripts/audit_knowledge_links.py` を実行し、全478件のMarkdownリンク切れ **0件（完全健全）** を実測確認。
 
 ### 🔄 判断の経緯 ＆ 落とした選択肢 (Decisions & Rejected Options)
 - **採用**: タイムスタンプ圧縮（[MM:SS]）＋LoL戦術キーワードスマートフィルタリング（B案）。
