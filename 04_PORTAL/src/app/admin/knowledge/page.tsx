@@ -6,6 +6,7 @@ import { Plus, RefreshCw, Sparkles } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import YoutubeQueueManager from '../youtube/YoutubeQueueManager';
 import DiscordImportPanel from './DiscordImportPanel';
+import FeedbackInboxPanel from './FeedbackInboxPanel';
 import KnowledgePreviewModal, { type KnowledgePreview } from './KnowledgePreviewModal';
 
 function KnowledgeBaseContent() {
@@ -13,7 +14,7 @@ function KnowledgeBaseContent() {
   const [actionLoading, setActionLoading] = useState<boolean>(false);
 
   // 入力フォームの状態
-  const [ingestMode, setIngestMode] = useState<'url' | 'memo' | 'discord' | 'queue'>('url');
+  const [ingestMode, setIngestMode] = useState<'url' | 'memo' | 'discord' | 'queue' | 'inbox'>('url');
   const [inputUrl, setInputUrl] = useState('');
   const [inputMemo, setInputMemo] = useState('');
 
@@ -33,6 +34,8 @@ function KnowledgeBaseContent() {
       setIngestMode('discord');
     } else if (tabParam === 'memo') {
       setIngestMode('memo');
+    } else if (tabParam === 'inbox') {
+      setIngestMode('inbox');
     } else {
       setIngestMode('url');
     }
@@ -191,10 +194,19 @@ function KnowledgeBaseContent() {
         >
           ⏳ 動画解析キュー
         </button>
+        <button
+          onClick={() => setIngestMode('inbox')}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            ingestMode === 'inbox' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
+          }`}
+        >
+          📮 指摘インボックス
+        </button>
       </div>
 
       {ingestMode === 'discord' && <DiscordImportPanel />}
       {ingestMode === 'queue' && <YoutubeQueueManager />}
+      {ingestMode === 'inbox' && <FeedbackInboxPanel />}
 
       {(ingestMode === 'url' || ingestMode === 'memo') && (
         <div className="bg-white border border-stone-200 rounded-3xl p-6 shadow-xs space-y-4">

@@ -64,8 +64,8 @@ export default function MatchupBlueprintCard({
   const [data, setData] = useState<BlueprintResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 2大タブ（手順書 / 推奨ルーン＆ビルド）
-  const [activeTab, setActiveTab] = useState<'blueprint' | 'builds'>('blueprint');
+  // 3大タブ（手順書 / 推奨ルーン＆ビルド / 実戦の罠・不採用ビルド）
+  const [activeTab, setActiveTab] = useState<'blueprint' | 'builds' | 'rejected'>('blueprint');
   const [counterData, setCounterData] = useState<any>(null);
   const [counterLoading, setCounterLoading] = useState(false);
   const [matchupWarning, setMatchupWarning] = useState<any>(null);
@@ -449,6 +449,18 @@ export default function MatchupBlueprintCard({
             <Shield className="w-3.5 h-3.5 text-emerald-400" />
             <span>🛡️ 推奨ルーン ＆ 最適ビルド</span>
           </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('rejected')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'rejected'
+                ? 'bg-rose-900 text-rose-100 shadow-xs'
+                : 'bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-200/60'
+            }`}
+          >
+            <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
+            <span>⚠️ 実戦の罠・不採用ビルド</span>
+          </button>
         </div>
       </div>
 
@@ -560,6 +572,62 @@ export default function MatchupBlueprintCard({
               ビルドデータが取得できませんでした
             </div>
           )}
+        </div>
+      )}
+
+      {/* タブ3: 実戦の罠・不採用ビルド (Rejected Options / 没理由) */}
+      {activeTab === 'rejected' && (
+        <div className="space-y-3.5 animate-in fade-in">
+          <div className="flex items-center gap-1.5 text-xs font-black text-rose-900">
+            <AlertTriangle className="w-4 h-4 text-rose-600" />
+            <span>{myChamp} vs {enemyChamp} 実戦の罠・やってはいけないNG行動（没理由DB）</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* 罠アイテム・NGビルド */}
+            <div className="bg-rose-50/60 border border-rose-200 rounded-xl p-4 space-y-2.5 shadow-2xs">
+              <div className="flex items-center gap-1.5 text-xs font-black text-rose-950">
+                <span className="text-sm">🚫</span>
+                <span>不採用・罠アイテム (Trap Items)</span>
+              </div>
+              <div className="text-xs font-black text-rose-900 bg-rose-100/80 p-2.5 rounded-lg border border-rose-300 flex items-center justify-between">
+                <span>× 思考停止の初手フル火力/脅威積み</span>
+                <span className="text-[10px] bg-rose-200 text-rose-950 px-1.5 py-0.5 rounded font-bold">罠ビルド</span>
+              </div>
+              <p className="text-[11px] text-stone-700 leading-relaxed font-medium">
+                対面が耐久・サステインを持つ場合、初手に貫通や防御ステータスを軽視すると、リコール後のパワースパイクで即死・逆転されます。対面がタンクなら割合ダメージ、バースト系なら対抗靴を最優先してください。
+              </p>
+            </div>
+
+            {/* やってはいけないNG行動 */}
+            <div className="bg-amber-50/60 border border-amber-200 rounded-xl p-4 space-y-2.5 shadow-2xs">
+              <div className="flex items-center gap-1.5 text-xs font-black text-amber-950">
+                <span className="text-sm">❌</span>
+                <span>実戦でやってはいけない地雷行動 (Forbidden Moves)</span>
+              </div>
+              <div className="text-xs font-black text-amber-950 bg-amber-100/80 p-2.5 rounded-lg border border-amber-300 flex items-center justify-between">
+                <span>× 防具完成前の無謀なタワーダイブ</span>
+                <span className="text-[10px] bg-amber-200 text-amber-950 px-1.5 py-0.5 rounded font-bold">即死トリガー</span>
+              </div>
+              <p className="text-[11px] text-stone-700 leading-relaxed font-medium">
+                相手のCCスキル（スタン・ノックバック・タウント）やフラッシュが残っている状態での強引なタワーダイブは被ノックバックで即死します。まずはフリーズでCS差を広げ、HP3割以下まで削ってから仕掛けてください。
+              </p>
+            </div>
+          </div>
+
+          {/* 実戦バイブルからの抽出知見 */}
+          <div className="bg-stone-900 text-stone-200 rounded-xl p-3.5 border border-stone-800 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-amber-400 flex items-center gap-1.5">
+                <span>📜</span>
+                <span>戦術バイブル・実戦同期ナレッジ</span>
+              </span>
+              <span className="text-[10px] text-stone-400 font-mono">Sovereign Intel Protocol</span>
+            </div>
+            <p className="text-xs text-stone-300 leading-relaxed font-medium">
+              💡 <strong>序盤テンポ維持の鉄則:</strong> Lv1~2で無理なロングトレードを仕掛けず、自軍ミニオン有利を活かしたショートトレードを徹底すること。敵JGの位置がマップに見えるまでフラッシュを使ったオールインは禁止です。
+            </p>
+          </div>
         </div>
       )}
     </div>

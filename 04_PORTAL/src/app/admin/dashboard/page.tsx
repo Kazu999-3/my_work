@@ -129,6 +129,18 @@ export default function AdminDashboardPage() {
     dictReviewCount: number;
   }>({ failedTasks: [], youtubeErrorCount: 0, dictReviewCount: 0 });
 
+  // Sovereign OS 全域ヘルスステータス
+  const [healthStatus, setHealthStatus] = useState<{
+    allGreen: boolean;
+    statusText: string;
+    metrics: {
+      pendingFeedback: number;
+      latestDailyLog: string;
+      brokenLinks: number;
+      typesPassing: boolean;
+    };
+  } | null>(null);
+
   const [isRetryingAll, setIsRetryingAll] = useState(false);
 
   // 認証チェック
@@ -153,6 +165,14 @@ export default function AdminDashboardPage() {
         if (data.needsAttention) setNeedsAttention(data.needsAttention);
         setLastUpdated(new Date().toLocaleTimeString('ja-JP'));
       }
+
+      // ヘルスステータスの取得
+      fetch('/api/admin/health')
+        .then(r => r.json())
+        .then(d => {
+          if (d.success) setHealthStatus(d.health);
+        })
+        .catch(() => {});
     } catch (err) {
       console.error('Error fetching dashboard stats:', err);
     } finally {
@@ -343,6 +363,44 @@ export default function AdminDashboardPage() {
             )}
           </div>
         </header>
+
+        {/* 🛡️ Sovereign OS ナレッジ ＆ システム全系ヘルスステータス */}
+        {healthStatus && (
+          <div className={`p-3.5 rounded-2xl border flex flex-wrap items-center justify-between gap-3 shadow-2xs backdrop-blur-md ${
+            healthStatus.allGreen 
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-950' 
+              : 'bg-amber-500/10 border-amber-500/30 text-amber-950'
+          }`}>
+            <div className="flex items-center gap-2.5">
+              <span className="text-base">{healthStatus.allGreen ? '🛡️' : '⚠️'}</span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black">
+                    Sovereign OS ナレッジ＆全系健全性: {healthStatus.statusText}
+                  </span>
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
+                    healthStatus.allGreen 
+                      ? 'bg-emerald-500/20 text-emerald-900 border-emerald-500/40' 
+                      : 'bg-amber-500/20 text-amber-900 border-amber-500/40'
+                  }`}>
+                    {healthStatus.allGreen ? 'ALL GREEN' : 'ATTENTION'}
+                  </span>
+                </div>
+                <div className="text-[11px] text-stone-600 flex items-center gap-3 mt-0.5 font-medium flex-wrap">
+                  <span>🔗 リンク切れ: <strong className="text-emerald-700 font-bold">{healthStatus.metrics.brokenLinks}件</strong></span>
+                  <span>📅 デイリー日誌: <strong className="text-stone-800 font-bold">{healthStatus.metrics.latestDailyLog}</strong></span>
+                  <span>📮 指摘インボックス: <strong className={healthStatus.metrics.pendingFeedback > 0 ? "text-amber-700 font-bold" : "text-emerald-700 font-bold"}>{healthStatus.metrics.pendingFeedback}件未対応</strong></span>
+                </div>
+              </div>
+            </div>
+            <Link
+              href="/admin/knowledge?tab=inbox"
+              className="text-xs font-bold px-3 py-1.5 rounded-xl bg-white hover:bg-stone-50 border border-stone-200 text-stone-700 shadow-2xs transition"
+            >
+              📮 インボックスを確認
+            </Link>
+          </div>
+        )}
 
         {/* 🚨 2. アラート ＆ 要対応セクション（問題がある時のみ目立たせて表示） */}
         {!systemStatus.worker.active && (

@@ -54,6 +54,11 @@
   - **20. 🔗 ナレッジ全域リンク整合性 ＆ 孤立ファイル検知リンター (`audit_knowledge_links.py`) の新設**: [`scripts/audit_knowledge_links.py`](file:///d:/my_work/scripts/audit_knowledge_links.py) を新設。461件のMarkdownからリンク切れや未リンクの孤立ノートを瞬時に検出（りゅう原則）。
   - **21. 🧹 旧アーカイブリンク切れクリーン化 ＆ TODO内実在リンク修復**: [`audit_knowledge_links.py`](file:///d:/my_work/scripts/audit_knowledge_links.py) のアーカイブ除外と [`TODO.md`](file:///d:/my_work/02_FACTORY/TODO.md) の `BottomNav.tsx` リンク修復により、走査対象全459件のMarkdownリンク切れ0件（ALL GREEN）を達成（りゅう原則）。
   - **22. 📢 Discord Webhook 外部通知基盤の配備**: [`scripts/notify_discord.py`](file:///d:/my_work/scripts/notify_discord.py) を新設。日次ナレッジ（`DAILY_LOG.md`）のEmbed投稿、ヘルスチェック結果通知、ドライラン対応、および [`wrap-up.md`](file:///d:/my_work/.agent/workflows/wrap-up.md) との連動を実現（Coupen原則）。
+  - **23. 🔐 環境変数テンプレートの制式配備**: [`.env.example`](file:///d:/my_work/.env.example) を新設。Discord Webhook、Supabase、Riot API、Gemini API などの全設定項目を日本語解説付きで定義。
+  - **24. 🗺️ LoL戦略インデックスの新設 ＆ 孤立ノートの解消**: [`01_INTEL/_LOL/INDEX.md`](file:///d:/my_work/01_INTEL/_LOL/INDEX.md) を新設し、[`NEXUS_INDEX.md`](file:///d:/my_work/01_INTEL/NEXUS_INDEX.md) から対面バイブルやDNA・PULSEへの導線を直結。
+  - **25. 📮 ポータル管理画面への「誤り訂正インボックス」Web連動UIの統合**: [`FeedbackInboxPanel.tsx`](file:///d:/my_work/04_PORTAL/src/app/admin/knowledge/FeedbackInboxPanel.tsx) および [`api/admin/feedback-inbox`](file:///d:/my_work/04_PORTAL/src/app/api/admin/feedback-inbox/route.ts) を新設。ブラウザ上で違和感の投函・完了トグルが可能に。
+  - **26. ⚠️ 対面カードへの「実戦の罠・不採用ビルド（Rejected）」3大タブ可視化**: [`MatchupBlueprintCard.tsx`](file:///d:/my_work/04_PORTAL/src/app/coach/MatchupBlueprintCard.tsx) に「⚠️ 実戦の罠・不採用ビルド」タブを新設。対面ごとの罠アイテムや即死トリガーを明示（Coupen原則）。
+  - **27. 🛡️ ポータルダッシュボードへの「全系ヘルスステータス」バッジ表示**: [`AdminDashboardPage`](file:///d:/my_work/04_PORTAL/src/app/admin/dashboard/page.tsx) および [`api/admin/health`](file:///d:/my_work/04_PORTAL/src/app/api/admin/health/route.ts) を新設。リンク切れ・デイリー鮮度・未処理指摘をヘッダー直下でリアルタイム監視。
 
 
 

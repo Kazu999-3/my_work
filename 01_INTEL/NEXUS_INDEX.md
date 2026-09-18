@@ -27,8 +27,10 @@
 - **[プロジェクト憲法 (ANTIGRAVITY.md)](file:///d:/my_work/ANTIGRAVITY.md)**: プロジェクトの開発・運営憲法（ルール）。
 - **[YouTube 攻略バイブル (Kirei Bible)](file:///d:/my_work/02_FACTORY/bible/kirei_bible/)**:
   - YouTube動画の文字起こしからAIが自動生成した、チャンピオン毎の戦術データがここに格納されています。
+- **[LoL 戦略・環境分析インデックス (_LOL/INDEX.md)](file:///d:/my_work/01_INTEL/_LOL/INDEX.md)**: DNA（思考哲学）・PULSE（リアルタイム環境・Lolalytics）の総合書庫。
 - **[戦術インテルライブラリ](file:///d:/my_work/01_INTEL/tactics/)**:
-  - チャンピオン辞典へマージする前の、手動または外部抽出された戦術メモ群。
+  - [`yorick_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/yorick_tactics_bible.md): 実戦データ連携によって自動更新された対面戦術バイブル実例。
+  - [`template_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/template_tactics_bible.md): 没理由・イミュータブル履歴を備えた制式戦術雛形。
 
 ---
 
