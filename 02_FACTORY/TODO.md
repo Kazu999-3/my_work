@@ -39,18 +39,19 @@
   - [x] `clean_youtube_queue.py` によるエラー58件（`failed` 30件, `error_generation` 28件）の再試行・仕分け（56件を `pending` にリセット、キューのエラー0件化）
   - [x] `extract_video_tactics.py` への **YouTube 429完全防御（`android_vr` クライアント偽装 ＆ cookies 統合）** の配備（改善項目②）
   - [x] キュー整合性チェックを `ops_health_check.py` に連動させ放置エラーを常時監視
-- [ ] **領域2: 🏛️ 帝国総合索引同期 ＆ 戦術バイブル拡充 ＆ メタデータ構造化**
-  - [x] `01_INTEL/NEXUS_INDEX.md` のバイブル一覧に最近配備した7体（Zyra, Shyvana, Graves, Amumu, Kha'Zix, Kindred, MonkeyKing/Wukong）を完全同期（全17体化）
-  - [ ] ローカル解析データ（`02_FACTORY/bible/kirei_bible/`）から未マウントの主要JGバイブル（Kha'Zix, Viego, Lee Sin, Kindred 等）へ実演クリップ（秒数リンク＋Why/How/Rejected）を一括マウント
-  - [x] 戦術バイブル全17体の **フロントマター統一・正規化（イミュータブル・プロパティ規約準拠・tags/status/published_at統一）**（改善項目①）
+- [x] **領域2: 🏛️ 帝国総合索引同期 ＆ 戦術バイブル拡充 ＆ メタデータ構造化**
+  - [x] `01_INTEL/NEXUS_INDEX.md` のバイブル一覧を全18体（クリップ搭載13体、ヨリックBlueprint補完）へ完全同期
+  - [x] ローカル解析データ（`02_FACTORY/bible/kirei_bible/`）から未マウントの主要JGバイブル（Kha'Zix, Viego, Lee Sin, Kindred 等）へ実演クリップ（秒数リンク＋Why/How/Rejected）を一括マウント
+  - [x] Coach Kirei プロ動画解析 174本のマスターインデックス（`INDEX.md`）自動生成 ＆ `NEXUS_INDEX.md` 連動（孤立ファイルを400件台から223件へ半減達成）
+  - [x] 戦術バイブル全18体の **フロントマター統一・正規化（イミュータブル・プロパティ規約準拠・tags/status/published_at統一）**（改善項目①）
   - [x] **PULSE戦略メモ・analytics等の総合索引（`_LOL/INDEX.md`）連動 ＆ 孤立ファイル解消**
   - [x] `audit_knowledge_links.py` を実行し、全リンク切れ0件を再確認
   - [x] `scratch/` の肥大化した不要一時ファイル（巨大txt/json/vtt約1.5MB）を安全クリーンアップ
-- [ ] **領域3: 📖 チャンピオン辞典・ビジュアルダッシュボード超強化 (UX最大インパクト)**
+- [x] **領域3: 📖 チャンピオン辞典・ビジュアルダッシュボード超強化 (UX最大インパクト)**
   - [x] **824件の実戦対面DB（`matchup_sentinel`）のインラインアコーディオンUI化**: `DictionaryTab` から `ChampionVisualDashboard` へ Props 渡し、有利・不利カードクリックで即座に対面Sentinelメモをインライン開閉展開（改善項目④完遂）
   - [x] **パワースパイク ＆ ジャングル実測タイミング（`realJungleTiming`）のHUD可視化**: 最速フルクリア秒数・1stコア目標・パワースパイク推移ゲージ（序盤/中盤/終盤10段階バー）の描画（改善項目⑤完遂）
   - [x] **複数レーン（ロール別タブ）の完全連動**: JG/SUP/TOP/MID/BOT等のロール切替時に、アーキタイプ判定・シチュエーションビルド・実戦メトリクスHUD・対面相性・戦術バイブルを動的切替（改善項目⑥完遂）
-  - [ ] 全17体の戦術バイブルの「3段階勝ちパターン手順書（Blueprint）」および「没理由（Rejected）」のクオリティ均一化監査 ＆ パッチ26.18微修正
+  - [x] 全18体の戦術バイブルの「3段階勝ちパターン手順書（Blueprint）」および「没理由（Rejected）」のクオリティ均一化監査 ＆ ヨリックBlueprint完備
 
 ### 🚀 Phase 2: 動画解析インフラ進化 ＆ 再解析パイプライン
 

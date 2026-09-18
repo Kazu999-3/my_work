@@ -25,17 +25,18 @@
 
 - **[総合システムデザイン](file:///d:/my_work/SYSTEM_DESIGN_BY_FUNCTION.md)**: Sovereign OS の全体の機能・設計書。
 - **[プロジェクト憲法 (ANTIGRAVITY.md)](file:///d:/my_work/ANTIGRAVITY.md)**: プロジェクトの開発・運営憲法（ルール）。
-- **[YouTube 攻略バイブル (Kirei Bible)](file:///d:/my_work/02_FACTORY/bible/kirei_bible/)**:
-  - YouTube動画の文字起こしからAIが自動生成した、チャンピオン毎の戦術データがここに格納されています。
+- **[YouTube 攻略バイブル (Kirei Bible INDEX - 174本)](file:///d:/my_work/02_FACTORY/_LOL/bible/kirei_bible/INDEX.md)**:
+  - YouTube動画の文字起こしからAIが自動生成した、43チャンピオン・174本の実戦動画解析マスターインデックス。
+  - **[サブ書庫 (Kirei Bible SUB - 30本)](file:///d:/my_work/02_FACTORY/bible/kirei_bible/INDEX.md)**
 - **[LoL 戦略・環境分析インデックス (_LOL/INDEX.md)](file:///d:/my_work/01_INTEL/_LOL/INDEX.md)**: DNA（思考哲学）・PULSE（リアルタイム環境・Lolalytics）の総合書庫。
 - **[戦術インテルライブラリ](file:///d:/my_work/01_INTEL/tactics/)**:
-  - **実戦バイブル (主力プール・全17体配備完了)**:
-    - **🌲 JG主力 (実演クリップ搭載)**:
+  - **実戦バイブル (主力プール・全18体配備完了 / 全体Blueprint完備)**:
+    - **🌲 JG/TOP主力 (プロ実演クリップ搭載 - 13体)**:
       - [`jarvaniv_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/jarvaniv_tactics_bible.md) / [`zyra_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/zyra_tactics_bible.md) / [`lillia_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/lillia_tactics_bible.md) / [`graves_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/graves_tactics_bible.md)
       - [`amumu_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/amumu_tactics_bible.md) / [`shyvana_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/shyvana_tactics_bible.md) / [`nocturne_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/nocturne_tactics_bible.md) / [`wukong_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/wukong_tactics_bible.md) ([`monkeyking`](file:///d:/my_work/01_INTEL/tactics/monkeyking_tactics_bible.md))
-    - **⚔️ JG/TOP主力 (戦術展開中)**:
-      - [`viego_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/viego_tactics_bible.md) / [`leesin_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/leesin_tactics_bible.md) / [`khazix_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/khazix_tactics_bible.md) / [`kindred_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/kindred_tactics_bible.md)
-      - [`xinzhao_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/xinzhao_tactics_bible.md) / [`aatrox_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/aatrox_tactics_bible.md) / [`darius_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/darius_tactics_bible.md) / [`jax_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/jax_tactics_bible.md)
+      - [`aatrox_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/aatrox_tactics_bible.md) / [`viego_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/viego_tactics_bible.md) / [`leesin_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/leesin_tactics_bible.md) / [`khazix_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/khazix_tactics_bible.md) / [`kindred_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/kindred_tactics_bible.md)
+    - **⚔️ TOP/Fighter主力 (3段階勝ちパターン Blueprint 完備 - 5体)**:
+      - [`xinzhao_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/xinzhao_tactics_bible.md) / [`darius_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/darius_tactics_bible.md) / [`jax_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/jax_tactics_bible.md)
       - [`fiora_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/fiora_tactics_bible.md) / [`yorick_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/yorick_tactics_bible.md)
   - [`template_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/template_tactics_bible.md): 没理由・イミュータブル履歴を備えた制式戦術雛形。
   - `generate_tactics_bible.py`: 主力プール・全168体対応のバイブル量産CLI。
@@ -81,3 +82,13 @@ Antigravity（AIアシスタント）の行動規範、スキル、ワークフ�
   - `ghost-writer/`（生きた言葉に変換するライティングスキル）、`ghost-tactics/`（動画からの戦術自動抽出・辞典マージスキル）など。
 - **[自動化ワークフロー (workflows/)](file:///d:/my_work/.agent/workflows/)**:
   - `/note-production`、`/ktm-admin`、`/daily-report` などのスラッシュコマンドの定義書。
+
+---
+
+## 🛡️ 5. 帝国事業 ＆ 運用ガバナンス (Governance & Vault)
+長期事業構想、システム引継ぎ、タスクボードの保管場所です。
+
+- **[事業構想 ＆ ロードマップ (README_BUSINESS.md)](file:///d:/my_work/01_INTEL/vault/README_BUSINESS.md)**: 帝国の収益化・事業多角化のロードマップ。
+- **[システム引継書 ＆ 緊急プロトコル (HANDOVER.md)](file:///d:/my_work/01_INTEL/vault/HANDOVER.md)**: 緊急時対応・運用引き継ぎの要点書。
+- **[全社タスクボード (TASK_BOARD.md)](file:///d:/my_work/01_INTEL/vault/TASK_BOARD.md)**: 開発・運用タスクの全社管理ボード。
+
