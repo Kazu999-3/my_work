@@ -224,12 +224,23 @@ def extract_tactics_from_bible_or_url(target_input):
             return video_id, champion, title, vtt_content
     except Exception as e:
         print(f"[WARN] yt-dlp Python API 字幕取得エラー: {e}")
-        # フォールバック: 既にscratchにVTTが残っていれば再利用
+        # フォールバック 1: 既にscratchにVTTが残っていれば再利用
         fallback_vtt = Path(f"scratch/{video_id}.en.vtt")
         if fallback_vtt.exists():
             print(f"[INFO] フォールバック: 既存VTTファイルを使用 ({fallback_vtt})")
             vtt_content = fallback_vtt.read_text(encoding="utf-8", errors="replace")
             return video_id, champion, title, vtt_content
+
+    # フォールバック 2: 字幕が存在しない場合、ローカル faster-whisper で音声を自動文字起こし
+    print(f"[INFO] 🎙️ 字幕なし/取得失敗を検知。ローカルWhisper音声認識フォールバックを起動: {video_id}")
+    try:
+        from scripts.whisper_transcriber import transcribe_youtube_video_fallback
+        whisper_text, whisper_title = transcribe_youtube_video_fallback(video_id, model_size="base")
+        if whisper_text:
+            print(f"[INFO] ✅ Whisper音声認識によるタイムスタンプ文字起こし成功 ({len(whisper_text)}文字)")
+            return video_id, champion, title or whisper_title, whisper_text
+    except Exception as we:
+        print(f"[WARN] Whisperフォールバック実行エラー: {we}")
 
     return video_id, champion, title, ""
 
