@@ -250,6 +250,18 @@ CORE_CHAMPIONS_DATA = {
 }
 
 def generate_bible_markdown(champ: str, data: dict) -> str:
+    clear_metric_line = ""
+    jg_timings = {
+        'JarvanIV': ('2分38秒', 17), 'Lillia': ('2分44秒', 11), 'Viego': ('2分41秒', 14),
+        'LeeSin': ('2分43秒', 12), 'Nocturne': ('2分42秒', 13), 'XinZhao': ('2分49秒', 6),
+        'Zyra': ('2分25秒', 30), 'Shyvana': ('2分43秒', 12), 'Graves': ('2分45秒', 10),
+        'Amumu': ('2分44秒', 11), 'MonkeyKing': ('2分43秒', 12), 'Wukong': ('2分43秒', 12),
+        'KhaZix': ('2分43秒', 12), 'Kindred': ('2分50秒', 5),
+    }
+    if champ in jg_timings:
+        t_str, lead_s = jg_timings[champ]
+        clear_metric_line = f"- **2026年最速フルクリア**: **{t_str}**（キャンプ0:55湧き / スカトル2:55湧きに **{lead_s}秒先行**）\n"
+
     content = f"""---
 title: "{data['title']}"
 status: verified
@@ -265,7 +277,7 @@ tags: {data['tags']}
 - **戦術概要**: {data['summary']}
 - **主要パワースパイク**: {data['power_spikes']}
 - **即死キルライン基準**: {data['lethal_threshold']}
-
+{clear_metric_line}
 ---
 
 ## 🗺️ 3段階勝ちパターン手順書 (Matchup Blueprint)

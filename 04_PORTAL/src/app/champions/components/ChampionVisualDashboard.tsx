@@ -767,7 +767,7 @@ export default function ChampionVisualDashboard({
                 )}
               </div>
               <span className="text-[10px] text-stone-400 block">
-                {internalRole === 'JG' ? '最速クリア目標 ＆ コアタイム' :
+                {internalRole === 'JG' ? '2026仕様: キャンプ0:55湧き / カニ2:55争奪基準' :
                  internalRole === 'SUP' ? 'Lv2先行プッシュ ＆ 視界スコア目標' :
                  internalRole === 'TOP' ? '1stリコール目標 ＆ フリーズ基準' :
                  internalRole === 'MID' ? 'キャノン押し込み ＆ オブジェクト寄り' :
@@ -780,10 +780,22 @@ export default function ChampionVisualDashboard({
             {internalRole === 'JG' ? (
               <>
                 <div className="bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
-                  <span className="text-[10px] text-stone-400 block font-bold">最速フルクリア</span>
-                  <span className="text-xs font-black text-amber-400 font-mono">
-                    {formatSec(realJungleTiming?.externalFastestClearSec || 195)}
-                  </span>
+                  <div className="flex items-center justify-end gap-1">
+                    <span className="text-[10px] text-stone-400 block font-bold">最速フルクリア</span>
+                    <span className="text-[9px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold">2026仕様</span>
+                  </div>
+                  <div className="flex items-baseline justify-end gap-1.5">
+                    <span className="text-xs font-black text-amber-400 font-mono">
+                      {formatSec(realJungleTiming?.externalFastestClearSec || 160)}
+                    </span>
+                    {realJungleTiming?.externalFastestClearSec && (
+                      <span className={`text-[9px] font-bold ${175 - realJungleTiming.externalFastestClearSec >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        {175 - realJungleTiming.externalFastestClearSec >= 0
+                          ? `カニ+${175 - realJungleTiming.externalFastestClearSec}s`
+                          : `カニ${175 - realJungleTiming.externalFastestClearSec}s`}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
                   <span className="text-[10px] text-stone-400 block font-bold">1stコア平均</span>

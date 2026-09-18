@@ -371,7 +371,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                                 <p className="text-[11px] text-stone-700 leading-relaxed">{result.knowledge.powerSpikes || "未登録"}</p>
                               </div>
                               <div className="bg-black/5 border border-black/10 p-4 rounded-2xl space-y-1.5">
-                                <span className="text-[10px] text-cyan-600 font-black tracking-wider uppercase block">🌲 周回クリアルート (Full Clear Path)</span>
+                                <span className="text-[10px] text-cyan-600 font-black tracking-wider uppercase block">🌲 周回クリアルート (2026 Full Clear Path)</span>
                                 <p className="text-[11px] text-stone-700 leading-relaxed font-bold">{result.knowledge.fullClearTime || "未登録"}</p>
                               </div>
                             </div>

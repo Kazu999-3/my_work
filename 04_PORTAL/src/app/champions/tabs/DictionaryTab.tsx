@@ -1989,13 +1989,18 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   <div className="mt-3 pt-3 border-t border-black/10 space-y-1.5">
                     {realJungleTiming.externalFastestClearSec != null && (
                       <p className="text-[11px] text-gray-400 font-bold flex items-center gap-1.5">
-                        🎮 実測値・フルクリア最速（{realJungleTiming.externalSource || 'junglepedia.lol'}調べ・全ティア{realJungleTiming.externalSampleSize ? `・${realJungleTiming.externalSampleSize.toLocaleString()}試合` : ''}）
+                        🎮 2026年実測値（キャンプ0:55湧き・カニ2:55争奪基準 / {realJungleTiming.externalSource || 'junglepedia.lol'}・全ティア{realJungleTiming.externalSampleSize ? `・${realJungleTiming.externalSampleSize.toLocaleString()}試合` : ''}）
                       </p>
                     )}
                     <div className="flex gap-2 flex-wrap items-center">
                       {realJungleTiming.externalFastestClearSec != null && (
-                        <span className="px-3 py-1.5 bg-sky-50 border border-sky-200 rounded-lg text-xs font-bold text-sky-700">
+                        <span className="px-3 py-1.5 bg-sky-50 border border-sky-200 rounded-lg text-xs font-bold text-sky-700 flex items-center gap-1.5">
                           フルクリア(最速) {formatTimingSec(realJungleTiming.externalFastestClearSec)}
+                          <span className={`text-[10px] px-1 py-0.2 rounded font-black ${175 - realJungleTiming.externalFastestClearSec >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                            {175 - realJungleTiming.externalFastestClearSec >= 0
+                              ? `カニ+${175 - realJungleTiming.externalFastestClearSec}s先行`
+                              : `カニ${175 - realJungleTiming.externalFastestClearSec}s`}
+                          </span>
                         </span>
                       )}
                       {realJungleTiming.avgFirstCoreSec != null && (
