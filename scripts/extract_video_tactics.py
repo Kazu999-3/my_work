@@ -260,18 +260,19 @@ def generate_action_steps_with_ai(video_id, champion, title, compressed_text):
 """
 
     if api_key:
-        try:
-            from google import genai
-            client = genai.Client(api_key=api_key)
-            # トークン節約のため gemini-2.5-flash または gemini-1.5-flash を使用
-            response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt
-            )
-            if response and response.text:
-                return response.text.strip()
-        except Exception as e:
-            print(f"[WARN] Gemini API 失敗 ({e})。ルールベース/Ollama フォールバックへ移行...")
+        from google import genai
+        client = genai.Client(api_key=api_key)
+        candidate_models = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.0-flash"]
+        for m_name in candidate_models:
+            try:
+                response = client.models.generate_content(
+                    model=m_name,
+                    contents=prompt
+                )
+                if response and response.text:
+                    return response.text.strip()
+            except Exception as e:
+                print(f"[WARN] Gemini モデル {m_name} 失敗 ({e})。次を試行...")
 
     # ローカル Ollama へのフォールバック
     try:
@@ -345,6 +346,10 @@ def append_to_tactics_bible(champion, video_id, title, action_markdown, dry_run=
     if video_id in content:
         print(f"ℹ️ 動画 {video_id} は既に {tactics_file.name} に登録済みです。")
         return
+
+    # URLサニタイズ（AI出力の表記ブレ補正）
+    action_markdown = re.sub(r'youtu\.be=([a-zA-Z0-9_-]+)', r'youtu.be/\1', action_markdown)
+    action_markdown = re.sub(r'youtu\.be/([a-zA-Z0-9_-]+)\.(en|ja|ko)', r'youtu.be/\1', action_markdown)
 
     video_section = f"""
 ## 🎥 プロ実演アクションクリップ (High Elo Breakdown)
