@@ -30,9 +30,24 @@
 
 ---
 
-## 📋 【次のタスク】 解析済み動画の再解析パイプライン (Re-analysis Pipeline)
+## 📋 【次のタスク】 ナレッジ基盤の先行整理 ＆ 再解析パイプライン
 
-ナレッジインフラ（yt-dlp Python API化、Gemini多重モデルフォールバック、JGマクロ保護パッチ、URLサニタイズ）が完成したため、過去の動画資産を新基準で再生・更新するパイプライン。
+### 🧹 Phase 1: ナレッジ ＆ キュー先行整理（領域 1, 2, 4）
+
+- [ ] **領域1: 📹 YouTubeキュー（`youtube_queue`）のデータ整合化 ＆ エラークリーンアップ**
+  - [ ] 完了済み動画のステータス同期（Zyra `YBZdHBTCZGU`、Lillia `ayqhHJc0pPY` 等を `completed` に更新）
+  - [ ] `clean_youtube_queue.py` を活用したエラー58件（`failed` 30件, `error_generation` 28件）の精密仕分け（字幕ありはリトライ、欠落・非公開は安全クローズ）
+  - [ ] キュー整合性チェックを `ops_health_check.py` に連動させ放置エラーを常時監視
+- [ ] **領域2: 🏛️ 帝国総合索引（`NEXUS_INDEX.md`）同期 ＆ 戦術バイブル拡充**
+  - [ ] `01_INTEL/NEXUS_INDEX.md` のバイブル一覧に最近配備した7体（Zyra, Shyvana, Graves, Amumu, Kha'Zix, Kindred, MonkeyKing/Wukong）を完全同期（全17体化）
+  - [ ] ローカル解析データ（`02_FACTORY/bible/kirei_bible/`）から未マウントの主要JGバイブル（Kha'Zix, Viego, Lee Sin, Kindred 等）へ実演クリップ（秒数リンク＋Why/How/Rejected）を一括マウント
+  - [ ] `audit_knowledge_links.py` を実行し、全リンク切れ0件を再確認
+- [ ] **領域4: 📖 チャンピオン辞典・ビルド・マクロ知識の個別見直し**
+  - [ ] ユーザー重点指定チャンピオン（JG/TOP等）のヒアリングと抽出
+  - [ ] 全17体の戦術バイブルの「3段階勝ちパターン手順書（Blueprint）」および「没理由（Rejected）」のクオリティ均一化監査
+  - [ ] 最新パッチ26.18におけるアイテム・ルーン・パワースパイクのズレ確認と `champion_facts` の微修正
+
+### 🚀 Phase 2: 解析済み動画の再解析パイプライン (Re-analysis Pipeline)
 
 - [ ] **第1弾 (MVP): 主要JGチャンピオン限定再解析 (約20〜30本)**
   - 対象: 戦術バイブルが存在する主要ジャングラー（Lee Sin, Viego, Kha'Zix, Kindred 等）の動画。
