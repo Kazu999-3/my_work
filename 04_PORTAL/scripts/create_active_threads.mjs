@@ -51,7 +51,7 @@ async function main() {
     const durationLabel = meta.durationLabel || '2週間育成コース（14日・推奨）';
     const commStyle = meta.commStyle || 'VC_ACTIVE';
 
-    const appliedTags = ['1524740838419202130']; // 🟢 質問・相談
+    const appliedTags = ['1550294121330114762']; // 📝 コーチング
     const laneTagMap = {
       TOP: '1524740905125544047',
       JG: '1524740942815297546',
@@ -62,15 +62,33 @@ async function main() {
       BOT: '1524741033831960587',
     };
 
-    const lanes = [
-      ...(Array.isArray(match.mentor?.lanes) ? match.mentor.lanes : []),
-      ...(Array.isArray(match.pupil?.lanes) ? match.pupil.lanes : []),
-    ];
+    const normalizeLane = (lane) => {
+      const upper = (lane || '').toUpperCase().trim();
+      if (upper === 'SUPPORT') return 'SUP';
+      if (upper === 'BOT') return 'ADC';
+      return upper;
+    };
 
-    for (const l of lanes) {
-      const upper = (l || '').toUpperCase();
-      if (laneTagMap[upper] && !appliedTags.includes(laneTagMap[upper])) {
-        appliedTags.push(laneTagMap[upper]);
+    const mLanes = (Array.isArray(match.mentor?.lanes) ? match.mentor.lanes : []).map(normalizeLane);
+    const pLanes = (Array.isArray(match.pupil?.lanes) ? match.pupil.lanes : []).map(normalizeLane);
+
+    let commonLanes = [];
+    if (mLanes.includes('ALL') || mLanes.includes('FILL')) {
+      commonLanes = pLanes.filter((l) => l !== 'ALL' && l !== 'FILL');
+    } else if (pLanes.includes('ALL') || pLanes.includes('FILL')) {
+      commonLanes = mLanes.filter((l) => l !== 'ALL' && l !== 'FILL');
+    } else {
+      commonLanes = mLanes.filter((l) => pLanes.includes(l));
+    }
+
+    if (commonLanes.length === 0) {
+      commonLanes = pLanes.length > 0 ? pLanes : mLanes;
+    }
+
+    for (const l of commonLanes) {
+      const tagId = laneTagMap[l];
+      if (tagId && !appliedTags.includes(tagId)) {
+        appliedTags.push(tagId);
       }
     }
 

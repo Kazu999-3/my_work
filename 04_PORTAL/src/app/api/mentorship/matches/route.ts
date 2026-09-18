@@ -710,10 +710,8 @@ export async function POST(request: Request) {
           durationLabel: meta.durationLabel,
           mentorDiscordId: match.mentor_discord_id,
           pupilDiscordId: match.pupil_discord_id,
-          lanes: [
-            ...(Array.isArray(match.mentor?.lanes) ? match.mentor.lanes : []),
-            ...(Array.isArray(match.pupil?.lanes) ? match.pupil.lanes : []),
-          ],
+          mentorLanes: Array.isArray(match.mentor?.lanes) ? match.mentor.lanes : [],
+          pupilLanes: Array.isArray(match.pupil?.lanes) ? match.pupil.lanes : [],
           commStyle: meta.commStyle,
         });
       } catch (thErr) {
@@ -777,10 +775,8 @@ export async function POST(request: Request) {
         durationLabel: meta.durationLabel,
         mentorDiscordId: match.mentor_discord_id,
         pupilDiscordId: match.pupil_discord_id,
-        lanes: [
-          ...(Array.isArray(match.mentor?.lanes) ? match.mentor.lanes : []),
-          ...(Array.isArray(match.pupil?.lanes) ? match.pupil.lanes : []),
-        ],
+        mentorLanes: Array.isArray(match.mentor?.lanes) ? match.mentor.lanes : [],
+        pupilLanes: Array.isArray(match.pupil?.lanes) ? match.pupil.lanes : [],
         commStyle: meta.commStyle,
       });
 

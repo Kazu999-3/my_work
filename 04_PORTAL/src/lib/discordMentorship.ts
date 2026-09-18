@@ -319,6 +319,8 @@ export interface CreateMentorshipThreadParams {
   durationLabel: string;
   mentorDiscordId?: string;
   pupilDiscordId?: string;
+  mentorLanes?: string[];
+  pupilLanes?: string[];
   lanes?: string[];
   commStyle?: string;
 }
@@ -346,12 +348,17 @@ export async function createMentorshipForumThread(
     durationLabel,
     mentorDiscordId,
     pupilDiscordId,
+    mentorLanes = [],
+    pupilLanes = [],
     lanes = [],
     commStyle = 'VC_ACTIVE',
   } = params;
 
-  // タグ決定: 「🟢 質問・相談」はデフォルトで付与
-  const appliedTags: string[] = ['1524740838419202130'];
+  // 1. 基本タグ: 「📝 コーチング」をデフォルトで付与 (質問・相談ではなくコーチング)
+  const COACHING_TAG_ID = '1550294121330114762';
+  const appliedTags: string[] = [COACHING_TAG_ID];
+
+  // 2. レーンタグ判定: コーチと弟子の共通レーンのみを抽出
   const laneTagMap: Record<string, string> = {
     TOP: '1524740905125544047',
     JG: '1524740942815297546',
@@ -362,10 +369,34 @@ export async function createMentorshipForumThread(
     BOT: '1524741033831960587',
   };
 
-  for (const l of lanes) {
-    const upper = (l || '').toUpperCase();
-    if (laneTagMap[upper] && !appliedTags.includes(laneTagMap[upper])) {
-      appliedTags.push(laneTagMap[upper]);
+  const normalizeLane = (lane: string): string => {
+    const upper = (lane || '').toUpperCase().trim();
+    if (upper === 'SUPPORT') return 'SUP';
+    if (upper === 'BOT') return 'ADC';
+    return upper;
+  };
+
+  const mLanes = (mentorLanes.length > 0 ? mentorLanes : lanes).map(normalizeLane);
+  const pLanes = (pupilLanes.length > 0 ? pupilLanes : lanes).map(normalizeLane);
+
+  let commonLanes: string[] = [];
+  if (mLanes.includes('ALL') || mLanes.includes('FILL')) {
+    commonLanes = pLanes.filter((l) => l !== 'ALL' && l !== 'FILL');
+  } else if (pLanes.includes('ALL') || pLanes.includes('FILL')) {
+    commonLanes = mLanes.filter((l) => l !== 'ALL' && l !== 'FILL');
+  } else {
+    commonLanes = mLanes.filter((l) => pLanes.includes(l));
+  }
+
+  // 共通レーンが空（完全不一致等）の場合は、弟子の希望レーン（指導対象レーン）を優先
+  if (commonLanes.length === 0) {
+    commonLanes = pLanes.length > 0 ? pLanes : mLanes;
+  }
+
+  for (const l of commonLanes) {
+    const tagId = laneTagMap[l];
+    if (tagId && !appliedTags.includes(tagId)) {
+      appliedTags.push(tagId);
     }
   }
 
