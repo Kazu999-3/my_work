@@ -32,7 +32,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 TACTICS_DIR = REPO_ROOT / "01_INTEL" / "tactics"
 DAILY_LOG_PATH = REPO_ROOT / "02_FACTORY" / "DAILY_LOG.md"
 
-def sync_match_to_intel(my_champ, enemy_champ, result, learning, trap=""):
+def sync_match_to_intel(my_champ, enemy_champ, result, learning, trap="", notify=False, channel_id="1550333564556546048"):
     TACTICS_DIR.mkdir(parents=True, exist_ok=True)
     today_str = datetime.date.today().strftime("%Y-%m-%d")
     
@@ -110,6 +110,8 @@ tags: [LoL, Tactics, {my_champ}]
             ]
             if trap:
                 cmd.extend(["--trap", trap])
+            if channel_id:
+                cmd.extend(["--channel-id", channel_id])
             subprocess.run(cmd)
 
 def main():
@@ -120,18 +122,20 @@ def main():
     parser.add_argument("--learning", type=str, help="実戦で得られた重要手順・立ち回り")
     parser.add_argument("--trap", type=str, default="", help="避けるべき罠アイテムや立ち回り")
     parser.add_argument("--notify", action="store_true", help="同期後にDiscordへリザルトを通知")
+    parser.add_argument("--channel-id", type=str, default="1550333564556546048", help="通知先 Discord チャンネルID")
 
     args = parser.parse_args()
 
     # 引数が不足している場合は対話モード
     if not (args.my_champ and args.enemy_champ and args.result and args.learning):
-        print("\n--- 🎮 試合後ナレッジ自動同期（対話モード） ---")
-        my_champ = input("使用チャンピオン (例: Yorick): ").strip()
-        enemy_champ = input("対面チャンピオン (例: Darius): ").strip()
+        print("🎮 【Sovereign OS 実戦データ対面バイブル同期】")
+        my_champ = input("使用チャンピオン名 (例: Yorick): ").strip()
+        enemy_champ = input("対面敵チャンピオン名 (例: Darius): ").strip()
         result = input("勝敗 (win / loss): ").strip().lower()
         learning = input("実戦で得られた教訓・立ち回り: ").strip()
         trap = input("避けるべき罠アイテム・ミス (省略可): ").strip()
         notify = True
+        channel_id = args.channel_id
     else:
         my_champ = args.my_champ
         enemy_champ = args.enemy_champ
@@ -139,8 +143,9 @@ def main():
         learning = args.learning
         trap = args.trap
         notify = args.notify
+        channel_id = args.channel_id
 
-    sync_match_to_intel(my_champ, enemy_champ, result, learning, trap, notify=notify)
+    sync_match_to_intel(my_champ, enemy_champ, result, learning, trap, notify=notify, channel_id=channel_id)
 
 if __name__ == "__main__":
     main()

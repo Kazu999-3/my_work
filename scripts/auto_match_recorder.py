@@ -126,6 +126,7 @@ def trigger_sync_to_intel(my_champ, enemy_champ, result, learning, trap="", noti
         cmd.extend(["--trap", trap])
     if notify:
         cmd.append("--notify")
+    cmd.extend(["--channel-id", "1550333564556546048"])
 
     print(f"\n🚀 [TRIGGER] バイブル同期コマンド実行: {' '.join(cmd)}")
     if dry_run:

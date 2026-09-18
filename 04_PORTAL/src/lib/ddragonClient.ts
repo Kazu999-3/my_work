@@ -116,6 +116,22 @@ export function getChampSplash(champId: string): string {
   return `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${formattedId}_0.jpg`;
 }
 
+/**
+ * スキル画像 (Q/W/E/R) のURLを取得します
+ */
+export function getSpellIcon(spellImageFull: string): string {
+  if (!spellImageFull) return "";
+  return `https://ddragon.leagueoflegends.com/cdn/${cachedLatestPatch}/img/spell/${spellImageFull}`;
+}
+
+/**
+ * パッシブ画像のURLを取得します
+ */
+export function getPassiveIcon(passiveImageFull: string): string {
+  if (!passiveImageFull) return "";
+  return `https://ddragon.leagueoflegends.com/cdn/${cachedLatestPatch}/img/passive/${passiveImageFull}`;
+}
+
 // チャンピオンIDとNameのキャッシュ
 let champDataCache: Record<string, string> | null = null;
 

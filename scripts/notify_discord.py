@@ -46,40 +46,80 @@ def get_webhook_url():
     load_env()
     return os.environ.get("DISCORD_WEBHOOK_URL", "").strip()
 
-def send_discord_webhook(payload, dry_run=False):
+def get_bot_token():
+    load_env()
+    return os.environ.get("DISCORD_BOT_TOKEN", "").strip()
+
+def send_discord_message(payload, channel_id=None, dry_run=False):
+    """
+    Discord へメッセージを送信。
+    1. channel_id と DISCORD_BOT_TOKEN がある場合は Discord API でチャンネルへ直接送信
+    2. それ以外は Webhook URL を利用
+    """
+    bot_token = get_bot_token()
     webhook_url = get_webhook_url()
-    
+    target_channel = channel_id or os.environ.get("DISCORD_BIBLE_CHANNEL_ID", "").strip()
+
     if dry_run:
+        dest = f"チャンネル ID: {target_channel} (Bot API)" if (bot_token and target_channel) else f"Webhook: {webhook_url}"
+        print(f"🔍 [DRY-RUN] 送信先: {dest}")
         print("🔍 [DRY-RUN] 送信ペイロード:")
         print(json.dumps(payload, indent=2, ensure_ascii=False))
         return True
 
-    if not webhook_url:
-        print("ℹ️  DISCORD_WEBHOOK_URL が設定されていないため、Discord通知を安全にスキップしました。")
-        print("   （通知を有効化するには .env に DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/... を記載してください）")
+    # 1. Bot Token + Channel ID で送信
+    if bot_token and target_channel:
+        api_url = f"https://discord.com/api/v10/channels/{target_channel}/messages"
+        data = json.dumps(payload).encode("utf-8")
+        headers = {
+            "Authorization": f"Bot {bot_token}",
+            "Content-Type": "application/json",
+            "User-Agent": "Sovereign-OS-Discord-Sender/1.0"
+        }
+        req = urllib.request.Request(api_url, data=data, headers=headers, method="POST")
+        try:
+            with urllib.request.urlopen(req, timeout=10) as res:
+                if res.status in (200, 201):
+                    print(f"✅ Discord チャンネル ({target_channel}) への送信に成功しました (ステータス: {res.status})")
+                    return True
+                else:
+                    print(f"⚠️ Discord チャンネル送信ステータス: {res.status}")
+        except urllib.error.HTTPError as e:
+            err_msg = e.read().decode("utf-8", errors="replace")
+            print(f"❌ Discord チャンネル送信エラー ({e.code}): {err_msg}")
+        except Exception as e:
+            print(f"❌ Discord チャンネル通信エラー: {e}")
+
+    # 2. Webhook URL で送信
+    if webhook_url:
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(
+            webhook_url,
+            data=data,
+            headers={
+                "Content-Type": "application/json",
+                "User-Agent": "Sovereign-OS-Discord-Sender/1.0"
+            },
+            method="POST"
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=10) as res:
+                if res.status in (200, 204):
+                    print(f"✅ Discord Webhook への送信に成功しました (ステータス: {res.status})")
+                    return True
+                else:
+                    print(f"⚠️ Discord 送信ステータス: {res.status}")
+        except urllib.error.HTTPError as e:
+            err_msg = e.read().decode("utf-8", errors="replace")
+            print(f"❌ Discord Webhook 送信エラー ({e.code}): {err_msg}")
+        except Exception as e:
+            print(f"❌ Discord 通信エラー: {e}")
+
+    if not bot_token and not webhook_url:
+        print("ℹ️  DISCORD_BOT_TOKEN も DISCORD_WEBHOOK_URL も設定されていないため、送信をスキップしました。")
         return True
 
-    headers = {
-        "Content-Type": "application/json",
-        "User-Agent": "Sovereign-OS-Notifier/1.0"
-    }
-
-    try:
-        data = json.dumps(payload).encode("utf-8")
-        req = urllib.request.Request(webhook_url, data=data, headers=headers, method="POST")
-        with urllib.request.urlopen(req, timeout=10) as res:
-            if res.status in (200, 204):
-                print("🚀 Discord 通知を送信しました！")
-                return True
-            else:
-                print(f"⚠️  Discord 送信レスポンス: {res.status}")
-                return False
-    except urllib.error.HTTPError as e:
-        print(f"❌ Discord 送信エラー (HTTP {e.code}): {e.reason}")
-        return False
-    except Exception as e:
-        print(f"❌ Discord 送信例外: {e}")
-        return False
+    return False
 
 def parse_latest_daily_log():
     daily_file = REPO_ROOT / "02_FACTORY" / "DAILY_LOG.md"
@@ -235,6 +275,7 @@ def main():
     parser.add_argument("--result", choices=["win", "loss"], default="win", help="勝敗 (match用)")
     parser.add_argument("--learning", type=str, default="", help="実戦教訓 (match用)")
     parser.add_argument("--trap", type=str, default="", help="罠・不採用ビルド (match用)")
+    parser.add_argument("--channel-id", type=str, default="", help="Discord チャンネルID (Bot Token利用時)")
     parser.add_argument("--test", action="store_true", help="疎通テスト通知")
     parser.add_argument("--dry-run", action="store_true", help="送信せずペイロードをコンソール出力")
 
@@ -265,7 +306,7 @@ def main():
     else:
         payload = make_daily_embed()
 
-    success = send_discord_webhook(payload, dry_run=args.dry_run)
+    success = send_discord_message(payload, channel_id=args.channel_id, dry_run=args.dry_run)
     sys.exit(0 if success else 1)
 
 if __name__ == "__main__":
