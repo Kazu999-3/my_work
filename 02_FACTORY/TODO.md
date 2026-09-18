@@ -38,6 +38,11 @@
   - **5. ✍️ note執筆プロトコル ＆ 骨格テンプレートの全面改訂**: [`forge_note_protocol.md`](file:///d:/my_work/02_FACTORY/03_ASSETS/forge_note_protocol.md) および [`template_note_skeleton.md`](file:///d:/my_work/02_FACTORY/03_ASSETS/template_note_skeleton.md) を改訂。確定パッチ・集計期間のメタデータ欄、読者の痛みに訴求する導入、不採用ビルド暴露、読後3大行動チェックリストを統合。
   - **6. 🏛️ 帝国総合索引のPARA構造再編**: [`NEXUS_INDEX.md`](file:///d:/my_work/01_INTEL/NEXUS_INDEX.md) の先頭にデイリーログ入口とナレッジ憲章を配置。
   - **7. 🧠 AI家庭教師スキル (`knowledge-drill`) の新設**: [`.agent/skills/knowledge-drill/SKILL.md`](file:///d:/my_work/.agent/skills/knowledge-drill/SKILL.md) を新設。外部情報インプットの3大完了条件（自分の言葉で説明・実戦適用・次の一歩）とクイズによる定着支援を実現（honkoma原則）。
+  - **8. 📖 ワンシート制式起動マニュアル (`RUNBOOK.md`) の新設**: [`03_SYSTEMS/RUNBOOK.md`](file:///d:/my_work/03_SYSTEMS/RUNBOOK.md) を新設。ワーカー・HUD・同期CLI・復旧ワンライナーを1枚に集約（Coupen原則）。
+  - **9. ⚠️ 地雷回避データベース (`known_pitfalls.md`) の新設**: [`.agent/rules/known_pitfalls.md`](file:///d:/my_work/.agent/rules/known_pitfalls.md) を新設。過去に外した日付・症状・真因・再発防止策を集約（べっぱん原則）。
+  - **10. 🔄 週次ナレッジ棚卸しワークフロー (`weekly-review.md`) の新設**: [`.agent/workflows/weekly-review.md`](file:///d:/my_work/.agent/workflows/weekly-review.md) を新設。日次と週次を分離し、知見の昇格と陳腐化防止をルーティン化（honkoma原則）。
+  - **11. 🏷️ イミュータブル・プロパティ規約の標準化**: [`01_base_style.md`](file:///d:/my_work/.agent/rules/01_base_style.md) に公開日（`published_at`）と取込日（`captured_at`）を分離する統一フロントマター仕様を明文化（Blooming/りゅう原則）。
+
 
 ## ✅ 2026-09-17 Antigravity セッションで対応済み（業務効率化＆一般ユーザー向けポータル大幅改善）
 

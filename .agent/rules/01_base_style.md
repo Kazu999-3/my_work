@@ -13,4 +13,17 @@ description: 基本的な応答スタイルと言語設定（日本語）
 - **指示・ルールの適用範囲の厳守（べっぱん原則）**:
   - ルールを追加・適用する際は、必ず末尾に「（適用場面：〜。非適用場面：〜）」を定義すること。
   - 例：「結論を先に述べる」指示は、設計の壁打ちや技術検証では適用するが、**読者向けnote記事やSNS投稿の下書きでは適用しない（淡白化を防ぐため）**。
+- **イミュータブル・プロパティ規約（フロントマター標準 / Blooming・りゅう原則）**:
+  - `01_INTEL/` や `02_FACTORY/` で新規作成・管理するすべてのMarkdownノートには、冒頭に以下の統一YAMLメタデータを付与すること。
+  - 特に**公開日（`published_at`）と取込日（`captured_at`）を厳密に分離**し、日時をLLMに推測させないこと。
+  ```yaml
+  ---
+  title: "ノートの正式名称"
+  status: verified # verified（実戦確定）| experimenting（検証中）| deprecated（旧仕様）
+  source_type: official # official（公式SSoT）| empirical（実戦実測）| ai_derived（AI派生）
+  published_at: 2026-XX-XX # 一次情報の公開日（不明なら unknown）
+  captured_at: 2026-XX-XX  # 保存・取込日時
+  tags: [LoL, Tactics, TOP]
+  ---
+  ```
 
