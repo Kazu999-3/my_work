@@ -1740,6 +1740,9 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           <ChampionVisualDashboard
             champion={selected}
             dataFields={dataFields}
+            matchupsList={matchupsList}
+            powerSpikeScores={powerSpikeScores}
+            realJungleTiming={realJungleTiming}
           />
         )}
 

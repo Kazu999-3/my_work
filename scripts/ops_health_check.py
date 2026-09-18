@@ -135,6 +135,22 @@ def check_riot_patch_status():
     except Exception as e:
         return {"status": "WARN", "msg": f"パッチ確認スキップ ({e})"}
 
+def check_youtube_queue_health():
+    """YouTube解析キューのエラー件数を確認"""
+    try:
+        sys.path.insert(0, str(REPO_ROOT / "scripts"))
+        from sync_dict_health import fetch_all_rows
+        error_rows = fetch_all_rows("youtube_queue", "id,status", "status=in.(error_generation,failed)")
+        pending_rows = fetch_all_rows("youtube_queue", "id,status", "status=eq.pending")
+        err_count = len(error_rows)
+        pending_count = len(pending_rows)
+        if err_count == 0:
+            return {"status": "PASS", "msg": f"エラー動画: 0件 (待機キュー: {pending_count}件)"}
+        else:
+            return {"status": "WARN", "msg": f"未解決エラー動画が {err_count} 件あります (待機: {pending_count}件)"}
+    except Exception as e:
+        return {"status": "INFO", "msg": f"キュー確認スキップ ({e})"}
+
 def main():
     print("\n" + "="*60)
     print(" 🛡️  Sovereign OS 全域総合ヘルスチェックレポート")
@@ -144,6 +160,7 @@ def main():
         ("ナレッジ訂正インボックス", check_feedback_inbox),
         ("デイリーログ鮮度", check_daily_log_freshness),
         ("ナレッジリンク整合性", check_knowledge_links),
+        ("YouTubeキュー健全性", check_youtube_queue_health),
         ("Git作業ツリー健全性", check_git_status),
         ("ポータル TypeScript 型整合性", check_portal_types),
         ("Riot 最新パッチ追従状況", check_riot_patch_status),

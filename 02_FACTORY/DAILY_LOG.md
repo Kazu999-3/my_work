@@ -110,6 +110,11 @@
     75. `youtube_queue` において、マウント完了済みの `YBZdHBTCZGU`（ザイラ）および `ayqhHJc0pPY`（リリア）を `error_generation` から `completed` へ正式更新（エラー動画 58件 ➔ 56件へ減少、完了 1061件達成）。
     76. `scripts/extract_video_tactics.py` に `android_vr` クライアント偽装（`--extractor-args youtube:player_client=android_vr,android,web`）を統合し、YouTube側からのIP制限（429）を物理遮断。
     77. `scripts/audit_knowledge_links.py` を実行し、全478件のMarkdownリンク切れ **0件（完全健全）** を実測確認。
+  - **追加整備 (第23弾: キュー56件再試行解放 ＆ ヘルスチェック連動 ＆ scratch掃除 ＆ 対面DB配線接続)**:
+    78. `scripts/clean_youtube_queue.py --retry-failed --apply` を実行し、エラー停止していた56件を `pending`（リトライ0）へ一括再試行リセット（キューのエラー停止0件を達成）。
+    79. `scripts/ops_health_check.py` に `check_youtube_queue_health` を新設統合し、未解決エラー動画と待機キュー件数を朝のヘルスチェックで常時監視可能に。
+    80. `scratch/` に滞留していた過去の巨大会話ログ・スキャン結果等の不要ダンプ（17ファイル・約1.5MB）を安全クリーンアップ。
+    81. `DictionaryTab.tsx` から `ChampionVisualDashboard.tsx` へ `matchupsList`（824件の対面データ）、`powerSpikeScores`、`realJungleTiming` を Props として完全配線接続（TypeScript型エラー0件合格）。
 
 ### 🔄 判断の経緯 ＆ 落とした選択肢 (Decisions & Rejected Options)
 - **採用**: タイムスタンプ圧縮（[MM:SS]）＋LoL戦術キーワードスマートフィルタリング（B案）。

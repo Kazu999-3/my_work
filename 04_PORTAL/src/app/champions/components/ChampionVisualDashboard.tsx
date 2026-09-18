@@ -13,6 +13,9 @@ import MatchupBlueprintCard from '../../coach/MatchupBlueprintCard';
 interface ChampionVisualDashboardProps {
   champion: any; // DDragon champion object
   dataFields: any; // Supabase/local dictionary fields
+  matchupsList?: any[]; // Supabase matchup_sentinel対面メモ一覧
+  powerSpikeScores?: any; // パワースパイクスコア
+  realJungleTiming?: any; // 実測ジャングルタイミング
   onOpenTactics?: () => void;
 }
 
@@ -349,6 +352,9 @@ function getPresetBuildDetails(
 export default function ChampionVisualDashboard({
   champion,
   dataFields,
+  matchupsList = [],
+  powerSpikeScores,
+  realJungleTiming,
   onOpenTactics,
 }: ChampionVisualDashboardProps) {
   const [activeTab, setActiveTab] = useState<'build' | 'matchup' | 'bible' | 'video'>('build');
