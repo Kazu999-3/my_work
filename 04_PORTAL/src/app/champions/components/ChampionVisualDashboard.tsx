@@ -27,6 +27,7 @@ export default function ChampionVisualDashboard({
     exists: boolean;
     traps: string[];
     matchups: Array<{ enemy: string; result: string; learning: string; date?: string; trap?: string }>;
+    videoClips?: Array<{ timestamp: string; url: string; title: string; why: string; how: string; rejected: string }>;
     rawContent?: string;
   } | null>(null);
   const [loadingTactics, setLoadingTactics] = useState(false);
@@ -50,6 +51,7 @@ export default function ChampionVisualDashboard({
             exists: data.exists,
             traps: data.traps || [],
             matchups: data.matchups || [],
+            videoClips: data.videoClips || [],
             rawContent: data.rawContent || '',
           });
         }
@@ -526,7 +528,7 @@ export default function ChampionVisualDashboard({
 
       {/* タブ 4: プロ実演クリップ */}
       {activeTab === 'video' && (
-        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-4 shadow-xs space-y-3">
+        <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-2xl p-4 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Play size={16} className="text-rose-500" />
@@ -534,59 +536,70 @@ export default function ChampionVisualDashboard({
                 🎥 チャレンジャー／プロ実演アクションクリップ
               </h3>
             </div>
-            <span className="text-[10px] bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 px-2 py-0.5 rounded-full font-bold">
-              タイムスタンプ付き
+            <span className="text-[10px] bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 px-2.5 py-0.5 rounded-full font-bold">
+              {tacticsData?.videoClips?.length || 0} 件の重要シーン
             </span>
           </div>
 
-          <div className="space-y-2.5 text-xs">
-            <div className="p-3 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded bg-rose-500 text-white font-black text-[10px]">
-                    03:25
-                  </span>
-                  <span className="font-bold text-stone-900 dark:text-white">
-                    Lv3 トップガンクの侵入角度 ＆ Flash温存キル
-                  </span>
-                </div>
-                <p className="text-[11px] text-stone-500 dark:text-stone-400">
-                  敵タワー射程外のトライブッシュから回り込み、スキル1発目を温存して敵のブリンクを誘発。
-                </p>
-              </div>
-              <a
-                href={`https://www.youtube.com/results?search_query=${encodeURIComponent(champId + ' challenger gameplay guide')}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-stone-200 dark:bg-stone-700 text-stone-800 dark:text-white font-bold text-xs hover:bg-rose-500 hover:text-white transition-all shrink-0"
-              >
-                YouTubeで観る <ArrowUpRight size={14} />
-              </a>
-            </div>
+          <div className="space-y-3 text-xs">
+            {tacticsData?.videoClips && tacticsData.videoClips.length > 0 ? (
+              tacticsData.videoClips.map((clip, idx) => (
+                <div key={idx} className="p-3.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700 space-y-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-200/60 dark:border-stone-700/60 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded-md bg-rose-500 text-white font-black text-[11px] shadow-2xs">
+                        {clip.timestamp}
+                      </span>
+                      <span className="font-black text-stone-900 dark:text-white text-xs">
+                        {clip.title}
+                      </span>
+                    </div>
+                    <a
+                      href={clip.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-500 hover:bg-rose-600 text-white font-bold text-[11px] transition-all self-start sm:self-auto shadow-2xs"
+                    >
+                      <span>該当秒数を観る</span>
+                      <ArrowUpRight size={13} />
+                    </a>
+                  </div>
 
-            <div className="p-3 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded bg-rose-500 text-white font-black text-[10px]">
-                    14:40
-                  </span>
-                  <span className="font-bold text-stone-900 dark:text-white">
-                    ヘラルド前ファイトのフォーカス順 ＆ 即死ライン突破
-                  </span>
+                  {clip.why && (
+                    <p className="text-stone-700 dark:text-stone-300 text-[11px] leading-relaxed">
+                      <span className="font-bold text-amber-600 dark:text-amber-400 mr-1">💡 理由:</span>
+                      {clip.why}
+                    </p>
+                  )}
+                  {clip.how && (
+                    <p className="text-stone-700 dark:text-stone-300 text-[11px] leading-relaxed">
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400 mr-1">🎯 コツ:</span>
+                      {clip.how}
+                    </p>
+                  )}
+                  {clip.rejected && (
+                    <p className="text-rose-600 dark:text-rose-400 text-[11px] leading-relaxed">
+                      <span className="font-bold mr-1">🚫 没理由:</span>
+                      {clip.rejected}
+                    </p>
+                  )}
                 </div>
-                <p className="text-[11px] text-stone-500 dark:text-stone-400">
-                  前衛タンクを無視し、E＋Flashで敵バックライン（ADC）へ即座にエンゲージ。
+              ))
+            ) : (
+              <div className="text-center py-8 space-y-3">
+                <p className="text-stone-400 text-xs">
+                  まだこのチャンピオンの動画解析クリップが登録されていません。
                 </p>
+                <a
+                  href={`https://www.youtube.com/results?search_query=${encodeURIComponent(champId + ' challenger gameplay guide')}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-stone-100 hover:bg-rose-500 hover:text-white text-stone-700 text-xs font-bold transition-all border border-stone-200"
+                >
+                  YouTubeで攻略動画を探す <ArrowUpRight size={14} />
+                </a>
               </div>
-              <a
-                href={`https://www.youtube.com/results?search_query=${encodeURIComponent(champId + ' teamfight guide')}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-stone-200 dark:bg-stone-700 text-stone-800 dark:text-white font-bold text-xs hover:bg-rose-500 hover:text-white transition-all shrink-0"
-              >
-                YouTubeで観る <ArrowUpRight size={14} />
-              </a>
-            </div>
+            )}
           </div>
         </div>
       )}

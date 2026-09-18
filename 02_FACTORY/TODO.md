@@ -65,6 +65,8 @@
   - **31. 🐾 Riot DataDragon 公式パッチ番犬 ＆ 自動キュー連携**: [`scripts/check_patch_update.py`](file:///d:/my_work/scripts/check_patch_update.py) を新設。最新パッチ（16.18.1等）を自動検知し、主力10体のバイブル再検証キューを更新＆Discord速報を送信。[`ops_health_check.py`](file:///d:/my_work/scripts/ops_health_check.py) にも統合完了。
   - **32. 📢 Discord Bot Token による特定チャンネルID直接配信**: [`scripts/notify_discord.py`](file:///d:/my_work/scripts/notify_discord.py) に `--channel-id` を追加。ご指定のチャンネル `1550333564556546048` へのリザルト送信疎通に成功。
   - **33. 👑 チャンピオン辞典の実戦即応ビジュアル戦略ダッシュボード大改造**: [`ChampionVisualDashboard.tsx`](file:///d:/my_work/04_PORTAL/src/app/champions/components/ChampionVisualDashboard.tsx) および [`api/champions/tactics`](file:///d:/my_work/04_PORTAL/src/app/api/champions/tactics/route.ts) を新設。スキルHUD先行順、シチュエーション別ビルド、カモ/天敵相性マトリクス、実戦バイブル・罠アイテム、プロ動画クリップタブを統合。
+  - **34. 🎬 新世代動画アクション抽出エンジン (B案) ＆ 秒数リンク自動生成**: [`scripts/extract_video_tactics.py`](file:///d:/my_work/scripts/extract_video_tactics.py) を新設。VTTタイムスタンプ保持とスマート戦術フィルタ（90%トークン削減）により前回のトークン切れを完全克服し、`[03:25](https://youtu.be/...t=205)` 形式のプロ実演手順をバイブル＆ポータルへ自動マウント完了。
+
 
 
 

@@ -82,6 +82,34 @@ export async function GET(req: Request) {
       });
     }
 
+    // 🎥 プロ実演アクションクリップのパース
+    const videoClips: Array<{ timestamp: string; url: string; title: string; why: string; how: string; rejected: string }> = [];
+    const clipSections = rawContent.split(/###\s+🕒\s+\[/);
+    for (let i = 1; i < clipSections.length; i++) {
+      const sec = clipSections[i];
+      const match = sec.match(/^(\d{2}:\d{2})\]\((https:\/\/youtu\.be\/[^\)]+)\)\s*-\s*([^\n]+)/);
+      if (match) {
+        const timestamp = match[1];
+        const url = match[2];
+        const title = match[3].trim();
+
+        let why = '';
+        let how = '';
+        let rejected = '';
+
+        const whyMatch = sec.match(/(?:判断の理由|\*\*Why\*\*)[*:\s]+([^\n]+)/i);
+        if (whyMatch) why = whyMatch[1].replace(/^[*\-\s]+/, '').trim();
+
+        const howMatch = sec.match(/(?:ミクロ・操作のコツ|\*\*How\*\*)[*:\s]+([^\n]+)/i);
+        if (howMatch) how = howMatch[1].replace(/^[*\-\s]+/, '').trim();
+
+        const rejMatch = sec.match(/(?:避けるべき罠・没理由|\*\*Rejected\*\*)[*:\s]+([^\n]+)/i);
+        if (rejMatch) rejected = rejMatch[1].replace(/^[*\-\s]+/, '').trim();
+
+        videoClips.push({ timestamp, url, title, why, how, rejected });
+      }
+    }
+
     return NextResponse.json({
       success: true,
       champion,
@@ -89,6 +117,7 @@ export async function GET(req: Request) {
       rawContent,
       matchups,
       traps,
+      videoClips,
     });
   } catch (err: any) {
     console.error('[api/champions/tactics] error:', err);
