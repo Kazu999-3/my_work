@@ -14,7 +14,12 @@ from pathlib import Path
 # Windows cp932対策
 if sys.platform == "win32":
     import io
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    if not getattr(sys.stdout, "_custom_utf8", False):
+        try:
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+            sys.stdout._custom_utf8 = True
+        except Exception:
+            pass
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -82,11 +87,27 @@ def check_daily_log_freshness():
         first_lines = f.read(2000)
     
     # 直近の日付を抽出
-    dates = re.findall(r"##\s*(\d{4}-\d{2}-\d{2})", first_lines)
+    dates = re.findall(r"##\s*(?:📅\s*)?(\d{4}-\d{2}-\d{2})", first_lines)
     if dates:
         latest = dates[0]
         return {"status": "PASS", "msg": f"最新のデイリーログ日付: {latest}"}
     return {"status": "INFO", "msg": "日付エントリが検出できませんでした"}
+
+def check_knowledge_links():
+    """ナレッジ全域のMarkdownリンク整合性を確認"""
+    script_path = REPO_ROOT / "scripts" / "audit_knowledge_links.py"
+    if not script_path.exists():
+        return {"status": "SKIP", "msg": "audit_knowledge_links.py が見つかりません"}
+    try:
+        sys.path.insert(0, str(REPO_ROOT / "scripts"))
+        from audit_knowledge_links import audit_links
+        broken = audit_links(include_archives=False, silent=True)
+        if broken == 0:
+            return {"status": "PASS", "msg": "Markdownリンク切れ: 0件 (完全健全)"}
+        else:
+            return {"status": "WARN", "msg": f"リンク切れが {broken} 件検出されました (要修復)"}
+    except Exception as e:
+        return {"status": "WARN", "msg": f"リンク監査スキップ ({e})"}
 
 def main():
     print("\n" + "="*60)
@@ -96,6 +117,7 @@ def main():
     checks = [
         ("ナレッジ訂正インボックス", check_feedback_inbox),
         ("デイリーログ鮮度", check_daily_log_freshness),
+        ("ナレッジリンク整合性", check_knowledge_links),
         ("Git作業ツリー健全性", check_git_status),
         ("ポータル TypeScript 型整合性", check_portal_types),
         ("Gemini モデル管理健全性", check_gemini_models),
@@ -121,10 +143,19 @@ def main():
         
     print("\n" + "-"*60)
     if all_pass:
+        summary_msg = "全レイヤー健全！ナレッジ・Git・ポータル型の全系テスト合格 (ALL GREEN)"
         print(" 🎉 全レイヤー健全！ 本日も快適に作業を開始できます。")
     else:
+        summary_msg = "いくつかの要対応・警告項目があります。ヘルスチェック結果を確認してください。"
         print(" ⚠️  いくつかの要対応・警告項目があります。上記を確認してください。")
     print("="*60 + "\n")
+
+    if "--notify" in sys.argv:
+        notify_script = REPO_ROOT / "scripts" / "notify_discord.py"
+        if notify_script.exists():
+            level = "info" if all_pass else "warn"
+            status = "ok" if all_pass else "error"
+            subprocess.run([sys.executable, str(notify_script), "--type", "health", "-m", summary_msg, "--level", level])
 
 if __name__ == "__main__":
     main()

@@ -52,6 +52,8 @@
 
   - **19. 🎮 実戦データ ➔ 対面ナレッジ自動同期CLI (`sync_last_match_to_intel.py`) の新設**: [`scripts/sync_last_match_to_intel.py`](file:///d:/my_work/scripts/sync_last_match_to_intel.py) を新設。試合後の対面勝敗・反省・罠ビルドをワンコマンドで対面バイブルへ自動マージ（つくラボAI原則）。
   - **20. 🔗 ナレッジ全域リンク整合性 ＆ 孤立ファイル検知リンター (`audit_knowledge_links.py`) の新設**: [`scripts/audit_knowledge_links.py`](file:///d:/my_work/scripts/audit_knowledge_links.py) を新設。461件のMarkdownからリンク切れや未リンクの孤立ノートを瞬時に検出（りゅう原則）。
+  - **21. 🧹 旧アーカイブリンク切れクリーン化 ＆ TODO内実在リンク修復**: [`audit_knowledge_links.py`](file:///d:/my_work/scripts/audit_knowledge_links.py) のアーカイブ除外と [`TODO.md`](file:///d:/my_work/02_FACTORY/TODO.md) の `BottomNav.tsx` リンク修復により、走査対象全459件のMarkdownリンク切れ0件（ALL GREEN）を達成（りゅう原則）。
+  - **22. 📢 Discord Webhook 外部通知基盤の配備**: [`scripts/notify_discord.py`](file:///d:/my_work/scripts/notify_discord.py) を新設。日次ナレッジ（`DAILY_LOG.md`）のEmbed投稿、ヘルスチェック結果通知、ドライラン対応、および [`wrap-up.md`](file:///d:/my_work/.agent/workflows/wrap-up.md) との連動を実現（Coupen原則）。
 
 
 
@@ -68,7 +70,7 @@
     - 直近5戦の勝敗アイコン列（`[W][W][W][L][W]`）および現在の連勝/連敗バッジ（`🔥 3連勝中` / `❄️ 2連敗中`）をファーストビューに配置。
     - 「🏆 名コンビ（最高勝率の相棒）」と「⚔️ 最大の天敵（苦戦中のライバル）」の直感的なミニカードをトップにピン留め表示。
   - **3. 📱 スマホ固定「ボトムナビゲーションバー（Mobile App Bar）」**:
-    - [`MobileBottomNav.tsx`](file:///d:/my_work/04_PORTAL/src/components/MobileBottomNav.tsx) を新設し、[`layout.tsx`](file:///d:/my_work/04_PORTAL/src/app/layout.tsx) に配置（`md:hidden`）。
+    - [`BottomNav.tsx`](file:///d:/my_work/04_PORTAL/src/components/BottomNav.tsx) を新設し、[`layout.tsx`](file:///d:/my_work/04_PORTAL/src/app/layout.tsx) に配置（`md:hidden`）。
     - `[👑 ホーム] [⚔️ バランサー] [🎯 予想] [🏆 順位表] [👤 マイカルテ]` の親指1本操作UIを実現。現在のアクティブページをゴールド＆インジケーターでハイライト。
   - **4. 🤝 師弟掲示板（`/mentorship`）のレーン別絞り込み ＆ スマホ横スクロール最適化**:
     - [`MentorshipHubPanel.tsx`](file:///d:/my_work/04_PORTAL/src/app/mentorship/MentorshipHubPanel.tsx) に `[🌐 全て] [🛡️ TOP] [🌲 JG] [⚡ MID] [🏹 BOT] [💖 SUP]` のクイックピルフィルターを新設。

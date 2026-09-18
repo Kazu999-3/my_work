@@ -15,7 +15,12 @@ from pathlib import Path
 # Windows cp932対策
 if sys.platform == "win32":
     import io
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    if not getattr(sys.stdout, "_custom_utf8", False):
+        try:
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+            sys.stdout._custom_utf8 = True
+        except Exception:
+            pass
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -27,7 +32,7 @@ SCAN_DIRS = [
     REPO_ROOT / "03_SYSTEMS",
 ]
 
-# 除外フォルダ
+# 除外フォルダ（過去の歴史的アーカイブやビルド成果物はデフォルト除外）
 EXCLUDE_DIRS = {
     "node_modules",
     "__pycache__",
@@ -38,15 +43,22 @@ EXCLUDE_DIRS = {
     "sns_assets",
     "assets",
     "scratch",
+    "imperial_archive",
+    "archive",
 }
 
-def get_all_md_files():
+def get_all_md_files(include_archives=False):
     md_files = []
+    excludes = set(EXCLUDE_DIRS)
+    if include_archives:
+        excludes.discard("imperial_archive")
+        excludes.discard("archive")
+
     for sdir in SCAN_DIRS:
         if not sdir.exists():
             continue
         for root, dirs, files in os.walk(sdir):
-            dirs[:] = [d for d in dirs if d not in EXCLUDE_DIRS]
+            dirs[:] = [d for d in dirs if d not in excludes]
             for file in files:
                 if file.endswith(".md"):
                     md_files.append(Path(root) / file)
@@ -70,6 +82,7 @@ def parse_markdown_links(file_path):
         # file:/// スキームの処理
         if target.startswith("file:///"):
             clean_target = target.replace("file:///", "").replace("file://", "")
+            clean_target = clean_target.split("#")[0] # アンカー除去
             # Windows パス修復 (d:/my_work/... -> D:\my_work\...)
             clean_target = clean_target.replace("/", "\\")
             target_path = Path(clean_target)
@@ -87,8 +100,8 @@ def parse_markdown_links(file_path):
         })
     return links
 
-def audit_links():
-    md_files = get_all_md_files()
+def audit_links(include_archives=False, silent=False):
+    md_files = get_all_md_files(include_archives=include_archives)
     file_map = {f.resolve(): f for f in md_files}
     referenced_files = set()
     broken_links = []
@@ -118,39 +131,42 @@ def audit_links():
         if fpath.resolve() not in referenced_files:
             orphan_files.append(fpath.relative_to(REPO_ROOT))
 
-    print("\n" + "="*65)
-    print(" 🔗  Sovereign OS ナレッジリンク整合性 ＆ 孤立ファイル監査")
-    print("="*65 + "\n")
-    print(f"📊 走査対象 Markdown ファイル数: {len(md_files)} 件\n")
+    if not silent:
+        print("\n" + "="*65)
+        print(" 🔗  Sovereign OS ナレッジリンク整合性 ＆ 孤立ファイル監査")
+        print("="*65 + "\n")
+        print(f"📊 走査対象 Markdown ファイル数: {len(md_files)} 件\n")
 
-    # 1. リンク切れの報告
-    if not broken_links:
-        print("✅ 【リンク切れ】: 検出されませんでした (0件 / 健全)")
-    else:
-        print(f"❌ 【リンク切れ検出】: {len(broken_links)} 件のリンク先が存在しません！")
-        for b in broken_links[:10]: # 最大10件表示
-            print(f"   - 参照元: {b['source']}")
-            print(f"     リンク名: [{b['text']}] -> {b['target']}")
-        if len(broken_links) > 10:
-            print(f"   ...他 {len(broken_links) - 10} 件")
+    if not silent:
+        # 1. リンク切れの報告
+        if not broken_links:
+            print("✅ 【リンク切れ】: 検出されませんでした (0件 / 健全)")
+        else:
+            print(f"❌ 【リンク切れ検出】: {len(broken_links)} 件のリンク先が存在しません！")
+            for b in broken_links[:10]: # 最大10件表示
+                print(f"   - 参照元: {b['source']}")
+                print(f"     リンク名: [{b['text']}] -> {b['target']}")
+            if len(broken_links) > 10:
+                print(f"   ...他 {len(broken_links) - 10} 件")
 
-    print("\n" + "-"*65 + "\n")
+        print("\n" + "-"*65 + "\n")
 
-    # 2. 孤立ファイルの報告
-    if not orphan_files:
-        print("✅ 【孤立ファイル】: 全てのノートが索引や日誌からリンクされています (0件)")
-    else:
-        print(f"ℹ️  【孤立（未リンク）ノート】: {len(orphan_files)} 件 (索引への登録を推奨)")
-        for o in orphan_files[:10]:
-            print(f"   - {o}")
-        if len(orphan_files) > 10:
-            print(f"   ...他 {len(orphan_files) - 10} 件")
+        # 2. 孤立ファイルの報告
+        if not orphan_files:
+            print("✅ 【孤立ファイル】: 全てのノートが索引や日誌からリンクされています (0件)")
+        else:
+            print(f"ℹ️  【孤立（未リンク）ノート】: {len(orphan_files)} 件 (索引への登録を推奨)")
+            for o in orphan_files[:10]:
+                print(f"   - {o}")
+            if len(orphan_files) > 10:
+                print(f"   ...他 {len(orphan_files) - 10} 件")
 
-    print("\n" + "="*65 + "\n")
+        print("\n" + "="*65 + "\n")
     return len(broken_links)
 
 if __name__ == "__main__":
-    broken_count = audit_links()
+    include_archives = "--include-archives" in sys.argv
+    broken_count = audit_links(include_archives=include_archives)
     # 監査レポートの表示完了。運用を止めないため正常終了とする
     sys.exit(0)
 

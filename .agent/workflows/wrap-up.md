@@ -29,7 +29,7 @@ description: セッション終了時に、作業経緯の要約、3行ナレッ
 1. `d:/my_work/02_FACTORY/TODO.md` を読み込む。
 2. 本日完了したタスクのチェックボックスを `- [x]` に更新し、セッション実績セクションへ追記する。
 
-### ステップ5: セキュリティ監査 ＆ Git Commit & Push
+### ステップ5: セキュリティ監査 ＆ Git Commit & Push ＆ 外部通知
 1. 機密ガードスクリプトを実行し、APIキーや秘密情報の混入がないかチェック：
    ```powershell
    py d:\my_work\scripts\pre_commit_guard.py
@@ -39,4 +39,8 @@ description: セッション終了時に、作業経緯の要約、3行ナレッ
    ```powershell
    git push origin master
    ```
-4. ユーザーへ「本日の作業完了サマリー」と「明日やるべき次の一歩」を提示して終了する。
+4. Discord Webhook が設定されている場合、日次ナレッジを自動通知：
+   ```powershell
+   py d:\my_work\scripts\notify_discord.py --type daily
+   ```
+5. ユーザーへ「本日の作業完了サマリー」と「明日やるべき次の一歩」を提示して終了する。
