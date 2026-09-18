@@ -121,6 +121,11 @@
     84. 戦術バイブル全17体＋`template_tactics_bible.md` のフロントマターを完全統一（イミュータブル・プロパティ規約準拠: `status: verified`, `source_type: official/empirical`, `published_at`, `captured_at`, `tags`）。
     85. `01_INTEL/_LOL/INDEX.md` に PULSE配下の戦術ノート（`META.md`, `lolalytics_multi_initial_26.07.md`, `research_lillia_26.08.md`, `pulse_test.md`）、チャンピオン個別メモ（`CHAMPIONS/`）、アイテム（`ITEMS/`）、メタ周回（`META/`）、およびマスターフックへのリンクを全網羅連動し、孤立ノートを一挙解消。
     86. `scripts/audit_knowledge_links.py` を URLデコード（`unquote`）対応に強化し、Markdownリンク切れ 0件・全レイヤーALL GREENを実証。
+  - **追加整備 (第25弾: 複数レーン・ロール別タブの完全動的連動 ＆ ロール特化バイブル探索配備)**:
+    87. `ChampionVisualDashboard.tsx` に「🎮 分析対象レーン・ロール選択セレクター（TOP / JG / MID / BOT / SUP）」を新設配備。`availableRoles` およびチャンピオンタグから利用可能なレーン候補を抽出し、ワンタップでシームレスに切り替え。
+    88. ロール切り替えに伴い、`detectChampionArchetype`（ZyraのSUP選出時のエンチャンター/メイジSUP適正化、Leona/NautilusのタンクSUP適正化、MarksmanのBOT適正化等）、シチュエーション別ビルド、ミニHUD（JG周回 ➔ SUP視界・初動 ➔ TOPウェーブ ➔ MIDローム ➔ BOTキャリー指標）、および対面相性マトリクス（ロールごとの天敵・カモ推定）が完全自動連動。
+    89. `DictionaryTab.tsx` から `ChampionVisualDashboard.tsx` への `currentRole`, `availableRoles`, `onRoleChange` コールバックを完全配線接続し、親コンポーネントのAPI再フェッチとも双方向同期。
+    90. `api/champions/tactics/route.ts` にロール特化バイブル探索フォールバック（`${champion}_${role}_tactics_bible.md` ➔ `${champion}_tactics_bible.md`）を新設し、ロール別バイブル展開への完全準備を確立。
 
 ### 🔄 判断の経緯 ＆ 落とした選択肢 (Decisions & Rejected Options)
 - **採用**: タイムスタンプ圧縮（[MM:SS]）＋LoL戦術キーワードスマートフィルタリング（B案）。

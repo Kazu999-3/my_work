@@ -13,10 +13,18 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'championパラメータが必要です' }, { status: 400 });
     }
 
+    const roleParam = searchParams.get('role');
+    const role = roleParam && roleParam !== 'GLOBAL' ? roleParam.toLowerCase() : '';
+
     const champion = normalizeChampionName(championParam);
     const repoRoot = path.resolve(process.cwd(), '..');
     const tacticsDir = path.join(repoRoot, '01_INTEL', 'tactics');
-    const filePath = path.join(tacticsDir, `${champion.toLowerCase()}_tactics_bible.md`);
+
+    // ロール特化バイブル（例: zyra_sup_tactics_bible.md）があれば優先、なければ通常バイブル
+    let filePath = role ? path.join(tacticsDir, `${champion.toLowerCase()}_${role}_tactics_bible.md`) : '';
+    if (!filePath || !fs.existsSync(filePath)) {
+      filePath = path.join(tacticsDir, `${champion.toLowerCase()}_tactics_bible.md`);
+    }
 
     if (!fs.existsSync(filePath)) {
       return NextResponse.json({

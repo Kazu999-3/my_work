@@ -1743,6 +1743,24 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
             matchupsList={matchupsList}
             powerSpikeScores={powerSpikeScores}
             realJungleTiming={realJungleTiming}
+            currentRole={selectedRole}
+            availableRoles={availableRoles}
+            onRoleChange={async (newRole) => {
+              setSelectedRole(newRole);
+              setDetailLoading(true);
+              try {
+                const res = await fetch(`/api/champions/detail?champion=${encodeURIComponent(selected.id)}&role=${encodeURIComponent(newRole)}`, { credentials: 'include' });
+                const detail = await res.json();
+                if (res.ok && detail.dataFields) {
+                  setDataFields(detail.dataFields);
+                  if (detail.currentRole) setSelectedRole(detail.currentRole);
+                }
+              } catch (e) {
+                console.error('レーン別データ切替エラー:', e);
+              } finally {
+                setDetailLoading(false);
+              }
+            }}
           />
         )}
 

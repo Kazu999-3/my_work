@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { 
   Swords, Shield, Zap, AlertTriangle, Play, BookOpen, 
@@ -24,6 +24,9 @@ interface ChampionVisualDashboardProps {
   matchupsList?: any[]; // Supabase matchup_sentinel対面メモ一覧
   powerSpikeScores?: any; // パワースパイクスコア
   realJungleTiming?: any; // 実測ジャングルタイミング
+  currentRole?: string; // 現在選択中のロール ('TOP' | 'JG' | 'MID' | 'BOT' | 'SUP' | 'GLOBAL')
+  availableRoles?: string[]; // 利用可能ロール一覧
+  onRoleChange?: (role: string) => void; // ロール変更コールバック
   onOpenTactics?: () => void;
 }
 
@@ -34,10 +37,36 @@ function detectChampionArchetype(
   champId: string,
   tags: string[] = [],
   info?: { attack?: number; defense?: number; magic?: number },
-  buildRunesText: string = ''
+  buildRunesText: string = '',
+  role?: string
 ): ChampionArchetype {
   const id = champId.toLowerCase();
   const text = (buildRunesText || '').toLowerCase();
+  const normalizedRole = (role || '').toUpperCase();
+
+  // ロールが明示指定されている場合の優先適正化
+  if (normalizedRole === 'SUP') {
+    const ENCHANTERS = ['lulu', 'nami', 'janna', 'soraka', 'sona', 'milio', 'yuumi', 'renataglasc', 'taric'];
+    if (ENCHANTERS.includes(id) || (tags.includes('Support') && (info?.magic || 0) >= (info?.attack || 0))) {
+      return 'enchanter';
+    }
+    const SUP_TANKS = ['leona', 'nautilus', 'alistar', 'braum', 'rell', 'thresh', 'blitzcrank', 'tahmkench', 'poppy', 'maokai'];
+    if (SUP_TANKS.includes(id) || tags.includes('Tank')) {
+      return 'tank';
+    }
+    if (['zyra', 'brand', 'lux', 'velkoz', 'xerath', 'morgana', 'swain'].includes(id)) {
+      return 'ap_mage';
+    }
+    if (id === 'senna' || id === 'pyke') {
+      return id === 'senna' ? 'marksman' : 'ad_assassin';
+    }
+  }
+
+  if (normalizedRole === 'BOT' || normalizedRole === 'ADC') {
+    if (!['karthus', 'swain', 'veigar', 'seraphine', 'ziggs'].includes(id)) {
+      return 'marksman';
+    }
+  }
 
   // 1. AP明示チャンピオン
   const AP_CHAMPS = [
@@ -363,6 +392,9 @@ export default function ChampionVisualDashboard({
   matchupsList = [],
   powerSpikeScores,
   realJungleTiming,
+  currentRole = 'GLOBAL',
+  availableRoles = [],
+  onRoleChange,
   onOpenTactics,
 }: ChampionVisualDashboardProps) {
   const [activeTab, setActiveTab] = useState<'build' | 'matchup' | 'bible' | 'video'>('build');
@@ -382,12 +414,43 @@ export default function ChampionVisualDashboard({
   const spells = champion?.spells || [];
   const passive = champion?.passive;
 
-  // チャンピオンの特性・アーキタイプ判定
+  // ロール状態管理
+  const [internalRole, setInternalRole] = useState<string>(() => {
+    if (currentRole && currentRole !== 'GLOBAL') return currentRole.toUpperCase();
+    if (availableRoles && availableRoles.length > 0) return availableRoles[0].toUpperCase();
+    return 'JG';
+  });
+
+  useEffect(() => {
+    if (currentRole && currentRole !== 'GLOBAL') {
+      setInternalRole(currentRole.toUpperCase());
+    }
+  }, [currentRole]);
+
+  // 表示するロール候補（親からの候補またはDDragonタグ推定）
+  const displayRoles = useMemo(() => {
+    if (availableRoles && availableRoles.length > 0) {
+      return availableRoles.map(r => r.toUpperCase());
+    }
+    const tags = champion?.tags || [];
+    const roles: string[] = [];
+    if (tags.includes('Fighter')) roles.push('TOP', 'JG');
+    if (tags.includes('Tank')) roles.push('TOP', 'SUP', 'JG');
+    if (tags.includes('Mage')) roles.push('MID', 'SUP');
+    if (tags.includes('Assassin')) roles.push('MID', 'JG');
+    if (tags.includes('Marksman')) roles.push('BOT');
+    if (tags.includes('Support')) roles.push('SUP');
+    const unique = Array.from(new Set(roles));
+    return unique.length > 0 ? unique : ['TOP', 'JG', 'MID', 'BOT', 'SUP'];
+  }, [availableRoles, champion?.tags]);
+
+  // チャンピオンの特性・アーキタイプ判定（ロール連動）
   const archetype = detectChampionArchetype(
     champId,
     champion?.tags || [],
     champion?.info,
-    dataFields?.buildRunes || ''
+    dataFields?.buildRunes || '',
+    internalRole
   );
 
   // 現在のシチュエーション別ビルド生成
@@ -413,11 +476,11 @@ export default function ChampionVisualDashboard({
   // スキルキー
   const skillKeys = ['Q', 'W', 'E', 'R'];
 
-  // ローカル戦術バイブルの自動取得
+  // ローカル戦術バイブルの自動取得（ロール連動）
   useEffect(() => {
     if (!champId) return;
     setLoadingTactics(true);
-    fetch(`/api/champions/tactics?champion=${encodeURIComponent(champId)}`)
+    fetch(`/api/champions/tactics?champion=${encodeURIComponent(champId)}&role=${encodeURIComponent(internalRole)}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
@@ -432,7 +495,7 @@ export default function ChampionVisualDashboard({
       })
       .catch((e) => console.warn('[ChampionVisualDashboard] Tactics fetch failed:', e))
       .finally(() => setLoadingTactics(false));
-  }, [champId]);
+  }, [champId, internalRole]);
 
   // 推奨スキル先行順（パースまたはフォールバック）
   const skillPriority = (() => {
@@ -463,41 +526,81 @@ export default function ChampionVisualDashboard({
       }
     }
 
-    // デフォルトフォールバック（アーキタイプに応じたインテリジェントな相性推定）
+    // デフォルトフォールバック（ロール・アーキタイプに応じたインテリジェントな相性推定）
     if (goodAgainst.length === 0) {
-      switch (archetype) {
-        case 'ap_mage':
-          goodAgainst.push({ name: 'DrMundo', note: '持続バーンで回復を上回る' }, { name: 'Sion', note: 'ポーク主体で一方的に削れる' });
-          break;
-        case 'tank':
-          goodAgainst.push({ name: 'Vayne', note: 'CCチェインで序盤に圧殺' }, { name: 'Jinx', note: 'エンゲージで射程差を無効化' });
-          break;
-        case 'ad_assassin':
-          goodAgainst.push({ name: 'Xerath', note: '接近すれば一方的にキル' }, { name: 'KogMaw', note: '耐久のない後衛をワンコン' });
-          break;
-        case 'marksman':
-          goodAgainst.push({ name: 'Sion', note: '引き撃ちでタンクを溶かす' }, { name: 'Amumu', note: 'カイト性能で近付かせない' });
-          break;
-        default:
-          goodAgainst.push({ name: 'Sion', note: 'ウェーブ押し込み後のローム優位' }, { name: 'DrMundo', note: '回復阻害と序盤のトレード主導権' });
+      if (internalRole === 'JG') {
+        goodAgainst.push(
+          { name: 'Amumu', note: 'カウンターJGで序盤キャンプを奪い主導権掌握' },
+          { name: 'Karthus', note: '序盤の森遭遇戦で一方的にキル奪取' }
+        );
+      } else if (internalRole === 'SUP') {
+        goodAgainst.push(
+          { name: 'Braum', note: '射程外からの継続ポークでシールドを無効化' },
+          { name: 'Nautilus', note: '接近前のハラスでエンゲージヘルスを削り取る' }
+        );
+      } else if (internalRole === 'MID') {
+        goodAgainst.push(
+          { name: 'TwistedFate', note: 'タイマン火力の差で主導権を取りローム阻止' },
+          { name: 'Veigar', note: '序盤のプッシュ力差でウェーブ押し込み圧殺' }
+        );
+      } else if (internalRole === 'BOT' || internalRole === 'ADC') {
+        goodAgainst.push(
+          { name: 'KogMaw', note: '序盤トレードの優位性を活かし主導権キープ' },
+          { name: 'Jinx', note: '序盤の主導権を取ってガンク合わせでキル' }
+        );
+      } else {
+        // TOPまたはデフォルト
+        switch (archetype) {
+          case 'ap_mage':
+            goodAgainst.push({ name: 'DrMundo', note: '持続バーンで回復を上回る' }, { name: 'Sion', note: 'ポーク主体で一方的に削れる' });
+            break;
+          case 'tank':
+            goodAgainst.push({ name: 'Vayne', note: 'CCチェインで序盤に圧殺' }, { name: 'Jinx', note: 'エンゲージで射程差を無効化' });
+            break;
+          case 'ad_assassin':
+            goodAgainst.push({ name: 'Xerath', note: '接近すれば一方的にキル' }, { name: 'KogMaw', note: '耐久のない後衛をワンコン' });
+            break;
+          default:
+            goodAgainst.push({ name: 'Sion', note: 'ウェーブ押し込み後のローム優位' }, { name: 'DrMundo', note: '回復阻害と序盤のトレード主導権' });
+        }
       }
     }
     if (badAgainst.length === 0) {
-      switch (archetype) {
-        case 'ap_mage':
-          badAgainst.push({ name: 'Zed', note: '接近＆バーストで即死リスク' }, { name: 'Nocturne', note: 'R突進でポジション崩壊' });
-          break;
-        case 'tank':
-          badAgainst.push({ name: 'Fiora', note: '割合真のダメージで耐久が無意味' }, { name: 'Vayne', note: '銀の矢で最大HPが溶ける' });
-          break;
-        case 'ad_assassin':
-          badAgainst.push({ name: 'Rammus', note: 'AR反射と挑発で脅威が無力化' }, { name: 'Malphite', note: 'AR積みで物理DMGが通らない' });
-          break;
-        case 'marksman':
-          badAgainst.push({ name: 'Rengar', note: 'ブッシュから即死ワンコン' }, { name: 'Zed', note: 'R指定でほぼ確殺' });
-          break;
-        default:
-          badAgainst.push({ name: 'Fiora', note: 'W受けと割合ダメージに注意' }, { name: 'Irelia', note: 'スタック維持時のオールイン警戒' });
+      if (internalRole === 'JG') {
+        badAgainst.push(
+          { name: 'LeeSin', note: '序盤の森遭遇戦でバースト即死リスク高' },
+          { name: 'Nocturne', note: 'R暗闇突進で視界遮断と逆サイド崩壊' }
+        );
+      } else if (internalRole === 'SUP') {
+        badAgainst.push(
+          { name: 'Blitzcrank', note: 'ブッシュからのロケットグラブ被弾で即死' },
+          { name: 'Pyke', note: 'ステルス接近からのスタン＆処刑R警戒' }
+        );
+      } else if (internalRole === 'MID') {
+        badAgainst.push(
+          { name: 'Zed', note: 'Lv6時の影コンボからのバースト即死ライン警戒' },
+          { name: 'Akali', note: '煙幕でのターゲット不可と急接近オールイン' }
+        );
+      } else if (internalRole === 'BOT' || internalRole === 'ADC') {
+        badAgainst.push(
+          { name: 'Draven', note: '序盤の斧回転AA火力が圧倒的、序盤殴り合い厳禁' },
+          { name: 'Samira', note: '接近オールインとWスキル消去による返り討ち' }
+        );
+      } else {
+        // TOPまたはデフォルト
+        switch (archetype) {
+          case 'ap_mage':
+            badAgainst.push({ name: 'Zed', note: '接近＆バーストで即死リスク' }, { name: 'Nocturne', note: 'R突進でポジション崩壊' });
+            break;
+          case 'tank':
+            badAgainst.push({ name: 'Fiora', note: '割合真のダメージで耐久が無意味' }, { name: 'Vayne', note: '銀の矢で最大HPが溶ける' });
+            break;
+          case 'ad_assassin':
+            badAgainst.push({ name: 'Rammus', note: 'AR反射と挑発で脅威が無力化' }, { name: 'Malphite', note: 'AR積みで物理DMGが通らない' });
+            break;
+          default:
+            badAgainst.push({ name: 'Fiora', note: 'W受けと割合ダメージに注意' }, { name: 'Irelia', note: 'スタック維持時のオールイン警戒' });
+        }
       }
     }
 
@@ -506,6 +609,47 @@ export default function ChampionVisualDashboard({
 
   return (
     <div className="w-full space-y-4">
+      {/* 🎮 0. 分析対象レーン・ロール選択セレクター */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5 p-2 sm:p-2.5 rounded-2xl bg-stone-900/90 border border-amber-500/30 shadow-md backdrop-blur-md">
+        <div className="flex items-center gap-2 px-1.5">
+          <span className="text-xs font-black text-amber-400 flex items-center gap-1.5">
+            <span>🎮</span> <span>分析レーン:</span>
+          </span>
+          <span className="text-[11px] text-stone-400 font-bold hidden sm:inline">
+            ロール別ビルド・戦術指標・対面メモに自動連動
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1.5 overflow-x-auto">
+          {displayRoles.map((r) => {
+            const isSelected = internalRole === r;
+            const label = 
+              r === 'TOP' ? '⚔️ TOP' :
+              r === 'JG' ? '🌲 JG' :
+              r === 'MID' ? '⚡ MID' :
+              r === 'BOT' || r === 'ADC' ? '🏹 BOT' :
+              r === 'SUP' ? '🛡️ SUP' : r;
+            return (
+              <button
+                key={r}
+                type="button"
+                onClick={() => {
+                  setInternalRole(r);
+                  if (onRoleChange) onRoleChange(r);
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap ${
+                  isSelected
+                    ? 'bg-amber-500 text-stone-950 shadow-md font-black scale-102'
+                    : 'bg-black/40 text-stone-400 hover:text-white hover:bg-stone-800 border border-white/5'
+                }`}
+              >
+                <span>{label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* 🚀 1. スキル先行順 ＆ クイックスキルHUD */}
       <div className="bg-stone-900/90 border border-amber-500/30 rounded-2xl p-3.5 sm:p-4.5 backdrop-blur-md shadow-lg text-white">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3 pb-3 border-b border-white/10">
@@ -593,38 +737,122 @@ export default function ChampionVisualDashboard({
 
       {/* ⏱️⚡ JG周回実測タイミング ＆ パワースパイク推移ミニHUD */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {/* JG周回実測タイミング */}
+        {/* レーン・ロール別実戦タイミング指標 */}
         <div className="bg-stone-900/80 border border-stone-800 rounded-2xl p-3 sm:p-3.5 backdrop-blur-md flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
-              <Clock size={16} />
+              {internalRole === 'JG' ? <Clock size={16} /> :
+               internalRole === 'SUP' ? <Shield size={16} /> :
+               internalRole === 'TOP' ? <Swords size={16} /> :
+               internalRole === 'MID' ? <Zap size={16} /> :
+               <Activity size={16} />}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-black text-white">JG周回実測</span>
-                {realJungleTiming?.sampleCount && (
+                <span className="text-xs font-black text-white">
+                  {internalRole === 'JG' ? '🌲 JG周回実測' :
+                   internalRole === 'SUP' ? '🛡️ SUP視界・初動指標' :
+                   internalRole === 'TOP' ? '⚔️ TOPウェーブ指標' :
+                   internalRole === 'MID' ? '⚡ MIDローム指標' :
+                   '🏹 BOT/ADC指標'}
+                </span>
+                {internalRole === 'JG' && realJungleTiming?.sampleCount ? (
                   <span className="text-[10px] px-1.5 py-0.2 rounded bg-stone-800 text-stone-400 font-bold border border-white/5">
                     {realJungleTiming.sampleCount}戦分析
                   </span>
+                ) : (
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-stone-800 text-stone-400 font-bold border border-white/5">
+                    {internalRole}標準
+                  </span>
                 )}
               </div>
-              <span className="text-[10px] text-stone-400 block">最速クリア目標 ＆ コアタイム</span>
+              <span className="text-[10px] text-stone-400 block">
+                {internalRole === 'JG' ? '最速クリア目標 ＆ コアタイム' :
+                 internalRole === 'SUP' ? 'Lv2先行プッシュ ＆ 視界スコア目標' :
+                 internalRole === 'TOP' ? '1stリコール目標 ＆ フリーズ基準' :
+                 internalRole === 'MID' ? 'キャノン押し込み ＆ オブジェクト寄り' :
+                 '1stコア目標 ＆ レーン主導権'}
+              </span>
             </div>
           </div>
 
           <div className="flex items-center gap-3 text-right">
-            <div className="bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
-              <span className="text-[10px] text-stone-400 block font-bold">最速フルクリア</span>
-              <span className="text-xs font-black text-amber-400 font-mono">
-                {formatSec(realJungleTiming?.externalFastestClearSec || 195)}
-              </span>
-            </div>
-            <div className="bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
-              <span className="text-[10px] text-stone-400 block font-bold">1stコア平均</span>
-              <span className="text-xs font-black text-emerald-400 font-mono">
-                {formatSec(realJungleTiming?.avgFirstCoreSec || 680)}
-              </span>
-            </div>
+            {internalRole === 'JG' ? (
+              <>
+                <div className="bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-stone-400 block font-bold">最速フルクリア</span>
+                  <span className="text-xs font-black text-amber-400 font-mono">
+                    {formatSec(realJungleTiming?.externalFastestClearSec || 195)}
+                  </span>
+                </div>
+                <div className="bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-stone-400 block font-bold">1stコア平均</span>
+                  <span className="text-xs font-black text-emerald-400 font-mono">
+                    {formatSec(realJungleTiming?.avgFirstCoreSec || 680)}
+                  </span>
+                </div>
+              </>
+            ) : internalRole === 'SUP' ? (
+              <>
+                <div className="bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-stone-400 block font-bold">Lv2先行基準</span>
+                  <span className="text-xs font-black text-cyan-400 font-mono">
+                    2波目前衛3体
+                  </span>
+                </div>
+                <div className="bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-stone-400 block font-bold">目標視界(20分)</span>
+                  <span className="text-xs font-black text-amber-400 font-mono">
+                    45+ スコア
+                  </span>
+                </div>
+              </>
+            ) : internalRole === 'TOP' ? (
+              <>
+                <div className="bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-stone-400 block font-bold">1stリコール目標</span>
+                  <span className="text-xs font-black text-amber-400 font-mono">
+                    1,200G〜1,300G
+                  </span>
+                </div>
+                <div className="bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-stone-400 block font-bold">フリーズ維持</span>
+                  <span className="text-xs font-black text-emerald-400 font-mono">
+                    タワー前4体
+                  </span>
+                </div>
+              </>
+            ) : internalRole === 'MID' ? (
+              <>
+                <div className="bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-stone-400 block font-bold">ローム優先時</span>
+                  <span className="text-xs font-black text-purple-400 font-mono">
+                    キャノン波後
+                  </span>
+                </div>
+                <div className="bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-stone-400 block font-bold">パワースパイク</span>
+                  <span className="text-xs font-black text-rose-400 font-mono">
+                    Lv6 即死
+                  </span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-stone-400 block font-bold">1コア目標</span>
+                  <span className="text-xs font-black text-emerald-400 font-mono">
+                    10:30 (最速)
+                  </span>
+                </div>
+                <div className="bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
+                  <span className="text-[10px] text-stone-400 block font-bold">目標CS</span>
+                  <span className="text-xs font-black text-amber-400 font-mono">
+                    8.5+ /分
+                  </span>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
