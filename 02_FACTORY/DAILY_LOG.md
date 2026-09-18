@@ -85,6 +85,12 @@
     56. チャンピオンのロール・タグ・ダメージ特性・実戦テキストを網羅判定する `detectChampionArchetype`（APメイジ、APアサシン、ADアサシン、耐久タンク、マークスマン、サポート、ADファイター）を新設配備。
     57. `getPresetBuildDetails` を配備し、標準コア、対タンク（貫通・割合DMG）、対バースト（無敵・高耐久・シールド）の3大シチュエーションに応じた適正アイテム・ルーン・解説を動的生成。
     58. 画面上にアーキタイプバッジ（「⚡ APメイジ」「🛡️ 耐久タンク」等）を追加し、ビルド選択の理由（Why）を可視化。
+  - **追加整備 (第17弾: yt-dlp Python API化 ＆ Zyra実演クリップ正式マウント ＆ 対面相性インテリジェント化)**:
+    59. `scripts/extract_video_tactics.py` の `yt-dlp` CLI呼び出しを Python API（`import yt_dlp`）へ完全移行。PATH未設定・429レート制限への耐性を確保し、既存VTTフォールバック機構を追加。
+    60. VTTファイル名の言語サフィックス（`.en`, `.ja`等）をstrip する処理を追加し、YouTube URL汚染を根本防止。
+    61. `zyra_tactics_bible.md` のダミーURL（`youtu.be/dummy?t=...`）3件を撤廃し、Agurin実動画（YBZdHBTCZGU）から5シーンの実演クリップ（インベード、ダイブ、カウンターJG、ドラゴン判断、分断タワー破壊）を正式マウント。
+    62. `ChampionVisualDashboard.tsx` の対面相性デフォルトフォールバックを、アーキタイプ別（APメイジ→アサシン天敵、タンク→割合ダメージ天敵等）のインテリジェントな推定値に置換。
+    63. `ops_health_check.py` の `check_feedback_inbox()` がコードブロック内の `- [ ]` を誤カウントしていた偽陽性バグを修正。
 
 ### 🔄 判断の経緯 ＆ 落とした選択肢 (Decisions & Rejected Options)
 - **採用**: タイムスタンプ圧縮（[MM:SS]）＋LoL戦術キーワードスマートフィルタリング（B案）。

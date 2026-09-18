@@ -34,6 +34,11 @@
   - `ChampionVisualDashboard.tsx` において、ザイラ等のAPメイジを含む全チャンピオンでAatrox用のADファイタービルド（赤月の刃/黒斧/征服者）が表示されていたバグを根本解決。
   - `detectChampionArchetype` および `getPresetBuildDetails` を新設し、APメイジ、APアサシン、ADアサシン、耐久タンク、マークスマン、サポート、ADファイターを自動判定して標準・対タンク・対バーストの3大シチュエーションに応じた適正ビルドを動的生成。
   - 画面上にアーキタイプバッジ（「⚡ APメイジ」「🛡️ 耐久タンク」等）を表示し、ビルド選択のWhyを可視化。
+- [x] **yt-dlp Python API化 ＆ Zyra実演クリップ正式マウント ＆ 対面相性インテリジェント化**:
+  - `extract_video_tactics.py` のyt-dlp CLIをPython API移行。429耐性＆VTTフォールバック追加。
+  - `zyra_tactics_bible.md` のダミーURL→Agurin実動画5シーンに差替え。
+  - 対面相性デフォルトをアーキタイプ別インテリジェント推定に改善。
+  - `ops_health_check.py` のインボックス誤検知修正。
 - [x] **note 10記事のディープリサーチに基づく「ナレッジマネジメント7大核心原則」のSovereign OS全域反映**
   - **1. 📅 デイリー作業ログの入口化 ＆ 3行ナレッジ自動抽出**: [`02_FACTORY/DAILY_LOG.md`](file:///d:/my_work/02_FACTORY/DAILY_LOG.md) を新設。作業終了時にAIが自動追記し、翌朝AIが真っ先に読み直す立ち上がり循環を確立。
   - **2. 🏷️ ルール適用範囲（コンテキストタグ）の厳格化**: [`01_base_style.md`](file:///d:/my_work/.agent/rules/01_base_style.md) に「適用場面・非適用場面」の明記を義務化。「結論先行」による読者向け文章の淡白化事故を根本遮断（べっぱん原則）。
