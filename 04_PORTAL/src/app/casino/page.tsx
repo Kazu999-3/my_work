@@ -7,6 +7,8 @@ import confetti from 'canvas-confetti';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { supabase } from '../../lib/supabaseClient';
 import OmikujiModal, { OmikujiData } from './components/OmikujiModal';
+import KtmSlotGame from './components/KtmSlotGame';
+import PoroCrashGame from './components/PoroCrashGame';
 
 interface RankingPlayer {
   name: string;
@@ -108,7 +110,7 @@ const SHOP_ITEMS = [
 
 export default function CasinoPage() {
   const { user, loginWithDiscord, logout, refreshUser } = useCurrentUser();
-  const [activeTab, setActiveTab] = useState<'bet' | 'shop'>('bet');
+  const [activeTab, setActiveTab] = useState<'bet' | 'slot' | 'crash' | 'shop'>('bet');
   const [ranking, setRanking] = useState<RankingPlayer[]>([]);
   const [activeMatch, setActiveMatch] = useState<any | null>(null);
   const [betTeam, setBetTeam] = useState<'BLUE' | 'RED'>('BLUE');
@@ -645,11 +647,13 @@ export default function CasinoPage() {
 
       <div className="max-w-[1200px] w-full mx-auto px-4 md:px-8 py-8 space-y-6">
 
-        {/* 2大機能タブナビゲーション */}
-        <div className="flex items-center justify-center gap-2 p-1.5 rounded-2xl bg-stone-200/80 text-stone-700 max-w-sm mx-auto shadow-sm border border-stone-300">
+        {/* 4大カジノ機能タブナビゲーション */}
+        <div className="flex items-center justify-center gap-1.5 p-1.5 rounded-2xl bg-stone-200/80 text-stone-700 max-w-xl mx-auto shadow-sm border border-stone-300 overflow-x-auto scrollbar-none">
           {[
-            { id: 'bet', label: '🎯 勝敗予想', desc: '試合予想 ＆ 長者番付' },
-            { id: 'shop', label: '🛒 KTMショップ', desc: '特権交換' },
+            { id: 'bet', label: '🎯 勝敗予想' },
+            { id: 'slot', label: '🎰 KTMスロット' },
+            { id: 'crash', label: '🚀 ポロ・クラッシュ' },
+            { id: 'shop', label: '🛒 ショップ' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -1278,7 +1282,33 @@ export default function CasinoPage() {
           </div>
         )}
 
-        {/* タブ2: 🛒 KTMショップ */}
+        {/* タブ2: 🎰 KTMスロット */}
+        {activeTab === 'slot' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <KtmSlotGame
+              userCoins={user?.coins ?? 1000}
+              onBalanceChange={(newBalance) => {
+                fetchBetData();
+                refreshUser();
+              }}
+            />
+          </div>
+        )}
+
+        {/* タブ3: 🚀 ポロ・クラッシュ */}
+        {activeTab === 'crash' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <PoroCrashGame
+              userCoins={user?.coins ?? 1000}
+              onBalanceChange={(newBalance) => {
+                fetchBetData();
+                refreshUser();
+              }}
+            />
+          </div>
+        )}
+
+        {/* タブ4: 🛒 KTMショップ */}
         {activeTab === 'shop' && (
           <div className="bg-white rounded-3xl p-6 md:p-8 border border-black/10 shadow-sm space-y-6">
             <div className="flex items-center justify-between border-b border-stone-100 pb-4">
