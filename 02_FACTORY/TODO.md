@@ -69,6 +69,7 @@
   - **35. ⚡ 全結合シナプス (C案完成) ＆ YouTubeインライン直接再生 ＆ 一括バッチマウント配備**: [`ChampionVisualDashboard.tsx`](file:///d:/my_work/04_PORTAL/src/app/champions/components/ChampionVisualDashboard.tsx) にYouTubeインライン埋め込みプレイヤーを配備。ポータル画面内で秒数ジャンプ再生を完結させ、既存プロ動画の一括バッチ抽出モード（`extract_video_tactics.py --batch`）を完全稼働。
   - **36. 🌿🐉🐒 ザイラ・シヴァーナ・ウーコンの辞典見直し ＆ 戦術バイブル配備 ＆ DB正規化**: `champion_facts` の文字化けと情報欠落（アイテム・ルーン・スキル順None）を26.18最新メタで完全修復。`zyra_tactics_bible.md`, `shyvana_tactics_bible.md`, `monkeyking_tactics_bible.md` を制式配備し、プロ実演クリップ（Agurin / Kireilol等）を完全統合。
   - **37. 👑 ジャーヴァンIVの辞典クリーン化 ＆ 戦術バイブル第2版配備 ＆ Agurin実演クリップ統合**: `champion_facts` の5重重複記述を解消し、26.18最新サンダード・スカイ軸へ同期。`jarvaniv_tactics_bible.md` にAgurin流プロ実演3クリップ（徒歩EQ、カウンターJG、裏回りR）および天敵ミクロ（Graves, Poppy, Lee Sin, Viego）を完全統合。
+  - **38. 🚀 全系一括リフレッシュ・パイプライン完遂 ＆ JGマクロ完全保護パッチ配備**: [`refresh_all_champion_facts.py`](file:///d:/my_work/scripts/refresh_all_champion_facts.py) により全175体の辞典を26.18最新同期（139件）、重複知見クリーン化（30件）、文字化け修復（6件）。[`extract_video_tactics.py`](file:///d:/my_work/scripts/extract_video_tactics.py) にJGマクロ（トラッキング・Prio・キャンプ順序・逆サイドクロス）抽出パッチを配備し、Amumu等への実演マウント完了。戦術バイブルプールを17体へ拡大。
 
 
 

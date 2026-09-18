@@ -74,6 +74,12 @@
     47. `champion_facts` の JarvanIV 重複文章（5重の追記知見）を統合・整理し、26.18最新サンダード・スカイ軸にクリーン同期
     48. `jarvaniv_tactics_bible.md` にAgurin流プロ実演3クリップ（02:50徒歩ガンク、08:15カウンターJG、16:30裏回りR）および主要対面ミクロ（Graves, Poppy, Lee Sin, Viego）を完全統合配備
     49. `generate_tactics_bible.py` の JarvanIV マスターデータもサンダード・スカイ軸に同期完了
+  - **追加整備 (第15弾: 全系一括リフレッシュ・パイプライン完遂 ＆ JGマクロ完全保護パッチ配備)**:
+    50. `scripts/refresh_all_champion_facts.py` の新設・実行により、全175体の `champion_facts` を完全監査・一括リフレッシュ（Patch 26.18最新同期 139件、重複【追記知見】クリーン化 30件、Graves/Kindred等の文字化け完全修復 6件）
+    51. `scripts/extract_video_tactics.py` への「JGマクロ完全保護パッチ」適用（`pathing`, `tracking`, `prio`, `sequencing`, `cross-map` 等のキーワード群網羅、およびAIプロンプトへの `🗺️ マクロ判断 (Macro)` 義務付け）
+    52. `generate_tactics_bible.py` への主要JG（Graves, Kindred, Amumu, Khazix）マスターデータ追加および新規バイブル配備（計17体へプール拡大）
+    53. `04_PORTAL/src/app/api/champions/tactics/route.ts` および `ChampionVisualDashboard.tsx` への `macro` 表示UI連動（画面内で敵JGトラッキング・Prio判断がヘクステックブルーで可視化）
+    54. 実機バッチ抽出テスト実証（`amumu_tactics_bible.md` へ敵Lee Sinトラッキング・Prio・逆サイドクロスを含むチャレンジャー級実演クリップの自動マウント成功）
 
 ### 🔄 判断の経緯 ＆ 落とした選択肢 (Decisions & Rejected Options)
 - **採用**: タイムスタンプ圧縮（[MM:SS]）＋LoL戦術キーワードスマートフィルタリング（B案）。

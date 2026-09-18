@@ -28,7 +28,7 @@ export default function ChampionVisualDashboard({
     exists: boolean;
     traps: string[];
     matchups: Array<{ enemy: string; result: string; learning: string; date?: string; trap?: string }>;
-    videoClips?: Array<{ timestamp: string; url: string; title: string; why: string; how: string; rejected: string }>;
+    videoClips?: Array<{ timestamp: string; url: string; title: string; macro?: string; why: string; how: string; rejected: string }>;
     rawContent?: string;
   } | null>(null);
   const [loadingTactics, setLoadingTactics] = useState(false);
@@ -611,6 +611,12 @@ export default function ChampionVisualDashboard({
                       </div>
                     </div>
 
+                    {clip.macro && (
+                      <p className="text-cyan-800 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/40 p-2 rounded-lg text-[11px] leading-relaxed border border-cyan-200 dark:border-cyan-800/50">
+                        <span className="font-bold text-cyan-600 dark:text-cyan-400 mr-1">🗺️ マクロ判断:</span>
+                        {clip.macro}
+                      </p>
+                    )}
                     {clip.why && (
                       <p className="text-stone-700 dark:text-stone-300 text-[11px] leading-relaxed">
                         <span className="font-bold text-amber-600 dark:text-amber-400 mr-1">💡 理由:</span>

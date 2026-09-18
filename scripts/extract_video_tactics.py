@@ -44,6 +44,14 @@ TACTICS_KEYWORDS = [
     # オブジェクト・マクロ
     "dragon", "drake", "baron", "herald", "grub", "void", "tower", "plate",
     "turret", "inhibitor", "nexus", "split", "roam", "tempo", "recall", "base",
+    # JG巡回・キャンプシークエンス・マクロ（JGマクロ必須）
+    "path", "pathing", "clear", "sequence", "sequencing", "respawn", "krugs", "raptors",
+    "wolves", "gromp", "red", "blue", "scuttle", "crab", "leash", "leashless",
+    # 敵JGトラッキング・マップクロス（JGマクロ必須）
+    "tracking", "track", "opposite", "cross", "cross-map", "cross map", "mirror",
+    "shadow", "vertical", "weakside", "strongside",
+    # レーン主導権・オブジェクト判断（JGマクロ必須）
+    "prio", "priority", "give", "concede", "reset",
     # ガンク・戦闘・ミクロ
     "gank", "invade", "dive", "counter", "flank", "engage", "disengage",
     "flash", "smite", "ignite", "teleport", "ult", "ultimate", "combo", "kill",
@@ -215,13 +223,15 @@ def generate_action_steps_with_ai(video_id, champion, title, compressed_text):
 動画URL: https://www.youtube.com/watch?v={video_id}
 
 【出力要件】
-1. 重要な戦術シーンを 3〜5 つ厳選すること（Lv3ガンク、ウェーブ管理、集団戦、オブジェクト判断など）。
+1. 重要な戦術シーンを 3〜5 つ厳選すること。
+   特に単なる戦闘ミクロだけでなく、「JGの巡回パス・キャンプ順序」「敵JGトラッキング（相手の位置予測）」「レーン主導権（Prio）判断」「逆サイド荒らし（クロス）」等の【JGマクロ】を必ず含めること。
 2. 各シーンの先頭に、該当秒数のYouTube直リンクを必ず付与すること。
    フォーマット: `### 🕒 [MM:SS](https://youtu.be/{video_id}?t=秒数) - アクション名`
-3. 各シーンには以下の3項目を箇条書きで必ず含めること：
-   - 💡 **判断の理由 (Why)**: なぜこのタイミングで動いたか
-   - 🎯 **ミクロ・操作のコツ (How)**: スキルの撃ち順、AAキャンセル、Flash判断
-   - 🚫 **避けるべき罠・没理由 (Rejected)**: ここでやってはいけないNG行動
+3. 各シーンには以下の4項目を箇条書きで必ず含めること：
+   - 🗺️ **マクロ判断 (Macro)**: 敵ジャングラーの位置予測（トラッキング）、味方レーンのPrio状況、マップの逆サイドアクション
+   - 💡 **判断の理由 (Why)**: なぜ今ガンク／ファーム／リコール／オブジェクトを選択したか
+   - 🎯 **ミクロ・操作のコツ (How)**: スキルの撃ち順、AAキャンセル、FlashやSmite判断
+   - 🚫 **避けるべき罠・没理由 (Rejected)**: ここでやってはいけないNG行動（無理な寄り、視界なしオブジェクト等）
 
 【タイムスタンプ付き字幕（圧縮版）】
 {compressed_text}
