@@ -436,12 +436,42 @@ export default function ChampionVisualDashboard({
       }
     }
 
-    // デフォルトフォールバック
+    // デフォルトフォールバック（アーキタイプに応じたインテリジェントな相性推定）
     if (goodAgainst.length === 0) {
-      goodAgainst.push({ name: 'Sion', note: 'ウェーブ押し込み後のローム優位' }, { name: 'DrMundo', note: '回復阻害と序盤のトレード主導権' });
+      switch (archetype) {
+        case 'ap_mage':
+          goodAgainst.push({ name: 'DrMundo', note: '持続バーンで回復を上回る' }, { name: 'Sion', note: 'ポーク主体で一方的に削れる' });
+          break;
+        case 'tank':
+          goodAgainst.push({ name: 'Vayne', note: 'CCチェインで序盤に圧殺' }, { name: 'Jinx', note: 'エンゲージで射程差を無効化' });
+          break;
+        case 'ad_assassin':
+          goodAgainst.push({ name: 'Xerath', note: '接近すれば一方的にキル' }, { name: 'KogMaw', note: '耐久のない後衛をワンコン' });
+          break;
+        case 'marksman':
+          goodAgainst.push({ name: 'Sion', note: '引き撃ちでタンクを溶かす' }, { name: 'Amumu', note: 'カイト性能で近付かせない' });
+          break;
+        default:
+          goodAgainst.push({ name: 'Sion', note: 'ウェーブ押し込み後のローム優位' }, { name: 'DrMundo', note: '回復阻害と序盤のトレード主導権' });
+      }
     }
     if (badAgainst.length === 0) {
-      badAgainst.push({ name: 'Fiora', note: 'W受けと割合ダメージに注意' }, { name: 'Irelia', note: 'スタック維持時のオールイン警戒' });
+      switch (archetype) {
+        case 'ap_mage':
+          badAgainst.push({ name: 'Zed', note: '接近＆バーストで即死リスク' }, { name: 'Nocturne', note: 'R突進でポジション崩壊' });
+          break;
+        case 'tank':
+          badAgainst.push({ name: 'Fiora', note: '割合真のダメージで耐久が無意味' }, { name: 'Vayne', note: '銀の矢で最大HPが溶ける' });
+          break;
+        case 'ad_assassin':
+          badAgainst.push({ name: 'Rammus', note: 'AR反射と挑発で脅威が無力化' }, { name: 'Malphite', note: 'AR積みで物理DMGが通らない' });
+          break;
+        case 'marksman':
+          badAgainst.push({ name: 'Rengar', note: 'ブッシュから即死ワンコン' }, { name: 'Zed', note: 'R指定でほぼ確殺' });
+          break;
+        default:
+          badAgainst.push({ name: 'Fiora', note: 'W受けと割合ダメージに注意' }, { name: 'Irelia', note: 'スタック維持時のオールイン警戒' });
+      }
     }
 
     return { goodAgainst, badAgainst };

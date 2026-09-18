@@ -187,21 +187,41 @@ def extract_tactics_from_bible_or_url(target_input):
     else:
         video_id = target_input
 
-    # yt-dlp で字幕取得を試みる
+    # yt-dlp Python API で字幕取得を試みる（CLIパス不要）
     try:
-        cmd = [
-            "yt-dlp", "--write-auto-sub", "--sub-lang", "en", "--skip-download",
-            "--output", f"scratch/{video_id}.%(ext)s",
-            f"https://www.youtube.com/watch?v={video_id}"
-        ]
-        res = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-        vtt_file = Path(f"scratch/{video_id}.en.vtt")
+        import yt_dlp
+        scratch_dir = Path("scratch")
+        scratch_dir.mkdir(exist_ok=True)
+        vtt_file = scratch_dir / f"{video_id}.en.vtt"
+
+        ydl_opts = {
+            'skip_download': True,
+            'writeautomaticsub': True,
+            'subtitleslangs': ['en'],
+            'subtitlesformat': 'vtt',
+            'outtmpl': str(scratch_dir / '%(id)s.%(ext)s'),
+            'quiet': True,
+            'no_warnings': True,
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(
+                f"https://www.youtube.com/watch?v={video_id}",
+                download=True,
+            )
+            title = info.get('title', title) or title
+
         if vtt_file.exists():
             vtt_content = vtt_file.read_text(encoding="utf-8", errors="replace")
             vtt_file.unlink(missing_ok=True)
             return video_id, champion, title, vtt_content
     except Exception as e:
-        print(f"[WARN] yt-dlp 字幕取得エラー: {e}")
+        print(f"[WARN] yt-dlp Python API 字幕取得エラー: {e}")
+        # フォールバック: 既にscratchにVTTが残っていれば再利用
+        fallback_vtt = Path(f"scratch/{video_id}.en.vtt")
+        if fallback_vtt.exists():
+            print(f"[INFO] フォールバック: 既存VTTファイルを使用 ({fallback_vtt})")
+            vtt_content = fallback_vtt.read_text(encoding="utf-8", errors="replace")
+            return video_id, champion, title, vtt_content
 
     return video_id, champion, title, ""
 

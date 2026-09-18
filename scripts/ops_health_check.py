@@ -32,7 +32,13 @@ def check_feedback_inbox():
     with open(inbox_path, "r", encoding="utf-8", errors="ignore") as f:
         content = f.read()
     
-    pending = re.findall(r"-\s*\[\s*\]", content)
+    # コードブロック（```...```）内の例示を除外
+    clean_content = re.sub(r"```[\s\S]*?```", "", content)
+    # 受信トレイセクションに限定（存在する場合）
+    inbox_match = re.search(r"## 📋 現在の受信トレイ[\s\S]*?(?=\n---|\Z)", clean_content)
+    target_text = inbox_match.group(0) if inbox_match else clean_content
+
+    pending = re.findall(r"-\s*\[\s*\]", target_text)
     count = len(pending)
     if count == 0:
         return {"status": "PASS", "msg": "未処理の指摘・誤り報告はありません (0件)", "count": 0}
