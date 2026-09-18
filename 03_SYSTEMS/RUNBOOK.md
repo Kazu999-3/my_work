@@ -52,12 +52,17 @@
 | **エラー動画の一括再試行リセット** | `py d:\my_work\scripts\clean_youtube_queue.py --retry-failed --apply` |
 | **回復不能な壊れた動画のクローズ** | `py d:\my_work\scripts\clean_youtube_queue.py --clean-errors` |
 
-### ③ Gemini APIモデル健全性・実クォータ実測
+### ③ 総合運用・ヘルスチェック ＆ セキュリティ
 | 目的 | コマンド |
 | :--- | :--- |
-| **利用可能モデルと残クォータ実測** | `py d:\my_work\.claude\skills\gemini-model-health-check\scripts\check_gemini_models.py` |
+| **全レイヤー総合ヘルスチェック (朝イチ)** | `py d:\my_work\scripts\ops_health_check.py` |
+| **重要ナレッジVaultのローカルバックアップ** | `py d:\my_work\scripts\backup_knowledge_vault.py` |
+| **機密・APIキー誤コミット防止検査** | `py d:\my_work\scripts\pre_commit_guard.py` |
+| **セッション終了の完全自動片付け** | チャットで `/wrap-up` （または「お疲れ様」） |
+| **Geminiモデル健全性・残クォータ実測** | `py d:\my_work\.claude\skills\gemini-model-health-check\scripts\check_gemini_models.py` |
 
 ---
+
 
 ## 🧪 3. 動作テスト ＆ 品質監査ワンライナー
 

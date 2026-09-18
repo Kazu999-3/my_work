@@ -23,6 +23,11 @@
     5. `template_web_clip.md`（りゅう/honkoma原則: 外部Web記事・パッチノートの制式クリッパー雛形）
     6. `recall-decision` スキル（Blooming原則: 判断経緯・没理由のピンポイント逆引き `/why`）
     7. `FEEDBACK_INBOX.md`（AIで仕事と心NOTE原則: ナレッジ誤り訂正の単一受付窓口ポスト）
+    8. `wrap-up.md`（Coupen原則: セッション終了の全自動ラップアップ・ワークフロー）
+    9. `ops_health_check.py`（AIで仕事と心NOTE原則: 全域総合ヘルスチェッカーCLI）
+    10. `backup_knowledge_vault.py`（Blooming原則: ナレッジVaultの超軽量・高速ローカルバックアップ）
+    11. `pre_commit_guard.py`（Coupen原則: 機密情報・APIキー誤コミット防止番犬）
+
 
 
 ### 🔄 判断の経緯 ＆ 落とした選択肢 (Decisions & Rejected Options)

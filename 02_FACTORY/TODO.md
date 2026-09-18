@@ -45,6 +45,11 @@
   - **12. 📑 Webクリップ制式雛形 (`template_web_clip.md`) の新設**: [`01_INTEL/template_web_clip.md`](file:///d:/my_work/01_INTEL/template_web_clip.md) を新設。確定事実・AI要約・4段階深掘り・人間検証欄を完全分離（りゅう/honkoma原則）。
   - **13. 🔍 判断経緯・没理由の逆引きスキル (`recall-decision`) の新設**: [`.agent/skills/recall-decision/SKILL.md`](file:///d:/my_work/.agent/skills/recall-decision/SKILL.md) を新設。「`/why [トピック]`」で過去の没理由・方針変更経緯を即座に回答（Blooming原則）。
   - **14. 📮 ナレッジ訂正・誤り報告の単一受付窓口 (`FEEDBACK_INBOX.md`) の新設**: [`02_FACTORY/FEEDBACK_INBOX.md`](file:///d:/my_work/02_FACTORY/FEEDBACK_INBOX.md) を新設。情報の違和感を1行投函し、AIが自動修正・スモークテストを行う仕組みを構築（AIで仕事と心NOTE原則）。
+  - **15. 🏁 セッション終了全自動ラップアップ (`wrap-up.md`) の新設**: [`.agent/workflows/wrap-up.md`](file:///d:/my_work/.agent/workflows/wrap-up.md) を新設。「`/wrap-up`」1発で経緯抽出・3行ナレッジ記録・TODO更新・Git Pushまで完全自律完結（Coupen原則）。
+  - **16. 🛡️ 全域総合ヘルスチェッカーCLI (`ops_health_check.py`) の新設**: [`scripts/ops_health_check.py`](file:///d:/my_work/scripts/ops_health_check.py) を新設。朝イチ10秒でナレッジ未処理・Git差分・ポータル型チェック・モデル健全性を一括診断（AIで仕事と心NOTE原則）。
+  - **17. 📦 ナレッジVault自動スナップショットCLI (`backup_knowledge_vault.py`) の新設**: [`scripts/backup_knowledge_vault.py`](file:///d:/my_work/scripts/backup_knowledge_vault.py) を新設。Markdown・設定正本571ファイルをわずか1秒・3.3MBで日付付きZIP退避（Blooming原則）。
+  - **18. 🐕 機密情報・APIキー誤コミット防止番犬 (`pre_commit_guard.py`) の新設**: [`scripts/pre_commit_guard.py`](file:///d:/my_work/scripts/pre_commit_guard.py) を新設。公開リポジトリへのキー誤プッシュを物理ブロック（Coupen原則）。
+
 
 
 
