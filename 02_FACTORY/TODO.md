@@ -50,6 +50,10 @@
   - **17. 📦 ナレッジVault自動スナップショットCLI (`backup_knowledge_vault.py`) の新設**: [`scripts/backup_knowledge_vault.py`](file:///d:/my_work/scripts/backup_knowledge_vault.py) を新設。Markdown・設定正本571ファイルをわずか1秒・3.3MBで日付付きZIP退避（Blooming原則）。
   - **18. 🐕 機密情報・APIキー誤コミット防止番犬 (`pre_commit_guard.py`) の新設**: [`scripts/pre_commit_guard.py`](file:///d:/my_work/scripts/pre_commit_guard.py) を新設。公開リポジトリへのキー誤プッシュを物理ブロック（Coupen原則）。
 
+  - **19. 🎮 実戦データ ➔ 対面ナレッジ自動同期CLI (`sync_last_match_to_intel.py`) の新設**: [`scripts/sync_last_match_to_intel.py`](file:///d:/my_work/scripts/sync_last_match_to_intel.py) を新設。試合後の対面勝敗・反省・罠ビルドをワンコマンドで対面バイブルへ自動マージ（つくラボAI原則）。
+  - **20. 🔗 ナレッジ全域リンク整合性 ＆ 孤立ファイル検知リンター (`audit_knowledge_links.py`) の新設**: [`scripts/audit_knowledge_links.py`](file:///d:/my_work/scripts/audit_knowledge_links.py) を新設。461件のMarkdownからリンク切れや未リンクの孤立ノートを瞬時に検出（りゅう原則）。
+
+
 
 
 

@@ -56,12 +56,15 @@
 | 目的 | コマンド |
 | :--- | :--- |
 | **全レイヤー総合ヘルスチェック (朝イチ)** | `py d:\my_work\scripts\ops_health_check.py` |
+| **ナレッジリンク切れ ＆ 孤立ファイル監査** | `py d:\my_work\scripts\audit_knowledge_links.py` |
+| **実戦データ ➔ 対面ナレッジ自動同期 (試合後)** | `py d:\my_work\scripts\sync_last_match_to_intel.py` |
 | **重要ナレッジVaultのローカルバックアップ** | `py d:\my_work\scripts\backup_knowledge_vault.py` |
 | **機密・APIキー誤コミット防止検査** | `py d:\my_work\scripts\pre_commit_guard.py` |
 | **セッション終了の完全自動片付け** | チャットで `/wrap-up` （または「お疲れ様」） |
 | **Geminiモデル健全性・残クォータ実測** | `py d:\my_work\.claude\skills\gemini-model-health-check\scripts\check_gemini_models.py` |
 
 ---
+
 
 
 ## 🧪 3. 動作テスト ＆ 品質監査ワンライナー

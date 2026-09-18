@@ -23,7 +23,7 @@
 ## 📚 1. LoL 戦略 ＆ 攻略バイブル (Intel Domain)
 動画解析やプロ追跡から得られた最新の LoL メタ・攻略知識です。
 
-- **[総合システムデザイン](file:///d:/my_work/SYSTEM_DESIGN.md)**: Sovereign OS の全体の機能・設計書。
+- **[総合システムデザイン](file:///d:/my_work/SYSTEM_DESIGN_BY_FUNCTION.md)**: Sovereign OS の全体の機能・設計書。
 - **[プロジェクト憲法 (ANTIGRAVITY.md)](file:///d:/my_work/ANTIGRAVITY.md)**: プロジェクトの開発・運営憲法（ルール）。
 - **[YouTube 攻略バイブル (Kirei Bible)](file:///d:/my_work/02_FACTORY/bible/kirei_bible/)**:
   - YouTube動画の文字起こしからAIが自動生成した、チャンピオン毎の戦術データがここに格納されています。
