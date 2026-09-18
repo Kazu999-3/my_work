@@ -65,6 +65,11 @@
     40. `ChampionVisualDashboard.tsx` への「YouTube直接インライン埋め込みプレイヤー」実装（画面遷移なしでカード内の「ここで再生」ボタンから即座に該当秒数で動画視聴可能）
     41. `scripts/extract_video_tactics.py` への `--batch` 一括抽出モード追加配備（既存のプロ動画キュー・字幕から対象チャンピオンのバイブルへ実演クリップを自動抽出・マウント）
     42. 既存プロ動画（Agurin選手等）からのバッチ抽出テスト実証（`nocturne_tactics_bible.md` への秒数リンク・Why/How/Rejected自動追記・連携成功確認）
+  - **追加整備 (第13弾: ザイラ・シヴァーナ・ウーコンの辞典見直し ＆ 戦術バイブル配備 ＆ DB正規化)**:
+    43. `zyra_tactics_bible.md`, `shyvana_tactics_bible.md`, `monkeyking_tactics_bible.md`, `wukong_tactics_bible.md` の制式戦術バイブルを新規配備（3段階手順、罠アイテム、主要対面ミクロ、プロ実演クリップ完全完備）
+    44. `scripts/generate_tactics_bible.py` への3体マスターデータ統合（自動生成恒久化）
+    45. Supabase `champion_facts` テーブルの3体（Zyra, Shyvana, MonkeyKing）の完全正規化（Patch 26.18最新メタ、文字化け解消、公式アイテム名・ルーン・スキル順・パワースパイク・カウンター・Tipsの全同期）
+    46. `04_PORTAL/src/app/api/champions/tactics/route.ts` の罠・動画クリップパースの柔軟性向上（多種記法対応）
 
 ### 🔄 判断の経緯 ＆ 落とした選択肢 (Decisions & Rejected Options)
 - **採用**: タイムスタンプ圧縮（[MM:SS]）＋LoL戦術キーワードスマートフィルタリング（B案）。

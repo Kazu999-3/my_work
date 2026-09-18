@@ -1,7 +1,7 @@
 {
   "patch_version": "26.18",
-  "updated_at": "2026-09-18T02:50:13.362572+00:00",
-  "status": "running",
+  "updated_at": "2026-09-18T02:50:42.676091+00:00",
+  "status": "suspended",
   "queue": {
     "Aatrox": {
       "name": "エイトロックス",
@@ -199,7 +199,7 @@
     },
     "Ezreal": {
       "name": "エズリアル",
-      "status": "running",
+      "status": "pending",
       "updated_at": "2026-09-07T04:09:46.336862+00:00",
       "error": null
     },

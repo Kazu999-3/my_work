@@ -33,12 +33,12 @@ export async function GET(req: Request) {
 
     // 罠アイテム・没理由のパース
     const traps: string[] = [];
-    const trapMatch = rawContent.match(/## 🚫 避けるべき罠・不採用ビルド[\s\S]*?(?=##|$)/);
+    const trapMatch = rawContent.match(/## (?:🚫|⚠️)[^\n]*[\s\S]*?(?=\n##\s+|$)/);
     if (trapMatch) {
       const trapLines = trapMatch[0].split('\n');
       for (const line of trapLines) {
         const trimmed = line.trim();
-        if (trimmed.startsWith('- **') || trimmed.startsWith('- ❌')) {
+        if (trimmed.startsWith('- **') || trimmed.startsWith('- ❌') || trimmed.startsWith('- 🚫')) {
           traps.push(trimmed.replace(/^[-*]\s*/, ''));
         }
       }
@@ -87,7 +87,7 @@ export async function GET(req: Request) {
     const clipSections = rawContent.split(/###\s+🕒\s+\[/);
     for (let i = 1; i < clipSections.length; i++) {
       const sec = clipSections[i];
-      const match = sec.match(/^(\d{2}:\d{2})\]\((https:\/\/youtu\.be\/[^\)]+)\)\s*-\s*([^\n]+)/);
+      const match = sec.match(/^(\d{2}:\d{2})\]\((https?:\/\/[^\)]+)\)\s*-\s*([^\n]+)/);
       if (match) {
         const timestamp = match[1];
         const url = match[2];
