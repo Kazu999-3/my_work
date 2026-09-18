@@ -6,6 +6,9 @@
 > **📅 日々の作業・ナレッジの入口**:
 > - **[デイリー作業ログ (DAILY_LOG.md)](file:///d:/my_work/02_FACTORY/DAILY_LOG.md)**: 今日の作業、判断経緯、3行ナレッジ抽出の唯一の入口。
 > - **[業務ダッシュボード (TODO.md)](file:///d:/my_work/02_FACTORY/TODO.md)**: 進行中タスク・完了タスク一覧。
+> - **[ナレッジ訂正インボックス (FEEDBACK_INBOX.md)](file:///d:/my_work/02_FACTORY/FEEDBACK_INBOX.md)**: 誤り・古い情報の単一投函ポスト。
+> - **[Webクリップ制式雛形 (template_web_clip.md)](file:///d:/my_work/01_INTEL/template_web_clip.md)**: 外部情報・パッチノートの標準取込フォーマット。
+
 
 ---
 

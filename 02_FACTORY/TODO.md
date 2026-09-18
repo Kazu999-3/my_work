@@ -42,6 +42,10 @@
   - **9. ⚠️ 地雷回避データベース (`known_pitfalls.md`) の新設**: [`.agent/rules/known_pitfalls.md`](file:///d:/my_work/.agent/rules/known_pitfalls.md) を新設。過去に外した日付・症状・真因・再発防止策を集約（べっぱん原則）。
   - **10. 🔄 週次ナレッジ棚卸しワークフロー (`weekly-review.md`) の新設**: [`.agent/workflows/weekly-review.md`](file:///d:/my_work/.agent/workflows/weekly-review.md) を新設。日次と週次を分離し、知見の昇格と陳腐化防止をルーティン化（honkoma原則）。
   - **11. 🏷️ イミュータブル・プロパティ規約の標準化**: [`01_base_style.md`](file:///d:/my_work/.agent/rules/01_base_style.md) に公開日（`published_at`）と取込日（`captured_at`）を分離する統一フロントマター仕様を明文化（Blooming/りゅう原則）。
+  - **12. 📑 Webクリップ制式雛形 (`template_web_clip.md`) の新設**: [`01_INTEL/template_web_clip.md`](file:///d:/my_work/01_INTEL/template_web_clip.md) を新設。確定事実・AI要約・4段階深掘り・人間検証欄を完全分離（りゅう/honkoma原則）。
+  - **13. 🔍 判断経緯・没理由の逆引きスキル (`recall-decision`) の新設**: [`.agent/skills/recall-decision/SKILL.md`](file:///d:/my_work/.agent/skills/recall-decision/SKILL.md) を新設。「`/why [トピック]`」で過去の没理由・方針変更経緯を即座に回答（Blooming原則）。
+  - **14. 📮 ナレッジ訂正・誤り報告の単一受付窓口 (`FEEDBACK_INBOX.md`) の新設**: [`02_FACTORY/FEEDBACK_INBOX.md`](file:///d:/my_work/02_FACTORY/FEEDBACK_INBOX.md) を新設。情報の違和感を1行投函し、AIが自動修正・スモークテストを行う仕組みを構築（AIで仕事と心NOTE原則）。
+
 
 
 ## ✅ 2026-09-17 Antigravity セッションで対応済み（業務効率化＆一般ユーザー向けポータル大幅改善）
