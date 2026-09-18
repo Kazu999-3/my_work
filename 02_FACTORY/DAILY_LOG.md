@@ -70,6 +70,10 @@
     44. `scripts/generate_tactics_bible.py` への3体マスターデータ統合（自動生成恒久化）
     45. Supabase `champion_facts` テーブルの3体（Zyra, Shyvana, MonkeyKing）の完全正規化（Patch 26.18最新メタ、文字化け解消、公式アイテム名・ルーン・スキル順・パワースパイク・カウンター・Tipsの全同期）
     46. `04_PORTAL/src/app/api/champions/tactics/route.ts` の罠・動画クリップパースの柔軟性向上（多種記法対応）
+  - **追加整備 (第14弾: ジャーヴァンIVの辞典クリーン化 ＆ 戦術バイブル第2版配備 ＆ Agurin実演クリップ統合)**:
+    47. `champion_facts` の JarvanIV 重複文章（5重の追記知見）を統合・整理し、26.18最新サンダード・スカイ軸にクリーン同期
+    48. `jarvaniv_tactics_bible.md` にAgurin流プロ実演3クリップ（02:50徒歩ガンク、08:15カウンターJG、16:30裏回りR）および主要対面ミクロ（Graves, Poppy, Lee Sin, Viego）を完全統合配備
+    49. `generate_tactics_bible.py` の JarvanIV マスターデータもサンダード・スカイ軸に同期完了
 
 ### 🔄 判断の経緯 ＆ 落とした選択肢 (Decisions & Rejected Options)
 - **採用**: タイムスタンプ圧縮（[MM:SS]）＋LoL戦術キーワードスマートフィルタリング（B案）。
