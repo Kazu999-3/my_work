@@ -192,11 +192,49 @@ def make_alert_embed(message, level="info"):
         "embeds": [embed]
     }
 
+def make_match_embed(my_champ, enemy_champ, result, learning, trap=""):
+    is_win = result.lower() == "win"
+    color = 0x22c55e if is_win else 0xef4444 # 勝利なら緑、敗北なら赤
+    title = f"⚔️ 【実戦バイブル更新】{my_champ} vs {enemy_champ} ({'🏆 WIN' if is_win else '💀 LOSS'})"
+    
+    fields = [
+        {
+            "name": "💡 実戦から得た重要知見 (Key Learning)",
+            "value": learning if learning else "安定した立ち回りを実証",
+            "inline": False
+        }
+    ]
+    if trap:
+        fields.append({
+            "name": "🚫 避けるべき罠・没理由 (Rejected Option)",
+            "value": trap,
+            "inline": False
+        })
+
+    embed = {
+        "title": title,
+        "description": f"試合が終了し、`{my_champ.lower()}_tactics_bible.md` へ実戦データが自動同期されました。",
+        "color": color,
+        "fields": fields,
+        "footer": {
+            "text": "Sovereign OS Victory Loop • Match Feedback"
+        }
+    }
+    return {
+        "username": "Sovereign OS 実戦戦術官",
+        "embeds": [embed]
+    }
+
 def main():
     parser = argparse.ArgumentParser(description="Sovereign OS Discord Webhook 通知スクリプト")
-    parser.add_argument("--type", choices=["daily", "health", "alert"], default="daily", help="通知種別")
+    parser.add_argument("--type", choices=["daily", "health", "alert", "match"], default="daily", help="通知種別")
     parser.add_argument("-m", "--message", type=str, default="", help="アラートメッセージ本文")
     parser.add_argument("--level", choices=["info", "warn", "error"], default="info", help="アラート重要度")
+    parser.add_argument("--my-champ", type=str, default="Aatrox", help="自チャンピオン名 (match用)")
+    parser.add_argument("--enemy-champ", type=str, default="Darius", help="敵チャンピオン名 (match用)")
+    parser.add_argument("--result", choices=["win", "loss"], default="win", help="勝敗 (match用)")
+    parser.add_argument("--learning", type=str, default="", help="実戦教訓 (match用)")
+    parser.add_argument("--trap", type=str, default="", help="罠・不採用ビルド (match用)")
     parser.add_argument("--test", action="store_true", help="疎通テスト通知")
     parser.add_argument("--dry-run", action="store_true", help="送信せずペイロードをコンソール出力")
 
@@ -216,6 +254,14 @@ def main():
     elif args.type == "alert":
         msg = args.message if args.message else "アラート通知"
         payload = make_alert_embed(msg, level=args.level)
+    elif args.type == "match":
+        payload = make_match_embed(
+            my_champ=args.my_champ,
+            enemy_champ=args.enemy_champ,
+            result=args.result,
+            learning=args.learning or args.message,
+            trap=args.trap
+        )
     else:
         payload = make_daily_embed()
 

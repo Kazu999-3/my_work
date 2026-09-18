@@ -109,6 +109,26 @@ def check_knowledge_links():
     except Exception as e:
         return {"status": "WARN", "msg": f"リンク監査スキップ ({e})"}
 
+def check_riot_patch_status():
+    """Riot DataDragon 最新パッチ差分の確認"""
+    script_path = REPO_ROOT / "scripts" / "check_patch_update.py"
+    if not script_path.exists():
+        return {"status": "SKIP", "msg": "check_patch_update.py が見つかりません"}
+    
+    try:
+        sys.path.insert(0, str(REPO_ROOT / "scripts"))
+        from check_patch_update import fetch_latest_patch_version, get_current_recorded_patch
+        latest = fetch_latest_patch_version(timeout=3.0)
+        current = get_current_recorded_patch()
+        if not latest:
+            return {"status": "WARN", "msg": "公式パッチAPI疎通不可 (オフラインまたはタイムアウト)"}
+        if latest == current:
+            return {"status": "PASS", "msg": f"最新パッチ追従中 ({latest})"}
+        else:
+            return {"status": "WARN", "msg": f"新パッチ検知: {current} ➔ {latest} (更新推奨)"}
+    except Exception as e:
+        return {"status": "WARN", "msg": f"パッチ確認スキップ ({e})"}
+
 def main():
     print("\n" + "="*60)
     print(" 🛡️  Sovereign OS 全域総合ヘルスチェックレポート")
@@ -120,6 +140,7 @@ def main():
         ("ナレッジリンク整合性", check_knowledge_links),
         ("Git作業ツリー健全性", check_git_status),
         ("ポータル TypeScript 型整合性", check_portal_types),
+        ("Riot 最新パッチ追従状況", check_riot_patch_status),
         ("Gemini モデル管理健全性", check_gemini_models),
     ]
     

@@ -44,8 +44,20 @@
     23. `scripts/generate_tactics_bible.py`（主力プール10体＋全168体対応の戦術バイブル量産CLI）
     24. 主力10体（JarvanIV, Lillia, Viego, LeeSin, Aatrox, Darius, Jax, XinZhao, Nocturne, Fiora）の実戦戦術バイブルを `01_INTEL/tactics/` へ制式配備
     25. `matchup_blueprint_engine.py` への没理由・罠データ統合 ＆ `matchup_card_widget.py` への「🚫 罠アイテム・NG行動警告 (FORBIDDEN / TRAP)」リアルタイム描画
+  - **追加整備 (第9弾: 試合終了ハンズフリー自動バイブル同期 ＆ Riotパッチ番犬)**:
+    26. `scripts/auto_match_recorder.py`（Riot Live Client API監視デーモン: ゲーム終了を自動検知し、バイブル同期・Discordリザルト通知まで完全ハンズフリー化）
+    27. `scripts/check_patch_update.py`（DataDragon公式パッチ巡回番犬: 新パッチ検知、主力10体の検証キュー自動更新、Discordアラート通知）
+    28. `scripts/notify_discord.py`（`--type match` 実戦リザルトEmbed対応: 勝利/敗北、教訓、罠アイテムを美しくカード化）
+    29. `scripts/sync_last_match_to_intel.py`（`--notify` 連動による試合後即時Webhook発信）
+    30. `scripts/ops_health_check.py` への「Riot 最新パッチ追従状況」チェック項目統合（ALL GREEN確認）
 
 ### 🔄 判断の経緯 ＆ 落とした選択肢 (Decisions & Rejected Options)
+- **採用**: 全168体のバイブル一括生成ではなく、遭遇時に自律成長する「自己増殖型バイブル」アーキテクチャ。
+  - *没案*: 全168チャンピオンのバイブルを一気に機械生成する案。
+  - *没理由*: 機械生成で一括作成すると情報が薄い形骸化バイブルが大量発生し、実戦の価値が下がる。パレートの法則に従い、遭遇率の高い主力10体を濃密に整備し、残りは `auto_match_recorder.py` で対戦した際に自動生成・肉付けしていく方式が圧倒的に実用的。
+- **採用**: Riot Live Client API切断検知によるハンズフリー記録 ＆ `--simulate` テストモード。
+  - *没案*: 毎試合ユーザーに手動でCLIを叩かせる案。
+  - *没理由*: 試合直後は疲労や次戦マッチングで手動入力が抜け落ちやすく、データ蓄積の継続性が損なわれるため。またテストモードを設けることで実機プレイ中以外のCI/開発環境でも容易に動作確認可能にした。
 - **採用**: ルールファイルへの「コンテキストタグ（適用場面・非適用場面）」の1行追加。
   - *理由*: 「結論を先に」等の指示が読者向け記事に誤爆して淡白化する事故（べっぱん氏の教訓）を防ぐため、ルールを全場面一律適用させない。
 - **採用**: 正本（Raw Data）と派生データ（AI Summary）の完全分離。

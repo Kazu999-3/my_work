@@ -16,10 +16,17 @@ import argparse
 import datetime
 from pathlib import Path
 
+import subprocess
+
 # Windows cp932対策
 if sys.platform == "win32":
     import io
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    if not getattr(sys.stdout, "_custom_utf8", False):
+        try:
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+            sys.stdout._custom_utf8 = True
+        except Exception:
+            pass
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TACTICS_DIR = REPO_ROOT / "01_INTEL" / "tactics"
@@ -90,6 +97,21 @@ tags: [LoL, Tactics, {my_champ}]
     print(f"    - 次回プレイ前の攻略手順書へ自動反映されます。")
     print("="*60 + "\n")
 
+    if notify:
+        notify_script = REPO_ROOT / "scripts" / "notify_discord.py"
+        if notify_script.exists():
+            cmd = [
+                sys.executable, str(notify_script),
+                "--type", "match",
+                "--my-champ", my_champ,
+                "--enemy-champ", enemy_champ,
+                "--result", result.lower(),
+                "--learning", learning,
+            ]
+            if trap:
+                cmd.extend(["--trap", trap])
+            subprocess.run(cmd)
+
 def main():
     parser = argparse.ArgumentParser(description="実戦データ ➔ 対面ナレッジ自動マージCLI")
     parser.add_argument("--my-champ", type=str, help="自分が使用したチャンピオン名 (例: Yorick)")
@@ -97,6 +119,7 @@ def main():
     parser.add_argument("--result", type=str, choices=["win", "loss"], help="試合結果 (win / loss)")
     parser.add_argument("--learning", type=str, help="実戦で得られた重要手順・立ち回り")
     parser.add_argument("--trap", type=str, default="", help="避けるべき罠アイテムや立ち回り")
+    parser.add_argument("--notify", action="store_true", help="同期後にDiscordへリザルトを通知")
 
     args = parser.parse_args()
 
@@ -108,14 +131,16 @@ def main():
         result = input("勝敗 (win / loss): ").strip().lower()
         learning = input("実戦で得られた教訓・立ち回り: ").strip()
         trap = input("避けるべき罠アイテム・ミス (省略可): ").strip()
+        notify = True
     else:
         my_champ = args.my_champ
         enemy_champ = args.enemy_champ
         result = args.result
         learning = args.learning
         trap = args.trap
+        notify = args.notify
 
-    sync_match_to_intel(my_champ, enemy_champ, result, learning, trap)
+    sync_match_to_intel(my_champ, enemy_champ, result, learning, trap, notify=notify)
 
 if __name__ == "__main__":
     main()
