@@ -79,6 +79,11 @@ export default function GuideRulesTab() {
               参加者の中で最も実力差が密集している（1ティア差以内の）10名を自動選出！<br />
               <span className="font-bold text-amber-900 dark:text-amber-200">※選考外となった方は「観戦・配信応援」または「2戦目に最優先で交代参加」となります。</span>
             </p>
+            <div className="mt-2 pt-2 border-t border-amber-200/60 text-[11px] text-amber-900 dark:text-amber-300 space-y-0.5">
+              <p className="font-bold">📊 最多ランク帯（基準）の集計ルール：</p>
+              <p>・<strong>エメラルド以上</strong>（エメラルド/ダイヤ/マスター等）はすべて<strong>「プラチナ」</strong>として合算カウント</p>
+              <p>・<strong>アイアン・未ランク</strong>はすべて<strong>「ブロンズ」</strong>として合算カウント</p>
+            </div>
           </div>
 
           {/* ③ 当日19時までに7名以下なら中止 */}

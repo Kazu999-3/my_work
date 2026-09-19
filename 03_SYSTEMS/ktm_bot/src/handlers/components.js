@@ -419,13 +419,22 @@ export async function handleButtonInteraction(interaction, env, ctx) {
           const count = fLines.length;
 
           // 参加者全体のランク分布と最多ランク帯（ボリュームゾーン）を集計
+          // ルール: エメラルド以上はプラチナに合算、アイアン・未ランクはブロンズに合算
           let dominantTierName = "未定";
           if (count > 0) {
             const tierCounts = {};
             fLines.forEach(line => {
-              const match = line.match(/【(アイアン|ブロンズ|シルバー|ゴールド|プラチナ|エメラルド|ダイヤ|マスター|チャレンジャー|グランドマスター|IRON|BRONZE|SILVER|GOLD|PLATINUM|EMERALD|DIAMOND|MASTER)/i);
+              const match = line.match(/【(アイアン|ブロンズ|シルバー|ゴールド|プラチナ|エメラルド|ダイヤ|マスター|チャレンジャー|グランドマスター|未ランク|IRON|BRONZE|SILVER|GOLD|PLATINUM|EMERALD|DIAMOND|MASTER|GRANDMASTER|CHALLENGER|UNRANKED)/i);
               const rawT = match ? match[1].toUpperCase() : "SILVER";
-              const jpT = RANK_JP_MAP[rawT] || match?.[1] || "シルバー";
+              let jpT = RANK_JP_MAP[rawT] || match?.[1] || "シルバー";
+
+              // ルール適用：エメラルド以上 ➔ プラチナ合算 / アイアン・未ランク ➔ ブロンズ合算
+              if (['チャレンジャー', 'グランドマスター', 'マスター', 'ダイヤ', 'エメラルド', 'プラチナ'].includes(jpT)) {
+                jpT = 'プラチナ';
+              } else if (['アイアン', '未ランク', 'ブロンズ'].includes(jpT)) {
+                jpT = 'ブロンズ';
+              }
+
               tierCounts[jpT] = (tierCounts[jpT] || 0) + 1;
             });
             let maxCount = 0;

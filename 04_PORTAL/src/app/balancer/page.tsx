@@ -1148,14 +1148,30 @@ export default function BalancerPage() {
         {balanceResult && (
           <>
             <optgroup label="Blue Team" className="text-stone-900 font-bold bg-blue-100">
-              {balanceResult.teamBlue.map((p:any) => <option key={`blue-${p.name}`} value={p.name} className="text-stone-900 bg-white">{p.name}</option>)}
+              {balanceResult.teamBlue.map((p:any) => (
+                <option key={`blue-${p.name}`} value={p.name} className="text-stone-900 bg-white">
+                  {p.name} (MMR {p.mmr || 1200})
+                </option>
+              ))}
             </optgroup>
             <optgroup label="Red Team" className="text-stone-900 font-bold bg-red-100">
-              {balanceResult.teamRed.map((p:any) => <option key={`red-${p.name}`} value={p.name} className="text-stone-900 bg-white">{p.name}</option>)}
+              {balanceResult.teamRed.map((p:any) => (
+                <option key={`red-${p.name}`} value={p.name} className="text-stone-900 bg-white">
+                  {p.name} (MMR {p.mmr || 1200})
+                </option>
+              ))}
             </optgroup>
             {balanceResult.spectators && balanceResult.spectators.length > 0 && (
               <optgroup label="Spectators" className="text-stone-900 font-bold bg-stone-200">
-                {balanceResult.spectators.map((name:string) => <option key={`spec-${name}`} value={name} className="text-stone-900 bg-white">{name}</option>)}
+                {balanceResult.spectators.map((name:string) => {
+                  const specP = players.find((p: any) => p.name === name);
+                  const specMmr = specP?.mmr || 1200;
+                  return (
+                    <option key={`spec-${name}`} value={name} className="text-stone-900 bg-white">
+                      {name} (MMR {specMmr})
+                    </option>
+                  );
+                })}
               </optgroup>
             )}
           </>
@@ -1759,10 +1775,15 @@ export default function BalancerPage() {
                   <div className="flex flex-wrap gap-2">
                     {balanceResult.spectators.map((name: string, index: number) => {
                       const slotKey = `spectators-${index}`;
+                      const specP = players.find((p: any) => p.name === name);
+                      const specMmr = specP?.mmr || 1200;
                       return (
                         <div key={`spec-${index}`} draggable onDragStart={e => handleDragStart(e,'spectators',index.toString(),name)} onDragOver={e => handleDragOver(e,slotKey)} onDragLeave={handleDragLeave} onDrop={e => handleDropPlayer(e,'spectators',index.toString())}
-                          className={`border rounded px-2.5 py-1.5 min-w-[120px] flex items-center justify-between gap-1.5 transition cursor-grab ${dragOverSlot===slotKey?'border-orange-400 bg-orange-100 border-dashed':'bg-stone-100 border-stone-200 hover:bg-stone-100'} ${swapSource?.name === name ? 'border-amber-500 bg-amber-100 animate-pulse' : ''}`}>
+                          className={`border rounded px-2.5 py-1.5 min-w-[140px] flex items-center justify-between gap-1.5 transition cursor-grab ${dragOverSlot===slotKey?'border-orange-400 bg-orange-100 border-dashed':'bg-stone-100 border-stone-200 hover:bg-stone-100'} ${swapSource?.name === name ? 'border-amber-500 bg-amber-100 animate-pulse' : ''}`}>
                           <div className="flex-1 min-w-0">{renderSwapSelect('spectators',index.toString(),name)}</div>
+                          <span className="font-mono text-[10px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded shrink-0" title="KTM代表MMR">
+                            {specMmr}
+                          </span>
                           {name && (
                             <button
                               type="button"
