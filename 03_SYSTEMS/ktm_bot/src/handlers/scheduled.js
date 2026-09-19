@@ -4,7 +4,7 @@ import { parseMessageData } from '../utils/helpers.js';
 import { fetchWithRetry, fetchPortalAPI } from '../utils/api.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed } from '../ui/embeds.js';
 import { createRecruitment } from '../utils/recruitPermission.js';
-import { getKtmRank, formatRankDistribution, formatMmrWithRank, getHighestLaneMmr } from '../utils/ktmRank.js';
+import { getKtmRank, formatRankDistribution, formatMmrWithRank, getHighestLaneMmr, getPlayerExperienceBadge } from '../utils/ktmRank.js';
 import { computeRecruitmentStatus, RECRUITMENT_COLORS } from '../utils/recruitmentStatus.js';
 
 export async function handleScheduledEvent(event, env, ctx) {
@@ -697,10 +697,10 @@ async function sendEventUsersNotification(env, options = {}) {
     const sunShortfall = recruitStatus.sunRem;
     const totalJoined = recruitStatus.totalJoined;
 
-    // 4. アナウンス Embed の作成（募集カードを完全同期 ＆ 参加者の希望レーンを自動付与）
+    // 4. アナウンス Embed の作成（募集カードを完全同期 ＆ 参加者の希望レーン・経験度バッジを自動付与）
     let syncFields = activeEmbed ? activeEmbed.fields : [];
 
-    // 参加ユーザー全員の希望レーンを全件一括ルックアップして補完
+    // 参加ユーザー全員の希望レーン＆経験度バッジを全件一括ルックアップして補完
     if (syncFields && syncFields.length > 0) {
       try {
         const allUserIds = new Set();
@@ -713,10 +713,15 @@ async function sendEventUsersNotification(env, options = {}) {
 
         if (allUserIds.size > 0) {
           const idsArr = Array.from(allUserIds);
-          const ps = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${idsArr.join(',')})&select=discord_id,role_preferences`);
+          const ps = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${idsArr.join(',')})&select=discord_id,role_preferences,total_games,recent_games_30d,days_since_last_match`);
           const prefMap = new Map();
+          const expMap = new Map();
+
           if (ps && ps.length > 0) {
             ps.forEach(p => {
+              const expObj = getPlayerExperienceBadge(p);
+              expMap.set(String(p.discord_id), expObj.short);
+
               if (p.role_preferences) {
                 let pref = p.role_preferences;
                 if (typeof pref === 'string') {
@@ -737,13 +742,28 @@ async function sendEventUsersNotification(env, options = {}) {
               const uMatch = line.match(/<@(\d+)>/);
               if (uMatch) {
                 const uId = uMatch[1];
-                const prefStr = prefMap.get(uId);
-                if (prefStr && !line.includes("【第1:")) {
-                  const cleanLine = line.replace(/【希望: [^】]+】/g, '').replace(/\*\(希望: [^\)]+\)\*/g, '').trim();
-                  return `${cleanLine} ${prefStr}`;
-                } else if (!prefStr) {
-                  return line.replace(/【希望: [^】]+】/g, '').replace(/\*\(希望: [^\)]+\)\*/g, '').trim();
+                let expBadge = expMap.get(uId) || '🔰初参加';
+                let prefStr = prefMap.get(uId);
+
+                let resLine = line;
+                // 経験度バッジの付与（まだ無ければメンションの後ろ、スタイルバッジの隣に追加）
+                if (!resLine.includes('🔰初参加') && !resLine.includes('🌱ライト') && !resLine.includes('⏳復帰勢') && !resLine.includes('🎖️経験者') && !resLine.includes('👑常連')) {
+                  const styleMatch = resLine.match(/(- <@\d+>\s*(?:🟢フル|⏱️1戦のみ|🌙途中参加(?:\(2戦目〜\))?))/);
+                  if (styleMatch) {
+                    resLine = resLine.replace(styleMatch[1], `${styleMatch[1]} ${expBadge}`);
+                  } else {
+                    resLine = resLine.replace(`- <@${uId}>`, `- <@${uId}> ${expBadge}`);
+                  }
                 }
+
+                // 希望レーンの付与
+                if (prefStr && !resLine.includes("【第1:")) {
+                  const cleanLine = resLine.replace(/【希望: [^】]+】/g, '').replace(/\*\(希望: [^\)]+\)\*/g, '').trim();
+                  resLine = `${cleanLine} ${prefStr}`;
+                } else if (!prefStr) {
+                  resLine = resLine.replace(/【希望: [^】]+】/g, '').replace(/\*\(希望: [^\)]+\)\*/g, '').trim();
+                }
+                return resLine;
               }
               return line;
             });
@@ -751,7 +771,7 @@ async function sendEventUsersNotification(env, options = {}) {
           });
         }
       } catch (prefErr) {
-        console.warn("Role pref sync warning:", prefErr);
+        console.warn("Role pref & exp badge sync warning:", prefErr);
       }
     }
     
@@ -760,6 +780,58 @@ async function sendEventUsersNotification(env, options = {}) {
         { name: "⚔️ 【土曜・本戦カスタム】 (0/10名) 🎯 基準: 未定 (最多帯自動編成)", value: "▫ 参加者: なし", inline: false },
         { name: "🎪 【日曜・お祭り部門】 (0/10名) 🎲 ランク不問 (MMRなし)", value: "▫ 参加者: なし", inline: false }
       ];
+    }
+
+    // 参加メンバーの経験層分析フィールドの同期/追加
+    const satLines = (syncFields[0]?.value || "").split('\n').filter(l => l.startsWith('- '));
+    const sunLines = (syncFields[1]?.value || "").split('\n').filter(l => l.startsWith('- '));
+    const allLines = [...satLines, ...sunLines];
+
+    const userExpMap = new Map();
+    for (const line of allLines) {
+      const uMatch = line.match(/<@(\d+)>/);
+      if (!uMatch) continue;
+      const uid = uMatch[1];
+      if (userExpMap.has(uid)) continue;
+
+      let tier = 'regular';
+      if (line.includes('🔰初参加') || line.includes('🔰 初参加')) tier = 'new';
+      else if (line.includes('🌱ライト') || line.includes('🌱 ライト')) tier = 'light';
+      else if (line.includes('⏳復帰勢') || line.includes('⏳ 復帰勢') || line.includes('🎖️経験者') || line.includes('🎖️ 経験者')) tier = 'returning';
+      else if (line.includes('👑常連') || line.includes('👑 常連')) tier = 'regular';
+      else tier = 'regular';
+      userExpMap.set(uid, tier);
+    }
+
+    const totalUniqueUsers = userExpMap.size;
+    if (totalUniqueUsers > 0) {
+      let newCnt = 0;
+      let lightCnt = 0;
+      let returningCnt = 0;
+      let regularCnt = 0;
+
+      for (const t of userExpMap.values()) {
+        if (t === 'new') newCnt++;
+        else if (t === 'light') lightCnt++;
+        else if (t === 'returning') returningCnt++;
+        else if (t === 'regular') regularCnt++;
+      }
+
+      const ratio = Math.round(((newCnt + lightCnt + returningCnt) / totalUniqueUsers) * 100);
+      const expField = {
+        name: `👥 参加メンバーの経験層分析 (${totalUniqueUsers}名)`,
+        value: `🔰初参加: **${newCnt}名** | 🌱ライト: **${lightCnt}名** | ⏳復帰勢: **${returningCnt}名** | 👑常連: **${regularCnt}名**\n✨ 初心者・復帰勢歓迎！ (新規・ライト・復帰層: **${ratio}%**)`,
+        inline: false
+      };
+
+      const expIdx = syncFields.findIndex(f => f.name.includes("経験層分析"));
+      if (expIdx >= 0) {
+        syncFields[expIdx] = expField;
+      } else {
+        syncFields.push(expField);
+      }
+    } else {
+      syncFields = syncFields.filter(f => !f.name.includes("経験層分析"));
     }
 
     const recruitLink = targetMessageId ? `\n\n👉 [元の募集メッセージを開く](https://discord.com/channels/${guildId}/${channelId}/${targetMessageId})` : '';
@@ -858,12 +930,11 @@ async function sendEventUsersNotification(env, options = {}) {
 
     if (!isAllReady && roleId) {
       let shortText = [];
-      if (silverShortfall > 0) shortText.push(`土曜シルバー あと${silverShortfall}名`);
-      if (goldShortfall > 0) shortText.push(`土曜ゴルプラ あと${goldShortfall}名`);
-      if (sundayShortfall > 0) shortText.push(`日曜お祭り あと${sundayShortfall}名`);
+      if (satShortfall > 0) shortText.push(`土曜本戦 あと${satShortfall}名`);
+      if (sunShortfall > 0) shortText.push(`日曜お祭り あと${sunShortfall}名`);
 
       let helperCall = "";
-      if ((silverShortfall <= 2 && silverShortfall > 0) || (goldShortfall <= 2 && goldShortfall > 0) || (sundayShortfall <= 2 && sundayShortfall > 0)) {
+      if ((satShortfall <= 2 && satShortfall > 0) || (sunShortfall <= 2 && sunShortfall > 0)) {
         helperCall = "\n💡 **「21:00からの第1試合だけなら参加できる！」という1戦のみ助っ人も大歓迎です！**";
       }
 

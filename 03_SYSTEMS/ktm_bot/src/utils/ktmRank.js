@@ -97,5 +97,62 @@ export function getHighestLaneMmr(player) {
   return player.mmr != null ? Number(player.mmr) : 0;
 }
 
+/**
+ * プレイヤーの経験度（初参加・ライト・復帰勢・常連）を判定してバッジオブジェクトを返す
+ * ポータル（/balancer, /ktm-admin）と同一の判定基準
+ * @param {object} p - プレイヤーオブジェクト (total_games, recent_games_30d, days_since_last_match 等)
+ */
+export function getPlayerExperienceBadge(p) {
+  if (!p) {
+    return { tier: 'new', label: '🔰 初参加', short: '🔰初参加', tip: '通算0戦：初参加のプレイヤーです！大歓迎✨' };
+  }
+  const totalG = p.total_games ?? p.games ?? p.metadata?.games ?? 0;
+  const recent30d = p.recent_games_30d ?? (p.days_since_last_match !== null && p.days_since_last_match !== undefined && p.days_since_last_match <= 30 ? 1 : 0);
+  const daysAgo = p.days_since_last_match !== undefined ? p.days_since_last_match : null;
+
+  // 1. 初参加（通算0戦）
+  if (totalG === 0) {
+    return {
+      tier: 'new',
+      label: '🔰 初参加',
+      short: '🔰初参加',
+      tip: '通算0戦：初参加のプレイヤーです！大歓迎✨'
+    };
+  }
+  // 2. ライト層（通算1〜4戦）
+  if (totalG <= 4) {
+    return {
+      tier: 'light',
+      label: '🌱 ライト',
+      short: '🌱ライト',
+      tip: `通算${totalG}戦：参加回数がまだ浅いライトプレイヤーです`
+    };
+  }
+  // 3. 通算5戦以上だが直近参加がない（30日以上ブランク）
+  if (daysAgo !== null && daysAgo > 30) {
+    if (daysAgo >= 60) {
+      return {
+        tier: 'returning',
+        label: '⏳ 復帰勢',
+        short: '⏳復帰勢',
+        tip: `通算${totalG}戦（最終参加: ${daysAgo}日前）：久しぶりの参加となる復帰プレイヤーです！大歓迎✨`
+      };
+    }
+    return {
+      tier: 'returning',
+      label: '🎖️ 経験者',
+      short: '🎖️経験者',
+      tip: `通算${totalG}戦（最終参加: ${daysAgo}日前）：久しぶりに参加の経験者プレイヤーです`
+    };
+  }
+  // 4. 直近も定期参加している現役常連
+  return {
+    tier: 'regular',
+    label: '👑 常連',
+    short: '👑常連',
+    tip: `通算${totalG}戦（直近30日: ${recent30d}戦）：定期的に参加しているアクティブ常連メンバーです`
+  };
+}
+
 export { KTM_TIERS };
 

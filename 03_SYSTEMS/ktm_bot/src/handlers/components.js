@@ -6,7 +6,7 @@ import { generateChampionRoulette } from './roulette.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, extractPlayersFromEmbed, getPortalComponents, getPortalEmbed, handleHelpPage } from '../ui/embeds.js';
 import { parseMessageData, handleAutoMatchEnd } from '../utils/helpers.js';
 import { getAdminDiscordIds, markRecruitmentStatus } from '../utils/recruitPermission.js';
-import { getKtmRank, getHighestLaneMmr } from '../utils/ktmRank.js';
+import { getKtmRank, getHighestLaneMmr, getPlayerExperienceBadge } from '../utils/ktmRank.js';
 import { computeRecruitmentStatus, buildStatusBanner } from '../utils/recruitmentStatus.js';
 
 export async function handleButtonInteraction(interaction, env, ctx) {
@@ -327,7 +327,7 @@ export async function handleButtonInteraction(interaction, env, ctx) {
           fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${msgId}`, {
             headers: { "Authorization": `Bot ${botToken}` }
           }),
-          fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup,role_preferences,name`)
+          fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup,role_preferences,name,total_games,recent_games_30d,days_since_last_match`)
             .then((rows) => (rows && rows.length > 0 ? rows[0] : null))
             .catch((e) => { console.warn('join_periodic: 名簿取得に失敗:', e); return null; }),
         ]);
@@ -362,13 +362,16 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         const isAlreadyInTarget = !!existingLine;
         const isSameStyle = existingLine && existingLine.includes(styleBadge);
 
-        // ランク＆レーン希望文字列の作成
+        // ランク＆レーン希望＆経験度バッジ文字列の作成
         const RANK_JP_MAP = {
           CHALLENGER: 'チャレンジャー', GRANDMASTER: 'グランドマスター', MASTER: 'マスター',
           DIAMOND: 'ダイヤ', EMERALD: 'エメラルド', PLATINUM: 'プラチナ',
           GOLD: 'ゴールド', SILVER: 'シルバー', BRONZE: 'ブロンズ', IRON: 'アイアン',
           UNRANKED: '未ランク'
         };
+
+        const expBadgeObj = getPlayerExperienceBadge(playerRow);
+        const expBadgeStr = ` ${expBadgeObj.short}`;
 
         let rankStr = "";
         if (playerRow) {
@@ -395,7 +398,7 @@ export async function handleButtonInteraction(interaction, env, ctx) {
           console.warn("role_preferences parse error:", e);
         }
 
-        const fullEntryBadge = `${rankStr}${lanePrefStr}`;
+        const fullEntryBadge = `${expBadgeStr}${rankStr}${lanePrefStr}`;
 
         if (isSundayMode) {
           // 日曜部門のトグル/スタイル変更（土曜には触らない）
@@ -403,7 +406,7 @@ export async function handleButtonInteraction(interaction, env, ctx) {
           fLines = fLines.filter(l => l.startsWith('- ') && !l.includes(userMention));
 
           if (!isAlreadyInTarget || !isSameStyle) {
-            fLines.push(`- ${userMention}${styleBadge}${lanePrefStr}`);
+            fLines.push(`- ${userMention}${styleBadge}${expBadgeStr}${lanePrefStr}`);
           }
           const count = fLines.length;
           targetEmbed.fields[1].name = `🎪 【日曜・お祭り部門】 (${count}/10名) 🎲 ランク不問 (MMRなし)`;
@@ -448,6 +451,62 @@ export async function handleButtonInteraction(interaction, env, ctx) {
 
           targetEmbed.fields[0].name = `⚔️ 【土曜・本戦カスタム】 (${count}/10名) 🎯 基準: ${dominantTierName} (※MMR基準)`;
           targetEmbed.fields[0].value = fLines.length > 0 ? fLines.join('\n') : "▫ 参加者: なし\n※対象: 全員エントリーOK！最も集まったKTM内戦MMR帯を基準に実力均等チーム分け";
+        }
+
+        // 参加メンバーの経験層分析（ユニーク参加者を集計）
+        const satLines = (targetEmbed.fields[0]?.value || "").split('\n').filter(l => l.startsWith('- '));
+        const sunLines = (targetEmbed.fields[1]?.value || "").split('\n').filter(l => l.startsWith('- '));
+        const allLines = [...satLines, ...sunLines];
+
+        const userExpMap = new Map();
+        for (const line of allLines) {
+          const uMatch = line.match(/<@(\d+)>/);
+          if (!uMatch) continue;
+          const uid = uMatch[1];
+          if (userExpMap.has(uid)) continue;
+
+          let tier = 'regular';
+          if (line.includes('🔰初参加') || line.includes('🔰 初参加')) tier = 'new';
+          else if (line.includes('🌱ライト') || line.includes('🌱 ライト')) tier = 'light';
+          else if (line.includes('⏳復帰勢') || line.includes('⏳ 復帰勢') || line.includes('🎖️経験者') || line.includes('🎖️ 経験者')) tier = 'returning';
+          else if (line.includes('👑常連') || line.includes('👑 常連')) tier = 'regular';
+          else {
+            // バッジ表記がない過去の行等の場合はデフォルト
+            tier = 'regular';
+          }
+          userExpMap.set(uid, tier);
+        }
+
+        const totalUniqueUsers = userExpMap.size;
+        if (totalUniqueUsers > 0) {
+          let newCnt = 0;
+          let lightCnt = 0;
+          let returningCnt = 0;
+          let regularCnt = 0;
+
+          for (const t of userExpMap.values()) {
+            if (t === 'new') newCnt++;
+            else if (t === 'light') lightCnt++;
+            else if (t === 'returning') returningCnt++;
+            else if (t === 'regular') regularCnt++;
+          }
+
+          const ratio = Math.round(((newCnt + lightCnt + returningCnt) / totalUniqueUsers) * 100);
+          const expField = {
+            name: `👥 参加メンバーの経験層分析 (${totalUniqueUsers}名)`,
+            value: `🔰初参加: **${newCnt}名** | 🌱ライト: **${lightCnt}名** | ⏳復帰勢: **${returningCnt}名** | 👑常連: **${regularCnt}名**\n✨ 初心者・復帰勢歓迎！ (新規・ライト・復帰層: **${ratio}%**)`,
+            inline: false
+          };
+
+          const expIdx = targetEmbed.fields.findIndex(f => f.name.includes("経験層分析"));
+          if (expIdx >= 0) {
+            targetEmbed.fields[expIdx] = expField;
+          } else {
+            targetEmbed.fields.push(expField);
+          }
+        } else {
+          // 参加者が0名の場合は経験層分析フィールドを削除
+          targetEmbed.fields = targetEmbed.fields.filter(f => !f.name.includes("経験層分析"));
         }
 
         // 3. 最新の参加人数とステータスバナー作成
