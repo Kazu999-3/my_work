@@ -717,18 +717,26 @@ function buildBalanceResult(
   const assignB = sortByRole(rawAssignB);
 
   // --- サイド公平化ロジック ---
-  let scoreNormal = 0;
-  assignA.forEach(p => scoreNormal += (ctx.sideHistory[p.name]?.BLUE || 0));
-  assignB.forEach(p => scoreNormal += (ctx.sideHistory[p.name]?.RED || 0));
-  
-  let scoreSwapped = 0;
-  assignB.forEach(p => scoreSwapped += (ctx.sideHistory[p.name]?.BLUE || 0));
-  assignA.forEach(p => scoreSwapped += (ctx.sideHistory[p.name]?.RED || 0));
+  // 各プレイヤーの偏り差（BLUE - RED）の合計で「今回このサイドに入ると偏りが増えるか減るか」を判定。
+  // 正の値＝BLUEが多い(BLUE過多)、負の値＝REDが多い(RED過多)。
+  // A が BLUE になるケース(normal) と A が RED になるケース(swapped) を比較し、
+  // 絶対値の合計が小さい（偏りが少ない）方を選ぶ。
+  const getBias = (p: AssignedPlayer) => (ctx.sideHistory[p.name]?.BLUE || 0) - (ctx.sideHistory[p.name]?.RED || 0);
+
+  // normal: A→BLUE, B→RED
+  const biasNormal =
+    assignA.reduce((s, p) => s + (getBias(p) + 1), 0) + // +1: 今回BLUEに入る
+    assignB.reduce((s, p) => s + (getBias(p) - 1), 0);  // -1: 今回REDに入る
+
+  // swapped: A→RED, B→BLUE
+  const biasSwapped =
+    assignA.reduce((s, p) => s + (getBias(p) - 1), 0) + // -1: 今回REDに入る
+    assignB.reduce((s, p) => s + (getBias(p) + 1), 0);  // +1: 今回BLUEに入る
 
   let isSwapped = false;
-  if (scoreNormal > scoreSwapped) {
+  if (Math.abs(biasSwapped) < Math.abs(biasNormal)) {
     isSwapped = true;
-  } else if (scoreNormal === scoreSwapped) {
+  } else if (Math.abs(biasNormal) === Math.abs(biasSwapped)) {
     isSwapped = Math.random() < 0.5;
   }
 
