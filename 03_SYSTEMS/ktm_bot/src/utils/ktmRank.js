@@ -106,7 +106,14 @@ export function getPlayerExperienceBadge(p) {
   if (!p) {
     return { tier: 'new', label: '🔰 初参加', short: '🔰初参加', tip: '通算0戦：初参加のプレイヤーです！大歓迎✨' };
   }
-  const totalG = p.total_games ?? p.games ?? p.metadata?.games ?? 0;
+  let totalG = p.total_games ?? p.games ?? p.metadata?.games;
+  if (totalG === undefined || totalG === null) {
+    if (p.games_top !== undefined || p.games_jg !== undefined || p.games_mid !== undefined || p.games_adc !== undefined || p.games_sup !== undefined) {
+      totalG = (p.games_top || 0) + (p.games_jg || 0) + (p.games_mid || 0) + (p.games_adc || 0) + (p.games_sup || 0);
+    } else {
+      totalG = 0;
+    }
+  }
   const recent30d = p.recent_games_30d ?? (p.days_since_last_match !== null && p.days_since_last_match !== undefined && p.days_since_last_match <= 30 ? 1 : 0);
   const daysAgo = p.days_since_last_match !== undefined ? p.days_since_last_match : null;
 

@@ -327,7 +327,7 @@ export async function handleButtonInteraction(interaction, env, ctx) {
           fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${msgId}`, {
             headers: { "Authorization": `Bot ${botToken}` }
           }),
-          fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup,role_preferences,name,total_games,recent_games_30d,days_since_last_match`)
+          fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup,role_preferences,name,games_top,games_jg,games_mid,games_adc,games_sup,metadata`)
             .then((rows) => (rows && rows.length > 0 ? rows[0] : null))
             .catch((e) => { console.warn('join_periodic: 名簿取得に失敗:', e); return null; }),
         ]);

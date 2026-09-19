@@ -713,59 +713,110 @@ async function sendEventUsersNotification(env, options = {}) {
 
         if (allUserIds.size > 0) {
           const idsArr = Array.from(allUserIds);
-          const ps = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${idsArr.join(',')})&select=discord_id,role_preferences,total_games,recent_games_30d,days_since_last_match`);
-          const prefMap = new Map();
-          const expMap = new Map();
+          const [playersRows, participantsRows] = await Promise.all([
+            fetchSupabase(env, 'ktm_players', `discord_id=in.(${idsArr.join(',')})&select=discord_id,name,role_preferences,mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup,games_top,games_jg,games_mid,games_adc,games_sup,metadata`).catch(() => []),
+            fetchSupabase(env, 'ktm_match_participants', `discord_id=in.(${idsArr.join(',')})&select=discord_id,created_at&order=created_at.desc`).catch(() => [])
+          ]);
 
-          if (ps && ps.length > 0) {
-            ps.forEach(p => {
-              const expObj = getPlayerExperienceBadge(p);
-              expMap.set(String(p.discord_id), expObj.short);
+          const now = Date.now();
+          const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+          const matchStatsMap = new Map();
+          (participantsRows || []).forEach(row => {
+            const dId = String(row.discord_id);
+            let s = matchStatsMap.get(dId);
+            if (!s) {
+              s = { total: 0, recent30d: 0, lastPlayedAt: null };
+              matchStatsMap.set(dId, s);
+            }
+            s.total += 1;
+            const t = row.created_at ? new Date(row.created_at).getTime() : 0;
+            if (t >= thirtyDaysAgo) s.recent30d += 1;
+            if (!s.lastPlayedAt || t > s.lastPlayedAt) s.lastPlayedAt = t;
+          });
 
-              if (p.role_preferences) {
-                let pref = p.role_preferences;
+          const playerMap = new Map();
+          (playersRows || []).forEach(p => {
+            playerMap.set(String(p.discord_id), p);
+          });
+
+          const RANK_JP_MAP = {
+            CHALLENGER: 'チャレンジャー', GRANDMASTER: 'グランドマスター', MASTER: 'マスター',
+            DIAMOND: 'ダイヤ', EMERALD: 'エメラルド', PLATINUM: 'プラチナ',
+            GOLD: 'ゴールド', SILVER: 'シルバー', BRONZE: 'ブロンズ', IRON: 'アイアン',
+            UNRANKED: '未ランク'
+          };
+
+          syncFields = syncFields.map((f, fIdx) => {
+            const isSundayField = fIdx === 1 || f.name.includes("日曜") || f.name.includes("お祭り");
+            let lines = (f.value || "").split('\n');
+            let updatedLines = lines.map(line => {
+              const uMatch = line.match(/<@(\d+)>/);
+              if (!uMatch) return line;
+
+              const uId = uMatch[1];
+              const p = playerMap.get(uId);
+              const mStats = matchStatsMap.get(uId);
+
+              // 参加スタイル（フル/1戦のみ/途中参加）の抽出
+              let styleBadge = " 🟢フル";
+              if (line.includes("⏱️1戦のみ") || line.includes("⏱️ 1戦のみ")) styleBadge = " ⏱️1戦のみ";
+              else if (line.includes("🌙途中参加")) {
+                styleBadge = line.includes("2戦目〜") ? " 🌙途中参加(2戦目〜)" : " 🌙途中参加";
+              }
+
+              // 経験度の計算
+              let expObj = null;
+              if (p) {
+                const laneSum = (p.games_top || 0) + (p.games_jg || 0) + (p.games_mid || 0) + (p.games_adc || 0) + (p.games_sup || 0);
+                const totalG = mStats?.total ?? laneSum;
+                const recent30d = mStats?.recent30d ?? 0;
+                const daysAgo = mStats?.lastPlayedAt ? Math.floor((now - mStats.lastPlayedAt) / (24 * 60 * 60 * 1000)) : null;
+
+                expObj = getPlayerExperienceBadge({
+                  total_games: totalG,
+                  recent_games_30d: recent30d,
+                  days_since_last_match: daysAgo,
+                  metadata: p.metadata
+                });
+              } else {
+                expObj = { short: '🔰初参加' };
+              }
+              const expBadgeStr = ` ${expObj.short}`;
+
+              // ランクの再計算（土曜本戦のみ表示）
+              let rankStr = "";
+              if (!isSundayField) {
+                if (p) {
+                  const mmr = getHighestLaneMmr(p);
+                  const tier = getKtmRank(mmr ?? 0);
+                  const jpName = RANK_JP_MAP[tier.name] || tier.name || "シルバー";
+                  rankStr = ` 【${jpName}】`;
+                } else {
+                  // pがない場合、既存行のランクを保持または未ランク
+                  const rMatch = line.match(/【(アイアン|ブロンズ|シルバー|ゴールド|プラチナ|エメラルド|ダイヤ|マスター|チャレンジャー|グランドマスター|未ランク)】/);
+                  rankStr = rMatch ? ` 【${rMatch[1]}】` : ` 【未ランク】`;
+                }
+              }
+
+              // 希望レーンの再計算
+              let lanePrefStr = "";
+              try {
+                let pref = p?.role_preferences;
                 if (typeof pref === 'string') {
                   try { pref = JSON.parse(pref); } catch (e) {}
                 }
                 if (pref && (pref.primary || pref.secondary)) {
                   const p1 = pref.primary || "指定なし";
                   const p2 = pref.secondary || "指定なし";
-                  prefMap.set(String(p.discord_id), `【第1: ${p1} / 第2: ${p2}】`);
+                  lanePrefStr = ` 【第1: ${p1} / 第2: ${p2}】`;
+                } else {
+                  const prefMatch = line.match(/【第1: [^】]+】/);
+                  if (prefMatch) lanePrefStr = ` ${prefMatch[0]}`;
                 }
-              }
-            });
-          }
+              } catch (e) {}
 
-          syncFields = syncFields.map(f => {
-            let lines = (f.value || "").split('\n');
-            let updatedLines = lines.map(line => {
-              const uMatch = line.match(/<@(\d+)>/);
-              if (uMatch) {
-                const uId = uMatch[1];
-                let expBadge = expMap.get(uId) || '🔰初参加';
-                let prefStr = prefMap.get(uId);
-
-                let resLine = line;
-                // 経験度バッジの付与（まだ無ければメンションの後ろ、スタイルバッジの隣に追加）
-                if (!resLine.includes('🔰初参加') && !resLine.includes('🌱ライト') && !resLine.includes('⏳復帰勢') && !resLine.includes('🎖️経験者') && !resLine.includes('👑常連')) {
-                  const styleMatch = resLine.match(/(- <@\d+>\s*(?:🟢フル|⏱️1戦のみ|🌙途中参加(?:\(2戦目〜\))?))/);
-                  if (styleMatch) {
-                    resLine = resLine.replace(styleMatch[1], `${styleMatch[1]} ${expBadge}`);
-                  } else {
-                    resLine = resLine.replace(`- <@${uId}>`, `- <@${uId}> ${expBadge}`);
-                  }
-                }
-
-                // 希望レーンの付与
-                if (prefStr && !resLine.includes("【第1:")) {
-                  const cleanLine = resLine.replace(/【希望: [^】]+】/g, '').replace(/\*\(希望: [^\)]+\)\*/g, '').trim();
-                  resLine = `${cleanLine} ${prefStr}`;
-                } else if (!prefStr) {
-                  resLine = resLine.replace(/【希望: [^】]+】/g, '').replace(/\*\(希望: [^\)]+\)\*/g, '').trim();
-                }
-                return resLine;
-              }
-              return line;
+              // 完全に正規化された行を再構築
+              return `- <@${uId}>${styleBadge}${expBadgeStr}${rankStr}${lanePrefStr}`;
             });
             return { ...f, value: updatedLines.join('\n') };
           });
