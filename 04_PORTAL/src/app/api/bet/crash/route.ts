@@ -127,8 +127,23 @@ export async function POST(req: Request) {
       const mult = parseFloat(claimedMultiplier);
       const actualCrash = payload.crashPoint;
 
-      // クラッシュ判定: 利確申請倍率が実際のクラッシュポイント以下なら成功
-      if (mult <= actualCrash) {
+      // サーバー側時間検証: multに対応する経過時間 (elapsed = ln(mult) / 0.22)
+      // クライアントが瞬時に高倍率をPOSTしてくるチートを防ぐ
+      const now = Date.now();
+      const clientElapsedSec = (now - payload.startedAt) / 1000;
+      // ネットワーク遅延・許容マージン(0.5秒)を考慮した、その経過秒数で到達可能な最大倍率
+      const maxPossibleMult = Math.floor(Math.pow(Math.E, (clientElapsedSec + 0.5) * 0.22) * 100) / 100;
+
+      if (mult > maxPossibleMult) {
+        return NextResponse.json({ ok: false, error: '不正な利確タイミングが検出されました。' }, { status: 400 });
+      }
+
+      // クラッシュ判定: 実際のクラッシュ倍率に達していなければ成功、超えていればクラッシュ
+      // ※経過時間から計算した倍率がクラッシュ値を超えていた場合もアウト
+      const currentServerMult = Math.floor(Math.pow(Math.E, clientElapsedSec * 0.22) * 100) / 100;
+      const isCrashed = mult > actualCrash || currentServerMult >= actualCrash;
+
+      if (!isCrashed) {
         const winCoins = Math.floor(payload.betAmount * mult);
         const currentCoins = getPlayerCoins(player);
         const newBalance = currentCoins + winCoins;
@@ -166,7 +181,7 @@ export async function POST(req: Request) {
           message: `🎉 利確成功！${mult}倍 (+${winCoins}🪙) 獲得！`,
         });
       } else {
-        // クラッシュ後の遅延クリック
+        // クラッシュ後の遅延クリックまたはクラッシュ到達
         return NextResponse.json({
           ok: true,
           success: false,
@@ -179,15 +194,36 @@ export async function POST(req: Request) {
     }
 
     // ==========================================
-    // 3. 爆発時の答え合わせ（クラッシュ値確認）
+    // 3. 爆発時の答え合わせ（※ゲーム終了・爆発確認時のみ開示）
     // ==========================================
     if (action === 'VERIFY_CRASH') {
       const { gameToken } = body;
       const payload = verifyCrashToken(gameToken);
-      if (!payload) {
+      if (!payload || payload.discordId !== session.discordId) {
         return NextResponse.json({ ok: false, error: '無効なトークンです。' }, { status: 400 });
       }
-      return NextResponse.json({ ok: true, crashPoint: payload.crashPoint });
+
+      // ★ セキュリティ修正:
+      // ゲーム開始から十分な時間（クラッシュ到達予定時刻）が経過する前には
+      // VERIFY_CRASH で事前にクラッシュポイントを開示しない！
+      const actualCrash = payload.crashPoint;
+      const elapsedSec = (Date.now() - payload.startedAt) / 1000;
+      const crashTimeSec = Math.log(Math.max(1.0, actualCrash)) / 0.22;
+
+      // まだ爆発していない（飛行中）なら「まだ飛行中」として開示拒否
+      if (elapsedSec < crashTimeSec) {
+        return NextResponse.json({
+          ok: true,
+          crashed: false,
+        });
+      }
+
+      // すでに爆発時刻を過ぎた場合のみ、答え合わせとして開示
+      return NextResponse.json({
+        ok: true,
+        crashed: true,
+        crashPoint: actualCrash,
+      });
     }
 
     return NextResponse.json({ ok: false, error: '不明なアクションです。' }, { status: 400 });

@@ -23,7 +23,6 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
 
   const animationFrameRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
-  const secretCrashPointRef = useRef<number>(2.0); // サーバーから取得したクラッシュ限界値
 
   // ゲーム開始（発射）
   const handleLaunch = async () => {
@@ -53,43 +52,66 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
       setGameToken(data.gameToken);
       onBalanceChange(data.newBalance);
 
-      // サーバー側トークンからクラッシュポイントを検証用APIで取得（クライアントの爆発演出用）
-      const verifyRes = await fetch('/api/bet/crash', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'VERIFY_CRASH', gameToken: data.gameToken }),
-      });
-      const vData = await verifyRes.json();
-      secretCrashPointRef.current = vData.crashPoint || 1.5;
-
-      // カウントアップ・上昇アニメーション開始
+      // カウントアップ・上昇アニメーション開始（※事前ネタバレAPI呼び出しは廃止）
       startTimeRef.current = performance.now();
-      runFlightAnimation();
+      runFlightAnimation(data.gameToken);
     } catch (e: any) {
       setGameState('IDLE');
       setErrorMsg(e.message || 'エラーが発生しました');
     }
   };
 
-  // 飛行アニメーションループ
-  const runFlightAnimation = () => {
-    const loop = (now: number) => {
+  // 飛行アニメーションループ ＆ サーバー側クラッシュ監視
+  const runFlightAnimation = (token: string) => {
+    let lastPollTime = 0;
+
+    const checkServerCrash = async () => {
+      try {
+        const verifyRes = await fetch('/api/bet/crash', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'VERIFY_CRASH', gameToken: token }),
+        });
+        const vData = await verifyRes.json();
+        if (vData.crashed && vData.crashPoint) {
+          // 💥 サーバー側で爆発到達！
+          if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+          const cp = vData.crashPoint;
+          setMultiplier(cp);
+          setFinalMultiplier(cp);
+          setGameState('CRASHED');
+          setCrashHistory((prev) => [cp, ...prev.slice(0, 5)]);
+          return true;
+        }
+      } catch {
+        // network retry
+      }
+      return false;
+    };
+
+    const loop = async (now: number) => {
       const elapsed = (now - startTimeRef.current) / 1000; // 秒数
       // 指数関数的カーブで倍率計算 (0秒=1.0x, 2秒=1.5x, 5秒=3.0x, 10秒=10x)
       const current = Math.floor(Math.pow(Math.E, elapsed * 0.22) * 100) / 100;
 
-      const crashLimit = secretCrashPointRef.current;
-
-      if (current >= crashLimit) {
-        // 💥 クラッシュ（爆発）！
-        setMultiplier(crashLimit);
-        setFinalMultiplier(crashLimit);
+      // 100倍到達で天井
+      if (current >= 100.0) {
+        setMultiplier(100.0);
+        setFinalMultiplier(100.0);
         setGameState('CRASHED');
-        setCrashHistory((prev) => [crashLimit, ...prev.slice(0, 5)]);
+        setCrashHistory((prev) => [100.0, ...prev.slice(0, 5)]);
         return;
       }
 
       setMultiplier(current);
+
+      // 0.3秒ごとにサーバーに「爆発したか」を安全に問い合わせ
+      if (now - lastPollTime > 300) {
+        lastPollTime = now;
+        const crashed = await checkServerCrash();
+        if (crashed) return;
+      }
+
       animationFrameRef.current = requestAnimationFrame(loop);
     };
 
