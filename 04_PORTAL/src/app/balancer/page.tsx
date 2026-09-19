@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
 import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Settings, Sparkles, Coins, Copy, Check, Shuffle } from "lucide-react";
-import { getColorFromRankName, calculateBlueWinProbability, getKtmRank, getRankBadgeStyle } from "../../lib/mmr";
+import { getColorFromRankName, calculateBlueWinProbability, getKtmRank, getRankBadgeStyle, getHighestLaneMmr } from "../../lib/mmr";
 import ProfileModal from "../ktm-admin/ProfileModal";
 import MatchRecordPanel from "../ktm-admin/MatchRecordPanel";
 import AramRotationPanel from "./AramRotationPanel";
@@ -2689,12 +2689,18 @@ export default function BalancerPage() {
                         <td className={`px-2 py-1.5 text-xs font-semibold ${getColorFromRankName(p.highest_rank)}`}>{p.highest_rank ? p.highest_rank.split(' ')[0] : 'UNRANKED'}</td>
                         <td className="px-2 py-1.5 text-center">
                           {(() => {
-                            const ktmTier = getKtmRank(p.mmr || 1200);
+                            const repMmr = p.mmr || 1200;
+                            const highestLaneMmr = getHighestLaneMmr(p);
+                            const ktmTier = getKtmRank(highestLaneMmr);
                             const badgeStyle = getRankBadgeStyle(ktmTier.name);
+                            const hasDiff = highestLaneMmr !== repMmr;
+                            const tooltip = hasDiff
+                              ? `最高レーン基準: ${ktmTier.name} (${highestLaneMmr}) / 代表MMR: ${repMmr}`
+                              : `KTMランク: ${ktmTier.name} (MMR: ${repMmr})`;
                             return (
-                              <div className="flex items-center justify-center gap-1.5">
-                                <span className="font-mono text-xs font-black text-amber-800 dark:text-amber-300">{p.mmr || 1200}</span>
-                                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${badgeStyle.bg} ${badgeStyle.color} ${badgeStyle.border}`} title={`KTMランク: ${ktmTier.name}`}>
+                              <div className="flex items-center justify-center gap-1.5" title={tooltip}>
+                                <span className="font-mono text-xs font-black text-amber-800 dark:text-amber-300">{repMmr}</span>
+                                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${badgeStyle.bg} ${badgeStyle.color} ${badgeStyle.border}`}>
                                   {ktmTier.name.split(' ')[0]}
                                 </span>
                               </div>
@@ -2793,8 +2799,14 @@ export default function BalancerPage() {
               const isBoundary = idx > 0 && curGroup !== prevGroup;
               const groupLabelMap: Record<number,string> = { 0:'👑 固定メンバー', 2:'👁 観戦固定', 3:'⚫ 不参加' };
               const groupBgMap: Record<number,string> = { 0:'bg-amber-100 text-amber-700', 2:'bg-orange-100 text-orange-700', 3:'bg-stone-100 text-stone-500' };
-              const ktmTier = getKtmRank(p.mmr || 1200);
+              const repMmr = p.mmr || 1200;
+              const highestLaneMmr = getHighestLaneMmr(p);
+              const ktmTier = getKtmRank(highestLaneMmr);
               const badgeStyle = getRankBadgeStyle(ktmTier.name);
+              const hasDiff = highestLaneMmr !== repMmr;
+              const tooltip = hasDiff
+                ? `最高レーン基準: ${ktmTier.name} (${highestLaneMmr}) / 代表MMR: ${repMmr}`
+                : `KTMランク: ${ktmTier.name} (MMR: ${repMmr})`;
               return (
                 <div key={p.id}>
                   {isBoundary && groupLabelMap[curGroup] && (
@@ -2838,8 +2850,8 @@ export default function BalancerPage() {
                         <span className={`text-xs font-semibold ${getColorFromRankName(p.highest_rank)}`}>{p.highest_rank ? p.highest_rank.split(' ')[0] : 'UNR'}</span>
                         
                         {/* MMR ＆ KTMランクバッジ */}
-                        <div className="ml-auto flex items-center gap-1">
-                          <span className="font-mono text-amber-700 text-xs font-bold">{p.mmr || 1200}</span>
+                        <div className="ml-auto flex items-center gap-1" title={tooltip}>
+                          <span className="font-mono text-amber-700 text-xs font-bold">{repMmr}</span>
                           <span className={`text-[9px] font-black px-1.5 py-0.2 rounded border ${badgeStyle.bg} ${badgeStyle.color} ${badgeStyle.border}`}>
                             {ktmTier.name.split(' ')[0]}
                           </span>

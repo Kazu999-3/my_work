@@ -107,6 +107,25 @@ export function getRankBadgeStyle(rank?: string | null): { bg: string; color: st
   return { bg: 'bg-stone-500/10', color: 'text-stone-600 dark:text-stone-400', border: 'border-stone-500/30' };
 }
 
+/**
+ * プレイヤーレコードから一番高いレーンのMMR（最高レーンMMR）を取得する共通関数
+ */
+export function getHighestLaneMmr(player: any): number {
+  if (!player) return 1200;
+  const laneMmrs = [
+    player.mmr_top,
+    player.mmr_jg,
+    player.mmr_mid,
+    player.mmr_adc,
+    player.mmr_sup,
+  ].map((v) => (v != null ? Number(v) : null)).filter((v): v is number => v !== null && !isNaN(v));
+
+  if (laneMmrs.length > 0) {
+    return Math.max(...laneMmrs);
+  }
+  return player.mmr != null ? Number(player.mmr) : 1200;
+}
+
 
 export interface RolePreferences {
   primary?: string;
