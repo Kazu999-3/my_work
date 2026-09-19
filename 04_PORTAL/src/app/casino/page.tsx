@@ -9,6 +9,7 @@ import { supabase } from '../../lib/supabaseClient';
 import OmikujiModal, { OmikujiData } from './components/OmikujiModal';
 import KtmSlotGame from './components/KtmSlotGame';
 import PoroCrashGame from './components/PoroCrashGame';
+import KtmBaccaratGame from './components/KtmBaccaratGame';
 
 interface RankingPlayer {
   name: string;
@@ -110,7 +111,7 @@ const SHOP_ITEMS = [
 
 export default function CasinoPage() {
   const { user, loginWithDiscord, logout, refreshUser } = useCurrentUser();
-  const [activeTab, setActiveTab] = useState<'bet' | 'slot' | 'crash' | 'shop'>('bet');
+  const [activeTab, setActiveTab] = useState<'bet' | 'slot' | 'crash' | 'baccarat' | 'shop'>('bet');
   const [ranking, setRanking] = useState<RankingPlayer[]>([]);
   const [activeMatch, setActiveMatch] = useState<any | null>(null);
   const [betTeam, setBetTeam] = useState<'BLUE' | 'RED'>('BLUE');
@@ -653,6 +654,7 @@ export default function CasinoPage() {
             { id: 'bet', label: '🎯 勝敗予想' },
             { id: 'slot', label: '🎰 KTMスロット' },
             { id: 'crash', label: '🚀 ポロ・クラッシュ' },
+            { id: 'baccarat', label: '🃏 バカラ' },
             { id: 'shop', label: '🛒 ショップ' },
           ].map((tab) => (
             <button
@@ -1308,7 +1310,24 @@ export default function CasinoPage() {
           </div>
         )}
 
-        {/* タブ4: 🛒 KTMショップ */}
+        {/* タブ4: 🃏 バカラ */}
+        {activeTab === 'baccarat' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl p-5 md:p-7 border border-black/10 shadow-sm">
+              <KtmBaccaratGame
+                userDiscordId={user?.discordId}
+                userDisplayName={user?.displayName || user?.username}
+                userCoins={user?.coins ?? 1000}
+                onBalanceChange={(newBalance) => {
+                  fetchBetData();
+                  refreshUser();
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* タブ5: 🛒 KTMショップ */}
         {activeTab === 'shop' && (
           <div className="bg-white rounded-3xl p-6 md:p-8 border border-black/10 shadow-sm space-y-6">
             <div className="flex items-center justify-between border-b border-stone-100 pb-4">
