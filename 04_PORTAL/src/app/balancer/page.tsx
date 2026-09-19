@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
 import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Settings, Sparkles, Coins, Copy, Check, Shuffle } from "lucide-react";
-import { getColorFromRankName, calculateBlueWinProbability } from "../../lib/mmr";
+import { getColorFromRankName, calculateBlueWinProbability, getKtmRank, getRankBadgeStyle } from "../../lib/mmr";
 import ProfileModal from "../ktm-admin/ProfileModal";
 import MatchRecordPanel from "../ktm-admin/MatchRecordPanel";
 import AramRotationPanel from "./AramRotationPanel";
@@ -2621,11 +2621,11 @@ export default function BalancerPage() {
                           </div>
                         </td>
                         <td className="px-2 py-1.5 text-center font-bold text-stone-500 text-xs">{p.no}</td>
-                        <td className="px-2 py-1.5 font-bold text-stone-900 whitespace-nowrap text-xs">
+                        <td className="px-2 py-1.5 font-bold text-stone-900 text-xs max-w-[240px]">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <button onClick={() => setSelectedPlayer(p)} className="text-amber-700 hover:text-stone-900 p-0.5 hover:bg-stone-100 rounded transition flex-shrink-0" title="プロフィール">
                               <Info className="w-3.5 h-3.5" /></button>
-                            <span className="font-extrabold text-stone-900">{p.name}</span>
+                            <span className="font-extrabold text-stone-900 truncate max-w-[130px]" title={p.name}>{p.name}</span>
                             
                             {/* 🔰/🌱/👑 参加者層バッジ */}
                             {(() => {
@@ -2669,17 +2669,38 @@ export default function BalancerPage() {
                               </span>
                             )}
 
-                            {/* 👑 カジノ保有アイテムバッジ */}
-                            {getPlayerCasinoBadges(p).map((badge, idx) => (
-                              <span key={idx} className="text-[9px] font-black bg-purple-100 text-purple-900 border border-purple-300 px-1.5 py-0.2 rounded flex items-center gap-0.5 shadow-2xs" title={`カジノ特典: ${badge.label}`}>
-                                <span>{badge.icon}</span>
-                                <span>{badge.label}</span>
-                              </span>
-                            ))}
+                            {/* 👑 カジノ保有アイテムバッジ（幅を圧迫しないようコンパクトにまとめ表示） */}
+                            {(() => {
+                              const casinoBadges = getPlayerCasinoBadges(p);
+                              if (casinoBadges.length === 0) return null;
+                              return (
+                                <div className="flex items-center gap-1">
+                                  {casinoBadges.map((badge, idx) => (
+                                    <span key={idx} className="text-[9px] font-black bg-purple-100 text-purple-900 border border-purple-300 px-1 py-0.2 rounded flex items-center gap-0.5 shadow-2xs" title={`カジノ特典: ${badge.label}`}>
+                                      <span>{badge.icon}</span>
+                                      <span className="max-w-[65px] truncate">{badge.label}</span>
+                                    </span>
+                                  ))}
+                                </div>
+                              );
+                            })()}
                           </div>
                         </td>
                         <td className={`px-2 py-1.5 text-xs font-semibold ${getColorFromRankName(p.highest_rank)}`}>{p.highest_rank ? p.highest_rank.split(' ')[0] : 'UNRANKED'}</td>
-                        <td className="px-2 py-1.5 text-center font-mono text-amber-700 font-bold text-xs">{p.mmr}</td>
+                        <td className="px-2 py-1.5 text-center">
+                          {(() => {
+                            const ktmTier = getKtmRank(p.mmr || 1200);
+                            const badgeStyle = getRankBadgeStyle(ktmTier.name);
+                            return (
+                              <div className="flex items-center justify-center gap-1.5">
+                                <span className="font-mono text-xs font-black text-amber-800 dark:text-amber-300">{p.mmr || 1200}</span>
+                                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${badgeStyle.bg} ${badgeStyle.color} ${badgeStyle.border}`} title={`KTMランク: ${ktmTier.name}`}>
+                                  {ktmTier.name.split(' ')[0]}
+                                </span>
+                              </div>
+                            );
+                          })()}
+                        </td>
                         <td className="px-2 py-1.5">
                           <div className="flex items-center gap-1 bg-stone-100 border border-stone-200 rounded px-1 py-0.5 w-20">
                             <RoleIcon role={prefs.primary || 'ALL'} className="w-3 h-3 flex-shrink-0" />
@@ -2739,11 +2760,11 @@ export default function BalancerPage() {
                 })}
                 {filteredPlayers.length === 0 && (
                   <tr>
-                    <td colSpan={13} className="py-12 text-center text-stone-500">
-                      <div className="space-y-2">
-                        <div className="text-xl">🔍</div>
-                        <div className="text-sm font-bold text-stone-700">条件に一致するプレイヤーが見つかりません</div>
-                        <p className="text-xs text-stone-400">検索文字やステータス・ロールフィルターを変更してください。</p>
+                    <td colSpan={13} className="p-8 text-center text-stone-500">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <span className="text-2xl">🔍</span>
+                        <span className="text-sm font-bold text-stone-700">条件に一致するプレイヤーが見つかりません</span>
+                        <p className="text-xs text-stone-400">検索文字やフィルター条件を変更してください。</p>
                         <button
                           type="button"
                           onClick={() => {
@@ -2772,6 +2793,8 @@ export default function BalancerPage() {
               const isBoundary = idx > 0 && curGroup !== prevGroup;
               const groupLabelMap: Record<number,string> = { 0:'👑 固定メンバー', 2:'👁 観戦固定', 3:'⚫ 不参加' };
               const groupBgMap: Record<number,string> = { 0:'bg-amber-100 text-amber-700', 2:'bg-orange-100 text-orange-700', 3:'bg-stone-100 text-stone-500' };
+              const ktmTier = getKtmRank(p.mmr || 1200);
+              const badgeStyle = getRankBadgeStyle(ktmTier.name);
               return (
                 <div key={p.id}>
                   {isBoundary && groupLabelMap[curGroup] && (
@@ -2813,7 +2836,14 @@ export default function BalancerPage() {
                           </span>
                         )}
                         <span className={`text-xs font-semibold ${getColorFromRankName(p.highest_rank)}`}>{p.highest_rank ? p.highest_rank.split(' ')[0] : 'UNR'}</span>
-                        <span className="font-mono text-amber-700 text-xs font-bold ml-auto">{p.mmr}</span>
+                        
+                        {/* MMR ＆ KTMランクバッジ */}
+                        <div className="ml-auto flex items-center gap-1">
+                          <span className="font-mono text-amber-700 text-xs font-bold">{p.mmr || 1200}</span>
+                          <span className={`text-[9px] font-black px-1.5 py-0.2 rounded border ${badgeStyle.bg} ${badgeStyle.color} ${badgeStyle.border}`}>
+                            {ktmTier.name.split(' ')[0]}
+                          </span>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <div className="flex items-center gap-0.5 bg-stone-100 border border-stone-200 rounded px-1.5 py-0.5">
