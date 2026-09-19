@@ -32,6 +32,8 @@
       - `04_PORTAL/src/lib/mmr.ts` に `getHighestLaneMmr(player)` ヘルパー関数を新規追加。
       - `04_PORTAL/src/app/balancer/page.tsx` のPCテーブルおよびモバイルカードにおいて、KTMランクバッジの判定を `getHighestLaneMmr` 基準に統一。
       - 数値は代表MMR（`p.mmr`）を維持しつつ、ツールチップに `最高レーン基準: Gold IV (1440) / 代表MMR: 1305` を明記して透明性を担保。
+    - **プレイヤーMMR適正化 (kœkkoke 様)**:
+      - ロール希望（第1: TOP / 第2: SUP）に対して全レーンMMRが1460一律になっていた不整合を修正。ルール通り「TOP 1560 / SUP 1460 / 他レーン 1360 / 代表MMR 1420」へ再同期完了。
   - **テスト・品質検証**:
     - `node scripts/dry_run_recruitment_status.mjs` による募集ステータス・不変条件検証パス。
     - `npm test`（36テスト全件通過）および `npx tsc --noEmit`（型チェック完全パス）を検証完了。
