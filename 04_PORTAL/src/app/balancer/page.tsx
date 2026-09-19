@@ -28,21 +28,45 @@ const RoleIcon = ({ role, className = "w-3.5 h-3.5" }: { role: string; className
   }
 };
 
-// ★ カジノ特典バッジ抽出ユーティリティ
-function getPlayerCasinoBadges(player: any): Array<{ id: string; icon: string; label: string }> {
+// ★ カジノ特典バッジ抽出ユーティリティ（※宝くじ等の非試合アイテムは除外、同アイテムは集約表示）
+function getPlayerCasinoBadges(player: any): Array<{ id: string; icon: string; label: string; count: number }> {
   const inv = (player?.inventory || player?.role_preferences?.inventory || []) as Array<{ id?: string; name?: string; icon?: string }>;
   if (!Array.isArray(inv) || inv.length === 0) return [];
-  return inv.map(item => {
+
+  // 試合に関係のないアイテム（宝くじ等）はバランサーに表示しない
+  const gameItems = inv.filter(item => {
     const id = item.id || '';
-    let label = (item.name || '').replace(/^[^\s]+\s*/, '').slice(0, 5) || 'アイテム';
-    let icon = item.icon || '👑';
-    if (id === 'force_champ_pick') { icon = '👑'; label = '下剋上'; }
-    else if (id === 'lane_heavy_ban') { icon = '🚫'; label = '集中BAN'; }
-    else if (id === 'champ_protect') { icon = '🛡️'; label = '保護'; }
-    else if (id === 'force_enemy_roles') { icon = '🔀'; label = 'ロール指定'; }
-    else if (id === 'all_offmeta_match') { icon = '🤡'; label = 'オフメタ'; }
-    return { id, icon, label };
+    return id !== 'lottery_ticket';
   });
+
+  if (gameItems.length === 0) return [];
+
+  // アイテムごとに集約
+  const itemMap: Record<string, { id: string; icon: string; label: string; count: number }> = {};
+
+  for (const item of gameItems) {
+    const id = item.id || '';
+    if (!itemMap[id]) {
+      let label = (item.name || '').replace(/^[^\s]+\s*/, '').slice(0, 5) || 'アイテム';
+      let icon = item.icon || '👑';
+      if (id === 'force_champ_pick') { icon = '👑'; label = '下剋上'; }
+      else if (id === 'lane_heavy_ban') { icon = '🚫'; label = '集中BAN'; }
+      else if (id === 'champ_protect') { icon = '🛡️'; label = '保護'; }
+      else if (id === 'force_enemy_roles') { icon = '🔀'; label = 'ロール指定'; }
+      else if (id === 'all_offmeta_match') { icon = '🤡'; label = 'オフメタ'; }
+      else if (id === 'side_pick') { icon = '🟦'; label = 'サイド指定'; }
+      else if (id === 'bounty_target') { icon = '🎯'; label = '賞金首'; }
+      else if (id === 'ban_free') { icon = '🚫'; label = 'BAN禁止'; }
+      else if (id === 'all_random_match' || id === 'ultimate_bravery') { icon = '🎲'; label = 'ランダム'; }
+      itemMap[id] = { id, icon, label, count: 0 };
+    }
+    itemMap[id].count += 1;
+  }
+
+  return Object.values(itemMap).map(b => ({
+    ...b,
+    label: b.count > 1 ? `${b.label}×${b.count}` : b.label
+  }));
 }
 
 // ★ グループ判定ユーティリティ（固定0 > 通常参加1 > 見学固定2 > 不参加3）
@@ -1142,7 +1166,8 @@ export default function BalancerPage() {
             handleSwapPlayer(team, role, e.target.value);
           }
         }}
-        className="w-full bg-transparent border-none text-stone-900 font-bold outline-none cursor-pointer appearance-none text-center"
+        className="w-full bg-transparent border-none text-stone-900 font-bold outline-none cursor-pointer appearance-none text-center truncate"
+        title={currentPlayerName || "選択"}
       >
         {(!currentPlayerName) && <option value="" className="text-stone-900">選択</option>}
         {balanceResult && (
@@ -1150,28 +1175,24 @@ export default function BalancerPage() {
             <optgroup label="Blue Team" className="text-stone-900 font-bold bg-blue-100">
               {balanceResult.teamBlue.map((p:any) => (
                 <option key={`blue-${p.name}`} value={p.name} className="text-stone-900 bg-white">
-                  {p.name} (MMR {p.mmr || 1200})
+                  {p.name}
                 </option>
               ))}
             </optgroup>
             <optgroup label="Red Team" className="text-stone-900 font-bold bg-red-100">
               {balanceResult.teamRed.map((p:any) => (
                 <option key={`red-${p.name}`} value={p.name} className="text-stone-900 bg-white">
-                  {p.name} (MMR {p.mmr || 1200})
+                  {p.name}
                 </option>
               ))}
             </optgroup>
             {balanceResult.spectators && balanceResult.spectators.length > 0 && (
               <optgroup label="Spectators" className="text-stone-900 font-bold bg-stone-200">
-                {balanceResult.spectators.map((name:string) => {
-                  const specP = players.find((p: any) => p.name === name);
-                  const specMmr = specP?.mmr || 1200;
-                  return (
-                    <option key={`spec-${name}`} value={name} className="text-stone-900 bg-white">
-                      {name} (MMR {specMmr})
-                    </option>
-                  );
-                })}
+                {balanceResult.spectators.map((name:string) => (
+                  <option key={`spec-${name}`} value={name} className="text-stone-900 bg-white">
+                    {name}
+                  </option>
+                ))}
               </optgroup>
             )}
           </>
