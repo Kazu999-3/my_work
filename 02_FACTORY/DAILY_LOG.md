@@ -43,6 +43,8 @@
         1. サーバーAPI（`04_PORTAL/src/app/api/bet/crash/route.ts`）において、ゲーム終了前の事前倍率開示を完全拒否（爆発時刻到達まで `crashed: false` のみ返却）。
         2. 利確（`CASHOUT`）時にサーバー側で経過秒数と到達可能倍率（`ln(mult)/0.22`）を厳密に照合し、即時高倍率送信チートを遮断。
         3. フロントエンド（`PoroCrashGame.tsx`）から爆発限界値の事前保持変数（`secretCrashPointRef`）を完全撤去し、サーバー主導の安全な監視ループへ移行。
+      - **利確直後の誤発射（ボタン連打・誤タップ）防止対策**:
+        - 利確ボタン押下時に即座にローディング状態（`isCashingOut`）とし、利確完了後も0.8秒間のセーフティクールダウン（`launchCooldown`）を設定。同一箇所のボタン差し替わりによる意図しない再発射（コイン浪費）を完全に防止。
   - **テスト・品質検証**:
     - `node scripts/dry_run_recruitment_status.mjs` による募集ステータス・不変条件検証パス。
     - `npm test`（36テスト全件通過）および `npx tsc --noEmit`（型チェック完全パス）を検証完了。

@@ -20,13 +20,15 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
   const [finalMultiplier, setFinalMultiplier] = useState<number>(1.0);
   const [winCoins, setWinCoins] = useState<number>(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isCashingOut, setIsCashingOut] = useState<boolean>(false);
+  const [launchCooldown, setLaunchCooldown] = useState<boolean>(false);
 
   const animationFrameRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
 
   // ゲーム開始（発射）
   const handleLaunch = async () => {
-    if (gameState === 'FLYING') return;
+    if (gameState === 'FLYING' || isCashingOut || launchCooldown) return;
     if (userCoins < betAmount) {
       setErrorMsg(`コインが足りません (所持: ${userCoins}🪙 / 必要: ${betAmount}🪙)`);
       return;
@@ -120,8 +122,9 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
 
   // 利確（キャッシュアウト）
   const handleCashout = async () => {
-    if (gameState !== 'FLYING' || !gameToken) return;
+    if (gameState !== 'FLYING' || !gameToken || isCashingOut) return;
 
+    setIsCashingOut(true);
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
@@ -157,6 +160,13 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
       }
     } catch {
       setGameState('CRASHED');
+    } finally {
+      setIsCashingOut(false);
+      // 利確直後の連打・誤タップによる次発射を防止（0.8秒クールダウン）
+      setLaunchCooldown(true);
+      setTimeout(() => {
+        setLaunchCooldown(false);
+      }, 800);
     }
   };
 
@@ -326,19 +336,26 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
           <button
             type="button"
             onClick={handleCashout}
-            className="w-full py-4 rounded-2xl font-black text-base uppercase tracking-wider bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:from-emerald-400 hover:to-teal-300 text-stone-950 shadow-lg shadow-emerald-500/40 animate-pulse hover:scale-[1.01] active:scale-98 transition-all cursor-pointer flex items-center justify-center gap-2"
+            disabled={isCashingOut}
+            className="w-full py-4 rounded-2xl font-black text-base uppercase tracking-wider bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:from-emerald-400 hover:to-teal-300 text-stone-950 shadow-lg shadow-emerald-500/40 animate-pulse hover:scale-[1.01] active:scale-98 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-wait"
           >
-            <span>💰 {(betAmount * multiplier).toFixed(0)} 🪙 で今すぐ利確！ ({multiplier.toFixed(2)}x)</span>
+            {isCashingOut ? (
+              <span>⏳ 利確処理中...</span>
+            ) : (
+              <span>💰 {(betAmount * multiplier).toFixed(0)} 🪙 で今すぐ利確！ ({multiplier.toFixed(2)}x)</span>
+            )}
           </button>
         ) : (
           <button
             type="button"
             onClick={handleLaunch}
-            disabled={userCoins < betAmount}
+            disabled={userCoins < betAmount || isCashingOut || launchCooldown}
             className="w-full py-4 rounded-2xl font-black text-base uppercase tracking-wider bg-gradient-to-r from-teal-500 via-emerald-500 to-teal-600 hover:from-teal-400 hover:to-emerald-400 text-stone-950 shadow-lg shadow-teal-500/30 hover:scale-[1.01] active:scale-98 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Rocket size={18} />
-            <span>🚀 {betAmount} 🪙 でロケット発射！</span>
+            <span>
+              {launchCooldown ? '⏳ 発射準備中...' : gameState === 'CASHED_OUT' || gameState === 'CRASHED' ? `🚀 もう一度発射！ (${betAmount} 🪙)` : `🚀 ${betAmount} 🪙 でロケット発射！`}
+            </span>
           </button>
         )}
       </div>
