@@ -326,8 +326,8 @@ export default function CasinoPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           fromDiscordId: user.discordId,
-          fromPlayerName: activePlayerName || user.username,
-          toPlayerName: tipToPlayer.trim(),
+          fromName: activePlayerName || user.username,
+          toName: tipToPlayer.trim(),
           amount: tipAmount,
           message: tipMessage.trim(),
         }),
