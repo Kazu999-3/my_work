@@ -5,50 +5,56 @@ import { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } fro
 import { sendShopNotification } from '../../../../lib/discordNotify';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
 
+export const dynamic = 'force-dynamic';
+
 // ネットワーク遅延・許容マージン(秒)。クライアント→サーバー到達までの遅延で
 // 「本来は間に合っていた利確」が理不尽にクラッシュ判定されるのを防ぐ。
 const LATENCY_MARGIN_SEC = 0.5;
 
+// ★ セキュリティ設計:
+// crashPointはクライアントへ一切渡さず、crash_sessionsテーブル(サーバー側のみ)で保持する。
+// クライアントに渡す「gameId」は完全に不透明な乱数文字列で、デコードしても何の情報も
+// 得られない(以前はHMAC署名付きトークンにcrashPointを平文JSONで同梱していたため、
+// base64urlデコードするだけで誰でも事前にクラッシュ値を読めてしまっていた)。
+
+interface CrashSession {
+  game_id: string;
+  discord_id: string;
+  bet_amount: number;
+  crash_point: number;
+  started_at: string;
+  status: 'pending' | 'settled';
+}
+
+async function getCrashSession(gameId: string, discordId: string): Promise<CrashSession | null> {
+  if (!supabaseAdmin) return null;
+  const { data } = await supabaseAdmin
+    .from('crash_sessions')
+    .select('*')
+    .eq('game_id', gameId)
+    .eq('discord_id', discordId)
+    .maybeSingle();
+  return data || null;
+}
+
 /**
- * gameTokenの多重利確(同一トークンでのCASHOUT複数回POST)を防止する。
- * トークンのハッシュをUNIQUE制約付きテーブルへINSERTし、既に使用済み(INSERT失敗)なら false を返す。
+ * 多重利確防止: pending -> settled への遷移をUNIQUE制約ベースで一度だけ許可する。
+ * 既にsettled済み(=WHERE句に一致する行が無い)なら更新0件でfalseを返す。
  */
-async function claimCrashToken(gameToken: string, discordId: string): Promise<boolean> {
+async function claimCrashSession(gameId: string, discordId: string): Promise<boolean> {
   if (!supabaseAdmin) return true; // DB未接続時はフォールバックで許可(ローカル開発用)
-  const tokenHash = crypto.createHash('sha256').update(gameToken).digest('hex');
-  const { error } = await supabaseAdmin
-    .from('crash_used_tokens')
-    .insert({ token_hash: tokenHash, discord_id: discordId });
-  // 23505 = unique_violation → 既に利確済みのトークン
+  const { data, error } = await supabaseAdmin
+    .from('crash_sessions')
+    .update({ status: 'settled' })
+    .eq('game_id', gameId)
+    .eq('discord_id', discordId)
+    .eq('status', 'pending')
+    .select('game_id');
   if (error) {
-    if ((error as any).code === '23505') return false;
-    console.error('[crash] claimCrashToken error:', error);
+    console.error('[crash] claimCrashSession error:', error);
     return false;
   }
-  return true;
-}
-
-export const dynamic = 'force-dynamic';
-
-const CRASH_SECRET = process.env.CRASH_GAME_SECRET || process.env.SESSION_SECRET || 'ktm_poro_crash_secret_key_2026';
-
-function signCrashPayload(payload: any): string {
-  const dataStr = Buffer.from(JSON.stringify(payload)).toString('base64url');
-  const sig = crypto.createHmac('sha256', CRASH_SECRET).update(dataStr).digest('hex');
-  return `${dataStr}.${sig}`;
-}
-
-function verifyCrashToken(token: string): any | null {
-  try {
-    const [dataStr, sig] = token.split('.');
-    if (!dataStr || !sig) return null;
-    const expectedSig = crypto.createHmac('sha256', CRASH_SECRET).update(dataStr).digest('hex');
-    if (sig !== expectedSig) return null;
-    const payload = JSON.parse(Buffer.from(dataStr, 'base64url').toString('utf-8'));
-    return payload;
-  } catch {
-    return null;
-  }
+  return !!data && data.length > 0;
 }
 
 /**
@@ -103,6 +109,10 @@ export async function POST(req: Request) {
         return NextResponse.json({ ok: false, error: `コインが不足しています (所持: ${currentCoins}🪙 / 必要: ${betAmount}🪙)` }, { status: 400 });
       }
 
+      if (!supabaseAdmin) {
+        return NextResponse.json({ ok: false, error: 'サーバー設定エラー（DB未接続）。' }, { status: 500 });
+      }
+
       // ベット額を減額して保存
       const newBalance = currentCoins - betAmount;
       await updatePlayerCoinsAndInventory({
@@ -110,20 +120,28 @@ export async function POST(req: Request) {
         newCoins: newBalance,
       });
 
-      // クラッシュポイントを決定
+      // クラッシュポイントを決定し、サーバー側のみに保持する(クライアントには渡さない)
       const crashPoint = generateCrashPoint();
-      const payload = {
-        discordId: session.discordId,
-        betAmount,
-        crashPoint,
-        startedAt: Date.now(),
-      };
+      const gameId = crypto.randomUUID();
 
-      const gameToken = signCrashPayload(payload);
+      const { error: insErr } = await supabaseAdmin.from('crash_sessions').insert({
+        game_id: gameId,
+        discord_id: session.discordId,
+        bet_amount: betAmount,
+        crash_point: crashPoint,
+        status: 'pending',
+      });
+
+      if (insErr) {
+        console.error('[crash] session insert error:', insErr);
+        // ベット控除をロールバックしてエラーを返す
+        await updatePlayerCoinsAndInventory({ player, newCoins: currentCoins });
+        return NextResponse.json({ ok: false, error: 'ゲームセッションの作成に失敗しました。' }, { status: 500 });
+      }
 
       return NextResponse.json({
         ok: true,
-        gameToken,
+        gameToken: gameId, // ★ 中身は不透明なgameIdのみ。crashPointは含まれない。
         betAmount,
         newBalance,
       });
@@ -133,34 +151,36 @@ export async function POST(req: Request) {
     // 2. 利確（キャッシュアウト）
     // ==========================================
     if (action === 'CASHOUT') {
-      const { gameToken, claimedMultiplier } = body;
-      if (!gameToken || !claimedMultiplier) {
+      const { gameToken: gameId, claimedMultiplier } = body;
+      if (!gameId || !claimedMultiplier) {
         return NextResponse.json({ ok: false, error: '無効なリクエストパラメータです。' }, { status: 400 });
       }
 
-      const payload = verifyCrashToken(gameToken);
-      if (!payload || payload.discordId !== session.discordId) {
-        return NextResponse.json({ ok: false, error: '無効または改ざんされたゲームトークンです。' }, { status: 403 });
+      const crashSession = await getCrashSession(gameId, session.discordId);
+      if (!crashSession) {
+        return NextResponse.json({ ok: false, error: '無効または存在しないゲームセッションです。' }, { status: 403 });
       }
 
+      const startedAtMs = new Date(crashSession.started_at).getTime();
+
       // 有効期限チェック (最大3分以内)
-      if (Date.now() - payload.startedAt > 180000) {
+      if (Date.now() - startedAtMs > 180000) {
         return NextResponse.json({ ok: false, error: 'ゲームセッションの有効期限が切れました。' }, { status: 400 });
       }
 
-      // 多重利確防止: 同一gameTokenでのCASHOUTは1回のみ受理する
-      const claimed = await claimCrashToken(gameToken, session.discordId);
+      // 多重利確防止: 同一セッションでのCASHOUTは1回のみ受理する(pending->settledの原子的遷移)
+      const claimed = await claimCrashSession(gameId, session.discordId);
       if (!claimed) {
         return NextResponse.json({ ok: false, error: 'このゲームは既に利確・処理済みです。' }, { status: 409 });
       }
 
       const mult = parseFloat(claimedMultiplier);
-      const actualCrash = payload.crashPoint;
+      const actualCrash = Number(crashSession.crash_point);
 
       // サーバー側時間検証: multに対応する経過時間 (elapsed = ln(mult) / 0.22)
       // クライアントが瞬時に高倍率をPOSTしてくるチートを防ぐ
       const now = Date.now();
-      const clientElapsedSec = (now - payload.startedAt) / 1000;
+      const clientElapsedSec = (now - startedAtMs) / 1000;
       // ネットワーク遅延・許容マージンを考慮した、その経過秒数で到達可能な最大倍率
       const maxPossibleMult = Math.floor(Math.pow(Math.E, (clientElapsedSec + LATENCY_MARGIN_SEC) * 0.22) * 100) / 100;
 
@@ -177,7 +197,7 @@ export async function POST(req: Request) {
       const isCrashed = mult > actualCrash || currentServerMult >= actualCrash;
 
       if (!isCrashed) {
-        const winCoins = Math.floor(payload.betAmount * mult);
+        const winCoins = Math.floor(crashSession.bet_amount * mult);
         const currentCoins = getPlayerCoins(player);
         const newBalance = currentCoins + winCoins;
 
@@ -195,7 +215,7 @@ export async function POST(req: Request) {
             embeds: [
               {
                 title: '🎉 【神業脱出】ポロ・チキンレース大勝利！',
-                description: `${mention} さんが **${payload.betAmount}コイン** を賭けて、脅威の **${mult}倍** で利確に成功！\n\n獲得コイン: **+${winCoins}🪙**\n実際のクラッシュ値: \`${actualCrash}x\``,
+                description: `${mention} さんが **${crashSession.bet_amount}コイン** を賭けて、脅威の **${mult}倍** で利確に成功！\n\n獲得コイン: **+${winCoins}🪙**\n実際のクラッシュ値: \`${actualCrash}x\``,
                 color: 0x10b981,
                 footer: { text: 'KTM カジノ | Poro Rocket Crash' },
                 timestamp: new Date().toISOString(),
@@ -230,17 +250,18 @@ export async function POST(req: Request) {
     // 3. 爆発時の答え合わせ（※ゲーム終了・爆発確認時のみ開示）
     // ==========================================
     if (action === 'VERIFY_CRASH') {
-      const { gameToken } = body;
-      const payload = verifyCrashToken(gameToken);
-      if (!payload || payload.discordId !== session.discordId) {
+      const { gameToken: gameId } = body;
+      const crashSession = await getCrashSession(gameId, session.discordId);
+      if (!crashSession) {
         return NextResponse.json({ ok: false, error: '無効なトークンです。' }, { status: 400 });
       }
 
       // ★ セキュリティ修正:
       // ゲーム開始から十分な時間（クラッシュ到達予定時刻）が経過する前には
       // VERIFY_CRASH で事前にクラッシュポイントを開示しない！
-      const actualCrash = payload.crashPoint;
-      const elapsedSec = (Date.now() - payload.startedAt) / 1000;
+      const actualCrash = Number(crashSession.crash_point);
+      const startedAtMs = new Date(crashSession.started_at).getTime();
+      const elapsedSec = (Date.now() - startedAtMs) / 1000;
       const crashTimeSec = Math.log(Math.max(1.0, actualCrash)) / 0.22;
 
       // まだ爆発していない（飛行中）なら「まだ飛行中」として開示拒否
