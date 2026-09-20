@@ -48,6 +48,9 @@
 - [x] **5. 🎓【中・API制約】師弟フォーラムスレッド作成時の Discord API タグ上限超過(400エラー)防止**
   - **対象**: `04_PORTAL/src/lib/discordMentorship.ts` (L357〜401)
   - **内容**: コーチングタグ＋5レーンタグで計6件となり Discord Forum API上限（最大5件）を超過してスレッド作成が失敗するリスクを `appliedTags.slice(0, 5)` で防御。
+- [x] **6. 🔥【最高・セキュリティ】ポロ・クラッシュの`gameToken`平文漏洩を根絶（#3のライブ検証中に発覚・同日中に追加対応）**
+  - **対象**: `04_PORTAL/src/app/api/bet/crash/route.ts`、新設 `crash_sessions` テーブル (`04_PORTAL/supabase/migrations/79_crash_sessions.sql`、本番適用・実測確認済み)
+  - **内容**: `gameToken`はHMAC署名のみでcrashPointを暗号化せずJSONに同梱しており、base64urlデコードするだけで誰でもゲーム開始直後にクラッシュ値を読めた（2026-09-19の`b60c336a`「完全根絶」は`VERIFY_CRASH`の早期開示経路だけを塞いでおり、本当の漏洩元だったgameToken自体は未対応だった）。crashPointをサーバー側`crash_sessions`テーブルのみで保持し、クライアントには意味を持たない乱数gameId(UUID)だけを渡す方式に変更。多重利確防止もこのテーブルの`pending→settled`原子的遷移に統合し、`crash_used_tokens`(#3で新設)は同マイグレーションで廃止。本番の実プレイヤーによる稼働も実測確認済み。
 
 ---
 
@@ -80,15 +83,27 @@
 ### 🚀 Phase 2: 動画解析インフラ進化 ＆ 再解析パイプライン
 
 - [x] **字幕欠落動画のローカルWhisper音声認識フォールバック配備**: 字幕のないプロ実況動画（エラーの主要因）をローカル `faster-whisper`（int8/CPU高速推論）+ `imageio-ffmpeg` で自動音声文字起こし（案3完遂 / `scripts/whisper_transcriber.py`）
+
+> **2026-09-20 現状調査で発覚**: `youtube_queue`実測1225件（completed 1071 / pending 19 / error系53 / manually_closed 82）。過去の「クラウドcron停止→ローカルデーモン側に処理が無く放置」問題(known-regression-patternsパターン4)はコード上解消済みだが、**ローカル常駐`edge_worker_daemon.py`自体が41時間以上起票停止していた**（PC起動依存という構造上、気づかれず止まり続けるリスクが現在進行形）。加えて`extract_video_tactics.py`に、第1弾MVPを実行する前に潰すべき重大バグ3件（下記「基盤修正」参照）が見つかったため、Phase2着手前に対応した。
+
+- [x] **第0弾: 基盤修正（Phase2着手前に必須、2026-09-20完了）**
+  - [x] `extract_video_tactics.py`の字幕抽出が特定1動画のセリフをハードコードした正規表現に依存しており、既存バイブル31本中30本で不一致→架空のタイムスタンプ・汎用テンプレ文言にフォールバックしていた（known-regression-patternsパターン5に直結するハルシネーション温床）のを、動画IDから実字幕/Whisper文字起こしを再取得する方式へ根本修正。実データが取得できない動画は架空データで埋めずスキップするよう全経路（`main()`/`run_batch_extraction()`/`generate_rule_based_actions()`）を修正。
+  - [x] Geminiモデル候補（`gemini-2.5-flash`→`gemini-1.5-flash`→`gemini-2.0-flash`）のうち後者2つが実測で404 NOT_FOUND（死亡確認済み）だったのを、実測で生存確認済みの`gemini-2.5-flash`→`gemini-3.1-flash-lite`→`gemini-3.5-flash-lite`へ差し替え。
+  - [x] チャンピオン名が`.lower()`のみで正規化されておらず`Kha'Zix`等が存在しないファイル名になりAI生成結果が静かに破棄されていたのを、`v2_CORE._LOL.champ_id_normalizer.normalize_champion_id()`を使う方式に統一（既存の`wukong_tactics_bible.md`/`monkeyking_tactics_bible.md`分裂も今後は発生しない設計に）。
+  - [x] ついでに発覚した別バグ: Whisperフォールバックの`from scripts.whisper_transcriber import ...`が直接スクリプト実行時は毎回`ModuleNotFoundError`で失敗し、Whisperフォールバックが実質一度も機能していなかったのを、同一ディレクトリの兄弟モジュールとして正しくimportするよう修正。
+  - [x] `scripts/ops_health_check.py`に`check_youtube_automation_freshness()`を追加。`youtube_queue_process`/`youtube_absorb`が3時間以上起票されていなければWARNを出す（上記の「41時間停止に誰も気づかなかった」再発防止）。
+  - [ ] **要確認（次回セッション）**: `ops_health_check.py`の新チェックを実際に実行して動作確認（前回セッションで実行前に中断）。
 - [ ] **案5: 🧹 SNS一時下書きドラフト群（213件）の自動インデックス化**: `02_FACTORY/01_DRAFTS/sns/INDEX.md` を自動生成し、帝国総合索引から接続して孤立ノートを実質一桁（ほぼ0件）へ完全クリーンアップ
 - [ ] **第1弾 (MVP): 主要JGチャンピオン限定再解析 (約20〜30本)**
   - 対象: 戦術バイブルが存在する主要ジャングラー（Lee Sin, Viego, Kha'Zix, Kindred 等）の動画。
-  - 方式: YouTube通信不要・ローカル字幕キャッシュから新世代マクロ保護プロンプト（Macro/Why/How/Rejected/秒数付きリンク）で再解析し、`personal_knowledge` および戦術バイブルへ反映。
-- [ ] **第2弾: エラー・保留キュー（52件）の自動救済・再解析**
+  - 方式: 修正済み`extract_video_tactics.py --batch`で、上記「第0弾」の修正が実際に本番相当のバッチ量でも安定するか少数実行して確認してから本格実行する。**Gemini APIの実バッチ課金が発生するため、実行前にユーザーへ確認すること**（`.claude/rules/confirmation.md`の「外部APIへの大量バッチ課金リクエスト」に該当）。
+- [ ] **第2弾: エラー・保留キュー（実測53件: error_generation 22 / error_no_transcript 5 / failed 26）の自動救済・再解析**
   - 対象: `youtube_queue` で過去に `error_generation` や `failed` となった動画。
-  - 方式: 配備済みの多重モデルフォールバック（2.5-flash→1.5-flash→2.0-flash）およびVTT保護機構で復旧・再生成。
-- [ ] **第3弾: 全体（1058本）の定期ローテーション再解析（GitHub Actions / バッチ）**
-  - 対象: 完了済み全1058本の動画。1回10〜20本ずつ安全に定期ローテーション実行。
+  - 方式: 修正済みの字幕/Whisper二段フォールバックおよび生存確認済みGeminiモデルで復旧・再生成。第1弾と同様、実行前にバッチ課金の確認を取ること。
+- [ ] **第3弾: 全体（1058本）の定期ローテーション再解析**
+  - 対象: 完了済み全1071本の動画（定期的な再解析による品質更新）。
+  - 方式: クラウド側(GitHub Actions)はYouTube側のbot判定が解消不能と確認済みのため断念し、`edge_worker_daemon.py`のスケジューラへ「1回n本ずつ完了済み動画を再解析キューに戻す」ローテーション専用task_typeを追加する方式で実装する。
+- [ ] **（低優先・データ整理）** `wukong_tactics_bible.md`と`monkeyking_tactics_bible.md`の既存分裂ファイルを手動統合する（第0弾の正規化修正は今後の新規追記のみ防止し、既存の分裂は解消しない）。
 
 ### 👑 Phase 3: 自律ナレッジループ ＆ セマンティック検索進化
 

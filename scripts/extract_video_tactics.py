@@ -39,6 +39,17 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 INTEL_TACTICS_DIR = REPO_ROOT / "01_INTEL" / "tactics"
 BIBLE_DIR = REPO_ROOT / "02_FACTORY" / "bible" / "kirei_bible"
 
+# チャンピオン名正規化（Kha'Zix/Lee Sin/Wukong等の表記ゆれをDDragon正規IDへ統一）。
+# これが無いと存在しないファイル名(kha'zix_tactics_bible.md等)になりAI生成結果が
+# 静かに破棄される(known-regression-patternsパターン2)。
+sys.path.insert(0, str(REPO_ROOT / "03_SYSTEMS"))
+try:
+    from v2_CORE._LOL.champ_id_normalizer import normalize_champion_id
+except Exception as _e:
+    print(f"[WARN] champ_id_normalizer のインポートに失敗、正規化なしで続行します: {_e}")
+    def normalize_champion_id(champ_name_or_id):
+        return champ_name_or_id
+
 # 戦術フィルタ用キーワード（これらを含むタイムスタンプ行を重点抽出）
 TACTICS_KEYWORDS = [
     # オブジェクト・マクロ
@@ -151,6 +162,34 @@ def compress_vtt_transcript(vtt_text):
 
     return result_text
 
+def extract_metadata_from_bible_file(path_obj):
+    """
+    既存の戦術バイブルMarkdown(02_FACTORY/bible/kirei_bible/*.md)から
+    video_id・チャンピオン・タイトルのメタデータのみを抽出する。
+
+    ★ 重要: このファイルはAIが生成済みの「要約」であり、発言の引用断片はあっても
+    秒数(タイムスタンプ)情報は失われている。そのため本文を疑似トランスクリプトとして
+    解析してはならない(以前は特定1動画のセリフをハードコードした正規表現で本文を
+    切り出そうとしており、31本中30本が不一致でハルシネーション温床になっていた)。
+    実字幕は必ず動画IDから再取得する。
+    """
+    content = path_obj.read_text(encoding="utf-8", errors="replace")
+    video_id = path_obj.stem
+    # VTTファイル名の言語サフィックス(.en, .ja等)を除去して純粋なvideo_idにする
+    video_id = re.sub(r'\.(en|ja|ko|zh|de|fr|es|pt|ru)$', '', video_id)
+
+    title = "LoL High Elo Gameplay"
+    t_match = re.search(r"#\s+([^\n]+)", content)
+    if t_match:
+        title = t_match.group(1).replace("[エラー: 日本語/英語字幕が動画に見つかりません]", "").strip()
+
+    champion = "Unknown"
+    c_match = re.search(r"\[Champions?:\s*([^\]]+)\]", content)
+    if c_match:
+        champion = c_match.group(1).split(",")[0].strip()
+
+    return video_id, champion, title
+
 def extract_tactics_from_bible_or_url(target_input):
     """
     動画ID、URL、または既存のMarkdownファイルから字幕テキストを抽出
@@ -159,28 +198,12 @@ def extract_tactics_from_bible_or_url(target_input):
     champion = "Unknown"
     title = "LoL High Elo Gameplay"
 
-    # ファイルパスの場合
+    # ファイルパスの場合: メタデータだけ取り出し、実字幕は動画IDから再取得する
     path_obj = Path(target_input)
     if path_obj.exists() and path_obj.is_file():
-        content = path_obj.read_text(encoding="utf-8", errors="replace")
-        video_id = path_obj.stem
-        # VTTファイル名の言語サフィックス(.en, .ja等)を除去して純粋なvideo_idにする
-        video_id = re.sub(r'\.(en|ja|ko|zh|de|fr|es|pt|ru)$', '', video_id)
-
-        # タイトル抽出
-        t_match = re.search(r"#\s+([^\n]+)", content)
-        if t_match:
-            title = t_match.group(1).replace("[エラー: 日本語/英語字幕が動画に見つかりません]", "").strip()
-
-        # チャンピオン判定
-        c_match = re.search(r"\[Champions?:\s*([^\]]+)\]", content)
-        if c_match:
-            champion = c_match.group(1).split(",")[0].strip()
-
-        # 字幕抽出（ファイルの後半にある英語字幕ブロック）
-        sub_match = re.search(r"(?:Mine got Caitlyn|Red skip red|Well, okay|First blood)[\s\S]*", content)
-        raw_text = sub_match.group(0) if sub_match else content
-        return video_id, champion, title, raw_text
+        meta_video_id, meta_champion, meta_title = extract_metadata_from_bible_file(path_obj)
+        _, _, fetched_title, raw_text = extract_tactics_from_bible_or_url(meta_video_id)
+        return meta_video_id, meta_champion, (fetched_title or meta_title), raw_text
 
     # YouTube URL または ID の場合
     if "youtube.com" in target_input or "youtu.be" in target_input:
@@ -234,7 +257,12 @@ def extract_tactics_from_bible_or_url(target_input):
     # フォールバック 2: 字幕が存在しない場合、ローカル faster-whisper で音声を自動文字起こし
     print(f"[INFO] 🎙️ 字幕なし/取得失敗を検知。ローカルWhisper音声認識フォールバックを起動: {video_id}")
     try:
-        from scripts.whisper_transcriber import transcribe_youtube_video_fallback
+        # ★ このファイル自体が scripts/ 直下にあるため、"scripts."プレフィックス付きの
+        # importは `python scripts/extract_video_tactics.py` のようにスクリプト直接実行した
+        # 場合(sys.path[0]がscripts/自身になるため)に毎回 ModuleNotFoundError で失敗していた。
+        # 同一ディレクトリの兄弟モジュールとして素直にimportする。
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from whisper_transcriber import transcribe_youtube_video_fallback
         whisper_text, whisper_title = transcribe_youtube_video_fallback(video_id, model_size="base")
         if whisper_text:
             print(f"[INFO] ✅ Whisper音声認識によるタイムスタンプ文字起こし成功 ({len(whisper_text)}文字)")
@@ -279,7 +307,9 @@ def generate_action_steps_with_ai(video_id, champion, title, compressed_text):
     if api_key:
         from google import genai
         client = genai.Client(api_key=api_key)
-        candidate_models = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.0-flash"]
+        # 2026-09-20 gemini-model-health-check実測: gemini-1.5-flash/gemini-2.0-flashは
+        # 404 NOT_FOUNDで死亡確認済みのため除去し、実際に生存確認済みのモデルのみ使用する。
+        candidate_models = ["gemini-2.5-flash", "gemini-3.1-flash-lite", "gemini-3.5-flash-lite"]
         for m_name in candidate_models:
             try:
                 response = client.models.generate_content(
@@ -339,19 +369,41 @@ def generate_rule_based_actions(video_id, champion, compressed_text):
 *(実況メモ: {note})*""")
 
     if not actions:
-        # デフォルトフォールバック
-        actions.append(f"""### 🕒 [03:25](https://youtu.be/{video_id}?t=205) - Lv3 序盤のファーストアクション
-- 💡 **判断の理由 (Why)**: スキル先行順を活かしたパワースパイクでのエンゲージ。
-- 🎯 **ミクロ・操作のコツ (How)**: フラッシュを温存し、敵の逃げ道をブッシュから塞ぐ。
-- 🚫 **避けるべき罠・没理由 (Rejected)**: 初手王剣ラッシュ等の耐久不足ビルド。""")
+        # ★ 対象時間帯(3/8/14分台)に一致する行が無かった場合でも、架空のシナリオを
+        # 作り話で埋めない(known-regression-patternsパターン5)。実データの先頭にある
+        # 実在タイムスタンプ行から機械的にカードを組み立て、無ければ空文字を返す。
+        for line in lines:
+            ts_m = re.match(r"\[(\d{2}:\d{2})\]\s*(.*)", line)
+            if not ts_m:
+                continue
+            ts = ts_m.group(1)
+            sec = parse_time_to_seconds(ts)
+            note = ts_m.group(2)[:80]
+            actions.append(f"""### 🕒 [{ts}](https://youtu.be/{video_id}?t={sec}) - 実況シーン
+- 💡 **判断の理由 (Why)**: 実況内容「{note}」の場面。AI解析が利用できなかったため、字幕から機械的に抽出した参考シーンです。
+- 🎯 **ミクロ・操作のコツ (How)**: 動画本編を実際に確認し、スキル操作やポジショニングを確認してください。
+- 🚫 **避けるべき罠・没理由 (Rejected)**: (AI解析未実施のため詳細不明。動画本編で確認してください)""")
+            if len(actions) >= 3:
+                break
+
+    if not actions:
+        print(f"[WARN] {video_id}: 実タイムスタンプ行が見つからず、ルールベース生成もスキップします。")
+        return ""
 
     return "\n\n".join(actions)
 
 def append_to_tactics_bible(champion, video_id, title, action_markdown, dry_run=False):
     """戦術バイブル (01_INTEL/tactics/{champ}_tactics_bible.md) へ自動マウント"""
+    if not action_markdown:
+        print(f"[INFO] {video_id}: 実データに基づくアクション手順が生成できなかったため、マウントをスキップします。")
+        return
+
     if not champion or champion == "Unknown":
         champion = "Aatrox"
 
+    # DDragon正規IDへ統一(Kha'Zix/Lee Sin/Wukong等の表記ゆれで別ファイル・
+    # 存在しないファイル名になるのを防ぐ)
+    champion = normalize_champion_id(champion)
     tactics_file = INTEL_TACTICS_DIR / f"{champion.lower()}_tactics_bible.md"
     if not tactics_file.exists():
         print(f"[INFO] バイブル未存在のため、スキップまたは新規作成: {tactics_file.name}")
@@ -406,7 +458,7 @@ def run_batch_extraction(limit=5, dry_run=False):
             break
 
         video_id, detected_champ, title, raw_text = extract_tactics_from_bible_or_url(md_path)
-        champ = detected_champ if detected_champ != "Unknown" else "JarvanIV"
+        champ = normalize_champion_id(detected_champ) if detected_champ != "Unknown" else "JarvanIV"
         tactics_file = INTEL_TACTICS_DIR / f"{champ.lower()}_tactics_bible.md"
 
         # 既にマウント済みか確認
@@ -418,7 +470,10 @@ def run_batch_extraction(limit=5, dry_run=False):
         print(f"\n[{processed_count + 1}/{limit}] 🎬 解析中: {title[:40]} ({champ} / {video_id})")
         compressed_text = compress_vtt_transcript(raw_text)
         if not compressed_text:
-            compressed_text = f"[03:20] {champ} early clear and gank\n[08:40] Drake setup and vision\n[14:15] Teamfight engage"
+            # ★ 実字幕/Whisper文字起こしが両方とも取得できなかった場合、
+            # 架空のタイムスタンプで埋めずにこの動画をスキップする(パターン5対策)。
+            print(f"[WARN] {video_id}: 実字幕/音声認識テキストが取得できずスキップします。")
+            continue
 
         action_markdown = generate_action_steps_with_ai(video_id, champ, title, compressed_text)
         append_to_tactics_bible(champ, video_id, title, action_markdown, dry_run=dry_run)
@@ -447,7 +502,7 @@ def main():
 
     # 1. 字幕・メタデータ抽出
     video_id, detected_champ, title, raw_text = extract_tactics_from_bible_or_url(args.target)
-    champ = args.champ or detected_champ or "Aatrox"
+    champ = normalize_champion_id(args.champ or detected_champ or "Aatrox")
 
     print(f"  動画ID: {video_id}")
     print(f"  チャンピオン: {champ}")
@@ -457,8 +512,10 @@ def main():
     # 2. タイムスタンプ圧縮＆戦術スマートフィルタ（トークン節約の神髄）
     compressed_text = compress_vtt_transcript(raw_text)
     if not compressed_text:
-        # 生テキストからタイムスタンプ付き行を擬似抽出
-        compressed_text = "[03:25] Gank angle bot side\n[08:15] Dragon control freeze\n[14:40] Herald teamfight engage"
+        # ★ 実字幕/Whisper文字起こしが無い場合、架空のタイムスタンプで埋めない
+        # (known-regression-patternsパターン5)。中断して正直に失敗を報告する。
+        print("[ERROR] 実字幕/音声認識テキストが取得できませんでした。処理を中断します。")
+        return
 
     print(f"  ⚡ 圧縮後テキスト長: {len(compressed_text)} 文字 (約90%のトークン削減！)")
 

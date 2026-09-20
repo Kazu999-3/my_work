@@ -151,6 +151,49 @@ def check_youtube_queue_health():
     except Exception as e:
         return {"status": "INFO", "msg": f"キュー確認スキップ ({e})"}
 
+def check_youtube_automation_freshness():
+    """
+    YouTube解析自動化(edge_worker_daemon.pyのyoutube_queue_process/youtube_absorb)が
+    実際に直近起票されているかを確認する。
+
+    背景: コード上はスケジューラ(10分/15分おき)が実装済みでも、実行経路が
+    ローカルPC常駐デーモンに依存しているため、PCが起動していない日は誰にも
+    気づかれず処理が丸ごと停止し続けるリスクがある(2026-09-20に41時間の
+    無起票を実測で発見)。「エラー0件」だけを見て安心する楽観バイアスを避けるため、
+    「そもそも新規実行されているか」を独立してチェックする。
+    """
+    import datetime
+    try:
+        sys.path.insert(0, str(REPO_ROOT / "scripts"))
+        from sync_dict_health import REST_BASE, HEADERS
+        import requests
+
+        STALE_THRESHOLD_HOURS = 3
+        task_types = ["youtube_queue_process", "youtube_absorb"]
+        stale = []
+        now = datetime.datetime.now(datetime.timezone.utc)
+
+        for tt in task_types:
+            url = f"{REST_BASE}/edge_tasks?select=created_at&task_type=eq.{tt}&order=created_at.desc&limit=1"
+            res = requests.get(url, headers=HEADERS, timeout=10)
+            if not res.ok:
+                stale.append(f"{tt}(確認失敗)")
+                continue
+            rows = res.json()
+            if not rows:
+                stale.append(f"{tt}(記録なし)")
+                continue
+            last = datetime.datetime.fromisoformat(rows[0]["created_at"].replace("Z", "+00:00"))
+            hours_ago = (now - last).total_seconds() / 3600
+            if hours_ago > STALE_THRESHOLD_HOURS:
+                stale.append(f"{tt}(最終実行 {hours_ago:.1f}時間前)")
+
+        if not stale:
+            return {"status": "PASS", "msg": f"YouTube自動化タスクは直近{STALE_THRESHOLD_HOURS}時間以内に起票されています"}
+        return {"status": "WARN", "msg": f"YouTube自動化が停止している可能性: {', '.join(stale)} — edge_worker_daemon.pyが稼働しているか確認してください"}
+    except Exception as e:
+        return {"status": "INFO", "msg": f"自動化鮮度チェックスキップ ({e})"}
+
 def main():
     print("\n" + "="*60)
     print(" 🛡️  Sovereign OS 全域総合ヘルスチェックレポート")
@@ -161,6 +204,7 @@ def main():
         ("デイリーログ鮮度", check_daily_log_freshness),
         ("ナレッジリンク整合性", check_knowledge_links),
         ("YouTubeキュー健全性", check_youtube_queue_health),
+        ("YouTube自動化の稼働鮮度", check_youtube_automation_freshness),
         ("Git作業ツリー健全性", check_git_status),
         ("ポータル TypeScript 型整合性", check_portal_types),
         ("Riot 最新パッチ追従状況", check_riot_patch_status),
