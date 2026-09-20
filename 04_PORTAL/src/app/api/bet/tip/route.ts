@@ -47,14 +47,16 @@ export async function POST(req: Request) {
     }
 
     // 受信者の確認・取得
+    // ★ autoCreate: false — 誤字入力等で実在しない相手へ送金し、
+    //   幽霊アカウントが自動生成されてしまうのを防ぐ（既存プレイヤーのみ送金可）。
     const receiver = await findOrCreatePlayer({
       discordId: toDiscordId,
       name: toName,
-      autoCreate: true,
+      autoCreate: false,
     });
 
     if (!receiver) {
-      return NextResponse.json({ error: '送信相手が見つかりません。' }, { status: 404 });
+      return NextResponse.json({ error: '送信相手が見つかりません。名前やIDの入力ミスがないか確認してください。' }, { status: 404 });
     }
 
     // 自分自身への送金を防止

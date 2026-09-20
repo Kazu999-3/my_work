@@ -441,7 +441,9 @@ export async function createMentorshipForumThread(
   const payload = {
     name: threadTitle,
     auto_archive_duration: 10080, // 7日間 (最大)
-    applied_tags: appliedTags,
+    // Discord Forumチャンネルのapplied_tagsは最大5件までのため、
+    // コーチングタグ+レーンタグ合計が6件以上になるケース(5レーン共通時)を安全に切り詰める。
+    applied_tags: appliedTags.slice(0, 5),
     message: {
       content: `${mentorMention} ${pupilMention} 🎉 **師弟マッチングが成立しました！** お二人の専用指導チャットが作成されました！`,
       embeds: [embed],

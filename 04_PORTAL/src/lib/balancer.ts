@@ -724,14 +724,16 @@ function buildBalanceResult(
   const getBias = (p: AssignedPlayer) => (ctx.sideHistory[p.name]?.BLUE || 0) - (ctx.sideHistory[p.name]?.RED || 0);
 
   // normal: A→BLUE, B→RED
+  // ★ 各個人の偏り絶対値の合計で比較する（符号付き合計だと+1/-1が5人ずつで
+  //   常に相殺されbiasNormal===biasSwappedになってしまうバグの修正）。
   const biasNormal =
-    assignA.reduce((s, p) => s + (getBias(p) + 1), 0) + // +1: 今回BLUEに入る
-    assignB.reduce((s, p) => s + (getBias(p) - 1), 0);  // -1: 今回REDに入る
+    assignA.reduce((s, p) => s + Math.abs(getBias(p) + 1), 0) + // +1: 今回BLUEに入る
+    assignB.reduce((s, p) => s + Math.abs(getBias(p) - 1), 0);  // -1: 今回REDに入る
 
   // swapped: A→RED, B→BLUE
   const biasSwapped =
-    assignA.reduce((s, p) => s + (getBias(p) - 1), 0) + // -1: 今回REDに入る
-    assignB.reduce((s, p) => s + (getBias(p) + 1), 0);  // +1: 今回BLUEに入る
+    assignA.reduce((s, p) => s + Math.abs(getBias(p) - 1), 0) + // -1: 今回REDに入る
+    assignB.reduce((s, p) => s + Math.abs(getBias(p) + 1), 0);  // +1: 今回BLUEに入る
 
   let isSwapped = false;
   if (Math.abs(biasSwapped) < Math.abs(biasNormal)) {

@@ -186,7 +186,7 @@ export async function POST(req: Request) {
 
     if (isTieWin) {
       payout = Math.floor(cleanAmount * PAYOUTS.TIE);
-      newCoins = currentCoins + payout;
+      newCoins = currentCoins - cleanAmount + payout;
       resultMessage = `🎊 TIE！ ${cleanAmount}コイン → +${payout}コイン 獲得！`;
     } else if (isPush) {
       // プッシュ（引き分けで PLAYER/BANKER ベット）→ 掛け金返還
@@ -195,7 +195,7 @@ export async function POST(req: Request) {
       resultMessage = `🤝 TIE（引き分け）！ 掛け金 ${cleanAmount}コインを返還します。`;
     } else if (isWin) {
       payout = Math.floor(cleanAmount * PAYOUTS[cleanBet]);
-      newCoins = currentCoins + payout;
+      newCoins = currentCoins - cleanAmount + payout;
       resultMessage = `🎉 ${result} 勝利！ ${cleanAmount}コイン → +${payout}コイン 獲得！`;
     } else {
       payout = -cleanAmount;

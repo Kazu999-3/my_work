@@ -337,7 +337,9 @@ export default function CasinoPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         triggerCelebration();
-        alert(data.message);
+        // data.message はチップに添えたメッセージ本文（デフォルト「ナイスプレイ！」）であり
+        // 送金結果ではないため、送金完了を示す文言として組み立てて表示する。
+        alert(`✅ ${data.to} さんに ${data.amount}コイン を送りました！`);
         setIsTipModalOpen(false);
         setTipMessage('');
         fetchBetData();

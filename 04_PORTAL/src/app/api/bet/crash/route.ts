@@ -3,6 +3,30 @@ import crypto from 'crypto';
 import { getAuthSession } from '../../../../lib/authGuard';
 import { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } from '../../../../lib/playerCoins';
 import { sendShopNotification } from '../../../../lib/discordNotify';
+import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
+
+// ネットワーク遅延・許容マージン(秒)。クライアント→サーバー到達までの遅延で
+// 「本来は間に合っていた利確」が理不尽にクラッシュ判定されるのを防ぐ。
+const LATENCY_MARGIN_SEC = 0.5;
+
+/**
+ * gameTokenの多重利確(同一トークンでのCASHOUT複数回POST)を防止する。
+ * トークンのハッシュをUNIQUE制約付きテーブルへINSERTし、既に使用済み(INSERT失敗)なら false を返す。
+ */
+async function claimCrashToken(gameToken: string, discordId: string): Promise<boolean> {
+  if (!supabaseAdmin) return true; // DB未接続時はフォールバックで許可(ローカル開発用)
+  const tokenHash = crypto.createHash('sha256').update(gameToken).digest('hex');
+  const { error } = await supabaseAdmin
+    .from('crash_used_tokens')
+    .insert({ token_hash: tokenHash, discord_id: discordId });
+  // 23505 = unique_violation → 既に利確済みのトークン
+  if (error) {
+    if ((error as any).code === '23505') return false;
+    console.error('[crash] claimCrashToken error:', error);
+    return false;
+  }
+  return true;
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -124,6 +148,12 @@ export async function POST(req: Request) {
         return NextResponse.json({ ok: false, error: 'ゲームセッションの有効期限が切れました。' }, { status: 400 });
       }
 
+      // 多重利確防止: 同一gameTokenでのCASHOUTは1回のみ受理する
+      const claimed = await claimCrashToken(gameToken, session.discordId);
+      if (!claimed) {
+        return NextResponse.json({ ok: false, error: 'このゲームは既に利確・処理済みです。' }, { status: 409 });
+      }
+
       const mult = parseFloat(claimedMultiplier);
       const actualCrash = payload.crashPoint;
 
@@ -131,8 +161,8 @@ export async function POST(req: Request) {
       // クライアントが瞬時に高倍率をPOSTしてくるチートを防ぐ
       const now = Date.now();
       const clientElapsedSec = (now - payload.startedAt) / 1000;
-      // ネットワーク遅延・許容マージン(0.5秒)を考慮した、その経過秒数で到達可能な最大倍率
-      const maxPossibleMult = Math.floor(Math.pow(Math.E, (clientElapsedSec + 0.5) * 0.22) * 100) / 100;
+      // ネットワーク遅延・許容マージンを考慮した、その経過秒数で到達可能な最大倍率
+      const maxPossibleMult = Math.floor(Math.pow(Math.E, (clientElapsedSec + LATENCY_MARGIN_SEC) * 0.22) * 100) / 100;
 
       if (mult > maxPossibleMult) {
         return NextResponse.json({ ok: false, error: '不正な利確タイミングが検出されました。' }, { status: 400 });
@@ -140,7 +170,10 @@ export async function POST(req: Request) {
 
       // クラッシュ判定: 実際のクラッシュ倍率に達していなければ成功、超えていればクラッシュ
       // ※経過時間から計算した倍率がクラッシュ値を超えていた場合もアウト
-      const currentServerMult = Math.floor(Math.pow(Math.E, clientElapsedSec * 0.22) * 100) / 100;
+      // 通信遅延で「本来は間に合っていた利確」が理不尽にクラッシュ判定されないよう、
+      // 上のmaxPossibleMult同様に同じ許容マージンを引いた時点の倍率で判定する。
+      const marginedElapsedSec = Math.max(0, clientElapsedSec - LATENCY_MARGIN_SEC);
+      const currentServerMult = Math.floor(Math.pow(Math.E, marginedElapsedSec * 0.22) * 100) / 100;
       const isCrashed = mult > actualCrash || currentServerMult >= actualCrash;
 
       if (!isCrashed) {

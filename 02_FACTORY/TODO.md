@@ -28,6 +28,27 @@
 - [x] **Step 4: 【完全勝利サイクルの結合 ＆ ナレッジ自動更新ループ】**
   - [x] 試合終了時の勝敗・ファイトデータ・改善ポイントをチャンピオン辞典に自動反映し、次回のプレイ前ナレッジへ循環するループ検証 (`match_feedback_sync.py` / `sync-match-feedback`)
 
+## ✅ 2026-09-20 保留中・修正キュー 対応済み（直近1週間の実装における潜在不具合修正 全5件）
+
+> **経緯**: 2026-09-20 の深層ロジック監査により、型チェックや既存テストをすり抜けて潜んでいた5件の不具合を特定。同日中に優先度順（経済実害・悪用可能性の高い順）で全件修正。
+
+- [x] **1. 🔥【最高・経済】バカラ配当計算の元金未差引バグ（無限コイン増殖インフレ）解消**
+  - **対象**: `04_PORTAL/src/app/api/bet/baccarat/route.ts` (L187〜204)
+  - **内容**: 勝利時に `newCoins = currentCoins + payout` となっておりベット元金が引かれないため、実質2.95倍配当（期待値+47.5%）になっていたのを `newCoins = currentCoins - cleanAmount + payout` に是正。
+- [x] **2. ⚖️【高・機能】バランサーサイド公平化の数学的恒等式（100%ランダム決定化）解消**
+  - **対象**: `04_PORTAL/src/lib/balancer.ts` (L724〜740)
+  - **内容**: 10名全員の偏り合算で `(+5) + (-5) = 0` 相殺により `biasNormal === biasSwapped` が常に成立し、毎回 `Math.random() < 0.5` で決定されていたのを、各個人の偏り絶対値和 `Math.abs(getBias(p) ± 1)` の比較方式へ修正。既存バランサーテスト36件パス確認済み。
+- [x] **3. 🚀【高・防衛】ポロ・クラッシュのリプレイ多重利確脆弱性 ＆ 通信遅延クラッシュ是正**
+  - **対象**: `04_PORTAL/src/app/api/bet/crash/route.ts` (L111〜155)、新設 `crash_used_tokens` テーブル (`04_PORTAL/supabase/migrations/78_crash_used_tokens.sql`)
+  - **内容**: ①同一gameTokenによる多重POST利確を、トークンハッシュのUNIQUE制約INSERTで1回のみに制限。②`currentServerMult` にも `maxPossibleMult` と同じ0.5s遅延マージンを適用し、通信遅延による理不尽な全損クラッシュ判定を防止。
+  - ⚠️ **要手動対応**: マイグレーション`78_crash_used_tokens.sql`は本番Supabaseへ未適用（ユーザーが手動でSQL Editor実行予定）。適用完了までは多重利確防止がDB側で有効化されない。
+- [x] **4. 💸【中・仕様】チップ送金の手入力誤字による幽霊アカウント自動生成防止 ＆ 完了通知是正**
+  - **対象**: `04_PORTAL/src/app/api/bet/tip/route.ts` (L50〜58) / `04_PORTAL/src/app/casino/page.tsx` (L340)
+  - **内容**: ①`findOrCreatePlayer` を `autoCreate: false` 化し存在しないプレイヤーへの誤送金・架空レコード作成をブロック。②`casino/page.tsx` で `alert(data.message)`（ユーザー添え状）ではなく送金完了メッセージ（送信先・金額）を表示するよう修正。
+- [x] **5. 🎓【中・API制約】師弟フォーラムスレッド作成時の Discord API タグ上限超過(400エラー)防止**
+  - **対象**: `04_PORTAL/src/lib/discordMentorship.ts` (L357〜401)
+  - **内容**: コーチングタグ＋5レーンタグで計6件となり Discord Forum API上限（最大5件）を超過してスレッド作成が失敗するリスクを `appliedTags.slice(0, 5)` で防御。
+
 ---
 
 ## 📋 【次のタスク】 ナレッジ基盤の先行整理 ＆ 再解析パイプライン
