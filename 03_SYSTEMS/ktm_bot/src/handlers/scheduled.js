@@ -12,25 +12,30 @@ export async function handleScheduledEvent(event, env, ctx) {
   const cronExpression = (event.cron || "").trim();
   const mode = event.mode || "";
 
-  // 1. 毎週水曜 12:00 JST (水曜 UTC 3:00 / dow=3): 週末定期カスタム募集（土日分）自動投稿
-  if (cronExpression.includes("0 3 * * 3") || cronExpression.includes("0 3 * * WED") || mode === "weekly_recruit") {
+  // ⚠️ 以下のcron文字列はwrangler.tomlの[triggers]crons設定と完全に一致させる必要がある。
+  // Cloudflare Workers Cron Triggersの曜日フィールドは「1=日曜〜7=土曜」(標準Unix cronの
+  // 「0=日曜〜6=土曜」とは異なる)。2026-09-21、wrangler.toml側で標準Unix流の数字が
+  // 誤って使われ続けていた再発バグを修正した際に、ここのマッチング文字列も合わせて更新した。
+
+  // 1. 毎週水曜 12:00 JST (UTC 3:00 水曜 / CF dow=4): 週末定期カスタム募集（土日分）自動投稿
+  if (cronExpression.includes("0 3 * * 4") || mode === "weekly_recruit") {
     console.log("[Scheduled] Executing weekly recruitment posting (Wednesday 12:00 JST)...");
     await postWeeklyRecruitment(env);
-  } else if (cronExpression.includes("0 0 * * 1") || cronExpression.includes("0 0 * * MON") || mode === "weekly_report") {
-    // 毎週月曜 9:00 JST (UTC 0:00 月曜=dow 1): 個人週間レポート配信
+  } else if (cronExpression.includes("0 0 * * 2") || mode === "weekly_report") {
+    // 毎週月曜 9:00 JST (UTC 0:00 月曜 / CF dow=2): 個人週間レポート配信
     await sendWeeklyReports(env);
   } else if (
-    cronExpression.includes("0 11 * * 6,7") || cronExpression.includes("0 11 * * 6") || 
-    cronExpression.includes("0 11 * * 7") || cronExpression.includes("0 11 * * 0") || 
+    cronExpression.includes("0 11 * * 7,1") || cronExpression.includes("0 11 * * 7") ||
+    cronExpression.includes("0 11 * * 1") ||
     mode === "check_2000"
   ) {
-    // 毎週土日 20:00 JST (UTC 11:00 土日=dow 6,7): 開催可否判定 ＆ 中止時クイック代替募集
+    // 毎週土日 20:00 JST (UTC 11:00 土日 / CF dow=7,1): 開催可否判定 ＆ 中止時クイック代替募集
     console.log("[Scheduled] Executing 20:00 Custom Check & Substitute Handler...");
     await checkCustomStatusAt2000(env);
   } else if (
-    mode === "event_notify" || 
-    cronExpression.includes("0 10 * * 5") || cronExpression.includes("0 10 * * FRI") || // 金曜 19:00 JST (UTC 10:00)
-    cronExpression.includes("0 8 * * 6,7") || cronExpression.includes("0 8 * * 6") || cronExpression.includes("0 8 * * 7") // 土曜・日曜 17:00 JST (UTC 08:00)
+    mode === "event_notify" ||
+    cronExpression.includes("0 10 * * 6") || // 金曜 19:00 JST (UTC 10:00 / CF dow=6)
+    cronExpression.includes("0 8 * * 7,1") || cronExpression.includes("0 8 * * 7") || cronExpression.includes("0 8 * * 1") // 土曜・日曜 17:00 JST (UTC 08:00 / CF dow=7,1)
   ) {
     // 金曜 19:00 JST, 土曜 17:00 JST, 日曜 17:00 JST: 中間アナウンス＆リマインド通知
     console.log("[Scheduled] Executing intermediate custom reminder & status notification...");
@@ -1021,8 +1026,18 @@ async function sendEventUsersNotification(env, options = {}) {
  */
 export async function checkCustomStatusAt2000(env) {
   try {
-    const channelId = env.DISCORD_KTM_CHANNEL_ID;
-    if (!channelId) return;
+    // ★ 2026-09-21修正: ここだけが他の全関数と違い、CONFIGのフォールバックを持たない
+    // env.DISCORD_KTM_CHANNEL_ID を素で参照していた。この変数はconfig.jsにもwrangler.tomlにも
+    // 定義が無く(コードベース全体でこの1箇所しか参照が無い)、未設定なら即returnするため、
+    // cronが正しく発火しても20:00判定が無言で何もしない状態だった(「孤立した自動化」パターン)。
+    // 募集カードを実際に投稿している postWeeklyRecruitment と同じ解決順に揃える。
+    // (DB照合も discord_channel_id=eq.${channelId} で行うため、投稿先と一致していないと
+    //  「対象の定期カスタム募集が見つかりません」で必ず空振りする)
+    const channelId = env.DISCORD_KTM_CHANNEL_ID || CONFIG.PERIODIC_RECRUIT_CHANNEL_ID || CONFIG.RECRUIT_CHANNEL_ID;
+    if (!channelId) {
+      console.error('[Check2000] 判定対象のチャンネルIDが解決できませんでした');
+      return;
+    }
 
     // 現在のJST曜日を取得 (0=日, 6=土)
     const nowJst = new Date(Date.now() + 9 * 60 * 60 * 1000);
@@ -1036,6 +1051,32 @@ export async function checkCustomStatusAt2000(env) {
     }
 
     const targetDayName = isSaturday ? '土曜カスタム' : '日曜お祭りカスタム';
+
+    // 二重投稿防止(2026-09-21追加): この関数にはこれまで重複チェックが無かった。
+    // Cloudflareネイティブcron(20:00 JST)とGitHub Actionsバックアップ(20:15 JST)を
+    // 15分差で両方発火させるようにしたため、ガードが無いと開催判定メッセージが
+    // 毎回2回投稿されてしまう。直近30分以内に同種の判定メッセージが無いか確認する。
+    try {
+      const recentRes = await fetchWithRetry(
+        `https://discord.com/api/v10/channels/${channelId}/messages?limit=10`,
+        { headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` } }
+      );
+      if (recentRes.ok) {
+        const recent = await recentRes.json();
+        const thirtyMinAgo = Date.now() - 30 * 60 * 1000;
+        const isDuplicate = recent.some((m) =>
+          m.author?.bot &&
+          new Date(m.timestamp).getTime() > thirtyMinAgo &&
+          (m.content?.includes('本日20:00 判定') || m.content?.includes('助っ人をピンポイント募集中'))
+        );
+        if (isDuplicate) {
+          console.log('[Check2000] 直近30分以内に同種の判定メッセージがあるためスキップ（二重発火防止）');
+          return;
+        }
+      }
+    } catch (dupErr) {
+      console.warn('[Check2000] 二重投稿チェックに失敗（判定は続行）:', dupErr);
+    }
 
     // 最新の open な定期カスタム募集を取得
     const rows = await fetchSupabase(

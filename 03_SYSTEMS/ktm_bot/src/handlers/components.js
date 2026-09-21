@@ -519,11 +519,20 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         const statusBanner = buildStatusBanner(recruitStatus, dominantTierText);
         targetEmbed.color = recruitStatus.color;
 
-        const BANNER_PATTERN = /(?:[🚨🔥🟡✅⚡]\s*)?\*\*【(?:シルバー以下\s*あと\d+名|定期カスタム募集中|週末定期カスタム募集中|開催確定部門あり|合計\d+名到達|全枠10名満員御礼|全部門10名達成)[^】]*】\*\*(?:\n[^\n]+){1,5}/;
+        // 2026-09-21修正: recruitmentStatus.jsのbuildStatusBanner()が実際に出す見出し
+        // (「開催確定日あり」「土日ともに10名達成」)と、このパターンの許容一覧が
+        // 文言リニューアル時に同期されておらず、「開催確定→満員御礼」への状態遷移で
+        // 置換がスキップされ本文が固着するバグがあった(過去の「残数バナー固着」バグの再発)。
+        // 現行の見出し文言を正として追加し、旧文言も後方互換のため残す。
+        // ★ uフラグ必須(2026-09-21): 絵文字(🔥🎉等)はUTF-16のサロゲートペアであり、
+        // uフラグ無しの文字クラスでは「ペアの片割れ1個」としてしか扱われない。そのため
+        // 先頭の絵文字が半分だけ消費され、置換のたびに壊れた文字(�)が本文の先頭へ
+        // 蓄積していた(実測で確認済み)。uフラグでコードポイント単位の一致にする。
+        const BANNER_PATTERN = /(?:[🚨🔥🟡✅⚡🎉]\s*)?\*\*【(?:シルバー以下\s*あと\d+名|定期カスタム募集中|週末定期カスタム募集中|開催確定部門あり|開催確定日あり|合計\d+名到達|全枠10名満員御礼|全部門10名達成|土日ともに10名達成)[^】]*】\*\*(?:\n[^\n]+){1,5}/u;
         const updateTextWithStatus = (text) => {
           if (!text) return text;
           if (BANNER_PATTERN.test(text)) {
-            return text.replace(new RegExp(BANNER_PATTERN.source, 'g'), statusBanner);
+            return text.replace(new RegExp(BANNER_PATTERN.source, 'gu'), statusBanner);
           }
           return text;
         };

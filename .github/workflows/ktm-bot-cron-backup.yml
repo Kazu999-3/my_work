@@ -15,10 +15,17 @@ on:
     - cron: '15 10 * * 5'    # 金 19:15 JST (UTC 10:15) → 金曜中間アナウンスのバックアップ
     - cron: '15 8 * * 6'     # 土 17:15 JST (UTC 08:15) → 土曜中間アナウンスのバックアップ
     - cron: '15 8 * * 0'     # 日 17:15 JST (UTC 08:15) → 日曜中間アナウンスのバックアップ
+    # 2026-09-21追加: wrangler.tomlのCloudflareネイティブcron曜日ズレ修正時、④(20:00開催判定)には
+    # これまでバックアップが一切無く、日曜分が構造的に一度も発火していなかったことが判明した。
+    # 他のジョブと同じ「本来時刻+15分」の設計で追加する（checkCustomStatusAt2000側に
+    # 二重投稿防止ガードも追加済み）。⑤(週間レポート)はDM送信のため、既存コメントの通り
+    # 意図的にバックアップ対象外のまま維持する（二重送信防止、wrangler.toml側の曜日修正のみで対応）。
+    - cron: '15 11 * * 6'    # 土 20:15 JST (UTC 11:15) → 土曜20:00開催判定のバックアップ
+    - cron: '15 11 * * 0'    # 日 20:15 JST (UTC 11:15) → 日曜20:00開催判定のバックアップ
   workflow_dispatch:
     inputs:
       mode:
-        description: 'mode (event_notify=人数集計アナウンス / weekly_recruit=定期募集)'
+        description: 'mode (event_notify=人数集計アナウンス / weekly_recruit=定期募集 / check_2000=20:00開催判定)'
         required: false
         default: ''
 
@@ -43,6 +50,8 @@ jobs:
               MODE="weekly_recruit"
             elif [ "${{ github.event.schedule }}" = "15 10 * * 5" ] || [ "${{ github.event.schedule }}" = "15 8 * * 6" ] || [ "${{ github.event.schedule }}" = "15 8 * * 0" ]; then
               MODE="event_notify"
+            elif [ "${{ github.event.schedule }}" = "15 11 * * 6" ] || [ "${{ github.event.schedule }}" = "15 11 * * 0" ]; then
+              MODE="check_2000"
             else
               MODE=""
             fi
