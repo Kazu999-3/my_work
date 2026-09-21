@@ -315,11 +315,154 @@ tags: {data['tags']}
 """
     return content
 
+def _v(row, key, fallback="（このチャンピオンについては確定情報が未取得です。実戦データの蓄積後に追記してください）"):
+    """
+    champion_facts の値を安全に取り出す。
+    ★ 値が無い/「情報不足」系の文言しか無い場合は、それらしい内容を創作せず
+      「未取得である」と正直に書く(known-regression-patternsパターン5のハルシネーション対策)。
+    """
+    val = row.get(key)
+    if not isinstance(val, str):
+        return fallback
+    val = val.strip()
+    if not val or "情報不足" in val or "判断できません" in val:
+        return fallback
+    # AIが追記しがちな【追記知見】【実戦要点メモ】等のブロックは、本文をほぼ同じ内容で
+    # 言い換えただけの重複が多く、そのまま載せるとバイブルが冗長になる。本文だけを使う。
+    import re as _re
+    return _re.split(r"\n\s*【[^】]+】", val)[0].strip()
+
+
+def generate_bible_from_db(champ: str) -> str | None:
+    """
+    `champion_facts`(Supabase)の既存データから戦術バイブルを生成する。
+
+    ハードコードのCORE_CHAMPIONS_DATAに無いチャンピオンでも、DBに蓄積済みの
+    確定データがあればバイブルを配備できるようにするためのモード(2026-09-21新設)。
+    新たなAI生成は行わない(=API課金ゼロ)。あくまで既存データの整形のみ。
+    """
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from sync_dict_health import REST_BASE, HEADERS
+    import requests
+
+    res = requests.get(
+        f"{REST_BASE}/champion_facts?champion=eq.{champ}&select=*&limit=1",
+        headers=HEADERS, timeout=25
+    )
+    if not res.ok:
+        print(f"⚠️  {champ}: champion_facts の取得に失敗しました ({res.status_code})")
+        return None
+    rows = res.json()
+    if not rows or not isinstance(rows[0], dict):
+        print(f"⚠️  {champ}: champion_facts にデータがありません")
+        return None
+    row = rows[0]
+
+    patch = row.get("patch") or "不明"
+    confidence = row.get("confidence") or "ai_generated"
+    role = row.get("role") or "-"
+    clear_line = ""
+    if row.get("full_clear_time"):
+        clear_line = f"- **フルクリアタイム**: {row['full_clear_time']}\n"
+
+    meta = row.get("patch_meta") if isinstance(row.get("patch_meta"), dict) else {}
+    meta_line = ""
+    if meta:
+        parts = [f"{k}: {meta[k]}" for k in ("tier", "win_rate", "pick_rate", "ban_rate") if meta.get(k) is not None]
+        if parts:
+            meta_line = f"- **メタ指標({meta.get('patch', patch)})**: {' / '.join(parts)}\n"
+
+    return f"""---
+title: "{champ} 対面戦術バイブル"
+status: {confidence}
+source_type: db_generated
+published_at: 2026-09-21
+captured_at: 2026-09-21
+tags: ['LoL', 'Tactics', '{role}', '{champ}']
+---
+
+# ⚔️ {champ} 対面戦術バイブル
+
+> ℹ️ このバイブルは `champion_facts`(パッチ {patch} 時点)の蓄積データから自動生成した初版です。
+> 確度は `{confidence}` であり、実戦で検証した確定情報ではありません。実戦データが
+> 溜まり次第、各セクションを人間が上書き・確定させてください。
+
+## 📌 基本方針 ＆ パワースパイク
+- **戦術概要**: {_v(row, 'strategy')}
+- **主要パワースパイク**: {_v(row, 'power_spikes')}
+{clear_line}{meta_line}
+---
+
+## 🗺️ 3段階勝ちパターン手順書 (Matchup Blueprint)
+
+> ⚠️ 未確定: 3段階手順書はこのチャンピオンについてまだ作成されていません。
+> 実戦での対面記録、または本ファイル下部のプロ実演クリップを元に追記してください。
+
+### Phase 1 (Lv1〜2: 序盤主導権)
+- **アクション**: （未記入）
+
+### Phase 2 (Lv3〜5: リコール・パワースパイク準備)
+- **アクション**: （未記入）
+
+### Phase 3 (Lv6〜: オールイン ＆ 試合決定打)
+- **アクション**: （未記入）
+
+---
+
+## 🛠️ ビルド ＆ ルーン方針
+- {_v(row, 'build_runes')}
+
+---
+
+## 🎯 対面・ドラフト方針 (Matchup / Draft)
+- **苦手・カウンター**: {_v(row, 'counter_champions')}
+- **先出し / 後出し適性**: {_v(row, 'pick_recommendation')}
+
+---
+
+## ⚠️ 検討して落とした選択肢 ＆ 罠ビルド (Rejected Options / 没理由)
+
+> ⚠️ 未確定: 「なぜこのビルド・行動が罠なのか」は実戦で踏んで初めて確定する情報のため、
+> 自動生成では埋めません。地雷を踏んだ都度ここへ追記してください。
+
+---
+
+## 📜 イミュータブル変更履歴 (Immutable Log)
+- **2026-09-21**: `generate_tactics_bible.py --from-db` により、champion_facts(パッチ {patch})のデータから初版を自動生成。
+"""
+
+
 def main():
     parser = argparse.ArgumentParser(description="主力チャンピオン対面戦術バイブル一括生成CLI")
     parser.add_argument("--champ", type=str, help="特定チャンピオンのみ生成 (例: JarvanIV)")
     parser.add_argument("--force", action="store_true", help="既存ファイルを強制上書き")
+    parser.add_argument("--from-db", type=str, default="",
+                        help="champion_factsの蓄積データからバイブルを生成する(カンマ区切りで複数指定可)。AI生成は行わない")
     args = parser.parse_args()
+
+    if args.from_db:
+        TACTICS_DIR.mkdir(parents=True, exist_ok=True)
+        created, skipped, failed = 0, 0, 0
+        print("\n" + "=" * 60)
+        print(" 📖 champion_facts の蓄積データから戦術バイブルを生成")
+        print("=" * 60 + "\n")
+        for champ in [c.strip() for c in args.from_db.split(",") if c.strip()]:
+            target = TACTICS_DIR / f"{champ.lower()}_tactics_bible.md"
+            if target.exists() and not args.force:
+                print(f"ℹ️  [SKIP] 既存: {target.name}")
+                skipped += 1
+                continue
+            md = generate_bible_from_db(champ)
+            if not md:
+                failed += 1
+                continue
+            target.write_text(md, encoding="utf-8")
+            print(f"✅ [CREATE] {target.name}")
+            created += 1
+        print("\n" + "-" * 60)
+        print(f" 生成: {created}件 / スキップ: {skipped}件 / 失敗: {failed}件")
+        print("=" * 60 + "\n")
+        return
 
     TACTICS_DIR.mkdir(parents=True, exist_ok=True)
 
