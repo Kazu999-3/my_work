@@ -1,8 +1,18 @@
 """
 Sovereign HUD / Portal - レーン戦3段階勝ちパターン手順書 ＆ 没理由エンジン (Matchup Blueprint Engine)
 ========================================================================================
-【最上位誓約準拠】: 確定戦術バイブル（01_INTEL/tactics/）に蓄積された実戦対面データから
-「Lv1〜2」「Lv3〜5」「Lv6以降」の3段階アクションプランおよび「⚠️ 罠・NG行動（没理由）」を自動抽出・提供する。
+「Lv1〜2」「Lv3〜5」「Lv6以降」の3段階アクションプランおよび「⚠️ 罠・NG行動（没理由）」を提供する。
+
+⚠️ データの出所について（2026-09-22訂正）:
+以前このdocstringは「確定戦術バイブル（01_INTEL/tactics/）に蓄積された実戦対面データから
+自動抽出」と記載していたが、**実際にはファイルもDBも一切読んでおらず**、下の
+DEFAULT_BLUEPRINTS に手書きされた6体分のみが実体だった。それ以外の対面には
+全対面共通の汎用文を、6体分の固有データと区別なく同じ形式で返していたため、
+HUD上では対面固有の分析であるかのように見えていた。
+（ポータル側の同一問題は2026-09-22に修正済み。こちらはそのHUD版。）
+
+現在は `is_generic` フラグで「対面固有データがあるか」を呼び出し側へ明示し、
+固有データが無い対面では罠・NG行動を空にして、それらしい汎用文で埋めない方針にしている。
 """
 
 from typing import Dict, Any, List
@@ -202,18 +212,24 @@ class MatchupBlueprintEngine:
                     "badge": "勝利 👑"
                 }
             ]
-            trap_items = "思考停止の初手フル火力積み（対面の防具やバーストで失速）"
-            forbidden_moves = "敵のCCやフラッシュが残っている状態での無謀なタワーダイブ"
+            # ★ 罠・NG行動は対面ごとに中身が全く変わる情報なので、固有データが無い対面で
+            # 汎用文を出すと「この対面を分析した結果」と誤認される。空にして出さない。
+            trap_items = ""
+            forbidden_moves = ""
+            is_generic = True
         else:
             phases = data["phases"]
-            trap_items = data.get("trap_items", "思考停止の初手フル火力積み（対面防具で失速）")
-            forbidden_moves = data.get("forbidden_moves", "防具完成前の無謀なタワーダイブ")
+            trap_items = data.get("trap_items", "")
+            forbidden_moves = data.get("forbidden_moves", "")
+            is_generic = False
 
         return {
             "my_champion": my_champ,
             "enemy_champion": enemy_champ,
             "phases": phases,
             "total_phases": len(phases),
+            # 対面固有データが無く汎用手順を返しているかどうか。表示側で明示するために使う。
+            "is_generic": is_generic,
             "rejected": {
                 "trap_items": trap_items,
                 "forbidden_moves": forbidden_moves

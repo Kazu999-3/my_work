@@ -1,14 +1,27 @@
 """
-Sovereign HUD / Portal - 全168チャンピオン公式即死キルライン計算エンジン (v2.0 完全網羅版)
-========================================================================================
-【最上位誓約準拠】: 168体すべての公式スキル基礎ダメージ・スケーリング・ダメージ種別を網羅。
-Riot DataDragon の最新確定計算式に基づき、敵Lv・アイテム・イグナイト・自防御力を数学的に厳密計算する。
+Sovereign HUD / Portal - 即死キルライン推定エンジン
+
+敵Lv・イグナイト・自防御力から、フルコンボを受けた場合の被ダメージを推定する。
+
+⚠️ 精度と出所について（2026-09-22訂正）:
+以前このdocstringは「**全168チャンピオン**の公式スキル基礎ダメージを網羅」
+「**Riot DataDragon の最新確定計算式**に基づき数学的に厳密計算」と記載していたが、
+**いずれも事実ではなかった**。実体は下の CHAMPION_BURST_PROFILES に手書きされた
+約41体分の概算値で、DataDragon は一切参照していない。未登録のチャンピオンには
+無言で汎用値を適用していたため、127体分は「公式・確定」を名乗る推定値だった。
+
+現在は戻り値に `is_estimated`（プロファイル未登録＝汎用値を使ったか）を含める。
+表示側はこれを見て「推定値」であることを明示すること。
+
+※根治には ddragon_master_sync.py を拡張して DDragon の effect/vars（ダメージ配列）を
+  取り込む必要がある。現状の ddragon_master_dict.json にはスキル名・CD・コストしか
+  無く、ダメージ数値とスケーリング係数が含まれていない（2026-09-22実測確認）。
 """
 
 from typing import Dict, Any, Optional
 
-# 全ロール・全系統の代表的な公式バースト計算プロファイル（自動分類テーブル）
-# 168チャンピオンすべてが適切なクラス・ダメージ計算式にマッピングされる
+# 手書きのバースト概算プロファイル（約41体分）。公式データではない。
+# ここに無いチャンピオンは get_profile() が汎用値へフォールバックする。
 CHAMPION_BURST_PROFILES: Dict[str, Dict[str, Any]] = {
     # --- Juggernauts & Bruisers (物理ファイター) ---
     "Darius": {"base_lvl6": 480.0, "ad_scale": 2.4, "ap_scale": 0.0, "type": "physical", "ignite": False},
@@ -62,17 +75,24 @@ CHAMPION_BURST_PROFILES: Dict[str, Dict[str, Any]] = {
 class KillLineCalculator:
     @staticmethod
     def get_profile(champion_name: str) -> Dict[str, Any]:
-        """全168体を網羅する自動プロファイラー"""
-        if champion_name in CHAMPION_BURST_PROFILES:
-            return CHAMPION_BURST_PROFILES[champion_name]
+        """
+        バースト概算プロファイルを返す。
 
-        # 未定義チャンプの自動フォールバック（公式ロール推定）
+        未登録チャンピオンには汎用値を使うが、その事実を `is_estimated` で呼び出し側へ
+        伝える（以前は無言で汎用値を返しており、127体分が「公式計算」を名乗っていた）。
+        """
+        if champion_name in CHAMPION_BURST_PROFILES:
+            profile = dict(CHAMPION_BURST_PROFILES[champion_name])
+            profile["is_estimated"] = False
+            return profile
+
         return {
             "base_lvl6": 460.0,
             "ad_scale": 2.0,
             "ap_scale": 1.8,
             "type": "physical",
-            "ignite": True
+            "ignite": True,
+            "is_estimated": True,
         }
 
     @staticmethod
@@ -126,18 +146,24 @@ class KillLineCalculator:
         total_lethal_damage = int(mitigated_burst + ignite_dmg)
         kill_hp_percent = min(95, max(20, int((total_lethal_damage / max(1.0, my_max_hp)) * 100)))
 
+        # ★ 2026-09-22: 未登録チャンピオンは汎用プロファイルによる粗い推定値なので、
+        # 「即死確定」と断言せず、推定である旨を文面に含める。
+        is_estimated = bool(profile.get("is_estimated"))
+        est_mark = "（推定値・プロファイル未登録）" if is_estimated else ""
+
         if kill_hp_percent >= 50:
             danger_badge = "超危険 🔴"
             danger_color = "#ef4444"
-            advice = f"HP {kill_hp_percent}% ({total_lethal_damage}以下) で即死確定。タワー下でも甘えない！"
+            verb = "即死圏内" if is_estimated else "即死確定"
+            advice = f"HP {kill_hp_percent}% ({total_lethal_damage}以下) で{verb}。タワー下でも甘えない！{est_mark}"
         elif kill_hp_percent >= 40:
             danger_badge = "警戒 🟠"
             danger_color = "#f97316"
-            advice = f"HP {kill_hp_percent}% ({total_lethal_damage}以下) でワンコン圏内。スキル空振りを待つ。"
+            advice = f"HP {kill_hp_percent}% ({total_lethal_damage}以下) でワンコン圏内。スキル空振りを待つ。{est_mark}"
         else:
             danger_badge = "通常 🟡"
             danger_color = "#eab308"
-            advice = f"フルコンボ被弾で約 {total_lethal_damage} dmg。ショートトレードなら有利。"
+            advice = f"フルコンボ被弾で約 {total_lethal_damage} dmg。ショートトレードなら有利。{est_mark}"
 
         return {
             "enemy_champion": enemy_champ,
@@ -155,4 +181,6 @@ class KillLineCalculator:
             "danger_badge": danger_badge,
             "danger_color": danger_color,
             "advice": advice,
+            # プロファイル未登録で汎用値を使った場合 True。表示側で「推定値」と明示するために使う。
+            "is_estimated": is_estimated,
         }

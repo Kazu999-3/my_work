@@ -398,7 +398,12 @@ class MatchupCardWidget(QWidget):
                 p_trigger = cphase.get("win_trigger", "")
                 p_badge = cphase.get("badge", "安定 🛡️")
 
-                self.phase_badge_label.setText(f"🗺️ レーン戦手順: [{p_name}] {p_badge}")
+                # ★ 2026-09-22: 対面固有の手順書が無い場合、以前は汎用文を固有データと
+                # 区別なく表示していたため、この対面を分析した結果に見えていた。
+                # 汎用であることを見出しに明示する。
+                is_generic = (state.get("matchup_blueprint") or {}).get("is_generic", False)
+                generic_mark = "（汎用手順・この対面のデータは未登録）" if is_generic else ""
+                self.phase_badge_label.setText(f"🗺️ レーン戦手順: [{p_name}] {p_badge}{generic_mark}")
                 self.phase_action_label.setText(f"・{p_title}: {p_action}")
                 self.phase_trigger_label.setText(f"🎯 勝利条件: {p_trigger}")
                 self.phase_frame.setVisible(True)

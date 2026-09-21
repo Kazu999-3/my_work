@@ -327,16 +327,20 @@ class HudStateEngine:
         return memo_data
 
     def _get_fallback_memo(self, enemy_champion: str) -> dict:
+        """
+        対面メモをDBから取得できなかったときの戻り値。
+
+        ★ 2026-09-22: 以前はここで「主要スキルのCD中にトレードを仕掛ける」等の汎用文を
+        `title: f"vs {enemy}"` 付きで返しており、DB取得に失敗したことがユーザーに伝わらず
+        対面固有メモと同じ見た目で表示されていた。未取得であることを明示する。
+        """
         return {
             "enemy": enemy_champion,
-            "title": f"vs {enemy_champion}",
-            "key_points": [
-                f"主要スキルのCD中にトレードを仕掛ける",
-                f"Lv6パワースパイクと敵JGのガンクに警戒",
-                f"ミニオンウェーブの主導権を意識"
-            ],
-            "power_spike": "Lv6",
-            "danger_skills": ["主要CCスキル"]
+            "title": f"vs {enemy_champion}（対面メモ未登録）",
+            "key_points": ["この対面のメモはまだ登録されていません"],
+            "power_spike": "",
+            "danger_skills": [],
+            "is_fallback": True,
         }
 
     def analyze_frame(self, game_data: dict) -> dict:
@@ -697,10 +701,13 @@ class HudStateEngine:
             "Nautilus": {"skill_name": "Q (錨投げ)", "badge": "回避必須 🔴", "advice": "壁やミニオンに吸わせる。Q不発後は足が遅いためカイトし放題。"}
         }
 
+        # ★ 2026-09-22: 未登録チャンピオンには汎用文を返すが、固有データと区別が付くよう明示する
+        # (以前は「{敵}の主力CC/高火力スキル」という、あたかも個別に調べた結果のような文面だった)
         threat_skill_info = threat_skill_map.get(enemy_champion, {
-            "skill_name": f"{enemy_champion}の主力CC/高火力スキル",
-            "badge": "警戒 🟠",
-            "advice": f"敵が主要スキルをミニオン処理等で空振りした直後のCD中に前へ出てトレード有利を作ろう！"
+            "skill_name": "警戒スキル未登録",
+            "badge": "情報なし ⚪",
+            "advice": "このチャンピオンの警戒スキルは未登録です（一般論: 敵が主要スキルを空振りした直後を狙う）",
+            "is_fallback": True,
         })
 
         # --- 12. 案B: レーン戦3段階勝ちパターン手順 ＆ 現在フェーズ抽出 ---
@@ -806,7 +813,11 @@ class HudStateEngine:
             "all_fights_analyzed": all_fights_analyzed,
             # 敵の最警戒スキル ＆ 仕掛けチャンス
             "threat_skill_info": threat_skill_info,
-            "kill_line": threat_skill_info,
+            # ★ 2026-09-22: ここは以前 "kill_line" という名前で threat_skill_info(スキル名と
+            # 定型アドバイス)をそのまま入れており、即死ライン計算の結果であるかのような
+            # キー名になっていた。実際 KillLineCalculator はimportされているが未使用。
+            # 誤解を招くため別名にした(即死ライン本体はポータル側APIが算出している)。
+            "threat_skill_info_alias": threat_skill_info,
             # 案B: 現在フェーズ手順 ＆ 勝ちパターン手順書
             "current_phase": current_phase,
             "matchup_blueprint": blueprint_data,
