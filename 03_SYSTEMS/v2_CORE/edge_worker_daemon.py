@@ -455,6 +455,16 @@ class EdgeWorkerDaemon:
                 result = self._run_subprocess_task("scripts/extract_video_tactics.py", args=args, timeout=600)
                 self.update_task_status(task_id, "completed" if result.get("success") else "failed", result=result)
 
+            elif task_type == "youtube_rotation":
+                # 完了済み動画を少数ずつ再解析キューへ戻すローテーション(2026-09-21新設)。
+                # 実処理は既存のyoutube_queue_process(youtube_worker.py)が拾うため、
+                # ここではstatusをcompleted→pendingへ戻すだけに徹する。
+                limit = int(payload.get("limit", 3))
+                min_age_days = int(payload.get("min_age_days", 30))
+                logger.info(f"♻️ [youtube_rotation] 完了済み動画の再解析ローテーションを実行 (最大{limit}件 / {min_age_days}日以上前に解析されたもの)")
+                result = self.rotate_completed_videos(limit=limit, min_age_days=min_age_days)
+                self.update_task_status(task_id, "completed", result=result)
+
             elif task_type == "youtube_queue_process":
                 # youtube_queue(動画解析キュー)の処理本体。以前はktm-cloud-worker.ymlの
                 # youtubeジョブ(GitHub Actions)経由のみだったが、共有IPがYouTube側から
@@ -572,6 +582,112 @@ class EdgeWorkerDaemon:
                 logger.error(f"❌ [YoutubeQueueScheduler] エラー: {e}")
             time.sleep(600)  # 10分おき
 
+    # 再解析ローテーションの安全弁。未処理キューがこの件数以上溜まっているときは
+    # 新たに完了済み動画を差し戻さない。これが無いと、処理が追いつかないまま
+    # 古い動画を積み増し続けてGeminiクォータを浪費し、新着動画の解析が永久に
+    # 後回しになる(このリポジトリで過去に何度も起きたキュー滞留パターン)。
+    ROTATION_PENDING_CAP = 20
+
+    def rotate_completed_videos(self, limit=3, min_age_days=30):
+        """
+        解析完了から min_age_days 以上経過した動画を、古い順に limit 件だけ
+        pending へ戻す(=再解析キューへ差し戻す)。
+        """
+        try:
+            # 1. 安全弁: 未処理キューが溜まっている間は差し戻さない
+            pending_res = httpx.get(
+                f"{self.supabase_url}/rest/v1/youtube_queue?status=eq.pending&select=id",
+                headers={**self.headers, "Prefer": "count=exact", "Range": "0-0"},
+                timeout=15
+            )
+            pending_count = 0
+            content_range = pending_res.headers.get("content-range", "")
+            if "/" in content_range:
+                try:
+                    pending_count = int(content_range.split("/")[-1])
+                except ValueError:
+                    pending_count = 0
+            if pending_count >= self.ROTATION_PENDING_CAP:
+                msg = f"未処理キューが{pending_count}件あるためローテーションをスキップしました(上限{self.ROTATION_PENDING_CAP}件)"
+                logger.info(f"♻️ [Rotation] {msg}")
+                return {"success": True, "rotated": 0, "skipped_reason": msg, "pending_count": pending_count}
+
+            # 2. 対象の抽出(解析が古い順)
+            cutoff = (datetime.now(timezone.utc) - timedelta(days=min_age_days)).isoformat().replace("+00:00", "Z")
+            target_res = httpx.get(
+                f"{self.supabase_url}/rest/v1/youtube_queue"
+                f"?status=eq.completed&updated_at=lt.{cutoff}&order=updated_at.asc&limit={limit}"
+                f"&select=id,title,updated_at",
+                headers=self.headers,
+                timeout=15
+            )
+            if target_res.status_code != 200:
+                return {"success": False, "error": f"対象取得に失敗: {target_res.status_code} {target_res.text}"}
+
+            targets = target_res.json()
+            if not targets:
+                msg = f"{min_age_days}日以上前に解析された完了済み動画はありません"
+                logger.info(f"♻️ [Rotation] {msg}")
+                return {"success": True, "rotated": 0, "skipped_reason": msg}
+
+            # 3. pendingへ差し戻し(1件ずつ。失敗した分は正直に失敗として数える)
+            rotated, failed = [], []
+            for row in targets:
+                vid = row.get("id")
+                patch_res = httpx.patch(
+                    f"{self.supabase_url}/rest/v1/youtube_queue?id=eq.{vid}",
+                    headers=self.headers,
+                    json={"status": "pending", "retry_count": 0, "updated_at": datetime.now(timezone.utc).isoformat()},
+                    timeout=15
+                )
+                if patch_res.status_code in (200, 204):
+                    rotated.append({"id": vid, "title": (row.get("title") or "")[:60], "last_analyzed": row.get("updated_at")})
+                else:
+                    failed.append({"id": vid, "status_code": patch_res.status_code, "error": patch_res.text[:200]})
+
+            logger.info(f"♻️ [Rotation] {len(rotated)}件を再解析キューへ差し戻しました(失敗{len(failed)}件)")
+            return {"success": len(failed) == 0, "rotated": len(rotated), "failed": len(failed), "items": rotated, "errors": failed}
+        except Exception as e:
+            logger.error(f"❌ [Rotation] エラー: {e}")
+            return {"success": False, "error": str(e)}
+
+    def youtube_rotation_scheduler_loop(self):
+        """
+        完了済み動画の定期ローテーション再解析を自動起票する。
+
+        ★ 既定は無効(オプトイン)。環境変数 ENABLE_YOUTUBE_ROTATION=1 を設定したときだけ動く。
+        常時ONにすると、完了→差し戻し→再解析→完了…のループでGeminiクォータを
+        継続的に消費し続けることになるため、意図して有効化したときのみ回す設計にした。
+        無効時もその旨をログに明示し、「実装したのに誰も気づかず動いていない/
+        動きっぱなし」のどちらにもならないようにする。
+        """
+        if os.environ.get("ENABLE_YOUTUBE_ROTATION") != "1":
+            logger.info("♻️ [RotationScheduler] 無効(既定)。有効化するには環境変数 ENABLE_YOUTUBE_ROTATION=1 を設定してください。")
+            return
+
+        interval_hours = int(os.environ.get("YOUTUBE_ROTATION_INTERVAL_HOURS", "24"))
+        batch = int(os.environ.get("YOUTUBE_ROTATION_BATCH", "3"))
+        min_age_days = int(os.environ.get("YOUTUBE_ROTATION_MIN_AGE_DAYS", "30"))
+        logger.info(f"♻️ [RotationScheduler] 有効。{interval_hours}時間おきに最大{batch}件ずつ再解析へ差し戻します。")
+
+        time.sleep(120)  # 起動直後の他スケジューラと時間をずらす
+        while getattr(self, "_heartbeat_active", True):
+            try:
+                httpx.post(
+                    f"{self.supabase_url}/rest/v1/edge_tasks",
+                    headers=self.headers,
+                    json={
+                        "task_type": "youtube_rotation",
+                        "payload": {"limit": batch, "min_age_days": min_age_days},
+                        "status": "pending"
+                    },
+                    timeout=10
+                )
+                logger.info("♻️ [RotationScheduler] youtube_rotationタスクをキューイングしました。")
+            except Exception as e:
+                logger.error(f"❌ [RotationScheduler] エラー: {e}")
+            time.sleep(interval_hours * 3600)
+
     def bulk_update_resume_scheduler_loop(self):
         """
         チャンピオン辞典一括更新がAPI制限等でsuspended状態のまま放置されると、ユーザーが
@@ -678,6 +794,11 @@ class EdgeWorkerDaemon:
         # バックグラウンドでYouTube動画解析キュー(youtube_queue)の自動起票スレッドを起動
         self.youtube_queue_scheduler_thread = threading.Thread(target=self.youtube_queue_scheduler_loop, daemon=True)
         self.youtube_queue_scheduler_thread.start()
+
+        # バックグラウンドで完了済み動画の再解析ローテーションスレッドを起動
+        # (既定は無効。ENABLE_YOUTUBE_ROTATION=1 のときだけ実際に回る)
+        self.youtube_rotation_scheduler_thread = threading.Thread(target=self.youtube_rotation_scheduler_loop, daemon=True)
+        self.youtube_rotation_scheduler_thread.start()
 
         # バックグラウンドで辞典一括更新のsuspended自動再開スレッドを起動
         self.bulk_update_resume_scheduler_thread = threading.Thread(target=self.bulk_update_resume_scheduler_loop, daemon=True)
