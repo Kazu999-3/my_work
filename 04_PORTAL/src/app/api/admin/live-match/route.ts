@@ -739,6 +739,14 @@ function generateCountersForJg(enemyChamp: string) {
   }
 }
 
+/**
+ * 敵JGの初動を推定する。
+ *
+ * ★ 2026-09-22: ここは実データを一切参照せず、手書きの5体リストに含まれるかどうかだけで
+ * 開始バフとガンク先を出している。レスポンスのフィールド名が `startBuffPrediction` /
+ * `firstGankTarget` で、スカウト画面では敵個人の分析の一部として表示されるため、
+ * 実データに基づく予測に見えていた。推定である旨を文面に含めるようにした。
+ */
 function generateLiveAnalysis(champ: string, tag: any) {
   const isEarlyJg = ['LeeSin', 'Khazix', 'JarvanIV', 'Shaco', 'Vi'].includes(champ);
   const isBrawler = tag?.id === 'early-brawler';
@@ -748,8 +756,8 @@ function generateLiveAnalysis(champ: string, tag: any) {
   let tips = '';
 
   if (isEarlyJg) {
-    startBuff = '青バフ (バフ3キャンプ速攻) スタート予測';
-    firstGank = 'トップまたはミッドへのLV3早期Gank';
+    startBuff = '青バフ (バフ3キャンプ速攻) スタートの可能性（チャンピオン特性からの一般的な推定）';
+    firstGank = 'トップまたはミッドへのLv3早期ガンクの可能性（一般的な推定）';
     tips = '相手は序盤が非常に強力なチャンピオンです。LV2またはLV3の早い段階でプレッシャーをかけてくる傾向があるため、サイドレーンは開始3分前後にリバーの視界を確保してください。自軍ジャングルへのインベイドにも注意し、孤立した戦闘を避けましょう。';
   } else if (isBrawler) {
     startBuff = 'ボット側リーシュあり赤バフスタート予測';

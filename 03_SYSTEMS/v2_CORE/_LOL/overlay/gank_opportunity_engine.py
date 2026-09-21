@@ -194,7 +194,10 @@ class GankOpportunityEngine:
         # 判定ラベル決定
         if score >= 80.0:
             verdict = "KILL_CONFIRMED"
-            verdict_label = "🟢 確実キル (85% UP)"
+            # ★ 2026-09-22: 手書きの主観レーティング表から算出した内部スコアであり、
+            # 実際の成功率を統計から出したものではないため「85% UP」という
+            # 具体的な確率表記をやめ、推奨度の段階表現に改めた。
+            verdict_label = "🟢 好機（推奨度: 高）"
             color = "#22c55e"
         elif score >= 60.0:
             verdict = "FLASH_BURN"

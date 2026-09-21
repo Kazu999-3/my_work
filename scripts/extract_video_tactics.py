@@ -452,11 +452,13 @@ def generate_rule_based_actions(video_id, champion, compressed_text):
                 ts = ts_m.group(1)
                 sec = parse_time_to_seconds(ts)
                 note = ts_m.group(2)[:80]
-                actions.append(f"""### 🕒 [{ts}](https://youtu.be/{video_id}?t={sec}) - {default_title}
-- 💡 **判断の理由 (Why)**: 敵の位置情報とウェーブプッシュ速度から逆算し、最もリターンが高いタイミングで仕掛ける。
-- 🎯 **ミクロ・操作のコツ (How)**: スキルを即座に全弾撃たず、敵のブリンクやフラッシュを誘発してから確実にCCを当てる。
-- 🚫 **避けるべき罠・没理由 (Rejected)**: 味方のマナやウェーブ状況を無視した無謀なタワーダイブは厳禁。
-*(実況メモ: {note})*""")
+                # ★ 2026-09-22: 以前はここで Why/How/Rejected の3項目に全動画共通の
+                # 固定文を貼り付けていた。実在するタイムスタンプと結合されるため
+                # AI解析の結果に見えるが、中身はどの動画でも同一だった。
+                # 下の分岐(実タイムスタンプから機械抽出)と同様、AI解析ではない旨を明示する。
+                actions.append(f"""### 🕒 [{ts}](https://youtu.be/{video_id}?t={sec}) - {default_title}（AI解析なし・時間帯からの機械抽出）
+- 💡 **実況メモ**: {note}
+- ⚠️ **注記**: AI解析が利用できなかったため、字幕の該当時間帯を機械的に抽出したものです。判断の理由・操作のコツ・没理由は動画本編を確認してください。""")
 
     if not actions:
         # ★ 対象時間帯(3/8/14分台)に一致する行が無かった場合でも、架空のシナリオを

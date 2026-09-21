@@ -1315,7 +1315,7 @@ export function calculateRealSessionAnalytics(
         poolArchetype = 'APスケーリング ＆ ファーム偏重構成';
         missingPiece = 'ADファイター / 序盤能動ガンク・エンゲージ役';
         additions = filterAdditions([
-          { championName: 'Xin Zhao (シン・ジャオ)', role: 'JUNGLE', archetype: 'AD序盤アグレッシブ＆イニシエート', synergyReason: '苦手な15分キル関与率（KP@15）を自ら仕掛けて引き上げ、AP過多時の主砲として機能。' },
+          { championName: 'Xin Zhao (シン・ジャオ)', role: 'JUNGLE', archetype: 'AD序盤アグレッシブ＆イニシエート', synergyReason: '序盤から自ら仕掛けて15分キル関与率（KP@15）を上げやすく、AP過多時のAD主砲としても機能。' },
           { championName: 'Jarvan IV (ジャーヴァンIV)', role: 'JUNGLE', archetype: 'ADエンゲージ＆ガンクマシン', synergyReason: 'Lv2〜3からの確定EQガンクとUlt天変地異で味方メイジの範囲スキルを最大限に活かす。' },
           { championName: 'Sejuani (セジュアニ)', role: 'JUNGLE', archetype: '高耐久フロントライン＆確定CC', synergyReason: 'チームにタンクがいない際の安定ピック。被デス回避の高い立ち回りと最高峰のシナジー。' },
           { championName: 'Vi (ヴァイ)', role: 'JUNGLE', archetype: '確定ロックオン暗殺イニシエート', synergyReason: '逃げ足の速い敵キャリーをRで必中キャッチし、一気に勝負を決める。' },
@@ -1739,7 +1739,7 @@ function getFallbackSessionAnalytics(targetTier: string = 'Emerald IV', detected
           championName: 'Xin Zhao (シン・ジャオ)',
           role: 'JUNGLE',
           archetype: 'AD序盤アグレッシブ＆イニシエート',
-          synergyReason: '苦手な「15分キル関与率（KP@15）」を自ら仕掛けて引き上げ、味方がAP過多の際の強力なAD主砲として機能。',
+          synergyReason: '序盤から自ら仕掛けて15分キル関与率（KP@15）を上げやすく、味方がAP過多の際の強力なAD主砲としても機能。',
         },
         {
           championName: 'Jarvan IV (ジャーヴァンIV)',

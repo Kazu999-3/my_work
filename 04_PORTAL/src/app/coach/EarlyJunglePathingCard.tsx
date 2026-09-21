@@ -32,6 +32,9 @@ export default function EarlyJunglePathingCard({
   // 2. 推奨プラン判定
   let planType: 'contest' | 'avoid' | 'gank_first' = 'contest';
   let planSummary = '';
+  // ★ 2026-09-22: ここは自他のパワースパイク比較だけで3パターンの定型文から選択している。
+  // 見出しに「{自分} vs {相手}」と対面名が入るため対面別の分析に見えるが、
+  // 中身は3種類しかない一般的な方針である点に注意。
   let step1Text = '';
   let step2Text = '';
   let step3Text = '';
@@ -67,7 +70,7 @@ export default function EarlyJunglePathingCard({
         <div className="flex items-center gap-2">
           <Compass className="w-4 h-4 text-amber-400 animate-pulse" />
           <h4 className="text-xs font-black text-amber-300 uppercase tracking-wider">
-            初動3分ルート分岐フローチャート（{myChampion} vs {enemyChampion}）
+            初動3分ルートの方針（{myChampion} vs {enemyChampion} / 一般的な指針）
           </h4>
         </div>
         <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
