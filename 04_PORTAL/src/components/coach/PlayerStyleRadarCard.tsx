@@ -16,7 +16,7 @@ import {
   CheckCircle2,
   HelpCircle,
 } from 'lucide-react';
-import { KAZURIN_STYLE_PROFILE, RADAR_HISTORY_TIMELINE, KAZURIN_VISION_METRICS, RadarHistoryPoint } from '../../lib/playerStyleProfile';
+import { KAZURIN_STYLE_PROFILE, RADAR_HISTORY_TIMELINE, KAZURIN_VISION_METRICS, PROFILE_SNAPSHOT_DATE, RadarHistoryPoint } from '../../lib/playerStyleProfile';
 import { Eye, ShieldCheck, MapPin } from 'lucide-react';
 
 // プレイスタイルの4大タイプ
@@ -86,8 +86,8 @@ export default function PlayerStyleRadarCard() {
           <div>
             <h3 className="font-black text-sm text-stone-900 flex items-center gap-2">
               <span>プレイスタイル深層特性カルテ</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-200 rounded-full">
-                your.gg 実戦データ連動
+              <span className="text-[10px] font-bold px-2 py-0.5 bg-stone-100 text-stone-600 border border-stone-200 rounded-full" title="your.ggから手入力で記録した固定値です。試合ごとに自動更新はされません。">
+                {PROFILE_SNAPSHOT_DATE} 時点の手入力値
               </span>
             </h3>
             <p className="text-[11px] text-stone-500 font-mono">
@@ -162,7 +162,7 @@ export default function PlayerStyleRadarCard() {
           <div className="rounded-2xl border border-stone-200 bg-stone-50/50 p-4 space-y-3">
             <div className="text-xs font-black text-stone-800 flex items-center justify-between">
               <span>📊 プレイスタイル 5大レーダー解析</span>
-              <span className="text-[10px] text-stone-400 font-normal">your.gg 同ランク比較</span>
+              <span className="text-[10px] text-stone-400 font-normal">同ランク比較（{PROFILE_SNAPSHOT_DATE} 時点の手入力値）</span>
             </div>
 
             <div className="space-y-2.5">

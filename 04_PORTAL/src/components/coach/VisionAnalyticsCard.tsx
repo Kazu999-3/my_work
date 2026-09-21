@@ -16,7 +16,7 @@ import {
   Shield,
   Coins,
 } from 'lucide-react';
-import { KAZURIN_VISION_METRICS, KAZURIN_STYLE_PROFILE } from '../../lib/playerStyleProfile';
+import { KAZURIN_VISION_METRICS, KAZURIN_STYLE_PROFILE, PROFILE_SNAPSHOT_DATE } from '../../lib/playerStyleProfile';
 
 export default function VisionAnalyticsCard() {
   const vision = KAZURIN_VISION_METRICS;
@@ -65,7 +65,7 @@ export default function VisionAnalyticsCard() {
               </span>
             </div>
             <p className="text-[11px] text-stone-500 font-medium">
-              your.gg ＆ Riot API 客観スタッツから導く視界診断とディープ配置戦略
+              視界診断とディープ配置戦略（{PROFILE_SNAPSHOT_DATE} 時点で手入力した固定値。自動更新はされません）
             </p>
           </div>
         </div>

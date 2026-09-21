@@ -1,7 +1,21 @@
 // ============================================================
 // Kazurin#4036 パーソナル プレイスタイル特性プロファイル
-// your.gg および Riot API の客観スタッツから導出された個人特性
+//
+// ⚠️ これは「手入力で記録した固定のスナップショット」です（2026-08-20記録 / 2026-09-15更新）。
+//    your.gg や Riot API と接続しておらず、試合を重ねても自動では更新されません。
+//
+// ★ 2026-09-22: 以前はこのファイルが「your.gg実戦データ連動」と称され、UI にも
+//    「your.gg 実戦データ連動」「客観データ」と表示されていた。実際には接続が無く、
+//    1か月以上前の手入力値が最新の実測値であるかのように提示されていた。
+//    さらに getPlayerStylePromptContext() がこの値を「your.gg実戦データ連動」と
+//    名乗ってAIコーチのプロンプトへ注入しており、どの試合を解析させても
+//    「KP@15が下位3%」という固定の前提でAI講評が生成される状態だった。
+//    数値自体は実際に your.gg から転記したものと思われるため削除はせず、
+//    「いつ時点の手入力値か」を明示して誤認を防ぐ方針に変更した。
 // ============================================================
+
+/** このプロファイルを手入力で記録した時点。UI・AIプロンプトで必ず併記する。 */
+export const PROFILE_SNAPSHOT_DATE = '2026-09-15';
 
 export interface PlayerStyleMetrics {
   summonerName: string;
@@ -380,7 +394,9 @@ export const KAZURIN_SESSION_ANALYTICS: LifeSessionAnalytics = {
 
 /** AIプロンプト（事前アドバイス・事後振り返り）へ注入するパーソナルコンテキスト文 */
 export function getPlayerStylePromptContext(): string {
-  return `【プレイヤー固有のプレイスタイル特性・弱点カルテ（your.gg実戦データ連動）】
+  return `【プレイヤー固有のプレイスタイル特性・弱点カルテ】
+※以下は ${PROFILE_SNAPSHOT_DATE} 時点で手入力された固定のプロファイルであり、今回の試合の実測値ではありません。
+※今回の試合データと食い違う場合は、必ず今回の試合の実測値を優先して講評してください。
 ・プレイヤー名: ${KAZURIN_STYLE_PROFILE.summonerName}（メイン: JG）
 ・最大の強み: 🛡️ 生存能力 A+（平均デス${KAZURIN_STYLE_PROFILE.avgDeaths} / 上位${KAZURIN_STYLE_PROFILE.survivalRankPercentile}%）、🌾 15分CS差 +${KAZURIN_STYLE_PROFILE.csd15}（上位${KAZURIN_STYLE_PROFILE.csdRankPercentile}%）、👁️ 分間視界スコア ${KAZURIN_VISION_METRICS.visionScorePerMin}/分（上位${KAZURIN_VISION_METRICS.visionRankPercentile}%）。防衛視界とファームが極めて正確。
 ・最大のボトルネック（敗因の核）: ⚠️ 序盤15分の戦闘関与率（KP@15）がわずか ${KAZURIN_STYLE_PROFILE.earlyKp15}%（下位3%）。視界の76%が防衛寄りで、敵陣ディープ視界（24%）が少ないため敵JGの初動察知が後手に回りやすい。
