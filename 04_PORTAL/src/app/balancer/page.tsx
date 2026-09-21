@@ -33,10 +33,17 @@ function getPlayerCasinoBadges(player: any): Array<{ id: string; icon: string; l
   const inv = (player?.inventory || player?.role_preferences?.inventory || []) as Array<{ id?: string; name?: string; icon?: string }>;
   if (!Array.isArray(inv) || inv.length === 0) return [];
 
-  // 試合に関係のないアイテム（宝くじ等）はバランサーに表示しない
+  // 試合に関係のないアイテム（宝くじ等）はバランサーに表示しない。
+  // ★ 2026-09-22: 以前は id の完全一致(`id !== 'lottery_ticket'`)だけで弾いていたため、
+  // id が欠けている/異なる経路で付与された宝くじが素通りし、チーム分け画面に
+  // 「週末メガ宝」バッジが大量に並んでプレイヤー名を画面外へ押し出していた。
+  // 名前側でも判定して取りこぼさないようにする。
   const gameItems = inv.filter(item => {
-    const id = item.id || '';
-    return id !== 'lottery_ticket';
+    const id = String(item.id || '');
+    const name = String(item.name || '');
+    if (id.includes('lottery')) return false;
+    if (name.includes('宝くじ')) return false;
+    return true;
   });
 
   if (gameItems.length === 0) return [];
@@ -45,7 +52,9 @@ function getPlayerCasinoBadges(player: any): Array<{ id: string; icon: string; l
   const itemMap: Record<string, { id: string; icon: string; label: string; count: number }> = {};
 
   for (const item of gameItems) {
-    const id = item.id || '';
+    // id が欠けている場合に全て同一バケットへ入れると、別アイテムなのに最初の1件の
+    // 名前で一括表示されてしまうため、名前をフォールバックキーにする。
+    const id = item.id || item.name || 'unknown';
     if (!itemMap[id]) {
       let label = (item.name || '').replace(/^[^\s]+\s*/, '').slice(0, 5) || 'アイテム';
       let icon = item.icon || '👑';
@@ -67,6 +76,37 @@ function getPlayerCasinoBadges(player: any): Array<{ id: string; icon: string; l
     ...b,
     label: b.count > 1 ? `${b.label}×${b.count}` : b.label
   }));
+}
+
+// チーム分け結果の1行に表示するカジノ特典バッジ。
+// ★ 表示上限を設ける理由(2026-09-22): バッジは全て shrink-0 で、行内で唯一縮むのが
+// プレイヤー名だったため、特典を多く持つ人がいると名前もMMRも画面外へ押し出されて
+// 「誰の行か分からない」状態になっていた(実際のスクリーンショットで確認)。
+// 行の主役は「誰がどのレーンでMMRいくつか」なので、バッジ側を畳む方針にする。
+const MAX_VISIBLE_BADGES = 2;
+
+function CasinoBadges({ player }: { player: any }) {
+  const badges = getPlayerCasinoBadges(player);
+  if (badges.length === 0) return null;
+
+  const visible = badges.slice(0, MAX_VISIBLE_BADGES);
+  const hidden = badges.slice(MAX_VISIBLE_BADGES);
+  const allLabels = badges.map(b => `${b.icon}${b.label}`).join(' / ');
+
+  return (
+    <span className="flex items-center gap-1 shrink min-w-0 overflow-hidden" title={`カジノ特典: ${allLabels}`}>
+      {visible.map(b => (
+        <span key={b.id} className="text-[9px] bg-purple-100 border border-purple-300 text-purple-900 px-1.5 py-0.5 rounded font-black shrink-0 whitespace-nowrap">
+          {b.icon}{b.label}
+        </span>
+      ))}
+      {hidden.length > 0 && (
+        <span className="text-[9px] bg-purple-50 border border-purple-200 text-purple-700 px-1.5 py-0.5 rounded font-black shrink-0 whitespace-nowrap">
+          +{hidden.length}
+        </span>
+      )}
+    </span>
+  );
 }
 
 // ★ グループ判定ユーティリティ（固定0 > 通常参加1 > 見学固定2 > 不参加3）
@@ -1697,7 +1737,8 @@ export default function BalancerPage() {
                     <div key={role} className="grid grid-cols-1 md:grid-cols-11 gap-2 items-center bg-black/[0.03] p-2 md:p-3 rounded-2xl border border-black/5">
                       <div draggable={!!pB?.name} onDragStart={e => handleDragStart(e,'teamBlue',role,pB?.name||'')} onDragOver={e => handleDragOver(e,bKey)} onDragLeave={handleDragLeave} onDrop={e => handleDropPlayer(e,'teamBlue',role)}
                         className={`col-span-5 flex items-center gap-2 p-2 rounded-xl border transition cursor-grab active:cursor-grabbing ${dragOverSlot===bKey?'border-blue-500 bg-blue-100 border-dashed':'bg-blue-50 border-blue-200 hover:bg-blue-100'} ${swapSource?.name === pB?.name ? 'border-amber-500 bg-amber-100 animate-pulse' : ''}`}>
-                        <div className="flex-1 min-w-0">{renderSwapSelect('teamBlue',role,pB?.name||'')}</div>
+                        {/* 名前は行の主役なので、バッジがいくつ増えても潰れないよう最低幅を確保する */}
+                        <div className="flex-1 min-w-[5.5rem]">{renderSwapSelect('teamBlue',role,pB?.name||'')}</div>
                         {pB?.name && (
                           <button
                             type="button"
@@ -1710,11 +1751,7 @@ export default function BalancerPage() {
                         )}
                         {offB && <span className="text-[9px] bg-red-100 border border-red-300 text-red-700 px-1.5 py-0.5 rounded font-black shrink-0">⚠️OFF</span>}
                         {pB?.name && handicapNames.has(pB.name) && <span className="text-[9px] bg-amber-100 border border-amber-300 text-amber-700 px-1.5 py-0.5 rounded font-black shrink-0" title="ハンデ参加（オフロール等の制約付き）">🎗️ハンデ</span>}
-                        {pBData && getPlayerCasinoBadges(pBData).map((b, idx) => (
-                          <span key={idx} className="text-[9px] bg-purple-100 border border-purple-300 text-purple-900 px-1.5 py-0.5 rounded font-black shrink-0" title={`カジノ特典: ${b.label}`}>
-                            {b.icon}{b.label}
-                          </span>
-                        ))}
+                        <CasinoBadges player={pBData} />
                         {pB?.name && (pB.mainLane !== 'ALL' || pB.subLane !== 'ALL') && (
                           <span className="text-[9px] bg-black/5 border border-black/10 text-stone-500 px-1.5 py-0.5 rounded font-bold shrink-0" title="第一希望／第二希望レーン">
                             {pB.mainLane !== 'ALL' && pB.mainLane !== '-' ? pB.mainLane : '指定無'}
@@ -1732,11 +1769,7 @@ export default function BalancerPage() {
                         <span className="font-mono text-xs font-bold text-red-700 shrink-0 bg-red-100 px-2 py-0.5 rounded border border-red-300">{rMMR}</span>
                         {offR && <span className="text-[9px] bg-red-100 border border-red-300 text-red-700 px-1.5 py-0.5 rounded font-black shrink-0">⚠️OFF</span>}
                         {pR?.name && handicapNames.has(pR.name) && <span className="text-[9px] bg-amber-100 border border-amber-300 text-amber-700 px-1.5 py-0.5 rounded font-black shrink-0" title="ハンデ参加（オフロール等の制約付き）">🎗️ハンデ</span>}
-                        {pRData && getPlayerCasinoBadges(pRData).map((b, idx) => (
-                          <span key={idx} className="text-[9px] bg-purple-100 border border-purple-300 text-purple-900 px-1.5 py-0.5 rounded font-black shrink-0" title={`カジノ特典: ${b.label}`}>
-                            {b.icon}{b.label}
-                          </span>
-                        ))}
+                        <CasinoBadges player={pRData} />
                         {pR?.name && (pR.mainLane !== 'ALL' || pR.subLane !== 'ALL') && (
                           <span className="text-[9px] bg-black/5 border border-black/10 text-stone-500 px-1.5 py-0.5 rounded font-bold shrink-0" title="第一希望／第二希望レーン">
                             {pR.mainLane !== 'ALL' && pR.mainLane !== '-' ? pR.mainLane : '指定無'}
@@ -1753,7 +1786,8 @@ export default function BalancerPage() {
                             ⇄
                           </button>
                         )}
-                        <div className="flex-1 min-w-0">{renderSwapSelect('teamRed',role,pR?.name||'')}</div>
+                        {/* 名前は行の主役なので、バッジがいくつ増えても潰れないよう最低幅を確保する */}
+                        <div className="flex-1 min-w-[5.5rem]">{renderSwapSelect('teamRed',role,pR?.name||'')}</div>
                       </div>
                     </div>
                   );
