@@ -57,14 +57,38 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
   - **自動化は不可能と確認済み（2026-09-21実測）**: Chrome/Edgeからのcookie直読みは `Failed to decrypt with DPAPI` で失敗する。Chrome 127以降の **App-Bound Encryption**（他アプリからの復号を防ぐ保護）によるもので、**Chromeを終了しても解決しない**。Firefox/Brave/Opera/Vivaldiは未インストール。したがって`.env`の `YT_DLP_COOKIES_FROM=chrome` は現在のChromeでは機能しない設定。
   - **必要な作業**: ①Chrome拡張「Get cookies.txt LOCALLY」を追加 → ②YouTubeを開いた状態で実行しcookies.txtをダウンロード → ③`.env`に `YT_DLP_COOKIES_FILE=（保存先の絶対パス）` を追加。保存先は`.gitignore`対象の場所にすること。
   - **配線は完了済み**: `scripts/yt_dlp_cookies.py` に解決ロジックを集約済みで、設定すれば現役3スクリプト全てで自動的に読まれる（ログに `[cookie] cookies.txt を使用します` と出る）。未設定でもフェイルセーフが働き、字幕のある動画は通常どおり処理される。
-- [ ] **第2弾: pendingキュー（実測75件）の再解析**
-  - 実測(2026-09-21): `youtube_queue` は completed 1071 / pending 75 / manually_closed 82 / **エラー系0件**。TODOに記載されていた「error系53件」は既にpendingへ戻されており、救済（リセット）自体は完了済み。残るのは75件を実際に処理すること。
-  - 10件サンプル調査では8割が英語字幕ありでWhisper不要のため、cookie未設定でも大半は処理できる見込み。実処理は`youtube_worker.py`（`youtube_queue_process`タスク）が担当。
-  - **ローカルワーカーの起動が必要**（実測で64時間以上停止していた）。Gemini課金が発生するため実行前に確認すること。
+  - **設定後の確認手順**:
+    ```bash
+    # 1. cookieが認識されているか（「cookies.txt を使用します」と出れば成功）
+    .venv/Scripts/python.exe -c "import sys; sys.path.insert(0,'scripts'); from dotenv import load_dotenv; load_dotenv('.env'); from yt_dlp_cookies import apply_cookie_opts; apply_cookie_opts({})"
+
+    # 2. 403で失敗していた動画で実際に音声を取得できるか試す
+    .venv/Scripts/python.exe scripts/extract_video_tactics.py 27t49A38l6I --dry-run
+
+    # 3. 通れば第1弾の残りをまとめて処理
+    .venv/Scripts/python.exe scripts/extract_video_tactics.py --batch --limit 20
+    ```
+- [ ] **第2弾: pendingキューの再解析（実測78件・2026-09-21時点）**
+  - 実測(2026-09-21時点): `youtube_queue` は合計1228〜1231件で pending 75〜78件（監視が新着を拾うため日々増える） / manually_closed 82 / **エラー系0件**。TODOに記載されていた「error系53件」は既にpendingへ戻されており、救済（リセット）自体は完了済み。残るのはこれらを実際に処理すること。
+  - 10件サンプル調査では8割が英語字幕ありでWhisper不要のため、cookie未設定でも大半は処理できる見込み。
+  - **⚠️ Gemini課金が発生する。まず少数で試してから本格実行すること。**
+  - **実行手順（そのまま使える）**:
+    ```bash
+    # 1. 現状確認（何件残っているか）
+    .venv/Scripts/python.exe scripts/clean_youtube_queue.py --status
+
+    # 2. まず3件だけ試す（MAX_ITEMS未指定時の既定も3件）
+    MAX_ITEMS=3 .venv/Scripts/python.exe scripts/youtube_worker.py
+
+    # 3. 結果を確認してから件数を増やす（429を避けるため20件程度ずつ推奨）
+    MAX_ITEMS=20 .venv/Scripts/python.exe scripts/youtube_worker.py
+    ```
+  - 常駐で回す場合はローカルワーカーを起動する（`start_all.bat` またはポータル管理画面の「🚀 ワーカー起動」ボタン）。起票は`youtube_queue_scheduler_loop`が10分おきに行う。
+  - **実行後の確認**: `.venv/Scripts/python.exe scripts/ops_health_check.py` で「YouTubeキュー健全性」「YouTube自動化の稼働鮮度」がPASSになるか見る。
 - [x] **第3弾: ローテーション再解析の実装（2026-09-21完了、実行は未着手）**
   - `edge_worker_daemon.py`に`youtube_rotation`タスクを新設。完了済み動画を古い順に少数ずつpendingへ戻す。
   - 暴走防止に2つの歯止め: 未処理キューが20件以上なら差し戻さない／スケジューラは既定で無効のオプトイン（`ENABLE_YOUTUBE_ROTATION=1`）。
-  - 現在pendingが75件あるため安全弁が作動し、有効化しても当面は何も差し戻さない（第2弾の消化が先）。
+  - 現在pendingが70件超あるため安全弁が作動し、有効化しても当面は何も差し戻さない（第2弾の消化が先）。
 - [x] **（データ整理）** `wukong_tactics_bible.md`と`monkeyking_tactics_bible.md`の分裂を統合（2026-09-21完了。両者はバイト単位で完全同一だったため、DDragon公式IDである`monkeyking_`側に一本化し`wukong_`を削除）。
 
 ### 👑 Phase 3: 自律ナレッジループ ＆ セマンティック検索進化
@@ -78,16 +102,22 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
 
 いずれも実害は小さいが、調査済みの経緯を失わないよう記録する。
 
-- [ ] **🏆 月間アワードの自動投稿が停止したまま**
-  - `scheduled.js`に毎月1日12:00 JSTの月間アワード投稿ロジック（`mode: monthly_award`）が実装済みだが、2026-09-16の`fb275ce4`でcronスケジュールを刷新した際に`"0 3 1 * *"`が`wrangler.toml`から落とされ、GitHub Actions側にも代替が無いため**完全なデッドコード**になっている（実装はあるが誰も呼ばない状態）。
-  - 2026-09-21にユーザー判断で「今は復活させない」と決定。復活させる場合は`wrangler.toml`の`crons`へ`"0 3 1 * *"`を戻すだけでよい（Discordチャンネルへの自動投稿が復活する点に注意）。
-- [ ] **⚖️ バランサーのサイド公平化に回帰テストが無い**
+- [ ] **⚖️ バランサーのサイド公平化に回帰テストが無い**（所要: 30分程度・課金なし）
   - 2026-09-21の監査で現行ロジックにバグは無いと実測確認済み（偏った`sideHistory`で40回試行し100%正しい側を選択、中立時は33/27でほぼ50/50）。
-  - ただし**このロジックを直接検証するテストが0件**で、2026-09-19〜20に同じバグを2回連続で見逃した経緯がある（1回目の修正は等価変形で実際には直っていなかった）。次に誰かが触った際に再発を検知できない状態が続くため、`sideHistory`を使った専用テストの追加を推奨。
-- [ ] **🗂️ `scratch/`(96MB)がAIの検索対象に入りうる**
+  - ただし**このロジックを直接検証するテストが0件**で、2026-09-19〜20に同じバグを2回連続で見逃した経緯がある（1回目の修正は等価変形で実際には直っていなかった）。次に誰かが触った際に再発を検知できない。
+  - **やること**: `04_PORTAL/src/lib/__tests__/balancer.test.ts` に以下2点のテストを追加する。
+    - 偏った`sideHistory`（片方にBLUE10/RED0、もう片方にBLUE0/RED10）を与え、RED偏重だった側が今回BLUEになることを検証
+    - `sideHistory`が中立のとき、多数回試行して概ね50/50に分布する（系統的バイアスが無い）ことを検証
+  - **検証**: `cd 04_PORTAL && npm test`（現在36件が約20秒で全パス）
+- [ ] **🏆 月間アワードの自動投稿が停止したまま**（所要: 5分・要デプロイ）
+  - `scheduled.js`に毎月1日12:00 JSTの投稿ロジック（`mode: monthly_award`）が実装済みだが、2026-09-16の`fb275ce4`でcronを刷新した際に`"0 3 1 * *"`が`wrangler.toml`から落とされ、GitHub Actions側にも代替が無いため**完全なデッドコード**になっている。
+  - 2026-09-21にユーザー判断で「今は復活させない」と決定。
+  - **復活させる場合**: `03_SYSTEMS/ktm_bot/wrangler.toml`の`crons`配列へ`"0 3 1 * *"`を追加し、`cd 03_SYSTEMS/ktm_bot && npx wrangler deploy`。Discordチャンネルへの自動投稿が復活する点に注意。
+- [ ] **📅 `DAILY_LOG.md`に日付エントリが無い**（所要: 判断次第）
+  - `ops_health_check.py`が「デイリーログ鮮度: 日付エントリが検出できませんでした」を出し続けている。2026-09-18に新設した運用（作業終了時にAIが追記し翌朝読み直す）が実際には回っていない。
+  - **判断が必要**: ①運用を続ける（セッション終了時に追記する習慣をルール化する）か、②チェック自体を`ops_health_check.py`から外すか。形だけ残すとヘルスチェックのノイズになり、本当に見るべきWARNが埋もれる。
+- [ ] **🗂️ `scratch/`(96MB)がAIの検索対象に入りうる**（低優先・現状維持で可）
   - `.gitignore`済みだが、Glob/Grepの検索範囲を絞る標準的な仕組みが見当たらず、無理に`settings.json`をいじるより現状維持が安全と判断して2026-09-21は見送った。エージェントが誤って広範囲に読み込む実害が出た場合に再検討する。
-- [ ] **📅 `DAILY_LOG.md`に日付エントリが無い**
-  - `ops_health_check.py`が「デイリーログ鮮度: 日付エントリが検出できませんでした」とINFOを出し続けている。2026-09-18に新設した運用（作業終了時にAIが追記し翌朝読み直す）が実際には回っていない可能性がある。運用を続けるのか、チェック自体を外すのかを決める必要がある。
 
 ---
 
