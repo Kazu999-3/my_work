@@ -42,7 +42,7 @@
 
 ※過去の未使用スキル17件は `99_ARCHIVE/skills/` に安全退避済み（必要に応じて復元可能）。
 
-`d:/my_work/.agent/skills/`・`.agent/workflows/` の旧スキル・ワークフローは2026-08-04に棚卸し完了。実際に使われている/価値のあるものは全て`.claude/skills/`へ移行済みで、残りは削除済み（`.agent/agents`・`.agent/rules`等の他ディレクトリは対象外・未調査）。
+`d:/my_work/.agent/skills/`・`.agent/workflows/` は2026-08-04に一度棚卸し済みだが、その後2026-09-18セッションで`.agent/skills/knowledge-drill`・`recall-decision`、`.agent/workflows/audit.md`・`note-gen.md`・`weekly-review.md`・`wrap-up.md`が新設され現存している（2026-09-21実態確認済み。`.agent/agents`・`.agent/rules`等の他ディレクトリは対象外・未調査）。
 
 **スキルの継続的な改善**: あるスキルの実行中に実害のある失敗（依存先の削除、規約違反、誤ったデータ書き込み等）を発見・修正した場合は、そのスキル自身のSKILL.md末尾に「## 既知の落とし穴 (Known Pitfalls)」として日付付きで記録すること（`sovereign-factory/SKILL.md`参照）。次にそのスキルを使う際に同じ轍を踏まないための経験メモとして機能する。新しいスキルを作る/大きく直す際は`skill-creator`スキル（`.claude/skills/skill-creator/scripts/quick_validate.py`でフォーマット検証可能）を使うこと。
 

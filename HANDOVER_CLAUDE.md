@@ -1,8 +1,8 @@
 # 🤝 Sovereign OS 開発引き継ぎマニュアル (HANDOVER_CLAUDE.md)
 
-本ドキュメントは、`my_work` (Sovereign OS) プロジェクトの全修正・実装履歴、システム構造をまとめた引き継ぎ資料です。Antigravity → Claude、Claude → Antigravity のどちらの方向へ切り替える場合も、本書と `02_FACTORY/TODO.md`・`01_INTEL/NEXUS_INDEX.md` を読み込めば文脈を復元できるよう、作業したツール側が都度この3ファイルを更新する運用にしています。
+本ドキュメントは、`my_work` (Sovereign OS) プロジェクトのシステム構造・稼働実態・絶対ルールをまとめた引き継ぎ資料です。Antigravity → Claude、Claude → Antigravity のどちらの方向へ切り替える場合も、本書と `02_FACTORY/TODO.md`・`01_INTEL/NEXUS_INDEX.md` を読み込めば文脈を復元できるよう、作業したツール側が都度この3ファイルを更新する運用にしています。
 
-2026-08-04時点: ユーザーはClaude CodeからAntigravity中心の運用に戻る予定だったが、2026-08-09〜08-10にClaude Codeで大規模な不具合修正セッションを実施（詳細は「2.6 Claude Code期間 (2026-08-09〜08-10) での主な実装・修正」を参照）。直近のClaude Codeセッションでの実装内容は「2.5」「2.6」の両方を参照。
+> 📦 **詳細な実装・修正履歴は [`02_FACTORY/TODO_ARCHIVE.md`](file:///d:/my_work/02_FACTORY/TODO_ARCHIVE.md) およびgit logに集約済み**（2026-09-21実施、AIコンテキスト消費削減のため）。本書では各期間のヘッドラインのみ要約しています。
 
 ---
 
@@ -10,194 +10,21 @@
 
 Sovereign OS は、League of Legends (LoL) の戦術解析・データ分析と、note 配信および AI ツール等のアフィリエイトによる自動収益化、および大会運営 (KTM) ポータルを統合した個人事業 OS です。
 
-2026-08-04以前は Claude (Claude Code CLI 等) をメインアシスタントとして開発・運用していましたが、2026-08-04時点で Antigravity 中心の運用に戻します。
+運用体制はAntigravity中心（2026-08-04〜）だが、大規模な不具合修正セッションはClaude Codeで実施することが多い（直近: 2026-09-20）。
 
 ---
 
-## 📜 2. Antigravity での主な実装・修正全履歴
+## 📜 2. 実装履歴サマリー（詳細は [`TODO_ARCHIVE.md`](file:///d:/my_work/02_FACTORY/TODO_ARCHIVE.md) を参照）
 
-Antigravity で実施されたこれまでの修正・新機能実装の到達点です。
-
-### 🌟 (0) 2026-09-17 一般ユーザー向けポータル改善（第1弾 ＆ 第2弾）
-- **⚔️ バランサー観戦スタジアムビュー (`/balancer`)**
-  - [`BalancerStadiumView.tsx`](file:///d:/my_work/04_PORTAL/src/app/balancer/components/BalancerStadiumView.tsx) を新設。
-  - 運営者以外でも直近の確定マッチを最上部で観戦可能（5レーン対面比較、本人枠ハイライト、勝敗予想への直通導線、待機者一覧）。
-  - マウント時に `/api/balancer/pending` から最新チーム分けを自動復元。
-- **🎁 デイリーボーナスのワンタップ受取導線**
-  - [`Sidebar.tsx`](file:///d:/my_work/04_PORTAL/src/components/Sidebar.tsx) に未受取時にパルスする「🎁 +100pt」ワンタップボタンを新設。
-  - クリック時に紙吹雪を飛ばして即座にコイン付与と残高再取得を実行。
-- **📱 順位表 (`/leaderboard`) のスマホカード型最適化**
-  - スマホ時に `[🌐 全レーン並列] [TOP] [JG] [MID] [ADC] [SUP]` の水平ロール切り替えピルを追加。
-  - プレイヤー名のインクリメンタル検索入力欄を追加。1〜3位のメダル装飾・高勝率カラーを最適化。
-- **🪙 勝敗予想 (`/casino`) のカウントダウン ＆ 受付状態視覚化**
-  - チーム確定時刻から15分のリアルタイムカウントダウンタイマーを設置。
-  - 締切3分前の炎パルス（🔥）および締切後の即時フォームロック（🔒）を実装。フロント・API双方で二重投票・締切後投票を防止。
-- **📜 一般向け試合履歴ページの解放 (`/history`)**
-  - 管理者専用リダイレクトを廃止し、一般参加者でも過去30試合のスコア・MMR変動を自由閲覧できる独立ページへ刷新。
-- **👤 選手カルテ (`/player/[id]`) のモメンタム ＆ 相棒・天敵ハイライト**
-  - 直近5戦の勝敗アイコン列 `[W][W][W][L][W]` と連勝バッジ（`🔥 3連勝中`）、および最高勝率の相棒・最大の天敵ライバルをトップにピン留め表示。
-- **📱 スマホ固定ボトムナビゲーション (`MobileBottomNav`)**
-  - 親指1本でホーム・バランサー・勝敗予想・順位表・マイカルテを行き来できるネイティブアプリ感覚の下部固定バーを新設。
-- **🤝 師弟掲示板 (`/mentorship`) のレーン別ピルフィルター ＆ スマホ横スクロール**
-  - `[🌐 全て] [TOP] [JG] [MID] [BOT] [SUP]` のクイック絞り込みを追加し、タブバーをスマホで綺麗に横スワイプ可能に改修。
-
-### 🚀 (1) Sovereign OS v1.0 ～ v7.0 コアエンジンの構築
-- **FastAPI Agent Gateway (`03_SYSTEMS/v2_CORE/api.py`)**
-  - LLM (Gemini) 呼び出しの共通窓口。冷却キーローテーション、クォータ保護、429エラー自動回避機構を統合。
-- **Webhook駆動ハイブリッドキュー (`edge_worker_daemon.py` / `SovereignQueue`)**
-  - 非同期タスクの過剰実行を防ぎ、イベント駆動でスクレイピングや解析タスクを分散処理。
-- **YouTube Absorber & モニターの完全自律化**
-  - RSSフィード巡回によりAPI枠を消費せず新着動画を検知。YouTube文字起こしから AI が自動で戦術・ルーン・ビルドを抽出してチャンピオン辞典へ自動アペンド。
-- **Riot & Discord 連携の改名自己修復**
-  - プレイヤーの Riot ID / Discord 名変更時の自動修復・安全停止機能。
-- **Sovereign Mind (ティルト防止メンタルチェッカー)**
-  - pywebview ベースのデスクトップアプリ。試合終了時の自動ポップアップと連敗検知、マインドフルネスタイマー、単一 `.exe` ビルド完了。
-
-### 🎨 (2) ポータル (`04_PORTAL`) のUI改善 ＆ 機能ハブ化
-- **サイドバー導線の最適化**
-  - メニュー項目を 10項目から 6項目へ整理し、直感的なセクション分けを実施。
-- **チャンピオン辞典のタブ統合ハブ化**
-  - 辞典閲覧 / マッチアップ対面 / AI更新ダッシュボードを単一ページに統合。
-- **自動化パイプラインダッシュボード**
-  - ジョブ実行状態、キュー消費ログ、SRE自己修復状況のリアルタイム可視化。
-- **辞典 ➔ note 記事生成の直結導線**
-  - 辞典の戦術データからワンクリックで 500円モデル有料 note 記事の下書きを出力する導線を構築。
-
-### 💰 (3) 収益化ファクトリー ＆ AI 執筆プロトコル
-
-> ⚠️ **2026-07-26 削除済み**: 以下の収益化パイプライン（`_MONETIZE/`、`agents/`、`monetization_batch.py`、`note-publisher` スキル/プラグイン等）は、設計を見直した上で改めて実装するため一旦削除しました。実装記録として過去の到達点のみ残しています。現存するのは `promoter.py` のみ（`pulse.py` の6時間おきcronが直接利用しているため）。
-
-- **Ghost Writer & Style Auditor**
-  - AI特有のポエミーな表現（「王」「～の舞」など）を徹底排除し、自然な人間の言葉に変換する校正ルールを制定。
-- **note 自動投稿 ＆ X 宣伝スレッド連携 (`note-publisher`)**
-  - Playwright を用いた note 下書き保存、有料領域区切り、および X（Twitter）スレッドの自動連動。
-- **ハイブリッドアフィリエイトバッチ (`tool_scout.py` / `tool_forge.py`)**
-  - AIツール等のトレンド自動収集と広告リンク入りのレビュー記事・SNS拡散文脈の自動錬成。
-
----
-
-## 📜 2.5. Claude Code期間 (〜2026-08-04) での主な実装・修正
-
-Claude Code CLI で実施した最終セッションの到達点です。詳細な経緯・不具合修正の背景は `02_FACTORY/TODO.md` の「2026-08-04 Claude Codeセッションで対応済み」節を参照。
-
-### 🎯 (1) ソロQ振り返りの自動化強化
-- **ティルト診断の自動ポップアップ化**: 試合終了検知時に `TiltDiagnosisPopup.tsx` を自動表示し、そのまま振り返り記録へ導線接続。
-- **曜日×時間帯 勝率ヒートマップ** (`TimingHeatmapTab`): `soloq_match_history` から集計し、ティルト診断と組み合わせて「次の試合に行くべきか」を統合判定 (`lib/soloqTiming.ts`)。マス詳細表示はブラウザ標準title属性ではなくカーソルオーバー/タップで即座に出る専用パネル方式。
-
-### 🔍 (2) チャンピオン辞典の一斉ファクトチェック機能（新設）
-`dict_fact_check_queue` テーブル (migration 45) を中核に、辞典データの品質担保フローを一式構築:
-- **ステップ1（無料・即時）**: champion列の表記ゆれ・ゴミ値検出。日本語名対応表を全173体に拡充。
-- **ステップ2（AI横断照合）**: チャンピオン単位で辞典本体・対面メモ・コーチAI知識層・ナレッジを横断し、矛盾/未確証claim/事実誤りをGeminiで検出。
-- **元データの直接編集・削除**: キューカードから対面メモ・コーチAIノート・構造化ファクトをその場で直接修正・削除可能（`FactCheckSourceBlock.tsx`）。
-- **チャンピオン単体チェック**: `/champions` の各詳細ページに単体チェックボタンを追加（全体一斉チェックを待たない）。
-- **辞典内インライン変更履歴**: 別ページへ移動せず、そのチャンピオンの変更履歴を辞典ページ内で確認可能。
-- **未処理レビュー上限(50件)**: 承認待ちキューが50件を超えたら新規検出を一時停止するガードを追加（コスト面・運用面の両方に配慮）。
-
-### 🈂️ (3) 辞典データの日本語化バッチ拡充
-アイテム名・チャンピオン名もカタカナ表記へ翻訳するオプションを追加。並行して `.limit(500)` によるレコード取りこぼし、アイテム名列挙への無限再翻訳ループなど複数バグを修正。
-
-### 🎨 (4) 細かいUI改善
-- サイドバーの「note分析」メニューを最後尾へ移動。
-- skill-creatorのSKILL.mdに「ルールは失敗が数値化・機械化されて初めて機能する」という原則を追記。
-
----
-
-## 📜 2.6. Claude Code期間 (2026-08-09〜08-10) での主な実装・修正
-
-チャンピオン辞典の更新失敗報告を起点に、Gemini APIクォータ枯渇の根本原因を突き止めるまで深掘りし、ついでにソロQコーチ・KTM Botの複数不具合も対応した大規模セッション。詳細な経緯・不具合の背景は `02_FACTORY/TODO.md` の「2026-08-10 Claude Codeセッションで対応済み」節を参照。
-
-### 🔑 (1) Gemini APIクォータ枯渇の根本原因究明・解消【最重要】
-
-- **真因**: `ai_helper.py`/`champion_trend_worker.py`等が使っていた`gemini-2.0-flash`系モデルは、このアカウントのAI Studio上で無料枠が**0/0(そもそも割り当てなし)**だった。2026-08-07のセッションが「架空のモデル名エラー」を誤って`gemini-3.x`系(実際にクォータがあった)のせいだと誤認し、`gemini-2.0-flash`/`gemini-1.5-flash`系へ後退させたのが真の退行原因(同日`error_429`が240件に急増した実績と一致)。`gemini-3.1-flash-lite`(15RPM/500RPD)へ`03_SYSTEMS`側5ファイル・`04_PORTAL`側3ファイルを統一。
-- **クォータ追跡の欠陥修正**: 自前の`quota_manager.py`が①成功時のみカウントするため429連発中は上限チェックをすり抜け続ける、②GitHub Actions等の毎回まっさらな実行環境がローカルPCの積み上げカウントをSupabase上で小さい値に巻き戻す、という2つの欠陥を修正。429が10件累積したら全機能を一律スキップするサーキットブレーカーを新設し、ローカル/リモートの値はmaxを採用するよう統一。
-- **エラーメッセージの可読化**: サブプロセス失敗時にstderrの生ログ(数百行)をそのまま表示していたのを、スクリプト側がstdoutに出す構造化JSON要約を優先的に使うよう変更(`edge_worker_daemon.py`/`scripts/edge_cloud_worker.py`)。
-- **二重起動防止**: `start_all.ps1`のプロセス一覧走査(TOCTOUレースあり)をファイル作成の排他性ベースのロックに変更。ただし実際の起動経路はこのスクリプトではなくポータルの「🚀 ワーカー起動」ボタン(`sovereign-worker://`プロトコル)で、既存の`SocketLock`(ポート19002)自体は正常動作と確認済み。
-
-### 📖 (2) チャンピオン辞典の不具合修正
-
-- `dictFactCheck.ts`の`.limit()`取りこぼし(PostgRESTデフォルト上限1000件)を`fetchAllRows`で解消。
-- `matchup_id`生成の正規化漏れ(Talon重複と同型のバグ)を`soloq/reflections`にも適用。
-- `DictionaryTab.tsx`の個別トレンド取得ボタンが一覧の`roleFilter`をそのままAIリサーチのroleに使っており、Jungle以外で絞り込んだ状態で個別更新するとジャングル関連フィールド(先出し後出し評価・序盤タイミング)が生成されないバグを修正。
-- ジャングルタイミングのプロンプトにハルシネーション対策を追加(他チャンピオンにも当てはまる一般的な目安の流用を禁止)。
-- パッチ表記をAI自己申告からDDragon実データへ切替。
-
-### 🧠 (3) ソロQコーチの複数改善
-
-- ティルト診断ポップアップが勝敗を無視して常に「敗因」を尋ねていたのを、勝敗で質問文を分岐。
-- 「直近成績」がユーザーの自己記録(`soloq_reflections`)のみの集計で実態とズレていたのを、Riot API実試合履歴からの再集計に変更。
-- 週次傾向レポート(`lib/coachTrends.ts`へ集計ロジックを一本化)に、デス発生時点のチーム総ゴールド差からの因果関係判定(劣勢中のデスか否か)とロール反映を追加。
-- AI試合後分析で、集団戦中に前衛として死んでも「孤立死」と誤って書かれる問題を、デス前後20秒以内の全キル数を見て判定するよう改善。
-- **対面(レーン)勝敗の記録機能を新設**(migration 55, `lane_result`列): 試合全体の勝敗とは別に対面との勝ち負けを振り返りフォームで記録でき、`MatchupWarningCard`に対面別成績(◯勝◯互角◯負け)を表示。
-
-### 🎮 (4) KTM Bot
-
-- 定期カスタムの参加者が部門をまたいで合計10人到達した場合、埋め込みを黄色化し「混合カスタム可能」と表示するロジックを新設。
-- Discord参加者取得ボタンが「カスタム募集のメッセージが見つかりません」で常に失敗していたバグを修正(定期カスタムの実際のembed文言と検索条件が最初から一致しない設計ミスだった)。
-- 残数バナーが状態遷移(募集中→満員/黄色→募集中)で固着するバグを修正。
-- 募集カードの色ロジックが`components.js`/`scheduled.js`に別々実装されており、募集中状態の色コードが2箇所で食い違っていた(0xc89b3c vs 0xe74c3c)バグを発見。`src/utils/recruitmentStatus.js`に一本化し、共通の純粋関数経由に変更。
-
-### 🛠️ (5) 再発防止のための内部スキル整備
-
-このセッションで発生したバグの多くが「同じ根本原因が形を変えて複数回発生する」パターンだったため、次回以降に同じ調査時間をかけずに済むよう4つの内部スキルを新設した。
-
-- `gemini-model-health-check`: コード中のGeminiモデル名がこのアカウントで実際にクォータを持つか実測するスクリプト。上記(1)の調査中に、修正のつもりで新たに紛れ込ませていた`gemini-2.5-flash-lite`(実際は404 NOT_FOUND)を検出し、6ファイルを`gemini-3.5-flash-lite`へ再修正した。
-- `known-regression-patterns`: Supabaseページネーション取りこぼし・チャンピオン名正規化漏れ・TOCTOUレース条件・孤立した自動化・AIハルシネーションという、今回洗い出した5パターンの実装前セルフレビュー用チェックリスト。
-- `ktm-recruitment-status-dryrun`: 上記の募集カード色ロジックを、Discordへ実投稿せず境界値・異常値パターンで検証するドライランスクリプト。
-- `session-handover-update`: このHANDOVER_CLAUDE.md/TODO.md更新作業自体の手順化(重複セクション作成を防ぐ事前チェックスクリプト付き)。
-
----
-
-## 📜 2.7. Antigravity期間 (2026-09-08〜09-17) での主な実装・修正
-
-### ⚔️ (1) The Sovereign Victory Loop ＆ Hextechオーバーレイ (2026-09-08)
-- **完全勝利サイクルの構築**: プレイ前対面計算 ➔ プレイ中HUD連動 ➔ プレイ後ディープアナリティクス ➔ ナレッジ自動更新ループの実装。
-- **公式DataDragonマスター辞書同期基盤**: Riot公式（16.17.1）から全173チャンピオン、全865スキル、全868アイテム、全62ルーンの完全な日英対照辞書（`ddragon_master_dict.json`）を構築し既存DBを一括正規化。
-- **Hextech Dark Goldオーバーレイリニューアル**: 余計なキルラインを削ぎ落とし、敵Lv/アイテムAH短縮を自動計算する敵Ult/スペル管理、LoL公式HUD調の対面インテルカードへ刷新。
-
-### 🚀 (2) 業務効率化 ＆ 過去ログ分析に基づく全体最適化 (2026-09-17)
-過去のClaude Code直近11セッション（計791プロンプト）のトランスクリプトを走査・分析し、開発手戻りを構造的に防止する5大改善を実施。
-- **多角フル監査コマンド化 (`/audit`)**:
-  - [`.claude/commands/audit.md`](file:///d:/my_work/.claude/commands/audit.md) および [`.agent/workflows/audit.md`](file:///d:/my_work/.agent/workflows/audit.md) を新設。
-  - 1発で「PostgREST 1000件上限/表記ゆれ」「TOCTOU競合/タイムアウト」「UIフィードバック/永続化」「エラーハンドリング/API保護」「再発防止パッチ」の5大観点を漏れなく同時監査。
-- **LLM健全性 ＆ 虚偽報告防止ガードのルール化**:
-  - [`.claude/rules/llm-health.md`](file:///d:/my_work/.claude/rules/llm-health.md) を新設し `CLAUDE.md` へ連携、および [`.agent/rules/04_hallucination_prevention.md`](file:///d:/my_work/.agent/rules/04_hallucination_prevention.md) 第4項へ同期。
-  - 架空モデル指定の禁止（実測スクリプト義務化）と、稼働状況報告時の「単なる成功ログ1件だけを見てエラー0件と答える虚偽報告（楽観バイアス）」を禁止し、DBの実測数値提示を義務化。
-- **休眠スキルの安全退避 ＆ 常設スキルのスリム化**:
-  - 実測で呼び出し0件だった未使用スキル17件を [`99_ARCHIVE/skills/`](file:///d:/my_work/99_ARCHIVE/skills/) へ安全退避。
-  - ルート直下の現役常設スキルを6件（`gemini-model-health-check`, `known-regression-patterns`, `supabase-migration-lint`, `session-handover-update`, `skill-usage-audit`, `ghost-writer`）に集約し、コンテキスト消費を劇的削減。
-- **UIデザイン・確定カラーパレット規約の明文化**:
-  - [`.claude/rules/ui-conventions.md`](file:///d:/my_work/.claude/rules/ui-conventions.md) および [`.agent/rules/04_usability_rules.md`](file:///d:/my_work/.agent/rules/04_usability_rules.md) を更新。
-  - サイバーパンク調ネオングローを禁止し、「やわらかい暖色ダーク（`#2b2620`、stone系）」と「Hextechゴールド（`#C89B3C`）」、幅375px〜のモバイル見切れ防止を明文化。
-- **チャンピオン辞典・DataDragon一括同期 ＆ ヘルスチェッカーCLIの新設 ＆ 62件タグ修復**:
-  - [`scripts/sync_dict_health.py`](file:///d:/my_work/scripts/sync_dict_health.py) を新設。
-  - PostgREST 1000件上限を突破するRangeページネーションを内蔵し、Vercelの60秒タイムアウトを受けずにローカルCLIから全件カウント・キュー状況確認（`--status`）、公式用語一括正規化（`--normalize`）を即時実行可能に整備。
-  - `--fix-tags --apply` により、`matchup_sentinel` / `personal_knowledge` に残っていた **全62件の不正タグ・表記ゆれ（KhaZix, グレイブス, Lee Sin等）をDataDragon公式名へ100%完全修復** 完了（再スキャンで0件確認）。
-- **スマート確認ルール（Vibe Coding）の改定**:
-  - [`.claude/rules/confirmation.md`](file:///d:/my_work/.claude/rules/confirmation.md) を改定。
-  - 非破壊操作（調査、テスト、ビルド、軽微な修正、新規ファイル作成）は確認不要で自律実行し、真に危険な破壊的操作（削除、機密変更、広範囲書き換え）のみy/n確認を要求する境界を明確化。過去300回超発生していた無駄な確認往復を排除。
-- **note有料記事のワンストップ自動執筆コマンド (`/note-gen`)**:
-  - [`.claude/commands/note-gen.md`](file:///d:/my_work/.claude/commands/note-gen.md) および [`.agent/workflows/note-gen.md`](file:///d:/my_work/.agent/workflows/note-gen.md) を新設。
-  - `/note-gen [チャンピオン名]` 1発で、戦術データ取得 ➔ `forge_note_protocol.md`（500円構成）錬成 ➔ AI臭排除（`ghost-writer`） ➔ `note_articles` テーブルへ下書き自動投入まで一気通貫で完結。
-- **YouTube解析キュー監視 ＆ クリーンアップCLIの新設**:
-  - [`scripts/clean_youtube_queue.py`](file:///d:/my_work/scripts/clean_youtube_queue.py) を新設。
-  - `youtube_queue` の1191件を全走査し、未解決エラー行（73件）の可視化（`--status`）、一括クローズ（`--clean-errors`）、再試行（`--retry-failed`）をワンコマンドで実行可能に整備。
-- **バランサー単体テスト高速モード化 ＆ npm test Windows対応**:
-  - [`04_PORTAL/src/lib/balancer.ts`](file:///d:/my_work/04_PORTAL/src/lib/balancer.ts) および [`04_PORTAL/src/lib/__tests__/balancer.test.ts`](file:///d:/my_work/04_PORTAL/src/lib/__tests__/balancer.test.ts) を改修。
-  - テスト環境（`NODE_ENV===test`）で144万回の総当たり評価ループによりハングしていた問題を、テスト用軽量モード（`searchDepth: 5`）の自動適用により解消（本番運用の100候補高精度は完全維持）。
-  - `package.json` の `test` コマンドをWindowsのglob不具合に影響されない明示的パス指定に修正し、全36テストが **20秒で全件一発パス (36 pass / 0 fail)** することを確認。
-- **ファクトチェックキュー整理 ＆ 滞留リセット**:
-  - `scripts/sync_dict_health.py --reset-pending` を実行し、長期間滞留していた古いpendingキュー47件をクリーンアップして0件にリセット完了。
-- **Dependabot脆弱性解消 ＆ 依存関係修復**:
-  - `04_PORTAL`: `npm audit fix` により Next.js (Critical含む), sharp, fast-uri 等の脆弱性5件を0件に解消。全36件の単体テストおよび型チェック（`tsc --noEmit`）の全パスを確認。
-  - `03_SYSTEMS/ktm_bot`: `npm audit fix` により hono 等の脆弱性6件を0件に解消。Cloudflare Workerドライラン（`dry_run_recruitment_status.mjs`）の正常パスを確認。
-- **YouTube解析キュー エラー動画73件の再試行リセット**:
-  - `scripts/clean_youtube_queue.py --retry-failed --apply` を実行し、エラー停止していた73件の動画を安全に `pending`（リトライ0）へ戻して自動解析パイプラインへ復帰完了。
-- **ポータル ＆ KTM Bot 安定性・パフォーマンス改善（課題1, 2, 3）**:
-  - **ビルド警告解消**: `api/overlay/route.ts` および `api/admin/jobs/route.ts` に `process.env.VERCEL` ガードと TurbopackIgnore を付与し、プロジェクト全体のトレース警告（サーバーレス関数の肥大化）を解消。
-  - **KTM Bot 管理者エラー通知**: [`03_SYSTEMS/ktm_bot/src/utils/alert.js`](file:///d:/my_work/03_SYSTEMS/ktm_bot/src/utils/alert.js) を新設し、Workers内の未処理例外や非同期処理の失敗時に管理者（Webhook/チャンネル）へDiscord Embedで即時自動アラートを送信する仕組みを導入。
-  - **バランサー画面のサブコンポーネント分割**: 3,125行の超巨大ファイル [`04_PORTAL/src/app/balancer/page.tsx`](file:///d:/my_work/04_PORTAL/src/app/balancer/page.tsx) から `BalancerVcManager.tsx` と `BalancerBo3Manager.tsx` を外出し・`React.memo` 化し、描画パフォーマンスと保守性を向上。
-
-
+- **〜v7.0（〜2026-07月）**: FastAPI Agent Gateway・Webhook駆動ハイブリッドキュー・YouTube Absorber自律化・Riot&Discord改名自己修復・Sovereign Mind等のコアエンジン構築。収益化ファクトリー（note自動投稿・アフィリエイトバッチ）を一時構築後、2026-07-26に設計見直しのため削除（`promoter.py`のみ現役cronのため残置）。
+- **2026-08-04（Claude Code）**: ソロQ振り返り自動化（ティルト診断ポップアップ・曜日×時間帯ヒートマップ）、チャンピオン辞典の一斉ファクトチェック機能新設（`dict_fact_check_queue`）、日本語化バッチ拡充。
+- **2026-08-09〜08-10（Claude Code）【最重要】**: Gemini APIクォータ枯渇の根本原因究明・解消（`gemini-2.0-flash`系が無料枠0/0だったと判明、`gemini-3.x`系へ統一）。クォータ追跡の欠陥修正・サーキットブレーカー新設。辞典/ソロQコーチ/KTM Botの複数不具合修正。再発防止用に`gemini-model-health-check`等4スキルを新設。
+- **2026-09-04〜09-08（Antigravity）**: Sovereign HUDオーバーレイのフルスペック化、集団戦勝因敗因アナライザー、DataDragon公式辞書同期基盤の構築（全173チャンピオン日英対照辞書）、Hextech Dark Goldオーバーレイへ全面リニューアル。
+- **2026-09-08（The Sovereign Victory Loop 着手）**: 即死キルライン境界メーター・3段階勝ちパターン手順書・オーバーレイ連動HUD・試合後ディープアナリティクス・ナレッジ自動更新ループを構築し、プレイ前→プレイ中→プレイ後→ナレッジ蓄積の完全循環ループを完成。
+- **2026-09-17（Antigravity、業務効率化）**: 過去11セッション791プロンプトの分析に基づき5大課題を解消 — `/audit`コマンド化、LLM健全性・虚偽報告防止ルール化、休眠スキル17件アーカイブ（常設6件に集約）、UIカラーパレット規約明文化（暖色ダーク＋Hextechゴールド）、辞典DataDragon一括同期CLI新設。一般ユーザー向けポータル改善（試合履歴解放・選手カルテ・ボトムナビ等）も実施。
+- **2026-09-18（Antigravity）**: note 10記事のディープリサーチに基づく「ナレッジマネジメント7大核心原則」を全域反映（38項目、デイリーログ・地雷回避DB・自動バイブル同期デーモン・リンク整合性リンター等を新設）。
+- **2026-09-20（Claude Code）**: カジノ経済ロジックの潜在不具合5件修正（バカラ配当・バランサー公平化・クラッシュ多重利確等）＋本番ライブ検証。検証中に発覚した`crashPoint`平文漏洩の重大脆弱性を根絶。動画解析パイプラインの現状調査（`edge_worker_daemon.py`が41時間停止していたことが判明）＆Phase2着手前の基盤修正3件。
+- **2026-09-21（Claude Code）**: AIエージェントのコンテキスト消費削減のため、本ファイルおよび`TODO.md`の過去ログを`TODO_ARCHIVE.md`へ退避・圧縮。
 
 ---
 
@@ -217,6 +44,7 @@ my_work/
 │
 ├── 02_FACTORY/                    # [成果物・執筆層]
 │   ├── TODO.md                    # 業務ダッシュボード (本日のタスク・バックログ)
+│   ├── TODO_ARCHIVE.md            # 過去セッションログの詳細アーカイブ
 │   ├── 01_DRAFTS/                 # note記事・SNSスレッド下書き
 │   ├── 02_PUBLISHED/              # 投稿済み書庫
 │   └── 03_ASSETS/                 # アフィリエイト知識、note執筆プロトコル等
@@ -238,58 +66,11 @@ my_work/
 
 - **ポータル・Bot はクラウド常時稼働**: `04_PORTAL` は Vercel、`03_SYSTEMS/ktm_bot` は Cloudflare Workers 上で稼働。ローカルで `npm run dev` を叩いても本番とは別のプレビュー環境が立つだけ。
 - **YouTube解析・辞典同期はGitHub Actions**: `scripts/youtube_worker.py`（30分おき）・`scripts/prospector.py`・`.github/workflows/ktm-cloud-worker.yml` が担当。`03_SYSTEMS/v2_CORE/youtube_absorber.py` 系の旧処理（`absorber.yml`）は重複解析を防ぐため**明示的に停止済み**。
-- **v2_CORE が現役なのは3つ**: ① `run_pulse_once.py`（Sovereign Pulse、GitHub Actionsから6時間おき） ② `edge_worker_daemon.py`（ローカルPCでの字幕なし動画のwhisper文字起こし、`start_all.bat` 経由） ③ `scripts/edge_cloud_worker.py`（GitHub Actions `edge-cloud-worker.yml`から5分おき、クラウド完結タスクを処理）。2026-08-10監査時点でこの③が抜け落ちて「2つだけ」と記載されていたのを修正（実害はないが次回セッションの文脈誤認リスクがあったため）。それ以外の `v2_CORE` モジュール（FastAPI Gateway常時起動、SREデーモン等）は本番では使われていません。
-- **既知の修正済みバグ**: `start_all.ps1` の既定モード（`-Mode edge`）は「Edge Worker Daemon起動」を謳いながら実際は SQLite時代の遺物 `task_worker.py` を起動しており、`SovereignQueue._get_conn()` 不在で起動直後にクラッシュしていた（2026-07-26修正済み）。これにより字幕なし動画の文字起こしが実質機能していなかった可能性がある。
-- **`start_all.ps1` の簡素化 (2026-07-26)**: `-Mode all`（ポータル/Bot/Ollama/Core APIのローカル重複起動＋`sre_daemon.py`）を廃止し、Edge Worker Daemon単独起動のみに一本化した。`sre_daemon.py`はGatewayバイパス問題とクラウド側との重複巡回タスクを抱えていたため削除。唯一有用だった「字幕なし動画(youtube_absorb)の15分おき自動起票」ロジックは `edge_worker_daemon.py` 自身（`youtube_absorb_scheduler_loop`）に統合済み。`healer.py`（sre_daemon.py専用の自己修復エンジン）も呼び出し元が無くなったため`deprecated/`へ移動。
+- **v2_CORE が現役なのは3つ**: ① `run_pulse_once.py`（Sovereign Pulse、GitHub Actionsから6時間おき） ② `edge_worker_daemon.py`（ローカルPCでの字幕なし動画のwhisper文字起こし、`start_all.bat` 経由） ③ `scripts/edge_cloud_worker.py`（GitHub Actions `edge-cloud-worker.yml`から5分おき、クラウド完結タスクを処理）。それ以外の `v2_CORE` モジュール（FastAPI Gateway常時起動、SREデーモン等）は本番では使われていません。
+- **既知の修正済みバグ**: `start_all.ps1` の既定モード（`-Mode edge`）は「Edge Worker Daemon起動」を謳いながら実際は SQLite時代の遺物 `task_worker.py` を起動しており、`SovereignQueue._get_conn()` 不在で起動直後にクラッシュしていた（2026-07-26修正済み）。
+- **`start_all.ps1` の簡素化 (2026-07-26)**: `-Mode all`（ポータル/Bot/Ollama/Core APIのローカル重複起動＋`sre_daemon.py`）を廃止し、Edge Worker Daemon単独起動のみに一本化した。`sre_daemon.py`はGatewayバイパス問題とクラウド側との重複巡回タスクを抱えていたため削除。唯一有用だった「字幕なし動画(youtube_absorb)の15分おき自動起票」ロジックは `edge_worker_daemon.py` 自身（`youtube_absorb_scheduler_loop`）に統合済み。
+- **2026-09-20時点の追加確認**: ローカル常駐`edge_worker_daemon.py`自体が41時間以上起票停止していたことが判明（PC起動依存という構造上、気づかれず止まり続けるリスクが現在進行形）。`scripts/ops_health_check.py`に`check_youtube_automation_freshness()`を追加済みだが動作確認は未実施（`TODO.md`のPhase2節参照）。
 - 詳細な移行経緯・落とし穴は `AI_HANDOFF.md` を参照。同ファイルの方が本書より新しい場合がある。
-
----
-
-## 📜 2.7. Antigravity セッション (2026-09-17) での主な実装・改善
-
-1. **ポータル ＆ KTM Bot 安定性・パフォーマンス改善**:
-   - **Turbopackビルド警告の解消**: `api/overlay/route.ts` と `api/admin/jobs/route.ts` に `process.env.VERCEL` ガードと TurbopackIgnore を追加し、サーバーレス関数の肥大化警告を完全解消。
-   - **KTM Bot 管理者エラー通知**: [`03_SYSTEMS/ktm_bot/src/utils/alert.js`](file:///d:/my_work/03_SYSTEMS/ktm_bot/src/utils/alert.js) を新設し、Workers内の未処理例外発生時にDiscord Embedで即時自動アラートを送信。
-   - **バランサー画面のサブコンポーネント分割**: 3,125行の超巨大ファイル [`balancer/page.tsx`](file:///d:/my_work/04_PORTAL/src/app/balancer/page.tsx) から `BalancerVcManager.tsx` と `BalancerBo3Manager.tsx` を外出し・`React.memo` 化。
-   - **チャンピオン辞典検索入力の超サクサク化**: [`DictionaryTab.tsx`](file:///d:/my_work/04_PORTAL/src/app/champions/tabs/DictionaryTab.tsx) に `useDeferredValue`（全173体＋対面検索の重いあいまい正規化をバックグラウンド化）およびURL同期の350msデバウンスタイマーを導入。タイピング時のカクつきとルーター再描画連打を根絶。
-   - **即死キルライン境界メーターのWeb UI統合**: [`api/lol/matchup-blueprint/route.ts`](file:///d:/my_work/04_PORTAL/src/app/api/lol/matchup-blueprint/route.ts) および [`MatchupBlueprintCard.tsx`](file:///d:/my_work/04_PORTAL/src/app/coach/MatchupBlueprintCard.tsx) を改修。デスクトップHUDで先行稼働していた数学的確定即死計算エンジンを移植し、カラーグラデーションHPゲージバー・即死ゾーン%・安全HP閾値・Phase 3（Lv6〜）への即死トリガー注記を完全統合。実戦マッチ（Kazurin#4036 / Yorick vs K'Sante）の確定データ検証済み。
-   - **リコール逆再生のタイムラインルーラー視覚化**: [`PostGameDeepAnalyticsDashboard.tsx`](file:///d:/my_work/04_PORTAL/src/app/coach/PostGameDeepAnalyticsDashboard.tsx) を改修。全リコールの発生分秒・損失ゴールド・購入アイテムを試合時間軸上にピン留めした横型タイムラインルーラーと詳細インスペクターを新設。
-   - **Sovereign HUD ワンクリック起動 (sovereign:// プロトコル連携)**: [`03_SYSTEMS/register_sovereign_protocol.bat`](file:///d:/my_work/03_SYSTEMS/register_sovereign_protocol.bat) を新設してWindowsレジストリへ登録し、[`OverlayLauncherButton.tsx`](file:///d:/my_work/04_PORTAL/src/app/coach/OverlayLauncherButton.tsx) からクラウド環境（Vercel）問わずブラウザのボタン1タップでローカルHUDを起動可能に整備。
-2. **Dependabot脆弱性解消**: `04_PORTAL`（5件）および `03_SYSTEMS/ktm_bot`（6件）の脆弱性を `npm audit fix` により 0件 に完全解消。
-3. **バランサー単体テスト高速モード化**: テスト実行時の144万回総当たりループをテスト専用深度に制御し、全36テストが20秒で一発パスする環境を整備。
-4. **ファクトチェック ＆ YouTubeキューのクリーンアップ**: 滞留pendingキュー47件および未解決エラー動画73件の再試行・リセットを完了。
-
----
-
-## 📜 2.8. Claude Code期間 (2026-09-20) での主な実装・修正
-
-深層ロジック監査で見つかった潜在不具合5件の修正 → ライブ動作確認 → 検証中に発覚した追加のセキュリティ脆弱性の修正 → 動画解析パイプラインの現状調査・基盤修正、という一連のセッション。詳細な経緯・不具合の背景は `02_FACTORY/TODO.md` の「2026-09-20 保留中・修正キュー 対応済み」節および「Phase 2: 動画解析インフラ進化」節を参照。
-
-### 🎰 (1) カジノ経済ロジックの潜在不具合5件を修正 ＆ 本番でライブ検証
-
-- **バカラ**: 勝利時にベット元金を差し引かず実質2.95倍配当になっていたインフレバグを是正。使い捨てテストアカウント＋実DBで6ラウンド実施し、元金差引が正しく反映されることを確認。
-- **バランサー**: サイド公平化の判定が「合算してから絶対値」になっており5人ずつのチームで常に相殺(`biasNormal === biasSwapped`)して100%ランダム決定になっていたのを、「各項に絶対値を付けてから合算」する方式に修正。**この恒等式バグは前日のコミット`4321db4b`でも修正が試みられていたが、絶対値を最終比較にしか付けておらず実際には直っていなかった**（`known-regression-patterns`スキルにパターン6として追記済み）。
-- **ポロ・クラッシュ**: 同一gameTokenでの多重利確をDB側UNIQUE制約(`crash_used_tokens`、後述の(2)で`crash_sessions`に統合・廃止)で防止し、通信遅延による理不尽な全損クラッシュ判定にも同じ0.5sマージンを適用。
-- **チップ送金**: 誤字入力での幽霊アカウント自動生成を`autoCreate: false`化で防止し、完了通知メッセージを是正。
-- **師弟フォーラム**: `appliedTags.slice(0, 5)`でDiscordタグ上限超過を防止。
-
-全件、実データベース(使い捨てQAアカウントを都度クリーンアップ)でのライブ検証済み。
-
-### 🔒 (2) ポロ・クラッシュの`gameToken`平文漏洩を根絶（ライブ検証中に発覚した追加のセキュリティ修正）
-
-上記(1)の多重利確防止をライブ検証中に、`gameToken`（HMAC署名のみで暗号化なし）を`base64url`デコードするだけで誰でもゲーム開始直後に`crashPoint`を読める重大な脆弱性を発見。前日のコミット`b60c336a`（「クラッシュ値漏洩グリッチを完全根絶」）は`VERIFY_CRASH`が早期に値を返す経路だけを塞いでおり、本当の漏洩元だったgameToken自体は最初から一度も塞がれていなかった。crashPointをサーバー側の新設`crash_sessions`テーブルのみで保持し、クライアントには意味を持たない乱数gameId(UUID)だけを渡す方式に変更。多重利確防止もこのテーブルの`pending→settled`原子的遷移に統合し、前述の`crash_used_tokens`は同マイグレーション(`79_crash_sessions.sql`)で廃止。本番の実プレイヤーによる正常稼働を実測確認済み。
-
-### 🎬 (3) 動画解析パイプラインの現状調査 ＆ Phase2着手前の基盤修正
-
-サブエージェントによる調査で、`youtube_queue`実測1225件(completed 1071/pending 19/error系53/manually_closed 82)、および過去の「孤立した自動化」問題(2026-07-31にクラウドcron停止)はコード上解消済みだが**ローカル常駐`edge_worker_daemon.py`自体が41時間以上起票停止していた**（PC起動依存という構造上、気づかれず止まり続けるリスクが現在進行形）ことを確認。
-
-さらに`extract_video_tactics.py`にPhase2着手前に潰すべき重大バグ3件を発見・修正:
-- 字幕抽出が特定1動画のセリフをハードコードした正規表現に依存し、既存バイブル31本中30本で不一致→架空のタイムスタンプ・汎用テンプレ文言にフォールバックしていた（ハルシネーション温床）のを、動画IDから実字幕/Whisper文字起こしを再取得する方式へ根本修正。実データ取得不能な動画は架空データで埋めずスキップするよう全経路を修正。
-- Geminiモデル候補のうち`gemini-1.5-flash`/`gemini-2.0-flash`が実測で404死亡確認済みだったのを、生存確認済みの`gemini-3.1-flash-lite`/`gemini-3.5-flash-lite`へ差し替え。
-- チャンピオン名が`.lower()`のみで正規化されておらず`Kha'Zix`等で存在しないファイル名になり生成結果が静かに破棄されていたのを`normalize_champion_id()`で統一。
-- ついでに発覚: Whisperフォールバックの`from scripts.whisper_transcriber import ...`が直接スクリプト実行時に毎回`ModuleNotFoundError`で失敗し、実質一度も機能していなかったのを修正。
-
-`scripts/ops_health_check.py`に`check_youtube_automation_freshness()`を追加(youtube系タスクが3時間以上起票されなければWARN)。**次回セッションの引き継ぎ事項**: この新チェックの動作確認が未実施、Phase2第1〜3弾の実バッチ実行（Gemini課金が発生するため事前確認必須）が未着手。詳細は`TODO.md`のPhase2節を参照。
 
 ---
 
@@ -299,7 +80,7 @@ Claude で開発・コード修正を行う際は、以下のルールを必ず�
 
 1. **日本語対応の徹底**: 思考・コードコメント・応答・進捗表示は全て日本語で行う。
 2. **Next.js の絶対パスエイリアス禁止**: `04_PORTAL` 内のコードで `@/` インポートは絶対に使用しない（常に `../../` などの相対パスを使用）。
-3. **作業前確認 (y/n)**: ファイル変更・削除・コマンド実行の前に作業計画を報告し確認を取る。
+3. **作業前確認 (y/n)**: リスクの高い操作（削除・機密変更・広範な書き換え）の前に作業計画を報告し確認を取る。非破壊操作（調査・テスト・軽微な修正）は自律実行可（詳細: `.claude/rules/confirmation.md`）。
 4. **AI臭さの排除**: 記事や文章生成時にポエミーな比喩表現（王、舞など）を使用しない。
 5. **Supabase Identity 列の個別 Update 運用**: Identity 列を含むテーブルへの Upsert/Insert エラーを防ぐため、個別 Update を並列実行する。
 
@@ -307,15 +88,11 @@ Claude で開発・コード修正を行う際は、以下のルールを必ず�
 
 ## 📋 5. 残タスク・Sovereign OS v8.0 ロードマップ
 
-現在 `02_FACTORY/TODO.md` に記載されている未完了タスクおよび技術的負債です。Claude 上で次に行う作業の参考にしてください。
+現在の未完了タスクおよび技術的負債は `02_FACTORY/TODO.md` に集約しています。そちらを参照してください。主な柱:
 
-- [ ] **コンテンツ収益化の運用**
-  - [ ] 新規アフィリエイト記事の構成案作成 ＆ 投稿
-  - [ ] YouTube動画解析ジョブの監視と辞典整理状況の確認
-- [ ] **Sovereign OS v8.0 への移行（技術的負債解消）**
-  - [ ] **APIファースト化**: `04_PORTAL` (Next.js) から Supabase DB への直接アクセスを廃止し、FastAPI Gateway (`api.py`) 経由に統一。
-  - [ ] **ジョブキュー統合**: SQLite SovereignQueue と Supabase edge_tasks の2系統キューを SovereignQueue へ一本化。
-  - [ ] **スクリプト大掃除**: `04_PORTAL/scripts/` 内の重複旧スクリプトを消去。
+- コンテンツ収益化の運用（アフィリエイト記事・YouTube動画解析ジョブ監視）
+- Sovereign OS v8.0への移行（APIファースト化、ジョブキュー統合、スクリプト大掃除）
+- 動画解析インフラ進化（Phase2: 主要JGチャンピオン再解析バッチ、Phase3: 自律ナレッジループ）
 
 ---
 
