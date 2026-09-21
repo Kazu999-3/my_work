@@ -33,7 +33,7 @@
   - **実戦バイブル (主力プール・全18体配備完了 / 全体Blueprint完備)**:
     - **🌲 JG/TOP主力 (プロ実演クリップ搭載 - 13体)**:
       - [`jarvaniv_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/jarvaniv_tactics_bible.md) / [`zyra_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/zyra_tactics_bible.md) / [`lillia_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/lillia_tactics_bible.md) / [`graves_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/graves_tactics_bible.md)
-      - [`amumu_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/amumu_tactics_bible.md) / [`shyvana_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/shyvana_tactics_bible.md) / [`nocturne_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/nocturne_tactics_bible.md) / [`wukong_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/wukong_tactics_bible.md) ([`monkeyking`](file:///d:/my_work/01_INTEL/tactics/monkeyking_tactics_bible.md))
+      - [`amumu_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/amumu_tactics_bible.md) / [`shyvana_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/shyvana_tactics_bible.md) / [`nocturne_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/nocturne_tactics_bible.md) / [`monkeyking_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/monkeyking_tactics_bible.md)（ウーコン。DDragon公式IDが`MonkeyKing`のため、以前あった`wukong_`版は2026-09-21に統合・削除済み）
       - [`aatrox_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/aatrox_tactics_bible.md) / [`viego_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/viego_tactics_bible.md) / [`leesin_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/leesin_tactics_bible.md) / [`khazix_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/khazix_tactics_bible.md) / [`kindred_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/kindred_tactics_bible.md)
     - **⚔️ TOP/Fighter主力 (3段階勝ちパターン Blueprint 完備 - 5体)**:
       - [`xinzhao_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/xinzhao_tactics_bible.md) / [`darius_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/darius_tactics_bible.md) / [`jax_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/jax_tactics_bible.md)
@@ -47,10 +47,9 @@
 ブログ記事、note 有料マガジン、アフィリエイト関連アセットの保管場所です。
 
 - **[01_DRAFTS (作成中の下書き)](file:///d:/my_work/02_FACTORY/01_DRAFTS/)**
-  - **[note/](file:///d:/my_work/02_FACTORY/01_DRAFTS/note/)**: 現在執筆中の note 記事（500円モデル等）のドラフト。
-  - **[sns/](file:///d:/my_work/02_FACTORY/01_DRAFTS/sns/)**: 宣伝用 X（Twitter）スレッドの下書き。
-- **[02_PUBLISHED (投稿完了アーカイブ)](file:///d:/my_work/02_FACTORY/02_PUBLISHED/)**
-  - すでに公開・配信が完了した記事・ポストを格納する書庫。
+  - **[sns/](file:///d:/my_work/02_FACTORY/01_DRAFTS/sns/)**: 宣伝用 X（Twitter）スレッドの下書き（全187件の一覧は [`sns/INDEX.md`](file:///d:/my_work/02_FACTORY/01_DRAFTS/sns/INDEX.md)）。
+  - ※ note 記事のドラフトは `02_FACTORY/note_drafts/` に保管（`.gitignore`対象のためリポジトリには含まれません）。公開管理・成績記録はポータルの `/admin/analytics` と `note_articles` テーブル側で行います。
+- ※ 旧 `02_PUBLISHED/`（投稿完了アーカイブ）は現存しません。公開済み記事の管理はポータルの `/admin/analytics` に一本化済みです。
 - **[03_ASSETS (定常アセット・ナレッジ)](file:///d:/my_work/02_FACTORY/03_ASSETS/)**
   - **[アフィリエイト知識 (affiliate_knowledge.md)](file:///d:/my_work/02_FACTORY/03_ASSETS/affiliate_knowledge.md)**: ASPや案件ごとの提携情報・攻略法。
   - **[アフィリエイトリンク集 (affiliate_links.json)](file:///d:/my_work/02_FACTORY/03_ASSETS/affiliate_links.json)**: すぐにコピペで使える計測リンク一覧。
