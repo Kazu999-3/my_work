@@ -87,7 +87,9 @@ export async function GET(req: NextRequest) {
     // dict-health/route.tsのgetCurrentPatch()と同じロジック(西暦下2桁基準への変換)。
     const dictHealthCurrentPatch = await (async () => {
       try {
-        const res = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
+        const res = await fetch('https://ddragon.leagueoflegends.com/api/versions.json', {
+          signal: AbortSignal.timeout(5000),
+        });
         const versions = await res.json();
         const [rawMajor, rawMinor] = (versions[0] || '16.15.1').split('.');
         return `${parseInt(rawMajor, 10) + 10}.${rawMinor}`;

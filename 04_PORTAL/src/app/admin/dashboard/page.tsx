@@ -150,6 +150,8 @@ export default function AdminDashboardPage() {
       .catch(() => setIsAuthenticated(false));
   }, []);
 
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
   const fetchData = async (silent = false) => {
     if (!silent) setIsRefreshing(true);
     try {
@@ -164,6 +166,10 @@ export default function AdminDashboardPage() {
         if (data.dictHealthSummary) setDictHealthSummary(data.dictHealthSummary);
         if (data.needsAttention) setNeedsAttention(data.needsAttention);
         setLastUpdated(new Date().toLocaleTimeString('ja-JP'));
+        setFetchError(null);
+      } else {
+        const errText = await res.text().catch(() => '');
+        setFetchError(`データの取得に失敗しました (HTTP ${res.status}): ${errText.slice(0, 100)}`);
       }
 
       // ヘルスステータスの取得
@@ -173,8 +179,9 @@ export default function AdminDashboardPage() {
           if (d.success) setHealthStatus(d.health);
         })
         .catch(() => {});
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching dashboard stats:', err);
+      setFetchError(`ネットワークエラーが発生しました: ${err?.message || '不明なエラー'}`);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -235,17 +242,7 @@ export default function AdminDashboardPage() {
     champion_db_bulk_update: '/champions?scope=health',
   };
 
-  if (isAuthenticated === null || isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f7f5f0]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-500/20 border-t-amber-600" />
-          <p className="text-xs font-bold text-stone-500">システム運用ダッシュボードを読み込み中...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // 認証チェック完了後に未認証であれば即座にログイン案内を表示
   if (isAuthenticated === false) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-[#f7f5f0] text-stone-900 font-sans">
@@ -261,6 +258,18 @@ export default function AdminDashboardPage() {
           >
             ログインページへ
           </a>
+        </div>
+      </div>
+    );
+  }
+
+  // 認証中、またはデータ読み込み中のスピナー表示
+  if (isAuthenticated === null || isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f7f5f0]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-500/20 border-t-amber-600" />
+          <p className="text-xs font-bold text-stone-500">システム運用ダッシュボードを読み込み中...</p>
         </div>
       </div>
     );
@@ -363,6 +372,14 @@ export default function AdminDashboardPage() {
             )}
           </div>
         </header>
+
+        {/* ⚠️ データ取得エラー通知（APIタイムアウト・ネットワーク障害時） */}
+        {fetchError && (
+          <div className="p-3.5 rounded-2xl bg-rose-50/90 border border-rose-200/80 text-rose-950 flex items-center gap-2.5 shadow-2xs backdrop-blur-md">
+            <ShieldAlert size={16} className="text-rose-600 shrink-0" />
+            <span className="text-xs font-bold">{fetchError}</span>
+          </div>
+        )}
 
         {/* 🛡️ Sovereign OS ナレッジ ＆ システム全系ヘルスステータス */}
         {healthStatus && (
