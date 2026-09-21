@@ -148,7 +148,10 @@ class KillLineCalculator:
             "ignite_damage": int(ignite_dmg),
             "kill_hp_percent": kill_hp_percent,
             "my_max_hp": int(my_max_hp),
-            "safe_hp_threshold": int(my_max_hp - total_lethal_damage),
+            # ★ 2026-09-22修正: 以前は `my_max_hp - total_lethal_damage`(満タンから
+            # フルコンボを受けた後の残HP)を「安全域」として返していたが、これは安全ラインではない。
+            # 実際に死ぬのは「現在HP <= 確定ダメージ」のときなので、安全ラインは確定ダメージそのもの。
+            "safe_hp_threshold": int(total_lethal_damage),
             "danger_badge": danger_badge,
             "danger_color": danger_color,
             "advice": advice,

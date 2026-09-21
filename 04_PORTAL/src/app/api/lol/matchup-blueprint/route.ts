@@ -115,7 +115,13 @@ function calculateKillLine(
 
   // 5. 即死境界割合
   const killHpPercent = Math.min(100, Math.round((totalLethal / myMaxHp) * 100));
-  const safeHpThreshold = Math.max(0, Math.round(myMaxHp - totalLethal));
+  // ★ 2026-09-22修正: 以前は `myMaxHp - totalLethal` を「安全域」として出していたが、
+  // これは「満タンからフルコンボを受けた後の残HP」であって安全ラインではない。
+  // 実際に死ぬのは「現在HP <= 確定ダメージ」のときなので、安全ラインは確定ダメージそのもの。
+  // 旧式だと、確定ダメージが最大HPの半分を超える対面で
+  // 「即死境界700HPなのに安全域>450HP」という矛盾した表示になり、
+  // 500HPで安全だと誤認させる(実際は即死する)危険な案内になっていた。
+  const safeHpThreshold = totalLethal;
 
   // 6. 危険度バッジ＆アドバイス
   let dangerBadge = '安全圏 🟢';
