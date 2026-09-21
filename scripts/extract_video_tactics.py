@@ -21,6 +21,7 @@ import os
 import sys
 import re
 import json
+import time
 import argparse
 import subprocess
 from pathlib import Path
@@ -489,7 +490,7 @@ def append_to_tactics_bible(
     """戦術バイブル (01_INTEL/tactics/{champ}_tactics_bible.md) へ自動マウント"""
     if not action_markdown:
         print(f"[INFO] {video_id}: 実データに基づくアクション手順が生成できなかったため、マウントをスキップします。")
-        return
+        return False
 
     if not champion or champion == "Unknown":
         champion = "Aatrox"
@@ -500,8 +501,8 @@ def append_to_tactics_bible(
     tactics_file = INTEL_TACTICS_DIR / f"{champion.lower()}_tactics_bible.md"
     if not tactics_file.exists():
         if not create_if_missing:
-            print(f"[INFO] バイブル未存在のため、スキップまたは新規作成: {tactics_file.name}")
-            return
+            print(f"[INFO] バイブル未存在のためマウントできません(要バイブル作成): {tactics_file.name}")
+            return False
         # 動画深堀りモード等、ユーザーが明示的にリクエストした単発解析では
         # バイブル未存在でも結果を静かに消さず、最小限のファイルを新規作成する。
         tactics_file.write_text(f"# {champion} 戦術バイブル\n", encoding="utf-8")
@@ -512,7 +513,7 @@ def append_to_tactics_bible(
     # 既に同じ動画が登録されているかチェック
     if video_id in content:
         print(f"ℹ️ 動画 {video_id} は既に {tactics_file.name} に登録済みです。")
-        return
+        return False
 
     # URLサニタイズ（AI出力の表記ブレ補正）
     action_markdown = re.sub(r'youtu\.be=([a-zA-Z0-9_-]+)', r'youtu.be/\1', action_markdown)
@@ -528,12 +529,13 @@ def append_to_tactics_bible(
     if dry_run:
         print(f"\n🔍 [DRY-RUN] {tactics_file.name} への追記予定内容:")
         print(video_section)
-        return
+        return True
 
     with open(tactics_file, "a", encoding="utf-8") as f:
         f.write("\n" + video_section)
 
     print(f"💾 {tactics_file.name} へ「{section_heading.lstrip('#').strip()}」を自動追記しました！")
+    return True
 
 def run_batch_extraction(limit=5, dry_run=False):
     """
@@ -548,36 +550,76 @@ def run_batch_extraction(limit=5, dry_run=False):
         print(f"[WARN] ディレクトリが存在しません: {BIBLE_DIR}")
         return
 
-    files = list(BIBLE_DIR.glob("*.md"))
-    processed_count = 0
+    # INDEX.md はマスターインデックスであり動画ではない。以前はこれも動画として
+    # 処理しようとして「Incomplete YouTube ID INDEX」エラーを出していた。
+    files = [f for f in BIBLE_DIR.glob("*.md") if f.stem.upper() != "INDEX"]
+
+    mounted = 0
+    skipped_no_bible = []
+    skipped_no_transcript = []
+    already_mounted = 0
+    attempted = 0
 
     for md_path in files:
-        if processed_count >= limit:
+        if mounted >= limit:
             break
 
-        video_id, detected_champ, title, raw_text = extract_tactics_from_bible_or_url(md_path)
-        champ = normalize_champion_id(detected_champ) if detected_champ != "Unknown" else "JarvanIV"
+        # ★ メタデータ(ローカルファイル読み取り=無料)だけで先に判定し、ネットワーク取得や
+        # Gemini呼び出しといった高コスト処理に入る前に除外する。以前はいきなり
+        # extract_tactics_from_bible_or_url() を呼んでいたため、結局マウントできない動画に
+        # 対しても毎回yt-dlp取得(と429の消費)を払っていた。
+        meta_video_id, meta_champ, meta_title = extract_metadata_from_bible_file(md_path)
+        if not meta_video_id:
+            continue
+        champ = normalize_champion_id(meta_champ) if meta_champ and meta_champ != "Unknown" else "JarvanIV"
         tactics_file = INTEL_TACTICS_DIR / f"{champ.lower()}_tactics_bible.md"
 
-        # 既にマウント済みか確認
-        if tactics_file.exists():
-            content = tactics_file.read_text(encoding="utf-8")
-            if video_id in content:
-                continue
+        if not tactics_file.exists():
+            # マウント先が無い動画は、解析しても結果が捨てられるだけなので取得前に除外する。
+            skipped_no_bible.append((meta_video_id, champ))
+            continue
 
-        print(f"\n[{processed_count + 1}/{limit}] 🎬 解析中: {title[:40]} ({champ} / {video_id})")
+        if meta_video_id in tactics_file.read_text(encoding="utf-8", errors="replace"):
+            already_mounted += 1
+            continue
+
+        attempted += 1
+        # 連続アクセスでYouTubeの字幕APIが429を返すため、2本目以降は間隔を空ける。
+        # (2026-09-21実測: 間隔なしの連続実行で28本中6本が429で取りこぼし)
+        if attempted > 1:
+            time.sleep(5)
+
+        video_id, detected_champ, title, raw_text = extract_tactics_from_bible_or_url(md_path)
+        title = title or meta_title or ""
+        print(f"\n[試行{attempted} / マウント済み{mounted}件] 🎬 解析中: {title[:40]} ({champ} / {video_id})")
+
         compressed_text = compress_vtt_transcript(raw_text)
         if not compressed_text:
             # ★ 実字幕/Whisper文字起こしが両方とも取得できなかった場合、
             # 架空のタイムスタンプで埋めずにこの動画をスキップする(パターン5対策)。
             print(f"[WARN] {video_id}: 実字幕/音声認識テキストが取得できずスキップします。")
+            skipped_no_transcript.append((video_id, champ))
             continue
 
         action_markdown = generate_action_steps_with_ai(video_id, champ, title, compressed_text)
-        append_to_tactics_bible(champ, video_id, title, action_markdown, dry_run=dry_run)
-        processed_count += 1
+        # ★ 実際にマウントできた場合だけ数える。以前は append の成否に関わらず
+        # カウントアップしていたため、バイブル未存在等で結果が捨てられた動画も
+        # 「マウントしました」に含まれ、実測7本なのに12本と報告していた
+        # (`.claude/rules/llm-health.md`が禁じる虚偽の成功報告)。
+        if append_to_tactics_bible(champ, video_id, title, action_markdown, dry_run=dry_run):
+            mounted += 1
 
-    print(f"\n🎉 [BATCH 完了] 合計 {processed_count} 本の動画アクション手順を戦術バイブルへマウントしました！")
+    print("\n" + "=" * 65)
+    print(f"🎉 [BATCH 完了] 実際にマウントできた動画: {mounted} 本")
+    print(f"   - 解析を試みた動画            : {attempted} 本")
+    print(f"   - 既にマウント済みでスキップ  : {already_mounted} 本")
+    print(f"   - 字幕/音声が取得できず失敗   : {len(skipped_no_transcript)} 本")
+    print(f"   - マウント先バイブルが無く除外: {len(skipped_no_bible)} 本")
+    if skipped_no_bible:
+        champs = sorted({c for _, c in skipped_no_bible})
+        print(f"     ↳ 先に戦術バイブルの作成が必要: {', '.join(champs)}")
+        print(f"       (scripts/generate_tactics_bible.py で作成できます)")
+    print("=" * 65)
 
 def main():
     parser = argparse.ArgumentParser(description="新世代 動画戦術アクション抽出エンジン (B/C案)")
