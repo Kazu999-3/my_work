@@ -398,22 +398,11 @@ def generate_action_steps_with_ai(video_id, champion, title, compressed_text):
 {compressed_text}
 """
 
-    if api_key:
-        from google import genai
-        client = genai.Client(api_key=api_key)
-        # 2026-09-20 gemini-model-health-check実測: gemini-1.5-flash/gemini-2.0-flashは
-        # 404 NOT_FOUNDで死亡確認済みのため除去し、実際に生存確認済みのモデルのみ使用する。
-        candidate_models = ["gemini-2.5-flash", "gemini-3.1-flash-lite", "gemini-3.5-flash-lite"]
-        for m_name in candidate_models:
-            try:
-                response = client.models.generate_content(
-                    model=m_name,
-                    contents=prompt
-                )
-                if response and response.text:
-                    return response.text.strip()
-            except Exception as e:
-                print(f"[WARN] Gemini モデル {m_name} 失敗 ({e})。次を試行...")
+    # Geminiの複数モデルフォールバックは _call_gemini_with_fallback() に集約済み
+    # (深堀りモードと共通)。APIキー未設定・全モデル失敗の場合はNoneが返る。
+    gemini_result = _call_gemini_with_fallback(prompt)
+    if gemini_result:
+        return gemini_result
 
     # ローカル Ollama へのフォールバック
     try:
