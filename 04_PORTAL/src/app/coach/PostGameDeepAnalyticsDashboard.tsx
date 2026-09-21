@@ -84,8 +84,6 @@ interface PostGameData {
     rating: string;
   };
   build_audit: {
-    score: number;
-    grade: string;
     summary: string;
     items_audited: {
       item_name: string;
@@ -96,7 +94,6 @@ interface PostGameData {
   };
   timing_scaling: {
     phase: string;
-    win_rate: number;
     impact: string;
     status: string;
   }[];
@@ -512,10 +509,10 @@ export default function PostGameDeepAnalyticsDashboard({
           <div className="flex items-center justify-between">
             <span className="text-xs font-black text-stone-900 flex items-center gap-1.5">
               <ShoppingBag className="w-4 h-4 text-sky-600" />
-              2. ビルド選択の分岐監査 (Build Audit)
+              2. アイテム購入タイムライン
             </span>
-            <span className="text-[11px] font-black text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded border border-amber-200 font-mono">
-              スコア: {data.build_audit.score}点 ({data.build_audit.grade}ランク)
+            <span className="text-[10px] font-bold text-stone-500 bg-stone-100 px-2 py-0.5 rounded border border-stone-200">
+              購入記録（自動評価なし）
             </span>
           </div>
 

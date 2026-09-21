@@ -57,8 +57,13 @@ export async function GET(request: NextRequest) {
       puuid = await fetchPuuidByRiotId(gName, tLine, apiKey);
     }
 
+    // ★ 2026-09-22: 以前はPUUID未指定時に環境変数 KAZURIN_PUUID → DBの'かずき' の順で
+    // 暗黙フォールバックしており、他の人がこの画面を開くと**他人の試合が自分の解析結果**
+    // として表示される状態だった。誰の解析かを戻り値で明示し、UIで確認できるようにする。
+    let resolvedFromFallback = false;
     if (!puuid) {
       puuid = process.env.KAZURIN_PUUID || '';
+      if (puuid) resolvedFromFallback = true;
     }
 
     if (!puuid) {
@@ -70,6 +75,7 @@ export async function GET(request: NextRequest) {
 
       if (player && player.puuid) {
         puuid = player.puuid;
+        resolvedFromFallback = true;
       } else if (player && player.ign && player.ign.includes('#')) {
         const [gName, tLine] = player.ign.split('#');
         puuid = await fetchPuuidByRiotId(gName.trim(), tLine.trim(), apiKey);
@@ -306,7 +312,9 @@ export async function GET(request: NextRequest) {
       const visionScore = Math.max(30, Math.min(95, Math.round(avgVision * 2.2)));
       const winRateScore = multiWinRate;
 
-      const radar_metrics = [
+      // ★ 2026-09-22: 「集団戦貢献度」「オブジェクト関与」は勝敗フラグから出した固定値
+    // (isWin ? 88 : 65 等)で未計測だったため削除した。残る項目は実測値から算出している。
+    const radar_metrics = [
         { subject: "レーン戦火力", my_score: Math.max(50, Math.min(98, 60 + Math.round(avgGoldDiff15 / 25))), target_score: 85, diff: `${avgGoldDiff15 >= 0 ? '+' : ''}${Math.round(avgGoldDiff15 / 25)}`, status: avgGoldDiff15 >= 0 ? "ダイヤ級 🟢" : "改善余地 🟡" },
         { subject: "CSペース (15分)", my_score: csScore, target_score: 88, diff: `${csScore >= 88 ? '+' : ''}${csScore - 88}`, status: csScore >= 88 ? "上位水準 🟢" : "要改善 🔴" },
         { subject: "視界スコア", my_score: visionScore, target_score: 80, diff: `${visionScore >= 80 ? '+' : ''}${visionScore - 80}`, status: visionScore >= 80 ? "優秀 🟢" : "要改善 🔴" },
@@ -359,7 +367,9 @@ export async function GET(request: NextRequest) {
             { time_str: "平均 17:30", gold_at_recall: 3600, bought_items: ["第2コア / 防御"], wave_state: "集団戦前リコール", loss_cs: 1, loss_gold: 40, evaluation: "集団戦準備 🟢", detail: "ドラゴン・オブジェクト前の先制アイテム補充。" },
           ],
           total_loss_gold: 70,
-          rating: `直近${totalValid}戦 平均テンポ維持率 ${multiWinRate >= 50 ? '92%' : '82%'} (${multiWinRate >= 50 ? '極めて良好' : '安定'})`,
+          // ★ 2026-09-22: 以前は「テンポ維持率 92%/82%」という勝率から出した固定値を
+          // 表示していたが、テンポ維持率という指標を計測していないため削除した。
+          rating: `直近${totalValid}戦のリコール記録`,
         },
         build_audit: {
           score: multiWinRate >= 50 ? 92 : 84,
@@ -565,14 +575,16 @@ export async function GET(request: NextRequest) {
       .map((p, idx) => ({
         item_name: p.itemName,
         timing: `${p.time_str} (${idx === 0 ? '1stアイテム' : idx === 1 ? '2ndアイテム' : '3rdアイテム'})`,
-        audit: idx === 0 ? '最適解 👑' : '適格 🟢',
-        reason: `${p.time_str}時点での購入により、${enemyChamp} に対する戦闘力と耐久力を即座に補強。`,
+        // ★ 内容を検証していないため「最適解」等の評価は付けない(2026-09-22)
+        audit: idx === 0 ? '1stアイテム' : idx === 1 ? '2ndアイテム' : '3rdアイテム',
+        reason: `${p.time_str} に購入。`,
       }));
 
+    // ★ 2026-09-22: score/grade は `isWin ? 94 : 82` とビルド内容を一切見ずに勝敗だけで
+    // 決めており、「ビルド監査 Sランク」という評価の体裁で表示されていた。評価できる
+    // 根拠が無いため廃止し、購入したアイテムと時刻という事実のみを提示する。
     const build_audit = {
-      score: isWin ? 94 : 82,
-      grade: isWin ? 'S' : 'A',
-      summary: `${myChamp} のパワースパイクに合わせた適切なアイテム選択と購入テンポを維持。`,
+      summary: `購入アイテムと購入時刻の記録です（ビルドの良し悪しの自動評価は行っていません）。`,
       items_audited: items_audited.length > 0 ? items_audited : [
         {
           item_name: "コアビルド完成",
@@ -666,10 +678,13 @@ export async function GET(request: NextRequest) {
     };
 
     // 時間帯別スケーリング
+    // ★ 2026-09-22: 以前は各フェーズに win_rate(68/72/65 等)を付けていたが、これは
+    // 勝敗フラグとゴールド差から三項演算子で出した固定値で、時間帯別の勝率を集計した
+    // ものではなかった。統計に見える数値なので削除し、この試合で観測できた内容だけを残す。
     const timing_scaling = [
-      { phase: "序盤 (〜15分)", win_rate: gold_diff_at_15 >= 0 ? 68 : 45, impact: gold_diff_at_15 >= 0 ? "高い (先行)" : "耐え展開", status: gold_diff_at_15 >= 0 ? "好調 🟢" : "要改善 🟠" },
-      { phase: "中盤 (15〜25分)", win_rate: isWin ? 72 : 50, impact: "主要オブジェクト戦", status: isWin ? "最強 👑" : "拮抗 🟡" },
-      { phase: "終盤 (25分〜)", win_rate: isWin ? 65 : 40, impact: "集団戦ポジショニング", status: isWin ? "勝利 🟢" : "警戒 🔴" },
+      { phase: "序盤 (〜15分)", impact: gold_diff_at_15 >= 0 ? "高い (先行)" : "耐え展開", status: gold_diff_at_15 >= 0 ? "好調 🟢" : "要改善 🟠" },
+      { phase: "中盤 (15〜25分)", impact: "主要オブジェクト戦", status: isWin ? "最強 👑" : "拮抗 🟡" },
+      { phase: "終盤 (25分〜)", impact: "集団戦ポジショニング", status: isWin ? "勝利 🟢" : "警戒 🔴" },
     ];
 
     // レーダー解析指標 (実戦スタッツから算出)
@@ -683,8 +698,6 @@ export async function GET(request: NextRequest) {
       { subject: "CSペース (15分)", my_score: Math.max(40, Math.min(98, csScore)), target_score: 88, diff: `${csScore >= 88 ? '+' : ''}${csScore - 88}`, status: csScore >= 88 ? "上位水準 🟢" : "要改善 🔴" },
       { subject: "視界スコア", my_score: Math.max(30, Math.min(95, visionScore)), target_score: 80, diff: `${visionScore >= 80 ? '+' : ''}${visionScore - 80}`, status: visionScore >= 80 ? "優秀 🟢" : "要改善 🔴" },
       { subject: "被ソロキル回避", my_score: myParticipant.deaths <= 3 ? 92 : myParticipant.deaths <= 6 ? 75 : 55, target_score: 85, diff: myParticipant.deaths <= 3 ? "+7" : "-10", status: myParticipant.deaths <= 3 ? "ダイヤ級 🟢" : "要改善 🟠" },
-      { subject: "集団戦貢献度", my_score: isWin ? 88 : 65, target_score: 80, diff: isWin ? "+8" : "-15", status: isWin ? "ダイヤ級 🟢" : "要改善 🟡" },
-      { subject: "オブジェクト関与", my_score: isWin ? 85 : 70, target_score: 82, diff: isWin ? "+3" : "-12", status: isWin ? "標準以上 🟢" : "プラチナ級 🟡" },
     ];
 
     // 最大のボトルネックと改善アドバイス
@@ -707,6 +720,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      // ★ PUUID未指定で既定プレイヤーへフォールバックした場合、誰の解析なのかを
+      // UIが明示できるようフラグと対象名を返す(2026-09-22)。
+      resolved_from_fallback: resolvedFromFallback,
+      analyzed_player: myParticipant?.riotIdName || null,
       selected_match_id: targetMatchId,
       recent_matches: recentMatches,
       cross_match_summary,
@@ -726,7 +743,8 @@ export async function GET(request: NextRequest) {
       recall_efficiency: {
         events: recall_events,
         total_loss_gold: recall_events.reduce((acc, e) => acc + (e.loss_gold || 0), 0),
-        rating: `テンポ維持率 ${isWin ? '92%' : '80%'} (${isWin ? '極めて優秀' : '改善余地あり'})`,
+        // ★ 2026-09-22: 勝敗から出していた架空の「テンポ維持率」を削除（未計測のため）
+        rating: `リコール ${recall_events.length}回の記録`,
       },
       build_audit,
       control_ward_audit,
