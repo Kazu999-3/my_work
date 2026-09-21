@@ -234,6 +234,12 @@ def extract_tactics_from_bible_or_url(target_input):
                 }
             },
         }
+        # ★ 2026-09-21: cookie設定を追加。TODOには「cookies統合を配備」と記録されていたが、
+        # 実際に入っていたのは上のクライアント偽装だけで、cookie側は未配線だった。
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from yt_dlp_cookies import apply_cookie_opts
+        apply_cookie_opts(ydl_opts)
+
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(
                 f"https://www.youtube.com/watch?v={video_id}",

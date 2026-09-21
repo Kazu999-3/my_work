@@ -90,7 +90,16 @@ def download_audio_only(video_id: str, output_dir: Path) -> Path | None:
             }
         },
     }
-    
+
+    # ★ 2026-09-21: cookie設定を追加。ここが最も403を食らう経路(メタデータ・字幕は
+    # 通るのに音声DLだけが403になる実測結果)にもかかわらず、cookie設定を一切
+    # 読んでいなかった。`.env`のYT_DLP_COOKIES_FROMは停止済みのyoutube_absorber.pyしか
+    # 読んでおらず、現役のこの経路には届いていなかった。
+    import sys as _sys
+    _sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from yt_dlp_cookies import apply_cookie_opts
+    apply_cookie_opts(ydl_opts)
+
     if ffmpeg_exe:
         ydl_opts['ffmpeg_location'] = ffmpeg_exe
 
