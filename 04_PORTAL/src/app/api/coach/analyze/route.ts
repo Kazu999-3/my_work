@@ -495,8 +495,13 @@ CS/min: 直近${agg.csTrend.recent} / 以前${agg.csTrend.older}　Vision/min: �
         if (jsonStart >= 0 && jsonEnd > jsonStart) cleaned = cleaned.slice(jsonStart, jsonEnd + 1);
         parsed = JSON.parse(cleaned);
       } catch {
-        // パース失敗時は生テキストを1項目として返す（UI側で表示可能）
-        parsed = { menu: [{ title: '今週の練習', detail: raw.slice(0, 200), target: '' }], note: '' };
+        // パース失敗時は生テキストを返すが、整形に失敗した旨を明示する。
+        // (2026-09-22: 以前は note を空にしていたため、AIの生出力の断片が
+        //  整形済みの練習メニューであるかのように表示されていた)
+        parsed = {
+          menu: [{ title: '今週の練習（自動整形に失敗）', detail: raw.slice(0, 200), target: '' }],
+          note: '⚠️ AI応答の整形に失敗したため、生の出力を途中まで表示しています。再生成をお試しください。',
+        };
       }
 
       return NextResponse.json({
@@ -932,19 +937,15 @@ ${liveRoster ? `- ライブロスター情報あり` : ''}
         const jsonEnd = cleaned.lastIndexOf('}');
         if (jsonStart >= 0 && jsonEnd > jsonStart) cleaned = cleaned.slice(jsonStart, jsonEnd + 1);
         parsed = JSON.parse(cleaned);
-      } catch {
-        parsed = {
-          recommendedFocus: 'GRUB',
-          focusTitle: '上ルート（ヴォイドグラブ3体）優先',
-          confidenceScore: 80,
-          oneSentenceStrategy: '序盤はTOP/MIDの主導権を活かしてヴォイドグラブを確保し、タワー破壊ゴールドを先行させましょう。',
-          laneTasks: {
-            jg: '4:30までにフルクリアを完了し、4:45に上リバーへ侵入',
-            topMid: '4:50にウェーブをプッシュしてリバーに即合流',
-            bot: '無理に戦わず安全にファームし、敵JGの位置をコール'
-          },
-          resetTimingAlert: '4分30秒にリコールを完了させる'
-        };
+      } catch (err) {
+        // ★ 2026-09-22: 以前はここでAIのパース失敗を隠し、汎用の作戦文を
+        // 成功レスポンスとして返していた。しかも confidenceScore: 80 という
+        // 捏造した確信度を含み、UIには「AI診断 確信度80%」と表示されていた。
+        // 同ファイルの counter_pick と同様に、失敗は失敗として返す。
+        console.error('Failed to parse Gemini objective_priority response:', err);
+        return NextResponse.json({
+          error: 'オブジェクト優先度の診断生成に失敗しました。時間をおいて再試行してください。'
+        }, { status: 502 });
       }
 
       return NextResponse.json({
@@ -1111,19 +1112,14 @@ ${enemyChamps.join('\n')}
         console.warn('[win_condition] JSON parse error:', e);
       }
 
+      // ★ 2026-09-22: 以前はここでAIのパース失敗を隠し、どの構成でも同じ汎用文
+      // (「味方のパワースパイクに合わせて〜」「敵構成: バランス型」等)を
+      // 成功レスポンスとして返していた。実際にはチームを分析できていないため、
+      // 同ファイルの counter_pick と同様に失敗として返す。
       if (!parsed) {
-        parsed = {
-          winCondition: '味方のパワースパイクに合わせてオブジェクト主導権を握る',
-          teamCompType: { ally: '集団戦重視', enemy: 'バランス型' },
-          powerSpikeComparison: { early: '互角', mid: '味方有利', late: '互角', criticalWindow: '15〜25分' },
-          keyPlayerToFeed: '主導権を取りやすいレーンを優先支援',
-          dangerEnemy: '敵の主要キャリーの早期ロームを警戒',
-          jgGamePlan: [
-            '序盤: フルクリアから有利レーンへガンク',
-            '中盤: ドラゴン・ヴォイドグラブの管理徹底',
-            '終盤: キャリーのピールまたは敵後衛へのエンゲージ',
-          ],
-        };
+        return NextResponse.json({
+          error: '勝ち筋診断の生成に失敗しました。時間をおいて再試行してください。'
+        }, { status: 502 });
       }
 
       return NextResponse.json({ mode: 'win_condition', result: parsed });

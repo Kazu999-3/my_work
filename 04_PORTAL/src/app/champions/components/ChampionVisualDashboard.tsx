@@ -526,83 +526,11 @@ export default function ChampionVisualDashboard({
       }
     }
 
-    // デフォルトフォールバック（ロール・アーキタイプに応じたインテリジェントな相性推定）
-    if (goodAgainst.length === 0) {
-      if (internalRole === 'JG') {
-        goodAgainst.push(
-          { name: 'Amumu', note: 'カウンターJGで序盤キャンプを奪い主導権掌握' },
-          { name: 'Karthus', note: '序盤の森遭遇戦で一方的にキル奪取' }
-        );
-      } else if (internalRole === 'SUP') {
-        goodAgainst.push(
-          { name: 'Braum', note: '射程外からの継続ポークでシールドを無効化' },
-          { name: 'Nautilus', note: '接近前のハラスでエンゲージヘルスを削り取る' }
-        );
-      } else if (internalRole === 'MID') {
-        goodAgainst.push(
-          { name: 'TwistedFate', note: 'タイマン火力の差で主導権を取りローム阻止' },
-          { name: 'Veigar', note: '序盤のプッシュ力差でウェーブ押し込み圧殺' }
-        );
-      } else if (internalRole === 'BOT' || internalRole === 'ADC') {
-        goodAgainst.push(
-          { name: 'KogMaw', note: '序盤トレードの優位性を活かし主導権キープ' },
-          { name: 'Jinx', note: '序盤の主導権を取ってガンク合わせでキル' }
-        );
-      } else {
-        // TOPまたはデフォルト
-        switch (archetype) {
-          case 'ap_mage':
-            goodAgainst.push({ name: 'DrMundo', note: '持続バーンで回復を上回る' }, { name: 'Sion', note: 'ポーク主体で一方的に削れる' });
-            break;
-          case 'tank':
-            goodAgainst.push({ name: 'Vayne', note: 'CCチェインで序盤に圧殺' }, { name: 'Jinx', note: 'エンゲージで射程差を無効化' });
-            break;
-          case 'ad_assassin':
-            goodAgainst.push({ name: 'Xerath', note: '接近すれば一方的にキル' }, { name: 'KogMaw', note: '耐久のない後衛をワンコン' });
-            break;
-          default:
-            goodAgainst.push({ name: 'Sion', note: 'ウェーブ押し込み後のローム優位' }, { name: 'DrMundo', note: '回復阻害と序盤のトレード主導権' });
-        }
-      }
-    }
-    if (badAgainst.length === 0) {
-      if (internalRole === 'JG') {
-        badAgainst.push(
-          { name: 'LeeSin', note: '序盤の森遭遇戦でバースト即死リスク高' },
-          { name: 'Nocturne', note: 'R暗闇突進で視界遮断と逆サイド崩壊' }
-        );
-      } else if (internalRole === 'SUP') {
-        badAgainst.push(
-          { name: 'Blitzcrank', note: 'ブッシュからのロケットグラブ被弾で即死' },
-          { name: 'Pyke', note: 'ステルス接近からのスタン＆処刑R警戒' }
-        );
-      } else if (internalRole === 'MID') {
-        badAgainst.push(
-          { name: 'Zed', note: 'Lv6時の影コンボからのバースト即死ライン警戒' },
-          { name: 'Akali', note: '煙幕でのターゲット不可と急接近オールイン' }
-        );
-      } else if (internalRole === 'BOT' || internalRole === 'ADC') {
-        badAgainst.push(
-          { name: 'Draven', note: '序盤の斧回転AA火力が圧倒的、序盤殴り合い厳禁' },
-          { name: 'Samira', note: '接近オールインとWスキル消去による返り討ち' }
-        );
-      } else {
-        // TOPまたはデフォルト
-        switch (archetype) {
-          case 'ap_mage':
-            badAgainst.push({ name: 'Zed', note: '接近＆バーストで即死リスク' }, { name: 'Nocturne', note: 'R突進でポジション崩壊' });
-            break;
-          case 'tank':
-            badAgainst.push({ name: 'Fiora', note: '割合真のダメージで耐久が無意味' }, { name: 'Vayne', note: '銀の矢で最大HPが溶ける' });
-            break;
-          case 'ad_assassin':
-            badAgainst.push({ name: 'Rammus', note: 'AR反射と挑発で脅威が無力化' }, { name: 'Malphite', note: 'AR積みで物理DMGが通らない' });
-            break;
-          default:
-            badAgainst.push({ name: 'Fiora', note: 'W受けと割合ダメージに注意' }, { name: 'Irelia', note: 'スタック維持時のオールイン警戒' });
-        }
-      }
-    }
+    // ★ 2026-09-22: ここには「counterChampions が空のとき、ロール・アーキタイプ別に
+    // 有利/不利のチャンピオン名と対面コメントを生成する」フォールバックがあった。
+    // 実データではなく、同じアーキタイプのチャンピオンには全員同じ「天敵」が出る作りで、
+    // UIでは「🟢 有利な相手 (カモ)」「🔴 不利・天敵」としてアイコン付きで表示されるため、
+    // 辞典に登録された対面相性であるかのように見えていた。架空の相性は出さない方針に変更。
 
     return { goodAgainst, badAgainst };
   })();
@@ -1123,6 +1051,11 @@ export default function ChampionVisualDashboard({
                 </span>
               </div>
               <div className="space-y-2">
+                {matchupCounters.goodAgainst.length === 0 && (
+                  <p className="text-[11px] text-stone-500 font-medium p-3 rounded-xl bg-stone-50 border border-stone-200">
+                    有利な相手はまだ辞典に登録されていません。
+                  </p>
+                )}
                 {matchupCounters.goodAgainst.map((item, idx) => {
                   const isExpanded = expandedEnemy === item.name;
                   const matchupRecord = matchupsList?.find(
@@ -1160,10 +1093,12 @@ export default function ChampionVisualDashboard({
                         <div className="p-3 bg-white dark:bg-stone-950/90 border-t border-emerald-100 dark:border-emerald-900/30 text-xs space-y-1.5">
                           <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-black text-[11px]">
                             <BookMarked size={13} />
-                            <span>対面Sentinel実戦攻略メモ</span>
+                            <span>{matchupRecord?.strategy ? "対面Sentinel実戦攻略メモ" : "対面メモ（未登録）"}</span>
                           </div>
                           <p className="text-stone-700 dark:text-stone-300 leading-relaxed text-[11px] whitespace-pre-wrap">
-                            {matchupRecord?.strategy || `${item.name} に対する実戦メモ: ${item.note}。敵の主要スキル回避後に積極的にトレードを仕掛け、有利なレーン主導権またはJG侵入を維持してください。`}
+                            {/* ★ 2026-09-22: 以前はここで汎用文を出しており、見出しの
+                                「対面Sentinel実戦攻略メモ」と相まって実戦記録に見えていた */}
+                            {matchupRecord?.strategy || `この対面の実戦メモはまだ登録されていません。`}
                           </p>
                           {matchupRecord?.title && (
                             <div className="text-[10px] text-stone-400 italic">
@@ -1192,6 +1127,11 @@ export default function ChampionVisualDashboard({
                 </span>
               </div>
               <div className="space-y-2">
+                {matchupCounters.badAgainst.length === 0 && (
+                  <p className="text-[11px] text-stone-500 font-medium p-3 rounded-xl bg-stone-50 border border-stone-200">
+                    不利・天敵はまだ辞典に登録されていません。
+                  </p>
+                )}
                 {matchupCounters.badAgainst.map((item, idx) => {
                   const isExpanded = expandedEnemy === item.name;
                   const matchupRecord = matchupsList?.find(
@@ -1229,10 +1169,10 @@ export default function ChampionVisualDashboard({
                         <div className="p-3 bg-white dark:bg-stone-950/90 border-t border-rose-100 dark:border-rose-900/30 text-xs space-y-1.5">
                           <div className="flex items-center gap-1.5 text-rose-700 dark:text-rose-400 font-black text-[11px]">
                             <BookMarked size={13} />
-                            <span>天敵対策・即死回避メモ</span>
+                            <span>{matchupRecord?.strategy ? "天敵対策・即死回避メモ" : "天敵対策メモ（未登録）"}</span>
                           </div>
                           <p className="text-stone-700 dark:text-stone-300 leading-relaxed text-[11px] whitespace-pre-wrap">
-                            {matchupRecord?.strategy || `${item.name} への警戒メモ: ${item.note}。単独での甘えたポジションを避け、タワー下または味方の寄りを確認してから迎撃体制を取ること。`}
+                            {matchupRecord?.strategy || `この対面の警戒メモはまだ登録されていません。`}
                           </p>
                           {matchupRecord?.title && (
                             <div className="text-[10px] text-stone-400 italic">
@@ -1265,9 +1205,11 @@ export default function ChampionVisualDashboard({
                   🚫 避けるべき罠・不採用ビルド（没理由）
                 </h3>
               </div>
-              <span className="text-[10px] bg-rose-500/20 border border-rose-500/40 text-rose-300 px-2 py-0.5 rounded-full font-bold">
-                実戦検証済み
-              </span>
+              {tacticsData?.traps && tacticsData.traps.length > 0 && (
+                <span className="text-[10px] bg-rose-500/20 border border-rose-500/40 text-rose-300 px-2 py-0.5 rounded-full font-bold">
+                  実戦検証済み
+                </span>
+              )}
             </div>
 
             {tacticsData?.traps && tacticsData.traps.length > 0 ? (
@@ -1280,8 +1222,11 @@ export default function ChampionVisualDashboard({
                 ))}
               </div>
             ) : (
+              /* ★ 2026-09-22: 以前はここで全チャンピオン共通のAD前提の助言
+                 (「初手王剣ラッシュ…ステラックまたはデスダンス優先」)を出しており、
+                 ZyraやLuluのようなAPチャンピオンにも同じ文言が表示されていた。 */
               <div className="text-xs text-stone-400 p-3 rounded-xl bg-black/30 border border-white/5">
-                初手王剣ラッシュ（耐久不足により即死リスク高、ステラックまたはデスダンス優先）。
+                このチャンピオンの罠ビルド・没理由はまだ登録されていません。
               </div>
             )}
           </div>
