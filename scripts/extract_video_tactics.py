@@ -272,13 +272,107 @@ def extract_tactics_from_bible_or_url(target_input):
 
     return video_id, champion, title, ""
 
+def _call_gemini_with_fallback(prompt):
+    """
+    複数のGeminiモデルへ順にフォールバックしながら1つのプロンプトを実行する共通ヘルパー。
+    generate_action_steps_with_ai / generate_deep_dive_analysis の両方から利用する。
+    """
+    load_env()
+    api_key = os.environ.get("GEMINI_API_KEY_FREE") or os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        return None
+
+    from google import genai
+    client = genai.Client(api_key=api_key)
+    # 2026-09-20 gemini-model-health-check実測: gemini-1.5-flash/gemini-2.0-flashは
+    # 404 NOT_FOUNDで死亡確認済みのため除去し、実際に生存確認済みのモデルのみ使用する。
+    candidate_models = ["gemini-2.5-flash", "gemini-3.1-flash-lite", "gemini-3.5-flash-lite"]
+    for m_name in candidate_models:
+        try:
+            response = client.models.generate_content(model=m_name, contents=prompt)
+            if response and response.text:
+                return response.text.strip()
+        except Exception as e:
+            print(f"[WARN] Gemini モデル {m_name} 失敗 ({e})。次を試行...")
+    return None
+
+# 「動画深堀りモード」の3大分析観点。通常のバッチ抽出は秒数リンク付きアクション
+# カードを1種類だけ生成するが、こちらは同じ字幕を観点別に複数回AI解析し、
+# 1本の動画からより深い示唆を引き出す(ポータルUIからの単体リクエスト専用)。
+DEEP_DIVE_PERSPECTIVES = [
+    {
+        "key": "matchup",
+        "heading": "⚔️ 対面（マッチアップ）観点",
+        "prompt_focus": (
+            "このチャンピオンと対面レーン相手との駆け引きに焦点を当ててください。"
+            "レベル帯ごとの有利不利、トレードのタイミング、対面特有の警戒ポイント、"
+            "アイテムスパイクによる攻守の入れ替わりを具体的に指摘すること。"
+        ),
+    },
+    {
+        "key": "macro",
+        "heading": "🗺️ マクロ（試合全体）観点",
+        "prompt_focus": (
+            "レーン戦を超えた試合全体のマクロ判断に焦点を当ててください。"
+            "ウェーブ管理、オブジェクト（ドラゴン/ヘラルド/バロン）前後の立ち回り、"
+            "視界コントロール、ローム・サイドプッシュのタイミング判断を具体的に指摘すること。"
+        ),
+    },
+    {
+        "key": "build",
+        "heading": "🛠️ ビルド・ルーン観点",
+        "prompt_focus": (
+            "アイテムビルドとルーン選択の意図に焦点を当ててください。"
+            "なぜこの順序でアイテムを積んだか、対面や試合展開に応じたビルド分岐、"
+            "避けるべき罠アイテム（没理由）を具体的に指摘すること。"
+        ),
+    },
+]
+
+def generate_deep_dive_analysis(video_id, champion, title, compressed_text):
+    """
+    1本の動画を「対面」「マクロ」「ビルド」の3観点で多角的に深堀り解析する。
+    ポータルUIからの単体リクエスト専用モード（--deep-dive）。
+    """
+    sections = []
+    for perspective in DEEP_DIVE_PERSPECTIVES:
+        prompt = f"""
+あなたはLoLのチャレンジャー／プロコーチです。
+以下のYouTube動画のタイムスタンプ付き字幕（圧縮版）を、「{perspective['heading']}」に絞って深く分析してください。
+
+【対象動画】
+タイトル: {title}
+チャンピオン: {champion}
+動画URL: https://www.youtube.com/watch?v={video_id}
+
+【分析の焦点】
+{perspective['prompt_focus']}
+
+【出力要件】
+1. この観点で重要なシーンを2〜4つ厳選すること。
+2. 各シーンの先頭に、該当秒数のYouTube直リンクを必ず付与すること。
+   フォーマット: `### 🕒 [MM:SS](https://youtu.be/{video_id}?t=秒数) - シーン名`
+3. 与えられた字幕に実際に含まれる内容のみを根拠にし、字幕にない情報を創作しないこと。
+   該当するシーンが本当に見つからない場合は、無理に埋めず「この観点で言及できる明確なシーンは見当たりませんでした」とだけ書くこと。
+
+【タイムスタンプ付き字幕（圧縮版）】
+{compressed_text}
+"""
+        result = _call_gemini_with_fallback(prompt)
+        if result:
+            sections.append(f"### {perspective['heading']}\n\n{result}")
+        else:
+            print(f"[WARN] {video_id}: 深堀り観点「{perspective['key']}」のAI解析に失敗しました（Gemini API未設定または全モデル失敗）。")
+
+    if not sections:
+        return ""
+
+    return "\n\n---\n\n".join(sections)
+
 def generate_action_steps_with_ai(video_id, champion, title, compressed_text):
     """
     Gemini または Ollama を使って、秒数リンク付きのアクション手順カードを生成
     """
-    load_env()
-    api_key = os.environ.get("GEMINI_API_KEY_FREE") or os.environ.get("GEMINI_API_KEY")
-
     prompt = f"""
 あなたはLoLのチャレンジャー／プロコーチです。
 以下のYouTube動画のタイムスタンプ付き字幕（圧縮版）を分析し、
@@ -392,7 +486,11 @@ def generate_rule_based_actions(video_id, champion, compressed_text):
 
     return "\n\n".join(actions)
 
-def append_to_tactics_bible(champion, video_id, title, action_markdown, dry_run=False):
+def append_to_tactics_bible(
+    champion, video_id, title, action_markdown, dry_run=False,
+    section_heading="## 🎥 プロ実演アクションクリップ (High Elo Breakdown)",
+    create_if_missing=False,
+):
     """戦術バイブル (01_INTEL/tactics/{champ}_tactics_bible.md) へ自動マウント"""
     if not action_markdown:
         print(f"[INFO] {video_id}: 実データに基づくアクション手順が生成できなかったため、マウントをスキップします。")
@@ -406,11 +504,16 @@ def append_to_tactics_bible(champion, video_id, title, action_markdown, dry_run=
     champion = normalize_champion_id(champion)
     tactics_file = INTEL_TACTICS_DIR / f"{champion.lower()}_tactics_bible.md"
     if not tactics_file.exists():
-        print(f"[INFO] バイブル未存在のため、スキップまたは新規作成: {tactics_file.name}")
-        return
+        if not create_if_missing:
+            print(f"[INFO] バイブル未存在のため、スキップまたは新規作成: {tactics_file.name}")
+            return
+        # 動画深堀りモード等、ユーザーが明示的にリクエストした単発解析では
+        # バイブル未存在でも結果を静かに消さず、最小限のファイルを新規作成する。
+        tactics_file.write_text(f"# {champion} 戦術バイブル\n", encoding="utf-8")
+        print(f"[INFO] バイブルが存在しなかったため新規作成しました: {tactics_file.name}")
 
     content = tactics_file.read_text(encoding="utf-8")
-    
+
     # 既に同じ動画が登録されているかチェック
     if video_id in content:
         print(f"ℹ️ 動画 {video_id} は既に {tactics_file.name} に登録済みです。")
@@ -421,7 +524,7 @@ def append_to_tactics_bible(champion, video_id, title, action_markdown, dry_run=
     action_markdown = re.sub(r'youtu\.be/([a-zA-Z0-9_-]+)\.(en|ja|ko)', r'youtu.be/\1', action_markdown)
 
     video_section = f"""
-## 🎥 プロ実演アクションクリップ (High Elo Breakdown)
+{section_heading}
 > 📺 **参考動画**: [{title}](https://www.youtube.com/watch?v={video_id})
 
 {action_markdown}
@@ -435,7 +538,7 @@ def append_to_tactics_bible(champion, video_id, title, action_markdown, dry_run=
     with open(tactics_file, "a", encoding="utf-8") as f:
         f.write("\n" + video_section)
 
-    print(f"💾 {tactics_file.name} へ秒数リンク付きプロ実演クリップを自動追記しました！")
+    print(f"💾 {tactics_file.name} へ「{section_heading.lstrip('#').strip()}」を自動追記しました！")
 
 def run_batch_extraction(limit=5, dry_run=False):
     """
@@ -488,6 +591,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="ファイル保存を行わないドライラン")
     parser.add_argument("--batch", action="store_true", help="既存の動画群を一括バッチ処理してバイブルへマウント")
     parser.add_argument("--limit", type=int, default=3, help="バッチ処理時の最大動画数")
+    parser.add_argument("--deep-dive", action="store_true", help="1本の動画を対面/マクロ/ビルドの複数観点で深堀り解析(ポータルUIからの単体リクエスト専用)")
 
     args = parser.parse_args()
 
@@ -515,9 +619,32 @@ def main():
         # ★ 実字幕/Whisper文字起こしが無い場合、架空のタイムスタンプで埋めない
         # (known-regression-patternsパターン5)。中断して正直に失敗を報告する。
         print("[ERROR] 実字幕/音声認識テキストが取得できませんでした。処理を中断します。")
-        return
+        print(json.dumps({"success": False, "error": "字幕/音声認識テキストが取得できませんでした", "video_id": video_id}, ensure_ascii=False))
+        sys.exit(1)
 
     print(f"  ⚡ 圧縮後テキスト長: {len(compressed_text)} 文字 (約90%のトークン削減！)")
+
+    if args.deep_dive:
+        # 動画深堀りモード: 対面/マクロ/ビルドの3観点でそれぞれAI解析し、
+        # 通常のバッチ抽出とは別セクションとしてバイブルへマウントする。
+        print("\n🔬 動画深堀りモード: 対面/マクロ/ビルドの3観点で多角的に解析中...")
+        deep_dive_markdown = generate_deep_dive_analysis(video_id, champ, title, compressed_text)
+        if not deep_dive_markdown:
+            print("[ERROR] 深堀り解析がすべての観点で失敗しました（Gemini API未設定または全モデル失敗）。")
+            print(json.dumps({"success": False, "error": "深堀り解析が全観点で失敗しました", "video_id": video_id, "champion": champ}, ensure_ascii=False))
+            sys.exit(1)
+        print(deep_dive_markdown)
+
+        print("\n📦 戦術バイブルへのマウントを実行中...")
+        append_to_tactics_bible(
+            champ, video_id, title, deep_dive_markdown, dry_run=args.dry_run,
+            section_heading="## 🔬 動画深堀り解析 (Multi-Perspective Deep Dive)",
+            create_if_missing=True,
+        )
+        print("\n✨ 動画深堀り解析・連携が正常に完了しました！")
+        # edge_worker_daemon.pyが結果をedge_tasks.resultへ格納する際に使う構造化JSON要約
+        print(json.dumps({"success": True, "video_id": video_id, "champion": champ, "title": title, "mode": "deep_dive"}, ensure_ascii=False))
+        return
 
     # 3. AIによる秒数リンク付きアクション手順の抽出
     print("\n🧠 AIプロアクション手順を抽出中...")

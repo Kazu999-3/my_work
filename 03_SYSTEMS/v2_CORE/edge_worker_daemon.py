@@ -442,6 +442,19 @@ class EdgeWorkerDaemon:
                 )
                 self.update_task_status(task_id, "completed", result=result)
 
+            elif task_type == "video_deep_dive":
+                # ポータルUIからの単発リクエスト専用: 1本の動画を対面/マクロ/ビルドの
+                # 3観点で多角的に解析する「動画深堀りモード」(2026-09-21新設)。
+                video_url = payload.get("video_url")
+                champion = payload.get("champion", "")
+                logger.info(f"🔬 [video_deep_dive] 動画深堀り解析を実行: {video_url} ({champion or '自動判定'})")
+                args = [video_url]
+                if champion:
+                    args.extend(["--champ", champion])
+                args.append("--deep-dive")
+                result = self._run_subprocess_task("scripts/extract_video_tactics.py", args=args, timeout=600)
+                self.update_task_status(task_id, "completed" if result.get("success") else "failed", result=result)
+
             elif task_type == "youtube_queue_process":
                 # youtube_queue(動画解析キュー)の処理本体。以前はktm-cloud-worker.ymlの
                 # youtubeジョブ(GitHub Actions)経由のみだったが、共有IPがYouTube側から

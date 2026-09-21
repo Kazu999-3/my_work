@@ -7,6 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import YoutubeQueueManager from '../youtube/YoutubeQueueManager';
 import DiscordImportPanel from './DiscordImportPanel';
 import FeedbackInboxPanel from './FeedbackInboxPanel';
+import VideoDeepDiveRequestPanel from './VideoDeepDiveRequestPanel';
 import KnowledgePreviewModal, { type KnowledgePreview } from './KnowledgePreviewModal';
 
 function KnowledgeBaseContent() {
@@ -205,7 +206,12 @@ function KnowledgeBaseContent() {
       </div>
 
       {ingestMode === 'discord' && <DiscordImportPanel />}
-      {ingestMode === 'queue' && <YoutubeQueueManager />}
+      {ingestMode === 'queue' && (
+        <div className="space-y-6">
+          <VideoDeepDiveRequestPanel />
+          <YoutubeQueueManager />
+        </div>
+      )}
       {ingestMode === 'inbox' && <FeedbackInboxPanel />}
 
       {(ingestMode === 'url' || ingestMode === 'memo') && (
