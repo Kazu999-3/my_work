@@ -353,8 +353,8 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         targetEmbed.fields = targetEmbed.fields ? [...targetEmbed.fields] : [];
 
         // フィールド0: 土曜本戦カスタム (最多ランク基準自動マッチング), フィールド1: 日曜お祭りカスタム
-        if (!targetEmbed.fields[0]) targetEmbed.fields[0] = { name: "⚔️ 【土曜・本戦カスタム】 (0/10名) 🎯 基準: 未定 (最多帯自動編成)", value: "▫ 参加者: なし", inline: false };
-        if (!targetEmbed.fields[1]) targetEmbed.fields[1] = { name: "🎪 【日曜・お祭り部門】 (0/10名) 🎲 ランク不問 (MMRなし)", value: "▫ 参加者: なし", inline: false };
+        if (!targetEmbed.fields[0]) targetEmbed.fields[0] = { name: "⚔️ 土曜・本戦カスタム (0/10名)", value: "▫ 参加者: なし", inline: false };
+        if (!targetEmbed.fields[1]) targetEmbed.fields[1] = { name: "🎪 日曜・お祭りカスタム (0/10名)", value: "▫ 参加者: なし", inline: false };
 
         const targetFieldIdx = isSundayMode ? 1 : 0;
         const targetText = targetEmbed.fields[targetFieldIdx]?.value || "";
@@ -409,8 +409,8 @@ export async function handleButtonInteraction(interaction, env, ctx) {
             fLines.push(`- ${userMention}${styleBadge}${expBadgeStr}${lanePrefStr}`);
           }
           const count = fLines.length;
-          targetEmbed.fields[1].name = `🎪 【日曜・お祭り部門】 (${count}/10名) 🎲 ランク不問 (MMRなし)`;
-          targetEmbed.fields[1].value = fLines.length > 0 ? fLines.join('\n') : "▫ 参加者: なし\n※対象: 全員OK！特殊ルール/ランダム/オフメタ等大歓迎（MMR変動なし）";
+          targetEmbed.fields[1].name = `🎪 日曜・お祭りカスタム (${count}/10名)`;
+          targetEmbed.fields[1].value = fLines.length > 0 ? fLines.join('\n') : "▫ 参加者: なし\n※ランク不問・MMR変動なし。特殊ルール/ランダム/オフメタ等なんでも歓迎です";
         } else {
           // 土曜本戦カスタムのトグル/スタイル変更
           let fLines = (targetEmbed.fields[0].value || "").split('\n');
@@ -449,8 +449,12 @@ export async function handleButtonInteraction(interaction, env, ctx) {
             }
           }
 
-          targetEmbed.fields[0].name = `⚔️ 【土曜・本戦カスタム】 (${count}/10名) 🎯 基準: ${dominantTierName} (※MMR基準)`;
-          targetEmbed.fields[0].value = fLines.length > 0 ? fLines.join('\n') : "▫ 参加者: なし\n※対象: 全員エントリーOK！最も集まったKTM内戦MMR帯を基準に実力均等チーム分け";
+          // ★ 「🎯 基準: 〜」はバナー生成時に正規表現(/🎯 基準: (.+)$/)で読み戻す機械可読マーカーを
+          //   兼ねている。末尾に付けていた「(※MMR基準)」も正規表現が丸ごと拾ってしまい、バナー側に
+          //   「基準: シルバー帯(3名) (※MMR基準)」と二重に出ていたため削除し、意味の説明は
+          //   フィールドのvalue側へ移した(2026-09-21)。この行の書式を変える場合は読み戻し側も要修正。
+          targetEmbed.fields[0].name = `⚔️ 土曜・本戦カスタム (${count}/10名) 🎯 基準: ${dominantTierName}`;
+          targetEmbed.fields[0].value = fLines.length > 0 ? fLines.join('\n') : "▫ 参加者: なし\n※ランク制限はありません。集まった方の最多ランク帯を基準に、実力が均等になるよう自動でチーム分けします（MMR変動あり）";
         }
 
         // 参加メンバーの経験層分析（ユニーク参加者を集計）
@@ -493,12 +497,12 @@ export async function handleButtonInteraction(interaction, env, ctx) {
 
           const ratio = Math.round(((newCnt + lightCnt + returningCnt) / totalUniqueUsers) * 100);
           const expField = {
-            name: `👥 参加メンバーの経験層分析 (${totalUniqueUsers}名)`,
+            name: `👥 参加者の経験層（土日いずれかに参加: ${totalUniqueUsers}名）`,
             value: `🔰初参加: **${newCnt}名** | 🌱ライト: **${lightCnt}名** | ⏳復帰勢: **${returningCnt}名** | 👑常連: **${regularCnt}名**\n✨ 初心者・復帰勢歓迎！ (新規・ライト・復帰層: **${ratio}%**)`,
             inline: false
           };
 
-          const expIdx = targetEmbed.fields.findIndex(f => f.name.includes("経験層分析"));
+          const expIdx = targetEmbed.fields.findIndex(f => f.name.includes("経験層"));
           if (expIdx >= 0) {
             targetEmbed.fields[expIdx] = expField;
           } else {
@@ -506,7 +510,7 @@ export async function handleButtonInteraction(interaction, env, ctx) {
           }
         } else {
           // 参加者が0名の場合は経験層分析フィールドを削除
-          targetEmbed.fields = targetEmbed.fields.filter(f => !f.name.includes("経験層分析"));
+          targetEmbed.fields = targetEmbed.fields.filter(f => !f.name.includes("経験層"));
         }
 
         // 3. 最新の参加人数とステータスバナー作成

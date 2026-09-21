@@ -71,23 +71,39 @@ export function computeRecruitmentStatus(satCount, sunCount = 0, thirdParam = un
 }
 
 // components.js / scheduled.js 側のプログレスバー付きバナー文言
+//
+// ★ 行数の制約(2026-09-21): このバナーは components.js の BANNER_PATTERN
+//   (`**【...】**` の見出し + 後続1〜5行) で丸ごと置換される。後続行を6行以上にすると
+//   置換しきれず古い行が残るため、見出しを除いて最大5行に収めること。
+//   また見出しの文言を変える場合は BANNER_PATTERN の許容一覧にも必ず追加すること
+//   (同期漏れで「状態が変わっても本文が更新されない」固着バグが過去2回発生している)。
 export function buildStatusBanner(status, dominantTierText = '') {
   const satBar = renderProgressBar(status.saturdayCount, 10);
   const sunBar = renderProgressBar(status.sundayCount || 0, 10);
 
-  let header = `🔥 **【週末定期カスタム募集中！合計 ${status.totalJoined}/20名】**`;
+  // ★ 「合計X/20名」という のべ人数 は出さない(2026-09-21)。土曜と日曜は各10名で
+  //   独立に成立判定される別々の募集であり、合算値を最上段に出すと
+  //   ①「20名集めないと開催できない」と誤読される
+  //   ②土日両方にエントリーした人が二重カウントされ実人数と合わない
+  //   ③「合計10/20名」なのに土日ともに未成立、という矛盾した見え方になる
+  //   という3つの誤解を生んでいたため、各日の進捗だけを見せる構成に変更した。
+  let header = `🔥 **【週末定期カスタム募集中】**`;
   if (status.isAllReady) {
     header = `🎉 **【土日ともに10名達成！満員御礼】**`;
   } else if (status.isConfirmed) {
     header = `⚡ **【開催確定日あり！週末定期カスタム】**`;
   }
 
-  const dominantNote = dominantTierText ? ` (基準: **${dominantTierText}**)` : '';
+  // dominantTierTextは components.js 側で「シルバー帯(3名)」のように既に「帯」を含む形で
+  // 組み立てられるため、ここで「帯」を付け足さないこと(「シルバー帯(3名)帯」になる)。
+  const dominantNote = dominantTierText ? `（チーム分け基準: **${dominantTierText}**）` : '';
+  const satState = status.isSatReady ? '**✅ 開催確定！**' : `**あと${status.satRem}名**で開催確定`;
+  const sunState = status.isSunReady ? '**✅ 開催確定！**' : `**あと${status.sunRem}名**で開催確定`;
 
   return [
     header,
-    `⚔️ **土曜・本戦カスタム (自動マッチング)**: \`${satBar}\` ${status.isSatReady ? '✅開催確定' : `(あと**${status.satRem}**名)`}${dominantNote}`,
-    `🎪 **日曜・お祭りカスタム (ランク不問/MMRなし)**: \`${sunBar}\` ${status.isSunReady ? '✅開催確定' : `(あと**${status.sunRem}**名)`}`,
-    `※当日20:00時点で10名未満の日は中止（ノーマル/ARAM代替募集）となります`
+    `⚔️ **土曜・本戦カスタム**　\`${satBar}\` → ${satState}${dominantNote}`,
+    `🎪 **日曜・お祭りカスタム**　\`${sunBar}\` → ${sunState}`,
+    `※土曜と日曜は別々の募集です（片方だけの参加もOK。各日20:00時点で10名未満のその日は中止し、ノーマル/ARAM代替募集へ切替）`
   ].join('\n');
 }

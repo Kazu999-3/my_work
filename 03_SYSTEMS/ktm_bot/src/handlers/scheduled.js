@@ -5,7 +5,7 @@ import { fetchWithRetry, fetchPortalAPI } from '../utils/api.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed } from '../ui/embeds.js';
 import { createRecruitment } from '../utils/recruitPermission.js';
 import { getKtmRank, formatRankDistribution, formatMmrWithRank, getHighestLaneMmr, getPlayerExperienceBadge } from '../utils/ktmRank.js';
-import { computeRecruitmentStatus, RECRUITMENT_COLORS } from '../utils/recruitmentStatus.js';
+import { computeRecruitmentStatus, buildStatusBanner, RECRUITMENT_COLORS } from '../utils/recruitmentStatus.js';
 
 export async function handleScheduledEvent(event, env, ctx) {
   console.log("Scheduled event triggered:", JSON.stringify(event));
@@ -457,25 +457,39 @@ async function postWeeklyRecruitment(env) {
     };
 
     // 2部屋統合 Embed (プログレスバー付き初期状態)
-    const initialStatusText = `🔥 **【週末定期カスタム募集中！合計 0/20名】**\n⚔️ **土曜・本戦カスタム (自動マッチング)**: \`[□□□□□□□□□□] 0/10名\` (あと**10**名)\n🎪 **日曜・お祭りカスタム (ランク不問/MMRなし)**: \`[□□□□□□□□□□] 0/10名\` (あと**10**名)\n※当日20:00時点で10名未満の日は中止（ノーマル/ARAM再募集）となります`;
+    // ★ 以前はここで初期バナーを独自にハードコードしていたため、ボタンが1回押されて
+    //   buildStatusBanner による更新が走った瞬間に文言が変わってしまっていた
+    //   (実測で「ノーマル/ARAM再募集」→「代替募集」のブレを確認)。色ロジックを
+    //   recruitmentStatus.js へ一本化したのと同じ理由で、文言生成も共通関数に統一する。
+    const initialStatusText = buildStatusBanner(computeRecruitmentStatus(0, 0));
+
+    // 参加スタイル(ボタン3種)の凡例。バナーと違い状態で変化しない静的テキストなので、
+    // 置換対象(BANNER_PATTERN)に巻き込まれないよう必ず空行を挟んで下に置く。
+    const staticGuide = [
+      '**▼ ボタンの種類（土曜・日曜それぞれにあります）**',
+      '🟢 **フル参加** = 全試合に参加　/　⏱️ **1戦のみ** = 21:00の第1試合だけ　/　🌙 **途中参加** = 2戦目から合流',
+      '',
+      '💡 1戦だけのスポット参加・途中抜けも大歓迎です！',
+      '💡 希望レーンの変更は、ポータルの「マイページ」からお願いします。'
+    ].join('\n');
 
     const embed = {
-      title: `⚔️ KTM 週末定期カスタム開催告知 [${satLabel}・${sunLabel} 21:00〜]`,
-      description: `${initialStatusText}\n\n毎週末恒例の定期カスタム戦です！\n下のボタンからエントリーしてください（土曜は集まったメンバーの最多ランク帯を基準に自動マッチング、日曜は誰でも参加OK！）。\n\n💡 **1戦だけのスポット参加・途中抜けも大歓迎！**\n💡 **希望レーンに変更がある方は、ポータルの「マイページ」より変更をお願いします！**`,
+      title: `⚔️ KTM 週末定期カスタム [${satLabel}・${sunLabel} 21:00〜]`,
+      description: `${initialStatusText}\n\n${staticGuide}`,
       color: 0xc89b3c, // 琥珀色
       fields: [
         {
-          name: `⚔️ 【土曜・本戦カスタム】 (0/10名) 🎯 基準: 未定 (※MMR基準)`,
-          value: `▫ 参加者: なし\n※対象: 全員エントリーOK！最も集まったKTM内戦MMR帯を基準に実力均等チーム分け`,
+          name: `⚔️ 土曜・本戦カスタム (0/10名)`,
+          value: `▫ 参加者: なし\n※ランク制限はありません。集まった方の最多ランク帯を基準に、実力が均等になるよう自動でチーム分けします（MMR変動あり）`,
           inline: false
         },
         {
-          name: `🎪 【日曜・お祭り部門】 (0/10名) 🎲 ランク不問 (MMRなし)`,
-          value: `▫ 参加者: なし\n※対象: 全員OK！特殊ルール/ランダム/オフメタ等大歓迎（MMR変動なし）`,
+          name: `🎪 日曜・お祭りカスタム (0/10名)`,
+          value: `▫ 参加者: なし\n※ランク不問・MMR変動なし。特殊ルール/ランダム/オフメタ等なんでも歓迎です`,
           inline: false
         }
       ],
-      footer: { text: `開催: 土曜21:00〜 ＆ 日曜21:00〜 | 主催: KTM運営 | 1戦のみ参加OK` },
+      footer: { text: `土曜21:00〜 ＆ 日曜21:00〜（別々の募集です） | 主催: KTM運営` },
       timestamp: new Date().toISOString()
     };
 
@@ -833,8 +847,8 @@ async function sendEventUsersNotification(env, options = {}) {
     
     if (!syncFields || syncFields.length === 0) {
       syncFields = [
-        { name: "⚔️ 【土曜・本戦カスタム】 (0/10名) 🎯 基準: 未定 (最多帯自動編成)", value: "▫ 参加者: なし", inline: false },
-        { name: "🎪 【日曜・お祭り部門】 (0/10名) 🎲 ランク不問 (MMRなし)", value: "▫ 参加者: なし", inline: false }
+        { name: "⚔️ 土曜・本戦カスタム (0/10名)", value: "▫ 参加者: なし", inline: false },
+        { name: "🎪 日曜・お祭りカスタム (0/10名)", value: "▫ 参加者: なし", inline: false }
       ];
     }
 
@@ -875,19 +889,19 @@ async function sendEventUsersNotification(env, options = {}) {
 
       const ratio = Math.round(((newCnt + lightCnt + returningCnt) / totalUniqueUsers) * 100);
       const expField = {
-        name: `👥 参加メンバーの経験層分析 (${totalUniqueUsers}名)`,
+        name: `👥 参加者の経験層（土日いずれかに参加: ${totalUniqueUsers}名）`,
         value: `🔰初参加: **${newCnt}名** | 🌱ライト: **${lightCnt}名** | ⏳復帰勢: **${returningCnt}名** | 👑常連: **${regularCnt}名**\n✨ 初心者・復帰勢歓迎！ (新規・ライト・復帰層: **${ratio}%**)`,
         inline: false
       };
 
-      const expIdx = syncFields.findIndex(f => f.name.includes("経験層分析"));
+      const expIdx = syncFields.findIndex(f => f.name.includes("経験層"));
       if (expIdx >= 0) {
         syncFields[expIdx] = expField;
       } else {
         syncFields.push(expField);
       }
     } else {
-      syncFields = syncFields.filter(f => !f.name.includes("経験層分析"));
+      syncFields = syncFields.filter(f => !f.name.includes("経験層"));
     }
 
     const recruitLink = targetMessageId ? `\n\n👉 [元の募集メッセージを開く](https://discord.com/channels/${guildId}/${channelId}/${targetMessageId})` : '';
@@ -896,9 +910,17 @@ async function sendEventUsersNotification(env, options = {}) {
     const isAllReady = recruitStatus.isAllReady;
     let statusMessage = '';
     if (isAllReady) {
-      statusMessage = `🎉 **週末の全カスタムともに開催確定！** 土曜（本戦）・日曜（お祭り）すべて10名達成しました！${laneNote}${recruitLink}`;
+      statusMessage = `🎉 **土曜・日曜ともに10名達成！両日とも開催確定です！**${laneNote}${recruitLink}`;
     } else {
-      statusMessage = `⚠️ **週末定期カスタム募集中！** 現在 **土曜本戦: ${satCount}名 / 日曜お祭り: ${sunCount}名** です。\n▫ ⚔️ 土曜・本戦カスタム (自動マッチング): あと **${satShortfall}名**\n▫ 🎪 日曜・お祭りカスタム (ランク不問/MMRなし): あと **${sunShortfall}名**\n💡 **1戦だけのスポット参加も大歓迎！**\n下のボタンからエントリーしてください！${laneNote}${recruitLink}`;
+      // ★ 土日を合算した数字は出さない(募集カード本体と同じ理由、2026-09-21)。
+      //   各日が独立して10名で成立することが一目で分かる並びにする。
+      const satLine = recruitStatus.isSatReady
+        ? `⚔️ **土曜・本戦カスタム**　${satCount}/10名 → **✅ 開催確定！**`
+        : `⚔️ **土曜・本戦カスタム**　${satCount}/10名 → **あと${satShortfall}名**で開催確定`;
+      const sunLine = recruitStatus.isSunReady
+        ? `🎪 **日曜・お祭りカスタム**　${sunCount}/10名 → **✅ 開催確定！**`
+        : `🎪 **日曜・お祭りカスタム**　${sunCount}/10名 → **あと${sunShortfall}名**で開催確定`;
+      statusMessage = `⚠️ **週末定期カスタム 募集中！**\n${satLine}\n${sunLine}\n\n※土曜と日曜は別々の募集です。片方だけの参加でもOK！\n💡 21:00の第1試合だけ参加する「1戦のみ」も大歓迎です。${laneNote}${recruitLink}`;
     }
     const embedColor = recruitStatus.color;
 
