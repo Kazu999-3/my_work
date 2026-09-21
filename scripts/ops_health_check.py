@@ -211,38 +211,52 @@ def main():
         ("Gemini モデル管理健全性", check_gemini_models),
     ]
     
-    all_pass = True
+    # ★ 2026-09-21修正: 以前は all_pass が FAIL のときしか False にならず、WARNが何件
+    #   出ていても最後に「🎉 全レイヤー健全！(ALL GREEN)」と表示し、--notify でも
+    #   level=info で「健全」と通知していた。実際にこのバグにより、新設した
+    #   check_youtube_automation_freshness() が「64時間 無起票」を正しく検知していたのに
+    #   サマリーがALL GREENを表示して握り潰していた。`.claude/rules/llm-health.md` が
+    #   禁じている「嘘の正常報告」そのものなので、WARNとFAILを独立して数える。
+    warn_items = []
+    fail_items = []
     for name, func in checks:
         result = func()
         status = result["status"]
         msg = result["msg"]
-        
+
         if status == "PASS":
             icon = "✅ [PASS]"
         elif status == "INFO":
             icon = "ℹ️  [INFO]"
         elif status == "WARN":
             icon = "⚠️  [WARN]"
+            warn_items.append(name)
         else:
             icon = "❌ [FAIL]"
-            all_pass = False
-            
+            fail_items.append(name)
+
         print(f"{icon} {name:<26} : {msg}")
-        
+
     print("\n" + "-"*60)
-    if all_pass:
+    all_clean = not warn_items and not fail_items
+    if all_clean:
         summary_msg = "全レイヤー健全！ナレッジ・Git・ポータル型の全系テスト合格 (ALL GREEN)"
         print(" 🎉 全レイヤー健全！ 本日も快適に作業を開始できます。")
     else:
-        summary_msg = "いくつかの要対応・警告項目があります。ヘルスチェック結果を確認してください。"
-        print(" ⚠️  いくつかの要対応・警告項目があります。上記を確認してください。")
+        parts = []
+        if fail_items:
+            parts.append(f"FAIL {len(fail_items)}件 ({', '.join(fail_items)})")
+        if warn_items:
+            parts.append(f"WARN {len(warn_items)}件 ({', '.join(warn_items)})")
+        summary_msg = "要対応: " + " / ".join(parts)
+        print(f" ⚠️  {summary_msg}")
+        print("    上記の該当項目を確認してください。")
     print("="*60 + "\n")
 
     if "--notify" in sys.argv:
         notify_script = REPO_ROOT / "scripts" / "notify_discord.py"
         if notify_script.exists():
-            level = "info" if all_pass else "warn"
-            status = "ok" if all_pass else "error"
+            level = "info" if all_clean else ("error" if fail_items else "warn")
             subprocess.run([sys.executable, str(notify_script), "--type", "health", "-m", summary_msg, "--level", level])
 
 if __name__ == "__main__":
