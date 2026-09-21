@@ -186,8 +186,8 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
             >
               <span>📱</span> ロード中HUDカンペ
             </button>
-            <span className="text-[9px] font-bold px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-300 rounded-full">
-              SSOT正本連動
+            <span className="text-[9px] font-bold px-2 py-0.5 bg-stone-100 text-stone-600 border border-stone-300 rounded-full" title="対面データが登録されている場合のみ表示されます">
+              対面データ参照
             </span>
           </div>
         </div>
@@ -205,7 +205,7 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
                 <span>最大の弱点・つけ入る隙</span>
               </div>
               <p className="text-xs font-semibold text-stone-800 leading-relaxed">
-                {counterIntel.weaknesses || 'レーン戦初期のクールダウン間隔やスキル回避を狙う。'}
+                {counterIntel.weaknesses || '（弱点は未登録です）'}
               </p>
             </div>
 
@@ -216,7 +216,7 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
                 <span>警戒パワースパイク</span>
               </div>
               <p className="text-xs font-semibold text-stone-800 leading-relaxed">
-                {counterIntel.power_spikes || 'Lv2/Lv6到達時および1stコア完成時に注意。'}
+                {counterIntel.power_spikes || '（警戒スパイクは未登録です）'}
               </p>
             </div>
 
@@ -227,13 +227,18 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
                 <span>推奨ビルド・立ち回り</span>
               </div>
               <p className="text-xs font-semibold text-stone-800 leading-relaxed">
-                {counterIntel.build_runes || '早期の物理/魔法防御靴の購入およびウェーブ管理を徹底。'}
+                {counterIntel.build_runes || '（推奨ビルドは未登録です）'}
               </p>
             </div>
           </div>
         ) : (
+          /* ★ 2026-09-22: ここは counterIntel が null(=対面データを1件も取得できなかった)
+             ときの分岐。以前は「正本データは最新パッチ26.15に適合済みです」と表示しており、
+             取得失敗を「確認済みで問題なし」と伝える逆方向の嘘になっていた(パッチ番号も固定)。 */
           <p className="text-xs text-stone-500 text-center py-2 font-medium">
-            対面 {enemyChampion} の正本データは最新パッチ26.15に適合済みです。
+            対面 {enemyChampion} のデータはまだ登録されていません。
+            <br />
+            <span className="text-[11px] text-stone-400">（チャンピオン辞典で対面メモを追加すると、ここに表示されます）</span>
           </p>
         )}
 

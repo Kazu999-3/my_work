@@ -487,7 +487,9 @@ export default function PlayerAnalyzerPage() {
                       </h3>
                     </div>
                     <p className="text-xs text-stone-600 font-medium mt-0.5">
-                      同ランク帯比較ではなく、目標【{targetTier}】の平均スタッツと現在の実測値を直接照合
+                      同ランク帯比較ではなく、目標【{targetTier}】の目標スタッツと現在の実測値を直接照合
+                      <br />
+                      <span className="text-[10px] text-stone-400">※目標スタッツは手動設定した基準値です（公式のランク平均統計ではありません）</span>
                     </p>
                   </div>
                 </div>
@@ -1418,6 +1420,11 @@ export default function PlayerAnalyzerPage() {
                       <span>カモにできる相手 (有利マッチアップ)</span>
                     </h4>
                     <div className="space-y-2">
+                      {(!selectedChampion.favoredMatchups || selectedChampion.favoredMatchups.length === 0) && (
+                        <p className="text-[11px] text-stone-500 font-medium p-3 rounded-2xl bg-stone-50 border border-stone-200">
+                          このチャンピオンの有利マッチアップはまだ登録されていません。
+                        </p>
+                      )}
                       {selectedChampion.favoredMatchups?.map((fav: any, idx: number) => (
                         <div
                           key={idx}
@@ -1441,6 +1448,11 @@ export default function PlayerAnalyzerPage() {
                       <span>天敵・警戒マッチアップ ＆ 対処法</span>
                     </h4>
                     <div className="space-y-2">
+                      {(!selectedChampion.hardMatchups || selectedChampion.hardMatchups.length === 0) && (
+                        <p className="text-[11px] text-stone-500 font-medium p-3 rounded-2xl bg-stone-50 border border-stone-200">
+                          このチャンピオンの天敵マッチアップはまだ登録されていません。
+                        </p>
+                      )}
                       {selectedChampion.hardMatchups?.map((hard: any, idx: number) => (
                         <div
                           key={idx}
