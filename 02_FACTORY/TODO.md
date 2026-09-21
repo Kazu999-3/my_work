@@ -38,23 +38,34 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
 
 - [x] 字幕欠落動画のローカルWhisper音声認識フォールバック配備（`scripts/whisper_transcriber.py`）
 
-> **2026-09-20 現状調査で発覚**: `youtube_queue`実測1225件（completed 1071 / pending 19 / error系53 / manually_closed 82）。ローカル常駐`edge_worker_daemon.py`自体が41時間以上起票停止していた（PC起動依存という構造上、気づかれず止まり続けるリスクが現在進行形）。`extract_video_tactics.py`のハルシネーション温床バグ含む重大バグ3件はPhase2着手前に修正済み（下記「第0弾」）。
+> **2026-09-21 実測**: `youtube_queue` 合計1228件（completed 1071 / pending 75 / manually_closed 82 / **エラー系0件**）。ローカル常駐`edge_worker_daemon.py`は**64.4時間 起票が止まっていた**（PC起動依存という構造上、気づかれず止まり続けるリスクが現在進行形。`ops_health_check.py`がこれを検知できることは実行確認済み）。
 
 - [x] **第0弾: 基盤修正（2026-09-20完了）**
   - [x] 字幕抽出のハードコード依存を実データ取得方式へ根本修正（実データ取得不能時はスキップ、架空データで埋めない）
   - [x] Geminiモデル候補を生存確認済みモデル（`gemini-3.1-flash-lite`等）へ差し替え
   - [x] チャンピオン名正規化を`normalize_champion_id()`に統一
   - [x] Whisperフォールバックの`ModuleNotFoundError`を修正
-  - [ ] **要確認（次回セッション）**: `ops_health_check.py`の新チェック（`check_youtube_automation_freshness`）を実際に実行して動作確認
+  - [x] `ops_health_check.py`の新チェックを実行して動作確認（2026-09-21完了。64.4時間の無起票を正しく検知した。あわせて、WARNが何件あっても最後に「ALL GREEN」と誤報していたサマリーのバグも修正）
 - [x] **案5: 🧹 SNS一時下書きドラフト群の自動インデックス化**: [`02_FACTORY/01_DRAFTS/sns/INDEX.md`](file:///d:/my_work/02_FACTORY/01_DRAFTS/sns/INDEX.md) を新設（2026-09-21、パッチ別・生成種別別に全187件を索引化）
-- [ ] **第1弾 (MVP): 主要JGチャンピオン限定再解析 (約20〜30本)**
-  - 対象: 戦術バイブルが存在する主要ジャングラー（Lee Sin, Viego, Kha'Zix, Kindred 等）の動画。
-  - 方式: 修正済み`extract_video_tactics.py --batch`で少数実行して確認してから本格実行。**Gemini APIの実バッチ課金が発生するため、実行前にユーザーへ確認すること**（`.claude/rules/confirmation.md`の「外部APIへの大量バッチ課金リクエスト」に該当）。
-- [ ] **第2弾: エラー・保留キュー（実測53件: error_generation 22 / error_no_transcript 5 / failed 26）の自動救済・再解析**
-  - 方式: 修正済みの字幕/Whisper二段フォールバックおよび生存確認済みGeminiモデルで復旧・再生成。第1弾と同様、実行前にバッチ課金の確認を取ること。
-- [ ] **第3弾: 全体（1058本）の定期ローテーション再解析**
-  - 方式: `edge_worker_daemon.py`のスケジューラへ「1回n本ずつ完了済み動画を再解析キューに戻す」ローテーション専用task_typeを追加する方式で実装。
-- [ ] **（低優先・データ整理）** `wukong_tactics_bible.md`と`monkeyking_tactics_bible.md`の既存分裂ファイルを手動統合する。
+- [x] **第1弾 (MVP): kirei_bible の実演クリップを戦術バイブルへマウント（2026-09-21完了）**
+  - 計15本をマウント（Kha'Zix / Viego / Shyvana×2 / Wukong / Graves×2 / JarvanIV / Akali / Akshan / Ambessa×2 / Bel'Veth / Talon / Vi）。
+  - 実行して判明した不具合を4件修正: ①実際は7本しかマウントできていないのに「12本マウント」と報告していた虚偽カウント、②間隔なし連続取得による429取りこぼし6本（5秒間隔を追加）、③判定より先に取得していた無駄なネットワークアクセス、④INDEX.mdの動画誤検出。
+  - マウント先バイブルが無く捨てられていた16本を救済するため、`champion_facts`の蓄積データからバイブルを生成する`generate_tactics_bible.py --from-db`を新設し12体を配備（AI生成なし＝課金ゼロ）。
+  - **残り12本は字幕・音声とも取得できず未処理**（下記のcookieタスク待ち）。
+- [ ] **🍪 YouTube cookie の設定（ユーザー作業が必要・第1弾の残り12本と第2弾の一部がこれ待ち）**
+  - **現状**: 字幕の無い動画はWhisperで音声から文字起こしするが、音声ダウンロードが `HTTP 403 Forbidden` で弾かれる。実測で第1弾の12本がこれで未処理。
+  - **自動化は不可能と確認済み（2026-09-21実測）**: Chrome/Edgeからのcookie直読みは `Failed to decrypt with DPAPI` で失敗する。Chrome 127以降の **App-Bound Encryption**（他アプリからの復号を防ぐ保護）によるもので、**Chromeを終了しても解決しない**。Firefox/Brave/Opera/Vivaldiは未インストール。したがって`.env`の `YT_DLP_COOKIES_FROM=chrome` は現在のChromeでは機能しない設定。
+  - **必要な作業**: ①Chrome拡張「Get cookies.txt LOCALLY」を追加 → ②YouTubeを開いた状態で実行しcookies.txtをダウンロード → ③`.env`に `YT_DLP_COOKIES_FILE=（保存先の絶対パス）` を追加。保存先は`.gitignore`対象の場所にすること。
+  - **配線は完了済み**: `scripts/yt_dlp_cookies.py` に解決ロジックを集約済みで、設定すれば現役3スクリプト全てで自動的に読まれる（ログに `[cookie] cookies.txt を使用します` と出る）。未設定でもフェイルセーフが働き、字幕のある動画は通常どおり処理される。
+- [ ] **第2弾: pendingキュー（実測75件）の再解析**
+  - 実測(2026-09-21): `youtube_queue` は completed 1071 / pending 75 / manually_closed 82 / **エラー系0件**。TODOに記載されていた「error系53件」は既にpendingへ戻されており、救済（リセット）自体は完了済み。残るのは75件を実際に処理すること。
+  - 10件サンプル調査では8割が英語字幕ありでWhisper不要のため、cookie未設定でも大半は処理できる見込み。実処理は`youtube_worker.py`（`youtube_queue_process`タスク）が担当。
+  - **ローカルワーカーの起動が必要**（実測で64時間以上停止していた）。Gemini課金が発生するため実行前に確認すること。
+- [x] **第3弾: ローテーション再解析の実装（2026-09-21完了、実行は未着手）**
+  - `edge_worker_daemon.py`に`youtube_rotation`タスクを新設。完了済み動画を古い順に少数ずつpendingへ戻す。
+  - 暴走防止に2つの歯止め: 未処理キューが20件以上なら差し戻さない／スケジューラは既定で無効のオプトイン（`ENABLE_YOUTUBE_ROTATION=1`）。
+  - 現在pendingが75件あるため安全弁が作動し、有効化しても当面は何も差し戻さない（第2弾の消化が先）。
+- [x] **（データ整理）** `wukong_tactics_bible.md`と`monkeyking_tactics_bible.md`の分裂を統合（2026-09-21完了。両者はバイト単位で完全同一だったため、DDragon公式IDである`monkeyking_`側に一本化し`wukong_`を削除）。
 
 ### 👑 Phase 3: 自律ナレッジループ ＆ セマンティック検索進化
 
