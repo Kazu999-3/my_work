@@ -24,7 +24,14 @@ if sys.platform == "win32":
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TACTICS_DIR = REPO_ROOT / "01_INTEL" / "tactics"
 
-# 主力プール上位チャンピオンの戦術データベース（確定データ・実戦反省）
+# 主力プール上位チャンピオンの戦術データ（手書き）
+#
+# ⚠️ 2026-09-22追記: ここは「確定データ」というコメントが付いていたが、実際は手入力である。
+# 生成されるMarkdownのfrontmatterも status: verified / source_type: official を無条件で
+# 付与しており、根拠のない具体数値（「Lv6時: フルコンボで約850 DMG」等）が
+# 「検証済み・公式」ラベル付きでファイルに永続化されていた。
+# 実データから生成したい場合は --from-db モードを使うこと（champion_facts から生成し、
+# 未取得項目は「未取得です」と正直に記載する）。
 CORE_CHAMPIONS_DATA = {
     "JarvanIV": {
         "title": "ジャーヴァンIV (Jarvan IV) 対面戦術バイブル",
@@ -264,14 +271,18 @@ def generate_bible_markdown(champ: str, data: dict) -> str:
 
     content = f"""---
 title: "{data['title']}"
-status: verified
-source_type: official
+status: hand_written
+source_type: hand_written
 published_at: 2026-09-18
 captured_at: 2026-09-18
 tags: {data['tags']}
 ---
 
 # ⚔️ {data['title']}
+
+> ℹ️ このバイブルは `generate_tactics_bible.py` に**手書きで登録された戦術データ**から
+> 生成されています（Riot公式データや実測統計からの自動取得ではありません）。
+> 記載のダメージ量・クリアタイム等の数値は目安であり、パッチによって変動します。
 
 ## 📌 基本方針 ＆ パワースパイク
 - **戦術概要**: {data['summary']}

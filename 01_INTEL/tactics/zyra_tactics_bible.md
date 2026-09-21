@@ -1,13 +1,18 @@
 ---
 title: "ザイラ (Zyra) 対面戦術バイブル"
-status: verified
-source_type: official
+status: hand_written
+source_type: hand_written
 published_at: 2026-09-18
 captured_at: 2026-09-18
 tags: ['LoL', 'Tactics', 'Jungle', 'Zyra']
 ---
 
 # ⚔️ ザイラ (Zyra) 対面戦術バイブル
+
+> ℹ️ このバイブルは `generate_tactics_bible.py` に手書きで登録された戦術データから
+> 生成されています（Riot公式データや実測統計からの自動取得ではありません）。
+> 記載のダメージ量・クリアタイム等の数値は目安であり、パッチによって変動します。
+> ※2026-09-22訂正: 以前は `status: verified` / `source_type: official` と記載していました。
 
 ## 📌 基本方針 ＆ パワースパイク
 - **戦術概要**: 2026年仕様（最速2分25秒）の超速フルクリア（キャンプ0:55湧き・カニ2:55湧きに30秒先行）と植物による中立・オブジェクト融解。視界外からのスネアと広範囲Ultでマップのテンポを完全掌握する。
