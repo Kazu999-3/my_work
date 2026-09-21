@@ -29,6 +29,15 @@ interface KillLineData {
   advice: string;
 }
 
+interface RejectedIntel {
+  weaknesses: string | null;
+  counter_champions: string | null;
+  is_enemy_counter: boolean;
+  matchup_memo: string | null;
+  source_patch: string | null;
+  confidence: string | null;
+}
+
 interface BlueprintResponse {
   success: boolean;
   my_champion: string;
@@ -37,6 +46,7 @@ interface BlueprintResponse {
   blueprint: {
     phases: Phase[];
   };
+  rejected_intel?: RejectedIntel;
 }
 
 // ユーザーの主力プール（マスタリー＆実戦上位）
@@ -583,46 +593,95 @@ export default function MatchupBlueprintCard({
             <span>{myChamp} vs {enemyChamp} 実戦の罠・やってはいけないNG行動（没理由DB）</span>
           </div>
 
+          {/* ★ 2026-09-22: ここは以前、チャンピオンを一切参照しないハードコード文言を
+              「没理由DB」由来であるかのように表示していた(Zyra(APメイジ)の対面で
+              「脅威積み」「防具完成前」等のAD向け助言が出ていた)。
+              champion_facts / matchup_sentinel の実データのみを表示し、
+              データが無い対面はそれらしい汎用文で埋めず「未登録」と明示する。 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {/* 罠アイテム・NGビルド */}
+            {/* この対面で突かれる弱点（champion_facts.weaknesses） */}
             <div className="bg-rose-50/60 border border-rose-200 rounded-xl p-4 space-y-2.5 shadow-2xs">
               <div className="flex items-center gap-1.5 text-xs font-black text-rose-950">
-                <span className="text-sm">🚫</span>
-                <span>不採用・罠アイテム (Trap Items)</span>
+                <span className="text-sm">🩸</span>
+                <span>{myChamp} の弱点・突かれどころ</span>
               </div>
-              <div className="text-xs font-black text-rose-900 bg-rose-100/80 p-2.5 rounded-lg border border-rose-300 flex items-center justify-between">
-                <span>× 思考停止の初手フル火力/脅威積み</span>
-                <span className="text-[10px] bg-rose-200 text-rose-950 px-1.5 py-0.5 rounded font-bold">罠ビルド</span>
-              </div>
-              <p className="text-[11px] text-stone-700 leading-relaxed font-medium">
-                対面が耐久・サステインを持つ場合、初手に貫通や防御ステータスを軽視すると、リコール後のパワースパイクで即死・逆転されます。対面がタンクなら割合ダメージ、バースト系なら対抗靴を最優先してください。
-              </p>
+              {data?.rejected_intel?.weaknesses ? (
+                <p className="text-[11px] text-stone-700 leading-relaxed font-medium whitespace-pre-line">
+                  {data?.rejected_intel.weaknesses}
+                </p>
+              ) : (
+                <p className="text-[11px] text-stone-500 leading-relaxed font-medium">
+                  {myChamp} の弱点はまだ辞典に登録されていません。
+                  <br />
+                  <span className="text-stone-400">（チャンピオン辞典の「AI更新」から取得できます）</span>
+                </p>
+              )}
             </div>
 
-            {/* やってはいけないNG行動 */}
+            {/* 苦手な相手（champion_facts.counter_champions）＋ 今回の対面が該当するか */}
             <div className="bg-amber-50/60 border border-amber-200 rounded-xl p-4 space-y-2.5 shadow-2xs">
               <div className="flex items-center gap-1.5 text-xs font-black text-amber-950">
-                <span className="text-sm">❌</span>
-                <span>実戦でやってはいけない地雷行動 (Forbidden Moves)</span>
+                <span className="text-sm">⚔️</span>
+                <span>苦手な相手・カウンター</span>
               </div>
-              <div className="text-xs font-black text-amber-950 bg-amber-100/80 p-2.5 rounded-lg border border-amber-300 flex items-center justify-between">
-                <span>× 防具完成前の無謀なタワーダイブ</span>
-                <span className="text-[10px] bg-amber-200 text-amber-950 px-1.5 py-0.5 rounded font-bold">即死トリガー</span>
-              </div>
-              <p className="text-[11px] text-stone-700 leading-relaxed font-medium">
-                相手のCCスキル（スタン・ノックバック・タウント）やフラッシュが残っている状態での強引なタワーダイブは被ノックバックで即死します。まずはフリーズでCS差を広げ、HP3割以下まで削ってから仕掛けてください。
-              </p>
+              {data?.rejected_intel?.counter_champions ? (
+                <>
+                  <div
+                    className={`text-xs font-black p-2.5 rounded-lg border flex items-center justify-between gap-2 ${
+                      data?.rejected_intel.is_enemy_counter
+                        ? 'text-rose-900 bg-rose-100/80 border-rose-300'
+                        : 'text-emerald-900 bg-emerald-100/80 border-emerald-300'
+                    }`}
+                  >
+                    <span>
+                      {data?.rejected_intel.is_enemy_counter
+                        ? `⚠️ ${enemyChamp} は苦手リストに入っています`
+                        : `${enemyChamp} は苦手リストには入っていません`}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-stone-700 leading-relaxed font-medium whitespace-pre-line">
+                    {data?.rejected_intel.counter_champions}
+                  </p>
+                </>
+              ) : (
+                <p className="text-[11px] text-stone-500 leading-relaxed font-medium">
+                  {myChamp} の苦手な相手はまだ辞典に登録されていません。
+                </p>
+              )}
             </div>
           </div>
 
-          {/* 実戦バイブルからの抽出知見 */}
+          {/* この対面固有の実戦メモ（matchup_sentinel.strategy） */}
+          {data?.rejected_intel?.matchup_memo && (
+            <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-1.5 shadow-2xs">
+              <div className="flex items-center gap-1.5 text-xs font-black text-stone-900">
+                <span className="text-sm">📝</span>
+                <span>{myChamp} vs {enemyChamp} の実戦メモ</span>
+              </div>
+              <p className="text-[11px] text-stone-700 leading-relaxed font-medium whitespace-pre-line">
+                {data?.rejected_intel.matchup_memo}
+              </p>
+            </div>
+          )}
+
+          {/* 出典の明示（どのパッチ時点の、どの確度のデータか） */}
+          {data?.rejected_intel?.source_patch && (
+            <p className="text-[10px] text-stone-400 font-medium">
+              出典: チャンピオン辞典（パッチ {data?.rejected_intel.source_patch} 時点
+              {data?.rejected_intel.confidence ? ` / 確度: ${data?.rejected_intel.confidence}` : ''}）
+            </p>
+          )}
+
+          {/* ★ この文章は対面に依存しない一般原則。以前は「戦術バイブル・実戦同期ナレッジ」と
+              題してバイブル由来のように見せていたが、実際はどの対面でも同じ固定文なので、
+              一般論であることが分かる見出しに改めた。 */}
           <div className="bg-stone-900 text-stone-200 rounded-xl p-3.5 border border-stone-800 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black text-amber-400 flex items-center gap-1.5">
                 <span>📜</span>
-                <span>戦術バイブル・実戦同期ナレッジ</span>
+                <span>対面共通の基本原則（一般論）</span>
               </span>
-              <span className="text-[10px] text-stone-400 font-mono">Sovereign Intel Protocol</span>
+              <span className="text-[10px] text-stone-400 font-mono">対面別データではありません</span>
             </div>
             <p className="text-xs text-stone-300 leading-relaxed font-medium">
               💡 <strong>序盤テンポ維持の鉄則:</strong> Lv1~2で無理なロングトレードを仕掛けず、自軍ミニオン有利を活かしたショートトレードを徹底すること。敵JGの位置がマップに見えるまでフラッシュを使ったオールインは禁止です。

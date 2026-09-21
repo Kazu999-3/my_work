@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
+import { normalizeChampionName } from '../../../../lib/championNames';
 
 // 主要チャンピオンのLv6時フルコンボ公式基礎ダメージ ＋ スケーリング
 interface BurstProfile {
@@ -207,6 +209,80 @@ const BLUEPRINTS: Record<string, any[]> = {
   ]
 };
 
+/**
+ * 「実戦の罠・やってはいけないNG行動」を champion_facts / matchup_sentinel の
+ * 実データから組み立てる。
+ *
+ * ★ 2026-09-22新設: 以前はこのセクションの文言がコンポーネント側に完全ハードコードされており、
+ * チャンピオンを一切参照していなかった。にもかかわらず見出しは「◯◯ vs ◯◯ 実戦の罠（没理由DB）」と
+ * DB由来であるかのように表示していたため、例えばZyra(APメイジ)の対面で
+ * 「脅威積み(AD用ステータス)」「防具完成前」といった無関係な助言が出ていた。
+ * 実データが無い対面では正直に「未登録」を返し、それらしい汎用文で埋めない。
+ */
+async function buildRejectedIntel(myChamp: string, enemyChamp: string) {
+  const result: {
+    weaknesses: string | null;
+    counter_champions: string | null;
+    is_enemy_counter: boolean;
+    matchup_memo: string | null;
+    source_patch: string | null;
+    confidence: string | null;
+  } = {
+    weaknesses: null,
+    counter_champions: null,
+    is_enemy_counter: false,
+    matchup_memo: null,
+    source_patch: null,
+    confidence: null,
+  };
+
+  try {
+    const { data: facts } = await supabaseAdmin
+      .from('champion_facts')
+      .select('weaknesses, counter_champions, patch, confidence')
+      .eq('champion', myChamp)
+      .maybeSingle();
+
+    if (facts) {
+      const isUsable = (v: any) =>
+        typeof v === 'string' && v.trim() && !v.includes('情報不足') && !v.includes('判断できません');
+      // AIが付けがちな【追記知見】等のブロックは本文の言い換えが多いので本文だけ使う
+      const trim = (v: string) => v.split(/\n\s*【[^】]+】/)[0].trim();
+
+      if (isUsable(facts.weaknesses)) result.weaknesses = trim(facts.weaknesses);
+      if (isUsable(facts.counter_champions)) {
+        result.counter_champions = trim(facts.counter_champions);
+        // 今回の対面相手が「苦手な相手」に挙がっているかを判定する(日本語名でも拾えるよう正規化)
+        const normalizedEnemy = normalizeChampionName(enemyChamp) || enemyChamp;
+        const haystack = result.counter_champions;
+        result.is_enemy_counter =
+          haystack.includes(enemyChamp) ||
+          haystack.includes(normalizedEnemy) ||
+          (normalizeChampionName(haystack) || '').includes(normalizedEnemy);
+      }
+      result.source_patch = facts.patch || null;
+      result.confidence = facts.confidence || null;
+    }
+
+    // この対面固有の実戦メモ(あれば最優先で見せる)
+    const { data: sentinel } = await supabaseAdmin
+      .from('matchup_sentinel')
+      .select('strategy')
+      .eq('champion', myChamp)
+      .eq('enemy', enemyChamp)
+      .not('strategy', 'is', null)
+      .neq('strategy', '')
+      .limit(1)
+      .maybeSingle();
+
+    if (sentinel?.strategy) result.matchup_memo = String(sentinel.strategy).trim();
+  } catch (e) {
+    console.error('[matchup-blueprint] rejected intel の取得に失敗:', e);
+  }
+
+  return result;
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const myChamp = searchParams.get('my') || 'JarvanIV';
@@ -240,6 +316,9 @@ export async function GET(request: NextRequest) {
     }
   ];
 
+  // 3. 実戦の罠・NG行動（実データのみ。無ければnullを返し、UI側で「未登録」と明示する）
+  const rejectedIntel = await buildRejectedIntel(myChamp, enemyChamp);
+
   return NextResponse.json({
     success: true,
     my_champion: myChamp,
@@ -247,6 +326,7 @@ export async function GET(request: NextRequest) {
     kill_line: killLine,
     blueprint: {
       phases
-    }
+    },
+    rejected_intel: rejectedIntel
   });
 }
