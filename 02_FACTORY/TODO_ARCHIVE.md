@@ -71,7 +71,10 @@
     - 直近5戦の勝敗アイコン列（`[W][W][W][L][W]`）および現在の連勝/連敗バッジ（`🔥 3連勝中` / `❄️ 2連敗中`）をファーストビューに配置。
     - 「🏆 名コンビ（最高勝率の相棒）」と「⚔️ 最大の天敵（苦戦中のライバル）」の直感的なミニカードをトップにピン留め表示。
   - **3. 📱 スマホ固定「ボトムナビゲーションバー（Mobile App Bar）」**:
-    - [`BottomNav.tsx`](file:///d:/my_work/04_PORTAL/src/components/BottomNav.tsx) を新設し、[`layout.tsx`](file:///d:/my_work/04_PORTAL/src/app/layout.tsx) に配置（`md:hidden`）。
+    - `BottomNav.tsx` を新設し、[`layout.tsx`](file:///d:/my_work/04_PORTAL/src/app/layout.tsx) に配置（`md:hidden`）。
+      ※ `BottomNav.tsx` は **2026-09-22 に削除済み**（どこからも import されておらず、同等のスマホ用
+      ボトムナビが `Sidebar.tsx` に実装されていたため）。当時の記録として文面は残すが、
+      ファイルが存在しないためリンクは外してある。
     - `[👑 ホーム] [⚔️ バランサー] [🎯 予想] [🏆 順位表] [👤 マイカルテ]` の親指1本操作UIを実現。現在のアクティブページをゴールド＆インジケーターでハイライト。
   - **4. 🤝 師弟掲示板（`/mentorship`）のレーン別絞り込み ＆ スマホ横スクロール最適化**:
     - [`MentorshipHubPanel.tsx`](file:///d:/my_work/04_PORTAL/src/app/mentorship/MentorshipHubPanel.tsx) に `[🌐 全て] [🛡️ TOP] [🌲 JG] [⚡ MID] [🏹 BOT] [💖 SUP]` のクイックピルフィルターを新設。
