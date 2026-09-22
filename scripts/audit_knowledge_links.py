@@ -101,7 +101,7 @@ def parse_markdown_links(file_path):
         })
     return links
 
-def audit_links(include_archives=False, silent=False):
+def audit_links(include_archives=False, silent=False, full=False):
     md_files = get_all_md_files(include_archives=include_archives)
     file_map = {f.resolve(): f for f in md_files}
     referenced_files = set()
@@ -144,11 +144,12 @@ def audit_links(include_archives=False, silent=False):
             print("✅ 【リンク切れ】: 検出されませんでした (0件 / 健全)")
         else:
             print(f"❌ 【リンク切れ検出】: {len(broken_links)} 件のリンク先が存在しません！")
-            for b in broken_links[:10]: # 最大10件表示
+            limit = None if full else 10  # --full で全件表示
+            for b in broken_links[:limit]:
                 print(f"   - 参照元: {b['source']}")
                 print(f"     リンク名: [{b['text']}] -> {b['target']}")
-            if len(broken_links) > 10:
-                print(f"   ...他 {len(broken_links) - 10} 件")
+            if not full and len(broken_links) > 10:
+                print(f"   ...他 {len(broken_links) - 10} 件（全件は --full）")
 
         print("\n" + "-"*65 + "\n")
 
@@ -157,17 +158,19 @@ def audit_links(include_archives=False, silent=False):
             print("✅ 【孤立ファイル】: 全てのノートが索引や日誌からリンクされています (0件)")
         else:
             print(f"ℹ️  【孤立（未リンク）ノート】: {len(orphan_files)} 件 (索引への登録を推奨)")
-            for o in orphan_files[:10]:
+            for o in orphan_files[:(None if full else 10)]:
                 print(f"   - {o}")
-            if len(orphan_files) > 10:
-                print(f"   ...他 {len(orphan_files) - 10} 件")
+            if not full and len(orphan_files) > 10:
+                print(f"   ...他 {len(orphan_files) - 10} 件（全件は --full）")
 
         print("\n" + "="*65 + "\n")
     return len(broken_links)
 
 if __name__ == "__main__":
     include_archives = "--include-archives" in sys.argv
-    broken_count = audit_links(include_archives=include_archives)
+    # --full: 10件で打ち切らず全件表示する（索引へ登録する対象を洗い出す用途）
+    full = "--full" in sys.argv
+    broken_count = audit_links(include_archives=include_archives, full=full)
     # 監査レポートの表示完了。運用を止めないため正常終了とする
     sys.exit(0)
 

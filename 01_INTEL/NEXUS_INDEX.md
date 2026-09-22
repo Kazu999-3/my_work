@@ -38,6 +38,10 @@
     - **⚔️ TOP/Fighter主力 (3段階勝ちパターン Blueprint 完備 - 5体)**:
       - [`xinzhao_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/xinzhao_tactics_bible.md) / [`darius_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/darius_tactics_bible.md) / [`jax_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/jax_tactics_bible.md)
       - [`fiora_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/fiora_tactics_bible.md) / [`yorick_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/yorick_tactics_bible.md)
+    - **📘 DB生成バイブル (champion_facts から自動生成・12体)**:
+      [`akali`](file:///d:/my_work/01_INTEL/tactics/akali_tactics_bible.md) / [`akshan`](file:///d:/my_work/01_INTEL/tactics/akshan_tactics_bible.md) / [`alistar`](file:///d:/my_work/01_INTEL/tactics/alistar_tactics_bible.md) / [`ambessa`](file:///d:/my_work/01_INTEL/tactics/ambessa_tactics_bible.md) / [`belveth`](file:///d:/my_work/01_INTEL/tactics/belveth_tactics_bible.md) / [`brand`](file:///d:/my_work/01_INTEL/tactics/brand_tactics_bible.md) / [`caitlyn`](file:///d:/my_work/01_INTEL/tactics/caitlyn_tactics_bible.md) / [`diana`](file:///d:/my_work/01_INTEL/tactics/diana_tactics_bible.md) / [`renekton`](file:///d:/my_work/01_INTEL/tactics/renekton_tactics_bible.md) / [`talon`](file:///d:/my_work/01_INTEL/tactics/talon_tactics_bible.md) / [`vi`](file:///d:/my_work/01_INTEL/tactics/vi_tactics_bible.md) / [`yuumi`](file:///d:/my_work/01_INTEL/tactics/yuumi_tactics_bible.md)
+      ※ `generate_tactics_bible.py --from-db` で2026-09-21に生成。frontmatter は
+      `status: ai_generated` / `source_type: db_generated`（手書きの主力プールとは出自が異なる）。
   - [`template_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/template_tactics_bible.md): 没理由・イミュータブル履歴を備えた制式戦術雛形。
   - `generate_tactics_bible.py`: 主力プール・全168体対応のバイブル量産CLI。
 
@@ -50,6 +54,8 @@
   - **[sns/](file:///d:/my_work/02_FACTORY/01_DRAFTS/sns/)**: 宣伝用 X（Twitter）スレッドの下書き（全187件の一覧は [`sns/INDEX.md`](file:///d:/my_work/02_FACTORY/01_DRAFTS/sns/INDEX.md)）。
   - ※ note 記事のドラフトは `02_FACTORY/note_drafts/` に保管（`.gitignore`対象のためリポジトリには含まれません）。公開管理・成績記録はポータルの `/admin/analytics` と `note_articles` テーブル側で行います。
 - ※ 旧 `02_PUBLISHED/`（投稿完了アーカイブ）は現存しません。公開済み記事の管理はポータルの `/admin/analytics` に一本化済みです。
+- **[STRATEGY_ASSETS (戦略アセット)](file:///d:/my_work/02_FACTORY/STRATEGY_ASSETS/INDEX.md)**: リサーチとSNS販促素材の索引。
+- **[PROMO (販促ドラフト)](file:///d:/my_work/02_FACTORY/PROMO/)**: `THREADS/`（Xスレッド自動生成分）・`SOCIAL/`・`FUNNELS/`。個別ファイルは生成物のため索引には列挙しない。
 - **[03_ASSETS (定常アセット・ナレッジ)](file:///d:/my_work/02_FACTORY/03_ASSETS/)**
   - **[アフィリエイト知識 (affiliate_knowledge.md)](file:///d:/my_work/02_FACTORY/03_ASSETS/affiliate_knowledge.md)**: ASPや案件ごとの提携情報・攻略法。
   - **[アフィリエイトリンク集 (affiliate_links.json)](file:///d:/my_work/02_FACTORY/03_ASSETS/affiliate_links.json)**: すぐにコピペで使える計測リンク一覧。
@@ -64,6 +70,9 @@ Sovereign OS のポータルサイト、API、エッジワーカーなど。
 
 - **[04_PORTAL (ポータル Web アプリ)](file:///d:/my_work/04_PORTAL/)**:
   - Next.js 製の大会運営（KTM）・MMRバランサー・YouTube監視ポータル。
+- **[KTM Bot テスト仕様](file:///d:/my_work/03_SYSTEMS/ktm_bot/_tests_v3/)**: [`TEST_SPEC_WORKER.md`](file:///d:/my_work/03_SYSTEMS/ktm_bot/_tests_v3/TEST_SPEC_WORKER.md) / [`TEST_SPEC_GAS.md`](file:///d:/my_work/03_SYSTEMS/ktm_bot/_tests_v3/TEST_SPEC_GAS.md)
+- **[KTM Bot 利用ガイド (KTM_USER_GUIDE.md)](file:///d:/my_work/03_SYSTEMS/ktm_bot/KTM_USER_GUIDE.md)**:
+  Discord コマンド（`/recruit` `/lane` `/balance` `/bet` `/tip` 等）のメンバー向け説明書。
 - **[03_SYSTEMS/v2_CORE (コアエンジン)](file:///d:/my_work/03_SYSTEMS/v2_CORE/)**:
   - **[api.py (API Gateway)](file:///d:/my_work/03_SYSTEMS/v2_CORE/api.py)**: 冷却キーローテーション搭載の AI ゲートウェイ。
   - **[edge_worker_daemon.py (エッジワーカー)](file:///d:/my_work/03_SYSTEMS/v2_CORE/edge_worker_daemon.py)**: Webhook 割り込み駆動の自動処理デーモン。
@@ -76,9 +85,19 @@ Sovereign OS のポータルサイト、API、エッジワーカーなど。
 Antigravity（AIアシスタント）の行動規範、スキル、ワークフローです。
 
 - **[ルール定義 (rules/)](file:///d:/my_work/.agent/rules/)**:
-  - `30_content_factory.md`（AI臭排除、note執筆規約）、`10_project_context.md`（プロジェクトの現状と指針）など。
+  - [`02_communication.md`](file:///d:/my_work/.agent/rules/02_communication.md): コミュニケーション規約
+  - [`03_security_rules.md`](file:///d:/my_work/.agent/rules/03_security_rules.md): セキュリティ規約
+  - [`05_implementation_workflow.md`](file:///d:/my_work/.agent/rules/05_implementation_workflow.md): 実装ワークフロー
+  - [`20_javascript_style.md`](file:///d:/my_work/.agent/rules/20_javascript_style.md): JavaScript スタイル
+  - [`21_powershell_style.md`](file:///d:/my_work/.agent/rules/21_powershell_style.md): PowerShell スタイル
+  - [`22_nextjs_style.md`](file:///d:/my_work/.agent/rules/22_nextjs_style.md): Next.js スタイル
+  - [`30_content_factory.md`](file:///d:/my_work/.agent/rules/30_content_factory.md): AI臭排除・note執筆規約
+  - [`31_deep_research_v3.md`](file:///d:/my_work/.agent/rules/31_deep_research_v3.md): ディープリサーチ手順
 - **[自律スキル (skills/)](file:///d:/my_work/.agent/skills/)**:
   - `ghost-writer/`（生きた言葉に変換するライティングスキル）、`ghost-tactics/`（動画からの戦術自動抽出・辞典マージスキル）など。
+- **[参照リソース (resources/)](file:///d:/my_work/.agent/resources/)**:
+  - [`CTA_Bridge_Patterns.md`](file:///d:/my_work/.agent/resources/CTA_Bridge_Patterns.md): 導線（CTA）の繋ぎ方の型。
+  - [`newsletter_context.md`](file:///d:/my_work/.agent/resources/newsletter_context.md): メルマガ執筆時の前提コンテキスト。
 - **[自動化ワークフロー (workflows/)](file:///d:/my_work/.agent/workflows/)**:
   - `/note-production`、`/ktm-admin`、`/daily-report` などのスラッシュコマンドの定義書。
 
