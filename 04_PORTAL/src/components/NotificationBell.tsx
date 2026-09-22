@@ -177,9 +177,44 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
     });
   };
 
+  /**
+   * 通知本文の整形（2026-09-23 追加）
+   *
+   * coach_review の body には AIの講評が丸ごと入っており、Markdownの `###` や
+   * `**強調**` がそのまま表示されて一覧が読みづらくなっていた。
+   * 記法を落として1行に潰す。展開時は全文（記法だけ除去）を見せる。
+   */
+  const stripMarkdown = (s: string) =>
+    s
+      .replace(/```[\s\S]*?```/g, '')       // コードブロック
+      .replace(/^#{1,6}\s*/gm, '')           // 見出し
+      .replace(/\*\*([^*]+)\*\*/g, '$1')    // 太字
+      .replace(/\*([^*]+)\*/g, '$1')         // 斜体
+      .replace(/^[-*+]\s+/gm, '・')           // 箇条書き
+      .replace(/^>\s?/gm, '')                // 引用
+      .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // リンク
+      .trim();
+
+  /** 一覧用の1行要約。最初の意味のある行だけを取り出す */
+  const summarize = (s: string) => {
+    const clean = stripMarkdown(s);
+    const firstLine = clean.split('\n').map((l) => l.trim()).filter(Boolean)[0] || '';
+    return firstLine.length > 60 ? firstLine.slice(0, 60) + '…' : firstLine;
+  };
+
   const getNotificationBadge = (n: AdminNotification) => {
     const title = n.title.toLowerCase();
     const type = n.type.toLowerCase();
+    // ⚠️ 2026-09-23 修正: 以前は 'soloq' / 'discord' / 'match' / 'error' を見ていたが、
+    // 実際に発行されている type は coach_review / dict_review の2種だけで
+    // **どれにも一致せず**、dict_review は全件が無個性な「🔔 お知らせ」になっていた。
+    // 実データの type を先に判定する。
+    if (type.includes('coach_review')) {
+      return { icon: '🎮', label: 'ソロQ振り返り', bg: 'bg-amber-100 text-amber-800 border-amber-200' };
+    }
+    if (type.includes('dict_review')) {
+      return { icon: '📖', label: '辞典レビュー', bg: 'bg-sky-100 text-sky-800 border-sky-200' };
+    }
     if (type.includes('soloq') || title.includes('ソロq') || title.includes('振り返り')) {
       return { icon: '🎮', label: 'ソロQ', bg: 'bg-amber-100 text-amber-800 border-amber-200' };
     }
@@ -198,6 +233,14 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
   const getQuickAction = (n: AdminNotification) => {
     const title = n.title.toLowerCase();
     const type = n.type.toLowerCase();
+    // 通知に url が入っていればそれを最優先で使う（coach_review は
+    // /coach?tab=matchup-memo&champion=... のように対象チャンピオンまで持っている）。
+    if (type.includes('coach_review')) {
+      return { label: '⚡ 振り返りを開く →', url: n.url || '/coach' };
+    }
+    if (type.includes('dict_review')) {
+      return { label: '📖 辞典レビューへ →', url: n.url || '/admin/dict-health' };
+    }
     if (type.includes('soloq') || title.includes('ソロq') || title.includes('振り返り')) {
       return { label: '⚡ 1分振り返りを開く →', url: '/coach' };
     }
@@ -330,8 +373,8 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
                           </div>
 
                           {n.body && (
-                            <p className={`mt-1 text-[11px] text-stone-600 whitespace-pre-wrap leading-relaxed ${isExpanded ? '' : 'line-clamp-2'}`}>
-                              {n.body}
+                            <p className={`mt-1 text-[11px] text-stone-600 leading-relaxed ${isExpanded ? 'whitespace-pre-wrap' : 'truncate'}`}>
+                              {isExpanded ? stripMarkdown(n.body) : summarize(n.body)}
                             </p>
                           )}
                         </div>
