@@ -439,7 +439,10 @@ export async function POST(request: Request) {
           const bet = task.payload || {};
           const won = (bet.team === winningTeam);
           let payout = 0;
-          let multiplier = Number(bet.odds) > 0 ? Number(bet.odds) : 2.0;
+          // 保存済みoddsは必ずクランプしてから使う。2026-09-22以前に作られたレコードは
+          // クライアント申告値がそのまま入っている可能性があるため（任意倍率払い戻しの防止）。
+          const { sanitizeStoredOdds } = await import('../../../../lib/betOdds');
+          let multiplier = sanitizeStoredOdds(bet.odds);
 
           const pPlayer = await findOrCreatePlayer({
             discordId: bet.discord_id,

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test src/lib/__tests__/balancer.test.ts src/lib/__tests__/discordName.test.ts src/lib/__tests__/mmr.test.ts"
+    "test": "tsx --test src/lib/__tests__/balancer.test.ts src/lib/__tests__/discordName.test.ts src/lib/__tests__/mmr.test.ts src/lib/__tests__/betOdds.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.111.0",

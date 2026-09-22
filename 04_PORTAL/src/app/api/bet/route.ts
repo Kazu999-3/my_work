@@ -117,16 +117,21 @@ export async function GET(req: Request) {
 export async function PUT(req: Request) {
   try {
     const body = await req.json();
-    const { discordId, playerName, type } = body; // type: 'daily' | 'rescue'
+    const { type } = body; // type: 'daily' | 'rescue'
 
-    if (!discordId && !playerName) {
-      return NextResponse.json({ error: 'ユーザー情報が不足しています。Discordログインを行ってください。' }, { status: 400 });
+    // ⚠️ 2026-09-22 セキュリティ修正:
+    // 以前は認証が無く、ボディに他人の識別子を書くだけで他人のデイリーボーナスや
+    // 破産救済保険を勝手に消化できた（受取権の踏み倒し）。
+    const { getAuthSession } = await import('../../../lib/authGuard');
+    const session = await getAuthSession();
+    if (!session || (!session.discordId && !session.displayName && !session.username)) {
+      return NextResponse.json({ error: 'ボーナスの受取にはDiscordログインが必要です。' }, { status: 401 });
     }
 
-    // プレイヤーを確実に特定・未登録なら自動初期化
+    // プレイヤーはセッションから特定する（ボディの識別子は受け付けない）
     const player = await findOrCreatePlayer({
-      discordId,
-      name: playerName,
+      discordId: session.discordId,
+      name: session.displayName || session.username,
       autoCreate: true,
     });
 
@@ -241,7 +246,8 @@ export async function PUT(req: Request) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { discordId, playerName, team, amount, matchId, odds } = body;
+    // ⚠️ body.odds は受け取らない。オッズはサーバーが算出した値のみを使う（下記参照）。
+    const { discordId, playerName, team, amount, matchId } = body;
     const parsedAmount = Math.floor(Number(amount));
     if (!team || !parsedAmount || parsedAmount <= 0) {
       return NextResponse.json({ error: 'チームと有効な賭け金（1コイン以上の整数）を指定してください。' }, { status: 400 });
@@ -255,17 +261,34 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'プレイヤー情報が不足しています。' }, { status: 400 });
     }
 
-    // 他者のコインを勝手に賭けないよう本人・管理者検証
+    // 他者のコインを勝手に賭けないよう本人・管理者検証。
+    // KTM Bot（Discordの /bet モーダル）からも叩かれるが、Botはセッションcookieを持たず
+    // X-Bot-Secret しか送らないため、Bot経由は verifyBotSecretStrict で許可する。
+    // Discord Interaction は署名検証済みで discordId は詐称できないため、
+    // Bot経由の場合に限りボディの識別子を正本として扱ってよい。
     const { verifyUserOrAdmin } = await import('../../../lib/authGuard');
-    const authCheck = await verifyUserOrAdmin(discordId || playerName);
-    if (!authCheck.ok) {
-      return NextResponse.json({ error: authCheck.error }, { status: 403 });
+    const { verifyBotSecretStrict } = await import('../../../lib/botAuth');
+    const isBot = verifyBotSecretStrict(req).ok;
+
+    let actorDiscordId = discordId;
+    let actorName = playerName;
+
+    if (!isBot) {
+      const authCheck = await verifyUserOrAdmin({ discordId, playerName });
+      if (!authCheck.ok || !authCheck.session) {
+        return NextResponse.json({ error: authCheck.error || 'Discordログインが必要です。' }, { status: 403 });
+      }
+      // プレイヤーの特定はセッションの識別子を正本とする（ボディの値は信用しない）。
+      // 管理者が代理でベットを入れる運用だけは従来どおりボディ指定を許可する。
+      const session = authCheck.session;
+      const actAsOther = session.isAdmin && (discordId || playerName);
+      actorDiscordId = actAsOther ? discordId : (session.discordId || discordId);
+      actorName = actAsOther ? playerName : (session.displayName || session.username || playerName);
     }
 
-    // プレイヤーの特定（未登録なら初期化）
     const player = await findOrCreatePlayer({
-      discordId,
-      name: playerName,
+      discordId: actorDiscordId,
+      name: actorName,
       autoCreate: true,
     });
 
@@ -323,7 +346,12 @@ export async function POST(req: Request) {
     }
 
     // ベートレコードを edge_tasks に保存（試合確定時の自動精算・配当払い戻し用）
-    const effectiveOdds = Number(odds) > 0 ? Number(odds) : 2.0;
+    // ⚠️ オッズは「このベットを投入する直前の投票状況」からサーバーが算出する。
+    // クライアントが申告してきた odds は一切使わない（任意倍率の払い戻しを防ぐため）。
+    const { calculateBetOdds, fetchPendingBetTotals } = await import('../../../lib/betOdds');
+    const totalsBefore = await fetchPendingBetTotals(supabase);
+    const serverOdds = calculateBetOdds(totalsBefore.blueAmount, totalsBefore.redAmount);
+    const effectiveOdds = team.toUpperCase() === 'BLUE' ? serverOdds.blue : serverOdds.red;
     try {
       await supabase
         .from('edge_tasks')
@@ -348,7 +376,7 @@ export async function POST(req: Request) {
       console.warn('[bet POST] edge_tasks / jackpot insert warning:', bErr);
     }
 
-    const oddsText = odds ? ` (オッズ: x${odds}倍)` : '';
+    const oddsText = ` (オッズ: x${effectiveOdds}倍)`;
 
     return NextResponse.json({
       success: true,

@@ -23,11 +23,17 @@ interface LotteryParticipant {
   remainingInventory: any[];
 }
 
+/** 宝くじ1口の価格。shop/route.ts の lottery_ticket.price と一致させること */
+export const TICKET_PRICE = 100;
+
 /**
  * 週末メガ宝くじ 抽選エンジン（等級分け＆キャリーオーバー方式）
- * 🥇 1等 (MEGA JACKPOT): 当選確率 8%（購入口数に応じて抽選） ➔ プール金全額総取り（外れは全額キャリーオーバー＋売上70%加算）
- * 🥈 2等 (ラッキー賞): 購入チケットの中から必ず1名当選 ➔ 1,000コイン
- * 🥉 3等 (参加還元賞): ハズレたチケット全口 ➔ 1口につき30コイン還元
+ *
+ * 賞金はすべて当週の売上（TICKET_PRICE × 口数）の内訳から拠出され、
+ * 払い戻し総額が売上を超えることはない（コインの純粋な再分配）。
+ * 🥇 1等 (MEGA JACKPOT): 当選確率 8%（購入口数に応じて抽選） ➔ 金庫全額総取り。外れたら売上の60%をキャリーオーバー
+ * 🥈 2等 (ラッキー賞): 購入チケットの中から必ず1口当選 ➔ 売上の10%（上限1,000コイン）
+ * 🥉 3等 (参加還元賞): 購入した全口 ➔ 1口につき30コイン（売上の30%）還元
  */
 export async function executeLotteryDraw(): Promise<LotteryResult> {
   const currentPool = await getJackpotPool();
@@ -102,6 +108,25 @@ export async function executeLotteryDraw(): Promise<LotteryResult> {
   const coinGains: Map<number, number> = new Map();
   participants.forEach(pt => coinGains.set(pt.player.id, 0));
 
+  // ── 賞金原資の配分（2026-09-22 是正） ───────────────────────────────
+  // 旧仕様は「1等リセット額10,000」と「2等1,000」をどこからも徴収せずに発行し、
+  // 3等も全口へ30コイン還元していたため、1回の抽選あたりの期待収支が
+  //   100T - (64.4T + 800 + 1000 + 30T) = 5.6T - 1800
+  // となり、収支が釣り合うのは321口以上のときだけだった。
+  // 総流通量が約15,000コインの経済では到達不可能で、開催のたびに約1,500〜1,700コインを
+  // 新規発行し続ける「インフレ装置」になっていた。
+  //
+  // 現在は賞金をすべて売上（1口100コイン × 口数）の内訳から拠出する。
+  //   3等（参加還元）: 売上の30% → 1口あたり30コイン（据え置き）
+  //   2等（ラッキー賞）: 売上の10%（上限1,000コイン）
+  //   1等原資（金庫積立）: 残り60%
+  // これにより払い戻し総額が売上を超えなくなり、宝くじは純粋なコインの再分配になる。
+  const ticketSales = totalTickets * TICKET_PRICE;
+  const REFUND_PER_TICKET = 30;                                  // 売上の30%
+  const totalRefund = totalTickets * REFUND_PER_TICKET;
+  const SECOND_PRIZE_COINS = Math.floor(Math.min(1000, ticketSales * 0.10));
+  const jackpotContribution = Math.max(0, ticketSales - totalRefund - SECOND_PRIZE_COINS);
+
   // 🥇 1等 (MEGA JACKPOT): 当選確率 8%
   const isFirstPrizeWon = Math.random() < 0.08;
   let firstPrizeWinner: any = null;
@@ -111,11 +136,13 @@ export async function executeLotteryDraw(): Promise<LotteryResult> {
   if (isFirstPrizeWon) {
     const winningTicket = flatTickets[Math.floor(Math.random() * flatTickets.length)];
     firstPrizeWinner = winningTicket.player;
-    firstPrizePayout = curJackpotAmount;
+    // 当選時は「前週までの金庫 ＋ 今回の売上からの積立」を総取りする
+    firstPrizePayout = curJackpotAmount + jackpotContribution;
     coinGains.set(firstPrizeWinner.id, (coinGains.get(firstPrizeWinner.id) || 0) + firstPrizePayout);
 
-    // 金庫を初期値へリセット
-    const RESET_JACKPOT = 10000;
+    // 金庫はゼロから積み直す。
+    // 旧実装はここで10,000コインを無条件に生成しており、これがインフレの主因だった。
+    const RESET_JACKPOT = 0;
     nextJackpotAmount = RESET_JACKPOT;
     await supabase
       .from('ktm_settings')
@@ -130,9 +157,8 @@ export async function executeLotteryDraw(): Promise<LotteryResult> {
         updated_at: new Date().toISOString(),
       }, { onConflict: 'key' });
   } else {
-    // キャリーオーバー！ チケット売上（1口100コイン × 口数）の70%を金庫へ積み立て
-    const poolAddition = Math.floor(totalTickets * 100 * 0.7);
-    nextJackpotAmount = await addToJackpot(poolAddition);
+    // キャリーオーバー！ 売上から3等・2等を差し引いた残りを金庫へ積み立て
+    nextJackpotAmount = await addToJackpot(jackpotContribution);
   }
 
   // 🥈 2等 (ラッキー賞): 購入チケットの中から必ず1口選出（1,000コイン）
@@ -145,16 +171,13 @@ export async function executeLotteryDraw(): Promise<LotteryResult> {
   const secondPrizeTicket = poolForSecond[Math.floor(Math.random() * poolForSecond.length)];
   const secondPrizeWinner = secondPrizeTicket.player;
   const secondPrizeWinnerName = secondPrizeWinner?.name || secondPrizeWinner?.ign || 'Anonymous';
-  const SECOND_PRIZE_COINS = 1000;
   coinGains.set(secondPrizeWinner.id, (coinGains.get(secondPrizeWinner.id) || 0) + SECOND_PRIZE_COINS);
 
-  // 🥉 3等 (参加還元賞): ハズレ口数 1口あたり 30コイン還元
-  const REFUND_PER_TICKET = 30;
-  let totalRefund = 0;
+  // 🥉 3等 (参加還元賞): 購入口数 1口あたり 30コイン還元
+  // ※コメントは長らく「ハズレ口数」だったが、実装は当初から1等・2等当選者を含む
+  //   全口へ還元している。実装に合わせて表記を是正した（2026-09-22）。
   for (const pt of participants) {
-    const refund = pt.ticketCount * REFUND_PER_TICKET;
-    totalRefund += refund;
-    coinGains.set(pt.player.id, (coinGains.get(pt.player.id) || 0) + refund);
+    coinGains.set(pt.player.id, (coinGains.get(pt.player.id) || 0) + pt.ticketCount * REFUND_PER_TICKET);
   }
 
   // 4. DB更新（チケット消費 & コイン加算）

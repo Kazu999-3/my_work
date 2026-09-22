@@ -85,10 +85,27 @@ function shouldBankerDraw(bankerScore: number, playerDrew: boolean, playerThirdC
 // ============================================================
 // 配当テーブル
 // ============================================================
+/**
+ * 配当テーブル（払戻総額の倍率。掛け金込みなので純利益は -1 した値）
+ *
+ * 2026-09-22 是正: 旧値 PLAYER 1.95 / BANKER 1.95 / TIE 8.0 には
+ * 「5%ハウスエッジ」というコメントが付いていたが、実装を200万ハンド回した実測では
+ * PLAYER 3.45% / BANKER 1.07% / TIE 24.15% と3つともコメントと一致していなかった。
+ * 特にTIEは本場の「8 to 1（純利益8倍）」ではなく「8 for 1（純利益7倍）」の計算になっており、
+ * 本場の14.4%より約10ポイント不利だった。
+ *
+ * 現在の値は本場のバカラと同じ配当体系に揃えたもの。
+ * 8デッキ実測の出現率 PLAYER 44.65% / BANKER 45.87% / TIE 9.48%
+ * （PLAYER・BANKERはTIE時プッシュ）に対するハウスエッジは
+ *   PLAYER 約1.2% / BANKER 約1.1% / TIE 約14.4%
+ * となる。TIEが突出して高いのは本場のバカラでも同じ性質のため意図的に許容しているが、
+ * プレイヤーが不利さに気づけるよう /casino/rules に確率と期待値を明記してある。
+ * 値を変更した場合は必ず `node scripts/casino_rtp_report.js` で実測し直すこと。
+ */
 const PAYOUTS: Record<BetTarget, number> = {
-  PLAYER: 1.95, // 5%ハウスエッジ
-  BANKER: 1.95, // 5%ハウスエッジ（本物はBANKERのみ5%コミッションだが、KTMは統一）
-  TIE: 8.0,
+  PLAYER: 2.0,  // 本場と同じ等倍配当 → 実測ハウスエッジ 約1.24%
+  BANKER: 1.95, // 本場と同じ5%コミッション相当 → 実測ハウスエッジ 約1.06%
+  TIE: 9.0,     // 本場と同じ 8 to 1（純利益8倍） → 実測ハウスエッジ 約14.4%
 };
 
 // ============================================================
@@ -96,8 +113,19 @@ const PAYOUTS: Record<BetTarget, number> = {
 // ============================================================
 export async function POST(req: Request) {
   try {
+    // ⚠️ 2026-09-22 セキュリティ修正:
+    // 以前は認証が無く、他人のdiscordIdを指定するだけで他人のコインを溶かせた。
+    const { getAuthSession } = await import('../../../../lib/authGuard');
+    const session = await getAuthSession();
+    if (!session || !session.discordId) {
+      return NextResponse.json({ error: 'バカラを遊ぶにはDiscordログインが必要です。' }, { status: 401 });
+    }
+
     const body = await req.json();
-    const { discordId, playerName, bet, amount } = body;
+    const { bet, amount } = body;
+    // プレイヤーはセッションから特定する（ボディの識別子は受け付けない）
+    const discordId = session.discordId;
+    const playerName = session.displayName || session.username;
 
     // ── バリデーション ──
     const cleanAmount = Math.floor(Number(amount));

@@ -6,6 +6,25 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
+    // ⚠️ 2026-09-22 セキュリティ修正:
+    // このエンドポイントは1人あたり最大850コイン（参加100+勝利150+MVP200+各賞200x3）を
+    // 任意のプレイヤーへ回数無制限に発行できるが、以前は認証が一切無く誰でも叩けた。
+    //
+    // 通常運用では KTM Bot（試合終了時の handleAutoMatchEnd）が呼ぶため、
+    // 管理者セッション または X-Bot-Secret のどちらかを必須とする。
+    // ⚠️ PORTAL_BOT_SECRET が未設定だと verifyBotSecretStrict は必ず false を返す。
+    //    その場合 Discord からの自動精算は動かなくなる（安全側に倒している）。
+    //    Vercel と Cloudflare Workers の両方に同じ値を設定すること。
+    const { requireAdmin } = await import('../../../../lib/authGuard');
+    const { verifyBotSecretStrict } = await import('../../../../lib/botAuth');
+
+    if (!verifyBotSecretStrict(req).ok) {
+      const auth = await requireAdmin();
+      if (!auth.ok) {
+        return NextResponse.json({ error: auth.error }, { status: 403 });
+      }
+    }
+
     const body = await req.json();
     const { winner, players, mvp, awards } = body;
     // winner: 'BLUE' | 'RED'

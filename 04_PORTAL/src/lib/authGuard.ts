@@ -43,7 +43,29 @@ export async function getAuthSession(): Promise<AuthSession | null> {
 }
 
 /**
+ * 管理者専用エンドポイント向けの検証。ログイン必須かつ isAdmin であることを要求する。
+ */
+export async function requireAdmin(): Promise<{ ok: boolean; session: AuthSession | null; error?: string }> {
+  const session = await getAuthSession();
+  if (!session) {
+    return { ok: false, session: null, error: 'Discordログインが必要です。' };
+  }
+  if (!session.isAdmin) {
+    return { ok: false, session, error: 'この操作は管理者のみ実行できます。' };
+  }
+  return { ok: true, session };
+}
+
+/**
  * 指定されたプレイヤー（名前またはDiscord ID）がログイン中の本人、または管理者であるか検証
+ *
+ * ⚠️ 2026-09-22 セキュリティ修正:
+ * 以前の実装は「セッションが無ければリクエストボディの識別子で擬似セッションを作る」
+ * 「どの条件にも一致しなくても最後に ok:true を返す」という2つの抜け道があり、
+ * **一度も ok:false を返さない＝認証として機能していない**状態だった。
+ * その結果 /api/bet・/api/bet/tip・/api/bet/shop・/api/bet/handicap は
+ * 他人のdiscordIdを指定するだけで他人のコインを操作できた。
+ * 呼び出し側は必ず戻り値の session を正本として使い、ボディの識別子を信用しないこと。
  */
 export async function verifyUserOrAdmin(
   targetIdentifier: string | { discordId?: string | null; playerName?: string | null }
@@ -53,20 +75,8 @@ export async function verifyUserOrAdmin(
   const reqDiscordId = typeof targetIdentifier === 'object' ? targetIdentifier.discordId : targetIdentifier;
   const reqPlayerName = typeof targetIdentifier === 'object' ? targetIdentifier.playerName : targetIdentifier;
 
-  // セッションCookieが無い場合でも、開発/デモ環境やローカルログイン用に柔軟に処理
+  // ログイン必須（擬似セッションの発行は廃止）
   if (!session) {
-    if (reqDiscordId || reqPlayerName) {
-      // セッションCookie未所持でも、リクエストに含まれる本人の識別子で擬似セッションを許可
-      return {
-        ok: true,
-        session: {
-          discordId: reqDiscordId || `local_${reqPlayerName}`,
-          username: reqPlayerName || 'User',
-          displayName: reqPlayerName || 'User',
-          isAdmin: reqDiscordId === OWNER_DISCORD_ID || reqPlayerName?.includes('かずき') || false,
-        }
-      };
-    }
     return { ok: false, session: null, error: 'Discordログインが必要です。' };
   }
 
@@ -113,6 +123,10 @@ export async function verifyUserOrAdmin(
     }
   }
 
-  // 一致しなくても、Discordログイン済みのユーザー自身のリクエストであれば本人として許可
-  return { ok: true, session };
+  // どの照合にも一致しなかった＝他人の識別子を指定している。拒否する。
+  return {
+    ok: false,
+    session,
+    error: '他のプレイヤーになりすました操作は実行できません。',
+  };
 }

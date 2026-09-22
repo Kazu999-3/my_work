@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from '../../components/Toaster';
-import { Coins, Trophy, Flame, Swords, CheckCircle2, TrendingUp, Sparkles, Shield, ArrowRight, ShoppingBag, Heart, Gift, Target, Dices, Ticket, LogIn, LogOut, UserCheck, Send, MessageSquare, Timer, Clock, AlertTriangle } from 'lucide-react';
+import { Coins, Trophy, Flame, Swords, CheckCircle2, TrendingUp, Sparkles, Shield, ArrowRight, ShoppingBag, Heart, Gift, Target, Dices, Ticket, LogIn, LogOut, UserCheck, Send, MessageSquare, Timer, Clock, AlertTriangle, Info } from 'lucide-react';
 import Link from 'next/link';
 import confetti from 'canvas-confetti';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { supabase } from '../../lib/supabaseClient';
+import { calculateBetOdds } from '../../lib/betOdds';
 import OmikujiModal, { OmikujiData } from './components/OmikujiModal';
 import KtmSlotGame from './components/KtmSlotGame';
 import PoroCrashGame from './components/PoroCrashGame';
@@ -356,23 +357,12 @@ export default function CasinoPage() {
   };
 
   // リアルタイム動的オッズ（パリミュチュエル方式：投票比率に反比例）
-  const calculatedOdds = useMemo(() => {
-    if (!betStats || (betStats.blueAmount === 0 && betStats.redAmount === 0)) {
-      return { blue: 1.85, red: 1.95 };
-    }
-    const total = betStats.blueAmount + betStats.redAmount;
-    const blueRatio = betStats.blueAmount > 0 ? betStats.blueAmount / total : 0.5;
-    const redRatio = betStats.redAmount > 0 ? betStats.redAmount / total : 0.5;
-
-    // オッズ = (0.95 / 比率)
-    const rawBlue = 0.95 / Math.max(blueRatio, 0.05);
-    const rawRed = 0.95 / Math.max(redRatio, 0.05);
-
-    const blueOdds = Number(Math.min(10.0, Math.max(1.15, rawBlue)).toFixed(2));
-    const redOdds = Number(Math.min(10.0, Math.max(1.15, rawRed)).toFixed(2));
-
-    return { blue: blueOdds, red: redOdds };
-  }, [betStats]);
+  // ⚠️ ここでの算出はあくまで「表示用の見積もり」。実際に適用されるオッズは
+  // サーバーが POST /api/bet の中で再計算した値（レスポンスの data.odds）である。
+  const calculatedOdds = useMemo(
+    () => calculateBetOdds(betStats?.blueAmount ?? 0, betStats?.redAmount ?? 0),
+    [betStats]
+  );
 
   // ⚔️ 現在のログインユーザーがこの試合の出場選手（BLUE / RED）かどうかを判定
   const isParticipant = useMemo(() => {
@@ -500,7 +490,7 @@ export default function CasinoPage() {
     try {
       setIsSubmitting(true);
       setBetMessage(null);
-      const currentOdds = betTeam === 'BLUE' ? calculatedOdds.blue : calculatedOdds.red;
+      // オッズはサーバー側で再計算される。ここでは送らない（改ざん防止）。
       const res = await fetch('/api/bet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -509,14 +499,13 @@ export default function CasinoPage() {
           playerName: activePlayerName.trim() || user?.username,
           team: betTeam,
           amount: betAmount,
-          odds: currentOdds,
         }),
       });
 
       const data = await res.json();
       if (res.ok && data.success) {
         triggerCelebration();
-        setBetMessage(`🎉 【ベット完了】 ${data.playerName} さんが ${data.team} に ${data.amount}コイン 賭けました！ (オッズ: x${currentOdds}倍 / 残高: ${data.remainingCoins}コイン)`);
+        setBetMessage(`🎉 【ベット完了】 ${data.playerName} さんが ${data.team} に ${data.amount}コイン 賭けました！ (確定オッズ: x${data.odds}倍 / 残高: ${data.remainingCoins}コイン)`);
         fetchBetData();
         refreshUser();
       } else {
@@ -627,6 +616,14 @@ export default function CasinoPage() {
           <p className="text-stone-700 text-xs md:text-sm max-w-xl mx-auto font-medium">
             勝敗予想でコインを増やし、特権チケットやバラエティ権と交換しよう🔥
           </p>
+
+          <Link
+            href="/casino/rules"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/70 hover:bg-white border border-stone-300 text-stone-700 hover:text-stone-900 text-xs font-black transition-colors"
+          >
+            <Info size={13} />
+            ルール ＆ 確率一覧を見る
+          </Link>
 
           {/* ジャックポット金庫バナー */}
           <div className="mt-4 inline-flex flex-col items-center justify-center gap-1.5 px-4 md:px-6 py-2.5 rounded-2xl bg-amber-100/90 border-2 border-amber-400/60 text-amber-950 text-xs font-black text-center max-w-full shadow-sm">
