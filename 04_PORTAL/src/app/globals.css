@@ -114,6 +114,57 @@ html.dark [class*="bg-stone-200\\/"] {
   color: #f2f3f5;
 }
 
+/* 🌙 淡色アクセント背景（bg-amber-50 等）のダークモード対応
+   ------------------------------------------------------------------
+   html.dark .bg-white { color: #f2f3f5 } で「白背景カードの中は明るい文字」に
+   なるが、そのカード内に bg-amber-50 のような**淡い色背景**を置くと、
+   背景は淡いまま・文字だけ明るい色を継承してしまい読めなくなっていた
+   （2026-09-23の監査で98箇所）。
+   淡色アクセントはダークでも「淡い背景＋暗い文字」の関係を保つ必要があるため、
+   背景をダーク寄りに沈めたうえで文字を明るく揃える。
+   ※ 個別に className を直すと98箇所の修正漏れが出るため、ここで一括して面倒を見る。 */
+html.dark [class*="bg-amber-50"],
+html.dark [class*="bg-amber-100"],
+html.dark [class*="bg-emerald-50"],
+html.dark [class*="bg-emerald-100"],
+html.dark [class*="bg-rose-50"],
+html.dark [class*="bg-rose-100"],
+html.dark [class*="bg-sky-50"],
+html.dark [class*="bg-sky-100"],
+html.dark [class*="bg-blue-50"],
+html.dark [class*="bg-blue-100"],
+html.dark [class*="bg-teal-50"],
+html.dark [class*="bg-teal-100"],
+html.dark [class*="bg-indigo-50"],
+html.dark [class*="bg-indigo-100"],
+html.dark [class*="bg-purple-50"],
+html.dark [class*="bg-purple-100"],
+html.dark [class*="bg-pink-50"],
+html.dark [class*="bg-pink-100"],
+html.dark [class*="bg-red-50"],
+html.dark [class*="bg-red-100"],
+html.dark [class*="bg-green-50"],
+html.dark [class*="bg-green-100"],
+html.dark [class*="bg-yellow-50"],
+html.dark [class*="bg-yellow-100"],
+html.dark [class*="bg-orange-50"],
+html.dark [class*="bg-orange-100"],
+html.dark [class*="bg-cyan-50"],
+html.dark [class*="bg-cyan-100"] {
+  background-color: #35373c !important;
+}
+
+/* 上記の淡色ブロック内で、明示的に濃い文字色を指定している要素は
+   ダーク背景に対して暗すぎるため、読める明度へ引き上げる。 */
+html.dark [class*="bg-amber-50"] .text-stone-900,
+html.dark [class*="bg-amber-100"] .text-stone-900,
+html.dark [class*="bg-emerald-50"] .text-stone-900,
+html.dark [class*="bg-rose-50"] .text-stone-900,
+html.dark [class*="bg-sky-50"] .text-stone-900,
+html.dark [class*="bg-blue-50"] .text-stone-900 {
+  color: #f2f3f5 !important;
+}
+
 html.dark .border-stone-200,
 html.dark [class*="border-stone-200"],
 html.dark .border-stone-300,

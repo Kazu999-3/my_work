@@ -2652,8 +2652,9 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
                                   <div className="space-y-1">
                                     <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider block">📊 プレイヤー別の実績</span>
-                                    <div className="overflow-hidden rounded-lg border border-black/10 bg-black/5">
-                                      <table className="w-full text-left border-collapse text-[10px]">
+                                    {/* 2026-09-23: overflow-hidden だと狭い画面で表の右側が切れて読めなくなるため横スクロールへ */}
+                                    <div className="overflow-x-auto rounded-lg border border-black/10 bg-black/5">
+                                      <table className="w-full min-w-[320px] text-left border-collapse text-[10px]">
                                         <thead>
                                           <tr className="bg-black/5 text-gray-400 font-bold uppercase border-b border-black/10 text-[8px]">
                                             <th className="p-2">プレイヤー</th>
