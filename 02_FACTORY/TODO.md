@@ -395,6 +395,35 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
   2. `/balancer`・`/coach` 固有400 KBのうち、初期表示に不要な部分を `next/dynamic` 化。
   3. ソース分割そのものは**可読性の改善としてのみ**価値がある（性能は変わらない）。
 
+  **共通668 KBの内訳（2026-09-22 追加調査）— 削減余地はほぼ無い**
+
+  | chunk | サイズ | 中身 |
+  |---|---|---|
+  | 3-wg5n_f-syfd.js | 228 KB | react-dom（シグネチャ検出） |
+  | 082gtuuts-7wf.js | 152 KB | React/Next.jsランタイム |
+  | 0c0hxoamwjsbw.js | 110 KB | 同上（特定できず） |
+  | 3b8urmju55db5.js | 51 KB | 同上（特定できず） |
+  | 0z8fecms1sb_d.js | 39 KB | canvas-confetti + next/image |
+  | 0ojltk_26jag0.js | 35 KB | lucide-react |
+  | その他5本 | 53 KB | turbopackランタイム等 |
+
+  - **大半が React + Next.js のフレームワーク本体**で、アプリ側から削れない。
+  - ルートレイアウト(`app/layout.tsx`)が読む自作コンポーネントは7つだけで、
+    外部依存は **lucide-react** と **canvas-confetti** のみ。
+    `Sidebar.tsx`(27.8KB) / `PwaRegister.tsx`(9.8KB) / `Toaster` / `BackButton` /
+    `BackToTop` / `OfflineNotifier` / `ThemeContext` といずれも小さい。
+  - **framer-motion・recharts・supabase-js は共通chunkに含まれていない**（既にルート分割済み）。
+  - 唯一の候補は `canvas-confetti`（39 KBチャンクに同梱）。`Sidebar.tsx` が読んでいるが
+    演出用途なので遅延読込にできる。ただし**効果は最大39 KB（全体の6%）で、
+    しかも next/image と同一chunkのため実際の削減はそれ未満**。労力に見合わない。
+  - ⚠️ 本番・ローカルとも完全にminifyされており、chunkから `node_modules` のパスは取れない。
+    シグネチャ文字列（`Minified React error` 等）での推定が限界。
+    より厳密に見るならソースマップを有効にしてビルドし直す必要がある。
+
+  **総合結論: バンドル最適化は既にほぼ限界。これ以上は投資対効果が悪い。**
+  やるとすれば `/balancer`・`/coach` 固有400 KBの遅延読込のみ。
+
+
 - [x] **孤立（未リンク）ノートの索引登録**（2026-09-22 完了）— 48件 → **22件**
   - 登録したもの: DB生成の戦術バイブル12体（akali/akshan/alistar/ambessa/belveth/brand/
     caitlyn/diana/renekton/talon/vi/yuumi）、`.agent/rules` 8件、`.agent/resources` 2件、
@@ -446,8 +475,22 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
     現在は `✅ [PASS] デイリーログ鮮度: 最新のデイリーログ日付: 2026-09-20 (2日前 / 全3エントリ)`。
   - **教訓**: 「チェックが警告を出し続けている」ときに、運用側ではなく**チェック側が壊れている**
     可能性を先に潰すこと。危うく正常に回っている運用を廃止するところだった。
-- [ ] **🗂️ `scratch/`(96MB)がAIの検索対象に入りうる**（低優先・現状維持で可）
-  - `.gitignore`済みだが、Glob/Grepの検索範囲を絞る標準的な仕組みが見当たらず、無理に`settings.json`をいじるより現状維持が安全と判断して2026-09-21は見送った。エージェントが誤って広範囲に読み込む実害が出た場合に再検討する。
+- [x] ~~**🗂️ `scratch/`(96MB)がAIの検索対象に入りうる**~~ → 2026-09-22 調査完了。
+  **懸念は過大評価だった。現状維持で問題ない。**
+  - 96MBの内訳を実測したところ、**95MBは `scratch/audio/` の .webm 音声3本だけ**だった
+    （`7vydOlTfXJ4` / `PnuZWquKQM0` / `_ANlylfkOPc`、2026-06-27〜06-30取得）。
+    Whisper文字起こし用にyt-dlpが落とした中間生成物。
+  - **バイナリファイルは ripgrep（Grepツールの実体）が既定でスキップする**ため、
+    AIのコンテキストを圧迫しない。Globはパスを返すだけ。
+  - 残り約1MBは小さな使い捨てスクリプト（`seed_champs.py` 等）で、実害なし。
+  - よって2026-09-21の「現状維持で可」という判断は正しかった。特別な除外設定は不要。
+
+- [ ] **`scratch/audio/` の音声3本(95MB)を削除するか**（所要: 1分・要確認）
+  - 3ヶ月前の中間生成物。`_ANlylfkOPc` と `7vydOlTfXJ4` は**どのナレッジからも参照されていない**。
+    `PnuZWquKQM0` は `02_FACTORY/_LOL/kirei_queue.json` にのみ登場（キュー記録）。
+  - 削除すればディスク95MBが空く。文字起こしが必要になれば再ダウンロードできる。
+  - ⚠️ **ファイルの物理削除なので実行前にユーザー確認が必要**（`.claude/rules/confirmation.md`）。
+
 
 ---
 
