@@ -777,7 +777,7 @@ export default function PlayerMyPage() {
             />
           )}
           {/* 暗めグラデーションオーバーレイ */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/80 to-black/60 z-0"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-stone-900/92 via-stone-900/80 to-stone-800/55 z-0"></div>
           <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
           
           <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6">
@@ -1451,7 +1451,7 @@ export default function PlayerMyPage() {
 
                   {/* 📊 勝ちパターン分析 (Victory Blueprint) */}
                   {victoryBlueprint && (
-                    <div className="bg-gradient-to-br from-stone-900/30 via-black/40 to-stone-800/30 backdrop-blur-xl border border-amber-500/20 rounded-3xl p-6 shadow-xl lg:col-span-2 flex flex-col justify-between">
+                    <div className="bg-gradient-to-br from-stone-900/30 via-stone-900/40 to-stone-800/30 backdrop-blur-xl border border-amber-500/20 rounded-3xl p-6 shadow-xl lg:col-span-2 flex flex-col justify-between">
                       <div>
                         <h3 className="text-base font-black flex items-center justify-between gap-2 mb-3 border-b border-black/10 pb-3">
                           <span className="flex items-center gap-2">
