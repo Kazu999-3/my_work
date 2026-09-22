@@ -9,6 +9,7 @@ import os
 import sys
 import subprocess
 import re
+import datetime
 from pathlib import Path
 
 # Windows cp932対策
@@ -84,20 +85,38 @@ def check_gemini_models():
     return {"status": "INFO", "msg": "モデル実測スクリプトは配置されていません"}
 
 def check_daily_log_freshness():
-    """DAILY_LOG.md の最終更新日確認"""
+    """DAILY_LOG.md の最終更新日確認 ＆ 鮮度判定
+
+    【2026-09-22 修正】旧実装は
+      ① 見出しの絵文字を 📅 に決め打ちしていたが実ファイルは 🗓 を使っており、
+      ② 先頭2000字しか読んでいなかった
+    ため、**ログは毎回きちんと書かれているのに「日付エントリが検出できませんでした」を
+    出し続けていた**。これを「運用が回っていない」と誤解し、チェックごと削除しかけた。
+    見出しの装飾に依存しないよう、行頭の ## / ### から日付だけを拾う形に変更している。
+    """
     log_path = REPO_ROOT / "02_FACTORY" / "DAILY_LOG.md"
     if not log_path.exists():
         return {"status": "WARN", "msg": "DAILY_LOG.md が見つかりません"}
-    
+
     with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
-        first_lines = f.read(2000)
-    
-    # 直近の日付を抽出
-    dates = re.findall(r"##\s*(?:📅\s*)?(\d{4}-\d{2}-\d{2})", first_lines)
-    if dates:
-        latest = dates[0]
-        return {"status": "PASS", "msg": f"最新のデイリーログ日付: {latest}"}
-    return {"status": "INFO", "msg": "日付エントリが検出できませんでした"}
+        content = f.read()
+
+    # 行頭の見出しから日付を抽出。絵文字や装飾が入っても拾えるようにする
+    # （例: "## 🗓 2026-09-20（土）" / "## 2026-09-19 (土)" のどちらも可）
+    dates = re.findall(r"^#{2,3}[^0-9\n]*(\d{4}-\d{2}-\d{2})", content, re.M)
+    if not dates:
+        return {"status": "WARN", "msg": "日付エントリが検出できませんでした（運用が止まっている可能性）"}
+
+    latest = max(dates)
+    try:
+        age = (datetime.date.today() - datetime.date.fromisoformat(latest)).days
+    except ValueError:
+        return {"status": "INFO", "msg": f"最新のデイリーログ日付: {latest}"}
+
+    # 毎日書く運用ではないため、1週間以上空いたら警告する
+    if age >= 7:
+        return {"status": "WARN", "msg": f"デイリーログが {age} 日間更新されていません (最終: {latest})"}
+    return {"status": "PASS", "msg": f"最新のデイリーログ日付: {latest} ({age}日前 / 全{len(dates)}エントリ)"}
 
 def check_knowledge_links():
     """ナレッジ全域のMarkdownリンク整合性を確認"""
