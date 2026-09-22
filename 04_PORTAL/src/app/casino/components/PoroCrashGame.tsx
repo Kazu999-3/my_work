@@ -11,10 +11,90 @@ interface PoroCrashGameProps {
 
 type GameState = 'IDLE' | 'FLYING' | 'CRASHED' | 'CASHED_OUT';
 
+/**
+ * 📈 倍率カーブのグラフ（実際のクラッシュゲーム風）
+ *
+ * 軌跡 {t: 経過秒, m: 倍率} を受け取り、SVGの折れ線として描く。
+ * - 横軸: 経過時間。最低6秒ぶんの幅を確保し、超えたら伸びる
+ * - 縦軸: 倍率。最低2.0xぶんを確保し、超えたら伸びる（常にカーブが収まる）
+ * - 塗り: カーブ下を薄く塗ってロケットの軌跡らしく見せる
+ * - crashed のときは赤、それ以外は琥珀色
+ */
+function MultiplierCurve({
+  curve,
+  crashed,
+  cashedOut,
+}: {
+  curve: { t: number; m: number }[];
+  crashed: boolean;
+  cashedOut: boolean;
+}) {
+  if (curve.length < 2) return null;
+
+  const W = 300;
+  const H = 120;
+  const PAD = 4;
+
+  const maxT = Math.max(6, curve[curve.length - 1].t);
+  const maxM = Math.max(2, curve[curve.length - 1].m);
+
+  const x = (tt: number) => PAD + (tt / maxT) * (W - PAD * 2);
+  // 倍率1.0を下端、maxM を上端にする
+  const y = (mm: number) => H - PAD - ((mm - 1) / (maxM - 1 || 1)) * (H - PAD * 2);
+
+  const pts = curve.map((c) => `${x(c.t).toFixed(1)},${y(c.m).toFixed(1)}`).join(' ');
+  const area = `${PAD},${H - PAD} ${pts} ${x(curve[curve.length - 1].t).toFixed(1)},${H - PAD}`;
+
+  const stroke = crashed ? '#f43f5e' : cashedOut ? '#34d399' : '#fbbf24';
+  const fill = crashed ? 'rgba(244,63,94,0.15)' : cashedOut ? 'rgba(52,211,153,0.15)' : 'rgba(251,191,36,0.15)';
+
+  const last = curve[curve.length - 1];
+
+  return (
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      preserveAspectRatio="none"
+      className="absolute inset-x-0 bottom-0 h-32 w-full pointer-events-none"
+      aria-hidden="true"
+    >
+      {/* 目盛り（横線）*/}
+      {[0.25, 0.5, 0.75].map((r) => (
+        <line
+          key={r}
+          x1={PAD}
+          x2={W - PAD}
+          y1={H - PAD - r * (H - PAD * 2)}
+          y2={H - PAD - r * (H - PAD * 2)}
+          stroke="rgba(255,255,255,0.07)"
+          strokeWidth="1"
+        />
+      ))}
+      <polygon points={area} fill={fill} />
+      <polyline
+        points={pts}
+        fill="none"
+        stroke={stroke}
+        strokeWidth="2.5"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      {/* 先端の光点 */}
+      <circle cx={x(last.t)} cy={y(last.m)} r="4" fill={stroke}>
+        {!crashed && !cashedOut && (
+          <animate attributeName="r" values="3;5.5;3" dur="1s" repeatCount="indefinite" />
+        )}
+      </circle>
+    </svg>
+  );
+}
+
 export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashGameProps) {
   const [betAmount, setBetAmount] = useState<number>(100);
   const [gameState, setGameState] = useState<GameState>('IDLE');
   const [multiplier, setMultiplier] = useState<number>(1.0);
+  // 📈 倍率カーブの軌跡。{t: 経過秒, m: 倍率} を溜めてSVGで描画する。
+  // 上限は120点（約6秒ぶんの描画点）で、超えたら間引いて負荷を抑える。
+  const [curve, setCurve] = useState<{ t: number; m: number }[]>([]);
   const [gameToken, setGameToken] = useState<string | null>(null);
   const [crashHistory, setCrashHistory] = useState<number[]>([1.84, 1.25, 4.12, 1.05, 12.4]);
   const [finalMultiplier, setFinalMultiplier] = useState<number>(1.0);
@@ -37,6 +117,7 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
     setErrorMsg(null);
     setGameState('FLYING');
     setMultiplier(1.0);
+    setCurve([{ t: 0, m: 1.0 }]);  // 前回の軌跡をリセット
     setWinCoins(0);
 
     try {
@@ -106,6 +187,11 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
       }
 
       setMultiplier(current);
+      // 軌跡を記録（描画点が増えすぎたら1つおきに間引く）
+      setCurve((prev) => {
+        const next = [...prev, { t: elapsed, m: current }];
+        return next.length > 120 ? next.filter((_, i) => i % 2 === 0) : next;
+      });
 
       // 0.3秒ごとにサーバーに「爆発したか」を安全に問い合わせ
       if (now - lastPollTime > 300) {
@@ -234,6 +320,13 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
       <div className="h-64 sm:h-72 bg-gradient-to-b from-indigo-950/40 via-stone-950 to-stone-900 border-2 border-stone-800 rounded-3xl p-5 relative overflow-hidden flex flex-col justify-between shadow-inner">
         {/* 背景の星屑 */}
         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none"></div>
+
+        {/* 📈 倍率カーブ（発射後の軌跡を可視化） */}
+        <MultiplierCurve
+          curve={curve}
+          crashed={gameState === 'CRASHED'}
+          cashedOut={gameState === 'CASHED_OUT'}
+        />
 
         {/* 倍率大表示 */}
         <div className="relative z-10 text-center pt-2">
