@@ -47,18 +47,18 @@ import { KTM_TIERS, getKtmRank } from "../../../lib/mmr";
 import { motion, AnimatePresence } from "framer-motion";
 
 const roleIcons: Record<string, any> = {
-  TOP: <Shield className="w-4 h-4 text-purple-600" />,
+  TOP: <Shield className="w-4 h-4 text-amber-600" />,
   JG: <Zap className="w-4 h-4 text-emerald-600" />,
   MID: <Star className="w-4 h-4 text-rose-600" />,
-  ADC: <Crosshair className="w-4 h-4 text-sky-600" />,
+  ADC: <Crosshair className="w-4 h-4 text-amber-700" />,
   SUP: <Award className="w-4 h-4 text-amber-600" />
 };
 
 const roleColors: Record<string, string> = {
-  TOP: "from-purple-100 to-purple-50 border-purple-200 text-purple-700",
+  TOP: "from-amber-100 to-amber-50 border-amber-300 text-amber-800",
   JG: "from-emerald-100 to-emerald-50 border-emerald-200 text-emerald-700",
   MID: "from-rose-100 to-rose-50 border-rose-200 text-rose-700",
-  ADC: "from-sky-100 to-sky-50 border-sky-200 text-sky-700",
+  ADC: "from-amber-100 to-amber-50 border-amber-300 text-amber-800",
   SUP: "from-amber-100 to-amber-50 border-amber-200 text-amber-700"
 };
 
@@ -657,7 +657,7 @@ export default function PlayerMyPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
-        <RefreshCw className="w-12 h-12 text-cyan-600 animate-spin" />
+        <RefreshCw className="w-12 h-12 text-amber-700 animate-spin" />
       </div>
     );
   }
@@ -695,8 +695,8 @@ export default function PlayerMyPage() {
   return (
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8 font-sans selection:bg-amber-300/40 overflow-x-hidden">
       {/* 背景ネオンデコレーション */}
-      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-cyan-500/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
-      <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-indigo-500/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+      <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-amber-500/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
 
       <div className="max-w-[1600px] w-full mx-auto space-y-6">
         
@@ -778,20 +778,20 @@ export default function PlayerMyPage() {
           )}
           {/* 暗めグラデーションオーバーレイ */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/80 to-black/60 z-0"></div>
-          <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-cyan-500/20 to-indigo-500/20 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
+          <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-amber-500/20 to-amber-600/20 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
           
-          <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <div className="flex items-center gap-5">
-              <div className="w-20 h-20 bg-gradient-to-br from-cyan-500 to-indigo-500 rounded-full flex items-center justify-center text-3xl font-black border-2 border-black/15 shadow-[0_0_25px_rgba(6,182,212,0.5)] shrink-0">
+          <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6">
+            <div className="flex items-center gap-4 sm:gap-5 min-w-0 w-full md:w-auto">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-amber-500 to-amber-600 rounded-full flex items-center justify-center text-2xl sm:text-3xl font-black border-2 border-black/15 shadow-md shrink-0">
                 {player.ign ? player.ign.charAt(0).toUpperCase() : player.name.charAt(0)}
               </div>
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2">
-                  <h1 className="text-3xl md:text-4xl font-black tracking-tight bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
+              <div className="space-y-1.5 min-w-0">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent min-w-0 break-words">
                     {player.name}
                   </h1>
                   {mainDisplayTag && mainDisplayTag !== 'Unknown' && mainDisplayTag !== 'unknown' && (
-                    <span className="bg-cyan-100 border border-cyan-200 text-cyan-700 text-[10px] font-black px-2.5 py-0.5 rounded-full backdrop-blur-md">
+                    <span className="bg-amber-100 border border-amber-300 text-amber-800 text-[10px] font-black px-2.5 py-0.5 rounded-full backdrop-blur-md">
                       Main: {mainDisplayTag}
                     </span>
                   )}
@@ -812,9 +812,9 @@ export default function PlayerMyPage() {
                   )}
                   <div className="flex gap-1.5 flex-wrap">
                     <span className="bg-black/5 border border-black/10 px-2.5 py-0.5 rounded-full text-xs font-bold text-stone-700 backdrop-blur-md">
-                      最高: <span className="text-cyan-600 font-extrabold">{player.highest_rank || "UNRANKED"}</span>
+                      最高: <span className="text-amber-700 font-extrabold">{player.highest_rank || "UNRANKED"}</span>
                     </span>
-                    <span className="bg-cyan-100 border border-cyan-200 px-2.5 py-0.5 rounded-full text-xs font-bold text-cyan-700 backdrop-blur-md">
+                    <span className="bg-amber-100 border border-amber-300 px-2.5 py-0.5 rounded-full text-xs font-bold text-amber-800 backdrop-blur-md">
                       総合MMR: <span className="text-stone-900 font-black">{player.mmr || 1200}</span>
                     </span>
                     {overallStats.total > 0 && (
@@ -836,7 +836,7 @@ export default function PlayerMyPage() {
             </div>
 
             {/* Participation Status & Recent Form */}
-            <div className="bg-white/70 border border-black/10 backdrop-blur-md rounded-2xl p-4 w-full md:w-auto flex items-center justify-between md:justify-start gap-6 shadow-xl flex-wrap">
+            <div className="bg-white/70 border border-black/10 backdrop-blur-md rounded-2xl p-3 sm:p-4 w-full md:w-auto flex items-center justify-between md:justify-start gap-x-4 gap-y-3 sm:gap-6 shadow-xl flex-wrap">
               <div className="space-y-1">
                 <div className="text-[10px] text-gray-400 font-black tracking-wider uppercase">直近コンディション</div>
                 <div className="flex items-center gap-1.5">
@@ -879,7 +879,7 @@ export default function PlayerMyPage() {
                 </div>
               </div>
               <div className="h-8 w-[1px] bg-black/5 hidden md:block"></div>
-              <div className="flex gap-6">
+              <div className="flex gap-4 sm:gap-6">
                 <div className="flex flex-col">
                   <span className="text-[10px] text-gray-400 font-black tracking-wider uppercase mb-1">第一希望</span>
                   <span className="text-stone-900 font-bold text-sm bg-black/5 px-2 py-0.5 rounded border border-black/10 text-center min-w-[36px]">
@@ -970,7 +970,7 @@ export default function PlayerMyPage() {
           {/* 3. 主力レーン適正 ＆ 通算勝率 */}
           <div className="bg-white/90 border border-stone-200/90 rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-cyan-100 border border-cyan-300 flex items-center justify-center text-xl shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-xl shrink-0">
                 🎯
               </div>
               <div>
@@ -1142,7 +1142,7 @@ export default function PlayerMyPage() {
                 title={tab.name}
                 className={`flex items-center justify-center gap-2 shrink-0 px-3 sm:px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 whitespace-nowrap cursor-pointer ${
                   isActive
-                    ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-black shadow-md scale-102'
+                    ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white font-black shadow-md scale-102'
                     : 'text-stone-600 hover:text-stone-900 hover:bg-black/5'
                 }`}
               >
@@ -1219,7 +1219,7 @@ export default function PlayerMyPage() {
                       <div className="bg-stone-50/80 border border-stone-200/80 rounded-2xl p-4 flex flex-col justify-between">
                         <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">平均 KDA</span>
                         <div className="my-2">
-                          <span className="text-3xl sm:text-4xl font-black text-indigo-600">
+                          <span className="text-3xl sm:text-4xl font-black text-amber-700">
                             {overallStats.kda}
                           </span>
                         </div>
@@ -1245,7 +1245,7 @@ export default function PlayerMyPage() {
                       <div className="bg-stone-50/80 border border-stone-200/80 rounded-2xl p-4 flex flex-col justify-between">
                         <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">実力レーティング</span>
                         <div className="my-2">
-                          <span className="text-3xl sm:text-4xl font-black text-cyan-600">
+                          <span className="text-3xl sm:text-4xl font-black text-amber-700">
                             {player.mmr || 1200}
                           </span>
                         </div>
@@ -1371,7 +1371,7 @@ export default function PlayerMyPage() {
                         <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
                           <h3 className="text-base font-black mb-4 border-b border-black/10 pb-3 flex items-center justify-between">
                             <span className="flex items-center gap-2">
-                              <Users className="w-5 h-5 text-indigo-600" />
+                              <Users className="w-5 h-5 text-amber-700" />
                               <span>チーム相性 ＆ シナジー分析</span>
                             </span>
                             <span className="text-[9px] text-gray-500 font-medium">(味方同チーム・3戦以上)</span>
@@ -1410,10 +1410,10 @@ export default function PlayerMyPage() {
                     <div>
                       <h3 className="text-base font-black flex items-center justify-between gap-2 mb-4 border-b border-black/10 pb-3">
                         <span className="flex items-center gap-2">
-                          <Zap className="w-5 h-5 text-cyan-600" />
+                          <Zap className="w-5 h-5 text-amber-700" />
                           <span>Hextech 5軸能力</span>
                         </span>
-                        <span className="text-[10px] bg-cyan-100 text-cyan-700 px-2 py-0.5 rounded-full border border-cyan-200 font-bold">
+                        <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-300 font-bold">
                           平均 3.0 基準 (1〜5)
                         </span>
                       </h3>
@@ -1432,7 +1432,7 @@ export default function PlayerMyPage() {
                               >
                                 <span className="text-stone-600">{d.subject}:</span>
                                 <span className={`font-black text-xs ${
-                                  d.value >= 4.0 ? 'text-cyan-700' : d.value >= 3.0 ? 'text-stone-900' : 'text-rose-600'
+                                  d.value >= 4.0 ? 'text-amber-800' : d.value >= 3.0 ? 'text-stone-900' : 'text-rose-600'
                                 }`}>
                                   {d.value} <span className="text-[9px] font-normal text-stone-400">/ 5.0</span>
                                 </span>
@@ -1451,7 +1451,7 @@ export default function PlayerMyPage() {
 
                   {/* 📊 勝ちパターン分析 (Victory Blueprint) */}
                   {victoryBlueprint && (
-                    <div className="bg-gradient-to-br from-indigo-900/20 via-black/40 to-purple-900/20 backdrop-blur-xl border border-indigo-500/20 rounded-3xl p-6 shadow-xl lg:col-span-2 flex flex-col justify-between">
+                    <div className="bg-gradient-to-br from-stone-900/30 via-black/40 to-stone-800/30 backdrop-blur-xl border border-amber-500/20 rounded-3xl p-6 shadow-xl lg:col-span-2 flex flex-col justify-between">
                       <div>
                         <h3 className="text-base font-black flex items-center justify-between gap-2 mb-3 border-b border-black/10 pb-3">
                           <span className="flex items-center gap-2">
@@ -1484,7 +1484,7 @@ export default function PlayerMyPage() {
                   {/* 📋 週刊スタッツ・スカウティングレポート */}
                   <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl lg:col-span-3">
                     <h3 className="text-base font-black flex items-center gap-2 mb-4 border-b border-black/10 pb-3">
-                      <Sparkles className="w-5 h-5 text-purple-600 animate-pulse" />
+                      <Sparkles className="w-5 h-5 text-amber-600 animate-pulse" />
                       <span>週刊スタッツ・スカウティングレポート (KTM Weekly Scouting)</span>
                     </h3>
                     <ScoutingReport stats={stats} mmr={player.mmr || 1200} />
@@ -1494,7 +1494,7 @@ export default function PlayerMyPage() {
                   <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl lg:col-span-2 space-y-6">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-black/10 pb-3">
                       <h3 className="text-lg font-black flex items-center gap-2">
-                        <TrendingUp className="w-5 h-5 text-indigo-600" />
+                        <TrendingUp className="w-5 h-5 text-amber-700" />
                         <span>MMR推移グラフ</span>
                       </h3>
                       
@@ -1518,7 +1518,7 @@ export default function PlayerMyPage() {
                               onClick={() => setChartPeriod(v)}
                               type="button"
                               className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all ${
-                                chartPeriod === v ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/20' : 'text-stone-500 hover:text-stone-900 hover:bg-black/5'
+                                chartPeriod === v ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20' : 'text-stone-500 hover:text-stone-900 hover:bg-black/5'
                               }`}
                             >
                               {label}
@@ -1534,7 +1534,7 @@ export default function PlayerMyPage() {
                               type="button"
                               className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all ${
                                 activeLane === lane
-                                  ? 'bg-cyan-500 text-black shadow-md shadow-cyan-500/20'
+                                  ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20'
                                   : 'text-stone-500 hover:text-stone-900 hover:bg-black/5'
                               }`}
                             >
@@ -1592,7 +1592,7 @@ export default function PlayerMyPage() {
                             <span>敗北</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <div className="w-6 border-t-2 border-dashed border-cyan-400/50"></div>
+                            <div className="w-6 border-t-2 border-dashed border-amber-400/50"></div>
                             <span>現在のMMR</span>
                           </div>
                           <div className="flex items-center gap-1.5">
@@ -1664,7 +1664,7 @@ export default function PlayerMyPage() {
                               className="bg-black/5 border border-black/10 rounded-2xl p-5 hover:border-black/10 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg relative overflow-hidden group"
                             >
                               {/* ホバー時のバックグラウンド発光 */}
-                              <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-cyan-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                              <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-amber-500 to-amber-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                               
                               <div className="flex justify-between items-center mb-3.5">
                                 <div className="flex items-center gap-2.5">
@@ -1673,7 +1673,7 @@ export default function PlayerMyPage() {
                                   </div>
                                   <span className="font-black text-lg tracking-wider text-stone-800">{role}</span>
                                 </div>
-                                <span className="text-[10px] text-cyan-700 font-bold bg-cyan-100 border border-cyan-200 px-2 py-0.5 rounded-full">
+                                <span className="text-[10px] text-amber-800 font-bold bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full">
                                   MMR {player[`mmr_${role.toLowerCase()}`] || 1200}
                                 </span>
                               </div>
@@ -1687,7 +1687,7 @@ export default function PlayerMyPage() {
                                 </div>
                                 <div className="w-full bg-black/10 rounded-full h-2.5 shadow-inner overflow-hidden border border-black/10">
                                   <div 
-                                    className={`h-full rounded-full ${s.winRate >= 50 ? 'bg-gradient-to-r from-emerald-500 to-teal-400 shadow-[0_0_8px_rgba(16,185,129,0.3)]' : 'bg-gradient-to-r from-rose-500 to-pink-400 shadow-[0_0_8px_rgba(244,63,94,0.3)]'}`} 
+                                    className={`h-full rounded-full ${s.winRate >= 50 ? 'bg-gradient-to-r from-emerald-500 to-teal-400 shadow-md' : 'bg-gradient-to-r from-rose-500 to-pink-400 shadow-md'}`} 
                                     style={{ width: `${s.winRate}%` }}
                                   ></div>
                                 </div>
@@ -1852,7 +1852,7 @@ export default function PlayerMyPage() {
                                   <td className="py-2 pr-3 text-right tabular-nums text-stone-600">{m.wins}</td>
                                   <td className={`py-2 text-right tabular-nums font-black ${
                                     m.winRate >= 60 ? 'text-emerald-600'
-                                      : m.winRate >= 50 ? 'text-sky-600'
+                                      : m.winRate >= 50 ? 'text-stone-600'
                                       : 'text-rose-500'
                                   }`}>
                                     {Math.round(m.winRate)}%
@@ -1897,7 +1897,7 @@ export default function PlayerMyPage() {
                                   <td className="py-2 pr-3 text-right tabular-nums text-stone-600">{r.wins}</td>
                                   <td className={`py-2 text-right tabular-nums font-black ${
                                     r.winRate >= 60 ? 'text-emerald-600'
-                                      : r.winRate >= 50 ? 'text-sky-600'
+                                      : r.winRate >= 50 ? 'text-stone-600'
                                       : 'text-rose-500'
                                   }`}>
                                     {Math.round(r.winRate)}%
@@ -1916,7 +1916,7 @@ export default function PlayerMyPage() {
               {activeTab === 'history' && (
                 <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
                   <h3 className="text-lg font-black flex items-center gap-2 mb-6 border-b border-black/10 pb-3">
-                    <Clock className="w-5 h-5 text-indigo-600" />
+                    <Clock className="w-5 h-5 text-amber-700" />
                     <span>直近の戦績 (KTMカスタム)</span>
                   </h3>
                   <div className="space-y-3">
