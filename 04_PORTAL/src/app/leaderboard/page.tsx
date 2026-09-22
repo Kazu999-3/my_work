@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { Spinner } from '../../components/Feedback';
 import Image from 'next/image';
 import { getChampIcon } from '../../lib/ddragonClient';
-import WinrateMatrixPanel from './WinrateMatrixPanel';
 import CoinsRankingPanel from './CoinsRankingPanel';
 import RosterPanel from './RosterPanel';
 import SynergyPanel from './SynergyPanel';

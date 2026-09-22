@@ -7,7 +7,6 @@ import Link from "next/link";
 import { useCurrentUser } from "../../../hooks/useCurrentUser";
 import PlayerSettingsPanel from "../PlayerSettingsPanel";
 import ScoutingReport from "../../../components/ScoutingReport";
-import MentorshipHubPanel from "../../mentorship/MentorshipHubPanel";
 import PlayerReputationCard from "../PlayerReputationCard";
 import MentorshipProgressCard from "../MentorshipProgressCard";
 import confetti from "canvas-confetti";

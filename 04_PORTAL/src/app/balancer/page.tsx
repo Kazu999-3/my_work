@@ -7,14 +7,25 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
 import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Settings, Sparkles, Coins, Copy, Check, Shuffle } from "lucide-react";
 import { getColorFromRankName, calculateBlueWinProbability, getKtmRank, getRankBadgeStyle, getHighestLaneMmr } from "../../lib/mmr";
-import ProfileModal from "../ktm-admin/ProfileModal";
-import MatchRecordPanel from "../ktm-admin/MatchRecordPanel";
-import AramRotationPanel from "./AramRotationPanel";
 import { BalancerVcManager, updateVcStatus } from "./components/BalancerVcManager";
 import { BalancerBo3Manager } from "./components/BalancerBo3Manager";
-import BalancerStadiumView from "./components/BalancerStadiumView";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { Spinner } from "../../components/Feedback";
+import dynamic from "next/dynamic";
+
+// ── 遅延読込 ───────────────────────────────────────────────────────
+// いずれも「常に表示されるわけではない」ものを、必要になるまで読み込まない。
+//   ProfileModal        … selectedPlayer が選ばれたときだけ表示するモーダル
+//   BalancerStadiumView … balanceResult が確定したあとにだけ表示
+//   AramRotationPanel   … modeTab === 'aram_rotation' のときだけ表示される専用タブ
+// ⚠️ dynamic 化が効くのは「描画されるまでマウントされない」場合だけ。
+//    上記3つはいずれも元から条件付き描画なので、そのまま効果が出る。
+const ProfileModal = dynamic(() => import("../ktm-admin/ProfileModal"), { ssr: false });
+const BalancerStadiumView = dynamic(() => import("./components/BalancerStadiumView"), { ssr: false });
+const AramRotationPanel = dynamic(() => import("./AramRotationPanel"), {
+  ssr: false,
+  loading: () => <div className="py-10 text-center text-xs text-stone-400">読み込み中…</div>,
+});
 
 
 const RoleIcon = ({ role, className = "w-3.5 h-3.5" }: { role: string; className?: string }) => {

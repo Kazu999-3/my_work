@@ -306,6 +306,24 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
   - 切り分け用に `scripts/check_db_connection.mjs` を追加（パスワードを表示せず、
     生のまま／percent-decode のどちらで通るかを判定する）。
 
+
+### 🤔 未配線のまま残った機能2件（2026-09-23発見・判断待ち）
+
+未使用importを外した結果、**どこからも呼ばれていない画面**が2つ表面化した。
+`node 04_PORTAL/scripts/find_dead_code.mjs` で到達不能2件/34.8KBとして検出される。
+
+- [ ] **`app/ktm-admin/MatchRecordPanel.tsx`（22.2KB）— 試合結果の記録パネル**
+  - `balancer/page.tsx` に import だけ残っていたが**JSXでは一度も使われていなかった**
+    （過去に配線を外した際、import を消し忘れたと思われる）。
+  - ⚠️ **専用APIが存在する**: `app/api/riot/fetch-match/route.ts` のコメントに
+    「ktm-admin/MatchRecordPanel.tsx(管理者ログイン必須のページ)専用の機能」と明記されている。
+    このパネルを削除するなら、そのAPIも道連れで死ぬため扱いを揃える必要がある。
+  - **選択肢**: ①`ktm-admin` か `balancer` へ配線して復活 ②削除（専用APIも一緒に）
+
+- [ ] **`app/leaderboard/WinrateMatrixPanel.tsx`（12.6KB）— 勝率マトリクス**
+  - `leaderboard/page.tsx` に import だけ残っていた。完全に未参照。
+  - **選択肢**: ①リーダーボードのタブとして復活 ②削除
+
 ### 🤔 判断が必要（未着手）
 
 - [x] ~~**到達不能コード15ファイル（166.8KB）＋未使用依存2件の扱い**~~ → 2026-09-22 完了。
@@ -466,6 +484,32 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
   計測前に `taskkill //F //IM node.exe` でプロセスを落とすこと。
 
   **残る候補**: `/balancer` 1,068 KB（固有400 KB）。同じ手法が使えるかは未調査。
+
+
+  **/balancer の遅延読込を実施（2026-09-23）— 1,068 KB → 1,027 KB（-41 KB / -3.8%）**
+
+  - `ProfileModal`(13.8KB) / `BalancerStadiumView`(9.5KB) / `AramRotationPanel`(31.3KB) を
+    `next/dynamic` + `ssr:false` 化。3つとも元から条件付き描画なのでそのまま効いた。
+  - **削減幅は `/coach` より小さい**。固有バンドル359 KBの大半は `page.tsx` 本体
+    （ソース176 KB）で、バランサーは1画面完結のツールのため初期表示に必要な部分が多い。
+    これ以上はページ本体の作り替えが必要で、投資対効果が悪い。
+
+  **⚠️ 実測で判明: 未使用importの削除ではバンドルは減らない**
+
+  `balancer/page.tsx` の `MatchRecordPanel`(22.2KB) など、**import されているのに一度も
+  使われていない** default import が計3件見つかった。当初「バンドルに無駄が乗っている」と
+  考えて削除したが、**`/leaderboard` は削除前後で 716 KB のまま変化しなかった**。
+  つまり **turbopack は未使用importを既にツリーシェイキングで除去していた**。
+  削除の価値はコードの見通しであって、性能ではない。
+  検出スクリプト: `04_PORTAL/scripts/find_unused_imports.py`
+
+  **バンドル最適化の到達点（2026-09-23時点）**
+
+  | ページ | 改善前 | 現在 |
+  |---|---|---|
+  | /coach | 1,065 KB | **813 KB** |
+  | /balancer | 1,068 KB | **1,027 KB** |
+  | 全ページ共通 | 668 KB | 668 KB（React/Next本体のため削減不可） |
 
   **総合結論: バンドル最適化は既にほぼ限界。これ以上は投資対効果が悪い。**
   やるとすれば `/balancer`・`/coach` 固有400 KBの遅延読込のみ。
