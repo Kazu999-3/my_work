@@ -64,7 +64,13 @@ async function main() {
 
   for (const file of files) {
     if (done.has(file)) { skipped++; continue; }
-    const sql = readFileSync(join(MIGRATIONS_DIR, file), 'utf8');
+    // BOM(U+FEFF)が先頭に付いていると Postgres が
+    //   42601 syntax error at or near ""
+    // を返してそこで停止する。Windowsのエディタ(メモ帳・一部のVS Code設定)で保存すると
+    // 混入しやすく、実際 77_fix_mentorship_matches_status_check.sql がこれで落ちた
+    // (2026-09-22)。ファイル側でも除去したが、今後の混入で同じ事故を繰り返さないよう
+    // 読み込み時にも落としておく。
+    const sql = readFileSync(join(MIGRATIONS_DIR, file), 'utf8').replace(/^﻿/, '');
     try {
       await client.query('BEGIN');
       await client.query(sql);

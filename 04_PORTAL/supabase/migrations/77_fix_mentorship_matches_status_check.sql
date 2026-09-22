@@ -1,4 +1,4 @@
-﻿-- Migration 77: Fix mentorship_matches status check constraint
+-- Migration 77: Fix mentorship_matches status check constraint
 -- -------------------------------------------------------------
 -- PENDING (オファー申請中) と REJECTED (オファー辞退) を status の許容値に追加する
 
