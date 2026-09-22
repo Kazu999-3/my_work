@@ -9,6 +9,8 @@ interface AdminNotification {
   type: string;
   title: string;
   body: string | null;
+  /** 通知ごとの付随情報（JSONB）。coach_review なら champion / enemyChampion など */
+  data?: Record<string, unknown> | null;
   url: string | null;
   read: boolean;
   created_at: string;
@@ -233,13 +235,30 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
   const getQuickAction = (n: AdminNotification) => {
     const title = n.title.toLowerCase();
     const type = n.type.toLowerCase();
+    // data は JSONB。型が来ないので any 扱いで安全に読む。
+    const d: Record<string, unknown> = (n as unknown as { data?: Record<string, unknown> }).data || {};
     // 通知に url が入っていればそれを最優先で使う（coach_review は
     // /coach?tab=matchup-memo&champion=... のように対象チャンピオンまで持っている）。
+    // ⚠️ 2026-09-23: 以前は「関連ページを開く →」のような汎用文言だったため、
+    // 押した先に何があるのか分からなかった。通知の data には対象チャンピオンや
+    // 対面相手・停滞件数が入っているので、それを文言に出して具体化する。
     if (type.includes('coach_review')) {
-      return { label: '⚡ 振り返りを開く →', url: n.url || '/coach' };
+      const champ = d.champion ? String(d.champion) : '';
+      const enemy = d.enemyChampion ? String(d.enemyChampion) : '';
+      const label =
+        champ && enemy
+          ? `⚡ ${champ} vs ${enemy} の対面メモを開く →`
+          : champ
+          ? `⚡ ${champ} の振り返りを開く →`
+          : '⚡ 振り返りを開く →';
+      return { label, url: n.url || '/coach' };
     }
     if (type.includes('dict_review')) {
-      return { label: '📖 辞典レビューへ →', url: n.url || '/admin/dict-health' };
+      const stale = typeof d.staleCount === 'number' ? d.staleCount : null;
+      return {
+        label: stale ? `📖 停滞中の${stale}件を確認 →` : '📖 辞典ヘルスを確認 →',
+        url: n.url || '/admin/dict-health',
+      };
     }
     if (type.includes('soloq') || title.includes('ソロq') || title.includes('振り返り')) {
       return { label: '⚡ 1分振り返りを開く →', url: '/coach' };

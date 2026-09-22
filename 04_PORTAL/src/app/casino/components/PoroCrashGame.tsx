@@ -105,6 +105,8 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
 
   const animationFrameRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
+  // 軌跡の実データ。毎フレーム push し、表示用の state へは間引いて反映する。
+  const curveRef = useRef<{ t: number; m: number }[]>([]);
 
   // ゲーム開始（発射）
   const handleLaunch = async () => {
@@ -117,6 +119,7 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
     setErrorMsg(null);
     setGameState('FLYING');
     setMultiplier(1.0);
+    curveRef.current = [{ t: 0, m: 1.0 }];
     setCurve([{ t: 0, m: 1.0 }]);  // 前回の軌跡をリセット
     setWinCoins(0);
 
@@ -172,7 +175,16 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
       return false;
     };
 
-    const loop = async (now: number) => {
+    // ⚠️ 2026-09-23 修正: 描画がカクついていた原因は2つ。
+    //   1) loop が async で `await checkServerCrash()` していたため、
+    //      通信の往復（数十〜数百ms）が終わるまで次フレームを requestAnimationFrame
+    //      できず、0.3秒ごとに描画が止まっていた。
+    //   2) 毎フレーム setCurve で配列を作り直しており、再レンダリングが重かった。
+    // → 通信は待たずに投げっぱなしにし、軌跡は ref に溜めて表示用stateの更新を
+    //   約50msごとに間引く。倍率の数字は毎フレーム更新して滑らかさを保つ。
+    let lastCurvePush = 0;
+
+    const loop = (now: number) => {
       const elapsed = (now - startTimeRef.current) / 1000; // 秒数
       // 指数関数的カーブで倍率計算 (0秒=1.0x, 2秒=1.5x, 5秒=3.0x, 10秒=10x)
       const current = Math.floor(Math.pow(Math.E, elapsed * 0.22) * 100) / 100;
@@ -187,17 +199,23 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
       }
 
       setMultiplier(current);
-      // 軌跡を記録（描画点が増えすぎたら1つおきに間引く）
-      setCurve((prev) => {
-        const next = [...prev, { t: elapsed, m: current }];
-        return next.length > 120 ? next.filter((_, i) => i % 2 === 0) : next;
-      });
 
-      // 0.3秒ごとにサーバーに「爆発したか」を安全に問い合わせ
+      // 軌跡は ref に毎フレーム溜め、stateへの反映は約50msごと（＝最大20fps）に間引く。
+      // カーブの見た目はこれで十分滑らかで、再レンダリング回数を1/3以下に抑えられる。
+      curveRef.current.push({ t: elapsed, m: current });
+      if (curveRef.current.length > 240) {
+        curveRef.current = curveRef.current.filter((_, i) => i % 2 === 0);
+      }
+      if (now - lastCurvePush > 50) {
+        lastCurvePush = now;
+        setCurve([...curveRef.current]);
+      }
+
+      // 0.3秒ごとにサーバーへ「爆発したか」を問い合わせる。
+      // ここで await するとフレームが止まるので、結果は待たない（投げっぱなし）。
       if (now - lastPollTime > 300) {
         lastPollTime = now;
-        const crashed = await checkServerCrash();
-        if (crashed) return;
+        void checkServerCrash();
       }
 
       animationFrameRef.current = requestAnimationFrame(loop);
@@ -368,8 +386,12 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
 
         {/* 上昇するポロ・ロケット */}
         <div className="relative z-10 w-full h-24">
+{/* 2026-09-23: transition-all duration-100 は毎フレームの位置更新と競合して
+                 カクついていた（100ms分の補間が常に上書きされる）。
+                 requestAnimationFrame で毎フレーム更新しているのでtransitionは不要。
+                 will-change でGPU合成に乗せる。 */}
           <div
-            className="absolute left-1/2 -translate-x-1/2 transition-all duration-100 flex flex-col items-center"
+            className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center will-change-[bottom]"
             style={{
               bottom: `${progressHeight}%`,
             }}
