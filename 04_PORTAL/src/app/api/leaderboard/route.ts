@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cachedJson } from '../../../lib/apiCache';
 import { supabaseAdmin as supabase } from '../../../lib/supabaseAdmin';
 import { fetchAllRows } from '../../../lib/fetchAll';
 import { getKtmRank } from '../../../lib/mmr';
@@ -99,7 +100,7 @@ export async function GET(req: Request) {
       result[role] = roleRanking;
     });
 
-    return NextResponse.json(result);
+    return cachedJson(result, 60);
   } catch (err: any) {
     console.error('[leaderboard] error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });

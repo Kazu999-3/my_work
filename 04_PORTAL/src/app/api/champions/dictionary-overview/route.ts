@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cachedJson } from '../../../../lib/apiCache';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { getDDragonMaster } from '../../../../lib/dataDragonMaster';
 
@@ -118,7 +119,7 @@ export async function GET(req: Request) {
       }
     });
 
-    return NextResponse.json({ 
+    return cachedJson({
       champions: ddragonChampions,
       dates, 
       pending, 
@@ -128,7 +129,7 @@ export async function GET(req: Request) {
       dbFavorites, 
       confidences, 
       laneRoles 
-    });
+    }, 300);
   } catch (err: any) {
     console.error('[champions/dictionary-overview] error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });

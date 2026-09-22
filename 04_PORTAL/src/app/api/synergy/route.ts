@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cachedJson } from '../../../lib/apiCache';
 import { supabaseAdmin as supabase } from '../../../lib/supabaseAdmin';
 import { fetchAllRows } from '../../../lib/fetchAll';
 
@@ -112,12 +113,12 @@ export async function GET() {
       }));
     });
 
-    return NextResponse.json({ 
+    return cachedJson({
       allyStats, 
       groupStats, 
       allPlayers: allPlayerNamesList,
       totalMatches: Object.keys(matches).length 
-    });
+    }, 60);
   } catch (err: any) {
     console.error('[synergy] error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cachedJson } from '../../../../lib/apiCache';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { fetchAllRows } from '../../../../lib/fetchAll';
 
@@ -215,7 +216,7 @@ export async function GET() {
       };
     });
 
-    return NextResponse.json({ success: true, stats: formattedStats });
+    return cachedJson({ success: true, stats: formattedStats }, 60);
 
   } catch (error: any) {
     console.error('Failed to calculate champion stats:', error);

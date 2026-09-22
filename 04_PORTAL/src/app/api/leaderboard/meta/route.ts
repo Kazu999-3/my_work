@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cachedJson } from '../../../../lib/apiCache';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { fetchAllRows } from '../../../../lib/fetchAll';
 
@@ -69,7 +70,7 @@ export async function GET() {
       };
     }).sort((a, b) => b.games - a.games || b.winRate - a.winRate);
 
-    return NextResponse.json({ rows });
+    return cachedJson({ rows }, 60);
   } catch (err: any) {
     console.error('[leaderboard/meta] error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });

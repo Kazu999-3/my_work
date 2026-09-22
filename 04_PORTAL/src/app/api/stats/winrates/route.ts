@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cachedJson } from '../../../../lib/apiCache';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { fetchAllRows } from '../../../../lib/fetchAll';
 import { normalizeRole } from '../../../../lib/roleUtils';
@@ -110,7 +111,7 @@ export async function GET() {
         return bWr - aWr;
       });
 
-    return NextResponse.json({ status: "SUCCESS", data: results });
+    return cachedJson({ status: "SUCCESS", data: results }, 60);
 
   } catch (error: any) {
     console.error('Stats API Error:', error);
