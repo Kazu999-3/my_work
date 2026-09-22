@@ -137,11 +137,16 @@ def parse_latest_daily_log():
     
     for line in lines:
         stripped = line.strip()
-        if re.match(r"^##\s+(?:📅\s*)?\d{4}-\d{2}-\d{2}", stripped):
+        # 【2026-09-22 修正】見出しの絵文字を 📅 に決め打ちしていたため、実ファイルが使う
+        # "## 🗓 2026-09-20（土）" 形式にマッチせず、**最新の日付を丸ごと読み飛ばして
+        # 1つ前の日付を「最新」として報告していた**（ops_health_check.py にも同じ不具合があった）。
+        # 装飾に依存せず、行頭の ## から最初に現れる日付を拾う。
+        if re.match(r"^##\s+[^0-9\n]*\d{4}-\d{2}-\d{2}", stripped):
             if current_date != "最新ログ":
                 # 次のセクションに来たら最初のセクションで確定終了
                 break
-            current_date = re.sub(r"^##\s+(?:📅\s*)?", "", stripped).strip()
+            current_date = re.sub(r"^##\s+", "", stripped).strip()
+            continue
             continue
 
         if "再利用可能なナレッジ" in stripped or "確定知見" in stripped:
@@ -158,10 +163,13 @@ def parse_latest_daily_log():
             if len(task_lines) < 5:
                 task_lines.append(stripped)
 
+    # 【2026-09-22 修正】抽出できなかったときに「記録しました」「タスク完了」と書くと、
+    # 実際には何も拾えていないのに成功したように見える（ハードコード偽装データ一掃で
+    # 潰したパターンと同じ）。取れなかったことをそのまま伝える。
     return {
         "date": current_date,
-        "knowledge": "\n".join(knowledge_lines) if knowledge_lines else "・本日のナレッジを記録しました",
-        "tasks": "\n".join(task_lines[:4]) if task_lines else "・タスク完了"
+        "knowledge": "\n".join(knowledge_lines) if knowledge_lines else "・（ナレッジの記載が見つかりませんでした）",
+        "tasks": "\n".join(task_lines[:4]) if task_lines else "・（完了タスクの記載が見つかりませんでした）"
     }
 
 def make_daily_embed():
