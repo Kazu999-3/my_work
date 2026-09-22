@@ -627,6 +627,7 @@ export default function MentorshipHubPanel() {
               href="https://discord.com/channels/1485636149379858567/1550159520687325205"
               target="_blank"
               rel="noopener noreferrer"
+              title="Discordの師弟募集チャンネルを新しいタブで開きます"
               className="px-3 py-2.5 rounded-xl bg-[#5865F2]/10 hover:bg-[#5865F2]/20 text-[#5865F2] font-bold text-xs transition border border-[#5865F2]/30 flex items-center gap-1.5 cursor-pointer shadow-2xs"
             >
               <ExternalLink size={13} />
@@ -648,6 +649,7 @@ export default function MentorshipHubPanel() {
 
             <button
               type="button"
+              title="指導・受講のガイドライン（褒めて伸ばす / 1試合1課題 など）を表示します"
               onClick={() => setIsGuidelinesModalOpen(true)}
               className="px-3.5 py-2.5 rounded-xl bg-white border border-stone-200 hover:bg-stone-100 text-stone-700 font-bold text-xs transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
             >
@@ -689,6 +691,7 @@ export default function MentorshipHubPanel() {
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
             <button
               type="button"
+              title="教わりたい人の自己紹介カード一覧に切り替えます"
               onClick={() => setActiveTab('PUPIL')}
               className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === 'PUPIL'
@@ -704,6 +707,7 @@ export default function MentorshipHubPanel() {
 
             <button
               type="button"
+              title="教えられる人の自己紹介カード一覧に切り替えます"
               onClick={() => setActiveTab('MENTOR')}
               className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === 'MENTOR'
@@ -719,6 +723,7 @@ export default function MentorshipHubPanel() {
 
             <button
               type="button"
+              title="成立済みのペアと現在の活動状況を表示します"
               onClick={() => setActiveTab('MATCHES')}
               className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === 'MATCHES'
@@ -839,6 +844,7 @@ export default function MentorshipHubPanel() {
                     </button>
                     <button
                       type="button"
+                      title="このオファーを承諾してペアを結成します。双方に+300コインが付与されます"
                       disabled={Boolean(acceptingMatchId)}
                       onClick={() => handleAcceptRequest(req.id)}
                       className={`px-4 py-1.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 ${
@@ -1075,6 +1081,7 @@ export default function MentorshipHubPanel() {
                         {/* ⭐ 匿名レビューボタン */}
                         <button
                           type="button"
+                          title="相手に星評価と推薦タグを匿名で送ります。送信で+100コイン"
                           onClick={() => {
                             setSelectedReviewMatch(match);
                             setIsReviewModalOpen(true);
@@ -1089,6 +1096,7 @@ export default function MentorshipHubPanel() {
                           <>
                             <button
                               type="button"
+                              title="ペア成立後にやること（挨拶→目標決め→1戦）の3ステップを表示します"
                               onClick={() => {
                                 setSelectedKickoffMatch(match);
                                 setIsKickoffModalOpen(true);
