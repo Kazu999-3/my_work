@@ -1,26 +1,19 @@
--- Migration 78: ポロ・クラッシュの多重利確防止用トークン使用済みテーブル
--- 同一gameToken(署名済みセッション)によるCASHOUTの多重POSTを防ぐため、
--- 利確処理に入る前にトークンのハッシュをこのテーブルへUNIQUE制約付きでINSERTし、
--- 既に使用済み(=INSERT失敗)なら二重利確として拒否する。
--- 全操作は/api/bet/crash route(service_role)経由のみのため、anon/authenticatedは完全遮断。
+-- Migration 78: 【廃止・適用不要】ポロ・クラッシュの多重利確防止用トークン使用済みテーブル
+--
+-- ⚠️ このマイグレーションは意図的に空（何も実行しない）にしてある。削除ではなく無効化なのは、
+--    ファイル名が _migrations テーブルのキーになっており、消すと番号の連続性と
+--    「なぜ無いのか」の記録が失われるため（supabase/migrations/README.md 参照）。
+--
+-- 【経緯】2026-09-22の棚卸しで判明:
+--   - このテーブル `crash_used_tokens` は**本番へ一度も適用されていなかった**
+--     （_migrations の記録は70番までで、71以降は手動適用されていた）。
+--   - かつ**コード内の参照が0件**。
+--   - 直後の migration 79 で `crash_sessions` テーブルを導入し、
+--     多重利確の防止は「pending → settled の原子的な UPDATE が1行だけ成功する」方式
+--     （04_PORTAL/src/app/api/bet/crash/route.ts の claimCrashSession）へ置き換わった。
+--     トークンハッシュを別テーブルへ記録する本方式は使われないまま役目を終えている。
+--
+-- したがって適用する必要はなく、適用すると使われないテーブルが増えるだけなので
+-- 中身を撤去した。クラッシュゲームの多重利確防止は 79_crash_sessions.sql を参照すること。
 
-CREATE TABLE IF NOT EXISTS crash_used_tokens (
-  token_hash TEXT PRIMARY KEY,
-  discord_id TEXT NOT NULL,
-  used_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE INDEX IF NOT EXISTS idx_crash_used_tokens_used_at ON crash_used_tokens (used_at);
-
-ALTER TABLE crash_used_tokens ENABLE ROW LEVEL SECURITY;
-
-DO $$
-DECLARE
-  pol RECORD;
-BEGIN
-  FOR pol IN SELECT policyname FROM pg_policies WHERE tablename = 'crash_used_tokens' LOOP
-    EXECUTE format('DROP POLICY IF EXISTS %I ON crash_used_tokens', pol.policyname);
-  END LOOP;
-END $$;
-
-REVOKE ALL ON crash_used_tokens FROM anon, authenticated;
+-- （実行する文はありません）

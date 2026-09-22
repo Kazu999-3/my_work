@@ -181,3 +181,74 @@ test('forbiddenPairsとrequiredPairsが同じペアで競合した場合、forbi
   const p2InBlue = result.teamBlue.some(p => p.name === 'P2');
   assert.notEqual(p1InBlue, p2InBlue, '競合時はforbiddenPairs優先でP1とP2は別チームになる');
 });
+
+// ============================================================
+// サイド公平化（BLUE/RED の偏り是正）の回帰テスト
+//
+// 2026-09-19〜20 に同じバグを2回連続で見逃した経緯がある。
+// 1回目の修正は「符号付き合計での比較」という等価変形で、+1/-1が5人ずつ相殺されて
+// biasNormal === biasSwapped となり、**サイドが常に50/50のランダム決定に落ちていた**
+// （＝公平化ロジックが何もしていなかった）。現在は個人ごとの偏りの絶対値の合計で
+// 比較することで解消しているが、これを直接検証するテストが0件だった。
+// balancer.ts の「--- サイド公平化ロジック ---」を触るときは必ずこの2本を通すこと。
+//
+// ⚠️ coreBalanceTeams は1回あたり約1.4秒かかる（searchDepth=5 でも重い）。
+//    試行回数を増やすとテスト全体が数分に膨らむため、下記の根拠で最小限に抑えている。
+// ============================================================
+
+/** sideHistory を「全員が同じ偏りを持つ」状態で作る */
+function biasedSideHistory(names: string[], blue: number, red: number) {
+  const h: Record<string, { BLUE: number; RED: number }> = {};
+  for (const n of names) h[n] = { BLUE: blue, RED: red };
+  return h;
+}
+
+test('サイド公平化: BLUEに偏った5人は必ずRED側へ回る', () => {
+  const players = tenPlayers();
+  const names = players.map(p => p.name);
+  const biased = names.slice(0, 5);
+
+  // P1〜P5 は BLUE10/RED0 の偏り、P6〜P10 は偏りなし。
+  // 偏り絶対値の合計を最小化するなら、P1〜P5 が RED に入る側が必ず選ばれる。
+  const sideHistory: Record<string, { BLUE: number; RED: number }> = {};
+  for (const n of biased) sideHistory[n] = { BLUE: 10, RED: 0 };
+  for (const n of names.slice(5)) sideHistory[n] = { BLUE: 0, RED: 0 };
+  const ctx = { ...emptyCtx(), sideHistory };
+
+  // 実測では30/30回すべてRED側だった（2026-09-22 calibration）。
+  // 公平化が壊れてランダム決定へ落ちた場合、8回連続で当たる確率は 1/256 なので
+  // 8回全一致を条件にすれば 99.6% の確率で回帰を検出できる。
+  const TRIALS = 8;
+  for (let i = 0; i < TRIALS; i++) {
+    const result = coreBalanceTeams(players, ctx);
+    assertValidResult(result, names);
+    const inRed = result.teamRed.filter(p => biased.includes(p.name)).length;
+    const inBlue = result.teamBlue.filter(p => biased.includes(p.name)).length;
+    assert.ok(
+      inRed > inBlue,
+      `${i + 1}回目: BLUE偏重メンバーがRED側に多く入っていない（RED ${inRed}人 / BLUE ${inBlue}人）。` +
+        'サイド公平化が無効化され、ランダム決定に落ちている可能性がある'
+    );
+  }
+});
+
+test('サイド公平化: 履歴が中立なら、特定プレイヤーのサイドが固定化しない', () => {
+  const players = tenPlayers();
+  const names = players.map(p => p.name);
+  const ctx = { ...emptyCtx(), sideHistory: biasedSideHistory(names, 0, 0) };
+
+  // 中立時は biasNormal === biasSwapped となり Math.random() で決まる設計。
+  // 「毎回同じサイドに固定される」実装ミスを検出するのが目的なので、
+  // 厳密な分布検定ではなく、全振り（0回 or 20回）にならないことだけを見る。
+  let p1Blue = 0;
+  const TRIALS = 20;
+  for (let i = 0; i < TRIALS; i++) {
+    const result = coreBalanceTeams(players, ctx);
+    if (result.teamBlue.some(p => p.name === 'P1')) p1Blue++;
+  }
+
+  assert.ok(
+    p1Blue > 0 && p1Blue < TRIALS,
+    `中立履歴なのにP1のBLUE入りが ${p1Blue}/${TRIALS} 回と完全に固定化している`
+  );
+});
