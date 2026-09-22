@@ -307,22 +307,31 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
     生のまま／percent-decode のどちらで通るかを判定する）。
 
 
-### 🤔 未配線のまま残った機能2件（2026-09-23発見・判断待ち）
+### ✅ 未配線だった機能2件の処理（2026-09-23 完了）
 
-未使用importを外した結果、**どこからも呼ばれていない画面**が2つ表面化した。
-`node 04_PORTAL/scripts/find_dead_code.mjs` で到達不能2件/34.8KBとして検出される。
+未使用importを外した結果、どこからも呼ばれていない画面が2つ表面化した。ユーザー判断により以下のとおり処理。
 
-- [ ] **`app/ktm-admin/MatchRecordPanel.tsx`（22.2KB）— 試合結果の記録パネル**
-  - `balancer/page.tsx` に import だけ残っていたが**JSXでは一度も使われていなかった**
-    （過去に配線を外した際、import を消し忘れたと思われる）。
-  - ⚠️ **専用APIが存在する**: `app/api/riot/fetch-match/route.ts` のコメントに
-    「ktm-admin/MatchRecordPanel.tsx(管理者ログイン必須のページ)専用の機能」と明記されている。
-    このパネルを削除するなら、そのAPIも道連れで死ぬため扱いを揃える必要がある。
-  - **選択肢**: ①`ktm-admin` か `balancer` へ配線して復活 ②削除（専用APIも一緒に）
+- [x] **`MatchRecordPanel`（22.2KB）→ 削除**（不要と判断）
+  - `balancer/page.tsx` に import だけ残っていた試合結果の手動記録フォーム。
+    勝利チーム選択・10人分のKDA/CS/ダメージ入力・チャンピオン選択・
+    Riot IDから直近カスタムの自動取得・お祭りカスタム（戦績ノーカウント）トグルを備えていた。
+  - **専用APIだった `app/api/riot/fetch-match/route.ts`（3.2KB）も一緒に削除**。
+    他に呼び出し元が無いことを確認済み。
+  - 日常の試合記録はDiscord Botの `handleAutoMatchEnd` → `/api/match/record` →
+    3分後の `riot/match-sync` で回っているため、削除しても記録自体は止まらない。
+    失ったのは「ポータル上での手動記録・手動修正の受け皿」。
 
-- [ ] **`app/leaderboard/WinrateMatrixPanel.tsx`（12.6KB）— 勝率マトリクス**
-  - `leaderboard/page.tsx` に import だけ残っていた。完全に未参照。
-  - **選択肢**: ①リーダーボードのタブとして復活 ②削除
+- [x] **`WinrateMatrixPanel`（12.6KB）→ リーダーボードのタブとして復活**
+  - `/leaderboard` に6つ目のタブ「🎯 レーン別勝率」を追加（`activeTab === 'winrate'`）。
+  - 全メンバー × 5レーン（TOP/JG/MID/ADC/SUP）の 試合数・勝利数・MMR をマトリクス表示。
+    勝率で色分けされ、総合／勝率／試合数／各レーンで並び替えできる。
+  - 依存API `/api/stats/winrates` は存在し、CDNキャッシュ済み（2026-09-22対応分）。
+  - **`next/dynamic` + `ssr:false` で遅延読込**にしたため、タブを開くまで読み込まれない。
+    実測: `/leaderboard` 716 KB → **722 KB（+6 KB）**に収まった。
+  - ⚠️ このページは `<Suspense>` 配下のクライアント描画のため、curlのSSR HTMLには
+    タブが現れない（フォールバックの「読み込み中」が返る）。目視確認はブラウザで行うこと。
+
+- 到達不能コード: 2件/34.8KB → **0件**（`node 04_PORTAL/scripts/find_dead_code.mjs` で確認）
 
 ### 🤔 判断が必要（未着手）
 

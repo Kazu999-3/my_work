@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Spinner } from '../../components/Feedback';
@@ -9,7 +10,7 @@ import { getChampIcon } from '../../lib/ddragonClient';
 import CoinsRankingPanel from './CoinsRankingPanel';
 import RosterPanel from './RosterPanel';
 import SynergyPanel from './SynergyPanel';
-import { Trophy, Activity, Info, Coins, Users, HeartHandshake, Sparkles, Sliders } from 'lucide-react';
+import { Trophy, Activity, Info, Coins, Users, HeartHandshake, Sparkles, Sliders, Grid3x3 } from 'lucide-react';
 
 type Role = 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP';
 const ROLES: Role[] = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
@@ -40,7 +41,7 @@ function LeaderboardContent() {
     TOP: [], JG: [], MID: [], ADC: [], SUP: []
   });
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'ranking' | 'coins' | 'roster' | 'synergy' | 'meta'>(
+  const [activeTab, setActiveTab] = useState<'ranking' | 'coins' | 'roster' | 'synergy' | 'meta' | 'winrate'>(
     ['ranking', 'coins', 'roster', 'synergy', 'meta'].includes(initialTab) ? initialTab : 'ranking'
   );
 
@@ -51,7 +52,7 @@ function LeaderboardContent() {
     }
   }, [searchParams]);
 
-  const handleTabChange = (tab: 'ranking' | 'coins' | 'roster' | 'synergy' | 'meta') => {
+  const handleTabChange = (tab: 'ranking' | 'coins' | 'roster' | 'synergy' | 'meta' | 'winrate') => {
     setActiveTab(tab);
     router.replace(`/leaderboard?tab=${tab}`, { scroll: false });
   };
@@ -214,6 +215,17 @@ function LeaderboardContent() {
               <Activity className="w-4 h-4" />
               <span>📊 メタ統計</span>
             </button>
+            <button
+              onClick={() => handleTabChange('winrate')}
+              className={`flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all whitespace-nowrap cursor-pointer ${
+                activeTab === 'winrate'
+                  ? 'bg-amber-600 text-white shadow-xs scale-102'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+              }`}
+            >
+              <Grid3x3 className="w-4 h-4" />
+              <span>🎯 レーン別勝率</span>
+            </button>
           </div>
         </div>
 
@@ -225,6 +237,9 @@ function LeaderboardContent() {
 
         {/* チーム相性タブ */}
         {activeTab === 'synergy' && <SynergyPanel />}
+
+        {/* レーン別勝率マトリクスタブ */}
+        {activeTab === 'winrate' && <WinrateMatrixPanel />}
 
         {/* メタ統計タブ */}
         {activeTab === 'meta' && (
@@ -521,6 +536,14 @@ function LeaderboardContent() {
     </div>
   );
 }
+
+// レーン別勝率マトリクスは専用タブを開いたときだけ読み込む（初期表示を重くしない）。
+// 2026-09-23: import だけされて未配線のまま放置されていたのをタブとして復活させた。
+const WinrateMatrixPanel = dynamic(() => import('./WinrateMatrixPanel'), {
+  ssr: false,
+  loading: () => <div className="py-10 text-center text-xs text-stone-400">読み込み中…</div>,
+});
+
 
 export default function LeaderboardPage() {
   return (
