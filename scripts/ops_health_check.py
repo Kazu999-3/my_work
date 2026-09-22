@@ -66,14 +66,19 @@ def check_portal_types():
     
     try:
         cmd = ["npx.cmd", "tsc", "--noEmit"] if sys.platform == "win32" else ["npx", "tsc", "--noEmit"]
-        res = subprocess.run(cmd, cwd=portal_dir, capture_output=True, text=True, timeout=30)
+        # 【2026-09-23 調整】30秒では edge_worker_daemon.py 稼働中などCPUが取られている
+        # ときに頻繁にタイムアウトし、実際には型エラー0件なのにWARNを出していた。
+        # 誤検知のWARNは本物のWARNを埋もれさせるため、余裕をみて120秒にする
+        # （平常時は6〜7秒で完了する）。
+        res = subprocess.run(cmd, cwd=portal_dir, capture_output=True, text=True, timeout=120)
         if res.returncode == 0:
             return {"status": "PASS", "msg": "TypeScript 型チェック: エラー0件 (合格)"}
         else:
             error_count = len(re.findall(r"error TS\d+:", res.stdout))
             return {"status": "FAIL", "msg": f"TypeScript 型エラーが {error_count} 件検出されました"}
     except subprocess.TimeoutExpired:
-        return {"status": "WARN", "msg": "TypeScript 型チェックがタイムアウトしました (30秒超過)"}
+        return {"status": "WARN",
+                "msg": "TypeScript 型チェックがタイムアウトしました (120秒超過)。型エラーではなくマシン負荷の可能性があります"}
     except Exception as e:
         return {"status": "WARN", "msg": f"型チェック実行スキップ ({e})"}
 
