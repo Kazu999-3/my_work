@@ -217,22 +217,10 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
 - `04_PORTAL/src/lib/betOdds.ts` ＋ 回帰テスト10件（テストは計46件パス）。
   **検証**: `cd 04_PORTAL && npm test`
 
-### 🚨 デプロイ前に必須（未着手・ユーザー作業）
+### ✅ デプロイ前の必須項目（2026-09-22 完了）
 
-- [ ] **`PORTAL_BOT_SECRET` を Vercel と Cloudflare Workers の両方に設定する**（所要: 10分）
-  - `/api/bet/settle` と `/api/bet` はKTM Botからも呼ばれるが、Botはセッションcookieを持たず
-    `X-Bot-Secret` しか送らない。**この値が未設定だと安全側に倒れて拒否するため、
-    Discordからの自動精算とベットが止まる**。
-  - 2026-09-20時点では「露出は低リスクな通知エンドポイントのみ」としてユーザー判断で
-    未設定のまま運用していたが、**今回コイン発行系が依存するようになり前提が変わった**。
-  - **やること**:
-    ```bash
-    openssl rand -hex 32                       # 1. 値を生成
-    # 2. Vercel: Settings > Environment Variables に PORTAL_BOT_SECRET を追加
-    cd 03_SYSTEMS/ktm_bot && npx wrangler secret put PORTAL_BOT_SECRET   # 3. Workers側
-    ```
-  - **検証**: 設定後にDiscordで `/bet` を実行し、コインが引かれることを確認する。
-- [ ] **`24cede10` の push ＆ デプロイ**（上記シークレット設定の後に行うこと）
+- [x] `PORTAL_BOT_SECRET` の設定、および migration 71〜80 の適用は完了済み。
+  詳細は下記「ジャックポット金庫の是正 ＆ コイン台帳の新設」節を参照。
 
 ### ジャックポット金庫の是正 ＆ コイン台帳の新設（2026-09-22 実装完了・DB適用待ち）
 
@@ -270,69 +258,35 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
   判定は `riot/match-sync` の `penta_kills > 0 && team === match.winning_team`。
   Discord通知と `/casino/rules` の文言も勝利条件を明記済み。
 
-**🚨 デプロイ前に必須（未着手）**
+**✅ デプロイ前の必須項目（2026-09-22 完了）**
 
-- [ ] **【最優先】migration 74・75・80 を本番へ適用する**
-  - 2026-09-22に実DBと照合した結果、`_migrations` の記録（70番まで）と実態が食い違っており、
-    **74・75・78 が未適用**だと判明した。実測結果は以下のとおり。
+- [x] **`PORTAL_BOT_SECRET` を Vercel と Cloudflare Workers の両方に設定**（完了）
+  - Worker `ktm-os-worker` へ `wrangler secret put` で登録、Vercel の Environment Variables にも同値を設定。
+  - 対話プロンプトが分かりにくい場合は `$secret | npx wrangler secret put PORTAL_BOT_SECRET` で
+    パイプ入力すると `Enter a secret value:` を出さずに済む。
+- [x] **migration 71〜80 を本番へ適用**（完了・新規適用4件）
+  - `_migrations` の記録が70番までしか無く、71〜79は手動適用されていたため、
+    初めてスクリプトを流した際に隠れていた不備が2つ表面化した。どちらも記録と実態のズレが原因。
 
-    | 番号 | 対象 | 状態 |
-    |---|---|---|
-    | 71 | `champion_jungle_timing_agg` | ✅ 適用済み |
-    | 72 | `ktm_players.coins` / `.inventory` | ✅ 適用済み |
-    | 73 | `mentorship_matches` / `mentorship_profiles` | ✅ 適用済み |
-    | **74** | `mentorship_reviews` / `player_reputations` | ❌ **未適用** |
-    | **75** | `mentorship_profile_comments` | ❌ **未適用** |
-    | 76 | `mentorship_profiles.max_pupils` | ✅ 適用済み |
-    | 78 | `crash_used_tokens` | ❌ 未適用（※参照0件・後述） |
-    | 79 | `crash_sessions` | ✅ 適用済み |
-    | **80** | `coin_transactions` / `penta_kills` / `jackpot_claimed` | ❌ **未適用（今回追加）** |
+    | 停止箇所 | エラー | 原因 | 対処 |
+    |---|---|---|---|
+    | 71番 | `42703` column does not exist | 適用済みのリネームを再実行していた | 旧列が残るときだけ実行する `DO` ブロックへ |
+    | 77番 | `42601` syntax error at or near "" | 先頭にBOM(EF BB BF)が混入 | ファイルから除去＋`migrate.mjs` 読み込み時にも除去 |
 
-  - ⚠️ **`node scripts/migrate.mjs` は現状そのままでは動かない。`DATABASE_URL` が未設定のため**
-    （`.env` / `04_PORTAL/.env` / `.env.local` のいずれにも無い）。
-    このスクリプトはPostgresへ直接接続してDDLを流す作りで、手元の
-    `SUPABASE_SERVICE_ROLE_KEY`（PostgREST経由）ではDDLを実行できない。
-    71〜79が記録から漏れていたのはこれが原因で、Supabaseダッシュボードから
-    手動適用されていたと考えられる。
-  - **やること**: Supabaseダッシュボード → Settings → Database → Connection string → URI を取得し、
-    ```bash
-    cd d:/my_work
-    DATABASE_URL='postgresql://postgres.xxxxx:[パスワード]@...pooler.supabase.com:6543/postgres' node scripts/migrate.mjs
-    ```
-    `.env` に保存する場合はユーザーの許可を得てから追記すること（機密情報のため）。
-  - **検証**: 適用後に以下で3件すべてが200を返すこと。
-    ```bash
-    node 04_PORTAL/scripts/casino_rtp_report.js   # 設定値の再確認（DB非依存）
-    curl -s "https://my-work-8jbd.vercel.app/api/player/reputation?playerName=test"
-    ```
-    加えて `coin_transactions` / `ktm_match_participants.penta_kills` /
-    `ktm_matches.jackpot_claimed` の3つがPostgREST経由で引けることを確認する。
-  - 80番が未適用でもアプリは壊れないよう防御済み（台帳の書き込み失敗は warn で握りつぶし、
-    `penta_kills` を含む更新が失敗したら列なしで再試行する）。ただし台帳は記録されない。
-
-- [ ] **【重要】告知済みの師弟機能3つが本番で静かに壊れている**（上記74・75の適用で直る）
-  - 2026-09-14の更新履歴で告知した以下が、テーブル不在のまま動いている。
-    - ⭐ 師弟の完全匿名評価 ＆ 満足度集約（+100🪙） … `mentorship_reviews`
-    - 🌟 メンバー匿名評判 ＆ KTM栄誉システム（+50🪙） … `player_reputations`
-    - 💬 師弟プロフィールへのコメント … `mentorship_profile_comments`
-  - 本番で叩くと **HTTP 200 で空データが返る**（エラーにならない）。
-    ```
-    mentorship/reviews    200  {"ok":true,"summaries":{},"hasReviewed":false}
-    player/reputation     200  {"ok":true,"tagCounts":{},"totalKudos":0,"canSendToday":true}
-    mentorship/comments   200  {"ok":true,"comments":[]}
-    ```
-  - 原因は `app/api/player/reputation/route.ts` 42〜45行目のように、selectのerrorを
-    `console.warn` に落として `ok: true` を返していること。**読み取りは永久に空、書き込みは失敗**する。
-    2026-09-22に一掃した「失敗を隠して成功を装う」パターンそのもので、
-    `known-regression-patterns` のパターン5に該当する。
-  - **74・75を適用したら、実際にレビュー投稿・評判送信・コメント投稿が通るかを必ず動作確認すること**
-    （テーブルを作っただけで満足せず、書き込み経路まで確かめる）。
-  - **あわせて検討**: テーブル不在のような構造的エラーまで握りつぶしてよいのか。
-    少なくとも「データが無い」と「テーブルが無い」は区別してログ・レスポンスに出すべき。
+  - **実測確認済み**（PostgREST経由で6項目すべて200応答）:
+    `mentorship_reviews` / `player_reputations` / `mentorship_profile_comments` /
+    `coin_transactions` / `ktm_match_participants.penta_kills` / `ktm_matches.jackpot_claimed`
+  - これで告知済みの師弟機能3つ（評価・評判・コメント）のテーブルが揃った。
+    **ただし動作確認（実際に投稿できるか）はデプロイ後に行うこと。**
+  - 今後は記録と実態が揃うため、この種の停止は起きない。
+  - 切り分け用に `scripts/check_db_connection.mjs` を追加（パスワードを表示せず、
+    生のまま／percent-decode のどちらで通るかを判定する）。
 
 ### 🤔 判断が必要（未着手）
 
-- [ ] **到達不能コード15ファイル（166.8KB）＋未使用依存2件の扱いを決める**（2026-09-22 調査済み）
+- [x] ~~**到達不能コード15ファイル（166.8KB）＋未使用依存2件の扱い**~~ → 2026-09-22 完了。
+  **到達不能コードは0件になった**（削除9件 / 復活3件 / 未使用依存2件を除去）。
+  再確認: `node 04_PORTAL/scripts/find_dead_code.mjs`
   - エントリポイント213件から**到達可能性を辿る解析**を実施（`src/` 配下で動的importは0件のため
     取りこぼし無し）。結果は「到達可能348件 / **到達不能15件**」。
   - ⚠️ **削除してもパフォーマンスは1バイトも改善しない**。どこからもimportされていないため
