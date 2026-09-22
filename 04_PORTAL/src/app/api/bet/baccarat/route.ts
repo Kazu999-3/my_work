@@ -233,7 +233,12 @@ export async function POST(req: Request) {
 
     // ── コイン更新 ──
     if (!isPush) {
-      await updatePlayerCoinsAndInventory({ player, newCoins });
+      await updatePlayerCoinsAndInventory({
+        player,
+        newCoins,
+        reason: 'baccarat',
+        reasonMetadata: { bet: cleanBet, result, amount: cleanAmount, payout },
+      });
     }
 
     return NextResponse.json({

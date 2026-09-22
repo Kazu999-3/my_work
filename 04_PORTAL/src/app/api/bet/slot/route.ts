@@ -120,6 +120,8 @@ export async function POST(req: Request) {
     await updatePlayerCoinsAndInventory({
       player,
       newCoins: newBalance,
+      reason: 'slot',
+      reasonMetadata: { betAmount, multiplier: outcome.multiplier, reels: outcome.reels },
     });
 
     // 15倍以上またはジャックポット時はDiscordへ祝賀通知

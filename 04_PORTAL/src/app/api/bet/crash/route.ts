@@ -142,6 +142,8 @@ export async function POST(req: Request) {
       await updatePlayerCoinsAndInventory({
         player,
         newCoins: newBalance,
+        reason: 'crash',
+        reasonMetadata: { phase: 'bet', betAmount },
       });
 
       // クラッシュポイントを決定し、サーバー側のみに保持する(クライアントには渡さない)
@@ -228,6 +230,8 @@ export async function POST(req: Request) {
         await updatePlayerCoinsAndInventory({
           player,
           newCoins: newBalance,
+          reason: 'crash',
+          reasonMetadata: { phase: 'cashout', multiplier: mult, betAmount: crashSession.bet_amount, actualCrash },
         });
 
         // 10倍以上の超ファインプレー時はDiscord通知

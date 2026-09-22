@@ -259,9 +259,18 @@ export async function updatePlayerCoinsAndInventory(params: {
   newCoins?: number;
   newInventory?: Array<{ id: string; name: string; icon: string; boughtAt: string }>;
   rolePreferencesUpdate?: Record<string, any>;
+  /**
+   * コイン増減の理由。渡すと coin_transactions へ台帳記録される（2026-09-22 新設）。
+   * 省略しても動作は変わらないが、コインが動く経路では必ず渡すこと。
+   * 渡し忘れると「収支が追えない」という元の問題に戻る。
+   */
+  reason?: import('./coinLedger').CoinReason;
+  /** 倍率・オッズ・購入アイテムなど、台帳へ残す補足情報 */
+  reasonMetadata?: Record<string, any>;
 }): Promise<{ success: boolean; coins: number; inventory: any[]; error?: string }> {
-  const { player, newCoins, newInventory, rolePreferencesUpdate } = params;
-  const targetCoins = typeof newCoins === 'number' ? newCoins : getPlayerCoins(player);
+  const { player, newCoins, newInventory, rolePreferencesUpdate, reason, reasonMetadata } = params;
+  const previousCoins = getPlayerCoins(player);
+  const targetCoins = typeof newCoins === 'number' ? newCoins : previousCoins;
   const targetInventory = Array.isArray(newInventory) ? newInventory : getPlayerInventory(player);
 
   if (!supabase) {
@@ -310,6 +319,18 @@ export async function updatePlayerCoinsAndInventory(params: {
         .from('ktm_players')
         .update({ role_preferences: updatedPrefs })
         .eq('name', player.name);
+    }
+
+    // コイン増減の台帳記録。失敗してもコイン更新自体は成立しているので握りつぶす。
+    if (reason && targetCoins !== previousCoins) {
+      const { recordCoinTransaction } = await import('./coinLedger');
+      await recordCoinTransaction({
+        player,
+        delta: targetCoins - previousCoins,
+        balanceAfter: targetCoins,
+        reason,
+        metadata: reasonMetadata,
+      });
     }
 
     return {

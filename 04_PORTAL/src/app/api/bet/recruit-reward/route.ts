@@ -26,6 +26,8 @@ export async function POST(req: Request) {
         await updatePlayerCoinsAndInventory({
           player: owner,
           newCoins: cur + ownerReward,
+          reason: 'match_settle',
+          reasonMetadata: { kind: 'recruit_owner' },
         });
       }
     }
@@ -54,6 +56,8 @@ export async function POST(req: Request) {
         await updatePlayerCoinsAndInventory({
           player: pPlayer,
           newCoins: cur + participantReward,
+          reason: 'match_settle',
+          reasonMetadata: { kind: 'recruit_participant' },
         });
       }
     }

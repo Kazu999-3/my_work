@@ -194,24 +194,42 @@ export async function POST(req: Request) {
         kda_score: kdaScore,
         mmr_delta: mmrDelta,
         champion_name: riotP.championName,
+        // ジャックポット総取り判定に使う。Riot Match-V5 の participant.pentaKills。
+        // migration 80 で penta_kills 列を追加するまで保存先が無く、判定が動かなかった。
+        penta_kills: Number(riotP.pentaKills) || 0,
+        player_name: p.player_name,
+        discord_id: p.discord_id || null,
         role: mappedRole // 実際のレーンで上書き
       };
       
       updates.push(pUpdate);
 
-      await supabase
+      const baseUpdate = {
+        kills: pUpdate.kills,
+        deaths: pUpdate.deaths,
+        assists: pUpdate.assists,
+        vision_score: pUpdate.vision_score,
+        kda_score: pUpdate.kda_score,
+        mmr_delta: pUpdate.mmr_delta,
+        champion_name: pUpdate.champion_name,
+        role: pUpdate.role
+      };
+
+      // penta_kills は migration 80 で追加した列。未適用の環境で更新全体が失敗し、
+      // kills/deaths/assists まで保存されなくなる事故を防ぐため、
+      // 列ありで試して失敗したら列なしで再試行する。
+      const { error: updErr } = await supabase
         .from('ktm_match_participants')
-        .update({
-          kills: pUpdate.kills,
-          deaths: pUpdate.deaths,
-          assists: pUpdate.assists,
-          vision_score: pUpdate.vision_score,
-          kda_score: pUpdate.kda_score,
-          mmr_delta: pUpdate.mmr_delta,
-          champion_name: pUpdate.champion_name,
-          role: pUpdate.role
-        })
+        .update({ ...baseUpdate, penta_kills: pUpdate.penta_kills })
         .eq('id', p.id);
+
+      if (updErr) {
+        console.warn('[match-sync] penta_kills を含む更新に失敗。列なしで再試行します:', updErr.message);
+        await supabase
+          .from('ktm_match_participants')
+          .update(baseUpdate)
+          .eq('id', p.id);
+      }
 
       // プレイヤーデータベース (ktm_players) の該当ロールMMRおよび全体平均MMRを更新する
       const roleMmrKey = `mmr_${p.role.toLowerCase()}`;
@@ -239,7 +257,49 @@ export async function POST(req: Request) {
         .eq('name', p.player_name);
     }
 
-    return NextResponse.json({ status: "SUCCESS", message: "Match detailed stats synchronized.", updates });
+    // ============================================================
+    // 💎 ジャックポット金庫：ペンタキル総取り判定
+    //
+    // 2026-09-22 新設。元々は /api/match/record 側にあったが、あちらはKTM Botが
+    // 試合終了直後に呼ぶもので kills/deaths/assists が全員0埋めの時点で走るため、
+    // ペンタキルを検知しようがなかった（かつ penta_kills 列も存在しなかった）。
+    // Riot APIの実データが揃うのはこの match-sync なので、判定はここで行う。
+    //
+    // ⚠️ この経路は同じ試合に対して複数回呼ばれうる（Botが再同期した場合など）。
+    // 二重払い出しを防ぐため、この試合で既に払い出し済みかを ktm_matches で確認する。
+    // ============================================================
+    let jackpotWinner: { name: string; payout: number } | null = null;
+    try {
+      const pentaWinner = updates.find((u: any) => Number(u.penta_kills) > 0);
+      if (pentaWinner) {
+        const { data: matchRow } = await supabase
+          .from('ktm_matches')
+          .select('id, jackpot_claimed')
+          .eq('id', matchId)
+          .maybeSingle();
+
+        // jackpot_claimed 列が未作成の環境では undefined になる。その場合も
+        // 「未払い出し」とみなさず、列がある場合のみ払い出す（安全側）。
+        if (matchRow && matchRow.jackpot_claimed === false) {
+          const { claimJackpot } = await import('../../../../lib/jackpot');
+          const jRes = await claimJackpot(pentaWinner.player_name, pentaWinner.discord_id);
+          if (jRes.success && jRes.payout > 0) {
+            jackpotWinner = { name: pentaWinner.player_name, payout: jRes.payout };
+            await supabase.from('ktm_matches').update({ jackpot_claimed: true }).eq('id', matchId);
+
+            const { sendShopNotification } = await import('../../../../lib/discordNotify');
+            await sendShopNotification({
+              content: `🚨 **【JACKPOT 炸裂！！】** \`${pentaWinner.player_name}\` 選手がペンタキルを達成し、ジャックポット金庫 **${jRes.payout.toLocaleString()}コイン** を総取りしました！！ 🚨`,
+            }).catch(() => {});
+          }
+        }
+      }
+    } catch (jErr) {
+      // 金庫処理の失敗で試合同期そのものを失敗させない
+      console.warn('[match-sync] ジャックポット判定エラー（続行）:', jErr);
+    }
+
+    return NextResponse.json({ status: "SUCCESS", message: "Match detailed stats synchronized.", updates, jackpotWinner });
   } catch (err: any) {
     console.error("Match Sync Error:", err);
     return NextResponse.json({ status: "ERROR", message: err.message }, { status: 500 });

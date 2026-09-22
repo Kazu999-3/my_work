@@ -89,6 +89,8 @@ export async function POST(req: Request) {
     await updatePlayerCoinsAndInventory({
       player: user,
       newCoins: remaining,
+      reason: 'handicap',
+      reasonMetadata: { level: handicap.level, title: handicap.title, cost: handicap.cost },
     });
 
     // Discord速報通知

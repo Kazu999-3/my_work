@@ -84,6 +84,8 @@ export async function POST(req: Request) {
         await updatePlayerCoinsAndInventory({
           player: dbPlayer,
           newCoins: total,
+          reason: 'match_settle',
+          reasonMetadata: { winner, reasons },
         });
 
         rewardDetails.push({

@@ -34,6 +34,8 @@ interface ParticipantStats {
   totalHeal: number;
   damageSelfMitigated: number;
   goldEarned?: number;
+  /** ペンタキル数。ジャックポット金庫の総取り判定に使う（riot/match-sync が保存） */
+  pentaKills?: number;
   win: boolean;
   lane: string; // TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY
 }
@@ -179,6 +181,9 @@ export async function fetchMatchDetails(matchId: string, apiKey: string): Promis
     totalHeal: (p.totalHeal || 0) + (p.totalDamageShieldedOnTeammates || 0),
     damageSelfMitigated: p.damageSelfMitigated || 0,
     goldEarned: p.goldEarned || 0,
+    // Riot Match-V5 の participant.pentaKills。ここでマッピングし忘れると
+    // ジャックポットの総取り判定が永久に発火しない（2026-09-22に実際そうなっていた）。
+    pentaKills: p.pentaKills || 0,
     win: p.win,
     lane: detectPosition(p) // TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY
   }));

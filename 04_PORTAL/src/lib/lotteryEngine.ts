@@ -190,6 +190,12 @@ export async function executeLotteryDraw(): Promise<LotteryResult> {
       player: pt.player,
       newCoins,
       newInventory: pt.remainingInventory,
+      reason: 'lottery_prize',
+      reasonMetadata: {
+        tickets: pt.ticketCount,
+        isFirstPrize: isFirstPrizeWon && firstPrizeWinner?.id === pt.player.id,
+        isSecondPrize: secondPrizeWinner?.id === pt.player.id,
+      },
     });
   }
 

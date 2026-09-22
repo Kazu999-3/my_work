@@ -310,6 +310,27 @@ export default function CasinoRulesPage() {
           </p>
         </section>
 
+        {/* ジャックポット金庫 */}
+        <section className={CARD}>
+          <h2 className={H2}>💎 サーバー共有ジャックポット金庫</h2>
+          <p className="text-xs text-stone-600 mb-3">
+            全員で積み立てる共有の賞金プールです。次の2つの方法で総取りできます。
+          </p>
+          <ul className="text-xs md:text-sm text-stone-700 space-y-1.5 list-disc list-inside leading-relaxed">
+            <li>
+              <strong>🔥 カスタムでペンタキルを達成する</strong>: 試合結果がRiot APIと同期された時点で判定され、
+              達成者が金庫を全額獲得します。
+            </li>
+            <li>
+              <strong>🎟️ 週末メガ宝くじの1等を引く</strong>: 毎週日曜22:00の抽選で8%の確率。
+            </li>
+          </ul>
+          <p className="text-[11px] text-stone-500 mt-2">
+            積立は「勝敗予想ベット額の5%」「カスタム1試合につき100コイン」「宝くじ売上の60%」から行われます。
+            金庫には上限があり、上限に達している間は積立が止まります。
+          </p>
+        </section>
+
         {/* 免責 */}
         <div className="rounded-2xl border border-stone-300 bg-stone-100/80 p-5">
           <p className="text-[11px] md:text-xs text-stone-600 leading-relaxed">

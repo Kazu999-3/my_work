@@ -71,11 +71,15 @@ export async function POST(req: Request) {
     await updatePlayerCoinsAndInventory({
       player: sender,
       newCoins: newSenderCoins,
+      reason: 'tip_send',
+      reasonMetadata: { to: receiver.name },
     });
 
     await updatePlayerCoinsAndInventory({
       player: receiver,
       newCoins: newReceiverCoins,
+      reason: 'tip_receive',
+      reasonMetadata: { from: sender.name },
     });
 
     const tipMessage = message?.trim() || 'ナイスプレイ！';

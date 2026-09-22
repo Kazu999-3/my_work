@@ -180,6 +180,8 @@ export async function POST(req: Request) {
       player,
       newCoins,
       newInventory,
+      reason: 'shop_purchase',
+      reasonMetadata: { itemId: item.id, itemName: item.name, price: item.price },
     });
 
     if (!updateRes.success) {

@@ -475,6 +475,8 @@ export async function POST(request: Request) {
               await updatePlayerCoinsAndInventory({
                 player: pPlayer,
                 newCoins: cur + payout,
+                reason: 'bet_payout',
+                reasonMetadata: { team: bet.team, amount: bet.amount, multiplier, streak: currentStreak },
                 rolePreferencesUpdate: {
                   betStreak: currentStreak,
                   maxBetStreak: maxStreak,
@@ -514,27 +516,22 @@ export async function POST(request: Request) {
       console.warn('[match/record] 勝敗予想の自動精算エラー（続行）:', e);
     }
 
-    // (4.7) 💎 サーバー共有ジャックポット金庫（ペンタキルで総取り判定 ＆ 試合ボーナス積立）
-    let jackpotWinnerInfo: { name: string; payout: number } | null = null;
+    // (4.7) 💎 サーバー共有ジャックポット金庫（試合開催ボーナスの積立）
+    //
+    // ⚠️ 2026-09-22 是正:
+    // ここには以前「ペンタキルで総取り」の判定があったが、**一度も発火しないデッドコード**
+    // だった。理由は2つ:
+    //   ①ktm_match_participants に penta_kills 列が存在しなかった
+    //   ②このエンドポイントはKTM Botが試合終了直後に呼ぶもので、その時点では
+    //     kills/deaths/assists が全員0埋め。実データを埋めるのは3分後に走る
+    //     riot/match-sync であり、判定のタイミングが根本的に早すぎた
+    // 判定は riot/match-sync 側（Riot APIの実データが揃った後）へ移設した。
+    // ここでは試合開催ボーナスの積立だけを行う（JACKPOT_CAP に達していれば加算されない）。
     try {
-      const { claimJackpot, addToJackpot } = await import('../../../../lib/jackpot');
-      // ペンタキル達成者の判定（pentaKills > 0 または kills >= 5 かつ penta フラグ）
-      const pentaKiller = results.find((r: any) => 
-        Number(r.pentaKills || r.penta_kills || 0) > 0 ||
-        (r.mmr_breakdown && r.mmr_breakdown.pentaKills > 0)
-      );
-
-      if (pentaKiller) {
-        const jRes = await claimJackpot(pentaKiller.name, pentaKiller.discord_id);
-        if (jRes.success && jRes.payout > 0) {
-          jackpotWinnerInfo = { name: pentaKiller.name, payout: jRes.payout };
-        }
-      } else {
-        // 誰もペンタキルしなかった場合は試合開催ボーナスとして +100 コインを金庫にキャリーオーバー積立
-        await addToJackpot(100);
-      }
+      const { addToJackpot } = await import('../../../../lib/jackpot');
+      await addToJackpot(100);
     } catch (jErr) {
-      console.warn('[match/record] ジャックポット処理エラー（続行）:', jErr);
+      console.warn('[match/record] ジャックポット積立エラー（続行）:', jErr);
     }
 
     // 5. Discordへ試合結果を速報通知 (非同期で送信して待たないか、待つか。エラーになっても保存は完了させる)
@@ -583,31 +580,21 @@ export async function POST(request: Request) {
           }
         ];
 
-        if (jackpotWinnerInfo) {
-          fieldsList.push({
-            name: "💎 🚨 JACKPOT 炸裂！！（ペンタキル総取り）",
-            value: `🎉 **\`${jackpotWinnerInfo.name}\` 選手がペンタキルを達成！**\nサーバー共有ジャックポット金庫から **+${jackpotWinnerInfo.payout.toLocaleString()} コイン** を総取り獲得しました！！`,
-            inline: false
-          });
-        }
+        // ペンタキル総取りの通知は riot/match-sync 側（実データ取得後）で行う
 
         const payload = isExhibition ? {
-          content: jackpotWinnerInfo
-            ? `🚨 **【JACKPOT 炸裂！！】\`${jackpotWinnerInfo.name}\` 選手がペンタキルを達成し、ジャックポット金庫（${jackpotWinnerInfo.payout.toLocaleString()}コイン）を総取りしました！！** 🚨\n🎪 **【KTMお祭りカスタム速報】エキシビション対決が終了しました！**`
-            : "🎪 **【KTMお祭りカスタム速報】エキシビション対決が終了しました！** 🎪\n🛡️ **完全戦績保護適用**: 全員の公式MMR・通算勝率はノーカウント（±0）で保護されました！\n🪙 参加賞（+100pt）＆勝利ボーナス（+150pt）および勝敗予想配当を付与しました！",
+          content: "🎪 **【KTMお祭りカスタム速報】エキシビション対決が終了しました！** 🎪\n🛡️ **完全戦績保護適用**: 全員の公式MMR・通算勝率はノーカウント（±0）で保護されました！\n🪙 参加賞（+100pt）＆勝利ボーナス（+150pt）および勝敗予想配当を付与しました！",
           embeds: [
             {
               title: "🎪 お祭りカスタム 試合リザルト (戦績ノーカウント保護)",
-              color: jackpotWinnerInfo ? 0xf59e0b : 0xf59e0b,
+              color: 0xf59e0b,
               fields: fieldsList,
               footer: { text: 'KTM Sovereign Festival Match • Official MMR Protected' },
               timestamp: new Date().toISOString()
             }
           ]
         } : {
-          content: jackpotWinnerInfo
-            ? `🚨 **【JACKPOT 炸裂！！】\`${jackpotWinnerInfo.name}\` 選手がペンタキルを達成し、ジャックポット金庫（${jackpotWinnerInfo.payout.toLocaleString()}コイン）を総取りしました！！** 🚨\n📜 **KTM 試合結果が記録されました！**`
-            : "📜 **KTM 試合結果が記録されました！** 📜\n各プレイヤーのMMRが更新されました。",
+          content: "📜 **KTM 試合結果が記録されました！** 📜\n各プレイヤーのMMRが更新されました。",
           embeds: [
             {
               title: "⚔️ 試合リザルト",

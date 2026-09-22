@@ -224,6 +224,8 @@ export async function PUT(req: Request) {
       player,
       newCoins,
       rolePreferencesUpdate,
+      reason: type === 'daily' ? 'daily_omikuji' : 'rescue_insurance',
+      reasonMetadata: omikujiData ? { tier: omikujiData.tier } : undefined,
     });
 
     if (!updateRes.success) {
@@ -339,6 +341,8 @@ export async function POST(req: Request) {
     const updateRes = await updatePlayerCoinsAndInventory({
       player,
       newCoins,
+      reason: 'bet_place',
+      reasonMetadata: { team: team.toUpperCase(), amount: betAmount },
     });
 
     if (!updateRes.success) {
