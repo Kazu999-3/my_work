@@ -153,7 +153,7 @@ function LeaderboardContent() {
             <span className="text-amber-500">🏆</span> KTM 順位表 ＆ コミュニティ名簿
           </h1>
           <p className="text-xs text-stone-500 font-bold mt-1">
-            ロール別ランキング・🪙 コイン長者番付・名簿一覧・相性シミュレーター統合ハブ
+            ロール別ランキング・🪙 コイン長者番付・名簿一覧・デュオ相性・レーン別勝率の統合ハブ
           </p>
         </div>
 

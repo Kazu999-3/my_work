@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
-import { Users, HeartHandshake, Crown, Skull, Sparkles, Filter, Search, UserCheck, ArrowRight, Trophy } from 'lucide-react';
+import { Users, HeartHandshake, Crown, Skull, Filter, Search, UserCheck, ArrowRight, Trophy } from 'lucide-react';
 
 interface AllyStat {
   p1: string;
@@ -109,113 +109,6 @@ export default function SynergyPanel() {
 
   return (
     <div className="space-y-6">
-      {/* 🔮 デュオ相性シミュレーター */}
-      <div className="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 border border-indigo-500/20 rounded-3xl p-6 shadow-xs space-y-4">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-indigo-600" />
-          <h3 className="text-base font-black text-stone-900">デュオ相性シミュレーター</h3>
-          <span className="text-[10px] font-bold text-indigo-700 bg-indigo-100/70 px-2 py-0.5 rounded-full">
-            2人を選んで共闘勝率を即判定
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-bold text-stone-700 mb-1.5">プレイヤー 1</label>
-            <select
-              value={simPlayer1}
-              onChange={(e) => setSimPlayer1(e.target.value)}
-              className="w-full bg-white border border-stone-300 rounded-xl px-3 py-2.5 text-xs font-bold text-stone-900 focus:outline-none focus:border-indigo-500"
-            >
-              <option value="">選択してください...</option>
-              {allPlayerNames.map(name => (
-                <option key={name} value={name}>{name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-stone-700 mb-1.5">プレイヤー 2</label>
-            <select
-              value={simPlayer2}
-              onChange={(e) => setSimPlayer2(e.target.value)}
-              className="w-full bg-white border border-stone-300 rounded-xl px-3 py-2.5 text-xs font-bold text-stone-900 focus:outline-none focus:border-indigo-500"
-            >
-              <option value="">選択してください...</option>
-              {allPlayerNames.filter(n => n !== simPlayer1).map(name => (
-                <option key={name} value={name}>{name}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* シミュレーション結果表示 */}
-        {simPlayer1 && simPlayer2 && simResult && (
-          <div className="mt-4 p-4 rounded-2xl bg-white border border-indigo-200/90 shadow-sm flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-3">
-              <span className="text-xl">🤝</span>
-              <div>
-                <div className="text-xs font-bold text-stone-500">
-                  {simPlayer1} ＆ {simPlayer2} の共闘戦績
-                </div>
-                <div className="text-sm font-black text-stone-900">
-                  {simResult.games > 0 ? (
-                    <span>{simResult.games}戦 {simResult.wins}勝 {simResult.games - simResult.wins}敗</span>
-                  ) : (
-                    <span className="text-stone-400">過去の共闘履歴がありません</span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {simResult.games > 0 && (
-              <div className="text-right">
-                <div className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">勝率</div>
-                <div className={`text-2xl font-black ${
-                  simResult.winRate >= 60 ? 'text-emerald-600' : simResult.winRate <= 40 ? 'text-rose-600' : 'text-stone-800'
-                }`}>
-                  {Math.round(simResult.winRate)}%
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* フィルター＆人数切り替え */}
-      <div className="bg-white rounded-2xl p-4 border border-stone-200 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Filter size={16} className="text-stone-400" />
-          <span className="text-xs font-bold text-stone-700">最低試合数:</span>
-          {[1, 2, 3, 5].map((count) => (
-            <button
-              key={count}
-              type="button"
-              onClick={() => setMinGames(count)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
-                minGames === count
-                  ? 'bg-amber-600 text-white'
-                  : 'bg-stone-100 hover:bg-stone-200 text-stone-600'
-              }`}
-            >
-              {count}戦以上
-            </button>
-          ))}
-        </div>
-
-        <div className="w-full md:w-60">
-          <select
-            value={filterPlayer}
-            onChange={(e) => setFilterPlayer(e.target.value)}
-            className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs font-bold text-stone-800 focus:outline-none"
-          >
-            <option value="ALL">全プレイヤーを表示</option>
-            {allPlayerNames.map(name => (
-              <option key={name} value={name}>{name}の相性のみ</option>
-            ))}
-          </select>
-        </div>
-      </div>
 
       {/* 🏆 ベストデュオ相性ランキング */}
       <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-xs space-y-4">
