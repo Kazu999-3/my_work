@@ -1,20 +1,19 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
-import ScoutTab, { type LiveRosterEntry } from './ScoutTab';
+import { type LiveRosterEntry } from './ScoutTab';
 import PushOptIn from '../../components/PushOptIn';
-import FiveVFiveSimTab from './FiveVFiveSimTab';
-import MySoloQDashboard from './MySoloQDashboard';
-import SoloQReflectionModal from './SoloQReflectionModal';
+
+
 import Collapsible from '../../components/Collapsible';
 import PlayerStyleRadarCard from '../../components/coach/PlayerStyleRadarCard';
 import VisionAnalyticsCard from '../../components/coach/VisionAnalyticsCard';
 import ChampionQuickSelector from '../../components/coach/ChampionQuickSelector';
 import MatchupBlueprintCard from './MatchupBlueprintCard';
 import MatchupWarningCard from './MatchupWarningCard';
-import MatchFightsAnalyticsCard from './MatchFightsAnalyticsCard';
-import PostGameDeepAnalyticsDashboard from './PostGameDeepAnalyticsDashboard';
+
 import OverlayLauncherButton from './OverlayLauncherButton';
 import SoloQDeepIntelSyncCard from '../../components/coach/SoloQDeepIntelSyncCard';
 
@@ -76,6 +75,15 @@ function CoachPageContent() {
   const [selectedDeepMatchId, setSelectedDeepMatchId] = useState<string>('');
 
   const [activeStepTab, setActiveStepTab] = useState<'pregame' | 'live' | 'postgame'>('pregame');
+
+  // 一度でも開いたタブだけを記録する。dynamic import と併用して
+  // 「まだ開いていないタブのコンポーネントは読み込まない」を実現する。
+  // 一度開いたら以降はマウントし続けるので、タブを往復しても状態は失われない。
+  const [visitedTabs, setVisitedTabs] = useState<Set<string>>(() => new Set(['pregame']));
+  const openStepTab = (id: 'pregame' | 'live' | 'postgame') => {
+    setActiveStepTab(id);
+    setVisitedTabs((prev) => (prev.has(id) ? prev : new Set(prev).add(id)));
+  };
 
   // 📝 ソロQ振り返りの入力モーダル。
   // POST /api/soloq/reflections を叩くのはこのモーダルだけで、MySoloQDashboard は
@@ -162,7 +170,7 @@ function CoachPageContent() {
                 <button
                   key={tab.id}
                   type="button"
-                  onClick={() => setActiveStepTab(tab.id as any)}
+                  onClick={() => openStepTab(tab.id as any)}
                   className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all cursor-pointer min-w-0 overflow-hidden ${
                     isActive
                       ? 'bg-primary text-white shadow-md ring-2 ring-primary/40 scale-[1.01]'
@@ -242,6 +250,7 @@ function CoachPageContent() {
         {/* ========================================================================= */}
         {/* 2. 🧭 試合中 (ライブ偵察・構成勝ち筋診断) */}
         {/* ========================================================================= */}
+        {visitedTabs.has('live') && (
         <div className={activeStepTab === 'live' ? 'space-y-4 animate-in' : 'hidden'}>
           {/* インゲームHUD連携ステータスバナー */}
           <div className="bg-gradient-to-r from-stone-900 to-stone-800 text-white rounded-2xl p-3.5 shadow-sm border border-stone-700/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -285,10 +294,12 @@ function CoachPageContent() {
             </div>
           </div>
         </div>
+        )}
 
         {/* ========================================================================= */}
         {/* 3. 📈 試合後 (確定実測ディープ分析 ＆ 集団戦レビュー ＆ 過去ログ) */}
         {/* ========================================================================= */}
+        {visitedTabs.has('postgame') && (
         <div className={activeStepTab === 'postgame' ? 'space-y-4 animate-in' : 'hidden'}>
           {/* 5大ディープアナリティクス (序盤15分メトリクス・リコール逆再生・ビルド監査・後からメモ編集) */}
           <PostGameDeepAnalyticsDashboard
@@ -333,6 +344,7 @@ function CoachPageContent() {
             onSaved={() => setReflectionRefresh((n) => n + 1)}
           />
         </div>
+        )}
 
         {/* フッター */}
         <div className="mt-8 text-center text-xs text-foreground/30">
@@ -342,6 +354,27 @@ function CoachPageContent() {
     </div>
   );
 }
+
+// ── 遅延読込 ───────────────────────────────────────────────────────
+// このページは3つのステップタブを `hidden` で切り替えており、**全タブが同時にマウント**
+// される作りだった。そのため初期表示に不要な「試合中」「試合後」のコンポーネントまで
+// 最初に読み込まれ、/coach の初回JSが 1,065KB に膨らんでいた（2026-09-22実測）。
+//
+// ⚠️ 単に dynamic 化しても、常にレンダリングされていればチャンクは即座に取得される。
+//    下の visitedTabs と併用して「一度も開いていないタブは描画しない」ことで初めて効く。
+//    一度開いたタブはマウントしたままにするので、タブを往復しても入力や取得済みデータは消えない。
+const tabLoading = () => (
+  <div className="py-10 text-center text-xs text-stone-400">読み込み中…</div>
+);
+
+const ScoutTab = dynamic(() => import('./ScoutTab'), { ssr: false, loading: tabLoading });
+const FiveVFiveSimTab = dynamic(() => import('./FiveVFiveSimTab'), { ssr: false, loading: tabLoading });
+const PostGameDeepAnalyticsDashboard = dynamic(() => import('./PostGameDeepAnalyticsDashboard'), { ssr: false, loading: tabLoading });
+const MatchFightsAnalyticsCard = dynamic(() => import('./MatchFightsAnalyticsCard'), { ssr: false, loading: tabLoading });
+const MySoloQDashboard = dynamic(() => import('./MySoloQDashboard'), { ssr: false, loading: tabLoading });
+// モーダルは「振り返りを書く」を押すまで一切不要なので、開くまで読み込まない
+const SoloQReflectionModal = dynamic(() => import('./SoloQReflectionModal'), { ssr: false });
+
 
 export default function CoachPage() {
   return (
