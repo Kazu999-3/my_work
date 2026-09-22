@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { fetchMatchDetails } from '../../../../lib/riot';
-import { calculateNewMMR, calculateKdaScore, MmrCalcContext, computeRepresentativeMmr } from '../../../../lib/mmr';
+import { calculateNewMMRDetailed, calculateKdaScore, MmrCalcContext, computeRepresentativeMmr } from '../../../../lib/mmr';
 import { verifyBotSecret } from '../../../../lib/botAuth';
 import { fetchAllRows } from '../../../../lib/fetchAll';
 
@@ -173,7 +173,12 @@ export async function POST(req: Request) {
         csd15: p.csd15
       };
 
-      const mmrDelta = calculateNewMMR(ctx);
+      // ⚠️ 2026-09-23 修正: 以前は calculateNewMMR() を使っており mmr_delta しか作らず、
+      // 保存時も mmr_breakdown を更新していなかった。その結果、/api/match/record が
+      // 最初に書いた内訳が残り続け、match-sync が delta を再計算するたびに
+      // **mmr_delta と mmr_breakdown.final が食い違っていった**（実測133件、最大16ポイント差）。
+      // Detailed 版に切り替えて、変動値と内訳を必ずセットで更新する。
+      const { delta: mmrDelta, breakdown: mmrBreakdown } = calculateNewMMRDetailed(ctx);
       const kdaScore = calculateKdaScore(riotP.kills, riotP.deaths, riotP.assists);
 
       // Riot API の実際のレーン情報をマッピング
@@ -194,6 +199,7 @@ export async function POST(req: Request) {
         kda_score: kdaScore,
         mmr_delta: mmrDelta,
         champion_name: riotP.championName,
+        mmr_breakdown: mmrBreakdown,
         // ジャックポット総取り判定に使う。Riot Match-V5 の participant.pentaKills。
         // migration 80 で penta_kills 列を追加するまで保存先が無く、判定が動かなかった。
         penta_kills: Number(riotP.pentaKills) || 0,
@@ -212,6 +218,7 @@ export async function POST(req: Request) {
         vision_score: pUpdate.vision_score,
         kda_score: pUpdate.kda_score,
         mmr_delta: pUpdate.mmr_delta,
+        mmr_breakdown: pUpdate.mmr_breakdown,
         champion_name: pUpdate.champion_name,
         role: pUpdate.role
       };

@@ -569,7 +569,12 @@ export async function performFullMmrRebuild(supabase: SupabaseClient) {
           team: pu.team,
           champion_name: pu.champion_name,
           kda_score: pu.kda_score,
-          mmr_delta: pu.mmr_delta
+          mmr_delta: pu.mmr_delta,
+          // ⚠️ 2026-09-23 修正: 上の matchDeltas では breakdown を計算しているのに、
+          // ここで書き戻す列に含めていなかった。そのため mmr_delta だけが更新され、
+          // mmr_breakdown は /api/match/record が最初に書いた古い値のまま残り続け、
+          // リビルドを回すたびに両者の食い違いが広がっていた（実測133件・最大16ポイント差）。
+          mmr_breakdown: pu.mmr_breakdown
         })));
 
       if (updateError) {
