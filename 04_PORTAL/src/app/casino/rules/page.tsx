@@ -318,8 +318,9 @@ export default function CasinoRulesPage() {
           </p>
           <ul className="text-xs md:text-sm text-stone-700 space-y-1.5 list-disc list-inside leading-relaxed">
             <li>
-              <strong>🔥 カスタムでペンタキルを達成する</strong>: 試合結果がRiot APIと同期された時点で判定され、
-              達成者が金庫を全額獲得します。
+              <strong>🔥 カスタムでペンタキルを達成し、その試合に勝利する</strong>: 試合結果がRiot APIと
+              同期された時点で判定され、条件を満たした人が金庫を全額獲得します。
+              <span className="text-stone-500">※ペンタキルを取っても負けた試合は対象外です。</span>
             </li>
             <li>
               <strong>🎟️ 週末メガ宝くじの1等を引く</strong>: 毎週日曜22:00の抽選で8%の確率。

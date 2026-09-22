@@ -199,6 +199,7 @@ export async function POST(req: Request) {
         penta_kills: Number(riotP.pentaKills) || 0,
         player_name: p.player_name,
         discord_id: p.discord_id || null,
+        team: p.team, // ジャックポットの勝利条件判定に使う（DBへは書き戻さない）
         role: mappedRole // 実際のレーンで上書き
       };
       
@@ -260,6 +261,10 @@ export async function POST(req: Request) {
     // ============================================================
     // 💎 ジャックポット金庫：ペンタキル総取り判定
     //
+    // 【条件】ペンタキルを達成し、**かつその試合に勝利していること**。
+    // 負け試合のペンタキル（いわゆる敗色濃厚な場面での帳尻キル）で金庫が飛ぶのを避け、
+    // 「勝ちに繋がった活躍」だけを報いる。
+    //
     // 2026-09-22 新設。元々は /api/match/record 側にあったが、あちらはKTM Botが
     // 試合終了直後に呼ぶもので kills/deaths/assists が全員0埋めの時点で走るため、
     // ペンタキルを検知しようがなかった（かつ penta_kills 列も存在しなかった）。
@@ -270,7 +275,9 @@ export async function POST(req: Request) {
     // ============================================================
     let jackpotWinner: { name: string; payout: number } | null = null;
     try {
-      const pentaWinner = updates.find((u: any) => Number(u.penta_kills) > 0);
+      const pentaWinner = updates.find(
+        (u: any) => Number(u.penta_kills) > 0 && u.team === match.winning_team
+      );
       if (pentaWinner) {
         const { data: matchRow } = await supabase
           .from('ktm_matches')
@@ -289,7 +296,7 @@ export async function POST(req: Request) {
 
             const { sendShopNotification } = await import('../../../../lib/discordNotify');
             await sendShopNotification({
-              content: `🚨 **【JACKPOT 炸裂！！】** \`${pentaWinner.player_name}\` 選手がペンタキルを達成し、ジャックポット金庫 **${jRes.payout.toLocaleString()}コイン** を総取りしました！！ 🚨`,
+              content: `🚨 **【JACKPOT 炸裂！！】** \`${pentaWinner.player_name}\` 選手がペンタキルを達成し、そのまま勝利！ ジャックポット金庫 **${jRes.payout.toLocaleString()}コイン** を総取りしました！！ 🚨`,
             }).catch(() => {});
           }
         }

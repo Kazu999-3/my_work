@@ -265,23 +265,134 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
   ショップ・ハンデ・チップ送受・宝くじ・ジャックポットの全経路に付与済み。
   **集計**: `summarizeCoinFlow(days)` で reason 別の発行/消費を実測できる。
 - [x] `/casino/rules` に金庫の説明（2つの当選方法・積立元・上限の存在）を追記。
+- [x] **ジャックポット総取りの条件を「ペンタキル達成 ＋ その試合に勝利」に変更**（2026-09-22）。
+  負け試合での帳尻ペンタキルで金庫が飛ぶのを避け、勝ちに繋がった活躍だけを報いる。
+  判定は `riot/match-sync` の `penta_kills > 0 && team === match.winning_team`。
+  Discord通知と `/casino/rules` の文言も勝利条件を明記済み。
 
 **🚨 デプロイ前に必須（未着手）**
 
-- [ ] **migration 80 の適用**（`04_PORTAL/supabase/migrations/80_coin_ledger_and_penta_kills.sql`）
-  - 内容: `coin_transactions` テーブル、`ktm_match_participants.penta_kills`、`ktm_matches.jackpot_claimed`
-  - **実行**: `cd d:/my_work && node scripts/migrate.mjs`
-  - ⚠️ **注意**: `_migrations` テーブルに記録されているのは **70番まで**だが、ファイルは79番まで存在する
-    （71〜79は記録外＝スクリプト経由ではなく手動適用された可能性が高い）。
-    `migrate.mjs` を実行すると71〜79も再適用が試みられる。全てDDLのみで
-    `IF NOT EXISTS` / `DROP POLICY`→`CREATE POLICY` の冪等な書き方になっており、
-    「既に存在する」系エラー（42P07/42710/42701）は適用済みとして記録して続行する作りだが、
-    **1ファイル1トランザクションのため、ファイル途中で既存エラーが出るとそのファイル全体が
-    ロールバックされ『適用済み』と記録される**。71〜79で未適用の文が残る可能性がある点に注意。
-  - 未適用でもアプリは壊れないよう防御済み（台帳の書き込み失敗は warn で握りつぶし、
+- [ ] **【最優先】migration 74・75・80 を本番へ適用する**
+  - 2026-09-22に実DBと照合した結果、`_migrations` の記録（70番まで）と実態が食い違っており、
+    **74・75・78 が未適用**だと判明した。実測結果は以下のとおり。
+
+    | 番号 | 対象 | 状態 |
+    |---|---|---|
+    | 71 | `champion_jungle_timing_agg` | ✅ 適用済み |
+    | 72 | `ktm_players.coins` / `.inventory` | ✅ 適用済み |
+    | 73 | `mentorship_matches` / `mentorship_profiles` | ✅ 適用済み |
+    | **74** | `mentorship_reviews` / `player_reputations` | ❌ **未適用** |
+    | **75** | `mentorship_profile_comments` | ❌ **未適用** |
+    | 76 | `mentorship_profiles.max_pupils` | ✅ 適用済み |
+    | 78 | `crash_used_tokens` | ❌ 未適用（※参照0件・後述） |
+    | 79 | `crash_sessions` | ✅ 適用済み |
+    | **80** | `coin_transactions` / `penta_kills` / `jackpot_claimed` | ❌ **未適用（今回追加）** |
+
+  - ⚠️ **`node scripts/migrate.mjs` は現状そのままでは動かない。`DATABASE_URL` が未設定のため**
+    （`.env` / `04_PORTAL/.env` / `.env.local` のいずれにも無い）。
+    このスクリプトはPostgresへ直接接続してDDLを流す作りで、手元の
+    `SUPABASE_SERVICE_ROLE_KEY`（PostgREST経由）ではDDLを実行できない。
+    71〜79が記録から漏れていたのはこれが原因で、Supabaseダッシュボードから
+    手動適用されていたと考えられる。
+  - **やること**: Supabaseダッシュボード → Settings → Database → Connection string → URI を取得し、
+    ```bash
+    cd d:/my_work
+    DATABASE_URL='postgresql://postgres.xxxxx:[パスワード]@...pooler.supabase.com:6543/postgres' node scripts/migrate.mjs
+    ```
+    `.env` に保存する場合はユーザーの許可を得てから追記すること（機密情報のため）。
+  - **検証**: 適用後に以下で3件すべてが200を返すこと。
+    ```bash
+    node 04_PORTAL/scripts/casino_rtp_report.js   # 設定値の再確認（DB非依存）
+    curl -s "https://my-work-8jbd.vercel.app/api/player/reputation?playerName=test"
+    ```
+    加えて `coin_transactions` / `ktm_match_participants.penta_kills` /
+    `ktm_matches.jackpot_claimed` の3つがPostgREST経由で引けることを確認する。
+  - 80番が未適用でもアプリは壊れないよう防御済み（台帳の書き込み失敗は warn で握りつぶし、
     `penta_kills` を含む更新が失敗したら列なしで再試行する）。ただし台帳は記録されない。
 
+- [ ] **【重要】告知済みの師弟機能3つが本番で静かに壊れている**（上記74・75の適用で直る）
+  - 2026-09-14の更新履歴で告知した以下が、テーブル不在のまま動いている。
+    - ⭐ 師弟の完全匿名評価 ＆ 満足度集約（+100🪙） … `mentorship_reviews`
+    - 🌟 メンバー匿名評判 ＆ KTM栄誉システム（+50🪙） … `player_reputations`
+    - 💬 師弟プロフィールへのコメント … `mentorship_profile_comments`
+  - 本番で叩くと **HTTP 200 で空データが返る**（エラーにならない）。
+    ```
+    mentorship/reviews    200  {"ok":true,"summaries":{},"hasReviewed":false}
+    player/reputation     200  {"ok":true,"tagCounts":{},"totalKudos":0,"canSendToday":true}
+    mentorship/comments   200  {"ok":true,"comments":[]}
+    ```
+  - 原因は `app/api/player/reputation/route.ts` 42〜45行目のように、selectのerrorを
+    `console.warn` に落として `ok: true` を返していること。**読み取りは永久に空、書き込みは失敗**する。
+    2026-09-22に一掃した「失敗を隠して成功を装う」パターンそのもので、
+    `known-regression-patterns` のパターン5に該当する。
+  - **74・75を適用したら、実際にレビュー投稿・評判送信・コメント投稿が通るかを必ず動作確認すること**
+    （テーブルを作っただけで満足せず、書き込み経路まで確かめる）。
+  - **あわせて検討**: テーブル不在のような構造的エラーまで握りつぶしてよいのか。
+    少なくとも「データが無い」と「テーブルが無い」は区別してログ・レスポンスに出すべき。
+
 ### 🤔 判断が必要（未着手）
+
+- [ ] **到達不能コード15ファイル（166.8KB）＋未使用依存2件の扱いを決める**（2026-09-22 調査済み）
+  - エントリポイント213件から**到達可能性を辿る解析**を実施（`src/` 配下で動的importは0件のため
+    取りこぼし無し）。結果は「到達可能348件 / **到達不能15件**」。
+  - ⚠️ **削除してもパフォーマンスは1バイトも改善しない**。どこからもimportされていないため
+    既にバンドルへ含まれていない。効くのは①AIのコンテキスト消費（171KBが検索対象から外れる）
+    ②開発時の混乱解消 ③**無駄な作業の防止**の3点。
+    実際 2026-09-22 に `SoloQReflectionModal.tsx`（alert→トースト化）と
+    `MatchupWarningCard.tsx`（偽装データ一掃）を編集したが、**どちらも死んだファイルで作業が無駄になった**。
+  - **再調査用スクリプト**: 下記を実行すれば同じ解析を再現できる（都度書き直さないこと）。
+    `04_PORTAL/scripts/find_dead_code.mjs`
+
+  **(a) 重複・未使用が明白（判断不要。指示があれば即削除する / 計 7.3KB）**
+
+  | ファイル | 理由 |
+  |---|---|
+  | `src/components/BottomNav.tsx` | `Sidebar.tsx:423` に同等のスマホ用ボトムナビが実装済み。完全な重複 |
+  | `src/components/Skeleton.tsx` | `components/Feedback.tsx:14` に同名の生きた `Skeleton` 実装あり |
+  | `src/lib/apiClient.ts` | 参照0件 |
+  | `src/lib/supabaseBrowserClient.ts` | 参照0件（`lib/supabaseClient.ts` が生きている） |
+
+  - あわせて **`clsx` と `tailwind-merge` が `package.json` に残っているが参照0件**
+    （shadcn系の `cn()` ヘルパーも存在しない）。削除候補。
+
+  **(b) 告知済み機能のため判断が必要（計 153KB）**
+
+  下記は更新履歴でメンバーに告知した機能だが、どこからも呼ばれていない。
+  削除＝「実装したはずの機能を正式に諦める」判断になるため、勝手に消さないこと。
+
+  | ファイル | 告知された機能 |
+  |---|---|
+  | `app/coach/TiltDiagnosisPopup.tsx` (17.5KB) | ティルト診断の自動ポップアップ（2026-08-04告知） |
+  | `components/coach/JgMatchupPredictor.tsx` (13.0KB) | JG特化HUDカンペ（2026-08-20告知） |
+  | `components/coach/JgSkillMasteryChecklist.tsx` (7.8KB) | 同上 |
+  | `components/coach/FocusStickyBar.tsx` (4.0KB) | 同上 |
+  | `app/coach/AngerDetoxModal.tsx` (6.3KB) | 間接的に死亡（呼び出し元が死んでいる） |
+  | `app/coach/SoloQReflectionModal.tsx` (51.7KB) | ソロQ振り返りモーダル |
+  | `app/coach/MatchupWarningCard.tsx` (23.8KB) | **存在しない `/api/coach/matchup-warning` を呼んでいる**（復活させるならAPIから作る必要あり） |
+  | `app/coach/MatchupSmartCard.tsx` (12.4KB) | |
+  | `app/coach/EarlyJunglePathingCard.tsx` (8.0KB) | 間接的に死亡 |
+  | `components/coach/MinimapPlotView.tsx` (7.1KB) | 間接的に死亡 |
+  | `app/admin/knowledge/PendingInsightsPanel.tsx` (8.0KB) | 管理画面。呼ぶ `/api/admin/knowledge/pending-review`(4.1KB) も生きた呼び出し元0件 |
+
+  - **選択肢**: ①まとめて `99_ARCHIVE/` へ退避（スキル棚卸しと同じ方式・復元可能） ②削除
+    ③使いたいものだけ `coach/page.tsx` へ配線して復活
+  - `coach/page.tsx` が現在importしているのは ScoutTab / FiveVFiveSimTab / MySoloQDashboard /
+    PlayerStyleRadarCard / VisionAnalyticsCard / ChampionQuickSelector / MatchupBlueprintCard /
+    MatchFightsAnalyticsCard / PostGameDeepAnalyticsDashboard / OverlayLauncherButton /
+    SoloQDeepIntelSyncCard の11件。復活させるならここへ足す。
+
+- [ ] **巨大ファイルの分割は「先に実測」してから判断する**（未着手・低優先）
+  - 候補: `app/balancer/page.tsx` 176KB / `app/champions/tabs/DictionaryTab.tsx` 174KB /
+    `app/analyzer/page.tsx` 116KB / `app/player/[id]/page.tsx` 105KB /
+    `app/ktm-admin/page.tsx` 97KB / `lib/sessionAnalyticsCalculator.ts` 92KB
+  - ⚠️ **推測で着手しないこと**。2026-09-22に「rechartsが全ページを肥大化させている」という
+    推測が実測で否定された（既にルート分割済みだった）。分割前に必ずバンドル実測を行う。
+
+- [ ] **migration 78 `crash_used_tokens` の置き去りをどうするか**（所要: 5分）
+  - このテーブルは未適用のままだが、**コード内の参照が0件**。79番の `crash_sessions` 方式へ
+    移行した際の置き去りで、未適用でも実害は無い。
+  - **選択肢**: ①ファイルごと削除する ②冒頭に「廃止・適用不要」のコメントを足して残す。
+    放置すると次に棚卸しする人が同じ調査を繰り返す。
 
 - [x] ~~**ジャックポット金庫 19,505コインの扱いを決める**~~ → 2026-09-22に決定・実装済み（上記セクション参照）。
   **既存の超過分は据え置き**、上限5,000は今後の積立停止にのみ適用する方針をユーザーが選択。
