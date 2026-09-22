@@ -100,6 +100,12 @@ export default function OverlayLauncherButton() {
     }
   };
 
+  // ⚠️ 2026-09-23: オーバーレイは spawn('powershell.exe', ...) でローカルPCのプロセスを
+  // 起動する機能のため、Vercel 上では原理的に動かない（/api/overlay も isCloud: true と
+  // 返して何もしない）。それでもボタンが表示されていたため「押しても無反応」に見えていた。
+  // クラウドでは丸ごと隠し、ローカルPCで開いたときだけ表示する。
+  if (isCloud) return null;
+
   return (
     <div className="relative inline-flex items-center gap-1.5">
       {/* メイン起動ボタン */}

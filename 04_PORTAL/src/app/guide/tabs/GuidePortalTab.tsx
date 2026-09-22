@@ -329,6 +329,73 @@ export default function GuidePortalTab() {
           </div>
         </div>
 
+
+        {/* 📊 MMR ＆ KTM内戦レートの説明（2026-09-23 追加） */}
+        <div className="md:col-span-2 bg-white rounded-3xl p-5 md:p-6 border border-stone-200 shadow-xs space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-2xl">
+              📊
+            </div>
+            <span className="text-[11px] font-bold text-stone-500 bg-stone-100 px-2.5 py-1 rounded-full">
+              レート ＆ ランク
+            </span>
+          </div>
+          <h3 className="text-base font-black text-stone-900">MMR（KTM内戦レート）の見方</h3>
+          <p className="text-stone-600 text-xs leading-relaxed">
+            MMRは<strong>KTM内戦の成績だけ</strong>で動く独自レートです。ソロQのランクとは別物で、
+            全員1200からスタートします。<strong>レーンごとに別々</strong>に管理されるので、
+            JGとTOPで違う数字を持ちます。カルテに出る「総合MMR」は、実際にプレイしたレーンの試合数で
+            重み付けした平均です。
+          </p>
+
+          <div className="bg-stone-50 rounded-2xl p-4 border border-stone-200/80 space-y-2.5">
+            <div className="font-bold text-stone-800 text-xs">🔢 勝敗でどれだけ動くか</div>
+            <ul className="text-xs text-stone-700 space-y-1.5 list-disc list-inside leading-relaxed">
+              <li><strong>勝利で +18 / 敗北で -20</strong> が基本。ここから下の補正が乗ります。</li>
+              <li><strong>格差補正（最大 ±15）</strong>: 対面が自分より強いほど、勝ったときの上がり幅が大きくなります。格下に勝っても上がり幅は小さめです。</li>
+              <li><strong>KDAボーナス（最大 +15）</strong>: (キル+アシスト)÷デス が 2.0 を超えた分だけ加点。サポートは +0.8 の補正付き。</li>
+              <li><strong>プレースメント（×1.5）</strong>: <strong>そのレーンで5戦未満</strong>のあいだは変動が1.5倍になり、早く適正レートへ寄ります。慣れないレーンを試したときに大きく動くのはこのためです。</li>
+              <li><strong>高勝率の抑制</strong>: 通算勝率が60%を超えると、上がり幅が最大8ポイント抑えられます。</li>
+              <li>1試合の変動幅は <strong>勝利 +50 / 敗北 -40</strong> が上限（プレースメント中は +70 / -60）。敗北時は必ず3ポイント以上下がります。</li>
+            </ul>
+          </div>
+
+          <div className="bg-stone-50 rounded-2xl p-4 border border-stone-200/80 space-y-2.5">
+            <div className="font-bold text-stone-800 text-xs">🏅 MMRとティアの対応</div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[320px] text-xs">
+                <thead>
+                  <tr className="text-left text-[11px] text-stone-500">
+                    <th className="py-1.5 pr-3 font-black">ティア</th>
+                    <th className="py-1.5 font-black">必要MMR</th>
+                  </tr>
+                </thead>
+                <tbody className="text-stone-700">
+                  <tr className="border-t border-stone-200"><td className="py-1 pr-3 font-bold">CHALLENGER</td><td className="py-1 tabular-nums">2000 〜</td></tr>
+                  <tr className="border-t border-stone-200"><td className="py-1 pr-3 font-bold">GRANDMASTER</td><td className="py-1 tabular-nums">1900 〜</td></tr>
+                  <tr className="border-t border-stone-200"><td className="py-1 pr-3 font-bold">MASTER</td><td className="py-1 tabular-nums">1850 〜</td></tr>
+                  <tr className="border-t border-stone-200"><td className="py-1 pr-3 font-bold">DIAMOND IV 〜 I</td><td className="py-1 tabular-nums">1800 〜 1849</td></tr>
+                  <tr className="border-t border-stone-200"><td className="py-1 pr-3 font-bold">EMERALD IV 〜 I</td><td className="py-1 tabular-nums">1650 〜 1799</td></tr>
+                  <tr className="border-t border-stone-200"><td className="py-1 pr-3 font-bold">PLATINUM IV 〜 I</td><td className="py-1 tabular-nums">1500 〜 1649</td></tr>
+                  <tr className="border-t border-stone-200"><td className="py-1 pr-3 font-bold">GOLD IV 〜 I</td><td className="py-1 tabular-nums">1350 〜 1499</td></tr>
+                  <tr className="border-t border-stone-200"><td className="py-1 pr-3 font-bold">SILVER IV 〜 I</td><td className="py-1 tabular-nums">1200 〜 1349</td></tr>
+                  <tr className="border-t border-stone-200"><td className="py-1 pr-3 font-bold">BRONZE IV 〜 I</td><td className="py-1 tabular-nums">1050 〜 1199</td></tr>
+                  <tr className="border-t border-stone-200"><td className="py-1 pr-3 font-bold">IRON IV 〜 I</td><td className="py-1 tabular-nums">900 〜 1049</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="text-[11px] text-stone-500 leading-relaxed">
+              各ティアはさらに IV → III → II → I の4段階に分かれます（例: GOLD IV は1350、GOLD I は1460から）。
+              開始時の1200は SILVER IV にあたります。
+            </p>
+          </div>
+
+          <div className="bg-amber-50 rounded-2xl p-3.5 border border-amber-200 text-[11px] text-amber-900 leading-relaxed">
+            💡 チーム分けバランサーはこのMMRを使って両チームの戦力が釣り合うように組みます。
+            レーンごとに管理しているのは「TOPは得意だがSUPは不慣れ」といった差を正しく反映するためです。
+          </div>
+        </div>
+
       </div>
     </div>
   );

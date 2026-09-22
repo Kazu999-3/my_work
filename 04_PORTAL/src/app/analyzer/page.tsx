@@ -334,11 +334,15 @@ export default function PlayerAnalyzerPage() {
 
           <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
             <span className="text-stone-400 font-bold">サンプル候補:</span>
+            <span className="text-stone-400">（JP鯖のみ対応）</span>
+            {/* ⚠️ 2026-09-23: 以前は Faker(KR1) / Agurin(EUW) をサンプルに出していたが、
+                アカウント検索と試合一覧は asia ルーティング（lib/riot.ts の RIOT_API_BASE_ASIA）、
+                ランク・マスタリー等は jp1 固定（RIOT_API_BASE_JP）のため、
+                **JP鯖以外のプレイヤーは名前が引けてもランク情報が取れない**。
+                誤解を招くのでJP鯖のサンプルだけに絞った。 */}
             {[
               { raw: 'Kazurin#4036', label: 'Kazurin#4036 (JG)' },
               { raw: 'yukizo#7867', label: 'yukizo#7867 (SUP)' },
-              { raw: 'Hide on bush#KR1', label: 'Faker (KR1)' },
-              { raw: 'Agurin#EUW', label: 'Agurin (EUW)' },
             ].map((p) => (
               <button
                 key={p.raw}
