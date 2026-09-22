@@ -6,6 +6,7 @@ import ScoutTab, { type LiveRosterEntry } from './ScoutTab';
 import PushOptIn from '../../components/PushOptIn';
 import FiveVFiveSimTab from './FiveVFiveSimTab';
 import MySoloQDashboard from './MySoloQDashboard';
+import SoloQReflectionModal from './SoloQReflectionModal';
 import Collapsible from '../../components/Collapsible';
 import PlayerStyleRadarCard from '../../components/coach/PlayerStyleRadarCard';
 import VisionAnalyticsCard from '../../components/coach/VisionAnalyticsCard';
@@ -74,6 +75,13 @@ function CoachPageContent() {
   const [selectedDeepMatchId, setSelectedDeepMatchId] = useState<string>('');
 
   const [activeStepTab, setActiveStepTab] = useState<'pregame' | 'live' | 'postgame'>('pregame');
+
+  // 📝 ソロQ振り返りの入力モーダル。
+  // POST /api/soloq/reflections を叩くのはこのモーダルだけで、MySoloQDashboard は
+  // 表示専用（GET のみ）。未配線のままだと「書き込み手段のない陳列棚」になるため、
+  // 2026-09-22 にここへ配線し直した。
+  const [reflectionOpen, setReflectionOpen] = useState(false);
+  const [reflectionRefresh, setReflectionRefresh] = useState(0);
 
   const STEP_TABS = [
     { id: 'pregame', title: '1. 試合前', sub: 'バンピック・5分作戦', icon: '🎯' },
@@ -285,14 +293,36 @@ function CoachPageContent() {
             onSelectMatchId={setSelectedDeepMatchId}
           />
 
+          {/* 📝 ソロQ振り返りの記録 */}
+          <div className="pt-2 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-stone-200 bg-white p-4 shadow-xs">
+            <div className="min-w-0">
+              <div className="text-sm font-black text-stone-900">📝 ソロQの振り返りを記録する</div>
+              <p className="text-xs text-stone-600 mt-0.5">
+                直近の試合を読み込んで、レーン結果・メンタル・分岐点を残せます。記録は下の履歴に蓄積されます。
+              </p>
+            </div>
+            <button
+              onClick={() => setReflectionOpen(true)}
+              className="shrink-0 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black transition-colors cursor-pointer"
+            >
+              振り返りを書く
+            </button>
+          </div>
+
           {/* 📂 過去の全ソロQログ履歴（折りたたみ） */}
           <div className="pt-2">
             <Collapsible title="📂 過去の全ソロQカルテ・対戦ログ履歴を展開" defaultOpen={false}>
               <div className="pt-3 bg-white border border-stone-200 rounded-2xl p-4 shadow-xs">
-                <MySoloQDashboard />
+                <MySoloQDashboard refreshSignal={reflectionRefresh} />
               </div>
             </Collapsible>
           </div>
+
+          <SoloQReflectionModal
+            isOpen={reflectionOpen}
+            onClose={() => setReflectionOpen(false)}
+            onSaved={() => setReflectionRefresh((n) => n + 1)}
+          />
         </div>
 
         {/* フッター */}

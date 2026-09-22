@@ -7,6 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import YoutubeQueueManager from '../youtube/YoutubeQueueManager';
 import DiscordImportPanel from './DiscordImportPanel';
 import FeedbackInboxPanel from './FeedbackInboxPanel';
+import PendingInsightsPanel from './PendingInsightsPanel';
 import VideoDeepDiveRequestPanel from './VideoDeepDiveRequestPanel';
 import KnowledgePreviewModal, { type KnowledgePreview } from './KnowledgePreviewModal';
 
@@ -15,7 +16,7 @@ function KnowledgeBaseContent() {
   const [actionLoading, setActionLoading] = useState<boolean>(false);
 
   // 入力フォームの状態
-  const [ingestMode, setIngestMode] = useState<'url' | 'memo' | 'discord' | 'queue' | 'inbox'>('url');
+  const [ingestMode, setIngestMode] = useState<'url' | 'memo' | 'discord' | 'queue' | 'inbox' | 'pending'>('url');
   const [inputUrl, setInputUrl] = useState('');
   const [inputMemo, setInputMemo] = useState('');
 
@@ -203,6 +204,17 @@ function KnowledgeBaseContent() {
         >
           📮 指摘インボックス
         </button>
+        {/* 2026-09-22 配線。動画解析が生成したナレッジは review_status='pending' で保存され、
+            champion_trend_worker が approved のみを拾うため、この承認UIが無いと辞典へ反映されない。
+            未配線のまま1ヶ月動き続けた結果、336件（2026-08-16〜09-18）が滞留していた。 */}
+        <button
+          onClick={() => setIngestMode('pending')}
+          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            ingestMode === 'pending' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
+          }`}
+        >
+          ✅ 承認待ちナレッジ
+        </button>
       </div>
 
       {ingestMode === 'discord' && <DiscordImportPanel />}
@@ -213,6 +225,7 @@ function KnowledgeBaseContent() {
         </div>
       )}
       {ingestMode === 'inbox' && <FeedbackInboxPanel />}
+      {ingestMode === 'pending' && <PendingInsightsPanel />}
 
       {(ingestMode === 'url' || ingestMode === 'memo') && (
         <div className="bg-white border border-stone-200 rounded-3xl p-6 shadow-xs space-y-4">

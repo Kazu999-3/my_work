@@ -374,32 +374,34 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
     （生きているAPI）が使っているため。
   - 削除後の到達不能: 15件/166.8KB → **6件/100.6KB**。型チェック通過。
 
-  **残り6件（判断保留中）**
+  **復活させたもの（2026-09-22）**
 
-  - [ ] **⑤ `app/coach/SoloQReflectionModal.tsx`（51.7KB）— 代替機能は存在しない**
-    - 調査の結果、**`POST /api/soloq/reflections` を叩いているのはこのファイルだけ**だった。
-      つまり**ソロQ振り返りを新規作成する手段がこれ以外に無い**。
-    - 一方 `MySoloQDashboard.tsx`（生きている）は `GET /api/soloq/reflections?limit=200` で
-      振り返りを**表示するだけ**。入力欄は検索ボックスのみ。
-    - 現在DBには既存の振り返りが18件あり表示はされるが、**モーダルを消すと今後1件も増やせない
-      「書き込み手段のない陳列棚」になる**。
-    - 依存: `lib/apiClient.ts` / `components/coach/MinimapPlotView.tsx`（どちらもこれ専用）
-    - **選択肢**: ①復活させて `coach/page.tsx` へ配線（API3本とも存在するので確実に動く）
-      ②諦めて `MySoloQDashboard` ごと整理する ③現状維持
-  - [ ] **⑦ `app/admin/knowledge/PendingInsightsPanel.tsx`（8.0KB）— 336件が滞留中**
-    - 動画解析(`youtube_worker.py`)が生成したナレッジを人間が承認・却下する管理画面。
-    - **`personal_knowledge` に `review_status='pending'` が336件（2026-08-16〜09-18）溜まっている**
-      （記事本体298件 + atomic insight 38件。承認済みは352件）。
-    - `champion_trend_worker.py:221` が `review_status=eq.approved` で絞っているため、
-      **この336件は承認されるまでチャンピオン辞典へ反映されない**。
-      承認UIが未配線のまま動画解析だけが動き続けた結果の滞留。
-    - APIは `/api/admin/knowledge/pending-review`（GET一覧 / POST承認・却下）が存在し動く。
-    - **復活コストは低く、効果は大きい**（配線するだけで336件の処理が可能になる）。
-  - [ ] **⑧ `app/coach/MatchupWarningCard.tsx`（23.8KB）— APIが存在しない**
-    - 呼び出し先 `/api/coach/matchup-warning` が**存在しない**（`app/api/coach/` 配下は
-      `analyze` のみ）。名前の似た `/api/soloq/matchup-warning` はあるが別物。
-    - 復活にはAPIの新規実装が必要（2時間以上）。
-    - 依存: `EarlyJunglePathingCard.tsx`（⑧専用になった）
+  - [x] **⑤ `app/coach/SoloQReflectionModal.tsx` を `coach/page.tsx` へ配線**
+    - `POST /api/soloq/reflections` を叩くのはこのファイルだけで、`MySoloQDashboard` は
+      表示専用（GETのみ）だった。未配線のままでは**振り返りを新規作成する手段が無く**、
+      「書き込み手段のない陳列棚」になっていた。
+    - 「📝 ソロQの振り返りを記録する」カード＋「振り返りを書く」ボタンを
+      過去ログ履歴の直上に設置。保存すると `refreshSignal` で `MySoloQDashboard` が再読込される。
+  - [x] **⑦ `app/admin/knowledge/PendingInsightsPanel.tsx` を管理画面へ配線**
+    - `/admin/knowledge` に「✅ 承認待ちナレッジ」タブを追加（`ingestMode === 'pending'`）。
+    - **滞留していた336件**（`personal_knowledge` の `review_status='pending'`、
+      記事本体298件＋atomic insight 38件、2026-08-16〜09-18）をここから承認・却下できる。
+    - `champion_trend_worker.py:221` が `review_status=eq.approved` で絞るため、
+      承認するまでチャンピオン辞典へ反映されない点は変わらない。**承認作業自体は今後の運用タスク**。
+  - 到達不能: 15件/166.8KB → **2件/31.8KB**（残りは⑧とその依存のみ）。型チェック・ビルド・テスト48件すべて通過。
+
+  **残り（判断待ち）**
+
+  - [ ] **⑧ `app/coach/MatchupWarningCard.tsx`（23.8KB）＋ `EarlyJunglePathingCard.tsx`（8.0KB）**
+    - ⚠️ **当初「APIが存在しないので新規実装に2時間以上」と見積もったが誤りだった。**
+      照合した結果、**既存の `/api/soloq/matchup-warning` が要求どおりの形で応答する**。
+      - ⑧の送信: `POST { champion, enemyChampion }` ／ 既存APIの受け口: 完全一致
+      - ⑧の読み取り: `data.warning` ／ 既存APIの返却: `{ warning: { memo, laneRecord, personalDossier, lastUpdatedAt } }` で一致
+      - **URL を `/api/coach/matchup-warning` → `/api/soloq/matchup-warning` に直すだけ**で動く見込み。
+    - `coach/page.tsx` には `sharedChampion` / `sharedEnemyChampion` の state が既にあり、
+      ⑧のProps（`champion` / `enemyChampion`）へそのまま渡せる。配線は20分程度。
+    - ただし既存APIは `verifyAdminSession` を要求するため、**管理者以外では常に `warning: null`** になる。
+      一般メンバーにも出すなら認証条件の見直しが必要。
 
 - [ ] **巨大ファイルの分割は「先に実測」してから判断する**（未着手・低優先）
   - 候補: `app/balancer/page.tsx` 176KB / `app/champions/tabs/DictionaryTab.tsx` 174KB /
