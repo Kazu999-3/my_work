@@ -1966,7 +1966,10 @@ export default function BalancerPage() {
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {saving && <span className="flex items-center gap-1 text-amber-700 text-xs"><RefreshCw className="h-3 w-3 animate-spin" /> 保存中...</span>}
-              <Link href="/ktm-admin?tab=history" className="flex items-center gap-1.5 bg-stone-100 hover:bg-stone-200 text-orange-700 px-3 py-1.5 rounded-lg font-bold transition text-xs border border-orange-200 whitespace-nowrap shrink-0">
+              {/* 2026-09-23: 飛び先を /ktm-admin?tab=history（管理者専用）から一般公開の /history へ変更。
+                  リンク自体は isAdmin の外にあり全員に見えていたため、一般メンバーが押すと
+                  管理者パスコードを求められて行き止まりになっていた。 */}
+              <Link href="/history" className="flex items-center gap-1.5 bg-stone-100 hover:bg-stone-200 text-orange-700 px-3 py-1.5 rounded-lg font-bold transition text-xs border border-orange-200 whitespace-nowrap shrink-0">
                 <History className="h-3.5 w-3.5" /> 過去の試合
               </Link>
               {isAdmin && (

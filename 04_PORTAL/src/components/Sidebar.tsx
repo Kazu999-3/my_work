@@ -190,7 +190,8 @@ const GENERAL_MENU_ITEMS: MenuItem[] = [
   // 対戦・大会
   { id: 'balancer', label: 'チーム分けバランサー', shortLabel: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-rose-600', activeBg: 'bg-rose-500/15', section: '対戦 ＆ 大会' },
   { id: 'casino', label: '勝敗予想 (カジノ)', shortLabel: '勝敗予想', icon: Coins, href: '/casino', color: 'text-amber-600', activeBg: 'bg-amber-500/15', section: '対戦 ＆ 大会' },
-  { id: 'history', label: '過去戦績・試合履歴', shortLabel: '試合履歴', icon: History, href: '/history', color: 'text-blue-600', activeBg: 'bg-blue-500/15', section: '対戦 ＆ 大会' },
+  // 2026-09-23: サイドメニューからは外した（バランサーの「過去の試合」ボタンから開く導線に一本化）。
+  // ページ自体は /history に残っており、一般メンバーも閲覧できる。
   // コミュニティ・戦績
   { id: 'leaderboard', label: '順位表 ＆ 名簿', shortLabel: '順位・名簿', icon: Trophy, href: '/leaderboard', color: 'text-yellow-600', activeBg: 'bg-yellow-500/15', section: 'コミュニティ' },
   // ガイド
