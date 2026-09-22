@@ -390,18 +390,18 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
       承認するまでチャンピオン辞典へ反映されない点は変わらない。**承認作業自体は今後の運用タスク**。
   - 到達不能: 15件/166.8KB → **2件/31.8KB**（残りは⑧とその依存のみ）。型チェック・ビルド・テスト48件すべて通過。
 
-  **残り（判断待ち）**
-
-  - [ ] **⑧ `app/coach/MatchupWarningCard.tsx`（23.8KB）＋ `EarlyJunglePathingCard.tsx`（8.0KB）**
-    - ⚠️ **当初「APIが存在しないので新規実装に2時間以上」と見積もったが誤りだった。**
-      照合した結果、**既存の `/api/soloq/matchup-warning` が要求どおりの形で応答する**。
-      - ⑧の送信: `POST { champion, enemyChampion }` ／ 既存APIの受け口: 完全一致
-      - ⑧の読み取り: `data.warning` ／ 既存APIの返却: `{ warning: { memo, laneRecord, personalDossier, lastUpdatedAt } }` で一致
-      - **URL を `/api/coach/matchup-warning` → `/api/soloq/matchup-warning` に直すだけ**で動く見込み。
-    - `coach/page.tsx` には `sharedChampion` / `sharedEnemyChampion` の state が既にあり、
-      ⑧のProps（`champion` / `enemyChampion`）へそのまま渡せる。配線は20分程度。
-    - ただし既存APIは `verifyAdminSession` を要求するため、**管理者以外では常に `warning: null`** になる。
-      一般メンバーにも出すなら認証条件の見直しが必要。
+  - [x] **⑧ `app/coach/MatchupWarningCard.tsx` を復活**（2026-09-22）
+    - ⚠️ 当初「APIが存在しないので新規実装に2時間以上」と見積もったが**誤りだった**。
+      既存の `/api/soloq/matchup-warning` が要求どおりの入出力
+      （`POST { champion, enemyChampion }` → `{ warning: { memo, laneRecord, personalDossier, lastUpdatedAt } }`）
+      を返すため、**URLを1行向け直すだけ**で動いた。
+    - `coach/page.tsx` の試合前タブ、対面ブループリントの直下へ配線
+      （`sharedChampion` / `sharedEnemyChampion` をそのまま渡す）。
+      敵チャンピオン未選択のときは何も表示しない（`if (!enemyChampion) return null`）。
+    - ⑤で記録した振り返りが、次の試合前にこのカードとして返ってくる循環の出口にあたる。
+    - ⚠️ **既存APIは `verifyAdminSession` を要求するため、管理者以外では `warning` が常に null**。
+      一般メンバーにも出すなら認証条件の見直しが必要（未対応・要判断）。
+    - これにより**到達不能コードは0件**になった（2026-09-22時点。`node 04_PORTAL/scripts/find_dead_code.mjs` で再確認可能）。
 
 - [ ] **巨大ファイルの分割は「先に実測」してから判断する**（未着手・低優先）
   - 候補: `app/balancer/page.tsx` 176KB / `app/champions/tabs/DictionaryTab.tsx` 174KB /

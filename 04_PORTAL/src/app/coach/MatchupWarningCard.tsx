@@ -74,7 +74,13 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
       try {
         // 1. 戦績・危険度情報の取得
         if (champion) {
-          const res = await fetch('/api/coach/matchup-warning', {
+          // 2026-09-22 修正: 従来は存在しない `/api/coach/matchup-warning` を叩いており、
+          // このカードは未配線のまま一度も表示されたことがなかった。
+          // 既存の `/api/soloq/matchup-warning` が同じ入出力
+          //   POST { champion, enemyChampion } → { warning: { memo, laneRecord, personalDossier, lastUpdatedAt } }
+          // を返すため、そちらへ向け直した。
+          // ⚠️ 同APIは verifyAdminSession を要求するので、管理者以外では warning が null になる。
+          const res = await fetch('/api/soloq/matchup-warning', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ champion, enemyChampion }),

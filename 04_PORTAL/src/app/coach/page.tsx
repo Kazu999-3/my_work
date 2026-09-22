@@ -12,6 +12,7 @@ import PlayerStyleRadarCard from '../../components/coach/PlayerStyleRadarCard';
 import VisionAnalyticsCard from '../../components/coach/VisionAnalyticsCard';
 import ChampionQuickSelector from '../../components/coach/ChampionQuickSelector';
 import MatchupBlueprintCard from './MatchupBlueprintCard';
+import MatchupWarningCard from './MatchupWarningCard';
 import MatchFightsAnalyticsCard from './MatchFightsAnalyticsCard';
 import PostGameDeepAnalyticsDashboard from './PostGameDeepAnalyticsDashboard';
 import OverlayLauncherButton from './OverlayLauncherButton';
@@ -203,6 +204,14 @@ function CoachPageContent() {
                 enemyChampion={sharedEnemyChampion}
                 onMyChampionChange={setSharedChampion}
                 onEnemyChampionChange={setSharedEnemyChampion}
+              />
+
+              {/* ⚠️ 対面警告カード。敵チャンピオンが選ばれたときだけ表示される。
+                  ソロQ振り返り(SoloQReflectionModal)で記録した対面メモ・レーン戦績・
+                  頻出の敗因タグが、次の試合前にここへ返ってくる循環の出口にあたる。 */}
+              <MatchupWarningCard
+                champion={sharedChampion}
+                enemyChampion={sharedEnemyChampion}
               />
             </div>
 
