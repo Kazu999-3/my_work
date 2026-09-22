@@ -357,31 +357,49 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
     どちらも下記(b)の**復活候補**だから。(b)の方針が決まってから処理すること。
   - 削除後の実測: 到達不能 15件/166.8KB → **12件/161.6KB**。型チェック通過。
 
-  **(b) 告知済み機能のため判断が必要（計 153KB）**
+  **(b) 告知済み機能 → ユーザー判断により2026-09-22に一部を削除**
 
-  下記は更新履歴でメンバーに告知した機能だが、どこからも呼ばれていない。
-  削除＝「実装したはずの機能を正式に諦める」判断になるため、勝手に消さないこと。
+  削除済み（計 68.8KB / gitの履歴からは復元可能）:
 
-  | ファイル | 告知された機能 |
+  | ファイル | 機能 |
   |---|---|
-  | `app/coach/TiltDiagnosisPopup.tsx` (17.5KB) | ティルト診断の自動ポップアップ（2026-08-04告知） |
-  | `components/coach/JgMatchupPredictor.tsx` (13.0KB) | JG特化HUDカンペ（2026-08-20告知） |
-  | `components/coach/JgSkillMasteryChecklist.tsx` (7.8KB) | 同上 |
-  | `components/coach/FocusStickyBar.tsx` (4.0KB) | 同上 |
-  | `app/coach/AngerDetoxModal.tsx` (6.3KB) | 間接的に死亡（呼び出し元が死んでいる） |
-  | `app/coach/SoloQReflectionModal.tsx` (51.7KB) | ソロQ振り返りモーダル |
-  | `app/coach/MatchupWarningCard.tsx` (23.8KB) | **存在しない `/api/coach/matchup-warning` を呼んでいる**（復活させるならAPIから作る必要あり） |
-  | `app/coach/MatchupSmartCard.tsx` (12.4KB) | |
-  | `app/coach/EarlyJunglePathingCard.tsx` (8.0KB) | 間接的に死亡 |
-  | `components/coach/MinimapPlotView.tsx` (7.1KB) | 間接的に死亡 |
-  | `app/admin/knowledge/PendingInsightsPanel.tsx` (8.0KB) | 管理画面。呼ぶ `/api/admin/knowledge/pending-review`(4.1KB) も生きた呼び出し元0件 |
+  | ~~`app/coach/TiltDiagnosisPopup.tsx`~~ | ティルト診断ポップアップ（3段階判定・他責検出） |
+  | ~~`app/coach/AngerDetoxModal.tsx`~~ | 上記から呼ばれるクールダウンモーダル（連鎖的に孤立） |
+  | ~~`components/coach/JgMatchupPredictor.tsx`~~ | JG対面予測（手書き12体分） |
+  | ~~`components/coach/JgSkillMasteryChecklist.tsx`~~ | JGスキル習熟チェック（4ステップ8項目） |
+  | ~~`components/coach/FocusStickyBar.tsx`~~ | 今日の集中テーマバー（localStorageのみ） |
+  | ~~`app/coach/MatchupSmartCard.tsx`~~ | 対面スマートカード |
 
-  - **選択肢**: ①まとめて `99_ARCHIVE/` へ退避（スキル棚卸しと同じ方式・復元可能） ②削除
-    ③使いたいものだけ `coach/page.tsx` へ配線して復活
-  - `coach/page.tsx` が現在importしているのは ScoutTab / FiveVFiveSimTab / MySoloQDashboard /
-    PlayerStyleRadarCard / VisionAnalyticsCard / ChampionQuickSelector / MatchupBlueprintCard /
-    MatchFightsAnalyticsCard / PostGameDeepAnalyticsDashboard / OverlayLauncherButton /
-    SoloQDeepIntelSyncCard の11件。復活させるならここへ足す。
+  - ⚠️ `lib/tiltBlameDetector.ts` は**削除していない**。`app/api/coach/analyze/route.ts`
+    （生きているAPI）が使っているため。
+  - 削除後の到達不能: 15件/166.8KB → **6件/100.6KB**。型チェック通過。
+
+  **残り6件（判断保留中）**
+
+  - [ ] **⑤ `app/coach/SoloQReflectionModal.tsx`（51.7KB）— 代替機能は存在しない**
+    - 調査の結果、**`POST /api/soloq/reflections` を叩いているのはこのファイルだけ**だった。
+      つまり**ソロQ振り返りを新規作成する手段がこれ以外に無い**。
+    - 一方 `MySoloQDashboard.tsx`（生きている）は `GET /api/soloq/reflections?limit=200` で
+      振り返りを**表示するだけ**。入力欄は検索ボックスのみ。
+    - 現在DBには既存の振り返りが18件あり表示はされるが、**モーダルを消すと今後1件も増やせない
+      「書き込み手段のない陳列棚」になる**。
+    - 依存: `lib/apiClient.ts` / `components/coach/MinimapPlotView.tsx`（どちらもこれ専用）
+    - **選択肢**: ①復活させて `coach/page.tsx` へ配線（API3本とも存在するので確実に動く）
+      ②諦めて `MySoloQDashboard` ごと整理する ③現状維持
+  - [ ] **⑦ `app/admin/knowledge/PendingInsightsPanel.tsx`（8.0KB）— 336件が滞留中**
+    - 動画解析(`youtube_worker.py`)が生成したナレッジを人間が承認・却下する管理画面。
+    - **`personal_knowledge` に `review_status='pending'` が336件（2026-08-16〜09-18）溜まっている**
+      （記事本体298件 + atomic insight 38件。承認済みは352件）。
+    - `champion_trend_worker.py:221` が `review_status=eq.approved` で絞っているため、
+      **この336件は承認されるまでチャンピオン辞典へ反映されない**。
+      承認UIが未配線のまま動画解析だけが動き続けた結果の滞留。
+    - APIは `/api/admin/knowledge/pending-review`（GET一覧 / POST承認・却下）が存在し動く。
+    - **復活コストは低く、効果は大きい**（配線するだけで336件の処理が可能になる）。
+  - [ ] **⑧ `app/coach/MatchupWarningCard.tsx`（23.8KB）— APIが存在しない**
+    - 呼び出し先 `/api/coach/matchup-warning` が**存在しない**（`app/api/coach/` 配下は
+      `analyze` のみ）。名前の似た `/api/soloq/matchup-warning` はあるが別物。
+    - 復活にはAPIの新規実装が必要（2時間以上）。
+    - 依存: `EarlyJunglePathingCard.tsx`（⑧専用になった）
 
 - [ ] **巨大ファイルの分割は「先に実測」してから判断する**（未着手・低優先）
   - 候補: `app/balancer/page.tsx` 176KB / `app/champions/tabs/DictionaryTab.tsx` 174KB /
