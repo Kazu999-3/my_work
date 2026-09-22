@@ -205,7 +205,6 @@ const ADMIN_EXTRA_ITEMS: MenuItem[] = [
   { id: 'analyzer', label: 'プレイヤー外部分析', shortLabel: '外部解析', icon: Globe, href: '/analyzer', color: 'text-sky-600', activeBg: 'bg-sky-500/15', section: '管理者専用', adminOnly: true },
   { id: 'ktm-admin', label: 'KTM大会管理', shortLabel: '大会管理', icon: Shield, href: '/ktm-admin', color: 'text-indigo-600', activeBg: 'bg-indigo-500/15', section: '管理者専用', adminOnly: true },
   { id: 'dashboard', label: 'システム運用', shortLabel: '運用設定', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-stone-800 dark:text-stone-200', activeBg: 'bg-black/10 dark:bg-white/10', section: '管理者専用', adminOnly: true },
-  { id: 'analytics', label: 'note分析', shortLabel: 'note分析', icon: TrendingUp, href: '/admin/analytics', color: 'text-teal-600', activeBg: 'bg-teal-500/15', section: '管理者専用', adminOnly: true },
 ];
 
 export default function Sidebar() {

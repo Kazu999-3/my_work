@@ -397,6 +397,26 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
     `{base:18, elo:…, kda:5.0, placement:…}` と出ること。
 
 ### 🤔 判断が必要（未着手）
+- [ ] **「AI Agent Gateway 設定室」(`/admin/prompts`) の中身をどうするか**（2026-09-23 保留）
+  - 2026-09-23に「一旦使っていないので削除したい」という話が出たが、**調査の結果いったん残した**。
+  - **理由**: この画面が編集する `agent_prompts` テーブルは、**Python側の解析パイプラインが実行時に読んでいる**。
+    - `03_SYSTEMS/v2_CORE/api.py:261` … `agent_prompts?prompt_id=eq.{request.prompt_id}`
+    - `03_SYSTEMS/v2_CORE/_LOL/youtube_absorber.py:516` … `youtube_bible_forge` を参照
+    - 画面を消してもデータは生き続けパイプラインは動く。失うのは**ブラウザから編集する手段**だけ。
+  - **登録されている7件**（いずれも最終更新 2026-06-21）:
+    `youtube_bible_forge`（動画解析が使用中） / `sre_error_analysis` /
+    `monetize_first_draft` / `monetize_review_article` / `monetize_persona_critique` /
+    `monetize_rewrite_critique` / `monetize_x_thread`
+  - ⚠️ `monetize_*` の5件は**収益化パイプライン向け**。2026-07-26〜08-04に収益化パイプラインは
+    削除済みで、[[project-side-business-scope-deferred]] のとおり副業再開までスコープ外。
+    **つまりこの5件は実質的に使われていない可能性が高い**（要確認）。
+  - **決めること**
+    1. `monetize_*` 5件を削除するか（使っている処理が本当に無いか grep で確認してから）
+    2. 残す2件（`youtube_bible_forge` / `sre_error_analysis`）の編集手段をどうするか
+       - ①画面を残す（現状） ②画面を消してSupabaseダッシュボードから直接編集する
+  - **判断材料**: プロンプトを今後調整する見込みがあるかどうか。
+    調整しないなら画面を消してよく、その場合 `/admin/prompts` と `/api/admin/prompts` を削除する。
+
 
 - [x] ~~**到達不能コード15ファイル（166.8KB）＋未使用依存2件の扱い**~~ → 2026-09-22 完了。
   **到達不能コードは0件になった**（削除9件 / 復活3件 / 未使用依存2件を除去）。
