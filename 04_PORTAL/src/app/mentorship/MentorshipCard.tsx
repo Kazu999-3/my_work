@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { toast } from '../../components/Toaster';
 import { MentorshipProfile } from '../api/mentorship/profiles/route';
 import { getRankBadgeStyle } from '../../lib/mmr';
 import { CHAMPION_JA } from '../../components/ChampSelect';
@@ -118,11 +119,11 @@ export function MentorshipCard({
         loadComments();
       } else {
         const err = await res.json();
-        alert(`コメント投稿に失敗しました: ${err.error || '不明なエラー'}`);
+        toast.error(`コメント投稿に失敗しました: ${err.error || '不明なエラー'}`);
       }
     } catch (e) {
       console.error('Failed to post comment:', e);
-      alert('通信エラーが発生しました');
+      toast.error('通信エラーが発生しました');
     } finally {
       setIsSubmittingComment(false);
     }
@@ -138,7 +139,7 @@ export function MentorshipCard({
         setComments(prev => prev.filter(c => c.id !== commentId));
         setCommentsCount(prev => Math.max(0, prev - 1));
       } else {
-        alert('コメント削除に失敗しました');
+        toast.error('コメント削除に失敗しました');
       }
     } catch (e) {
       console.error('Failed to delete comment:', e);

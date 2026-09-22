@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback, useMemo, Fragment } from "react";
+import { toast } from '../../components/Toaster';
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
@@ -196,7 +197,7 @@ export default function BalancerPage() {
       const champion = nextT1Wins >= 2 ? bo3State.team1Name : bo3State.team2Name;
       const score = `${Math.max(nextT1Wins, nextT2Wins)} - ${Math.min(nextT1Wins, nextT2Wins)}`;
       setMessage({ type: 'success', text: `🎉 【BO3シリーズ決着】${champion} が ${score} でシリーズを制覇しました！🏆` });
-      alert(`🎉 【BO3シリーズ決着】\n${champion} が ${score} でシリーズを制覇しました！\nDiscordへ総合リザルトを投稿できます。`);
+      toast.success(`🎉 【BO3シリーズ決着】\n${champion} が ${score} でシリーズを制覇しました！\nDiscordへ総合リザルトを投稿できます。`);
     } else {
       setMessage({ type: 'success', text: `✅ 第${bo3State.gameNumber}戦: ${winnerName} が勝利！「第${bo3State.gameNumber + 1}戦へ（サイド交代）」を押して次戦へ進んでください。` });
     }
@@ -484,7 +485,7 @@ export default function BalancerPage() {
   const handleAnnounceStats = async () => {
     const activeCount = players.filter(p => p.is_active && !p.is_spectator_fixed).length;
     if (activeCount === 0) {
-      alert("参加予定のプレイヤーが選択されていません。");
+      toast.info("参加予定のプレイヤーが選択されていません。");
       return;
     }
     setAnnouncingStats(true);
@@ -497,9 +498,9 @@ export default function BalancerPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "通知に失敗しました。");
       
-      alert("📢 Discordへ現在の募集・希望レーン状況を通知しました！");
+      toast.success("📢 Discordへ現在の募集・希望レーン状況を通知しました！");
     } catch (err: any) {
-      alert(`通知エラー: ${err.message}`);
+      toast.error(`通知エラー: ${err.message}`);
     } finally {
       setAnnouncingStats(false);
     }
@@ -1496,9 +1497,9 @@ export default function BalancerPage() {
                     const res = await updateVcStatus('game1');
                     if (res.success) {
                       setMessage({ type: 'success', text: `🔊 ${res.message}` });
-                      alert(`🔊 ${res.message}`);
+                      toast.info(`🔊 ${res.message}`);
                     } else {
-                      alert(`VC更新エラー: ${res.error}`);
+                      toast.error(`VC更新エラー: ${res.error}`);
                     }
                   }}
                   className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg font-bold transition text-xs md:text-sm cursor-pointer"
@@ -1700,7 +1701,7 @@ export default function BalancerPage() {
                           mmrDiff: Math.abs(newBlueMMR - newRedMMR),
                         };
                         setBalanceResult(updatedRes);
-                        alert("⚡ 【案E微調整完了】 ハンデ補正（実効MMR -300）を適用し、対面格差と勝率予想を再計算しました！");
+                        toast.success("⚡ 【案E微調整完了】 ハンデ補正（実効MMR -300）を適用し、対面格差と勝率予想を再計算しました！");
                       }}
                       className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-black text-xs transition-all shadow-sm cursor-pointer flex items-center gap-1.5"
                     >
@@ -2128,10 +2129,10 @@ export default function BalancerPage() {
                     if (Array.isArray(savedIds) && savedIds.length > 0) {
                       setPlayers(prev => prev.map(p => ({ ...p, is_active: savedIds.includes(p.id) })));
                     } else {
-                      alert('保存された前回のメンバー構成が見つかりません。');
+                      toast.info('保存された前回のメンバー構成が見つかりません。');
                     }
                   } catch {
-                    alert('復元に失敗しました。');
+                    toast.error('復元に失敗しました。');
                   }
                 }}
                 className="px-3 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-900 font-bold text-xs transition"

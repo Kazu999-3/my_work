@@ -26,10 +26,13 @@ export const toast = {
   info: (m: string) => emit('info', m),
 };
 
+// ★ 2026-09-22: 旧・暗色テーマ時代の配色(text-emerald-300 等)のままで、
+// 現在の明るいクリーム基調の背景では文字が薄く読みづらかったため、
+// .claude/rules/ui-conventions.md の配色(成功=emerald / 警告=rose)に沿って不透明の明色系へ変更。
 const STYLE: Record<ToastType, string> = {
-  success: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300',
-  error: 'border-rose-500/40 bg-rose-500/10 text-rose-300',
-  info: 'border-sky-500/40 bg-sky-500/10 text-sky-300',
+  success: 'border-emerald-300 bg-emerald-50 text-emerald-900',
+  error: 'border-rose-300 bg-rose-50 text-rose-900',
+  info: 'border-stone-300 bg-white text-stone-900',
 };
 const ICON: Record<ToastType, string> = { success: '✅', error: '❌', info: 'ℹ️' };
 
@@ -42,7 +45,7 @@ export default function Toaster() {
       setItems((prev) => [...prev, detail]);
       setTimeout(() => {
         setItems((prev) => prev.filter((t) => t.id !== detail.id));
-      }, 4000);
+      }, detail.type === 'error' ? 6000 : 4000);
     };
     window.addEventListener(EVENT, onToast);
     return () => window.removeEventListener(EVENT, onToast);

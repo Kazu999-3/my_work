@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useRef, useDeferredValue, Suspense } from 'react';
+import { toast } from '../../../components/Toaster';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -238,7 +239,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
       if (!res.ok) throw new Error(data.error || '品質チェックに失敗しました。');
       setQualityResult(data.result);
     } catch (err: any) {
-      alert(err.message || '品質チェックに失敗しました。');
+      toast.error(err.message || '品質チェックに失敗しました。');
     } finally {
       setCheckingQuality(false);
     }
@@ -342,7 +343,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
         refinedFields: d.refinedFields,
       });
     } catch (e: any) {
-      alert(`❌ 清書エラー: ${e.message}`);
+      toast.error(`❌ 清書エラー: ${e.message}`);
     } finally {
       setRefiningFacts(false);
     }
@@ -377,10 +378,10 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           return next;
         });
       }
-      alert('✨ 蓄積知見を清書版へ更新しました！');
+      toast.success('✨ 蓄積知見を清書版へ更新しました！');
       setFactsRefinePreview(null);
     } catch (e: any) {
-      alert(`❌ 保存エラー: ${e.message}`);
+      toast.error(`❌ 保存エラー: ${e.message}`);
     } finally {
       setSavingRefinedFacts(false);
     }
@@ -824,7 +825,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err: any) {
-      alert('保存失敗: ' + err.message);
+      toast.error('保存失敗: ' + err.message);
     }
     setSaving(false);
   };
@@ -1494,11 +1495,11 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                                   setTimeout(() => setSaveSuccess(false), 3000);
                                 } else {
                                   const errData = await res.json().catch(() => ({}));
-                                  alert(errData.error || '確認済みマークの更新に失敗しました');
+                                  toast.error(errData.error || '確認済みマークの更新に失敗しました');
                                 }
                               } catch (e: any) {
                                 console.error(e);
-                                alert(e.message || '通信エラーが発生しました');
+                                toast.error(e.message || '通信エラーが発生しました');
                               }
                             }}
                             className="w-full text-left p-2 text-xs text-stone-200 hover:bg-stone-800/80 rounded-xl flex items-start gap-2.5 transition cursor-pointer"

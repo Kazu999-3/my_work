@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { toast } from '../../components/Toaster';
 import Link from 'next/link';
 import { 
   HeartHandshake, 
@@ -94,10 +95,10 @@ export default function MentorshipProgressCard({
           )
         );
       } else {
-        alert(data.error || 'スレッド作成に失敗しました');
+        toast.error(data.error || 'スレッド作成に失敗しました');
       }
     } catch {
-      alert('通信エラーが発生しました');
+      toast.error('通信エラーが発生しました');
     } finally {
       setCreatingThreadMatchId(null);
     }
@@ -171,10 +172,10 @@ export default function MentorshipProgressCard({
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 3000);
       } else {
-        alert(data.error || '更新に失敗しました');
+        toast.error(data.error || '更新に失敗しました');
       }
     } catch {
-      alert('通信エラーが発生しました');
+      toast.error('通信エラーが発生しました');
     } finally {
       setSaving(false);
     }

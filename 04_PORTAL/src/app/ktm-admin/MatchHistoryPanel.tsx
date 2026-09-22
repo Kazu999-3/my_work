@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { toast } from '../../components/Toaster';
 import { History, Swords, Trophy, Calendar, RefreshCw, Edit, Trash2, Search, AlertCircle, X, Target, GripVertical } from 'lucide-react';
 import Image from 'next/image';
 import { getChampIcon } from '../../lib/ddragonClient';
@@ -113,11 +114,11 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '削除に失敗しました');
 
-      alert('試合履歴を削除しました。プレイヤーのMMRに反映させるために、必ず名簿タブの「Rebuild」を実行してください。');
+      toast.success('試合履歴を削除しました。プレイヤーのMMRに反映させるために、必ず名簿タブの「Rebuild」を実行してください。');
       setActionMessage({ type: 'success', text: '試合履歴を削除しました。「Rebuild」を実行してください。' });
       fetchMatches();
     } catch (err: any) {
-      alert(`削除エラー: ${err.message}`);
+      toast.error(`削除エラー: ${err.message}`);
       setActionMessage({ type: 'error', text: `削除エラー: ${err.message}` });
     }
   };
@@ -138,12 +139,12 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '更新に失敗しました');
 
-      alert('試合データを更新しました。プレイヤーのMMRに反映させるために、必ず名簿タブの「Rebuild」を実行してください。');
+      toast.success('試合データを更新しました。プレイヤーのMMRに反映させるために、必ず名簿タブの「Rebuild」を実行してください。');
       setActionMessage({ type: 'success', text: '試合データを更新しました。「Rebuild」を実行してください。' });
       setEditingMatch(null);
       fetchMatches();
     } catch (err: any) {
-      alert(`更新エラー: ${err.message}`);
+      toast.error(`更新エラー: ${err.message}`);
       setActionMessage({ type: 'error', text: `更新エラー: ${err.message}` });
     } finally {
       setSaving(false);

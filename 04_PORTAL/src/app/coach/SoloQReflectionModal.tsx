@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { toast } from '../../components/Toaster';
 import { apiJson } from '../../lib/apiClient';
 import MinimapPlotView from '../../components/coach/MinimapPlotView';
 
@@ -258,7 +259,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
         [currentMatch.matchId]: [...(prev[currentMatch.matchId] || []), { q, a: res.reply }],
       }));
     } catch (err: any) {
-      alert(`AI質問エラー: ${err.message}`);
+      toast.error(`AI質問エラー: ${err.message}`);
     } finally {
       setChatLoading(false);
     }
@@ -278,11 +279,11 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentMatch) {
-      alert('振り返る対象の試合データを選択してください。');
+      toast.error('振り返る対象の試合データを選択してください。');
       return;
     }
     if (savedMatchIds.has(currentMatch.matchId)) {
-      alert('この試合は既に振り返り済みです。');
+      toast.info('この試合は既に振り返り済みです。');
       return;
     }
 
@@ -338,7 +339,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
         onClose();
       }, 1200);
     } catch (err: any) {
-      alert(`エラー: ${err.message}`);
+      toast.error(`エラー: ${err.message}`);
     } finally {
       setSaving(false);
     }

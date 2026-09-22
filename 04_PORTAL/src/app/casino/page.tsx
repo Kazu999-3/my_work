@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { toast } from '../../components/Toaster';
 import { Coins, Trophy, Flame, Swords, CheckCircle2, TrendingUp, Sparkles, Shield, ArrowRight, ShoppingBag, Heart, Gift, Target, Dices, Ticket, LogIn, LogOut, UserCheck, Send, MessageSquare, Timer, Clock, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import confetti from 'canvas-confetti';
@@ -308,15 +309,15 @@ export default function CasinoPage() {
   const handleSendTip = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      alert('チップを贈るにはDiscordログインが必要です。');
+      toast.error('チップを贈るにはDiscordログインが必要です。');
       return;
     }
     if (!tipToPlayer.trim()) {
-      alert('チップを贈る相手を選択または入力してください。');
+      toast.error('チップを贈る相手を選択または入力してください。');
       return;
     }
     if (tipAmount <= 0) {
-      alert('1コイン以上のチップを指定してください。');
+      toast.error('1コイン以上のチップを指定してください。');
       return;
     }
 
@@ -339,16 +340,16 @@ export default function CasinoPage() {
         triggerCelebration();
         // data.message はチップに添えたメッセージ本文（デフォルト「ナイスプレイ！」）であり
         // 送金結果ではないため、送金完了を示す文言として組み立てて表示する。
-        alert(`✅ ${data.to} さんに ${data.amount}コイン を送りました！`);
+        toast.success(`✅ ${data.to} さんに ${data.amount}コイン を送りました！`);
         setIsTipModalOpen(false);
         setTipMessage('');
         fetchBetData();
         refreshUser();
       } else {
-        alert(data.error || 'チップの送信に失敗しました。');
+        toast.error(data.error || 'チップの送信に失敗しました。');
       }
     } catch (e: any) {
-      alert('エラーが発生しました: ' + e.message);
+      toast.error('エラーが発生しました: ' + e.message);
     } finally {
       setIsTipSubmitting(false);
     }
@@ -420,7 +421,7 @@ export default function CasinoPage() {
 
   const handleClaimBonus = async (type: 'daily' | 'rescue') => {
     if (!user) {
-      alert('ボーナスを受け取るにはDiscordでログインしてください。');
+      toast.error('ボーナスを受け取るにはDiscordでログインしてください。');
       return;
     }
     try {
@@ -440,15 +441,15 @@ export default function CasinoPage() {
           setIsOmikujiOpen(true);
         } else {
           triggerCelebration();
-          alert(data.message);
+          toast.success(data.message);
         }
         fetchBetData();
         refreshUser();
       } else {
-        alert(data.error || '受取に失敗しました。');
+        toast.error(data.error || '受取に失敗しました。');
       }
     } catch (e: any) {
-      alert('エラー: ' + e.message);
+      toast.error('エラー: ' + e.message);
     }
   };
 
@@ -471,28 +472,28 @@ export default function CasinoPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         triggerCelebration();
-        alert(data.message);
+        toast.success(data.message);
         fetchInventory();
       } else {
-        alert(data.error || '発動宣言に失敗しました。');
+        toast.error(data.error || '発動宣言に失敗しました。');
       }
     } catch (e: any) {
-      alert('エラー: ' + e.message);
+      toast.error('エラー: ' + e.message);
     }
   };
 
   const handlePlaceBet = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activePlayerName.trim() && !user?.discordId) {
-      alert('Discordでログインするか、お名前を選択してください。');
+      toast.error('Discordでログインするか、お名前を選択してください。');
       return;
     }
     if (isBetLocked) {
-      alert('勝敗予想の受付はすでに締め切られています。試合終了をお待ちください。');
+      toast.error('勝敗予想の受付はすでに締め切られています。試合終了をお待ちください。');
       return;
     }
     if (betAmount <= 0) {
-      alert('1コイン以上の賭け金を指定してください。');
+      toast.error('1コイン以上の賭け金を指定してください。');
       return;
     }
 
@@ -519,10 +520,10 @@ export default function CasinoPage() {
         fetchBetData();
         refreshUser();
       } else {
-        alert(data.error || 'ベットに失敗しました。');
+        toast.error(data.error || 'ベットに失敗しました。');
       }
     } catch (e: any) {
-      alert('エラーが発生しました: ' + e.message);
+      toast.error('エラーが発生しました: ' + e.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -564,10 +565,10 @@ export default function CasinoPage() {
         fetchInventory();
         refreshUser();
       } else {
-        alert(data.error || '購入に失敗しました。');
+        toast.error(data.error || '購入に失敗しました。');
       }
     } catch (e: any) {
-      alert('エラー: ' + e.message);
+      toast.error('エラー: ' + e.message);
     }
   };
 
@@ -601,12 +602,12 @@ export default function CasinoPage() {
       if (res.ok) {
         triggerCelebration();
         fetchActiveMatch();
-        alert('🎮 模擬カスタム対戦を生成しました！勝敗予想の受付を開始します🔥');
+        toast.success('🎮 模擬カスタム対戦を生成しました！勝敗予想の受付を開始します🔥');
       } else {
-        alert('模擬対戦の生成に失敗しました。');
+        toast.error('模擬対戦の生成に失敗しました。');
       }
     } catch (e: any) {
-      alert('エラー: ' + e.message);
+      toast.error('エラー: ' + e.message);
     }
   };
 

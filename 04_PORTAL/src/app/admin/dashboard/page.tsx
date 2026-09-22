@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { toast } from '../../../components/Toaster';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Activity,
@@ -208,13 +209,13 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (data.success) {
-        alert(`⚡ ${data.retriedCount}件の失敗タスクを一括再実行しました。`);
+        toast.success(`⚡ ${data.retriedCount}件の失敗タスクを一括再実行しました。`);
         fetchData(true);
       } else {
-        alert(data.error || '一括再実行に失敗しました。');
+        toast.error(data.error || '一括再実行に失敗しました。');
       }
     } catch {
-      alert('通信エラーが発生しました。');
+      toast.error('通信エラーが発生しました。');
     } finally {
       setIsRetryingAll(false);
     }
@@ -333,7 +334,7 @@ export default function AdminDashboardPage() {
             <button
               onClick={() => {
                 navigator.clipboard.writeText("d:/my_work/.venv/Scripts/python.exe d:/my_work/03_SYSTEMS/v2_CORE/edge_worker_daemon.py");
-                alert("📋 起動コマンドをクリップボードにコピーしました！\nPowerShell等で実行してください。");
+                toast.success("📋 起動コマンドをクリップボードにコピーしました！\nPowerShell等で実行してください。");
               }}
               className="px-3 py-2 rounded-xl bg-white/80 backdrop-blur-md border border-stone-200 hover:bg-white hover:border-stone-300 text-xs font-bold text-stone-700 transition shadow-xs flex items-center gap-1 cursor-pointer"
               title="Python起動コマンドをコピー"
@@ -449,7 +450,7 @@ export default function AdminDashboardPage() {
               <button
                 onClick={() => {
                   navigator.clipboard.writeText("d:/my_work/.venv/Scripts/python.exe d:/my_work/03_SYSTEMS/v2_CORE/edge_worker_daemon.py");
-                  alert("📋 起動コマンドをクリップボードにコピーしました！\nPowerShell等で実行してください。");
+                  toast.success("📋 起動コマンドをクリップボードにコピーしました！\nPowerShell等で実行してください。");
                 }}
                 className="px-3 py-1.5 rounded-xl bg-white/90 border border-stone-300 hover:bg-white text-stone-700 text-xs font-bold transition shadow-xs"
               >
@@ -725,7 +726,7 @@ export default function AdminDashboardPage() {
                         <button
                           onClick={() => {
                             navigator.clipboard.writeText("d:/my_work/.venv/Scripts/python.exe d:/my_work/03_SYSTEMS/v2_CORE/edge_worker_daemon.py");
-                            alert("📋 起動コマンドをクリップボードにコピーしました！\nPowerShell等で実行してください。");
+                            toast.success("📋 起動コマンドをクリップボードにコピーしました！\nPowerShell等で実行してください。");
                           }}
                           className="px-2 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 text-[10px] font-bold border border-stone-200 transition cursor-pointer"
                           title="Python起動コマンドをコピー"
