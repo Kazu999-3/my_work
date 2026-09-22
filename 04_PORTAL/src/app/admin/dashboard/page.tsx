@@ -80,27 +80,6 @@ export default function AdminDashboardPage() {
     redCount: 0
   });
 
-  // 知識ベース & 辞典ヘルス
-  const [kbStats, setKbStats] = useState<{
-    facts: number | null;
-    library: number | null;
-    laneGuides: number | null;
-    memos: number | null;
-    matchupLog: number | null;
-  }>({
-    facts: null,
-    library: null,
-    laneGuides: null,
-    memos: null,
-    matchupLog: null,
-  });
-
-  const [dictHealthSummary, setDictHealthSummary] = useState<{
-    verified: number;
-    aiGenerated: number;
-    stale: number;
-  } | null>(null);
-
   // 要対応
   const [needsAttention, setNeedsAttention] = useState<{
     failedTasks: any[];
@@ -141,8 +120,6 @@ export default function AdminDashboardPage() {
         if (data.systemMetrics) setSystemMetrics(data.systemMetrics);
         if (data.ktmStats) setKtmStats(data.ktmStats);
         if (data.casinoStats) setCasinoStats(data.casinoStats);
-        if (data.kbStats) setKbStats(data.kbStats);
-        if (data.dictHealthSummary) setDictHealthSummary(data.dictHealthSummary);
         if (data.needsAttention) setNeedsAttention(data.needsAttention);
         setLastUpdated(new Date().toLocaleTimeString('ja-JP'));
         setFetchError(null);
@@ -715,140 +692,6 @@ export default function AdminDashboardPage() {
             })}
           </div>
 
-          {/* GitHub Actions クラウド定期ワーカー実行ログ */}
-          {systemMetrics.cloud_workers && Object.keys(systemMetrics.cloud_workers).length > 0 && (
-            <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-md border border-stone-200/80 shadow-xs space-y-3">
-              <h3 className="text-xs font-black text-stone-800 flex items-center gap-1.5">
-                <span>☁️</span> GitHub Actions 定期自動実行ログ
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {Object.entries(systemMetrics.cloud_workers).map(([workerKey, log]: [string, any]) => {
-                  const isOk = log.status === 'ok';
-                  const isWarn = log.status === 'warn';
-                  const updatedAtMs = log.updated_at ? new Date(log.updated_at).getTime() : NaN;
-                  const ageHours = Number.isFinite(updatedAtMs) ? (Date.now() - updatedAtMs) / (1000 * 60 * 60) : Infinity;
-                  const isStale = ageHours > 24;
-
-                  const statusBg = isStale ? 'border-stone-200 bg-stone-50/50' : isOk ? 'border-emerald-200 bg-emerald-50/40' : isWarn ? 'border-amber-200 bg-amber-50/40' : 'border-rose-200 bg-rose-50/40';
-                  const badgeColor = isStale ? 'text-stone-600 bg-stone-100 border-stone-300' : isOk ? 'text-emerald-700 bg-emerald-100 border-emerald-200' : isWarn ? 'text-amber-700 bg-amber-100 border-amber-200' : 'text-rose-700 bg-rose-100 border-rose-200';
-                  const lastResultLabel = isOk ? '正常完了' : isWarn ? '一部警告' : 'エラー';
-                  const ageLabel = Number.isFinite(ageHours) ? (ageHours < 24 ? `${Math.max(1, Math.round(ageHours))}時間前` : `${Math.round(ageHours / 24)}日前`) : '';
-                  const updatedTime = log.updated_at ? new Date(log.updated_at).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) : '時刻不明';
-
-                  return (
-                    <div key={workerKey} className={`p-3.5 rounded-xl border text-xs ${statusBg}`}>
-                      <div className="flex justify-between items-center mb-1.5">
-                        <span className="font-black text-stone-900 uppercase tracking-tight">{workerKey}</span>
-                        <span className={`px-2 py-0.5 rounded-full border text-[9px] font-bold ${badgeColor}`}>
-                          {lastResultLabel}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-stone-700 mb-2 font-medium">{log.summary}</p>
-                      {log.details && log.details.length > 0 && (
-                        <div className="space-y-0.5 mb-2 bg-black/[0.03] p-2 rounded-lg text-[10px] text-stone-600 font-mono">
-                          {log.details.slice(0, 2).map((detail: string, i: number) => (
-                            <div key={i} className="truncate">• {detail}</div>
-                          ))}
-                        </div>
-                      )}
-                      <div className="text-[9px] text-stone-400 text-right">
-                        最終実行: {updatedTime} {ageLabel && `(${ageLabel})`}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </section>
-
-        {/* 📚 5. AI知識ベース ＆ チャンピオン辞典ヘルス */}
-        <section className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-1.5 h-4 bg-amber-500 rounded-full"></div>
-              <h2 className="text-sm font-black text-stone-900 uppercase tracking-wider">
-                📚 AI知識ベース ＆ 攻略辞典ヘルス
-              </h2>
-            </div>
-            <Link href="/champions?tab=knowledge" className="text-xs font-bold text-amber-700 hover:underline">
-              データ整備へ ➔
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-            {/* 知識ベース統計 */}
-            <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-md border border-stone-200/80 shadow-xs space-y-3 hover:border-stone-300 transition">
-              <div className="flex justify-between items-center">
-                <h3 className="text-xs font-black text-stone-900 flex items-center gap-1.5">
-                  <Database size={14} className="text-emerald-600" />
-                  知識ベース登録資産
-                </h3>
-                <Link href="/champions" className="text-[11px] font-bold text-emerald-700 hover:underline">
-                  辞典を見る →
-                </Link>
-              </div>
-
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                {[
-                  { label: 'チャンピオン辞典', value: kbStats.facts, href: '/champions', color: 'text-amber-700' },
-                  { label: '未整理記事', value: kbStats.library, href: '/champions?tab=knowledge', color: 'text-orange-700' },
-                  { label: 'レーンガイド', value: kbStats.laneGuides, href: '/lane-guides', color: 'text-indigo-700', suffix: '/6' },
-                  { label: '対面メモ', value: kbStats.memos, href: '/coach?tab=matchup-memo', color: 'text-emerald-700' },
-                  { label: '対面カルテ', value: kbStats.matchupLog, href: '/coach?tab=matchup-memo', color: 'text-rose-700' },
-                ].map((s) => (
-                  <Link
-                    key={s.label}
-                    href={s.href}
-                    className="p-2.5 rounded-xl bg-stone-50/80 border border-stone-100 hover:bg-stone-100/90 transition text-center"
-                  >
-                    <div className={`text-lg font-black ${s.color}`}>
-                      {s.value === null ? '—' : s.value}
-                      {s.suffix && <span className="text-[10px] text-stone-400 font-normal">{s.suffix}</span>}
-                    </div>
-                    <div className="text-[9px] text-stone-500 font-bold mt-0.5 truncate">{s.label}</div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            {/* 辞典ヘルス */}
-            <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-md border border-stone-200/80 shadow-xs space-y-3 hover:border-stone-300 transition">
-              <div className="flex justify-between items-center">
-                <h3 className="text-xs font-black text-stone-900 flex items-center gap-1.5">
-                  <Sparkles size={14} className="text-amber-500" />
-                  攻略辞典 鮮度・品質ヘルス
-                </h3>
-                <Link href="/champions?scope=health" className="text-[11px] font-bold text-rose-700 hover:underline">
-                  詳細ダッシュボード →
-                </Link>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                <Link
-                  href="/champions?scope=health"
-                  className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200 hover:bg-emerald-100/80 transition text-center"
-                >
-                  <div className="text-lg font-black text-emerald-800">{dictHealthSummary === null ? '—' : dictHealthSummary.verified}</div>
-                  <div className="text-[10px] text-emerald-700 font-bold mt-0.5">🟢 確認済み</div>
-                </Link>
-                <Link
-                  href="/champions?scope=health"
-                  className="p-3 rounded-xl bg-amber-50/80 border border-amber-200 hover:bg-amber-100/80 transition text-center"
-                >
-                  <div className="text-lg font-black text-amber-800">{dictHealthSummary === null ? '—' : dictHealthSummary.aiGenerated}</div>
-                  <div className="text-[10px] text-amber-700 font-bold mt-0.5">🟡 AI生成</div>
-                </Link>
-                <Link
-                  href="/champions?scope=health"
-                  className="p-3 rounded-xl bg-rose-50/80 border border-rose-200 hover:bg-rose-100/80 transition text-center"
-                >
-                  <div className="text-lg font-black text-rose-800">{dictHealthSummary === null ? '—' : dictHealthSummary.stale}</div>
-                  <div className="text-[10px] text-rose-700 font-bold mt-0.5">🔴 要対応</div>
-                </Link>
-              </div>
-            </div>
-          </div>
         </section>
 
       </div>
