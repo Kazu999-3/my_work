@@ -11,7 +11,10 @@ export async function GET() {
     const [{ data: players, error: pError }, { data: participants, error: mError }] = await Promise.all([
       supabase
         .from('ktm_players')
-        .select('id, name, ign, discord_id, is_active, mmr, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup, highest_rank, role_preferences')
+        // ⚠️ 2026-09-23 修正: NG設定・こだわり・格上許可・Pity の6列が select から漏れており、
+        // バランサーの一覧でこれらが常に空（初期値）として表示されていた。
+        // DBには値が入っている（NG設定3名・こだわり7名など）ので、取得漏れが原因。
+        .select('id, name, ign, discord_id, is_active, mmr, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup, highest_rank, role_preferences, ng_lane_1, ng_lane_2, weight, allow_higher, pity, off_role_pity, spectator_pity')
         .order('is_active', { ascending: false })
         .order('name', { ascending: true }),
       fetchAllRows((from, to) =>
