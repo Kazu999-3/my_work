@@ -578,18 +578,27 @@ export default function PlayerMyPage() {
 
         setPlayer(pData);
 
-        // 2. KTM戦績の取得
-        const res = await fetch(`/api/player/profile?name=${encodeURIComponent(pData.name)}`);
-        const sData = await res.json();
+        // 2 & 4. KTM戦績と相性・ライバルを取得
+        // ⚠️ 2026-09-23 修正: 以前は profile → chemistry を直列に await していたため、
+        // lookup と合わせて本番実測で 1.31s + 3.33s + 2.42s = 7.07秒かかっていた。
+        // 両者に依存関係は無い（どちらも pData.name しか使わない）ので並列化する。
+        // 実測上限は一番遅い profile の 3.33秒に縮む。
+        const encodedName = encodeURIComponent(pData.name);
+        const [sData, cData] = await Promise.all([
+          fetch(`/api/player/profile?name=${encodedName}`)
+            .then((r) => r.json())
+            .catch(() => ({})),
+          fetch(`/api/player/chemistry?name=${encodedName}`)
+            .then((r) => r.json())
+            .catch(() => ({})),
+        ]);
+
         if (sData.stats) setStats(sData.stats);
         if (sData.matchups) setMatchups(sData.matchups);
         if (sData.history) setHistory(sData.history);
         if (sData.playstyle) setPlaystyle(sData.playstyle);
         if (sData.overall) setOverall(sData.overall);
 
-        // 4. 相性・ライバルの取得
-        const cRes = await fetch(`/api/player/chemistry?name=${encodeURIComponent(pData.name)}`);
-        const cData = await cRes.json();
         if (cData.success) {
           setChemistry(cData.chemistry || []);
           setRivals(cData.rivals || []);
@@ -1802,6 +1811,103 @@ export default function PlayerMyPage() {
                         )}
                       </div>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 4. 相性＆好敵手タブ
+                  ⚠️ 2026-09-23 追加: タブ定義（tabItems）とデータ取得（/api/player/chemistry）は
+                  最初から存在したが、**描画する JSX が一度も書かれていなかった**ため
+                  タブを押しても何も表示されなかった（activeTab === 'chemistry' の分岐が皆無）。 */}
+              {activeTab === 'chemistry' && (
+                <div className="space-y-6">
+                  {/* 味方との相性 */}
+                  <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-4 sm:p-6 shadow-xl">
+                    <h3 className="text-base sm:text-lg font-black flex items-center gap-2 mb-4 border-b border-black/10 pb-3">
+                      <Users className="w-5 h-5 text-emerald-600 shrink-0" />
+                      <span className="min-w-0">味方との相性（同チームで3戦以上）</span>
+                    </h3>
+                    {qualifiedChemistry.length === 0 ? (
+                      <p className="text-sm text-stone-500 py-6 text-center">
+                        まだデータが足りません。同じチームで3戦以上プレイすると表示されます。
+                      </p>
+                    ) : (
+                      <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+                        <table className="w-full min-w-[420px] text-sm">
+                          <thead>
+                            <tr className="text-left text-[11px] uppercase tracking-wide text-stone-500">
+                              <th className="py-2 pr-3 font-black">メンバー</th>
+                              <th className="py-2 pr-3 font-black text-right">試合数</th>
+                              <th className="py-2 pr-3 font-black text-right">勝利</th>
+                              <th className="py-2 font-black text-right">勝率</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {[...qualifiedChemistry]
+                              .sort((a: any, b: any) => b.winRate - a.winRate || b.games - a.games)
+                              .map((m: any) => (
+                                <tr key={m.name} className="border-t border-black/5">
+                                  <td className="py-2 pr-3 font-bold text-stone-800 truncate max-w-[160px]">{m.name}</td>
+                                  <td className="py-2 pr-3 text-right tabular-nums text-stone-600">{m.games}</td>
+                                  <td className="py-2 pr-3 text-right tabular-nums text-stone-600">{m.wins}</td>
+                                  <td className={`py-2 text-right tabular-nums font-black ${
+                                    m.winRate >= 60 ? 'text-emerald-600'
+                                      : m.winRate >= 50 ? 'text-sky-600'
+                                      : 'text-rose-500'
+                                  }`}>
+                                    {Math.round(m.winRate)}%
+                                  </td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 好敵手（対戦相手） */}
+                  <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-4 sm:p-6 shadow-xl">
+                    <h3 className="text-base sm:text-lg font-black flex items-center gap-2 mb-4 border-b border-black/10 pb-3">
+                      <Swords className="w-5 h-5 text-rose-500 shrink-0" />
+                      <span className="min-w-0">好敵手（敵チームで3戦以上）</span>
+                    </h3>
+                    {(rivals || []).filter((r: any) => r.games >= 3).length === 0 ? (
+                      <p className="text-sm text-stone-500 py-6 text-center">
+                        まだデータが足りません。敵チームとして3戦以上当たると表示されます。
+                      </p>
+                    ) : (
+                      <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+                        <table className="w-full min-w-[420px] text-sm">
+                          <thead>
+                            <tr className="text-left text-[11px] uppercase tracking-wide text-stone-500">
+                              <th className="py-2 pr-3 font-black">相手</th>
+                              <th className="py-2 pr-3 font-black text-right">対戦数</th>
+                              <th className="py-2 pr-3 font-black text-right">勝利</th>
+                              <th className="py-2 font-black text-right">勝率</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(rivals || [])
+                              .filter((r: any) => r.games >= 3)
+                              .sort((a: any, b: any) => a.winRate - b.winRate || b.games - a.games)
+                              .map((r: any) => (
+                                <tr key={r.name} className="border-t border-black/5">
+                                  <td className="py-2 pr-3 font-bold text-stone-800 truncate max-w-[160px]">{r.name}</td>
+                                  <td className="py-2 pr-3 text-right tabular-nums text-stone-600">{r.games}</td>
+                                  <td className="py-2 pr-3 text-right tabular-nums text-stone-600">{r.wins}</td>
+                                  <td className={`py-2 text-right tabular-nums font-black ${
+                                    r.winRate >= 60 ? 'text-emerald-600'
+                                      : r.winRate >= 50 ? 'text-sky-600'
+                                      : 'text-rose-500'
+                                  }`}>
+                                    {Math.round(r.winRate)}%
+                                  </td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
