@@ -127,19 +127,21 @@ function ChampionsShell() {
           >
             <span>📖 レーン攻略</span>
           </Link>
-          <Link
-            href="/library"
-            className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 transition flex items-center gap-1"
-          >
-            <span>📒 攻略ライブラリ</span>
-          </Link>
           {isAuthenticated && (
-            <Link
-              href="/admin/knowledge"
-              className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-pink-700 hover:text-pink-900 bg-pink-50 hover:bg-pink-100/80 border border-pink-200 transition flex items-center gap-1"
-            >
-              <span>📥 戦術取込</span>
-            </Link>
+            <>
+              <Link
+                href="/library"
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-purple-700 hover:text-purple-900 bg-purple-50 hover:bg-purple-100/80 border border-purple-200 transition flex items-center gap-1"
+              >
+                <span>📒 攻略ライブラリ</span>
+              </Link>
+              <Link
+                href="/admin/knowledge"
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-pink-700 hover:text-pink-900 bg-pink-50 hover:bg-pink-100/80 border border-pink-200 transition flex items-center gap-1"
+              >
+                <span>📥 戦術取込</span>
+              </Link>
+            </>
           )}
         </div>
       </motion.header>
