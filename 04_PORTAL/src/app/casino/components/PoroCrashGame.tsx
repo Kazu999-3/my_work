@@ -117,6 +117,14 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
   // START リクエストそのもの。発射直後（トークン到着前）に利確を押されたとき、
   // 無反応にせずトークンの到着を待ち合わせるために保持する。
   const startRequestRef = useRef<Promise<void> | null>(null);
+  // このラウンドがまだ決着していないか。爆発監視の応答が利確後に遅れて届いて
+  // 結果を上書きしてしまうのを防ぐ。
+  const roundActiveRef = useRef<boolean>(false);
+  // 飛行中の爆発監視（ロングポーリング）を打ち切るためのコントローラ
+  const crashWatchRef = useRef<AbortController | null>(null);
+  // サーバーの計時開始に追いつくために、まだ吸収しきれていないズレ(ms)。
+  // 一気に引き戻すと倍率が逆戻りして見えるので、上昇を半速にして徐々に吸収する。
+  const pendingSkewRef = useRef<number>(0);
 
   // ゲーム開始（発射）
   const handleLaunch = async () => {
@@ -139,10 +147,15 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
     // 初回は「押した時刻を開始時刻として遡らせる」だけの補正にしたが、
     // アニメーション自体はSTART応答後に開始していたため、押してから約0.4秒は
     // 1.00xで固まり、そのあと一気に数値が飛ぶ挙動になっていた（かえって不自然）。
-    // ここでは応答を待たずにその場でループを回し始める。開始時刻は押した瞬間なので
-    // サーバーの想定する倍率カーブとずれない。トークンはrefへ後から差し込む。
+    // ここでは応答を待たずにその場でループを回し始める。トークンはrefへ後から差し込む。
+    // ⚠️ ただし押下時刻を起点にするとサーバーの計時開始（started_at）より約0.3秒
+    //    先行する。当初これを「ずれない」と誤って書いていたが、実際には
+    //    「画面はまだ飛んでいるのに利確が爆発済みで弾かれる」不具合の原因になった。
+    //    START応答で受け取る serverElapsedMs を使って下で合わせ直している。
     gameTokenRef.current = null;
     startTimeRef.current = launchPressedAtRef.current;
+    pendingSkewRef.current = 0;
+    roundActiveRef.current = true;
     runFlightAnimation();
 
     let resolveStart: () => void = () => {};
@@ -164,7 +177,23 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
 
       gameTokenRef.current = data.gameToken;
       onBalanceChange(data.newBalance);
+
+      // ⚠️ 2026-09-23: サーバーとの時計合わせ。
+      // サーバーの計時開始（crash_sessions.started_at）は認証・プレイヤー取得・
+      // コイン減算のあとなので、押下時刻から計時しているクライアントは約0.3秒
+      // 先行してしまう。放っておくと画面がまだ飛んでいるのにサーバー的には
+      // 爆発後、という食い違いが出る（実際「爆発してないのに利確で爆発する」
+      // 不具合として報告された）。ここでズレを測り、以降のフレームで吸収する。
+      if (typeof data.serverElapsedMs === 'number') {
+        const clientElapsed = performance.now() - startTimeRef.current;
+        const skew = clientElapsed - data.serverElapsedMs;
+        // 異常値（時計の飛びや極端な遅延）は無視する
+        pendingSkewRef.current = Math.max(0, Math.min(skew, 1500));
+      }
+
+      startCrashWatch(data.gameToken);
     } catch (e: any) {
+      roundActiveRef.current = false;
       // 発射そのものが失敗したので、先行させたアニメーションを巻き戻す
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -180,53 +209,84 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
     }
   };
 
-  // 飛行アニメーションループ ＆ サーバー側クラッシュ監視
-  const runFlightAnimation = () => {
-    let lastPollTime = 0;
+  // 💥 爆発監視（ロングポーリング）
+  //
+  // 従来は0.3秒間隔でVERIFY_CRASHを叩いていたが、応答の往復に0.4秒かかるため
+  // 爆発が画面に出るまで最大0.7秒遅れ、その間クライアントは倍率を伸ばし続けていた。
+  // 結果「画面ではまだ飛んでいるのに、利確を押すと爆発済み扱いになる」という
+  // 食い違いが起きる（倍率換算で最大16%ぶんの空白時間）。
+  // ここではサーバーに爆発の瞬間まで待ってもらい、起きた瞬間に応答をもらう。
+  // 遅れは片道のネットワーク遅延だけになる。サーバー側の待ち上限は6秒なので、
+  // 未決着で返ってきたら即座に張り直す。
+  const startCrashWatch = (token: string) => {
+    const controller = new AbortController();
+    crashWatchRef.current = controller;
 
-    const checkServerCrash = async () => {
-      // START応答より先にループが回り始めるので、トークンが届くまでは問い合わせない
-      const token = gameTokenRef.current;
-      if (!token) return false;
-      try {
-        const verifyRes = await fetch('/api/bet/crash', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'VERIFY_CRASH', gameToken: token }),
-        });
-        const vData = await verifyRes.json();
-        if (vData.crashed && vData.crashPoint) {
-          // 💥 サーバー側で爆発到達！
-          if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-          const cp = vData.crashPoint;
-          setMultiplier(cp);
-          setFinalMultiplier(cp);
-          setGameState('CRASHED');
-          setCrashHistory((prev) => [cp, ...prev.slice(0, 5)]);
-          return true;
+    const poll = async () => {
+      while (roundActiveRef.current && !controller.signal.aborted) {
+        try {
+          const res = await fetch('/api/bet/crash', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'VERIFY_CRASH', gameToken: token, wait: true }),
+            signal: controller.signal,
+          });
+          const vData = await res.json();
+
+          // 利確などで既に決着している場合は結果を上書きしない
+          if (!roundActiveRef.current || controller.signal.aborted) return;
+
+          if (vData.crashed && vData.crashPoint) {
+            roundActiveRef.current = false;
+            if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+            const cp = vData.crashPoint;
+            setMultiplier(cp);
+            setFinalMultiplier(cp);
+            setGameState('CRASHED');
+            setCrashHistory((prev) => [cp, ...prev.slice(0, 5)]);
+            return;
+          }
+          // 待ち上限で打ち切られただけ。そのまま次のロングポーリングを張る。
+        } catch {
+          if (controller.signal.aborted) return;
+          // 通信エラー時だけ少し間を置いて再試行する
+          await new Promise((resolve) => setTimeout(resolve, 500));
         }
-      } catch {
-        // network retry
       }
-      return false;
     };
 
+    void poll();
+  };
+
+  // 飛行アニメーションループ
+  const runFlightAnimation = () => {
     // ⚠️ 2026-09-23 修正: 描画がカクついていた原因は2つ。
-    //   1) loop が async で `await checkServerCrash()` していたため、
-    //      通信の往復（数十〜数百ms）が終わるまで次フレームを requestAnimationFrame
-    //      できず、0.3秒ごとに描画が止まっていた。
+    //   1) loop が async で通信を await していたため、往復が終わるまで次フレームを
+    //      requestAnimationFrame できず、0.3秒ごとに描画が止まっていた。
     //   2) 毎フレーム setCurve で配列を作り直しており、再レンダリングが重かった。
-    // → 通信は待たずに投げっぱなしにし、軌跡は ref に溜めて表示用stateの更新を
-    //   約50msごとに間引く。倍率の数字は毎フレーム更新して滑らかさを保つ。
+    // → 通信はループから切り離し（startCrashWatch へ）、軌跡は ref に溜めて
+    //   表示用stateの更新を約50msごとに間引く。倍率の数字は毎フレーム更新する。
     let lastCurvePush = 0;
+    let lastFrameTime = 0;
 
     const loop = (now: number) => {
+      // サーバーとのズレを吸収する。startTimeRef を前へずらすと経過時間が縮むので、
+      // 倍率が逆戻りせず「上昇が半分の速度になる」形で自然に追いつける。
+      if (pendingSkewRef.current > 0 && lastFrameTime) {
+        const absorb = Math.min(pendingSkewRef.current, (now - lastFrameTime) * 0.5);
+        startTimeRef.current += absorb;
+        pendingSkewRef.current -= absorb;
+      }
+      lastFrameTime = now;
+
       const elapsed = (now - startTimeRef.current) / 1000; // 秒数
       // 指数関数的カーブで倍率計算 (0秒=1.0x, 2秒=1.5x, 5秒=3.0x, 10秒=10x)
       const current = Math.floor(Math.pow(Math.E, elapsed * 0.22) * 100) / 100;
 
       // 100倍到達で天井
       if (current >= 100.0) {
+        roundActiveRef.current = false;
+        crashWatchRef.current?.abort();
         setMultiplier(100.0);
         setFinalMultiplier(100.0);
         setGameState('CRASHED');
@@ -237,7 +297,6 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
       setMultiplier(current);
 
       // 軌跡は ref に毎フレーム溜め、stateへの反映は約50msごと（＝最大20fps）に間引く。
-      // カーブの見た目はこれで十分滑らかで、再レンダリング回数を1/3以下に抑えられる。
       curveRef.current.push({ t: elapsed, m: current });
       if (curveRef.current.length > 240) {
         curveRef.current = curveRef.current.filter((_, i) => i % 2 === 0);
@@ -245,13 +304,6 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
       if (now - lastCurvePush > 50) {
         lastCurvePush = now;
         setCurve([...curveRef.current]);
-      }
-
-      // 0.3秒ごとにサーバーへ「爆発したか」を問い合わせる。
-      // ここで await するとフレームが止まるので、結果は待たない（投げっぱなし）。
-      if (now - lastPollTime > 300) {
-        lastPollTime = now;
-        void checkServerCrash();
       }
 
       animationFrameRef.current = requestAnimationFrame(loop);
@@ -279,6 +331,12 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
+    // 爆発監視を打ち切る。ここで止めないと、飛行中に張っていたロングポーリングが
+    // このあと「爆発した」と返してきて、利確の結果を上書きしてしまう。
+    roundActiveRef.current = false;
+    crashWatchRef.current?.abort();
+    crashWatchRef.current = null;
+
     const claimMult = multiplier;
     setGameState('CASHED_OUT');
     setFinalMultiplier(claimMult);
@@ -354,6 +412,8 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      roundActiveRef.current = false;
+      crashWatchRef.current?.abort();
     };
   }, []);
 

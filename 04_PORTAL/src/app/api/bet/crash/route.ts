@@ -150,13 +150,17 @@ export async function POST(req: Request) {
       const crashPoint = generateCrashPoint();
       const gameId = crypto.randomUUID();
 
-      const { error: insErr } = await supabaseAdmin.from('crash_sessions').insert({
-        game_id: gameId,
-        discord_id: session.discordId,
-        bet_amount: betAmount,
-        crash_point: crashPoint,
-        status: 'pending',
-      });
+      const { data: inserted, error: insErr } = await supabaseAdmin
+        .from('crash_sessions')
+        .insert({
+          game_id: gameId,
+          discord_id: session.discordId,
+          bet_amount: betAmount,
+          crash_point: crashPoint,
+          status: 'pending',
+        })
+        .select('started_at')
+        .single();
 
       if (insErr) {
         console.error('[crash] session insert error:', insErr);
@@ -165,11 +169,25 @@ export async function POST(req: Request) {
         return NextResponse.json({ ok: false, error: 'ゲームセッションの作成に失敗しました。' }, { status: 500 });
       }
 
+      // ⚠️ 2026-09-23: クライアントの時計合わせ用。
+      // started_at は DEFAULT now() なので「insertした瞬間」＝認証・プレイヤー取得・
+      // コイン減算がすべて終わったあとに打たれる。つまりサーバーの計時開始は
+      // ボタン押下より0.3秒ほど遅い。クライアントが押下時刻から計時していると
+      // 画面の倍率だけがサーバーより先行し、**まだ飛んで見えるのに利確が
+      // 「もう爆発済み」で弾かれる**という食い違いが起きる。
+      // そこで「サーバー側で既に何ms経過しているか」を返し、クライアント側の
+      // 起点をこれに合わせ直させる。タイムスタンプそのものではなく経過時間を
+      // 返すので、利用者PCの時計がずれていても影響を受けない。
+      const serverElapsedMs = inserted?.started_at
+        ? Math.max(0, Date.now() - new Date(inserted.started_at).getTime())
+        : 0;
+
       return NextResponse.json({
         ok: true,
         gameToken: gameId, // ★ 中身は不透明なgameIdのみ。crashPointは含まれない。
         betAmount,
         newBalance,
+        serverElapsedMs,
       });
     }
 
@@ -278,22 +296,40 @@ export async function POST(req: Request) {
     // 3. 爆発時の答え合わせ（※ゲーム終了・爆発確認時のみ開示）
     // ==========================================
     if (action === 'VERIFY_CRASH') {
-      const { gameToken: gameId } = body;
+      const { gameToken: gameId, wait } = body;
       const crashSession = await getCrashSession(gameId, session.discordId);
       if (!crashSession) {
         return NextResponse.json({ ok: false, error: '無効なトークンです。' }, { status: 400 });
       }
 
-      // ★ セキュリティ修正:
+      // ★ セキュリティ:
       // ゲーム開始から十分な時間（クラッシュ到達予定時刻）が経過する前には
       // VERIFY_CRASH で事前にクラッシュポイントを開示しない！
       const actualCrash = Number(crashSession.crash_point);
       const startedAtMs = new Date(crashSession.started_at).getTime();
-      const elapsedSec = (Date.now() - startedAtMs) / 1000;
       const crashTimeSec = Math.log(Math.max(1.0, actualCrash)) / 0.22;
+      const crashAtMs = startedAtMs + crashTimeSec * 1000;
+
+      // ⚠️ 2026-09-23: ロングポーリング対応。
+      // 従来はクライアントが0.3秒間隔で「爆発した？」と問い合わせていたため、
+      // 爆発から画面に反映されるまで最大 0.3秒(待ち) + 0.4秒(往復) = 0.7秒かかり、
+      // その間クライアントは倍率を伸ばし続けていた。結果、**画面はまだ飛んでいるのに
+      // 利確が弾かれる**空白時間が生まれていた（倍率換算で最大16%ぶん）。
+      // wait:true のときは爆発の瞬間までサーバー側で待ってから応答する。
+      // 反映の遅れは片道のネットワーク遅延だけ（0.2秒程度）に縮む。
+      // ・待ちの上限は6秒。Vercel Functionの実行時間上限（Hobbyで10秒）に収める。
+      //   超えたぶんはクライアントが即座に次のロングポーリングを張り直す。
+      // ・1ラウンドあたりの呼び出しは最大3回程度になり、従来の約59回から激減する。
+      if (wait) {
+        const WAIT_BUDGET_MS = 6000;
+        const waitMs = Math.min(crashAtMs - Date.now(), WAIT_BUDGET_MS);
+        if (waitMs > 0) {
+          await new Promise((resolve) => setTimeout(resolve, waitMs));
+        }
+      }
 
       // まだ爆発していない（飛行中）なら「まだ飛行中」として開示拒否
-      if (elapsedSec < crashTimeSec) {
+      if (Date.now() < crashAtMs) {
         return NextResponse.json({
           ok: true,
           crashed: false,
