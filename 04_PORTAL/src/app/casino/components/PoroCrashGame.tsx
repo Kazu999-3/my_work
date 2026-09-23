@@ -95,13 +95,15 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
   // 📈 倍率カーブの軌跡。{t: 経過秒, m: 倍率} を溜めてSVGで描画する。
   // 上限は120点（約6秒ぶんの描画点）で、超えたら間引いて負荷を抑える。
   const [curve, setCurve] = useState<{ t: number; m: number }[]>([]);
-  const [gameToken, setGameToken] = useState<string | null>(null);
   const [crashHistory, setCrashHistory] = useState<number[]>([1.84, 1.25, 4.12, 1.05, 12.4]);
   const [finalMultiplier, setFinalMultiplier] = useState<number>(1.0);
   const [winCoins, setWinCoins] = useState<number>(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isCashingOut, setIsCashingOut] = useState<boolean>(false);
   const [launchCooldown, setLaunchCooldown] = useState<boolean>(false);
+  // 利確を押してサーバーの裁定を待っている最中か。UIは先に結果を出すが、
+  // 「確定中」であることは隠さない（後からクラッシュ判定に覆る可能性があるため）。
+  const [awaitingSettle, setAwaitingSettle] = useState<boolean>(false);
 
   const animationFrameRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
@@ -109,6 +111,12 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
   const curveRef = useRef<{ t: number; m: number }[]>([]);
   // 発射ボタンを押した瞬間の時刻。API応答を待つあいだのラグを打ち消すのに使う。
   const launchPressedAtRef = useRef<number>(0);
+  // gameToken の ref 版。アニメーションループはSTART応答を待たずに回り始めるので、
+  // state の再レンダリングを待たずに最新のトークンを読めるようにしておく。
+  const gameTokenRef = useRef<string | null>(null);
+  // START リクエストそのもの。発射直後（トークン到着前）に利確を押されたとき、
+  // 無反応にせずトークンの到着を待ち合わせるために保持する。
+  const startRequestRef = useRef<Promise<void> | null>(null);
 
   // ゲーム開始（発射）
   const handleLaunch = async () => {
@@ -127,6 +135,21 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
     setCurve([{ t: 0, m: 1.0 }]);  // 前回の軌跡をリセット
     setWinCoins(0);
 
+    // ⚠️ 2026-09-23: 発射ボタンの体感ラグ対策（2回目の修正）。
+    // 初回は「押した時刻を開始時刻として遡らせる」だけの補正にしたが、
+    // アニメーション自体はSTART応答後に開始していたため、押してから約0.4秒は
+    // 1.00xで固まり、そのあと一気に数値が飛ぶ挙動になっていた（かえって不自然）。
+    // ここでは応答を待たずにその場でループを回し始める。開始時刻は押した瞬間なので
+    // サーバーの想定する倍率カーブとずれない。トークンはrefへ後から差し込む。
+    gameTokenRef.current = null;
+    startTimeRef.current = launchPressedAtRef.current;
+    runFlightAnimation();
+
+    let resolveStart: () => void = () => {};
+    startRequestRef.current = new Promise<void>((r) => {
+      resolveStart = r;
+    });
+
     try {
       const res = await fetch('/api/bet/crash', {
         method: 'POST',
@@ -139,29 +162,32 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
         throw new Error(data.error || '発射に失敗しました');
       }
 
-      setGameToken(data.gameToken);
+      gameTokenRef.current = data.gameToken;
       onBalanceChange(data.newBalance);
-
-      // ⚠️ 2026-09-23: 発射ボタンのタイムラグ対策。
-      // START APIは 認証 → プレイヤー取得 → コイン減算 → セッション作成 と
-      // DB往復が4回あり、本番実測で0.4秒以上かかる。以前はこの応答を待ってから
-      // startTimeRef を打っていたため、押してから動き出すまで無反応に見えていた。
-      // 押した瞬間(launchPressedAtRef)を開始時刻として扱い、通信にかかった時間を
-      // 巻き戻して補正する。こうすると倍率はサーバーの想定どおりのまま、
-      // 見た目だけ即座に動き出す。
-      startTimeRef.current = launchPressedAtRef.current || performance.now();
-      runFlightAnimation(data.gameToken);
     } catch (e: any) {
+      // 発射そのものが失敗したので、先行させたアニメーションを巻き戻す
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      gameTokenRef.current = null;
       setGameState('IDLE');
+      setMultiplier(1.0);
+      curveRef.current = [];
+      setCurve([]);
       setErrorMsg(e.message || 'エラーが発生しました');
+    } finally {
+      resolveStart();
     }
   };
 
   // 飛行アニメーションループ ＆ サーバー側クラッシュ監視
-  const runFlightAnimation = (token: string) => {
+  const runFlightAnimation = () => {
     let lastPollTime = 0;
 
     const checkServerCrash = async () => {
+      // START応答より先にループが回り始めるので、トークンが届くまでは問い合わせない
+      const token = gameTokenRef.current;
+      if (!token) return false;
       try {
         const verifyRes = await fetch('/api/bet/crash', {
           method: 'POST',
@@ -236,14 +262,46 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
 
   // 利確（キャッシュアウト）
   const handleCashout = async () => {
-    if (gameState !== 'FLYING' || !gameToken || isCashingOut) return;
+    if (gameState !== 'FLYING' || isCashingOut) return;
 
     setIsCashingOut(true);
+
+    // ⚠️ 2026-09-23: 利確ボタンの体感ラグ対策。
+    // CASHOUT APIは本番実測で 0.33〜0.43秒 かかる。認証で弾かれるリクエストでも
+    // 同じだけかかるため、これは Vercel Function 呼び出しそのものの下限であり、
+    // サーバー側のDB往復（4回）を削っても 0.35秒は縮まらない。
+    // 応答を待ってから結果を描いていたので、押しても0.4秒なにも起きない
+    // 「効かないボタン」に見えていた。ここでは押した瞬間の倍率で結果を先に描き、
+    // サーバーの裁定で後から確定させる。
+    // ※ 勝利演出（紙吹雪）はサーバーがOKを返すまで出さない。VERIFY_CRASHの
+    //   ポーリングが0.3秒間隔なので「実はもう爆発していた」ことがあり得るため、
+    //   先に祝ってから負けに覆るのだけは避ける。
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
-
     const claimMult = multiplier;
+    setGameState('CASHED_OUT');
+    setFinalMultiplier(claimMult);
+    setWinCoins(Math.floor(betAmount * claimMult));
+    setAwaitingSettle(true);
+
+    // 発射直後（START応答が届く前）に利確を押されたケース。以前は無反応で返して
+    // いたが、アニメーションが押した瞬間から動くようになった今は「押せるのに
+    // 効かない0.4秒」が生まれてしまうため、トークンの到着を待ち合わせる。
+    // 倍率は待ち合わせ前に確定させてあるので、待った分だけ得をすることはない。
+    let token = gameTokenRef.current;
+    if (!token && startRequestRef.current) {
+      await startRequestRef.current;
+      token = gameTokenRef.current;
+    }
+    if (!token) {
+      // STARTそのものが失敗している（handleLaunch側でエラー表示済み）
+      setAwaitingSettle(false);
+      setIsCashingOut(false);
+      setGameState('IDLE');
+      setMultiplier(1.0);
+      return;
+    }
 
     try {
       const res = await fetch('/api/bet/crash', {
@@ -251,14 +309,14 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'CASHOUT',
-          gameToken,
+          gameToken: token,
           claimedMultiplier: claimMult,
         }),
       });
 
       const data = await res.json();
       if (data.success) {
-        setGameState('CASHED_OUT');
+        // サーバー裁定で確定。倍率・獲得コインはサーバーの値で上書きする。
         setFinalMultiplier(data.multiplier);
         setWinCoins(data.winCoins);
         onBalanceChange(data.newBalance);
@@ -269,12 +327,19 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
           confetti({ particleCount: 50, spread: 50, origin: { y: 0.6 } });
         }
       } else {
+        // 間に合っていなかった（すでに爆発済み）ので結果を差し替える
         setGameState('CRASHED');
         setFinalMultiplier(data.actualCrash || claimMult);
+        setWinCoins(0);
+        if (data.actualCrash) {
+          setCrashHistory((prev) => [data.actualCrash, ...prev.slice(0, 5)]);
+        }
       }
     } catch {
       setGameState('CRASHED');
+      setWinCoins(0);
     } finally {
+      setAwaitingSettle(false);
       setIsCashingOut(false);
       // 利確直後の連打・誤タップによる次発射を防止（0.8秒クールダウン）
       setLaunchCooldown(true);
@@ -371,7 +436,9 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
                 🎉 {finalMultiplier.toFixed(2)}x
               </span>
               <p className="text-xs font-bold text-emerald-300 mt-1">
-                +{winCoins.toLocaleString()} 🪙 利確成功！お見事！
+                {awaitingSettle
+                  ? `+${winCoins.toLocaleString()} 🪙 脱出！サーバーで確定処理中…`
+                  : `+${winCoins.toLocaleString()} 🪙 利確成功！お見事！`}
               </p>
             </div>
           ) : (
