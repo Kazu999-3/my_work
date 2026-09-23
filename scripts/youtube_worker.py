@@ -7,6 +7,35 @@
 # ============================================================
 import os, re, json, glob, subprocess, sys, time
 import urllib.request, urllib.error
+from pathlib import Path
+
+# Windowsのコンソール(cp932)では絵文字や記号で UnicodeEncodeError になるため。
+# 元々GitHub Actions(Linux/UTF-8)専用だったのでこの手当てが無かった。
+try:
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
+except Exception:
+    pass
+
+# ローカル実行時は .env から環境変数を読む（2026-09-23 追加）。
+# このワーカーは元々 GitHub Actions 専用で、環境変数がプロセスに注入されている
+# 前提だった。そのため TODO に載っていたローカル実行コマンドが
+#   KeyError: SUPABASE_URL
+# で即落ちしていた。load_dotenv は既存の環境変数を上書きしないので、
+# GitHub Actions 側の挙動は変わらない。
+try:
+    from dotenv import load_dotenv
+    _root = Path(__file__).resolve().parent.parent
+    for _env in [_root / "04_PORTAL" / ".env.local", _root / "04_PORTAL" / ".env", _root / ".env"]:
+        if _env.exists():
+            load_dotenv(_env)
+    # SUPABASE_URL は名前が揺れるので、ポータル側の名前からも補う
+    if not os.environ.get("SUPABASE_URL"):
+        _url = os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
+        if _url:
+            os.environ["SUPABASE_URL"] = _url
+except ImportError:
+    pass  # GitHub Actions では python-dotenv が無くても環境変数が直接入っている
 
 from notify import notify, COLOR_OK, COLOR_WARN
 
@@ -84,16 +113,30 @@ def fetch_subtitles(url, vid):
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from yt_dlp_cookies import get_cookie_cli_args
     cmd.extend(get_cookie_cli_args())
-    res = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
-    files = sorted(glob.glob(f"{out}*.vtt"), key=lambda f: (0 if ".ja" in f else 1))
-    if not files:
+    # ⚠️ 2026-09-23: 429（Too Many Requests）はその場で待って再試行する。
+    # 従来は1回叩いて429なら即RateLimitedにしていたため、次のワーカー起動まで
+    # 何分も空いたうえに retry_count だけが減っていった。実測では59件のエラーのうち
+    # 23件がこの429で、いずれも retry_count を3まで使い切って error_generation に
+    # 固定されていた（2026-09-22 16:53〜2026-09-23 08:54 に発生）。
+    BACKOFF_SEC = [10, 30]
+    for attempt in range(len(BACKOFF_SEC) + 1):
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+        files = sorted(glob.glob(f"{out}*.vtt"), key=lambda f: (0 if ".ja" in f else 1))
+        if files:
+            break
         err = (res.stderr or "").strip()
         tail = err.splitlines()[-1] if err else "(yt-dlpの出力なし)"
-        print(f"  [字幕なし] {vid}: {tail}", file=sys.stderr)
-        if "Sign in to confirm" in err or "bot" in err.lower() or "429" in err:
-            print(f"  ⚠️ IP制限の疑い（YouTubeがbot判定）: {vid}", file=sys.stderr)
-            raise RateLimited(tail)
-        return None
+        is_limited = "Sign in to confirm" in err or "bot" in err.lower() or "429" in err
+        if not is_limited:
+            print(f"  [字幕なし] {vid}: {tail}", file=sys.stderr)
+            return None
+        if attempt < len(BACKOFF_SEC):
+            wait = BACKOFF_SEC[attempt]
+            print(f"  ⏳ 429/bot判定。{wait}秒待って再試行 ({attempt + 1}/{len(BACKOFF_SEC)}): {vid}", file=sys.stderr)
+            time.sleep(wait)
+            continue
+        print(f"  ⚠️ IP制限が解消しません（YouTubeがbot判定）: {vid}", file=sys.stderr)
+        raise RateLimited(tail)
     text_lines, seen = [], set()
     for line in open(files[0], encoding="utf-8", errors="ignore"):
         line = line.strip()
@@ -221,8 +264,15 @@ def main():
         return
 
     done, failed = [], []   # 通知用の結果集計
+    processed = 0
     for it in items:
         vid, url = it["id"], it["url"]
+        # ⚠️ 2026-09-23: 連続アクセスでYouTubeの字幕APIが429を返すため間隔を空ける。
+        # extract_video_tactics.py では 2026-09-21 の実測（間隔なしで28本中6本が429）を
+        # 受けて既に5秒待っていたが、このワーカーには入っていなかった。
+        if processed > 0:
+            time.sleep(5)
+        processed += 1
         print(f"▶ 処理開始: {it.get('title')} ({vid})")
         # 注意: status は CHECK 制約付きで、許可値は
         #   pending / completed / error_generation / error_no_transcript / failed / on_hold
@@ -280,6 +330,16 @@ def main():
             title = video_title
             done.append(title)
             print(f"✅ 完了: {title}")
+        except RateLimited as e:
+            # ⚠️ 2026-09-23: レート制限は「この動画の問題」ではなく「今このIPが
+            # 叩きすぎている」という環境要因なので、retry_count を消費させない。
+            # さらに、以降の動画も確実に同じ429を食らって retry_count だけを
+            # 削っていくため、この回の実行はここで打ち切る。
+            # （実際それで23件が retry_count を使い切り error_generation に固定された）
+            sb("PATCH", f"youtube_queue?id=eq.{vid}", {"status": "pending"})
+            failed.append((it.get("title") or vid, "rate_limited", str(e)[:80]))
+            print(f"⏸ レート制限のため中断（pendingのまま据え置き）: {e}", file=sys.stderr)
+            break
         except Exception as e:
             retry = (it.get("retry_count") or 0) + 1
             if isinstance(e, NoTranscript):
@@ -307,7 +367,10 @@ def main():
             lines.append(f"\n**❌ 失敗: {len(failed)}本**")
             # 字幕なしが多い＝IP制限の可能性があるので、理由も添える
             for t, st, reason in failed:
-                label = "字幕なし" if st == "error_no_transcript" else "生成失敗" if st == "error_generation" else "再試行待ち"
+                label = ("字幕なし" if st == "error_no_transcript"
+                         else "生成失敗" if st == "error_generation"
+                         else "レート制限で中断" if st == "rate_limited"
+                         else "再試行待ち")
                 lines.append(f"・{t}（{label}）")
         color = COLOR_WARN if failed else COLOR_OK
         status = "warn" if failed else "ok"

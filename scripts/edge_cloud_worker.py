@@ -269,6 +269,9 @@ def notify_discord_direct(title: str, description: str, color: int = 0xe74c3c):
     }
     req = urllib.request.Request(DISCORD_WEBHOOK, data=json.dumps(payload).encode(), method="POST")
     req.add_header("Content-Type", "application/json")
+    # ⚠️ 2026-09-23: User-Agent が無いと Discord の前段(Cloudflare)が 403 で弾く。
+    # notify.py と同じ問題（実測: UAなし→403 / UAあり→APIに到達）。
+    req.add_header("User-Agent", "SovereignOS-Notifier/1.0 (+https://github.com/Kazu999-3/my_work)")
     try:
         urllib.request.urlopen(req, timeout=10)
     except Exception as e:

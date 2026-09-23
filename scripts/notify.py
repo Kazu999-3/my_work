@@ -114,7 +114,15 @@ def notify(title, lines=None, color=0x5865F2, worker_name=None, status="ok"):
         req = urllib.request.Request(
             webhook,
             data=json.dumps(payload).encode(),
-            headers={"Content-Type": "application/json"},
+            headers={
+                "Content-Type": "application/json",
+                # ⚠️ 2026-09-23: User-Agent を付けないと Discord の前段(Cloudflare)が
+                # 403 Forbidden で弾く。urllib の既定 UA (Python-urllib/3.x) が対象。
+                # このため**ワーカーの通知は長期間1件も届いていなかった**
+                # （失敗しても print するだけなので誰も気づけない状態だった）。
+                # 実測: UAなし→403 / UAあり→400(空ペイロードとしてAPIに到達)。
+                "User-Agent": "SovereignOS-Notifier/1.0 (+https://github.com/Kazu999-3/my_work)",
+            },
             method="POST",
         )
         urllib.request.urlopen(req, timeout=15)

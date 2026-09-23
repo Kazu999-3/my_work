@@ -15,6 +15,7 @@ YouTube解析パイプライン(youtube_queue)で発生したエラー動画(err
 import os
 import sys
 import argparse
+import re
 from pathlib import Path
 from collections import Counter
 from dotenv import load_dotenv
@@ -40,6 +41,7 @@ if not SUPABASE_URL or not SUPABASE_KEY:
     print("[ERROR] Supabaseの環境変数が設定されていません (NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY)")
     sys.exit(1)
 
+ERROR_SUFFIX_RE = r"\s*\[エラー:.*\]"
 REST_BASE = f"{SUPABASE_URL}/rest/v1"
 HEADERS = {
     "apikey": SUPABASE_KEY,
@@ -131,17 +133,67 @@ def cmd_retry_failed(apply: bool):
             print(f"\n❌ 更新失敗: {res.status_code} {res.text}")
 
 
+def cmd_retry_rate_limited(apply: bool):
+    """YouTube側のレート制限(429)で固定されてしまった動画だけを pending へ戻す。
+
+    --retry-failed は error_generation / failed を**全件**戻すため、字幕そのものが
+    無い動画やcookie待ちの動画まで巻き込んで再び失敗させてしまう。
+    429 は時間を置けば通るものなので、それだけを選んで戻す。
+    (2026-09-23: ワーカーに間隔制御もバックオフも無く、23件が retry_count を
+     使い切って error_generation に固定されていた。ワーカー側は修正済み)
+    """
+    rows = fetch_all_rows("youtube_queue", "id,status,title", "status=in.(error_generation,failed)")
+    targets = [r for r in rows
+               if "429" in (r.get("title") or "") or "Too Many Requests" in (r.get("title") or "")]
+    if not targets:
+        print("レート制限で止まっている動画はありません。")
+        return
+
+    mode = "DB反映" if apply else "ドライラン"
+    print("")
+    print("🔄 レート制限で止まっている動画: %d 件 (モード: %s)" % (len(targets), mode))
+    for r in targets[:10]:
+        print("  - [%s] %s" % (r["status"], (r.get("title") or "")[:70]))
+    if len(targets) > 10:
+        print("  ... 他 %d 件" % (len(targets) - 10))
+
+    if not apply:
+        print("")
+        print("💡 DBへ実際に反映するには --apply を付けて実行してください。")
+        return
+
+    ok = 0
+    for r in targets:
+        # タイトルに追記されたエラー表記も外して元の題名に戻す
+        clean_title = re.sub(ERROR_SUFFIX_RE, "", r.get("title") or "").strip()
+        res = requests.patch(
+            REST_BASE + "/youtube_queue?id=eq." + str(r["id"]),
+            headers=HEADERS,
+            json={"status": "pending", "retry_count": 0, "title": clean_title},
+        )
+        if res.ok:
+            ok += 1
+        else:
+            print("  ❌ 失敗: %s %s %s" % (r["id"], res.status_code, res.text[:80]))
+    print("")
+    print("✅ %d/%d 件を 'pending' (リトライ0) に戻しました。" % (ok, len(targets)))
+
+
 def main():
     parser = argparse.ArgumentParser(description="YouTube解析キュー監視 ＆ クリーンアップ")
     parser.add_argument("--status", action="store_true", help="キュー集計とエラー動画一覧を表示")
     parser.add_argument("--clean-errors", action="store_true", help="エラー動画をmanually_closedにクローズ")
     parser.add_argument("--retry-failed", action="store_true", help="エラー動画をpendingに戻して再試行")
+    parser.add_argument("--retry-rate-limited", action="store_true",
+                        help="レート制限(429)で止まった動画だけをpendingに戻す")
     parser.add_argument("--apply", action="store_true", help="DB更新を実際に適用")
 
     args = parser.parse_args()
 
     if args.status:
         cmd_status()
+    elif args.retry_rate_limited:
+        cmd_retry_rate_limited(args.apply)
     elif args.clean_errors:
         cmd_clean_errors(args.apply)
     elif args.retry_failed:
