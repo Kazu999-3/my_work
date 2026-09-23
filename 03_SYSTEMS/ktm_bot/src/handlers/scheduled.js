@@ -39,8 +39,29 @@ export async function handleScheduledEvent(event, env, ctx) {
     console.log("[Scheduled] Executing legacy periodic card migration...");
     await migrateLegacyPeriodicCards(env);
   } else if (cronExpression.includes("0 0 * * 2") || mode === "weekly_report") {
-    // 毎週月曜 9:00 JST (UTC 0:00 月曜 / CF dow=2): 個人週間レポート配信
+    // 毎週月曜 9:00 JST (UTC 0:00 月曜 / CF dow=2): 個人週間レポート配信 ＆ 前週末カスタムカードの受付終了
     await sendWeeklyReports(env);
+    try {
+      const channelId = CONFIG.PERIODIC_RECRUIT_CHANNEL_ID || CONFIG.RECRUIT_CHANNEL_ID;
+      const recent = await fetchRecentBotMessages(env, channelId);
+      for (const m of recent.slice(0, MAX_CARDS_PER_RUN)) {
+        const title = m.embeds?.[0]?.title || '';
+        if ((title.includes('土曜・本戦カスタム') || title.includes('日曜・お祭りカスタム')) && !isClosedCard(m)) {
+          const closedEmbed = { ...m.embeds[0], title: markTitleClosed(title), color: 0x7f8c8d };
+          const disabledComponents = (m.components || []).map((row) => ({
+            ...row,
+            components: row.components.map((btn) => ({ ...btn, disabled: true }))
+          }));
+          await fetchWithRetry(`https://discord.com/api/v10/channels/${m.channel_id || channelId}/messages/${m.id}`, {
+            method: 'PATCH',
+            headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ embeds: [closedEmbed], components: disabledComponents })
+          }).catch(() => {});
+        }
+      }
+    } catch (e) {
+      console.warn('[WeeklyReport] 月曜の定期カスタム締め切りに失敗:', e);
+    }
   } else if (
     cronExpression.includes("0 11 * * 7,1") || cronExpression.includes("0 11 * * 7") ||
     cronExpression.includes("0 11 * * 1") ||
@@ -554,29 +575,20 @@ async function closePreviousPeriodicRecruitments(env, channelId, targets, messag
     // サブリクエスト上限対策。1回で捌ききれない分は次回の実行に回す。
     for (const msg of stale.slice(0, MAX_CARDS_PER_RUN)) {
       try {
-        const closedEmbed = { ...msg.embeds[0] };
-        closedEmbed.title = markTitleClosed(closedEmbed.title);
-        closedEmbed.color = 0x7f8c8d; // グレーアウト
-
-        const disabledComponents = (msg.components || []).map((row) => ({
-          ...row,
-          components: row.components.map((btn) => ({ ...btn, disabled: true }))
-        }));
-
+        // ★ 過去カードの物理削除: チャンネルに古い募集が残って今週分と混ざるのを完全に防止する
         await fetchWithRetry(`https://discord.com/api/v10/channels/${msg.channel_id || channelId}/messages/${msg.id}`, {
-          method: 'PATCH',
-          headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ embeds: [closedEmbed], components: disabledComponents })
-        }).catch((e) => console.warn(`[WeeklyRecruit] ${msg.id} の受付終了表示に失敗:`, e));
+          method: 'DELETE',
+          headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
+        }).catch((e) => console.warn(`[WeeklyRecruit] ${msg.id} のカード削除に失敗:`, e));
 
         // DB側も閉じる（行が無ければ何も起きない。ベストエフォート）
         await markRecruitmentStatus(env, msg.id, 'closed')
           .catch((e) => console.warn(`[WeeklyRecruit] ${msg.id} のDB締め切りに失敗:`, e));
       } catch (e) {
-        console.warn('[WeeklyRecruit] 旧カードの締め切り処理でエラー:', e);
+        console.warn('[WeeklyRecruit] 旧カードの削除処理でエラー:', e);
       }
     }
-    console.log(`[WeeklyRecruit] 前回のカード${stale.length}件を受付終了にしました`);
+    console.log(`[WeeklyRecruit] 前回のカード${stale.length}件を削除しました（最新カードのみに維持）`);
   } catch (closeErr) {
     console.warn('[WeeklyRecruit] 前回の募集締め切り処理のエラー:', closeErr);
   }
