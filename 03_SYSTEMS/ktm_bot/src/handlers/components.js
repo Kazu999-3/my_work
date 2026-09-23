@@ -877,10 +877,30 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         console.warn('Recruit reward API error:', rewardErr);
       }
 
-      await sendInteractionFollowup(appId, token, {
+      // 確定通知は募集パネルへの「返信」としてぶら下げ、メンションは参加者＋募集主に限定する。
+      // 独立メッセージ(Followup)のままだとチャンネルの流れから浮くうえ、allowed_mentions未指定のため
+      // content内のメンションが無条件に解決されていた(削除・終了通知は既にこの方式に統一済み)。
+      const notifyIds = [...new Set([metadata.owner, ...metadata.joined])].filter(Boolean).slice(0, 100);
+      const notifyBody = {
         content: `⚔️ **メンバー確定！** 対戦準備を開始してください。\n通知: ${mentions}`,
-        ...(laneEmbed ? { embeds: [laneEmbed] } : {})
-      });
+        ...(laneEmbed ? { embeds: [laneEmbed] } : {}),
+        allowed_mentions: { users: notifyIds }
+      };
+      const notifyChannelId = interaction.channel_id || interaction.channel?.id;
+      let notifyReplied = false;
+      if (notifyChannelId && botToken) {
+        const res = await sendDiscordMessage(`channels/${notifyChannelId}/messages`, botToken, "POST", {
+          ...notifyBody,
+          message_reference: { message_id: interaction.message.id, fail_if_not_exists: false }
+        }).catch((e) => { console.error("メンバー確定通知の返信送信に失敗:", e); return null; });
+        // sendDiscordMessage は失敗してもthrowせずresを返すため、ok判定は必須
+        notifyReplied = !!(res && res.ok);
+      }
+      // 返信に失敗した場合だけ従来どおりFollowupで送り、通知そのものは落とさない
+      if (!notifyReplied) {
+        await sendInteractionFollowup(appId, token, notifyBody)
+          .catch((e) => console.error("メンバー確定通知のFollowup送信に失敗:", e));
+      }
     })());
     
     const closingMessage = (metadata.mode === 'ノーマル' || metadata.mode === 'ARAM')

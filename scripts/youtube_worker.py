@@ -61,6 +61,15 @@ MAX_ITEMS = int(os.environ.get("MAX_ITEMS", "3"))
 # 字幕が無い動画をWhisperで文字起こしするか。CPUで走るため1本あたり数分かかる。
 ENABLE_WHISPER = os.environ.get("ENABLE_WHISPER", "1") not in ("0", "false", "False")
 WHISPER_MODEL = os.environ.get("WHISPER_MODEL", "base")
+# 字幕が取れない動画を Gemini の映像解析で処理するか。
+# Gemini が YouTube URL を直接読むため yt-dlp を使わず、cookie も bot判定も無関係。
+# 2026-09-23 実測: 12分の動画・低解像度で 約88,000トークン / 79秒。
+# 字幕がある動画にも使うと質は上がるがトークンが2桁増えるので、既定では
+# 「字幕が取れなかったときだけ」にしている（ENABLE_VIDEO_ANALYSIS_ALWAYS=1 で全件）。
+ENABLE_VIDEO_ANALYSIS = os.environ.get("ENABLE_VIDEO_ANALYSIS", "1") not in ("0", "false", "False")
+ENABLE_VIDEO_ANALYSIS_ALWAYS = os.environ.get("ENABLE_VIDEO_ANALYSIS_ALWAYS", "0") in ("1", "true", "True")
+# 映像解析に使うモデル。gemini-model-health-check で実クォータを確認したものだけを書くこと。
+VIDEO_MODEL = os.environ.get("VIDEO_MODEL", "gemini-2.5-flash")
 # これ未満の文字数なら「実況なし」とみなしてGeminiへ渡さない
 WHISPER_MIN_CHARS = int(os.environ.get("WHISPER_MIN_CHARS", "500"))
 
@@ -167,6 +176,90 @@ def fetch_subtitles(url, vid):
         try: os.remove(f)
         except Exception: pass
     return "\n".join(text_lines)[:30000] or None
+
+VIDEO_PROMPT = """あなたはLoLのコーチです。この動画から、**視聴者が自分の試合で再現できる判断ルール**を抜き出してください。
+
+【絶対に書かないこと】
+- 動画で何が起きたかの実況・あらすじ
+- 「〜と解説しています」という伝聞
+- その試合でしか使えない固有の展開
+
+【まず動画の種類を判定し、理由の説明軸をそれに合わせること】
+- マクロ（試合運び）… リソース / テンポ / 視界 / 経験値 / オブジェクト のいずれかで説明する
+- メカニクス（操作）… 射程 / クールダウン / 硬直 / 判定 / 反応時間 のいずれかで説明する
+- ビルド（構成）……… パワースパイク / ステータス効率 / 対面の脅威 のいずれかで説明する
+どの軸でも説明できないルールは**書かないこと**。「強いから」「プロがやっているから」は理由ではない。
+
+【優先順位】
+「何を差し置いても先にやること」だけを**最大5件**。話題の羅列にしないこと。
+
+【出力】純粋なJSONのみ（コードブロック不要）:
+{"title":"<日本語の記事タイトル>",
+ "summary":"<下記のMarkdown構成で本文>",
+ "genre":"<LoL攻略/ビルド/マクロ/その他 から1つ>",
+ "tags":["<最大5つ>"],
+ "champion":"<主題のチャンピオン英語ID。無ければUnknown>"}
+
+summary は次の構成にすること:
+## 🎬 この動画の種類
+（マクロ / メカニクス / ビルド のどれか。理由の説明軸もここに明記）
+
+## 🧭 判断ルール
+### ルール1: <短い見出し>
+- **状況**: いつ・何が成立しているとき
+- **行動**: 何をするか
+- **理由**: 上の軸のどれかで説明
+- **反例**: その条件が崩れたらどうするか
+（ルール2以降も同じ形式で続ける）
+
+## 🥇 優先順位（最大5件）
+
+## ⚠️ よくあるミス
+- **ミス** / **なぜ悪い** / **直し方** の3点セットで
+
+## 📌 前提
+（対象レート帯・パッチ・前提知識。動画から読み取れなければ「明示なし」と書く）
+
+日本語で書くこと。チャンピオン名・アイテム名・ルーン名などの固有名詞のみ英語可。"""
+
+
+def gemini_analyze_video(url, title, channel):
+    """YouTube URL を Gemini に直接渡して解析する。
+
+    字幕も音声も無い動画（テロップのみ・実況なし）でも中身を読み取れる。
+    yt-dlp を経由しないので cookie も bot判定も関係しない。
+    ⚠️ トークン消費は動画の長さにほぼ比例する（低解像度で1秒あたり約103トークン）。
+    """
+    from google import genai
+    from google.genai import types
+
+    client = genai.Client(api_key=GEMINI_KEY)
+    head = f"動画タイトル: {title}\nチャンネル: {channel}\n\n"
+    res = client.models.generate_content(
+        model=VIDEO_MODEL,
+        contents=types.Content(parts=[
+            types.Part(file_data=types.FileData(file_uri=url)),
+            types.Part(text=head + VIDEO_PROMPT),
+        ]),
+        config=types.GenerateContentConfig(
+            # 低解像度でも画面内テキストは読める。既定のままだとトークンが約3倍になる
+            # （2026-09-23実測: 12分の動画で 212,419 → 74,179）。
+            media_resolution="MEDIA_RESOLUTION_LOW",
+            temperature=0.2,
+        ),
+    )
+    txt = (res.text or "").strip()
+    for pre in ("```json", "```"):
+        if txt.startswith(pre):
+            txt = txt[len(pre):]
+    if txt.endswith("```"):
+        txt = txt[:-3]
+    data = json.loads(txt.strip())
+    um = getattr(res, "usage_metadata", None)
+    if um:
+        print(f"  📊 映像解析: 入力{um.prompt_token_count} 出力{um.candidates_token_count} トークン")
+    return data
+
 
 def validate_article_json(data):
     if not isinstance(data, dict):
@@ -310,20 +403,30 @@ def main():
                 print(f"✅ 完了（既存の要約を検出、再生成をスキップ）: {title}")
                 continue
 
-            transcript = fetch_subtitles(url, vid)
-            if not transcript and ENABLE_WHISPER:
-                # ⚠️ 2026-09-23: 字幕が無い動画の音声文字起こし。
-                # whisper_transcriber.py は 2026-09 に用意されていたが、
-                # 呼んでいたのは extract_video_tactics.py だけで、
-                # **キューを処理するこのワーカーからは一度も呼ばれていなかった**。
-                # ffmpeg は imageio-ffmpeg のバンドル版を使うのでシステム導入は不要。
+            a = None
+
+            # ① 映像解析を常用する設定なら、字幕を取りに行かず最初から映像で読む
+            if ENABLE_VIDEO_ANALYSIS_ALWAYS and ENABLE_VIDEO_ANALYSIS:
+                print(f"  🎬 映像解析で読み取ります（常用設定）: {vid}")
+                a = gemini_analyze_video(url, it.get("title") or "", it.get("channel_name") or "")
+
+            # ② 通常は字幕を優先する（安く速いため）
+            transcript = None
+            if a is None:
+                transcript = fetch_subtitles(url, vid)
+
+            # ③ 字幕が無ければ映像解析へ。
+            #    2026-09-23: ここは以前 Whisper を試していたが、実測で7本中6本が
+            #    文字起こし0文字だった（YouTubeが自動字幕を作れていない動画＝
+            #    実況音声が無い動画のため）。映像解析なら画面内のテロップや盤面から
+            #    読み取れるので、そちらを既定の手段にした。
+            #    Whisper は ENABLE_WHISPER=1 のときだけ動く（既定は無効）。
+            if a is None and not transcript and ENABLE_WHISPER:
                 try:
                     from whisper_transcriber import transcribe_youtube_video_fallback
                     print(f"  🎙️ 字幕が無いのでWhisperで文字起こしします: {vid}")
                     text, _ = transcribe_youtube_video_fallback(vid, model_size=WHISPER_MODEL)
                     text = (text or "").strip()
-                    # 音声はあっても実況が無い動画は数語しか返らない。
-                    # そのままGeminiへ渡すと中身の無い記事を量産するので足切りする。
                     if len(text) < WHISPER_MIN_CHARS:
                         print(f"  ⚠️ 文字起こしが短すぎます({len(text)}文字 < {WHISPER_MIN_CHARS})。実況なしの動画と判断します。",
                               file=sys.stderr)
@@ -332,9 +435,15 @@ def main():
                         transcript = text[:30000]
                 except Exception as we:
                     print(f"  ⚠️ Whisperに失敗: {we}", file=sys.stderr)
-            if not transcript:
-                raise NoTranscript("字幕を取得できませんでした（字幕なし or IP制限の可能性）")
-            a = gemini_summarize(it.get("title") or "YouTube Video", it.get("channel_name") or "", transcript)
+
+            if a is None and not transcript and ENABLE_VIDEO_ANALYSIS:
+                print(f"  🎬 字幕が無いので映像解析で読み取ります: {vid}")
+                a = gemini_analyze_video(url, it.get("title") or "", it.get("channel_name") or "")
+
+            if a is None:
+                if not transcript:
+                    raise NoTranscript("字幕を取得できませんでした（字幕なし or IP制限の可能性）")
+                a = gemini_summarize(it.get("title") or "YouTube Video", it.get("channel_name") or "", transcript)
             # 元動画情報を記事の先頭に必ず明記する（2026-08-17、ユーザー指示）
             video_title = a.get("title") or it.get("title") or "YouTube攻略メモ"
             channel_name = it.get("channel_name") or "YouTube Channel"

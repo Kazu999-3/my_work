@@ -113,15 +113,10 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
   5. 文字起こしが極端に短い場合はGeminiへ渡さない足切り（既定500文字）を追加。
      中身の無い記事の量産を防ぐ。
 
-- [ ] **実況音声が無い35件の扱い（2026-09-23 判断が必要）**
-  - 残りは `error_no_transcript` 35件。字幕なし＋（解説系については）Whisperも0文字。
-  - 内訳はほぼ実況なしの試合リプレイ・ショート
-    （`VIEGO VS SHYVANA - 8/1/0 KDA JUNGLE GAMEPLAY`、`Caitlyn build god`、Agurinのショート等）。
-  - **決めること**: ①`manually_closed` にして閉じる（推奨・これ以上取れる情報が無い）
-    ②残しておいて将来の手法改善を待つ（ただしキューの健全性チェックには出続ける）
-  - 閉じる場合: `python scripts/clean_youtube_queue.py --clean-errors --apply`
-    ただしこれは `error_generation` / `failed` が対象なので、`error_no_transcript` を
-    含めるにはスクリプト側の対象ステータス追加が必要。
+- [x] **字幕・音声なし動画へのGemini映像直接解析配備（2026-09-23 実装完了）**
+  - 実況音声・字幕のない動画向けに `gemini_analyze_video()` を `youtube_worker.py` へ実装。
+  - YouTube URL を Gemini へ直接渡して映像解析・戦術記事生成（低解像度メディア指定でトークン約1/3抑制）。
+  - 残る `error_no_transcript` 32件について、映像解析パイプラインによる消化またはクローズの選択肢が確保された。
 
 - [x] **第3弾: ローテーション再解析の実装（2026-09-21完了、実行は未着手）**
   - `edge_worker_daemon.py`に`youtube_rotation`タスクを新設。完了済み動画を古い順に少数ずつpendingへ戻す。

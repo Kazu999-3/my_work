@@ -9,6 +9,21 @@
 
 ---
 
+## 🗓️ 2026-09-23（水）
+
+### 🎬 動画解析パイプラインのGemini映像直接解析実装 ＆ KTM Bot確定通知改善
+
+**概要**:
+1. `scripts/youtube_worker.py`: 字幕なし・Whisper文字起こし0文字の動画に対して、Gemini に YouTube URL を直接渡して映像解析・戦術記事生成を行う `gemini_analyze_video()` を追加配備。低解像度メディア指定（`MEDIA_RESOLUTION_LOW`）によるトークン大幅節約、yt-dlp・cookie依存を迂回した解析経路を確立。
+2. `03_SYSTEMS/ktm_bot/src/handlers/components.js`: メンバー確定通知を独立Followupから募集カードへの「返信（`message_reference`）」へぶら下げ、`allowed_mentions` で参加者＋募集主に限定してチャンネル無関係通知スパムを防止。
+
+**3行ナレッジ**:
+1. **実況なし動画の文字起こし限界と映像解析**: Whisperで音声解析しても、BGMやSEのみで実況音声のない動画は0文字となり処理が止まる。GeminiへのYouTube URL直接入力（映像解析）をフォールバックに配備することで、画面内テロップ・盤面情報から直接戦術を抽出可能になる。
+2. **Discord Bot通知の文脈保持とメンション制御**: 確定通知を独立メッセージで送信するとスレッドやタイムラインで浮く。`message_reference` による元パネルへの返信と `allowed_mentions: { users: [...] }` を組み合わせることで、文脈の維持と不要な全体通知の防止を両立できる。
+3. **低解像度指定によるLLM動画解析のトークン抑制**: Gemini映像解析では、`media_resolution="MEDIA_RESOLUTION_LOW"` を指定することで画面内文字（テロップ・UI）の可読性を保ちながらトークン消費を約3分の1に抑えられる。
+
+---
+
 ## 🗓️ 2026-09-20（土）
 
 ### ✅ チップ送金バグ修正（`fix(casino): チップ送金フィールド名修正`）
