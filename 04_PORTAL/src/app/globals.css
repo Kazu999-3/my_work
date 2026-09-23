@@ -213,6 +213,50 @@ html:not(.dark) textarea::placeholder {
   opacity: 0.9 !important;
 }
 
+/* 🌙 色付きの濃い文字のダークモード対応（2026-09-23）
+   ------------------------------------------------------------------
+   グレー系（stone/gray/slate/zinc）の 500〜900 は下のブロックで既に明るく
+   上書きしていたが、**色付き（amber-600 / rose-700 など）は対象外**で
+   暗いまま残っていた。監査で49種・803箇所あり、ダーク背景(#1e1f22 / #2b2d31)
+   の上では読めない。
+   色味は保ったまま明度だけ上げる（600/700→400相当、800以上→300相当）ので、
+   意味づけ（警告=rose、成功=emerald 等）は崩れない。
+   ※ filter だと背景・ボーダー・アイコンまで巻き込むため color を直接指定している。 */
+html.dark .text-amber-600, html.dark .text-amber-700 { color: #fbbf24 !important; }
+html.dark .text-amber-800, html.dark .text-amber-900, html.dark .text-amber-950 { color: #fcd34d !important; }
+html.dark .text-rose-600, html.dark .text-rose-700 { color: #fb7185 !important; }
+html.dark .text-rose-800, html.dark .text-rose-900, html.dark .text-rose-950 { color: #fda4af !important; }
+html.dark .text-emerald-600, html.dark .text-emerald-700 { color: #34d399 !important; }
+html.dark .text-emerald-800, html.dark .text-emerald-900, html.dark .text-emerald-950 { color: #6ee7b7 !important; }
+html.dark .text-indigo-600, html.dark .text-indigo-700 { color: #818cf8 !important; }
+html.dark .text-indigo-800, html.dark .text-indigo-900, html.dark .text-indigo-950 { color: #a5b4fc !important; }
+html.dark .text-red-600, html.dark .text-red-700 { color: #f87171 !important; }
+html.dark .text-red-800, html.dark .text-red-900, html.dark .text-red-950 { color: #fca5a5 !important; }
+html.dark .text-cyan-600, html.dark .text-cyan-700 { color: #22d3ee !important; }
+html.dark .text-cyan-800, html.dark .text-cyan-900, html.dark .text-cyan-950 { color: #67e8f9 !important; }
+html.dark .text-violet-600, html.dark .text-violet-700 { color: #a78bfa !important; }
+html.dark .text-violet-800, html.dark .text-violet-900, html.dark .text-violet-950 { color: #c4b5fd !important; }
+html.dark .text-sky-600, html.dark .text-sky-700 { color: #38bdf8 !important; }
+html.dark .text-sky-800, html.dark .text-sky-900, html.dark .text-sky-950 { color: #7dd3fc !important; }
+html.dark .text-blue-600, html.dark .text-blue-700 { color: #60a5fa !important; }
+html.dark .text-blue-800, html.dark .text-blue-900, html.dark .text-blue-950 { color: #93c5fd !important; }
+html.dark .text-teal-600, html.dark .text-teal-700 { color: #2dd4bf !important; }
+html.dark .text-teal-800, html.dark .text-teal-900, html.dark .text-teal-950 { color: #5eead4 !important; }
+html.dark .text-purple-600, html.dark .text-purple-700 { color: #c084fc !important; }
+html.dark .text-purple-800, html.dark .text-purple-900, html.dark .text-purple-950 { color: #d8b4fe !important; }
+html.dark .text-pink-600, html.dark .text-pink-700 { color: #f472b6 !important; }
+html.dark .text-pink-800, html.dark .text-pink-900, html.dark .text-pink-950 { color: #f9a8d4 !important; }
+html.dark .text-green-600, html.dark .text-green-700 { color: #4ade80 !important; }
+html.dark .text-green-800, html.dark .text-green-900, html.dark .text-green-950 { color: #86efac !important; }
+html.dark .text-yellow-600, html.dark .text-yellow-700 { color: #facc15 !important; }
+html.dark .text-yellow-800, html.dark .text-yellow-900, html.dark .text-yellow-950 { color: #fde047 !important; }
+html.dark .text-orange-600, html.dark .text-orange-700 { color: #fb923c !important; }
+html.dark .text-orange-800, html.dark .text-orange-900, html.dark .text-orange-950 { color: #fdba74 !important; }
+html.dark .text-lime-600, html.dark .text-lime-700 { color: #a3e635 !important; }
+html.dark .text-lime-800, html.dark .text-lime-900, html.dark .text-lime-950 { color: #bef264 !important; }
+html.dark .text-fuchsia-600, html.dark .text-fuchsia-700 { color: #e879f9 !important; }
+html.dark .text-fuchsia-800, html.dark .text-fuchsia-900, html.dark .text-fuchsia-950 { color: #f0abfc !important; }
+
 /* 🌙 ダークモード専用（暗色背景 #1e1f22 / カード #2b2d31）での文字コントラスト最適化 */
 /* 暗い背景上でも全文字が明るくハッキリ読める高コントラスト設定 */
 html.dark .text-stone-900,

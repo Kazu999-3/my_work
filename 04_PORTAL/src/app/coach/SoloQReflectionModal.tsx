@@ -821,7 +821,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
           {/* 3. メンタル度評価 */}
           <div className="bg-white border border-stone-200 rounded-lg p-3.5 space-y-2 shadow-sm">
             <label className="font-bold text-stone-800 text-xs block">3. 集中度・メンタル評価 (1〜5)</label>
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
               {[
                 { rating: 1, label: '1 (絶望/ティルト)', color: 'border-rose-300 bg-rose-50 text-rose-900' },
                 { rating: 2, label: '2 (不調/焦り)', color: 'border-orange-300 bg-orange-50 text-orange-900' },

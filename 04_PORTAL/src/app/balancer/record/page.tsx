@@ -813,7 +813,7 @@ function CustomRecordPageContent() {
 
                       {/* 詳細入力アコーディオン */}
                       {openDetails[index] && (
-                        <div className="mt-1 ml-18 grid grid-cols-4 gap-2 bg-black/5 p-3 rounded-lg border border-border transition shadow-inner">
+                        <div className="mt-1 ml-18 grid grid-cols-2 sm:grid-cols-4 gap-2 bg-black/5 p-3 rounded-lg border border-border transition shadow-inner">
                           <div>
                             <label className="text-[10px] text-stone-500 font-bold block mb-1 text-center">CS</label>
                             <input type="number" value={s.cs || 0} onChange={e => handleStatChangeByIndex(index, 'cs', e.target.value)} className="w-full bg-white border border-border text-stone-900 rounded px-2 py-1 text-xs text-center" />
@@ -901,7 +901,7 @@ function CustomRecordPageContent() {
 
                       {/* 詳細入力アコーディオン */}
                       {openDetails[index] && (
-                        <div className="mt-1 ml-18 grid grid-cols-4 gap-2 bg-black/5 p-3 rounded-lg border border-border transition shadow-inner">
+                        <div className="mt-1 ml-18 grid grid-cols-2 sm:grid-cols-4 gap-2 bg-black/5 p-3 rounded-lg border border-border transition shadow-inner">
                           <div>
                             <label className="text-[10px] text-stone-500 font-bold block mb-1 text-center">CS</label>
                             <input type="number" value={s.cs || 0} onChange={e => handleStatChangeByIndex(index, 'cs', e.target.value)} className="w-full bg-white border border-border text-stone-900 rounded px-2 py-1 text-xs text-center" />

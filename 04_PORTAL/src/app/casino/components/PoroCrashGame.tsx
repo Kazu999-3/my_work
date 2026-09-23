@@ -107,6 +107,8 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
   const startTimeRef = useRef<number>(0);
   // 軌跡の実データ。毎フレーム push し、表示用の state へは間引いて反映する。
   const curveRef = useRef<{ t: number; m: number }[]>([]);
+  // 発射ボタンを押した瞬間の時刻。API応答を待つあいだのラグを打ち消すのに使う。
+  const launchPressedAtRef = useRef<number>(0);
 
   // ゲーム開始（発射）
   const handleLaunch = async () => {
@@ -117,6 +119,8 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
     }
 
     setErrorMsg(null);
+    // 押した瞬間を記録しておき、API応答後にこれを開始時刻として使う（体感ラグの解消）
+    launchPressedAtRef.current = performance.now();
     setGameState('FLYING');
     setMultiplier(1.0);
     curveRef.current = [{ t: 0, m: 1.0 }];
@@ -138,8 +142,14 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
       setGameToken(data.gameToken);
       onBalanceChange(data.newBalance);
 
-      // カウントアップ・上昇アニメーション開始（※事前ネタバレAPI呼び出しは廃止）
-      startTimeRef.current = performance.now();
+      // ⚠️ 2026-09-23: 発射ボタンのタイムラグ対策。
+      // START APIは 認証 → プレイヤー取得 → コイン減算 → セッション作成 と
+      // DB往復が4回あり、本番実測で0.4秒以上かかる。以前はこの応答を待ってから
+      // startTimeRef を打っていたため、押してから動き出すまで無反応に見えていた。
+      // 押した瞬間(launchPressedAtRef)を開始時刻として扱い、通信にかかった時間を
+      // 巻き戻して補正する。こうすると倍率はサーバーの想定どおりのまま、
+      // 見た目だけ即座に動き出す。
+      startTimeRef.current = launchPressedAtRef.current || performance.now();
       runFlightAnimation(data.gameToken);
     } catch (e: any) {
       setGameState('IDLE');

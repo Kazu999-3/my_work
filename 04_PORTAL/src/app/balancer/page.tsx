@@ -2288,7 +2288,7 @@ export default function BalancerPage() {
                   <p className="text-xs text-stone-500 mt-2">まだ結果と突き合わせ済みの予測がありません（チーム分け→試合結果記録が蓄積されると表示されます）。</p>
                 ) : (
                   <>
-                  <div className="grid grid-cols-4 gap-2 mt-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
                     <div className="bg-black/[0.04] rounded-lg p-2 text-center">
                       <div className="text-[10px] text-stone-500">予測的中率</div>
                       <div className="text-lg font-black text-emerald-700">{predStats.accuracy}%</div>

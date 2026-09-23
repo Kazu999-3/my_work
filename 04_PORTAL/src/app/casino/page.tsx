@@ -1131,7 +1131,7 @@ export default function CasinoPage() {
                               </div>
                             </div>
 
-                            <div className="grid grid-cols-5 gap-1.5">
+                            <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
                               {[50, 100, 300, 500, 1000].map((amt) => (
                                 <button
                                   key={amt}
@@ -1544,7 +1544,7 @@ export default function CasinoPage() {
                     所持: {(user?.coins ?? 1000).toLocaleString()}pt
                   </span>
                 </div>
-                <div className="grid grid-cols-4 gap-1.5">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                   {[50, 100, 300, 500].map((amt) => (
                     <button
                       key={amt}
