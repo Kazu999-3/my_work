@@ -93,36 +93,39 @@ export default function FeedbackInboxPanel() {
 
   return (
     <div className="space-y-6">
-      {/* ヘッダー情報 */}
-      <div className="bg-gradient-to-r from-amber-500/10 via-stone-900 to-stone-900 border border-amber-500/20 rounded-2xl p-5 space-y-2">
+      {/* 💡 機能概要バナー */}
+      <div className="bg-white border border-stone-200/90 rounded-2xl p-5 shadow-xs space-y-2.5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Mail className="w-5 h-5 text-amber-400" />
-            <h3 className="text-sm font-black text-stone-100">
-              📮 ナレッジ誤り訂正インボックス (FEEDBACK_INBOX)
-            </h3>
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-amber-50 text-amber-600 border border-amber-200/60">
+              <Mail className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-stone-900">
+                📮 ナレッジ誤り・パッチ訂正の目安箱 (FEEDBACK_INBOX)
+              </h3>
+              <p className="text-[11px] text-stone-500 font-medium">
+                攻略の古い数値・違和感を発見した際に投函するメモポストです。次回AIセッション時に自動修正されます。
+              </p>
+            </div>
           </div>
           <button
             type="button"
             onClick={fetchItems}
             disabled={refreshing}
-            className="flex items-center gap-1.5 px-3 py-1 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-lg text-xs font-bold transition border border-stone-700 cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-stone-100 hover:bg-stone-200/80 text-stone-700 rounded-xl text-xs font-bold transition border border-stone-200 cursor-pointer"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-amber-400' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-amber-500' : ''}`} />
             <span>更新</span>
           </button>
         </div>
-        <p className="text-xs text-stone-400 leading-relaxed">
-          実戦や読書で発見した「情報の誤り・古いパッチ表記・違和感」を即座に投函する単一ポストです。
-          ここに投函された指摘は、次回の Antigravity / AI 開発セッションで優先的に自動修正＆スモークテストされます。
-        </p>
       </div>
 
       {message && (
         <div className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
           message.type === 'success' 
-            ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300' 
-            : 'bg-rose-500/10 border border-rose-500/30 text-rose-300'
+            ? 'bg-emerald-50 border border-emerald-300 text-emerald-800' 
+            : 'bg-rose-50 border border-rose-300 text-rose-800'
         }`}>
           {message.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
           <span>{message.text}</span>
@@ -130,18 +133,18 @@ export default function FeedbackInboxPanel() {
       )}
 
       {/* 新規投函フォーム */}
-      <form onSubmit={handleSubmit} className="bg-stone-900/80 border border-stone-800 rounded-2xl p-4 space-y-3">
-        <h4 className="text-xs font-black text-stone-200 flex items-center gap-1.5">
-          <Plus className="w-4 h-4 text-amber-400" />
+      <form onSubmit={handleSubmit} className="bg-white border border-stone-200/90 rounded-2xl p-5 shadow-xs space-y-3.5">
+        <h4 className="text-xs font-black text-stone-900 flex items-center gap-2 border-b border-stone-100 pb-2.5">
+          <Plus className="w-4 h-4 text-amber-500" />
           <span>新しい誤り・違和感を投函する</span>
         </h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <input
             type="text"
             value={newSource}
             onChange={(e) => setNewSource(e.target.value)}
             placeholder="対象ファイル（例: JarvanIV辞典, RUNBOOK.md）"
-            className="px-3 py-2 bg-stone-950 border border-stone-800 rounded-xl text-xs text-stone-200 outline-none focus:border-amber-500"
+            className="px-3.5 py-2.5 bg-stone-50/80 border border-stone-200 rounded-xl text-xs text-stone-900 placeholder-stone-400 outline-none focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-500/20 transition-all"
           />
           <input
             type="text"
@@ -149,14 +152,14 @@ export default function FeedbackInboxPanel() {
             onChange={(e) => setNewContent(e.target.value)}
             placeholder="指摘内容（例: Wのシールド計算が旧パッチのままです）"
             required
-            className="md:col-span-2 px-3 py-2 bg-stone-950 border border-stone-800 rounded-xl text-xs text-stone-200 outline-none focus:border-amber-500"
+            className="md:col-span-2 px-3.5 py-2.5 bg-stone-50/80 border border-stone-200 rounded-xl text-xs text-stone-900 placeholder-stone-400 outline-none focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-500/20 transition-all"
           />
         </div>
-        <div className="flex justify-end">
+        <div className="flex justify-end pt-1">
           <button
             type="submit"
             disabled={submitting || !newContent.trim()}
-            className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-stone-950 font-black text-xs rounded-xl transition cursor-pointer"
+            className="flex items-center gap-1.5 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-stone-950 font-black text-xs rounded-xl shadow-xs transition cursor-pointer"
           >
             <Send className="w-3.5 h-3.5" />
             <span>{submitting ? '投函中...' : 'インボックスへ投函'}</span>
@@ -168,13 +171,13 @@ export default function FeedbackInboxPanel() {
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-amber-400" />
-            <h4 className="text-xs font-black text-stone-200">
+            <Clock className="w-4 h-4 text-amber-500" />
+            <h4 className="text-xs font-black text-stone-900">
               未対応の指摘 ({pendingItems.length} 件)
             </h4>
           </div>
           {pendingItems.length === 0 && (
-            <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/30">
+            <span className="text-[11px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-300">
               ALL CLEAR
             </span>
           )}
@@ -185,36 +188,36 @@ export default function FeedbackInboxPanel() {
             インボックスを読み込み中...
           </div>
         ) : pendingItems.length === 0 ? (
-          <div className="p-8 text-center bg-stone-900/40 border border-stone-800/80 rounded-2xl text-xs text-stone-500 font-bold space-y-1">
-            <CheckCircle2 className="w-6 h-6 text-emerald-500/60 mx-auto mb-2" />
+          <div className="p-8 text-center bg-stone-50 border border-stone-200 rounded-2xl text-xs text-stone-600 font-bold space-y-1">
+            <CheckCircle2 className="w-6 h-6 text-emerald-600 mx-auto mb-2" />
             <p>未処理の指摘・違和感はありません。</p>
-            <p className="text-[10px] text-stone-600">ナレッジベースはクリーンで健全な状態です。</p>
+            <p className="text-[10px] text-stone-500">ナレッジベースはクリーンで健全な状態です。</p>
           </div>
         ) : (
           <div className="space-y-2.5">
             {pendingItems.map((item) => (
               <div
                 key={item.id}
-                className="bg-stone-900/90 border border-amber-500/30 hover:border-amber-500/60 rounded-xl p-3.5 flex items-start justify-between gap-3 transition"
+                className="bg-white border border-stone-200 hover:border-amber-500/40 rounded-xl p-4 flex items-start justify-between gap-3 shadow-xs transition"
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
                       {item.date}
                     </span>
-                    <span className="text-[11px] font-black text-stone-300 flex items-center gap-1">
+                    <span className="text-[11px] font-black text-stone-900 flex items-center gap-1">
                       <FileText className="w-3 h-3 text-stone-400" />
                       {item.source}
                     </span>
                   </div>
-                  <p className="text-xs text-stone-200 font-medium leading-relaxed">
+                  <p className="text-xs text-stone-700 font-medium leading-relaxed">
                     {item.content}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => handleToggle(item)}
-                  className="shrink-0 text-xs font-bold px-2.5 py-1 rounded-lg bg-stone-800 hover:bg-emerald-500/20 hover:text-emerald-300 hover:border-emerald-500/40 text-stone-400 border border-stone-700 transition cursor-pointer"
+                  className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-lg bg-stone-100 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-300 text-stone-700 border border-stone-200 transition cursor-pointer"
                 >
                   完了済みにする
                 </button>
@@ -228,34 +231,34 @@ export default function FeedbackInboxPanel() {
       {completedItems.length > 0 && (
         <div className="space-y-3 pt-2">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-stone-500" />
-            <h4 className="text-xs font-bold text-stone-400">
+            <CheckCircle2 className="w-4 h-4 text-stone-400" />
+            <h4 className="text-xs font-bold text-stone-500">
               対応完了・修正済み ({completedItems.length} 件)
             </h4>
           </div>
-          <div className="space-y-2 opacity-60">
+          <div className="space-y-2 opacity-70">
             {completedItems.map((item) => (
               <div
                 key={item.id}
-                className="bg-stone-900/40 border border-stone-800/80 rounded-xl p-3 flex items-start justify-between gap-3"
+                className="bg-stone-50 border border-stone-200 rounded-xl p-3 flex items-start justify-between gap-3"
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-stone-800 text-stone-400">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-stone-200 text-stone-600">
                       {item.date}
                     </span>
-                    <span className="text-[11px] font-bold text-stone-400 line-through">
+                    <span className="text-[11px] font-bold text-stone-500 line-through">
                       {item.source}
                     </span>
                   </div>
-                  <p className="text-xs text-stone-400 line-through">
+                  <p className="text-xs text-stone-500 line-through">
                     {item.content}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => handleToggle(item)}
-                  className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded bg-stone-800 text-stone-500 hover:text-stone-300 transition cursor-pointer"
+                  className="shrink-0 text-[10px] font-bold px-2.5 py-1 rounded bg-stone-200 text-stone-600 hover:text-stone-900 transition cursor-pointer"
                 >
                   未完了に戻す
                 </button>

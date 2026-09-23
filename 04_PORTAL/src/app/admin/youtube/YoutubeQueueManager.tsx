@@ -756,23 +756,23 @@ export default function YoutubeQueueManager() {
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       {/* ヘッダー */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200 pb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-stone-200 pb-6">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-700 via-amber-600 to-cyan-700">
+          <h1 className="text-2xl font-black tracking-tight text-stone-900">
             📺 YouTube Absorber コマンドセンター
           </h1>
-          <p className="text-sm text-gray-400 mt-1">
+          <p className="text-sm text-stone-600 mt-1">
             攻略動画の字幕テキストを自動抽出・AI解析し、戦略バイブルへとライブラリ化します。
           </p>
         </div>
 
         {/* タブ切り替えボタン */}
-        <div className="flex glass-panel p-1 rounded-xl items-center self-start md:self-auto border border-gray-200 bg-gray-100">
+        <div className="flex p-1 rounded-xl items-center self-start md:self-auto border border-stone-200 bg-stone-100/80 shadow-xs">
           <button 
             type="button"
             onClick={() => setActiveTab('queue')} 
             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-              activeTab === 'queue' ? 'bg-amber-500 text-gray-950 shadow-md font-extrabold' : 'text-gray-500 hover:text-gray-900'
+              activeTab === 'queue' ? 'bg-white text-stone-900 shadow-xs font-extrabold' : 'text-stone-600 hover:text-stone-900'
             }`}
           >
             動画キュー管理
@@ -781,7 +781,7 @@ export default function YoutubeQueueManager() {
             type="button"
             onClick={() => { setActiveTab('channels'); fetchChannels(); }} 
             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-              activeTab === 'channels' ? 'bg-amber-500 text-gray-950 shadow-md font-extrabold' : 'text-gray-500 hover:text-gray-900'
+              activeTab === 'channels' ? 'bg-white text-stone-900 shadow-xs font-extrabold' : 'text-stone-600 hover:text-stone-900'
             }`}
           >
             監視チャンネル設定
@@ -790,7 +790,7 @@ export default function YoutubeQueueManager() {
             type="button"
             onClick={() => { setActiveTab('playlists'); fetchPlaylists(); }} 
             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-              activeTab === 'playlists' ? 'bg-amber-500 text-gray-950 shadow-md font-extrabold' : 'text-gray-500 hover:text-gray-900'
+              activeTab === 'playlists' ? 'bg-white text-stone-900 shadow-xs font-extrabold' : 'text-stone-600 hover:text-stone-900'
             }`}
           >
             監視プレイリスト設定

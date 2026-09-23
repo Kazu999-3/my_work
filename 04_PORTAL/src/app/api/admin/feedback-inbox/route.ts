@@ -68,7 +68,16 @@ export async function GET() {
   try {
     const inboxPath = getInboxPath();
     if (!fs.existsSync(inboxPath)) {
-      return NextResponse.json({ success: false, error: 'FEEDBACK_INBOX.md が見つかりません' }, { status: 404 });
+      return NextResponse.json({
+        success: true,
+        items: [],
+        stats: {
+          total: 0,
+          pending: 0,
+          completed: 0,
+        },
+        notice: 'FEEDBACK_INBOX.md はローカル開発環境で同期されます'
+      });
     }
 
     const content = fs.readFileSync(inboxPath, 'utf-8');
