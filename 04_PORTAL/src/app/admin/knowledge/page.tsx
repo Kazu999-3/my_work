@@ -145,7 +145,31 @@ function KnowledgeBaseContent() {
   }
 
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full max-w-5xl mx-auto space-y-5 p-3 sm:p-5">
+      {/* ページヘッダー */}
+      <motion.header
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 bg-white border border-stone-200/90 rounded-2xl shadow-xs"
+      >
+        <div className="flex items-center gap-3">
+          <div className="text-2xl p-2.5 bg-amber-50 rounded-xl border border-amber-200/80 shrink-0 text-amber-600">
+            <Sparkles size={24} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-base sm:text-lg font-black tracking-tight text-stone-900">戦術取り込み ＆ AI解析ハブ</h1>
+              <span className="px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-900 text-[10px] font-extrabold">
+                管理者専用
+              </span>
+            </div>
+            <p className="text-[11px] text-stone-500 font-medium">
+              Web記事・X投稿・YouTube動画・実戦メモから知見を抽出し、チャンピオン辞典へ反映
+            </p>
+          </div>
+        </div>
+      </motion.header>
+
       {/* フィードバックメッセージ */}
       <AnimatePresence>
         {message && (
@@ -154,7 +178,7 @@ function KnowledgeBaseContent() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -50 }}
             className={`fixed top-5 left-1/2 -translate-x-1/2 z-50 px-6 py-3.5 rounded-2xl shadow-2xl border text-xs font-semibold flex items-center gap-2 ${
-              message.type === 'success' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-red-100 text-red-700 border-red-200'
+              message.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-rose-50 text-rose-800 border-rose-300'
             }`}
           >
             {message.type === 'success' ? '✅' : '❌'} {message.text}
@@ -162,58 +186,61 @@ function KnowledgeBaseContent() {
         )}
       </AnimatePresence>
 
-      {/* モード切り替えバー */}
-      <div className="flex gap-1.5 bg-stone-100 p-1 rounded-xl w-fit flex-wrap border border-stone-200/60">
+      {/* モード切り替えセグメントコントロール */}
+      <div className="flex items-center gap-1.5 p-1 bg-stone-100 rounded-xl border border-stone-200 overflow-x-auto">
         <button
+          type="button"
           onClick={() => setIngestMode('url')}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-            ingestMode === 'url' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+            ingestMode === 'url' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
           }`}
         >
-          🌐 Web / X / YouTube 要約
+          <span>🌐 Web / X / YouTube 要約</span>
         </button>
         <button
+          type="button"
           onClick={() => setIngestMode('memo')}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-            ingestMode === 'memo' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+            ingestMode === 'memo' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
           }`}
         >
-          📝 テキストメモ保存
+          <span>📝 テキストメモ保存</span>
         </button>
         <button
+          type="button"
           onClick={() => setIngestMode('discord')}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-            ingestMode === 'discord' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+            ingestMode === 'discord' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
           }`}
         >
-          💬 Discord ログ解析
+          <span>💬 Discord ログ解析</span>
         </button>
         <button
+          type="button"
           onClick={() => setIngestMode('queue')}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-            ingestMode === 'queue' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+            ingestMode === 'queue' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
           }`}
         >
-          ⏳ 動画解析キュー
+          <span>⏳ 動画解析キュー</span>
         </button>
         <button
+          type="button"
           onClick={() => setIngestMode('inbox')}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-            ingestMode === 'inbox' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+            ingestMode === 'inbox' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
           }`}
         >
-          📮 指摘インボックス
+          <span>📮 指摘インボックス</span>
         </button>
-        {/* 2026-09-22 配線。動画解析が生成したナレッジは review_status='pending' で保存され、
-            champion_trend_worker が approved のみを拾うため、この承認UIが無いと辞典へ反映されない。
-            未配線のまま1ヶ月動き続けた結果、336件（2026-08-16〜09-18）が滞留していた。 */}
         <button
+          type="button"
           onClick={() => setIngestMode('pending')}
-          className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-            ingestMode === 'pending' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900'
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
+            ingestMode === 'pending' ? 'bg-white text-emerald-800 border border-emerald-300 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
           }`}
         >
-          ✅ 承認待ちナレッジ
+          <span>✅ 承認待ちナレッジ</span>
         </button>
       </div>
 
@@ -228,44 +255,56 @@ function KnowledgeBaseContent() {
       {ingestMode === 'pending' && <PendingInsightsPanel />}
 
       {(ingestMode === 'url' || ingestMode === 'memo') && (
-        <div className="bg-white border border-stone-200 rounded-3xl p-6 shadow-xs space-y-4">
-          <h2 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-            <Plus size={16} className="text-pink-500" />
-            {ingestMode === 'url' ? 'Web記事・X投稿・YouTube動画を取り込む' : '戦術メモ・気付きを登録する'}
+        <div className="bg-white border border-stone-200/90 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+          <h2 className="text-sm font-bold text-stone-900 flex items-center gap-2 border-b border-stone-100 pb-3">
+            <span className="p-1.5 bg-amber-50 rounded-lg text-amber-600 border border-amber-200/60">
+              <Plus size={15} />
+            </span>
+            <span>{ingestMode === 'url' ? 'Web記事・X投稿・YouTube動画の取り込み' : '戦術メモ・気付きの登録'}</span>
           </h2>
 
           <form onSubmit={handleAddKnowledge} className="space-y-4">
             {ingestMode === 'url' ? (
-              <div className="space-y-1">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-stone-600">
+                  対象URL (Xポスト / Web攻略記事 / YouTube動画)
+                </label>
                 <input
                   type="url"
                   placeholder="https://x.com/username/status/12345... または Web記事 / YouTube URL..."
                   value={inputUrl}
                   onChange={(e) => setInputUrl(e.target.value)}
-                  className="w-full px-4 py-3 bg-stone-50 border border-stone-300 rounded-xl focus:outline-none focus:border-pink-500 focus:bg-white text-xs text-stone-900 placeholder-stone-400 font-mono"
+                  className="w-full px-4 py-3 bg-stone-50/70 border border-stone-200 rounded-xl focus:outline-none focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-500/20 text-xs text-stone-900 placeholder-stone-400 font-mono transition-all"
                 />
-                <p className="text-[10px] text-stone-500 pl-1">
-                  ※ X(Twitter)画像・動画やWeb記事をAIが自動要約。YouTube動画は自動的に解析キューへ送信されます。
+                <p className="text-[10px] text-stone-500 pl-0.5">
+                  ※ X(Twitter)画像・動画やWeb記事をAIが自動要約。YouTube動画は自動的に解析キューへ送信され、要約・実演シーン抽出が行われます。
                 </p>
               </div>
             ) : (
-              <textarea
-                rows={5}
-                placeholder="戦術メモ、マッチアップの気付き、立ち回りノウハウを記入..."
-                value={inputMemo}
-                onChange={(e) => setInputMemo(e.target.value)}
-                className="w-full px-4 py-3 bg-stone-50 border border-stone-300 rounded-xl focus:outline-none focus:border-pink-500 focus:bg-white text-xs text-stone-900 placeholder-stone-400 resize-none leading-relaxed"
-              />
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-stone-600">
+                  戦術メモ・立ち回りノウハウ
+                </label>
+                <textarea
+                  rows={6}
+                  placeholder="マッチアップの気付き、ビルドの没理由、立ち回りノウハウを自由に入力..."
+                  value={inputMemo}
+                  onChange={(e) => setInputMemo(e.target.value)}
+                  className="w-full px-4 py-3 bg-stone-50/70 border border-stone-200 rounded-xl focus:outline-none focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-500/20 text-xs text-stone-900 placeholder-stone-400 resize-none leading-relaxed transition-all"
+                />
+              </div>
             )}
 
-            <button
-              type="submit"
-              disabled={actionLoading}
-              className="w-full flex items-center justify-center gap-1.5 py-3 rounded-xl bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold transition-all shadow-md shadow-pink-600/20 disabled:opacity-50 cursor-pointer"
-            >
-              {actionLoading ? <RefreshCw size={14} className="animate-spin" /> : <Sparkles size={14} />}
-              {ingestMode === 'url' ? '要約・解析を実行' : 'AIによる分類・保存'}
-            </button>
+            <div className="flex items-center justify-end pt-1">
+              <button
+                type="submit"
+                disabled={actionLoading}
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xs transition-all shadow-xs flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+              >
+                {actionLoading ? <RefreshCw size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                <span>{ingestMode === 'url' ? '要約・解析を実行' : 'AIによる分類・保存'}</span>
+              </button>
+            </div>
           </form>
         </div>
       )}

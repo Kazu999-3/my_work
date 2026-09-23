@@ -25,7 +25,8 @@ export default function ChampSelect({ value, onChange, onSelect, placeholder = "
 
   useEffect(() => {
     if (!isOpen) {
-      setSearchTerm(CHAMPION_JA[value]?.ja || value);
+      const safeVal = value || '';
+      setSearchTerm(CHAMPION_JA[safeVal]?.ja || safeVal);
     }
   }, [value, isOpen]);
 
@@ -40,13 +41,15 @@ export default function ChampSelect({ value, onChange, onSelect, placeholder = "
   }, []);
 
   const filteredChamps = ALL_CHAMPIONS.filter(c => {
-    const term = searchTerm.toLowerCase();
+    if (!c) return false;
+    const term = (searchTerm || '').toLowerCase();
+    if (!term) return true;
     const jaData = CHAMPION_JA[c];
     
     const matchEnglish = c.toLowerCase().includes(term) || c.replace(/[^a-zA-Z0-9]/g, '').toLowerCase().includes(term);
     if (!jaData) return matchEnglish;
 
-    const matchJapanese = jaData.ja.includes(term) || jaData.ruby.includes(term);
+    const matchJapanese = (jaData.ja || '').includes(term) || (jaData.ruby || '').includes(term);
     return matchEnglish || matchJapanese;
   });
 

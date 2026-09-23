@@ -28,6 +28,11 @@
 5. `04_PORTAL/src/app/champions/tabs/DictionaryTab.tsx`:
    - 左側チャンピオン一覧の選択中ハイライトを洗練されたアンバーゴールド（`bg-amber-500/10 border-amber-500 ring-1 ring-amber-500/40 text-amber-950 font-black`）へ更新。
    - VS対面比較モードのカードも黒ベタ塗りからモダン白カードへ刷新。
+6. `04_PORTAL/src/app/admin/knowledge/page.tsx` ＆ `PendingInsightsPanel.tsx`:
+   - **戦術取り込みレイアウトの全面刷新**: 画面幅いっぱいに広がっていた全幅デザインを `max-w-5xl` の快適な幅に収め、専用のモダンヘッダーを配備。ショッキングピンクの巨大ベタ塗りボタンを廃止し、ポータルの世界観に調和する洗練されたアンバーゴールド（`bg-amber-500 hover:bg-amber-400 text-stone-950 font-black`）のスマートな右寄せボタンへ変更。
+   - **タブバーのセグメントコントロール化**: 貧弱だったタブを角丸カード・アイコン付きのモダンライトセグメントコントロールへ刷新。
+7. `04_PORTAL/src/components/ChampSelect.tsx`:
+   - **`Cannot read properties of null (reading 'toLowerCase')` の根本修正**: `ChampSelect` で `value` が `null` の際に `searchTerm` が `null` となり、`filter()` 内でクラッシュしていた問題を安全ガード（`(searchTerm || '').toLowerCase()` および `CHAMPION_JA[value || '']`）で完全解決。「承認待ちナレッジ」が正常に表示・操作可能に。
 
 **3行ナレッジ**:
 1. **ハイブリッドUIにおけるダーク接頭辞の徹底**: コンポーネント単体で `bg-stone-900 text-white` をダークバリアント（`dark:`）なしでハードコードすると、全体がライトテーマになっても一部だけ黒ベタ塗りで浮いてしまう。必ず `bg-white dark:bg-stone-900 text-stone-900 dark:text-white` の二段構えで記述すること。
