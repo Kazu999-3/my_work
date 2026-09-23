@@ -3,12 +3,12 @@ import { fetchSupabase } from '../utils/supabase.js';
 import { parseMessageData } from '../utils/helpers.js';
 import { fetchWithRetry, fetchPortalAPI, sendDiscordMessage } from '../utils/api.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, buildDayRecruitEmbed, buildDayRecruitComponents } from '../ui/embeds.js';
-import { createRecruitment } from '../utils/recruitPermission.js';
+import { createRecruitment, markRecruitmentStatus } from '../utils/recruitPermission.js';
 import { notifyAdminError } from '../utils/alert.js';
 import { getKtmRank, formatRankDistribution, formatMmrWithRank, getHighestLaneMmr, getPlayerExperienceBadge } from '../utils/ktmRank.js';
 import {
   computeDayStatus, buildDayBanner, replaceBanner, getDayDef, detectDayKey,
-  computeDominantTier, extractEntryLines, DAY_CAPACITY, RECRUITMENT_COLORS,
+  computeDominantTier, extractEntryLines, DAY_CAPACITY, RECRUITMENT_COLORS, DAY_DEFS,
   resolveWeekendTargets,
 } from '../utils/recruitmentStatus.js';
 
@@ -380,12 +380,13 @@ async function postWeeklyRecruitment(env, options = {}) {
     // 1. 前回の定期カスタム募集を DB および Discord 上で締め切る
     //    今週分(targets)は除外する。バックアップキックで2回目以降が走ったとき、
     //    直前に投稿したばかりのカードを自分で閉じてしまうのを防ぐ。
-    await closePreviousPeriodicRecruitments(env, targets.map((t) => t.startAtIso));
+    const recentMessages = await fetchRecentBotMessages(env, targetChannelId);
+    await closePreviousPeriodicRecruitments(env, targetChannelId, targets, recentMessages);
 
     // 2. 土曜・日曜のカードをそれぞれ投稿する（片方が失敗しても、もう片方は投稿する）
     let posted = 0;
     for (const target of targets) {
-      const ok = await postDayRecruitmentCard(env, targetChannelId, target);
+      const ok = await postDayRecruitmentCard(env, targetChannelId, target, { recentMessages });
       if (ok) posted += 1;
     }
     console.log(`[WeeklyRecruit] 定期カスタム募集カードを ${posted}/${targets.length} 件投稿しました`);
@@ -403,6 +404,58 @@ async function postWeeklyRecruitment(env, options = {}) {
   } catch (err) {
     console.error('[WeeklyRecruit] error:', err);
   }
+}
+
+const CHANNEL_SCAN_LIMIT = 100;
+
+/**
+ * チャンネルの直近メッセージからBotの投稿を取得する。
+ *
+ * ★ 2026-09-23: `recruitments` テーブルが実測で全件0行だったため、DBを唯一の
+ *   手がかりにしている処理はすべて空振りする。Botの書き込みが成立していない
+ *   （`recruitPermission.js` にも「ベストエフォート作成」と書かれている）ので、
+ *   募集カードの所在はDBではなく Discord を正とし、DBは補助に格下げした。
+ */
+async function fetchRecentBotMessages(env, channelId) {
+  try {
+    const res = await fetchWithRetry(
+      `https://discord.com/api/v10/channels/${channelId}/messages?limit=${CHANNEL_SCAN_LIMIT}`,
+      { headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` } }
+    );
+    if (!res.ok) return [];
+    const msgs = await res.json();
+    return Array.isArray(msgs) ? msgs.filter((m) => m.author?.bot) : [];
+  } catch (e) {
+    console.warn('[Recruit] チャンネル走査に失敗:', e);
+    return [];
+  }
+}
+
+/** 受付終了済みのカードか */
+function isClosedCard(msg) {
+  return (msg.embeds?.[0]?.title || '').startsWith(CLOSED_PREFIX);
+}
+
+/** 新形式（参加者フィールド1つ）の、指定した日のカードを探す */
+function findDayCard(messages, target) {
+  const def = getDayDef(target.dayKey);
+  return messages.find((m) => {
+    const embed = m.embeds?.[0];
+    if (!embed || isClosedCard(m)) return false;
+    const title = embed.title || '';
+    if (!title.includes(def.name) || !title.includes(target.label)) return false;
+    // 旧形式(土日同居)は参加者フィールドが2つ以上あるので除外する
+    return (embed.fields || []).filter((f) => detectDayKey(f.name) !== null).length < 2;
+  }) || null;
+}
+
+/** 旧形式（1枚に土日が同居）のカードを探す */
+function findLegacyCards(messages) {
+  return messages.filter((m) => {
+    const embed = m.embeds?.[0];
+    if (!embed || isClosedCard(m)) return false;
+    return (embed.fields || []).filter((f) => detectDayKey(f.name) !== null).length >= 2;
+  });
 }
 
 const CLOSED_PREFIX = '🔒 [受付終了]';
@@ -432,63 +485,64 @@ async function updateRecruitment(env, id, patch) {
 }
 
 /**
- * 前回のオープンな定期カスタム募集を締め切る（DBを closed にし、Discord側のボタンも無効化）。
+ * 前回の定期カスタム募集カードを締め切る（Discord上のボタンを無効化し、DBも closed にする）。
  *
- * ★ mode で必ず絞ること。以前は status=open の募集を無条件に全件締め切っていたため、
- *   メンバーが自分で立てた進行中のアドホック募集まで毎週水曜に問答無用で
- *   「[受付終了]」にされる状態だった。
+ * ★ 2026-09-23: 対象の特定をDBからチャンネル走査へ切り替えた。`recruitments` は実測で
+ *   全件0行であり、DBを頼りにすると「締め切り対象なし」で毎回素通りしてしまう。
+ *   また旧実装は `status=open` を無条件に全件閉じていたため、メンバーが自分で立てた
+ *   進行中のアドホック募集まで毎週水曜に「[受付終了]」にしていた。
+ *   現在は「このチャンネルにある定期カスタムのカードのうち、今週分ではないもの」だけを閉じる。
  */
-async function closePreviousPeriodicRecruitments(env, keepStartAts = []) {
+async function closePreviousPeriodicRecruitments(env, channelId, targets, messages) {
   try {
-    const activeRecruits = await fetchSupabase(
-      env, 'recruitments',
-      `status=eq.open&mode=eq.${encodeURIComponent('定期カスタム')}&select=*`
-    );
-    if (!activeRecruits || activeRecruits.length === 0) return;
+    const recent = messages || await fetchRecentBotMessages(env, channelId);
+    const keepLabels = new Set(targets.map((t) => t.label));
+    const dayNames = Object.values(DAY_DEFS).map((d) => d.name);
 
-    // DB側の書式(+00:00)とISO文字列(.000Z)で表記が揺れるため、時刻の数値で比較する
-    const keep = new Set(
-      keepStartAts.map((v) => new Date(v).getTime()).filter((t) => !Number.isNaN(t))
-    );
+    const stale = recent.filter((m) => {
+      const embed = m.embeds?.[0];
+      if (!embed || isClosedCard(m)) return false;
+      const title = embed.title || '';
 
-    for (const oldRecruit of activeRecruits) {
-      const at = oldRecruit.start_at ? new Date(oldRecruit.start_at).getTime() : NaN;
-      if (!Number.isNaN(at) && keep.has(at)) {
-        console.log(`[WeeklyRecruit] ${oldRecruit.discord_message_id} は今週分のため締め切り対象から除外`);
-        continue;
-      }
+      // 旧形式（1枚に土日同居）のカードは無条件に対象
+      const dayFieldCount = (embed.fields || []).filter((f) => detectDayKey(f.name) !== null).length;
+      if (dayFieldCount >= 2) return true;
 
-      await updateRecruitment(env, oldRecruit.id, { status: 'closed' }).catch(() => {});
+      // 新形式のカードは、今週分の日付ラベルを持たないものだけ対象
+      if (!dayNames.some((n) => title.includes(n))) return false;
+      return ![...keepLabels].some((label) => title.includes(label));
+    });
 
+    if (stale.length === 0) {
+      console.log('[WeeklyRecruit] 締め切るべき前回のカードはありません');
+      return;
+    }
+
+    for (const msg of stale) {
       try {
-        const oldMsgRes = await fetch(`https://discord.com/api/v10/channels/${oldRecruit.discord_channel_id}/messages/${oldRecruit.discord_message_id}`, {
-          headers: { "Authorization": `Bot ${env.DISCORD_TOKEN}` }
-        });
-        if (!oldMsgRes.ok) continue;
-
-        const oldMsg = await oldMsgRes.json();
-        if (!oldMsg.embeds || oldMsg.embeds.length === 0) continue;
-
-        const closedEmbed = { ...oldMsg.embeds[0] };
+        const closedEmbed = { ...msg.embeds[0] };
         closedEmbed.title = markTitleClosed(closedEmbed.title);
         closedEmbed.color = 0x7f8c8d; // グレーアウト
 
-        const disabledComponents = oldMsg.components
-          ? oldMsg.components.map(row => ({
-              ...row,
-              components: row.components.map(btn => ({ ...btn, disabled: true }))
-            }))
-          : [];
+        const disabledComponents = (msg.components || []).map((row) => ({
+          ...row,
+          components: row.components.map((btn) => ({ ...btn, disabled: true }))
+        }));
 
-        await fetch(`https://discord.com/api/v10/channels/${oldRecruit.discord_channel_id}/messages/${oldRecruit.discord_message_id}`, {
+        await fetchWithRetry(`https://discord.com/api/v10/channels/${msg.channel_id || channelId}/messages/${msg.id}`, {
           method: 'PATCH',
           headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ embeds: [closedEmbed], components: disabledComponents })
-        }).catch(() => {});
+        }).catch((e) => console.warn(`[WeeklyRecruit] ${msg.id} の受付終了表示に失敗:`, e));
+
+        // DB側も閉じる（行が無ければ何も起きない。ベストエフォート）
+        await markRecruitmentStatus(env, msg.id, 'closed')
+          .catch((e) => console.warn(`[WeeklyRecruit] ${msg.id} のDB締め切りに失敗:`, e));
       } catch (e) {
-        console.warn('[WeeklyRecruit] 旧カードの締め切り表示に失敗:', e);
+        console.warn('[WeeklyRecruit] 旧カードの締め切り処理でエラー:', e);
       }
     }
+    console.log(`[WeeklyRecruit] 前回のカード${stale.length}件を受付終了にしました`);
   } catch (closeErr) {
     console.warn('[WeeklyRecruit] 前回の募集締め切り処理のエラー:', closeErr);
   }
@@ -504,18 +558,14 @@ async function postDayRecruitmentCard(env, channelId, target, options = {}) {
   const { def, label, startAtIso, dayKey } = target;
   const seedLines = options.seedLines || [];
 
-  // 二重投稿防止: 同じ開始時刻の定期カスタムが既にあれば（open/closed問わず）スキップ
-  if (!options.skipDuplicateCheck) try {
-    const existing = await fetchSupabase(
-      env, 'recruitments',
-      `mode=eq.${encodeURIComponent('定期カスタム')}&start_at=eq.${encodeURIComponent(startAtIso)}&select=id&limit=1`
-    );
-    if (existing && existing.length > 0) {
-      console.log(`[WeeklyRecruit] ${label}(${startAtIso})の募集は投稿済みのためスキップ（二重発火防止）`);
+  // 二重投稿防止。DBは当てにできない（recruitments が実測で0行）ため、
+  // チャンネルに同じ日のカードが既に出ていないかを正として判定する。
+  if (!options.skipDuplicateCheck) {
+    const messages = options.recentMessages || await fetchRecentBotMessages(env, channelId);
+    if (findDayCard(messages, target)) {
+      console.log(`[WeeklyRecruit] ${label}のカードは既にチャンネルに存在するためスキップ（二重発火防止）`);
       return false;
     }
-  } catch (dupErr) {
-    console.warn(`[WeeklyRecruit] ${label}の二重投稿チェックに失敗（投稿は続行）:`, dupErr);
   }
 
   const embed = buildDayRecruitEmbed(target, seedLines);
@@ -538,6 +588,8 @@ async function postDayRecruitmentCard(env, channelId, target, options = {}) {
   }
   const sent = await res.json();
 
+  // DB登録はベストエフォート。ここが失敗しても、もう一方の曜日のカード投稿まで
+  // 巻き添えで止まらないように必ず捕まえる（2026-09-23、書き込みが通っていないことが実測で判明）。
   await createRecruitment(env, {
     messageId: sent.id,
     channelId,
@@ -545,7 +597,7 @@ async function postDayRecruitmentCard(env, channelId, target, options = {}) {
     mode: '定期カスタム',
     maxCount: DAY_CAPACITY,
     startAt: startAtIso,
-  });
+  }).catch((e) => console.error(`[WeeklyRecruit] ${label} のrecruitments登録に失敗（カード投稿は成功）:`, e));
   console.log(`[WeeklyRecruit] ${def.name} ${label} の募集を投稿しました (msg ${sent.id})`);
 
   try {
@@ -561,42 +613,30 @@ async function postDayRecruitmentCard(env, channelId, target, options = {}) {
 /**
  * 旧形式（1枚のカードに土日が同居）の募集カードを、土日2枚の新形式へ移行する一度きりの処理。
  * 既存の参加者をそのまま新カードへ引き継ぎ、旧カードは受付終了にしてボタンを無効化する。
- * デプロイ直後に /trigger-scheduled?key=...&mode=weekly_recruit_migrate で手動キックする。
+ * /trigger-scheduled?key=...&mode=weekly_recruit_migrate から手動でキックする。
  *
- * ※ 新旧で同じ start_at のレコードが並ぶことになるが、参照側はいずれも
- *   created_at の降順で最新1件を見るため、常に新カードが選ばれる。
+ * ★ 2026-09-23: 対象の特定をDBからチャンネル走査へ切り替えた。初版は
+ *   `recruitments` の open 行を起点にしていたが、同テーブルは実測で全件0行であり
+ *   （Botからの書き込みが成立していない）、旧カードが目の前にあるのに
+ *   「移行対象なし」で何もせず終了していた。募集カードの所在はDiscordを正とする。
  */
 async function migrateLegacyPeriodicCards(env) {
   try {
     const channelId = CONFIG.PERIODIC_RECRUIT_CHANNEL_ID || CONFIG.RECRUIT_CHANNEL_ID;
-    const rows = await fetchSupabase(
-      env, 'recruitments',
-      `status=eq.open&mode=eq.${encodeURIComponent('定期カスタム')}&select=*&order=created_at.desc`
-    );
-    if (!rows || rows.length === 0) {
-      console.log('[Migrate] open な定期カスタム募集がありません');
+    const messages = await fetchRecentBotMessages(env, channelId);
+    const legacyCards = findLegacyCards(messages);
+
+    if (legacyCards.length === 0) {
+      console.log('[Migrate] 移行対象の旧形式カードはありませんでした');
       return;
     }
 
     const seeds = { sat: [], sun: [] };
-    let migratedAny = false;
 
-    for (const row of rows) {
+    for (const msg of legacyCards) {
       try {
-        const msgRes = await fetchWithRetry(
-          `https://discord.com/api/v10/channels/${row.discord_channel_id}/messages/${row.discord_message_id}`,
-          { headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` } }
-        );
-        if (!msgRes.ok) continue;
-        const msg = await msgRes.json();
         const fields = msg.embeds?.[0]?.fields || [];
-        const dayFields = fields.filter((f) => detectDayKey(f.name) !== null);
-        if (dayFields.length < 2) {
-          console.log(`[Migrate] ${row.discord_message_id} は旧形式ではないためスキップ`);
-          continue;
-        }
-
-        for (const f of dayFields) {
+        for (const f of fields) {
           const key = detectDayKey(f.name);
           if (key) seeds[key].push(...extractEntryLines(f.value));
         }
@@ -609,24 +649,23 @@ async function migrateLegacyPeriodicCards(env) {
         const disabled = (msg.components || []).map((r) => ({
           ...r, components: r.components.map((b) => ({ ...b, disabled: true }))
         }));
-        await fetchWithRetry(`https://discord.com/api/v10/channels/${row.discord_channel_id}/messages/${row.discord_message_id}`, {
+
+        await fetchWithRetry(`https://discord.com/api/v10/channels/${msg.channel_id || channelId}/messages/${msg.id}`, {
           method: 'PATCH',
           headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ embeds: [closedEmbed], components: disabled })
-        }).catch(() => {});
-        await updateRecruitment(env, row.id, { status: 'closed' }).catch(() => {});
-        migratedAny = true;
+        }).catch((e) => console.warn(`[Migrate] ${msg.id} の受付終了表示に失敗:`, e));
+
+        await markRecruitmentStatus(env, msg.id, 'closed')
+          .catch((e) => console.warn(`[Migrate] ${msg.id} のDB締め切りに失敗（行が無い可能性）:`, e));
+
+        console.log(`[Migrate] 旧カード ${msg.id} を受付終了にしました`);
       } catch (e) {
-        console.warn(`[Migrate] ${row.discord_message_id} の読み取りに失敗:`, e);
+        console.warn(`[Migrate] ${msg.id} の処理に失敗:`, e);
       }
     }
 
-    if (!migratedAny) {
-      console.log('[Migrate] 移行対象の旧形式カードはありませんでした');
-      return;
-    }
-
-    // 同一ユーザーが重複して載っている場合は先勝ちで1行に寄せる
+    // 同一ユーザーが複数行に載っている場合は先勝ちで1行に寄せる
     const dedupe = (lines) => {
       const seen = new Set();
       const out = [];
@@ -640,8 +679,10 @@ async function migrateLegacyPeriodicCards(env) {
     };
 
     for (const target of resolveWeekendTargets()) {
+      const seedLines = dedupe(seeds[target.dayKey] || []);
+      console.log(`[Migrate] ${target.label} の新カードを投稿します（引き継ぎ${seedLines.length}名）`);
       await postDayRecruitmentCard(env, channelId, target, {
-        seedLines: dedupe(seeds[target.dayKey] || []),
+        seedLines,
         skipDuplicateCheck: true,
       });
     }
@@ -730,15 +771,47 @@ async function createWeeklyEvents(env) {
   }
 }
 
-/** recruitments から、その日の募集カードと現在の参加人数を取得する */
-async function loadDayRecruitmentSummary(env, target) {
+/**
+ * その日の募集カードと現在の参加人数を取得する。
+ *
+ * ★ 2026-09-23: 探索の主経路をチャンネル走査にした。以前は `recruitments` の
+ *   start_at で引いていたが、同テーブルは実測で全件0行であり（Botからの書き込みが
+ *   成立していない）、中間アナウンスも20:00開催判定も常に「カードが見つかりません」で
+ *   空振りする。DBが直った場合に備えて、走査で見つからなかったときだけDBを試す。
+ */
+async function loadDayRecruitmentSummary(env, target, messages) {
+  const channelId = CONFIG.PERIODIC_RECRUIT_CHANNEL_ID || CONFIG.RECRUIT_CHANNEL_ID;
+
+  // 1. Discordのチャンネルから直接探す（こちらが正）
+  try {
+    const recent = messages || await fetchRecentBotMessages(env, channelId);
+    const card = findDayCard(recent, target);
+    if (card) {
+      const lines = extractEntryLines(card.embeds?.[0]?.fields?.[0]?.value);
+      return {
+        target,
+        messageId: card.id,
+        channelId: card.channel_id || channelId,
+        message: card,
+        lines,
+        status: computeDayStatus(lines.length),
+      };
+    }
+  } catch (e) {
+    console.warn(`[Recruit] ${target.label}のチャンネル走査に失敗:`, e);
+  }
+
+  // 2. 走査で見つからない場合のみDBを当たる（カードが100件より前へ流れた場合の保険）
   try {
     const rows = await fetchSupabase(
       env, 'recruitments',
       `mode=eq.${encodeURIComponent('定期カスタム')}&start_at=eq.${encodeURIComponent(target.startAtIso)}` +
       `&select=id,discord_message_id,discord_channel_id,status&order=created_at.desc&limit=1`
     );
-    if (!rows || rows.length === 0) return null;
+    if (!rows || rows.length === 0) {
+      console.log(`[Recruit] ${target.label}の募集カードが見つかりません（チャンネル・DBとも）`);
+      return null;
+    }
 
     const row = rows[0];
     const msgRes = await fetchWithRetry(
@@ -751,7 +824,6 @@ async function loadDayRecruitmentSummary(env, target) {
     }
 
     const message = await msgRes.json();
-    // 分離後のカードは「参加者フィールド1つ」構成なので fields[0] を見れば良い。
     const lines = extractEntryLines(message.embeds?.[0]?.fields?.[0]?.value);
 
     return {
@@ -819,9 +891,10 @@ async function sendEventUsersNotification(env, options = {}) {
       return;
     }
 
+    const recentMessages = await fetchRecentBotMessages(env, channelId);
     const summaries = [];
     for (const target of targets) {
-      const summary = await loadDayRecruitmentSummary(env, target);
+      const summary = await loadDayRecruitmentSummary(env, target, recentMessages);
       if (summary) summaries.push(summary);
     }
     if (summaries.length === 0) {
