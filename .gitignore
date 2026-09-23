@@ -80,3 +80,6 @@ scratch/
 # 実行時ログ（*.logパターン漏れで誤ってgit管理下にあったもの、2026-09-21発覚）
 **/worker_logs.txt
 *.log
+
+# ローカル専用の認証情報置き場（YouTubeのcookies.txt等）。絶対にコミットしない
+.secrets/

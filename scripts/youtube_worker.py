@@ -81,13 +81,23 @@ def sb(method, path, body=None, prefer=None):
             t = r.read().decode()
             return json.loads(t) if t else None
     except urllib.error.HTTPError as e:
+        # エラー本文を必ず拾う（2026-09-23）。従来は e をそのまま投げており
+        # 「HTTP Error 409: Conflict」としか残らず、どのテーブルのどの制約に
+        # ぶつかったのか分からなかった。実際それで原因特定に時間を要した。
+        detail = ""
+        try:
+            detail = e.read().decode()[:300]
+        except Exception:
+            pass
         if e.code == 401:
             # キーが空・別プロジェクトのキー・失効のいずれか。原因を明示して即終了する。
             sys.exit(
                 "❌ Supabaseに認証拒否されました (401)。GitHubのSecretのキーが正しいか、"
                 "対象プロジェクトのものか確認してください。"
             )
-        raise
+        raise RuntimeError(
+            "HTTP %s %s %s -> %s" % (e.code, method, path.split("?")[0], detail or "(本文なし)")
+        ) from e
 
 import tempfile, shutil
 
@@ -341,6 +351,20 @@ def main():
             print(f"⏸ レート制限のため中断（pendingのまま据え置き）: {e}", file=sys.stderr)
             break
         except Exception as e:
+            # ⚠️ 2026-09-23: 要約の保存(POST)が成功した後の工程で落ちると、
+            # 成果物は既にあるのに pending へ戻り、次の実行でGeminiを再課金して
+            # しまう（実際 405u21rOh2M で発生。personal_knowledge には保存済みなのに
+            # 409で失敗扱いになっていた）。保存済みかを確認して完了扱いにする。
+            try:
+                saved = sb("GET", "personal_knowledge?source_url=eq.%s&select=id" % url)
+                if saved:
+                    sb("PATCH", "youtube_queue?id=eq.%s" % vid, {"status": "completed"})
+                    done.append(it.get("title") or vid)
+                    print("✅ 完了（保存済みを検出し復旧）: %s" % (it.get("title") or vid))
+                    continue
+            except Exception:
+                pass  # 復旧の確認自体に失敗したら通常の失敗処理へ進む
+
             retry = (it.get("retry_count") or 0) + 1
             if isinstance(e, NoTranscript):
                 status = "error_no_transcript"          # 字幕が無い動画は再試行しても無駄なので即時決定

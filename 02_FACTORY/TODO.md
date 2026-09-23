@@ -52,39 +52,54 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
   - 実行して判明した不具合を4件修正: ①実際は7本しかマウントできていないのに「12本マウント」と報告していた虚偽カウント、②間隔なし連続取得による429取りこぼし6本（5秒間隔を追加）、③判定より先に取得していた無駄なネットワークアクセス、④INDEX.mdの動画誤検出。
   - マウント先バイブルが無く捨てられていた16本を救済するため、`champion_facts`の蓄積データからバイブルを生成する`generate_tactics_bible.py --from-db`を新設し12体を配備（AI生成なし＝課金ゼロ）。
   - **残り12本は字幕・音声とも取得できず未処理**（下記のcookieタスク待ち）。
-- [ ] **🍪 YouTube cookie の設定（ユーザー作業が必要・第1弾の残り12本と第2弾の一部がこれ待ち）**
-  - **現状**: 字幕の無い動画はWhisperで音声から文字起こしするが、音声ダウンロードが `HTTP 403 Forbidden` で弾かれる。実測で第1弾の12本がこれで未処理。
-  - **自動化は不可能と確認済み（2026-09-21実測）**: Chrome/Edgeからのcookie直読みは `Failed to decrypt with DPAPI` で失敗する。Chrome 127以降の **App-Bound Encryption**（他アプリからの復号を防ぐ保護）によるもので、**Chromeを終了しても解決しない**。Firefox/Brave/Opera/Vivaldiは未インストール。したがって`.env`の `YT_DLP_COOKIES_FROM=chrome` は現在のChromeでは機能しない設定。
-  - **必要な作業**: ①Chrome拡張「Get cookies.txt LOCALLY」を追加 → ②YouTubeを開いた状態で実行しcookies.txtをダウンロード → ③`.env`に `YT_DLP_COOKIES_FILE=（保存先の絶対パス）` を追加。保存先は`.gitignore`対象の場所にすること。
-  - **配線は完了済み**: `scripts/yt_dlp_cookies.py` に解決ロジックを集約済みで、設定すれば現役3スクリプト全てで自動的に読まれる（ログに `[cookie] cookies.txt を使用します` と出る）。未設定でもフェイルセーフが働き、字幕のある動画は通常どおり処理される。
-  - **設定後の確認手順**:
-    ```bash
-    # 1. cookieが認識されているか（「cookies.txt を使用します」と出れば成功）
-    .venv/Scripts/python.exe -c "import sys; sys.path.insert(0,'scripts'); from dotenv import load_dotenv; load_dotenv('.env'); from yt_dlp_cookies import apply_cookie_opts; apply_cookie_opts({})"
+- [x] **🍪 YouTube cookie の設定（2026-09-23 完了）**
+  - `.secrets/youtube_cookies.txt`（`.gitignore` 済み）に配置し、`.env` に
+    `YT_DLP_COOKIES_FILE=D:/my_work/.secrets/youtube_cookies.txt` を設定した。
+  - 機能しなかった `YT_DLP_COOKIES_FROM=chrome` はコメントアウト（Chrome 127以降の
+    App-Bound Encryption で他アプリからの復号ができないため）。
+  - **効果は実測で確認**: 設定前は429が解消せずワーカーが中断していたが、設定後は
+    23件を連続で処理できた。
+  - ⚠️ cookieは失効する。再び429や403が頻発したら、シークレットウィンドウで
+    YouTubeにログイン → 拡張でエクスポート → 他ページを開かずに閉じる、の手順で取り直す。
 
-    # 2. 403で失敗していた動画で実際に音声を取得できるか試す
-    .venv/Scripts/python.exe scripts/extract_video_tactics.py 27t49A38l6I --dry-run
+- [x] **第2弾: pendingキューの再解析（2026-09-23 完了）**
+  - **着手時の実測はTODOの記載と反転していた**。2026-09-21時点の記載は
+    「pending 75件 / エラー系0件」だったが、実際は **pending 0 / エラー59件**
+    （字幕もWhisperも取得不可 33 / HTTP 429 23 / 字幕なし 3）で、
+    2026-09-22 16:53〜2026-09-23 08:54 に現在進行形で発生していた。
+  - **原因と修正（いずれも実測で確認）**:
+    1. `youtube_worker.py` に動画間の間隔制御もバックオフも無く、1回叩いて429なら即
+       あきらめ、しかもそれが `retry_count` を消費していた。23件が3回で
+       `error_generation` に固定されていた。姉妹スクリプト `extract_video_tactics.py`
+       には2026-09-21の実測を受けた5秒待機が既にあったが、ワーカーには入っていなかった。
+       → 10秒→30秒のバックオフ再試行 ＋ 5秒間隔 ＋ 「レート制限では `retry_count` を
+         消費せず pending のまま据え置き、その回の実行を打ち切る」へ変更。
+    2. ワーカーがローカルで起動できなかった（`KeyError: SUPABASE_URL`）。
+       GitHub Actions専用で環境変数がプロセスに注入される前提だったため。
+       → `.env` 読み込み（既存の環境変数は上書きしない）と、Windowsコンソール(cp932)の
+         `UnicodeEncodeError` 対策を追加。
+    3. 要約の保存(POST)が成功した後の工程で落ちると、成果物があるのに pending へ戻り、
+       次回Geminiを再課金していた。→ 保存済みを検出して完了扱いにする自己修復を追加。
+    4. `sb()` がHTTPエラーの本文を捨てており「HTTP Error 409: Conflict」としか
+       残らなかった。→ 本文を例外に載せるようにした。
+  - **結果**: completed 1099 → **1122件**（+23）。pending 0 / failed 0 / error_generation 0。
+  - 復旧用に `clean_youtube_queue.py --retry-rate-limited` を追加
+    （`--retry-failed` はエラー全件を戻すため、字幕が無い動画まで巻き込んで再失敗させる）。
 
-    # 3. 通れば第1弾の残りをまとめて処理
-    .venv/Scripts/python.exe scripts/extract_video_tactics.py --batch --limit 20
-    ```
-- [ ] **第2弾: pendingキューの再解析（実測78件・2026-09-21時点）**
-  - 実測(2026-09-21時点): `youtube_queue` は合計1228〜1231件で pending 75〜78件（監視が新着を拾うため日々増える） / manually_closed 82 / **エラー系0件**。TODOに記載されていた「error系53件」は既にpendingへ戻されており、救済（リセット）自体は完了済み。残るのはこれらを実際に処理すること。
-  - 10件サンプル調査では8割が英語字幕ありでWhisper不要のため、cookie未設定でも大半は処理できる見込み。
-  - **⚠️ Gemini課金が発生する。まず少数で試してから本格実行すること。**
-  - **実行手順（そのまま使える）**:
-    ```bash
-    # 1. 現状確認（何件残っているか）
-    .venv/Scripts/python.exe scripts/clean_youtube_queue.py --status
+- [ ] **字幕が存在しない36件の扱い（2026-09-23 判断が必要）**
+  - キュー上の残りはこれだけ（`error_no_transcript` 36件）。`yt-dlp --list-subs` で
+    実際に確認したところ **字幕も自動字幕も存在しない**（サンプル3本で確認）。
+  - 大半は実況なしの試合リプレイ・ショート（`VIEGO VS SHYVANA - 8/1/0 KDA JUNGLE GAMEPLAY`、
+    `Caitlyn build god`、Agurinのショート等）。YouTubeが自動字幕を生成できていない＝
+    聞き取れる音声が無いということなので、**Whisperにかけても得るものは無い見込み**。
+  - ただし7本ほどは解説系のタイトル（`AATROX COMBO GUIDE`、`SECRET Anivia Tips & Tricks`、
+    `Advanced Cassiopeia Tips & Tricks`、`差がつくリーシンの本質【らいじん/切り抜き】`等）で、
+    ナレーションがある可能性がある。
+  - ⚠️ **Whisper経路には ffmpeg が必要だが未インストール**（PATHにも `.venv` にも無い）。
+    `faster_whisper` は入っている。
+  - **決めること**: ①36件すべて `manually_closed` にして閉じる（推奨・コスト0）
+    ②ffmpegを入れて解説系7本だけWhisperにかける ③全件Whisperにかける（効果は薄い見込み）
 
-    # 2. まず3件だけ試す（MAX_ITEMS未指定時の既定も3件）
-    MAX_ITEMS=3 .venv/Scripts/python.exe scripts/youtube_worker.py
-
-    # 3. 結果を確認してから件数を増やす（429を避けるため20件程度ずつ推奨）
-    MAX_ITEMS=20 .venv/Scripts/python.exe scripts/youtube_worker.py
-    ```
-  - 常駐で回す場合はローカルワーカーを起動する（`start_all.bat` またはポータル管理画面の「🚀 ワーカー起動」ボタン）。起票は`youtube_queue_scheduler_loop`が10分おきに行う。
-  - **実行後の確認**: `.venv/Scripts/python.exe scripts/ops_health_check.py` で「YouTubeキュー健全性」「YouTube自動化の稼働鮮度」がPASSになるか見る。
 - [x] **第3弾: ローテーション再解析の実装（2026-09-21完了、実行は未着手）**
   - `edge_worker_daemon.py`に`youtube_rotation`タスクを新設。完了済み動画を古い順に少数ずつpendingへ戻す。
   - 暴走防止に2つの歯止め: 未処理キューが20件以上なら差し戻さない／スケジューラは既定で無効のオプトイン（`ENABLE_YOUTUBE_ROTATION=1`）。
