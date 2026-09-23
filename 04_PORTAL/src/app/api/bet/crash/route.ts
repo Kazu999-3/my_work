@@ -97,6 +97,18 @@ function generateCrashPoint(): number {
 }
 
 export async function POST(req: Request) {
+  // ⚠️ 2026-09-23: 利確の判定に使う「受信時刻」はここで採る。
+  // 以前は判定直前の Date.now() を使っていたが、そこに至るまでに
+  // 認証 → プレイヤー取得 → セッション取得 → 多重利確ロックと**DB往復が4回**あり、
+  // 実測で0.6〜2.3秒かかっていた（コールドスタート時は2.3秒）。
+  // その遅延ぶんだけ「経過時間が進んだ」とみなされ、許容マージン0.5秒を超えると
+  // **プレイヤーは爆発前に押しているのにクラッシュ判定になる**。
+  // 実際 2026-09-23 の実プレイで、爆発値4.09のラウンドに倍率1.33で利確した記録が
+  // 残っている一方、爆発値1.46(爆発まで1.72秒)のラウンドは払い戻し無しで
+  // settled になっていた。サーバーの処理時間をプレイヤーに負担させないため、
+  // リクエストが届いた瞬間の時刻で判定する。
+  const requestAtMs = Date.now();
+
   try {
     const session = await getAuthSession();
     if (!session || !session.discordId) {
@@ -223,8 +235,7 @@ export async function POST(req: Request) {
 
       // サーバー側時間検証: multに対応する経過時間 (elapsed = ln(mult) / 0.22)
       // クライアントが瞬時に高倍率をPOSTしてくるチートを防ぐ
-      const now = Date.now();
-      const clientElapsedSec = (now - startedAtMs) / 1000;
+      const clientElapsedSec = (requestAtMs - startedAtMs) / 1000;
       // ネットワーク遅延・許容マージンを考慮した、その経過秒数で到達可能な最大倍率
       const maxPossibleMult = Math.floor(Math.pow(Math.E, (clientElapsedSec + LATENCY_MARGIN_SEC) * 0.22) * 100) / 100;
 
@@ -239,6 +250,29 @@ export async function POST(req: Request) {
       const marginedElapsedSec = Math.max(0, clientElapsedSec - LATENCY_MARGIN_SEC);
       const currentServerMult = Math.floor(Math.pow(Math.E, marginedElapsedSec * 0.22) * 100) / 100;
       const isCrashed = mult > actualCrash || currentServerMult >= actualCrash;
+
+      // 判定の内訳を残す（2026-09-23）。「画面は飛行中なのに爆発扱い」の原因追跡用。
+      // 失敗しても利確処理そのものは止めない。
+      if (supabaseAdmin) {
+        void supabaseAdmin
+          .from('crash_sessions')
+          .update({
+            settle_note: {
+              claimedMultiplier: mult,
+              crashPoint: actualCrash,
+              elapsedAtRequestSec: Number(clientElapsedSec.toFixed(3)),
+              marginedMult: currentServerMult,
+              // リクエスト受信から判定までにサーバー側で費やした時間。
+              // ここが大きいほど、判定が遅れてプレイヤーに不利になる。
+              handlerMs: Date.now() - requestAtMs,
+              verdict: isCrashed
+                ? (mult > actualCrash ? 'claim_above_crash' : 'time_past_crash')
+                : 'win',
+            },
+          })
+          .eq('game_id', gameId)
+          .then(undefined, () => {});
+      }
 
       if (!isCrashed) {
         const winCoins = Math.floor(crashSession.bet_amount * mult);
