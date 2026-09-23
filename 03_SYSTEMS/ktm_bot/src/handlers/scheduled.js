@@ -30,6 +30,10 @@ export async function handleScheduledEvent(event, env, ctx) {
     // 管理者へ通知する。2026-09-23に本命が不発し、GitHub Actions側も5時間20分遅延した結果、
     // 募集が水曜17:35に飛ぶ事故が起きたが、誰も気づける仕組みが無かった。
     await postWeeklyRecruitment(env, { isBackupKick: mode === "weekly_recruit" });
+  } else if (mode === "weekly_recruit_reset") {
+    // 移行が途中で失敗したときの立て直し。手動キック専用。
+    console.log("[Scheduled] Executing periodic card reset...");
+    await resetPeriodicCards(env);
   } else if (mode === "weekly_recruit_migrate") {
     // 旧形式(1枚に土日同居)カードから新形式(2枚)への一度きりの移行。手動キック専用。
     console.log("[Scheduled] Executing legacy periodic card migration...");
@@ -239,15 +243,29 @@ async function sendRecruitStatusNotification(env) {
         ? `⚠️ カスタム募集中 — あと${shortage}名！`
         : `✅ カスタム募集 — メンバー確定（${joined.length}/${max}）`;
 
-      // 二重投稿防止
+      // 二重投稿防止。
+      // ★ メンバー確定の通知は参加者へメンションが飛ぶため、募集中の通知(3時間窓)と同じ基準だと
+      //   満員のまま10分間隔cronが回り続ける間、3時間おきに全員へ鳴り直してしまう。
+      //   確定通知だけは走査範囲と期間を広げ、同じ募集カードへの確定返信が1件でもあれば送らない。
+      const isConfirmed = shortage === 0;
+      const dupLimit = isConfirmed ? 50 : 10;
+      const dupWindowMs = isConfirmed ? 7 * 24 * 60 * 60 * 1000 : 3 * 60 * 60 * 1000;
       const recentRes = await fetchWithRetry(
-        `https://discord.com/api/v10/channels/${r.discord_channel_id}/messages?limit=10`,
+        `https://discord.com/api/v10/channels/${r.discord_channel_id}/messages?limit=${dupLimit}`,
         { headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` } }
       );
       if (recentRes.ok) {
         const recent = await recentRes.json();
-        const threeHoursAgo = nowMs - 3 * 60 * 60 * 1000;
-        if (recent.find((m) => m.author?.bot && m.embeds?.[0]?.title === title && new Date(m.timestamp).getTime() > threeHoursAgo)) {
+        const since = nowMs - dupWindowMs;
+        const duplicated = recent.find((m) => {
+          if (!m.author?.bot || new Date(m.timestamp).getTime() <= since) return false;
+          if (m.embeds?.[0]?.title === title) return true;
+          // 確定タイトルには人数が入るので、この募集への確定返信かどうかでも照合する
+          return isConfirmed
+            && m.message_reference?.message_id === r.discord_message_id
+            && (m.embeds?.[0]?.title || '').startsWith('✅ カスタム募集');
+        });
+        if (duplicated) {
           console.log('[RecruitStatus] 同一通知が直近にあるためスキップ');
           continue;
         }
@@ -261,11 +279,21 @@ async function sendRecruitStatusNotification(env) {
         timestamp: new Date().toISOString()
       };
 
-      const body = { embeds: [embed] };
+      // 募集メッセージへの返信としてぶら下げ、チャンネルの流れに通知が散らばらないようにする
+      const body = {
+        embeds: [embed],
+        message_reference: { message_id: r.discord_message_id, fail_if_not_exists: false }
+      };
       // 人数不足のときだけ通知ロールをメンションして能動的に呼ぶ
       if (shortage > 0 && CONFIG.NOTIFICATION_ROLE_ID) {
         body.content = `<@&${CONFIG.NOTIFICATION_ROLE_ID}> 🔥 **あと${shortage}名でカスタム開催です！** 参加できる方は上の募集メッセージから参加ボタンを押してください！`;
         body.allowed_mentions = { roles: [CONFIG.NOTIFICATION_ROLE_ID] };
+      } else if (shortage === 0 && joined.length > 0) {
+        // メンバー確定は当事者だけに通知する(ロール購読者全員に鳴らさない)。
+        // 以前は確定時にcontent自体が無く、揃ったことが誰にも通知されていなかった。
+        const confirmIds = [...new Set(joined)].filter(Boolean).slice(0, 100);
+        body.content = `✅ **メンバーが揃いました！** 開始までに準備をお願いします。\n通知: ${confirmIds.map((id) => `<@${id}>`).join(' ')}`;
+        body.allowed_mentions = { users: confirmIds };
       }
 
       const sendRes = await fetchWithRetry(
@@ -408,6 +436,11 @@ async function postWeeklyRecruitment(env, options = {}) {
 
 const CHANNEL_SCAN_LIMIT = 100;
 
+// Cloudflare Workers はリクエストあたりのサブリクエスト数に上限がある（無料プランで50）。
+// 上限を超えると以降の fetch がすべて失敗するため、1回の実行で触る旧カードの枚数を絞る。
+// 2026-09-23、旧カードを大量に処理した結果、続く日曜カードの投稿が丸ごと飛んだ。
+const MAX_CARDS_PER_RUN = 4;
+
 /**
  * チャンネルの直近メッセージからBotの投稿を取得する。
  *
@@ -518,7 +551,8 @@ async function closePreviousPeriodicRecruitments(env, channelId, targets, messag
       return;
     }
 
-    for (const msg of stale) {
+    // サブリクエスト上限対策。1回で捌ききれない分は次回の実行に回す。
+    for (const msg of stale.slice(0, MAX_CARDS_PER_RUN)) {
       try {
         const closedEmbed = { ...msg.embeds[0] };
         closedEmbed.title = markTitleClosed(closedEmbed.title);
@@ -583,7 +617,14 @@ async function postDayRecruitmentCard(env, channelId, target, options = {}) {
   });
 
   if (!res.ok) {
-    console.error(`[WeeklyRecruit] ${label}の募集投稿に失敗: ${res.status} ${await res.text()}`);
+    const detail = await res.text();
+    console.error(`[WeeklyRecruit] ${label}の募集投稿に失敗: ${res.status} ${detail}`);
+    // 無言で欠けると「片方の曜日だけカードが無い」状態に誰も気づけないため通知する。
+    await notifyAdminError(env, `${def.name}(${label})の募集カード投稿に失敗しました`, {
+      status: res.status,
+      detail: detail.slice(0, 500),
+      source: 'postDayRecruitmentCard',
+    }).catch(() => {});
     return false;
   }
   const sent = await res.json();
@@ -631,16 +672,23 @@ async function migrateLegacyPeriodicCards(env) {
       return;
     }
 
+    // ★ 引き継ぎ元は「最新の旧カード1枚」だけにする。
+    //   走査範囲(直近100件)には先週以前のカードも含まれており、全部から参加者を
+    //   集めると別の週のエントリーまで合算されてしまう（実際に土曜が16名になった）。
+    //   締め切り対象は最新以外にも広げるが、Cloudflare Workersの
+    //   サブリクエスト上限(無料プランで50)に当たると以降のfetchが全て失敗するため、
+    //   1回あたりの処理件数に上限を設ける（日曜カードの投稿が飛んだ原因）。
     const seeds = { sat: [], sun: [] };
+    const primary = legacyCards[0];
 
-    for (const msg of legacyCards) {
+    for (const f of primary.embeds?.[0]?.fields || []) {
+      const key = detectDayKey(f.name);
+      if (key) seeds[key].push(...extractEntryLines(f.value));
+    }
+    console.log(`[Migrate] 引き継ぎ元: ${primary.id}（土${seeds.sat.length}名 / 日${seeds.sun.length}名）`);
+
+    for (const msg of legacyCards.slice(0, MAX_CARDS_PER_RUN)) {
       try {
-        const fields = msg.embeds?.[0]?.fields || [];
-        for (const f of fields) {
-          const key = detectDayKey(f.name);
-          if (key) seeds[key].push(...extractEntryLines(f.value));
-        }
-
         // 旧カードを受付終了にする
         const closedEmbed = { ...msg.embeds[0] };
         closedEmbed.title = markTitleClosed(closedEmbed.title);
@@ -689,6 +737,92 @@ async function migrateLegacyPeriodicCards(env) {
     console.log('[Migrate] 新形式カードへの移行が完了しました');
   } catch (err) {
     console.error('[Migrate] error:', err);
+  }
+}
+
+/**
+ * 今週の定期カスタムのカードを作り直す（手動キック専用: mode=weekly_recruit_reset）。
+ *
+ * 移行が途中で失敗してカードが中途半端な状態になったときの立て直し用。
+ * ① 直近の旧形式カード（受付終了済みでも可）から参加者を引き継ぎ元として拾う
+ * ② チャンネルに出ている定期カスタムのカードをすべて受付終了にする
+ * ③ 土曜・日曜のカードを新しく投稿し直す
+ *
+ * ★ 2026-09-23: 初回の移行で「先週以前のカードまで参加者を合算して土曜が16名になり、
+ *   さらにサブリクエスト上限に当たって日曜カードが投稿されなかった」状態の復旧用に追加した。
+ */
+async function resetPeriodicCards(env) {
+  try {
+    const channelId = CONFIG.PERIODIC_RECRUIT_CHANNEL_ID || CONFIG.RECRUIT_CHANNEL_ID;
+    const messages = await fetchRecentBotMessages(env, channelId);
+
+    // ① 引き継ぎ元（受付終了済みも対象に含める。移行済みなら既に閉じているため）
+    const seeds = { sat: [], sun: [] };
+    const legacy = messages.find((m) => {
+      const embed = m.embeds?.[0];
+      if (!embed) return false;
+      return (embed.fields || []).filter((f) => detectDayKey(f.name) !== null).length >= 2;
+    });
+    if (legacy) {
+      for (const f of legacy.embeds[0].fields || []) {
+        const key = detectDayKey(f.name);
+        if (key) seeds[key].push(...extractEntryLines(f.value));
+      }
+      console.log(`[Reset] 引き継ぎ元: ${legacy.id}（土${seeds.sat.length}名 / 日${seeds.sun.length}名）`);
+    } else {
+      console.log('[Reset] 引き継ぎ元の旧形式カードは見つかりませんでした（空のカードを作り直します）');
+    }
+
+    // ② 出ている定期カスタムのカードをすべて閉じる
+    const dayNames = Object.values(DAY_DEFS).map((d) => d.name);
+    const openCards = messages.filter((m) => {
+      const embed = m.embeds?.[0];
+      if (!embed || isClosedCard(m)) return false;
+      const title = embed.title || '';
+      const dayFieldCount = (embed.fields || []).filter((f) => detectDayKey(f.name) !== null).length;
+      return dayFieldCount >= 2 || dayNames.some((n) => title.includes(n));
+    });
+
+    for (const msg of openCards.slice(0, MAX_CARDS_PER_RUN)) {
+      try {
+        const closedEmbed = { ...msg.embeds[0] };
+        closedEmbed.title = markTitleClosed(closedEmbed.title);
+        closedEmbed.color = 0x7f8c8d;
+        const disabled = (msg.components || []).map((r) => ({
+          ...r, components: r.components.map((b) => ({ ...b, disabled: true }))
+        }));
+        await fetchWithRetry(`https://discord.com/api/v10/channels/${msg.channel_id || channelId}/messages/${msg.id}`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ embeds: [closedEmbed], components: disabled })
+        }).catch((e) => console.warn(`[Reset] ${msg.id} の受付終了表示に失敗:`, e));
+        console.log(`[Reset] ${msg.id} を受付終了にしました`);
+      } catch (e) {
+        console.warn(`[Reset] ${msg.id} の処理に失敗:`, e);
+      }
+    }
+
+    // ③ 作り直す
+    const dedupe = (lines) => {
+      const seen = new Set();
+      const out = [];
+      for (const line of lines) {
+        const id = line.match(/<@(\d+)>/)?.[1];
+        if (!id || seen.has(id)) continue;
+        seen.add(id);
+        out.push(line);
+      }
+      return out;
+    };
+
+    for (const target of resolveWeekendTargets()) {
+      const seedLines = dedupe(seeds[target.dayKey] || []);
+      console.log(`[Reset] ${target.label} のカードを投稿します（引き継ぎ${seedLines.length}名）`);
+      await postDayRecruitmentCard(env, channelId, target, { seedLines, skipDuplicateCheck: true });
+    }
+    console.log('[Reset] 作り直しが完了しました');
+  } catch (err) {
+    console.error('[Reset] error:', err);
   }
 }
 
@@ -1126,12 +1260,29 @@ export async function checkCustomStatusAt2000(env) {
       `\n💡 **せっかく集まったので別のゲームで遊びませんか？**\n` +
       `下のボタンからワンクリックで「ノーマル」または「ARAM / メイヘム」のクイック募集に合流できます！`;
 
-    await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+    // 中止はエントリー済みの当事者に最も届くべき通知なので、募集カードへの返信としてぶら下げ、
+    // メンションはその人たちだけに限定する(@募集通知ロール全体には鳴らさない)。
+    // 以前は独立メッセージかつメンション無しで、エントリー済みの人が中止に気づけなかった。
+    const entryIds = [...new Set(
+      summary.lines.flatMap((l) => [...l.matchAll(/<@!?(\d+)>/g)].map((m) => m[1]))
+    )].slice(0, 100);
+    const cancelMentions = entryIds.length > 0
+      ? `\n\n通知: ${entryIds.map((id) => `<@${id}>`).join(' ')}`
+      : '';
+
+    // 返信は同一チャンネル内でしか成立しないため、投稿先は募集カードのチャンネルに合わせる
+    const cancelChannelId = summary.channelId || channelId;
+    await fetchWithRetry(`https://discord.com/api/v10/channels/${cancelChannelId}/messages`, {
       method: 'POST',
       headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: cancelContent, components: substituteComponents })
+      body: JSON.stringify({
+        content: cancelContent + cancelMentions,
+        components: substituteComponents,
+        allowed_mentions: { users: entryIds },
+        ...(summary.messageId ? { message_reference: { message_id: summary.messageId, fail_if_not_exists: false } } : {})
+      })
     });
-    console.log(`[Check2000] 中止告知＆代替募集ボタンを投稿しました: ${def.name}`);
+    console.log(`[Check2000] 中止告知＆代替募集ボタンを投稿しました: ${def.name}（通知対象 ${entryIds.length}名）`);
 
   } catch (err) {
     console.error('[Check2000] error:', err);

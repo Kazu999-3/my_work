@@ -303,6 +303,28 @@ export function extractPlayersFromEmbed(embed) {
 //   状態の反映は必ず applyDayCardState() 1本を通すこと。
 // ============================================================================
 
+// Discordの制限: Embedのフィールド value は1024文字まで。超えるとメッセージ全体が
+// 400で弾かれ、カードが1枚も投稿されない。参加者が増えた場合や旧カードからの
+// 引き継ぎで超えうるため、入りきらない分は件数だけ示して切り詰める。
+const FIELD_VALUE_LIMIT = 1024;
+
+function renderEntryList(lines) {
+  if (!lines || lines.length === 0) return '▫ まだ誰もいません。最初の1人になりませんか？';
+
+  const out = [];
+  let length = 0;
+  for (const line of lines) {
+    const rest = `…ほか${lines.length - out.length}名`;
+    if (length + line.length + 1 + rest.length + 1 > FIELD_VALUE_LIMIT) {
+      out.push(rest);
+      return out.join('\n');
+    }
+    out.push(line);
+    length += line.length + 1;
+  }
+  return out.join('\n');
+}
+
 /**
  * 募集カードEmbedへ、現在の参加者から導かれる状態（バナー・色・参加者フィールド）を反映する。
  * 新規作成時も更新時もこの関数を通すため、文言の二重管理が発生しない。
@@ -328,7 +350,7 @@ export function applyDayCardState(embed, dayKey, entryLines) {
   embed.fields = [
     {
       name: `👥 参加者 (${status.joined}/${status.capacity}名)`,
-      value: lines.length > 0 ? lines.join('\n') : '▫ まだ誰もいません。最初の1人になりませんか？',
+      value: renderEntryList(lines),
       inline: false,
     },
   ];

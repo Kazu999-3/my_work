@@ -55,7 +55,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'mode (event_notify=人数集計アナウンス / weekly_recruit=定期募集 / check_2000=20:00開催判定 / weekly_recruit_migrate=旧カードから2枚構成への移行)'
+        description: 'mode (event_notify=人数集計アナウンス / weekly_recruit=定期募集 / check_2000=20:00開催判定 / weekly_recruit_migrate=旧カードから2枚構成への移行 / weekly_recruit_reset=今週のカードを作り直す)'
         required: false
         default: ''
 
