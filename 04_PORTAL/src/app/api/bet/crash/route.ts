@@ -253,8 +253,13 @@ export async function POST(req: Request) {
 
       // 判定の内訳を残す（2026-09-23）。「画面は飛行中なのに爆発扱い」の原因追跡用。
       // 失敗しても利確処理そのものは止めない。
+      // ⚠️ ここは必ず await すること。最初は投げっぱなし（void）にしていたが、
+      //    サーバーレス関数はレスポンスを返した時点で実行を凍結・終了できるため、
+      //    応答後に残った書き込みは完了が保証されない。実際それで1件も記録されず、
+      //    却下されたラウンドの原因を再び推測するしかない状態になった。
       if (supabaseAdmin) {
-        void supabaseAdmin
+        try {
+          await supabaseAdmin
           .from('crash_sessions')
           .update({
             settle_note: {
@@ -270,8 +275,10 @@ export async function POST(req: Request) {
                 : 'win',
             },
           })
-          .eq('game_id', gameId)
-          .then(undefined, () => {});
+          .eq('game_id', gameId);
+        } catch {
+          // 診断用の記録なので、失敗しても利確処理は続行する
+        }
       }
 
       if (!isCrashed) {
@@ -368,6 +375,32 @@ export async function POST(req: Request) {
           ok: true,
           crashed: false,
         });
+      }
+
+      // 爆発通知が「実際の爆発時刻からどれだけ遅れて出ているか」を記録する（2026-09-23）。
+      // ロングポーリングが効いているかの実測値。notifiedAtSec - crashAtSec が遅れ。
+      // ここが大きいと、クライアントは爆発後も倍率を伸ばし続け、画面が飛行中のまま
+      // 爆発値を追い越す＝利確が弾かれる、という症状になる。
+      // 利確側の判定内訳を上書きしないよう、まだ何も書かれていないときだけ書く。
+      if (supabaseAdmin) {
+        try {
+          await supabaseAdmin
+            .from('crash_sessions')
+            .update({
+              settle_note: {
+                verdict: 'crash_notified',
+                crashPoint: actualCrash,
+                crashAtSec: Number(crashTimeSec.toFixed(3)),
+                notifiedAtSec: Number(((Date.now() - startedAtMs) / 1000).toFixed(3)),
+                longPoll: !!wait,
+                handlerMs: Date.now() - requestAtMs,
+              },
+            })
+            .eq('game_id', gameId)
+            .is('settle_note', null);
+        } catch {
+          // 診断用の記録なので失敗しても続行する
+        }
       }
 
       // すでに爆発時刻を過ぎた場合のみ、答え合わせとして開示
