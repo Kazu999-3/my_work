@@ -138,11 +138,88 @@ function lotteryReport() {
   console.log(`   （1等当選確率 ${FIRST_PRIZE_PROB * 100}% は「金庫がいつ放出されるか」のみを決め、総量には影響しない）`);
 }
 
+
+// ============================================================
+// 🌿 ブッシュ・スカウト  src/lib/minesMath.ts
+// ============================================================
+// ⚠️ src/lib/minesMath.ts の式と一致させること
+const MINES_GRID = 25;
+const MINES_RTP = 0.95;
+const MINES_MAX_PAYOUT = 50000;
+const MINE_COUNTS = [1, 3, 5, 10];
+
+function minesSurvival(mines, n) {
+  const safe = MINES_GRID - mines;
+  if (n <= 0) return 1;
+  if (n > safe) return 0;
+  let p = 1;
+  for (let i = 0; i < n; i++) p *= (safe - i) / (MINES_GRID - i);
+  return p;
+}
+
+function minesMultiplier(mines, n) {
+  if (n <= 0) return 0;
+  const raw = MINES_RTP / minesSurvival(mines, n);
+  return Math.max(1, Math.floor(raw * 100) / 100);
+}
+
+function minesReport(n) {
+  console.log('');
+  console.log('🌿 ブッシュ・スカウト (解析値 ＋ ' + n.toLocaleString() + '回実測)');
+  console.log('   ※ プレイヤーが引き返すマス数を選ぶゲームなので、還元率は「どのマス数で');
+  console.log('      引き返しても期待値が同じ」ことで保証される。全マス数について検算する。');
+
+  for (const mines of MINE_COUNTS) {
+    const safe = MINES_GRID - mines;
+    let min = 1;
+    let max = 0;
+    for (let k = 1; k <= safe; k++) {
+      const ev = minesSurvival(mines, k) * minesMultiplier(mines, k);
+      min = Math.min(min, ev);
+      max = Math.max(max, ev);
+    }
+    console.log(
+      `   キノコ${String(mines).padStart(2)}個  1マス目で踏む確率 ${pct(mines / MINES_GRID)}` +
+      `  安全マス${String(safe).padStart(2)}個  RTP ${pct(min)} 〜 ${pct(max)}`
+    );
+  }
+  console.log('   ※ 実際に開けられるマス数は、払い戻し上限50,000コインに当たるまで（ベット額で変わる）。');
+  console.log('   → 幅が出るのは表示倍率を小数第2位で切り捨てているため（プレイヤー不利側へ寄る）。');
+  console.log('      キノコ1個・1マスだけは元返し(1.00倍)を保証しているので 96.00% になる。');
+
+  // 実測: 「3マス開けたら引き返す」戦略でモンテカルロ
+  const BET = 100;
+  for (const mines of MINE_COUNTS) {
+    const target = 3;
+    let wagered = 0;
+    let returned = 0;
+    for (let r = 0; r < n; r++) {
+      const tiles = Array.from({ length: MINES_GRID }, (_, i) => i);
+      for (let i = tiles.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
+      }
+      const minePos = new Set(tiles.slice(0, mines));
+      const picks = Array.from({ length: MINES_GRID }, (_, i) => i);
+      for (let i = picks.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [picks[i], picks[j]] = [picks[j], picks[i]];
+      }
+      wagered += BET;
+      let alive = true;
+      for (let k = 0; k < target; k++) if (minePos.has(picks[k])) { alive = false; break; }
+      if (alive) returned += Math.min(Math.floor(BET * minesMultiplier(mines, target)), MINES_MAX_PAYOUT);
+    }
+    console.log(`   [実測] キノコ${String(mines).padStart(2)}個 / 3マスで引き返す戦略 → RTP ${pct(returned / wagered)}`);
+  }
+}
+
 // ============================================================
 console.log('='.repeat(70));
 console.log(` KTMカジノ RTPレポート  (試行回数: ${N.toLocaleString()})`);
 console.log('='.repeat(70));
 slotReport();
 baccaratReport(N);
+minesReport(Math.min(N, 500_000));
 lotteryReport();
 console.log('\n' + '='.repeat(70));

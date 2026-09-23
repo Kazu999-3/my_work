@@ -8,6 +8,7 @@ import { ArrowLeft, Coins, Info, AlertTriangle } from 'lucide-react';
  * 配当テーブルや抽選確率を変更したら必ず `node scripts/casino_rtp_report.js` を実行し、
  * 出力された実測値でこのページを更新すること。
  * （2026-09-22 実測。スロットは固定テーブルのため解析値、他は200万回試行）
+ * （2026-09-23 ブッシュ・スカウトを追加。倍率は解析値、還元率は全マス数の期待値を検算した範囲）
  */
 export const metadata = {
   title: 'カジノ ルール ＆ 確率 | KTM Portal',
@@ -46,6 +47,16 @@ const SLOT_ROWS = [
   { label: '💎 Hextechジェム ×2', prob: '2.0%', mult: '×1.5' },
   { label: '🐹 ポロ ×2', prob: '5.0%', mult: '×1（元返し）' },
   { label: 'ハズレ', prob: '69.8%', mult: '×0' },
+];
+
+// 倍率は src/lib/minesMath.ts の payoutMultiplier() から算出した値。
+// 「最大」はベット100コイン時の上限（払い戻し上限50,000コインに当たるまで）。
+const MINES_ROWS = [
+  { label: '1マス', m1: '1.00', m3: '1.07', m5: '1.18', m10: '1.58' },
+  { label: '2マス', m1: '1.03', m3: '1.23', m5: '1.50', m10: '2.71' },
+  { label: '3マス', m1: '1.07', m3: '1.41', m5: '1.91', m10: '4.80' },
+  { label: '5マス', m1: '1.18', m3: '1.91', m5: '3.25', m10: '16.80' },
+  { label: '最大（ベット100時）', m1: '23.75 (24マス)', m3: '218.50 (20マス)', m5: '400.58 (16マス)', m10: '387.77 (9マス)' },
 ];
 
 const BACCARAT_ROWS = [
@@ -135,6 +146,63 @@ export default function CasinoRulesPage() {
           <p className="text-[11px] text-stone-500 mt-2">
             何かしらの配当が出る確率は 30.2%。ハウスエッジ（胴元の取り分）は 7.0% です。
           </p>
+        </section>
+
+        {/* ブッシュ・スカウト */}
+        <section className={CARD}>
+          <h2 className={H2}>
+            🌿 ブッシュ・スカウト <RtpBadge rtp={0.95} />
+          </h2>
+          <p className="text-xs text-stone-600 mb-3">
+            5×5の25個のブッシュのうち、選んだ数だけ<strong>敵のキノコ（トラップ）</strong>が隠れています。
+            ブッシュを1つ開けるたびに倍率が上がり、<strong>いつでも引き返して（利確して）その時点の倍率を受け取れます</strong>。
+            キノコを踏んだ時点でベット額は没収。キノコの数は 1 / 3 / 5 / 10 個、ベット額は 100 / 500 / 1000 コインから選びます。
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs md:text-sm border-collapse">
+              <thead>
+                <tr className="bg-stone-100">
+                  <th className={TH}>開けた数</th>
+                  <th className={TH}>キノコ1個</th>
+                  <th className={TH}>キノコ3個</th>
+                  <th className={TH}>キノコ5個</th>
+                  <th className={TH}>キノコ10個</th>
+                </tr>
+              </thead>
+              <tbody>
+                {MINES_ROWS.map((r) => (
+                  <tr key={r.label}>
+                    <td className={`${TD} font-black`}>{r.label}</td>
+                    <td className={`${TD} font-mono`}>×{r.m1}</td>
+                    <td className={`${TD} font-mono`}>×{r.m3}</td>
+                    <td className={`${TD} font-mono`}>×{r.m5}</td>
+                    <td className={`${TD} font-mono font-black`}>×{r.m10}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <ul className="text-[11px] md:text-xs text-stone-600 mt-3 space-y-1.5 list-disc list-inside leading-relaxed">
+            <li>
+              倍率は「そこまで無事に開けられる確率」の逆数に 0.95 を掛けたものです。そのため
+              <strong>何マスで引き返しても期待値は同じ</strong>で、「何マスまで粘るのが得か」という正解はありません。
+            </li>
+            <li>
+              1ラウンドの払い戻しは <strong className="font-mono">50,000コイン</strong> が上限で、到達すると自動で引き返します。
+              ベット額が小さいほど高い倍率まで伸ばせます（100コインなら最大500倍、1000コインなら最大50倍）。
+            </li>
+            <li>
+              実際の還元率は <strong className="font-mono">94.2% 〜 96.0%</strong>。表示倍率を小数第2位で切り捨てているぶん
+              95%をわずかに下回ります（キノコ1個で1マスだけ開けた場合のみ、元返しを保証しているため 96.0%）。
+            </li>
+            <li>
+              キノコの位置は<strong>ラウンド開始時にサーバー側で確定</strong>し、決着するまでクライアントには一切送られません。
+              開けるマスによって後から位置が変わることはありません。
+            </li>
+            <li>
+              時間経過で倍率が変わる要素は一切ないため、通信の速さや回線の状態が結果に影響することはありません。
+            </li>
+          </ul>
         </section>
 
         {/* バカラ */}

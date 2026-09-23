@@ -11,6 +11,7 @@ import { calculateBetOdds } from '../../lib/betOdds';
 import OmikujiModal, { OmikujiData } from './components/OmikujiModal';
 import KtmSlotGame from './components/KtmSlotGame';
 import KtmBaccaratGame from './components/KtmBaccaratGame';
+import KtmMinesGame from './components/KtmMinesGame';
 
 interface RankingPlayer {
   name: string;
@@ -112,7 +113,7 @@ const SHOP_ITEMS = [
 
 export default function CasinoPage() {
   const { user, loginWithDiscord, logout, refreshUser } = useCurrentUser();
-  const [activeTab, setActiveTab] = useState<'bet' | 'slot' | 'baccarat' | 'shop'>('bet');
+  const [activeTab, setActiveTab] = useState<'bet' | 'slot' | 'mines' | 'baccarat' | 'shop'>('bet');
   const [ranking, setRanking] = useState<RankingPlayer[]>([]);
   const [activeMatch, setActiveMatch] = useState<any | null>(null);
   const [betTeam, setBetTeam] = useState<'BLUE' | 'RED'>('BLUE');
@@ -647,11 +648,12 @@ export default function CasinoPage() {
 
       <div className="max-w-[1200px] w-full mx-auto px-4 md:px-8 py-8 space-y-6">
 
-        {/* 4大カジノ機能タブナビゲーション */}
+        {/* カジノ機能タブナビゲーション */}
         <div className="flex items-center justify-center gap-1.5 p-1.5 rounded-2xl bg-stone-200/80 text-stone-700 max-w-xl mx-auto shadow-sm border border-stone-300 overflow-x-auto scrollbar-none">
           {[
             { id: 'bet', label: '🎯 勝敗予想' },
             { id: 'slot', label: '🎰 KTMスロット' },
+            { id: 'mines', label: '🌿 ブッシュ・スカウト' },
             { id: 'baccarat', label: '🃏 バカラ' },
             { id: 'shop', label: '🛒 ショップ' },
           ].map((tab) => (
@@ -1295,6 +1297,19 @@ export default function CasinoPage() {
           </div>
         )}
 
+
+        {/* タブ3: 🌿 ブッシュ・スカウト */}
+        {activeTab === 'mines' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <KtmMinesGame
+              userCoins={user?.coins ?? 1000}
+              onBalanceChange={() => {
+                fetchBetData();
+                refreshUser();
+              }}
+            />
+          </div>
+        )}
 
         {/* タブ4: 🃏 バカラ */}
         {activeTab === 'baccarat' && (
