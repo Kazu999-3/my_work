@@ -26,7 +26,9 @@ export function createRecruitEmbed(metadata, tierLine) {
   const modeIcon = isCustom ? '⚔️' : metadata.mode === 'ARAM' ? '❄️' : '🎮';
   let title = `${modeIcon} 【${metadata.mode}募集】 [${currentCount}/${maxCount}人]`;
   if (isFull) {
-    title = `🎉 【${metadata.mode}】メンバー確定！ [${currentCount}/${maxCount}人] 出発準備完了！`;
+    title = isCustom
+      ? `🎉 【${metadata.mode}】メンバー確定！ [${currentCount}/${maxCount}人] 出発準備完了！`
+      : `🔒 [受付終了] 🎉 【${metadata.mode}】メンバー確定！ [${currentCount}/${maxCount}人]`;
   } else if (isAlmostFull) {
     title = `🔥 【あと${remaining}名】で出発！ [${currentCount}/${maxCount}人]`;
   }
@@ -133,25 +135,23 @@ export function createRecruitButtons(metadata) {
         },
       ],
     });
-  } else {
-    const fullRow = [];
-    if (isCustom) {
-      fullRow.push({
-        type: 2,
-        label: "🌐 Webバランサーでチーム分け",
-        style: 5, // リンク
-        url: `${CONFIG.PORTAL_URL}/balancer`,
-      });
-    }
-    fullRow.push({
-      type: 2,
-      label: isCustom ? "👁️ 補欠/見学に入る" : "👁️ 見学に入る",
-      style: 2,
-      custom_id: `toggle_spectate:${metadata.owner}`,
-    });
+  } else if (isCustom) {
     comps.push({
       type: 1,
-      components: fullRow,
+      components: [
+        {
+          type: 2,
+          label: "🌐 Webバランサーでチーム分け",
+          style: 5, // リンク
+          url: `${CONFIG.PORTAL_URL}/balancer`,
+        },
+        {
+          type: 2,
+          label: "👁️ 補欠/見学に入る",
+          style: 2,
+          custom_id: `toggle_spectate:${metadata.owner}`,
+        }
+      ],
     });
   }
 
@@ -374,7 +374,7 @@ export function buildDayRecruitEmbed(target, entryLines = []) {
   return embed;
 }
 
-/** 1日分の参加ボタン（フル / 1戦のみ / 途中参加）を組み立てる */
+/** 1日分の参加ボタン（フル / 1戦のみ / 途中参加 / 辞退）を組み立てる */
 export function buildDayRecruitComponents(dayKey) {
   const def = getDayDef(dayKey);
   return [
@@ -384,6 +384,7 @@ export function buildDayRecruitComponents(dayKey) {
         { type: 2, label: `${def.emoji} フル参加`, style: def.buttonStyle, custom_id: `${def.joinPrefix}:full` },
         { type: 2, label: '⏱️ 1戦のみ (21:00〜)', style: 2, custom_id: `${def.joinPrefix}:single` },
         { type: 2, label: '🌙 途中参加 (2戦目〜)', style: 2, custom_id: `${def.joinPrefix}:late` },
+        { type: 2, label: '❌ 辞退', style: 4, custom_id: `${def.joinPrefix}:leave` },
       ],
     },
   ];

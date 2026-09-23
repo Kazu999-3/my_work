@@ -62,6 +62,8 @@ export async function handleScheduledEvent(event, env, ctx) {
     } catch (e) {
       console.warn('[WeeklyReport] 月曜の定期カスタム締め切りに失敗:', e);
     }
+    // 放置された古いアドホック募集（6時間以上経過）も静かに受付終了にする
+    await cleanupStaleAdhocRecruitments(env);
   } else if (
     cronExpression.includes("0 11 * * 7,1") || cronExpression.includes("0 11 * * 7") ||
     cronExpression.includes("0 11 * * 1") ||
@@ -139,6 +141,42 @@ async function sendRecruitmentReminders(env) {
     }
   } catch (err) {
     console.error("sendRecruitmentReminders error:", err);
+  }
+}
+
+/** 投稿から6時間以上経過したオープンなアドホック（ノーマル/ARAM/都度カスタム）募集を静かに受付終了にする（通知なし） */
+async function cleanupStaleAdhocRecruitments(env) {
+  try {
+    const channelId = CONFIG.RECRUIT_CHANNEL_ID || CONFIG.PERIODIC_RECRUIT_CHANNEL_ID;
+    if (!channelId) return;
+    const recent = await fetchRecentBotMessages(env, channelId);
+    const sixHoursAgo = Date.now() - 6 * 60 * 60 * 1000;
+
+    for (const m of recent.slice(0, 10)) {
+      const embed = m.embeds?.[0];
+      if (!embed || isClosedCard(m)) continue;
+      const title = embed.title || '';
+      // 定期カスタムは別管理のため除外
+      if (title.includes('土曜・本戦カスタム') || title.includes('日曜・お祭りカスタム')) continue;
+
+      const createdTime = new Date(m.timestamp).getTime();
+      if (createdTime < sixHoursAgo) {
+        const closedEmbed = {
+          ...embed,
+          title: markTitleClosed(title),
+          color: 0x7f8c8d
+        };
+        await fetchWithRetry(`https://discord.com/api/v10/channels/${m.channel_id || channelId}/messages/${m.id}`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ embeds: [closedEmbed], components: [] })
+        }).catch(() => {});
+        await markRecruitmentStatus(env, m.id, 'closed').catch(() => {});
+        console.log(`[AutoClose] 6時間経過した募集 ${m.id} を静かに受付終了にしました`);
+      }
+    }
+  } catch (e) {
+    console.warn('[AutoClose] アドホック募集の自動クローズに失敗:', e);
   }
 }
 
@@ -431,6 +469,7 @@ async function postWeeklyRecruitment(env, options = {}) {
     //    直前に投稿したばかりのカードを自分で閉じてしまうのを防ぐ。
     const recentMessages = await fetchRecentBotMessages(env, targetChannelId);
     await closePreviousPeriodicRecruitments(env, targetChannelId, targets, recentMessages);
+    await cleanupStaleAdhocRecruitments(env);
 
     // 2. 土曜・日曜のカードをそれぞれ投稿する（片方が失敗しても、もう片方は投稿する）
     let posted = 0;

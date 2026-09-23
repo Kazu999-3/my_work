@@ -406,12 +406,15 @@ export async function handleButtonInteraction(interaction, env, ctx) {
 
         const entryLine = `- ${userMention}${styleBadge}${expBadgeStr}${rankStr}${lanePrefStr}`;
 
-        // --- 参加者一覧のトグル（同じボタンをもう一度押したら取り消し、別ボタンならスタイル変更）---
+        // --- 参加者一覧の更新（辞退なら削除、通常ならトグル/スタイル変更）---
         const currentLines = readDayEntryLines(targetEmbed);
         const existingLine = currentLines.find((l) => l.includes(userMention));
         const nextLines = currentLines.filter((l) => !l.includes(userMention));
-        if (!existingLine || !existingLine.includes(styleBadge)) {
-          nextLines.push(entryLine);
+
+        if (participationStyle !== 'leave') {
+          if (!existingLine || !existingLine.includes(styleBadge)) {
+            nextLines.push(entryLine);
+          }
         }
 
         applyDayCardState(targetEmbed, dayKey, nextLines);
@@ -420,6 +423,15 @@ export async function handleButtonInteraction(interaction, env, ctx) {
           embeds: [targetEmbed],
           components: interaction.message.components
         });
+
+        // ★ あと1名（9名）になった瞬間にラストワン促進の返信を自動投稿
+        if (nextLines.length === 9 && (!existingLine || currentLines.length !== 9)) {
+          const promptContent = `🔥 **【${def.shortName}: あと1名で開催確定！】** どなたか最後の1枠で参加しませんか？✨`;
+          await sendDiscordMessage(`channels/${channelId}/messages`, botToken, "POST", {
+            content: promptContent,
+            message_reference: { message_id: msgId, fail_if_not_exists: false }
+          }).catch((e) => console.warn("あと1名リマインドの送信失敗:", e));
+        }
       } catch (err) {
         console.error("join_periodic error:", err);
       }
@@ -877,6 +889,11 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         console.warn('Recruit reward API error:', rewardErr);
       }
 
+      // ノーマル/ARAM募集は満員確定と同時にDBのrecruitmentsステータスもclosedに更新（通知なし・内部状態整理）
+      if (metadata.mode === 'ノーマル' || metadata.mode === 'ARAM') {
+        await markRecruitmentStatus(env, interaction.message.id, 'closed').catch(() => {});
+      }
+
       // 確定通知は募集パネルへの「返信」としてぶら下げ、メンションは参加者＋募集主に限定する。
       // 独立メッセージ(Followup)のままだとチャンネルの流れから浮くうえ、allowed_mentions未指定のため
       // content内のメンションが無条件に解決されていた(削除・終了通知は既にこの方式に統一済み)。
@@ -908,6 +925,23 @@ export async function handleButtonInteraction(interaction, env, ctx) {
       : "\n🚨 **定員に達したため締め切りました。ポータル画面からチーム分けを行ってください。**";
       
     return Response.json({ type: 7, data: { content: createMessageContent(metadata) + closingMessage, embeds: [createRecruitEmbed(metadata)], components: createRecruitButtons(metadata) } });
+  }
+
+  // ★ あと1名になった瞬間にラストワン促進の返信を自動投稿（ノーマル/カスタム共用）
+  if (metadata.joined.length === metadata.maxCount - 1 && (customId.startsWith('join_any') || customId.startsWith('join_role:'))) {
+    ctx.waitUntil((async () => {
+      try {
+        const channelId = interaction.channel_id || interaction.channel?.id;
+        if (!channelId || !botToken) return;
+        const targetPrompt = metadata.mode === 'ノーマル'
+          ? `🔥 **【あと1名で出発できます！】** どなたか最後の1枠で合流しませんか？🎮`
+          : `🔥 **【あと1名で確定！】** どなたか最後の1枠で参加しませんか？✨`;
+        await sendDiscordMessage(`channels/${channelId}/messages`, botToken, "POST", {
+          content: targetPrompt,
+          message_reference: { message_id: interaction.message.id, fail_if_not_exists: false }
+        }).catch(() => {});
+      } catch (e) {}
+    })());
   }
 
   // ランク帯の内訳表示は定期募集のみに限定するため、都度募集のここでは付与しない(#③)
