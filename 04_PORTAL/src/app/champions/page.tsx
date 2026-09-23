@@ -76,7 +76,7 @@ function ChampionsShell() {
         initial={{ y: -6, opacity: 0 }} 
         animate={{ y: 0, opacity: 1 }} 
         transition={{ duration: 0.2 }}
-        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 bg-white border border-stone-200/80 rounded-2xl shadow-xs"
+        className="flex flex-col md:flex-row md:items-center justify-between gap-3 px-4 py-3 bg-white border border-stone-200/80 rounded-2xl shadow-xs"
       >
         <div className="flex items-center gap-3">
           <div className="text-2xl p-1.5 bg-amber-50 rounded-xl border border-amber-200/60 shrink-0">👑</div>
@@ -93,38 +93,52 @@ function ChampionsShell() {
           </div>
         </div>
 
-        {/* 右側の整理されたサブナビゲーション */}
-        <div className="flex items-center gap-2 self-end sm:self-auto flex-wrap">
-          {scope !== 'champions' && (
-            <button
-              onClick={() => handleScopeChange('champions')}
-              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500 text-stone-950 hover:bg-amber-400 transition cursor-pointer shadow-xs"
-            >
-              👑 チャンピオン辞典に戻る
-            </button>
-          )}
-          {scope === 'champions' && (
-            <>
-              <button
-                onClick={() => handleScopeChange('lane-guides')}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 transition cursor-pointer"
-              >
-                📖 レーン・マクロ攻略
-              </button>
-              <button
-                onClick={() => handleScopeChange('library')}
-                className="px-3 py-1.5 rounded-xl text-xs font-bold text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 transition cursor-pointer"
-              >
-                📒 攻略記事一覧
-              </button>
-            </>
-          )}
+        {/* 中央: チャンピオン攻略 ＆ 辞典ヘルス 切替タブ */}
+        <div className="flex items-center gap-1.5 p-1 bg-stone-100 rounded-xl border border-stone-200 self-start md:self-auto">
+          <button
+            type="button"
+            onClick={() => handleScopeChange('champions')}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              scope === 'champions'
+                ? 'bg-white text-stone-900 shadow-xs font-black scale-101'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
+            }`}
+          >
+            <span>👑 チャンピオン攻略</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleScopeChange('health')}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              scope === 'health'
+                ? 'bg-white text-amber-700 shadow-xs font-black scale-101'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
+            }`}
+          >
+            <span>🩺 辞典ヘルス</span>
+          </button>
+        </div>
+
+        {/* 右側の整理されたクイックリンク */}
+        <div className="flex items-center gap-2 self-end md:self-auto flex-wrap">
+          <Link
+            href="/lane-guides"
+            className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 transition flex items-center gap-1"
+          >
+            <span>📖 レーン攻略</span>
+          </Link>
+          <Link
+            href="/library"
+            className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 transition flex items-center gap-1"
+          >
+            <span>📒 攻略ライブラリ</span>
+          </Link>
           {isAuthenticated && (
             <Link
               href="/admin/knowledge"
-              className="px-3 py-1.5 rounded-xl text-xs font-bold text-amber-700 hover:text-amber-900 bg-amber-50 hover:bg-amber-100/80 border border-amber-200 transition flex items-center gap-1"
+              className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-pink-700 hover:text-pink-900 bg-pink-50 hover:bg-pink-100/80 border border-pink-200 transition flex items-center gap-1"
             >
-              <span>⚙️ ナレッジ管理</span>
+              <span>📥 戦術取込</span>
             </Link>
           )}
         </div>
@@ -133,10 +147,10 @@ function ChampionsShell() {
       {/* メインコンテンツ */}
       <div className="flex-1 min-w-0">
         {scope === 'champions' && <DictionaryTab isAdmin={isAuthenticated} />}
+        {scope === 'health' && <DictHealthView />}
         {scope === 'lane-guides' && <LaneGuidesView />}
         {scope === 'library' && <LibraryTabContent />}
         {scope === 'ingest' && <KnowledgeIngestView />}
-        {scope === 'health' && <DictHealthView />}
       </div>
     </div>
   );

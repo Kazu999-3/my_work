@@ -26,7 +26,9 @@ import {
   Globe,
   Gift,
   Check,
-  History
+  History,
+  Library,
+  Download
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import FavoritesPanel from './FavoritesPanel';
@@ -194,13 +196,15 @@ const GENERAL_MENU_ITEMS: MenuItem[] = [
   // ページ自体は /history に残っており、一般メンバーも閲覧できる。
   // コミュニティ・戦績
   { id: 'leaderboard', label: '順位表 ＆ 名簿', shortLabel: '順位・名簿', icon: Trophy, href: '/leaderboard', color: 'text-yellow-600', activeBg: 'bg-yellow-500/15', section: 'コミュニティ' },
-  // ガイド
-  { id: 'guide', label: '使い方 ＆ 更新情報', shortLabel: 'ガイド', icon: BookOpen, href: '/guide', color: 'text-emerald-600', activeBg: 'bg-emerald-500/15', section: 'ガイド' },
+  // ガイド ＆ 攻略
+  { id: 'library', label: '攻略ライブラリ', shortLabel: 'ライブラリ', icon: Library, href: '/library', color: 'text-amber-600', activeBg: 'bg-amber-500/15', section: 'ガイド ＆ 攻略' },
+  { id: 'guide', label: '使い方 ＆ 更新情報', shortLabel: 'ガイド', icon: BookOpen, href: '/guide', color: 'text-emerald-600', activeBg: 'bg-emerald-500/15', section: 'ガイド ＆ 攻略' },
 ];
 
-// 🛡️ 管理者向け追加メニュー（攻略辞典・パーソナルコーチ・外部分析・大会管理・運用）
+// 🛡️ 管理者向け追加メニュー（攻略辞典・戦術取込・パーソナルコーチ・外部分析・大会管理・運用）
 const ADMIN_EXTRA_ITEMS: MenuItem[] = [
   { id: 'champions', label: 'チャンピオン攻略辞典', shortLabel: '攻略辞典', icon: BookHeart, href: '/champions', color: 'text-amber-600', activeBg: 'bg-amber-500/15', section: '管理者専用', adminOnly: true },
+  { id: 'knowledge-ingest', label: '戦術取り込み (AI解析)', shortLabel: '戦術取込', icon: Download, href: '/admin/knowledge', color: 'text-pink-600', activeBg: 'bg-pink-500/15', section: '管理者専用', adminOnly: true },
   { id: 'coach', label: 'パーソナルコーチ', shortLabel: 'コーチ', icon: Sparkles, href: '/coach', color: 'text-purple-600', activeBg: 'bg-purple-500/15', section: '管理者専用', adminOnly: true },
   { id: 'analyzer', label: 'プレイヤー外部分析', shortLabel: '外部解析', icon: Globe, href: '/analyzer', color: 'text-sky-600', activeBg: 'bg-sky-500/15', section: '管理者専用', adminOnly: true },
   { id: 'ktm-admin', label: 'KTM大会管理', shortLabel: '大会管理', icon: Shield, href: '/ktm-admin', color: 'text-indigo-600', activeBg: 'bg-indigo-500/15', section: '管理者専用', adminOnly: true },
