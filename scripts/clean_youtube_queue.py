@@ -179,6 +179,96 @@ def cmd_retry_rate_limited(apply: bool):
     print("✅ %d/%d 件を 'pending' (リトライ0) に戻しました。" % (ok, len(targets)))
 
 
+def cmd_retry_video_analysis(apply: bool, limit: int = 5):
+    """字幕なし(error_no_transcript)や生成失敗(failed/error_generation)の動画を
+    Gemini映像直接解析(gemini_analyze_video)で直接読み取って一括救済・ナレッジ化する。
+    """
+    rows = fetch_all_rows(
+        "youtube_queue",
+        "id,status,title,url,channel_name,retry_count",
+        "status=in.(error_no_transcript,error_generation,failed)&order=updated_at.desc"
+    )
+    if not rows:
+        print("映像解析で救済対象となるエラー動画はありません。")
+        return
+
+    targets = rows[:limit] if limit > 0 else rows
+    mode = "DB反映＆実解析" if apply else "ドライラン"
+    print("")
+    print("🎬 映像直接解析による救済対象: %d 件 (全体エラー: %d 件, モード: %s)" % (len(targets), len(rows), mode))
+    for r in targets:
+        clean_title = re.sub(ERROR_SUFFIX_RE, "", r.get("title") or "").strip()
+        print("  - [%s] ID %s (%s): %s" % (r["status"], r["id"], r.get("channel_name") or "不明", clean_title[:50]))
+
+    if not apply:
+        print("")
+        print("💡 実際にGemini映像直接解析を実行して保存するには --apply を付けて実行してください。")
+        print("   例: python scripts/clean_youtube_queue.py --retry-video-analysis --apply --limit 1")
+        return
+
+    # 実解析の実行
+    sys.path.append(str(ROOT_DIR / "scripts"))
+    try:
+        from youtube_worker import gemini_analyze_video, sb
+    except ImportError as e:
+        print(f"❌ youtube_workerのインポートに失敗しました: {e}")
+        return
+
+    success_count = 0
+    for idx, it in enumerate(targets):
+        vid, url = it["id"], it.get("url") or f"https://www.youtube.com/watch?v={it['id']}"
+        raw_title = re.sub(ERROR_SUFFIX_RE, "", it.get("title") or "").strip()
+        channel = it.get("channel_name") or "YouTube Channel"
+        print(f"\n▶ [{idx+1}/{len(targets)}] 映像直接解析を開始: {raw_title} ({vid})")
+
+        try:
+            # 既に personal_knowledge に保存済みか二重チェック
+            existing = sb("GET", f"personal_knowledge?source_url=eq.{url}&select=id,title")
+            if existing:
+                sb("PATCH", f"youtube_queue?id=eq.{vid}", {"status": "completed"})
+                print(f"  ✅ 完了（既存の要約を検出）: {existing[0].get('title')}")
+                success_count += 1
+                continue
+
+            # Gemini 映像直接解析を実行
+            data = gemini_analyze_video(url, raw_title, channel)
+
+            video_title = data.get("title") or raw_title
+            summary_content = data.get("summary") or ""
+            video_meta_header = (
+                f"> 📺 **元動画情報**\n"
+                f"> - **動画タイトル**: {video_title}\n"
+                f"> - **チャンネル**: {channel}\n"
+                f"> - **動画リンク**: [{url}]({url})\n\n"
+                f"---\n\n"
+            )
+            final_content = video_meta_header + summary_content if "元動画情報" not in summary_content else summary_content
+
+            # personal_knowledge へ保存 (review_status='pending')
+            sb("POST", "personal_knowledge", [{
+                "title": video_title,
+                "content": final_content,
+                "raw_content": f"映像直接解析による自動抽出 (ID: {vid})",
+                "source_url": url,
+                "genre": data.get("genre") or "LoL攻略",
+                "tags": data.get("tags") or [],
+                "champion": data.get("champion") or "Unknown",
+                "review_status": "pending",
+            }], prefer="return=minimal")
+
+            # キューを completed に更新
+            sb("PATCH", f"youtube_queue?id=eq.{vid}", {"status": "completed", "title": video_title})
+            print(f"  ✨ 解析・ナレッジ化成功: {video_title}")
+            success_count += 1
+
+        except Exception as e:
+            print(f"  ❌ 映像解析エラー ({vid}): {e}")
+
+    print(f"\n============================================================")
+    print(f" 🎉 救済バッチ完了: {success_count}/{len(targets)} 件を解析・ナレッジ化しました。")
+    print(f"============================================================")
+
+
 def main():
     parser = argparse.ArgumentParser(description="YouTube解析キュー監視 ＆ クリーンアップ")
     parser.add_argument("--status", action="store_true", help="キュー集計とエラー動画一覧を表示")
@@ -186,12 +276,17 @@ def main():
     parser.add_argument("--retry-failed", action="store_true", help="エラー動画をpendingに戻して再試行")
     parser.add_argument("--retry-rate-limited", action="store_true",
                         help="レート制限(429)で止まった動画だけをpendingに戻す")
+    parser.add_argument("--retry-video-analysis", action="store_true",
+                        help="字幕なし/エラー動画をGemini映像直接解析で救済・ナレッジ化")
+    parser.add_argument("--limit", type=int, default=5, help="一度に処理する動画の最大件数 (デフォルト: 5件, 0で全件)")
     parser.add_argument("--apply", action="store_true", help="DB更新を実際に適用")
 
     args = parser.parse_args()
 
     if args.status:
         cmd_status()
+    elif args.retry_video_analysis:
+        cmd_retry_video_analysis(args.apply, limit=args.limit)
     elif args.retry_rate_limited:
         cmd_retry_rate_limited(args.apply)
     elif args.clean_errors:

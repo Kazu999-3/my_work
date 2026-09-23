@@ -190,6 +190,9 @@ VIDEO_PROMPT = """あなたはLoLのコーチです。この動画から、**視
 - ビルド（構成）……… パワースパイク / ステータス効率 / 対面の脅威 のいずれかで説明する
 どの軸でも説明できないルールは**書かないこと**。「強いから」「プロがやっているから」は理由ではない。
 
+【実演タイムスタンプの記録】
+各判断ルールやコンボ、重要なテクニックが動画内の「何分何秒」で実演・解説されているかを必ず記録してください（例: "02:15"）。
+
 【優先順位】
 「何を差し置いても先にやること」だけを**最大5件**。話題の羅列にしないこと。
 
@@ -198,19 +201,20 @@ VIDEO_PROMPT = """あなたはLoLのコーチです。この動画から、**視
  "summary":"<下記のMarkdown構成で本文>",
  "genre":"<LoL攻略/ビルド/マクロ/その他 から1つ>",
  "tags":["<最大5つ>"],
- "champion":"<主題のチャンピオン英語ID。無ければUnknown>"}
+ "champion":"<主題のチャンピオン英語ID。無ければUnknown>",
+ "key_clips":[{"timestamp":"<MM:SS形式。例: 02:15>", "label":"<実演内容の簡潔な説明>"}]}
 
 summary は次の構成にすること:
 ## 🎬 この動画の種類
 （マクロ / メカニクス / ビルド のどれか。理由の説明軸もここに明記）
 
 ## 🧭 判断ルール
-### ルール1: <短い見出し>
+### ルール1: <短い見出し> [実演: MM:SS]
 - **状況**: いつ・何が成立しているとき
 - **行動**: 何をするか
 - **理由**: 上の軸のどれかで説明
 - **反例**: その条件が崩れたらどうするか
-（ルール2以降も同じ形式で続ける）
+（ルール2以降も同じ形式で続ける。実演時間があれば見出し末尾に [実演: MM:SS] を付与）
 
 ## 🥇 優先順位（最大5件）
 
@@ -221,6 +225,62 @@ summary は次の構成にすること:
 （対象レート帯・パッチ・前提知識。動画から読み取れなければ「明示なし」と書く）
 
 日本語で書くこと。チャンピオン名・アイテム名・ルーン名などの固有名詞のみ英語可。"""
+
+
+def parse_timestamp_to_seconds(ts_str):
+    """'02:15' や '1:23:45' を秒数に変換"""
+    try:
+        parts = [int(p) for p in ts_str.strip().split(":")]
+        if len(parts) == 2:
+            return parts[0] * 60 + parts[1]
+        elif len(parts) == 3:
+            return parts[0] * 3600 + parts[1] * 60 + parts[2]
+    except Exception:
+        pass
+    return None
+
+
+def build_youtube_timestamp_url(video_url, ts_str):
+    """動画URLとタイムスタンプ文字列から秒数リンクを生成"""
+    sec = parse_timestamp_to_seconds(ts_str)
+    if sec is None:
+        return video_url
+    # 短縮URL(youtu.be/VID) または 通常URL(watch?v=VID)
+    vid_match = re.search(r"(?:v=|youtu\.be/)([a-zA-Z0-9_-]{11})", video_url)
+    if vid_match:
+        return f"https://youtu.be/{vid_match.group(1)}?t={sec}"
+    sep = "&" if "?" in video_url else "?"
+    return f"{video_url}{sep}t={sec}s"
+
+
+def enrich_summary_with_timestamps(summary, key_clips, video_url):
+    """本文中の [実演: MM:SS] や key_clips をクリッカブルな動画リンクへ変換"""
+    if not summary:
+        return summary
+
+    # 1. 本文中の [実演: MM:SS] をリンクに変換
+    def replace_inline_ts(match):
+        ts = match.group(1)
+        url = build_youtube_timestamp_url(video_url, ts)
+        return f"[▶ {ts} 実演シーン]({url})"
+
+    enriched = re.sub(r"\[(?:実演:\s*)?(\d{1,2}:\d{2}(?::\d{2})?)\]", replace_inline_ts, summary)
+
+    # 2. key_clips があれば先頭にタイムスタンプ目次を追加
+    if key_clips and isinstance(key_clips, list):
+        clip_lines = []
+        for c in key_clips:
+            if not isinstance(c, dict): continue
+            ts = c.get("timestamp") or ""
+            label = c.get("label") or ""
+            if ts and label:
+                ts_url = build_youtube_timestamp_url(video_url, ts)
+                clip_lines.append(f"> - [▶ {ts}]({ts_url}) **{label}**")
+        if clip_lines:
+            clip_header = "> ⏱️ **実演チャプター・キーシーン**\n" + "\n".join(clip_lines) + "\n\n"
+            enriched = clip_header + enriched
+
+    return enriched
 
 
 def gemini_analyze_video(url, title, channel):
@@ -258,6 +318,12 @@ def gemini_analyze_video(url, title, channel):
     um = getattr(res, "usage_metadata", None)
     if um:
         print(f"  📊 映像解析: 入力{um.prompt_token_count} 出力{um.candidates_token_count} トークン")
+
+    # 実演タイムスタンプを本文にリンクとして埋め込む
+    key_clips = data.get("key_clips") or []
+    if data.get("summary"):
+        data["summary"] = enrich_summary_with_timestamps(data["summary"], key_clips, url)
+
     return data
 
 
@@ -465,20 +531,22 @@ def main():
             # /admin/knowledgeの「未承認」パネルで人間が承認するまではfetch_personal_knowledge
             # (champion_trend_worker.py)の対象から外れるようにする(2026-08-16、ユーザー要望)。
             # 既存の承認済み記事はそのまま維持し、今後の新規分だけが対象。
-            sb("POST", "personal_knowledge", [{
+            # personal_knowledge へ保存 (review_status='pending')
+            created_row = sb("POST", "personal_knowledge", [{
                 "title": video_title,
                 "content": final_content,
-                "raw_content": transcript[:8000],
+                "raw_content": transcript[:8000] if transcript else f"映像直接解析による自動抽出 (ID: {vid})",
                 "source_url": url,
                 "genre": a.get("genre") or "LoL攻略",
                 "tags": a.get("tags") or [],
                 "champion": a.get("champion") or "Unknown",
                 "review_status": "pending",
-            }], prefer="return=minimal")
+            }], prefer="return=representation")
+            created_id = created_row[0].get("id") if (created_row and isinstance(created_row, list)) else None
             sb("PATCH", f"youtube_queue?id=eq.{vid}", {"status": "completed"})
             title = video_title
-            done.append(title)
-            print(f"✅ 完了: {title}")
+            done.append({"title": title, "id": created_id})
+            print(f"✅ 完了 (ID: {created_id}): {title}")
         except RateLimited as e:
             # ⚠️ 2026-09-23: レート制限は「この動画の問題」ではなく「今このIPが
             # 叩きすぎている」という環境要因なので、retry_count を消費させない。
@@ -495,11 +563,13 @@ def main():
             # しまう（実際 405u21rOh2M で発生。personal_knowledge には保存済みなのに
             # 409で失敗扱いになっていた）。保存済みかを確認して完了扱いにする。
             try:
-                saved = sb("GET", "personal_knowledge?source_url=eq.%s&select=id" % url)
+                saved = sb("GET", "personal_knowledge?source_url=eq.%s&select=id,title" % url)
                 if saved:
                     sb("PATCH", "youtube_queue?id=eq.%s" % vid, {"status": "completed"})
-                    done.append(it.get("title") or vid)
-                    print("✅ 完了（保存済みを検出し復旧）: %s" % (it.get("title") or vid))
+                    recovered_id = saved[0].get("id")
+                    recovered_title = saved[0].get("title") or it.get("title") or vid
+                    done.append({"title": recovered_title, "id": recovered_id})
+                    print("✅ 完了（保存済みを検出し復旧 ID: %s）: %s" % (recovered_id, recovered_title))
                     continue
             except Exception:
                 pass  # 復旧の確認自体に失敗したら通常の失敗処理へ進む
@@ -523,12 +593,41 @@ def main():
     # 結果をDiscordへ通知する（完了か失敗があったときだけ）
     if done or failed:
         lines = []
+        components = []
         if done:
             lines.append(f"**✅ 解析完了: {len(done)}本**")
-            lines += [f"・{t}" for t in done]
+            lines += [f"・{item['title'] if isinstance(item, dict) else item}" for item in done]
+
+            # 承認ボタンの組み立て（最大4件までボタン化、5行目はポータルリンク）
+            btn_rows = []
+            valid_done = [d for d in done if isinstance(d, dict) and d.get("id")]
+            for item in valid_done[:4]:
+                btn_rows.append({
+                    "type": 1,
+                    "components": [{
+                        "type": 2,
+                        "label": f"✅ 承認: {item['title'][:25]}",
+                        "style": 3, # 緑
+                        "custom_id": f"approve_knowledge:{item['id']}"
+                    }]
+                })
+            portal_url = os.environ.get("PORTAL_URL", "https://ktm-portal.pages.dev").rstrip("/")
+            portal_link_btn = {
+                "type": 1,
+                "components": [{
+                    "type": 2,
+                    "label": "🌐 未承認ナレッジ一覧 (ポータル)",
+                    "style": 5, # リンク
+                    "url": f"{portal_url}/admin/knowledge"
+                }]
+            }
+            if btn_rows:
+                components = btn_rows + [portal_link_btn]
+            elif portal_url:
+                components = [portal_link_btn]
+
         if failed:
             lines.append(f"\n**❌ 失敗: {len(failed)}本**")
-            # 字幕なしが多い＝IP制限の可能性があるので、理由も添える
             for t, st, reason in failed:
                 label = ("字幕なし" if st == "error_no_transcript"
                          else "生成失敗" if st == "error_generation"
@@ -537,7 +636,7 @@ def main():
                 lines.append(f"・{t}（{label}）")
         color = COLOR_WARN if failed else COLOR_OK
         status = "warn" if failed else "ok"
-        notify("🎬 YouTube解析ワーカー", lines, color=color, worker_name="youtube_worker", status=status)
+        notify("🎬 YouTube解析ワーカー", lines, color=color, worker_name="youtube_worker", status=status, components=components)
 
     # 全滅かつ全て字幕なし＝データセンターIPがブロックされている疑いが濃い
     if failed and not done and all(st == "error_no_transcript" for _, st, _ in failed):

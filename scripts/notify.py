@@ -80,24 +80,22 @@ def record_worker_log(worker_name, status, summary, details=None):
         print(f"[notify] Supabaseログ記録に失敗: {e}")
 
 
-def notify(title, lines=None, color=0x5865F2, worker_name=None, status="ok"):
+def notify(title, lines=None, color=0x5865F2, worker_name=None, status="ok", components=None):
     """
     Discord へ Embed を1件送る。同時に worker_name があれば Supabase にもログ記録する。
+    DISCORD_BOT_TOKEN があれば Bot API でコンポーネント(ボタン)付きで送信し、
+    無ければ DISCORD_WEBHOOK で送信する。
 
     title: 見出し
     lines: 本文にする文字列のリスト（None可）
     color: Embed左端の色
     worker_name: ワーカー名（例: "youtube_worker", "prospector"）
     status: "ok", "warn", "error"
+    components: Discordコンポーネント配列（ボタンなど）
     """
     # 1. Supabase ログ記録
     if worker_name:
         record_worker_log(worker_name, status, title, lines)
-
-    # 2. Discord Webhook 送信
-    webhook = os.environ.get("DISCORD_WEBHOOK", "").strip()
-    if not webhook:
-        return  # 未設定なら黙って何もしない
 
     description = "\n".join(lines) if lines else ""
     if len(description) > 3900:
@@ -110,17 +108,48 @@ def notify(title, lines=None, color=0x5865F2, worker_name=None, status="ok"):
             "color": color,
         }]
     }
+    if components:
+        payload["components"] = components
+
+    # 2. Discord Bot API 優先（ボタンが利用可能）
+    bot_token = os.environ.get("DISCORD_BOT_TOKEN", "").strip()
+    channel_id = (
+        os.environ.get("DISCORD_LOG_CHANNEL_ID")
+        or os.environ.get("DISCORD_ERROR_LOG_CHANNEL_ID")
+        or "1550118540038774865"
+    ).strip()
+
+    if bot_token and channel_id:
+        try:
+            req = urllib.request.Request(
+                f"https://discord.com/api/v10/channels/{channel_id}/messages",
+                data=json.dumps(payload).encode(),
+                headers={
+                    "Authorization": f"Bot {bot_token}",
+                    "Content-Type": "application/json",
+                    "User-Agent": "SovereignOS-Notifier/1.0 (+https://github.com/Kazu999-3/my_work)",
+                },
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=15) as res:
+                if res.status in (200, 201):
+                    return  # 送信成功
+        except Exception as be:
+            print(f"[notify] Discord Bot API 送信エラー (Webhookへフォールバック): {be}")
+
+    # 3. Discord Webhook 送信フォールバック
+    webhook = os.environ.get("DISCORD_WEBHOOK", "").strip()
+    if not webhook:
+        return  # 未設定なら何もしない
+
+    # Webhook 送信時は custom_id を持つ対話コンポーネントは Discord 仕様で拒否されるため除外
+    webhook_payload = {"embeds": payload["embeds"]}
     try:
         req = urllib.request.Request(
             webhook,
-            data=json.dumps(payload).encode(),
+            data=json.dumps(webhook_payload).encode(),
             headers={
                 "Content-Type": "application/json",
-                # ⚠️ 2026-09-23: User-Agent を付けないと Discord の前段(Cloudflare)が
-                # 403 Forbidden で弾く。urllib の既定 UA (Python-urllib/3.x) が対象。
-                # このため**ワーカーの通知は長期間1件も届いていなかった**
-                # （失敗しても print するだけなので誰も気づけない状態だった）。
-                # 実測: UAなし→403 / UAあり→400(空ペイロードとしてAPIに到達)。
                 "User-Agent": "SovereignOS-Notifier/1.0 (+https://github.com/Kazu999-3/my_work)",
             },
             method="POST",

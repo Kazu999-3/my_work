@@ -206,6 +206,59 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     });
   }
 
+  // 📚 YouTube解析ナレッジのワンクリック承認
+  if (customId.startsWith('approve_knowledge:')) {
+    const adminIds = getAdminDiscordIds(env);
+    if (!adminIds.includes(userId)) {
+      return Response.json({
+        type: 4,
+        data: { content: '❌ ナレッジの承認権限がありません（管理者のみ操作可能）。', flags: 64 }
+      });
+    }
+
+    const articleId = customId.split(':')[1];
+    try {
+      await fetchSupabase(env, 'personal_knowledge', `id=eq.${articleId}`, 'PATCH', {
+        review_status: 'verified'
+      });
+
+      const memberName = interaction.member?.nick || interaction.user?.global_name || interaction.user?.username || '管理者';
+      const updatedComponents = [
+        {
+          type: 1,
+          components: [
+            {
+              type: 2,
+              label: `✅ 承認済み (by ${memberName})`,
+              style: 3,
+              disabled: true,
+              custom_id: `approved_noop:${articleId}`
+            },
+            {
+              type: 2,
+              label: '🌐 ポータルで確認',
+              style: 5,
+              url: `${CONFIG.PORTAL_URL}/admin/knowledge`
+            }
+          ]
+        }
+      ];
+
+      return Response.json({
+        type: 7, // UPDATE_MESSAGE
+        data: {
+          components: updatedComponents
+        }
+      });
+    } catch (e) {
+      console.error('[approve_knowledge] 承認処理エラー:', e);
+      return Response.json({
+        type: 4,
+        data: { content: `❌ 承認処理に失敗しました: ${e?.message || e}`, flags: 64 }
+      });
+    }
+  }
+
   if (customId === 'portal_recruit') {
     return Response.json({
       type: 9,
