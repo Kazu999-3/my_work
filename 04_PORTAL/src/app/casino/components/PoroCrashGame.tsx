@@ -273,7 +273,11 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
       // サーバーとのズレを吸収する。startTimeRef を前へずらすと経過時間が縮むので、
       // 倍率が逆戻りせず「上昇が半分の速度になる」形で自然に追いつける。
       if (pendingSkewRef.current > 0 && lastFrameTime) {
-        const absorb = Math.min(pendingSkewRef.current, (now - lastFrameTime) * 0.5);
+        // 吸収の速さ: 当初は0.5（半速）にしていたが、ズレが0.8秒近くあった当時は
+        // 吸収に2秒近くかかり、短いラウンドでは最後までクライアントが先行したまま
+        // だった。サーバー側の計時開始を受信時刻に変えてズレ自体が小さくなったので、
+        // 0.8（=実時間の2割の速さで上昇）にして0.3秒程度で追いつかせる。
+        const absorb = Math.min(pendingSkewRef.current, (now - lastFrameTime) * 0.8);
         startTimeRef.current += absorb;
         pendingSkewRef.current -= absorb;
       }
@@ -373,6 +377,20 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
       });
 
       const data = await res.json();
+
+      // サーバーがエラーを返した場合（セッション切れ・多重利確など）は
+      // クラッシュではない。以前は data.success が無いだけで💥表示にしていたため、
+      // 「利確を押したのに爆発した」と見える原因のひとつになっていた。
+      if (!res.ok || data.ok === false) {
+        setGameState('IDLE');
+        setMultiplier(1.0);
+        curveRef.current = [];
+        setCurve([]);
+        setWinCoins(0);
+        setErrorMsg(data.error || '利確に失敗しました。もう一度お試しください。');
+        return;
+      }
+
       if (data.success) {
         // サーバー裁定で確定。倍率・獲得コインはサーバーの値で上書きする。
         setFinalMultiplier(data.multiplier);

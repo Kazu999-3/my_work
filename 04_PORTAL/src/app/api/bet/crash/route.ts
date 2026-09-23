@@ -170,6 +170,14 @@ export async function POST(req: Request) {
           bet_amount: betAmount,
           crash_point: crashPoint,
           status: 'pending',
+          // ⚠️ 2026-09-23: DEFAULT now() に任せると、認証 → プレイヤー取得 →
+          // コイン減算のあと、この insert の瞬間に打たれる。実測でボタン押下から
+          // **0.8秒も後**だった。クライアントは押下時刻から計時しているので、
+          // その差がまるごと「クライアントが未来の倍率を申告している」ことになり、
+          // 許容マージン0.5秒を超えてアンチチート判定に引っかかっていた。
+          // リクエストが届いた瞬間を計時開始とすることで、ズレを片道の
+          // ネットワーク遅延（0.15秒程度）だけに抑える。
+          started_at: new Date(requestAtMs).toISOString(),
         })
         .select('started_at')
         .single();
@@ -230,7 +238,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ ok: false, error: 'このゲームは既に利確・処理済みです。' }, { status: 409 });
       }
 
-      const mult = parseFloat(claimedMultiplier);
+      const rawMult = parseFloat(claimedMultiplier);
       const actualCrash = Number(crashSession.crash_point);
 
       // サーバー側時間検証: multに対応する経過時間 (elapsed = ln(mult) / 0.22)
@@ -239,9 +247,15 @@ export async function POST(req: Request) {
       // ネットワーク遅延・許容マージンを考慮した、その経過秒数で到達可能な最大倍率
       const maxPossibleMult = Math.floor(Math.pow(Math.E, (clientElapsedSec + LATENCY_MARGIN_SEC) * 0.22) * 100) / 100;
 
-      if (mult > maxPossibleMult) {
-        return NextResponse.json({ ok: false, error: '不正な利確タイミングが検出されました。' }, { status: 400 });
-      }
+      // ⚠️ 2026-09-23: ここは以前「到達不可能な倍率なら400で拒否」していたが、
+      // 拒否すると多重利確ロック(claimCrashSession)を通過済みなので**賭け金だけ
+      // 没収**される。しかもクライアントはこの400を受けて💥クラッシュ表示に
+      // なるため、プレイヤーには「利確を押したのに爆発した」としか見えない。
+      // 実際 2026-09-23 のプレイで、時計のズレだけでこれが発生していた。
+      // 拒否せずクランプする。チート側の利得はゼロ（その瞬間に正直に到達できた
+      // 上限しか受け取れない）で、正直なプレイヤーは正しい額を受け取れる。
+      const mult = Math.min(rawMult, maxPossibleMult);
+      const clamped = rawMult > maxPossibleMult;
 
       // クラッシュ判定: 実際のクラッシュ倍率に達していなければ成功、超えていればクラッシュ
       // ※経過時間から計算した倍率がクラッシュ値を超えていた場合もアウト
@@ -270,6 +284,8 @@ export async function POST(req: Request) {
               // リクエスト受信から判定までにサーバー側で費やした時間。
               // ここが大きいほど、判定が遅れてプレイヤーに不利になる。
               handlerMs: Date.now() - requestAtMs,
+              rawMultiplier: rawMult,
+              clamped,
               verdict: isCrashed
                 ? (mult > actualCrash ? 'claim_above_crash' : 'time_past_crash')
                 : 'win',
