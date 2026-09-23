@@ -1038,6 +1038,20 @@ async function sendEventUsersNotification(env, options = {}) {
     }
 
     const allReady = summaries.every((s) => s.status.isReady);
+    if (allReady) {
+      console.log('[EventNotify] 対象日（' + summaries.map((s) => s.target.label).join(', ') + '）はすべて定員到達（開催確定）しているためリマインド送信をスキップします');
+      // 満員になった場合も、以前の「残り枠リマインド」が残っていれば掃除する
+      for (const m of recentMessages) {
+        if (m.embeds?.[0]?.title?.includes('週末カスタム 残り枠のお知らせ')) {
+          await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages/${m.id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
+          }).catch(() => {});
+        }
+      }
+      return;
+    }
+
     const guildId = await resolveGuildId(env, channelId);
 
     const dayLines = summaries.map((s) => {
@@ -1050,42 +1064,43 @@ async function sendEventUsersNotification(env, options = {}) {
     });
 
     const embed = {
-      title: allReady ? '🎉 週末カスタム 開催確定！' : '📣 週末カスタム 残り枠のお知らせ',
+      title: '📣 週末カスタム 残り枠のお知らせ',
       description: [
         dayLines.join('\n'),
         '',
-        allReady
-          ? '21:00開始です。時間になったらVCへの集合をお願いします。'
-          : '💡 21:00の第1試合だけ参加する「1戦のみ」も大歓迎です。参加は各募集カードのボタンからどうぞ。',
+        '💡 21:00の第1試合だけ参加する「1戦のみ」も大歓迎です。参加は各募集カードのボタンからどうぞ。',
         '💡 希望レーンの変更は、ポータルの「マイページ」からお願いします。',
       ].join('\n'),
-      color: allReady ? RECRUITMENT_COLORS.confirmed : RECRUITMENT_COLORS.recruiting,
+      color: RECRUITMENT_COLORS.recruiting,
       footer: { text: 'KTM Bot | 週末カスタム リマインド' },
       timestamp: new Date().toISOString(),
     };
 
     // 二重投稿防止: 直近1時間以内に同一タイトルのBot投稿があればスキップ
     try {
-      const recentRes = await fetchWithRetry(
-        `https://discord.com/api/v10/channels/${channelId}/messages?limit=10`,
-        { headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` } }
-      );
-      if (recentRes.ok) {
-        const recent = await recentRes.json();
-        const oneHourAgo = Date.now() - 60 * 60 * 1000;
-        if (recent.find((m) => m.author?.bot && m.embeds?.[0]?.title === embed.title && new Date(m.timestamp).getTime() > oneHourAgo)) {
-          console.log('[EventNotify] 同一タイトルの通知が直近1時間以内にあるためスキップ（二重発火防止）');
-          return;
-        }
+      const oneHourAgo = Date.now() - 60 * 60 * 1000;
+      if (recentMessages.find((m) => m.embeds?.[0]?.title === embed.title && new Date(m.timestamp).getTime() > oneHourAgo)) {
+        console.log('[EventNotify] 同一タイトルの通知が直近1時間以内にあるためスキップ（二重発火防止）');
+        return;
       }
     } catch (dupErr) {
       console.warn('[EventNotify] 二重投稿チェックに失敗（送信は続行）:', dupErr);
     }
 
+    // チャンネルの自浄: 古いリマインド通知（📣 週末カスタム 残り枠のお知らせ）があれば事前に削除して最新1通に保つ
+    for (const m of recentMessages) {
+      if (m.embeds?.[0]?.title?.includes('週末カスタム 残り枠のお知らせ')) {
+        await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages/${m.id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
+        }).catch((e) => console.warn('[EventNotify] 過去リマインド削除に失敗:', e));
+      }
+    }
+
     const messageBody = { embeds: [embed] };
 
     const roleId = CONFIG.NOTIFICATION_ROLE_ID;
-    if (!allReady && roleId) {
+    if (roleId) {
       const shortText = summaries
         .filter((s) => !s.status.isReady)
         .map((s) => `${getDayDef(s.target.dayKey).label} あと${s.status.remaining}名`)
@@ -1198,20 +1213,22 @@ export async function checkCustomStatusAt2000(env) {
 
     console.log(`[Check2000] ${def.name}: 第1試合稼働${firstMatchCount}名 / 途中参加${lateCount}名`);
 
-    // A. 開催確定
+    // A. 開催確定（募集カードへの返信として投稿）
     if (firstMatchCount >= DAY_CAPACITY) {
-      await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+      const confirmChannelId = summary.channelId || channelId;
+      await fetchWithRetry(`https://discord.com/api/v10/channels/${confirmChannelId}/messages`, {
         method: 'POST',
         headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          content: `🎉 **【本日20:00 判定: 開催確定！】**\n${def.emoji} **${def.name}** は${firstMatchCount}名集まりました！21:00より開始します。ポータルのバランサーでチーム分けを行います。`
+          content: `🎉 **【本日20:00 判定: 開催確定！】**\n${def.emoji} **${def.name}** は${firstMatchCount}名集まりました！21:00より開始します。ポータルのバランサーでチーム分けを行います。`,
+          ...(summary.messageId ? { message_reference: { message_id: summary.messageId, fail_if_not_exists: false } } : {})
         })
       });
-      console.log('[Check2000] 開催確定通知を投稿しました');
+      console.log('[Check2000] 開催確定通知を募集カードへの返信として投稿しました');
       return;
     }
 
-    // B. あと1〜2名 かつ 途中参加者がいる場合は、1戦だけの助っ人をピンポイント募集
+    // B. あと1〜2名 かつ 途中参加者がいる場合は、1戦だけの助っ人をピンポイント募集（募集カードへの返信）
     if (firstMatchCount >= 8 && lateCount >= 1) {
       const helpComponents = [
         {
@@ -1232,16 +1249,18 @@ export async function checkCustomStatusAt2000(env) {
         `💡 **「21:00から1試合だけならできる！」という方はいませんか？**\n` +
         `下のボタンから1戦だけ助っ人エントリーをお願いします！`;
 
-      await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+      const helpChannelId = summary.channelId || channelId;
+      await fetchWithRetry(`https://discord.com/api/v10/channels/${helpChannelId}/messages`, {
         method: 'POST',
         headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           content,
           components: helpComponents,
-          allowed_mentions: { roles: [CONFIG.NOTIFICATION_ROLE_ID] }
+          allowed_mentions: { roles: [CONFIG.NOTIFICATION_ROLE_ID] },
+          ...(summary.messageId ? { message_reference: { message_id: summary.messageId, fail_if_not_exists: false } } : {})
         })
       });
-      console.log('[Check2000] ピンポイント助っ人募集メッセージを投稿しました');
+      console.log('[Check2000] ピンポイント助っ人募集メッセージを募集カードへの返信として投稿しました');
       return;
     }
 
