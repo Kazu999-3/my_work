@@ -113,36 +113,6 @@ function baccaratReport(n) {
 }
 
 // ============================================================
-// 🚀 クラッシュ  src/app/api/bet/crash/route.ts の generateCrashPoint()
-// ============================================================
-const CRASH_RTP = 0.96;
-const CRASH_MAX_MULTIPLIER = 50;
-
-function generateCrashPoint() {
-  const r = Math.random();
-  const raw = CRASH_RTP / (1 - r);
-  if (raw < 1.0) return 1.0;
-  return Math.floor(Math.min(CRASH_MAX_MULTIPLIER, raw) * 100) / 100;
-}
-
-function crashReport(n) {
-  const points = new Float64Array(n);
-  for (let i = 0; i < n; i++) points[i] = generateCrashPoint();
-
-  console.log(`\n🚀 ポロ・クラッシュ (${n.toLocaleString()}回実測 / 利確目標ごとのRTP)`);
-  console.log('   ※ RTPが目標倍率によらず一定であることが是正の狙い');
-  for (const t of [1.1, 1.5, 2.0, 3.0, 5.0, 10.0, 20.0, 50.0]) {
-    let win = 0;
-    for (let i = 0; i < n; i++) if (points[i] >= t) win++;
-    const reach = win / n;
-    console.log(`   ${String(t + 'x').padEnd(6)} 到達率 ${pct(reach)}  RTP ${pct(reach * t)}  ハウスエッジ ${pct(1 - reach * t)}`);
-  }
-  let instant = 0;
-  for (let i = 0; i < n; i++) if (points[i] === 1.0) instant++;
-  console.log(`   即クラッシュ(1.00x)の発生率: ${pct(instant / n)}`);
-}
-
-// ============================================================
 // 🎟️ 宝くじ  src/lib/lotteryEngine.ts
 // ============================================================
 function lotteryReport() {
@@ -174,6 +144,5 @@ console.log(` KTMカジノ RTPレポート  (試行回数: ${N.toLocaleString()}
 console.log('='.repeat(70));
 slotReport();
 baccaratReport(N);
-crashReport(N);
 lotteryReport();
 console.log('\n' + '='.repeat(70));

@@ -21,7 +21,7 @@ export type CoinReason =
   | 'bet_place'          // 勝敗予想ベットの投入（マイナス）
   | 'bet_payout'         // 勝敗予想ベットの的中払い戻し
   | 'slot'               // スロット（1スピンの純増減）
-  | 'crash'              // ポロ・クラッシュ
+  | 'crash'              // ポロ・クラッシュ（2026-09-23 にゲームを削除。過去データが残るため型は維持）
   | 'baccarat'           // バカラ
   | 'shop_purchase'      // ショップ購入
   | 'handicap'           // ハンデ発動

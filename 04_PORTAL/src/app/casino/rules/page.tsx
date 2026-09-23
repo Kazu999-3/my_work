@@ -54,16 +54,6 @@ const BACCARAT_ROWS = [
   { label: 'TIE（引き分け）', prob: '9.5%', mult: '×9.00', rtp: '85.8%', edge: '14.2%' },
 ];
 
-const CRASH_ROWS = [
-  { target: '1.1x', reach: '87.3%' },
-  { target: '1.5x', reach: '64.0%' },
-  { target: '2.0x', reach: '48.0%' },
-  { target: '3.0x', reach: '32.0%' },
-  { target: '5.0x', reach: '19.2%' },
-  { target: '10x', reach: '9.6%' },
-  { target: '20x', reach: '4.8%' },
-  { target: '50x', reach: '1.9%（上限）' },
-];
 
 const OMIKUJI_ROWS = [
   { label: '👑 大大吉', prob: '10%', coins: '+300' },
@@ -187,45 +177,6 @@ export default function CasinoRulesPage() {
               これは本場のバカラでも同じ性質です。コインを長持ちさせたいなら BANKER（エッジ 0.9%）が最も有利です。
             </p>
           </div>
-        </section>
-
-        {/* クラッシュ */}
-        <section className={CARD}>
-          <h2 className={H2}>
-            🚀 ポロ・クラッシュ <RtpBadge rtp={0.96} />
-          </h2>
-          <p className="text-xs text-stone-600 mb-3">
-            ベット額は 50 / 100 / 300 / 500 / 1000 コイン。倍率が時間とともに上昇し、好きなタイミングで利確できます。
-            ロケットが爆発する前に利確できれば「ベット額 × 利確倍率」を獲得、間に合わなければ全額没収です。
-            クラッシュする倍率はゲーム開始時にサーバー側で決定され、外部からは一切見えません。
-          </p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs md:text-sm border-collapse">
-              <thead>
-                <tr className="bg-stone-100">
-                  <th className={TH}>利確目標</th>
-                  <th className={TH}>到達する確率</th>
-                  <th className={TH}>RTP</th>
-                </tr>
-              </thead>
-              <tbody>
-                {CRASH_ROWS.map((r) => (
-                  <tr key={r.target}>
-                    <td className={`${TD} font-mono font-black`}>{r.target}</td>
-                    <td className={`${TD} font-mono`}>{r.reach}</td>
-                    <td className={`${TD} font-mono`}>96.0%</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="text-[11px] text-stone-500 mt-2">
-            約5%の確率で 1.00倍のまま即クラッシュします。最大倍率は 50倍です。
-            <strong className="text-stone-700">
-              どの倍率を狙っても RTP は 96% で一定
-            </strong>
-            なので、「低く刻む方が得」「高く狙う方が得」というような有利不利はありません。狙う倍率は好みで選べます。
-          </p>
         </section>
 
         {/* 勝敗予想ベット */}

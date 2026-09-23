@@ -10,7 +10,6 @@ import { supabase } from '../../lib/supabaseClient';
 import { calculateBetOdds } from '../../lib/betOdds';
 import OmikujiModal, { OmikujiData } from './components/OmikujiModal';
 import KtmSlotGame from './components/KtmSlotGame';
-import PoroCrashGame from './components/PoroCrashGame';
 import KtmBaccaratGame from './components/KtmBaccaratGame';
 
 interface RankingPlayer {
@@ -113,7 +112,7 @@ const SHOP_ITEMS = [
 
 export default function CasinoPage() {
   const { user, loginWithDiscord, logout, refreshUser } = useCurrentUser();
-  const [activeTab, setActiveTab] = useState<'bet' | 'slot' | 'crash' | 'baccarat' | 'shop'>('bet');
+  const [activeTab, setActiveTab] = useState<'bet' | 'slot' | 'baccarat' | 'shop'>('bet');
   const [ranking, setRanking] = useState<RankingPlayer[]>([]);
   const [activeMatch, setActiveMatch] = useState<any | null>(null);
   const [betTeam, setBetTeam] = useState<'BLUE' | 'RED'>('BLUE');
@@ -653,7 +652,6 @@ export default function CasinoPage() {
           {[
             { id: 'bet', label: '🎯 勝敗予想' },
             { id: 'slot', label: '🎰 KTMスロット' },
-            { id: 'crash', label: '🚀 ポロ・クラッシュ' },
             { id: 'baccarat', label: '🃏 バカラ' },
             { id: 'shop', label: '🛒 ショップ' },
           ].map((tab) => (
@@ -1297,18 +1295,6 @@ export default function CasinoPage() {
           </div>
         )}
 
-        {/* タブ3: 🚀 ポロ・クラッシュ */}
-        {activeTab === 'crash' && (
-          <div className="space-y-6 animate-in fade-in duration-200">
-            <PoroCrashGame
-              userCoins={user?.coins ?? 1000}
-              onBalanceChange={(newBalance) => {
-                fetchBetData();
-                refreshUser();
-              }}
-            />
-          </div>
-        )}
 
         {/* タブ4: 🃏 バカラ */}
         {activeTab === 'baccarat' && (
