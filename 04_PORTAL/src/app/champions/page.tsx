@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { BookOpen, Activity, Map, Sparkles, Layers } from 'lucide-react';
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
@@ -70,88 +71,72 @@ function ChampionsShell() {
 
   return (
     <div className="min-h-screen p-2 sm:p-4 md:p-6 max-w-[1760px] w-full mx-auto flex flex-col gap-4">
-      {/* 統合ナレッジヘッダー ＆ スコープ切り替えバー（フラット5タブ） */}
+      {/* 洗練されたクリーンな辞典ヘッダー */}
       <motion.header 
         initial={{ y: -6, opacity: 0 }} 
         animate={{ y: 0, opacity: 1 }} 
         transition={{ duration: 0.2 }}
-        className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3 sm:p-4 bg-white/90 border border-stone-200/90 rounded-2xl shadow-xs backdrop-blur-sm"
+        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3 bg-white border border-stone-200/80 rounded-2xl shadow-xs"
       >
         <div className="flex items-center gap-3">
-          <div className="text-2xl sm:text-3xl p-1.5 bg-amber-50 rounded-xl border border-amber-200/80 shrink-0">📖</div>
+          <div className="text-2xl p-1.5 bg-amber-50 rounded-xl border border-amber-200/60 shrink-0">👑</div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg sm:text-xl font-black tracking-tight text-stone-900">攻略ナレッジハブ</h1>
-              <span className="px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-900 text-[10px] font-extrabold">
-                {isAuthenticated ? '管理者モード' : 'プレイヤー攻略モード'}
+              <h1 className="text-base sm:text-lg font-black tracking-tight text-stone-900">チャンピオン攻略辞典</h1>
+              <span className="px-2 py-0.5 rounded-full bg-amber-100/70 border border-amber-300/60 text-amber-800 text-[10px] font-extrabold">
+                {isAuthenticated ? '管理者' : '攻略モード'}
               </span>
             </div>
-            <p className="text-[11px] text-stone-500 font-medium hidden sm:block">
-              チャンピオン辞典・レーン戦術・攻略記事・知見取り込み・データ品質監査
+            <p className="text-[11px] text-stone-500 font-medium">
+              チャレンジャー実戦データ・立ち回り・ビルド・対面相性アーカイブ
             </p>
           </div>
         </div>
 
-        {/* スコープ切り替えタブ（完全フラットな5タブ） */}
-        <div className="flex items-center gap-1.5 p-1 bg-stone-100/90 rounded-xl overflow-x-auto scrollbar-none max-w-full">
-          {SCOPES.map((s) => {
-            const isActive = scope === s.id;
-            const isProtected = (s.id === 'ingest' || s.id === 'health') && !isAuthenticated;
-            return (
+        {/* 右側の整理されたサブナビゲーション */}
+        <div className="flex items-center gap-2 self-end sm:self-auto flex-wrap">
+          {scope !== 'champions' && (
+            <button
+              onClick={() => handleScopeChange('champions')}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500 text-stone-950 hover:bg-amber-400 transition cursor-pointer shadow-xs"
+            >
+              👑 チャンピオン辞典に戻る
+            </button>
+          )}
+          {scope === 'champions' && (
+            <>
               <button
-                key={s.id}
-                onClick={() => handleScopeChange(s.id)}
-                className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 select-none cursor-pointer ${
-                  isActive
-                    ? `bg-white shadow-xs ${s.color} border border-stone-200/80 font-black scale-102`
-                    : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
-                }`}
+                onClick={() => handleScopeChange('lane-guides')}
+                className="px-3 py-1.5 rounded-xl text-xs font-bold text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 transition cursor-pointer"
               >
-                <span>{s.label}</span>
-                {isProtected && <span className="text-[10px] opacity-70">🔒</span>}
+                📖 レーン・マクロ攻略
               </button>
-            );
-          })}
+              <button
+                onClick={() => handleScopeChange('library')}
+                className="px-3 py-1.5 rounded-xl text-xs font-bold text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-stone-200 transition cursor-pointer"
+              >
+                📒 攻略記事一覧
+              </button>
+            </>
+          )}
+          {isAuthenticated && (
+            <Link
+              href="/admin/knowledge"
+              className="px-3 py-1.5 rounded-xl text-xs font-bold text-amber-700 hover:text-amber-900 bg-amber-50 hover:bg-amber-100/80 border border-amber-200 transition flex items-center gap-1"
+            >
+              <span>⚙️ ナレッジ管理</span>
+            </Link>
+          )}
         </div>
       </motion.header>
 
-      {/* スコープに応じたゼロ遷移ビュー */}
+      {/* メインコンテンツ */}
       <div className="flex-1 min-w-0">
-        {isAdminOnlyScope && !isAuthenticated ? (
-          <div className="min-h-[400px] flex items-center justify-center p-4">
-            <div className="text-center max-w-md rounded-2xl border border-stone-200 bg-white p-8 shadow-xs">
-              <div className="text-4xl mb-3">🔑</div>
-              <h2 className="text-base font-black mb-2 text-stone-900">管理者認証が必要です</h2>
-              <p className="text-xs text-stone-600 mb-6 leading-relaxed">
-                「{scope === 'ingest' ? '戦術取り込み' : '辞典ヘルス'}」は管理者専用の保守管理機能です。<br />
-                チャンピオン辞典やレーン攻略はログイン不要でどなたでもご利用いただけます。
-              </p>
-              <div className="flex items-center justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => handleScopeChange('champions')}
-                  className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition"
-                >
-                  👑 チャンピオン辞典を見る
-                </button>
-                <a
-                  href="/login"
-                  className="rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2 text-xs font-black text-stone-950 transition"
-                >
-                  管理者ログイン
-                </a>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <>
-            {scope === 'champions' && <DictionaryTab isAdmin={isAuthenticated} />}
-            {scope === 'lane-guides' && <LaneGuidesView />}
-            {scope === 'library' && <LibraryTabContent />}
-            {scope === 'ingest' && <KnowledgeIngestView />}
-            {scope === 'health' && <DictHealthView />}
-          </>
-        )}
+        {scope === 'champions' && <DictionaryTab isAdmin={isAuthenticated} />}
+        {scope === 'lane-guides' && <LaneGuidesView />}
+        {scope === 'library' && <LibraryTabContent />}
+        {scope === 'ingest' && <KnowledgeIngestView />}
+        {scope === 'health' && <DictHealthView />}
       </div>
     </div>
   );

@@ -3,22 +3,21 @@
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-background: #eae4d4;
-  --color-foreground: #201c2b;
+  --color-background: #f8fafc;
+  --color-foreground: #0f172a;
 
-  /* Sovereign Parchment Theme（2026-08-01: 暖色ダークから、junglepedia.lol系の
-     クリーム/羊皮紙調ライトテーマへ全面切り替え。success/dangerの意味的な色は維持） */
-  --color-primary: #c2650f;
-  --color-primary-glow: rgba(194, 101, 15, 0.25);
-  --color-accent: #b5410a;
-  --color-gold: #a9760f;
-  --color-gold-glow: rgba(169, 118, 15, 0.3);
-  --color-success: #0f9d6a;
-  --color-danger: #d5372f;
-  --color-surface: #fdfcf9;
-  --color-surface-hover: #f5f1e6;
-  --color-border: #ddd6c2;
-  --color-muted: #6f6a5a;
+  /* Sovereign Clean Modern Light Theme（クリーンなスレート・オフホワイト調モダンUI） */
+  --color-primary: #d97706;
+  --color-primary-glow: rgba(217, 119, 6, 0.2);
+  --color-accent: #ea580c;
+  --color-gold: #b45309;
+  --color-gold-glow: rgba(180, 83, 9, 0.25);
+  --color-success: #10b981;
+  --color-danger: #ef4444;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f1f5f9;
+  --color-border: #e2e8f0;
+  --color-muted: #64748b;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
@@ -45,8 +44,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-image:
-    radial-gradient(circle at 15% 50%, rgba(194, 101, 15, 0.05) 0%, transparent 50%),
-    radial-gradient(circle at 85% 30%, rgba(169, 118, 15, 0.05) 0%, transparent 50%);
+    radial-gradient(circle at 15% 50%, rgba(217, 119, 6, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 85% 30%, rgba(14, 165, 233, 0.03) 0%, transparent 50%);
   background-attachment: fixed;
   transition: background-color 0.25s ease, color 0.25s ease;
 }

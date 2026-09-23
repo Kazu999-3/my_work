@@ -1195,7 +1195,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   onClick={() => handleSelectChampion(c)}
                   className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2.5 ${
                     isSelected
-                      ? 'bg-amber-500/10 border-[#c89b3c] shadow-xs ring-1 ring-[#c89b3c]'
+                      ? 'bg-amber-500/10 border-amber-500 shadow-xs ring-1 ring-amber-500/40'
                       : 'bg-white border-stone-200 hover:border-stone-300 hover:bg-stone-50/80'
                   }`}
                 >
@@ -1206,12 +1206,16 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                         alt={c.name}
                         width={38}
                         height={38}
-                        className="w-9 h-9 rounded-lg border border-black/10 shrink-0"
+                        className={`w-9 h-9 rounded-lg border shrink-0 transition-colors ${
+                          isSelected ? 'border-amber-500 ring-1 ring-amber-500/30' : 'border-black/10'
+                        }`}
                       />
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-xs text-stone-900 truncate">{c.name}</span>
+                        <span className={`text-xs truncate ${
+                          isSelected ? 'font-black text-amber-950 dark:text-amber-200' : 'font-bold text-stone-900'
+                        }`}>{c.name}</span>
                         {isFav && <span className="text-amber-500 text-xs">★</span>}
                       </div>
                       <div className="flex items-center gap-1.5 text-[10px] text-stone-400">
@@ -1650,40 +1654,40 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 {/* 左側: あなたのチャンピオン */}
-                <div className="bg-stone-900/90 border border-[#c89b3c]/40 rounded-2xl p-4 flex flex-col gap-3 shadow-lg">
-                  <div className="flex items-center gap-3 border-b border-stone-800 pb-2.5">
+                <div className="bg-white dark:bg-stone-900 border border-amber-500/40 rounded-2xl p-4 flex flex-col gap-3 shadow-xs">
+                  <div className="flex items-center gap-3 border-b border-stone-100 dark:border-stone-800 pb-2.5">
                     <Image
                       src={getChampIcon(selected.id)}
                       alt={selected.name}
                       width={44}
                       height={44}
-                      className="w-11 h-11 rounded-xl border-2 border-[#c89b3c]"
+                      className="w-11 h-11 rounded-xl border-2 border-amber-500 shadow-xs"
                     />
                     <div>
-                      <span className="text-[10px] font-bold text-[#c89b3c] uppercase">あなた側 (YOU)</span>
-                      <h3 className="text-base font-black text-white">{selected.name}</h3>
+                      <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase">あなた側 (YOU)</span>
+                      <h3 className="text-base font-black text-stone-900 dark:text-white">{selected.name}</h3>
                     </div>
                   </div>
 
                   {/* 強み ＆ パワースパイク */}
                   <div className="space-y-2.5 text-xs">
-                    <div className="bg-stone-950/60 rounded-xl p-3 border border-emerald-500/30">
-                      <span className="text-[10px] font-bold text-emerald-400 block mb-1">💪 自チャンプの強み・勝ち筋</span>
-                      <p className="text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
+                    <div className="bg-emerald-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-emerald-500/30">
+                      <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 block mb-1">💪 自チャンプの強み・勝ち筋</span>
+                      <p className="text-stone-800 dark:text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
                         {dataFields.strengths || '強みデータ未登録'}
                       </p>
                     </div>
 
-                    <div className="bg-stone-950/60 rounded-xl p-3 border border-amber-500/30">
-                      <span className="text-[10px] font-bold text-amber-400 block mb-1">⚡ パワースパイク・仕掛け時</span>
-                      <p className="text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
+                    <div className="bg-amber-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-amber-500/30">
+                      <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 block mb-1">⚡ パワースパイク・仕掛け時</span>
+                      <p className="text-stone-800 dark:text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
                         {dataFields.powerSpikes || 'パワースパイク未登録'}
                       </p>
                     </div>
 
-                    <div className="bg-stone-950/60 rounded-xl p-3 border border-purple-500/30">
-                      <span className="text-[10px] font-bold text-purple-400 block mb-1">🛡️ ビルド・ルーン構成</span>
-                      <p className="text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
+                    <div className="bg-purple-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-purple-500/30">
+                      <span className="text-[10px] font-bold text-purple-700 dark:text-purple-400 block mb-1">🛡️ ビルド・ルーン構成</span>
+                      <p className="text-stone-800 dark:text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
                         {dataFields.buildRunes || 'ビルドデータ未登録'}
                       </p>
                     </div>
@@ -1691,40 +1695,40 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 </div>
 
                 {/* 右側: 相手のチャンピオン */}
-                <div className="bg-stone-900/90 border border-rose-500/40 rounded-2xl p-4 flex flex-col gap-3 shadow-lg">
-                  <div className="flex items-center gap-3 border-b border-stone-800 pb-2.5">
+                <div className="bg-white dark:bg-stone-900 border border-rose-500/40 rounded-2xl p-4 flex flex-col gap-3 shadow-xs">
+                  <div className="flex items-center gap-3 border-b border-stone-100 dark:border-stone-800 pb-2.5">
                     <Image
                       src={getChampIcon(vsEnemyId)}
                       alt={vsEnemyId}
                       width={44}
                       height={44}
-                      className="w-11 h-11 rounded-xl border-2 border-rose-500"
+                      className="w-11 h-11 rounded-xl border-2 border-rose-500 shadow-xs"
                     />
                     <div>
-                      <span className="text-[10px] font-bold text-rose-400 uppercase">対戦相手 (ENEMY)</span>
-                      <h3 className="text-base font-black text-white">{champions.find(c => c.id === vsEnemyId)?.name || vsEnemyId}</h3>
+                      <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase">対戦相手 (ENEMY)</span>
+                      <h3 className="text-base font-black text-stone-900 dark:text-white">{champions.find(c => c.id === vsEnemyId)?.name || vsEnemyId}</h3>
                     </div>
                   </div>
 
                   {/* 相手の弱み ＆ 要注意スキル */}
                   <div className="space-y-2.5 text-xs">
-                    <div className="bg-stone-950/60 rounded-xl p-3 border border-rose-500/30">
-                      <span className="text-[10px] font-bold text-rose-400 block mb-1">⚠️ 相手の弱み・突くべき隙</span>
-                      <p className="text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
+                    <div className="bg-rose-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-rose-500/30">
+                      <span className="text-[10px] font-bold text-rose-700 dark:text-rose-400 block mb-1">⚠️ 相手の弱み・突くべき隙</span>
+                      <p className="text-stone-800 dark:text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
                         {vsEnemyData?.weaknesses || '弱みデータ未登録'}
                       </p>
                     </div>
 
-                    <div className="bg-stone-950/60 rounded-xl p-3 border border-amber-500/30">
-                      <span className="text-[10px] font-bold text-amber-400 block mb-1">💥 相手のパワースパイク・警戒タイミング</span>
-                      <p className="text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
+                    <div className="bg-amber-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-amber-500/30">
+                      <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 block mb-1">💥 相手のパワースパイク・警戒タイミング</span>
+                      <p className="text-stone-800 dark:text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
                         {vsEnemyData?.powerSpikes || 'パワースパイク未登録'}
                       </p>
                     </div>
 
-                    <div className="bg-stone-950/60 rounded-xl p-3 border border-cyan-500/30">
-                      <span className="text-[10px] font-bold text-cyan-400 block mb-1">🎯 相手側の対面推奨・特徴</span>
-                      <p className="text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
+                    <div className="bg-cyan-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-cyan-500/30">
+                      <span className="text-[10px] font-bold text-cyan-700 dark:text-cyan-400 block mb-1">🎯 相手側の対面推奨・特徴</span>
+                      <p className="text-stone-800 dark:text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
                         {vsEnemyData?.pickRecommendation || vsEnemyData?.strengths || '特徴データ未登録'}
                       </p>
                     </div>

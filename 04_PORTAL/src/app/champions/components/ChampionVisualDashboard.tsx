@@ -538,12 +538,12 @@ export default function ChampionVisualDashboard({
   return (
     <div className="w-full space-y-4">
       {/* 🎮 0. 分析対象レーン・ロール選択セレクター */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5 p-2 sm:p-2.5 rounded-2xl bg-stone-900/90 border border-amber-500/30 shadow-md backdrop-blur-md">
+      <div className="flex flex-wrap items-center justify-between gap-2.5 p-2 sm:p-2.5 rounded-2xl bg-white dark:bg-stone-900/90 border border-stone-200 dark:border-stone-800 shadow-xs backdrop-blur-md">
         <div className="flex items-center gap-2 px-1.5">
-          <span className="text-xs font-black text-amber-400 flex items-center gap-1.5">
+          <span className="text-xs font-black text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
             <span>🎮</span> <span>分析レーン:</span>
           </span>
-          <span className="text-[11px] text-stone-400 font-bold hidden sm:inline">
+          <span className="text-[11px] text-stone-500 dark:text-stone-400 font-bold hidden sm:inline">
             ロール別ビルド・戦術指標・対面メモに自動連動
           </span>
         </div>
@@ -567,8 +567,8 @@ export default function ChampionVisualDashboard({
                 }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap ${
                   isSelected
-                    ? 'bg-amber-500 text-stone-950 shadow-md font-black scale-102'
-                    : 'bg-black/40 text-stone-400 hover:text-white hover:bg-stone-800 border border-white/5'
+                    ? 'bg-amber-500 text-stone-950 shadow-xs font-black scale-102'
+                    : 'bg-stone-100 dark:bg-stone-800/80 text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-200/80 dark:hover:bg-stone-700 border border-stone-200/80 dark:border-white/5'
                 }`}
               >
                 <span>{label}</span>
@@ -579,28 +579,28 @@ export default function ChampionVisualDashboard({
       </div>
 
       {/* 🚀 1. スキル先行順 ＆ クイックスキルHUD */}
-      <div className="bg-stone-900/90 border border-amber-500/30 rounded-2xl p-3.5 sm:p-4.5 backdrop-blur-md shadow-lg text-white">
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-3 pb-3 border-b border-white/10">
+      <div className="bg-white dark:bg-stone-900/90 border border-stone-200 dark:border-stone-800 rounded-2xl p-3.5 sm:p-4.5 shadow-xs text-stone-900 dark:text-white">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3 pb-3 border-b border-stone-100 dark:border-white/10">
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[11px] font-black tracking-wider uppercase">
+            <span className="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[11px] font-black tracking-wider uppercase">
               Skill HUD
             </span>
-            <span className="text-xs font-bold text-stone-300">スキル構成 ＆ 推奨先行上げ順</span>
+            <span className="text-xs font-bold text-stone-700 dark:text-stone-300">スキル構成 ＆ 推奨先行上げ順</span>
           </div>
 
           {/* スキル上げ優先順位バッジ */}
           <div className="flex items-center gap-1.5 text-xs">
-            <span className="text-[11px] text-stone-400 font-bold">先行上げ:</span>
+            <span className="text-[11px] text-stone-500 dark:text-stone-400 font-bold">先行上げ:</span>
             <div className="flex items-center gap-1">
               <span className="px-2 py-0.5 rounded-md bg-amber-500 text-stone-950 font-black text-xs shadow-xs">
                 {skillPriority[0] || 'Q'}
               </span>
-              <ChevronRight size={14} className="text-stone-500" />
-              <span className="px-2 py-0.5 rounded-md bg-stone-700 text-white font-black text-xs">
+              <ChevronRight size={14} className="text-stone-400" />
+              <span className="px-2 py-0.5 rounded-md bg-stone-200 dark:bg-stone-700 text-stone-800 dark:text-white font-black text-xs">
                 {skillPriority[1] || 'E'}
               </span>
-              <ChevronRight size={14} className="text-stone-500" />
-              <span className="px-2 py-0.5 rounded-md bg-stone-800 text-stone-400 font-black text-xs">
+              <ChevronRight size={14} className="text-stone-400" />
+              <span className="px-2 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 font-black text-xs border border-stone-200 dark:border-stone-700">
                 {skillPriority[2] || 'W'}
               </span>
               <span className="text-[10px] text-stone-400 ml-1">（※Rは随時取得）</span>
@@ -612,8 +612,8 @@ export default function ChampionVisualDashboard({
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
           {/* パッシブ */}
           {passive && (
-            <div className="flex items-center gap-2.5 p-2 rounded-xl bg-black/40 border border-white/5 hover:border-amber-500/30 transition-all">
-              <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-amber-400/40 shrink-0">
+            <div className="flex items-center gap-2.5 p-2 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-200/80 dark:border-white/5 hover:border-amber-500/30 transition-all">
+              <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-amber-500/40 shrink-0">
                 <img
                   src={getPassiveIcon(passive.image?.full)}
                   alt={passive.name}
@@ -624,7 +624,7 @@ export default function ChampionVisualDashboard({
                 </span>
               </div>
               <div className="min-w-0 flex-1">
-                <span className="text-[11px] font-bold text-stone-200 block truncate" title={passive.name}>
+                <span className="text-[11px] font-bold text-stone-800 dark:text-stone-200 block truncate" title={passive.name}>
                   {passive.name}
                 </span>
                 <span className="text-[10px] text-stone-400 block truncate">固有スキル</span>
@@ -636,8 +636,8 @@ export default function ChampionVisualDashboard({
           {spells.slice(0, 4).map((spell: any, idx: number) => {
             const key = skillKeys[idx];
             return (
-              <div key={spell.id || idx} className="flex items-center gap-2.5 p-2 rounded-xl bg-black/40 border border-white/5 hover:border-amber-500/30 transition-all">
-                <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-white/20 shrink-0">
+              <div key={spell.id || idx} className="flex items-center gap-2.5 p-2 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-200/80 dark:border-white/5 hover:border-amber-500/30 transition-all">
+                <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-stone-200 dark:border-white/20 shrink-0">
                   <img
                     src={getSpellIcon(spell.image?.full)}
                     alt={spell.name}
@@ -650,7 +650,7 @@ export default function ChampionVisualDashboard({
                   </span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <span className="text-[11px] font-bold text-stone-100 block truncate" title={spell.name}>
+                  <span className="text-[11px] font-bold text-stone-800 dark:text-stone-100 block truncate" title={spell.name}>
                     {spell.name}
                   </span>
                   <span className="text-[10px] text-stone-400 block truncate">
@@ -666,9 +666,9 @@ export default function ChampionVisualDashboard({
       {/* ⏱️⚡ JG周回実測タイミング ＆ パワースパイク推移ミニHUD */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {/* レーン・ロール別実戦タイミング指標 */}
-        <div className="bg-stone-900/80 border border-stone-800 rounded-2xl p-3 sm:p-3.5 backdrop-blur-md flex items-center justify-between gap-4">
+        <div className="bg-white dark:bg-stone-900/80 border border-stone-200 dark:border-stone-800 rounded-2xl p-3 sm:p-3.5 shadow-xs flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 shrink-0">
               {internalRole === 'JG' ? <Clock size={16} /> :
                internalRole === 'SUP' ? <Shield size={16} /> :
                internalRole === 'TOP' ? <Swords size={16} /> :
@@ -677,7 +677,7 @@ export default function ChampionVisualDashboard({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-black text-white">
+                <span className="text-xs font-black text-stone-900 dark:text-white">
                   {internalRole === 'JG' ? '🌲 JG周回実測' :
                    internalRole === 'SUP' ? '🛡️ SUP視界・初動指標' :
                    internalRole === 'TOP' ? '⚔️ TOPウェーブ指標' :
@@ -685,16 +685,16 @@ export default function ChampionVisualDashboard({
                    '🏹 BOT/ADC指標'}
                 </span>
                 {internalRole === 'JG' && realJungleTiming?.sampleCount ? (
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-stone-800 text-stone-400 font-bold border border-white/5">
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 font-bold border border-stone-200 dark:border-white/5">
                     {realJungleTiming.sampleCount}戦分析
                   </span>
                 ) : (
-                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-stone-800 text-stone-400 font-bold border border-white/5">
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 font-bold border border-stone-200 dark:border-white/5">
                     {internalRole}標準
                   </span>
                 )}
               </div>
-              <span className="text-[10px] text-stone-400 block">
+              <span className="text-[10px] text-stone-500 dark:text-stone-400 block">
                 {internalRole === 'JG' ? '2026仕様: キャンプ0:55湧き / カニ2:55争奪基準' :
                  internalRole === 'SUP' ? 'Lv2先行プッシュ ＆ 視界スコア目標' :
                  internalRole === 'TOP' ? '1stリコール目標 ＆ フリーズ基準' :
@@ -707,17 +707,17 @@ export default function ChampionVisualDashboard({
           <div className="flex items-center gap-3 text-right">
             {internalRole === 'JG' ? (
               <>
-                <div className="bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
+                <div className="bg-stone-50 dark:bg-stone-800/60 px-2.5 py-1.5 rounded-xl border border-stone-200/80 dark:border-white/5">
                   <div className="flex items-center justify-end gap-1">
-                    <span className="text-[10px] text-stone-400 block font-bold">最速フルクリア</span>
-                    <span className="text-[9px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold">2026仕様</span>
+                    <span className="text-[10px] text-stone-500 dark:text-stone-400 block font-bold">最速フルクリア</span>
+                    <span className="text-[9px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold">2026仕様</span>
                   </div>
                   <div className="flex items-baseline justify-end gap-1.5">
-                    <span className="text-xs font-black text-amber-400 font-mono">
+                    <span className="text-xs font-black text-amber-600 dark:text-amber-400 font-mono">
                       {formatSec(realJungleTiming?.externalFastestClearSec || 160)}
                     </span>
                     {realJungleTiming?.externalFastestClearSec && (
-                      <span className={`text-[9px] font-bold ${175 - realJungleTiming.externalFastestClearSec >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      <span className={`text-[9px] font-bold ${175 - realJungleTiming.externalFastestClearSec >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                         {175 - realJungleTiming.externalFastestClearSec >= 0
                           ? `カニ+${175 - realJungleTiming.externalFastestClearSec}s`
                           : `カニ${175 - realJungleTiming.externalFastestClearSec}s`}
@@ -725,69 +725,69 @@ export default function ChampionVisualDashboard({
                     )}
                   </div>
                 </div>
-                <div className="bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
-                  <span className="text-[10px] text-stone-400 block font-bold">1stコア平均</span>
-                  <span className="text-xs font-black text-emerald-400 font-mono">
+                <div className="bg-stone-50 dark:bg-stone-800/60 px-2.5 py-1.5 rounded-xl border border-stone-200/80 dark:border-white/5">
+                  <span className="text-[10px] text-stone-500 dark:text-stone-400 block font-bold">1stコア平均</span>
+                  <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">
                     {formatSec(realJungleTiming?.avgFirstCoreSec || 680)}
                   </span>
                 </div>
               </>
             ) : internalRole === 'SUP' ? (
               <>
-                <div className="bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
-                  <span className="text-[10px] text-stone-400 block font-bold">Lv2先行基準</span>
-                  <span className="text-xs font-black text-cyan-400 font-mono">
+                <div className="bg-stone-50 dark:bg-stone-800/60 px-2.5 py-1.5 rounded-xl border border-stone-200/80 dark:border-white/5">
+                  <span className="text-[10px] text-stone-500 dark:text-stone-400 block font-bold">Lv2先行基準</span>
+                  <span className="text-xs font-black text-cyan-600 dark:text-cyan-400 font-mono">
                     2波目前衛3体
                   </span>
                 </div>
-                <div className="bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
-                  <span className="text-[10px] text-stone-400 block font-bold">目標視界(20分)</span>
-                  <span className="text-xs font-black text-amber-400 font-mono">
+                <div className="bg-stone-50 dark:bg-stone-800/60 px-2.5 py-1.5 rounded-xl border border-stone-200/80 dark:border-white/5">
+                  <span className="text-[10px] text-stone-500 dark:text-stone-400 block font-bold">目標視界(20分)</span>
+                  <span className="text-xs font-black text-amber-600 dark:text-amber-400 font-mono">
                     45+ スコア
                   </span>
                 </div>
               </>
             ) : internalRole === 'TOP' ? (
               <>
-                <div className="bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
-                  <span className="text-[10px] text-stone-400 block font-bold">1stリコール目標</span>
-                  <span className="text-xs font-black text-amber-400 font-mono">
+                <div className="bg-stone-50 dark:bg-stone-800/60 px-2.5 py-1.5 rounded-xl border border-stone-200/80 dark:border-white/5">
+                  <span className="text-[10px] text-stone-500 dark:text-stone-400 block font-bold">1stリコール目標</span>
+                  <span className="text-xs font-black text-amber-600 dark:text-amber-400 font-mono">
                     1,200G〜1,300G
                   </span>
                 </div>
-                <div className="bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
-                  <span className="text-[10px] text-stone-400 block font-bold">フリーズ維持</span>
-                  <span className="text-xs font-black text-emerald-400 font-mono">
+                <div className="bg-stone-50 dark:bg-stone-800/60 px-2.5 py-1.5 rounded-xl border border-stone-200/80 dark:border-white/5">
+                  <span className="text-[10px] text-stone-500 dark:text-stone-400 block font-bold">フリーズ維持</span>
+                  <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">
                     タワー前4体
                   </span>
                 </div>
               </>
             ) : internalRole === 'MID' ? (
               <>
-                <div className="bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
-                  <span className="text-[10px] text-stone-400 block font-bold">ローム優先時</span>
-                  <span className="text-xs font-black text-purple-400 font-mono">
+                <div className="bg-stone-50 dark:bg-stone-800/60 px-2.5 py-1.5 rounded-xl border border-stone-200/80 dark:border-white/5">
+                  <span className="text-[10px] text-stone-500 dark:text-stone-400 block font-bold">ローム優先時</span>
+                  <span className="text-xs font-black text-purple-600 dark:text-purple-400 font-mono">
                     キャノン波後
                   </span>
                 </div>
-                <div className="bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
-                  <span className="text-[10px] text-stone-400 block font-bold">パワースパイク</span>
-                  <span className="text-xs font-black text-rose-400 font-mono">
+                <div className="bg-stone-50 dark:bg-stone-800/60 px-2.5 py-1.5 rounded-xl border border-stone-200/80 dark:border-white/5">
+                  <span className="text-[10px] text-stone-500 dark:text-stone-400 block font-bold">パワースパイク</span>
+                  <span className="text-xs font-black text-rose-600 dark:text-rose-400 font-mono">
                     Lv6 即死
                   </span>
                 </div>
               </>
             ) : (
               <>
-                <div className="bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
-                  <span className="text-[10px] text-stone-400 block font-bold">1コア目標</span>
-                  <span className="text-xs font-black text-emerald-400 font-mono">
+                <div className="bg-stone-50 dark:bg-stone-800/60 px-2.5 py-1.5 rounded-xl border border-stone-200/80 dark:border-white/5">
+                  <span className="text-[10px] text-stone-500 dark:text-stone-400 block font-bold">1コア目標</span>
+                  <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">
                     10:30 (最速)
                   </span>
                 </div>
-                <div className="bg-black/40 px-2.5 py-1.5 rounded-xl border border-white/5">
-                  <span className="text-[10px] text-stone-400 block font-bold">目標CS</span>
-                  <span className="text-xs font-black text-amber-400 font-mono">
+                <div className="bg-stone-50 dark:bg-stone-800/60 px-2.5 py-1.5 rounded-xl border border-stone-200/80 dark:border-white/5">
+                  <span className="text-[10px] text-stone-500 dark:text-stone-400 block font-bold">目標CS</span>
+                  <span className="text-xs font-black text-amber-600 dark:text-amber-400 font-mono">
                     8.5+ /分
                   </span>
                 </div>
@@ -797,50 +797,50 @@ export default function ChampionVisualDashboard({
         </div>
 
         {/* パワースパイク推移 */}
-        <div className="bg-stone-900/80 border border-stone-800 rounded-2xl p-3 sm:p-3.5 backdrop-blur-md flex flex-col justify-center gap-1.5">
+        <div className="bg-white dark:bg-stone-900/80 border border-stone-200 dark:border-stone-800 rounded-2xl p-3 sm:p-3.5 shadow-xs flex flex-col justify-center gap-1.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Activity size={15} className="text-cyan-400" />
-              <span className="text-xs font-black text-white">パワースパイク推移</span>
+              <Activity size={15} className="text-cyan-600 dark:text-cyan-400" />
+              <span className="text-xs font-black text-stone-900 dark:text-white">パワースパイク推移</span>
             </div>
-            <span className="text-[10px] text-stone-400 font-bold">10段階指標</span>
+            <span className="text-[10px] text-stone-500 dark:text-stone-400 font-bold">10段階指標</span>
           </div>
 
           <div className="grid grid-cols-3 gap-2 text-center pt-1">
-            <div className="bg-black/30 p-1.5 rounded-lg border border-white/5">
-              <div className="flex justify-between items-center text-[10px] text-stone-400 mb-1 px-0.5">
+            <div className="bg-stone-50 dark:bg-stone-800/60 p-1.5 rounded-lg border border-stone-200/80 dark:border-white/5">
+              <div className="flex justify-between items-center text-[10px] text-stone-500 dark:text-stone-400 mb-1 px-0.5">
                 <span>序盤</span>
-                <span className="font-bold text-amber-400">{spikeValues.early}/10</span>
+                <span className="font-bold text-amber-600 dark:text-amber-400">{spikeValues.early}/10</span>
               </div>
-              <div className="w-full bg-stone-800 h-1.5 rounded-full overflow-hidden">
+              <div className="w-full bg-stone-200 dark:bg-stone-800 h-1.5 rounded-full overflow-hidden">
                 <div 
-                  className="bg-amber-400 h-full rounded-full transition-all duration-500" 
+                  className="bg-amber-500 h-full rounded-full transition-all duration-500" 
                   style={{ width: `${(spikeValues.early / 10) * 100}%` }}
                 />
               </div>
             </div>
 
-            <div className="bg-black/30 p-1.5 rounded-lg border border-white/5">
-              <div className="flex justify-between items-center text-[10px] text-stone-400 mb-1 px-0.5">
+            <div className="bg-stone-50 dark:bg-stone-800/60 p-1.5 rounded-lg border border-stone-200/80 dark:border-white/5">
+              <div className="flex justify-between items-center text-[10px] text-stone-500 dark:text-stone-400 mb-1 px-0.5">
                 <span>中盤</span>
-                <span className="font-bold text-emerald-400">{spikeValues.mid}/10</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">{spikeValues.mid}/10</span>
               </div>
-              <div className="w-full bg-stone-800 h-1.5 rounded-full overflow-hidden">
+              <div className="w-full bg-stone-200 dark:bg-stone-800 h-1.5 rounded-full overflow-hidden">
                 <div 
-                  className="bg-emerald-400 h-full rounded-full transition-all duration-500" 
+                  className="bg-emerald-500 h-full rounded-full transition-all duration-500" 
                   style={{ width: `${(spikeValues.mid / 10) * 100}%` }}
                 />
               </div>
             </div>
 
-            <div className="bg-black/30 p-1.5 rounded-lg border border-white/5">
-              <div className="flex justify-between items-center text-[10px] text-stone-400 mb-1 px-0.5">
+            <div className="bg-stone-50 dark:bg-stone-800/60 p-1.5 rounded-lg border border-stone-200/80 dark:border-white/5">
+              <div className="flex justify-between items-center text-[10px] text-stone-500 dark:text-stone-400 mb-1 px-0.5">
                 <span>終盤</span>
-                <span className="font-bold text-purple-400">{spikeValues.late}/10</span>
+                <span className="font-bold text-purple-600 dark:text-purple-400">{spikeValues.late}/10</span>
               </div>
-              <div className="w-full bg-stone-800 h-1.5 rounded-full overflow-hidden">
+              <div className="w-full bg-stone-200 dark:bg-stone-800 h-1.5 rounded-full overflow-hidden">
                 <div 
-                  className="bg-purple-400 h-full rounded-full transition-all duration-500" 
+                  className="bg-purple-500 h-full rounded-full transition-all duration-500" 
                   style={{ width: `${(spikeValues.late / 10) * 100}%` }}
                 />
               </div>
@@ -1215,9 +1215,9 @@ export default function ChampionVisualDashboard({
             {tacticsData?.traps && tacticsData.traps.length > 0 ? (
               <div className="space-y-2">
                 {tacticsData.traps.map((trap, idx) => (
-                  <div key={idx} className="flex items-start gap-2 text-xs p-2.5 rounded-xl bg-black/40 border border-rose-500/20">
-                    <span className="text-rose-400 font-bold shrink-0">❌</span>
-                    <p className="text-stone-200 leading-relaxed font-medium">{trap}</p>
+                  <div key={idx} className="flex items-start gap-2 text-xs p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-500/20">
+                    <span className="text-rose-500 dark:text-rose-400 font-bold shrink-0">❌</span>
+                    <p className="text-rose-950 dark:text-stone-200 leading-relaxed font-medium">{trap}</p>
                   </div>
                 ))}
               </div>
@@ -1225,7 +1225,7 @@ export default function ChampionVisualDashboard({
               /* ★ 2026-09-22: 以前はここで全チャンピオン共通のAD前提の助言
                  (「初手王剣ラッシュ…ステラックまたはデスダンス優先」)を出しており、
                  ZyraやLuluのようなAPチャンピオンにも同じ文言が表示されていた。 */
-              <div className="text-xs text-stone-400 p-3 rounded-xl bg-black/30 border border-white/5">
+              <div className="text-xs text-stone-500 dark:text-stone-400 p-3 rounded-xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200 dark:border-white/5">
                 このチャンピオンの罠ビルド・没理由はまだ登録されていません。
               </div>
             )}
