@@ -172,6 +172,19 @@ html.dark [class*="border-stone-300"] {
   border-color: #3f4147 !important;
 }
 
+/* 🔠 極小フォントの下限（2026-09-23）
+   ------------------------------------------------------------------
+   監査で text-[10px] が652箇所、text-[9px] が82箇所、text-[8px] が10箇所
+   見つかった（合計744箇所）。8〜9pxは日本語だと潰れて実質読めず、
+   10pxも長時間見るには小さい。
+   個別に className を直すと744箇所の修正漏れが出るため、ここで下限を引き上げる。
+   レイアウトが崩れない範囲に留めるため、上げ幅は 1〜2px に抑えている。
+   ※ 意図的に小さくしたい箇所が出てきたら、その要素に text-[7px] など
+     ここで指定していないサイズを使えば回避できる。 */
+.text-\[8px\]  { font-size: 10px !important; line-height: 1.45 !important; }
+.text-\[9px\]  { font-size: 10.5px !important; line-height: 1.45 !important; }
+.text-\[10px\] { font-size: 11.5px !important; line-height: 1.5 !important; }
+
 /* ☀️ ライトモード専用（羊皮紙調背景 #eae4d4 / カード #fdfcf9）での文字コントラスト最適化 */
 /* html:not(.dark) でスコープを限定し、ダークモード側に黒文字が波及するのを完全に防止 */
 html:not(.dark) .text-stone-400 {
