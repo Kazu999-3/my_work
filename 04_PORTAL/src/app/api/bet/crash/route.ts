@@ -149,58 +149,62 @@ export async function POST(req: Request) {
         return NextResponse.json({ ok: false, error: 'サーバー設定エラー（DB未接続）。' }, { status: 500 });
       }
 
-      // ベット額を減額して保存
-      const newBalance = currentCoins - betAmount;
-      await updatePlayerCoinsAndInventory({
-        player,
-        newCoins: newBalance,
-        reason: 'crash',
-        reasonMetadata: { phase: 'bet', betAmount },
-      });
-
       // クラッシュポイントを決定し、サーバー側のみに保持する(クライアントには渡さない)
       const crashPoint = generateCrashPoint();
       const gameId = crypto.randomUUID();
+      const newBalance = currentCoins - betAmount;
 
-      const { data: inserted, error: insErr } = await supabaseAdmin
-        .from('crash_sessions')
-        .insert({
-          game_id: gameId,
-          discord_id: session.discordId,
-          bet_amount: betAmount,
-          crash_point: crashPoint,
-          status: 'pending',
-          // ⚠️ 2026-09-23: DEFAULT now() に任せると、認証 → プレイヤー取得 →
-          // コイン減算のあと、この insert の瞬間に打たれる。実測でボタン押下から
-          // **0.8秒も後**だった。クライアントは押下時刻から計時しているので、
-          // その差がまるごと「クライアントが未来の倍率を申告している」ことになり、
-          // 許容マージン0.5秒を超えてアンチチート判定に引っかかっていた。
-          // リクエストが届いた瞬間を計時開始とすることで、ズレを片道の
-          // ネットワーク遅延（0.15秒程度）だけに抑える。
-          started_at: new Date(requestAtMs).toISOString(),
-        })
-        .select('started_at')
-        .single();
+      // ⚠️ 2026-09-23: コイン減算とセッション作成は依存関係が無いので並列に投げる。
+      // 直列だとDB往復が1回ぶん余計にかかり、その分だけトークンの到着が遅れる。
+      // トークンが届くまでクライアントは爆発監視を開始できないため、ここの遅さが
+      // そのまま「爆発しているのに画面は飛行中」の時間になる。
+      const [, insRes] = await Promise.all([
+        updatePlayerCoinsAndInventory({
+          player,
+          newCoins: newBalance,
+          reason: 'crash',
+          reasonMetadata: { phase: 'bet', betAmount },
+        }),
+        supabaseAdmin
+          .from('crash_sessions')
+          .insert({
+            game_id: gameId,
+            discord_id: session.discordId,
+            bet_amount: betAmount,
+            crash_point: crashPoint,
+            status: 'pending',
+            // ⚠️ 2026-09-23: DEFAULT now() に任せると、認証 → プレイヤー取得 →
+            // コイン減算のあと、この insert の瞬間に打たれる。実測でボタン押下から
+            // 0.8秒も後だった。クライアントは押下時刻から計時しているので、その差が
+            // まるごと「未来の倍率を申告している」とみなされ、許容マージン0.5秒を
+            // 超えてアンチチート判定に引っかかっていた。リクエストが届いた瞬間を
+            // 計時開始とすることで、ズレを片道のネットワーク遅延だけに抑える。
+            started_at: new Date(requestAtMs).toISOString(),
+          }),
+      ]);
 
-      if (insErr) {
-        console.error('[crash] session insert error:', insErr);
+      if (insRes.error) {
+        console.error('[crash] session insert error:', insRes.error);
         // ベット控除をロールバックしてエラーを返す
         await updatePlayerCoinsAndInventory({ player, newCoins: currentCoins });
         return NextResponse.json({ ok: false, error: 'ゲームセッションの作成に失敗しました。' }, { status: 500 });
       }
 
-      // ⚠️ 2026-09-23: クライアントの時計合わせ用。
-      // started_at は DEFAULT now() なので「insertした瞬間」＝認証・プレイヤー取得・
-      // コイン減算がすべて終わったあとに打たれる。つまりサーバーの計時開始は
-      // ボタン押下より0.3秒ほど遅い。クライアントが押下時刻から計時していると
-      // 画面の倍率だけがサーバーより先行し、**まだ飛んで見えるのに利確が
-      // 「もう爆発済み」で弾かれる**という食い違いが起きる。
-      // そこで「サーバー側で既に何ms経過しているか」を返し、クライアント側の
-      // 起点をこれに合わせ直させる。タイムスタンプそのものではなく経過時間を
-      // 返すので、利用者PCの時計がずれていても影響を受けない。
-      const serverElapsedMs = inserted?.started_at
-        ? Math.max(0, Date.now() - new Date(inserted.started_at).getTime())
-        : 0;
+      // クライアントの時計合わせ用。started_at = requestAtMs なので、ここまでに
+      // サーバー側で経過した時間はそのまま差分で出せる。タイムスタンプではなく
+      // 経過時間を返すので、利用者PCの時計がずれていても影響を受けない。
+      const serverElapsedMs = Math.max(0, Date.now() - requestAtMs);
+
+      // ⚠️ 2026-09-23: START の処理中に既に爆発時刻を過ぎているケースへの対応。
+      // この処理は実測で往復1.3秒ほどかかる。一方クラッシュ値の分布上、
+      // **約3割のラウンドは1.4秒以内に爆発する**。クライアントはトークンが
+      // 届くまで爆発監視を開始できないので、これらは「爆発済みなのに画面は
+      // 飛行中」になり、利確を押すとクラッシュ判定される（実際
+      // 2026-09-23 08:44:41 のラウンドが爆発まで0.71秒で、押下は1.75秒だった）。
+      // 既に過ぎている場合はこの応答で結果を開示する。時刻は既に過ぎているので、
+      // VERIFY_CRASH と同じく開示してよい（事前開示にはならない）。
+      const crashTimeSec = Math.log(Math.max(1.0, crashPoint)) / 0.22;
+      const alreadyCrashed = serverElapsedMs >= crashTimeSec * 1000 ? crashPoint : null;
 
       return NextResponse.json({
         ok: true,
@@ -208,6 +212,7 @@ export async function POST(req: Request) {
         betAmount,
         newBalance,
         serverElapsedMs,
+        alreadyCrashed, // 既に爆発時刻を過ぎている場合のみ倍率が入る（通常は null）
       });
     }
 

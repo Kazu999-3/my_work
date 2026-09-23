@@ -178,6 +178,26 @@ export default function PoroCrashGame({ userCoins, onBalanceChange }: PoroCrashG
       gameTokenRef.current = data.gameToken;
       onBalanceChange(data.newBalance);
 
+      // ⚠️ 2026-09-23: START の往復中に既に爆発していたケース。
+      // この往復は実測で1.3秒ほどかかる一方、クラッシュ値の分布上およそ3割の
+      // ラウンドは1.4秒以内に爆発する。トークンが無いと爆発監視を開始できないため、
+      // 従来はこれらが「爆発済みなのに画面は飛行中」になり、利確を押すと
+      // クラッシュ判定されていた。サーバーが結果を返してきたら即座に反映する。
+      // ※ 既に利確を押している場合（roundActive=false）は上書きしない。
+      //    その場合はサーバーの裁定に従う。
+      if (data.alreadyCrashed && roundActiveRef.current) {
+        roundActiveRef.current = false;
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+        const cp = data.alreadyCrashed;
+        setMultiplier(cp);
+        setFinalMultiplier(cp);
+        setGameState('CRASHED');
+        setCrashHistory((prev) => [cp, ...prev.slice(0, 5)]);
+        return;
+      }
+
       // ⚠️ 2026-09-23: サーバーとの時計合わせ。
       // サーバーの計時開始（crash_sessions.started_at）は認証・プレイヤー取得・
       // コイン減算のあとなので、押下時刻から計時しているクライアントは約0.3秒
