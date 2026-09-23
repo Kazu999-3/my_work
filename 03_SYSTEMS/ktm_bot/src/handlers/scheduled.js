@@ -1,7 +1,7 @@
 import { CONFIG } from '../config.js';
 import { fetchSupabase } from '../utils/supabase.js';
 import { parseMessageData } from '../utils/helpers.js';
-import { fetchWithRetry, fetchPortalAPI } from '../utils/api.js';
+import { fetchWithRetry, fetchPortalAPI, sendDiscordMessage } from '../utils/api.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, buildDayRecruitEmbed, buildDayRecruitComponents } from '../ui/embeds.js';
 import { createRecruitment } from '../utils/recruitPermission.js';
 import { notifyAdminError } from '../utils/alert.js';
@@ -405,6 +405,32 @@ async function postWeeklyRecruitment(env, options = {}) {
   }
 }
 
+const CLOSED_PREFIX = '🔒 [受付終了]';
+
+/** 受付終了の見出しを付ける。既に付いていれば二重に付けない（移行の再実行対策） */
+function markTitleClosed(title) {
+  const t = (title || '').trim();
+  return t.startsWith(CLOSED_PREFIX) ? t : `${CLOSED_PREFIX} ${t}`.trim();
+}
+
+/**
+ * 募集レコードを id 指定で更新する。
+ *
+ * ★ 2026-09-23: この関数は以前から2箇所で呼ばれていたにもかかわらず、コードベースの
+ *   どこにも定義が無く、呼ばれるたびに ReferenceError になっていた。
+ *   呼び出し元が try/catch で例外を握りつぶしていたため表面化せず、
+ *   「毎週水曜に前回の募集を締め切る」処理が一度も成功していなかった
+ *   （＝ status=open の定期カスタムが毎週溜まり続け、旧カードのボタンも押せるまま）。
+ *   `.catch()` を付けても ReferenceError は Promise の拒否ではなく同期例外なので
+ *   捕まえられない、という点も発覚が遅れた理由。
+ */
+async function updateRecruitment(env, id, patch) {
+  return fetchSupabase(env, 'recruitments', `id=eq.${id}`, 'PATCH', {
+    ...patch,
+    updated_at: new Date().toISOString(),
+  });
+}
+
 /**
  * 前回のオープンな定期カスタム募集を締め切る（DBを closed にし、Discord側のボタンも無効化）。
  *
@@ -444,7 +470,7 @@ async function closePreviousPeriodicRecruitments(env, keepStartAts = []) {
         if (!oldMsg.embeds || oldMsg.embeds.length === 0) continue;
 
         const closedEmbed = { ...oldMsg.embeds[0] };
-        closedEmbed.title = `🔒 [受付終了] ${closedEmbed.title || ''}`.trim();
+        closedEmbed.title = markTitleClosed(closedEmbed.title);
         closedEmbed.color = 0x7f8c8d; // グレーアウト
 
         const disabledComponents = oldMsg.components
@@ -577,7 +603,7 @@ async function migrateLegacyPeriodicCards(env) {
 
         // 旧カードを受付終了にする
         const closedEmbed = { ...msg.embeds[0] };
-        closedEmbed.title = `🔒 [受付終了] ${closedEmbed.title || ''}`.trim();
+        closedEmbed.title = markTitleClosed(closedEmbed.title);
         closedEmbed.description = '⚠️ このカードは土曜／日曜それぞれの新しい募集カードへ移行しました。参加は新しいカードからお願いします。';
         closedEmbed.color = 0x7f8c8d;
         const disabled = (msg.components || []).map((r) => ({
