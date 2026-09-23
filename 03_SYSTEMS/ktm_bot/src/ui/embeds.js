@@ -1,5 +1,8 @@
 import { CONFIG } from '../config.js';
-import { RECRUITMENT_COLORS } from '../utils/recruitmentStatus.js';
+import {
+  RECRUITMENT_COLORS, getDayDef, buildDayBanner, replaceBanner,
+  computeDayStatus, computeDominantTier,
+} from '../utils/recruitmentStatus.js';
 
 function renderProgressBar(current, max) {
   const totalBlocks = 10;
@@ -287,4 +290,79 @@ export function extractPlayersFromEmbed(embed) {
   if (teamAField) teamAField.value.split('\n').forEach(l => { const p = parseLine(l, 'BLUE'); if (p) players.push(p); });
   if (teamBField) teamBField.value.split('\n').forEach(l => { const p = parseLine(l, 'RED'); if (p) players.push(p); });
   return players;
+}
+
+// ============================================================================
+// 週末定期カスタム（土曜カード / 日曜カード）
+// ----------------------------------------------------------------------------
+// ★ 2026-09-23: 土日を1枚のカードへ同居させる構成をやめ、1日1枚へ分離した。
+//   カードの組み立ては「水曜の自動投稿(scheduled.js)」と「参加ボタン押下時の再描画
+//   (components.js)」の2箇所から呼ばれる。過去、この2箇所が別々にEmbedを組んでいたために
+//   「初回投稿の文言」と「ボタンが1回押された後の文言」が食い違う不具合が実際に出ている
+//   （初回だけバナーをハードコードしており、1回押された瞬間に文言が変わっていた）。
+//   状態の反映は必ず applyDayCardState() 1本を通すこと。
+// ============================================================================
+
+/**
+ * 募集カードEmbedへ、現在の参加者から導かれる状態（バナー・色・参加者フィールド）を反映する。
+ * 新規作成時も更新時もこの関数を通すため、文言の二重管理が発生しない。
+ *
+ * @param {object} embed 対象のEmbed（破壊的に更新する）
+ * @param {string} dayKey 'sat' | 'sun'
+ * @param {string[]} entryLines 参加者行（'- <@id> 🟢フル ...' 形式）
+ */
+export function applyDayCardState(embed, dayKey, entryLines) {
+  const def = getDayDef(dayKey);
+  const lines = entryLines || [];
+  const status = computeDayStatus(lines.length);
+  // 最多ランク帯は土曜（チーム分け基準あり）でのみ意味を持つ。
+  const dominantTierText = def.showRank ? computeDominantTier(lines) : '';
+  const banner = buildDayBanner(def.key, status, dominantTierText);
+
+  // description は「バナー ＋ 空行 ＋ 補足1行」で固定する（replaceBanner の前提）。
+  // ボタンの凡例はボタンのラベル自体に同じ情報があるため、カードには載せない（文字量削減）。
+  embed.description = embed.description
+    ? replaceBanner(embed.description, banner)
+    : `${banner}\n\n${def.rule}`;
+  embed.color = status.color;
+  embed.fields = [
+    {
+      name: `👥 参加者 (${status.joined}/${status.capacity}名)`,
+      value: lines.length > 0 ? lines.join('\n') : '▫ まだ誰もいません。最初の1人になりませんか？',
+      inline: false,
+    },
+  ];
+
+  return { embed, status, dominantTierText };
+}
+
+/**
+ * 1日分の募集カードEmbedを新規に組み立てる。
+ * @param {{dayKey: string, label: string}} target 対象日（label例: '9/26(土)'）
+ * @param {string[]} [entryLines] 参加者行
+ */
+export function buildDayRecruitEmbed(target, entryLines = []) {
+  const def = getDayDef(target.dayKey);
+  const embed = {
+    title: `${def.emoji} KTM ${def.name}　${target.label} 21:00〜`,
+    footer: { text: '20:00時点で10名未満なら中止 → ノーマル/ARAM代替募集へ ｜ 土曜と日曜は別々の募集です' },
+    timestamp: new Date().toISOString(),
+  };
+  applyDayCardState(embed, target.dayKey, entryLines);
+  return embed;
+}
+
+/** 1日分の参加ボタン（フル / 1戦のみ / 途中参加）を組み立てる */
+export function buildDayRecruitComponents(dayKey) {
+  const def = getDayDef(dayKey);
+  return [
+    {
+      type: 1,
+      components: [
+        { type: 2, label: `${def.emoji} フル参加`, style: def.buttonStyle, custom_id: `${def.joinPrefix}:full` },
+        { type: 2, label: '⏱️ 1戦のみ (21:00〜)', style: 2, custom_id: `${def.joinPrefix}:single` },
+        { type: 2, label: '🌙 途中参加 (2戦目〜)', style: 2, custom_id: `${def.joinPrefix}:late` },
+      ],
+    },
+  ];
 }

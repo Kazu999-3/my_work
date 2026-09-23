@@ -1,16 +1,70 @@
-// 定期カスタム募集の「土曜定期カスタム（最多ランク基準自動マッチング） / 日曜お祭りカスタム」の参加人数から、
-// 埋め込みの色・状態フラグを一元計算する純粋関数。
-// 新方針:
-// ・土曜: 1つの統合プール制。参加者のランク分布を集計し、最も人数の多いランク帯を基準にバランサーが均等編成。
-// ・日曜: ランク不問のお遊び・お祭りカスタム（MMR変動なし）。
+// 定期カスタム募集カードの状態（色・バナー文言・最多ランク帯）を一元計算する純粋関数。
+//
+// ★ 2026-09-23: 募集カードを「土曜カード」「日曜カード」の2枚へ完全分離したのに伴い、
+//   本モジュールを「1枚 = 1日分」を前提とした単日モデルへ作り直した。
+//   旧モデル（土日の人数を同時に受け取り1枚のカードへ合成する）は、
+//   ①1枚のカードに意味の違う人数が同居して誤読される
+//   ②関数側からは土日どちらのカードを更新しているのか判別できない
+//   という2点で、分離後は成立しない。
+//
+// ★ 併せて、バナーを正規表現で部分置換する仕組み（旧 BANNER_PATTERN）を廃止した。
+//   「置換パターンの許容文言」と「実際に生成される見出し」の同期漏れによるバナー固着バグが
+//   2026-08〜2026-09で2回発生している。description を毎回まるごと組み直す方式にすれば、
+//   その再発経路自体が無くなる。差し替えが必要な箇所では replaceBanner() を使うこと。
 
 export const RECRUITMENT_COLORS = {
-  recruiting: 0xc89b3c, // 琥珀色: 定員未達、募集中
-  partialConfirmed: 0x3498db, // 青色: 土曜または日曜が10名達成
-  confirmed: 0x2ecc71,  // 緑: 両日10名達成（満員御礼）
+  recruiting: 0xc89b3c,      // 琥珀色: 定員未達、募集中
+  confirmed: 0x2ecc71,       // 緑: 10名達成、開催確定
 };
 
-export function renderProgressBar(current, max = 10) {
+export const DAY_CAPACITY = 10;
+
+// 土曜=本戦カスタム / 日曜=お祭りカスタム の呼称・絵文字・ルール文言をここへ集約する。
+// 過去に「日曜・お祭り部門」と「日曜・お祭りカスタム」の呼称ゆれが発生しているため、
+// 表示に使う文字列は必ずここから引くこと。
+export const DAY_DEFS = {
+  sat: {
+    key: 'sat',
+    emoji: '⚔️',
+    label: '土曜',
+    name: '土曜・本戦カスタム',
+    shortName: '土曜本戦カスタム',
+    rule: 'ランク制限はありません。集まった方の最多ランク帯を基準に、実力が均等になるよう自動でチーム分けします（MMR変動あり）',
+    joinPrefix: 'join_periodic_auto',
+    showRank: true,   // 参加者行にランク表記を出すか（日曜はランク不問なので出さない）
+    buttonStyle: 1,   // Primary (Blue)
+  },
+  sun: {
+    key: 'sun',
+    emoji: '🎪',
+    label: '日曜',
+    name: '日曜・お祭りカスタム',
+    shortName: '日曜お祭りカスタム',
+    rule: 'ランク不問・MMR変動なし。特殊ルール/ランダム/オフメタ等なんでも歓迎です',
+    joinPrefix: 'join_periodic_sunday',
+    showRank: false,
+    buttonStyle: 3,   // Success (Green)
+  },
+};
+
+export function getDayDef(dayKey) {
+  return DAY_DEFS[dayKey] || DAY_DEFS.sat;
+}
+
+/**
+ * Embedのタイトルやボタンのcustom_idから、そのカードがどちらの日のものかを判定する。
+ * ★ カードを2枚に分けた以上、「定期カスタムという名前のメッセージ」を一括で同期しては
+ *   いけない（土曜カードの内容が日曜カードを上書きする事故になる）。同期対象の絞り込みには
+ *   必ずこの関数を通すこと。
+ */
+export function detectDayKey(text) {
+  if (!text) return null;
+  if (text.includes('join_periodic_sunday') || text.includes('日曜') || text.includes('お祭り')) return 'sun';
+  if (text.includes('join_periodic_auto') || text.includes('土曜') || text.includes('本戦')) return 'sat';
+  return null;
+}
+
+export function renderProgressBar(current, max = DAY_CAPACITY) {
   const totalBlocks = 10;
   const filled = Math.min(totalBlocks, Math.max(0, Math.round((current / max) * totalBlocks)));
   const empty = totalBlocks - filled;
@@ -18,92 +72,152 @@ export function renderProgressBar(current, max = 10) {
 }
 
 /**
- * @param {number} satCount 土曜定期カスタムの参加人数
- * @param {number} [sunCount] 日曜お祭りカスタムの参加人数
- * @param {number} capacity 1日あたりの定員(既定10)
+ * 1日分（カード1枚分）の募集状態を計算する。
+ * @param {number} count その日の参加人数
+ * @param {number} [capacity] 定員（既定10）
  */
-export function computeRecruitmentStatus(satCount, sunCount = 0, thirdParam = undefined, capacity = 10) {
-  let saturdayCount = satCount;
-  let sundayCount = sunCount;
-
-  // 以前の3引数 (silver, gold, sunday) が渡された場合の互換性対応
-  if (typeof thirdParam === 'number') {
-    saturdayCount = satCount + sunCount;
-    sundayCount = thirdParam;
-  }
-
-  const satRem = Math.max(0, capacity - saturdayCount);
-  const sunRem = Math.max(0, capacity - sundayCount);
-  const totalJoined = saturdayCount + sundayCount;
-  const isSatReady = saturdayCount >= capacity;
-  const isSunReady = sundayCount >= capacity;
-  const isAllReady = isSatReady && isSunReady;
-  const isConfirmed = isSatReady || isSunReady;
-
-  let color = RECRUITMENT_COLORS.recruiting;
-  if (isAllReady) {
-    color = RECRUITMENT_COLORS.confirmed;
-  } else if (isConfirmed) {
-    color = RECRUITMENT_COLORS.partialConfirmed;
-  }
+export function computeDayStatus(count, capacity = DAY_CAPACITY) {
+  const joined = Math.max(0, Number(count) || 0);
+  const remaining = Math.max(0, capacity - joined);
+  const isReady = joined >= capacity;
 
   return {
-    saturdayCount,
-    sundayCount,
-    satRem,
-    sunRem,
-    totalJoined,
-    isSatReady,
-    isSunReady,
-    isAllReady,
-    isConfirmed,
-    color,
-    // 互換性用エイリアス
-    silverCount: saturdayCount,
-    goldCount: 0,
-    isSilverReady: isSatReady,
-    isGoldReady: false,
-    isSundayReady: isSunReady,
-    silverRem: satRem,
-    goldRem: 0,
-    sundayRem: sunRem
+    joined,
+    capacity,
+    remaining,
+    isReady,
+    color: isReady ? RECRUITMENT_COLORS.confirmed : RECRUITMENT_COLORS.recruiting,
   };
 }
 
-// components.js / scheduled.js 側のプログレスバー付きバナー文言
-//
-// ★ 行数の制約(2026-09-21): このバナーは components.js の BANNER_PATTERN
-//   (`**【...】**` の見出し + 後続1〜5行) で丸ごと置換される。後続行を6行以上にすると
-//   置換しきれず古い行が残るため、見出しを除いて最大5行に収めること。
-//   また見出しの文言を変える場合は BANNER_PATTERN の許容一覧にも必ず追加すること
-//   (同期漏れで「状態が変わっても本文が更新されない」固着バグが過去2回発生している)。
-export function buildStatusBanner(status, dominantTierText = '') {
-  const satBar = renderProgressBar(status.saturdayCount, 10);
-  const sunBar = renderProgressBar(status.sundayCount || 0, 10);
+/**
+ * カードの description 先頭に置くステータスバナー（見出し＋1行の計2行固定）。
+ * 文字量を減らすため、説明文やボタンの凡例はここへ混ぜないこと。
+ */
+export function buildDayBanner(dayKey, status, dominantTierText = '') {
+  const def = getDayDef(dayKey);
+  const bar = renderProgressBar(status.joined, status.capacity);
 
-  // ★ 「合計X/20名」という のべ人数 は出さない(2026-09-21)。土曜と日曜は各10名で
-  //   独立に成立判定される別々の募集であり、合算値を最上段に出すと
-  //   ①「20名集めないと開催できない」と誤読される
-  //   ②土日両方にエントリーした人が二重カウントされ実人数と合わない
-  //   ③「合計10/20名」なのに土日ともに未成立、という矛盾した見え方になる
-  //   という3つの誤解を生んでいたため、各日の進捗だけを見せる構成に変更した。
-  let header = `🔥 **【週末定期カスタム募集中】**`;
-  if (status.isAllReady) {
-    header = `🎉 **【土日ともに10名達成！満員御礼】**`;
-  } else if (status.isConfirmed) {
-    header = `⚡ **【開催確定日あり！週末定期カスタム】**`;
+  const header = status.isReady
+    ? `✅ **【${def.name}　開催確定！】**`
+    : `🔥 **【${def.name}　募集中】**`;
+  const state = status.isReady
+    ? `**${status.joined}名**集まりました！`
+    : `**あと${status.remaining}名**で開催確定`;
+
+  // dominantTierText は「シルバー帯(3名)」のように既に「帯」を含む形で渡ってくる。
+  // ここで「帯」を足さないこと（「シルバー帯(3名)帯」になる）。
+  const tierNote = dominantTierText ? `（チーム分け基準: **${dominantTierText}**）` : '';
+
+  return `${header}\n\`${bar}\` → ${state}${tierNote}`;
+}
+
+/**
+ * description は「バナー ＋ 空行 ＋ 補足」という構成で統一している。
+ * その先頭ブロック（バナー）だけを最新状態へ差し替える。
+ * 空行区切りでの分割なので、絵文字や見出し文言の揺れに影響されない。
+ */
+export function replaceBanner(description, banner) {
+  if (!description) return banner;
+  const parts = description.split('\n\n');
+  parts[0] = banner;
+  return parts.join('\n\n');
+}
+
+const RANK_JP_MAP = {
+  CHALLENGER: 'チャレンジャー', GRANDMASTER: 'グランドマスター', MASTER: 'マスター',
+  DIAMOND: 'ダイヤ', EMERALD: 'エメラルド', PLATINUM: 'プラチナ',
+  GOLD: 'ゴールド', SILVER: 'シルバー', BRONZE: 'ブロンズ', IRON: 'アイアン',
+  UNRANKED: '未ランク',
+};
+
+const RANK_LINE_PATTERN = /【(アイアン|ブロンズ|シルバー|ゴールド|プラチナ|エメラルド|ダイヤ|マスター|チャレンジャー|グランドマスター|未ランク|IRON|BRONZE|SILVER|GOLD|PLATINUM|EMERALD|DIAMOND|MASTER|GRANDMASTER|CHALLENGER|UNRANKED)/i;
+
+/**
+ * 参加者行から最多ランク帯（ボリュームゾーン）を集計する。
+ * ルール: エメラルド以上はプラチナへ合算 / アイアン・未ランクはブロンズへ合算。
+ *
+ * ★ 以前は集計結果をフィールド名へ「🎯 基準: 〜」として書き込み、次回の更新時に
+ *   正規表現で読み戻していた。書式を変えるたびに読み戻し側とズレる（実際に
+ *   「(※MMR基準)」まで拾ってバナーに二重表示される不具合が出た）ため、
+ *   参加者行から毎回その場で計算する方式に変更した。
+ * @returns {string} 例: 'シルバー帯(3名)'。参加者0名なら空文字。
+ */
+export function computeDominantTier(lines) {
+  const entries = (lines || []).filter((l) => l && l.startsWith('- '));
+  if (entries.length === 0) return '';
+
+  const tierCounts = {};
+  for (const line of entries) {
+    const match = line.match(RANK_LINE_PATTERN);
+    const raw = match ? match[1].toUpperCase() : 'SILVER';
+    let jp = RANK_JP_MAP[raw] || match?.[1] || 'シルバー';
+
+    if (['チャレンジャー', 'グランドマスター', 'マスター', 'ダイヤ', 'エメラルド', 'プラチナ'].includes(jp)) {
+      jp = 'プラチナ';
+    } else if (['アイアン', '未ランク', 'ブロンズ'].includes(jp)) {
+      jp = 'ブロンズ';
+    }
+    tierCounts[jp] = (tierCounts[jp] || 0) + 1;
   }
 
-  // dominantTierTextは components.js 側で「シルバー帯(3名)」のように既に「帯」を含む形で
-  // 組み立てられるため、ここで「帯」を付け足さないこと(「シルバー帯(3名)帯」になる)。
-  const dominantNote = dominantTierText ? `（チーム分け基準: **${dominantTierText}**）` : '';
-  const satState = status.isSatReady ? '**✅ 開催確定！**' : `**あと${status.satRem}名**で開催確定`;
-  const sunState = status.isSunReady ? '**✅ 開催確定！**' : `**あと${status.sunRem}名**で開催確定`;
+  let best = '';
+  let maxCount = 0;
+  for (const [tier, count] of Object.entries(tierCounts)) {
+    if (count > maxCount) {
+      maxCount = count;
+      best = `${tier}帯(${count}名)`;
+    }
+  }
+  return best;
+}
+
+/** 埋め込みの参加者フィールドから参加者行だけを取り出す */
+export function extractEntryLines(fieldValue) {
+  return (fieldValue || '').split('\n').filter((l) => l.startsWith('- '));
+}
+
+/**
+ * 直近の「土曜21:00 JST」「日曜21:00 JST」を解決する。
+ * 20:00開催判定や中間アナウンスからも同じ基準で参照するため、必ずこの関数を通すこと。
+ */
+export function resolveWeekendTargets(now = new Date()) {
+  const jstNow = new Date(now.getTime() + 9 * 3600 * 1000);
+  const currentDay = jstNow.getUTCDay(); // 0(日)〜6(土)
+
+  // ★ 日曜は「前日の土曜」とペアで1つの週末として扱う。
+  //   (6 - currentDay + 7) % 7 だけで計算すると、日曜には6日後の土曜＝翌週末を指してしまい、
+  //   日曜20:00の開催判定や日曜17:00のリマインドが「今日」ではなく「来週の日曜」の
+  //   カードを探しに行って必ず空振りする。
+  let diffToSaturday;
+  if (currentDay === 0) {
+    diffToSaturday = jstNow.getUTCHours() >= 21 ? 6 : -1;
+  } else {
+    diffToSaturday = (6 - currentDay + 7) % 7;
+    if (diffToSaturday === 0 && jstNow.getUTCHours() >= 21) {
+      diffToSaturday = 7; // すでに土曜21時を過ぎている場合は翌週
+    }
+  }
 
   return [
-    header,
-    `⚔️ **土曜・本戦カスタム**　\`${satBar}\` → ${satState}${dominantNote}`,
-    `🎪 **日曜・お祭りカスタム**　\`${sunBar}\` → ${sunState}`,
-    `※土曜と日曜は別々の募集です（片方だけの参加もOK。各日20:00時点で10名未満のその日は中止し、ノーマル/ARAM代替募集へ切替）`
-  ].join('\n');
+    buildWeekendTarget('sat', jstNow, diffToSaturday),
+    buildWeekendTarget('sun', jstNow, diffToSaturday + 1),
+  ];
+}
+
+const JST_DAY_CHARS = ['日', '月', '火', '水', '木', '金', '土'];
+
+function buildWeekendTarget(dayKey, jstNow, diffDays) {
+  // 21:00 JST = 12:00 UTC。Date.UTC は日付の桁あふれ（月またぎ）を自動で正規化する。
+  const startUtcMs = Date.UTC(
+    jstNow.getUTCFullYear(), jstNow.getUTCMonth(), jstNow.getUTCDate() + diffDays, 12, 0, 0, 0
+  );
+  const jst = new Date(startUtcMs + 9 * 3600 * 1000);
+
+  return {
+    dayKey,
+    def: getDayDef(dayKey),
+    startAtIso: new Date(startUtcMs).toISOString(),
+    label: `${jst.getUTCMonth() + 1}/${jst.getUTCDate()}(${JST_DAY_CHARS[jst.getUTCDay()]})`,
+  };
 }

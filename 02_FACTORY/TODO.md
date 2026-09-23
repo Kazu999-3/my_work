@@ -86,19 +86,42 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
   - 復旧用に `clean_youtube_queue.py --retry-rate-limited` を追加
     （`--retry-failed` はエラー全件を戻すため、字幕が無い動画まで巻き込んで再失敗させる）。
 
-- [ ] **字幕が存在しない36件の扱い（2026-09-23 判断が必要）**
-  - キュー上の残りはこれだけ（`error_no_transcript` 36件）。`yt-dlp --list-subs` で
-    実際に確認したところ **字幕も自動字幕も存在しない**（サンプル3本で確認）。
-  - 大半は実況なしの試合リプレイ・ショート（`VIEGO VS SHYVANA - 8/1/0 KDA JUNGLE GAMEPLAY`、
-    `Caitlyn build god`、Agurinのショート等）。YouTubeが自動字幕を生成できていない＝
-    聞き取れる音声が無いということなので、**Whisperにかけても得るものは無い見込み**。
-  - ただし7本ほどは解説系のタイトル（`AATROX COMBO GUIDE`、`SECRET Anivia Tips & Tricks`、
-    `Advanced Cassiopeia Tips & Tricks`、`差がつくリーシンの本質【らいじん/切り抜き】`等）で、
-    ナレーションがある可能性がある。
-  - ⚠️ **Whisper経路には ffmpeg が必要だが未インストール**（PATHにも `.venv` にも無い）。
-    `faster_whisper` は入っている。
-  - **決めること**: ①36件すべて `manually_closed` にして閉じる（推奨・コスト0）
-    ②ffmpegを入れて解説系7本だけWhisperにかける ③全件Whisperにかける（効果は薄い見込み）
+- [x] **字幕が存在しない動画へのWhisper適用（2026-09-23 実施・解説系7本）**
+  - 対象はキューに残った `error_no_transcript` 36件。`yt-dlp --list-subs` で
+    **字幕も自動字幕も存在しない**ことを確認済み。うち解説系のタイトル7本にWhisperをかけた。
+  - **結果: 7本中1本のみ記事化できた**（`bqHcE8m4Pi8` 差がつくリーシンの本質 →
+    文字起こし1,387文字 → 記事ID 37199 / LeeSin / 本文2,419文字）。
+    残り6本は**音声はダウンロードできたが文字起こしが0文字**だった。
+    YouTubeが自動字幕を作れていない＋Whisperも0文字、という独立した2つの根拠から
+    **実況音声が無い動画（テロップのみ・BGMのみ）**と判断できる。
+  - `ffmpeg` はシステム導入不要だった。`imageio-ffmpeg` のバンドル版が既に入っており、
+    `whisper_transcriber.get_ffmpeg_path()` がそれを拾う。
+    （途中「ffmpeg未インストール」と誤認したが、PATHに無いだけだった）
+
+  **ここで判明した実装の穴（いずれも修正済み）**
+  1. **Whisperフォールバックがキュー処理から呼ばれていなかった**。`whisper_transcriber.py`
+     は用意されていたが、呼んでいたのは `extract_video_tactics.py` だけで、
+     `youtube_worker.py` からは一度も呼ばれていなかった
+     （[[project-orphaned-automation-pattern]] と同型）。ワーカーに接続した。
+  2. **`android_vr` はメタデータは取れるが音声の実ダウンロードで403になる**。
+     cookieを付けても変わらない。`web_safari` / `mweb` は同じ動画を問題なく取得できた。
+  3. **`player_client` に複数を並べて一度に渡すと逆効果**。yt-dlpは全クライアントの
+     フォーマットをまとめてから選ぶため、`bestaudio` が android_vr 由来の音声専用
+     フォーマットに当たって結局403になる。**1クライアントずつ順に試す**ように変更した。
+  4. `whisper_transcriber.py` を単体実行すると `.env` を読まず cookie 未設定になり、
+     「cookieを設定したのに403のまま」という誤った結論を出しかけた。読み込みを追加。
+  5. 文字起こしが極端に短い場合はGeminiへ渡さない足切り（既定500文字）を追加。
+     中身の無い記事の量産を防ぐ。
+
+- [ ] **実況音声が無い35件の扱い（2026-09-23 判断が必要）**
+  - 残りは `error_no_transcript` 35件。字幕なし＋（解説系については）Whisperも0文字。
+  - 内訳はほぼ実況なしの試合リプレイ・ショート
+    （`VIEGO VS SHYVANA - 8/1/0 KDA JUNGLE GAMEPLAY`、`Caitlyn build god`、Agurinのショート等）。
+  - **決めること**: ①`manually_closed` にして閉じる（推奨・これ以上取れる情報が無い）
+    ②残しておいて将来の手法改善を待つ（ただしキューの健全性チェックには出続ける）
+  - 閉じる場合: `python scripts/clean_youtube_queue.py --clean-errors --apply`
+    ただしこれは `error_generation` / `failed` が対象なので、`error_no_transcript` を
+    含めるにはスクリプト側の対象ステータス追加が必要。
 
 - [x] **第3弾: ローテーション再解析の実装（2026-09-21完了、実行は未着手）**
   - `edge_worker_daemon.py`に`youtube_rotation`タスクを新設。完了済み動画を古い順に少数ずつpendingへ戻す。

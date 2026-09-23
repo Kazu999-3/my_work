@@ -58,6 +58,12 @@ GEMINI_KEY = os.environ["GEMINI_API_KEY"]
 # gemini-2.5-flash はこのキーで日次上限を超過した実績があるため使わない。
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.1-flash-lite")
 MAX_ITEMS = int(os.environ.get("MAX_ITEMS", "3"))
+# 字幕が無い動画をWhisperで文字起こしするか。CPUで走るため1本あたり数分かかる。
+ENABLE_WHISPER = os.environ.get("ENABLE_WHISPER", "1") not in ("0", "false", "False")
+WHISPER_MODEL = os.environ.get("WHISPER_MODEL", "base")
+# これ未満の文字数なら「実況なし」とみなしてGeminiへ渡さない
+WHISPER_MIN_CHARS = int(os.environ.get("WHISPER_MIN_CHARS", "500"))
+
 MAX_RETRY = 3
 
 class NoTranscript(RuntimeError):
@@ -138,7 +144,10 @@ def fetch_subtitles(url, vid):
         tail = err.splitlines()[-1] if err else "(yt-dlpの出力なし)"
         is_limited = "Sign in to confirm" in err or "bot" in err.lower() or "429" in err
         if not is_limited:
-            print(f"  [字幕なし] {vid}: {tail}", file=sys.stderr)
+            # yt-dlpのstderr末尾は ffmpeg の警告など無関係な行であることが多く、
+            # 実際の失敗理由が埋もれる。ERROR行があればそちらを優先して出す。
+            reason = next((l for l in reversed(err.splitlines()) if "ERROR" in l), tail)
+            print(f"  [字幕なし] {vid}: {reason}", file=sys.stderr)
             return None
         if attempt < len(BACKOFF_SEC):
             wait = BACKOFF_SEC[attempt]
@@ -302,6 +311,27 @@ def main():
                 continue
 
             transcript = fetch_subtitles(url, vid)
+            if not transcript and ENABLE_WHISPER:
+                # ⚠️ 2026-09-23: 字幕が無い動画の音声文字起こし。
+                # whisper_transcriber.py は 2026-09 に用意されていたが、
+                # 呼んでいたのは extract_video_tactics.py だけで、
+                # **キューを処理するこのワーカーからは一度も呼ばれていなかった**。
+                # ffmpeg は imageio-ffmpeg のバンドル版を使うのでシステム導入は不要。
+                try:
+                    from whisper_transcriber import transcribe_youtube_video_fallback
+                    print(f"  🎙️ 字幕が無いのでWhisperで文字起こしします: {vid}")
+                    text, _ = transcribe_youtube_video_fallback(vid, model_size=WHISPER_MODEL)
+                    text = (text or "").strip()
+                    # 音声はあっても実況が無い動画は数語しか返らない。
+                    # そのままGeminiへ渡すと中身の無い記事を量産するので足切りする。
+                    if len(text) < WHISPER_MIN_CHARS:
+                        print(f"  ⚠️ 文字起こしが短すぎます({len(text)}文字 < {WHISPER_MIN_CHARS})。実況なしの動画と判断します。",
+                              file=sys.stderr)
+                    else:
+                        print(f"  ✅ Whisperで {len(text)} 文字を取得しました")
+                        transcript = text[:30000]
+                except Exception as we:
+                    print(f"  ⚠️ Whisperに失敗: {we}", file=sys.stderr)
             if not transcript:
                 raise NoTranscript("字幕を取得できませんでした（字幕なし or IP制限の可能性）")
             a = gemini_summarize(it.get("title") or "YouTube Video", it.get("channel_name") or "", transcript)

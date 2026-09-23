@@ -42,6 +42,20 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# 単体実行（python scripts/whisper_transcriber.py <video_id>）でも .env を読む。
+# 2026-09-23: これが無いため単体テストだけ cookie 未設定になり、
+# 「cookieを設定したのに403のまま」という誤った結論を出しかけた。
+try:
+    from dotenv import load_dotenv as _load_dotenv
+    for _env in [Path(__file__).resolve().parent.parent / "04_PORTAL" / ".env.local",
+                 Path(__file__).resolve().parent.parent / "04_PORTAL" / ".env",
+                 Path(__file__).resolve().parent.parent / ".env"]:
+        if _env.exists():
+            _load_dotenv(_env)
+except ImportError:
+    pass
+
+
 def get_ffmpeg_path() -> str:
     """ffmpeg の実行可能パスを取得（imageio_ffmpeg から取得）"""
     try:
@@ -78,48 +92,61 @@ def download_audio_only(video_id: str, output_dir: Path) -> Path | None:
             os.environ["PATH"] = f"{ffmpeg_dir};{os.environ.get('PATH', '')}"
 
     target_tmpl = str(output_dir / f"{video_id}_audio.%(ext)s")
-    
-    ydl_opts = {
-        'format': 'bestaudio[ext=m4a]/bestaudio/best',
-        'outtmpl': target_tmpl,
-        'quiet': True,
-        'no_warnings': True,
-        'extractor_args': {
-            'youtube': {
-                'player_client': ['android_vr', 'android', 'web']
-            }
-        },
-    }
 
-    # ★ 2026-09-21: cookie設定を追加。ここが最も403を食らう経路(メタデータ・字幕は
-    # 通るのに音声DLだけが403になる実測結果)にもかかわらず、cookie設定を一切
-    # 読んでいなかった。`.env`のYT_DLP_COOKIES_FROMは停止済みのyoutube_absorber.pyしか
-    # 読んでおらず、現役のこの経路には届いていなかった。
+    # ⚠️ 2026-09-23 実測メモ（同じ轍を踏まないための記録）
+    # ・android_vr は**メタデータは取れるが音声の実ダウンロードで 403 Forbidden**
+    #   になる。cookie を付けても変わらない。web_safari / mweb は同じ動画を
+    #   問題なくダウンロードできた。
+    # ・player_client に複数を並べて一度に渡すと、yt-dlp は全クライアントの
+    #   フォーマットをまとめてから選ぶため、`bestaudio` が android_vr 由来の
+    #   音声専用フォーマットに当たってしまい、結局403になる。
+    #   そのため**1クライアントずつ順に試す**。
+    CLIENT_CANDIDATES = ["web_safari", "mweb", "android_vr", "android", "web"]
+
     import sys as _sys
     _sys.path.insert(0, str(Path(__file__).resolve().parent))
     from yt_dlp_cookies import apply_cookie_opts
-    apply_cookie_opts(ydl_opts)
 
-    if ffmpeg_exe:
-        ydl_opts['ffmpeg_location'] = ffmpeg_exe
+    def build_opts(client: str) -> dict:
+        opts = {
+            "format": "bestaudio[ext=m4a]/bestaudio/best",
+            "outtmpl": target_tmpl,
+            "quiet": True,
+            "no_warnings": True,
+            "extractor_args": {"youtube": {"player_client": [client]}},
+        }
+        # 音声DLはcookieが最も効く経路。メタデータや字幕が通っても
+        # ここだけ403になることがある。
+        apply_cookie_opts(opts)
+        if ffmpeg_exe:
+            opts["ffmpeg_location"] = ffmpeg_exe
+        return opts
 
     url = f"https://www.youtube.com/watch?v={video_id}"
     logger.info(f"🎙️ 音声のみダウンロードを開始: {video_id}")
-    
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
-            
-        for ext in ['m4a', 'opus', 'webm', 'mp3']:
-            candidate = output_dir / f"{video_id}_audio.{ext}"
-            if candidate.exists() and candidate.stat().st_size > 1000:
-                logger.info(f"✅ 音声ダウンロード完了: {candidate.name} ({candidate.stat().st_size // 1024} KB)")
-                return candidate
-                
-    except Exception as e:
-        logger.error(f"❌ 音声ダウンロード失敗 ({video_id}): {e}")
-        
+
+    last_err = None
+    for client in CLIENT_CANDIDATES:
+        for old_file in output_dir.glob(f"{video_id}_audio.*"):
+            try:
+                old_file.unlink()
+            except Exception:
+                pass
+        try:
+            with yt_dlp.YoutubeDL(build_opts(client)) as ydl:
+                ydl.download([url])
+            found = sorted(output_dir.glob(f"{video_id}_audio.*"))
+            if found:
+                logger.info(f"✅ 音声を取得しました ({client}): {found[0].name}")
+                return found[0]
+            last_err = "ダウンロードは成功したがファイルが見つからない"
+        except Exception as e:
+            last_err = str(e)
+            logger.warning(f"  ↻ {client} で失敗、次のクライアントを試します: {str(e)[:120]}")
+
+    logger.error(f"❌ 音声ダウンロード失敗 ({video_id}): {last_err}")
     return None
+
 
 def transcribe_audio_with_whisper(audio_path: Path, model_size: str = "base") -> str:
     """faster-whisper を使ってローカルで音声を文字起こしし、タイムスタンプ付きテキストを生成"""

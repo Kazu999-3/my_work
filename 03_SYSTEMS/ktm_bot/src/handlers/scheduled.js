@@ -2,10 +2,15 @@ import { CONFIG } from '../config.js';
 import { fetchSupabase } from '../utils/supabase.js';
 import { parseMessageData } from '../utils/helpers.js';
 import { fetchWithRetry, fetchPortalAPI } from '../utils/api.js';
-import { createMessageContent, createRecruitButtons, createRecruitEmbed } from '../ui/embeds.js';
+import { createMessageContent, createRecruitButtons, createRecruitEmbed, buildDayRecruitEmbed, buildDayRecruitComponents } from '../ui/embeds.js';
 import { createRecruitment } from '../utils/recruitPermission.js';
+import { notifyAdminError } from '../utils/alert.js';
 import { getKtmRank, formatRankDistribution, formatMmrWithRank, getHighestLaneMmr, getPlayerExperienceBadge } from '../utils/ktmRank.js';
-import { computeRecruitmentStatus, buildStatusBanner, RECRUITMENT_COLORS } from '../utils/recruitmentStatus.js';
+import {
+  computeDayStatus, buildDayBanner, replaceBanner, getDayDef, detectDayKey,
+  computeDominantTier, extractEntryLines, DAY_CAPACITY, RECRUITMENT_COLORS,
+  resolveWeekendTargets,
+} from '../utils/recruitmentStatus.js';
 
 export async function handleScheduledEvent(event, env, ctx) {
   console.log("Scheduled event triggered:", JSON.stringify(event));
@@ -20,7 +25,15 @@ export async function handleScheduledEvent(event, env, ctx) {
   // 1. 毎週水曜 12:00 JST (UTC 3:00 水曜 / CF dow=4): 週末定期カスタム募集（土日分）自動投稿
   if (cronExpression.includes("0 3 * * 4") || mode === "weekly_recruit") {
     console.log("[Scheduled] Executing weekly recruitment posting (Wednesday 12:00 JST)...");
-    await postWeeklyRecruitment(env);
+    // mode指定で来た場合 = GitHub Actionsのバックアップ経由。そこで実際に投稿が発生したら、
+    // Cloudflare側の本命cron(水曜12:00 JST)が空振りしたということなので、無言で済ませず
+    // 管理者へ通知する。2026-09-23に本命が不発し、GitHub Actions側も5時間20分遅延した結果、
+    // 募集が水曜17:35に飛ぶ事故が起きたが、誰も気づける仕組みが無かった。
+    await postWeeklyRecruitment(env, { isBackupKick: mode === "weekly_recruit" });
+  } else if (mode === "weekly_recruit_migrate") {
+    // 旧形式(1枚に土日同居)カードから新形式(2枚)への一度きりの移行。手動キック専用。
+    console.log("[Scheduled] Executing legacy periodic card migration...");
+    await migrateLegacyPeriodicCards(env);
   } else if (cronExpression.includes("0 0 * * 2") || mode === "weekly_report") {
     // 毎週月曜 9:00 JST (UTC 0:00 月曜 / CF dow=2): 個人週間レポート配信
     await sendWeeklyReports(env);
@@ -345,238 +358,270 @@ async function sendWeeklyReports(env) {
 }
 
 /**
- * 毎週土曜 21:00 JST に、その日21:00開催の定期カスタム募集を専用チャンネルへ自動投稿する(#85)。
- * 参加予定を事前に表明できるようにする。recruitments.start_at で二重投稿を防止
- * （同じ開始時刻の募集が既にあればスキップ＝冗長キックにも安全）。
+ * 直近の週末（土曜21:00 / 日曜21:00）の定期カスタム募集カードを専用チャンネルへ自動投稿する(#85)。
+ * 毎週水曜 12:00 JST に発火。
+ *
+ * ★ 2026-09-23: 1枚のカードに土日を同居させる構成をやめ、土曜カード/日曜カードの
+ *   2メッセージへ完全に分離した。旧構成は「※土曜と日曜は別々の募集です」と文章で
+ *   断っていただけで、実態としては
+ *   ・6個のボタンが1メッセージに同居して押し間違えやすい
+ *   ・recruitments へ登録されるレコードが土曜分の1件だけで、日曜側はDB上存在せず、
+ *     リマインド・20:00開催判定・ポータル通知が構造的に機能しない
+ *   という問題が残っていた（「生成経路はあるが誰も拾っていない」孤立パターン）。
+ *
+ * 二重投稿防止は recruitments.start_at を使って「日ごと」に行うため、
+ * Cloudflare cron と GitHub Actions バックアップが何度重複発火しても安全。
  */
-async function postWeeklyRecruitment(env) {
+async function postWeeklyRecruitment(env, options = {}) {
   try {
     const targetChannelId = CONFIG.PERIODIC_RECRUIT_CHANNEL_ID || CONFIG.RECRUIT_CHANNEL_ID || "1528646515533287497";
+    const targets = resolveWeekendTargets();
 
-    // 0. 二重投稿防止(2026-08-08発覚): この関数には重複チェックが一切無く、
-    // Cloudflareネイティブcron(日曜0:00 JST)とGitHub Actionsバックアップ(土曜21:10 JST)が
-    // 数時間差で両方発火すると、同じ週の定期カスタム募集が毎回2回投稿されていた。
-    // 投稿対象の開催日時(startAtIso)を先に計算し、同じstart_atの募集が既にDBにあれば
-    // (open/closed問わず)スキップする。
-    const nowForCheck = new Date();
-    const jstNowForCheck = new Date(nowForCheck.getTime() + 9 * 3600 * 1000);
-    const currentDayForCheck = jstNowForCheck.getUTCDay();
-    let diffToSaturdayForCheck = (6 - currentDayForCheck + 7) % 7;
-    if (diffToSaturdayForCheck === 0 && jstNowForCheck.getUTCHours() >= 21) {
-      diffToSaturdayForCheck = 7;
+    // 1. 前回の定期カスタム募集を DB および Discord 上で締め切る
+    //    今週分(targets)は除外する。バックアップキックで2回目以降が走ったとき、
+    //    直前に投稿したばかりのカードを自分で閉じてしまうのを防ぐ。
+    await closePreviousPeriodicRecruitments(env, targets.map((t) => t.startAtIso));
+
+    // 2. 土曜・日曜のカードをそれぞれ投稿する（片方が失敗しても、もう片方は投稿する）
+    let posted = 0;
+    for (const target of targets) {
+      const ok = await postDayRecruitmentCard(env, targetChannelId, target);
+      if (ok) posted += 1;
     }
-    const targetDateForCheck = jstNowForCheck.getUTCDate() + diffToSaturdayForCheck;
-    const startUtcMsForCheck = Date.UTC(jstNowForCheck.getUTCFullYear(), jstNowForCheck.getUTCMonth(), targetDateForCheck, 12, 0, 0, 0);
-    const startAtIsoForCheck = new Date(startUtcMsForCheck).toISOString();
-    try {
-      const existing = await fetchSupabase(
-        env, 'recruitments',
-        `mode=eq.${encodeURIComponent('定期カスタム')}&start_at=eq.${encodeURIComponent(startAtIsoForCheck)}&select=id&limit=1`
-      );
-      if (existing && existing.length > 0) {
-        console.log(`[WeeklyRecruit] 今週(${startAtIsoForCheck})の募集は投稿済みのためスキップ（二重発火防止）`);
-        return;
-      }
-    } catch (dupErr) {
-      console.warn('[WeeklyRecruit] 二重投稿チェックに失敗（投稿は続行）:', dupErr);
-    }
+    console.log(`[WeeklyRecruit] 定期カスタム募集カードを ${posted}/${targets.length} 件投稿しました`);
 
-    // 1. 前回のオープンな募集を DB および Discord 上で締め切る (status = 'closed')
-    try {
-      const activeRecruits = await fetchSupabase(env, 'recruitments', 'status=eq.open&select=*');
-      if (activeRecruits && activeRecruits.length > 0) {
-        for (const oldRecruit of activeRecruits) {
-          // DB のステータスを closed に変更
-          await updateRecruitment(env, oldRecruit.id, { status: 'closed' }).catch(() => {});
-
-          // Discord 上の旧メッセージのボタンを無効化し、タイトルに [受付終了] を追加
-          try {
-            const oldMsgRes = await fetch(`https://discord.com/api/v10/channels/${oldRecruit.discord_channel_id}/messages/${oldRecruit.discord_message_id}`, {
-              headers: { "Authorization": `Bot ${env.DISCORD_TOKEN}` }
-            });
-            if (oldMsgRes.ok) {
-              const oldMsg = await oldMsgRes.json();
-              if (oldMsg.embeds && oldMsg.embeds.length > 0) {
-                const closedEmbed = { ...oldMsg.embeds[0] };
-                closedEmbed.title = closedEmbed.title.replace("開催告知", "[受付終了]");
-                closedEmbed.color = 0x7f8c8d; // グレーアウト
-
-                const disabledComponents = oldMsg.components ? oldMsg.components.map(row => ({
-                  ...row,
-                  components: row.components.map(btn => ({ ...btn, disabled: true }))
-                })) : [];
-
-                await fetch(`https://discord.com/api/v10/channels/${oldRecruit.discord_channel_id}/messages/${oldRecruit.discord_message_id}`, {
-                  method: 'PATCH',
-                  headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ embeds: [closedEmbed], components: disabledComponents })
-                }).catch(() => {});
-              }
-            }
-          } catch (e) {}
-        }
-      }
-    } catch (closeErr) {
-      console.warn('[WeeklyRecruit] 前回の募集締め切り処理のエラー:', closeErr);
-    }
-
-    // 2. 毎週月曜 12:00 JST 投稿時 ➔ 直近の「土曜日 21:00 JST」および「日曜日 21:00 JST」を開催日時とする
-    const now = new Date();
-    const jstNow = new Date(now.getTime() + 9 * 3600 * 1000);
-    const currentDay = jstNow.getUTCDay(); // 0(日)〜6(土)
-    
-    // 今週の土曜日までの日数（月曜日の場合 5日後）
-    let diffToSaturday = (6 - currentDay + 7) % 7;
-    if (diffToSaturday === 0 && jstNow.getUTCHours() >= 21) {
-      diffToSaturday = 7; // すでに土曜21時を過ぎている場合は来週
-    }
-    const diffToSunday = diffToSaturday + 1;
-
-    const satDate = jstNow.getUTCDate() + diffToSaturday;
-    const startSatUtcMs = Date.UTC(jstNow.getUTCFullYear(), jstNow.getUTCMonth(), satDate, 12, 0, 0, 0);
-    const satAtIso = new Date(startSatUtcMs).toISOString();
-    const satJst = new Date(startSatUtcMs + 9 * 3600 * 1000);
-    const satLabel = `${satJst.getUTCMonth() + 1}/${satJst.getUTCDate()}(土)`;
-
-    const sunDate = jstNow.getUTCDate() + diffToSunday;
-    const startSunUtcMs = Date.UTC(jstNow.getUTCFullYear(), jstNow.getUTCMonth(), sunDate, 12, 0, 0, 0);
-    const sunJst = new Date(startSunUtcMs + 9 * 3600 * 1000);
-    const sunLabel = `${sunJst.getUTCMonth() + 1}/${sunJst.getUTCDate()}(日)`;
-
-    const ownerId = CONFIG.ADMIN_ID;
-    
-    // 3部屋統合用メタデータ
-    const metadata = {
-      mode: '定期カスタム',
-      time: `${satLabel} & ${sunLabel} 21:00`,
-      maxCount: 30,
-      memo: `【定期カスタム】${satLabel}・${sunLabel} 21:00 開催予定！下のボタンからご希望の部門に参加してください🎮`,
-      owner: ownerId,
-      createdAt: new Date().toISOString(),
-      names: { [ownerId]: 'KTM定期カスタム' }
-    };
-
-    // 2部屋統合 Embed (プログレスバー付き初期状態)
-    // ★ 以前はここで初期バナーを独自にハードコードしていたため、ボタンが1回押されて
-    //   buildStatusBanner による更新が走った瞬間に文言が変わってしまっていた
-    //   (実測で「ノーマル/ARAM再募集」→「代替募集」のブレを確認)。色ロジックを
-    //   recruitmentStatus.js へ一本化したのと同じ理由で、文言生成も共通関数に統一する。
-    const initialStatusText = buildStatusBanner(computeRecruitmentStatus(0, 0));
-
-    // 参加スタイル(ボタン3種)の凡例。バナーと違い状態で変化しない静的テキストなので、
-    // 置換対象(BANNER_PATTERN)に巻き込まれないよう必ず空行を挟んで下に置く。
-    const staticGuide = [
-      '**▼ ボタンの種類（土曜・日曜それぞれにあります）**',
-      '🟢 **フル参加** = 全試合に参加　/　⏱️ **1戦のみ** = 21:00の第1試合だけ　/　🌙 **途中参加** = 2戦目から合流',
-      '',
-      '💡 1戦だけのスポット参加・途中抜けも大歓迎です！',
-      '💡 希望レーンの変更は、ポータルの「マイページ」からお願いします。'
-    ].join('\n');
-
-    const embed = {
-      title: `⚔️ KTM 週末定期カスタム [${satLabel}・${sunLabel} 21:00〜]`,
-      description: `${initialStatusText}\n\n${staticGuide}`,
-      color: 0xc89b3c, // 琥珀色
-      fields: [
+    if (posted > 0 && options.isBackupKick) {
+      await notifyAdminError(
+        env,
+        `定期カスタム募集をバックアップ経路から投稿しました (${posted}件)`,
         {
-          name: `⚔️ 土曜・本戦カスタム (0/10名)`,
-          value: `▫ 参加者: なし\n※ランク制限はありません。集まった方の最多ランク帯を基準に、実力が均等になるよう自動でチーム分けします（MMR変動あり）`,
-          inline: false
-        },
-        {
-          name: `🎪 日曜・お祭りカスタム (0/10名)`,
-          value: `▫ 参加者: なし\n※ランク不問・MMR変動なし。特殊ルール/ランダム/オフメタ等なんでも歓迎です`,
-          inline: false
+          detail: 'Cloudflareの本命cron(水曜12:00 JST)が空振りしています。Workers側のcron設定と実行ログを確認してください。',
+          source: 'postWeeklyRecruitment',
         }
-      ],
-      footer: { text: `土曜21:00〜 ＆ 日曜21:00〜（別々の募集です） | 主催: KTM運営` },
-      timestamp: new Date().toISOString()
-    };
-
-    // 参加ボタン（土曜: フル/1戦のみ/途中参加、日曜: フル/1戦のみ/途中参加）
-    const components = [
-      {
-        type: 1, // Action Row 1: 土曜部門
-        components: [
-          {
-            type: 2,
-            label: "🎮 土曜フル参加 (自動振分)",
-            style: 1, // Primary (Blue)
-            custom_id: "join_periodic_auto:full"
-          },
-          {
-            type: 2,
-            label: "⏱️ 土曜 1戦のみ",
-            style: 2, // Secondary (Gray)
-            custom_id: "join_periodic_auto:single"
-          },
-          {
-            type: 2,
-            label: "🌙 土曜 途中参加(2戦目〜)",
-            style: 2, // Secondary (Gray)
-            custom_id: "join_periodic_auto:late"
-          }
-        ]
-      },
-      {
-        type: 1, // Action Row 2: 日曜部門
-        components: [
-          {
-            type: 2,
-            label: "🎪 日曜フル参加",
-            style: 3, // Success (Green)
-            custom_id: "join_periodic_sunday:full"
-          },
-          {
-            type: 2,
-            label: "⏱️ 日曜 1戦のみ",
-            style: 2, // Secondary (Gray)
-            custom_id: "join_periodic_sunday:single"
-          },
-          {
-            type: 2,
-            label: "🌙 日曜 途中参加(2戦目〜)",
-            style: 2, // Secondary (Gray)
-            custom_id: "join_periodic_sunday:late"
-          }
-        ]
-      }
-    ];
-
-    const res = await fetchWithRetry(`https://discord.com/api/v10/channels/${targetChannelId}/messages`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        content: `📢 **【週末定期カスタム募集】${satLabel}・${sunLabel} 21:00 開催！** <@&${CONFIG.NOTIFICATION_ROLE_ID}>`,
-        embeds: [embed],
-        components: components,
-        allowed_mentions: { roles: [CONFIG.NOTIFICATION_ROLE_ID] }
-      })
-    });
-
-    if (!res.ok) {
-      console.error(`[WeeklyRecruit] 募集投稿に失敗: ${res.status} ${await res.text()}`);
-      return;
+      ).catch(() => {});
     }
-    const sent = await res.json();
-
-    // recruitments DB に記録
-    await createRecruitment(env, {
-      messageId: sent.id,
-      channelId: targetChannelId,
-      ownerDiscordId: ownerId,
-      mode: '定期カスタム',
-      maxCount: 30,
-      startAt: satAtIso,
-    });
-    console.log(`[WeeklyRecruit] 3部屋統合定期カスタム募集を投稿しました (msg ${sent.id})`);
-
-    try {
-      const { fetchPortalAPI } = await import('../utils/api.js');
-      await fetchPortalAPI(env, '/api/push/notify-recruit', { mode: '定期カスタム', time: `${satLabel} 21:00` }).catch(() => {});
-    } catch (e) {}
   } catch (err) {
     console.error('[WeeklyRecruit] error:', err);
+  }
+}
+
+/**
+ * 前回のオープンな定期カスタム募集を締め切る（DBを closed にし、Discord側のボタンも無効化）。
+ *
+ * ★ mode で必ず絞ること。以前は status=open の募集を無条件に全件締め切っていたため、
+ *   メンバーが自分で立てた進行中のアドホック募集まで毎週水曜に問答無用で
+ *   「[受付終了]」にされる状態だった。
+ */
+async function closePreviousPeriodicRecruitments(env, keepStartAts = []) {
+  try {
+    const activeRecruits = await fetchSupabase(
+      env, 'recruitments',
+      `status=eq.open&mode=eq.${encodeURIComponent('定期カスタム')}&select=*`
+    );
+    if (!activeRecruits || activeRecruits.length === 0) return;
+
+    // DB側の書式(+00:00)とISO文字列(.000Z)で表記が揺れるため、時刻の数値で比較する
+    const keep = new Set(
+      keepStartAts.map((v) => new Date(v).getTime()).filter((t) => !Number.isNaN(t))
+    );
+
+    for (const oldRecruit of activeRecruits) {
+      const at = oldRecruit.start_at ? new Date(oldRecruit.start_at).getTime() : NaN;
+      if (!Number.isNaN(at) && keep.has(at)) {
+        console.log(`[WeeklyRecruit] ${oldRecruit.discord_message_id} は今週分のため締め切り対象から除外`);
+        continue;
+      }
+
+      await updateRecruitment(env, oldRecruit.id, { status: 'closed' }).catch(() => {});
+
+      try {
+        const oldMsgRes = await fetch(`https://discord.com/api/v10/channels/${oldRecruit.discord_channel_id}/messages/${oldRecruit.discord_message_id}`, {
+          headers: { "Authorization": `Bot ${env.DISCORD_TOKEN}` }
+        });
+        if (!oldMsgRes.ok) continue;
+
+        const oldMsg = await oldMsgRes.json();
+        if (!oldMsg.embeds || oldMsg.embeds.length === 0) continue;
+
+        const closedEmbed = { ...oldMsg.embeds[0] };
+        closedEmbed.title = `🔒 [受付終了] ${closedEmbed.title || ''}`.trim();
+        closedEmbed.color = 0x7f8c8d; // グレーアウト
+
+        const disabledComponents = oldMsg.components
+          ? oldMsg.components.map(row => ({
+              ...row,
+              components: row.components.map(btn => ({ ...btn, disabled: true }))
+            }))
+          : [];
+
+        await fetch(`https://discord.com/api/v10/channels/${oldRecruit.discord_channel_id}/messages/${oldRecruit.discord_message_id}`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ embeds: [closedEmbed], components: disabledComponents })
+        }).catch(() => {});
+      } catch (e) {
+        console.warn('[WeeklyRecruit] 旧カードの締め切り表示に失敗:', e);
+      }
+    }
+  } catch (closeErr) {
+    console.warn('[WeeklyRecruit] 前回の募集締め切り処理のエラー:', closeErr);
+  }
+}
+
+/**
+ * 1日分の募集カードを投稿し、recruitments へ登録する。投稿したら true。
+ * @param {{seedLines?: string[], skipDuplicateCheck?: boolean}} [options]
+ *   seedLines: 旧カードからの移行時に、既存の参加者行をそのまま引き継ぐ
+ *   skipDuplicateCheck: 移行時のみ true（同じ start_at の旧レコードが残っているため）
+ */
+async function postDayRecruitmentCard(env, channelId, target, options = {}) {
+  const { def, label, startAtIso, dayKey } = target;
+  const seedLines = options.seedLines || [];
+
+  // 二重投稿防止: 同じ開始時刻の定期カスタムが既にあれば（open/closed問わず）スキップ
+  if (!options.skipDuplicateCheck) try {
+    const existing = await fetchSupabase(
+      env, 'recruitments',
+      `mode=eq.${encodeURIComponent('定期カスタム')}&start_at=eq.${encodeURIComponent(startAtIso)}&select=id&limit=1`
+    );
+    if (existing && existing.length > 0) {
+      console.log(`[WeeklyRecruit] ${label}(${startAtIso})の募集は投稿済みのためスキップ（二重発火防止）`);
+      return false;
+    }
+  } catch (dupErr) {
+    console.warn(`[WeeklyRecruit] ${label}の二重投稿チェックに失敗（投稿は続行）:`, dupErr);
+  }
+
+  const embed = buildDayRecruitEmbed(target, seedLines);
+  const components = buildDayRecruitComponents(dayKey);
+
+  const res = await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      content: `📢 **【${def.shortName}募集】${label} 21:00〜** <@&${CONFIG.NOTIFICATION_ROLE_ID}>`,
+      embeds: [embed],
+      components,
+      allowed_mentions: { roles: [CONFIG.NOTIFICATION_ROLE_ID] }
+    })
+  });
+
+  if (!res.ok) {
+    console.error(`[WeeklyRecruit] ${label}の募集投稿に失敗: ${res.status} ${await res.text()}`);
+    return false;
+  }
+  const sent = await res.json();
+
+  await createRecruitment(env, {
+    messageId: sent.id,
+    channelId,
+    ownerDiscordId: CONFIG.ADMIN_ID,
+    mode: '定期カスタム',
+    maxCount: DAY_CAPACITY,
+    startAt: startAtIso,
+  });
+  console.log(`[WeeklyRecruit] ${def.name} ${label} の募集を投稿しました (msg ${sent.id})`);
+
+  try {
+    await fetchPortalAPI(env, '/api/push/notify-recruit', {
+      mode: '定期カスタム',
+      time: `${label} 21:00`,
+    }).catch(() => {});
+  } catch (e) {}
+
+  return true;
+}
+
+/**
+ * 旧形式（1枚のカードに土日が同居）の募集カードを、土日2枚の新形式へ移行する一度きりの処理。
+ * 既存の参加者をそのまま新カードへ引き継ぎ、旧カードは受付終了にしてボタンを無効化する。
+ * デプロイ直後に /trigger-scheduled?key=...&mode=weekly_recruit_migrate で手動キックする。
+ *
+ * ※ 新旧で同じ start_at のレコードが並ぶことになるが、参照側はいずれも
+ *   created_at の降順で最新1件を見るため、常に新カードが選ばれる。
+ */
+async function migrateLegacyPeriodicCards(env) {
+  try {
+    const channelId = CONFIG.PERIODIC_RECRUIT_CHANNEL_ID || CONFIG.RECRUIT_CHANNEL_ID;
+    const rows = await fetchSupabase(
+      env, 'recruitments',
+      `status=eq.open&mode=eq.${encodeURIComponent('定期カスタム')}&select=*&order=created_at.desc`
+    );
+    if (!rows || rows.length === 0) {
+      console.log('[Migrate] open な定期カスタム募集がありません');
+      return;
+    }
+
+    const seeds = { sat: [], sun: [] };
+    let migratedAny = false;
+
+    for (const row of rows) {
+      try {
+        const msgRes = await fetchWithRetry(
+          `https://discord.com/api/v10/channels/${row.discord_channel_id}/messages/${row.discord_message_id}`,
+          { headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` } }
+        );
+        if (!msgRes.ok) continue;
+        const msg = await msgRes.json();
+        const fields = msg.embeds?.[0]?.fields || [];
+        const dayFields = fields.filter((f) => detectDayKey(f.name) !== null);
+        if (dayFields.length < 2) {
+          console.log(`[Migrate] ${row.discord_message_id} は旧形式ではないためスキップ`);
+          continue;
+        }
+
+        for (const f of dayFields) {
+          const key = detectDayKey(f.name);
+          if (key) seeds[key].push(...extractEntryLines(f.value));
+        }
+
+        // 旧カードを受付終了にする
+        const closedEmbed = { ...msg.embeds[0] };
+        closedEmbed.title = `🔒 [受付終了] ${closedEmbed.title || ''}`.trim();
+        closedEmbed.description = '⚠️ このカードは土曜／日曜それぞれの新しい募集カードへ移行しました。参加は新しいカードからお願いします。';
+        closedEmbed.color = 0x7f8c8d;
+        const disabled = (msg.components || []).map((r) => ({
+          ...r, components: r.components.map((b) => ({ ...b, disabled: true }))
+        }));
+        await fetchWithRetry(`https://discord.com/api/v10/channels/${row.discord_channel_id}/messages/${row.discord_message_id}`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ embeds: [closedEmbed], components: disabled })
+        }).catch(() => {});
+        await updateRecruitment(env, row.id, { status: 'closed' }).catch(() => {});
+        migratedAny = true;
+      } catch (e) {
+        console.warn(`[Migrate] ${row.discord_message_id} の読み取りに失敗:`, e);
+      }
+    }
+
+    if (!migratedAny) {
+      console.log('[Migrate] 移行対象の旧形式カードはありませんでした');
+      return;
+    }
+
+    // 同一ユーザーが重複して載っている場合は先勝ちで1行に寄せる
+    const dedupe = (lines) => {
+      const seen = new Set();
+      const out = [];
+      for (const line of lines) {
+        const id = line.match(/<@(\d+)>/)?.[1];
+        if (!id || seen.has(id)) continue;
+        seen.add(id);
+        out.push(line);
+      }
+      return out;
+    };
+
+    for (const target of resolveWeekendTargets()) {
+      await postDayRecruitmentCard(env, channelId, target, {
+        seedLines: dedupe(seeds[target.dayKey] || []),
+        skipDuplicateCheck: true,
+      });
+    }
+    console.log('[Migrate] 新形式カードへの移行が完了しました');
+  } catch (err) {
+    console.error('[Migrate] error:', err);
   }
 }
 
@@ -659,278 +704,130 @@ async function createWeeklyEvents(env) {
   }
 }
 
-/** イベントおよび定期募集の「参加者・興味あり」メンバーを同期抽出して送信する */
-async function sendEventUsersNotification(env, options = {}) {
-  const lookaheadHours = options.lookaheadHours || 48;
-  const isAdvanceNotice = lookaheadHours > 48;
-  console.log(`Starting event users extraction notification... (lookahead: ${lookaheadHours}h)`);
+/** recruitments から、その日の募集カードと現在の参加人数を取得する */
+async function loadDayRecruitmentSummary(env, target) {
   try {
-    const channelId = CONFIG.MATCH_CHANNEL_ID || CONFIG.PERIODIC_RECRUIT_CHANNEL_ID || "1528646515533287497";
-    
-    // 1. チャンネル情報から Guild ID を動的に取得
-    const channelRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}`, {
+    const rows = await fetchSupabase(
+      env, 'recruitments',
+      `mode=eq.${encodeURIComponent('定期カスタム')}&start_at=eq.${encodeURIComponent(target.startAtIso)}` +
+      `&select=id,discord_message_id,discord_channel_id,status&order=created_at.desc&limit=1`
+    );
+    if (!rows || rows.length === 0) return null;
+
+    const row = rows[0];
+    const msgRes = await fetchWithRetry(
+      `https://discord.com/api/v10/channels/${row.discord_channel_id}/messages/${row.discord_message_id}`,
+      { headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` } }
+    );
+    if (!msgRes.ok) {
+      console.warn(`[Recruit] ${target.label}の募集カード(${row.discord_message_id})を取得できませんでした: ${msgRes.status}`);
+      return null;
+    }
+
+    const message = await msgRes.json();
+    // 分離後のカードは「参加者フィールド1つ」構成なので fields[0] を見れば良い。
+    const lines = extractEntryLines(message.embeds?.[0]?.fields?.[0]?.value);
+
+    return {
+      target,
+      recruitId: row.id,
+      messageId: row.discord_message_id,
+      channelId: row.discord_channel_id,
+      message,
+      lines,
+      status: computeDayStatus(lines.length),
+    };
+  } catch (e) {
+    console.warn(`[Recruit] ${target.label}の募集カード取得に失敗:`, e);
+    return null;
+  }
+}
+
+/** チャンネルIDから Guild ID を解決する（メッセージリンクの組み立て用） */
+async function resolveGuildId(env, channelId) {
+  try {
+    const res = await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}`, {
       headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
     });
+    if (!res.ok) return null;
+    return (await res.json()).guild_id || null;
+  } catch (e) {
+    return null;
+  }
+}
 
-    if (!channelRes.ok) throw new Error(`Failed to fetch channel info: ${channelRes.status}`);
-
-    const channelInfo = await channelRes.json();
-    const guildId = channelInfo.guild_id;
-    if (!guildId) throw new Error("Guild ID not found in channel response.");
-
-    // 2. DBおよびチャンネル直近メッセージからアクティブな最新の募集カードを取得して完全同期
-    let activeEmbed = null;
-    let targetMessageId = null;
-    try {
-      // チャンネルの直近メッセージから最新の募集カードを探す
-      const channelMsgsRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages?limit=20`, {
-        headers: { "Authorization": `Bot ${env.DISCORD_TOKEN}` }
-      });
-      if (channelMsgsRes.ok) {
-        const channelMsgs = await channelMsgsRes.json();
-        const recruitMsg = channelMsgs.find(m => m.author?.bot && m.embeds?.[0]?.title && m.embeds[0].title.includes("定期カスタム"));
-        if (recruitMsg) {
-          activeEmbed = recruitMsg.embeds[0];
-          targetMessageId = recruitMsg.id;
-        }
-      }
-    } catch (dbErr) {
-      console.warn("Recruitment fetch warning:", dbErr);
-    }
-    let satCount = 0;
-    let sunCount = 0;
-
-    if (activeEmbed && activeEmbed.fields) {
-      activeEmbed.fields.forEach(f => {
-        const matches = (f.value || "").match(/- <@\d+>/g) || [];
-        if (f.name.includes("土曜") || f.name.includes("本戦")) {
-          satCount = matches.length;
-        } else if (f.name.includes("お祭り") || f.name.includes("日曜")) {
-          sunCount = matches.length;
-        }
-      });
+/**
+ * 金曜19:00 / 土曜17:00 / 日曜17:00 の中間アナウンス（残り枠リマインド）。
+ *
+ * ★ 2026-09-23に全面的に作り直した。以前はこの通知が募集カードの参加者一覧・
+ *   経験層分析まで丸ごと複製したEmbedを毎回投稿しており、同じ情報が週3回
+ *   チャンネルへ積み上がっていた。さらに通知側にも参加ボタンが付いていたため、
+ *   「押されたメッセージ」と「本来のカード」の間で fields を丸ごとコピーし合う
+ *   同期処理が必要になり、カードを2枚に分けると土曜の内容が日曜カードを
+ *   上書きする事故の温床になる。
+ *   現在は「各日の残り枠 ＋ 募集カードへのリンク」だけを伝える1通に絞り、
+ *   参加はカード側のボタンに一本化している。
+ */
+async function sendEventUsersNotification(env, options = {}) {
+  console.log('[EventNotify] Starting weekend recruitment reminder...');
+  try {
+    const channelId = CONFIG.PERIODIC_RECRUIT_CHANNEL_ID || CONFIG.MATCH_CHANNEL_ID || CONFIG.RECRUIT_CHANNEL_ID;
+    if (!channelId) {
+      console.error('[EventNotify] 通知先チャンネルIDが解決できませんでした');
+      return;
     }
 
-    const recruitStatus = computeRecruitmentStatus(satCount, sunCount);
-    const satShortfall = recruitStatus.satRem;
-    const sunShortfall = recruitStatus.sunRem;
-    const totalJoined = recruitStatus.totalJoined;
+    // 当日に応じて対象日を絞る。土曜17:00の通知に日曜の話まで並べても情報量が増えるだけなので、
+    // 金曜は土日の両方、土曜は土曜のみ、日曜は日曜のみを扱う。
+    const jstNow = new Date(Date.now() + 9 * 3600 * 1000);
+    const jstDay = jstNow.getUTCDay(); // 0(日)〜6(土)
+    let targets = resolveWeekendTargets();
+    if (jstDay === 6) targets = targets.filter((t) => t.dayKey === 'sat');
+    else if (jstDay === 0) targets = targets.filter((t) => t.dayKey === 'sun');
 
-    // 4. アナウンス Embed の作成（募集カードを完全同期 ＆ 参加者の希望レーン・経験度バッジを自動付与）
-    let syncFields = activeEmbed ? activeEmbed.fields : [];
-
-    // 参加ユーザー全員の希望レーン＆経験度バッジを全件一括ルックアップして補完
-    if (syncFields && syncFields.length > 0) {
-      try {
-        const allUserIds = new Set();
-        syncFields.forEach(f => {
-          const matches = (f.value || "").match(/<@(\d+)>/g);
-          if (matches) {
-            matches.forEach(m => allUserIds.add(m.replace(/<@|>/g, '')));
-          }
-        });
-
-        if (allUserIds.size > 0) {
-          const idsArr = Array.from(allUserIds);
-          const [playersRows, participantsRows] = await Promise.all([
-            fetchSupabase(env, 'ktm_players', `discord_id=in.(${idsArr.join(',')})&select=discord_id,name,role_preferences,mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup,games_top,games_jg,games_mid,games_adc,games_sup,metadata`).catch(() => []),
-            fetchSupabase(env, 'ktm_match_participants', `discord_id=in.(${idsArr.join(',')})&select=discord_id,created_at&order=created_at.desc`).catch(() => [])
-          ]);
-
-          const now = Date.now();
-          const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
-          const matchStatsMap = new Map();
-          (participantsRows || []).forEach(row => {
-            const dId = String(row.discord_id);
-            let s = matchStatsMap.get(dId);
-            if (!s) {
-              s = { total: 0, recent30d: 0, lastPlayedAt: null };
-              matchStatsMap.set(dId, s);
-            }
-            s.total += 1;
-            const t = row.created_at ? new Date(row.created_at).getTime() : 0;
-            if (t >= thirtyDaysAgo) s.recent30d += 1;
-            if (!s.lastPlayedAt || t > s.lastPlayedAt) s.lastPlayedAt = t;
-          });
-
-          const playerMap = new Map();
-          (playersRows || []).forEach(p => {
-            playerMap.set(String(p.discord_id), p);
-          });
-
-          const RANK_JP_MAP = {
-            CHALLENGER: 'チャレンジャー', GRANDMASTER: 'グランドマスター', MASTER: 'マスター',
-            DIAMOND: 'ダイヤ', EMERALD: 'エメラルド', PLATINUM: 'プラチナ',
-            GOLD: 'ゴールド', SILVER: 'シルバー', BRONZE: 'ブロンズ', IRON: 'アイアン',
-            UNRANKED: '未ランク'
-          };
-
-          syncFields = syncFields.map((f, fIdx) => {
-            const isSundayField = fIdx === 1 || f.name.includes("日曜") || f.name.includes("お祭り");
-            let lines = (f.value || "").split('\n');
-            let updatedLines = lines.map(line => {
-              const uMatch = line.match(/<@(\d+)>/);
-              if (!uMatch) return line;
-
-              const uId = uMatch[1];
-              const p = playerMap.get(uId);
-              const mStats = matchStatsMap.get(uId);
-
-              // 参加スタイル（フル/1戦のみ/途中参加）の抽出
-              let styleBadge = " 🟢フル";
-              if (line.includes("⏱️1戦のみ") || line.includes("⏱️ 1戦のみ")) styleBadge = " ⏱️1戦のみ";
-              else if (line.includes("🌙途中参加")) {
-                styleBadge = line.includes("2戦目〜") ? " 🌙途中参加(2戦目〜)" : " 🌙途中参加";
-              }
-
-              // 経験度の計算
-              let expObj = null;
-              if (p) {
-                const laneSum = (p.games_top || 0) + (p.games_jg || 0) + (p.games_mid || 0) + (p.games_adc || 0) + (p.games_sup || 0);
-                const totalG = mStats?.total ?? laneSum;
-                const recent30d = mStats?.recent30d ?? 0;
-                const daysAgo = mStats?.lastPlayedAt ? Math.floor((now - mStats.lastPlayedAt) / (24 * 60 * 60 * 1000)) : null;
-
-                expObj = getPlayerExperienceBadge({
-                  total_games: totalG,
-                  recent_games_30d: recent30d,
-                  days_since_last_match: daysAgo,
-                  metadata: p.metadata
-                });
-              } else {
-                expObj = { short: '🔰初参加' };
-              }
-              const expBadgeStr = ` ${expObj.short}`;
-
-              // ランクの再計算（土曜本戦のみ表示）
-              let rankStr = "";
-              if (!isSundayField) {
-                if (p) {
-                  const mmr = getHighestLaneMmr(p);
-                  const tier = getKtmRank(mmr ?? 0);
-                  const jpName = RANK_JP_MAP[tier.name] || tier.name || "シルバー";
-                  rankStr = ` 【${jpName}】`;
-                } else {
-                  // pがない場合、既存行のランクを保持または未ランク
-                  const rMatch = line.match(/【(アイアン|ブロンズ|シルバー|ゴールド|プラチナ|エメラルド|ダイヤ|マスター|チャレンジャー|グランドマスター|未ランク)】/);
-                  rankStr = rMatch ? ` 【${rMatch[1]}】` : ` 【未ランク】`;
-                }
-              }
-
-              // 希望レーンの再計算
-              let lanePrefStr = "";
-              try {
-                let pref = p?.role_preferences;
-                if (typeof pref === 'string') {
-                  try { pref = JSON.parse(pref); } catch (e) {}
-                }
-                if (pref && (pref.primary || pref.secondary)) {
-                  const p1 = pref.primary || "指定なし";
-                  const p2 = pref.secondary || "指定なし";
-                  lanePrefStr = ` 【第1: ${p1} / 第2: ${p2}】`;
-                } else {
-                  const prefMatch = line.match(/【第1: [^】]+】/);
-                  if (prefMatch) lanePrefStr = ` ${prefMatch[0]}`;
-                }
-              } catch (e) {}
-
-              // 完全に正規化された行を再構築
-              return `- <@${uId}>${styleBadge}${expBadgeStr}${rankStr}${lanePrefStr}`;
-            });
-            return { ...f, value: updatedLines.join('\n') };
-          });
-        }
-      } catch (prefErr) {
-        console.warn("Role pref & exp badge sync warning:", prefErr);
-      }
-    }
-    
-    if (!syncFields || syncFields.length === 0) {
-      syncFields = [
-        { name: "⚔️ 土曜・本戦カスタム (0/10名)", value: "▫ 参加者: なし", inline: false },
-        { name: "🎪 日曜・お祭りカスタム (0/10名)", value: "▫ 参加者: なし", inline: false }
-      ];
+    // ★ 2026-09-23追加: 手遅れ実行のガード。バックアップ経路(GitHub Actions)は実測で
+    // 1〜5時間遅れて発火するため、土日の21:00開始を過ぎてから「あと○名！」を
+    // 投げてしまう事態を防ぐ。
+    if ((jstDay === 6 || jstDay === 0) && jstNow.getUTCHours() >= 21) {
+      console.log('[EventNotify] 開催時刻(21:00 JST)を過ぎているためスキップ');
+      return;
     }
 
-    // 参加メンバーの経験層分析フィールドの同期/追加
-    const satLines = (syncFields[0]?.value || "").split('\n').filter(l => l.startsWith('- '));
-    const sunLines = (syncFields[1]?.value || "").split('\n').filter(l => l.startsWith('- '));
-    const allLines = [...satLines, ...sunLines];
-
-    const userExpMap = new Map();
-    for (const line of allLines) {
-      const uMatch = line.match(/<@(\d+)>/);
-      if (!uMatch) continue;
-      const uid = uMatch[1];
-      if (userExpMap.has(uid)) continue;
-
-      let tier = 'regular';
-      if (line.includes('🔰初参加') || line.includes('🔰 初参加')) tier = 'new';
-      else if (line.includes('🌱ライト') || line.includes('🌱 ライト')) tier = 'light';
-      else if (line.includes('⏳復帰勢') || line.includes('⏳ 復帰勢') || line.includes('🎖️経験者') || line.includes('🎖️ 経験者')) tier = 'returning';
-      else if (line.includes('👑常連') || line.includes('👑 常連')) tier = 'regular';
-      else tier = 'regular';
-      userExpMap.set(uid, tier);
+    const summaries = [];
+    for (const target of targets) {
+      const summary = await loadDayRecruitmentSummary(env, target);
+      if (summary) summaries.push(summary);
+    }
+    if (summaries.length === 0) {
+      console.log('[EventNotify] 対象の定期カスタム募集カードが見つからないためスキップ');
+      return;
     }
 
-    const totalUniqueUsers = userExpMap.size;
-    if (totalUniqueUsers > 0) {
-      let newCnt = 0;
-      let lightCnt = 0;
-      let returningCnt = 0;
-      let regularCnt = 0;
+    const allReady = summaries.every((s) => s.status.isReady);
+    const guildId = await resolveGuildId(env, channelId);
 
-      for (const t of userExpMap.values()) {
-        if (t === 'new') newCnt++;
-        else if (t === 'light') lightCnt++;
-        else if (t === 'returning') returningCnt++;
-        else if (t === 'regular') regularCnt++;
-      }
-
-      const ratio = Math.round(((newCnt + lightCnt + returningCnt) / totalUniqueUsers) * 100);
-      const expField = {
-        name: `👥 参加者の経験層（土日いずれかに参加: ${totalUniqueUsers}名）`,
-        value: `🔰初参加: **${newCnt}名** | 🌱ライト: **${lightCnt}名** | ⏳復帰勢: **${returningCnt}名** | 👑常連: **${regularCnt}名**\n✨ 初心者・復帰勢歓迎！ (新規・ライト・復帰層: **${ratio}%**)`,
-        inline: false
-      };
-
-      const expIdx = syncFields.findIndex(f => f.name.includes("経験層"));
-      if (expIdx >= 0) {
-        syncFields[expIdx] = expField;
-      } else {
-        syncFields.push(expField);
-      }
-    } else {
-      syncFields = syncFields.filter(f => !f.name.includes("経験層"));
-    }
-
-    const recruitLink = targetMessageId ? `\n\n👉 [元の募集メッセージを開く](https://discord.com/channels/${guildId}/${channelId}/${targetMessageId})` : '';
-    const laneNote = `\n\n💡 **希望レーンに変更がある方は、ポータルの「マイページ」より事前に変更をお願いします！**`;
-
-    const isAllReady = recruitStatus.isAllReady;
-    let statusMessage = '';
-    if (isAllReady) {
-      statusMessage = `🎉 **土曜・日曜ともに10名達成！両日とも開催確定です！**${laneNote}${recruitLink}`;
-    } else {
-      // ★ 土日を合算した数字は出さない(募集カード本体と同じ理由、2026-09-21)。
-      //   各日が独立して10名で成立することが一目で分かる並びにする。
-      const satLine = recruitStatus.isSatReady
-        ? `⚔️ **土曜・本戦カスタム**　${satCount}/10名 → **✅ 開催確定！**`
-        : `⚔️ **土曜・本戦カスタム**　${satCount}/10名 → **あと${satShortfall}名**で開催確定`;
-      const sunLine = recruitStatus.isSunReady
-        ? `🎪 **日曜・お祭りカスタム**　${sunCount}/10名 → **✅ 開催確定！**`
-        : `🎪 **日曜・お祭りカスタム**　${sunCount}/10名 → **あと${sunShortfall}名**で開催確定`;
-      statusMessage = `⚠️ **週末定期カスタム 募集中！**\n${satLine}\n${sunLine}\n\n※土曜と日曜は別々の募集です。片方だけの参加でもOK！\n💡 21:00の第1試合だけ参加する「1戦のみ」も大歓迎です。${laneNote}${recruitLink}`;
-    }
-    const embedColor = recruitStatus.color;
+    const dayLines = summaries.map((s) => {
+      const def = getDayDef(s.target.dayKey);
+      const state = s.status.isReady ? '**✅ 開催確定！**' : `**あと${s.status.remaining}名**`;
+      const link = guildId
+        ? ` → [募集カードを開く](https://discord.com/channels/${guildId}/${s.channelId}/${s.messageId})`
+        : '';
+      return `${def.emoji} **${def.name}**　${s.target.label} 21:00　${s.status.joined}/${s.status.capacity}名 → ${state}${link}`;
+    });
 
     const embed = {
-      title: activeEmbed ? activeEmbed.title : `📅 【週末定期】カスタム戦 参加メンバー状況 🔔`,
-      description: statusMessage,
-      color: embedColor,
-      fields: syncFields,
-      footer: { text: "KTM Bot | 週末募集同期アナウンス" },
-      timestamp: new Date().toISOString()
+      title: allReady ? '🎉 週末カスタム 開催確定！' : '📣 週末カスタム 残り枠のお知らせ',
+      description: [
+        dayLines.join('\n'),
+        '',
+        allReady
+          ? '21:00開始です。時間になったらVCへの集合をお願いします。'
+          : '💡 21:00の第1試合だけ参加する「1戦のみ」も大歓迎です。参加は各募集カードのボタンからどうぞ。',
+        '💡 希望レーンの変更は、ポータルの「マイページ」からお願いします。',
+      ].join('\n'),
+      color: allReady ? RECRUITMENT_COLORS.confirmed : RECRUITMENT_COLORS.recruiting,
+      footer: { text: 'KTM Bot | 週末カスタム リマインド' },
+      timestamp: new Date().toISOString(),
     };
 
     // 二重投稿防止: 直近1時間以内に同一タイトルのBot投稿があればスキップ
@@ -942,8 +839,7 @@ async function sendEventUsersNotification(env, options = {}) {
       if (recentRes.ok) {
         const recent = await recentRes.json();
         const oneHourAgo = Date.now() - 60 * 60 * 1000;
-        const dupTitle = embed.title;
-        if (recent.find((m) => m.author?.bot && m.embeds?.[0]?.title === dupTitle && new Date(m.timestamp).getTime() > oneHourAgo)) {
+        if (recent.find((m) => m.author?.bot && m.embeds?.[0]?.title === embed.title && new Date(m.timestamp).getTime() > oneHourAgo)) {
           console.log('[EventNotify] 同一タイトルの通知が直近1時間以内にあるためスキップ（二重発火防止）');
           return;
         }
@@ -952,99 +848,44 @@ async function sendEventUsersNotification(env, options = {}) {
       console.warn('[EventNotify] 二重投稿チェックに失敗（送信は続行）:', dupErr);
     }
 
-    // 5. メッセージ ＆ ワンタップ「参加する」ボタンの作成（2段構成）
+    const messageBody = { embeds: [embed] };
+
     const roleId = CONFIG.NOTIFICATION_ROLE_ID;
-    const messageBody = {
-      embeds: [embed],
-      components: [
-        {
-          type: 1, // Action Row 1: 土曜
-          components: [
-            {
-              type: 2,
-              label: "🎮 土曜フル参加 (自動振分)",
-              style: 1, // Primary (Blue)
-              custom_id: "join_periodic_auto:full"
-            },
-            {
-              type: 2,
-              label: "⏱️ 土曜 1戦のみ",
-              style: 2,
-              custom_id: "join_periodic_auto:single"
-            },
-            {
-              type: 2,
-              label: "🌙 土曜 途中参加",
-              style: 2,
-              custom_id: "join_periodic_auto:late"
-            }
-          ]
-        },
-        {
-          type: 1, // Action Row 2: 日曜
-          components: [
-            {
-              type: 2,
-              label: "🎪 日曜フル参加",
-              style: 3, // Success (Green)
-              custom_id: "join_periodic_sunday:full"
-            },
-            {
-              type: 2,
-              label: "⏱️ 日曜 1戦のみ",
-              style: 2,
-              custom_id: "join_periodic_sunday:single"
-            },
-            {
-              type: 2,
-              label: "🌙 日曜 途中参加",
-              style: 2,
-              custom_id: "join_periodic_sunday:late"
-            }
-          ]
-        }
-      ]
-    };
-
-    if (!isAllReady && roleId) {
-      let shortText = [];
-      if (satShortfall > 0) shortText.push(`土曜本戦 あと${satShortfall}名`);
-      if (sunShortfall > 0) shortText.push(`日曜お祭り あと${sunShortfall}名`);
-
-      let helperCall = "";
-      if ((satShortfall <= 2 && satShortfall > 0) || (sunShortfall <= 2 && sunShortfall > 0)) {
-        helperCall = "\n💡 **「21:00からの第1試合だけなら参加できる！」という1戦のみ助っ人も大歓迎です！**";
-      }
-
-      messageBody.content = `<@&${roleId}> 📢 **【${shortText.join(' / ')}】で週末カスタム開催です！** 参加できる方は下のボタンからエントリーをお願いします！${helperCall}`;
+    if (!allReady && roleId) {
+      const shortText = summaries
+        .filter((s) => !s.status.isReady)
+        .map((s) => `${getDayDef(s.target.dayKey).label} あと${s.status.remaining}名`)
+        .join(' / ');
+      messageBody.content = `<@&${roleId}> 📢 **【${shortText}】** 参加できる方はエントリーをお願いします！`;
       messageBody.allowed_mentions = { roles: [roleId] };
     }
 
     const sendRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bot ${env.DISCORD_TOKEN}`,
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(messageBody)
     });
 
     if (!sendRes.ok) {
-      console.error(`Failed to send message: ${sendRes.status} ${await sendRes.text()}`);
+      console.error(`[EventNotify] 送信に失敗: ${sendRes.status} ${await sendRes.text()}`);
     } else {
-      console.log(`Integrated notification with action buttons sent successfully.`);
+      console.log(`[EventNotify] 残り枠リマインドを送信しました (対象${summaries.length}日分)`);
     }
-
   } catch (err) {
     console.error("Error in sendEventUsersNotification:", err);
   }
 }
 
+
 /**
- * 当日 20:00 (JST) 開催可否判定 ＆ 中止時の自動代替募集トリガー
- * - 土曜日: シルバー以下 / ゴルプラ それぞれ10名以上集まっているか判定。
- * - 日曜日: お祭り部門が10名以上集まっているか判定。
- * - 10名未満の場合: 「中止」を自動告知し、その場で「🎮 ノーマル行く人！ / 🔥 ARAM・メイヘム行く人！」の代替募集ボタンを提示。
+ * 当日 20:00 (JST) の開催可否判定 ＆ 中止時の自動代替募集トリガー。
+ * 土曜は「土曜・本戦カスタム」、日曜は「日曜・お祭りカスタム」のカードだけを見る。
+ *
+ * ★ 2026-09-23: カードを2枚に分離したのに伴い、対象カードの特定方法を変更した。
+ *   以前は「このチャンネルで最新の open な定期カスタム1件」を取ってきて、その中の
+ *   土曜フィールド/日曜フィールドを読み分けていた。カードが2枚になるとこの
+ *   「最新1件」は常に日曜カード（後に投稿した方）を指してしまい、土曜の判定が
+ *   日曜の人数で行われる。start_at で当日のカードを直接引くよう改めた。
  */
 export async function checkCustomStatusAt2000(env) {
   try {
@@ -1052,9 +893,6 @@ export async function checkCustomStatusAt2000(env) {
     // env.DISCORD_KTM_CHANNEL_ID を素で参照していた。この変数はconfig.jsにもwrangler.tomlにも
     // 定義が無く(コードベース全体でこの1箇所しか参照が無い)、未設定なら即returnするため、
     // cronが正しく発火しても20:00判定が無言で何もしない状態だった(「孤立した自動化」パターン)。
-    // 募集カードを実際に投稿している postWeeklyRecruitment と同じ解決順に揃える。
-    // (DB照合も discord_channel_id=eq.${channelId} で行うため、投稿先と一致していないと
-    //  「対象の定期カスタム募集が見つかりません」で必ず空振りする)
     const channelId = env.DISCORD_KTM_CHANNEL_ID || CONFIG.PERIODIC_RECRUIT_CHANNEL_ID || CONFIG.RECRUIT_CHANNEL_ID;
     if (!channelId) {
       console.error('[Check2000] 判定対象のチャンネルIDが解決できませんでした');
@@ -1064,20 +902,27 @@ export async function checkCustomStatusAt2000(env) {
     // 現在のJST曜日を取得 (0=日, 6=土)
     const nowJst = new Date(Date.now() + 9 * 60 * 60 * 1000);
     const dayOfWeek = nowJst.getUTCDay();
-    const isSaturday = dayOfWeek === 6;
-    const isSunday = dayOfWeek === 0;
-
-    if (!isSaturday && !isSunday) {
+    const dayKey = dayOfWeek === 6 ? 'sat' : dayOfWeek === 0 ? 'sun' : null;
+    if (!dayKey) {
       console.log('[Check2000] 土日ではないためスキップ');
       return;
     }
 
-    const targetDayName = isSaturday ? '土曜カスタム' : '日曜お祭りカスタム';
+    // ★ 2026-09-23追加: 手遅れ実行のガード。
+    // GitHub Actionsのバックアップは実測で1〜5時間遅れて発火する（2026-09-23調査）。
+    // 21:00開始の可否判定を22時や23時に投稿しても意味が無いどころか、
+    // 「本日20:00 判定結果: 中止」が試合後に流れる混乱の元になる。
+    const jstMinutes = nowJst.getUTCHours() * 60 + nowJst.getUTCMinutes();
+    if (jstMinutes < 19 * 60 + 50 || jstMinutes > 21 * 60) {
+      console.log(`[Check2000] 20:00判定の有効時間帯(19:50〜21:00 JST)を外れているためスキップ (現在 ${nowJst.getUTCHours()}:${String(nowJst.getUTCMinutes()).padStart(2, '0')} JST)`);
+      return;
+    }
 
-    // 二重投稿防止(2026-09-21追加): この関数にはこれまで重複チェックが無かった。
-    // Cloudflareネイティブcron(20:00 JST)とGitHub Actionsバックアップ(20:15 JST)を
-    // 15分差で両方発火させるようにしたため、ガードが無いと開催判定メッセージが
-    // 毎回2回投稿されてしまう。直近30分以内に同種の判定メッセージが無いか確認する。
+    const def = getDayDef(dayKey);
+
+    // 二重投稿防止(2026-09-21追加): Cloudflareネイティブcron(20:00 JST)と
+    // GitHub Actionsバックアップを両方発火させているため、ガードが無いと
+    // 判定メッセージが2回投稿される。直近30分以内に同種の投稿が無いか確認する。
     try {
       const recentRes = await fetchWithRetry(
         `https://discord.com/api/v10/channels/${channelId}/messages?limit=10`,
@@ -1100,169 +945,96 @@ export async function checkCustomStatusAt2000(env) {
       console.warn('[Check2000] 二重投稿チェックに失敗（判定は続行）:', dupErr);
     }
 
-    // 最新の open な定期カスタム募集を取得
-    const rows = await fetchSupabase(
-      env,
-      'recruitments',
-      `mode=eq.${encodeURIComponent('定期カスタム')}&status=eq.open&discord_channel_id=eq.${channelId}&select=discord_message_id,id&order=created_at.desc&limit=1`
-    );
-    if (!rows || rows.length === 0) {
-      console.log('[Check2000] 対象の定期カスタム募集が見つかりません');
+    // 本日開催分のカードを start_at で直接引く
+    const target = resolveWeekendTargets().find((t) => t.dayKey === dayKey);
+    if (!target) {
+      console.log('[Check2000] 本日の開催対象が解決できませんでした');
+      return;
+    }
+    const summary = await loadDayRecruitmentSummary(env, target);
+    if (!summary) {
+      console.log(`[Check2000] ${def.name}(${target.label})の募集カードが見つかりません`);
       return;
     }
 
-    const msgRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages/${rows[0].discord_message_id}`, {
-      headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
-    });
-    if (!msgRes.ok) return;
-    const msg = await msgRes.json();
-    const embed = msg.embeds?.[0];
-    if (!embed || !embed.fields) return;
+    // 1戦目から稼働できる人数（フル + 1戦のみ）と、途中参加の人数
+    const firstMatchCount = summary.lines.filter((l) => !l.includes('🌙途中参加')).length;
+    const lateCount = summary.lines.filter((l) => l.includes('🌙途中参加')).length;
+    const shortfall = DAY_CAPACITY - firstMatchCount;
 
-    // 参加者集計
-    let satLines = [];
-    let sunLines = [];
+    console.log(`[Check2000] ${def.name}: 第1試合稼働${firstMatchCount}名 / 途中参加${lateCount}名`);
 
-    embed.fields.forEach(f => {
-      const lines = (f.value || '').split('\n').filter(l => l.startsWith('- '));
-      if (f.name.includes("土曜") || f.name.includes("本戦")) {
-        satLines = lines;
-      } else if (f.name.includes("日曜") || f.name.includes("お祭り")) {
-        sunLines = lines;
-      }
-    });
-
-    // 1戦目稼働可能者（フル + 1戦のみ）の人数と途中参加者人数
-    const countFirstMatch = (lines) => lines.filter(l => !l.includes('🌙途中参加')).length;
-    const countLate = (lines) => lines.filter(l => l.includes('🌙途中参加')).length;
-
-    const satFirst = countFirstMatch(satLines);
-    const sunFirst = countFirstMatch(sunLines);
-
-    const satLate = countLate(satLines);
-    const sunLate = countLate(sunLines);
-
-    const satReady = satFirst >= 10;
-    const sunReady = sunFirst >= 10;
-
-    let cancelDepartments = [];
-    let confirmedDepartments = [];
-    let urgentHelpDepartments = []; // ピンポイント助っ人募集部門（あと1〜2名 & 途中参加あり）
-
-    if (isSaturday) {
-      if (satReady) {
-        confirmedDepartments.push(`⚔️ 土曜本戦カスタム (${satFirst}名 開催確定！)`);
-      } else if (satFirst >= 8 && satLate >= 1) {
-        urgentHelpDepartments.push({ name: '土曜本戦カスタム', shortfall: 10 - satFirst, late: satLate, customId: 'join_periodic_auto:single' });
-      } else {
-        cancelDepartments.push(`⚔️ 土曜本戦カスタム (${satFirst}/10名)`);
-      }
-    } else {
-      if (sunReady) {
-        confirmedDepartments.push(`🎪 日曜お祭りカスタム (${sunFirst}名 開催確定！)`);
-      } else if (sunFirst >= 8 && sunLate >= 1) {
-        urgentHelpDepartments.push({ name: '日曜お祭りカスタム', shortfall: 10 - sunFirst, late: sunLate, customId: 'join_periodic_sunday:single' });
-      } else {
-        cancelDepartments.push(`🎪 日曜お祭りカスタム (${sunFirst}/10名)`);
-      }
+    // A. 開催確定
+    if (firstMatchCount >= DAY_CAPACITY) {
+      await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: `🎉 **【本日20:00 判定: 開催確定！】**\n${def.emoji} **${def.name}** は${firstMatchCount}名集まりました！21:00より開始します。ポータルのバランサーでチーム分けを行います。`
+        })
+      });
+      console.log('[Check2000] 開催確定通知を投稿しました');
+      return;
     }
 
-    // A. ピンポイント助っ人募集がある場合（ラストチャンス告知）
-    if (urgentHelpDepartments.length > 0) {
-      const helpTexts = urgentHelpDepartments.map(d =>
-        `・**${d.name}**: 第1試合（21:00〜）があと **${d.shortfall}名** 不足！（2戦目からは途中参加の方が ${d.late}名 合流予定✨）`
-      ).join('\n');
-
+    // B. あと1〜2名 かつ 途中参加者がいる場合は、1戦だけの助っ人をピンポイント募集
+    if (firstMatchCount >= 8 && lateCount >= 1) {
       const helpComponents = [
         {
           type: 1,
-          components: urgentHelpDepartments.map(d => ({
-            type: 2,
-            label: `⏱️ 【助っ人急募】${d.name}に1戦だけ参加する！ (あと${d.shortfall}名)`,
-            style: 1, // Primary
-            custom_id: d.customId
-          }))
+          components: [
+            {
+              type: 2,
+              label: `⏱️ 【助っ人急募】1戦だけ参加する！ (あと${shortfall}名)`,
+              style: 1,
+              custom_id: `${def.joinPrefix}:single`
+            }
+          ]
         }
       ];
 
       const content = `🚨 <@&${CONFIG.NOTIFICATION_ROLE_ID}> **【21:00開始の第1試合 助っ人をピンポイント募集中！】**\n\n` +
-        `${helpTexts}\n\n` +
+        `・**${def.shortName}**: 第1試合（21:00〜）があと **${shortfall}名** 不足！（2戦目からは途中参加の方が ${lateCount}名 合流予定✨）\n\n` +
         `💡 **「21:00から1試合だけならできる！」という方はいませんか？**\n` +
-        `下のボタンから1戦だけ助っ人エントリーをお願いします！あと1〜2名揃えばカスタム開催決定となります🎮`;
+        `下のボタンから1戦だけ助っ人エントリーをお願いします！`;
 
       await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bot ${env.DISCORD_TOKEN}`,
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           content,
           components: helpComponents,
           allowed_mentions: { roles: [CONFIG.NOTIFICATION_ROLE_ID] }
         })
       });
-      console.log(`[Check2000] ピンポイント助っ人募集メッセージを投稿しました`);
+      console.log('[Check2000] ピンポイント助っ人募集メッセージを投稿しました');
       return;
     }
 
-    // B. 中止部門がある場合、自動代替募集メッセージを投稿
-    if (cancelDepartments.length > 0) {
-      const cancelText = cancelDepartments.join('、');
-      const substituteComponents = [
-        {
-          type: 1, // Action Row
-          components: [
-            {
-              type: 2,
-              label: "🎮 ノーマル行く人！ (1/5)",
-              style: 1, // Primary
-              custom_id: "quick_substitute_normal"
-            },
-            {
-              type: 2,
-              label: "🔥 ARAM / メイヘムやる人！ (1/5)",
-              style: 3, // Success
-              custom_id: "quick_substitute_aram"
-            }
-          ]
-        }
-      ];
+    // C. 中止 ＆ 代替募集
+    const substituteComponents = [
+      {
+        type: 1,
+        components: [
+          { type: 2, label: "🎮 ノーマル行く人！ (1/5)", style: 1, custom_id: "quick_substitute_normal" },
+          { type: 2, label: "🔥 ARAM / メイヘムやる人！ (1/5)", style: 3, custom_id: "quick_substitute_aram" }
+        ]
+      }
+    ];
 
-      const content = `⚠️ **【本日20:00 判定結果: ${targetDayName}】**\n\n` +
-        `誠に残念ながら、${cancelText} は20:00時点で10名に達しなかったため、**定期カスタムとしては中止**となります。\n` +
-        (confirmedDepartments.length > 0 ? `※${confirmedDepartments.join('、')} は21:00より予定通り開催いたします！\n` : '') +
-        `\n💡 **せっかく集まったので別のゲームで遊びませんか？**\n` +
-        `下のボタンからワンクリックで「ノーマル」または「ARAM / メイヘム」のクイック募集に合流できます！`;
+    const cancelContent = `⚠️ **【本日20:00 判定結果: ${def.name}】**\n\n` +
+      `誠に残念ながら、20:00時点で ${firstMatchCount}/${DAY_CAPACITY}名 と定員に達しなかったため、**定期カスタムとしては中止**となります。\n` +
+      `\n💡 **せっかく集まったので別のゲームで遊びませんか？**\n` +
+      `下のボタンからワンクリックで「ノーマル」または「ARAM / メイヘム」のクイック募集に合流できます！`;
 
-      await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bot ${env.DISCORD_TOKEN}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          content,
-          components: substituteComponents
-        })
-      });
-      console.log(`[Check2000] 中止告知＆代替募集ボタンを投稿しました: ${cancelText}`);
-    } else {
-      // 全て開催確定
-      await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bot ${env.DISCORD_TOKEN}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          content: `🎉 **【本日20:00 判定: 開催確定！】**\n${confirmedDepartments.join('、')} はすべて10名集まりました！21:00より開始いたします。ポータルのバランサーにてチーム分けを実施します。`
-        })
-      });
-      console.log(`[Check2000] 全部門開催確定通知を投稿しました`);
-    }
+    await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: cancelContent, components: substituteComponents })
+    });
+    console.log(`[Check2000] 中止告知＆代替募集ボタンを投稿しました: ${def.name}`);
 
   } catch (err) {
-    console.error('[Check2000] 20:00 判定処理でエラー:', err);
+    console.error('[Check2000] error:', err);
   }
 }

@@ -3,11 +3,34 @@ import { fetchGAS, patchInteractionResponse, sendDiscordMessage, sendInteraction
 import { fetchSupabase } from '../utils/supabase.js';
 import { handleLaneCommand, handleStatsCommand } from './commands.js';
 import { generateChampionRoulette } from './roulette.js';
-import { createMessageContent, createRecruitButtons, createRecruitEmbed, extractPlayersFromEmbed, getPortalComponents, getPortalEmbed, handleHelpPage } from '../ui/embeds.js';
+import { createMessageContent, createRecruitButtons, createRecruitEmbed, extractPlayersFromEmbed, getPortalComponents, getPortalEmbed, handleHelpPage, applyDayCardState } from '../ui/embeds.js';
 import { parseMessageData, handleAutoMatchEnd } from '../utils/helpers.js';
 import { getAdminDiscordIds, markRecruitmentStatus } from '../utils/recruitPermission.js';
 import { getKtmRank, getHighestLaneMmr, getPlayerExperienceBadge } from '../utils/ktmRank.js';
-import { computeRecruitmentStatus, buildStatusBanner } from '../utils/recruitmentStatus.js';
+import { detectDayKey, getDayDef, extractEntryLines } from '../utils/recruitmentStatus.js';
+
+const RANK_JP_MAP = {
+  CHALLENGER: 'チャレンジャー', GRANDMASTER: 'グランドマスター', MASTER: 'マスター',
+  DIAMOND: 'ダイヤ', EMERALD: 'エメラルド', PLATINUM: 'プラチナ',
+  GOLD: 'ゴールド', SILVER: 'シルバー', BRONZE: 'ブロンズ', IRON: 'アイアン',
+  UNRANKED: '未ランク',
+};
+
+/**
+ * 旧形式（1枚のカードに土曜・日曜のフィールドが同居）の募集カードかどうか。
+ * 新形式のカードは参加者フィールドが1つだけで、曜日はタイトル側が持つ。
+ * 旧カードに新ロジックで書き込むと、もう一方の曜日の参加者一覧が消えるため、
+ * 移行が終わるまでは書き込まずに案内だけ返す。
+ */
+function isLegacyPeriodicCard(message) {
+  const fields = message?.embeds?.[0]?.fields || [];
+  return fields.filter((f) => detectDayKey(f.name) !== null).length >= 2;
+}
+
+/** 新形式カードから参加者行を取り出す */
+function readDayEntryLines(embed) {
+  return extractEntryLines(embed?.fields?.[0]?.value);
+}
 
 export async function handleButtonInteraction(interaction, env, ctx) {
   let customId = interaction.data.custom_id;
@@ -303,20 +326,37 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     return Response.json({ type: 5, data: { flags: 64 } });
   }
 
-  if (customId.startsWith('join_periodic:') || customId.startsWith('join_periodic_auto') || customId.startsWith('join_periodic_sunday')) {
-    // join_periodic_auto:style : 土曜カスタム（代表MMRからシルバー以下/ゴルプラへ自動振り分け）
-    // join_periodic_sunday:style : 日曜お祭りカスタム（ランク不問/MMR変動なし）
+  if (customId.startsWith('join_periodic')) {
+    // join_periodic_auto:style   : 土曜・本戦カスタム
+    // join_periodic_sunday:style : 日曜・お祭りカスタム
     // style: 'full' | 'single' | 'late'
-    const parts = customId.split(':');
-    const isSundayMode = customId.startsWith('join_periodic_sunday');
-    const isAutoMode = customId.startsWith('join_periodic_auto');
-    const participationStyle = parts.length > 1 ? parts[1] : 'full'; // 'full' | 'single' | 'late'
+    //
+    // ★ 2026-09-23: 募集カードを土日の2枚に分離したため、この処理は
+    //   「押されたカード1枚だけ」を更新する。
+    //   以前は1枚のカードに土日のフィールドが同居していた関係で、チャンネル内の
+    //   「タイトルに定期カスタムを含むBot投稿」を最大100件走査して fields を丸ごと
+    //   コピーして回る同期処理を持っていた。カードが2枚になるとこの同期は
+    //   土曜カードの内容で日曜カードを上書きしてしまうため、完全に廃止した。
+    const [prefix, rawStyle] = customId.split(':');
+    const dayKey = detectDayKey(prefix) || 'sat';
+    const def = getDayDef(dayKey);
+    const participationStyle = rawStyle || 'full';
 
     let styleBadge = " 🟢フル";
     if (participationStyle === 'single') styleBadge = " ⏱️1戦のみ";
     else if (participationStyle === 'late') styleBadge = " 🌙途中参加(2戦目〜)";
 
     const userMention = `<@${userId}>`;
+
+    if (isLegacyPeriodicCard(interaction.message)) {
+      return Response.json({
+        type: 4,
+        data: {
+          content: "⚠️ この募集カードは旧形式のため、こちらからは参加を受け付けられません。\n同じチャンネルに投稿されている **土曜／日曜それぞれの募集カード** からエントリーをお願いします🙏",
+          flags: 64
+        }
+      });
+    }
 
     ctx.waitUntil((async () => {
       try {
@@ -332,54 +372,22 @@ export async function handleButtonInteraction(interaction, env, ctx) {
             .catch((e) => { console.warn('join_periodic: 名簿取得に失敗:', e); return null; }),
         ]);
 
-        let roomType = null;
-        if (isSundayMode) {
-          roomType = 'sunday';
-        } else if (isAutoMode) {
-          const mmr = playerRow ? getHighestLaneMmr(playerRow) : null;
-          const tier = getKtmRank(mmr ?? 0);
-          roomType = tier.min >= 1350 ? 'gold' : 'silver';
-        } else {
-          roomType = parts[0].split(':')[1] || 'silver'; // silver or gold
-        }
-
         if (!msgRes.ok) throw new Error("メッセージ取得失敗");
-
         const msg = await msgRes.json();
-        const embeds = msg.embeds || [];
-        if (embeds.length === 0) throw new Error("Embedが見つかりません");
+        if (!msg.embeds || msg.embeds.length === 0) throw new Error("Embedが見つかりません");
 
-        const targetEmbed = { ...embeds[0] };
-        targetEmbed.fields = targetEmbed.fields ? [...targetEmbed.fields] : [];
+        const targetEmbed = { ...msg.embeds[0] };
 
-        // フィールド0: 土曜本戦カスタム (最多ランク基準自動マッチング), フィールド1: 日曜お祭りカスタム
-        if (!targetEmbed.fields[0]) targetEmbed.fields[0] = { name: "⚔️ 土曜・本戦カスタム (0/10名)", value: "▫ 参加者: なし", inline: false };
-        if (!targetEmbed.fields[1]) targetEmbed.fields[1] = { name: "🎪 日曜・お祭りカスタム (0/10名)", value: "▫ 参加者: なし", inline: false };
+        // --- 参加者行のバッジを組み立てる ---
+        const expBadgeStr = ` ${getPlayerExperienceBadge(playerRow).short}`;
 
-        const targetFieldIdx = isSundayMode ? 1 : 0;
-        const targetText = targetEmbed.fields[targetFieldIdx]?.value || "";
-        const existingLine = targetText.split('\n').find(l => l.includes(userMention));
-        const isAlreadyInTarget = !!existingLine;
-        const isSameStyle = existingLine && existingLine.includes(styleBadge);
-
-        // ランク＆レーン希望＆経験度バッジ文字列の作成
-        const RANK_JP_MAP = {
-          CHALLENGER: 'チャレンジャー', GRANDMASTER: 'グランドマスター', MASTER: 'マスター',
-          DIAMOND: 'ダイヤ', EMERALD: 'エメラルド', PLATINUM: 'プラチナ',
-          GOLD: 'ゴールド', SILVER: 'シルバー', BRONZE: 'ブロンズ', IRON: 'アイアン',
-          UNRANKED: '未ランク'
-        };
-
-        const expBadgeObj = getPlayerExperienceBadge(playerRow);
-        const expBadgeStr = ` ${expBadgeObj.short}`;
-
+        // ランク表記は土曜（最多ランク帯を基準にチーム分けする）でのみ意味を持つ。
+        // 日曜はランク不問・MMR変動なしなので出さない。
         let rankStr = "";
-        if (playerRow) {
-          const mmr = getHighestLaneMmr(playerRow);
-          const tier = getKtmRank(mmr ?? 0);
+        if (def.showRank && playerRow) {
+          const tier = getKtmRank(getHighestLaneMmr(playerRow) ?? 0);
           if (tier && tier.name) {
-            const jpName = RANK_JP_MAP[tier.name] || tier.name;
-            rankStr = ` 【${jpName}】`;
+            rankStr = ` 【${RANK_JP_MAP[tier.name] || tier.name}】`;
           }
         }
 
@@ -390,240 +398,28 @@ export async function handleButtonInteraction(interaction, env, ctx) {
             try { pref = JSON.parse(pref); } catch (e) {}
           }
           if (pref && (pref.primary || pref.secondary)) {
-            const p1 = pref.primary || "指定なし";
-            const p2 = pref.secondary || "指定なし";
-            lanePrefStr = ` 【第1: ${p1} / 第2: ${p2}】`;
+            lanePrefStr = ` 【第1: ${pref.primary || "指定なし"} / 第2: ${pref.secondary || "指定なし"}】`;
           }
         } catch (e) {
           console.warn("role_preferences parse error:", e);
         }
 
-        const fullEntryBadge = `${expBadgeStr}${rankStr}${lanePrefStr}`;
+        const entryLine = `- ${userMention}${styleBadge}${expBadgeStr}${rankStr}${lanePrefStr}`;
 
-        if (isSundayMode) {
-          // 日曜部門のトグル/スタイル変更（土曜には触らない）
-          let fLines = (targetEmbed.fields[1].value || "").split('\n');
-          fLines = fLines.filter(l => l.startsWith('- ') && !l.includes(userMention));
-
-          if (!isAlreadyInTarget || !isSameStyle) {
-            fLines.push(`- ${userMention}${styleBadge}${expBadgeStr}${lanePrefStr}`);
-          }
-          const count = fLines.length;
-          targetEmbed.fields[1].name = `🎪 日曜・お祭りカスタム (${count}/10名)`;
-          targetEmbed.fields[1].value = fLines.length > 0 ? fLines.join('\n') : "▫ 参加者: なし\n※ランク不問・MMR変動なし。特殊ルール/ランダム/オフメタ等なんでも歓迎です";
-        } else {
-          // 土曜本戦カスタムのトグル/スタイル変更
-          let fLines = (targetEmbed.fields[0].value || "").split('\n');
-          fLines = fLines.filter(l => l.startsWith('- ') && !l.includes(userMention));
-
-          if (!isAlreadyInTarget || !isSameStyle) {
-            fLines.push(`- ${userMention}${styleBadge}${fullEntryBadge}`);
-          }
-          const count = fLines.length;
-
-          // 参加者全体のランク分布と最多ランク帯（ボリュームゾーン）を集計
-          // ルール: エメラルド以上はプラチナに合算、アイアン・未ランクはブロンズに合算
-          let dominantTierName = "未定";
-          if (count > 0) {
-            const tierCounts = {};
-            fLines.forEach(line => {
-              const match = line.match(/【(アイアン|ブロンズ|シルバー|ゴールド|プラチナ|エメラルド|ダイヤ|マスター|チャレンジャー|グランドマスター|未ランク|IRON|BRONZE|SILVER|GOLD|PLATINUM|EMERALD|DIAMOND|MASTER|GRANDMASTER|CHALLENGER|UNRANKED)/i);
-              const rawT = match ? match[1].toUpperCase() : "SILVER";
-              let jpT = RANK_JP_MAP[rawT] || match?.[1] || "シルバー";
-
-              // ルール適用：エメラルド以上 ➔ プラチナ合算 / アイアン・未ランク ➔ ブロンズ合算
-              if (['チャレンジャー', 'グランドマスター', 'マスター', 'ダイヤ', 'エメラルド', 'プラチナ'].includes(jpT)) {
-                jpT = 'プラチナ';
-              } else if (['アイアン', '未ランク', 'ブロンズ'].includes(jpT)) {
-                jpT = 'ブロンズ';
-              }
-
-              tierCounts[jpT] = (tierCounts[jpT] || 0) + 1;
-            });
-            let maxCount = 0;
-            for (const [t, c] of Object.entries(tierCounts)) {
-              if (c > maxCount) {
-                maxCount = c;
-                dominantTierName = `${t}帯(${c}名)`;
-              }
-            }
-          }
-
-          // ★ 「🎯 基準: 〜」はバナー生成時に正規表現(/🎯 基準: (.+)$/)で読み戻す機械可読マーカーを
-          //   兼ねている。末尾に付けていた「(※MMR基準)」も正規表現が丸ごと拾ってしまい、バナー側に
-          //   「基準: シルバー帯(3名) (※MMR基準)」と二重に出ていたため削除し、意味の説明は
-          //   フィールドのvalue側へ移した(2026-09-21)。この行の書式を変える場合は読み戻し側も要修正。
-          targetEmbed.fields[0].name = `⚔️ 土曜・本戦カスタム (${count}/10名) 🎯 基準: ${dominantTierName}`;
-          targetEmbed.fields[0].value = fLines.length > 0 ? fLines.join('\n') : "▫ 参加者: なし\n※ランク制限はありません。集まった方の最多ランク帯を基準に、実力が均等になるよう自動でチーム分けします（MMR変動あり）";
+        // --- 参加者一覧のトグル（同じボタンをもう一度押したら取り消し、別ボタンならスタイル変更）---
+        const currentLines = readDayEntryLines(targetEmbed);
+        const existingLine = currentLines.find((l) => l.includes(userMention));
+        const nextLines = currentLines.filter((l) => !l.includes(userMention));
+        if (!existingLine || !existingLine.includes(styleBadge)) {
+          nextLines.push(entryLine);
         }
 
-        // 参加メンバーの経験層分析（ユニーク参加者を集計）
-        const satLines = (targetEmbed.fields[0]?.value || "").split('\n').filter(l => l.startsWith('- '));
-        const sunLines = (targetEmbed.fields[1]?.value || "").split('\n').filter(l => l.startsWith('- '));
-        const allLines = [...satLines, ...sunLines];
+        applyDayCardState(targetEmbed, dayKey, nextLines);
 
-        const userExpMap = new Map();
-        for (const line of allLines) {
-          const uMatch = line.match(/<@(\d+)>/);
-          if (!uMatch) continue;
-          const uid = uMatch[1];
-          if (userExpMap.has(uid)) continue;
-
-          let tier = 'regular';
-          if (line.includes('🔰初参加') || line.includes('🔰 初参加')) tier = 'new';
-          else if (line.includes('🌱ライト') || line.includes('🌱 ライト')) tier = 'light';
-          else if (line.includes('⏳復帰勢') || line.includes('⏳ 復帰勢') || line.includes('🎖️経験者') || line.includes('🎖️ 経験者')) tier = 'returning';
-          else if (line.includes('👑常連') || line.includes('👑 常連')) tier = 'regular';
-          else {
-            // バッジ表記がない過去の行等の場合はデフォルト
-            tier = 'regular';
-          }
-          userExpMap.set(uid, tier);
-        }
-
-        const totalUniqueUsers = userExpMap.size;
-        if (totalUniqueUsers > 0) {
-          let newCnt = 0;
-          let lightCnt = 0;
-          let returningCnt = 0;
-          let regularCnt = 0;
-
-          for (const t of userExpMap.values()) {
-            if (t === 'new') newCnt++;
-            else if (t === 'light') lightCnt++;
-            else if (t === 'returning') returningCnt++;
-            else if (t === 'regular') regularCnt++;
-          }
-
-          const ratio = Math.round(((newCnt + lightCnt + returningCnt) / totalUniqueUsers) * 100);
-          const expField = {
-            name: `👥 参加者の経験層（土日いずれかに参加: ${totalUniqueUsers}名）`,
-            value: `🔰初参加: **${newCnt}名** | 🌱ライト: **${lightCnt}名** | ⏳復帰勢: **${returningCnt}名** | 👑常連: **${regularCnt}名**\n✨ 初心者・復帰勢歓迎！ (新規・ライト・復帰層: **${ratio}%**)`,
-            inline: false
-          };
-
-          const expIdx = targetEmbed.fields.findIndex(f => f.name.includes("経験層"));
-          if (expIdx >= 0) {
-            targetEmbed.fields[expIdx] = expField;
-          } else {
-            targetEmbed.fields.push(expField);
-          }
-        } else {
-          // 参加者が0名の場合は経験層分析フィールドを削除
-          targetEmbed.fields = targetEmbed.fields.filter(f => !f.name.includes("経験層"));
-        }
-
-        // 3. 最新の参加人数とステータスバナー作成
-        const satCount = (targetEmbed.fields[0]?.value || "").split('\n').filter(l => l.startsWith('- ')).length;
-        const sunCount = (targetEmbed.fields[1]?.value || "").split('\n').filter(l => l.startsWith('- ')).length;
-
-        const recruitStatus = computeRecruitmentStatus(satCount, sunCount);
-        const dominantMatch = (targetEmbed.fields[0]?.name || "").match(/🎯 基準: (.+)$/);
-        const dominantTierText = dominantMatch ? dominantMatch[1] : '';
-        const statusBanner = buildStatusBanner(recruitStatus, dominantTierText);
-        targetEmbed.color = recruitStatus.color;
-
-        // 2026-09-21修正: recruitmentStatus.jsのbuildStatusBanner()が実際に出す見出し
-        // (「開催確定日あり」「土日ともに10名達成」)と、このパターンの許容一覧が
-        // 文言リニューアル時に同期されておらず、「開催確定→満員御礼」への状態遷移で
-        // 置換がスキップされ本文が固着するバグがあった(過去の「残数バナー固着」バグの再発)。
-        // 現行の見出し文言を正として追加し、旧文言も後方互換のため残す。
-        // ★ uフラグ必須(2026-09-21): 絵文字(🔥🎉等)はUTF-16のサロゲートペアであり、
-        // uフラグ無しの文字クラスでは「ペアの片割れ1個」としてしか扱われない。そのため
-        // 先頭の絵文字が半分だけ消費され、置換のたびに壊れた文字(�)が本文の先頭へ
-        // 蓄積していた(実測で確認済み)。uフラグでコードポイント単位の一致にする。
-        const BANNER_PATTERN = /(?:[🚨🔥🟡✅⚡🎉]\s*)?\*\*【(?:シルバー以下\s*あと\d+名|定期カスタム募集中|週末定期カスタム募集中|開催確定部門あり|開催確定日あり|合計\d+名到達|全枠10名満員御礼|全部門10名達成|土日ともに10名達成)[^】]*】\*\*(?:\n[^\n]+){1,5}/u;
-        const updateTextWithStatus = (text) => {
-          if (!text) return text;
-          if (BANNER_PATTERN.test(text)) {
-            return text.replace(new RegExp(BANNER_PATTERN.source, 'gu'), statusBanner);
-          }
-          return text;
-        };
-
-        if (targetEmbed.description) {
-          targetEmbed.description = updateTextWithStatus(targetEmbed.description);
-        }
-
-        const updatedContent = updateTextWithStatus(interaction.message.content);
-
-        // 押されたメッセージ自体の更新と、同期対象を探すための直近メッセージ一覧取得・
-        // DBに永続化されている「定期カスタム募集」本カードの直接取得を並列実行。
-        // 以前は直近15件の検索のみに頼っており、チャンネルの他投稿がその間に15件を
-        // 超えると本カードが同期対象から漏れて色・人数が古いまま固着し得た
-        // (2026-08-13、KTM運営Bot監査#20で発覚)。Discord APIの上限である100件まで
-        // 検索範囲を広げた上で、recruitmentsテーブルに永続化されている本カードのIDは
-        // 検索に頼らず直接取得して確実に同期対象へ含める(事前告知/メンバー状況カードは
-        // DBに追跡列が無いため引き続き検索頼みだが、上限拡大で漏れの可能性は大幅に減る)。
-        const [, channelMsgsRes, mainCardRow] = await Promise.all([
-          sendDiscordMessage(`channels/${channelId}/messages/${msgId}`, botToken, "PATCH", {
-            content: updatedContent,
-            embeds: [targetEmbed],
-            components: interaction.message.components
-          }),
-          fetch(`https://discord.com/api/v10/channels/${channelId}/messages?limit=100`, {
-            headers: { "Authorization": `Bot ${botToken}` }
-          }).catch(() => null),
-          fetchSupabase(env, 'recruitments', `mode=eq.${encodeURIComponent('定期カスタム')}&status=eq.open&discord_channel_id=eq.${channelId}&select=discord_message_id&order=created_at.desc&limit=1`)
-            .then((rows) => (rows && rows.length > 0 ? rows[0] : null))
-            .catch(() => null),
-        ]);
-
-        // チャンネル内の直近メッセージから「募集カード」と「アナウンス通知」の両方を検索して完全同期
-        try {
-          const relatedMsgs = [];
-          const seenIds = new Set([msgId]);
-
-          if (channelMsgsRes && channelMsgsRes.ok) {
-            const channelMsgs = await channelMsgsRes.json();
-            for (const m of channelMsgs) {
-              if (seenIds.has(m.id) || !m.author?.bot) continue;
-              const matches =
-                (m.embeds?.[0]?.title && (m.embeds[0].title.includes("定期カスタム") || m.embeds[0].title.includes("事前告知") || m.embeds[0].title.includes("メンバー状況"))) ||
-                (m.content && m.content.includes("【定期カスタム募集】"));
-              if (matches) { relatedMsgs.push(m); seenIds.add(m.id); }
-            }
-          }
-
-          // DB永続化されている本カードが検索範囲(100件)からも漏れていた場合の最終保険。
-          if (mainCardRow?.discord_message_id && !seenIds.has(mainCardRow.discord_message_id)) {
-            try {
-              const mainMsgRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${mainCardRow.discord_message_id}`, {
-                headers: { "Authorization": `Bot ${botToken}` }
-              });
-              if (mainMsgRes.ok) {
-                relatedMsgs.push(await mainMsgRes.json());
-                seenIds.add(mainCardRow.discord_message_id);
-              }
-            } catch (e) {
-              console.warn("main recruitment card direct fetch failed:", e);
-            }
-          }
-
-          {
-            // 各メッセージは独立した書き込み先なので並列実行して一元更新
-            await Promise.all(relatedMsgs.map((relMsg) => {
-              const relEmbed = relMsg.embeds?.[0] ? { ...relMsg.embeds[0] } : null;
-              if (relEmbed) {
-                relEmbed.fields = targetEmbed.fields; // フィールドを完全同期
-                relEmbed.color = targetEmbed.color; // 色(混合カスタム到達サイン等)も同期
-                if (relEmbed.description) {
-                  relEmbed.description = updateTextWithStatus(relEmbed.description);
-                }
-              }
-              const relContent = updateTextWithStatus(relMsg.content);
-
-              return sendDiscordMessage(`channels/${channelId}/messages/${relMsg.id}`, botToken, "PATCH", {
-                content: relContent,
-                embeds: relEmbed ? [relEmbed] : relMsg.embeds,
-                components: relMsg.components
-              }).catch(() => {});
-            }));
-          }
-        } catch (syncErr) {
-          console.warn("Dual card sync warning:", syncErr);
-        }
-
+        await sendDiscordMessage(`channels/${channelId}/messages/${msgId}`, botToken, "PATCH", {
+          embeds: [targetEmbed],
+          components: interaction.message.components
+        });
       } catch (err) {
         console.error("join_periodic error:", err);
       }

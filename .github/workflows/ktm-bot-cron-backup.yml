@@ -1,9 +1,30 @@
 name: KTM Bot Cron Backup
 
 # Cloudflare Workersのcronはbest-effortで稀に発火が飛ぶ(#85)。
-# 各定期処理の15分後にGitHub Actionsから /trigger-scheduled を冗長キックする。
-# BOT側に二重投稿防止(直近同一通知チェック / recruitments.start_atチェック)があるため、
-# 両方発火しても重複投稿にはならない。
+# その保険として GitHub Actions から /trigger-scheduled を冗長キックする。
+# BOT側に二重投稿防止(recruitments.start_atチェック / 直近同一通知チェック)があるため、
+# 本命とバックアップが両方発火しても重複投稿にはならない。
+#
+# ⚠️ GitHub Actionsのスケジュール実行は「指定時刻ぴったり」には走らない。
+#    このリポジトリの実測値(2026-09-23調査, 直近5回):
+#      09/16(水) 予定03:15Z → 実行08:31Z (5h16遅れ)
+#      09/18(金) 予定10:15Z → 実行14:28Z (4h13遅れ)
+#      09/19(金) 予定10:15Z → 実行12:28Z (2h13遅れ)
+#      09/20(日) 予定11:15Z → 実行13:03Z (1h48遅れ)
+#      09/23(水) 予定03:15Z → 実行08:35Z (5h20遅れ)
+#    そのため当初の「本来時刻+15分のバックアップ」という設計は成立していなかった。
+#    実際、2026-09-23は本命が空振りした上にバックアップが5時間20分遅れ、
+#    水曜12:00に出るはずの週末カスタム募集が17:35に投稿される事故が起きている。
+#
+#    対策:
+#      1. 遅延の影響が小さい weekly_recruit（募集開始。多少遅れても投稿する価値がある）は
+#         試行回数を増やし、混雑しやすい :00 / :15 を避けた半端な分に散らす。
+#      2. 時刻がシビアな event_notify / check_2000 は、遅延して手遅れになった場合に
+#         BOT側(scheduled.js)が有効時間帯の外だと判断して自分でスキップする。
+#         よってここでは今まで通り1回だけキックする。
+#      3. weekly_recruit がこのバックアップ経路で実際に投稿した場合は、
+#         「本命のCloudflare cronが空振りした」ことを意味するので、
+#         BOT側から管理者エラーチャンネルへ通知が飛ぶ。
 #
 # 必要なシークレット:
 #   KTM_WORKER_URL  : ワーカーの公開URL (例: https://ktm-os-worker.xxxx.workers.dev)
@@ -11,21 +32,30 @@ name: KTM Bot Cron Backup
 
 on:
   schedule:
-    - cron: '15 3 * * 3'     # 水 12:15 JST (UTC 03:15) → 週末定期カスタム募集投稿のバックアップ
-    - cron: '15 10 * * 5'    # 金 19:15 JST (UTC 10:15) → 金曜中間アナウンスのバックアップ
-    - cron: '15 8 * * 6'     # 土 17:15 JST (UTC 08:15) → 土曜中間アナウンスのバックアップ
-    - cron: '15 8 * * 0'     # 日 17:15 JST (UTC 08:15) → 日曜中間アナウンスのバックアップ
-    # 2026-09-21追加: wrangler.tomlのCloudflareネイティブcron曜日ズレ修正時、④(20:00開催判定)には
-    # これまでバックアップが一切無く、日曜分が構造的に一度も発火していなかったことが判明した。
-    # 他のジョブと同じ「本来時刻+15分」の設計で追加する（checkCustomStatusAt2000側に
-    # 二重投稿防止ガードも追加済み）。⑤(週間レポート)はDM送信のため、既存コメントの通り
-    # 意図的にバックアップ対象外のまま維持する（二重送信防止、wrangler.toml側の曜日修正のみで対応）。
-    - cron: '15 11 * * 6'    # 土 20:15 JST (UTC 11:15) → 土曜20:00開催判定のバックアップ
-    - cron: '15 11 * * 0'    # 日 20:15 JST (UTC 11:15) → 日曜20:00開催判定のバックアップ
+    # --- 週末定期カスタムの募集投稿（本命: 水曜12:00 JST / UTC 03:00）---
+    # 遅延を見越して3回試行する。2回目以降は既に投稿済みならBOT側でスキップされる。
+    - cron: '7 3 * * 3'      # 水 12:07 JST
+    - cron: '23 4 * * 3'     # 水 13:23 JST
+    - cron: '41 6 * * 3'     # 水 15:41 JST
+
+    # --- 中間アナウンス（本命: 金19:00 / 土17:00 / 日17:00 JST）---
+    # 21:00を過ぎて届いても無意味なため、BOT側に有効時間帯のガードがある。
+    - cron: '13 10 * * 5'    # 金 19:13 JST
+    - cron: '13 8 * * 6'     # 土 17:13 JST
+    - cron: '13 8 * * 0'     # 日 17:13 JST
+
+    # --- 20:00開催判定（本命: 土日20:00 JST）---
+    # 2026-09-21追加。それまで④(20:00判定)だけバックアップが無く、
+    # Cloudflare側のcron曜日ズレと相まって日曜分が構造的に一度も発火していなかった。
+    # 判定は19:50〜21:00 JSTの間でしか実行されない（BOT側のガード）。
+    - cron: '9 11 * * 6'     # 土 20:09 JST
+    - cron: '9 11 * * 0'     # 日 20:09 JST
+
+    # ⑤(週間レポート)はDM送信のため、二重送信防止の観点から意図的にバックアップ対象外。
   workflow_dispatch:
     inputs:
       mode:
-        description: 'mode (event_notify=人数集計アナウンス / weekly_recruit=定期募集 / check_2000=20:00開催判定)'
+        description: 'mode (event_notify=人数集計アナウンス / weekly_recruit=定期募集 / check_2000=20:00開催判定 / weekly_recruit_migrate=旧カードから2枚構成への移行)'
         required: false
         default: ''
 
@@ -37,6 +67,9 @@ jobs:
         env:
           WORKER_URL: ${{ secrets.KTM_WORKER_URL }}
           TRIGGER_KEY: ${{ secrets.KTM_TRIGGER_KEY }}
+          EVENT_NAME: ${{ github.event_name }}
+          SCHEDULE: ${{ github.event.schedule }}
+          INPUT_MODE: ${{ github.event.inputs.mode }}
         run: |
           if [ -z "$WORKER_URL" ]; then
             echo "::error::KTM_WORKER_URL シークレットが未設定です。リポジトリ Settings > Secrets に追加してください。"
@@ -44,20 +77,24 @@ jobs:
           fi
           KEY="${TRIGGER_KEY:-ktm_v3_internal_secret_2026}"
 
-          MODE="${{ github.event.inputs.mode }}"
-          if [ "${{ github.event_name }}" = "schedule" ]; then
-            if [ "${{ github.event.schedule }}" = "15 3 * * 3" ]; then
-              MODE="weekly_recruit"
-            elif [ "${{ github.event.schedule }}" = "15 10 * * 5" ] || [ "${{ github.event.schedule }}" = "15 8 * * 6" ] || [ "${{ github.event.schedule }}" = "15 8 * * 0" ]; then
-              MODE="event_notify"
-            elif [ "${{ github.event.schedule }}" = "15 11 * * 6" ] || [ "${{ github.event.schedule }}" = "15 11 * * 0" ]; then
-              MODE="check_2000"
-            else
-              MODE=""
-            fi
+          MODE="$INPUT_MODE"
+          if [ "$EVENT_NAME" = "schedule" ]; then
+            case "$SCHEDULE" in
+              '7 3 * * 3'|'23 4 * * 3'|'41 6 * * 3')          MODE="weekly_recruit" ;;
+              '13 10 * * 5'|'13 8 * * 6'|'13 8 * * 0')        MODE="event_notify" ;;
+              '9 11 * * 6'|'9 11 * * 0')                      MODE="check_2000" ;;
+              *)
+                # ワークフロー更新直後は、旧スケジュールでキューに入った実行が1回だけ
+                # ここへ来ることがある。失敗扱いにせず、何もせず終了する。
+                echo "::warning::未知のスケジュール '$SCHEDULE' のためスキップします（cron一覧とcase文の対応を確認してください）"
+                exit 0
+                ;;
+            esac
           fi
 
-          echo "Kicking mode='$MODE'"
+          # 予定時刻からどれだけ遅れて起動したかを毎回記録しておく（遅延傾向の把握用）
+          echo "event=$EVENT_NAME schedule='$SCHEDULE' mode='$MODE' actual_utc=$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+
           STATUS=$(curl -s -o /tmp/resp.txt -w "%{http_code}" "$WORKER_URL/trigger-scheduled?key=$KEY&mode=$MODE")
           cat /tmp/resp.txt
           if [ "$STATUS" != "200" ]; then
