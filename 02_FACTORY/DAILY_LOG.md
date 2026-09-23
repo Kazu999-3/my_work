@@ -17,10 +17,12 @@
 1. `scripts/youtube_worker.py`: 字幕なし・Whisper文字起こし0文字の動画に対して、Gemini に YouTube URL を直接渡して映像解析・戦術記事生成を行う `gemini_analyze_video()` を追加配備。低解像度メディア指定（`MEDIA_RESOLUTION_LOW`）によるトークン大幅節約、yt-dlp・cookie依存を迂回した解析経路を確立。
 2. `03_SYSTEMS/ktm_bot/src/handlers/components.js`: メンバー確定通知を独立Followupから募集カードへの「返信（`message_reference`）」へぶら下げ、`allowed_mentions` で参加者＋募集主に限定してチャンネル無関係通知スパムを防止。
 
+3. `03_SYSTEMS/ktm_bot/src/utils/recruitmentStatus.js` & `scheduled.js`: 定期カスタム募集カードのチャット本文（`content`）に「当日の全体の流れ（カスタム3戦＋締めのメイヘムカスタム）」「参加ボタンの凡例」「名簿バッジの意味」を固定表示。Embedの1024文字制限を圧迫することなく、初参加・復帰勢への案内を両立。
+
 **3行ナレッジ**:
 1. **実況なし動画の文字起こし限界と映像解析**: Whisperで音声解析しても、BGMやSEのみで実況音声のない動画は0文字となり処理が止まる。GeminiへのYouTube URL直接入力（映像解析）をフォールバックに配備することで、画面内テロップ・盤面情報から直接戦術を抽出可能になる。
 2. **Discord Bot通知の文脈保持とメンション制御**: 確定通知を独立メッセージで送信するとスレッドやタイムラインで浮く。`message_reference` による元パネルへの返信と `allowed_mentions: { users: [...] }` を組み合わせることで、文脈の維持と不要な全体通知の防止を両立できる。
-3. **低解像度指定によるLLM動画解析のトークン抑制**: Gemini映像解析では、`media_resolution="MEDIA_RESOLUTION_LOW"` を指定することで画面内文字（テロップ・UI）の可読性を保ちながらトークン消費を約3分の1に抑えられる。
+3. **Embed上限回避とチャット本文（content）の役割分担**: Embedは装飾性に優れるがフィールドあたり1024文字等の厳格な制限がある。固定の凡例や当日の流れなどの全体説明はメッセージ本文（上限2000文字）に配置し、Embed側は動的な参加者リストやステータスに専念させることで、エラー落ちを防ぎつつ高い情報伝達力を維持できる。
 
 ---
 

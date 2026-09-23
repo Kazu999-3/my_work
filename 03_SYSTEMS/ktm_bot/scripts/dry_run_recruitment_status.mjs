@@ -14,7 +14,7 @@
 
 import {
   computeDayStatus, buildDayBanner, computeDominantTier, getDayDef,
-  RECRUITMENT_COLORS, DAY_CAPACITY, resolveWeekendTargets,
+  RECRUITMENT_COLORS, DAY_CAPACITY, resolveWeekendTargets, buildRecruitmentContent,
 } from '../src/utils/recruitmentStatus.js';
 import { buildDayRecruitEmbed, buildDayRecruitComponents } from '../src/ui/embeds.js';
 
@@ -135,9 +135,10 @@ for (const [dayKey, label, lines] of [['sat', '9/26(土)', sampleLines], ['sun',
   const def = getDayDef(dayKey);
   const embed = buildDayRecruitEmbed({ dayKey, label }, lines);
   const buttons = buildDayRecruitComponents(dayKey)[0].components.map((b) => `[${b.label}]`).join(' ');
+  const content = buildRecruitmentContent({ dayKey, def, label }, '1528646515533287497');
 
   console.log(`\n${'='.repeat(70)}`);
-  console.log(`📢 **【${def.shortName}募集】${label} 21:00〜** @募集通知`);
+  console.log(content);
   console.log('-'.repeat(70));
   console.log(embed.title);
   console.log('');
@@ -152,9 +153,10 @@ for (const [dayKey, label, lines] of [['sat', '9/26(土)', sampleLines], ['sun',
 
   const charCount = [embed.title, embed.description, ...embed.fields.flatMap((f) => [f.name, f.value]), embed.footer.text]
     .join('\n').length;
-  console.log(`(Embed全体の文字数: ${charCount})`);
+  console.log(`(Embed全体の文字数: ${charCount} / 本文の文字数: ${content.length})`);
 
-  // Discordの上限（description 4096 / field value 1024 / footer 2048）に対する保険
+  // Discordの上限（content 2000 / description 4096 / field value 1024 / footer 2048）に対する保険
+  if (content.length > 2000) fail(`[${dayKey}] contentが2000文字を超えています (${content.length})`);
   if (embed.description.length > 4096) fail(`[${dayKey}] descriptionが4096文字を超えています`);
   for (const f of embed.fields) {
     if (f.value.length > 1024) fail(`[${dayKey}] フィールド「${f.name}」のvalueが1024文字を超えています`);

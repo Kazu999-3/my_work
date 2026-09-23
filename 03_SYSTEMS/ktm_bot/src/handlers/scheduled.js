@@ -9,7 +9,7 @@ import { getKtmRank, formatRankDistribution, formatMmrWithRank, getHighestLaneMm
 import {
   computeDayStatus, buildDayBanner, replaceBanner, getDayDef, detectDayKey,
   computeDominantTier, extractEntryLines, DAY_CAPACITY, RECRUITMENT_COLORS, DAY_DEFS,
-  resolveWeekendTargets,
+  resolveWeekendTargets, buildRecruitmentContent,
 } from '../utils/recruitmentStatus.js';
 
 export async function handleScheduledEvent(event, env, ctx) {
@@ -604,12 +604,13 @@ async function postDayRecruitmentCard(env, channelId, target, options = {}) {
 
   const embed = buildDayRecruitEmbed(target, seedLines);
   const components = buildDayRecruitComponents(dayKey);
+  const content = buildRecruitmentContent(target, CONFIG.NOTIFICATION_ROLE_ID);
 
   const res = await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages`, {
     method: 'POST',
     headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      content: `📢 **【${def.shortName}募集】${label} 21:00〜** <@&${CONFIG.NOTIFICATION_ROLE_ID}>`,
+      content,
       embeds: [embed],
       components,
       allowed_mentions: { roles: [CONFIG.NOTIFICATION_ROLE_ID] }

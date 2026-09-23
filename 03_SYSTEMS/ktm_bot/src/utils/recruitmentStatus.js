@@ -221,3 +221,35 @@ function buildWeekendTarget(dayKey, jstNow, diffDays) {
     label: `${jst.getUTCMonth() + 1}/${jst.getUTCDate()}(${JST_DAY_CHARS[jst.getUTCDay()]})`,
   };
 }
+
+/**
+ * 募集カードのメッセージ本文（チャット部分）を組み立てる。
+ * Embedのスリム化に伴い、進行スケジュール・参加ボタン凡例・名簿バッジの意味を固定で案内する。
+ *
+ * @param {object} target resolveWeekendTargets() の返り値要素
+ * @param {string|number} [notificationRoleId] メンション対象のロールID
+ */
+export function buildRecruitmentContent(target, notificationRoleId) {
+  const { def, label } = target;
+  const mention = notificationRoleId ? `<@&${notificationRoleId}>` : '';
+  const matchDesc = target.dayKey === 'sat'
+    ? '・21:00〜 **カスタムマッチ 3戦**（本戦・実力均等チーム分け）'
+    : '・21:00〜 **お祭りカスタム 3戦**（ランク不問・特殊ルール歓迎）';
+
+  return `📢 **【${def.shortName}募集】${label} 21:00〜** ${mention}
+
+**【🕒 当日の全体の流れ】**
+${matchDesc}
+・23:30前後〜 **締めのメイヘムカスタム！**（最後はお祭り・特殊ルールでワイワイ楽しんで解散✨）
+
+**【🔘 参加ボタンについて】**
+・🟢 **フル参加**: 21:00〜 最後のメイヘムまで通しで参加できる方
+・⏱️ **1戦のみ**: 21:00〜 最初の1試合だけサクッと参加したい方
+・🌙 **途中参加**: 2戦目（21:50頃目安）以降やメイヘムから合流したい方
+
+**【🏷️ 名簿バッジについて】**
+・🔰**初参加**: 通算0戦・カスタム初参戦の方（大歓迎！）
+・🌱**ライト**: 通算1〜4戦の軽め参加の方
+・⏳**復帰勢**: 1ヶ月以上ぶりの久しぶりの方
+・👑**常連**: 直近30日も定期参加しているアクティブメンバー`.trim();
+}
