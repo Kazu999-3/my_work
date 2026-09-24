@@ -46,11 +46,11 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 
 from v2_CORE._LOL.overlay.lol_live_client import LiveClient
 from v2_CORE._LOL.overlay.hud_state_engine import HudStateEngine
-from v2_CORE._LOL.overlay.top_bar_widget import TopBarWidget
+# from v2_CORE._LOL.overlay.top_bar_widget import TopBarWidget (右上撤去)
 from v2_CORE._LOL.overlay.matchup_card_widget import MatchupCardWidget
 from v2_CORE._LOL.overlay.toast_alert_widget import ToastAlertWidget
 from v2_CORE._LOL.overlay.spell_tracker_widget import SpellTrackerWidget
-from v2_CORE._LOL.overlay.lane_dominance_widget import LaneDominanceWidget
+# from v2_CORE._LOL.overlay.lane_dominance_widget import LaneDominanceWidget (TAB連動撤去)
 from v2_CORE._LOL.overlay.tab_key_listener import TabKeyListener
 from v2_CORE._LOL.overlay.hud_config import load_widget_positions
 from v2_CORE._LOL.overlay.status_pill_widget import MiniStatusPillWidget
@@ -127,12 +127,10 @@ def main():
     live_client = LiveClient()
     state_engine = HudStateEngine()
 
-    # 5つのコアウィジェットを初期化
-    top_bar = TopBarWidget()
+    # 3つのコアウィジェットを初期化 (TopBarとLaneDominanceは視界確保のため撤去)
     matchup_card = MatchupCardWidget()
     toast_alert = ToastAlertWidget()
     spell_tracker = SpellTrackerWidget()
-    lane_dominance = LaneDominanceWidget()
 
     # 解像度自動取得 ＆ 安全領域自動スナップ
     saved_positions = load_widget_positions()
@@ -140,14 +138,7 @@ def main():
     screen_w = screen.width()
     screen_h = screen.height()
 
-    # ⓪ 画面右上 (TopBar: 経済＆マクロ):
-    pos_top = saved_positions.get("top_bar", {})
-    if pos_top:
-        top_bar.move(pos_top.get("x", screen_w - 260), pos_top.get("y", 30))
-    else:
-        top_bar.move(screen_w - 260, 30)
-
-    # ① 画面右下 (SpellTracker: 敵Ult＆スペルタイマー):
+    # ① 画面右下 (SpellTracker: 敵Ult＆スペルタイマー ＆ マクロ経済統合):
     pos_spell = saved_positions.get("spell_tracker", {})
     if pos_spell:
         spell_tracker.move(pos_spell.get("x", screen_w - 420), pos_spell.get("y", screen_h - 220))
@@ -161,17 +152,14 @@ def main():
     else:
         matchup_card.move(24, int(screen_h * 0.22))
 
-    # ③ トーストアラート (画面中央上部 - 平常時は非表示、アラート時のみポップアップ)
-    toast_alert.move(int((screen_w - 320) / 2), 50)
-    toast_alert.hide()
-
-    # ④ 画面中央付近 (LaneDominance: スコアボード直結5連ゴールド差ピル - TABキー連動)
-    pos_lane = saved_positions.get("lane_dominance", {})
-    if pos_lane:
-        lane_dominance.move(pos_lane.get("x", int((screen_w - 106) / 2)), pos_lane.get("y", int(screen_h * 0.42)))
+    # ③ 画面左下 (ToastAlert: 左下スマート通知パネル - スパイク/JG/大砲/バフ/購入通知)
+    pos_toast = saved_positions.get("toast_alert", {})
+    default_toast_y = max(50, screen_h - 260)
+    if pos_toast:
+        toast_alert.move(pos_toast.get("x", 24), pos_toast.get("y", default_toast_y))
     else:
-        lane_dominance.move(int((screen_w - 106) / 2), int(screen_h * 0.42))
-    lane_dominance.hide()
+        toast_alert.move(24, default_toast_y)
+    toast_alert.hide()
 
     def toggle_manual_visibility():
         nonlocal hud_visible
@@ -201,7 +189,6 @@ def main():
 
     def show_hud_widgets():
         nonlocal hud_visible
-        top_bar.show()
         spell_tracker.show()
         matchup_card.show()
         status_pill.show()
@@ -209,11 +196,9 @@ def main():
 
     def hide_hud_widgets():
         nonlocal hud_visible
-        top_bar.hide()
         spell_tracker.hide()
         matchup_card.hide()
         status_pill.hide()
-        lane_dominance.hide()
         toast_alert.hide()
         hud_visible = False
 
@@ -288,11 +273,9 @@ def main():
         if is_pressed:
             if not matchup_card.is_pinned:
                 matchup_card.show()
-            lane_dominance.show()
         else:
             if not matchup_card.is_pinned:
                 matchup_card.hide()
-            lane_dominance.hide()
 
     def on_numpad_pressed(idx: int):
         if not hud_visible and not args.always_show:
@@ -456,10 +439,8 @@ def main():
             spell_tracker.update_gank_scores(gank_results)
 
         if hud_visible or args.always_show:
-            top_bar.update_data(state)
             spell_tracker.update_data(state)
             matchup_card.update_data(state)
-            lane_dominance.update_data(state)
             toast_alert.update_events(state)
 
     timer = QTimer()

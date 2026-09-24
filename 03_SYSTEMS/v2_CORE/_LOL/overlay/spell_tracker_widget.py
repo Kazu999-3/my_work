@@ -21,6 +21,7 @@ from v2_CORE._LOL.overlay.spell_asset_manager import (
     calculate_effective_spell_cd,
     SPELL_COOLDOWNS,
 )
+from v2_CORE._LOL.overlay.item_price_manager import ItemPriceManager
 
 class CoolDownButton(QPushButton):
     def __init__(self, spell_type: str, spell_name: str, max_cd: int, parent=None):
@@ -482,6 +483,13 @@ class SpellTrackerWidget(QWidget):
         item_layout.setSpacing(1)
 
         item_text_row = QHBoxLayout()
+        item_text_row.setSpacing(4)
+        self.target_item_icon = QLabel(item_box)
+        self.target_item_icon.setFixedSize(20, 20)
+        self.target_item_icon.setStyleSheet("background: transparent; border: none;")
+        self.target_item_icon.setVisible(False)
+        item_text_row.addWidget(self.target_item_icon)
+
         self.target_name_label = QLabel("🛍️ 1stコア目標", item_box)
         self.target_name_label.setStyleSheet("color: #fef08a; font-size: 9.5px; font-weight: bold;")
 
@@ -573,7 +581,18 @@ class SpellTrackerWidget(QWidget):
         target_price = max(1, advice.get("price", 1100))
         my_gold = int(state.get("my_gold", 0) or 0)
 
-        self.target_name_label.setText(f"🛍️ {target_name} ({target_price}G)")
+        i_id = ItemPriceManager.find_item_id_by_name(target_name)
+        pix = SpellAssetManager.get_item_icon(i_id)
+        if not pix.isNull():
+            self.target_item_icon.setPixmap(SpellAssetManager.create_rounded_icon(pix, radius=4).scaled(20, 20, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+            self.target_item_icon.setVisible(True)
+        else:
+            self.target_item_icon.setVisible(False)
+
+        short_name = target_name
+        if len(short_name) > 10:
+            short_name = short_name[:10] + "…"
+        self.target_name_label.setText(f"{short_name} ({target_price}G)")
         pct = min(100, int((my_gold / target_price) * 100))
         self.progress_bar.setValue(pct)
 

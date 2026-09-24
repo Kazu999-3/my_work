@@ -299,9 +299,19 @@ class TestOverlayWidgetsVisual(unittest.TestCase):
         pix_tracker.save(str(self.screenshot_dir / "03_spell_tracker.png"))
         self.assertFalse(pix_tracker.isNull(), "SpellTracker screenshot should not be null")
 
-        # 4. ToastAlertWidget (画面中央上部: 3行常時インフォパネル)
+        # 4. ToastAlertWidget (画面左下: スマート通知パネル - スパイク/JG/バフ/購入通知)
+        toast_state = dict(state)
+        toast_state["spike_details"] = [{
+            "champion": "Darius",
+            "item_name": "トリニティ・フォース",
+            "item_id": 3078,
+            "price": 3333
+        }]
+        toast_state["is_gank_danger"] = True
+        toast_state["enemy_jg"] = "Elise"
+        toast_state["buff_status"] = ["🟣 バロン: 175s"]
         toast = ToastAlertWidget()
-        toast.update_events(state)
+        toast.update_events(toast_state)
         toast.show()
         self.app.processEvents()
         pix_toast = toast.grab()

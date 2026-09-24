@@ -257,6 +257,7 @@ class HudStateEngine:
         # 状態追跡用
         self.known_enemy_items = {}  # {summoner_name: set(item_ids)}
         self.power_spike_alerts = []  # 新着コア完成アラート
+        self.power_spike_details = []  # 構造化スパイク詳細 (champion, item_name, item_id)
         self.last_fight_damage = 0.0
         self.recent_fight_summary = None
         self.fight_active = False
@@ -491,6 +492,7 @@ class HudStateEngine:
 
         # --- 5. 敵コアアイテム完成 ＆ パワースパイク検知 ---
         spike_alerts = []
+        spike_details = []
         for ep in enemy_players:
             s_name = ep.get("summonerName")
             c_name = ep.get("championName")
@@ -507,11 +509,18 @@ class HudStateEngine:
                 # 2500G以上の完成アイテムを新規購入した場合
                 if i_id not in prev_items and i_price >= 2500:
                     spike_alerts.append(f"⚠️ 敵 {c_name}: {i_name} 完成！")
+                    spike_details.append({
+                        "champion": c_name,
+                        "item_name": i_name,
+                        "item_id": i_id,
+                        "price": i_price
+                    })
 
             self.known_enemy_items[s_name] = current_item_ids
 
         if spike_alerts:
             self.power_spike_alerts = spike_alerts
+            self.power_spike_details = spike_details
 
         # --- 6. 動的対抗ビルド推薦 (Dynamic Build Advisor) ---
         my_items = my_player_obj.get("items", []) if my_player_obj else []
@@ -814,6 +823,7 @@ class HudStateEngine:
             "gold_diff_str": gold_diff_str,
             "gold_diff_color": gold_diff_color,
             "spike_alerts": self.power_spike_alerts,
+            "spike_details": getattr(self, "power_spike_details", []),
             "build_recommendations": build_recommendations[:2],
             "buff_status": buff_status,
             "recent_fight_damage": recent_fight_dmg,
