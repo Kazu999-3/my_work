@@ -418,7 +418,7 @@ class DictSynthesizer:
                 "raw_content": synthesized,
                 "champion": "Unknown",
                 "tags": [genre, "総合バイブル"],
-                "source_url": existing_article.get("source_url") if existing_article else f"d:\\my_work\\02_FACTORY\\bible\\kirei_bible\\genre_{genre}.md",
+                "source_url": existing_article.get("source_url") if existing_article else f"d:\\my_work\\02_FACTORY\\_LOL\\bible\\kirei_bible\\genre_{genre}.md",
                 "genre": "LoL攻略"
             }
             

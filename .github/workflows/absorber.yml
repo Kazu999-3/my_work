@@ -2,7 +2,7 @@ name: YouTube Absorber (Whisper Rescue)
 
 # クラウド側 ktm-cloud-worker.yml（youtube job）が字幕なしと判定した動画
 # （youtube_queue: status=error_no_transcript）を、Groq Whisper API で文字起こし
-# して救済し、KireiLoL攻略バイブル(02_FACTORY/bible/kirei_bible/)を生成する。
+# して救済し、KireiLoL攻略バイブル(02_FACTORY/_LOL/bible/kirei_bible/)を生成する。
 #
 # 以前はローカルGPU(faster-whisper/CUDA)前提だったため無効化していたが、
 # 文字起こしをGroqのクラウドAPIに移行したことでActions上でも動くようになった。
@@ -24,7 +24,7 @@ on:
     # 参照・検証用の手動実行（定期cronは2026-07-31に停止。上記コメント参照）
 
 permissions:
-  contents: write   # バイブル(02_FACTORY/bible/kirei_bible/)をコミットで永続化するため
+  contents: write   # バイブル(02_FACTORY/_LOL/bible/kirei_bible/)をコミットで永続化するため
 
 jobs:
   run-absorber:
@@ -75,7 +75,7 @@ jobs:
         run: |
           git config --global user.name 'Antigravity Auditor'
           git config --global user.email 'auditor@antigravity.local'
-          git add 02_FACTORY/bible/kirei_bible/
+          git add 02_FACTORY/_LOL/bible/kirei_bible/
           git commit -m "chore: update KireiLoL bible via Whisper rescue [skip ci]" || echo "No changes to commit"
           git push
 

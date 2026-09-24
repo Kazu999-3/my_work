@@ -202,7 +202,7 @@ class RedditScout:
         # Supabase およびローカルへ保存
         date_str = datetime.now().strftime("%Y-%m-%d")
         title = f"[Redditトレンド] {date_str} のメタ分析"
-        file_path = f"d:\\my_work\\02_FACTORY\\bible\\kirei_bible\\reddit_trend_{date_str.replace('-', '')}.md"
+        file_path = f"d:\\my_work\\02_FACTORY\\_LOL\\bible\\kirei_bible\\reddit_trend_{date_str.replace('-', '')}.md"
         
         payload = {
             "title": title,

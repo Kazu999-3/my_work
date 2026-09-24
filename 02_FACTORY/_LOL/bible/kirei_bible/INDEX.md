@@ -11,7 +11,7 @@ tags: [LoL, Tactics, Video, Kirei, Bible]
 
 本インデックスは、Coach Kireiおよびチャレンジャー帯プレイヤーの実戦動画から抽出した、チャンピオン別の戦術・マクロ・ミクロ知見の一覧です。
 
-**総収録動画数**: 144 本
+**総収録動画数**: 150 本
 
 ---
 
@@ -75,7 +75,7 @@ tags: [LoL, Tactics, Video, Kirei, Bible]
 - [`This Is How You Carry on the LOWEST Winrate Champ!`](./OD8hU_ajIvs.md)
   - *要約*: Garenジャングルは、徹底したフルクリアとアグレッシブなカウンタージャングル、適切なオブジェクトコントロールを通じてファーム優位を確立し、パワースパイクを活かしてキャリーする異色の戦略である。
 
-## 🛡️ General (15本)
+## 🛡️ General (21本)
 - [`Shyvana Jungle vs Lee Sin - KR Challenger Patch 26.14 (エラー: AI要約生成に失敗しました (リトライ 1回目)`](./-BYma15H514.md)
   - *要約*: 提供された字幕情報からは、ゲームプレイ内容や戦略に関する具体的な分析が不可能であるため、動画の結論を導き出すことはできません。
 - [`【ロックJG】使えば使うほど、パワーを感じる。もしかしたらコイツ強いのではないだろうか・・・！【ジャングル】【League of Legends】【フルクリアTV】`](./8YizIQelRUw.md)
@@ -99,6 +99,18 @@ tags: [LoL, Tactics, Video, Kirei, Bible]
 - [`---`](./reddit_trend_20260705.md)
 - [`UNRANKED to CHALLENGER in 6 Hours - Kha'Zix Guide`](./ztmtK_123OY.md)
   - *要約*: 低レート帯ではカ＝ジックスのメカニクスとダメージ感覚を徹底的に磨き上げ、効果的なピングとサイド意識で味方を動かしつつ、適切なパワースパイク管理とEの温存による立ち回りで、圧倒的なキャリー力を発揮せよ。
+- [`Is this my Penta? #leagueoflegends #agurin`](./-KmxPyy_JvE.md)
+  - *要約*: 提供された字幕テキストと動画クリップからは、Nocturneがペンタキルを狙う緊迫した戦闘の瞬間が示唆されるものの、具体的な戦略的判断やプレイのコツを導き出すには情報が著しく不足している。
+- [`DROPPED TO GM XDDDDDDDDDDDDDDDD`](./1JqwO5vqw0U.md)
+  - *要約*: ジャングルロールにおいて、レーン状況の正確な認識とオブジェクト（特にドラゴン）への迅速な判断、そして予測不能な状況下でのミクロな判断力が勝敗を分ける。
+- [`Coaching Jungle Fundamentals - How to climb in League of Legends`](./BxavFyUcU2U.md)
+  - *要約*: レート上昇の鍵は、限定されたチャンピオンプールでテンポと情報収集を徹底し、明確な目的意識を持ってオブジェクトとウェーブを連動させるマクロ戦略の徹底である。
+- [`How to Play NEW BEL'VETH JUNGLE and CARRY YOUR TEAM`](./b-0KWcK3pmI.md)
+  - *要約*: Bel'Vethは序盤の不利をファームで凌ぎ、レベルとスタックによるパワースパイクを最大化し、特にTwisted Fateのようなレーナーとの連携で終盤を支配する、高いスケーリングを誇るジャングラーで
+- [`SHYVANA Jungle will JUST FARM & CARRY you out of LOW ELO!!!`](./cnhS3ZYaWQ0.md)
+  - *要約*: Shyvanaは序盤のファームを徹底し、究極のハンターとトリニティフォース、ショウジンの矛によるビルドでUltの回転率を最大化し、ドラゴンフォームとQの確定ダメージを軸にミッドゲーム以降のキャリー力を
+- [`SHYVANA JUNGLE GUIDE - Step by Step how to 1v9`](./m01FCNlqQLs.md)
+  - *要約*: Shyvanaにおける「Less is more」の原則に基づき、序盤の不利を徹底したファームとジャングルトラッキングで挽回し、適切なオブジェクト管理とパワースパイクを活かしてゲームを1v9でキャリー
 
 ## 🛡️ Gragas (2本)
 - [`👍How to carry in Jungle and CARRY low elo👍`](./667ybVxsYn8.md)

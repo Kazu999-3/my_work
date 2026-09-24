@@ -27,7 +27,7 @@
 - **[プロジェクト憲法 (ANTIGRAVITY.md)](file:///d:/my_work/ANTIGRAVITY.md)**: プロジェクトの開発・運営憲法（ルール）。
 - **[YouTube 攻略バイブル (Kirei Bible INDEX - 174本)](file:///d:/my_work/02_FACTORY/_LOL/bible/kirei_bible/INDEX.md)**:
   - YouTube動画の文字起こしからAIが自動生成した、43チャンピオン・174本の実戦動画解析マスターインデックス。
-  - **[サブ書庫 (Kirei Bible SUB - 30本)](file:///d:/my_work/02_FACTORY/bible/kirei_bible/INDEX.md)**
+  - 旧サブ書庫 `02_FACTORY/bible/kirei_bible/` は2026-09-24に本書庫へ統合済み（字幕取得失敗の24本はファイルのみ移動し、INDEXには未掲載）。
 - **[LoL 戦略・環境分析インデックス (_LOL/INDEX.md)](file:///d:/my_work/01_INTEL/_LOL/INDEX.md)**: DNA（思考哲学）・PULSE（リアルタイム環境・Lolalytics）の総合書庫。
 - **[戦術インテルライブラリ](file:///d:/my_work/01_INTEL/tactics/)**:
   - **実戦バイブル (主力プール・全18体配備完了 / 全体Blueprint完備)**:

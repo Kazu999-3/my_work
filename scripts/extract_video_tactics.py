@@ -38,7 +38,7 @@ if sys.platform == "win32":
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 INTEL_TACTICS_DIR = REPO_ROOT / "01_INTEL" / "tactics"
-BIBLE_DIR = REPO_ROOT / "02_FACTORY" / "bible" / "kirei_bible"
+BIBLE_DIR = REPO_ROOT / "02_FACTORY" / "_LOL" / "bible" / "kirei_bible"
 
 # チャンピオン名正規化（Kha'Zix/Lee Sin/Wukong等の表記ゆれをDDragon正規IDへ統一）。
 # これが無いと存在しないファイル名(kha'zix_tactics_bible.md等)になりAI生成結果が
@@ -165,7 +165,7 @@ def compress_vtt_transcript(vtt_text):
 
 def extract_metadata_from_bible_file(path_obj):
     """
-    既存の戦術バイブルMarkdown(02_FACTORY/bible/kirei_bible/*.md)から
+    既存の戦術バイブルMarkdown(02_FACTORY/_LOL/bible/kirei_bible/*.md)から
     video_id・チャンピオン・タイトルのメタデータのみを抽出する。
 
     ★ 重要: このファイルはAIが生成済みの「要約」であり、発言の引用断片はあっても
@@ -541,7 +541,7 @@ def append_to_tactics_bible(
 
 def run_batch_extraction(limit=5, dry_run=False):
     """
-    02_FACTORY/bible/kirei_bible/*.md を走査し、
+    02_FACTORY/_LOL/bible/kirei_bible/*.md を走査し、
     未マウントの動画をスマートにバッチ抽出して戦術バイブルへ追記
     """
     print("\n" + "=" * 65)

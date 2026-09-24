@@ -44,7 +44,7 @@ class YouTubeAbsorber:
         else:
             self.client = None
         self.queue_file = os.path.join(settings.ROOT_DIR, "02_FACTORY", "kirei_queue.json")
-        self.bible_dir = os.path.join(settings.ROOT_DIR, "02_FACTORY", "bible", "kirei_bible")
+        self.bible_dir = os.path.join(settings.ROOT_DIR, "02_FACTORY", "_LOL", "bible", "kirei_bible")
         os.makedirs(self.bible_dir, exist_ok=True)  # 出力先ディレクトリが存在しない場合は自動作成
 
         yt_bin = shutil.which("yt-dlp") or shutil.which("yt-dlp.exe") or str(settings.ROOT_DIR / ".venv" / "Scripts" / "yt-dlp.exe")
@@ -776,7 +776,7 @@ class YouTubeAbsorber:
             # herald.notify_progress(
             #     f"👑 **【YouTube Absorber完了】** {success_count}本のKireiLoL動画をバイブル化しました！\n\n"
             #     f"{details_str}\n\n"
-            #     f"📁 `02_FACTORY/bible/kirei_bible/`\n"
+            #     f"📁 `02_FACTORY/_LOL/bible/kirei_bible/`\n"
             #     f"📊 残りキュー: **{pending_remaining}件**\n"
             #     f"*(※ この後、Dict Synthesizerによってチャンピオン辞典へ自動でマージされます)*",
             #     portal_link=True, page='youtube'

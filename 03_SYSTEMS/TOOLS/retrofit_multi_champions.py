@@ -102,7 +102,7 @@ def update_champion_tag(content: str, new_champions: list[str]) -> str:
 # メイン処理
 # ============================================================
 def main():
-    bible_dir = os.path.join(str(settings.ROOT_DIR), "02_FACTORY", "bible", "kirei_bible")
+    bible_dir = os.path.join(str(settings.ROOT_DIR), "02_FACTORY", "_LOL", "bible", "kirei_bible")
     files = [f for f in os.listdir(bible_dir) if f.endswith(".md")]
     logger.info(f"📂 対象ファイル数: {len(files)}")
 

@@ -167,7 +167,7 @@ class SovereignSync:
 
         article_dirs = [
             settings.ROOT_DIR / "02_FACTORY/PRODUCTS/ARTICLES",
-            settings.ROOT_DIR / "02_FACTORY/bible/kirei_bible",
+            settings.ROOT_DIR / "02_FACTORY/_LOL/bible/kirei_bible",
             settings.ROOT_DIR / "01_INTEL/tactics"
         ]
         

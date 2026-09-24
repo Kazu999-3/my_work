@@ -25,7 +25,7 @@ if sys.stdout.encoding != 'utf-8':
 
 # ===== 設定 =====
 ROOT_DIR = Path("d:/my_work")
-KIREI_BIBLE_DIR = ROOT_DIR / "02_FACTORY" / "bible" / "kirei_bible"
+KIREI_BIBLE_DIR = ROOT_DIR / "02_FACTORY" / "_LOL" / "bible" / "kirei_bible"
 VENV_YT_DLP = ROOT_DIR / ".venv" / "Scripts" / "yt-dlp.exe"
 
 # 環境変数から取得（.envがあれば読み込む）
