@@ -147,7 +147,7 @@ def run_monitor(dry_run=False):
             vid = v["id"]
             title = v.get("title", "")
             if vid not in existing_ids:
-                is_bad, bad_kw = is_blacklisted_title(title)
+                is_bad, bad_kw = is_blacklisted_title(title, allow_shorts=True)
                 if is_bad:
                     print(f"    🚫 ブラックリスト除外 ({bad_kw}): {title[:45]}")
                     existing_ids.add(vid)

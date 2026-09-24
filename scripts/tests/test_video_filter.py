@@ -9,6 +9,7 @@ from video_filter import (
     is_blacklisted_title,
     is_valid_guide_title,
     is_valid_duration,
+    is_shorts_video,
     DEFAULT_MIN_SEC,
     DEFAULT_MAX_SEC,
 )
@@ -27,8 +28,39 @@ class TestVideoFilter(unittest.TestCase):
             "TikTok compilation LoL edition",
         ]
         for title in bad_titles:
-            is_bad, kw = is_blacklisted_title(title)
+            is_bad, kw = is_blacklisted_title(title, allow_shorts=False)
             self.assertTrue(is_bad, f"除外されるべき動画が通過しました: {title} (kw: {kw})")
+
+    def test_allow_shorts_で登録チャンネルのShortsが通過する(self):
+        shorts_titles = [
+            "知っておくべきリーシンのインセク小技 #Shorts",
+            "1分でわかるヤスオのベイガー対策 shorts",
+        ]
+        for title in shorts_titles:
+            # allow_shorts=True の場合は通過する
+            is_bad, _ = is_blacklisted_title(title, allow_shorts=True)
+            self.assertFalse(is_bad, f"登録チャンネルのShortsが誤って除外されました: {title}")
+
+            # allow_shorts=False の場合は除外される
+            is_bad_default, _ = is_blacklisted_title(title, allow_shorts=False)
+            self.assertTrue(is_bad_default, f"全体検索時はShortsが除外されるべきです: {title}")
+
+    def test_Shorts許可時でも純粋なノイズは確実に除外される(self):
+        noise_titles = [
+            "Faker Best Plays Montage 2026 #shorts",
+            "Funny Moments in Challenger shorts",
+            "生放送アーカイブ Part 2",
+        ]
+        for title in noise_titles:
+            is_bad, kw = is_blacklisted_title(title, allow_shorts=True)
+            self.assertTrue(is_bad, f"キル集やミームはShorts許可時でも除外されるべきです: {title} (kw: {kw})")
+
+    def test_is_shorts_videoの判定(self):
+        self.assertTrue(is_shorts_video("小技解説 #shorts"))
+        self.assertTrue(is_shorts_video("1分Tips (SHORTS)"))
+        self.assertTrue(is_shorts_video("通常タイトル", duration_sec=55)) # 55秒
+        self.assertFalse(is_shorts_video("通常解説動画", duration_sec=600)) # 10分
+        self.assertFalse(is_shorts_video("通常解説動画", duration_sec=None))
 
     def test_問題のない解説タイトルはブラックリストを通過する(self):
         clean_titles = [
@@ -50,6 +82,7 @@ class TestVideoFilter(unittest.TestCase):
             "Leesin Combos and Tips for Beginners",
             "アッシュ徹底解説",
             "Top Lane Review: Wave Management Breakdown",
+            "知っておくべき小技集",
         ]
         for title in good_titles:
             is_guide, kw = is_valid_guide_title(title)

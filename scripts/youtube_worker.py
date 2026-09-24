@@ -38,6 +38,7 @@ except ImportError:
     pass  # GitHub Actions では python-dotenv が無くても環境変数が直接入っている
 
 from notify import notify, COLOR_OK, COLOR_WARN
+from video_filter import is_shorts_video
 
 SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
 # シークレット名は環境によって揺れる（Vercelは SUPABASE_SERVICE_ROLE_KEY、
@@ -226,6 +227,40 @@ summary は次の構成にすること:
 
 日本語で書くこと。チャンピオン名・アイテム名・ルーン名などの固有名詞のみ英語可。"""
 
+SHORTS_PROMPT = """あなたはLoL(League of Legends)の最高峰戦術アナリスト・プロコーチAIです。
+このショート動画（Shorts）の映像または字幕・音声から、**1分間で凝縮された核心テクニック・ワンポイントTips**を漏れなく抽出してください。
+
+【厳格ルール】
+- 存在しない長文の試合展開や架空のルーン・アイテムビルドを捏造（ハルシネーション）することは【絶対厳禁】です。
+- 動画内で実際に解説・実演されている「小技」「コンボ手順」「隠れた仕様」「特定の対面対策」だけに集中して、高密度かつ端的に言語化してください。
+
+【出力】純粋なJSONのみ（コードブロック不要）:
+{"title":"【1分Tips】<具体的で分かりやすい日本語タイトル>",
+ "summary":"<下記のMarkdown構成で本文（500〜1,200文字程度）>",
+ "genre":"LoL攻略",
+ "tags":["Shorts", "Tips", "<チャンピオン名英語>", "<関連タグ最大2つ>"],
+ "champion":"<主題のチャンピオン英語ID。無ければUnknown>"}
+
+summary は次の構成にすること:
+# 💡 【1分Tips】<タイトル>
+
+## 🎯 核心ポイント（何ができるテクニックか）
+- このショート動画が教えているテクニック・小技の要点
+- なぜこれが実戦で強いのか（ダメージ最大化、相手の反応不能、視界外からの強襲など）
+
+## ⌨️ スキル操作・コンボ手順（キー入力順）
+- **キー入力順**: 例: `E ➔ Flash ➔ Q ➔ AA`
+- **操作のコツ・タイミング**: アニメーションキャンセル、入力受付時間、ブッシュ・壁の利用など
+
+## ⚠️ 注意点・知っておくべき仕様
+- 失敗しやすいポイント、仕様上の注意（敵がフラッシュを持っている時の挙動など）
+- 反対にこの技を使わない方がいい状況（敵のCCが残っている時など）
+
+## 🏆 実戦での活用シーン
+- レーン戦でのキルライン、集団戦でのエンゲージ、ローム時など、どこで狙うべきか
+
+日本語で書くこと。チャンピオン名・アイテム名・スキルキーなどの固有名詞のみ英語可。"""
+
 
 def parse_timestamp_to_seconds(ts_str):
     """'02:15' や '1:23:45' を秒数に変換"""
@@ -283,23 +318,25 @@ def enrich_summary_with_timestamps(summary, key_clips, video_url):
     return enriched
 
 
-def gemini_analyze_video(url, title, channel):
+def gemini_analyze_video(url, title, channel, is_short=False):
     """YouTube URL を Gemini に直接渡して解析する。
 
     字幕も音声も無い動画（テロップのみ・実況なし）でも中身を読み取れる。
     yt-dlp を経由しないので cookie も bot判定も関係しない。
     ⚠️ トークン消費は動画の長さにほぼ比例する（低解像度で1秒あたり約103トークン）。
+    Shorts(60秒未満)の場合は格安（数千トークン）で解析可能。
     """
     from google import genai
     from google.genai import types
 
     client = genai.Client(api_key=GEMINI_KEY)
     head = f"動画タイトル: {title}\nチャンネル: {channel}\n\n"
+    prompt_text = SHORTS_PROMPT if is_short else VIDEO_PROMPT
     res = client.models.generate_content(
         model=VIDEO_MODEL,
         contents=types.Content(parts=[
             types.Part(file_data=types.FileData(file_uri=url)),
-            types.Part(text=head + VIDEO_PROMPT),
+            types.Part(text=head + prompt_text),
         ]),
         config=types.GenerateContentConfig(
             # 低解像度でも画面内テキストは読める。既定のままだとトークンが約3倍になる
@@ -317,7 +354,7 @@ def gemini_analyze_video(url, title, channel):
     data = json.loads(txt.strip())
     um = getattr(res, "usage_metadata", None)
     if um:
-        print(f"  📊 映像解析: 入力{um.prompt_token_count} 出力{um.candidates_token_count} トークン")
+        print(f"  📊 映像解析 ({'Shorts' if is_short else '通常'}): 入力{um.prompt_token_count} 出力{um.candidates_token_count} トークン")
 
     # 実演タイムスタンプを本文にリンクとして埋め込む
     key_clips = data.get("key_clips") or []
@@ -427,6 +464,85 @@ def gemini_summarize(title, channel, transcript):
 
     raise RuntimeError(f"Gemini出力の構造化バリデーションに失敗しました: {last_err}")
 
+
+def gemini_summarize_short(title, channel, transcript):
+    """Shorts動画（60秒未満）の文字起こしから、ワンポイントTipsを抽出する。"""
+    prompt = f"""あなたはLoL(League of Legends)の最高峰戦術アナリスト・プロコーチAIです。
+以下のショート動画（Shorts）の文字起こしから、1分間で凝縮された核心テクニック・ワンポイントTipsを漏れなく抽出してください。
+
+動画タイトル: {title}
+チャンネル: {channel}
+
+【厳格ルール】
+- 存在しない長文の試合展開や架空のルーン・アイテムビルドを捏造（ハルシネーション）することは【絶対厳禁】です。
+- 動画内で実際に解説・実演されている「小技」「コンボ手順」「隠れた仕様」「特定の対面対策」だけに集中して、高密度かつ端的に言語化してください。
+
+【出力】純粋なJSONのみ（コードブロック不要）:
+{{"title":"【1分Tips】<具体的で分かりやすい日本語タイトル>",
+ "summary":"<下記のMarkdown構成で本文（500〜1,200文字程度）>",
+ "genre":"LoL攻略",
+ "tags":["Shorts", "Tips", "<チャンピオン名英語>", "<関連タグ最大2つ>"],
+ "champion":"<主題のチャンピオン英語ID。無ければUnknown>"}}
+
+summary は次の構成にすること:
+# 💡 【1分Tips】<タイトル>
+
+## 🎯 核心ポイント（何ができるテクニックか）
+- このショート動画が教えているテクニック・小技の要点
+- なぜこれが実戦で強いのか（ダメージ最大化、相手の反応不能、視界外からの強襲など）
+
+## ⌨️ スキル操作・コンボ手順（キー入力順）
+- **キー入力順**: 例: `E ➔ Flash ➔ Q ➔ AA`
+- **操作のコツ・タイミング**: アニメーションキャンセル、入力受付時間、ブッシュ・壁の利用など
+
+## ⚠️ 注意点・知っておくべき仕様
+- 失敗しやすいポイント、仕様上の注意（敵がフラッシュを持っている時の挙動など）
+- 反対にこの技を使わない方がいい状況（敵のCCが残っている時など）
+
+## 🏆 実戦での活用シーン
+- レーン戦でのキルライン、集団戦でのエンゲージ、ローム時など、どこで狙うべきか
+
+日本語で書くこと。チャンピオン名・アイテム名・スキルキーなどの固有名詞のみ英語可。
+
+文字起こし:
+{transcript}"""
+    body = {"contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {"temperature": 0.2, "maxOutputTokens": 4096}}
+
+    last_err = None
+    for attempt in range(3):
+        try:
+            req = urllib.request.Request(
+                f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_KEY}",
+                data=json.dumps(body).encode(), method="POST")
+            req.add_header("Content-Type", "application/json")
+            with urllib.request.urlopen(req, timeout=60) as r:
+                res = json.loads(r.read().decode())
+            text = res["candidates"][0]["content"]["parts"][0]["text"].strip()
+            text = re.sub(r"^```[a-z]*\n?|```$", "", text).strip()
+            s, e = text.find("{"), text.rfind("}")
+            parsed = json.loads(text[s:e+1])
+            if validate_article_json(parsed):
+                return parsed
+            else:
+                print(f"[gemini_summarize_short] キー欠落または形式不整合。再試行 ({attempt+1}/3)")
+        except urllib.error.HTTPError as err:
+            last_err = err
+            if err.code == 429:
+                wait_sec = 20 * (attempt + 1)
+                print(f"[gemini_summarize_short] 429 (レート制限)。{wait_sec}秒待機して再試行 ({attempt+1}/3)")
+                time.sleep(wait_sec)
+            else:
+                print(f"[gemini_summarize_short] HTTPエラー: {err} ({attempt+1}/3)")
+                time.sleep(2)
+        except Exception as err:
+            last_err = err
+            print(f"[gemini_summarize_short] JSONパース失敗/エラー: {err} ({attempt+1}/3)")
+            time.sleep(2)
+
+    raise RuntimeError(f"Gemini出力の構造化バリデーションに失敗しました: {last_err}")
+
+
 def main():
     # 優先度の高いものから、次に登録が古いものから処理する。
     # priority は文字列なのでDB側のソートだと high→low→medium になってしまう。
@@ -470,31 +586,35 @@ def main():
                 continue
 
             a = None
+            is_short = is_shorts_video(it.get("title") or "", it.get("duration_sec"))
+            if is_short:
+                print(f"  📱 Shorts動画として解析します: {it.get('title')}")
 
-            # ① 映像解析を常用する設定なら、字幕を取りに行かず最初から映像で読む
-            if ENABLE_VIDEO_ANALYSIS_ALWAYS and ENABLE_VIDEO_ANALYSIS:
-                print(f"  🎬 映像解析で読み取ります（常用設定）: {vid}")
-                a = gemini_analyze_video(url, it.get("title") or "", it.get("channel_name") or "")
+            # ① 映像解析を常用する設定、またはShorts動画なら最初から映像で読む
+            # （Shortsはテロップや実演がメインで実況なしが多いため映像解析が最も確実・トークンも極小）
+            if (ENABLE_VIDEO_ANALYSIS_ALWAYS or is_short) and ENABLE_VIDEO_ANALYSIS:
+                print(f"  🎬 映像解析で読み取ります ({'Shorts特化' if is_short else '常用設定'}): {vid}")
+                try:
+                    a = gemini_analyze_video(url, it.get("title") or "", it.get("channel_name") or "", is_short=is_short)
+                except Exception as ve:
+                    print(f"  ⚠️ 映像解析に失敗: {ve}。字幕取得へフォールバックします。", file=sys.stderr)
+                    a = None
 
             # ② 通常は字幕を優先する（安く速いため）
             transcript = None
             if a is None:
                 transcript = fetch_subtitles(url, vid)
 
-            # ③ 字幕が無ければ映像解析へ。
-            #    2026-09-23: ここは以前 Whisper を試していたが、実測で7本中6本が
-            #    文字起こし0文字だった（YouTubeが自動字幕を作れていない動画＝
-            #    実況音声が無い動画のため）。映像解析なら画面内のテロップや盤面から
-            #    読み取れるので、そちらを既定の手段にした。
-            #    Whisper は ENABLE_WHISPER=1 のときだけ動く（既定は無効）。
+            # ③ 字幕が無ければWhisper文字起こし
             if a is None and not transcript and ENABLE_WHISPER:
                 try:
                     from whisper_transcriber import transcribe_youtube_video_fallback
                     print(f"  🎙️ 字幕が無いのでWhisperで文字起こしします: {vid}")
                     text, _ = transcribe_youtube_video_fallback(vid, model_size=WHISPER_MODEL)
                     text = (text or "").strip()
-                    if len(text) < WHISPER_MIN_CHARS:
-                        print(f"  ⚠️ 文字起こしが短すぎます({len(text)}文字 < {WHISPER_MIN_CHARS})。実況なしの動画と判断します。",
+                    min_chars = 50 if is_short else WHISPER_MIN_CHARS
+                    if len(text) < min_chars:
+                        print(f"  ⚠️ 文字起こしが短すぎます({len(text)}文字 < {min_chars})。実況なしの動画と判断します。",
                               file=sys.stderr)
                     else:
                         print(f"  ✅ Whisperで {len(text)} 文字を取得しました")
@@ -502,14 +622,18 @@ def main():
                 except Exception as we:
                     print(f"  ⚠️ Whisperに失敗: {we}", file=sys.stderr)
 
+            # ④ 通常動画で字幕・Whisperが取れなかった場合は映像解析
             if a is None and not transcript and ENABLE_VIDEO_ANALYSIS:
                 print(f"  🎬 字幕が無いので映像解析で読み取ります: {vid}")
-                a = gemini_analyze_video(url, it.get("title") or "", it.get("channel_name") or "")
+                a = gemini_analyze_video(url, it.get("title") or "", it.get("channel_name") or "", is_short=is_short)
 
             if a is None:
                 if not transcript:
                     raise NoTranscript("字幕を取得できませんでした（字幕なし or IP制限の可能性）")
-                a = gemini_summarize(it.get("title") or "YouTube Video", it.get("channel_name") or "", transcript)
+                if is_short:
+                    a = gemini_summarize_short(it.get("title") or "YouTube Shorts", it.get("channel_name") or "", transcript)
+                else:
+                    a = gemini_summarize(it.get("title") or "YouTube Video", it.get("channel_name") or "", transcript)
             # 元動画情報を記事の先頭に必ず明記する（2026-08-17、ユーザー指示）
             video_title = a.get("title") or it.get("title") or "YouTube攻略メモ"
             channel_name = it.get("channel_name") or "YouTube Channel"
@@ -526,6 +650,10 @@ def main():
             else:
                 final_content = summary_content
 
+            tags = a.get("tags") or []
+            if is_short and "Shorts" not in tags:
+                tags.append("Shorts")
+
             # 完全自動(人間の確認なし)でチャンピオン辞典生成にそのまま使われていたため、
             # 手動登録(knowledge/add→confirm)と同じくreview_status='pending'で保存し、
             # /admin/knowledgeの「未承認」パネルで人間が承認するまではfetch_personal_knowledge
@@ -538,7 +666,7 @@ def main():
                 "raw_content": transcript[:8000] if transcript else f"映像直接解析による自動抽出 (ID: {vid})",
                 "source_url": url,
                 "genre": a.get("genre") or "LoL攻略",
-                "tags": a.get("tags") or [],
+                "tags": tags,
                 "champion": a.get("champion") or "Unknown",
                 "review_status": "pending",
             }], prefer="return=representation")
