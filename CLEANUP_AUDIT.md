@@ -74,7 +74,7 @@
 |---|---|
 | 1-1 | `scout.yml` を削除 |
 | 1-2 | `youtube-monitor.yml` に `requests` を追加 |
-| 1-3 | **保留**。`02_FACTORY/` は `.vercelignore` で本番デプロイ対象外のため、パネルを組み込んでも本番では保存先ファイルが無く動かない（ローカルdev専用）。組み込み・削除・DB化のいずれにするか判断待ち |
+| 1-3 | パネルと `api/admin/feedback-inbox` を削除（本番で動かない構造かつインボックス自体の利用実績がほぼ無いため）。`FEEDBACK_INBOX.md` と `ops_health_check.py` のチェックは存続 |
 | 1-4 | `02_FACTORY/_LOL/bible/kirei_bible/` へ統合。30本を移動し、書き込み側8ファイルのパスを変更。INDEXには解析成功の6本のみ追記（字幕取得失敗の24本は検索に出さないため未掲載） |
 | 2 | cache 90枚・test_screenshots 6枚を `git rm --cached`（ローカルは残存）。INFRA/tmp は下記と共に退避 |
 | 3-1/3-2 | 79ファイルを `99_ARCHIVE/cleanup_20260924/` へ元のパス構成のまま退避 |
