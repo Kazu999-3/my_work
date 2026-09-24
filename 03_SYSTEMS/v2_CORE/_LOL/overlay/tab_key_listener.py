@@ -12,6 +12,7 @@ from PyQt6.QtCore import QObject, pyqtSignal, QTimer
 VK_TAB = 0x09
 VK_CONTROL = 0x11 # Ctrl
 VK_MENU = 0x12    # Alt
+VK_F8 = 0x77      # F8 (HUDトグルキー)
 VK_NUMPADS = [0x61, 0x62, 0x63, 0x64, 0x65] # テンキー 1〜5
 
 class GlobalKeyListener(QObject):
@@ -19,10 +20,13 @@ class GlobalKeyListener(QObject):
     tab_state_changed = pyqtSignal(bool)
     # テンキー1〜5 押下シグナル (0: TOP, 1: JG, 2: MID, 3: ADC, 4: SUP)
     numpad_pressed = pyqtSignal(int)
+    # HUD全ウィジェット 手動表示/非表示 トグルシグナル (F8キー)
+    toggle_hud_pressed = pyqtSignal()
 
     def __init__(self, check_interval_ms: int = 40, parent=None):
         super().__init__(parent)
         self.is_tab_down = False
+        self.is_f8_down = False
         self.numpad_states = [False] * 5
         self.user32 = ctypes.windll.user32
 
@@ -51,7 +55,14 @@ class GlobalKeyListener(QObject):
             self.is_tab_down = is_tab
             self.tab_state_changed.emit(self.is_tab_down)
 
-        # 2. テンキー 1〜5 の押下エッジ判定（誤爆防止のため Ctrl または Alt 同時押しでのみ発火）
+        # 2. F8キーのトグル判定（エッジ押下検知）
+        f8_raw = self.user32.GetAsyncKeyState(VK_F8)
+        is_f8 = bool(f8_raw & 0x8000)
+        if is_f8 and not self.is_f8_down:
+            self.toggle_hud_pressed.emit()
+        self.is_f8_down = is_f8
+
+        # 3. テンキー 1〜5 の押下エッジ判定（誤爆防止のため Ctrl または Alt 同時押しでのみ発火）
         ctrl_down = bool(self.user32.GetAsyncKeyState(VK_CONTROL) & 0x8000)
         alt_down = bool(self.user32.GetAsyncKeyState(VK_MENU) & 0x8000)
         is_modifier = ctrl_down or alt_down

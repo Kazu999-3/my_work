@@ -139,7 +139,14 @@ def main():
     screen_w = screen.width()
     screen_h = screen.height()
 
-    # ① 画面右側 (統合インテリジェンスハブ: SpellTracker + TopBar機能):
+    # ⓪ 画面右上 (TopBar: 経済＆マクロ):
+    pos_top = saved_positions.get("top_bar", {})
+    if pos_top:
+        top_bar.move(pos_top.get("x", screen_w - 260), pos_top.get("y", 30))
+    else:
+        top_bar.move(screen_w - 260, 30)
+
+    # ① 画面右下 (SpellTracker: 敵Ult＆スペルタイマー):
     pos_spell = saved_positions.get("spell_tracker", {})
     if pos_spell:
         spell_tracker.move(pos_spell.get("x", screen_w - 420), pos_spell.get("y", screen_h - 220))
@@ -162,13 +169,13 @@ def main():
         if hud_visible:
             hide_hud_widgets()
             try:
-                tray_icon.showMessage("Sovereign HUD", "オーバーレイを手動で非表示にしました", QSystemTrayIcon.MessageIcon.Information, 1500)
+                tray_icon.showMessage("Sovereign HUD", "オーバーレイを非表示にしました [F8で再表示]", QSystemTrayIcon.MessageIcon.Information, 1500)
             except Exception:
                 pass
         else:
             show_hud_widgets()
             try:
-                tray_icon.showMessage("Sovereign HUD", "オーバーレイを手動で表示しました", QSystemTrayIcon.MessageIcon.Information, 1500)
+                tray_icon.showMessage("Sovereign HUD", "オーバーレイを表示しました [F8で非表示]", QSystemTrayIcon.MessageIcon.Information, 1500)
             except Exception:
                 pass
 
@@ -177,12 +184,14 @@ def main():
 
     def show_hud_widgets():
         nonlocal hud_visible
+        top_bar.show()
         spell_tracker.show()
         matchup_card.show()
         hud_visible = True
 
     def hide_hud_widgets():
         nonlocal hud_visible
+        top_bar.hide()
         spell_tracker.hide()
         matchup_card.hide()
         toast_alert.hide()
@@ -289,6 +298,7 @@ def main():
 
     key_listener.tab_state_changed.connect(on_tab_state_changed)
     key_listener.numpad_pressed.connect(on_numpad_pressed)
+    key_listener.toggle_hud_pressed.connect(toggle_manual_visibility)
 
     # 試合終了時の完全非同期スレッド自動データ転送 (threading.Thread)
     game_state_tracker = {
@@ -371,7 +381,7 @@ def main():
 
             if last_reported_status != "in_game":
                 print(f"\n🟢 [インゲーム自動連動成功！] 試合時間: {t_str} | {my_champ} vs {enemy_champ} | {g_str}")
-                print("💡 オーバーレイが自動表示されました！（TABキーで対面手順書＆レーン優勢度が出現）\n")
+                print("💡 オーバーレイが自動表示されました！（TABキーで対面手順書＆レーン優勢度が出現、F8でトグル）\n")
                 last_reported_status = "in_game"
                 status_pill.set_status(True, my_champ)
             elif tick_count % 10 == 0:
@@ -436,6 +446,7 @@ def main():
             spell_tracker.update_gank_scores(gank_results)
 
         if hud_visible or args.always_show:
+            top_bar.update_data(state)
             spell_tracker.update_data(state)
             matchup_card.update_data(state)
             toast_alert.update_events(state)
@@ -452,6 +463,7 @@ def main():
     print("  [3] 👑 システムトレイ常駐: タスクバー通知領域に常駐（右クリックで操作）")
     print("  [4] ⌨️ TABキー連動: スコアボード確認時にレーン優勢度が出現")
     print("  [5] 💬 チャット連動: スペルタイマー自動始動")
+    print("  [6] ⌨️ F8キー: HUD全表示/非表示の一発トグル")
     print("-----------------------------------------------------------------")
     print("💡 LoLを起動して試合を開始すると、自動的に画面上にHUDが表示されます。")
     print("=" * 65)
