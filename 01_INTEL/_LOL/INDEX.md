@@ -17,6 +17,7 @@ tags: [LoL, Tactics, Pulse, DNA]
 
 ### 1. 🧬 [DNA (思考哲学・参考チャンネル)](./DNA/)
 *トッププレイヤー・コーチ・分析官のゲーム理解・哲学の生データ。*
+- [`challenger_mental_principles.md`](./DNA/challenger_mental_principles.md): **韓国チャレンジャー思考哲学 ＆ 4つの鉄則**（3戦セット、筋トレ、勝率管理、ドーパミンデトックス）
 - [`reference_antigravity.md`](./DNA/reference_antigravity.md): AI共創・意思決定プロトコル
 - [`reference_himazinproducer.md`](./DNA/reference_himazinproducer.md): マクロ・試合展開の構造化
 - [`reference_youtube.md`](./DNA/reference_youtube.md): YouTube動画分析の標準仕様
@@ -49,7 +50,8 @@ tags: [LoL, Tactics, Pulse, DNA]
 
 ### 4. 📖 [tactics (戦術ライブラリ)](./tactics/)
 *汎用的なレーン管理、ウェーブコントロール、集団戦の行動規範。*
-- [`lol_textbook.md`](./tactics/lol_textbook.md): LoL戦術教科書（決定版バイブル）
+- [`kr_challenger_textbook.md`](./tactics/kr_challenger_textbook.md): **KRチャレンジャーの頭脳：LoLの教科書（統合マクロ・全レーン攻略マスターバイブル）**（天狐ハク監修。全レーン有機的連動、JGルート12選、ガンク優先度、視界奪還3手法、ミッド完全攻略）
+- ※旧未整形ファイル `[旧] lol_textbook_raw.md` は `99_ARCHIVE/legacy_tactics/` へ退避済み。
 
 ---
-*Last Verified: 2026-09-18*
+*Last Verified: 2026-09-24*

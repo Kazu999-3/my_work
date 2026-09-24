@@ -145,6 +145,45 @@ function loadTacticsItems(repoRoot: string): CachedTacticsItem[] {
     }
   }
 
+  // 3. 総合マスターバイブル ＆ DNA（01_INTEL/_LOL/tactics/kr_challenger_textbook.md & DNA）
+  const masterTextbookPath = path.join(repoRoot, '01_INTEL', '_LOL', 'tactics', 'kr_challenger_textbook.md');
+  const dnaPrinciplesPath = path.join(repoRoot, '01_INTEL', '_LOL', 'DNA', 'challenger_mental_principles.md');
+
+  const extraFiles = [
+    { p: masterTextbookPath, tag: 'LoLの教科書', champ: 'Macro', champJa: 'マクロ・総合' },
+    { p: dnaPrinciplesPath, tag: '思考哲学DNA', champ: 'Mindset', champJa: 'メンタル・鉄則' },
+  ];
+
+  for (const extra of extraFiles) {
+    if (fs.existsSync(extra.p)) {
+      try {
+        const raw = fs.readFileSync(extra.p, 'utf-8');
+        const sections = raw.split(/\n(?=##\s+)/);
+        for (const sec of sections) {
+          const lines = sec.trim().split('\n');
+          const header = lines[0].replace(/^##\s+/, '').trim();
+          if (!header || header.startsWith('---') || header.startsWith('#')) continue;
+          const body = lines.slice(1).join('\n');
+
+          items.push({
+            id: `textbook-${header.slice(0, 20)}`,
+            type: 'bible',
+            champion: extra.champ,
+            championJa: extra.champJa,
+            section: header,
+            title: `【${extra.tag}】${header}`,
+            body,
+            fullTextLower: sec.toLowerCase(),
+            headerLower: header.toLowerCase(),
+            tags: [extra.tag, 'チャレンジャー直伝', extra.champJa],
+          });
+        }
+      } catch (err) {
+        console.warn(`[tactics/search] Failed to load ${extra.p}:`, err);
+      }
+    }
+  }
+
   cachedItems = items;
   lastCacheTime = now;
   return items;

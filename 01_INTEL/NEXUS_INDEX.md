@@ -25,6 +25,10 @@
 
 - **[総合システムデザイン](file:///d:/my_work/SYSTEM_DESIGN_BY_FUNCTION.md)**: Sovereign OS の全体の機能・設計書。
 - **[プロジェクト憲法 (ANTIGRAVITY.md)](file:///d:/my_work/ANTIGRAVITY.md)**: プロジェクトの開発・運営憲法（ルール）。
+- **[KRチャレンジャーの頭脳：LoLの教科書 (kr_challenger_textbook.md)](file:///d:/my_work/01_INTEL/_LOL/tactics/kr_challenger_textbook.md)**:
+  - 韓国チャレンジャー1000LP（天狐ハク）監修。全レーン対応の統合マクロ、JGルート12選、ガンク優先度判定、視界奪還3手法、ミッド攻略、思考ドリル80問を網羅した最高峰バイブル。
+- **[韓国チャレンジャー思考哲学 ＆ 4つの鉄則 (challenger_mental_principles.md)](file:///d:/my_work/01_INTEL/_LOL/DNA/challenger_mental_principles.md)**:
+  - 「ソロランク＝6〜7科目の試験」、3戦セット（90分集中・2連敗即終了）、試合間筋トレ、勝率管理、ドーパミンデトックスによるプロメンタル規約。
 - **[YouTube 攻略バイブル (Kirei Bible INDEX - 174本)](file:///d:/my_work/02_FACTORY/_LOL/bible/kirei_bible/INDEX.md)**:
   - YouTube動画の文字起こしからAIが自動生成した、43チャンピオン・174本の実戦動画解析マスターインデックス。
   - 旧サブ書庫 `02_FACTORY/bible/kirei_bible/` は2026-09-24に本書庫へ統合済み（字幕取得失敗の24本はファイルのみ移動し、INDEXには未掲載）。
