@@ -6,7 +6,6 @@ import { Plus, RefreshCw, Sparkles } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import YoutubeQueueManager from '../youtube/YoutubeQueueManager';
 import DiscordImportPanel from './DiscordImportPanel';
-import FeedbackInboxPanel from './FeedbackInboxPanel';
 import PendingInsightsPanel from './PendingInsightsPanel';
 import VideoDeepDiveRequestPanel from './VideoDeepDiveRequestPanel';
 import KnowledgePreviewModal, { type KnowledgePreview } from './KnowledgePreviewModal';
@@ -16,7 +15,7 @@ function KnowledgeBaseContent() {
   const [actionLoading, setActionLoading] = useState<boolean>(false);
 
   // 入力フォームの状態
-  const [ingestMode, setIngestMode] = useState<'url' | 'memo' | 'discord' | 'queue' | 'inbox' | 'pending'>('url');
+  const [ingestMode, setIngestMode] = useState<'url' | 'memo' | 'discord' | 'queue' | 'pending'>('url');
   const [inputUrl, setInputUrl] = useState('');
   const [inputMemo, setInputMemo] = useState('');
 
@@ -36,8 +35,8 @@ function KnowledgeBaseContent() {
       setIngestMode('discord');
     } else if (tabParam === 'memo') {
       setIngestMode('memo');
-    } else if (tabParam === 'inbox') {
-      setIngestMode('inbox');
+    } else if (tabParam === 'pending') {
+      setIngestMode('pending');
     } else {
       setIngestMode('url');
     }
@@ -208,15 +207,6 @@ function KnowledgeBaseContent() {
         </button>
         <button
           type="button"
-          onClick={() => setIngestMode('discord')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-            ingestMode === 'discord' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
-          }`}
-        >
-          <span>💬 Discord ログ解析</span>
-        </button>
-        <button
-          type="button"
           onClick={() => setIngestMode('queue')}
           className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
             ingestMode === 'queue' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
@@ -226,12 +216,12 @@ function KnowledgeBaseContent() {
         </button>
         <button
           type="button"
-          onClick={() => setIngestMode('inbox')}
+          onClick={() => setIngestMode('discord')}
           className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-            ingestMode === 'inbox' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
+            ingestMode === 'discord' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
           }`}
         >
-          <span>📮 指摘インボックス</span>
+          <span>💬 Discord ログ解析</span>
         </button>
         <button
           type="button"
@@ -251,7 +241,6 @@ function KnowledgeBaseContent() {
           <YoutubeQueueManager />
         </div>
       )}
-      {ingestMode === 'inbox' && <FeedbackInboxPanel />}
       {ingestMode === 'pending' && <PendingInsightsPanel />}
 
       {(ingestMode === 'url' || ingestMode === 'memo') && (

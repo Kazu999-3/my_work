@@ -354,15 +354,14 @@ export default function AdminDashboardPage() {
                 <div className="text-[11px] text-stone-600 flex items-center gap-3 mt-0.5 font-medium flex-wrap">
                   <span>🔗 リンク切れ: <strong className="text-emerald-700 font-bold">{healthStatus.metrics.brokenLinks}件</strong></span>
                   <span>📅 デイリー日誌: <strong className="text-stone-800 font-bold">{healthStatus.metrics.latestDailyLog}</strong></span>
-                  <span>📮 指摘インボックス: <strong className={healthStatus.metrics.pendingFeedback > 0 ? "text-amber-700 font-bold" : "text-emerald-700 font-bold"}>{healthStatus.metrics.pendingFeedback}件未対応</strong></span>
                 </div>
               </div>
             </div>
             <Link
-              href="/admin/knowledge?tab=inbox"
+              href="/admin/knowledge"
               className="text-xs font-bold px-3 py-1.5 rounded-xl bg-white hover:bg-stone-50 border border-stone-200 text-stone-700 shadow-2xs transition"
             >
-              📮 インボックスを確認
+              📥 戦術取り込みを開く
             </Link>
           </div>
         )}
