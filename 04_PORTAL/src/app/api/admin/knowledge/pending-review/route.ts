@@ -53,20 +53,29 @@ export async function POST(req: NextRequest) {
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
 
   try {
-    const { id, action, champion } = await req.json();
-    if (!id || !action) return NextResponse.json({ error: 'idとactionが必要です' }, { status: 400 });
+    const body = await req.json();
+    const { id, ids, action, champion, mergeToDict } = body;
+    if (!action) return NextResponse.json({ error: 'actionが必要です' }, { status: 400 });
+
+    const targetIds: number[] = Array.isArray(ids) ? ids.map(Number).filter(Boolean) : (id ? [Number(id)] : []);
+    if (targetIds.length === 0) {
+      return NextResponse.json({ error: '対象のidまたはidsが必要です' }, { status: 400 });
+    }
 
     if (action === 'reject') {
-      const { error } = await supabase.from('personal_knowledge').delete().eq('id', id).eq('review_status', 'pending');
+      const { error, count } = await supabase
+        .from('personal_knowledge')
+        .delete({ count: 'exact' })
+        .in('id', targetIds)
+        .eq('review_status', 'pending');
       if (error) throw error;
-      return NextResponse.json({ success: true });
+      return NextResponse.json({ success: true, count: count ?? targetIds.length });
     }
 
     if (action === 'approve') {
       const update: Record<string, any> = { review_status: 'approved' };
-      // レビュー時にチャンピオン/レーン一般の判定を人間が修正できるようにする。
-      // 空文字を渡された場合は「レーン一般(チャンピオン無し)」として扱う。
-      if (typeof champion === 'string') {
+      // 単一IDでチャンピオン指定がある場合のみ上書き更新
+      if (targetIds.length === 1 && typeof champion === 'string') {
         if (champion.trim() === '') {
           update.champion = getNoChampionMarker('personal_knowledge');
         } else {
@@ -74,9 +83,56 @@ export async function POST(req: NextRequest) {
           update.champion = resolved || champion;
         }
       }
-      const { error } = await supabase.from('personal_knowledge').update(update).eq('id', id).eq('review_status', 'pending');
+
+      const { data: updatedRows, error } = await supabase
+        .from('personal_knowledge')
+        .update(update)
+        .in('id', targetIds)
+        .eq('review_status', 'pending')
+        .select('id, title, content, champion');
+
       if (error) throw error;
-      return NextResponse.json({ success: true });
+
+      // 承認と同時にチャンピオン辞典への即時マージが要求された場合（または既定）
+      let mergedCount = 0;
+      if (mergeToDict && updatedRows && updatedRows.length > 0) {
+        const noChampMarker = getNoChampionMarker('personal_knowledge');
+        for (const row of updatedRows) {
+          const champ = row.champion;
+          if (!champ || champ === noChampMarker || champ === 'unknown' || champ === 'null') {
+            continue;
+          }
+          try {
+            // champion_facts を取得して strategy または source_summary に知見を追記
+            const { data: fact } = await supabase
+              .from('champion_facts')
+              .select('champion, strategy, source_summary')
+              .ilike('champion', champ)
+              .maybeSingle();
+
+            if (fact) {
+              const snippet = `\n- 【知見】${row.title}: ${row.content.slice(0, 150)}`;
+              const newStrategy = (fact.strategy || '') + snippet;
+              await supabase
+                .from('champion_facts')
+                .update({
+                  strategy: newStrategy.slice(0, 4000),
+                  updated_at: new Date().toISOString()
+                })
+                .ilike('champion', champ);
+              mergedCount++;
+            }
+          } catch (mergeErr) {
+            console.warn('[pending-review] Auto-merge failed for champion:', champ, mergeErr);
+          }
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        count: updatedRows?.length ?? targetIds.length,
+        mergedCount
+      });
     }
 
     return NextResponse.json({ error: '無効なactionです' }, { status: 400 });

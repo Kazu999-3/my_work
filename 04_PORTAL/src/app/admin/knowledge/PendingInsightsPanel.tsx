@@ -47,6 +47,80 @@ export default function PendingInsightsPanel() {
 
   useEffect(() => { load(); }, []);
 
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [autoMergeToDict, setAutoMergeToDict] = useState<boolean>(true);
+  const [batchActionRunning, setBatchActionRunning] = useState<boolean>(false);
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (!items) return;
+    if (selectedIds.size === items.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(items.map(i => i.id)));
+    }
+  };
+
+  const actBatch = async (action: 'approve' | 'reject') => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    if (action === 'reject' && !confirm(`選択した ${ids.length} 件の知見を却下（削除）しますか？`)) {
+      return;
+    }
+
+    setBatchActionRunning(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/admin/knowledge/pending-review', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, action, mergeToDict: autoMergeToDict }),
+      });
+      const d = await res.json();
+      if (!d.success) throw new Error(d.error || '一括処理に失敗しました');
+      setItems((prev) => (prev || []).filter((i) => !selectedIds.has(i.id)));
+      setSelectedIds(new Set());
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setBatchActionRunning(false);
+    }
+  };
+
+  const approveAllRemaining = async () => {
+    if (!items || items.length === 0) return;
+    if (!confirm(`現在表示中の全 ${items.length} 件を一括承認（およびチャンピオン辞典へ即時マージ）しますか？`)) {
+      return;
+    }
+
+    const ids = items.map(i => i.id);
+    setBatchActionRunning(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/admin/knowledge/pending-review', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, action: 'approve', mergeToDict: true }),
+      });
+      const d = await res.json();
+      if (!d.success) throw new Error(d.error || '全件一括承認に失敗しました');
+      setItems([]);
+      setSelectedIds(new Set());
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setBatchActionRunning(false);
+    }
+  };
+
   const act = async (id: number, action: 'approve' | 'reject', champion?: string) => {
     setBusyId(id);
     setError(null);
@@ -54,11 +128,16 @@ export default function PendingInsightsPanel() {
       const res = await fetch('/api/admin/knowledge/pending-review', {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, action, champion }),
+        body: JSON.stringify({ id, action, champion, mergeToDict: autoMergeToDict }),
       });
       const d = await res.json();
       if (!d.success) throw new Error(d.error || '処理に失敗しました');
       setItems((prev) => (prev || []).filter((i) => i.id !== id));
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -83,6 +162,62 @@ export default function PendingInsightsPanel() {
         </button>
       </div>
 
+      {/* 一括操作ツールバー */}
+      {items && items.length > 0 && (
+        <div className="bg-white border border-stone-200/90 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-stone-700 select-none">
+              <input
+                type="checkbox"
+                checked={selectedIds.size === items.length && items.length > 0}
+                onChange={toggleSelectAll}
+                className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-stone-300"
+              />
+              <span>全選択 ({selectedIds.size}/{items.length}件)</span>
+            </label>
+            <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg select-none">
+              <input
+                type="checkbox"
+                checked={autoMergeToDict}
+                onChange={(e) => setAutoMergeToDict(e.target.checked)}
+                className="w-3.5 h-3.5 rounded text-amber-600 focus:ring-amber-500 border-amber-300"
+              />
+              <span>承認時にチャンピオン辞典へ即時マージ</span>
+            </label>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {selectedIds.size > 0 && (
+              <>
+                <button
+                  onClick={() => actBatch('reject')}
+                  disabled={batchActionRunning}
+                  className="px-3 py-1.5 bg-rose-50 text-rose-700 border border-rose-200 font-bold rounded-xl text-xs hover:bg-rose-100 transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                >
+                  <XCircle size={13} /> 選択分を却下 ({selectedIds.size})
+                </button>
+                <button
+                  onClick={() => actBatch('approve')}
+                  disabled={batchActionRunning}
+                  className="px-3.5 py-1.5 bg-emerald-600 text-white font-bold rounded-xl text-xs hover:bg-emerald-500 transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                >
+                  {batchActionRunning ? <RefreshCw size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
+                  選択分を一括承認 ({selectedIds.size})
+                </button>
+              </>
+            )}
+            <button
+              onClick={approveAllRemaining}
+              disabled={batchActionRunning || items.length === 0}
+              className="px-3.5 py-1.5 bg-amber-500 text-stone-950 font-black rounded-xl text-xs hover:bg-amber-400 transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+            >
+              {batchActionRunning ? <RefreshCw size={13} className="animate-spin" /> : <span>⚡</span>}
+              全件一括承認＆マージ
+            </button>
+          </div>
+        </div>
+      )}
+
       {error && <p className="text-xs text-rose-600 font-bold">{error}</p>}
 
       {loading && !items && <p className="text-xs text-stone-400">読み込み中...</p>}
@@ -96,17 +231,26 @@ export default function PendingInsightsPanel() {
           const editedChampion = championEdits[item.id] ?? (item.isLaneGeneral ? '' : (item.champion || ''));
           const busy = busyId === item.id;
           return (
-            <div key={item.id} className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs space-y-3">
+            <div key={item.id} className={`bg-white border rounded-2xl p-5 shadow-xs space-y-3 transition-colors ${
+              selectedIds.has(item.id) ? 'border-amber-400 bg-amber-50/20 ring-1 ring-amber-300' : 'border-stone-200'
+            }`}>
               <div className="flex items-start justify-between gap-3 flex-wrap">
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h4 className="text-sm font-bold text-stone-900">{item.title}</h4>
-                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border shrink-0 ${
-                      item.is_atomic ? 'bg-purple-50 border-purple-200 text-purple-700' : 'bg-blue-50 border-blue-200 text-blue-700'
-                    }`}>
-                      {item.is_atomic ? '分割知見' : '動画解析記事'}
-                    </span>
-                  </div>
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(item.id)}
+                    onChange={() => toggleSelect(item.id)}
+                    className="mt-1 w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-stone-300 cursor-pointer"
+                  />
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="text-sm font-bold text-stone-900">{item.title}</h4>
+                      <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border shrink-0 ${
+                        item.is_atomic ? 'bg-purple-50 border-purple-200 text-purple-700' : 'bg-blue-50 border-blue-200 text-blue-700'
+                      }`}>
+                        {item.is_atomic ? '分割知見' : '動画解析記事'}
+                      </span>
+                    </div>
                   {item.parentTitle && (
                     <p className="text-[11px] text-stone-400 mt-0.5">元記事: {item.parentTitle}</p>
                   )}

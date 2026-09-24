@@ -56,6 +56,25 @@ function KnowledgeBaseContent() {
     return () => clearTimeout(timer);
   }, []);
 
+  const [pendingCount, setPendingCount] = useState<number>(0);
+
+  const fetchPendingCount = () => {
+    fetch('/api/admin/knowledge/pending-review', { credentials: 'include' })
+      .then(res => res.json())
+      .then(d => {
+        if (d.success && Array.isArray(d.items)) {
+          setPendingCount(d.items.length);
+        }
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchPendingCount();
+    }
+  }, [isAuthenticated, ingestMode]);
+
   const showFeedback = (text: string, type: 'success' | 'error') => {
     setMessage({ text, type });
     setTimeout(() => setMessage(null), 5000);
@@ -263,6 +282,11 @@ function KnowledgeBaseContent() {
           }`}
         >
           <span>✅ 承認待ちナレッジ</span>
+          {pendingCount > 0 && (
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">
+              {pendingCount}
+            </span>
+          )}
         </button>
       </div>
 
