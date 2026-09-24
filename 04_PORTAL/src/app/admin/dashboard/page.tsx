@@ -313,6 +313,15 @@ export default function AdminDashboardPage() {
               <span>AIプロンプト</span>
             </Link>
 
+            <Link
+              href="/admin/guide"
+              className="px-3.5 py-2 rounded-xl bg-amber-500/15 backdrop-blur-md border border-amber-300 hover:bg-amber-500/25 text-xs font-black text-amber-900 transition shadow-xs flex items-center gap-1.5"
+              title="LoLデータ収集・辞典・AIコーチ連携の全貌詳細仕様ガイド"
+            >
+              <BookOpen size={13} className="text-amber-700" />
+              <span>📖 全貌仕様ガイド</span>
+            </Link>
+
             {lastUpdated && (
               <span className="text-[11px] text-stone-400 font-mono flex items-center gap-1 ml-1">
                 <Clock size={11} /> {lastUpdated}
@@ -357,12 +366,22 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
             </div>
-            <Link
-              href="/admin/knowledge"
-              className="text-xs font-bold px-3 py-1.5 rounded-xl bg-white hover:bg-stone-50 border border-stone-200 text-stone-700 shadow-2xs transition"
-            >
-              📥 戦術取り込みを開く
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/admin/guide"
+                className="text-xs font-bold px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 shadow-2xs transition flex items-center gap-1"
+                title="LoLデータ収集＆辞典＆コーチ連携の全貌仕様ガイド"
+              >
+                <BookOpen size={12} className="text-amber-700" />
+                <span>📖 仕様ガイド</span>
+              </Link>
+              <Link
+                href="/admin/knowledge"
+                className="text-xs font-bold px-3 py-1.5 rounded-xl bg-white hover:bg-stone-50 border border-stone-200 text-stone-700 shadow-2xs transition"
+              >
+                📥 戦術取り込みを開く
+              </Link>
+            </div>
           </div>
         )}
 

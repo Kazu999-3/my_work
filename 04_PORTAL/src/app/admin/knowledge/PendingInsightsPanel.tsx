@@ -260,6 +260,7 @@ export default function PendingInsightsPanel() {
                       <ExternalLink size={11} /> 元動画/記事を開く
                     </a>
                   )}
+                  </div>
                 </div>
                 <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg border shrink-0 ${
                   item.isLaneGeneral ? 'bg-sky-50 border-sky-200 text-sky-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'

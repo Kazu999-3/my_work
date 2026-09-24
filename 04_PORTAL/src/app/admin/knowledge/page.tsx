@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, RefreshCw, Sparkles } from 'lucide-react';
+import { Plus, RefreshCw, Sparkles, BookOpen } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import YoutubeQueueManager from '../youtube/YoutubeQueueManager';
 import DiscordImportPanel from './DiscordImportPanel';
@@ -46,10 +47,16 @@ function KnowledgeBaseContent() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsAuthenticated(prev => (prev === null ? false : prev));
-    }, 4000);
+    }, 3000);
 
-    fetch('/api/auth/verify', { method: 'POST', credentials: 'include' })
-      .then(res => setIsAuthenticated(res.ok))
+    fetch('/api/auth/verify', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    })
+      .then(res => res.json())
+      .then(data => setIsAuthenticated(!!data.valid))
       .catch(() => setIsAuthenticated(false))
       .finally(() => clearTimeout(timer));
 
@@ -217,6 +224,17 @@ function KnowledgeBaseContent() {
               Web記事・X投稿・YouTube動画・実戦メモから知見を抽出し、チャンピオン辞典へ反映
             </p>
           </div>
+        </div>
+
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          <Link
+            href="/admin/guide"
+            className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs"
+            title="LoLデータ収集＆辞典＆コーチ連携の全貌仕様ガイドを開く"
+          >
+            <BookOpen size={14} className="text-amber-700" />
+            <span>📖 機能全貌ガイド</span>
+          </Link>
         </div>
       </motion.header>
 

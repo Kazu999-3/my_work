@@ -12,15 +12,19 @@ const DictionaryTab = dynamic(() => import('./tabs/DictionaryTab'), {
   loading: () => <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-[#c89b3c] border-t-transparent rounded-full animate-spin"></div></div>
 });
 const LaneGuidesView = dynamic(() => import('../lane-guides/page'), {
+  ssr: false,
   loading: () => <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-sky-400 border-t-transparent rounded-full animate-spin"></div></div>
 });
 const LibraryTabContent = dynamic(() => import('../admin/knowledge/LibraryTabContent'), {
+  ssr: false,
   loading: () => <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div></div>
 });
 const KnowledgeIngestView = dynamic(() => import('../admin/knowledge/page'), {
+  ssr: false,
   loading: () => <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-pink-500 border-t-transparent rounded-full animate-spin"></div></div>
 });
 const DictHealthView = dynamic(() => import('../admin/dict-health/page'), {
+  ssr: false,
   loading: () => <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div></div>
 });
 
@@ -140,6 +144,13 @@ function ChampionsShell() {
                 className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-pink-700 hover:text-pink-900 bg-pink-50 hover:bg-pink-100/80 border border-pink-200 transition flex items-center gap-1"
               >
                 <span>📥 戦術取込</span>
+              </Link>
+              <Link
+                href="/admin/guide"
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-amber-800 hover:text-amber-950 bg-amber-50 hover:bg-amber-100/80 border border-amber-200 transition flex items-center gap-1"
+                title="LoLデータ収集＆辞典＆コーチ連携の全貌仕様ガイド"
+              >
+                <span>📖 全貌ガイド</span>
               </Link>
             </>
           )}

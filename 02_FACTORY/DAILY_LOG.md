@@ -12,6 +12,44 @@
 
 ## 🗓️ 2026-09-25（金）
 
+### 🚀 戦術取り込みの構文エラー解消（無限ぐるぐる根絶） ＆ システム全貌仕様ガイド新設
+
+**概要**:
+1. **背景と目的**:
+   - ユーザーから「戦術取り込みは変わらずぐるぐるしてるな」「ナレッジ、チャンピオン辞典、コーチ系のLoLデータ収集機能の全貌が全然分かってない。ポータルの管理者用に事細かな機能詳細説明ページを新たに作成して欲しい」との要請。
+2. **原因と方針決定（Decisions Over Artifacts）**:
+   - **「ぐるぐる（スピナー）」が消えなかった真因**:
+     - `04_PORTAL/src/app/admin/knowledge/PendingInsightsPanel.tsx` のカード内リンクブロックにおいて、`<div>` の閉じタグが1つ不足していた。
+     - このJSX構文エラー（TS17008/TS1381）によりクライアント側でチャンクがコンパイル・ロード不能となり、Next.js App Router の Suspense / dynamic import の `loading` スピナーが永久に回り続けていた。
+   - **没案（説明をチャット窓に全文書き出す案）**:
+     - チャット窓に何千行もの仕様を出力するとコンテキストを汚染し、再利用もできないため不採用（コンテキスト保護原則）。
+   - **採用案**:
+     - `PendingInsightsPanel.tsx` の閉じタグ不整合を完全解消し、`tsc --noEmit` でエラー0件を確認。
+     - `/champions` における dynamic import に `ssr: false` を付与し、クライアントハイドレーションを安定化。
+     - ポータル管理者専用ページ [`04_PORTAL/src/app/admin/guide/page.tsx`](file:///d:/my_work/04_PORTAL/src/app/admin/guide/page.tsx) を新設。
+     - YouTube動画・Discord議論・Web記事の3大インジェスト、チャンピオン辞典（2層DB・戦術バイブル）、AIコーチ＆Live Client HUD連携の全貌を図解付きで体系化。
+     - 管理者ダッシュボード、戦術取り込みヘッダー、サイドバーにナビゲーションリンクを配備。
+3. **実装内容**:
+   - [`04_PORTAL/src/app/admin/knowledge/PendingInsightsPanel.tsx`](file:///d:/my_work/04_PORTAL/src/app/admin/knowledge/PendingInsightsPanel.tsx): 不足していた `</div>` 閉じタグを追加。
+   - [`04_PORTAL/src/app/champions/page.tsx`](file:///d:/my_work/04_PORTAL/src/app/champions/page.tsx): 各管理者タブの dynamic import に `ssr: false` を追加、ヘッダーにガイドリンクを配備。
+   - [`04_PORTAL/src/app/admin/knowledge/page.tsx`](file:///d:/my_work/04_PORTAL/src/app/admin/knowledge/page.tsx): 認証fetchの堅牢化と仕様ガイドリンクの追加。
+   - [`04_PORTAL/src/app/admin/guide/page.tsx`](file:///d:/my_work/04_PORTAL/src/app/admin/guide/page.tsx): システム全貌仕様ガイド画面を新規作成。
+   - [`04_PORTAL/src/app/admin/dashboard/page.tsx`](file:///d:/my_work/04_PORTAL/src/app/admin/dashboard/page.tsx): ヘッダーおよびヘルスバナーに仕様ガイドリンクを配備。
+   - [`04_PORTAL/src/components/Sidebar.tsx`](file:///d:/my_work/04_PORTAL/src/components/Sidebar.tsx): 管理者メニューに「システム全貌仕様ガイド」を追加。
+   - テスト63件全パス、TypeScript型チェック エラー0件を確認。
+
+**3行ナレッジ**:
+1. **「スピナーが消えない」時はロジックではなくJSX構文エラーを疑え**: Next.js App Router では、子コンポーネントに1つでも閉じタグ不足やコンパイルエラーがあると、チャンク読み込みが中断され、親のSuspense fallback（ぐるぐる）が永久に回り続ける。
+2. **動的インポート（next/dynamic）には必ず `ssr: false` を添えよ**: 管理画面や複雑なステートを持つ巨大コンポーネントをクライアント遅延読み込みする場合、SSRをオフにすることでサーバーとクライアントのハイドレーション不整合を確実に防げる。
+3. **システムの全貌はポータル内に「生きたドキュメント」として持て**: READMEやチャットのやり取りに埋もれた仕様はすぐに風化する。管理者UIの中に直結した仕様ガイドページを常設することで、迷ったときに1タップで全体像（勝利ループ）を再認識できる。
+
+**🌾 拾い上げ (Harvest)**:
+- `[要検証]`: Live Client Data API (2999) 取得時のキルライン判定と、チャンピオン辞典のパワースパイク記述との自動マッピング精度。
+- `[継続ウォッチ]`: YouTube解析ワーカーにおけるGemini 2.5の応答遅延や429頻度（必要に応じてバッチ間隔の調整）。
+- `[発信候補]`: 「LoLの勝ち方をAIで体系化する：動画要約・Discordログ・リアルタイムHUDを1つに繋ぐ完全自動化アーキテクチャ」をnoteやZennで発信。
+
+---
+
 ### ⚡ ナレッジ承認パイプラインの高速化（一括承認・即時辞典マージ・バッジ可視化）
 
 **概要**:
