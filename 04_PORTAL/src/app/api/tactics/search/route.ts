@@ -44,6 +44,112 @@ function extractSnippet(text: string, keyword: string, snippetLength = 120): str
   return snippet;
 }
 
+interface CachedTacticsItem {
+  id: string;
+  type: 'bible' | 'video';
+  champion: string;
+  championJa: string;
+  section: string;
+  title: string;
+  body: string;
+  fullTextLower: string;
+  headerLower: string;
+  tags: string[];
+}
+
+// インメモリキャッシュ (TTL: 5分)
+let cachedItems: CachedTacticsItem[] | null = null;
+let lastCacheTime = 0;
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+function loadTacticsItems(repoRoot: string): CachedTacticsItem[] {
+  const now = Date.now();
+  if (cachedItems && now - lastCacheTime < CACHE_TTL_MS) {
+    return cachedItems;
+  }
+
+  const items: CachedTacticsItem[] = [];
+  const tacticsDir = path.join(repoRoot, '01_INTEL', 'tactics');
+  const kireiDir = path.join(repoRoot, '02_FACTORY', '_LOL', 'bible', 'kirei_bible');
+
+  // 1. 戦術バイブル（01_INTEL/tactics/）を走査
+  if (fs.existsSync(tacticsDir)) {
+    const files = fs.readdirSync(tacticsDir).filter(f => f.endsWith('_tactics_bible.md'));
+    for (const f of files) {
+      const filePath = path.join(tacticsDir, f);
+      try {
+        const raw = fs.readFileSync(filePath, 'utf-8');
+        const champIdMatch = f.match(/^([a-z0-9]+)_tactics_bible\.md$/i);
+        const rawChampId = champIdMatch ? champIdMatch[1] : '';
+        const champKey = Object.keys(CHAMPION_JA).find(
+          k => k.toLowerCase() === rawChampId.toLowerCase()
+        ) || rawChampId;
+        const champJa = CHAMPION_JA[champKey] || champKey;
+
+        // セクション単位に分割 (## 見出し)
+        const sections = raw.split(/\n(?=##\s+)/);
+        for (const sec of sections) {
+          const lines = sec.trim().split('\n');
+          const header = lines[0].replace(/^##\s+/, '').trim();
+          const body = lines.slice(1).join('\n');
+
+          items.push({
+            id: `bible-${rawChampId}-${header.slice(0, 20)}`,
+            type: 'bible',
+            champion: champKey,
+            championJa: champJa,
+            section: header,
+            title: `${champJa} (${champKey}) - ${header}`,
+            body,
+            fullTextLower: sec.toLowerCase(),
+            headerLower: header.toLowerCase(),
+            tags: ['戦術バイブル', champJa, header.split(' ')[0]],
+          });
+        }
+      } catch (err) {
+        console.warn(`[tactics/search] Failed to load ${f}:`, err);
+      }
+    }
+  }
+
+  // 2. Kirei Bible（02_FACTORY/_LOL/bible/kirei_bible/INDEX.md）を走査
+  const kireiIndex = path.join(kireiDir, 'INDEX.md');
+  if (fs.existsSync(kireiIndex)) {
+    try {
+      const kireiRaw = fs.readFileSync(kireiIndex, 'utf-8');
+      const lines = kireiRaw.split('\n');
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line.startsWith('- [') && !line.startsWith('* [')) continue;
+
+        const titleMatch = line.match(/\[(.*?)\]\((.*?)\)/);
+        const title = titleMatch ? titleMatch[1] : line;
+        const champName = line.match(/\b([A-Z][a-zA-Z]+)\b/)?.[1] || 'LoL';
+
+        items.push({
+          id: `video-kirei-${i}`,
+          type: 'video',
+          champion: champName,
+          championJa: CHAMPION_JA[champName] || champName,
+          section: '動画解析Tips',
+          title: `実演解析: ${title}`,
+          body: line.replace(/^[-*]\s*/, ''),
+          fullTextLower: line.toLowerCase(),
+          headerLower: title.toLowerCase(),
+          tags: ['動画Tips', champName],
+        });
+      }
+    } catch (err) {
+      console.warn('[tactics/search] Failed to load kirei index:', err);
+    }
+  }
+
+  cachedItems = items;
+  lastCacheTime = now;
+  return items;
+}
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -60,114 +166,46 @@ export async function GET(req: Request) {
     }
 
     const repoRoot = path.resolve(process.cwd(), '..');
-    const tacticsDir = path.join(repoRoot, '01_INTEL', 'tactics');
-    const kireiDir = path.join(repoRoot, '02_FACTORY', '_LOL', 'bible', 'kirei_bible');
+    const items = loadTacticsItems(repoRoot);
 
     const results: TacticsSearchResult[] = [];
     const lowerQuery = query.toLowerCase();
     const queryWords = lowerQuery.split(/\s+/).filter(Boolean);
 
-    // 1. 戦術バイブル（01_INTEL/tactics/）を走査
-    if (fs.existsSync(tacticsDir)) {
-      const files = fs.readdirSync(tacticsDir).filter(f => f.endsWith('_tactics_bible.md'));
-      for (const f of files) {
-        const filePath = path.join(tacticsDir, f);
-        const raw = fs.readFileSync(filePath, 'utf-8');
+    for (const item of items) {
+      let score = 0;
+      let matched = false;
 
-        const champIdMatch = f.match(/^([a-z0-9]+)_tactics_bible\.md$/i);
-        const rawChampId = champIdMatch ? champIdMatch[1] : '';
-        const champKey = Object.keys(CHAMPION_JA).find(
-          k => k.toLowerCase() === rawChampId.toLowerCase()
-        ) || rawChampId;
-        const champJa = CHAMPION_JA[champKey] || champKey;
-
-        // セクション単位に分割 (## 見出し)
-        const sections = raw.split(/\n(?=##\s+)/);
-        for (const sec of sections) {
-          const lines = sec.trim().split('\n');
-          const header = lines[0].replace(/^##\s+/, '').trim();
-          const body = lines.slice(1).join('\n');
-          const fullSec = sec.toLowerCase();
-
-          // スコア計算
-          let score = 0;
-          let matched = false;
-
-          for (const w of queryWords) {
-            if (header.toLowerCase().includes(w)) {
-              score += 15;
-              matched = true;
-            }
-            if (fullSec.includes(w)) {
-              // 出現回数に応じた加算 (RegExpを使用せず安全にカウント)
-              const count = fullSec.split(w).length - 1;
-              score += Math.min(10, count * 3);
-              matched = true;
-            }
-          }
-
-          // チャンピオン名（英・日）がヒットした場合
-          if (champKey.toLowerCase().includes(lowerQuery) || champJa.includes(lowerQuery)) {
-            score += 8;
-            matched = true;
-          }
-
-          if (matched && score > 0) {
-            results.push({
-              id: `bible-${rawChampId}-${header.slice(0, 20)}`,
-              type: 'bible',
-              champion: champKey,
-              championJa: champJa,
-              section: header,
-              title: `${champJa} (${champKey}) - ${header}`,
-              snippet: extractSnippet(body || header, queryWords[0] || query),
-              tags: ['戦術バイブル', champJa, header.split(' ')[0]],
-              score,
-            });
-          }
+      for (const w of queryWords) {
+        if (item.headerLower.includes(w)) {
+          score += 15;
+          matched = true;
+        }
+        if (item.fullTextLower.includes(w)) {
+          const count = item.fullTextLower.split(w).length - 1;
+          score += Math.min(10, count * 3);
+          matched = true;
         }
       }
-    }
 
-    // 2. Kirei Bible（02_FACTORY/_LOL/bible/kirei_bible/INDEX.md）を走査
-    const kireiIndex = path.join(kireiDir, 'INDEX.md');
-    if (fs.existsSync(kireiIndex)) {
-      const kireiRaw = fs.readFileSync(kireiIndex, 'utf-8');
-      const lines = kireiRaw.split('\n');
+      // チャンピオン名（英・日）がヒットした場合
+      if (item.champion.toLowerCase().includes(lowerQuery) || item.championJa.includes(lowerQuery)) {
+        score += 8;
+        matched = true;
+      }
 
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line.startsWith('- [') && !line.startsWith('* [')) continue;
-
-        const lowerLine = line.toLowerCase();
-        let score = 0;
-        let matched = false;
-
-        for (const w of queryWords) {
-          if (lowerLine.includes(w)) {
-            score += 12;
-            matched = true;
-          }
-        }
-
-        if (matched) {
-          // タイトルとリンク抽出
-          const titleMatch = line.match(/\[(.*?)\]\((.*?)\)/);
-          const title = titleMatch ? titleMatch[1] : line;
-          const champName = line.match(/\b([A-Z][a-zA-Z]+)\b/)?.[1] || 'LoL';
-
-          results.push({
-            id: `video-kirei-${i}`,
-            type: 'video',
-            champion: champName,
-            championJa: CHAMPION_JA[champName] || champName,
-            section: '動画解析Tips',
-            title: `実演解析: ${title}`,
-            snippet: line.replace(/^[-*]\s*/, ''),
-            tags: ['動画Tips', champName],
-            score,
-          });
-        }
+      if (matched && score > 0) {
+        results.push({
+          id: item.id,
+          type: item.type,
+          champion: item.champion,
+          championJa: item.championJa,
+          section: item.section,
+          title: item.title,
+          snippet: extractSnippet(item.body || item.section, queryWords[0] || query),
+          tags: item.tags,
+          score,
+        });
       }
     }
 
@@ -182,6 +220,7 @@ export async function GET(req: Request) {
       total: results.length,
       limit,
       results: paginated,
+      cached: Date.now() - lastCacheTime < CACHE_TTL_MS,
     });
   } catch (err: any) {
     console.error('[tactics/search] error:', err);

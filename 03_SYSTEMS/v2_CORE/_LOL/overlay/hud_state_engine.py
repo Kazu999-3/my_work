@@ -101,6 +101,200 @@ TYPICAL_MID_CHAMPIONS = {
     "Veigar", "VelKoz", "Vex", "Viktor", "Vladimir", "Xerath", "Yasuo", "Yone", "Zed", "Zoe"
 }
 
+GRIEVOUS_WOUNDS_ITEMS = {
+    3123: "処刑人の劫罰",
+    3033: "モータル リマインダー",
+    6609: "ケミパンク チェーンソード",
+    3916: "忘却のオーブ",
+    3165: "モレロノミコン",
+    3076: "ブランブル ベスト",
+    3075: "ソーンメイル"
+}
+CONTROL_WARD_ITEM_ID = 2055
+
+MAGE_CHAMPIONS = {
+    "Ahri", "Akali", "Anivia", "Annie", "AurelionSol", "Azir", "Brand", "Cassiopeia",
+    "Diana", "Ekko", "Elise", "Evelynn", "Fiddlesticks", "Fizz", "Galio", "Gwen",
+    "Heimerdinger", "Hwei", "Karthus", "Kassadin", "Katarina", "Kayle", "Kennen",
+    "LeBlanc", "Lillia", "Lissandra", "Lux", "Malzahar", "Mordekaiser", "Morgana",
+    "Neeko", "Nidalee", "Orianna", "Rumble", "Ryze", "Singed", "Swain", "Syndra",
+    "Taliyah", "Teemo", "TwistedFate", "Veigar", "VelKoz", "Vex", "Viktor", "Vladimir",
+    "Xerath", "Ziggs", "Zoe", "Zyra"
+}
+
+def calculate_cannon_wave_info(game_time_sec: float) -> dict:
+    """
+    大砲ミニオン（キャノンウェーブ）の出現タイミングを正確に計算する。
+    - 第1ウェーブスポーン: 1:05 (65秒)
+    - ウェーブ間隔: 30秒
+    - 15分 (900秒) 未満: 3ウェーブに1回 (第3, 6, 9...波)
+    - 15分〜25分 (1500秒): 2ウェーブに1回 (偶数波)
+    - 25分以降: 毎ウェーブ (全波)
+    """
+    if game_time_sec < 65:
+        time_to_first = max(0, int(65 - game_time_sec))
+        return {
+            "is_cannon_active": False,
+            "sec_until_cannon": time_to_first + 60,
+            "current_wave": 0,
+            "desc": f"第1ウェーブまで {time_to_first}s"
+        }
+
+    elapsed_since_first = game_time_sec - 65
+    current_wave = int(elapsed_since_first // 30) + 1
+    time_in_current_wave = elapsed_since_first % 30
+
+    def is_cannon(wave_num: int, spawn_time: float) -> bool:
+        if spawn_time >= 1500:
+            return True
+        elif spawn_time >= 900:
+            return (wave_num % 2 == 0)
+        else:
+            return (wave_num % 3 == 0)
+
+    current_spawn_time = 65 + (current_wave - 1) * 30
+    is_current_cannon = is_cannon(current_wave, current_spawn_time)
+
+    # 次のキャノンウェーブ探索
+    w = current_wave + 1
+    st = 65 + (w - 1) * 30
+    while not is_cannon(w, st):
+        w += 1
+        st += 30
+
+    sec_until_cannon = max(0, int(st - game_time_sec))
+
+    return {
+        "is_current_cannon": is_current_cannon,
+        "sec_until_cannon": sec_until_cannon,
+        "current_wave": current_wave,
+        "desc": "💣 大砲ウェーブ接近中！" if (is_current_cannon and time_in_current_wave < 25) else f"💣 次大砲: {sec_until_cannon}s後"
+    }
+
+def calculate_enemy_damage_profile(enemy_players: list) -> dict:
+    """
+    敵チーム5人のアイテムから得られるADとAPの総量、およびチャンピオンのデフォルト属性から、
+    敵チームの物理(AD) vs 魔法(AP)の脅威比率を算出。
+    """
+    total_ad = 0.0
+    total_ap = 0.0
+
+    for ep in enemy_players:
+        c_name = extract_champion_name(ep)
+        stats = ep.get("championStats", {})
+        ad = stats.get("attackDamage", 0.0)
+        ap = stats.get("abilityPower", 0.0)
+
+        if c_name in MAGE_CHAMPIONS:
+            ap += 45.0
+        else:
+            ad += 25.0
+
+        total_ad += max(0.0, ad)
+        total_ap += max(0.0, ap)
+
+    grand_total = total_ad + total_ap
+    if grand_total <= 0:
+        return {"ad_pct": 50, "ap_pct": 50, "bias": "EVEN", "advice": "物理/魔法 互角"}
+
+    ad_pct = int(round((total_ad / grand_total) * 100))
+    ap_pct = 100 - ad_pct
+
+    if ad_pct >= 65:
+        bias = "HEAVY_AD"
+        advice = f"敵: 物理偏重 ({ad_pct}%) ➔ アーマー(物理防具)優先 🛡️"
+    elif ap_pct >= 65:
+        bias = "HEAVY_AP"
+        advice = f"敵: 魔法偏重 ({ap_pct}%) ➔ MR(魔法防具)優先 🔮"
+    else:
+        bias = "HYBRID"
+        advice = f"敵属性: 物理 {ad_pct}% / 魔法 {ap_pct}% (複合防具推奨)"
+
+    return {
+        "ad_pct": ad_pct,
+        "ap_pct": ap_pct,
+        "bias": bias,
+        "advice": advice
+    }
+
+def estimate_player_gold(player_obj: dict, game_time_sec: float) -> dict:
+    """
+    プレイヤーの「確定アイテム総額」と、CS・キル・アシスト・自然増加から逆算した「推定手持ちゴールド」を計算。
+    """
+    item_gold = ItemPriceManager.calculate_player_item_gold(player_obj.get("items", []))
+    scores = player_obj.get("scores", {})
+    kills = scores.get("kills", 0)
+    assists = scores.get("assists", 0)
+    cs = scores.get("creepScore", 0)
+
+    passive_gold = max(0.0, (game_time_sec - 110) * 2.04) if game_time_sec > 110 else 0.0
+    initial_gold = 500.0
+    farm_gold = cs * 20.0
+    kill_gold = kills * 300.0 + assists * 125.0
+    estimated_total = initial_gold + passive_gold + farm_gold + kill_gold
+    estimated_current = max(0, int(estimated_total - item_gold))
+
+    return {
+        "item_gold": item_gold,
+        "estimated_current_gold": estimated_current,
+        "estimated_total_gold": int(estimated_total)
+    }
+
+def analyze_grievous_wounds(my_team_players: list, enemy_players: list, my_summoner_name: str) -> dict:
+    """
+    敵チームに回復特化チャンピオンが存在するか判定し、
+    味方全員の所持アイテムから重傷アイテム所持者を特定する。
+    """
+    heal_threats = []
+    for ep in enemy_players:
+        c_name = extract_champion_name(ep)
+        if c_name in HEAL_HEAVY_CHAMPIONS:
+            heal_threats.append(c_name)
+
+    needed = len(heal_threats) > 0
+    allies_holding = []
+    self_holding = False
+
+    for p in my_team_players:
+        s_name = p.get("summonerName", "")
+        c_name = extract_champion_name(p)
+        is_self = (s_name == my_summoner_name)
+        items = p.get("items", [])
+        for it in items:
+            i_id = it.get("itemID")
+            if i_id in GRIEVOUS_WOUNDS_ITEMS:
+                item_label = GRIEVOUS_WOUNDS_ITEMS[i_id]
+                allies_holding.append({
+                    "summoner": s_name,
+                    "champion": c_name,
+                    "item_id": i_id,
+                    "item_name": item_label,
+                    "is_self": is_self
+                })
+                if is_self:
+                    self_holding = True
+                break
+
+    if not needed:
+        summary_text = "回復阻害: 不要（敵に高回復なし ⚪）"
+        status = "NOT_NEEDED"
+    elif allies_holding:
+        holder_names = [f"{h['champion']}({h['item_name']})" for h in allies_holding]
+        summary_text = f"重傷所持済 🟢: {', '.join(holder_names)}"
+        status = "ACQUIRED"
+    else:
+        summary_text = f"重傷(回復阻害) 必須 🔴: 敵 {', '.join(heal_threats)} 対策 (味方未所持)"
+        status = "CRITICAL_MISSING"
+
+    return {
+        "needed": needed,
+        "heal_threats": heal_threats,
+        "allies_holding": allies_holding,
+        "self_holding": self_holding,
+        "summary_text": summary_text,
+        "status": status
+    }
+
 def assign_team_roles(players: list) -> dict:
     """チームの全プレイヤーを TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY に100%正確に割り当て"""
     assigned = {} # {role_key: player_obj}
@@ -263,6 +457,10 @@ class HudStateEngine:
         # バフタイマー追跡
         self.baron_end_time = 0.0
         self.elder_end_time = 0.0
+        self.herald_eye_end_time = 0.0
+
+        # コントロールワード追跡 (各サモナーの購入数・使用数・所持数)
+        self.ward_tracker = {}  # {summoner_name: {"purchased": int, "used": int, "prev_count": int}}
 
     def get_matchup_memo(self, my_champion: str, enemy_champion: str) -> dict:
         """Supabaseから対面攻略メモを取得（キャッシュ付き）"""
@@ -588,7 +786,7 @@ class HudStateEngine:
         if next_item_advice.get("reason"):
             build_recommendations.append(next_item_advice["reason"])
 
-        # --- 7. バロン・エルダーバフタイマー ---
+        # --- 7. バロン・エルダー・ヘラルドバフタイマー ---
         for ev in events:
             ev_name = ev.get("EventName")
             ev_time = ev.get("EventTime", 0.0)
@@ -596,15 +794,20 @@ class HudStateEngine:
                 self.baron_end_time = ev_time + 180.0
             elif ev_name == "DragonKill" and ev.get("DragonType") == "Elder" and ev_time > (self.elder_end_time - 150):
                 self.elder_end_time = ev_time + 150.0
+            elif ev_name == "HeraldKill" and ev_time > (self.herald_eye_end_time - 240):
+                self.herald_eye_end_time = ev_time + 240.0
 
         baron_left = max(0, int(self.baron_end_time - game_time_sec))
         elder_left = max(0, int(self.elder_end_time - game_time_sec))
+        herald_left = max(0, int(self.herald_eye_end_time - game_time_sec))
 
         buff_status = []
         if baron_left > 0:
-            buff_status.append(f"🟣 バロンバフ: 残り {baron_left}s")
+            buff_status.append(f"🟣 バロン: {baron_left}s")
         if elder_left > 0:
-            buff_status.append(f"🐉 エルダーバフ: 残り {elder_left}s")
+            buff_status.append(f"🐉 エルダー: {elder_left}s")
+        if herald_left > 0:
+            buff_status.append(f"👁️ 瞳: {herald_left}s")
 
         # --- 8. 集団戦セッション自動トラッキング ＆ 勝因・敗因分析 ---
         self.fight_tracker.process_events(
@@ -766,6 +969,71 @@ class HudStateEngine:
         else:
             jg_objective_plan = f"👑 バロン / エルダー決戦 視界掌握 (スマイト: {smite_damage}dmg)"
 
+        # --- 13. 重傷・対策アイテム解析 ---
+        grievous_wounds = analyze_grievous_wounds(ally_players, enemy_players, my_summoner)
+
+        # --- 14. 大砲ミニオン（キャノンウェーブ）タイミング ---
+        cannon_wave_info = calculate_cannon_wave_info(game_time_sec)
+
+        # --- 15. 敵チーム攻撃属性比率 (物理AD vs 魔法AP) ---
+        enemy_damage_profile = calculate_enemy_damage_profile(enemy_players)
+
+        # --- 16. コントロールワード追跡 (購入数・使用数・所持数) ---
+        for p in all_players:
+            s_name = p.get("summonerName", "")
+            if not s_name:
+                continue
+            cur_wards = 0
+            for it in p.get("items", []):
+                if it.get("itemID") == CONTROL_WARD_ITEM_ID:
+                    cur_wards += it.get("count", 1)
+
+            p_data = self.ward_tracker.setdefault(s_name, {"purchased": 0, "used": 0, "prev_count": 0})
+            prev_c = p_data["prev_count"]
+            if cur_wards > prev_c:
+                p_data["purchased"] += (cur_wards - prev_c)
+            elif cur_wards < prev_c:
+                p_data["used"] += (prev_c - cur_wards)
+            p_data["prev_count"] = cur_wards
+
+        my_ward_info = self.ward_tracker.get(my_summoner, {"purchased": 0, "used": 0, "prev_count": 0})
+        team_ward_purchased = sum(self.ward_tracker.get(p.get("summonerName", ""), {}).get("purchased", 0) for p in ally_players)
+        team_ward_used = sum(self.ward_tracker.get(p.get("summonerName", ""), {}).get("used", 0) for p in ally_players)
+        ward_stats = {
+            "my_purchased": my_ward_info["purchased"],
+            "my_used": my_ward_info["used"],
+            "my_current": my_ward_info["prev_count"],
+            "team_purchased": team_ward_purchased,
+            "team_used": team_ward_used,
+            "summary_text": f"買{my_ward_info['purchased']} 置{my_ward_info['used']} (持{my_ward_info['prev_count']})"
+        }
+
+        # --- 17. 敵・味方・対面ゴールド推定 ---
+        enemy_gold_est = estimate_player_gold(opponent_obj, game_time_sec) if opponent_obj else {"item_gold": 0, "estimated_current_gold": 0, "estimated_total_gold": 0}
+        my_item_gold = ItemPriceManager.calculate_player_item_gold(my_player_obj.get("items", [])) if my_player_obj else 0
+        gold_estimates = {
+            "my_item_gold": my_item_gold,
+            "my_current_gold": int(my_gold),
+            "my_total_gold": int(my_gold) + my_item_gold,
+            "enemy_item_gold": enemy_gold_est["item_gold"],
+            "enemy_est_current_gold": enemy_gold_est["estimated_current_gold"],
+            "enemy_est_total_gold": enemy_gold_est["estimated_total_gold"],
+        }
+
+        # --- 18. 【3-1】試合前（ロード画面・試合開始直後）対面ブリーフィング ---
+        is_pregame = game_time_sec <= 90.0
+        counter_first = f"{composition_counters[0].get('item_name', '')}: {composition_counters[0].get('reason', '')}" if (composition_counters and isinstance(composition_counters, list)) else "初期アイテムを忘れずに購入"
+        pregame_briefing = {
+            "is_pregame": is_pregame,
+            "title": f"⚡ 試合前ブリーフィング: {my_champion} vs {enemy_champion}",
+            "threat_skill": threat_skill_info.get("skill_name", "主要警戒スキル"),
+            "threat_advice": threat_skill_info.get("advice", ""),
+            "early_action": current_phase.get("action", "Lv1~2はミニオンのプッシュ状況を管理しCS確保") if current_phase else "Lv1~2は無理せずCS確保",
+            "early_goal": current_phase.get("trigger", "タワー前でウェーブ固定できれば第1段階クリア") if current_phase else "1stリコール目標達成を目指す",
+            "counter_advice": counter_first,
+            "forbidden_warning": "× 防具前のタワーダイブ禁止 (CC即死トリガー)"
+        }
+
         # 時間フォーマット
         min_part = int(game_time_sec // 60)
         sec_part = int(game_time_sec % 60)
@@ -813,10 +1081,6 @@ class HudStateEngine:
             "all_fights_analyzed": all_fights_analyzed,
             # 敵の最警戒スキル ＆ 仕掛けチャンス
             "threat_skill_info": threat_skill_info,
-            # ★ 2026-09-22: ここは以前 "kill_line" という名前で threat_skill_info(スキル名と
-            # 定型アドバイス)をそのまま入れており、即死ライン計算の結果であるかのような
-            # キー名になっていた。実際 KillLineCalculator はimportされているが未使用。
-            # 誤解を招くため別名にした(即死ライン本体はポータル側APIが算出している)。
             "threat_skill_info_alias": threat_skill_info,
             # 案B: 現在フェーズ手順 ＆ 勝ちパターン手順書
             "current_phase": current_phase,
@@ -824,4 +1088,11 @@ class HudStateEngine:
             "rejected_options": blueprint_data.get("rejected", {}),
             # 案C: 劣勢時逆転コンパス
             "comeback_compass": comeback_compass,
+            # 強化機能
+            "grievous_wounds": grievous_wounds,
+            "cannon_wave_info": cannon_wave_info,
+            "enemy_damage_profile": enemy_damage_profile,
+            "ward_stats": ward_stats,
+            "gold_estimates": gold_estimates,
+            "pregame_briefing": pregame_briefing,
         }

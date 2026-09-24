@@ -166,6 +166,50 @@ class TestHudStateEngine(unittest.TestCase):
         matched = find_my_player(active_player, all_players)
         self.assertEqual(matched.get("summonerName"), "Kazu#JP1")
 
+    def test_enhanced_overlay_features(self):
+        """強化機能（重傷判定、大砲ミニオン周期、敵属性比率、ゴールド推定、ワード追跡、試合前ブリーフィング）のテスト"""
+        mock_raw = LiveClient.get_mock_game_data()
+        state = self.engine.analyze_frame(mock_raw)
+
+        # 1. 重傷アイテム解析
+        self.assertIn("grievous_wounds", state)
+        gw = state["grievous_wounds"]
+        self.assertIn("needed", gw)
+        self.assertIn("summary_text", gw)
+
+        # 2. 大砲ミニオン（キャノンウェーブ）
+        self.assertIn("cannon_wave_info", state)
+        cannon = state["cannon_wave_info"]
+        self.assertIn("sec_until_cannon", cannon)
+        self.assertIn("desc", cannon)
+
+        # 3. 敵チーム攻撃属性比率 (AD vs AP)
+        self.assertIn("enemy_damage_profile", state)
+        dmg_p = state["enemy_damage_profile"]
+        self.assertIn("ad_pct", dmg_p)
+        self.assertIn("ap_pct", dmg_p)
+        self.assertEqual(dmg_p["ad_pct"] + dmg_p["ap_pct"], 100)
+
+        # 4. コントロールワード追跡
+        self.assertIn("ward_stats", state)
+        ward = state["ward_stats"]
+        self.assertIn("my_purchased", ward)
+        self.assertIn("summary_text", ward)
+
+        # 5. ゴールド推定
+        self.assertIn("gold_estimates", state)
+        ge = state["gold_estimates"]
+        self.assertIn("my_item_gold", ge)
+        self.assertIn("enemy_item_gold", ge)
+        self.assertIn("enemy_est_current_gold", ge)
+
+        # 6. 【3-1】試合前対面ブリーフィング
+        self.assertIn("pregame_briefing", state)
+        pb = state["pregame_briefing"]
+        self.assertIn("title", pb)
+        self.assertIn("threat_skill", pb)
+        self.assertIn("early_action", pb)
+
 
 class TestKillLineCalculator(unittest.TestCase):
     """3. キルライン計算エンジンのテスト"""

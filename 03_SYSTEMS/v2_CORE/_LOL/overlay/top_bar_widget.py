@@ -118,7 +118,7 @@ class TopBarWidget(QWidget):
 
         card_layout.addWidget(target_box)
 
-        # 4. 🟣 バフタイマー (バロン/エルダー獲得時のみ表示)
+        # 4. 🟣 バフタイマー (バロン/エルダー/ヘラルド獲得時のみ表示)
         self.buff_label = QLabel("", self.card_frame)
         self.buff_label.setStyleSheet("""
             background-color: rgba(168, 85, 247, 0.25);
@@ -131,6 +131,16 @@ class TopBarWidget(QWidget):
         self.buff_label.setVisible(False)
         card_layout.addWidget(self.buff_label)
 
+        # 5. 💣 大砲ミニオン ＆ 視界（ピンクワード）情報行
+        self.cannon_ward_label = QLabel("💣 次大砲: -- | 👁️ 視界: --", self.card_frame)
+        self.cannon_ward_label.setStyleSheet("color: #94a3b8; font-size: 10px; font-weight: 600;")
+        card_layout.addWidget(self.cannon_ward_label)
+
+        # 6. ⚔️ 敵属性比率 (物理AD vs 魔法AP)
+        self.dmg_profile_label = QLabel("⚔️ 敵属性: 物理 --% / 魔法 --%", self.card_frame)
+        self.dmg_profile_label.setStyleSheet("color: #cbd5e1; font-size: 9.5px; font-weight: bold;")
+        card_layout.addWidget(self.dmg_profile_label)
+
         layout.addWidget(self.card_frame)
         self.adjustSize()
 
@@ -142,6 +152,8 @@ class TopBarWidget(QWidget):
             self.progress_bar.setValue(0)
             self.progress_text_label.setText("---")
             self.buff_label.setVisible(False)
+            self.cannon_ward_label.setText("💣 次大砲: -- | 👁️ 視界: --")
+            self.dmg_profile_label.setText("⚔️ 敵属性: 物理 --% / 魔法 --%")
             self.adjustSize()
             return
 
@@ -221,6 +233,18 @@ class TopBarWidget(QWidget):
             self.buff_label.setVisible(True)
         else:
             self.buff_label.setVisible(False)
+
+        # 5. 💣 大砲ミニオン ＆ 視界情報
+        cannon = state.get("cannon_wave_info", {})
+        cannon_desc = cannon.get("desc", "💣 次大砲: --")
+        ward = state.get("ward_stats", {})
+        ward_desc = ward.get("summary_text", "買0 置0")
+        self.cannon_ward_label.setText(f"{cannon_desc} | 👁️ {ward_desc}")
+
+        # 6. ⚔️ 敵属性比率
+        dmg_prof = state.get("enemy_damage_profile", {})
+        dmg_advice = dmg_prof.get("advice", "敵属性: 物理 --% / 魔法 --%")
+        self.dmg_profile_label.setText(f"⚔️ {dmg_advice}")
 
         self.adjustSize()
 

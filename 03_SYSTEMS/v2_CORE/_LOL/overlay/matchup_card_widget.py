@@ -142,6 +142,11 @@ class MatchupCardWidget(QWidget):
 
         card_layout.addLayout(header_layout)
 
+        # 1.5 対面ゴールド比較行 (敵アイテム確定値 ＆ 推定未消費ゴールド)
+        self.gold_compare_label = QLabel("💰 対面G: 敵 --G (推定手持 --G) | 自分手持 --G", self.card_frame)
+        self.gold_compare_label.setStyleSheet("color: #fef08a; font-size: 10px; font-weight: bold; background: transparent; border: none;")
+        card_layout.addWidget(self.gold_compare_label)
+
         # 2. ⚠️ セクション①: 敵の最警戒スキル ＆ 仕掛けチャンス
         self.threat_frame = QFrame(self.card_frame)
         self.threat_frame.setStyleSheet("""
@@ -358,11 +363,24 @@ class MatchupCardWidget(QWidget):
         is_jg = state.get("is_jg", False)
         enemy_champ = state.get("enemy_champion", "Enemy")
         my_champ = state.get("my_champion", "")
+        is_pregame = state.get("pregame_briefing", {}).get("is_pregame", False)
 
-        if is_jg:
+        if is_pregame:
+            self.title_label.setText(f"⚡ 戦闘ブリーフィング: {my_champ} vs {enemy_champ}")
+            self.title_label.setStyleSheet("color: #fef08a; font-size: 13.5px; font-weight: 900;")
+        elif is_jg:
             self.title_label.setText(f"🌲 {my_champ} (JG) vs {enemy_champ}")
+            self.title_label.setStyleSheet("color: #F0E6D2; font-size: 13.5px; font-weight: 900;")
         else:
             self.title_label.setText(f"⚔️ {my_champ} vs {enemy_champ}")
+            self.title_label.setStyleSheet("color: #F0E6D2; font-size: 13.5px; font-weight: 900;")
+
+        # 対面ゴールド比較
+        gold_est = state.get("gold_estimates", {})
+        enemy_it = gold_est.get("enemy_item_gold", 0)
+        enemy_cur = gold_est.get("enemy_est_current_gold", 0)
+        my_cur = gold_est.get("my_current_gold", 0)
+        self.gold_compare_label.setText(f"💰 対面G: 敵{enemy_it}G(推定手持+{enemy_cur}G) | 自分手持{my_cur}G")
 
         # 1. 警戒スキル ＆ 仕掛けチャンス
         threat_info = state.get("threat_skill_info", {})
@@ -423,13 +441,20 @@ class MatchupCardWidget(QWidget):
         else:
             self.build_frame.setVisible(False)
 
-        # 3.5 敵味方構成 対策キーアイテム
+        # 3.5 敵味方構成 対策キーアイテム ＆ 重傷解析
         counters = state.get("composition_counters", [])
+        grievous = state.get("grievous_wounds", {})
+        lines = []
+
+        if grievous and grievous.get("needed"):
+            lines.append(f"🩸 {grievous.get('summary_text', '')}")
+
         if counters:
-            lines = []
             for c in counters[:2]:
                 status_str = "🟢 [購入済]" if c.get("is_owned") else "⚡ [未購入]"
                 lines.append(f"{c['tag']} {c['item_name']} ({c['price']}G) {status_str}\n  └ {c['reason']}")
+
+        if lines:
             self.counter_items_label.setText("\n".join(lines))
             self.counter_frame.setVisible(True)
         else:
