@@ -54,15 +54,19 @@ def extract_champion_name(player_obj: dict) -> str:
 
     return normalize_champion_id(c_name) if c_name else "Unknown"
 
-HEAL_HEAVY_CHAMPIONS = {
-    "Aatrox", "Warwick", "Vladimir", "Soraka", "Briar", "Swain",
-    "Fiora", "Sylas", "DrMundo", "Yuumi", "Olaf", "Illaoi", "Irelia", "RedKayn"
-}
-
-HEAVY_CC_CHAMPIONS = {
-    "Leona", "Nautilus", "Malzahar", "Morgana", "Amumu", "Sejuani",
-    "Rell", "Maokai", "Lissandra", "Skarner", "Thresh", "Blitzcrank"
-}
+from v2_CORE._LOL.overlay.macro_analytics import (
+    calculate_cannon_wave_info,
+    calculate_enemy_damage_profile,
+    estimate_player_gold,
+    analyze_grievous_wounds,
+    calculate_player_effective_gold,
+    HEAL_HEAVY_CHAMPIONS,
+    HEAVY_CC_CHAMPIONS,
+    GRIEVOUS_WOUNDS_ITEMS,
+    CONTROL_WARD_ITEM_ID,
+    MAGE_CHAMPIONS,
+)
+from v2_CORE._LOL.overlay.matchup_intel_provider import MatchupIntelProvider
 
 TYPICAL_TOP_CHAMPIONS = {
     "Aatrox", "Camille", "ChoGath", "Darius", "DrMundo", "Fiora", "Gangplank",
@@ -100,200 +104,6 @@ TYPICAL_MID_CHAMPIONS = {
     "Malzahar", "Neeko", "Orianna", "Qiyana", "Ryze", "Syndra", "Talon", "TwistedFate",
     "Veigar", "VelKoz", "Vex", "Viktor", "Vladimir", "Xerath", "Yasuo", "Yone", "Zed", "Zoe"
 }
-
-GRIEVOUS_WOUNDS_ITEMS = {
-    3123: "処刑人の劫罰",
-    3033: "モータル リマインダー",
-    6609: "ケミパンク チェーンソード",
-    3916: "忘却のオーブ",
-    3165: "モレロノミコン",
-    3076: "ブランブル ベスト",
-    3075: "ソーンメイル"
-}
-CONTROL_WARD_ITEM_ID = 2055
-
-MAGE_CHAMPIONS = {
-    "Ahri", "Akali", "Anivia", "Annie", "AurelionSol", "Azir", "Brand", "Cassiopeia",
-    "Diana", "Ekko", "Elise", "Evelynn", "Fiddlesticks", "Fizz", "Galio", "Gwen",
-    "Heimerdinger", "Hwei", "Karthus", "Kassadin", "Katarina", "Kayle", "Kennen",
-    "LeBlanc", "Lillia", "Lissandra", "Lux", "Malzahar", "Mordekaiser", "Morgana",
-    "Neeko", "Nidalee", "Orianna", "Rumble", "Ryze", "Singed", "Swain", "Syndra",
-    "Taliyah", "Teemo", "TwistedFate", "Veigar", "VelKoz", "Vex", "Viktor", "Vladimir",
-    "Xerath", "Ziggs", "Zoe", "Zyra"
-}
-
-def calculate_cannon_wave_info(game_time_sec: float) -> dict:
-    """
-    大砲ミニオン（キャノンウェーブ）の出現タイミングを正確に計算する。
-    - 第1ウェーブスポーン: 1:05 (65秒)
-    - ウェーブ間隔: 30秒
-    - 15分 (900秒) 未満: 3ウェーブに1回 (第3, 6, 9...波)
-    - 15分〜25分 (1500秒): 2ウェーブに1回 (偶数波)
-    - 25分以降: 毎ウェーブ (全波)
-    """
-    if game_time_sec < 65:
-        time_to_first = max(0, int(65 - game_time_sec))
-        return {
-            "is_cannon_active": False,
-            "sec_until_cannon": time_to_first + 60,
-            "current_wave": 0,
-            "desc": f"第1ウェーブまで {time_to_first}s"
-        }
-
-    elapsed_since_first = game_time_sec - 65
-    current_wave = int(elapsed_since_first // 30) + 1
-    time_in_current_wave = elapsed_since_first % 30
-
-    def is_cannon(wave_num: int, spawn_time: float) -> bool:
-        if spawn_time >= 1500:
-            return True
-        elif spawn_time >= 900:
-            return (wave_num % 2 == 0)
-        else:
-            return (wave_num % 3 == 0)
-
-    current_spawn_time = 65 + (current_wave - 1) * 30
-    is_current_cannon = is_cannon(current_wave, current_spawn_time)
-
-    # 次のキャノンウェーブ探索
-    w = current_wave + 1
-    st = 65 + (w - 1) * 30
-    while not is_cannon(w, st):
-        w += 1
-        st += 30
-
-    sec_until_cannon = max(0, int(st - game_time_sec))
-
-    return {
-        "is_current_cannon": is_current_cannon,
-        "sec_until_cannon": sec_until_cannon,
-        "current_wave": current_wave,
-        "desc": "💣 大砲ウェーブ接近中！" if (is_current_cannon and time_in_current_wave < 25) else f"💣 次大砲: {sec_until_cannon}s後"
-    }
-
-def calculate_enemy_damage_profile(enemy_players: list) -> dict:
-    """
-    敵チーム5人のアイテムから得られるADとAPの総量、およびチャンピオンのデフォルト属性から、
-    敵チームの物理(AD) vs 魔法(AP)の脅威比率を算出。
-    """
-    total_ad = 0.0
-    total_ap = 0.0
-
-    for ep in enemy_players:
-        c_name = extract_champion_name(ep)
-        stats = ep.get("championStats", {})
-        ad = stats.get("attackDamage", 0.0)
-        ap = stats.get("abilityPower", 0.0)
-
-        if c_name in MAGE_CHAMPIONS:
-            ap += 45.0
-        else:
-            ad += 25.0
-
-        total_ad += max(0.0, ad)
-        total_ap += max(0.0, ap)
-
-    grand_total = total_ad + total_ap
-    if grand_total <= 0:
-        return {"ad_pct": 50, "ap_pct": 50, "bias": "EVEN", "advice": "物理/魔法 互角"}
-
-    ad_pct = int(round((total_ad / grand_total) * 100))
-    ap_pct = 100 - ad_pct
-
-    if ad_pct >= 65:
-        bias = "HEAVY_AD"
-        advice = f"敵: 物理偏重 ({ad_pct}%) ➔ アーマー(物理防具)優先 🛡️"
-    elif ap_pct >= 65:
-        bias = "HEAVY_AP"
-        advice = f"敵: 魔法偏重 ({ap_pct}%) ➔ MR(魔法防具)優先 🔮"
-    else:
-        bias = "HYBRID"
-        advice = f"敵属性: 物理 {ad_pct}% / 魔法 {ap_pct}% (複合防具推奨)"
-
-    return {
-        "ad_pct": ad_pct,
-        "ap_pct": ap_pct,
-        "bias": bias,
-        "advice": advice
-    }
-
-def estimate_player_gold(player_obj: dict, game_time_sec: float) -> dict:
-    """
-    プレイヤーの「確定アイテム総額」と、CS・キル・アシスト・自然増加から逆算した「推定手持ちゴールド」を計算。
-    """
-    item_gold = ItemPriceManager.calculate_player_item_gold(player_obj.get("items", []))
-    scores = player_obj.get("scores", {})
-    kills = scores.get("kills", 0)
-    assists = scores.get("assists", 0)
-    cs = scores.get("creepScore", 0)
-
-    passive_gold = max(0.0, (game_time_sec - 110) * 2.04) if game_time_sec > 110 else 0.0
-    initial_gold = 500.0
-    farm_gold = cs * 20.0
-    kill_gold = kills * 300.0 + assists * 125.0
-    estimated_total = initial_gold + passive_gold + farm_gold + kill_gold
-    estimated_current = max(0, int(estimated_total - item_gold))
-
-    return {
-        "item_gold": item_gold,
-        "estimated_current_gold": estimated_current,
-        "estimated_total_gold": int(estimated_total)
-    }
-
-def analyze_grievous_wounds(my_team_players: list, enemy_players: list, my_summoner_name: str) -> dict:
-    """
-    敵チームに回復特化チャンピオンが存在するか判定し、
-    味方全員の所持アイテムから重傷アイテム所持者を特定する。
-    """
-    heal_threats = []
-    for ep in enemy_players:
-        c_name = extract_champion_name(ep)
-        if c_name in HEAL_HEAVY_CHAMPIONS:
-            heal_threats.append(c_name)
-
-    needed = len(heal_threats) > 0
-    allies_holding = []
-    self_holding = False
-
-    for p in my_team_players:
-        s_name = p.get("summonerName", "")
-        c_name = extract_champion_name(p)
-        is_self = (s_name == my_summoner_name)
-        items = p.get("items", [])
-        for it in items:
-            i_id = it.get("itemID")
-            if i_id in GRIEVOUS_WOUNDS_ITEMS:
-                item_label = GRIEVOUS_WOUNDS_ITEMS[i_id]
-                allies_holding.append({
-                    "summoner": s_name,
-                    "champion": c_name,
-                    "item_id": i_id,
-                    "item_name": item_label,
-                    "is_self": is_self
-                })
-                if is_self:
-                    self_holding = True
-                break
-
-    if not needed:
-        summary_text = "回復阻害: 不要（敵に高回復なし ⚪）"
-        status = "NOT_NEEDED"
-    elif allies_holding:
-        holder_names = [f"{h['champion']}({h['item_name']})" for h in allies_holding]
-        summary_text = f"重傷所持済 🟢: {', '.join(holder_names)}"
-        status = "ACQUIRED"
-    else:
-        summary_text = f"重傷(回復阻害) 必須 🔴: 敵 {', '.join(heal_threats)} 対策 (味方未所持)"
-        status = "CRITICAL_MISSING"
-
-    return {
-        "needed": needed,
-        "heal_threats": heal_threats,
-        "allies_holding": allies_holding,
-        "self_holding": self_holding,
-        "summary_text": summary_text,
-        "status": status
-    }
 
 def assign_team_roles(players: list) -> dict:
     """チームの全プレイヤーを TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY に100%正確に割り当て"""
@@ -438,7 +248,7 @@ class HudStateEngine:
     def __init__(self):
         self.supabase_url = settings.SUPABASE_URL
         self.supabase_key = settings.SUPABASE_KEY
-        self.cached_matchup_memo = {}
+        self.intel_provider = MatchupIntelProvider(self.supabase_url, self.supabase_key)
         
         # 集団戦・ファイト分析
         self.fight_tracker = FightTracker()
@@ -462,130 +272,21 @@ class HudStateEngine:
         # コントロールワード追跡 (各サモナーの購入数・使用数・所持数)
         self.ward_tracker = {}  # {summoner_name: {"purchased": int, "used": int, "prev_count": int}}
 
+    @property
+    def cached_matchup_memo(self):
+        return self.intel_provider.cached_matchup_memo
+
+    @cached_matchup_memo.setter
+    def cached_matchup_memo(self, val):
+        self.intel_provider.cached_matchup_memo = val
+
     def get_matchup_memo(self, my_champion: str, enemy_champion: str) -> dict:
-        """Supabaseから対面攻略メモを取得（キャッシュ付き）"""
-        cache_key = f"{my_champion}_vs_{enemy_champion}"
-        if cache_key in self.cached_matchup_memo:
-            return self.cached_matchup_memo[cache_key]
-
-        if not self.supabase_url or not self.supabase_key:
-            return self._get_fallback_memo(enemy_champion)
-
-        memo_data = {
-            "enemy": enemy_champion,
-            "title": f"{enemy_champion} 対策メモ",
-            "key_points": [],
-            "power_spike": "Lv6オールイン警戒",
-            "danger_skills": []
-        }
-
-        try:
-            enemy_norm = normalize_champion_id(enemy_champion)
-            headers = {
-                "apikey": self.supabase_key,
-                "Authorization": f"Bearer {self.supabase_key}"
-            }
-            # 1. matchup_sentinel から対面メモ取得
-            url = f"{self.supabase_url}/rest/v1/matchup_sentinel"
-            params = {
-                "champion": f"ilike.{enemy_norm}",
-                "enemy_champion": f"ilike.{my_champion}",
-                "select": "summary,advice,raw_data",
-                "limit": "1"
-            }
-            res = httpx.get(url, headers=headers, params=params, timeout=3.0)
-            if res.status_code == 200 and res.json():
-                row = res.json()[0]
-                advice = row.get("advice") or row.get("summary") or ""
-                if advice:
-                    lines = [l.strip("・- ") for l in advice.split("\n") if l.strip()][:3]
-                    memo_data["key_points"] = lines
-
-            # 2. champion_facts から敵の強み・弱みを取得（補完）
-            if not memo_data["key_points"]:
-                facts_url = f"{self.supabase_url}/rest/v1/champion_facts?champion=ilike.{enemy_norm}&select=weaknesses,strengths,early_game,powerspikes&limit=1"
-                f_res = httpx.get(facts_url, headers=headers, timeout=3.0)
-                if f_res.status_code == 200 and f_res.json():
-                    frow = f_res.json()[0]
-                    weak = frow.get("weaknesses") or []
-                    early = frow.get("early_game") or ""
-                    pts = []
-                    if early:
-                        pts.append(early[:60])
-                    if weak:
-                        pts.extend([f"弱点: {w}" for w in weak[:2]])
-                    memo_data["key_points"] = pts[:3]
-
-            # 3. soloq_reflections から対面純粋戦績（LDR/JDR）を取得 (全指標・JG特化計算)
-            ref_url = f"{self.supabase_url}/rest/v1/soloq_reflections?enemy_champion=ilike.{enemy_norm}&select=lane_result,win,champion,win_lose_reason_tags&limit=25"
-            r_res = httpx.get(ref_url, headers=headers, timeout=2.5)
-            if r_res.status_code == 200 and r_res.json():
-                r_rows = r_res.json()
-                champ_match = [r for r in r_rows if str(r.get("champion", "")).lower() == my_champion.lower()]
-                target_r = champ_match if champ_match else r_rows
-                w = len([r for r in target_r if r.get("lane_result") == "win"])
-                e = len([r for r in target_r if r.get("lane_result") == "even"])
-                l = len([r for r in target_r if r.get("lane_result") == "loss"])
-                tot = len(target_r)
-                dec = w + l
-                # ① 純粋対面勝率
-                l_wr = int(round((w / dec) * 100)) if dec > 0 else (50 if tot > 0 and e == tot else 0)
-                # ② 互角0.5換算勝率
-                adj_wr = int(round(((w * 1.0 + e * 0.5) / tot) * 100)) if tot > 0 else 0
-                # ③ チーム勝率
-                gw = len([r for r in target_r if r.get("win") is True])
-                g_wr = int(round((gw / tot) * 100)) if tot > 0 else 0
-                # ④ キャリー変換率
-                win_rows = [r for r in target_r if r.get("lane_result") == "win"]
-                carry_wins = len([r for r in win_rows if r.get("win") is True])
-                carry_rate = int(round((carry_wins / len(win_rows)) * 100)) if win_rows else None
-                # ⑤ 外部ノイズ検知数
-                noise_tags = {'味方崩壊', '他レーン崩壊', '敵JGキャンプ', '味方トロール', '不可抗力', 'JG差なし'}
-                noise_cnt = len([r for r in target_r if any(t in noise_tags for t in (r.get("win_lose_reason_tags") or []))])
-
-                memo_data["lane_record"] = {
-                    "wins": w,
-                    "evens": e,
-                    "losses": l,
-                    "total": tot,
-                    "lane_win_rate": l_wr,
-                    "laneWinRate": l_wr,
-                    "adjusted_lane_win_rate": adj_wr,
-                    "adjustedLaneWinRate": adj_wr,
-                    "game_win_rate": g_wr,
-                    "gameWinRate": g_wr,
-                    "carry_conversion_rate": carry_rate,
-                    "carryConversionRate": carry_rate,
-                    "noise_match_count": noise_cnt,
-                    "noiseMatchCount": noise_cnt,
-                    "summary": f"純粋勝率: {adj_wr}% ({w}勝{l}敗{e}分) | チーム: {g_wr}%",
-                    "jg_summary": f"JG支配率: {adj_wr}% ({w}勝{l}敗{e}分) | チーム: {g_wr}%"
-                }
-        except Exception:
-            pass
-
-        if not memo_data["key_points"]:
-            memo_data = self._get_fallback_memo(enemy_champion)
-
-        self.cached_matchup_memo[cache_key] = memo_data
-        return memo_data
+        """Supabaseから対面メモおよび純粋対面戦績 (LDR/JDR) を取得（MatchupIntelProviderへ委譲）"""
+        return self.intel_provider.get_matchup_memo(my_champion, enemy_champion)
 
     def _get_fallback_memo(self, enemy_champion: str) -> dict:
-        """
-        対面メモをDBから取得できなかったときの戻り値。
-
-        ★ 2026-09-22: 以前はここで「主要スキルのCD中にトレードを仕掛ける」等の汎用文を
-        `title: f"vs {enemy}"` 付きで返しており、DB取得に失敗したことがユーザーに伝わらず
-        対面固有メモと同じ見た目で表示されていた。未取得であることを明示する。
-        """
-        return {
-            "enemy": enemy_champion,
-            "title": f"vs {enemy_champion}（対面メモ未登録）",
-            "key_points": ["この対面のメモはまだ登録されていません"],
-            "power_spike": "",
-            "danger_skills": [],
-            "is_fallback": True,
-        }
+        """対面メモをDBから取得できなかったときのフォールバック戻り値"""
+        return self.intel_provider._get_fallback_memo(enemy_champion)
 
     def analyze_frame(self, game_data: dict) -> dict:
         """1フレーム（秒単位）のゲームデータを解析してHUD描画データを生成"""

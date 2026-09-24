@@ -420,6 +420,61 @@ class TestGankOpportunityEngine(unittest.TestCase):
         self.assertEqual(res_pantheon["verdict"], "KILL_CONFIRMED")
 
 
+class TestMacroAnalyticsAndIntel(unittest.TestCase):
+    """7. 新設モジュール (macro_analytics, matchup_intel_provider) の独立単体テスト"""
+
+    def test_cannon_wave_timing(self):
+        """大砲ミニオン出現タイマーの境界値テスト"""
+        from v2_CORE._LOL.overlay.macro_analytics import calculate_cannon_wave_info
+        # 試合開始前
+        c0 = calculate_cannon_wave_info(10.0)
+        self.assertFalse(c0["is_cannon_active"])
+        self.assertIn("第1ウェーブまで", c0["desc"])
+
+        # 序盤 (3ウェーブに1回)
+        c_early = calculate_cannon_wave_info(120.0)
+        self.assertIn("次大砲", c_early["desc"])
+
+        # 25分以降 (毎ウェーブ大砲)
+        c_late = calculate_cannon_wave_info(1600.0)
+        self.assertTrue(c_late["is_current_cannon"])
+
+    def test_damage_profile(self):
+        """敵ダメージ属性比率の判定テスト"""
+        from v2_CORE._LOL.overlay.macro_analytics import calculate_enemy_damage_profile
+        ad_enemies = [
+            {"championName": "Darius", "championStats": {"attackDamage": 150.0, "abilityPower": 0.0}},
+            {"championName": "Zed", "championStats": {"attackDamage": 200.0, "abilityPower": 0.0}},
+            {"championName": "Jinx", "championStats": {"attackDamage": 250.0, "abilityPower": 0.0}},
+        ]
+        prof = calculate_enemy_damage_profile(ad_enemies)
+        self.assertEqual(prof["bias"], "HEAVY_AD")
+        self.assertGreaterEqual(prof["ad_pct"], 65)
+
+    def test_grievous_wounds(self):
+        """重傷アイテム解析テスト"""
+        from v2_CORE._LOL.overlay.macro_analytics import analyze_grievous_wounds
+        # 敵にAatroxがいる場合
+        enemies = [{"championName": "Aatrox"}]
+        allies_no_gw = [{"summonerName": "Me", "championName": "Garen", "items": []}]
+        res_needed = analyze_grievous_wounds(allies_no_gw, enemies, "Me")
+        self.assertTrue(res_needed["needed"])
+        self.assertEqual(res_needed["status"], "CRITICAL_MISSING")
+
+        # 味方がExecutioner's Calling (3123) 所持時
+        allies_gw = [{"summonerName": "Me", "championName": "Garen", "items": [{"itemID": 3123}]}]
+        res_owned = analyze_grievous_wounds(allies_gw, enemies, "Me")
+        self.assertTrue(res_owned["self_holding"])
+        self.assertEqual(res_owned["status"], "ACQUIRED")
+
+    def test_matchup_intel_fallback(self):
+        """対面インテル未登録時のフォールバックテスト"""
+        from v2_CORE._LOL.overlay.matchup_intel_provider import MatchupIntelProvider
+        provider = MatchupIntelProvider(supabase_url="", supabase_key="")
+        memo = provider.get_matchup_memo("LeeSin", "Elise")
+        self.assertTrue(memo.get("is_fallback"))
+        self.assertIn("未登録", memo.get("title"))
+
 
 def run_full_suite():
     print("=" * 65)
@@ -433,6 +488,7 @@ def run_full_suite():
     suite.addTest(loader.loadTestsFromTestCase(TestKillLineCalculator))
     suite.addTest(loader.loadTestsFromTestCase(TestChatSpellDetector))
     suite.addTest(loader.loadTestsFromTestCase(TestGankOpportunityEngine))
+    suite.addTest(loader.loadTestsFromTestCase(TestMacroAnalyticsAndIntel))
     suite.addTest(loader.loadTestsFromTestCase(TestOverlayWidgetsVisual))
 
     runner = unittest.TextTestRunner(verbosity=2)
