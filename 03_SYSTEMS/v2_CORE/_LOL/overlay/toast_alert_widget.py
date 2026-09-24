@@ -34,18 +34,19 @@ class NotificationCard(QFrame):
                 background-color: rgba(11, 19, 33, 0.90);
                 border: 1px solid rgba(200, 155, 60, 0.45);
                 border-radius: 6px;
-                padding: 2px;
+                padding: 0px;
             }
         """)
         self.setFixedHeight(38)
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(5, 3, 5, 3)
+        layout.setContentsMargins(6, 4, 6, 4)
         layout.setSpacing(6)
 
         # 1. 左側アイコン (顔アイコンまたはアイテム画像 28x28)
         self.icon_left = QLabel(self)
         self.icon_left.setFixedSize(28, 28)
+        self.icon_left.setScaledContents(True)
         self.icon_left.setStyleSheet("background: transparent; border: none;")
         layout.addWidget(self.icon_left)
 
@@ -74,6 +75,7 @@ class NotificationCard(QFrame):
         # 4. 右側アイテムアイコン (完成アイテム等 28x28)
         self.icon_right = QLabel(self)
         self.icon_right.setFixedSize(28, 28)
+        self.icon_right.setScaledContents(True)
         self.icon_right.setStyleSheet("background: transparent; border: none;")
         self.icon_right.setVisible(False)
         layout.addWidget(self.icon_right)
@@ -296,14 +298,19 @@ class ToastAlertWidget(QWidget):
                 if champ:
                     pix = SpellAssetManager.get_champion_icon(champ)
                     if not pix.isNull():
-                        card.icon_left.setPixmap(SpellAssetManager.create_rounded_icon(pix, radius=6))
+                        card.icon_left.setPixmap(SpellAssetManager.create_rounded_icon(
+                            pix, size=28, radius=6, border_color=QColor(200, 155, 60, 180)
+                        ))
                         card.icon_left.setVisible(True)
                     else:
                         card.icon_left.setVisible(False)
                 elif item_id:
                     pix = SpellAssetManager.get_item_icon(item_id)
                     if not pix.isNull():
-                        card.icon_left.setPixmap(SpellAssetManager.create_rounded_icon(pix, radius=6))
+                        b_col = QColor(34, 197, 94, 200) if ev.get("type") == "shop" else QColor(200, 155, 60, 180)
+                        card.icon_left.setPixmap(SpellAssetManager.create_rounded_icon(
+                            pix, size=28, radius=6, border_color=b_col
+                        ))
                         card.icon_left.setVisible(True)
                     else:
                         card.icon_left.setVisible(False)
@@ -314,7 +321,9 @@ class ToastAlertWidget(QWidget):
                 if ev.get("type") == "spike" and item_id:
                     pix_item = SpellAssetManager.get_item_icon(item_id)
                     if not pix_item.isNull():
-                        card.icon_right.setPixmap(SpellAssetManager.create_rounded_icon(pix_item, radius=6))
+                        card.icon_right.setPixmap(SpellAssetManager.create_rounded_icon(
+                            pix_item, size=28, radius=6, border_color=QColor(234, 179, 8, 220)
+                        ))
                         card.icon_right.setVisible(True)
                     else:
                         card.icon_right.setVisible(False)
