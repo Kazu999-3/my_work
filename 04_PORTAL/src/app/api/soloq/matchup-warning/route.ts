@@ -45,19 +45,60 @@ export async function POST(request: Request) {
       .order('created_at', { ascending: false })
       .limit(10);
 
-    // 3. 対面(レーン)成績の集計
+    // 3. 対面(レーン/JG)成績の完全統合集計
+    // 自身のチャンピオンも一致する行を優先しつつ、対面戦績を取得
     const { data: laneRows } = await supabaseAdmin
       .from('soloq_reflections')
-      .select('lane_result, win')
+      .select('lane_result, win, champion, win_lose_reason_tags')
       .eq('enemy_champion', enemyChampion);
 
-    const laneRecord = laneRows && laneRows.length > 0
+    // 自身がプレイしたチャンピオンに絞り込み (指定がある場合)
+    const relevantRows = (laneRows || []).filter(
+      (r: any) => !champion || r.champion?.toLowerCase() === champion.toLowerCase()
+    );
+    const targetRows = relevantRows.length > 0 ? relevantRows : (laneRows || []);
+
+    const wins = targetRows.filter((r: any) => r.lane_result === 'win').length;
+    const evens = targetRows.filter((r: any) => r.lane_result === 'even').length;
+    const losses = targetRows.filter((r: any) => r.lane_result === 'loss').length;
+    const total = targetRows.length;
+    const decided = wins + losses;
+
+    // ① 純粋対面勝率 (1v1/JG直接勝敗): 勝ち / (勝ち+負け)
+    const laneWinRate = decided > 0 ? Math.round((wins / decided) * 100) : (total > 0 && evens === total ? 50 : 0);
+
+    // ② 互角耐え0.5換算の補正勝率: (勝ち×1.0 + 互角×0.5) / 全試合
+    const adjustedLaneWinRate = total > 0 ? Math.round(((wins * 1.0 + evens * 0.5) / total) * 100) : 0;
+
+    // ③ チーム勝率 (Nexus破壊)
+    const gameWins = targetRows.filter((r: any) => r.win).length;
+    const gameWinRate = total > 0 ? Math.round((gameWins / total) * 100) : 0;
+
+    // ④ キャリー変換率 (レーンで勝った試合中、チームも勝利した割合 = 味方ガチャ耐性)
+    const laneWinRows = targetRows.filter((r: any) => r.lane_result === 'win');
+    const laneAndGameWins = laneWinRows.filter((r: any) => r.win).length;
+    const carryConversionRate = laneWinRows.length > 0
+      ? Math.round((laneAndGameWins / laneWinRows.length) * 100)
+      : null;
+
+    // ⑤ 外部ノイズ（味方崩壊・被キャンプ）タグ検出数
+    const noiseTags = new Set(['味方崩壊', '他レーン崩壊', '敵JGキャンプ', '味方トロール', '不可抗力', 'JG差なし']);
+    const noiseMatchCount = targetRows.filter((r: any) =>
+      (r.win_lose_reason_tags || []).some((t: string) => noiseTags.has(t))
+    ).length;
+
+    const laneRecord = total > 0
       ? {
-          wins: laneRows.filter((r: any) => r.lane_result === 'win').length,
-          evens: laneRows.filter((r: any) => r.lane_result === 'even').length,
-          losses: laneRows.filter((r: any) => r.lane_result === 'loss').length,
-          total: laneRows.length,
-          gameWinRate: Math.round((laneRows.filter((r: any) => r.win).length / laneRows.length) * 100),
+          wins,
+          evens,
+          losses,
+          total,
+          laneWinRate,
+          adjustedLaneWinRate,
+          gameWinRate,
+          carryConversionRate,
+          noiseMatchCount,
+          isChampionSpecific: relevantRows.length > 0,
         }
       : null;
 

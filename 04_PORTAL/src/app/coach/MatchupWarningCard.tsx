@@ -133,22 +133,74 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
 
   return (
     <div className="space-y-3 mb-4">
-      {/* 対面(レーン)成績。試合全体の勝敗とは別に、この対面での勝ち負けだけを集計する(#⑤) */}
+      {/* 対面(レーン/JG)純粋戦績。他メンバーの影響(チーム勝敗)を除外した純粋実力指標 */}
       {warning?.laneRecord && (
-        <div className="bg-white border border-stone-200 rounded-xl p-3.5 shadow-sm animate-fade-in">
-          <div className="flex items-center justify-between">
-            <h4 className="font-extrabold text-stone-800 text-xs flex items-center gap-1.5">
-              <Target className="w-3.5 h-3.5 text-amber-600" />
-              対面成績 ({warning.champion} vs {warning.enemyChampion})
+        <div className="bg-white border-2 border-amber-500/40 rounded-2xl p-4 shadow-md animate-fade-in space-y-2.5">
+          <div className="flex items-center justify-between border-b border-stone-100 pb-2">
+            <h4 className="font-black text-stone-900 text-xs flex items-center gap-1.5">
+              <Target className="w-4 h-4 text-amber-600" />
+              純粋対面実力指標 ({warning.champion} vs {warning.enemyChampion})
             </h4>
-            <span className="text-[10px] text-stone-400 font-medium">{warning.laneRecord.total}戦の記録</span>
+            <span className="text-[11px] font-mono text-stone-500 font-bold">{warning.laneRecord.total}戦の実戦データ</span>
           </div>
-          <div className="flex items-center gap-2 mt-2 text-xs font-bold">
-            <span className="px-2 py-1 rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-200">🟢 {warning.laneRecord.wins}勝</span>
-            {warning.laneRecord.evens > 0 && (
-              <span className="px-2 py-1 rounded-lg bg-stone-100 text-stone-700 border border-stone-200">⚪ {warning.laneRecord.evens}互角</span>
+
+          <div className="grid grid-cols-2 gap-2">
+            {/* 純粋レーン/JG勝率 */}
+            <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-2.5 flex flex-col justify-center">
+              <span className="text-[10px] font-extrabold text-amber-800 uppercase tracking-wider">
+                🛡️ 純粋対面勝率 (LDR/JDR)
+              </span>
+              <div className="flex items-baseline gap-1.5 mt-0.5">
+                <span className={`text-xl font-black ${
+                  warning.laneRecord.laneWinRate >= 60 ? 'text-emerald-700' :
+                  warning.laneRecord.laneWinRate >= 45 ? 'text-amber-700' : 'text-rose-700'
+                }`}>
+                  {warning.laneRecord.laneWinRate}%
+                </span>
+                <span className="text-[10px] text-stone-500 font-bold">
+                  ({warning.laneRecord.wins}勝 {warning.laneRecord.losses}敗)
+                </span>
+              </div>
+            </div>
+
+            {/* チーム勝敗 (味方ガチャ対比) */}
+            <div className="bg-stone-50 border border-stone-200 rounded-xl p-2.5 flex flex-col justify-center">
+              <span className="text-[10px] font-extrabold text-stone-600 uppercase tracking-wider">
+                👑 チーム勝率 (Nexus破壊)
+              </span>
+              <div className="flex items-baseline gap-1.5 mt-0.5">
+                <span className="text-xl font-black text-stone-800">
+                  {warning.laneRecord.gameWinRate}%
+                </span>
+                {warning.laneRecord.carryConversionRate !== null && (
+                  <span className="text-[10px] text-indigo-700 font-extrabold bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded">
+                    勝率変換 {warning.laneRecord.carryConversionRate}%
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-1.5 pt-1 text-[11px]">
+            <div className="flex items-center gap-1.5 font-bold">
+              <span className="px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-200">
+                🟢 {warning.laneRecord.wins}勝
+              </span>
+              {warning.laneRecord.evens > 0 && (
+                <span className="px-2 py-0.5 rounded-lg bg-stone-100 text-stone-700 border border-stone-200">
+                  ⚪ {warning.laneRecord.evens}互角 (耐え)
+                </span>
+              )}
+              <span className="px-2 py-0.5 rounded-lg bg-rose-100 text-rose-800 border border-rose-200">
+                🔴 {warning.laneRecord.losses}敗
+              </span>
+            </div>
+
+            {warning.laneRecord.noiseMatchCount > 0 && (
+              <span className="text-[10px] text-stone-500 font-medium">
+                🛡️ 他レーン崩壊等のノイズ検知: {warning.laneRecord.noiseMatchCount}戦
+              </span>
             )}
-            <span className="px-2 py-1 rounded-lg bg-rose-100 text-rose-800 border border-rose-200">🔴 {warning.laneRecord.losses}負け</span>
           </div>
         </div>
       )}

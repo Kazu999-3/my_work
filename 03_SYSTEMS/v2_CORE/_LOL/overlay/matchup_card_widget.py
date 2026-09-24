@@ -83,7 +83,7 @@ class MatchupCardWidget(QWidget):
             Qt.WindowType.Tool
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
-        self.setFixedWidth(330)
+        self.setFixedWidth(315)
 
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
@@ -99,8 +99,8 @@ class MatchupCardWidget(QWidget):
         self.card_frame.setObjectName("cardFrame")
         
         card_layout = QVBoxLayout(self.card_frame)
-        card_layout.setContentsMargins(10, 8, 10, 10)
-        card_layout.setSpacing(7)
+        card_layout.setContentsMargins(8, 6, 8, 8)
+        card_layout.setSpacing(5)
 
         # 0. ドラッグハンドルバー
         self.drag_handle = QFrame(self.card_frame)
@@ -119,7 +119,7 @@ class MatchupCardWidget(QWidget):
         header_layout.setContentsMargins(0, 0, 0, 0)
 
         self.title_label = QLabel("⚔️ 対面インテル ＆ 手順書", self.card_frame)
-        self.title_label.setStyleSheet("color: #F0E6D2; font-size: 13.5px; font-weight: 900;")
+        self.title_label.setStyleSheet("color: #F0E6D2; font-size: 13px; font-weight: 900;")
         header_layout.addWidget(self.title_label)
 
         self.pin_btn = QPushButton("👁️ スマート", self.card_frame)
@@ -128,7 +128,7 @@ class MatchupCardWidget(QWidget):
                 background-color: rgba(10, 200, 185, 0.15);
                 border: 1px solid rgba(10, 200, 185, 0.4);
                 color: #0AC8B9;
-                font-size: 10px;
+                font-size: 9.5px;
                 font-weight: bold;
                 border-radius: 3px;
                 padding: 1px 4px;
@@ -142,9 +142,14 @@ class MatchupCardWidget(QWidget):
 
         card_layout.addLayout(header_layout)
 
+        # 1.2 純粋対面勝率バッジ行 (LDR / JDR 他メンバー影響除外)
+        self.lane_record_label = QLabel("🛡️ 対面戦績: 初対戦 (データ蓄積中)", self.card_frame)
+        self.lane_record_label.setStyleSheet("color: #0AC8B9; font-size: 10px; font-weight: bold; background: transparent; border: none;")
+        card_layout.addWidget(self.lane_record_label)
+
         # 1.5 対面ゴールド比較行 (敵アイテム確定値 ＆ 推定未消費ゴールド)
         self.gold_compare_label = QLabel("💰 対面G: 敵 --G (推定手持 --G) | 自分手持 --G", self.card_frame)
-        self.gold_compare_label.setStyleSheet("color: #fef08a; font-size: 10px; font-weight: bold; background: transparent; border: none;")
+        self.gold_compare_label.setStyleSheet("color: #fef08a; font-size: 9.5px; font-weight: bold; background: transparent; border: none;")
         card_layout.addWidget(self.gold_compare_label)
 
         # 2. ⚠️ セクション①: 敵の最警戒スキル ＆ 仕掛けチャンス
@@ -157,8 +162,8 @@ class MatchupCardWidget(QWidget):
             }
         """)
         threat_layout = QVBoxLayout(self.threat_frame)
-        threat_layout.setContentsMargins(8, 6, 8, 6)
-        threat_layout.setSpacing(3)
+        threat_layout.setContentsMargins(6, 4, 6, 4)
+        threat_layout.setSpacing(2)
 
         threat_header = QHBoxLayout()
         self.threat_title = QLabel("⚠️ 警戒スキル ＆ 勝機", self.threat_frame)
@@ -187,20 +192,20 @@ class MatchupCardWidget(QWidget):
             }
         """)
         phase_layout = QVBoxLayout(self.phase_frame)
-        phase_layout.setContentsMargins(8, 6, 8, 6)
-        phase_layout.setSpacing(3)
+        phase_layout.setContentsMargins(6, 4, 6, 4)
+        phase_layout.setSpacing(2)
 
         self.phase_badge_label = QLabel("🗺️ 手順: [Phase 1] 🛡️ 安定", self.phase_frame)
-        self.phase_badge_label.setStyleSheet("color: #C8AA6E; font-size: 12.5px; font-weight: 900; background: transparent; border: none;")
+        self.phase_badge_label.setStyleSheet("color: #C8AA6E; font-size: 11.5px; font-weight: 900; background: transparent; border: none;")
         phase_layout.addWidget(self.phase_badge_label)
 
         self.phase_action_label = QLabel("・Lv1は無理せずCSを捨ててプルウェーブを作る", self.phase_frame)
-        self.phase_action_label.setStyleSheet("color: #F0E6D2; font-size: 12px; font-weight: 600; line-height: 1.3; background: transparent; border: none;")
+        self.phase_action_label.setStyleSheet("color: #F0E6D2; font-size: 11px; font-weight: 600; line-height: 1.25; background: transparent; border: none;")
         self.phase_action_label.setWordWrap(True)
         phase_layout.addWidget(self.phase_action_label)
 
         self.phase_trigger_label = QLabel("🎯 勝利条件: タワー前でウェーブ固定できれば第1段階クリア", self.phase_frame)
-        self.phase_trigger_label.setStyleSheet("color: #0AC8B9; font-size: 11.5px; font-weight: 800; background: transparent; border: none;")
+        self.phase_trigger_label.setStyleSheet("color: #0AC8B9; font-size: 10.5px; font-weight: 800; background: transparent; border: none;")
         self.phase_trigger_label.setWordWrap(True)
         phase_layout.addWidget(self.phase_trigger_label)
 
@@ -216,15 +221,15 @@ class MatchupCardWidget(QWidget):
             }
         """)
         build_layout = QVBoxLayout(self.build_frame)
-        build_layout.setContentsMargins(8, 6, 8, 6)
-        build_layout.setSpacing(3)
+        build_layout.setContentsMargins(6, 4, 6, 4)
+        build_layout.setSpacing(2)
 
         self.build_item_name = QLabel("🛡️ 優先: プレート スチールキャップ (1100G)", self.build_frame)
-        self.build_item_name.setStyleSheet("color: #C8AA6E; font-size: 12.5px; font-weight: 900; background: transparent; border: none;")
+        self.build_item_name.setStyleSheet("color: #C8AA6E; font-size: 11.5px; font-weight: 900; background: transparent; border: none;")
         build_layout.addWidget(self.build_item_name)
 
         self.build_reason = QLabel("敵の通常攻撃ダメージを12%軽減。殴り合いで圧倒的優位に！", self.build_frame)
-        self.build_reason.setStyleSheet("color: #E2D6B5; font-size: 11.5px; font-weight: 600; background: transparent; border: none;")
+        self.build_reason.setStyleSheet("color: #E2D6B5; font-size: 10.5px; font-weight: 600; background: transparent; border: none;")
         self.build_reason.setWordWrap(True)
         build_layout.addWidget(self.build_reason)
 
@@ -240,21 +245,21 @@ class MatchupCardWidget(QWidget):
             }
         """)
         counter_layout = QVBoxLayout(self.counter_frame)
-        counter_layout.setContentsMargins(8, 6, 8, 6)
-        counter_layout.setSpacing(3)
+        counter_layout.setContentsMargins(6, 4, 6, 4)
+        counter_layout.setSpacing(2)
 
         counter_header = QHBoxLayout()
         self.counter_title = QLabel("🎯 構成対策キーアイテム", self.counter_frame)
-        self.counter_title.setStyleSheet("color: #C084FC; font-size: 12px; font-weight: 900; background: transparent; border: none;")
+        self.counter_title.setStyleSheet("color: #C084FC; font-size: 11.5px; font-weight: 900; background: transparent; border: none;")
         counter_header.addWidget(self.counter_title)
 
         self.counter_badge = QLabel("COUNTER", self.counter_frame)
-        self.counter_badge.setStyleSheet("color: #E879F9; font-size: 9.5px; font-weight: 900; background: transparent; border: none;")
+        self.counter_badge.setStyleSheet("color: #E879F9; font-size: 9px; font-weight: 900; background: transparent; border: none;")
         counter_header.addWidget(self.counter_badge, alignment=Qt.AlignmentFlag.AlignRight)
         counter_layout.addLayout(counter_header)
 
-        self.counter_items_label = QLabel("・処刑人の劫罰 (800G) - 敵ソラカの回復阻害", self.counter_frame)
-        self.counter_items_label.setStyleSheet("color: #F0E6D2; font-size: 11.5px; font-weight: 600; line-height: 1.3; background: transparent; border: none;")
+        self.counter_items_label = QLabel("・処刑人の劫罰 (800G) - 敵回復阻害", self.counter_frame)
+        self.counter_items_label.setStyleSheet("color: #F0E6D2; font-size: 10.5px; font-weight: 600; line-height: 1.25; background: transparent; border: none;")
         self.counter_items_label.setWordWrap(True)
         counter_layout.addWidget(self.counter_items_label)
 
@@ -270,21 +275,21 @@ class MatchupCardWidget(QWidget):
             }
         """)
         trap_layout = QVBoxLayout(self.trap_frame)
-        trap_layout.setContentsMargins(8, 6, 8, 6)
-        trap_layout.setSpacing(3)
+        trap_layout.setContentsMargins(6, 4, 6, 4)
+        trap_layout.setSpacing(2)
 
         trap_header = QHBoxLayout()
         self.trap_title = QLabel("🚫 罠アイテム ＆ NG行動警告", self.trap_frame)
-        self.trap_title.setStyleSheet("color: #FB7185; font-size: 12px; font-weight: 900; background: transparent; border: none;")
+        self.trap_title.setStyleSheet("color: #FB7185; font-size: 11.5px; font-weight: 900; background: transparent; border: none;")
         trap_header.addWidget(self.trap_title)
 
         self.trap_badge = QLabel("FORBIDDEN", self.trap_frame)
-        self.trap_badge.setStyleSheet("color: #FDA4AF; font-size: 9.5px; font-weight: 900; background: transparent; border: none;")
+        self.trap_badge.setStyleSheet("color: #FDA4AF; font-size: 9px; font-weight: 900; background: transparent; border: none;")
         trap_header.addWidget(self.trap_badge, alignment=Qt.AlignmentFlag.AlignRight)
         trap_layout.addLayout(trap_header)
 
         self.trap_desc_label = QLabel("・× 防具前のタワーダイブ禁止 (CC即死トリガー)", self.trap_frame)
-        self.trap_desc_label.setStyleSheet("color: #FFE4E6; font-size: 11px; font-weight: 600; line-height: 1.3; background: transparent; border: none;")
+        self.trap_desc_label.setStyleSheet("color: #FFE4E6; font-size: 10.5px; font-weight: 600; line-height: 1.25; background: transparent; border: none;")
         self.trap_desc_label.setWordWrap(True)
         trap_layout.addWidget(self.trap_desc_label)
 
@@ -300,21 +305,21 @@ class MatchupCardWidget(QWidget):
             }
         """)
         compass_layout = QVBoxLayout(self.compass_frame)
-        compass_layout.setContentsMargins(10, 8, 10, 8)
-        compass_layout.setSpacing(4)
+        compass_layout.setContentsMargins(8, 6, 8, 6)
+        compass_layout.setSpacing(3)
 
         compass_header = QHBoxLayout()
         self.compass_title = QLabel("🧭 逆転コンパス: スプリット推奨", self.compass_frame)
-        self.compass_title.setStyleSheet("color: #F0E6D2; font-family: 'BeaufortforLOL', sans-serif; font-size: 13px; font-weight: 900; background: transparent; border: none;")
+        self.compass_title.setStyleSheet("color: #F0E6D2; font-family: 'BeaufortforLOL', sans-serif; font-size: 12px; font-weight: 900; background: transparent; border: none;")
         compass_header.addWidget(self.compass_title)
 
         compass_badge = QLabel("COMEBACK", self.compass_frame)
-        compass_badge.setStyleSheet("color: #0AC8B9; font-family: 'BeaufortforLOL', sans-serif; font-size: 11px; font-weight: 900; background: transparent; border: none;")
+        compass_badge.setStyleSheet("color: #0AC8B9; font-family: 'BeaufortforLOL', sans-serif; font-size: 10px; font-weight: 900; background: transparent; border: none;")
         compass_header.addWidget(compass_badge, alignment=Qt.AlignmentFlag.AlignRight)
         compass_layout.addLayout(compass_header)
 
         self.compass_advice = QLabel("正面5v5は不利。サイドレーンを押して敵を分散させ、オブジェクト孤立を狙え！", self.compass_frame)
-        self.compass_advice.setStyleSheet("color: #F0E6D2; font-size: 12px; font-weight: bold; background: transparent; border: none; line-height: 1.35;")
+        self.compass_advice.setStyleSheet("color: #F0E6D2; font-size: 11px; font-weight: bold; background: transparent; border: none; line-height: 1.3;")
         self.compass_advice.setWordWrap(True)
         compass_layout.addWidget(self.compass_advice)
 
@@ -350,6 +355,7 @@ class MatchupCardWidget(QWidget):
     def update_data(self, state: dict):
         if not state or not state.get("active"):
             self.title_label.setText("⚔️ Sovereign HUD 稼働中")
+            self.lane_record_label.setText("🛡️ 対面戦績: 待機中 ---")
             self.waiting_frame.setVisible(True)
             self.threat_frame.setVisible(False)
             self.phase_frame.setVisible(False)
@@ -367,20 +373,44 @@ class MatchupCardWidget(QWidget):
 
         if is_pregame:
             self.title_label.setText(f"⚡ 戦闘ブリーフィング: {my_champ} vs {enemy_champ}")
-            self.title_label.setStyleSheet("color: #fef08a; font-size: 13.5px; font-weight: 900;")
+            self.title_label.setStyleSheet("color: #fef08a; font-size: 13px; font-weight: 900;")
         elif is_jg:
             self.title_label.setText(f"🌲 {my_champ} (JG) vs {enemy_champ}")
-            self.title_label.setStyleSheet("color: #F0E6D2; font-size: 13.5px; font-weight: 900;")
+            self.title_label.setStyleSheet("color: #F0E6D2; font-size: 13px; font-weight: 900;")
         else:
             self.title_label.setText(f"⚔️ {my_champ} vs {enemy_champ}")
-            self.title_label.setStyleSheet("color: #F0E6D2; font-size: 13.5px; font-weight: 900;")
+            self.title_label.setStyleSheet("color: #F0E6D2; font-size: 13px; font-weight: 900;")
+
+        # 対面純粋戦績 (LDR / JDR 他メンバー影響除外)
+        memo = state.get("matchup_memo") or {}
+        rec = memo.get("lane_record") or {}
+        tot = rec.get("total", 0)
+
+        if tot > 0:
+            w = rec.get("wins", 0)
+            l = rec.get("losses", 0)
+            e = rec.get("evens", 0)
+            adj_wr = rec.get("adjusted_lane_win_rate", rec.get("adjustedLaneWinRate", 50))
+            g_wr = rec.get("game_win_rate", rec.get("gameWinRate", 50))
+            carry = rec.get("carry_conversion_rate", rec.get("carryConversionRate"))
+            carry_txt = f" 変換{carry}%" if carry is not None else ""
+            col = "#4ade80" if adj_wr >= 60 else ("#facc15" if adj_wr >= 45 else "#f87171")
+            
+            if is_jg:
+                self.lane_record_label.setText(f"🌲 JG支配率: {adj_wr}% ({w}勝{l}敗{e}分) | チーム{g_wr}%{carry_txt}")
+            else:
+                self.lane_record_label.setText(f"🛡️ 純粋勝率: {adj_wr}% ({w}勝{l}敗{e}分) | チーム{g_wr}%{carry_txt}")
+            self.lane_record_label.setStyleSheet(f"color: {col}; font-size: 9.5px; font-weight: bold; background: transparent; border: none;")
+        else:
+            self.lane_record_label.setText("🛡️ 対面戦績: 初対戦 (客観データ蓄積中)")
+            self.lane_record_label.setStyleSheet("color: #94a3b8; font-size: 9.5px; font-weight: 600; background: transparent; border: none;")
 
         # 対面ゴールド比較
         gold_est = state.get("gold_estimates", {})
         enemy_it = gold_est.get("enemy_item_gold", 0)
         enemy_cur = gold_est.get("enemy_est_current_gold", 0)
         my_cur = gold_est.get("my_current_gold", 0)
-        self.gold_compare_label.setText(f"💰 対面G: 敵{enemy_it}G(推定手持+{enemy_cur}G) | 自分手持{my_cur}G")
+        self.gold_compare_label.setText(f"💰 対面G: 敵{enemy_it}G(手持+{enemy_cur}G) | 自分手持{my_cur}G")
 
         # 1. 警戒スキル ＆ 仕掛けチャンス
         threat_info = state.get("threat_skill_info", {})
@@ -388,7 +418,7 @@ class MatchupCardWidget(QWidget):
             self.threat_frame.setVisible(False)
         elif threat_info or enemy_champ:
             skill_name = threat_info.get("skill_name", f"{enemy_champ}の主要スキル")
-            advice = threat_info.get("advice", f"敵が{skill_name}を外した/使用した直後は反撃の絶好の勝機。積極的に前へ出てトレード有利を取ろう！")
+            advice = threat_info.get("advice", f"敵が{skill_name}を外した直後は反撃の絶好の勝機！")
             self.threat_title.setText(f"⚠️ 警戒: {skill_name}")
             self.threat_badge.setText(f"{threat_info.get('badge', 'CRITICAL')}")
             self.threat_advice.setText(advice)
@@ -399,12 +429,14 @@ class MatchupCardWidget(QWidget):
         # 2. ガンク優先レーン (JG) / レーン戦手順 (Laner)
         curr_phase_str = ""
         if is_jg:
-            self.phase_badge_label.setText("🎯 ガンク優先ターゲット (Gank Radar)")
+            smite_dmg = state.get("smite_damage", 900)
+            smite_tier = state.get("smite_tier_name", "Primal")
+            self.phase_badge_label.setText(f"🌲 JG戦術: ⚡ スマイト {smite_dmg}dmg ({smite_tier})")
             gank_list = state.get("jg_gank_targets", [])
             gank_str = "\n".join(gank_list[:2]) if gank_list else "・各レーンのウェーブ状況・スペルを確認中..."
             self.phase_action_label.setText(gank_str)
             obj_plan = state.get("jg_objective_plan", "3:30 スカットル争奪 ➔ 5:00 ヴォイドグラブ")
-            self.phase_trigger_label.setText(f"🗺️ ルート・オブジェクト: {obj_plan}")
+            self.phase_trigger_label.setText(f"🐉 オブジェクト: {obj_plan}")
             self.phase_frame.setVisible(True)
             curr_phase_str = "JG_MAIN"
         else:
