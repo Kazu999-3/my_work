@@ -180,11 +180,64 @@ def research_champion(champion, role="JG"):
     return 0
 
 
+def research_diff_champions(limit=None):
+    """パッチ差分検知データ（patch_modified_champions.json）から変更チャンピオンのみをリサーチ"""
+    diff_file = Path("d:/my_work/01_INTEL/_LOL/patch_modified_champions.json")
+    if not diff_file.exists():
+        print(f"❌ 差分データが見つかりません: {diff_file}")
+        print("💡 先に `py scripts/check_patch_update.py --detect-diff` を実行してください。")
+        return 1
+
+    try:
+        with open(diff_file, "r", encoding="utf-8") as f:
+            diff_data = json.load(f)
+    except Exception as e:
+        print(f"❌ 差分データ読み込みエラー: {e}")
+        return 1
+
+    champs = diff_data.get("champions", [])
+    if not champs:
+        print("✅ 差分チャンピオンは0件です。更新リサーチは不要です。")
+        return 0
+
+    if limit and limit > 0:
+        champs = champs[:limit]
+
+    print(f"🎯 パッチ差分リサーチ開始: 合計 {len(champs)} 体の変更チャンピオンを調査します")
+    print(f"   対象: {', '.join(c['id'] for c in champs)}\n")
+
+    success_count = 0
+    for idx, c in enumerate(champs, 1):
+        cid = c["id"]
+        cname = c.get("name", cid)
+        print(f"\n[{idx}/{len(champs)}] 🔄 差分リサーチ実行中: {cname} ({cid})")
+        # デフォルトロール推定（必要に応じて）
+        role = "TOP"
+        try:
+            code = research_champion(cid, role)
+            if code == 0:
+                success_count += 1
+        except Exception as e:
+            print(f"  ⚠️ {cid} のリサーチ中にエラー: {e}")
+        time.sleep(2)  # レートリミット安全マージン
+
+    print(f"\n✨ 差分リサーチ完了: {success_count}/{len(champs)} 体の攻略データを更新しました。")
+    return 0
+
+
 def main():
     parser = argparse.ArgumentParser(description="特定チャンピオン ディープリサーチ CLI")
-    parser.add_argument("--champion", "-c", required=True, help="対象チャンピオン英語名 (例: Ahri, Riven, Aatrox)")
+    parser.add_argument("--champion", "-c", help="対象チャンピオン英語名 (例: Ahri, Riven, Aatrox)")
     parser.add_argument("--role", "-r", default="JG", help="想定レーン (TOP, JG, MID, ADC, SUP)")
+    parser.add_argument("--diff-only", action="store_true", help="直近パッチで変更があったチャンピオンのみを自動リサーチ")
+    parser.add_argument("--limit", type=int, default=None, help="--diff-only 実行時の最大チャンピオン数")
     args = parser.parse_args()
+
+    if args.diff_only:
+        return research_diff_champions(limit=args.limit)
+
+    if not args.champion:
+        parser.error("--champion または --diff-only のいずれかを指定してください。")
 
     return research_champion(args.champion.strip(), args.role.strip().upper())
 

@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { supabase } from './supabaseClient';
 
 // ============================
@@ -14,8 +15,10 @@ export interface GeminiCallOptions {
   maxRetries?: number;
   apiKeyEnv?: string; // デフォルト: GEMINI_API_KEY
   responseMimeType?: string;
-  cacheKey?: string; // 指定時はDBキャッシュを利用
+  cacheKey?: string; // 指定時は指定キーでDBキャッシュを利用
   cacheTtlMs?: number; // デフォルト24時間
+  /** true にすると自動キャッシュ・手動キャッシュをバイパスして強制再生成 */
+  noCache?: boolean;
   /** 画像を添えて解析させる場合に指定する（スコアボードの読み取りなど） */
   image?: { base64: string; mimeType: string };
   /** レスポンス本文の構造化検証関数（検証失敗時はリトライ） */
@@ -35,6 +38,16 @@ export interface GeminiCallOptions {
 const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
 const FALLBACK_MODELS = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'];
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * プロンプトと生成設定からSHA-256ハッシュキーを自動計算し、
+ * cacheKey未指定時でも同一リクエストの二重消費を100%遮断する。
+ */
+function computeAutoCacheKey(prompt: string, model: string, mime?: string, temp?: number): string {
+  const payload = `${model}:${mime || ''}:${temp ?? ''}:${prompt}`;
+  const hash = crypto.createHash('sha256').update(payload).digest('hex');
+  return `auto_${hash.slice(0, 32)}`;
+}
 
 async function readCache(cacheKey: string, ttlMs: number): Promise<string | null> {
   if (!supabase) return null;
@@ -115,11 +128,20 @@ export async function callGeminiWithRetry(
     cacheTtlMs = DEFAULT_TTL_MS,
     image,
     translateProperNouns = false,
+    noCache = false,
   } = options;
 
-  if (cacheKey) {
-    const cached = await readCache(cacheKey, cacheTtlMs);
-    if (cached) return cached;
+  // キャッシュキーの決定：手動指定 > 自動ハッシュ（画像解析時またはnoCache時はバイパス）
+  const effectiveCacheKey = noCache || image
+    ? null
+    : (cacheKey || computeAutoCacheKey(prompt, model, responseMimeType, temperature));
+
+  if (effectiveCacheKey) {
+    const cached = await readCache(effectiveCacheKey, cacheTtlMs);
+    if (cached) {
+      console.log(`[geminiClient] ⚡ Cache Hit (${effectiveCacheKey.slice(0, 16)}...)`);
+      return cached;
+    }
   }
 
   // 環境変数はカンマ区切りで複数キーを持てる。
@@ -261,7 +283,7 @@ ${properNounRule}
       }
     }
 
-    if (cacheKey) await writeCache(cacheKey, text);
+    if (effectiveCacheKey) await writeCache(effectiveCacheKey, text);
     return text;
   }
 
