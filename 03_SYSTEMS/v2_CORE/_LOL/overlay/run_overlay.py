@@ -346,6 +346,17 @@ def main():
                 print("💬 [デモチャット検知] 「Zed: R」を自動検知しました！")
                 on_chat_spell_event("zed r")
             state = state_engine.analyze_frame(raw_data)
+            # 🔔 デモ用: 新設した左下通知パネルのリアルタイム表示
+            if not state.get("spike_details"):
+                state["spike_details"] = [{
+                    "champion": "Darius",
+                    "item_name": "トリニティ・フォース",
+                    "item_id": 3078,
+                    "price": 3333
+                }]
+            state["is_gank_danger"] = True
+            state["enemy_jg"] = "Elise"
+            state["buff_status"] = [f"🟣 バロン: {max(10, 180 - (tick_count * 2))}s"]
         elif args.mock:
             raw_data = LiveClient.get_mock_game_data()
             state = state_engine.analyze_frame(raw_data)

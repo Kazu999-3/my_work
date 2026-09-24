@@ -1,6 +1,6 @@
 ' Sovereign HUD - Shortcut Generator (VBScript)
 Option Explicit
-Dim WshShell, fso, ScriptDir, DesktopDir, StartupDir, s1, s2, s3
+Dim WshShell, fso, ScriptDir, DesktopDir, StartupDir, s1, s2, s3, s4
 Set WshShell = CreateObject("WScript.Shell")
 Set fso = CreateObject("Scripting.FileSystemObject")
 
@@ -21,6 +21,13 @@ s2.WorkingDirectory = ScriptDir
 s2.WindowStyle = 7
 s2.Description = "Sovereign HUD Overlay (Stop)"
 s2.Save
+
+Set s4 = WshShell.CreateShortcut(DesktopDir & "\Sovereign HUD (Demo).lnk")
+s4.TargetPath = ScriptDir & "\v2_CORE\_LOL\overlay\run_demo.bat"
+s4.WorkingDirectory = ScriptDir & "\v2_CORE\_LOL\overlay"
+s4.WindowStyle = 1
+s4.Description = "Sovereign HUD Overlay (Live Demo Mode)"
+s4.Save
 
 If fso.FolderExists(StartupDir) Then
     Set s3 = WshShell.CreateShortcut(StartupDir & "\Sovereign_HUD_Overlay.lnk")
