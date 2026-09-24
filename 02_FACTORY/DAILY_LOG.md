@@ -12,6 +12,21 @@
 
 ## 🗓️ 2026-09-24（木）
 
+### 🚀 CI型チェック完全修復 ＆ 本番デプロイ正常化（MatchupWarningCard型整合）
+
+**概要**:
+1. **背景と目的**:
+   - Step 1で導入した純粋対面勝率（LDR/JDR）のポータル表示コンポーネントにおいて、`warning.laneRecord` のTypeScript型定義漏れ（TS2551 / TS2339 / TS18048）によりGitHub Actions CI (`04_PORTAL`) が失敗していた事象を発見。
+   - 型定義をAPI側の返却値（`adjustedLaneWinRate`, `carryConversionRate`, `noiseMatchCount`）と100%整合させ、ローカル `npx tsc --noEmit` および `npm run build` による全53ページ静的生成（Static/Dynamic）を実値検証。
+2. **実装内容**:
+   - `04_PORTAL/src/app/coach/MatchupWarningCard.tsx`:
+     - `warning.laneRecord` の型定義に全フィールドを明記。
+     - `noiseMatchCount` のオプショナル安全参照（`?? 0`）を配備。
+   - **実値検証**:
+     - `npx tsc --noEmit`: エラー0件で完全パス。
+     - `npm run build`: 全53ページ正常コンパイル完了（First Load JS 104kB）。
+     - GitHub Actions CI (`04_PORTAL`): 実行ジョブ `ID 107641634359` 完全合格（All Green）。
+
 ### 🎮 オーバーレイ整理 Step 3（操作性・起動運用の整理 ＆ F8トグル・ワンクリック起動配備）
 
 **概要**:
