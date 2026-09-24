@@ -148,85 +148,144 @@ function LeaderboardContent() {
       <div className="max-w-[1680px] w-full mx-auto space-y-5">
 
         {/* ヘッダー */}
-        <div className="bg-white/80 backdrop-blur-sm border border-stone-200/90 rounded-2xl p-5 shadow-xs text-center">
-          <h1 className="text-2xl md:text-3xl font-black text-stone-900 tracking-tight flex items-center justify-center gap-2">
-            <span className="text-amber-500">🏆</span> KTM 順位表 ＆ コミュニティ名簿
-          </h1>
-          <p className="text-xs text-stone-500 font-bold mt-1">
-            ロール別ランキング・🪙 コイン長者番付・名簿一覧・デュオ相性・レーン別勝率の統合ハブ
-          </p>
+        <div className="bg-white dark:bg-stone-900 border border-stone-200/90 dark:border-stone-800 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
+          <div className="flex items-center gap-3">
+            <div className="text-2xl p-2.5 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-200/80 dark:border-amber-800/60 shrink-0 text-amber-600">
+              <Trophy size={24} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-base sm:text-lg font-black tracking-tight text-stone-900 dark:text-stone-100">
+                  KTM 順位表 ＆ コミュニティ名簿
+                </h1>
+                <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300 text-[10px] font-extrabold">
+                  コミュニティ
+                </span>
+              </div>
+              <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium mt-0.5">
+                ロール別実力ランキング・🪙 コイン番付・全選手名簿・詳細データ分析
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* タブナビゲーション */}
-        <div className="flex justify-center mb-4 px-2">
-          <div className="inline-flex flex-wrap justify-center gap-1.5 bg-white/90 rounded-2xl p-1.5 border border-stone-200/90 shadow-2xs max-w-full">
-            <button
-              onClick={() => handleTabChange('ranking')}
-              className={`flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all whitespace-nowrap cursor-pointer ${
-                activeTab === 'ranking'
-                  ? 'bg-amber-600 text-white shadow-xs scale-102'
-                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
-              }`}
-            >
-              <Trophy className="w-4 h-4" />
-              <span>ロール別順位</span>
-            </button>
-            <button
-              onClick={() => handleTabChange('coins')}
-              className={`flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all whitespace-nowrap cursor-pointer ${
-                activeTab === 'coins'
-                  ? 'bg-amber-600 text-white shadow-xs scale-102'
-                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
-              }`}
-            >
-              <Coins className="w-4 h-4 text-amber-500" />
-              <span>🪙 コイン番付</span>
-            </button>
-            <button
-              onClick={() => handleTabChange('roster')}
-              className={`flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all whitespace-nowrap cursor-pointer ${
-                activeTab === 'roster'
-                  ? 'bg-amber-600 text-white shadow-xs scale-102'
-                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
-              }`}
-            >
-              <Users className="w-4 h-4" />
-              <span>👥 名簿一覧</span>
-            </button>
-            <button
-              onClick={() => handleTabChange('synergy')}
-              className={`flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all whitespace-nowrap cursor-pointer ${
-                activeTab === 'synergy'
-                  ? 'bg-amber-600 text-white shadow-xs scale-102'
-                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
-              }`}
-            >
-              <HeartHandshake className="w-4 h-4" />
-              <span>🤝 相性分析</span>
-            </button>
-            <button
-              onClick={() => handleTabChange('meta')}
-              className={`flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all whitespace-nowrap cursor-pointer ${
-                activeTab === 'meta'
-                  ? 'bg-amber-600 text-white shadow-xs scale-102'
-                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
-              }`}
-            >
-              <Activity className="w-4 h-4" />
-              <span>📊 メタ統計</span>
-            </button>
-            <button
-              onClick={() => handleTabChange('winrate')}
-              className={`flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-black transition-all whitespace-nowrap cursor-pointer ${
-                activeTab === 'winrate'
-                  ? 'bg-amber-600 text-white shadow-xs scale-102'
-                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
-              }`}
-            >
-              <Grid3x3 className="w-4 h-4" />
-              <span>🎯 レーン別勝率</span>
-            </button>
+        {/* メインタブナビゲーション（3大グループ） */}
+        <div className="space-y-3">
+          <div className="flex justify-center px-1">
+            <div className="inline-flex items-center gap-1.5 p-1 bg-stone-100 dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-2xs max-w-full overflow-x-auto">
+              {/* グループ1: ランキング */}
+              <button
+                type="button"
+                onClick={() => handleTabChange(['ranking', 'coins'].includes(activeTab) ? activeTab : 'ranking')}
+                className={`flex items-center gap-1.5 px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
+                  ['ranking', 'coins'].includes(activeTab)
+                    ? 'bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 shadow-xs font-black'
+                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-stone-200/60 dark:hover:bg-stone-800/60'
+                }`}
+              >
+                <Trophy className="w-4 h-4 text-amber-500" />
+                <span>🏆 ランキング</span>
+              </button>
+
+              {/* グループ2: 名簿一覧 */}
+              <button
+                type="button"
+                onClick={() => handleTabChange('roster')}
+                className={`flex items-center gap-1.5 px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
+                  activeTab === 'roster'
+                    ? 'bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 shadow-xs font-black'
+                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-stone-200/60 dark:hover:bg-stone-800/60'
+                }`}
+              >
+                <Users className="w-4 h-4 text-indigo-500" />
+                <span>👥 メンバー名簿</span>
+              </button>
+
+              {/* グループ3: データ分析 */}
+              <button
+                type="button"
+                onClick={() => handleTabChange(['synergy', 'meta', 'winrate'].includes(activeTab) ? activeTab : 'synergy')}
+                className={`flex items-center gap-1.5 px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
+                  ['synergy', 'meta', 'winrate'].includes(activeTab)
+                    ? 'bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 shadow-xs font-black'
+                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-stone-200/60 dark:hover:bg-stone-800/60'
+                }`}
+              >
+                <Activity className="w-4 h-4 text-cyan-500" />
+                <span>📊 詳細データ分析</span>
+              </button>
+            </div>
           </div>
+
+          {/* サブタブ切り替え（親がランキングまたはデータ分析の時のみコンパクトに表示） */}
+          {['ranking', 'coins'].includes(activeTab) && (
+            <div className="flex justify-center">
+              <div className="inline-flex items-center gap-1 p-0.5 bg-stone-200/70 dark:bg-stone-800/80 rounded-xl border border-stone-200 dark:border-stone-700 text-xs">
+                <button
+                  type="button"
+                  onClick={() => handleTabChange('ranking')}
+                  className={`px-3 py-1 rounded-lg font-bold transition cursor-pointer ${
+                    activeTab === 'ranking'
+                      ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-2xs font-extrabold'
+                      : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+                  }`}
+                >
+                  ⚔️ ロール別順位
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleTabChange('coins')}
+                  className={`px-3 py-1 rounded-lg font-bold transition cursor-pointer flex items-center gap-1 ${
+                    activeTab === 'coins'
+                      ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-2xs font-extrabold'
+                      : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+                  }`}
+                >
+                  <span>🪙 コイン番付</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {['synergy', 'meta', 'winrate'].includes(activeTab) && (
+            <div className="flex justify-center">
+              <div className="inline-flex items-center gap-1 p-0.5 bg-stone-200/70 dark:bg-stone-800/80 rounded-xl border border-stone-200 dark:border-stone-700 text-xs">
+                <button
+                  type="button"
+                  onClick={() => handleTabChange('synergy')}
+                  className={`px-3 py-1 rounded-lg font-bold transition cursor-pointer ${
+                    activeTab === 'synergy'
+                      ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-2xs font-extrabold'
+                      : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+                  }`}
+                >
+                  🤝 デュオ相性
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleTabChange('meta')}
+                  className={`px-3 py-1 rounded-lg font-bold transition cursor-pointer ${
+                    activeTab === 'meta'
+                      ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-2xs font-extrabold'
+                      : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+                  }`}
+                >
+                  📊 メタ統計
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleTabChange('winrate')}
+                  className={`px-3 py-1 rounded-lg font-bold transition cursor-pointer ${
+                    activeTab === 'winrate'
+                      ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-2xs font-extrabold'
+                      : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+                  }`}
+                >
+                  🎯 レーン別勝率
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* コイン長者番付タブ */}

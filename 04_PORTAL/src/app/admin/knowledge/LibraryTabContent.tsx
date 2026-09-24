@@ -1293,70 +1293,60 @@ export function LibraryTabContentInner() {
   }
 
   return (
-    <div className="max-w-[1600px] w-full mx-auto flex flex-col gap-8">
-      <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5 }}>
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-2 flex items-center gap-4">
-          <Book className="text-violet-700" size={36} /> <span className="text-gradient text-gradient-purple">攻略ライブラリ</span>
-        </h1>
-        <p className="text-violet-700 font-medium text-glow flex items-center gap-2">
-          <Activity size={18} className="animate-pulse" /> AI生成済みの攻略記事データベース
-        </p>
-      </motion.header>
-
-
-
-      {/* 統計サマリー & タグクラウド */}
+    <div className="max-w-[1600px] w-full mx-auto flex flex-col gap-5">
+      {/* 統計サマリー & タグクラウド（コンパクトな折りたたみ） */}
       {articles.length > 0 && (
-        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.05 }} className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* 総記事数とチャンピオン統計 */}
-          <div className="glass-panel p-6 rounded-2xl relative overflow-hidden flex flex-col justify-between border-t-2 border-violet-400">
-            <div>
-              <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-4">📊 ライブラリ統計</h4>
-              <div className="flex items-baseline gap-2 mb-2">
-                <span className="text-4xl font-black text-gray-900">{statsSummary.total}</span>
-                <span className="text-sm text-gray-500 font-bold">総記事数</span>
-              </div>
+        <details className="group bg-white dark:bg-stone-900 border border-stone-200/90 dark:border-stone-800 rounded-2xl p-3 sm:p-4 shadow-xs transition-all">
+          <summary className="cursor-pointer flex items-center justify-between text-xs font-bold text-stone-700 dark:text-stone-300 select-none">
+            <div className="flex items-center gap-2">
+              <span className="p-1 bg-purple-50 dark:bg-purple-950/40 rounded-lg text-purple-600 border border-purple-200/60">📊</span>
+              <span className="font-black text-stone-900 dark:text-stone-100">ライブラリ統計 ＆ トレンドタグ</span>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 font-extrabold">
+                {statsSummary.total}件
+              </span>
             </div>
-            <div className="mt-4 pt-4 border-t border-black/10 space-y-2">
-              <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">主要チャンピオン</span>
-              <div className="flex flex-wrap gap-2">
+            <span className="text-[11px] text-stone-400 group-open:rotate-180 transition-transform">▼</span>
+          </summary>
+
+          <div className="mt-3 pt-3 border-t border-stone-100 dark:border-stone-800 grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* 主要チャンピオン */}
+            <div>
+              <span className="text-[10px] text-stone-500 font-bold uppercase tracking-wider block mb-2">主要チャンピオン</span>
+              <div className="flex flex-wrap gap-1.5">
                 {statsSummary.champs.map(([champ, count]) => (
                   <button
                     key={champ}
+                    type="button"
                     onClick={() => setSearch(champ)}
-                    className="text-xs bg-black/5 border border-black/10 hover:border-violet-300 hover:bg-violet-50 text-gray-700 font-bold px-2.5 py-1 rounded-lg transition-all"
+                    className="text-xs bg-stone-100 hover:bg-purple-50 border border-stone-200 hover:border-purple-300 text-stone-700 hover:text-purple-700 font-bold px-2 py-0.5 rounded-lg transition-all cursor-pointer"
                   >
                     {champ} ({count})
                   </button>
                 ))}
               </div>
             </div>
-          </div>
 
-          {/* よく使われるキーワード (タグクラウド) */}
-          <div className="glass-panel p-6 rounded-2xl md:col-span-2 border-t-2 border-cyan-300 flex flex-col justify-between">
-            <div>
-              <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-4">🎯 トレンドキーワード</h4>
-              <div className="flex flex-wrap gap-2">
+            {/* よく使われるキーワード (タグクラウド) */}
+            <div className="md:col-span-2">
+              <span className="text-[10px] text-stone-500 font-bold uppercase tracking-wider block mb-2">トレンドキーワード</span>
+              <div className="flex flex-wrap gap-1.5">
                 {statsSummary.keywords.length > 0 ? statsSummary.keywords.map(([kw, count]) => (
                   <button
                     key={kw}
+                    type="button"
                     onClick={() => setSearch(kw)}
-                    className="text-xs bg-black/5 hover:bg-cyan-100 border border-black/10 hover:border-cyan-200 text-gray-700 hover:text-cyan-600 px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5"
+                    className="text-xs bg-stone-100 hover:bg-cyan-50 border border-stone-200 hover:border-cyan-300 text-stone-700 hover:text-cyan-700 px-2.5 py-1 rounded-xl font-bold transition-all flex items-center gap-1 cursor-pointer"
                   >
-                    <span># {kw}</span>
-                    <span className="text-[10px] text-gray-500 font-mono bg-black/5 px-1.5 py-0.5 rounded-md">{count}</span>
+                    <span>#{kw}</span>
+                    <span className="text-[10px] text-stone-400 font-mono bg-white dark:bg-stone-800 px-1 py-0.2 rounded">{count}</span>
                   </button>
                 )) : (
-                  <span className="text-sm text-gray-500 italic">タグデータがありません</span>
+                  <span className="text-xs text-stone-400 italic">タグデータがありません</span>
                 )}
               </div>
             </div>
-            <div className="text-[10px] text-gray-500 font-bold mt-4 pt-2">
-              ※ タグをクリックすると、そのキーワードでライブラリを瞬時にフィルタリングできます。
-            </div>
           </div>
-        </motion.div>
+        </details>
       )}
 
 

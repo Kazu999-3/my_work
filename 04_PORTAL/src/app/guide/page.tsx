@@ -90,80 +90,81 @@ function GuideContent() {
   ];
 
   return (
-    <div className="min-h-screen pb-20 bg-[#eae4d4] text-[#201c2b]">
-      {/* ヒーローセクション */}
-      <div className="bg-gradient-to-b from-stone-900 via-stone-800 to-stone-900 text-stone-100 py-10 md:py-12 px-6 relative overflow-hidden border-b border-black/10">
-        <div className="max-w-4xl mx-auto relative z-10 text-center space-y-3">
-          <div className="flex items-center justify-center">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-black tracking-wider border border-amber-500/30">
-              <BookOpen size={14} />
-              KTM Sovereign OS 総合ガイド ＆ リリースノート
-            </div>
+    <div className="min-h-screen pb-16 bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-stone-100 p-3 sm:p-5 md:p-6 space-y-5 max-w-[1300px] w-full mx-auto">
+      {/* 洗練されたコンパクトヘッダー */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 md:p-5 bg-white dark:bg-stone-900 border border-stone-200/90 dark:border-stone-800 rounded-2xl shadow-xs">
+        <div className="flex items-center gap-3.5">
+          <div className="text-2xl p-2.5 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-200/80 dark:border-amber-800/60 shrink-0 text-amber-600">
+            <BookOpen size={24} />
           </div>
-          <h1 className="text-2xl md:text-4xl font-black tracking-tight text-white">
-            KTM 総合使い方説明 ＆ アップデート
-          </h1>
-          <p className="text-stone-300 text-xs md:text-sm max-w-xl mx-auto font-medium leading-relaxed">
-            Botコマンド・ポータル機能・カスタム参加手順から最新の更新情報まで、迷ったらここをチェック！
-          </p>
-
-          {/* クイックマイページ検索 */}
-          <form onSubmit={handleSearch} className="mt-6 max-w-md mx-auto flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="サモナー名でマイページを即検索..."
-                value={searchName}
-                onChange={(e) => setSearchName(e.target.value)}
-                className="w-full bg-stone-950/80 border border-stone-700 text-white rounded-xl pl-10 pr-4 py-2 text-xs font-bold focus:outline-none focus:border-amber-500 transition-colors shadow-inner"
-              />
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-base sm:text-lg font-black tracking-tight text-stone-900 dark:text-stone-100">
+                KTM 総合使い方ガイド ＆ リリースノート
+              </h1>
+              <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300 text-[10px] font-extrabold">
+                公式ガイド
+              </span>
             </div>
-            <button
-              type="submit"
-              className="bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-xl font-black text-xs transition-all shadow-md flex items-center gap-1.5 shrink-0 cursor-pointer"
-            >
-              検索 <ArrowRight size={14} />
-            </button>
-          </form>
+            <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium mt-0.5">
+              Botコマンド・ポータル機能・カスタム参加手順から最新の更新情報まで網羅
+            </p>
+          </div>
         </div>
+
+        {/* クイックマイページ検索 */}
+        <form onSubmit={handleSearch} className="flex items-center gap-2 w-full md:w-auto">
+          <div className="relative flex-1 md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 w-3.5 h-3.5" />
+            <input
+              type="text"
+              placeholder="サモナー名で戦績検索..."
+              value={searchName}
+              onChange={(e) => setSearchName(e.target.value)}
+              className="w-full bg-stone-50 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100 rounded-xl pl-9 pr-3 py-2 text-xs font-bold focus:outline-none focus:border-amber-500 transition-colors placeholder-stone-400"
+            />
+          </div>
+          <button
+            type="submit"
+            className="bg-amber-500 hover:bg-amber-400 text-stone-950 px-3.5 py-2 rounded-xl font-black text-xs transition-all shadow-xs flex items-center gap-1 shrink-0 cursor-pointer"
+          >
+            <span>検索</span>
+            <ArrowRight size={13} />
+          </button>
+        </form>
       </div>
 
-      {/* メインコンテンツ */}
-      <div className="max-w-[1300px] w-full mx-auto px-4 md:px-8 py-6 space-y-6">
-        
-        {/* タブナビゲーション */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-stone-300/80">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => handleTabChange(tab.id)}
-                className={`px-4 py-2.5 rounded-2xl font-black text-xs md:text-sm transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer border ${
-                  isActive
-                    ? `${tab.activeBg} shadow-xs scale-102`
-                    : 'bg-white/80 hover:bg-white text-stone-600 border-stone-200/90'
-                }`}
-              >
-                <Icon size={16} className={isActive ? tab.color : 'text-stone-400'} />
-                <span className="hidden sm:inline">{tab.label}</span>
-                <span className="sm:hidden">{tab.shortLabel}</span>
-              </button>
-            );
-          })}
-        </div>
+      {/* タブナビゲーション（セグメントコントロール） */}
+      <div className="flex items-center gap-1.5 p-1 bg-stone-100 dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-800 overflow-x-auto">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => handleTabChange(tab.id)}
+              className={`px-3.5 py-2 rounded-lg font-bold text-xs transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 ${
+                isActive
+                  ? 'bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 shadow-xs font-black'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-stone-200/60 dark:hover:bg-stone-800/60'
+              }`}
+            >
+              <Icon size={14} className={isActive ? tab.color : 'text-stone-400'} />
+              <span className="hidden sm:inline">{tab.label}</span>
+              <span className="sm:hidden">{tab.shortLabel}</span>
+            </button>
+          );
+        })}
+      </div>
 
-        {/* タブコンテンツ */}
-        <div className="transition-all duration-200">
-          {activeTab === 'quickstart' && <GuideQuickStartTab onSelectTab={handleTabChange} />}
-          {activeTab === 'rules' && <GuideRulesTab />}
-          {activeTab === 'bot' && <GuideBotTab />}
-          {activeTab === 'portal' && <GuidePortalTab />}
-          {activeTab === 'updates' && <GuideUpdatesTab />}
-        </div>
+      {/* タブコンテンツ */}
+      <div className="transition-all duration-200">
+        {activeTab === 'quickstart' && <GuideQuickStartTab onSelectTab={handleTabChange} />}
+        {activeTab === 'rules' && <GuideRulesTab />}
+        {activeTab === 'bot' && <GuideBotTab />}
+        {activeTab === 'portal' && <GuidePortalTab />}
+        {activeTab === 'updates' && <GuideUpdatesTab />}
       </div>
     </div>
   );
@@ -172,8 +173,8 @@ function GuideContent() {
 export default function GuidePage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#eae4d4] flex items-center justify-center">
-        <div className="text-stone-600 text-xs font-bold animate-pulse">ガイドを読み込み中...</div>
+      <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex items-center justify-center">
+        <div className="text-stone-600 dark:text-stone-400 text-xs font-bold animate-pulse">ガイドを読み込み中...</div>
       </div>
     }>
       <GuideContent />
