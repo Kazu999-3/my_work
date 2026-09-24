@@ -5,6 +5,7 @@ source_type: db_generated
 published_at: 2026-09-21
 captured_at: 2026-09-21
 tags: ['LoL', 'Tactics', 'MID', 'Akali']
+verified_at: unverified
 ---
 
 # ⚔️ Akali 対面戦術バイブル

@@ -5,6 +5,7 @@ source_type: hand_written
 published_at: 2026-09-18
 captured_at: 2026-09-18
 tags: ['LoL', 'Tactics', 'Jungle', 'Lillia']
+verified_at: unverified
 ---
 
 # ⚔️ リリア (Lillia) 対面戦術バイブル
@@ -13,6 +14,9 @@ tags: ['LoL', 'Tactics', 'Jungle', 'Lillia']
 > 生成されています（Riot公式データや実測統計からの自動取得ではありません）。
 > 記載のダメージ量・クリアタイム等の数値は目安であり、パッチによって変動します。
 > ※2026-09-22訂正: 以前は `status: verified` / `source_type: official` と記載していました。
+
+
+> ⚠️ **パッチ16.19.1差分速報**: 基礎ステータス変動あり (armor: 22 → 24)。実戦数値・キルラインに留意すること。
 
 ## 📌 基本方針 ＆ パワースパイク
 - **戦術概要**: 高い移動速度（MS）と持続魔法ダメージによるカイト型JG。集団戦での複数人睡眠（R）でゲームを決定づける。
@@ -54,6 +58,7 @@ tags: ['LoL', 'Tactics', 'Jungle', 'Lillia']
 
 ## 📜 イミュータブル変更履歴 (Immutable Log)
 - **2026-09-18**: 制式戦術バイブル自動生成CLI（`generate_tactics_bible.py`）により初版確定配備。
+- **2026-09-24**: パッチ16.19.1調整差分検知（armor: 22 → 24）を注記反映。
 
 
 ## 🎥 プロ実演アクションクリップ (High Elo Breakdown)

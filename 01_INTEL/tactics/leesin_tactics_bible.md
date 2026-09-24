@@ -5,6 +5,7 @@ source_type: hand_written
 published_at: 2026-09-18
 captured_at: 2026-09-18
 tags: ['LoL', 'Tactics', 'Jungle', 'LeeSin']
+verified_at: unverified
 ---
 
 # ⚔️ リー・シン (Lee Sin) 対面戦術バイブル

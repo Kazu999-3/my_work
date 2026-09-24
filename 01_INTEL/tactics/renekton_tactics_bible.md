@@ -5,6 +5,7 @@ source_type: db_generated
 published_at: 2026-09-21
 captured_at: 2026-09-21
 tags: ['LoL', 'Tactics', 'TOP', 'Renekton']
+verified_at: unverified
 ---
 
 # ⚔️ Renekton 対面戦術バイブル

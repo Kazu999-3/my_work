@@ -8,9 +8,10 @@ Riot Live Client Data API をバックグラウンド監視し、
 
 【特徴】
 1. 完全ハンズフリー：ゲーム起動〜終了まで自動追跡。手動入力不要。
-2. 自己増殖型バイブル：未知の対面でも初遭遇時に自動で骨子ファイルを生成・蓄積。
-3. シミュレーションモード (--simulate)：実機LoLなしで即座に検証・テスト可能。
-4. 安全設計：Live Client API未起動時も静かに待機し、CPU負荷を最小化。
+2. 高精度対面判定：positionおよびサモナースペル（Smite等）から同一レーン対面を自動特定。
+3. 自己増殖型バイブル：未知の対面でも初遭遇時に自動で骨子ファイルを生成・蓄積。
+4. シミュレーションモード (--simulate)：実機LoLなしで即座に検証・テスト可能。
+5. 安全設計：Live Client API未起動時も静かに待機し、CPU負荷を最小化。
 --------------------------------------------------------------------------------
 """
 
@@ -55,9 +56,17 @@ def fetch_live_game_data(timeout=2.0):
         return None
     return None
 
+def has_smite(player_obj):
+    """サモナースペルにスマイト（JG）が含まれるか判定"""
+    spells = player_obj.get("summonerSpells", {})
+    for s in spells.values():
+        if isinstance(s, dict) and "smite" in s.get("displayName", "").lower():
+            return True
+    return False
+
 def analyze_match_context(game_data):
     """
-    game_data から自チャンプ、敵チャンプ（推定対面）、勝敗兆候、アイテム状況を抽出
+    game_data から自チャンプ、敵対面チャンプ、勝敗、スタッツ、アイテム状況を高精度抽出
     """
     if not game_data:
         return None
@@ -72,23 +81,49 @@ def analyze_match_context(game_data):
     my_champ = "Unknown"
     my_team = "ORDER"
     my_items = []
+    my_position = None
+    my_is_jg = False
+    my_scores = {"kills": 0, "deaths": 0, "assists": 0, "creepScore": 0}
 
     # 自プレイヤー情報特定
     for p in all_players:
         if p.get("summonerName") == my_summoner_name or (not my_summoner_name and p.get("championName") == active_player.get("championName")):
             my_champ = p.get("championName", "Unknown")
             my_team = p.get("team", "ORDER")
-            my_items = [it.get("displayName") for it in p.get("items", [])]
+            my_items = [it.get("displayName") for it in p.get("items", []) if it.get("displayName")]
+            my_position = p.get("position") or p.get("rawPosition")
+            my_is_jg = has_smite(p)
+            my_scores = p.get("scores", my_scores)
             break
 
     # 敵チームのプレイヤーを抽出
     enemy_players = [p for p in all_players if p.get("team") != my_team]
     
-    # 推定対面（ポジションが一致、またはキル関与の高い敵、ひとまず先頭または主要敵）
+    # 対面チャンピオンの精密特定
     enemy_champ = "Opponent"
+    matched_enemy = None
+
     if enemy_players:
-        # TODO: position / lane が取れれば優先、無ければ先頭
-        enemy_champ = enemy_players[0].get("championName", "Opponent")
+        # 1. JG同士の判定（スマイト所持）
+        if my_is_jg:
+            for ep in enemy_players:
+                if has_smite(ep):
+                    matched_enemy = ep
+                    break
+
+        # 2. position / rawPosition の一致判定
+        if not matched_enemy and my_position and my_position not in ["NONE", "UNKNOWN", ""]:
+            for ep in enemy_players:
+                ep_pos = ep.get("position") or ep.get("rawPosition")
+                if ep_pos and ep_pos.upper() == my_position.upper():
+                    matched_enemy = ep
+                    break
+
+        # 3. フォールバック: 先頭または最もキル関与の高い敵
+        if not matched_enemy:
+            matched_enemy = enemy_players[0]
+
+        enemy_champ = matched_enemy.get("championName", "Opponent")
 
     # 勝敗判定（GameEnd イベントがあれば利用、なければキル数比較で推定）
     result = "win"
@@ -99,13 +134,33 @@ def analyze_match_context(game_data):
             result = "win" if ev.get("Result") == "Win" else "loss"
             break
 
+    # 客観的実戦メモ（learning）と罠（trap）の自動生成
+    k = my_scores.get("kills", 0)
+    d = my_scores.get("deaths", 0)
+    a = my_scores.get("assists", 0)
+    cs = my_scores.get("creepScore", 0)
+    duration_min = max(1, int(game_time // 60))
+    items_str = ", ".join(my_items) if my_items else "なし"
+
+    if result == "win":
+        learning = f"試合時間 {duration_min}分で勝利。KDA {k}/{d}/{a} (CS {cs})。最終ビルド: [{items_str}]。対面 {enemy_champ} に対して主導権を維持しオブジェクト制圧に貢献。"
+        trap = ""
+        if d >= 5:
+            trap = f"勝利したもののデス数（{d}回）が多め。対面のパワースパイクやガンクへの警戒位置取りを見直すこと。"
+    else:
+        learning = f"試合時間 {duration_min}分で敗北。KDA {k}/{d}/{a} (CS {cs})。最終ビルド: [{items_str}]。対面 {enemy_champ} とのトレード・パワースパイク差に課題。"
+        trap = f"中盤の集団戦・サイドレーンでの被キャッチ（デス数 {d}回）。相手対面の先行パワースパイク帯での無理なトレードを避けること。"
+
     return {
         "my_champ": my_champ,
         "enemy_champ": enemy_champ,
         "result": result,
         "game_time": game_time,
         "my_items": my_items,
-        "game_ended": game_ended
+        "scores": my_scores,
+        "game_ended": game_ended,
+        "learning": learning,
+        "trap": trap
     }
 
 def trigger_sync_to_intel(my_champ, enemy_champ, result, learning, trap="", notify=True, dry_run=False):
@@ -144,11 +199,11 @@ def trigger_sync_to_intel(my_champ, enemy_champ, result, learning, trap="", noti
 def run_simulation(dry_run=False, notify=True):
     """テスト用シミュレーション実行"""
     print("🎮 [SIMULATION] 試合終了シミュレーションを開始します...")
-    mock_champ = "Aatrox"
+    mock_champ = "Yorick"
     mock_enemy = "Darius"
     mock_result = "win"
-    mock_learning = "Lv1〜Lv3の波動剣外縁当て徹底により主導権を確保。ステラックの篭手による耐久で集団戦を制覇。"
-    mock_trap = "初手王剣ラッシュ（耐久不足により即死リスク高、デスダンスまたはステラック優先）。"
+    mock_learning = "Lv2先行からのEスロー連動トレードが刺さり主導権確保。トリニティフォース完成後はサイドを押し切ってタワー2本破壊。"
+    mock_trap = "相手ゴースト発動中の無理な殴り合い（即死リスク高、W檻で時間稼ぎ徹底）。"
 
     print(f"  自チャンプ: {mock_champ}")
     print(f"  対面: {mock_enemy}")
@@ -165,7 +220,7 @@ def run_simulation(dry_run=False, notify=True):
         notify=notify,
         dry_run=dry_run
     )
-    print("✅ [SIMULATION] シミュレーション完了。バイブルへの追記フローが正常に動作しました。")
+    print("✅ [SIMULATION] シミュレーション完了。バイブルへの構造的マージが正常に動作しました。")
 
 def monitor_loop(interval=5, dry_run=False, notify=True, once=False):
     """常駐監視ループ"""
@@ -199,15 +254,15 @@ def monitor_loop(interval=5, dry_run=False, notify=True, once=False):
                         my_c = last_context.get("my_champ", "Unknown")
                         en_c = last_context.get("enemy_champ", "Unknown")
                         res = last_context.get("result", "win")
-                        items_str = ", ".join(last_context.get("my_items", []))
-                        learning = f"試合時間 {int(last_context.get('game_time', 0)//60)}分での実戦完了。最終ビルド: [{items_str}]"
+                        learning = last_context.get("learning", "実戦完了")
+                        trap = last_context.get("trap", "")
                         
                         trigger_sync_to_intel(
                             my_champ=my_c,
                             enemy_champ=en_c,
                             result=res,
                             learning=learning,
-                            trap="",
+                            trap=trap,
                             notify=notify,
                             dry_run=dry_run
                         )

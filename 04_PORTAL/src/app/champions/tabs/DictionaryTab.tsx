@@ -17,12 +17,14 @@ import ChampionRevisionHistory from '../ChampionRevisionHistory';
 import { diffLines, diffSummary, diffSideBySide } from '../../../lib/diffUtils';
 import MatchupBlueprintCard from '../../coach/MatchupBlueprintCard';
 import ChampionVisualDashboard from '../components/ChampionVisualDashboard';
+import TacticsSearchModal from '../../../components/TacticsSearchModal';
 
 function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const [champions, setChampions] = useState<any[]>([]);
+  const [isTacticsSearchOpen, setIsTacticsSearchOpen] = useState(false);
   // フィルタ・ソート状態はuseStateのみで管理していたためリロードで消えていた
   // (2026-08-05発覚)。多数のフィルタを設定した後に別チャンピオン詳細を見て戻る、
   // という操作を頻繁に行う画面のため、URLクエリに保持して復元できるようにする。
@@ -994,6 +996,15 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   </button>
                 )}
               </div>
+              <button
+                type="button"
+                onClick={() => setIsTacticsSearchOpen(true)}
+                className="px-2.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 shrink-0 border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 cursor-pointer shadow-2xs"
+                title="インベード、Lv3ガンク、オブジェクトなどの戦術概念を横断検索"
+              >
+                <Zap size={13} className="text-amber-600 fill-amber-500/20" />
+                <span className="text-[11px] hidden sm:inline">概念逆引き</span>
+              </button>
               <button
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
                 className={`relative px-2.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 border cursor-pointer ${
@@ -2924,6 +2935,19 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           </div>
         </div>
       )}
+
+      {/* 戦術概念 逆引きモーダル */}
+      <TacticsSearchModal
+        isOpen={isTacticsSearchOpen}
+        onClose={() => setIsTacticsSearchOpen(false)}
+        onSelectChampion={(champName) => {
+          const found = champions.find(c => 
+            c.name?.toLowerCase() === champName.toLowerCase() || 
+            c.id?.toLowerCase() === champName.toLowerCase()
+          );
+          if (found) setSelected(found);
+        }}
+      />
     </div>
   );
 }

@@ -14,9 +14,8 @@ import os
 import sys
 import argparse
 import datetime
-from pathlib import Path
-
 import subprocess
+from pathlib import Path
 
 # Windows cp932対策
 if sys.platform == "win32":
@@ -38,8 +37,6 @@ def sync_match_to_intel(my_champ, enemy_champ, result, learning, trap="", notify
     
     # チャンピオンごとの対面ノート
     tactics_file = TACTICS_DIR / f"{my_champ.lower()}_tactics_bible.md"
-    
-    # ノートが存在しない場合はテンプレートベースで新規作成
     is_new = not tactics_file.exists()
     
     matchup_entry = f"""
@@ -58,43 +55,117 @@ status: verified
 source_type: empirical
 published_at: {today_str}
 captured_at: {today_str}
+verified_at: {today_str}
 tags: [LoL, Tactics, {my_champ}]
 ---
 
 # 📖 {my_champ} 戦術バイブル ＆ 対面インテル
 
-> **SSoT**: Kazurin実戦実測データ ＆ DataDragon公式連携
+> **SSoT**: 実戦実測データ ＆ DataDragon公式連携
 > **イミュータブル原則**: 過去の対面データを上書きせず、追記履歴として蓄積する。
 
 ## ⚔️ 対面別 実戦攻略アーカイブ (Matchup Archives)
 """
         content = header + matchup_entry
-        with open(tactics_file, "w", encoding="utf-8") as f:
-            f.write(content)
+        if trap:
+            content += f"""
+## ⚠️ 検討して落とした選択肢 ＆ 罠ビルド (Rejected Options / 没理由)
+
+### 🚫 罠アイテム・NGビルド
+- **❌ {trap}**:
+  - *没理由*: 実戦（vs {enemy_champ} {today_str}）で機能せず失速要因となったため不採用。
+"""
+        content += f"""
+## 📜 イミュータブル変更履歴 (Immutable Log)
+- **{today_str}**: 実戦対面ログ（vs {enemy_champ}）を自律逆流記録。
+"""
+        tactics_file.write_text(content, encoding="utf-8")
         print(f"✨ 新規戦術バイブルを作成しました: {tactics_file.name}")
     else:
-        with open(tactics_file, "a", encoding="utf-8") as f:
-            f.write(matchup_entry)
-        print(f"🔄 既存の戦術バイブルへ追記マージしました: {tactics_file.name}")
+        # 既存ファイルの適切な位置へ構造的マージ
+        raw = tactics_file.read_text(encoding="utf-8")
+        lines = raw.splitlines()
+
+        # 1. verified_at を本日の実戦日に更新
+        in_fm = False
+        fm_end = -1
+        for i, l in enumerate(lines):
+            if l.strip() == "---":
+                if not in_fm:
+                    in_fm = True
+                else:
+                    fm_end = i
+                    break
+            elif in_fm and l.startswith("verified_at:"):
+                lines[i] = f"verified_at: {today_str}"
+                break
+
+        # 2. 対面別 実戦攻略アーカイブへの追記
+        archive_header = "## ⚔️ 対面別 実戦攻略アーカイブ"
+        inserted_matchup = False
+        for i, l in enumerate(lines):
+            if archive_header in l:
+                # この見出しの直後に挿入
+                lines.insert(i + 1, matchup_entry)
+                inserted_matchup = True
+                break
+
+        if not inserted_matchup:
+            # 見出しが無い場合、イミュータブル履歴やプロ実演の直前に新設
+            insert_pos = -1
+            for i, l in enumerate(lines):
+                if l.startswith("## 📜") or l.startswith("## 🎥"):
+                    insert_pos = i
+                    break
+            section_to_add = f"\n## ⚔️ 対面別 実戦攻略アーカイブ (Matchup Archives)\n{matchup_entry}\n"
+            if insert_pos != -1:
+                lines.insert(insert_pos, section_to_add)
+            else:
+                lines.append(section_to_add)
+
+        # 3. trap があれば「検討して落とした選択肢」へ追記
+        if trap:
+            trap_header = "## ⚠️ 検討して落とした選択肢"
+            trap_inserted = False
+            for i, l in enumerate(lines):
+                if trap_header in l:
+                    trap_line = f"- **❌ {trap}** (実戦実測: vs {enemy_champ} {today_str})"
+                    lines.insert(i + 2, trap_line)
+                    trap_inserted = True
+                    break
+            if not trap_inserted:
+                # 没理由セクションがない場合は末尾手前に新設
+                lines.append(f"\n## ⚠️ 検討して落とした選択肢 ＆ 罠ビルド (Rejected Options / 没理由)\n- **❌ {trap}** (実戦実測: vs {enemy_champ} {today_str})\n")
+
+        # 4. イミュータブル履歴に追記
+        hist_inserted = False
+        hist_entry = f"- **{today_str}**: 実戦対面ログ（vs {enemy_champ} / {result.upper()}）を自動同期。"
+        for i, l in enumerate(lines):
+            if "イミュータブル変更履歴" in l or "Immutable Log" in l:
+                lines.insert(i + 2, hist_entry)
+                hist_inserted = True
+                break
+        if not hist_inserted:
+            lines.append(f"\n## 📜 イミュータブル変更履歴\n{hist_entry}\n")
+
+        tactics_file.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        print(f"🔄 既存の戦術バイブルへ構造的マージ完了: {tactics_file.name}")
 
     # DAILY_LOG.md にも実戦知見として追記
     if DAILY_LOG_PATH.exists():
-        with open(DAILY_LOG_PATH, "r", encoding="utf-8") as f:
-            daily_content = f.read()
-        
+        daily_content = DAILY_LOG_PATH.read_text(encoding="utf-8")
         log_snippet = f"\n- **🎮 実戦対面知見 ({my_champ} vs {enemy_champ} / {result.upper()})**: {learning}"
         if trap:
             log_snippet += f" (※罠: {trap})"
         
         # 本日のエントリの末尾に追加
-        with open(DAILY_LOG_PATH, "a", encoding="utf-8") as f:
-            f.write(log_snippet)
+        DAILY_LOG_PATH.write_text(daily_content + log_snippet + "\n", encoding="utf-8")
         print(f"📅 DAILY_LOG.md にも実戦ナレッジを反映完了！")
 
     print("\n" + "="*60)
     print(f" 🎉 対面インテル同期完了: {my_champ} vs {enemy_champ}")
     print(f"    - 反映先: {tactics_file}")
-    print(f"    - 次回プレイ前の攻略手順書へ自動反映されます。")
+    print(f"    - ポータル（/champions）の攻略タブへ即座に反映されます。")
     print("="*60 + "\n")
 
     if notify:

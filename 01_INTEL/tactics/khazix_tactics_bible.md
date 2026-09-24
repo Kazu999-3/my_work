@@ -5,6 +5,7 @@ source_type: hand_written
 published_at: 2026-09-18
 captured_at: 2026-09-18
 tags: ['LoL', 'Tactics', 'Jungle', 'Khazix']
+verified_at: unverified
 ---
 
 # ⚔️ カ＝ジックス (Kha'Zix) 対面戦術バイブル

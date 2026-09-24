@@ -5,6 +5,7 @@ source_type: db_generated
 published_at: 2026-09-21
 captured_at: 2026-09-21
 tags: ['LoL', 'Tactics', 'JG', 'Belveth']
+verified_at: unverified
 ---
 
 # ⚔️ Belveth 対面戦術バイブル

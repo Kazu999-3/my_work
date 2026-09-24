@@ -5,6 +5,7 @@ source_type: db_generated
 published_at: 2026-09-21
 captured_at: 2026-09-21
 tags: ['LoL', 'Tactics', 'JG', 'Brand']
+verified_at: unverified
 ---
 
 # ⚔️ Brand 対面戦術バイブル

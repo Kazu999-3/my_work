@@ -5,6 +5,7 @@ source_type: db_generated
 published_at: 2026-09-21
 captured_at: 2026-09-21
 tags: ['LoL', 'Tactics', 'TOP', 'Ambessa']
+verified_at: unverified
 ---
 
 # ⚔️ Ambessa 対面戦術バイブル
