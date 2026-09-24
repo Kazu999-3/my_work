@@ -12,6 +12,39 @@
 
 ## 🗓️ 2026-09-25（金）
 
+### 🛡️ /admin ゲート（proxy.ts）のDiscord管理者セッション未対応解消（無限リダイレクトぐるぐるの完全根絶）
+
+**概要**:
+1. **背景と目的**:
+   - ユーザーから「システム全貌仕様ガイドと戦術取り込みページがぐるぐるして開けない」との報告。
+   - `/admin/guide` にはスピナーを出すコードが存在しないにも関わらず画面が開かない謎の現象が発生していた。
+2. **原因と方針決定（Decisions Over Artifacts）**:
+   - **真因の特定（プロキシとログイン画面の無限ループ）**:
+     1. Next.js 16 のルーティングゲートである [`04_PORTAL/src/proxy.ts`](file:///d:/my_work/04_PORTAL/src/proxy.ts) が、パスワード用の `admin_session` クッキーしか検証しておらず、Discord OAuthセッション（`ktm_user_session`）を全くチェックしていなかった。
+     2. そのため、Discord管理者（かずき）でログインしているユーザーが `/admin/*`（`/admin/guide` や `/admin/knowledge`）を開こうとすると、`proxy.ts` が「未認証」と判定して `/login` へ 307 一時リダイレクトしていた。
+     3. `/login` 画面ではマウント時にスピナー（`border-t-amber-600 rounded-full animate-spin`）を表示しながら `/api/auth/verify` を呼ぶが、API側（`adminSession.ts`）はDiscordセッションを認識して「有効」と返すため、`router.replace("/admin/dashboard")` を実行。
+     4. しかし `/admin/dashboard` をリクエストすると、再び `proxy.ts` が未認証として `/login` へ 307 リダイレクトを返し、ブラウザ上で**無限リダイレクト・スピナースタック**が発生していた。
+   - **採用案**:
+     - `src/proxy.ts` に `isValidDiscordAdminSession` を追加し、Edge Runtime 互換（`atob` / `Buffer`）で `ktm_user_session` の管理者フラグおよびオーナーID（`697220229964759130`）を判定。Discord管理者ログイン済みなら `/admin/*` を直接通過させる。
+     - 未ログイン時のリダイレクトに `returnTo` クエリパラメータを付与。ログイン完了後に元々開こうとしていたURL（`/admin/guide` 等）へ正しく復帰させる。
+     - `src/app/login/page.tsx` に 2秒のフォールバックタイマーを配備し、通信遅延時もスピナーが永久に止まらない構造を根絶。
+3. **実装内容**:
+   - [`04_PORTAL/src/proxy.ts`](file:///d:/my_work/04_PORTAL/src/proxy.ts): Discord管理者セッション（`ktm_user_session`）の検証とリダイレクト時 `returnTo` 引き継ぎを実装。
+   - [`04_PORTAL/src/app/login/page.tsx`](file:///d:/my_work/04_PORTAL/src/app/login/page.tsx): `returnTo` パラメータ対応、Discordログイン連携、2秒タイマー導入。
+   - 本番サーバー（`next start`）で実通信検証を実施。Discord管理者セッションでのアクセス時に **307リダイレクトが消滅し、ダイレクトに HTTP 200 OK でガイドHTMLが完全返却されることを実値確認（Pass）**。
+   - テスト63件全パス、型チェック0エラーを確認。
+
+**3行ナレッジ**:
+1. **API層とミドルウェア層（proxy.ts）の認証判定は絶対に乖離させるな**: APIルート（Node環境）でDiscordログインを通しているのに、Middleware/Proxy（Edge環境）でパスワードクッキーしか見ていないと、無限リダイレクトループとスピナーフリーズという最悪のハングを引き起こす。
+2. **Edge RuntimeでのBase64デコードは `atob` を優先せよ**: Next.js Middleware/ProxyはEdge環境で動くため、Node標準の `Buffer` だけでなく Web標準APIである `atob()` を用いることで安全にJWT/セッションJSONを展開できる。
+3. **認証リダイレクトには必ず `returnTo` を添えよ**: ログイン後に一律でトップやダッシュボードへ飛ばすと、ユーザーが直接開こうとしていた深い階層（仕様ガイドや特定ツール）に辿り着けなくなる。`returnTo` を持たせることで遷移の連続性が保たれる。
+
+**🌾 拾い上げ (Harvest)**:
+- `[継続ウォッチ]`: Discord OAuthセッションの有効期限切れ時の挙動と、再ログインダイアログのスムーズさ。
+- `[発信候補]`: 「Next.js 16のproxy.tsでハマった無限リダイレクト：APIとMiddlewareで認証方式が乖離したときのデバッグ手法」を技術Tipsとして共有。
+
+---
+
 ### 🚀 戦術取り込みの構文エラー解消（無限ぐるぐる根絶） ＆ システム全貌仕様ガイド新設
 
 **概要**:

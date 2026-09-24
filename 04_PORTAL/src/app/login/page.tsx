@@ -1,12 +1,18 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { Shield, LogIn, Key, Sparkles, AlertTriangle } from "lucide-react";
 
 function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawReturnTo = searchParams.get('returnTo');
+  const returnTo = (rawReturnTo && rawReturnTo.startsWith('/') && !rawReturnTo.startsWith('//'))
+    ? rawReturnTo
+    : '/admin/dashboard';
+
   const { user, loginWithDiscord } = useCurrentUser();
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -14,17 +20,28 @@ function LoginContent() {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
+    const timer = setTimeout(() => setChecking(false), 2000);
+
     // 既存セッションの検証
-    fetch("/api/auth/verify", { method: "POST", credentials: "include" })
-      .then((res) => {
-        if (res.ok) {
-          router.replace("/admin/dashboard");
+    fetch("/api/auth/verify", {
+      method: "POST",
+      credentials: "include",
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.valid) {
+          router.replace(returnTo);
         } else {
           setChecking(false);
         }
       })
-      .catch(() => setChecking(false));
-  }, [router, user]);
+      .catch(() => setChecking(false))
+      .finally(() => clearTimeout(timer));
+
+    return () => clearTimeout(timer);
+  }, [router, user, returnTo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +61,7 @@ function LoginContent() {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        router.replace("/admin/dashboard");
+        router.replace(returnTo);
       } else {
         setErrorMsg(data.error || "パスワードが正しくありません。");
         setIsLoading(false);
@@ -93,7 +110,7 @@ function LoginContent() {
           </div>
           <button
             type="button"
-            onClick={() => loginWithDiscord('/admin/dashboard')}
+            onClick={() => loginWithDiscord(returnTo)}
             className="w-full py-3.5 px-4 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] text-white font-black text-xs transition-all shadow-md hover:shadow-indigo-500/20 flex items-center justify-center gap-2 cursor-pointer transform active:scale-98"
           >
             <LogIn size={16} />
