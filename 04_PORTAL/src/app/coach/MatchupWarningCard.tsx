@@ -14,7 +14,18 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
     champion: string;
     enemyChampion: string;
     memo: string | null;
-    laneRecord: { wins: number; evens: number; losses: number; total: number; gameWinRate?: number } | null;
+    laneRecord: {
+      wins: number;
+      evens: number;
+      losses: number;
+      total: number;
+      laneWinRate: number;
+      adjustedLaneWinRate: number;
+      gameWinRate?: number;
+      carryConversionRate?: number | null;
+      noiseMatchCount?: number;
+      isChampionSpecific?: boolean;
+    } | null;
     personalDossier?: {
       totalMatches: number;
       recentMatches: { matchId: string; champion: string; win: boolean; laneResult: string; kda: string; memo: string; createdAt: string }[];
@@ -196,7 +207,7 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
               </span>
             </div>
 
-            {warning.laneRecord.noiseMatchCount > 0 && (
+            {(warning.laneRecord.noiseMatchCount ?? 0) > 0 && (
               <span className="text-[10px] text-stone-500 font-medium">
                 🛡️ 他レーン崩壊等のノイズ検知: {warning.laneRecord.noiseMatchCount}戦
               </span>
