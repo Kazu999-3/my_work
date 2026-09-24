@@ -20,7 +20,7 @@ export async function GET(req: Request) {
         winning_team,
         ktm_match_participants (
           player_name, team, role, champion_name, kills, deaths, assists,
-          player_mmr, kda_score, mmr_delta, cs, damage_dealt, vision_score
+          player_mmr, kda_score, mmr_delta, mmr_breakdown, cs, damage_dealt, vision_score
         )
       `)
       .order('created_at', { ascending: false })

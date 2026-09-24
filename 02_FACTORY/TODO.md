@@ -459,28 +459,14 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
   プレースメント×1.5」という**古いロール前提の値が残っていた**もの。再計算後は妥当な値になった。
 
 
-- [ ] **MMR変動の内訳をUIに表示する**（所要: 30分程度・課金なし）
-  - **背景**: 2026-09-23に「KDA 0/3/9 なのにMMRが+63なのはなぜ？」という疑問が出た。
-    調べれば説明できる（格上補正＋プレースメント×1.5）が、**画面からは分からない**。
-    `lib/mmr.ts` の `MmrBreakdown` には
-    「`M-03: MMR変動の内訳。「なぜ+18なのか」をUIで見せるための構造`」とコメントがあり、
-    **表示する意図で作られたが実装されないまま**になっている。
-  - **データは既にDBにある**: `ktm_match_participants.mmr_breakdown`（JSONB）。
-    2026-09-23の修正で `mmr_delta` と必ずセットで保存されるようになった。
-    形は `{ base, elo, wrAdjust, kda, dampener, placement, final }`。
-  - **やること（3ステップ）**
-    1. `04_PORTAL/src/app/api/match/history/route.ts` の `.select()` に
-       **`mmr_breakdown` を追加**（現在は `mmr_delta` までしか取っていない・17〜25行目）。
-    2. `04_PORTAL/src/app/ktm-admin/MatchHistoryPanel.tsx` の型 `mmr_delta: number;`（22行目）に
-       `mmr_breakdown?: {...}` を追加し、API変換部（206・220行目付近）でも引き回す。
-    3. 変動値の表示箇所（347・389行目付近の `{p.mmr_delta > 0 ? '+' : ''}{p.mmr_delta}`）に
-       `title` 属性でホバー説明を付ける。例:
-       `勝利+18 / 格上補正+7.3 / KDA+5.0 / プレースメント×1.5`
-       （`title` はこのプロジェクトの標準パターン。44ファイルで使用中）
-  - **表示先**: この画面は `app/history/page.tsx`（一般メンバー向け試合履歴）と
-    `app/ktm-admin/page.tsx`（管理者）の両方から使われるため、1箇所直せば両方に効く。
-  - **検証**: 2026-09-19 22:53 の試合でかずき選手の内訳が
-    `{base:18, elo:…, kda:5.0, placement:…}` と出ること。
+- [x] **MMR変動の内訳をUIに表示する**（2026-09-24 完了）
+  - **背景**: 2026-09-23に「KDA 0/3/9 なのにMMRが+63なのはなぜ？」という疑問が出たが画面からは分からなかった。DBの `ktm_match_participants.mmr_breakdown` を活用してツールチップで可視化。
+  - **実装内容**:
+    1. `04_PORTAL/src/app/api/match/history/route.ts`: `ktm_match_participants` の取得列に `mmr_breakdown` を追加。
+    2. `04_PORTAL/src/app/ktm-admin/MatchHistoryPanel.tsx`: `Participant` に `mmr_breakdown` を追加し、スワップ処理および表示部へ連携。`formatMmrBreakdown` ヘルパーで「`勝利+18 / 格上補正+7.3 / KDA+5 / プレースメント×1.5 / 計 +63`」形式のホバーツールチップ（`title` 属性 ＋ `cursor-help`）を付与。
+    3. `04_PORTAL/src/lib/__tests__/mmrBreakdownFormat.test.ts`: 通常・格差・高勝率・プレースメント・お祭り・フォールバックの全境界値テスト4件を新設。
+  - **検証結果**: `npm test`（全58件パス）、`npx tsc --noEmit`（エラー0件）、`npm run build`（ビルド成功）を確認済み。
+  - **表示先**: 一般メンバー向け試合履歴（`/history`）および管理者画面（`/ktm-admin`）の両方に自動反映。
 
 ### ✅ カジノに新ミニゲーム「ブッシュ・スカウト」を追加（2026-09-23 完了 / コミット `c9536bbf`）
 

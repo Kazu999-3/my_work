@@ -3,6 +3,7 @@ import { toast } from '../../components/Toaster';
 import { History, Swords, Trophy, Calendar, RefreshCw, Edit, Trash2, Search, AlertCircle, X, Target, GripVertical } from 'lucide-react';
 import Image from 'next/image';
 import { getChampIcon } from '../../lib/ddragonClient';
+import type { MmrBreakdown } from '../../lib/mmr';
 
 interface Match {
   id: string;
@@ -20,10 +21,41 @@ interface Participant {
   assists: number;
   kda_score: number;
   mmr_delta: number;
+  mmr_breakdown?: MmrBreakdown | null;
   champion_name?: string;
   cs?: number;
   damage_dealt?: number;
   vision_score?: number;
+}
+
+function formatMmrBreakdown(b?: MmrBreakdown | null, delta?: number): string {
+  if (!b) return delta !== undefined ? `MMR変動: ${delta > 0 ? '+' : ''}${delta}` : '';
+  if ((b as any).isExhibition) return 'お祭りカスタム（戦績ノーカウント）: 変動0';
+  if ((b as any).note) return (b as any).note;
+
+  const parts: string[] = [];
+  if (b.base !== undefined) {
+    if (b.base > 0) parts.push(`勝利+${b.base}`);
+    else if (b.base < 0) parts.push(`敗北${b.base}`);
+    else parts.push('ベース0');
+  }
+  if (b.elo) {
+    parts.push(`${b.elo > 0 ? '格上補正+' : '格下補正'}${b.elo}`);
+  }
+  if (b.wrAdjust) {
+    parts.push(`高勝率補正${b.wrAdjust > 0 ? '+' : ''}${b.wrAdjust}`);
+  }
+  if (b.kda) {
+    parts.push(`KDA+${b.kda}`);
+  }
+  if (b.dampener && b.dampener < 1.0) {
+    parts.push(`対面減衰×${b.dampener}`);
+  }
+  if (b.placement) {
+    parts.push('プレースメント×1.5');
+  }
+  parts.push(`計 ${b.final > 0 ? '+' : ''}${b.final ?? delta ?? 0}`);
+  return parts.join(' / ');
 }
 
 const ROLES = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
@@ -204,6 +236,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
         assists: pTarget.assists,
         kda_score: pTarget.kda_score,
         mmr_delta: pTarget.mmr_delta,
+        mmr_breakdown: pTarget.mmr_breakdown,
         cs: pTarget.cs,
         damage_dealt: pTarget.damage_dealt,
         vision_score: pTarget.vision_score
@@ -218,6 +251,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
         assists: pStart.assists,
         kda_score: pStart.kda_score,
         mmr_delta: pStart.mmr_delta,
+        mmr_breakdown: pStart.mmr_breakdown,
         cs: pStart.cs,
         damage_dealt: pStart.damage_dealt,
         vision_score: pStart.vision_score
@@ -344,7 +378,10 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                           </div>
                         </div>
 
-                        <div className={`w-14 text-right font-black text-sm flex-shrink-0 ${p.mmr_delta > 0 ? 'text-emerald-700' : p.mmr_delta < 0 ? 'text-red-700' : 'text-stone-500'}`}>
+                        <div
+                          title={formatMmrBreakdown(p.mmr_breakdown, p.mmr_delta)}
+                          className={`w-14 text-right font-black text-sm flex-shrink-0 cursor-help ${p.mmr_delta > 0 ? 'text-emerald-700' : p.mmr_delta < 0 ? 'text-red-700' : 'text-stone-500'}`}
+                        >
                           {p.mmr_delta > 0 ? '+' : ''}{p.mmr_delta}
                         </div>
                       </div>
@@ -386,7 +423,10 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                           </div>
                         </div>
 
-                        <div className={`w-14 text-right font-black text-sm flex-shrink-0 ${p.mmr_delta > 0 ? 'text-emerald-700' : p.mmr_delta < 0 ? 'text-red-700' : 'text-stone-500'}`}>
+                        <div
+                          title={formatMmrBreakdown(p.mmr_breakdown, p.mmr_delta)}
+                          className={`w-14 text-right font-black text-sm flex-shrink-0 cursor-help ${p.mmr_delta > 0 ? 'text-emerald-700' : p.mmr_delta < 0 ? 'text-red-700' : 'text-stone-500'}`}
+                        >
                           {p.mmr_delta > 0 ? '+' : ''}{p.mmr_delta}
                         </div>
                       </div>
