@@ -1,12 +1,13 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-chcp 65001 > nul
+
+for %%I in ("%~dp0..\..\..\..\.venv\Scripts\python.exe") do set "PYTHON_EXE=%%~fI"
+if not exist "%PYTHON_EXE%" set "PYTHON_EXE=python.exe"
 
 echo =================================================================
 echo   Sovereign HUD - Live Desktop Demo Simulation
 echo =================================================================
 echo.
-"%~dp0..\..\..\.venv\Scripts\python.exe" "%~dp0run_overlay.py" --demo
-
+"%PYTHON_EXE%" "%~dp0run_overlay.py" --demo
 pause

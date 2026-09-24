@@ -127,11 +127,12 @@ def main():
     live_client = LiveClient()
     state_engine = HudStateEngine()
 
-    # 4つのコアウィジェットを初期化
+    # 5つのコアウィジェットを初期化
     top_bar = TopBarWidget()
     matchup_card = MatchupCardWidget()
     toast_alert = ToastAlertWidget()
     spell_tracker = SpellTrackerWidget()
+    lane_dominance = LaneDominanceWidget()
 
     # 解像度自動取得 ＆ 安全領域自動スナップ
     saved_positions = load_widget_positions()
@@ -164,6 +165,14 @@ def main():
     toast_alert.move(int((screen_w - 320) / 2), 50)
     toast_alert.hide()
 
+    # ④ 画面中央付近 (LaneDominance: スコアボード直結5連ゴールド差ピル - TABキー連動)
+    pos_lane = saved_positions.get("lane_dominance", {})
+    if pos_lane:
+        lane_dominance.move(pos_lane.get("x", int((screen_w - 106) / 2)), pos_lane.get("y", int(screen_h * 0.42)))
+    else:
+        lane_dominance.move(int((screen_w - 106) / 2), int(screen_h * 0.42))
+    lane_dominance.hide()
+
     def toggle_manual_visibility():
         nonlocal hud_visible
         if hud_visible:
@@ -182,11 +191,20 @@ def main():
     # 表示状態管理
     hud_visible = False
 
+    # 👑 フローティングステータスバッジ（ゲーム中または手動表示時のみ展開）
+    status_pill = MiniStatusPillWidget(
+        on_toggle_hud=toggle_manual_visibility,
+        on_quit=app.quit
+    )
+    status_pill.move(int((screen_w - 240) / 2), 8)
+    status_pill.hide()
+
     def show_hud_widgets():
         nonlocal hud_visible
         top_bar.show()
         spell_tracker.show()
         matchup_card.show()
+        status_pill.show()
         hud_visible = True
 
     def hide_hud_widgets():
@@ -194,6 +212,8 @@ def main():
         top_bar.hide()
         spell_tracker.hide()
         matchup_card.hide()
+        status_pill.hide()
+        lane_dominance.hide()
         toast_alert.hide()
         hud_visible = False
 
@@ -201,7 +221,7 @@ def main():
     if args.always_show or args.demo or args.mock:
         show_hud_widgets()
     else:
-        # 通常のLoL監視モード: ゲーム開始まで完全非表示
+        # 通常のLoL監視モード: ゲーム開始まで完全非表示（完全ステルス待機）
         hide_hud_widgets()
 
     # システムトレイアイコンの構築
@@ -214,7 +234,7 @@ def main():
     tray_menu.addAction(status_action)
     tray_menu.addSeparator()
 
-    toggle_action = QAction("👁️ オーバーレイ手動 表示/非表示", tray_menu)
+    toggle_action = QAction("👁️ オーバーレイ手動 表示/非表示 [F8]", tray_menu)
     toggle_action.triggered.connect(toggle_manual_visibility)
     tray_menu.addAction(toggle_action)
 
@@ -231,23 +251,11 @@ def main():
     tray_icon.setContextMenu(tray_menu)
     tray_icon.show()
 
-    # 👑 フローティングステータスバッジ（画面最上部に常駐し、起動待機・試合中を即座に視覚化）
-    status_pill = MiniStatusPillWidget(
-        on_toggle_hud=toggle_manual_visibility,
-        on_quit=app.quit
-    )
-    status_pill.move(int((screen_w - 240) / 2), 8)
-    status_pill.show()
-
-    # 画面上部にウェルカムトーストを表示（起動を視覚的に通知）
-    toast_alert.show()
-    toast_alert.show_alert("👑", "Sovereign HUD 待機開始 (LoL試合を自動検知)", alert_type="spike", duration_ms=4000)
-
-    # Windows通知領域にもトースト表示
+    # Windows通知領域にトースト表示（画面中央にはポップアップを出さずトレイ通知のみで静かに案内）
     try:
         tray_icon.showMessage(
             "👑 Sovereign HUD 起動完了",
-            "LoLの試合開始を自動検知して待機中...\n（バッジまたはアイコンクリックで手動表示/非表示）",
+            "LoLの試合開始を自動検知して待機中...\n（[F8] キーまたはトレイアイコンで手動表示）",
             QSystemTrayIcon.MessageIcon.Information,
             3000
         )
@@ -280,9 +288,11 @@ def main():
         if is_pressed:
             if not matchup_card.is_pinned:
                 matchup_card.show()
+            lane_dominance.show()
         else:
             if not matchup_card.is_pinned:
                 matchup_card.hide()
+            lane_dominance.hide()
 
     def on_numpad_pressed(idx: int):
         if not hud_visible and not args.always_show:
@@ -449,6 +459,7 @@ def main():
             top_bar.update_data(state)
             spell_tracker.update_data(state)
             matchup_card.update_data(state)
+            lane_dominance.update_data(state)
             toast_alert.update_events(state)
 
     timer = QTimer()
