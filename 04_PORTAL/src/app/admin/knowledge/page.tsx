@@ -42,11 +42,18 @@ function KnowledgeBaseContent() {
     }
   }, [searchParams]);
 
-  // 認証の確認
+  // 認証の確認（タイムアウト付き）
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsAuthenticated(prev => (prev === null ? false : prev));
+    }, 4000);
+
     fetch('/api/auth/verify', { method: 'POST', credentials: 'include' })
       .then(res => setIsAuthenticated(res.ok))
-      .catch(() => setIsAuthenticated(false));
+      .catch(() => setIsAuthenticated(false))
+      .finally(() => clearTimeout(timer));
+
+    return () => clearTimeout(timer);
   }, []);
 
   const showFeedback = (text: string, type: 'success' | 'error') => {
@@ -140,7 +147,32 @@ function KnowledgeBaseContent() {
   };
 
   if (isAuthenticated === null) {
-    return <div className="flex justify-center py-20"><RefreshCw className="animate-spin text-pink-500" size={24} /></div>;
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-3">
+        <RefreshCw className="animate-spin text-pink-500" size={24} />
+        <p className="text-xs font-bold text-stone-400">認証状態を確認中...</p>
+      </div>
+    );
+  }
+
+  if (isAuthenticated === false) {
+    return (
+      <div className="w-full max-w-md mx-auto py-16 px-4">
+        <div className="text-center rounded-3xl border border-stone-200/80 bg-white p-8 shadow-sm">
+          <div className="text-4xl mb-3">🔑</div>
+          <h2 className="text-base font-black text-stone-900 mb-2">管理者認証が必要です</h2>
+          <p className="text-xs text-stone-500 mb-6 leading-relaxed">
+            戦術取り込み ＆ AI解析ハブは管理者専用です。Discord管理者アカウントでログインしてください。
+          </p>
+          <a
+            href="/login"
+            className="inline-block w-full rounded-xl bg-amber-500 hover:bg-amber-400 px-5 py-3 text-xs font-black text-stone-950 transition shadow-xs"
+          >
+            ログインページへ
+          </a>
+        </div>
+      </div>
+    );
   }
 
   return (
