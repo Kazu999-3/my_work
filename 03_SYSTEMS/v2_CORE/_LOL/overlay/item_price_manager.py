@@ -135,3 +135,23 @@ class ItemPriceManager:
                 price = it.get("price", 0)
             total += (price * cnt)
         return total
+
+    @classmethod
+    def find_item_id_by_name(cls, name_query: str) -> int:
+        """アイテム名（部分一致）からitem_idを逆引き"""
+        if not cls._is_loaded:
+            cls.load_items()
+        if not name_query:
+            return 0
+        q = name_query.strip().replace(" ", "").replace("・", "").lower()
+        # 1. 完全一致
+        for i_id, i_name in cls._item_names.items():
+            clean = i_name.replace(" ", "").replace("・", "").lower()
+            if clean == q:
+                return i_id
+        # 2. 部分一致
+        for i_id, i_name in cls._item_names.items():
+            clean = i_name.replace(" ", "").replace("・", "").lower()
+            if q in clean or clean in q:
+                return i_id
+        return 0

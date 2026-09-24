@@ -228,3 +228,66 @@ class SpellAssetManager:
         pix = QPixmap(28, 28)
         pix.fill(QColor(60, 60, 60))
         return pix
+
+    @classmethod
+    def get_item_icon(cls, item_id: int) -> QPixmap:
+        """アイテムの公式アイコン画像を取得"""
+        if not item_id or int(item_id) <= 0:
+            pix = QPixmap(32, 32)
+            pix.fill(QColor(30, 35, 45))
+            return pix
+
+        item_id = int(item_id)
+        cache_file = CACHE_DIR / f"item_{item_id}.png"
+        cache_key = f"item_{item_id}"
+        if cache_key in cls._pixmap_cache:
+            return cls._pixmap_cache[cache_key]
+
+        if cache_file.exists():
+            pix = QPixmap(str(cache_file))
+            if not pix.isNull():
+                cls._pixmap_cache[cache_key] = pix
+                return pix
+
+        url = f"{CDN_BASE}/item/{item_id}.png"
+        try:
+            r = httpx.get(url, timeout=3.0)
+            if r.status_code == 200:
+                with open(cache_file, "wb") as f:
+                    f.write(r.content)
+                pix = QPixmap(str(cache_file))
+                cls._pixmap_cache[cache_key] = pix
+                return pix
+        except Exception:
+            pass
+
+        pix = QPixmap(32, 32)
+        pix.fill(QColor(35, 40, 50))
+        return pix
+
+    @classmethod
+    def create_rounded_icon(cls, pixmap: QPixmap, size: int = 36, border_color: QColor = None, radius: int = 6) -> QPixmap:
+        """角丸＆枠線付きの美しいアイコンPixmapを生成"""
+        from PyQt6.QtGui import QPainter, QBrush, QPen, QPainterPath
+        out = QPixmap(size, size)
+        out.fill(Qt.GlobalColor.transparent)
+
+        painter = QPainter(out)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        path = QPainterPath()
+        path.addRoundedRect(0, 0, size, size, radius, radius)
+        painter.setClipPath(path)
+
+        scaled = pixmap.scaled(size, size, Qt.AspectRatioMode.KeepAspectRatioByExpanding, Qt.TransformationMode.SmoothTransformation)
+        painter.drawPixmap(0, 0, scaled)
+
+        if border_color:
+            painter.setClipping(False)
+            pen = QPen(border_color, 1.5)
+            painter.setPen(pen)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawRoundedRect(1, 1, size - 2, size - 2, radius, radius)
+
+        painter.end()
+        return out

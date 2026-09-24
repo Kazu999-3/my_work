@@ -1,11 +1,12 @@
 """
-Sovereign HUD - 経済＆マクロウィジェット (案3: アイテム進捗ゲージ付き型)
-========================================================================
-ゲーム時間等の重複を排除し、直感的なインテリジェンスに特化。
-1. 💰 チーム総ゴールド差 (一目で有利不利を判定)
+Sovereign HUD - 経済＆マクロウィジェット (TopBarWidget - アイコン＆視覚プログレス版)
+==================================================================================
+1. 💰 チーム総ゴールド差 (有利/不利ピル)
 2. 🎯 CSペース評価 (/分 と 好調/普通/警戒 のランク表示)
-3. 🛍️ 次のおすすめ目標アイテム ＆ 視覚的ゴールド蓄積プログレスバー
+3. 🛍️ 次のおすすめ目標アイテム公式アイコン ＆ 視覚的ゴールド蓄積プログレスバー
 4. 🟣 バロン/エルダーバフ持続タイマー (獲得時のみ)
+5. 💣 大砲ミニオンタイマー ＆ 👁️ 視界ワード
+6. ⚔️ 敵属性比率 (物理/魔法)
 """
 
 from PyQt6.QtCore import Qt, QPoint
@@ -13,7 +14,12 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QFrame, QProgressBar
 )
+from PyQt6.QtGui import QColor
+
 from v2_CORE._LOL.overlay.hud_config import save_widget_position
+from v2_CORE._LOL.overlay.spell_asset_manager import SpellAssetManager
+from v2_CORE._LOL.overlay.item_price_manager import ItemPriceManager
+
 
 class TopBarWidget(QWidget):
     def __init__(self, data_provider_cb=None):
@@ -31,7 +37,7 @@ class TopBarWidget(QWidget):
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
-        self.setFixedWidth(240)
+        self.setFixedWidth(250)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -39,15 +45,15 @@ class TopBarWidget(QWidget):
         self.card_frame = QFrame(self)
         self.card_frame.setStyleSheet("""
             QFrame {
-                background: rgba(8, 14, 24, 0.45);
-                border: 1px solid rgba(200, 155, 60, 0.35);
+                background: rgba(8, 14, 24, 0.65);
+                border: 1px solid rgba(200, 155, 60, 0.40);
                 border-radius: 10px;
                 padding: 2px;
             }
         """)
         
         card_layout = QVBoxLayout(self.card_frame)
-        card_layout.setContentsMargins(8, 4, 8, 4)
+        card_layout.setContentsMargins(8, 5, 8, 5)
         card_layout.setSpacing(3)
 
         # 1. 💰 チームゴールド差 ＆ 🎯 CS/JGペース (横並び1行統合)
@@ -57,7 +63,7 @@ class TopBarWidget(QWidget):
         self.gold_value_label = QLabel("💰 +0G (互角)", self.card_frame)
         self.gold_value_label.setStyleSheet("color: #F0E6D2; font-size: 11px; font-weight: 900;")
 
-        self.cs_title = QLabel("", self.card_frame)  # 互換性用
+        self.cs_title = QLabel("", self.card_frame)
         self.cs_title.setVisible(False)
 
         self.cs_value_label = QLabel("🎯 0.0/分", self.card_frame)
@@ -69,32 +75,39 @@ class TopBarWidget(QWidget):
         economy_row.addWidget(self.cs_value_label)
         card_layout.addLayout(economy_row)
 
-        # 2. 🛍️ 次の目標アイテム ＆ スリムプログレスバー
+        # 2. 🛍️ 次の目標アイテム公式アイコン ＆ スリムプログレスバー
         target_box = QFrame(self.card_frame)
         target_box.setStyleSheet("""
             QFrame {
-                background-color: rgba(0, 0, 0, 0.3);
-                border-radius: 4px;
+                background-color: rgba(0, 0, 0, 0.35);
+                border-radius: 5px;
                 padding: 1px;
             }
         """)
         target_layout = QVBoxLayout(target_box)
-        target_layout.setContentsMargins(4, 2, 4, 2)
-        target_layout.setSpacing(1)
+        target_layout.setContentsMargins(4, 3, 4, 3)
+        target_layout.setSpacing(2)
 
         target_header_row = QHBoxLayout()
         target_header_row.setContentsMargins(0, 0, 0, 0)
+        target_header_row.setSpacing(5)
 
-        self.target_name_label = QLabel("🛍️ スチールキャップ (1100G)", target_box)
+        # アイテム画像アイコン (22x22)
+        self.target_item_icon = QLabel(target_box)
+        self.target_item_icon.setFixedSize(22, 22)
+        self.target_item_icon.setStyleSheet("background: transparent; border: none;")
+        target_header_row.addWidget(self.target_item_icon)
+
+        self.target_name_label = QLabel("スチールキャップ", target_box)
         self.target_name_label.setStyleSheet("color: #fef08a; font-size: 9.5px; font-weight: bold;")
-
-        self.progress_text_label = QLabel("0/1100G", target_box)
-        self.progress_text_label.setStyleSheet("color: #cbd5e1; font-size: 9px; font-weight: 500;")
-        self.progress_text_label.setAlignment(Qt.AlignmentFlag.AlignRight)
-
         target_header_row.addWidget(self.target_name_label)
         target_header_row.addStretch()
+
+        self.progress_text_label = QLabel("0/1100G", target_box)
+        self.progress_text_label.setStyleSheet("color: #cbd5e1; font-size: 9px; font-weight: bold;")
+        self.progress_text_label.setAlignment(Qt.AlignmentFlag.AlignRight)
         target_header_row.addWidget(self.progress_text_label)
+
         target_layout.addLayout(target_header_row)
 
         # スリムプログレスバー (高さ4px)
@@ -129,7 +142,7 @@ class TopBarWidget(QWidget):
         self.buff_label.setVisible(False)
         card_layout.addWidget(self.buff_label)
 
-        # 4. 💣 大砲ミニオン ＆ 👁️ 視界ワード ＆ ⚔️ 敵属性比率 (マクロ統合コンパクト行)
+        # 4. 💣 次大砲ミニオン ＆ 👁️ 視界ワード ＆ ⚔️ 敵属性比率
         self.cannon_ward_label = QLabel("💣 次大砲: -- | 👁️ 視界: --", self.card_frame)
         self.cannon_ward_label.setStyleSheet("color: #94a3b8; font-size: 9px; font-weight: 600;")
         card_layout.addWidget(self.cannon_ward_label)
@@ -145,7 +158,8 @@ class TopBarWidget(QWidget):
         if not state or not state.get("active"):
             self.gold_value_label.setText("待機中 ---")
             self.cs_value_label.setText("待機中 ---")
-            self.target_name_label.setText("🛍️ 待機中...")
+            self.target_name_label.setText("待機中...")
+            self.target_item_icon.setVisible(False)
             self.progress_bar.setValue(0)
             self.progress_text_label.setText("---")
             self.buff_label.setVisible(False)
@@ -162,7 +176,6 @@ class TopBarWidget(QWidget):
 
         # 2. CSペース / JGファーム
         is_jg = state.get("is_jg", False)
-        my_cs = int(state.get("my_cs", 0) or 0)
         cspm = state.get("cs_per_min", 0.0)
         cs_rating = state.get("cs_rating", "MID")
         cs_col = state.get("cs_color", "#22c55e")
@@ -176,22 +189,34 @@ class TopBarWidget(QWidget):
 
         self.cs_value_label.setStyleSheet(f"color: {cs_col}; font-size: 11px; font-weight: bold;")
 
-        # 3. 次のおすすめ目標アイテム ＆ プログレスバー
+        # 3. 次のおすすめ目標アイテム公式アイコン ＆ プログレスバー
         advice = state.get("next_item_advice") or {}
         target_name = advice.get("item_name", "1stコア")
         target_price = max(1, advice.get("price", 1100))
         my_gold = int(state.get("my_gold", 0) or 0)
 
-        # 短縮名
-        short_name = target_name.replace("プレート スチールキャップ", "スチールキャップ").replace("マーキュリー トレッド", "マーキュリー靴")
-        self.target_name_label.setText(f"🛍️ {short_name} ({target_price}G)")
+        # アイテム画像アイコン
+        i_id = ItemPriceManager.find_item_id_by_name(target_name)
+        pix = SpellAssetManager.get_item_icon(i_id)
+        rounded_pix = SpellAssetManager.create_rounded_icon(pix, size=22, border_color=QColor(200, 155, 60), radius=3)
+        self.target_item_icon.setPixmap(rounded_pix)
+        self.target_item_icon.setVisible(True)
+
+        # 短縮名（はみ出し完全防止）
+        short_name = target_name.replace("プレート スチールキャップ", "スチールキャップ") \
+                                .replace("マーキュリー トレッド", "マーキュリー靴") \
+                                .replace("ライアンドリーの苦悶", "ライアンドリー") \
+                                .replace("サンダード スカイ", "サンダードスカイ")
+        if len(short_name) > 10:
+            short_name = short_name[:10] + "…"
+
+        self.target_name_label.setText(short_name)
 
         # 進捗率
         pct = min(100, int((my_gold / target_price) * 100))
         self.progress_bar.setValue(pct)
 
         gold_needed = max(0, target_price - my_gold)
-        waves = max(1, int((gold_needed + 120) / 125)) if gold_needed > 0 else 0
 
         if gold_needed > 0:
             self.progress_bar.setStyleSheet("""
@@ -205,10 +230,9 @@ class TopBarWidget(QWidget):
                     border-radius: 1px;
                 }
             """)
-            self.progress_text_label.setText(f"{my_gold}/{target_price}G (あと{gold_needed}G/{waves}W)")
-            self.progress_text_label.setStyleSheet("color: #cbd5e1; font-size: 9px; font-weight: 500;")
+            self.progress_text_label.setText(f"{my_gold}/{target_price}G")
+            self.progress_text_label.setStyleSheet("color: #cbd5e1; font-size: 9px; font-weight: 600;")
         else:
-            # 目標達成時 ➔ ネオングリーンで発光
             self.progress_bar.setStyleSheet("""
                 QProgressBar {
                     background-color: rgba(0, 0, 0, 0.4);
@@ -220,7 +244,7 @@ class TopBarWidget(QWidget):
                     border-radius: 1px;
                 }
             """)
-            self.progress_text_label.setText(f"💰 {my_gold}G (購入可能 🟢)")
+            self.progress_text_label.setText(f"READY 🟢 ({my_gold}G)")
             self.progress_text_label.setStyleSheet("color: #4ade80; font-size: 9px; font-weight: bold;")
 
         # 4. バフ
@@ -231,30 +255,17 @@ class TopBarWidget(QWidget):
         else:
             self.buff_label.setVisible(False)
 
-        # 5. 💣 大砲ミニオン ＆ 視界情報
-        cannon = state.get("cannon_wave_info", {})
-        cannon_desc = cannon.get("desc", "💣 次大砲: --")
-        ward = state.get("ward_stats", {})
-        ward_desc = ward.get("summary_text", "買0 置0")
-        self.cannon_ward_label.setText(f"{cannon_desc} | 👁️ {ward_desc}")
+        # 5. 大砲ミニオン ＆ 視界ワード
+        cannon_str = state.get("cannon_wave_str", "--")
+        p_wards = state.get("purchased_control_wards", 0)
+        c_wards = state.get("current_control_wards", 0)
+        ward_text = f"買{p_wards} 置{c_wards}"
+        self.cannon_ward_label.setText(f"💣 {cannon_str} | 👁️ {ward_text}")
 
-        # 6. ⚔️ 敵属性比率
+        # 6. 敵ダメージ属性比率
         dmg_prof = state.get("enemy_damage_profile", {})
-        dmg_advice = dmg_prof.get("advice", "敵属性: 物理 --% / 魔法 --%")
-        self.dmg_profile_label.setText(f"⚔️ {dmg_advice}")
+        phys = dmg_prof.get("physical_pct", 50)
+        magic = dmg_prof.get("magic_pct", 50)
+        self.dmg_profile_label.setText(f"⚔️ 敵: 物理{phys}% / 魔法{magic}%")
 
         self.adjustSize()
-
-    # ドラッグ移動 ＆ 位置自動保存
-    def mousePressEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.drag_position = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
-            event.accept()
-
-    def mouseMoveEvent(self, event):
-        if event.buttons() == Qt.MouseButton.LeftButton:
-            self.move(event.globalPosition().toPoint() - self.drag_position)
-            event.accept()
-
-    def mouseReleaseEvent(self, event):
-        save_widget_position("top_bar", self.x(), self.y())
