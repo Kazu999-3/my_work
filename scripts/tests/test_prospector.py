@@ -14,26 +14,46 @@ def fake_run(lines):
 class TestSearchFilter(unittest.TestCase):
     def test_尺が範囲内のものだけ拾う(self):
         lines = [
-            "aaaaaaaaaaa\t短いクリップ\tCh\t30",      # 短すぎる
-            "bbbbbbbbbbb\t適切な解説\tCh\t600",       # OK
-            "ccccccccccc\t長い配信\tCh\t20000",       # 長すぎる
+            "aaaaaaaaaaa\t短いクリップ解説\tCh\t30",      # 短すぎる (30s)
+            "bbbbbbbbbbb\t適切な解説動画\tCh\t600",       # OK (10分)
+            "ccccccccccc\t長い配信解説\tCh\t20000",       # 長すぎる
+        ]
+        with patch("subprocess.run", fake_run(lines)):
+            got = P.search_videos("q", 3)
+        self.assertEqual([v["id"] for v in got], ["bbbbbbbbbbb"])
+
+    def test_ブラックリストタイトルを除外する(self):
+        lines = [
+            "aaaaaaaaaaa\tShorts動画 #shorts\tCh\t600",
+            "bbbbbbbbbbb\tBest Plays Montage\tCh\t600",
+            "ccccccccccc\t生放送アーカイブ\tCh\t600",
+            "ddddddddddd\t良質な立ち回り解説\tCh\t600",
+        ]
+        with patch("subprocess.run", fake_run(lines)):
+            got = P.search_videos("q", 3)
+        self.assertEqual([v["id"] for v in got], ["ddddddddddd"])
+
+    def test_解説キーワードのない動画を除外する(self):
+        lines = [
+            "aaaaaaaaaaa\tFAKER YASUO 1v5\tCh\t600",     # 単なるプレイ動画
+            "bbbbbbbbbbb\tYasuo In-Depth Guide\tCh\t600", # ガイド動画
         ]
         with patch("subprocess.run", fake_run(lines)):
             got = P.search_videos("q", 3)
         self.assertEqual([v["id"] for v in got], ["bbbbbbbbbbb"])
 
     def test_尺不明の配信中は除外する(self):
-        lines = ["ddddddddddd\t配信中\tCh\tNA"]
+        lines = ["ddddddddddd\t配信中解説\tCh\tNA"]
         with patch("subprocess.run", fake_run(lines)):
             self.assertEqual(P.search_videos("q", 3), [])
 
     def test_動画IDの形式が不正なら除外する(self):
-        lines = ["short\tタイトル\tCh\t600"]
+        lines = ["short\tタイトル解説\tCh\t600"]
         with patch("subprocess.run", fake_run(lines)):
             self.assertEqual(P.search_videos("q", 3), [])
 
     def test_列が足りない行を無視する(self):
-        lines = ["こわれた行", "eeeeeeeeeee\tOK\tCh\t600"]
+        lines = ["こわれた行", "eeeeeeeeeee\tOKな解説動画\tCh\t600"]
         with patch("subprocess.run", fake_run(lines)):
             self.assertEqual(len(P.search_videos("q", 3)), 1)
 

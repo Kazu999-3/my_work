@@ -21,7 +21,20 @@ import sys
 import time
 import urllib.request, urllib.error
 
+# Windows cp932対策
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+except Exception:
+    pass
+
 from notify import notify, COLOR_INFO, COLOR_OK
+from video_filter import (
+    is_blacklisted_title,
+    is_valid_guide_title,
+    DEFAULT_MIN_SEC,
+    DEFAULT_MAX_SEC,
+)
 
 SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
 # シークレット名は環境によって揺れるため、候補を順に拾う
@@ -43,9 +56,9 @@ PER_CHAMP = int(os.environ.get("PROSPECT_PER_CHAMP", "1"))
 # 積みすぎるとGeminiの日次上限に当たる。
 MAX_BACKLOG = int(os.environ.get("PROSPECT_MAX_BACKLOG", "20"))
 
-# 短すぎるクリップと長すぎる配信アーカイブを避ける（既定: 4分〜60分）
-MIN_SEC = int(os.environ.get("PROSPECT_MIN_SEC", "240"))
-MAX_SEC = int(os.environ.get("PROSPECT_MAX_SEC", "3600"))
+# 短すぎるクリップと長すぎる配信アーカイブを避ける（厳格化: 8分〜40分）
+MIN_SEC = int(os.environ.get("PROSPECT_MIN_SEC", str(DEFAULT_MIN_SEC)))
+MAX_SEC = int(os.environ.get("PROSPECT_MAX_SEC", str(DEFAULT_MAX_SEC)))
 
 # 解析に失敗し続ける等の理由で登録したくない動画
 BLACKLIST = {"juYeqA61oPI"}
@@ -160,6 +173,17 @@ def search_videos(query, want):
         # 尺が取れない動画(配信中など)は避ける
         if duration <= 0 or not (MIN_SEC <= duration <= MAX_SEC):
             continue
+
+        # ブラックリスト判定（Shorts、キル集、生放送アーカイブ、ミーム等を除外）
+        is_bad, bad_kw = is_blacklisted_title(title)
+        if is_bad:
+            continue
+
+        # ホワイトリスト判定（解説・立ち回り・ガイド等を示すキーワードが必須）
+        is_guide, guide_kw = is_valid_guide_title(title)
+        if not is_guide:
+            continue
+
         out.append({"id": vid, "title": title, "channel": channel, "duration": duration})
     return out
 

@@ -54,6 +54,7 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 sys.path.append(str(ROOT_DIR / "scripts"))
 from notify import notify, COLOR_INFO
+from video_filter import is_blacklisted_title
 
 
 def sb_request(method, path, body=None, prefer=None):
@@ -144,7 +145,13 @@ def run_monitor(dry_run=False):
 
         for v in videos:
             vid = v["id"]
+            title = v.get("title", "")
             if vid not in existing_ids:
+                is_bad, bad_kw = is_blacklisted_title(title)
+                if is_bad:
+                    print(f"    🚫 ブラックリスト除外 ({bad_kw}): {title[:45]}")
+                    existing_ids.add(vid)
+                    continue
                 new_videos.append(v)
                 existing_ids.add(vid)  # 同一実行内での重複防止
 
