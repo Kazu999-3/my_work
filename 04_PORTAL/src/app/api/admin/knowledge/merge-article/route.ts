@@ -6,6 +6,7 @@ import { recordRevision } from '../../../../../lib/knowledgeRevisions';
 import { resolveToRosterChampion } from '../../../../../lib/dictFactCheck';
 import { detectLane, classifyLaneGeneralContent, mergeContentIntoLane } from '../../../../../lib/laneGuideMerge';
 import { callGeminiWithRetry } from '../../../../../lib/geminiClient';
+import { normalizeLoLTerms } from '../../../../../lib/dataDragonMaster';
 
 // ============================================================
 // 攻略ライブラリ(personal_knowledge)の1記事を、選択されたチャンピオンの
@@ -86,6 +87,11 @@ async function analyzeArticleInsights(
   const prompt = `あなたはLeague of Legendsの戦略データアナリストです。
 以下の攻略記事を詳細に分析し、対象チャンピオン【${champListStr}】に関する構造化トレンドデータ、および記事中に登場する「対特定チャンピオン（マッチアップ対策）」情報を整理して抽出してください。
 
+【最重要ルール: アイテム名・ルーン名・スキル名の公式日本語化の絶対厳守】
+- アイテム名、ルーン名、サモナースペル名は、英語のまま残さず必ず「日本サーバー公式名称」に翻訳・統一してください。
+  （例: Blade of the Ruined King → ルインドキング ブレード / 破滅の王の剣、Infinity Edge → インフィニティ エッジ、Liandry's Torment → リアンドリーの苦悶、Zhonya's Hourglass → ゾーニャの砂時計、Flash → フラッシュ、Ignite → イグナイト、Conqueror → 征服者、Lethal Tempo → リーサルテンポ、Electrocute → 電撃、Phase Rush → フェイズラッシュ 等）
+- チャンピオンのスキルも英語名（Q, W, E, R または公式日本語スキル名）を用い、不自然な直訳を避けてください。
+
 【記事タイトル】
 ${title || '無題'}
 
@@ -151,6 +157,25 @@ ${content.slice(0, 10000)}
       const parsed = JSON.parse(cleaned.slice(s, e + 1));
       const trendData = parsed.trendData || {};
       const rawMatchups = Array.isArray(parsed.matchups) ? parsed.matchups : [];
+
+      // 各チャンピオンのトレンドデータにも用語正規化を適用
+      const normalizedTrendData: typeof trendData = {};
+      for (const [cName, tObj] of Object.entries(trendData)) {
+        if (!tObj || typeof tObj !== 'object') continue;
+        const o = tObj as any;
+        normalizedTrendData[cName] = {
+          summaryPoints: Array.isArray(o.summaryPoints)
+            ? o.summaryPoints.map((sp: string) => normalizeLoLTerms(sp || '', cName))
+            : [],
+          strengths: normalizeLoLTerms(o.strengths || '', cName),
+          weaknesses: normalizeLoLTerms(o.weaknesses || '', cName),
+          power_spikes: normalizeLoLTerms(o.power_spikes || '', cName),
+          build_runes: normalizeLoLTerms(o.build_runes || '', cName),
+          strategy: normalizeLoLTerms(o.strategy || '', cName),
+          must_ban_champions: normalizeLoLTerms(o.must_ban_champions || '', cName),
+          pick_recommendation: normalizeLoLTerms(o.pick_recommendation || '', cName),
+        };
+      }
       
       // 敵チャンピオン名を正規化
       const validatedMatchups: MatchupInsight[] = [];
@@ -162,14 +187,14 @@ ${content.slice(0, 10000)}
           validatedMatchups.push({
             targetChampion: normalizedTarget,
             enemyChampion: normalizedEnemy,
-            title: m.title || `${normalizedTarget} vs ${normalizedEnemy} 対策`,
-            strategy: m.strategy,
+            title: normalizeLoLTerms(m.title || `${normalizedTarget} vs ${normalizedEnemy} 対策`, normalizedTarget),
+            strategy: normalizeLoLTerms(m.strategy, normalizedTarget),
             confidence: 'high',
           });
         }
       }
 
-      return { trendData, matchups: validatedMatchups };
+      return { trendData: normalizedTrendData, matchups: validatedMatchups };
     }
   } catch (err) {
     console.warn('[merge-article] analyzeArticleInsights失敗(フォールバック):', err);
@@ -253,7 +278,8 @@ export async function POST(req: Request) {
 
           const fieldUpdates: TrendFieldUpdate[] = TREND_FIELDS.map((f) => {
             const existingVal = (existingFact as any)?.[f.key] || '';
-            const extractedVal = (extractedFields as any)?.[f.key] || '';
+            const rawExtractedVal = (extractedFields as any)?.[f.key] || '';
+            const extractedVal = rawExtractedVal ? normalizeLoLTerms(rawExtractedVal, championName) : '';
             let mergedVal = existingVal;
 
             if (extractedVal && extractedVal.trim()) {
@@ -269,7 +295,7 @@ export async function POST(req: Request) {
               fieldLabel: f.label,
               existingValue: existingVal,
               extractedValue: extractedVal,
-              mergedValue: mergedVal,
+              mergedValue: normalizeLoLTerms(mergedVal, championName),
               isNew: !existingVal.trim() && !!extractedVal.trim(),
             };
           });
@@ -380,7 +406,9 @@ export async function POST(req: Request) {
       const champOverrides = trendDataOverrides?.[championName];
       for (const f of TREND_FIELDS) {
         if (champOverrides && champOverrides[f.key] !== undefined) {
-          factPayload[f.key] = champOverrides[f.key];
+          factPayload[f.key] = typeof champOverrides[f.key] === 'string'
+            ? normalizeLoLTerms(champOverrides[f.key], championName)
+            : champOverrides[f.key];
         }
       }
 
@@ -465,12 +493,15 @@ export async function POST(req: Request) {
         const matchupIdPrimary = `champ_${targetChamp}_vs_${enemyChamp}`;
         const matchupIdSecondary = `${targetChamp}_vs_${enemyChamp}`;
 
+        const rawStrategy = m.strategy || '';
+        const rawTitle = m.title || `${targetChamp} vs ${enemyChamp} 対策メモ`;
+
         const matchupRecord = {
           matchup_id: matchupIdPrimary,
           champion: targetChamp,
           enemy: enemyChamp,
-          title: m.title || `${targetChamp} vs ${enemyChamp} 対策メモ`,
-          strategy: m.strategy,
+          title: normalizeLoLTerms(rawTitle, targetChamp),
+          strategy: normalizeLoLTerms(rawStrategy, targetChamp),
           raw_data: {
             source: 'library_article',
             source_article_id: articleId,
@@ -508,8 +539,9 @@ export async function POST(req: Request) {
       if (!item.champion || !item.summary) continue;
       try {
         const resolvedChamp = await resolveToRosterChampion(item.champion) || item.champion;
-        const insightHeader = `### 【固有知見】${item.title || '戦術メモ'}`;
-        const insightText = `${insightHeader}\n${item.summary}`;
+        const insightHeader = `### 【固有知見】${normalizeLoLTerms(item.title || '戦術メモ', resolvedChamp)}`;
+        const normalizedSummary = normalizeLoLTerms(item.summary, resolvedChamp);
+        const insightText = `${insightHeader}\n${normalizedSummary}`;
 
         // 1) champion_facts の strategy へ追記マージ
         const { data: existingFact } = await supabase

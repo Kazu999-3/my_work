@@ -17,6 +17,7 @@ import {
   Star, 
   Zap, 
   Crosshair, 
+  Target,
   RefreshCw, 
   CheckCircle2, 
   TrendingUp, 
@@ -88,14 +89,14 @@ export default function PlayerMyPage() {
   const [playstyleSource, setPlaystyleSource] = useState<'custom' | 'soloq'>('custom');
   const [syncingSoloq, setSyncingSoloq] = useState(false);
   
-  // タブ管理用のステートを追加 (旧lanes, 旧championsをanalyticsに統合)
+  // タブ管理用のステートを追加 (案B: KTMカスタムとソロキューの明確な分離)
   const rawTab = (searchParams.get("tab") as string) || "summary";
-  const normalizeTab = (t: string): 'summary' | 'analytics' | 'chemistry' | 'history' | 'settings' => {
+  const normalizeTab = (t: string): 'summary' | 'analytics' | 'soloq' | 'chemistry' | 'history' | 'settings' => {
     if (t === 'lanes' || t === 'champions') return 'analytics';
-    if (['summary', 'analytics', 'chemistry', 'history', 'settings'].includes(t)) return t as any;
+    if (['summary', 'analytics', 'soloq', 'chemistry', 'history', 'settings'].includes(t)) return t as any;
     return 'summary';
   };
-  const [activeTab, setActiveTab] = useState<'summary' | 'analytics' | 'chemistry' | 'history' | 'settings'>(normalizeTab(rawTab));
+  const [activeTab, setActiveTab] = useState<'summary' | 'analytics' | 'soloq' | 'chemistry' | 'history' | 'settings'>(normalizeTab(rawTab));
 
   // 🎁 デイリーボーナス関連ステート
   const [claimingDaily, setClaimingDaily] = useState(false);
@@ -683,12 +684,13 @@ export default function PlayerMyPage() {
     (player?.name && (player.name === currentUser.displayName || player.name === currentUser.username))
   );
 
-  // タブアイテム定義（レーンとチャンプを「レーン＆チャンプ戦績」に統合）
+  // タブアイテム定義（案B: KTMカスタムとソロキューを完全分離）
   const tabItems = [
     { id: "summary", name: "総合カルテ", icon: <Activity className="w-4 h-4" /> },
-    { id: "analytics", name: "レーン＆チャンプ戦績", icon: <Swords className="w-4 h-4" /> },
-    { id: "chemistry", name: "相性＆好敵手", icon: <Users className="w-4 h-4" /> },
-    { id: "history", name: "試合履歴", icon: <Clock className="w-4 h-4" /> },
+    { id: "analytics", name: "⚔️ KTMカスタム分析", icon: <Swords className="w-4 h-4" /> },
+    { id: "soloq", name: "🎮 ソロキュー戦績", icon: <Award className="w-4 h-4" /> },
+    { id: "chemistry", name: "🤝 相性＆好敵手", icon: <Users className="w-4 h-4" /> },
+    { id: "history", name: "📜 試合履歴", icon: <Clock className="w-4 h-4" /> },
     ...(isMe ? [{ id: "settings", name: "⚙️ 希望設定", icon: <Settings className="w-4 h-4 text-amber-500" /> }] : []),
   ] as const;
 
@@ -796,38 +798,43 @@ export default function PlayerMyPage() {
                     </span>
                   )}
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-stone-200 text-sm font-bold font-mono">{player.ign || "IGN未登録"}</span>
-                  {opggUrl && (
-                    <a
-                      href={opggUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-[#5383e8] hover:bg-[#4168c4] text-white rounded-full text-xs font-black transition-all shadow-md hover:scale-105"
-                      title="OP.GGで戦績・直近のマッチ履歴を確認"
-                    >
-                      <span className="font-black text-[10px] bg-white text-[#5383e8] px-1 py-0.2 rounded font-mono">OP</span>
-                      <span>OP.GG ↗</span>
-                    </a>
-                  )}
-                  <div className="flex gap-1.5 flex-wrap">
-                    <span className="bg-black/5 border border-black/10 px-2.5 py-0.5 rounded-full text-xs font-bold text-stone-700 backdrop-blur-md">
-                      最高: <span className="text-amber-700 font-extrabold">{player.highest_rank || "UNRANKED"}</span>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 pt-1 flex-wrap">
+                  {/* 🎮 ソロキュー情報 */}
+                  <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/10 text-xs">
+                    <span className="text-[10px] font-black text-cyan-400 flex items-center gap-1">
+                      <span>🎮 ソロキュー:</span>
                     </span>
-                    <span className="bg-amber-100 border border-amber-300 px-2.5 py-0.5 rounded-full text-xs font-bold text-amber-800 backdrop-blur-md">
-                      総合MMR: <span className="text-stone-900 font-black">{player.mmr || 1200}</span>
+                    <span className="text-white font-bold font-mono text-xs">{player.ign || "IGN未登録"}</span>
+                    <span className="text-amber-300 font-extrabold text-[11px] bg-amber-400/20 px-1.5 py-0.5 rounded border border-amber-400/30">
+                      {player.highest_rank || "UNRANKED"}
+                    </span>
+                    {opggUrl && (
+                      <a
+                        href={opggUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#5383e8] hover:bg-[#4168c4] text-white rounded-lg text-[10px] font-black transition-all shadow-xs hover:scale-105"
+                        title="OP.GGで戦績を確認"
+                      >
+                        <span>OP.GG ↗</span>
+                      </a>
+                    )}
+                  </div>
+
+                  {/* ⚔️ KTMカスタム内戦情報 */}
+                  <div className="flex items-center gap-1.5 bg-amber-950/40 backdrop-blur-md px-2.5 py-1 rounded-xl border border-amber-500/30 text-xs">
+                    <span className="text-[10px] font-black text-amber-400 flex items-center gap-1">
+                      <span>⚔️ KTMカスタム:</span>
+                    </span>
+                    <span className="text-white font-black font-mono">
+                      MMR {player.mmr || 1200}
+                    </span>
+                    <span className="text-[10px] font-bold text-amber-300 bg-amber-500/20 px-1.5 py-0.5 rounded border border-amber-500/30">
+                      {getKtmRank(player.mmr || 1200).name}
                     </span>
                     {overallStats.total > 0 && (
-                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-black border backdrop-blur-md flex items-center gap-1 ${
-                        overallStats.winRate >= 60
-                          ? 'bg-amber-100/90 text-amber-900 border-amber-300'
-                          : overallStats.winRate >= 50
-                          ? 'bg-emerald-100/90 text-emerald-900 border-emerald-300'
-                          : 'bg-rose-100/90 text-rose-900 border-rose-300'
-                      }`}>
-                        <span>🏆 通算勝率:</span>
-                        <span className="font-extrabold">{overallStats.winRate}%</span>
-                        <span className="text-[10px] opacity-80">({overallStats.wins}勝{overallStats.losses}敗)</span>
+                      <span className="text-emerald-400 font-extrabold text-[11px] ml-1">
+                        勝率 {overallStats.winRate}% ({overallStats.wins}勝{overallStats.losses}敗)
                       </span>
                     )}
                   </div>
@@ -881,13 +888,13 @@ export default function PlayerMyPage() {
               <div className="h-8 w-[1px] bg-black/5 hidden md:block"></div>
               <div className="flex gap-4 sm:gap-6">
                 <div className="flex flex-col">
-                  <span className="text-[10px] text-gray-400 font-black tracking-wider uppercase mb-1">第一希望</span>
+                  <span className="text-[10px] text-gray-400 font-black tracking-wider uppercase mb-1">内戦第一希望</span>
                   <span className="text-stone-900 font-bold text-sm bg-black/5 px-2 py-0.5 rounded border border-black/10 text-center min-w-[36px]">
                     {player.role_preferences?.primary || "ALL"}
                   </span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[10px] text-gray-400 font-black tracking-wider uppercase mb-1">第二希望</span>
+                  <span className="text-[10px] text-gray-400 font-black tracking-wider uppercase mb-1">内戦第二希望</span>
                   <span className="text-stone-700 font-bold text-sm bg-black/5 px-2 py-0.5 rounded border border-black/10 text-center min-w-[36px]">
                     {player.role_preferences?.secondary || "ALL"}
                   </span>
@@ -1241,18 +1248,63 @@ export default function PlayerMyPage() {
                         </span>
                       </div>
 
-                      {/* 代表MMR */}
+                      {/* KTM代表MMR */}
                       <div className="bg-stone-50/80 border border-stone-200/80 rounded-2xl p-4 flex flex-col justify-between">
-                        <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">実力レーティング</span>
+                        <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">KTMカスタムMMR</span>
                         <div className="my-2">
                           <span className="text-3xl sm:text-4xl font-black text-amber-700">
                             {player.mmr || 1200}
                           </span>
                         </div>
-                        <span className="text-[10px] font-bold text-stone-500">
-                          {player.highest_rank || "UNRANKED"}
+                        <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded border border-amber-200 inline-block self-start">
+                          Tier: {getKtmRank(player.mmr || 1200).name}
                         </span>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* 🎮 ソロキュー戦績クイックサマリーカード（案B: 混合を防ぐため独立配置） */}
+                  <div className="lg:col-span-3 bg-gradient-to-r from-cyan-950/10 via-blue-950/5 to-transparent border border-cyan-500/25 rounded-3xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-11 h-11 rounded-2xl bg-cyan-600 text-white flex items-center justify-center font-black text-xl shadow-xs shrink-0">
+                        🎮
+                      </div>
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="text-sm font-black text-stone-900">
+                            ソロキュー公式ステータス (Riot連携)
+                          </h4>
+                          <span className="text-xs font-black px-2 py-0.5 rounded-md bg-cyan-100 text-cyan-800 border border-cyan-300">
+                            {player.highest_rank || "UNRANKED"}
+                          </span>
+                          <span className="text-xs text-stone-500 font-mono">
+                            {player.ign || "IGN未登録"}
+                          </span>
+                        </div>
+                        <p className="text-xs text-stone-500">
+                          Riot公式マスタリーやソロキュー戦績は「🎮 ソロキュー戦績」タブで詳しく確認できます。
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      {opggUrl && (
+                        <a
+                          href={opggUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1.5 rounded-xl bg-[#5383e8] hover:bg-[#4168c4] text-white text-xs font-black transition-all flex items-center gap-1 shadow-2xs"
+                        >
+                          <span>OP.GG ↗</span>
+                        </a>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('soloq')}
+                        className="px-3.5 py-1.5 rounded-xl bg-cyan-50 hover:bg-cyan-100 text-cyan-900 text-xs font-black transition-all border border-cyan-200 cursor-pointer"
+                      >
+                        <span>ソロキュー詳細を見る →</span>
+                      </button>
                     </div>
                   </div>
 
@@ -1741,74 +1793,193 @@ export default function PlayerMyPage() {
                     )}
                   </div>
 
-                  {/* 魂のチャンピオン ＆ 対面マッチアップ勝率 */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* 魂のチャンピオン */}
-                    <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
-                      <h3 className="text-lg font-black flex items-center gap-2 mb-6 border-b border-black/10 pb-3">
-                        <Star className="w-5 h-5 text-amber-600" />
-                        <span>魂のチャンピオン (マスタリー)</span>
-                      </h3>
-                      <div className="space-y-3">
-                        {riotMasteries.length > 0 ? riotMasteries.map((m, idx) => (
-                          <div key={idx} className="flex items-center gap-4 bg-black/5 p-3.5 rounded-2xl border border-black/10 hover:border-black/10 transition-colors">
+                  {/* KTMカスタム対面マッチアップ勝率 */}
+                  <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
+                    <h3 className="text-lg font-black flex items-center gap-2 mb-6 border-b border-black/10 pb-3">
+                      <Crosshair className="w-5 h-5 text-rose-500" />
+                      <span>⚔️ KTMカスタム 対面マッチアップ勝率</span>
+                      <span className="text-xs text-stone-500 font-bold ml-1">（内戦での直接対決データ）</span>
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[460px] overflow-y-auto pr-1">
+                      {matchups.length > 0 ? matchups.map((m, idx) => (
+                        <div key={idx} className="flex items-center justify-between bg-black/5 p-3 rounded-2xl border border-black/10 hover:border-black/20 transition-colors">
+                          <div className="flex items-center gap-3">
                             <Image
-                              src={m.iconUrl}
-                              alt={m.name}
-                              width={48}
-                              height={48}
-                              className="w-12 h-12 rounded-full border border-black/10 shadow-md"
+                              src={getChampIcon(m.opponentChampion)}
+                              alt={m.opponentChampion}
+                              width={36}
+                              height={36}
+                              className="w-9 h-9 rounded-full border border-black/10 shadow-sm shrink-0"
                               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                             />
-                            <div className="space-y-1">
-                              <div className="font-black text-base text-stone-900">{m.name === 'Unknown' ? `ID:${m.championId}` : m.name}</div>
-                              <div className="text-[10px] text-gray-400 font-bold bg-black/5 px-2 py-0.5 rounded border border-black/10 inline-block">
-                                マスタリーLv {m.championLevel} ({m.championPoints.toLocaleString()} pt)
+                            <div className="font-bold text-stone-800 text-sm truncate">vs {m.opponentChampion}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className={`font-black text-sm ${m.winRate >= 50 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                              {m.winRate}%
+                            </div>
+                            <div className="text-[10px] text-gray-500 font-bold mt-0.5">
+                              {m.wins}W - {m.games - m.wins}L ({m.games}戦)
+                            </div>
+                          </div>
+                        </div>
+                      )) : (
+                        <div className="col-span-full text-gray-500 text-sm py-12 text-center border border-dashed border-black/10 rounded-2xl">
+                          まだKTM内戦の対面データがありません
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 3. ソロキュー ＆ マスタリータブ（案B: ソロキュー情報を完全独立） */}
+              {activeTab === 'soloq' && (
+                <div className="space-y-6">
+                  {/* ソロキュー公式ステータス ＆ Riot連携カード */}
+                  <div className="bg-white/70 backdrop-blur-xl border border-cyan-500/20 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/10 pb-4 mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-md">
+                          <Award className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h2 className="text-lg font-black text-stone-900">🎮 ソロキュー戦績 ＆ Riot公式データ</h2>
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-800 border border-cyan-300">
+                              Riot API 連携
+                            </span>
+                          </div>
+                          <p className="text-xs text-stone-500 font-bold">サモナー公式ランク・マスタリー・OP.GGデータ</p>
+                        </div>
+                      </div>
+
+                      {/* ソロキュー戦績の同期ボタン */}
+                      <div className="flex items-center gap-2">
+                        {opggUrl && (
+                          <a
+                            href={opggUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3.5 py-1.5 rounded-xl bg-[#5383e8] hover:bg-[#4168c4] text-white text-xs font-black transition-all flex items-center gap-1.5 shadow-sm"
+                          >
+                            <span>OP.GGで詳細を見る ↗</span>
+                          </a>
+                        )}
+                        <button
+                          type="button"
+                          onClick={handleSyncSoloq}
+                          disabled={syncingSoloq}
+                          className="px-3.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-black transition-all border border-stone-300 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        >
+                          <RefreshCw size={13} className={syncingSoloq ? 'animate-spin text-cyan-600' : ''} />
+                          <span>{syncingSoloq ? '同期中...' : '最新戦績を同期'}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      {/* サモナー名 */}
+                      <div className="bg-stone-50/80 border border-stone-200/80 rounded-2xl p-4 flex flex-col justify-between">
+                        <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">サモナー名 (IGN)</span>
+                        <div className="my-2">
+                          <span className="text-lg sm:text-xl font-black font-mono text-stone-900 truncate block">
+                            {player.ign || "未登録"}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-stone-400">JP サーバー</span>
+                      </div>
+
+                      {/* 最高到達ランク */}
+                      <div className="bg-stone-50/80 border border-stone-200/80 rounded-2xl p-4 flex flex-col justify-between">
+                        <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">最高到達ランク</span>
+                        <div className="my-2">
+                          <span className="text-2xl sm:text-3xl font-black text-amber-700">
+                            {player.highest_rank || "UNRANKED"}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-stone-500">ソロ/デュオ ランク基準</span>
+                      </div>
+
+                      {/* メインロール推定 */}
+                      <div className="bg-stone-50/80 border border-stone-200/80 rounded-2xl p-4 flex flex-col justify-between">
+                        <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">得意ロール (マスタリー基準)</span>
+                        <div className="my-2">
+                          <span className="text-xl sm:text-2xl font-black text-stone-900">
+                            {mainDisplayTag || "FLEX"}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-stone-400">主力ピック傾向</span>
+                      </div>
+
+                      {/* 総マスタリーチャンピオン数 */}
+                      <div className="bg-stone-50/80 border border-stone-200/80 rounded-2xl p-4 flex flex-col justify-between">
+                        <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">登録マスタリー数</span>
+                        <div className="my-2">
+                          <span className="text-2xl sm:text-3xl font-black text-cyan-700">
+                            {riotMasteries.length} <span className="text-sm font-bold text-stone-500">体</span>
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-stone-400">TOP チャンピオン表示</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 魂のチャンピオン (Riot公式マスタリー) ＆ スカウティングサマリー */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* 魂のチャンピオン (マスタリー一覧) */}
+                    <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
+                      <div className="flex items-center justify-between mb-6 border-b border-black/10 pb-3">
+                        <h3 className="text-lg font-black flex items-center gap-2">
+                          <Star className="w-5 h-5 text-amber-600" />
+                          <span>魂のチャンピオン (Riot公式マスタリー)</span>
+                        </h3>
+                        <span className="text-xs text-stone-500 font-bold">上位ピック</span>
+                      </div>
+                      <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
+                        {riotMasteries.length > 0 ? riotMasteries.map((m, idx) => (
+                          <div key={idx} className="flex items-center justify-between bg-black/5 p-3.5 rounded-2xl border border-black/10 hover:border-black/20 transition-colors">
+                            <div className="flex items-center gap-3.5">
+                              <Image
+                                src={m.iconUrl}
+                                alt={m.name}
+                                width={44}
+                                height={44}
+                                className="w-11 h-11 rounded-full border border-black/10 shadow-sm shrink-0"
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                              />
+                              <div className="space-y-0.5">
+                                <div className="font-black text-sm text-stone-900">{m.name === 'Unknown' ? `ID:${m.championId}` : m.name}</div>
+                                <div className="text-[10px] text-gray-500 font-bold">
+                                  マスタリーLv {m.championLevel}
+                                </div>
                               </div>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-xs font-mono font-black text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-lg">
+                                {m.championPoints?.toLocaleString()} pt
+                              </span>
                             </div>
                           </div>
                         )) : (
-                          <div className="text-gray-500 text-sm py-8 text-center border border-dashed border-black/10 rounded-2xl">
-                            データがありません
+                          <div className="text-gray-500 text-sm py-12 text-center border border-dashed border-black/10 rounded-2xl">
+                            マスタリーデータがまだ登録されていません。右上の「最新戦績を同期」をお試しください。
                           </div>
                         )}
                       </div>
                     </div>
 
-                    {/* 対面マッチアップ勝率 */}
-                    <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
-                      <h3 className="text-lg font-black flex items-center gap-2 mb-6 border-b border-black/10 pb-3">
-                        <Crosshair className="w-5 h-5 text-rose-500" />
-                        <span>⚔️ 対面マッチアップ勝率</span>
-                      </h3>
-                      <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
-                        {matchups.length > 0 ? matchups.map((m, idx) => (
-                          <div key={idx} className="flex items-center justify-between bg-black/5 p-3 rounded-2xl border border-black/10 hover:border-black/10 transition-colors">
-                            <div className="flex items-center gap-3">
-                              <Image
-                                src={getChampIcon(m.opponentChampion)}
-                                alt={m.opponentChampion}
-                                width={36}
-                                height={36}
-                                className="w-9 h-9 rounded-full border border-black/10 shadow-sm"
-                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                              />
-                              <div className="font-bold text-stone-700 text-sm w-32 truncate">vs {m.opponentChampion}</div>
-                            </div>
-                            <div className="text-right">
-                              <div className={`font-black text-sm ${m.winRate >= 50 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                {m.winRate}%
-                              </div>
-                              <div className="text-[9px] text-gray-500 font-bold mt-0.5">
-                                {m.wins}W - {m.games - m.wins}L
-                              </div>
-                            </div>
-                          </div>
-                        )) : (
-                          <div className="text-gray-500 text-sm py-12 text-center border border-dashed border-black/10 rounded-2xl">
-                            まだ対面データがありません
-                          </div>
-                        )}
+                    {/* スカウティングレポート (ScoutingReport) */}
+                    <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl flex flex-col justify-between">
+                      <div className="border-b border-black/10 pb-3 mb-4 flex items-center justify-between">
+                        <h3 className="text-lg font-black flex items-center gap-2">
+                          <Target className="w-5 h-5 text-cyan-600" />
+                          <span>スカウティング ＆ 傾向レポート</span>
+                        </h3>
+                        <span className="text-xs text-stone-500 font-bold">プレイスタイル</span>
+                      </div>
+                      <div className="flex-1">
+                        <ScoutingReport stats={stats} mmr={player.mmr || 1200} />
                       </div>
                     </div>
                   </div>

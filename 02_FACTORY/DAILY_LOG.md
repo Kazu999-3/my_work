@@ -12,6 +12,45 @@
 
 ## 🗓️ 2026-09-25（金）
 
+### 🛡️ 英語アイテム名・ルーン・誤訳の徹底排除（3重防壁） ＆ マイページ案B（KTMカスタムとソロキューの完全分離）
+
+**概要**:
+1. **背景と目的**:
+   - ユーザーから2つの重要な要望：
+     1. 「ポータル全体的にソロキュー情報とカスタム情報が混合されててちょっと分かりにくい。マイページだけ案B（左右・タブで明確分離）にしてそれ以外は変更不要」
+     2. 「あとナレッジのアイテムやルーンが英語のままだったり1部翻訳間違ってたりする。対策考えて行って」
+   - 調査したところ、`src/lib/dataDragonMaster.ts` に包括的な公式日本語辞書 `CUSTOM_TERM_MAP` と置換エンジン `normalizeLoLTerms` が存在していたが、一部の限定的APIでしか呼ばれておらず、新規取り込み時（`add`, `merge-article`, `import-discord`）や既存データに英語や略称が残存していた。
+   - また、マイページ（`/player/[id]`）ではヘッダーやサマリーカードにKTM内戦MMRとソロキュー最高ランクが同列に並び、マスタリーと内戦戦績が同じタブに混在していた。
+2. **原因と方針決定（Decisions Over Artifacts）**:
+   - **用語正規化の3大防壁（採用）**:
+     - **第1防壁（AIプロンプトの厳格化）**: `add/route.ts`, `merge-article/route.ts`, `import-discord/route.ts` のプロンプトに「アイテム名・ルーン名・スキル名の公式日本語化の絶対厳守ルール」を注入。
+     - **第2防壁（保存時・プレビュー時の決定論的置換）**: AIが万一英語を出力しても、`normalizeLoLTerms` で機械的に公式日本語名へ自動変換。
+     - **第3防壁（既存データの一括クレンジングAPI ＆ UI）**: `/api/admin/champions/cleanse-terms` を新設し、`DictHealthSummaryBar.tsx` に「🧹 用語正規化」ボタンを配備。既存のDBレコードを一網打尽に正規化可能にした。
+   - **マイページ案B（KTMカスタムとソロキューの完全分離）**:
+     - ヘッダー部を「⚔️ KTMカスタム (MMR・Tier・通算勝率)」と「🎮 ソロキュー (最高ランク・サモナー名・OP.GG)」の2大ブロックに視覚的に分離。
+     - タブ構成に「🎮 ソロキュー戦績」タブを新設し、Riot公式ステータス、マスタリー一覧、スカウティングレポート、同期ボタンを集約。
+     - 「⚔️ KTMカスタム分析」タブは純粋な内戦レーン別戦績・対面マッチアップ勝率・MMR推移グラフに純化。
+     - 総合カルテ（`summary`）内でもKTM内戦サマリーとソロキュー独立クイックカードを分離。
+3. **実装内容**:
+   - [`04_PORTAL/src/app/api/admin/knowledge/add/route.ts`](file:///d:/my_work/04_PORTAL/src/app/api/admin/knowledge/add/route.ts): プロンプトへの日本語厳守注入 ＆ `normalizeLoLTerms` 適用。
+   - [`04_PORTAL/src/app/api/admin/knowledge/merge-article/route.ts`](file:///d:/my_work/04_PORTAL/src/app/api/admin/knowledge/merge-article/route.ts): プロンプト厳格化 ＆ `dryRun`/非dryRun の各フィールド正規化。
+   - [`04_PORTAL/src/app/api/admin/knowledge/import-discord/route.ts`](file:///d:/my_work/04_PORTAL/src/app/api/admin/knowledge/import-discord/route.ts): プロンプト厳格化 ＆ 抽出・保存時の用語正規化。
+   - [`04_PORTAL/src/app/api/admin/champions/cleanse-terms/route.ts`](file:///d:/my_work/04_PORTAL/src/app/api/admin/champions/cleanse-terms/route.ts): 既存データ一括正規化APIを新規作成。
+   - [`04_PORTAL/src/app/champions/components/DictHealthSummaryBar.tsx`](file:///d:/my_work/04_PORTAL/src/app/champions/components/DictHealthSummaryBar.tsx): 「🧹 用語正規化」ボタン配備。
+   - [`04_PORTAL/src/app/player/[id]/page.tsx`](file:///d:/my_work/04_PORTAL/src/app/player/%5Bid%5D/page.tsx): 案B適用（ヘッダー・サマリーカード・`soloq` 専用タブ新設・内戦分析の純化）。
+   - 型チェック（`npx tsc --noEmit`）0エラー、テスト63件全パス。
+
+**3行ナレッジ**:
+1. **AIの翻訳能力を過信するな、辞書による決定論的置換（Deterministic Normalizer）を必ず防壁として挟め**: LLMは指示しても時に英語のまま出力したり、微妙な直訳（例: Blade of the Ruined King → 滅びの王の剣）を捏造する。マスター辞書によるRegex置換を一律でパイプラインに噛ませるのが最も安く確実である。
+2. **2つの異なる文脈（内戦 vs ソロキュー）のデータは、同じカードの中に併記するな**: KTMレートの下にソロキュー最高ランクを併記すると、ユーザーは「これはどっちの数字か？」と混乱する。ヘッダーの段階から「⚔️ KTMカスタム」「🎮 ソロキュー」のブロックを分け、タブも独立させることで、認知の迷いが完全に消える。
+3. **既存データのクレンジング機能は「管理ヘルスバー」に1ボタンで添えよ**: 新規保存時の対策だけでは過去に蓄積されたデータが治らない。ヘルスサマリーバーにクレンジングボタンを添えておくことで、管理者が気付いたときに1秒で過去ログまで一括修正できる。
+
+**🌾 拾い上げ (Harvest)**:
+- `[要検証]`: 本番環境で「🧹 用語正規化」を実行した際、更新された `champion_facts` や `matchup_sentinel` の件数と、攻略記事の表示確認。
+- `[発信候補]`: 「ゲーム攻略ポータルで『ソロキュー戦績』と『コミュニティ内戦MMR』がごちゃ混ぜになる問題を、UIのタブ分離と2大識別ブロックで解決した話」
+
+---
+
 ### 🩺 辞典ヘルスの最適化（提案2＆3の複合：チャンピオン一覧への完全統合 ＆ ヘルスサマリー・一括最新化バー配備）
 
 **概要**:

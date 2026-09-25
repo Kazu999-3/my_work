@@ -4,6 +4,7 @@ import { callGeminiWithRetry } from '../../../../../lib/geminiClient';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
 import { resolveToRosterChampion } from '../../../../../lib/dictFactCheck';
 import { detectLane } from '../../../../../lib/laneGuideMerge';
+import { normalizeLoLTerms } from '../../../../../lib/dataDragonMaster';
 
 // ============================================================
 // X (Twitter) 投稿の画像および「動画メディア(MP4/サムネイル)」を全自動動画・画像AI解析
@@ -420,7 +421,10 @@ async function analyzeWithGemini(title: string, content: string): Promise<{
 3. 関連する重要なキーワードタグ（最大8つ）を抽出してください。
 4. このナレッジに最も適した具体的で分かりやすいタイトル（日本語）を決定してください。
 5. LoLの攻略情報である場合、対象となっているチャンピオン名を特定してください（無い場合は 'Unknown' を返却）。
-6. 【原子的な知見への分解（Zettelkasten方式）】: 内容の中に、独立して再利用できる具体的な知見（例：「特定のアイテムビルドの根拠」「特定の局面での立ち回りの結論」）が複数含まれている場合、それぞれを「1つのテーマに限定した短いメモ」として最大5件抽出してください。
+6. 【最重要ルール: アイテム名・ルーン名・スキル名の公式日本語化の絶対厳守】:
+   - アイテム名、ルーン名、スキル名は、英語表記のまま残すことや、自己流の直訳（例: Wit's End ➔ 機知の果て 等）を固く禁止します。
+   - 必ず日本サーバー公式の日本語名称（例: トリニティ フォース, 征服者, ルインドキング ブレード, ウィッツ エンド, ハートスチール, インフィニティ エッジ, デス ダンス, 終わりなき絶望 等）で記述してください。
+7. 【原子的な知見への分解（Zettelkasten方式）】: 内容の中に、独立して再利用できる具体的な知見（例：「特定のアイテムビルドの根拠」「特定の局面での立ち回りの結論」）が複数含まれている場合、それぞれを「1つのテーマに限定した短いメモ」として最大5件抽出してください。
    - 各メモは要約(summary)を2〜4文程度に留め、他の知見と混ぜないこと。
    - 単一の主張・情報しか無い短い内容の場合は、無理に分解せず空配列 [] を返すこと。
    - 元の全文網羅ナレッジ(summary)と重複が多くても構わない（こちらは検索・再利用のための短い抜粋という位置づけ）。
@@ -539,18 +543,27 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // 辞書による決定論的用語正規化（英語アイテム・ルーン・誤訳を公式日本語名に統一）
+    const normalizedTitle = normalizeLoLTerms(analyzed.title, resolvedChampion || undefined);
+    const normalizedSummary = normalizeLoLTerms(finalSummary, resolvedChampion || undefined);
+    const normalizedAtomicInsights = atomicInsights.map((insight: any) => ({
+      ...insight,
+      title: normalizeLoLTerms(insight.title, resolvedChampion || undefined),
+      summary: normalizeLoLTerms(insight.summary, resolvedChampion || undefined),
+    }));
+
     return NextResponse.json({
       success: true,
       preview: {
-        title: analyzed.title,
-        summary: finalSummary,
+        title: normalizedTitle,
+        summary: normalizedSummary,
         rawContent: rawContent.slice(0, 15000),
         url: url || '',
         genre: analyzed.genre,
         tags: analyzed.tags,
         champion: resolvedChampion || '',
         authorKey,
-        atomicInsights,
+        atomicInsights: normalizedAtomicInsights,
       },
     });
 

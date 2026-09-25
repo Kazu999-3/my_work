@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
+import { normalizeLoLTerms } from '../../../../../lib/dataDragonMaster';
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
@@ -29,6 +30,11 @@ export async function POST(req: Request) {
       const prompt = `
 あなたはLeague of Legendsのトップアナリスト・AIコーチです。
 以下のDiscordの生のチャットログ（テキスト）を読み、雑談・挨拶・無関係な発言を除外し、LoLのゲーム攻略、立ち回り、ビルド、対面対策、チャンピオンの強み・弱みなどの【有用な知見】のみを抽出してJSON形式で出力してください。
+
+【最重要ルール: アイテム名・ルーン名・スキル名の公式日本語化の絶対厳守】
+- アイテム名、ルーン名、サモナースペル名は、英語のまま残さず必ず「日本サーバー公式名称」に翻訳・統一してください。
+  （例: Blade of the Ruined King → ルインドキング ブレード、Infinity Edge → インフィニティ エッジ、Liandry's Torment → リアンドリーの苦悶、Flash → フラッシュ、Conqueror → 征服者 等）
+- スキルも英語名（Q, W, E, R または公式日本語スキル名）を用い、不自然な直訳を避けてください。
 
 【出力フォーマット (JSONのみ厳守)】
 {
@@ -77,7 +83,13 @@ ${text.slice(0, 8000)}
         console.error('Failed to parse JSON from Gemini:', rawText);
       }
 
-      return NextResponse.json({ success: true, items: parsed.items || [] });
+      const normalizedItems = (parsed.items || []).map((it: any) => ({
+        ...it,
+        title: normalizeLoLTerms(it.title || '', it.champion),
+        summary: normalizeLoLTerms(it.summary || '', it.champion),
+      }));
+
+      return NextResponse.json({ success: true, items: normalizedItems });
     }
 
     // 2. 抽出された知見をナレッジDB (personal_knowledge / champion_facts) へ保存
@@ -98,8 +110,8 @@ ${text.slice(0, 8000)}
             champion: item.champion,
             enemy_champion: item.enemy_champion || null,
             category: item.category || 'strategy',
-            title: item.title || `${item.champion} の攻略メモ`,
-            content: item.summary,
+            title: normalizeLoLTerms(item.title || `${item.champion} の攻略メモ`, item.champion),
+            content: normalizeLoLTerms(item.summary, item.champion),
             source: 'discord_import',
             created_at: new Date().toISOString(),
           })

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { ShieldCheck, RefreshCw, Zap, AlertTriangle, CheckCircle2, ChevronRight, Filter } from 'lucide-react';
+import { ShieldCheck, RefreshCw, Zap, AlertTriangle, CheckCircle2, ChevronRight, Filter, Wand2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export type HealthStatusFilter = 'ALL' | 'stale' | 'ai_generated' | 'verified';
@@ -57,6 +57,38 @@ export default function DictHealthSummaryBar({
   const showMsg = (text: string, type: 'success' | 'error') => {
     setMessage({ text, type });
     setTimeout(() => setMessage(null), 4000);
+  };
+
+  const handleCleanseTerms = async () => {
+    if (!confirm('全チャンピオンの辞典データ・攻略記事をスキャンし、残存する英語のアイテム名・ルーン名・スキル名を公式日本語名に一括正規化しますか？')) {
+      return;
+    }
+
+    setActionLoading('cleanse');
+    try {
+      const res = await fetch('/api/admin/champions/cleanse-terms', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dryRun: false }),
+      });
+      const json = await res.json();
+      if (res.ok) {
+        const total = json.summary?.totalUpdates ?? 0;
+        showMsg(
+          total > 0
+            ? `✨ ${total}件の英語・略称用語（辞典${json.summary.factsUpdated}件/対面${json.summary.matchupsUpdated}件/知見${json.summary.knowledgeUpdated}件）を公式日本語名に正規化しました！`
+            : '✅ すでに全ての用語が公式日本語名に正規化されています。',
+          'success'
+        );
+      } else {
+        showMsg(json.error || '用語正規化に失敗しました', 'error');
+      }
+    } catch {
+      showMsg('通信エラーが発生しました', 'error');
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const handleBulkEnqueueStale = async () => {
@@ -152,6 +184,17 @@ export default function DictHealthSummaryBar({
 
         {/* 右側: 一括アクション ＆ 詳細リンク */}
         <div className="flex items-center gap-2 self-start md:self-auto flex-wrap">
+          <button
+            type="button"
+            onClick={handleCleanseTerms}
+            disabled={actionLoading === 'cleanse'}
+            className="px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            title="残存する英語のアイテム名・ルーン名・スキル名を公式日本語名に一括正規化"
+          >
+            {actionLoading === 'cleanse' ? <RefreshCw size={13} className="animate-spin text-purple-600" /> : <Wand2 size={13} className="text-purple-600" />}
+            <span>🧹 用語正規化</span>
+          </button>
+
           {stale > 0 ? (
             <button
               type="button"
