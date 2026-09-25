@@ -12,8 +12,6 @@ import PlayerStyleRadarCard from '../../components/coach/PlayerStyleRadarCard';
 import VisionAnalyticsCard from '../../components/coach/VisionAnalyticsCard';
 import ChampionQuickSelector from '../../components/coach/ChampionQuickSelector';
 import MatchupBlueprintCard from './MatchupBlueprintCard';
-import MatchupWarningCard from './MatchupWarningCard';
-
 import OverlayLauncherButton from './OverlayLauncherButton';
 import SoloQDeepIntelSyncCard from '../../components/coach/SoloQDeepIntelSyncCard';
 
@@ -205,21 +203,13 @@ function CoachPageContent() {
 
           {/* 2カラムHUDグリッド: ドラフト1画面集約 */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-            {/* 左側: 即死ライン・3段階手順書・推奨ルーン・JG警戒 */}
+            {/* 左側: 確定対面HUDカルテ（キルライン・手順書・ルーン・敵JG初動・罠・反省遺言を完全統合） */}
             <div className="lg:col-span-7 xl:col-span-7 flex flex-col gap-4">
               <MatchupBlueprintCard
                 myChampion={sharedChampion}
                 enemyChampion={sharedEnemyChampion}
                 onMyChampionChange={setSharedChampion}
                 onEnemyChampionChange={setSharedEnemyChampion}
-              />
-
-              {/* ⚠️ 対面警告カード。敵チャンピオンが選ばれたときだけ表示される。
-                  ソロQ振り返り(SoloQReflectionModal)で記録した対面メモ・レーン戦績・
-                  頻出の敗因タグが、次の試合前にここへ返ってくる循環の出口にあたる。 */}
-              <MatchupWarningCard
-                champion={sharedChampion}
-                enemyChampion={sharedEnemyChampion}
               />
             </div>
 

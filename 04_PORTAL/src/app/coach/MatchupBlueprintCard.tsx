@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Zap, Shield, Sparkles, AlertTriangle, CheckCircle2, Swords, Eye } from 'lucide-react';
+import { Zap, Shield, Sparkles, AlertTriangle, CheckCircle2, Swords, Eye, Compass, Target, Clock } from 'lucide-react';
 import Image from 'next/image';
 import { getChampIcon } from '../../lib/ddragonClient';
 import { getVisionAlertRule } from '../../lib/visionAlertRules';
+import EarlyJunglePathingCard from './EarlyJunglePathingCard';
 
 interface Phase {
   phase: string;
@@ -49,15 +50,6 @@ interface BlueprintResponse {
   rejected_intel?: RejectedIntel;
 }
 
-// ユーザーの主力プール（マスタリー＆実戦上位）
-const MY_POOL_CHAMPIONS = [
-  'JarvanIV', 'Lillia', 'Graves', 'Viego', 'Nocturne', 'XinZhao', 'LeeSin', 'Hecarim', 'Kindred', 'Vi', 'Aatrox', 'Darius', 'Jax', 'Ahri'
-];
-
-const ENEMY_POPULAR_CHAMPIONS = [
-  'LeeSin', 'XinZhao', 'JarvanIV', 'Viego', 'Nocturne', 'Vi', 'MasterYi', 'Zac', 'Amumu', 'Warwick', 'Elise', 'Shaco', 'Darius', 'Aatrox'
-];
-
 export default function MatchupBlueprintCard({
   myChampion: initialMyChampion = 'JarvanIV',
   enemyChampion: initialEnemyChampion = 'LeeSin',
@@ -74,11 +66,27 @@ export default function MatchupBlueprintCard({
   const [data, setData] = useState<BlueprintResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 3大タブ（手順書 / 推奨ルーン＆ビルド / 実戦の罠・不採用ビルド）
-  const [activeTab, setActiveTab] = useState<'blueprint' | 'builds' | 'rejected'>('blueprint');
+  // 4大タブ（手順書 / 推奨ルーン＆ビルド / 敵JG初動ルート / 実戦の罠・不採用ビルド）
+  const [activeTab, setActiveTab] = useState<'blueprint' | 'builds' | 'jungle' | 'rejected'>('blueprint');
   const [counterData, setCounterData] = useState<any>(null);
   const [counterLoading, setCounterLoading] = useState(false);
   const [matchupWarning, setMatchupWarning] = useState<any>(null);
+
+  // JGタイミング
+  const [enemyJungleTiming, setEnemyJungleTiming] = useState<{
+    sampleCount?: number;
+    avgFirstCoreSec?: number | null;
+    avgSecondCoreSec?: number | null;
+    externalFastestClearSec?: number | null;
+    tier?: string;
+  } | null>(null);
+  const [myJungleTiming, setMyJungleTiming] = useState<{
+    sampleCount?: number;
+    avgFirstCoreSec?: number | null;
+    avgSecondCoreSec?: number | null;
+    externalFastestClearSec?: number | null;
+    tier?: string;
+  } | null>(null);
 
   // 外部からのprops更新に同期
   useEffect(() => {
@@ -131,9 +139,10 @@ export default function MatchupBlueprintCard({
       .catch(() => setCounterLoading(false));
   }, [myChamp, enemyChamp]);
 
-  // 過去の反省遺言・対面過去戦績の取得
+  // 過去の反省遺言・対面過去戦績 ＆ JGテンポ詳細の取得
   useEffect(() => {
     if (!enemyChamp) return;
+
     fetch('/api/soloq/matchup-warning', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -148,6 +157,24 @@ export default function MatchupBlueprintCard({
         }
       })
       .catch(() => setMatchupWarning(null));
+
+    // SSOT正本から対面および自陣のジャングルタイミングを取得
+    Promise.all([
+      fetch(`/api/champions/detail?champion=${encodeURIComponent(enemyChamp)}`),
+      myChamp ? fetch(`/api/champions/detail?champion=${encodeURIComponent(myChamp)}`) : Promise.resolve(null),
+    ])
+      .then(async ([enemyRes, myRes]) => {
+        const enemyDetail = await enemyRes.json().catch(() => null);
+        const myDetail = myRes ? await myRes.json().catch(() => null) : null;
+        if (enemyDetail?.realJungleTiming) setEnemyJungleTiming(enemyDetail.realJungleTiming);
+        else setEnemyJungleTiming(null);
+        if (myDetail?.realJungleTiming) setMyJungleTiming(myDetail.realJungleTiming);
+        else setMyJungleTiming(null);
+      })
+      .catch(() => {
+        setEnemyJungleTiming(null);
+        setMyJungleTiming(null);
+      });
   }, [myChamp, enemyChamp]);
 
   if (loading && !data) {
@@ -164,23 +191,30 @@ export default function MatchupBlueprintCard({
 
   return (
     <div className="bg-white border border-stone-200/90 rounded-2xl p-5 shadow-sm text-stone-900 space-y-4">
-      {/* ⚠️ 過去の自分の反省遺言バナー（存在時最優先ポップアップ） */}
-      {matchupWarning && (
+      {/* ⚠️ 過去の自分の反省遺言バナー ＆ 純粋対面勝率（LDR/JDR） */}
+      {matchupWarning && (matchupWarning.memo || matchupWarning.matchupMemo || matchupWarning.laneRecord) && (
         <div className="bg-gradient-to-r from-amber-500/15 via-rose-500/10 to-amber-500/15 border-2 border-amber-500/60 rounded-xl p-3.5 shadow-2xs space-y-2 animate-in">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-1.5 text-xs font-black text-amber-950">
-              <AlertTriangle className="w-4 h-4 text-amber-600 animate-bounce" />
+              <AlertTriangle className="w-4 h-4 text-amber-600 animate-bounce shrink-0" />
               <span>【過去の反省遺言】 vs {enemyChamp} 前回の教訓</span>
             </div>
             {matchupWarning.laneRecord && (
-              <span className="text-[10px] font-black font-mono bg-white/90 text-stone-700 px-2 py-0.5 rounded border border-amber-300">
-                対面勝率 {matchupWarning.laneRecord.gameWinRate}% ({matchupWarning.laneRecord.wins}勝 {matchupWarning.laneRecord.losses}敗)
-              </span>
+              <div className="flex items-center gap-1 text-[10px] font-black font-mono">
+                <span className="bg-amber-100 text-amber-950 border border-amber-300 px-2 py-0.5 rounded">
+                  純粋対面勝率 {matchupWarning.laneRecord.laneWinRate}% ({matchupWarning.laneRecord.wins}勝 {matchupWarning.laneRecord.losses}敗)
+                </span>
+                {matchupWarning.laneRecord.gameWinRate !== undefined && (
+                  <span className="bg-white/90 text-stone-700 border border-stone-300 px-2 py-0.5 rounded">
+                    試合勝率 {matchupWarning.laneRecord.gameWinRate}%
+                  </span>
+                )}
+              </div>
             )}
           </div>
-          {matchupWarning.matchupMemo && (
-            <p className="text-xs font-bold text-stone-800 bg-white/90 p-2 rounded-lg border border-amber-200/80 leading-relaxed">
-              💬 <span className="text-amber-900 font-extrabold">メモ:</span> {matchupWarning.matchupMemo}
+          {(matchupWarning.memo || matchupWarning.matchupMemo) && (
+            <p className="text-xs font-bold text-stone-800 bg-white/95 p-2 rounded-lg border border-amber-200/80 leading-relaxed">
+              💬 <span className="text-amber-900 font-extrabold">メモ:</span> {matchupWarning.memo || matchupWarning.matchupMemo}
             </p>
           )}
           {matchupWarning.sentinelStrategy && (
@@ -249,104 +283,18 @@ export default function MatchupBlueprintCard({
         );
       })()}
 
-      {/* ヘッダー: ドラフト即応セレクター ＆ 対戦カード */}
-      <div className="border-b border-stone-100 pb-3.5 space-y-3">
-        {/* 1段目: チャンピオンクイックセレクター (MyPool / 敵対面) */}
-        <div className="bg-stone-50/90 border border-stone-200/90 rounded-xl p-3 space-y-2.5">
-          {/* 自分側の選択 */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-[11px] font-black text-stone-700 flex items-center gap-1">
-                <span>🛡️ 使用チャンピオン (My Pick):</span>
-              </label>
-              <input
-                type="text"
-                value={myChamp}
-                onChange={(e) => handleMyChange(e.target.value)}
-                placeholder="自チャンプ検索..."
-                className="text-xs font-bold px-2 py-0.5 rounded border border-stone-300 bg-white text-stone-800 w-28 text-right outline-none focus:border-amber-500"
-              />
-            </div>
-            <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
-              <span className="text-[10px] font-bold text-stone-400 shrink-0 mr-0.5">MyPool:</span>
-              {MY_POOL_CHAMPIONS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => handleMyChange(c)}
-                  className={`shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-bold transition border cursor-pointer ${
-                    myChamp.toLowerCase() === c.toLowerCase()
-                      ? 'bg-amber-500 text-stone-950 border-amber-600 shadow-2xs'
-                      : 'bg-white text-stone-700 border-stone-200 hover:border-amber-300'
-                  }`}
-                >
-                  <Image
-                    src={getChampIcon(c)}
-                    alt={c}
-                    width={14}
-                    height={14}
-                    className="w-3.5 h-3.5 rounded-full"
-                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                  />
-                  <span>{c}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* 敵側の選択 */}
-          <div className="space-y-1.5 pt-1 border-t border-stone-200/60">
-            <div className="flex items-center justify-between">
-              <label className="text-[11px] font-black text-rose-900 flex items-center gap-1">
-                <span>⚔️ 敵チャンピオン (Enemy Pick):</span>
-              </label>
-              <input
-                type="text"
-                value={enemyChamp}
-                onChange={(e) => handleEnemyChange(e.target.value)}
-                placeholder="敵チャンプ検索..."
-                className="text-xs font-bold px-2 py-0.5 rounded border border-rose-300 bg-white text-rose-900 w-28 text-right outline-none focus:border-rose-500"
-              />
-            </div>
-            <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
-              <span className="text-[10px] font-bold text-stone-400 shrink-0 mr-0.5">人気対面:</span>
-              {ENEMY_POPULAR_CHAMPIONS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => handleEnemyChange(c)}
-                  className={`shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-bold transition border cursor-pointer ${
-                    enemyChamp.toLowerCase() === c.toLowerCase()
-                      ? 'bg-rose-600 text-white border-rose-700 shadow-2xs'
-                      : 'bg-white text-stone-700 border-stone-200 hover:border-rose-300'
-                  }`}
-                >
-                  <Image
-                    src={getChampIcon(c)}
-                    alt={c}
-                    width={14}
-                    height={14}
-                    className="w-3.5 h-3.5 rounded-full"
-                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                  />
-                  <span>{c}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* 2段目: 対戦カードサマリー */}
-        <div className="flex items-center justify-between flex-wrap gap-2 pt-1">
+      {/* ヘッダー: 対戦カードサマリー（親セレクターと完全連動・重複UIなし） */}
+      <div className="border-b border-stone-100 pb-3 space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2 pt-0.5">
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 bg-stone-100/80 px-2.5 py-1 rounded-xl border border-stone-200">
+            <div className="flex items-center gap-2 bg-stone-100/90 px-3 py-1.5 rounded-xl border border-stone-200/80">
               <div className="flex items-center gap-1.5">
                 <Image
                   src={getChampIcon(myChamp)}
                   alt={myChamp}
-                  width={22}
-                  height={22}
-                  className="w-5.5 h-5.5 rounded-full border border-amber-500 shrink-0"
+                  width={24}
+                  height={24}
+                  className="w-6 h-6 rounded-full border border-amber-500 shrink-0"
                   onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
                 <span className="font-black text-xs text-stone-900">{myChamp}</span>
@@ -356,9 +304,9 @@ export default function MatchupBlueprintCard({
                 <Image
                   src={getChampIcon(enemyChamp)}
                   alt={enemyChamp}
-                  width={22}
-                  height={22}
-                  className="w-5.5 h-5.5 rounded-full border border-rose-500 shrink-0"
+                  width={24}
+                  height={24}
+                  className="w-6 h-6 rounded-full border border-rose-500 shrink-0"
                   onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
                 <span className="font-black text-xs text-rose-900">{enemyChamp}</span>
@@ -433,43 +381,55 @@ export default function MatchupBlueprintCard({
           </div>
         )}
 
-        {/* 2大タブ切替 */}
-        <div className="flex items-center gap-1.5 pt-1">
+        {/* 4大タブ切替 */}
+        <div className="flex items-center gap-1.5 pt-1 overflow-x-auto pb-0.5">
           <button
             type="button"
             onClick={() => setActiveTab('blueprint')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shrink-0 ${
               activeTab === 'blueprint'
                 ? 'bg-stone-900 text-white shadow-xs'
                 : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
             }`}
           >
             <Zap className="w-3.5 h-3.5 text-amber-400" />
-            <span>📋 3段階勝ちパターン手順書</span>
+            <span>📋 3段階勝ちパターン</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('builds')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shrink-0 ${
               activeTab === 'builds'
                 ? 'bg-stone-900 text-white shadow-xs'
                 : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
             }`}
           >
             <Shield className="w-3.5 h-3.5 text-emerald-400" />
-            <span>🛡️ 推奨ルーン ＆ 最適ビルド</span>
+            <span>🛡️ 推奨ルーン ＆ ビルド</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('jungle')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shrink-0 ${
+              activeTab === 'jungle'
+                ? 'bg-stone-900 text-white shadow-xs'
+                : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+            }`}
+          >
+            <Compass className="w-3.5 h-3.5 text-sky-400" />
+            <span>🌲 敵JG初動ルート ＆ テンポ</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('rejected')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shrink-0 ${
               activeTab === 'rejected'
                 ? 'bg-rose-900 text-rose-100 shadow-xs'
                 : 'bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-200/60'
             }`}
           >
             <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
-            <span>⚠️ 実戦の罠・不採用ビルド</span>
+            <span>⚠️ 罠 ＆ 不採用ビルド</span>
           </button>
         </div>
       </div>
@@ -585,7 +545,99 @@ export default function MatchupBlueprintCard({
         </div>
       )}
 
-      {/* タブ3: 実戦の罠・不採用ビルド (Rejected Options / 没理由) */}
+      {/* タブ3: 🌲 敵JG初動ルート ＆ テンポシミュレーター */}
+      {activeTab === 'jungle' && (
+        <div className="space-y-3.5 animate-in fade-in">
+          <div className="flex items-center justify-between border-b border-stone-100 pb-2">
+            <h4 className="font-black text-stone-900 text-xs flex items-center gap-1.5">
+              <Compass className="w-4 h-4 text-sky-600" />
+              <span>🌲 vs {enemyChamp} 敵JG初動3分ルート ＆ カニ争奪テンポ</span>
+            </h4>
+            <span className="text-[10px] font-bold text-stone-500 font-mono">
+              2:55 カニ湧き / 5:00 ヴォイドグラブ基準
+            </span>
+          </div>
+
+          {/* カニ遭遇危険度バナー（自陣JGと敵JGの両方のタイムが揃っている場合） */}
+          {myJungleTiming?.externalFastestClearSec && enemyJungleTiming?.externalFastestClearSec && (() => {
+            const myClear = myJungleTiming.externalFastestClearSec;
+            const enemyClear = enemyJungleTiming.externalFastestClearSec;
+            const diff = enemyClear - myClear; // 正: 自陣が早い(リード), 負: 敵が早い(ビハインド)
+
+            const isAdvantage = diff >= 8;
+            const isDanger = diff <= -8;
+
+            return (
+              <div className={`p-3 rounded-xl border text-xs shadow-2xs ${
+                isAdvantage ? 'bg-emerald-50 border-emerald-300 text-emerald-900' :
+                isDanger ? 'bg-rose-50 border-rose-300 text-rose-900' :
+                'bg-amber-50 border-amber-300 text-amber-900'
+              }`}>
+                <div className="flex items-center justify-between font-black text-xs mb-1.5">
+                  <span className="flex items-center gap-1">
+                    {isAdvantage ? '⚡ 【テンポ優位】リバー先制掌握 ＆ カニ先狩り可能' :
+                     isDanger ? '⚠️ 【交戦危険】カニ直接鉢合わせ禁止 ＆ 逆サイド迂回推奨' :
+                     '⚔️ 【互角接敵】リバー2v2/3v3寄りの速さ勝負'}
+                  </span>
+                  <span className="font-mono text-xs font-black">
+                    {diff > 0 ? `+${diff}秒リード` : diff < 0 ? `${diff}秒遅延` : '同時着'}
+                  </span>
+                </div>
+                <p className="text-[11px] leading-relaxed opacity-95">
+                  {isAdvantage
+                    ? `自陣(${myChamp} ${Math.floor(myClear/60)}:${String(myClear%60).padStart(2,'0')})が敵(${enemyChamp} ${Math.floor(enemyClear/60)}:${String(enemyClear%60).padStart(2,'0')})より${diff}秒早くフルクリア可能。先にリバー視界を取り、同サイドカニまたは敵逆サイド森へのインベードが極めて有効。`
+                    : isDanger
+                    ? `敵(${enemyChamp} ${Math.floor(enemyClear/60)}:${String(enemyClear%60).padStart(2,'0')})が自陣より${Math.abs(diff)}秒早く森を空にしてリバーに入ります。同じカニへ向かうと孤立デスする危険が高いため、逆サイドカニへ迂回するかレーナーの寄りを確認してください。`
+                    : `自陣と敵のクリア完了時刻がほぼ同時（${Math.abs(diff)}秒差）です。2:55のカニ湧きで正面衝突するため、ミッド・サイドレーンのプッシュ状況（主導権）がない場合は無理に争奪せず引く判断が必要です。`}
+                </p>
+              </div>
+            );
+          })()}
+
+          {/* フルクリア時間比較カード */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-center text-xs">
+            <div className="bg-stone-50 p-2.5 rounded-xl border border-stone-200">
+              <div className="text-[10px] text-stone-500 font-bold">敵({enemyChamp})の最速フルクリア</div>
+              <div className="text-xs font-black text-amber-700 mt-0.5 font-mono">
+                {enemyJungleTiming?.externalFastestClearSec
+                  ? `${Math.floor(enemyJungleTiming.externalFastestClearSec / 60)}分${String(enemyJungleTiming.externalFastestClearSec % 60).padStart(2, '0')}秒`
+                  : 'データ収集中'}
+              </div>
+            </div>
+
+            <div className="bg-stone-50 p-2.5 rounded-xl border border-stone-200">
+              <div className="text-[10px] text-stone-500 font-bold">自陣({myChamp})の最速フルクリア</div>
+              <div className="text-xs font-black text-emerald-700 mt-0.5 font-mono">
+                {myJungleTiming?.externalFastestClearSec
+                  ? `${Math.floor(myJungleTiming.externalFastestClearSec / 60)}分${String(myJungleTiming.externalFastestClearSec % 60).padStart(2, '0')}秒`
+                  : 'レーナー/未選択'}
+              </div>
+            </div>
+
+            <div className="bg-stone-50 p-2.5 rounded-xl border border-stone-200 col-span-2 sm:col-span-1">
+              <div className="text-[10px] text-stone-500 font-bold">敵のカニ(2:55)先行差</div>
+              <div className="text-xs font-black text-stone-800 mt-0.5 font-mono">
+                {enemyJungleTiming?.externalFastestClearSec
+                  ? `${175 - enemyJungleTiming.externalFastestClearSec >= 0 ? '+' : ''}${175 - enemyJungleTiming.externalFastestClearSec}秒`
+                  : '-'}
+              </div>
+            </div>
+          </div>
+
+          {/* 🗺️ 初動3分ルート分岐フローチャート */}
+          {myChamp && enemyChamp && (
+            <div className="pt-2 border-t border-stone-100">
+              <EarlyJunglePathingCard
+                myChampion={myChamp}
+                enemyChampion={enemyChamp}
+                enemyFastestClearSec={enemyJungleTiming?.externalFastestClearSec}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* タブ4: 実戦の罠・不採用ビルド (Rejected Options / 没理由) */}
       {activeTab === 'rejected' && (
         <div className="space-y-3.5 animate-in fade-in">
           <div className="flex items-center gap-1.5 text-xs font-black text-rose-900">
