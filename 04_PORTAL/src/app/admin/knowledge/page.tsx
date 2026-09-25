@@ -407,16 +407,28 @@ function KnowledgeBaseContent() {
                   </div>
                 ) : (
                   <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-stone-600">
-                      戦術メモ・気付き・立ち回りノウハウ
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-stone-600">
+                        戦術メモ・気付き・立ち回り（Discordの会話ログ貼り付けも対応）
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setInputSubMode('discord')}
+                        className="text-[10px] text-indigo-700 hover:text-indigo-900 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>💬 専用Discord抽出パネルを使う</span>
+                      </button>
+                    </div>
                     <textarea
                       rows={6}
-                      placeholder="マッチアップの気付き、ビルドの没理由、立ち回りノウハウを自由に入力..."
+                      placeholder="マッチアップの気付き、ビルドの没理由、立ち回りノウハウ、または Discordのチャットログをそのまま貼り付け..."
                       value={inputMemo}
                       onChange={(e) => setInputMemo(e.target.value)}
                       className="w-full px-4 py-3 bg-stone-50/70 border border-stone-200 rounded-xl focus:outline-none focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-500/20 text-xs text-stone-900 placeholder-stone-400 resize-none leading-relaxed transition-all"
                     />
+                    <p className="text-[10px] text-stone-500 pl-0.5">
+                      ※ 自由な戦術メモのほか、Discordのチャットログをそのまま貼り付けてもAIが雑談を除去して自動整形します。
+                    </p>
                   </div>
                 )}
 

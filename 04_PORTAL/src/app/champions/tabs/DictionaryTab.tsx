@@ -18,6 +18,7 @@ import { diffLines, diffSummary, diffSideBySide } from '../../../lib/diffUtils';
 import MatchupBlueprintCard from '../../coach/MatchupBlueprintCard';
 import ChampionVisualDashboard from '../components/ChampionVisualDashboard';
 import TacticsSearchModal from '../../../components/TacticsSearchModal';
+import DictHealthSummaryBar, { type HealthStatusFilter } from '../components/DictHealthSummaryBar';
 
 function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   const searchParams = useSearchParams();
@@ -97,6 +98,26 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [pickFilter, setPickFilter] = useState<'ALL' | 'BLIND' | 'COUNTER'>(() => (searchParams.get('pick') as any) || 'ALL');
   const [showDetailedEditor, setShowDetailedEditor] = useState(false);
+
+  // 🩺 辞典ヘルス状態フィルター ＆ ヘルス詳細マップ (提案2と3の複合)
+  const [healthStatusFilter, setHealthStatusFilter] = useState<HealthStatusFilter>('ALL');
+  const [dictHealthMap, setDictHealthMap] = useState<Record<string, { status: 'verified' | 'ai_generated' | 'stale'; patch?: string }>>({});
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    fetch('/api/admin/dict-health', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.champions && Array.isArray(data.champions)) {
+          const map: Record<string, { status: 'verified' | 'ai_generated' | 'stale'; patch?: string }> = {};
+          data.champions.forEach((c: any) => {
+            map[c.champion.toLowerCase()] = { status: c.status, patch: c.patch };
+          });
+          setDictHealthMap(map);
+        }
+      })
+      .catch(() => {});
+  }, [isAdmin]);
 
   // チャンピオン選択ハンドラ（URLクエリ連動）
   const handleSelectChampion = (champ: any) => {
@@ -918,6 +939,15 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
         return true;
       });
     }
+
+    // 3. 辞典ヘルス状態フィルター (healthStatusFilter)
+    if (healthStatusFilter !== 'ALL') {
+      result = result.filter(c => {
+        const h = dictHealthMap[c.id.toLowerCase()] || dictHealthMap[c.name.toLowerCase()];
+        return h?.status === healthStatusFilter;
+      });
+    }
+
     return [...result].sort((a, b) => {
       // ⭐️ お気に入りピン留め最優先（お気に入り登録されたチャンピオンは常に上位）
       const isFavA = favoriteChamps.includes(a.id);
@@ -948,7 +978,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
       }
       return a.name.localeCompare(b.name);
     });
-  }, [champions, deferredSearch, sortOrder, champDates, showPendingOnly, champPending, roleFilter, showFavoritesOnly, favoriteChamps, typeFilter, pickFilter, champJgStyles, champLaneRoles]);
+  }, [champions, deferredSearch, sortOrder, champDates, showPendingOnly, champPending, roleFilter, showFavoritesOnly, favoriteChamps, typeFilter, pickFilter, champJgStyles, champLaneRoles, healthStatusFilter, dictHealthMap]);
 
   const containerVariants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.02 } } };
   const itemVariants = { hidden: { scale: 0.9, opacity: 0 }, visible: { scale: 1, opacity: 1 } };
@@ -968,6 +998,19 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
   return (
     <div className="w-full flex flex-col gap-4">
+      {/* 🩺 辞典ヘルス＆パッチ健全度サマリーバー (提案2と3の複合: 一覧統合 ＆ 健康度サマリー・一括アクション) */}
+      {isAdmin && (
+        <DictHealthSummaryBar
+          activeStatusFilter={healthStatusFilter}
+          onFilterChange={setHealthStatusFilter}
+          onOpenFullHealth={() => {
+            const params = new URLSearchParams(searchParams.toString());
+            params.set('scope', 'health');
+            router.replace(`/champions?${params.toString()}`, { scroll: false });
+          }}
+        />
+      )}
+
       {/* 2ペインレイアウトコンテナ */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
         {/* ── 左ペイン: マスターリスト (lg:col-span-4 xl:col-span-3) ── */}
@@ -1196,9 +1239,10 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               const isFav = favoriteChamps.includes(c.id);
               const jgStyle = champJgStyles[c.id] || {};
               const powerSpike = champPowerSpikes[c.id];
+              const healthInfo = dictHealthMap[c.id.toLowerCase()] || dictHealthMap[c.name.toLowerCase()];
               const patchMeta = champPatchMetas[c.id];
-              const patchVer = patchMeta?.patch || (champDates[c.id] ? '蓄積済' : null);
-              const isLatest = patchVer && (patchVer.includes('26.17') || patchVer.includes('最新'));
+              const patchVer = healthInfo?.patch || patchMeta?.patch || (champDates[c.id] ? '蓄積済' : null);
+              const healthStatus = healthInfo?.status;
 
               return (
                 <div
@@ -1229,17 +1273,23 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                         }`}>{c.name}</span>
                         {isFav && <span className="text-amber-500 text-xs">★</span>}
                       </div>
-                      <div className="flex items-center gap-1.5 text-[10px] text-stone-400">
+                      <div className="flex items-center gap-1.5 text-[10px] text-stone-400 flex-wrap">
                         <span className="truncate">{c.id}</span>
-                        {patchVer ? (
-                          <span className={`px-1 py-0.2 rounded text-[9px] font-mono font-bold ${
-                            isLatest 
-                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
-                              : patchVer === '蓄積済'
-                              ? 'bg-stone-100 text-stone-600 border border-stone-200'
-                              : 'bg-amber-100 text-amber-800 border border-amber-300'
-                          }`}>
-                            {isLatest ? `🟢 ${patchVer}` : patchVer === '蓄積済' ? '⚪ 蓄積済' : `🟡 ${patchVer}`}
+                        {healthStatus === 'verified' ? (
+                          <span className="px-1 py-0.2 rounded text-[9px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300" title="実戦確定（最新パッチ）">
+                            🟢 {patchVer || '確定'}
+                          </span>
+                        ) : healthStatus === 'stale' ? (
+                          <span className="px-1 py-0.2 rounded text-[9px] font-mono font-bold bg-rose-100 text-rose-800 border border-rose-300 animate-pulse" title="パッチ遅れ（要対応）">
+                            🔴 {patchVer && patchVer !== '未設定' ? patchVer : '要対応'}
+                          </span>
+                        ) : healthStatus === 'ai_generated' ? (
+                          <span className="px-1 py-0.2 rounded text-[9px] font-mono font-bold bg-amber-100 text-amber-800 border border-amber-300" title="AI自動生成（要検証）">
+                            🟡 {patchVer && patchVer !== '未設定' ? patchVer : 'AI生成'}
+                          </span>
+                        ) : patchVer ? (
+                          <span className="px-1 py-0.2 rounded text-[9px] font-mono font-bold bg-stone-100 text-stone-600 border border-stone-200">
+                            ⚪ {patchVer}
                           </span>
                         ) : (
                           <span className="text-[9px] text-stone-400">⚪ 未取得</span>
