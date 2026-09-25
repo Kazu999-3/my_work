@@ -980,7 +980,7 @@ async function loadDayRecruitmentSummary(env, target, messages) {
         channelId: card.channel_id || channelId,
         message: card,
         lines,
-        status: computeDayStatus(lines.length),
+        status: computeDayStatus(lines),
       };
     }
   } catch (e) {
@@ -1019,7 +1019,7 @@ async function loadDayRecruitmentSummary(env, target, messages) {
       channelId: row.discord_channel_id,
       message,
       lines,
-      status: computeDayStatus(lines.length),
+      status: computeDayStatus(lines),
     };
   } catch (e) {
     console.warn(`[Recruit] ${target.label}の募集カード取得に失敗:`, e);
@@ -1107,11 +1107,19 @@ async function sendEventUsersNotification(env, options = {}) {
 
     const dayLines = summaries.map((s) => {
       const def = getDayDef(s.target.dayKey);
-      const state = s.status.isReady ? '**✅ 開催確定！**' : `**あと${s.status.remaining}名**`;
+      let state;
+      if (s.status.breakdown?.hasBreakdown) {
+        const b = s.status.breakdown;
+        const m1 = b.isMatch1Ready ? '第1戦: 確定' : `第1戦: あと${b.match1Remaining}名`;
+        const m2 = b.isMatch2Ready ? '第2戦: 確定' : `第2戦: あと${b.match2Remaining}名`;
+        state = `**${m1} / ${m2}**`;
+      } else {
+        state = s.status.isReady ? '**✅ 開催確定！**' : `**あと${s.status.remaining}名**`;
+      }
       const link = guildId
         ? ` → [募集カードを開く](https://discord.com/channels/${guildId}/${s.channelId}/${s.messageId})`
         : '';
-      return `${def.emoji} **${def.name}**　${s.target.label} 21:00　${s.status.joined}/${s.status.capacity}名 → ${state}${link}`;
+      return `${def.emoji} **${def.name}**　${s.target.label} 21:00　計${s.status.joined}名 → ${state}${link}`;
     });
 
     const embed = {
@@ -1154,7 +1162,17 @@ async function sendEventUsersNotification(env, options = {}) {
     if (roleId) {
       const shortText = summaries
         .filter((s) => !s.status.isReady)
-        .map((s) => `${getDayDef(s.target.dayKey).label} あと${s.status.remaining}名`)
+        .map((s) => {
+          const def = getDayDef(s.target.dayKey);
+          if (s.status.breakdown?.hasBreakdown) {
+            const b = s.status.breakdown;
+            const parts = [];
+            if (!b.isMatch1Ready) parts.push(`第1戦あと${b.match1Remaining}名`);
+            if (!b.isMatch2Ready) parts.push(`第2戦あと${b.match2Remaining}名`);
+            return `${def.label} ${parts.join('・')}`;
+          }
+          return `${def.label} あと${s.status.remaining}名`;
+        })
         .join(' / ');
       messageBody.content = `<@&${roleId}> 📢 **【${shortText}】** 参加できる方はエントリーをお願いします！`;
       messageBody.allowed_mentions = { roles: [roleId] };

@@ -1,7 +1,7 @@
 import { CONFIG } from '../config.js';
 import {
   RECRUITMENT_COLORS, getDayDef, buildDayBanner, replaceBanner,
-  computeDayStatus, computeDominantTier,
+  computeDayStatus, computeDominantTier, parseEntryBreakdown,
 } from '../utils/recruitmentStatus.js';
 
 function renderProgressBar(current, max) {
@@ -308,9 +308,7 @@ export function extractPlayersFromEmbed(embed) {
 // 引き継ぎで超えうるため、入りきらない分は件数だけ示して切り詰める。
 const FIELD_VALUE_LIMIT = 1024;
 
-function renderEntryList(lines) {
-  if (!lines || lines.length === 0) return '▫ まだ誰もいません。最初の1人になりませんか？';
-
+function formatLinesSafe(lines) {
   const out = [];
   let length = 0;
   for (const line of lines) {
@@ -325,6 +323,33 @@ function renderEntryList(lines) {
   return out.join('\n');
 }
 
+function renderEntryList(lines) {
+  if (!lines || lines.length === 0) return '▫ まだ誰もいません。最初の1人になりませんか？';
+
+  const breakdown = parseEntryBreakdown(lines);
+  if (!breakdown.hasBreakdown) {
+    return formatLinesSafe(lines);
+  }
+
+  const sections = [];
+  if (breakdown.full.length > 0) {
+    sections.push(`**【🟢 フル参加 (${breakdown.full.length}名)】**\n${breakdown.full.join('\n')}`);
+  }
+  if (breakdown.single.length > 0) {
+    sections.push(`**【⏱️ 1戦のみ (${breakdown.single.length}名)】**\n${breakdown.single.join('\n')}`);
+  }
+  if (breakdown.late.length > 0) {
+    sections.push(`**【🌙 途中参加 (${breakdown.late.length}名)】**\n${breakdown.late.join('\n')}`);
+  }
+
+  const groupedText = sections.join('\n\n');
+  if (groupedText.length <= FIELD_VALUE_LIMIT) {
+    return groupedText;
+  }
+
+  return formatLinesSafe(lines);
+}
+
 /**
  * 募集カードEmbedへ、現在の参加者から導かれる状態（バナー・色・参加者フィールド）を反映する。
  * 新規作成時も更新時もこの関数を通すため、文言の二重管理が発生しない。
@@ -336,7 +361,7 @@ function renderEntryList(lines) {
 export function applyDayCardState(embed, dayKey, entryLines) {
   const def = getDayDef(dayKey);
   const lines = entryLines || [];
-  const status = computeDayStatus(lines.length);
+  const status = computeDayStatus(lines);
   // 最多ランク帯は土曜（チーム分け基準あり）でのみ意味を持つ。
   const dominantTierText = def.showRank ? computeDominantTier(lines) : '';
   const banner = buildDayBanner(def.key, status, dominantTierText);
@@ -347,9 +372,14 @@ export function applyDayCardState(embed, dayKey, entryLines) {
     ? replaceBanner(embed.description, banner)
     : `${banner}\n\n${def.rule}`;
   embed.color = status.color;
+
+  const fieldTitle = status.breakdown?.hasBreakdown
+    ? `👥 参加者 (計${status.joined}名)`
+    : `👥 参加者 (${status.joined}/${status.capacity}名)`;
+
   embed.fields = [
     {
-      name: `👥 参加者 (${status.joined}/${status.capacity}名)`,
+      name: fieldTitle,
       value: renderEntryList(lines),
       inline: false,
     },

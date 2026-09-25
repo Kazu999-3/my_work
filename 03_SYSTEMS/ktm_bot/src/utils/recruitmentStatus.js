@@ -72,12 +72,66 @@ export function renderProgressBar(current, max = DAY_CAPACITY) {
 }
 
 /**
+ * 参加者行から参加形態（フル、1戦のみ、途中参加）と各試合の実働人数を集計する。
+ */
+export function parseEntryBreakdown(lines) {
+  const entries = (lines || []).filter((l) => l && l.startsWith('- '));
+  const full = [];
+  const single = [];
+  const late = [];
+
+  for (const line of entries) {
+    if (line.includes('1戦のみ')) {
+      single.push(line);
+    } else if (line.includes('途中参加')) {
+      late.push(line);
+    } else {
+      full.push(line);
+    }
+  }
+
+  const match1Count = full.length + single.length;
+  const match2Count = full.length + late.length;
+
+  return {
+    total: entries.length,
+    full,
+    single,
+    late,
+    hasBreakdown: single.length > 0 || late.length > 0,
+    match1Count,
+    match2Count,
+    match1Remaining: Math.max(0, DAY_CAPACITY - match1Count),
+    match2Remaining: Math.max(0, DAY_CAPACITY - match2Count),
+    isMatch1Ready: match1Count >= DAY_CAPACITY,
+    isMatch2Ready: match2Count >= DAY_CAPACITY,
+  };
+}
+
+/**
  * 1日分（カード1枚分）の募集状態を計算する。
- * @param {number} count その日の参加人数
+ * 配列が渡された場合は参加形態（1戦のみ・途中参加）を加味して試合別の人数を計算する。
+ * @param {number|string[]} countOrLines その日の参加人数または参加者行配列
  * @param {number} [capacity] 定員（既定10）
  */
-export function computeDayStatus(count, capacity = DAY_CAPACITY) {
-  const joined = Math.max(0, Number(count) || 0);
+export function computeDayStatus(countOrLines, capacity = DAY_CAPACITY) {
+  if (Array.isArray(countOrLines)) {
+    const breakdown = parseEntryBreakdown(countOrLines);
+    const joined = breakdown.total;
+    const remaining = Math.max(0, capacity - joined);
+    const isReady = breakdown.isMatch1Ready || (breakdown.match1Count === 0 && breakdown.isMatch2Ready);
+
+    return {
+      joined,
+      capacity,
+      remaining,
+      isReady,
+      color: (breakdown.isMatch1Ready || breakdown.isMatch2Ready) ? RECRUITMENT_COLORS.confirmed : RECRUITMENT_COLORS.recruiting,
+      breakdown,
+    };
+  }
+
+  const joined = Math.max(0, Number(countOrLines) || 0);
   const remaining = Math.max(0, capacity - joined);
   const isReady = joined >= capacity;
 
@@ -87,17 +141,45 @@ export function computeDayStatus(count, capacity = DAY_CAPACITY) {
     remaining,
     isReady,
     color: isReady ? RECRUITMENT_COLORS.confirmed : RECRUITMENT_COLORS.recruiting,
+    breakdown: null,
   };
 }
 
 /**
- * カードの description 先頭に置くステータスバナー（見出し＋1行の計2行固定）。
- * 文字量を減らすため、説明文やボタンの凡例はここへ混ぜないこと。
+ * カードの description 先頭に置くステータスバナー。
+ * 1戦のみ・途中参加者がいる場合は各試合の実働人数を明記する。
  */
 export function buildDayBanner(dayKey, status, dominantTierText = '') {
   const def = getDayDef(dayKey);
   const bar = renderProgressBar(status.joined, status.capacity);
+  const b = status.breakdown;
 
+  // 1戦のみや途中参加者が含まれる場合: 各試合の実働人数を明記
+  if (b && b.hasBreakdown) {
+    let header;
+    if (b.isMatch1Ready && b.isMatch2Ready) {
+      header = `✅ **【${def.name}　全戦 開催確定！】**`;
+    } else if (b.isMatch1Ready) {
+      header = `✅ **【${def.name}　第1戦 開催確定！】**`;
+    } else if (b.isMatch2Ready) {
+      header = `✅ **【${def.name}　第2戦 開催確定！】**`;
+    } else {
+      header = `🔥 **【${def.name}　募集中】**`;
+    }
+
+    const tierNote = dominantTierText ? `（チーム分け基準: **${dominantTierText}**）` : '';
+    const m1State = b.isMatch1Ready ? '🎉 **開催確定！**' : `あと**${b.match1Remaining}名**`;
+    const m2State = b.isMatch2Ready ? '🎉 **開催確定！**' : `あと**${b.match2Remaining}名**`;
+
+    return [
+      header,
+      `\`${bar}\` 計**${b.total}名**エントリー${tierNote}`,
+      `・第1戦（開幕 21:00〜）: **${b.match1Count}/${status.capacity}名** → ${m1State}`,
+      `・第2戦（途中合流〜）: **${b.match2Count}/${status.capacity}名** → ${m2State}`,
+    ].join('\n');
+  }
+
+  // 全員フルの場合（従来のスッキリ表示）
   const header = status.isReady
     ? `✅ **【${def.name}　開催確定！】**`
     : `🔥 **【${def.name}　募集中】**`;
@@ -105,8 +187,6 @@ export function buildDayBanner(dayKey, status, dominantTierText = '') {
     ? `**${status.joined}名**集まりました！`
     : `**あと${status.remaining}名**で開催確定`;
 
-  // dominantTierText は「シルバー帯(3名)」のように既に「帯」を含む形で渡ってくる。
-  // ここで「帯」を足さないこと（「シルバー帯(3名)帯」になる）。
   const tierNote = dominantTierText ? `（チーム分け基準: **${dominantTierText}**）` : '';
 
   return `${header}\n\`${bar}\` → ${state}${tierNote}`;

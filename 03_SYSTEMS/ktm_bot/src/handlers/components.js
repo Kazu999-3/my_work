@@ -470,16 +470,31 @@ export async function handleButtonInteraction(interaction, env, ctx) {
           }
         }
 
-        applyDayCardState(targetEmbed, dayKey, nextLines);
+        const { status: nextStatus } = applyDayCardState(targetEmbed, dayKey, nextLines);
 
         await sendDiscordMessage(`channels/${channelId}/messages/${msgId}`, botToken, "PATCH", {
           embeds: [targetEmbed],
           components: interaction.message.components
         });
 
-        // ★ あと1名（9名）になった瞬間にラストワン促進の返信を自動投稿
-        if (nextLines.length === 9 && (!existingLine || currentLines.length !== 9)) {
-          const promptContent = `🔥 **【${def.shortName}: あと1名で開催確定！】** どなたか最後の1枠で参加しませんか？✨`;
+        // ★ あと1名になった瞬間にラストワン促進の返信を自動投稿
+        const prevStatus = computeDayStatus(currentLines);
+        let promptContent = null;
+
+        if (nextStatus.breakdown?.hasBreakdown) {
+          const m1JustOne = nextStatus.breakdown.match1Remaining === 1 && (!existingLine || prevStatus.breakdown?.match1Remaining !== 1);
+          const m2JustOne = nextStatus.breakdown.match2Remaining === 1 && (!existingLine || prevStatus.breakdown?.match2Remaining !== 1);
+
+          if (m1JustOne) {
+            promptContent = `🔥 **【${def.shortName}: 第1試合があと1名で開催確定！】** 21:00からの開幕戦にエントリーしませんか？✨`;
+          } else if (m2JustOne && nextStatus.breakdown.isMatch1Ready) {
+            promptContent = `🔥 **【${def.shortName}: 第2試合があと1名で10名到達！】** 2戦目からの途中合流で参加しませんか？✨`;
+          }
+        } else if (nextStatus.remaining === 1 && (!existingLine || prevStatus.remaining !== 1)) {
+          promptContent = `🔥 **【${def.shortName}: あと1名で開催確定！】** どなたか最後の1枠で参加しませんか？✨`;
+        }
+
+        if (promptContent) {
           await sendDiscordMessage(`channels/${channelId}/messages`, botToken, "POST", {
             content: promptContent,
             message_reference: { message_id: msgId, fail_if_not_exists: false }

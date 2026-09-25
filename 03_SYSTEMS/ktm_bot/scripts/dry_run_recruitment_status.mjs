@@ -29,12 +29,26 @@ const fail = (msg) => { console.error(`❌ ${msg}`); hasFailure = true; };
 // 1. 状態遷移の不変条件
 // ---------------------------------------------------------------------------
 const cases = [
-  { label: '募集開始直後', count: 0 },
-  { label: '半分ほど集まった', count: 5 },
-  { label: '定員直前', count: 9 },
-  { label: '定員到達(開催確定)', count: 10 },
-  { label: '異常値: 定員超過(離脱漏れ等の想定外データ)', count: 12 },
-  { label: '異常値: 負の人数', count: -3 },
+  { label: '募集開始直後', input: 0 },
+  { label: '半分ほど集まった', input: 5 },
+  { label: '定員直前', input: 9 },
+  { label: '定員到達(開催確定)', input: 10 },
+  { label: '異常値: 定員超過(離脱漏れ等の想定外データ)', input: 12 },
+  { label: '異常値: 負の人数', input: -3 },
+  {
+    label: '実戦混在ケース(計9名: フル6/1戦1/途中2)',
+    input: [
+      '- <@1> ⏱️1戦のみ 👑常連 【シルバー】',
+      '- <@2> 🟢フル 👑常連 【ゴールド】',
+      '- <@3> 🟢フル 👑常連 【プラチナ】',
+      '- <@4> 🌙途中参加(2戦目〜) 👑常連 【シルバー】',
+      '- <@5> 🟢フル 👑常連 【プラチナ】',
+      '- <@6> 🟢フル 👑常連 【シルバー】',
+      '- <@7> 🌙途中参加(2戦目〜) 👑常連 【プラチナ】',
+      '- <@8> 🟢フル 👑常連 【プラチナ】',
+      '- <@9> 🟢フル 👑常連 【プラチナ】',
+    ]
+  },
 ];
 
 console.log('day | 人数 | color      | isReady | remaining | バナー見出し');
@@ -42,13 +56,19 @@ console.log('----|------|------------|---------|-----------|-------------');
 
 for (const dayKey of ['sat', 'sun']) {
   for (const c of cases) {
-    const status = computeDayStatus(c.count);
+    const status = computeDayStatus(c.input);
     const header = buildDayBanner(dayKey, status).split('\n')[0];
     const colorName = COLOR_NAMES[status.color] || `不明(0x${status.color.toString(16)})`;
 
     if (status.remaining < 0) fail(`[${dayKey}/${c.label}] remainingが負になっています`);
     if (status.joined < 0) fail(`[${dayKey}/${c.label}] joinedが負になっています`);
-    if (status.isReady !== (status.joined >= DAY_CAPACITY)) {
+    
+    // 混在ケースの場合は第1戦または第2戦の成立で判定
+    const expectedReady = status.breakdown?.hasBreakdown
+      ? (status.breakdown.isMatch1Ready || status.breakdown.isMatch2Ready)
+      : (status.joined >= DAY_CAPACITY);
+
+    if (status.isReady !== expectedReady) {
       fail(`[${dayKey}/${c.label}] isReadyが人数と一致しません`);
     }
     const expectedColor = status.isReady ? RECRUITMENT_COLORS.confirmed : RECRUITMENT_COLORS.recruiting;
@@ -127,8 +147,14 @@ for (const [label, now, expSat, expSun] of dateCases) {
 // ---------------------------------------------------------------------------
 const sampleLines = [
   '- <@1> ⏱️1戦のみ 👑常連 【シルバー】 【第1: SUP / 第2: ADC】',
-  '- <@2> 🌙途中参加(2戦目〜) 🌱ライト 【プラチナ】 【第1: ADC / 第2: JG】',
-  '- <@3> 🟢フル 👑常連 【ゴールド】 【第1: TOP / 第2: JG】',
+  '- <@2> 🟢フル 👑常連 【ゴールド】 【第1: TOP / 第2: JG】',
+  '- <@3> 🟢フル 👑常連 【プラチナ】 【第1: JG / 第2: TOP】',
+  '- <@4> 🌙途中参加(2戦目〜) 👑常連 【シルバー】 【第1: SUP / 第2: MID】',
+  '- <@5> 🟢フル 👑常連 【プラチナ】 【第1: TOP / 第2: JG】',
+  '- <@6> 🟢フル 👑常連 【シルバー】 【第1: SUP / 第2: ADC】',
+  '- <@7> 🌙途中参加(2戦目〜) 👑常連 【プラチナ】 【第1: JG / 第2: SUP】',
+  '- <@8> 🟢フル 👑常連 【プラチナ】 【第1: MID / 第2: ADC】',
+  '- <@9> 🟢フル 👑常連 【プラチナ】 【第1: TOP / 第2: JG】',
 ];
 
 for (const [dayKey, label, lines] of [['sat', '9/26(土)', sampleLines], ['sun', '9/27(日)', []]]) {
