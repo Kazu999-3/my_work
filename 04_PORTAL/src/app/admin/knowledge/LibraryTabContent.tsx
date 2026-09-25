@@ -289,7 +289,7 @@ export function LibraryTabContentInner() {
       }
       const { data, error } = await supabase
         .from('personal_knowledge')
-        .select('id, created_at, title, content, raw_content, source_url, genre, tags, champion, author, parent_id, is_atomic')
+        .select('id, created_at, title, content, raw_content, source_url, genre, tags, champion, author, parent_id, is_atomic, review_status')
         .order('created_at', { ascending: false })
         .limit(2000);
       if (!error && data) {
@@ -1090,23 +1090,38 @@ export function LibraryTabContentInner() {
                 </div>
               ) : (
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-                  <h1 className="text-2xl sm:text-4xl md:text-5xl font-black leading-tight font-mono text-gray-900 flex-1 break-words max-w-full">{selectedArticle.title ? selectedArticle.title.replace(/_/g, ' ') : ''}</h1>
+                  <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      {selectedArticle.review_status === 'pending' ? (
+                        <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 shrink-0">
+                          ⏳ 審査中（未承認知見）
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 shrink-0">
+                          ✅ 辞典反映済
+                        </span>
+                      )}
+                    </div>
+                    <h1 className="text-2xl sm:text-4xl md:text-5xl font-black leading-tight font-mono text-gray-900 break-words max-w-full">
+                      {selectedArticle.title ? selectedArticle.title.replace(/_/g, ' ') : ''}
+                    </h1>
+                  </div>
                   <div className="flex items-center gap-2 flex-wrap shrink-0">
                     {/* レーン別ガイドへ送る（チャンピオン記事ではない、マクロ・立ち回り記事向け） */}
                     {!showMoved && (
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-1.5 shrink-0 bg-stone-50 border border-stone-200 rounded-xl p-1">
                         <select
                           value={laneChoice}
                           onChange={(e) => setLaneChoice(e.target.value)}
                           title="送り先のレーンを選びます"
-                          className="bg-white border border-amber-300 rounded-xl px-2 py-2.5 text-xs text-amber-800 outline-none focus:border-amber-500"
+                          className="bg-transparent text-xs text-stone-700 outline-none px-2 py-1 cursor-pointer font-bold"
                         >
                           {LANE_CHOICES.map(l => <option key={l.key} value={l.key}>{l.label}</option>)}
                         </select>
                         <button
                           onClick={sendToLaneGuide}
                           disabled={sendingLane}
-                          className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-sm font-black shrink-0 transition disabled:opacity-50"
+                          className="px-3 py-1.5 rounded-lg bg-stone-200 hover:bg-stone-300 text-stone-800 text-xs font-bold shrink-0 transition disabled:opacity-50 cursor-pointer"
                           title="この記事をレーン別ガイドへ統合します"
                         >
                           {sendingLane ? '統合中...' : '🗺️ ガイドへ送る'}
@@ -1365,63 +1380,40 @@ export function LibraryTabContentInner() {
         </div>
         
         <div className="flex gap-2 sm:gap-3 flex-wrap w-full sm:w-auto items-center">
-          {/* 連続レビュー（案A）開始ボタン */}
-          {!showMoved && filteredArticles.length > 0 && (
-            <button
-              onClick={() => startContinuousReview(filteredArticles, 0)}
-              disabled={batchMerging || syncingAll}
-              title="未処理記事を1件ずつプレビュー確認しながらサクサク連続で統合・振り分けします"
-              className="px-3 sm:px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-2xl text-xs font-black transition-all shadow-md shadow-amber-600/20 flex items-center gap-1.5 disabled:opacity-50"
-            >
-              <Zap size={14} /> ⚡ 連続レビュー開始
-            </button>
-          )}
-
-          {/* 全選択 / 選択解除 */}
-          {!showMoved && filteredArticles.length > 0 && (
-            <button
-              onClick={toggleSelectAll}
-              className="px-3 sm:px-4 py-2.5 glass-panel glass-panel-hover text-xs font-bold text-stone-700 rounded-2xl transition-all"
-            >
-              {selectedIds.size === filteredArticles.length && filteredArticles.length > 0
-                ? '選択を全解除'
-                : `すべて選択 (${selectedIds.size}/${filteredArticles.length})`}
-            </button>
-          )}
-
           {/* 辞典へ移動した記事の閲覧・復元（誤移動のリカバリ用） */}
           <button
             onClick={() => { setShowMoved(v => !v); setSelectedArticle(null); setSelectedIds(new Set()); }}
             title="辞典へ移動してライブラリから消えた記事を表示し、必要なら元に戻せます"
-            className={`px-3 sm:px-4 py-2.5 rounded-2xl text-xs font-bold transition-all border flex-1 sm:flex-none text-center ${
+            className={`px-3 sm:px-4 py-2.5 rounded-2xl text-xs font-bold transition-all border flex-1 sm:flex-none text-center cursor-pointer ${
               showMoved
-                ? 'bg-amber-500 text-black border-amber-400'
-                : 'glass-panel glass-panel-hover text-amber-700 border-transparent'
+                ? 'bg-amber-500 text-black border-amber-400 font-black shadow-xs'
+                : 'glass-panel glass-panel-hover text-stone-600 hover:text-stone-900 border-stone-200'
             }`}
           >
-            🗄️ {showMoved ? 'ライブラリに戻る' : `移動済み${movedCount > 0 ? ` (${movedCount})` : ''}`}
+            🗄️ {showMoved ? 'ライブラリに戻る' : `移動済みアーカイブ${movedCount > 0 ? ` (${movedCount})` : ''}`}
           </button>
           <button
             onClick={expandAllGroups}
-            className="px-3 sm:px-4 py-2.5 glass-panel glass-panel-hover text-xs font-bold text-violet-700 rounded-2xl transition-all flex-1 sm:flex-none text-center"
+            className="px-3 sm:px-4 py-2.5 glass-panel glass-panel-hover text-xs font-bold text-stone-700 hover:text-stone-900 rounded-2xl transition-all flex-1 sm:flex-none text-center cursor-pointer"
           >
             すべて展開
           </button>
           <button 
             onClick={collapseAllGroups} 
-            className="px-3 sm:px-4 py-2.5 glass-panel glass-panel-hover text-xs font-bold text-violet-700 rounded-2xl transition-all flex-1 sm:flex-none text-center"
+            className="px-3 sm:px-4 py-2.5 glass-panel glass-panel-hover text-xs font-bold text-stone-700 hover:text-stone-900 rounded-2xl transition-all flex-1 sm:flex-none text-center cursor-pointer"
           >
             すべて閉じる
           </button>
           <button
             onClick={handleSyncAllArticles}
             disabled={syncingAll || batchMerging}
-            className="px-3 sm:px-4 py-2.5 bg-gradient-to-r from-pink-500 to-indigo-600 hover:from-pink-400 hover:to-indigo-500 text-white text-xs font-bold rounded-2xl transition-all shadow-[0_0_15px_rgba(244,63,94,0.15)] flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+            className="px-3 sm:px-4 py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300 text-xs font-bold rounded-2xl transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto cursor-pointer"
+            title="ライブラリの全記事を各チャンピオン辞典へ同期します"
           >
             <RefreshCw className={`h-3 w-3 ${syncingAll ? 'animate-spin' : ''}`} />
             {syncingAll && syncProgress
               ? (syncProgress.total > 0 ? `同期中... (${syncProgress.processed}/${syncProgress.total}件)` : "同期準備中...")
-              : "全チャンプ辞典に一括同期"}
+              : "辞典と同期"}
           </button>
           {syncingAll && syncProgress && syncProgress.total > 0 && (
             <div className="w-full basis-full h-1.5 bg-black/5 rounded-full overflow-hidden mt-1">
@@ -1429,25 +1421,6 @@ export function LibraryTabContentInner() {
                 className="h-full bg-gradient-to-r from-pink-500 to-indigo-500 transition-all duration-300"
                 style={{ width: `${Math.min(100, Math.round((syncProgress.processed / syncProgress.total) * 100))}%` }}
               />
-            </div>
-          )}
-
-          {/* スマート一括統合のプログレスバー */}
-          {batchMerging && batchProgress && (
-            <div className="w-full basis-full p-3 bg-amber-50 border border-amber-300 rounded-2xl space-y-1.5 mt-2 animate-fade-in">
-              <div className="flex items-center justify-between text-xs font-bold text-amber-900">
-                <span className="flex items-center gap-1.5">
-                  <RefreshCw size={13} className="animate-spin text-amber-600" />
-                  <span>AIスマート一括統合を実行中... ({batchProgress.current} / {batchProgress.total}件完了)</span>
-                </span>
-                <span>{Math.round((batchProgress.current / batchProgress.total) * 100)}%</span>
-              </div>
-              <div className="w-full h-2 bg-amber-200/60 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-amber-500 to-emerald-500 transition-all duration-300"
-                  style={{ width: `${Math.min(100, Math.round((batchProgress.current / batchProgress.total) * 100))}%` }}
-                />
-              </div>
             </div>
           )}
 
@@ -1478,23 +1451,6 @@ export function LibraryTabContentInner() {
                     <span className="text-gray-500 text-xs sm:text-sm font-bold">({items.length} 記事)</span>
                   </button>
 
-                  {!showMoved && (
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={(e) => startContinuousReview(items, 0)}
-                        className="text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2.5 py-1.5 rounded-xl transition flex items-center gap-1"
-                        title="このグループ内の記事を順番に連続レビューします"
-                      >
-                        <Zap size={12} /> 連続レビュー
-                      </button>
-                      <button
-                        onClick={(e) => toggleSelectGroup(items, e)}
-                        className="text-xs font-bold text-stone-600 bg-black/5 hover:bg-black/10 border border-black/10 px-2.5 py-1.5 rounded-xl transition"
-                      >
-                        {items.every(a => selectedIds.has(a.id)) ? 'グループ解除' : 'グループ全選択'}
-                      </button>
-                    </div>
-                  )}
                 </div>
 
                 <div 
@@ -1517,22 +1473,22 @@ export function LibraryTabContentInner() {
                               className="p-4 sm:p-5 hover:bg-black/2 cursor-pointer flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 group/item"
                             >
                               <div className="flex items-start gap-3 min-w-0 flex-1">
-                                {!showMoved && (
-                                  <input
-                                    type="checkbox"
-                                    checked={isSelected}
-                                    onChange={(e) => toggleSelect(article.id, e as any)}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="mt-1 sm:mt-1.5 h-4 w-4 rounded border-stone-300 text-amber-600 focus:ring-amber-500 cursor-pointer shrink-0 accent-amber-600"
-                                  />
-                                )}
                                 <div className="flex flex-col gap-2 min-w-0 flex-1">
-                                  <div className="flex items-start sm:items-center gap-2">
-                                    <span className={`text-violet-700 transition-transform duration-300 shrink-0 mt-0.5 sm:mt-0 ${isExpanded ? 'rotate-90' : 'rotate-0'}`}>
+                                  <div className="flex items-start sm:items-center gap-2 flex-wrap">
+                                    <span className={`text-stone-500 transition-transform duration-300 shrink-0 mt-0.5 sm:mt-0 ${isExpanded ? 'rotate-90 text-amber-600' : 'rotate-0'}`}>
                                       <ChevronDown size={16} />
                                     </span>
-                                    <h3 className={`font-bold transition-colors flex items-start sm:items-center gap-2 min-w-0 text-sm sm:text-base ${isExpanded ? 'text-violet-700' : 'text-stone-800 group-hover/item:text-violet-700'}`}>
-                                      {favoriteArticles.includes(article.id) && <StarIcon size={14} className="text-amber-600 shrink-0 mt-0.5 sm:mt-0" fill="currentColor" />}
+                                    {article.review_status === 'pending' ? (
+                                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 shrink-0">
+                                        ⏳ 審査中
+                                      </span>
+                                    ) : (
+                                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 shrink-0">
+                                        ✅ 辞典反映済
+                                      </span>
+                                    )}
+                                    <h3 className={`font-bold transition-colors flex items-start sm:items-center gap-2 min-w-0 text-sm sm:text-base ${isExpanded ? 'text-amber-800' : 'text-stone-800 group-hover/item:text-stone-950'}`}>
+                                      {favoriteArticles.includes(article.id) && <StarIcon size={14} className="text-amber-500 shrink-0 mt-0.5 sm:mt-0" fill="currentColor" />}
                                       <span className="break-all">{article.title ? article.title.replace(/_/g, ' ') : ''}</span>
                                     </h3>
                                   </div>
@@ -1658,62 +1614,7 @@ export function LibraryTabContentInner() {
           <h3 className="text-xl font-bold text-stone-900 mb-2">{search ? `「${search}」に一致する記事なし` : 'まだ記事がありません'}</h3>
         </div>
       )}
-      {/* 複数選択時のフローティングアクションバー */}
-      {selectedIds.size > 0 && !showMoved && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 animate-fade-in-up w-full max-w-2xl px-4">
-          <div className="bg-stone-900/95 text-white border border-amber-500/40 rounded-3xl p-4 shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-md flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
-            <div className="flex items-center gap-3">
-              <span className="bg-amber-500 text-black text-xs font-black px-2.5 py-1 rounded-full font-mono">
-                {selectedIds.size} 件選択中
-              </span>
-              <span className="text-xs text-stone-300 hidden sm:inline">
-                辞典とレーンガイドへ自動仕分け
-              </span>
-            </div>
 
-            <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
-              <button
-                type="button"
-                onClick={() => setSelectedIds(new Set())}
-                disabled={batchMerging}
-                className="px-3 py-2 text-xs font-bold text-stone-400 hover:text-white rounded-xl hover:bg-white/10 transition disabled:opacity-50"
-              >
-                選択解除
-              </button>
-
-              <button
-                type="button"
-                onClick={() => startContinuousReview(articles.filter(a => selectedIds.has(a.id)), 0)}
-                disabled={batchMerging}
-                className="px-4 py-2 text-xs font-bold bg-stone-700 hover:bg-stone-600 text-stone-100 rounded-xl transition flex items-center gap-1.5 disabled:opacity-50"
-                title="選択した記事だけを順番に連続プレビュー確認します"
-              >
-                <Zap size={13} className="text-amber-400" />
-                <span>選択分を連続レビュー</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleBatchSmartMerge()}
-                disabled={batchMerging}
-                className="px-5 py-2.5 text-xs font-black bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 rounded-xl shadow-lg shadow-amber-500/20 transition flex items-center gap-2 disabled:opacity-50"
-              >
-                {batchMerging ? (
-                  <>
-                    <RefreshCw size={14} className="animate-spin" />
-                    <span>統合中...</span>
-                  </>
-                ) : (
-                  <>
-                    <Zap size={14} />
-                    <span>⚡ 選択した{selectedIds.size}件をスマート統合</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* トースト通知 */}
       {toast.show && (
