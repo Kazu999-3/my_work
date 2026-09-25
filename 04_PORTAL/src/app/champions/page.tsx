@@ -11,48 +11,32 @@ import dynamic from 'next/dynamic';
 const DictionaryTab = dynamic(() => import('./tabs/DictionaryTab'), {
   loading: () => <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-[#c89b3c] border-t-transparent rounded-full animate-spin"></div></div>
 });
-const LaneGuidesView = dynamic(() => import('../lane-guides/page'), {
-  ssr: false,
-  loading: () => <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-sky-400 border-t-transparent rounded-full animate-spin"></div></div>
-});
-const LibraryTabContent = dynamic(() => import('../admin/knowledge/LibraryTabContent'), {
-  ssr: false,
-  loading: () => <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div></div>
-});
-const KnowledgeIngestView = dynamic(() => import('../admin/knowledge/page'), {
-  ssr: false,
-  loading: () => <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-pink-500 border-t-transparent rounded-full animate-spin"></div></div>
-});
 const DictHealthView = dynamic(() => import('../admin/dict-health/page'), {
   ssr: false,
   loading: () => <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div></div>
 });
 
-type KnowledgeScope = 'champions' | 'lane-guides' | 'library' | 'ingest' | 'health';
-
-const SCOPES: { id: KnowledgeScope; label: string; icon: any; color: string; activeBg: string }[] = [
-  { id: 'champions', label: '👑 チャンピオン辞典', icon: BookOpen, color: 'text-[#c89b3c]', activeBg: 'bg-[#c89b3c]/15 text-[#c89b3c] border-[#c89b3c]/40' },
-  { id: 'lane-guides', label: '🗺️ レーン・マクロ', icon: Map, color: 'text-sky-500', activeBg: 'bg-sky-500/15 text-sky-600 border-sky-500/40' },
-  { id: 'library', label: '🗂️ 攻略ライブラリ', icon: Layers, color: 'text-purple-600', activeBg: 'bg-purple-500/15 text-purple-700 border-purple-500/40' },
-  { id: 'ingest', label: '📥 戦術取り込み', icon: Sparkles, color: 'text-pink-600', activeBg: 'bg-pink-500/15 text-pink-700 border-pink-500/40' },
-  { id: 'health', label: '📊 辞典ヘルス', icon: Activity, color: 'text-amber-600', activeBg: 'bg-amber-500/15 text-amber-700 border-amber-500/40' },
-];
+type KnowledgeScope = 'champions' | 'health';
 
 function ChampionsShell() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const rawScope = searchParams.get('scope');
-  
-  // 後方互換性を持たせたスコープ正規化
-  const normalizedScope: KnowledgeScope = 
-    rawScope === 'lane-guides' ? 'lane-guides' :
-    rawScope === 'library' ? 'library' :
-    (rawScope === 'ingest' || rawScope === 'knowledge') ? 'ingest' :
-    rawScope === 'health' ? 'health' :
-    rawScope === 'maintenance' ? 'health' :
-    'champions';
 
-  const [scope, setScope] = useState<KnowledgeScope>(normalizedScope);
+  // 後方互換：古い埋め込みスコープでアクセスされた場合は独立URLへ安全にリダイレクト
+  useEffect(() => {
+    if (rawScope === 'lane-guides') {
+      router.replace('/lane-guides');
+    } else if (rawScope === 'library') {
+      router.replace('/library');
+    } else if (rawScope === 'ingest' || rawScope === 'knowledge') {
+      router.replace('/admin/knowledge');
+    }
+  }, [rawScope, router]);
+
+  const [scope, setScope] = useState<KnowledgeScope>(
+    rawScope === 'health' || rawScope === 'maintenance' ? 'health' : 'champions'
+  );
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [authChecking, setAuthChecking] = useState<boolean>(true);
 
@@ -70,8 +54,6 @@ function ChampionsShell() {
     params.set('scope', newScope);
     router.replace(`/champions?${params.toString()}`, { scroll: false });
   };
-
-  const isAdminOnlyScope = scope === 'ingest' || scope === 'health';
 
   return (
     <div className="min-h-screen p-2 sm:p-4 md:p-6 max-w-[1760px] w-full mx-auto flex flex-col gap-4">
@@ -161,9 +143,6 @@ function ChampionsShell() {
       <div className="flex-1 min-w-0">
         {scope === 'champions' && <DictionaryTab isAdmin={isAuthenticated} />}
         {scope === 'health' && <DictHealthView />}
-        {scope === 'lane-guides' && <LaneGuidesView />}
-        {scope === 'library' && <LibraryTabContent />}
-        {scope === 'ingest' && <KnowledgeIngestView />}
       </div>
     </div>
   );

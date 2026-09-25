@@ -15,10 +15,16 @@ function KnowledgeBaseContent() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
 
-  // 入力フォームの状態
-  const [ingestMode, setIngestMode] = useState<'url' | 'memo' | 'discord' | 'queue' | 'pending'>('url');
+  // メインタブの状態 ('input' | 'pipelines' | 'pending')
+  const [activeTab, setActiveTab] = useState<'input' | 'pipelines' | 'pending'>('input');
+
+  // 入力サブモード ('url' | 'memo')
+  const [inputSubMode, setInputSubMode] = useState<'url' | 'memo'>('url');
   const [inputUrl, setInputUrl] = useState('');
   const [inputMemo, setInputMemo] = useState('');
+
+  // パイプラインサブモード ('youtube' | 'discord')
+  const [pipelineSubMode, setPipelineSubMode] = useState<'youtube' | 'discord'>('youtube');
 
   // AI解析結果のプレビュー
   const [pendingPreview, setPendingPreview] = useState<KnowledgePreview | null>(null);
@@ -27,19 +33,27 @@ function KnowledgeBaseContent() {
 
   const searchParams = useSearchParams();
 
-  // URLパラメータ (?tab=...) の自動反映
+  // URLパラメータ (?tab=...) の自動反映（後方互換対応）
   useEffect(() => {
     const tabParam = searchParams?.get('tab');
-    if (tabParam === 'video' || tabParam === 'queue') {
-      setIngestMode('queue');
+    if (tabParam === 'video' || tabParam === 'queue' || tabParam === 'youtube') {
+      setActiveTab('pipelines');
+      setPipelineSubMode('youtube');
     } else if (tabParam === 'discord') {
-      setIngestMode('discord');
+      setActiveTab('pipelines');
+      setPipelineSubMode('discord');
+    } else if (tabParam === 'pipelines') {
+      setActiveTab('pipelines');
     } else if (tabParam === 'memo') {
-      setIngestMode('memo');
+      setActiveTab('input');
+      setInputSubMode('memo');
+    } else if (tabParam === 'url') {
+      setActiveTab('input');
+      setInputSubMode('url');
     } else if (tabParam === 'pending') {
-      setIngestMode('pending');
+      setActiveTab('pending');
     } else {
-      setIngestMode('url');
+      setActiveTab('input');
     }
   }, [searchParams]);
 
@@ -80,7 +94,7 @@ function KnowledgeBaseContent() {
     if (isAuthenticated) {
       fetchPendingCount();
     }
-  }, [isAuthenticated, ingestMode]);
+  }, [isAuthenticated, activeTab]);
 
   const showFeedback = (text: string, type: 'success' | 'error') => {
     setMessage({ text, type });
@@ -92,30 +106,31 @@ function KnowledgeBaseContent() {
   };
 
   // ナレッジの追加（要約＆分類）
-  const handleAddKnowledge = async (e: React.FormEvent) => {
+  const handleAddKnowledge = async (e: React.FormEvent, forceQueue: boolean = false) => {
     e.preventDefault();
-    const payload = ingestMode === 'url' ? { type: 'url', url: inputUrl } : { type: 'memo', memo: inputMemo, text: inputMemo };
-    if (ingestMode === 'url' && !inputUrl) {
+    const payload = inputSubMode === 'url' ? { type: 'url', url: inputUrl } : { type: 'memo', memo: inputMemo, text: inputMemo };
+    if (inputSubMode === 'url' && !inputUrl) {
       showFeedback('URLを入力してください。', 'error');
       return;
     }
-    if (ingestMode === 'memo' && !inputMemo) {
+    if (inputSubMode === 'memo' && !inputMemo) {
       showFeedback('メモ本文を入力してください。', 'error');
       return;
     }
 
     setActionLoading(true);
     try {
-      if (ingestMode === 'url' && isYoutubeUrl(payload.url || '')) {
+      if (inputSubMode === 'url' && (forceQueue || isYoutubeUrl(payload.url || ''))) {
         const res = await fetch('/api/admin/youtube', {
           method: 'POST', credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: payload.url })
         });
         if (res.ok) {
-          showFeedback('YouTube動画を解析キューに追加しました！(SREデーモンが順次要約します)', 'success');
+          showFeedback('YouTube動画を解析キューに追加しました！(SREワーカーが順次解析します)', 'success');
           setInputUrl('');
-          setIngestMode('queue');
+          setActiveTab('pipelines');
+          setPipelineSubMode('youtube');
         } else {
           const err = await res.json().catch(() => ({}));
           showFeedback(err.error || 'キュー追加に失敗しました。', 'error');
@@ -132,7 +147,7 @@ function KnowledgeBaseContent() {
             setPendingPreview(resData.preview);
           } else {
             showFeedback('ナレッジのAI要約・解析が完了しました！', 'success');
-            if (ingestMode === 'url') setInputUrl('');
+            if (inputSubMode === 'url') setInputUrl('');
             else setInputMemo('');
           }
         } else {
@@ -140,7 +155,7 @@ function KnowledgeBaseContent() {
           showFeedback(err.error || 'ナレッジの解析・追加に失敗しました。', 'error');
         }
       }
-    } catch (err) {
+    } catch {
       showFeedback('通信エラーが発生しました。', 'error');
     } finally {
       setActionLoading(false);
@@ -159,7 +174,7 @@ function KnowledgeBaseContent() {
       if (res.ok) {
         showFeedback('ナレッジを保存し、チャンピオン辞典へ反映しました！', 'success');
         setPendingPreview(null);
-        if (ingestMode === 'url') setInputUrl('');
+        if (inputSubMode === 'url') setInputUrl('');
         else setInputMemo('');
       } else {
         const err = await res.json().catch(() => ({}));
@@ -228,12 +243,19 @@ function KnowledgeBaseContent() {
 
         <div className="flex items-center gap-2 self-end sm:self-auto">
           <Link
+            href="/library"
+            className="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200/80 text-stone-700 border border-stone-200 text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs"
+            title="確定知見の書庫（攻略ライブラリ）を開く"
+          >
+            <span>🗂️ 攻略ライブラリ</span>
+          </Link>
+          <Link
             href="/admin/guide"
             className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs"
             title="LoLデータ収集＆辞典＆コーチ連携の全貌仕様ガイドを開く"
           >
             <BookOpen size={14} className="text-amber-700" />
-            <span>📖 機能全貌ガイド</span>
+            <span>📖 全貌ガイド</span>
           </Link>
         </div>
       </motion.header>
@@ -254,91 +276,123 @@ function KnowledgeBaseContent() {
         )}
       </AnimatePresence>
 
-      {/* モード切り替えセグメントコントロール */}
-      <div className="flex items-center gap-1.5 p-1 bg-stone-100 rounded-xl border border-stone-200 overflow-x-auto">
+      {/* 🎯 3大メインタブ（知見追加 / 自動収集 / 承認待ち） */}
+      <div className="grid grid-cols-3 gap-2 p-1.5 bg-stone-100/90 rounded-2xl border border-stone-200">
         <button
           type="button"
-          onClick={() => setIngestMode('url')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-            ingestMode === 'url' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
+          onClick={() => setActiveTab('input')}
+          className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            activeTab === 'input'
+              ? 'bg-white text-stone-900 shadow-xs font-black'
+              : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
           }`}
         >
-          <span>🌐 Web / X / YouTube 要約</span>
+          <Plus size={15} className={activeTab === 'input' ? 'text-amber-600' : 'text-stone-400'} />
+          <span>知見の追加</span>
         </button>
+
         <button
           type="button"
-          onClick={() => setIngestMode('memo')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-            ingestMode === 'memo' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
+          onClick={() => setActiveTab('pipelines')}
+          className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            activeTab === 'pipelines'
+              ? 'bg-white text-stone-900 shadow-xs font-black'
+              : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
           }`}
         >
-          <span>📝 テキストメモ保存</span>
+          <RefreshCw size={14} className={activeTab === 'pipelines' ? 'text-indigo-600' : 'text-stone-400'} />
+          <span>自動収集パイプライン</span>
         </button>
+
         <button
           type="button"
-          onClick={() => setIngestMode('queue')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-            ingestMode === 'queue' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
+          onClick={() => setActiveTab('pending')}
+          className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer relative ${
+            activeTab === 'pending'
+              ? 'bg-white text-emerald-800 border border-emerald-300 shadow-xs font-black'
+              : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
           }`}
         >
-          <span>⏳ 動画解析キュー</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setIngestMode('discord')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-            ingestMode === 'discord' ? 'bg-white text-stone-900 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
-          }`}
-        >
-          <span>💬 Discord ログ解析</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setIngestMode('pending')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-            ingestMode === 'pending' ? 'bg-white text-emerald-800 border border-emerald-300 shadow-xs font-black' : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
-          }`}
-        >
-          <span>✅ 承認待ちナレッジ</span>
+          <Sparkles size={14} className={activeTab === 'pending' ? 'text-emerald-600' : 'text-stone-400'} />
+          <span>承認待ちナレッジ</span>
           {pendingCount > 0 && (
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse shadow-xs">
               {pendingCount}
             </span>
           )}
         </button>
       </div>
 
-      {ingestMode === 'discord' && <DiscordImportPanel />}
-      {ingestMode === 'queue' && (
-        <div className="space-y-6">
-          <VideoDeepDiveRequestPanel />
-          <YoutubeQueueManager />
-        </div>
-      )}
-      {ingestMode === 'pending' && <PendingInsightsPanel />}
-
-      {(ingestMode === 'url' || ingestMode === 'memo') && (
+      {/* 1. 📥 知見の追加タブ */}
+      {activeTab === 'input' && (
         <div className="bg-white border border-stone-200/90 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
-          <h2 className="text-sm font-bold text-stone-900 flex items-center gap-2 border-b border-stone-100 pb-3">
-            <span className="p-1.5 bg-amber-50 rounded-lg text-amber-600 border border-amber-200/60">
-              <Plus size={15} />
-            </span>
-            <span>{ingestMode === 'url' ? 'Web記事・X投稿・YouTube動画の取り込み' : '戦術メモ・気付きの登録'}</span>
-          </h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-3">
+            <h2 className="text-sm font-bold text-stone-900 flex items-center gap-2">
+              <span className="p-1.5 bg-amber-50 rounded-lg text-amber-600 border border-amber-200/60">
+                <Plus size={15} />
+              </span>
+              <span>新しい知見を取り込む</span>
+            </h2>
 
-          <form onSubmit={handleAddKnowledge} className="space-y-4">
-            {ingestMode === 'url' ? (
-              <div className="space-y-1.5">
+            {/* URL / メモ のサブ切り替えピル */}
+            <div className="flex items-center gap-1 p-1 bg-stone-100 rounded-xl border border-stone-200 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => setInputSubMode('url')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  inputSubMode === 'url'
+                    ? 'bg-white text-stone-900 shadow-xs font-black'
+                    : 'text-stone-500 hover:text-stone-900'
+                }`}
+              >
+                🌐 Web / X / YouTube URL
+              </button>
+              <button
+                type="button"
+                onClick={() => setInputSubMode('memo')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  inputSubMode === 'memo'
+                    ? 'bg-white text-stone-900 shadow-xs font-black'
+                    : 'text-stone-500 hover:text-stone-900'
+                }`}
+              >
+                📝 テキスト自由メモ
+              </button>
+            </div>
+          </div>
+
+          <form onSubmit={(e) => handleAddKnowledge(e, false)} className="space-y-4">
+            {inputSubMode === 'url' ? (
+              <div className="space-y-2">
                 <label className="text-[11px] font-bold text-stone-600">
                   対象URL (Xポスト / Web攻略記事 / YouTube動画)
                 </label>
                 <input
                   type="url"
-                  placeholder="https://x.com/username/status/12345... または Web記事 / YouTube URL..."
+                  placeholder="https://x.com/... または Web攻略記事 / YouTube URL を入力..."
                   value={inputUrl}
                   onChange={(e) => setInputUrl(e.target.value)}
                   className="w-full px-4 py-3 bg-stone-50/70 border border-stone-200 rounded-xl focus:outline-none focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-500/20 text-xs text-stone-900 placeholder-stone-400 font-mono transition-all"
                 />
+
+                {/* YouTube検知バナー */}
+                {isYoutubeUrl(inputUrl) && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">🎥</span>
+                      <span>YouTube動画が検出されました。バックグラウンド解析キューへ追加して非同期に処理できます。</span>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={actionLoading}
+                      onClick={(e) => handleAddKnowledge(e, true)}
+                      className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-[11px] transition shadow-xs shrink-0 cursor-pointer disabled:opacity-50"
+                    >
+                      ⏳ キューに追加
+                    </button>
+                  </div>
+                )}
+
                 <p className="text-[10px] text-stone-500 pl-0.5">
                   ※ X(Twitter)画像・動画やWeb記事をAIが自動要約。YouTube動画は自動的に解析キューへ送信され、要約・実演シーン抽出が行われます。
                 </p>
@@ -346,7 +400,7 @@ function KnowledgeBaseContent() {
             ) : (
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-stone-600">
-                  戦術メモ・立ち回りノウハウ
+                  戦術メモ・気付き・立ち回りノウハウ
                 </label>
                 <textarea
                   rows={6}
@@ -358,19 +412,62 @@ function KnowledgeBaseContent() {
               </div>
             )}
 
-            <div className="flex items-center justify-end pt-1">
+            <div className="flex items-center justify-end gap-2 pt-1">
               <button
                 type="submit"
                 disabled={actionLoading}
                 className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xs transition-all shadow-xs flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
               >
                 {actionLoading ? <RefreshCw size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                <span>{ingestMode === 'url' ? '要約・解析を実行' : 'AIによる分類・保存'}</span>
+                <span>{inputSubMode === 'url' ? 'AI解析を実行' : 'AIによる分類・保存'}</span>
               </button>
             </div>
           </form>
         </div>
       )}
+
+      {/* 2. ⚙️ 自動収集パイプラインタブ */}
+      {activeTab === 'pipelines' && (
+        <div className="space-y-4">
+          {/* パイプライン内サブ切り替え */}
+          <div className="flex items-center gap-1.5 p-1 bg-stone-100 rounded-xl border border-stone-200 w-fit">
+            <button
+              type="button"
+              onClick={() => setPipelineSubMode('youtube')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                pipelineSubMode === 'youtube'
+                  ? 'bg-white text-stone-900 shadow-xs font-black'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
+              }`}
+            >
+              <span>🎥 YouTube 動画解析キュー</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPipelineSubMode('discord')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                pipelineSubMode === 'discord'
+                  ? 'bg-white text-stone-900 shadow-xs font-black'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
+              }`}
+            >
+              <span>💬 Discord ログ解析</span>
+            </button>
+          </div>
+
+          {pipelineSubMode === 'youtube' && (
+            <div className="space-y-6">
+              <VideoDeepDiveRequestPanel />
+              <YoutubeQueueManager />
+            </div>
+          )}
+
+          {pipelineSubMode === 'discord' && <DiscordImportPanel />}
+        </div>
+      )}
+
+      {/* 3. ✅ 承認待ちナレッジタブ */}
+      {activeTab === 'pending' && <PendingInsightsPanel />}
 
       {pendingPreview && (
         <KnowledgePreviewModal
