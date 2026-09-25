@@ -7,7 +7,7 @@ import { createMessageContent, createRecruitButtons, createRecruitEmbed, extract
 import { parseMessageData, handleAutoMatchEnd } from '../utils/helpers.js';
 import { getAdminDiscordIds, markRecruitmentStatus } from '../utils/recruitPermission.js';
 import { getKtmRank, getHighestLaneMmr, getPlayerExperienceBadge } from '../utils/ktmRank.js';
-import { detectDayKey, getDayDef, extractEntryLines } from '../utils/recruitmentStatus.js';
+import { detectDayKey, getDayDef, extractEntryLines, resolveWeekendTargets, buildRecruitmentContent } from '../utils/recruitmentStatus.js';
 
 const RANK_JP_MAP = {
   CHALLENGER: 'チャレンジャー', GRANDMASTER: 'グランドマスター', MASTER: 'マスター',
@@ -472,9 +472,15 @@ export async function handleButtonInteraction(interaction, env, ctx) {
 
         const { status: nextStatus } = applyDayCardState(targetEmbed, dayKey, nextLines);
 
+        const [satTarget, sunTarget] = resolveWeekendTargets();
+        const currentTarget = dayKey === 'sun' ? sunTarget : satTarget;
+        const newContent = currentTarget ? buildRecruitmentContent(currentTarget, CONFIG.NOTIFICATION_ROLE_ID) : undefined;
+
         await sendDiscordMessage(`channels/${channelId}/messages/${msgId}`, botToken, "PATCH", {
+          ...(newContent ? { content: newContent } : {}),
           embeds: [targetEmbed],
-          components: interaction.message.components
+          components: interaction.message.components,
+          allowed_mentions: { roles: [] }
         });
 
         // ★ あと1名になった瞬間にラストワン促進の返信を自動投稿

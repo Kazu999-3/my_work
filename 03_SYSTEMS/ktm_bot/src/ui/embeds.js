@@ -366,11 +366,8 @@ export function applyDayCardState(embed, dayKey, entryLines) {
   const dominantTierText = def.showRank ? computeDominantTier(lines) : '';
   const banner = buildDayBanner(def.key, status, dominantTierText);
 
-  // description は「バナー ＋ 空行 ＋ 補足1行」で固定する（replaceBanner の前提）。
-  // ボタンの凡例はボタンのラベル自体に同じ情報があるため、カードには載せない（文字量削減）。
-  embed.description = embed.description
-    ? replaceBanner(embed.description, banner)
-    : `${banner}\n\n${def.rule}`;
+  // description は「バナー ＋ 空行 ＋ 補足1行（def.rule）」で常に最新化する。
+  embed.description = `${banner}\n\n${def.rule}`;
   embed.color = status.color;
 
   const fieldTitle = status.breakdown?.hasBreakdown
