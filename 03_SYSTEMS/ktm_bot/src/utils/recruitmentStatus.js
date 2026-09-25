@@ -29,7 +29,7 @@ export const DAY_DEFS = {
     label: '土曜',
     name: '土曜・本戦カスタム',
     shortName: '土曜本戦カスタム',
-    rule: 'ランク制限はありません。集まった方の最多ランク帯を基準に、実力が均等になるよう自動でチーム分けします（MMR変動あり）',
+    rule: 'ランク差を作らない実力伯仲マッチ。最多ランク帯から1ティア差以内を基準に10名を選出し、実力が均等になるよう自動でチーム分けします（MMR変動あり）',
     joinPrefix: 'join_periodic_auto',
     showRank: true,   // 参加者行にランク表記を出すか（日曜はランク不問なので出さない）
     buttonStyle: 1,   // Primary (Blue)
@@ -167,7 +167,7 @@ export function buildDayBanner(dayKey, status, dominantTierText = '') {
       header = `🔥 **【${def.name}　募集中】**`;
     }
 
-    const tierNote = dominantTierText ? `（チーム分け基準: **${dominantTierText}**）` : '';
+    const tierNote = dominantTierText ? `（基準: **${dominantTierText}** / 1ティア差選出）` : '';
     const m1State = b.isMatch1Ready ? '🎉 **開催確定！**' : `あと**${b.match1Remaining}名**`;
     const m2State = b.isMatch2Ready ? '🎉 **開催確定！**' : `あと**${b.match2Remaining}名**`;
 
@@ -187,7 +187,7 @@ export function buildDayBanner(dayKey, status, dominantTierText = '') {
     ? `**${status.joined}名**集まりました！`
     : `**あと${status.remaining}名**で開催確定`;
 
-  const tierNote = dominantTierText ? `（チーム分け基準: **${dominantTierText}**）` : '';
+  const tierNote = dominantTierText ? `（基準: **${dominantTierText}** / 1ティア差選出）` : '';
 
   return `${header}\n\`${bar}\` → ${state}${tierNote}`;
 }
@@ -316,14 +316,15 @@ export function buildRecruitmentContent(target, notificationRoleId) {
   if (target.dayKey === 'sat') {
     return `📢 **【${def.shortName}募集】${label} 21:00〜** ${mention}
 
-🔰 **「低ランクだけど迷惑かけない？」「強い人ばかりじゃない？」**
-➔ **まったく気にせずボタン押してください！**
-チームの実力が五分五分になるように自動でチーム分けされるので、初心者や低ランクでも全然大丈夫です。
+⚔️ **【土曜は実力伯仲の真剣勝負！ランク差を作らない徹底方針】**
+一方的な試合を防ぎ、全員が全力で楽しめるよう**「1ティア差以内（1ランク差）」**のメンバーでチームを編成します！
 
-**【⚖️ ランクと人数のルール】**
-・**20人集まったら2部屋に分割**: 「強い人部屋」と「初心者・初中級部屋」に分かれて同時にやるので、同じレベル同士で楽しめます！
-・**1部屋のとき**: 一番人数が多いランク帯に合わせて、チームの強さが同じくらいになるよう自動で分けられます
-・**低ランクの人が集まるほど安心**: アイアンや未ランクはブロンズとして数えるので、低ランクの人が何人か集まるだけでブロンズ〜シルバー中心の部屋になります（遠慮せず入ってください！）
+**【⚖️ ランクと部屋分けのルール】**
+・**20人集まったら2部屋に完全分割**: 「上位部屋（プラチナ以上）」と「初中級部屋（シルバー・ゴールド等）」に分かれて同時にやるので、全ランク帯の人が同レベル同士で白熱できます！
+・**1部屋（10〜19人）のとき**: 一番人数の多い最多ランク帯から「1ティア差以内（例：プラチナ基準ならゴールド〜プラチナ）」で10名を選出します
+・**2ティア以上離れた場合**: 実力差対戦を避けるため、外れ値の方は「観戦枠・配信応援」または「2戦目に交代」となります
+・**低ランクの方も安心**: アイアンや未ランクはブロンズとして合算します。低ランクの人が集まれば最多帯がシルバー等に変わり、初中級中心の部屋になります
+（※ランク不問で誰でも気楽にワイワイ遊べるのは日曜の「お祭りカスタム」です🎪）
 
 **【🕒 当日の全体の流れ】**
 ・21:00〜 **カスタムマッチ 3戦程度**（実力五分五分のチーム分け）
