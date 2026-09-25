@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, RefreshCw, Sparkles, BookOpen } from 'lucide-react';
+import { Plus, RefreshCw, Sparkles, BookOpen, Film } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import YoutubeQueueManager from '../youtube/YoutubeQueueManager';
 import DiscordImportPanel from './DiscordImportPanel';
@@ -15,16 +15,13 @@ function KnowledgeBaseContent() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
 
-  // メインタブの状態 ('input' | 'pipelines' | 'pending')
-  const [activeTab, setActiveTab] = useState<'input' | 'pipelines' | 'pending'>('input');
+  // メインタブの状態 ('input' | 'queue' | 'pending')
+  const [activeTab, setActiveTab] = useState<'input' | 'queue' | 'pending'>('input');
 
-  // 入力サブモード ('url' | 'memo')
-  const [inputSubMode, setInputSubMode] = useState<'url' | 'memo'>('url');
+  // 入力サブモード ('url' | 'memo' | 'discord')
+  const [inputSubMode, setInputSubMode] = useState<'url' | 'memo' | 'discord'>('url');
   const [inputUrl, setInputUrl] = useState('');
   const [inputMemo, setInputMemo] = useState('');
-
-  // パイプラインサブモード ('youtube' | 'discord')
-  const [pipelineSubMode, setPipelineSubMode] = useState<'youtube' | 'discord'>('youtube');
 
   // AI解析結果のプレビュー
   const [pendingPreview, setPendingPreview] = useState<KnowledgePreview | null>(null);
@@ -36,14 +33,11 @@ function KnowledgeBaseContent() {
   // URLパラメータ (?tab=...) の自動反映（後方互換対応）
   useEffect(() => {
     const tabParam = searchParams?.get('tab');
-    if (tabParam === 'video' || tabParam === 'queue' || tabParam === 'youtube') {
-      setActiveTab('pipelines');
-      setPipelineSubMode('youtube');
+    if (tabParam === 'video' || tabParam === 'queue' || tabParam === 'youtube' || tabParam === 'pipelines') {
+      setActiveTab('queue');
     } else if (tabParam === 'discord') {
-      setActiveTab('pipelines');
-      setPipelineSubMode('discord');
-    } else if (tabParam === 'pipelines') {
-      setActiveTab('pipelines');
+      setActiveTab('input');
+      setInputSubMode('discord');
     } else if (tabParam === 'memo') {
       setActiveTab('input');
       setInputSubMode('memo');
@@ -129,8 +123,7 @@ function KnowledgeBaseContent() {
         if (res.ok) {
           showFeedback('YouTube動画を解析キューに追加しました！(SREワーカーが順次解析します)', 'success');
           setInputUrl('');
-          setActiveTab('pipelines');
-          setPipelineSubMode('youtube');
+          setActiveTab('queue');
         } else {
           const err = await res.json().catch(() => ({}));
           showFeedback(err.error || 'キュー追加に失敗しました。', 'error');
@@ -276,7 +269,7 @@ function KnowledgeBaseContent() {
         )}
       </AnimatePresence>
 
-      {/* 🎯 3大メインタブ（知見追加 / 自動収集 / 承認待ち） */}
+      {/* 🎯 3大メインタブ（知見追加 / 動画解析キュー / 承認待ちナレッジ） */}
       <div className="grid grid-cols-3 gap-2 p-1.5 bg-stone-100/90 rounded-2xl border border-stone-200">
         <button
           type="button"
@@ -293,15 +286,15 @@ function KnowledgeBaseContent() {
 
         <button
           type="button"
-          onClick={() => setActiveTab('pipelines')}
+          onClick={() => setActiveTab('queue')}
           className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-            activeTab === 'pipelines'
+            activeTab === 'queue'
               ? 'bg-white text-stone-900 shadow-xs font-black'
               : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
           }`}
         >
-          <RefreshCw size={14} className={activeTab === 'pipelines' ? 'text-indigo-600' : 'text-stone-400'} />
-          <span>自動収集パイプライン</span>
+          <Film size={14} className={activeTab === 'queue' ? 'text-indigo-600' : 'text-stone-400'} />
+          <span>動画解析キュー</span>
         </button>
 
         <button
@@ -325,148 +318,133 @@ function KnowledgeBaseContent() {
 
       {/* 1. 📥 知見の追加タブ */}
       {activeTab === 'input' && (
-        <div className="bg-white border border-stone-200/90 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-3">
-            <h2 className="text-sm font-bold text-stone-900 flex items-center gap-2">
-              <span className="p-1.5 bg-amber-50 rounded-lg text-amber-600 border border-amber-200/60">
-                <Plus size={15} />
-              </span>
-              <span>新しい知見を取り込む</span>
-            </h2>
+        <div className="space-y-4">
+          <div className="bg-white border border-stone-200/90 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-3">
+              <h2 className="text-sm font-bold text-stone-900 flex items-center gap-2">
+                <span className="p-1.5 bg-amber-50 rounded-lg text-amber-600 border border-amber-200/60">
+                  <Plus size={15} />
+                </span>
+                <span>新しい知見を取り込む</span>
+              </h2>
 
-            {/* URL / メモ のサブ切り替えピル */}
-            <div className="flex items-center gap-1 p-1 bg-stone-100 rounded-xl border border-stone-200 self-start sm:self-auto">
-              <button
-                type="button"
-                onClick={() => setInputSubMode('url')}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  inputSubMode === 'url'
-                    ? 'bg-white text-stone-900 shadow-xs font-black'
-                    : 'text-stone-500 hover:text-stone-900'
-                }`}
-              >
-                🌐 Web / X / YouTube URL
-              </button>
-              <button
-                type="button"
-                onClick={() => setInputSubMode('memo')}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  inputSubMode === 'memo'
-                    ? 'bg-white text-stone-900 shadow-xs font-black'
-                    : 'text-stone-500 hover:text-stone-900'
-                }`}
-              >
-                📝 テキスト自由メモ
-              </button>
+              {/* URL / メモ / Discordチャット のサブ切り替えピル */}
+              <div className="flex items-center gap-1 p-1 bg-stone-100 rounded-xl border border-stone-200 self-start sm:self-auto flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setInputSubMode('url')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    inputSubMode === 'url'
+                      ? 'bg-white text-stone-900 shadow-xs font-black'
+                      : 'text-stone-500 hover:text-stone-900'
+                  }`}
+                >
+                  🌐 Web / X / YouTube URL
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInputSubMode('memo')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    inputSubMode === 'memo'
+                      ? 'bg-white text-stone-900 shadow-xs font-black'
+                      : 'text-stone-500 hover:text-stone-900'
+                  }`}
+                >
+                  📝 テキスト自由メモ
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInputSubMode('discord')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    inputSubMode === 'discord'
+                      ? 'bg-white text-indigo-900 shadow-xs font-black'
+                      : 'text-stone-500 hover:text-stone-900'
+                  }`}
+                >
+                  💬 Discordチャットログ解析
+                </button>
+              </div>
             </div>
-          </div>
 
-          <form onSubmit={(e) => handleAddKnowledge(e, false)} className="space-y-4">
-            {inputSubMode === 'url' ? (
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold text-stone-600">
-                  対象URL (Xポスト / Web攻略記事 / YouTube動画)
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://x.com/... または Web攻略記事 / YouTube URL を入力..."
-                  value={inputUrl}
-                  onChange={(e) => setInputUrl(e.target.value)}
-                  className="w-full px-4 py-3 bg-stone-50/70 border border-stone-200 rounded-xl focus:outline-none focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-500/20 text-xs text-stone-900 placeholder-stone-400 font-mono transition-all"
-                />
+            {inputSubMode === 'discord' ? (
+              <DiscordImportPanel />
+            ) : (
+              <form onSubmit={(e) => handleAddKnowledge(e, false)} className="space-y-4">
+                {inputSubMode === 'url' ? (
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-stone-600">
+                      対象URL (Xポスト / Web攻略記事 / YouTube動画)
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://x.com/... または Web攻略記事 / YouTube URL を入力..."
+                      value={inputUrl}
+                      onChange={(e) => setInputUrl(e.target.value)}
+                      className="w-full px-4 py-3 bg-stone-50/70 border border-stone-200 rounded-xl focus:outline-none focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-500/20 text-xs text-stone-900 placeholder-stone-400 font-mono transition-all"
+                    />
 
-                {/* YouTube検知バナー */}
-                {isYoutubeUrl(inputUrl) && (
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-base">🎥</span>
-                      <span>YouTube動画が検出されました。バックグラウンド解析キューへ追加して非同期に処理できます。</span>
-                    </div>
-                    <button
-                      type="button"
-                      disabled={actionLoading}
-                      onClick={(e) => handleAddKnowledge(e, true)}
-                      className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-[11px] transition shadow-xs shrink-0 cursor-pointer disabled:opacity-50"
-                    >
-                      ⏳ キューに追加
-                    </button>
+                    {/* YouTube検知バナー */}
+                    {isYoutubeUrl(inputUrl) && (
+                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">🎥</span>
+                          <span>YouTube動画が検出されました。動画解析キューへ追加して非同期に処理できます。</span>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={actionLoading}
+                          onClick={(e) => handleAddKnowledge(e, true)}
+                          className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-[11px] transition shadow-xs shrink-0 cursor-pointer disabled:opacity-50"
+                        >
+                          ⏳ キューに追加
+                        </button>
+                      </div>
+                    )}
+
+                    <p className="text-[10px] text-stone-500 pl-0.5">
+                      ※ X(Twitter)画像・動画やWeb記事をAIが自動要約。YouTube動画は自動的に解析キューへ送信され、要約・実演シーン抽出が行われます。
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-stone-600">
+                      戦術メモ・気付き・立ち回りノウハウ
+                    </label>
+                    <textarea
+                      rows={6}
+                      placeholder="マッチアップの気付き、ビルドの没理由、立ち回りノウハウを自由に入力..."
+                      value={inputMemo}
+                      onChange={(e) => setInputMemo(e.target.value)}
+                      className="w-full px-4 py-3 bg-stone-50/70 border border-stone-200 rounded-xl focus:outline-none focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-500/20 text-xs text-stone-900 placeholder-stone-400 resize-none leading-relaxed transition-all"
+                    />
                   </div>
                 )}
 
-                <p className="text-[10px] text-stone-500 pl-0.5">
-                  ※ X(Twitter)画像・動画やWeb記事をAIが自動要約。YouTube動画は自動的に解析キューへ送信され、要約・実演シーン抽出が行われます。
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-stone-600">
-                  戦術メモ・気付き・立ち回りノウハウ
-                </label>
-                <textarea
-                  rows={6}
-                  placeholder="マッチアップの気付き、ビルドの没理由、立ち回りノウハウを自由に入力..."
-                  value={inputMemo}
-                  onChange={(e) => setInputMemo(e.target.value)}
-                  className="w-full px-4 py-3 bg-stone-50/70 border border-stone-200 rounded-xl focus:outline-none focus:border-amber-500 focus:bg-white focus:ring-2 focus:ring-amber-500/20 text-xs text-stone-900 placeholder-stone-400 resize-none leading-relaxed transition-all"
-                />
-              </div>
+                <div className="flex items-center justify-end gap-2 pt-1">
+                  <button
+                    type="submit"
+                    disabled={actionLoading}
+                    className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xs transition-all shadow-xs flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                  >
+                    {actionLoading ? <RefreshCw size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                    <span>{inputSubMode === 'url' ? 'AI解析を実行' : 'AIによる分類・保存'}</span>
+                  </button>
+                </div>
+              </form>
             )}
-
-            <div className="flex items-center justify-end gap-2 pt-1">
-              <button
-                type="submit"
-                disabled={actionLoading}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xs transition-all shadow-xs flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
-              >
-                {actionLoading ? <RefreshCw size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                <span>{inputSubMode === 'url' ? 'AI解析を実行' : 'AIによる分類・保存'}</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* 2. ⚙️ 自動収集パイプラインタブ */}
-      {activeTab === 'pipelines' && (
-        <div className="space-y-4">
-          {/* パイプライン内サブ切り替え */}
-          <div className="flex items-center gap-1.5 p-1 bg-stone-100 rounded-xl border border-stone-200 w-fit">
-            <button
-              type="button"
-              onClick={() => setPipelineSubMode('youtube')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                pipelineSubMode === 'youtube'
-                  ? 'bg-white text-stone-900 shadow-xs font-black'
-                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
-              }`}
-            >
-              <span>🎥 YouTube 動画解析キュー</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setPipelineSubMode('discord')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                pipelineSubMode === 'discord'
-                  ? 'bg-white text-stone-900 shadow-xs font-black'
-                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
-              }`}
-            >
-              <span>💬 Discord ログ解析</span>
-            </button>
           </div>
-
-          {pipelineSubMode === 'youtube' && (
-            <div className="space-y-6">
-              <VideoDeepDiveRequestPanel />
-              <YoutubeQueueManager />
-            </div>
-          )}
-
-          {pipelineSubMode === 'discord' && <DiscordImportPanel />}
         </div>
       )}
 
-      {/* 3. ✅ 承認待ちナレッジタブ */}
+      {/* 2. 🎥 動画解析キュータブ */}
+      {activeTab === 'queue' && (
+        <div className="space-y-6">
+          <VideoDeepDiveRequestPanel />
+          <YoutubeQueueManager />
+        </div>
+      )}
+
+      {/* 3. 🧩 承認待ちナレッジタブ */}
       {activeTab === 'pending' && <PendingInsightsPanel />}
 
       {pendingPreview && (

@@ -1,8 +1,15 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { CheckCircle2, XCircle, RefreshCw, HelpCircle, ExternalLink } from 'lucide-react';
+import { CheckCircle2, XCircle, RefreshCw, HelpCircle, ExternalLink, Eye, Sparkles } from 'lucide-react';
 import ChampSelect from '../../../components/ChampSelect';
+import LibraryMergePreviewModal, {
+  type MergePreviewItem,
+  type ChampionTrendAnalysis,
+  type MatchupInsight,
+  type LaneGeneralInsight,
+  type ChampionSpecificInsight,
+} from './LibraryMergePreviewModal';
 
 type PendingItem = {
   id: number;
@@ -16,6 +23,16 @@ type PendingItem = {
   source_url: string | null;
   created_at: string;
   isLaneGeneral: boolean;
+};
+
+type MergePreviewState = {
+  item: PendingItem;
+  previews: MergePreviewItem[];
+  trendAnalyses: ChampionTrendAnalysis[];
+  matchupInsights: MatchupInsight[];
+  laneGeneralInsights: LaneGeneralInsight[];
+  detectedLane: string;
+  editChampions: string[];
 };
 
 // review_status='pending'の行を承認/却下するパネル。対象は2種類:
@@ -50,6 +67,162 @@ export default function PendingInsightsPanel() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [autoMergeToDict, setAutoMergeToDict] = useState<boolean>(true);
   const [batchActionRunning, setBatchActionRunning] = useState<boolean>(false);
+
+  // プレビューモーダル管理
+  const [mergePreview, setMergePreview] = useState<MergePreviewState | null>(null);
+  const [previewLoadingId, setPreviewLoadingId] = useState<number | null>(null);
+  const [previewSaving, setPreviewSaving] = useState(false);
+  const [reAnalyzing, setReAnalyzing] = useState(false);
+
+  /** プレビューモーダルを開く（dryRun: trueでDiffを計算） */
+  const openMergePreview = async (item: PendingItem) => {
+    setPreviewLoadingId(item.id);
+    setError(null);
+    const editedChamp = championEdits[item.id] ?? (item.isLaneGeneral ? '' : (item.champion || ''));
+    const champs = editedChamp.trim() ? [editedChamp.trim()] : [];
+
+    try {
+      const res = await fetch('/api/admin/knowledge/merge-article', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          articleId: item.id,
+          title: item.title,
+          content: item.content,
+          editChampions: champs,
+          dryRun: true,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'プレビューの取得に失敗しました');
+
+      setMergePreview({
+        item,
+        previews: data.previews || [],
+        trendAnalyses: data.trendAnalyses || [],
+        matchupInsights: data.matchupInsights || [],
+        laneGeneralInsights: data.laneGeneralInsights || [],
+        detectedLane: data.detectedLane || 'COMMON',
+        editChampions: data.champions || champs,
+      });
+    } catch (e: any) {
+      setError(`プレビュー取得エラー: ${e.message}`);
+    } finally {
+      setPreviewLoadingId(null);
+    }
+  };
+
+  /** モーダル内からのチャンピオン変更に伴うAI再解析 */
+  const handleReAnalyzeFromModal = async (newChamps: string[]) => {
+    if (!mergePreview) return;
+    setReAnalyzing(true);
+    try {
+      const res = await fetch('/api/admin/knowledge/merge-article', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          articleId: mergePreview.item.id,
+          title: mergePreview.item.title,
+          content: mergePreview.item.content,
+          editChampions: newChamps,
+          dryRun: true,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '再解析に失敗しました');
+
+      setMergePreview({
+        ...mergePreview,
+        previews: data.previews || [],
+        trendAnalyses: data.trendAnalyses || [],
+        matchupInsights: data.matchupInsights || [],
+        laneGeneralInsights: data.laneGeneralInsights || [],
+        detectedLane: data.detectedLane || 'COMMON',
+        editChampions: data.champions || newChamps,
+      });
+    } catch (e: any) {
+      setError(`再解析エラー: ${e.message}`);
+    } finally {
+      setReAnalyzing(false);
+    }
+  };
+
+  /** プレビューで確認・調整した内容を確定して辞典へマージ */
+  const confirmMerge = async (options: {
+    sendToLane: string | null;
+    approvedMatchups: MatchupInsight[];
+    approvedLaneGeneralInsights: LaneGeneralInsight[];
+    championSpecificInsights: ChampionSpecificInsight[];
+    trendDataOverrides?: Record<string, Record<string, string>>;
+    championRoles?: Record<string, string>;
+    finalChampions?: string[];
+  }) => {
+    if (!mergePreview) return;
+    setPreviewSaving(true);
+    setError(null);
+    try {
+      const champsToMerge = options.finalChampions && options.finalChampions.length > 0
+        ? options.finalChampions
+        : mergePreview.editChampions;
+
+      const laneInsights = options.approvedLaneGeneralInsights || mergePreview.laneGeneralInsights;
+      const laneGeneralExcerpt = options.sendToLane && laneInsights.length > 0
+        ? laneInsights.map((i: any) => `## ${i.title}\n${i.summary}`).join('\n\n')
+        : '';
+
+      // 1. 辞典・レーンガイドへ高度マージ
+      const mergeRes = await fetch('/api/admin/knowledge/merge-article', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          articleId: mergePreview.item.id,
+          title: mergePreview.item.title,
+          content: mergePreview.item.content,
+          editChampions: champsToMerge,
+          sendLaneGeneralToLane: options.sendToLane,
+          laneGeneralExcerpt,
+          approvedMatchups: options.approvedMatchups,
+          approvedLaneGeneralInsights: laneInsights,
+          championSpecificInsights: options.championSpecificInsights || [],
+          trendDataOverrides: options.trendDataOverrides,
+          championRoles: options.championRoles || {},
+        }),
+      });
+      const mergeData = await mergeRes.json();
+      if (!mergeRes.ok) throw new Error(mergeData.error || '辞典へのマージに失敗しました');
+
+      // 2. pending-review から承認完了として外す
+      await fetch('/api/admin/knowledge/pending-review', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: mergePreview.item.id,
+          action: 'approve',
+          champion: champsToMerge[0] || '',
+          mergeToDict: false, // 既に merge-article で高度マージ済み
+        }),
+      });
+
+      // 3. UIのリストから除外
+      const removedId = mergePreview.item.id;
+      setItems((prev) => (prev || []).filter((i) => i.id !== removedId));
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(removedId);
+        return next;
+      });
+
+      setMergePreview(null);
+    } catch (e: any) {
+      setError(`マージ確定エラー: ${e.message}`);
+    } finally {
+      setPreviewSaving(false);
+    }
+  };
 
   const toggleSelect = (id: number) => {
     setSelectedIds(prev => {
@@ -282,18 +455,32 @@ export default function PendingInsightsPanel() {
                     placeholder="空欄でレーン一般論"
                   />
                 </div>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => openMergePreview(item)}
+                    disabled={busy || previewLoadingId === item.id}
+                    className="px-3.5 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold rounded-xl text-xs transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                    title="辞典や対面メモにどう反映されるかを事前に確認・調整します"
+                  >
+                    {previewLoadingId === item.id ? (
+                      <RefreshCw size={13} className="animate-spin text-amber-700" />
+                    ) : (
+                      <Eye size={13} className="text-amber-700" />
+                    )}
+                    <span>🔍 辞典反映プレビュー</span>
+                  </button>
                   <button
                     onClick={() => act(item.id, 'reject')}
-                    disabled={busy}
-                    className="px-4 py-2.5 bg-rose-50 text-rose-700 border border-rose-200 font-bold rounded-xl text-xs hover:bg-rose-100 transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                    disabled={busy || previewLoadingId === item.id}
+                    className="px-3.5 py-2.5 bg-rose-50 text-rose-700 border border-rose-200 font-bold rounded-xl text-xs hover:bg-rose-100 transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                   >
                     <XCircle size={14} /> 却下(削除)
                   </button>
                   <button
                     onClick={() => act(item.id, 'approve', editedChampion)}
-                    disabled={busy}
-                    className="px-4 py-2.5 bg-emerald-600 text-white font-bold rounded-xl text-xs hover:bg-emerald-500 transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                    disabled={busy || previewLoadingId === item.id}
+                    className="px-3.5 py-2.5 bg-emerald-600 text-white font-bold rounded-xl text-xs hover:bg-emerald-500 transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                   >
                     {busy ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={14} />} 承認
                   </button>
@@ -303,6 +490,27 @@ export default function PendingInsightsPanel() {
           );
         })}
       </div>
+
+      {/* 🔍 辞典統合 ＆ 戦略データ整理プレビューモーダル */}
+      {mergePreview && (
+        <LibraryMergePreviewModal
+          key={mergePreview.item.id}
+          previews={mergePreview.previews}
+          trendAnalyses={mergePreview.trendAnalyses}
+          matchupInsights={mergePreview.matchupInsights}
+          laneGeneralInsights={mergePreview.laneGeneralInsights}
+          detectedLane={mergePreview.detectedLane}
+          currentChampions={mergePreview.editChampions}
+          articleTitle={mergePreview.item.title}
+          articleContent={mergePreview.item.content}
+          sourceUrl={mergePreview.item.source_url || ''}
+          saving={previewSaving}
+          reAnalyzing={reAnalyzing}
+          onReAnalyze={handleReAnalyzeFromModal}
+          onConfirm={confirmMerge}
+          onCancel={() => setMergePreview(null)}
+        />
+      )}
     </div>
   );
 }
