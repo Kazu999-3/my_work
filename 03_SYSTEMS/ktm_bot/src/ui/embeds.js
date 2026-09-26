@@ -1,7 +1,7 @@
 import { CONFIG } from '../config.js';
 import {
   RECRUITMENT_COLORS, getDayDef, buildDayBanner, replaceBanner,
-  computeDayStatus, computeDominantTier, parseEntryBreakdown,
+  computeDayStatus, computeDominantTier, parseEntryBreakdown, cleanEntryLine,
 } from '../utils/recruitmentStatus.js';
 
 function renderProgressBar(current, max) {
@@ -323,31 +323,28 @@ function formatLinesSafe(lines) {
   return out.join('\n');
 }
 
-function renderEntryList(lines) {
+function renderEntryList(lines, status) {
   if (!lines || lines.length === 0) return '▫ まだ誰もいません。最初の1人になりませんか？';
 
-  const breakdown = parseEntryBreakdown(lines);
-  if (!breakdown.hasBreakdown) {
-    return formatLinesSafe(lines);
+  const b = status?.breakdown;
+  if (b && b.hasSpectator) {
+    const rangeText = status.dominantTierInfo?.rangeText || '1ティア差以内';
+    const sections = [];
+    if (b.eligibleLines.length > 0) {
+      sections.push(`**【🎯 出場対象枠（${rangeText}: ${b.eligibleTotal}名）】**\n${b.eligibleLines.join('\n')}`);
+    }
+    if (b.spectatorLines.length > 0) {
+      sections.push(`**【👀 観戦・2部屋目待ち枠（${b.spectatorTotal}名）】**\n${b.spectatorLines.join('\n')}`);
+    }
+    const groupedText = sections.join('\n\n');
+    if (groupedText.length <= FIELD_VALUE_LIMIT) {
+      return groupedText;
+    }
   }
 
-  const sections = [];
-  if (breakdown.full.length > 0) {
-    sections.push(`**【🟢 フル参加 (${breakdown.full.length}名)】**\n${breakdown.full.join('\n')}`);
-  }
-  if (breakdown.single.length > 0) {
-    sections.push(`**【⏱️ 1戦のみ (${breakdown.single.length}名)】**\n${breakdown.single.join('\n')}`);
-  }
-  if (breakdown.late.length > 0) {
-    sections.push(`**【🌙 途中参加 (${breakdown.late.length}名)】**\n${breakdown.late.join('\n')}`);
-  }
-
-  const groupedText = sections.join('\n\n');
-  if (groupedText.length <= FIELD_VALUE_LIMIT) {
-    return groupedText;
-  }
-
-  return formatLinesSafe(lines);
+  // 観戦枠がいない場合はシンプルに全行（フル参加表記除去済み）を表示
+  const cleaned = (b?.eligibleLines || lines).map(cleanEntryLine);
+  return formatLinesSafe(cleaned);
 }
 
 /**
@@ -361,7 +358,7 @@ function renderEntryList(lines) {
 export function applyDayCardState(embed, dayKey, entryLines) {
   const def = getDayDef(dayKey);
   const lines = entryLines || [];
-  const status = computeDayStatus(lines);
+  const status = computeDayStatus(lines, undefined, dayKey);
   // 最多ランク帯は土曜（チーム分け基準あり）でのみ意味を持つ。
   const dominantTierText = def.showRank ? computeDominantTier(lines) : '';
   const banner = buildDayBanner(def.key, status, dominantTierText);
@@ -370,14 +367,17 @@ export function applyDayCardState(embed, dayKey, entryLines) {
   embed.description = `${banner}\n\n${def.rule}`;
   embed.color = status.color;
 
-  const fieldTitle = status.breakdown?.hasBreakdown
-    ? `👥 参加者 (計${status.joined}名)`
-    : `👥 参加者 (${status.joined}/${status.capacity}名)`;
+  let fieldTitle;
+  if (status.breakdown?.hasSpectator) {
+    fieldTitle = `👥 参加者（計${status.total}名 / 出場対象: ${status.breakdown.eligibleTotal}名・観戦待ち: ${status.breakdown.spectatorTotal}名）`;
+  } else {
+    fieldTitle = `👥 参加者 (${status.joined}/${status.capacity}名)`;
+  }
 
   embed.fields = [
     {
       name: fieldTitle,
-      value: renderEntryList(lines),
+      value: renderEntryList(lines, status),
       inline: false,
     },
   ];

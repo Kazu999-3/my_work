@@ -56,8 +56,8 @@ console.log('----|------|------------|---------|-----------|-------------');
 
 for (const dayKey of ['sat', 'sun']) {
   for (const c of cases) {
-    const status = computeDayStatus(c.input);
-    const header = buildDayBanner(dayKey, status).split('\n')[0];
+    const status = computeDayStatus(c.input, undefined, dayKey);
+    const header = buildDayBanner(dayKey, status, status.dominantTierInfo?.text).split('\n')[0];
     const colorName = COLOR_NAMES[status.color] || `不明(0x${status.color.toString(16)})`;
 
     if (status.remaining < 0) fail(`[${dayKey}/${c.label}] remainingが負になっています`);

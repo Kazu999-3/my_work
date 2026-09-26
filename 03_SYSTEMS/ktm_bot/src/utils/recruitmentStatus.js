@@ -71,34 +71,121 @@ export function renderProgressBar(current, max = DAY_CAPACITY) {
   return `[${'■'.repeat(filled)}${'□'.repeat(empty)}] ${current}/${max}名`;
 }
 
-/**
- * 参加者行から参加形態（フル、1戦のみ、途中参加）と各試合の実働人数を集計する。
- */
-export function parseEntryBreakdown(lines) {
-  const entries = (lines || []).filter((l) => l && l.startsWith('- '));
-  const full = [];
-  const single = [];
-  const late = [];
+export const TIER_ORDER = {
+  'ブロンズ': 1,
+  'シルバー': 2,
+  'ゴールド': 3,
+  'プラチナ': 4,
+};
 
+export const TIER_RANGE_TEXT = {
+  'プラチナ': 'ゴールド〜プラチナ',
+  'ゴールド': 'シルバー〜プラチナ',
+  'シルバー': 'ブロンズ〜ゴールド',
+  'ブロンズ': 'アイアン〜シルバー',
+};
+
+const RANK_JP_MAP = {
+  CHALLENGER: 'チャレンジャー', GRANDMASTER: 'グランドマスター', MASTER: 'マスター',
+  DIAMOND: 'ダイヤ', EMERALD: 'エメラルド', PLATINUM: 'プラチナ',
+  GOLD: 'ゴールド', SILVER: 'シルバー', BRONZE: 'ブロンズ', IRON: 'アイアン',
+  UNRANKED: '未ランク',
+};
+
+const RANK_LINE_PATTERN = /【(アイアン|ブロンズ|シルバー|ゴールド|プラチナ|エメラルド|ダイヤ|マスター|チャレンジャー|グランドマスター|未ランク|IRON|BRONZE|SILVER|GOLD|PLATINUM|EMERALD|DIAMOND|MASTER|GRANDMASTER|CHALLENGER|UNRANKED)/i;
+
+/** 行から正規化した4大ランク（ブロンズ・シルバー・ゴールド・プラチナ）を取得 */
+export function getNormalizedTier(line) {
+  const match = (line || '').match(RANK_LINE_PATTERN);
+  const raw = match ? match[1].toUpperCase() : 'SILVER';
+  const jp = RANK_JP_MAP[raw] || match?.[1] || 'シルバー';
+
+  if (['チャレンジャー', 'グランドマスター', 'マスター', 'ダイヤ', 'エメラルド', 'プラチナ'].includes(jp)) {
+    return 'プラチナ';
+  } else if (['アイアン', '未ランク', 'ブロンズ'].includes(jp)) {
+    return 'ブロンズ';
+  }
+  return jp;
+}
+
+/** 通常参加である「🟢フル」の表示を除去して視認性を高める */
+export function cleanEntryLine(line) {
+  return (line || '').replace(/\s*🟢\s*フル/g, '');
+}
+
+/** 最多ランク帯と対象レンジ情報を計算 */
+export function computeDominantTierInfo(lines) {
+  const entries = (lines || []).filter((l) => l && l.startsWith('- '));
+  if (entries.length === 0) return { key: '', text: '', rangeText: '' };
+
+  const tierCounts = {};
   for (const line of entries) {
-    if (line.includes('1戦のみ')) {
-      single.push(line);
-    } else if (line.includes('途中参加')) {
-      late.push(line);
-    } else {
-      full.push(line);
+    const jp = getNormalizedTier(line);
+    tierCounts[jp] = (tierCounts[jp] || 0) + 1;
+  }
+
+  let bestKey = '';
+  let maxCount = 0;
+  for (const [tier, count] of Object.entries(tierCounts)) {
+    if (count > maxCount) {
+      maxCount = count;
+      bestKey = tier;
     }
   }
 
-  const match1Count = full.length + single.length;
-  const match2Count = full.length + late.length;
+  return {
+    key: bestKey,
+    text: bestKey ? `${bestKey}帯(${maxCount}名)` : '',
+    rangeText: TIER_RANGE_TEXT[bestKey] || '',
+  };
+}
+
+/**
+ * 参加者行から「1ティア差以内の出場対象枠」と「2ティア差離れた観戦・2部屋目待ち枠」を分離し、
+ * 出場対象枠の中だけで各試合の実働人数を集計する。
+ */
+export function parseEntryBreakdown(lines, dominantTierKey = null) {
+  const entries = (lines || []).filter((l) => l && l.startsWith('- '));
+  const dominantOrder = dominantTierKey ? TIER_ORDER[dominantTierKey] : null;
+
+  const eligible = [];
+  const spectator = [];
+
+  for (const rawLine of entries) {
+    const cleaned = cleanEntryLine(rawLine);
+    if (!dominantOrder) {
+      // 日曜などランク不問の場合は全員出場対象
+      eligible.push({ raw: rawLine, line: cleaned });
+      continue;
+    }
+
+    const tier = getNormalizedTier(rawLine);
+    const tierOrder = TIER_ORDER[tier] || 2;
+    // 最多ランク帯から1ティア差以内なら出場対象、2ティア差以上なら観戦枠
+    if (Math.abs(tierOrder - dominantOrder) <= 1) {
+      eligible.push({ raw: rawLine, line: cleaned, tier });
+    } else {
+      spectator.push({ raw: rawLine, line: cleaned, tier });
+    }
+  }
+
+  // ★ カウントは出場対象枠（eligible）の中だけで集計！
+  const eligibleFull = eligible.filter((e) => !e.raw.includes('1戦のみ') && !e.raw.includes('途中参加'));
+  const eligibleSingle = eligible.filter((e) => e.raw.includes('1戦のみ'));
+  const eligibleLate = eligible.filter((e) => e.raw.includes('途中参加'));
+
+  const match1Count = eligibleFull.length + eligibleSingle.length;
+  const match2Count = eligibleFull.length + eligibleLate.length;
 
   return {
     total: entries.length,
-    full,
-    single,
-    late,
-    hasBreakdown: single.length > 0 || late.length > 0,
+    eligibleTotal: eligible.length,
+    spectatorTotal: spectator.length,
+    eligibleLines: eligible.map((e) => e.line),
+    spectatorLines: spectator.map((e) => e.line),
+    dominantTierKey,
+    hasBreakdown: eligibleSingle.length > 0 || eligibleLate.length > 0 || spectator.length > 0,
+    hasSpectator: spectator.length > 0,
     match1Count,
     match2Count,
     match1Remaining: Math.max(0, DAY_CAPACITY - match1Count),
@@ -110,24 +197,29 @@ export function parseEntryBreakdown(lines) {
 
 /**
  * 1日分（カード1枚分）の募集状態を計算する。
- * 配列が渡された場合は参加形態（1戦のみ・途中参加）を加味して試合別の人数を計算する。
- * @param {number|string[]} countOrLines その日の参加人数または参加者行配列
- * @param {number} [capacity] 定員（既定10）
+ * 配列が渡された場合は参加形態（1戦のみ・途中参加）およびランク制限を加味して計算する。
  */
-export function computeDayStatus(countOrLines, capacity = DAY_CAPACITY) {
+export function computeDayStatus(countOrLines, capacity = DAY_CAPACITY, dayKey = 'sat') {
   if (Array.isArray(countOrLines)) {
-    const breakdown = parseEntryBreakdown(countOrLines);
-    const joined = breakdown.total;
+    const dominantTierInfo = (dayKey === 'sat')
+      ? computeDominantTierInfo(countOrLines)
+      : { key: '', text: '', rangeText: '' };
+
+    const breakdown = parseEntryBreakdown(countOrLines, dominantTierInfo.key);
+    // ★ カウント・プログレスバーは出場対象枠（eligibleTotal）を基準にする
+    const joined = breakdown.eligibleTotal;
     const remaining = Math.max(0, capacity - joined);
     const isReady = breakdown.isMatch1Ready || (breakdown.match1Count === 0 && breakdown.isMatch2Ready);
 
     return {
+      total: breakdown.total,
       joined,
       capacity,
       remaining,
       isReady,
       color: (breakdown.isMatch1Ready || breakdown.isMatch2Ready) ? RECRUITMENT_COLORS.confirmed : RECRUITMENT_COLORS.recruiting,
       breakdown,
+      dominantTierInfo,
     };
   }
 
@@ -136,26 +228,26 @@ export function computeDayStatus(countOrLines, capacity = DAY_CAPACITY) {
   const isReady = joined >= capacity;
 
   return {
+    total: joined,
     joined,
     capacity,
     remaining,
     isReady,
     color: isReady ? RECRUITMENT_COLORS.confirmed : RECRUITMENT_COLORS.recruiting,
     breakdown: null,
+    dominantTierInfo: { key: '', text: '', rangeText: '' },
   };
 }
 
 /**
  * カードの description 先頭に置くステータスバナー。
- * 1戦のみ・途中参加者がいる場合は各試合の実働人数を明記する。
  */
 export function buildDayBanner(dayKey, status, dominantTierText = '') {
   const def = getDayDef(dayKey);
   const bar = renderProgressBar(status.joined, status.capacity);
   const b = status.breakdown;
 
-  // 1戦のみや途中参加者が含まれる場合: 各試合の実働人数を明記
-  if (b && b.hasBreakdown) {
+  if (b && (b.hasBreakdown || b.hasSpectator || dayKey === 'sat')) {
     let header;
     if (b.isMatch1Ready && b.isMatch2Ready) {
       header = `✅ **【${def.name}　全戦 開催確定！】**`;
@@ -167,16 +259,23 @@ export function buildDayBanner(dayKey, status, dominantTierText = '') {
       header = `🔥 **【${def.name}　募集中】**`;
     }
 
-    const tierNote = dominantTierText ? `（基準: **${dominantTierText}** / 1ティア差選出）` : '';
+    const rangeNote = status.dominantTierInfo?.rangeText ? ` / 対象: **${status.dominantTierInfo.rangeText}**` : '';
+    const tierNote = dominantTierText ? `（基準: **${dominantTierText}**${rangeNote}）` : '';
     const m1State = b.isMatch1Ready ? '🎉 **開催確定！**' : `あと**${b.match1Remaining}名**`;
     const m2State = b.isMatch2Ready ? '🎉 **開催確定！**' : `あと**${b.match2Remaining}名**`;
 
-    return [
+    const lines = [
       header,
       `\`${bar}\` 計**${b.total}名**エントリー${tierNote}`,
       `・第1戦（開幕 21:00〜）: **${b.match1Count}/${status.capacity}名** → ${m1State}`,
       `・第2戦（途中合流〜）: **${b.match2Count}/${status.capacity}名** → ${m2State}`,
-    ].join('\n');
+    ];
+
+    if (b.hasSpectator) {
+      lines.push(`（※観戦・2部屋目待ち: **${b.spectatorTotal}名** / 20名到達で初中級部屋が同時開催✨）`);
+    }
+
+    return lines.join('\n');
   }
 
   // 全員フルの場合（従来のスッキリ表示）
@@ -192,11 +291,6 @@ export function buildDayBanner(dayKey, status, dominantTierText = '') {
   return `${header}\n\`${bar}\` → ${state}${tierNote}`;
 }
 
-/**
- * description は「バナー ＋ 空行 ＋ 補足」という構成で統一している。
- * その先頭ブロック（バナー）だけを最新状態へ差し替える。
- * 空行区切りでの分割なので、絵文字や見出し文言の揺れに影響されない。
- */
 export function replaceBanner(description, banner) {
   if (!description) return banner;
   const parts = description.split('\n\n');
@@ -204,52 +298,8 @@ export function replaceBanner(description, banner) {
   return parts.join('\n\n');
 }
 
-const RANK_JP_MAP = {
-  CHALLENGER: 'チャレンジャー', GRANDMASTER: 'グランドマスター', MASTER: 'マスター',
-  DIAMOND: 'ダイヤ', EMERALD: 'エメラルド', PLATINUM: 'プラチナ',
-  GOLD: 'ゴールド', SILVER: 'シルバー', BRONZE: 'ブロンズ', IRON: 'アイアン',
-  UNRANKED: '未ランク',
-};
-
-const RANK_LINE_PATTERN = /【(アイアン|ブロンズ|シルバー|ゴールド|プラチナ|エメラルド|ダイヤ|マスター|チャレンジャー|グランドマスター|未ランク|IRON|BRONZE|SILVER|GOLD|PLATINUM|EMERALD|DIAMOND|MASTER|GRANDMASTER|CHALLENGER|UNRANKED)/i;
-
-/**
- * 参加者行から最多ランク帯（ボリュームゾーン）を集計する。
- * ルール: エメラルド以上はプラチナへ合算 / アイアン・未ランクはブロンズへ合算。
- *
- * ★ 以前は集計結果をフィールド名へ「🎯 基準: 〜」として書き込み、次回の更新時に
- *   正規表現で読み戻していた。書式を変えるたびに読み戻し側とズレる（実際に
- *   「(※MMR基準)」まで拾ってバナーに二重表示される不具合が出た）ため、
- *   参加者行から毎回その場で計算する方式に変更した。
- * @returns {string} 例: 'シルバー帯(3名)'。参加者0名なら空文字。
- */
 export function computeDominantTier(lines) {
-  const entries = (lines || []).filter((l) => l && l.startsWith('- '));
-  if (entries.length === 0) return '';
-
-  const tierCounts = {};
-  for (const line of entries) {
-    const match = line.match(RANK_LINE_PATTERN);
-    const raw = match ? match[1].toUpperCase() : 'SILVER';
-    let jp = RANK_JP_MAP[raw] || match?.[1] || 'シルバー';
-
-    if (['チャレンジャー', 'グランドマスター', 'マスター', 'ダイヤ', 'エメラルド', 'プラチナ'].includes(jp)) {
-      jp = 'プラチナ';
-    } else if (['アイアン', '未ランク', 'ブロンズ'].includes(jp)) {
-      jp = 'ブロンズ';
-    }
-    tierCounts[jp] = (tierCounts[jp] || 0) + 1;
-  }
-
-  let best = '';
-  let maxCount = 0;
-  for (const [tier, count] of Object.entries(tierCounts)) {
-    if (count > maxCount) {
-      maxCount = count;
-      best = `${tier}帯(${count}名)`;
-    }
-  }
-  return best;
+  return computeDominantTierInfo(lines).text;
 }
 
 /** 埋め込みの参加者フィールドから参加者行だけを取り出す */
