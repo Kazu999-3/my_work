@@ -747,33 +747,18 @@ def main():
             lines.append(f"**✅ 解析完了: {len(done)}本**")
             lines += [f"・{item['title'] if isinstance(item, dict) else item}" for item in done]
 
-            # 承認ボタンの組み立て（最大4件までボタン化、5行目はポータルリンク）
-            btn_rows = []
-            valid_done = [d for d in done if isinstance(d, dict) and d.get("id")]
-            for item in valid_done[:4]:
-                btn_rows.append({
+            # 承認はポータル側の未承認ナレッジ管理ページで行うため、Discord上の個別承認ボタンは撤去
+            portal_url = os.environ.get("PORTAL_URL", "https://ktm-portal.pages.dev").rstrip("/")
+            if portal_url:
+                components = [{
                     "type": 1,
                     "components": [{
                         "type": 2,
-                        "label": f"✅ 承認: {item['title'][:25]}",
-                        "style": 3, # 緑
-                        "custom_id": f"approve_knowledge:{item['id']}"
+                        "label": "🌐 未承認ナレッジ確認・承認 (ポータル)",
+                        "style": 5, # リンク
+                        "url": f"{portal_url}/admin/knowledge"
                     }]
-                })
-            portal_url = os.environ.get("PORTAL_URL", "https://ktm-portal.pages.dev").rstrip("/")
-            portal_link_btn = {
-                "type": 1,
-                "components": [{
-                    "type": 2,
-                    "label": "🌐 未承認ナレッジ一覧 (ポータル)",
-                    "style": 5, # リンク
-                    "url": f"{portal_url}/admin/knowledge"
                 }]
-            }
-            if btn_rows:
-                components = btn_rows + [portal_link_btn]
-            elif portal_url:
-                components = [portal_link_btn]
 
         if failed:
             lines.append(f"\n**❌ 失敗: {len(failed)}本**")
