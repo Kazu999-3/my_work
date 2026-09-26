@@ -29,7 +29,7 @@ export const DAY_DEFS = {
     label: '土曜',
     name: '土曜・本戦カスタム',
     shortName: '土曜本戦カスタム',
-    rule: 'ランク差を作らない実力伯仲マッチ。最多ランク帯から1ティア差以内を基準に10名を選出し、実力が均等になるよう自動でチーム分けします（MMR変動あり）',
+    rule: 'ランク差を作らない実力伯仲マッチ。最多ランク帯から1ティア差以内を基準に選出（人数不足時は対面が同レートになるよう低レート枠を編成して試合成立・MMR変動あり）',
     joinPrefix: 'join_periodic_auto',
     showRank: true,   // 参加者行にランク表記を出すか（日曜はランク不問なので出さない）
     buttonStyle: 1,   // Primary (Blue)
@@ -166,16 +166,38 @@ export function computeDominantTierInfo(lines) {
   };
 }
 
+/** 行から希望レーンを抽出 */
+export function extractPlayerLanes(rawLine) {
+  const p1 = (rawLine || '').match(/第1:\s*([A-Za-z]+)/)?.[1]?.toUpperCase();
+  const p2 = (rawLine || '').match(/第2:\s*([A-Za-z]+)/)?.[1]?.toUpperCase();
+  const set = new Set();
+  if (p1 && p1 !== '指定なし') set.add(p1);
+  if (p2 && p2 !== '指定なし') set.add(p2);
+  return set;
+}
+
+/** 2人が共通の希望レーンを持っているか（指定なし・おまかせ含む） */
+export function hasCommonLane(rawA, rawB) {
+  const lanesA = extractPlayerLanes(rawA);
+  const lanesB = extractPlayerLanes(rawB);
+  if (lanesA.size === 0 || lanesB.size === 0) return true;
+  for (const lane of lanesA) {
+    if (lanesB.has(lane)) return true;
+  }
+  return false;
+}
+
 /**
  * 参加者行から「1ティア差以内の出場対象枠」と「2ティア差離れた観戦・2部屋目待ち枠」を分離し、
  * 出場対象枠の中だけで各試合の実働人数を集計する。
+ * ★ 人数不足時（10名未満）は、特定レーンで同レート同士の対面（ミラー）が組めるペアを出場枠へ昇格。
  */
 export function parseEntryBreakdown(lines, dominantTierKey = null) {
   const entries = (lines || []).filter((l) => l && l.startsWith('- '));
   const dominantOrder = dominantTierKey ? TIER_ORDER[dominantTierKey] : null;
 
   const eligible = [];
-  const spectator = [];
+  const spectatorCandidates = [];
 
   for (const rawLine of entries) {
     const cleaned = cleanEntryLine(rawLine);
@@ -187,15 +209,64 @@ export function parseEntryBreakdown(lines, dominantTierKey = null) {
 
     const tier = getNormalizedTier(rawLine);
     const tierOrder = TIER_ORDER[tier] || 2;
-    // 最多ランク帯から1ティア差以内なら出場対象、2ティア差以上なら観戦枠
+    // 最多ランク帯から1ティア差以内なら出場対象、2ティア差以上なら観戦枠候補
     if (Math.abs(tierOrder - dominantOrder) <= 1) {
       eligible.push({ raw: rawLine, line: cleaned, tier });
     } else {
-      spectator.push({ raw: rawLine, line: cleaned, tier });
+      spectatorCandidates.push({ raw: rawLine, line: cleaned, tier });
     }
   }
 
-  // ★ カウントは出場対象枠（eligible）の中だけで集計！
+  // ★ 人数不足時の対面ミラー救済:
+  // 出場対象が定員(10名)に満たない場合、特定レーンで同レート同士の対面（ミラー）が組めるペアを出場枠へ昇格
+  let promotedPairsCount = 0;
+  const spectator = [];
+
+  if (dominantOrder && eligible.length < DAY_CAPACITY && spectatorCandidates.length >= 2) {
+    const promotedIndices = new Set();
+
+    // 試合別（第1戦・第2戦）に、参加可能な候補者同士で同ティア・共通レーンのペアを探索
+    function tryPair(candidates, matchFilter) {
+      const matchCands = candidates.filter((c) => matchFilter(c.raw));
+      for (let i = 0; i < matchCands.length; i++) {
+        const c1 = matchCands[i];
+        if (promotedIndices.has(c1.idx)) continue;
+        if (eligible.length + promotedIndices.size + 2 > DAY_CAPACITY) break;
+
+        for (let j = i + 1; j < matchCands.length; j++) {
+          const c2 = matchCands[j];
+          if (promotedIndices.has(c2.idx)) continue;
+
+          if (c1.tier === c2.tier && hasCommonLane(c1.raw, c2.raw)) {
+            promotedIndices.add(c1.idx);
+            promotedIndices.add(c2.idx);
+            promotedPairsCount += 1;
+            break;
+          }
+        }
+      }
+    }
+
+    const indexedCands = spectatorCandidates.map((c, idx) => ({ ...c, idx }));
+    // 第1戦（フル or 1戦のみ）の対面ペアを判定
+    tryPair(indexedCands, (raw) => !raw.includes('途中参加'));
+    // 第2戦（フル or 途中参加）の対面ペアを判定
+    tryPair(indexedCands, (raw) => !raw.includes('1戦のみ'));
+
+    for (let i = 0; i < spectatorCandidates.length; i++) {
+      const cand = spectatorCandidates[i];
+      if (promotedIndices.has(i)) {
+        cand.line += ' 🤝対面枠';
+        eligible.push(cand);
+      } else {
+        spectator.push(cand);
+      }
+    }
+  } else {
+    spectator.push(...spectatorCandidates);
+  }
+
+  // ★ カウントは出場対象枠（eligible: 1ティア差 ＋ 昇格した対面枠）で集計！
   const eligibleFull = eligible.filter((e) => !e.raw.includes('1戦のみ') && !e.raw.includes('途中参加'));
   const eligibleSingle = eligible.filter((e) => e.raw.includes('1戦のみ'));
   const eligibleLate = eligible.filter((e) => e.raw.includes('途中参加'));
@@ -220,7 +291,8 @@ export function parseEntryBreakdown(lines, dominantTierKey = null) {
     match1Lines,
     match2LateLines,
     dominantTierKey,
-    hasBreakdown: eligibleSingle.length > 0 || eligibleLate.length > 0 || spectator.length > 0,
+    promotedPairsCount,
+    hasBreakdown: eligibleSingle.length > 0 || eligibleLate.length > 0 || spectator.length > 0 || promotedPairsCount > 0,
     hasSpectator: spectator.length > 0,
     match1Count,
     match2Count,
@@ -295,7 +367,9 @@ export function buildDayBanner(dayKey, status, dominantTierText = '') {
       header = `🔥 **【${def.name}　募集中】**`;
     }
 
-    const rangeNote = status.dominantTierInfo?.rangeText ? ` / 対象: **${status.dominantTierInfo.rangeText}**` : '';
+    const hasMirror = (b.promotedPairsCount || 0) > 0;
+    const mirrorText = hasMirror ? '＋対面枠' : '';
+    const rangeNote = status.dominantTierInfo?.rangeText ? ` / 対象: **${status.dominantTierInfo.rangeText}${mirrorText}**` : '';
     const tierNote = dominantTierText ? `（基準: **${dominantTierText}**${rangeNote}）` : '';
     const m1State = b.isMatch1Ready ? '🎉 **開催確定！**' : `あと**${b.match1Remaining}名**`;
     const m2State = b.isMatch2Ready ? '🎉 **開催確定！**' : `あと**${b.match2Remaining}名**`;
@@ -407,8 +481,9 @@ export function buildRecruitmentContent(target, notificationRoleId) {
 
 **【⚖️ ランクと部屋分けのルール】**
 ・**20人集まったら2部屋に完全分割**: 「上位部屋（プラチナ以上）」と「初中級部屋（シルバー・ゴールド等）」に分かれて同時にやるので、全ランク帯の人が同レベル同士で白熱できます！
-・**1部屋（10〜19人）のとき**: 一番人数の多い最多ランク帯から「1ティア差以内（例：プラチナ基準ならゴールド〜プラチナ）」で10名を選出します
-・**2ティア以上離れた場合**: 実力差対戦を避けるため、外れ値の方は「観戦枠・配信応援」または「2戦目に交代」となります
+・**1部屋（10〜19人）のとき**: 最多ランク帯から「1ティア差以内（例：プラチナ基準ならゴールド〜プラチナ）」で10名を選出します
+・**人数不足時の対面ミラー救済**: 10人に満たない場合は、特定レーン（SUP同士など）の対面2人が同レート帯であれば、レートが離れていても積極的に試合へ参加してもらいます！（対面の実力が互角になるようバランサーで自動調整）
+・**対面が組めない外れ値の場合**: 実力差対戦を避けるため、対面が組めない外れ値の方は「観戦枠・配信応援」または「2戦目に交代」となります
 ・**低ランクの方も安心**: アイアンや未ランクはブロンズとして合算します。低ランクの人が集まれば最多帯がシルバー等に変わり、初中級中心の部屋になります
 （※ランク不問で誰でも気楽にワイワイ遊べるのは日曜の「お祭りカスタム」です🎪）
 
