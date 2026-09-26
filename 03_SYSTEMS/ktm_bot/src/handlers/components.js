@@ -484,20 +484,23 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         });
 
         // ★ あと1名になった瞬間にラストワン促進の返信を自動投稿
-        const prevStatus = computeDayStatus(currentLines);
+        const prevStatus = computeDayStatus(currentLines, DAY_CAPACITY, targetDayKey);
         let promptContent = null;
+        const rankNote = (def.key === 'sat' && nextStatus.dominantTierInfo?.rangeText)
+          ? `（${nextStatus.dominantTierInfo.rangeText}対象）`
+          : '';
 
         if (nextStatus.breakdown?.hasBreakdown) {
           const m1JustOne = nextStatus.breakdown.match1Remaining === 1 && (!existingLine || prevStatus.breakdown?.match1Remaining !== 1);
           const m2JustOne = nextStatus.breakdown.match2Remaining === 1 && (!existingLine || prevStatus.breakdown?.match2Remaining !== 1);
 
           if (m1JustOne) {
-            promptContent = `🔥 **【${def.shortName}: 第1試合があと1名で開催確定！】** 21:00からの開幕戦にエントリーしませんか？✨`;
+            promptContent = `🔥 **【${def.shortName}: 第1試合があと1名で開催確定！${rankNote}】** 21:00からの開幕戦にエントリーしませんか？✨`;
           } else if (m2JustOne && nextStatus.breakdown.isMatch1Ready) {
-            promptContent = `🔥 **【${def.shortName}: 第2試合があと1名で10名到達！】** 2戦目からの途中合流で参加しませんか？✨`;
+            promptContent = `🔥 **【${def.shortName}: 第2試合があと1名で10名到達！${rankNote}】** 2戦目からの途中合流で参加しませんか？✨`;
           }
         } else if (nextStatus.remaining === 1 && (!existingLine || prevStatus.remaining !== 1)) {
-          promptContent = `🔥 **【${def.shortName}: あと1名で開催確定！】** どなたか最後の1枠で参加しませんか？✨`;
+          promptContent = `🔥 **【${def.shortName}: あと1名で開催確定！${rankNote}】** どなたか最後の1枠で参加しませんか？✨`;
         }
 
         if (promptContent) {

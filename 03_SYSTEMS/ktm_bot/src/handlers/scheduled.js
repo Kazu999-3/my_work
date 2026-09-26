@@ -1019,7 +1019,7 @@ async function loadDayRecruitmentSummary(env, target, messages) {
       channelId: row.discord_channel_id,
       message,
       lines,
-      status: computeDayStatus(lines),
+      status: computeDayStatus(lines, DAY_CAPACITY, target.dayKey),
     };
   } catch (e) {
     console.warn(`[Recruit] ${target.label}の募集カード取得に失敗:`, e);
@@ -1116,19 +1116,34 @@ async function sendEventUsersNotification(env, options = {}) {
       } else {
         state = s.status.isReady ? '**✅ 開催確定！**' : `**あと${s.status.remaining}名**`;
       }
+
+      let rankInfo = '';
+      if (s.target.dayKey === 'sat') {
+        const dom = s.status.dominantTierInfo;
+        if (dom?.text) {
+          rankInfo = `（基準: **${dom.text}** / 対象: **${dom.rangeText}**）`;
+        }
+        if (s.status.breakdown?.spectatorTotal > 0) {
+          rankInfo += `（※観戦枠: ${s.status.breakdown.spectatorTotal}名）`;
+        }
+      } else {
+        rankInfo = '（ランク不問・お祭りルール🎪）';
+      }
+
       const link = guildId
         ? ` → [募集カードを開く](https://discord.com/channels/${guildId}/${s.channelId}/${s.messageId})`
         : '';
-      return `${def.emoji} **${def.name}**　${s.target.label} 21:00　計${s.status.joined}名 → ${state}${link}`;
+      return `${def.emoji} **${def.name}**　${s.target.label} 21:00\n　出場対象: **${s.status.joined}/10名** ${rankInfo} → ${state}${link}`;
     });
 
     const embed = {
       title: '📣 週末カスタム 残り枠のお知らせ',
       description: [
-        dayLines.join('\n'),
+        dayLines.join('\n\n'),
         '',
-        '💡 21:00の第1試合だけ参加する「1戦のみ」も大歓迎です。参加は各募集カードのボタンからどうぞ。',
-        '💡 希望レーンの変更は、ポータルの「マイページ」からお願いします。',
+        '💡 土曜は**ランク差を作らない1ティア差選出**（20名で2部屋同時開催✨）。',
+        '💡 日曜は**ランク不問・レート変動なし**で誰でも気楽に参加できます。',
+        '💡 21:00の第1試合だけ参加する「1戦のみ」や途中参加も大歓迎！各募集カードからどうぞ。',
       ].join('\n'),
       color: RECRUITMENT_COLORS.recruiting,
       footer: { text: 'KTM Bot | 週末カスタム リマインド' },
@@ -1164,14 +1179,18 @@ async function sendEventUsersNotification(env, options = {}) {
         .filter((s) => !s.status.isReady)
         .map((s) => {
           const def = getDayDef(s.target.dayKey);
+          let targetNote = '';
+          if (s.target.dayKey === 'sat' && s.status.dominantTierInfo?.rangeText) {
+            targetNote = ` [${s.status.dominantTierInfo.rangeText}歓迎]`;
+          }
           if (s.status.breakdown?.hasBreakdown) {
             const b = s.status.breakdown;
             const parts = [];
             if (!b.isMatch1Ready) parts.push(`第1戦あと${b.match1Remaining}名`);
             if (!b.isMatch2Ready) parts.push(`第2戦あと${b.match2Remaining}名`);
-            return `${def.label} ${parts.join('・')}`;
+            return `${def.label}${targetNote} ${parts.join('・')}`;
           }
-          return `${def.label} あと${s.status.remaining}名`;
+          return `${def.label}${targetNote} あと${s.status.remaining}名`;
         })
         .join(' / ');
       messageBody.content = `<@&${roleId}> 📢 **【${shortText}】** 参加できる方はエントリーをお願いします！`;
@@ -1275,12 +1294,14 @@ export async function checkCustomStatusAt2000(env) {
       return;
     }
 
-    // 1戦目から稼働できる人数（フル + 1戦のみ）と、途中参加の人数
-    const firstMatchCount = summary.lines.filter((l) => !l.includes('🌙途中参加')).length;
-    const lateCount = summary.lines.filter((l) => l.includes('🌙途中参加')).length;
-    const shortfall = DAY_CAPACITY - firstMatchCount;
+    // 1戦目から稼働できる人数（フル + 1戦のみ）と、途中参加の人数（土曜は1ティア差の出場対象枠のみをカウント）
+    const breakdown = summary.status?.breakdown;
+    const firstMatchCount = breakdown ? breakdown.match1Count : summary.lines.filter((l) => !l.includes('🌙途中参加')).length;
+    const lateCount = breakdown ? (breakdown.match2LateLines?.length ?? 0) : summary.lines.filter((l) => l.includes('🌙途中参加')).length;
+    const shortfall = Math.max(0, DAY_CAPACITY - firstMatchCount);
+    const dominant = summary.status?.dominantTierInfo;
 
-    console.log(`[Check2000] ${def.name}: 第1試合稼働${firstMatchCount}名 / 途中参加${lateCount}名`);
+    console.log(`[Check2000] ${def.name}: 第1試合稼働${firstMatchCount}名 / 途中参加${lateCount}名 (基準: ${dominant?.text || 'なし'})`);
 
     // A. 開催確定（募集カードへの返信として投稿）
     if (firstMatchCount >= DAY_CAPACITY) {
@@ -1289,7 +1310,7 @@ export async function checkCustomStatusAt2000(env) {
         method: 'POST',
         headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          content: `🎉 **【本日20:00 判定: 開催確定！】**\n${def.emoji} **${def.name}** は${firstMatchCount}名集まりました！21:00より開始します。ポータルのバランサーでチーム分けを行います。`,
+          content: `🎉 **【本日20:00 判定: 開催確定！】**\n${def.emoji} **${def.name}** は第1戦メンバーが${firstMatchCount}名集まりました！21:00より開始します。ポータルのバランサーでチーム分けを行います。`,
           ...(summary.messageId ? { message_reference: { message_id: summary.messageId, fail_if_not_exists: false } } : {})
         })
       });
@@ -1313,8 +1334,14 @@ export async function checkCustomStatusAt2000(env) {
         }
       ];
 
+      let rankHint = '';
+      if (dayKey === 'sat' && dominant?.rangeText) {
+        rankHint = `（※ランク差を作らないため、**${dominant.rangeText}** の方を大募集中です！）\n`;
+      }
+
       const content = `🚨 <@&${CONFIG.NOTIFICATION_ROLE_ID}> **【21:00開始の第1試合 助っ人をピンポイント募集中！】**\n\n` +
-        `・**${def.shortName}**: 第1試合（21:00〜）があと **${shortfall}名** 不足！（2戦目からは途中参加の方が ${lateCount}名 合流予定✨）\n\n` +
+        `・**${def.shortName}**: 第1試合（21:00〜）があと **${shortfall}名** 不足！（2戦目からは途中参加の方が ${lateCount}名 合流予定✨）\n` +
+        rankHint + '\n' +
         `💡 **「21:00から1試合だけならできる！」という方はいませんか？**\n` +
         `下のボタンから1戦だけ助っ人エントリーをお願いします！`;
 
@@ -1345,7 +1372,7 @@ export async function checkCustomStatusAt2000(env) {
     ];
 
     const cancelContent = `⚠️ **【本日20:00 判定結果: ${def.name}】**\n\n` +
-      `誠に残念ながら、20:00時点で ${firstMatchCount}/${DAY_CAPACITY}名 と定員に達しなかったため、**定期カスタムとしては中止**となります。\n` +
+      `誠に残念ながら、20:00時点で第1戦が ${firstMatchCount}/${DAY_CAPACITY}名 と定員に達しなかったため、**定期カスタムとしては中止**となります。\n` +
       `\n💡 **せっかく集まったので別のゲームで遊びませんか？**\n` +
       `下のボタンからワンクリックで「ノーマル」または「ARAM / メイヘム」のクイック募集に合流できます！`;
 
