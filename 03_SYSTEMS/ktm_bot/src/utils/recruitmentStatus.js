@@ -108,9 +108,35 @@ export function getNormalizedTier(line) {
   return jp;
 }
 
-/** 通常参加である「🟢フル」の表示を除去して視認性を高める */
+/**
+ * 参加者行をスッキリ整形する：
+ * 1. 通常参加である「🟢フル」の表示を除去
+ * 2. 経験バッジをアイコンのみ（👑、🔰、🌱、⏳）にスリム化
+ * 3. 変則参加（1戦のみ・途中参加）を行頭タグ化して見落としを防止
+ */
 export function cleanEntryLine(line) {
-  return (line || '').replace(/\s*🟢\s*フル/g, '');
+  let s = (line || '').replace(/\s*🟢\s*フル/g, '');
+
+  // 経験度バッジをアイコンのみに簡素化
+  s = s.replace(/👑\s*常連/g, '👑')
+       .replace(/🔰\s*初参加/g, '🔰')
+       .replace(/🌱\s*ライト/g, '🌱')
+       .replace(/⏳\s*復帰勢/g, '⏳')
+       .replace(/🎖️\s*経験者/g, '🎖️');
+
+  // 変則参加バッジを識別しやすい行頭タグへ変換
+  const hasSingle = s.includes('1戦のみ');
+  const hasLate = s.includes('途中参加');
+
+  if (hasSingle) {
+    s = s.replace(/\s*⏱️?\s*1戦のみ/g, '');
+    s = s.replace(/^- /, '- ⏱️【1戦のみ】');
+  } else if (hasLate) {
+    s = s.replace(/\s*🌙\s*途中参加(\([^)]*\))?/g, '');
+    s = s.replace(/^- /, '- 🌙【2戦目〜】');
+  }
+
+  return s;
 }
 
 /** 最多ランク帯と対象レンジ情報を計算 */
@@ -177,12 +203,22 @@ export function parseEntryBreakdown(lines, dominantTierKey = null) {
   const match1Count = eligibleFull.length + eligibleSingle.length;
   const match2Count = eligibleFull.length + eligibleLate.length;
 
+  // 試合別の行一覧（案1：第1戦出場メンバーと2戦目合流メンバー）
+  const match1Lines = eligible
+    .filter((e) => !e.raw.includes('途中参加'))
+    .map((e) => e.line);
+  const match2LateLines = eligible
+    .filter((e) => e.raw.includes('途中参加'))
+    .map((e) => e.line);
+
   return {
     total: entries.length,
     eligibleTotal: eligible.length,
     spectatorTotal: spectator.length,
     eligibleLines: eligible.map((e) => e.line),
     spectatorLines: spectator.map((e) => e.line),
+    match1Lines,
+    match2LateLines,
     dominantTierKey,
     hasBreakdown: eligibleSingle.length > 0 || eligibleLate.length > 0 || spectator.length > 0,
     hasSpectator: spectator.length > 0,
@@ -385,11 +421,11 @@ export function buildRecruitmentContent(target, notificationRoleId) {
 ・⏱️ **1戦のみ**: 最初の1試合だけサクッと出たい人（お試し大歓迎！）
 ・🌙 **途中参加**: 2戦目以降やメイヘムから合流したい人
 
-**【🏷️ 名簿バッジについて】**
-・🔰**初参加**: カスタム初参戦の人（大歓迎！）
-・🌱**ライト**: 通算1〜4戦の軽め参加の人
-・⏳**復帰勢**: 1ヶ月以上ぶりの久しぶりの人
-・👑**常連**: よく参加している人`.trim();
+**【🏷️ 名簿アイコンについて】**
+・🔰: 初参加の人（大歓迎！）
+・🌱: 通算1〜4戦の軽め参加の人
+・⏳: 1ヶ月以上ぶりの久しぶりの人
+・👑: よく参加している常連さん`.trim();
   }
 
   return `📢 **【${def.shortName}募集】${label} 21:00〜** ${mention}
@@ -409,9 +445,9 @@ export function buildRecruitmentContent(target, notificationRoleId) {
 ・⏱️ **1戦のみ**: 最初の1試合だけサクッと出たい人
 ・🌙 **途中参加**: 2戦目以降やメイヘムから合流したい人
 
-**【🏷️ 名簿バッジについて】**
-・🔰**初参加**: カスタム初参戦の人（大歓迎！）
-・🌱**ライト**: 通算1〜4戦の軽め参加の人
-・⏳**復帰勢**: 1ヶ月以上ぶりの久しぶりの人
-・👑**常連**: よく参加している人`.trim();
+**【🏷️ 名簿アイコンについて】**
+・🔰: 初参加の人（大歓迎！）
+・🌱: 通算1〜4戦の軽め参加の人
+・⏳: 1ヶ月以上ぶりの久しぶりの人
+・👑: よく参加している常連さん`.trim();
 }

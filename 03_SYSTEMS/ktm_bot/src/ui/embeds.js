@@ -327,22 +327,33 @@ function renderEntryList(lines, status) {
   if (!lines || lines.length === 0) return '▫ まだ誰もいません。最初の1人になりませんか？';
 
   const b = status?.breakdown;
-  if (b && b.hasSpectator) {
-    const rangeText = status.dominantTierInfo?.rangeText || '1ティア差以内';
+  if (b && (b.hasBreakdown || b.hasSpectator)) {
     const sections = [];
-    if (b.eligibleLines.length > 0) {
-      sections.push(`**【🎯 出場対象枠（${rangeText}: ${b.eligibleTotal}名）】**\n${b.eligibleLines.join('\n')}`);
+
+    // 1. 第1戦 出場メンバー（フル参加者 ＋ 1戦のみ参加者）
+    if (b.match1Lines && b.match1Lines.length > 0) {
+      sections.push(`**【⚔️ 第1戦 出場メンバー（${b.match1Count}/${status.capacity}名）】**\n${b.match1Lines.join('\n')}`);
     }
-    if (b.spectatorLines.length > 0) {
+
+    // 2. 2戦目〜合流メンバー（途中参加者）
+    if (b.match2LateLines && b.match2LateLines.length > 0) {
+      sections.push(`**【🌙 2戦目〜合流（${b.match2LateLines.length}名）】**\n${b.match2LateLines.join('\n')}`);
+    }
+
+    // 3. 観戦・2部屋目待ち枠（2ティア差離れたメンバー等）
+    if (b.spectatorLines && b.spectatorLines.length > 0) {
       sections.push(`**【👀 観戦・2部屋目待ち枠（${b.spectatorTotal}名）】**\n${b.spectatorLines.join('\n')}`);
     }
-    const groupedText = sections.join('\n\n');
-    if (groupedText.length <= FIELD_VALUE_LIMIT) {
-      return groupedText;
+
+    if (sections.length > 0) {
+      const groupedText = sections.join('\n\n');
+      if (groupedText.length <= FIELD_VALUE_LIMIT) {
+        return groupedText;
+      }
     }
   }
 
-  // 観戦枠がいない場合はシンプルに全行（フル参加表記除去済み）を表示
+  // 変則参加も観戦枠もいない場合はシンプルに全行（フル参加表記除去・アイコン化済み）を表示
   const cleaned = (b?.eligibleLines || lines).map(cleanEntryLine);
   return formatLinesSafe(cleaned);
 }
