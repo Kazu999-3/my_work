@@ -394,6 +394,7 @@ export function applyDayCardState(embed, dayKey, entryLines) {
       inline: false,
     },
   ];
+  embed.footer = { text: '土曜・日曜は別々エントリー ｜ 途中参加・1戦のみ歓迎' };
 
   return { embed, status, dominantTierText };
 }
@@ -407,7 +408,7 @@ export function buildDayRecruitEmbed(target, entryLines = []) {
   const def = getDayDef(target.dayKey);
   const embed = {
     title: `${def.emoji} KTM ${def.name}　${target.label} 21:00〜`,
-    footer: { text: '20:00時点で10名未満なら中止 → ノーマル/ARAM代替募集へ ｜ 土曜と日曜は別々の募集です' },
+    footer: { text: '土曜・日曜は別々エントリー ｜ 途中参加・1戦のみ歓迎' },
     timestamp: new Date().toISOString(),
   };
   applyDayCardState(embed, target.dayKey, entryLines);

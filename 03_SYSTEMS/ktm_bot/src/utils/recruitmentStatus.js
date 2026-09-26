@@ -85,34 +85,56 @@ export const TIER_RANGE_TEXT = {
   'ブロンズ': 'アイアン〜シルバー',
 };
 
-const RANK_JP_MAP = {
+export const RANK_JP_MAP = {
   CHALLENGER: 'チャレンジャー', GRANDMASTER: 'グランドマスター', MASTER: 'マスター',
   DIAMOND: 'ダイヤ', EMERALD: 'エメラルド', PLATINUM: 'プラチナ',
   GOLD: 'ゴールド', SILVER: 'シルバー', BRONZE: 'ブロンズ', IRON: 'アイアン',
   UNRANKED: '未ランク',
 };
 
-const RANK_LINE_PATTERN = /【(アイアン|ブロンズ|シルバー|ゴールド|プラチナ|エメラルド|ダイヤ|マスター|チャレンジャー|グランドマスター|未ランク|IRON|BRONZE|SILVER|GOLD|PLATINUM|EMERALD|DIAMOND|MASTER|GRANDMASTER|CHALLENGER|UNRANKED)/i;
+export const RANK_SHORT_JP_MAP = {
+  CHALLENGER: 'チャレ', GRANDMASTER: 'グラマス', MASTER: 'マス',
+  DIAMOND: 'ダイヤ', EMERALD: 'エメ', PLATINUM: 'プラ',
+  GOLD: 'ゴル', SILVER: 'シル', BRONZE: 'ブロ', IRON: 'アイ',
+  UNRANKED: '未',
+};
+
+const RANK_LINE_PATTERN = /【(アイアン|アイ|ブロンズ|ブロ|シルバー|シル|ゴールド|ゴル|プラチナ|プラ|エメラルド|エメ|ダイヤ|マスター|マス|チャレンジャー|チャレ|グランドマスター|グラマス|未ランク|未|IRON|BRONZE|SILVER|GOLD|PLATINUM|EMERALD|DIAMOND|MASTER|GRANDMASTER|CHALLENGER|UNRANKED)/i;
 
 /** 行から正規化した4大ランク（ブロンズ・シルバー・ゴールド・プラチナ）を取得 */
 export function getNormalizedTier(line) {
   const match = (line || '').match(RANK_LINE_PATTERN);
-  const raw = match ? match[1].toUpperCase() : 'SILVER';
-  const jp = RANK_JP_MAP[raw] || match?.[1] || 'シルバー';
+  if (!match) return 'シルバー';
+  const raw = match[1].toUpperCase();
+  const jp = RANK_JP_MAP[raw] || match[1];
 
-  if (['チャレンジャー', 'グランドマスター', 'マスター', 'ダイヤ', 'エメラルド', 'プラチナ'].includes(jp)) {
+  if (['チャレンジャー', 'チャレ', 'グランドマスター', 'グラマス', 'マスター', 'マス', 'ダイヤ', 'エメラルド', 'エメ', 'プラチナ', 'プラ'].includes(jp)) {
     return 'プラチナ';
-  } else if (['アイアン', '未ランク', 'ブロンズ'].includes(jp)) {
+  } else if (['アイアン', 'アイ', '未ランク', '未', 'ブロンズ', 'ブロ'].includes(jp)) {
     return 'ブロンズ';
+  } else if (['ゴールド', 'ゴル'].includes(jp)) {
+    return 'ゴールド';
+  } else if (['シルバー', 'シル'].includes(jp)) {
+    return 'シルバー';
   }
-  return jp;
+  return 'シルバー';
+}
+
+export function isSingleMatch(line) {
+  return /1戦のみ/.test(line || '');
+}
+
+export function isLateJoin(line) {
+  return /途中参加|2戦目/.test(line || '');
 }
 
 /**
  * 参加者行をスッキリ整形する：
  * 1. 通常参加である「🟢フル」の表示を除去
  * 2. 経験バッジをアイコンのみ（👑、🔰、🌱、⏳）にスリム化
- * 3. 変則参加（1戦のみ・途中参加）を行頭タグ化して見落としを防止
+ * 3. ランク表記を短縮（案B: 【プラ】【ゴル】等）
+ * 4. レーン希望表記を短縮（第1・第2を撤去して 【TOP/JG】 形式へ）
+ * 5. 変則参加（1戦のみ・途中参加）を行頭タグ化して見落としを防止
  */
 export function cleanEntryLine(line) {
   let s = (line || '').replace(/\s*🟢\s*フル/g, '');
@@ -124,15 +146,48 @@ export function cleanEntryLine(line) {
        .replace(/⏳\s*復帰勢/g, '⏳')
        .replace(/🎖️\s*経験者/g, '🎖️');
 
-  // 変則参加バッジを識別しやすい行頭タグへ変換
-  const hasSingle = s.includes('1戦のみ');
-  const hasLate = s.includes('途中参加');
+  // ランク表記を短縮（案B）
+  s = s.replace(/【プラチナ】/g, '【プラ】')
+       .replace(/【ゴールド】/g, '【ゴル】')
+       .replace(/【シルバー】/g, '【シル】')
+       .replace(/【ブロンズ】/g, '【ブロ】')
+       .replace(/【アイアン】/g, '【アイ】')
+       .replace(/【エメラルド】/g, '【エメ】')
+       .replace(/【マスター】/g, '【マス】')
+       .replace(/【グランドマスター】/g, '【グラマス】')
+       .replace(/【チャレンジャー】/g, '【チャレ】')
+       .replace(/【未ランク】/g, '【未】');
+
+  // レーン表記の短縮（第1・第2を撤去して 【TOP/JG】 形式へ）
+  s = s.replace(/【第1:\s*([^/]+?)\s*\/\s*第2:\s*([^}]+?)】/g, (match, p1, p2) => {
+    const r1 = p1.trim();
+    const r2 = p2.trim();
+    const isNone = (v) => !v || v === '指定なし' || v === 'なし' || v === '-';
+    if (!isNone(r1) && !isNone(r2)) {
+      return `【${r1}/${r2}】`;
+    } else if (!isNone(r1)) {
+      return `【${r1}】`;
+    } else if (!isNone(r2)) {
+      return `【${r2}】`;
+    }
+    return '';
+  });
+
+  // 変則参加バッジを判定（既にタグ化されている場合も含む）
+  const hasSingle = isSingleMatch(s);
+  const hasLate = isLateJoin(s);
+
+  // 既存タグの多重付加を防止するため、まずは変則参加タグ・対面枠タグを完全に剥がす
+  s = s.replace(/(?:⏱️\s*)?【?1戦のみ】?/g, '')
+       .replace(/(?:🌙\s*)?【?2戦目〜?】?/g, '')
+       .replace(/\s*🌙\s*途中参加(?:\([^)]*\))?/g, '')
+       .replace(/\s*🤝\s*対面枠/g, '')
+       .replace(/^- \s*/, '- ')
+       .trim();
 
   if (hasSingle) {
-    s = s.replace(/\s*⏱️?\s*1戦のみ/g, '');
     s = s.replace(/^- /, '- ⏱️【1戦のみ】');
   } else if (hasLate) {
-    s = s.replace(/\s*🌙\s*途中参加(\([^)]*\))?/g, '');
     s = s.replace(/^- /, '- 🌙【2戦目〜】');
   }
 
@@ -166,11 +221,25 @@ export function computeDominantTierInfo(lines) {
   };
 }
 
-/** 行から希望レーンを抽出 */
+/** 行から希望レーンを抽出（新形式 【TOP/JG】 と 旧形式 【第1: TOP / 第2: JG】 の両対応） */
 export function extractPlayerLanes(rawLine) {
-  const p1 = (rawLine || '').match(/第1:\s*([A-Za-z]+)/)?.[1]?.toUpperCase();
-  const p2 = (rawLine || '').match(/第2:\s*([A-Za-z]+)/)?.[1]?.toUpperCase();
   const set = new Set();
+  const line = rawLine || '';
+
+  // 新形式 【TOP/JG】 または 【TOP】
+  const shortMatch = line.match(/【([A-Za-z]+)(?:\/([A-Za-z]+))?】/);
+  if (shortMatch) {
+    const r1 = shortMatch[1]?.toUpperCase();
+    const r2 = shortMatch[2]?.toUpperCase();
+    const validRoles = new Set(['TOP', 'JG', 'MID', 'BOT', 'ADC', 'SUP']);
+    if (validRoles.has(r1)) set.add(r1);
+    if (validRoles.has(r2)) set.add(r2);
+    if (set.size > 0) return set;
+  }
+
+  // 旧形式 【第1: TOP / 第2: JG】
+  const p1 = line.match(/第1:\s*([A-Za-z]+)/)?.[1]?.toUpperCase();
+  const p2 = line.match(/第2:\s*([A-Za-z]+)/)?.[1]?.toUpperCase();
   if (p1 && p1 !== '指定なし') set.add(p1);
   if (p2 && p2 !== '指定なし') set.add(p2);
   return set;
@@ -249,14 +318,16 @@ export function parseEntryBreakdown(lines, dominantTierKey = null) {
 
     const indexedCands = spectatorCandidates.map((c, idx) => ({ ...c, idx }));
     // 第1戦（フル or 1戦のみ）の対面ペアを判定
-    tryPair(indexedCands, (raw) => !raw.includes('途中参加'));
+    tryPair(indexedCands, (raw) => !isLateJoin(raw));
     // 第2戦（フル or 途中参加）の対面ペアを判定
-    tryPair(indexedCands, (raw) => !raw.includes('1戦のみ'));
+    tryPair(indexedCands, (raw) => !isSingleMatch(raw));
 
     for (let i = 0; i < spectatorCandidates.length; i++) {
       const cand = spectatorCandidates[i];
       if (promotedIndices.has(i)) {
-        cand.line += ' 🤝対面枠';
+        if (!cand.line.includes('🤝対面枠')) {
+          cand.line += ' 🤝対面枠';
+        }
         eligible.push(cand);
       } else {
         spectator.push(cand);
@@ -267,19 +338,19 @@ export function parseEntryBreakdown(lines, dominantTierKey = null) {
   }
 
   // ★ カウントは出場対象枠（eligible: 1ティア差 ＋ 昇格した対面枠）で集計！
-  const eligibleFull = eligible.filter((e) => !e.raw.includes('1戦のみ') && !e.raw.includes('途中参加'));
-  const eligibleSingle = eligible.filter((e) => e.raw.includes('1戦のみ'));
-  const eligibleLate = eligible.filter((e) => e.raw.includes('途中参加'));
+  const eligibleFull = eligible.filter((e) => !isSingleMatch(e.raw) && !isLateJoin(e.raw));
+  const eligibleSingle = eligible.filter((e) => isSingleMatch(e.raw));
+  const eligibleLate = eligible.filter((e) => isLateJoin(e.raw));
 
   const match1Count = eligibleFull.length + eligibleSingle.length;
   const match2Count = eligibleFull.length + eligibleLate.length;
 
   // 試合別の行一覧（案1：第1戦出場メンバーと2戦目合流メンバー）
   const match1Lines = eligible
-    .filter((e) => !e.raw.includes('途中参加'))
+    .filter((e) => !isLateJoin(e.raw))
     .map((e) => e.line);
   const match2LateLines = eligible
-    .filter((e) => e.raw.includes('途中参加'))
+    .filter((e) => isLateJoin(e.raw))
     .map((e) => e.line);
 
   return {

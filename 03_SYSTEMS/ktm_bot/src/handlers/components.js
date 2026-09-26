@@ -7,7 +7,7 @@ import { createMessageContent, createRecruitButtons, createRecruitEmbed, extract
 import { parseMessageData, handleAutoMatchEnd } from '../utils/helpers.js';
 import { getAdminDiscordIds, markRecruitmentStatus } from '../utils/recruitPermission.js';
 import { getKtmRank, getHighestLaneMmr, getPlayerExperienceBadge, getPlayerActiveMark } from '../utils/ktmRank.js';
-import { detectDayKey, getDayDef, extractEntryLines, resolveWeekendTargets, buildRecruitmentContent } from '../utils/recruitmentStatus.js';
+import { detectDayKey, getDayDef, extractEntryLines, resolveWeekendTargets, buildRecruitmentContent, RANK_SHORT_JP_MAP } from '../utils/recruitmentStatus.js';
 
 const RANK_JP_MAP = {
   CHALLENGER: 'チャレンジャー', GRANDMASTER: 'グランドマスター', MASTER: 'マスター',
@@ -440,7 +440,8 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         if (def.showRank && playerRow) {
           const tier = getKtmRank(getHighestLaneMmr(playerRow) ?? 0);
           if (tier && tier.name) {
-            rankStr = ` 【${RANK_JP_MAP[tier.name] || tier.name}】`;
+            const shortName = RANK_SHORT_JP_MAP[tier.name] || RANK_JP_MAP[tier.name] || tier.name;
+            rankStr = ` 【${shortName}】`;
           }
         }
 
@@ -451,7 +452,13 @@ export async function handleButtonInteraction(interaction, env, ctx) {
             try { pref = JSON.parse(pref); } catch (e) {}
           }
           if (pref && (pref.primary || pref.secondary)) {
-            lanePrefStr = ` 【第1: ${pref.primary || "指定なし"} / 第2: ${pref.secondary || "指定なし"}】`;
+            const p1 = pref.primary && pref.primary !== '指定なし' && pref.primary !== 'なし' ? pref.primary : '';
+            const p2 = pref.secondary && pref.secondary !== '指定なし' && pref.secondary !== 'なし' ? pref.secondary : '';
+            if (p1 && p2) {
+              lanePrefStr = ` 【${p1}/${p2}】`;
+            } else if (p1 || p2) {
+              lanePrefStr = ` 【${p1 || p2}】`;
+            }
           }
         } catch (e) {
           console.warn("role_preferences parse error:", e);
