@@ -152,7 +152,15 @@ def fetch_subtitles(url, vid):
             break
         err = (res.stderr or "").strip()
         tail = err.splitlines()[-1] if err else "(yt-dlpの出力なし)"
-        is_limited = "Sign in to confirm" in err or "bot" in err.lower() or "429" in err
+
+        # ⚠️ ログイン認証必須 ("Sign in to confirm you're not a bot" 等) は
+        # 一時的なレート制限(429)ではなく「その動画自体がログイン必須」であるため、
+        # 永久リトライさせずに字幕なし/取得不能として通常フォールバックさせる
+        if "sign in to confirm" in err.lower():
+            print(f"  [認証必須/bot制限] {vid}: ログイン必須の動画のため通常フローへフォールバック", file=sys.stderr)
+            return None
+
+        is_limited = "bot" in err.lower() or "429" in err
         if not is_limited:
             # yt-dlpのstderr末尾は ffmpeg の警告など無関係な行であることが多く、
             # 実際の失敗理由が埋もれる。ERROR行があればそちらを優先して出す。
