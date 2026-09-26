@@ -66,8 +66,13 @@ export default function MatchupBlueprintCard({
   const [data, setData] = useState<BlueprintResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 4大タブ（手順書 / 推奨ルーン＆ビルド / 敵JG初動ルート / 実戦の罠・不採用ビルド）
-  const [activeTab, setActiveTab] = useState<'blueprint' | 'builds' | 'jungle' | 'rejected'>('blueprint');
+  // 4大セクション クイックジャンプ
+  const scrollToSection = (sectionId: string) => {
+    const el = document.getElementById(sectionId);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
   const [counterData, setCounterData] = useState<any>(null);
   const [counterLoading, setCounterLoading] = useState(false);
   const [matchupWarning, setMatchupWarning] = useState<any>(null);
@@ -381,52 +386,36 @@ export default function MatchupBlueprintCard({
           </div>
         )}
 
-        {/* 4大タブ切替 */}
+        {/* 4大セクション クイック目次 */}
         <div className="flex items-center gap-1.5 pt-1 overflow-x-auto pb-0.5">
           <button
             type="button"
-            onClick={() => setActiveTab('blueprint')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shrink-0 ${
-              activeTab === 'blueprint'
-                ? 'bg-stone-900 text-white shadow-xs'
-                : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-            }`}
+            onClick={() => scrollToSection('section-blueprint')}
+            className="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shrink-0 bg-stone-100 text-stone-700 hover:bg-stone-200 hover:text-stone-900 border border-stone-200/60 shadow-2xs"
           >
-            <Zap className="w-3.5 h-3.5 text-amber-400" />
+            <Zap className="w-3.5 h-3.5 text-amber-500" />
             <span>📋 3段階勝ちパターン</span>
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab('builds')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shrink-0 ${
-              activeTab === 'builds'
-                ? 'bg-stone-900 text-white shadow-xs'
-                : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-            }`}
+            onClick={() => scrollToSection('section-builds')}
+            className="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shrink-0 bg-stone-100 text-stone-700 hover:bg-stone-200 hover:text-stone-900 border border-stone-200/60 shadow-2xs"
           >
-            <Shield className="w-3.5 h-3.5 text-emerald-400" />
+            <Shield className="w-3.5 h-3.5 text-emerald-500" />
             <span>🛡️ 推奨ルーン ＆ ビルド</span>
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab('jungle')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shrink-0 ${
-              activeTab === 'jungle'
-                ? 'bg-stone-900 text-white shadow-xs'
-                : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
-            }`}
+            onClick={() => scrollToSection('section-jungle')}
+            className="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shrink-0 bg-stone-100 text-stone-700 hover:bg-stone-200 hover:text-stone-900 border border-stone-200/60 shadow-2xs"
           >
-            <Compass className="w-3.5 h-3.5 text-sky-400" />
+            <Compass className="w-3.5 h-3.5 text-sky-500" />
             <span>🌲 敵JG初動ルート ＆ テンポ</span>
           </button>
           <button
             type="button"
-            onClick={() => setActiveTab('rejected')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shrink-0 ${
-              activeTab === 'rejected'
-                ? 'bg-rose-900 text-rose-100 shadow-xs'
-                : 'bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-200/60'
-            }`}
+            onClick={() => scrollToSection('section-rejected')}
+            className="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shrink-0 bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-200/80 shadow-2xs"
           >
             <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
             <span>⚠️ 罠 ＆ 不採用ビルド</span>
@@ -434,9 +423,10 @@ export default function MatchupBlueprintCard({
         </div>
       </div>
 
-      {/* タブ1: 3段階勝ちパターン手順書 */}
-      {activeTab === 'blueprint' && (
-        <div className="space-y-3.5 animate-in fade-in">
+      {/* 4大セクション縦一括表示 */}
+      <div className="space-y-6 pt-2">
+        {/* セクション1: 3段階勝ちパターン手順書 */}
+        <div id="section-blueprint" className="space-y-3.5 scroll-mt-6">
           <div className="flex items-center gap-1.5 text-xs font-black text-stone-800">
             <Zap className="w-4 h-4 text-amber-600" />
             <span>{myChamp} vs {enemyChamp} 3段階勝ちパターン・タイムライン</span>
@@ -488,11 +478,13 @@ export default function MatchupBlueprintCard({
             </div>
           )}
         </div>
-      )}
 
-      {/* タブ2: 推奨ルーン ＆ 初期ビルド */}
-      {activeTab === 'builds' && (
-        <div className="space-y-3 animate-in fade-in">
+        {/* セクション2: 推奨ルーン ＆ 初期ビルド */}
+        <div id="section-builds" className="space-y-3 pt-5 border-t border-stone-200 scroll-mt-6">
+          <div className="flex items-center gap-1.5 text-xs font-black text-stone-800">
+            <Shield className="w-4 h-4 text-emerald-600" />
+            <span>{myChamp} vs {enemyChamp} 推奨ルーン ＆ 初期ビルド</span>
+          </div>
           {counterLoading ? (
             <div className="p-8 text-center text-xs text-stone-500 font-bold animate-pulse">
               {myChamp} vs {enemyChamp} のビルド＆ルーン最適解を計算中...
@@ -543,11 +535,9 @@ export default function MatchupBlueprintCard({
             </div>
           )}
         </div>
-      )}
 
-      {/* タブ3: 🌲 敵JG初動ルート ＆ テンポシミュレーター */}
-      {activeTab === 'jungle' && (
-        <div className="space-y-3.5 animate-in fade-in">
+        {/* セクション3: 🌲 敵JG初動ルート ＆ テンポシミュレーター */}
+        <div id="section-jungle" className="space-y-3.5 pt-5 border-t border-stone-200 scroll-mt-6">
           <div className="flex items-center justify-between border-b border-stone-100 pb-2">
             <h4 className="font-black text-stone-900 text-xs flex items-center gap-1.5">
               <Compass className="w-4 h-4 text-sky-600" />
@@ -635,11 +625,9 @@ export default function MatchupBlueprintCard({
             </div>
           )}
         </div>
-      )}
 
-      {/* タブ4: 実戦の罠・不採用ビルド (Rejected Options / 没理由) */}
-      {activeTab === 'rejected' && (
-        <div className="space-y-3.5 animate-in fade-in">
+        {/* セクション4: 実戦の罠・不採用ビルド (Rejected Options / 没理由) */}
+        <div id="section-rejected" className="space-y-3.5 pt-5 border-t border-stone-200 scroll-mt-6">
           <div className="flex items-center gap-1.5 text-xs font-black text-rose-900">
             <AlertTriangle className="w-4 h-4 text-rose-600" />
             <span>{myChamp} vs {enemyChamp} 実戦の罠・やってはいけないNG行動（没理由DB）</span>
@@ -740,7 +728,7 @@ export default function MatchupBlueprintCard({
             </p>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

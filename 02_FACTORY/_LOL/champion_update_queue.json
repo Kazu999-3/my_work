@@ -1,302 +1,302 @@
 {
-  "patch_version": "26.18",
-  "updated_at": "2026-09-23T13:41:26.378814+00:00",
+  "patch_version": "26.19",
+  "updated_at": "2026-09-26T07:19:49.075145+00:00",
   "status": "suspended",
   "queue": {
     "Aatrox": {
       "name": "エイトロックス",
-      "status": "review_needed",
-      "updated_at": "2026-09-10T09:22:34.992914+00:00",
+      "status": "completed",
+      "updated_at": "2026-09-26T07:10:47.908771+00:00",
       "error": null,
       "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
     },
     "Ahri": {
       "name": "アーリ",
       "status": "completed",
-      "updated_at": "2026-09-10T09:23:23.991544+00:00",
+      "updated_at": "2026-09-26T07:11:42.915988+00:00",
       "error": null
     },
     "Akali": {
       "name": "アカリ",
       "status": "completed",
-      "updated_at": "2026-09-10T09:24:13.392833+00:00",
+      "updated_at": "2026-09-26T07:12:40.695210+00:00",
       "error": null
     },
     "Akshan": {
       "name": "アクシャン",
       "status": "completed",
-      "updated_at": "2026-09-10T09:25:00.391304+00:00",
+      "updated_at": "2026-09-26T07:13:36.194723+00:00",
       "error": null
     },
     "Alistar": {
       "name": "アリスター",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-11T08:06:25.396224+00:00",
       "error": null
     },
     "Ambessa": {
       "name": "アンベッサ",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-11T08:07:13.293547+00:00",
       "error": null
     },
     "Amumu": {
       "name": "アムム",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-11T08:08:00.006170+00:00",
       "error": null
     },
     "Anivia": {
       "name": "アニビア",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-11T08:08:45.804056+00:00",
       "error": null
     },
     "Annie": {
       "name": "アニー",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-12T08:33:58.645860+00:00",
       "error": null
     },
     "Aphelios": {
       "name": "アフェリオス",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-12T08:34:47.531690+00:00",
       "error": null
     },
     "Ashe": {
       "name": "アッシュ",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-12T08:35:38.118959+00:00",
       "error": null
     },
     "AurelionSol": {
       "name": "オレリオン・ソル",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-12T08:36:27.337452+00:00",
       "error": null
     },
     "Aurora": {
       "name": "オーロラ",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-13T08:23:58.952059+00:00",
       "error": null
     },
     "Azir": {
       "name": "アジール",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-13T08:24:48.982992+00:00",
       "error": null
     },
     "Bard": {
       "name": "バード",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-13T08:25:36.130069+00:00",
       "error": null
     },
     "Belveth": {
       "name": "ベル＝ヴェス",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-13T08:26:25.561299+00:00",
       "error": null
     },
     "Blitzcrank": {
       "name": "ブリッツクランク",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-15T04:17:06.821272+00:00",
       "error": null
     },
     "Brand": {
       "name": "ブランド",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-15T04:17:57.696733+00:00",
       "error": null
     },
     "Braum": {
       "name": "ブラウム",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-15T04:18:48.481308+00:00",
       "error": null
     },
     "Briar": {
       "name": "ブライアー",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-15T04:19:37.588993+00:00",
       "error": null
     },
     "Caitlyn": {
       "name": "ケイトリン",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-15T08:18:23.225857+00:00",
       "error": null
     },
     "Camille": {
       "name": "カミール",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-15T08:19:11.297362+00:00",
       "error": null
     },
     "Cassiopeia": {
       "name": "カシオペア",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-15T08:19:59.235570+00:00",
       "error": null
     },
     "Chogath": {
       "name": "チョ＝ガス",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-15T08:20:47.568199+00:00",
       "error": null
     },
     "Corki": {
       "name": "コーキ",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-16T08:49:42.241106+00:00",
       "error": null
     },
     "Darius": {
       "name": "ダリウス",
-      "status": "review_needed",
+      "status": "pending",
       "updated_at": "2026-09-16T08:50:32.362503+00:00",
       "error": null,
       "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
     },
     "Diana": {
       "name": "ダイアナ",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-16T08:51:24.655007+00:00",
       "error": null
     },
     "Draven": {
       "name": "ドレイヴン",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-16T08:52:14.693571+00:00",
       "error": null
     },
     "DrMundo": {
       "name": "ドクター・ムンド",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-17T09:19:56.948392+00:00",
       "error": null
     },
     "Ekko": {
       "name": "エコー",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-17T09:20:47.299420+00:00",
       "error": null
     },
     "Elise": {
       "name": "エリス",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-17T09:21:35.948874+00:00",
       "error": null
     },
     "Evelynn": {
       "name": "イブリン",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-17T09:22:28.214070+00:00",
       "error": null
     },
     "Ezreal": {
       "name": "エズリアル",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-18T08:20:49.572437+00:00",
       "error": null
     },
     "Fiddlesticks": {
       "name": "フィドルスティックス",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-18T08:21:38.775221+00:00",
       "error": null
     },
     "Fiora": {
       "name": "フィオラ",
-      "status": "review_needed",
+      "status": "pending",
       "updated_at": "2026-09-07T04:11:20.466548+00:00",
       "error": null,
       "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
     },
     "Fizz": {
       "name": "フィズ",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-18T08:22:25.622874+00:00",
       "error": null
     },
     "Galio": {
       "name": "ガリオ",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-18T08:23:12.353704+00:00",
       "error": null
     },
     "Gangplank": {
       "name": "ガングプランク",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-20T20:01:21.284029+00:00",
       "error": null
     },
     "Garen": {
       "name": "ガレン",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-20T20:02:04.746206+00:00",
       "error": null
     },
     "Gnar": {
       "name": "ナー",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-20T20:02:47.844160+00:00",
       "error": null
     },
     "Gragas": {
       "name": "グラガス",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-20T20:07:00.993320+00:00",
       "error": null
     },
     "Graves": {
       "name": "グレイブス",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-22T16:10:50.957736+00:00",
       "error": null
     },
     "Gwen": {
       "name": "グウェン",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-22T16:12:20.849566+00:00",
       "error": null
     },
     "Hecarim": {
       "name": "ヘカリム",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-22T16:13:47.695592+00:00",
       "error": null
     },
     "Heimerdinger": {
       "name": "ハイマーディンガー",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-22T16:14:49.574304+00:00",
       "error": null
     },
     "Hwei": {
       "name": "フェイ",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-23T08:10:58.533354+00:00",
       "error": null
     },
     "Illaoi": {
       "name": "イラオイ",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-23T08:11:49.051899+00:00",
       "error": null
     },
     "Irelia": {
       "name": "イレリア",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-23T08:12:39.199416+00:00",
       "error": null
     },
     "Ivern": {
       "name": "アイバーン",
-      "status": "completed",
+      "status": "pending",
       "updated_at": "2026-09-23T08:13:29.540532+00:00",
       "error": null
     },
@@ -308,14 +308,14 @@
     },
     "JarvanIV": {
       "name": "ジャーヴァンⅣ",
-      "status": "review_needed",
+      "status": "pending",
       "updated_at": "2026-09-07T04:23:53.131251+00:00",
       "error": null,
       "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
     },
     "Jax": {
       "name": "ジャックス",
-      "status": "review_needed",
+      "status": "pending",
       "updated_at": "2026-09-07T04:24:40.632116+00:00",
       "error": null,
       "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
@@ -430,7 +430,7 @@
     },
     "LeeSin": {
       "name": "リー・シン",
-      "status": "review_needed",
+      "status": "pending",
       "updated_at": "2026-09-07T04:42:12.344582+00:00",
       "error": null,
       "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
@@ -443,7 +443,7 @@
     },
     "Lillia": {
       "name": "リリア",
-      "status": "review_needed",
+      "status": "pending",
       "updated_at": "2026-09-07T04:44:55.081278+00:00",
       "error": null,
       "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
@@ -582,7 +582,7 @@
     },
     "Nocturne": {
       "name": "ノクターン",
-      "status": "review_needed",
+      "status": "pending",
       "updated_at": "2026-09-07T02:41:15.169515+00:00",
       "error": null,
       "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
@@ -925,7 +925,7 @@
     },
     "Viego": {
       "name": "ヴィエゴ",
-      "status": "review_needed",
+      "status": "pending",
       "updated_at": "2026-09-07T03:28:07.529948+00:00",
       "error": null,
       "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
@@ -968,7 +968,7 @@
     },
     "XinZhao": {
       "name": "シン・ジャオ",
-      "status": "review_needed",
+      "status": "pending",
       "updated_at": "2026-09-07T03:33:37.882307+00:00",
       "error": null,
       "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
