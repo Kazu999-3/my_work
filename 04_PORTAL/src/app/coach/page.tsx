@@ -262,25 +262,21 @@ function CoachPageContent() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-            {/* 左側: リアルタイム偵察 */}
-            <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-4">
-              <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs space-y-3">
-                <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-                  <span>🧭</span> リアルタイム偵察 (敵10人スキャン ＆ ガンク優先ターゲット)
-                </h3>
-                <ScoutTab onLiveMatchDetected={handleLiveMatchDetected} />
-              </div>
+          <div className="space-y-6">
+            {/* 上段: リアルタイム偵察 */}
+            <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs space-y-3">
+              <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+                <span>🧭</span> リアルタイム偵察 (敵10人スキャン ＆ ガンク優先ターゲット)
+              </h3>
+              <ScoutTab onLiveMatchDetected={handleLiveMatchDetected} />
             </div>
 
-            {/* 右側: 統合 チーム構成 ＆ 勝ち筋シミュレーター */}
-            <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-4 lg:sticky lg:top-4">
-              <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs space-y-3">
-                <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
-                  <span>⚔️</span> チーム構成 ＆ 勝ち筋シミュレーター
-                </h3>
-                <FiveVFiveSimTab liveRoster={liveRoster} />
-              </div>
+            {/* 下段: 統合 チーム構成 ＆ 勝ち筋シミュレーター */}
+            <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs space-y-3">
+              <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+                <span>⚔️</span> チーム構成 ＆ 勝ち筋シミュレーター
+              </h3>
+              <FiveVFiveSimTab liveRoster={liveRoster} />
             </div>
           </div>
         </div>
