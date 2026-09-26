@@ -6,7 +6,7 @@ import { generateChampionRoulette } from './roulette.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, extractPlayersFromEmbed, getPortalComponents, getPortalEmbed, handleHelpPage, applyDayCardState } from '../ui/embeds.js';
 import { parseMessageData, handleAutoMatchEnd } from '../utils/helpers.js';
 import { getAdminDiscordIds, markRecruitmentStatus } from '../utils/recruitPermission.js';
-import { getKtmRank, getHighestLaneMmr, getPlayerExperienceBadge } from '../utils/ktmRank.js';
+import { getKtmRank, getHighestLaneMmr, getPlayerExperienceBadge, getPlayerActiveMark } from '../utils/ktmRank.js';
 import { detectDayKey, getDayDef, extractEntryLines, resolveWeekendTargets, buildRecruitmentContent } from '../utils/recruitmentStatus.js';
 
 const RANK_JP_MAP = {
@@ -856,7 +856,26 @@ export async function handleButtonInteraction(interaction, env, ctx) {
       metadata.spectating = metadata.spectating.filter(id => id !== userId);
     }
     Object.keys(metadata.roles).forEach(r => { if (metadata.roles[r] === userId) metadata.roles[r] = null; });
-  } else if (customId.startsWith('close_silent') || customId.startsWith('close')) {
+  }
+
+  // 参加者・見学者のアクティブマーク（👑、🔰、🌱、⏳等）を補完
+  if (!metadata.badges) metadata.badges = {};
+  const allParticipantIds = [...new Set([...(metadata.joined || []), ...(metadata.spectating || [])])];
+  const missingBadgeIds = allParticipantIds.filter(id => !metadata.badges[id]);
+  if (missingBadgeIds.length > 0) {
+    try {
+      const idsStr = missingBadgeIds.map(i => `"${i}"`).join(',');
+      const pRows = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${idsStr})&select=discord_id,games_top,games_jg,games_mid,games_adc,games_sup,total_games,metadata,days_since_last_match`);
+      const pMap = new Map((pRows || []).map(p => [String(p.discord_id), p]));
+      for (const id of missingBadgeIds) {
+        metadata.badges[id] = getPlayerActiveMark(pMap.get(String(id)));
+      }
+    } catch (e) {
+      console.warn('badges fetch error:', e);
+    }
+  }
+
+  if (customId.startsWith('close_silent') || customId.startsWith('close')) {
     if (!canManageRecruitment) return Response.json({ type: 4, data: { content: "⚠️ 募集主または管理者のみ募集終了可能です。", flags: 64 } });
     const isSilent = customId.startsWith('close_silent');
 

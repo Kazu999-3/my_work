@@ -161,5 +161,20 @@ export function getPlayerExperienceBadge(p) {
   };
 }
 
+/**
+ * プレイヤーのアクティブマーク（絵文字のみ: 👑、🔰、🌱、⏳、🎖️）を返す
+ */
+export function getPlayerActiveMark(p) {
+  const b = getPlayerExperienceBadge(p);
+  switch (b?.tier) {
+    case 'new': return '🔰';
+    case 'light': return '🌱';
+    case 'returning': return b.short?.includes('⏳') ? '⏳' : '🎖️';
+    case 'regular':
+    default:
+      return '👑';
+  }
+}
+
 export { KTM_TIERS };
 

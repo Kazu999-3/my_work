@@ -73,20 +73,22 @@ export function renderRoles(data) {
   const icons = { Top: '🛡️', Jg: '⚔️', Mid: '🧙', Adc: '🏹', Sup: '🩹' };
   let lines = [];
 
+  const getMark = (id) => (id && data.badges && data.badges[id] ? ` ${data.badges[id]}` : '');
+
   if (data.mode === 'ノーマル') {
     lines.push("🟦 **希望ポジション (ROLES)**");
     ['Top', 'Jg', 'Mid', 'Adc', 'Sup'].forEach(r => {
       const pId = data.roles ? data.roles[r] : null;
-      lines.push(`${icons[r]} **${r}**: ${pId ? `<@${pId}>` : "◽ *(空き)*"}`);
+      lines.push(`${icons[r]} **${r}**: ${pId ? `<@${pId}>${getMark(pId)}` : "◽ *(空き)*"}`);
     });
     const pooled = data.joined.filter(id => !(data.roles && Object.values(data.roles).includes(id)));
     if (pooled.length > 0) {
       lines.push("\n👥 **ロール未定・参加者:**");
-      pooled.forEach(id => lines.push(`- <@${id}>`));
+      pooled.forEach(id => lines.push(`- <@${id}>${getMark(id)}`));
     }
   } else {
     lines.push(`👥 **参加メンバー一覧 (${data.joined.length}/${data.maxCount || (isCustom ? 10 : 5)}人)**`);
-    data.joined.forEach((id, i) => lines.push(`\`${String(i + 1).padStart(2, '0')}.\` <@${id}>`));
+    data.joined.forEach((id, i) => lines.push(`\`${String(i + 1).padStart(2, '0')}.\` <@${id}>${getMark(id)}`));
     const targetMax = data.maxCount || (isCustom ? 10 : 5);
     for (let i = data.joined.length + 1; i <= targetMax; i++) {
       lines.push(`\`${String(i).padStart(2, '0')}.\` ◽ *(募集中)*`);
@@ -97,7 +99,7 @@ export function renderRoles(data) {
   if (data.spectating && data.spectating.length > 0) {
     const specHeader = isCustom ? "👁️ **見学・補欠メンバー**" : "👁️ **見学・応援**";
     lines.push(`\n${specHeader}`);
-    data.spectating.forEach(id => lines.push(`- <@${id}>`));
+    data.spectating.forEach(id => lines.push(`- <@${id}>${getMark(id)}`));
   }
   return lines.join('\n');
 }

@@ -4,7 +4,7 @@ import { createMessageContent, createRecruitButtons, createRecruitEmbed, getPort
 import { getPlayersByNames, fetchSupabase } from '../utils/supabase.js';
 import { parseMessageData, parseStartTime, parseSmartRecruitInput } from '../utils/helpers.js';
 import { createRecruitment } from '../utils/recruitPermission.js';
-import { getTierEmoji } from '../utils/ktmRank.js';
+import { getTierEmoji, getPlayerActiveMark } from '../utils/ktmRank.js';
 
 export function handleRecruitDirect(interaction, env, ctx) {
   const options = interaction.data.options || [];
@@ -46,7 +46,8 @@ export function handleRecruitDirect(interaction, env, ctx) {
     mode, time, maxCount: max, memo,
     // createdAt: 投稿時刻を固定保存
     owner: userId, createdAt: new Date().toISOString(), joined: initialJoined, spectating: [],
-    roles: { Top: null, Jg: null, Mid: null, Adc: null, Sup: null }, names: names
+    roles: { Top: null, Jg: null, Mid: null, Adc: null, Sup: null }, names: names,
+    badges: {}
   };
 
   // 応答後にバックグラウンドで @original メッセージIDを取得し、recruitments に記録して
@@ -67,6 +68,24 @@ export function handleRecruitDirect(interaction, env, ctx) {
         }
         if (messageId) {
           await createRecruitment(env, { messageId, channelId, ownerDiscordId: userId, mode, maxCount: max, startAt });
+          // 募集主・初期参加者のアクティブマークを取得して即時反映
+          try {
+            const idsStr = initialJoined.map(i => `"${i}"`).join(',');
+            const pRows = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${idsStr})&select=discord_id,games_top,games_jg,games_mid,games_adc,games_sup,total_games,metadata,days_since_last_match`);
+            const pMap = new Map((pRows || []).map(p => [String(p.discord_id), p]));
+            for (const id of initialJoined) {
+              metadata.badges[id] = getPlayerActiveMark(pMap.get(String(id)));
+            }
+            await fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${messageId}`, {
+              method: 'PATCH',
+              headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                embeds: [createRecruitEmbed(metadata)],
+              })
+            });
+          } catch (bErr) {
+            console.warn('Initial badges patch error:', bErr);
+          }
         }
         // Web Push通知(#54)。失敗しても無視。
         try { await fetchPortalAPI(env, '/api/push/notify-recruit', { mode, time }); } catch (e) { /* noop */ }
