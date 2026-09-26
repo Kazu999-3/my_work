@@ -295,18 +295,20 @@ export function parseEntryBreakdown(lines, dominantTierKey = null) {
     const promotedIndices = new Set();
 
     // 試合別（第1戦・第2戦）に、参加可能な候補者同士で同ティア・共通レーンのペアを探索
-    function tryPair(candidates, matchFilter) {
+    function findMatchPairs(candidates, matchFilter) {
       const matchCands = candidates.filter((c) => matchFilter(c.raw));
+      const pairedInMatch = new Set();
       for (let i = 0; i < matchCands.length; i++) {
         const c1 = matchCands[i];
-        if (promotedIndices.has(c1.idx)) continue;
-        if (eligible.length + promotedIndices.size + 2 > DAY_CAPACITY) break;
+        if (pairedInMatch.has(c1.idx)) continue;
 
         for (let j = i + 1; j < matchCands.length; j++) {
           const c2 = matchCands[j];
-          if (promotedIndices.has(c2.idx)) continue;
+          if (pairedInMatch.has(c2.idx)) continue;
 
           if (c1.tier === c2.tier && hasCommonLane(c1.raw, c2.raw)) {
+            pairedInMatch.add(c1.idx);
+            pairedInMatch.add(c2.idx);
             promotedIndices.add(c1.idx);
             promotedIndices.add(c2.idx);
             promotedPairsCount += 1;
@@ -318,9 +320,9 @@ export function parseEntryBreakdown(lines, dominantTierKey = null) {
 
     const indexedCands = spectatorCandidates.map((c, idx) => ({ ...c, idx }));
     // 第1戦（フル or 1戦のみ）の対面ペアを判定
-    tryPair(indexedCands, (raw) => !isLateJoin(raw));
+    findMatchPairs(indexedCands, (raw) => !isLateJoin(raw));
     // 第2戦（フル or 途中参加）の対面ペアを判定
-    tryPair(indexedCands, (raw) => !isSingleMatch(raw));
+    findMatchPairs(indexedCands, (raw) => !isSingleMatch(raw));
 
     for (let i = 0; i < spectatorCandidates.length; i++) {
       const cand = spectatorCandidates[i];
@@ -423,53 +425,51 @@ export function computeDayStatus(countOrLines, capacity = DAY_CAPACITY, dayKey =
  */
 export function buildDayBanner(dayKey, status, dominantTierText = '') {
   const def = getDayDef(dayKey);
-  const bar = renderProgressBar(status.joined, status.capacity);
   const b = status.breakdown;
+  const dominantName = status.dominantTierInfo?.key || dominantTierText.replace(/帯.*$/, '');
+  const tierLabel = dominantName ? `（${dominantName}基準）` : '';
 
   if (b && (b.hasBreakdown || b.hasSpectator || dayKey === 'sat')) {
     let header;
     if (b.isMatch1Ready && b.isMatch2Ready) {
-      header = `✅ **【${def.name}　全戦 開催確定！】**`;
+      header = `✅ **全戦 開催確定！**${tierLabel}`;
     } else if (b.isMatch1Ready) {
-      header = `✅ **【${def.name}　第1戦 開催確定！】**`;
+      header = `✅ **第1戦 開催確定！**${tierLabel}`;
     } else if (b.isMatch2Ready) {
-      header = `✅ **【${def.name}　第2戦 開催確定！】**`;
+      header = `✅ **第2戦 開催確定！**${tierLabel}`;
     } else {
-      header = `🔥 **【${def.name}　募集中】**`;
+      header = `🔥 **募集中${tierLabel}**`;
     }
 
-    const hasMirror = (b.promotedPairsCount || 0) > 0;
-    const mirrorText = hasMirror ? '＋対面枠' : '';
-    const rangeNote = status.dominantTierInfo?.rangeText ? ` / 対象: **${status.dominantTierInfo.rangeText}${mirrorText}**` : '';
-    const tierNote = dominantTierText ? `（基準: **${dominantTierText}**${rangeNote}）` : '';
-    const m1State = b.isMatch1Ready ? '🎉 **開催確定！**' : `あと**${b.match1Remaining}名**`;
-    const m2State = b.isMatch2Ready ? '🎉 **開催確定！**' : `あと**${b.match2Remaining}名**`;
+    // バーは開幕（第1戦）の実働人数を基準に表示（第1戦がなければ第2戦）
+    const activeCount = b.match1Count > 0 ? b.match1Count : b.match2Count;
+    const bar = renderProgressBar(activeCount, status.capacity);
+
+    const m1State = b.isMatch1Ready ? '第1戦: 開催確定！' : `第1戦: あと${b.match1Remaining}名`;
+    const m2State = b.isMatch2Ready ? '第2戦: 開催確定！' : `第2戦: あと${b.match2Remaining}名`;
 
     const lines = [
       header,
-      `\`${bar}\` 計**${b.total}名**エントリー${tierNote}`,
-      `・第1戦（開幕 21:00〜）: **${b.match1Count}/${status.capacity}名** → ${m1State}`,
-      `・第2戦（途中合流〜）: **${b.match2Count}/${status.capacity}名** → ${m2State}`,
+      `\`${bar}\` ${m1State} ｜ ${m2State}`,
     ];
 
     if (b.hasSpectator) {
-      lines.push(`（※観戦・2部屋目待ち: **${b.spectatorTotal}名** / 20名到達で初中級部屋が同時開催✨）`);
+      lines.push(`（※観戦・2部屋目待ち: ${b.spectatorTotal}名）`);
     }
 
     return lines.join('\n');
   }
 
-  // 全員フルの場合（従来のスッキリ表示）
+  // 全員フルの場合（シンプル表示）
   const header = status.isReady
-    ? `✅ **【${def.name}　開催確定！】**`
-    : `🔥 **【${def.name}　募集中】**`;
+    ? `✅ **開催確定！**${tierLabel}`
+    : `🔥 **募集中${tierLabel}**`;
+  const bar = renderProgressBar(status.joined, status.capacity);
   const state = status.isReady
-    ? `**${status.joined}名**集まりました！`
-    : `**あと${status.remaining}名**で開催確定`;
+    ? `21:00よりスタート！`
+    : `あと${status.remaining}名で開催確定`;
 
-  const tierNote = dominantTierText ? `（基準: **${dominantTierText}** / 1ティア差選出）` : '';
-
-  return `${header}\n\`${bar}\` → ${state}${tierNote}`;
+  return `${header}\n\`${bar}\` ${state}`;
 }
 
 export function replaceBanner(description, banner) {

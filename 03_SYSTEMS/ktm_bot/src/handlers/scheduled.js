@@ -1052,6 +1052,41 @@ async function resolveGuildId(env, channelId) {
  *   現在は「各日の残り枠 ＋ 募集カードへのリンク」だけを伝える1通に絞り、
  *   参加はカード側のボタンに一本化している。
  */
+export async function cleanupOldReminderMessages(env, channelId) {
+  try {
+    const res = await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages?limit=25`, {
+      headers: { Authorization: `Bot ${env.DISCORD_TOKEN}` }
+    });
+    if (!res.ok) return;
+    const messages = await res.json();
+    for (const m of messages) {
+      if (!m.author?.bot) continue;
+      const embedTitle = m.embeds?.[0]?.title || '';
+      if (embedTitle.includes('KTM 土曜・本戦カスタム') || embedTitle.includes('KTM 日曜・お祭りカスタム')) {
+        continue;
+      }
+      const isReminderEmbed = embedTitle.includes('週末カスタム 残り枠のお知らせ');
+      const isShortfallContent = m.content && (
+        m.content.includes('あと1名で開催確定！') ||
+        m.content.includes('助っ人をピンポイント募集中') ||
+        m.content.includes('状況案内:') ||
+        m.content.includes('判定結果:') ||
+        m.content.includes('参加できる方はエントリーをお願いします')
+      );
+
+      if (isReminderEmbed || isShortfallContent) {
+        console.log(`[Cleanup] 古いBotリマインド/催促メッセージを削除: ${m.id}`);
+        await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages/${m.id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bot ${env.DISCORD_TOKEN}` }
+        }).catch(() => {});
+      }
+    }
+  } catch (err) {
+    console.warn('[Cleanup] リマインドメッセージ掃除エラー:', err);
+  }
+}
+
 async function sendEventUsersNotification(env, options = {}) {
   console.log('[EventNotify] Starting weekend recruitment reminder...');
   try {
@@ -1161,15 +1196,8 @@ async function sendEventUsersNotification(env, options = {}) {
       console.warn('[EventNotify] 二重投稿チェックに失敗（送信は続行）:', dupErr);
     }
 
-    // チャンネルの自浄: 古いリマインド通知（📣 週末カスタム 残り枠のお知らせ）があれば事前に削除して最新1通に保つ
-    for (const m of recentMessages) {
-      if (m.embeds?.[0]?.title?.includes('週末カスタム 残り枠のお知らせ')) {
-        await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages/${m.id}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
-        }).catch((e) => console.warn('[EventNotify] 過去リマインド削除に失敗:', e));
-      }
-    }
+    // チャンネルの自浄: 古いリマインド・催促通知があれば事前に削除して最新1通に保つ
+    await cleanupOldReminderMessages(env, channelId);
 
     const messageBody = { embeds: [embed] };
 
@@ -1302,6 +1330,9 @@ export async function checkCustomStatusAt2000(env) {
     const dominant = summary.status?.dominantTierInfo;
 
     console.log(`[Check2000] ${def.name}: 第1試合稼働${firstMatchCount}名 / 途中参加${lateCount}名 (基準: ${dominant?.text || 'なし'})`);
+
+    // チャンネルの自浄: 過去のリマインド・催促を削除して最新の判定メッセージ1通に保つ
+    await cleanupOldReminderMessages(env, summary.channelId || channelId);
 
     // A. 開催確定（募集カードへの返信として投稿）
     if (firstMatchCount >= DAY_CAPACITY) {

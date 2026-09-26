@@ -8,6 +8,7 @@ import { parseMessageData, handleAutoMatchEnd } from '../utils/helpers.js';
 import { getAdminDiscordIds, markRecruitmentStatus } from '../utils/recruitPermission.js';
 import { getKtmRank, getHighestLaneMmr, getPlayerExperienceBadge, getPlayerActiveMark } from '../utils/ktmRank.js';
 import { detectDayKey, getDayDef, extractEntryLines, resolveWeekendTargets, buildRecruitmentContent, RANK_SHORT_JP_MAP } from '../utils/recruitmentStatus.js';
+import { cleanupOldReminderMessages } from './scheduled.js';
 
 const RANK_JP_MAP = {
   CHALLENGER: 'チャレンジャー', GRANDMASTER: 'グランドマスター', MASTER: 'マスター',
@@ -511,6 +512,7 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         }
 
         if (promptContent) {
+          await cleanupOldReminderMessages(env, channelId);
           await sendDiscordMessage(`channels/${channelId}/messages`, botToken, "POST", {
             content: promptContent,
             message_reference: { message_id: msgId, fail_if_not_exists: false }

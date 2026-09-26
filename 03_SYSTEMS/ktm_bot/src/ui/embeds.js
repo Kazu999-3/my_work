@@ -376,8 +376,8 @@ export function applyDayCardState(embed, dayKey, entryLines) {
   const dominantTierText = def.showRank ? computeDominantTier(lines) : '';
   const banner = buildDayBanner(def.key, status, dominantTierText);
 
-  // description は「バナー ＋ 空行 ＋ 補足1行（def.rule）」で常に最新化する。
-  embed.description = `${banner}\n\n${def.rule}`;
+  // description は純粋にバナー（状況表示）のみとし、ルール等の解説は埋め込み外（メッセージ本文）に任せる
+  embed.description = banner;
   embed.color = status.color;
 
   let fieldTitle;
