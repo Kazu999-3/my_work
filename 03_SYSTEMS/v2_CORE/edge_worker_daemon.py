@@ -135,9 +135,9 @@ class EdgeWorkerDaemon:
         # matchup_simulation_5v5 は Vercel側(/api/match/simulate)で同期的に完結するようになったため、
         # このデーモンが横取りしないよう明示的に除外する（横取りするとGeminiクォータを無駄に消費し、
         # Vercel側の正常な結果を後から上書きしてしまうことがあった）。
-        # balancer_pending も同様に、edge_tasksをチーム分け結果の永続ストアとして間借りしている
-        # だけで実行対象ではないため除外する（未対応タスクタイプとして即failedになっていた）。
-        url = f"{self.supabase_url}/rest/v1/edge_tasks?status=eq.pending&task_type=neq.matchup_simulation_5v5&task_type=neq.balancer_pending&order=created_at.asc&limit=10"
+        # balancer_pending / custom_bet も同様に、edge_tasksをチーム分け結果や勝敗ベットの
+        # 永続ストアとして間借りしているだけで実行対象ではないため除外する（未対応タスクタイプとして即failedになっていた）。
+        url = f"{self.supabase_url}/rest/v1/edge_tasks?status=eq.pending&task_type=neq.matchup_simulation_5v5&task_type=neq.balancer_pending&task_type=neq.custom_bet&order=created_at.asc&limit=10"
         try:
             res = httpx.get(url, headers=self.headers, timeout=10)
             if res.status_code == 200 and res.json():
@@ -504,6 +504,12 @@ class EdgeWorkerDaemon:
                         error_message = f"{te}（再キューにも失敗したため、手動で「一括更新を開始」を押し直してください）"
                         self.update_task_status(task_id, "failed", error_message=error_message)
                 
+            elif task_type in ("custom_bet", "balancer_pending", "matchup_simulation_5v5"):
+                # 間借りタスクが万一ロックされてしまった場合は、データを壊さず pending に戻して解放する
+                logger.warning(f"⚠️ 間借りタスク ({task_type}) を検知したため、データを保護して pending に復元・解放します: ID: {task_id}")
+                self.update_task_status(task_id, "pending")
+                return
+
             else:
                 raise NotImplementedError(f"未サポートのタスクタイプです: {task_type}")
                 
