@@ -55,26 +55,49 @@ function spinReels(): { reels: [SlotSymbol, SlotSymbol, SlotSymbol]; multiplier:
   }
   // 6. 💎 Gem x2 (1.5倍 確率 2.0%)
   if (rand < 0.252) {
-    const dummy: SlotSymbol[] = ['minion', 'potion', 'sword', 'poro'];
+    const dummy: SlotSymbol[] = ['minion', 'potion', 'sword', 'poro', 'dragon', 'baron'];
     const other = dummy[Math.floor(Math.random() * dummy.length)];
-    return { reels: ['gem', 'gem', other], multiplier: 1.5, isJackpot: false, message: '💎 惜しい！ジェム2つ揃い (1.5倍)！' };
+    const arr: [SlotSymbol, SlotSymbol, SlotSymbol] = ['gem', 'gem', other];
+    // ランダムに位置をシャッフル
+    const pos = Math.floor(Math.random() * 3);
+    if (pos === 0) [arr[0], arr[2]] = [arr[2], arr[0]];
+    else if (pos === 1) [arr[1], arr[2]] = [arr[2], arr[1]];
+    return { reels: arr, multiplier: 1.5, isJackpot: false, message: '💎 惜しい！ジェム2つ揃い (1.5倍)！' };
   }
   // 7. 🐹 Poro x2 (1.0倍 元返し 確率 5.0%)
   if (rand < 0.302) {
-    const dummy: SlotSymbol[] = ['minion', 'potion', 'sword'];
+    const dummy: SlotSymbol[] = ['minion', 'potion', 'sword', 'dragon', 'baron'];
     const other = dummy[Math.floor(Math.random() * dummy.length)];
-    return { reels: ['poro', 'poro', other], multiplier: 1.0, isJackpot: false, message: '🐹 ポロ2つ揃い！ベット額返還 (1倍)！' };
+    const arr: [SlotSymbol, SlotSymbol, SlotSymbol] = ['poro', 'poro', other];
+    // ランダムに位置をシャッフル
+    const pos = Math.floor(Math.random() * 3);
+    if (pos === 0) [arr[0], arr[2]] = [arr[2], arr[0]];
+    else if (pos === 1) [arr[1], arr[2]] = [arr[2], arr[1]];
+    return { reels: arr, multiplier: 1.0, isJackpot: false, message: '🐹 ポロ2つ揃い！ベット額返還 (1倍)！' };
   }
 
-  // 8. ハズレ (不揃いリール生成)
+  // 8. ハズレ (不揃いリール生成: 当たり役が偶然成立しないよう厳密に保護)
   const pool: SlotSymbol[] = ['minion', 'potion', 'sword', 'poro', 'dragon', 'baron'];
-  let r1 = pool[Math.floor(Math.random() * pool.length)];
-  let r2 = pool[Math.floor(Math.random() * pool.length)];
-  let r3 = pool[Math.floor(Math.random() * pool.length)];
+  let r1: SlotSymbol, r2: SlotSymbol, r3: SlotSymbol;
+  let attempts = 0;
+  while (true) {
+    attempts++;
+    r1 = pool[Math.floor(Math.random() * pool.length)];
+    r2 = pool[Math.floor(Math.random() * pool.length)];
+    r3 = pool[Math.floor(Math.random() * pool.length)];
 
-  // 万一揃ってしまったら1つズラす
-  if (r1 === r2 && r2 === r3) {
-    r3 = r3 === 'potion' ? 'minion' : 'potion';
+    // 1) 3つ揃いは不可
+    if (r1 === r2 && r2 === r3) continue;
+
+    // 2) ポロ2個揃いは不可（配当1倍の役なのでハズレでは絶対に出さない）
+    const poroCount = (r1 === 'poro' ? 1 : 0) + (r2 === 'poro' ? 1 : 0) + (r3 === 'poro' ? 1 : 0);
+    if (poroCount >= 2) continue;
+
+    // 3) ジェム2個揃いは不可（配当1.5倍の役なのでハズレでは絶対に出さない）
+    const gemCount = (r1 === 'gem' ? 1 : 0) + (r2 === 'gem' ? 1 : 0) + (r3 === 'gem' ? 1 : 0);
+    if (gemCount >= 2) continue;
+
+    break;
   }
 
   return { reels: [r1, r2, r3], multiplier: 0, isJackpot: false, message: '残念…ハズレ！次は当たるかも！？' };
