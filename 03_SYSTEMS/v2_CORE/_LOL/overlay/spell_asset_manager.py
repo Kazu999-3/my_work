@@ -15,7 +15,7 @@ from PyQt6.QtGui import QPixmap, QColor
 CACHE_DIR = Path(__file__).parent / "cache"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
-DDRAGON_VERSION = "14.24.1"
+DDRAGON_VERSION = "16.19.1"
 CDN_BASE = f"https://ddragon.leagueoflegends.com/cdn/{DDRAGON_VERSION}/img"
 
 SPELL_IMG_MAP = {
@@ -68,10 +68,20 @@ SPELL_COOLDOWNS = {
 
 # 辞書ファイルから全チャンピオンのUlt CDおよびスキル情報をロード
 import json
+import re
 
-MASTER_DICT_PATH = Path(__file__).parent.parent.parent.parent / "01_INTEL" / "_LOL" / "ddragon_master_dict.json"
+# プロジェクトルートからの確実な辞書パス解決
+_curr_path = Path(__file__).resolve()
+_root_path = None
+for _p in [_curr_path] + list(_curr_path.parents):
+    if (_p / "01_INTEL" / "_LOL" / "ddragon_master_dict.json").exists():
+        _root_path = _p
+        break
+MASTER_DICT_PATH = (_root_path / "01_INTEL" / "_LOL" / "ddragon_master_dict.json") if _root_path else Path("d:/my_work/01_INTEL/_LOL/ddragon_master_dict.json")
+
 DYNAMIC_CHAMPION_ULT_CDS = {}
 DYNAMIC_CHAMPION_ULT_SPELL_IDS = {}
+MASTER_DICT_CHAMPIONS_MAP = {}
 
 if MASTER_DICT_PATH.exists():
     try:
@@ -84,6 +94,26 @@ if MASTER_DICT_PATH.exists():
                     if cds and len(cds) >= 3:
                         DYNAMIC_CHAMPION_ULT_CDS[champ] = [int(cds[0]), int(cds[1]), int(cds[2])]
                     DYNAMIC_CHAMPION_ULT_SPELL_IDS[champ] = skill.get("spell_id", "")
+
+            # 全173体のチャンピオン公式ID・日本語名・英語名マッピングを構築
+            for cid, cinfo in m_dict.get("champions", {}).items():
+                official_id = cinfo.get("id", cid)
+                name_ja = cinfo.get("name_ja", "")
+                name_en = cinfo.get("name_en", "")
+
+                MASTER_DICT_CHAMPIONS_MAP[official_id] = official_id
+                MASTER_DICT_CHAMPIONS_MAP[official_id.lower()] = official_id
+                if name_ja:
+                    MASTER_DICT_CHAMPIONS_MAP[name_ja] = official_id
+                    MASTER_DICT_CHAMPIONS_MAP[name_ja.replace("Ⅳ", "IV")] = official_id
+                    clean_ja = re.sub(r"[・＝=＝\s\-_]", "", name_ja)
+                    MASTER_DICT_CHAMPIONS_MAP[clean_ja] = official_id
+                    MASTER_DICT_CHAMPIONS_MAP[clean_ja.replace("Ⅳ", "IV")] = official_id
+                if name_en:
+                    MASTER_DICT_CHAMPIONS_MAP[name_en] = official_id
+                    MASTER_DICT_CHAMPIONS_MAP[name_en.lower()] = official_id
+                    clean_en = re.sub(r"[\'.\s\-_&]", "", name_en.lower())
+                    MASTER_DICT_CHAMPIONS_MAP[clean_en] = official_id
     except Exception as e:
         print(f"Warning: Failed to load master dict in spell_asset_manager: {e}")
 
@@ -144,55 +174,122 @@ def calculate_effective_spell_cd(spell_name: str, items: list) -> int:
     
     return base_cd
 
-# DDragon公式アイコンファイル名への正規化マッピング (特殊名・新チャンプ網羅)
-CHAMPION_DDRAGON_KEYS = {
-    "Wukong": "MonkeyKing", "wukong": "MonkeyKing", "悟空": "MonkeyKing",
-    "Nunu": "Nunu", "Nunu & Willump": "Nunu", "ヌヌ": "Nunu",
-    "Renata": "Renata", "Renata Glasc": "Renata", "レナータ": "Renata",
-    "KSante": "KSante", "K'Sante": "KSante", "クサンテ": "KSante",
-    "ChoGath": "Chogath", "Chogath": "Chogath", "チョガス": "Chogath",
-    "KaiSa": "Kaisa", "Kaisa": "Kaisa", "カイサ": "Kaisa",
-    "KhaZix": "Khazix", "Khazix": "Khazix", "カジックス": "Khazix",
-    "VelKoz": "Velkoz", "Velkoz": "Velkoz", "ヴェルコズ": "Velkoz",
-    "BelVeth": "Belveth", "Belveth": "Belveth", "ベルヴェス": "Belveth",
-    "LeBlanc": "Leblanc", "Leblanc": "Leblanc", "ルブラン": "Leblanc",
-    "JarvanIV": "JarvanIV", "Jarvan IV": "JarvanIV", "ジャーヴァンIV": "JarvanIV",
-    "DrMundo": "DrMundo", "Dr. Mundo": "DrMundo", "ムンド": "DrMundo",
-    "Smolder": "Smolder", "スモルダー": "Smolder",
-    "Aurora": "Aurora", "オーロラ": "Aurora",
-    "Ambessa": "Ambessa", "アンベッサ": "Ambessa",
+# 俗称・愛称・表記揺れエイリアステーブル
+CHAMPION_COMMON_ALIASES = {
+    # 俗称・愛称・表記揺れ
+    "クサンテ": "KSante", "ksante": "KSante", "k'sante": "KSante", "カ＝サンテ": "KSante", "カサンテ": "KSante",
+    "ウーコン": "MonkeyKing", "悟空": "MonkeyKing", "wukong": "MonkeyKing",
+    "ヌヌ": "Nunu", "ヌヌ＆ウィランプ": "Nunu", "ヌヌ&ウィランプ": "Nunu", "ヌヌ＆ウィルンプ": "Nunu", "nunu": "Nunu", "nunu&willump": "Nunu", "nunuwillump": "Nunu",
+    "ムンド": "DrMundo", "ドクタームンド": "DrMundo", "ドクター・ムンド": "DrMundo", "drmundo": "DrMundo", "dr.mundo": "DrMundo", "doctormundo": "DrMundo",
+    "レナータ": "Renata", "レナータグラスク": "Renata", "レナータ・グラスク": "Renata", "renata": "Renata", "renataglasc": "Renata",
+    "チョガス": "Chogath", "チョ＝ガス": "Chogath", "chogath": "Chogath", "cho'gath": "Chogath",
+    "カイサ": "Kaisa", "kaisa": "Kaisa", "kai'sa": "Kaisa",
+    "カジックス": "Khazix", "khazix": "Khazix", "kha'zix": "Khazix",
+    "ヴェルコズ": "Velkoz", "velkoz": "Velkoz", "vel'koz": "Velkoz",
+    "ベルヴェス": "Belveth", "ベル＝ヴェス": "Belveth", "belveth": "Belveth", "bel'veth": "Belveth",
+    "ルブラン": "Leblanc", "leblanc": "Leblanc", "le blanc": "Leblanc",
+    "ジャーヴァン": "JarvanIV", "ジャーヴァン4": "JarvanIV", "ジャーヴァンiv": "JarvanIV", "ジャーヴァンⅳ": "JarvanIV", "ジャーヴァンiv": "JarvanIV", "jarvaniv": "JarvanIV", "jarvan iv": "JarvanIV", "j4": "JarvanIV",
+    "マスターイー": "MasterYi", "マスター・イー": "MasterYi", "masteryi": "MasterYi", "master yi": "MasterYi", "yi": "MasterYi",
+    "ミスフォーチュン": "MissFortune", "ミス・フォーチュン": "MissFortune", "missfortune": "MissFortune", "miss fortune": "MissFortune", "mf": "MissFortune",
+    "タムケンチ": "TahmKench", "タム・ケンチ": "TahmKench", "tahmkench": "TahmKench", "tahm kench": "TahmKench", "タム": "TahmKench",
+    "ツイステッドフェイト": "TwistedFate", "ツイステッド・フェイト": "TwistedFate", "twistedfate": "TwistedFate", "twisted fate": "TwistedFate", "tf": "TwistedFate",
+    "シンジャオ": "XinZhao", "シン・ジャオ": "XinZhao", "xinzhao": "XinZhao", "xin zhao": "XinZhao",
+    "オレリオンソル": "AurelionSol", "オレリオン・ソル": "AurelionSol", "aurelionsol": "AurelionSol", "aurelion sol": "AurelionSol", "asol": "AurelionSol",
+    "コグマウ": "KogMaw", "コグ＝マウ": "KogMaw", "コグマオ": "KogMaw", "コグ＝マオ": "KogMaw", "kogmaw": "KogMaw", "kog'maw": "KogMaw",
+    "レクサイ": "RekSai", "レク＝サイ": "RekSai", "reksai": "RekSai", "rek'sai": "RekSai",
+    "フィドルスティックス": "Fiddlesticks", "フィドル": "Fiddlesticks", "fiddlesticks": "Fiddlesticks", "fiddlestick": "Fiddlesticks",
+    "スモルダー": "Smolder", "smolder": "Smolder",
+    "オーロラ": "Aurora", "aurora": "Aurora",
+    "アンベッサ": "Ambessa", "ambessa": "Ambessa",
+    "メル": "Mel", "mel": "Mel",
 }
+
+# 互換用 alias
+CHAMPION_DDRAGON_KEYS = CHAMPION_COMMON_ALIASES
+
+def normalize_champion_name(raw_name: str) -> str:
+    """任意のチャンピオン名（日本語、英語、内部ID、俗称、表記揺れ）をDDragon公式IDへ完全正規化"""
+    if not raw_name or str(raw_name).strip() in ("Enemy", "Unknown", "未選択", ""):
+        return "Aatrox"
+
+    s = str(raw_name).strip()
+    # Live Client Data の raw prefix 除去
+    if s.startswith("game_character_displayname_"):
+        s = s.replace("game_character_displayname_", "")
+
+    s_lower = s.lower()
+
+    # 1. 完全一致（公式辞書）
+    if s in MASTER_DICT_CHAMPIONS_MAP:
+        return MASTER_DICT_CHAMPIONS_MAP[s]
+    if s_lower in MASTER_DICT_CHAMPIONS_MAP:
+        return MASTER_DICT_CHAMPIONS_MAP[s_lower]
+
+    # 2. 俗称・エイリアス完全一致
+    if s in CHAMPION_COMMON_ALIASES:
+        return CHAMPION_COMMON_ALIASES[s]
+    if s_lower in CHAMPION_COMMON_ALIASES:
+        return CHAMPION_COMMON_ALIASES[s_lower]
+
+    # 3. 記号・スペース除去後のマッチ
+    clean_s = re.sub(r"[\'.\s\-_・＝=＝&]", "", s)
+    clean_lower = clean_s.lower().replace("ⅳ", "iv").replace("Ⅳ", "iv")
+
+    if clean_s in MASTER_DICT_CHAMPIONS_MAP:
+        return MASTER_DICT_CHAMPIONS_MAP[clean_s]
+    if clean_lower in MASTER_DICT_CHAMPIONS_MAP:
+        return MASTER_DICT_CHAMPIONS_MAP[clean_lower]
+    if clean_s in CHAMPION_COMMON_ALIASES:
+        return CHAMPION_COMMON_ALIASES[clean_s]
+    if clean_lower in CHAMPION_COMMON_ALIASES:
+        return CHAMPION_COMMON_ALIASES[clean_lower]
+
+    # 4. 一般整形: 単語の先頭を大文字化
+    return clean_s.capitalize() if clean_s else "Aatrox"
 
 class SpellAssetManager:
     _pixmap_cache = {}
 
     @classmethod
     def get_champion_icon(cls, champion_name: str) -> QPixmap:
-        """チャンピオンの顔アイコンを取得"""
-        if not champion_name or champion_name in ("Enemy", "Unknown"):
-            champion_name = "Aatrox"
+        """チャンピオンの顔アイコンを取得（全173体＋表記揺れ＋日本語完全対応）"""
+        norm_key = normalize_champion_name(champion_name)
 
-        norm_key = CHAMPION_DDRAGON_KEYS.get(champion_name, champion_name)
-        
-        cache_file = CACHE_DIR / f"champ_{norm_key}.png"
         if norm_key in cls._pixmap_cache:
             return cls._pixmap_cache[norm_key]
 
+        cache_file = CACHE_DIR / f"champ_{norm_key}.png"
         if cache_file.exists():
             pix = QPixmap(str(cache_file))
             if not pix.isNull():
                 cls._pixmap_cache[norm_key] = pix
                 return pix
 
+        # 1. 最新 CDN から取得
         url = f"{CDN_BASE}/champion/{norm_key}.png"
         try:
             r = httpx.get(url, timeout=3.0)
-            if r.status_code == 200:
+            if r.status_code == 200 and r.content:
                 with open(cache_file, "wb") as f:
                     f.write(r.content)
                 pix = QPixmap(str(cache_file))
-                cls._pixmap_cache[norm_key] = pix
-                return pix
+                if not pix.isNull():
+                    cls._pixmap_cache[norm_key] = pix
+                    return pix
+        except Exception:
+            pass
+
+        # 2. フォールバック: 旧パッチ (14.24.1) からの取得
+        try:
+            fb_url = f"https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/{norm_key}.png"
+            fb_r = httpx.get(fb_url, timeout=2.0)
+            if fb_r.status_code == 200 and fb_r.content:
+                with open(cache_file, "wb") as f:
+                    f.write(fb_r.content)
+                pix = QPixmap(str(cache_file))
+                if not pix.isNull():
+                    cls._pixmap_cache[norm_key] = pix
+                    return pix
         except Exception:
             pass
 
