@@ -429,14 +429,33 @@ export async function POST(request: Request) {
   let body: any = null;
   try {
     session = await getAuthSession();
+    body = await request.json();
+
+    // 🤖 Bot/システム連携時のサーバーサイドセッションフォールバック
+    if (!session?.discordId && body?.sessionUser?.discordId) {
+      const authHeader = request.headers.get('x-system-key') || '';
+      const validKeys = [
+        process.env.SYSTEM_SYNC_KEY,
+        process.env.SUPABASE_SERVICE_ROLE_KEY,
+        process.env.DISCORD_BOT_TOKEN,
+      ].filter(Boolean);
+
+      if (validKeys.some((k) => k && authHeader.includes(k))) {
+        session = {
+          discordId: body.sessionUser.discordId,
+          displayName: body.sessionUser.displayName || body.sessionUser.username || 'DiscordMember',
+          username: body.sessionUser.username || 'member',
+          isAdmin: false,
+        };
+      }
+    }
+
     if (!session || !session.discordId) {
       return NextResponse.json(
         { ok: false, error: 'オファーを行うにはDiscordログインが必要です。' },
         { status: 401 }
       );
     }
-
-    body = await request.json();
     const {
       action = 'APPLY',
       targetProfileId,
@@ -743,6 +762,177 @@ export async function POST(request: Request) {
         ok: true,
         message: '師弟ペアが正式に成立しました！専用指導チャットを作成しました(+300コイン付与)',
         threadUrl: threadResult?.threadUrl,
+      });
+    }
+
+    // ==========================================
+    // 4.2 弟子カードからワンポチで師匠引き受け (CLAIM_MENTOR)
+    // ==========================================
+    if (action === 'CLAIM_MENTOR') {
+      const pupilProfileId = targetProfileId || body.pupilProfileId;
+      if (!pupilProfileId) {
+        return NextResponse.json({ ok: false, error: '弟子プロフィールIDが必要です。' }, { status: 400 });
+      }
+
+      // 1. 弟子プロフィールの取得
+      const { data: pupilProfile, error: pErr } = await supabase
+        .from('mentorship_profiles')
+        .select('*')
+        .eq('id', pupilProfileId)
+        .single();
+
+      if (pErr || !pupilProfile) {
+        return NextResponse.json({ ok: false, error: '対象の弟子が見つかりません。' }, { status: 404 });
+      }
+
+      if (pupilProfile.discord_id === session.discordId) {
+        return NextResponse.json({ ok: false, error: '自分自身の弟子カードを引き受けることはできません。' }, { status: 400 });
+      }
+
+      // 2. 師匠プロフィールの自動作成（存在しない場合）
+      let { data: mentorProfile } = await supabase
+        .from('mentorship_profiles')
+        .select('*')
+        .eq('discord_id', session.discordId)
+        .eq('role_type', 'MENTOR')
+        .maybeSingle();
+
+      if (!mentorProfile) {
+        const myPlayer = await findOrCreatePlayer({
+          discordId: session.discordId,
+          name: session.displayName || session.username || 'Mentor',
+        });
+        const { data: createdMentor } = await supabase
+          .from('mentorship_profiles')
+          .insert({
+            player_id: myPlayer?.id || null,
+            discord_id: session.discordId,
+            player_name: session.displayName || session.username || myPlayer?.name || 'Mentor',
+            role_type: 'MENTOR',
+            current_rank: myPlayer?.highest_rank || 'UNRANKED',
+            status: 'OPEN',
+            max_pupils: 3,
+            bio: '弟子カードから直接指導を引き受けました！楽しく上達していきましょう。',
+          })
+          .select()
+          .single();
+        mentorProfile = createdMentor;
+      }
+
+      // 3. 既存のアクティブペアチェック
+      const { data: existingActive } = await supabase
+        .from('mentorship_matches')
+        .select('*')
+        .eq('mentor_profile_id', mentorProfile.id)
+        .eq('pupil_profile_id', pupilProfile.id)
+        .eq('status', 'ACTIVE')
+        .maybeSingle();
+
+      if (existingActive) {
+        return NextResponse.json({ ok: true, message: '既に師弟ペアが成立しています。' });
+      }
+
+      const durObj = MENTORSHIP_DURATIONS[durationKey] || MENTORSHIP_DURATIONS['14_DAYS'];
+      const meta: MatchMeta = {
+        durationKey: durationKey || '14_DAYS',
+        durationLabel: durObj.label,
+        durationDays: durObj.days,
+        commStyle,
+        autoRenew: true,
+        message: message.trim() || '指導を引き受けました！よろしくお願いします！',
+        fromDiscordId: session.discordId,
+        progressNotes: '',
+        targetRank: pupilProfile.target_rank || '',
+      };
+
+      // 4. マッチの直接作成 (ACTIVE)
+      const { data: newMatch, error: createErr } = await supabase
+        .from('mentorship_matches')
+        .insert({
+          mentor_profile_id: mentorProfile.id,
+          pupil_profile_id: pupilProfile.id,
+          mentor_discord_id: session.discordId,
+          pupil_discord_id: pupilProfile.discord_id,
+          status: 'ACTIVE',
+          started_at: new Date().toISOString(),
+          notes: JSON.stringify(meta),
+        })
+        .select()
+        .single();
+
+      if (createErr) throw createErr;
+
+      // 弟子側を MATCHED に更新
+      await supabase
+        .from('mentorship_profiles')
+        .update({ status: 'MATCHED' })
+        .eq('id', pupilProfile.id);
+
+      // コイン付与 (+300コイン)
+      try {
+        const [mentorPlayer, pupilPlayer] = await Promise.all([
+          findOrCreatePlayer({ discordId: session.discordId }),
+          findOrCreatePlayer({ discordId: pupilProfile.discord_id }),
+        ]);
+        if (mentorPlayer) {
+          await updatePlayerCoinsAndInventory({
+            player: mentorPlayer,
+            newCoins: getPlayerCoins(mentorPlayer) + 300,
+          });
+        }
+        if (pupilPlayer) {
+          await updatePlayerCoinsAndInventory({
+            player: pupilPlayer,
+            newCoins: getPlayerCoins(pupilPlayer) + 300,
+          });
+        }
+      } catch (cErr) {
+        console.warn('[mentorship/matches] Coin bonus error:', cErr);
+      }
+
+      // 専用フォーラムスレッドの作成
+      let threadResult: { threadId: string; threadUrl: string } | null = null;
+      try {
+        threadResult = await createMentorshipForumThread({
+          mentorName: mentorProfile.player_name || '師匠',
+          pupilName: pupilProfile.player_name || '弟子',
+          durationLabel: meta.durationLabel,
+          mentorDiscordId: session.discordId,
+          pupilDiscordId: pupilProfile.discord_id,
+          mentorLanes: Array.isArray(mentorProfile.lanes) ? mentorProfile.lanes : [],
+          pupilLanes: Array.isArray(pupilProfile.lanes) ? pupilProfile.lanes : [],
+          commStyle: meta.commStyle,
+        });
+      } catch (thErr) {
+        console.warn('[mentorship/matches] Thread create error:', thErr);
+      }
+
+      if (threadResult) {
+        meta.threadId = threadResult.threadId;
+        meta.threadUrl = threadResult.threadUrl;
+        await supabase
+          .from('mentorship_matches')
+          .update({ notes: JSON.stringify(meta) })
+          .eq('id', newMatch.id);
+      }
+
+      // Discord通知
+      sendDiscordPairAnnounce(
+        mentorProfile.player_name || '師匠',
+        pupilProfile.player_name || '弟子',
+        meta.durationLabel,
+        session.discordId,
+        pupilProfile.discord_id,
+        threadResult?.threadUrl
+      ).catch(() => {});
+
+      syncMentorshipDashboard().catch(() => {});
+
+      return NextResponse.json({
+        ok: true,
+        message: `🎉 ${pupilProfile.player_name} さんの師匠を引き受けました！専用チャットを作成しました(+300🪙)`,
+        threadUrl: threadResult?.threadUrl,
+        match: newMatch,
       });
     }
 

@@ -259,6 +259,7 @@ export async function notifyNewMentorshipProfile(params: {
 
   try {
     const isMentor = profile.role_type === 'MENTOR';
+    const isPupil = profile.role_type === 'PUPIL';
     const roleLabel = isMentor ? '師匠（指導者）' : '弟子（修行希望）';
     const icon = isMentor ? '🥋' : '🌱';
     const color = isMentor ? 0xf59e0b : 0x10b981; // 師匠: Gold, 弟子: Emerald
@@ -328,37 +329,63 @@ export async function notifyNewMentorshipProfile(params: {
       body: JSON.stringify({
         content,
         embeds: [embed],
-        components: [
-          {
-            type: 1,
-            components: [
+        components: isPupil
+          ? [
               {
-                type: 2,
-                style: 3, // Green
-                label: '🌱 弟子入りしたい (修行希望)',
-                custom_id: 'mentorship_apply_pupil',
+                type: 1,
+                components: [
+                  {
+                    type: 2,
+                    style: 3, // Green
+                    label: '🤝 師匠を引き受ける (+300🪙)',
+                    custom_id: `mentorship_claim_pupil:${profile.id}`,
+                  },
+                  {
+                    type: 2,
+                    style: 2, // Secondary
+                    label: '🌱 弟子入りしたい',
+                    custom_id: 'mentorship_apply_pupil',
+                  },
+                  {
+                    type: 2,
+                    style: 5, // Link
+                    label: '🌐 詳細・オファー送信',
+                    url: `${PORTAL_BASE_URL}/mentorship`,
+                  },
+                ],
               },
+            ]
+          : [
               {
-                type: 2,
-                style: 1, // Blurple
-                label: '🥋 弟子を取りたい (指導者)',
-                custom_id: 'mentorship_apply_mentor',
-              },
-              {
-                type: 2,
-                style: 5, // Link
-                label: '🌐 詳細・オファー送信',
-                url: `${PORTAL_BASE_URL}/mentorship`,
+                type: 1,
+                components: [
+                  {
+                    type: 2,
+                    style: 3, // Green
+                    label: '🌱 弟子入りしたい (修行希望)',
+                    custom_id: 'mentorship_apply_pupil',
+                  },
+                  {
+                    type: 2,
+                    style: 1, // Blurple
+                    label: '🥋 弟子を取りたい (指導者)',
+                    custom_id: 'mentorship_apply_mentor',
+                  },
+                  {
+                    type: 2,
+                    style: 5, // Link
+                    label: '🌐 詳細・オファー送信',
+                    url: `${PORTAL_BASE_URL}/mentorship`,
+                  },
+                ],
               },
             ],
-          },
-        ],
       }),
     });
 
     // 🤖 AI仲人チェック: 登録されたプロフィールと相性の良い相手（70%以上）がいれば自動推薦
     try {
-      const { findBestMentorshipMatch } = await import('./mentorshipMatchmaker');
+      const { findBestMentorshipMatch, findBestSeniorMentor } = await import('./mentorshipMatchmaker');
       const matchData = await findBestMentorshipMatch(profile);
       if (matchData && matchData.matchResult.score >= 70) {
         await notifyAiMentorshipMatch({
@@ -366,6 +393,16 @@ export async function notifyNewMentorshipProfile(params: {
           profileB: matchData.bestPartner,
           matchResult: matchData.matchResult,
         });
+      } else if (isPupil) {
+        // 既存の師匠登録者がいない場合、ktm_players 全体から最適な先輩をスカウト！
+        const seniorData = await findBestSeniorMentor(profile);
+        if (seniorData) {
+          await notifySeniorScout({
+            pupilProfile: profile,
+            seniorPlayer: seniorData.seniorPlayer,
+            reasons: seniorData.reasons,
+          });
+        }
       }
     } catch (matchErr) {
       console.warn('[discordMentorship] AI matchmaker warning:', matchErr);
@@ -465,6 +502,95 @@ export async function notifyAiMentorshipMatch(params: {
     return false;
   }
 }
+
+/**
+ * 🌟 AI仲人による先輩プレイヤーへのスカウト推薦（師匠未登録でも一肌脱いでもらう）
+ */
+export async function notifySeniorScout(params: {
+  pupilProfile: any;
+  seniorPlayer: any;
+  reasons: string[];
+}): Promise<boolean> {
+  const { pupilProfile, seniorPlayer, reasons } = params;
+  const channelId = await ensureMentorshipChannel();
+  if (!channelId || !DISCORD_BOT_TOKEN) return false;
+
+  try {
+    const pupilMention = pupilProfile.discord_id ? `<@${pupilProfile.discord_id}>` : `**${pupilProfile.player_name}**`;
+    const seniorMention = seniorPlayer.discord_id ? `<@${seniorPlayer.discord_id}>` : `**${seniorPlayer.name}**`;
+
+    const pupilLanes = Array.isArray(pupilProfile.lanes) ? pupilProfile.lanes.join('/') : 'ALL';
+    const reasonsText = reasons.length > 0 ? reasons.map((r) => `・${r}`).join('\n') : '・レーン適性と実力差がベストマッチ';
+
+    const embed = {
+      title: `🌟 【AI仲人】頼れる先輩スカウト！一肌脱いでみませんか？`,
+      description:
+        `${pupilMention} さんが修行を希望してエントリーしました！✨\n` +
+        `サーバーメンバーを分析したところ、${seniorMention} 先輩が最も頼りになる指導者候補として選ばれました！\n\n` +
+        `「師匠登録はしてないけど、教えてあげてもいいよ！」という先輩は、ぜひ下のボタンから引き受けてあげてください！🤝`,
+      color: 0xf59e0b, // Hextech Gold
+      fields: [
+        {
+          name: `🌱 弟子希望`,
+          value: `👤 ${pupilProfile.player_name} (${pupilMention})\n📈 ランク: **${pupilProfile.current_rank || 'UNRANKED'}**\n🛡️ 希望レーン: \`${pupilLanes}\``,
+          inline: true,
+        },
+        {
+          name: `🥋 スカウトされた先輩`,
+          value: `👤 ${seniorPlayer.name} (${seniorMention})\n📈 最高ランク: **${seniorPlayer.highest_rank || '上位ランク'}**`,
+          inline: true,
+        },
+        {
+          name: `🎯 AIスカウト理由`,
+          value: reasonsText,
+          inline: false,
+        },
+      ],
+      footer: {
+        text: 'KTM AI Scout | 引き受けると師弟ペアが即時成立し、両名に+300コインが付与されます',
+      },
+    };
+
+    const content = `📢 ${seniorMention} 先輩！ ${pupilMention} さんがアドバイスを求めています！ちょっと教えてあげませんか？✨`;
+
+    const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        content,
+        embeds: [embed],
+        components: [
+          {
+            type: 1,
+            components: [
+              {
+                type: 2,
+                style: 3, // Green
+                label: '🤝 師匠を引き受ける (+300🪙)',
+                custom_id: `mentorship_claim_pupil:${pupilProfile.id}`,
+              },
+              {
+                type: 2,
+                style: 5, // Link
+                label: '🌐 詳細を見る',
+                url: `${PORTAL_BASE_URL}/mentorship`,
+              },
+            ],
+          },
+        ],
+      }),
+    });
+
+    return res.ok;
+  } catch (err) {
+    console.error('[discordMentorship] Error in notifySeniorScout:', err);
+    return false;
+  }
+}
+
 
 export interface CreateMentorshipThreadParams {
   mentorName: string;

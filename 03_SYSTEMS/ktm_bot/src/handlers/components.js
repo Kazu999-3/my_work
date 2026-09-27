@@ -284,6 +284,57 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     });
   }
 
+  // 🤝 師弟マッチング：弟子カードからワンポチで師匠を引き受ける (未登録先輩でも即ペア成立)
+  if (customId.startsWith('mentorship_claim_pupil:')) {
+    const pupilProfileId = customId.split(':')[1];
+    const portalUrl = CONFIG.PORTAL_URL || 'https://ktm-portal.vercel.app';
+    const userName = interaction.member?.nick || interaction.member?.user?.global_name || interaction.member?.user?.username || '先輩';
+
+    ctx.waitUntil((async () => {
+      try {
+        const res = await fetch(`${portalUrl}/api/mentorship/matches`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            // サーバーサイド・ボット実行用の認証ヘッダー
+            'x-system-key': env.SYSTEM_SYNC_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '',
+          },
+          body: JSON.stringify({
+            action: 'CLAIM_MENTOR',
+            targetProfileId: pupilProfileId,
+            sessionUser: {
+              discordId: userId,
+              displayName: userName,
+              username: interaction.member?.user?.username,
+            },
+          }),
+        });
+
+        const data = await res.json();
+        if (data.ok) {
+          const threadMsg = data.threadUrl ? `\n\n💬 **[🎓 専用指導チャットはこちら](${data.threadUrl})**` : '';
+          await patchInteractionResponse(appId, token, {
+            content: `🎉 **【師弟ペア結成完了！】**\n指導を引き受けていただきありがとうございます！✨\n両名にボーナス **+300コイン** を進呈しました！🪙${threadMsg}`,
+          });
+        } else {
+          await patchInteractionResponse(appId, token, {
+            content: `⚠️ ペア結成に失敗しました: ${data.error || '不明なエラー'}`,
+          });
+        }
+      } catch (err) {
+        console.error('[mentorship_claim_pupil] error:', err);
+        await patchInteractionResponse(appId, token, {
+          content: `❌ 通信エラーが発生しました。時間をおいて再試行してください。`,
+        });
+      }
+    })());
+
+    return Response.json({
+      type: 5, // DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE (flags: 64)
+      data: { flags: 64 },
+    });
+  }
+
   if (customId === 'portal_ign') {
     return Response.json({
       type: 9,

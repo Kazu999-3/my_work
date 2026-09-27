@@ -160,3 +160,87 @@ export async function findBestMentorshipMatch(
 
   return null;
 }
+
+/**
+ * 🌟 弟子がエントリーした際、師匠登録がない場合でも ktm_players から最適な先輩（指導者候補）をスカウト
+ */
+export async function findBestSeniorMentor(
+  pupilProfile: any
+): Promise<{ seniorPlayer: any; reasons: string[]; rankDiff: number } | null> {
+  try {
+    const pupilRankKey = (pupilProfile.current_rank || 'UNRANKED').toUpperCase().split(' ')[0];
+    const pupilTier = RANK_ORDER[pupilRankKey] || 3;
+    const pupilLanes: string[] = Array.isArray(pupilProfile.lanes) ? pupilProfile.lanes : [];
+
+    // 1. ktm_players からアクティブなプレイヤーを取得
+    const { data: players, error } = await supabase
+      .from('ktm_players')
+      .select('id, name, ign, discord_id, highest_rank, is_active, role_preferences')
+      .eq('is_active', true)
+      .neq('discord_id', pupilProfile.discord_id);
+
+    if (error || !players || players.length === 0) return null;
+
+    let bestSenior: any = null;
+    let bestScore = -1;
+    let bestReasons: string[] = [];
+    let bestRankDiff = 0;
+
+    for (const player of players) {
+      if (!player.discord_id) continue;
+
+      const playerRankKey = (player.highest_rank || 'UNRANKED').toUpperCase().split(' ')[0];
+      const playerTier = RANK_ORDER[playerRankKey] || 3;
+
+      // 弟子よりランクが高い先輩（1〜4ティア上）
+      const tierDiff = playerTier - pupilTier;
+      if (tierDiff < 1) continue;
+
+      let score = 0;
+      const reasons: string[] = [];
+
+      // ランク差（1〜3ティア上が最高）
+      if (tierDiff >= 1 && tierDiff <= 3) {
+        score += 40;
+        reasons.push(`実力差最適（${player.highest_rank || '上位ランク'} / +${tierDiff}ティア）`);
+      } else {
+        score += 25;
+        reasons.push(`上位プレイヤー（${player.highest_rank}）`);
+      }
+
+      // レーン一致（role_preferences の main/sub チェック）
+      const mainLane = (player.role_preferences?.main || '').toUpperCase();
+      const subLane = (player.role_preferences?.sub || '').toUpperCase();
+      const playerLanes = [mainLane, subLane].filter(Boolean);
+
+      const hasSharedLane = pupilLanes.some((pl) => playerLanes.includes(pl) || pl === 'ALL');
+      if (hasSharedLane) {
+        score += 35;
+        reasons.push(`メイン/得意レーン一致（${mainLane || subLane}）`);
+      } else {
+        score += 5;
+      }
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestSenior = player;
+        bestReasons = reasons;
+        bestRankDiff = tierDiff;
+      }
+    }
+
+    if (bestSenior && bestScore >= 45) {
+      return {
+        seniorPlayer: bestSenior,
+        reasons: bestReasons,
+        rankDiff: bestRankDiff,
+      };
+    }
+
+    return null;
+  } catch (err) {
+    console.error('[mentorshipMatchmaker] findBestSeniorMentor error:', err);
+    return null;
+  }
+}
+

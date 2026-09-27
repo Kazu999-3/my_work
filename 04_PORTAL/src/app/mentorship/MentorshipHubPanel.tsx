@@ -239,8 +239,44 @@ export default function MentorshipHubPanel() {
     }
   };
 
-  // 申請モーダルを開く
-  const handleOffer = (targetProfile: MentorshipProfile) => {
+  // 申請モーダルを開く または 弟子カードの場合は師匠引き受け
+  const handleOffer = async (targetProfile: MentorshipProfile) => {
+    // 弟子カードに対して「師匠を引き受ける」を押した場合
+    if (targetProfile.role_type === 'PUPIL') {
+      if (
+        !confirm(
+          `🎉 ${targetProfile.player_name} さんの指導を引き受けますか？\n（あなたの師匠登録が自動完了し、師弟ペアが即時成立します！+300🪙）`
+        )
+      ) {
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/mentorship/matches', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'CLAIM_MENTOR',
+            targetProfileId: targetProfile.id,
+          }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          toast.success(data.message || '🎉 師弟ペアが成立しました！');
+          if (data.threadUrl) {
+            window.open(data.threadUrl, '_blank');
+          }
+          fetchMatches();
+          fetchProfiles();
+        } else {
+          toast.error(data.error || '師匠引き受けに失敗しました');
+        }
+      } catch (err) {
+        toast.error('通信エラーが発生しました');
+      }
+      return;
+    }
+
     setTargetRequestProfile(targetProfile);
     setIsRequestModalOpen(true);
   };
