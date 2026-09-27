@@ -18,6 +18,7 @@ interface BalancerStadiumViewProps {
   result: any;
   currentUserName?: string;
   onOpenAdminModal?: () => void;
+  onOpenDraftAdvisor?: () => void;
   isAdmin?: boolean;
 }
 
@@ -25,6 +26,7 @@ export default function BalancerStadiumView({
   result,
   currentUserName,
   onOpenAdminModal,
+  onOpenDraftAdvisor,
   isAdmin,
 }: BalancerStadiumViewProps) {
   if (!result || !result.teamBlue || !result.teamRed) return null;
@@ -66,6 +68,17 @@ export default function BalancerStadiumView({
 
         {/* アクションボタングループ */}
         <div className="flex items-center gap-2 flex-wrap">
+          {onOpenDraftAdvisor && (
+            <button
+              type="button"
+              onClick={onOpenDraftAdvisor}
+              className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer border border-purple-400"
+            >
+              <Sparkles size={14} className="text-amber-300" />
+              <span>🤖 AIドラフト軍師</span>
+            </button>
+          )}
+
           <Link
             href="/casino"
             className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer border border-amber-400"

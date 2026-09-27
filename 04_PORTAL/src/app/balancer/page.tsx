@@ -22,6 +22,7 @@ import dynamic from "next/dynamic";
 //    上記3つはいずれも元から条件付き描画なので、そのまま効果が出る。
 const ProfileModal = dynamic(() => import("../ktm-admin/ProfileModal"), { ssr: false });
 const BalancerStadiumView = dynamic(() => import("./components/BalancerStadiumView"), { ssr: false });
+const BalancerDraftAdvisorModal = dynamic(() => import("./components/BalancerDraftAdvisorModal"), { ssr: false });
 const AramRotationPanel = dynamic(() => import("./AramRotationPanel"), {
   ssr: false,
   loading: () => <div className="py-10 text-center text-xs text-stone-400">読み込み中…</div>,
@@ -532,6 +533,8 @@ export default function BalancerPage() {
   const [sendingDiscord, setSendingDiscord] = useState(false);
   // ★ チーム分け結果モーダルの表示フラグ
   const [showResultModal, setShowResultModal] = useState(false);
+  // 🤖 AIドラフト軍師モーダルの表示フラグ
+  const [showDraftAdvisor, setShowDraftAdvisor] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   
   const [sortConfig, setSortConfig] = useState({ key: "no", direction: "asc" });
@@ -1923,6 +1926,16 @@ export default function BalancerPage() {
                     サイド交代 (BLUE ⇄ RED)
                   </button>
 
+                  <button
+                    type="button"
+                    onClick={() => setShowDraftAdvisor(true)}
+                    className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-5 py-3 rounded-xl font-black transition flex items-center justify-center gap-2 shadow-lg cursor-pointer text-xs sm:text-sm"
+                    title="両チームのプール・相性を分析し、推奨BAN・構成・注目対面をAIがアドバイス"
+                  >
+                    <Sparkles className="h-4 w-4 text-amber-300" />
+                    🤖 AIドラフト軍師
+                  </button>
+
                   <Link
                     href="/coach?tab=live"
                     className="bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white px-5 py-3 rounded-xl font-black transition flex items-center justify-center gap-2 shadow-lg cursor-pointer text-xs sm:text-sm"
@@ -1952,6 +1965,7 @@ export default function BalancerPage() {
               currentUserName={currentUser?.playerName || currentUser?.displayName}
               isAdmin={isAdmin}
               onOpenAdminModal={() => setShowResultModal(true)}
+              onOpenDraftAdvisor={() => setShowDraftAdvisor(true)}
             />
           </div>
         )}
@@ -3056,6 +3070,14 @@ export default function BalancerPage() {
 
         {selectedPlayer && (
           <ProfileModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />
+        )}
+
+        {showDraftAdvisor && balanceResult && (
+          <BalancerDraftAdvisorModal
+            isOpen={showDraftAdvisor}
+            onClose={() => setShowDraftAdvisor(false)}
+            balanceResult={balanceResult}
+          />
         )}
       </div>
     </div>
