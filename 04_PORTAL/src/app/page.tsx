@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import MatchNewsTicker from './components/MatchNewsTicker';
 import { 
   Swords, 
   Users, 
@@ -53,6 +54,9 @@ export default function HomePage() {
             </Link>
           </div>
         </header>
+
+        {/* 📰 月刊KTMスポーツ速報 (直近内戦のAIハイライト実況ニュース) */}
+        <MatchNewsTicker />
 
         {/* 4大コア機能カード */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

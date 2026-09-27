@@ -567,7 +567,48 @@ export async function POST(request: Request) {
           ? payoutWinners.map(w => `・\`${w.name}\`: **+${w.payout.toLocaleString()}🪙** 獲得！(x${w.multiplier}倍)`).join('\n')
           : '的中者なし (または受付中のベットなし)';
 
+        // 📰 AIハイライト実況ニュース（スポーツ報知風ダイジェスト）の自動生成
+        let newsArticle: any = null;
+        try {
+          const { generateMatchNews } = await import('../news/route');
+          newsArticle = await generateMatchNews({
+            matchId: newMatchId,
+            winningTeam,
+            gameDuration,
+            participants: results.map((r: any) => ({
+              name: r.name,
+              team: r.team,
+              role: r.role,
+              champion_name: r.champion_name,
+              kills: r.kills || 0,
+              deaths: r.deaths || 0,
+              assists: r.assists || 0,
+              mmrDelta: r.mmrDelta || 0,
+            })),
+          });
+
+          // edge_tasks へ保存（ポータルトップや履歴での閲覧用）
+          await supabase.from('edge_tasks').insert({
+            task_type: 'ktm_match_news',
+            payload: {
+              matchId: newMatchId,
+              winningTeam,
+              article: newsArticle,
+            },
+            status: 'completed',
+          });
+        } catch (newsErr) {
+          console.warn('[match/record] AIニュース生成スキップ（続行）:', newsErr);
+        }
+
         const fieldsList = [
+          ...(newsArticle ? [
+            {
+              name: `📰 【KTMスポーツ号外】${newsArticle.headline}`,
+              value: `**${newsArticle.subheadline}**\n${newsArticle.lead}\n\n👑 **本日のMVP**: **${newsArticle.mvp?.name}** (${newsArticle.mvp?.role} / KDA: ${newsArticle.mvp?.kda})\n💬 *「${newsArticle.interviewQuote}」*`,
+              inline: false
+            }
+          ] : []),
           {
             name: `${blueTitle}  🆚  ${redTitle}`,
             value: matchupsText,
