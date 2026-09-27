@@ -80,6 +80,15 @@ export default function BalancerStadiumView({
           )}
 
           <Link
+            href="/balancer/spectate"
+            target="_blank"
+            className="px-3 py-1.5 bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white font-black text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer border border-sky-400"
+            title="OBS・配信・観戦者向けのテレビ中継風フルスクリーンHUDを開く"
+          >
+            <span>⚔️ 観戦HUD</span>
+          </Link>
+
+          <Link
             href="/casino"
             className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer border border-amber-400"
           >

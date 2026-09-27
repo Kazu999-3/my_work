@@ -1937,8 +1937,17 @@ export default function BalancerPage() {
                   </button>
 
                   <Link
-                    href="/coach?tab=live"
+                    href="/balancer/spectate"
+                    target="_blank"
                     className="bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white px-5 py-3 rounded-xl font-black transition flex items-center justify-center gap-2 shadow-lg cursor-pointer text-xs sm:text-sm"
+                    title="OBS・配信・観戦者向けのテレビ中継風フルスクリーンHUDを開く"
+                  >
+                    <span>⚔️ 観戦HUD (中継ビュー)</span>
+                  </Link>
+
+                  <Link
+                    href="/coach?tab=live"
+                    className="bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white px-5 py-3 rounded-xl font-black transition flex items-center justify-center gap-2 shadow-lg cursor-pointer text-xs sm:text-sm"
                     title="コーチ画面の5v5シミュレータ・勝ち筋診断へ直結"
                   >
                     <Sparkles className="h-4 w-4" />
