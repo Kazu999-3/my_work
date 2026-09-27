@@ -160,11 +160,11 @@ export async function handleButtonInteraction(interaction, env, ctx) {
               {
                 type: 4,
                 custom_id: "lanes",
-                label: "希望レーン (教わりたいレーン)",
+                label: "希望レーン (1つ選択)",
                 style: 1,
-                placeholder: "TOP / JG / MID / BOT / SUP / ALL",
+                placeholder: "TOP / JG / MID / BOT / SUP のいずれか1つ",
                 required: true,
-                max_length: 20
+                max_length: 10
               }
             ]
           },
@@ -229,11 +229,11 @@ export async function handleButtonInteraction(interaction, env, ctx) {
               {
                 type: 4,
                 custom_id: "lanes",
-                label: "指導可能レーン",
+                label: "指導レーン (1つ選択)",
                 style: 1,
-                placeholder: "TOP / JG / MID / BOT / SUP / 全レーン",
+                placeholder: "TOP / JG / MID / BOT / SUP のいずれか1つ",
                 required: true,
-                max_length: 30
+                max_length: 10
               }
             ]
           },

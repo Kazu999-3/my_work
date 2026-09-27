@@ -228,9 +228,11 @@ export async function handleModalSubmit(interaction, env, ctx) {
     };
 
     const lanesRaw = getVal('lanes');
-    const lanes = lanesRaw
+    const parsedLanes = lanesRaw
       ? lanesRaw.split(/[,/、\s]+/).map(s => s.toUpperCase()).filter(Boolean)
-      : ['ALL'];
+      : ['MID'];
+    // 師弟関係は単一レーンに絞り込む（先頭の1つのみ採用）
+    const lanes = parsedLanes.length > 0 ? [parsedLanes[0]] : ['MID'];
     
     const champsRaw = getVal('champions');
     const champions = champsRaw

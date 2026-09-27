@@ -186,9 +186,16 @@ export async function POST(request: Request) {
     let isFirstTimeBonus = false;
     let updatedCoins = 1000;
 
+    // 師弟関係は単一レーンに特化するため、単一レーンのみ採用
+    const normalizedLanes = Array.isArray(lanes) && lanes.length > 0
+      ? [lanes[0]]
+      : typeof lanes === 'string' && lanes.trim()
+        ? [lanes.trim()]
+        : ['MID'];
+
     const basePayload: Record<string, any> = {
       player_name: playerName,
-      lanes,
+      lanes: normalizedLanes,
       champions,
       current_rank: finalCurrentRank,
       target_rank: role_type === 'PUPIL' ? target_rank : null,

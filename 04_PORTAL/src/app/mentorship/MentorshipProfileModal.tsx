@@ -224,12 +224,9 @@ export function MentorshipProfileModal({
     return idMatch || jaMatch || rubyMatch;
   }).slice(0, 15);
 
-  const toggleLane = (laneId: string) => {
-    if (lanes.includes(laneId)) {
-      setLanes(lanes.filter((l) => l !== laneId));
-    } else {
-      setLanes([...lanes, laneId]);
-    }
+  const selectLane = (laneId: string) => {
+    // 師弟関係は単一レーンに特化するため、単一選択
+    setLanes([laneId]);
   };
 
   const addChampion = (champId: string) => {
@@ -522,7 +519,7 @@ export function MentorshipProfileModal({
               <div>
                 <label className="block text-xs font-black text-stone-700 mb-1.5 flex items-center gap-1.5">
                   <span className="w-4.5 h-4.5 rounded-full bg-amber-500 text-white text-[11px] flex items-center justify-center font-black">2</span>
-                  {roleType === 'PUPIL' ? '学びたい対象レーン' : '教えられるレーン'} (複数選択可)
+                  {roleType === 'PUPIL' ? '学びたい対象レーン' : '指導レーン'} (1つ選択)
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {AVAILABLE_LANES.map((lane) => {
@@ -531,10 +528,10 @@ export function MentorshipProfileModal({
                       <button
                         key={lane.id}
                         type="button"
-                        onClick={() => toggleLane(lane.id)}
+                        onClick={() => selectLane(lane.id)}
                         className={`px-3.5 py-2 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
                           isSelected
-                            ? 'bg-amber-600 text-white border-amber-600 shadow-sm scale-105'
+                            ? 'bg-amber-600 text-white border-amber-600 shadow-sm scale-105 ring-2 ring-amber-400'
                             : 'bg-stone-50 border-stone-200 text-stone-700 hover:bg-stone-100'
                         }`}
                       >
