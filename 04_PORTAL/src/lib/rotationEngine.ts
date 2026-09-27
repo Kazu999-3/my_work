@@ -11,6 +11,7 @@ export interface RotationPlayer {
   ign?: string;
   highest_rank?: string;
   mmr?: number;
+  assignedRole?: 'TOP' | 'JUNGLE' | 'MID' | 'BOT' | 'SUPPORT';
   // ローテーション用統計
   gamesPlayed: number;       // 出場した総試合数
   benchedCount: number;      // 観戦（待機）した総回数
@@ -24,25 +25,38 @@ export interface RotationResult {
   blueTeam: RotationPlayer[];       // BLUEチーム (5人)
   redTeam: RotationPlayer[];        // REDチーム (5人)
   roundNumber: number;              // 試合番号（第1試合、第2試合...）
+  blueMmr?: number;
+  redMmr?: number;
+  mmrDiff?: number;
+  hasRoles?: boolean;
 }
+
+const ROLES: ('TOP' | 'JUNGLE' | 'MID' | 'BOT' | 'SUPPORT')[] = ['TOP', 'JUNGLE', 'MID', 'BOT', 'SUPPORT'];
 
 /**
  * 10人以上のプールから次戦のスタメン10人と観戦枠を選出する
  */
 export function calculateNextRotation(
   pool: RotationPlayer[],
-  roundNumber: number = 1
+  roundNumber: number = 1,
+  options?: { assignRoles?: boolean }
 ): RotationResult {
+  const assignRoles = options?.assignRoles ?? false;
+
   if (pool.length <= 10) {
     // 10人以下の場合は全員スタメン
     const active = [...pool];
-    const { blue, red } = splitIntoTwoTeams(active);
+    const { blue, red, blueMmr, redMmr } = splitIntoBalancedTeams(active, assignRoles);
     return {
       activePlayers: active,
       benchedPlayers: [],
       blueTeam: blue,
       redTeam: red,
       roundNumber,
+      blueMmr,
+      redMmr,
+      mmrDiff: Math.abs(blueMmr - redMmr),
+      hasRoles: assignRoles,
     };
   }
 
@@ -77,7 +91,7 @@ export function calculateNextRotation(
   const benched = sorted.slice(10);
 
   // 10人をBLUE/REDに均等分割（MMR考慮）
-  const { blue, red } = splitIntoTwoTeams(active);
+  const { blue, red, blueMmr, redMmr } = splitIntoBalancedTeams(active, assignRoles);
 
   return {
     activePlayers: active,
@@ -85,43 +99,107 @@ export function calculateNextRotation(
     blueTeam: blue,
     redTeam: red,
     roundNumber,
+    blueMmr,
+    redMmr,
+    mmrDiff: Math.abs(blueMmr - redMmr),
+    hasRoles: assignRoles,
   };
 }
 
 /**
  * 10人のスタメンをBLUEチームとREDチームに実力均等に分割
+ * 10C5 = 252通りの全探索を行い、チーム合計MMR差が最小になる分け方を特定する。
+ * 同点または差が僅差（100以内）の組み合わせからランダムに1つ選定し、偏りを防止。
+ * assignRolesがtrueの場合は、各チーム内で5つのロールをランダムに割り当てる。
  */
-function splitIntoTwoTeams(players: RotationPlayer[]): { blue: RotationPlayer[]; red: RotationPlayer[] } {
-  // MMR順にソート (未設定は1200)
-  const sorted = [...players].sort((a, b) => (b.mmr || 1200) - (a.mmr || 1200));
+export function splitIntoBalancedTeams(
+  players: RotationPlayer[],
+  assignRoles: boolean = false
+): { blue: RotationPlayer[]; red: RotationPlayer[]; blueMmr: number; redMmr: number } {
+  if (players.length !== 10) {
+    // 10人未満のフォールバック
+    const half = Math.ceil(players.length / 2);
+    const blue = players.slice(0, half);
+    const red = players.slice(half);
+    const blueMmr = blue.reduce((s, p) => s + (p.mmr || 1200), 0);
+    const redMmr = red.reduce((s, p) => s + (p.mmr || 1200), 0);
+    return { blue, red, blueMmr, redMmr };
+  }
 
-  const blue: RotationPlayer[] = [];
-  const red: RotationPlayer[] = [];
+  const n = 10;
+  const k = 5;
+  const combinations: number[][] = [];
 
-  let blueMmr = 0;
-  let redMmr = 0;
-
-  // スネークドラフト方式で均等に振り分け
-  sorted.forEach((p, idx) => {
-    const mmr = p.mmr || 1200;
-    if (blue.length < 5 && red.length < 5) {
-      if (blueMmr <= redMmr) {
-        blue.push(p);
-        blueMmr += mmr;
-      } else {
-        red.push(p);
-        redMmr += mmr;
-      }
-    } else if (blue.length < 5) {
-      blue.push(p);
-      blueMmr += mmr;
-    } else {
-      red.push(p);
-      redMmr += mmr;
+  function getComb(start: number, chosen: number[]) {
+    if (chosen.length === k) {
+      combinations.push([...chosen]);
+      return;
     }
-  });
+    for (let i = start; i < n; i++) {
+      chosen.push(i);
+      getComb(i + 1, chosen);
+      chosen.pop();
+    }
+  }
+  getComb(0, []);
 
-  return { blue, red };
+  const totalMmr = players.reduce((s, p) => s + (p.mmr || 1200), 0);
+  const targetMmr = totalMmr / 2;
+
+  let bestComb: number[] = combinations[0];
+  let minDiff = Infinity;
+  const goodCandidates: { comb: number[]; diff: number }[] = [];
+
+  for (const comb of combinations) {
+    const blueMmr = comb.reduce((s, idx) => s + (players[idx].mmr || 1200), 0);
+    const redMmr = totalMmr - blueMmr;
+    const diff = Math.abs(blueMmr - redMmr);
+
+    if (diff < minDiff) {
+      minDiff = diff;
+      bestComb = comb;
+    }
+
+    // 差が120以下の良バランス候補を収集
+    if (diff <= 120) {
+      goodCandidates.push({ comb, diff });
+    }
+  }
+
+  // 良候補が複数あればその中からランダム選択して毎回同じ分け方になるのを防ぐ
+  const chosenIndices = goodCandidates.length > 0
+    ? goodCandidates[Math.floor(Math.random() * goodCandidates.length)].comb
+    : bestComb;
+
+  const chosenSet = new Set(chosenIndices);
+  let blueTeam = players.filter((_, idx) => chosenSet.has(idx));
+  let redTeam = players.filter((_, idx) => !chosenSet.has(idx));
+
+  // ロールランダム割り当て
+  if (assignRoles) {
+    const shuffledRolesBlue = [...ROLES].sort(() => Math.random() - 0.5);
+    const shuffledRolesRed = [...ROLES].sort(() => Math.random() - 0.5);
+
+    blueTeam = blueTeam.map((p, idx) => ({
+      ...p,
+      assignedRole: shuffledRolesBlue[idx],
+    }));
+
+    redTeam = redTeam.map((p, idx) => ({
+      ...p,
+      assignedRole: shuffledRolesRed[idx],
+    }));
+
+    // ロール順（TOP, JUNGLE, MID, BOT, SUPPORT）にソートして見やすく配置
+    const roleOrder: Record<string, number> = { TOP: 0, JUNGLE: 1, MID: 2, BOT: 3, SUPPORT: 4 };
+    blueTeam.sort((a, b) => roleOrder[a.assignedRole!] - roleOrder[b.assignedRole!]);
+    redTeam.sort((a, b) => roleOrder[a.assignedRole!] - roleOrder[b.assignedRole!]);
+  }
+
+  const blueMmr = blueTeam.reduce((s, p) => s + (p.mmr || 1200), 0);
+  const redMmr = redTeam.reduce((s, p) => s + (p.mmr || 1200), 0);
+
+  return { blue: blueTeam, red: redTeam, blueMmr, redMmr };
 }
 
 /**

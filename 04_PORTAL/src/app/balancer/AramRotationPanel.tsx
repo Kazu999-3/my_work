@@ -6,7 +6,7 @@ import {
   Flame, Dices, RefreshCw, Trophy, Award, Gift, Settings, Plus, Trash2, Tag, AlertTriangle, X
 } from "lucide-react";
 import { 
-  RotationPlayer, RotationResult, calculateNextRotation, advanceRotationState 
+  RotationPlayer, RotationResult, calculateNextRotation, advanceRotationState, splitIntoBalancedTeams 
 } from "@/lib/rotationEngine";
 import { PartyChaosRule, DEFAULT_PARTY_RULES } from "@/lib/partyRules";
 
@@ -27,8 +27,8 @@ const TAG_OPTIONS = [
 ];
 
 export default function AramRotationPanel({ availablePlayers, isAdmin = false }: AramRotationPanelProps) {
-  // モード選択 ('aram' | 'party_chaos')
-  const [customMode, setCustomMode] = useState<'party_chaos' | 'aram'>('party_chaos');
+  // モード選択 ('party_chaos' | 'aram' | 'random_roles')
+  const [customMode, setCustomMode] = useState<'party_chaos' | 'aram' | 'random_roles'>('random_roles');
 
   // ルール一覧（APIから取得）
   const [partyRules, setPartyRules] = useState<PartyChaosRule[]>(DEFAULT_PARTY_RULES);
@@ -207,7 +207,8 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
     setRotationPool(initialPool);
     setRoundNumber(1);
     setCurrentRule(pickRandomRule());
-    const result = calculateNextRotation(initialPool, 1);
+    const assignRoles = customMode === 'random_roles';
+    const result = calculateNextRotation(initialPool, 1, { assignRoles });
     setCurrentRound(result);
   };
 
@@ -224,8 +225,24 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
     setRoundNumber(nextRoundNum);
     setCurrentRule(pickRandomRule());
 
-    const nextResult = calculateNextRotation(updatedPool, nextRoundNum);
+    const assignRoles = customMode === 'random_roles';
+    const nextResult = calculateNextRotation(updatedPool, nextRoundNum, { assignRoles });
     setCurrentRound(nextResult);
+  };
+
+  // 現在のスタメン10人のロール・チームシャッフルを再抽選（MMRバランスを保ちつつロール再抽選）
+  const rerollRoles = () => {
+    if (!currentRound) return;
+    const { blue, red, blueMmr, redMmr } = splitIntoBalancedTeams(currentRound.activePlayers, true);
+    setCurrentRound({
+      ...currentRound,
+      blueTeam: blue,
+      redTeam: red,
+      blueMmr,
+      redMmr,
+      mmrDiff: Math.abs(blueMmr - redMmr),
+      hasRoles: true,
+    });
   };
 
   // ルールの再抽選
@@ -245,8 +262,30 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
   const copyDiscordFormat = () => {
     if (!currentRound) return;
 
-    const blueNames = currentRound.blueTeam.map((p) => p.name).join(", ");
-    const redNames = currentRound.redTeam.map((p) => p.name).join(", ");
+    const roleEmoji: Record<string, string> = {
+      TOP: '🛡️ TOP',
+      JUNGLE: '🌲 JG',
+      MID: '⚡ MID',
+      BOT: '🏹 BOT',
+      SUPPORT: '💖 SUP',
+    };
+
+    const formatPlayer = (p: RotationPlayer) => {
+      if (p.assignedRole && currentRound.hasRoles) {
+        return `${roleEmoji[p.assignedRole] || p.assignedRole}: **${p.name}**`;
+      }
+      return `**${p.name}**`;
+    };
+
+    const isRoleMode = currentRound.hasRoles;
+    const blueList = isRoleMode
+      ? currentRound.blueTeam.map((p) => `  • ${formatPlayer(p)}`).join("\n")
+      : currentRound.blueTeam.map((p) => p.name).join(", ");
+
+    const redList = isRoleMode
+      ? currentRound.redTeam.map((p) => `  • ${formatPlayer(p)}`).join("\n")
+      : currentRound.redTeam.map((p) => p.name).join(", ");
+
     const benchNames = currentRound.benchedPlayers.length > 0
       ? currentRound.benchedPlayers.map((p) => p.name).join(", ")
       : "なし";
@@ -256,11 +295,24 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
       ruleText = `\n📜 **【今試合のスペシャル縛りルール】**\n👉 **${currentRule.title}**\n${currentRule.desc}\n`;
     }
 
-    const text = `🎉 **【お祭り・ARAMカスタム 第${roundNumber}試合】**\n` +
-      ruleText +
-      `🔵 **BLUEチーム**: ${blueNames}\n` +
-      `🔴 **REDチーム**: ${redNames}\n` +
-      `👀 **観戦・待機枠 (次戦確定出場)**: ${benchNames}`;
+    const titleMode = isRoleMode ? "🎲 10人ロールランダム 5v5" : "お祭り・ARAMカスタム";
+    const mmrInfo = currentRound.blueMmr && currentRound.redMmr
+      ? `⚖️ **MMR差**: ${currentRound.mmrDiff ?? Math.abs(currentRound.blueMmr - currentRound.redMmr)} (BLUE: ${currentRound.blueMmr} / RED: ${currentRound.redMmr})\n`
+      : "";
+
+    const text = isRoleMode
+      ? `⚔️ **【${titleMode} 第${roundNumber}試合】**\n` +
+        ruleText +
+        mmrInfo +
+        `\n🔵 **BLUEチーム**:\n${blueList}\n\n` +
+        `🔴 **REDチーム**:\n${redList}\n\n` +
+        `👀 **観戦・待機枠 (次戦確定出場)**: ${benchNames}`
+      : `🎉 **【${titleMode} 第${roundNumber}試合】**\n` +
+        ruleText +
+        mmrInfo +
+        `🔵 **BLUEチーム**: ${blueList}\n` +
+        `🔴 **REDチーム**: ${redList}\n` +
+        `👀 **観戦・待機枠 (次戦確定出場)**: ${benchNames}`;
 
     navigator.clipboard.writeText(text);
     setCopied(true);
@@ -307,7 +359,19 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
               <span>メンバーを選び直す</span>
             </button>
           ) : (
-            <div className="flex items-center gap-2 bg-stone-100 border border-stone-300 p-1 rounded-xl">
+            <div className="flex items-center gap-1.5 bg-stone-100 border border-stone-300 p-1 rounded-xl flex-wrap">
+              <button
+                type="button"
+                onClick={() => setCustomMode('random_roles')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                  customMode === 'random_roles'
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : 'text-stone-600 hover:text-stone-900'
+                }`}
+                title="10人をMMR均等にBLUE/REDへ分け、5ロール（TOP/JG/MID/BOT/SUP）をランダムに割り振ります"
+              >
+                ⚔️ ロールランダム 5v5
+              </button>
               <button
                 type="button"
                 onClick={() => setCustomMode('party_chaos')}
@@ -317,7 +381,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                     : 'text-stone-500 hover:text-stone-800'
                 }`}
               >
-                🎲 カオス縛りルーレット付き
+                🎲 カオス縛り付き
               </button>
               <button
                 type="button"
@@ -396,7 +460,13 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
               className="w-full sm:w-auto px-8 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
             >
               <Play className="w-4 h-4 fill-current" />
-              <span>第1試合を開始 ＆ ルール抽選</span>
+              <span>
+                {customMode === 'random_roles'
+                  ? '第1試合を開始 ＆ ロールランダム振分'
+                  : customMode === 'party_chaos'
+                  ? '第1試合を開始 ＆ ルール抽選'
+                  : '第1試合を開始'}
+              </span>
             </button>
           </div>
         </div>
@@ -449,7 +519,19 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              {currentRound.hasRoles && (
+                <button
+                  type="button"
+                  onClick={rerollRoles}
+                  className="px-3.5 py-2.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-300 text-xs font-black flex items-center gap-1.5 transition cursor-pointer"
+                  title="スタメン10人のMMRバランスを保ちつつ、ロールを再度ランダムにシャッフルします"
+                >
+                  <Dices className="w-4 h-4 text-purple-600" />
+                  <span>ロール再抽選</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={copyDiscordFormat}
@@ -470,6 +552,26 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
             </div>
           </div>
 
+          {/* ⚖️ チーム間MMRバランスサマリー */}
+          {currentRound.blueMmr !== undefined && currentRound.redMmr !== undefined && (
+            <div className="flex items-center justify-between p-3.5 bg-gradient-to-r from-blue-50/60 via-stone-50 to-rose-50/60 border border-stone-200 rounded-xl text-xs font-bold text-stone-800">
+              <div className="flex items-center gap-2">
+                <span className="text-base">⚖️</span>
+                <span>
+                  チームMMR差: <strong className={`font-black ${(currentRound.mmrDiff ?? 0) <= 80 ? 'text-emerald-700' : 'text-amber-800'}`}>{currentRound.mmrDiff ?? Math.abs(currentRound.blueMmr - currentRound.redMmr)} pt</strong>
+                </span>
+                <span className="text-[10px] text-stone-500 font-normal">
+                  ({(currentRound.mmrDiff ?? 0) <= 80 ? '✨ 極小差・好バランス' : '良バランス'})
+                </span>
+              </div>
+              <div className="flex items-center gap-4 text-[11px] font-mono">
+                <span className="text-blue-700 font-black">BLUE: {currentRound.blueMmr}</span>
+                <span className="text-stone-400">vs</span>
+                <span className="text-rose-700 font-black">RED: {currentRound.redMmr}</span>
+              </div>
+            </div>
+          )}
+
           {/* チーム分け表示 (BLUE vs RED) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
@@ -480,17 +582,41 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                   <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
                   BLUE TEAM (5人)
                 </span>
+                {currentRound.blueMmr !== undefined && (
+                  <span className="text-[11px] font-mono font-bold text-blue-800 bg-blue-100 px-2 py-0.5 rounded-md">
+                    MMR {currentRound.blueMmr}
+                  </span>
+                )}
               </div>
               <div className="space-y-2">
-                {currentRound.blueTeam.map((p) => (
-                  <div
-                    key={p.id}
-                    className="p-2.5 rounded-xl bg-white border border-blue-200/80 flex items-center justify-between shadow-2xs"
-                  >
-                    <span className="text-xs font-bold text-blue-950">{p.name}</span>
-                    <span className="text-[10px] text-blue-600 font-mono font-bold">出場: {p.gamesPlayed}回</span>
-                  </div>
-                ))}
+                {currentRound.blueTeam.map((p) => {
+                  const roleConfig: Record<string, { label: string; badge: string }> = {
+                    TOP: { label: '🛡️ TOP', badge: 'bg-stone-200 text-stone-800 border-stone-300' },
+                    JUNGLE: { label: '🌲 JG', badge: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+                    MID: { label: '⚡ MID', badge: 'bg-amber-100 text-amber-900 border-amber-300' },
+                    BOT: { label: '🏹 BOT', badge: 'bg-sky-100 text-sky-800 border-sky-300' },
+                    SUPPORT: { label: '💖 SUP', badge: 'bg-pink-100 text-pink-800 border-pink-300' },
+                  };
+                  return (
+                    <div
+                      key={p.id}
+                      className="p-2.5 rounded-xl bg-white border border-blue-200/80 flex items-center justify-between shadow-2xs"
+                    >
+                      <div className="flex items-center gap-2">
+                        {p.assignedRole && currentRound.hasRoles && (
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border ${roleConfig[p.assignedRole]?.badge || 'bg-stone-100'}`}>
+                            {roleConfig[p.assignedRole]?.label || p.assignedRole}
+                          </span>
+                        )}
+                        <span className="text-xs font-bold text-blue-950">{p.name}</span>
+                        {p.highest_rank && (
+                          <span className="text-[10px] text-stone-400 font-mono">({p.highest_rank})</span>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-blue-600 font-mono font-bold">出場: {p.gamesPlayed}回</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -501,17 +627,41 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                   <span className="w-2.5 h-2.5 rounded-full bg-rose-600" />
                   RED TEAM (5人)
                 </span>
+                {currentRound.redMmr !== undefined && (
+                  <span className="text-[11px] font-mono font-bold text-rose-800 bg-rose-100 px-2 py-0.5 rounded-md">
+                    MMR {currentRound.redMmr}
+                  </span>
+                )}
               </div>
               <div className="space-y-2">
-                {currentRound.redTeam.map((p) => (
-                  <div
-                    key={p.id}
-                    className="p-2.5 rounded-xl bg-white border border-rose-200/80 flex items-center justify-between shadow-2xs"
-                  >
-                    <span className="text-xs font-bold text-rose-950">{p.name}</span>
-                    <span className="text-[10px] text-rose-600 font-mono font-bold">出場: {p.gamesPlayed}回</span>
-                  </div>
-                ))}
+                {currentRound.redTeam.map((p) => {
+                  const roleConfig: Record<string, { label: string; badge: string }> = {
+                    TOP: { label: '🛡️ TOP', badge: 'bg-stone-200 text-stone-800 border-stone-300' },
+                    JUNGLE: { label: '🌲 JG', badge: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+                    MID: { label: '⚡ MID', badge: 'bg-amber-100 text-amber-900 border-amber-300' },
+                    BOT: { label: '🏹 BOT', badge: 'bg-sky-100 text-sky-800 border-sky-300' },
+                    SUPPORT: { label: '💖 SUP', badge: 'bg-pink-100 text-pink-800 border-pink-300' },
+                  };
+                  return (
+                    <div
+                      key={p.id}
+                      className="p-2.5 rounded-xl bg-white border border-rose-200/80 flex items-center justify-between shadow-2xs"
+                    >
+                      <div className="flex items-center gap-2">
+                        {p.assignedRole && currentRound.hasRoles && (
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border ${roleConfig[p.assignedRole]?.badge || 'bg-stone-100'}`}>
+                            {roleConfig[p.assignedRole]?.label || p.assignedRole}
+                          </span>
+                        )}
+                        <span className="text-xs font-bold text-rose-950">{p.name}</span>
+                        {p.highest_rank && (
+                          <span className="text-[10px] text-stone-400 font-mono">({p.highest_rank})</span>
+                        )}
+                      </div>
+                      <span className="text-[10px] text-rose-600 font-mono font-bold">出場: {p.gamesPlayed}回</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
