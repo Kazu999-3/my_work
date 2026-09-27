@@ -342,14 +342,8 @@ export async function notifyNewMentorshipProfile(params: {
                   },
                   {
                     type: 2,
-                    style: 2, // Secondary
-                    label: '🌱 弟子入りしたい',
-                    custom_id: 'mentorship_apply_pupil',
-                  },
-                  {
-                    type: 2,
                     style: 5, // Link
-                    label: '🌐 詳細・オファー送信',
+                    label: '🌐 ポータルでプロフィールを見る',
                     url: `${PORTAL_BASE_URL}/mentorship`,
                   },
                 ],
@@ -361,20 +355,14 @@ export async function notifyNewMentorshipProfile(params: {
                 components: [
                   {
                     type: 2,
-                    style: 3, // Green
-                    label: '🌱 弟子入りしたい (修行希望)',
-                    custom_id: 'mentorship_apply_pupil',
-                  },
-                  {
-                    type: 2,
                     style: 1, // Blurple
-                    label: '🥋 弟子を取りたい (指導者)',
-                    custom_id: 'mentorship_apply_mentor',
+                    label: '🙋 弟子入りをお願いする',
+                    url: `${PORTAL_BASE_URL}/mentorship`,
                   },
                   {
                     type: 2,
                     style: 5, // Link
-                    label: '🌐 詳細・オファー送信',
+                    label: '🌐 ポータルでプロフィールを見る',
                     url: `${PORTAL_BASE_URL}/mentorship`,
                   },
                 ],
