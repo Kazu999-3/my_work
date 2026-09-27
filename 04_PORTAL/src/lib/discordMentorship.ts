@@ -1,4 +1,5 @@
 import { supabaseAdmin as supabase } from './supabaseAdmin';
+import { MENTORSHIP_DURATIONS } from './mentorshipConstants';
 
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const DISCORD_GUILD_ID = process.env.DISCORD_GUILD_ID;
@@ -100,8 +101,15 @@ export async function syncMentorshipDashboard(): Promise<boolean> {
         .map((m: any) => {
           const lanes = Array.isArray(m.lanes) && m.lanes.length > 0 ? m.lanes.join('/') : 'ALL';
           const rank = m.current_rank || 'UNRANKED';
-          const tagList = Array.isArray(m.tags) && m.tags.length > 0 ? ` [${m.tags.slice(0, 2).join(', ')}]` : '';
-          return `• **${m.player_name}** (${rank}) | 🛡️ \`${lanes}\`${tagList}`;
+          const dur = m.preferred_duration || 
+            (m.tags?.some((t: string) => t.includes('1試合') || t.includes('カスタム') || t.includes('単発')) ? '1_MATCH' :
+             m.tags?.some((t: string) => t.includes('リプレイ') || t.includes('添削')) ? 'REPLAY' :
+             m.tags?.some((t: string) => t.includes('3日') || t.includes('お試し')) ? '3_DAYS' : null);
+          const durBadge = dur && MENTORSHIP_DURATIONS[dur] ? ` [${MENTORSHIP_DURATIONS[dur].shortLabel}]` : '';
+          const tagList = Array.isArray(m.tags) && m.tags.length > 0
+            ? ` [${m.tags.filter((t: string) => !t.includes('1試合') && !t.includes('リプレイ') && !t.includes('3日')).slice(0, 2).join(', ')}]`
+            : '';
+          return `• **${m.player_name}** (${rank}) | 🛡️ \`${lanes}\`${durBadge}${tagList}`;
         })
         .join('\n');
       if (mentors.length > 15) {
@@ -120,7 +128,12 @@ export async function syncMentorshipDashboard(): Promise<boolean> {
           const lanes = Array.isArray(p.lanes) && p.lanes.length > 0 ? p.lanes.join('/') : 'ALL';
           const rank = p.current_rank || 'UNRANKED';
           const target = p.target_rank ? ` ➔ 目標: **${p.target_rank}**` : '';
-          return `• **${p.player_name}** (${rank}${target}) | 🛡️ \`${lanes}\``;
+          const dur = p.preferred_duration || 
+            (p.tags?.some((t: string) => t.includes('1試合') || t.includes('カスタム') || t.includes('単発')) ? '1_MATCH' :
+             p.tags?.some((t: string) => t.includes('リプレイ') || t.includes('添削')) ? 'REPLAY' :
+             p.tags?.some((t: string) => t.includes('3日') || t.includes('お試し')) ? '3_DAYS' : null);
+          const durBadge = dur && MENTORSHIP_DURATIONS[dur] ? ` [${MENTORSHIP_DURATIONS[dur].shortLabel}]` : '';
+          return `• **${p.player_name}** (${rank}${target}) | 🛡️ \`${lanes}\`${durBadge}`;
         })
         .join('\n');
 
@@ -300,6 +313,17 @@ export async function notifyNewMentorshipProfile(params: {
         {
           name: isMentor ? '🏆 得意チャンピオン' : '🎯 練習中チャンピオン',
           value: champs,
+          inline: true,
+        },
+        {
+          name: '⚡ 希望コース・スタイル',
+          value: (() => {
+            const dur = profile.preferred_duration || 
+              (profile.tags?.some((t: string) => t.includes('1試合') || t.includes('カスタム') || t.includes('単発')) ? '1_MATCH' :
+               profile.tags?.some((t: string) => t.includes('リプレイ') || t.includes('添削')) ? 'REPLAY' :
+               profile.tags?.some((t: string) => t.includes('3日') || t.includes('お試し')) ? '3_DAYS' : null);
+            return dur && MENTORSHIP_DURATIONS[dur] ? `**${MENTORSHIP_DURATIONS[dur].label}**` : '指定なし（柔軟対応）';
+          })(),
           inline: true,
         },
         {

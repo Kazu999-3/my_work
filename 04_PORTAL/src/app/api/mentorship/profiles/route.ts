@@ -21,6 +21,7 @@ export interface MentorshipProfile {
   bio: string;
   active_hours: string;
   status: 'OPEN' | 'MATCHED' | 'PAUSED';
+  preferred_duration?: string; // '1_MATCH' | 'REPLAY' | '3_DAYS' | '14_DAYS' | '30_DAYS' | 'INDEFINITE'
   max_pupils?: number; // 師匠の最大受入人数（デフォルト: 3）
   active_pupils_count?: number; // 現在進行中の弟子数
   active_pupil_names?: string[]; // 現在進行中の弟子たちの名前
@@ -143,6 +144,7 @@ export async function POST(request: Request) {
       active_hours = '',
       status = 'OPEN',
       max_pupils = 3,
+      preferred_duration,
       discord_id: bodyDiscordId,
       player_name: bodyPlayerName,
     } = body;
@@ -193,13 +195,31 @@ export async function POST(request: Request) {
         ? [lanes.trim()]
         : ['MID'];
 
+    // preferred_duration に基づくタグの同期（既存DBカラムが無い場合でも互換性を担保）
+    let normalizedTags = Array.isArray(tags) ? [...tags] : [];
+    // 既存の期間系タグを除去して再設定
+    normalizedTags = normalizedTags.filter((t: string) => 
+      !['1試合カスタム', 'リプレイ添削', '3日間お試し', '2週間育成', '1ヶ月特訓', '長期指導'].includes(t)
+    );
+    if (preferred_duration === '1_MATCH') {
+      normalizedTags.unshift('1試合カスタム');
+    } else if (preferred_duration === 'REPLAY') {
+      normalizedTags.unshift('リプレイ添削');
+    } else if (preferred_duration === '3_DAYS') {
+      normalizedTags.unshift('3日間お試し');
+    } else if (preferred_duration === '14_DAYS') {
+      normalizedTags.unshift('2週間育成');
+    } else if (preferred_duration === '30_DAYS') {
+      normalizedTags.unshift('1ヶ月特訓');
+    }
+
     const basePayload: Record<string, any> = {
       player_name: playerName,
       lanes: normalizedLanes,
       champions,
       current_rank: finalCurrentRank,
       target_rank: role_type === 'PUPIL' ? target_rank : null,
-      tags,
+      tags: normalizedTags,
       bio,
       active_hours,
       status,

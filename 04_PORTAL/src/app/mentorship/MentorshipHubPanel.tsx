@@ -25,6 +25,7 @@ const LANE_FILTERS = [
 export default function MentorshipHubPanel() {
   const [activeTab, setActiveTab] = useState<'PUPIL' | 'MENTOR' | 'MATCHES'>('PUPIL');
   const [laneFilter, setLaneFilter] = useState('ALL');
+  const [lightOnlyFilter, setLightOnlyFilter] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [profiles, setProfiles] = useState<MentorshipProfile[]>([]);
   const [matches, setMatches] = useState<any[]>([]);
@@ -618,6 +619,12 @@ export default function MentorshipHubPanel() {
   const filteredProfiles = profiles.filter((p) => {
     if (activeTab !== 'MATCHES' && p.role_type !== activeTab) return false;
     if (laneFilter !== 'ALL' && !(p.lanes || []).includes(laneFilter)) return false;
+    if (lightOnlyFilter) {
+      const pDur = (p as any).preferred_duration;
+      const isLight = pDur === '1_MATCH' || pDur === 'REPLAY' || pDur === '3_DAYS' ||
+        p.tags?.some((t) => t.includes('1試合') || t.includes('カスタム') || t.includes('単発') || t.includes('リプレイ') || t.includes('添削') || t.includes('3日') || t.includes('お試し'));
+      if (!isLight) return false;
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const matchName = (p.player_name || '').toLowerCase().includes(q);
@@ -789,24 +796,43 @@ export default function MentorshipHubPanel() {
           )}
         </div>
 
-        {/* 🎯 レーン別クイックフィルターピル */}
+        {/* 🎯 レーン別クイックフィルターピル ＆ 単発お試しフィルター */}
         {activeTab !== 'MATCHES' && (
-          <div className="flex items-center gap-1.5 overflow-x-auto pt-1 border-t border-stone-100 scrollbar-none">
-            <span className="text-[11px] font-bold text-stone-400 shrink-0 mr-1">レーン:</span>
-            {LANE_FILTERS.map((f) => (
+          <div className="flex items-center justify-between gap-2 overflow-x-auto pt-1 border-t border-stone-100 scrollbar-none flex-wrap">
+            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+              <span className="text-[11px] font-bold text-stone-400 shrink-0 mr-1">レーン:</span>
+              {LANE_FILTERS.map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setLaneFilter(f.id)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-black transition shrink-0 cursor-pointer ${
+                    laneFilter === f.id
+                      ? 'bg-stone-900 text-white shadow-xs'
+                      : 'bg-stone-100 hover:bg-stone-200 text-stone-600'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2">
               <button
-                key={f.id}
                 type="button"
-                onClick={() => setLaneFilter(f.id)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-black transition shrink-0 cursor-pointer ${
-                  laneFilter === f.id
-                    ? 'bg-stone-900 text-white shadow-xs'
-                    : 'bg-stone-100 hover:bg-stone-200 text-stone-600'
+                onClick={() => setLightOnlyFilter(!lightOnlyFilter)}
+                className={`px-3 py-1 rounded-lg text-xs font-black transition shrink-0 cursor-pointer flex items-center gap-1.5 border ${
+                  lightOnlyFilter
+                    ? 'bg-sky-500 text-white border-sky-600 shadow-xs ring-2 ring-sky-300'
+                    : 'bg-white hover:bg-sky-50 text-stone-700 border-sky-200 hover:border-sky-300'
                 }`}
+                title="1試合のみやリプレイ添削など、気軽に参加できる単発お試しコースのみを表示します"
               >
-                {f.label}
+                <span>⚡</span>
+                <span>お試し・単発OKのみ</span>
+                {lightOnlyFilter && <span className="text-[10px] bg-white/20 px-1 rounded-full">ON</span>}
               </button>
-            ))}
+            </div>
           </div>
         )}
       </div>
@@ -906,25 +932,7 @@ export default function MentorshipHubPanel() {
         </div>
       )}
 
-      {/* レーンフィルター */}
-      {activeTab !== 'MATCHES' && (
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          {LANE_FILTERS.map((lane) => (
-            <button
-              key={lane.id}
-              type="button"
-              onClick={() => setLaneFilter(lane.id)}
-              className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 ${
-                laneFilter === lane.id
-                  ? 'bg-stone-800 text-white'
-                  : 'bg-white border border-stone-200 hover:bg-stone-100 text-stone-600'
-              }`}
-            >
-              {lane.label}
-            </button>
-          ))}
-        </div>
-      )}
+
 
       {/* 🎯 AI相性マッチング・おすすめバディセクション */}
       {activeTab !== 'MATCHES' && (

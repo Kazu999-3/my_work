@@ -5,6 +5,7 @@ import { MentorshipProfile } from '../api/mentorship/profiles/route';
 import { ALL_CHAMPIONS, CHAMPION_JA } from '../../components/ChampSelect';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { getKtmRank, RANKS as MMR_RANKS } from '../../lib/mmr';
+import { MENTORSHIP_DURATIONS } from '../../lib/mentorshipConstants';
 import { Search, Plus, X, Sparkles, Volume2, Video, Swords, BookOpen, Clock, Shield, Check } from 'lucide-react';
 
 interface MentorshipProfileModalProps {
@@ -154,6 +155,7 @@ export function MentorshipProfileModal({
   const [currentRank, setCurrentRank] = useState('SILVER');
   const [targetRank, setTargetRank] = useState('GOLD');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [preferredDuration, setPreferredDuration] = useState<string>('14_DAYS');
   const [customTag, setCustomTag] = useState('');
   const [bio, setBio] = useState('');
   const [activeHours, setActiveHours] = useState('');
@@ -173,6 +175,21 @@ export function MentorshipProfileModal({
       setCurrentRank(profile.current_rank || 'SILVER');
       setTargetRank(profile.target_rank || (targetRole === 'PUPIL' ? 'GOLD' : '全ランク・初心者歓迎'));
       setSelectedTags(profile.tags || []);
+      
+      // preferred_duration 判定（profile.preferred_duration または tags から復元）
+      const profDuration = (profile as any).preferred_duration;
+      if (profDuration && MENTORSHIP_DURATIONS[profDuration]) {
+        setPreferredDuration(profDuration);
+      } else if (profile.tags?.some(t => t.includes('1試合') || t.includes('カスタム') || t.includes('単発'))) {
+        setPreferredDuration('1_MATCH');
+      } else if (profile.tags?.some(t => t.includes('リプレイ') || t.includes('添削'))) {
+        setPreferredDuration('REPLAY');
+      } else if (profile.tags?.some(t => t.includes('3日') || t.includes('お試し'))) {
+        setPreferredDuration('3_DAYS');
+      } else {
+        setPreferredDuration(targetRole === 'PUPIL' ? '1_MATCH' : '14_DAYS');
+      }
+
       setBio(profile.bio || '');
       setActiveHours(profile.active_hours || '');
       setMaxPupils(profile.max_pupils || 3);
@@ -185,6 +202,7 @@ export function MentorshipProfileModal({
       setSelectedChampions([]);
       setCurrentRank(RANKS.includes(userRank) ? userRank : 'SILVER');
       setTargetRank(targetRole === 'PUPIL' ? 'GOLD' : '全ランク・初心者歓迎');
+      setPreferredDuration(targetRole === 'PUPIL' ? '1_MATCH' : '14_DAYS');
       setSelectedTags(
         targetRole === 'PUPIL'
           ? ['VC可能', '画面共有ライブ指導', 'トレード・キルライン見極め']
@@ -274,6 +292,7 @@ export function MentorshipProfileModal({
         bio,
         active_hours: activeHours,
         status: 'OPEN',
+        preferred_duration: preferredDuration,
         max_pupils: roleType === 'MENTOR' ? maxPupils : 1,
         discord_id: user?.discordId,
         player_name: user?.displayName || user?.username,
@@ -374,9 +393,16 @@ export function MentorshipProfileModal({
 
               <div className={`p-5 rounded-3xl border bg-white shadow-md ${isMentor ? 'border-amber-400' : 'border-emerald-400'} space-y-4`}>
                 <div className="flex items-center justify-between">
-                  <div className={`px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase flex items-center gap-1.5 ${isMentor ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-emerald-100 text-emerald-900 border border-emerald-300'}`}>
-                    <span>{isMentor ? '👨‍🏫' : '🔰'}</span>
-                    <span>{isMentor ? '師匠 (Mentor)' : '弟子 (Pupil)'}</span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <div className={`px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase flex items-center gap-1.5 ${isMentor ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-emerald-100 text-emerald-900 border border-emerald-300'}`}>
+                      <span>{isMentor ? '👨‍🏫' : '🔰'}</span>
+                      <span>{isMentor ? '師匠 (Mentor)' : '弟子 (Pupil)'}</span>
+                    </div>
+                    {preferredDuration && MENTORSHIP_DURATIONS[preferredDuration] && (
+                      <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black border shadow-2xs ${MENTORSHIP_DURATIONS[preferredDuration].badgeColor || 'bg-stone-100 text-stone-800 border-stone-300'}`}>
+                        {MENTORSHIP_DURATIONS[preferredDuration].shortLabel}
+                      </span>
+                    )}
                   </div>
                   <span className="text-xs text-emerald-700 font-black bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">🟢 募集中</span>
                 </div>
@@ -635,11 +661,81 @@ export function MentorshipProfileModal({
                 </div>
               )}
 
-              {/* 4. チャンピオン選択 (日本語インクリメンタル検索＆チップ) */}
+              {/* 4. 希望する受講・指導スタイル / 期間コース */}
+              <div className="space-y-2 p-3.5 bg-stone-50 border border-stone-200 rounded-2xl">
+                <label className="block text-xs font-black text-stone-800 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-4.5 h-4.5 rounded-full bg-amber-500 text-white text-[11px] flex items-center justify-center font-black">4</span>
+                    <span>{roleType === 'PUPIL' ? '希望する受講スタイル・期間' : '対応可能な指導スタイル・期間'}</span>
+                  </span>
+                  <span className="text-[10px] text-sky-700 font-bold bg-sky-50 px-2 py-0.5 rounded-md border border-sky-200">
+                    ⚡ 1試合・単発OK
+                  </span>
+                </label>
+
+                {/* 気軽な1回・お試しコース */}
+                <div className="space-y-1">
+                  <span className="text-[10px] font-black text-stone-500 uppercase tracking-wider">✨ 気軽な1回・お試しコース</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+                    {Object.entries(MENTORSHIP_DURATIONS)
+                      .filter(([_, item]) => item.isLight)
+                      .map(([key, item]) => {
+                        const isSelected = preferredDuration === key;
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => setPreferredDuration(key)}
+                            className={`p-2.5 rounded-xl text-left border text-xs font-bold transition flex flex-col justify-between gap-1 cursor-pointer ${
+                              isSelected
+                                ? 'bg-gradient-to-br from-sky-50 to-amber-50 border-sky-500 text-stone-900 shadow-2xs ring-2 ring-sky-300 scale-[1.02]'
+                                : 'bg-white border-stone-200 text-stone-700 hover:bg-sky-50/50 hover:border-sky-300'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-extrabold">{item.shortLabel}</span>
+                              {isSelected && <span className="text-sky-600 text-xs font-black">✓</span>}
+                            </div>
+                            <span className="text-[10px] text-stone-500 font-medium leading-tight">{item.label.split('（')[0]}</span>
+                          </button>
+                        );
+                      })}
+                  </div>
+                </div>
+
+                {/* しっかり継続コース */}
+                <div className="space-y-1 pt-1 border-t border-stone-200/60">
+                  <span className="text-[10px] font-black text-stone-500 uppercase tracking-wider">🔥 しっかり継続コース</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    {Object.entries(MENTORSHIP_DURATIONS)
+                      .filter(([_, item]) => !item.isLight)
+                      .map(([key, item]) => {
+                        const isSelected = preferredDuration === key;
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => setPreferredDuration(key)}
+                            className={`p-2 rounded-xl text-left border text-xs font-bold transition flex items-center justify-between cursor-pointer ${
+                              isSelected
+                                ? 'bg-amber-50 border-amber-400 text-amber-950 shadow-2xs ring-1 ring-amber-300'
+                                : 'bg-white border-stone-200 text-stone-700 hover:bg-stone-100'
+                            }`}
+                          >
+                            <span className="font-bold">{item.shortLabel}</span>
+                            {isSelected && <span className="text-amber-600 text-xs font-black">✓</span>}
+                          </button>
+                        );
+                      })}
+                  </div>
+                </div>
+              </div>
+
+              {/* 5. チャンピオン選択 (日本語インクリメンタル検索＆チップ) */}
               <div className="space-y-2">
                 <label className="block text-xs font-black text-stone-700 flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
-                    <span className="w-4.5 h-4.5 rounded-full bg-amber-500 text-white text-[11px] flex items-center justify-center font-black">4</span>
+                    <span className="w-4.5 h-4.5 rounded-full bg-amber-500 text-white text-[11px] flex items-center justify-center font-black">5</span>
                     {roleType === 'PUPIL' ? '練習中・使いたいチャンピオン' : '得意・指導可能チャンピオン'} (最大8体)
                   </div>
                   <span className="text-[11px] text-stone-500 font-bold">
@@ -747,10 +843,10 @@ export function MentorshipProfileModal({
                 </div>
               </div>
 
-              {/* 5. カテゴリ別実用タグの選択 */}
+              {/* 6. カテゴリ別実用タグの選択 */}
               <div className="space-y-3">
                 <label className="block text-xs font-black text-stone-700 flex items-center gap-1.5">
-                  <span className="w-4.5 h-4.5 rounded-full bg-amber-500 text-white text-[11px] flex items-center justify-center font-black">5</span>
+                  <span className="w-4.5 h-4.5 rounded-full bg-amber-500 text-white text-[11px] flex items-center justify-center font-black">6</span>
                   {roleType === 'PUPIL' ? '希望する指導・通話スタイル ＆ 悩み' : '指導可能スタイル ＆ 得意テーマ'} (タップで選択)
                 </label>
 
@@ -802,11 +898,11 @@ export function MentorshipProfileModal({
                 </div>
               </div>
 
-              {/* 6. 自己紹介文 ＆ 1クリックテンプレート */}
+              {/* 7. 自己紹介文 ＆ 1クリックテンプレート */}
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between flex-wrap gap-1">
                   <label className="block text-xs font-black text-stone-700 flex items-center gap-1.5">
-                    <span className="w-4.5 h-4.5 rounded-full bg-amber-500 text-white text-[11px] flex items-center justify-center font-black">6</span>
+                    <span className="w-4.5 h-4.5 rounded-full bg-amber-500 text-white text-[11px] flex items-center justify-center font-black">7</span>
                     自己紹介・意気込み
                   </label>
                   <span className="text-[11px] text-amber-700 font-bold flex items-center gap-1">
@@ -837,10 +933,10 @@ export function MentorshipProfileModal({
                 />
               </div>
 
-              {/* 7. 活動しやすい時間帯 */}
+              {/* 8. 活動しやすい時間帯 */}
               <div>
                 <label className="block text-xs font-black text-stone-700 mb-1 flex items-center gap-1.5">
-                  <span className="w-4.5 h-4.5 rounded-full bg-amber-500 text-white text-[11px] flex items-center justify-center font-black">7</span>
+                  <span className="w-4.5 h-4.5 rounded-full bg-amber-500 text-white text-[11px] flex items-center justify-center font-black">8</span>
                   活動しやすい時間帯・曜日
                 </label>
                 <input
