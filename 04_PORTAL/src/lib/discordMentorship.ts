@@ -328,12 +328,140 @@ export async function notifyNewMentorshipProfile(params: {
       body: JSON.stringify({
         content,
         embeds: [embed],
+        components: [
+          {
+            type: 1,
+            components: [
+              {
+                type: 2,
+                style: 3, // Green
+                label: '🌱 弟子入りしたい (修行希望)',
+                custom_id: 'mentorship_apply_pupil',
+              },
+              {
+                type: 2,
+                style: 1, // Blurple
+                label: '🥋 弟子を取りたい (指導者)',
+                custom_id: 'mentorship_apply_mentor',
+              },
+              {
+                type: 2,
+                style: 5, // Link
+                label: '🌐 詳細・オファー送信',
+                url: `${PORTAL_BASE_URL}/mentorship`,
+              },
+            ],
+          },
+        ],
       }),
     });
+
+    // 🤖 AI仲人チェック: 登録されたプロフィールと相性の良い相手（70%以上）がいれば自動推薦
+    try {
+      const { findBestMentorshipMatch } = await import('./mentorshipMatchmaker');
+      const matchData = await findBestMentorshipMatch(profile);
+      if (matchData && matchData.matchResult.score >= 70) {
+        await notifyAiMentorshipMatch({
+          profileA: profile,
+          profileB: matchData.bestPartner,
+          matchResult: matchData.matchResult,
+        });
+      }
+    } catch (matchErr) {
+      console.warn('[discordMentorship] AI matchmaker warning:', matchErr);
+    }
 
     return postRes.ok;
   } catch (err) {
     console.error('[discordMentorship] Error in notifyNewMentorshipProfile:', err);
+    return false;
+  }
+}
+
+/**
+ * 🤖 AI仲人によるペアリング推薦（お見合い提案）をDiscordに投稿
+ */
+export async function notifyAiMentorshipMatch(params: {
+  profileA: any;
+  profileB: any;
+  matchResult: import('./mentorshipMatchmaker').MatchScoreResult;
+}): Promise<boolean> {
+  const { profileA, profileB, matchResult } = params;
+  const channelId = await ensureMentorshipChannel();
+  if (!channelId || !DISCORD_BOT_TOKEN) return false;
+
+  try {
+    const mentor = profileA.role_type === 'MENTOR' ? profileA : profileB;
+    const pupil = profileA.role_type === 'PUPIL' ? profileA : profileB;
+
+    const mentorMention = mentor.discord_id ? `<@${mentor.discord_id}>` : `**${mentor.player_name}**`;
+    const pupilMention = pupil.discord_id ? `<@${pupil.discord_id}>` : `**${pupil.player_name}**`;
+
+    const mentorLanes = Array.isArray(mentor.lanes) ? mentor.lanes.join('/') : 'ALL';
+    const pupilLanes = Array.isArray(pupil.lanes) ? pupil.lanes.join('/') : 'ALL';
+
+    const reasonsText = matchResult.reasons.length > 0
+      ? matchResult.reasons.map((r) => `・${r}`).join('\n')
+      : '・高い総合プレイスタイル適合度';
+
+    const embed = {
+      title: `🤖 【AI仲人】おすすめの師弟ペアリング提案！`,
+      description:
+        `AIが希望レーンや実力差、プレイスタイルを分析したところ、お二人の相性スコアが **【${matchResult.score}%】** と非常に高いことがわかりました！✨\n\n` +
+        `お互いに声をかけづらい場合は、AIが代わりに背中を押します！ぜひ一度お話ししてみませんか？🤝`,
+      color: 0x8b5cf6, // Purple
+      fields: [
+        {
+          name: `🥋 師匠（指導者）`,
+          value: `👤 ${mentor.player_name} (${mentorMention})\n📈 ランク: **${mentor.current_rank || 'UNRANKED'}**\n🛡️ レーン: \`${mentorLanes}\``,
+          inline: true,
+        },
+        {
+          name: `🌱 弟子（修行希望）`,
+          value: `👤 ${pupil.player_name} (${pupilMention})\n📈 ランク: **${pupil.current_rank || 'UNRANKED'}**\n🛡️ 希望: \`${pupilLanes}\``,
+          inline: true,
+        },
+        {
+          name: `🎯 AIおすすめポイント (相性スコア: ${matchResult.score}%)`,
+          value: reasonsText,
+          inline: false,
+        },
+      ],
+      footer: {
+        text: 'KTM AI Matchmaker | ポータルからオファーを送ると相手に直接DMが届きます',
+      },
+    };
+
+    const content = `✨ **【AI仲人の推薦】** ${pupilMention} さん 🤝 ${mentorMention} さん、お二人の相性スコアは **${matchResult.score}%** です！`;
+
+    const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        content,
+        embeds: [embed],
+        components: [
+          {
+            type: 1,
+            components: [
+              {
+                type: 2,
+                style: 5, // Link
+                label: '🤝 ポータルでオファーを送る',
+                url: `${PORTAL_BASE_URL}/mentorship`,
+              },
+            ],
+          },
+        ],
+      }),
+    });
+
+    return res.ok;
+  } catch (err) {
+    console.error('[discordMentorship] Error in notifyAiMentorshipMatch:', err);
     return false;
   }
 }
