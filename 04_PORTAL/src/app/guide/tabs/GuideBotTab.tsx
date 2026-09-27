@@ -408,6 +408,59 @@ export default function GuideBotTab() {
             </div>
           )}
         </div>
+
+        {/* 4. 師弟募集チャンネルボタン & 先輩スカウト */}
+        <div className="bg-white rounded-3xl border border-stone-200 shadow-xs overflow-hidden">
+          <button
+            type="button"
+            onClick={() => toggleSection('mentorship')}
+            className="w-full p-6 text-left flex items-center justify-between gap-4 hover:bg-stone-50 transition cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-xl">
+                🤝
+              </div>
+              <div>
+                <h3 className="text-base font-black text-stone-900">
+                  4. 師弟募集チャンネルのワンポチ登録 ＆ 先輩スカウト機能
+                </h3>
+                <p className="text-xs text-stone-500">#🤝師弟募集 チャンネルからWebログイン不要で即エントリー</p>
+              </div>
+            </div>
+            {openSection === 'mentorship' ? <ChevronUp size={20} className="text-stone-400" /> : <ChevronDown size={20} className="text-stone-400" />}
+          </button>
+
+          {openSection === 'mentorship' && (
+            <div className="p-6 pt-0 border-t border-stone-100 space-y-4">
+              <p className="text-xs text-stone-600 leading-relaxed">
+                Discordの <code>#🤝師弟募集</code> チャンネルに常設されているピン留めメッセージから、Webポータルを開かずにワンタップでエントリーできます。
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-200 space-y-1">
+                  <div className="font-black text-xs text-emerald-900">🌱 弟子入りしたい（緑ボタン）</div>
+                  <p className="text-[11px] text-emerald-800 leading-relaxed">
+                    ボタンを押すとポップアップ（モーダル）が開きます。学びたいレーンや悩みを入力するだけで即時エントリー完了！
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-200 space-y-1">
+                  <div className="font-black text-xs text-blue-900">🥋 弟子を取りたい（青ボタン）</div>
+                  <p className="text-[11px] text-blue-800 leading-relaxed">
+                    指導可能レーンや得意チャンプ、活動可能時間を入力して師匠登録。AIが相性の良い弟子をマッチングします。
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-purple-50/60 border border-purple-200 space-y-1">
+                  <div className="font-black text-xs text-purple-900">🌟 頼れる先輩スカウト ＆ 指導引き受け</div>
+                  <p className="text-[11px] text-purple-800 leading-relaxed">
+                    弟子エントリーがあると、適任な先輩へAIからDMでスカウト通知が届きます。「🤝 師匠を引き受ける」ボタンを押せば即時ペア結成＆ボーナス <strong>+300🪙</strong>！
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

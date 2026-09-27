@@ -262,6 +262,20 @@ export default function GuideRulesTab() {
               ポータルのバランサー画面からスコアボード・サイド交代をワンクリックで管理できます。
             </p>
           </div>
+
+          {/* 10人以上お祭り・ARAMローテーション ＆ ロールランダム5v5 */}
+          <div className="p-5 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-2.5">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full bg-purple-600 text-white text-xs font-black">
+                🎲 10人以上お祭り ＆ ロールランダム5v5
+              </span>
+              <span className="text-xs font-bold text-stone-500">（ARAM公平交代 / いつもと違うロール）</span>
+            </div>
+            <p className="text-xs text-stone-600 leading-relaxed font-medium">
+              参加者が10名を超えたお祭り・ARAMカスタムでは、全員の出場回数を公平化する自動交代システムが稼働します。<br />
+              さらに新機能<strong>「ロールランダム5v5」</strong>を使えば、全員の希望レーンを完全ランダムにシャッフルしつつ、チーム間の総合MMRが互角になるよう自動調整！いつものメインレーンから離れて新鮮なバトルを楽しめます。
+            </p>
+          </div>
         </div>
       </div>
 

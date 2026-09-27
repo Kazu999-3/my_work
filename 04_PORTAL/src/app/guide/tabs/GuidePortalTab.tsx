@@ -77,7 +77,7 @@ export default function GuidePortalTab() {
           </div>
         </div>
 
-        {/* 2. チーム分けバランサー */}
+        {/* 2. チーム分けバランサー ＆ AIドラフト・観戦HUD */}
         <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -85,24 +85,32 @@ export default function GuidePortalTab() {
                 ⚖️
               </div>
               <span className="text-[11px] font-bold text-cyan-800 bg-cyan-100 px-2.5 py-1 rounded-full">
-                運営・進行必須
+                AI軍師 ＆ 観戦HUD新設 ✨
               </span>
             </div>
-            <h3 className="text-base font-black text-stone-900">チーム分けバランサー ＆ カスタム作成</h3>
+            <h3 className="text-base font-black text-stone-900">チーム分けバランサー ＆ AIドラフト・観戦HUD</h3>
             <p className="text-stone-600 text-xs leading-relaxed">
-              参加プレイヤーのMMRや希望ロールをもとに、実力差を最小化する公平な5v5チーム分けを瞬時に自動生成します。
+              MMRや希望ロールをもとに実力差を最小化する公平な5v5チーム分けを自動生成。さらにチーム確定直後のAIドラフト相談やテレビ中継風の観戦オーバーレイが連動！
             </p>
             <div className="bg-stone-50 rounded-2xl p-3.5 border border-stone-200/80 text-xs text-stone-700 space-y-1.5">
               <div className="font-bold text-stone-800 flex items-center gap-1.5 text-[11px]">
                 <Swords size={13} className="text-cyan-600" />
-                バランサーの強み
+                最新の注目機能
               </div>
-              <p>・MMR均等化 ＆ 各自の希望レーンを自動最適配分</p>
-              <p>・手動ドラッグ＆ドロップによる微調整とシャッフル</p>
+              <p>・🤖 <strong>AIドラフト軍師</strong>: ワンクリックで相手の得意ピックを突く推奨BAN 2体＆シナジー構成をGeminiが提示</p>
+              <p>・⚔️ <strong>観戦Webオーバーレイ (/balancer/spectate)</strong>: OBSや配信・観戦者向けのテレビ中継風フルスクリーン対面HUD</p>
+              <p>・🎲 <strong>お祭りロールランダム</strong>: 10人のロールをランダムにシャッフルしつつチーム間MMRを拮抗させる新機能</p>
               <p>・ワンクリックで全員の<strong>OP.GG一括コピー</strong>＆カスタムリンク生成</p>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-stone-100">
+          <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between">
+            <Link
+              href="/balancer/spectate"
+              target="_blank"
+              className="text-xs font-bold text-stone-500 hover:text-stone-800 flex items-center gap-1"
+            >
+              観戦HUDを見る ↗
+            </Link>
             <Link
               href="/balancer"
               className="text-xs font-black text-cyan-700 hover:text-cyan-900 flex items-center gap-1 group-hover:translate-x-1 transition"
@@ -242,7 +250,64 @@ export default function GuidePortalTab() {
           </div>
         </div>
 
-        {/* 6. 師弟マッチングハブ */}
+        {/* 6. 📰 月刊KTMスポーツ速報（AIハイライト実況ニュース） */}
+        <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group col-span-1 md:col-span-2">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-2xl group-hover:scale-105 transition">
+                📰
+              </div>
+              <span className="text-[11px] font-bold text-red-700 bg-red-100 px-2.5 py-1 rounded-full border border-red-200 animate-pulse">
+                号外配信中 ⚡
+              </span>
+            </div>
+            <h3 className="text-base md:text-lg font-black text-stone-900">
+              月刊KTMスポーツ速報（試合終了直後のAI実況ハイライトニュース）
+            </h3>
+            <p className="text-stone-600 text-xs leading-relaxed">
+              内戦カスタムの試合結果が記録されると、Geminiがスポーツ新聞（東スポ・Number風）のユーモアと熱狂あふれる号外ダイジェストを自動執筆！Discord速報通知およびポータルトップに即座に掲示されます。
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+              <div className="bg-stone-50 rounded-2xl p-3 border border-stone-200/80 text-xs text-stone-700 space-y-1">
+                <div className="font-bold text-stone-900 flex items-center gap-1 text-[11px]">
+                  <span>🏆</span> 本日のMVP寸評
+                </div>
+                <p className="text-[11px] text-stone-600">
+                  キルレや集団戦の貢献度から、その試合で最も輝いたプレイヤーをピックアップして絶賛。
+                </p>
+              </div>
+              <div className="bg-stone-50 rounded-2xl p-3 border border-stone-200/80 text-xs text-stone-700 space-y-1">
+                <div className="font-bold text-stone-900 flex items-center gap-1 text-[11px]">
+                  <span>🔥</span> 勝負の分水嶺
+                </div>
+                <p className="text-[11px] text-stone-600">
+                  バロン争奪戦や逆転の集団戦など、勝敗を決定づけた運命のターニングポイントを解説。
+                </p>
+              </div>
+              <div className="bg-stone-50 rounded-2xl p-3 border border-stone-200/80 text-xs text-stone-700 space-y-1">
+                <div className="font-bold text-stone-900 flex items-center gap-1 text-[11px]">
+                  <span>💬</span> 試合後コメント ＆ 小ネタ
+                </div>
+                <p className="text-[11px] text-stone-600">
+                  選手の叫びや対面因縁の裏話など、VCで思わずツッコミたくなるクスッと笑えるエピソード。
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between">
+            <span className="text-[11px] text-stone-500 font-medium">
+              ポータルのトップページですぐに最新号外を読めます！
+            </span>
+            <Link
+              href="/"
+              className="text-xs font-black text-amber-700 hover:text-amber-900 flex items-center gap-1 group-hover:translate-x-1 transition"
+            >
+              トップの速報を見る <ArrowRight size={13} />
+            </Link>
+          </div>
+        </div>
+
+        {/* 7. 師弟マッチングハブ */}
         <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group col-span-1 md:col-span-2">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -254,34 +319,34 @@ export default function GuidePortalTab() {
               </span>
             </div>
             <h3 className="text-base md:text-lg font-black text-stone-900">
-              師弟マッチングハブ（AI相性分析・キックオフ3ステップ ＆ 安心制度）
+              師弟マッチングハブ（Discord内完結登録 ＆ AI仲人・先輩スカウト）
             </h3>
             <p className="text-stone-600 text-xs leading-relaxed">
-              教えたい師匠（Mentor）と学びたい弟子（Pupil）を繋ぐ公式掲示板です。AI相性分析や安心の申請・承諾フローに加え、迷わず始められる「キックオフ3ステップ」や「師弟の心得」、気まずくならずにリセットできる「円満解散」機能を完備しています。
+              教えたい師匠（Mentor）と学びたい弟子（Pupil）を繋ぐ公式掲示板です。Discordの <code>#🤝師弟募集</code> チャンネルの常設ボタンからワンタップで即座にエントリー可能！AI相性分析（70%以上で自動推薦）や「先輩スカウト機能」、ワンポチ指導引き受け（+300🪙）を完備しています。
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
               <div className="bg-stone-50 rounded-2xl p-3 border border-stone-200/80 text-xs text-stone-700 space-y-1">
                 <div className="font-bold text-stone-900 flex items-center gap-1 text-[11px]">
-                  <span>🎯</span> AI相性 ＆ 5大専門指導
+                  <span>💬</span> Discord完結ワンポチ登録
                 </div>
                 <p className="text-[11px] text-stone-600">
-                  相性スコア（60〜98%）自動算出。カイト、エンゲージ、ピール、ウェーブ管理などを体系化。
+                  Webログイン不要！Discordの <code>#🤝師弟募集</code> から緑/青ボタンを押すだけでモーダル入力から即登録。
                 </p>
               </div>
               <div className="bg-stone-50 rounded-2xl p-3 border border-stone-200/80 text-xs text-stone-700 space-y-1">
                 <div className="font-bold text-stone-900 flex items-center gap-1 text-[11px]">
-                  <span>🚀</span> キックオフ 3ステップ
+                  <span>🤖</span> AI仲人 ＆ 先輩スカウト
                 </div>
                 <p className="text-[11px] text-stone-600">
-                  ①挨拶＆OP.GG共有 ➔ ②目標を1つ決める ➔ ③ノーマル/カスタム1戦で迷わずスタート！
+                  相性70%以上のベストマッチを自動お見合い推薦。師匠が未登録でも頼れる先輩をAIが自動指名スカウト！
                 </p>
               </div>
               <div className="bg-stone-50 rounded-2xl p-3 border border-stone-200/80 text-xs text-stone-700 space-y-1">
                 <div className="font-bold text-stone-900 flex items-center gap-1 text-[11px]">
-                  <span>🍃</span> 期間延長 ＆ 円満解散・管理
+                  <span>🤝</span> ワンポチ指導引き受け (+300🪙)
                 </div>
                 <p className="text-[11px] text-stone-600">
-                  「⚡ そのまま実行」で即時延長、「🎓 卒業(+200🪙)」、「🍃 円満解散」、管理者による不正・不要カードの削除管理も完備。
+                  弟子カードの「師匠を引き受ける」ボタンを押すだけで、先輩登録がなくても即座にペア成立＆専用スレッド自動開設。
                 </p>
               </div>
             </div>
