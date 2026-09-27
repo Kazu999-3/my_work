@@ -146,6 +146,142 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         ]
       }
     });
+  // 🎓 師弟マッチング：弟子登録モーダル
+  if (customId === 'mentorship_apply_pupil') {
+    return Response.json({
+      type: 9,
+      data: {
+        title: "🌱 師弟マッチング：弟子入り登録 (修行希望)",
+        custom_id: "mentorship_pupil_modal",
+        components: [
+          {
+            type: 1,
+            components: [
+              {
+                type: 4,
+                custom_id: "lanes",
+                label: "希望レーン (教わりたいレーン)",
+                style: 1,
+                placeholder: "TOP / JG / MID / BOT / SUP / ALL",
+                required: true,
+                max_length: 20
+              }
+            ]
+          },
+          {
+            type: 1,
+            components: [
+              {
+                type: 4,
+                custom_id: "target_rank",
+                label: "目標ランク (目指したいランク)",
+                style: 1,
+                placeholder: "例: ゴールド / プラチナ / エメラルド",
+                required: false,
+                max_length: 20
+              }
+            ]
+          },
+          {
+            type: 1,
+            components: [
+              {
+                type: 4,
+                custom_id: "champions",
+                label: "練習したいチャンピオン (カンマ区切り)",
+                style: 1,
+                placeholder: "例: ヤスオ, ヨネ, アーリ",
+                required: false,
+                max_length: 50
+              }
+            ]
+          },
+          {
+            type: 1,
+            components: [
+              {
+                type: 4,
+                custom_id: "bio",
+                label: "学びたいこと・悩み・ひとこと意気込み",
+                style: 2,
+                placeholder: "例: CSの取り方やウェーブ管理を安定させたいです！週末夜に通話できます。",
+                required: true,
+                max_length: 500
+              }
+            ]
+          }
+        ]
+      }
+    });
+  }
+
+  // 🥋 師弟マッチング：師匠登録モーダル
+  if (customId === 'mentorship_apply_mentor') {
+    return Response.json({
+      type: 9,
+      data: {
+        title: "🥋 師弟マッチング：師匠登録 (指導者)",
+        custom_id: "mentorship_mentor_modal",
+        components: [
+          {
+            type: 1,
+            components: [
+              {
+                type: 4,
+                custom_id: "lanes",
+                label: "指導可能レーン",
+                style: 1,
+                placeholder: "TOP / JG / MID / BOT / SUP / 全レーン",
+                required: true,
+                max_length: 30
+              }
+            ]
+          },
+          {
+            type: 1,
+            components: [
+              {
+                type: 4,
+                custom_id: "champions",
+                label: "得意チャンピオン (カンマ区切り)",
+                style: 1,
+                placeholder: "例: リー・シン, ジャルヴァンIV, ザック",
+                required: false,
+                max_length: 50
+              }
+            ]
+          },
+          {
+            type: 1,
+            components: [
+              {
+                type: 4,
+                custom_id: "active_hours",
+                label: "活動・指導可能時間帯",
+                style: 1,
+                placeholder: "例: 平日21:00〜24:00 / 週末",
+                required: false,
+                max_length: 50
+              }
+            ]
+          },
+          {
+            type: 1,
+            components: [
+              {
+                type: 4,
+                custom_id: "bio",
+                label: "指導方針・アドバイスできる内容",
+                style: 2,
+                placeholder: "例: リプレイ添削やレーン戦の立ち回りを優しく教えます。初心者歓迎です！",
+                required: true,
+                max_length: 500
+              }
+            ]
+          }
+        ]
+      }
+    });
   }
 
   if (customId === 'portal_ign') {

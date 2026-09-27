@@ -220,6 +220,58 @@ export async function handleModalSubmit(interaction, env, ctx) {
     return Response.json({ type: 4, data: { content: "✅ **参加者に一括連絡（返信メンション）を送信しました**", flags: 64 } });
   }
 
+  if (customId === 'mentorship_pupil_modal' || customId === 'mentorship_mentor_modal') {
+    const isMentor = customId === 'mentorship_mentor_modal';
+    const getVal = (cid) => {
+      const row = interaction.data.components.find(c => c.components[0].custom_id === cid);
+      return row ? row.components[0].value.trim() : "";
+    };
+
+    const lanesRaw = getVal('lanes');
+    const lanes = lanesRaw
+      ? lanesRaw.split(/[,/、\s]+/).map(s => s.toUpperCase()).filter(Boolean)
+      : ['ALL'];
+    
+    const champsRaw = getVal('champions');
+    const champions = champsRaw
+      ? champsRaw.split(/[,/、\s]+/).filter(Boolean)
+      : [];
+
+    const bio = getVal('bio');
+    const targetRank = isMentor ? undefined : (getVal('target_rank') || undefined);
+    const activeHours = isMentor ? (getVal('active_hours') || undefined) : undefined;
+
+    const discordName = interaction.member?.nick || interaction.member?.user?.global_name || interaction.member?.user?.username || "Player";
+
+    ctx.waitUntil((async () => {
+      try {
+        const { fetchPortalAPI } = await import('../utils/api.js');
+        await fetchPortalAPI(env, '/api/mentorship/profiles', {
+          role_type: isMentor ? 'MENTOR' : 'PUPIL',
+          lanes,
+          champions,
+          target_rank: targetRank,
+          active_hours: activeHours,
+          bio,
+          status: 'OPEN',
+          discord_id: userId,
+          player_name: discordName,
+        });
+      } catch (err) {
+        console.error('[MentorshipModal] Error saving profile:', err);
+      }
+    })());
+
+    const roleName = isMentor ? '師匠（指導者）' : '弟子（修行希望）';
+    return Response.json({
+      type: 4,
+      data: {
+        content: `✅ **${roleName}として師弟掲示板にエントリーしました！**\n#🤝師弟募集 のダッシュボードと新着カードに反映されます。相性の良いペアが見つかるのをお楽しみに！`,
+        flags: 64
+      }
+    });
+  }
+
   if (customId.startsWith('edit_recruit_modal:')) {
     const getVal = (cid) => interaction.data.components.find(c => c.components[0].custom_id === cid).components[0].value;
     const metadata = parseMessageData(interaction.message);

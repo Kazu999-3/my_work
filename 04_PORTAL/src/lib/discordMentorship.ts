@@ -166,6 +166,31 @@ export async function syncMentorshipDashboard(): Promise<boolean> {
 
     const payload = {
       embeds: [dashboardEmbed],
+      components: [
+        {
+          type: 1, // ActionRow
+          components: [
+            {
+              type: 2, // Button
+              style: 3, // Success (Green)
+              label: '🌱 弟子入りしたい (修行希望)',
+              custom_id: 'mentorship_apply_pupil',
+            },
+            {
+              type: 2, // Button
+              style: 1, // Primary (Blurple)
+              label: '🥋 弟子を取りたい (指導者)',
+              custom_id: 'mentorship_apply_mentor',
+            },
+            {
+              type: 2, // Button
+              style: 5, // Link
+              label: '🌐 ポータルで詳細を見る',
+              url: `${PORTAL_BASE_URL}/mentorship`,
+            },
+          ],
+        },
+      ],
     };
 
     // 5. チャンネル内の既存ピン留めメッセージを探索
