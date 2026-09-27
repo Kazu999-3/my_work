@@ -553,6 +553,59 @@ export async function notifySeniorScout(params: {
 
     const content = `📢 ${seniorMention} 先輩！ ${pupilMention} さんがアドバイスを求めています！ちょっと教えてあげませんか？✨`;
 
+    const components = [
+      {
+        type: 1,
+        components: [
+          {
+            type: 2,
+            style: 3, // Green
+            label: '🤝 師匠を引き受ける (+300🪙)',
+            custom_id: `mentorship_claim_pupil:${pupilProfile.id}`,
+          },
+          {
+            type: 2,
+            style: 5, // Link
+            label: '🌐 詳細を見る',
+            url: `${PORTAL_BASE_URL}/mentorship`,
+          },
+        ],
+      },
+    ];
+
+    // 1. 先輩のDiscord ID宛てにダイレクトメッセージ(DM)を最優先で送信！
+    if (seniorPlayer.discord_id) {
+      try {
+        const dmRes = await fetch('https://discord.com/api/v10/users/@me/channels', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ recipient_id: seniorPlayer.discord_id }),
+        });
+
+        if (dmRes.ok) {
+          const dmChannel = await dmRes.json();
+          await fetch(`https://discord.com/api/v10/channels/${dmChannel.id}/messages`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              content: `📩 **【KTM 師弟スカウト】** 先輩、後輩の ${pupilProfile.player_name} さんからアドバイスを求められています！`,
+              embeds: [embed],
+              components,
+            }),
+          });
+        }
+      } catch (dmErr) {
+        console.warn('[discordMentorship] Senior scout DM send failed:', dmErr);
+      }
+    }
+
+    // 2. #🤝師弟募集 チャンネルにも公開スカウト（他の先輩も名乗り出られるように）
     const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
       method: 'POST',
       headers: {
@@ -562,25 +615,7 @@ export async function notifySeniorScout(params: {
       body: JSON.stringify({
         content,
         embeds: [embed],
-        components: [
-          {
-            type: 1,
-            components: [
-              {
-                type: 2,
-                style: 3, // Green
-                label: '🤝 師匠を引き受ける (+300🪙)',
-                custom_id: `mentorship_claim_pupil:${pupilProfile.id}`,
-              },
-              {
-                type: 2,
-                style: 5, // Link
-                label: '🌐 詳細を見る',
-                url: `${PORTAL_BASE_URL}/mentorship`,
-              },
-            ],
-          },
-        ],
+        components,
       }),
     });
 
