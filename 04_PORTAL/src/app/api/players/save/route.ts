@@ -29,6 +29,17 @@ function pick(obj: any, keys: readonly string[]) {
   return out;
 }
 
+const ECONOMY_KEYS = ['coins', 'inventory'] as const;
+
+function preserveEconomyKeys(incoming: any, current: any) {
+  const out: any = { ...incoming };
+  for (const k of ECONOMY_KEYS) {
+    delete out[k];
+    if (current && current[k] !== undefined) out[k] = current[k];
+  }
+  return out;
+}
+
 // balancer.ts はこのpity/off_role_pityを選出ペナルティの乗数に直接使う
 // (pity*10000〜20000、spectator_pity>=10で強制選出扱い等)。無認証の公開APIで
 // 数値検証が無かったため、devtools等から巨大値を送るだけで毎回の優先選出を
@@ -67,9 +78,19 @@ export async function POST(req: Request) {
     const results = await Promise.all(
       targets.map(async (p) => {
         const payload = pick(p, ALLOWED_FIELDS);
-        if (payload.metadata !== undefined && payload.metadata !== null) {
-          const { data: current } = await supabase.from('ktm_players').select('metadata').eq('id', p.id).maybeSingle();
-          payload.metadata = { ...(current?.metadata || {}), ...payload.metadata };
+        const hasPrefs = payload.role_preferences !== undefined && payload.role_preferences !== null;
+        const hasMeta = payload.metadata !== undefined && payload.metadata !== null;
+        if (hasPrefs || hasMeta) {
+          const { data: current } = await supabase.from('ktm_players').select('role_preferences, metadata').eq('id', p.id).maybeSingle();
+          // role_preferences/metadataにはコイン残高・所持品の控え(getPlayerCoins/getPlayerInventoryが
+          // 参照する)が同居している。無認証APIのため、送られてきた値は捨てて常にDBの現在値を残す
+          // (任意のコイン額・宝くじチケットを書き込めてしまっていた、2026-09-29発覚)。
+          if (hasPrefs) {
+            payload.role_preferences = preserveEconomyKeys(payload.role_preferences, current?.role_preferences);
+          }
+          if (hasMeta) {
+            payload.metadata = preserveEconomyKeys({ ...(current?.metadata || {}), ...payload.metadata }, current?.metadata);
+          }
         }
         return supabase.from('ktm_players').update(payload).eq('id', p.id);
       })

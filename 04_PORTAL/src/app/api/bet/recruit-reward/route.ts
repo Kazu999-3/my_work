@@ -1,10 +1,17 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } from '../../../../lib/playerCoins';
+import { verifyBotSecretStrict } from '../../../../lib/botAuth';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
+  // コインを発行しautoCreateで新規アカウントも作るため、ktm_bot以外からの呼び出しを拒否する
+  // (無認証で誰でもコインと1000コイン付きアカウントを量産できた、2026-09-29発覚)
+  const botAuth = verifyBotSecretStrict(req);
+  if (!botAuth.ok) {
+    return NextResponse.json({ error: botAuth.error }, { status: 401 });
+  }
   try {
     const body = await req.json();
     const { mode, ownerDiscordId, ownerName, joinedDiscordIds, joinedNames } = body;
