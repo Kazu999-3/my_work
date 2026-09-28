@@ -6,9 +6,33 @@ import { fetchAllRows } from '../../../../lib/fetchAll';
 // 各プレイヤーの通算試合数（total_games）、直近30日参加数（recent_games_30d）、最終参加日（last_played_at）を集計してマージする。
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+// 参加履歴(全件・1,200行超)は試合記録時にしか変わらないのに、毎リクエスト全件取得→集計していた
+// (応答0.8〜1.5秒の主因、2026-09-29実測)。参加者リスト本体(is_active等)は即時性が要るため
+// キャッシュせず、履歴集計の元データだけを関数インスタンス内で短時間使い回す。
+// 試合記録直後は最大 PARTICIPANTS_TTL_MS だけ通算試合数等の反映が遅れる。
+const PARTICIPANTS_TTL_MS = 60 * 1000;
+let participantsCache: { at: number; rows: any[] } | null = null;
+
+async function loadParticipants(): Promise<any[]> {
+  if (participantsCache && Date.now() - participantsCache.at < PARTICIPANTS_TTL_MS) {
+    return participantsCache.rows;
+  }
+  const { data } = await fetchAllRows((from, to) =>
+    supabase
+      .from('ktm_match_participants')
+      .select('player_name, discord_id, created_at')
+      .range(from, to)
+  );
+  const rows = data || [];
+  participantsCache = { at: Date.now(), rows };
+  return rows;
+}
+
+export async function GET(request: Request) {
   try {
-    const [{ data: players, error: pError }, { data: participants, error: mError }] = await Promise.all([
+    // ?lite=1: 名前・ランク等だけ欲しい画面(カジノの送金先候補など)向け。参加履歴の集計を省く
+    const lite = new URL(request.url).searchParams.get('lite') === '1';
+    const [{ data: players, error: pError }, participants] = await Promise.all([
       supabase
         .from('ktm_players')
         // ⚠️ 2026-09-23 修正: NG設定・こだわり・格上許可・Pity の6列が select から漏れており、
@@ -17,15 +41,13 @@ export async function GET() {
         .select('id, name, ign, discord_id, is_active, mmr, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup, highest_rank, role_preferences, ng_lane_1, ng_lane_2, weight, allow_higher, pity, off_role_pity, spectator_pity')
         .order('is_active', { ascending: false })
         .order('name', { ascending: true }),
-      fetchAllRows((from, to) =>
-        supabase
-          .from('ktm_match_participants')
-          .select('player_name, discord_id, created_at')
-          .range(from, to)
-      )
+      lite ? Promise.resolve([] as any[]) : loadParticipants(),
     ]);
 
     if (pError) throw pError;
+    if (lite) {
+      return NextResponse.json({ players: players || [] });
+    }
 
     const now = Date.now();
     const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;

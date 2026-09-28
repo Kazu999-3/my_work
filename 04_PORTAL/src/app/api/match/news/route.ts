@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { callGeminiWithRetry } from '../../../../lib/geminiClient';
+import { cachedJson } from '../../../../lib/apiCache';
 
 export const dynamic = 'force-dynamic';
 
@@ -148,7 +149,8 @@ export async function GET(req: Request) {
       winningTeam: row.payload?.winningTeam,
     }));
 
-    return NextResponse.json({ success: true, news: newsList });
+    // 試合記録時にしか増えないため60秒のCDNキャッシュで十分（トップページ表示ごとに約1秒のDB問い合わせが走っていた）
+    return cachedJson({ success: true, news: newsList }, 60);
   } catch (error: any) {
     console.error('[match/news GET] error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

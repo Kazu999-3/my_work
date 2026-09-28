@@ -225,21 +225,30 @@ export default function CasinoPage() {
       fetchInventory();
     }
 
-    // 10秒ごとのフォールバックポーリング
-    const interval = setInterval(() => {
+    const refreshLive = () => {
       fetchActiveMatch();
       fetchBetData();
+    };
+
+    // 10秒ごとのフォールバックポーリング。各APIは約1秒かかるため、タブが裏にある間は
+    // 止め、表に戻った瞬間に1回取り直す（2026-09-29: 非表示タブでも回り続けていた）
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') refreshLive();
     }, 10000);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') refreshLive();
+    };
+    document.addEventListener('visibilitychange', onVisible);
 
     // 🎲 Supabase Realtime による試合確定・ベット受付の即時同期
+    // edge_tasksは解析ワーカー等も頻繁に書き込むため、カジノに関係するタスク種別だけを購読する
+    // （以前はテーブル全体を購読しており、無関係な書き込みでも2本のAPIを叩き直していた）
     let channel: any = null;
     try {
       channel = supabase
         .channel('realtime-casino')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'edge_tasks' }, () => {
-          fetchActiveMatch();
-          fetchBetData();
-        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'edge_tasks', filter: 'task_type=eq.balancer_pending' }, refreshLive)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'edge_tasks', filter: 'task_type=eq.custom_bet' }, refreshLive)
         .subscribe();
     } catch (rErr) {
       console.warn('[casino] Realtime subscription warning:', rErr);
@@ -247,6 +256,7 @@ export default function CasinoPage() {
 
     return () => {
       clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
       if (channel) {
         supabase.removeChannel(channel);
       }
@@ -293,7 +303,8 @@ export default function CasinoPage() {
 
   const fetchPlayersList = async () => {
     try {
-      const res = await fetch('/api/players/list');
+      // 送金先候補には名前とランクしか使わないため、参加履歴の集計を省く軽量版を使う
+      const res = await fetch('/api/players/list?lite=1');
       if (res.ok) {
         const data = await res.json();
         const players = (data.players || []).map((p: any) => ({

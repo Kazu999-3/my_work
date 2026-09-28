@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://ktm-portal.vercel.app';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://my-work-8jbd.vercel.app';
 
   return {
     rules: [
