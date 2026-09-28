@@ -78,11 +78,8 @@ export async function GET(req: Request) {
       ? player.highest_rank 
       : (player?.mmr ? (player.mmr >= 2000 ? 'DIAMOND' : player.mmr >= 1700 ? 'EMERALD' : player.mmr >= 1500 ? 'PLATINUM' : player.mmr >= 1300 ? 'GOLD' : 'SILVER') : 'GOLD');
 
-    const adminIds = (process.env.ADMIN_DISCORD_IDS || '697220229964759130')
-      .split(',')
-      .map((s) => s.trim());
-
-    const isAdmin = adminIds.includes(discordUser.id) || discordUser.id === '697220229964759130' || discordUser.username === 'kazuki' || displayName?.includes('かずき');
+    const { encodeUserSession, isAdminDiscordId, USER_SESSION_COOKIE, USER_SESSION_MAX_AGE_SEC } = await import('../../../../../lib/userSession');
+    const isAdmin = isAdminDiscordId(discordUser.id);
 
     // 4. セッションオブジェクト作成
     const sessionData = {
@@ -98,15 +95,16 @@ export async function GET(req: Request) {
       loggedInAt: Date.now(),
     };
 
-    const sessionCookieVal = Buffer.from(JSON.stringify(sessionData)).toString('base64');
+    const sessionCookieVal = encodeUserSession(sessionData);
 
     const response = NextResponse.redirect(`${baseUrl}${returnTo}`);
-    response.cookies.set('ktm_user_session', sessionCookieVal, {
+    response.cookies.set(USER_SESSION_COOKIE, sessionCookieVal, {
       path: '/',
-      httpOnly: false, // クライアントJSでも読み取れるように
+      // クライアントJSからこのCookieを読む箇所は無い(ユーザー情報は/api/auth/me経由)ためHttpOnlyにする
+      httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 30, // 30日間
+      maxAge: USER_SESSION_MAX_AGE_SEC,
     });
 
     // 管理者の場合は管理者セッションCookie(admin_session)も発行してセット

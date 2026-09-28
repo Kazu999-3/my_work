@@ -1,26 +1,16 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { findOrCreatePlayer, getPlayerCoins } from '../../../../lib/playerCoins';
+import { decodeUserSession, isAdminDiscordId, USER_SESSION_COOKIE } from '../../../../lib/userSession';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
     const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get('ktm_user_session')?.value;
-
-    if (!sessionCookie) {
-      return NextResponse.json({ user: null });
-    }
-
-    let sessionData: any = null;
-    try {
-      sessionData = JSON.parse(Buffer.from(sessionCookie, 'base64').toString('utf-8'));
-    } catch {
-      return NextResponse.json({ user: null });
-    }
-
-    if (!sessionData || !sessionData.discordId) {
+    // 署名検証に失敗した(旧形式の無署名Cookieを含む)場合は未ログイン扱い
+    const sessionData = decodeUserSession(cookieStore.get(USER_SESSION_COOKIE)?.value);
+    if (!sessionData) {
       return NextResponse.json({ user: null });
     }
 
@@ -31,10 +21,7 @@ export async function GET() {
       autoCreate: true,
     });
 
-    const adminIds = (process.env.ADMIN_DISCORD_IDS || '697220229964759130')
-      .split(',')
-      .map((s) => s.trim());
-    const isAdmin = adminIds.includes(sessionData.discordId) || sessionData.discordId === '697220229964759130' || sessionData.username === 'kazuki' || player?.name?.includes('かずき');
+    const isAdmin = isAdminDiscordId(sessionData.discordId);
 
     // 日本時間基準で今日のデイリーボーナス受取状況を判定
     const todayStr = new Intl.DateTimeFormat('ja-JP', {

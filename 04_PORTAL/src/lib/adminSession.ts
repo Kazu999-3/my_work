@@ -7,6 +7,7 @@
  * Discord OAuth (adminAuth.ts の verifyAdminSession) には依存しない。
  */
 import { createHmac, timingSafeEqual } from 'crypto';
+import { decodeUserSession, isAdminDiscordId } from './userSession';
 
 const COOKIE_NAME = 'admin_session';
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7日間（モバイルでの操作頻度が低く12時間だと頻繁に切れていたため延長）
@@ -73,12 +74,12 @@ export async function verifyAdminSession(req: Request): Promise<{ ok: boolean; e
   if (verifySessionToken(token)) return { ok: true };
 
   // Discord OAuth2 ログインセッション (ktm_user_session) の管理者チェック
+  // (署名検証済みのセッションのみ。以前は無署名のJSONを信用しており偽造できた、2026-09-29修正)
   try {
     const discordMatch = cookieHeader.match(/ktm_user_session=([^;]+)/);
     if (discordMatch) {
-      const raw = Buffer.from(decodeURIComponent(discordMatch[1]), 'base64').toString('utf-8');
-      const session = JSON.parse(raw);
-      if (session && (session.isAdmin || session.discordId === '697220229964759130' || session.id === '697220229964759130')) {
+      const session = decodeUserSession(decodeURIComponent(discordMatch[1]));
+      if (session && isAdminDiscordId(session.discordId)) {
         return { ok: true };
       }
     }

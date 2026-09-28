@@ -1,8 +1,6 @@
 import { cookies } from 'next/headers';
 import { supabaseAdmin as supabase } from './supabaseAdmin';
-
-// 管理者Discord IDリスト（環境変数または固定オーナーID）
-const OWNER_DISCORD_ID = '697220229964759130';
+import { decodeUserSession, isAdminDiscordId, USER_SESSION_COOKIE } from './userSession';
 
 export interface AuthSession {
   discordId: string;
@@ -20,21 +18,12 @@ export interface AuthSession {
 export async function getAuthSession(): Promise<AuthSession | null> {
   try {
     const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get('ktm_user_session')?.value;
-    if (!sessionCookie) return null;
-
-    const parsed = JSON.parse(Buffer.from(sessionCookie, 'base64').toString('utf-8'));
-    if (!parsed || (!parsed.discordId && !parsed.username && !parsed.displayName)) return null;
-
-    const adminIds = (process.env.ADMIN_DISCORD_IDS || OWNER_DISCORD_ID)
-      .split(',')
-      .map((s) => s.trim());
-
-    const isAdmin = adminIds.includes(parsed.discordId) || parsed.discordId === OWNER_DISCORD_ID || parsed.username === 'kazuki' || parsed.displayName?.includes('かずき');
+    const parsed = decodeUserSession(cookieStore.get(USER_SESSION_COOKIE)?.value);
+    if (!parsed) return null;
 
     return {
       ...parsed,
-      isAdmin,
+      isAdmin: isAdminDiscordId(parsed.discordId),
     };
   } catch (err) {
     console.warn('[authGuard] Failed to parse session:', err);

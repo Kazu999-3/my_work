@@ -54,31 +54,38 @@ async function isValidAdminSession(token: string | undefined, secret: string): P
   return Date.now() < Number(match[1]);
 }
 
-function isValidDiscordAdminSession(sessionCookie: string | undefined): boolean {
+// lib/userSession.ts と同じ「base64url(JSON).HMAC("user:"+base64url)」形式を検証する。
+// 以前は無署名のJSONを信用しており、Cookieを手書きするだけで管理画面に入れた(2026-09-29修正)。
+const USER_SESSION_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+const OWNER_DISCORD_ID = '697220229964759130';
+
+function decodeBase64UrlUtf8(encoded: string): string {
+  const b64 = encoded.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(encoded.length / 4) * 4, '=');
+  const bin = atob(b64);
+  const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+async function isValidDiscordAdminSession(sessionCookie: string | undefined, secret: string): Promise<boolean> {
   if (!sessionCookie) return false;
   try {
-    const raw = decodeURIComponent(sessionCookie);
-    let jsonStr: string;
-    if (typeof atob === 'function') {
-      jsonStr = atob(raw);
-    } else if (typeof Buffer !== 'undefined') {
-      jsonStr = Buffer.from(raw, 'base64').toString('utf-8');
-    } else {
-      return false;
-    }
-    const session = JSON.parse(jsonStr);
-    if (!session) return false;
-    if (
-      session.isAdmin ||
-      session.discordId === '697220229964759130' ||
-      session.id === '697220229964759130'
-    ) {
-      return true;
-    }
+    const value = decodeURIComponent(sessionCookie);
+    const lastDot = value.lastIndexOf('.');
+    if (lastDot <= 0) return false;
+    const encoded = value.slice(0, lastDot);
+    const signature = value.slice(lastDot + 1);
+    const expected = await hmacSha256Hex(secret, `user:${encoded}`);
+    if (!timingSafeEqualHex(signature, expected)) return false;
+
+    const session = JSON.parse(decodeBase64UrlUtf8(encoded));
+    if (!session || typeof session.discordId !== 'string') return false;
+    if (typeof session.loggedInAt !== 'number' || Date.now() - session.loggedInAt > USER_SESSION_MAX_AGE_MS) return false;
+
+    const adminIds = (process.env.ADMIN_DISCORD_IDS || OWNER_DISCORD_ID).split(',').map((s) => s.trim()).filter(Boolean);
+    return adminIds.includes(session.discordId) || session.discordId === OWNER_DISCORD_ID;
   } catch {
     return false;
   }
-  return false;
 }
 
 export async function proxy(req: NextRequest) {
@@ -117,7 +124,7 @@ export async function proxy(req: NextRequest) {
 
   // Discord OAuth2 ログインセッション (ktm_user_session) の管理者チェック
   const discordSession = req.cookies.get('ktm_user_session')?.value;
-  if (isValidDiscordAdminSession(discordSession)) {
+  if (await isValidDiscordAdminSession(discordSession, secret)) {
     return NextResponse.next();
   }
 
