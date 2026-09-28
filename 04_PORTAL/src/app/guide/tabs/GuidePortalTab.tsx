@@ -77,7 +77,7 @@ export default function GuidePortalTab() {
           </div>
         </div>
 
-        {/* 2. チーム分けバランサー ＆ AIドラフト・観戦HUD */}
+        {/* 2. チーム分けバランサー */}
         <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -85,32 +85,24 @@ export default function GuidePortalTab() {
                 ⚖️
               </div>
               <span className="text-[11px] font-bold text-cyan-800 bg-cyan-100 px-2.5 py-1 rounded-full">
-                AI軍師 ＆ 観戦HUD新設 ✨
+                お祭り機能追加 ✨
               </span>
             </div>
-            <h3 className="text-base font-black text-stone-900">チーム分けバランサー ＆ AIドラフト・観戦HUD</h3>
+            <h3 className="text-base font-black text-stone-900">チーム分けバランサー</h3>
             <p className="text-stone-600 text-xs leading-relaxed">
-              MMRや希望ロールをもとに実力差を最小化する公平な5v5チーム分けを自動生成。さらにチーム確定直後のAIドラフト相談やテレビ中継風の観戦オーバーレイが連動！
+              MMRや希望ロールをもとに実力差を最小化する公平な5v5チーム分けを自動生成。ワンクリックで全員のOP.GG一括コピーやカスタムリンク生成が可能です。
             </p>
             <div className="bg-stone-50 rounded-2xl p-3.5 border border-stone-200/80 text-xs text-stone-700 space-y-1.5">
               <div className="font-bold text-stone-800 flex items-center gap-1.5 text-[11px]">
                 <Swords size={13} className="text-cyan-600" />
-                最新の注目機能
+                主な機能
               </div>
-              <p>・🤖 <strong>AIドラフト軍師</strong>: ワンクリックで相手の得意ピックを突く推奨BAN 2体＆シナジー構成をGeminiが提示</p>
-              <p>・⚔️ <strong>観戦Webオーバーレイ (/balancer/spectate)</strong>: OBSや配信・観戦者向けのテレビ中継風フルスクリーン対面HUD</p>
               <p>・🎲 <strong>お祭りロールランダム</strong>: 10人のロールをランダムにシャッフルしつつチーム間MMRを拮抗させる新機能</p>
               <p>・ワンクリックで全員の<strong>OP.GG一括コピー</strong>＆カスタムリンク生成</p>
+              <p>・確定した対戦カードはポータルトップの<strong>スタジアムビュー</strong>にリアルタイム掲示</p>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between">
-            <Link
-              href="/balancer/spectate"
-              target="_blank"
-              className="text-xs font-bold text-stone-500 hover:text-stone-800 flex items-center gap-1"
-            >
-              観戦HUDを見る ↗
-            </Link>
+          <div className="mt-4 pt-3 border-t border-stone-100">
             <Link
               href="/balancer"
               className="text-xs font-black text-cyan-700 hover:text-cyan-900 flex items-center gap-1 group-hover:translate-x-1 transition"
