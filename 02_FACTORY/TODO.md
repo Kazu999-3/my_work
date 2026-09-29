@@ -965,6 +965,24 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
       - 検証: `npx tsc --noEmit` エラー0 / `npm test` 全パス。
 - [ ] **`match/record` の無認証コイン発行**（未対応）。試合記録と同時にコインを発行する経路に認証が無い。
 
+- [x] **Dependabot の脆弱性2件（`ip-address`）を解消**（2026-09-29）
+  - 依存元は **`@google/clasp`**（Google Apps Script CLI）→ MCP SDK → express-rate-limit → ip-address。
+  - **clasp は完全に未使用**だった: `.clasp.json` / `appsscript.json` が存在せず、npm scripts でも使われず、
+    このディレクトリに Apps Script のソースも無い。`fetchGAS`（`config.js` の `GAS_URL` へ `fetch`）は
+    単なるHTTPリクエストなので clasp は不要。→ **devDependency から削除**して2件とも解消。
+  - `dependencies` は元から空で、Worker本番バンドルには何も同梱されないため**本番への影響は元々ゼロ**だった。
+  - 検証: `npm ls ip-address` → empty / `wrangler deploy --dry-run` 成功（267.97 KiB）。
+- [ ] **`wrangler` 由来の moderate 3件は意図的に放置**（2026-09-29 判断）
+  - 実体は1つの原因: `undici` の「WebSocket permessage-deflate 解凍時のDoS」。`wrangler` → `miniflare` → `undici`。
+  - **npmの提案は `wrangler` を 4.101.0 へダウングレード**（`isSemVerMajor: true`＝破壊的変更）。これは採らない。
+    - `wrangler` は devDependency で、`miniflare`/`undici` が動くのは**ローカルの `wrangler dev` とCIのビルド時のみ**。
+      本番Workerランタイムには含まれない。
+    - 脆弱性は「信頼できないクライアントからのWebSocket接続を受ける場合」のDoSで、localhost開発では該当しない。
+    - 過去に wrangler 3.x→4.x のメジャー更新で**本番デプロイが実際に失敗した経緯**があり（2026-08-08、Node 22必須）、
+      デプロイ経路を壊すリスクの方が明確に大きい。
+  - **再評価の条件**: 上流が 4.12x 系で `undici` を上げたら普通に `npm update wrangler` で解消する。
+    それまでは `npm audit` にこの3件が出続けるが既知として扱う（`npm audit fix --force` を実行しないこと）。
+
 ---
 
 ## 🔍 Discord Bot 静的監査の結果（2026-09-29）
