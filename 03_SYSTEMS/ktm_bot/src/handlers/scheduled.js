@@ -85,53 +85,22 @@ export async function handleScheduledEvent(event, env, ctx) {
   }
 }
 
-/** 開始予定時刻が近い(=数分〜15分以内)募集の参加者にメンションでリマインドする(D1) */
-async function sendRecruitmentReminders(env) {
-  try {
-    const now = Date.now();
-    const minIso = new Date(now - 5 * 60 * 1000).toISOString();  // 5分前まで（開始直後の取りこぼし救済）
-    const maxIso = new Date(now + 15 * 60 * 1000).toISOString(); // 15分後まで（10分間隔cronで確実に1回拾う）
-    const q = `status=eq.open&reminded=eq.false&start_at=not.is.null&start_at=gte.${minIso}&start_at=lte.${maxIso}&select=*`;
-    const rows = await fetchSupabase(env, 'recruitments', q);
-    if (!rows || rows.length === 0) return;
-
-    for (const r of rows) {
-      try {
-        // 元の募集メッセージを取得して参加者を復元
-        const msgRes = await fetch(`https://discord.com/api/v10/channels/${r.discord_channel_id}/messages/${r.discord_message_id}`, {
-          headers: { "Authorization": `Bot ${env.DISCORD_TOKEN}` }
-        });
-        if (!msgRes.ok) {
-          // メッセージが削除済み等 → 二度と拾わないよう既送信扱いにする
-          await markReminded(env, r.discord_message_id);
-          continue;
-        }
-        const msg = await msgRes.json();
-        const meta = parseMessageData(msg);
-        const ids = [...new Set([meta.owner, ...(meta.joined || [])])].filter(Boolean);
-        const mentions = ids.map(id => `<@${id}>`).join(' ');
-        const timeText = meta.time ? `（開始予定 ${meta.time}）` : '';
-
-        await fetch(`https://discord.com/api/v10/channels/${r.discord_channel_id}/messages`, {
-          method: "POST",
-          headers: { "Authorization": `Bot ${env.DISCORD_TOKEN}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            content: `⏰ **まもなく開始予定です！**${timeText}\n参加者は集合をお願いします 🎮\n${mentions}`.trim(),
-            message_reference: { message_id: r.discord_message_id },
-            allowed_mentions: { users: ids.slice(0, 100) }
-          })
-        });
-
-        await markReminded(env, r.discord_message_id);
-      } catch (e) {
-        console.error(`Recruitment reminder failed (msg ${r.discord_message_id}):`, e);
-      }
-    }
-  } catch (err) {
-    console.error("sendRecruitmentReminders error:", err);
-  }
-}
-
+// ⚠️ 2026-09-29: `sendRecruitmentReminders`（開始15分前のメンションリマインド）と
+// その専用ヘルパー `markReminded` をここから削除した。
+//
+// 削除理由:
+//  1. 定義だけで**呼び出し元が一度も存在しなかった**（2026-09-23発見。以来ずっと死んだコード）。
+//  2. 復活させる先が無い。15分の窓を狙うには時刻の正確なcronが必要だが、
+//     Cloudflareの無料枠cronは**5本上限で既に満杯**。GitHub Actionsは枠が無限だが
+//     実測で毎回1〜5時間遅れて発火するため、-5〜+15分の窓にはほぼ入らない。
+//     配線しても「動いているように見えて実際は発火しない」状態になり、
+//     [[project-orphaned-automation-pattern]] を別の形で作るだけになる。
+//  3. 役割は代替できた。**punctualな土日20:00のCloudflare cron**（開催判定）で
+//     開催確定時に参加者メンションを出すようにした（上記 checkCustomStatusAt2000 の分岐A）。
+//     開始1時間前になるが、確実に届く方が15分前で届かないより価値が高い。
+//
+// `recruitments.reminded` 列はこれで未使用になるが、DBからは消していない
+// （他から参照されておらず害は無く、将来punctualな枠が確保できたら再利用できる）。
 /** 投稿から6時間以上経過したオープンなアドホック（ノーマル/ARAM/都度カスタム）募集を静かに受付終了にする（通知なし） */
 async function cleanupStaleAdhocRecruitments(env) {
   try {
@@ -165,17 +134,6 @@ async function cleanupStaleAdhocRecruitments(env) {
     }
   } catch (e) {
     console.warn('[AutoClose] アドホック募集の自動クローズに失敗:', e);
-  }
-}
-
-async function markReminded(env, messageId) {
-  try {
-    await fetchSupabase(env, 'recruitments', `discord_message_id=eq.${messageId}`, 'PATCH', {
-      reminded: true,
-      updated_at: new Date().toISOString(),
-    });
-  } catch (e) {
-    console.error("markReminded failed:", e);
   }
 }
 
@@ -1334,15 +1292,27 @@ export async function checkCustomStatusAt2000(env) {
     // A. 開催確定（募集カードへの返信として投稿）
     if (firstMatchCount >= DAY_CAPACITY) {
       const confirmChannelId = summary.channelId || channelId;
+      // ⚠️ 2026-09-29追加: 以前は開催確定時に**参加者へのメンションが無かった**。
+      // 中止のときだけメンションしており、「開催される側」は返信に気づかないと集合できない
+      // 非対称な状態だった（開催確定こそ集合の合図が要る）。中止側と同じ方式で当事者だけに鳴らす。
+      // なお `sendRecruitmentReminders`（開始15分前リマインド）は呼び出し元ゼロの死んだ関数で、
+      // punctualなcron枠が無く実装できないため削除した。その役割はここが担う。
+      const attendeeIds = [...new Set(
+        summary.lines.flatMap((l) => [...l.matchAll(/<@!?(\d+)>/g)].map((m) => m[1]))
+      )].slice(0, 100);
+      const attendeeMentions = attendeeIds.length > 0
+        ? `\n\n集合をお願いします 🎮 ${attendeeIds.map((id) => `<@${id}>`).join(' ')}`
+        : '';
       await fetchWithRetry(`https://discord.com/api/v10/channels/${confirmChannelId}/messages`, {
         method: 'POST',
         headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          content: `🎉 **【本日20:00 判定: 開催確定！】**\n${def.emoji} **${def.name}** は第1戦メンバーが${firstMatchCount}名集まりました！21:00より開始します。ポータルのバランサーでチーム分けを行います。`,
+          content: `🎉 **【本日20:00 判定: 開催確定！】**\n${def.emoji} **${def.name}** は第1戦メンバーが${firstMatchCount}名集まりました！21:00より開始します。ポータルのバランサーでチーム分けを行います。${attendeeMentions}`,
+          allowed_mentions: { users: attendeeIds },
           ...(summary.messageId ? { message_reference: { message_id: summary.messageId, fail_if_not_exists: false } } : {})
         })
       });
-      console.log('[Check2000] 開催確定通知を募集カードへの返信として投稿しました');
+      console.log(`[Check2000] 開催確定通知を募集カードへの返信として投稿しました（通知対象 ${attendeeIds.length}名）`);
       return;
     }
 
