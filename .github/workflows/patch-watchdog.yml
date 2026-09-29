@@ -1,0 +1,85 @@
+name: Riot Patch Watchdog
+
+# DataDragon の最新パッチを巡回し、差分チャンピオンを抽出して検証キューを更新する
+# (scripts/check_patch_update.py)。
+#
+# 【なぜ新設したか】2026-09-30
+#   02_FACTORY/AUTOMATION_MAP.md には「GitHub Actions 1日2回」と書かれていたが、
+#   実際にはどのワークフローにも登録されていなかった。その結果
+#   01_INTEL/_LOL/current_patch.json の記録が 16.18.1（最終確認 2026-09-18）で止まり、
+#   公式最新 16.19.1 との差分検知・検証キュー更新・Discord速報が自動では一度も
+#   走っていなかった。
+#
+#   なお pulse.yml の「パッチ更新の検知」(pulse.check_lol_patches) はこれとは別物で、
+#   公式パッチノートのHTMLを見て前回URLを self.last_patch_url に持つ実装のため、
+#   単発実行では毎回「初回」扱いになり通知条件に入らない（クラウドでは検知できない）。
+#   DataDragon の versions.json ＋ current_patch.json による永続的な比較を行う
+#   こちらを、パッチ検知の正規の経路とする。
+#
+# 【依存】check_patch_update.py / notify_discord.py はどちらも標準ライブラリのみで
+#   動作するため pip install は不要。requirements.txt の導入を挟まないぶん高速で、
+#   依存の破損で番犬が止まることもない。
+#
+# 【書き込み先】実行すると以下がリポジトリ内で更新されるため、コミットして永続化する。
+#   - 01_INTEL/_LOL/current_patch.json          （記録パッチ）
+#   - 01_INTEL/_LOL/patch_modified_champions.json（差分チャンピオン）
+#   - 02_FACTORY/_LOL/champion_update_queue.json （検証キュー: review_needed へ）
+#   ※キューの status（suspended 等）は書き換えないため、停止中のパイプラインが
+#     これによって勝手に再開することはない。
+
+on:
+  schedule:
+    # 1日2回。JST 15:20 / 07:20。既存ジョブと同じ分に重ならない時刻を選んでいる。
+    - cron: '20 6,22 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: '実行モード'
+        required: true
+        default: 'apply'
+        type: choice
+        options:
+          - apply       # 検知・記録更新・キュー更新・Discord通知まで実行
+          - dry-run     # 書き込みと通知を行わない
+          - check-only  # 判定のみ（差分検知もしない）
+
+permissions:
+  contents: write   # 記録パッチ・キューの更新をコミットで永続化するため
+
+jobs:
+  patch-watchdog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+
+      - name: Run patch watchdog
+        env:
+          # notify_discord.py が読むのは DISCORD_WEBHOOK_URL。
+          # 他のワークフローは DISCORD_WEBHOOK という名前で同じシークレットを
+          # 渡しているが、あちらは各スクリプトが自前で DISCORD_WEBHOOK を読むため。
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          case "${{ github.event.inputs.mode }}" in
+            check-only) FLAGS="--check-only" ;;
+            dry-run)    FLAGS="--dry-run" ;;
+            *)          FLAGS="" ;;   # scheduleでの実行はinputsが空になるのでここに来る
+          esac
+          echo "実行モード: ${{ github.event.inputs.mode || 'apply (schedule)' }}"
+          python scripts/check_patch_update.py $FLAGS
+
+      - name: Commit patch record and queue progress
+        run: |
+          git config --global user.name 'KTM Patch Watchdog'
+          git config --global user.email 'actions@ktm.local'
+          git add 01_INTEL/_LOL/current_patch.json \
+                  01_INTEL/_LOL/patch_modified_champions.json \
+                  02_FACTORY/_LOL/champion_update_queue.json || true
+          git commit -m "chore: パッチ記録と検証キューの更新を保存 [skip ci]" || echo "変更なし"
+          git push || echo "プッシュ対象なし"

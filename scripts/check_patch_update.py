@@ -250,11 +250,26 @@ def notify_patch_change(old_patch, new_patch, dry_run=False):
         cmd.append("--dry-run")
 
     print(f"  📢 Discord 通知実行中...")
+    # 終了コードを見ずに stdout を流すだけだと、Webhook未設定や送信失敗でも
+    # 成功したように見えてしまう（この調査で最も多く見つかった型）。
+    # 番犬が黙って通知を落としていると新パッチに気づけないため、明示的に判定する。
     try:
         res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
-        print(res.stdout)
+        if res.stdout:
+            print(res.stdout.rstrip())
+        if res.returncode != 0:
+            print(f"[ERROR] Discord通知が失敗しました (exit={res.returncode})")
+            if res.stderr:
+                print(f"        stderr: {res.stderr.strip()[-500:]}")
+            return False
+        if dry_run:
+            print("  🔍 [DRY-RUN] 実際には送信していません。")
+        else:
+            print("  ✅ Discord通知を送信しました。")
+        return True
     except Exception as e:
         print(f"[ERROR] 通知失敗: {e}")
+        return False
 
 def check_patch(force=False, dry_run=False, check_only=False):
     print("=" * 65)

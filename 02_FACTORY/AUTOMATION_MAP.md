@@ -38,6 +38,7 @@ grep -A12 "\[triggers\]" 03_SYSTEMS/ktm_bot/wrangler.toml
 | **Sovereign DB Sync**<br>(`sync.yml`) | 毎日 13:00 | `0 4 * * *` | ローカル資産とSupabaseの同期 | `03_SYSTEMS/v2_CORE/sovereign_sync.py` |
 | **Database Backup**<br>(`db-backup.yml`) | 毎日 03:00 | `0 18 * * *` | `pg_dump` による論理バックアップ（Supabase無料プランはPITRが使えないため） | Supabase → Artifact |
 | **KTM Bot Cron Backup**<br>(`ktm-bot-cron-backup.yml`) | 毎週水 12:07 | `7 3 * * 3` | Cloudflare Cronの発火漏れ（best-effort）に対する保険。`/trigger-scheduled` を冗長キック | ktm-os-worker |
+| **Riot Patch Watchdog**<br>(`patch-watchdog.yml`) | 1日2回<br>07:20 / 15:20 | `20 6,22 * * *` | DataDragon最新パッチの巡回検知、差分チャンピオン抽出、検証キュー更新（`review_needed`）、Discord速報。記録は `current_patch.json` にコミットで永続化 | `scripts/check_patch_update.py` |
 | **Champion Dictionary Bulk Update**<br>(`champ-dict-update.yml`) | 毎週月 03:00 | `0 18 * * 0` | チャンピオン辞典の一括更新 | `champ_db_bulk_updater.py` |
 | **Champion Lane Role Update**<br>(`lane-role-update.yml`) | 毎週水 03:00 | `0 18 * * 2` | チャンピオンのレーン適性データ更新 | `lane_role_collector.py` |
 | **Riot Jungle Timing Update**<br>(`riot-jungle-timing-update.yml`) | 毎週金 03:00 | `0 18 * * 4` | ジャングル周回タイミングの実測データ更新 | `junglepedia_clear_collector.py`<br>`riot_jungle_timing_collector.py` |
@@ -98,7 +99,8 @@ grep -A12 "\[triggers\]" 03_SYSTEMS/ktm_bot/wrangler.toml
 
 | スクリプト | 本来の役割 | 現状 |
 |---|---|---|
-| `scripts/check_patch_update.py` | DataDragon最新パッチの巡回検知、差分チャンピオン抽出、検証キュー更新、Discord速報 | ⚠️ **どのワークフロー・Cronにも登録されていない**。旧版のこのファイルには「GitHub Actions 1日2回」と書かれていたが事実ではなかった。<br>実害: `01_INTEL/_LOL/current_patch.json` の記録が **16.18.1（最終確認 2026-09-18）** のまま止まり、公式最新 16.19.1 との差分検知・キュー更新・Discord速報が自動では一度も走っていない。手動実行（`py scripts/check_patch_update.py`）で追いつく必要がある。 |
+| `scripts/check_patch_update.py` | DataDragon最新パッチの巡回検知、差分チャンピオン抽出、検証キュー更新、Discord速報 | ✅ **2026-09-30に `patch-watchdog.yml` を新設して解消**。それまではどのワークフローにも登録されておらず（旧版のこのファイルには「GitHub Actions 1日2回」と書かれていたが事実ではなかった）、`current_patch.json` の記録が 16.18.1（最終確認 2026-09-18）で止まっていた。 |
+| `pulse.check_lol_patches()`<br>(`pulse.yml` の第1ステップ) | 公式パッチノートHTMLの巡回 | ⚠️ **単発実行では構造的に検知できない**。前回URLを `self.last_patch_url` にメモリで保持し、`last_patch_url is not None` のときだけ通知する実装のため、6時間おきの単発実行では毎回「初回」扱いで何もせず終了する（2026-09-30確認）。パッチ検知の正規の経路は上記 `patch-watchdog.yml`。 |
 | `scripts/ops_health_check.py` | 上記の記録パッチと公式最新の乖離を含む、運用状態の点検 | ⚠️ 同様にどのワークフローにも登録されていない。パッチ番犬の停止を検知できるはずの点検自体も自動実行されていない。 |
 
 ---

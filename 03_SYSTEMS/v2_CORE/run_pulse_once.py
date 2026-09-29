@@ -27,7 +27,14 @@ def main() -> int:
     failures = []
 
     steps = [
-        ("パッチ更新の検知", lambda: pulse.check_lol_patches()),
+        # ⚠️ check_lol_patches は「前回見たパッチノートURL」を self.last_patch_url に
+        # メモリで保持し、値が変わったときだけ通知する実装。単発実行では毎回 None から
+        # 始まるため通知条件（last_patch_url is not None）に入らず、クラウドでは
+        # パッチを検知できない（2026-09-30確認）。ここは公式パッチノートHTMLの
+        # 巡回として残すが、パッチ検知の正規の経路は DataDragon の versions.json と
+        # current_patch.json を比較する scripts/check_patch_update.py
+        # （.github/workflows/patch-watchdog.yml で1日2回実行）である。
+        ("パッチ更新の検知(単発実行では通知条件に入らない)", lambda: pulse.check_lol_patches()),
         ("LoLalytics統計の取得", lambda: pulse.check_lolalytics_stats()),
         ("Discordメンバー同期", lambda: asyncio.run(pulse.sync_server_members())),
     ]
