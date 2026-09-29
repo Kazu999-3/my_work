@@ -1376,3 +1376,54 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
 
 - [ ] **`pending_match_sync` も0行**（2026-09-23 発見）
   - Botが書き込むもう一方のテーブル。`recruitments` と同じ理由（Worker の鍵に書き込み権限が無い）で一度も記録できていないとみられる。試合終了後の match-sync 予約がどこまで機能しているか未確認。Worker の鍵を差し替えたら、こちらも記録されるようになるか確認すること。
+
+---
+
+## 🧹 Discordコマンドを21名称 → 9名称へ整理（2026-09-29・ユーザー判断）
+
+**発端**: 「使ってない不要なコマンドがある」という指摘。実装11機能に対しコマンド名が21種あり、
+Discordの選択欄に21個並んで初見のメンバーが選べない状態だった。
+
+### 削除したもの（13名称）
+
+| 区分 | コマンド | 理由 |
+|---|---|---|
+| 機能ごと廃止 | `/welcome` `/welcome-panel` | `getWelcomeEmbed()` が `getPortalEmbed()` をそのまま返す実装で、**`/portal` と表示が完全に同一**だった |
+| 機能ごと廃止 | `/roulette` | チャンピオン抽選。`handlers/roulette.js`（376行）ごと削除 |
+| 機能ごと廃止 | `/memo` | ナレッジ登録。使用実績が確認できず。**副産物として、この関数が唯一の呼び出し元だったポータル管理API `/api/admin/knowledge/add` への無認証POSTも消えた** |
+| 機能ごと廃止 | `/patch` | パッチ情報。`handlers/patchNoteSummary.js` ごと削除 |
+| エイリアス廃止 | `/panel` `/command` `/ktm_portal` → `/portal` | 4つが完全に同じものだった |
+| エイリアス廃止 | `/bet` → `/coins` | **「賭ける」と誤解されるのに残高表示**だったので特に紛らわしい |
+| エイリアス廃止 | `/rich` → `/casino` / `/send-coins` → `/tip` / `/award` → `/ranking` | 1機能1名称へ |
+| 幽霊 | `anchan_chat` | 実装が無いのに登録されている疑い（`99_ARCHIVE` に登録スクリプトだけ残っていた） |
+
+**維持9名称**: `/portal` `/ign` `/lane` `/recruit` `/stats` `/ranking` `/coins` `/casino` `/tip`
+
+### 登録解除ツールを新設（幽霊コマンド化の防止）
+
+- **コードを消しただけではDiscord側の登録は消えない**（選択欄に出続け、押しても無反応になる）。
+  `03_SYSTEMS/TOOLS/unregister_discord_commands.mjs` を新設した。
+- ⚠️ **一括PUTは使っていない**。Discordの一括登録は「渡したリストに無いコマンドを全削除」するため、
+  現状把握が不十分なまま実行すると生きているコマンドを消す。**名前を明示した個別DELETE**にしてある。
+  `KEEP` リストとの重複チェックも入れた二重の安全ネット付き。
+- グローバルと参加中の全ギルドを走査する（片方だけ残る事故の防止）。既定はドライランで `--apply` で実行。
+
+### 散在していた登録スクリプトも整理
+
+**「実行すると削除したコマンドが復活する」罠を除去した**:
+
+- `TOOLS/register_portal_commands.js` … 削除した `/welcome` を登録していたので該当部分を除去
+- ~~`TOOLS/register_memo_command.py`~~ … `/memo` 専用だったので**削除**
+- ~~`scratch/register_panel.py`~~ … 廃止した `/panel` を登録していたので**削除**
+- 残る登録関連は3本（`list_discord_commands.js` / `register_portal_commands.js` / `unregister_discord_commands.mjs`）
+
+### 検証
+
+- 整合性チェック（`scratchpad/verify_cmdlists.mjs`）で全項目パス:
+  削除対象と維持リストの重複なし / 実装があるのにKEEPに無いものなし / KEEPにあるのに実装が無いものなし /
+  削除対象なのに `index.js` がまだ処理しているものなし
+- `src/` 全JSで `node --check` OK、`wrangler deploy --dry-run` 成功
+- **バンドル 274.10 KiB → 239.22 KiB / コード 6,308行 → 5,771行**
+
+- [ ] 🚨 **ユーザー作業（タスク#7）**: `node 03_SYSTEMS/TOOLS/unregister_discord_commands.mjs --list` で
+      現状を確認 → `--apply` で登録解除。**これをやるまで削除した13名称は選択欄に残り、押しても無反応になる。**

@@ -15,14 +15,14 @@ async function main() {
   const appId = me.id;
   const guildId = '1485636149379858567';
 
+  // ⚠️ 2026-09-29: ここにあった `welcome` の登録を削除した。
+  // /welcome は /portal と表示内容が完全に同一だったためコマンドごと廃止しており、
+  // このスクリプトを昔のまま実行すると**削除した幽霊コマンドが復活する**状態だった。
+  // 登録解除は `unregister_discord_commands.mjs` を使う。
   const commandsToRegister = [
     {
       name: 'portal',
       description: 'KTM プレイヤーズハブ ＆ 統合コントロールパネルを表示します'
-    },
-    {
-      name: 'welcome',
-      description: '新規メンバー案内 ＆ 統合コントロールパネルを表示します'
     }
   ];
 

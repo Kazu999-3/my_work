@@ -2,7 +2,6 @@ import { CONFIG } from '../config.js';
 import { patchInteractionResponse, sendDiscordMessage, sendInteractionFollowup } from '../utils/api.js';
 import { fetchSupabase } from '../utils/supabase.js';
 import { handleLaneCommand, handleStatsCommand } from './commands.js';
-import { generateChampionRoulette, fetchChampionCatalog } from './roulette.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, extractPlayersFromEmbed, getPortalComponents, getPortalEmbed, handleHelpPage, applyDayCardState } from '../ui/embeds.js';
 import { parseMessageData, handleAutoMatchEnd } from '../utils/helpers.js';
 import { getAdminDiscordIds, markRecruitmentStatus } from '../utils/recruitPermission.js';
@@ -387,20 +386,9 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     return handleStatsCommand(interaction, env, ctx);
   }
 
-  if (customId === 'portal_roulette') {
-    // DataDragonの全チャンピオンから抽選する（取得失敗時は厳選プールへ縮退し、
-    // その旨がEmbedのfooterに出る）。アイソレート内でキャッシュされるため通常は即時。
-    const catalog = await fetchChampionCatalog();
-    const result = generateChampionRoulette('ALL', 1, catalog);
-    return Response.json({
-      type: 4,
-      data: {
-        embeds: [result.embed],
-        components: result.components,
-        flags: 64 // 実行者のみに表示
-      }
-    });
-  }
+  // ⚠️ 2026-09-29: portal_roulette ボタンのハンドラを削除した（/roulette 機能ごと削除・ユーザー判断）。
+  // handlers/roulette.js も削除済み。このcustom_idを持つ古いメッセージが残っていた場合は
+  // 下のフォールスルーで「不明な操作です」が返る（無言で落ちない）。
 
   // 📚 YouTube解析ナレッジのワンクリック承認
   if (customId.startsWith('approve_knowledge:')) {

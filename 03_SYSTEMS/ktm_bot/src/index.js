@@ -1,6 +1,5 @@
 import { verifySignature } from './utils/security.js';
-import { handleAnnounceMatch, handleLaneCommand, handleRecruitDirect, handleSetIgn, handleStatsCommand, handleMemoCommand, handleWelcomePanel, handlePortalPanel } from './handlers/commands.js';
-import { handleRouletteCommand, handleRouletteButton } from './handlers/roulette.js';
+import { handleAnnounceMatch, handleLaneCommand, handleRecruitDirect, handleSetIgn, handleStatsCommand, handlePortalPanel } from './handlers/commands.js';
 import { handleButtonInteraction } from './handlers/components.js';
 import { handleModalSubmit } from './handlers/modals.js';
 import { handleScheduledEvent } from './handlers/scheduled.js';
@@ -109,34 +108,42 @@ export default {
       if (interaction.type === 2) {
         const name = interaction.data.name;
         const context = { ...env, DISCORD_TOKEN }; // トークンを注入
+        // ⚠️ 2026-09-29: コマンドを21名称 → 7名称へ整理した（ユーザー判断）。
+        //
+        // 【機能ごと削除】/welcome /welcome-panel（/portal と中身が完全に同じだった）、
+        //   /roulette（チャンピオン抽選）、/memo、/patch。実装ファイルも削除済み。
+        // 【エイリアス廃止】1機能に複数名称を登録していたため、Discordの選択欄に21個並び
+        //   初見のメンバーがどれを選ぶべきか判断できなかった。主名称1つに統一:
+        //     /panel /command /ktm_portal → /portal
+        //     /bet        → /coins    （/bet は「賭ける」と誤解されるのに残高表示だった）
+        //     /rich       → /casino
+        //     /send-coins → /tip
+        //     /award      → /ranking
+        //
+        // 🚨 コードを消しただけでは Discord 側の登録は消えない（＝押しても無反応の
+        //   幽霊コマンドになる）。`03_SYSTEMS/TOOLS/unregister_discord_commands.mjs` で
+        //   登録解除まで行うこと。
         if (name === 'ign') return await handleSetIgn(interaction, context, ctx);
         if (name === 'recruit') return handleRecruitDirect(interaction, context, ctx);
         if (name === 'stats') return handleStatsCommand(interaction, context, ctx);
         if (name === 'lane') return handleLaneCommand(interaction, context, ctx);
-        if (name === 'memo') return await handleMemoCommand(interaction, context, ctx);
-        if (name === 'welcome' || name === 'welcome-panel') return await handleWelcomePanel(interaction, context, ctx);
-        if (name === 'roulette') return await handleRouletteCommand(interaction, context, ctx);
-        if (name === 'ranking' || name === 'award') {
+        if (name === 'ranking') {
           const { handleRankingCommand } = await import('./handlers/ranking.js');
           return await handleRankingCommand(interaction, context, ctx);
         }
-        if (name === 'patch') {
-          const { handlePatchCommand } = await import('./handlers/patchNoteSummary.js');
-          return await handlePatchCommand(interaction, context, ctx);
-        }
-        if (name === 'coins' || name === 'bet') {
+        if (name === 'coins') {
           const { handleCoinsCommand } = await import('./handlers/bet.js');
           return await handleCoinsCommand(interaction, context, ctx);
         }
-        if (name === 'casino' || name === 'rich') {
+        if (name === 'casino') {
           const { handleCasinoCommand } = await import('./handlers/bet.js');
           return await handleCasinoCommand(interaction, context, ctx);
         }
-        if (name === 'tip' || name === 'send-coins') {
+        if (name === 'tip') {
           const { handleTipCommand } = await import('./handlers/bet.js');
           return await handleTipCommand(interaction, context, ctx);
         }
-        if (name === 'panel' || name === 'portal' || name === 'command' || name === 'ktm_portal') {
+        if (name === 'portal') {
           return await handlePortalPanel(interaction, context, ctx);
         }
       }
@@ -144,9 +151,6 @@ export default {
       // Message Component (Buttons/Select Menus)
       if (interaction.type === 3) {
         const customId = interaction.data?.custom_id || '';
-        if (customId.startsWith('roulette_reroll:')) {
-          return await handleRouletteButton(interaction, { ...env, DISCORD_TOKEN }, ctx);
-        }
         if (customId.startsWith('bet_team:')) {
           const { handleBetButton } = await import('./handlers/bet.js');
           return handleBetButton(interaction, { ...env, DISCORD_TOKEN }, ctx);

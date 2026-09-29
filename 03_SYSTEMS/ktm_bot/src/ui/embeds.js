@@ -208,9 +208,7 @@ export function getPortalEmbed() {
   }; 
 }
 
-export function getWelcomeEmbed() {
-  return getPortalEmbed();
-}
+// ⚠️ 2026-09-29: getWelcomeEmbed() を削除（getPortalEmbed() をそのまま返すだけの別名だった）。
 
 export function getPortalComponents(userId, portalUrl = CONFIG.PORTAL_URL) {
   // Row 1: メインアクション（一括登録・募集作成・マイ戦績）
@@ -247,9 +245,7 @@ export function getPortalComponents(userId, portalUrl = CONFIG.PORTAL_URL) {
   ];
 }
 
-export function getWelcomeComponents(portalUrl = CONFIG.PORTAL_URL) {
-  return getPortalComponents(null, portalUrl);
-}
+// ⚠️ 2026-09-29: getWelcomeComponents() を削除（getPortalComponents() の別名だった）。
 
 export function handleHelpPage() {
   const pages = [
