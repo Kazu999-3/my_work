@@ -131,7 +131,17 @@ export function handleStatsCommand(interaction, env, ctx) {
           { name: "🕒 直近5試合", value: recentIcons || "データなし", inline: true },
           { name: "🏮 現在の不運度 (Pity)", value: `**${data.pity || 0}** pts`, inline: true },
           { name: "📍 ポジション別 (MMR)", value: Object.entries(s.roles).map(([r, rs]) => {
-              const mmr = data.mmrs[r] || 1200;
+              // ⚠️ 2026-09-29 是正: 以前は `data.mmrs[r] || 1200` で、**MMRが取得できない
+              // ロールに 1200 という架空の数値を表示**していた（バーの長さもその値で描いていた）。
+              // 初期MMRはポータルの calculateInitialMmr() が「最高ランク × ロール」から算出する
+              // 値で、1200 固定ではない。つまり誰にとっても正しくない数字を出していた。
+              // （同じ問題が ranking.js では `|| 1000` になっており、既定値すら食い違っていた）
+              // 値が無いときは無いと書く。
+              const raw = data.mmrs?.[r];
+              const mmr = typeof raw === 'number' ? raw : null;
+              if (mmr === null) {
+                return `\`${String(r).padEnd(3)}\` ${'⬛'.repeat(8)} **未登録** (${rs.g}戦)`;
+              }
               // D-05改: █░はDiscordで潰れて見にくいため、色付き絵文字ブロック8マスに変更。
               // 色はティア帯を表現（⬜シルバー以下 / 🟨ゴールド / 🟦プラチナ / 🟩エメラルド以上）
               const filled = Math.max(1, Math.min(8, Math.round((mmr - 1000) / 125)));

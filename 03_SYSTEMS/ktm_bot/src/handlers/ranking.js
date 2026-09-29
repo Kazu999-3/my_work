@@ -31,7 +31,12 @@ export async function handleRankingCommand(interaction, env, ctx) {
         statsMap.set(p.name, {
           name: p.name,
           discordId: p.discord_id,
-          mmr: p.mmr || 1000,
+          // ⚠️ 2026-09-29: 以前は `p.mmr || 1000` だった。この値は現在どこにも表示されて
+          // いないため実害は無かったが、①1000という架空の既定値を作っている
+          // ②commands.js 側の同種フォールバックは 1200 で**既定値すら食い違っていた**
+          // （初期MMRは calculateInitialMmr() が最高ランク×ロールから算出する値で固定値ではない）。
+          // 将来この値を表示したときに架空の数字が出ないよう、無い場合は null にしておく。
+          mmr: typeof p.mmr === 'number' ? p.mmr : null,
           games: 0,
           wins: 0,
           roles: { TOP: 0, JG: 0, MID: 0, ADC: 0, SUP: 0 }
