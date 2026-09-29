@@ -352,8 +352,26 @@ export async function POST(req: Request) {
     // ベートレコードを edge_tasks に保存（試合確定時の自動精算・配当払い戻し用）
     // ⚠️ オッズは「このベットを投入する直前の投票状況」からサーバーが算出する。
     // クライアントが申告してきた odds は一切使わない（任意倍率の払い戻しを防ぐため）。
+    // このベットが属する「ラウンド」を特定する。精算(match/record)は balancer_predictions の
+    // 未確定(match_id=null)行を1ラウンドとみなすため、同じIDを payload に持たせて紐付ける。
+    // これが無いと、2ラウンド同時進行時に別ラウンドの結果で精算されてしまう（試合を問わず
+    // pending を全件精算していたため）。取得できなければ null（レガシー動作へ縮退）。
+    let roundId: string | number | null = null;
+    try {
+      const { data: liveRound } = await supabase
+        .from('balancer_predictions')
+        .select('id')
+        .is('match_id', null)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      roundId = liveRound?.id ?? null;
+    } catch (rErr) {
+      console.warn('[bet POST] round linkage lookup warning:', rErr);
+    }
+
     const { calculateBetOdds, fetchPendingBetTotals } = await import('../../../lib/betOdds');
-    const totalsBefore = await fetchPendingBetTotals(supabase);
+    const totalsBefore = await fetchPendingBetTotals(supabase, roundId);
     const serverOdds = calculateBetOdds(totalsBefore.blueAmount, totalsBefore.redAmount);
     const effectiveOdds = team.toUpperCase() === 'BLUE' ? serverOdds.blue : serverOdds.red;
     try {
@@ -369,6 +387,7 @@ export async function POST(req: Request) {
             amount: betAmount,
             odds: effectiveOdds,
             match_id: matchId || null,
+            round_id: roundId, // このベットが属するラウンド(balancer_predictions.id)。精算時の照合キー
             created_at: new Date().toISOString()
           }
         });

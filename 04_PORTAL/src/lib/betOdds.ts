@@ -55,11 +55,38 @@ export function calculateBetOdds(blueAmount: number, redAmount: number): { blue:
 }
 
 /**
+ * ベットを「ラウンド」で絞り込む。
+ *
+ * 精算(match/record)は balancer_predictions の未確定行を1ラウンドとみなすため、
+ * 各ベットの payload.round_id にそのラウンドIDを持たせている。ここではオッズ集計・精算の
+ * どちらでも同じ絞り込み規則を使うことで、2ラウンド同時進行時に別ラウンドのベットを
+ * 巻き込む事故（別試合の結果で精算される）を防ぐ。
+ *
+ * - `roundId` 未指定(null/undefined)なら全件を返す（ラウンドを特定できない場合のレガシー動作）。
+ * - `round_id` を持たないレガシーbet(null)は、どのラウンドの集計・精算にも巻き込めるよう常に含める
+ *   （紐付け導入前に作られたベットを取りこぼして宙に浮かせないため）。
+ */
+export function filterBetsByRound<T extends { round_id?: string | number | null }>(
+  bets: T[],
+  roundId: string | number | null | undefined
+): T[] {
+  if (roundId === null || roundId === undefined) return bets;
+  return bets.filter((b) => {
+    const rid = b?.round_id ?? null;
+    return rid === null || rid === roundId;
+  });
+}
+
+/**
  * 未精算(pending)の custom_bet から現在の投票額を集計する。
  * オッズ算出の入力となるため、必ずサーバー側でこの関数を通して取得すること。
+ *
+ * `roundId` を渡すとそのラウンドのベット（＋ラウンド未紐付けのレガシーbet）だけを集計する。
+ * 省略すると全件を集計する（従来動作）。
  */
 export async function fetchPendingBetTotals(
-  supabase: any
+  supabase: any,
+  roundId?: string | number | null
 ): Promise<{ blueAmount: number; redAmount: number; blueCount: number; redCount: number }> {
   const empty = { blueAmount: 0, redAmount: 0, blueCount: 0, redCount: 0 };
   if (!supabase) return empty;
@@ -73,7 +100,10 @@ export async function fetchPendingBetTotals(
 
     if (!data || data.length === 0) return empty;
 
-    const bets = data.map((t: any) => t.payload).filter(Boolean);
+    const bets = filterBetsByRound(
+      data.map((t: any) => t.payload).filter(Boolean),
+      roundId
+    );
     const sum = (team: string) =>
       bets.filter((b: any) => b.team === team).reduce((s: number, b: any) => s + (Number(b.amount) || 0), 0);
 

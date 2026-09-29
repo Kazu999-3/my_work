@@ -373,6 +373,11 @@ export async function POST(request: Request) {
 
     // (4) 待機プレイヤーの Pity 加算はチーム確定時（pending保存時）に行うようにライフサイクルを分離・移動したため、ここでは行わない。
 
+    // この試合が精算する「ラウンド」(balancer_predictions.id)。(4.5) でロスター一致した予測から確定し、
+    // (4.6) の勝敗予想ベット精算で「このラウンドのベットだけ」を対象にするために使う。
+    // 予測を特定できなければ null のままとし、(4.6) は従来どおり pending 全件を精算する（取りこぼし防止）。
+    let settledRoundId: string | number | null = null;
+
     // (4.5) バランサー予測勝率の突き合わせ（課題: 予測勝率の検証）
     // 直近の未突き合わせ予測から、このゲームのロスターに一致するものを探して的中/不的中を記録する。
     // 予測はチーム確定時に balancer_predictions へ保存済み。テーブル未作成でも try/catch で握りつぶす。
@@ -398,6 +403,7 @@ export async function POST(request: Request) {
       });
 
       if (match) {
+        settledRoundId = match.id ?? null;
         // 予測は「保存時のblue側」基準。実ロスターが入れ替わっていれば勝者側も読み替える。
         const swapped = !(setEq(blueNames, match.blue_players || []));
         const actualBlueWon = winningTeam === 'BLUE';
@@ -428,11 +434,20 @@ export async function POST(request: Request) {
     const payoutWinners: Array<{ name: string; payout: number; multiplier: number; streak?: number }> = [];
     try {
       const { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } = await import('../../../../lib/playerCoins');
-      const { data: openBetTasks } = await supabase
+      const { data: allOpenBetTasks } = await supabase
         .from('edge_tasks')
         .select('id, payload')
         .eq('task_type', 'custom_bet')
         .eq('status', 'pending');
+
+      // このラウンドに属するベットだけを精算する。settledRoundId が特定できなかった場合は
+      // 従来どおり全件（filterBetsByRound が roundId=null で全件返す）。round_id を持たない
+      // レガシーbet は常に含まれる（filterBetsByRound の仕様）。
+      const { filterBetsByRound } = await import('../../../../lib/betOdds');
+      const openBetTasks = filterBetsByRound(
+        (allOpenBetTasks || []).map((t: any) => ({ round_id: t?.payload?.round_id ?? null, task: t })),
+        settledRoundId
+      ).map((x: any) => x.task);
 
       if (openBetTasks && openBetTasks.length > 0) {
         for (const task of openBetTasks) {

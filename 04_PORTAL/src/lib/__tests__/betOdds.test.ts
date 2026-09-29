@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   calculateBetOdds,
   sanitizeStoredOdds,
+  filterBetsByRound,
   BET_ODDS_MIN,
   BET_ODDS_MAX,
   BET_ODDS_INITIAL,
@@ -76,4 +77,58 @@ test('sanitizeStoredOdds: 正常な範囲の値はそのまま通す', () => {
 
 test('sanitizeStoredOdds: 下限未満の倍率も下限へ引き上げる', () => {
   assert.equal(sanitizeStoredOdds(0.01), BET_ODDS_MIN);
+});
+
+// 2026-09-29 修正: 精算が「試合」を特定せず pending の custom_bet を全件対象にしていたため、
+// 2ラウンド同時進行時に2試合目の賭けが1試合目の結果で精算されて消える不具合があった。
+// filterBetsByRound がその紐付け規則の単一の真実。ここが緩むと再発する。
+
+test('filterBetsByRound: roundId一致のベットだけ返す', () => {
+  const bets = [
+    { round_id: 'A', team: 'BLUE' },
+    { round_id: 'B', team: 'RED' },
+    { round_id: 'A', team: 'RED' },
+  ];
+  const out = filterBetsByRound(bets, 'A');
+  assert.equal(out.length, 2);
+  assert.ok(out.every((b) => b.round_id === 'A'));
+});
+
+test('filterBetsByRound: 別ラウンドのベットは巻き込まない（本バグの本丸）', () => {
+  const bets = [
+    { round_id: 'round-1', team: 'BLUE' },
+    { round_id: 'round-2', team: 'BLUE' },
+  ];
+  // round-1 の試合を精算するとき、round-2 のベットが混ざってはならない
+  const out = filterBetsByRound(bets, 'round-1');
+  assert.deepEqual(out, [{ round_id: 'round-1', team: 'BLUE' }]);
+});
+
+test('filterBetsByRound: round_id を持たないレガシーbet(null)は常に含める', () => {
+  const bets = [
+    { round_id: null, team: 'BLUE' },
+    { round_id: undefined, team: 'RED' },
+    { round_id: 'A', team: 'BLUE' },
+    { round_id: 'B', team: 'RED' },
+  ];
+  const out = filterBetsByRound(bets, 'A');
+  // A + null + undefined の3件（Bは除外）
+  assert.equal(out.length, 3);
+  assert.ok(!out.some((b) => b.round_id === 'B'));
+});
+
+test('filterBetsByRound: roundId未指定なら全件返す（レガシー動作）', () => {
+  const bets = [
+    { round_id: 'A' },
+    { round_id: 'B' },
+    { round_id: null },
+  ];
+  assert.equal(filterBetsByRound(bets, null).length, 3);
+  assert.equal(filterBetsByRound(bets, undefined).length, 3);
+});
+
+test('filterBetsByRound: 数値のroundIdでも一致する', () => {
+  const bets = [{ round_id: 12 }, { round_id: 34 }, { round_id: null }];
+  const out = filterBetsByRound(bets, 12);
+  assert.equal(out.length, 2); // 12 + null
 });
