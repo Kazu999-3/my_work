@@ -1267,10 +1267,20 @@ async function sendOnboardingIfNeeded(env, userId) {
     // 既にレーン希望が設定済みなら何もしない
     if (p && p.role_preferences && p.role_preferences.primary) return;
 
+    // ⚠️ 2026-09-29 是正: 案内していたボタン名が実在しなかった。
+    //   「🆔 IGN登録」→ 実際のラベルは「📝 サモナー名変更」（この名前のボタンは存在しない）
+    //   「📍レーン設定」→ 実際は「📍 レーン設定変更」
+    // 新規の人はDMの通りに探して見つけられない。実ラベル（ui/embeds.js の
+    // getPortalComponents）と一致させる。**ボタン名を変えたらここも直すこと。**
+    //
+    // また「名簿への登録は管理者がDiscord同期を実行すると…」と案内していたが、
+    // パネルの説明文は「未登録の方も自動で名簿作成＆ランク同期されます」と書いており
+    // **矛盾していた**。実際は緑の「🎮 サモナー名 ＆ 希望レーン登録」を押せば自分で完結する。
+    // 管理者待ちだと思わせて止めてしまうのを避け、自分で進める案内に統一した。
     const missing = [];
-    if (!p) missing.push('・名簿への登録（管理者が「Discord同期」を実行すると自動登録されます）');
-    if (!p || !p.role_preferences?.primary) missing.push('・**希望レーンの設定** → `/lane` コマンド、または募集パネルの「📍レーン設定」ボタン');
-    if (p && !p.ign) missing.push('・Riot IDの登録 → 募集パネルの「🆔 IGN登録」ボタン（任意。ソロQ戦績と連携できます）');
+    if (!p) missing.push('・名簿への登録 → `/portal` を実行し、緑の「🎮 サモナー名 ＆ 希望レーン登録」を押すだけで自動登録されます（管理者を待つ必要はありません）');
+    if (!p || !p.role_preferences?.primary) missing.push('・**希望レーンの設定** → `/lane` コマンド、または `/portal` の「📍 レーン設定変更」ボタン');
+    if (p && !p.ign) missing.push('・Riot IDの登録 → `/portal` の「📝 サモナー名変更」ボタン（任意。ソロQ戦績と連携できます）');
 
     const dmRes = await fetch('https://discord.com/api/v10/users/@me/channels', {
       method: 'POST',
@@ -1286,7 +1296,9 @@ async function sendOnboardingIfNeeded(env, userId) {
         embeds: [{
           title: '👋 KTMカスタムへの参加ありがとうございます！',
           description: `より良いチーム分けのために、以下の設定をお願いします：\n\n${missing.join('\n')}\n\n設定しておくと、あなたの希望レーンや「こだわり度」「格上許可」がチーム分けに反映されます。`,
-          color: 0x00cfef,
+          // 0x00cfef（シアン）は `.claude/rules/ui-conventions.md` の「寒色系ネオン禁止」に反するため
+          // Hextechゴールド（#C89B3C 系）へ変更（2026-09-29）
+          color: 0xc2650f,
           footer: { text: 'この案内は設定が完了すると表示されなくなります' }
         }]
       })
