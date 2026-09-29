@@ -841,11 +841,36 @@ export async function handleButtonInteraction(interaction, env, ctx) {
       owner: userId, createdAt: new Date().toISOString(), joined: [], spectating: [],
       roles: { Top: null, Jg: null, Mid: null, Adc: null, Sup: null }, names: { [userId]: ownerName }
     };
+    const quickAppId = interaction.application_id;
+    const quickToken = interaction.token;
+
     ctx.waitUntil((async () => {
+      const { patchInteractionResponse } = await import('../utils/api.js');
       try {
         const res = await sendDiscordMessage(`channels/${CONFIG.RECRUIT_CHANNEL_ID}/messages`, botToken, "POST", {
           content: createMessageContent(metadata), embeds: [createRecruitEmbed(metadata)], components: createRecruitButtons(metadata)
         });
+
+        // ⚠️ 2026-09-29 是正: 以前は成否を確認せず、無条件に「⚡ 投下しました！」を返していた。
+        // カード投稿が失敗すると**募集が存在しないのに成功表示**になり、募集主は来ない人を待つ。
+        // `sendDiscordMessage` は失敗時も throw せずレスポンスを返すため、明示的に確認する。
+        // （portal_recruit_modal と同じ問題。本日5件目の「waitUntil＋無条件✅」パターン）
+        if (!res.ok) {
+          let detail = `HTTP ${res.status}`;
+          try { detail += `: ${(await res.clone().text()).slice(0, 200)}`; } catch { /* noop */ }
+          await patchInteractionResponse(quickAppId, quickToken, {
+            content: `❌ **募集の投稿に失敗しました**（${detail}）\n※募集は作成されていません。時間をおいてもう一度お試しください。`
+          }).catch(() => {});
+          await notifyAdminError(env, new Error(`クイック即募集のカード投稿に失敗: ${detail}`), {
+            action: 'quick_recruit（クイック即募集）', customId, userId
+          });
+          return;
+        }
+
+        await patchInteractionResponse(quickAppId, quickToken, {
+          content: `⚡ **${qMode}${qMax}人の募集を #募集板 に投下しました！**（時刻やメモは「⚙️募集編集」で後から設定できます）`
+        }).catch(() => {});
+
         const sentMessage = await res.clone().json();
         const { createRecruitment } = await import('../utils/recruitPermission.js');
         await createRecruitment(env, {
@@ -854,9 +879,16 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         });
         const { fetchPortalAPI } = await import('../utils/api.js');
         await fetchPortalAPI(env, '/api/push/notify-recruit', { mode: qMode, time: '' }).catch(() => {});
-      } catch (e) { console.error("quick_recruit error:", e); }
+      } catch (e) {
+        console.error("quick_recruit error:", e);
+        await patchInteractionResponse(quickAppId, quickToken, {
+          content: `❌ **募集の投稿でエラーが発生しました**: ${e.message}\n※#募集板 にカードが出ているか確認してください。`
+        }).catch(() => {});
+        await notifyAdminError(env, e, { action: 'quick_recruit（クイック即募集）', customId, userId });
+      }
     })());
-    return Response.json({ type: 4, data: { content: `⚡ **${qMode}${qMax}人の募集を #募集板 に投下しました！**（時刻やメモは「⚙️募集編集」で後から設定できます）`, flags: 64 } });
+    // 成否が確定するまで断定しない（結果は上の waitUntil が上書きする）
+    return Response.json({ type: 5, data: { flags: 64 } });
   }
 
   if (customId === 'portal_menu_cancel') return Response.json({ type: 7, data: { content: "✅ 操作をキャンセルしました。", components: [] } });
