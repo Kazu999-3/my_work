@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from '../../../components/Toaster';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Zap, ShieldAlert, Cpu, RefreshCw, ChevronRight, AlertTriangle, Trophy, Coins, Swords, Users, Shield, Layers, Database, ExternalLink, BookOpen, Calendar, Clock, Sparkles, Flame } from 'lucide-react';
+import { Activity, Zap, ShieldAlert, RefreshCw, ChevronRight, AlertTriangle, Trophy, Coins, Swords, Users, Shield, Layers, Database, ExternalLink, BookOpen, Calendar, Clock, Sparkles, Flame } from 'lucide-react';
 import Link from 'next/link';
 
 function summarizeError(errorStr?: string): { label: string; bg: string } {
@@ -303,14 +303,6 @@ export default function AdminDashboardPage() {
             >
               <Trophy size={13} />
               <span>KTM大会管理</span>
-            </Link>
-
-            <Link
-              href="/admin/prompts"
-              className="px-3.5 py-2 rounded-xl bg-white/80 backdrop-blur-md border border-stone-200 hover:bg-white hover:border-stone-300 text-xs font-bold text-stone-700 transition shadow-xs flex items-center gap-1.5"
-            >
-              <Cpu size={13} className="text-amber-600" />
-              <span>AIプロンプト</span>
             </Link>
 
             <Link

@@ -568,25 +568,35 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
   - **ついでに確認したこと（変更なし）**: 連勝ストリーク（2連勝+5% / 3連勝+10% / 5連勝+20%）の
     ロジック自体は正常。精算実績が1件だけ（`streak=1 → 0%`）でボーナス発生実績はまだ無いがバグではない。
 
-- [ ] **「AI Agent Gateway 設定室」(`/admin/prompts`) の中身をどうするか**（2026-09-23 保留）
-  - 2026-09-23に「一旦使っていないので削除したい」という話が出たが、**調査の結果いったん残した**。
-  - **理由**: この画面が編集する `agent_prompts` テーブルは、**Python側の解析パイプラインが実行時に読んでいる**。
-    - `03_SYSTEMS/v2_CORE/api.py:261` … `agent_prompts?prompt_id=eq.{request.prompt_id}`
-    - `03_SYSTEMS/v2_CORE/_LOL/youtube_absorber.py:516` … `youtube_bible_forge` を参照
-    - 画面を消してもデータは生き続けパイプラインは動く。失うのは**ブラウザから編集する手段**だけ。
-  - **登録されている7件**（いずれも最終更新 2026-06-21）:
-    `youtube_bible_forge`（動画解析が使用中） / `sre_error_analysis` /
-    `monetize_first_draft` / `monetize_review_article` / `monetize_persona_critique` /
-    `monetize_rewrite_critique` / `monetize_x_thread`
-  - ⚠️ `monetize_*` の5件は**収益化パイプライン向け**。2026-07-26〜08-04に収益化パイプラインは
-    削除済みで、[[project-side-business-scope-deferred]] のとおり副業再開までスコープ外。
-    **つまりこの5件は実質的に使われていない可能性が高い**（要確認）。
-  - **決めること**
-    1. `monetize_*` 5件を削除するか（使っている処理が本当に無いか grep で確認してから）
-    2. 残す2件（`youtube_bible_forge` / `sre_error_analysis`）の編集手段をどうするか
-       - ①画面を残す（現状） ②画面を消してSupabaseダッシュボードから直接編集する
-  - **判断材料**: プロンプトを今後調整する見込みがあるかどうか。
-    調整しないなら画面を消してよく、その場合 `/admin/prompts` と `/api/admin/prompts` を削除する。
+### 🗑️ 「AI Agent Gateway 設定室」(`/admin/prompts`) の削除（2026-09-29 ユーザー判断で削除決定・作業途中）
+
+**2026-09-29 の再調査で、2026-09-23 の前提が誤っていたと判明した。**
+
+- ❌ 旧TODOは「`youtube_bible_forge`（動画解析が使用中）」と書いていたが、**現役の動画解析はこのテーブルを読んでいない**。
+  現役ワーカー `scripts/youtube_worker.py` はプロンプトを**ファイル内にハードコード**している（`VIDEO_PROMPT` 189行 / `SHORTS_PROMPT` 245行）。
+- `agent_prompts` を実行時に読む経路の実態（全て休止・未使用）:
+
+  | 参照元 | 実態 |
+  |---|---|
+  | `_LOL/youtube_absorber.py:516`（`youtube_bible_forge`） | `absorber.yml` は**2026-07-31に定期実行停止**。`workflow_dispatch` の手動実行のみ |
+  | `v2_CORE/api.py:261`（汎用リーダー） | FastAPI Gateway 自体が**本番未使用**（HANDOVER §3.5） |
+  | `sre_error_analysis` | **コード参照ゼロ**。`sre_daemon.py` は2026-07-26に削除済み |
+  | `monetize_*` 5件 | **コード参照ゼロ**。収益化パイプラインは2026-07-26〜08-04に削除済み（[[project-side-business-scope-deferred]]） |
+
+- **結論**: この画面で編集しても**現役の解析品質は1文字も変わらない**。「ここを編集すればAIの挙動が変わる」という誤解を生むため削除する
+  （2026-09-22に一掃した「由来を偽る表示」と同種のリスク）。画面は `agent_prompts` の純CRUDエディタのみで、他の機能は持たない。
+
+**進捗**
+
+- [x] 管理ダッシュボードからのリンク除去（`admin/dashboard/page.tsx`。専用だった `Cpu` アイコンのimportも除去）
+- [ ] **🚨 ユーザー作業: 以下2フォルダをエクスプローラーで削除する**（`git rm -r` / PowerShell がいずれも自動承認の分類器にブロックされ、AI側から実行できなかった）
+  - `D:\my_work\04_PORTAL\src\app\admin\prompts`（画面 347行）
+  - `D:\my_work\04_PORTAL\src\app\api\admin\prompts`（API 45行）
+  - 削除後は git 側が次のコミットで削除として認識する。`npx tsc --noEmit` と `npm run build` で参照漏れが無いことを確認すること。
+  - ⚠️ **リンクだけ先に消えている状態なので、削除するまでは「到達不能コード」が1件ある**（このプロジェクトが繰り返し潰してきたパターン）。削除しない方針に変えるならリンク除去を巻き戻すこと。
+- [ ] **DB行の整理（Supabaseコネクタ認証後にAI側で実行可能）**: `monetize_*` 5件 と `sre_error_analysis` を `agent_prompts` から削除。
+  この環境に `DATABASE_URL` が無いため未実施。**`youtube_bible_forge` は残す**（休止中の `youtube_absorber.py` を手動実行する余地を保つため）。
+  画面を消してもデータは残るので、編集が必要になればSupabaseダッシュボードから直接行う。
 
 
 - [x] ~~**到達不能コード15ファイル（166.8KB）＋未使用依存2件の扱い**~~ → 2026-09-22 完了。
