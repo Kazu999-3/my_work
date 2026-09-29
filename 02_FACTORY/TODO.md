@@ -904,15 +904,14 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
 
 以下は 2026-09-23 の定期カスタム調査で新たに判明した未解決項目です。
 
-- [ ] **🚨 ユーザー作業が必要: Supabase の Region を確認する**（2026-09-29 起票・ポータル高速化の前提）
-  - **背景（実測）**: 本番(`my-work-8jbd.vercel.app`)のレスポンスヘッダが `x-vercel-id: kix1::iad1`。日本からのリクエストが**米国東部(iad1)の関数**で処理されている。DBを使わない `/api/auth/me` が0.33秒なのに対し、DB問い合わせ1回の `/api/balancer/pending` は0.8〜1.0秒、`/api/bet` は1.0〜1.5秒。Supabaseが東京なら太平洋往復が主因。
-  - **調べ方**（どれか1つでよい）:
-    - A: https://supabase.com/dashboard/projects のプロジェクトカードに出る `AWS | ap-northeast-1` 等を見る
-    - B: プロジェクトを開く → 左下 ⚙️ Project Settings → General → **Region** 欄
-    - C: Vercel → ポータルのプロジェクト → Settings → Environment Variables → `NEXT_PUBLIC_SUPABASE_URL` の `https://xxxxxxxx.supabase.co` の `xxxxxxxx` を控え、`https://supabase.com/dashboard/project/xxxxxxxx/settings/general` を開く
-  - **読み方**: `ap-northeast-1` = 東京 / `ap-northeast-2` = ソウル / `us-east-1` = 米国東部
-  - **東京だった場合**: `04_PORTAL/vercel.json` に `"regions": ["hnd1"]` を追加してデプロイし、上記3APIを同条件で測り直して効果を数字で確認する。
-  - **米国東部だった場合**: 関数とDBは既に近いので地域変更は効果なし。遅さの原因を別途調査する。
+- [x] ~~**🚨 ユーザー作業が必要: Supabase の Region を確認する**~~ → 2026-09-29 **Supabaseコネクタ(MCP)で確認完了。東京だった。**
+  - **確認結果**: プロジェクト `bhohvjlksezkyujroiow`（Kazu999-3's Project）の region は **`ap-northeast-1`（東京）**、Postgres 17.6、status ACTIVE_HEALTHY。
+  - **背景（実測）**: 本番(`my-work-8jbd.vercel.app`)のレスポンスヘッダが `x-vercel-id: kix1::iad1`。`04_PORTAL/vercel.json` に `regions` 指定が無く、**関数が既定の米国東部(iad1)で動いていた**。
+    DBを使わない `/api/auth/me` が0.33秒なのに対し、DB問い合わせ1回の `/api/balancer/pending` は0.8〜1.0秒、`/api/bet` は1.0〜1.5秒。**DBは東京・関数は米国東部という構成が遅さの主因**と確定した。
+  - **対応済み**: `04_PORTAL/vercel.json` に `"regions": ["hnd1"]`（東京）を追加。単一リージョン指定なのでHobby/Proどちらでも通る。
+    ⚠️ `vercel.json` は未知のトップレベルキーを拒否するため**コメントを書き込まないこと**（`$comment` を入れるとデプロイが失敗しうる。だからこの経緯はここに残している）。
+  - [ ] **効果測定（次回デプロイ後）**: デプロイ後に `x-vercel-id` が `hnd1` に変わったことを確認し、`/api/auth/me`・`/api/balancer/pending`・`/api/bet` を同条件で測り直して数字で効果を出す。
+    改善しなければ原因は別（クエリ・N+1・コールドスタート等）なので、そこから先は再調査する。
 
 - [ ] **🚨 ユーザー作業が必要: `PORTAL_BOT_SECRET` を GitHub Secrets とローカル `.env` に登録する**（2026-09-29 起票）
   - **背景**: `verifyBotSecret`（`04_PORTAL/src/lib/botAuth.ts`）が 2026-08-27（`8f6f7298`）以降、鍵が不一致でも通す実装になっており、`player/update-puuid`・`player/update-lane`・`riot/sync-ranks`・`riot/match-sync`・`push/notify-admin`・`push/notify-recruit` の6本が実質無認証だった。不一致なら401を返す修正は**作業ツリーに適用済み・未コミット**。
