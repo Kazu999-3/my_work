@@ -105,7 +105,7 @@ async function sendDiscordPairAnnounce(
   pupilDiscordId?: string,
   threadUrl?: string
 ) {
-  const portalUrl = 'https://ktm-portal.vercel.app/mypage';
+  const portalUrl = 'https://my-work-8jbd.vercel.app/mypage';
   const threadLinkText = threadUrl
     ? `\n\n💬 **[🎓 Discord専用指導チャットはこちら](${threadUrl})**`
     : '';
@@ -153,7 +153,7 @@ async function sendDiscordGraduationAnnounce(
   mentorDiscordId?: string,
   pupilDiscordId?: string
 ) {
-  const portalUrl = 'https://ktm-portal.vercel.app/mentorship';
+  const portalUrl = 'https://my-work-8jbd.vercel.app/mentorship';
   const embed = {
     title: '🎓 【祝・師弟卒業】指導期間が無事に修了しました！🎉',
     description: `👑 **師匠:** ${mentorName}\n🌱 **弟子:** ${pupilName}\n⏱️ **完走コース:** ${durationLabel}\n\n特訓完走おめでとうございます！✨\n両名に卒業ボーナス **+200コイン** を進呈しました！🪙\n引き続きKTMカスタムやソロキューで切磋琢磨していきましょう！\n\n👉 **[師弟ハブで新たな仲間を探す](${portalUrl})**`,
@@ -219,7 +219,7 @@ async function sendDiscordOfferNotification(
   durationLabel: string,
   message: string
 ) {
-  const portalUrl = 'https://ktm-portal.vercel.app/mentorship';
+  const portalUrl = 'https://my-work-8jbd.vercel.app/mentorship';
   const embed = {
     title: '📩 【KTM師弟ハブ】新たな師弟オファーが届きました！',
     description: `👤 **申請者:** ${fromName}\n🎯 **対象:** ${toName}\n⏱️ **希望コース:** ${durationLabel}\n💬 **メッセージ:**\n> ${message}\n\nポータル画面を開いて [承諾] すると正式にペア結成となります！\n👉 **[ポータルで確認・承諾する](${portalUrl})**`,

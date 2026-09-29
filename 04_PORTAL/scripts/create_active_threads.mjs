@@ -116,8 +116,8 @@ async function main() {
         `2. 目標ランクや克服したい課題（CS精度、リコール判断、視界、集団戦等）のヒアリング 📝\n` +
         `3. Discord画面共有でのリプレイ鑑賞やKTMカスタムでの同チーム参加 🎮\n\n` +
         `🔗 **便利なポータルツール:**\n` +
-        `• [マイページ（目標進捗・指導メモ共有）](https://ktm-portal.vercel.app/mypage)\n` +
-        `• [戦績コーチング・リプレイ監査](https://ktm-portal.vercel.app/coach)`,
+        `• [マイページ（目標進捗・指導メモ共有）](https://my-work-8jbd.vercel.app/mypage)\n` +
+        `• [戦績コーチング・リプレイ監査](https://my-work-8jbd.vercel.app/coach)`,
       color: 0x10b981,
       fields: [
         { name: '👑 師匠', value: `${mentorName} (${mentorMention})`, inline: true },

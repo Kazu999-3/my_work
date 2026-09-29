@@ -6,7 +6,7 @@ compatibility_date = "2024-04-17"
 # DISCORD_PUBLIC_KEY = "..."
 # DISCORD_TOKEN = "..."
 # LOCAL_API_URL = "..."
-# PORTAL_API_URL = "https://ktm-portal.vercel.app"
+# PORTAL_API_URL = "https://my-work-8jbd.vercel.app"   # ← ktm-portal.vercel.app は404。有効化するならこの値
 
 [triggers]
 # ⚠️ Cloudflare Workers Cron Triggersの曜日フィールドは「1=日曜〜7=土曜」という

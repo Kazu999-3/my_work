@@ -20,7 +20,7 @@ export interface ChangelogEntry {
   items: string[];
 }
 
-export function formatChangelogForDiscord(entry: ChangelogEntry, baseUrl: string = 'https://ktm-portal.vercel.app'): string {
+export function formatChangelogForDiscord(entry: ChangelogEntry, baseUrl: string = 'https://my-work-8jbd.vercel.app'): string {
   const url = `${baseUrl}/guide?tab=updates`;
   const bulletItems = entry.items.map(item => `・${item}`).join('\n');
   return `📢 **【KTM アップデート情報】** (${entry.date})\n` +
@@ -31,6 +31,16 @@ export function formatChangelogForDiscord(entry: ChangelogEntry, baseUrl: string
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    date: '2026-09-29',
+    title: '🤝 師弟募集のDiscordボタンがようやく使えます ＆ ポータルが速くなりました',
+    tag: 'FIX',
+    items: [
+      '🤝 【師弟募集のDiscordボタンが実際に動くようになりました】9/28のお知らせで「ボタン1つで登録できます」とご案内していましたが、実際には反映作業が失敗しており、押しても反応しない状態が3日続いていました。申し訳ありません。原因を直し、#🤝師弟募集 のピン留めメッセージにある「🌱 弟子入りしたい」「🥋 弟子を取りたい」から登録できるようになりました。',
+      '⚡ 【ポータルの表示が速くなりました】データの置き場所（東京）に対してプログラムの実行場所がアメリカだったため、毎回太平洋を往復していました。実行場所を東京に移し、実測でチーム分け待ち画面が約1.0秒→0.3秒前後、カジノのベット画面が約1.3秒→0.4秒前後になりました。',
+      '🎯 【勝敗予想ベットの精算が別の試合の結果で行われる不具合を修正】2試合分の予想が同時に入っている状態で1試合目の結果を記録すると、2試合目に賭けた分までその結果で精算されてしまう問題がありました。予想が試合ごとに正しく紐づくようにしました。現時点で誤って精算された記録はありません。',
+    ],
+  },
   {
     date: '2026-09-28',
     title: '📰 AIハイライト実況ニュース（月刊KTMスポーツ速報）登場 ＆ 師弟Discord登録など機能拡充！',

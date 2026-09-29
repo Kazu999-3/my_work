@@ -289,7 +289,9 @@ export async function handleButtonInteraction(interaction, env, ctx) {
   // 🤝 師弟マッチング：弟子カードからワンポチで師匠を引き受ける (未登録先輩でも即ペア成立)
   if (customId.startsWith('mentorship_claim_pupil:')) {
     const pupilProfileId = customId.split(':')[1];
-    const portalUrl = CONFIG.PORTAL_URL || 'https://ktm-portal.vercel.app';
+    // CONFIG.PORTAL_URL が常に設定済みなので到達しないが、死んだドメイン
+    // (ktm-portal.vercel.app は404) を残すと次に触る人が混乱するため揃える
+    const portalUrl = CONFIG.PORTAL_URL || 'https://my-work-8jbd.vercel.app';
     const userName = interaction.member?.nick || interaction.member?.user?.global_name || interaction.member?.user?.username || '先輩';
 
     ctx.waitUntil((async () => {

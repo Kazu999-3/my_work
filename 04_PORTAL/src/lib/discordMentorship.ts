@@ -7,7 +7,7 @@ const GAME_CATEGORY_ID = '1485646715716632787'; // 🎮 【Game】 カスタム�
 const CHANNEL_NAME = '🤝師弟募集';
 export const DEFAULT_MENTORSHIP_CHANNEL_ID = '1550159520687325205';
 export const DEFAULT_MENTORSHIP_FORUM_CHANNEL_ID = '1524740558550073496';
-const PORTAL_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://ktm-portal.vercel.app';
+const PORTAL_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://my-work-8jbd.vercel.app';
 
 const DASHBOARD_TITLE = '🎯 KTM 師弟募集リアルタイム掲示板';
 
