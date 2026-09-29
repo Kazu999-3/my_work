@@ -17,7 +17,17 @@ export async function handleCoinsCommand(interaction, env, ctx) {
   ctx.waitUntil((async () => {
     try {
       const data = await fetchPortalAPI(env, `/api/bet?discordId=${discordId}&name=${encodeURIComponent(playerName)}`);
-      const coins = data?.userCoins ?? 1000;
+
+      // ⚠️ 2026-09-29 是正: 以前は `data?.userCoins ?? 1000` で、**取得に失敗しても
+      // 1000コインを実際の残高として表示**していた（新規プレイヤーの初期値と同じ数字なので
+      // 誤解に気づけない）。お金の表示で推測値を出さない。取れなければ取れないと言う。
+      const coins = typeof data?.userCoins === 'number' ? data.userCoins : null;
+      if (coins === null) {
+        await patchInteractionResponse(appId, token, {
+          content: '⚠️ 残高を取得できませんでした。時間をおいて再度お試しください。'
+        });
+        return;
+      }
 
       const embed = {
         title: `🪙 KTMウォレット: ${playerName}`,
@@ -30,8 +40,18 @@ export async function handleCoinsCommand(interaction, env, ctx) {
             inline: true
           },
           {
+            // ⚠️ 2026-09-29 是正: 以前は「試合参加: +50〜100」と書いていたが、これは
+            // **募集参加ボーナス**(bet/recruit-reward: カスタム100/他50)の額で、
+            // **試合参加賞は+100固定**(match/record)。2つの別制度を混同していた。
+            // 実装の値と突き合わせて書き直した。変更時はここも直すこと。
             name: "🎮 コインの貯め方",
-            value: `▫ 募集主ボーナス: **+100〜200**\n▫ 試合参加: **+50〜100**\n▫ カスタム勝利: **+150**\n▫ 試合MVP・殊勲賞: **+200**\n▫ 勝敗ベット的中: **オッズ倍率配当**`,
+            value:
+              `▫ 募集を立てる: **+200**（カスタム） / **+100**（ノーマル等）\n` +
+              `▫ 募集に参加: **+100**（カスタム） / **+50**（ノーマル等）\n` +
+              `▫ 試合に参加: **+100**\n` +
+              `▫ カスタム勝利: **+150**（勝つと参加賞と合わせて +250）\n` +
+              `▫ MVP・各賞: **+200**\n` +
+              `▫ 勝敗ベット的中: **オッズ倍率配当**`,
             inline: false
           }
         ],
@@ -76,7 +96,10 @@ export async function handleCasinoCommand(interaction, env, ctx) {
 
       const lines = ranking.map((p, i) => {
         const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `\`${i + 1}.\``;
-        return `${medal} **${p.name}**: **${(p.coins ?? 1000).toLocaleString()}** コイン (${p.rank || 'UNRANKED'})`;
+        // ⚠️ 2026-09-29 是正: 以前は `p.coins ?? 1000` で、コイン数が欠けている行に
+        // **1000コインという架空の数字**を入れて表示していた（順位表なので特に誤解を招く）。
+        const coinText = typeof p.coins === 'number' ? `**${p.coins.toLocaleString()}** コイン` : '（取得できませんでした）';
+        return `${medal} **${p.name}**: ${coinText} (${p.rank || 'UNRANKED'})`;
       });
 
       const embed = {
@@ -161,7 +184,11 @@ export async function handleBetModalSubmit(interaction, env, ctx) {
   const discordId = interaction.member?.user?.id || interaction.user?.id;
   const playerName = interaction.member?.user?.global_name || interaction.member?.user?.username || '不明';
 
+  const appId = interaction.application_id;
+  const token = interaction.token;
+
   ctx.waitUntil((async () => {
+    const { sendInteractionFollowup } = await import('../utils/api.js');
     try {
       const res = await fetchPortalAPI(env, '/api/bet', {
         discordId,
@@ -171,13 +198,26 @@ export async function handleBetModalSubmit(interaction, env, ctx) {
       });
 
       if (res && res.success) {
-        const { sendInteractionFollowup } = await import('../utils/api.js');
-        await sendInteractionFollowup(interaction.application_id, interaction.token, {
+        await sendInteractionFollowup(appId, token, {
           content: `🎉 **【ベット完了】** <@${discordId}> さんが **【${team} チーム】** に **${res.amount}コイン** を賭けました！（残高: ${res.remainingCoins}コイン）`
         });
+        return;
       }
+
+      // ⚠️ 2026-09-29 是正: 以前はここに分岐が無く、**失敗すると何も返らなかった**。
+      // ユーザーには「⌛ベット処理中です...」が残ったままで、残高不足・受付終了・
+      // 認証エラーのいずれで失敗したのか分からず、賭けが成立したのかも判断できなかった。
+      // （同じファイルの handleTipCommand は最初から失敗を伝えていたので不整合でもあった）
+      await patchInteractionResponse(appId, token, {
+        content: `❌ **ベットできませんでした**: ${res?.error || 'コインが不足しているか、受付が終了している可能性があります。'}\n※コインは引かれていません。`
+      });
     } catch (e) {
       console.error("Bet submit error:", e);
+      await patchInteractionResponse(appId, token, {
+        content: `❌ **ベット処理でエラーが発生しました**: ${e.message}\n※コインが引かれたかはポータルの残高で確認してください。`
+      }).catch(() => {});
+      const { notifyAdminError } = await import('../utils/alert.js');
+      await notifyAdminError(env, e, { action: 'handleBetModalSubmit', customId });
     }
   })());
 
