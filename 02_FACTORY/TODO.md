@@ -1474,3 +1474,57 @@ Bot配下の偽装データ監査の続き。**コインは実害が出やすい
 - [ ] **Bot配下の偽装データ監査の残り**: `commands.js`・`ktmRank.js`（180行）・`embeds.js`（432行）・
   `modals.js`（297行）・`helpers.js`（286行）・`recruitmentStatus.js`（585行）は未点検。
   `/patch`・`/roulette`・`bet.js` で3件連続して見つかっているため、残りにも同種がある可能性が高い。
+
+---
+
+## 🔔 エラー通知が「実際に届くか」を検証可能にした（2026-09-29）
+
+> **指摘**: 「エラーが起きた時にチャンネルに送られるようになっているか随時確認して」
+> → 配線しただけでは不十分で、**経路自体が壊れていても気づけない**構造だったことが判明。
+
+### 判明した構造的な穴
+
+`notifyAdminError` は `CONFIG.ERROR_LOG_CHANNEL_ID`（`1550118540038774865`）＋ `env.DISCORD_TOKEN` で
+Discordへ送る（`ADMIN_WEBHOOK_URL` / `ADMIN_LOG_CHANNEL_ID` は config にもwrangler にも無いのでフォールバック側が実際の経路）。
+
+**問題**: 送信結果を一切返さず、失敗しても `console.error` だけが残っていた。つまり
+- エラー管理チャンネルが削除されていた
+- Botに Send Messages 権限が無い
+- チャンネルIDが古い
+
+のいずれでも**アラートは静かに失敗し、それを知らせる手段が無い**（知らせる仕組み自体が壊れているため）。
+今日9箇所を `notifyAdminError` へ配線したが、**実際に届くことは一度も確認されていなかった**。
+
+### 対応
+
+- [x] **`notifyAdminError` が配送結果を返すようにした**
+      `{ delivered, via, channelId, status, error }`。HTTPステータスが非200なら
+      「アラートが届いていない」ことを明示的にログへ残す（従来は `sendDiscordMessage` 内の
+      汎用エラーログに埋もれていた）。
+- [x] **自己診断モードを追加**: `GET /trigger-scheduled?key=<KEY>&mode=selftest_alert`
+      実際に1通送り、**HTTPレスポンスで配送結果を返す**。Discordに届かなかった場合も
+      curlの応答で壊れていることが分かる（アラート経路を、アラートに頼らず検証できる）。
+      `ktm-bot-cron-backup.yml` の `workflow_dispatch` の mode 説明にも追記した。
+- [ ] **🚨 ユーザー作業: 実際に叩いて配送を確認する**
+      ```bash
+      curl "https://<WORKER_URL>/trigger-scheduled?key=<INTERNAL_GAS_SECRET>&mode=selftest_alert"
+      ```
+      `✅ アラート経路は生きています。` が返り、かつ Discord のエラー管理チャンネルに
+      診断メッセージが届いていれば、今日配線した9箇所すべてが機能する。
+      ❌ が返った場合は チャンネルの存在 / BotのSend Messages権限 / `CONFIG.ERROR_LOG_CHANNEL_ID`
+      の値を確認する。**鍵はローテーション前の現行値でも叩ける**（タスク#5の完了を待たなくてよい）。
+
+## 🧹 ランク日本語表記の重複を一本化（2026-09-29）
+
+- **同一内容の英語→日本語対応表（11キー）が3箇所に重複**していた:
+  `handlers/components.js`（ローカル定義）/ `utils/recruitmentStatus.js`（export）/ `utils/ktmRank.js`（`RANK_JP`）。
+  照合スクリプトで**完全一致**を確認済み＝片方を直しても他方が古いまま残る構造だった
+  （例: 「ダイヤ」を「ダイヤモンド」に変えると募集カードと戦績表示で表記が食い違う）。
+- `recruitmentStatus.js` の `RANK_JP_MAP` へ一本化（定義箇所 3 → **1**）。
+  `recruitmentStatus.js` は何もimportしていないため**循環参照は発生しない**ことを確認済み。
+- ✅ **`ktmRank.js` 自体は良い実装だった**: MMRしきい値を `04_PORTAL/src/shared/ktm_tiers.json`
+  から読み込んでおり、ポータルと単一の情報源を共有している（偽装データなし）。
+- [ ] **残る結合（未対応・要注意）**: `recruitmentStatus.js` の `RANK_LINE_PATTERN`（正規表現）と
+  102/111/158行の配列が**同じランク語彙をハードコード**している。対応表のティア名を変えると
+  正規表現がマッチしなくなる。正規表現を対応表から生成する形にできるが、パース失敗のリスクが
+  あるため今回は触らず記録に留めた。

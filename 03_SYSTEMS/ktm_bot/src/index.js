@@ -78,6 +78,34 @@ export default {
 
       const mode = url.searchParams.get('mode') || "";
 
+      // ── アラート経路の自己診断 (2026-09-29追加) ──────────────────────────
+      // エラー通知は「壊れていても誰も気づけない」のが最大の弱点。
+      // エラー管理チャンネルが消えている / Botに投稿権限が無い / チャンネルIDが古い、
+      // のいずれでも通知は静かに失敗し、それを知らせる手段が無い（通知が壊れているので）。
+      // このモードは実際に1通送り、**HTTPレスポンスで配送結果を返す**。
+      // Discordに届かなかった場合でも、curlの応答を見れば壊れていることが分かる。
+      //   例) curl "$WORKER_URL/trigger-scheduled?key=$KEY&mode=selftest_alert"
+      if (mode === 'selftest_alert') {
+        const result = await notifyAdminError(
+          { ...env, DISCORD_TOKEN },
+          new Error('これはアラート経路の自己診断メッセージです（実際の障害ではありません）'),
+          { action: 'selftest_alert' }
+        );
+        const ok = !!result?.delivered;
+        const body = [
+          ok ? '✅ アラート経路は生きています。' : '❌ アラートが配送できませんでした。',
+          `via=${result?.via ?? 'unknown'}`,
+          result?.channelId ? `channelId=${result.channelId}` : null,
+          result?.status ? `httpStatus=${result.status}` : null,
+          result?.error ? `error=${result.error}` : null,
+          '',
+          ok
+            ? 'Discordのエラー管理チャンネルに診断メッセージが届いているか確認してください。'
+            : 'チャンネルの存在・BotのSend Messages権限・CONFIG.ERROR_LOG_CHANNEL_ID の値を確認してください。'
+        ].filter(Boolean).join('\n');
+        return new Response(body, { status: ok ? 200 : 500 });
+      }
+
       try {
         await handleScheduledEvent({ cron: "manual", mode }, { ...env, DISCORD_TOKEN }, ctx);
         return new Response(`Scheduled event triggered successfully (mode: ${mode})`, { status: 200 });

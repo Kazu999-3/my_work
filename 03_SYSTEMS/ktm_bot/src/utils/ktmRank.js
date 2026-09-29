@@ -23,13 +23,10 @@ export function getKtmRank(mmr) {
   return KTM_TIERS.find((t) => m >= t.min) || KTM_TIERS[KTM_TIERS.length - 1];
 }
 
-// ランク名（英語）→ 日本語表記。募集通知で「ゴールド相当」のように出す用。
-const RANK_JP = {
-  CHALLENGER: 'チャレンジャー', GRANDMASTER: 'グランドマスター', MASTER: 'マスター',
-  DIAMOND: 'ダイヤ', EMERALD: 'エメラルド', PLATINUM: 'プラチナ',
-  GOLD: 'ゴールド', SILVER: 'シルバー', BRONZE: 'ブロンズ', IRON: 'アイアン',
-  UNRANKED: '未ランク',
-};
+// ⚠️ 2026-09-29: ローカル定義していた RANK_JP を削除し、recruitmentStatus.js の
+// RANK_JP_MAP へ一本化した（同一内容が3箇所に重複しており、片方を直しても他方が
+// 古いまま残る構造だった）。
+import { RANK_JP_MAP as RANK_JP } from './recruitmentStatus.js';
 
 /**
  * 個人のMMRを「1450（ゴールド相当）」の形にする。

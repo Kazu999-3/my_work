@@ -6,16 +6,15 @@ import { createMessageContent, createRecruitButtons, createRecruitEmbed, extract
 import { parseMessageData, handleAutoMatchEnd } from '../utils/helpers.js';
 import { getAdminDiscordIds, markRecruitmentStatus } from '../utils/recruitPermission.js';
 import { getKtmRank, getHighestLaneMmr, getPlayerExperienceBadge, getPlayerActiveMark } from '../utils/ktmRank.js';
-import { detectDayKey, getDayDef, extractEntryLines, resolveWeekendTargets, buildRecruitmentContent, computeDayStatus, DAY_CAPACITY, RANK_SHORT_JP_MAP } from '../utils/recruitmentStatus.js';
+import { detectDayKey, getDayDef, extractEntryLines, resolveWeekendTargets, buildRecruitmentContent, computeDayStatus, DAY_CAPACITY, RANK_SHORT_JP_MAP, RANK_JP_MAP } from '../utils/recruitmentStatus.js';
 import { cleanupOldReminderMessages } from './scheduled.js';
 import { notifyAdminError } from '../utils/alert.js';
 
-const RANK_JP_MAP = {
-  CHALLENGER: 'チャレンジャー', GRANDMASTER: 'グランドマスター', MASTER: 'マスター',
-  DIAMOND: 'ダイヤ', EMERALD: 'エメラルド', PLATINUM: 'プラチナ',
-  GOLD: 'ゴールド', SILVER: 'シルバー', BRONZE: 'ブロンズ', IRON: 'アイアン',
-  UNRANKED: '未ランク',
-};
+// ⚠️ 2026-09-29: ここにあったローカルの RANK_JP_MAP を削除し、
+// recruitmentStatus.js の export 版へ一本化した（下の import 行に追加済み）。
+// 同じ11キーの対応表が **3箇所**（ここ / recruitmentStatus.js / ktmRank.js の RANK_JP）に
+// 完全同一の内容で重複しており、片方を直しても他方が古いまま残る構造だった
+// （例: 「ダイヤ」を「ダイヤモンド」に変えると募集カードと戦績表示で表記が食い違う）。
 
 /**
  * 旧形式（1枚のカードに土曜・日曜のフィールドが同居）の募集カードかどうか。

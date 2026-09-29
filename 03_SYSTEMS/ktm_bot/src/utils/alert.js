@@ -50,28 +50,47 @@ export async function notifyAdminError(env, error, context = {}) {
     timestamp
   };
 
+  // ⚠️ 2026-09-29: 配送結果を返すようにした。
+  // 以前は成功/失敗を一切返さず、送信に失敗しても console.error だけが残っていた。
+  // エラー管理チャンネルが消えていた・Botに投稿権限が無かった場合、**アラート経路自体が
+  // 壊れていることに誰も気づけない**（アラートを頼りにしている以上、ここが最後の砦になる）。
+  // 呼び出し元は戻り値を無視してもよいが、自己診断（/trigger-scheduled?mode=selftest_alert）
+  // はこの結果を使って「実際に届いたか」を報告する。
   try {
     // 1. Webhook が設定されている場合は優先して送信
     if (env?.ADMIN_WEBHOOK_URL) {
-      await fetch(env.ADMIN_WEBHOOK_URL, {
+      const res = await fetch(env.ADMIN_WEBHOOK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ embeds: [embed] })
       });
-      return;
+      if (!res.ok) {
+        console.error(`[ADMIN_ALERT] Webhook送信に失敗: HTTP ${res.status}`);
+      }
+      return { delivered: res.ok, via: 'webhook', status: res.status };
     }
 
-    // 2. 指定のエラー管理用チャンネル (1550118540038774865) へ直接送信
+    // 2. 指定のエラー管理用チャンネルへ直接送信
     const channelId = env?.ADMIN_LOG_CHANNEL_ID || CONFIG.ERROR_LOG_CHANNEL_ID || "1550118540038774865";
     const token = env?.DISCORD_TOKEN;
-    if (channelId && token) {
-      await sendDiscordMessage(`channels/${channelId}/messages`, token, 'POST', {
-        embeds: [embed]
-      });
-      return;
+    if (!channelId || !token) {
+      const reason = !token ? 'DISCORD_TOKEN が未設定' : 'チャンネルIDが解決できない';
+      console.error(`[ADMIN_ALERT] 送信先が無いため通知できません: ${reason}`);
+      return { delivered: false, via: 'none', error: reason };
     }
+
+    const res = await sendDiscordMessage(`channels/${channelId}/messages`, token, 'POST', {
+      embeds: [embed]
+    });
+    if (!res.ok) {
+      // sendDiscordMessage 側でも console.error するが、ここで「アラートが届いていない」ことを
+      // 明示的に記録する（チャンネル削除・権限不足・IDの誤りがこの経路で表面化する）
+      console.error(`[ADMIN_ALERT] チャンネル ${channelId} への通知に失敗: HTTP ${res.status}`);
+    }
+    return { delivered: res.ok, via: 'channel', channelId, status: res.status };
   } catch (notifyErr) {
     // アラート送信自体の失敗で本体をクラッシュさせない
     console.error('Failed to dispatch admin alert:', notifyErr);
+    return { delivered: false, via: 'exception', error: notifyErr?.message || String(notifyErr) };
   }
 }
