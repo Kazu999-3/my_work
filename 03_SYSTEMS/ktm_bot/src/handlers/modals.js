@@ -301,13 +301,25 @@ export async function handleModalSubmit(interaction, env, ctx) {
       return row ? row.components[0].value.trim() : "";
     };
 
+    // ⚠️ 2026-09-29 是正: レーン入力が無検証だった（portal_register_modal と同じ問題）。
+    // さらに **未入力や解釈不能なとき黙って `MID` にされていた**。モーダルでは必須項目
+    // （`required: true`）なのに、「とっぷ」等と書くと本人の意図と無関係に MID の
+    // 師弟プロフィールが作られ、しかも「✅ エントリーしました」と表示されていた。
+    // 勝手に決めずに理由を返す。師弟関係は単一レーンなので先頭の1つだけを採用する。
     const lanesRaw = getVal('lanes');
-    const parsedLanes = lanesRaw
-      ? lanesRaw.split(/[,/、\s]+/).map(s => s.toUpperCase()).filter(Boolean)
-      : ['MID'];
-    // 師弟関係は単一レーンに絞り込む（先頭の1つのみ採用）
-    const lanes = parsedLanes.length > 0 ? [parsedLanes[0]] : ['MID'];
-    
+    const firstLane = lanesRaw.split(/[,/、\s]+/).filter(Boolean)[0] || '';
+    const laneR = normalizeLaneInput(firstLane, { allowAll: true, allowEmpty: false });
+    if (laneR.error) {
+      return Response.json({
+        type: 4,
+        data: {
+          content: `⚠️ **入力内容を確認してください**\n\n・${laneR.error}\n\n※もう一度ボタンを押して入力し直してください。まだ登録されていません。`,
+          flags: 64
+        }
+      });
+    }
+    const lanes = [laneR.value];
+
     const champsRaw = getVal('champions');
     const champions = champsRaw
       ? champsRaw.split(/[,/、\s]+/).filter(Boolean)
@@ -319,9 +331,13 @@ export async function handleModalSubmit(interaction, env, ctx) {
 
     const discordName = interaction.member?.nick || interaction.member?.user?.global_name || interaction.member?.user?.username || "Player";
 
+    const roleName = isMentor ? '師匠（指導者）' : '弟子（修行希望）';
+    const mAppId = interaction.application_id;
+    const mToken = interaction.token;
+
     ctx.waitUntil((async () => {
+      const { fetchPortalAPI, patchInteractionResponse } = await import('../utils/api.js');
       try {
-        const { fetchPortalAPI } = await import('../utils/api.js');
         await fetchPortalAPI(env, '/api/mentorship/profiles', {
           role_type: isMentor ? 'MENTOR' : 'PUPIL',
           lanes,
@@ -333,19 +349,27 @@ export async function handleModalSubmit(interaction, env, ctx) {
           discord_id: userId,
           player_name: discordName,
         });
+        await patchInteractionResponse(mAppId, mToken, {
+          content: `✅ **${roleName}として師弟掲示板にエントリーしました！**\n#🤝師弟募集 のダッシュボードと新着カードに反映されます。相性の良いペアが見つかるのをお楽しみに！`
+        });
       } catch (err) {
+        // ⚠️ 2026-09-29 是正: 以前はここが console.error だけで、**保存に失敗しても
+        // 「✅ エントリーしました！」と返していた**。掲示板に自分が載らないのに成功表示され、
+        // 本人は「誰からもオファーが来ない」と待ち続けることになる。
+        // 本日6件目の「ctx.waitUntil＋成功を断定する即時レスポンス」パターン。
         console.error('[MentorshipModal] Error saving profile:', err);
+        await patchInteractionResponse(mAppId, mToken, {
+          content: `❌ **師弟掲示板への登録に失敗しました**: ${err.message}\n※まだ登録されていません。時間をおいてもう一度お試しください。`
+        }).catch(() => {});
+        const { notifyAdminError } = await import('../utils/alert.js');
+        await notifyAdminError(env, err, {
+          action: `師弟掲示板の登録（${roleName}）`, customId, userId
+        });
       }
     })());
 
-    const roleName = isMentor ? '師匠（指導者）' : '弟子（修行希望）';
-    return Response.json({
-      type: 4,
-      data: {
-        content: `✅ **${roleName}として師弟掲示板にエントリーしました！**\n#🤝師弟募集 のダッシュボードと新着カードに反映されます。相性の良いペアが見つかるのをお楽しみに！`,
-        flags: 64
-      }
-    });
+    // 成否が確定するまで断定しない（結果は上の waitUntil が上書きする）
+    return Response.json({ type: 5, data: { flags: 64 } });
   }
 
   if (customId.startsWith('edit_recruit_modal:')) {
