@@ -85,13 +85,16 @@ function UserAuthWidget({ collapsed, inDrawer }: { collapsed?: boolean; inDrawer
   if (loading) return null;
 
   if (user) {
+    const targetName = user.playerName || user.displayName;
+    const mypageHref = targetName ? `/player/${encodeURIComponent(targetName)}?tab=settings` : '/mypage';
+
     return (
       <div
         className={`p-2.5 rounded-2xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/20 flex items-center gap-2 transition ${
           collapsed && !inDrawer ? 'justify-center' : ''
         }`}
       >
-        <Link href="/mypage" className="flex items-center gap-2.5 min-w-0 flex-1 group">
+        <Link href={mypageHref} className="flex items-center gap-2.5 min-w-0 flex-1 group">
           <img
             src={user.avatar}
             alt={user.displayName}
@@ -219,6 +222,14 @@ export default function Sidebar() {
   const [activeTab, setActiveTab] = useState<'general' | 'admin'>('general');
   const [isAdminUser, setIsAdminUser] = useState(false);
   const [showMobileDrawer, setShowMobileDrawer] = useState(false);
+
+  const resolveItemHref = (item: MenuItem) => {
+    if (item.id === 'mypage') {
+      const targetName = user?.playerName || user?.displayName;
+      return targetName ? `/player/${encodeURIComponent(targetName)}?tab=settings` : '/mypage';
+    }
+    return item.href;
+  };
 
   useEffect(() => {
     const savedCollapsed = localStorage.getItem('sovereign_sidebar_collapsed');
@@ -362,7 +373,8 @@ export default function Sidebar() {
         <div className="flex-1 overflow-y-auto p-3 space-y-1">
           {desktopItems.map((item: MenuItem, idx) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+            const itemHref = resolveItemHref(item);
+            const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href)) || (item.id === 'mypage' && pathname.startsWith('/player/'));
             const showSection = !isCollapsed && item.section && (idx === 0 || desktopItems[idx - 1]?.section !== item.section);
             const isMentorship = item.id === 'mentorship';
 
@@ -374,7 +386,7 @@ export default function Sidebar() {
                   </div>
                 )}
                 <Link
-                  href={item.href}
+                  href={itemHref}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition ${
                     isActive ? `${item.activeBg} ${item.color}` : 'text-stone-600 dark:text-stone-300 hover:bg-stone-200/50 dark:hover:bg-[#2b2d31] hover:text-stone-900 dark:hover:text-white'
                   }`}
@@ -537,12 +549,13 @@ export default function Sidebar() {
                 <div className="grid grid-cols-2 gap-2.5">
                   {GENERAL_MENU_ITEMS.map((item) => {
                     const Icon = item.icon;
-                    const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+                    const itemHref = resolveItemHref(item);
+                    const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href)) || (item.id === 'mypage' && pathname.startsWith('/player/'));
                     const isMentorship = item.id === 'mentorship';
                     return (
                       <Link
                         key={item.id}
-                        href={item.href}
+                        href={itemHref}
                         onClick={() => setShowMobileDrawer(false)}
                         className={`flex items-center gap-2.5 p-3 rounded-2xl border transition-all ${
                           isActive

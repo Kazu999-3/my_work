@@ -35,24 +35,24 @@ function MyPageContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#1c1917] text-stone-100 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
         <div className="flex flex-col items-center gap-4">
           <RefreshCw className="w-8 h-8 text-amber-500 animate-spin" />
-          <p className="text-stone-300 text-sm font-bold">マイページ（公式カルテ）を読み込み中...</p>
+          <p className="text-muted text-sm font-bold">マイページ（公式カルテ）を読み込み中...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#1c1917] text-stone-100 flex items-center justify-center p-6">
-      <div className="max-w-md w-full bg-[#2b2620] border border-amber-500/30 rounded-3xl p-8 text-center shadow-2xl space-y-6 animate-fade-in">
-        <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400">
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
+      <div className="max-w-md w-full bg-surface border border-border rounded-3xl p-8 text-center shadow-xl space-y-6 animate-fade-in">
+        <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-500">
           <Sparkles className="w-8 h-8" />
         </div>
         <div>
-          <h2 className="text-xl font-black text-white mb-2">マイページのご利用にはログインが必要です</h2>
-          <p className="text-xs text-stone-400 leading-relaxed">
+          <h2 className="text-xl font-black text-foreground mb-2">マイページのご利用にはログインが必要です</h2>
+          <p className="text-xs text-muted leading-relaxed">
             Discordでログインすると、あなた専用の公式カルテ（通算戦績・プレイスタイル診断・相性分析・希望レーン設定・師弟募集・🎁 デイリーボーナス）をすべて確認・利用できます。
           </p>
         </div>
@@ -71,7 +71,7 @@ function MyPageContent() {
 export default function MyPageRedirect() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#1c1917] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <RefreshCw className="w-8 h-8 text-amber-500 animate-spin" />
       </div>
     }>
