@@ -396,14 +396,19 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
   Botが**書き込む**テーブル（`recruitments` / `pending_match_sync`）だけが0件で、**読むだけ**のテーブル（`ktm_players` 62件 / `ktm_matches` 122件 / `ktm_match_participants` 1220件）にはデータがあることも裏付けになっている。
 - [x] **影響範囲**: 20:00開催判定・中間アナウンス・前回カードの締め切り・移行処理が、すべて対象0件で空振りしていた。全ての呼び出し元が例外を握りつぶしていたため誰も気づかなかった。
 - [x] **暫定対応**: 募集カードの所在を DB ではなく **Discordのチャンネル走査（直近100件）を正** に変更。DBが空のままでも全機能が動く。
-- [ ] **🚨 ユーザー作業が必要**: Worker側の鍵を service role キーへ差し替える。
-  ```bash
-  cd 03_SYSTEMS/ktm_bot
-  npx wrangler secret put SUPABASE_KEY
-  # 04_PORTAL/.env.local の SUPABASE_SERVICE_ROLE_KEY (sb_secret_...) と同じ値を貼る
-  ```
-  これが通ればリマインド・ポータル連携も本来の姿で動く。RLSにanon向けポリシーを足す案は `.claude/rules/database.md` の方針（`USING (true)` の放置禁止）に反するため採らない。Workerはサーバー側なのでsecretキーが正しい。
-- [ ] **鍵を差し替えたら確認すること**: 次の水曜の募集投稿後に `recruitments` に2行（土曜・日曜）入るか。入れば全経路が復旧している。
+- [x] ~~**🚨 ユーザー作業が必要**: Worker側の鍵を service role キーへ差し替える~~ → **2026-09-29 完了を実測確認**。
+  （`npx wrangler secret put SUPABASE_KEY` に `sb_secret_...` を設定する作業。RLSにanon向けポリシーを足す案は `.claude/rules/database.md` の方針に反するため採らなかった）
+  - **確認方法（Supabaseコネクタ経由で実測）**: `recruitments` が **0行 → 3行**になっていた。
+    いずれもDiscord message_id を伴う実レコードで、**Botからの書き込みが成立している**。
+    | created_at | mode | status |
+    |---|---|---|
+    | 2026-09-28 11:17 UTC | ARAM | open |
+    | 2026-09-26 03:32 UTC | ノーマル | closed |
+    | 2026-09-24 12:46 UTC | ARAM | closed |
+- [ ] **残る確認（次の水曜=2026-09-30以降）**: 上記3件はすべて**メンバーが自分で立てた募集**で、`mode='定期カスタム'` の行はまだ無い。
+  鍵の差し替え後、**週末定期カスタムの投稿タイミングがまだ来ていない**ため。次の水曜の投稿後に `recruitments` へ土曜・日曜の2行が入るかを確認すれば、20:00開催判定・リマインド・ポータル連携まで含めた全経路の復旧が確定する。
+  - 確認SQL: `SELECT start_at, status FROM recruitments WHERE mode='定期カスタム' ORDER BY created_at DESC;`
+- [x] **`pending_match_sync` は今も0行**（2026-09-29 実測）。ただしこれは異常とは言い切れない — 試合同期の待ち行列で、処理済みは `done=true` で残る設計。0行＝未処理も履歴も無い状態。書き込み経路が生きているかは次の試合記録時に確認する。
 
 ### 🧨 移行の初回実行で露呈した落とし穴（2026-09-23 修正済み）
 
@@ -594,9 +599,15 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
   - `D:\my_work\04_PORTAL\src\app\api\admin\prompts`（API 45行）
   - 削除後は git 側が次のコミットで削除として認識する。`npx tsc --noEmit` と `npm run build` で参照漏れが無いことを確認すること。
   - ⚠️ **リンクだけ先に消えている状態なので、削除するまでは「到達不能コード」が1件ある**（このプロジェクトが繰り返し潰してきたパターン）。削除しない方針に変えるならリンク除去を巻き戻すこと。
-- [ ] **DB行の整理（Supabaseコネクタ認証後にAI側で実行可能）**: `monetize_*` 5件 と `sre_error_analysis` を `agent_prompts` から削除。
-  この環境に `DATABASE_URL` が無いため未実施。**`youtube_bible_forge` は残す**（休止中の `youtube_absorber.py` を手動実行する余地を保つため）。
-  画面を消してもデータは残るので、編集が必要になればSupabaseダッシュボードから直接行う。
+- [x] **DB行の整理** → **2026-09-29 完了**（Supabaseコネクタ経由で実行）。`agent_prompts` **7行 → 1行**。
+  - 削除した6件: `monetize_first_draft` / `monetize_review_article` / `monetize_persona_critique` / `monetize_rewrite_critique` / `monetize_x_thread` / `sre_error_analysis`（いずれもコード参照ゼロ）。
+  - **残した1件**: `youtube_bible_forge`（休止中の `youtube_absorber.py` を手動実行する余地を保つため）。
+  - ⚠️ **バックアップ**: `99_ARCHIVE/db_backups/agent_prompts_deleted_20260929.json`（6件全文・復元手順つき）。
+    **`99_ARCHIVE/` は `.gitignore` 配下＝ローカルPCにしか無い**。PC乗り換え・ディスク障害で失われる点に注意。
+  - 📌 **判明した追加事実**: 残した `youtube_bible_forge` を含め、**7件すべてが `default_model: gemini-2.5-flash`** を指していた。
+    これは「無料枠0で常時429」としてHANDOVER §2（2026-08-09〜10）で対処済みの**死んだモデル**。
+    つまり `youtube_absorber.py` を今手動実行しても429で失敗する。復活させる場合は
+    `gemini-model-health-check` スキルで生存確認したモデルIDへ差し替えが必要。
 
 
 - [x] ~~**到達不能コード15ファイル（166.8KB）＋未使用依存2件の扱い**~~ → 2026-09-22 完了。
@@ -918,7 +929,29 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
   - **登録が必要な理由**: `push/notify-admin` を呼ぶ `scripts/edge_cloud_worker.py`（GitHub Actions）と `03_SYSTEMS/v2_CORE/_LOL/herald.py`（ローカル）が鍵を持っていない。このまま修正をデプロイすると管理者向け通知が401で止まる（解析処理自体は止まらない）。ktm_bot は鍵が一致済みで影響なし。
   - **やること**: Vercel と同じ値を ①GitHub → Settings → Secrets → Actions に `PORTAL_BOT_SECRET` として登録 ②`d:/my_work/.env` に `PORTAL_BOT_SECRET=...` を追記。
   - **登録後**: `botAuth.ts` の修正をコミット＆プッシュし、次回のワーカー実行で管理者通知が届くことを確認する。
+  - **2026-09-29 実測（コネクタ経由）で登録状況を確定した**:
+    | 場所 | 状態 | 備考 |
+    |---|---|---|
+    | Vercel | ✅ **登録済み** | production / preview / development の3環境。最終更新 2026-09-22 |
+    | GitHub Secrets | ❌ **未登録** | `gh secret list` に無い（登録済みは CLOUDFLARE_API_TOKEN / CRON_SECRET / DATABASE_URL / GEMINI_API_KEY / GROQ_API_KEY / KTM_WORKER_URL / RIOT_API_KEY / SUPABASE_SERVICE_ROLE_KEY / SUPABASE_URL / VERCEL_CRON_SECRET / YOUTUBE_COOKIES_TXT の11件） |
+    | ローカル `.env` | 未確認 | `.env` の読み取りは `.claude/rules/confirmation.md` で要確認のため未実施 |
+    → **残るユーザー作業は「GitHub Secretsへの登録」と「ローカル`.env`への追記」の2つ**。Vercel側は対応不要。
+  - ⚠️ **2026-09-29 に気づいた別件（要判断）**: Vercelの `PORTAL_BOT_SECRET` の **comment欄に64桁の16進文字列が入っている**。
+    値そのものをメモとして貼った可能性があり、**comment欄は暗号化されない**ためプロジェクト閲覧権限があれば平文で読める。
+    秘密値と同一なら削除すること（値の確認は Vercel ダッシュボードで行う。ここには転記しない）。
   - 関連の未対応(下記「Supabase Region確認」とは別件): cron系7ルートが User-Agent `vercel-cron` を信用している（偽装可能）／`cron/lottery` の合言葉既定値 `'ktm_admin_secret'` のハードコード／`match/record` の無認証コイン発行／号外ニュースの架空コメント生成（2026-09-22の偽装データ一掃ルールと衝突）。
+
+- [ ] **Preview環境ではポータルの管理用Supabaseクライアントがanonキーに落ちている**（2026-09-29 発見・実害は小）
+  - `lib/supabaseAdmin.ts` は `SUPABASE_SERVICE_ROLE_KEY || SUPABASE_KEY || NEXT_PUBLIC_SUPABASE_ANON_KEY` の順にフォールバックする。
+  - Vercelの実測: **`SUPABASE_SERVICE_ROLE_KEY` は未登録**で、`SUPABASE_KEY` は **target が production のみ**（preview に無い）。
+    → **Preview デプロイでは3段目のanonキーまで落ちる**。RLSで閉じたテーブル（`agent_prompts` 等）を触る管理APIはPreviewで動かない。
+    本番は `SUPABASE_KEY` が効いているので影響なし（実際に書き込みが成立している: `coin_transactions` 251行等）。
+  - ⚠️ `supabaseAdmin.ts` 自身が「`SUPABASE_SERVICE_ROLE_KEY` を設定してください」と警告を出す作りになっているのに、
+    実際には別名の `SUPABASE_KEY` で運用されている。**名前の不一致が放置されている**ため、次に触る人が混乱する。
+  - **決めること**: ①Vercelに `SUPABASE_SERVICE_ROLE_KEY` を（preview含めて）登録して名前を揃える
+    ②`SUPABASE_KEY` の target に preview を追加する ③Previewで管理APIを使わない前提を明文化して現状維持。
+  - ⚠️ 本番の `SUPABASE_KEY` が secret(service) キーであることは書き込み成立から推定しているが、**値そのものは未確認**。
+    KTM Bot 側は同名の `SUPABASE_KEY` に anon キーが入っていて事故になった経緯がある（上記「Botの Supabase 書き込みが…」節）ので、同名変数の中身を混同しないこと。
 
 - [ ] **Cloudflare本命cronが空振りした理由が未特定**（2026-09-23 発見）
   - 水曜12:00 JSTの募集投稿が本命cronで実行されず、GitHub Actionsのバックアップ（5時間20分遅延）が投稿した。曜日設定・デプロイともに問題なしを確認済みなので、残る候補は「CF cronの取りこぼし（公式にbest-effort）」か「発火したが投稿処理内でエラー落ち」の2つ。
