@@ -3,7 +3,17 @@
 // チャンピオン抽選、ロールシャッフル、特殊縛りルールの生成
 // ============================================================
 
-// 代表的なチャンピオン一覧とロール情報 (DDragon準拠)
+// ⚠️ 2026-09-29 是正: ここは以前「代表的なチャンピオン一覧とロール情報 (DDragon準拠)」と
+// 書かれていたが、**DDragon準拠ではなく完全な手入力**だった。実測で 65体しか無く、
+// DataDragonの実際の総数は 173体（2026-09-29 確認）。つまり **108体（62%）が抽選で
+// 一度も出ない**のに「DDragon準拠」を名乗っていた。
+// 2026-09-22に一掃した「実データに見せかけた手入力」と同型（あの監査はBotを対象外にしていた）。
+//
+// ただし **ロール（TOP/JG/MID/ADC/SUP）はDataDragonが提供していない**（あるのは
+// Fighter/Mage等の`tags`だけ）。ロール絞り込みにはこの手入力データが必要なので、
+// 役割を分けて使う:
+//   - ロール指定なし(ALL) … DataDragonの全173体から抽選（`fetchChampionCatalog()`）
+//   - ロール指定あり     … 下の厳選プールから抽選（そう表示する）
 export const CHAMPION_POOL = [
   // TOP
   { id: 'Aatrox', name: 'エイトロックス', title: 'ダーキンの暴剣', role: 'TOP' },
@@ -135,18 +145,86 @@ export const FUN_RULES = [
   },
 ];
 
-function getDDragonIconUrl(championId) {
-  return `https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/${championId}.png`;
+// 厳選プール(CHAMPION_POOL)しか使えない場合のアイコン用バージョン。
+// ⚠️ 以前はここが唯一のバージョン指定で `14.24.1` 固定だった。旧バージョンのCDNは
+// 残るため既存65体は今も200で返るが、**14.24.1以降に追加されたチャンピオンは403**
+// （2026-09-29実測: Mel / Yunara が403、Ambessa / Aurora は200）。
+// プールへ新チャンピオンを足した瞬間に画像が壊れる潜在バグだったので、
+// DataDragonから取得した実バージョンを優先し、これは取得失敗時のみのフォールバックにした。
+const FALLBACK_DDRAGON_VERSION = '14.24.1';
+
+function getDDragonIconUrl(championId, version = FALLBACK_DDRAGON_VERSION) {
+  return `https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${championId}.png`;
+}
+
+/**
+ * DataDragon から現行バージョンと全チャンピオン（日本語名・タイトル付き）を取得する。
+ * Workers のアイソレートが再利用される間はキャッシュして使う（ボタン押下時の
+ * 即時応答(type:4)でも3秒制限に余裕を持たせるため）。
+ * 取得に失敗したら null を返す（推測データで埋めない）。
+ */
+let _catalogCache = null;
+const CATALOG_TTL_MS = 6 * 60 * 60 * 1000; // 6時間
+
+export async function fetchChampionCatalog() {
+  if (_catalogCache && Date.now() - _catalogCache.fetchedAt < CATALOG_TTL_MS) {
+    return _catalogCache;
+  }
+  try {
+    const vRes = await fetch('https://ddragon.leagueoflegends.com/api/versions.json', {
+      signal: AbortSignal.timeout(4000)
+    });
+    if (!vRes.ok) throw new Error(`versions.json HTTP ${vRes.status}`);
+    const versions = await vRes.json();
+    const version = Array.isArray(versions) && versions[0];
+    if (!version) throw new Error('versions.json が空');
+
+    const cRes = await fetch(
+      `https://ddragon.leagueoflegends.com/cdn/${version}/data/ja_JP/champion.json`,
+      { signal: AbortSignal.timeout(6000) }
+    );
+    if (!cRes.ok) throw new Error(`champion.json HTTP ${cRes.status}`);
+    const json = await cRes.json();
+
+    const champions = Object.values(json.data || {}).map((c) => ({
+      id: c.id,
+      name: c.name,
+      title: c.title,
+      role: null // DataDragonはレーン情報を持たない
+    }));
+    if (champions.length === 0) throw new Error('champion.json が空');
+
+    _catalogCache = { version, champions, fetchedAt: Date.now() };
+    return _catalogCache;
+  } catch (e) {
+    console.warn('[roulette] DataDragonのチャンピオン一覧取得に失敗:', e?.message);
+    // 期限切れでも古いキャッシュがあればそれを使う（無ければ null）
+    return _catalogCache || null;
+  }
 }
 
 /**
  * チャンピオン抽選Embedを生成
  */
-export function generateChampionRoulette(roleFilter = 'ALL', count = 1) {
-  let pool = CHAMPION_POOL;
-  if (roleFilter && roleFilter !== 'ALL') {
-    pool = CHAMPION_POOL.filter((c) => c.role.toUpperCase() === roleFilter.toUpperCase());
+export function generateChampionRoulette(roleFilter = 'ALL', count = 1, catalog = null) {
+  const isAll = !roleFilter || roleFilter === 'ALL';
+  const version = catalog?.version || FALLBACK_DDRAGON_VERSION;
+
+  // ロール指定なし → DataDragonの全チャンピオンを使う（取得できていれば）。
+  // ロール指定あり → DataDragonはレーン情報を持たないため厳選プールを使う。
+  const usingFullCatalog = isAll && Array.isArray(catalog?.champions) && catalog.champions.length > 0;
+  let pool = usingFullCatalog ? catalog.champions : CHAMPION_POOL;
+  if (!isAll) {
+    pool = CHAMPION_POOL.filter((c) => c.role && c.role.toUpperCase() === roleFilter.toUpperCase());
   }
+  if (pool.length === 0) pool = CHAMPION_POOL; // 念のための保険
+
+  // 抽選元を偽らずに明示する（「DDragon準拠」と書いて65体しか無かった過去の反省）
+  const sourceNote = usingFullCatalog
+    ? `全${pool.length}体から抽選 (DataDragon ${version})`
+    : isAll
+      ? `厳選${pool.length}体から抽選 (DataDragon取得に失敗したため)`
+      : `厳選${pool.length}体から抽選 (ロール情報はDataDragonに無いため手入力データを使用)`;
 
   // シャッフルして指定件数抽出
   const shuffled = [...pool].sort(() => 0.5 - Math.random());
@@ -154,13 +232,15 @@ export function generateChampionRoulette(roleFilter = 'ALL', count = 1) {
 
   if (count === 1) {
     const c = selected[0];
+    // DataDragon由来のチャンピオンにはロール情報が無いので、その場合は行そのものを出さない
+    const roleLine = c.role ? `推奨ロール: **${c.role}**\n` : '';
     return {
       embed: {
         title: `🎲 チャンピオン抽選結果: ${c.name}`,
-        description: `**${c.title} - ${c.id}**\n推奨ロール: **${c.role}**\n\n「運命はお前を選んだ！このチャンピオンで勝利を掴め！」`,
+        description: `**${c.title} - ${c.id}**\n${roleLine}\n「運命はお前を選んだ！このチャンピオンで勝利を掴め！」`,
         color: 0xc2650f, // KTMアンバー
-        thumbnail: { url: getDDragonIconUrl(c.id) },
-        footer: { text: `ロール条件: ${roleFilter} | KTM Roulette System` },
+        thumbnail: { url: getDDragonIconUrl(c.id, version) },
+        footer: { text: `ロール条件: ${roleFilter} | ${sourceNote}` },
         timestamp: new Date().toISOString(),
       },
       components: [
@@ -204,8 +284,9 @@ export function generateChampionRoulette(roleFilter = 'ALL', count = 1) {
       description: '全5レーンのチャンピオンを一発抽選しました！\nこの構成でカスタムを戦い抜け！',
       color: 0x5865f2,
       fields,
-      thumbnail: { url: getDDragonIconUrl(teamPicks[0].id) },
-      footer: { text: 'KTM Sovereign OS | チームドラフト' },
+      thumbnail: { url: getDDragonIconUrl(teamPicks[0].id, version) },
+      // チーム抽選はレーン別に選ぶため、ロール情報を持つ厳選プールしか使えない。そう明記する。
+      footer: { text: `KTM Sovereign OS | チームドラフト | 厳選${CHAMPION_POOL.length}体から抽選（レーン別のため）` },
       timestamp: new Date().toISOString(),
     },
     components: [
@@ -323,6 +404,11 @@ export async function handleRouletteCommand(interaction, env, ctx) {
   const mode = getOpt('mode') || 'champion';
   const role = getOpt('role') || 'ALL';
 
+  // チャンピオン抽選のときだけDataDragonの一覧が必要。
+  // アイソレート内でキャッシュされるため通常は即時、初回のみ数百ms。
+  const needsCatalog = mode === 'team' || !(mode === 'roles' || mode === 'shuffle' || mode === 'bravery' || mode === 'rule');
+  const catalog = needsCatalog ? await fetchChampionCatalog() : null;
+
   let result;
   if (mode === 'roles' || mode === 'shuffle') {
     // 実行者のメンションを含める
@@ -331,9 +417,9 @@ export async function handleRouletteCommand(interaction, env, ctx) {
   } else if (mode === 'bravery' || mode === 'rule') {
     result = generateBraveryRoulette();
   } else if (mode === 'team') {
-    result = generateChampionRoulette('ALL', 5);
+    result = generateChampionRoulette('ALL', 5, catalog);
   } else {
-    result = generateChampionRoulette(role, 1);
+    result = generateChampionRoulette(role, 1, catalog);
   }
 
   return Response.json({
@@ -353,6 +439,10 @@ export async function handleRouletteButton(interaction, env, ctx) {
   const [, type, role, countStr] = customId.split(':');
   const count = parseInt(countStr || '1', 10);
 
+  // チャンピオン抽選のときだけDataDragonの一覧が必要（キャッシュ済みなら即時）
+  const needsCatalog = type === 'team' || !(type === 'roles' || type === 'bravery');
+  const catalog = needsCatalog ? await fetchChampionCatalog() : null;
+
   let result;
   if (type === 'roles') {
     const caller = `<@${interaction.member?.user?.id || interaction.user?.id}>`;
@@ -360,9 +450,9 @@ export async function handleRouletteButton(interaction, env, ctx) {
   } else if (type === 'bravery') {
     result = generateBraveryRoulette();
   } else if (type === 'team') {
-    result = generateChampionRoulette('ALL', 5);
+    result = generateChampionRoulette('ALL', 5, catalog);
   } else {
-    result = generateChampionRoulette(role || 'ALL', count);
+    result = generateChampionRoulette(role || 'ALL', count, catalog);
   }
 
   // メッセージを更新 (type 7)
