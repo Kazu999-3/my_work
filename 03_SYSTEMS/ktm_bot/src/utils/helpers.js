@@ -251,7 +251,13 @@ export async function handleAutoMatchEnd(interaction, players, winnerTeam, env, 
           players: players.map(p => ({ name: p.name, team: p.team, role: p.role }))
         });
       } catch (betErr) {
+        // ⚠️ 2026-09-29: 以前は console.warn だけだった。ここが失敗すると参加賞・勝利
+        // ボーナス・ベット配当が付かないのに、カードは「✅ 記録完了」のまま。気づけない。
         console.warn("Bet settle API error:", betErr);
+        const { notifyAdminError } = await import('./alert.js');
+        await notifyAdminError(env, betErr, {
+          action: 'handleAutoMatchEnd: /api/bet/settle（コイン精算）が失敗。試合記録自体は成功している'
+        });
       }
 
       // 3分後の match-sync 実行を予約する。ctx.waitUntil+setTimeoutはワーカーの
@@ -264,20 +270,82 @@ export async function handleAutoMatchEnd(interaction, players, winnerTeam, env, 
             run_after: new Date(Date.now() + 180000).toISOString(),
           });
         } catch (err) {
+          // ⚠️ 2026-09-29: 以前は console.error だけだった。ここが失敗すると3分後の
+          // riot/match-sync が予約されず、KDA・MMR内訳・ペンタキル判定が永久に埋まらない。
           console.error("Failed to schedule pending match-sync:", err);
+          const { notifyAdminError } = await import('./alert.js');
+          await notifyAdminError(env, err, {
+            action: `handleAutoMatchEnd: pending_match_sync の予約に失敗（match_id=${resultData.matchId}）。実データ取得が走らない`
+          });
         }
       }
-    } catch (err) { 
-      console.error("AutoLog Error:", err); 
+
+      // ここまで到達した＝記録が実際に成功した。カードを「記録中」から完了表示へ更新する。
+      // （下の即時レスポンスは成否が未確定なので「⏳ 記録中...」にしてある）
+      try {
+        const okEmbed = interaction.message.embeds?.[0] ? { ...interaction.message.embeds[0] } : {};
+        okEmbed.title = `✅ 試合終了: ${winnerTeam} 勝利で記録されました`;
+        okEmbed.color = winnerTeam === 'BLUE' ? 0x3498db : 0xe74c3c;
+        okEmbed.footer = {
+          text: `✅ 記録完了 | 約3分後にリザルト自動取得... (ID: ${Math.floor(Date.now() / 1000).toString(16)})`
+        };
+        await fetch(`https://discord.com/api/v10/channels/${interaction.channel_id}/messages/${interaction.message.id}`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ embeds: [okEmbed], components: [] })
+        });
+      } catch (patchErr) {
+        // カードの更新に失敗しても記録自体は成功しているので、致命的ではない
+        console.warn('Failed to mark match card as completed:', patchErr);
+      }
+    } catch (err) {
+      console.error("AutoLog Error:", err);
+
+      // 🚨 2026-09-29 是正: ここが本セッションで見つけた中でも影響が大きい箇所。
+      // 記録処理は ctx.waitUntil の中で非同期に走るのに、下のカード更新は**成功を待たずに**
+      // 「✅ 試合終了 / ✅ 記録完了」と表示していた。/api/match/record が失敗しても
+      // console.error だけで、**試合が記録されていないのにカードは記録完了と主張する**。
+      // MMR・コイン・戦績のすべてが入らないのに誰も気づけない、最悪の無言failureだった。
+      //
+      // さらに今日 /api/match/record に verifyBotSecret を追加したため、
+      // PORTAL_BOT_SECRET が Worker と Vercel でズレると必ず401になる。
+      // その状態で「記録完了」と表示され続けるのは致命的なので、失敗をカードへ反映する。
+      try {
+        const { notifyAdminError } = await import('./alert.js');
+        await notifyAdminError(env, err, {
+          action: 'handleAutoMatchEnd: /api/match/record が失敗。試合が記録されていない（MMR・コイン・戦績すべて未反映）'
+        });
+      } catch (alertErr) {
+        console.error('AutoLog alert dispatch failed:', alertErr);
+      }
+
+      // カードの「記録完了」表示を訂正する（メッセージ編集で上書きする）
+      try {
+        const failEmbed = interaction.message.embeds?.[0] ? { ...interaction.message.embeds[0] } : {};
+        failEmbed.title = `❌ 試合の記録に失敗しました（${winnerTeam} 勝利として送信）`;
+        failEmbed.color = 0xed4245;
+        failEmbed.footer = {
+          text: '⚠️ MMR・コイン・戦績は反映されていません。管理者に通知済みです。'
+        };
+        await fetch(`https://discord.com/api/v10/channels/${interaction.channel_id}/messages/${interaction.message.id}`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ embeds: [failEmbed], components: [] })
+        });
+      } catch (patchErr) {
+        console.error('Failed to mark match card as failed:', patchErr);
+      }
     }
   })());
 
   const updatedEmbed = interaction.message.embeds[0];
-  updatedEmbed.title = `✅ 試合終了: ${winnerTeam} 勝利で記録されました`;
+  // ⚠️ この時点では記録の成否が未確定（上の waitUntil が非同期に走る）。
+  // 失敗した場合は上の catch がこのカードを「❌ 記録に失敗」へ書き換える。
+  updatedEmbed.title = `⏳ 試合終了: ${winnerTeam} 勝利として記録中...`;
   updatedEmbed.color = winnerTeam === 'BLUE' ? 0x3498db : 0xe74c3c;
-  
+
   if (!updatedEmbed.footer) updatedEmbed.footer = {};
-  updatedEmbed.footer.text = `✅ 記録完了 | 約3分後にリザルト自動取得... (ID: ${Math.floor(Date.now() / 1000).toString(16)})`;
+  updatedEmbed.footer.text = `記録処理中 | 完了後に約3分でリザルト自動取得 (ID: ${Math.floor(Date.now() / 1000).toString(16)})`;
 
   return Response.json({ 
     type: 7, 
