@@ -910,6 +910,78 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
 
 ---
 
+## 🚨🚨 公開リポジトリに本番認証キーが平文で載っていた（2026-09-29 発見・要ローテーション）
+
+> **経緯**: 「Discord Botの改善ポイント調査」で静的監査を行った際に発見。`gh repo view` で
+> **リポジトリが PUBLIC** であることを確認済み。
+
+### ① Worker の `INTERNAL_GAS_SECRET` が公開されていた（実害あり・実証済み）
+
+- `.github/workflows/ktm-bot-cron-backup.yml:78` に `KEY="${TRIGGER_KEY:-ktm_v3_internal_secret_2026}"` とハードコード。
+- `KTM_TRIGGER_KEY` は GitHub Secrets に**未登録**だった → **この既定値が実際に使われていた**。
+- **証拠**: バックアップcronの直近6回が全て `success`（ワークフローはHTTP 200以外で `exit 1` する）。
+  つまり Worker 側の `INTERNAL_GAS_SECRET` = `ktm_v3_internal_secret_2026` が確定。
+- **誰でも叩けた操作**（`/trigger-scheduled?key=...&mode=...`）:
+  募集カードの投稿 / 20:00判定の告知（「中止」等をチャンネルへ）/ `weekly_recruit_reset`（**出ているカードを全部閉じて作り直す**）/ メンバーへのDM送信。
+- ⚠️ **git履歴は公開のまま永久に残るため、ファイルを直しただけでは無効化されない。ローテーションが必須。**
+
+### ② 宝くじ抽選API の合言葉が公開されていた
+
+- `04_PORTAL/src/app/api/cron/lottery/route.ts:19` に `process.env.ADMIN_SECRET_KEY || 'ktm_admin_secret'`。
+- `ADMIN_SECRET_KEY` は Vercel に**未登録**（環境変数一覧をコネクタで実測）→ 既定値が有効だった。
+- `executeLotteryDraw()` は**コインを払い出す**処理。さらに User-Agent に `vercel-cron` を含めるだけで通る経路もあった（ヘッダは偽装可能）。
+
+### 対応済み（コード側・2026-09-29）
+
+- [x] ワークフローのハードコード既定値を**撤去**。`KTM_TRIGGER_KEY` 未設定なら `::error::` を出して `exit 1`（黙って公開鍵で動かない）。
+- [x] 宝くじAPIを **`CRON_SECRET` の Bearer のみを正**に変更。`ADMIN_SECRET_KEY` は既定値を持たせず、未設定なら `?key=` 経路自体を閉じる。
+      User-Agent による判定も撤去（`CRON_SECRET` が設定済みなら Vercel Cron は自動でBearerを付けるため `vercel.json` の定期実行はそのまま動く）。
+
+### 🚨 ユーザー作業（鍵の設定はAI側がブロックされるため必須）
+
+新しい値は生成済み（**スクラッチパッドにあり、セッション終了で消える**）:
+`%TEMP%\claude\D--my-work\b3a69003-040c-4527-b7b6-baca022bf9c0\scratchpad\` の
+`internal_gas_secret_new.txt`（64桁hex）/ `admin_secret_key_new.txt`（48桁hex）
+
+- [ ] **⏰ 時間制約あり（水曜12:00 JSTより前が望ましい）**: `INTERNAL_GAS_SECRET` のローテーション。
+      **2箇所を同じ値にすること**。片方だけだとバックアップcronが401になる。
+      ```bash
+      cd 03_SYSTEMS/ktm_bot
+      npx wrangler secret put INTERNAL_GAS_SECRET < "<internal_gas_secret_new.txt のパス>"
+      gh secret set KTM_TRIGGER_KEY < "<同じファイルのパス>"
+      ```
+      ⚠️ **今は `KTM_TRIGGER_KEY` が未登録なので、この作業が終わるまでバックアップcronは401で失敗する**。
+      本命のCloudflare cron（水曜12:00 JST）は動くので募集自体は投稿されるが、保険が外れている状態。
+- [ ] `ADMIN_SECRET_KEY` を Vercel に登録（`admin_secret_key_new.txt` の値）。
+      ※ 宝くじの定期実行は `CRON_SECRET` で動くため**登録しなくても動作する**。手動実行したい場合のみ必要。
+- [ ] 残る同系統の課題: **cron系の他6ルートがまだ User-Agent `vercel-cron` を信用している**（偽装可能）。
+      今回は実害が最大の `cron/lottery` のみ直した。`match/record` の無認証コイン発行も未対応。
+
+---
+
+## 🔍 Discord Bot 静的監査の結果（2026-09-29）
+
+全19ファイル6,308行を機械的に走査した。
+
+- [x] **【実害あり・修正済み】`components.js:686` に未定義の識別子が3つ**
+  - `computeDayStatus` と `DAY_CAPACITY` の**import漏れ**（他ファイルはimport済み）、および**どこにも存在しない `targetDayKey`**（正しくは `dayKey`）。
+  - `d945b4bc`（**2026-09-26**）で混入。このコミットはデプロイ成功しているため**本番で3日間 ReferenceError を投げ続けていた**。
+  - **影響**: 「🔥 あと1名で開催確定！」の促進投稿が**一度も出ていない**。参加者一覧のPATCHは例外より前なので成功しており、**外から見ると正常に動いて見えていた**。
+  - esbuildは未定義の識別子をグローバル参照として素通りさせるため、ビルドでは検出できない（HANDOVER §2.10(6) と同型の**3件目**）。
+- [ ] **例外の握りつぶしが構造的**: `catch` 全111箇所の内訳は
+  **管理者へ通知 1件 / `console` 出力のみ 54件 / 完全に空 5件**。
+  `notifyAdminError` という通知機構は既にあるのに、使われているのは1箇所だけ。
+  Cloudflare Workers の `console` は `wrangler tail` を繋いでいる間しか見えず**保存されない**ため、
+  後から「いつ何が失敗したか」を追えない。今回のバグが3日気づかれなかった直接の原因。
+  - **やること（未着手）**: 少なくとも定期実行系（`scheduled.js`、console のみのcatchが27件）と
+    決済・コイン系の失敗は `notifyAdminError` へ流す。空catch5件（`components.js:512/644/1243`、`modals.js:97`、`scheduled.js:689`）は個別に判断
+    （`644` は `JSON.parse` のフォールバックなので現状維持でよい）。
+- [ ] **`sendRecruitmentReminders` は定義のみ・呼び出し元ゼロ**（既知・`scheduled.js:89`）。開始15分前リマインドが一度も動いていない。
+- 孤立したexportは0件、他の未定義関数呼び出しも0件（上記1件のみ）。
+- ファイル規模の偏り: `scheduled.js` 1,426行 / `components.js` 1,288行で全体の43%。分割は未検討。
+
+---
+
 ## 🔧 積み残し（2026-09-21セッションで発見・判断保留したもの）
 
 いずれも実害は小さいが、調査済みの経緯を失わないよう記録する。

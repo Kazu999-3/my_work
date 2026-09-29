@@ -75,7 +75,21 @@ jobs:
             echo "::error::KTM_WORKER_URL シークレットが未設定です。リポジトリ Settings > Secrets に追加してください。"
             exit 1
           fi
-          KEY="${TRIGGER_KEY:-ktm_v3_internal_secret_2026}"
+
+          # ⚠️ 2026-09-29 セキュリティ修正:
+          # ここには以前 KEY="${TRIGGER_KEY:-ktm_v3_internal_secret_2026}" とハードコードの
+          # 既定値があった。KTM_TRIGGER_KEY が未登録だったため**この値が本番で実際に使われており**
+          # (直近のバックアップ実行が全てHTTP 200で成功していたことが証拠)、かつこのリポジトリは
+          # 公開されている。つまり誰でも /trigger-scheduled を叩いて募集カードの投稿・20:00判定の
+          # 告知・カードの一括作り直し・メンバーへのDM送信を実行できる状態だった。
+          # フォールバックは廃止し、未設定なら黙って動かず失敗させる。
+          if [ -z "$TRIGGER_KEY" ]; then
+            echo "::error::KTM_TRIGGER_KEY が未設定です。Worker の INTERNAL_GAS_SECRET と同じ値を"
+            echo "::error::リポジトリ Settings > Secrets and variables > Actions に登録してください。"
+            echo "::error::旧値 ktm_v3_internal_secret_2026 は公開履歴に残っており使用禁止です（要ローテーション）。"
+            exit 1
+          fi
+          KEY="$TRIGGER_KEY"
 
           MODE="$INPUT_MODE"
           if [ "$EVENT_NAME" = "schedule" ]; then

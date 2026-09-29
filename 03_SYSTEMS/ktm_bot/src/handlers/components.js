@@ -7,7 +7,7 @@ import { createMessageContent, createRecruitButtons, createRecruitEmbed, extract
 import { parseMessageData, handleAutoMatchEnd } from '../utils/helpers.js';
 import { getAdminDiscordIds, markRecruitmentStatus } from '../utils/recruitPermission.js';
 import { getKtmRank, getHighestLaneMmr, getPlayerExperienceBadge, getPlayerActiveMark } from '../utils/ktmRank.js';
-import { detectDayKey, getDayDef, extractEntryLines, resolveWeekendTargets, buildRecruitmentContent, RANK_SHORT_JP_MAP } from '../utils/recruitmentStatus.js';
+import { detectDayKey, getDayDef, extractEntryLines, resolveWeekendTargets, buildRecruitmentContent, computeDayStatus, DAY_CAPACITY, RANK_SHORT_JP_MAP } from '../utils/recruitmentStatus.js';
 import { cleanupOldReminderMessages } from './scheduled.js';
 
 const RANK_JP_MAP = {
@@ -683,7 +683,11 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         });
 
         // ★ あと1名になった瞬間にラストワン促進の返信を自動投稿
-        const prevStatus = computeDayStatus(currentLines, DAY_CAPACITY, targetDayKey);
+        // ⚠️ この行は2026-09-26〜09-29の間、未定義の識別子3つ(computeDayStatus /
+        // DAY_CAPACITY のimport漏れ ＋ 存在しない targetDayKey)で ReferenceError を投げており、
+        // 下の catch が握りつぶしていたため「あと1名」促進が一度も投稿されていなかった。
+        // 参加者一覧のPATCH(上)は例外より前なので成功しており、外から見ると正常に見えていた。
+        const prevStatus = computeDayStatus(currentLines, DAY_CAPACITY, dayKey);
         let promptContent = null;
         const rankNote = (def.key === 'sat' && nextStatus.dominantTierInfo?.rangeText)
           ? `（${nextStatus.dominantTierInfo.rangeText}対象）`
