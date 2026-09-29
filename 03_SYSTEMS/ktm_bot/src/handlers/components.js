@@ -146,6 +146,8 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         ]
       }
     });
+  }
+
   // 🎓 師弟マッチング：弟子登録モーダル
   if (customId === 'mentorship_apply_pupil') {
     return Response.json({
