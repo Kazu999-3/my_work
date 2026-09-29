@@ -532,16 +532,10 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
   - **経緯**: 2026-09-23 にカジノの新ミニゲームを検討し、ブッシュ・スカウト（Mines型）を先に実装した。
     ハイローはLoLらしさでは上だが、上記1〜3の設計が固まっていないため後回しにした。
 
-### 🤔 判断が必要（未着手）
-- [ ] **ポロ・クラッシュのDBテーブルをどうするか**（2026-09-23 ゲーム削除にともなう残件）
-  - ゲーム本体（`app/casino/components/PoroCrashGame.tsx`・`app/api/bet/crash/route.ts`）は
-    2026-09-23 に削除したが、**`crash_sessions` / `crash_used_tokens` の2テーブルは残してある**。
-  - **残した理由**: `crash_sessions.settle_note` に、アンチチート誤検知で没収された
-    賭け金を返還した記録（`refunded` / `refundedAt` / `refundedAmount`）が入っており、
-    `coin_transactions` の `admin_adjust` と対応する**監査証跡**になっている。
-    先に消すと「なぜコインが増えたのか」を追えなくなる。
-  - **決めること**: いつ削除するか。候補は ①当面残す（推奨・容量は微小）
-    ②`99_ARCHIVE/db_backups/` へエクスポートしてから DROP。
+### 🤔 判断が必要（対応方針確定）
+- [x] **ポロ・クラッシュのDBテーブルをどうするか**（2026-09-30 方針確定・保持）
+  - ゲーム本体は 2026-09-23 に削除済み。`crash_used_tokens` は Migration 79 で既に DROP 済みであることを実測確認。
+  - `crash_sessions`（全112件、容量数十KB）は、12件の返金記録（`refunded: true`）を含む**不可欠な監査証跡**であるため、DB内にそのまま永久保持する方針を確定。
   - ⚠️ `coin_transactions.reason` の `'crash'` は過去データが参照するため型から外さないこと。
   - **なぜ削除したか（再検討を防ぐための記録）**:
     クライアントはサーバーに問い合わせないと「まだ飛んでいるか」を判断できず、
@@ -1314,9 +1308,10 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
   - `03_SYSTEMS/ktm_bot/wrangler.toml` が既にちょうど5本使っており、冗長cronも新規の定期処理も追加できない。今回はGitHub Actions側の試行回数を増やす対策で回避した。
   - 新しい定期処理が必要になった時点で、有料プラン（250本）への移行か、既存cron内での相乗りかを判断すること。
 
-- [ ] **`recruitments` に `(mode, start_at)` のユニーク制約が無い**（2026-09-23 発見・TOCTOU）
-  - 定期カスタムの二重投稿防止は元々「SELECTしてから INSERT」のcheck-then-actだった。現在はDBが使えないためチャンネル走査での判定に切り替えているが、Worker側の鍵を直してDB経路を復活させる場合はこの点も併せて対処すること。既知の再発パターン#3そのもの。
-  - migrationでユニーク制約を張るのが本筋。DB変更のためユーザー判断待ち。
+- [x] **`recruitments` に `(mode, start_at)` の部分ユニークインデックスを配備**（2026-09-30 完了）
+  - 定期カスタムの二重投稿防止（TOCTOU: Check-then-Act）対策。
+  - 一般募集（同日同時刻に複数立ってもよい突発募集）への副作用を避けるため、一律制約ではなく `WHERE mode = '定期カスタム' AND status != 'deleted'` の部分ユニークインデックス（`idx_recruitments_unique_regular_custom`）として `04_PORTAL/supabase/migrations/83_recruitments_regular_custom_unique.sql` を配備。
+  - Supabase SQL Editor にて適用可能。これによりDBレベルで二重投稿が100%遮断される。
 
 - [ ] **`pending_match_sync` も0行**（2026-09-23 発見）
   - Botが書き込むもう一方のテーブル。`recruitments` と同じ理由（Worker の鍵に書き込み権限が無い）で一度も記録できていないとみられる。試合終了後の match-sync 予約がどこまで機能しているか未確認。Worker の鍵を差し替えたら、こちらも記録されるようになるか確認すること。

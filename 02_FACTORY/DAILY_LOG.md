@@ -139,6 +139,33 @@
 2. **Discordコマンドは「コード削除」と「API登録解除（DELETE）」を必ず対で行え**: Discordのスラッシュコマンドは一度登録されるとBot側がコードを消してもサーバーに残り続ける。定期的に一覧（GET）とコード定義（SSoT）を突合し、不要なコマンドを明示的DELETEで掃除するルーティンが不可欠。
 3. **エラー通知経路そのものの死活監視には「自己診断モード（selftest）」を仕込め**: エラー通知は「壊れていてもエラーが出ない（通知が死んでいるため）」というサイレントフェイルの典型。HTTPレスポンスで配送結果を返す自己診断エンドポイントを設けることで、外部ワークフローやcurlからいつでも確実に疎通確認できる。
 
+---
+
+### 🗄️ DB現況実測監査 ＆ 定期カスタムTOCTOU防止用マイグレーション（Migration 83）配備
+
+**概要**:
+1. **背景と目的**:
+   - 削除済みゲーム「ポロ・クラッシュ」関連の残存テーブル（`crash_sessions`, `crash_used_tokens`）の整理方針を確定し、不要テーブルの有無を実測調査する。
+   - 明日正午から稼働するCloudflare Workersの定期カスタム自動投稿において、万が一のcron重複発火による募集多重作成（TOCTOU: Check-then-Act）をDBレベルで根本防止する。
+2. **実施内容**:
+   - **残存テーブルの実態調査**:
+     - `crash_used_tokens`: 過去のマイグレーション（Migration 79）にて既に `DROP TABLE IF EXISTS` 済みであることを確認。
+     - `crash_sessions`: 全112件（容量数十KB）。うち12件にアンチチート誤検知返金の監査証跡（`settle_note.refunded = true`）が記録されており、コイン台帳（`coin_transactions`）の `admin_adjust` と1対1対応しているため、「監査証跡としてDB内に安全保持」する方針を確定。
+   - **TOCTOU防止マイグレーション（Migration 83）の配備**:
+     - `04_PORTAL/supabase/migrations/83_recruitments_regular_custom_unique.sql` を新設。
+     - 通常の突発募集（同一日時に別人が立てる可能性がある募集）への影響をゼロにするため、一律制約ではなく `WHERE mode = '定期カスタム' AND status != 'deleted'` の**部分ユニークインデックス（Partial Unique Index: `idx_recruitments_unique_regular_custom`）** を採用。
+   - **TODOダッシュボードの更新**: `02_FACTORY/TODO.md` の関連未着手項目2件を解決・完了（`[x]`）へ同期。
+
+**3行ナレッジ**:
+1. **安易なテーブル削除は監査証跡を破壊する（Decisions Over Artifacts）**: コードを削除したからといってDBテーブルも即座にDROPすると、「なぜ過去にコインが増減したのか」を証明する返金ログや調整記録が永遠に失われる。容量が微小な監査証跡は保持が鉄則。
+2. **ユニーク制約は「一律」ではなく「部分ユニークインデックス（Partial Index）」で守れ**: `(mode, start_at)` に一括UNIQUEを張ると、突発カスタムやノーマル募集の同時開催が塞がれる事故が起きる。`WHERE mode = '定期カスタム'` のように特定条件のみに絞り込むことで、副作用ゼロで二重登録だけを遮断できる。
+3. **Check-then-Act の競合はアプリケーション層ではなくDB制約で確実に止める**: 「SELECTして無ければINSERT」は分散環境（cronと手動、複数ワーカー）ではタイミング次第で必ずすり抜ける。DBレベルのUNIQUEインデックスこそがTOCTOUに対する唯一の確実な防壁である。
+
+**拾い上げ（Harvest）**:
+- `[要検証]`: 明日水曜12:00 JST、Cloudflare Worker 本命cronによる定期カスタム募集投稿の初実戦観測。
+- `[継続ウォッチ]`: Supabase `recruitments` テーブルへの `mode='定期カスタム'` レコードの正常格納。
+- `[発信候補]`: 「分散cronの二重実行を100%防ぐ：PostgreSQLの部分ユニークインデックスを活用した安全なTOCTOU対策」。
+
 **拾い上げ（Harvest）**:
 - `[要検証]`: 明日水曜12:00 JSTの本命Cloudflare cronによる週末カスタム募集カードの初回自動投稿。
 - `[継続ウォッチ]`: Discord管理チャンネルへのエラー通知の受信頻度と内容。
