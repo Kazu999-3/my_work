@@ -845,13 +845,26 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
 - **修正**: 欠落していた `}` を復元（`components.js` 148行の直後）。
 - **検証**: `node --check` で `src/` 配下の全JSファイルを確認（全件OK）、
   `npx wrangler deploy --dry-run` でバンドル成功（267.11 KiB / gzip 60.42 KiB）を確認。
-- **教訓・再発防止の検討事項（未対応）**:
-  - **デプロイ失敗が誰にも通知されていない**。`ktm-bot-deploy.yml` が失敗しても本番Workerは
-    古いコードで動き続けるため、**画面上は何も壊れず気づけない**。3日気づかなかったのはこれが理由。
-    → 失敗時にDiscordの管理者エラーチャンネルへ通知するステップを足すべき。
-  - **CIに構文チェックが無い**。`node --check` か `wrangler deploy --dry-run` をPR/pushで回せば
-    コミット時点で落とせた。`.github/workflows/ci.yml` が既にあるのでそこへ追加するのが早い。
-  - これは [[project-orphaned-automation-pattern]] の変種（自動化は存在するが、失敗が観測されていない）。
+- **再発防止（2026-09-29 実装済み）**: これは [[project-orphaned-automation-pattern]] の変種
+  （自動化は存在するが、**失敗が観測されていない**）。2方向から塞いだ。
+
+  **① CIでコミット時点に落とす（`.github/workflows/ci.yml` に `bot-syntax` ジョブを追加）**
+  - `src/` 配下の全JSへ `node --check` を当て、続けて `npx wrangler deploy --dry-run` でバンドル検証。
+  - 対象パスに `03_SYSTEMS/ktm_bot/**` を追加（従来は `04_PORTAL/**` のみが対象で、Botは**CIの管轄外**だった）。
+  - **実証済み**: 当時壊れていた版（`b430fecb` の `components.js`）に対してCIと同じロジックを実行し、
+    構文エラーを検出して exit 1 になることを確認した。「チェックを足したが実は検出できない」を避けるため実測した。
+  - ⚠️ 「04_PORTALに変更が無ければテストをスキップ」という条件は**意図的に付けていない**。
+    `github.event.commits` は20件で打ち切られる等の取りこぼしがあり、**テストが黙ってスキップされる方が危険**。
+
+  **② デプロイ失敗を通知する（`ktm-bot-deploy.yml`）**
+  - 失敗時に**GitHub Issueを自動作成**する（`permissions: issues: write` ＋ 標準の `GITHUB_TOKEN`）。
+    **新しいシークレットが不要**なので今日から機能する。既に同じIssueが開いていればコメント追記に留め、量産を防ぐ。
+  - `DISCORD_KTM_WEBHOOK_URL` が**GitHub Secretsに登録されていれば**Discordへも送る。
+    未登録なら `::warning::` を出してスキップ（Issueは出るので無通知にはならない）。
+    - [ ] **任意のユーザー作業**: Discordにも飛ばしたい場合は `gh secret set DISCORD_KTM_WEBHOOK_URL`
+      で登録する（値は `04_PORTAL/.env.local` の同名変数。AIからの読み出しは機密保護でブロックされた）。
+  - Issue本文には「本番Workerは古いコードで動き続けるので画面上は壊れない」旨と、
+    ローカルでの再現コマンドを載せてある。
 
 ---
 

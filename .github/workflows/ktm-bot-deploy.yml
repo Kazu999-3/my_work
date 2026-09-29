@@ -14,6 +14,10 @@ on:
   workflow_dispatch:
     # 手動実行用のトリガー（コード変更なしで再デプロイしたい場合など）
 
+permissions:
+  contents: read
+  issues: write   # デプロイ失敗を検知可能にするため、失敗時にIssueを立てる
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -39,3 +43,58 @@ jobs:
         run: npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      # ───────────────────────────────────────────────────────────────
+      # 失敗の可視化 (2026-09-29 追加)
+      #
+      # デプロイが失敗しても本番Workerは古いコードで動き続けるため、画面上は
+      # 何も壊れず誰も気づけない。実際に2026-09-27の構文エラーで3回連続失敗し、
+      # 師弟マッチングの3コミットが3日間本番へ反映されないままだった。
+      #
+      # 新しいシークレットを必要としない GitHub Issue を主たる通知手段にする
+      # (標準の GITHUB_TOKEN で動き、Issueは通知が飛ぶ上に消えずに残る)。
+      # DISCORD_KTM_WEBHOOK_URL が登録されていればDiscordへも送る。
+      # ───────────────────────────────────────────────────────────────
+      - name: 失敗をIssueで通知
+        if: failure()
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SHA: ${{ github.sha }}
+          MSG: ${{ github.event.head_commit.message }}
+        run: |
+          TITLE="🚨 KTM Botのデプロイが失敗しています"
+          # 既に開いている同じIssueがあれば本文を追記するだけにして、実行ごとの量産を防ぐ
+          EXISTING=$(gh issue list --state open --search "$TITLE in:title" --json number --jq '.[0].number' || echo "")
+          BODY=$(printf '%s\n' \
+            "デプロイが失敗しました。**本番Workerは古いコードで動き続けているため、画面上は何も壊れません**。" \
+            "" \
+            "- 実行ログ: $RUN_URL" \
+            "- コミット: \`${SHA}\`" \
+            "- メッセージ: ${MSG}" \
+            "" \
+            "### 最初に見るべきところ" \
+            "構文エラーなら \`cd 03_SYSTEMS/ktm_bot && npx wrangler deploy --dry-run\` をローカルで回せば同じ失敗が再現します。" \
+            "\`node --check\` を \`src/\` の全JSに当てるとファイル単位で特定できます（CIの bot-syntax ジョブと同じ内容）。")
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+            echo "既存Issue #$EXISTING にコメントしました"
+          else
+            gh issue create --title "$TITLE" --body "$BODY"
+          fi
+
+      - name: 失敗をDiscordへ通知 (webhook未設定ならスキップ)
+        if: failure()
+        working-directory: .
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_KTM_WEBHOOK_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "$WEBHOOK" ]; then
+            echo "::warning::DISCORD_KTM_WEBHOOK_URL が未登録のためDiscord通知はスキップしました（Issueは作成済み）。登録すればここからも飛びます。"
+            exit 0
+          fi
+          curl -s -X POST "$WEBHOOK" -H 'Content-Type: application/json' \
+            -d "$(printf '{"content":"🚨 **KTM Botのデプロイが失敗しました**\\n本番Workerは古いコードのままです（画面上は壊れないので見落としやすい）。\\n%s"}' "$RUN_URL")" \
+            > /dev/null && echo "Discordへ通知しました"

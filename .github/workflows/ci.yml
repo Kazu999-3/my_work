@@ -1,18 +1,27 @@
-name: CI (04_PORTAL)
+name: CI (04_PORTAL / ktm_bot)
 
 # 個人開発でCIが無かったため、pushするまで壊れているかどうか誰も気づけなかった
 # (実際に2件のテストが仕様変更に追従できておらず失敗したまま放置されていた)。
 # 最低限、型チェックとユニットテストだけは自動で回す。
+#
+# 2026-09-29: ktm_bot のジョブを追加した。components.js の閉じ括弧が1つ欠落した
+# 状態が3日間コミットされ続け、ktm-bot-deploy.yml が3回連続で失敗していた
+# (2026-09-27の師弟マッチング3コミットが本番へ一度も反映されていなかった)。
+# デプロイが失敗しても本番Workerは古いコードで動き続けるため画面上は何も壊れず、
+# 誰も気づけなかった。構文とバンドルだけでも先に落としておく。
 
 on:
   push:
     branches: [master]
-    paths: ['04_PORTAL/**']
+    paths: ['04_PORTAL/**', '03_SYSTEMS/ktm_bot/**', '.github/workflows/ci.yml']
   pull_request:
-    paths: ['04_PORTAL/**']
+    paths: ['04_PORTAL/**', '03_SYSTEMS/ktm_bot/**', '.github/workflows/ci.yml']
 
 jobs:
   test:
+    # ⚠️ 「04_PORTAL に変更が無ければスキップ」という条件は意図的に付けていない。
+    # github.event.commits は20件で打ち切られる等の取りこぼしがあり、
+    # テストが黙ってスキップされる方が、数分余計に回すよりずっと危険。
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -27,3 +36,41 @@ jobs:
       - run: npm ci
       - run: npx tsc --noEmit
       - run: npm test
+
+  bot-syntax:
+    # Cloudflare Worker は esbuild でバンドルされるため、未定義の識別子は
+    # グローバル参照として素通りしてビルドが通ってしまう(HANDOVER §2.10(6))。
+    # 一方で閉じ括弧の欠落のような構文エラーはここで確実に落とせる。
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: 03_SYSTEMS/ktm_bot
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          # wrangler 4.x は Node.js 22以上が必須(ktm-bot-deploy.yml と揃える)
+          node-version: '22'
+
+      - name: 全JSファイルの構文チェック
+        run: |
+          fail=0
+          while IFS= read -r f; do
+            if ! node --check "$f" 2>/dev/null; then
+              echo "::error file=03_SYSTEMS/ktm_bot/$f::構文エラー: $f"
+              node --check "$f" || true
+              fail=1
+            fi
+          done < <(find src -name '*.js')
+          if [ "$fail" -ne 0 ]; then
+            echo "::error::構文エラーのあるファイルが存在します。このままpushするとデプロイが失敗します。"
+            exit 1
+          fi
+          echo "✅ src配下の全JSファイルが構文OK"
+
+      - name: 依存インストール
+        run: npm install
+
+      - name: バンドル検証 (wrangler dry-run)
+        # 実際のデプロイと同じバンドル処理を走らせるが、本番へは反映しない。
+        run: npx wrangler deploy --dry-run --outdir=/tmp/bot_bundle
