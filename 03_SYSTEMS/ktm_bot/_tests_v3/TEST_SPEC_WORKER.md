@@ -1,5 +1,24 @@
 # 📝 KTM Worker (Discord) インタラクション仕様書 (Phase 0)
 
+> # 🚨 この文書は 2026-04-17 時点の記録で、**現在の実装とは大きく乖離しています**
+>
+> 2026-09-29 の監査で確認した乖離（**現行仕様の参照には使わないこと**）:
+>
+> | 本文の記載 | 2026-09-29 時点の実際 |
+> |---|---|
+> | `/ktm_portal` | **廃止**（`/portal` へ統合。エイリアス整理で削除） |
+> | `/balance` | **実装が存在しない** |
+> | GAS（Google Apps Script）連携が10箇所 | `fetchGAS()` は**削除済み**（呼び出し元ゼロの死んだコードだった） |
+> | `broadcast_start:` / `broadcast_modal:` | **削除済み**（開くボタンが存在せず到達不能。かつ権限チェック無しで「募集主からの連絡」を名乗る危険な作りだった） |
+> | `balance_from_recruit:` / `forge_show:` / `leave:` / `rebalance` | **実装が存在しない** |
+>
+> **現行の正しい情報源**:
+> - コマンド一覧と説明文 … `03_SYSTEMS/ktm_bot/src/commandDefinitions.js`（9コマンド）
+> - 実際のディスパッチ … `03_SYSTEMS/ktm_bot/src/index.js`
+> - 募集カードの状態遷移の検証 … `03_SYSTEMS/ktm_bot/scripts/dry_run_recruitment_status.mjs`
+>
+> 本文は「Phase 0 のリライト当時どう設計されていたか」の履歴としてのみ残しています。
+
 リライト（モジュール分割）後の結合テストにおける「入出力リファレンス」です。
 全てのパスで、分割後も引数と戻り値（Response）が本ドキュメントと一致すること。
 

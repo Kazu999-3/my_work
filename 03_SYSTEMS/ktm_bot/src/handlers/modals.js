@@ -194,31 +194,20 @@ export async function handleModalSubmit(interaction, env, ctx) {
     return Response.json({ type: 4, data: { content: `✅ ${targetName} の ${role} MMRを更新しました。`, flags: 64 } });
   }
 
-  if (customId.startsWith('broadcast_modal:')) {
-    const msg = interaction.data.components[0].components[0].value;
-    const meta = parseMessageData(interaction.message);
-    const mentions = [...new Set([...meta.joined, ...meta.spectating, meta.owner])].map(id => `<@${id}>`).join(" ");
-    
-    const channelId = interaction.channel_id;
-    const msgId = interaction.message.id;
-    
-    ctx.waitUntil((async () => {
-      try {
-        await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
-          method: "POST",
-          headers: { "Authorization": `Bot ${env.DISCORD_TOKEN}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            content: `📣 **募集主からの連絡**\n━━━━━━━━━━━━\n${msg}\n━━━━━━━━━━━━\n対象: ${mentions}`,
-            message_reference: { message_id: msgId }
-          })
-        });
-      } catch (err) {
-        console.error("Broadcast Reply Error:", err);
-      }
-    })());
-    
-    return Response.json({ type: 4, data: { content: "✅ **参加者に一括連絡（返信メンション）を送信しました**", flags: 64 } });
-  }
+  // ⚠️ 2026-09-29: ここにあった `broadcast_modal:`（参加者への一括連絡）を削除した。
+  //
+  // 削除理由:
+  //  1. **到達不能だった**。このモーダルを開くボタン `broadcast_start:` は
+  //     `_tests_v3/TEST_SPEC_WORKER.md`（2026-04-17付）に記載があるだけで、
+  //     現在のソースには存在しない。つまり誰も使えない死んだコードだった。
+  //  2. **復活させると危険な作りだった**。権限チェックが一切無いのに、送信される文面は
+  //     「📣 **募集主からの連絡**」と名乗り、参加者・観戦者・募集主の全員へメンションする。
+  //     ボタンを付け直した人が気づかないまま、**募集主を騙って全員に通知を飛ばせる**
+  //     機能になっていた（他の管理者モーダルは `userId !== CONFIG.ADMIN_ID` で守っている）。
+  //  3. 送信失敗が `console.error` だけで、ユーザーには無条件に「✅ 送信しました」を返していた。
+  //
+  // 同種の連絡が必要になった場合は、**権限チェック（募集主 or 管理者）を必ず入れ、
+  // 送信結果を確認してから成功を報告する**こと。
 
   if (customId === 'mentorship_pupil_modal' || customId === 'mentorship_mentor_modal') {
     const isMentor = customId === 'mentorship_mentor_modal';
