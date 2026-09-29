@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { getAuthSession } from '../../../../lib/authGuard';
+import { verifyBotSecret } from '../../../../lib/botAuth';
 import { findOrCreatePlayer } from '../../../../lib/playerCoins';
 import { sendErrorNotification } from '../../../../lib/discordNotify';
 import { notifyNewMentorshipProfile, syncMentorshipDashboard } from '../../../../lib/discordMentorship';
@@ -149,13 +150,24 @@ export async function POST(request: Request) {
       player_name: bodyPlayerName,
     } = body;
 
-    // Discord OAuth セッションがあれば優先、なければリクエストボディのフォールバックを使用
-    const effectiveDiscordId = session?.discordId || bodyDiscordId || (bodyPlayerName ? `local_${bodyPlayerName}` : null);
-    const effectivePlayerName = session?.displayName || session?.username || bodyPlayerName || 'Player';
+    // 🛡️ なりすまし防止ガード:
+    // 1. ログインユーザーは必ず自身のセッションIDで登録（他人名義作成を遮断）
+    // 2. セッションが無い場合は Bot からの正当な代理登録（verifyBotSecret）のみ許可
+    // 3. それ以外（未認証の外部リクエスト）は 401 拒否
+    const isBotAuthorized = verifyBotSecret(request).ok;
 
-    if (!effectiveDiscordId) {
+    let effectiveDiscordId: string | null = null;
+    let effectivePlayerName: string = 'Player';
+
+    if (session?.discordId) {
+      effectiveDiscordId = session.discordId;
+      effectivePlayerName = session.displayName || session.username || 'Player';
+    } else if (isBotAuthorized && bodyDiscordId) {
+      effectiveDiscordId = bodyDiscordId;
+      effectivePlayerName = bodyPlayerName || 'Player';
+    } else {
       return NextResponse.json(
-        { ok: false, error: 'プロフィールを登録するにはDiscordログインまたはプレイヤー選択が必要です。' },
+        { ok: false, error: 'プロフィールを登録するにはDiscordログインが必要です。' },
         { status: 401 }
       );
     }

@@ -285,56 +285,38 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     });
   }
 
-  // 🤝 師弟マッチング：弟子カードからワンポチで師匠を引き受ける (未登録先輩でも即ペア成立)
+  // 🤝 師弟マッチング：弟子カードから師匠を引き受ける (未登録先輩でも即ペア成立)
+  //
+  // ⚠️ 2026-09-29: ボタン押下で即APIを呼ぶ「ワンポチ」だったが、**ひとことを一切送れなかった**。
+  // サーバー側(CLAIM_MENTOR)は元から `message` を受け取る実装なのに画面から渡しておらず、
+  // 結果として**立候補した師匠全員が同じ定型文の自己紹介**になり、弟子側は
+  // 「どんな人が引き受けてくれたのか」が分からなかった（マッチングの要が機能していない）。
+  // 弟子からの申請は最初からメッセージを書けたので非対称でもあった。
+  // → 一度モーダルを挟んでひとことを受け取る（任意。空欄なら従来どおり成立する）。
   if (customId.startsWith('mentorship_claim_pupil:')) {
     const pupilProfileId = customId.split(':')[1];
-    // CONFIG.PORTAL_URL が常に設定済みなので到達しないが、死んだドメイン
-    // (ktm-portal.vercel.app は404) を残すと次に触る人が混乱するため揃える
-    const portalUrl = CONFIG.PORTAL_URL || 'https://my-work-8jbd.vercel.app';
-    const userName = interaction.member?.nick || interaction.member?.user?.global_name || interaction.member?.user?.username || '先輩';
-
-    ctx.waitUntil((async () => {
-      try {
-        const res = await fetch(`${portalUrl}/api/mentorship/matches`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            // サーバーサイド・ボット実行用の認証ヘッダー
-            'x-system-key': env.SYSTEM_SYNC_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '',
-          },
-          body: JSON.stringify({
-            action: 'CLAIM_MENTOR',
-            targetProfileId: pupilProfileId,
-            sessionUser: {
-              discordId: userId,
-              displayName: userName,
-              username: interaction.member?.user?.username,
-            },
-          }),
-        });
-
-        const data = await res.json();
-        if (data.ok) {
-          const threadMsg = data.threadUrl ? `\n\n💬 **[🎓 専用指導チャットはこちら](${data.threadUrl})**` : '';
-          await patchInteractionResponse(appId, token, {
-            content: `🎉 **【師弟ペア結成完了！】**\n指導を引き受けていただきありがとうございます！✨\n両名にボーナス **+300コイン** を進呈しました！🪙${threadMsg}`,
-          });
-        } else {
-          await patchInteractionResponse(appId, token, {
-            content: `⚠️ ペア結成に失敗しました: ${data.error || '不明なエラー'}`,
-          });
-        }
-      } catch (err) {
-        console.error('[mentorship_claim_pupil] error:', err);
-        await patchInteractionResponse(appId, token, {
-          content: `❌ 通信エラーが発生しました。時間をおいて再試行してください。`,
-        });
-      }
-    })());
-
     return Response.json({
-      type: 5, // DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE (flags: 64)
-      data: { flags: 64 },
+      type: 9,
+      data: {
+        title: '🎓 指導を引き受ける',
+        custom_id: `mentorship_claim_modal:${pupilProfileId}`,
+        components: [
+          {
+            type: 1,
+            components: [
+              {
+                type: 4,
+                custom_id: 'message',
+                label: 'お相手へのひとこと（任意）',
+                style: 2,
+                placeholder: '例: JGのルート設計を中心に見ます。週末の夜なら通話できます',
+                required: false,
+                max_length: 300
+              }
+            ]
+          }
+        ]
+      }
     });
   }
 
@@ -1338,5 +1320,71 @@ async function sendOnboardingIfNeeded(env, userId) {
   } catch (e) {
     console.warn('[Onboarding] DM送信スキップ:', e?.message);
   }
+}
+
+/**
+ * 弟子カードからの「指導を引き受ける」を実行する（2026-09-29 切り出し）。
+ *
+ * 以前はボタン押下で即APIを呼んでいたが、**ひとことを送れない**のが問題だった
+ * （サーバー側は元から `message` を受け取る実装なのに画面から渡していなかったため、
+ * 立候補した師匠全員が同じ定型文の自己紹介になっていた）。
+ * ボタン → モーダル → ここ の流れに変えたため、modals.js から呼べるよう関数化してある。
+ *
+ * @param {object} interaction モーダル送信のinteraction
+ * @param {object} env Workers env（DISCORD_TOKEN注入済み）
+ * @param {object} ctx waitUntil用
+ * @param {string} pupilProfileId 対象の弟子プロフィールID
+ * @param {string} message 引き受け時のひとこと（空文字可）
+ */
+export async function executeMentorshipClaim(interaction, env, ctx, pupilProfileId, message = '') {
+  const appId = interaction.application_id;
+  const token = interaction.token;
+  const userId = interaction.member?.user?.id || interaction.user?.id;
+  const portalUrl = CONFIG.PORTAL_URL;
+  const userName = interaction.member?.nick || interaction.member?.user?.global_name || interaction.member?.user?.username || '先輩';
+
+  ctx.waitUntil((async () => {
+    try {
+      const res = await fetch(`${portalUrl}/api/mentorship/matches`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // サーバーサイド・ボット実行用の認証ヘッダー
+          // ⚠️ ポータル側は SYSTEM_SYNC_KEY / SUPABASE_SERVICE_ROLE_KEY / DISCORD_BOT_TOKEN の
+          // 3つを受け付ける実装で、高価値な秘密情報をAPIトークンに流用している点は
+          // TODO.md に改善候補として記録済み（専用の SYSTEM_SYNC_KEY へ絞るべき）。
+          'x-system-key': env.SYSTEM_SYNC_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '',
+        },
+        body: JSON.stringify({
+          action: 'CLAIM_MENTOR',
+          targetProfileId: pupilProfileId,
+          message: (message || '').trim(),
+          sessionUser: {
+            discordId: userId,
+            displayName: userName,
+            username: interaction.member?.user?.username,
+          },
+        }),
+      });
+
+      const data = await res.json();
+      if (data.ok) {
+        const threadMsg = data.threadUrl ? `\n\n💬 **[🎓 専用指導チャットはこちら](${data.threadUrl})**` : '';
+        await patchInteractionResponse(appId, token, {
+          content: `🎉 **【師弟ペア結成完了！】**\n指導を引き受けていただきありがとうございます！✨\n両名にボーナス **+300コイン** を進呈しました！🪙${threadMsg}`,
+        });
+      } else {
+        await patchInteractionResponse(appId, token, {
+          content: `⚠️ ペア結成に失敗しました: ${data.error || '不明なエラー'}`,
+        });
+      }
+    } catch (err) {
+      console.error('[mentorship_claim] error:', err);
+      await patchInteractionResponse(appId, token, {
+        content: `❌ 通信エラーが発生しました。時間をおいて再試行してください。`,
+      });
+      await notifyAdminError(env, err, { action: '師弟: 指導引き受け(CLAIM_MENTOR)', userId });
+    }
+  })());
 }
 

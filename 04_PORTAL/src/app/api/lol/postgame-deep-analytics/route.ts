@@ -7,6 +7,7 @@ import {
   fetchMatchDetails,
   fetchMatchTimeline,
 } from '../../../../lib/riot';
+import { getLatestPatch } from '../../../../lib/ddragonClient';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 45;
@@ -16,10 +17,9 @@ let cachedItemNames: Map<number, string> | null = null;
 async function getItemNamesMap(): Promise<Map<number, string>> {
   if (cachedItemNames) return cachedItemNames;
   try {
-    const vRes = await fetch("https://ddragon.leagueoflegends.com/api/versions.json", { cache: 'no-store' });
-    const versions = await vRes.json();
-    const latest = versions[0] || "14.24.1";
+    const latest = await getLatestPatch();
     const itemRes = await fetch(`https://ddragon.leagueoflegends.com/cdn/${latest}/data/ja_JP/item.json`);
+    if (!itemRes.ok) throw new Error(`item.json fetch failed: HTTP ${itemRes.status}`);
     const itemData = await itemRes.json();
     const map = new Map<number, string>();
     for (const [idStr, info] of Object.entries(itemData.data || {})) {

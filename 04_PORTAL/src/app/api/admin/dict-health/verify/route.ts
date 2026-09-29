@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
+import { getCalendarPatch } from '../../../../../lib/ddragonClient';
 
 export async function POST(req: Request) {
   const auth = await verifyAdminSession(req);
@@ -45,17 +46,7 @@ export async function POST(req: Request) {
 
     // B. 人間確認済みに変更: verify
     if (action === 'verify') {
-      // DDragonのメジャー番号はシーズン通し番号(14=2024,15=2025,16=2026...)のため、
-      // 辞典側の表記(西暦下2桁基準の26.xx)に揃えるため+10する(2026-08-08発覚)。
-      let currentPatch = '26.15';
-      try {
-        const vRes = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
-        const versions = await vRes.json();
-        const [rawMajor, rawMinor] = (versions[0] || '16.15.1').split('.');
-        currentPatch = `${parseInt(rawMajor, 10) + 10}.${rawMinor}`;
-      } catch {
-        // fallback
-      }
+      const currentPatch = await getCalendarPatch();
 
       const { error } = await supabase
         .from('champion_facts')

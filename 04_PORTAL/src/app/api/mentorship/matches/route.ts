@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { getAuthSession } from '../../../../lib/authGuard';
+import { verifyBotSecret } from '../../../../lib/botAuth';
 import { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } from '../../../../lib/playerCoins';
 import { MENTORSHIP_DURATIONS } from '../../../../lib/mentorshipConstants';
 import { sendDiscordDirectMessage, sendErrorNotification } from '../../../../lib/discordNotify';
@@ -433,14 +434,16 @@ export async function POST(request: Request) {
 
     // 🤖 Bot/システム連携時のサーバーサイドセッションフォールバック
     if (!session?.discordId && body?.sessionUser?.discordId) {
-      const authHeader = request.headers.get('x-system-key') || '';
-      const validKeys = [
-        process.env.SYSTEM_SYNC_KEY,
-        process.env.SUPABASE_SERVICE_ROLE_KEY,
-        process.env.DISCORD_BOT_TOKEN,
-      ].filter(Boolean);
+      const authHeader = (request.headers.get('x-system-key') || '').trim();
+      const expectedSystemKey = (process.env.SYSTEM_SYNC_KEY || '').trim();
+      const botSecretResult = verifyBotSecret(request);
 
-      if (validKeys.some((k) => k && authHeader.includes(k))) {
+      // 高価値なサービスロールキーやBotトークンの流用を廃止し、専用SYSTEM_SYNC_KEYまたはBotSecretで検証
+      const isAuthorized =
+        (expectedSystemKey && authHeader === expectedSystemKey) ||
+        botSecretResult.ok;
+
+      if (isAuthorized) {
         session = {
           discordId: body.sessionUser.discordId,
           displayName: body.sessionUser.displayName || body.sessionUser.username || 'DiscordMember',
@@ -812,7 +815,14 @@ export async function POST(request: Request) {
             current_rank: myPlayer?.highest_rank || 'UNRANKED',
             status: 'OPEN',
             max_pupils: 3,
-            bio: '弟子カードから直接指導を引き受けました！楽しく上達していきましょう。',
+            // ⚠️ 2026-09-29 是正: ここは決め打ちの文言だったため、**弟子カードから立候補した
+            // 師匠全員がまったく同じ自己紹介文**になり、弟子側は「どんな人が引き受けてくれたのか」
+            // が分からなかった（師弟マッチングで最も見られる情報なのに機能していなかった）。
+            // 引き受け時のひとこと(message)を書いてもらえた場合はそれを自己紹介に使う。
+            // 空欄のときだけ従来の定型文にフォールバックする。
+            bio: (message || '').trim()
+              ? `${String(message).trim()}\n\n（弟子カードから直接指導を引き受けました）`
+              : '弟子カードから直接指導を引き受けました！楽しく上達していきましょう。',
           })
           .select()
           .single();

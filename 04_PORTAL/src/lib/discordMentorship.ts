@@ -1,5 +1,6 @@
 import { supabaseAdmin as supabase } from './supabaseAdmin';
 import { MENTORSHIP_DURATIONS } from './mentorshipConstants';
+import { discordFetch } from './discordFetch';
 
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const DISCORD_GUILD_ID = process.env.DISCORD_GUILD_ID;
@@ -25,7 +26,7 @@ export async function ensureMentorshipChannel(): Promise<string | null> {
 
   try {
     // 1. チャンネル一覧を取得
-    const res = await fetch(`https://discord.com/api/v10/guilds/${DISCORD_GUILD_ID}/channels`, {
+    const res = await discordFetch(`https://discord.com/api/v10/guilds/${DISCORD_GUILD_ID}/channels`, {
       headers: { Authorization: `Bot ${DISCORD_BOT_TOKEN}` },
     });
 
@@ -44,7 +45,7 @@ export async function ensureMentorshipChannel(): Promise<string | null> {
     }
 
     // 2. 存在しない場合は作成
-    const createRes = await fetch(`https://discord.com/api/v10/guilds/${DISCORD_GUILD_ID}/channels`, {
+    const createRes = await discordFetch(`https://discord.com/api/v10/guilds/${DISCORD_GUILD_ID}/channels`, {
       method: 'POST',
       headers: {
         Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
@@ -207,7 +208,7 @@ export async function syncMentorshipDashboard(): Promise<boolean> {
     };
 
     // 5. チャンネル内の既存ピン留めメッセージを探索
-    const pinsRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/pins`, {
+    const pinsRes = await discordFetch(`https://discord.com/api/v10/channels/${channelId}/pins`, {
       headers: { Authorization: `Bot ${DISCORD_BOT_TOKEN}` },
     });
 
@@ -220,7 +221,7 @@ export async function syncMentorshipDashboard(): Promise<boolean> {
 
     if (existingPinId) {
       // 既存ダッシュボードメッセージを上書き更新
-      const patchRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${existingPinId}`, {
+      const patchRes = await discordFetch(`https://discord.com/api/v10/channels/${channelId}/messages/${existingPinId}`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
@@ -231,7 +232,7 @@ export async function syncMentorshipDashboard(): Promise<boolean> {
       return patchRes.ok;
     } else {
       // 新規メッセージを投稿し、ピン留め
-      const postRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+      const postRes = await discordFetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
         method: 'POST',
         headers: {
           Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
@@ -246,7 +247,7 @@ export async function syncMentorshipDashboard(): Promise<boolean> {
       }
 
       const newMsg = await postRes.json();
-      await fetch(`https://discord.com/api/v10/channels/${channelId}/pins/${newMsg.id}`, {
+      await discordFetch(`https://discord.com/api/v10/channels/${channelId}/pins/${newMsg.id}`, {
         method: 'PUT',
         headers: { Authorization: `Bot ${DISCORD_BOT_TOKEN}` },
       });
@@ -344,7 +345,7 @@ export async function notifyNewMentorshipProfile(params: {
 
     const content = `📢 **${roleLabel}の新着募集！** ${mention} さんが掲示板にエントリーしました！\n👉 [ポータルでプロフィールを見る・オファーを送る](${PORTAL_BASE_URL}/mentorship)`;
 
-    const postRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+    const postRes = await discordFetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
       method: 'POST',
       headers: {
         Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
@@ -483,7 +484,7 @@ export async function notifyAiMentorshipMatch(params: {
 
     const content = `✨ **【AI仲人の推薦】** ${pupilMention} さん 🤝 ${mentorMention} さん、お二人の相性スコアは **${matchResult.score}%** です！`;
 
-    const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+    const res = await discordFetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
       method: 'POST',
       headers: {
         Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
@@ -588,7 +589,7 @@ export async function notifySeniorScout(params: {
     // 1. 先輩のDiscord ID宛てにダイレクトメッセージ(DM)を最優先で送信！
     if (seniorPlayer.discord_id) {
       try {
-        const dmRes = await fetch('https://discord.com/api/v10/users/@me/channels', {
+        const dmRes = await discordFetch('https://discord.com/api/v10/users/@me/channels', {
           method: 'POST',
           headers: {
             Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
@@ -599,7 +600,7 @@ export async function notifySeniorScout(params: {
 
         if (dmRes.ok) {
           const dmChannel = await dmRes.json();
-          await fetch(`https://discord.com/api/v10/channels/${dmChannel.id}/messages`, {
+          await discordFetch(`https://discord.com/api/v10/channels/${dmChannel.id}/messages`, {
             method: 'POST',
             headers: {
               Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
@@ -618,7 +619,7 @@ export async function notifySeniorScout(params: {
     }
 
     // 2. #🤝師弟募集 チャンネルにも公開スカウト（他の先輩も名乗り出られるように）
-    const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+    const res = await discordFetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
       method: 'POST',
       headers: {
         Authorization: `Bot ${DISCORD_BOT_TOKEN}`,
@@ -777,7 +778,7 @@ export async function createMentorshipForumThread(
   };
 
   try {
-    const res = await fetch(`https://discord.com/api/v10/channels/${forumChannelId}/threads`, {
+    const res = await discordFetch(`https://discord.com/api/v10/channels/${forumChannelId}/threads`, {
       method: 'POST',
       headers: {
         Authorization: `Bot ${DISCORD_BOT_TOKEN}`,

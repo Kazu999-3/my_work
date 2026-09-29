@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { getPlayerCoins } from '../../../../lib/playerCoins';
+import { getCalendarPatch } from '../../../../lib/ddragonClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -84,19 +85,8 @@ export async function GET(req: NextRequest) {
       supabase.from('edge_tasks').select('id, payload, created_at').eq('task_type', 'bet_record').eq('status', 'pending'),
     ]);
 
-    // dict-health/route.tsのgetCurrentPatch()と同じロジック(西暦下2桁基準への変換)。
-    const dictHealthCurrentPatch = await (async () => {
-      try {
-        const res = await fetch('https://ddragon.leagueoflegends.com/api/versions.json', {
-          signal: AbortSignal.timeout(5000),
-        });
-        const versions = await res.json();
-        const [rawMajor, rawMinor] = (versions[0] || '16.15.1').split('.');
-        return `${parseInt(rawMajor, 10) + 10}.${rawMinor}`;
-      } catch {
-        return '26.15';
-      }
-    })();
+    // 辞典パッチ（西暦下2桁基準への変換）の取得
+    const dictHealthCurrentPatch = await getCalendarPatch();
 
     // (task_type, payload)ごとに最新の1件だけを残し、それが failed のものだけを抽出
     const latestByKey = new Map<string, any>();

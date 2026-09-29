@@ -29,7 +29,7 @@ import path from 'path';
 
 // ── 2026-09-29 の整理で不要になったコマンド名 ──────────────────────────
 // 「機能ごと削除」したもの
-const REMOVED_FEATURES = ['welcome', 'welcome-panel', 'roulette', 'memo', 'patch'];
+const REMOVED_FEATURES = ['welcome', 'welcome-panel', 'roulette', 'memo', 'patch', 'balance', 'forge'];
 // 「エイリアス廃止」で主名称へ統合したもの（残すのは portal / coins / casino / tip / ranking）
 const REMOVED_ALIASES = ['panel', 'command', 'ktm_portal', 'bet', 'rich', 'send-coins', 'award'];
 // 実装が存在しない幽霊コマンド（99_ARCHIVE に登録スクリプトだけ残っていた）

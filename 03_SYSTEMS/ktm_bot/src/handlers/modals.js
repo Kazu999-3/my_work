@@ -294,6 +294,21 @@ export async function handleModalSubmit(interaction, env, ctx) {
   // 同種の連絡が必要になった場合は、**権限チェック（募集主 or 管理者）を必ず入れ、
   // 送信結果を確認してから成功を報告する**こと。
 
+  // 🎓 師弟: 指導引き受け時のひとこと（2026-09-29 新設）
+  // ボタン(mentorship_claim_pupil:)→このモーダル→executeMentorshipClaim() の流れ。
+  // 以前はボタン押下で即実行しており、ひとことを送る手段が無かった。
+  if (customId.startsWith('mentorship_claim_modal:')) {
+    const pupilProfileId = customId.split(':')[1];
+    const row = interaction.data.components?.find(c => c.components[0].custom_id === 'message');
+    const message = row ? (row.components[0].value || '').trim() : '';
+
+    const { executeMentorshipClaim } = await import('./components.js');
+    await executeMentorshipClaim(interaction, env, ctx, pupilProfileId, message);
+
+    // 実処理は waitUntil 内で進み、結果でこの応答を上書きする
+    return Response.json({ type: 5, data: { flags: 64 } });
+  }
+
   if (customId === 'mentorship_pupil_modal' || customId === 'mentorship_mentor_modal') {
     const isMentor = customId === 'mentorship_mentor_modal';
     const getVal = (cid) => {

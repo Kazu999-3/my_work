@@ -1,22 +1,9 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
+import { getCalendarPatch } from '../../../../lib/ddragonClient';
 
 export const dynamic = 'force-dynamic';
-
-// DDragonのメジャー番号はシーズン通し番号(14=2024,15=2025,16=2026...)のため、
-// 辞典側(champion_facts.patch)の表記(西暦下2桁基準の26.xx)に揃えるため+10する。
-// ここがズレると全チャンピオンを毎回staleと誤判定し、不要なAI再生成を積み続ける(2026-08-08発覚)。
-async function getCurrentPatch(): Promise<string> {
-  try {
-    const res = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
-    const versions = await res.json();
-    const [rawMajor, rawMinor] = (versions[0] || '16.15.1').split('.');
-    return `${parseInt(rawMajor, 10) + 10}.${rawMinor}`;
-  } catch {
-    return '26.15';
-  }
-}
 
 export async function GET(req: Request) {
   // CRON_SECRET 認証または管理者セッション
@@ -27,7 +14,7 @@ export async function GET(req: Request) {
   }
 
   try {
-    const currentPatch = await getCurrentPatch();
+    const currentPatch = await getCalendarPatch();
     console.log(`[dict-auto-refresh] 現在の最新パッチ: ${currentPatch}`);
 
     // champion_facts の全アクティブ行を取得

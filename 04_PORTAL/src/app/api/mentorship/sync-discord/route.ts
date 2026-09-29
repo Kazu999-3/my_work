@@ -1,11 +1,21 @@
 import { NextResponse } from 'next/server';
 import { syncMentorshipDashboard, ensureMentorshipChannel } from '../../../../lib/discordMentorship';
 import { getAuthSession } from '../../../../lib/authGuard';
+import { verifyBotSecret } from '../../../../lib/botAuth';
 
 export async function POST(request: Request) {
   try {
     const session = await getAuthSession();
-    // 管理者またはログインユーザーが手動更新をトリガー可能
+    const hasBotSecret = request.headers.has('x-bot-secret') && verifyBotSecret(request).ok;
+
+    if (!session && !hasBotSecret) {
+      return NextResponse.json(
+        { ok: false, error: 'ログインまたはBot認証が必要です。' },
+        { status: 401 }
+      );
+    }
+
+    // 管理者・ログインユーザーまたはBotが手動更新をトリガー可能
     const channelId = await ensureMentorshipChannel();
     const success = await syncMentorshipDashboard();
 

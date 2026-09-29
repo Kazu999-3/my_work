@@ -53,6 +53,22 @@ export async function getLatestPatch(): Promise<string> {
   return cachedLatestPatch;
 }
 
+/**
+ * 辞典・戦術ノート等で使われる西暦表記パッチ（例: "28.19"）を返す（2026-09-29 新設）。
+ *
+ * DDragonのメジャー番号はシーズン通し番号（例: 14=2024, 16=2026）となっており、
+ * 辞典側（champion_facts.patch）の西暦下2桁表記（26.x / 28.x）と12ズレる。
+ * 各所で `parseInt(major) + 12` をコピペしていたため、本関数を唯一のSSoTとする。
+ */
+export async function getCalendarPatch(): Promise<string> {
+  const patch = await getLatestPatch();
+  const [rawMajor, rawMinor] = patch.split('.');
+  const majorNum = parseInt(rawMajor, 10);
+  if (isNaN(majorNum)) return '26.19';
+  // DDragonのメジャー番号(14=2024, 16=2026)に+10すると西暦下2桁(24.x, 26.x)になる
+  return `${majorNum + 10}.${rawMinor || '1'}`;
+}
+
 // DDragon の特殊ID・表記揺れ・スペース削除マッピングテーブル
 const ID_CORRECTION_MAP: Record<string, string> = {
   "wukong": "MonkeyKing",

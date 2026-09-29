@@ -252,6 +252,24 @@ export default function MentorshipHubPanel() {
         return;
       }
 
+      // ⚠️ 2026-09-29 追加: 引き受け時のひとことを送れるようにした。
+      // **サーバー側(CLAIM_MENTOR)は元から `message` を受け取る実装だったのに、
+      // 画面からは一度も渡していなかった**ため、マッチのメッセージが全員
+      // 「指導を引き受けました！よろしくお願いします！」の決め打ちになっていた。
+      // さらに師匠プロフィールが自動作成される場合の bio も決め打ちで、
+      // **立候補した師匠全員が同じ自己紹介文**になり、弟子側は「どんな人が
+      // 引き受けてくれたのか」が全く分からない状態だった（師弟マッチングの要が機能していない）。
+      // 弟子からの申請(APPLY)は最初からメッセージを書けたので、非対称でもあった。
+      // 空欄でもこれまで通り成立する（必須にはしない）。
+      const claimMessage = prompt(
+        `${targetProfile.player_name} さんへのひとこと（任意）\n` +
+          `指導方針や得意分野を書くと、相手が安心できます。\n` +
+          `例: 「JGのルート設計を中心に見ます。週末の夜なら通話できます」`,
+        ''
+      );
+      // prompt のキャンセル(null)は「引き受け自体をやめる」と解釈する
+      if (claimMessage === null) return;
+
       try {
         const res = await fetch('/api/mentorship/matches', {
           method: 'POST',
@@ -259,6 +277,7 @@ export default function MentorshipHubPanel() {
           body: JSON.stringify({
             action: 'CLAIM_MENTOR',
             targetProfileId: targetProfile.id,
+            message: claimMessage.trim(),
           }),
         });
         const data = await res.json();

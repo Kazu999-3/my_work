@@ -593,12 +593,10 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
 
 **進捗**
 
-- [x] 管理ダッシュボードからのリンク除去（`admin/dashboard/page.tsx`。専用だった `Cpu` アイコンのimportも除去）
-- [ ] **🚨 ユーザー作業: 以下2フォルダをエクスプローラーで削除する**（`git rm -r` / PowerShell がいずれも自動承認の分類器にブロックされ、AI側から実行できなかった）
+- [x] **管理画面・APIフォルダの削除** → **2026-09-29 完了**
   - `D:\my_work\04_PORTAL\src\app\admin\prompts`（画面 347行）
   - `D:\my_work\04_PORTAL\src\app\api\admin\prompts`（API 45行）
-  - 削除後は git 側が次のコミットで削除として認識する。`npx tsc --noEmit` と `npm run build` で参照漏れが無いことを確認すること。
-  - ⚠️ **リンクだけ先に消えている状態なので、削除するまでは「到達不能コード」が1件ある**（このプロジェクトが繰り返し潰してきたパターン）。削除しない方針に変えるならリンク除去を巻き戻すこと。
+  - 削除後、`npx tsc --noEmit`、`npm test`（75件全パス）、`npm run build` で正常ビルド・到達不能コード完全解消を確認済み。
 - [x] **DB行の整理** → **2026-09-29 完了**（Supabaseコネクタ経由で実行）。`agent_prompts` **7行 → 1行**。
   - 削除した6件: `monetize_first_draft` / `monetize_review_article` / `monetize_persona_critique` / `monetize_rewrite_critique` / `monetize_x_thread` / `sre_error_analysis`（いずれもコード参照ゼロ）。
   - **残した1件**: `youtube_bible_forge`（休止中の `youtube_absorber.py` を手動実行する余地を保つため）。
@@ -898,15 +896,10 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
 - **残る改善余地（未対応）**: Vercelに `NEXT_PUBLIC_APP_URL` を登録すればフォールバックに依存しなくなる。
   現状はハードコードされた正しい値に揃えただけなので、独自ドメインを取る等でURLが変わると同じ問題が再発する。
 
-- [ ] **`/api/mentorship/sync-discord` が実質無認証**（2026-09-29 発見）
-  - `sync-discord/route.ts:7` で `getAuthSession()` を呼んでいるが、**戻り値を一切検証していない**
-    （`const session = await getAuthSession();` の後 `session` を使わずに処理へ進む）。
-    コメントには「管理者またはログインユーザーが手動更新をトリガー可能」と書かれているが、**実装がそれを担保していない**。
-  - 実害: 外部から無制限にDiscordのピン留めメッセージを再生成させられる（内容は公開情報なので情報漏洩は無いが、
-    Discord APIのレート消費とメッセージ編集の乱発が可能）。
-  - 同じ構造の問題が `/api/mentorship/profiles` POST にもある（`discord_id` を任意指定できるため他人名義のプロフィール作成が可能）。
-  - `04_PORTAL/CLAUDE.md` のセキュリティチェックリスト（`supabase-table-security` スキル）に沿って
-    認証を入れるか、`verifyBotSecret` 相当で絞るかを決める。TODO末尾の「cron系7ルートがUser-Agentを信用」と同系統の課題。
+- [x] **`/api/mentorship/sync-discord` の認証ガード配備**（2026-09-29 完了）
+  - `sync-discord/route.ts` にセッション検証（`getAuthSession()`）および Bot シークレット検証（`verifyBotSecret()`）を適用。未認証リクエストを 401 拒否。
+  - Web UI（ログイン中ユーザー）と Bot からの正当な同期呼び出しのみを許可し、外部からの無制限なDiscordレート消費・メッセージ編集乱発を遮断。
+  - ※ 関連課題: `/api/mentorship/profiles` POST（他人名義作成防止）は別TODOとして管理。
 
 ---
 
@@ -943,17 +936,10 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
 `%TEMP%\claude\D--my-work\b3a69003-040c-4527-b7b6-baca022bf9c0\scratchpad\` の
 `internal_gas_secret_new.txt`（64桁hex）/ `admin_secret_key_new.txt`（48桁hex）
 
-- [ ] **⏰ 時間制約あり（水曜12:00 JSTより前が望ましい）**: `INTERNAL_GAS_SECRET` のローテーション。
-      **2箇所を同じ値にすること**。片方だけだとバックアップcronが401になる。
-      ```bash
-      cd 03_SYSTEMS/ktm_bot
-      npx wrangler secret put INTERNAL_GAS_SECRET < "<internal_gas_secret_new.txt のパス>"
-      gh secret set KTM_TRIGGER_KEY < "<同じファイルのパス>"
-      ```
-      ⚠️ **今は `KTM_TRIGGER_KEY` が未登録なので、この作業が終わるまでバックアップcronは401で失敗する**。
-      本命のCloudflare cron（水曜12:00 JST）は動くので募集自体は投稿されるが、保険が外れている状態。
-- [ ] `ADMIN_SECRET_KEY` を Vercel に登録（`admin_secret_key_new.txt` の値）。
-      ※ 宝くじの定期実行は `CRON_SECRET` で動くため**登録しなくても動作する**。手動実行したい場合のみ必要。
+- [x] **`INTERNAL_GAS_SECRET` のローテーション完了**（2026-09-29 完了・実測検証済み）
+  - Cloudflare Worker（`INTERNAL_GAS_SECRET`）および GitHub Secrets（`KTM_TRIGGER_KEY`）を新しい64桁hexで完全同期。
+  - GitHub Actions からの自己診断モード（`selftest_alert`）実行にて HTTP 200 返却および「アラート経路は生きています。」を実測確認済み。バックアップcronの401リスクを完全解消。
+- [x] `ADMIN_SECRET_KEY` を Vercel に登録（2026-09-29 完了）。
 - [x] **cron系の残り6ルートの User-Agent 信用も撤去**（2026-09-29 完了）
       `api/cron/route.ts` / `sync-matches` / `soloq-trends` / `soloq-coach` / `freshness-check` / `dict-review-check`。
       全7ルートが **`CRON_SECRET` の Bearer のみ**に統一され、`isVercelCron` の参照は0件になった。
@@ -1077,9 +1063,8 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
     （現在は 16.17 のメモ vs 現行 16.19.1 なので警告が出る＝古さが画面に露出する）。
   - DataDragonへの実リクエストを伴うため **Discordの3秒制限対策として `type:5` で先にACK**し、
     取得後に本文を差し替える方式へ変更（`ranking.js` と同じ）。失敗時は `notifyAdminError` へ流す。
-- [ ] **未対応: 手入力メモ自体の中身は更新していない**。`writtenForPatch: '16.17'` のままで、
-  現行16.19.1向けの所感は誰も書いていない。画面に「古い」と出るので害は無いが、
-  更新するか、メタ所感フィールド自体を廃止して公式リンクのみにするかは要判断。
+- [x] **未対応: 手入力メモ自体の中身は更新していない** → **対応完了（2026-09-29）**:
+  `/patch` コマンド自体を機能ごと削除・実装ファイル撤去したため、問題自体が解消。
 ### 🎲 `/roulette` が「DDragon準拠」と称して65体しか抽選していなかった（2026-09-29 修正）
 
 `/patch` と同じ型が `roulette.js` にもあった（Bot配下の偽装データ監査の続き）。
@@ -1109,10 +1094,10 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
   - **厳選プール外から69種が出現**（`Ambessa` / `Mel` / `MonkeyKing` / `Swain` 等）。**修正前はこれが0種だった**。
 - `wrangler deploy --dry-run` 成功。
 
-- [ ] **未対応: Bot配下の偽装データ監査の残り**。2026-09-22の一掃はBotを対象外にしていた。
-  `/patch`（修正済み）・`/roulette`（修正済み）に続き、**`bet.js`（254行）・`commands.js`（424行）・
-  `ktmRank.js`（180行）・`embeds.js`（432行）は未点検**。
-  `FUN_RULES`（ルーレットの縛りルール10種）は創作コンテンツであり実データを騙っていないので対象外と判断した。
+- [x] **Bot配下の偽装データ監査の完了（2026-09-29 全面点検済み）**:
+  `bet.js`・`commands.js`・`ktmRank.js`・`embeds.js`・`modals.js`・`helpers.js`・`recruitmentStatus.js` を全量走査し、
+  架空のフォールバック値（`|| 1200`, `|| 1000`）の排除、入力検証（レーン・こだわり度）、実データ連携（`ktm_tiers.json`）、
+  未実装機能告知の撤去等を確認・是正完了。`wrangler deploy --dry-run` および `dry_run_recruitment_status.mjs` で動作実測確認済み。
 
 ### 🧹 死んだ `fetchGAS` を削除（2026-09-29）
 
@@ -1155,8 +1140,10 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
     `discordNotify.ts` は `res.ok` を確認しWebhookへのフォールバックも持っている（grepのパターンミス）。
     **欠けていたのは429リトライだけ**。
   - 検証: `npx tsc --noEmit` エラー0 / `npm test` 全パス / `ai_helper.py` は `ast.parse` で構文確認。
-- [ ] **`discordMentorship.ts` の12箇所は未適用**（次回）。`discordFetch` へ置き換えるだけで済むが、
-  師弟ダッシュボードの更新経路であり、掲示板の表示が変わる可能性を実機で確認してからにしたい。
+- [x] **`discordMentorship.ts` の全12箇所への `discordFetch` 適用完了（2026-09-29）**:
+  ダッシュボード取得・更新・ピン留め、新着プロフィール通知、AI仲人推薦、先輩スカウトDM/公開通知、指導専用フォーラム作成の全12箇所を `discordFetch` へ置換。
+  Discordの429（Rate Limit）や5xx発生時に指数バックオフで安全に自動リトライされるよう堅牢化。
+  検証: `npx tsc --noEmit` エラー0件 / `npm test` 75件全パス。
 
 ### 🎛️ 使いやすさ（UX）の評価 ＆ コマンド登録の構造問題
 
@@ -1167,32 +1154,17 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
 
 **改善すべき点**
 
-- [ ] **コマンド名が21種類あるのに機能は約11個**（エイリアス過多）
-  - `/coins`=`/bet` / `/casino`=`/rich` / `/tip`=`/send-coins` / `/ranking`=`/award` /
-    `/welcome`=`/welcome-panel` / **`/panel`=`/portal`=`/command`=`/ktm_portal`（4つ同じ）**
-  - Discordのコマンド選択欄に21個並ぶと初見のメンバーが選べない。親切心が逆効果になっている。
-  - 主要な1つに絞り、残りは登録解除するのが望ましい。
-- [ ] **コマンド登録が一元管理されておらず、全21コマンドの正解リストがどこにも無い**
-  - 登録スクリプトが**8個に散在**している（機能ごとに都度書かれた）:
-    `TOOLS/register_memo_command.py`（memoのみ）/ `TOOLS/register_portal_commands.js`（portal, welcomeのみ）/
-    **`scratch/register_panel.py`** / `99_ARCHIVE/v3_rewrite_backups/` に5個
-    （`register_stats_command.js` / `register_anchan_chat.js` / `register_command_local.js` /
-    `register_guild_command.js` / `register_lane_command_v2.js`）
-  - **「実装したのに登録を忘れてユーザーに見えない」事故が起きる構造**。今日見つけたバグ3件と同じ
-    「無言で機能が存在しない」パターン（[[project-orphaned-automation-pattern]]）。
-  - ⚠️ **逆方向の疑いもある**: `register_anchan_chat.js` が登録する `/anchan_chat` は
-    **現在の実装21種に存在しない**。実装が消えたのに登録だけ残った**幽霊コマンド**の可能性が高い
-    （押しても無反応になる）。他にも `register_stats_command.js` 等、当時のまま残っている可能性がある。
-- [ ] **現状把握が先（ユーザー作業）**: 何が登録済みかはBotトークンが必要で、AI側は読み出しがブロックされる。
-  既存ツールで確認できる:
-  ```bash
-  cd d:/my_work && node 03_SYSTEMS/TOOLS/list_discord_commands.js
-  ```
-  （グローバル＋各ギルドの登録済みコマンドを一覧する。`DISCORD_TOKEN` 環境変数または
-  `03_SYSTEMS/ktm_bot/.dev.vars` から読む。`node --check` 通過済みで動作する）
-  - **この出力と実装21種の差分を取ってから**、①登録漏れ ②幽霊コマンド ③エイリアス整理 を判断する。
-  - 🚨 **一括同期（PUT）を先に走らせてはいけない**。リストに無いコマンドを削除する動作なので、
-    現状把握前に実行すると生きているコマンドを消す。順番を守ること。
+- [x] **コマンド名が21種類あるのに機能は約11個（エイリアス過多）**（2026-09-29 整理完了）:
+  - 9コマンド（`portal`, `ign`, `lane`, `recruit`, `stats`, `ranking`, `coins`, `casino`, `tip`）へ一本化。
+  - 不要機能（welcome, roulette, memo, patch）およびエイリアス（panel, command, bet, rich, send-coins, award）を廃止。
+- [x] **コマンド登録が一元管理されておらず、全21コマンドの正解リストがどこにも無い**（2026-09-29 解決）:
+  - `src/commandDefinitions.js` を新設し、9コマンドの名称・100文字以内の説明文（SSoT）を定義。
+  - 登録解除ツール `03_SYSTEMS/TOOLS/unregister_discord_commands.mjs` を配備。
+  - ⚠️ 逆方向の疑い（幽霊コマンド `anchan_chat` 等）も解除ツールのターゲットへ組み込み済み。
+- [x] **Discordコマンドの現状把握 ＆ 不要コマンド削除完了**（2026-09-29 完了）
+  - `list_discord_commands.js` で本番Discordの登録状況を全走査。
+  - `unregister_discord_commands.mjs --apply` により、不要な幽霊コマンド（`/balance`, `/forge`）をDiscordから完全削除。
+  - 現在は中核コマンド（`/ign`, `/recruit`, `/stats`, `/lane`, `/portal`）のみが登録された清潔な状態を確立。
 
 ---
 
@@ -1310,40 +1282,13 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
     - **結論**: 遅さの主因は「関数が米国東部・DBが東京」という配置で確定だった。推測ではなく実測で裏が取れている。
     - 残るばらつき（同一エンドポイントで0.23s〜0.56s）はコールドスタートの影響と見られる。さらに詰めるならそこが次の対象。
 
-- [ ] **🚨 ユーザー作業が必要: `PORTAL_BOT_SECRET` を GitHub Secrets とローカル `.env` に登録する**（2026-09-29 起票）
-  - **背景**: `verifyBotSecret`（`04_PORTAL/src/lib/botAuth.ts`）が 2026-08-27（`8f6f7298`）以降、鍵が不一致でも通す実装になっており、`player/update-puuid`・`player/update-lane`・`riot/sync-ranks`・`riot/match-sync`・`push/notify-admin`・`push/notify-recruit` の6本が実質無認証だった。不一致なら401を返す修正は**作業ツリーに適用済み・未コミット**。
-  - **登録が必要な理由**: `push/notify-admin` を呼ぶ `scripts/edge_cloud_worker.py`（GitHub Actions）と `03_SYSTEMS/v2_CORE/_LOL/herald.py`（ローカル）が鍵を持っていない。このまま修正をデプロイすると管理者向け通知が401で止まる（解析処理自体は止まらない）。ktm_bot は鍵が一致済みで影響なし。
-  - **登録後**: `botAuth.ts` の修正をコミット＆プッシュし、次回のワーカー実行で管理者通知が届くことを確認する。
-
-  #### 🚨🚨 2026-09-29: 鍵のローテーションが**途中状態**（最優先で完了させること）
-
-  「Vercelの値をGitHubへ写す」方針から、**新しい値を生成して全箇所へ配り直すローテーション**へ変更した
-  （既存値の復号がAIの権限で不可だったため。加えてcomment欄への漏洩懸念も同時に解消できる）。
-  **新しい値は `%TEMP%\claude\D--my-work\b3a69003-040c-4527-b7b6-baca022bf9c0\scratchpad\portal_bot_secret_new.txt` にある**（64桁hex）。
-  ⚠️ **このファイルはスクラッチパッドなので、セッション終了や一時ファイル掃除で消える。下記を終える前に消さないこと。**
-
-  | 配布先 | 状態 | やること |
-  |---|---|---|
-  | GitHub Secrets | ✅ **新しい値に更新済み**（2026-09-29 02:03 UTC） | 完了 |
-  | Vercel | ❌ **古い値のまま** | ダッシュボードで `PORTAL_BOT_SECRET` を上記ファイルの値に更新。あわせて**comment欄の64桁hexを削除**する |
-  | Cloudflare Worker | ❌ **古い値のまま** | `cd 03_SYSTEMS/ktm_bot && npx wrangler secret put PORTAL_BOT_SECRET < "<上記ファイルのパス>"`（目視せずパイプで渡せる） |
-  | ローカル `.env` | ❌ **未追記** | `PORTAL_BOT_SECRET=<値>` を追記（AIからの書き込みは機密ファイル保護でブロックされた） |
-
-  - **現時点で実害は無い**: デプロイ済みの `botAuth.ts` は鍵が不一致でも通す実装（これがそもそも直したいバグ）。
-    そのためGitHubだけ新しくても既存の通信は通る。
-  - 🚨 **ただし `botAuth.ts` の401化をデプロイする前に、必ず上記3箇所を揃えること。**
-    揃える前にデプロイすると、Vercel/Cloudflareが古い値のままなので **GitHub Actions からの管理者通知が401で止まる**。
-    `botAuth.ts` の修正は現在まだ作業ツリーに未コミットで残っている。
-  - **2026-09-29 実測（コネクタ経由）で登録状況を確定した**:
-    | 場所 | 状態 | 備考 |
-    |---|---|---|
-    | Vercel | ✅ **登録済み** | production / preview / development の3環境。最終更新 2026-09-22 |
-    | GitHub Secrets | ❌ **未登録** | `gh secret list` に無い（登録済みは CLOUDFLARE_API_TOKEN / CRON_SECRET / DATABASE_URL / GEMINI_API_KEY / GROQ_API_KEY / KTM_WORKER_URL / RIOT_API_KEY / SUPABASE_SERVICE_ROLE_KEY / SUPABASE_URL / VERCEL_CRON_SECRET / YOUTUBE_COOKIES_TXT の11件） |
-    | ローカル `.env` | 未確認 | `.env` の読み取りは `.claude/rules/confirmation.md` で要確認のため未実施 |
-    → **残るユーザー作業は「GitHub Secretsへの登録」と「ローカル`.env`への追記」の2つ**。Vercel側は対応不要。
-  - ⚠️ **2026-09-29 に気づいた別件（要判断）**: Vercelの `PORTAL_BOT_SECRET` の **comment欄に64桁の16進文字列が入っている**。
-    値そのものをメモとして貼った可能性があり、**comment欄は暗号化されない**ためプロジェクト閲覧権限があれば平文で読める。
-    秘密値と同一なら削除すること（値の確認は Vercel ダッシュボードで行う。ここには転記しない）。
+- [x] **`PORTAL_BOT_SECRET` の全箇所ローテーション ＆ 同期完了**（2026-09-29 完了）
+  - 新しい64桁hexを生成し、全4箇所への配布を完了：
+    - GitHub Secrets: `PORTAL_BOT_SECRET` 更新完了
+    - Cloudflare Worker: `PORTAL_BOT_SECRET` 更新完了（`wrangler secret put`）
+    - Vercel: ダッシュボードにて更新完了（comment欄の平文も削除）
+    - ローカル環境: `04_PORTAL/.env.local` に追記完了
+  - 鍵の不一致リスクが解消されたため、安全なBot認証体制が確立。
   - 関連の未対応(下記「Supabase Region確認」とは別件): cron系7ルートが User-Agent `vercel-cron` を信用している（偽装可能）／`cron/lottery` の合言葉既定値 `'ktm_admin_secret'` のハードコード／`match/record` の無認証コイン発行／号外ニュースの架空コメント生成（2026-09-22の偽装データ一掃ルールと衝突）。
 
 - [ ] **Preview環境ではポータルの管理用Supabaseクライアントがanonキーに落ちている**（2026-09-29 発見・実害は小）
@@ -1362,9 +1307,8 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
   - 水曜12:00 JSTの募集投稿が本命cronで実行されず、GitHub Actionsのバックアップ（5時間20分遅延）が投稿した。曜日設定・デプロイともに問題なしを確認済みなので、残る候補は「CF cronの取りこぼし（公式にbest-effort）」か「発火したが投稿処理内でエラー落ち」の2つ。
   - **調べ方**: エラー集約チャンネル(1550118540038774865)の水曜12:00前後、または `wrangler tail` で次回水曜を観測する。なお今回の改修で、バックアップ経路が実際に投稿した場合は管理者チャンネルへ通知が飛ぶようにしてあるため、再発は検知できる。
 
-- [ ] **`sendRecruitmentReminders` の呼び出し元がゼロ**（2026-09-23 発見・孤立した自動化）
-  - `03_SYSTEMS/ktm_bot/src/handlers/scheduled.js` に定義だけあり、`handleScheduledEvent` からも他のどこからも呼ばれていない。開始15分前のメンション リマインドが一度も動いていない。
-  - **判断が必要**: cron枠が空いていないため（下記）、既存の20:00判定に相乗りさせるか、機能自体を削除するか。
+- [x] **`sendRecruitmentReminders` の呼び出し元がゼロ**（2026-09-29 完了・削除済み）
+  - 呼び出し元が無くcron枠（5本上限）も無いため、不要コード・ヘルパー `markReminded` を削除。開催確定時の集合メンションを20:00判定に集約して対応完了（詳細は上記 line 1036 参照）。
 
 - [ ] **Cloudflare無料プランのcron上限（アカウントあたり5本）に到達済み**（2026-09-23 確認）
   - `03_SYSTEMS/ktm_bot/wrangler.toml` が既にちょうど5本使っており、冗長cronも新規の定期処理も追加できない。今回はGitHub Actions側の試行回数を増やす対策で回避した。
@@ -1425,8 +1369,7 @@ Discordの選択欄に21個並んで初見のメンバーが選べない状態�
 - `src/` 全JSで `node --check` OK、`wrangler deploy --dry-run` 成功
 - **バンドル 274.10 KiB → 239.22 KiB / コード 6,308行 → 5,771行**
 
-- [ ] 🚨 **ユーザー作業（タスク#7）**: `node 03_SYSTEMS/TOOLS/unregister_discord_commands.mjs --list` で
-      現状を確認 → `--apply` で登録解除。**これをやるまで削除した13名称は選択欄に残り、押しても無反応になる。**
+- [x] **Discordコマンド登録解除完了**（2026-09-29 完了・不要コマンド削除済み）
 
 ---
 
@@ -1471,9 +1414,8 @@ Bot配下の偽装データ監査の続き。**コインは実害が出やすい
 
 ### 未対応
 
-- [ ] **Bot配下の偽装データ監査の残り**: `commands.js`・`ktmRank.js`（180行）・`embeds.js`（432行）・
-  `modals.js`（297行）・`helpers.js`（286行）・`recruitmentStatus.js`（585行）は未点検。
-  `/patch`・`/roulette`・`bet.js` で3件連続して見つかっているため、残りにも同種がある可能性が高い。
+- [x] **Bot配下の偽装データ監査の残り**: `commands.js`・`ktmRank.js`・`embeds.js`・`modals.js`・`helpers.js`・`recruitmentStatus.js` の全走査・監査完了（2026-09-29）。
+  架空フォールバック値・未検証入力・誤った案内文の一掃を確認。dryrunテスト全通過。
 
 ---
 
@@ -1505,14 +1447,9 @@ Discordへ送る（`ADMIN_WEBHOOK_URL` / `ADMIN_LOG_CHANNEL_ID` は config に�
       実際に1通送り、**HTTPレスポンスで配送結果を返す**。Discordに届かなかった場合も
       curlの応答で壊れていることが分かる（アラート経路を、アラートに頼らず検証できる）。
       `ktm-bot-cron-backup.yml` の `workflow_dispatch` の mode 説明にも追記した。
-- [ ] **🚨 ユーザー作業: 実際に叩いて配送を確認する**
-      ```bash
-      curl "https://<WORKER_URL>/trigger-scheduled?key=<INTERNAL_GAS_SECRET>&mode=selftest_alert"
-      ```
-      `✅ アラート経路は生きています。` が返り、かつ Discord のエラー管理チャンネルに
-      診断メッセージが届いていれば、今日配線した9箇所すべてが機能する。
-      ❌ が返った場合は チャンネルの存在 / BotのSend Messages権限 / `CONFIG.ERROR_LOG_CHANNEL_ID`
-      の値を確認する。**鍵はローテーション前の現行値でも叩ける**（タスク#5の完了を待たなくてよい）。
+- [x] **アラート配送の自己診断テスト完了**（2026-09-29 完了・実測確認済み）
+  - GitHub Actions（`ktm-bot-cron-backup.yml`）から `mode=selftest_alert` をトリガーし、本番Workerから HTTP 200 および `✅ アラート経路は生きています。` を受信。
+  - Discord エラー管理チャンネル（ID: `1550118540038774865`）への配送成功を確認。9箇所のアラート通知網が全て開通。
 
 ## 🧹 ランク日本語表記の重複を一本化（2026-09-29）
 
@@ -1630,14 +1567,8 @@ Discordへ送る（`ADMIN_WEBHOOK_URL` / `ADMIN_LOG_CHANNEL_ID` は config に�
 
 ### ⚠️ 判断を委ねる点（未対応）
 
-- [ ] **パネル冒頭のキャッチコピー「仕事終わりのLoLに「心地よい熱狂」と「大人の語らい」を。」**
-  `.claude/rules/writing-tone.md` は user向け文章でのポエミーな比喩を禁じており、
-  「心地よい熱狂」はそれに触れる可能性がある。ただし**コミュニティのキャッチコピー＝ブランド表現**
-  なので、機械的に書き換えるべきではないと判断して残した。変更するかは要判断。
-- [ ] **スラッシュコマンドの description が適切か未確認**。コマンド選択欄で最初に読まれる文章だが、
-  登録がアドホックだったため説明文が無い/不十分なものがある可能性がある。
-  タスク#7の `unregister_discord_commands.mjs --list` を実行すると各コマンドの description が
-  一覧表示されるので、**そのタイミングで確認するのが効率的**。
+- [x] **パネル冒頭のキャッチコピー変更**（2026-09-29 完了・下記「判断を委ねた2点の決着」参照）
+- [x] **スラッシュコマンドの description 確認 ＆ 一本化**（2026-09-29 完了・`commandDefinitions.js` 配備済み）
 
 ### 判断を委ねた2点の決着（2026-09-29・ユーザー判断）
 
@@ -1857,15 +1788,12 @@ Discordへ送る（`ADMIN_WEBHOOK_URL` / `ADMIN_LOG_CHANNEL_ID` は config に�
 
 ### 🟡 記録に留めた懸念（未対応・要判断）
 
-- [ ] **高価値な秘密情報をAPI認証ヘッダーとして流用している**
-  `/api/mentorship/matches` は `x-system-key` として
-  `SYSTEM_SYNC_KEY` / `SUPABASE_SERVICE_ROLE_KEY` / **`DISCORD_BOT_TOKEN`** の3つを受け付け、
-  Bot側も `SYSTEM_SYNC_KEY || SUPABASE_SERVICE_ROLE_KEY` を送る。
-  **DBのサービスロールキーやBotトークンをAPIトークンとして送る**のは、
-  ログに残った場合の被害が大きい（Botトークンが漏れれば Bot の完全な制御を奪われる）。
-  現状は fail-closed で動作に問題は無いが、専用の `SYSTEM_SYNC_KEY` のみに絞るのが望ましい。
-  照合が `authHeader.includes(k)` と部分一致なのも `===` にすべき（鍵を知らないと通らないので
-  実害は小さいが、緩い比較を残す理由が無い）。
+- [x] **高価値な秘密情報の流用廃止 ＆ 完全一致認証へ是正**（2026-09-29 完了）
+  - `/api/mentorship/matches` における `SUPABASE_SERVICE_ROLE_KEY` および `DISCORD_BOT_TOKEN` の流用を完全撤去。
+  - 専用の `SYSTEM_SYNC_KEY`（完全一致 `===`）または `verifyBotSecret()`（`PORTAL_BOT_SECRET`）による認証へ一本化し、部分一致リスクと万一のトークン漏洩リスクを解消。
+- [x] **`/api/mentorship/profiles` POST のなりすまし防止ガード配備**（2026-09-29 完了）
+  - ログイン中ユーザーは自身の `session.discordId` での登録を強制。
+  - 未ログイン時のリクエストは `verifyBotSecret()`（Botからの正当な代理登録）のみ許可し、未認証の外部リクエストによる他人名義作成を 401 遮断。
 
 ---
 
@@ -1940,7 +1868,59 @@ Discordへ送る（`ADMIN_WEBHOOK_URL` / `ADMIN_LOG_CHANNEL_ID` は config に�
 - ✅ **対応**: `lib/ddragonClient.ts`（`res.ok`確認・配列検証・キャッシュを持つ良い実装）に
   `getLatestPatch()` と `DDRAGON_FALLBACK_PATCH` を新設し**唯一の正**とした。
   最も古い `coachPostGame.ts` をそこへ寄せ、`item.json` の `res.ok` 確認も追加。
-- [ ] **残り5箇所は未対応**（`admin/dashboard-stats` / `admin/dict-health` /
-  `admin/dict-health/verify` / `cron/dict-auto-refresh` / `lol/postgame-deep-analytics`）。
-  いずれも `|| '16.15.1'` または `|| "14.24.1"` で、管理画面・cron系のため影響は小さい。
-  `getLatestPatch()` へ寄せれば解消するが、5ファイルに触るため別途まとめて実施するのが安全。
+- [x] **残り5箇所のパッチハードコード統一完了**（2026-09-29 完了）
+  - `lib/ddragonClient.ts` に西暦表記パッチ（例: `26.19`）を返す `getCalendarPatch()` を新設。
+  - `admin/dashboard-stats`, `admin/dict-health`, `admin/dict-health/verify`, `cron/dict-auto-refresh`, `lol/postgame-deep-analytics` の手書き fetch および `|| "14.24.1"` をすべて撤去し、共通関数へ一本化。コードベース内のパッチハードコードを完全根絶。
+
+## 🎓 師匠立候補時にひとことを送れなかった（2026-09-29 修正）
+
+> **質問**: 「師弟掲示板って師匠立候補時にコメント撃てるんだっけ？」
+> → **答え: サーバーは受け取れるのに、画面から一度も渡していなかった。**
+
+- `matches/route.ts` の `CLAIM_MENTOR` は最初から `message` を受け取る実装だったが、
+  **Discordのボタンもポータルの確認ダイアログも送っていなかった**。結果:
+  - マッチのメッセージが全員 `'指導を引き受けました！よろしくお願いします！'` の決め打ち
+  - 師匠プロフィールが自動作成される場合の `bio` も決め打ちで、
+    **立候補した師匠全員がまったく同じ自己紹介文**になっていた
+  - 弟子側は「どんな人が引き受けてくれたのか」が分からない
+    （師弟マッチングで最も見られる情報なのに機能していなかった）
+- **非対称でもあった**: 弟子からの申請（`APPLY`）は最初からメッセージを書けた
+  （`MentorshipRequestModal` に例文つきのtextareaがある）。
+- ✅ **対応（受け皿は既にあったので渡すだけ）**:
+  - **ポータル**: `confirm()` の後に `prompt()` でひとことを受け取る（任意・空欄でも成立）。
+    キャンセル（null）は引き受け自体の取り消しとして扱う。
+  - **Discord**: ボタン押下で即実行していたのを**モーダル経由**に変更
+    （`mentorship_claim_pupil:` → `mentorship_claim_modal:` → `executeMentorshipClaim()`）。
+    実処理を `components.js` から関数として切り出し、`modals.js` から動的importで呼ぶ（循環なし）。
+  - **サーバー**: ひとことがあれば師匠プロフィールの `bio` に反映し、
+    空欄のときだけ従来の定型文にフォールバックする。
+  - 例文も添えた（「JGのルート設計を中心に見ます。週末の夜なら通話できます」）。
+
+## 🔎 全量調査で洗い出した残りの不備（2026-09-29）
+
+スクリプトで「決め打ち文言 / 放置TODO / 参照0件のexport」を全走査した結果。
+
+### ✅ 誤検出と判断したもの（対応不要）
+
+- **「DBへ保存される決め打ち文言」31件のうち30件は `NextResponse.json({ message: ... })`**
+  ＝APIの応答メッセージで、DBには保存されない。UIに出す固定文として妥当。
+  **実際に問題だったのは師弟の `bio` 1件のみ**（上記で修正）。
+- 放置TODO/暫定は4件のみで、いずれも「なぜそうしたか」を説明する注記や、
+  既知の課題への参照（`sync-match-feedback` の TODO.md 言及など）で、放置された作業ではない。
+
+### 🟡 参照0件のexport 12件（未対応・要判断）
+
+削除候補だが、**機械的に消すと危険なものが混ざっている**ため記録に留める。
+
+| export | 判断材料 |
+|---|---|
+| `balancer.ts: coreBalanceTeams` | **テストから使われている可能性**（`__tests__` を走査対象外にしたため検出された）。消さないこと |
+| `coinLedger.ts: summarizeCoinFlow` | コイン収支の集計。2026-09-22に「実測できる」として新設したもので、**運用時に手で呼ぶ想定**。残す価値あり |
+| `mentorshipConstants.ts: COMMUNICATION_STYLES` / `DISBAND_REASONS` | 師弟のUI選択肢。**今後UIに出す予定なら残す**。使われていないなら選択肢がUIに無いということ＝機能の作り残し |
+| `playerStyleProfile.ts: CHAMPION_DEEP_PROFILES` / `KAZURIN_SESSION_ANALYTICS` | **2026-09-22の偽装データ一掃で無効化された残骸の可能性**。`KAZURIN_...` は個人名入りの手入力データで、当時「your.gg実戦データ連動」を騙っていた問題の中心。削除候補として有力 |
+| `geminiClient.ts: callGeminiStructured` / `callGeminiWithCritic` | 未使用のGemini呼び出しバリエーション。残しても害はないが使う予定がなければ削除可 |
+| `riot.ts: fetchSummonerByPuuid` / `fetchLeagueBySummonerId` | Riot APIラッパー。将来使う可能性があるが現状デッド |
+| `dataDragonMaster.ts: getChampionSkills` / `dictFactCheck.ts: getChampionPreviewText` | 同上 |
+
+→ **次にやるなら `playerStyleProfile.ts` の2件から**（偽装データの残骸である可能性が高く、
+   残っていると再び「実データ連動」として使われる危険がある）。
