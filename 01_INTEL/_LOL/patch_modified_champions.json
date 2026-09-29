@@ -1,0 +1,64 @@
+{
+  "old_patch": "16.18.1",
+  "new_patch": "16.19.1",
+  "detected_at": "2026-09-24T00:24:38.233000+00:00",
+  "total_champions": 173,
+  "modified_count": 5,
+  "champions": [
+    {
+      "id": "Draven",
+      "name": "ドレイヴン",
+      "type": "stats_changed",
+      "diffs": {
+        "attackdamage": {
+          "old": 62,
+          "new": 64
+        }
+      }
+    },
+    {
+      "id": "Fiora",
+      "name": "フィオラ",
+      "type": "stats_changed",
+      "diffs": {
+        "hpperlevel": {
+          "old": 99,
+          "new": 105
+        }
+      }
+    },
+    {
+      "id": "Lillia",
+      "name": "リリア",
+      "type": "stats_changed",
+      "diffs": {
+        "armor": {
+          "old": 22,
+          "new": 24
+        }
+      }
+    },
+    {
+      "id": "Ryze",
+      "name": "ライズ",
+      "type": "stats_changed",
+      "diffs": {
+        "armorperlevel": {
+          "old": 4.2,
+          "new": 4.7
+        }
+      }
+    },
+    {
+      "id": "Vi",
+      "name": "ヴァイ",
+      "type": "stats_changed",
+      "diffs": {
+        "attackdamage": {
+          "old": 63,
+          "new": 61
+        }
+      }
+    }
+  ]
+}

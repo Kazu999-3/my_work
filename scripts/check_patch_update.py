@@ -311,7 +311,16 @@ def check_patch(force=False, dry_run=False, check_only=False):
     update_champion_queue(latest, modified_champions=modified, dry_run=dry_run)
 
     # 4. Discord通知
-    notify_patch_change(current, latest, dry_run=dry_run)
+    # 記録ファイルが無い(unknown)状態は「パッチが変わった」ではなく「前回の記録が
+    # 失われた」だけなので、速報を飛ばさず記録だけ行う。
+    # 2026-09-30: 状態ファイルが.gitignoreの*.jsonに巻き込まれて未追跡だったため、
+    # GitHub Actions側では毎回unknownになり、実行のたびに「新パッチ検知」の誤通知が
+    # 飛び続ける状態だった(追跡対象に変更して解消)。同じことが再発しても
+    # 通知だけは荒れないようにするための安全弁。
+    if current == "unknown":
+        print("  ℹ️ 前回の記録が無いため、今回は記録の初期化のみ行い Discord通知は行いません。")
+    else:
+        notify_patch_change(current, latest, dry_run=dry_run)
 
     print("\n✨ パッチ更新プロセスが正常に完了しました。")
     return 0
