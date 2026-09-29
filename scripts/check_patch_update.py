@@ -47,18 +47,45 @@ CORE_CHAMPIONS = [
     "LeeSin", "Lillia", "Nocturne", "Viego", "XinZhao"
 ]
 
-def fetch_latest_patch_version(timeout=5.0):
-    """DataDragon 公式から最新パッチを取得"""
+def fetch_patch_versions(timeout=5.0):
+    """DataDragon 公式のバージョン一覧（新しい順）を取得"""
     try:
         req = urllib.request.Request(DDRAGON_VERSIONS_URL, headers={"User-Agent": "Sovereign-OS-PatchWatcher/1.0"})
         with urllib.request.urlopen(req, timeout=timeout) as res:
             if res.status == 200:
                 versions = json.loads(res.read().decode("utf-8"))
                 if versions and isinstance(versions, list):
-                    return versions[0]
+                    return versions
     except Exception as e:
         print(f"[WARN] DataDragon パッチ取得エラー: {e}")
+        return []
+    return []
+
+def fetch_latest_patch_version(timeout=5.0):
+    """DataDragon 公式から最新パッチを取得"""
+    versions = fetch_patch_versions(timeout=timeout)
+    return versions[0] if versions else None
+
+def fetch_previous_patch_version(latest=None, timeout=5.0):
+    """最新の1つ前のパッチ（マイナー番号が違う直近のもの）を取得する。
+
+    差分検知の比較元にパッチ番号を決め打ちしていた箇所を置き換えるために追加
+    （2026-09-30）。versions.json には同じマイナーのビルド違い（16.19.1 の後に
+    16.19.2 等）が並ぶことがあるため、マイナーが変わる最初の要素を「1つ前」とする。
+    """
+    versions = fetch_patch_versions(timeout=timeout)
+    if not versions:
         return None
+    latest = latest or versions[0]
+
+    def minor_of(v):
+        parts = str(v).split(".")
+        return ".".join(parts[:2]) if len(parts) >= 2 else str(v)
+
+    latest_minor = minor_of(latest)
+    for v in versions:
+        if minor_of(v) != latest_minor:
+            return v
     return None
 
 def get_current_recorded_patch():
@@ -254,7 +281,12 @@ def check_patch(force=False, dry_run=False, check_only=False):
         return 0
 
     # 1. パッチ差分検知（スキル・ステータス変動チャンピオンの自動抽出）
-    old_p = current if current != "unknown" else "16.18.1"
+    #    記録が無い場合の比較元は versions.json の「1つ前」を実取得する
+    #    （以前は "16.18.1" の決め打ちで、時間が経つほど的外れな比較になっていた）。
+    old_p = current if current != "unknown" else fetch_previous_patch_version(latest)
+    if not old_p:
+        print("❌ 比較元パッチを特定できませんでした（記録なし・versions.json取得失敗）。")
+        return 1
     modified = detect_modified_champions(old_p, latest, dry_run=dry_run)
 
     # 2. 記録更新
@@ -281,7 +313,14 @@ def main():
     if args.detect_diff:
         latest = fetch_latest_patch_version()
         current = get_current_recorded_patch()
-        old_p = "16.18.1" if latest == "16.19.1" else current
+        # 記録が既に最新まで進んでいると current との比較では差分0になるため、
+        # このモードでは versions.json の「1つ前」を比較元にする。
+        # 以前は `"16.18.1" if latest == "16.19.1" else current` という
+        # 特定パッチ専用の分岐で、次のパッチに進むと機能しなくなっていた。
+        old_p = current if (current and current != "unknown" and current != latest) else fetch_previous_patch_version(latest)
+        if not old_p:
+            print("❌ 比較元パッチを特定できませんでした。")
+            sys.exit(1)
         print(f"🔬 手動差分検知モード: {old_p} ➔ {latest}")
         diffs = detect_modified_champions(old_p, latest, dry_run=args.dry_run)
         print(f"結果: {len(diffs)} 体の差分を特定・保存しました。")

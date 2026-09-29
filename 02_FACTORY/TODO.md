@@ -2026,3 +2026,97 @@ Discordへ送る（`ADMIN_WEBHOOK_URL` / `ADMIN_LOG_CHANNEL_ID` は config に�
 - [ ] **`except: pass` 65件の棚卸し**（未対応）。全部が悪いわけではない
   （任意importのフォールバック等は妥当）が、件数が多いため
   「失敗するとデータが残らない経路」に絞って通知を入れる方針で別途進める。
+
+---
+
+# 🔧 DDragon決め打ちの解消 ＆ 自動化マップの実態化（2026-09-30 後半）
+
+## ✅ 完了: HUDのアイテム価格が2年前のパッチで計算されていた
+
+`03_SYSTEMS/v2_CORE/_LOL/overlay/item_price_manager.py` が `DDRAGON_VERSION = "14.24.1"`
+（2024年12月）を決め打ちしていた。overlay全体（`hud_state_engine` / `macro_analytics` /
+`matchup_card_widget` / `spell_tracker_widget` / `toast_alert_widget` / `top_bar_widget` /
+`dynamic_build_advisor`）から使われている現役モジュール。
+
+**実測した乖離**（14.24.1 と 16.19.1 の item.json を実取得して比較）:
+
+| 観点 | 数値 |
+|---|---|
+| アイテム総数 | 575件 → **870件** |
+| 14.24.1に存在しないアイテム | **295件**（うち購入可能かつ1000G以上が**172件**） |
+| 価格が変わったアイテム | **90件**（例: 1000G→2750G、3100G→1100G） |
+
+- 「所持アイテムのゴールド総額を100%正確に算出」と謳っていたが、現環境のアイテムを
+  0G扱い・旧価格扱いで計算していた。`get_item_price()` を直接使う
+  `dynamic_build_advisor.py:430` の「2600G以上か」判定も新アイテムでは常に偽になっていた。
+- さらに**キャッシュ（`cache/ddragon_items.json`）にバージョン情報が無く**、
+  定数を新しくしても既存キャッシュが読まれ続けて何も変わらない状態だった（二重の罠）。
+
+**対応**:
+- `overlay/ddragon_version.py` を新設。`versions.json` から解決し24時間ローカルキャッシュ、
+  取得失敗時は `FALLBACK_VERSION`（実測値）へ退避。HUD起動を待たせないよう
+  import時は `allow_network=False`（キャッシュ読みのみ）にできる設計。
+- `item_price_manager.py`: バージョン動的解決 ＋ **キャッシュをバージョンで紐付け**
+  （旧形式キャッシュは期限切れ扱いで自動破棄）。通信失敗時は古いキャッシュで代用し、
+  ハードコード数十件へ落ちないようにした。
+- `spell_asset_manager.py`: 同じく動的解決。アイコン取得の2段目フォールバックが
+  `14.24.1` 固定だったため、**2024年12月以降に追加されたチャンピオンは1段目が失敗すると
+  必ず灰色の四角**になっていた（`FALLBACK_VERSION` へ変更）。
+- 検証: 870件ロード、`3031=3500G` `3172=1100G` 等が現行値で取得できることを実測確認。
+
+## ✅ 完了: アイテム名の逆引きが無関係なIDを返していた（副次発見）
+
+- item.jsonには**名前が空の内部エントリが4件**（2008等）あり、部分一致の `clean in q`
+  （空文字は必ず含まれる）に引っかかって、**一致しない問い合わせすべてに対して
+  無関係なIDを返していた**。→ 存在しない名前は 0 を返すよう修正。
+- **同名で複数IDを持つアイテムが218件**（アリーナ/ARAM用の `221xxx`/`223xxx`/`771xxx` 派生）。
+  辞書の並び順で派生IDを返すことがあり、CDNに画像が無くてアイコンが灰色になっていた。
+  → 最小のIDを正規アイテムとして優先し、部分一致は最も具体的（長い）名前を選ぶよう修正。
+
+## ✅ 完了: パッチ番号の決め打ち2ファイル
+
+- `scripts/audit_tactics_bibles.py`: 注記済み判定が `"16.19.1" not in content` のリテラル比較で、
+  次のパッチに進むと(1)常に `DIFF_PENDING` と誤報告し(2)`--fix` で注記を毎回重複挿入していた。
+  → 差分JSONの `new_patch` 実値で判定するよう修正（既定値のリテラルも削除）。
+- `scripts/check_patch_update.py`: `old_p = "16.18.1" if latest == "16.19.1" else current` という
+  特定パッチ専用の分岐。→ `fetch_previous_patch_version()` を追加し `versions.json` から
+  「1つ前のマイナー」を実取得。現行値（16.18.1 ➔ 16.19.1）を再現することを実測確認。
+
+## ✅ 完了: 私自身の誤記載を訂正（設計書の youtube_worker）
+
+本日の前半に `systemDesignMarkdown.ts` を修正した際、「GitHub Actions の
+`youtube_worker.py`（30分おき）が自動巡回」と書いたが、**これは事実ではなかった**。
+`ktm-cloud-worker.yml` のコメントに明記されている通り、**youtubeジョブの定期実行は
+2026-07-31に停止済み**（GitHub Actionsの共有IPがYouTube側から低信用と判定されるため）で、
+現在は `workflow_dispatch` の手動実行のみ。嘘の記載を直す作業で新しい嘘を書いていた。
+→ 停止の事実・理由と、ローカル `edge_worker_daemon.py` が15分おきに `youtube_absorb` を
+起票してWhisper(GPU)で処理する実経路に書き換えた。
+
+## ✅ 完了: AUTOMATION_MAP.md を全面改訂（旧48行 → 140行）
+
+「止まっているのに気づかない」を防ぐための表自体が最大の盲点になっていた。
+
+| 旧版の記載 | 実態 |
+|---|---|
+| `prospector.yml` / `youtube-worker.yml` | **どちらも存在しない**。実際は両方 `ktm-cloud-worker.yml` 内のジョブ |
+| YouTube新着巡回「毎時(0分)」 | 実際は `0 23,5,11 * * *` = **1日3回**（JST 08/14/20時） |
+| Riotパッチ番犬「GitHub Actions 1日2回」 | **どのワークフローにも登録されていない**（下記） |
+| 動画解析ワーカー「キュー起票契機＋定期実行」 | **2026-07-31に定期実行停止**、手動のみ |
+| （記載なし） | GitHub Actions **11本**・Vercel Cron **7本**・Cloudflare Cron **5本**が未記載 |
+
+→ 実ファイルから機械的に再作成し、再検証用のコマンドも冒頭に明記した。
+
+## 🔴 未対応（ユーザー判断が必要）
+
+- [ ] **`scripts/check_patch_update.py` に実行者がいない**。
+  `01_INTEL/_LOL/current_patch.json` の記録が **16.18.1（最終確認 2026-09-18）** で止まっており、
+  公式最新 16.19.1 との差分検知・検証キュー更新・Discord速報が自動では一度も走っていない。
+  - 手動実行する場合: `py scripts/check_patch_update.py`（Discordへ速報が飛ぶので要承知）。
+    まず `--check-only` や `--dry-run` で確認するのが安全。
+  - 自動化する場合: GitHub Actionsワークフローの新設が必要。**Discord通知が定期的に飛ぶようになる**ため、
+    作成の可否を確認したい。
+- [ ] **`scripts/ops_health_check.py` にも実行者がいない**。上記パッチ番犬の停止を検知できるはずの
+  点検自体が自動実行されていない（乖離を検知する仕組みが乖離していた）。
+- [ ] `02_FACTORY/_LOL/champion_update_queue.json` が `status: "suspended"` のまま、
+  **未処理(pending)が約35体**残っている（最終更新 2026-09-29）。意図的な停止か放置かの確認が必要。
+- [ ] Python側 `except: pass` 65件の棚卸し（前述。件数が多いため「失敗するとデータが残らない経路」に絞る方針）。

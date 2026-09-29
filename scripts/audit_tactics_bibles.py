@@ -38,8 +38,11 @@ def load_patch_diffs():
         for c in data.get("champions", []):
             res[c["id"].lower()] = {
                 "name": c["name"],
-                "old_patch": data.get("old_patch", "16.18.1"),
-                "new_patch": data.get("new_patch", "16.19.1"),
+                # パッチ番号はJSON側の実値のみを使う。以前ここは "16.18.1"/"16.19.1" を
+                # 既定値にしていたが、この既定値が使われるとその時点の実パッチと無関係な
+                # 番号で注記が入るため、取れない場合は None にして注記自体を見送る。
+                "old_patch": data.get("old_patch"),
+                "new_patch": data.get("new_patch"),
                 "diffs": c.get("diffs", {})
             }
         return res
@@ -99,8 +102,12 @@ def audit_and_fix(fix=False):
         # status: deprecated の場合の [旧] 接頭辞チェック
         needs_old_prefix = (status == "deprecated" and not title.startswith("[旧]"))
 
+        # 「注記が入っているか」の判定は、差分JSONが示す実際の新パッチ番号で行う。
+        # 以前は "16.19.1" のリテラル比較で、次のパッチに進むと
+        # (1) 常に DIFF_PENDING と誤報告し (2) --fix で注記を毎回重複挿入していた。
+        new_patch = (diff_info or {}).get("new_patch")
         patch_note_status = "OK"
-        if has_patch_diff and "16.19.1" not in content:
+        if has_patch_diff and new_patch and new_patch not in content:
             patch_note_status = "DIFF_PENDING"
 
         print(f"{f.name:30} | {status:14} | {str(verified_at):12} | {patch_note_status:12} | {title}")
@@ -126,8 +133,8 @@ def audit_and_fix(fix=False):
                         modified = True
                         break
 
-            # 3. パッチ16.19.1差分の注記追記（未反映の場合）
-            if has_patch_diff and "16.19.1" not in content and diff_info:
+            # 3. 最新パッチ差分の注記追記（未反映の場合）
+            if has_patch_diff and new_patch and new_patch not in content:
                 diff_desc = []
                 for k, v in diff_info["diffs"].items():
                     diff_desc.append(f"{k}: {v.get('old')} → {v.get('new')}")

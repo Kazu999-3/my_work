@@ -12,11 +12,20 @@ import httpx
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap, QColor
 
+from v2_CORE._LOL.overlay.ddragon_version import (
+    FALLBACK_VERSION,
+    cdn_base,
+    get_ddragon_version,
+)
+
 CACHE_DIR = Path(__file__).parent / "cache"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
-DDRAGON_VERSION = "16.19.1"
-CDN_BASE = f"https://ddragon.leagueoflegends.com/cdn/{DDRAGON_VERSION}/img"
+# import時はHUDの起動を待たせないため通信しない（キャッシュが無ければFALLBACKを使う）。
+# 実際の通信は item_price_manager.load_items() 側で行われ、そこで書かれた
+# バージョンキャッシュが次回起動から反映される。
+DDRAGON_VERSION = get_ddragon_version(allow_network=False)
+CDN_BASE = cdn_base(DDRAGON_VERSION)
 
 SPELL_IMG_MAP = {
     "Flash": f"{CDN_BASE}/spell/SummonerFlash.png",
@@ -279,9 +288,11 @@ class SpellAssetManager:
         except Exception:
             pass
 
-        # 2. フォールバック: 旧パッチ (14.24.1) からの取得
+        # 2. フォールバック: 動作確認済みの既知バージョンから取得。
+        #    以前はここが 14.24.1(2024年12月) 固定だったため、それ以降に追加された
+        #    チャンピオンは1段目が失敗すると必ず灰色の四角になっていた。
         try:
-            fb_url = f"https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/{norm_key}.png"
+            fb_url = f"https://ddragon.leagueoflegends.com/cdn/{FALLBACK_VERSION}/img/champion/{norm_key}.png"
             fb_r = httpx.get(fb_url, timeout=2.0)
             if fb_r.status_code == 200 and fb_r.content:
                 with open(cache_file, "wb") as f:
