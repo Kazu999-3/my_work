@@ -9,8 +9,6 @@ export async function GET(request: Request) {
   
   // 認証チェック (cronジョブからのリクエストを想定)
   const authHeader = request.headers.get('authorization');
-  const userAgent = request.headers.get('user-agent') || '';
-  const isVercelCron = userAgent.includes('vercel-cron');
   const cronSecret = process.env.CRON_SECRET; // Vercel の CRON_SECRET 等を設定
   
   // 以前は ?test=true を付けるだけでこの認証チェック自体を丸ごとスキップできてしまっていた
@@ -18,8 +16,10 @@ export async function GET(request: Request) {
   // さらに `cronSecret && ...` の短絡により、CRON_SECRET未設定時はチェック自体が
   // 丸ごと無効化(fail-open)される、api/cron/route.tsで既に修正済みの構造も残っていた
   // (2026-08-05発覚)。Bearer側の真偽を先に確定させ、fail-closedに統一する。
+  // 2026-09-29: User-Agent に `vercel-cron` が含まれるだけで通す経路も撤去した（偽装可能）。
+  // Vercel は CRON_SECRET 設定時にCron実行で自動的にBearerを付けるため定期実行は維持される。
   const bearerOk = !!cronSecret && authHeader === `Bearer ${cronSecret}`;
-  if (!bearerOk && !isVercelCron) {
+  if (!bearerOk) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

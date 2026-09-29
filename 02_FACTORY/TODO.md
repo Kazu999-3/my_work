@@ -954,8 +954,16 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
       本命のCloudflare cron（水曜12:00 JST）は動くので募集自体は投稿されるが、保険が外れている状態。
 - [ ] `ADMIN_SECRET_KEY` を Vercel に登録（`admin_secret_key_new.txt` の値）。
       ※ 宝くじの定期実行は `CRON_SECRET` で動くため**登録しなくても動作する**。手動実行したい場合のみ必要。
-- [ ] 残る同系統の課題: **cron系の他6ルートがまだ User-Agent `vercel-cron` を信用している**（偽装可能）。
-      今回は実害が最大の `cron/lottery` のみ直した。`match/record` の無認証コイン発行も未対応。
+- [x] **cron系の残り6ルートの User-Agent 信用も撤去**（2026-09-29 完了）
+      `api/cron/route.ts` / `sync-matches` / `soloq-trends` / `soloq-coach` / `freshness-check` / `dict-review-check`。
+      全7ルートが **`CRON_SECRET` の Bearer のみ**に統一され、`isVercelCron` の参照は0件になった。
+      - **壊れない根拠**: `CRON_SECRET` は Vercel（本番・preview）と GitHub Secrets の両方に設定済みで、
+        Vercel は Cron 実行時に自動で Bearer を付ける。`soloq-coach-poll.yml` や `ktm-cloud-worker.yml` など
+        GitHub Actions 側の呼び出しも元から `Authorization: Bearer $CRON_SECRET` を使っている。**UA経路に依存した呼び出し元は無かった**。
+      - `soloq-coach` / `soloq-trends` は Gemini を呼ぶため、偽装UAでの連打は**日次クォータ枯渇に直結**していた
+        （[[project-gemini-quota-constraint]]）。
+      - 検証: `npx tsc --noEmit` エラー0 / `npm test` 全パス。
+- [ ] **`match/record` の無認証コイン発行**（未対応）。試合記録と同時にコインを発行する経路に認証が無い。
 
 ---
 

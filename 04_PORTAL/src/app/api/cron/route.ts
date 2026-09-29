@@ -9,18 +9,17 @@ export async function GET(request: Request) {
   
   // 認証キー（Cronからのリクエストであることを証明する）
   const authHeader = request.headers.get('authorization');
-  const userAgent = request.headers.get('user-agent') || '';
-  const isVercelCron = userAgent.includes('vercel-cron');
   const cronSecret = process.env.CRON_SECRET;
 
-  // Bearer(CRON_SECRET一致)またはVercel Cronヘッダーのいずれかを必須とする。
-  // 以前は `cronSecret &&` を先頭に付けていたため、CRON_SECRET未設定の間は
-  // チェック自体が丸ごと無効化(fail-open)され、外部から連打されるとGemini日次
-  // クォータを消費し尽くすリスクがあった(2026-08-05発覚)。CRON_SECRET未設定の間は
-  // Bearer側が常に不一致になるため、実質「Vercel Cron経由のみ許可」に倒れる
-  // (fail-closed)。
+  // 2026-08-05: `cronSecret &&` の短絡でCRON_SECRET未設定時にチェックが丸ごと
+  // 無効化(fail-open)される問題を修正済み。
+  // 2026-09-29: さらに User-Agent に `vercel-cron` が含まれるだけで通す経路を撤去した。
+  // ヘッダは誰でも偽装できるため認証として機能しておらず、外部から連打されると
+  // Gemini日次クォータを消費し尽くすリスクが残っていた。
+  // Vercel は CRON_SECRET が設定されていれば Cron 実行時に自動で Bearer を付けるため、
+  // `vercel.json` の定期実行はそのまま動く（CRON_SECRET は本番・previewに設定済み）。
   const bearerOk = !!cronSecret && authHeader === `Bearer ${cronSecret}`;
-  if (!bearerOk && !isVercelCron) {
+  if (!bearerOk) {
     return new NextResponse('Unauthorized', { status: 401 });
   }
 

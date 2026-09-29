@@ -19,9 +19,11 @@ export async function GET(req: Request) {
   // CRON_SECRET未設定時fail-openパターンの修正(2026-08-05発覚、api/cron/route.tsと同じ修正)。
   const auth = req.headers.get('authorization') || '';
   const cronSecret = process.env.CRON_SECRET;
-  const isVercelCron = (req.headers.get('user-agent') || '').includes('vercel-cron');
   const bearerOk = !!cronSecret && auth === `Bearer ${cronSecret}`;
-  if (!bearerOk && !isVercelCron) {
+  // 2026-09-29: User-Agent に `vercel-cron` が含まれるだけで通す経路を撤去（誰でも偽装できるため
+  // 認証として機能していなかった）。Vercel は CRON_SECRET 設定時にCron実行で自動的に
+  // Bearer を付けるため、vercel.json の定期実行はそのまま動く。
+  if (!bearerOk) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
