@@ -963,7 +963,22 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
       - `soloq-coach` / `soloq-trends` は Gemini を呼ぶため、偽装UAでの連打は**日次クォータ枯渇に直結**していた
         （[[project-gemini-quota-constraint]]）。
       - 検証: `npx tsc --noEmit` エラー0 / `npm test` 全パス。
-- [ ] **`match/record` の無認証コイン発行**（未対応）。試合記録と同時にコインを発行する経路に認証が無い。
+- [x] **`match/record` の無認証コイン発行を封鎖**（2026-09-29）
+  - **無認証だった理由が既に失効していた**: コードには「仲間内メンバーが自分でも操作する運用のため
+    認証は掛けない設計」と書かれていたが、**唯一の手動記録UIだった `MatchRecordPanel` は2026-09-23に削除済み**。
+    現在の呼び出し元は **KTM Bot の `handleAutoMatchEnd`（`ktm_bot/src/utils/helpers.js:245`）1箇所だけ**で、
+    Bot は `fetchPortalAPI` 経由で `X-Bot-Secret` を既に送っている。
+  - **放置した場合の実害**: 捏造した10人分のペイロードをPOSTするだけで
+    1試合あたり**約2,550コイン**（参加100×10 + 勝利150×5 + MVP200 + 各賞200×3）を発行できた。
+    コイン総供給が約15,000枚規模のため**1回で約17%のインフレ**。さらに `ktm_matches` /
+    `ktm_match_participants` に架空戦績が入り、MMRとリーダーボードも汚染される。
+  - **対応**: `verifyBotSecret`（Bot経路）＋ `verifyAdminSession`（将来手動UIを戻す場合の逃げ道）で認証。
+    既存の `admin/fix-match` 等と同じパターンに揃えた。検証: `npx tsc --noEmit` エラー0。
+  - 🚨 **これにより鍵ローテーションの影響範囲が拡大した**（タスク#4も更新済み）。
+    順序を誤ると「管理者通知が止まる」だけでなく**試合記録そのものが401で止まる**
+    （戦績が残らない・コインが配られない・MMRが動かない）。
+    **今は壊れていない**（デプロイ済みの `botAuth.ts` は不一致でも通す版で、かつ Vercel と Cloudflare は
+    両方とも古い値で互いに一致しているため）。`botAuth.ts` を commit する前に必ず両方を揃えること。
 
 - [x] **Dependabot の脆弱性2件（`ip-address`）を解消**（2026-09-29）
   - 依存元は **`@google/clasp`**（Google Apps Script CLI）→ MCP SDK → express-rate-limit → ip-address。

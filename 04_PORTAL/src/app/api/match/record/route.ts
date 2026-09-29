@@ -2,9 +2,37 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { calculateNewMMRDetailed, calculateKdaScore, MmrCalcContext, calculateInitialMmr, computeRepresentativeMmr, propagateCrossLaneMmr } from '../../../../lib/mmr';
 import { fetchAllRows } from '../../../../lib/fetchAll';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
+import { verifyBotSecret } from '../../../../lib/botAuth';
 
 export async function POST(request: Request) {
   try {
+    // ===== 認証（2026-09-29 追加）=====
+    // 以前は「仲間内メンバーが自分でも操作する運用のため認証は掛けない設計」という
+    // コメントと共に完全な無認証だった。だがその前提は既に失効している:
+    // 唯一の手動記録UI だった MatchRecordPanel を 2026-09-23 に削除済みで、
+    // 現在の呼び出し元は KTM Bot の handleAutoMatchEnd（ktm_bot/src/utils/helpers.js:245）
+    // 1箇所だけ。Bot は fetchPortalAPI 経由で X-Bot-Secret を送っている。
+    //
+    // 無認証のままだと、捏造した10人分のペイロードをPOSTするだけで
+    // 1試合あたり約2,550コイン（参加100×10 + 勝利150×5 + MVP200 + 各賞200×3）を発行でき、
+    // コイン総供給が約15,000枚規模のため1回で約17%のインフレになる。
+    // さらに ktm_matches / ktm_match_participants に架空の戦績が入り、MMRとリーダーボードも汚染される。
+    //
+    // verifyBotSecret は PORTAL_BOT_SECRET 未設定時のみ fail-open する（Vercelには設定済み）。
+    // 将来ポータル側に手動記録UIを戻す場合は管理者セッションでも通るようにしてある。
+    const botAuth = verifyBotSecret(request);
+    if (!botAuth.ok) {
+      const adminAuth = await verifyAdminSession(request);
+      if (!adminAuth.ok) {
+        return NextResponse.json(
+          { error: botAuth.error || adminAuth.error || 'Unauthorized' },
+          { status: 401 }
+        );
+      }
+    }
+    // ==================================
+
     const body = await request.json();
     const { winningTeam, gameDuration, participants, riotMatchId, balanceSatisfaction, isExhibition, dry_run } = body;
 
@@ -12,9 +40,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '入力データが不正です。10人の参加者と勝利チームが必要です。' }, { status: 400 });
     }
 
-    // このエンドポイントは仲間内メンバーが自分でも操作する運用のため認証は掛けない設計
-    // (api/players/saveと同じ意図的な公開API)。ただし荒唐無稽な数値の入力・誤操作で
-    // MMR/戦績データが壊れることを防ぐため、最低限の値域チェックだけは行う(2026-08-05発覚)。
+    // 荒唐無稽な数値の入力・誤操作でMMR/戦績データが壊れることを防ぐため、
+    // 認証とは別に最低限の値域チェックも行う(2026-08-05発覚)。
     if (winningTeam !== 'BLUE' && winningTeam !== 'RED') {
       return NextResponse.json({ error: 'winningTeamはBLUEかREDのいずれかを指定してください。' }, { status: 400 });
     }
