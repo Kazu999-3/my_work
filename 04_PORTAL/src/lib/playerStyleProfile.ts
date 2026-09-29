@@ -181,6 +181,11 @@ export interface ChampionDeepProfile {
   aiTacticsGuide: string;
 }
 
+// ⚠️ 2026-09-30 追記: このデータは**どこからも参照されていない**（リポジトリ全体で0件）。
+// 内容は winRate/kda/gamesCount まで揃った手入力のスナップショットで、**実測のように見える**。
+// ファイル冒頭の方針どおり数値自体は残すが、**配線し直す場合は必ず出典と日付を確認すること**。
+// 2026-09-22に「your.gg実戦データ連動」と称して実際は接続が無かった問題を一掃した際、
+// このexportは未使用だったため対象から漏れた。同じ誤認を繰り返さないための注記。
 export const CHAMPION_DEEP_PROFILES: ChampionDeepProfile[] = [
   {
     id: 'Zyra',
@@ -319,6 +324,10 @@ export interface LifeSessionAnalytics {
   goldenSessionRules: string[];
 }
 
+// ⚠️ 2026-09-30 追記: 同上。**参照0件**の手入力スナップショット。
+// 時間帯別の勝率・KDA・試合数まで具体的だが、Riot APIや your.gg との接続は無い。
+// 「ゴールデンタイムは勝率62%」等をUIやAIプロンプトへ出す場合、それは
+// **測定値ではなく手入力の記録**である旨を併記すること。
 export const KAZURIN_SESSION_ANALYTICS: LifeSessionAnalytics = {
   timeOfDayPerformance: [
     {

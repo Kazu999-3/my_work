@@ -306,7 +306,10 @@ export default function MentorshipHubPanel() {
     targetProfileId: string,
     message: string,
     durationKey: string = '14_DAYS',
-    autoRenew: boolean = true
+    autoRenew: boolean = true,
+    // ⚠️ 2026-09-30 追加: サーバーは commStyle を受け取りDBにも保存していたが、
+    // UIから送っていなかったため全員 'VC_ACTIVE'(通話歓迎)で固定されていた。
+    commStyle: string = 'VC_ACTIVE'
   ) => {
     try {
       const res = await fetch('/api/mentorship/matches', {
@@ -318,6 +321,7 @@ export default function MentorshipHubPanel() {
           message,
           durationKey,
           autoRenew,
+          commStyle,
         }),
       });
       const data = await res.json();

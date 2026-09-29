@@ -2,14 +2,14 @@
 
 import React, { useState } from 'react';
 import { MentorshipProfile } from '../api/mentorship/profiles/route';
-import { MENTORSHIP_DURATIONS } from '../../lib/mentorshipConstants';
+import { MENTORSHIP_DURATIONS, COMMUNICATION_STYLES } from '../../lib/mentorshipConstants';
 import { Send, X, Clock, RefreshCw } from 'lucide-react';
 
 interface MentorshipRequestModalProps {
   isOpen: boolean;
   onClose: () => void;
   targetProfile: MentorshipProfile | null;
-  onSubmit: (targetProfileId: string, message: string, durationKey: string, autoRenew: boolean) => Promise<void>;
+  onSubmit: (targetProfileId: string, message: string, durationKey: string, autoRenew: boolean, commStyle: string) => Promise<void>;
 }
 
 const TEMPLATE_MESSAGES_FOR_MENTOR = [
@@ -32,6 +32,11 @@ export function MentorshipRequestModal({
   const [message, setMessage] = useState('');
   const [durationKey, setDurationKey] = useState('14_DAYS');
   const [autoRenew, setAutoRenew] = useState(true);
+  // ⚠️ 2026-09-30 追加: サーバーは commStyle を10箇所で扱いDBにも保存していたが、
+  // UIから一度も送っておらず**全員 'VC_ACTIVE'(通話歓迎)で固定**されていた。
+  // 「通話は苦手だからテキストで教わりたい」人が意思表示できず、師弟の相性を左右する
+  // 情報が失われていた（選択肢 COMMUNICATION_STYLES は定義だけで参照0件だった）。
+  const [commStyle, setCommStyle] = useState('VC_ACTIVE');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen || !targetProfile) return null;
@@ -43,7 +48,7 @@ export function MentorshipRequestModal({
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await onSubmit(targetProfile.id, message, durationKey, autoRenew);
+      await onSubmit(targetProfile.id, message, durationKey, autoRenew, commStyle);
       setMessage('');
       onClose();
     } catch (err) {
@@ -174,6 +179,33 @@ export function MentorshipRequestModal({
             </div>
           </div>
 
+
+          {/* 希望するやりとりの形（2026-09-30追加。従来はUIが無く全員VC_ACTIVE固定だった） */}
+          <div className="space-y-2">
+            <label className="block text-xs font-black text-stone-700">
+              希望するやりとりの形
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {Object.entries(COMMUNICATION_STYLES).map(([key, item]) => {
+                const isSelected = commStyle === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setCommStyle(key)}
+                    className={`p-2.5 rounded-2xl border text-left transition cursor-pointer ${
+                      isSelected
+                        ? 'bg-amber-100 border-amber-400 ring-2 ring-amber-300'
+                        : 'bg-white border-stone-200 hover:border-stone-300'
+                    }`}
+                  >
+                    <div className="text-xs font-black text-stone-900">{item.label}</div>
+                    <div className="text-[10px] text-stone-500 font-medium leading-tight mt-0.5">{item.desc}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           {/* 期間切れ後の自動継続（そのまま実行）設定 */}
           <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200 flex items-center justify-between gap-3">
