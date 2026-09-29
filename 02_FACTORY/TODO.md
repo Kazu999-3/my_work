@@ -893,6 +893,23 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
 
 以下は 2026-09-23 の定期カスタム調査で新たに判明した未解決項目です。
 
+- [ ] **🚨 ユーザー作業が必要: Supabase の Region を確認する**（2026-09-29 起票・ポータル高速化の前提）
+  - **背景（実測）**: 本番(`my-work-8jbd.vercel.app`)のレスポンスヘッダが `x-vercel-id: kix1::iad1`。日本からのリクエストが**米国東部(iad1)の関数**で処理されている。DBを使わない `/api/auth/me` が0.33秒なのに対し、DB問い合わせ1回の `/api/balancer/pending` は0.8〜1.0秒、`/api/bet` は1.0〜1.5秒。Supabaseが東京なら太平洋往復が主因。
+  - **調べ方**（どれか1つでよい）:
+    - A: https://supabase.com/dashboard/projects のプロジェクトカードに出る `AWS | ap-northeast-1` 等を見る
+    - B: プロジェクトを開く → 左下 ⚙️ Project Settings → General → **Region** 欄
+    - C: Vercel → ポータルのプロジェクト → Settings → Environment Variables → `NEXT_PUBLIC_SUPABASE_URL` の `https://xxxxxxxx.supabase.co` の `xxxxxxxx` を控え、`https://supabase.com/dashboard/project/xxxxxxxx/settings/general` を開く
+  - **読み方**: `ap-northeast-1` = 東京 / `ap-northeast-2` = ソウル / `us-east-1` = 米国東部
+  - **東京だった場合**: `04_PORTAL/vercel.json` に `"regions": ["hnd1"]` を追加してデプロイし、上記3APIを同条件で測り直して効果を数字で確認する。
+  - **米国東部だった場合**: 関数とDBは既に近いので地域変更は効果なし。遅さの原因を別途調査する。
+
+- [ ] **🚨 ユーザー作業が必要: `PORTAL_BOT_SECRET` を GitHub Secrets とローカル `.env` に登録する**（2026-09-29 起票）
+  - **背景**: `verifyBotSecret`（`04_PORTAL/src/lib/botAuth.ts`）が 2026-08-27（`8f6f7298`）以降、鍵が不一致でも通す実装になっており、`player/update-puuid`・`player/update-lane`・`riot/sync-ranks`・`riot/match-sync`・`push/notify-admin`・`push/notify-recruit` の6本が実質無認証だった。不一致なら401を返す修正は**作業ツリーに適用済み・未コミット**。
+  - **登録が必要な理由**: `push/notify-admin` を呼ぶ `scripts/edge_cloud_worker.py`（GitHub Actions）と `03_SYSTEMS/v2_CORE/_LOL/herald.py`（ローカル）が鍵を持っていない。このまま修正をデプロイすると管理者向け通知が401で止まる（解析処理自体は止まらない）。ktm_bot は鍵が一致済みで影響なし。
+  - **やること**: Vercel と同じ値を ①GitHub → Settings → Secrets → Actions に `PORTAL_BOT_SECRET` として登録 ②`d:/my_work/.env` に `PORTAL_BOT_SECRET=...` を追記。
+  - **登録後**: `botAuth.ts` の修正をコミット＆プッシュし、次回のワーカー実行で管理者通知が届くことを確認する。
+  - 関連の未対応(下記「Supabase Region確認」とは別件): cron系7ルートが User-Agent `vercel-cron` を信用している（偽装可能）／`cron/lottery` の合言葉既定値 `'ktm_admin_secret'` のハードコード／`match/record` の無認証コイン発行／号外ニュースの架空コメント生成（2026-09-22の偽装データ一掃ルールと衝突）。
+
 - [ ] **Cloudflare本命cronが空振りした理由が未特定**（2026-09-23 発見）
   - 水曜12:00 JSTの募集投稿が本命cronで実行されず、GitHub Actionsのバックアップ（5時間20分遅延）が投稿した。曜日設定・デプロイともに問題なしを確認済みなので、残る候補は「CF cronの取りこぼし（公式にbest-effort）」か「発火したが投稿処理内でエラー落ち」の2つ。
   - **調べ方**: エラー集約チャンネル(1550118540038774865)の水曜12:00前後、または `wrangler tail` で次回水曜を観測する。なお今回の改修で、バックアップ経路が実際に投稿した場合は管理者チャンネルへ通知が飛ぶようにしてあるため、再発は検知できる。
