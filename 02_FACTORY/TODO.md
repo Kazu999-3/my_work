@@ -1053,6 +1053,40 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
 - 孤立したexportは0件、他の未定義関数呼び出しも0件（上記1件のみ）。
 - ファイル規模の偏り: `scheduled.js` 1,426行 / `components.js` 1,288行で全体の43%。分割は未検討。
 
+### 📡 Discord通知経路の整理（2026-09-29）
+
+**調査結果: 「4ファイルに分散」は不正確で、実際は Python 4経路 ＋ TS 2経路の計6経路だった。**
+
+| 経路 | 役割 | 判断 |
+|---|---|---|
+| `scripts/notify.py` の `notify()` | ワーカーがimportして使うライブラリ。現役4ワーカー（`youtube_worker` / `prospector` / `champion_researcher` / `cloud_youtube_monitor`） | ✅ 維持 |
+| `scripts/notify_discord.py` | CLI（`--type daily/health/alert/match`）。現役4箇所がsubprocessで実行（`ops_health_check` / `check_patch_update` / `sync_last_match_to_intel` / `wrap-up.md`） | ✅ 維持 |
+| `scripts/edge_cloud_worker.py` の `notify_discord_direct()` | ローカルデーモン死活監視専用。ポータル経由ではなくDiscordへ直投げ | ✅ 維持（**安全上重要な経路なので触らない**） |
+| `03_SYSTEMS/v2_CORE/ai_helper.py` の `notify_discord()` | **呼び出し元0件の死んだコード。しかもUA未設定** | ✅ **削除した** |
+| `04_PORTAL/src/lib/discordNotify.ts` | ショップ購入 / ランク昇格 / エラーログ / DM | ✅ 維持（下記リトライ導入） |
+| `04_PORTAL/src/lib/discordMentorship.ts` | 師弟掲示板・ダッシュボード | ✅ 維持 |
+
+- **`notify.py` と `notify_discord.py` は統合しない判断**: 前者はimportライブラリ、後者はCLIで**インターフェースが違う**。
+  どちらも現役で計8箇所から使われており、統合は8箇所の書き換えを要する一方で利得は小さい。
+- **`notify_discord_direct()` も統合しない判断**: `notify.py` で代替可能だが、これは
+  **ローカルデーモンの死活監視＝異常に気づくための最後の砦**。通知形式が変わるリスクを取る価値がない。
+
+- [x] **ポータル側のDiscord送信に429リトライを導入**（実害の予防）
+  - **問題**: Bot側（`ktm_bot/src/utils/api.js` の `fetchWithRetry`）には429/5xx/Retry-After対応があり、
+    これは「参加ボタン連打でレート制限に当たった瞬間に定期通知がまるごとスキップされた」**実害を受けて追加された**もの。
+    一方 **ポータル側は17箇所すべて素の `fetch` で、429を一切処理していなかった**。
+    Discordの制限はチャンネルあたり5req/5秒程度で、**障害時にまとめて発火するエラーログ通知**では現実的に当たる。
+    当たると通知は捨てられ `console.warn` だけが残る（今日繰り返し直してきた「無言で失敗する」型そのもの）。
+  - **対応**: Bot側の実績ある実装を `04_PORTAL/src/lib/discordFetch.ts` へ移植し、
+    **`discordNotify.ts` の全11箇所**（Discord API 5 ＋ Webhook 6）に適用した。
+    4xx（401/403/404）はリトライしない（鍵違い・権限不足・対象消滅は待っても直らない）。
+  - ⚠️ 訂正: 当初「レスポンスの ok チェックも無い」と判断したが**誤り**だった。
+    `discordNotify.ts` は `res.ok` を確認しWebhookへのフォールバックも持っている（grepのパターンミス）。
+    **欠けていたのは429リトライだけ**。
+  - 検証: `npx tsc --noEmit` エラー0 / `npm test` 全パス / `ai_helper.py` は `ast.parse` で構文確認。
+- [ ] **`discordMentorship.ts` の12箇所は未適用**（次回）。`discordFetch` へ置き換えるだけで済むが、
+  師弟ダッシュボードの更新経路であり、掲示板の表示が変わる可能性を実機で確認してからにしたい。
+
 ### 🎛️ 使いやすさ（UX）の評価 ＆ コマンド登録の構造問題
 
 **良い点（変更不要）**

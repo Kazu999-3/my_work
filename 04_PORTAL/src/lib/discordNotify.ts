@@ -1,3 +1,4 @@
+import { discordFetch } from './discordFetch';
 export const DEFAULT_SHOP_CHANNEL_ID = '1545806575770276061';
 
 /**
@@ -14,7 +15,7 @@ export async function sendShopNotification(payload: {
   // 1. ショップ専用Webhookがある場合はWebhookで送信
   if (shopWebhookUrl) {
     try {
-      const res = await fetch(shopWebhookUrl, {
+      const res = await discordFetch(shopWebhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -28,7 +29,7 @@ export async function sendShopNotification(payload: {
   // 2. Discord Bot Token を使って指定チャンネル（#ショップ通知）へ直接送信
   if (botToken && shopChannelId) {
     try {
-      const res = await fetch(`https://discord.com/api/v10/channels/${shopChannelId}/messages`, {
+      const res = await discordFetch(`https://discord.com/api/v10/channels/${shopChannelId}/messages`, {
         method: 'POST',
         headers: {
           Authorization: `Bot ${botToken}`,
@@ -48,7 +49,7 @@ export async function sendShopNotification(payload: {
   const fallbackWebhook = process.env.DISCORD_KTM_WEBHOOK_URL || process.env.DISCORD_WEBHOOK_URL;
   if (fallbackWebhook) {
     try {
-      const res = await fetch(fallbackWebhook, {
+      const res = await discordFetch(fallbackWebhook, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -110,7 +111,7 @@ export async function sendRankUpgradeNotification(params: {
   // 1. 専用Webhookがある場合はWebhookで送信
   if (rankWebhookUrl) {
     try {
-      const res = await fetch(rankWebhookUrl, {
+      const res = await discordFetch(rankWebhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -124,7 +125,7 @@ export async function sendRankUpgradeNotification(params: {
   // 2. 指定チャンネル (1485995428548972595) へBot Tokenで直接送信
   if (botToken && rankChannelId) {
     try {
-      const res = await fetch(`https://discord.com/api/v10/channels/${rankChannelId}/messages`, {
+      const res = await discordFetch(`https://discord.com/api/v10/channels/${rankChannelId}/messages`, {
         method: 'POST',
         headers: {
           Authorization: `Bot ${botToken}`,
@@ -144,7 +145,7 @@ export async function sendRankUpgradeNotification(params: {
   const fallbackWebhook = process.env.DISCORD_KTM_WEBHOOK_URL || process.env.DISCORD_WEBHOOK_URL;
   if (fallbackWebhook) {
     try {
-      const res = await fetch(fallbackWebhook, {
+      const res = await discordFetch(fallbackWebhook, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -277,7 +278,7 @@ export async function notifyPortalError(params: PortalErrorLogParams): Promise<b
   // 1. Webhook が設定されていれば Webhook で送信
   if (webhookUrl) {
     try {
-      const res = await fetch(webhookUrl, {
+      const res = await discordFetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -291,7 +292,7 @@ export async function notifyPortalError(params: PortalErrorLogParams): Promise<b
   // 2. Bot Token で指定チャンネル (1550118540038774865) へ直接送信
   if (botToken && channelId) {
     try {
-      const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+      const res = await discordFetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
         method: 'POST',
         headers: {
           Authorization: `Bot ${botToken}`,
@@ -311,7 +312,7 @@ export async function notifyPortalError(params: PortalErrorLogParams): Promise<b
   const fallbackWebhook = process.env.DISCORD_KTM_WEBHOOK_URL || process.env.DISCORD_WEBHOOK_URL;
   if (fallbackWebhook) {
     try {
-      const res = await fetch(fallbackWebhook, {
+      const res = await discordFetch(fallbackWebhook, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -346,7 +347,7 @@ export async function sendDiscordDirectMessage(
 
   try {
     // 1. 対象ユーザーとのDMチャンネルを作成/取得
-    const dmChannelRes = await fetch('https://discord.com/api/v10/users/@me/channels', {
+    const dmChannelRes = await discordFetch('https://discord.com/api/v10/users/@me/channels', {
       method: 'POST',
       headers: {
         Authorization: `Bot ${botToken}`,
@@ -365,7 +366,7 @@ export async function sendDiscordDirectMessage(
     const channelId = dmChannel.id;
 
     // 2. DMチャンネルへメッセージを送信
-    const sendRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+    const sendRes = await discordFetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
       method: 'POST',
       headers: {
         Authorization: `Bot ${botToken}`,

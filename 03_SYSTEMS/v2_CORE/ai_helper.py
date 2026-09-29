@@ -365,16 +365,15 @@ def generate_with_routing(client, prompt: str, task_type: str = "auto",
     return generate_content_safe(client, prompt, config=config, feature_name=feature_name)
 
 
-def notify_discord(message: str):
-    """Discordに通知を送信する"""
-    webhook_url = os.environ.get("DISCORD_WEBHOOK")
-    if not webhook_url:
-        return
-    try:
-        import requests
-        requests.post(webhook_url, json={"content": message})
-    except Exception as e:
-        logger.error(f"Discord Webhook Error: {e}")
+# ⚠️ 2026-09-29: ここにあった notify_discord() を削除した。
+# 呼び出し元がコードベース全体で0件の死んだコードだった上に、User-Agent を付けずに
+# Webhookへ投げる実装で、仮に使ってもDiscord前段のCloudflareに弾かれる可能性があった
+# （`scripts/edge_cloud_worker.py` の同種関数に「UAが無いと403。notify.py と同じ問題」と
+# 実測の注記がある）。Python から Discord へ通知する正規の経路は以下の3つ:
+#   1. `scripts/notify.py` の notify() … ワーカーからimportして使うライブラリ（現役4ワーカー）
+#   2. `scripts/notify_discord.py` … CLI（--type daily/health/alert/match、現役4箇所から実行）
+#   3. `scripts/edge_cloud_worker.py` の notify_discord_direct() … ローカルデーモン死活監視専用
+# 新たに通知が必要になった場合は 1 を使うこと（独自実装を増やさない）。
 
 
 def get_embedding(client, text: str) -> list:
