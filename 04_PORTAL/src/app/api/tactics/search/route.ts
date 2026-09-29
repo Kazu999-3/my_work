@@ -73,12 +73,12 @@ function loadTacticsItems(repoRoot: string): CachedTacticsItem[] {
   const kireiDir = path.join(repoRoot, '02_FACTORY', '_LOL', 'bible', 'kirei_bible');
 
   // 1. 戦術バイブル（01_INTEL/tactics/）を走査
-  if (fs.existsSync(tacticsDir)) {
-    const files = fs.readdirSync(tacticsDir).filter(f => f.endsWith('_tactics_bible.md'));
+  if (fs.existsSync(/*turbopackIgnore: true*/ tacticsDir)) {
+    const files = fs.readdirSync(/*turbopackIgnore: true*/ tacticsDir).filter(f => f.endsWith('_tactics_bible.md'));
     for (const f of files) {
       const filePath = path.join(tacticsDir, f);
       try {
-        const raw = fs.readFileSync(filePath, 'utf-8');
+        const raw = fs.readFileSync(/*turbopackIgnore: true*/ filePath, 'utf-8');
         const champIdMatch = f.match(/^([a-z0-9]+)_tactics_bible\.md$/i);
         const rawChampId = champIdMatch ? champIdMatch[1] : '';
         const champKey = Object.keys(CHAMPION_JA).find(
@@ -114,9 +114,9 @@ function loadTacticsItems(repoRoot: string): CachedTacticsItem[] {
 
   // 2. Kirei Bible（02_FACTORY/_LOL/bible/kirei_bible/INDEX.md）を走査
   const kireiIndex = path.join(kireiDir, 'INDEX.md');
-  if (fs.existsSync(kireiIndex)) {
+  if (fs.existsSync(/*turbopackIgnore: true*/ kireiIndex)) {
     try {
-      const kireiRaw = fs.readFileSync(kireiIndex, 'utf-8');
+      const kireiRaw = fs.readFileSync(/*turbopackIgnore: true*/ kireiIndex, 'utf-8');
       const lines = kireiRaw.split('\n');
 
       for (let i = 0; i < lines.length; i++) {
@@ -155,9 +155,9 @@ function loadTacticsItems(repoRoot: string): CachedTacticsItem[] {
   ];
 
   for (const extra of extraFiles) {
-    if (fs.existsSync(extra.p)) {
+    if (fs.existsSync(/*turbopackIgnore: true*/ extra.p)) {
       try {
-        const raw = fs.readFileSync(extra.p, 'utf-8');
+        const raw = fs.readFileSync(/*turbopackIgnore: true*/ extra.p, 'utf-8');
         const sections = raw.split(/\n(?=##\s+)/);
         for (const sec of sections) {
           const lines = sec.trim().split('\n');

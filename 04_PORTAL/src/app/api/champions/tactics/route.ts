@@ -22,11 +22,11 @@ export async function GET(req: Request) {
 
     // ロール特化バイブル（例: zyra_sup_tactics_bible.md）があれば優先、なければ通常バイブル
     let filePath = role ? path.join(tacticsDir, `${champion.toLowerCase()}_${role}_tactics_bible.md`) : '';
-    if (!filePath || !fs.existsSync(filePath)) {
+    if (!filePath || !fs.existsSync(/*turbopackIgnore: true*/ filePath)) {
       filePath = path.join(tacticsDir, `${champion.toLowerCase()}_tactics_bible.md`);
     }
 
-    if (!fs.existsSync(filePath)) {
+    if (!fs.existsSync(/*turbopackIgnore: true*/ filePath)) {
       return NextResponse.json({
         success: true,
         champion,
@@ -37,7 +37,7 @@ export async function GET(req: Request) {
       });
     }
 
-    const rawContent = fs.readFileSync(filePath, 'utf-8');
+    const rawContent = fs.readFileSync(/*turbopackIgnore: true*/ filePath, 'utf-8');
 
     // 罠アイテム・没理由のパース
     const traps: string[] = [];

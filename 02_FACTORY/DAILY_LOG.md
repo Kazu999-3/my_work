@@ -201,8 +201,34 @@
 
 **拾い上げ（Harvest）**:
 - `[要検証]`: モバイル実機でのサイドバータップ時、黒画面のチラつきが完全に消えていることの体感確認。
-- `[継続ウォッチ]`: 他の動的パラメータルートで同様の中継パターンが存在しないか。
 - `[発信候補]`: 「Next.js App Routerで画面遷移が一瞬黒くなる原因：中継リダイレクトとハードコード背景色の罠」。
+
+---
+
+### ⚡ Next.js Turbopack 動的ファイル走査（過剰トレース）警告の完全根絶
+
+**概要**:
+1. **背景と目的**:
+   - `next build` 実行時、動的パスでMarkdownやバイブルファイルを走査する2つのAPIルート（`api/tactics/search`, `api/champions/tactics`）において、Next.js Turbopack から「プロジェクト全体がサーバーレス関数の出力に過剰トレースされ、バンドルサイズが肥大化・デプロイ失敗を招くリスクがある」という警告（`Warning: Dynamic filesystem access causes tracing of the whole project`）が発生していた。
+   - Vercelデプロイ時の容量制限（250MB）オーバーやコールドスタート遅延を根本防止するため、警告をゼロにする。
+2. **実施内容**:
+   - **`/*turbopackIgnore: true*/` コメントの配備**:
+     - `04_PORTAL/src/app/api/tactics/search/route.ts`: 動的走査を行っている `fs.existsSync`（3箇所）、`fs.readdirSync`（1箇所）、`fs.readFileSync`（3箇所）にすべて ignore コメントを付与。
+     - `04_PORTAL/src/app/api/champions/tactics/route.ts`: 動的パス判定の `fs.existsSync`（2箇所）、`fs.readFileSync`（1箇所）に ignore コメントを付与。
+   - **機械的実値検証**:
+     - `npm run build`（Turbopack）を実行し、過剰トレース警告が **完全ゼロ（消滅）** になったことを実測確認（全102ルートがクリーンに出力）。
+     - `npx tsc --noEmit` ➔ 0エラー。
+     - `npm test` ➔ 全75件パス（0 failed）。
+
+**3行ナレッジ**:
+1. **Next.jsの動的fsアクセス警告は放置するとデプロイ制限死を招く**: Turbopackは動的パスの `fs.readFileSync` を見つけると最悪ケースに備えてリポジトリ全体をバンドルに詰め込もうとする。容量制限やデプロイ時間爆発の火種になるため放置してはならない。
+2. **公式推奨の `/*turbopackIgnore: true*/` でトレーサーの暴走を安全に止めよ**: サーバーサイドで特定ディレクトリを走査する正規の処理には、Turbopack専用のアノテーション（`/*turbopackIgnore: true*/`）を関数引数の直前に置くことで、静的解析の過剰巻き込みだけをピンポイントで抑制できる。
+3. **ビルドログの警告（Warning）は実測で0件になるまで潰し切れ**: 警告が出ている状態を許容すると、将来の致命的なエラーが警告の山に埋もれて検知が遅れる。実測ログでクリーンな状態を保つことが最高の保守性につながる。
+
+**拾い上げ（Harvest）**:
+- `[要検証]`: 次回Vercel Production自動デプロイ時、関数バンドルサイズが大幅に軽量化されていることの確認。
+- `[継続ウォッチ]`: 新規APIルート追加時における動的 `fs` アクセスのトレーサー挙動。
+- `[発信候補]`: 「Next.js Turbopackで『Dynamic filesystem access causes tracing of the whole project』が出た時の正しい対処法」。
 
 ### 💎 DDragonパッチバージョン完全SSoT化 ＆ 師弟API認証ヘッダー堅牢化・なりすまし防止ガード配備（品質100点満点達成）
 
