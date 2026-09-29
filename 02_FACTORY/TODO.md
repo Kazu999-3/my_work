@@ -996,6 +996,42 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
 - 孤立したexportは0件、他の未定義関数呼び出しも0件（上記1件のみ）。
 - ファイル規模の偏り: `scheduled.js` 1,426行 / `components.js` 1,288行で全体の43%。分割は未検討。
 
+### 🎛️ 使いやすさ（UX）の評価 ＆ コマンド登録の構造問題
+
+**良い点（変更不要）**
+- `/portal` パネルが優秀。10ボタン4行で サモナー名登録 / 募集作成 / クイック即募集 / レーン変更 /
+  通知ON-OFF / ガイド / Webポータル が全てワンタップで、**コマンドを覚える必要がない**。ライトユーザー向けに正しい設計。
+- エフェメラル応答（`flags:64`）が53箇所。個人向け返信でチャンネルが埋まらない配慮ができている。
+
+**改善すべき点**
+
+- [ ] **コマンド名が21種類あるのに機能は約11個**（エイリアス過多）
+  - `/coins`=`/bet` / `/casino`=`/rich` / `/tip`=`/send-coins` / `/ranking`=`/award` /
+    `/welcome`=`/welcome-panel` / **`/panel`=`/portal`=`/command`=`/ktm_portal`（4つ同じ）**
+  - Discordのコマンド選択欄に21個並ぶと初見のメンバーが選べない。親切心が逆効果になっている。
+  - 主要な1つに絞り、残りは登録解除するのが望ましい。
+- [ ] **コマンド登録が一元管理されておらず、全21コマンドの正解リストがどこにも無い**
+  - 登録スクリプトが**8個に散在**している（機能ごとに都度書かれた）:
+    `TOOLS/register_memo_command.py`（memoのみ）/ `TOOLS/register_portal_commands.js`（portal, welcomeのみ）/
+    **`scratch/register_panel.py`** / `99_ARCHIVE/v3_rewrite_backups/` に5個
+    （`register_stats_command.js` / `register_anchan_chat.js` / `register_command_local.js` /
+    `register_guild_command.js` / `register_lane_command_v2.js`）
+  - **「実装したのに登録を忘れてユーザーに見えない」事故が起きる構造**。今日見つけたバグ3件と同じ
+    「無言で機能が存在しない」パターン（[[project-orphaned-automation-pattern]]）。
+  - ⚠️ **逆方向の疑いもある**: `register_anchan_chat.js` が登録する `/anchan_chat` は
+    **現在の実装21種に存在しない**。実装が消えたのに登録だけ残った**幽霊コマンド**の可能性が高い
+    （押しても無反応になる）。他にも `register_stats_command.js` 等、当時のまま残っている可能性がある。
+- [ ] **現状把握が先（ユーザー作業）**: 何が登録済みかはBotトークンが必要で、AI側は読み出しがブロックされる。
+  既存ツールで確認できる:
+  ```bash
+  cd d:/my_work && node 03_SYSTEMS/TOOLS/list_discord_commands.js
+  ```
+  （グローバル＋各ギルドの登録済みコマンドを一覧する。`DISCORD_TOKEN` 環境変数または
+  `03_SYSTEMS/ktm_bot/.dev.vars` から読む。`node --check` 通過済みで動作する）
+  - **この出力と実装21種の差分を取ってから**、①登録漏れ ②幽霊コマンド ③エイリアス整理 を判断する。
+  - 🚨 **一括同期（PUT）を先に走らせてはいけない**。リストに無いコマンドを削除する動作なので、
+    現状把握前に実行すると生きているコマンドを消す。順番を守ること。
+
 ---
 
 ## 🔧 積み残し（2026-09-21セッションで発見・判断保留したもの）
