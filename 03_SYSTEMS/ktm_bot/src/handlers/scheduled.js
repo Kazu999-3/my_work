@@ -203,6 +203,8 @@ async function processPendingMatchSyncs(env) {
     }
   } catch (err) {
     console.error("processPendingMatchSyncs error:", err);
+    // 試合結果の実データ取り込み。落ちるとKDA・MMR・ペンタキル判定が反映されない
+    await notifyAdminError(env, err, { action: 'processPendingMatchSyncs(試合同期)' });
   }
 }
 
@@ -429,6 +431,7 @@ async function sendWeeklyReports(env) {
     console.log(`[WeeklyReport] ${sent}/${agg.size} 人へ送信しました`);
   } catch (err) {
     console.error('[WeeklyReport] error:', err);
+    await notifyAdminError(env, err, { action: 'sendWeeklyReports(週間レポートDM)' });
   }
 }
 
@@ -618,6 +621,10 @@ async function closePreviousPeriodicRecruitments(env, channelId, targets, messag
     console.log(`[WeeklyRecruit] 前回のカード${stale.length}件を削除しました（最新カードのみに維持）`);
   } catch (closeErr) {
     console.warn('[WeeklyRecruit] 前回の募集締め切り処理のエラー:', closeErr);
+    // この処理は2026-09-23まで、存在しない updateRecruitment を呼んで毎回死んでいたのに
+    // ここで握りつぶされて誰も気づかなかった（結果、先週以前のカードが開いたまま溜まり
+    // 移行時に16名が合算される事故になった）。同じ轍を踏まないよう通知する。
+    await notifyAdminError(env, closeErr, { action: 'closePreviousPeriodicRecruitments(前回カードの締め切り)' });
   }
 }
 
@@ -942,6 +949,7 @@ async function createWeeklyEvents(env) {
     ];
   } catch (err) {
     console.error("Error in createWeeklyEvents:", err);
+    await notifyAdminError(env, err, { action: 'createWeeklyEvents(Discordイベント作成)' });
   }
 }
 
@@ -1226,6 +1234,7 @@ async function sendEventUsersNotification(env, options = {}) {
     }
   } catch (err) {
     console.error("Error in sendEventUsersNotification:", err);
+    await notifyAdminError(env, err, { action: 'sendEventUsersNotification(中間アナウンス)' });
   }
 }
 
@@ -1422,5 +1431,8 @@ export async function checkCustomStatusAt2000(env) {
 
   } catch (err) {
     console.error('[Check2000] error:', err);
+    // 20:00判定は「開催/中止」を告知する最重要処理。ここが落ちると誰にも何も届かないまま
+    // 試合時刻を迎えるため、必ず管理者へ通知する（consoleはWorkersで保存されず追跡不能）
+    await notifyAdminError(env, err, { action: 'checkCustomStatusAt(20:00開催判定)' });
   }
 }

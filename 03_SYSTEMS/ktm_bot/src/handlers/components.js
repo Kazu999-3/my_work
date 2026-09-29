@@ -9,6 +9,7 @@ import { getAdminDiscordIds, markRecruitmentStatus } from '../utils/recruitPermi
 import { getKtmRank, getHighestLaneMmr, getPlayerExperienceBadge, getPlayerActiveMark } from '../utils/ktmRank.js';
 import { detectDayKey, getDayDef, extractEntryLines, resolveWeekendTargets, buildRecruitmentContent, computeDayStatus, DAY_CAPACITY, RANK_SHORT_JP_MAP } from '../utils/recruitmentStatus.js';
 import { cleanupOldReminderMessages } from './scheduled.js';
+import { notifyAdminError } from '../utils/alert.js';
 
 const RANK_JP_MAP = {
   CHALLENGER: 'チャレンジャー', GRANDMASTER: 'グランドマスター', MASTER: 'マスター',
@@ -509,7 +510,11 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         console.error("Toggle Role Error:", err);
         try {
           await patchInteractionResponse(appId, token, { content: `❌ **ロール操作エラー**: ${err.message}\nBotのロール権限の順位を確認してください。` });
-        } catch (e) {}
+        } catch (e) {
+          // 意図的に空: これは「エラーをユーザーへ伝える処理」自体の失敗。
+          // ここで更に通知を試みても同じ経路で失敗する可能性が高く、打てる手が無い。
+          // 外側のcatchがエラー内容をログに残しており、ユーザーにはロール操作の失敗が見えている。
+        }
       }
     })());
 
@@ -715,6 +720,11 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         }
       } catch (err) {
         console.error("join_periodic error:", err);
+        // ⚠️ このcatchが2026-09-26〜09-29の間、computeDayStatus の ReferenceError を
+        // 3日間握りつぶしていた（「あと1名で開催確定」促進が一度も出なかった）。
+        // 参加者一覧のPATCHは例外より前で成功するため、外から見ると正常に見えてしまう。
+        // 同じ見落としを防ぐため管理者へ通知する。
+        await notifyAdminError(env, err, { action: 'join_periodic(定期カスタムの参加ボタン)', customId });
       }
     })());
 
@@ -1240,7 +1250,13 @@ export async function handleButtonInteraction(interaction, env, ctx) {
           content: targetPrompt,
           message_reference: { message_id: interaction.message.id, fail_if_not_exists: false }
         }).catch(() => {});
-      } catch (e) {}
+      } catch (e) {
+        // ⚠️ ここは定期カスタム側(join_periodic)と同じ「あと1名」促進処理。
+        // そちらは同型のcatchで ReferenceError を3日間隠していた(2026-09-26〜29)ため、
+        // 空catchのままにせず通知する。残り1枠のときだけ走るので乱発しない。
+        console.error("あと1名促進(ノーマル)の処理エラー:", e);
+        await notifyAdminError(env, e, { action: 'あと1名促進(ノーマル募集)', customId });
+      }
     })());
   }
 
