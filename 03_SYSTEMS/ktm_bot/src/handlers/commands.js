@@ -119,7 +119,21 @@ export function handleStatsCommand(interaction, env, ctx) {
       const { fetchPortalAPI } = await import('../utils/api.js');
       const data = await fetchPortalAPI(env, "/api/player/stats", { discordId, discordName });
       if (data.status === "NOT_FOUND") {
-         await patchInteractionResponse(appId, token, { content: "⚠️ あなたの戦績がまだ登録されていません。\n👉 **次の手順で登録できます**\n1. パネルの「📍 レーン設定」で希望レーンを登録\n2. 一度カスタムに参加して対戦する\n3. 「📝 サモナー名登録」でRiot IDを紐付けるとランクも同期されます" });
+         // ⚠️ 2026-09-29 是正: 案内していたボタン名が実在しなかった
+         //   「📝 サモナー名登録」→ 実際のラベルは「📝 サモナー名変更」
+         //   「📍 レーン設定」   → 実際は「📍 レーン設定変更」
+         // さらに手順が非効率だった: 緑の「🎮 サモナー名 ＆ 希望レーン登録」は
+         // **Riot IDと希望レーンを1回で両方登録できる**のに、別々の手順として案内していた。
+         // パネル側の推奨フロー（🔰 はじめての方はこの2つだけ）と表現を揃える。
+         await patchInteractionResponse(appId, token, {
+           content:
+             "⚠️ あなたの戦績がまだ登録されていません。\n\n" +
+             "👉 **次の手順で表示されるようになります**\n" +
+             "1. `/portal` を実行し、緑の「🎮 サモナー名 ＆ 希望レーン登録」を押す\n" +
+             "　（Riot IDと希望レーンをまとめて登録でき、ランクも同期されます）\n" +
+             "2. カスタムに1回参加して対戦する\n\n" +
+             "※ 登録内容を後から変えたい場合は「📝 サモナー名変更」「📍 レーン設定変更」から行えます。"
+         });
          return;
       }
       const s = data.stats;

@@ -868,7 +868,7 @@ export async function handleButtonInteraction(interaction, env, ctx) {
         }
 
         await patchInteractionResponse(quickAppId, quickToken, {
-          content: `⚡ **${qMode}${qMax}人の募集を #募集板 に投下しました！**（時刻やメモは「⚙️募集編集」で後から設定できます）`
+          content: `⚡ **${qMode}${qMax}人の募集を #募集板 に投下しました！**（時刻やメモは募集カードの「⚙️ 募集を編集」ボタンから後で設定できます）`
         }).catch(() => {});
 
         const sentMessage = await res.clone().json();
