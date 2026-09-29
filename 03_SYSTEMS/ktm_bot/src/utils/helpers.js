@@ -2,6 +2,70 @@ import { CONFIG } from '../config.js';
 import { fetchPortalAPI, sendDiscordMessage, sendInteractionFollowup } from './api.js';
 import { fetchSupabase } from './supabase.js';
 
+// ============================================================
+// レーン希望・こだわり度の入力検証（2026-09-29 新設）
+//
+// 【なぜ必要か】
+// モーダルの自由入力をそのままポータルへ送っていた。ポータル側も値を検証せず
+// `role_preferences.primary` にそのまま保存する。
+// バランサーは `ROLES.includes(mainRole)` で弾くのでデータは壊れないが、
+// **無効な値は永久に無視される**。つまり「とっぷ」と入力しても
+// 「🎉 登録完了！希望レーン: とっぷ」と成功表示され、本人は希望が通らない理由が分からない。
+// weight も NaN チェックだけで範囲制限が無く、999 を入れても「受付ました」になる
+// （パネルの説明は「1:絶対, 2:通常, 3:柔軟」）。
+// サーバーが安全に無視する以上データ破壊は起きないので、**入口で弾いて理由を伝える**のが正解。
+// ============================================================
+
+/** バランサーが実際に解釈できるレーン値（`04_PORTAL/src/lib/balancer.ts` の ROLES と対応） */
+export const VALID_LANES = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
+/** メイン希望では「全部やれる」を許可する。サブ・NGでは「なし」を意味する '-' を許可する。 */
+const MAIN_EXTRA = ['ALL'];
+const OPTIONAL_EXTRA = ['-', 'なし', 'ナシ', 'NONE'];
+
+/**
+ * レーン入力を正規化する。
+ * @param {string} raw 入力値
+ * @param {{ allowAll?: boolean, allowEmpty?: boolean }} opts
+ * @returns {{ value: string|undefined, error: string|null }}
+ */
+export function normalizeLaneInput(raw, opts = {}) {
+  const { allowAll = false, allowEmpty = true } = opts;
+  const s = String(raw ?? '').trim().toUpperCase();
+
+  if (!s) {
+    return allowEmpty ? { value: undefined, error: null } : { value: undefined, error: 'レーンを入力してください。' };
+  }
+  // 「なし」系の表記は未指定として扱う
+  if (OPTIONAL_EXTRA.includes(s)) return { value: '-', error: null };
+  if (allowAll && MAIN_EXTRA.includes(s)) return { value: 'ALL', error: null };
+
+  // よくある別表記を吸収する（BOT=ADC は LoLの慣習、TOPの全角など）
+  const alias = { BOT: 'ADC', BOTTOM: 'ADC', JUNGLE: 'JG', JUNG: 'JG', MIDDLE: 'MID', SUPPORT: 'SUP', SUPP: 'SUP' };
+  const normalized = alias[s] || s;
+
+  if (VALID_LANES.includes(normalized)) return { value: normalized, error: null };
+
+  const allowed = [...VALID_LANES, ...(allowAll ? MAIN_EXTRA : []), '-'].join(' / ');
+  return { value: undefined, error: `「${raw}」はレーンとして認識できません。次のいずれかで入力してください: ${allowed}` };
+}
+
+/**
+ * こだわり度(weight)を正規化する。1〜3の整数のみ許可する。
+ * @returns {{ value: number|undefined, error: string|null }}
+ */
+export function normalizeWeightInput(raw) {
+  const s = String(raw ?? '').trim();
+  if (!s) return { value: undefined, error: null };
+  const n = parseInt(s, 10);
+  if (Number.isNaN(n)) {
+    return { value: undefined, error: `こだわり度は数字で入力してください（1=絶対 / 2=通常 / 3=柔軟）。入力値: 「${raw}」` };
+  }
+  if (n < 1 || n > 3) {
+    return { value: undefined, error: `こだわり度は 1〜3 で入力してください（1=絶対 / 2=通常 / 3=柔軟）。入力値: ${n}` };
+  }
+  return { value: n, error: null };
+}
+
 /**
  * parseSmartRecruitInput: フリー入力テキストや省略入力をスマートに解釈して募集パラメータを生成
  * 例: "21:00" -> { mode: 'カスタム', time: '21:00〜', max: 10 }

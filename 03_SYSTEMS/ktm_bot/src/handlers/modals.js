@@ -1,7 +1,7 @@
 import { CONFIG, getPortalUrl } from '../config.js';
 import { sendDiscordMessage } from '../utils/api.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed } from '../ui/embeds.js';
-import { parseMessageData, parseStartTime } from '../utils/helpers.js';
+import { parseMessageData, parseStartTime , normalizeLaneInput, normalizeWeightInput } from '../utils/helpers.js';
 import { createRecruitment } from '../utils/recruitPermission.js';
 
 export async function handleModalSubmit(interaction, env, ctx) {
@@ -20,8 +20,35 @@ export async function handleModalSubmit(interaction, env, ctx) {
     const ownerName = interaction.member?.nick || interaction.member?.user?.global_name || interaction.member?.user?.username || "不明";
     // createdAt: 投稿時刻を固定保存。これが無いと参加/編集の再描画のたびに日時が「現在時刻」に上書きされていた。
     const metadata = { mode, time: getVal('time'), maxCount, memo: getVal('memo'), owner: userId, createdAt: new Date().toISOString(), joined: [], spectating: [], roles: { Top: null, Jg: null, Mid: null, Adc: null, Sup: null }, names: { [userId]: ownerName } };
+    const appIdR = interaction.application_id;
+    const tokenR = interaction.token;
+
     ctx.waitUntil((async () => {
+      const { patchInteractionResponse } = await import('../utils/api.js');
       const res = await sendDiscordMessage(`channels/${CONFIG.RECRUIT_CHANNEL_ID}/messages`, env.DISCORD_TOKEN, "POST", { content: createMessageContent(metadata), embeds: [createRecruitEmbed(metadata)], components: createRecruitButtons(metadata) });
+
+      // ⚠️ 2026-09-29 是正: 以前はここの成否を確認せず、無条件に
+      // 「✅ 募集を #募集板 に投下しました！」を返していた。カード投稿が失敗すると
+      // （権限不足・レート制限・チャンネルID誤り等）**募集が存在しないのに成功表示**になり、
+      // 募集主は来ない人をずっと待つことになる。本日4件目の同パターン。
+      // `sendDiscordMessage` は失敗時も throw せずレスポンスを返すので、明示的に確認する。
+      if (!res.ok) {
+        let detail = `HTTP ${res.status}`;
+        try { detail += `: ${(await res.clone().text()).slice(0, 200)}`; } catch { /* noop */ }
+        await patchInteractionResponse(appIdR, tokenR, {
+          content: `❌ **募集の投稿に失敗しました**（${detail}）\n※募集は作成されていません。時間をおいてもう一度お試しください。`
+        }).catch(() => {});
+        const { notifyAdminError } = await import('../utils/alert.js');
+        await notifyAdminError(env, new Error(`募集カードの投稿に失敗: ${detail}`), {
+          action: 'portal_recruit_modal（募集カードの投稿）', userId
+        });
+        return;
+      }
+
+      await patchInteractionResponse(appIdR, tokenR, {
+        content: `✅ **募集を #募集板 に投下しました！**\n${mode} / ${getVal('time') || '時間未指定'} / 最大${maxCount}名`
+      }).catch(() => {});
+
       try {
         const sentMessage = await res.clone().json();
         // 埋め込みメタデータに加えて recruitments テーブルにも正規に記録する（課題②）。
@@ -43,7 +70,8 @@ export async function handleModalSubmit(interaction, env, ctx) {
         await fetchPortalAPI(env, '/api/push/notify-recruit', { mode, time: getVal('time') });
       } catch (e) { /* push未設定でもOK */ }
     })());
-    return Response.json({ type: 4, data: { content: "✅ **募集を #募集板 に投下しました！**", flags: 64 } });
+    // 成否が確定するまで断定しない（結果は上の waitUntil が上書きする）
+    return Response.json({ type: 5, data: { flags: 64 } });
   }
 
   if (customId === 'portal_register_modal') {
@@ -52,12 +80,32 @@ export async function handleModalSubmit(interaction, env, ctx) {
       return row ? row.components[0].value.trim() : "";
     };
     const ign = getVal('ign');
-    let main = getVal('main').toUpperCase();
-    let sub = getVal('sub').toUpperCase();
+
+    // ⚠️ 2026-09-29: 以前は入力値を無検証でポータルへ送っていた。ポータル側も検証せず
+    // `role_preferences.primary` にそのまま保存し、バランサーは `ROLES.includes()` で弾くため
+    // **無効な値は永久に無視される**。つまり「とっぷ」と入力しても「🎉 登録完了！希望レーン:
+    // とっぷ」と成功表示され、本人は希望が通らない理由が分からなかった。入口で弾いて理由を伝える。
+    const mainR = normalizeLaneInput(getVal('main'), { allowAll: true, allowEmpty: false });
+    const subR = normalizeLaneInput(getVal('sub'), { allowAll: false });
+    const ng1R = normalizeLaneInput(getVal('ng1'), { allowAll: false });
+    const weightR = normalizeWeightInput(getVal('weight'));
+
+    const inputErrors = [mainR.error, subR.error, ng1R.error, weightR.error].filter(Boolean);
+    if (inputErrors.length > 0) {
+      return Response.json({
+        type: 4,
+        data: {
+          content: `⚠️ **入力内容を確認してください**\n\n${inputErrors.map((e) => `・${e}`).join('\n')}\n\n※もう一度ボタンを押して入力し直してください。まだ何も保存されていません。`,
+          flags: 64
+        }
+      });
+    }
+
+    let main = mainR.value;
+    let sub = subR.value;
     if (main === 'ALL') sub = '-';
-    const weightRaw = getVal('weight');
-    const weight = weightRaw ? parseInt(weightRaw) : undefined;
-    const ng1 = getVal('ng1').toUpperCase();
+    const weight = weightR.value;
+    const ng1 = ng1R.value;
 
     const discordName = interaction.member?.nick || interaction.member?.user?.global_name || interaction.member?.user?.username;
     const appId = interaction.application_id;
@@ -147,29 +195,66 @@ export async function handleModalSubmit(interaction, env, ctx) {
       const row = interaction.data.components.find(c => c.components[0].custom_id === cid);
       return row ? row.components[0].value.trim().toUpperCase() : "";
     };
-    let main = getVal('main'), sub = getVal('sub'), ng1 = getVal('ng1'), ng2 = getVal('ng2');
+    // ⚠️ 2026-09-29: 入力検証を追加（登録モーダルと同じ理由。無効な値は
+    // バランサーに無視されるだけなのに「✅ 受付ました」と表示されていた）。
+    const mainR = normalizeLaneInput(getVal('main'), { allowAll: true, allowEmpty: false });
+    const subR = normalizeLaneInput(getVal('sub'), { allowAll: false });
+    const ng1R = normalizeLaneInput(getVal('ng1'), { allowAll: false });
+    const ng2R = normalizeLaneInput(getVal('ng2'), { allowAll: false });
+    const weightRaw = interaction.data.components.find(c => c.components[0].custom_id === 'weight')?.components[0].value;
+    const weightR = normalizeWeightInput(weightRaw);
+
+    const inputErrors = [mainR.error, subR.error, ng1R.error, ng2R.error, weightR.error].filter(Boolean);
+    if (inputErrors.length > 0) {
+      return Response.json({
+        type: 4,
+        data: {
+          content: `⚠️ **入力内容を確認してください**\n\n${inputErrors.map((e) => `・${e}`).join('\n')}\n\n※もう一度ボタンを押して入力し直してください。まだ何も保存されていません。`,
+          flags: 64
+        }
+      });
+    }
+
+    let main = mainR.value;
+    let sub = subR.value;
+    const ng1 = ng1R.value;
+    const ng2 = ng2R.value;
+    const weight = weightR.value;
     if (main === 'ALL') {
       sub = '-';
     }
-    const weightRaw = interaction.data.components.find(c => c.components[0].custom_id === 'weight')?.components[0].value;
-    const weight = weightRaw ? parseInt(weightRaw) : undefined;
-    
+
     const discordName = interaction.member.user.global_name || interaction.member.user.username;
+    const appId = interaction.application_id;
+    const token = interaction.token;
+
     ctx.waitUntil((async () => {
+      const { fetchPortalAPI, patchInteractionResponse } = await import('../utils/api.js');
       try {
         // ktm_players はRLSでanon直書き不可。サーバーAPI(サービスロール)経由で更新する。
-        const { fetchPortalAPI } = await import('../utils/api.js');
         await fetchPortalAPI(env, '/api/player/update-lane', {
           discordId: userId, discordName, main, sub, ng1, ng2, weight,
         });
+        await patchInteractionResponse(appId, token, {
+          content: `✅ **レーン設定を保存しました**\nメイン: \`${main}\` / サブ: \`${sub || '-'}\` / NG1: \`${ng1 || '-'}\` / NG2: \`${ng2 || '-'}\`${weight ? ` / こだわり度: \`${weight}\`` : ''}\nチーム分けの際にこの希望が考慮されます。`
+        });
       } catch (err) {
+        // ⚠️ 2026-09-29 是正: 以前はここが console.error だけで、**保存に失敗しても
+        // 「✅ レーン設定を受付ました」と入力値をそのまま返していた**（成功を待たずに
+        // 即時レスポンスを返す作りだったため）。本日3件目の同パターン（ベット・試合記録に続く）。
         console.error("Modal Lane Update Error:", err);
+        await patchInteractionResponse(appId, token, {
+          content: `❌ **レーン設定の保存に失敗しました**: ${err.message}\n※設定は変更されていません。時間をおいてもう一度お試しください。`
+        }).catch(() => {});
+        const { notifyAdminError } = await import('../utils/alert.js');
+        await notifyAdminError(env, err, { action: 'portal_lane_modal（レーン設定の保存）', userId });
       }
     })());
 
-    return Response.json({ 
-      type: 4, 
-      data: { content: `✅ **レーン設定を受付ました**\nメイン:${main} / サブ:${sub} / NG1:${ng1} / NG2:${ng2}\n※反映まで数秒かかる場合があります。`, flags: 64 } 
+    // 成否が確定するまで断定しない（結果は上の waitUntil が上書きする）
+    return Response.json({
+      type: 5,
+      data: { flags: 64 }
     });
   }
 
