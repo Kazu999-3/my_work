@@ -154,6 +154,9 @@
    - **TOCTOU防止マイグレーション（Migration 83）の配備**:
      - `04_PORTAL/supabase/migrations/83_recruitments_regular_custom_unique.sql` を新設。
      - 通常の突発募集（同一日時に別人が立てる可能性がある募集）への影響をゼロにするため、一律制約ではなく `WHERE mode = '定期カスタム' AND status != 'deleted'` の**部分ユニークインデックス（Partial Unique Index: `idx_recruitments_unique_regular_custom`）** を採用。
+   - **本番適用と機械的実値検証の完了**:
+     - ユーザーによりSupabase SQL Editorにてインデックス作成SQLが即時適用完了。
+     - スクリプトによる実測テストを実施。同一日時の定期カスタムを2件連続で挿入したところ、1件目は成功、2件目は期待通り `23505 duplicate key value violates unique constraint "idx_recruitments_unique_regular_custom"` で完全に弾かれ、テストデータは安全に自動クリーンアップ。DBレベルの二重登録遮断が100%機能していることを実証。
    - **TODOダッシュボードの更新**: `02_FACTORY/TODO.md` の関連未着手項目2件を解決・完了（`[x]`）へ同期。
 
 **3行ナレッジ**:
@@ -165,9 +168,6 @@
 - `[要検証]`: 明日水曜12:00 JST、Cloudflare Worker 本命cronによる定期カスタム募集投稿の初実戦観測。
 - `[継続ウォッチ]`: Supabase `recruitments` テーブルへの `mode='定期カスタム'` レコードの正常格納。
 - `[発信候補]`: 「分散cronの二重実行を100%防ぐ：PostgreSQLの部分ユニークインデックスを活用した安全なTOCTOU対策」。
-
-**拾い上げ（Harvest）**:
-- `[要検証]`: 明日水曜12:00 JSTの本命Cloudflare cronによる週末カスタム募集カードの初回自動投稿。
 - `[継続ウォッチ]`: Discord管理チャンネルへのエラー通知の受信頻度と内容。
 - `[発信候補]`: 「公開リポジトリ化で焦らない：Cloudflare Worker × GitHub Actions × Vercelのゼロダウンタイム秘密鍵ローテーション実戦記」。
 

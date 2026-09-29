@@ -1308,10 +1308,10 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
   - `03_SYSTEMS/ktm_bot/wrangler.toml` が既にちょうど5本使っており、冗長cronも新規の定期処理も追加できない。今回はGitHub Actions側の試行回数を増やす対策で回避した。
   - 新しい定期処理が必要になった時点で、有料プラン（250本）への移行か、既存cron内での相乗りかを判断すること。
 
-- [x] **`recruitments` に `(mode, start_at)` の部分ユニークインデックスを配備**（2026-09-30 完了）
+- [x] **`recruitments` に `(mode, start_at)` の部分ユニークインデックスを本番適用 ＆ 実測検証完了**（2026-09-30 完了）
   - 定期カスタムの二重投稿防止（TOCTOU: Check-then-Act）対策。
-  - 一般募集（同日同時刻に複数立ってもよい突発募集）への副作用を避けるため、一律制約ではなく `WHERE mode = '定期カスタム' AND status != 'deleted'` の部分ユニークインデックス（`idx_recruitments_unique_regular_custom`）として `04_PORTAL/supabase/migrations/83_recruitments_regular_custom_unique.sql` を配備。
-  - Supabase SQL Editor にて適用可能。これによりDBレベルで二重投稿が100%遮断される。
+  - 一般募集への副作用を避けるため、`WHERE mode = '定期カスタム' AND status != 'deleted'` の部分ユニークインデックス（`idx_recruitments_unique_regular_custom`）を配備。
+  - **実測検証済み**: 同一日時（`2099-01-01`）の定期カスタムをテスト挿入したところ、1件目は正常に通り、2件目は期待通り `23505 duplicate key value violates unique constraint "idx_recruitments_unique_regular_custom"` で完全に弾かれることを確認。二重登録遮断が100%機能していることを実証。
 
 - [ ] **`pending_match_sync` も0行**（2026-09-23 発見）
   - Botが書き込むもう一方のテーブル。`recruitments` と同じ理由（Worker の鍵に書き込み権限が無い）で一度も記録できていないとみられる。試合終了後の match-sync 予約がどこまで機能しているか未確認。Worker の鍵を差し替えたら、こちらも記録されるようになるか確認すること。
