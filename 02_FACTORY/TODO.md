@@ -891,8 +891,22 @@ YouTubeキュー整合化、帝国総合索引同期・戦術バイブル拡充�
   | `ktm_bot/src/handlers/components.js:292` | 到達しない死んだフォールバック（`CONFIG.PORTAL_URL` が正しいため無害だが混乱を招くので揃えた） |
   | `ktm_bot/wrangler.toml:9` | **コメントアウトされた設定例が404を指していた**。有効化すると壊れるので修正 |
 
+- **デプロイだけでは直らなかった**: ダッシュボードは「プロフィール登録やマッチ操作が起きた時」にしか再生成されないため、
+  修正版をデプロイしてもピン留め済みメッセージは古い404リンクを保持したままだった。
+  `POST /api/mentorship/sync-discord` を叩いて作り直し、`{"ok":true}` を確認済み（2026-09-29）。
+  **今後もこの種の「Discordに投稿済みのメッセージを直す」修正では、デプロイ後に再同期が必要**。
 - **残る改善余地（未対応）**: Vercelに `NEXT_PUBLIC_APP_URL` を登録すればフォールバックに依存しなくなる。
   現状はハードコードされた正しい値に揃えただけなので、独自ドメインを取る等でURLが変わると同じ問題が再発する。
+
+- [ ] **`/api/mentorship/sync-discord` が実質無認証**（2026-09-29 発見）
+  - `sync-discord/route.ts:7` で `getAuthSession()` を呼んでいるが、**戻り値を一切検証していない**
+    （`const session = await getAuthSession();` の後 `session` を使わずに処理へ進む）。
+    コメントには「管理者またはログインユーザーが手動更新をトリガー可能」と書かれているが、**実装がそれを担保していない**。
+  - 実害: 外部から無制限にDiscordのピン留めメッセージを再生成させられる（内容は公開情報なので情報漏洩は無いが、
+    Discord APIのレート消費とメッセージ編集の乱発が可能）。
+  - 同じ構造の問題が `/api/mentorship/profiles` POST にもある（`discord_id` を任意指定できるため他人名義のプロフィール作成が可能）。
+  - `04_PORTAL/CLAUDE.md` のセキュリティチェックリスト（`supabase-table-security` スキル）に沿って
+    認証を入れるか、`verifyBotSecret` 相当で絞るかを決める。TODO末尾の「cron系7ルートがUser-Agentを信用」と同系統の課題。
 
 ---
 
