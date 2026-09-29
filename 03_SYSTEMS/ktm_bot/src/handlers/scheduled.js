@@ -1,7 +1,7 @@
 import { CONFIG } from '../config.js';
 import { fetchSupabase } from '../utils/supabase.js';
 import { parseMessageData } from '../utils/helpers.js';
-import { fetchWithRetry, fetchPortalAPI, sendDiscordMessage } from '../utils/api.js';
+import { fetchWithRetry, fetchPortalAPI } from '../utils/api.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, buildDayRecruitEmbed, buildDayRecruitComponents } from '../ui/embeds.js';
 import { createRecruitment, markRecruitmentStatus } from '../utils/recruitPermission.js';
 import { notifyAdminError } from '../utils/alert.js';
@@ -80,18 +80,6 @@ export async function handleScheduledEvent(event, env, ctx) {
     // 金曜 19:00 JST, 土曜 17:00 JST, 日曜 17:00 JST: 中間アナウンス＆リマインド通知
     console.log("[Scheduled] Executing intermediate custom reminder & status notification...");
     await sendEventUsersNotification(env, { lookaheadHours: 72 });
-  } else if (cronExpression.includes("0 3 1 * *") || mode === "monthly_award") {
-    // 毎月1日 12:00 JST (UTC 3:00 毎月1日): 月間アワード表彰の自動投稿
-    console.log("[Scheduled] Executing monthly award announcement...");
-    const { generateMonthlyAwardEmbed } = await import('./ranking.js');
-    const embed = await generateMonthlyAwardEmbed(env);
-    if (embed) {
-      const channelId = CONFIG.RECRUIT_CHANNEL_ID || "1485636511679651871";
-      await sendDiscordMessage(`channels/${channelId}/messages`, env.DISCORD_TOKEN, "POST", {
-        content: `👑 **【KTM 月間アワード発表】先月最も活躍したメンバーを表彰します！** <@&${CONFIG.NOTIFICATION_ROLE_ID}>`,
-        embeds: [embed]
-      }).catch(e => console.error("Monthly award post failed:", e));
-    }
   } else {
     console.log("[Scheduled] No matching handler for this trigger:", cronExpression || mode);
   }
