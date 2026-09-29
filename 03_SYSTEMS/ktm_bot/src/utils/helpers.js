@@ -1,5 +1,5 @@
 import { CONFIG } from '../config.js';
-import { fetchGAS, fetchPortalAPI, sendDiscordMessage, sendInteractionFollowup } from './api.js';
+import { fetchPortalAPI, sendDiscordMessage, sendInteractionFollowup } from './api.js';
 import { fetchSupabase } from './supabase.js';
 
 /**

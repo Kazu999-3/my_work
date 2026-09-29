@@ -1,5 +1,5 @@
 import { CONFIG } from '../config.js';
-import { fetchGAS, patchInteractionResponse, sendDiscordMessage, sendInteractionFollowup } from '../utils/api.js';
+import { patchInteractionResponse, sendDiscordMessage, sendInteractionFollowup } from '../utils/api.js';
 import { fetchSupabase } from '../utils/supabase.js';
 import { handleLaneCommand, handleStatsCommand } from './commands.js';
 import { generateChampionRoulette } from './roulette.js';

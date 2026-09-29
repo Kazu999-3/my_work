@@ -1,5 +1,5 @@
 import { CONFIG, getPortalUrl } from '../config.js';
-import { fetchGAS, sendDiscordMessage } from '../utils/api.js';
+import { sendDiscordMessage } from '../utils/api.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed } from '../ui/embeds.js';
 import { parseMessageData, parseStartTime } from '../utils/helpers.js';
 import { createRecruitment } from '../utils/recruitPermission.js';

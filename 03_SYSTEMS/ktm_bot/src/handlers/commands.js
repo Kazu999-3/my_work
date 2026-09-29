@@ -1,5 +1,5 @@
 import { CONFIG, getPortalUrl } from '../config.js';
-import { fetchGAS, patchInteractionResponse, sendDiscordMessage, fetchPortalAPI } from '../utils/api.js';
+import { patchInteractionResponse, sendDiscordMessage, fetchPortalAPI } from '../utils/api.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, getPortalComponents, getPortalEmbed } from '../ui/embeds.js';
 import { getPlayersByNames, fetchSupabase } from '../utils/supabase.js';
 import { parseMessageData, parseStartTime, parseSmartRecruitInput } from '../utils/helpers.js';

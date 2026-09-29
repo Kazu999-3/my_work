@@ -77,23 +77,13 @@ export async function sendInteractionFollowup(appId, token, bodyJSON) {
   return res;
 }
 
-/** GAS への通信ラップ (レガシー) */
-export async function fetchGAS(payload) {
-  const res = await fetch(CONFIG.GAS_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`GAS HTTP Error: ${res.status} - ${errorText}`);
-  }
-  const data = await res.json();
-  if (data && data.status && data.status !== "SUCCESS") {
-    throw new Error(data.message || `GAS Error: ${JSON.stringify(data)}`);
-  }
-  return data;
-}
+// ⚠️ 2026-09-29: ここにあった fetchGAS()（Google Apps Script へのレガシー通信ラップ）を削除した。
+// commands.js / components.js / modals.js / helpers.js の4ファイルが import していたが、
+// **どこからも実際には呼ばれていなかった**（定義とimportだけが残る死んだコード）。
+// CONFIG.GAS_URL は疎通自体は生きている（2026-09-29に HTTP 200 を実測）が、参照はこれで0件になる。
+// Bot からポータルへ通信する正規の経路は下記の fetchPortalAPI()。
+// なお env.INTERNAL_GAS_SECRET は名前にGASが入っているだけの別物（/trigger-scheduled の鍵）で、
+// これとは無関係に現役なので混同しないこと。
 
 /** Webポータル (Next.js) API への通信ラップ */
 export async function fetchPortalAPI(env, endpointPath, payload, method = "POST") {
