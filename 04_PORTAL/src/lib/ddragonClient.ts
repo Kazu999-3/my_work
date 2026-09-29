@@ -1,4 +1,12 @@
-let cachedLatestPatch = "14.24.1"; // 確実に実在するDDragon安定パッチバージョン（フェッチ失敗時のフォールバック）
+// ⚠️ 2026-09-29: フェッチ失敗時のフォールバック。**この定数が唯一の正**とする。
+// 調査時点でコードベース内に DDragon バージョンのハードコードが7箇所あり、
+// 値が `14.1.1` / `14.24.1` / `16.15.1` の**3種類にバラけていた**（実際の最新は 16.19.1）。
+// 特に `coachPostGame.ts` の `14.1.1` は約2年前で、アイテムデータが大きく異なる。
+// 「同じものの既定値が複数ある」＝誰も実データを見ていないサインなので、
+// 新しい箇所でハードコードせず `getLatestPatch()` を使うこと。
+export const DDRAGON_FALLBACK_PATCH = "16.19.1";
+
+let cachedLatestPatch = DDRAGON_FALLBACK_PATCH;
 
 export async function initLatestPatch() {
   try {
@@ -27,6 +35,22 @@ let patchInitPromise: Promise<void> | null = null;
 async function ensureLatestPatch(): Promise<void> {
   if (!patchInitPromise) patchInitPromise = initLatestPatch();
   await patchInitPromise;
+}
+
+/**
+ * 現行のDDragonパッチバージョンを返す（2026-09-29 新設）。
+ *
+ * これまで `fetch('.../versions.json')` を各所で独立に叩き、失敗時のフォールバックを
+ * それぞれハードコードしていた（7箇所・3種類の値）。`res.ok` を確認していない箇所もあり、
+ * DDragonがHTMLエラーを返すと `.json()` で例外になる作りだった。
+ * このモジュールは既に `res.ok` 確認・配列検証・キャッシュを持っているので、そこへ寄せる。
+ *
+ * 初回だけ実際に取得し、以降はモジュールキャッシュを返す（サーバー側のwarm instanceでも
+ * 古い値に固定されないよう `ensureLatestPatch()` を通す）。
+ */
+export async function getLatestPatch(): Promise<string> {
+  await ensureLatestPatch();
+  return cachedLatestPatch;
 }
 
 // DDragon の特殊ID・表記揺れ・スペース削除マッピングテーブル

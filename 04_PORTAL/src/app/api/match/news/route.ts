@@ -160,6 +160,29 @@ export async function GET(req: Request) {
 // POST: 特定のmatchIdに対するニュースを手動再生成または即時生成
 export async function POST(req: Request) {
   try {
+    // ⚠️ 2026-09-29 セキュリティ修正:
+    // このPOSTは**無認証・クールダウンなし・重複防止なし**でGeminiを呼べる状態だった。
+    // 有効な matchId（現在126件存在）を1つ知っていれば、同じ試合に対して何度でも
+    // 再生成を要求でき、**Geminiの日次クォータを枯渇させられる**。
+    // このプロジェクトはクォータ枯渇で複数時間の障害を実際に起こしている
+    // （HANDOVER §2 の 2026-08-09〜10。辞典・ソロQコーチ・動画解析が全滅した）。
+    //
+    // 重複防止(既存ニュースがあればスキップ)は **GET側にしか無かった**。
+    //
+    // 調査の結果、この**HTTP POSTには呼び出し元が1つも無い**:
+    //   - 正規の生成経路は `match/record` が `generateMatchNews()` を直接import して呼ぶ
+    //   - 画面側(`MatchNewsTicker.tsx`)は GET しか使わない
+    // つまり手動再生成用に残されていた口なので、管理者セッションまたはBot経由のみに絞る。
+    const { verifyAdminSession } = await import('../../../../lib/adminAuth');
+    const { verifyBotSecretStrict } = await import('../../../../lib/botAuth');
+    const adminAuth = await verifyAdminSession(req);
+    if (!adminAuth.ok && !verifyBotSecretStrict(req).ok) {
+      return NextResponse.json(
+        { error: 'ニュースの再生成は管理者のみ実行できます。' },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
     const { matchId } = body;
 

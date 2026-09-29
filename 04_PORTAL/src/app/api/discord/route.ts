@@ -25,6 +25,41 @@ export async function POST(request: Request) {
       }
     }
 
+    // ⚠️ 2026-09-29 追加: 連投対策のクールダウン。
+    // 名前検証（上記・2026-08-05対応）で「実在しないプレイヤーを含む投稿」は防げるが、
+    // **実在名を使った連投は防げなかった**。無認証なのでチャンネルを埋め尽くせる状態だった。
+    // 既に同じ問題へ対処済みの `match/analyze-image` と同じ edge_tasks ベースの方式に揃える。
+    // チーム分け結果の投稿は本来1試合に1回なので、30秒あれば通常利用は妨げない。
+    const COOLDOWN_MS = 30 * 1000;
+    const COOLDOWN_TASK = 'discord_post_cooldown';
+    try {
+      const { data: lastPost } = await supabase
+        .from('edge_tasks')
+        .select('created_at')
+        .eq('task_type', COOLDOWN_TASK)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (lastPost?.created_at) {
+        const elapsed = Date.now() - new Date(lastPost.created_at).getTime();
+        if (elapsed < COOLDOWN_MS) {
+          const wait = Math.ceil((COOLDOWN_MS - elapsed) / 1000);
+          return NextResponse.json(
+            { error: `連続投稿を防ぐため${wait}秒ほどお待ちください。` },
+            { status: 429 }
+          );
+        }
+      }
+      await supabase.from('edge_tasks').insert({
+        task_type: COOLDOWN_TASK,
+        status: 'completed',
+        payload: { at: new Date().toISOString() },
+      });
+    } catch (cdErr) {
+      // クールダウン判定の失敗で投稿自体を止めない（本来の機能を優先する）
+      console.warn('[discord] クールダウン判定に失敗（投稿は続行）:', cdErr);
+    }
+
     const webhookUrl = process.env.DISCORD_KTM_WEBHOOK_URL;
     if (!webhookUrl) {
       return NextResponse.json({ error: 'サーバーにWebhook URLが設定されていません。(.env.local を確認してください)' }, { status: 500 });

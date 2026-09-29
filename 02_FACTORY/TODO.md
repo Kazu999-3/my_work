@@ -1866,3 +1866,81 @@ Discordへ送る（`ADMIN_WEBHOOK_URL` / `ADMIN_LOG_CHANNEL_ID` は config に�
   現状は fail-closed で動作に問題は無いが、専用の `SYSTEM_SYNC_KEY` のみに絞るのが望ましい。
   照合が `authHeader.includes(k)` と部分一致なのも `===` にすべき（鍵を知らないと通らないので
   実害は小さいが、緩い比較を残す理由が無い）。
+
+---
+
+# 📋 ポータル全量調査（2026-09-29）
+
+> **依頼**: 「都度聞くのが面倒なので全量調査して。師弟機能はWebポータルにもあるから」
+> 対象: **97,585行 / APIルート170本 / 師弟機能6,706行**。目視では不可能なので
+> 本日確定した欠陥パターンをスクリプト化して全量走査し、検出結果を実コードで精査した。
+
+## 🔒 APIルート170本の認証状況を全量走査
+
+- **コイン操作の無認証は0本**（本日 `match/record` を塞いだ分が効いている）。
+- 書き込み系で認証の形跡が無いもの20本を精査し、**2本が実害**と判断して修正した。
+
+### 🔴 修正: `/api/match/news` POST（Geminiクォータ枯渇の経路）
+
+- **無認証・クールダウンなし・重複防止なし**でGeminiを呼べた。有効な `matchId`（126件存在）を
+  1つ知っていれば同じ試合に対して何度でも再生成を要求でき、**日次クォータを枯渇させられる**。
+  このプロジェクトはクォータ枯渇で複数時間の障害を実際に起こしている（HANDOVER §2 2026-08-09〜10）。
+- 重複防止は**GET側にしか無かった**（POSTは素通り）。
+- **調査で判明**: このHTTP POSTには**呼び出し元が1つも無い**。正規の生成経路は
+  `match/record` が `generateMatchNews()` を直接importして呼ぶ。画面側(`MatchNewsTicker`)はGETのみ。
+  → 手動再生成用の口なので**管理者セッションまたはBot経由のみ**に制限した。
+
+### 🔴 修正: `/api/discord` POST（Discord連投）
+
+- 無認証でチャンネルへ投稿できた。**名前検証は既にあった**（2026-08-05対応で、
+  実在しない登録名を含む投稿は拒否）が、**実在名を使った連投は防げていなかった**。
+- `balancer/page.tsx` から実際に使われている意図的な公開APIなので、認証ではなく
+  **30秒クールダウン**を追加（`match/analyze-image` と同じ edge_tasks 方式に揃えた）。
+  チーム分け投稿は本来1試合1回なので通常利用を妨げない。
+
+### ✅ 問題なしと確認（誤検出・既に対処済み）
+
+| ルート | 判断 |
+|---|---|
+| `/api/match/analyze-image` | **既に30秒クールダウン実装済み**（2026-08-05に同じ懸念で対処）。コードベース中最も高コストなGemini呼び出しだが保護されている |
+| `/api/player/sync-soloq` | **クールダウン4箇所あり**（Riot API保護） |
+| `/api/auth/login` `/logout` `/logs/error` `/push/subscribe` | 公開が正しい性質 |
+| その他 | DB書き込みのみで外部コストが無く、実害が小さい |
+
+## 🤝 師弟機能（ポータル側6,706行）の調査
+
+### ✅ UIは良く作られていた（変更不要）
+
+スキャナが4件の「fetch結果未確認」を挙げたが、**精査の結果ほぼ誤検出**だった。
+
+- `MentorshipHubPanel` は `res.ok` ではなく **`data.ok` を確認**し、失敗時は
+  `toast.error(data.error)` でユーザーに理由を表示している。catch でも `toast.error` を出す。
+  （サーバーがHTMLエラーを返した場合も `.json()` の例外を catch が拾う）
+- 唯一の空 `catch (_) {}` は **canvas-confetti の import 失敗用**で、演出が出ないだけなので妥当。
+- `data.bonusCoins || 500`（+500コイン獲得の表示）は `data.isFirstTimeBonus` で分岐しており、
+  APIは `isFirstTimeBonus ? 500 : 0` を返すため**架空表示にならない**。`|| 500` は冗長だが無害。
+- 「由来を偽る表示」47件は**全て誤検出**。`championKitTactics.ts` の「確定キル」「確定ダメージ」は
+  LoLの戦術用語（guaranteed）で、データの由来主張ではない。
+
+### 🟡 サーバー側の失敗が全て無音（未対応・要判断）
+
+- **師弟APIルート5本で catch 計43箇所、管理者通知は0件**。
+  `notifyPortalError`（`lib/discordNotify.ts`）は存在するが、ポータル全体で使っているのは
+  `app/api/logs/error/route.ts` の1箇所だけ＝**Bot側と同じ「機構はあるが使われていない」状態**。
+- Bot側は本日 `notifyAdminError` を9箇所へ配線したが、ポータル側は未着手。
+  少なくとも「失敗するとデータが残らない」経路（`mentorship/matches` の
+  APPLY/ACCEPT/CLAIM_MENTOR、`profiles` の登録）へは流すべき。
+
+## 🐉 DDragonバージョンのハードコードが7箇所・3種類にバラけていた
+
+- 値が `14.1.1` / `14.24.1` / `16.15.1` の**3種類**（実際の最新は **16.19.1**）。
+  **「同じものの既定値が複数ある」＝誰も実データを見ていないサイン**（MMRの1200 vs 1000と同型）。
+- 特に `lib/coachPostGame.ts` の **`14.1.1` は約2年前**で、その版のアイテムデータは現行と大きく異なる。
+  `res.ok` も確認していなかったため、DDragonが一時的に落ちると**古い装備情報で講評を出す**恐れがあった。
+- ✅ **対応**: `lib/ddragonClient.ts`（`res.ok`確認・配列検証・キャッシュを持つ良い実装）に
+  `getLatestPatch()` と `DDRAGON_FALLBACK_PATCH` を新設し**唯一の正**とした。
+  最も古い `coachPostGame.ts` をそこへ寄せ、`item.json` の `res.ok` 確認も追加。
+- [ ] **残り5箇所は未対応**（`admin/dashboard-stats` / `admin/dict-health` /
+  `admin/dict-health/verify` / `cron/dict-auto-refresh` / `lol/postgame-deep-analytics`）。
+  いずれも `|| '16.15.1'` または `|| "14.24.1"` で、管理画面・cron系のため影響は小さい。
+  `getLatestPatch()` へ寄せれば解消するが、5ファイルに触るため別途まとめて実施するのが安全。

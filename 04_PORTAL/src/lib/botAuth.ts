@@ -24,9 +24,12 @@ export function verifyBotSecret(req: Request): { ok: boolean; error?: string } {
   
   // シークレットが不一致、または未送信の場合
   console.warn(`[botAuth] Bot secret mismatch: provided=${provided ? 'PRESENT(length=' + provided.length + ')' : 'MISSING'}, expectedLength=${expected.length}`);
-  
-  // 開発・過渡期のブロック回避: 不一致でも即死させず通す（ログ記録付き）
-  return { ok: true };
+
+  // 2026-08-27〜09-29は「過渡期のブロック回避」として不一致でも通していたため、
+  // このチェックを使う全ルート(update-puuid/update-lane/sync-ranks/match-sync/notify-*)が
+  // 実質無認証だった。bet/settle(Strict版)が9/22から本番で通っており、Botの鍵が
+  // 一致していることは確認済みのため拒否に戻す。
+  return { ok: false, error: 'Unauthorized (invalid bot secret)' };
 }
 
 /**

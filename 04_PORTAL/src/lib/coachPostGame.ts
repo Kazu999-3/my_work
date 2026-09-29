@@ -148,10 +148,14 @@ async function getCompletedItemMetadata(): Promise<{ completedIds: Set<number>; 
     return { completedIds: cachedCompletedItemIds, itemNames: cachedItemNames };
   }
   try {
-    const vRes = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
-    const versions = await vRes.json();
-    const latest = versions[0] || '14.1.1';
+    // ⚠️ 2026-09-29 是正: ここは独自に versions.json を叩き、`res.ok` を確認せず、
+    // 失敗時のフォールバックが **'14.1.1'（約2年前）** だった。その版のアイテムデータは
+    // 現行と大きく異なるため、DDragonが一時的に落ちた際に**古い装備情報で講評を出す**恐れがあった。
+    // `res.ok` 確認・配列検証・キャッシュを持つ `ddragonClient` に寄せる（フォールバック値も一元化）。
+    const { getLatestPatch } = await import('./ddragonClient');
+    const latest = await getLatestPatch();
     const itemRes = await fetch(`https://ddragon.leagueoflegends.com/cdn/${latest}/data/ja_JP/item.json`);
+    if (!itemRes.ok) throw new Error(`DDragon item.json HTTP ${itemRes.status}`);
     const itemData = await itemRes.json();
     const completed = new Set<number>();
     const names = new Map<number, string>();
