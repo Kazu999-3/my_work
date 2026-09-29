@@ -89,22 +89,33 @@ def fetch_previous_patch_version(latest=None, timeout=5.0):
     return None
 
 def get_current_recorded_patch():
-    """ローカルに記録されている現在のパッチバージョンを取得"""
+    """ローカルに記録されている現在のパッチバージョンを取得
+
+    読み取り失敗を黙って握りつぶすと "unknown" に落ち、呼び出し側は
+    「前回の記録が無い」のか「ファイルが壊れている」のか区別できない。
+    ファイルが壊れているだけなら直せば済むので、理由をログに出す(2026-09-30)。
+    """
     if PATCH_RECORD_FILE.exists():
         try:
             with open(PATCH_RECORD_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                return data.get("current_patch")
-        except Exception:
-            pass
+                recorded = data.get("current_patch")
+                if recorded:
+                    return recorded
+                print(f"[WARN] {PATCH_RECORD_FILE.name} に current_patch がありません。")
+        except Exception as e:
+            print(f"[WARN] {PATCH_RECORD_FILE.name} の読み込みに失敗しました: {e}")
 
     if MASTER_DICT_FILE.exists():
         try:
             with open(MASTER_DICT_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                return data.get("patch")
-        except Exception:
-            pass
+                recorded = data.get("patch")
+                if recorded:
+                    print(f"[INFO] 記録パッチを {MASTER_DICT_FILE.name} から復元しました: {recorded}")
+                    return recorded
+        except Exception as e:
+            print(f"[WARN] {MASTER_DICT_FILE.name} の読み込みに失敗しました: {e}")
 
     return "unknown"
 

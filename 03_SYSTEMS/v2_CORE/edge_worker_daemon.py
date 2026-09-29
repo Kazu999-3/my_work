@@ -356,10 +356,31 @@ class EdgeWorkerDaemon:
             "updated_at": now_str,
             "created_at": now_str
         }
+        # ハートビートはポータルの稼働状況表示(04_PORTAL /api/admin/pipeline-status)が
+        # 「このデーモンが生きているか」を判断する唯一の材料。以前はここが
+        # `except Exception: pass` で、しかも status_code も見ていなかったため、
+        # キーの誤り(401/403)やRLSで送信が通っていなくても何のログも出ず、
+        # 「デーモンは動いているのに管理画面では停止扱い」の原因が特定できない
+        # 状態だった(2026-09-30修正)。
+        # 5秒おきに走るためログを溢れさせないよう、最初の失敗と以降5分ごと、
+        # および復旧時だけ記録する。
+        if not hasattr(self, "_hb_fail_streak"):
+            self._hb_fail_streak = 0
         try:
-            httpx.post(url, headers=headers, json=payload, timeout=5)
-        except Exception:
-            pass
+            res = httpx.post(url, headers=headers, json=payload, timeout=5)
+            if res.status_code >= 400:
+                raise RuntimeError(f"status={res.status_code} body={res.text[:200]}")
+            if self._hb_fail_streak:
+                logger.info(f"📡 ハートビート送信が復旧しました（連続失敗 {self._hb_fail_streak} 回で終了）。")
+                self._hb_fail_streak = 0
+        except Exception as e:
+            self._hb_fail_streak += 1
+            # 1回目、その後は60回(約5分)ごと
+            if self._hb_fail_streak == 1 or self._hb_fail_streak % 60 == 0:
+                logger.warning(
+                    f"⚠️ ハートビート送信に失敗しています（連続 {self._hb_fail_streak} 回）: {e} "
+                    "／ 管理画面ではこのデーモンが停止中として表示されます。"
+                )
 
     def execute_task(self, task: dict):
         """指示されたタスクの中身に応じた実行分岐"""
