@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
+import { getTargetTier } from '../../../../lib/coachSettings';
 import {
   fetchPuuidByRiotId,
   fetchRankedSoloMatchIds,
@@ -29,8 +30,12 @@ export async function POST(request: NextRequest) {
       gameName,
       tagLine,
       queueType = 'solo', // 'solo' | 'all'
-      targetTier = 'Emerald IV',
     } = body;
+
+    // 目標ランクは ktm_settings に保存された値を使う（未設定なら既定値）。
+    // 2026-09-30: 以前は 'Emerald IV' がこのルートの既定値とクライアント側の両方に
+    // 直書きされており、昇格しても目標が動かないままAIへの指示文に入り続けていた。
+    const targetTier = String(body?.targetTier || '').trim() || (await getTargetTier());
 
     // Riot IDが指定されていなければ環境変数のオーナーIDにフォールバックする。
     // 2026-09-30: 呼び出し側(SoloQDeepIntelSyncCard と coach/page.tsx)に

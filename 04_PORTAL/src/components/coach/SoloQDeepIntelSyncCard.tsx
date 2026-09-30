@@ -35,12 +35,13 @@ export default function SoloQDeepIntelSyncCard({
     setLoading(true);
     setError('');
     try {
-      // gameName / tagLine は送らない。サーバー側が環境変数のオーナーIDへ
-      // フォールバックする（Riot IDの出所を1箇所にする）。
+      // gameName / tagLine / targetTier は送らない。サーバー側が
+      // 環境変数のオーナーIDと ktm_settings の目標ランクから解決する
+      // （Riot IDと目標ランクの出所をそれぞれ1箇所にする。2026-09-30）。
       const res = await fetch('/api/analyzer/deep-intel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetTier: 'Emerald IV' }),
+        body: JSON.stringify({}),
       });
 
       if (!res.ok) throw new Error('アナライザーデータの取得に失敗しました');

@@ -258,7 +258,11 @@ export default function TimingHeatmapCard() {
             )}
           </div>
 
-          <div className="w-full">
+          {/* 24列を画面幅に押し込むと375px幅で1セル約13pxになり、指でタップできない。
+              ui-conventions.md の「スマホで見切れないよう横スクロールを必ず設定」に従い、
+              最小幅を確保して横スクロールさせる（2026-09-30修正。復活時の見落とし）。 */}
+          <div className="w-full overflow-x-auto -mx-1 px-1">
+            <div className="min-w-[560px]">
             {/* 時間ヘッダー */}
             <div className="grid grid-cols-[1.25rem_repeat(24,1fr)] gap-px text-[9px] text-stone-400 text-center mb-1">
               <div className="w-5"></div>
@@ -297,8 +301,9 @@ export default function TimingHeatmapCard() {
                 </div>
               ))}
             </div>
+            </div>
           </div>
-          <p className="text-[10px] text-stone-400">※ グレーは3試合未満のためサンプル不足。マスを選択・ホバーすると詳細が表示されます。</p>
+          <p className="text-[10px] text-stone-400">※ グレーは3試合未満のためサンプル不足。マスを選択・タップすると詳細が表示されます（横スクロールできます）。</p>
         </div>
       )}
     </div>

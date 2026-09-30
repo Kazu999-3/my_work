@@ -83,9 +83,16 @@ export async function GET(req: Request) {
         // 試合終了ごとに対面メモを書いてもらうための深リンク。対面(enemyChampion)が
         // 特定できた場合のみ、対面メモの新規作成フォームへ試合結果・KDA・試合IDを
         // 引き継いで自動プリフィルする（MatchupMemoTabのURLパラメータ処理を再利用）。
+        // 2026-09-30: リンク先を実在するタブへ修正した。
+        // それまでは `?tab=matchup-memo` を指していたが、そのタブは2026-09-17の
+        // スリム化で削除されており、しかもコーチページは tab パラメータを読んでいなかった。
+        // 結果、通知を押すと常に「試合前」に着地し、対面メモを書くという目的を果たせず
+        // role/result/kda/matchId も捨てられていた（直近30日で14件がこの状態）。
+        // メモ編集は「試合後」タブの PostGameDeepAnalyticsDashboard にあるので、
+        // そのタブと対象試合(matchId)を開くリンクにする。
         const matchupMemoPath = result.enemyChampion
-          ? `/coach?tab=matchup-memo&champion=${encodeURIComponent(result.champion)}&enemy=${encodeURIComponent(result.enemyChampion)}&role=${encodeURIComponent(result.role)}&result=${encodeURIComponent(result.win ? '勝ち' : '負け')}&kda=${encodeURIComponent(result.kda)}&matchId=${encodeURIComponent(targetMatchId)}`
-          : '/coach?tab=matchup-memo';
+          ? `/coach?tab=postgame&matchId=${encodeURIComponent(targetMatchId)}&champion=${encodeURIComponent(result.champion)}&enemy=${encodeURIComponent(result.enemyChampion)}`
+          : `/coach?tab=postgame&matchId=${encodeURIComponent(targetMatchId)}`;
 
         // ポータル通知（履歴保存＋"admin" scope購読者へのプッシュ）。
         // createAdminNotification経由にすることで、コーチのベル通知一覧にも残る。

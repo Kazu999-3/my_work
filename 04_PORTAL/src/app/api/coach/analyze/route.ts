@@ -16,8 +16,6 @@ import { getChampionKnowledge } from '../../../../lib/championKnowledge';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { runPostGameReview } from '../../../../lib/coachPostGame';
 import { computeTrendAggregates, formatMainRoleLine, formatDeathContextBlock } from '../../../../lib/coachTrends';
-import { getTimingContext, buildPlayRecommendation } from '../../../../lib/soloqTiming';
-import { diagnoseTilt, analyzeStreak } from '../../../../lib/playRecommendation';
 
 // tilt/pre診断はRiot APIの複数回fetch(最大10並列)+Gemini呼び出し(429時最大3リトライで
 // 最大14秒消費)を直列実行するため、Vercelのデフォルト関数タイムアウトに抵触しうる。
@@ -284,8 +282,9 @@ async function getPlayerCounterStats(playerName: string, enemyChampion: string):
 // ============================
 // ティルト診断ロジック
 // ============================
-// diagnoseTilt / analyzeStreak は lib/playRecommendation.ts へ移動した（2026-09-30）。
-// 試合前タブ用の /api/coach/play-recommendation と同じ判定を共有するため。
+// diagnoseTilt / analyzeStreak / 時間帯勝率の判定は lib/playRecommendation.ts と
+// lib/soloqTiming.ts にあり、/api/coach/play-recommendation が使う（2026-09-30）。
+// このルートからは tilt モードの削除に伴い参照が無くなった。
 
 // ============================
 // ランクを「絶対LP」(ティア跨ぎで単調増加する数値)に正規化する (課題: シーズン目標トラッカー)
@@ -350,6 +349,18 @@ export async function POST(req: NextRequest) {
     // PUUID取得
     const puuid = await fetchPuuidByRiotId(gameName, tagLine, apiKey);
 
+    // ============================================================
+    // 【2026-09-30】UIから到達不能だった6モードを削除した（計383行）。
+    //   practice_menu / tilt / matchup / post_latest / objective_priority / win_condition
+    // UIが送るのは counter_pick / post / post_lookup / chat の4つだけで、
+    // これら6つはどの画面からもBot/Pythonからも呼ばれていなかった。
+    // tilt が算出していた「次の試合に行くべきか」の判定は、LLMを呼ばない
+    // /api/coach/play-recommendation として作り直したのでそちらが後継。
+    // （tilt内にはGeminiへ「時間帯勝率を数値で示せ」と指示しつつ数値を渡していない
+    //   捏造経路があり同日に修正したが、分岐自体を消したのでリスクごと無くなった）
+    // 残したモード: counter_pick / post / post_lookup / chat（UIが使用中）、
+    //   trends / history / goal（2026-09-30に画面へ配線）
+    // ============================================================
     // ----------------------------
     // MODE: trends - 直近の傾向分析（coach_analysesの蓄積データを集計）
     // ----------------------------
@@ -406,73 +417,6 @@ Vision/min傾向: 直近${visionTrend.recent} ← 以前${visionTrend.older}
       });
     }
 
-    // ----------------------------
-    // MODE: practice_menu - 蓄積データから今週の練習メニューを構造化生成
-    // ----------------------------
-    if (mode === 'practice_menu') {
-      const limit = Math.min(50, Math.max(5, Number(body.limit) || 20));
-      const { data: rows } = await supabase
-        .from('coach_analyses')
-        .select('*')
-        .eq('puuid', puuid)
-        .order('created_at', { ascending: false })
-        .limit(limit);
-
-      const analyses = rows || [];
-      if (analyses.length < 3) {
-        return NextResponse.json({
-          mode: 'practice_menu',
-          enough: false,
-          count: analyses.length,
-          message: '練習メニュー生成には試合後振り返りの蓄積が3件以上必要です。',
-        });
-      }
-
-      const agg = computeTrendAggregates(analyses);
-      const menuPrompt = `あなたはLoLの成長コーチです。あるプレイヤーの直近${analyses.length}試合の集計から、今週取り組むべき練習メニューを作ってください。
-
-${formatMainRoleLine(agg)}
-デス時間帯（回数）: 序盤${agg.deathPhases.序盤} / 中盤${agg.deathPhases.中盤} / 終盤${agg.deathPhases.終盤}
-${formatDeathContextBlock(agg)}
-繰り返し狩られている相手: ${agg.topKillers.map((k) => `${k.champion}(${k.count})`).join(', ') || 'なし'}
-再発している弱点: ${agg.topWeaknesses.map((w) => `${w.label}(${w.count})`).join(', ') || 'なし'}
-CS/min: 直近${agg.csTrend.recent} / 以前${agg.csTrend.older}　Vision/min: 直近${agg.visionTrend.recent} / 以前${agg.visionTrend.older}　勝率: ${agg.winRate}%
-
-上記データの弱点および「主にプレイしているロール」に直結する、具体的で実行可能な練習項目を3〜4個作ってください（実際のロールと矛盾する項目は作らないこと）。必ず以下のJSON形式のみを出力（前置き・コードブロック禁止）。各項目は日本語:
-{
-  "menu": [
-    { "title": "<練習の狙い(20字以内)>", "detail": "<具体的な練習内容・意識点(60字以内)>", "target": "<達成目標(例: 3戦, 10分デス0, CS7.0/min など)>" }
-  ],
-  "note": "<全体の一言アドバイス(50字以内)>"
-}`;
-      const raw = await callGemini(menuPrompt, `menu:${puuid}:${analyses.length}`);
-
-      let parsed: any = null;
-      try {
-        let cleaned = raw.trim();
-        if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
-        const jsonStart = cleaned.indexOf('{');
-        const jsonEnd = cleaned.lastIndexOf('}');
-        if (jsonStart >= 0 && jsonEnd > jsonStart) cleaned = cleaned.slice(jsonStart, jsonEnd + 1);
-        parsed = JSON.parse(cleaned);
-      } catch {
-        // パース失敗時は生テキストを返すが、整形に失敗した旨を明示する。
-        // (2026-09-22: 以前は note を空にしていたため、AIの生出力の断片が
-        //  整形済みの練習メニューであるかのように表示されていた)
-        parsed = {
-          menu: [{ title: '今週の練習（自動整形に失敗）', detail: raw.slice(0, 200), target: '' }],
-          note: '⚠️ AI応答の整形に失敗したため、生の出力を途中まで表示しています。再生成をお試しください。',
-        };
-      }
-
-      return NextResponse.json({
-        mode: 'practice_menu',
-        enough: true,
-        count: analyses.length,
-        menu: Array.isArray(parsed.menu) ? parsed.menu : [],
-        note: parsed.note || '',
-      });
-    }
 
     // ----------------------------
     // MODE: goal - シーズン目標トラッカー（目標ランクまでの到達予測）
@@ -562,219 +506,8 @@ CS/min: 直近${agg.csTrend.recent} / 以前${agg.csTrend.older}　Vision/min: �
       });
     }
 
-    // ----------------------------
-    // MODE: tilt - ティルト診断
-    // ----------------------------
-    if (mode === 'tilt') {
-      // ランクソロのみ（ノーマル/ARAMを混ぜない）
-      const matchIds = await fetchRankedSoloMatchIds(puuid, apiKey, 10);
 
-      const matchDetails = await Promise.all(
-        matchIds.slice(0, 10).map((id) => fetchMatchDetails(id, apiKey).catch(() => null))
-      );
 
-      const myMatches = matchDetails
-        .filter(Boolean)
-        .map((m) => {
-          const me = m!.participants.find((p) => p.puuid === puuid);
-          if (!me) return null;
-          return {
-            win: me.win,
-            kills: me.kills,
-            deaths: me.deaths,
-            assists: me.assists,
-            champion: me.championName,
-          };
-        })
-        .filter(Boolean) as any[];
-
-      const tilt = diagnoseTilt(myMatches);
-
-      // ティルト相関分析（連敗と「連敗後の勝率」の相関から“やめどき”を判定）。
-      // 2026-09-30: この計算は lib/playRecommendation.ts の analyzeStreak へ移動した。
-      // 試合前タブの /api/coach/play-recommendation と同じ判定を共有するため。
-      const streakAnalysis = analyzeStreak(myMatches);
-
-      // 曜日×時間帯の過去勝率＋連敗ストッパーも加味して「次の試合に行くべきか」を判定する
-      const timing = await getTimingContext(supabase, puuid);
-      const playRecommendation = buildPlayRecommendation(tilt, timing, streakAnalysis);
-      const timingLabel = timing.scope === 'hour' ? `${timing.dayLabel}曜${timing.hour}時台` : `${timing.dayLabel}曜全体`;
-
-      // プロンプトへ渡す時間帯勝率のブロック。
-      //
-      // 2026-09-30: これまで出力要求だけが「時間帯勝率が低い場合は具体的に根拠を
-      // 数値で示してください」と指示しており、その数値をプロンプトに一切渡して
-      // いなかった。AIが指示に従おうとすると数値を捏造する経路になっていたため、
-      // 実数値（または「データ不足」の明示）を必ず渡す形に変えた。
-      // 集計元(soloq_match_history)は手動同期でしか更新されないため、古い場合は
-      // 古さも一緒に渡して「今の傾向」と断言させない。
-      const timingFreshness =
-        timing.daysSinceNewest === null
-          ? ''
-          : timing.daysSinceNewest >= 14
-            ? `（注意: この集計の最新試合は${timing.daysSinceNewest}日前で、現在の傾向を反映していない可能性があります）`
-            : `（最新試合は${timing.daysSinceNewest}日前まで反映）`;
-      const timingBlock =
-        timing.winRate === null
-          ? `${timingLabel}の過去勝率: データ不足（該当サンプル${timing.games}試合のみ）`
-          : `${timingLabel}の過去勝率: ${timing.winRate}% (${timing.wins}/${timing.games}勝)${timingFreshness}`;
-
-      const knowledgeCtx = tilt.level !== 'green'
-        ? await searchKnowledge(['メンタル', 'ティルト', '連敗', '休憩'])
-        : '';
-
-      const userText: string = body.text || '';
-      const quickChoice = body.quickChoice as import('../../../../lib/tiltBlameDetector').QuickChoiceOption | undefined;
-
-      const prompt = `あなたはLoLのメンタルコーチおよび言語感情分析アナリストです。
-プレイヤーの直近${myMatches.length}試合のデータ:
-${myMatches.map((m, i) => `${i + 1}. ${m.champion} ${m.win ? '✅勝' : '❌負'} KDA: ${m.kills}/${m.deaths}/${m.assists}`).join('\n')}
-
-ティルト判定: ${tilt.label} (スコア: ${tilt.score})
-理由: ${tilt.reasons.join('、') || 'なし'}
-${timingBlock}
-ユーザーの振り返りテキスト・コメント: ${userText ? `"${userText}"` : '（なし）'}
-
-【出力フォーマット要求】
-1. メンタルアドバイス文 (日本語で150字程度。上に与えられた数値（時間帯勝率・敗北直後の勝率など）が低い場合は、その数値をそのまま引用して根拠にしてください。与えられていない数値は絶対に書かないこと。「データ不足」と書かれている項目については、勝率を推測して述べてはいけません。)
-2. 文章の感情トーン解析結果を以下のJSON形式で末尾に付与してください:
-\`\`\`json
-{
-  "aiBlameScore": 0から100の数値 (味方への愚痴・攻撃的表現・責任転嫁の強さ),
-  "aiCalmScore": 0から100の数値 (自責・客観的理由・前向きな課題意識の強さ),
-  "sentimentAnalysis": "他罰感情優位" | "冷静な事実分析" | "中立"
-}
-\`\`\``;
-
-      const rawResponse = await callGemini(prompt, `tilt:${puuid}:${matchIds[0] || 'none'}:${userText ? userText.slice(0, 30) : 'none'}`);
-
-      let advice = rawResponse;
-      let aiBlameScore = 0;
-      let aiCalmScore = 50;
-      let sentimentAnalysis = '中立';
-
-      try {
-        const jsonMatch = rawResponse.match(/```json\s*([\s\S]*?)\s*```/) || rawResponse.match(/\{[\s\S]*"aiBlameScore"[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[1] || jsonMatch[0]);
-          aiBlameScore = typeof parsed.aiBlameScore === 'number' ? parsed.aiBlameScore : 0;
-          aiCalmScore = typeof parsed.aiCalmScore === 'number' ? parsed.aiCalmScore : 50;
-          sentimentAnalysis = parsed.sentimentAnalysis || '中立';
-          advice = rawResponse.replace(/```json[\s\S]*```/, '').trim();
-        }
-      } catch (e) {
-        console.warn('[coach/analyze tilt] JSON parsing fallback:', e);
-      }
-
-      // 統合スコア計算 (1秒チェック 30% + 戦績 30% + AIトーン 40%)
-      const { calculateIntegratedTiltScore } = await import('../../../../lib/tiltBlameDetector');
-      const integratedResult = calculateIntegratedTiltScore({
-        quickChoice,
-        aiBlameScore,
-        aiCalmScore,
-        lossStreak: streakAnalysis.currentStreak,
-        text: userText,
-      });
-
-      return NextResponse.json({
-        mode: 'tilt',
-        tilt,
-        streakAnalysis,
-        timing,
-        playRecommendation,
-        recentMatches: myMatches,
-        advice,
-        aiBlameScore,
-        aiCalmScore,
-        sentimentAnalysis,
-        integratedResult,
-      });
-    }
-
-    // ----------------------------
-    // MODE: matchup - マッチアップ解析
-    // ----------------------------
-    if (mode === 'matchup') {
-      if (!champion || !enemyChampion) {
-        return NextResponse.json({ error: 'champion と enemyChampion を指定してください。' }, { status: 400 });
-      }
-
-      // ナレッジDB、チャンピオン辞典、過去勝率データ、時間帯別の強さを並行して取得
-      const [knowledgeCtx, sentinelCtx, counterStats, mySpike, enemySpike] = await Promise.all([
-        searchKnowledge([champion, enemyChampion, 'マッチアップ', 'matchup']),
-        searchMatchupSentinel(champion),
-        getPlayerCounterStats(gameName, enemyChampion),
-        fetchPowerSpikeContext(champion),
-        fetchPowerSpikeContext(enemyChampion),
-      ]);
-
-      const spikeBlock = [mySpike, enemySpike].filter(Boolean).join('\n\n');
-
-      const prompt = `あなたはLoL攻略コーチです。
-担当チャンピオン: ${champion}
-対面の敵: ${enemyChampion}
-
-以下の参考データやナレッジを踏まえ、このマッチアップで勝つための具体的なアドバイスを日本語で300字以内で述べてください。
-ポイントは「序盤の動き方」「Lvスパイク」「気をつけるべき敵スキル」「有利な交戦タイミング」の4点を意識してください。
-時間帯別の強さ（パワースパイク）が与えられている場合は、自分と相手の強い/弱い時間帯の差を必ず攻略に反映してください（例: 相手が終盤型なら序盤〜中盤で試合を決める）。
-
-${counterStats ? `=== プレイヤーの対敵勝率実績 ===\n${counterStats}\n` : ''}
-${spikeBlock ? `=== 時間帯別の強さ（パワースパイク）===\n${spikeBlock}\n` : ''}
-=== ナレッジDB (攻略記事) ===
-${knowledgeCtx || '（関連記事なし）'}
-
-=== チャンピオン辞典 ===
-${sentinelCtx || '（辞典データなし）'}`;
-
-      const advice = await callGemini(prompt, `matchup:${champion}:${enemyChampion}`);
-
-      return NextResponse.json({
-        mode: 'matchup',
-        myChampion: champion,
-        enemyChampion,
-        advice,
-        counterStats: counterStats || '過去の対戦データなし',
-        knowledgeSources: knowledgeCtx ? '✅ ナレッジDB参照済み' : '⚠️ 関連記事なし',
-        sentinelSources: sentinelCtx ? '✅ チャンピオン辞典参照済み' : '⚠️ 辞典データなし',
-      });
-    }
-
-    // ----------------------------
-    // MODE: post_latest - 「試合後」タブ用。手動ボタンを廃止し、日次Cronが
-    // 既に自動生成・保存済みの最新の振り返りをそのまま返す（Gemini/Riot API呼び出し無し）。
-    // ----------------------------
-    if (mode === 'post_latest') {
-      const { data: latest } = await supabase
-        .from('coach_analyses')
-        .select('*')
-        .eq('puuid', puuid)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (!latest) {
-        return NextResponse.json({ mode: 'post_latest', found: false });
-      }
-
-      return NextResponse.json({
-        mode: 'post_latest',
-        found: true,
-        result: {
-          win: latest.win,
-          champion: latest.champion,
-          kda: `${latest.kills}/${latest.deaths}/${latest.assists}`,
-          kdaRatio: latest.kda_ratio === null ? 'Perfect' : String(latest.kda_ratio),
-          csPerMin: String(latest.cs_per_min),
-          visionPerMin: String(latest.vision_per_min),
-        },
-        weaknesses: latest.weaknesses || [],
-        advice: latest.advice || '',
-        focus: latest.focus,
-        focusAchieved: latest.focus_achieved,
-        createdAt: latest.created_at,
-        saved: true,
-      });
-    }
 
     // ----------------------------
     // ----------------------------
@@ -848,61 +581,6 @@ ${enemyKnowledge.text || `${enemy} の基本データ`}
       });
     }
 
-    // ----------------------------
-    // MODE: objective_priority - 5分オブジェクト診断（ヴォイドグラブ vs ドラゴン方針）
-    // ----------------------------
-    if (mode === 'objective_priority') {
-      const myChamp = body.champion || '';
-      const enemyChamp = body.enemyChampion || '';
-      const liveRoster = body.liveRoster || null;
-
-      const prompt = `あなたはLoLの専属マクロコーチです。
-2026年メタ（シーズン16・ヴォイドグラブ3体仕様 vs 1stドラゴン）に基づき、5分〜6分の「オブジェクト初動優先度」を診断してください。
-
-条件:
-- 自分のチャンピオン: ${myChamp || '未指定'}
-- 敵対面チャンピオン: ${enemyChamp || '未指定'}
-${liveRoster ? `- ライブロスター情報あり` : ''}
-
-以下の厳密なJSON形式のみで出力してください（マークダウンのコードブロック不要）:
-{
-  "recommendedFocus": "GRUB" | "DRAGON" | "CROSS_MAP",
-  "focusTitle": "上ルート（ヴォイドグラブ3体）最優先" または "下ルート（1stドラゴン＋ボットプレート）優先" または "クロスマップ（敵の逆サイドを強奪）",
-  "confidenceScore": 85,
-  "oneSentenceStrategy": "5分時点で実行すべき最重要マクロ方針を1文で（例: 4分40秒にTOP主導権を作って幼虫3体を即狩り、敵JGがボットに寄るならドラゴンを捨てて上サイドタワーを破壊する）",
-  "laneTasks": {
-    "jg": "JGの初動タスク（リコール秒数と寄り）",
-    "topMid": "TOP/MIDのレーン管理タスク",
-    "bot": "BOT/SUPの視界とプレート削りタスク"
-  },
-  "resetTimingAlert": "4分25秒〜4分35秒にリコールして買い物・ポーション補充を完了させること"
-}`;
-
-      const raw = await callGemini(prompt, `obj_prio_${myChamp}_${enemyChamp}`);
-      let parsed: any;
-      try {
-        let cleaned = raw.trim();
-        if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
-        const jsonStart = cleaned.indexOf('{');
-        const jsonEnd = cleaned.lastIndexOf('}');
-        if (jsonStart >= 0 && jsonEnd > jsonStart) cleaned = cleaned.slice(jsonStart, jsonEnd + 1);
-        parsed = JSON.parse(cleaned);
-      } catch (err) {
-        // ★ 2026-09-22: 以前はここでAIのパース失敗を隠し、汎用の作戦文を
-        // 成功レスポンスとして返していた。しかも confidenceScore: 80 という
-        // 捏造した確信度を含み、UIには「AI診断 確信度80%」と表示されていた。
-        // 同ファイルの counter_pick と同様に、失敗は失敗として返す。
-        console.error('Failed to parse Gemini objective_priority response:', err);
-        return NextResponse.json({
-          error: 'オブジェクト優先度の診断生成に失敗しました。時間をおいて再試行してください。'
-        }, { status: 502 });
-      }
-
-      return NextResponse.json({
-        mode: 'objective_priority',
-        ...parsed
-      });
-    }
 
     // ----------------------------
     // MODE: post_lookup - 「1分ソロQ振り返り」モーダルで、選択した特定の試合について
@@ -1005,75 +683,6 @@ ${matchContext.advice ? `・前回の添削要約: ${matchContext.advice.slice(0
       return NextResponse.json({ mode: 'chat', reply });
     }
 
-    // ----------------------------
-    // MODE: win_condition - ピック・構成の勝ち筋診断
-    // ----------------------------
-    if (mode === 'win_condition') {
-      const allies: { role: string; champion: string }[] = body.allies || [];
-      const enemies: { role: string; champion: string }[] = body.enemies || [];
-
-      const allyChamps = allies.filter((a) => a.champion).map((a) => `${a.role}: ${a.champion}`);
-      const enemyChamps = enemies.filter((e) => e.champion).map((e) => `${e.role}: ${e.champion}`);
-
-      if (allyChamps.length === 0 || enemyChamps.length === 0) {
-        return NextResponse.json({ error: '味方と敵のチャンピオンをそれぞれ1体以上指定してください。' }, { status: 400 });
-      }
-
-      const prompt = `あなたはLoLの専属パーソナルコーチです。ピック画面での構成対比から、チームの勝ち筋（Win Condition）とJGとしてのゲームプランを診断してください。
-
-【味方構成】
-${allyChamps.join('\n')}
-
-【敵構成】
-${enemyChamps.join('\n')}
-
-以下のJSONフォーマットのみを返してください。markdownのコードブロック内に記述すること:
-\`\`\`json
-{
-  "winCondition": "この試合で最も重要な勝ち筋の要約(60字以内)",
-  "teamCompType": {
-    "ally": "集団戦重視 / サイドプッシュ / キャッチ＆暗殺 / レイトスケール / ポーク",
-    "enemy": "集団戦重視 / サイドプッシュ / キャッチ＆暗殺 / レイトスケール / ポーク"
-  },
-  "powerSpikeComparison": {
-    "early": "味方有利 / 互角 / 敵有利",
-    "mid": "味方有利 / 互角 / 敵有利",
-    "late": "味方有利 / 互角 / 敵有利",
-    "criticalWindow": "最も勝負を決めるべき時間帯 (例: 14〜22分)"
-  },
-  "keyPlayerToFeed": "味方の中で最優先で育てるべきレーン・チャンピオンとその理由(80字以内)",
-  "dangerEnemy": "敵の中で最も警戒すべきチャンピオンと対策(80字以内)",
-  "jgGamePlan": [
-    "序盤(Lv1〜6): 初動のルート・介入方針(60字以内)",
-    "中盤(8〜20分): オブジェクト(グラブ/ドラゴン/ヘラルド)のプライオリティ(60字以内)",
-    "終盤(20分〜): 集団戦での立ち回り(エンゲージ/ピール/裏取り等)(60字以内)"
-  ]
-}
-\`\`\``;
-
-      const raw = await callGemini(prompt);
-      let parsed: any = null;
-      try {
-        const jsonMatch = raw.match(/```json\s*([\s\S]*?)\s*```/) || raw.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          parsed = JSON.parse(jsonMatch[1] || jsonMatch[0]);
-        }
-      } catch (e) {
-        console.warn('[win_condition] JSON parse error:', e);
-      }
-
-      // ★ 2026-09-22: 以前はここでAIのパース失敗を隠し、どの構成でも同じ汎用文
-      // (「味方のパワースパイクに合わせて〜」「敵構成: バランス型」等)を
-      // 成功レスポンスとして返していた。実際にはチームを分析できていないため、
-      // 同ファイルの counter_pick と同様に失敗として返す。
-      if (!parsed) {
-        return NextResponse.json({
-          error: '勝ち筋診断の生成に失敗しました。時間をおいて再試行してください。'
-        }, { status: 502 });
-      }
-
-      return NextResponse.json({ mode: 'win_condition', result: parsed });
-    }
 
     // ----------------------------
     // MODE: post - 試合後振り返り（matchId省略時は最新のランクソロ試合が対象）

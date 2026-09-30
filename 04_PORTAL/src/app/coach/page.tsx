@@ -44,6 +44,30 @@ function CoachPageContent() {
     try { localStorage.setItem('coach_enemy_champ', val); } catch {}
   };
 
+  // 通知やブックマークからの ?tab= / ?matchId= を受け取る。
+  //
+  // 2026-09-30: 15分おきのcron(/api/cron/soloq-coach)が新しい試合を検知するたびに
+  // `/coach?tab=matchup-memo&champion=..&enemy=..&role=..&result=..&kda=..&matchId=..`
+  // というリンクの通知を出していたが、このページは champion / enemy しか読んでおらず、
+  // しかも matchup-memo タブ自体が2026-09-17のスリム化で消えていた。
+  // そのため通知を押すと常に「試合前」に着地し、対面メモを書くという本来の目的を
+  // 果たせないまま role/result/kda/matchId が捨てられていた（直近30日で14件）。
+  // メモ編集は現在「試合後」タブの PostGameDeepAnalyticsDashboard にあるので、
+  // 旧 matchup-memo はそこへ読み替える。
+  useEffect(() => {
+    const queryTab = searchParams.get('tab');
+    if (queryTab) {
+      const mapped =
+        queryTab === 'matchup-memo' || queryTab === 'postgame' ? 'postgame' :
+        queryTab === 'live' ? 'live' :
+        queryTab === 'pregame' ? 'pregame' : null;
+      if (mapped) openStepTab(mapped);
+    }
+    const queryMatchId = searchParams.get('matchId');
+    if (queryMatchId) setSelectedDeepMatchId(queryMatchId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   useEffect(() => {
     const queryChamp = searchParams.get('champion');
     const queryEnemy = searchParams.get('enemy');
@@ -129,9 +153,12 @@ function CoachPageContent() {
 
   return (
     <div className="min-h-screen px-4 py-6 font-sans text-foreground bg-background">
+      {/* 2026-09-30: ここにあった Google Fonts の @import と `* { font-family: 'Inter' }` を外した。
+          ①`<style>`内の@importは描画をブロックする書き方で、しかもポータル全体ではこのページ
+          だけがInterを取得していた（他のページは globals.css の --font-sans でシステムフォント）。
+          ②`*`での上書きはデザイントークンを無視してこのページだけ別フォントにしていた。
+          外したことでポータル全体と同じフォントに揃い、余分なフォント取得も無くなる。 */}
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
         @keyframes fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
         .animate-in { animation: fade-in 0.35s ease forwards; }
       `}</style>
@@ -254,6 +281,17 @@ function CoachPageContent() {
             </Collapsible>
           </div>
 
+          {/* 🎯 ランク目標と到達見込み（2026-09-30配線。mode=goal は実装済みだったが
+              どの画面からも呼ばれておらず、soloq_lp_history が2026-08-04で止まっていた）。
+              開くと当日のLPスナップショットも記録されるので、使うほど推移が貯まる。 */}
+          <div className="pt-2">
+            <Collapsible title="🎯 ランク目標と到達見込み" defaultOpen={false}>
+              <div className="pt-3 bg-white border border-stone-200 rounded-2xl p-4 shadow-xs">
+                <RankGoalCard />
+              </div>
+            </Collapsible>
+          </div>
+
           {/* サブカルテ（視界・プレイスタイル詳細）: 折りたたみ */}
           <div className="pt-2">
             <Collapsible title="📊 詳細カルテ ＆ 視界マップ分析を展開" defaultOpen={false}>
@@ -332,10 +370,15 @@ function CoachPageContent() {
 
           {/* 📝 ソロQ振り返りの記録 */}
           <div className="pt-2 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-stone-200 bg-white p-4 shadow-xs">
+            {/* 2026-09-30: 自動振り返り（上の「🤖 自動振り返りの履歴」）を画面に出したので、
+                自動と手動の役割が重なって見える。手動側は「自分の言葉で残す」用途だと
+                分かるように文言を整えた。なお手動記録(soloq_reflections)は18件で
+                最終記録が2026-08-25、一方で自動側は直近30日に14件貯まっている。 */}
             <div className="min-w-0">
-              <div className="text-sm font-black text-stone-900">📝 ソロQの振り返りを記録する</div>
+              <div className="text-sm font-black text-stone-900">📝 自分の言葉で振り返りを残す</div>
               <p className="text-xs text-stone-600 mt-0.5">
-                直近の試合を読み込んで、レーン結果・メンタル・分岐点を残せます。記録は下の履歴に蓄積されます。
+                AIの自動振り返りは上の「🤖 自動振り返りの履歴」に貯まります。こちらは手書き用で、
+                レーン結果・メンタル・分岐点を自分の言葉で残せます（記録は下の履歴に蓄積されます）。
               </p>
             </div>
             <button
@@ -344,6 +387,17 @@ function CoachPageContent() {
             >
               振り返りを書く
             </button>
+          </div>
+
+          {/* 🤖 自動振り返りの履歴 ＆ 傾向分析（2026-09-30配線）。
+              cronが試合ごとに生成して coach_analyses に貯めていた86件が、
+              通知本文（500字で切り詰め）以外から読めない状態だったのを解消する。 */}
+          <div className="pt-2">
+            <Collapsible title="🤖 自動振り返りの履歴 ＆ 傾向分析" defaultOpen={false}>
+              <div className="pt-3 bg-white border border-stone-200 rounded-2xl p-4 shadow-xs">
+                <CoachReviewPanel />
+              </div>
+            </Collapsible>
           </div>
 
           {/* 📂 過去の全ソロQログ履歴（折りたたみ） */}
@@ -396,6 +450,10 @@ const TimingHeatmapCard = dynamic(() => import('./TimingHeatmapCard'), { ssr: fa
 // 「次の試合に行くべきか」は試合前タブの先頭に常時表示するため、折りたたみの中とは違い
 // 開いた時点で取得が走る。LLMを使わない軽量APIなのでコストは小さい。
 const PlayRecommendationCard = dynamic(() => import('./PlayRecommendationCard'), { ssr: false, loading: tabLoading });
+// どちらも折りたたみの中なので、Collapsible の「開くまで子をマウントしない」と
+// 併せて、開かない限り読み込みも取得も走らない。
+const RankGoalCard = dynamic(() => import('./RankGoalCard'), { ssr: false, loading: tabLoading });
+const CoachReviewPanel = dynamic(() => import('./CoachReviewPanel'), { ssr: false, loading: tabLoading });
 // モーダルは「振り返りを書く」を押すまで一切不要なので、開くまで読み込まない
 const SoloQReflectionModal = dynamic(() => import('./SoloQReflectionModal'), { ssr: false });
 
