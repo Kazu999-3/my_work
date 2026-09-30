@@ -63,7 +63,7 @@ function CardFace({
       style={{ transitionDelay: `${delay}ms` }}
     >
       {visible ? (
-        <div className="w-full h-full rounded-xl border-2 border-stone-200 bg-white shadow-md flex flex-col justify-between p-1.5 select-none">
+        <div className="w-full h-full rounded-xl border-2 border-border bg-white shadow-md flex flex-col justify-between p-1.5 select-none">
           {/* 左上 */}
           <div className={`text-xs font-black leading-none ${suit.color}`}>
             <div>{card.rank}</div>
@@ -115,7 +115,7 @@ function CardRow({
         ))}
         {/* 3枚目スロット（まだカードがない場合は空欄） */}
         {cards.length < 3 && visibleCount >= 2 && (
-          <div className="w-14 h-20 md:w-16 md:h-24 rounded-xl border-2 border-dashed border-stone-300 opacity-30" />
+          <div className="w-14 h-20 md:w-16 md:h-24 rounded-xl border-2 border-dashed border-border opacity-30" />
         )}
       </div>
       <div className={`text-2xl font-black tabular-nums ${accent}`}>{score}</div>
@@ -288,7 +288,7 @@ export default function KtmBaccaratGame({
       )}
 
       {/* ── カードテーブル ── */}
-      <div className="rounded-3xl overflow-hidden border-2 border-stone-300 bg-gradient-to-b from-emerald-800 to-emerald-900 shadow-lg">
+      <div className="rounded-3xl overflow-hidden border-2 border-border bg-gradient-to-b from-emerald-800 to-emerald-900 shadow-lg">
         {/* フェルト面 */}
         <div className="p-6 flex items-center justify-around gap-4">
           {/* BANKER側 */}
@@ -372,7 +372,7 @@ export default function KtmBaccaratGame({
             max={userCoins}
             onChange={e => setBetAmount(Math.max(10, Math.floor(Number(e.target.value))))}
             disabled={phase !== 'IDLE'}
-            className="flex-1 px-3 py-2 rounded-xl border-2 border-stone-300 bg-white text-stone-900 font-black text-sm text-right focus:border-amber-500 focus:outline-none disabled:opacity-50"
+            className="flex-1 px-3 py-2 rounded-xl border-2 border-border bg-white text-stone-900 font-black text-sm text-right focus:border-amber-500 focus:outline-none disabled:opacity-50"
           />
           <span className="text-xs text-stone-500 font-bold whitespace-nowrap">🪙</span>
         </div>
@@ -442,7 +442,7 @@ export default function KtmBaccaratGame({
       </div>
 
       {/* ルール説明 */}
-      <div className="p-3 rounded-2xl bg-stone-100 border border-stone-200 text-[10px] text-stone-500 font-medium leading-relaxed">
+      <div className="p-3 rounded-2xl bg-stone-100 border border-border text-[10px] text-stone-500 font-medium leading-relaxed">
         <strong className="text-stone-700">🃏 バカラ基本ルール:</strong> PLAYER・BANKERに各2枚配り、合計の下一桁（9が最高）が大きい方が勝ち。
         0〜5点の場合は3枚目をドロー（本格ルール準拠）。8・9点は「ナチュラル」で即勝負。TIEは引き分け（PLAYER/BANKERはプッシュ＝掛け金返還）。
       </div>

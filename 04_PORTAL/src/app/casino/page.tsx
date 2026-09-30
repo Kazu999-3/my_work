@@ -630,7 +630,7 @@ export default function CasinoPage() {
 
           <Link
             href="/casino/rules"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/70 hover:bg-white border border-stone-300 text-stone-700 hover:text-stone-900 text-xs font-black transition-colors"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/70 hover:bg-white border border-border text-stone-700 hover:text-stone-900 text-xs font-black transition-colors"
           >
             <Info size={13} />
             ルール ＆ 確率一覧を見る
@@ -660,7 +660,7 @@ export default function CasinoPage() {
       <div className="max-w-[1200px] w-full mx-auto px-4 md:px-8 py-8 space-y-6">
 
         {/* カジノ機能タブナビゲーション */}
-        <div className="flex items-center justify-center gap-1.5 p-1.5 rounded-2xl bg-stone-200/80 text-stone-700 max-w-xl mx-auto shadow-sm border border-stone-300 overflow-x-auto scrollbar-none">
+        <div className="flex items-center justify-center gap-1.5 p-1.5 rounded-2xl bg-stone-200/80 text-stone-700 max-w-xl mx-auto shadow-sm border border-border overflow-x-auto scrollbar-none">
           {[
             { id: 'bet', label: '🎯 勝敗予想' },
             { id: 'slot', label: '🎰 KTMスロット' },
@@ -673,7 +673,7 @@ export default function CasinoPage() {
               onClick={() => setActiveTab(tab.id as any)}
               className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap text-center ${
                 activeTab === tab.id
-                  ? 'bg-white text-stone-900 shadow-sm scale-102 border border-stone-200'
+                  ? 'bg-white text-stone-900 shadow-sm scale-102 border border-border'
                   : 'text-stone-600 hover:text-stone-900 hover:bg-white/50'
               }`}
             >
@@ -890,7 +890,7 @@ export default function CasinoPage() {
             {activeMatch ? (
               <div className="space-y-6">
                 {/* 📊 リアルタイム投票比率バー */}
-                <div className="p-4 rounded-2xl bg-white/95 text-stone-900 space-y-2 border border-stone-200 shadow-sm">
+                <div className="p-4 rounded-2xl bg-white/95 text-stone-900 space-y-2 border border-border shadow-sm">
                   <div className="flex items-center justify-between text-xs font-black">
                     <span className="text-amber-600 flex items-center gap-1">
                       <span>🟦 BLUE:</span>
@@ -907,7 +907,7 @@ export default function CasinoPage() {
                     </span>
                   </div>
                   {/* プログレスバー */}
-                  <div className="w-full h-3 bg-stone-200 rounded-full overflow-hidden flex border border-stone-300">
+                  <div className="w-full h-3 bg-stone-200 rounded-full overflow-hidden flex border border-border">
                     <div
                       style={{ width: `${betStats.blueRatio}%` }}
                       className="h-full bg-gradient-to-r from-amber-500 to-amber-600 transition-all duration-500"
@@ -922,7 +922,7 @@ export default function CasinoPage() {
                 {/* ⏱️ 受付カウントダウン・ステータスバナー */}
                 <div className={`p-4 rounded-3xl border-2 flex flex-wrap items-center justify-between gap-3 shadow-xs transition-all ${
                   isBetLocked
-                    ? 'bg-stone-100 border-stone-300 text-stone-700'
+                    ? 'bg-stone-100 border-border text-stone-700'
                     : (timeLeftSeconds !== null && timeLeftSeconds <= 180)
                     ? 'bg-rose-50 border-rose-300 text-rose-950 shadow-[0_0_15px_rgba(244,63,94,0.15)]'
                     : 'bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border-emerald-300 text-emerald-950 shadow-[0_0_15px_rgba(16,185,129,0.12)]'
@@ -983,7 +983,7 @@ export default function CasinoPage() {
                 </div>
 
                 {/* 対戦カード表示 */}
-                <div className="p-5 rounded-3xl bg-white/95 text-stone-900 space-y-4 border border-stone-200 shadow-sm">
+                <div className="p-5 rounded-3xl bg-white/95 text-stone-900 space-y-4 border border-border shadow-sm">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="flex h-2.5 w-2.5 relative">
@@ -1061,7 +1061,7 @@ export default function CasinoPage() {
                         </p>
                       </div>
 
-                      <div className="p-3.5 rounded-2xl bg-white border border-stone-200 flex items-center justify-between text-left text-xs shadow-xs">
+                      <div className="p-3.5 rounded-2xl bg-white border border-border flex items-center justify-between text-left text-xs shadow-xs">
                         <div className="flex items-center gap-2.5">
                           <span className="text-xl">🏆</span>
                           <div>
@@ -1100,7 +1100,7 @@ export default function CasinoPage() {
                                 className={`p-3 md:p-5 rounded-2xl md:rounded-3xl border-2 md:border-3 font-black text-xs md:text-sm transition-all flex flex-col items-center gap-1.5 md:gap-2 cursor-pointer ${
                                   betTeam === 'BLUE'
                                     ? 'border-amber-600 bg-amber-50 text-amber-700 shadow-md scale-102'
-                                    : 'border-stone-200 hover:border-amber-200 text-stone-600'
+                                    : 'border-border hover:border-amber-200 text-stone-600'
                                 }`}
                               >
                                 <span className="text-xl md:text-2xl">🟦</span>
@@ -1116,7 +1116,7 @@ export default function CasinoPage() {
                                 className={`p-3 md:p-5 rounded-2xl md:rounded-3xl border-2 md:border-3 font-black text-xs md:text-sm transition-all flex flex-col items-center gap-1.5 md:gap-2 cursor-pointer ${
                                   betTeam === 'RED'
                                     ? 'border-rose-600 bg-rose-50 text-rose-700 shadow-md scale-102'
-                                    : 'border-stone-200 hover:border-rose-200 text-stone-600'
+                                    : 'border-border hover:border-rose-200 text-stone-600'
                                 }`}
                               >
                                 <span className="text-xl md:text-2xl">🟥</span>
@@ -1151,7 +1151,7 @@ export default function CasinoPage() {
                                   className={`py-2 md:py-2.5 rounded-xl text-[11px] md:text-xs font-black border transition-all cursor-pointer ${
                                     betAmount === amt
                                       ? 'bg-amber-500 text-white border-amber-600 shadow-sm scale-105'
-                                      : 'bg-white hover:bg-amber-100/50 text-stone-700 border-stone-200'
+                                      : 'bg-white hover:bg-amber-100/50 text-stone-700 border-border'
                                   }`}
                                 >
                                   {amt}
@@ -1164,7 +1164,7 @@ export default function CasinoPage() {
                               max={user?.coins ?? 1000}
                               value={betAmount}
                               onChange={(e) => setBetAmount(Number(e.target.value))}
-                              className="w-full bg-white border border-stone-300 rounded-xl px-4 py-2.5 text-sm font-black text-stone-900 focus:outline-none focus:border-amber-500 font-mono"
+                              className="w-full bg-white border border-border rounded-xl px-4 py-2.5 text-sm font-black text-stone-900 focus:outline-none focus:border-amber-500 font-mono"
                             />
                           </div>
 
@@ -1181,7 +1181,7 @@ export default function CasinoPage() {
                     </form>
                   )
                 ) : (
-                  <div className="text-center p-6 bg-stone-50 rounded-2xl border border-stone-200">
+                  <div className="text-center p-6 bg-stone-50 rounded-2xl border border-border">
                     <p className="text-xs text-stone-600 font-bold mb-3">
                       ベットするにはDiscordログインが必要です
                     </p>
@@ -1248,7 +1248,7 @@ export default function CasinoPage() {
                       idx === 0
                         ? 'bg-amber-50/80 border-amber-300 font-bold shadow-xs'
                         : idx === 1
-                        ? 'bg-stone-50 border-stone-300 font-bold'
+                        ? 'bg-stone-50 border-border font-bold'
                         : idx === 2
                         ? 'bg-amber-900/5 border-amber-700/20 font-bold'
                         : 'bg-white border-black/5 hover:bg-stone-50'
@@ -1365,7 +1365,7 @@ export default function CasinoPage() {
               {SHOP_ITEMS.map((item) => (
                 <div
                   key={item.id}
-                  className="p-5 rounded-3xl bg-stone-50 border-2 border-stone-200/80 hover:border-amber-400 transition-all flex flex-col justify-between space-y-4 group shadow-xs"
+                  className="p-5 rounded-3xl bg-stone-50 border-2 border-border/80 hover:border-amber-400 transition-all flex flex-col justify-between space-y-4 group shadow-xs"
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -1382,7 +1382,7 @@ export default function CasinoPage() {
                     </p>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 border-t border-stone-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 border-t border-border">
                     <span className="text-sm font-black text-amber-600 font-mono">
                       🪙 {item.price.toLocaleString()} {item.id === 'lottery_ticket' ? '/ 1口' : ''}
                     </span>
@@ -1426,7 +1426,7 @@ export default function CasinoPage() {
         )}
 
         {/* 🪙 コインの貯め方ガイド（5大ルート一覧） */}
-        <div className="bg-white/95 text-stone-800 rounded-3xl p-6 md:p-8 border border-stone-200 shadow-sm space-y-6">
+        <div className="bg-white/95 text-stone-800 rounded-3xl p-6 md:p-8 border border-border shadow-sm space-y-6">
           <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
             <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 border border-amber-300 flex items-center justify-center text-xl font-bold">
               🪙
@@ -1438,7 +1438,7 @@ export default function CasinoPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-1.5">
+            <div className="p-4 rounded-2xl bg-stone-50 border border-border space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black text-amber-700">① 初回ログイン</span>
                 <span className="text-xs font-mono font-black text-emerald-600">+1,000 pt</span>
@@ -1448,7 +1448,7 @@ export default function CasinoPage() {
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-1.5">
+            <div className="p-4 rounded-2xl bg-stone-50 border border-border space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black text-amber-700">② 試合に参加</span>
                 <span className="text-xs font-mono font-black text-emerald-600">+100 pt</span>
@@ -1458,7 +1458,7 @@ export default function CasinoPage() {
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-1.5">
+            <div className="p-4 rounded-2xl bg-stone-50 border border-border space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black text-amber-700">③ 試合に勝利</span>
                 <span className="text-xs font-mono font-black text-emerald-600">+150 pt (計250)</span>
@@ -1468,7 +1468,7 @@ export default function CasinoPage() {
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-1.5">
+            <div className="p-4 rounded-2xl bg-stone-50 border border-border space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black text-amber-700">④ 募集を主催</span>
                 <span className="text-xs font-mono font-black text-emerald-600">+200 pt</span>
@@ -1478,7 +1478,7 @@ export default function CasinoPage() {
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-1.5 sm:col-span-2 lg:col-span-2">
+            <div className="p-4 rounded-2xl bg-stone-50 border border-border space-y-1.5 sm:col-span-2 lg:col-span-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black text-amber-700">⑤ 勝敗予想が的中</span>
                 <span className="text-xs font-mono font-black text-amber-600">賭け金 × 2倍 配当</span>
@@ -1495,7 +1495,7 @@ export default function CasinoPage() {
       {/* 🪙 チップ送金モーダル */}
       {isTipModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-stone-200 space-y-5">
+          <div className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-border space-y-5">
             <div className="flex items-center justify-between border-b border-stone-100 pb-3">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center font-bold">
@@ -1525,7 +1525,7 @@ export default function CasinoPage() {
                   <select
                     value={tipToPlayer}
                     onChange={(e) => setTipToPlayer(e.target.value)}
-                    className="flex-1 bg-stone-50 border border-stone-300 rounded-xl px-3 py-2 text-xs font-bold text-stone-800 focus:outline-none focus:border-amber-500"
+                    className="flex-1 bg-stone-50 border border-border rounded-xl px-3 py-2 text-xs font-bold text-stone-800 focus:outline-none focus:border-amber-500"
                   >
                     <option value="">-- プレイヤー一覧から選択 --</option>
                     {allPlayersList
@@ -1542,7 +1542,7 @@ export default function CasinoPage() {
                   placeholder="または直接名前を入力..."
                   value={tipToPlayer}
                   onChange={(e) => setTipToPlayer(e.target.value)}
-                  className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800 focus:outline-none focus:border-amber-500"
+                  className="w-full bg-stone-50 border border-border rounded-xl px-3 py-1.5 text-xs text-stone-800 focus:outline-none focus:border-amber-500"
                 />
               </div>
 
@@ -1565,7 +1565,7 @@ export default function CasinoPage() {
                       className={`py-1.5 rounded-xl text-xs font-black border transition cursor-pointer ${
                         tipAmount === amt
                           ? 'bg-amber-600 text-white border-amber-700 shadow-xs'
-                          : 'bg-stone-50 hover:bg-amber-50 text-stone-700 border-stone-200'
+                          : 'bg-stone-50 hover:bg-amber-50 text-stone-700 border-border'
                       }`}
                     >
                       {amt}
@@ -1578,7 +1578,7 @@ export default function CasinoPage() {
                   max={user?.coins ?? 1000}
                   value={tipAmount}
                   onChange={(e) => setTipAmount(Number(e.target.value))}
-                  className="w-full bg-white border border-stone-300 rounded-xl px-3 py-2 text-sm font-black text-stone-900 focus:outline-none focus:border-amber-500 font-mono"
+                  className="w-full bg-white border border-border rounded-xl px-3 py-2 text-sm font-black text-stone-900 focus:outline-none focus:border-amber-500 font-mono"
                 />
               </div>
 
@@ -1594,7 +1594,7 @@ export default function CasinoPage() {
                   placeholder="ナイスキャリーでした！ / いつもカスタムありがとう！"
                   value={tipMessage}
                   onChange={(e) => setTipMessage(e.target.value)}
-                  className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-amber-500"
+                  className="w-full bg-stone-50 border border-border rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-amber-500"
                 />
               </div>
 

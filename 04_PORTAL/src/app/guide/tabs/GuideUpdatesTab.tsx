@@ -65,7 +65,7 @@ export default function GuideUpdatesTab() {
         {CHANGELOG.map((entry, index) => (
           <div
             key={entry.date + entry.title}
-            className="bg-white border border-stone-200 rounded-3xl p-6 relative overflow-hidden shadow-xs hover:border-amber-400 transition group"
+            className="bg-white border border-border rounded-3xl p-6 relative overflow-hidden shadow-xs hover:border-amber-400 transition group"
           >
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-4 pb-3 border-b border-stone-100">
               <div className="space-y-1">
@@ -95,7 +95,7 @@ export default function GuideUpdatesTab() {
               <button
                 type="button"
                 onClick={() => handleCopyDiscord(entry)}
-                className="px-3.5 py-2 rounded-xl bg-stone-50 hover:bg-[#5865F2]/10 border border-stone-200 hover:border-[#5865F2]/40 text-stone-700 hover:text-[#5865F2] font-black text-xs transition flex items-center gap-1.5 shrink-0 cursor-pointer shadow-2xs"
+                className="px-3.5 py-2 rounded-xl bg-stone-50 hover:bg-[#5865F2]/10 border border-border hover:border-[#5865F2]/40 text-stone-700 hover:text-[#5865F2] font-black text-xs transition flex items-center gap-1.5 shrink-0 cursor-pointer shadow-2xs"
                 title="Discord告知用テキストをコピー"
               >
                 {copiedDate === entry.date ? (

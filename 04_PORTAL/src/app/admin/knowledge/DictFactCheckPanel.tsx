@@ -112,7 +112,7 @@ export default function DictFactCheckPanel() {
   };
 
   return (
-    <div className="bg-white border border-stone-200 rounded-3xl p-6 space-y-5">
+    <div className="bg-white border border-border rounded-3xl p-6 space-y-5">
       <h2 className="text-base font-bold text-stone-900 flex items-center gap-2">
         <ShieldCheck size={18} className="text-teal-600" /> 辞典・ナレッジの一斉ファクトチェック
       </h2>

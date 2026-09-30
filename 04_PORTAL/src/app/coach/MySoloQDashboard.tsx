@@ -177,11 +177,11 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
 
       {/* スタッツハイライト */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white border border-stone-200 rounded-xl p-3.5 text-center shadow-sm">
+        <div className="bg-white border border-border rounded-xl p-3.5 text-center shadow-sm">
           <span className="text-[11px] text-stone-500 font-medium block">総振り返り数</span>
           <span className="text-xl font-extrabold text-stone-900">{totalMatches} <span className="text-xs font-normal text-stone-500">試合</span></span>
         </div>
-        <div className="bg-white border border-stone-200 rounded-xl p-3.5 text-center shadow-sm">
+        <div className="bg-white border border-border rounded-xl p-3.5 text-center shadow-sm">
           <span className="text-[11px] text-stone-500 font-medium block">
             {realRecord ? `直近${realRecord.totalMatches}戦の勝率` : realRecordError ? '振り返り試合の勝率' : '取得中...'}
           </span>
@@ -195,7 +195,7 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
             <span className="text-xl font-extrabold text-stone-300">-</span>
           )}
         </div>
-        <div className="bg-white border border-stone-200 rounded-xl p-3.5 text-center shadow-sm">
+        <div className="bg-white border border-border rounded-xl p-3.5 text-center shadow-sm">
           <span className="text-[11px] text-stone-500 font-medium block">平均集中・メンタル度</span>
           <span className="text-xl font-extrabold text-amber-800">{avgMental} <span className="text-xs font-normal text-stone-500">/ 5</span></span>
         </div>
@@ -211,7 +211,7 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
           placeholder="チャンプ名、メモキーワード検索..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="px-3 py-1.5 border border-stone-300 rounded-lg text-xs bg-white text-stone-900 w-64 focus:outline-none focus:ring-2 focus:ring-amber-500"
+          className="px-3 py-1.5 border border-border rounded-lg text-xs bg-white text-stone-900 w-64 focus:outline-none focus:ring-2 focus:ring-amber-500"
         />
       </div>
 
@@ -246,7 +246,7 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
             </div>
 
             {/* 直近10試合のメンタルスコア×勝敗の視覚的トレンドミニグラフ */}
-            <div className="mt-3 bg-white p-3 rounded-xl border border-stone-200 shadow-sm">
+            <div className="mt-3 bg-white p-3 rounded-xl border border-border shadow-sm">
               <span className="text-[10px] font-bold text-stone-500 block mb-2 uppercase">📈 直近10試合のメンタル ⇄ 勝敗トレンド</span>
               <div className="flex items-end justify-between gap-1.5 h-16 pt-2 px-1">
                 {reflections.slice(0, 10).reverse().map((r, idx) => {
@@ -297,7 +297,7 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
         if (winTags.length === 0 && loseTags.length === 0) return null;
 
         return (
-          <div className="bg-white border border-stone-200 rounded-2xl p-4 mb-4 shadow-sm">
+          <div className="bg-white border border-border rounded-2xl p-4 mb-4 shadow-sm">
             <div className="text-xs font-black text-stone-800 mb-2 flex items-center justify-between">
               <span>🏷️ 勝因・敗因タグの傾向</span>
               <span className="text-[10px] text-stone-500 font-normal">過去{reflections.length}戦のデータ</span>
@@ -341,7 +341,7 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
       {!loading && filtered.length > 0 && (
         <div className="space-y-3">
           {filtered.map((ref) => (
-            <div key={ref.id} className="bg-white border border-stone-200 rounded-xl p-4 shadow-sm space-y-2">
+            <div key={ref.id} className="bg-white border border-border rounded-xl p-4 shadow-sm space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-100 pb-2">
                 <div className="flex items-center gap-2">
                   <span className={`px-2 py-0.5 font-bold text-[10px] rounded text-white ${ref.win ? 'bg-emerald-600' : 'bg-rose-600'}`}>

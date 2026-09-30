@@ -111,7 +111,7 @@ export default function DiscordImportPanel() {
   };
 
   return (
-    <div className="bg-white border border-stone-200 rounded-3xl p-6 space-y-6 shadow-sm">
+    <div className="bg-white border border-border rounded-3xl p-6 space-y-6 shadow-sm">
       <div className="flex items-center justify-between border-b border-stone-100 pb-4 flex-wrap gap-2">
         <div className="flex items-center gap-2.5">
           <div className="p-2 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700">
@@ -148,7 +148,7 @@ export default function DiscordImportPanel() {
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           placeholder="例: [15:30] UserA: アーリは対アサシンだと6前にW上げでハラスして押し切るのが強い。コアビルドはルーデン..."
-          className="w-full h-36 p-4 rounded-2xl border border-stone-200 bg-stone-50/50 text-xs font-mono text-stone-800 focus:bg-white focus:outline-none focus:border-amber-500 transition-all resize-y"
+          className="w-full h-36 p-4 rounded-2xl border border-border bg-stone-50/50 text-xs font-mono text-stone-800 focus:bg-white focus:outline-none focus:border-amber-500 transition-all resize-y"
         />
 
         <div className="flex justify-end">
@@ -165,7 +165,7 @@ export default function DiscordImportPanel() {
 
       {/* 解析結果プレビュー */}
       {extractedItems.length > 0 && (
-        <div className="space-y-4 pt-4 border-t border-stone-200">
+        <div className="space-y-4 pt-4 border-t border-border">
           <div className="flex items-center justify-between">
             <span className="text-xs font-extrabold text-stone-900 flex items-center gap-2">
               <ShieldCheck size={16} className="text-emerald-600" />
@@ -186,7 +186,7 @@ export default function DiscordImportPanel() {
               <div
                 key={idx}
                 className={`p-4 rounded-2xl border transition-all ${
-                  item.selected ? 'bg-white border-amber-300 shadow-sm' : 'bg-stone-50 border-stone-200 opacity-60'
+                  item.selected ? 'bg-white border-amber-300 shadow-sm' : 'bg-stone-50 border-border opacity-60'
                 }`}
               >
                 <div className="flex items-start justify-between gap-3 mb-2">
@@ -195,12 +195,12 @@ export default function DiscordImportPanel() {
                       type="checkbox"
                       checked={!!item.selected}
                       onChange={(e) => updateItem(idx, 'selected', e.target.checked)}
-                      className="w-4 h-4 rounded border-stone-300 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                      className="w-4 h-4 rounded border-border text-amber-600 focus:ring-amber-500 cursor-pointer"
                     />
                     <img
                       src={getChampIcon(item.champion)}
                       alt={item.champion}
-                      className="w-9 h-9 rounded-xl border border-stone-200 object-cover"
+                      className="w-9 h-9 rounded-xl border border-border object-cover"
                       onError={(e) => { (e.target as any).src = '/favicon.ico'; }}
                     />
                     <div>
@@ -211,7 +211,7 @@ export default function DiscordImportPanel() {
                             vs {item.enemy_champion}
                           </span>
                         )}
-                        <span className="text-[10px] bg-stone-100 text-stone-700 font-bold px-2 py-0.5 rounded-full border border-stone-200">
+                        <span className="text-[10px] bg-stone-100 text-stone-700 font-bold px-2 py-0.5 rounded-full border border-border">
                           {CATEGORY_LABELS[item.category] || item.category}
                         </span>
                       </div>

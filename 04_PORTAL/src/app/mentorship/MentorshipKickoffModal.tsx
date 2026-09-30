@@ -39,7 +39,7 @@ export function MentorshipKickoffModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-4 bg-stone-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white border border-stone-200 rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden text-stone-900 animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
+      <div className="bg-white border border-border rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden text-stone-900 animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
         {/* ヘッダー */}
         <div className="p-5 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-emerald-500/15 border-b border-emerald-200 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
@@ -76,7 +76,7 @@ export function MentorshipKickoffModal({
             {KICKOFF_STEPS.map((s, idx) => (
               <div
                 key={s.step}
-                className="p-4 rounded-2xl border border-stone-200 bg-stone-50/60 space-y-2 hover:border-emerald-300 transition"
+                className="p-4 rounded-2xl border border-border bg-stone-50/60 space-y-2 hover:border-emerald-300 transition"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -99,7 +99,7 @@ export function MentorshipKickoffModal({
                     <button
                       type="button"
                       onClick={() => copyToClipboard(templateGreeting, 1)}
-                      className="px-3.5 py-1.5 rounded-xl bg-white border border-stone-300 hover:border-emerald-400 text-stone-800 text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                      className="px-3.5 py-1.5 rounded-xl bg-white border border-border hover:border-emerald-400 text-stone-800 text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
                     >
                       {copiedIndex === 1 ? (
                         <>
@@ -120,12 +120,12 @@ export function MentorshipKickoffModal({
           </div>
 
           {/* 挨拶テンプレートのプレビュー */}
-          <div className="p-3.5 bg-stone-100 rounded-2xl border border-stone-200 space-y-1.5">
+          <div className="p-3.5 bg-stone-100 rounded-2xl border border-border space-y-1.5">
             <div className="text-[11px] font-black text-stone-700 flex items-center gap-1">
               <MessageSquare size={12} className="text-stone-500" />
               <span>挨拶テンプレート内容:</span>
             </div>
-            <pre className="text-[11px] text-stone-800 font-mono whitespace-pre-wrap leading-relaxed bg-white p-2.5 rounded-xl border border-stone-200">
+            <pre className="text-[11px] text-stone-800 font-mono whitespace-pre-wrap leading-relaxed bg-white p-2.5 rounded-xl border border-border">
               {templateGreeting}
             </pre>
           </div>

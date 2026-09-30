@@ -353,9 +353,9 @@ export default function LibraryMergePreviewModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-[#fcfbf9] dark:bg-[#2b2d31] border border-stone-200 rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-5">
+      <div className="bg-[#fcfbf9] dark:bg-[#2b2d31] border border-border rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-5">
         {/* ヘッダー */}
-        <div className="flex items-start sm:items-center justify-between border-b border-stone-200 pb-4 gap-4 flex-col sm:flex-row">
+        <div className="flex items-start sm:items-center justify-between border-b border-border pb-4 gap-4 flex-col sm:flex-row">
           <div>
             <div className="flex items-center gap-2.5 flex-wrap">
               <h3 className="text-xl font-black text-stone-900 flex items-center gap-2">
@@ -383,7 +383,7 @@ export default function LibraryMergePreviewModal({
         </div>
 
         {/* 📄 元記事の即座確認アコーディオン */}
-        <div className="bg-stone-100/80 border border-stone-200 rounded-2xl overflow-hidden transition-all">
+        <div className="bg-stone-100/80 border border-border rounded-2xl overflow-hidden transition-all">
           <div
             onClick={() => setShowSourceArticle(v => !v)}
             className="p-3.5 flex items-center justify-between cursor-pointer hover:bg-stone-200/50 transition-colors"
@@ -416,7 +416,7 @@ export default function LibraryMergePreviewModal({
           </div>
 
           {showSourceArticle && (
-            <div className="p-4 border-t border-stone-200 bg-white max-h-[300px] overflow-y-auto text-xs leading-relaxed text-stone-700 prose prose-stone max-w-none">
+            <div className="p-4 border-t border-border bg-white max-h-[300px] overflow-y-auto text-xs leading-relaxed text-stone-700 prose prose-stone max-w-none">
               {articleContent ? (
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{articleContent}</ReactMarkdown>
               ) : (
@@ -505,7 +505,7 @@ export default function LibraryMergePreviewModal({
                       className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 border ${
                         laneChoice === l.key
                           ? 'bg-amber-600 border-amber-600 text-white shadow-xs'
-                          : 'bg-stone-50 border-stone-200 text-stone-700 hover:bg-amber-50 hover:border-amber-300'
+                          : 'bg-stone-50 border-border text-stone-700 hover:bg-amber-50 hover:border-amber-300'
                       }`}
                     >
                       <span>{l.label}</span>
@@ -566,7 +566,7 @@ export default function LibraryMergePreviewModal({
             </div>
 
             {trendAnalyses.map((analysis) => (
-              <div key={analysis.champion} className="bg-white border border-stone-200 rounded-2xl p-4 shadow-sm space-y-3">
+              <div key={analysis.champion} className="bg-white border border-border rounded-2xl p-4 shadow-sm space-y-3">
                 <div className="flex items-center justify-between border-b border-stone-100 pb-2">
                   <div className="flex items-center justify-between w-full flex-wrap gap-2">
                     <div className="flex items-center gap-2.5">
@@ -634,7 +634,7 @@ export default function LibraryMergePreviewModal({
                                   ? 'bg-amber-600 border-amber-600 text-white shadow-xs'
                                   : isRecommended
                                     ? 'bg-white border-amber-300 text-amber-900 hover:bg-amber-100'
-                                    : 'bg-stone-100/80 border-stone-200 text-stone-500 hover:bg-stone-200/80 hover:text-stone-800'
+                                    : 'bg-stone-100/80 border-border text-stone-500 hover:bg-stone-200/80 hover:text-stone-800'
                               }`}
                               title={isRecommended ? '推奨レーン' : 'このレーンとして統合'}
                             >
@@ -677,7 +677,7 @@ export default function LibraryMergePreviewModal({
                       return (
                         <div
                           key={field.fieldKey}
-                          className="border border-stone-200 rounded-xl bg-stone-50/50 overflow-hidden"
+                          className="border border-border rounded-xl bg-stone-50/50 overflow-hidden"
                         >
                           <button
                             type="button"
@@ -704,11 +704,11 @@ export default function LibraryMergePreviewModal({
                           </button>
 
                           {isExpanded && (
-                            <div className="p-3 pt-0 border-t border-stone-200 bg-white space-y-2 text-xs">
+                            <div className="p-3 pt-0 border-t border-border bg-white space-y-2 text-xs">
                               {!field.isNew && field.existingValue && (
                                 <div>
                                   <p className="text-[10px] font-bold text-stone-400 mb-0.5">現在の内容:</p>
-                                  <div className="bg-stone-50 border border-stone-200 rounded-lg p-2 text-stone-600 text-[11px] whitespace-pre-wrap max-h-24 overflow-y-auto">
+                                  <div className="bg-stone-50 border border-border rounded-lg p-2 text-stone-600 text-[11px] whitespace-pre-wrap max-h-24 overflow-y-auto">
                                     {field.existingValue}
                                   </div>
                                 </div>
@@ -732,14 +732,14 @@ export default function LibraryMergePreviewModal({
           /* フォールバック用プレビュー */
           <div className="space-y-3">
             {previews.map((p, idx) => (
-              <div key={idx} className="border border-stone-200 rounded-2xl p-4 bg-white">
+              <div key={idx} className="border border-border rounded-2xl p-4 bg-white">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800">
                     🏆 {p.champion}
                   </span>
                   <span className="text-xs text-stone-500">項目: {p.fieldName}</span>
                 </div>
-                <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 text-xs text-stone-700 whitespace-pre-wrap">
+                <div className="bg-stone-50 border border-border rounded-xl p-3 text-xs text-stone-700 whitespace-pre-wrap">
                   {p.mergedExcerpt}
                 </div>
               </div>
@@ -774,7 +774,7 @@ export default function LibraryMergePreviewModal({
                     className={`border rounded-2xl p-3.5 transition ${
                       isSelected
                         ? 'border-rose-300 bg-rose-50/40 shadow-sm'
-                        : 'border-stone-200 bg-stone-50/40 opacity-60'
+                        : 'border-border bg-stone-50/40 opacity-60'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
@@ -794,7 +794,7 @@ export default function LibraryMergePreviewModal({
                           <img
                             src={getChampIcon(m.enemyChampion)}
                             alt={m.enemyChampion}
-                            className="w-5 h-5 rounded-md border border-stone-200"
+                            className="w-5 h-5 rounded-md border border-border"
                           />
                         )}
                       </div>
@@ -814,7 +814,7 @@ export default function LibraryMergePreviewModal({
         {/* 3. レーン一般論 ＆ チャンピオン固有への振り分け */}
         {laneInsightItems.length > 0 && (
           <div className="space-y-3 pt-2">
-            <div className="flex items-center justify-between border-t border-stone-200 pt-4 flex-wrap gap-2">
+            <div className="flex items-center justify-between border-t border-border pt-4 flex-wrap gap-2">
               <div>
                 <div className="flex items-center gap-2">
                   <Map size={16} className="text-teal-600" />
@@ -864,7 +864,7 @@ export default function LibraryMergePreviewModal({
                     key={idx}
                     className={`border rounded-2xl p-3.5 transition ${
                       !item.included
-                        ? 'border-stone-200 bg-stone-50/50 opacity-40'
+                        ? 'border-border bg-stone-50/50 opacity-40'
                         : isLaneGeneral
                         ? 'border-teal-200 bg-teal-50/30'
                         : 'border-amber-300 bg-amber-50/40 shadow-sm'
@@ -876,7 +876,7 @@ export default function LibraryMergePreviewModal({
                           type="checkbox"
                           checked={item.included}
                           onChange={() => toggleLaneInsightIncluded(idx)}
-                          className="mt-0.5 rounded border-stone-300 text-teal-600 focus:ring-teal-400"
+                          className="mt-0.5 rounded border-border text-teal-600 focus:ring-teal-400"
                         />
                         <div className="min-w-0">
                           <span className="text-xs font-bold text-stone-900 block leading-tight">
@@ -926,7 +926,7 @@ export default function LibraryMergePreviewModal({
 
                     <div
                       className={`rounded-xl p-2.5 text-xs leading-relaxed whitespace-pre-wrap ${
-                        item.included ? 'bg-white text-stone-700 border border-stone-200/80' : 'text-stone-400'
+                        item.included ? 'bg-white text-stone-700 border border-border/80' : 'text-stone-400'
                       }`}
                     >
                       {item.summary}
@@ -945,7 +945,7 @@ export default function LibraryMergePreviewModal({
         )}
 
         {/* フッターアクション */}
-        <div className="flex items-center justify-between gap-2.5 pt-4 border-t border-stone-200 flex-wrap">
+        <div className="flex items-center justify-between gap-2.5 pt-4 border-t border-border flex-wrap">
           <div className="text-xs text-stone-500">
             {currentChampions.length === 0 ? (
               sendToLaneChecked ? (

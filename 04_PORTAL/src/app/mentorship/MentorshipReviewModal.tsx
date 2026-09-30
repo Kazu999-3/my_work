@@ -100,10 +100,10 @@ export function MentorshipReviewModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-4 bg-stone-900/50 backdrop-blur-xs">
-      <div className="bg-white border border-stone-300 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden text-stone-900 animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-white border border-border rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden text-stone-900 animate-in fade-in zoom-in-95 duration-200">
         
         {/* ヘッダー */}
-        <div className="p-4 md:px-6 md:py-4 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border-b border-stone-200 flex items-center justify-between">
+        <div className="p-4 md:px-6 md:py-4 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-2xl bg-amber-500 text-stone-950 flex items-center justify-center text-xl shadow-xs font-black">
               ⭐
@@ -130,7 +130,7 @@ export function MentorshipReviewModal({
         <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-5 text-sm">
           
           {/* 相手情報バナー */}
-          <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200 flex items-center justify-between">
+          <div className="p-3 bg-stone-50 rounded-2xl border border-border flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-lg">{isMyMentor ? '🌱' : '👑'}</span>
               <div>
@@ -197,7 +197,7 @@ export function MentorshipReviewModal({
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer flex items-center gap-1 ${
                       isSelected
                         ? 'bg-amber-500 text-stone-950 border-amber-500 shadow-2xs'
-                        : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
+                        : 'bg-stone-50 text-stone-700 border-border hover:bg-stone-100'
                     }`}
                   >
                     {isSelected && <Check size={12} />}
@@ -218,7 +218,7 @@ export function MentorshipReviewModal({
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="一緒にプレイした感想や感謝の言葉をご記入ください（個人を特定できない形式で集約されます）..."
-              className="w-full bg-stone-50 border border-stone-300 rounded-2xl p-3 text-stone-900 text-xs focus:border-amber-500 focus:bg-white focus:outline-hidden leading-relaxed font-medium"
+              className="w-full bg-stone-50 border border-border rounded-2xl p-3 text-stone-900 text-xs focus:border-amber-500 focus:bg-white focus:outline-hidden leading-relaxed font-medium"
             />
           </div>
 

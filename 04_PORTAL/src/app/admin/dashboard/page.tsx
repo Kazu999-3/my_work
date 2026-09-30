@@ -7,7 +7,7 @@ import { Activity, Zap, ShieldAlert, RefreshCw, ChevronRight, AlertTriangle, Tro
 import Link from 'next/link';
 
 function summarizeError(errorStr?: string): { label: string; bg: string } {
-  if (!errorStr) return { label: 'エラー発生', bg: 'bg-stone-100 text-stone-700 border-stone-200' };
+  if (!errorStr) return { label: 'エラー発生', bg: 'bg-stone-100 text-stone-700 border-border' };
   const s = errorStr.toLowerCase();
   if (s.includes('429') || s.includes('quota') || s.includes('resource_exhausted')) {
     return { label: 'Gemini API 一時混雑 (429)', bg: 'bg-amber-100 text-amber-900 border-amber-300' };
@@ -202,7 +202,7 @@ export default function AdminDashboardPage() {
   if (isAuthenticated === false) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-[#f7f5f0] dark:bg-[#1e1f22] text-stone-900 font-sans">
-        <div className="text-center max-w-sm rounded-3xl border border-stone-200/80 bg-white/90 backdrop-blur-md p-8 shadow-xl">
+        <div className="text-center max-w-sm rounded-3xl border border-border/80 bg-white/90 backdrop-blur-md p-8 shadow-xl">
           <div className="text-4xl mb-3">🔑</div>
           <h2 className="text-lg font-black mb-2">管理者認証が必要です</h2>
           <p className="text-xs text-stone-500 mb-6 leading-relaxed">
@@ -248,7 +248,7 @@ export default function AdminDashboardPage() {
       <div className="max-w-7xl mx-auto p-4 md:p-8 flex flex-col gap-6 relative z-10">
 
         {/* 🌟 1. ヘッダー ＆ クイックナビゲーション */}
-        <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-4 border-b border-stone-200/80">
+        <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-4 border-b border-border/80">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <div className="p-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-800 shadow-2xs">
@@ -270,7 +270,7 @@ export default function AdminDashboardPage() {
             <button
               onClick={() => fetchData(false)}
               disabled={isRefreshing}
-              className="px-3.5 py-2 rounded-xl bg-white/80 backdrop-blur-md border border-stone-200 hover:bg-white hover:border-stone-300 text-xs font-bold text-stone-700 transition shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className="px-3.5 py-2 rounded-xl bg-white/80 backdrop-blur-md border border-border hover:bg-white hover:border-border text-xs font-bold text-stone-700 transition shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               title="データを即時更新"
             >
               <RefreshCw size={13} className={isRefreshing ? 'animate-spin text-amber-600' : 'text-stone-500'} />
@@ -291,7 +291,7 @@ export default function AdminDashboardPage() {
                 navigator.clipboard.writeText("d:/my_work/.venv/Scripts/python.exe d:/my_work/03_SYSTEMS/v2_CORE/edge_worker_daemon.py");
                 toast.success("📋 起動コマンドをクリップボードにコピーしました！\nPowerShell等で実行してください。");
               }}
-              className="px-3 py-2 rounded-xl bg-white/80 backdrop-blur-md border border-stone-200 hover:bg-white hover:border-stone-300 text-xs font-bold text-stone-700 transition shadow-xs flex items-center gap-1 cursor-pointer"
+              className="px-3 py-2 rounded-xl bg-white/80 backdrop-blur-md border border-border hover:bg-white hover:border-border text-xs font-bold text-stone-700 transition shadow-xs flex items-center gap-1 cursor-pointer"
               title="Python起動コマンドをコピー"
             >
               <span>📋 コマンドコピー</span>
@@ -369,7 +369,7 @@ export default function AdminDashboardPage() {
               </Link>
               <Link
                 href="/admin/knowledge"
-                className="text-xs font-bold px-3 py-1.5 rounded-xl bg-white hover:bg-stone-50 border border-stone-200 text-stone-700 shadow-2xs transition"
+                className="text-xs font-bold px-3 py-1.5 rounded-xl bg-white hover:bg-stone-50 border border-border text-stone-700 shadow-2xs transition"
               >
                 📥 戦術取り込みを開く
               </Link>
@@ -409,7 +409,7 @@ export default function AdminDashboardPage() {
                   navigator.clipboard.writeText("d:/my_work/.venv/Scripts/python.exe d:/my_work/03_SYSTEMS/v2_CORE/edge_worker_daemon.py");
                   toast.success("📋 起動コマンドをクリップボードにコピーしました！\nPowerShell等で実行してください。");
                 }}
-                className="px-3 py-1.5 rounded-xl bg-white/90 border border-stone-300 hover:bg-white text-stone-700 text-xs font-bold transition shadow-xs"
+                className="px-3 py-1.5 rounded-xl bg-white/90 border border-border hover:bg-white text-stone-700 text-xs font-bold transition shadow-xs"
               >
                 コマンドコピー
               </button>
@@ -513,7 +513,7 @@ export default function AdminDashboardPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
             {/* 登録プレイヤー */}
-            <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-md border border-stone-200/80 shadow-xs flex flex-col justify-between hover:border-stone-300 transition">
+            <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-md border border-border/80 shadow-xs flex flex-col justify-between hover:border-border transition">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-stone-500 flex items-center gap-1.5">
                   <Users size={14} className="text-amber-600" />
@@ -532,7 +532,7 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* 大会試合数 */}
-            <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-md border border-stone-200/80 shadow-xs flex flex-col justify-between hover:border-stone-300 transition">
+            <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-md border border-border/80 shadow-xs flex flex-col justify-between hover:border-border transition">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-stone-500 flex items-center gap-1.5">
                   <Trophy size={14} className="text-amber-600" />
@@ -558,7 +558,7 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* 総流通コイン */}
-            <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-md border border-stone-200/80 shadow-xs flex flex-col justify-between hover:border-stone-300 transition">
+            <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-md border border-border/80 shadow-xs flex flex-col justify-between hover:border-border transition">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-stone-500 flex items-center gap-1.5">
                   <Coins size={14} className="text-amber-500" />
@@ -577,7 +577,7 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* 受付中ベット */}
-            <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-md border border-stone-200/80 shadow-xs flex flex-col justify-between hover:border-stone-300 transition">
+            <div className="p-4 rounded-2xl bg-white/80 backdrop-blur-md border border-border/80 shadow-xs flex flex-col justify-between hover:border-border transition">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-stone-500 flex items-center gap-1.5">
                   <Flame size={14} className="text-rose-500" />
@@ -647,7 +647,7 @@ export default function AdminDashboardPage() {
                   indicatorColor = 'bg-emerald-500';
                 } else {
                   statusText = '待機中 (必要時起動)';
-                  statusColor = 'text-stone-600 bg-stone-100 border-stone-200';
+                  statusColor = 'text-stone-600 bg-stone-100 border-border';
                   indicatorColor = 'bg-stone-400';
                 }
               } else if (service.kind === 'local') {
@@ -657,13 +657,13 @@ export default function AdminDashboardPage() {
                   indicatorColor = 'bg-emerald-500 animate-pulse';
                 } else {
                   statusText = '待機中';
-                  statusColor = 'text-stone-600 bg-stone-100 border-stone-200';
+                  statusColor = 'text-stone-600 bg-stone-100 border-border';
                   indicatorColor = 'bg-stone-400';
                 }
               }
 
               return (
-                <div key={service.id} className="p-4 rounded-2xl bg-white/80 backdrop-blur-md border border-stone-200/80 shadow-xs flex flex-col justify-between hover:border-stone-300 transition">
+                <div key={service.id} className="p-4 rounded-2xl bg-white/80 backdrop-blur-md border border-border/80 shadow-xs flex flex-col justify-between hover:border-border transition">
                   <div>
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-xs font-black text-stone-900">{service.name}</span>
@@ -685,7 +685,7 @@ export default function AdminDashboardPage() {
                             navigator.clipboard.writeText("d:/my_work/.venv/Scripts/python.exe d:/my_work/03_SYSTEMS/v2_CORE/edge_worker_daemon.py");
                             toast.success("📋 起動コマンドをクリップボードにコピーしました！\nPowerShell等で実行してください。");
                           }}
-                          className="px-2 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 text-[10px] font-bold border border-stone-200 transition cursor-pointer"
+                          className="px-2 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 text-[10px] font-bold border border-border transition cursor-pointer"
                           title="Python起動コマンドをコピー"
                         >
                           📋 コピー

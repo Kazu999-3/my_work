@@ -60,7 +60,7 @@ export function MentorshipRequestModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white border border-stone-200 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden text-stone-900 animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
+      <div className="bg-white border border-border rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden text-stone-900 animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
         {/* ヘッダー */}
         <div className={`p-5 flex items-center justify-between border-b shrink-0 ${
           isTargetMentor ? 'bg-amber-50/70 border-amber-200' : 'bg-emerald-50/70 border-emerald-200'
@@ -90,7 +90,7 @@ export function MentorshipRequestModal({
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4 overflow-y-auto">
           {/* 相手のプロフィール概要 */}
-          <div className="p-3.5 bg-stone-50 rounded-2xl border border-stone-200 space-y-2">
+          <div className="p-3.5 bg-stone-50 rounded-2xl border border-border space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black text-stone-800 flex items-center gap-1.5">
                 <span>👤 申請相手:</span>
@@ -137,7 +137,7 @@ export function MentorshipRequestModal({
                         className={`p-2.5 rounded-xl text-left border text-xs font-bold transition flex flex-col justify-between gap-1 cursor-pointer ${
                           isSelected
                             ? 'bg-gradient-to-br from-teal-50 to-amber-50 border-teal-400 text-stone-900 shadow-2xs ring-2 ring-teal-300'
-                            : 'bg-stone-50 border-stone-200 text-stone-700 hover:bg-teal-50/50 hover:border-teal-300'
+                            : 'bg-stone-50 border-border text-stone-700 hover:bg-teal-50/50 hover:border-teal-300'
                         }`}
                       >
                         <div className="flex items-center justify-between">
@@ -167,7 +167,7 @@ export function MentorshipRequestModal({
                         className={`p-2 rounded-xl text-left border text-xs font-bold transition flex items-center justify-between cursor-pointer ${
                           isSelected
                             ? 'bg-amber-50 border-amber-400 text-amber-950 shadow-2xs'
-                            : 'bg-stone-50 border-stone-200 text-stone-700 hover:bg-stone-100'
+                            : 'bg-stone-50 border-border text-stone-700 hover:bg-stone-100'
                         }`}
                       >
                         <span>{item.label}</span>
@@ -196,7 +196,7 @@ export function MentorshipRequestModal({
                     className={`p-2.5 rounded-2xl border text-left transition cursor-pointer ${
                       isSelected
                         ? 'bg-amber-100 border-amber-400 ring-2 ring-amber-300'
-                        : 'bg-white border-stone-200 hover:border-stone-300'
+                        : 'bg-white border-border hover:border-border'
                     }`}
                   >
                     <div className="text-xs font-black text-stone-900">{item.label}</div>
@@ -208,7 +208,7 @@ export function MentorshipRequestModal({
           </div>
 
           {/* 期間切れ後の自動継続（そのまま実行）設定 */}
-          <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200 flex items-center justify-between gap-3">
+          <div className="p-3 bg-stone-50 rounded-2xl border border-border flex items-center justify-between gap-3">
             <div className="space-y-0.5">
               <div className="flex items-center gap-1.5 text-xs font-black text-stone-900">
                 <RefreshCw size={13} className="text-emerald-600" />
@@ -224,7 +224,7 @@ export function MentorshipRequestModal({
               className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer border shrink-0 ${
                 autoRenew
                   ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
-                  : 'bg-stone-200 border-stone-300 text-stone-600'
+                  : 'bg-stone-200 border-border text-stone-600'
               }`}
             >
               {autoRenew ? '⚡ そのまま継続' : '🎓 終了時に相談'}
@@ -245,7 +245,7 @@ export function MentorshipRequestModal({
                   key={idx}
                   type="button"
                   onClick={() => setMessage(tmpl)}
-                  className="w-full text-left p-2 rounded-xl bg-stone-100 hover:bg-stone-200/80 border border-stone-200 text-[11px] text-stone-700 hover:text-stone-900 font-medium transition cursor-pointer leading-snug"
+                  className="w-full text-left p-2 rounded-xl bg-stone-100 hover:bg-stone-200/80 border border-border text-[11px] text-stone-700 hover:text-stone-900 font-medium transition cursor-pointer leading-snug"
                 >
                   💬 {tmpl}
                 </button>
@@ -257,7 +257,7 @@ export function MentorshipRequestModal({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="メッセージを入力してください（上の例文をクリックしても入力できます）..."
-              className="w-full bg-stone-50 border border-stone-300 rounded-2xl p-3 text-stone-900 text-xs focus:border-amber-500 focus:bg-white focus:outline-hidden font-medium leading-relaxed"
+              className="w-full bg-stone-50 border border-border rounded-2xl p-3 text-stone-900 text-xs focus:border-amber-500 focus:bg-white focus:outline-hidden font-medium leading-relaxed"
             />
           </div>
 

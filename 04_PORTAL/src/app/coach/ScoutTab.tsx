@@ -496,7 +496,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
 
                               {/* 🛡️ 警戒・放置推奨レーン */}
                               {avoidTarget && avoidTarget.name !== primaryTarget?.name && (
-                                <div className="bg-white p-3 rounded-xl border border-stone-200 shadow-2xs space-y-1">
+                                <div className="bg-white p-3 rounded-xl border border-border shadow-2xs space-y-1">
                                   <div className="text-[10px] font-black text-stone-600 flex items-center gap-1">
                                     <span>🛡️</span> 【警戒・カウンター警戒レーン】
                                   </div>
@@ -506,7 +506,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                                       alt={avoidTarget.championName || 'Champ'}
                                       width={28}
                                       height={28}
-                                      className="rounded-lg border border-stone-200"
+                                      className="rounded-lg border border-border"
                                     />
                                     <div>
                                       <div className="font-black text-stone-900">

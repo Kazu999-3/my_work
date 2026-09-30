@@ -680,7 +680,7 @@ function CustomRecordPageContent() {
             className={`mb-8 p-8 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-3 transition-all ${
               isDragging
                 ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                : 'border-border bg-black/3 text-stone-500 hover:border-stone-300 hover:bg-black/5'
+                : 'border-border bg-black/3 text-stone-500 hover:border-border hover:bg-black/5'
             }`}
           >
             {analyzing ? (
@@ -735,7 +735,7 @@ function CustomRecordPageContent() {
                 onChange={(e) => setIsExhibition(e.target.checked)}
                 className="sr-only peer"
               />
-              <div className="w-11 h-6 bg-stone-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+              <div className="w-11 h-6 bg-stone-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
             </label>
           </div>
 
@@ -1062,7 +1062,7 @@ function CustomRecordPageContent() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-fade-in"
           onClick={e => { if (e.target === e.currentTarget) setSavedMatchSummary(null); }}
         >
-          <div className="bg-white border border-stone-300 rounded-3xl w-full max-w-lg shadow-2xl p-6 sm:p-8 space-y-6 text-center animate-scale-up">
+          <div className="bg-white border border-border rounded-3xl w-full max-w-lg shadow-2xl p-6 sm:p-8 space-y-6 text-center animate-scale-up">
             <div className="w-16 h-16 rounded-3xl bg-emerald-100 border-2 border-emerald-300 flex items-center justify-center text-3xl mx-auto shadow-xs">
               🏆
             </div>
@@ -1113,7 +1113,7 @@ function CustomRecordPageContent() {
 
               <Link
                 href="/balancer"
-                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs sm:text-sm border border-stone-200 transition group"
+                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs sm:text-sm border border-border transition group"
               >
                 <div className="flex items-center gap-2.5">
                   <span className="text-lg">⚔️</span>

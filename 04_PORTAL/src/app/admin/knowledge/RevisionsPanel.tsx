@@ -89,21 +89,21 @@ export default function RevisionsPanel() {
   };
 
   return (
-    <div className="bg-white border border-stone-200 rounded-2xl p-5 space-y-4">
+    <div className="bg-white border border-border rounded-2xl p-5 space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h3 className="font-black text-stone-900 flex items-center gap-2">
           <History size={16} className="text-amber-600" /> 更新履歴・差分
         </h3>
         <div className="flex gap-2 items-center">
           <select value={filterType} onChange={e => setFilterType(e.target.value)}
-            className="bg-stone-50 border border-stone-200 rounded-lg px-2 py-1.5 text-xs text-stone-700 outline-none focus:border-amber-500">
+            className="bg-stone-50 border border-border rounded-lg px-2 py-1.5 text-xs text-stone-700 outline-none focus:border-amber-500">
             <option value="all">すべて</option>
             <option value="matchup_sentinel">チャンピオン辞典</option>
             <option value="champion_fact">チャンピオン辞典（対面タブ）</option>
             <option value="lane_guide">レーン別ガイド</option>
           </select>
           <button onClick={load} disabled={loading}
-            className="text-xs font-bold bg-black/5 text-stone-700 border border-stone-300 px-3 py-1.5 rounded-lg hover:bg-black/10 disabled:opacity-50">
+            className="text-xs font-bold bg-black/5 text-stone-700 border border-border px-3 py-1.5 rounded-lg hover:bg-black/10 disabled:opacity-50">
             更新
           </button>
         </div>
@@ -125,7 +125,7 @@ export default function RevisionsPanel() {
       ) : (
         <div className="space-y-1.5">
           {revisions.map((r) => (
-            <div key={r.id} className="border border-stone-200 rounded-xl overflow-hidden">
+            <div key={r.id} className="border border-border rounded-xl overflow-hidden">
               <button onClick={() => openDetail(r.id)}
                 className="w-full text-left px-3 py-2.5 hover:bg-black/5 transition-colors flex items-center gap-2 flex-wrap">
                 <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-200">
@@ -157,12 +157,12 @@ export default function RevisionsPanel() {
               )}
 
               {openId === r.id && (
-                <div className="border-t border-stone-200 bg-stone-50 p-3">
+                <div className="border-t border-border bg-stone-50 p-3">
                   {detailLoading ? (
                     <p className="text-xs text-stone-500">差分を読み込み中...</p>
                   ) : detail ? (
                     <>
-                      <div className="max-h-80 overflow-auto font-mono text-[11px] leading-relaxed rounded-lg border border-stone-200">
+                      <div className="max-h-80 overflow-auto font-mono text-[11px] leading-relaxed rounded-lg border border-border">
                         {(detail.diff || []).map((line: any, i: number) => (
                           <div key={i} className={
                             line.op === 'added' ? 'bg-emerald-100 text-emerald-700 px-2'

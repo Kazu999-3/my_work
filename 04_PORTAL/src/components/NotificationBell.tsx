@@ -229,7 +229,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
     if (type.includes('error') || title.includes('エラー') || title.includes('失敗')) {
       return { icon: '⚠️', label: 'アラート', bg: 'bg-rose-100 text-rose-800 border-rose-200' };
     }
-    return { icon: '🔔', label: 'お知らせ', bg: 'bg-stone-100 text-stone-800 border-stone-200' };
+    return { icon: '🔔', label: 'お知らせ', bg: 'bg-stone-100 text-stone-800 border-border' };
   };
 
   const getQuickAction = (n: AdminNotification) => {
@@ -303,10 +303,10 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
         <div
           ref={dropdownRef}
           style={{ top: coords.top, left: coords.left, right: coords.right }}
-          className="fixed z-50 w-96 max-w-[calc(100vw-2rem)] max-h-[460px] overflow-hidden flex flex-col rounded-2xl border border-stone-300/80 bg-white shadow-2xl animate-in"
+          className="fixed z-50 w-96 max-w-[calc(100vw-2rem)] max-h-[460px] overflow-hidden flex flex-col rounded-2xl border border-border/80 bg-white shadow-2xl animate-in"
         >
           {/* ヘッダー コントロールバー */}
-          <div className="flex items-center justify-between border-b border-stone-200 px-4 py-3 bg-stone-50/80">
+          <div className="flex items-center justify-between border-b border-border px-4 py-3 bg-stone-50/80">
             <div className="flex items-center gap-2">
               <span className="text-xs font-black text-stone-900">通知センター</span>
               {unreadCount > 0 && (
@@ -321,7 +321,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
                 type="button"
                 onClick={() => setOnlyUnread(!onlyUnread)}
                 className={`px-2 py-0.5 rounded-md transition cursor-pointer border ${
-                  onlyUnread ? 'bg-amber-600 text-white border-amber-600' : 'bg-white text-stone-600 border-stone-300 hover:bg-stone-100'
+                  onlyUnread ? 'bg-amber-600 text-white border-amber-600' : 'bg-white text-stone-600 border-border hover:bg-stone-100'
                 }`}
               >
                 {onlyUnread ? '未読のみ' : 'すべて'}

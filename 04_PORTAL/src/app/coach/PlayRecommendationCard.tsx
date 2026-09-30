@@ -107,11 +107,11 @@ export default function PlayRecommendationCard() {
 
       {/* 判定の内訳。数値は必ず実測値のみを出す（推定値は出さない）。 */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-        <div className="rounded-xl border border-stone-300 dark:border-stone-700/60 bg-white dark:bg-stone-900/60 px-3 py-2">
+        <div className="rounded-xl border border-border dark:border-stone-700/60 bg-white dark:bg-stone-900/60 px-3 py-2">
           <div className="text-[10px] font-bold text-stone-500 dark:text-stone-400">メンタル負荷</div>
           <div className="font-bold text-stone-900 dark:text-stone-100 mt-0.5">{data.tilt?.label}</div>
         </div>
-        <div className="rounded-xl border border-stone-300 dark:border-stone-700/60 bg-white dark:bg-stone-900/60 px-3 py-2">
+        <div className="rounded-xl border border-border dark:border-stone-700/60 bg-white dark:bg-stone-900/60 px-3 py-2">
           <div className="text-[10px] font-bold text-stone-500 dark:text-stone-400">直近の流れ</div>
           <div className="font-bold text-stone-900 dark:text-stone-100 mt-0.5">
             {data.streak?.streakType === 'loss'
@@ -124,7 +124,7 @@ export default function PlayRecommendationCard() {
             </span>
           </div>
         </div>
-        <div className="rounded-xl border border-stone-300 dark:border-stone-700/60 bg-white dark:bg-stone-900/60 px-3 py-2">
+        <div className="rounded-xl border border-border dark:border-stone-700/60 bg-white dark:bg-stone-900/60 px-3 py-2">
           <div className="text-[10px] font-bold text-stone-500 dark:text-stone-400">今の時間帯</div>
           <div className="font-bold text-stone-900 dark:text-stone-100 mt-0.5">
             {data.timing?.winRate !== null && data.timing

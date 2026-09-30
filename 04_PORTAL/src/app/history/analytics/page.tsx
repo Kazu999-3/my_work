@@ -14,7 +14,7 @@ export default function MatchAnalyticsRedirectPage() {
 
   return (
     <div className="min-h-screen bg-[#eae4d4] dark:bg-[#1e1f22] text-[#201c2b] dark:text-[#f2f3f5] flex items-center justify-center p-4">
-      <div className="text-center max-w-md bg-white/95 border border-stone-200/80 rounded-3xl p-8 shadow-xl space-y-4">
+      <div className="text-center max-w-md bg-white/95 border border-border/80 rounded-3xl p-8 shadow-xl space-y-4">
         <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-2xl mx-auto">
           👑
         </div>

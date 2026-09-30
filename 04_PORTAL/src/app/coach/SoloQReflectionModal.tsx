@@ -356,7 +356,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-stone-50 border border-stone-300 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden my-6">
+      <div className="bg-stone-50 border border-border rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden my-6">
         {/* Header */}
         <div className="bg-amber-900 text-amber-50 px-6 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -389,7 +389,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
           )}
 
           {/* 1. Riot ID 設定 & 直近5試合選択 */}
-          <div className="bg-white border border-stone-200 rounded-lg p-4 space-y-3 shadow-sm">
+          <div className="bg-white border border-border rounded-lg p-4 space-y-3 shadow-sm">
             <div className="flex items-center justify-between">
               <label className="font-bold text-stone-800 text-xs flex items-center gap-1">
                 <span>🎯</span> 1. 振り返る試合を選択 (直近5試合)
@@ -404,7 +404,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                 placeholder="Riot ID (例: 名前#JP1)"
                 value={ign}
                 onChange={(e) => setIgn(e.target.value)}
-                className="flex-1 px-3 py-1.5 border border-stone-300 rounded-md bg-stone-50 text-xs text-stone-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-amber-500"
+                className="flex-1 px-3 py-1.5 border border-border rounded-md bg-stone-50 text-xs text-stone-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-amber-500"
               />
               <button
                 type="button"
@@ -436,7 +436,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                       className={`w-full p-2.5 rounded-lg border text-left flex items-center justify-between transition-all ${
                         isSelected
                           ? 'border-amber-500 bg-amber-50/90 ring-2 ring-amber-500/40 shadow-sm'
-                          : 'border-stone-200 bg-stone-50 hover:bg-stone-100'
+                          : 'border-border bg-stone-50 hover:bg-stone-100'
                       }`}
                     >
                       <div className="flex items-center gap-2 text-xs">
@@ -755,7 +755,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                             <div className="bg-amber-50 text-amber-900 font-bold p-1.5 rounded-lg text-left">
                               Q: {msg.q}
                             </div>
-                            <div className="bg-stone-50 text-stone-800 p-1.5 rounded-lg border border-stone-200 text-left leading-relaxed">
+                            <div className="bg-stone-50 text-stone-800 p-1.5 rounded-lg border border-border text-left leading-relaxed">
                               A: {msg.a}
                             </div>
                           </div>
@@ -769,7 +769,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                         placeholder="例: 「BOTが崩壊した時JGはどう動くべきだった？」「スカトル争うべきだった？」"
                         value={chatQuestion}
                         onChange={(e) => setChatQuestion(e.target.value)}
-                        className="flex-1 px-2.5 py-1.5 text-xs border border-stone-300 rounded-md bg-stone-50 text-stone-900 focus:bg-white focus:outline-none"
+                        className="flex-1 px-2.5 py-1.5 text-xs border border-border rounded-md bg-stone-50 text-stone-900 focus:bg-white focus:outline-none"
                       />
                       <button
                         type="button"
@@ -800,7 +800,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
           )}
 
           {/* 2. 対面(レーン)勝敗。試合全体の勝敗(win)とは別に記録する(#⑤) */}
-          <div className="bg-white border border-stone-200 rounded-lg p-3.5 space-y-2 shadow-sm">
+          <div className="bg-white border border-border rounded-lg p-3.5 space-y-2 shadow-sm">
             <label className="font-bold text-stone-800 text-xs block">
               2. 対面 {currentMatch ? currentMatch.enemyChampion : ''} との勝敗（レーン戦の内容。任意）
               <span className="text-[11px] text-stone-400 font-normal block mt-0.5">試合自体の勝敗とは別に、対面との勝ち負けを記録します（集団戦で拾われた等で試合結果と食い違ってもOK）</span>
@@ -808,7 +808,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
             <div className="grid grid-cols-3 gap-2">
               {[
                 { value: 'win' as const, label: '🟢 レーン勝ち', color: 'border-emerald-300 bg-emerald-50 text-emerald-900' },
-                { value: 'even' as const, label: '⚪ 互角', color: 'border-stone-300 bg-stone-100 text-stone-800' },
+                { value: 'even' as const, label: '⚪ 互角', color: 'border-border bg-stone-100 text-stone-800' },
                 { value: 'loss' as const, label: '🔴 レーン負け', color: 'border-rose-300 bg-rose-50 text-rose-900' },
               ].map((opt) => (
                 <button
@@ -818,7 +818,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                   className={`py-2 px-1 text-[11px] font-bold rounded-lg border transition-all text-center ${
                     laneResult === opt.value
                       ? `${opt.color} ring-2 ring-amber-500 shadow-sm scale-105`
-                      : 'border-stone-200 bg-stone-50 text-stone-600 hover:bg-stone-100'
+                      : 'border-border bg-stone-50 text-stone-600 hover:bg-stone-100'
                   }`}
                 >
                   {opt.label}
@@ -828,13 +828,13 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
           </div>
 
           {/* 3. メンタル度評価 */}
-          <div className="bg-white border border-stone-200 rounded-lg p-3.5 space-y-2 shadow-sm">
+          <div className="bg-white border border-border rounded-lg p-3.5 space-y-2 shadow-sm">
             <label className="font-bold text-stone-800 text-xs block">3. 集中度・メンタル評価 (1〜5)</label>
             <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
               {[
                 { rating: 1, label: '1 (絶望/ティルト)', color: 'border-rose-300 bg-rose-50 text-rose-900' },
                 { rating: 2, label: '2 (不調/焦り)', color: 'border-orange-300 bg-orange-50 text-orange-900' },
-                { rating: 3, label: '3 (普通)', color: 'border-stone-300 bg-stone-50 text-stone-900' },
+                { rating: 3, label: '3 (普通)', color: 'border-border bg-stone-50 text-stone-900' },
                 { rating: 4, label: '4 (集中)', color: 'border-amber-300 bg-amber-50 text-amber-900' },
                 { rating: 5, label: '5 (ゾーン/好調)', color: 'border-emerald-300 bg-emerald-50 text-emerald-900' },
               ].map((item) => (
@@ -845,7 +845,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                   className={`py-2 px-1 text-[11px] font-bold rounded-lg border transition-all text-center ${
                     mentalRating === item.rating
                       ? `${item.color} ring-2 ring-amber-500 shadow-sm scale-105`
-                      : 'border-stone-200 bg-stone-50 text-stone-600 hover:bg-stone-100'
+                      : 'border-border bg-stone-50 text-stone-600 hover:bg-stone-100'
                   }`}
                 >
                   {item.label}
@@ -855,7 +855,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
           </div>
 
           {/* 3. 勝因・敗因ワンタップタグ ＆ 反省メモ */}
-          <div className="bg-white border border-stone-200 rounded-lg p-3.5 space-y-2.5 shadow-sm">
+          <div className="bg-white border border-border rounded-lg p-3.5 space-y-2.5 shadow-sm">
             <label className="font-bold text-stone-800 text-xs block flex items-center justify-between">
               <span>4. {isWin ? '🏆 勝因タグ' : '⚠️ 敗因タグ'}（ワンタップ選定）</span>
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${isWin ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
@@ -875,7 +875,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                         ? isWin
                           ? 'bg-emerald-700 text-white border-emerald-700 font-bold shadow-sm'
                           : 'bg-rose-700 text-white border-rose-700 font-bold shadow-sm'
-                        : 'bg-stone-100 text-stone-700 border-stone-200 hover:bg-stone-200'
+                        : 'bg-stone-100 text-stone-700 border-border hover:bg-stone-200'
                     }`}
                   >
                     {active ? '✓ ' : ''}{tag}
@@ -884,7 +884,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
               })}
             </div>
             {/* JG専用死因・勝因スタンプ (タップだけで文字入力ゼロ化) */}
-            <div className="bg-stone-50 p-2.5 rounded-lg border border-stone-200 space-y-1.5">
+            <div className="bg-stone-50 p-2.5 rounded-lg border border-border space-y-1.5">
               <span className="text-[10px] text-amber-900 font-extrabold flex items-center gap-1">
                 <span>⚡</span> JG専用クイックスタンプ (タップでメモとタグを自動入力):
               </span>
@@ -908,7 +908,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                         setSelectedTags((prev) => [...prev, item.tag]);
                       }
                     }}
-                    className="px-2 py-1 text-[10px] bg-white hover:bg-amber-100 text-stone-800 hover:text-amber-950 border border-stone-300 rounded-lg font-bold transition shadow-xs active:scale-95 text-left"
+                    className="px-2 py-1 text-[10px] bg-white hover:bg-amber-100 text-stone-800 hover:text-amber-950 border border-border rounded-lg font-bold transition shadow-xs active:scale-95 text-left"
                   >
                     + {item.label}
                   </button>
@@ -921,12 +921,12 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
               placeholder="反省メモや勝敗を分けたプレイ（上記スタンプをタップするか直接入力）"
               value={reflectionNote}
               onChange={(e) => setReflectionNote(e.target.value)}
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-stone-50 text-stone-900 focus:bg-white focus:outline-none text-xs placeholder:text-stone-400 font-medium"
+              className="w-full px-3 py-2 border border-border rounded-md bg-stone-50 text-stone-900 focus:bg-white focus:outline-none text-xs placeholder:text-stone-400 font-medium"
             />
           </div>
 
           {/* 4. 対面メモ（対面DBへ自動連携） */}
-          <div className="bg-white border border-stone-200 rounded-lg p-3.5 space-y-2 shadow-sm">
+          <div className="bg-white border border-border rounded-lg p-3.5 space-y-2 shadow-sm">
             <div className="flex items-center justify-between flex-wrap gap-1">
               <label className="font-bold text-stone-800 text-xs block">
                 5. 対面チャンピオンメモ <span className="text-[11px] text-amber-800 font-bold">（📚 チャンピオン辞典 `matchup_sentinel` へ自動学習・反映）</span>
@@ -952,7 +952,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
               placeholder={`対面 ${currentMatch ? currentMatch.enemyChampion : ''} への次回対策・やりづらかった点（例: Lv2トレード注意 / スペル落ちたタイミングでローム）`}
               value={matchupMemo}
               onChange={(e) => setMatchupMemo(e.target.value)}
-              className="w-full px-3 py-2 border border-stone-300 rounded-md bg-stone-50 text-stone-900 focus:bg-white focus:outline-none text-xs placeholder:text-stone-400"
+              className="w-full px-3 py-2 border border-border rounded-md bg-stone-50 text-stone-900 focus:bg-white focus:outline-none text-xs placeholder:text-stone-400"
             />
           </div>
 
@@ -971,14 +971,14 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
           </div>
 
           {/* Footer */}
-          <div className="flex justify-end items-center gap-3 pt-2 border-t border-stone-200">
+          <div className="flex justify-end items-center gap-3 pt-2 border-t border-border">
             {isAlreadyReflected && (
               <span className="text-[11px] text-emerald-700 font-bold mr-auto">✅ この試合は振り返り済みです</span>
             )}
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-stone-300 rounded-md text-stone-600 hover:bg-stone-100 text-xs font-medium transition-colors"
+              className="px-4 py-2 border border-border rounded-md text-stone-600 hover:bg-stone-100 text-xs font-medium transition-colors"
             >
               キャンセル
             </button>

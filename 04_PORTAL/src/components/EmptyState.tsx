@@ -18,7 +18,7 @@ export default function EmptyState({
   className = '',
 }: EmptyStateProps) {
   return (
-    <div className={`flex flex-col items-center justify-center p-8 text-center rounded-2xl border border-stone-200/80 bg-stone-100/50 ${className}`}>
+    <div className={`flex flex-col items-center justify-center p-8 text-center rounded-2xl border border-border/80 bg-stone-100/50 ${className}`}>
       <div className="text-4xl mb-3">{icon}</div>
       <h3 className="text-sm font-bold text-stone-900 mb-1">{title}</h3>
       {description && (

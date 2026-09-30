@@ -104,7 +104,7 @@ export default function SoloQDeepIntelSyncCard({
             type="button"
             onClick={fetchDeepIntel}
             disabled={loading}
-            className="p-1.5 rounded-lg bg-white hover:bg-stone-100 text-stone-600 border border-stone-200 transition cursor-pointer disabled:opacity-50"
+            className="p-1.5 rounded-lg bg-white hover:bg-stone-100 text-stone-600 border border-border transition cursor-pointer disabled:opacity-50"
             title="最新データ再同期"
           >
             <RefreshCw size={13} className={loading ? 'animate-spin text-amber-600' : ''} />
@@ -164,7 +164,7 @@ export default function SoloQDeepIntelSyncCard({
 
           {/* 2. 選択中チャンピオンの実測勝敗境界線 ＆ パワースパイク */}
           {matchedChampProfile && (
-            <div className="bg-white rounded-2xl border border-stone-200 p-3.5 shadow-2xs space-y-2.5">
+            <div className="bg-white rounded-2xl border border-border p-3.5 shadow-2xs space-y-2.5">
               <div className="flex items-center justify-between border-b border-stone-100 pb-2">
                 <div className="flex items-center gap-2">
                   <span className="font-black text-xs text-stone-900">
@@ -221,7 +221,7 @@ export default function SoloQDeepIntelSyncCard({
 
           {/* 3. セッション管理 ＆ 黄金プレイルール */}
           {rules && rules.length > 0 && (
-            <div className="bg-stone-50/80 rounded-2xl border border-stone-200/80 p-3 space-y-1.5">
+            <div className="bg-stone-50/80 rounded-2xl border border-border/80 p-3 space-y-1.5">
               <span className="text-[10px] font-black uppercase tracking-wider text-stone-400 flex items-center gap-1">
                 <Flame size={12} className="text-amber-600" />
                 <span>実測セッション黄金ルール (連敗・疲労防止)</span>

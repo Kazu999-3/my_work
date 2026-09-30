@@ -756,7 +756,7 @@ export default function YoutubeQueueManager() {
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       {/* ヘッダー */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-stone-200 pb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-6">
         <div>
           <h1 className="text-2xl font-black tracking-tight text-stone-900">
             📺 YouTube Absorber コマンドセンター
@@ -767,7 +767,7 @@ export default function YoutubeQueueManager() {
         </div>
 
         {/* タブ切り替えボタン */}
-        <div className="flex p-1 rounded-xl items-center self-start md:self-auto border border-stone-200 bg-stone-100/80 shadow-xs">
+        <div className="flex p-1 rounded-xl items-center self-start md:self-auto border border-border bg-stone-100/80 shadow-xs">
           <button 
             type="button"
             onClick={() => setActiveTab('queue')} 

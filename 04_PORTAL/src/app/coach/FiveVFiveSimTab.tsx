@@ -459,7 +459,7 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
                   if (laneData.priority === 'RED_PRIORITY') {
                     return { text: '敵有利 (Red)', style: 'bg-red-100 text-red-700 border-red-200' };
                   }
-                  return { text: '互角 (Even)', style: 'bg-stone-100 text-stone-700 border-stone-200' };
+                  return { text: '互角 (Even)', style: 'bg-stone-100 text-stone-700 border-border' };
                 };
                 const label = getPriorityLabel();
 

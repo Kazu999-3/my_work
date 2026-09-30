@@ -79,9 +79,9 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center p-4 sm:p-6 md:p-10 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
-      <div className="bg-white border border-stone-200 rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden my-auto flex flex-col max-h-[85vh]">
+      <div className="bg-white border border-border rounded-3xl w-full max-w-3xl shadow-2xl overflow-hidden my-auto flex flex-col max-h-[85vh]">
         {/* ヘッダー */}
-        <div className="p-4 sm:p-5 border-b border-stone-200/80 bg-stone-50/70 flex items-center justify-between">
+        <div className="p-4 sm:p-5 border-b border-border/80 bg-stone-50/70 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-700">
               <Zap size={18} className="fill-amber-500/20" />
@@ -105,7 +105,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
         </div>
 
         {/* 検索入力バー */}
-        <div className="p-4 sm:p-5 border-b border-stone-200/80 space-y-3">
+        <div className="p-4 sm:p-5 border-b border-border/80 space-y-3">
           <div className="relative">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" size={18} />
             <input
@@ -114,7 +114,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
               placeholder="戦術キーワードを入力 (例: インベード, Lv3ガンク, オブジェクト放棄, 没理由)..."
               value={query}
               onChange={e => setQuery(e.target.value)}
-              className="w-full bg-stone-50 border border-stone-200 focus:border-amber-500 focus:bg-white rounded-2xl py-3 pl-10 pr-10 text-stone-900 font-bold outline-none transition text-sm shadow-2xs"
+              className="w-full bg-stone-50 border border-border focus:border-amber-500 focus:bg-white rounded-2xl py-3 pl-10 pr-10 text-stone-900 font-bold outline-none transition text-sm shadow-2xs"
             />
             {query && (
               <button
@@ -139,7 +139,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
                 className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition cursor-pointer ${
                   query === concept
                     ? 'bg-amber-500 text-stone-950 border-amber-500'
-                    : 'bg-white text-stone-600 border-stone-200 hover:bg-stone-100 hover:text-stone-900'
+                    : 'bg-white text-stone-600 border-border hover:bg-stone-100 hover:text-stone-900'
                 }`}
               >
                 {concept}
@@ -195,7 +195,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
                       onClose();
                     }
                   }}
-                  className="group bg-stone-50/70 hover:bg-amber-50/40 border border-stone-200 hover:border-amber-300 p-3.5 rounded-2xl transition cursor-pointer flex flex-col gap-2"
+                  className="group bg-stone-50/70 hover:bg-amber-50/40 border border-border hover:border-amber-300 p-3.5 rounded-2xl transition cursor-pointer flex flex-col gap-2"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
@@ -205,7 +205,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
                           alt={item.champion}
                           width={28}
                           height={28}
-                          className="w-7 h-7 rounded-full border border-stone-200 shrink-0 object-cover"
+                          className="w-7 h-7 rounded-full border border-border shrink-0 object-cover"
                           onError={e => { e.currentTarget.style.display = 'none'; }}
                         />
                       )}
@@ -231,7 +231,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
                   </div>
 
                   {/* スニペット本文 */}
-                  <p className="text-xs text-stone-700 leading-relaxed pl-9 bg-white/60 p-2 rounded-xl border border-stone-200/60 font-medium">
+                  <p className="text-xs text-stone-700 leading-relaxed pl-9 bg-white/60 p-2 rounded-xl border border-border/60 font-medium">
                     {item.snippet}
                   </p>
                 </div>
@@ -241,7 +241,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
         </div>
 
         {/* フッター */}
-        <div className="p-3 bg-stone-50 border-t border-stone-200 text-center text-[11px] text-stone-400 font-bold">
+        <div className="p-3 bg-stone-50 border-t border-border text-center text-[11px] text-stone-400 font-bold">
           ESCキーで閉じる • 該当チャンピオンをクリックして辞典へ直行
         </div>
       </div>

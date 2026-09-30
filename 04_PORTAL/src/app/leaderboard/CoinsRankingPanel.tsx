@@ -95,7 +95,7 @@ export default function CoinsRankingPanel() {
       {/* 概要サマリーカード */}
       {stats && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-          <div className="bg-white/90 backdrop-blur-sm border border-stone-200/90 rounded-2xl p-4 shadow-xs flex items-center gap-3.5">
+          <div className="bg-white/90 backdrop-blur-sm border border-border/90 rounded-2xl p-4 shadow-xs flex items-center gap-3.5">
             <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold shrink-0">
               <Coins size={24} />
             </div>
@@ -107,7 +107,7 @@ export default function CoinsRankingPanel() {
             </div>
           </div>
 
-          <div className="bg-white/90 backdrop-blur-sm border border-stone-200/90 rounded-2xl p-4 shadow-xs flex items-center gap-3.5">
+          <div className="bg-white/90 backdrop-blur-sm border border-border/90 rounded-2xl p-4 shadow-xs flex items-center gap-3.5">
             <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold shrink-0">
               <Users size={24} />
             </div>
@@ -119,7 +119,7 @@ export default function CoinsRankingPanel() {
             </div>
           </div>
 
-          <div className="bg-white/90 backdrop-blur-sm border border-stone-200/90 rounded-2xl p-4 shadow-xs flex items-center gap-3.5">
+          <div className="bg-white/90 backdrop-blur-sm border border-border/90 rounded-2xl p-4 shadow-xs flex items-center gap-3.5">
             <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold shrink-0">
               <TrendingUp size={24} />
             </div>
@@ -138,7 +138,7 @@ export default function CoinsRankingPanel() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-2">
           {/* 🥈 2位 */}
           {top2 && (
-            <div className="order-2 md:order-1 bg-gradient-to-b from-stone-100/90 to-white/90 border-2 border-stone-300 rounded-3xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-between">
+            <div className="order-2 md:order-1 bg-gradient-to-b from-stone-100/90 to-white/90 border-2 border-border rounded-3xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-between">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-2xl">🥈</span>
                 <span className="text-[10px] font-black tracking-widest uppercase px-2.5 py-0.5 rounded-full bg-stone-200 text-stone-700">
@@ -159,7 +159,7 @@ export default function CoinsRankingPanel() {
                   </span>
                 </div>
               </div>
-              <div className="mt-3 pt-3 border-t border-stone-200/80 flex items-baseline justify-between">
+              <div className="mt-3 pt-3 border-t border-border/80 flex items-baseline justify-between">
                 <span className="text-[11px] text-stone-400 font-bold">所持コイン</span>
                 <span className="text-lg font-black text-stone-800 font-mono">
                   🪙 {top2.coins.toLocaleString()}
@@ -224,7 +224,7 @@ export default function CoinsRankingPanel() {
                   </span>
                 </div>
               </div>
-              <div className="mt-3 pt-3 border-t border-stone-200/80 flex items-baseline justify-between">
+              <div className="mt-3 pt-3 border-t border-border/80 flex items-baseline justify-between">
                 <span className="text-[11px] text-stone-400 font-bold">所持コイン</span>
                 <span className="text-lg font-black text-amber-800 font-mono">
                   🪙 {top3.coins.toLocaleString()}
@@ -236,7 +236,7 @@ export default function CoinsRankingPanel() {
       )}
 
       {/* コントロールバー（検索・ソート） */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white/80 backdrop-blur-sm border border-stone-200/90 rounded-2xl p-3 shadow-2xs">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white/80 backdrop-blur-sm border border-border/90 rounded-2xl p-3 shadow-2xs">
         <div className="flex items-center gap-2 flex-1 min-w-[240px]">
           <Search size={16} className="text-stone-400" />
           <input
@@ -268,8 +268,8 @@ export default function CoinsRankingPanel() {
       </div>
 
       {/* 全プレイヤー ランキング一覧 */}
-      <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-stone-200/90 shadow-xs overflow-hidden">
-        <div className="flex items-center gap-3 px-4 py-3 bg-stone-50/90 border-b border-stone-200 text-[11px] font-black text-stone-500">
+      <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-border/90 shadow-xs overflow-hidden">
+        <div className="flex items-center gap-3 px-4 py-3 bg-stone-50/90 border-b border-border text-[11px] font-black text-stone-500">
           <span className="w-10 text-center shrink-0">順位</span>
           <span className="flex-1 min-w-0">プレイヤー</span>
           <span className="w-24 text-center shrink-0 hidden sm:block">最高ランク</span>

@@ -171,7 +171,7 @@ export default function TimingHeatmapCard() {
           className={`rounded-xl border px-3.5 py-2 text-xs ${
             isStale
               ? 'bg-rose-950/30 text-rose-400 border-rose-800/60'
-              : 'bg-stone-100 dark:bg-stone-800/60 text-stone-600 dark:text-stone-300 border-stone-300 dark:border-stone-700/60'
+              : 'bg-stone-100 dark:bg-stone-800/60 text-stone-600 dark:text-stone-300 border-border dark:border-stone-700/60'
           }`}
         >
           <span className="font-bold">
@@ -225,7 +225,7 @@ export default function TimingHeatmapCard() {
             </div>
           )}
 
-          <div className="min-h-10 rounded-xl border border-stone-300 dark:border-stone-700/60 bg-white dark:bg-stone-900/60 px-3.5 py-2 text-xs flex items-center justify-between gap-2 shadow-xs">
+          <div className="min-h-10 rounded-xl border border-border dark:border-stone-700/60 bg-white dark:bg-stone-900/60 px-3.5 py-2 text-xs flex items-center justify-between gap-2 shadow-xs">
             {activeCell ? (() => {
               const c = cellMap.get(`${activeCell.day}-${activeCell.hour}`);
               const games = c?.games || 0;

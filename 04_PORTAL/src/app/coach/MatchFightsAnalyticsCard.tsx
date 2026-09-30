@@ -97,7 +97,7 @@ export default function MatchFightsAnalyticsCard({
 
   if (loading) {
     return (
-      <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs">
+      <div className="bg-white border border-border rounded-2xl p-5 shadow-xs">
         <div className="flex items-center gap-2 text-xs font-bold text-stone-500">
           <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
           <span>最新の集団戦ディープアナリティクスを読み込み中...</span>
@@ -114,7 +114,7 @@ export default function MatchFightsAnalyticsCard({
   const recentMatches = data.recent_matches || [];
 
   return (
-    <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs text-stone-900 space-y-4">
+    <div className="bg-white border border-border rounded-2xl p-5 shadow-xs text-stone-900 space-y-4">
       {/* 複数試合セレクターバー */}
       {recentMatches.length > 0 && (
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin border-b border-stone-100">
@@ -171,11 +171,11 @@ export default function MatchFightsAnalyticsCard({
 
         {/* スタッツバッジ */}
         <div className="flex items-center gap-2">
-          <div className="bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-center">
+          <div className="bg-stone-50 border border-border rounded-xl px-3 py-1.5 text-center">
             <div className="text-[10px] text-stone-500 font-bold">集団戦勝率</div>
             <div className="text-sm font-black text-emerald-600 font-mono">{winRate}%</div>
           </div>
-          <div className="bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-center">
+          <div className="bg-stone-50 border border-border rounded-xl px-3 py-1.5 text-center">
             <div className="text-[10px] text-stone-500 font-bold">交戦総火力</div>
             <div className="text-sm font-black text-amber-700 font-mono">{data.total_fight_damage.toLocaleString()}</div>
           </div>
@@ -267,7 +267,7 @@ export default function MatchFightsAnalyticsCard({
                   {fight.summary}
                 </p>
 
-                <div className="bg-white/90 rounded-xl p-3 border border-stone-200/80 space-y-1.5 text-[11px] shadow-2xs">
+                <div className="bg-white/90 rounded-xl p-3 border border-border/80 space-y-1.5 text-[11px] shadow-2xs">
                   <div className="flex items-start gap-1.5">
                     <Target className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
                     <div>

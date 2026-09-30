@@ -137,7 +137,7 @@ function LoginContent() {
               placeholder="••••••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-stone-50 border border-stone-300 rounded-xl px-4 py-3 text-sm font-mono text-stone-900 focus:outline-none focus:border-amber-500 focus:bg-white transition-all shadow-inner"
+              className="w-full bg-stone-50 border border-border rounded-xl px-4 py-3 text-sm font-mono text-stone-900 focus:outline-none focus:border-amber-500 focus:bg-white transition-all shadow-inner"
               disabled={isLoading}
               required
             />

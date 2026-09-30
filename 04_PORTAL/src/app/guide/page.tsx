@@ -92,7 +92,7 @@ function GuideContent() {
   return (
     <div className="min-h-screen pb-16 bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-stone-100 p-3 sm:p-5 md:p-6 space-y-5 max-w-[1300px] w-full mx-auto">
       {/* 洗練されたコンパクトヘッダー */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 md:p-5 bg-white dark:bg-stone-900 border border-stone-200/90 dark:border-stone-800 rounded-2xl shadow-xs">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 md:p-5 bg-white dark:bg-stone-900 border border-border/90 dark:border-stone-800 rounded-2xl shadow-xs">
         <div className="flex items-center gap-3.5">
           <div className="text-2xl p-2.5 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-200/80 dark:border-amber-800/60 shrink-0 text-amber-600">
             <BookOpen size={24} />
@@ -121,7 +121,7 @@ function GuideContent() {
               placeholder="サモナー名で戦績検索..."
               value={searchName}
               onChange={(e) => setSearchName(e.target.value)}
-              className="w-full bg-stone-50 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-stone-100 rounded-xl pl-9 pr-3 py-2 text-xs font-bold focus:outline-none focus:border-amber-500 transition-colors placeholder-stone-400"
+              className="w-full bg-stone-50 dark:bg-stone-800/80 border border-border dark:border-stone-700 text-stone-900 dark:text-stone-100 rounded-xl pl-9 pr-3 py-2 text-xs font-bold focus:outline-none focus:border-amber-500 transition-colors placeholder-stone-400"
             />
           </div>
           <button
@@ -135,7 +135,7 @@ function GuideContent() {
       </div>
 
       {/* タブナビゲーション（セグメントコントロール） */}
-      <div className="flex items-center gap-1.5 p-1 bg-stone-100 dark:bg-stone-900 rounded-xl border border-stone-200 dark:border-stone-800 overflow-x-auto">
+      <div className="flex items-center gap-1.5 p-1 bg-stone-100 dark:bg-stone-900 rounded-xl border border-border dark:border-stone-800 overflow-x-auto">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;

@@ -705,7 +705,7 @@ export default function MentorshipHubPanel() {
                 type="button"
                 onClick={handleSyncDiscord}
                 disabled={isSyncingDiscord}
-                className="px-2.5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition border border-stone-200 flex items-center gap-1 cursor-pointer disabled:opacity-50 shadow-2xs"
+                className="px-2.5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition border border-border flex items-center gap-1 cursor-pointer disabled:opacity-50 shadow-2xs"
                 title="Discordの常駐ダッシュボードを即座に再同期します"
               >
                 <RefreshCw size={13} className={isSyncingDiscord ? 'animate-spin text-amber-600' : ''} />
@@ -717,7 +717,7 @@ export default function MentorshipHubPanel() {
               type="button"
               title="指導・受講のガイドライン（褒めて伸ばす / 1試合1課題 など）を表示します"
               onClick={() => setIsGuidelinesModalOpen(true)}
-              className="px-3.5 py-2.5 rounded-xl bg-white border border-stone-200 hover:bg-stone-100 text-stone-700 font-bold text-xs transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2.5 rounded-xl bg-white border border-border hover:bg-stone-100 text-stone-700 font-bold text-xs transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
             >
               <BookOpen size={14} className="text-amber-600" />
               <span>📜 師弟の心得</span>
@@ -752,7 +752,7 @@ export default function MentorshipHubPanel() {
 
 
       {/* タブ切り替えバー */}
-      <div className="space-y-3 bg-white/90 p-4 rounded-2xl border border-stone-200/90 shadow-2xs">
+      <div className="space-y-3 bg-white/90 p-4 rounded-2xl border border-border/90 shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
             <button
@@ -813,7 +813,7 @@ export default function MentorshipHubPanel() {
                 placeholder="名前・チャンプ・コメント検索..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-stone-50 border border-stone-200 rounded-xl pl-8 pr-3 py-1.5 text-xs font-bold text-stone-900 focus:outline-none focus:border-emerald-500"
+                className="w-full bg-stone-50 border border-border rounded-xl pl-8 pr-3 py-1.5 text-xs font-bold text-stone-900 focus:outline-none focus:border-emerald-500"
               />
             </div>
           )}
@@ -1056,7 +1056,7 @@ export default function MentorshipHubPanel() {
                 key={match.id}
                 className={`rounded-2xl p-5 border shadow-xs flex flex-col justify-between gap-3.5 transition ${
                   isCompleted
-                    ? 'bg-stone-50/80 border-stone-200 opacity-90'
+                    ? 'bg-stone-50/80 border-border opacity-90'
                     : isExpired
                     ? 'bg-amber-50/70 border-amber-300 ring-2 ring-amber-400/50'
                     : isMyMatch
@@ -1142,7 +1142,7 @@ export default function MentorshipHubPanel() {
 
                 {/* 自分のペアである場合のアクション（レビュー送信 / 期間延長 / 卒業完了 / キックオフ / Discord連絡 / 円満解散） */}
                 {isMyMatch && (
-                  <div className="pt-2.5 border-t border-stone-200/80 space-y-2">
+                  <div className="pt-2.5 border-t border-border/80 space-y-2">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {/* ⭐ 匿名レビューボタン */}
@@ -1168,7 +1168,7 @@ export default function MentorshipHubPanel() {
                                 setSelectedKickoffMatch(match);
                                 setIsKickoffModalOpen(true);
                               }}
-                              className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-stone-100 hover:bg-stone-200 text-stone-800 transition flex items-center gap-1 cursor-pointer border border-stone-200"
+                              className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-stone-100 hover:bg-stone-200 text-stone-800 transition flex items-center gap-1 cursor-pointer border border-border"
                             >
                               <Rocket size={13} className="text-emerald-600" />
                               <span>🚀 ガイド</span>
@@ -1204,7 +1204,7 @@ export default function MentorshipHubPanel() {
                                 const partner = match.mentor_discord_id === myDiscordId ? match.pupil : match.mentor;
                                 handleContactDiscord(partner?.player_name || '相手');
                               }}
-                              className="px-2 py-1.5 rounded-xl font-bold text-xs bg-stone-100 hover:bg-stone-200 text-stone-700 transition flex items-center gap-1 cursor-pointer border border-stone-200"
+                              className="px-2 py-1.5 rounded-xl font-bold text-xs bg-stone-100 hover:bg-stone-200 text-stone-700 transition flex items-center gap-1 cursor-pointer border border-border"
                               title="相手のDiscord名を表示"
                             >
                               <span>DM</span>
@@ -1253,7 +1253,7 @@ export default function MentorshipHubPanel() {
           })}
 
           {matches.length === 0 && (
-            <div className="col-span-full py-12 text-center text-stone-400 text-xs font-bold bg-white rounded-2xl border border-stone-200">
+            <div className="col-span-full py-12 text-center text-stone-400 text-xs font-bold bg-white rounded-2xl border border-border">
               まだ成立した師弟ペアはありません。掲示板で相手を探してみましょう！
             </div>
           )}
@@ -1289,7 +1289,7 @@ export default function MentorshipHubPanel() {
           })}
 
           {filteredProfiles.length === 0 && (
-            <div className="col-span-full py-12 text-center text-stone-400 text-xs font-bold bg-white rounded-2xl border border-stone-200">
+            <div className="col-span-full py-12 text-center text-stone-400 text-xs font-bold bg-white rounded-2xl border border-border">
               該当する自己紹介カードが見つかりませんでした。
             </div>
           )}

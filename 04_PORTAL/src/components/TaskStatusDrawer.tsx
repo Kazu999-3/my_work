@@ -203,10 +203,10 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
         <div
           ref={drawerRef}
           style={{ top: coords.top, left: coords.left, right: coords.right }}
-          className="fixed z-50 w-96 max-w-[92vw] max-h-[85vh] overflow-y-auto rounded-2xl border border-stone-200 bg-white shadow-2xl space-y-4 p-4 text-xs font-sans animate-fade-in"
+          className="fixed z-50 w-96 max-w-[92vw] max-h-[85vh] overflow-y-auto rounded-2xl border border-border bg-white shadow-2xl space-y-4 p-4 text-xs font-sans animate-fade-in"
         >
           {/* ヘッダー */}
-          <div className="flex items-center justify-between border-b border-stone-200 pb-2.5">
+          <div className="flex items-center justify-between border-b border-border pb-2.5">
             <div className="flex items-center gap-2">
               <Zap size={18} className="text-amber-600" />
               <span className="font-extrabold text-sm text-stone-900">リアルタイム・タスクキュー</span>
@@ -222,7 +222,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
           </div>
 
           {/* 1. ワーカー稼働状況 */}
-          <div className="flex items-center justify-between p-2.5 rounded-xl border border-stone-200 bg-stone-50">
+          <div className="flex items-center justify-between p-2.5 rounded-xl border border-border bg-stone-50">
             <div className="flex items-center gap-2">
               <Cpu size={16} className={isWorkerActive ? 'text-emerald-600' : 'text-rose-500'} />
               <div>
@@ -346,7 +346,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
             ) : (
               <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
                 {pendingTasks.map((t, idx) => (
-                  <div key={t.id} className="p-2 rounded-lg border border-stone-200 bg-white flex justify-between items-center text-[10px]">
+                  <div key={t.id} className="p-2 rounded-lg border border-border bg-white flex justify-between items-center text-[10px]">
                     <span className="font-bold text-stone-800">
                       #{idx + 1} {TASK_LABELS[t.task_type] || t.task_type}
                     </span>
@@ -359,11 +359,11 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
 
           {/* 5. 直近実行履歴 */}
           {systemData.history.length > 0 && (
-            <div className="space-y-2 pt-2 border-t border-stone-200">
+            <div className="space-y-2 pt-2 border-t border-border">
               <span className="font-bold text-stone-600 text-xs block">直近の実行履歴</span>
               <div className="space-y-1 max-h-36 overflow-y-auto pr-1">
                 {systemData.history.slice(0, 5).map((h) => (
-                  <div key={h.id} className="p-2 rounded-lg border border-stone-200 bg-stone-50 flex justify-between items-center text-[10px]">
+                  <div key={h.id} className="p-2 rounded-lg border border-border bg-stone-50 flex justify-between items-center text-[10px]">
                     <div className="flex items-center gap-1.5 min-w-0">
                       {h.status === 'completed' ? (
                         <CheckCircle2 size={12} className="text-emerald-600 shrink-0" />

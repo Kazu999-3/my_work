@@ -120,7 +120,7 @@ export default function PlayerReputationCard({
   };
 
   return (
-    <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-xs space-y-4 relative overflow-hidden">
+    <div className="bg-white rounded-3xl p-6 border border-border shadow-xs space-y-4 relative overflow-hidden">
       {/* ヘッダー */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -150,7 +150,7 @@ export default function PlayerReputationCard({
             className={`px-4 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 shadow-sm cursor-pointer shrink-0 ${
               canSendToday
                 ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 shadow-amber-500/20 hover:scale-102 active:scale-98 animate-pulse'
-                : 'bg-stone-100 text-stone-500 border border-stone-200 hover:bg-stone-200'
+                : 'bg-stone-100 text-stone-500 border border-border hover:bg-stone-200'
             }`}
           >
             <Sparkles size={14} className={canSendToday ? 'text-stone-950' : 'text-stone-400'} />
@@ -186,7 +186,7 @@ export default function PlayerReputationCard({
           })}
         </div>
       ) : (
-        <div className="p-4 bg-stone-50 rounded-2xl border border-stone-200/80 text-center text-xs text-stone-500 font-medium">
+        <div className="p-4 bg-stone-50 rounded-2xl border border-border/80 text-center text-xs text-stone-500 font-medium">
           まだメンバーからの称賛タグはありません。一緒にカスタムやノーマルをプレイして栄誉を集めましょう！
         </div>
       )}
@@ -194,10 +194,10 @@ export default function PlayerReputationCard({
       {/* 称賛送信モーダル */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-4 bg-stone-900/50 backdrop-blur-xs">
-          <div className="bg-white border border-stone-300 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden text-stone-900 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white border border-border rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden text-stone-900 animate-in fade-in zoom-in-95 duration-200">
             
             {/* モーダルヘッダー */}
-            <div className="p-4 md:px-6 md:py-4 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border-b border-stone-200 flex items-center justify-between">
+            <div className="p-4 md:px-6 md:py-4 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border-b border-border flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="w-10 h-10 rounded-2xl bg-amber-500 text-stone-950 flex items-center justify-center text-xl shadow-xs font-black">
                   🌟
@@ -224,7 +224,7 @@ export default function PlayerReputationCard({
             <form onSubmit={handleSendKudos} className="p-4 md:p-6 space-y-5 text-sm">
               
               {/* 管理者通報トグル */}
-              <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200 flex items-center justify-between">
+              <div className="p-3 bg-stone-50 rounded-2xl border border-border flex items-center justify-between">
                 <div className="space-y-0.5">
                   <div className="text-xs font-black text-stone-900 flex items-center gap-1.5">
                     <Shield size={14} className="text-amber-600" />
@@ -241,7 +241,7 @@ export default function PlayerReputationCard({
                   className={`px-3 py-1.5 rounded-xl text-xs font-black border transition cursor-pointer ${
                     isReport
                       ? 'bg-rose-100 text-rose-900 border-rose-300'
-                      : 'bg-white text-stone-700 border-stone-300 hover:bg-stone-100'
+                      : 'bg-white text-stone-700 border-border hover:bg-stone-100'
                   }`}
                 >
                   {isReport ? '🛡️ 管理者への通報中' : '称賛モード'}
@@ -267,7 +267,7 @@ export default function PlayerReputationCard({
                           className={`p-2.5 rounded-xl border text-left text-xs font-bold transition flex items-center justify-between gap-1.5 cursor-pointer ${
                             isSelected
                               ? 'bg-amber-500 text-stone-950 border-amber-500 shadow-2xs font-black'
-                              : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
+                              : 'bg-stone-50 text-stone-700 border-border hover:bg-stone-100'
                           }`}
                         >
                           <span className="truncate">{kudo.label}</span>
@@ -293,7 +293,7 @@ export default function PlayerReputationCard({
                       ? '管理者のみに届く相談・通報内容をご記入ください...'
                       : '「キャリーありがとう！」「また組もう！」など温かいメッセージをどうぞ（相手には匿名で届きます）...'
                   }
-                  className="w-full bg-stone-50 border border-stone-300 rounded-2xl p-3 text-stone-900 text-xs focus:border-amber-500 focus:bg-white focus:outline-hidden leading-relaxed font-medium"
+                  className="w-full bg-stone-50 border border-border rounded-2xl p-3 text-stone-900 text-xs focus:border-amber-500 focus:bg-white focus:outline-hidden leading-relaxed font-medium"
                 />
               </div>
 

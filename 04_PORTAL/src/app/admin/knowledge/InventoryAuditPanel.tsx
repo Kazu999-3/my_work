@@ -175,7 +175,7 @@ export default function InventoryAuditPanel() {
   const incompleteList = facts.filter((f) => !f.has_strengths);
 
   return (
-    <div className="bg-white border border-stone-200 rounded-3xl p-6 space-y-6 shadow-sm">
+    <div className="bg-white border border-border rounded-3xl p-6 space-y-6 shadow-sm">
       {/* タイトル ＆ アクション */}
       <div className="flex items-center justify-between border-b border-stone-100 pb-4 flex-wrap gap-3">
         <div>
@@ -234,7 +234,7 @@ export default function InventoryAuditPanel() {
         <div
           onClick={() => setActiveFilter('unverified')}
           className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-            activeFilter === 'unverified' ? 'bg-amber-50 border-amber-300 ring-2 ring-amber-400/30' : 'bg-stone-50 border-stone-200 hover:bg-stone-100'
+            activeFilter === 'unverified' ? 'bg-amber-50 border-amber-300 ring-2 ring-amber-400/30' : 'bg-stone-50 border-border hover:bg-stone-100'
           }`}
         >
           <span className="text-[10px] font-extrabold text-amber-700 uppercase tracking-wider block">人間未確認 (要棚卸し)</span>
@@ -245,7 +245,7 @@ export default function InventoryAuditPanel() {
         <div
           onClick={() => setActiveFilter('outdated')}
           className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-            activeFilter === 'outdated' ? 'bg-teal-50 border-teal-300 ring-2 ring-teal-400/30' : 'bg-stone-50 border-stone-200 hover:bg-stone-100'
+            activeFilter === 'outdated' ? 'bg-teal-50 border-teal-300 ring-2 ring-teal-400/30' : 'bg-stone-50 border-border hover:bg-stone-100'
           }`}
         >
           <span className="text-[10px] font-extrabold text-teal-700 uppercase tracking-wider block">古いトレンド (3日以上経過)</span>
@@ -256,7 +256,7 @@ export default function InventoryAuditPanel() {
         <div
           onClick={() => setActiveFilter('incomplete')}
           className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-            activeFilter === 'incomplete' ? 'bg-rose-50 border-rose-300 ring-2 ring-rose-400/30' : 'bg-stone-50 border-stone-200 hover:bg-stone-100'
+            activeFilter === 'incomplete' ? 'bg-rose-50 border-rose-300 ring-2 ring-rose-400/30' : 'bg-stone-50 border-border hover:bg-stone-100'
           }`}
         >
           <span className="text-[10px] font-extrabold text-rose-700 uppercase tracking-wider block">空項目あり (欠損データ)</span>
@@ -266,7 +266,7 @@ export default function InventoryAuditPanel() {
       </div>
 
       {/* タブ切り替えボタン */}
-      <div className="flex gap-2 border-b border-stone-200 pb-3 overflow-x-auto">
+      <div className="flex gap-2 border-b border-border pb-3 overflow-x-auto">
         <button
           onClick={() => setActiveFilter('unverified')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${
@@ -320,9 +320,9 @@ export default function InventoryAuditPanel() {
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-1">
                 {unverifiedList.map((f) => (
-                  <div key={f.champion_name} className="p-3.5 rounded-2xl border border-stone-200 bg-stone-50/50 flex items-center justify-between gap-3 hover:bg-white hover:border-amber-300 transition">
+                  <div key={f.champion_name} className="p-3.5 rounded-2xl border border-border bg-stone-50/50 flex items-center justify-between gap-3 hover:bg-white hover:border-amber-300 transition">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <img src={getChampIcon(f.champion_name)} alt={f.display_name} className="w-10 h-10 rounded-xl border border-stone-200 object-cover shrink-0" />
+                      <img src={getChampIcon(f.champion_name)} alt={f.display_name} className="w-10 h-10 rounded-xl border border-border object-cover shrink-0" />
                       <div className="min-w-0">
                         <span className="font-extrabold text-stone-900 text-xs truncate block">{f.display_name}</span>
                         <span className="text-[10px] text-stone-400 block font-mono">{f.champion_name}</span>
@@ -359,9 +359,9 @@ export default function InventoryAuditPanel() {
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-1">
                 {outdatedList.map((f) => (
-                  <div key={f.champion_name} className="p-3.5 rounded-2xl border border-stone-200 bg-stone-50/50 flex items-center justify-between gap-3">
+                  <div key={f.champion_name} className="p-3.5 rounded-2xl border border-border bg-stone-50/50 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5">
-                      <img src={getChampIcon(f.champion_name)} alt={f.display_name} className="w-10 h-10 rounded-xl border border-stone-200 object-cover shrink-0" />
+                      <img src={getChampIcon(f.champion_name)} alt={f.display_name} className="w-10 h-10 rounded-xl border border-border object-cover shrink-0" />
                       <div>
                         <span className="font-extrabold text-stone-900 text-xs block">{f.display_name}</span>
                         <span className="text-[10px] text-teal-700 font-bold bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200">
@@ -389,9 +389,9 @@ export default function InventoryAuditPanel() {
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-1">
                 {incompleteList.map((f) => (
-                  <div key={f.champion_name} className="p-3.5 rounded-2xl border border-stone-200 bg-stone-50/50 flex items-center justify-between gap-3">
+                  <div key={f.champion_name} className="p-3.5 rounded-2xl border border-border bg-stone-50/50 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5">
-                      <img src={getChampIcon(f.champion_name)} alt={f.display_name} className="w-10 h-10 rounded-xl border border-stone-200 object-cover shrink-0" />
+                      <img src={getChampIcon(f.champion_name)} alt={f.display_name} className="w-10 h-10 rounded-xl border border-border object-cover shrink-0" />
                       <div>
                         <span className="font-extrabold text-stone-900 text-xs block">{f.display_name}</span>
                         <div className="flex gap-1 text-[9px] font-bold text-rose-600 mt-0.5">
@@ -422,7 +422,7 @@ export default function InventoryAuditPanel() {
                   <p className="text-xs text-stone-400 italic">取り込まれたナレッジデータはありません。</p>
                 ) : (
                   knowledgeItems.map((item) => (
-                    <div key={item.id} className="p-3.5 rounded-2xl border border-stone-200 bg-stone-50/60 flex items-start justify-between gap-3">
+                    <div key={item.id} className="p-3.5 rounded-2xl border border-border bg-stone-50/60 flex items-start justify-between gap-3">
                       <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-extrabold text-stone-900 text-xs">{item.champion}</span>

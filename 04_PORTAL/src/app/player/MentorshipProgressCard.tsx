@@ -251,7 +251,7 @@ export default function MentorshipProgressCard({
         return (
           <div
             key={match.id}
-            className="bg-white dark:bg-[#202225] border border-stone-200 dark:border-stone-800 rounded-3xl p-5 md:p-6 shadow-sm space-y-5"
+            className="bg-white dark:bg-[#202225] border border-border dark:border-stone-800 rounded-3xl p-5 md:p-6 shadow-sm space-y-5"
           >
             {/* ヘッダー: 役職 ＆ パートナー情報 */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 dark:border-stone-800 pb-4">
@@ -325,7 +325,7 @@ export default function MentorshipProgressCard({
             </div>
 
             {/* 目標ランク進捗バー */}
-            <div className="bg-stone-50 dark:bg-stone-900/50 border border-stone-200/80 dark:border-stone-800/80 rounded-2xl p-4 space-y-2.5">
+            <div className="bg-stone-50 dark:bg-stone-900/50 border border-border/80 dark:border-stone-800/80 rounded-2xl p-4 space-y-2.5">
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-1.5 font-extrabold text-stone-800 dark:text-stone-200">
                   <Target className="w-4 h-4 text-rose-500" />
@@ -345,7 +345,7 @@ export default function MentorshipProgressCard({
 
               {/* 進捗ゲージ */}
               <div className="space-y-1.5">
-                <div className="w-full bg-stone-200 dark:bg-stone-800 h-3 rounded-full overflow-hidden p-0.5 border border-stone-300 dark:border-stone-700/60">
+                <div className="w-full bg-stone-200 dark:bg-stone-800 h-3 rounded-full overflow-hidden p-0.5 border border-border dark:border-stone-700/60">
                   <div
                     className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full transition-all duration-500 shadow-sm"
                     style={{ width: `${progressPct}%` }}
@@ -390,7 +390,7 @@ export default function MentorshipProgressCard({
                       value={editTargetRank}
                       onChange={(e) => setEditTargetRank(e.target.value)}
                       placeholder="例: GOLD IV, EMERALD IV"
-                      className="w-full text-xs font-bold px-3 py-2 rounded-xl bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 text-stone-900 dark:text-stone-100 focus:outline-none focus:border-amber-500"
+                      className="w-full text-xs font-bold px-3 py-2 rounded-xl bg-white dark:bg-stone-800 border border-border dark:border-stone-700 text-stone-900 dark:text-stone-100 focus:outline-none focus:border-amber-500"
                     />
                   </div>
                   <div>
@@ -402,7 +402,7 @@ export default function MentorshipProgressCard({
                       onChange={(e) => setEditNotes(e.target.value)}
                       rows={3}
                       placeholder="例: Lv3ガンク合わせのショートトレード意識。2デスしたらウェーブをフリーズしてJGを待つ。"
-                      className="w-full text-xs font-medium px-3 py-2 rounded-xl bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 text-stone-900 dark:text-stone-100 focus:outline-none focus:border-amber-500"
+                      className="w-full text-xs font-medium px-3 py-2 rounded-xl bg-white dark:bg-stone-800 border border-border dark:border-stone-700 text-stone-900 dark:text-stone-100 focus:outline-none focus:border-amber-500"
                     />
                   </div>
                   <div className="flex justify-end gap-2">
@@ -426,7 +426,7 @@ export default function MentorshipProgressCard({
                   </div>
                 </div>
               ) : (
-                <div className="bg-stone-50 dark:bg-stone-900/30 border border-stone-200/60 dark:border-stone-800/60 rounded-2xl p-3.5 text-xs text-stone-700 dark:text-stone-300 leading-relaxed min-h-[48px] flex items-center">
+                <div className="bg-stone-50 dark:bg-stone-900/30 border border-border/60 dark:border-stone-800/60 rounded-2xl p-3.5 text-xs text-stone-700 dark:text-stone-300 leading-relaxed min-h-[48px] flex items-center">
                   {match.meta?.progressNotes ? (
                     <p className="whitespace-pre-wrap">{match.meta.progressNotes}</p>
                   ) : (

@@ -126,7 +126,7 @@ function CoachPageContent() {
   if (isAuthenticated === null) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-stone-300 border-t-primary" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-primary" />
       </div>
     );
   }
@@ -134,7 +134,7 @@ function CoachPageContent() {
   if (isAuthenticated === false) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 font-sans text-foreground bg-background">
-        <div className="text-center max-w-sm rounded-3xl border border-stone-200/90 bg-white p-8 shadow-xl">
+        <div className="text-center max-w-sm rounded-3xl border border-border/90 bg-white p-8 shadow-xl">
           <div className="text-4xl mb-4">🔑</div>
           <h2 className="text-lg font-bold mb-2 text-stone-900">認証が必要です</h2>
           <p className="text-xs text-stone-500 mb-6 leading-relaxed">
@@ -165,7 +165,7 @@ function CoachPageContent() {
 
       <div className="mx-auto max-w-[1600px] w-full px-2 md:px-6 space-y-5">
         {/* スリム化されたヘッダー */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/80 border border-stone-200/90 rounded-2xl p-4 shadow-xs backdrop-blur-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/80 border border-border/90 rounded-2xl p-4 shadow-xs backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <div className="text-3xl p-2 bg-amber-50 rounded-2xl border border-amber-200/80">🏆</div>
             <div>
@@ -196,7 +196,7 @@ function CoachPageContent() {
         </div>
 
         {/* 3ステップ ナビゲーションバー */}
-        <div className="bg-white/95 border border-stone-200/90 p-1.5 rounded-2xl shadow-xs">
+        <div className="bg-white/95 border border-border/90 p-1.5 rounded-2xl shadow-xs">
           <div className="grid grid-cols-3 gap-1.5">
             {STEP_TABS.map((tab) => {
               const isActive = activeStepTab === tab.id;
@@ -233,7 +233,7 @@ function CoachPageContent() {
               どのUIからも参照されていなかった（2026-09-30に配線）。
               表示専用の軽量API(/api/coach/play-recommendation)を使うため、
               ここを開いてもGeminiは呼ばれない。 */}
-          <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs space-y-3">
+          <div className="bg-white border border-border rounded-2xl p-4 shadow-xs space-y-3">
             <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
               <span>🚦</span> 次の試合に行くべきか
             </h3>
@@ -275,7 +275,7 @@ function CoachPageContent() {
               「試合後」ではなく「試合前」に置く。 */}
           <div className="pt-2">
             <Collapsible title="🗓️ 今の時間帯は勝てているか（曜日×時間帯 勝率ヒートマップ）" defaultOpen={false}>
-              <div className="pt-3 bg-white border border-stone-200 rounded-2xl p-4 shadow-xs">
+              <div className="pt-3 bg-white border border-border rounded-2xl p-4 shadow-xs">
                 <TimingHeatmapCard />
               </div>
             </Collapsible>
@@ -286,7 +286,7 @@ function CoachPageContent() {
               開くと当日のLPスナップショットも記録されるので、使うほど推移が貯まる。 */}
           <div className="pt-2">
             <Collapsible title="🎯 ランク目標と到達見込み" defaultOpen={false}>
-              <div className="pt-3 bg-white border border-stone-200 rounded-2xl p-4 shadow-xs">
+              <div className="pt-3 bg-white border border-border rounded-2xl p-4 shadow-xs">
                 <RankGoalCard />
               </div>
             </Collapsible>
@@ -333,7 +333,7 @@ function CoachPageContent() {
 
           <div className="space-y-6">
             {/* 上段: リアルタイム偵察 */}
-            <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs space-y-3">
+            <div className="bg-white border border-border rounded-2xl p-4 shadow-xs space-y-3">
               <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
                 <span>🧭</span> リアルタイム偵察 (敵10人スキャン ＆ ガンク優先ターゲット)
               </h3>
@@ -341,7 +341,7 @@ function CoachPageContent() {
             </div>
 
             {/* 下段: 統合 チーム構成 ＆ 勝ち筋シミュレーター */}
-            <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs space-y-3">
+            <div className="bg-white border border-border rounded-2xl p-4 shadow-xs space-y-3">
               <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
                 <span>⚔️</span> チーム構成 ＆ 勝ち筋シミュレーター
               </h3>
@@ -369,7 +369,7 @@ function CoachPageContent() {
           />
 
           {/* 📝 ソロQ振り返りの記録 */}
-          <div className="pt-2 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-stone-200 bg-white p-4 shadow-xs">
+          <div className="pt-2 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border bg-white p-4 shadow-xs">
             {/* 2026-09-30: 自動振り返り（上の「🤖 自動振り返りの履歴」）を画面に出したので、
                 自動と手動の役割が重なって見える。手動側は「自分の言葉で残す」用途だと
                 分かるように文言を整えた。なお手動記録(soloq_reflections)は18件で
@@ -394,7 +394,7 @@ function CoachPageContent() {
               通知本文（500字で切り詰め）以外から読めない状態だったのを解消する。 */}
           <div className="pt-2">
             <Collapsible title="🤖 自動振り返りの履歴 ＆ 傾向分析" defaultOpen={false}>
-              <div className="pt-3 bg-white border border-stone-200 rounded-2xl p-4 shadow-xs">
+              <div className="pt-3 bg-white border border-border rounded-2xl p-4 shadow-xs">
                 <CoachReviewPanel />
               </div>
             </Collapsible>
@@ -403,7 +403,7 @@ function CoachPageContent() {
           {/* 📂 過去の全ソロQログ履歴（折りたたみ） */}
           <div className="pt-2">
             <Collapsible title="📂 過去の全ソロQカルテ・対戦ログ履歴を展開" defaultOpen={false}>
-              <div className="pt-3 bg-white border border-stone-200 rounded-2xl p-4 shadow-xs">
+              <div className="pt-3 bg-white border border-border rounded-2xl p-4 shadow-xs">
                 <MySoloQDashboard refreshSignal={reflectionRefresh} />
               </div>
             </Collapsible>
@@ -462,7 +462,7 @@ export default function CoachPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-stone-300 border-t-primary" />
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-primary" />
       </div>
     }>
       <CoachPageContent />

@@ -3,8 +3,8 @@
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-background: #f8fafc;
-  --color-foreground: #0f172a;
+  --color-background: #fafaf9;   /* stone-50。部品が使う暖色に合わせる(2026-09-30) */
+  --color-foreground: #1c1917;   /* stone-900 */
 
   /* Sovereign Clean Modern Light Theme（クリーンなスレート・オフホワイト調モダンUI） */
   --color-primary: #d97706;
@@ -15,9 +15,9 @@
   --color-success: #10b981;
   --color-danger: #ef4444;
   --color-surface: #ffffff;
-  --color-surface-hover: #f1f5f9;
-  --color-border: #e2e8f0;
-  --color-muted: #64748b;
+  --color-surface-hover: #e7e5e4; /* stone-200 */
+  --color-border: #e7e5e4;       /* stone-200 */
+  --color-muted: #78716c;        /* stone-500 */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
@@ -637,12 +637,11 @@ html.dark [class*="to-blue-200\\/"] {
   background-color: #35373c !important;
 }
 
-html.dark .border-stone-200,
-html.dark [class*="border-stone-200"],
-html.dark .border-stone-300,
-html.dark [class*="border-stone-300"] {
-  border-color: #3f4147 !important;
-}
+/* ⬇️ 枠線の中和ルールは撤去した（2026-09-30 Phase 1）。
+   border-stone-200/300 の870箇所を トークン border-border へ移行済みで、
+   トークンは @theme と html.dark でライト #e7e5e4 / ダーク #3f4147 に
+   切り替わるため、後追いの !important 上書きが不要になった。
+   ※ PlayerSettingsPanel の dark:border-stone-200 だけは意図的な反転指定として残している。 */
 
 /* 🔠 極小フォントの下限（2026-09-23）
    ------------------------------------------------------------------

@@ -116,7 +116,7 @@ export default function OmikujiModal({ isOpen, onClose, omikujiData, onClaimFini
           <div
             className={`w-28 h-28 mx-auto rounded-3xl flex items-center justify-center text-5xl shadow-xl transition-all duration-300 ${
               isSpinning
-                ? 'bg-gradient-to-br from-stone-100 to-stone-200 dark:from-[#1e1f22] dark:to-[#35373c] animate-bounce-short border-2 border-stone-300 dark:border-[#3f4147]'
+                ? 'bg-gradient-to-br from-stone-100 to-stone-200 dark:from-[#1e1f22] dark:to-[#35373c] animate-bounce-short border-2 border-border dark:border-[#3f4147]'
                 : `bg-gradient-to-br ${style.bg} ${style.glow} text-white scale-110`
             }`}
           >
@@ -125,7 +125,7 @@ export default function OmikujiModal({ isOpen, onClose, omikujiData, onClaimFini
 
           {!isSpinning && (
             <div className="mt-3">
-              <span className="inline-block px-3 py-0.5 rounded-full text-[11px] font-black bg-white/90 dark:bg-[#1e1f22] text-stone-900 dark:text-white shadow-sm border border-stone-200 dark:border-[#3f4147]">
+              <span className="inline-block px-3 py-0.5 rounded-full text-[11px] font-black bg-white/90 dark:bg-[#1e1f22] text-stone-900 dark:text-white shadow-sm border border-border dark:border-[#3f4147]">
                 {style.badge}
               </span>
             </div>

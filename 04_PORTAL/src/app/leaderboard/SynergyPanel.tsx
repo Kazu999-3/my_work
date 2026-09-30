@@ -111,7 +111,7 @@ export default function SynergyPanel() {
     <div className="space-y-6">
 
       {/* 🏆 ベストデュオ相性ランキング */}
-      <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-xs space-y-4">
+      <div className="bg-white rounded-3xl p-6 border border-border shadow-xs space-y-4">
         <h3 className="text-base font-black text-stone-900 flex items-center gap-2">
           <Crown className="w-5 h-5 text-amber-500" />
           最強デュオ相性ランキング (勝率順)
@@ -121,7 +121,7 @@ export default function SynergyPanel() {
           {filteredBestAlly.slice(0, 12).map((item, idx) => (
             <div
               key={item.p1 + item.p2}
-              className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200/80 hover:border-amber-300 transition flex items-center justify-between gap-3"
+              className="p-3.5 rounded-2xl bg-stone-50 border border-border/80 hover:border-amber-300 transition flex items-center justify-between gap-3"
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${

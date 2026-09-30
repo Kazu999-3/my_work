@@ -24,7 +24,7 @@ export default function HomePage() {
       <div className="max-w-5xl mx-auto w-full space-y-8">
         
         {/* トップヘッダー */}
-        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/90 dark:bg-[#2b2d31]/90 backdrop-blur-md border border-stone-200/90 dark:border-[#3f4147] rounded-3xl p-6 shadow-xs">
+        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white/90 dark:bg-[#2b2d31]/90 backdrop-blur-md border border-border/90 dark:border-[#3f4147] rounded-3xl p-6 shadow-xs">
           <div className="flex items-center gap-4">
             <div className="text-3xl sm:text-4xl p-3 bg-gradient-to-br from-amber-50 to-amber-100/80 dark:from-amber-500/20 dark:to-amber-500/10 rounded-2xl border border-amber-300/80 dark:border-amber-500/30 shadow-xs shrink-0">
               👑
@@ -47,7 +47,7 @@ export default function HomePage() {
           <div className="flex items-center gap-2 flex-wrap">
             <Link
               href="/guide"
-              className="px-3.5 py-2 bg-stone-100 hover:bg-stone-200 dark:bg-[#1e1f22] dark:hover:bg-[#35373c] text-stone-700 dark:text-stone-200 border border-stone-300 dark:border-[#3f4147] rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+              className="px-3.5 py-2 bg-stone-100 hover:bg-stone-200 dark:bg-[#1e1f22] dark:hover:bg-[#35373c] text-stone-700 dark:text-stone-200 border border-border dark:border-[#3f4147] rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
             >
               <BookOpen className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               <span>利用ガイド</span>
@@ -86,7 +86,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-xs font-black text-amber-700 dark:text-amber-400 group-hover:translate-x-1 transition-transform border-t border-stone-200/80 dark:border-[#3f4147] pt-3">
+            <div className="flex items-center justify-between text-xs font-black text-amber-700 dark:text-amber-400 group-hover:translate-x-1 transition-transform border-t border-border/80 dark:border-[#3f4147] pt-3">
               <span>マイカルテを開く</span>
               <ChevronRight className="w-4 h-4" />
             </div>
@@ -117,7 +117,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-xs font-black text-emerald-700 dark:text-emerald-400 group-hover:translate-x-1 transition-transform border-t border-stone-200/80 dark:border-[#3f4147] pt-3">
+            <div className="flex items-center justify-between text-xs font-black text-emerald-700 dark:text-emerald-400 group-hover:translate-x-1 transition-transform border-t border-border/80 dark:border-[#3f4147] pt-3">
               <span>師弟掲示板を見る</span>
               <ChevronRight className="w-4 h-4" />
             </div>
@@ -126,7 +126,7 @@ export default function HomePage() {
           {/* 3. チーム分けバランサー */}
           <Link
             href="/balancer"
-            className="group relative bg-white/90 dark:bg-[#2b2d31]/90 backdrop-blur-md border border-stone-200/90 hover:border-rose-400 dark:border-[#3f4147] dark:hover:border-rose-500 p-6 rounded-3xl transition-all duration-300 shadow-xs hover:shadow-lg hover:shadow-rose-500/10 flex flex-col justify-between space-y-5 cursor-pointer"
+            className="group relative bg-white/90 dark:bg-[#2b2d31]/90 backdrop-blur-md border border-border/90 hover:border-rose-400 dark:border-[#3f4147] dark:hover:border-rose-500 p-6 rounded-3xl transition-all duration-300 shadow-xs hover:shadow-lg hover:shadow-rose-500/10 flex flex-col justify-between space-y-5 cursor-pointer"
           >
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -148,7 +148,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-xs font-black text-rose-700 dark:text-rose-400 group-hover:translate-x-1 transition-transform border-t border-stone-200/80 dark:border-[#3f4147] pt-3">
+            <div className="flex items-center justify-between text-xs font-black text-rose-700 dark:text-rose-400 group-hover:translate-x-1 transition-transform border-t border-border/80 dark:border-[#3f4147] pt-3">
               <span>バランサーを開く</span>
               <ChevronRight className="w-4 h-4" />
             </div>
@@ -157,7 +157,7 @@ export default function HomePage() {
           {/* 4. 勝敗予想 (カジノ) */}
           <Link
             href="/casino"
-            className="group relative bg-white/90 dark:bg-[#2b2d31]/90 backdrop-blur-md border border-stone-200/90 hover:border-amber-400 dark:border-[#3f4147] dark:hover:border-amber-500 p-6 rounded-3xl transition-all duration-300 shadow-xs hover:shadow-lg hover:shadow-amber-500/10 flex flex-col justify-between space-y-5 cursor-pointer"
+            className="group relative bg-white/90 dark:bg-[#2b2d31]/90 backdrop-blur-md border border-border/90 hover:border-amber-400 dark:border-[#3f4147] dark:hover:border-amber-500 p-6 rounded-3xl transition-all duration-300 shadow-xs hover:shadow-lg hover:shadow-amber-500/10 flex flex-col justify-between space-y-5 cursor-pointer"
           >
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -179,7 +179,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-xs font-black text-amber-700 dark:text-amber-400 group-hover:translate-x-1 transition-transform border-t border-stone-200/80 dark:border-[#3f4147] pt-3">
+            <div className="flex items-center justify-between text-xs font-black text-amber-700 dark:text-amber-400 group-hover:translate-x-1 transition-transform border-t border-border/80 dark:border-[#3f4147] pt-3">
               <span>勝敗予想へ行く</span>
               <ChevronRight className="w-4 h-4" />
             </div>
@@ -227,7 +227,7 @@ export default function HomePage() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`bg-white/80 dark:bg-[#2b2d31]/80 backdrop-blur-sm border border-stone-200/90 dark:border-[#3f4147] rounded-2xl p-4 transition-all duration-200 shadow-2xs hover:shadow-md hover:-translate-y-0.5 flex flex-col justify-between space-y-2 group cursor-pointer ${item.borderHover}`}
+                className={`bg-white/80 dark:bg-[#2b2d31]/80 backdrop-blur-sm border border-border/90 dark:border-[#3f4147] rounded-2xl p-4 transition-all duration-200 shadow-2xs hover:shadow-md hover:-translate-y-0.5 flex flex-col justify-between space-y-2 group cursor-pointer ${item.borderHover}`}
               >
                 <div className="p-2 rounded-xl bg-stone-100 dark:bg-[#1e1f22] group-hover:scale-110 transition-transform w-fit">
                   {item.icon}
@@ -246,7 +246,7 @@ export default function HomePage() {
         </div>
 
         {/* フッター */}
-        <footer className="text-center text-[11px] text-stone-500 dark:text-stone-400 font-bold border-t border-stone-200/80 dark:border-[#3f4147] pt-6">
+        <footer className="text-center text-[11px] text-stone-500 dark:text-stone-400 font-bold border-t border-border/80 dark:border-[#3f4147] pt-6">
           <p>© 2026 KTM Custom Portal. All Rights Reserved.</p>
         </footer>
 

@@ -94,7 +94,7 @@ export default function CoachReviewPanel() {
       </p>
 
       {/* 傾向分析（Geminiを使うのでボタン実行） */}
-      <div className="rounded-xl border border-stone-300 dark:border-stone-700/60 bg-white dark:bg-stone-900/60 p-3.5 space-y-2">
+      <div className="rounded-xl border border-border dark:border-stone-700/60 bg-white dark:bg-stone-900/60 p-3.5 space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="min-w-0">
             <div className="text-xs font-black text-stone-900 dark:text-stone-100">📈 蓄積した振り返りの傾向分析</div>
@@ -135,7 +135,7 @@ export default function CoachReviewPanel() {
             return (
               <div
                 key={a.matchId}
-                className="rounded-xl border border-stone-300 dark:border-stone-700/60 bg-white dark:bg-stone-900/60 overflow-hidden"
+                className="rounded-xl border border-border dark:border-stone-700/60 bg-white dark:bg-stone-900/60 overflow-hidden"
               >
                 <button
                   type="button"
@@ -162,7 +162,7 @@ export default function CoachReviewPanel() {
                 </button>
 
                 {open && (
-                  <div className="px-3.5 pb-3 space-y-2 border-t border-stone-200 dark:border-stone-800 pt-2.5">
+                  <div className="px-3.5 pb-3 space-y-2 border-t border-border dark:border-stone-800 pt-2.5">
                     <div className="flex flex-wrap gap-3 text-[11px] text-stone-600 dark:text-stone-300">
                       <span>ロール: {a.role || '—'}</span>
                       <span>CS/分: {a.csPerMin}</span>

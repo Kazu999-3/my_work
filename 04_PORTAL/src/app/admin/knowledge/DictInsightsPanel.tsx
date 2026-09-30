@@ -189,7 +189,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
 
       {/* 矛盾検出 */}
       {mode === 'inspect' && (
-      <div className="bg-white border border-stone-200 rounded-2xl p-5">
+      <div className="bg-white border border-border rounded-2xl p-5">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
           <h3 className="font-black text-stone-900 flex items-center gap-2">
             <AlertTriangle size={16} className="text-amber-600" /> 辞典の矛盾検出
@@ -207,7 +207,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
         ) : (
           <div className="space-y-2">
             {issues.map((it, i) => (
-              <div key={i} className={`rounded-xl border px-3 py-2 ${typeLabel[it.type]?.cls || 'bg-stone-100 text-stone-700 border-stone-200'}`}>
+              <div key={i} className={`rounded-xl border px-3 py-2 ${typeLabel[it.type]?.cls || 'bg-stone-100 text-stone-700 border-border'}`}>
                 <div className="flex items-center gap-2 flex-wrap text-xs">
                   <span className="font-black">{it.champion} vs {it.enemy}</span>
                   <span className="text-[10px] opacity-70">{typeLabel[it.type]?.label}</span>
@@ -223,7 +223,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
 
       {/* 既存データの日本語化 */}
       {mode === 'maintenance' && (
-      <div className="bg-white border border-stone-200 rounded-2xl p-5">
+      <div className="bg-white border border-border rounded-2xl p-5">
         <h3 className="font-black text-stone-900 flex items-center gap-2 mb-3">
           <span className="w-6 h-6 rounded-full bg-orange-500 text-black text-xs flex items-center justify-center font-black shrink-0">1</span>
           <Languages size={16} className="text-orange-600" /> 英語データの日本語化
@@ -251,7 +251,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
 
       {/* レーン別ガイドへの統合 */}
       {mode === 'maintenance' && (
-      <div className="bg-white border border-stone-200 rounded-2xl p-5">
+      <div className="bg-white border border-border rounded-2xl p-5">
         <h3 className="font-black text-stone-900 flex items-center gap-2 mb-3">
           <span className="w-6 h-6 rounded-full bg-amber-500 text-black text-xs flex items-center justify-center font-black shrink-0">3</span>
           <MapIcon size={16} className="text-amber-600" /> レーン別ガイドへ統合
@@ -269,7 +269,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
             {laneMerging ? `統合中... (${laneProgress}本)` : '🗺️ レーン別ガイドへ統合'}
           </button>
           <button onClick={restoreLaneArticles} disabled={laneMerging || restoring}
-            className="text-xs font-bold bg-black/5 text-stone-700 border border-stone-300 px-4 py-2 rounded-lg hover:bg-black/10 disabled:opacity-50">
+            className="text-xs font-bold bg-black/5 text-stone-700 border border-border px-4 py-2 rounded-lg hover:bg-black/10 disabled:opacity-50">
             {restoring ? '復旧中...' : '↩️ 消えた記事をライブラリに戻す'}
           </button>
         </div>
@@ -284,7 +284,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
 
       {/* 自動リサーチ（LoLalytics） */}
       {mode === 'inspect' && (
-      <div className="bg-white border border-stone-200 rounded-2xl p-5">
+      <div className="bg-white border border-border rounded-2xl p-5">
         <h3 className="font-black text-stone-900 flex items-center gap-2 mb-3">
           <Globe size={16} className="text-teal-600" /> 自動リサーチ（LoLalytics統計）
         </h3>
@@ -293,9 +293,9 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
           <input value={researchChamp} onChange={e => setResearchChamp(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') runResearch(false); }}
             placeholder="チャンピオン名（英語ID 例: Graves）"
-            className="flex-1 min-w-[180px] bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm text-stone-900 outline-none focus:border-teal-500" />
+            className="flex-1 min-w-[180px] bg-stone-50 border border-border rounded-lg px-3 py-2 text-sm text-stone-900 outline-none focus:border-teal-500" />
           <select value={researchRole} onChange={e => setResearchRole(e.target.value)}
-            className="bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm text-stone-700 outline-none">
+            className="bg-stone-50 border border-border rounded-lg px-3 py-2 text-sm text-stone-700 outline-none">
             {['TOP', 'JG', 'MID', 'ADC', 'SUP'].map(r => <option key={r} value={r}>{r}</option>)}
           </select>
           <button onClick={() => runResearch(false)} disabled={researching || !researchChamp.trim()}
@@ -340,7 +340,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
 
       {/* メモの自動要約 */}
       {mode === 'inspect' && (
-      <div className="bg-white border border-stone-200 rounded-2xl p-5">
+      <div className="bg-white border border-border rounded-2xl p-5">
         <h3 className="font-black text-stone-900 flex items-center gap-2 mb-3">
           <Sparkles size={16} className="text-amber-600" /> 対面メモの自動要約
         </h3>
@@ -349,7 +349,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
           <input value={champion} onChange={e => setChampion(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') runSummarize(); }}
             placeholder="チャンピオン名（英語ID 例: Graves）"
-            className="flex-1 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm text-stone-900 outline-none focus:border-amber-500" />
+            className="flex-1 bg-stone-50 border border-border rounded-lg px-3 py-2 text-sm text-stone-900 outline-none focus:border-amber-500" />
           <button onClick={runSummarize} disabled={summarizing || !champion.trim()}
             className="flex items-center gap-1.5 text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 px-4 py-2 rounded-lg hover:bg-amber-200 disabled:opacity-50">
             {summarizing ? <RefreshCw size={13} className="animate-spin" /> : <Sparkles size={13} />} 要約

@@ -21,7 +21,7 @@ export default function HistoryPage() {
           <div className="flex items-center gap-2">
             <Link
               href="/leaderboard"
-              className="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 border border-stone-200 text-xs font-bold text-stone-700 transition flex items-center gap-1.5 cursor-pointer"
+              className="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 border border-border text-xs font-bold text-stone-700 transition flex items-center gap-1.5 cursor-pointer"
             >
               <Trophy className="w-3.5 h-3.5 text-amber-600" />
               <span>順位表を見る</span>

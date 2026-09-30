@@ -226,7 +226,7 @@ export default function ChampionQuickSelector({
   const enemyFiltered = filterChampions(enemyQuery);
 
   return (
-    <div className="rounded-3xl border border-stone-200/90 bg-white/95 p-5 shadow-xs space-y-4">
+    <div className="rounded-3xl border border-border/90 bg-white/95 p-5 shadow-xs space-y-4">
       {/* 上部ヘッダー ＆ ライブ自動検出ボタン */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-3">
         <div>
@@ -244,7 +244,7 @@ export default function ChampionQuickSelector({
 
         <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
           {/* 🎮 Riot ID 管理チップ */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-stone-100 border border-stone-200 text-stone-700">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-stone-100 border border-border text-stone-700">
             <span className="text-stone-400 font-medium">対象ID:</span>
             {isEditingRiotId ? (
               <div className="flex items-center gap-1">
@@ -349,14 +349,14 @@ export default function ChampionQuickSelector({
               className={`w-full rounded-2xl border bg-stone-50/70 py-2.5 pr-8 text-xs font-bold text-stone-900 outline-none transition-all focus:bg-white focus:ring-2 ${
                 myChampion
                   ? 'pl-11 border-teal-300 focus:border-teal-500 focus:ring-teal-100'
-                  : 'pl-9 border-stone-300 focus:border-amber-500 focus:ring-amber-100'
+                  : 'pl-9 border-border focus:border-amber-500 focus:ring-amber-100'
               }`}
             />
           </div>
 
           {/* オートコンプリート候補ドロップダウン */}
           {isMyDropdownOpen && (
-            <div className="absolute z-30 left-0 right-0 mt-1 max-h-56 overflow-y-auto rounded-2xl border border-stone-200 bg-white p-1.5 shadow-xl space-y-0.5">
+            <div className="absolute z-30 left-0 right-0 mt-1 max-h-56 overflow-y-auto rounded-2xl border border-border bg-white p-1.5 shadow-xl space-y-0.5">
               {myFiltered.length === 0 ? (
                 <div className="p-3 text-center text-xs text-stone-400">見つかりませんでした</div>
               ) : (
@@ -370,7 +370,7 @@ export default function ChampionQuickSelector({
                     <img
                       src={getDDragonIconUrl(c.id)}
                       alt={c.id}
-                      className="w-5 h-5 rounded-md object-cover border border-stone-200"
+                      className="w-5 h-5 rounded-md object-cover border border-border"
                       onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
                     />
                     <span className="font-bold">{c.nameJa}</span>
@@ -391,7 +391,7 @@ export default function ChampionQuickSelector({
             type="button"
             onClick={handleSwap}
             title="自分と相手を入れ替え"
-            className="p-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-600 hover:text-stone-900 transition-all border border-stone-200/80 shadow-2xs cursor-pointer"
+            className="p-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-600 hover:text-stone-900 transition-all border border-border/80 shadow-2xs cursor-pointer"
           >
             <ArrowLeftRight size={14} />
           </button>
@@ -437,14 +437,14 @@ export default function ChampionQuickSelector({
               className={`w-full rounded-2xl border bg-stone-50/70 py-2.5 pr-8 text-xs font-bold text-stone-900 outline-none transition-all focus:bg-white focus:ring-2 ${
                 enemyChampion
                   ? 'pl-11 border-red-300 focus:border-red-500 focus:ring-red-100'
-                  : 'pl-9 border-stone-300 focus:border-amber-500 focus:ring-amber-100'
+                  : 'pl-9 border-border focus:border-amber-500 focus:ring-amber-100'
               }`}
             />
           </div>
 
           {/* オートコンプリート候補ドロップダウン */}
           {isEnemyDropdownOpen && (
-            <div className="absolute z-30 left-0 right-0 mt-1 max-h-56 overflow-y-auto rounded-2xl border border-stone-200 bg-white p-1.5 shadow-xl space-y-0.5">
+            <div className="absolute z-30 left-0 right-0 mt-1 max-h-56 overflow-y-auto rounded-2xl border border-border bg-white p-1.5 shadow-xl space-y-0.5">
               {enemyFiltered.length === 0 ? (
                 <div className="p-3 text-center text-xs text-stone-400">見つかりませんでした</div>
               ) : (
@@ -458,7 +458,7 @@ export default function ChampionQuickSelector({
                     <img
                       src={getDDragonIconUrl(c.id)}
                       alt={c.id}
-                      className="w-5 h-5 rounded-md object-cover border border-stone-200"
+                      className="w-5 h-5 rounded-md object-cover border border-border"
                       onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
                     />
                     <span className="font-bold">{c.nameJa}</span>
@@ -492,7 +492,7 @@ export default function ChampionQuickSelector({
                   className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
                     isSelected
                       ? 'bg-teal-600 text-white border-teal-700 shadow-xs scale-[1.03]'
-                      : 'bg-stone-100/90 hover:bg-teal-50 hover:text-teal-800 hover:border-teal-200 text-stone-700 border-stone-200/80'
+                      : 'bg-stone-100/90 hover:bg-teal-50 hover:text-teal-800 hover:border-teal-200 text-stone-700 border-border/80'
                   }`}
                 >
                   <img
@@ -524,7 +524,7 @@ export default function ChampionQuickSelector({
                   className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
                     isSelected
                       ? 'bg-red-600 text-white border-red-700 shadow-xs scale-[1.03]'
-                      : 'bg-stone-100/90 hover:bg-red-50 hover:text-red-800 hover:border-red-200 text-stone-700 border-stone-200/80'
+                      : 'bg-stone-100/90 hover:bg-red-50 hover:text-red-800 hover:border-red-200 text-stone-700 border-border/80'
                   }`}
                 >
                   <img

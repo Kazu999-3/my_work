@@ -18,10 +18,10 @@ export const metadata = {
 // 静的な内容のみのページ。1日キャッシュして構わない。
 export const revalidate = 86400;
 
-const CARD = 'rounded-2xl border border-stone-300 bg-white/70 p-5 md:p-6 shadow-sm';
+const CARD = 'rounded-2xl border border-border bg-white/70 p-5 md:p-6 shadow-sm';
 const H2 = 'text-lg md:text-xl font-black text-stone-900 flex items-center gap-2 mb-1';
 const TH = 'text-left font-black text-stone-600 text-[11px] uppercase tracking-wide px-3 py-2';
-const TD = 'px-3 py-2 text-stone-800 border-t border-stone-200';
+const TD = 'px-3 py-2 text-stone-800 border-t border-border';
 
 /** 還元率バッジ。数値そのままを出し、良し悪しを色で補足する */
 function RtpBadge({ rtp }: { rtp: number }) {
@@ -99,7 +99,7 @@ export default function CasinoRulesPage() {
 
       <div className="max-w-4xl mx-auto px-4 md:px-6 py-8 space-y-6">
         {/* RTPの説明 */}
-        <div className="rounded-2xl border border-stone-300 bg-stone-100/80 p-5">
+        <div className="rounded-2xl border border-border bg-stone-100/80 p-5">
           <h2 className="text-sm font-black text-stone-900 flex items-center gap-2 mb-2">
             <Info size={16} className="text-stone-600" />
             還元率（RTP）の読み方
@@ -352,7 +352,7 @@ export default function CasinoRulesPage() {
         </section>
 
         {/* 免責 */}
-        <div className="rounded-2xl border border-stone-300 bg-stone-100/80 p-5">
+        <div className="rounded-2xl border border-border bg-stone-100/80 p-5">
           <p className="text-[11px] md:text-xs text-stone-600 leading-relaxed">
             コインはKTM内でのみ使える遊び用のポイントで、現金や現金価値のあるものとは一切交換できません。
             抽選はすべてサーバー側で行われ、結果は確定するまでクライアントへ送信されません。

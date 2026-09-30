@@ -25,7 +25,7 @@ export default function ThemeToggle({ variant = 'compact', className = '' }: The
 
   if (variant === 'full') {
     return (
-      <div className={`flex items-center gap-1 p-1 bg-stone-200/70 dark:bg-[#2b2d31] rounded-xl border border-stone-300/60 dark:border-[#3f4147] ${className}`}>
+      <div className={`flex items-center gap-1 p-1 bg-stone-200/70 dark:bg-[#2b2d31] rounded-xl border border-border/60 dark:border-[#3f4147] ${className}`}>
         <button
           type="button"
           onClick={() => setTheme('light')}
@@ -73,7 +73,7 @@ export default function ThemeToggle({ variant = 'compact', className = '' }: The
     <button
       type="button"
       onClick={toggleTheme}
-      className={`p-2 rounded-xl bg-white/80 dark:bg-[#2b2d31]/80 hover:bg-stone-100 dark:hover:bg-[#35373c] text-stone-700 dark:text-stone-200 border border-stone-200/80 dark:border-[#3f4147] shadow-2xs transition-all flex items-center justify-center cursor-pointer group ${className}`}
+      className={`p-2 rounded-xl bg-white/80 dark:bg-[#2b2d31]/80 hover:bg-stone-100 dark:hover:bg-[#35373c] text-stone-700 dark:text-stone-200 border border-border/80 dark:border-[#3f4147] shadow-2xs transition-all flex items-center justify-center cursor-pointer group ${className}`}
       title={`テーマ切替 (現在: ${resolvedTheme === 'dark' ? 'ダーク' : 'ライト'})`}
       aria-label="ダークモード切り替え"
     >

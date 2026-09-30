@@ -222,7 +222,7 @@ function DictHealthDashboardContent() {
 
       <div className="w-full space-y-5">
         {/* 3タブの使い方ガイド（折りたたみアコーディオン） */}
-        <div className="bg-gradient-to-br from-stone-50 to-amber-50/30 rounded-2xl border border-stone-200 p-3.5 sm:p-5 shadow-xs">
+        <div className="bg-gradient-to-br from-stone-50 to-amber-50/30 rounded-2xl border border-border p-3.5 sm:p-5 shadow-xs">
           <button
             type="button"
             onClick={() => setShowGuide(!showGuide)}
@@ -238,7 +238,7 @@ function DictHealthDashboardContent() {
           </button>
 
           {showGuide && (
-            <div className="mt-3.5 pt-3 border-t border-stone-200 space-y-3 animate-fade-in">
+            <div className="mt-3.5 pt-3 border-t border-border space-y-3 animate-fade-in">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-3">
                 {/* タブ1 ガイド */}
                 <button
@@ -246,7 +246,7 @@ function DictHealthDashboardContent() {
                   className={`text-left p-3 sm:p-3.5 rounded-xl border-2 transition-all hover:shadow-md ${
                     hubTab === 'health'
                       ? 'border-amber-400 bg-amber-50 ring-2 ring-amber-300/40'
-                      : 'border-stone-200 bg-white hover:border-amber-300'
+                      : 'border-border bg-white hover:border-amber-300'
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-1.5">
@@ -271,7 +271,7 @@ function DictHealthDashboardContent() {
                   className={`text-left p-3 sm:p-3.5 rounded-xl border-2 transition-all hover:shadow-md ${
                     hubTab === 'audit'
                       ? 'border-teal-400 bg-teal-50 ring-2 ring-teal-300/40'
-                      : 'border-stone-200 bg-white hover:border-teal-300'
+                      : 'border-border bg-white hover:border-teal-300'
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-1.5">
@@ -296,7 +296,7 @@ function DictHealthDashboardContent() {
                   className={`text-left p-3 sm:p-3.5 rounded-xl border-2 transition-all hover:shadow-md ${
                     hubTab === 'history'
                       ? 'border-pink-400 bg-pink-50 ring-2 ring-pink-300/40'
-                      : 'border-stone-200 bg-white hover:border-pink-300'
+                      : 'border-border bg-white hover:border-pink-300'
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-1.5">
@@ -325,7 +325,7 @@ function DictHealthDashboardContent() {
         </div>
 
         {/* ヘッダー */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 sm:gap-6 border-b border-stone-200 pb-4 sm:pb-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 sm:gap-6 border-b border-border pb-4 sm:pb-6">
           <div className="w-full md:w-auto">
             <div className="flex items-center gap-2 flex-wrap">
               <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-amber-600 shrink-0" />
@@ -411,7 +411,7 @@ function DictHealthDashboardContent() {
                 className={`p-5 rounded-2xl border text-left transition ${
                   statusFilter === 'verified'
                     ? 'bg-emerald-100/80 border-emerald-400 ring-2 ring-emerald-500/30'
-                    : 'bg-white border-stone-200 hover:border-emerald-300'
+                    : 'bg-white border-border hover:border-emerald-300'
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -429,7 +429,7 @@ function DictHealthDashboardContent() {
                 className={`p-5 rounded-2xl border text-left transition ${
                   statusFilter === 'ai_generated'
                     ? 'bg-amber-100/80 border-amber-400 ring-2 ring-amber-500/30'
-                    : 'bg-white border-stone-200 hover:border-amber-300'
+                    : 'bg-white border-border hover:border-amber-300'
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -447,7 +447,7 @@ function DictHealthDashboardContent() {
                 className={`p-5 rounded-2xl border text-left transition ${
                   statusFilter === 'stale'
                     ? 'bg-red-100/80 border-red-400 ring-2 ring-red-500/30'
-                    : 'bg-white border-stone-200 hover:border-red-300'
+                    : 'bg-white border-border hover:border-red-300'
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -481,7 +481,7 @@ function DictHealthDashboardContent() {
                       <img
                         src={getChampIcon(c.champion)}
                         alt={c.champion}
-                        className="w-9 h-9 rounded-lg border border-stone-200 object-cover"
+                        className="w-9 h-9 rounded-lg border border-border object-cover"
                         onError={(e) => { (e.target as any).src = '/favicon.ico'; }}
                       />
                       <div className="flex-1 min-w-0 space-y-1">
@@ -509,7 +509,7 @@ function DictHealthDashboardContent() {
             )}
 
         {/* コントロールバー */}
-        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-stone-200 shadow-xs mb-4 sm:mb-6 space-y-3">
+        <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-border shadow-xs mb-4 sm:mb-6 space-y-3">
           <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
             {/* 検索入力 */}
             <div className="relative flex-1">
@@ -519,7 +519,7 @@ function DictHealthDashboardContent() {
                 placeholder="チャンピオン検索..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 rounded-xl bg-stone-50 border border-stone-200 text-xs font-medium focus:outline-none focus:border-amber-500"
+                className="w-full pl-9 pr-4 py-2 rounded-xl bg-stone-50 border border-border text-xs font-medium focus:outline-none focus:border-amber-500"
               />
             </div>
 
@@ -594,7 +594,7 @@ function DictHealthDashboardContent() {
                       <img
                         src={getChampIcon(champ.champion)}
                         alt={champ.champion}
-                        className="w-10 h-10 rounded-xl border border-stone-200 object-cover shadow-sm"
+                        className="w-10 h-10 rounded-xl border border-border object-cover shadow-sm"
                         onError={(e) => { (e.target as any).src = '/favicon.ico'; }}
                       />
                       <div>
@@ -685,7 +685,7 @@ function DictHealthDashboardContent() {
         </div>
 
         {filteredList.length === 0 && (
-          <div className="text-center py-16 bg-white rounded-2xl border border-stone-200">
+          <div className="text-center py-16 bg-white rounded-2xl border border-border">
             <p className="text-sm font-bold text-stone-500">条件に一致するチャンピオンが見つかりませんでした</p>
           </div>
         )}
@@ -704,7 +704,7 @@ function DictHealthDashboardContent() {
                 <DeepResearchPanel />
               </div>
 
-              <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
+              <div className="bg-white rounded-3xl border border-border p-6 shadow-sm">
                 <div className="flex items-center gap-2 mb-4">
                   <Sparkles className="text-amber-600 w-5 h-5" />
                   <h2 className="text-sm font-extrabold text-stone-900">💡 ナレッジ点検 & 蓄積メモ・プロ分析インサイト</h2>
@@ -725,7 +725,7 @@ function DictHealthDashboardContent() {
             <InventoryAuditPanel />
 
             {/* AIファクトチェック */}
-            <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
+            <div className="bg-white rounded-3xl border border-border p-6 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <FileCheck className="text-teal-600 w-5 h-5" />
                 <h2 className="text-sm font-extrabold text-stone-900">🕵️‍♂️ AIファクトチェック & 誤記述の自動検知キュー</h2>
@@ -737,7 +737,7 @@ function DictHealthDashboardContent() {
             </div>
 
             {/* レビューパネル */}
-            <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
+            <div className="bg-white rounded-3xl border border-border p-6 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <ClipboardCheck className="text-amber-600 w-5 h-5" />
                 <h2 className="text-sm font-extrabold text-stone-900">📝 辞典データ人間レビュー</h2>
@@ -754,7 +754,7 @@ function DictHealthDashboardContent() {
         {hubTab === 'history' && (
           <div className="space-y-8 animate-in">
             {/* 変更履歴 */}
-            <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
+            <div className="bg-white rounded-3xl border border-border p-6 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <History className="text-pink-600 w-5 h-5" />
                 <h2 className="text-sm font-extrabold text-stone-900">📜 辞典 ＆ ナレッジ全変更履歴 Diff & ワンタップ巻き戻し</h2>
@@ -766,7 +766,7 @@ function DictHealthDashboardContent() {
             </div>
 
             {/* 鮮度レビュー */}
-            <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
+            <div className="bg-white rounded-3xl border border-border p-6 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <Activity className="text-emerald-600 w-5 h-5" />
                 <h2 className="text-sm font-extrabold text-stone-900">🍃 ナレッジ鮮度レビュー & 定期点検</h2>

@@ -184,7 +184,7 @@ export default function MatchupBlueprintCard({
 
   if (loading && !data) {
     return (
-      <div className="bg-white border border-stone-200 rounded-2xl p-5 shadow-xs animate-pulse">
+      <div className="bg-white border border-border rounded-2xl p-5 shadow-xs animate-pulse">
         <div className="h-4 bg-stone-200 rounded w-1/3 mb-3"></div>
         <div className="h-16 bg-stone-100 rounded-xl mb-4"></div>
         <div className="h-24 bg-stone-100 rounded-xl"></div>
@@ -195,7 +195,7 @@ export default function MatchupBlueprintCard({
   const blueprint = data?.blueprint || { phases: [] };
 
   return (
-    <div className="bg-white border border-stone-200/90 rounded-2xl p-5 shadow-sm text-stone-900 space-y-4">
+    <div className="bg-white border border-border/90 rounded-2xl p-5 shadow-sm text-stone-900 space-y-4">
       {/* ⚠️ 過去の自分の反省遺言バナー ＆ 純粋対面勝率（LDR/JDR） */}
       {matchupWarning && (matchupWarning.memo || matchupWarning.matchupMemo || matchupWarning.laneRecord) && (
         <div className="bg-gradient-to-r from-amber-500/15 via-rose-500/10 to-amber-500/15 border-2 border-amber-500/60 rounded-xl p-3.5 shadow-2xs space-y-2 animate-in">
@@ -210,7 +210,7 @@ export default function MatchupBlueprintCard({
                   純粋対面勝率 {matchupWarning.laneRecord.laneWinRate}% ({matchupWarning.laneRecord.wins}勝 {matchupWarning.laneRecord.losses}敗)
                 </span>
                 {matchupWarning.laneRecord.gameWinRate !== undefined && (
-                  <span className="bg-white/90 text-stone-700 border border-stone-300 px-2 py-0.5 rounded">
+                  <span className="bg-white/90 text-stone-700 border border-border px-2 py-0.5 rounded">
                     試合勝率 {matchupWarning.laneRecord.gameWinRate}%
                   </span>
                 )}
@@ -259,7 +259,7 @@ export default function MatchupBlueprintCard({
               </span>
             </div>
 
-            <div className="bg-white/95 rounded-lg p-2.5 border border-stone-200/80 space-y-1.5 text-xs">
+            <div className="bg-white/95 rounded-lg p-2.5 border border-border/80 space-y-1.5 text-xs">
               <p className="font-black text-stone-900 flex items-center gap-1">
                 <span>🎯</span>
                 <span>{visionRule.title}</span>
@@ -292,7 +292,7 @@ export default function MatchupBlueprintCard({
       <div className="border-b border-stone-100 pb-3 space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-2 pt-0.5">
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 bg-stone-100/90 px-3 py-1.5 rounded-xl border border-stone-200/80">
+            <div className="flex items-center gap-2 bg-stone-100/90 px-3 py-1.5 rounded-xl border border-border/80">
               <div className="flex items-center gap-1.5">
                 <Image
                   src={getChampIcon(myChamp)}
@@ -391,7 +391,7 @@ export default function MatchupBlueprintCard({
           <button
             type="button"
             onClick={() => scrollToSection('section-blueprint')}
-            className="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shrink-0 bg-stone-100 text-stone-700 hover:bg-stone-200 hover:text-stone-900 border border-stone-200/60 shadow-2xs"
+            className="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shrink-0 bg-stone-100 text-stone-700 hover:bg-stone-200 hover:text-stone-900 border border-border/60 shadow-2xs"
           >
             <Zap className="w-3.5 h-3.5 text-amber-500" />
             <span>📋 3段階勝ちパターン</span>
@@ -399,7 +399,7 @@ export default function MatchupBlueprintCard({
           <button
             type="button"
             onClick={() => scrollToSection('section-builds')}
-            className="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shrink-0 bg-stone-100 text-stone-700 hover:bg-stone-200 hover:text-stone-900 border border-stone-200/60 shadow-2xs"
+            className="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shrink-0 bg-stone-100 text-stone-700 hover:bg-stone-200 hover:text-stone-900 border border-border/60 shadow-2xs"
           >
             <Shield className="w-3.5 h-3.5 text-emerald-500" />
             <span>🛡️ 推奨ルーン ＆ ビルド</span>
@@ -407,7 +407,7 @@ export default function MatchupBlueprintCard({
           <button
             type="button"
             onClick={() => scrollToSection('section-jungle')}
-            className="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shrink-0 bg-stone-100 text-stone-700 hover:bg-stone-200 hover:text-stone-900 border border-stone-200/60 shadow-2xs"
+            className="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shrink-0 bg-stone-100 text-stone-700 hover:bg-stone-200 hover:text-stone-900 border border-border/60 shadow-2xs"
           >
             <Compass className="w-3.5 h-3.5 text-teal-500" />
             <span>🌲 敵JG初動ルート ＆ テンポ</span>
@@ -436,7 +436,7 @@ export default function MatchupBlueprintCard({
             {blueprint.phases.map((p, idx) => (
               <div
                 key={idx}
-                className="bg-stone-50/80 border border-stone-200 rounded-xl p-3.5 space-y-2 flex flex-col justify-between shadow-2xs hover:border-amber-300 transition-colors"
+                className="bg-stone-50/80 border border-border rounded-xl p-3.5 space-y-2 flex flex-col justify-between shadow-2xs hover:border-amber-300 transition-colors"
               >
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-[11px]">
@@ -455,7 +455,7 @@ export default function MatchupBlueprintCard({
                   </p>
                 </div>
 
-                <div className="pt-2 border-t border-stone-200/70 space-y-1.5">
+                <div className="pt-2 border-t border-border/70 space-y-1.5">
                   <div className="text-[10px] text-emerald-800 font-bold bg-emerald-50/80 p-1.5 rounded">
                     🎯 クリア条件: {p.win_trigger}
                   </div>
@@ -480,7 +480,7 @@ export default function MatchupBlueprintCard({
         </div>
 
         {/* セクション2: 推奨ルーン ＆ 初期ビルド */}
-        <div id="section-builds" className="space-y-3 pt-5 border-t border-stone-200 scroll-mt-6">
+        <div id="section-builds" className="space-y-3 pt-5 border-t border-border scroll-mt-6">
           <div className="flex items-center gap-1.5 text-xs font-black text-stone-800">
             <Shield className="w-4 h-4 text-emerald-600" />
             <span>{myChamp} vs {enemyChamp} 推奨ルーン ＆ 初期ビルド</span>
@@ -493,7 +493,7 @@ export default function MatchupBlueprintCard({
             <div className="space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {/* 推奨ルーン */}
-                <div className="bg-stone-50 p-4 rounded-xl border border-stone-200 space-y-2.5">
+                <div className="bg-stone-50 p-4 rounded-xl border border-border space-y-2.5">
                   <div className="flex items-center gap-1.5 text-xs font-black text-stone-900">
                     <Sparkles className="w-4 h-4 text-amber-600" />
                     <span>{myChamp} 推奨ルーン構成</span>
@@ -507,7 +507,7 @@ export default function MatchupBlueprintCard({
                 </div>
 
                 {/* 推奨初手アイテム・コアビルド */}
-                <div className="bg-stone-50 p-4 rounded-xl border border-stone-200 space-y-2.5">
+                <div className="bg-stone-50 p-4 rounded-xl border border-border space-y-2.5">
                   <div className="flex items-center gap-1.5 text-xs font-black text-stone-900">
                     <Shield className="w-4 h-4 text-emerald-600" />
                     <span>初手アイテム ＆ 対策コアビルド</span>
@@ -537,7 +537,7 @@ export default function MatchupBlueprintCard({
         </div>
 
         {/* セクション3: 🌲 敵JG初動ルート ＆ テンポシミュレーター */}
-        <div id="section-jungle" className="space-y-3.5 pt-5 border-t border-stone-200 scroll-mt-6">
+        <div id="section-jungle" className="space-y-3.5 pt-5 border-t border-border scroll-mt-6">
           <div className="flex items-center justify-between border-b border-stone-100 pb-2">
             <h4 className="font-black text-stone-900 text-xs flex items-center gap-1.5">
               <Compass className="w-4 h-4 text-teal-600" />
@@ -586,7 +586,7 @@ export default function MatchupBlueprintCard({
 
           {/* フルクリア時間比較カード */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-center text-xs">
-            <div className="bg-stone-50 p-2.5 rounded-xl border border-stone-200">
+            <div className="bg-stone-50 p-2.5 rounded-xl border border-border">
               <div className="text-[10px] text-stone-500 font-bold">敵({enemyChamp})の最速フルクリア</div>
               <div className="text-xs font-black text-amber-700 mt-0.5 font-mono">
                 {enemyJungleTiming?.externalFastestClearSec
@@ -595,7 +595,7 @@ export default function MatchupBlueprintCard({
               </div>
             </div>
 
-            <div className="bg-stone-50 p-2.5 rounded-xl border border-stone-200">
+            <div className="bg-stone-50 p-2.5 rounded-xl border border-border">
               <div className="text-[10px] text-stone-500 font-bold">自陣({myChamp})の最速フルクリア</div>
               <div className="text-xs font-black text-emerald-700 mt-0.5 font-mono">
                 {myJungleTiming?.externalFastestClearSec
@@ -604,7 +604,7 @@ export default function MatchupBlueprintCard({
               </div>
             </div>
 
-            <div className="bg-stone-50 p-2.5 rounded-xl border border-stone-200 col-span-2 sm:col-span-1">
+            <div className="bg-stone-50 p-2.5 rounded-xl border border-border col-span-2 sm:col-span-1">
               <div className="text-[10px] text-stone-500 font-bold">敵のカニ(2:55)先行差</div>
               <div className="text-xs font-black text-stone-800 mt-0.5 font-mono">
                 {enemyJungleTiming?.externalFastestClearSec
@@ -627,7 +627,7 @@ export default function MatchupBlueprintCard({
         </div>
 
         {/* セクション4: 実戦の罠・不採用ビルド (Rejected Options / 没理由) */}
-        <div id="section-rejected" className="space-y-3.5 pt-5 border-t border-stone-200 scroll-mt-6">
+        <div id="section-rejected" className="space-y-3.5 pt-5 border-t border-border scroll-mt-6">
           <div className="flex items-center gap-1.5 text-xs font-black text-rose-900">
             <AlertTriangle className="w-4 h-4 text-rose-600" />
             <span>{myChamp} vs {enemyChamp} 実戦の罠・やってはいけないNG行動（没理由DB）</span>
@@ -693,7 +693,7 @@ export default function MatchupBlueprintCard({
 
           {/* この対面固有の実戦メモ（matchup_sentinel.strategy） */}
           {data?.rejected_intel?.matchup_memo && (
-            <div className="bg-white border border-stone-200 rounded-xl p-4 space-y-1.5 shadow-2xs">
+            <div className="bg-white border border-border rounded-xl p-4 space-y-1.5 shadow-2xs">
               <div className="flex items-center gap-1.5 text-xs font-black text-stone-900">
                 <span className="text-sm">📝</span>
                 <span>{myChamp} vs {enemyChamp} の実戦メモ</span>

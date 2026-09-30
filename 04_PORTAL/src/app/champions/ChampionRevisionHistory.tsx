@@ -167,7 +167,7 @@ export default function ChampionRevisionHistory({
       {revisions && revisions.length > 0 && (
         <div className="space-y-1.5 max-h-[60vh] overflow-y-auto pr-1">
           {revisions.map((r) => (
-            <div key={r.id} className="border border-stone-200 rounded-lg overflow-hidden bg-white text-xs">
+            <div key={r.id} className="border border-border rounded-lg overflow-hidden bg-white text-xs">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -191,12 +191,12 @@ export default function ChampionRevisionHistory({
               </button>
 
               {openId === r.id && (
-                <div className="border-t border-stone-200 bg-stone-50 p-2.5">
+                <div className="border-t border-border bg-stone-50 p-2.5">
                   {detailLoading ? (
                     <p className="text-[11px] text-stone-500">差分を読み込み中...</p>
                   ) : detail ? (
                     <>
-                      <div className="max-h-64 overflow-auto font-mono text-[10px] leading-relaxed rounded-lg border border-stone-200 bg-white">
+                      <div className="max-h-64 overflow-auto font-mono text-[10px] leading-relaxed rounded-lg border border-border bg-white">
                         {(detail.diff || []).map((line: DiffLine, i: number) => (
                           <div
                             key={i}
@@ -242,7 +242,7 @@ export default function ChampionRevisionHistory({
   if (isModal) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose}>
-        <div className="bg-white border border-stone-200 rounded-2xl p-4 sm:p-5 w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl space-y-4" onClick={(e) => e.stopPropagation()}>
+        <div className="bg-white border border-border rounded-2xl p-4 sm:p-5 w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl space-y-4" onClick={(e) => e.stopPropagation()}>
           {content}
         </div>
       </div>
