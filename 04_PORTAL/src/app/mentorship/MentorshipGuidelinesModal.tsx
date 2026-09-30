@@ -17,7 +17,7 @@ export function MentorshipGuidelinesModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-4 bg-stone-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-surface border border-border rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden text-stone-900 animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
+      <div className="bg-surface border border-border rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden text-foreground animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
         {/* ヘッダー */}
         <div className="p-5 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border-b border-amber-200 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
@@ -25,7 +25,7 @@ export function MentorshipGuidelinesModal({
               📜
             </div>
             <div>
-              <h2 className="text-base font-black text-stone-900 flex items-center gap-1.5">
+              <h2 className="text-base font-black text-foreground flex items-center gap-1.5">
                 <span>KTM 師弟の心得 ＆ ガイドライン</span>
               </h2>
               <p className="text-xs text-stone-600 font-bold">
@@ -35,7 +35,7 @@ export function MentorshipGuidelinesModal({
           </div>
           <button
             onClick={onClose}
-            className="text-stone-400 hover:text-stone-700 p-1 rounded-full transition cursor-pointer"
+            className="text-stone-400 hover:text-foreground-subtle p-1 rounded-full transition cursor-pointer"
           >
             <X size={20} />
           </button>
@@ -44,7 +44,7 @@ export function MentorshipGuidelinesModal({
         {/* ボディ */}
         <div className="p-5 space-y-5 overflow-y-auto">
           {/* 基本スタンス */}
-          <div className="p-3.5 bg-amber-50/70 border border-amber-200 rounded-2xl text-xs text-stone-800 leading-relaxed font-medium">
+          <div className="p-3.5 bg-amber-50/70 border border-amber-200 rounded-2xl text-xs text-foreground-soft leading-relaxed font-medium">
             🌟 KTMの師弟制度は「褒めて伸ばす」「一緒に楽しむ」文化を最優先にしています。勝敗やレートに関係なく、楽しく上達できるバディ関係を育みましょう。
           </div>
 
@@ -56,7 +56,7 @@ export function MentorshipGuidelinesModal({
             </div>
             <div className="p-3.5 rounded-2xl bg-background border border-border space-y-2">
               {MENTORSHIP_GUIDELINES.mentor.map((item, idx) => (
-                <div key={idx} className="flex items-start gap-2 text-xs text-stone-700">
+                <div key={idx} className="flex items-start gap-2 text-xs text-foreground-subtle">
                   <CheckCircle2 size={14} className="text-emerald-600 shrink-0 mt-0.5" />
                   <span className="font-medium leading-relaxed">{item}</span>
                 </div>
@@ -72,7 +72,7 @@ export function MentorshipGuidelinesModal({
             </div>
             <div className="p-3.5 rounded-2xl bg-background border border-border space-y-2">
               {MENTORSHIP_GUIDELINES.pupil.map((item, idx) => (
-                <div key={idx} className="flex items-start gap-2 text-xs text-stone-700">
+                <div key={idx} className="flex items-start gap-2 text-xs text-foreground-subtle">
                   <CheckCircle2 size={14} className="text-emerald-600 shrink-0 mt-0.5" />
                   <span className="font-medium leading-relaxed">{item}</span>
                 </div>
@@ -81,8 +81,8 @@ export function MentorshipGuidelinesModal({
           </div>
 
           {/* 円満解散について */}
-          <div className="p-3.5 bg-surface-subtle rounded-2xl border border-border space-y-1 text-xs text-stone-700">
-            <div className="font-black text-stone-900 flex items-center gap-1.5">
+          <div className="p-3.5 bg-surface-subtle rounded-2xl border border-border space-y-1 text-xs text-foreground-subtle">
+            <div className="font-black text-foreground flex items-center gap-1.5">
               <ShieldCheck size={14} className="text-stone-600" />
               <span>🍃 スケジュールが合わなくなったときは？</span>
             </div>

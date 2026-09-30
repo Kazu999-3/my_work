@@ -87,7 +87,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
               <Zap size={18} className="fill-amber-500/20" />
             </div>
             <div>
-              <h3 className="text-base font-black text-stone-900 flex items-center gap-1.5">
+              <h3 className="text-base font-black text-foreground flex items-center gap-1.5">
                 戦術概念 逆引きインデックス
                 <span className="text-[10px] bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded-full font-bold">RAG</span>
               </h3>
@@ -98,7 +98,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-surface-hover/60 transition"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-stone-400 hover:text-foreground-subtle hover:bg-surface-hover/60 transition"
           >
             <X size={18} />
           </button>
@@ -114,12 +114,12 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
               placeholder="戦術キーワードを入力 (例: インベード, Lv3ガンク, オブジェクト放棄, 没理由)..."
               value={query}
               onChange={e => setQuery(e.target.value)}
-              className="w-full bg-background border border-border focus:border-amber-500 focus:bg-surface rounded-2xl py-3 pl-10 pr-10 text-stone-900 font-bold outline-none transition text-sm shadow-2xs"
+              className="w-full bg-background border border-border focus:border-amber-500 focus:bg-surface rounded-2xl py-3 pl-10 pr-10 text-foreground font-bold outline-none transition text-sm shadow-2xs"
             />
             {query && (
               <button
                 onClick={() => setQuery('')}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 p-1 rounded-full hover:bg-surface-hover/60"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-foreground-subtle p-1 rounded-full hover:bg-surface-hover/60"
               >
                 <X size={15} />
               </button>
@@ -139,7 +139,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
                 className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition cursor-pointer ${
                   query === concept
                     ? 'bg-amber-500 text-stone-950 border-amber-500'
-                    : 'bg-surface text-stone-600 border-border hover:bg-surface-subtle hover:text-stone-900'
+                    : 'bg-surface text-stone-600 border-border hover:bg-surface-subtle hover:text-foreground'
                 }`}
               >
                 {concept}
@@ -173,7 +173,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
           {!loading && !error && query.trim().length < 2 && (
             <div className="py-12 text-center text-stone-400 space-y-2">
               <div className="text-3xl">🔍</div>
-              <p className="text-sm font-bold text-stone-700">戦術概念キーワードを2文字以上入力してください</p>
+              <p className="text-sm font-bold text-foreground-subtle">戦術概念キーワードを2文字以上入力してください</p>
               <p className="text-xs text-stone-500 max-w-sm mx-auto">
                 上のピルをタップするか、「インベード」「ガンク回避」「ウェーブ管理」などを検索すると該当チャンピオンのバイブルが即座に表示されます。
               </p>
@@ -209,7 +209,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
                           onError={e => { e.currentTarget.style.display = 'none'; }}
                         />
                       )}
-                      <span className="font-black text-stone-900 text-xs truncate">
+                      <span className="font-black text-foreground text-xs truncate">
                         {item.championJa} ({item.champion})
                       </span>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
@@ -231,7 +231,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
                   </div>
 
                   {/* スニペット本文 */}
-                  <p className="text-xs text-stone-700 leading-relaxed pl-9 bg-surface/60 p-2 rounded-xl border border-border/60 font-medium">
+                  <p className="text-xs text-foreground-subtle leading-relaxed pl-9 bg-surface/60 p-2 rounded-xl border border-border/60 font-medium">
                     {item.snippet}
                   </p>
                 </div>

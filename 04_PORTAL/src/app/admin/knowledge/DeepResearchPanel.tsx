@@ -57,13 +57,13 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
   };
 
   return (
-    <div className="bg-surface border border-border rounded-3xl p-6 sm:p-8 text-stone-900 shadow-2xl space-y-6">
+    <div className="bg-surface border border-border rounded-3xl p-6 sm:p-8 text-foreground shadow-2xl space-y-6">
       <div className="flex items-center gap-3 border-b border-black/5 pb-5">
         <div className="p-3 rounded-2xl bg-gradient-to-br from-amber-100 to-pink-100 text-amber-700 border border-amber-200">
           <Target size={26} />
         </div>
         <div>
-          <h3 className="font-extrabold text-xl text-stone-900 tracking-tight flex items-center gap-2">
+          <h3 className="font-extrabold text-xl text-foreground tracking-tight flex items-center gap-2">
             特定チャンプ ディープリサーチ
             <span className="text-[10px] bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-bold">
               AI Deep Analysis
@@ -78,7 +78,7 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
       <form onSubmit={handleResearch} className="space-y-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold text-stone-700 mb-1.5 flex items-center gap-1">
+            <label className="block text-xs font-bold text-foreground-subtle mb-1.5 flex items-center gap-1">
               <Search size={14} className="text-amber-600" />
               対象チャンピオン名 (日本語名・英語名OK)
             </label>
@@ -87,20 +87,20 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
               placeholder="例: アーリ, リー・シン, Ahri, LeeSin, Viego"
               value={champion}
               onChange={(e) => setChampion(e.target.value)}
-              className="w-full px-4 py-3 bg-background border border-border rounded-2xl text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all font-mono"
+              className="w-full px-4 py-3 bg-background border border-border rounded-2xl text-sm text-foreground placeholder-stone-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all font-mono"
               required
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-stone-700 mb-1.5 flex items-center gap-1">
+            <label className="block text-xs font-bold text-foreground-subtle mb-1.5 flex items-center gap-1">
               <Layers size={14} className="text-amber-600" />
               想定メインレーン
             </label>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="w-full px-4 py-3 bg-background border border-border rounded-2xl text-sm text-stone-900 focus:outline-none focus:border-amber-500 font-medium"
+              className="w-full px-4 py-3 bg-background border border-border rounded-2xl text-sm text-foreground focus:outline-none focus:border-amber-500 font-medium"
             >
               <option value="TOP">TOP (トップ)</option>
               <option value="JG">JUNGLE (ジャングル)</option>
@@ -119,7 +119,7 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
             onChange={(e) => setFetchVideos(e.target.checked)}
             className="w-4 h-4 rounded bg-surface border-border text-amber-500 focus:ring-amber-500 accent-amber-500 cursor-pointer"
           />
-          <label htmlFor="fetchVideosPanel" className="text-xs text-stone-700 font-medium cursor-pointer flex items-center gap-1.5">
+          <label htmlFor="fetchVideosPanel" className="text-xs text-foreground-subtle font-medium cursor-pointer flex items-center gap-1.5">
             <Video size={14} className="text-pink-600" />
             YouTubeから最新の高レート（Challenger/OTP）解説動画を自動検索しキュー登録する
           </label>
@@ -137,7 +137,7 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
               {resultMsg.type === 'success' ? <CheckCircle2 size={18} className="text-emerald-600 shrink-0" /> : <AlertCircle size={18} className="text-rose-600 shrink-0" />}
               <span>{resultMsg.type === 'success' ? 'ディープリサーチ完了' : 'エラーが発生しました'}</span>
             </div>
-            <p className="leading-relaxed text-stone-700">{resultMsg.text}</p>
+            <p className="leading-relaxed text-foreground-subtle">{resultMsg.text}</p>
             {resultMsg.details && (
               <div className="pt-2 border-t border-emerald-200 text-[11px] text-emerald-700/90 font-mono space-y-1">
                 <div>・記事タイトル: {resultMsg.details.articleTitle}</div>
@@ -164,7 +164,7 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
         {resultMsg?.type === 'success' && resultMsg.details?.article && (
           <div className="bg-background border border-border rounded-2xl overflow-hidden">
             <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-black/5 bg-surface/60">
-              <span className="text-xs font-black text-stone-700 flex items-center gap-1.5">
+              <span className="text-xs font-black text-foreground-subtle flex items-center gap-1.5">
                 <Sparkles size={14} className="text-amber-600" /> 生成された攻略バイブル（プレビュー）
               </span>
               <div className="flex items-center gap-3 shrink-0">
@@ -186,7 +186,7 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
                 )}
               </div>
             </div>
-            <div className="max-h-[480px] overflow-auto p-5 prose prose-sm max-w-none prose-headings:text-amber-700 prose-strong:text-stone-900 prose-li:text-stone-700 prose-p:text-stone-700">
+            <div className="max-h-[480px] overflow-auto p-5 prose prose-sm max-w-none prose-headings:text-amber-700 prose-strong:text-foreground prose-li:text-foreground-subtle prose-p:text-foreground-subtle">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{resultMsg.details.article}</ReactMarkdown>
             </div>
           </div>

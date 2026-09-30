@@ -73,7 +73,7 @@ export function getColorFromRankName(rank: string): string {
   const r = (rank || "").toUpperCase();
   if (r.includes("IRON")) return "text-stone-500 font-bold";
   if (r.includes("BRONZE")) return "text-amber-700 font-bold";
-  if (r.includes("SILVER")) return "text-stone-700 font-bold";
+  if (r.includes("SILVER")) return "text-foreground-subtle font-bold";
   if (r.includes("GOLD")) return "text-yellow-700 font-bold";
   if (r.includes("PLATINUM")) return "text-teal-700 font-bold";
   if (r.includes("EMERALD")) return "text-emerald-700 font-bold";

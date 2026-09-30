@@ -90,7 +90,7 @@ function GuideContent() {
   ];
 
   return (
-    <div className="min-h-screen pb-16 bg-background dark:bg-stone-950 text-stone-900 dark:text-stone-100 p-3 sm:p-5 md:p-6 space-y-5 max-w-[1300px] w-full mx-auto">
+    <div className="min-h-screen pb-16 bg-background dark:bg-stone-950 text-foreground dark:text-stone-100 p-3 sm:p-5 md:p-6 space-y-5 max-w-[1300px] w-full mx-auto">
       {/* 洗練されたコンパクトヘッダー */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 md:p-5 bg-surface dark:bg-stone-900 border border-border/90 dark:border-stone-800 rounded-2xl shadow-xs">
         <div className="flex items-center gap-3.5">
@@ -99,7 +99,7 @@ function GuideContent() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-base sm:text-lg font-black tracking-tight text-stone-900 dark:text-stone-100">
+              <h1 className="text-base sm:text-lg font-black tracking-tight text-foreground dark:text-stone-100">
                 KTM 総合使い方ガイド ＆ リリースノート
               </h1>
               <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300 text-[10px] font-extrabold">
@@ -121,7 +121,7 @@ function GuideContent() {
               placeholder="サモナー名で戦績検索..."
               value={searchName}
               onChange={(e) => setSearchName(e.target.value)}
-              className="w-full bg-background dark:bg-stone-800/80 border border-border dark:border-stone-700 text-stone-900 dark:text-stone-100 rounded-xl pl-9 pr-3 py-2 text-xs font-bold focus:outline-none focus:border-amber-500 transition-colors placeholder-stone-400"
+              className="w-full bg-background dark:bg-stone-800/80 border border-border dark:border-stone-700 text-foreground dark:text-stone-100 rounded-xl pl-9 pr-3 py-2 text-xs font-bold focus:outline-none focus:border-amber-500 transition-colors placeholder-stone-400"
             />
           </div>
           <button
@@ -146,8 +146,8 @@ function GuideContent() {
               onClick={() => handleTabChange(tab.id)}
               className={`px-3.5 py-2 rounded-lg font-bold text-xs transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 ${
                 isActive
-                  ? 'bg-surface dark:bg-stone-800 text-stone-900 dark:text-stone-100 shadow-xs font-black'
-                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-surface-hover/60 dark:hover:bg-stone-800/60'
+                  ? 'bg-surface dark:bg-stone-800 text-foreground dark:text-stone-100 shadow-xs font-black'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-foreground dark:hover:text-stone-200 hover:bg-surface-hover/60 dark:hover:bg-stone-800/60'
               }`}
             >
               <Icon size={14} className={isActive ? tab.color : 'text-stone-400'} />

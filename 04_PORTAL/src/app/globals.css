@@ -5,6 +5,10 @@
 @theme {
   --color-background: #fafaf9;   /* stone-50。部品が使う暖色に合わせる(2026-09-30) */
   --color-foreground: #1c1917;   /* stone-900 */
+  /* 本文の階調（2026-09-30 Phase 4）。ライト値は移行前の stone と完全一致させ、
+     ダークは旧中和ルールが3段階すべてを1色へ寄せていた挙動をそのまま踏襲する。 */
+  --color-foreground-soft: #292524;   /* stone-800 */
+  --color-foreground-subtle: #44403c; /* stone-700 */
 
   /* Sovereign Clean Modern Light Theme（クリーンなスレート・オフホワイト調モダンUI） */
   --color-primary: #d97706;
@@ -55,6 +59,8 @@ body {
 html.dark {
   --color-background: #1e1f22;
   --color-foreground: #f2f3f5;
+  --color-foreground-soft: #f2f3f5;
+  --color-foreground-subtle: #f2f3f5;
   --color-surface: #2b2d31;
   --color-surface-subtle: #1e1f22;
   --color-surface-hover: #35373c;
@@ -723,9 +729,8 @@ html.dark .text-fuchsia-800, html.dark .text-fuchsia-900, html.dark .text-fuchsi
 
 /* 🌙 ダークモード専用（暗色背景 #1e1f22 / カード #2b2d31）での文字コントラスト最適化 */
 /* 暗い背景上でも全文字が明るくハッキリ読める高コントラスト設定 */
-html.dark .text-stone-900,
-html.dark .text-stone-800,
-html.dark .text-stone-700,
+/* stone系(900/800/700)はトークン text-foreground / -soft / -subtle へ移行済みのため
+   ここから外した（2026-09-30 Phase 4a）。gray/slate/zinc は未移行なので残す。 */
 html.dark .text-gray-900,
 html.dark .text-gray-800,
 html.dark .text-gray-700,

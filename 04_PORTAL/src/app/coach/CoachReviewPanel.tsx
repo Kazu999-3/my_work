@@ -97,7 +97,7 @@ export default function CoachReviewPanel() {
       <div className="rounded-xl border border-border dark:border-stone-700/60 bg-surface dark:bg-stone-900/60 p-3.5 space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="min-w-0">
-            <div className="text-xs font-black text-stone-900 dark:text-stone-100">📈 蓄積した振り返りの傾向分析</div>
+            <div className="text-xs font-black text-foreground dark:text-stone-100">📈 蓄積した振り返りの傾向分析</div>
             <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5">
               繰り返し出ている弱点と次のフォーカスをまとめます。AIを1回呼ぶので、押した時だけ実行します。
             </p>
@@ -112,7 +112,7 @@ export default function CoachReviewPanel() {
         </div>
         {trendError && <p className="text-xs text-rose-600 dark:text-rose-400">❌ {trendError}</p>}
         {trendSummary && (
-          <div className="rounded-lg bg-surface-subtle dark:bg-stone-800/60 px-3 py-2 text-xs text-stone-800 dark:text-stone-200 whitespace-pre-wrap leading-relaxed">
+          <div className="rounded-lg bg-surface-subtle dark:bg-stone-800/60 px-3 py-2 text-xs text-foreground-soft dark:text-stone-200 whitespace-pre-wrap leading-relaxed">
             {trendSummary}
           </div>
         )}
@@ -151,7 +151,7 @@ export default function CoachReviewPanel() {
                   >
                     {a.win ? '勝' : '負'}
                   </span>
-                  <span className="text-xs font-black text-stone-900 dark:text-stone-100 truncate">
+                  <span className="text-xs font-black text-foreground dark:text-stone-100 truncate">
                     {a.champion}
                     {a.enemyChampion ? ` vs ${a.enemyChampion}` : ''}
                   </span>
@@ -170,13 +170,13 @@ export default function CoachReviewPanel() {
                     </div>
                     {a.weaknesses.length > 0 && (
                       <div className="text-xs">
-                        <span className="font-bold text-stone-700 dark:text-stone-200">弱点: </span>
+                        <span className="font-bold text-foreground-subtle dark:text-stone-200">弱点: </span>
                         <span className="text-stone-600 dark:text-stone-300">{a.weaknesses.join(' / ')}</span>
                       </div>
                     )}
                     {a.focus && (
                       <div className="text-xs">
-                        <span className="font-bold text-stone-700 dark:text-stone-200">次のフォーカス: </span>
+                        <span className="font-bold text-foreground-subtle dark:text-stone-200">次のフォーカス: </span>
                         <span className="text-stone-600 dark:text-stone-300">{a.focus}</span>
                         {a.focusAchieved !== null && (
                           <span className={`ml-1.5 text-[10px] font-bold ${a.focusAchieved ? 'text-emerald-500' : 'text-stone-400'}`}>
@@ -186,7 +186,7 @@ export default function CoachReviewPanel() {
                       </div>
                     )}
                     {a.advice && (
-                      <div className="rounded-lg bg-surface-subtle dark:bg-stone-800/60 px-3 py-2 text-xs text-stone-800 dark:text-stone-200 whitespace-pre-wrap leading-relaxed">
+                      <div className="rounded-lg bg-surface-subtle dark:bg-stone-800/60 px-3 py-2 text-xs text-foreground-soft dark:text-stone-200 whitespace-pre-wrap leading-relaxed">
                         {a.advice}
                       </div>
                     )}

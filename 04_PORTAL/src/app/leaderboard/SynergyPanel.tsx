@@ -112,7 +112,7 @@ export default function SynergyPanel() {
 
       {/* 🏆 ベストデュオ相性ランキング */}
       <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs space-y-4">
-        <h3 className="text-base font-black text-stone-900 flex items-center gap-2">
+        <h3 className="text-base font-black text-foreground flex items-center gap-2">
           <Crown className="w-5 h-5 text-amber-500" />
           最強デュオ相性ランキング (勝率順)
         </h3>
@@ -132,7 +132,7 @@ export default function SynergyPanel() {
                   {idx + 1}
                 </span>
                 <div className="min-w-0">
-                  <div className="text-xs font-black text-stone-900 truncate">
+                  <div className="text-xs font-black text-foreground truncate">
                     {item.p1} × {item.p2}
                   </div>
                   <div className="text-[10px] text-stone-500 font-medium">

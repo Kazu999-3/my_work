@@ -124,7 +124,7 @@ const MmrBadgeInput = ({ value, onChange }: { value: number, onChange: (v: numbe
         onChange={(e) => onChange(parseInt(e.target.value) || 0)}
         onBlur={() => setEditing(false)}
         autoFocus
-        className="bg-background border border-amber-500 rounded px-1 py-0.5 outline-none w-14 text-center font-mono text-xs text-stone-900"
+        className="bg-background border border-amber-500 rounded px-1 py-0.5 outline-none w-14 text-center font-mono text-xs text-foreground"
       />
     );
   }
@@ -883,7 +883,7 @@ export default function KtmAdminPage() {
 
   if (loading && players.length === 0) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background text-stone-900">
+      <div className="flex h-screen items-center justify-center bg-background text-foreground">
         <RefreshCw className="h-8 w-8 animate-spin text-amber-500" />
         <span className="ml-3">データを読み込み中...</span>
       </div>
@@ -892,7 +892,7 @@ export default function KtmAdminPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-background text-stone-800 flex items-center justify-center">
+      <div className="min-h-screen bg-background text-foreground-soft flex items-center justify-center">
         <div className="text-center space-y-4">
           <RefreshCw className="h-8 w-8 text-amber-500 animate-spin mx-auto" />
           <p className="text-sm text-stone-400 font-bold">認証情報を読み込み中...</p>
@@ -903,11 +903,11 @@ export default function KtmAdminPage() {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-background text-stone-800 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background text-foreground-soft flex items-center justify-center p-4">
         <div className="bg-surface border border-border rounded-lg p-8 max-w-md w-full text-center space-y-6 shadow-2xl">
           <Shield className="h-16 w-16 text-amber-500 mx-auto" />
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-stone-900">KTM 管理ダッシュボード</h1>
+            <h1 className="text-2xl font-bold text-foreground">KTM 管理ダッシュボード</h1>
             <p className="text-sm text-stone-400 font-medium">この画面にアクセスするには、管理者パスコードでのログインが必要です。</p>
           </div>
           <button
@@ -922,17 +922,17 @@ export default function KtmAdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-stone-800 p-8">
+    <div className="min-h-screen bg-background text-foreground-soft p-8">
       <div className="max-w-[1600px] mx-auto space-y-6">
         {/* Auth Bar */}
         <div className="flex justify-between items-center bg-surface border border-border rounded-lg px-6 py-3">
           <div className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-amber-500" />
-            <span className="text-xs font-bold text-stone-900">KTM 管理モード</span>
+            <span className="text-xs font-bold text-foreground">KTM 管理モード</span>
           </div>
           <div className="flex items-center gap-4 text-xs">
             <span className="text-stone-400">
-              ログイン中: <strong className="text-stone-900 font-bold">管理者</strong>
+              ログイン中: <strong className="text-foreground font-bold">管理者</strong>
             </span>
             <button
               onClick={handleLogout}
@@ -950,7 +950,7 @@ export default function KtmAdminPage() {
             className={`px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 cursor-pointer ${
               activeTab === 'players' 
                 ? 'border-amber-500 text-amber-700 bg-amber-500/5' 
-                : 'border-transparent text-stone-500 hover:text-stone-700 hover:bg-black/5'
+                : 'border-transparent text-stone-500 hover:text-foreground-subtle hover:bg-black/5'
             }`}
           >
             <Users className="h-4 w-4" /> 👥 プレイヤー名簿・MMR編集 ({players.length}名)
@@ -960,7 +960,7 @@ export default function KtmAdminPage() {
             className={`px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 cursor-pointer ${
               activeTab === 'history' 
                 ? 'border-emerald-500 text-emerald-700 bg-emerald-500/5' 
-                : 'border-transparent text-stone-500 hover:text-stone-700 hover:bg-black/5'
+                : 'border-transparent text-stone-500 hover:text-foreground-subtle hover:bg-black/5'
             }`}
           >
             <History className="h-4 w-4" /> ⚔️ 戦績履歴・勝敗登録
@@ -976,7 +976,7 @@ export default function KtmAdminPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-border pb-6 gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-stone-900 flex items-center gap-3">
+                <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
                   <Users className="h-8 w-8 text-amber-500" />
                   KTM 管理ダッシュボード
                 </h1>
@@ -993,7 +993,7 @@ export default function KtmAdminPage() {
                     placeholder="名前・IGN・Discord IDで検索..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-surface border border-border rounded-lg px-4 py-2 pl-9 text-xs text-stone-900 focus:outline-none focus:border-amber-500 transition"
+                    className="w-full bg-surface border border-border rounded-lg px-4 py-2 pl-9 text-xs text-foreground focus:outline-none focus:border-amber-500 transition"
                   />
                   <Filter className="absolute left-3 top-2.5 h-3.5 w-3.5 text-stone-500" />
                 </div>
@@ -1066,7 +1066,7 @@ export default function KtmAdminPage() {
 
                 <button
                   onClick={() => setShowMmrInfo(!showMmrInfo)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition border text-xs ${showMmrInfo ? 'bg-amber-100 border-amber-500 text-amber-700' : 'bg-black/5 border-border text-stone-400 hover:text-stone-900'}`}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition border text-xs ${showMmrInfo ? 'bg-amber-100 border-amber-500 text-amber-700' : 'bg-black/5 border-border text-stone-400 hover:text-foreground'}`}
                   title="MMR計算ロジックを見る"
                 >
                   <Info className="h-5 w-5" />
@@ -1079,21 +1079,21 @@ export default function KtmAdminPage() {
               <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
                 <div className="bg-surface border border-border rounded-xl max-w-2xl w-full shadow-2xl flex flex-col max-h-[90vh]">
                   <div className="p-6 border-b border-border flex justify-between items-center bg-black/5">
-                    <h2 className="text-xl font-bold text-stone-900 flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                       <Users className="h-6 w-6 text-[#5865F2]" />
                       Discordメンバー同期の確認
                     </h2>
                     <button 
                       onClick={() => { setSyncData(null); setSyncingDiscord(false); }} 
                       disabled={syncingDiscord}
-                      className="text-stone-500 hover:text-stone-900 disabled:opacity-20 disabled:cursor-not-allowed"
+                      className="text-stone-500 hover:text-foreground disabled:opacity-20 disabled:cursor-not-allowed"
                     >
                       <X className="h-6 w-6" />
                     </button>
                   </div>
                   
                   <div className="p-6 overflow-y-auto space-y-6 flex-1">
-                    <p className="text-stone-700 text-sm">
+                    <p className="text-foreground-subtle text-sm">
                       現在のDiscordサーバーには <strong>{syncData.totalDiscordMembers}</strong> 人のメンバーがいます（Botを除く）。<br />
                       以下の差分が見つかりました。同期を実行すると、データベースが自動的に更新されます。
                     </p>
@@ -1123,7 +1123,7 @@ export default function KtmAdminPage() {
                                       updatedAdd[idx].highest_rank = e.target.value;
                                       setSyncData({ ...syncData, toAdd: updatedAdd });
                                     }}
-                                    className="bg-surface border border-border text-stone-900 rounded px-2 py-1 outline-none focus:border-green-500 cursor-pointer"
+                                    className="bg-surface border border-border text-foreground rounded px-2 py-1 outline-none focus:border-green-500 cursor-pointer"
                                   >
                                     {HIGHEST_RANK_OPTIONS.map(r => (
                                       <option key={r} value={r}>{r}</option>
@@ -1146,7 +1146,7 @@ export default function KtmAdminPage() {
                                       }
                                       setSyncData({ ...syncData, toAdd: updatedAdd });
                                     }}
-                                    className="bg-surface border border-border text-stone-900 rounded px-2 py-1 outline-none focus:border-green-500 cursor-pointer"
+                                    className="bg-surface border border-border text-foreground rounded px-2 py-1 outline-none focus:border-green-500 cursor-pointer"
                                   >
                                     {["ALL", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
                                       <option key={role} value={role}>{role}</option>
@@ -1166,7 +1166,7 @@ export default function KtmAdminPage() {
                                       updatedAdd[idx].role_preferences.secondary = e.target.value;
                                       setSyncData({ ...syncData, toAdd: updatedAdd });
                                     }}
-                                    className="bg-surface border border-border text-stone-900 rounded px-2 py-1 outline-none focus:border-green-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="bg-surface border border-border text-foreground rounded px-2 py-1 outline-none focus:border-green-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
                                     {["-", "ALL", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
                                       <option key={role} value={role}>{role}</option>
@@ -1209,7 +1209,7 @@ export default function KtmAdminPage() {
                                       className={`bg-surface border rounded px-2 py-1 outline-none w-36 placeholder-stone-600 font-mono ${
                                         !p.ign || !p.ign.includes('#') || p.ign.trim().split('#').length !== 2
                                           ? 'border-red-500 focus:border-red-400 text-red-700 shadow-[0_0_8px_rgba(239,68,68,0.2)]'
-                                          : 'border-border focus:border-green-500 text-stone-900'
+                                          : 'border-border focus:border-green-500 text-foreground'
                                       }`}
                                     />
                                   </div>
@@ -1309,33 +1309,33 @@ export default function KtmAdminPage() {
                   <h2 className="text-xl font-bold text-amber-700 flex items-center gap-2">
                     <Info className="h-6 w-6" /> MMR計算ロジック
                   </h2>
-                  <button onClick={() => setShowMmrInfo(false)} className="text-stone-500 hover:text-stone-900">
+                  <button onClick={() => setShowMmrInfo(false)} className="text-stone-500 hover:text-foreground">
                     <X className="h-5 w-5" />
                   </button>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-stone-700">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-foreground-subtle">
                   <div className="space-y-3">
                     <div>
-                      <h3 className="font-bold text-stone-900 text-base">1. Eloベースの勝敗変動 (K=48)</h3>
+                      <h3 className="font-bold text-foreground text-base">1. Eloベースの勝敗変動 (K=48)</h3>
                       <p>対面相手との現在のMMR差から期待勝率を計算し、勝利時は加点、敗北時は減点。Elo変動係数（Kファクター）は <span className="text-amber-700 font-mono">48</span> を採用しています。</p>
                     </div>
                     <div>
-                      <h3 className="font-bold text-stone-900 text-base">2. KDAボーナス</h3>
+                      <h3 className="font-bold text-foreground text-base">2. KDAボーナス</h3>
                       <p>基準KDAを 3.0 とし、<span className="text-amber-700 font-mono">(KDA - 3.0) * 8</span> でボーナス値を算出します。（最小 <span className="text-amber-700 font-mono">-20</span> から最大 <span className="text-amber-700 font-mono">+20</span>）</p>
                     </div>
                     <div>
-                      <h3 className="font-bold text-stone-900 text-base">3. ランク収束引力</h3>
+                      <h3 className="font-bold text-foreground text-base">3. ランク収束引力</h3>
                       <p>設定された最高Rankの適正レートへ引き寄せられる引力が働きます。引力強度はそのロールの試合数（5試合未満: 0.005, 10試合未満: 0.003, それ以上: 0.001）に応じて減衰します。</p>
                     </div>
                   </div>
                   <div className="space-y-3">
                     <div>
-                      <h3 className="font-bold text-stone-900 text-base">4. 習熟度（試合数）倍率</h3>
+                      <h3 className="font-bold text-foreground text-base">4. 習熟度（試合数）倍率</h3>
                       <p>レートが安定するまでの未熟期（そのロールで5試合未満は <span className="text-amber-700 font-mono">3.0倍</span>、10試合未満は <span className="text-amber-700 font-mono">2.0倍</span>、それ以降は <span className="text-amber-700 font-mono">1.0倍</span>）は変動幅が大きく増幅され、素早く適正MMRへ収束させます。</p>
                     </div>
                     <div>
-                      <h3 className="font-bold text-stone-900 text-base">5. 对面回数倍率 ＆ 最終セーフティ</h3>
+                      <h3 className="font-bold text-foreground text-base">5. 对面回数倍率 ＆ 最終セーフティ</h3>
                       <p>同じ相手との対戦回数が少ないうちは変動幅を大きくする対面回数倍率（最大1.5倍〜最小1.0倍）が掛かります。また、勝利時は最低でも <span className="text-green-700 font-mono">+10</span> を保証し、敗北時は最大でも <span className="text-red-700 font-mono">-5</span>（必ずMMR減少）に制限するガードを適用しています。</p>
                     </div>
                   </div>
@@ -1366,7 +1366,7 @@ export default function KtmAdminPage() {
                   </h2>
                   <button 
                     onClick={() => setRiotSyncErrors([])} 
-                    className="text-stone-500 hover:text-stone-900 text-xs bg-surface border border-border rounded px-2 py-1 transition"
+                    className="text-stone-500 hover:text-foreground text-xs bg-surface border border-border rounded px-2 py-1 transition"
                   >
                     パネルを閉じる
                   </button>
@@ -1380,7 +1380,7 @@ export default function KtmAdminPage() {
                   {riotSyncErrors.map((errorPlayer) => (
                     <div key={errorPlayer.id} className="bg-surface/60 border border-border rounded-lg p-3 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs hover:border-amber-200 transition">
                       <div className="space-y-1">
-                        <span className="font-bold text-stone-900 text-sm">{errorPlayer.name}</span>
+                        <span className="font-bold text-foreground text-sm">{errorPlayer.name}</span>
                         <div className="text-red-700 text-[11px] font-mono flex items-center gap-1">
                           <span>❌ {errorPlayer.error}</span>
                         </div>
@@ -1393,7 +1393,7 @@ export default function KtmAdminPage() {
                             placeholder="Name#TAG"
                             defaultValue={errorPlayer.ign}
                             id={`error-ign-${errorPlayer.id}`}
-                            className="w-full md:w-48 bg-background border border-border text-stone-900 rounded px-2 py-1.5 outline-none focus:border-amber-500 placeholder-stone-600 font-mono text-xs"
+                            className="w-full md:w-48 bg-background border border-border text-foreground rounded px-2 py-1.5 outline-none focus:border-amber-500 placeholder-stone-600 font-mono text-xs"
                           />
                         </div>
                         <button
@@ -1528,7 +1528,7 @@ export default function KtmAdminPage() {
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                         statusFilter === tab.key
                           ? 'bg-amber-600 text-white shadow-md'
-                          : 'bg-black/5 text-stone-600 hover:text-stone-900 hover:bg-black/8'
+                          : 'bg-black/5 text-stone-600 hover:text-foreground hover:bg-black/8'
                       }`}
                     >
                       {tab.label}
@@ -1556,7 +1556,7 @@ export default function KtmAdminPage() {
                   className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
                     roleFilter === null
                       ? 'bg-amber-500 text-black shadow-xs'
-                      : 'bg-black/5 text-stone-500 hover:text-stone-900 hover:bg-black/8'
+                      : 'bg-black/5 text-stone-500 hover:text-foreground hover:bg-black/8'
                   }`}
                 >
                   ALL
@@ -1568,7 +1568,7 @@ export default function KtmAdminPage() {
                     className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
                       roleFilter === role
                         ? 'bg-surface border-amber-500 text-amber-700 font-black shadow-xs'
-                        : 'bg-black/5 border-transparent text-stone-500 hover:text-stone-900 hover:bg-black/8'
+                        : 'bg-black/5 border-transparent text-stone-500 hover:text-foreground hover:bg-black/8'
                     }`}
                   >
                     <RoleIcon role={role} className="w-3 h-3" />
@@ -1594,7 +1594,7 @@ export default function KtmAdminPage() {
                           value={p.name}
                           onChange={(e) => handleInputChange(uid, "name", e.target.value)}
                           onBlur={handleBlurSave}
-                          className="bg-transparent font-black text-stone-900 text-sm outline-none max-w-[120px]"
+                          className="bg-transparent font-black text-foreground text-sm outline-none max-w-[120px]"
                         />
                         <span
                           className={`text-[9px] font-black px-1.5 py-0.2 rounded border shadow-2xs whitespace-nowrap ${exp.color}`}
@@ -1700,7 +1700,7 @@ export default function KtmAdminPage() {
                           <div className="flex items-center gap-1.5">
                             <button 
                               onClick={() => setSelectedPlayer(p)}
-                              className="text-amber-700 hover:text-stone-900 p-1 hover:bg-black/5 rounded transition shrink-0"
+                              className="text-amber-700 hover:text-foreground p-1 hover:bg-black/5 rounded transition shrink-0"
                               title="プロフィールを表示"
                             >
                               <Info className="w-3 h-3" />
@@ -1710,7 +1710,7 @@ export default function KtmAdminPage() {
                               value={p.name}
                               onChange={(e) => handleInputChange(uid, "name", e.target.value)}
                               onBlur={handleBlurSave}
-                              className="bg-transparent border border-transparent focus:border-border hover:border-border focus:bg-black/5 rounded px-1 py-0.5 outline-none min-w-[70px] max-w-[120px] font-bold text-stone-900 text-xs"
+                              className="bg-transparent border border-transparent focus:border-border hover:border-border focus:bg-black/5 rounded px-1 py-0.5 outline-none min-w-[70px] max-w-[120px] font-bold text-foreground text-xs"
                             />
                             <span
                               className={`text-[9px] font-black px-1.5 py-0.2 rounded border shadow-2xs shrink-0 whitespace-nowrap ${exp.color}`}
@@ -1748,7 +1748,7 @@ export default function KtmAdminPage() {
                                 className={`bg-transparent outline-none cursor-pointer text-xs font-bold ${getColorFromRole(p.role_preferences?.primary)}`}
                               >
                                 {["ALL", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
-                                  <option key={role} value={role} className="text-stone-800 bg-surface">{role}</option>
+                                  <option key={role} value={role} className="text-foreground-soft bg-surface">{role}</option>
                                 ))}
                               </select>
                             </div>
@@ -1763,7 +1763,7 @@ export default function KtmAdminPage() {
                                 className={`bg-transparent outline-none cursor-pointer text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed ${getColorFromRole(p.role_preferences?.secondary)}`}
                               >
                                 {["-", "ALL", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
-                                  <option key={role} value={role} className="text-stone-800 bg-surface">{role}</option>
+                                  <option key={role} value={role} className="text-foreground-soft bg-surface">{role}</option>
                                 ))}
                               </select>
                             </div>
@@ -1803,7 +1803,7 @@ export default function KtmAdminPage() {
                             <button
                               type="button"
                               onClick={() => togglePlayerDetails(uid)}
-                              className={`p-0.5 rounded transition ${expandedPlayerIds.includes(uid) ? 'bg-amber-600 text-white' : 'text-stone-400 hover:text-stone-900 hover:bg-black/5'}`}
+                              className={`p-0.5 rounded transition ${expandedPlayerIds.includes(uid) ? 'bg-amber-600 text-white' : 'text-stone-400 hover:text-foreground hover:bg-black/5'}`}
                               title="レーン別MMR詳細"
                             >
                               <ChevronDown className={`w-3.5 h-3.5 transform transition-transform duration-300 ${expandedPlayerIds.includes(uid) ? 'rotate-180' : ''}`} />
@@ -1838,7 +1838,7 @@ export default function KtmAdminPage() {
                             onChange={(e) => handleInputChange(uid, "notes", e.target.value)}
                             onBlur={handleBlurSave}
                             placeholder="備考を入力"
-                            className="bg-transparent border border-transparent focus:border-border hover:border-border focus:bg-black/5 rounded px-1 py-0.5 outline-none w-32 text-xs text-stone-800"
+                            className="bg-transparent border border-transparent focus:border-border hover:border-border focus:bg-black/5 rounded px-1 py-0.5 outline-none w-32 text-xs text-foreground-soft"
                           />
                         </td>
                       </tr>
@@ -1858,7 +1858,7 @@ export default function KtmAdminPage() {
                                   return (
                                     <div key={role} className="flex items-center gap-2 bg-surface px-2 py-1.5 rounded border border-border hover:border-border transition">
                                       <RoleIcon role={role} />
-                                      <span className="font-bold text-stone-700 w-8">{role}</span>
+                                      <span className="font-bold text-foreground-subtle w-8">{role}</span>
                                       <MmrBadgeInput
                                         value={val}
                                         onChange={(v) => handleInputSave(uid, `mmr_${role.toLowerCase()}`, v)}

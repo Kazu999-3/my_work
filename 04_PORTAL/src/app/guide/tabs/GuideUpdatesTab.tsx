@@ -50,10 +50,10 @@ export default function GuideUpdatesTab() {
               <ScrollText size={14} className="text-amber-600" />
               リリースノート ＆ 更新履歴
             </div>
-            <h2 className="text-xl md:text-2xl font-black text-stone-900">
+            <h2 className="text-xl md:text-2xl font-black text-foreground">
               機能アップデート ＆ 改善ログ一覧
             </h2>
-            <p className="text-stone-700 text-xs md:text-sm max-w-2xl font-medium leading-relaxed">
+            <p className="text-foreground-subtle text-xs md:text-sm max-w-2xl font-medium leading-relaxed">
               KTMポータル、Discord Bot、カスタム管理システムの最新アップデート情報です。各カードの「📋 Discord告知文をコピー」を押すと、Discordにそのまま共有できる告知テキストを取得できます。
             </p>
           </div>
@@ -86,7 +86,7 @@ export default function GuideUpdatesTab() {
                     </span>
                   )}
                 </div>
-                <h3 className="text-base md:text-lg font-black text-stone-900">
+                <h3 className="text-base md:text-lg font-black text-foreground">
                   {entry.title}
                 </h3>
               </div>
@@ -95,7 +95,7 @@ export default function GuideUpdatesTab() {
               <button
                 type="button"
                 onClick={() => handleCopyDiscord(entry)}
-                className="px-3.5 py-2 rounded-xl bg-background hover:bg-[#5865F2]/10 border border-border hover:border-[#5865F2]/40 text-stone-700 hover:text-[#5865F2] font-black text-xs transition flex items-center gap-1.5 shrink-0 cursor-pointer shadow-2xs"
+                className="px-3.5 py-2 rounded-xl bg-background hover:bg-[#5865F2]/10 border border-border hover:border-[#5865F2]/40 text-foreground-subtle hover:text-[#5865F2] font-black text-xs transition flex items-center gap-1.5 shrink-0 cursor-pointer shadow-2xs"
                 title="Discord告知用テキストをコピー"
               >
                 {copiedDate === entry.date ? (
@@ -117,7 +117,7 @@ export default function GuideUpdatesTab() {
               {entry.items.map((item, i) => (
                 <li
                   key={i}
-                  className="text-xs md:text-sm text-stone-700 leading-relaxed pl-3 border-l-2 border-amber-400/60"
+                  className="text-xs md:text-sm text-foreground-subtle leading-relaxed pl-3 border-l-2 border-amber-400/60"
                 >
                   {item}
                 </li>

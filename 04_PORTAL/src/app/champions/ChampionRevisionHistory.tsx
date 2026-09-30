@@ -143,13 +143,13 @@ export default function ChampionRevisionHistory({
   const content = (
     <div className="space-y-3">
       <div className="flex items-center justify-between border-b border-black/10 pb-2">
-        <p className="text-xs font-bold text-stone-700 flex items-center gap-1.5">
+        <p className="text-xs font-bold text-foreground-subtle flex items-center gap-1.5">
           <History size={14} className="text-amber-600" />
           <span>{headerLabel}</span>
           {revisions && <span className="text-stone-400 font-normal">({revisions.length}件)</span>}
         </p>
         {isModal && onClose && (
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-black/5 text-stone-500 hover:text-stone-900 transition-colors">
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-black/5 text-stone-500 hover:text-foreground transition-colors">
             <X size={16} />
           </button>
         )}
@@ -178,7 +178,7 @@ export default function ChampionRevisionHistory({
                 <span className="font-black px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-200">
                   {TYPE_LABELS[r.target_type] || r.target_type}
                 </span>
-                <span className="font-bold text-stone-900">{FIELD_LABELS[r.field] || r.field}</span>
+                <span className="font-bold text-foreground">{FIELD_LABELS[r.field] || r.field}</span>
                 {r.isNew ? (
                   <span className="font-black text-teal-700">新規作成</span>
                 ) : (

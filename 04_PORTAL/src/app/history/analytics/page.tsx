@@ -18,7 +18,7 @@ export default function MatchAnalyticsRedirectPage() {
         <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-2xl mx-auto">
           👑
         </div>
-        <h1 className="text-base font-black text-stone-900">
+        <h1 className="text-base font-black text-foreground">
           集団戦ディープアナリティクス統合ハブへ移動中...
         </h1>
         <p className="text-xs text-stone-600 leading-relaxed">

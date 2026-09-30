@@ -120,20 +120,20 @@ export default function FactCheckSourceBlock({
           <textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            className="w-full min-h-[90px] p-2 border border-teal-300 rounded-lg text-[11px] text-stone-900 outline-none focus:border-teal-500"
+            className="w-full min-h-[90px] p-2 border border-teal-300 rounded-lg text-[11px] text-foreground outline-none focus:border-teal-500"
           />
           <div className="flex items-center gap-2">
             <button onClick={save} disabled={saving}
               className="flex items-center gap-1 text-[11px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-lg hover:bg-emerald-200 disabled:opacity-50">
               <Save size={11} /> {saving ? '保存中...' : '保存'}
             </button>
-            <button onClick={() => setEditing(false)} disabled={saving} className="flex items-center gap-1 text-[11px] text-stone-500 hover:text-stone-800">
+            <button onClick={() => setEditing(false)} disabled={saving} className="flex items-center gap-1 text-[11px] text-stone-500 hover:text-foreground-soft">
               <X size={11} /> キャンセル
             </button>
           </div>
         </div>
       ) : (
-        <p className="text-stone-700 whitespace-pre-wrap leading-relaxed">{value}</p>
+        <p className="text-foreground-subtle whitespace-pre-wrap leading-relaxed">{value}</p>
       )}
       {error && <p className="text-rose-700 mt-1">{error}</p>}
     </div>

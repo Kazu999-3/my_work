@@ -113,7 +113,7 @@ export default function DictFactCheckPanel() {
 
   return (
     <div className="bg-surface border border-border rounded-3xl p-6 space-y-5">
-      <h2 className="text-base font-bold text-stone-900 flex items-center gap-2">
+      <h2 className="text-base font-bold text-foreground flex items-center gap-2">
         <ShieldCheck size={18} className="text-teal-600" /> 辞典・ナレッジの一斉ファクトチェック
       </h2>
       <p className="text-xs text-stone-500">
@@ -156,14 +156,14 @@ export default function DictFactCheckPanel() {
       {/* レビューキュー */}
       <div className="space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <h3 className="text-sm font-bold text-stone-900 flex items-center gap-2">
+          <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
             検出結果レビュー（要人間確認・残り {items.length} 件）
           </h3>
           <div className="flex items-center gap-2">
             <button
               onClick={() => loadQueue()}
               disabled={loadingQueue}
-              className="text-xs text-stone-500 hover:text-stone-800 flex items-center gap-1 font-bold"
+              className="text-xs text-stone-500 hover:text-foreground-soft flex items-center gap-1 font-bold"
             >
               <RefreshCw size={12} className={loadingQueue ? 'animate-spin' : ''} /> 再読込
             </button>

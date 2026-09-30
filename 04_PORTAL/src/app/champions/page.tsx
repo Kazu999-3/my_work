@@ -68,7 +68,7 @@ function ChampionsShell() {
           <div className="text-2xl p-1.5 bg-amber-50 rounded-xl border border-amber-200/60 shrink-0">👑</div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-base sm:text-lg font-black tracking-tight text-stone-900">チャンピオン攻略辞典</h1>
+              <h1 className="text-base sm:text-lg font-black tracking-tight text-foreground">チャンピオン攻略辞典</h1>
               <span className="px-2 py-0.5 rounded-full bg-amber-100/70 border border-amber-300/60 text-amber-800 text-[10px] font-extrabold">
                 {isAuthenticated ? '管理者' : '攻略モード'}
               </span>
@@ -86,8 +86,8 @@ function ChampionsShell() {
             onClick={() => handleScopeChange('champions')}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               scope === 'champions'
-                ? 'bg-surface text-stone-900 shadow-xs font-black scale-101'
-                : 'text-stone-600 hover:text-stone-900 hover:bg-surface-hover/60'
+                ? 'bg-surface text-foreground shadow-xs font-black scale-101'
+                : 'text-stone-600 hover:text-foreground hover:bg-surface-hover/60'
             }`}
           >
             <span>👑 チャンピオン攻略</span>
@@ -98,7 +98,7 @@ function ChampionsShell() {
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               scope === 'health'
                 ? 'bg-surface text-amber-700 shadow-xs font-black scale-101'
-                : 'text-stone-600 hover:text-stone-900 hover:bg-surface-hover/60'
+                : 'text-stone-600 hover:text-foreground hover:bg-surface-hover/60'
             }`}
           >
             <span>🩺 辞典ヘルス</span>
@@ -109,7 +109,7 @@ function ChampionsShell() {
         <div className="flex items-center gap-2 self-end md:self-auto flex-wrap">
           <Link
             href="/lane-guides"
-            className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-stone-600 hover:text-stone-900 hover:bg-surface-subtle border border-border transition flex items-center gap-1"
+            className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-stone-600 hover:text-foreground hover:bg-surface-subtle border border-border transition flex items-center gap-1"
           >
             <span>📖 レーン攻略</span>
           </Link>

@@ -38,7 +38,7 @@ export const BalancerBo3Manager = memo(function BalancerBo3Manager({
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <span className="text-base">🏆</span>
-          <strong className="text-stone-900 text-sm font-black">
+          <strong className="text-foreground text-sm font-black">
             BO3 シリーズ進行中 — 第{bo3State.gameNumber}戦
           </strong>
           {bo3State.gameNumber === 3 && (
@@ -55,7 +55,7 @@ export const BalancerBo3Manager = memo(function BalancerBo3Manager({
         <button
           type="button"
           onClick={onResetBo3}
-          className="text-[11px] font-bold text-stone-500 hover:text-stone-800 underline cursor-pointer"
+          className="text-[11px] font-bold text-stone-500 hover:text-foreground-soft underline cursor-pointer"
         >
           BO3を終了
         </button>

@@ -129,7 +129,7 @@ export default function PlayerReputationCard({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-base font-black text-stone-900">
+              <h3 className="text-base font-black text-foreground">
                 KTM 栄誉 ＆ メンバーからの評判
               </h3>
               <span className="text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-0.5 rounded-full">
@@ -194,7 +194,7 @@ export default function PlayerReputationCard({
       {/* 称賛送信モーダル */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-4 bg-stone-900/50 backdrop-blur-xs">
-          <div className="bg-surface border border-border rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden text-stone-900 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-surface border border-border rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden text-foreground animate-in fade-in zoom-in-95 duration-200">
             
             {/* モーダルヘッダー */}
             <div className="p-4 md:px-6 md:py-4 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border-b border-border flex items-center justify-between">
@@ -203,7 +203,7 @@ export default function PlayerReputationCard({
                   🌟
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-stone-900">
+                  <h3 className="text-base font-black text-foreground">
                     {playerName} さんへ匿名評判を贈る
                   </h3>
                   <p className="text-[11px] text-stone-600 font-medium">
@@ -214,7 +214,7 @@ export default function PlayerReputationCard({
 
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="w-8 h-8 rounded-xl bg-surface-subtle hover:bg-surface-hover text-stone-500 hover:text-stone-900 flex items-center justify-center font-bold text-sm transition cursor-pointer"
+                className="w-8 h-8 rounded-xl bg-surface-subtle hover:bg-surface-hover text-stone-500 hover:text-foreground flex items-center justify-center font-bold text-sm transition cursor-pointer"
               >
                 ✕
               </button>
@@ -226,7 +226,7 @@ export default function PlayerReputationCard({
               {/* 管理者通報トグル */}
               <div className="p-3 bg-background rounded-2xl border border-border flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <div className="text-xs font-black text-stone-900 flex items-center gap-1.5">
+                  <div className="text-xs font-black text-foreground flex items-center gap-1.5">
                     <Shield size={14} className="text-amber-600" />
                     <span>送信モード</span>
                   </div>
@@ -241,7 +241,7 @@ export default function PlayerReputationCard({
                   className={`px-3 py-1.5 rounded-xl text-xs font-black border transition cursor-pointer ${
                     isReport
                       ? 'bg-rose-100 text-rose-900 border-rose-300'
-                      : 'bg-surface text-stone-700 border-border hover:bg-surface-subtle'
+                      : 'bg-surface text-foreground-subtle border-border hover:bg-surface-subtle'
                   }`}
                 >
                   {isReport ? '🛡️ 管理者への通報中' : '称賛モード'}
@@ -251,7 +251,7 @@ export default function PlayerReputationCard({
               {/* 称賛タグ選択 (称賛モード時のみ) */}
               {!isReport && (
                 <div className="space-y-2">
-                  <label className="block text-xs font-black text-stone-700 flex items-center justify-between">
+                  <label className="block text-xs font-black text-foreground-subtle flex items-center justify-between">
                     <span>称賛タグを選択（最大3つ）</span>
                     <span className="text-[10px] text-stone-500 font-bold">{selectedTags.length}/3 選択中</span>
                   </label>
@@ -267,7 +267,7 @@ export default function PlayerReputationCard({
                           className={`p-2.5 rounded-xl border text-left text-xs font-bold transition flex items-center justify-between gap-1.5 cursor-pointer ${
                             isSelected
                               ? 'bg-amber-500 text-stone-950 border-amber-500 shadow-2xs font-black'
-                              : 'bg-background text-stone-700 border-border hover:bg-surface-subtle'
+                              : 'bg-background text-foreground-subtle border-border hover:bg-surface-subtle'
                           }`}
                         >
                           <span className="truncate">{kudo.label}</span>
@@ -281,7 +281,7 @@ export default function PlayerReputationCard({
 
               {/* メッセージ入力欄 */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-black text-stone-700">
+                <label className="block text-xs font-black text-foreground-subtle">
                   {isReport ? '管理者への報告内容（理由・状況など）' : '匿名メッセージ・感謝の言葉（任意）'}
                 </label>
                 <textarea
@@ -293,7 +293,7 @@ export default function PlayerReputationCard({
                       ? '管理者のみに届く相談・通報内容をご記入ください...'
                       : '「キャリーありがとう！」「また組もう！」など温かいメッセージをどうぞ（相手には匿名で届きます）...'
                   }
-                  className="w-full bg-background border border-border rounded-2xl p-3 text-stone-900 text-xs focus:border-amber-500 focus:bg-surface focus:outline-hidden leading-relaxed font-medium"
+                  className="w-full bg-background border border-border rounded-2xl p-3 text-foreground text-xs focus:border-amber-500 focus:bg-surface focus:outline-hidden leading-relaxed font-medium"
                 />
               </div>
 
@@ -302,7 +302,7 @@ export default function PlayerReputationCard({
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-surface-subtle hover:bg-surface-hover text-stone-700 rounded-xl text-xs font-black transition cursor-pointer"
+                  className="px-4 py-2 bg-surface-subtle hover:bg-surface-hover text-foreground-subtle rounded-xl text-xs font-black transition cursor-pointer"
                 >
                   キャンセル
                 </button>

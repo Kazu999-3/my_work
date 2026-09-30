@@ -197,7 +197,7 @@ export default function PlayerAnalyzerPage() {
         <div className="w-12 h-12 bg-amber-100 text-amber-800 rounded-2xl flex items-center justify-center mx-auto text-xl font-black">
           🔒
         </div>
-        <h2 className="text-lg font-black text-stone-900">管理者ログインが必要です</h2>
+        <h2 className="text-lg font-black text-foreground">管理者ログインが必要です</h2>
         <p className="text-xs text-stone-500 font-medium">
           LoLディープアナライザーは管理者限定の統合診断ツールです。ログインしてください。
         </p>
@@ -252,7 +252,7 @@ export default function PlayerAnalyzerPage() {
               value={summonerInput}
               onChange={(e) => setSummonerInput(e.target.value)}
               placeholder="サモナー名#タグ (例: Kazurin#4036, yukizo#7867, Hide on bush#KR1)"
-              className="w-full pl-10 pr-3 py-2.5 bg-background border border-border rounded-2xl text-xs font-bold text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-amber-500 focus:bg-surface transition"
+              className="w-full pl-10 pr-3 py-2.5 bg-background border border-border rounded-2xl text-xs font-bold text-foreground placeholder:text-stone-400 focus:outline-none focus:border-amber-500 focus:bg-surface transition"
             />
           </div>
 
@@ -265,7 +265,7 @@ export default function PlayerAnalyzerPage() {
                 setTargetTier(e.target.value);
                 handleRunAnalysis(summonerInput, e.target.value);
               }}
-              className="bg-transparent text-xs font-black text-stone-900 focus:outline-none cursor-pointer"
+              className="bg-transparent text-xs font-black text-foreground focus:outline-none cursor-pointer"
             >
               <option value="Gold IV">🥇 Gold IV (ゴールド)</option>
               <option value="Platinum IV">🥈 Platinum IV (プラチナ)</option>
@@ -351,7 +351,7 @@ export default function PlayerAnalyzerPage() {
                   setSummonerInput(p.raw);
                   handleRunAnalysis(p.raw, targetTier);
                 }}
-                className="px-2.5 py-0.5 rounded-lg bg-surface-subtle hover:bg-surface-hover text-stone-600 hover:text-stone-900 font-medium text-[10.5px] border border-border/70 transition cursor-pointer"
+                className="px-2.5 py-0.5 rounded-lg bg-surface-subtle hover:bg-surface-hover text-stone-600 hover:text-foreground font-medium text-[10.5px] border border-border/70 transition cursor-pointer"
               >
                 {p.label}
               </button>
@@ -375,7 +375,7 @@ export default function PlayerAnalyzerPage() {
             🔍
           </div>
           <div className="space-y-1.5 max-w-md mx-auto">
-            <h3 className="text-base font-black text-stone-900">
+            <h3 className="text-base font-black text-foreground">
               サモナー名を入力して深層アナライズを開始
             </h3>
             <p className="text-xs text-stone-500 font-medium leading-relaxed">
@@ -419,10 +419,10 @@ export default function PlayerAnalyzerPage() {
               </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-lg font-black text-stone-900">
+                  <h2 className="text-lg font-black text-foreground">
                     {report.summoner.name}#{report.summoner.tag}
                   </h2>
-                  <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-surface-subtle text-stone-700 border border-border">
+                  <span className="text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-surface-subtle text-foreground-subtle border border-border">
                     現在: {report.summoner.tier}
                   </span>
                   <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300">
@@ -486,7 +486,7 @@ export default function PlayerAnalyzerPage() {
                       <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300">
                         目標基準: {report.sessionAnalytics.targetRankGap.benchmark.tierName}
                       </span>
-                      <h3 className="text-lg font-black text-stone-900">
+                      <h3 className="text-lg font-black text-foreground">
                         目標ランク到達度 ＆ スタッツギャップ診断
                       </h3>
                     </div>
@@ -522,7 +522,7 @@ export default function PlayerAnalyzerPage() {
                       {report.sessionAnalytics.targetRankGap.gaps.deathsDiff.passed ? '達成' : '要改善'}
                     </span>
                   </div>
-                  <div className="text-stone-900 font-black font-mono">
+                  <div className="text-foreground font-black font-mono">
                     実測 {report.sessionAnalytics.targetRankGap.currentActual.avgDeaths} / 目標{' '}
                     {report.sessionAnalytics.targetRankGap.benchmark.avgDeaths}
                   </div>
@@ -545,7 +545,7 @@ export default function PlayerAnalyzerPage() {
                       {report.sessionAnalytics.targetRankGap.gaps.csDiff.passed ? '達成' : '要改善'}
                     </span>
                   </div>
-                  <div className="text-stone-900 font-black font-mono">
+                  <div className="text-foreground font-black font-mono">
                     実測 {report.sessionAnalytics.targetRankGap.currentActual.csPerMin} / 目標{' '}
                     {report.sessionAnalytics.targetRankGap.benchmark.csPerMin}
                   </div>
@@ -568,7 +568,7 @@ export default function PlayerAnalyzerPage() {
                       {report.sessionAnalytics.targetRankGap.gaps.kpDiff.passed ? '達成' : '最重要'}
                     </span>
                   </div>
-                  <div className="text-stone-900 font-black font-mono">
+                  <div className="text-foreground font-black font-mono">
                     実測 {report.sessionAnalytics.targetRankGap.currentActual.kp15}% / 目標{' '}
                     {report.sessionAnalytics.targetRankGap.benchmark.kp15}%
                   </div>
@@ -591,7 +591,7 @@ export default function PlayerAnalyzerPage() {
                       {report.sessionAnalytics.targetRankGap.gaps.visionDiff.passed ? '達成' : '要改善'}
                     </span>
                   </div>
-                  <div className="text-stone-900 font-black font-mono">
+                  <div className="text-foreground font-black font-mono">
                     実測 {report.sessionAnalytics.targetRankGap.currentActual.visionScorePerMin} / 目標{' '}
                     {report.sessionAnalytics.targetRankGap.benchmark.visionScorePerMin}
                   </div>
@@ -614,7 +614,7 @@ export default function PlayerAnalyzerPage() {
                       {report.sessionAnalytics.targetRankGap.gaps.deepWardDiff.passed ? '達成' : '要改善'}
                     </span>
                   </div>
-                  <div className="text-stone-900 font-black font-mono">
+                  <div className="text-foreground font-black font-mono">
                     実測 {report.sessionAnalytics.targetRankGap.currentActual.deepWardRatio}% / 目標{' '}
                     {report.sessionAnalytics.targetRankGap.benchmark.deepWardRatio}%
                   </div>
@@ -630,7 +630,7 @@ export default function PlayerAnalyzerPage() {
                   <Sparkles size={14} className="text-emerald-600" />
                   <span>【{targetTier}】昇格への逆算処方箋:</span>
                 </div>
-                <ul className="space-y-1 text-xs text-stone-700 font-medium">
+                <ul className="space-y-1 text-xs text-foreground-subtle font-medium">
                   {report.sessionAnalytics.targetRankGap.keyActionToPromote?.map((act: string, idx: number) => (
                     <li key={idx} className="flex items-start gap-1.5">
                       <CheckCircle2 size={13} className="text-emerald-600 shrink-0 mt-0.5" />
@@ -707,7 +707,7 @@ export default function PlayerAnalyzerPage() {
                 <div className="rounded-3xl border border-border bg-surface p-5 md:p-6 shadow-xs space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-stone-100 pb-3 gap-2">
                     <div>
-                      <h3 className="font-black text-sm text-stone-900 flex items-center gap-2">
+                      <h3 className="font-black text-sm text-foreground flex items-center gap-2">
                         <PieChart size={16} className="text-amber-600" />
                         <span>⚖️ 試合展開4タイプ自動分類 (Carry vs ACE Loss Index)</span>
                       </h3>
@@ -817,8 +817,8 @@ export default function PlayerAnalyzerPage() {
                     </div>
                   </div>
 
-                  <div className="p-3.5 rounded-2xl bg-background border border-border/80 text-xs text-stone-700 space-y-1">
-                    <div className="font-black text-stone-900 flex items-center gap-1.5">
+                  <div className="p-3.5 rounded-2xl bg-background border border-border/80 text-xs text-foreground-subtle space-y-1">
+                    <div className="font-black text-foreground flex items-center gap-1.5">
                       <span>💡 展開傾向診断:</span>
                     </div>
                     <p className="leading-relaxed font-medium">
@@ -836,7 +836,7 @@ export default function PlayerAnalyzerPage() {
                     <div className="flex items-center justify-between border-b border-stone-100 pb-3 flex-wrap gap-2">
                       <div className="flex items-center gap-2">
                         <TrendingUp size={16} className="text-amber-600" />
-                        <h3 className="font-black text-sm text-stone-900">
+                        <h3 className="font-black text-sm text-foreground">
                           プレイスタイル 5大レーダー客観解析
                         </h3>
                         {report.sessionAnalytics?.roleConfig && (
@@ -1133,7 +1133,7 @@ export default function PlayerAnalyzerPage() {
                                     </span>
                                   )}
                                 </span>
-                                <span className="text-stone-900 font-black">
+                                <span className="text-foreground font-black">
                                   {item.score}点{' '}
                                   <span className={`text-[10px] ${item.subTextColor} font-normal`}>
                                     ({item.valueText})
@@ -1157,20 +1157,20 @@ export default function PlayerAnalyzerPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {report.sessionAnalytics?.fatalDeathAnalytics && (
                       <div className="rounded-3xl border border-border bg-surface p-5 shadow-xs space-y-2.5">
-                        <div className="text-xs font-black text-stone-900 flex items-center gap-1.5 border-b border-stone-100 pb-2">
+                        <div className="text-xs font-black text-foreground flex items-center gap-1.5 border-b border-stone-100 pb-2">
                           <Skull size={14} className="text-rose-600" />
                           <span>致命的デス (Throw) 検知</span>
                         </div>
-                        <div className="space-y-1.5 text-xs text-stone-700">
+                        <div className="space-y-1.5 text-xs text-foreground-subtle">
                           <div className="flex justify-between font-bold">
                             <span>Obj直前デス:</span>
-                            <span className="font-mono text-stone-900">
+                            <span className="font-mono text-foreground">
                               {report.sessionAnalytics.fatalDeathAnalytics.objPreSpawnDeathsCount}回 ({report.sessionAnalytics.fatalDeathAnalytics.objPreSpawnDeathsRate}%)
                             </span>
                           </div>
                           <div className="flex justify-between font-bold">
                             <span>孤立被キャッチ率:</span>
-                            <span className="font-mono text-stone-900">
+                            <span className="font-mono text-foreground">
                               {report.sessionAnalytics.fatalDeathAnalytics.isolatedDeathsPercent}%
                             </span>
                           </div>
@@ -1186,14 +1186,14 @@ export default function PlayerAnalyzerPage() {
 
                     {report.sessionAnalytics?.earlyTimelineImpact && (
                       <div className="rounded-3xl border border-border bg-surface p-5 shadow-xs space-y-2.5">
-                        <div className="text-xs font-black text-stone-900 flex items-center gap-1.5 border-b border-stone-100 pb-2">
+                        <div className="text-xs font-black text-foreground flex items-center gap-1.5 border-b border-stone-100 pb-2">
                           <Timer size={14} className="text-amber-600" />
                           <span>序盤14分 タイムライン因果</span>
                         </div>
-                        <div className="space-y-1.5 text-xs text-stone-700">
+                        <div className="space-y-1.5 text-xs text-foreground-subtle">
                           <div className="flex justify-between font-bold">
                             <span>初デス平均時間:</span>
-                            <span className="font-mono text-stone-900">
+                            <span className="font-mono text-foreground">
                               {report.sessionAnalytics.earlyTimelineImpact.firstDeathAvgMinute}
                             </span>
                           </div>
@@ -1224,7 +1224,7 @@ export default function PlayerAnalyzerPage() {
                   {/* 視界客観データ */}
                   <div className="rounded-3xl border border-border bg-surface p-5 md:p-6 shadow-xs space-y-4">
                     <div className="flex items-center justify-between border-b border-stone-100 pb-3">
-                      <h3 className="font-black text-sm text-stone-900 flex items-center gap-2">
+                      <h3 className="font-black text-sm text-foreground flex items-center gap-2">
                         <Eye size={16} className="text-amber-600" />
                         <span>視界・コントロール客観解析 (League of Graphs / Riot API連動)</span>
                       </h3>
@@ -1234,7 +1234,7 @@ export default function PlayerAnalyzerPage() {
                     </div>
 
                     <div className="space-y-1.5">
-                      <div className="flex justify-between text-xs font-bold text-stone-700">
+                      <div className="flex justify-between text-xs font-bold text-foreground-subtle">
                         <span>視界侵入深度バランス:</span>
                         <span>
                           {report.sessionAnalytics?.roleConfig?.visionLabelA || '自陣防衛'}{' '}
@@ -1279,7 +1279,7 @@ export default function PlayerAnalyzerPage() {
                       <span>🌟</span>
                       <span>実測データから導かれた「3大強み」</span>
                     </div>
-                    <ul className="space-y-1.5 text-xs text-stone-700 font-medium">
+                    <ul className="space-y-1.5 text-xs text-foreground-subtle font-medium">
                       {report.analysis.strengths?.map((s: string, idx: number) => (
                         <li key={idx} className="flex items-start gap-1.5">
                           <CheckCircle2 size={13} className="text-emerald-600 shrink-0 mt-0.5" />
@@ -1295,7 +1295,7 @@ export default function PlayerAnalyzerPage() {
                       <span className="p-1 rounded-md bg-amber-200 text-amber-900">⚠️</span>
                       <span>【{targetTier}】到達を阻む最大のボトルネック</span>
                     </div>
-                    <p className="text-xs text-stone-800 leading-relaxed font-medium bg-surface p-3 rounded-2xl border border-amber-200">
+                    <p className="text-xs text-foreground-soft leading-relaxed font-medium bg-surface p-3 rounded-2xl border border-amber-200">
                       {report.analysis.coreBottleNeck}
                     </p>
                   </div>
@@ -1308,7 +1308,7 @@ export default function PlayerAnalyzerPage() {
                     </div>
 
                     <div className="bg-surface p-3.5 rounded-2xl border border-amber-200 space-y-2">
-                      <div className="text-xs font-bold text-stone-900 leading-relaxed">
+                      <div className="text-xs font-bold text-foreground leading-relaxed">
                         {report.analysis.actionPlan}
                       </div>
 
@@ -1344,7 +1344,7 @@ export default function PlayerAnalyzerPage() {
                     className={`px-4 py-2 rounded-2xl font-black text-xs transition cursor-pointer flex items-center gap-2 border ${
                       selectedChampion.id === champ.id
                         ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
-                        : 'bg-surface text-stone-700 hover:bg-background border-border'
+                        : 'bg-surface text-foreground-subtle hover:bg-background border-border'
                     }`}
                   >
                     <span>{champ.name}</span>
@@ -1366,7 +1366,7 @@ export default function PlayerAnalyzerPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-stone-100 gap-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="text-xl font-black text-stone-900">{selectedChampion.name}</h3>
+                      <h3 className="text-xl font-black text-foreground">{selectedChampion.name}</h3>
                       <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-200">
                         {selectedChampion.powerRating}
                       </span>
@@ -1380,7 +1380,7 @@ export default function PlayerAnalyzerPage() {
                   <div className="flex items-center gap-3">
                     <div className="text-right">
                       <div className="text-[10px] text-stone-400 font-bold">勝率 / KDA</div>
-                      <div className="text-lg font-black text-stone-900 font-mono">
+                      <div className="text-lg font-black text-foreground font-mono">
                         {selectedChampion.winRate}%{' '}
                         <span className="text-xs font-normal text-stone-500">({selectedChampion.kda})</span>
                       </div>
@@ -1390,26 +1390,26 @@ export default function PlayerAnalyzerPage() {
 
                 {/* 1. パワースパイク分析 */}
                 <div className="space-y-3">
-                  <h4 className="font-black text-xs text-stone-900 flex items-center gap-1.5">
+                  <h4 className="font-black text-xs text-foreground flex items-center gap-1.5">
                     <Zap size={14} className="text-amber-600" />
                     <span>⚡ パワースパイク ＆ 立ち回り時間軸</span>
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div className="p-4 rounded-2xl bg-background border border-border/80 space-y-1">
                       <div className="text-[11px] font-black text-stone-500">序盤 (Lv1〜5)</div>
-                      <p className="text-xs text-stone-800 font-medium leading-relaxed">
+                      <p className="text-xs text-foreground-soft font-medium leading-relaxed">
                         {selectedChampion.powerSpikes.earlyLvl1to5}
                       </p>
                     </div>
                     <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 space-y-1">
                       <div className="text-[11px] font-black text-amber-900">中盤 (1〜2コア完成時)</div>
-                      <p className="text-xs text-stone-900 font-bold leading-relaxed">
+                      <p className="text-xs text-foreground font-bold leading-relaxed">
                         {selectedChampion.powerSpikes.mid1to2Core}
                       </p>
                     </div>
                     <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 space-y-1">
                       <div className="text-[11px] font-black text-amber-900">終盤 (3コア以降 / 集団戦)</div>
-                      <p className="text-xs text-stone-900 font-medium leading-relaxed">
+                      <p className="text-xs text-foreground font-medium leading-relaxed">
                         {selectedChampion.powerSpikes.late3CorePlus}
                       </p>
                     </div>
@@ -1440,7 +1440,7 @@ export default function PlayerAnalyzerPage() {
                               有利相性
                             </span>
                           </div>
-                          <p className="text-xs text-stone-700 font-medium leading-relaxed">{fav.reason}</p>
+                          <p className="text-xs text-foreground-subtle font-medium leading-relaxed">{fav.reason}</p>
                         </div>
                       ))}
                     </div>
@@ -1468,7 +1468,7 @@ export default function PlayerAnalyzerPage() {
                               要警戒
                             </span>
                           </div>
-                          <p className="text-xs text-stone-700 font-medium leading-relaxed">
+                          <p className="text-xs text-foreground-subtle font-medium leading-relaxed">
                             <strong className="text-rose-900">対策:</strong> {hard.counterPlay}
                           </p>
                         </div>
@@ -1479,32 +1479,32 @@ export default function PlayerAnalyzerPage() {
 
                 {/* 3. 勝利時 vs 敗北時の客観スタッツ差分 */}
                 <div className="p-5 rounded-3xl bg-background border border-border space-y-3">
-                  <h4 className="font-black text-xs text-stone-900 flex items-center gap-1.5">
-                    <Swords size={14} className="text-stone-700" />
+                  <h4 className="font-black text-xs text-foreground flex items-center gap-1.5">
+                    <Swords size={14} className="text-foreground-subtle" />
                     <span>勝利時 vs 敗北時のスタッツ差分（勝敗を分ける境界線）</span>
                   </h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                     <div className="p-3 bg-surface rounded-2xl border border-border/80">
                       <div className="text-[10px] text-stone-400 font-bold">15分CS差</div>
-                      <div className="font-black text-stone-900 mt-0.5">
+                      <div className="font-black text-foreground mt-0.5">
                         {selectedChampion.winVsLossDiffs?.cs15Diff}
                       </div>
                     </div>
                     <div className="p-3 bg-surface rounded-2xl border border-border/80">
                       <div className="text-[10px] text-stone-400 font-bold">平均被デス</div>
-                      <div className="font-black text-stone-900 mt-0.5">
+                      <div className="font-black text-foreground mt-0.5">
                         {selectedChampion.winVsLossDiffs?.deathsDiff}
                       </div>
                     </div>
                     <div className="p-3 bg-surface rounded-2xl border border-border/80">
                       <div className="text-[10px] text-stone-400 font-bold">視界・コントロール</div>
-                      <div className="font-black text-stone-900 mt-0.5">
+                      <div className="font-black text-foreground mt-0.5">
                         {selectedChampion.winVsLossDiffs?.visionDiff}
                       </div>
                     </div>
                     <div className="p-3 bg-surface rounded-2xl border border-border/80">
                       <div className="text-[10px] text-stone-400 font-bold">第1コア完成時間</div>
-                      <div className="font-black text-stone-900 mt-0.5">
+                      <div className="font-black text-foreground mt-0.5">
                         {selectedChampion.winVsLossDiffs?.firstCoreTime}
                       </div>
                     </div>
@@ -1534,7 +1534,7 @@ export default function PlayerAnalyzerPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <div className="flex justify-between text-xs font-bold text-stone-700">
+                    <div className="flex justify-between text-xs font-bold text-foreground-subtle">
                       <span>手持ちプールの属性バランス:</span>
                       <span>
                         AP {report.sessionAnalytics.championPoolDiagnosis.apRatioPercent}% / AD{' '}
@@ -1572,7 +1572,7 @@ export default function PlayerAnalyzerPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       {report.sessionAnalytics.championPoolDiagnosis.recommendedAdditions?.map((rec: any, idx: number) => (
                         <div key={idx} className="p-3.5 bg-surface rounded-2xl border border-amber-200/80 space-y-1 shadow-2xs">
-                          <div className="text-xs font-black text-stone-900">{rec.championName}</div>
+                          <div className="text-xs font-black text-foreground">{rec.championName}</div>
                           <div className="text-[10px] font-bold text-amber-700">{rec.archetype}</div>
                           <p className="text-[11px] text-stone-600 font-medium leading-relaxed pt-1 border-t border-stone-100">
                             {rec.synergyReason}
@@ -1594,7 +1594,7 @@ export default function PlayerAnalyzerPage() {
               {/* 1. 時間帯別パフォーマンス */}
               <div className="rounded-3xl border border-border bg-surface p-6 shadow-xs space-y-4">
                 <div className="flex items-center justify-between border-b border-stone-100 pb-3">
-                  <h3 className="font-black text-sm text-stone-900 flex items-center gap-2">
+                  <h3 className="font-black text-sm text-foreground flex items-center gap-2">
                     <Clock size={16} className="text-amber-600" />
                     <span>時間帯別勝率カーブ ＆ 集中力ピーク (実測タイムスタンプ集計)</span>
                   </h3>
@@ -1617,13 +1617,13 @@ export default function PlayerAnalyzerPage() {
                     >
                       <div className="flex justify-between items-start">
                         <div>
-                          <div className="text-xs font-black text-stone-900">{slot.label}</div>
+                          <div className="text-xs font-black text-foreground">{slot.label}</div>
                           <div className="text-[11px] font-mono text-stone-500 font-bold mt-0.5">
                             {slot.timeSlot}
                           </div>
                         </div>
                         <div className="text-right font-mono">
-                          <div className="text-lg font-black text-stone-900">
+                          <div className="text-lg font-black text-foreground">
                             {slot.hasData ? `${slot.winRate}%` : '0試合'}
                           </div>
                           <div className="text-[10px] text-stone-500">
@@ -1631,7 +1631,7 @@ export default function PlayerAnalyzerPage() {
                           </div>
                         </div>
                       </div>
-                      <p className="text-xs text-stone-700 font-medium leading-relaxed pt-2 border-t border-border/50">
+                      <p className="text-xs text-foreground-subtle font-medium leading-relaxed pt-2 border-t border-border/50">
                         {slot.insight}
                       </p>
                     </div>
@@ -1643,7 +1643,7 @@ export default function PlayerAnalyzerPage() {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <div className="lg:col-span-7 rounded-3xl border border-border bg-surface p-6 shadow-xs space-y-4">
                   <div className="border-b border-stone-100 pb-3">
-                    <h3 className="font-black text-sm text-stone-900 flex items-center gap-2">
+                    <h3 className="font-black text-sm text-foreground flex items-center gap-2">
                       <Activity size={16} className="text-amber-600" />
                       <span>連続試合数による疲労度・勝率低下分析 (実測セッション)</span>
                     </h3>
@@ -1658,10 +1658,10 @@ export default function PlayerAnalyzerPage() {
                         }`}
                       >
                         <div className="flex justify-between items-center text-xs font-bold">
-                          <span className="text-stone-900 font-black">
+                          <span className="text-foreground font-black">
                             {f.gameNumberInSession} - {f.label}
                           </span>
-                          <span className="font-mono text-stone-800 font-black">
+                          <span className="font-mono text-foreground-soft font-black">
                             {f.hasData ? (
                               <>
                                 勝率 {f.winRate}%{' '}
@@ -1719,7 +1719,7 @@ export default function PlayerAnalyzerPage() {
 
                   <div className="p-4 rounded-2xl bg-surface border border-amber-200 space-y-3">
                     <div className="flex items-center justify-between">
-                      <div className="text-xs font-bold text-stone-700">負け直後 5分以内即キュー</div>
+                      <div className="text-xs font-bold text-foreground-subtle">負け直後 5分以内即キュー</div>
                       <div className="text-sm font-black font-mono">
                         {report.sessionAnalytics.requeueTiltStats.immediateRequeueGames > 0 ? (
                           <span className={
@@ -1740,7 +1740,7 @@ export default function PlayerAnalyzerPage() {
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
-                      <div className="text-xs font-bold text-stone-700">5分以上休憩後のマッチ</div>
+                      <div className="text-xs font-bold text-foreground-subtle">5分以上休憩後のマッチ</div>
                       <div className="text-sm font-black font-mono">
                         {report.sessionAnalytics.requeueTiltStats.restedRequeueGames > 0 ? (
                           <span className={
@@ -1778,7 +1778,7 @@ export default function PlayerAnalyzerPage() {
                     )}
                   </div>
 
-                  <p className="text-xs text-stone-700 leading-relaxed font-medium bg-surface/70 p-3 rounded-xl border border-amber-200/50">
+                  <p className="text-xs text-foreground-subtle leading-relaxed font-medium bg-surface/70 p-3 rounded-xl border border-amber-200/50">
                     💡 <strong>実測インサイト:</strong>{' '}
                     {report.sessionAnalytics.requeueTiltStats.insight ||
                       (report.sessionAnalytics.requeueTiltStats.immediateRequeueGames < 3
@@ -1798,7 +1798,7 @@ export default function PlayerAnalyzerPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {report.sessionAnalytics.goldenSessionRules?.map((rule: string, idx: number) => (
                     <div key={idx} className="p-4 bg-surface rounded-2xl border border-amber-200 space-y-1 shadow-2xs">
-                      <div className="text-xs font-bold text-stone-800 leading-relaxed">{rule}</div>
+                      <div className="text-xs font-bold text-foreground-soft leading-relaxed">{rule}</div>
                     </div>
                   ))}
                 </div>
@@ -1822,7 +1822,7 @@ export default function PlayerAnalyzerPage() {
                         <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-200 font-mono">
                           TYPE: {report.sessionAnalytics.playstyleMbti.typeCode}
                         </span>
-                        <h3 className="text-lg md:text-xl font-black text-stone-900">
+                        <h3 className="text-lg md:text-xl font-black text-foreground">
                           {report.sessionAnalytics.playstyleMbti.typeName}
                         </h3>
                       </div>
@@ -1843,7 +1843,7 @@ export default function PlayerAnalyzerPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-4 rounded-2xl bg-surface border border-amber-100 space-y-1.5 shadow-2xs">
-                    <div className="flex justify-between text-xs font-bold text-stone-800">
+                    <div className="flex justify-between text-xs font-bold text-foreground-soft">
                       <span>🛡️ セーフティ計算型 ({report.sessionAnalytics.playstyleMbti.axes.safetyVsRisk.safetyPercent}%)</span>
                       <span className="text-stone-400">ハイリスク型 ({report.sessionAnalytics.playstyleMbti.axes.safetyVsRisk.riskPercent}%)</span>
                     </div>
@@ -1854,7 +1854,7 @@ export default function PlayerAnalyzerPage() {
                   </div>
 
                   <div className="p-4 rounded-2xl bg-surface border border-amber-100 space-y-1.5 shadow-2xs">
-                    <div className="flex justify-between text-xs font-bold text-stone-800">
+                    <div className="flex justify-between text-xs font-bold text-foreground-soft">
                       <span>🌾 自己スケール重視 ({report.sessionAnalytics.playstyleMbti.axes.scaleVsEnabler.scalePercent}%)</span>
                       <span className="text-stone-400">献身サポート ({report.sessionAnalytics.playstyleMbti.axes.scaleVsEnabler.enablerPercent}%)</span>
                     </div>
@@ -1865,7 +1865,7 @@ export default function PlayerAnalyzerPage() {
                   </div>
 
                   <div className="p-4 rounded-2xl bg-surface border border-amber-100 space-y-1.5 shadow-2xs">
-                    <div className="flex justify-between text-xs font-bold text-stone-800">
+                    <div className="flex justify-between text-xs font-bold text-foreground-soft">
                       <span>🏰 自陣テリトリー防衛 ({report.sessionAnalytics.playstyleMbti.axes.guardianVsInvader.guardianPercent}%)</span>
                       <span className="text-stone-400">敵陣侵略 ({report.sessionAnalytics.playstyleMbti.axes.guardianVsInvader.invaderPercent}%)</span>
                     </div>
@@ -1876,7 +1876,7 @@ export default function PlayerAnalyzerPage() {
                   </div>
 
                   <div className="p-4 rounded-2xl bg-surface border border-amber-100 space-y-1.5 shadow-2xs">
-                    <div className="flex justify-between text-xs font-bold text-stone-800">
+                    <div className="flex justify-between text-xs font-bold text-foreground-soft">
                       <span>🧠 慎重観察型 ({report.sessionAnalytics.playstyleMbti.axes.deliberateVsReflex.deliberatePercent}%)</span>
                       <span className="text-stone-400">直感即断型 ({report.sessionAnalytics.playstyleMbti.axes.deliberateVsReflex.reflexPercent}%)</span>
                     </div>
@@ -1887,7 +1887,7 @@ export default function PlayerAnalyzerPage() {
                   </div>
                 </div>
 
-                <p className="text-xs text-stone-700 leading-relaxed font-medium bg-surface/90 p-4 rounded-2xl border border-amber-100">
+                <p className="text-xs text-foreground-subtle leading-relaxed font-medium bg-surface/90 p-4 rounded-2xl border border-amber-100">
                   {report.sessionAnalytics.playstyleMbti.personalityAnalysis}
                 </p>
               </div>
@@ -1905,14 +1905,14 @@ export default function PlayerAnalyzerPage() {
                       </span>
                     </div>
 
-                    <div className="space-y-2 text-xs text-stone-800">
+                    <div className="space-y-2 text-xs text-foreground-soft">
                       <div className="p-3 bg-surface rounded-2xl border border-rose-100 space-y-1">
                         <div className="text-[10px] text-stone-400 font-bold">自陣インベード荒らし耐性</div>
-                        <div className="font-bold text-stone-900">{report.sessionAnalytics.tiltTriggerMatrix.invadeResistanceRating}</div>
+                        <div className="font-bold text-foreground">{report.sessionAnalytics.tiltTriggerMatrix.invadeResistanceRating}</div>
                       </div>
                       <div className="p-3 bg-surface rounded-2xl border border-rose-100 space-y-1">
                         <div className="text-[10px] text-stone-400 font-bold">味方序盤崩壊時のメンタル</div>
-                        <div className="font-bold text-stone-900">{report.sessionAnalytics.tiltTriggerMatrix.teammateDeathResistance}</div>
+                        <div className="font-bold text-foreground">{report.sessionAnalytics.tiltTriggerMatrix.teammateDeathResistance}</div>
                       </div>
                       <div className="p-3 bg-surface rounded-2xl border border-rose-100 space-y-1">
                         <div className="text-[10px] text-stone-400 font-bold">雪だるま連続デス防止率</div>
@@ -1940,10 +1940,10 @@ export default function PlayerAnalyzerPage() {
                       </span>
                     </div>
 
-                    <div className="space-y-2 text-xs text-stone-800">
+                    <div className="space-y-2 text-xs text-foreground-soft">
                       <div className="p-3 bg-surface rounded-2xl border border-amber-100 space-y-1">
                         <div className="text-[10px] text-stone-400 font-bold">ゴールド死蔵率 (リコール遅延)</div>
-                        <div className="font-bold text-stone-900">{report.sessionAnalytics.goldEfficiency.goldStashRating}</div>
+                        <div className="font-bold text-foreground">{report.sessionAnalytics.goldEfficiency.goldStashRating}</div>
                       </div>
                       <div className="p-3 bg-surface rounded-2xl border border-amber-100 space-y-1">
                         <div className="text-[10px] text-stone-400 font-bold">1コア完成直後のアクション率</div>
@@ -1953,7 +1953,7 @@ export default function PlayerAnalyzerPage() {
                       </div>
                     </div>
 
-                    <p className="text-[11px] text-stone-700 leading-relaxed font-medium bg-surface p-3 rounded-2xl border border-amber-200/80">
+                    <p className="text-[11px] text-foreground-subtle leading-relaxed font-medium bg-surface p-3 rounded-2xl border border-amber-200/80">
                       {report.sessionAnalytics.goldEfficiency.efficiencyVerdict}
                     </p>
                   </div>
@@ -1964,7 +1964,7 @@ export default function PlayerAnalyzerPage() {
                 {report.sessionAnalytics.adversityBehavior && (
                   <div className="rounded-3xl border border-border bg-surface p-6 shadow-xs space-y-3">
                     <div className="flex items-center justify-between border-b border-stone-100 pb-3">
-                      <h4 className="font-black text-xs text-stone-900 flex items-center gap-1.5">
+                      <h4 className="font-black text-xs text-foreground flex items-center gap-1.5">
                         <ShieldAlert size={15} className="text-amber-600" />
                         <span>逆境・ビハインド時の人間性</span>
                       </h4>
@@ -1977,7 +1977,7 @@ export default function PlayerAnalyzerPage() {
                       <div className="text-xs font-black text-amber-950">
                         行動タイプ: {report.sessionAnalytics.adversityBehavior.archetype}
                       </div>
-                      <p className="text-xs text-stone-700 leading-relaxed font-medium">
+                      <p className="text-xs text-foreground-subtle leading-relaxed font-medium">
                         {report.sessionAnalytics.adversityBehavior.behaviorVerdict}
                       </p>
                     </div>
@@ -1999,10 +1999,10 @@ export default function PlayerAnalyzerPage() {
 
                     <div className="space-y-2 text-xs">
                       <div className="p-3 bg-surface rounded-2xl border border-amber-100">
-                        <div className="font-bold text-stone-900">{report.sessionAnalytics.cognitiveBiases.recallHabitBias}</div>
+                        <div className="font-bold text-foreground">{report.sessionAnalytics.cognitiveBiases.recallHabitBias}</div>
                       </div>
                       <div className="p-3 bg-surface rounded-2xl border border-amber-100">
-                        <div className="font-bold text-stone-900">{report.sessionAnalytics.cognitiveBiases.mapAttentionBias}</div>
+                        <div className="font-bold text-foreground">{report.sessionAnalytics.cognitiveBiases.mapAttentionBias}</div>
                       </div>
                     </div>
 
@@ -2011,7 +2011,7 @@ export default function PlayerAnalyzerPage() {
                         <Sparkles size={13} className="text-amber-600" />
                         <span>矯正処方箋:</span>
                       </div>
-                      <p className="text-xs text-stone-800 leading-relaxed font-bold">
+                      <p className="text-xs text-foreground-soft leading-relaxed font-bold">
                         {report.sessionAnalytics.cognitiveBiases.actionPrescription}
                       </p>
                     </div>

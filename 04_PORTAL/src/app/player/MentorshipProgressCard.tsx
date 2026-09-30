@@ -197,7 +197,7 @@ export default function MentorshipProgressCard({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-extrabold text-sm md:text-base text-stone-900 dark:text-stone-100">
+                <span className="font-extrabold text-sm md:text-base text-foreground dark:text-stone-100">
                   師弟ハブで共闘パートナーを探しませんか？
                 </span>
                 <span className="px-2 py-0.5 text-[10px] font-black rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
@@ -270,7 +270,7 @@ export default function MentorshipProgressCard({
                   </div>
                   <div className="flex items-center gap-1.5 mt-1">
                     <span className="text-xs text-stone-500 dark:text-stone-400">パートナー ({partnerRole}):</span>
-                    <span className="text-sm font-black text-stone-900 dark:text-stone-100">
+                    <span className="text-sm font-black text-foreground dark:text-stone-100">
                       {partner?.player_name || 'メンバー'}
                     </span>
                     {partner?.current_rank && (
@@ -327,7 +327,7 @@ export default function MentorshipProgressCard({
             {/* 目標ランク進捗バー */}
             <div className="bg-background dark:bg-stone-900/50 border border-border/80 dark:border-stone-800/80 rounded-2xl p-4 space-y-2.5">
               <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5 font-extrabold text-stone-800 dark:text-stone-200">
+                <div className="flex items-center gap-1.5 font-extrabold text-foreground-soft dark:text-stone-200">
                   <Target className="w-4 h-4 text-rose-500" />
                   <span>目標ランクへの成長ステップ</span>
                 </div>
@@ -363,7 +363,7 @@ export default function MentorshipProgressCard({
             {/* 指導メモ ＆ 反省ノート */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-xs font-extrabold text-stone-800 dark:text-stone-200">
+                <div className="flex items-center gap-1.5 text-xs font-extrabold text-foreground-soft dark:text-stone-200">
                   <MessageSquare className="w-3.5 h-3.5 text-amber-500" />
                   <span>指導メモ ＆ 今週の練習テーマ</span>
                 </div>
@@ -390,7 +390,7 @@ export default function MentorshipProgressCard({
                       value={editTargetRank}
                       onChange={(e) => setEditTargetRank(e.target.value)}
                       placeholder="例: GOLD IV, EMERALD IV"
-                      className="w-full text-xs font-bold px-3 py-2 rounded-xl bg-surface dark:bg-stone-800 border border-border dark:border-stone-700 text-stone-900 dark:text-stone-100 focus:outline-none focus:border-amber-500"
+                      className="w-full text-xs font-bold px-3 py-2 rounded-xl bg-surface dark:bg-stone-800 border border-border dark:border-stone-700 text-foreground dark:text-stone-100 focus:outline-none focus:border-amber-500"
                     />
                   </div>
                   <div>
@@ -402,7 +402,7 @@ export default function MentorshipProgressCard({
                       onChange={(e) => setEditNotes(e.target.value)}
                       rows={3}
                       placeholder="例: Lv3ガンク合わせのショートトレード意識。2デスしたらウェーブをフリーズしてJGを待つ。"
-                      className="w-full text-xs font-medium px-3 py-2 rounded-xl bg-surface dark:bg-stone-800 border border-border dark:border-stone-700 text-stone-900 dark:text-stone-100 focus:outline-none focus:border-amber-500"
+                      className="w-full text-xs font-medium px-3 py-2 rounded-xl bg-surface dark:bg-stone-800 border border-border dark:border-stone-700 text-foreground dark:text-stone-100 focus:outline-none focus:border-amber-500"
                     />
                   </div>
                   <div className="flex justify-end gap-2">
@@ -426,7 +426,7 @@ export default function MentorshipProgressCard({
                   </div>
                 </div>
               ) : (
-                <div className="bg-background dark:bg-stone-900/30 border border-border/60 dark:border-stone-800/60 rounded-2xl p-3.5 text-xs text-stone-700 dark:text-stone-300 leading-relaxed min-h-[48px] flex items-center">
+                <div className="bg-background dark:bg-stone-900/30 border border-border/60 dark:border-stone-800/60 rounded-2xl p-3.5 text-xs text-foreground-subtle dark:text-stone-300 leading-relaxed min-h-[48px] flex items-center">
                   {match.meta?.progressNotes ? (
                     <p className="whitespace-pre-wrap">{match.meta.progressNotes}</p>
                   ) : (

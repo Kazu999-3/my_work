@@ -19,9 +19,9 @@ export const metadata = {
 export const revalidate = 86400;
 
 const CARD = 'rounded-2xl border border-border bg-surface/70 p-5 md:p-6 shadow-sm';
-const H2 = 'text-lg md:text-xl font-black text-stone-900 flex items-center gap-2 mb-1';
+const H2 = 'text-lg md:text-xl font-black text-foreground flex items-center gap-2 mb-1';
 const TH = 'text-left font-black text-stone-600 text-[11px] uppercase tracking-wide px-3 py-2';
-const TD = 'px-3 py-2 text-stone-800 border-t border-border';
+const TD = 'px-3 py-2 text-foreground-soft border-t border-border';
 
 /** 還元率バッジ。数値そのままを出し、良し悪しを色で補足する */
 function RtpBadge({ rtp }: { rtp: number }) {
@@ -81,16 +81,16 @@ export default function CasinoRulesPage() {
         <div className="max-w-4xl mx-auto space-y-3">
           <Link
             href="/casino"
-            className="inline-flex items-center gap-1.5 text-xs font-black text-stone-600 hover:text-stone-900 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-black text-stone-600 hover:text-foreground transition-colors"
           >
             <ArrowLeft size={14} />
             カジノへ戻る
           </Link>
-          <h1 className="text-2xl md:text-3xl font-black tracking-tight text-stone-900 flex items-center gap-2.5">
+          <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground flex items-center gap-2.5">
             <Coins className="text-amber-600" size={28} />
             ルール ＆ 確率一覧
           </h1>
-          <p className="text-stone-700 text-xs md:text-sm font-medium max-w-2xl">
+          <p className="text-foreground-subtle text-xs md:text-sm font-medium max-w-2xl">
             各ゲームの当選確率と還元率（RTP）をすべて公開しています。数値は実際の抽選コードを
             200万回試行して実測したものです。
           </p>
@@ -100,14 +100,14 @@ export default function CasinoRulesPage() {
       <div className="max-w-4xl mx-auto px-4 md:px-6 py-8 space-y-6">
         {/* RTPの説明 */}
         <div className="rounded-2xl border border-border bg-surface-subtle/80 p-5">
-          <h2 className="text-sm font-black text-stone-900 flex items-center gap-2 mb-2">
+          <h2 className="text-sm font-black text-foreground flex items-center gap-2 mb-2">
             <Info size={16} className="text-stone-600" />
             還元率（RTP）の読み方
           </h2>
-          <p className="text-xs md:text-sm text-stone-700 leading-relaxed">
+          <p className="text-xs md:text-sm text-foreground-subtle leading-relaxed">
             RTP は「賭けたコインのうち、長期的に平均して手元へ戻ってくる割合」です。
             RTP 96% なら、100コイン賭けるごとに平均4コインずつ減っていきます。
-            <strong className="text-stone-900">
+            <strong className="text-foreground">
               どのゲームも RTP は100%未満なので、長く遊べば遊ぶほど必ず減ります。
             </strong>
             短期的には大きく増えることもありますが、それは運によるブレです。
@@ -254,7 +254,7 @@ export default function CasinoRulesPage() {
             開催中のカスタムで BLUE / RED どちらが勝つかに賭けます。
             <strong>出場選手は自分の試合にベットできません。</strong>
           </p>
-          <ul className="text-xs md:text-sm text-stone-700 space-y-1.5 list-disc list-inside leading-relaxed">
+          <ul className="text-xs md:text-sm text-foreground-subtle space-y-1.5 list-disc list-inside leading-relaxed">
             <li>
               オッズはパリミュチュエル方式（<span className="font-mono">0.95 ÷ その陣営への投票比率</span>）で、
               <strong>人気のない側ほど高配当</strong>になります。
@@ -311,7 +311,7 @@ export default function CasinoRulesPage() {
           <p className="text-xs text-stone-600 mb-3">
             ショップで1口100コインで購入し、毎週日曜22:00に抽選します。口数を増やすほど当選しやすくなります。
           </p>
-          <ul className="text-xs md:text-sm text-stone-700 space-y-1.5 list-disc list-inside leading-relaxed">
+          <ul className="text-xs md:text-sm text-foreground-subtle space-y-1.5 list-disc list-inside leading-relaxed">
             <li>
               <strong>🥇 1等（ジャックポット総取り）</strong>: 毎回 8% の確率で当選者が出ます。
               当たった人は金庫の全額を獲得。誰も当たらなければ全額が翌週へ繰り越されます。
@@ -335,7 +335,7 @@ export default function CasinoRulesPage() {
           <p className="text-xs text-stone-600 mb-3">
             全員で積み立てる共有の賞金プールです。次の2つの方法で総取りできます。
           </p>
-          <ul className="text-xs md:text-sm text-stone-700 space-y-1.5 list-disc list-inside leading-relaxed">
+          <ul className="text-xs md:text-sm text-foreground-subtle space-y-1.5 list-disc list-inside leading-relaxed">
             <li>
               <strong>🔥 カスタムでペンタキルを達成し、その試合に勝利する</strong>: 試合結果がRiot APIと
               同期された時点で判定され、条件を満たした人が金庫を全額獲得します。

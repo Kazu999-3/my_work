@@ -136,7 +136,7 @@ function CoachPageContent() {
       <div className="min-h-screen flex items-center justify-center p-4 font-sans text-foreground bg-background">
         <div className="text-center max-w-sm rounded-3xl border border-border/90 bg-surface p-8 shadow-xl">
           <div className="text-4xl mb-4">🔑</div>
-          <h2 className="text-lg font-bold mb-2 text-stone-900">認証が必要です</h2>
+          <h2 className="text-lg font-bold mb-2 text-foreground">認証が必要です</h2>
           <p className="text-xs text-stone-500 mb-6 leading-relaxed">
             このコーチング機能は管理者専用です。管理者パスコードでログインしてから再度アクセスしてください。
           </p>
@@ -170,7 +170,7 @@ function CoachPageContent() {
             <div className="text-3xl p-2 bg-amber-50 rounded-2xl border border-amber-200/80">🏆</div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-black tracking-tight text-stone-900">パーソナルコーチ</h1>
+                <h1 className="text-xl font-black tracking-tight text-foreground">パーソナルコーチ</h1>
                 {/* 以前はここに「🟢 ライブ連携中」を条件なしで常時表示していた（点滅ドット付き）。
                     何とも連携していなくても出るため、画面を信じて判断する側に嘘を伝えていた
                     （2026-09-30修正）。ライブ検知は常時ポーリングではなく操作契機の取得なので、
@@ -208,7 +208,7 @@ function CoachPageContent() {
                   className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all cursor-pointer min-w-0 overflow-hidden ${
                     isActive
                       ? 'bg-primary text-white shadow-md ring-2 ring-primary/40 scale-[1.01]'
-                      : 'bg-surface-subtle/70 text-stone-600 hover:bg-surface-hover/80 hover:text-stone-900'
+                      : 'bg-surface-subtle/70 text-stone-600 hover:bg-surface-hover/80 hover:text-foreground'
                   }`}
                 >
                   <span className="text-base shrink-0">{tab.icon}</span>
@@ -234,7 +234,7 @@ function CoachPageContent() {
               表示専用の軽量API(/api/coach/play-recommendation)を使うため、
               ここを開いてもGeminiは呼ばれない。 */}
           <div className="bg-surface border border-border rounded-2xl p-4 shadow-xs space-y-3">
-            <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+            <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
               <span>🚦</span> 次の試合に行くべきか
             </h3>
             <PlayRecommendationCard />
@@ -334,7 +334,7 @@ function CoachPageContent() {
           <div className="space-y-6">
             {/* 上段: リアルタイム偵察 */}
             <div className="bg-surface border border-border rounded-2xl p-4 shadow-xs space-y-3">
-              <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
                 <span>🧭</span> リアルタイム偵察 (敵10人スキャン ＆ ガンク優先ターゲット)
               </h3>
               <ScoutTab onLiveMatchDetected={handleLiveMatchDetected} />
@@ -342,7 +342,7 @@ function CoachPageContent() {
 
             {/* 下段: 統合 チーム構成 ＆ 勝ち筋シミュレーター */}
             <div className="bg-surface border border-border rounded-2xl p-4 shadow-xs space-y-3">
-              <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
                 <span>⚔️</span> チーム構成 ＆ 勝ち筋シミュレーター
               </h3>
               <FiveVFiveSimTab liveRoster={liveRoster} />
@@ -375,7 +375,7 @@ function CoachPageContent() {
                 分かるように文言を整えた。なお手動記録(soloq_reflections)は18件で
                 最終記録が2026-08-25、一方で自動側は直近30日に14件貯まっている。 */}
             <div className="min-w-0">
-              <div className="text-sm font-black text-stone-900">📝 自分の言葉で振り返りを残す</div>
+              <div className="text-sm font-black text-foreground">📝 自分の言葉で振り返りを残す</div>
               <p className="text-xs text-stone-600 mt-0.5">
                 AIの自動振り返りは上の「🤖 自動振り返りの履歴」に貯まります。こちらは手書き用で、
                 レーン結果・メンタル・分岐点を自分の言葉で残せます（記録は下の履歴に蓄積されます）。

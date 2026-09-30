@@ -39,7 +39,7 @@ export function MentorshipKickoffModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-4 bg-stone-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-surface border border-border rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden text-stone-900 animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
+      <div className="bg-surface border border-border rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden text-foreground animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
         {/* ヘッダー */}
         <div className="p-5 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-emerald-500/15 border-b border-emerald-200 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
@@ -47,7 +47,7 @@ export function MentorshipKickoffModal({
               🚀
             </div>
             <div>
-              <h2 className="text-base font-black text-stone-900 flex items-center gap-1.5">
+              <h2 className="text-base font-black text-foreground flex items-center gap-1.5">
                 <span>師弟スタート・キックオフガイド</span>
                 <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full">3ステップ</span>
               </h2>
@@ -58,7 +58,7 @@ export function MentorshipKickoffModal({
           </div>
           <button
             onClick={onClose}
-            className="text-stone-400 hover:text-stone-700 p-1 rounded-full transition cursor-pointer"
+            className="text-stone-400 hover:text-foreground-subtle p-1 rounded-full transition cursor-pointer"
           >
             <X size={20} />
           </button>
@@ -67,7 +67,7 @@ export function MentorshipKickoffModal({
         {/* ボディ */}
         <div className="p-5 space-y-4 overflow-y-auto">
           {/* 説明バナー */}
-          <div className="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-2xl text-xs text-stone-800 leading-relaxed font-medium">
+          <div className="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-2xl text-xs text-foreground-soft leading-relaxed font-medium">
             💡 ペア結成おめでとうございます！まずは以下の3つのステップに沿って、気楽に最初の挨拶とプレイを進めてみましょう。
           </div>
 
@@ -83,7 +83,7 @@ export function MentorshipKickoffModal({
                     <span className="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs font-black flex items-center justify-center shadow-2xs">
                       {s.step}
                     </span>
-                    <h3 className="text-xs font-black text-stone-900">
+                    <h3 className="text-xs font-black text-foreground">
                       {s.title}
                     </h3>
                   </div>
@@ -99,7 +99,7 @@ export function MentorshipKickoffModal({
                     <button
                       type="button"
                       onClick={() => copyToClipboard(templateGreeting, 1)}
-                      className="px-3.5 py-1.5 rounded-xl bg-surface border border-border hover:border-emerald-400 text-stone-800 text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                      className="px-3.5 py-1.5 rounded-xl bg-surface border border-border hover:border-emerald-400 text-foreground-soft text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
                     >
                       {copiedIndex === 1 ? (
                         <>
@@ -121,11 +121,11 @@ export function MentorshipKickoffModal({
 
           {/* 挨拶テンプレートのプレビュー */}
           <div className="p-3.5 bg-surface-subtle rounded-2xl border border-border space-y-1.5">
-            <div className="text-[11px] font-black text-stone-700 flex items-center gap-1">
+            <div className="text-[11px] font-black text-foreground-subtle flex items-center gap-1">
               <MessageSquare size={12} className="text-stone-500" />
               <span>挨拶テンプレート内容:</span>
             </div>
-            <pre className="text-[11px] text-stone-800 font-mono whitespace-pre-wrap leading-relaxed bg-surface p-2.5 rounded-xl border border-border">
+            <pre className="text-[11px] text-foreground-soft font-mono whitespace-pre-wrap leading-relaxed bg-surface p-2.5 rounded-xl border border-border">
               {templateGreeting}
             </pre>
           </div>

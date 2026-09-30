@@ -37,7 +37,7 @@ export default function LibraryPage() {
       <div className="min-h-[500px] flex items-center justify-center p-4">
         <div className="text-center max-w-md rounded-2xl border border-border bg-surface p-8 shadow-xs">
           <div className="text-4xl mb-3">🔑</div>
-          <h2 className="text-base font-black mb-2 text-stone-900">管理者認証が必要です</h2>
+          <h2 className="text-base font-black mb-2 text-foreground">管理者認証が必要です</h2>
           <p className="text-xs text-stone-600 mb-6 leading-relaxed">
             「攻略ライブラリ」は管理者専用の戦術アーカイブです。<br />
             閲覧・編集を行うには管理者としてログインしてください。
@@ -45,7 +45,7 @@ export default function LibraryPage() {
           <div className="flex items-center justify-center gap-3">
             <Link
               href="/champions"
-              className="px-4 py-2 rounded-xl bg-surface-subtle hover:bg-surface-hover text-stone-700 font-bold text-xs transition"
+              className="px-4 py-2 rounded-xl bg-surface-subtle hover:bg-surface-hover text-foreground-subtle font-bold text-xs transition"
             >
               👑 チャンピオン辞典へ戻る
             </Link>
@@ -75,7 +75,7 @@ export default function LibraryPage() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-base sm:text-lg font-black tracking-tight text-stone-900">攻略ライブラリ</h1>
+              <h1 className="text-base sm:text-lg font-black tracking-tight text-foreground">攻略ライブラリ</h1>
               <span className="px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-800 text-[10px] font-extrabold">
                 管理者専用
               </span>

@@ -13,7 +13,7 @@ export default function SoloqScoutRedirect() {
   }, [router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background text-stone-900 text-sm">
+    <div className="min-h-screen flex items-center justify-center bg-background text-foreground text-sm">
       ソロQコーチへ移動中...
     </div>
   );

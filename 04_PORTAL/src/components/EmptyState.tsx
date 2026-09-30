@@ -20,7 +20,7 @@ export default function EmptyState({
   return (
     <div className={`flex flex-col items-center justify-center p-8 text-center rounded-2xl border border-border/80 bg-surface-subtle/50 ${className}`}>
       <div className="text-4xl mb-3">{icon}</div>
-      <h3 className="text-sm font-bold text-stone-900 mb-1">{title}</h3>
+      <h3 className="text-sm font-bold text-foreground mb-1">{title}</h3>
       {description && (
         <p className="text-xs text-stone-500 max-w-sm leading-relaxed mb-4">
           {description}

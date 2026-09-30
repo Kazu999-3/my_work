@@ -668,9 +668,9 @@ export default function PlayerMyPage() {
       <div className="flex-1 min-h-screen bg-background flex flex-col items-center justify-center p-4">
         <div className="glass-panel border border-red-200 p-8 rounded-3xl max-w-md w-full text-center space-y-6">
           <div className="text-5xl text-red-600 flex justify-center"><Shield className="w-12 h-12" /></div>
-          <h1 className="text-xl font-extrabold text-stone-900">プレイヤーが見つかりません</h1>
+          <h1 className="text-xl font-extrabold text-foreground">プレイヤーが見つかりません</h1>
           <p className="text-stone-500 text-xs">指定された Discord ID ({id}) の名簿登録が存在しないか削除されました。</p>
-          <Link href="/leaderboard" className="px-6 py-2.5 bg-surface-subtle border border-black/10 text-stone-700 rounded-xl hover:bg-[#c89b3c] hover:text-black font-bold transition-all text-xs inline-block">
+          <Link href="/leaderboard" className="px-6 py-2.5 bg-surface-subtle border border-black/10 text-foreground-subtle rounded-xl hover:bg-[#c89b3c] hover:text-black font-bold transition-all text-xs inline-block">
             リーダーボードに戻る
           </Link>
         </div>
@@ -759,7 +759,7 @@ export default function PlayerMyPage() {
                 className={`px-4 py-2.5 rounded-2xl text-xs font-black flex items-center gap-1.5 transition border cursor-pointer ${
                   activeTab === 'settings'
                     ? 'bg-stone-900 text-white border-stone-800'
-                    : 'bg-surface/90 hover:bg-surface text-stone-800 border-border'
+                    : 'bg-surface/90 hover:bg-surface text-foreground-soft border-border'
                 }`}
               >
                 <Settings size={14} />
@@ -855,7 +855,7 @@ export default function PlayerMyPage() {
                         ? 'bg-amber-100 text-amber-800 border-amber-300'
                         : recentForm.last10Rate <= 40
                         ? 'bg-rose-100 text-rose-800 border-rose-300'
-                        : 'bg-surface-subtle text-stone-700 border-border'
+                        : 'bg-surface-subtle text-foreground-subtle border-border'
                     }`}>
                       <span>
                         {recentForm.streak >= 3 && recentForm.streakWin ? '🔥' : recentForm.last10Rate >= 60 ? '📈' : recentForm.last10Rate <= 40 ? '⚠️' : '⚖️'}
@@ -889,13 +889,13 @@ export default function PlayerMyPage() {
               <div className="flex gap-4 sm:gap-6">
                 <div className="flex flex-col">
                   <span className="text-[10px] text-gray-400 font-black tracking-wider uppercase mb-1">内戦第一希望</span>
-                  <span className="text-stone-900 font-bold text-sm bg-black/5 px-2 py-0.5 rounded border border-black/10 text-center min-w-[36px]">
+                  <span className="text-foreground font-bold text-sm bg-black/5 px-2 py-0.5 rounded border border-black/10 text-center min-w-[36px]">
                     {player.role_preferences?.primary || "ALL"}
                   </span>
                 </div>
                 <div className="flex flex-col">
                   <span className="text-[10px] text-gray-400 font-black tracking-wider uppercase mb-1">内戦第二希望</span>
-                  <span className="text-stone-700 font-bold text-sm bg-black/5 px-2 py-0.5 rounded border border-black/10 text-center min-w-[36px]">
+                  <span className="text-foreground-subtle font-bold text-sm bg-black/5 px-2 py-0.5 rounded border border-black/10 text-center min-w-[36px]">
                     {player.role_preferences?.secondary || "ALL"}
                   </span>
                 </div>
@@ -909,9 +909,9 @@ export default function PlayerMyPage() {
           <div className={`rounded-2xl border p-4 flex items-center justify-between gap-3 ${tierChange.up ? 'bg-emerald-100 border-emerald-200' : 'bg-rose-100 border-rose-200'}`}>
             <p className={`text-sm font-black ${tierChange.up ? 'text-emerald-700' : 'text-rose-700'}`}>
               {tierChange.up ? '🎉 昇格しました！' : '📉 降格しました…'}
-              <span className="ml-2 text-stone-700 font-bold">{tierChange.from} → {tierChange.to}</span>
+              <span className="ml-2 text-foreground-subtle font-bold">{tierChange.from} → {tierChange.to}</span>
             </p>
-            <button onClick={() => setTierChange(null)} className="text-stone-500 hover:text-stone-900 text-xs font-bold shrink-0">✕</button>
+            <button onClick={() => setTierChange(null)} className="text-stone-500 hover:text-foreground text-xs font-bold shrink-0">✕</button>
           </div>
         )}
 
@@ -926,7 +926,7 @@ export default function PlayerMyPage() {
               <div>
                 <div className="text-[10px] font-black text-stone-400 uppercase tracking-wider">KTM内戦レート ＆ Tier</div>
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="text-xl font-black font-mono text-stone-900">{player.mmr || 1200}</span>
+                  <span className="text-xl font-black font-mono text-foreground">{player.mmr || 1200}</span>
                   <span className="text-xs font-black text-amber-800 bg-amber-100 px-2 py-0.5 rounded border border-amber-200">
                     {getKtmRank(player.mmr || 1200).name}
                   </span>
@@ -963,7 +963,7 @@ export default function PlayerMyPage() {
                     onError={(e) => { e.currentTarget.style.display = 'none'; }}
                   />
                   <div className="min-w-0 flex-1">
-                    <div className="text-[11px] font-black text-stone-900 truncate">{c.name}</div>
+                    <div className="text-[11px] font-black text-foreground truncate">{c.name}</div>
                     <div className="text-[9px] font-mono font-bold text-emerald-700">{c.winRate}% ({c.games}戦)</div>
                   </div>
                 </div>
@@ -983,7 +983,7 @@ export default function PlayerMyPage() {
               <div>
                 <div className="text-[10px] font-black text-stone-400 uppercase tracking-wider">主力希望レーン ＆ 勝率</div>
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="text-sm font-black text-stone-900 bg-surface-subtle px-2 py-0.5 rounded border border-border">
+                  <span className="text-sm font-black text-foreground bg-surface-subtle px-2 py-0.5 rounded border border-border">
                     {player.role_preferences?.primary || 'ALL'}
                   </span>
                   <span className="text-xs font-bold text-stone-400">/</span>
@@ -995,7 +995,7 @@ export default function PlayerMyPage() {
             </div>
             <div className="text-right">
               <div className="text-[10px] font-bold text-stone-400">通算戦績</div>
-              <div className="text-xs font-black font-mono text-stone-900 mt-0.5">
+              <div className="text-xs font-black font-mono text-foreground mt-0.5">
                 <span className="text-emerald-700 font-extrabold">{overallStats.winRate}%</span>
                 <span className="text-[10px] text-stone-500 ml-1">({overallStats.wins}勝{overallStats.losses}敗)</span>
               </div>
@@ -1017,7 +1017,7 @@ export default function PlayerMyPage() {
                     ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
                     : recentForm.streak >= 2 && !recentForm.streakWin
                     ? 'bg-rose-100 text-rose-800 border-rose-300'
-                    : 'bg-surface-subtle text-stone-700 border-border'
+                    : 'bg-surface-subtle text-foreground-subtle border-border'
                 }`}>
                   {recentForm.streakWin ? `🔥 ${recentForm.streak}連勝中` : `❄️ ${recentForm.streak}連敗中`}
                 </span>
@@ -1070,7 +1070,7 @@ export default function PlayerMyPage() {
                       🥇
                     </div>
                     <div>
-                      <div className="text-xs font-black text-stone-900 group-hover:text-emerald-700 transition">
+                      <div className="text-xs font-black text-foreground group-hover:text-emerald-700 transition">
                         {synergyPair.best.name}
                       </div>
                       <div className="text-[10px] text-stone-500 font-medium">
@@ -1110,7 +1110,7 @@ export default function PlayerMyPage() {
                       ⚠️
                     </div>
                     <div>
-                      <div className="text-xs font-black text-stone-900 group-hover:text-rose-700 transition">
+                      <div className="text-xs font-black text-foreground group-hover:text-rose-700 transition">
                         {matchupExtremes.worst[0].name || matchupExtremes.worst[0].champion}
                       </div>
                       <div className="text-[10px] text-stone-500 font-medium">
@@ -1150,7 +1150,7 @@ export default function PlayerMyPage() {
                 className={`flex items-center justify-center gap-2 shrink-0 px-3 sm:px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 whitespace-nowrap cursor-pointer ${
                   isActive
                     ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white font-black shadow-md scale-102'
-                    : 'text-stone-600 hover:text-stone-900 hover:bg-black/5'
+                    : 'text-stone-600 hover:text-foreground hover:bg-black/5'
                 }`}
               >
                 {tab.icon}
@@ -1192,13 +1192,13 @@ export default function PlayerMyPage() {
                           <Trophy className="w-5 h-5" />
                         </div>
                         <div>
-                          <h2 className="text-lg font-black text-stone-900">👑 KTMカスタム 通算戦績サマリー</h2>
+                          <h2 className="text-lg font-black text-foreground">👑 KTMカスタム 通算戦績サマリー</h2>
                           <p className="text-xs text-stone-500 font-bold">全対戦履歴から集計された公式スタッツ</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-stone-500">総試合数:</span>
-                        <span className="text-sm font-black px-3 py-1 bg-surface-subtle rounded-full border border-border text-stone-800">
+                        <span className="text-sm font-black px-3 py-1 bg-surface-subtle rounded-full border border-border text-foreground-soft">
                           {overallStats.total} 試合
                         </span>
                       </div>
@@ -1239,7 +1239,7 @@ export default function PlayerMyPage() {
                       <div className="bg-background/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
                         <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">プレイスタイル</span>
                         <div className="my-2">
-                          <span className="text-sm font-black text-stone-900 line-clamp-2">
+                          <span className="text-sm font-black text-foreground line-clamp-2">
                             {victoryBlueprint?.archetype.replace(/^[^\s]+ /, '') || "データ収集中"}
                           </span>
                         </div>
@@ -1271,7 +1271,7 @@ export default function PlayerMyPage() {
                       </div>
                       <div className="space-y-0.5">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="text-sm font-black text-stone-900">
+                          <h4 className="text-sm font-black text-foreground">
                             ソロキュー公式ステータス (Riot連携)
                           </h4>
                           <span className="text-xs font-black px-2 py-0.5 rounded-md bg-teal-100 text-teal-800 border border-teal-300">
@@ -1326,7 +1326,7 @@ export default function PlayerMyPage() {
                           </div>
                           <div>
                             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">直近{recentForm.last10Games}戦</p>
-                            <p className="text-2xl font-black text-stone-900">
+                            <p className="text-2xl font-black text-foreground">
                               {recentForm.last10Wins}<span className="text-sm text-gray-500">勝{recentForm.last10Games - recentForm.last10Wins}敗</span>
                               <span className={`ml-2 text-base ${recentForm.last10Rate >= 50 ? 'text-emerald-600' : 'text-rose-600'}`}>{recentForm.last10Rate}%</span>
                             </p>
@@ -1362,7 +1362,7 @@ export default function PlayerMyPage() {
                               {matchupExtremes.best.map((m: any) => (
                                 <div key={m.opponentChampion} className="flex items-center gap-2 text-xs">
                                   <Image src={getChampIcon(m.opponentChampion)} alt={m.opponentChampion} width={24} height={24} className="w-6 h-6 rounded-full border border-black/10" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                                  <span className="text-stone-800 truncate flex-1">{m.opponentChampion}</span>
+                                  <span className="text-foreground-soft truncate flex-1">{m.opponentChampion}</span>
                                   <span className="text-emerald-600 font-bold">{m.winRate}%</span>
                                   <span className="text-[10px] text-gray-600">({m.games})</span>
                                 </div>
@@ -1375,7 +1375,7 @@ export default function PlayerMyPage() {
                               {matchupExtremes.worst.map((m: any) => (
                                 <div key={m.opponentChampion} className="flex items-center gap-2 text-xs">
                                   <Image src={getChampIcon(m.opponentChampion)} alt={m.opponentChampion} width={24} height={24} className="w-6 h-6 rounded-full border border-black/10" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                                  <span className="text-stone-800 truncate flex-1">{m.opponentChampion}</span>
+                                  <span className="text-foreground-soft truncate flex-1">{m.opponentChampion}</span>
                                   <span className="text-rose-600 font-bold">{m.winRate}%</span>
                                   <span className="text-[10px] text-gray-600">({m.games})</span>
                                 </div>
@@ -1408,7 +1408,7 @@ export default function PlayerMyPage() {
                                     (e.target as HTMLImageElement).src = "https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/29.png";
                                   }}
                                 />
-                                <span className="w-24 truncate font-bold text-stone-800">{c.name}</span>
+                                <span className="w-24 truncate font-bold text-foreground-soft">{c.name}</span>
                                 <div className="flex-1 h-2 bg-black/5 rounded-full overflow-hidden">
                                   <div className={`h-full ${c.winRate >= 50 ? 'bg-emerald-500/70' : 'bg-rose-500/60'}`} style={{ width: `${Math.min(100, c.games * 10)}%` }} />
                                 </div>
@@ -1431,7 +1431,7 @@ export default function PlayerMyPage() {
                           <div className="grid grid-cols-2 gap-4 text-center">
                             <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
                               <p className="text-[10px] text-emerald-700 font-black mb-1">🏆 最強のシナジー (高勝率)</p>
-                              <p className="text-lg font-black text-stone-900 truncate">{synergyPair.best.name}</p>
+                              <p className="text-lg font-black text-foreground truncate">{synergyPair.best.name}</p>
                               <p className="text-xs text-stone-500">同チーム{synergyPair.best.games}戦・勝率<span className="text-emerald-700 font-bold ml-1">{synergyPair.best.winRate}%</span></p>
                               {synergyPair.best.games <= 3 && (
                                 <p className="text-[9px] text-stone-400 mt-0.5">※参考データ（3戦）</p>
@@ -1441,7 +1441,7 @@ export default function PlayerMyPage() {
                               <p className="text-[10px] text-amber-700 font-black mb-1">⚠️ 課題のシナジー (伸びしろ)</p>
                               {synergyPair.challenging ? (
                                 <>
-                                  <p className="text-lg font-black text-stone-900 truncate">{synergyPair.challenging.name}</p>
+                                  <p className="text-lg font-black text-foreground truncate">{synergyPair.challenging.name}</p>
                                   <p className="text-xs text-stone-500">同チーム{synergyPair.challenging.games}戦・勝率<span className="text-amber-700 font-bold ml-1">{synergyPair.challenging.winRate}%</span></p>
                                   {synergyPair.challenging.games <= 3 && (
                                     <p className="text-[9px] text-stone-400 mt-0.5">※参考データ（3戦）</p>
@@ -1484,7 +1484,7 @@ export default function PlayerMyPage() {
                               >
                                 <span className="text-stone-600">{d.subject}:</span>
                                 <span className={`font-black text-xs ${
-                                  d.value >= 4.0 ? 'text-amber-800' : d.value >= 3.0 ? 'text-stone-900' : 'text-rose-600'
+                                  d.value >= 4.0 ? 'text-amber-800' : d.value >= 3.0 ? 'text-foreground' : 'text-rose-600'
                                 }`}>
                                   {d.value} <span className="text-[9px] font-normal text-stone-400">/ 5.0</span>
                                 </span>
@@ -1518,7 +1518,7 @@ export default function PlayerMyPage() {
                           <div className="inline-block bg-amber-100 border border-amber-200 text-amber-700 text-sm font-black px-3.5 py-1 rounded-xl">
                             {victoryBlueprint.archetype}
                           </div>
-                          <p className="text-xs text-stone-700 leading-relaxed font-medium">
+                          <p className="text-xs text-foreground-subtle leading-relaxed font-medium">
                             {victoryBlueprint.desc}
                           </p>
                         </div>
@@ -1527,7 +1527,7 @@ export default function PlayerMyPage() {
                         <Flame className="w-5 h-5 text-rose-600 shrink-0" />
                         <div className="text-xs">
                           <span className="text-gray-500 font-bold">勝率最大化のカギ: </span>
-                          <span className="text-stone-900 font-bold">{victoryBlueprint.keyFactor}</span>
+                          <span className="text-foreground font-bold">{victoryBlueprint.keyFactor}</span>
                         </div>
                       </div>
                     </div>
@@ -1556,7 +1556,7 @@ export default function PlayerMyPage() {
                           type="button"
                           onClick={() => setShowWinRate(v => !v)}
                           className={`px-2.5 py-1.5 rounded-xl text-[10px] font-black transition-all border ${
-                            showWinRate ? 'bg-emerald-500 text-white border-emerald-400' : 'bg-black/5 text-stone-500 border-black/10 hover:text-stone-900'
+                            showWinRate ? 'bg-emerald-500 text-white border-emerald-400' : 'bg-black/5 text-stone-500 border-black/10 hover:text-foreground'
                           }`}
                           title="直近10戦の勝率を重ねて表示します"
                         >
@@ -1570,7 +1570,7 @@ export default function PlayerMyPage() {
                               onClick={() => setChartPeriod(v)}
                               type="button"
                               className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all ${
-                                chartPeriod === v ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20' : 'text-stone-500 hover:text-stone-900 hover:bg-black/5'
+                                chartPeriod === v ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20' : 'text-stone-500 hover:text-foreground hover:bg-black/5'
                               }`}
                             >
                               {label}
@@ -1587,7 +1587,7 @@ export default function PlayerMyPage() {
                               className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all ${
                                 activeLane === lane
                                   ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20'
-                                  : 'text-stone-500 hover:text-stone-900 hover:bg-black/5'
+                                  : 'text-stone-500 hover:text-foreground hover:bg-black/5'
                               }`}
                             >
                               {lane === 'TOTAL' ? '総合' : lane === 'ALL' ? '全レーン' : lane}
@@ -1695,7 +1695,7 @@ export default function PlayerMyPage() {
                             className={`px-3 py-1 rounded-xl text-xs font-black transition-all ${
                               laneSortKey === k
                                 ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-black shadow-md shadow-emerald-500/20'
-                                : 'text-stone-500 hover:text-stone-900 hover:bg-black/5'
+                                : 'text-stone-500 hover:text-foreground hover:bg-black/5'
                             }`}
                           >
                             {label}
@@ -1723,7 +1723,7 @@ export default function PlayerMyPage() {
                                   <div className="p-1.5 bg-black/5 rounded-lg">
                                     {roleIcons[role]}
                                   </div>
-                                  <span className="font-black text-lg tracking-wider text-stone-800">{role}</span>
+                                  <span className="font-black text-lg tracking-wider text-foreground-soft">{role}</span>
                                 </div>
                                 <span className="text-[10px] text-amber-800 font-bold bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full">
                                   MMR {player[`mmr_${role.toLowerCase()}`] || 1200}
@@ -1772,7 +1772,7 @@ export default function PlayerMyPage() {
                                         className="w-8 h-8 rounded-full border border-black/10 shadow-sm"
                                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                                       />
-                                      <div className="flex-1 font-bold text-stone-700 text-xs truncate">{champ.name}</div>
+                                      <div className="flex-1 font-bold text-foreground-subtle text-xs truncate">{champ.name}</div>
                                       <div className="text-xs font-bold text-gray-400">
                                         <span className={champ.winRate >= 50 ? 'text-emerald-600' : 'text-gray-400'}>{champ.wins}W</span>
                                         <span className="text-gray-600 mx-1">-</span>
@@ -1812,7 +1812,7 @@ export default function PlayerMyPage() {
                               className="w-9 h-9 rounded-full border border-black/10 shadow-sm shrink-0"
                               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                             />
-                            <div className="font-bold text-stone-800 text-sm truncate">vs {m.opponentChampion}</div>
+                            <div className="font-bold text-foreground-soft text-sm truncate">vs {m.opponentChampion}</div>
                           </div>
                           <div className="text-right">
                             <div className={`font-black text-sm ${m.winRate >= 50 ? 'text-emerald-600' : 'text-rose-600'}`}>
@@ -1845,7 +1845,7 @@ export default function PlayerMyPage() {
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <h2 className="text-lg font-black text-stone-900">🎮 ソロキュー戦績 ＆ Riot公式データ</h2>
+                            <h2 className="text-lg font-black text-foreground">🎮 ソロキュー戦績 ＆ Riot公式データ</h2>
                             <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-300">
                               Riot API 連携
                             </span>
@@ -1870,7 +1870,7 @@ export default function PlayerMyPage() {
                           type="button"
                           onClick={handleSyncSoloq}
                           disabled={syncingSoloq}
-                          className="px-3.5 py-1.5 rounded-xl bg-surface-subtle hover:bg-surface-hover text-stone-800 text-xs font-black transition-all border border-border flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                          className="px-3.5 py-1.5 rounded-xl bg-surface-subtle hover:bg-surface-hover text-foreground-soft text-xs font-black transition-all border border-border flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                         >
                           <RefreshCw size={13} className={syncingSoloq ? 'animate-spin text-teal-600' : ''} />
                           <span>{syncingSoloq ? '同期中...' : '最新戦績を同期'}</span>
@@ -1883,7 +1883,7 @@ export default function PlayerMyPage() {
                       <div className="bg-background/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
                         <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">サモナー名 (IGN)</span>
                         <div className="my-2">
-                          <span className="text-lg sm:text-xl font-black font-mono text-stone-900 truncate block">
+                          <span className="text-lg sm:text-xl font-black font-mono text-foreground truncate block">
                             {player.ign || "未登録"}
                           </span>
                         </div>
@@ -1905,7 +1905,7 @@ export default function PlayerMyPage() {
                       <div className="bg-background/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
                         <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">得意ロール (マスタリー基準)</span>
                         <div className="my-2">
-                          <span className="text-xl sm:text-2xl font-black text-stone-900">
+                          <span className="text-xl sm:text-2xl font-black text-foreground">
                             {mainDisplayTag || "FLEX"}
                           </span>
                         </div>
@@ -1949,7 +1949,7 @@ export default function PlayerMyPage() {
                                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                               />
                               <div className="space-y-0.5">
-                                <div className="font-black text-sm text-stone-900">{m.name === 'Unknown' ? `ID:${m.championId}` : m.name}</div>
+                                <div className="font-black text-sm text-foreground">{m.name === 'Unknown' ? `ID:${m.championId}` : m.name}</div>
                                 <div className="text-[10px] text-gray-500 font-bold">
                                   マスタリーLv {m.championLevel}
                                 </div>
@@ -2018,7 +2018,7 @@ export default function PlayerMyPage() {
                               .sort((a: any, b: any) => b.winRate - a.winRate || b.games - a.games)
                               .map((m: any) => (
                                 <tr key={m.name} className="border-t border-black/5">
-                                  <td className="py-2 pr-3 font-bold text-stone-800 truncate max-w-[160px]">{m.name}</td>
+                                  <td className="py-2 pr-3 font-bold text-foreground-soft truncate max-w-[160px]">{m.name}</td>
                                   <td className="py-2 pr-3 text-right tabular-nums text-stone-600">{m.games}</td>
                                   <td className="py-2 pr-3 text-right tabular-nums text-stone-600">{m.wins}</td>
                                   <td className={`py-2 text-right tabular-nums font-black ${
@@ -2063,7 +2063,7 @@ export default function PlayerMyPage() {
                               .sort((a: any, b: any) => a.winRate - b.winRate || b.games - a.games)
                               .map((r: any) => (
                                 <tr key={r.name} className="border-t border-black/5">
-                                  <td className="py-2 pr-3 font-bold text-stone-800 truncate max-w-[160px]">{r.name}</td>
+                                  <td className="py-2 pr-3 font-bold text-foreground-soft truncate max-w-[160px]">{r.name}</td>
                                   <td className="py-2 pr-3 text-right tabular-nums text-stone-600">{r.games}</td>
                                   <td className="py-2 pr-3 text-right tabular-nums text-stone-600">{r.wins}</td>
                                   <td className={`py-2 text-right tabular-nums font-black ${
@@ -2130,7 +2130,7 @@ export default function PlayerMyPage() {
                         <div className="flex items-center gap-8 mt-4 sm:mt-0 w-full sm:w-auto justify-between sm:justify-end">
                           <div className="text-center sm:text-left">
                             <div className="text-[9px] text-gray-500 font-black uppercase tracking-wider mb-1">K / D / A</div>
-                            <div className="font-bold text-sm text-stone-800">
+                            <div className="font-bold text-sm text-foreground-soft">
                               <span>{match.kills}</span>
                               <span className="text-gray-600 mx-1">/</span>
                               <span className="text-rose-600">{match.deaths}</span>

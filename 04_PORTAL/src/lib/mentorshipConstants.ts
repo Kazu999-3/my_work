@@ -23,7 +23,7 @@ export const MENTORSHIP_DURATIONS: Record<string, { label: string; shortLabel: s
     shortLabel: '☕ 3日間お試し',
     days: 3,
     isLight: true,
-    badgeColor: 'bg-surface-subtle text-stone-900 border-stone-400',
+    badgeColor: 'bg-surface-subtle text-foreground border-stone-400',
   },
   '7_DAYS': {
     label: '⏱️ 1週間集中コース（7日）',

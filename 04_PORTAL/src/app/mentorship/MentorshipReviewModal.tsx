@@ -100,7 +100,7 @@ export function MentorshipReviewModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-4 bg-stone-900/50 backdrop-blur-xs">
-      <div className="bg-surface border border-border rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden text-stone-900 animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-surface border border-border rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden text-foreground animate-in fade-in zoom-in-95 duration-200">
         
         {/* ヘッダー */}
         <div className="p-4 md:px-6 md:py-4 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border-b border-border flex items-center justify-between">
@@ -109,7 +109,7 @@ export function MentorshipReviewModal({
               ⭐
             </div>
             <div>
-              <h2 className="text-base font-black text-stone-900 flex items-center gap-1.5">
+              <h2 className="text-base font-black text-foreground flex items-center gap-1.5">
                 師弟の匿名評価 ＆ 感謝フィードバック
               </h2>
               <p className="text-[11px] text-stone-600 font-medium">
@@ -120,7 +120,7 @@ export function MentorshipReviewModal({
 
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-xl bg-surface-subtle hover:bg-surface-hover text-stone-500 hover:text-stone-900 flex items-center justify-center font-bold text-sm transition cursor-pointer"
+            className="w-8 h-8 rounded-xl bg-surface-subtle hover:bg-surface-hover text-stone-500 hover:text-foreground flex items-center justify-center font-bold text-sm transition cursor-pointer"
           >
             ✕
           </button>
@@ -134,7 +134,7 @@ export function MentorshipReviewModal({
             <div className="flex items-center gap-2">
               <span className="text-lg">{isMyMentor ? '🌱' : '👑'}</span>
               <div>
-                <div className="text-xs font-black text-stone-900">
+                <div className="text-xs font-black text-foreground">
                   {partner?.player_name || 'お相手'} さん（{partnerRoleLabel}）への評価
                 </div>
                 <div className="text-[10px] text-stone-500 font-medium">
@@ -149,7 +149,7 @@ export function MentorshipReviewModal({
 
           {/* 1. 星評価 (1〜5) */}
           <div className="space-y-2 text-center py-2 bg-amber-50/50 rounded-2xl border border-amber-200/80">
-            <label className="block text-xs font-black text-stone-800">
+            <label className="block text-xs font-black text-foreground-soft">
               総合満足度を選んでください
             </label>
             <div className="flex items-center justify-center gap-2">
@@ -182,7 +182,7 @@ export function MentorshipReviewModal({
 
           {/* 2. 称賛・推薦タグ (タップ選択) */}
           <div className="space-y-2">
-            <label className="block text-xs font-black text-stone-700 flex items-center justify-between">
+            <label className="block text-xs font-black text-foreground-subtle flex items-center justify-between">
               <span>良かったポイント（複数選択可）</span>
               <span className="text-[10px] text-stone-500 font-bold">{selectedTags.length}個選択中</span>
             </label>
@@ -197,7 +197,7 @@ export function MentorshipReviewModal({
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer flex items-center gap-1 ${
                       isSelected
                         ? 'bg-amber-500 text-stone-950 border-amber-500 shadow-2xs'
-                        : 'bg-background text-stone-700 border-border hover:bg-surface-subtle'
+                        : 'bg-background text-foreground-subtle border-border hover:bg-surface-subtle'
                     }`}
                   >
                     {isSelected && <Check size={12} />}
@@ -210,7 +210,7 @@ export function MentorshipReviewModal({
 
           {/* 3. 感謝コメント・フィードバック */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-black text-stone-700">
+            <label className="block text-xs font-black text-foreground-subtle">
               感謝のメッセージ・フィードバック（任意）
             </label>
             <textarea
@@ -218,7 +218,7 @@ export function MentorshipReviewModal({
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="一緒にプレイした感想や感謝の言葉をご記入ください（個人を特定できない形式で集約されます）..."
-              className="w-full bg-background border border-border rounded-2xl p-3 text-stone-900 text-xs focus:border-amber-500 focus:bg-surface focus:outline-hidden leading-relaxed font-medium"
+              className="w-full bg-background border border-border rounded-2xl p-3 text-foreground text-xs focus:border-amber-500 focus:bg-surface focus:outline-hidden leading-relaxed font-medium"
             />
           </div>
 
@@ -227,7 +227,7 @@ export function MentorshipReviewModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-surface-subtle hover:bg-surface-hover text-stone-700 rounded-xl text-xs font-black transition cursor-pointer"
+              className="px-4 py-2 bg-surface-subtle hover:bg-surface-hover text-foreground-subtle rounded-xl text-xs font-black transition cursor-pointer"
             >
               キャンセル
             </button>

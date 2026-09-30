@@ -261,7 +261,7 @@ export default function BulkUpdatePanel() {
       <div className="absolute -right-10 -top-10 w-40 h-40 bg-[#c89b3c]/5 rounded-full blur-2xl pointer-events-none" />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div className="flex-1 space-y-2 w-full">
-          <h3 className="text-lg font-bold text-stone-900 flex items-center gap-2 flex-wrap">
+          <h3 className="text-lg font-bold text-foreground flex items-center gap-2 flex-wrap">
             <Sparkles size={20} className="text-[#c89b3c]" />
             AIチャンピオン辞典一括更新システム
             {bulkStatus.patch_version && (
@@ -291,7 +291,7 @@ export default function BulkUpdatePanel() {
 
           {isBulkRunning || (bulkStatus.initialized && bulkStatus.total > 0) ? (
             <div className="space-y-2 mt-2 w-full">
-              <div className="flex justify-between text-xs font-bold text-stone-700 flex-wrap gap-2">
+              <div className="flex justify-between text-xs font-bold text-foreground-subtle flex-wrap gap-2">
                 <span>ジョブ進捗率: {Math.round((bulkStatus.completed / bulkStatus.total) * 100) || 0}% ({bulkStatus.completed} / {bulkStatus.total} 体)</span>
                 <span className="text-gray-400">
                   {bulkStatus.status === 'running'
@@ -323,7 +323,7 @@ export default function BulkUpdatePanel() {
             </div>
           ) : (
             <div className="space-y-2 mt-2 w-full">
-              <div className="flex justify-between text-xs font-bold text-stone-700 flex-wrap gap-2">
+              <div className="flex justify-between text-xs font-bold text-foreground-subtle flex-wrap gap-2">
                 <span>辞典データベース構築率: {dbProgress.percentage}% ({dbProgress.completed} / {dbProgress.total} 体 構築完了)</span>
                 <span className="text-gray-400">未構築: {dbProgress.pending} 体</span>
               </div>
@@ -349,7 +349,7 @@ export default function BulkUpdatePanel() {
 
           <button
             onClick={handleResetQueue}
-            className="px-4 py-3 glass-panel glass-panel-hover text-gray-400 hover:text-stone-900 rounded-xl text-sm font-bold transition-all"
+            className="px-4 py-3 glass-panel glass-panel-hover text-gray-400 hover:text-foreground rounded-xl text-sm font-bold transition-all"
           >
             キュー初期化
           </button>
@@ -365,7 +365,7 @@ export default function BulkUpdatePanel() {
         transition={{ delay: 0.25 }}
         className="glass-panel p-6 rounded-2xl border-t-2 border-rose-500/40"
       >
-        <h3 className="text-lg font-bold text-stone-900 flex items-center gap-2 mb-4">
+        <h3 className="text-lg font-bold text-foreground flex items-center gap-2 mb-4">
           <AlertTriangle size={20} className="text-rose-700" />
           チャンピオントレンド更新の失敗タスク（{failedTasks.length}件）
         </h3>
@@ -382,7 +382,7 @@ export default function BulkUpdatePanel() {
                 }`}
               >
                 <div className="min-w-0">
-                  <div className="text-sm font-bold text-stone-900">
+                  <div className="text-sm font-bold text-foreground">
                     {champion} <span className="text-gray-500 font-normal">/ {role}</span>
                     {task.executor && (
                       <span className="ml-2 text-[10px] text-gray-500 font-normal">

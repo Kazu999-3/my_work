@@ -118,7 +118,7 @@ export default function DiscordImportPanel() {
             <MessageSquare size={20} />
           </div>
           <div>
-            <h2 className="text-base font-extrabold text-stone-900 flex items-center gap-2">
+            <h2 className="text-base font-extrabold text-foreground flex items-center gap-2">
               💬 Discordトーク AI全自動抽出・ナレッジインポート
             </h2>
             <p className="text-xs text-stone-500 mt-0.5">
@@ -140,7 +140,7 @@ export default function DiscordImportPanel() {
 
       {/* フォームエリア */}
       <div className="space-y-3">
-        <label className="block text-xs font-extrabold text-stone-800 flex items-center justify-between">
+        <label className="block text-xs font-extrabold text-foreground-soft flex items-center justify-between">
           <span>📋 Discordのチャットログをそのままコピペ（貼り付け）</span>
           <span className="text-[10px] text-stone-400 font-normal">ユーザー名やタイムスタンプ・雑談が混ざっていてもAIが自動フィルタします</span>
         </label>
@@ -148,7 +148,7 @@ export default function DiscordImportPanel() {
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           placeholder="例: [15:30] UserA: アーリは対アサシンだと6前にW上げでハラスして押し切るのが強い。コアビルドはルーデン..."
-          className="w-full h-36 p-4 rounded-2xl border border-border bg-background/50 text-xs font-mono text-stone-800 focus:bg-surface focus:outline-none focus:border-amber-500 transition-all resize-y"
+          className="w-full h-36 p-4 rounded-2xl border border-border bg-background/50 text-xs font-mono text-foreground-soft focus:bg-surface focus:outline-none focus:border-amber-500 transition-all resize-y"
         />
 
         <div className="flex justify-end">
@@ -167,7 +167,7 @@ export default function DiscordImportPanel() {
       {extractedItems.length > 0 && (
         <div className="space-y-4 pt-4 border-t border-border">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold text-stone-900 flex items-center gap-2">
+            <span className="text-xs font-extrabold text-foreground flex items-center gap-2">
               <ShieldCheck size={16} className="text-emerald-600" />
               抽出されたナレッジ候補 ({extractedItems.length}件)
             </span>
@@ -205,17 +205,17 @@ export default function DiscordImportPanel() {
                     />
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-extrabold text-stone-900 text-xs">{item.champion}</span>
+                        <span className="font-extrabold text-foreground text-xs">{item.champion}</span>
                         {item.enemy_champion && (
                           <span className="text-[10px] bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded-full border border-rose-200">
                             vs {item.enemy_champion}
                           </span>
                         )}
-                        <span className="text-[10px] bg-surface-subtle text-stone-700 font-bold px-2 py-0.5 rounded-full border border-border">
+                        <span className="text-[10px] bg-surface-subtle text-foreground-subtle font-bold px-2 py-0.5 rounded-full border border-border">
                           {CATEGORY_LABELS[item.category] || item.category}
                         </span>
                       </div>
-                      <span className="text-xs font-bold text-stone-800 block mt-0.5">{item.title}</span>
+                      <span className="text-xs font-bold text-foreground-soft block mt-0.5">{item.title}</span>
                     </div>
                   </div>
 
@@ -260,7 +260,7 @@ export default function DiscordImportPanel() {
                     </button>
                   </div>
                 ) : (
-                  <div className="text-xs text-stone-700 bg-background/80 p-3 rounded-xl border border-stone-100 leading-relaxed whitespace-pre-wrap mt-2">
+                  <div className="text-xs text-foreground-subtle bg-background/80 p-3 rounded-xl border border-stone-100 leading-relaxed whitespace-pre-wrap mt-2">
                     {item.summary}
                   </div>
                 )}

@@ -161,7 +161,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
   const isWorkerActive = systemData.worker.active;
 
   const badgeCount = runningTasks.length + failedTasks.length;
-  const badgeColor = failedTasks.length > 0 ? 'bg-rose-500 text-white' : runningTasks.length > 0 ? 'bg-amber-500 text-white animate-pulse' : 'bg-surface-hover text-stone-700';
+  const badgeColor = failedTasks.length > 0 ? 'bg-rose-500 text-white' : runningTasks.length > 0 ? 'bg-amber-500 text-white animate-pulse' : 'bg-surface-hover text-foreground-subtle';
 
   const TASK_LABELS: Record<string, string> = {
     champion_trend: 'チャンピオントレンド更新',
@@ -180,7 +180,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
       <button
         onClick={toggleOpen}
         title="タスクキュー状況"
-        className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition-all hover:bg-black/5 hover:text-stone-900 text-stone-700 relative ${
+        className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition-all hover:bg-black/5 hover:text-foreground text-foreground-subtle relative ${
           collapsed ? 'justify-center' : 'w-full'
         }`}
       >
@@ -209,7 +209,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
           <div className="flex items-center justify-between border-b border-border pb-2.5">
             <div className="flex items-center gap-2">
               <Zap size={18} className="text-amber-600" />
-              <span className="font-extrabold text-sm text-stone-900">リアルタイム・タスクキュー</span>
+              <span className="font-extrabold text-sm text-foreground">リアルタイム・タスクキュー</span>
             </div>
             <div className="flex items-center gap-2">
               <button onClick={() => fetchTaskStatus()} className="p-1 rounded hover:bg-black/5 text-stone-500" title="最新状態に更新">
@@ -226,7 +226,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
             <div className="flex items-center gap-2">
               <Cpu size={16} className={isWorkerActive ? 'text-emerald-600' : 'text-rose-500'} />
               <div>
-                <span className="font-bold text-stone-900 block">エッジワーカー</span>
+                <span className="font-bold text-foreground block">エッジワーカー</span>
                 <span className="text-[10px] text-stone-500">
                   {systemData.worker.last_active ? `最終動作: ${new Date(systemData.worker.last_active).toLocaleTimeString()}` : '未起動'}
                 </span>
@@ -274,7 +274,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
                   return (
                     <div key={t.id} className="p-2.5 rounded-xl border border-rose-200 bg-rose-50 space-y-1">
                       <div className="flex justify-between items-center gap-2">
-                        <span className="font-bold text-stone-900 text-[11px] truncate">
+                        <span className="font-bold text-foreground text-[11px] truncate">
                           {TASK_LABELS[t.task_type] || t.task_type}
                           {t.payload?.champion && <span className="text-stone-500 font-normal"> ({t.payload.champion})</span>}
                         </span>
@@ -319,7 +319,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
                 {runningTasks.map((t) => (
                   <div key={t.id} className="p-2.5 rounded-xl border border-amber-300 bg-amber-50 flex justify-between items-center gap-2">
                     <div>
-                      <span className="font-bold text-stone-900 text-[11px] block">
+                      <span className="font-bold text-foreground text-[11px] block">
                         {TASK_LABELS[t.task_type] || t.task_type}
                         {t.payload?.champion && <span className="text-stone-600"> ({t.payload.champion})</span>}
                       </span>
@@ -338,7 +338,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
 
           {/* 4. 待機中タスク */}
           <div className="space-y-2">
-            <div className="flex justify-between items-center text-xs font-bold text-stone-700">
+            <div className="flex justify-between items-center text-xs font-bold text-foreground-subtle">
               <span>待機中キュー ({pendingTasks.length}件)</span>
             </div>
             {pendingTasks.length === 0 ? (
@@ -347,7 +347,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
               <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
                 {pendingTasks.map((t, idx) => (
                   <div key={t.id} className="p-2 rounded-lg border border-border bg-surface flex justify-between items-center text-[10px]">
-                    <span className="font-bold text-stone-800">
+                    <span className="font-bold text-foreground-soft">
                       #{idx + 1} {TASK_LABELS[t.task_type] || t.task_type}
                     </span>
                     <span className="text-stone-400 font-mono">{new Date(t.created_at).toLocaleTimeString()}</span>
@@ -370,7 +370,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
                       ) : (
                         <AlertTriangle size={12} className="text-rose-500 shrink-0" />
                       )}
-                      <span className="font-bold text-stone-800 truncate">{TASK_LABELS[h.task_type] || h.task_type}</span>
+                      <span className="font-bold text-foreground-soft truncate">{TASK_LABELS[h.task_type] || h.task_type}</span>
                     </div>
                     <span className="text-stone-400 font-mono shrink-0">{new Date(h.updated_at).toLocaleTimeString()}</span>
                   </div>

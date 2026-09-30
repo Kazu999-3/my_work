@@ -643,10 +643,10 @@ function CustomRecordPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-stone-800 p-4 md:p-8">
+    <div className="min-h-screen bg-background text-foreground-soft p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
-          <h1 className="text-2xl md:text-3xl font-extrabold text-stone-900 flex items-center gap-3">
+          <h1 className="text-2xl md:text-3xl font-extrabold text-foreground flex items-center gap-3">
             <Trophy className="h-7 w-7 md:h-8 md:w-8 text-emerald-600" />
             カスタム試合を手動記録
           </h1>
@@ -705,7 +705,7 @@ function CustomRecordPageContent() {
                 <div className="flex justify-center mb-3">
                   <Target className="h-12 w-12 text-emerald-500 animate-pulse" />
                 </div>
-                <p className="font-bold text-stone-900 mb-1 text-base">
+                <p className="font-bold text-foreground mb-1 text-base">
                   スクリーンショット画像を貼り付け (Ctrl+V)
                 </p>
                 <p className="text-xs text-stone-500">
@@ -744,7 +744,7 @@ function CustomRecordPageContent() {
               type="button"
               onClick={handleSwapTeams}
               title="BLUE/REDの中身(名前・チャンピオン・スタッツ)を丸ごと入れ替えます"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/5 hover:bg-black/10 border border-border text-stone-700 font-bold text-xs transition"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/5 hover:bg-black/10 border border-border text-foreground-subtle font-bold text-xs transition"
             >
               <ArrowLeftRight className="h-3.5 w-3.5" /> BLUE ⇄ RED 入れ替え
             </button>
@@ -763,14 +763,14 @@ function CustomRecordPageContent() {
                         <select
                           value={s.currentRole}
                           onChange={e => handleStatChangeByIndex(index, 'currentRole', e.target.value)}
-                          className="w-16 bg-surface border border-border rounded px-1.5 py-1 text-stone-900 outline-none focus:border-teal-500 text-xs font-bold"
+                          className="w-16 bg-surface border border-border rounded px-1.5 py-1 text-foreground outline-none focus:border-teal-500 text-xs font-bold"
                         >
                           {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                         <select
                           value={s.name}
                           onChange={e => handleStatChangeByIndex(index, 'name', e.target.value)}
-                          className="w-28 bg-surface border border-border rounded px-2 py-1.5 text-stone-900 outline-none focus:border-teal-500 text-sm"
+                          className="w-28 bg-surface border border-border rounded px-2 py-1.5 text-foreground outline-none focus:border-teal-500 text-sm"
                         >
                           <option value="">選択...</option>
                           {playersPool.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
@@ -778,7 +778,7 @@ function CustomRecordPageContent() {
                         <button
                           onClick={() => setActiveChampSelector({ team: 'BLUE', role: s.currentRole, slotIndex: index })}
                           type="button"
-                          className="w-32 bg-surface border border-border hover:border-teal-500 rounded px-2 py-1.5 text-stone-500 hover:text-stone-900 text-xs flex items-center justify-between gap-1 transition shrink-0"
+                          className="w-32 bg-surface border border-border hover:border-teal-500 rounded px-2 py-1.5 text-stone-500 hover:text-foreground text-xs flex items-center justify-between gap-1 transition shrink-0"
                         >
                           <span className="truncate">
                             {s.champion_name ? (championsList.find(c => c.id === s.champion_name)?.name || 'チャンプ') : 'チャンプ選択'}
@@ -795,15 +795,15 @@ function CustomRecordPageContent() {
                           )}
                         </button>
                         <div className="flex-1 flex gap-1 justify-end items-center">
-                          <input type="number" value={s.kills} onChange={e => handleStatChangeByIndex(index, 'kills', e.target.value)} className="w-11 bg-surface border border-border text-stone-900 text-center rounded py-1 text-sm" placeholder="K" />
+                          <input type="number" value={s.kills} onChange={e => handleStatChangeByIndex(index, 'kills', e.target.value)} className="w-11 bg-surface border border-border text-foreground text-center rounded py-1 text-sm" placeholder="K" />
                           <span className="text-stone-500 self-center text-xs">/</span>
                           <input type="number" value={s.deaths} onChange={e => handleStatChangeByIndex(index, 'deaths', e.target.value)} className="w-11 bg-surface border border-red-200 text-red-700 text-center rounded py-1 text-sm" placeholder="D" />
                           <span className="text-stone-500 self-center text-xs">/</span>
-                          <input type="number" value={s.assists} onChange={e => handleStatChangeByIndex(index, 'assists', e.target.value)} className="w-11 bg-surface border border-border text-stone-900 text-center rounded py-1 text-sm" placeholder="A" />
+                          <input type="number" value={s.assists} onChange={e => handleStatChangeByIndex(index, 'assists', e.target.value)} className="w-11 bg-surface border border-border text-foreground text-center rounded py-1 text-sm" placeholder="A" />
                           <button
                             type="button"
                             onClick={() => toggleDetails(index)}
-                            className={`ml-2 p-1.5 rounded transition ${openDetails[index] ? 'bg-teal-600 text-white' : 'bg-black/5 text-stone-500 hover:text-stone-900'}`}
+                            className={`ml-2 p-1.5 rounded transition ${openDetails[index] ? 'bg-teal-600 text-white' : 'bg-black/5 text-stone-500 hover:text-foreground'}`}
                             title="詳細スタッツ（CS・ダメージなど）"
                           >
                             <Settings className="h-4 w-4" />
@@ -816,19 +816,19 @@ function CustomRecordPageContent() {
                         <div className="mt-1 ml-18 grid grid-cols-2 sm:grid-cols-4 gap-2 bg-black/5 p-3 rounded-lg border border-border transition shadow-inner">
                           <div>
                             <label className="text-[10px] text-stone-500 font-bold block mb-1 text-center">CS</label>
-                            <input type="number" value={s.cs || 0} onChange={e => handleStatChangeByIndex(index, 'cs', e.target.value)} className="w-full bg-surface border border-border text-stone-900 rounded px-2 py-1 text-xs text-center" />
+                            <input type="number" value={s.cs || 0} onChange={e => handleStatChangeByIndex(index, 'cs', e.target.value)} className="w-full bg-surface border border-border text-foreground rounded px-2 py-1 text-xs text-center" />
                           </div>
                           <div>
                             <label className="text-[10px] text-stone-500 font-bold block mb-1 text-center">与ダメージ</label>
-                            <input type="number" value={s.damage_dealt || 0} onChange={e => handleStatChangeByIndex(index, 'damage_dealt', e.target.value)} className="w-full bg-surface border border-border text-stone-900 rounded px-2 py-1 text-xs text-center" />
+                            <input type="number" value={s.damage_dealt || 0} onChange={e => handleStatChangeByIndex(index, 'damage_dealt', e.target.value)} className="w-full bg-surface border border-border text-foreground rounded px-2 py-1 text-xs text-center" />
                           </div>
                           <div>
                             <label className="text-[10px] text-stone-500 font-bold block mb-1 text-center">被ダメージ</label>
-                            <input type="number" value={s.damage_taken || 0} onChange={e => handleStatChangeByIndex(index, 'damage_taken', e.target.value)} className="w-full bg-surface border border-border text-stone-900 rounded px-2 py-1 text-xs text-center" />
+                            <input type="number" value={s.damage_taken || 0} onChange={e => handleStatChangeByIndex(index, 'damage_taken', e.target.value)} className="w-full bg-surface border border-border text-foreground rounded px-2 py-1 text-xs text-center" />
                           </div>
                           <div>
                             <label className="text-[10px] text-stone-500 font-bold block mb-1 text-center">視界スコア</label>
-                            <input type="number" value={s.vision || 0} onChange={e => handleStatChangeByIndex(index, 'vision', e.target.value)} className="w-full bg-surface border border-border text-stone-900 rounded px-2 py-1 text-xs text-center" />
+                            <input type="number" value={s.vision || 0} onChange={e => handleStatChangeByIndex(index, 'vision', e.target.value)} className="w-full bg-surface border border-border text-foreground rounded px-2 py-1 text-xs text-center" />
                           </div>
                         </div>
                       )}
@@ -851,14 +851,14 @@ function CustomRecordPageContent() {
                         <select
                           value={s.currentRole}
                           onChange={e => handleStatChangeByIndex(index, 'currentRole', e.target.value)}
-                          className="w-16 bg-surface border border-border rounded px-1.5 py-1 text-stone-900 outline-none focus:border-red-500 text-xs font-bold"
+                          className="w-16 bg-surface border border-border rounded px-1.5 py-1 text-foreground outline-none focus:border-red-500 text-xs font-bold"
                         >
                           {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                         <select
                           value={s.name}
                           onChange={e => handleStatChangeByIndex(index, 'name', e.target.value)}
-                          className="w-28 bg-surface border border-border rounded px-2 py-1.5 text-stone-900 outline-none focus:border-red-500 text-sm"
+                          className="w-28 bg-surface border border-border rounded px-2 py-1.5 text-foreground outline-none focus:border-red-500 text-sm"
                         >
                           <option value="">選択...</option>
                           {playersPool.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
@@ -866,7 +866,7 @@ function CustomRecordPageContent() {
                         <button
                           onClick={() => setActiveChampSelector({ team: 'RED', role: s.currentRole, slotIndex: index })}
                           type="button"
-                          className="w-32 bg-surface border border-border hover:border-red-500 rounded px-2 py-1.5 text-stone-500 hover:text-stone-900 text-xs flex items-center justify-between gap-1 transition shrink-0"
+                          className="w-32 bg-surface border border-border hover:border-red-500 rounded px-2 py-1.5 text-stone-500 hover:text-foreground text-xs flex items-center justify-between gap-1 transition shrink-0"
                         >
                           <span className="truncate">
                             {s.champion_name ? (championsList.find(c => c.id === s.champion_name)?.name || 'チャンプ') : 'チャンプ選択'}
@@ -883,15 +883,15 @@ function CustomRecordPageContent() {
                           )}
                         </button>
                         <div className="flex-1 flex gap-1 justify-end items-center">
-                          <input type="number" value={s.kills} onChange={e => handleStatChangeByIndex(index, 'kills', e.target.value)} className="w-11 bg-surface border border-border text-stone-900 text-center rounded py-1 text-sm" placeholder="K" />
+                          <input type="number" value={s.kills} onChange={e => handleStatChangeByIndex(index, 'kills', e.target.value)} className="w-11 bg-surface border border-border text-foreground text-center rounded py-1 text-sm" placeholder="K" />
                           <span className="text-stone-500 self-center text-xs">/</span>
                           <input type="number" value={s.deaths} onChange={e => handleStatChangeByIndex(index, 'deaths', e.target.value)} className="w-11 bg-surface border border-red-200 text-red-700 text-center rounded py-1 text-sm" placeholder="D" />
                           <span className="text-stone-500 self-center text-xs">/</span>
-                          <input type="number" value={s.assists} onChange={e => handleStatChangeByIndex(index, 'assists', e.target.value)} className="w-11 bg-surface border border-border text-stone-900 text-center rounded py-1 text-sm" placeholder="A" />
+                          <input type="number" value={s.assists} onChange={e => handleStatChangeByIndex(index, 'assists', e.target.value)} className="w-11 bg-surface border border-border text-foreground text-center rounded py-1 text-sm" placeholder="A" />
                           <button
                             type="button"
                             onClick={() => toggleDetails(index)}
-                            className={`ml-2 p-1.5 rounded transition ${openDetails[index] ? 'bg-red-600 text-white' : 'bg-black/5 text-stone-500 hover:text-stone-900'}`}
+                            className={`ml-2 p-1.5 rounded transition ${openDetails[index] ? 'bg-red-600 text-white' : 'bg-black/5 text-stone-500 hover:text-foreground'}`}
                             title="詳細スタッツ（CS・ダメージなど）"
                           >
                             <Settings className="h-4 w-4" />
@@ -904,19 +904,19 @@ function CustomRecordPageContent() {
                         <div className="mt-1 ml-18 grid grid-cols-2 sm:grid-cols-4 gap-2 bg-black/5 p-3 rounded-lg border border-border transition shadow-inner">
                           <div>
                             <label className="text-[10px] text-stone-500 font-bold block mb-1 text-center">CS</label>
-                            <input type="number" value={s.cs || 0} onChange={e => handleStatChangeByIndex(index, 'cs', e.target.value)} className="w-full bg-surface border border-border text-stone-900 rounded px-2 py-1 text-xs text-center" />
+                            <input type="number" value={s.cs || 0} onChange={e => handleStatChangeByIndex(index, 'cs', e.target.value)} className="w-full bg-surface border border-border text-foreground rounded px-2 py-1 text-xs text-center" />
                           </div>
                           <div>
                             <label className="text-[10px] text-stone-500 font-bold block mb-1 text-center">与ダメージ</label>
-                            <input type="number" value={s.damage_dealt || 0} onChange={e => handleStatChangeByIndex(index, 'damage_dealt', e.target.value)} className="w-full bg-surface border border-border text-stone-900 rounded px-2 py-1 text-xs text-center" />
+                            <input type="number" value={s.damage_dealt || 0} onChange={e => handleStatChangeByIndex(index, 'damage_dealt', e.target.value)} className="w-full bg-surface border border-border text-foreground rounded px-2 py-1 text-xs text-center" />
                           </div>
                           <div>
                             <label className="text-[10px] text-stone-500 font-bold block mb-1 text-center">被ダメージ</label>
-                            <input type="number" value={s.damage_taken || 0} onChange={e => handleStatChangeByIndex(index, 'damage_taken', e.target.value)} className="w-full bg-surface border border-border text-stone-900 rounded px-2 py-1 text-xs text-center" />
+                            <input type="number" value={s.damage_taken || 0} onChange={e => handleStatChangeByIndex(index, 'damage_taken', e.target.value)} className="w-full bg-surface border border-border text-foreground rounded px-2 py-1 text-xs text-center" />
                           </div>
                           <div>
                             <label className="text-[10px] text-stone-500 font-bold block mb-1 text-center">視界スコア</label>
-                            <input type="number" value={s.vision || 0} onChange={e => handleStatChangeByIndex(index, 'vision', e.target.value)} className="w-full bg-surface border border-border text-stone-900 rounded px-2 py-1 text-xs text-center" />
+                            <input type="number" value={s.vision || 0} onChange={e => handleStatChangeByIndex(index, 'vision', e.target.value)} className="w-full bg-surface border border-border text-foreground rounded px-2 py-1 text-xs text-center" />
                           </div>
                         </div>
                       )}
@@ -982,13 +982,13 @@ function CustomRecordPageContent() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="bg-surface border border-border rounded-2xl w-full max-w-2xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-extrabold text-stone-900 flex items-center gap-2">
+              <h3 className="text-lg font-extrabold text-foreground flex items-center gap-2">
                 <Target className="h-5 w-5 text-emerald-600" />
                 チャンピオン選択 ({activeChampSelector.team} - {activeChampSelector.role})
               </h3>
               <button
                 onClick={() => { setActiveChampSelector(null); setChampSearchQuery(''); }}
-                className="text-stone-500 hover:text-stone-900 text-sm bg-black/5 px-3 py-1.5 rounded-lg border border-border transition"
+                className="text-stone-500 hover:text-foreground text-sm bg-black/5 px-3 py-1.5 rounded-lg border border-border transition"
               >
                 閉じる
               </button>
@@ -999,7 +999,7 @@ function CustomRecordPageContent() {
               placeholder="チャンピオン名で検索 (ひらがな・カタカナ・英語名)..."
               value={champSearchQuery}
               onChange={e => setChampSearchQuery(e.target.value)}
-              className="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-stone-900 mb-4 outline-none focus:border-emerald-500 text-sm"
+              className="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-foreground mb-4 outline-none focus:border-emerald-500 text-sm"
               autoFocus
             />
 
@@ -1037,7 +1037,7 @@ function CustomRecordPageContent() {
                       className="w-12 h-12 rounded-xl border border-border group-hover:border-emerald-500 transition object-cover"
                       alt={c.name}
                     />
-                    <span className="text-[10px] text-stone-500 truncate w-14 text-center group-hover:text-stone-900 transition">
+                    <span className="text-[10px] text-stone-500 truncate w-14 text-center group-hover:text-foreground transition">
                       {c.name}
                     </span>
                   </button>
@@ -1068,7 +1068,7 @@ function CustomRecordPageContent() {
             </div>
 
             <div className="space-y-2">
-              <h2 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
                 試合結果の記録が完了しました！
               </h2>
               <div className="flex items-center justify-center gap-2 text-xs font-bold text-stone-600">
@@ -1113,7 +1113,7 @@ function CustomRecordPageContent() {
 
               <Link
                 href="/balancer"
-                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-surface-subtle hover:bg-surface-hover text-stone-800 font-bold text-xs sm:text-sm border border-border transition group"
+                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-surface-subtle hover:bg-surface-hover text-foreground-soft font-bold text-xs sm:text-sm border border-border transition group"
               >
                 <div className="flex items-center gap-2.5">
                   <span className="text-lg">⚔️</span>

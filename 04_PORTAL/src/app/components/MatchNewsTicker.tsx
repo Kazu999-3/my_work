@@ -65,7 +65,7 @@ export default function MatchNewsTicker() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-sm sm:text-base font-black text-stone-900 dark:text-white flex items-center gap-1.5">
+              <h3 className="text-sm sm:text-base font-black text-foreground dark:text-white flex items-center gap-1.5">
                 <span>月刊KTMスポーツ速報</span>
                 <span className="text-[10px] bg-red-600 text-white font-black px-2 py-0.5 rounded-full animate-pulse">
                   号外
@@ -122,7 +122,7 @@ export default function MatchNewsTicker() {
                       {new Date(item.createdAt).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
-                  <h4 className="text-sm sm:text-base font-black text-stone-900 dark:text-white leading-snug hover:text-amber-700 dark:hover:text-amber-400 transition-colors">
+                  <h4 className="text-sm sm:text-base font-black text-foreground dark:text-white leading-snug hover:text-amber-700 dark:hover:text-amber-400 transition-colors">
                     {art.headline}
                   </h4>
                   <p className="text-xs text-stone-500 dark:text-stone-300 font-bold truncate">
@@ -137,9 +137,9 @@ export default function MatchNewsTicker() {
 
               {/* 記事詳細（展開時） */}
               {isExpanded && (
-                <div className="px-4 pb-4 pt-1 border-t border-stone-100 dark:border-stone-800 space-y-3.5 text-xs text-stone-700 dark:text-stone-200 animate-in fade-in">
+                <div className="px-4 pb-4 pt-1 border-t border-stone-100 dark:border-stone-800 space-y-3.5 text-xs text-foreground-subtle dark:text-stone-200 animate-in fade-in">
                   {/* リード文 */}
-                  <p className="leading-relaxed font-sans text-stone-800 dark:text-stone-100 text-[13px] bg-amber-50/50 dark:bg-amber-950/20 p-3 rounded-xl border border-amber-200/40">
+                  <p className="leading-relaxed font-sans text-foreground-soft dark:text-stone-100 text-[13px] bg-amber-50/50 dark:bg-amber-950/20 p-3 rounded-xl border border-amber-200/40">
                     {art.lead}
                   </p>
 
@@ -152,7 +152,7 @@ export default function MatchNewsTicker() {
                           <span>本日のMVP: {art.mvp.name} 選手 ({art.mvp.role})</span>
                         </div>
                         <div className="text-[11px] text-stone-500 font-mono">
-                          KDA: <strong className="text-stone-800 dark:text-white">{art.mvp.kda}</strong>
+                          KDA: <strong className="text-foreground-soft dark:text-white">{art.mvp.kda}</strong>
                         </div>
                         <p className="text-[11px] text-stone-600 dark:text-stone-300 leading-tight">
                           {art.mvp.comment}

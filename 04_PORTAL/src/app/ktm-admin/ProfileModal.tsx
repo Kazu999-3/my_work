@@ -74,7 +74,7 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
               {player.ign ? player.ign.charAt(0).toUpperCase() : player.name.charAt(0)}
             </div>
             <div>
-              <h2 className="text-3xl font-extrabold text-stone-900">{player.name}</h2>
+              <h2 className="text-3xl font-extrabold text-foreground">{player.name}</h2>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-stone-400 text-sm font-medium">{player.ign || "IGN未登録"}</span>
                 <span className="bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded text-xs font-bold">
@@ -116,7 +116,7 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
           </div>
           <button 
             onClick={onClose}
-            className="text-stone-400 hover:text-stone-900 bg-black/5 hover:bg-black/8 p-2 rounded-full transition"
+            className="text-stone-400 hover:text-foreground bg-black/5 hover:bg-black/8 p-2 rounded-full transition"
           >
             <X className="w-6 h-6" />
           </button>
@@ -126,7 +126,7 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
           
           {/* Riot API Mastery */}
           <section>
-            <h3 className="text-xl font-bold text-stone-800 mb-4 flex items-center gap-2">
+            <h3 className="text-xl font-bold text-foreground-soft mb-4 flex items-center gap-2">
               <Star className="w-5 h-5 text-yellow-500" />
               得意チャンピオン (Riotマスタリー)
             </h3>
@@ -143,7 +143,7 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                       onError={(e) => { (e.target as HTMLImageElement).src = 'https://ddragon.leagueoflegends.com/cdn/14.1.1/img/profileicon/29.png' }}
                     />
                     <div>
-                      <div className="text-lg font-bold text-stone-900">{m.name === 'Unknown' ? `ID:${m.championId}` : m.name}</div>
+                      <div className="text-lg font-bold text-foreground">{m.name === 'Unknown' ? `ID:${m.championId}` : m.name}</div>
                       <div className="text-sm text-stone-400">Lv {m.championLevel} • {m.championPoints.toLocaleString()} pts</div>
                     </div>
                   </div>
@@ -157,7 +157,7 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
           </section>
 
           <section>
-            <h3 className="text-xl font-bold text-stone-800 mb-4 flex items-center gap-2">
+            <h3 className="text-xl font-bold text-foreground-soft mb-4 flex items-center gap-2">
               <Swords className="w-5 h-5 text-emerald-500" />
               KTM 戦績 ＆ プレイスタイル分析
             </h3>
@@ -175,7 +175,7 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                     <ScoutingReport stats={stats} mmr={player.mmr || 1200} />
                   </div>
                   <div className="w-full md:w-2/3 space-y-3">
-                    <h4 className="text-lg font-bold text-stone-900 flex items-center gap-2">
+                    <h4 className="text-lg font-bold text-foreground flex items-center gap-2">
                       <Activity className="w-5 h-5 text-amber-700" />
                       AI プレイスタイル分析
                     </h4>
@@ -213,7 +213,7 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                       <div className="flex justify-between items-center mb-3">
                         <div className="flex items-center gap-2">
                           {roleIcons[role]}
-                          <span className="font-bold text-lg text-stone-800">{role}</span>
+                          <span className="font-bold text-lg text-foreground-soft">{role}</span>
                         </div>
                         <span className="text-xs text-stone-400 font-medium bg-surface px-2 py-1 rounded">
                           MMR: {player[`mmr_${role.toLowerCase()}`] || 1200}
@@ -257,7 +257,7 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                                 className="w-6 h-6 rounded-full bg-black/5"
                                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                               />
-                              <div className="flex-1 text-sm font-medium text-stone-700 truncate">{champ.name}</div>
+                              <div className="flex-1 text-sm font-medium text-foreground-subtle truncate">{champ.name}</div>
                               <div className="text-xs text-stone-500">{champ.games}戦</div>
                             </div>
                           );

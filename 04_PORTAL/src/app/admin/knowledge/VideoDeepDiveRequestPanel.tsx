@@ -14,7 +14,7 @@ interface DeepDiveTask {
 }
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
-  pending: { label: '待機中', className: 'bg-surface-subtle text-stone-700 border-border' },
+  pending: { label: '待機中', className: 'bg-surface-subtle text-foreground-subtle border-border' },
   running: { label: '解析中', className: 'bg-amber-50 text-amber-800 border-amber-300' },
   completed: { label: '完了', className: 'bg-emerald-50 text-emerald-800 border-emerald-300' },
   failed: { label: '失敗', className: 'bg-rose-50 text-rose-800 border-rose-300' },
@@ -83,7 +83,7 @@ export default function VideoDeepDiveRequestPanel() {
             <Microscope className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="text-sm font-black text-stone-900">
+            <h3 className="text-sm font-black text-foreground">
               🔬 動画深掘りモード（個別YouTube解析リクエスト）
             </h3>
             <p className="text-[11px] text-stone-500 font-medium">
@@ -112,14 +112,14 @@ export default function VideoDeepDiveRequestPanel() {
             onChange={(e) => setVideoUrl(e.target.value)}
             placeholder="YouTube URL または動画ID"
             required
-            className="md:col-span-2 px-3.5 py-2.5 bg-surface border border-border rounded-xl text-xs text-stone-900 placeholder-stone-400 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+            className="md:col-span-2 px-3.5 py-2.5 bg-surface border border-border rounded-xl text-xs text-foreground placeholder-stone-400 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
           />
           <input
             type="text"
             value={champion}
             onChange={(e) => setChampion(e.target.value)}
             placeholder="対象チャンピオン（省略時は自動判定）"
-            className="px-3.5 py-2.5 bg-surface border border-border rounded-xl text-xs text-stone-900 placeholder-stone-400 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+            className="px-3.5 py-2.5 bg-surface border border-border rounded-xl text-xs text-foreground placeholder-stone-400 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
           />
         </div>
         <div className="flex justify-end pt-1">
@@ -136,7 +136,7 @@ export default function VideoDeepDiveRequestPanel() {
 
       {!loadingTasks && tasks.length > 0 && (
         <div className="space-y-2.5 pt-1">
-          <h4 className="text-[11px] font-black text-stone-700 flex items-center gap-1.5">
+          <h4 className="text-[11px] font-black text-foreground-subtle flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5 text-stone-400" />
             直近のリクエスト履歴
           </h4>
@@ -150,7 +150,7 @@ export default function VideoDeepDiveRequestPanel() {
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     {task.status === 'running' && <Loader2 className="w-3.5 h-3.5 text-amber-500 animate-spin shrink-0" />}
-                    <span className="text-stone-800 font-medium truncate">
+                    <span className="text-foreground-soft font-medium truncate">
                       {task.payload?.champion || '(自動判定)'} — {task.payload?.video_url}
                     </span>
                   </div>

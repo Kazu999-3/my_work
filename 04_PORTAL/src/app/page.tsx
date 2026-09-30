@@ -31,7 +31,7 @@ export default function HomePage() {
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-stone-900 dark:text-white">
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground dark:text-white">
                   KTM カスタムポータル
                 </h1>
                 <span className="text-[10px] bg-gradient-to-r from-amber-500 to-amber-600 text-white font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-2xs">
@@ -47,7 +47,7 @@ export default function HomePage() {
           <div className="flex items-center gap-2 flex-wrap">
             <Link
               href="/guide"
-              className="px-3.5 py-2 bg-surface-subtle hover:bg-surface-hover dark:bg-[#1e1f22] dark:hover:bg-[#35373c] text-stone-700 dark:text-stone-200 border border-border dark:border-[#3f4147] rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+              className="px-3.5 py-2 bg-surface-subtle hover:bg-surface-hover dark:bg-[#1e1f22] dark:hover:bg-[#35373c] text-foreground-subtle dark:text-stone-200 border border-border dark:border-[#3f4147] rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
             >
               <BookOpen className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               <span>利用ガイド</span>
@@ -77,7 +77,7 @@ export default function HomePage() {
                 </span>
               </div>
               <div>
-                <h2 className="text-lg sm:text-xl font-black text-stone-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                <h2 className="text-lg sm:text-xl font-black text-foreground dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                   マイページ ＆ 希望レーン設定
                 </h2>
                 <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed mt-1 font-medium">
@@ -108,7 +108,7 @@ export default function HomePage() {
                 </span>
               </div>
               <div>
-                <h2 className="text-lg sm:text-xl font-black text-stone-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                <h2 className="text-lg sm:text-xl font-black text-foreground dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                   師弟自己紹介掲示板
                 </h2>
                 <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed mt-1 font-medium">
@@ -139,7 +139,7 @@ export default function HomePage() {
                 </span>
               </div>
               <div>
-                <h2 className="text-lg sm:text-xl font-black text-stone-900 dark:text-white group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
+                <h2 className="text-lg sm:text-xl font-black text-foreground dark:text-white group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
                   チーム分けバランサー (5v5 Custom)
                 </h2>
                 <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed mt-1 font-medium">
@@ -170,7 +170,7 @@ export default function HomePage() {
                 </span>
               </div>
               <div>
-                <h2 className="text-lg sm:text-xl font-black text-stone-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                <h2 className="text-lg sm:text-xl font-black text-foreground dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                   勝敗予想 ＆ KTMショップ
                 </h2>
                 <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed mt-1 font-medium">
@@ -190,7 +190,7 @@ export default function HomePage() {
         {/* サブ機能クイックグリッド */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-black text-stone-900 dark:text-white">⚡ コミュニティ ＆ 統計情報</span>
+            <span className="text-sm font-black text-foreground dark:text-white">⚡ コミュニティ ＆ 統計情報</span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -233,7 +233,7 @@ export default function HomePage() {
                   {item.icon}
                 </div>
                 <div>
-                  <div className="font-extrabold text-xs text-stone-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                  <div className="font-extrabold text-xs text-foreground dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                     {item.title}
                   </div>
                   <div className="text-[10px] text-stone-500 dark:text-stone-400 font-bold mt-0.5">

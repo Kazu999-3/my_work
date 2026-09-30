@@ -233,10 +233,10 @@ export default function TimingHeatmapCard() {
               const isBad = games >= 3 && (c?.winRate || 0) < 45;
               return (
                 <div className="flex items-center justify-between w-full flex-wrap gap-2">
-                  <span className="font-bold text-stone-900 dark:text-stone-100">
+                  <span className="font-bold text-foreground dark:text-stone-100">
                     {HEATMAP_DAYS[activeCell.day]}曜 {activeCell.hour}時台:{' '}
                     {games > 0 ? (
-                      <span className="font-extrabold text-stone-700 dark:text-stone-300">{c!.winRate}% ({c!.wins}/{games}勝)</span>
+                      <span className="font-extrabold text-foreground-subtle dark:text-stone-300">{c!.winRate}% ({c!.wins}/{games}勝)</span>
                     ) : (
                       <span className="font-normal text-stone-400">データなし</span>
                     )}

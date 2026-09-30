@@ -130,7 +130,7 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
       {/* 🛑 連敗検知時のAI連敗ストッパー安全装置 */}
       {consecutiveLosses >= 2 && (
         <div
-          className={`rounded-2xl p-4.5 text-stone-900 shadow-lg border-2 transition-all ${
+          className={`rounded-2xl p-4.5 text-foreground shadow-lg border-2 transition-all ${
             consecutiveLosses >= 3
               ? 'bg-rose-50 border-rose-500 shadow-rose-500/10 animate-pulse'
               : 'bg-amber-50 border-amber-500 shadow-amber-500/10'
@@ -179,7 +179,7 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-surface border border-border rounded-xl p-3.5 text-center shadow-sm">
           <span className="text-[11px] text-stone-500 font-medium block">総振り返り数</span>
-          <span className="text-xl font-extrabold text-stone-900">{totalMatches} <span className="text-xs font-normal text-stone-500">試合</span></span>
+          <span className="text-xl font-extrabold text-foreground">{totalMatches} <span className="text-xs font-normal text-stone-500">試合</span></span>
         </div>
         <div className="bg-surface border border-border rounded-xl p-3.5 text-center shadow-sm">
           <span className="text-[11px] text-stone-500 font-medium block">
@@ -203,7 +203,7 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
 
       {/* 検索バー */}
       <div className="flex justify-between items-center bg-black/5 p-3 rounded-xl border border-black/10">
-        <h4 className="font-bold text-stone-800 text-xs flex items-center gap-1.5">
+        <h4 className="font-bold text-foreground-soft text-xs flex items-center gap-1.5">
           <span>📊</span> 過去ログ ＆ 対面メモ検索
         </h4>
         <input
@@ -211,7 +211,7 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
           placeholder="チャンプ名、メモキーワード検索..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="px-3 py-1.5 border border-border rounded-lg text-xs bg-surface text-stone-900 w-64 focus:outline-none focus:ring-2 focus:ring-amber-500"
+          className="px-3 py-1.5 border border-border rounded-lg text-xs bg-surface text-foreground w-64 focus:outline-none focus:ring-2 focus:ring-amber-500"
         />
       </div>
 
@@ -298,7 +298,7 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
 
         return (
           <div className="bg-surface border border-border rounded-2xl p-4 mb-4 shadow-sm">
-            <div className="text-xs font-black text-stone-800 mb-2 flex items-center justify-between">
+            <div className="text-xs font-black text-foreground-soft mb-2 flex items-center justify-between">
               <span>🏷️ 勝因・敗因タグの傾向</span>
               <span className="text-[10px] text-stone-500 font-normal">過去{reflections.length}戦のデータ</span>
             </div>
@@ -347,16 +347,16 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
                   <span className={`px-2 py-0.5 font-bold text-[10px] rounded text-white ${ref.win ? 'bg-emerald-600' : 'bg-rose-600'}`}>
                     {ref.win ? 'WIN' : 'LOSE'}
                   </span>
-                  <span className="font-bold text-stone-900 text-sm">{ref.champion}</span>
+                  <span className="font-bold text-foreground text-sm">{ref.champion}</span>
                   <span className="text-xs text-stone-400">vs</span>
-                  <span className="font-bold text-stone-700 text-sm">{ref.enemy_champion || 'Unknown'}</span>
+                  <span className="font-bold text-foreground-subtle text-sm">{ref.enemy_champion || 'Unknown'}</span>
                 </div>
                 <div className="text-[11px] text-stone-500">
                   {new Date(ref.created_at).toLocaleString('ja-JP')}
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-4 text-xs text-stone-700">
+              <div className="flex flex-wrap items-center gap-4 text-xs text-foreground-subtle">
                 <span>KDA: <strong>{ref.kda || '-'}</strong></span>
                 <span>CS: <strong>{ref.cs ?? '-'}</strong></span>
                 <span>メンタル: <strong className="text-amber-800">{ref.mental_rating}/5</strong></span>
@@ -366,8 +366,8 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
               </div>
 
               {ref.reflection_note && (
-                <div className="text-xs bg-background p-2 rounded border border-stone-100 text-stone-800">
-                  <strong className="text-stone-900">反省メモ:</strong> {ref.reflection_note}
+                <div className="text-xs bg-background p-2 rounded border border-stone-100 text-foreground-soft">
+                  <strong className="text-foreground">反省メモ:</strong> {ref.reflection_note}
                 </div>
               )}
               {ref.matchup_memo && (

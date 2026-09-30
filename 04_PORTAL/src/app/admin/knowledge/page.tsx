@@ -194,7 +194,7 @@ function KnowledgeBaseContent() {
       <div className="w-full max-w-md mx-auto py-16 px-4">
         <div className="text-center rounded-3xl border border-border/80 bg-surface p-8 shadow-sm">
           <div className="text-4xl mb-3">🔑</div>
-          <h2 className="text-base font-black text-stone-900 mb-2">管理者認証が必要です</h2>
+          <h2 className="text-base font-black text-foreground mb-2">管理者認証が必要です</h2>
           <p className="text-xs text-stone-500 mb-6 leading-relaxed">
             戦術取り込み ＆ AI解析ハブは管理者専用です。Discord管理者アカウントでログインしてください。
           </p>
@@ -223,7 +223,7 @@ function KnowledgeBaseContent() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-base sm:text-lg font-black tracking-tight text-stone-900">戦術取り込み ＆ AI解析ハブ</h1>
+              <h1 className="text-base sm:text-lg font-black tracking-tight text-foreground">戦術取り込み ＆ AI解析ハブ</h1>
               <span className="px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-900 text-[10px] font-extrabold">
                 管理者専用
               </span>
@@ -237,7 +237,7 @@ function KnowledgeBaseContent() {
         <div className="flex items-center gap-2 self-end sm:self-auto">
           <Link
             href="/library"
-            className="px-3 py-1.5 rounded-xl bg-surface-subtle hover:bg-surface-hover/80 text-stone-700 border border-border text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs"
+            className="px-3 py-1.5 rounded-xl bg-surface-subtle hover:bg-surface-hover/80 text-foreground-subtle border border-border text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs"
             title="確定知見の書庫（攻略ライブラリ）を開く"
           >
             <span>🗂️ 攻略ライブラリ</span>
@@ -276,8 +276,8 @@ function KnowledgeBaseContent() {
           onClick={() => setActiveTab('input')}
           className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
             activeTab === 'input'
-              ? 'bg-surface text-stone-900 shadow-xs font-black'
-              : 'text-stone-600 hover:text-stone-900 hover:bg-surface-hover/60'
+              ? 'bg-surface text-foreground shadow-xs font-black'
+              : 'text-stone-600 hover:text-foreground hover:bg-surface-hover/60'
           }`}
         >
           <Plus size={15} className={activeTab === 'input' ? 'text-amber-600' : 'text-stone-400'} />
@@ -289,8 +289,8 @@ function KnowledgeBaseContent() {
           onClick={() => setActiveTab('queue')}
           className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
             activeTab === 'queue'
-              ? 'bg-surface text-stone-900 shadow-xs font-black'
-              : 'text-stone-600 hover:text-stone-900 hover:bg-surface-hover/60'
+              ? 'bg-surface text-foreground shadow-xs font-black'
+              : 'text-stone-600 hover:text-foreground hover:bg-surface-hover/60'
           }`}
         >
           <Film size={14} className={activeTab === 'queue' ? 'text-amber-600' : 'text-stone-400'} />
@@ -303,7 +303,7 @@ function KnowledgeBaseContent() {
           className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer relative ${
             activeTab === 'pending'
               ? 'bg-surface text-emerald-800 border border-emerald-300 shadow-xs font-black'
-              : 'text-stone-600 hover:text-stone-900 hover:bg-surface-hover/60'
+              : 'text-stone-600 hover:text-foreground hover:bg-surface-hover/60'
           }`}
         >
           <Sparkles size={14} className={activeTab === 'pending' ? 'text-emerald-600' : 'text-stone-400'} />
@@ -321,7 +321,7 @@ function KnowledgeBaseContent() {
         <div className="space-y-4">
           <div className="bg-surface border border-border/90 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-3">
-              <h2 className="text-sm font-bold text-stone-900 flex items-center gap-2">
+              <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
                 <span className="p-1.5 bg-amber-50 rounded-lg text-amber-600 border border-amber-200/60">
                   <Plus size={15} />
                 </span>
@@ -335,8 +335,8 @@ function KnowledgeBaseContent() {
                   onClick={() => setInputSubMode('url')}
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     inputSubMode === 'url'
-                      ? 'bg-surface text-stone-900 shadow-xs font-black'
-                      : 'text-stone-500 hover:text-stone-900'
+                      ? 'bg-surface text-foreground shadow-xs font-black'
+                      : 'text-stone-500 hover:text-foreground'
                   }`}
                 >
                   🌐 Web / X / YouTube URL
@@ -346,8 +346,8 @@ function KnowledgeBaseContent() {
                   onClick={() => setInputSubMode('memo')}
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     inputSubMode === 'memo'
-                      ? 'bg-surface text-stone-900 shadow-xs font-black'
-                      : 'text-stone-500 hover:text-stone-900'
+                      ? 'bg-surface text-foreground shadow-xs font-black'
+                      : 'text-stone-500 hover:text-foreground'
                   }`}
                 >
                   📝 テキスト自由メモ
@@ -358,7 +358,7 @@ function KnowledgeBaseContent() {
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     inputSubMode === 'discord'
                       ? 'bg-surface text-amber-900 shadow-xs font-black'
-                      : 'text-stone-500 hover:text-stone-900'
+                      : 'text-stone-500 hover:text-foreground'
                   }`}
                 >
                   💬 Discordチャットログ解析
@@ -380,7 +380,7 @@ function KnowledgeBaseContent() {
                       placeholder="https://x.com/... または Web攻略記事 / YouTube URL を入力..."
                       value={inputUrl}
                       onChange={(e) => setInputUrl(e.target.value)}
-                      className="w-full px-4 py-3 bg-background/70 border border-border rounded-xl focus:outline-none focus:border-amber-500 focus:bg-surface focus:ring-2 focus:ring-amber-500/20 text-xs text-stone-900 placeholder-stone-400 font-mono transition-all"
+                      className="w-full px-4 py-3 bg-background/70 border border-border rounded-xl focus:outline-none focus:border-amber-500 focus:bg-surface focus:ring-2 focus:ring-amber-500/20 text-xs text-foreground placeholder-stone-400 font-mono transition-all"
                     />
 
                     {/* YouTube検知バナー */}
@@ -424,7 +424,7 @@ function KnowledgeBaseContent() {
                       placeholder="マッチアップの気付き、ビルドの没理由、立ち回りノウハウ、または Discordのチャットログをそのまま貼り付け..."
                       value={inputMemo}
                       onChange={(e) => setInputMemo(e.target.value)}
-                      className="w-full px-4 py-3 bg-background/70 border border-border rounded-xl focus:outline-none focus:border-amber-500 focus:bg-surface focus:ring-2 focus:ring-amber-500/20 text-xs text-stone-900 placeholder-stone-400 resize-none leading-relaxed transition-all"
+                      className="w-full px-4 py-3 bg-background/70 border border-border rounded-xl focus:outline-none focus:border-amber-500 focus:bg-surface focus:ring-2 focus:ring-amber-500/20 text-xs text-foreground placeholder-stone-400 resize-none leading-relaxed transition-all"
                     />
                     <p className="text-[10px] text-stone-500 pl-0.5">
                       ※ 自由な戦術メモのほか、Discordのチャットログをそのまま貼り付けてもAIが雑談を除去して自動整形します。

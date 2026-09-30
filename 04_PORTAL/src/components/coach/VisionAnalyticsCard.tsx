@@ -57,7 +57,7 @@ export default function VisionAnalyticsCard() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-black text-sm sm:text-base text-stone-900">
+              <h3 className="font-black text-sm sm:text-base text-foreground">
                 視界・マップコントロール客観解析
               </h3>
               <span className="text-[10px] font-black px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-200 rounded-full">
@@ -88,7 +88,7 @@ export default function VisionAnalyticsCard() {
             <span>分間視界 (VS/m)</span>
             <span className="text-amber-600 font-bold">上位18%</span>
           </div>
-          <div className="text-base font-black text-stone-900">
+          <div className="text-base font-black text-foreground">
             {vision.visionScorePerMin}
           </div>
           <div className="text-[10px] text-stone-500">
@@ -102,7 +102,7 @@ export default function VisionAnalyticsCard() {
             <span>ピンクワード</span>
             <span className="text-emerald-600 font-bold">平均の2倍</span>
           </div>
-          <div className="text-base font-black text-stone-900">
+          <div className="text-base font-black text-foreground">
             {vision.controlWardsPerGame} <span className="text-xs font-normal text-stone-400">本/戦</span>
           </div>
           <div className="text-[10px] text-emerald-700 font-bold">
@@ -115,7 +115,7 @@ export default function VisionAnalyticsCard() {
           <div className="text-[10px] font-bold text-stone-500">
             分間ワード設置
           </div>
-          <div className="text-base font-black text-stone-900">
+          <div className="text-base font-black text-foreground">
             {vision.wardsPlacedPerMin} <span className="text-xs font-normal text-stone-400">個/分</span>
           </div>
           <div className="text-[10px] text-stone-500">
@@ -128,7 +128,7 @@ export default function VisionAnalyticsCard() {
           <div className="text-[10px] font-bold text-stone-500">
             分間ワード破壊
           </div>
-          <div className="text-base font-black text-stone-900">
+          <div className="text-base font-black text-foreground">
             {vision.wardsClearedPerMin} <span className="text-xs font-normal text-stone-400">個/分</span>
           </div>
           <div className="text-[10px] text-stone-500">
@@ -139,7 +139,7 @@ export default function VisionAnalyticsCard() {
 
       {/* 視界配置バランス（自陣防衛 76% vs 敵陣ディープ 24%） */}
       <div className="p-4 bg-background/60 rounded-2xl border border-border/80 space-y-3">
-        <div className="flex items-center justify-between text-xs font-black text-stone-800">
+        <div className="flex items-center justify-between text-xs font-black text-foreground-soft">
           <span className="flex items-center gap-1.5">
             <Compass size={14} className="text-amber-600" />
             <span>視界配置バランス ＆ 侵入深度の客観データ</span>
@@ -176,7 +176,7 @@ export default function VisionAnalyticsCard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-xs pt-1">
-          <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-stone-700 space-y-1">
+          <div className="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-foreground-subtle space-y-1">
             <span className="font-bold text-emerald-950 flex items-center gap-1">
               <span>✅</span> 驚異的な生存率（被デス 3.46）の源泉
             </span>
@@ -185,7 +185,7 @@ export default function VisionAnalyticsCard() {
             </p>
           </div>
 
-          <div className="p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-stone-700 space-y-1">
+          <div className="p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-foreground-subtle space-y-1">
             <span className="font-bold text-amber-950 flex items-center gap-1">
               <span>⚠️</span> 15分キル関与（KP@15 35%）向上の急所
             </span>
@@ -198,7 +198,7 @@ export default function VisionAnalyticsCard() {
 
       {/* 🎯 3:30 黄金のディープワードスポット3選 */}
       <div className="space-y-2.5">
-        <div className="text-xs font-black text-stone-800 flex items-center gap-1.5">
+        <div className="text-xs font-black text-foreground-soft flex items-center gap-1.5">
           <MapPin size={14} className="text-amber-600" />
           <span>🎯 勝率を跳ね上げる「黄金のディープワードスポット 3選」</span>
         </div>
@@ -217,7 +217,7 @@ export default function VisionAnalyticsCard() {
                     : 'border-border bg-surface hover:bg-background'
                 }`}
               >
-                <div className="text-xs font-black text-stone-900 truncate">
+                <div className="text-xs font-black text-foreground truncate">
                   {spot.title}
                 </div>
                 <div className="text-[10px] font-bold text-amber-700">
@@ -237,7 +237,7 @@ export default function VisionAnalyticsCard() {
             <CheckCircle2 size={13} className="text-amber-600" />
             <span>{DEEP_WARD_SPOTS[selectedSpot].title} の戦術メリット:</span>
           </div>
-          <p className="text-xs text-stone-800 font-medium leading-relaxed">
+          <p className="text-xs text-foreground-soft font-medium leading-relaxed">
             {DEEP_WARD_SPOTS[selectedSpot].benefit}
           </p>
         </div>
@@ -251,7 +251,7 @@ export default function VisionAnalyticsCard() {
               🔴
             </span>
             <div>
-              <h4 className="text-xs sm:text-sm font-black text-stone-900 flex items-center gap-1.5">
+              <h4 className="text-xs sm:text-sm font-black text-foreground flex items-center gap-1.5">
                 <span>コントロールワード 最適購入タイミング ＆ 運用黄金ルール</span>
                 <span className="text-[10px] font-bold px-1.5 py-0.2 bg-rose-100 text-rose-800 rounded">
                   75Gの投資対効果最大化
@@ -269,7 +269,7 @@ export default function VisionAnalyticsCard() {
 
         {/* 4つのベスト購入タイミング */}
         <div className="space-y-2">
-          <span className="text-[11px] font-black text-stone-700 flex items-center gap-1">
+          <span className="text-[11px] font-black text-foreground-subtle flex items-center gap-1">
             <Coins size={13} className="text-amber-600" />
             <span>ベストな購入タイミング（迷わず買う瞬間）:</span>
           </span>
@@ -332,7 +332,7 @@ export default function VisionAnalyticsCard() {
               <AlertTriangle size={13} className="text-amber-700" />
               <span>⚠️ 買ってはいけないNGタイミング（テンポロス）</span>
             </span>
-            <ul className="text-[11px] text-stone-700 space-y-1 font-medium">
+            <ul className="text-[11px] text-foreground-subtle space-y-1 font-medium">
               <li className="flex items-start gap-1">
                 <span className="text-amber-600 font-bold">•</span>
                 <span><strong>コアアイテム完成が75G遅れる時:</strong> 次のパワースパイク（例: ロストチャプターや完成品）があと75Gで届く場合は、ピンクワードを我慢して装備完成を最優先。</span>
@@ -346,14 +346,14 @@ export default function VisionAnalyticsCard() {
 
           {/* ロール別推奨購入目安 */}
           <div className="p-3 bg-background rounded-2xl border border-border space-y-1.5">
-            <span className="text-xs font-black text-stone-900 flex items-center gap-1">
+            <span className="text-xs font-black text-foreground flex items-center gap-1">
               <Shield size={13} className="text-amber-600" />
               <span>ロール別 1試合あたりの推奨購入目安</span>
             </span>
             <div className="grid grid-cols-3 gap-1.5 text-center text-[10px] pt-0.5">
               <div className="p-1.5 bg-surface rounded-xl border border-border">
                 <span className="text-stone-400 font-bold block">TOP / BOT</span>
-                <span className="text-stone-900 font-black text-xs">2〜3本</span>
+                <span className="text-foreground font-black text-xs">2〜3本</span>
                 <span className="text-[9px] text-stone-500 block">リバー防衛</span>
               </div>
               <div className="p-1.5 bg-surface rounded-xl border border-border">

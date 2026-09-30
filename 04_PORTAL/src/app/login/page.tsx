@@ -81,7 +81,7 @@ function LoginContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#f5f1e6] via-[#eae4d4] to-[#ded5be] text-stone-900">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#f5f1e6] via-[#eae4d4] to-[#ded5be] text-foreground">
       <div className="w-full max-w-md bg-surface/80 backdrop-blur-xl border border-black/10 rounded-3xl p-8 shadow-2xl space-y-6 text-center">
         
         {/* ロゴ ＆ タイトル */}
@@ -89,7 +89,7 @@ function LoginContent() {
           <div className="w-16 h-16 rounded-3xl bg-amber-500/10 text-amber-600 border border-amber-500/30 flex items-center justify-center mx-auto text-3xl shadow-sm">
             <Shield size={32} />
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-stone-900">
+          <h1 className="text-2xl font-black tracking-tight text-foreground">
             Sovereign Portal 管理認証
           </h1>
           <p className="text-xs text-stone-500 max-w-xs mx-auto leading-relaxed">
@@ -128,7 +128,7 @@ function LoginContent() {
         {/* 方法2: 🔑 パスワード認証フォーム */}
         <form onSubmit={handleSubmit} className="space-y-4 text-left">
           <div>
-            <label className="block text-xs font-bold text-stone-700 mb-1.5 flex items-center gap-1">
+            <label className="block text-xs font-bold text-foreground-subtle mb-1.5 flex items-center gap-1">
               <Key size={13} className="text-stone-500" />
               管理者パスコード
             </label>
@@ -137,7 +137,7 @@ function LoginContent() {
               placeholder="••••••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm font-mono text-stone-900 focus:outline-none focus:border-amber-500 focus:bg-surface transition-all shadow-inner"
+              className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm font-mono text-foreground focus:outline-none focus:border-amber-500 focus:bg-surface transition-all shadow-inner"
               disabled={isLoading}
               required
             />

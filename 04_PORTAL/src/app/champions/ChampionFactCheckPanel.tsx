@@ -89,7 +89,7 @@ export default function ChampionFactCheckPanel({ champion }: { champion: string 
       {/* 1件ずつ集中処理のプログレスバー */}
       {!loading && items.length > 0 && (
         <div className="bg-surface-subtle border border-border rounded-xl p-3 space-y-2">
-          <div className="flex items-center justify-between text-xs font-extrabold text-stone-800">
+          <div className="flex items-center justify-between text-xs font-extrabold text-foreground-soft">
             <span className="flex items-center gap-1.5 text-amber-900">
               <Sparkles size={14} className="text-amber-600" />
               残り {items.length} 件 （{processedCount + 1} / {initialTotal} 件目を片付け中）

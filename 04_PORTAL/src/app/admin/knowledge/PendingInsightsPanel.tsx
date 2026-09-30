@@ -329,8 +329,8 @@ export default function PendingInsightsPanel() {
       </div>
 
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-black text-stone-900">🧩 未承認のナレッジ {items ? `(${items.length}件)` : ''}</h3>
-        <button onClick={load} disabled={loading} className="text-xs font-bold text-stone-600 hover:text-stone-900 bg-surface-subtle hover:bg-surface-hover/80 px-3 py-1.5 rounded-xl border border-border transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer">
+        <h3 className="text-sm font-black text-foreground">🧩 未承認のナレッジ {items ? `(${items.length}件)` : ''}</h3>
+        <button onClick={load} disabled={loading} className="text-xs font-bold text-stone-600 hover:text-foreground bg-surface-subtle hover:bg-surface-hover/80 px-3 py-1.5 rounded-xl border border-border transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer">
           <RefreshCw size={13} className={loading ? 'animate-spin' : ''} /> 再読み込み
         </button>
       </div>
@@ -339,7 +339,7 @@ export default function PendingInsightsPanel() {
       {items && items.length > 0 && (
         <div className="bg-surface border border-border/90 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-stone-700 select-none">
+            <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-foreground-subtle select-none">
               <input
                 type="checkbox"
                 checked={selectedIds.size === items.length && items.length > 0}
@@ -417,7 +417,7 @@ export default function PendingInsightsPanel() {
                   />
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="text-sm font-bold text-stone-900">{item.title}</h4>
+                      <h4 className="text-sm font-bold text-foreground">{item.title}</h4>
                       <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border shrink-0 ${
                         item.is_atomic ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-teal-50 border-teal-200 text-teal-700'
                       }`}>
@@ -442,7 +442,7 @@ export default function PendingInsightsPanel() {
                 </span>
               </div>
 
-              <p className="text-xs text-stone-700 leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto">{item.content}</p>
+              <p className="text-xs text-foreground-subtle leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto">{item.content}</p>
 
               <div className="flex items-end justify-between gap-4 pt-3 border-t border-stone-100 flex-wrap">
                 <div className="flex flex-col gap-1 min-w-[220px]">

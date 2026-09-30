@@ -84,7 +84,7 @@ export default function PlayerStyleRadarCard() {
         <div className="flex items-center gap-2">
           <span className="text-xl">📊</span>
           <div>
-            <h3 className="font-black text-sm text-stone-900 flex items-center gap-2">
+            <h3 className="font-black text-sm text-foreground flex items-center gap-2">
               <span>プレイスタイル深層特性カルテ</span>
               <span className="text-[10px] font-bold px-2 py-0.5 bg-surface-subtle text-stone-600 border border-border rounded-full" title="your.ggから手入力で記録した固定値です。試合ごとに自動更新はされません。">
                 {PROFILE_SNAPSHOT_DATE} 時点の手入力値
@@ -102,7 +102,7 @@ export default function PlayerStyleRadarCard() {
             type="button"
             onClick={() => setActiveTab('profile')}
             className={`px-2 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
-              activeTab === 'profile' ? 'bg-surface text-stone-900 shadow-2xs' : 'text-stone-500 hover:text-stone-800'
+              activeTab === 'profile' ? 'bg-surface text-foreground shadow-2xs' : 'text-stone-500 hover:text-foreground-soft'
             }`}
           >
             📈 現在
@@ -111,7 +111,7 @@ export default function PlayerStyleRadarCard() {
             type="button"
             onClick={() => setActiveTab('timeline')}
             className={`px-2 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
-              activeTab === 'timeline' ? 'bg-surface text-stone-900 shadow-2xs text-amber-700' : 'text-stone-500 hover:text-stone-800'
+              activeTab === 'timeline' ? 'bg-surface text-foreground shadow-2xs text-amber-700' : 'text-stone-500 hover:text-foreground-soft'
             }`}
           >
             📊 5大推移
@@ -120,7 +120,7 @@ export default function PlayerStyleRadarCard() {
             type="button"
             onClick={() => setActiveTab('vision')}
             className={`px-2 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
-              activeTab === 'vision' ? 'bg-surface text-amber-700 font-black shadow-2xs' : 'text-stone-500 hover:text-stone-800'
+              activeTab === 'vision' ? 'bg-surface text-amber-700 font-black shadow-2xs' : 'text-stone-500 hover:text-foreground-soft'
             }`}
           >
             👁️ 視界解析
@@ -129,7 +129,7 @@ export default function PlayerStyleRadarCard() {
             type="button"
             onClick={() => setActiveTab('types')}
             className={`px-2 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
-              activeTab === 'types' ? 'bg-surface text-stone-900 shadow-2xs' : 'text-stone-500 hover:text-stone-800'
+              activeTab === 'types' ? 'bg-surface text-foreground shadow-2xs' : 'text-stone-500 hover:text-foreground-soft'
             }`}
           >
             🧭 4大比較
@@ -160,7 +160,7 @@ export default function PlayerStyleRadarCard() {
 
           {/* 5大指標レーダーバー */}
           <div className="rounded-2xl border border-border bg-background/50 p-4 space-y-3">
-            <div className="text-xs font-black text-stone-800 flex items-center justify-between">
+            <div className="text-xs font-black text-foreground-soft flex items-center justify-between">
               <span>📊 プレイスタイル 5大レーダー解析</span>
               <span className="text-[10px] text-stone-400 font-normal">同ランク比較（{PROFILE_SNAPSHOT_DATE} 時点の手入力値）</span>
             </div>
@@ -172,7 +172,7 @@ export default function PlayerStyleRadarCard() {
                   <span className="text-emerald-700 flex items-center gap-1">
                     <Shield size={12} /> 生存率・デス回避 (Survival)
                   </span>
-                  <span className="text-stone-900 font-black">96点 <span className="text-[10px] text-emerald-600 font-normal">(上位4%)</span></span>
+                  <span className="text-foreground font-black">96点 <span className="text-[10px] text-emerald-600 font-normal">(上位4%)</span></span>
                 </div>
                 <div className="h-2 w-full rounded-full bg-surface-hover overflow-hidden">
                   <div className="h-full bg-emerald-500 rounded-full" style={{ width: '96%' }} />
@@ -185,7 +185,7 @@ export default function PlayerStyleRadarCard() {
                   <span className="text-teal-700 flex items-center gap-1">
                     <Zap size={12} /> 15分CSリード (CSD@15)
                   </span>
-                  <span className="text-stone-900 font-black">88点 <span className="text-[10px] text-teal-600 font-normal">(上位12% / +13.9CS)</span></span>
+                  <span className="text-foreground font-black">88点 <span className="text-[10px] text-teal-600 font-normal">(上位12% / +13.9CS)</span></span>
                 </div>
                 <div className="h-2 w-full rounded-full bg-surface-hover overflow-hidden">
                   <div className="h-full bg-teal-500 rounded-full" style={{ width: '88%' }} />
@@ -211,7 +211,7 @@ export default function PlayerStyleRadarCard() {
                   <span className="text-amber-700 flex items-center gap-1">
                     <Target size={12} /> オブジェクト確保 (Obj Control)
                   </span>
-                  <span className="text-stone-900 font-black">74点 <span className="text-[10px] text-amber-700 font-normal">(標準以上)</span></span>
+                  <span className="text-foreground font-black">74点 <span className="text-[10px] text-amber-700 font-normal">(標準以上)</span></span>
                 </div>
                 <div className="h-2 w-full rounded-full bg-surface-hover overflow-hidden">
                   <div className="h-full bg-amber-500 rounded-full" style={{ width: '74%' }} />
@@ -224,7 +224,7 @@ export default function PlayerStyleRadarCard() {
                   <span className="text-amber-700 flex items-center gap-1">
                     <Crosshair size={12} /> 集団戦ポジショニング (Teamfight)
                   </span>
-                  <span className="text-stone-900 font-black">82点 <span className="text-[10px] text-amber-600 font-normal">(高KDA維持)</span></span>
+                  <span className="text-foreground font-black">82点 <span className="text-[10px] text-amber-600 font-normal">(高KDA維持)</span></span>
                 </div>
                 <div className="h-2 w-full rounded-full bg-surface-hover overflow-hidden">
                   <div className="h-full bg-amber-500 rounded-full" style={{ width: '82%' }} />
@@ -239,7 +239,7 @@ export default function PlayerStyleRadarCard() {
               <span className="p-1 rounded-md bg-amber-200 text-amber-900">⚠️</span>
               <span>勝率を跳ね上げる「ボトルネック解消」の急所</span>
             </div>
-            <p className="text-xs text-stone-700 leading-relaxed font-medium">
+            <p className="text-xs text-foreground-subtle leading-relaxed font-medium">
               {p.coreBottleNeck}
             </p>
             <div className="rounded-xl border border-amber-400/60 bg-surface p-3 space-y-1">
@@ -247,7 +247,7 @@ export default function PlayerStyleRadarCard() {
                 <CheckCircle2 size={13} className="text-amber-600" />
                 <span>今日のソロQで実践する具体的アクション:</span>
               </div>
-              <p className="text-xs text-stone-800 font-bold leading-relaxed">
+              <p className="text-xs text-foreground-soft font-bold leading-relaxed">
                 {p.actionGuideline}
               </p>
             </div>
@@ -262,7 +262,7 @@ export default function PlayerStyleRadarCard() {
         <div className="space-y-4 animate-in fade-in">
           {/* 期間選択ピル */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs font-bold text-stone-700">
+            <div className="flex items-center justify-between text-xs font-bold text-foreground-subtle">
               <span className="flex items-center gap-1.5">
                 <TrendingUp size={14} className="text-amber-600" />
                 <span>時系列スコア推移（過去スプリット比較）</span>
@@ -289,7 +289,7 @@ export default function PlayerStyleRadarCard() {
                     <div className="text-[10px] font-bold text-stone-500 truncate">
                       {pt.period}
                     </div>
-                    <div className="text-xs font-black text-stone-900 truncate">
+                    <div className="text-xs font-black text-foreground truncate">
                       {pt.label}
                     </div>
                     <div className="flex items-center gap-1 text-[10px] font-bold text-amber-700">
@@ -308,7 +308,7 @@ export default function PlayerStyleRadarCard() {
               <div className="flex items-center gap-2">
                 <span className="text-lg">📌</span>
                 <div>
-                  <div className="text-xs font-black text-stone-900">
+                  <div className="text-xs font-black text-foreground">
                     {selectedPeriod.label} の特性 ＆ 総括
                   </div>
                   <div className="text-[10px] text-stone-500">
@@ -332,7 +332,7 @@ export default function PlayerStyleRadarCard() {
 
           {/* 5大指標の推移バー ＆ 変化差分 */}
           <div className="rounded-2xl border border-border bg-surface p-4 space-y-3.5 shadow-2xs">
-            <div className="text-xs font-black text-stone-800 flex items-center justify-between border-b border-stone-100 pb-2">
+            <div className="text-xs font-black text-foreground-soft flex items-center justify-between border-b border-stone-100 pb-2">
               <span>📊 5大指標スコアの変化</span>
               {prevPeriod && (
                 <span className="text-[10px] text-stone-500 font-bold">
@@ -354,7 +354,7 @@ export default function PlayerStyleRadarCard() {
                         {selectedPeriod.survival >= prevPeriod.survival ? `▲ +${selectedPeriod.survival - prevPeriod.survival}` : `▼ -${prevPeriod.survival - selectedPeriod.survival}`}
                       </span>
                     )}
-                    <span className="text-stone-900 font-black">{selectedPeriod.survival}点</span>
+                    <span className="text-foreground font-black">{selectedPeriod.survival}点</span>
                   </div>
                 </div>
                 <div className="h-2 w-full rounded-full bg-surface-subtle overflow-hidden">
@@ -374,7 +374,7 @@ export default function PlayerStyleRadarCard() {
                         {selectedPeriod.farm >= prevPeriod.farm ? `▲ +${selectedPeriod.farm - prevPeriod.farm}` : `▼ -${prevPeriod.farm - selectedPeriod.farm}`}
                       </span>
                     )}
-                    <span className="text-stone-900 font-black">{selectedPeriod.farm}点</span>
+                    <span className="text-foreground font-black">{selectedPeriod.farm}点</span>
                   </div>
                 </div>
                 <div className="h-2 w-full rounded-full bg-surface-subtle overflow-hidden">
@@ -415,7 +415,7 @@ export default function PlayerStyleRadarCard() {
                         {selectedPeriod.objectives >= prevPeriod.objectives ? `▲ +${selectedPeriod.objectives - prevPeriod.objectives}` : `▼ -${prevPeriod.objectives - selectedPeriod.objectives}`}
                       </span>
                     )}
-                    <span className="text-stone-900 font-black">{selectedPeriod.objectives}点</span>
+                    <span className="text-foreground font-black">{selectedPeriod.objectives}点</span>
                   </div>
                 </div>
                 <div className="h-2 w-full rounded-full bg-surface-subtle overflow-hidden">
@@ -435,7 +435,7 @@ export default function PlayerStyleRadarCard() {
                         {selectedPeriod.teamfight >= prevPeriod.teamfight ? `▲ +${selectedPeriod.teamfight - prevPeriod.teamfight}` : `▼ -${prevPeriod.teamfight - selectedPeriod.teamfight}`}
                       </span>
                     )}
-                    <span className="text-stone-900 font-black">{selectedPeriod.teamfight}点</span>
+                    <span className="text-foreground font-black">{selectedPeriod.teamfight}点</span>
                   </div>
                 </div>
                 <div className="h-2 w-full rounded-full bg-surface-subtle overflow-hidden">
@@ -448,7 +448,7 @@ export default function PlayerStyleRadarCard() {
           {/* 成長トレンドの総括バナー */}
           <div className="rounded-2xl border border-emerald-300 bg-emerald-50/70 p-3.5 flex items-start gap-2.5">
             <span className="text-xl">📈</span>
-            <div className="space-y-0.5 text-xs text-stone-700">
+            <div className="space-y-0.5 text-xs text-foreground-subtle">
               <div className="font-black text-emerald-950">
                 克服トレンドの成果: 15分キル関与率 +7%（28% ➔ 35%）
               </div>
@@ -478,7 +478,7 @@ export default function PlayerStyleRadarCard() {
                     上位 {vision.visionRankPercentile}%
                   </span>
                 </div>
-                <p className="text-xs text-stone-700 leading-relaxed font-medium">
+                <p className="text-xs text-foreground-subtle leading-relaxed font-medium">
                   {vision.strengthsSummary}
                 </p>
               </div>
@@ -493,7 +493,7 @@ export default function PlayerStyleRadarCard() {
                 <span>分間視界スコア (VS/m)</span>
                 <span className="text-amber-600 font-bold">上位18%</span>
               </div>
-              <div className="text-base font-black text-stone-900">
+              <div className="text-base font-black text-foreground">
                 {vision.visionScorePerMin} <span className="text-xs font-normal text-stone-400">/分</span>
               </div>
               <div className="text-[10px] text-emerald-700 font-bold">
@@ -507,7 +507,7 @@ export default function PlayerStyleRadarCard() {
                 <span>ピンクワード購入</span>
                 <span className="text-emerald-600 font-bold">高水準</span>
               </div>
-              <div className="text-base font-black text-stone-900">
+              <div className="text-base font-black text-foreground">
                 {vision.controlWardsPerGame} <span className="text-xs font-normal text-stone-400">本 / 試合</span>
               </div>
               <div className="text-[10px] text-stone-500 font-bold">
@@ -521,7 +521,7 @@ export default function PlayerStyleRadarCard() {
                 <span>分間ワード設置</span>
                 <span className="text-stone-400">Placing</span>
               </div>
-              <div className="text-base font-black text-stone-900">
+              <div className="text-base font-black text-foreground">
                 {vision.wardsPlacedPerMin} <span className="text-xs font-normal text-stone-400">個 / 分</span>
               </div>
               <div className="text-[10px] text-stone-500">
@@ -535,7 +535,7 @@ export default function PlayerStyleRadarCard() {
                 <span>分間ワード破壊</span>
                 <span className="text-stone-400">Clearing</span>
               </div>
-              <div className="text-base font-black text-stone-900">
+              <div className="text-base font-black text-foreground">
                 {vision.wardsClearedPerMin} <span className="text-xs font-normal text-stone-400">個 / 分</span>
               </div>
               <div className="text-[10px] text-stone-500">
@@ -546,7 +546,7 @@ export default function PlayerStyleRadarCard() {
 
           {/* 視界配置バランス（ディープ 24% vs 防衛 76%） */}
           <div className="p-4 bg-surface rounded-2xl border border-border shadow-2xs space-y-3">
-            <div className="flex items-center justify-between text-xs font-black text-stone-800">
+            <div className="flex items-center justify-between text-xs font-black text-foreground-soft">
               <span className="flex items-center gap-1.5">
                 <MapPin size={13} className="text-amber-600" />
                 <span>視界配置バランス ＆ 侵入深度</span>
@@ -593,7 +593,7 @@ export default function PlayerStyleRadarCard() {
               <Sparkles size={13} className="text-amber-600" />
               <span>客観データから導く「視界の急所アクション」:</span>
             </div>
-            <p className="text-xs text-stone-800 font-bold leading-relaxed">
+            <p className="text-xs text-foreground-soft font-bold leading-relaxed">
               {vision.actionAdvice}
             </p>
           </div>
@@ -622,7 +622,7 @@ export default function PlayerStyleRadarCard() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-lg">{t.icon}</span>
-                    <span className="font-black text-xs text-stone-900">{t.name}</span>
+                    <span className="font-black text-xs text-foreground">{t.name}</span>
                   </div>
                   <span
                     className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
@@ -644,7 +644,7 @@ export default function PlayerStyleRadarCard() {
                   <div className="text-rose-700 font-bold">
                     <span className="text-stone-400">弱み:</span> {t.cons}
                   </div>
-                  <div className="text-stone-700 font-bold pt-0.5">
+                  <div className="text-foreground-subtle font-bold pt-0.5">
                     <span className="text-stone-400">相性◎:</span> {t.recommendedChamps.join(', ')}
                   </div>
                 </div>

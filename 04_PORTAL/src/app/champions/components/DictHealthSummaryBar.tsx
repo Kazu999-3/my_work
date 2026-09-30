@@ -168,8 +168,8 @@ export default function DictHealthSummaryBar({
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-black text-stone-900">辞典ヘルス ＆ パッチ整合度</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-subtle text-stone-700 border border-border">
+              <span className="text-xs font-black text-foreground">辞典ヘルス ＆ パッチ整合度</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-subtle text-foreground-subtle border border-border">
                 基準パッチ: {data.currentPatch || '最新'}
               </span>
               <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-800">
@@ -217,7 +217,7 @@ export default function DictHealthSummaryBar({
             <button
               type="button"
               onClick={onOpenFullHealth}
-              className="px-2.5 py-1.5 rounded-xl bg-surface-subtle hover:bg-surface-hover/80 text-stone-700 text-xs font-bold transition border border-border flex items-center gap-1 cursor-pointer"
+              className="px-2.5 py-1.5 rounded-xl bg-surface-subtle hover:bg-surface-hover/80 text-foreground-subtle text-xs font-bold transition border border-border flex items-center gap-1 cursor-pointer"
               title="監査ログ・ファクトチェック・変更履歴を開く"
             >
               <span>詳細点検</span>

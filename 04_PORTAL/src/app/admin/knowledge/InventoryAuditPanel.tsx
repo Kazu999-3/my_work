@@ -179,7 +179,7 @@ export default function InventoryAuditPanel() {
       {/* タイトル ＆ アクション */}
       <div className="flex items-center justify-between border-b border-stone-100 pb-4 flex-wrap gap-3">
         <div>
-          <h2 className="text-lg font-black text-stone-900 flex items-center gap-2">
+          <h2 className="text-lg font-black text-foreground flex items-center gap-2">
             🧹 ナレッジ ＆ チャンピオン辞典 全自動棚卸しハブ
           </h2>
           <p className="text-xs text-stone-500 mt-0.5">
@@ -201,7 +201,7 @@ export default function InventoryAuditPanel() {
           <button
             onClick={loadAuditData}
             disabled={loading}
-            className="px-4 py-2 rounded-xl bg-surface-subtle hover:bg-surface-hover text-stone-800 text-xs font-bold transition flex items-center gap-1.5"
+            className="px-4 py-2 rounded-xl bg-surface-subtle hover:bg-surface-hover text-foreground-soft text-xs font-bold transition flex items-center gap-1.5"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> 再読み込み
           </button>
@@ -324,7 +324,7 @@ export default function InventoryAuditPanel() {
                     <div className="flex items-center gap-2.5 min-w-0">
                       <img src={getChampIcon(f.champion_name)} alt={f.display_name} className="w-10 h-10 rounded-xl border border-border object-cover shrink-0" />
                       <div className="min-w-0">
-                        <span className="font-extrabold text-stone-900 text-xs truncate block">{f.display_name}</span>
+                        <span className="font-extrabold text-foreground text-xs truncate block">{f.display_name}</span>
                         <span className="text-[10px] text-stone-400 block font-mono">{f.champion_name}</span>
                       </div>
                     </div>
@@ -339,7 +339,7 @@ export default function InventoryAuditPanel() {
                       </button>
                       <Link
                         href={`/champions?select=${encodeURIComponent(f.champion_name)}`}
-                        className="p-1.5 rounded-lg bg-surface-hover hover:bg-stone-300 text-stone-700 transition text-[10px] font-bold"
+                        className="p-1.5 rounded-lg bg-surface-hover hover:bg-stone-300 text-foreground-subtle transition text-[10px] font-bold"
                         title="辞典を開いて直接編集"
                       >
                         <ExternalLink size={12} />
@@ -363,7 +363,7 @@ export default function InventoryAuditPanel() {
                     <div className="flex items-center gap-2.5">
                       <img src={getChampIcon(f.champion_name)} alt={f.display_name} className="w-10 h-10 rounded-xl border border-border object-cover shrink-0" />
                       <div>
-                        <span className="font-extrabold text-stone-900 text-xs block">{f.display_name}</span>
+                        <span className="font-extrabold text-foreground text-xs block">{f.display_name}</span>
                         <span className="text-[10px] text-teal-700 font-bold bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200">
                           {f.patch_meta_patch ? `Patch ${f.patch_meta_patch}` : '未解析'}
                         </span>
@@ -393,7 +393,7 @@ export default function InventoryAuditPanel() {
                     <div className="flex items-center gap-2.5">
                       <img src={getChampIcon(f.champion_name)} alt={f.display_name} className="w-10 h-10 rounded-xl border border-border object-cover shrink-0" />
                       <div>
-                        <span className="font-extrabold text-stone-900 text-xs block">{f.display_name}</span>
+                        <span className="font-extrabold text-foreground text-xs block">{f.display_name}</span>
                         <div className="flex gap-1 text-[9px] font-bold text-rose-600 mt-0.5">
                           {!f.has_strengths && <span>[要コンテンツ入力]</span>}
                         </div>
@@ -425,17 +425,17 @@ export default function InventoryAuditPanel() {
                     <div key={item.id} className="p-3.5 rounded-2xl border border-border bg-background/60 flex items-start justify-between gap-3">
                       <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-extrabold text-stone-900 text-xs">{item.champion}</span>
+                          <span className="font-extrabold text-foreground text-xs">{item.champion}</span>
                           {item.enemy_champion && (
                             <span className="text-[10px] bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded-full border border-rose-200">
                               vs {item.enemy_champion}
                             </span>
                           )}
-                          <span className="text-[10px] bg-surface-hover text-stone-700 font-bold px-2 py-0.5 rounded-full">
+                          <span className="text-[10px] bg-surface-hover text-foreground-subtle font-bold px-2 py-0.5 rounded-full">
                             {item.category}
                           </span>
                         </div>
-                        <span className="text-xs font-bold text-stone-800 block">{item.title}</span>
+                        <span className="text-xs font-bold text-foreground-soft block">{item.title}</span>
                         <p className="text-xs text-stone-600 line-clamp-2 leading-relaxed">{item.content}</p>
                       </div>
 

@@ -40,10 +40,10 @@ export default function GuideBotTab() {
             <Bot size={14} className="text-amber-600" />
             KTM Discord Bot マニュアル
           </div>
-          <h2 className="text-xl md:text-2xl font-black text-stone-900">
+          <h2 className="text-xl md:text-2xl font-black text-foreground">
             Discord Bot コマンド ＆ パネル操作ガイド
           </h2>
-          <p className="text-stone-700 text-xs md:text-sm max-w-2xl font-medium leading-relaxed">
+          <p className="text-foreground-subtle text-xs md:text-sm max-w-2xl font-medium leading-relaxed">
             募集作成からチーム分け、希望レーンの登録まで、Discord内で完結する便利なBotコマンドとボタン操作をすべて解説します。
           </p>
         </div>
@@ -51,7 +51,7 @@ export default function GuideBotTab() {
 
       {/* 🚀 クイックコマンド一覧 */}
       <div className="bg-surface rounded-3xl p-6 md:p-8 border border-border shadow-xs space-y-4">
-        <h3 className="text-base font-black text-stone-900 flex items-center gap-2">
+        <h3 className="text-base font-black text-foreground flex items-center gap-2">
           <Terminal size={18} className="text-amber-600" />
           よく使うスラッシュコマンド一覧
         </h3>
@@ -107,14 +107,14 @@ export default function GuideBotTab() {
                     {item.tag}
                   </span>
                 </div>
-                <p className="text-xs text-stone-700 font-medium">{item.desc}</p>
+                <p className="text-xs text-foreground-subtle font-medium">{item.desc}</p>
               </div>
               <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/60 text-[11px]">
                 <code className="font-mono text-stone-500 truncate">{item.example}</code>
                 <button
                   type="button"
                   onClick={() => copyCommand(item.cmd)}
-                  className="px-2 py-1 rounded-lg bg-surface border border-border hover:bg-surface-subtle text-stone-700 text-[10px] font-bold flex items-center gap-1 shrink-0 cursor-pointer shadow-2xs"
+                  className="px-2 py-1 rounded-lg bg-surface border border-border hover:bg-surface-subtle text-foreground-subtle text-[10px] font-bold flex items-center gap-1 shrink-0 cursor-pointer shadow-2xs"
                   title="コマンドをコピー"
                 >
                   {copiedCmd === item.cmd ? (
@@ -147,7 +147,7 @@ export default function GuideBotTab() {
                 📢
               </div>
               <div>
-                <h3 className="text-base font-black text-stone-900">
+                <h3 className="text-base font-black text-foreground">
                   1. メンバー募集コマンド <code className="font-mono text-amber-700">/recruit</code> とボタン操作
                 </h3>
                 <p className="text-xs text-stone-500">募集パネルの作り方と、表示される各種ボタンの役割</p>
@@ -158,8 +158,8 @@ export default function GuideBotTab() {
 
           {openSection === 'recruit' && (
             <div className="p-6 pt-0 border-t border-stone-100 space-y-5">
-              <div className="bg-background rounded-2xl p-4 border border-border text-xs text-stone-700 space-y-2">
-                <div className="font-bold text-stone-900 flex items-center gap-1.5">
+              <div className="bg-background rounded-2xl p-4 border border-border text-xs text-foreground-subtle space-y-2">
+                <div className="font-bold text-foreground flex items-center gap-1.5">
                   <Sparkles size={14} className="text-amber-600" />
                   爆速AIメモ解析機能
                 </div>
@@ -169,59 +169,59 @@ export default function GuideBotTab() {
               </div>
 
               <div>
-                <h4 className="text-xs font-black text-stone-900 mb-2">🔘 募集パネルのボタン一覧</h4>
+                <h4 className="text-xs font-black text-foreground mb-2">🔘 募集パネルのボタン一覧</h4>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
-                      <tr className="bg-surface-subtle/80 text-stone-700 border-b border-border">
+                      <tr className="bg-surface-subtle/80 text-foreground-subtle border-b border-border">
                         <th className="p-2.5 font-bold">ボタン</th>
                         <th className="p-2.5 font-bold">押せる人</th>
                         <th className="p-2.5 font-bold">動作・効果</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-stone-100 text-stone-700">
+                    <tbody className="divide-y divide-stone-100 text-foreground-subtle">
                       <tr>
-                        <td className="p-2.5 font-bold text-stone-900">✋ どこでも参加</td>
+                        <td className="p-2.5 font-bold text-foreground">✋ どこでも参加</td>
                         <td className="p-2.5">誰でも</td>
                         <td className="p-2.5">参加者リストに追加され、枠を1つ確保します。</td>
                       </tr>
                       <tr>
-                        <td className="p-2.5 font-bold text-stone-900">🛡️ Top / ⚔️ Jg 等</td>
+                        <td className="p-2.5 font-bold text-foreground">🛡️ Top / ⚔️ Jg 等</td>
                         <td className="p-2.5">誰でも（ノーマル時）</td>
                         <td className="p-2.5">希望のレーン枠に直接エントリーします。</td>
                       </tr>
                       <tr>
-                        <td className="p-2.5 font-bold text-stone-900">⏳ 待機 / 👁️ 観戦希望</td>
+                        <td className="p-2.5 font-bold text-foreground">⏳ 待機 / 👁️ 観戦希望</td>
                         <td className="p-2.5">誰でも</td>
                         <td className="p-2.5">対戦枠には入らず、待機枠に入ります（観戦Pityが貯まります）。</td>
                       </tr>
                       <tr>
-                        <td className="p-2.5 font-bold text-stone-900">🏃 離脱</td>
+                        <td className="p-2.5 font-bold text-foreground">🏃 離脱</td>
                         <td className="p-2.5">誰でも</td>
                         <td className="p-2.5">参加・待機リストから抜けます。</td>
                       </tr>
                       <tr>
-                        <td className="p-2.5 font-bold text-stone-900">🚀 10人に拡張</td>
+                        <td className="p-2.5 font-bold text-foreground">🚀 10人に拡張</td>
                         <td className="p-2.5">募集主のみ</td>
                         <td className="p-2.5">ノーマル/ARAM等の5人募集を、10人のカスタム募集に即座に拡張します。</td>
                       </tr>
                       <tr>
-                        <td className="p-2.5 font-bold text-stone-900">👥 代理追加</td>
+                        <td className="p-2.5 font-bold text-foreground">👥 代理追加</td>
                         <td className="p-2.5">募集主のみ</td>
                         <td className="p-2.5">Discordメンバーを選択し、代わりに募集へ追加します。</td>
                       </tr>
                       <tr>
-                        <td className="p-2.5 font-bold text-stone-900">📢 一括連絡</td>
+                        <td className="p-2.5 font-bold text-foreground">📢 一括連絡</td>
                         <td className="p-2.5">募集主のみ</td>
                         <td className="p-2.5">参加者全員へ一括でメンション連絡を送信します。</td>
                       </tr>
                       <tr>
-                        <td className="p-2.5 font-bold text-stone-900">🚩 募集終了（通知あり）</td>
+                        <td className="p-2.5 font-bold text-foreground">🚩 募集終了（通知あり）</td>
                         <td className="p-2.5">募集主のみ</td>
                         <td className="p-2.5">参加者全員にメンションで締切・解散通知を送信して締め切ります。</td>
                       </tr>
                       <tr>
-                        <td className="p-2.5 font-bold text-stone-900">🔕 募集終了（通知なし）</td>
+                        <td className="p-2.5 font-bold text-foreground">🔕 募集終了（通知なし）</td>
                         <td className="p-2.5">募集主のみ</td>
                         <td className="p-2.5">メンション通知を飛ばさずに静かに募集パネルを締め切ります。</td>
                       </tr>
@@ -245,7 +245,7 @@ export default function GuideBotTab() {
                 ⚔️
               </div>
               <div>
-                <h3 className="text-base font-black text-stone-900">
+                <h3 className="text-base font-black text-foreground">
                   2. 週末定期カスタム募集（土曜本戦 ＆ 日曜お祭り）
                 </h3>
                 <p className="text-xs text-stone-500">毎週月曜12時に自動投稿される定期募集と参加ボタンの役割</p>
@@ -256,21 +256,21 @@ export default function GuideBotTab() {
 
           {openSection === 'periodic' && (
             <div className="p-6 pt-0 border-t border-stone-100 space-y-5">
-              <div className="bg-background rounded-2xl p-4 border border-border text-xs text-stone-700 space-y-2">
-                <div className="font-bold text-stone-900 flex items-center gap-1.5">
+              <div className="bg-background rounded-2xl p-4 border border-border text-xs text-foreground-subtle space-y-2">
+                <div className="font-bold text-foreground flex items-center gap-1.5">
                   <Sparkles size={14} className="text-amber-600" />
                   定期カスタムの開催日程 ＆ 通知スケジュール
                 </div>
                 <ul className="space-y-1 text-stone-600">
-                  <li>・<strong className="text-stone-800">毎週月曜 12:00:</strong> 土日分の募集カードが自動投下されます。</li>
-                  <li>・<strong className="text-stone-800">毎週水曜 12:00:</strong> 中間人数アナウンス（あと◯名で確定）。</li>
-                  <li>・<strong className="text-stone-800">毎週金曜 19:00:</strong> 前日最終アナウンス（土曜開催の直前確認）。</li>
-                  <li>・<strong className="text-stone-800">当日 20:00:</strong> 開催可否の最終判定。10名未満の部門は自動中止となり、ワンクリックで「ノーマル」「ARAM/メイヘム」の代替募集へ切り替わります。</li>
+                  <li>・<strong className="text-foreground-soft">毎週月曜 12:00:</strong> 土日分の募集カードが自動投下されます。</li>
+                  <li>・<strong className="text-foreground-soft">毎週水曜 12:00:</strong> 中間人数アナウンス（あと◯名で確定）。</li>
+                  <li>・<strong className="text-foreground-soft">毎週金曜 19:00:</strong> 前日最終アナウンス（土曜開催の直前確認）。</li>
+                  <li>・<strong className="text-foreground-soft">当日 20:00:</strong> 開催可否の最終判定。10名未満の部門は自動中止となり、ワンクリックで「ノーマル」「ARAM/メイヘム」の代替募集へ切り替わります。</li>
                 </ul>
               </div>
 
               <div>
-                <h4 className="text-xs font-black text-stone-900 mb-2">🔘 柔軟な参加スタイル（フル / 1戦のみ / 途中参加）</h4>
+                <h4 className="text-xs font-black text-foreground mb-2">🔘 柔軟な参加スタイル（フル / 1戦のみ / 途中参加）</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div className="p-3.5 rounded-2xl bg-teal-50/70 border border-teal-200 space-y-1.5">
                     <div className="font-black text-xs text-teal-900 flex items-center gap-1.5">
@@ -316,7 +316,7 @@ export default function GuideBotTab() {
                 🎯
               </div>
               <div>
-                <h3 className="text-base font-black text-stone-900">
+                <h3 className="text-base font-black text-foreground">
                   2. レーン設定コマンド <code className="font-mono text-amber-700">/lane</code> とこだわり度
                 </h3>
                 <p className="text-xs text-stone-500">希望ロール・NGロール・対面格上許可の設定方法</p>
@@ -328,27 +328,27 @@ export default function GuideBotTab() {
           {openSection === 'lane' && (
             <div className="p-6 pt-0 border-t border-stone-100 space-y-5">
               <p className="text-xs text-stone-600 leading-relaxed">
-                チーム分けAIはあなたの設定した希望レーンとNGレーンを参照し、全員が納得できる配置を自動計算します。ポータルの <strong className="text-stone-900 font-bold">マイページ</strong> からも同一設定が可能です。
+                チーム分けAIはあなたの設定した希望レーンとNGレーンを参照し、全員が納得できる配置を自動計算します。ポータルの <strong className="text-foreground font-bold">マイページ</strong> からも同一設定が可能です。
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 rounded-2xl bg-background border border-border/80 space-y-2">
-                  <h4 className="text-xs font-black text-stone-900">設定パラメータ</h4>
+                  <h4 className="text-xs font-black text-foreground">設定パラメータ</h4>
                   <ul className="text-xs text-stone-600 space-y-1.5">
-                    <li>・<strong className="text-stone-800">main:</strong> メインレーン（TOP / JG / MID / ADC / SUP / ALL）</li>
-                    <li>・<strong className="text-stone-800">sub:</strong> サブレーン（2番目に得意な位置）</li>
-                    <li>・<strong className="text-stone-800">ng1 / ng2:</strong> NGレーン（絶対に行きたくない位置）</li>
-                    <li>・<strong className="text-stone-800">weight:</strong> こだわり度（1〜3）</li>
-                    <li>・<strong className="text-stone-800">allow_higher:</strong> 格上との対面を許容するか</li>
+                    <li>・<strong className="text-foreground-soft">main:</strong> メインレーン（TOP / JG / MID / ADC / SUP / ALL）</li>
+                    <li>・<strong className="text-foreground-soft">sub:</strong> サブレーン（2番目に得意な位置）</li>
+                    <li>・<strong className="text-foreground-soft">ng1 / ng2:</strong> NGレーン（絶対に行きたくない位置）</li>
+                    <li>・<strong className="text-foreground-soft">weight:</strong> こだわり度（1〜3）</li>
+                    <li>・<strong className="text-foreground-soft">allow_higher:</strong> 格上との対面を許容するか</li>
                   </ul>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-background border border-border/80 space-y-2">
-                  <h4 className="text-xs font-black text-stone-900">こだわり度（weight）の目安</h4>
+                  <h4 className="text-xs font-black text-foreground">こだわり度（weight）の目安</h4>
                   <ul className="text-xs text-stone-600 space-y-1.5">
-                    <li>・<strong className="text-stone-800">1 (柔軟):</strong> チームバランス優先。他レーンでもOK</li>
-                    <li>・<strong className="text-stone-800">2 (普通):</strong> なるべく希望レーンに行きたい（標準）</li>
-                    <li>・<strong className="text-stone-800">3 (絶対):</strong> 何が何でも希望レーンでプレイしたい</li>
+                    <li>・<strong className="text-foreground-soft">1 (柔軟):</strong> チームバランス優先。他レーンでもOK</li>
+                    <li>・<strong className="text-foreground-soft">2 (普通):</strong> なるべく希望レーンに行きたい（標準）</li>
+                    <li>・<strong className="text-foreground-soft">3 (絶対):</strong> 何が何でも希望レーンでプレイしたい</li>
                   </ul>
                 </div>
               </div>
@@ -368,7 +368,7 @@ export default function GuideBotTab() {
                 ⚔️
               </div>
               <div>
-                <h3 className="text-base font-black text-stone-900">
+                <h3 className="text-base font-black text-foreground">
                   3. チーム分けコマンド <code className="font-mono text-emerald-700">/balance</code> と3つのプリセット
                 </h3>
                 <p className="text-xs text-stone-500">AIが提案する3タイプのチーム分け案と投票の仕組み</p>
@@ -392,14 +392,14 @@ export default function GuideBotTab() {
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-background border border-border space-y-1">
-                  <div className="font-black text-xs text-stone-900">案B: 戦力均等</div>
+                  <div className="font-black text-xs text-foreground">案B: 戦力均等</div>
                   <p className="text-[11px] text-stone-600 leading-relaxed">
                     レーン適性を無視し、チーム全体の総MMRが最も均等になるように配置。
                   </p>
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-background border border-border space-y-1">
-                  <div className="font-black text-xs text-stone-900">案C: 希望優先</div>
+                  <div className="font-black text-xs text-foreground">案C: 希望優先</div>
                   <p className="text-[11px] text-stone-600 leading-relaxed">
                     参加者の希望メインレーン配置を最優先にした構成。
                   </p>
@@ -421,7 +421,7 @@ export default function GuideBotTab() {
                 🤝
               </div>
               <div>
-                <h3 className="text-base font-black text-stone-900">
+                <h3 className="text-base font-black text-foreground">
                   4. 師弟募集チャンネルのワンポチ登録 ＆ 先輩スカウト機能
                 </h3>
                 <p className="text-xs text-stone-500">#🤝師弟募集 チャンネルからWebログイン不要で即エントリー</p>

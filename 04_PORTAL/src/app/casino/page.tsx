@@ -614,23 +614,23 @@ export default function CasinoPage() {
   return (
     <div className="min-h-screen pb-16 bg-[#eae4d4] dark:bg-[#1e1f22] text-[#201c2b] dark:text-[#f2f3f5]">
       {/* ヒーローセクション */}
-      <div className="bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-amber-500/15 text-stone-900 py-10 px-6 relative overflow-hidden border-b border-amber-500/30">
+      <div className="bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-amber-500/15 text-foreground py-10 px-6 relative overflow-hidden border-b border-amber-500/30">
         <div className="max-w-4xl mx-auto relative z-10 text-center space-y-3">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-900 text-xs font-black tracking-wider border border-amber-500/30">
             <Sparkles size={14} className="text-amber-600" />
             KTM Sovereign Casino & Shop
           </div>
-          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-stone-900 flex items-center justify-center gap-3">
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-foreground flex items-center justify-center gap-3">
             <Coins className="text-amber-600" size={32} />
             勝敗予想 ＆ KTMショップ ＆ 長者番付
           </h1>
-          <p className="text-stone-700 text-xs md:text-sm max-w-xl mx-auto font-medium">
+          <p className="text-foreground-subtle text-xs md:text-sm max-w-xl mx-auto font-medium">
             勝敗予想でコインを増やし、特権チケットやバラエティ権と交換しよう🔥
           </p>
 
           <Link
             href="/casino/rules"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-surface/70 hover:bg-surface border border-border text-stone-700 hover:text-stone-900 text-xs font-black transition-colors"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-surface/70 hover:bg-surface border border-border text-foreground-subtle hover:text-foreground text-xs font-black transition-colors"
           >
             <Info size={13} />
             ルール ＆ 確率一覧を見る
@@ -660,7 +660,7 @@ export default function CasinoPage() {
       <div className="max-w-[1200px] w-full mx-auto px-4 md:px-8 py-8 space-y-6">
 
         {/* カジノ機能タブナビゲーション */}
-        <div className="flex items-center justify-center gap-1.5 p-1.5 rounded-2xl bg-surface-hover/80 text-stone-700 max-w-xl mx-auto shadow-sm border border-border overflow-x-auto scrollbar-none">
+        <div className="flex items-center justify-center gap-1.5 p-1.5 rounded-2xl bg-surface-hover/80 text-foreground-subtle max-w-xl mx-auto shadow-sm border border-border overflow-x-auto scrollbar-none">
           {[
             { id: 'bet', label: '🎯 勝敗予想' },
             { id: 'slot', label: '🎰 KTMスロット' },
@@ -673,8 +673,8 @@ export default function CasinoPage() {
               onClick={() => setActiveTab(tab.id as any)}
               className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap text-center ${
                 activeTab === tab.id
-                  ? 'bg-surface text-stone-900 shadow-sm scale-102 border border-border'
-                  : 'text-stone-600 hover:text-stone-900 hover:bg-surface/50'
+                  ? 'bg-surface text-foreground shadow-sm scale-102 border border-border'
+                  : 'text-stone-600 hover:text-foreground hover:bg-surface/50'
               }`}
             >
               {tab.label}
@@ -693,7 +693,7 @@ export default function CasinoPage() {
                   className="w-12 h-12 rounded-2xl border-2 border-amber-500 shadow-sm"
                 />
                 <div>
-                  <div className="text-sm font-black text-stone-900 flex items-center gap-2">
+                  <div className="text-sm font-black text-foreground flex items-center gap-2">
                     {user.displayName}
                     <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-200 text-amber-900 font-bold border border-amber-300">
                       {user.rank}
@@ -758,7 +758,7 @@ export default function CasinoPage() {
                 <button
                   type="button"
                   onClick={logout}
-                  className="text-xs text-stone-700 hover:text-stone-950 font-black px-3 py-1.5 rounded-xl bg-surface/90 hover:bg-surface border border-amber-400 shadow-2xs transition"
+                  className="text-xs text-foreground-subtle hover:text-stone-950 font-black px-3 py-1.5 rounded-xl bg-surface/90 hover:bg-surface border border-amber-400 shadow-2xs transition"
                 >
                   ログアウト
                 </button>
@@ -806,7 +806,7 @@ export default function CasinoPage() {
                   {inventory.map((item, idx) => (
                     <div
                       key={idx}
-                      className="p-3 rounded-2xl bg-surface border border-amber-400 text-stone-900 text-xs font-bold flex flex-col justify-between gap-2 shadow-sm"
+                      className="p-3 rounded-2xl bg-surface border border-amber-400 text-foreground text-xs font-bold flex flex-col justify-between gap-2 shadow-sm"
                     >
                       <div className="flex items-center gap-1.5">
                         <span className="text-base">{item.icon}</span>
@@ -873,7 +873,7 @@ export default function CasinoPage() {
                   <Flame size={20} />
                 </div>
                 <div>
-                  <h2 className="text-lg font-black text-stone-900">カスタム勝敗予想</h2>
+                  <h2 className="text-lg font-black text-foreground">カスタム勝敗予想</h2>
                   <p className="text-xs text-stone-500">次のマッチの勝利チームを予想してコインを賭けよう！</p>
                 </div>
               </div>
@@ -890,7 +890,7 @@ export default function CasinoPage() {
             {activeMatch ? (
               <div className="space-y-6">
                 {/* 📊 リアルタイム投票比率バー */}
-                <div className="p-4 rounded-2xl bg-surface/95 text-stone-900 space-y-2 border border-border shadow-sm">
+                <div className="p-4 rounded-2xl bg-surface/95 text-foreground space-y-2 border border-border shadow-sm">
                   <div className="flex items-center justify-between text-xs font-black">
                     <span className="text-amber-600 flex items-center gap-1">
                       <span>🟦 BLUE:</span>
@@ -922,7 +922,7 @@ export default function CasinoPage() {
                 {/* ⏱️ 受付カウントダウン・ステータスバナー */}
                 <div className={`p-4 rounded-3xl border-2 flex flex-wrap items-center justify-between gap-3 shadow-xs transition-all ${
                   isBetLocked
-                    ? 'bg-surface-subtle border-border text-stone-700'
+                    ? 'bg-surface-subtle border-border text-foreground-subtle'
                     : (timeLeftSeconds !== null && timeLeftSeconds <= 180)
                     ? 'bg-rose-50 border-rose-300 text-rose-950 shadow-[0_0_15px_rgba(244,63,94,0.15)]'
                     : 'bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border-emerald-300 text-emerald-950 shadow-[0_0_15px_rgba(16,185,129,0.12)]'
@@ -941,14 +941,14 @@ export default function CasinoPage() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className={`text-[11px] font-black tracking-wider uppercase px-2 py-0.5 rounded-lg ${
                           isBetLocked
-                            ? 'bg-stone-300 text-stone-800'
+                            ? 'bg-stone-300 text-foreground-soft'
                             : (timeLeftSeconds !== null && timeLeftSeconds <= 180)
                             ? 'bg-rose-600 text-white'
                             : 'bg-emerald-600 text-white'
                         }`}>
                           {isBetLocked ? '締切済み' : (timeLeftSeconds !== null && timeLeftSeconds <= 180) ? '締切直前' : '予想受付中'}
                         </span>
-                        <span className="text-xs sm:text-sm font-black text-stone-900">
+                        <span className="text-xs sm:text-sm font-black text-foreground">
                           {isBetLocked
                             ? '勝敗予想の受付は締め切られました（試合進行中）'
                             : (timeLeftSeconds !== null && timeLeftSeconds <= 180)
@@ -974,7 +974,7 @@ export default function CasinoPage() {
                       <Clock size={16} className={timeLeftSeconds <= 180 ? 'text-rose-600' : 'text-emerald-600'} />
                       <span className="text-xs font-black text-stone-600">締切目安:</span>
                       <span className={`font-mono text-base sm:text-lg font-black tracking-wider ${
-                        timeLeftSeconds <= 180 ? 'text-rose-600' : 'text-stone-900'
+                        timeLeftSeconds <= 180 ? 'text-rose-600' : 'text-foreground'
                       }`}>
                         {formatTimeLeft(timeLeftSeconds)}
                       </span>
@@ -983,7 +983,7 @@ export default function CasinoPage() {
                 </div>
 
                 {/* 対戦カード表示 */}
-                <div className="p-5 rounded-3xl bg-surface/95 text-stone-900 space-y-4 border border-border shadow-sm">
+                <div className="p-5 rounded-3xl bg-surface/95 text-foreground space-y-4 border border-border shadow-sm">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="flex h-2.5 w-2.5 relative">
@@ -1016,7 +1016,7 @@ export default function CasinoPage() {
                       <div className="space-y-1.5 text-xs">
                         {(activeMatch.teamBlue || []).map((p: any, i: number) => (
                           <div key={i} className="flex items-center justify-between text-[11px]">
-                            <span className="font-bold text-stone-800 truncate">{p.assignedRole || p.role || `P${i+1}`}: {p.name}</span>
+                            <span className="font-bold text-foreground-soft truncate">{p.assignedRole || p.role || `P${i+1}`}: {p.name}</span>
                             <span className="text-[9px] text-stone-500 font-mono shrink-0">{p.rank || p.highestRank || ''}</span>
                           </div>
                         ))}
@@ -1032,7 +1032,7 @@ export default function CasinoPage() {
                       <div className="space-y-1.5 text-xs">
                         {(activeMatch.teamRed || []).map((p: any, i: number) => (
                           <div key={i} className="flex items-center justify-between text-[11px]">
-                            <span className="font-bold text-stone-800 truncate">{p.assignedRole || p.role || `P${i+1}`}: {p.name}</span>
+                            <span className="font-bold text-foreground-soft truncate">{p.assignedRole || p.role || `P${i+1}`}: {p.name}</span>
                             <span className="text-[9px] text-stone-500 font-mono shrink-0">{p.rank || p.highestRank || ''}</span>
                           </div>
                         ))}
@@ -1044,7 +1044,7 @@ export default function CasinoPage() {
                 {/* ベットフォーム */}
                 {user ? (
                   isParticipant ? (
-                    <div className="p-5 md:p-6 rounded-3xl bg-gradient-to-br from-amber-50 via-white to-amber-50 text-stone-900 border-2 border-amber-200 shadow-md space-y-4 text-center">
+                    <div className="p-5 md:p-6 rounded-3xl bg-gradient-to-br from-amber-50 via-white to-amber-50 text-foreground border-2 border-amber-200 shadow-md space-y-4 text-center">
                       <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 border border-amber-200 flex items-center justify-center mx-auto text-2xl">
                         ⚔️
                       </div>
@@ -1052,7 +1052,7 @@ export default function CasinoPage() {
                         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-black border border-amber-200">
                           🛡️ 出場選手（プレイヤー）として参加中
                         </div>
-                        <h4 className="text-base font-black text-stone-900 pt-2">
+                        <h4 className="text-base font-black text-foreground pt-2">
                           あなたは現在このカスタム対戦の選手です
                         </h4>
                         <p className="text-xs text-stone-600 leading-relaxed max-w-md mx-auto">
@@ -1065,7 +1065,7 @@ export default function CasinoPage() {
                         <div className="flex items-center gap-2.5">
                           <span className="text-xl">🏆</span>
                           <div>
-                            <div className="font-black text-stone-900">選手勝利ボーナス</div>
+                            <div className="font-black text-foreground">選手勝利ボーナス</div>
                             <div className="text-[10px] text-stone-500">試合に勝利すると自動でポイントが付与されます</div>
                           </div>
                         </div>
@@ -1090,7 +1090,7 @@ export default function CasinoPage() {
                       ) : (
                         <>
                           <div>
-                            <label className="block text-xs font-black text-stone-700 mb-2">
+                            <label className="block text-xs font-black text-foreground-subtle mb-2">
                               👉 どちらのチームが勝つか選んでください:
                             </label>
                             <div className="grid grid-cols-2 gap-2 md:gap-4">
@@ -1131,7 +1131,7 @@ export default function CasinoPage() {
                           {/* 賭け金 & もらえるコイン直感シミュレーター */}
                           <div className="p-4 md:p-5 rounded-2xl md:rounded-3xl bg-amber-50/60 border border-amber-200/80 space-y-3">
                             <div className="flex items-center justify-between flex-wrap gap-1">
-                              <label className="block text-xs font-black text-stone-800">
+                              <label className="block text-xs font-black text-foreground-soft">
                                 🪙 賭けるコイン数
                               </label>
                               <div className="text-right">
@@ -1151,7 +1151,7 @@ export default function CasinoPage() {
                                   className={`py-2 md:py-2.5 rounded-xl text-[11px] md:text-xs font-black border transition-all cursor-pointer ${
                                     betAmount === amt
                                       ? 'bg-amber-500 text-white border-amber-600 shadow-sm scale-105'
-                                      : 'bg-surface hover:bg-amber-100/50 text-stone-700 border-border'
+                                      : 'bg-surface hover:bg-amber-100/50 text-foreground-subtle border-border'
                                   }`}
                                 >
                                   {amt}
@@ -1164,7 +1164,7 @@ export default function CasinoPage() {
                               max={user?.coins ?? 1000}
                               value={betAmount}
                               onChange={(e) => setBetAmount(Number(e.target.value))}
-                              className="w-full bg-surface border border-border rounded-xl px-4 py-2.5 text-sm font-black text-stone-900 focus:outline-none focus:border-amber-500 font-mono"
+                              className="w-full bg-surface border border-border rounded-xl px-4 py-2.5 text-sm font-black text-foreground focus:outline-none focus:border-amber-500 font-mono"
                             />
                           </div>
 
@@ -1202,7 +1202,7 @@ export default function CasinoPage() {
                   ☕
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-base font-black text-stone-900">
+                  <h3 className="text-base font-black text-foreground">
                     現在受付中のカスタム対戦はありません
                   </h3>
                   <p className="text-xs text-stone-500 max-w-md mx-auto leading-relaxed">
@@ -1231,7 +1231,7 @@ export default function CasinoPage() {
                     <Trophy size={16} />
                   </div>
                   <div>
-                    <h3 className="text-sm font-black text-stone-900">KTM 長者番付 TOP 10</h3>
+                    <h3 className="text-sm font-black text-foreground">KTM 長者番付 TOP 10</h3>
                     <p className="text-[11px] text-stone-500">現在のコイン富豪ランキング</p>
                   </div>
                 </div>
@@ -1259,7 +1259,7 @@ export default function CasinoPage() {
                         {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}`}
                       </span>
                       <div>
-                        <div className="text-xs font-black text-stone-900 flex items-center gap-1">
+                        <div className="text-xs font-black text-foreground flex items-center gap-1">
                           {p.name}
                           <span className="text-[8px] px-1 py-0.2 rounded bg-black/5 text-stone-500 font-mono">
                             {p.rank}
@@ -1348,7 +1348,7 @@ export default function CasinoPage() {
                   <ShoppingBag size={20} />
                 </div>
                 <div>
-                  <h2 className="text-lg font-black text-stone-900">KTMショップ ＆ 特権アイテム交換所</h2>
+                  <h2 className="text-lg font-black text-foreground">KTMショップ ＆ 特権アイテム交換所</h2>
                   <p className="text-xs text-stone-500">貯めたコインでカスタム特権チケットやバラエティ権をGET！</p>
                 </div>
               </div>
@@ -1374,7 +1374,7 @@ export default function CasinoPage() {
                         {item.badge}
                       </span>
                     </div>
-                    <h3 className="font-black text-stone-900 text-sm group-hover:text-amber-700 transition-colors">
+                    <h3 className="font-black text-foreground text-sm group-hover:text-amber-700 transition-colors">
                       {item.name}
                     </h3>
                     <p className="text-xs text-stone-500 leading-relaxed">
@@ -1426,13 +1426,13 @@ export default function CasinoPage() {
         )}
 
         {/* 🪙 コインの貯め方ガイド（5大ルート一覧） */}
-        <div className="bg-surface/95 text-stone-800 rounded-3xl p-6 md:p-8 border border-border shadow-sm space-y-6">
+        <div className="bg-surface/95 text-foreground-soft rounded-3xl p-6 md:p-8 border border-border shadow-sm space-y-6">
           <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
             <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 border border-amber-300 flex items-center justify-center text-xl font-bold">
               🪙
             </div>
             <div>
-              <h3 className="text-base md:text-lg font-black text-stone-900">コインを自動で貯める 5つの方法</h3>
+              <h3 className="text-base md:text-lg font-black text-foreground">コインを自動で貯める 5つの方法</h3>
               <p className="text-xs text-stone-500">試合に出る人も、観戦する人も全員がコインを獲得できます！</p>
             </div>
           </div>
@@ -1502,7 +1502,7 @@ export default function CasinoPage() {
                   <Gift size={18} />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-stone-900">コインをチップとして贈る</h3>
+                  <h3 className="text-base font-black text-foreground">コインをチップとして贈る</h3>
                   <p className="text-[11px] text-stone-500">ナイスプレイや日頃の感謝を込めてコインをプレゼント！</p>
                 </div>
               </div>
@@ -1518,14 +1518,14 @@ export default function CasinoPage() {
             <form onSubmit={handleSendTip} className="space-y-4">
               {/* 相手選択 */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-black text-stone-700">
+                <label className="block text-xs font-black text-foreground-subtle">
                   🎁 送信先プレイヤー
                 </label>
                 <div className="flex gap-2">
                   <select
                     value={tipToPlayer}
                     onChange={(e) => setTipToPlayer(e.target.value)}
-                    className="flex-1 bg-background border border-border rounded-xl px-3 py-2 text-xs font-bold text-stone-800 focus:outline-none focus:border-amber-500"
+                    className="flex-1 bg-background border border-border rounded-xl px-3 py-2 text-xs font-bold text-foreground-soft focus:outline-none focus:border-amber-500"
                   >
                     <option value="">-- プレイヤー一覧から選択 --</option>
                     {allPlayersList
@@ -1542,14 +1542,14 @@ export default function CasinoPage() {
                   placeholder="または直接名前を入力..."
                   value={tipToPlayer}
                   onChange={(e) => setTipToPlayer(e.target.value)}
-                  className="w-full bg-background border border-border rounded-xl px-3 py-1.5 text-xs text-stone-800 focus:outline-none focus:border-amber-500"
+                  className="w-full bg-background border border-border rounded-xl px-3 py-1.5 text-xs text-foreground-soft focus:outline-none focus:border-amber-500"
                 />
               </div>
 
               {/* 金額選択 */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-black text-stone-700">
+                  <label className="block text-xs font-black text-foreground-subtle">
                     🪙 チップ金額 (コイン)
                   </label>
                   <span className="text-[10px] text-stone-500 font-bold">
@@ -1565,7 +1565,7 @@ export default function CasinoPage() {
                       className={`py-1.5 rounded-xl text-xs font-black border transition cursor-pointer ${
                         tipAmount === amt
                           ? 'bg-amber-600 text-white border-amber-700 shadow-xs'
-                          : 'bg-background hover:bg-amber-50 text-stone-700 border-border'
+                          : 'bg-background hover:bg-amber-50 text-foreground-subtle border-border'
                       }`}
                     >
                       {amt}
@@ -1578,13 +1578,13 @@ export default function CasinoPage() {
                   max={user?.coins ?? 1000}
                   value={tipAmount}
                   onChange={(e) => setTipAmount(Number(e.target.value))}
-                  className="w-full bg-surface border border-border rounded-xl px-3 py-2 text-sm font-black text-stone-900 focus:outline-none focus:border-amber-500 font-mono"
+                  className="w-full bg-surface border border-border rounded-xl px-3 py-2 text-sm font-black text-foreground focus:outline-none focus:border-amber-500 font-mono"
                 />
               </div>
 
               {/* メッセージ */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-black text-stone-700 flex items-center gap-1">
+                <label className="block text-xs font-black text-foreground-subtle flex items-center gap-1">
                   <MessageSquare size={13} />
                   <span>応援メッセージ（任意 / Discordに公開通知）</span>
                 </label>
@@ -1594,7 +1594,7 @@ export default function CasinoPage() {
                   placeholder="ナイスキャリーでした！ / いつもカスタムありがとう！"
                   value={tipMessage}
                   onChange={(e) => setTipMessage(e.target.value)}
-                  className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-amber-500"
+                  className="w-full bg-background border border-border rounded-xl px-3 py-2 text-xs text-foreground-soft focus:outline-none focus:border-amber-500"
                 />
               </div>
 
@@ -1602,7 +1602,7 @@ export default function CasinoPage() {
                 <button
                   type="button"
                   onClick={() => setIsTipModalOpen(false)}
-                  className="flex-1 py-3 rounded-xl bg-surface-subtle hover:bg-surface-hover text-stone-700 font-black text-xs transition cursor-pointer"
+                  className="flex-1 py-3 rounded-xl bg-surface-subtle hover:bg-surface-hover text-foreground-subtle font-black text-xs transition cursor-pointer"
                 >
                   キャンセル
                 </button>

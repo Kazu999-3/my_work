@@ -82,7 +82,7 @@ export default function ChampSelect({ value, onChange, onSelect, placeholder = "
         }}
         onFocus={() => setIsOpen(true)}
         placeholder={placeholder}
-        className={`w-full bg-surface border border-black/10 focus:border-[#c89b3c]/50 rounded-xl p-3 text-stone-900 outline-none transition-colors shadow-inner ${className}`}
+        className={`w-full bg-surface border border-black/10 focus:border-[#c89b3c]/50 rounded-xl p-3 text-foreground outline-none transition-colors shadow-inner ${className}`}
       />
 
       {isOpen && filteredChamps.length > 0 && (
@@ -102,7 +102,7 @@ export default function ChampSelect({ value, onChange, onSelect, placeholder = "
                 onError={(e) => { (e.target as HTMLImageElement).src = '/favicon.ico'; }}
               />
               <div className="flex flex-col">
-                <span className="font-bold text-sm text-stone-800">{CHAMPION_JA[champ]?.ja || champ}</span>
+                <span className="font-bold text-sm text-foreground-soft">{CHAMPION_JA[champ]?.ja || champ}</span>
                 <span className="text-[10px] text-gray-500 font-mono">{champ}</span>
               </div>
             </div>

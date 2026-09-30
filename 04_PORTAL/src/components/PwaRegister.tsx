@@ -125,7 +125,7 @@ export default function PwaRegister() {
       ) : (
         /* 📲 PWA インストール誘導カード（クリックで展開時のみ） */
         <div
-          className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-50 bg-surface border border-[#c89b3c]/30 text-stone-900 p-3 rounded-xl shadow-xl flex items-center gap-3 max-w-xs"
+          className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-50 bg-surface border border-[#c89b3c]/30 text-foreground p-3 rounded-xl shadow-xl flex items-center gap-3 max-w-xs"
         >
           <div className="w-8 h-8 rounded-lg bg-[#c89b3c]/15 border border-[#c89b3c]/40 flex items-center justify-center shrink-0">
             <Download className="text-[#c89b3c]" size={16} />
@@ -146,7 +146,7 @@ export default function PwaRegister() {
               type="button"
               onClick={() => setMinimized(true)}
               style={{ pointerEvents: 'auto' }}
-              className="p-1 rounded-lg text-gray-400 hover:text-stone-900 hover:bg-black/5 transition-colors cursor-pointer"
+              className="p-1 rounded-lg text-gray-400 hover:text-foreground hover:bg-black/5 transition-colors cursor-pointer"
               title="小さくする"
             >
               <X size={14} />
@@ -177,34 +177,34 @@ export default function PwaRegister() {
           >
             <button
               onClick={() => { setShowGuide(false); dismissBanner(); }}
-              className="absolute top-4 right-4 text-gray-400 hover:text-stone-900 p-1 cursor-pointer"
+              className="absolute top-4 right-4 text-gray-400 hover:text-foreground p-1 cursor-pointer"
             >
               <X size={20} />
             </button>
 
             <div className="flex items-center gap-3 mb-4 text-[#c89b3c]">
               <HelpCircle size={24} />
-              <h3 className="text-base font-black text-stone-900">アプリのインストール方法</h3>
+              <h3 className="text-base font-black text-foreground">アプリのインストール方法</h3>
             </div>
 
             <div className="space-y-4 text-xs text-gray-700">
               <div className="bg-black/3 p-3 rounded-xl border border-black/10">
-                <div className="font-bold text-stone-900 mb-1.5 flex items-center gap-2">
+                <div className="font-bold text-foreground mb-1.5 flex items-center gap-2">
                   <span className="text-base">🌐</span> Chrome / Edge (PC・スマホ)
                 </div>
                 <ol className="list-decimal list-inside space-y-1 text-gray-700 leading-relaxed">
                   <li>アドレスバー右端の <span className="inline-flex items-center bg-black/5 px-1.5 py-0.5 rounded text-amber-700 font-mono text-[10px]">⊕</span> アイコンをクリック</li>
-                  <li>または右上の <span className="font-mono text-amber-700">⋮</span> → 「<span className="text-stone-900 font-bold">アプリをインストール</span>」</li>
+                  <li>または右上の <span className="font-mono text-amber-700">⋮</span> → 「<span className="text-foreground font-bold">アプリをインストール</span>」</li>
                 </ol>
               </div>
 
               <div className="bg-black/3 p-3 rounded-xl border border-black/10">
-                <div className="font-bold text-stone-900 mb-1.5 flex items-center gap-2">
+                <div className="font-bold text-foreground mb-1.5 flex items-center gap-2">
                   <span className="text-base">📱</span> Safari (iOS)
                 </div>
                 <ol className="list-decimal list-inside space-y-1 text-gray-700 leading-relaxed">
                   <li>画面下部の共有アイコン <span className="font-mono text-amber-700">⬆</span> をタップ</li>
-                  <li>「<span className="text-stone-900 font-bold">ホーム画面に追加</span>」を選択</li>
+                  <li>「<span className="text-foreground font-bold">ホーム画面に追加</span>」を選択</li>
                 </ol>
               </div>
 

@@ -88,7 +88,7 @@ export default function ArticleRevisionHistory({ articleId }: Props) {
               <span className="font-black px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-200">
                 {TYPE_LABELS[r.target_type] || r.target_type}
               </span>
-              <span className="font-bold text-stone-900">{r.target_key}</span>
+              <span className="font-bold text-foreground">{r.target_key}</span>
               {r.isNew ? (
                 <span className="font-black text-teal-700">新規作成</span>
               ) : (

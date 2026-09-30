@@ -39,10 +39,10 @@ type GamePhase = 'IDLE' | 'DEALING' | 'RESULT';
 // カード表示ヘルパー
 // ============================================================
 const SUIT_ICONS: Record<string, { icon: string; color: string }> = {
-  spades:   { icon: '♠', color: 'text-stone-900' },
+  spades:   { icon: '♠', color: 'text-foreground' },
   hearts:   { icon: '♥', color: 'text-rose-600' },
   diamonds: { icon: '♦', color: 'text-rose-600' },
-  clubs:    { icon: '♣', color: 'text-stone-900' },
+  clubs:    { icon: '♣', color: 'text-foreground' },
 };
 
 /** 1枚のカードコンポーネント */
@@ -262,7 +262,7 @@ export default function KtmBaccaratGame({
   // 結果アクセント
   const resultAccent = lastResult
     ? lastResult.isPush
-      ? 'bg-surface-subtle border-stone-400 text-stone-700'
+      ? 'bg-surface-subtle border-stone-400 text-foreground-subtle'
       : lastResult.isWin
         ? 'bg-amber-100 border-amber-500 text-amber-900'
         : 'bg-rose-100 border-rose-400 text-rose-900'
@@ -364,7 +364,7 @@ export default function KtmBaccaratGame({
       {/* ── 金額入力 ── */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <label className="text-xs font-black text-stone-700 whitespace-nowrap">ベット額:</label>
+          <label className="text-xs font-black text-foreground-subtle whitespace-nowrap">ベット額:</label>
           <input
             type="number"
             value={betAmount}
@@ -372,7 +372,7 @@ export default function KtmBaccaratGame({
             max={userCoins}
             onChange={e => setBetAmount(Math.max(10, Math.floor(Number(e.target.value))))}
             disabled={phase !== 'IDLE'}
-            className="flex-1 px-3 py-2 rounded-xl border-2 border-border bg-surface text-stone-900 font-black text-sm text-right focus:border-amber-500 focus:outline-none disabled:opacity-50"
+            className="flex-1 px-3 py-2 rounded-xl border-2 border-border bg-surface text-foreground font-black text-sm text-right focus:border-amber-500 focus:outline-none disabled:opacity-50"
           />
           <span className="text-xs text-stone-500 font-bold whitespace-nowrap">🪙</span>
         </div>
@@ -385,7 +385,7 @@ export default function KtmBaccaratGame({
               type="button"
               onClick={() => setBetAmount(Math.min(q, userCoins))}
               disabled={phase !== 'IDLE' || userCoins < q}
-              className="px-2.5 py-1 rounded-xl bg-surface-hover hover:bg-stone-300 text-stone-700 font-black text-xs transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="px-2.5 py-1 rounded-xl bg-surface-hover hover:bg-stone-300 text-foreground-subtle font-black text-xs transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               {q.toLocaleString()}
             </button>
@@ -443,7 +443,7 @@ export default function KtmBaccaratGame({
 
       {/* ルール説明 */}
       <div className="p-3 rounded-2xl bg-surface-subtle border border-border text-[10px] text-stone-500 font-medium leading-relaxed">
-        <strong className="text-stone-700">🃏 バカラ基本ルール:</strong> PLAYER・BANKERに各2枚配り、合計の下一桁（9が最高）が大きい方が勝ち。
+        <strong className="text-foreground-subtle">🃏 バカラ基本ルール:</strong> PLAYER・BANKERに各2枚配り、合計の下一桁（9が最高）が大きい方が勝ち。
         0〜5点の場合は3枚目をドロー（本格ルール準拠）。8・9点は「ナチュラル」で即勝負。TIEは引き分け（PLAYER/BANKERはプッシュ＝掛け金返還）。
       </div>
     </div>

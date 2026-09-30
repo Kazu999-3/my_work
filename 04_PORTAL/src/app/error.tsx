@@ -36,7 +36,7 @@ export default function Error({
         </div>
 
         <div className="space-y-1">
-          <h2 className="text-lg font-black text-stone-900 dark:text-white">
+          <h2 className="text-lg font-black text-foreground dark:text-white">
             画面の読み込みで問題が発生しました
           </h2>
           <p className="text-xs text-stone-500 dark:text-stone-300">
@@ -63,7 +63,7 @@ export default function Error({
           </button>
           <Link
             href="/"
-            className="flex-1 py-2.5 px-4 rounded-xl bg-surface-subtle dark:bg-[#1e1f22] hover:bg-surface-hover dark:hover:bg-[#35373c] text-stone-700 dark:text-stone-200 font-bold text-xs transition flex items-center justify-center gap-1.5 border border-border dark:border-[#3f4147]"
+            className="flex-1 py-2.5 px-4 rounded-xl bg-surface-subtle dark:bg-[#1e1f22] hover:bg-surface-hover dark:hover:bg-[#35373c] text-foreground-subtle dark:text-stone-200 font-bold text-xs transition flex items-center justify-center gap-1.5 border border-border dark:border-[#3f4147]"
           >
             <Home size={14} />
             <span>トップへ戻る</span>

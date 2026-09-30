@@ -111,7 +111,7 @@ export default function RankGoalCard() {
       {/* 目標ランクの表示・変更 */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="text-xs text-stone-600 dark:text-stone-400">
-          目標: <span className="font-black text-stone-900 dark:text-stone-100">{targetTier || '—'}</span>
+          目標: <span className="font-black text-foreground dark:text-stone-100">{targetTier || '—'}</span>
         </div>
         {!editing ? (
           <button
@@ -126,7 +126,7 @@ export default function RankGoalCard() {
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               placeholder="例: EMERALD IV / MASTER"
-              className="px-2 py-1 text-xs rounded-lg border border-border dark:border-stone-700 bg-surface dark:bg-stone-900 text-stone-900 dark:text-stone-100 w-44"
+              className="px-2 py-1 text-xs rounded-lg border border-border dark:border-stone-700 bg-surface dark:bg-stone-900 text-foreground dark:text-stone-100 w-44"
             />
             <button
               onClick={saveTarget}
@@ -137,7 +137,7 @@ export default function RankGoalCard() {
             </button>
             <button
               onClick={() => { setEditing(false); setDraft(targetTier); setSaveError(''); }}
-              className="text-[11px] px-2 py-1 rounded-lg text-stone-500 hover:text-stone-800 cursor-pointer"
+              className="text-[11px] px-2 py-1 rounded-lg text-stone-500 hover:text-foreground-soft cursor-pointer"
             >
               取消
             </button>
@@ -157,7 +157,7 @@ export default function RankGoalCard() {
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="rounded-xl border border-border dark:border-stone-700/60 bg-surface dark:bg-stone-900/60 px-3 py-2">
               <div className="text-[10px] font-bold text-stone-500 dark:text-stone-400">現在</div>
-              <div className="font-black text-stone-900 dark:text-stone-100 mt-0.5">{data.current?.label}</div>
+              <div className="font-black text-foreground dark:text-stone-100 mt-0.5">{data.current?.label}</div>
             </div>
             <div className="rounded-xl border border-amber-800/60 bg-amber-950/30 px-3 py-2">
               <div className="text-[10px] font-bold text-amber-400">目標</div>
@@ -169,7 +169,7 @@ export default function RankGoalCard() {
             {typeof data.gap === 'number' && (
               <div>
                 <span className="text-stone-500 dark:text-stone-400">目標までの差: </span>
-                <span className="font-bold text-stone-900 dark:text-stone-100">{data.gap} LP相当</span>
+                <span className="font-bold text-foreground dark:text-stone-100">{data.gap} LP相当</span>
               </div>
             )}
             {data.projection?.reached ? (
@@ -184,7 +184,7 @@ export default function RankGoalCard() {
                 {typeof data.lpPerDay === 'number' && (
                   <div>
                     <span className="text-stone-500 dark:text-stone-400">直近の伸び: </span>
-                    <span className="font-bold text-stone-900 dark:text-stone-100">
+                    <span className="font-bold text-foreground dark:text-stone-100">
                       {data.lpPerDay > 0 ? '+' : ''}{data.lpPerDay} LP/日
                     </span>
                     {typeof data.daySpan === 'number' && (
@@ -195,7 +195,7 @@ export default function RankGoalCard() {
                 {data.projection?.reachDate && (
                   <div>
                     <span className="text-stone-500 dark:text-stone-400">到達見込み: </span>
-                    <span className="font-bold text-stone-900 dark:text-stone-100">
+                    <span className="font-bold text-foreground dark:text-stone-100">
                       {data.projection.reachDate}
                       {typeof data.projection.days === 'number' ? `（約${data.projection.days}日後）` : ''}
                     </span>
@@ -204,7 +204,7 @@ export default function RankGoalCard() {
                 {typeof data.projection?.gamesNeeded === 'number' && (
                   <div>
                     <span className="text-stone-500 dark:text-stone-400">必要な勝ち数の目安: </span>
-                    <span className="font-bold text-stone-900 dark:text-stone-100">約{data.projection.gamesNeeded}勝</span>
+                    <span className="font-bold text-foreground dark:text-stone-100">約{data.projection.gamesNeeded}勝</span>
                   </div>
                 )}
                 {data.projection?.note && (

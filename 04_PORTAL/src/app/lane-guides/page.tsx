@@ -204,11 +204,11 @@ export default function LaneGuidesPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/"
-            className="px-3 py-1.5 rounded-xl bg-surface border border-border text-stone-700 hover:text-stone-900 font-bold text-xs shadow-2xs hover:bg-background transition"
+            className="px-3 py-1.5 rounded-xl bg-surface border border-border text-foreground-subtle hover:text-foreground font-bold text-xs shadow-2xs hover:bg-background transition"
           >
             ← ポータルトップへ戻る
           </Link>
-          <h1 className="text-base md:text-lg font-black text-stone-900 flex items-center gap-2">
+          <h1 className="text-base md:text-lg font-black text-foreground flex items-center gap-2">
             <span>🗺️</span> レーン別・マクロ攻略ガイド
           </h1>
         </div>
@@ -231,7 +231,7 @@ export default function LaneGuidesPage() {
                     className={`px-4 py-2 rounded-xl text-xs md:text-sm font-black transition-all flex items-center gap-2 ${
                       active === g.lane
                         ? 'bg-amber-600 text-white shadow-sm'
-                        : 'bg-surface-subtle text-stone-600 hover:text-stone-900 hover:bg-surface-hover'
+                        : 'bg-surface-subtle text-stone-600 hover:text-foreground hover:bg-surface-hover'
                     }`}
                   >
                     <span>{laneLabel(g.lane)}</span>
@@ -273,27 +273,27 @@ export default function LaneGuidesPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
                 <div className="bg-surface p-3.5 rounded-2xl border border-amber-200/70 shadow-2xs">
                   <span className="text-[10px] font-mono font-extrabold text-amber-700 block">2:55 〜</span>
-                  <strong className="text-stone-900 block mt-0.5 text-sm">初動スカトル争奪</strong>
+                  <strong className="text-foreground block mt-0.5 text-sm">初動スカトル争奪</strong>
                   <p className="text-[11px] text-stone-500 mt-1">キャンプ湧き(0:55)から最速周回。レーン優先度を見て交戦判断</p>
                 </div>
                 <div className="bg-surface p-3.5 rounded-2xl border border-amber-200/70 shadow-2xs">
                   <span className="text-[10px] font-mono font-extrabold text-amber-700 block">5:00 〜</span>
-                  <strong className="text-stone-900 block mt-0.5 text-sm">初代ドラゴン出現</strong>
+                  <strong className="text-foreground block mt-0.5 text-sm">初代ドラゴン出現</strong>
                   <p className="text-[11px] text-stone-500 mt-1">Bot/MidプッシュとBot視界掌握で先手触り（5分リスポーン）</p>
                 </div>
                 <div className="bg-surface p-3.5 rounded-2xl border border-amber-200/70 shadow-2xs">
                   <span className="text-[10px] font-mono font-extrabold text-amber-700 block">8:00 〜</span>
-                  <strong className="text-stone-900 block mt-0.5 text-sm">ヴォイドグラブ出現</strong>
+                  <strong className="text-foreground block mt-0.5 text-sm">ヴォイドグラブ出現</strong>
                   <p className="text-[11px] text-stone-500 mt-1">1回のみ出現(14:45消滅)。Top/Midプライオリティで確保</p>
                 </div>
                 <div className="bg-surface p-3.5 rounded-2xl border border-amber-200/70 shadow-2xs">
                   <span className="text-[10px] font-mono font-extrabold text-amber-700 block">15:00 〜</span>
-                  <strong className="text-stone-900 block mt-0.5 text-sm">リフトヘラルド出現</strong>
+                  <strong className="text-foreground block mt-0.5 text-sm">リフトヘラルド出現</strong>
                   <p className="text-[11px] text-stone-500 mt-1">19:45消滅。永続タワープレート削りや外塔破壊の起点に</p>
                 </div>
                 <div className="bg-surface p-3.5 rounded-2xl border border-amber-200/70 shadow-2xs">
                   <span className="text-[10px] font-mono font-extrabold text-amber-700 block">20:00 〜</span>
-                  <strong className="text-stone-900 block mt-0.5 text-sm">バロンナッシャー出現</strong>
+                  <strong className="text-foreground block mt-0.5 text-sm">バロンナッシャー出現</strong>
                   <p className="text-[11px] text-stone-500 mt-1">視界制圧と人数有利（ピックアップ）からのバロン決戦</p>
                 </div>
               </div>
@@ -305,7 +305,7 @@ export default function LaneGuidesPage() {
                 {/* 📌 左カラム: 目次（Sticky TOC） */}
                 <aside className="lg:col-span-3 lg:sticky lg:top-6 space-y-4">
                   <div className="bg-surface border border-border/90 rounded-3xl p-5 shadow-2xs">
-                    <h3 className="text-xs font-black text-stone-900 mb-3 flex items-center gap-1.5 uppercase tracking-wider">
+                    <h3 className="text-xs font-black text-foreground mb-3 flex items-center gap-1.5 uppercase tracking-wider">
                       <ListOrdered size={15} className="text-amber-600" />
                       <span>章立て・クイック目次</span>
                     </h3>
@@ -317,8 +317,8 @@ export default function LaneGuidesPage() {
                             href={`#section-${i}`}
                             className={`block py-1.5 px-2.5 rounded-xl transition font-medium line-clamp-1 ${
                               h.level === 2
-                                ? 'text-stone-800 hover:text-amber-900 hover:bg-amber-50 font-bold'
-                                : 'text-stone-500 hover:text-stone-800 pl-5 text-[11px]'
+                                ? 'text-foreground-soft hover:text-amber-900 hover:bg-amber-50 font-bold'
+                                : 'text-stone-500 hover:text-foreground-soft pl-5 text-[11px]'
                             }`}
                           >
                             <span className="flex items-center gap-1">
@@ -337,15 +337,15 @@ export default function LaneGuidesPage() {
                   <div className="bg-background border border-border/80 rounded-2xl p-4 text-xs space-y-2 text-stone-600">
                     <div className="flex justify-between">
                       <span className="text-stone-400">対象ロール</span>
-                      <strong className="text-stone-800">{laneLabel(current.lane)}</strong>
+                      <strong className="text-foreground-soft">{laneLabel(current.lane)}</strong>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-stone-400">統合記事数</span>
-                      <strong className="text-stone-800">{current.source_count || 0} 本</strong>
+                      <strong className="text-foreground-soft">{current.source_count || 0} 本</strong>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-stone-400">最終更新</span>
-                      <strong className="text-stone-800">{new Date(current.updated_at).toLocaleDateString('ja-JP')}</strong>
+                      <strong className="text-foreground-soft">{new Date(current.updated_at).toLocaleDateString('ja-JP')}</strong>
                     </div>
                   </div>
                 </aside>
@@ -354,7 +354,7 @@ export default function LaneGuidesPage() {
                 <article className="lg:col-span-9 bg-surface border border-border/90 rounded-3xl p-6 md:p-10 shadow-xs">
                   <div className="flex items-center justify-between border-b border-stone-100 pb-5 mb-8 flex-wrap gap-3">
                     <div>
-                      <h2 className="text-2xl md:text-3xl font-black text-stone-900 tracking-tight mb-2">
+                      <h2 className="text-2xl md:text-3xl font-black text-foreground tracking-tight mb-2">
                         {current.title}
                       </h2>
                       <p className="text-xs text-stone-500 flex items-center gap-2 flex-wrap">
@@ -383,7 +383,7 @@ export default function LaneGuidesPage() {
                     </button>
                   </div>
 
-                  <div className="prose prose-sm md:prose-base max-w-none prose-headings:text-amber-950 prose-headings:font-black prose-h2:border-b prose-h2:border-amber-100 prose-h2:pb-2 prose-h2:mt-10 prose-h2:mb-4 prose-h3:text-amber-900 prose-strong:text-stone-900 prose-li:text-stone-700 leading-relaxed font-sans">
+                  <div className="prose prose-sm md:prose-base max-w-none prose-headings:text-amber-950 prose-headings:font-black prose-h2:border-b prose-h2:border-amber-100 prose-h2:pb-2 prose-h2:mt-10 prose-h2:mb-4 prose-h3:text-amber-900 prose-strong:text-foreground prose-li:text-foreground-subtle leading-relaxed font-sans">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{current.body}</ReactMarkdown>
                   </div>
                 </article>
@@ -400,7 +400,7 @@ export default function LaneGuidesPage() {
               <div className="p-3.5 sm:p-5 border-b border-border flex items-center justify-between gap-2 shrink-0 bg-surface">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="text-base sm:text-xl font-black text-stone-900 flex items-center gap-1.5 truncate">
+                    <h3 className="text-base sm:text-xl font-black text-foreground flex items-center gap-1.5 truncate">
                       <Sparkles size={20} className="text-amber-600 shrink-0" />
                       <span>AI清書・体系化プレビュー（校閲モード）</span>
                     </h3>
@@ -415,7 +415,7 @@ export default function LaneGuidesPage() {
                 <button
                   onClick={() => setRefinePreview(null)}
                   disabled={savingRefined || refining}
-                  className="text-stone-400 hover:text-stone-700 p-2 rounded-xl hover:bg-surface-subtle transition shrink-0"
+                  className="text-stone-400 hover:text-foreground-subtle p-2 rounded-xl hover:bg-surface-subtle transition shrink-0"
                 >
                   <X size={20} />
                 </button>
@@ -430,7 +430,7 @@ export default function LaneGuidesPage() {
                     className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${
                       previewTab === 'annotations'
                         ? 'bg-amber-600 text-white shadow-xs'
-                        : 'bg-surface text-stone-600 hover:text-stone-900 border border-border'
+                        : 'bg-surface text-stone-600 hover:text-foreground border border-border'
                     }`}
                   >
                     <span>📝 ① 朱入れ校閲ビュー（生知見＋判定）</span>
@@ -441,7 +441,7 @@ export default function LaneGuidesPage() {
                     className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${
                       previewTab === 'refined'
                         ? 'bg-amber-600 text-white shadow-xs'
-                        : 'bg-surface text-stone-600 hover:text-stone-900 border border-border'
+                        : 'bg-surface text-stone-600 hover:text-foreground border border-border'
                     }`}
                   >
                     <Sparkles size={13} />
@@ -453,7 +453,7 @@ export default function LaneGuidesPage() {
                     className={`hidden md:flex px-3.5 py-1.5 rounded-xl text-xs font-black transition items-center gap-1.5 ${
                       previewTab === 'comparison'
                         ? 'bg-amber-600 text-white shadow-xs'
-                        : 'bg-surface text-stone-600 hover:text-stone-900 border border-border'
+                        : 'bg-surface text-stone-600 hover:text-foreground border border-border'
                     }`}
                   >
                     <Columns size={13} />
@@ -536,7 +536,7 @@ export default function LaneGuidesPage() {
                             {/* 本文（生Markdownをそのまま美しく表示） */}
                             <div className="p-4 sm:p-5">
                               <div className={`prose prose-xs sm:prose-sm max-w-none font-sans leading-relaxed ${
-                                isDup ? 'text-rose-900 line-through opacity-70' : 'text-stone-800'
+                                isDup ? 'text-rose-900 line-through opacity-70' : 'text-foreground-soft'
                               }`}>
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{sec.rawText}</ReactMarkdown>
                               </div>
@@ -560,7 +560,7 @@ export default function LaneGuidesPage() {
                         {refinePreview.refinedBody.length} 文字
                       </span>
                     </div>
-                    <div className="prose prose-xs sm:prose-base max-w-none prose-headings:text-amber-950 prose-headings:font-black prose-h2:border-b prose-h2:border-amber-100 prose-h2:pb-2 prose-h2:mt-8 prose-h2:mb-4 prose-strong:text-stone-900 text-stone-800 leading-relaxed font-medium">
+                    <div className="prose prose-xs sm:prose-base max-w-none prose-headings:text-amber-950 prose-headings:font-black prose-h2:border-b prose-h2:border-amber-100 prose-h2:pb-2 prose-h2:mt-8 prose-h2:mb-4 prose-strong:text-foreground text-foreground-soft leading-relaxed font-medium">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{refinePreview.refinedBody}</ReactMarkdown>
                     </div>
                   </div>
@@ -571,14 +571,14 @@ export default function LaneGuidesPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="bg-background border border-border rounded-2xl p-5 shadow-2xs space-y-3">
                       <div className="flex items-center justify-between pb-2 border-b border-border">
-                        <span className="text-xs font-black text-stone-700 flex items-center gap-1.5">
+                        <span className="text-xs font-black text-foreground-subtle flex items-center gap-1.5">
                           <span>📄</span> 清書前（元の生知見全文）
                         </span>
-                        <span className="text-[10px] bg-surface-hover text-stone-700 px-2 py-0.5 rounded font-mono font-bold">
+                        <span className="text-[10px] bg-surface-hover text-foreground-subtle px-2 py-0.5 rounded font-mono font-bold">
                           {refinePreview.originalBody.length} 文字
                         </span>
                       </div>
-                      <div className="prose prose-xs max-w-none text-stone-700 leading-relaxed font-sans">
+                      <div className="prose prose-xs max-w-none text-foreground-subtle leading-relaxed font-sans">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{refinePreview.originalBody}</ReactMarkdown>
                       </div>
                     </div>
@@ -593,7 +593,7 @@ export default function LaneGuidesPage() {
                           {refinePreview.refinedBody.length} 文字
                         </span>
                       </div>
-                      <div className="prose prose-xs max-w-none prose-headings:text-amber-900 prose-strong:text-stone-900 text-stone-800 leading-relaxed font-medium">
+                      <div className="prose prose-xs max-w-none prose-headings:text-amber-900 prose-strong:text-foreground text-foreground-soft leading-relaxed font-medium">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{refinePreview.refinedBody}</ReactMarkdown>
                       </div>
                     </div>

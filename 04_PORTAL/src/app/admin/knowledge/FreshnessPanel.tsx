@@ -43,7 +43,7 @@ export default function FreshnessPanel() {
   return (
     <div className="bg-surface border border-border rounded-2xl p-5">
       <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
-        <h3 className="font-black text-stone-900 flex items-center gap-2">
+        <h3 className="font-black text-foreground flex items-center gap-2">
           <Clock size={16} className="text-teal-600" /> データ鮮度モニター
           {staleCount > 0 && (
             <span className="text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-full">
@@ -66,7 +66,7 @@ export default function FreshnessPanel() {
             <div key={s.key} className={`rounded-xl border px-3 py-2 flex items-center justify-between gap-2 ${
               s.isStale ? 'bg-rose-50 border-rose-200' : 'bg-emerald-50 border-emerald-200'
             }`}>
-              <span className="text-xs font-bold text-stone-800">{s.label}</span>
+              <span className="text-xs font-bold text-foreground-soft">{s.label}</span>
               <span className={`text-[11px] font-mono shrink-0 ${s.isStale ? 'text-rose-700' : 'text-emerald-700'}`}>
                 {formatAge(s.ageHours)}
               </span>

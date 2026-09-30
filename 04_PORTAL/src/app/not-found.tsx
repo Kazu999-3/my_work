@@ -4,13 +4,13 @@ import { Compass, Home } from 'lucide-react';
 // 404ページ（#64）。存在しないURLに来たときの共通画面。
 export default function NotFound() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background px-6 text-center text-stone-900">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background px-6 text-center text-foreground">
       <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-black/[0.03] text-[#c89b3c]">
         <Compass size={38} />
       </div>
       <div>
         <p className="text-5xl font-black tracking-tight text-[#c89b3c]">404</p>
-        <p className="mt-3 text-sm font-bold text-stone-700">ページが見つかりませんでした</p>
+        <p className="mt-3 text-sm font-bold text-foreground-subtle">ページが見つかりませんでした</p>
         <p className="mt-1 max-w-sm text-xs leading-relaxed text-stone-500">
           URLが変更されたか、削除された可能性があります。下のボタンからホームに戻れます。
         </p>

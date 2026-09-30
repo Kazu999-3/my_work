@@ -91,7 +91,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
   return (
     <div className="bg-surface/80 dark:bg-[#232428]/80 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-3xl p-6 sm:p-8 shadow-xl space-y-8">
       <div>
-        <h2 className="text-xl font-black text-stone-900 dark:text-white flex items-center gap-2">
+        <h2 className="text-xl font-black text-foreground dark:text-white flex items-center gap-2">
           <Shield className="w-5 h-5 text-amber-600" />
           <span>アカウント設定 ＆ 希望・NGレーン設定</span>
         </h2>
@@ -102,7 +102,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
 
       {/* サモナーネーム（IGN）入力 */}
       <div className="bg-background dark:bg-[#2b2d31] border border-border dark:border-[#3f4147] rounded-2xl p-4 sm:p-5 space-y-2">
-        <label className="block text-xs font-black text-stone-700 dark:text-stone-300 uppercase tracking-wider">
+        <label className="block text-xs font-black text-foreground-subtle dark:text-stone-300 uppercase tracking-wider">
           ゲーム内サモナーネーム (IGN#TAG)
         </label>
         <input
@@ -110,7 +110,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
           value={ign}
           onChange={(e) => setIgn(e.target.value)}
           placeholder="例: Hide on bush#KR1"
-          className="w-full bg-surface dark:bg-[#1e1f22] border border-border dark:border-[#3f4147] rounded-xl px-4 py-2.5 text-sm text-stone-900 dark:text-white font-mono placeholder:text-stone-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 shadow-xs"
+          className="w-full bg-surface dark:bg-[#1e1f22] border border-border dark:border-[#3f4147] rounded-xl px-4 py-2.5 text-sm text-foreground dark:text-white font-mono placeholder:text-stone-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 shadow-xs"
         />
         <p className="text-[11px] text-stone-400 font-medium">
           ※ LoLクライアント内の Riot ID と タグライン（#JP1など）を入力すると、OP.GGやカルテへの自動連携が有効になります。
@@ -148,7 +148,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
 
       {/* 第2希望レーン */}
       <div className="space-y-3">
-        <label className="block text-xs font-black text-stone-700 dark:text-stone-300 uppercase tracking-wider flex items-center justify-between">
+        <label className="block text-xs font-black text-foreground-subtle dark:text-stone-300 uppercase tracking-wider flex items-center justify-between">
           <span>🥈 第2希望レーン (Secondary Role)</span>
           <span className="text-[11px] text-stone-500 dark:text-stone-400 normal-case font-bold">第1希望が埋まった際の次候補</span>
         </label>
@@ -223,7 +223,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
               <Moon size={18} />
             </div>
             <div>
-              <h3 className="text-sm font-black text-stone-900 dark:text-white">外観・テーマ設定</h3>
+              <h3 className="text-sm font-black text-foreground dark:text-white">外観・テーマ設定</h3>
               <p className="text-[11px] text-stone-500 dark:text-stone-400">ライトモード・スレート調ダークモード・OS自動連動を切り替えられます</p>
             </div>
           </div>

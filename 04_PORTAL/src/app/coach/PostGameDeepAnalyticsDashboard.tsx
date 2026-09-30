@@ -286,7 +286,7 @@ export default function PostGameDeepAnalyticsDashboard({
     return (
       <div className="bg-surface border border-border rounded-2xl p-5 shadow-xs text-center space-y-3">
         <AlertCircle className="w-8 h-8 text-amber-600 mx-auto" />
-        <h4 className="text-sm font-bold text-stone-900">試合後ディープアナリティクス</h4>
+        <h4 className="text-sm font-bold text-foreground">試合後ディープアナリティクス</h4>
         <p className="text-xs text-stone-500 max-w-md mx-auto">
           {error || '直近のランク戦タイムラインデータが見つかりませんでした。ソロQをプレイ後に再度お試しください。'}
         </p>
@@ -302,12 +302,12 @@ export default function PostGameDeepAnalyticsDashboard({
   }
 
   return (
-    <div className="bg-surface border border-border rounded-2xl p-5 md:p-6 shadow-xs text-stone-900 space-y-6">
+    <div className="bg-surface border border-border rounded-2xl p-5 md:p-6 shadow-xs text-foreground space-y-6">
       {/* 🎮 直近マッチ選択セレクターバー */}
       {data.recent_matches && data.recent_matches.length > 0 && (
         <div className="space-y-2.5">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-black text-stone-800 flex items-center gap-1.5 uppercase tracking-wider">
+            <h4 className="text-xs font-black text-foreground-soft flex items-center gap-1.5 uppercase tracking-wider">
               <Layers className="w-4 h-4 text-amber-600" />
               <span>直近のソロQマッチ選択 (全{data.recent_matches.length}試合)</span>
             </h4>
@@ -376,23 +376,23 @@ export default function PostGameDeepAnalyticsDashboard({
       {data.cross_match_summary && data.cross_match_summary.total_matches > 1 && (
         <div className="bg-gradient-to-r from-amber-50/90 via-stone-50 to-amber-50/90 border border-amber-200/80 rounded-xl p-4 space-y-2.5 shadow-2xs">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <span className="text-xs font-black text-stone-900 flex items-center gap-1.5">
+            <span className="text-xs font-black text-foreground flex items-center gap-1.5">
               <Activity className="w-4 h-4 text-amber-600" />
               <span>直近 {data.cross_match_summary.total_matches} 試合の横断パフォーマンス総括</span>
             </span>
             <div className="flex items-center gap-3 text-[11px] font-bold">
-              <span className="text-stone-700 font-mono">
+              <span className="text-foreground-subtle font-mono">
                 勝率: <strong className={data.cross_match_summary.win_rate >= 50 ? 'text-emerald-700' : 'text-rose-600'}>{data.cross_match_summary.win_rate}%</strong>
               </span>
-              <span className="text-stone-700 font-mono">
+              <span className="text-foreground-subtle font-mono">
                 平均KDA: <strong>{data.cross_match_summary.avg_kda}</strong>
               </span>
-              <span className="text-stone-700 font-mono">
+              <span className="text-foreground-subtle font-mono">
                 平均視界: <strong>{data.cross_match_summary.avg_vision_score}pt</strong>
               </span>
             </div>
           </div>
-          <p className="text-xs text-stone-700 font-medium leading-relaxed bg-surface/80 p-2.5 rounded-lg border border-amber-200/50">
+          <p className="text-xs text-foreground-subtle font-medium leading-relaxed bg-surface/80 p-2.5 rounded-lg border border-amber-200/50">
             💡 {data.cross_match_summary.summary_text}
           </p>
         </div>
@@ -404,7 +404,7 @@ export default function PostGameDeepAnalyticsDashboard({
           <span className="px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 rounded-md text-[10px] font-black uppercase tracking-wider">
             {currentMatchId === 'all' || data.selected_match_id === 'all' ? 'Multi-Match Aggregate' : 'Match Deep Dive'}
           </span>
-          <h3 className="text-base font-black text-stone-900 flex items-center gap-1.5">
+          <h3 className="text-base font-black text-foreground flex items-center gap-1.5">
             <span>
               {currentMatchId === 'all' || data.selected_match_id === 'all'
                 ? `⚡ 直近${data.recent_matches?.length || ''}戦 統合ディープアナリティクス`
@@ -425,7 +425,7 @@ export default function PostGameDeepAnalyticsDashboard({
               ? 'VICTORY'
               : 'DEFEAT'}
           </span>
-          <span className="bg-surface-subtle px-2 py-0.5 rounded border border-border text-stone-800 flex items-center gap-1.5">
+          <span className="bg-surface-subtle px-2 py-0.5 rounded border border-border text-foreground-soft flex items-center gap-1.5">
             {currentMatchId !== 'all' && (
               <Image
                 src={getChampIcon(data.my_champion)}
@@ -445,7 +445,7 @@ export default function PostGameDeepAnalyticsDashboard({
           <button
             onClick={() => fetchAnalytics(currentMatchId)}
             title="最新の試合を再読み込み"
-            className="p-1 rounded-lg hover:bg-surface-subtle text-stone-500 hover:text-stone-900 transition ml-1"
+            className="p-1 rounded-lg hover:bg-surface-subtle text-stone-500 hover:text-foreground transition ml-1"
           >
             <RefreshCw size={13} />
           </button>
@@ -465,7 +465,7 @@ export default function PostGameDeepAnalyticsDashboard({
             ボトルネック: {data.biggest_bottleneck.metric}
           </span>
         </div>
-        <p className="text-xs md:text-sm font-black text-stone-900 leading-relaxed bg-surface/95 p-3 rounded-lg border border-rose-200">
+        <p className="text-xs md:text-sm font-black text-foreground leading-relaxed bg-surface/95 p-3 rounded-lg border border-rose-200">
           {data.biggest_bottleneck.advice}
         </p>
       </div>
@@ -474,7 +474,7 @@ export default function PostGameDeepAnalyticsDashboard({
         {/* 1: 序盤15分メトリクス */}
         <div className="bg-background/70 border border-border rounded-xl p-4 space-y-3 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-black text-stone-900 flex items-center gap-1.5">
+            <span className="text-xs font-black text-foreground flex items-center gap-1.5">
               <Zap className="w-4 h-4 text-amber-600" />
               1. 序盤15分CS ＆ レーン戦推移
             </span>
@@ -486,7 +486,7 @@ export default function PostGameDeepAnalyticsDashboard({
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="bg-surface p-2.5 rounded-lg border border-border">
               <div className="text-[10px] font-bold text-stone-400">15分CS数</div>
-              <div className="text-base font-black text-stone-900 font-mono">{data.early_game_metrics.cs_at_15}</div>
+              <div className="text-base font-black text-foreground font-mono">{data.early_game_metrics.cs_at_15}</div>
               <div className="text-[9px] text-stone-500 font-bold">{data.early_game_metrics.cs_per_min_at_15} CS/分</div>
             </div>
             <div className="bg-surface p-2.5 rounded-lg border border-border">
@@ -507,7 +507,7 @@ export default function PostGameDeepAnalyticsDashboard({
         {/* 2: アイテムビルド選択の分岐監査 (Build Audit) */}
         <div className="bg-background/70 border border-border rounded-xl p-4 space-y-3 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-black text-stone-900 flex items-center gap-1.5">
+            <span className="text-xs font-black text-foreground flex items-center gap-1.5">
               <ShoppingBag className="w-4 h-4 text-teal-600" />
               2. アイテム購入タイムライン
             </span>
@@ -520,7 +520,7 @@ export default function PostGameDeepAnalyticsDashboard({
             {data.build_audit.items_audited.map((item, idx) => (
               <div key={idx} className="bg-surface p-2 rounded-lg border border-border flex items-center justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <span className="font-extrabold text-stone-800">{item.item_name}</span>
+                  <span className="font-extrabold text-foreground-soft">{item.item_name}</span>
                   <span className="text-[10px] text-stone-400 ml-1.5 font-mono">({item.timing})</span>
                   <p className="text-[10px] text-stone-600 truncate mt-0.5">{item.reason}</p>
                 </div>
@@ -535,7 +535,7 @@ export default function PostGameDeepAnalyticsDashboard({
         {/* 3: リコール＆ウェーブ テンポロス逆再生 (インタラクティブ・タイムライン視覚化) */}
         <div className="bg-background/70 border border-border rounded-xl p-4 space-y-3.5 shadow-2xs">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <span className="text-xs font-black text-stone-900 flex items-center gap-1.5">
+            <span className="text-xs font-black text-foreground flex items-center gap-1.5">
               <Clock className="w-4 h-4 text-amber-600" />
               <span>
                 {data.is_jungle
@@ -606,7 +606,7 @@ export default function PostGameDeepAnalyticsDashboard({
                       </span>
                       <span
                         className={`text-[9px] font-mono font-bold mt-1 whitespace-nowrap px-1 rounded transition-colors ${
-                          isSelected ? 'bg-amber-100 text-amber-900' : 'text-stone-400 group-hover:text-stone-700'
+                          isSelected ? 'bg-amber-100 text-amber-900' : 'text-stone-400 group-hover:text-foreground-subtle'
                         }`}
                       >
                         {ev.time_str}
@@ -627,11 +627,11 @@ export default function PostGameDeepAnalyticsDashboard({
                         <span className="text-[11px] font-black bg-amber-100 text-amber-950 px-2 py-0.5 rounded border border-amber-200">
                           リコール #{selectedRecallIdx + 1} ({activeEv.time_str})
                         </span>
-                        <span className="text-[10px] font-black text-stone-700 bg-surface-subtle px-2 py-0.5 rounded">
+                        <span className="text-[10px] font-black text-foreground-subtle bg-surface-subtle px-2 py-0.5 rounded">
                           所持G: {activeEv.gold_at_recall ? `${activeEv.gold_at_recall}G` : '未記録'}
                         </span>
                       </div>
-                      <span className="text-[10px] font-bold text-stone-800">
+                      <span className="text-[10px] font-bold text-foreground-soft">
                         {activeEv.evaluation}
                       </span>
                     </div>
@@ -641,7 +641,7 @@ export default function PostGameDeepAnalyticsDashboard({
                       <div className="flex items-center gap-1 flex-wrap pt-0.5">
                         <span className="text-[10px] font-bold text-stone-400">購入:</span>
                         {activeEv.bought_items.map((item, i) => (
-                          <span key={i} className="text-[10px] font-bold bg-surface-subtle text-stone-800 px-1.5 py-0.2 rounded border border-border">
+                          <span key={i} className="text-[10px] font-bold bg-surface-subtle text-foreground-soft px-1.5 py-0.2 rounded border border-border">
                             🛒 {item}
                           </span>
                         ))}
@@ -654,7 +654,7 @@ export default function PostGameDeepAnalyticsDashboard({
                         <span className="text-stone-400 font-bold block">
                           {data.is_jungle ? '帰還時周回状況:' : '帰還時ウェーブ:'}
                         </span>
-                        <span className="font-black text-stone-800">{activeEv.wave_state || (data.is_jungle ? 'キャンプ周回後' : 'ウェーブ押し込み後')}</span>
+                        <span className="font-black text-foreground-soft">{activeEv.wave_state || (data.is_jungle ? 'キャンプ周回後' : 'ウェーブ押し込み後')}</span>
                       </div>
                       <div className="bg-background p-1.5 rounded border border-border">
                         <span className="text-stone-400 font-bold block">
@@ -684,7 +684,7 @@ export default function PostGameDeepAnalyticsDashboard({
         {data.control_ward_audit && (
           <div className="bg-rose-50/40 border border-rose-200/80 rounded-xl p-4 space-y-3.5 shadow-2xs">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <span className="text-xs font-black text-stone-900 flex items-center gap-1.5">
+              <span className="text-xs font-black text-foreground flex items-center gap-1.5">
                 <Eye className="w-4 h-4 text-rose-600" />
                 <span>3.5 コントロールワード 実戦購入タイミング監査</span>
               </span>
@@ -715,7 +715,7 @@ export default function PostGameDeepAnalyticsDashboard({
                         {p.audit}
                       </span>
                     </div>
-                    <div className="text-[10px] font-bold text-stone-800">
+                    <div className="text-[10px] font-bold text-foreground-soft">
                       {p.timing_tag}
                     </div>
                     <p className="text-[9px] text-stone-500 leading-relaxed">
@@ -740,7 +740,7 @@ export default function PostGameDeepAnalyticsDashboard({
                   <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
                   <span>逃した購入・配置タイミング（勝率向上の急所）:</span>
                 </span>
-                <ul className="text-[10px] text-stone-700 space-y-0.5 pl-4 list-disc font-medium">
+                <ul className="text-[10px] text-foreground-subtle space-y-0.5 pl-4 list-disc font-medium">
                   {data.control_ward_audit.missed_timings.map((miss, mIdx) => (
                     <li key={mIdx}>{miss}</li>
                   ))}
@@ -749,8 +749,8 @@ export default function PostGameDeepAnalyticsDashboard({
             )}
 
             {/* 総評テキスト */}
-            <p className="text-[11px] text-stone-700 leading-relaxed font-medium bg-surface p-2.5 rounded-xl border border-border">
-              💬 <span className="font-bold text-stone-900">コーチ総評:</span> {data.control_ward_audit.verdict}
+            <p className="text-[11px] text-foreground-subtle leading-relaxed font-medium bg-surface p-2.5 rounded-xl border border-border">
+              💬 <span className="font-bold text-foreground">コーチ総評:</span> {data.control_ward_audit.verdict}
             </p>
           </div>
         )}
@@ -758,7 +758,7 @@ export default function PostGameDeepAnalyticsDashboard({
         {/* 4: レーダー多角形指標 */}
         <div className="bg-background/70 border border-border rounded-xl p-4 space-y-3 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-black text-stone-900 flex items-center gap-1.5">
+            <span className="text-xs font-black text-foreground flex items-center gap-1.5">
               <Award className="w-4 h-4 text-amber-600" />
               4. 目標ランク水準とのギャップ比較
             </span>
@@ -771,7 +771,7 @@ export default function PostGameDeepAnalyticsDashboard({
           <div className="grid grid-cols-2 gap-1.5 text-[11px]">
             {data.radar_metrics.map((m, idx) => (
               <div key={idx} className="bg-surface p-2 rounded-lg border border-border flex items-center justify-between">
-                <span className="font-bold text-stone-700">{m.subject}</span>
+                <span className="font-bold text-foreground-subtle">{m.subject}</span>
                 <span className={`font-mono font-bold text-[10px] ${m.diff.startsWith('+') ? 'text-emerald-700' : 'text-rose-600'}`}>
                   {m.diff}pt ({m.status})
                 </span>
@@ -785,7 +785,7 @@ export default function PostGameDeepAnalyticsDashboard({
               <ShieldAlert className="w-4 h-4 text-rose-600" />
               <span>改善急所: {data.biggest_bottleneck.metric}</span>
             </div>
-            <p className="text-stone-700 text-[10px] leading-relaxed">
+            <p className="text-foreground-subtle text-[10px] leading-relaxed">
               {data.biggest_bottleneck.advice}
             </p>
           </div>
@@ -795,7 +795,7 @@ export default function PostGameDeepAnalyticsDashboard({
       {/* 📝 この試合の気づき・反省メモ（後からいつでも追加・編集・保存可能） */}
       <div className="bg-background border border-border rounded-xl p-4 space-y-3 shadow-2xs">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-black text-stone-900 flex items-center gap-1.5">
+          <span className="text-xs font-black text-foreground flex items-center gap-1.5">
             <span>📝</span>
             <span>この試合の反省・気づきメモ（後からいつでも編集可能）</span>
           </span>
@@ -812,7 +812,7 @@ export default function PostGameDeepAnalyticsDashboard({
             value={memoText}
             onChange={(e) => setMemoText(e.target.value)}
             placeholder="例: レベル3ガンク時の寄り遅れを反省 / 敵JGの位置予測が当たってテンポ取れた"
-            className="flex-1 px-3.5 py-2.5 bg-surface border border-border rounded-xl text-xs font-medium text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="flex-1 px-3.5 py-2.5 bg-surface border border-border rounded-xl text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500"
           />
           <button
             type="button"
@@ -829,7 +829,7 @@ export default function PostGameDeepAnalyticsDashboard({
       {/* 完全勝利サイクル: ナレッジ自動フィードバック同期バー */}
       <div className="bg-gradient-to-r from-amber-50 via-amber-50 to-emerald-50 border border-amber-200/80 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
         <div className="space-y-0.5 text-center sm:text-left">
-          <div className="flex items-center justify-center sm:justify-start gap-1.5 text-xs font-black text-stone-900">
+          <div className="flex items-center justify-center sm:justify-start gap-1.5 text-xs font-black text-foreground">
             <Sparkles className="w-4 h-4 text-amber-600" />
             <span>完全勝利サイクル (The Sovereign Victory Loop) 連動</span>
           </div>

@@ -86,7 +86,7 @@ export default function SoloQDeepIntelSyncCard({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-black text-sm text-stone-900">
+              <h3 className="font-black text-sm text-foreground">
                 SoloQ実測アナライザー同期インテル
               </h3>
               <span className="text-[10px] font-black px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 rounded-full">
@@ -167,7 +167,7 @@ export default function SoloQDeepIntelSyncCard({
             <div className="bg-surface rounded-2xl border border-border p-3.5 shadow-2xs space-y-2.5">
               <div className="flex items-center justify-between border-b border-stone-100 pb-2">
                 <div className="flex items-center gap-2">
-                  <span className="font-black text-xs text-stone-900">
+                  <span className="font-black text-xs text-foreground">
                     👑 {matchedChampProfile.name} の実戦カルテ
                   </span>
                   <span className="text-[10px] font-mono text-stone-500 font-bold">
@@ -184,13 +184,13 @@ export default function SoloQDeepIntelSyncCard({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
                   <div className="bg-background p-2 rounded-xl border border-stone-100 space-y-0.5">
                     <span className="text-[10px] font-bold text-stone-400">🌾 分間CSの勝敗ライン:</span>
-                    <p className="font-bold text-stone-800">
+                    <p className="font-bold text-foreground-soft">
                       {matchedChampProfile.winVsLossDiffs.cs15Diff}
                     </p>
                   </div>
                   <div className="bg-background p-2 rounded-xl border border-stone-100 space-y-0.5">
                     <span className="text-[10px] font-bold text-stone-400">🛡️ 被デス削減ライン:</span>
-                    <p className="font-bold text-stone-800">
+                    <p className="font-bold text-foreground-soft">
                       {matchedChampProfile.winVsLossDiffs.deathsDiff}
                     </p>
                   </div>
@@ -204,7 +204,7 @@ export default function SoloQDeepIntelSyncCard({
                     <Zap size={12} className="text-amber-600" />
                     <span>実戦パワースパイク立ち回り:</span>
                   </div>
-                  <div className="text-[11px] text-stone-700 bg-amber-50/60 p-2 rounded-xl border border-amber-200/60 leading-relaxed font-medium space-y-1">
+                  <div className="text-[11px] text-foreground-subtle bg-amber-50/60 p-2 rounded-xl border border-amber-200/60 leading-relaxed font-medium space-y-1">
                     <div>
                       <strong className="text-amber-900">【序盤 Lv1〜5】:</strong>{' '}
                       {matchedChampProfile.powerSpikes.earlyLvl1to5}
@@ -226,7 +226,7 @@ export default function SoloQDeepIntelSyncCard({
                 <Flame size={12} className="text-amber-600" />
                 <span>実測セッション黄金ルール (連敗・疲労防止)</span>
               </span>
-              <ul className="text-[11px] text-stone-700 space-y-1 font-medium">
+              <ul className="text-[11px] text-foreground-subtle space-y-1 font-medium">
                 {rules.slice(0, 2).map((r: string, idx: number) => (
                   <li key={idx} className="flex items-start gap-1.5">
                     <span className="text-amber-600 font-bold shrink-0">✔</span>

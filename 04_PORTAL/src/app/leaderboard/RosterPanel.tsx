@@ -87,7 +87,7 @@ export default function RosterPanel() {
             placeholder="プレイヤー名・Riot ID・ランクで検索..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-background border border-border rounded-xl pl-10 pr-4 py-2 text-xs font-bold text-stone-900 focus:outline-none focus:border-amber-500 transition-colors"
+            className="w-full bg-background border border-border rounded-xl pl-10 pr-4 py-2 text-xs font-bold text-foreground focus:outline-none focus:border-amber-500 transition-colors"
           />
         </div>
 
@@ -113,7 +113,7 @@ export default function RosterPanel() {
           <select
             value={statusFilter}
             onChange={(e: any) => setStatusFilter(e.target.value)}
-            className="bg-surface-subtle border border-border text-stone-700 text-xs font-bold rounded-xl px-3 py-1.5 focus:outline-none shrink-0"
+            className="bg-surface-subtle border border-border text-foreground-subtle text-xs font-bold rounded-xl px-3 py-1.5 focus:outline-none shrink-0"
           >
             <option value="ALL">全ステータス</option>
             <option value="ACTIVE">アクティブのみ</option>
@@ -146,7 +146,7 @@ export default function RosterPanel() {
                       <RoleIcon size={18} />
                     </div>
                     <div className="min-w-0">
-                      <h4 className="text-sm font-black text-stone-900 truncate group-hover:text-amber-800 transition">
+                      <h4 className="text-sm font-black text-foreground truncate group-hover:text-amber-800 transition">
                         {player.name}
                       </h4>
                       <p className="text-[11px] font-mono text-stone-500 truncate">
@@ -163,7 +163,7 @@ export default function RosterPanel() {
                 {/* レーン希望バッジ */}
                 <div className="flex items-center gap-1.5 text-[11px] font-bold">
                   <span className="text-stone-500">希望:</span>
-                  <span className="px-2 py-0.5 rounded-md bg-surface-subtle text-stone-800 font-mono">
+                  <span className="px-2 py-0.5 rounded-md bg-surface-subtle text-foreground-soft font-mono">
                     {primaryRole}
                   </span>
                   {secondaryRole !== "FILL" && (

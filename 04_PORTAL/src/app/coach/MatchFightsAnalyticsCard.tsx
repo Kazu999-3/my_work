@@ -114,7 +114,7 @@ export default function MatchFightsAnalyticsCard({
   const recentMatches = data.recent_matches || [];
 
   return (
-    <div className="bg-surface border border-border rounded-2xl p-5 shadow-xs text-stone-900 space-y-4">
+    <div className="bg-surface border border-border rounded-2xl p-5 shadow-xs text-foreground space-y-4">
       {/* 複数試合セレクターバー */}
       {recentMatches.length > 0 && (
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin border-b border-stone-100">
@@ -163,7 +163,7 @@ export default function MatchFightsAnalyticsCard({
               <Clock className="w-3.5 h-3.5 text-stone-400" /> {data.match_duration}
             </span>
           </div>
-          <h3 className="text-base font-extrabold text-stone-900 flex items-center gap-2">
+          <h3 className="text-base font-extrabold text-foreground flex items-center gap-2">
             <span>⚔️ {data.champion}</span>
             <span className="text-stone-500 text-xs font-bold">集団戦ディープレビュー（全{data.total_fights}戦）</span>
           </h3>
@@ -220,10 +220,10 @@ export default function MatchFightsAnalyticsCard({
                 {/* ファイトタイトル ＆ バッジ */}
                 <div className="flex items-center justify-between gap-2 flex-wrap text-xs">
                   <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 bg-surface-hover/80 rounded-full flex items-center justify-center font-mono font-bold text-[10px] text-stone-700">
+                    <span className="w-5 h-5 bg-surface-hover/80 rounded-full flex items-center justify-center font-mono font-bold text-[10px] text-foreground-subtle">
                       #{idx + 1}
                     </span>
-                    <span className="font-extrabold text-stone-900 text-sm">{fight.title}</span>
+                    <span className="font-extrabold text-foreground text-sm">{fight.title}</span>
                     <span className="text-stone-500 font-mono text-[11px] font-bold">
                       (味方{fight.ally_kills}K vs 敵{fight.enemy_kills}D)
                     </span>
@@ -263,7 +263,7 @@ export default function MatchFightsAnalyticsCard({
                 </div>
 
                 {/* サマリー ＆ 要因 */}
-                <p className="text-xs text-stone-800 leading-relaxed font-bold">
+                <p className="text-xs text-foreground-soft leading-relaxed font-bold">
                   {fight.summary}
                 </p>
 
@@ -271,7 +271,7 @@ export default function MatchFightsAnalyticsCard({
                   <div className="flex items-start gap-1.5">
                     <Target className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
                     <div>
-                      <span className="font-extrabold text-stone-800">勝敗要因: </span>
+                      <span className="font-extrabold text-foreground-soft">勝敗要因: </span>
                       <span className="text-stone-600 font-medium">{fight.key_factor}</span>
                     </div>
                   </div>
@@ -279,7 +279,7 @@ export default function MatchFightsAnalyticsCard({
                     <Shield className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
                     <div>
                       <span className="font-extrabold text-amber-700">プレイ評価: </span>
-                      <span className="text-stone-700 font-medium">{fight.feedback}</span>
+                      <span className="text-foreground-subtle font-medium">{fight.feedback}</span>
                     </div>
                   </div>
                 </div>

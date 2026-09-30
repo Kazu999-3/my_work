@@ -102,7 +102,7 @@ function UserAuthWidget({ collapsed, inDrawer }: { collapsed?: boolean; inDrawer
           />
           {(!collapsed || inDrawer) && (
             <div className="min-w-0 flex-1">
-              <div className="text-xs font-black text-stone-900 dark:text-stone-100 truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition">
+              <div className="text-xs font-black text-foreground dark:text-stone-100 truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition">
                 {user.displayName}
               </div>
               <div className="text-[11px] font-bold text-amber-700 dark:text-amber-300 flex items-center gap-1">
@@ -212,7 +212,7 @@ const ADMIN_EXTRA_ITEMS: MenuItem[] = [
   { id: 'analyzer', label: 'プレイヤー外部分析', shortLabel: '外部解析', icon: Globe, href: '/analyzer', color: 'text-teal-600', activeBg: 'bg-teal-500/15', section: '管理者専用', adminOnly: true },
   { id: 'ktm-admin', label: 'KTM大会管理', shortLabel: '大会管理', icon: Shield, href: '/ktm-admin', color: 'text-amber-600', activeBg: 'bg-amber-500/15', section: '管理者専用', adminOnly: true },
   { id: 'admin-guide', label: 'システム全貌仕様ガイド', shortLabel: '仕様ガイド', icon: BookOpen, href: '/admin/guide', color: 'text-amber-600', activeBg: 'bg-amber-500/15', section: '管理者専用', adminOnly: true },
-  { id: 'dashboard', label: 'システム運用', shortLabel: '運用設定', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-stone-800 dark:text-stone-200', activeBg: 'bg-black/10 dark:bg-white/10', section: '管理者専用', adminOnly: true },
+  { id: 'dashboard', label: 'システム運用', shortLabel: '運用設定', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-foreground-soft dark:text-stone-200', activeBg: 'bg-black/10 dark:bg-white/10', section: '管理者専用', adminOnly: true },
 ];
 
 export default function Sidebar() {
@@ -331,7 +331,7 @@ export default function Sidebar() {
         <div className="flex items-center justify-between p-4 border-b border-border/80 dark:border-[#3f4147]">
           {!isCollapsed && (
             <Link href="/" className="flex items-center gap-2">
-              <span className="font-extrabold text-lg text-stone-900 dark:text-white tracking-tight">KTM PORTAL</span>
+              <span className="font-extrabold text-lg text-foreground dark:text-white tracking-tight">KTM PORTAL</span>
             </Link>
           )}
           <div className="flex items-center gap-1">
@@ -352,7 +352,7 @@ export default function Sidebar() {
               <button
                 onClick={() => handleTabChange('general')}
                 className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
-                  activeTab === 'general' ? 'bg-surface dark:bg-[#1e1f22] text-stone-900 dark:text-white shadow-sm' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'
+                  activeTab === 'general' ? 'bg-surface dark:bg-[#1e1f22] text-foreground dark:text-white shadow-sm' : 'text-stone-600 dark:text-stone-400 hover:text-foreground dark:hover:text-white'
                 }`}
               >
                 一般
@@ -360,7 +360,7 @@ export default function Sidebar() {
               <button
                 onClick={() => handleTabChange('admin')}
                 className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
-                  activeTab === 'admin' ? 'bg-surface dark:bg-[#1e1f22] text-stone-900 dark:text-white shadow-sm' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'
+                  activeTab === 'admin' ? 'bg-surface dark:bg-[#1e1f22] text-foreground dark:text-white shadow-sm' : 'text-stone-600 dark:text-stone-400 hover:text-foreground dark:hover:text-white'
                 }`}
               >
                 管理者
@@ -388,7 +388,7 @@ export default function Sidebar() {
                 <Link
                   href={itemHref}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition ${
-                    isActive ? `${item.activeBg} ${item.color}` : 'text-stone-600 dark:text-stone-300 hover:bg-surface-hover/50 dark:hover:bg-[#2b2d31] hover:text-stone-900 dark:hover:text-white'
+                    isActive ? `${item.activeBg} ${item.color}` : 'text-stone-600 dark:text-stone-300 hover:bg-surface-hover/50 dark:hover:bg-[#2b2d31] hover:text-foreground dark:hover:text-white'
                   }`}
                   title={isCollapsed ? (isMentorship && mentorshipCount > 0 ? `${item.label} (${mentorshipCount}名募集中)` : item.label) : undefined}
                 >
@@ -495,7 +495,7 @@ export default function Sidebar() {
                 className="flex items-center gap-2 group cursor-pointer"
               >
                 <span className="text-lg">👑</span>
-                <span className="font-extrabold text-base text-stone-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition">
+                <span className="font-extrabold text-base text-foreground dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition">
                   KTM ポータル
                 </span>
               </Link>
@@ -522,7 +522,7 @@ export default function Sidebar() {
                 <button
                   onClick={() => handleTabChange('general')}
                   className={`flex-1 py-2 text-xs font-bold rounded-lg transition ${
-                    activeTab === 'general' ? 'bg-surface dark:bg-[#1e1f22] text-stone-900 dark:text-white shadow-sm' : 'text-stone-600 dark:text-stone-400'
+                    activeTab === 'general' ? 'bg-surface dark:bg-[#1e1f22] text-foreground dark:text-white shadow-sm' : 'text-stone-600 dark:text-stone-400'
                   }`}
                 >
                   一般メニュー
@@ -560,7 +560,7 @@ export default function Sidebar() {
                         className={`flex items-center gap-2.5 p-3 rounded-2xl border transition-all ${
                           isActive
                             ? `${item.activeBg} ${item.color} border-current font-black shadow-sm`
-                            : 'bg-surface dark:bg-[#2b2d31] border-border/80 dark:border-[#3f4147] text-stone-700 dark:text-stone-200 hover:border-amber-500/40 font-bold'
+                            : 'bg-surface dark:bg-[#2b2d31] border-border/80 dark:border-[#3f4147] text-foreground-subtle dark:text-stone-200 hover:border-amber-500/40 font-bold'
                         }`}
                       >
                         <div className={`p-1.5 rounded-xl shrink-0 ${isActive ? 'bg-surface/20' : item.activeBg}`}>
@@ -600,7 +600,7 @@ export default function Sidebar() {
                           className={`flex items-center gap-2.5 p-3 rounded-2xl border transition-all ${
                             isActive
                               ? `${item.activeBg} ${item.color} border-current font-black shadow-sm`
-                              : 'bg-surface dark:bg-[#2b2d31] border-amber-200/60 dark:border-amber-900/40 text-stone-700 dark:text-stone-200 hover:border-amber-500 font-bold'
+                              : 'bg-surface dark:bg-[#2b2d31] border-amber-200/60 dark:border-amber-900/40 text-foreground-subtle dark:text-stone-200 hover:border-amber-500 font-bold'
                           }`}
                         >
                           <div className={`p-1.5 rounded-xl ${item.activeBg}`}>

@@ -1045,7 +1045,7 @@ export function LibraryTabContentInner() {
                                 onClick={() => {
                                   setEditChampions(prev => prev.includes(d.champion) ? prev : [...prev, d.champion]);
                                 }}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-surface border border-amber-300 rounded-md text-[11px] font-bold text-stone-800 hover:bg-amber-100 hover:border-amber-400 transition shadow-2xs cursor-pointer"
+                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-surface border border-amber-300 rounded-md text-[11px] font-bold text-foreground-soft hover:bg-amber-100 hover:border-amber-400 transition shadow-2xs cursor-pointer"
                                 title={`出現: ${d.count}回 / マッチ表記: ${d.matchedAlias}${d.inTitle ? ' (タイトル内)' : ''}`}
                               >
                                 <span>{d.champion}</span>
@@ -1114,14 +1114,14 @@ export function LibraryTabContentInner() {
                           value={laneChoice}
                           onChange={(e) => setLaneChoice(e.target.value)}
                           title="送り先のレーンを選びます"
-                          className="bg-transparent text-xs text-stone-700 outline-none px-2 py-1 cursor-pointer font-bold"
+                          className="bg-transparent text-xs text-foreground-subtle outline-none px-2 py-1 cursor-pointer font-bold"
                         >
                           {LANE_CHOICES.map(l => <option key={l.key} value={l.key}>{l.label}</option>)}
                         </select>
                         <button
                           onClick={sendToLaneGuide}
                           disabled={sendingLane}
-                          className="px-3 py-1.5 rounded-lg bg-surface-hover hover:bg-stone-300 text-stone-800 text-xs font-bold shrink-0 transition disabled:opacity-50 cursor-pointer"
+                          className="px-3 py-1.5 rounded-lg bg-surface-hover hover:bg-stone-300 text-foreground-soft text-xs font-bold shrink-0 transition disabled:opacity-50 cursor-pointer"
                           title="この記事をレーン別ガイドへ統合します"
                         >
                           {sendingLane ? '統合中...' : '🗺️ ガイドへ送る'}
@@ -1141,7 +1141,7 @@ export function LibraryTabContentInner() {
                     <button
                       type="button"
                       onClick={(e) => handleCopyArticleContent(selectedArticle, e)}
-                      className="px-3.5 py-2.5 rounded-xl bg-surface-subtle hover:bg-surface-hover border border-border text-stone-800 text-xs font-bold shrink-0 transition flex items-center gap-1.5 cursor-pointer"
+                      className="px-3.5 py-2.5 rounded-xl bg-surface-subtle hover:bg-surface-hover border border-border text-foreground-soft text-xs font-bold shrink-0 transition flex items-center gap-1.5 cursor-pointer"
                       title="記事タイトルと本文をクリップボードにコピー"
                     >
                       {copiedArticleId === selectedArticle.id ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
@@ -1210,7 +1210,7 @@ export function LibraryTabContentInner() {
                 {/* 生字幕/文字起こしテキストがある場合の折りたたみ表示 */}
                 {selectedArticle.raw_content && selectedArticle.content && selectedArticle.raw_content !== selectedArticle.content && (
                   <details className="mt-6 border border-border rounded-2xl bg-background/60 p-4 text-xs">
-                    <summary className="font-bold text-stone-600 cursor-pointer hover:text-stone-900 select-none">
+                    <summary className="font-bold text-stone-600 cursor-pointer hover:text-foreground select-none">
                       📄 元の動画字幕 / 生文字起こしテキストを確認（{selectedArticle.raw_content.length}文字）
                     </summary>
                     <div className="mt-3 p-3 bg-surface border border-border rounded-xl max-h-60 overflow-y-auto font-mono text-[11px] text-stone-600 whitespace-pre-wrap leading-relaxed">
@@ -1312,10 +1312,10 @@ export function LibraryTabContentInner() {
       {/* 統計サマリー & タグクラウド（コンパクトな折りたたみ） */}
       {articles.length > 0 && (
         <details className="group bg-surface dark:bg-stone-900 border border-border/90 dark:border-stone-800 rounded-2xl p-3 sm:p-4 shadow-xs transition-all">
-          <summary className="cursor-pointer flex items-center justify-between text-xs font-bold text-stone-700 dark:text-stone-300 select-none">
+          <summary className="cursor-pointer flex items-center justify-between text-xs font-bold text-foreground-subtle dark:text-stone-300 select-none">
             <div className="flex items-center gap-2">
               <span className="p-1 bg-amber-50 dark:bg-amber-950/40 rounded-lg text-amber-600 border border-amber-200/60">📊</span>
-              <span className="font-black text-stone-900 dark:text-stone-100">ライブラリ統計 ＆ トレンドタグ</span>
+              <span className="font-black text-foreground dark:text-stone-100">ライブラリ統計 ＆ トレンドタグ</span>
               <span className="text-[11px] px-2 py-0.5 rounded-full bg-surface-subtle dark:bg-stone-800 text-stone-600 dark:text-stone-400 font-extrabold">
                 {statsSummary.total}件
               </span>
@@ -1333,7 +1333,7 @@ export function LibraryTabContentInner() {
                     key={champ}
                     type="button"
                     onClick={() => setSearch(champ)}
-                    className="text-xs bg-surface-subtle hover:bg-amber-50 border border-border hover:border-amber-300 text-stone-700 hover:text-amber-700 font-bold px-2 py-0.5 rounded-lg transition-all cursor-pointer"
+                    className="text-xs bg-surface-subtle hover:bg-amber-50 border border-border hover:border-amber-300 text-foreground-subtle hover:text-amber-700 font-bold px-2 py-0.5 rounded-lg transition-all cursor-pointer"
                   >
                     {champ} ({count})
                   </button>
@@ -1350,7 +1350,7 @@ export function LibraryTabContentInner() {
                     key={kw}
                     type="button"
                     onClick={() => setSearch(kw)}
-                    className="text-xs bg-surface-subtle hover:bg-teal-50 border border-border hover:border-teal-300 text-stone-700 hover:text-teal-700 px-2.5 py-1 rounded-xl font-bold transition-all flex items-center gap-1 cursor-pointer"
+                    className="text-xs bg-surface-subtle hover:bg-teal-50 border border-border hover:border-teal-300 text-foreground-subtle hover:text-teal-700 px-2.5 py-1 rounded-xl font-bold transition-all flex items-center gap-1 cursor-pointer"
                   >
                     <span>#{kw}</span>
                     <span className="text-[10px] text-stone-400 font-mono bg-surface dark:bg-stone-800 px-1 py-0.2 rounded">{count}</span>
@@ -1387,27 +1387,27 @@ export function LibraryTabContentInner() {
             className={`px-3 sm:px-4 py-2.5 rounded-2xl text-xs font-bold transition-all border flex-1 sm:flex-none text-center cursor-pointer ${
               showMoved
                 ? 'bg-amber-500 text-black border-amber-400 font-black shadow-xs'
-                : 'glass-panel glass-panel-hover text-stone-600 hover:text-stone-900 border-border'
+                : 'glass-panel glass-panel-hover text-stone-600 hover:text-foreground border-border'
             }`}
           >
             🗄️ {showMoved ? 'ライブラリに戻る' : `移動済みアーカイブ${movedCount > 0 ? ` (${movedCount})` : ''}`}
           </button>
           <button
             onClick={expandAllGroups}
-            className="px-3 sm:px-4 py-2.5 glass-panel glass-panel-hover text-xs font-bold text-stone-700 hover:text-stone-900 rounded-2xl transition-all flex-1 sm:flex-none text-center cursor-pointer"
+            className="px-3 sm:px-4 py-2.5 glass-panel glass-panel-hover text-xs font-bold text-foreground-subtle hover:text-foreground rounded-2xl transition-all flex-1 sm:flex-none text-center cursor-pointer"
           >
             すべて展開
           </button>
           <button 
             onClick={collapseAllGroups} 
-            className="px-3 sm:px-4 py-2.5 glass-panel glass-panel-hover text-xs font-bold text-stone-700 hover:text-stone-900 rounded-2xl transition-all flex-1 sm:flex-none text-center cursor-pointer"
+            className="px-3 sm:px-4 py-2.5 glass-panel glass-panel-hover text-xs font-bold text-foreground-subtle hover:text-foreground rounded-2xl transition-all flex-1 sm:flex-none text-center cursor-pointer"
           >
             すべて閉じる
           </button>
           <button
             onClick={handleSyncAllArticles}
             disabled={syncingAll || batchMerging}
-            className="px-3 sm:px-4 py-2.5 bg-surface-subtle hover:bg-surface-hover text-stone-700 border border-border text-xs font-bold rounded-2xl transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto cursor-pointer"
+            className="px-3 sm:px-4 py-2.5 bg-surface-subtle hover:bg-surface-hover text-foreground-subtle border border-border text-xs font-bold rounded-2xl transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto cursor-pointer"
             title="ライブラリの全記事を各チャンピオン辞典へ同期します"
           >
             <RefreshCw className={`h-3 w-3 ${syncingAll ? 'animate-spin' : ''}`} />
@@ -1487,7 +1487,7 @@ export function LibraryTabContentInner() {
                                         ✅ 辞典反映済
                                       </span>
                                     )}
-                                    <h3 className={`font-bold transition-colors flex items-start sm:items-center gap-2 min-w-0 text-sm sm:text-base ${isExpanded ? 'text-amber-800' : 'text-stone-800 group-hover/item:text-stone-950'}`}>
+                                    <h3 className={`font-bold transition-colors flex items-start sm:items-center gap-2 min-w-0 text-sm sm:text-base ${isExpanded ? 'text-amber-800' : 'text-foreground-soft group-hover/item:text-stone-950'}`}>
                                       {favoriteArticles.includes(article.id) && <StarIcon size={14} className="text-amber-500 shrink-0 mt-0.5 sm:mt-0" fill="currentColor" />}
                                       <span className="break-all">{article.title ? article.title.replace(/_/g, ' ') : ''}</span>
                                     </h3>
@@ -1530,7 +1530,7 @@ export function LibraryTabContentInner() {
                                   <button
                                     type="button"
                                     onClick={(e) => handleCopyArticleContent(article, e)}
-                                    className="px-4 py-2 glass-panel glass-panel-hover text-stone-700 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer"
+                                    className="px-4 py-2 glass-panel glass-panel-hover text-foreground-subtle rounded-xl text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer"
                                     title="記事タイトルと本文をコピー"
                                   >
                                     {copiedArticleId === article.id ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
@@ -1572,7 +1572,7 @@ export function LibraryTabContentInner() {
                                     className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all border ${
                                       favoriteArticles.includes(article.id)
                                         ? 'bg-amber-100 border-amber-300 text-amber-700'
-                                        : 'glass-panel text-stone-500 hover:text-stone-900 border-transparent'
+                                        : 'glass-panel text-stone-500 hover:text-foreground border-transparent'
                                     }`}
                                   >
                                     <StarIcon size={14} fill={favoriteArticles.includes(article.id) ? "currentColor" : "none"} />
@@ -1611,7 +1611,7 @@ export function LibraryTabContentInner() {
           <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-4">
             <Book size={32} className="text-amber-700" />
           </div>
-          <h3 className="text-xl font-bold text-stone-900 mb-2">{search ? `「${search}」に一致する記事なし` : 'まだ記事がありません'}</h3>
+          <h3 className="text-xl font-bold text-foreground mb-2">{search ? `「${search}」に一致する記事なし` : 'まだ記事がありません'}</h3>
         </div>
       )}
 

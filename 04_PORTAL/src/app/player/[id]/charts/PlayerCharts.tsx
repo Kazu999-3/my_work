@@ -51,12 +51,12 @@ export function MiniMmrChart({ pts, lane }: { pts: any[]; lane: string }) {
             const d = payload[0].payload;
             return (
               <div className="bg-surface border border-black/10 rounded-lg p-2 text-[10px] shadow-xl">
-                <div className="font-bold text-stone-900">
+                <div className="font-bold text-foreground">
                   {d.champion}{d.opponentChampion ? <span className="text-rose-600"> vs {d.opponentChampion}</span> : ''}
                 </div>
                 {d.opponentName && <div className="text-gray-500">対面: {d.opponentName}</div>}
                 <div className={d.isWin ? 'text-emerald-600' : 'text-rose-600'}>{d.isWin ? 'WIN' : 'LOSE'}</div>
-                <div className="text-stone-700">MMR {d.mmr} <span className={d.mmrDelta >= 0 ? 'text-emerald-600' : 'text-rose-600'}>({d.mmrDelta > 0 ? '+' : ''}{d.mmrDelta})</span></div>
+                <div className="text-foreground-subtle">MMR {d.mmr} <span className={d.mmrDelta >= 0 ? 'text-emerald-600' : 'text-rose-600'}>({d.mmrDelta > 0 ? '+' : ''}{d.mmrDelta})</span></div>
                 <div className="text-gray-500">{d.date}</div>
               </div>
             );
@@ -128,7 +128,7 @@ export function MainMmrChart({
                     className="w-6 h-6 rounded-full"
                     onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                   />
-                  <span className="font-bold text-stone-900">{d.champion}</span>
+                  <span className="font-bold text-foreground">{d.champion}</span>
                   {d.opponentChampion && (
                     <>
                       <span className="text-[9px] font-black text-gray-500 italic">VS</span>
@@ -164,9 +164,9 @@ export function MainMmrChart({
                     {laneLabels[activeLane]}
                   </span>
                 </div>
-                <div className="text-stone-700 mt-2 pt-2 border-t border-black/10 space-y-1">
+                <div className="text-foreground-subtle mt-2 pt-2 border-t border-black/10 space-y-1">
                   <div>
-                    MMR: <span className="font-bold text-stone-900">{d.mmr}</span>
+                    MMR: <span className="font-bold text-foreground">{d.mmr}</span>
                     <span className={`ml-2 font-bold ${d.mmrDelta > 0 && d.role === activeLane ? 'text-emerald-600' : d.mmrDelta < 0 && d.role === activeLane ? 'text-rose-600' : 'text-gray-500'}`}>
                       ({d.mmrDelta > 0 ? '+' : ''}{d.mmrDelta})
                     </span>

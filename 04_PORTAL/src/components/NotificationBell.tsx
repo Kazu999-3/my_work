@@ -229,7 +229,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
     if (type.includes('error') || title.includes('エラー') || title.includes('失敗')) {
       return { icon: '⚠️', label: 'アラート', bg: 'bg-rose-100 text-rose-800 border-rose-200' };
     }
-    return { icon: '🔔', label: 'お知らせ', bg: 'bg-surface-subtle text-stone-800 border-border' };
+    return { icon: '🔔', label: 'お知らせ', bg: 'bg-surface-subtle text-foreground-soft border-border' };
   };
 
   const getQuickAction = (n: AdminNotification) => {
@@ -284,7 +284,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
       <button
         onClick={toggleOpen}
         title="通知"
-        className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition-all hover:bg-black/5 hover:text-stone-900 text-gray-400 relative cursor-pointer ${
+        className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition-all hover:bg-black/5 hover:text-foreground text-gray-400 relative cursor-pointer ${
           collapsed ? 'justify-center' : 'w-full'
         }`}
       >
@@ -308,7 +308,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
           {/* ヘッダー コントロールバー */}
           <div className="flex items-center justify-between border-b border-border px-4 py-3 bg-background/80">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-black text-stone-900">通知センター</span>
+              <span className="text-xs font-black text-foreground">通知センター</span>
               {unreadCount > 0 && (
                 <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[9px] font-black">
                   未読 {unreadCount}
@@ -387,7 +387,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
                           onClick={() => toggleExpand(n)}
                           className="cursor-pointer group"
                         >
-                          <div className={`text-xs font-black text-stone-900 group-hover:text-amber-800 transition ${!n.read ? 'font-black' : 'font-bold text-stone-700'}`}>
+                          <div className={`text-xs font-black text-foreground group-hover:text-amber-800 transition ${!n.read ? 'font-black' : 'font-bold text-foreground-subtle'}`}>
                             {n.title}
                           </div>
 
@@ -413,7 +413,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
                             <button
                               type="button"
                               onClick={() => toggleExpand(n)}
-                              className="text-[9px] font-bold text-stone-400 hover:text-stone-700 cursor-pointer"
+                              className="text-[9px] font-bold text-stone-400 hover:text-foreground-subtle cursor-pointer"
                             >
                               {isExpanded ? '閉じる ▲' : 'もっと見る ▼'}
                             </button>

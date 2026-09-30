@@ -94,7 +94,7 @@ export default function OmikujiModal({ isOpen, onClose, omikujiData, onClaimFini
         {!isSpinning && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 rounded-full text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-surface-subtle dark:hover:bg-[#35373c] transition"
+            className="absolute top-4 right-4 p-2 rounded-full text-stone-400 hover:text-foreground-subtle dark:hover:text-stone-200 hover:bg-surface-subtle dark:hover:bg-[#35373c] transition"
           >
             <X size={18} />
           </button>
@@ -106,7 +106,7 @@ export default function OmikujiModal({ isOpen, onClose, omikujiData, onClaimFini
             <Sparkles size={13} className="animate-spin" />
             <span>KTM デイリーおみくじ</span>
           </div>
-          <h3 className="text-xl font-black text-stone-900 dark:text-white">
+          <h3 className="text-xl font-black text-foreground dark:text-white">
             {isSpinning ? '運命の抽選中...' : `本日の運勢は【${omikujiData.tier}】！`}
           </h3>
         </div>
@@ -125,7 +125,7 @@ export default function OmikujiModal({ isOpen, onClose, omikujiData, onClaimFini
 
           {!isSpinning && (
             <div className="mt-3">
-              <span className="inline-block px-3 py-0.5 rounded-full text-[11px] font-black bg-surface/90 dark:bg-[#1e1f22] text-stone-900 dark:text-white shadow-sm border border-border dark:border-[#3f4147]">
+              <span className="inline-block px-3 py-0.5 rounded-full text-[11px] font-black bg-surface/90 dark:bg-[#1e1f22] text-foreground dark:text-white shadow-sm border border-border dark:border-[#3f4147]">
                 {style.badge}
               </span>
             </div>
@@ -137,7 +137,7 @@ export default function OmikujiModal({ isOpen, onClose, omikujiData, onClaimFini
           <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="p-3 rounded-2xl bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/30 flex items-center justify-center gap-2">
               <Coins className="w-6 h-6 text-amber-600 dark:text-amber-400" />
-              <span className="text-sm font-bold text-stone-700 dark:text-stone-300">獲得:</span>
+              <span className="text-sm font-bold text-foreground-subtle dark:text-stone-300">獲得:</span>
               <strong className="text-2xl font-black text-amber-600 dark:text-amber-400 font-mono">
                 +{omikujiData.coins}
               </strong>

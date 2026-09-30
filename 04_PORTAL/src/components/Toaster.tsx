@@ -32,7 +32,7 @@ export const toast = {
 const STYLE: Record<ToastType, string> = {
   success: 'border-emerald-300 bg-emerald-50 text-emerald-900',
   error: 'border-rose-300 bg-rose-50 text-rose-900',
-  info: 'border-border bg-surface text-stone-900',
+  info: 'border-border bg-surface text-foreground',
 };
 const ICON: Record<ToastType, string> = { success: '✅', error: '❌', info: 'ℹ️' };
 

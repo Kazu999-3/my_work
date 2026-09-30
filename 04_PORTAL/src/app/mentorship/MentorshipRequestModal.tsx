@@ -60,7 +60,7 @@ export function MentorshipRequestModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-surface border border-border rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden text-stone-900 animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
+      <div className="bg-surface border border-border rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden text-foreground animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
         {/* ヘッダー */}
         <div className={`p-5 flex items-center justify-between border-b shrink-0 ${
           isTargetMentor ? 'bg-amber-50/70 border-amber-200' : 'bg-emerald-50/70 border-emerald-200'
@@ -72,7 +72,7 @@ export function MentorshipRequestModal({
               {isTargetMentor ? '🙋' : '🤝'}
             </div>
             <div>
-              <h2 className="text-base font-black text-stone-900">
+              <h2 className="text-base font-black text-foreground">
                 {isTargetMentor ? '弟子入りを申請する' : '師匠オファーを送る'}
               </h2>
               <p className="text-xs text-stone-500 font-bold">
@@ -82,7 +82,7 @@ export function MentorshipRequestModal({
           </div>
           <button
             onClick={onClose}
-            className="text-stone-400 hover:text-stone-700 p-1 rounded-full transition cursor-pointer"
+            className="text-stone-400 hover:text-foreground-subtle p-1 rounded-full transition cursor-pointer"
           >
             <X size={20} />
           </button>
@@ -92,11 +92,11 @@ export function MentorshipRequestModal({
           {/* 相手のプロフィール概要 */}
           <div className="p-3.5 bg-background rounded-2xl border border-border space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black text-stone-800 flex items-center gap-1.5">
+              <span className="text-xs font-black text-foreground-soft flex items-center gap-1.5">
                 <span>👤 申請相手:</span>
-                <span className="text-sm font-black text-stone-900">{targetProfile.player_name}</span>
+                <span className="text-sm font-black text-foreground">{targetProfile.player_name}</span>
               </span>
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-surface-hover/80 text-stone-800">
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-surface-hover/80 text-foreground-soft">
                 {targetProfile.current_rank}
               </span>
             </div>
@@ -104,14 +104,14 @@ export function MentorshipRequestModal({
             {targetProfile.lanes && targetProfile.lanes.length > 0 && (
               <div className="flex items-center gap-1.5 text-xs text-stone-600 font-bold">
                 <span>レーン:</span>
-                <span className="text-stone-900">{targetProfile.lanes.join(', ')}</span>
+                <span className="text-foreground">{targetProfile.lanes.join(', ')}</span>
               </div>
             )}
           </div>
 
           {/* 期間設定 (Duration) */}
           <div className="space-y-2.5">
-            <label className="block text-xs font-black text-stone-700 flex items-center justify-between">
+            <label className="block text-xs font-black text-foreground-subtle flex items-center justify-between">
               <span className="flex items-center gap-1.5">
                 <Clock size={14} className="text-amber-600" />
                 <span>希望するペア活動・指導の期間</span>
@@ -136,8 +136,8 @@ export function MentorshipRequestModal({
                         onClick={() => setDurationKey(key)}
                         className={`p-2.5 rounded-xl text-left border text-xs font-bold transition flex flex-col justify-between gap-1 cursor-pointer ${
                           isSelected
-                            ? 'bg-gradient-to-br from-teal-50 to-amber-50 border-teal-400 text-stone-900 shadow-2xs ring-2 ring-teal-300'
-                            : 'bg-background border-border text-stone-700 hover:bg-teal-50/50 hover:border-teal-300'
+                            ? 'bg-gradient-to-br from-teal-50 to-amber-50 border-teal-400 text-foreground shadow-2xs ring-2 ring-teal-300'
+                            : 'bg-background border-border text-foreground-subtle hover:bg-teal-50/50 hover:border-teal-300'
                         }`}
                       >
                         <div className="flex items-center justify-between">
@@ -167,7 +167,7 @@ export function MentorshipRequestModal({
                         className={`p-2 rounded-xl text-left border text-xs font-bold transition flex items-center justify-between cursor-pointer ${
                           isSelected
                             ? 'bg-amber-50 border-amber-400 text-amber-950 shadow-2xs'
-                            : 'bg-background border-border text-stone-700 hover:bg-surface-subtle'
+                            : 'bg-background border-border text-foreground-subtle hover:bg-surface-subtle'
                         }`}
                       >
                         <span>{item.label}</span>
@@ -182,7 +182,7 @@ export function MentorshipRequestModal({
 
           {/* 希望するやりとりの形（2026-09-30追加。従来はUIが無く全員VC_ACTIVE固定だった） */}
           <div className="space-y-2">
-            <label className="block text-xs font-black text-stone-700">
+            <label className="block text-xs font-black text-foreground-subtle">
               希望するやりとりの形
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -199,7 +199,7 @@ export function MentorshipRequestModal({
                         : 'bg-surface border-border hover:border-border'
                     }`}
                   >
-                    <div className="text-xs font-black text-stone-900">{item.label}</div>
+                    <div className="text-xs font-black text-foreground">{item.label}</div>
                     <div className="text-[10px] text-stone-500 font-medium leading-tight mt-0.5">{item.desc}</div>
                   </button>
                 );
@@ -210,7 +210,7 @@ export function MentorshipRequestModal({
           {/* 期間切れ後の自動継続（そのまま実行）設定 */}
           <div className="p-3 bg-background rounded-2xl border border-border flex items-center justify-between gap-3">
             <div className="space-y-0.5">
-              <div className="flex items-center gap-1.5 text-xs font-black text-stone-900">
+              <div className="flex items-center gap-1.5 text-xs font-black text-foreground">
                 <RefreshCw size={13} className="text-emerald-600" />
                 <span>期間満了時の設定</span>
               </div>
@@ -233,7 +233,7 @@ export function MentorshipRequestModal({
 
           {/* ひと言メッセージ入力 */}
           <div className="space-y-2">
-            <label className="block text-xs font-black text-stone-700 flex items-center justify-between">
+            <label className="block text-xs font-black text-foreground-subtle flex items-center justify-between">
               <span>ひと言メッセージ（意気込みや教えてほしいこと）</span>
               <span className="text-[11px] text-stone-400 font-normal">例文から選択可能</span>
             </label>
@@ -245,7 +245,7 @@ export function MentorshipRequestModal({
                   key={idx}
                   type="button"
                   onClick={() => setMessage(tmpl)}
-                  className="w-full text-left p-2 rounded-xl bg-surface-subtle hover:bg-surface-hover/80 border border-border text-[11px] text-stone-700 hover:text-stone-900 font-medium transition cursor-pointer leading-snug"
+                  className="w-full text-left p-2 rounded-xl bg-surface-subtle hover:bg-surface-hover/80 border border-border text-[11px] text-foreground-subtle hover:text-foreground font-medium transition cursor-pointer leading-snug"
                 >
                   💬 {tmpl}
                 </button>
@@ -257,7 +257,7 @@ export function MentorshipRequestModal({
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="メッセージを入力してください（上の例文をクリックしても入力できます）..."
-              className="w-full bg-background border border-border rounded-2xl p-3 text-stone-900 text-xs focus:border-amber-500 focus:bg-surface focus:outline-hidden font-medium leading-relaxed"
+              className="w-full bg-background border border-border rounded-2xl p-3 text-foreground text-xs focus:border-amber-500 focus:bg-surface focus:outline-hidden font-medium leading-relaxed"
             />
           </div>
 
@@ -266,7 +266,7 @@ export function MentorshipRequestModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-bold text-stone-600 hover:text-stone-900 rounded-xl transition cursor-pointer"
+              className="px-4 py-2 text-xs font-bold text-stone-600 hover:text-foreground rounded-xl transition cursor-pointer"
             >
               キャンセル
             </button>
