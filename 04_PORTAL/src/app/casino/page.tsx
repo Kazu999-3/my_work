@@ -612,7 +612,7 @@ export default function CasinoPage() {
   };
 
   return (
-    <div className="min-h-screen pb-16 bg-[#eae4d4] text-[#201c2b]">
+    <div className="min-h-screen pb-16 bg-[#eae4d4] dark:bg-[#1e1f22] text-[#201c2b] dark:text-[#f2f3f5]">
       {/* ヒーローセクション */}
       <div className="bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-amber-500/15 text-stone-900 py-10 px-6 relative overflow-hidden border-b border-amber-500/30">
         <div className="max-w-4xl mx-auto relative z-10 text-center space-y-3">

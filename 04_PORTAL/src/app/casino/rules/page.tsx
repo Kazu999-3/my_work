@@ -75,7 +75,7 @@ const OMIKUJI_ROWS = [
 
 export default function CasinoRulesPage() {
   return (
-    <div className="min-h-screen pb-16 bg-[#eae4d4] text-[#201c2b]">
+    <div className="min-h-screen pb-16 bg-[#eae4d4] dark:bg-[#1e1f22] text-[#201c2b] dark:text-[#f2f3f5]">
       {/* ヘッダー */}
       <div className="bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-amber-500/15 py-8 px-4 md:px-6 border-b border-amber-500/30">
         <div className="max-w-4xl mx-auto space-y-3">

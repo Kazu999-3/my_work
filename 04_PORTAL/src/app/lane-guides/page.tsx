@@ -395,7 +395,7 @@ export default function LaneGuidesPage() {
         {/* ✨ AI清書 プレビューモーダル（📝 朱入れ校閲・添削モード） */}
         {refinePreview && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-stone-950/80 backdrop-blur-md animate-fade-in touch-pan-y">
-            <div className="bg-[#fcfbf9] border border-stone-200 rounded-2xl sm:rounded-3xl w-full max-w-[1550px] w-[96vw] h-[94vh] max-h-[94vh] shadow-2xl flex flex-col overflow-hidden">
+            <div className="bg-[#fcfbf9] dark:bg-[#2b2d31] border border-stone-200 rounded-2xl sm:rounded-3xl w-full max-w-[1550px] w-[96vw] h-[94vh] max-h-[94vh] shadow-2xl flex flex-col overflow-hidden">
               {/* ヘッダー */}
               <div className="p-3.5 sm:p-5 border-b border-stone-200 flex items-center justify-between gap-2 shrink-0 bg-white">
                 <div className="min-w-0">

@@ -191,7 +191,7 @@ function DictHealthDashboardContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f7f5f0] text-gray-900 font-sans">
+      <div className="min-h-screen flex items-center justify-center bg-[#f7f5f0] dark:bg-[#1e1f22] text-gray-900 font-sans">
         <div className="flex flex-col items-center gap-3">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-200 border-t-amber-600" />
           <p className="text-sm font-semibold text-gray-600">SSOT ヘルス状態を照合中...</p>
@@ -786,7 +786,7 @@ function DictHealthDashboardContent() {
 export default function DictHealthDashboard() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#f7f5f0] flex items-center justify-center">
+      <div className="min-h-screen bg-[#f7f5f0] dark:bg-[#1e1f22] flex items-center justify-center">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-200 border-t-amber-600" />
       </div>
     }>

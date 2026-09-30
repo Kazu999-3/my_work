@@ -353,7 +353,7 @@ export default function LibraryMergePreviewModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-[#fcfbf9] border border-stone-200 rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-5">
+      <div className="bg-[#fcfbf9] dark:bg-[#2b2d31] border border-stone-200 rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl space-y-5">
         {/* ヘッダー */}
         <div className="flex items-start sm:items-center justify-between border-b border-stone-200 pb-4 gap-4 flex-col sm:flex-row">
           <div>

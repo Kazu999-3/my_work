@@ -201,7 +201,7 @@ export default function AdminDashboardPage() {
   // 認証チェック完了後に未認証であれば即座にログイン案内を表示
   if (isAuthenticated === false) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-[#f7f5f0] text-stone-900 font-sans">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-[#f7f5f0] dark:bg-[#1e1f22] text-stone-900 font-sans">
         <div className="text-center max-w-sm rounded-3xl border border-stone-200/80 bg-white/90 backdrop-blur-md p-8 shadow-xl">
           <div className="text-4xl mb-3">🔑</div>
           <h2 className="text-lg font-black mb-2">管理者認証が必要です</h2>
@@ -222,7 +222,7 @@ export default function AdminDashboardPage() {
   // 認証中、またはデータ読み込み中のスピナー表示
   if (isAuthenticated === null || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f7f5f0]">
+      <div className="min-h-screen flex items-center justify-center bg-[#f7f5f0] dark:bg-[#1e1f22]">
         <div className="flex flex-col items-center gap-3">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-500/20 border-t-amber-600" />
           <p className="text-xs font-bold text-stone-500">システム運用ダッシュボードを読み込み中...</p>
@@ -237,7 +237,7 @@ export default function AdminDashboardPage() {
   const redPercent = totalBetAmount > 0 ? 100 - bluePercent : 50;
 
   return (
-    <div className="min-h-screen w-full bg-[#f7f5f0] text-stone-900 relative overflow-hidden">
+    <div className="min-h-screen w-full bg-[#f7f5f0] dark:bg-[#1e1f22] text-stone-900 relative overflow-hidden">
       {/* Background Decorative Ambient Orbs */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
         <div className="absolute top-[-5%] right-[-5%] w-[45vw] h-[45vw] rounded-full bg-amber-500/10 blur-[130px] animate-pulse"></div>
