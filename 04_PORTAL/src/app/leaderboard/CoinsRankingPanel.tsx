@@ -100,9 +100,9 @@ export default function CoinsRankingPanel() {
               <Coins size={24} />
             </div>
             <div>
-              <p className="text-[11px] font-bold text-stone-500">総流通コイン</p>
+              <p className="text-[11px] font-bold text-muted-strong">総流通コイン</p>
               <p className="text-xl font-black text-amber-600 font-mono tracking-tight">
-                {stats.totalCoins.toLocaleString()} <span className="text-xs font-bold text-stone-400">🪙</span>
+                {stats.totalCoins.toLocaleString()} <span className="text-xs font-bold text-faint">🪙</span>
               </p>
             </div>
           </div>
@@ -112,9 +112,9 @@ export default function CoinsRankingPanel() {
               <Users size={24} />
             </div>
             <div>
-              <p className="text-[11px] font-bold text-stone-500">登録プレイヤー数</p>
+              <p className="text-[11px] font-bold text-muted-strong">登録プレイヤー数</p>
               <p className="text-xl font-black text-foreground font-mono tracking-tight">
-                {stats.totalPlayers} <span className="text-xs font-bold text-stone-400">名</span>
+                {stats.totalPlayers} <span className="text-xs font-bold text-faint">名</span>
               </p>
             </div>
           </div>
@@ -124,9 +124,9 @@ export default function CoinsRankingPanel() {
               <TrendingUp size={24} />
             </div>
             <div>
-              <p className="text-[11px] font-bold text-stone-500">1人あたり平均所持</p>
+              <p className="text-[11px] font-bold text-muted-strong">1人あたり平均所持</p>
               <p className="text-xl font-black text-foreground-soft font-mono tracking-tight">
-                {stats.avgCoins.toLocaleString()} <span className="text-xs font-bold text-stone-400">🪙</span>
+                {stats.avgCoins.toLocaleString()} <span className="text-xs font-bold text-faint">🪙</span>
               </p>
             </div>
           </div>
@@ -160,7 +160,7 @@ export default function CoinsRankingPanel() {
                 </div>
               </div>
               <div className="mt-3 pt-3 border-t border-border/80 flex items-baseline justify-between">
-                <span className="text-[11px] text-stone-400 font-bold">所持コイン</span>
+                <span className="text-[11px] text-faint font-bold">所持コイン</span>
                 <span className="text-lg font-black text-foreground-soft font-mono">
                   🪙 {top2.coins.toLocaleString()}
                 </span>
@@ -225,7 +225,7 @@ export default function CoinsRankingPanel() {
                 </div>
               </div>
               <div className="mt-3 pt-3 border-t border-border/80 flex items-baseline justify-between">
-                <span className="text-[11px] text-stone-400 font-bold">所持コイン</span>
+                <span className="text-[11px] text-faint font-bold">所持コイン</span>
                 <span className="text-lg font-black text-amber-800 font-mono">
                   🪙 {top3.coins.toLocaleString()}
                 </span>
@@ -238,7 +238,7 @@ export default function CoinsRankingPanel() {
       {/* コントロールバー（検索・ソート） */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-surface/80 backdrop-blur-sm border border-border/90 rounded-2xl p-3 shadow-2xs">
         <div className="flex items-center gap-2 flex-1 min-w-[240px]">
-          <Search size={16} className="text-stone-400" />
+          <Search size={16} className="text-faint" />
           <input
             type="text"
             value={search}
@@ -249,14 +249,14 @@ export default function CoinsRankingPanel() {
           {search && (
             <button
               onClick={() => setSearch('')}
-              className="text-stone-400 hover:text-foreground-subtle text-xs px-2 py-0.5 rounded-md bg-surface-subtle cursor-pointer"
+              className="text-faint hover:text-foreground-subtle text-xs px-2 py-0.5 rounded-md bg-surface-subtle cursor-pointer"
             >
               クリア
             </button>
           )}
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-bold text-stone-500">
+        <div className="flex items-center gap-2 text-xs font-bold text-muted-strong">
           <span>並び替え:</span>
           <button
             onClick={() => setSortDir((d) => (d === 'desc' ? 'asc' : 'desc'))}
@@ -269,7 +269,7 @@ export default function CoinsRankingPanel() {
 
       {/* 全プレイヤー ランキング一覧 */}
       <div className="bg-surface/90 backdrop-blur-sm rounded-2xl border border-border/90 shadow-xs overflow-hidden">
-        <div className="flex items-center gap-3 px-4 py-3 bg-background/90 border-b border-border text-[11px] font-black text-stone-500">
+        <div className="flex items-center gap-3 px-4 py-3 bg-background/90 border-b border-border text-[11px] font-black text-muted-strong">
           <span className="w-10 text-center shrink-0">順位</span>
           <span className="flex-1 min-w-0">プレイヤー</span>
           <span className="w-24 text-center shrink-0 hidden sm:block">最高ランク</span>
@@ -279,7 +279,7 @@ export default function CoinsRankingPanel() {
 
         <div className="divide-y divide-stone-100">
           {filteredPlayers.length === 0 ? (
-            <div className="p-12 text-center text-stone-400 text-xs font-bold">
+            <div className="p-12 text-center text-faint text-xs font-bold">
               該当するプレイヤーが見つかりません
             </div>
           ) : (
@@ -298,7 +298,7 @@ export default function CoinsRankingPanel() {
                         ? 'bg-stone-300 text-foreground-soft font-bold'
                         : player.rank === 3
                         ? 'bg-amber-700 text-white font-bold'
-                        : 'text-stone-500 bg-surface-subtle'
+                        : 'text-muted-strong bg-surface-subtle'
                     }`}
                   >
                     {player.rank}
@@ -313,7 +313,7 @@ export default function CoinsRankingPanel() {
                   >
                     {player.name}
                   </Link>
-                  <span className="sm:hidden text-[10px] text-stone-400 block mt-0.5">
+                  <span className="sm:hidden text-[10px] text-faint block mt-0.5">
                     {player.highestRank}
                   </span>
                 </div>
@@ -336,7 +336,7 @@ export default function CoinsRankingPanel() {
                 <div className="w-16 text-center shrink-0">
                   <Link
                     href={`/player/${player.discordId || player.name}`}
-                    className="inline-flex items-center justify-center p-1.5 rounded-lg bg-surface-subtle hover:bg-amber-500 hover:text-white text-stone-500 transition cursor-pointer"
+                    className="inline-flex items-center justify-center p-1.5 rounded-lg bg-surface-subtle hover:bg-amber-500 hover:text-white text-muted-strong transition cursor-pointer"
                     title={`${player.name} の個人カルテ`}
                   >
                     <ArrowUpRight size={14} />
@@ -356,7 +356,7 @@ export default function CoinsRankingPanel() {
           </div>
           <div>
             <p className="text-xs font-black text-foreground">もっとコインを増やしたい？</p>
-            <p className="text-[11px] text-stone-500">カスタム戦の勝敗予想やデイリーボーナスでコインをGETしよう！</p>
+            <p className="text-[11px] text-muted-strong">カスタム戦の勝敗予想やデイリーボーナスでコインをGETしよう！</p>
           </div>
         </div>
         <Link

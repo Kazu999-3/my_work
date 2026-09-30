@@ -170,14 +170,14 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
             <h2 className="text-base sm:text-lg font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-emerald-200 via-emerald-400 to-teal-500">
               ブッシュ・スカウト
             </h2>
-            <p className="text-xs text-stone-400">
+            <p className="text-xs text-faint">
               キノコを避けてブッシュにワードを刺す。1マスごとに倍率アップ、いつでも引き返せます。
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 bg-stone-800/70 border border-stone-700/60 px-3.5 py-1.5 rounded-xl self-start sm:self-center">
-          <span className="text-xs text-stone-400">所持コイン:</span>
+          <span className="text-xs text-faint">所持コイン:</span>
           <span className="text-sm font-black text-amber-400 font-mono">
             {userCoins.toLocaleString()} 🪙
           </span>
@@ -187,7 +187,7 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
       {/* 設定パネル（ラウンド中は変更不可） */}
       <div className="space-y-3">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-xs font-bold text-stone-400 mr-1 w-full sm:w-auto">🍄 キノコの数:</span>
+          <span className="text-xs font-bold text-faint mr-1 w-full sm:w-auto">🍄 キノコの数:</span>
           {MINES_ALLOWED_MINE_COUNTS.map((m) => (
             <button
               key={m}
@@ -198,19 +198,19 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
               className={`px-3 py-2 rounded-xl text-xs font-black transition cursor-pointer ${
                 activeMineCount === m
                   ? 'bg-emerald-500 text-stone-950 shadow-md shadow-emerald-500/30 ring-2 ring-emerald-300'
-                  : 'bg-stone-800 hover:bg-stone-700 text-stone-300'
+                  : 'bg-stone-800 hover:bg-stone-700 text-faint'
               } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {m}個
             </button>
           ))}
-          <span className="text-[11px] text-stone-500 ml-1">
+          <span className="text-[11px] text-muted-strong ml-1">
             {MINE_COUNT_LABELS[activeMineCount]?.label} / {MINE_COUNT_LABELS[activeMineCount]?.hint}
           </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-xs font-bold text-stone-400 mr-1 w-full sm:w-auto">🪙 ベット額:</span>
+          <span className="text-xs font-bold text-faint mr-1 w-full sm:w-auto">🪙 ベット額:</span>
           {MINES_ALLOWED_BETS.map((amt) => (
             <button
               key={amt}
@@ -220,13 +220,13 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
               className={`px-3 py-2 rounded-xl text-xs font-black transition cursor-pointer ${
                 activeBet === amt
                   ? 'bg-amber-500 text-stone-950 shadow-md shadow-amber-500/30 ring-2 ring-yellow-300'
-                  : 'bg-stone-800 hover:bg-stone-700 text-stone-300'
+                  : 'bg-stone-800 hover:bg-stone-700 text-faint'
               } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {amt} 🪙
             </button>
           ))}
-          <span className="text-[11px] text-stone-500 ml-1">
+          <span className="text-[11px] text-muted-strong ml-1">
             最大 {activeMax}マス / 最高 {previewTable[previewTable.length - 1]?.multiplier ?? 0}倍
           </span>
         </div>
@@ -239,7 +239,7 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
           <span className="text-emerald-400/80">
             ● {revealedCount} / {activeMax} マス
           </span>
-          <span className="text-stone-400">
+          <span className="text-faint">
             {isPlaying && state
               ? state.nextMultiplier
                 ? `次の1マスで ${state.nextMultiplier}倍`
@@ -297,13 +297,13 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
         {isPlaying && state && (
           <div className="grid grid-cols-2 gap-2.5">
             <div className="bg-stone-900/80 border border-stone-800 rounded-2xl p-3 text-center">
-              <div className="text-[10px] text-stone-400 font-bold">現在の倍率</div>
+              <div className="text-[10px] text-faint font-bold">現在の倍率</div>
               <div className="text-xl font-black font-mono text-emerald-400">
                 {state.multiplier > 0 ? `${state.multiplier}倍` : '—'}
               </div>
             </div>
             <div className="bg-stone-900/80 border border-stone-800 rounded-2xl p-3 text-center">
-              <div className="text-[10px] text-stone-400 font-bold">引き返すともらえる額</div>
+              <div className="text-[10px] text-faint font-bold">引き返すともらえる額</div>
               <div className="text-xl font-black font-mono text-amber-400">
                 {state.payout > 0 ? `${state.payout.toLocaleString()}🪙` : '—'}
               </div>
@@ -319,7 +319,7 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
                 ? 'bg-emerald-950/70 border-emerald-700/70 text-emerald-300'
                 : state.status === 'lost'
                 ? 'bg-rose-950/60 border-rose-800/70 text-rose-300'
-                : 'bg-stone-900/80 border-stone-800 text-stone-300'
+                : 'bg-stone-900/80 border-stone-800 text-faint'
             }`}
           >
             <p className="text-sm">{state.message}</p>
@@ -342,7 +342,7 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
         {/* 操作ボタン */}
         <div className="pt-1">
           {restoring ? (
-            <div className="w-full py-3.5 rounded-2xl bg-stone-800 text-stone-400 text-xs font-black flex items-center justify-center gap-2">
+            <div className="w-full py-3.5 rounded-2xl bg-stone-800 text-faint text-xs font-black flex items-center justify-center gap-2">
               <Loader2 size={16} className="animate-spin" />
               <span>進行中のラウンドを確認しています…</span>
             </div>
@@ -385,7 +385,7 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
         <button
           type="button"
           onClick={() => setShowTable((v) => !v)}
-          className="w-full font-extrabold text-stone-300 flex items-center justify-between gap-1.5 text-xs cursor-pointer"
+          className="w-full font-extrabold text-faint flex items-center justify-between gap-1.5 text-xs cursor-pointer"
         >
           <span className="flex items-center gap-1.5">
             <Trophy size={14} className="text-amber-400" />
@@ -393,7 +393,7 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
               倍率表（キノコ{activeMineCount}個 / ベット{activeBet}🪙）
             </span>
           </span>
-          <span className="text-stone-500">{showTable ? '閉じる ▲' : '開く ▼'}</span>
+          <span className="text-muted-strong">{showTable ? '閉じる ▲' : '開く ▼'}</span>
         </button>
 
         {showTable && (
@@ -404,17 +404,17 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
                 className={`p-1.5 rounded-lg border flex items-center justify-between gap-1 ${
                   revealedCount === row.revealCount
                     ? 'bg-emerald-950/60 border-emerald-700 text-emerald-300'
-                    : 'bg-stone-900/70 border-stone-800/80 text-stone-300'
+                    : 'bg-stone-900/70 border-stone-800/80 text-faint'
                 }`}
               >
-                <span className="text-stone-500">{row.revealCount}</span>
+                <span className="text-muted-strong">{row.revealCount}</span>
                 <span className="font-black font-mono">{row.multiplier}倍</span>
               </div>
             ))}
           </div>
         )}
 
-        <p className="text-[10px] text-stone-500 leading-relaxed pt-1 border-t border-stone-800/80">
+        <p className="text-[10px] text-muted-strong leading-relaxed pt-1 border-t border-stone-800/80">
           還元率95%。どのマス数で引き返しても期待値は同じなので、「何マスまで開けるのが得か」という正解はありません。
           1ラウンドの払い戻しは {MINES_MAX_PAYOUT.toLocaleString()}🪙 が上限で、到達すると自動で引き返します
           （ベット額が小さいほど高い倍率まで伸ばせます）。キノコの位置はラウンド開始時にサーバー側で確定し、

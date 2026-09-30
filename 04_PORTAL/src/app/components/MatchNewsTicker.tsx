@@ -72,7 +72,7 @@ export default function MatchNewsTicker() {
                 </span>
               </h3>
             </div>
-            <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium">
+            <p className="text-[11px] text-muted-strong font-medium">
               直近の公式カスタム試合結果をAIデスクが面白ダイジェスト実況！
             </p>
           </div>
@@ -118,19 +118,19 @@ export default function MatchNewsTicker() {
                     }`}>
                       {item.winningTeam === 'BLUE' ? '🟦 BLUE勝利' : '🟥 RED勝利'}
                     </span>
-                    <span className="text-[10px] text-stone-400 font-mono">
+                    <span className="text-[10px] text-faint font-mono">
                       {new Date(item.createdAt).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
                   <h4 className="text-sm sm:text-base font-black text-foreground dark:text-white leading-snug hover:text-amber-700 dark:hover:text-amber-400 transition-colors">
                     {art.headline}
                   </h4>
-                  <p className="text-xs text-stone-500 dark:text-stone-300 font-bold truncate">
+                  <p className="text-xs text-muted-strong font-bold truncate">
                     {art.subheadline}
                   </p>
                 </div>
 
-                <span className="text-xs text-stone-400 font-bold shrink-0 pt-1">
+                <span className="text-xs text-faint font-bold shrink-0 pt-1">
                   {isExpanded ? '閉じる ▲' : '読む ▼'}
                 </span>
               </button>
@@ -151,10 +151,10 @@ export default function MatchNewsTicker() {
                           <Trophy className="w-3.5 h-3.5" />
                           <span>本日のMVP: {art.mvp.name} 選手 ({art.mvp.role})</span>
                         </div>
-                        <div className="text-[11px] text-stone-500 font-mono">
+                        <div className="text-[11px] text-muted-strong font-mono">
                           KDA: <strong className="text-foreground-soft dark:text-white">{art.mvp.kda}</strong>
                         </div>
-                        <p className="text-[11px] text-stone-600 dark:text-stone-300 leading-tight">
+                        <p className="text-[11px] text-muted leading-tight">
                           {art.mvp.comment}
                         </p>
                       </div>
@@ -166,7 +166,7 @@ export default function MatchNewsTicker() {
                         <Flame className="w-3.5 h-3.5" />
                         <span>勝負の分水嶺</span>
                       </div>
-                      <p className="text-[11px] text-stone-600 dark:text-stone-300 leading-relaxed">
+                      <p className="text-[11px] text-muted leading-relaxed">
                         {art.turningPoint}
                       </p>
                     </div>
@@ -174,12 +174,12 @@ export default function MatchNewsTicker() {
 
                   {/* 試合後インタビュー ＆ サイドストーリー */}
                   <div className="p-3 rounded-xl bg-black/[0.03] dark:bg-white/[0.03] border border-border/80 dark:border-stone-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-[11px]">
-                    <div className="flex items-center gap-1.5 italic text-stone-600 dark:text-stone-300">
+                    <div className="flex items-center gap-1.5 italic text-muted">
                       <MessageSquareQuote className="w-4 h-4 text-amber-500 shrink-0" />
                       <span>「{art.interviewQuote}」</span>
                     </div>
                     {art.sideStory && (
-                      <span className="text-stone-500 dark:text-stone-400 font-medium">
+                      <span className="text-muted-strong font-medium">
                         💡 {art.sideStory}
                       </span>
                     )}

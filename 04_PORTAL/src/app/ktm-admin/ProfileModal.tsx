@@ -76,7 +76,7 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
             <div>
               <h2 className="text-3xl font-extrabold text-foreground">{player.name}</h2>
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-stone-400 text-sm font-medium">{player.ign || "IGN未登録"}</span>
+                <span className="text-faint text-sm font-medium">{player.ign || "IGN未登録"}</span>
                 <span className="bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded text-xs font-bold">
                   {player.highest_rank || "UNRANKED"}
                 </span>
@@ -116,7 +116,7 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
           </div>
           <button 
             onClick={onClose}
-            className="text-stone-400 hover:text-foreground bg-black/5 hover:bg-black/8 p-2 rounded-full transition"
+            className="text-faint hover:text-foreground bg-black/5 hover:bg-black/8 p-2 rounded-full transition"
           >
             <X className="w-6 h-6" />
           </button>
@@ -144,13 +144,13 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                     />
                     <div>
                       <div className="text-lg font-bold text-foreground">{m.name === 'Unknown' ? `ID:${m.championId}` : m.name}</div>
-                      <div className="text-sm text-stone-400">Lv {m.championLevel} • {m.championPoints.toLocaleString()} pts</div>
+                      <div className="text-sm text-faint">Lv {m.championLevel} • {m.championPoints.toLocaleString()} pts</div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-stone-500 italic bg-black/5 p-4 rounded-lg border border-border">
+              <div className="text-muted-strong italic bg-black/5 p-4 rounded-lg border border-border">
                 Riot APIの同期データがありません。ダッシュボードから一括同期を行ってください。
               </div>
             )}
@@ -179,12 +179,12 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                       <Activity className="w-5 h-5 text-amber-700" />
                       AI プレイスタイル分析
                     </h4>
-                    <p className="text-stone-400 text-sm">
+                    <p className="text-faint text-sm">
                       過去のKTM内戦の勝率、プレイ回数、選択レーン、そして現在のMMRから算出されたプレイスタイル指標です。
                     </p>
                     <div className="grid grid-cols-2 gap-4 mt-2">
                       <div className="bg-surface p-3 rounded border border-border">
-                        <div className="text-xs text-stone-500 font-bold mb-1">総合勝率</div>
+                        <div className="text-xs text-muted-strong font-bold mb-1">総合勝率</div>
                         <div className="text-2xl font-black text-emerald-700">
                           {Math.round(
                             Object.values(stats as Record<string, any>).reduce((acc:any, s:any) => acc + (s ? s.totalWins : 0), 0) /
@@ -193,7 +193,7 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                         </div>
                       </div>
                       <div className="bg-surface p-3 rounded border border-border">
-                        <div className="text-xs text-stone-500 font-bold mb-1">総試合数</div>
+                        <div className="text-xs text-muted-strong font-bold mb-1">総試合数</div>
                         <div className="text-2xl font-black text-amber-700">
                           {Object.values(stats as Record<string, any>).reduce((acc:any, s:any) => acc + (s ? s.totalGames : 0), 0)}戦
                         </div>
@@ -215,14 +215,14 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                           {roleIcons[role]}
                           <span className="font-bold text-lg text-foreground-soft">{role}</span>
                         </div>
-                        <span className="text-xs text-stone-400 font-medium bg-surface px-2 py-1 rounded">
+                        <span className="text-xs text-faint font-medium bg-surface px-2 py-1 rounded">
                           MMR: {player[`mmr_${role.toLowerCase()}`] || 1200}
                         </span>
                       </div>
                       
                       <div className="mb-4">
                         <div className="flex justify-between text-sm mb-1">
-                          <span className="text-stone-400">勝率 ({s.totalWins}W {s.totalGames - s.totalWins}L)</span>
+                          <span className="text-faint">勝率 ({s.totalWins}W {s.totalGames - s.totalWins}L)</span>
                           <span className={`font-bold ${s.winRate >= 50 ? 'text-emerald-700' : 'text-red-700'}`}>
                             {s.winRate}%
                           </span>
@@ -236,14 +236,14 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                       </div>
 
                       <div className="mt-auto space-y-2">
-                        <div className="text-xs text-stone-500 font-bold uppercase mb-2">よく使うチャンピオン</div>
+                        <div className="text-xs text-muted-strong font-bold uppercase mb-2">よく使うチャンピオン</div>
                         {s.topChampions.map((champ: any, cIdx: number) => {
                           if (champ.name === 'Unknown') {
                             return (
                               <div key={cIdx} className="flex items-center gap-2 bg-black/3 p-1.5 rounded">
-                                <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center text-stone-500 text-[10px]">?</div>
-                                <div className="flex-1 text-sm font-medium text-stone-500 italic">記録なし</div>
-                                <div className="text-xs text-stone-500">{champ.games}戦</div>
+                                <div className="w-6 h-6 rounded-full bg-black/5 flex items-center justify-center text-muted-strong text-[10px]">?</div>
+                                <div className="flex-1 text-sm font-medium text-muted-strong italic">記録なし</div>
+                                <div className="text-xs text-muted-strong">{champ.games}戦</div>
                               </div>
                             );
                           }
@@ -258,7 +258,7 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                               />
                               <div className="flex-1 text-sm font-medium text-foreground-subtle truncate">{champ.name}</div>
-                              <div className="text-xs text-stone-500">{champ.games}戦</div>
+                              <div className="text-xs text-muted-strong">{champ.games}戦</div>
                             </div>
                           );
                         })}
@@ -269,7 +269,7 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
               </div>
             </div>
             ) : (
-               <div className="text-stone-500 italic bg-black/5 p-4 rounded-lg border border-border">
+               <div className="text-muted-strong italic bg-black/5 p-4 rounded-lg border border-border">
                 KTMでの試合記録がまだありません。
               </div>
             )}

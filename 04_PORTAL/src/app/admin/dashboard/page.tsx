@@ -205,7 +205,7 @@ export default function AdminDashboardPage() {
         <div className="text-center max-w-sm rounded-3xl border border-border/80 bg-surface/90 backdrop-blur-md p-8 shadow-xl">
           <div className="text-4xl mb-3">🔑</div>
           <h2 className="text-lg font-black mb-2">管理者認証が必要です</h2>
-          <p className="text-xs text-stone-500 mb-6 leading-relaxed">
+          <p className="text-xs text-muted-strong mb-6 leading-relaxed">
             システム運用コントロールセンターは管理者専用です。Discord管理者アカウントでログインしてください。
           </p>
           <a
@@ -225,7 +225,7 @@ export default function AdminDashboardPage() {
       <div className="min-h-screen flex items-center justify-center bg-[#f7f5f0] dark:bg-[#1e1f22]">
         <div className="flex flex-col items-center gap-3">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-500/20 border-t-amber-600" />
-          <p className="text-xs font-bold text-stone-500">システム運用ダッシュボードを読み込み中...</p>
+          <p className="text-xs font-bold text-muted-strong">システム運用ダッシュボードを読み込み中...</p>
         </div>
       </div>
     );
@@ -261,7 +261,7 @@ export default function AdminDashboardPage() {
                 HQ v5.2
               </span>
             </div>
-            <p className="text-xs text-stone-500 font-medium">
+            <p className="text-xs text-muted-strong font-medium">
               Sovereign OS 全体の稼働状況、大会・勝敗予想メトリクス、AI知識ベースの総合管制センター
             </p>
           </div>
@@ -273,7 +273,7 @@ export default function AdminDashboardPage() {
               className="px-3.5 py-2 rounded-xl bg-surface/80 backdrop-blur-md border border-border hover:bg-surface hover:border-border text-xs font-bold text-foreground-subtle transition shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               title="データを即時更新"
             >
-              <RefreshCw size={13} className={isRefreshing ? 'animate-spin text-amber-600' : 'text-stone-500'} />
+              <RefreshCw size={13} className={isRefreshing ? 'animate-spin text-amber-600' : 'text-muted-strong'} />
               <span>{isRefreshing ? '更新中...' : '即時リフレッシュ'}</span>
             </button>
 
@@ -315,7 +315,7 @@ export default function AdminDashboardPage() {
             </Link>
 
             {lastUpdated && (
-              <span className="text-[11px] text-stone-400 font-mono flex items-center gap-1 ml-1">
+              <span className="text-[11px] text-faint font-mono flex items-center gap-1 ml-1">
                 <Clock size={11} /> {lastUpdated}
               </span>
             )}
@@ -352,7 +352,7 @@ export default function AdminDashboardPage() {
                     {healthStatus.allGreen ? 'ALL GREEN' : 'ATTENTION'}
                   </span>
                 </div>
-                <div className="text-[11px] text-stone-600 flex items-center gap-3 mt-0.5 font-medium flex-wrap">
+                <div className="text-[11px] text-muted flex items-center gap-3 mt-0.5 font-medium flex-wrap">
                   <span>🔗 リンク切れ: <strong className="text-emerald-700 font-bold">{healthStatus.metrics.brokenLinks}件</strong></span>
                   <span>📅 デイリー日誌: <strong className="text-foreground-soft font-bold">{healthStatus.metrics.latestDailyLog}</strong></span>
                 </div>
@@ -392,7 +392,7 @@ export default function AdminDashboardPage() {
                 <span className="font-black text-xs block text-foreground">
                   ℹ️ ローカルPythonワーカー（エッジワーカー）は待機中/未起動です
                 </span>
-                <p className="text-[11px] text-stone-600 font-medium mt-0.5">
+                <p className="text-[11px] text-muted font-medium mt-0.5">
                   YouTube動画解析タスクなどPCリソースが必要な処理のみワーカー起動が必要です。通常のポータル利用・大会運営はクラウドで自律稼働しています。
                 </p>
               </div>
@@ -451,13 +451,13 @@ export default function AdminDashboardPage() {
                       <div className="flex items-center gap-2 flex-wrap mb-0.5">
                         <span className="text-xs font-black text-foreground">
                           {TASK_LABELS[task.task_type] || task.task_type}
-                          {task.payload?.champion && <span className="text-stone-500 font-normal">（{task.payload.champion}/{task.payload.role || ''}）</span>}
+                          {task.payload?.champion && <span className="text-muted-strong font-normal">（{task.payload.champion}/{task.payload.role || ''}）</span>}
                         </span>
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${errSummary.bg}`}>
                           {errSummary.label}
                         </span>
                       </div>
-                      <div className="text-[10px] text-stone-500 font-mono truncate" title={task.error_message || ''}>
+                      <div className="text-[10px] text-muted-strong font-mono truncate" title={task.error_message || ''}>
                         {(task.error_message || '').slice(0, 90) || '(エラー詳細なし)'}
                       </div>
                     </div>
@@ -504,7 +504,7 @@ export default function AdminDashboardPage() {
               <Link href="/ktm-admin" className="text-xs font-bold text-amber-600 hover:underline">
                 大会管理 ➔
               </Link>
-              <span className="text-stone-300">|</span>
+              <span className="text-faint">|</span>
               <Link href="/casino" className="text-xs font-bold text-amber-600 hover:underline">
                 勝敗予想 ➔
               </Link>
@@ -515,7 +515,7 @@ export default function AdminDashboardPage() {
             {/* 登録プレイヤー */}
             <div className="p-4 rounded-2xl bg-surface/80 backdrop-blur-md border border-border/80 shadow-xs flex flex-col justify-between hover:border-border transition">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-stone-500 flex items-center gap-1.5">
+                <span className="text-xs font-bold text-muted-strong flex items-center gap-1.5">
                   <Users size={14} className="text-amber-600" />
                   登録プレイヤー
                 </span>
@@ -524,9 +524,9 @@ export default function AdminDashboardPage() {
                 </Link>
               </div>
               <div className="text-2xl font-black text-foreground">
-                {ktmStats.activePlayers.toLocaleString()} <span className="text-xs font-bold text-stone-400">名</span>
+                {ktmStats.activePlayers.toLocaleString()} <span className="text-xs font-bold text-faint">名</span>
               </div>
-              <p className="text-[10px] text-stone-400 mt-1">
+              <p className="text-[10px] text-faint mt-1">
                 レーティング・ロール設定済みのアクティブメンバー
               </p>
             </div>
@@ -534,7 +534,7 @@ export default function AdminDashboardPage() {
             {/* 大会試合数 */}
             <div className="p-4 rounded-2xl bg-surface/80 backdrop-blur-md border border-border/80 shadow-xs flex flex-col justify-between hover:border-border transition">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-stone-500 flex items-center gap-1.5">
+                <span className="text-xs font-bold text-muted-strong flex items-center gap-1.5">
                   <Trophy size={14} className="text-amber-600" />
                   カスタム大会 試合数
                 </span>
@@ -544,7 +544,7 @@ export default function AdminDashboardPage() {
               </div>
               <div className="flex items-baseline gap-2">
                 <div className="text-2xl font-black text-foreground">
-                  {ktmStats.totalMatches.toLocaleString()} <span className="text-xs font-bold text-stone-400">試合</span>
+                  {ktmStats.totalMatches.toLocaleString()} <span className="text-xs font-bold text-faint">試合</span>
                 </div>
                 {ktmStats.recentMatches > 0 && (
                   <span className="text-[11px] font-black text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-300">
@@ -552,7 +552,7 @@ export default function AdminDashboardPage() {
                   </span>
                 )}
               </div>
-              <p className="text-[10px] text-stone-400 mt-1">
+              <p className="text-[10px] text-faint mt-1">
                 {ktmStats.latestMatchDate ? `最終開催: ${new Date(ktmStats.latestMatchDate).toLocaleDateString('ja-JP')}` : '開催履歴なし'}
               </p>
             </div>
@@ -560,7 +560,7 @@ export default function AdminDashboardPage() {
             {/* 総流通コイン */}
             <div className="p-4 rounded-2xl bg-surface/80 backdrop-blur-md border border-border/80 shadow-xs flex flex-col justify-between hover:border-border transition">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-stone-500 flex items-center gap-1.5">
+                <span className="text-xs font-bold text-muted-strong flex items-center gap-1.5">
                   <Coins size={14} className="text-amber-500" />
                   総流通コイン量
                 </span>
@@ -569,9 +569,9 @@ export default function AdminDashboardPage() {
                 </Link>
               </div>
               <div className="text-2xl font-black text-amber-700">
-                🪙 {casinoStats.totalCirculatingCoins.toLocaleString()} <span className="text-xs font-bold text-stone-400">pt</span>
+                🪙 {casinoStats.totalCirculatingCoins.toLocaleString()} <span className="text-xs font-bold text-faint">pt</span>
               </div>
-              <p className="text-[10px] text-stone-400 mt-1">
+              <p className="text-[10px] text-faint mt-1">
                 コミュニティ全体のプレイヤー所持コイン総額
               </p>
             </div>
@@ -579,7 +579,7 @@ export default function AdminDashboardPage() {
             {/* 受付中ベット */}
             <div className="p-4 rounded-2xl bg-surface/80 backdrop-blur-md border border-border/80 shadow-xs flex flex-col justify-between hover:border-border transition">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-stone-500 flex items-center gap-1.5">
+                <span className="text-xs font-bold text-muted-strong flex items-center gap-1.5">
                   <Flame size={14} className="text-rose-500" />
                   勝敗予想（未精算）
                 </span>
@@ -591,10 +591,10 @@ export default function AdminDashboardPage() {
                 <div className="text-2xl font-black text-foreground">
                   {casinoStats.pendingBetTotalAmount > 0 ? (
                     <>
-                      {casinoStats.pendingBetTotalAmount.toLocaleString()} <span className="text-xs font-bold text-stone-400">pt ({casinoStats.pendingBetCount}票)</span>
+                      {casinoStats.pendingBetTotalAmount.toLocaleString()} <span className="text-xs font-bold text-faint">pt ({casinoStats.pendingBetCount}票)</span>
                     </>
                   ) : (
-                    <span className="text-base text-stone-400 font-bold">待機中 (受付なし)</span>
+                    <span className="text-base text-faint font-bold">待機中 (受付なし)</span>
                   )}
                 </div>
                 {totalBetAmount > 0 && (
@@ -603,14 +603,14 @@ export default function AdminDashboardPage() {
                       <div style={{ width: `${bluePercent}%` }} className="bg-teal-500 h-full"></div>
                       <div style={{ width: `${redPercent}%` }} className="bg-rose-500 h-full"></div>
                     </div>
-                    <div className="flex justify-between text-[9px] font-bold text-stone-500">
+                    <div className="flex justify-between text-[9px] font-bold text-muted-strong">
                       <span className="text-teal-600">青 {bluePercent}% ({casinoStats.blueCount}票)</span>
                       <span className="text-rose-600">赤 {redPercent}% ({casinoStats.redCount}票)</span>
                     </div>
                   </div>
                 )}
               </div>
-              <p className="text-[10px] text-stone-400 mt-1">
+              <p className="text-[10px] text-faint mt-1">
                 次回カスタム試合のリアルタイム投票状況
               </p>
             </div>
@@ -626,7 +626,7 @@ export default function AdminDashboardPage() {
                 🛰️ システムインフラ ＆ 自動ワークフロー
               </h2>
             </div>
-            <span className="text-[11px] text-stone-400 font-medium">常時自律監視中</span>
+            <span className="text-[11px] text-faint font-medium">常時自律監視中</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3.5">
@@ -647,7 +647,7 @@ export default function AdminDashboardPage() {
                   indicatorColor = 'bg-emerald-500';
                 } else {
                   statusText = '待機中 (必要時起動)';
-                  statusColor = 'text-stone-600 bg-surface-subtle border-border';
+                  statusColor = 'text-muted bg-surface-subtle border-border';
                   indicatorColor = 'bg-stone-400';
                 }
               } else if (service.kind === 'local') {
@@ -657,7 +657,7 @@ export default function AdminDashboardPage() {
                   indicatorColor = 'bg-emerald-500 animate-pulse';
                 } else {
                   statusText = '待機中';
-                  statusColor = 'text-stone-600 bg-surface-subtle border-border';
+                  statusColor = 'text-muted bg-surface-subtle border-border';
                   indicatorColor = 'bg-stone-400';
                 }
               }
@@ -669,7 +669,7 @@ export default function AdminDashboardPage() {
                       <span className="text-xs font-black text-foreground">{service.name}</span>
                       <span className={`w-2.5 h-2.5 rounded-full ${indicatorColor}`}></span>
                     </div>
-                    <p className="text-[10px] text-stone-400 mb-2">{service.desc}</p>
+                    <p className="text-[10px] text-faint mb-2">{service.desc}</p>
                     
                     {service.id === 'edge_worker' && (
                       <div className="flex items-center gap-1.5 my-2">
@@ -694,7 +694,7 @@ export default function AdminDashboardPage() {
                     )}
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t border-stone-100 mt-1">
-                    <span className="text-[10px] font-bold text-stone-400">{service.kind === 'cloud' ? '常時稼働' : 'オンデマンド'}</span>
+                    <span className="text-[10px] font-bold text-faint">{service.kind === 'cloud' ? '常時稼働' : 'オンデマンド'}</span>
                     <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${statusColor}`}>{statusText}</span>
                   </div>
                 </div>

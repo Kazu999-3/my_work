@@ -215,7 +215,7 @@ export function MentorshipCard({
             {reviewSummary && reviewSummary.totalReviews > 0 ? (
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700 flex items-center gap-1 shadow-2xs">
                 <span>⭐ {reviewSummary.averageRating}</span>
-                <span className="text-[10px] text-stone-500 dark:text-stone-400 font-normal">({reviewSummary.totalReviews}件)</span>
+                <span className="text-[10px] text-muted-strong font-normal">({reviewSummary.totalReviews}件)</span>
               </span>
             ) : null}
 
@@ -254,7 +254,7 @@ export function MentorshipCard({
               {isMine && onEdit && (
                 <button
                   onClick={() => onEdit(profile)}
-                  className="px-2 py-1 text-xs text-stone-600 dark:text-stone-300 hover:text-foreground dark:hover:text-white hover:bg-surface dark:hover:bg-[#2b2d31] rounded transition cursor-pointer"
+                  className="px-2 py-1 text-xs text-muted hover:text-foreground dark:hover:text-white hover:bg-surface dark:hover:bg-[#2b2d31] rounded transition cursor-pointer"
                   title="編集"
                 >
                   ✏️
@@ -306,7 +306,7 @@ export function MentorshipCard({
             {/* 師匠が現在指導中の弟子（兄弟弟子）一覧 */}
             {isMentor && profile.active_pupil_names && profile.active_pupil_names.length > 0 && (
               <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                <span className="text-[10px] font-bold text-stone-500 dark:text-stone-400 flex items-center gap-0.5">
+                <span className="text-[10px] font-bold text-muted-strong flex items-center gap-0.5">
                   <span>🤝</span>
                   <span>指導中:</span>
                 </span>
@@ -360,7 +360,7 @@ export function MentorshipCard({
         {/* チャンピオンアイコン一覧 */}
         {profile.champions && profile.champions.length > 0 && (
           <div className="space-y-1.5">
-            <span className="text-[11px] font-bold text-stone-500 dark:text-stone-400">
+            <span className="text-[11px] font-bold text-muted-strong">
               {isMentor ? '⚔️ 指導可能チャンピオン:' : '🎯 練習中・得意チャンピオン:'}
             </span>
             <div className="flex flex-wrap gap-1.5 items-center">
@@ -417,9 +417,9 @@ export function MentorshipCard({
 
         {/* 活動時間帯 */}
         {profile.active_hours && (
-          <div className="flex items-center gap-1.5 text-xs text-stone-600 dark:text-stone-300 bg-surface-subtle/70 dark:bg-[#1e1f22] p-2 rounded-xl border border-border/60 dark:border-[#3f4147]">
+          <div className="flex items-center gap-1.5 text-xs text-muted bg-surface-subtle/70 dark:bg-[#1e1f22] p-2 rounded-xl border border-border/60 dark:border-[#3f4147]">
             <Clock size={13} className="text-amber-600 dark:text-amber-400" />
-            <span className="font-bold text-stone-500 dark:text-stone-400">活動時間:</span>
+            <span className="font-bold text-muted-strong">活動時間:</span>
             <span className="font-bold text-foreground-soft dark:text-stone-100">{profile.active_hours}</span>
           </div>
         )}
@@ -434,7 +434,7 @@ export function MentorshipCard({
               <MessageSquare size={13} className="text-teal-600 dark:text-teal-400" />
               <span>💬 ワンポイント相談 / 応援コメント</span>
             </span>
-            <span className="text-[11px] font-semibold bg-surface dark:bg-[#2b2d31] text-foreground-subtle dark:text-stone-300 px-2 py-0.5 rounded-full border border-border dark:border-[#3f4147]">
+            <span className="text-[11px] font-semibold bg-surface dark:bg-[#2b2d31] text-foreground-subtle px-2 py-0.5 rounded-full border border-border dark:border-[#3f4147]">
               {showComments ? '閉じる ▲' : '見る・書く ▼'}
             </span>
           </button>
@@ -443,11 +443,11 @@ export function MentorshipCard({
           {showComments && (
             <div className="mt-2.5 p-3 rounded-2xl bg-background/90 dark:bg-[#1e1f22] border border-border dark:border-[#3f4147] space-y-3 animate-in fade-in duration-200">
               {isLoadingComments ? (
-                <div className="text-center py-2 text-xs text-stone-500 font-medium">
+                <div className="text-center py-2 text-xs text-muted-strong font-medium">
                   コメントを読み込み中...
                 </div>
               ) : comments.length === 0 ? (
-                <div className="text-center py-2 text-xs text-stone-500 font-medium">
+                <div className="text-center py-2 text-xs text-muted-strong font-medium">
                   まだコメントはありません。気軽に「このチャンプ教えられます！」「1試合だけやりませんか？」と書き込んでみましょう！
                 </div>
               ) : (
@@ -464,12 +464,12 @@ export function MentorshipCard({
                             <span>💬</span>
                             <span>{comment.author_name}</span>
                             {isMyComment && (
-                              <span className="text-[9px] bg-surface-subtle text-stone-600 px-1 rounded font-normal">
+                              <span className="text-[9px] bg-surface-subtle text-muted px-1 rounded font-normal">
                                 あなた
                               </span>
                             )}
                           </span>
-                          <div className="flex items-center gap-1.5 text-stone-400">
+                          <div className="flex items-center gap-1.5 text-faint">
                             <span>
                               {new Date(comment.created_at).toLocaleDateString('ja-JP', {
                                 month: 'numeric',
@@ -524,12 +524,12 @@ export function MentorshipCard({
 
       {/* 下部アクションボタン */}
       <div className="p-3.5 bg-background border-t border-border/80 flex items-center justify-between gap-2">
-        <div className="text-[11px] text-stone-500 font-medium">
+        <div className="text-[11px] text-muted-strong font-medium">
           {new Date(profile.updated_at || profile.created_at).toLocaleDateString('ja-JP')} 更新
         </div>
 
         {isMine ? (
-          <span className="text-xs text-stone-500 font-bold">（あなたのカード）</span>
+          <span className="text-xs text-muted-strong font-bold">（あなたのカード）</span>
         ) : !isMentor && profile.status === 'MATCHED' ? (
           <span className="text-xs text-amber-700 font-bold bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200">
             🤝 ペア結成中

@@ -39,14 +39,14 @@ export default function Error({
           <h2 className="text-lg font-black text-foreground dark:text-white">
             画面の読み込みで問題が発生しました
           </h2>
-          <p className="text-xs text-stone-500 dark:text-stone-300">
+          <p className="text-xs text-muted-strong">
             予期せぬエラーが発生しました。エラー内容は管理者へ自動通報されました。
           </p>
         </div>
 
         {error?.message && (
           <div className="p-3 rounded-xl bg-surface-subtle dark:bg-[#1e1f22] border border-border dark:border-[#3f4147] text-left">
-            <div className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-1">エラー詳細</div>
+            <div className="text-[10px] font-bold text-faint uppercase tracking-wider mb-1">エラー詳細</div>
             <p className="text-xs font-mono text-rose-600 dark:text-rose-400 break-all line-clamp-3">
               {error.message}
             </p>

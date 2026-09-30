@@ -51,14 +51,14 @@ export function MentorshipKickoffModal({
                 <span>師弟スタート・キックオフガイド</span>
                 <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full">3ステップ</span>
               </h2>
-              <p className="text-xs text-stone-600 font-bold">
+              <p className="text-xs text-muted font-bold">
                 👑 {mentorName} × 🌱 {pupilName} ({durationLabel})
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-stone-400 hover:text-foreground-subtle p-1 rounded-full transition cursor-pointer"
+            className="text-faint hover:text-foreground-subtle p-1 rounded-full transition cursor-pointer"
           >
             <X size={20} />
           </button>
@@ -89,7 +89,7 @@ export function MentorshipKickoffModal({
                   </div>
                 </div>
 
-                <p className="text-xs text-stone-600 pl-8 leading-relaxed font-medium">
+                <p className="text-xs text-muted pl-8 leading-relaxed font-medium">
                   {s.desc}
                 </p>
 
@@ -108,7 +108,7 @@ export function MentorshipKickoffModal({
                         </>
                       ) : (
                         <>
-                          <Copy size={13} className="text-stone-500" />
+                          <Copy size={13} className="text-muted-strong" />
                           <span>挨拶テンプレートをコピー</span>
                         </>
                       )}
@@ -122,7 +122,7 @@ export function MentorshipKickoffModal({
           {/* 挨拶テンプレートのプレビュー */}
           <div className="p-3.5 bg-surface-subtle rounded-2xl border border-border space-y-1.5">
             <div className="text-[11px] font-black text-foreground-subtle flex items-center gap-1">
-              <MessageSquare size={12} className="text-stone-500" />
+              <MessageSquare size={12} className="text-muted-strong" />
               <span>挨拶テンプレート内容:</span>
             </div>
             <pre className="text-[11px] text-foreground-soft font-mono whitespace-pre-wrap leading-relaxed bg-surface p-2.5 rounded-xl border border-border">

@@ -27,7 +27,7 @@ export default function AdminGuidePage() {
               <span className="px-3 py-1 rounded-full bg-amber-100 border border-amber-300 text-amber-900 text-xs font-black">
                 管理者専用マニュアル
               </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-surface-subtle border border-border text-stone-600 text-[11px] font-bold">
+              <span className="px-2.5 py-0.5 rounded-full bg-surface-subtle border border-border text-muted text-[11px] font-bold">
                 Sovereign OS v2.6
               </span>
             </div>
@@ -37,7 +37,7 @@ export default function AdminGuidePage() {
               </span>
               LoL データ収集・戦術辞典・AIコーチ連携 全貌仕様ガイド
             </h1>
-            <p className="text-xs sm:text-sm text-stone-600 max-w-3xl leading-relaxed font-medium">
+            <p className="text-xs sm:text-sm text-muted max-w-3xl leading-relaxed font-medium">
               チャレンジャーの解説動画・Discord議論・Web攻略から知見を自動抽出し、
               チャンピオン辞典へ統合して、インゲームHUDやAIコーチとしてリアルタイムに手元へ還元する
               <strong className="text-amber-800 font-bold">「絶対勝利循環（The Sovereign Victory Loop）」</strong>の全貌を解説します。
@@ -77,7 +77,7 @@ export default function AdminGuidePage() {
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
                 activeTab === tab.id
                   ? 'bg-amber-500 text-stone-950 shadow-xs font-black'
-                  : 'text-stone-600 hover:text-foreground hover:bg-surface-subtle'
+                  : 'text-muted hover:text-foreground hover:bg-surface-subtle'
               }`}
             >
               {tab.label}
@@ -97,7 +97,7 @@ export default function AdminGuidePage() {
               <h2 className="text-base sm:text-lg font-black text-foreground">
                 全体循環モデル：絶対勝利循環（The Sovereign Victory Loop）
               </h2>
-              <p className="text-xs text-stone-500 font-medium">
+              <p className="text-xs text-muted-strong font-medium">
                 集めた知識が単なるアーカイブで終わらず、実際の試合で使える武器になるまでの5段階フロー
               </p>
             </div>
@@ -178,7 +178,7 @@ export default function AdminGuidePage() {
               <h2 className="text-base sm:text-lg font-black text-foreground">
                 1. 3大データ収集パイプライン（取り込みハブの仕組み）
               </h2>
-              <p className="text-xs text-stone-500 font-medium">
+              <p className="text-xs text-muted-strong font-medium">
                 プレイヤーが欲しい情報を手作業でまとめず、AIが自動で高密度な知識に精製する3つの収集ルート
               </p>
             </div>
@@ -191,14 +191,14 @@ export default function AdminGuidePage() {
                 <Video size={20} />
                 <h3 className="text-sm font-black text-foreground">ルートA: YouTube動画解析</h3>
               </div>
-              <p className="text-xs text-stone-600 leading-relaxed font-medium">
+              <p className="text-xs text-muted leading-relaxed font-medium">
                 <strong>最も高密度な情報源。</strong> チャレンジャーやプロの実況解説動画から、立ち回り・ウェーブ管理・対面スキル回避タイミングを抽出します。
               </p>
-              <div className="bg-surface p-3 rounded-xl border border-border/80 space-y-2 text-[11px] text-stone-600">
+              <div className="bg-surface p-3 rounded-xl border border-border/80 space-y-2 text-[11px] text-muted">
                 <div className="font-bold text-foreground flex items-center gap-1.5">
                   <span>⚙️</span> 内部パイプライン (`youtube_worker.py`):
                 </div>
-                <ol className="list-decimal pl-4 space-y-1 text-[10px] leading-relaxed text-stone-500">
+                <ol className="list-decimal pl-4 space-y-1 text-[10px] leading-relaxed text-muted-strong">
                   <li><strong>キュー投入</strong>: ポータルまたはDiscordからURLを登録</li>
                   <li><strong>Whisper音声認識</strong>: 高速文字起こしで全会話をテキスト化</li>
                   <li><strong>Gemini 2.5解析</strong>: チャンピオン判定、実演タイムスタンプ、立ち回りのコツを抽出</li>
@@ -216,14 +216,14 @@ export default function AdminGuidePage() {
                 <MessageSquare size={20} />
                 <h3 className="text-sm font-black text-foreground">ルートB: Discord雑談・考察ログ抽出</h3>
               </div>
-              <p className="text-xs text-stone-600 leading-relaxed font-medium">
+              <p className="text-xs text-muted leading-relaxed font-medium">
                 <strong>コミュニティの生きた声。</strong> 定期カスタムや雑談チャンネルでの「このビルド試したら強かった」「この対面は無理」といった議論をAIが自動検知。
               </p>
-              <div className="bg-surface p-3 rounded-xl border border-border/80 space-y-2 text-[11px] text-stone-600">
+              <div className="bg-surface p-3 rounded-xl border border-border/80 space-y-2 text-[11px] text-muted">
                 <div className="font-bold text-foreground flex items-center gap-1.5">
                   <span>⚙️</span> 内部パイプライン (`DiscordImportPanel`):
                 </div>
-                <ol className="list-decimal pl-4 space-y-1 text-[10px] leading-relaxed text-stone-500">
+                <ol className="list-decimal pl-4 space-y-1 text-[10px] leading-relaxed text-muted-strong">
                   <li><strong>チャンネル監視</strong>: <code>#lol-tactics</code> や雑談ログをスキャン</li>
                   <li><strong>知見判定</strong>: 単なる挨拶を除外し、攻略・マッチアップに関する発言のみを抽出</li>
                   <li><strong>没理由の保全</strong>: なぜダメだったのかの理由もセットで抽出</li>
@@ -241,14 +241,14 @@ export default function AdminGuidePage() {
                 <Globe size={20} />
                 <h3 className="text-sm font-black text-foreground">ルートC: Web / X / 手動メモ</h3>
               </div>
-              <p className="text-xs text-stone-600 leading-relaxed font-medium">
+              <p className="text-xs text-muted leading-relaxed font-medium">
                 <strong>速報性と即時メモ。</strong> パッチノート速報、X(Twitter)のチャレンジャーTips、自分の実戦メモをURLまたは自由文で瞬時に投入。
               </p>
-              <div className="bg-surface p-3 rounded-xl border border-border/80 space-y-2 text-[11px] text-stone-600">
+              <div className="bg-surface p-3 rounded-xl border border-border/80 space-y-2 text-[11px] text-muted">
                 <div className="font-bold text-foreground flex items-center gap-1.5">
                   <span>⚙️</span> 内部パイプライン (`add/route.ts`):
                 </div>
-                <ol className="list-decimal pl-4 space-y-1 text-[10px] leading-relaxed text-stone-500">
+                <ol className="list-decimal pl-4 space-y-1 text-[10px] leading-relaxed text-muted-strong">
                   <li><strong>URLスクレイピング</strong>: Xポスト画像/本文やWeb記事を即時読込</li>
                   <li><strong>AIプレビュー</strong>: 要約結果をモーダルで即座に提示</li>
                   <li><strong>レーン一般論 vs 固有知見判定</strong>: 空欄ならレーンガイド、チャンピオン名があれば辞典へ自動分類</li>
@@ -274,7 +274,7 @@ export default function AdminGuidePage() {
               <h2 className="text-base sm:text-lg font-black text-foreground">
                 2. チャンピオン辞典 ＆ 攻略ライブラリ（知識の構造化とSSoT）
               </h2>
-              <p className="text-xs text-stone-500 font-medium">
+              <p className="text-xs text-muted-strong font-medium">
                 「未承認知見」がどのようにチャンピオン辞典に組み込まれ、死蔵を防ぐか
               </p>
             </div>
@@ -285,7 +285,7 @@ export default function AdminGuidePage() {
               <h3 className="text-sm font-black text-foreground flex items-center gap-2">
                 <span>📚</span> 2層構造の知識ストレージ（SSoT原則）
               </h3>
-              <p className="text-xs text-stone-600 leading-relaxed font-medium">
+              <p className="text-xs text-muted leading-relaxed font-medium">
                 本システムでは、知見を単なる1つのテキストファイルにせず、高速検索用の<strong>DB（Supabase）</strong>と、
                 Git管理される<strong>Markdown戦術バイブル（原本）</strong>の2層で同期管理しています。
               </p>
@@ -317,7 +317,7 @@ export default function AdminGuidePage() {
               <h3 className="text-sm font-black text-foreground flex items-center gap-2">
                 <span>⚡</span> 承認待ちの高速消化（一括承認＆マージ）
               </h3>
-              <p className="text-xs text-stone-600 leading-relaxed font-medium">
+              <p className="text-xs text-muted leading-relaxed font-medium">
                 以前は「知見が1件ずつ溜まり、承認が追いつかない」という問題がありました。
                 現在は以下の高速化ツールが配備されています：
               </p>
@@ -329,15 +329,15 @@ export default function AdminGuidePage() {
                 </div>
                 <div className="flex items-start justify-between gap-3 text-xs">
                   <span className="font-bold text-emerald-700 shrink-0">☑️ 全選択チェック</span>
-                  <span className="text-stone-600 text-[11px]">ページ内の未承認知見をワンクリックで一括選択</span>
+                  <span className="text-muted text-[11px]">ページ内の未承認知見をワンクリックで一括選択</span>
                 </div>
                 <div className="flex items-start justify-between gap-3 text-xs">
                   <span className="font-bold text-amber-700 shrink-0">⚡ 全件一括承認＆マージ</span>
-                  <span className="text-stone-600 text-[11px]">全知見を承認すると同時に、即座に該当チャンピオンの辞典へマージ反映</span>
+                  <span className="text-muted text-[11px]">全知見を承認すると同時に、即座に該当チャンピオンの辞典へマージ反映</span>
                 </div>
                 <div className="flex items-start justify-between gap-3 text-xs">
                   <span className="font-bold text-teal-700 shrink-0">🏷️ レーン一般論の自動仕分け</span>
-                  <span className="text-stone-600 text-[11px]">チャンピオン固有でない知見は自動でレーン・マクロ攻略へ振り分け</span>
+                  <span className="text-muted text-[11px]">チャンピオン固有でない知見は自動でレーン・マクロ攻略へ振り分け</span>
                 </div>
               </div>
 
@@ -360,7 +360,7 @@ export default function AdminGuidePage() {
               <h2 className="text-base sm:text-lg font-black text-foreground">
                 3. AIコーチ ＆ リアルタイムHUDオーバーレイ連携
               </h2>
-              <p className="text-xs text-stone-500 font-medium">
+              <p className="text-xs text-muted-strong font-medium">
                 蓄積された辞典データが、いかにして実際のゲームプレイ中にプレイヤーを支援するか
               </p>
             </div>
@@ -372,7 +372,7 @@ export default function AdminGuidePage() {
                 <Gamepad2 size={18} />
                 <span>① Live Client Data API 連携</span>
               </div>
-              <p className="text-xs text-stone-600 leading-relaxed font-medium">
+              <p className="text-xs text-muted leading-relaxed font-medium">
                 LoLが起動すると、クライアント自身がローカル（<code>127.0.0.1:2999/liveclientdata</code>）にゲーム内情報を出力します。
                 AIコーチはこのAPIと秒単位で通信し、現在の所持アイテム・キルデス・対面チャンピオンを検知します。
               </p>
@@ -383,7 +383,7 @@ export default function AdminGuidePage() {
                 <Swords size={18} />
                 <span>② キルライン ＆ パワースパイク警告</span>
               </div>
-              <p className="text-xs text-stone-600 leading-relaxed font-medium">
+              <p className="text-xs text-muted leading-relaxed font-medium">
                 チャンピオン辞典にある「Lv2先行時の即死コンボ」「相手の1コア完成タイミング」と現在のゲーム状況を照合。
                 危険なタイミングやトレード勝機の境界線（キルライン）をリアルタイムに画面や音声で警告します。
               </p>
@@ -394,7 +394,7 @@ export default function AdminGuidePage() {
                 <RefreshCw size={18} />
                 <span>③ 試合後レビュー ＆ ナレッジ還元</span>
               </div>
-              <p className="text-xs text-stone-600 leading-relaxed font-medium">
+              <p className="text-xs text-muted leading-relaxed font-medium">
                 試合が終わると、デスした瞬間のタイムスタンプと相手のスキル状況を自動突合。
                 「なぜ死んだのか」「どのパワースパイクを見落としたか」を自動で自己反省メモとして生成し、マイページやナレッジへ還元します。
               </p>
@@ -414,7 +414,7 @@ export default function AdminGuidePage() {
               <h2 className="text-base sm:text-lg font-black text-foreground">
                 4. 管理者日常オペレーション ＆ エラーリカバリ
               </h2>
-              <p className="text-xs text-stone-500 font-medium">
+              <p className="text-xs text-muted-strong font-medium">
                 ポータルを健全に保つための最低限のチェック項目と、問題発生時の対処法
               </p>
             </div>
@@ -425,7 +425,7 @@ export default function AdminGuidePage() {
               <h3 className="text-xs font-black text-foreground flex items-center gap-2">
                 <span>📋</span> 日常の3ステップ・ルーティン
               </h3>
-              <ol className="list-decimal pl-4 space-y-2 text-xs text-stone-600 font-medium leading-relaxed">
+              <ol className="list-decimal pl-4 space-y-2 text-xs text-muted font-medium leading-relaxed">
                 <li>
                   <strong>システム運用ダッシュボード確認</strong>:
                   <br />
@@ -448,22 +448,22 @@ export default function AdminGuidePage() {
               <h3 className="text-xs font-black text-foreground flex items-center gap-2">
                 <span>🛠️</span> よくあるエラーと対処法
               </h3>
-              <div className="space-y-2 text-xs text-stone-600 font-medium">
+              <div className="space-y-2 text-xs text-muted font-medium">
                 <div className="p-2.5 rounded-xl bg-surface border border-border/80">
                   <div className="font-bold text-foreground text-[11px] mb-0.5">⚠️ エッジワーカー未起動</div>
-                  <p className="text-[10px] text-stone-500">
+                  <p className="text-[10px] text-muted-strong">
                     YouTube動画のWhisper解析などPCリソースが必要な処理のみワーカーが必要です。ダッシュボード上部の「ワーカー起動」またはコマンド実行で起動します。
                   </p>
                 </div>
                 <div className="p-2.5 rounded-xl bg-surface border border-border/80">
                   <div className="font-bold text-foreground text-[11px] mb-0.5">⚠️ Gemini API 429 (混雑エラー)</div>
-                  <p className="text-[10px] text-stone-500">
+                  <p className="text-[10px] text-muted-strong">
                     Google APIの一時的な流量制限です。ワーカーが自動で待機・指数バックオフ再試行を行うため、通常は放置で自動解決します。
                   </p>
                 </div>
                 <div className="p-2.5 rounded-xl bg-surface border border-border/80">
                   <div className="font-bold text-foreground text-[11px] mb-0.5">⚠️ 動画キューがエラーで止まる</div>
-                  <p className="text-[10px] text-stone-500">
+                  <p className="text-[10px] text-muted-strong">
                     「動画解析キュー」タブの「エラー動画を一括再試行」ボタンを押すことで、pending状態に戻して再実行できます。
                   </p>
                 </div>
@@ -480,11 +480,11 @@ export default function AdminGuidePage() {
             <h3 className="text-sm font-black text-white flex items-center gap-2">
               <span>🧭</span> 管理者クイックナビゲーション
             </h3>
-            <p className="text-xs text-stone-400 font-medium mt-0.5">
+            <p className="text-xs text-faint font-medium mt-0.5">
               各機能へワンクリックでアクセスできます
             </p>
           </div>
-          <span className="text-[11px] text-stone-500 font-mono">
+          <span className="text-[11px] text-muted-strong font-mono">
             Sovereign OS Operations
           </span>
         </div>
@@ -495,7 +495,7 @@ export default function AdminGuidePage() {
             className="p-3 rounded-xl bg-stone-800/80 hover:bg-stone-800 border border-stone-700 text-xs font-bold text-stone-200 hover:text-white transition flex items-center justify-between group"
           >
             <span>📥 戦術取り込み</span>
-            <ChevronRight size={13} className="text-stone-500 group-hover:text-amber-400 group-hover:translate-x-0.5 transition" />
+            <ChevronRight size={13} className="text-muted-strong group-hover:text-amber-400 group-hover:translate-x-0.5 transition" />
           </Link>
 
           <Link
@@ -503,7 +503,7 @@ export default function AdminGuidePage() {
             className="p-3 rounded-xl bg-stone-800/80 hover:bg-stone-800 border border-stone-700 text-xs font-bold text-stone-200 hover:text-white transition flex items-center justify-between group"
           >
             <span>👑 チャンピオン辞典</span>
-            <ChevronRight size={13} className="text-stone-500 group-hover:text-amber-400 group-hover:translate-x-0.5 transition" />
+            <ChevronRight size={13} className="text-muted-strong group-hover:text-amber-400 group-hover:translate-x-0.5 transition" />
           </Link>
 
           <Link
@@ -511,7 +511,7 @@ export default function AdminGuidePage() {
             className="p-3 rounded-xl bg-stone-800/80 hover:bg-stone-800 border border-stone-700 text-xs font-bold text-stone-200 hover:text-white transition flex items-center justify-between group"
           >
             <span>🩺 辞典ヘルス</span>
-            <ChevronRight size={13} className="text-stone-500 group-hover:text-amber-400 group-hover:translate-x-0.5 transition" />
+            <ChevronRight size={13} className="text-muted-strong group-hover:text-amber-400 group-hover:translate-x-0.5 transition" />
           </Link>
 
           <Link
@@ -519,7 +519,7 @@ export default function AdminGuidePage() {
             className="p-3 rounded-xl bg-stone-800/80 hover:bg-stone-800 border border-stone-700 text-xs font-bold text-stone-200 hover:text-white transition flex items-center justify-between group"
           >
             <span>📊 運用ダッシュボード</span>
-            <ChevronRight size={13} className="text-stone-500 group-hover:text-amber-400 group-hover:translate-x-0.5 transition" />
+            <ChevronRight size={13} className="text-muted-strong group-hover:text-amber-400 group-hover:translate-x-0.5 transition" />
           </Link>
         </div>
       </footer>

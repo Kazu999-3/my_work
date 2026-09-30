@@ -149,7 +149,7 @@ function UserAuthWidget({ collapsed, inDrawer }: { collapsed?: boolean; inDrawer
               logout();
             }}
             title="ログアウト"
-            className="p-1.5 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-500/10 transition shrink-0"
+            className="p-1.5 rounded-lg text-faint hover:text-rose-600 hover:bg-rose-500/10 transition shrink-0"
           >
             <LogOut size={15} />
           </button>
@@ -338,7 +338,7 @@ export default function Sidebar() {
             {!isCollapsed && <ThemeToggle variant="compact" />}
             <button
               onClick={toggleSidebar}
-              className="p-2 rounded-xl hover:bg-surface-hover/60 dark:hover:bg-[#35373c] text-stone-600 dark:text-stone-300 transition cursor-pointer"
+              className="p-2 rounded-xl hover:bg-surface-hover/60 dark:hover:bg-[#35373c] text-muted transition cursor-pointer"
             >
               {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
             </button>
@@ -352,7 +352,7 @@ export default function Sidebar() {
               <button
                 onClick={() => handleTabChange('general')}
                 className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
-                  activeTab === 'general' ? 'bg-surface dark:bg-[#1e1f22] text-foreground dark:text-white shadow-sm' : 'text-stone-600 dark:text-stone-400 hover:text-foreground dark:hover:text-white'
+                  activeTab === 'general' ? 'bg-surface dark:bg-[#1e1f22] text-foreground dark:text-white shadow-sm' : 'text-muted hover:text-foreground dark:hover:text-white'
                 }`}
               >
                 一般
@@ -360,7 +360,7 @@ export default function Sidebar() {
               <button
                 onClick={() => handleTabChange('admin')}
                 className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
-                  activeTab === 'admin' ? 'bg-surface dark:bg-[#1e1f22] text-foreground dark:text-white shadow-sm' : 'text-stone-600 dark:text-stone-400 hover:text-foreground dark:hover:text-white'
+                  activeTab === 'admin' ? 'bg-surface dark:bg-[#1e1f22] text-foreground dark:text-white shadow-sm' : 'text-muted hover:text-foreground dark:hover:text-white'
                 }`}
               >
                 管理者
@@ -381,14 +381,14 @@ export default function Sidebar() {
             return (
               <React.Fragment key={item.id}>
                 {showSection && (
-                  <div className="px-3 pt-3.5 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-stone-400 dark:text-stone-500">
+                  <div className="px-3 pt-3.5 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-faint">
                     {item.section}
                   </div>
                 )}
                 <Link
                   href={itemHref}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition ${
-                    isActive ? `${item.activeBg} ${item.color}` : 'text-stone-600 dark:text-stone-300 hover:bg-surface-hover/50 dark:hover:bg-[#2b2d31] hover:text-foreground dark:hover:text-white'
+                    isActive ? `${item.activeBg} ${item.color}` : 'text-muted hover:bg-surface-hover/50 dark:hover:bg-[#2b2d31] hover:text-foreground dark:hover:text-white'
                   }`}
                   title={isCollapsed ? (isMentorship && mentorshipCount > 0 ? `${item.label} (${mentorshipCount}名募集中)` : item.label) : undefined}
                 >
@@ -449,11 +449,11 @@ export default function Sidebar() {
               className={`flex flex-col items-center justify-center flex-1 py-1 rounded-xl transition-all duration-150 touch-manipulation select-none ${
                 isActive
                   ? `${item.color} font-black scale-105`
-                  : 'text-stone-500 dark:text-stone-400 active:bg-black/5 dark:active:bg-surface/5 font-medium'
+                  : 'text-muted-strong active:bg-black/5 dark:active:bg-surface/5 font-medium'
               }`}
             >
               <div className={`relative p-1 rounded-xl transition-colors ${isActive ? item.activeBg : ''}`}>
-                <Icon size={20} className={isActive ? item.color : 'text-stone-400 dark:text-stone-500'} />
+                <Icon size={20} className={isActive ? item.color : 'text-faint'} />
                 {isMentorship && mentorshipCount > 0 && (
                   <span className="absolute -top-0.5 -right-1 px-1 text-[9px] font-black rounded-full bg-emerald-500 text-white min-w-[14px] h-[14px] flex items-center justify-center shadow-xs">
                     {mentorshipCount}
@@ -469,10 +469,10 @@ export default function Sidebar() {
         <button
           type="button"
           onClick={() => setShowMobileDrawer(true)}
-          className="flex flex-col items-center justify-center flex-1 py-1 rounded-xl text-stone-500 dark:text-stone-400 active:bg-black/5 dark:active:bg-surface/5 font-medium touch-manipulation select-none"
+          className="flex flex-col items-center justify-center flex-1 py-1 rounded-xl text-muted-strong active:bg-black/5 dark:active:bg-surface/5 font-medium touch-manipulation select-none"
         >
           <div className="p-1 rounded-xl">
-            <MenuIcon size={20} className="text-stone-400 dark:text-stone-500" />
+            <MenuIcon size={20} className="text-faint" />
           </div>
           <span className="text-[10px] tracking-tight mt-0.5 leading-none">メニュー</span>
         </button>
@@ -503,7 +503,7 @@ export default function Sidebar() {
                 <ThemeToggle variant="compact" />
                 <button
                   onClick={() => setShowMobileDrawer(false)}
-                  className="p-2 rounded-full bg-surface-hover/60 dark:bg-[#2b2d31] text-stone-600 dark:text-stone-300 hover:bg-stone-300 dark:hover:bg-[#35373c] transition"
+                  className="p-2 rounded-full bg-surface-hover/60 dark:bg-[#2b2d31] text-muted hover:bg-stone-300 dark:hover:bg-[#35373c] transition"
                   aria-label="閉じる"
                 >
                   <XIcon size={18} />
@@ -522,7 +522,7 @@ export default function Sidebar() {
                 <button
                   onClick={() => handleTabChange('general')}
                   className={`flex-1 py-2 text-xs font-bold rounded-lg transition ${
-                    activeTab === 'general' ? 'bg-surface dark:bg-[#1e1f22] text-foreground dark:text-white shadow-sm' : 'text-stone-600 dark:text-stone-400'
+                    activeTab === 'general' ? 'bg-surface dark:bg-[#1e1f22] text-foreground dark:text-white shadow-sm' : 'text-muted'
                   }`}
                 >
                   一般メニュー
@@ -530,7 +530,7 @@ export default function Sidebar() {
                 <button
                   onClick={() => handleTabChange('admin')}
                   className={`flex-1 py-2 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1 ${
-                    activeTab === 'admin' ? 'bg-surface dark:bg-[#1e1f22] text-amber-600 dark:text-amber-400 shadow-sm' : 'text-stone-600 dark:text-stone-400'
+                    activeTab === 'admin' ? 'bg-surface dark:bg-[#1e1f22] text-amber-600 dark:text-amber-400 shadow-sm' : 'text-muted'
                   }`}
                 >
                   <Shield size={13} />
@@ -543,7 +543,7 @@ export default function Sidebar() {
             <div className="space-y-4">
               {/* 一般機能セクション */}
               <div>
-                <div className="text-[11px] font-extrabold uppercase tracking-wider text-stone-400 dark:text-stone-500 mb-2 px-1">
+                <div className="text-[11px] font-extrabold uppercase tracking-wider text-faint mb-2 px-1">
                   メイン機能
                 </div>
                 <div className="grid grid-cols-2 gap-2.5">

@@ -87,16 +87,16 @@ export default function EarlyJunglePathingCard({
       {/* テンポ・戦闘力比較ミニバー */}
       <div className="grid grid-cols-2 gap-2 text-[11px] bg-stone-800/60 p-2 rounded-xl">
         <div className="flex justify-between items-center px-1">
-          <span className="text-stone-400 font-bold">自クリア基準 ({myChampion})</span>
+          <span className="text-faint font-bold">自クリア基準 ({myChampion})</span>
           <span className="font-mono font-black text-amber-300">{fmtSec(myFastestClearSec)}</span>
         </div>
         <div className="flex justify-between items-center px-1 border-l border-stone-700">
-          <span className="text-stone-400 font-bold">敵クリア基準 ({enemyChampion})</span>
+          <span className="text-faint font-bold">敵クリア基準 ({enemyChampion})</span>
           <span className="font-mono font-black text-rose-300">{fmtSec(enemyFastestClearSec)}</span>
         </div>
       </div>
 
-      <p className="text-xs text-stone-300 leading-relaxed font-medium">
+      <p className="text-xs text-faint leading-relaxed font-medium">
         💡 <strong className="text-amber-300">戦術要約:</strong> {planSummary}
       </p>
 

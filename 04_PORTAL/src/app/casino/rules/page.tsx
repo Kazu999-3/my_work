@@ -20,7 +20,7 @@ export const revalidate = 86400;
 
 const CARD = 'rounded-2xl border border-border bg-surface/70 p-5 md:p-6 shadow-sm';
 const H2 = 'text-lg md:text-xl font-black text-foreground flex items-center gap-2 mb-1';
-const TH = 'text-left font-black text-stone-600 text-[11px] uppercase tracking-wide px-3 py-2';
+const TH = 'text-left font-black text-muted text-[11px] uppercase tracking-wide px-3 py-2';
 const TD = 'px-3 py-2 text-foreground-soft border-t border-border';
 
 /** 還元率バッジ。数値そのままを出し、良し悪しを色で補足する */
@@ -81,7 +81,7 @@ export default function CasinoRulesPage() {
         <div className="max-w-4xl mx-auto space-y-3">
           <Link
             href="/casino"
-            className="inline-flex items-center gap-1.5 text-xs font-black text-stone-600 hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-black text-muted hover:text-foreground transition-colors"
           >
             <ArrowLeft size={14} />
             カジノへ戻る
@@ -101,7 +101,7 @@ export default function CasinoRulesPage() {
         {/* RTPの説明 */}
         <div className="rounded-2xl border border-border bg-surface-subtle/80 p-5">
           <h2 className="text-sm font-black text-foreground flex items-center gap-2 mb-2">
-            <Info size={16} className="text-stone-600" />
+            <Info size={16} className="text-muted" />
             還元率（RTP）の読み方
           </h2>
           <p className="text-xs md:text-sm text-foreground-subtle leading-relaxed">
@@ -119,7 +119,7 @@ export default function CasinoRulesPage() {
           <h2 className={H2}>
             🎰 Hextechスロット <RtpBadge rtp={0.93} />
           </h2>
-          <p className="text-xs text-stone-600 mb-3">
+          <p className="text-xs text-muted mb-3">
             ベット額は 100 / 500 / 1000 コインの3択。3つのリールが揃うと配当が発生します。
             15倍以上が出るとDiscordへ自動で祝賀通知が飛びます。
           </p>
@@ -143,7 +143,7 @@ export default function CasinoRulesPage() {
               </tbody>
             </table>
           </div>
-          <p className="text-[11px] text-stone-500 mt-2">
+          <p className="text-[11px] text-muted-strong mt-2">
             何かしらの配当が出る確率は 30.2%。ハウスエッジ（胴元の取り分）は 7.0% です。
           </p>
         </section>
@@ -153,7 +153,7 @@ export default function CasinoRulesPage() {
           <h2 className={H2}>
             🌿 ブッシュ・スカウト <RtpBadge rtp={0.95} />
           </h2>
-          <p className="text-xs text-stone-600 mb-3">
+          <p className="text-xs text-muted mb-3">
             5×5の25個のブッシュのうち、選んだ数だけ<strong>敵のキノコ（トラップ）</strong>が隠れています。
             ブッシュを1つ開けるたびに倍率が上がり、<strong>いつでも引き返して（利確して）その時点の倍率を受け取れます</strong>。
             キノコを踏んだ時点でベット額は没収。キノコの数は 1 / 3 / 5 / 10 個、ベット額は 100 / 500 / 1000 コインから選びます。
@@ -182,7 +182,7 @@ export default function CasinoRulesPage() {
               </tbody>
             </table>
           </div>
-          <ul className="text-[11px] md:text-xs text-stone-600 mt-3 space-y-1.5 list-disc list-inside leading-relaxed">
+          <ul className="text-[11px] md:text-xs text-muted mt-3 space-y-1.5 list-disc list-inside leading-relaxed">
             <li>
               倍率は「そこまで無事に開けられる確率」の逆数に 0.95 を掛けたものです。そのため
               <strong>何マスで引き返しても期待値は同じ</strong>で、「何マスまで粘るのが得か」という正解はありません。
@@ -210,7 +210,7 @@ export default function CasinoRulesPage() {
           <h2 className={H2}>
             🃏 KTMバカラ <RtpBadge rtp={0.991} />
           </h2>
-          <p className="text-xs text-stone-600 mb-3">
+          <p className="text-xs text-muted mb-3">
             8デッキを使った本格ルール（ナチュラル8・9、プレイヤー5以下ドロー、バンカーの3枚目条件表）で進行します。
             最低ベットは10コイン。<strong>TIE が出たとき、PLAYER / BANKER に賭けていた場合は掛け金が全額返還</strong>されます。
           </p>
@@ -250,7 +250,7 @@ export default function CasinoRulesPage() {
         {/* 勝敗予想ベット */}
         <section className={CARD}>
           <h2 className={H2}>🎯 勝敗予想ベット</h2>
-          <p className="text-xs text-stone-600 mb-3">
+          <p className="text-xs text-muted mb-3">
             開催中のカスタムで BLUE / RED どちらが勝つかに賭けます。
             <strong>出場選手は自分の試合にベットできません。</strong>
           </p>
@@ -277,7 +277,7 @@ export default function CasinoRulesPage() {
         {/* おみくじ */}
         <section className={CARD}>
           <h2 className={H2}>🎋 デイリーおみくじ</h2>
-          <p className="text-xs text-stone-600 mb-3">
+          <p className="text-xs text-muted mb-3">
             1日1回、無料で引けます。日本時間の 0:00 に切り替わります。平均獲得は 165コイン/日です。
           </p>
           <div className="overflow-x-auto">
@@ -300,7 +300,7 @@ export default function CasinoRulesPage() {
               </tbody>
             </table>
           </div>
-          <p className="text-[11px] text-stone-500 mt-2">
+          <p className="text-[11px] text-muted-strong mt-2">
             💸 <strong>破産救済保険</strong>: 残高が100コイン未満のとき、月1回だけ +300コインを受け取れます。
           </p>
         </section>
@@ -308,7 +308,7 @@ export default function CasinoRulesPage() {
         {/* 宝くじ */}
         <section className={CARD}>
           <h2 className={H2}>🎟️ 週末メガ宝くじ</h2>
-          <p className="text-xs text-stone-600 mb-3">
+          <p className="text-xs text-muted mb-3">
             ショップで1口100コインで購入し、毎週日曜22:00に抽選します。口数を増やすほど当選しやすくなります。
           </p>
           <ul className="text-xs md:text-sm text-foreground-subtle space-y-1.5 list-disc list-inside leading-relaxed">
@@ -323,7 +323,7 @@ export default function CasinoRulesPage() {
               <strong>🥉 3等（参加還元賞）</strong>: 購入した全員が、1口につき30コインを受け取れます（1等・2等に当たった人も対象）。
             </li>
           </ul>
-          <p className="text-[11px] text-stone-500 mt-2">
+          <p className="text-[11px] text-muted-strong mt-2">
             賞金はすべて当週の売上の中から配分されます（3等に30% / 2等に10% / 残り60%を金庫へ積立）。
             外部から新しいコインが追加されることはないため、宝くじはコインの再分配として機能します。
           </p>
@@ -332,20 +332,20 @@ export default function CasinoRulesPage() {
         {/* ジャックポット金庫 */}
         <section className={CARD}>
           <h2 className={H2}>💎 サーバー共有ジャックポット金庫</h2>
-          <p className="text-xs text-stone-600 mb-3">
+          <p className="text-xs text-muted mb-3">
             全員で積み立てる共有の賞金プールです。次の2つの方法で総取りできます。
           </p>
           <ul className="text-xs md:text-sm text-foreground-subtle space-y-1.5 list-disc list-inside leading-relaxed">
             <li>
               <strong>🔥 カスタムでペンタキルを達成し、その試合に勝利する</strong>: 試合結果がRiot APIと
               同期された時点で判定され、条件を満たした人が金庫を全額獲得します。
-              <span className="text-stone-500">※ペンタキルを取っても負けた試合は対象外です。</span>
+              <span className="text-muted-strong">※ペンタキルを取っても負けた試合は対象外です。</span>
             </li>
             <li>
               <strong>🎟️ 週末メガ宝くじの1等を引く</strong>: 毎週日曜22:00の抽選で8%の確率。
             </li>
           </ul>
-          <p className="text-[11px] text-stone-500 mt-2">
+          <p className="text-[11px] text-muted-strong mt-2">
             積立は「勝敗予想ベット額の5%」「カスタム1試合につき100コイン」「宝くじ売上の60%」から行われます。
             金庫には上限があり、上限に達している間は積立が止まります。
           </p>
@@ -353,7 +353,7 @@ export default function CasinoRulesPage() {
 
         {/* 免責 */}
         <div className="rounded-2xl border border-border bg-surface-subtle/80 p-5">
-          <p className="text-[11px] md:text-xs text-stone-600 leading-relaxed">
+          <p className="text-[11px] md:text-xs text-muted leading-relaxed">
             コインはKTM内でのみ使える遊び用のポイントで、現金や現金価値のあるものとは一切交換できません。
             抽選はすべてサーバー側で行われ、結果は確定するまでクライアントへ送信されません。
             このページの数値は <span className="font-mono">scripts/casino_rtp_report.js</span> による実測値です

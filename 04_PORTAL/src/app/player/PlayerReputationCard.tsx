@@ -136,7 +136,7 @@ export default function PlayerReputationCard({
                 通算称賛 {totalKudos} 回
               </span>
             </div>
-            <p className="text-[11px] text-stone-500 font-medium">
+            <p className="text-[11px] text-muted-strong font-medium">
               カスタムやノーマルで一緒にプレイしたメンバーから匿名で贈られた栄誉バッジです
             </p>
           </div>
@@ -150,10 +150,10 @@ export default function PlayerReputationCard({
             className={`px-4 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 shadow-sm cursor-pointer shrink-0 ${
               canSendToday
                 ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 shadow-amber-500/20 hover:scale-102 active:scale-98 animate-pulse'
-                : 'bg-surface-subtle text-stone-500 border border-border hover:bg-surface-hover'
+                : 'bg-surface-subtle text-muted-strong border border-border hover:bg-surface-hover'
             }`}
           >
-            <Sparkles size={14} className={canSendToday ? 'text-stone-950' : 'text-stone-400'} />
+            <Sparkles size={14} className={canSendToday ? 'text-stone-950' : 'text-faint'} />
             <span>{canSendToday ? '🌟 匿名で称賛を贈る (+50🪙)' : '本日送信済み（明日また送れます）'}</span>
           </button>
         )}
@@ -161,7 +161,7 @@ export default function PlayerReputationCard({
 
       {/* 獲得タグ一覧 */}
       {isLoading ? (
-        <div className="py-6 text-center text-xs text-stone-400 font-bold animate-pulse">
+        <div className="py-6 text-center text-xs text-faint font-bold animate-pulse">
           評判データを読み込み中...
         </div>
       ) : Object.keys(tagCounts).length > 0 ? (
@@ -186,7 +186,7 @@ export default function PlayerReputationCard({
           })}
         </div>
       ) : (
-        <div className="p-4 bg-background rounded-2xl border border-border/80 text-center text-xs text-stone-500 font-medium">
+        <div className="p-4 bg-background rounded-2xl border border-border/80 text-center text-xs text-muted-strong font-medium">
           まだメンバーからの称賛タグはありません。一緒にカスタムやノーマルをプレイして栄誉を集めましょう！
         </div>
       )}
@@ -206,7 +206,7 @@ export default function PlayerReputationCard({
                   <h3 className="text-base font-black text-foreground">
                     {playerName} さんへ匿名評判を贈る
                   </h3>
-                  <p className="text-[11px] text-stone-600 font-medium">
+                  <p className="text-[11px] text-muted font-medium">
                     完全匿名で送信されます（1日1回・+50コイン獲得🎁）
                   </p>
                 </div>
@@ -214,7 +214,7 @@ export default function PlayerReputationCard({
 
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="w-8 h-8 rounded-xl bg-surface-subtle hover:bg-surface-hover text-stone-500 hover:text-foreground flex items-center justify-center font-bold text-sm transition cursor-pointer"
+                className="w-8 h-8 rounded-xl bg-surface-subtle hover:bg-surface-hover text-muted-strong hover:text-foreground flex items-center justify-center font-bold text-sm transition cursor-pointer"
               >
                 ✕
               </button>
@@ -230,7 +230,7 @@ export default function PlayerReputationCard({
                     <Shield size={14} className="text-amber-600" />
                     <span>送信モード</span>
                   </div>
-                  <div className="text-[11px] text-stone-500 font-medium">
+                  <div className="text-[11px] text-muted-strong font-medium">
                     {isReport ? '⚠️ 管理者直通の相談・通報として非公開送信' : '🌟 公開称賛バッジとして送信'}
                   </div>
                 </div>
@@ -253,7 +253,7 @@ export default function PlayerReputationCard({
                 <div className="space-y-2">
                   <label className="block text-xs font-black text-foreground-subtle flex items-center justify-between">
                     <span>称賛タグを選択（最大3つ）</span>
-                    <span className="text-[10px] text-stone-500 font-bold">{selectedTags.length}/3 選択中</span>
+                    <span className="text-[10px] text-muted-strong font-bold">{selectedTags.length}/3 選択中</span>
                   </label>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

@@ -761,7 +761,7 @@ export default function YoutubeQueueManager() {
           <h1 className="text-2xl font-black tracking-tight text-foreground">
             📺 YouTube Absorber コマンドセンター
           </h1>
-          <p className="text-sm text-stone-600 mt-1">
+          <p className="text-sm text-muted mt-1">
             攻略動画の字幕テキストを自動抽出・AI解析し、戦略バイブルへとライブラリ化します。
           </p>
         </div>
@@ -772,7 +772,7 @@ export default function YoutubeQueueManager() {
             type="button"
             onClick={() => setActiveTab('queue')} 
             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-              activeTab === 'queue' ? 'bg-surface text-foreground shadow-xs font-extrabold' : 'text-stone-600 hover:text-foreground'
+              activeTab === 'queue' ? 'bg-surface text-foreground shadow-xs font-extrabold' : 'text-muted hover:text-foreground'
             }`}
           >
             動画キュー管理
@@ -781,7 +781,7 @@ export default function YoutubeQueueManager() {
             type="button"
             onClick={() => { setActiveTab('channels'); fetchChannels(); }} 
             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-              activeTab === 'channels' ? 'bg-surface text-foreground shadow-xs font-extrabold' : 'text-stone-600 hover:text-foreground'
+              activeTab === 'channels' ? 'bg-surface text-foreground shadow-xs font-extrabold' : 'text-muted hover:text-foreground'
             }`}
           >
             監視チャンネル設定
@@ -790,7 +790,7 @@ export default function YoutubeQueueManager() {
             type="button"
             onClick={() => { setActiveTab('playlists'); fetchPlaylists(); }} 
             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-              activeTab === 'playlists' ? 'bg-surface text-foreground shadow-xs font-extrabold' : 'text-stone-600 hover:text-foreground'
+              activeTab === 'playlists' ? 'bg-surface text-foreground shadow-xs font-extrabold' : 'text-muted hover:text-foreground'
             }`}
           >
             監視プレイリスト設定

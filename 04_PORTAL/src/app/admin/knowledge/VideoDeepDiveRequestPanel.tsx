@@ -86,7 +86,7 @@ export default function VideoDeepDiveRequestPanel() {
             <h3 className="text-sm font-black text-foreground">
               🔬 動画深掘りモード（個別YouTube解析リクエスト）
             </h3>
-            <p className="text-[11px] text-stone-500 font-medium">
+            <p className="text-[11px] text-muted-strong font-medium">
               1本の動画を「対面相性」「マクロ判断」「ビルド」の3観点でAI解析し、対象チャンピオンの戦術バイブルへ追記します。
             </p>
           </div>
@@ -137,7 +137,7 @@ export default function VideoDeepDiveRequestPanel() {
       {!loadingTasks && tasks.length > 0 && (
         <div className="space-y-2.5 pt-1">
           <h4 className="text-[11px] font-black text-foreground-subtle flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-stone-400" />
+            <Clock className="w-3.5 h-3.5 text-faint" />
             直近のリクエスト履歴
           </h4>
           <div className="space-y-1.5">

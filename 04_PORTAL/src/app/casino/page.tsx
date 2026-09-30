@@ -649,7 +649,7 @@ export default function CasinoPage() {
               </span>
             </div>
             {betStats.jackpot?.lastWinner && (
-              <div className="text-[10px] text-stone-600 font-medium">
+              <div className="text-[10px] text-muted font-medium">
                 👑 直近の総取り当選者: <strong className="text-amber-700">{betStats.jackpot.lastWinner}</strong> さん（+{betStats.jackpot.lastPayout.toLocaleString()}🪙）
               </div>
             )}
@@ -674,7 +674,7 @@ export default function CasinoPage() {
               className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap text-center ${
                 activeTab === tab.id
                   ? 'bg-surface text-foreground shadow-sm scale-102 border border-border'
-                  : 'text-stone-600 hover:text-foreground hover:bg-surface/50'
+                  : 'text-muted hover:text-foreground hover:bg-surface/50'
               }`}
             >
               {tab.label}
@@ -724,7 +724,7 @@ export default function CasinoPage() {
                     const currentMonthStr = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit' }).format(new Date()).replace(/\//g, '-');
                     const isRescueClaimedThisMonth = lastRescueMonth === currentMonthStr;
                     return isRescueClaimedThisMonth ? (
-                      <div className="px-3 py-1.5 rounded-xl bg-surface-hover text-stone-500 font-bold text-xs flex items-center gap-1.5 cursor-not-allowed" title="破産救済保険は月1回までです（今月分は受取済み）">
+                      <div className="px-3 py-1.5 rounded-xl bg-surface-hover text-muted-strong font-bold text-xs flex items-center gap-1.5 cursor-not-allowed" title="破産救済保険は月1回までです（今月分は受取済み）">
                         <span className="text-sm">🔒</span>
                         <span>破産救済 (今月受取済)</span>
                       </div>
@@ -775,7 +775,7 @@ export default function CasinoPage() {
                       ? 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/40'
                       : userStreak >= 1
                         ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40'
-                        : 'bg-surface-hover/60 dark:bg-[#1e1f22] text-stone-500 dark:text-stone-400'
+                        : 'bg-surface-hover/60 dark:bg-[#1e1f22] text-muted-strong'
                 }`}>
                   <Flame size={14} className={userStreak > 0 ? 'text-amber-400 animate-bounce' : ''} />
                   <span>{userStreak > 0 ? `🔥 予想 ${userStreak} 連勝中！` : '連勝ストリーク: 0戦'}</span>
@@ -788,10 +788,10 @@ export default function CasinoPage() {
                 )}
               </div>
 
-              <div className="text-[11px] font-bold text-stone-500 dark:text-stone-400 flex items-center gap-1.5">
+              <div className="text-[11px] font-bold text-muted-strong flex items-center gap-1.5">
                 <span>👑 自己ベスト:</span>
                 <strong className="text-amber-600 dark:text-amber-400">{userMaxStreak}連勝</strong>
-                <span className="text-[10px] text-stone-400 dark:text-stone-500 font-normal">（2連勝:+5% / 3連勝:+10% / 5連勝:+20%）</span>
+                <span className="text-[10px] text-faint font-normal">（2連勝:+5% / 3連勝:+10% / 5連勝:+20%）</span>
               </div>
             </div>
 
@@ -799,7 +799,7 @@ export default function CasinoPage() {
             <div className="pt-3 border-t border-amber-500/20">
               <div className="flex items-center gap-2 text-xs font-bold text-amber-950 mb-2">
                 <span>🎒 あなたの所持特権チケット:</span>
-                <span className="text-[11px] font-normal text-stone-600">({inventory.length}枚保有中)</span>
+                <span className="text-[11px] font-normal text-muted">({inventory.length}枚保有中)</span>
               </div>
               {inventory.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
@@ -832,7 +832,7 @@ export default function CasinoPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-stone-500 italic">
+                <p className="text-xs text-muted-strong italic">
                   現在保有している特権チケットはありません。「🛒 KTMショップ」からお好みの特権を交換できます！
                 </p>
               )}
@@ -848,7 +848,7 @@ export default function CasinoPage() {
                 <h3 className="text-sm font-black text-white">
                   Discordアカウントで1秒ログイン
                 </h3>
-                <p className="text-xs text-stone-300 mt-0.5">
+                <p className="text-xs text-faint mt-0.5">
                   ログインすると、毎日のボーナス受取やワンタップ勝敗ベット、特権アイテム発動が楽しめます！
                 </p>
               </div>
@@ -874,7 +874,7 @@ export default function CasinoPage() {
                 </div>
                 <div>
                   <h2 className="text-lg font-black text-foreground">カスタム勝敗予想</h2>
-                  <p className="text-xs text-stone-500">次のマッチの勝利チームを予想してコインを賭けよう！</p>
+                  <p className="text-xs text-muted-strong">次のマッチの勝利チームを予想してコインを賭けよう！</p>
                 </div>
               </div>
             </div>
@@ -895,13 +895,13 @@ export default function CasinoPage() {
                     <span className="text-amber-600 flex items-center gap-1">
                       <span>🟦 BLUE:</span>
                       <span className="font-mono">{betStats.blueRatio}%</span>
-                      <span className="text-[10px] text-stone-500 font-normal">({betStats.blueAmount.toLocaleString()}pt / {betStats.blueCount}人)</span>
+                      <span className="text-[10px] text-muted-strong font-normal">({betStats.blueAmount.toLocaleString()}pt / {betStats.blueCount}人)</span>
                     </span>
                     <span className="text-amber-700 font-mono text-[11px] font-black">
                       総プール: {betStats.totalAmount.toLocaleString()}pt
                     </span>
                     <span className="text-rose-600 flex items-center gap-1">
-                      <span className="text-[10px] text-stone-500 font-normal">({betStats.redAmount.toLocaleString()}pt / {betStats.redCount}人)</span>
+                      <span className="text-[10px] text-muted-strong font-normal">({betStats.redAmount.toLocaleString()}pt / {betStats.redCount}人)</span>
                       <span className="font-mono">{betStats.redRatio}%</span>
                       <span>:RED 🟥</span>
                     </span>
@@ -930,7 +930,7 @@ export default function CasinoPage() {
                   <div className="flex items-center gap-3">
                     <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 shadow-xs ${
                       isBetLocked
-                        ? 'bg-surface-hover text-stone-600'
+                        ? 'bg-surface-hover text-muted'
                         : (timeLeftSeconds !== null && timeLeftSeconds <= 180)
                         ? 'bg-rose-500 text-white animate-bounce'
                         : 'bg-emerald-500 text-white'
@@ -956,7 +956,7 @@ export default function CasinoPage() {
                             : 'LIVE MATCH 投票受付中'}
                         </span>
                       </div>
-                      <div className="text-[11px] text-stone-500 font-medium mt-0.5">
+                      <div className="text-[11px] text-muted-strong font-medium mt-0.5">
                         {isBetLocked
                           ? '試合終了後に勝敗が記録されると自動で配当コインが精算されます。観戦をお楽しみください！'
                           : '試合開始と同時に受付終了となります。どちらが勝つか予想して投票しよう！'}
@@ -972,7 +972,7 @@ export default function CasinoPage() {
                         : 'bg-surface border-emerald-200 text-emerald-900'
                     }`}>
                       <Clock size={16} className={timeLeftSeconds <= 180 ? 'text-rose-600' : 'text-emerald-600'} />
-                      <span className="text-xs font-black text-stone-600">締切目安:</span>
+                      <span className="text-xs font-black text-muted">締切目安:</span>
                       <span className={`font-mono text-base sm:text-lg font-black tracking-wider ${
                         timeLeftSeconds <= 180 ? 'text-rose-600' : 'text-foreground'
                       }`}>
@@ -995,7 +995,7 @@ export default function CasinoPage() {
                         }`}></span>
                       </span>
                       <span className={`text-xs font-black tracking-wider ${
-                        isBetLocked ? 'text-stone-500' : (timeLeftSeconds !== null && timeLeftSeconds <= 180) ? 'text-rose-600' : 'text-emerald-700'
+                        isBetLocked ? 'text-muted-strong' : (timeLeftSeconds !== null && timeLeftSeconds <= 180) ? 'text-rose-600' : 'text-emerald-700'
                       }`}>
                         {isBetLocked ? 'LOCK 試合進行中' : 'LIVE MATCH 受付中'}
                       </span>
@@ -1017,7 +1017,7 @@ export default function CasinoPage() {
                         {(activeMatch.teamBlue || []).map((p: any, i: number) => (
                           <div key={i} className="flex items-center justify-between text-[11px]">
                             <span className="font-bold text-foreground-soft truncate">{p.assignedRole || p.role || `P${i+1}`}: {p.name}</span>
-                            <span className="text-[9px] text-stone-500 font-mono shrink-0">{p.rank || p.highestRank || ''}</span>
+                            <span className="text-[9px] text-muted-strong font-mono shrink-0">{p.rank || p.highestRank || ''}</span>
                           </div>
                         ))}
                       </div>
@@ -1033,7 +1033,7 @@ export default function CasinoPage() {
                         {(activeMatch.teamRed || []).map((p: any, i: number) => (
                           <div key={i} className="flex items-center justify-between text-[11px]">
                             <span className="font-bold text-foreground-soft truncate">{p.assignedRole || p.role || `P${i+1}`}: {p.name}</span>
-                            <span className="text-[9px] text-stone-500 font-mono shrink-0">{p.rank || p.highestRank || ''}</span>
+                            <span className="text-[9px] text-muted-strong font-mono shrink-0">{p.rank || p.highestRank || ''}</span>
                           </div>
                         ))}
                       </div>
@@ -1055,7 +1055,7 @@ export default function CasinoPage() {
                         <h4 className="text-base font-black text-foreground pt-2">
                           あなたは現在このカスタム対戦の選手です
                         </h4>
-                        <p className="text-xs text-stone-600 leading-relaxed max-w-md mx-auto">
+                        <p className="text-xs text-muted leading-relaxed max-w-md mx-auto">
                           試合の公平性・八百長防止のため、<strong className="text-amber-700">出場選手本人は勝敗予想ベットを行うことができません。</strong><br />
                           勝敗予想は観戦者・コミュニティメンバー限定の機能となります。
                         </p>
@@ -1066,7 +1066,7 @@ export default function CasinoPage() {
                           <span className="text-xl">🏆</span>
                           <div>
                             <div className="font-black text-foreground">選手勝利ボーナス</div>
-                            <div className="text-[10px] text-stone-500">試合に勝利すると自動でポイントが付与されます</div>
+                            <div className="text-[10px] text-muted-strong">試合に勝利すると自動でポイントが付与されます</div>
                           </div>
                         </div>
                         <span className="font-mono font-black text-amber-700 text-sm bg-amber-100 border border-amber-300 px-3 py-1 rounded-xl">
@@ -1082,7 +1082,7 @@ export default function CasinoPage() {
                             <span className="text-lg">🔒</span>
                             <div>
                               <div className="font-extrabold text-xs">勝敗予想は締め切られました（試合進行中）</div>
-                              <div className="text-[11px] text-stone-600">試合終了後のコイン精算をお待ちください！</div>
+                              <div className="text-[11px] text-muted">試合終了後のコイン精算をお待ちください！</div>
                             </div>
                           </div>
                           <span className="text-[10px] bg-amber-200 text-amber-900 font-bold px-2 py-0.5 rounded-full">LOCK</span>
@@ -1100,7 +1100,7 @@ export default function CasinoPage() {
                                 className={`p-3 md:p-5 rounded-2xl md:rounded-3xl border-2 md:border-3 font-black text-xs md:text-sm transition-all flex flex-col items-center gap-1.5 md:gap-2 cursor-pointer ${
                                   betTeam === 'BLUE'
                                     ? 'border-amber-600 bg-amber-50 text-amber-700 shadow-md scale-102'
-                                    : 'border-border hover:border-amber-200 text-stone-600'
+                                    : 'border-border hover:border-amber-200 text-muted'
                                 }`}
                               >
                                 <span className="text-xl md:text-2xl">🟦</span>
@@ -1116,7 +1116,7 @@ export default function CasinoPage() {
                                 className={`p-3 md:p-5 rounded-2xl md:rounded-3xl border-2 md:border-3 font-black text-xs md:text-sm transition-all flex flex-col items-center gap-1.5 md:gap-2 cursor-pointer ${
                                   betTeam === 'RED'
                                     ? 'border-rose-600 bg-rose-50 text-rose-700 shadow-md scale-102'
-                                    : 'border-border hover:border-rose-200 text-stone-600'
+                                    : 'border-border hover:border-rose-200 text-muted'
                                 }`}
                               >
                                 <span className="text-xl md:text-2xl">🟥</span>
@@ -1135,7 +1135,7 @@ export default function CasinoPage() {
                                 🪙 賭けるコイン数
                               </label>
                               <div className="text-right">
-                                <span className="text-[10px] md:text-[11px] text-stone-500 font-bold">勝った場合: </span>
+                                <span className="text-[10px] md:text-[11px] text-muted-strong font-bold">勝った場合: </span>
                                 <strong className="text-xs md:text-sm font-black text-amber-600 font-mono">
                                   🎯 +{Math.round(betAmount * (betTeam === 'BLUE' ? calculatedOdds.blue : calculatedOdds.red))} コイン
                                 </strong>
@@ -1182,7 +1182,7 @@ export default function CasinoPage() {
                   )
                 ) : (
                   <div className="text-center p-6 bg-background rounded-2xl border border-border">
-                    <p className="text-xs text-stone-600 font-bold mb-3">
+                    <p className="text-xs text-muted font-bold mb-3">
                       ベットするにはDiscordログインが必要です
                     </p>
                     <button
@@ -1205,7 +1205,7 @@ export default function CasinoPage() {
                   <h3 className="text-base font-black text-foreground">
                     現在受付中のカスタム対戦はありません
                   </h3>
-                  <p className="text-xs text-stone-500 max-w-md mx-auto leading-relaxed">
+                  <p className="text-xs text-muted-strong max-w-md mx-auto leading-relaxed">
                     バランサーでチーム分けが確定されると、ここに自動で5v5対戦カードが出現し、勝敗予想の受付が開始されます🔥
                   </p>
                 </div>
@@ -1232,7 +1232,7 @@ export default function CasinoPage() {
                   </div>
                   <div>
                     <h3 className="text-sm font-black text-foreground">KTM 長者番付 TOP 10</h3>
-                    <p className="text-[11px] text-stone-500">現在のコイン富豪ランキング</p>
+                    <p className="text-[11px] text-muted-strong">現在のコイン富豪ランキング</p>
                   </div>
                 </div>
                 <span className="text-[10px] text-amber-700 bg-amber-100/70 font-bold px-2 py-0.5 rounded-full">
@@ -1261,7 +1261,7 @@ export default function CasinoPage() {
                       <div>
                         <div className="text-xs font-black text-foreground flex items-center gap-1">
                           {p.name}
-                          <span className="text-[8px] px-1 py-0.2 rounded bg-black/5 text-stone-500 font-mono">
+                          <span className="text-[8px] px-1 py-0.2 rounded bg-black/5 text-muted-strong font-mono">
                             {p.rank}
                           </span>
                         </div>
@@ -1349,7 +1349,7 @@ export default function CasinoPage() {
                 </div>
                 <div>
                   <h2 className="text-lg font-black text-foreground">KTMショップ ＆ 特権アイテム交換所</h2>
-                  <p className="text-xs text-stone-500">貯めたコインでカスタム特権チケットやバラエティ権をGET！</p>
+                  <p className="text-xs text-muted-strong">貯めたコインでカスタム特権チケットやバラエティ権をGET！</p>
                 </div>
               </div>
             </div>
@@ -1377,7 +1377,7 @@ export default function CasinoPage() {
                     <h3 className="font-black text-foreground text-sm group-hover:text-amber-700 transition-colors">
                       {item.name}
                     </h3>
-                    <p className="text-xs text-stone-500 leading-relaxed">
+                    <p className="text-xs text-muted-strong leading-relaxed">
                       {item.desc}
                     </p>
                   </div>
@@ -1433,7 +1433,7 @@ export default function CasinoPage() {
             </div>
             <div>
               <h3 className="text-base md:text-lg font-black text-foreground">コインを自動で貯める 5つの方法</h3>
-              <p className="text-xs text-stone-500">試合に出る人も、観戦する人も全員がコインを獲得できます！</p>
+              <p className="text-xs text-muted-strong">試合に出る人も、観戦する人も全員がコインを獲得できます！</p>
             </div>
           </div>
 
@@ -1443,7 +1443,7 @@ export default function CasinoPage() {
                 <span className="text-xs font-black text-amber-700">① 初回ログイン</span>
                 <span className="text-xs font-mono font-black text-emerald-600">+1,000 pt</span>
               </div>
-              <p className="text-[11px] text-stone-600 leading-relaxed">
+              <p className="text-[11px] text-muted leading-relaxed">
                 Discordで初めてログインすると、全員に初期所持金として自動付与！
               </p>
             </div>
@@ -1453,7 +1453,7 @@ export default function CasinoPage() {
                 <span className="text-xs font-black text-amber-700">② 試合に参加</span>
                 <span className="text-xs font-mono font-black text-emerald-600">+100 pt</span>
               </div>
-              <p className="text-[11px] text-stone-600 leading-relaxed">
+              <p className="text-[11px] text-muted leading-relaxed">
                 カスタム試合に参加するだけで、勝敗に関係なく全員に参加賞を付与！
               </p>
             </div>
@@ -1463,7 +1463,7 @@ export default function CasinoPage() {
                 <span className="text-xs font-black text-amber-700">③ 試合に勝利</span>
                 <span className="text-xs font-mono font-black text-emerald-600">+150 pt (計250)</span>
               </div>
-              <p className="text-[11px] text-stone-600 leading-relaxed">
+              <p className="text-[11px] text-muted leading-relaxed">
                 試合に勝利したチームのメンバー全員に勝利ボーナスを追加付与！
               </p>
             </div>
@@ -1473,7 +1473,7 @@ export default function CasinoPage() {
                 <span className="text-xs font-black text-amber-700">④ 募集を主催</span>
                 <span className="text-xs font-mono font-black text-emerald-600">+200 pt</span>
               </div>
-              <p className="text-[11px] text-stone-600 leading-relaxed">
+              <p className="text-[11px] text-muted leading-relaxed">
                 Discordで `/recruit` を打って募集を立てた主催者に感謝ボーナス！
               </p>
             </div>
@@ -1483,7 +1483,7 @@ export default function CasinoPage() {
                 <span className="text-xs font-black text-amber-700">⑤ 勝敗予想が的中</span>
                 <span className="text-xs font-mono font-black text-amber-600">賭け金 × 2倍 配当</span>
               </div>
-              <p className="text-[11px] text-stone-600 leading-relaxed">
+              <p className="text-[11px] text-muted leading-relaxed">
                 カスタムの勝利チームを予想して的中すると、賭けたコインがザクザク倍増して戻ってきます！
               </p>
             </div>
@@ -1503,13 +1503,13 @@ export default function CasinoPage() {
                 </div>
                 <div>
                   <h3 className="text-base font-black text-foreground">コインをチップとして贈る</h3>
-                  <p className="text-[11px] text-stone-500">ナイスプレイや日頃の感謝を込めてコインをプレゼント！</p>
+                  <p className="text-[11px] text-muted-strong">ナイスプレイや日頃の感謝を込めてコインをプレゼント！</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsTipModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-surface-subtle hover:bg-surface-hover text-stone-500 flex items-center justify-center text-sm font-black transition cursor-pointer"
+                className="w-8 h-8 rounded-full bg-surface-subtle hover:bg-surface-hover text-muted-strong flex items-center justify-center text-sm font-black transition cursor-pointer"
               >
                 ✕
               </button>
@@ -1552,7 +1552,7 @@ export default function CasinoPage() {
                   <label className="block text-xs font-black text-foreground-subtle">
                     🪙 チップ金額 (コイン)
                   </label>
-                  <span className="text-[10px] text-stone-500 font-bold">
+                  <span className="text-[10px] text-muted-strong font-bold">
                     所持: {(user?.coins ?? 1000).toLocaleString()}pt
                   </span>
                 </div>

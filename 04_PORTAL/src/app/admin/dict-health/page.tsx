@@ -253,7 +253,7 @@ function DictHealthDashboardContent() {
                     <Activity className="w-4 h-4 text-amber-600" />
                     <span className="text-xs font-black text-amber-900">📊 ヘルス概要</span>
                   </div>
-                  <div className="text-[11px] text-stone-600 space-y-1 leading-relaxed">
+                  <div className="text-[11px] text-muted space-y-1 leading-relaxed">
                     <div className="flex items-start gap-1.5">
                       <span className="text-amber-500 font-bold shrink-0 mt-0.5">▸</span>
                       <span><strong className="text-foreground-soft">やること:</strong> 全チャンピオンの状態を一覧し、ワンタップで一括AI最新化</span>
@@ -278,7 +278,7 @@ function DictHealthDashboardContent() {
                     <ClipboardCheck className="w-4 h-4 text-teal-600" />
                     <span className="text-xs font-black text-teal-900">🕵️ ファクトチェック & 棚卸し</span>
                   </div>
-                  <div className="text-[11px] text-stone-600 space-y-1 leading-relaxed">
+                  <div className="text-[11px] text-muted space-y-1 leading-relaxed">
                     <div className="flex items-start gap-1.5">
                       <span className="text-teal-500 font-bold shrink-0 mt-0.5">▸</span>
                       <span><strong className="text-foreground-soft">やること:</strong> AIが検知した矛盾・誤記述を1件ずつ確認し修正</span>
@@ -303,7 +303,7 @@ function DictHealthDashboardContent() {
                     <History className="w-4 h-4 text-pink-600" />
                     <span className="text-xs font-black text-pink-900">📜 履歴 & 鮮度</span>
                   </div>
-                  <div className="text-[11px] text-stone-600 space-y-1 leading-relaxed">
+                  <div className="text-[11px] text-muted space-y-1 leading-relaxed">
                     <div className="flex items-start gap-1.5">
                       <span className="text-pink-500 font-bold shrink-0 mt-0.5">▸</span>
                       <span><strong className="text-foreground-soft">やること:</strong> 変更履歴の確認・巻き戻し、データ鮮度チェック</span>
@@ -336,7 +336,7 @@ function DictHealthDashboardContent() {
                 パッチ {data?.currentPatch || '26.15'}
               </span>
             </div>
-            <p className="text-[11px] sm:text-xs text-stone-500 mt-1">
+            <p className="text-[11px] sm:text-xs text-muted-strong mt-1">
               全 {data?.totalCount || 0} チャンピオンの辞典SSOT健康度を監視し、一括AI最新化を行えます
             </p>
           </div>
@@ -381,7 +381,7 @@ function DictHealthDashboardContent() {
                 className={`flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-2 sm:py-3 rounded-xl text-xs font-bold transition-all shrink-0 ${
                   isActive
                     ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-md shadow-amber-600/30'
-                    : 'text-stone-500 hover:text-foreground-soft hover:bg-surface/60'
+                    : 'text-muted-strong hover:text-foreground-soft hover:bg-surface/60'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
@@ -513,7 +513,7 @@ function DictHealthDashboardContent() {
           <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
             {/* 検索入力 */}
             <div className="relative flex-1">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
               <input
                 type="text"
                 placeholder="チャンピオン検索..."
@@ -532,7 +532,7 @@ function DictHealthDashboardContent() {
                     key={st}
                     onClick={() => setStatusFilter(st)}
                     className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition whitespace-nowrap ${
-                      statusFilter === st ? 'bg-surface text-foreground shadow-xs' : 'text-stone-500 hover:text-foreground-soft'
+                      statusFilter === st ? 'bg-surface text-foreground shadow-xs' : 'text-muted-strong hover:text-foreground-soft'
                     }`}
                   >
                     {st === 'ALL' ? 'すべて' : st === 'verified' ? '🟢確認済' : st === 'ai_generated' ? '🟡AI' : '🔴要対応'}
@@ -599,7 +599,7 @@ function DictHealthDashboardContent() {
                       />
                       <div>
                         <h3 className="font-bold text-sm text-foreground leading-tight">{champ.champion}</h3>
-                        <span className="text-[10px] font-semibold text-stone-500">
+                        <span className="text-[10px] font-semibold text-muted-strong">
                           パッチ: {champ.patch}
                         </span>
                       </div>
@@ -619,7 +619,7 @@ function DictHealthDashboardContent() {
                   </div>
 
                   {/* 詳細情報 (1秒インライン展開) */}
-                  <div className="space-y-1 text-[11px] text-stone-600 bg-background p-2.5 rounded-xl border border-stone-100 mb-3">
+                  <div className="space-y-1 text-[11px] text-muted bg-background p-2.5 rounded-xl border border-stone-100 mb-3">
                     <p className="truncate" title={champ.sourceSummary || ''}>
                       <span className="font-bold text-foreground-subtle">根拠・ステータス:</span> {champ.sourceSummary || '現行パッチ26.15データ統合済み'}
                     </p>
@@ -686,7 +686,7 @@ function DictHealthDashboardContent() {
 
         {filteredList.length === 0 && (
           <div className="text-center py-16 bg-surface rounded-2xl border border-border">
-            <p className="text-sm font-bold text-stone-500">条件に一致するチャンピオンが見つかりませんでした</p>
+            <p className="text-sm font-bold text-muted-strong">条件に一致するチャンピオンが見つかりませんでした</p>
           </div>
         )}
 
@@ -709,7 +709,7 @@ function DictHealthDashboardContent() {
                   <Sparkles className="text-amber-600 w-5 h-5" />
                   <h2 className="text-sm font-extrabold text-foreground">💡 ナレッジ点検 & 蓄積メモ・プロ分析インサイト</h2>
                 </div>
-                <p className="text-xs text-stone-500 mb-4">
+                <p className="text-xs text-muted-strong mb-4">
                   コーチAIが対戦データから集計したチャンピオン別の蓄積メモやナレッジの整合性を点検・直接編集します。公式データを起点にした個別チャンピオンの下書き作成もここから行えます。
                 </p>
                 <DictInsightsPanel />
@@ -730,7 +730,7 @@ function DictHealthDashboardContent() {
                 <FileCheck className="text-teal-600 w-5 h-5" />
                 <h2 className="text-sm font-extrabold text-foreground">🕵️‍♂️ AIファクトチェック & 誤記述の自動検知キュー</h2>
               </div>
-              <p className="text-xs text-stone-500 mb-4">
+              <p className="text-xs text-muted-strong mb-4">
                 全170+体のチャンピオン辞典から、パッチ数値の相違や古い記述・誤った解説をAIがスキャンしキューとして表示します。
               </p>
               <DictFactCheckPanel />
@@ -742,7 +742,7 @@ function DictHealthDashboardContent() {
                 <ClipboardCheck className="text-amber-600 w-5 h-5" />
                 <h2 className="text-sm font-extrabold text-foreground">📝 辞典データ人間レビュー</h2>
               </div>
-              <p className="text-xs text-stone-500 mb-4">
+              <p className="text-xs text-muted-strong mb-4">
                 AI生成データの品質を人間の目で最終確認するレビューキューです。
               </p>
               <DictReviewPanel />
@@ -759,7 +759,7 @@ function DictHealthDashboardContent() {
                 <History className="text-pink-600 w-5 h-5" />
                 <h2 className="text-sm font-extrabold text-foreground">📜 辞典 ＆ ナレッジ全変更履歴 Diff & ワンタップ巻き戻し</h2>
               </div>
-              <p className="text-xs text-stone-500 mb-4">
+              <p className="text-xs text-muted-strong mb-4">
                 過去にいつ・誰が（手動またはAI）・何を変更したかの全差分ログを閲覧し、必要に応じて以前の状態へ巻き戻せます。
               </p>
               <RevisionsPanel />
@@ -771,7 +771,7 @@ function DictHealthDashboardContent() {
                 <Activity className="text-emerald-600 w-5 h-5" />
                 <h2 className="text-sm font-extrabold text-foreground">🍃 ナレッジ鮮度レビュー & 定期点検</h2>
               </div>
-              <p className="text-xs text-stone-500 mb-4">
+              <p className="text-xs text-muted-strong mb-4">
                 ナレッジデータの更新日時・鮮度を点検し、最新パッチとの適合率を確認できます。
               </p>
               <FreshnessPanel />

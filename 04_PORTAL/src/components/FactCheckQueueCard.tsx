@@ -291,7 +291,7 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
             {ISSUE_LABEL[it.issue_type]?.label || it.issue_type}
           </span>
           {Array.isArray(it.source_refs) && it.issue_type !== 'invalid_champion_tag' && (
-            <span className="text-[10px] text-stone-400">出典: {it.source_refs.map((s: any) => (typeof s === 'string' ? s : s.table)).join(', ')}</span>
+            <span className="text-[10px] text-faint">出典: {it.source_refs.map((s: any) => (typeof s === 'string' ? s : s.table)).join(', ')}</span>
           )}
         </div>
         {it.issue_type !== 'invalid_champion_tag' && (
@@ -319,7 +319,7 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
             <span><strong>記載を削除</strong>: 誤った古い記述自体を消去して完了</span>
           </div>
           <div className="bg-surface/80 border border-amber-200 rounded-lg p-1.5 flex items-start gap-1">
-            <span className="text-stone-600 font-black">③</span>
+            <span className="text-muted font-black">③</span>
             <span><strong>誤検知として却下</strong>: AIの誤判定の場合はそのまま却下</span>
           </div>
         </div>
@@ -403,7 +403,7 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                 {/* Before: 現在の文章 */}
                 <div className="p-2.5 rounded-lg bg-surface-subtle border border-border space-y-1">
-                  <span className="text-[11px] font-extrabold text-stone-600 block">
+                  <span className="text-[11px] font-extrabold text-muted block">
                     【変更前（現在の記載）】: {aiSuggestion.targetLabel}
                   </span>
                   <p className="text-[11px] font-mono text-foreground-subtle whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto bg-surface p-2 rounded border border-border">
@@ -446,7 +446,7 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
                 <button
                   type="button"
                   onClick={() => setAiSuggestion(null)}
-                  className="px-3 py-2 bg-surface border border-border hover:bg-surface-subtle text-stone-600 rounded-lg text-xs font-bold transition"
+                  className="px-3 py-2 bg-surface border border-border hover:bg-surface-subtle text-muted rounded-lg text-xs font-bold transition"
                 >
                   閉じる
                 </button>
@@ -496,7 +496,7 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
         <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-2.5 text-xs">
           <div className="font-bold text-amber-900">📄 {it.sourcePreview.title || '(タイトルなし)'}</div>
           {it.sourcePreview.body && (
-            <p className="text-stone-600 mt-1 whitespace-pre-wrap leading-relaxed">{it.sourcePreview.body}{it.sourcePreview.body.length >= 300 ? '…' : ''}</p>
+            <p className="text-muted mt-1 whitespace-pre-wrap leading-relaxed">{it.sourcePreview.body}{it.sourcePreview.body.length >= 300 ? '…' : ''}</p>
           )}
           {it.sourcePreview.url && (
             <a href={it.sourcePreview.url} target="_blank" rel="noreferrer"

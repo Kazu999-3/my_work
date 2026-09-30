@@ -71,7 +71,7 @@ export const KTM_TIERS: KtmTier[] = rawKtmTiers as KtmTier[];
 // あったため一元化(known-regression-patterns #4系、2026-08-10)。
 export function getColorFromRankName(rank: string): string {
   const r = (rank || "").toUpperCase();
-  if (r.includes("IRON")) return "text-stone-500 font-bold";
+  if (r.includes("IRON")) return "text-muted-strong font-bold";
   if (r.includes("BRONZE")) return "text-amber-700 font-bold";
   if (r.includes("SILVER")) return "text-foreground-subtle font-bold";
   if (r.includes("GOLD")) return "text-yellow-700 font-bold";
@@ -81,7 +81,7 @@ export function getColorFromRankName(rank: string): string {
   if (r.includes("MASTER")) return "text-orange-700 font-bold";
   if (r.includes("GRANDMASTER")) return "text-red-500 font-bold";
   if (r.includes("CHALLENGER")) return "text-amber-700 font-bold";
-  return "text-stone-400 font-medium";
+  return "text-faint font-medium";
 }
 
 export function getKtmRank(mmr: number): { name: string; color: string; bg: string } {
@@ -112,7 +112,7 @@ export function getRankBadgeStyle(rank?: string | null): { bg: string; color: st
   if (r.includes('SILVER')) return { bg: 'bg-slate-400/10', color: 'text-slate-600 dark:text-slate-300', border: 'border-slate-400/30' };
   if (r.includes('BRONZE')) return { bg: 'bg-amber-800/10', color: 'text-amber-800 dark:text-amber-600', border: 'border-amber-800/30' };
   if (r.includes('IRON')) return { bg: 'bg-zinc-500/10', color: 'text-zinc-600 dark:text-zinc-400', border: 'border-zinc-500/30' };
-  return { bg: 'bg-stone-500/10', color: 'text-stone-600 dark:text-stone-400', border: 'border-stone-500/30' };
+  return { bg: 'bg-stone-500/10', color: 'text-muted', border: 'border-stone-500/30' };
 }
 
 /**

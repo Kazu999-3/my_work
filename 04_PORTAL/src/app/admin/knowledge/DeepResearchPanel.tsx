@@ -69,7 +69,7 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
               AI Deep Analysis
             </span>
           </h3>
-          <p className="text-xs text-stone-500 mt-1">
+          <p className="text-xs text-muted-strong mt-1">
             対象チャンピオンの最新パッチメタ・戦術リサーチ・高レート解説動画の発掘・攻略ナレッジ化を一発自動実行
           </p>
         </div>

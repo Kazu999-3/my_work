@@ -65,11 +65,11 @@ export default function ArticleRevisionHistory({ articleId }: Props) {
     } catch (e: any) { setError(e.message); } finally { setReverting(false); }
   };
 
-  if (loading) return <p className="text-[11px] text-stone-400 mt-3">この記事の変化履歴を確認中...</p>;
+  if (loading) return <p className="text-[11px] text-faint mt-3">この記事の変化履歴を確認中...</p>;
   if (error) return <p className="text-[11px] text-rose-600 mt-3">履歴の取得に失敗: {error}</p>;
   if (!revisions || revisions.length === 0) {
     return (
-      <p className="text-[11px] text-stone-400 mt-3 flex items-center gap-1">
+      <p className="text-[11px] text-faint mt-3 flex items-center gap-1">
         <History size={12} /> この記事はまだレーン別ガイド・チャンピオン辞典へ統合されていません。
       </p>
     );
@@ -77,7 +77,7 @@ export default function ArticleRevisionHistory({ articleId }: Props) {
 
   return (
     <div className="mt-3 border-t border-black/10 pt-3">
-      <p className="text-[11px] font-bold text-stone-600 flex items-center gap-1 mb-2">
+      <p className="text-[11px] font-bold text-muted flex items-center gap-1 mb-2">
         <History size={12} /> この記事の変化履歴（{revisions.length}件）
       </p>
       <div className="space-y-1.5">
@@ -97,14 +97,14 @@ export default function ArticleRevisionHistory({ articleId }: Props) {
                   <span className="text-rose-700">-{r.removed}</span>
                 </span>
               )}
-              <span className="text-stone-400 ml-auto shrink-0">{new Date(r.created_at).toLocaleString('ja-JP')}</span>
+              <span className="text-faint ml-auto shrink-0">{new Date(r.created_at).toLocaleString('ja-JP')}</span>
               {openId === r.id ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
             </button>
 
             {openId === r.id && (
               <div className="border-t border-border bg-background p-2.5">
                 {detailLoading ? (
-                  <p className="text-[11px] text-stone-500">差分を読み込み中...</p>
+                  <p className="text-[11px] text-muted-strong">差分を読み込み中...</p>
                 ) : detail ? (
                   <>
                     <div className="max-h-64 overflow-auto font-mono text-[10px] leading-relaxed rounded-lg border border-border">
@@ -112,7 +112,7 @@ export default function ArticleRevisionHistory({ articleId }: Props) {
                         <div key={i} className={
                           line.op === 'added' ? 'bg-emerald-100 text-emerald-700 px-2'
                           : line.op === 'removed' ? 'bg-rose-100 text-rose-700/80 px-2 line-through decoration-rose-400'
-                          : 'text-stone-500 px-2'
+                          : 'text-muted-strong px-2'
                         }>
                           <span className="select-none opacity-40 mr-2">
                             {line.op === 'added' ? '+' : line.op === 'removed' ? '-' : ' '}

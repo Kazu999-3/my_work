@@ -18,7 +18,7 @@ const ROLES = [
   { id: "MID", name: "ミッド", icon: Zap, color: "text-teal-600 border-teal-500/40 bg-teal-500/10" },
   { id: "ADC", name: "ボット(ADC)", icon: Target, color: "text-rose-600 border-rose-500/40 bg-rose-500/10" },
   { id: "SUP", name: "サポート", icon: Heart, color: "text-amber-600 border-amber-500/40 bg-amber-500/10" },
-  { id: "FILL", name: "おまかせ(FILL)", icon: Shuffle, color: "text-stone-600 border-stone-500/40 bg-stone-500/10" },
+  { id: "FILL", name: "おまかせ(FILL)", icon: Shuffle, color: "text-muted border-stone-500/40 bg-stone-500/10" },
 ];
 
 export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsPanelProps) {
@@ -95,14 +95,14 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
           <Shield className="w-5 h-5 text-amber-600" />
           <span>アカウント設定 ＆ 希望・NGレーン設定</span>
         </h2>
-        <p className="text-xs sm:text-sm text-stone-500 dark:text-stone-400 font-medium mt-1">
+        <p className="text-xs sm:text-sm text-muted-strong font-medium mt-1">
           カスタム募集やチーム分けバランサーで優先される希望ロールと、絶対に入りたくないNGロールを自己設定できます。
         </p>
       </div>
 
       {/* サモナーネーム（IGN）入力 */}
       <div className="bg-background dark:bg-[#2b2d31] border border-border dark:border-[#3f4147] rounded-2xl p-4 sm:p-5 space-y-2">
-        <label className="block text-xs font-black text-foreground-subtle dark:text-stone-300 uppercase tracking-wider">
+        <label className="block text-xs font-black text-foreground-subtle uppercase tracking-wider">
           ゲーム内サモナーネーム (IGN#TAG)
         </label>
         <input
@@ -110,9 +110,9 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
           value={ign}
           onChange={(e) => setIgn(e.target.value)}
           placeholder="例: Hide on bush#KR1"
-          className="w-full bg-surface dark:bg-[#1e1f22] border border-border dark:border-[#3f4147] rounded-xl px-4 py-2.5 text-sm text-foreground dark:text-white font-mono placeholder:text-stone-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 shadow-xs"
+          className="w-full bg-surface dark:bg-[#1e1f22] border border-border dark:border-[#3f4147] rounded-xl px-4 py-2.5 text-sm text-foreground dark:text-white font-mono placeholder:text-faint focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 shadow-xs"
         />
-        <p className="text-[11px] text-stone-400 font-medium">
+        <p className="text-[11px] text-faint font-medium">
           ※ LoLクライアント内の Riot ID と タグライン（#JP1など）を入力すると、OP.GGやカルテへの自動連携が有効になります。
         </p>
       </div>
@@ -121,7 +121,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
       <div className="space-y-3">
         <label className="block text-xs font-black text-amber-800 dark:text-amber-400 uppercase tracking-wider flex items-center justify-between">
           <span>⭐ 第1希望レーン (Primary Role)</span>
-          <span className="text-[11px] text-stone-500 dark:text-stone-400 normal-case font-bold">最優先で割り当てられます</span>
+          <span className="text-[11px] text-muted-strong normal-case font-bold">最優先で割り当てられます</span>
         </label>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
           {ROLES.map((r) => {
@@ -135,7 +135,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
                 className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border text-center transition-all cursor-pointer ${
                   isSelected
                     ? "bg-amber-500 text-stone-950 font-black shadow-md border-amber-600 scale-[1.02]"
-                    : "bg-surface dark:bg-[#2b2d31] border-border dark:border-[#3f4147] text-stone-600 dark:text-stone-300 hover:border-border hover:bg-background dark:hover:bg-[#313338] font-bold"
+                    : "bg-surface dark:bg-[#2b2d31] border-border dark:border-[#3f4147] text-muted hover:border-border hover:bg-background dark:hover:bg-[#313338] font-bold"
                 }`}
               >
                 <Icon className="w-6 h-6 mb-1.5" />
@@ -148,9 +148,9 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
 
       {/* 第2希望レーン */}
       <div className="space-y-3">
-        <label className="block text-xs font-black text-foreground-subtle dark:text-stone-300 uppercase tracking-wider flex items-center justify-between">
+        <label className="block text-xs font-black text-foreground-subtle uppercase tracking-wider flex items-center justify-between">
           <span>🥈 第2希望レーン (Secondary Role)</span>
-          <span className="text-[11px] text-stone-500 dark:text-stone-400 normal-case font-bold">第1希望が埋まった際の次候補</span>
+          <span className="text-[11px] text-muted-strong normal-case font-bold">第1希望が埋まった際の次候補</span>
         </label>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
           {ROLES.map((r) => {
@@ -164,7 +164,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
                 className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border text-center transition-all cursor-pointer ${
                   isSelected
                     ? "bg-stone-800 dark:bg-stone-100 text-white dark:text-stone-900 font-black shadow-md border-stone-900 dark:border-stone-200 scale-[1.02]"
-                    : "bg-surface dark:bg-[#2b2d31] border-border dark:border-[#3f4147] text-stone-600 dark:text-stone-300 hover:border-border hover:bg-background dark:hover:bg-[#313338] font-bold"
+                    : "bg-surface dark:bg-[#2b2d31] border-border dark:border-[#3f4147] text-muted hover:border-border hover:bg-background dark:hover:bg-[#313338] font-bold"
                 }`}
               >
                 <Icon className="w-6 h-6 mb-1.5" />
@@ -182,7 +182,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
             <Ban className="w-4 h-4" />
             <span>🚫 NGレーン設定 (最大2つまで)</span>
           </span>
-          <span className="text-[11px] text-stone-500 dark:text-stone-400 normal-case font-bold">
+          <span className="text-[11px] text-muted-strong normal-case font-bold">
             バランサーがこのレーンへの配置を回避します
           </span>
         </label>
@@ -198,10 +198,10 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
                 className={`flex items-center justify-center gap-2 p-3 rounded-2xl border text-center transition-all cursor-pointer ${
                   isNg
                     ? "bg-rose-500 text-white font-black shadow-md border-rose-600 scale-[1.02]"
-                    : "bg-surface dark:bg-[#2b2d31] border-border dark:border-[#3f4147] text-stone-600 dark:text-stone-300 hover:border-border hover:bg-background dark:hover:bg-[#313338] font-bold"
+                    : "bg-surface dark:bg-[#2b2d31] border-border dark:border-[#3f4147] text-muted hover:border-border hover:bg-background dark:hover:bg-[#313338] font-bold"
                 }`}
               >
-                <Ban className={`w-4 h-4 ${isNg ? "text-white" : "text-stone-400"}`} />
+                <Ban className={`w-4 h-4 ${isNg ? "text-white" : "text-faint"}`} />
                 <Icon className="w-4 h-4" />
                 <span className="text-xs">{r.name}</span>
               </button>
@@ -224,7 +224,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
             </div>
             <div>
               <h3 className="text-sm font-black text-foreground dark:text-white">外観・テーマ設定</h3>
-              <p className="text-[11px] text-stone-500 dark:text-stone-400">ライトモード・スレート調ダークモード・OS自動連動を切り替えられます</p>
+              <p className="text-[11px] text-muted-strong">ライトモード・スレート調ダークモード・OS自動連動を切り替えられます</p>
             </div>
           </div>
           <ThemeToggle variant="full" />

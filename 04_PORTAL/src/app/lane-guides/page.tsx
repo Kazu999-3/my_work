@@ -231,12 +231,12 @@ export default function LaneGuidesPage() {
                     className={`px-4 py-2 rounded-xl text-xs md:text-sm font-black transition-all flex items-center gap-2 ${
                       active === g.lane
                         ? 'bg-amber-600 text-white shadow-sm'
-                        : 'bg-surface-subtle text-stone-600 hover:text-foreground hover:bg-surface-hover'
+                        : 'bg-surface-subtle text-muted hover:text-foreground hover:bg-surface-hover'
                     }`}
                   >
                     <span>{laneLabel(g.lane)}</span>
                     <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
-                      active === g.lane ? 'bg-amber-700/60 text-white' : 'bg-surface-hover text-stone-600'
+                      active === g.lane ? 'bg-amber-700/60 text-white' : 'bg-surface-hover text-muted'
                     }`}>
                       {g.source_count || 0}
                     </span>
@@ -274,27 +274,27 @@ export default function LaneGuidesPage() {
                 <div className="bg-surface p-3.5 rounded-2xl border border-amber-200/70 shadow-2xs">
                   <span className="text-[10px] font-mono font-extrabold text-amber-700 block">2:55 〜</span>
                   <strong className="text-foreground block mt-0.5 text-sm">初動スカトル争奪</strong>
-                  <p className="text-[11px] text-stone-500 mt-1">キャンプ湧き(0:55)から最速周回。レーン優先度を見て交戦判断</p>
+                  <p className="text-[11px] text-muted-strong mt-1">キャンプ湧き(0:55)から最速周回。レーン優先度を見て交戦判断</p>
                 </div>
                 <div className="bg-surface p-3.5 rounded-2xl border border-amber-200/70 shadow-2xs">
                   <span className="text-[10px] font-mono font-extrabold text-amber-700 block">5:00 〜</span>
                   <strong className="text-foreground block mt-0.5 text-sm">初代ドラゴン出現</strong>
-                  <p className="text-[11px] text-stone-500 mt-1">Bot/MidプッシュとBot視界掌握で先手触り（5分リスポーン）</p>
+                  <p className="text-[11px] text-muted-strong mt-1">Bot/MidプッシュとBot視界掌握で先手触り（5分リスポーン）</p>
                 </div>
                 <div className="bg-surface p-3.5 rounded-2xl border border-amber-200/70 shadow-2xs">
                   <span className="text-[10px] font-mono font-extrabold text-amber-700 block">8:00 〜</span>
                   <strong className="text-foreground block mt-0.5 text-sm">ヴォイドグラブ出現</strong>
-                  <p className="text-[11px] text-stone-500 mt-1">1回のみ出現(14:45消滅)。Top/Midプライオリティで確保</p>
+                  <p className="text-[11px] text-muted-strong mt-1">1回のみ出現(14:45消滅)。Top/Midプライオリティで確保</p>
                 </div>
                 <div className="bg-surface p-3.5 rounded-2xl border border-amber-200/70 shadow-2xs">
                   <span className="text-[10px] font-mono font-extrabold text-amber-700 block">15:00 〜</span>
                   <strong className="text-foreground block mt-0.5 text-sm">リフトヘラルド出現</strong>
-                  <p className="text-[11px] text-stone-500 mt-1">19:45消滅。永続タワープレート削りや外塔破壊の起点に</p>
+                  <p className="text-[11px] text-muted-strong mt-1">19:45消滅。永続タワープレート削りや外塔破壊の起点に</p>
                 </div>
                 <div className="bg-surface p-3.5 rounded-2xl border border-amber-200/70 shadow-2xs">
                   <span className="text-[10px] font-mono font-extrabold text-amber-700 block">20:00 〜</span>
                   <strong className="text-foreground block mt-0.5 text-sm">バロンナッシャー出現</strong>
-                  <p className="text-[11px] text-stone-500 mt-1">視界制圧と人数有利（ピックアップ）からのバロン決戦</p>
+                  <p className="text-[11px] text-muted-strong mt-1">視界制圧と人数有利（ピックアップ）からのバロン決戦</p>
                 </div>
               </div>
             </div>
@@ -318,7 +318,7 @@ export default function LaneGuidesPage() {
                             className={`block py-1.5 px-2.5 rounded-xl transition font-medium line-clamp-1 ${
                               h.level === 2
                                 ? 'text-foreground-soft hover:text-amber-900 hover:bg-amber-50 font-bold'
-                                : 'text-stone-500 hover:text-foreground-soft pl-5 text-[11px]'
+                                : 'text-muted-strong hover:text-foreground-soft pl-5 text-[11px]'
                             }`}
                           >
                             <span className="flex items-center gap-1">
@@ -329,22 +329,22 @@ export default function LaneGuidesPage() {
                         ))}
                       </nav>
                     ) : (
-                      <p className="text-stone-400 text-xs">目次を自動生成中...</p>
+                      <p className="text-faint text-xs">目次を自動生成中...</p>
                     )}
                   </div>
 
                   {/* ガイドメタ情報カード */}
-                  <div className="bg-background border border-border/80 rounded-2xl p-4 text-xs space-y-2 text-stone-600">
+                  <div className="bg-background border border-border/80 rounded-2xl p-4 text-xs space-y-2 text-muted">
                     <div className="flex justify-between">
-                      <span className="text-stone-400">対象ロール</span>
+                      <span className="text-faint">対象ロール</span>
                       <strong className="text-foreground-soft">{laneLabel(current.lane)}</strong>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-stone-400">統合記事数</span>
+                      <span className="text-faint">統合記事数</span>
                       <strong className="text-foreground-soft">{current.source_count || 0} 本</strong>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-stone-400">最終更新</span>
+                      <span className="text-faint">最終更新</span>
                       <strong className="text-foreground-soft">{new Date(current.updated_at).toLocaleDateString('ja-JP')}</strong>
                     </div>
                   </div>
@@ -357,7 +357,7 @@ export default function LaneGuidesPage() {
                       <h2 className="text-2xl md:text-3xl font-black text-foreground tracking-tight mb-2">
                         {current.title}
                       </h2>
-                      <p className="text-xs text-stone-500 flex items-center gap-2 flex-wrap">
+                      <p className="text-xs text-muted-strong flex items-center gap-2 flex-wrap">
                         <span>{current.source_count}本の記事から統合</span>
                         <span>・</span>
                         <span>更新: {new Date(current.updated_at).toLocaleDateString('ja-JP')}</span>
@@ -408,14 +408,14 @@ export default function LaneGuidesPage() {
                       {refinePreview.title}
                     </span>
                   </div>
-                  <p className="text-[11px] text-stone-500 mt-0.5 hidden sm:block">
+                  <p className="text-[11px] text-muted-strong mt-0.5 hidden sm:block">
                     元の文章を上からそのまま読み進めながら、各段落の「移動先章」や「重複削除の理由」を直感的に確認できます。
                   </p>
                 </div>
                 <button
                   onClick={() => setRefinePreview(null)}
                   disabled={savingRefined || refining}
-                  className="text-stone-400 hover:text-foreground-subtle p-2 rounded-xl hover:bg-surface-subtle transition shrink-0"
+                  className="text-faint hover:text-foreground-subtle p-2 rounded-xl hover:bg-surface-subtle transition shrink-0"
                 >
                   <X size={20} />
                 </button>
@@ -430,7 +430,7 @@ export default function LaneGuidesPage() {
                     className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${
                       previewTab === 'annotations'
                         ? 'bg-amber-600 text-white shadow-xs'
-                        : 'bg-surface text-stone-600 hover:text-foreground border border-border'
+                        : 'bg-surface text-muted hover:text-foreground border border-border'
                     }`}
                   >
                     <span>📝 ① 朱入れ校閲ビュー（生知見＋判定）</span>
@@ -441,7 +441,7 @@ export default function LaneGuidesPage() {
                     className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${
                       previewTab === 'refined'
                         ? 'bg-amber-600 text-white shadow-xs'
-                        : 'bg-surface text-stone-600 hover:text-foreground border border-border'
+                        : 'bg-surface text-muted hover:text-foreground border border-border'
                     }`}
                   >
                     <Sparkles size={13} />
@@ -453,7 +453,7 @@ export default function LaneGuidesPage() {
                     className={`hidden md:flex px-3.5 py-1.5 rounded-xl text-xs font-black transition items-center gap-1.5 ${
                       previewTab === 'comparison'
                         ? 'bg-amber-600 text-white shadow-xs'
-                        : 'bg-surface text-stone-600 hover:text-foreground border border-border'
+                        : 'bg-surface text-muted hover:text-foreground border border-border'
                     }`}
                   >
                     <Columns size={13} />
@@ -461,7 +461,7 @@ export default function LaneGuidesPage() {
                   </button>
                 </div>
 
-                <div className="text-[11px] font-mono font-bold text-stone-600 hidden sm:flex items-center gap-2">
+                <div className="text-[11px] font-mono font-bold text-muted hidden sm:flex items-center gap-2">
                   <span>生知見: {refinePreview.originalBody.length}字</span>
                   <span>➔</span>
                   <span className="text-amber-700 font-black">清書後: {refinePreview.refinedBody.length}字</span>
@@ -528,7 +528,7 @@ export default function LaneGuidesPage() {
                                 </span>
                               </div>
 
-                              <span className="text-[11px] font-bold text-stone-600 bg-surface/90 px-2.5 py-0.5 rounded-md border border-black/10">
+                              <span className="text-[11px] font-bold text-muted bg-surface/90 px-2.5 py-0.5 rounded-md border border-black/10">
                                 理由: {sec.reason}
                               </span>
                             </div>
@@ -607,7 +607,7 @@ export default function LaneGuidesPage() {
                   type="button"
                   onClick={() => setRefinePreview(null)}
                   disabled={savingRefined || refining}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-stone-500 hover:bg-surface-subtle transition"
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-muted-strong hover:bg-surface-subtle transition"
                 >
                   破棄して閉じる
                 </button>

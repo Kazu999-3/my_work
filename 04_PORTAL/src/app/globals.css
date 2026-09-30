@@ -22,7 +22,14 @@
   --color-surface-subtle: #f5f5f4; /* stone-100。わずかに沈めたパネル面(2026-09-30 Phase 3) */
   --color-surface-hover: #e7e5e4; /* stone-200 */
   --color-border: #e7e5e4;       /* stone-200 */
-  --color-muted: #78716c;        /* stone-500 */
+  /* 補足テキストの階調（2026-09-30 Phase 4b）。
+     旧実装はライト側にも上書きがあり、番号と実際の色がねじれていた
+     （text-stone-500 が 400 より濃い、400 と 600 が同色 等）。
+     移行時は「今の見た目」を優先し、実効値をそのままトークン化している。
+     ねじれの解消は移行完了後に意図的なデザイン変更として別途行う。 */
+  --color-muted-strong: #44403c;  /* 旧 text-stone-500 の実効値 */
+  --color-muted: #57534e;         /* 旧 text-stone-600 の実効値 */
+  --color-faint: #57534e;         /* 旧 text-stone-400 の実効値（ライトでは muted と同色） */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
@@ -65,7 +72,9 @@ html.dark {
   --color-surface-subtle: #1e1f22;
   --color-surface-hover: #35373c;
   --color-border: #3f4147;
-  --color-muted: #949ba4;
+  --color-muted-strong: #e2e8f0;
+  --color-muted: #e2e8f0;
+  --color-faint: #cbd5e1;
   --color-primary: #e07a1e;
   --color-primary-glow: rgba(224, 122, 30, 0.35);
   --color-accent: #f59e0b;
@@ -262,64 +271,11 @@ html.dark [class*="bg-cyan-200\\/"] {
   background-color: #35373c !important;
 }
 
-/* 上記の淡色ブロック内で、明示的に濃い文字色を指定している要素は
-   ダーク背景に対して暗すぎるため、読める明度へ引き上げる。 */
-html.dark [class~="bg-amber-50"] .text-stone-900,
-html.dark [class*="bg-amber-50/"] .text-stone-900,
-html.dark [class*="bg-amber-50\\/"] .text-stone-900,
-html.dark [class~="bg-amber-100"] .text-stone-900,
-html.dark [class*="bg-amber-100/"] .text-stone-900,
-html.dark [class*="bg-amber-100\\/"] .text-stone-900,
-html.dark [class~="bg-amber-200"] .text-stone-900,
-html.dark [class*="bg-amber-200/"] .text-stone-900,
-html.dark [class*="bg-amber-200\\/"] .text-stone-900,
-html.dark [class~="bg-emerald-50"] .text-stone-900,
-html.dark [class*="bg-emerald-50/"] .text-stone-900,
-html.dark [class*="bg-emerald-50\\/"] .text-stone-900,
-html.dark [class~="bg-emerald-100"] .text-stone-900,
-html.dark [class*="bg-emerald-100/"] .text-stone-900,
-html.dark [class*="bg-emerald-100\\/"] .text-stone-900,
-html.dark [class~="bg-emerald-200"] .text-stone-900,
-html.dark [class*="bg-emerald-200/"] .text-stone-900,
-html.dark [class*="bg-emerald-200\\/"] .text-stone-900,
-html.dark [class~="bg-rose-50"] .text-stone-900,
-html.dark [class*="bg-rose-50/"] .text-stone-900,
-html.dark [class*="bg-rose-50\\/"] .text-stone-900,
-html.dark [class~="bg-rose-100"] .text-stone-900,
-html.dark [class*="bg-rose-100/"] .text-stone-900,
-html.dark [class*="bg-rose-100\\/"] .text-stone-900,
-html.dark [class~="bg-rose-200"] .text-stone-900,
-html.dark [class*="bg-rose-200/"] .text-stone-900,
-html.dark [class*="bg-rose-200\\/"] .text-stone-900,
-html.dark [class~="bg-sky-50"] .text-stone-900,
-html.dark [class*="bg-sky-50/"] .text-stone-900,
-html.dark [class*="bg-sky-50\\/"] .text-stone-900,
-html.dark [class~="bg-sky-100"] .text-stone-900,
-html.dark [class*="bg-sky-100/"] .text-stone-900,
-html.dark [class*="bg-sky-100\\/"] .text-stone-900,
-html.dark [class~="bg-sky-200"] .text-stone-900,
-html.dark [class*="bg-sky-200/"] .text-stone-900,
-html.dark [class*="bg-sky-200\\/"] .text-stone-900,
-html.dark [class~="bg-blue-50"] .text-stone-900,
-html.dark [class*="bg-blue-50/"] .text-stone-900,
-html.dark [class*="bg-blue-50\\/"] .text-stone-900,
-html.dark [class~="bg-blue-100"] .text-stone-900,
-html.dark [class*="bg-blue-100/"] .text-stone-900,
-html.dark [class*="bg-blue-100\\/"] .text-stone-900,
-html.dark [class~="bg-blue-200"] .text-stone-900,
-html.dark [class*="bg-blue-200/"] .text-stone-900,
-html.dark [class*="bg-blue-200\\/"] .text-stone-900,
-html.dark [class~="bg-teal-50"] .text-stone-900,
-html.dark [class*="bg-teal-50/"] .text-stone-900,
-html.dark [class*="bg-teal-50\\/"] .text-stone-900,
-html.dark [class~="bg-teal-100"] .text-stone-900,
-html.dark [class*="bg-teal-100/"] .text-stone-900,
-html.dark [class*="bg-teal-100\\/"] .text-stone-900,
-html.dark [class~="bg-teal-200"] .text-stone-900,
-html.dark [class*="bg-teal-200/"] .text-stone-900,
-html.dark [class*="bg-teal-200\\/"] .text-stone-900 {
-  color: #f2f3f5 !important;
-}
+/* ⬇️ 「淡色ブロック内の濃い文字色を明るくする」ルールは撤去した（2026-09-30 Phase 4b）。
+   `.text-stone-900` を参照していたが、そのクラスは Phase 4a で全て
+   トークン text-foreground へ移行したため、どの要素にも一致しない死んだセレクタに
+   なっていた（55行）。淡色ブロックの背景は #35373c に中和され、文字はトークン側が
+   ダークで明るい値を持つので、この補正自体が不要。 */
 
 /* 🌙 淡色グラデーションのダークモード対応（2026-09-30追加）
    ------------------------------------------------------------------
@@ -655,17 +611,13 @@ html.dark [class*="to-blue-200\\/"] {
 .text-\[9px\]  { font-size: 10.5px !important; line-height: 1.45 !important; }
 .text-\[10px\] { font-size: 11.5px !important; line-height: 1.5 !important; }
 
-/* ☀️ ライトモード専用（羊皮紙調背景 #eae4d4 / カード #fdfcf9）での文字コントラスト最適化 */
+/* ☀️ ライトモード専用の文字コントラスト最適化
+   ⬇️ stone-300/400/500 への上書きは撤去した（2026-09-30 Phase 4b）。
+   この上書きのせいで「番号と実際の色がねじれる」（text-stone-500 が 400 より濃い、
+   400 と 600 が同色）状態になっており、クラス名から描画結果を予測できなかった。
+   実効値をトークン（--color-muted-strong / --color-muted / --color-faint）へ
+   移したので、後追いの上書きは不要になった。 */
 /* html:not(.dark) でスコープを限定し、ダークモード側に黒文字が波及するのを完全に防止 */
-html:not(.dark) .text-stone-400 {
-  color: #57534e !important;
-}
-html:not(.dark) .text-stone-500 {
-  color: #44403c !important;
-}
-html:not(.dark) .text-stone-300 {
-  color: #78716c !important;
-}
 html:not(.dark) .text-gray-400,
 html:not(.dark) .text-slate-400,
 html:not(.dark) .text-zinc-400 {
@@ -743,8 +695,7 @@ html.dark .text-zinc-700 {
   color: #f8fafc !important; /* 鮮明なホワイト */
 }
 
-html.dark .text-stone-600,
-html.dark .text-stone-500,
+/* stone系(600/500)はトークン text-muted / text-muted-strong へ移行済み（Phase 4b）。 */
 html.dark .text-gray-600,
 html.dark .text-gray-500,
 html.dark .text-slate-600,
@@ -754,8 +705,7 @@ html.dark .text-zinc-500 {
   color: #e2e8f0 !important; /* 明るいライトスレート */
 }
 
-html.dark .text-stone-400,
-html.dark .text-stone-300,
+/* stone系(400/300)はトークン text-faint へ移行済み（Phase 4b）。 */
 html.dark .text-gray-400,
 html.dark .text-gray-300,
 html.dark .text-slate-400,

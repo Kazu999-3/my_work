@@ -38,7 +38,7 @@ export default function LibraryPage() {
         <div className="text-center max-w-md rounded-2xl border border-border bg-surface p-8 shadow-xs">
           <div className="text-4xl mb-3">🔑</div>
           <h2 className="text-base font-black mb-2 text-foreground">管理者認証が必要です</h2>
-          <p className="text-xs text-stone-600 mb-6 leading-relaxed">
+          <p className="text-xs text-muted mb-6 leading-relaxed">
             「攻略ライブラリ」は管理者専用の戦術アーカイブです。<br />
             閲覧・編集を行うには管理者としてログインしてください。
           </p>
@@ -80,7 +80,7 @@ export default function LibraryPage() {
                 管理者専用
               </span>
             </div>
-            <p className="text-[11px] text-stone-500 font-medium">
+            <p className="text-[11px] text-muted-strong font-medium">
               チャレンジャー実戦動画の解析記事・チーム戦術ノート・チャンピオン攻略アーカイブ
             </p>
           </div>

@@ -121,7 +121,7 @@ export default function DiscordImportPanel() {
             <h2 className="text-base font-extrabold text-foreground flex items-center gap-2">
               💬 Discordトーク AI全自動抽出・ナレッジインポート
             </h2>
-            <p className="text-xs text-stone-500 mt-0.5">
+            <p className="text-xs text-muted-strong mt-0.5">
               Botが入っていない他人のDiscordサーバーのトーク文をコピペするだけで、AIが雑談を除去して攻略ナレッジとして自動整形します
             </p>
           </div>
@@ -142,7 +142,7 @@ export default function DiscordImportPanel() {
       <div className="space-y-3">
         <label className="block text-xs font-extrabold text-foreground-soft flex items-center justify-between">
           <span>📋 Discordのチャットログをそのままコピペ（貼り付け）</span>
-          <span className="text-[10px] text-stone-400 font-normal">ユーザー名やタイムスタンプ・雑談が混ざっていてもAIが自動フィルタします</span>
+          <span className="text-[10px] text-faint font-normal">ユーザー名やタイムスタンプ・雑談が混ざっていてもAIが自動フィルタします</span>
         </label>
         <textarea
           value={inputText}
@@ -222,7 +222,7 @@ export default function DiscordImportPanel() {
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button
                       onClick={() => setEditingIdx(editingIdx === idx ? null : idx)}
-                      className="p-1.5 rounded-lg hover:bg-surface-subtle text-stone-600 transition"
+                      className="p-1.5 rounded-lg hover:bg-surface-subtle text-muted transition"
                       title="内容を微調整"
                     >
                       <Edit3 size={14} />
@@ -266,7 +266,7 @@ export default function DiscordImportPanel() {
                 )}
 
                 {item.raw_excerpt && (
-                  <p className="text-[10px] text-stone-400 mt-2 italic truncate" title={item.raw_excerpt}>
+                  <p className="text-[10px] text-faint mt-2 italic truncate" title={item.raw_excerpt}>
                     💬 発言抜粋: &quot;{item.raw_excerpt}&quot;
                   </p>
                 )}

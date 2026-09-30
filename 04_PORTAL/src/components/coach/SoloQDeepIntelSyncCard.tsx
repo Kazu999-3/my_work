@@ -93,7 +93,7 @@ export default function SoloQDeepIntelSyncCard({
                 直近35戦実測
               </span>
             </div>
-            <p className="text-[11px] text-stone-500 font-medium">
+            <p className="text-[11px] text-muted-strong font-medium">
               目標ランク【{gap?.targetTier || 'Emerald IV'}】到達に向けた実測課題 ＆ 境界線
             </p>
           </div>
@@ -104,7 +104,7 @@ export default function SoloQDeepIntelSyncCard({
             type="button"
             onClick={fetchDeepIntel}
             disabled={loading}
-            className="p-1.5 rounded-lg bg-surface hover:bg-surface-subtle text-stone-600 border border-border transition cursor-pointer disabled:opacity-50"
+            className="p-1.5 rounded-lg bg-surface hover:bg-surface-subtle text-muted border border-border transition cursor-pointer disabled:opacity-50"
             title="最新データ再同期"
           >
             <RefreshCw size={13} className={loading ? 'animate-spin text-amber-600' : ''} />
@@ -120,7 +120,7 @@ export default function SoloQDeepIntelSyncCard({
       </div>
 
       {loading && !intel ? (
-        <div className="py-6 flex items-center justify-center gap-2 text-xs font-bold text-stone-500">
+        <div className="py-6 flex items-center justify-center gap-2 text-xs font-bold text-muted-strong">
           <RefreshCw size={15} className="animate-spin text-amber-600" />
           <span>アナライザーから直近ソロQデータを同期中...</span>
         </div>
@@ -170,7 +170,7 @@ export default function SoloQDeepIntelSyncCard({
                   <span className="font-black text-xs text-foreground">
                     👑 {matchedChampProfile.name} の実戦カルテ
                   </span>
-                  <span className="text-[10px] font-mono text-stone-500 font-bold">
+                  <span className="text-[10px] font-mono text-muted-strong font-bold">
                     ({matchedChampProfile.gamesCount}戦 勝率{matchedChampProfile.winRate}% / KDA {matchedChampProfile.kda})
                   </span>
                 </div>
@@ -183,13 +183,13 @@ export default function SoloQDeepIntelSyncCard({
               {matchedChampProfile.winVsLossDiffs && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
                   <div className="bg-background p-2 rounded-xl border border-stone-100 space-y-0.5">
-                    <span className="text-[10px] font-bold text-stone-400">🌾 分間CSの勝敗ライン:</span>
+                    <span className="text-[10px] font-bold text-faint">🌾 分間CSの勝敗ライン:</span>
                     <p className="font-bold text-foreground-soft">
                       {matchedChampProfile.winVsLossDiffs.cs15Diff}
                     </p>
                   </div>
                   <div className="bg-background p-2 rounded-xl border border-stone-100 space-y-0.5">
-                    <span className="text-[10px] font-bold text-stone-400">🛡️ 被デス削減ライン:</span>
+                    <span className="text-[10px] font-bold text-faint">🛡️ 被デス削減ライン:</span>
                     <p className="font-bold text-foreground-soft">
                       {matchedChampProfile.winVsLossDiffs.deathsDiff}
                     </p>
@@ -222,7 +222,7 @@ export default function SoloQDeepIntelSyncCard({
           {/* 3. セッション管理 ＆ 黄金プレイルール */}
           {rules && rules.length > 0 && (
             <div className="bg-background/80 rounded-2xl border border-border/80 p-3 space-y-1.5">
-              <span className="text-[10px] font-black uppercase tracking-wider text-stone-400 flex items-center gap-1">
+              <span className="text-[10px] font-black uppercase tracking-wider text-faint flex items-center gap-1">
                 <Flame size={12} className="text-amber-600" />
                 <span>実測セッション黄金ルール (連敗・疲労防止)</span>
               </span>

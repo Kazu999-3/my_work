@@ -368,14 +368,14 @@ export default function LibraryMergePreviewModal({
                 </span>
               )}
             </div>
-            <p className="text-xs text-stone-500 mt-1">
+            <p className="text-xs text-muted-strong mt-1">
               記事の内容をAIが整理し、チャンピオントレンド各項目・対面メモ・レーンガイドへ最適配分します。
             </p>
           </div>
           <button
             onClick={onCancel}
             disabled={saving || reAnalyzing}
-            className="text-stone-400 hover:text-foreground-subtle p-1.5 rounded-lg hover:bg-surface-subtle disabled:opacity-50 transition self-end sm:self-auto"
+            className="text-faint hover:text-foreground-subtle p-1.5 rounded-lg hover:bg-surface-subtle disabled:opacity-50 transition self-end sm:self-auto"
             title="閉じる"
           >
             <X size={20} />
@@ -408,7 +408,7 @@ export default function LibraryMergePreviewModal({
                   <ExternalLink size={11} />
                 </a>
               )}
-              <span className="text-stone-400 text-xs flex items-center gap-0.5 font-bold">
+              <span className="text-faint text-xs flex items-center gap-0.5 font-bold">
                 {showSourceArticle ? '閉じる' : '全文を見る'}
                 <ChevronDown size={14} className={`transition-transform duration-200 ${showSourceArticle ? 'rotate-180' : 'rotate-0'}`} />
               </span>
@@ -420,7 +420,7 @@ export default function LibraryMergePreviewModal({
               {articleContent ? (
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{articleContent}</ReactMarkdown>
               ) : (
-                <p className="text-stone-400 italic">本文がありません</p>
+                <p className="text-faint italic">本文がありません</p>
               )}
             </div>
           )}
@@ -474,7 +474,7 @@ export default function LibraryMergePreviewModal({
                     onClick={() => handleRemoveChampion(c)}
                     disabled={saving || reAnalyzing}
                     title={`${c} を除外`}
-                    className="text-stone-400 hover:text-rose-600 ml-0.5 transition"
+                    className="text-faint hover:text-rose-600 ml-0.5 transition"
                   >
                     <X size={13} />
                   </button>
@@ -634,7 +634,7 @@ export default function LibraryMergePreviewModal({
                                   ? 'bg-amber-600 border-amber-600 text-white shadow-xs'
                                   : isRecommended
                                     ? 'bg-surface border-amber-300 text-amber-900 hover:bg-amber-100'
-                                    : 'bg-surface-subtle/80 border-border text-stone-500 hover:bg-surface-hover/80 hover:text-foreground-soft'
+                                    : 'bg-surface-subtle/80 border-border text-muted-strong hover:bg-surface-hover/80 hover:text-foreground-soft'
                               }`}
                               title={isRecommended ? '推奨レーン' : 'このレーンとして統合'}
                             >
@@ -697,7 +697,7 @@ export default function LibraryMergePreviewModal({
                                 {field.isNew ? '新規追加' : '追記/統合'}
                               </span>
                             </div>
-                            <div className="flex items-center gap-1 text-[11px] text-stone-500 font-medium">
+                            <div className="flex items-center gap-1 text-[11px] text-muted-strong font-medium">
                               <span>{isExpanded ? '折りたたむ' : '差分を確認'}</span>
                               {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                             </div>
@@ -707,8 +707,8 @@ export default function LibraryMergePreviewModal({
                             <div className="p-3 pt-0 border-t border-border bg-surface space-y-2 text-xs">
                               {!field.isNew && field.existingValue && (
                                 <div>
-                                  <p className="text-[10px] font-bold text-stone-400 mb-0.5">現在の内容:</p>
-                                  <div className="bg-background border border-border rounded-lg p-2 text-stone-600 text-[11px] whitespace-pre-wrap max-h-24 overflow-y-auto">
+                                  <p className="text-[10px] font-bold text-faint mb-0.5">現在の内容:</p>
+                                  <div className="bg-background border border-border rounded-lg p-2 text-muted text-[11px] whitespace-pre-wrap max-h-24 overflow-y-auto">
                                     {field.existingValue}
                                   </div>
                                 </div>
@@ -737,7 +737,7 @@ export default function LibraryMergePreviewModal({
                   <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800">
                     🏆 {p.champion}
                   </span>
-                  <span className="text-xs text-stone-500">項目: {p.fieldName}</span>
+                  <span className="text-xs text-muted-strong">項目: {p.fieldName}</span>
                 </div>
                 <div className="bg-background border border-border rounded-xl p-3 text-xs text-foreground-subtle whitespace-pre-wrap">
                   {p.mergedExcerpt}
@@ -761,7 +761,7 @@ export default function LibraryMergePreviewModal({
                 調査時に即表示可能
               </span>
             </div>
-            <p className="text-xs text-stone-500">
+            <p className="text-xs text-muted-strong">
               記事内に対特定チャンピオンへの立ち回り・対策が含まれています。保存すると、パーソナルコーチの試合前警告やマッチアップ検索時に自動表示されます。
             </p>
 
@@ -798,7 +798,7 @@ export default function LibraryMergePreviewModal({
                           />
                         )}
                       </div>
-                      <span className="text-[10px] font-bold text-stone-500">{m.title}</span>
+                      <span className="text-[10px] font-bold text-muted-strong">{m.title}</span>
                     </div>
 
                     <div className="bg-surface border border-rose-200/80 rounded-xl p-2.5 text-xs text-foreground-soft leading-relaxed whitespace-pre-wrap">
@@ -822,7 +822,7 @@ export default function LibraryMergePreviewModal({
                     3. 抽出された一般論・戦術知見 ({laneInsightItems.length}件)
                   </h4>
                 </div>
-                <p className="text-xs text-stone-500 mt-0.5">
+                <p className="text-xs text-muted-strong mt-0.5">
                   各項目のチェックを外して除外したり、「チャンピオン固有」に切り替えて対象チャンプの辞典へ直接書き込むことができます。
                 </p>
               </div>
@@ -926,7 +926,7 @@ export default function LibraryMergePreviewModal({
 
                     <div
                       className={`rounded-xl p-2.5 text-xs leading-relaxed whitespace-pre-wrap ${
-                        item.included ? 'bg-surface text-foreground-subtle border border-border/80' : 'text-stone-400'
+                        item.included ? 'bg-surface text-foreground-subtle border border-border/80' : 'text-faint'
                       }`}
                     >
                       {item.summary}
@@ -946,7 +946,7 @@ export default function LibraryMergePreviewModal({
 
         {/* フッターアクション */}
         <div className="flex items-center justify-between gap-2.5 pt-4 border-t border-border flex-wrap">
-          <div className="text-xs text-stone-500">
+          <div className="text-xs text-muted-strong">
             {currentChampions.length === 0 ? (
               sendToLaneChecked ? (
                 <span className="text-teal-800 font-bold flex items-center gap-1">
@@ -970,7 +970,7 @@ export default function LibraryMergePreviewModal({
               type="button"
               onClick={onCancel}
               disabled={saving || reAnalyzing}
-              className="px-3.5 py-2.5 rounded-xl text-xs font-bold text-stone-500 hover:bg-surface-subtle disabled:opacity-50 transition"
+              className="px-3.5 py-2.5 rounded-xl text-xs font-bold text-muted-strong hover:bg-surface-subtle disabled:opacity-50 transition"
             >
               {continuousReview ? '中断して閉じる' : 'キャンセル'}
             </button>
@@ -981,7 +981,7 @@ export default function LibraryMergePreviewModal({
                   type="button"
                   onClick={continuousReview.onSkipNext}
                   disabled={saving || reAnalyzing}
-                  className="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-surface-subtle hover:bg-surface-hover text-stone-600 flex items-center gap-1.5 disabled:opacity-50 transition"
+                  className="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-surface-subtle hover:bg-surface-hover text-muted flex items-center gap-1.5 disabled:opacity-50 transition"
                   title="この記事は統合せず、スキップして次の記事を表示します"
                 >
                   <span>⏭️ スキップ</span>

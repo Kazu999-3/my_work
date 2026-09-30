@@ -87,7 +87,7 @@ export default function DesignEditor() {
       <div className="flex flex-col items-center justify-center min-h-[50vh] bg-surface/60 backdrop-blur-md rounded-3xl border border-black/10 p-12 max-w-7xl mx-auto shadow-2xl text-center max-w-sm">
         <div className="text-4xl mb-4">🔑</div>
         <h2 className="text-lg font-bold mb-2 text-foreground">認証が必要です</h2>
-        <p className="text-sm text-stone-500 mb-6 leading-relaxed">システム設計書は管理者専用です。管理者パスコードでログインしてから再度アクセスしてください。</p>
+        <p className="text-sm text-muted-strong mb-6 leading-relaxed">システム設計書は管理者専用です。管理者パスコードでログインしてから再度アクセスしてください。</p>
         <a href="/login" className="inline-block w-full rounded-xl bg-[#c89b3c] px-5 py-3 text-sm font-semibold text-black transition hover:bg-yellow-400">ログインページへ</a>
       </div>
     );
@@ -272,7 +272,7 @@ export default function DesignEditor() {
                   ol: ({node, ...props}) => <ol className="list-decimal list-inside pl-4 mb-4 text-foreground-subtle space-y-1.5 text-xs md:text-sm" {...props} />,
                   li: ({node, ...props}) => <li className="mb-1 text-foreground-subtle" {...props} />,
                   a: ({node, ...props}) => <a className="text-[#00cfef] hover:underline font-bold" target="_blank" rel="noopener noreferrer" {...props} />,
-                  blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-[#c89b3c] bg-[#c89b3c]/5 pl-4 py-2 my-4 rounded-r-xl italic text-stone-600" {...props} />,
+                  blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-[#c89b3c] bg-[#c89b3c]/5 pl-4 py-2 my-4 rounded-r-xl italic text-muted" {...props} />,
                   code: ({node, className, children, ...props}) => {
                     const match = /language-(\w+)/.exec(className || '');
                     const inline = !match;
@@ -297,10 +297,10 @@ export default function DesignEditor() {
             // 編集エディタモード
             <div className="space-y-4">
               <div className="flex justify-between items-center pb-2 border-b border-black/10">
-                <span className="text-xs font-bold text-stone-500 flex items-center gap-1.5">
+                <span className="text-xs font-bold text-muted-strong flex items-center gap-1.5">
                   <Edit3 size={14} /> Markdown エディタ: {activeDoc.title}
                 </span>
-                <span className="text-[10px] bg-black/5 px-2 py-0.5 rounded-full border border-black/10 text-stone-500 font-mono">
+                <span className="text-[10px] bg-black/5 px-2 py-0.5 rounded-full border border-black/10 text-muted-strong font-mono">
                   {editContent.length} 文字
                 </span>
               </div>

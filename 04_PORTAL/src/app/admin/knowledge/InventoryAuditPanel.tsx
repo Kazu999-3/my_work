@@ -182,7 +182,7 @@ export default function InventoryAuditPanel() {
           <h2 className="text-lg font-black text-foreground flex items-center gap-2">
             🧹 ナレッジ ＆ チャンピオン辞典 全自動棚卸しハブ
           </h2>
-          <p className="text-xs text-stone-500 mt-0.5">
+          <p className="text-xs text-muted-strong mt-0.5">
             全168チャンピオンのデータ完全性・人間の確認状況・古いトレンド・ナレッジDBを一元で点検・整理します
           </p>
         </div>
@@ -270,7 +270,7 @@ export default function InventoryAuditPanel() {
         <button
           onClick={() => setActiveFilter('unverified')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${
-            activeFilter === 'unverified' ? 'bg-amber-600 text-white shadow-md' : 'bg-surface-subtle text-stone-600 hover:bg-surface-hover'
+            activeFilter === 'unverified' ? 'bg-amber-600 text-white shadow-md' : 'bg-surface-subtle text-muted hover:bg-surface-hover'
           }`}
         >
           <AlertCircle size={14} /> 人間未確認リスト ({unverifiedList.length})
@@ -279,7 +279,7 @@ export default function InventoryAuditPanel() {
         <button
           onClick={() => setActiveFilter('outdated')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${
-            activeFilter === 'outdated' ? 'bg-teal-600 text-white shadow-md' : 'bg-surface-subtle text-stone-600 hover:bg-surface-hover'
+            activeFilter === 'outdated' ? 'bg-teal-600 text-white shadow-md' : 'bg-surface-subtle text-muted hover:bg-surface-hover'
           }`}
         >
           <Clock size={14} /> 古いパッチ情報 ({outdatedList.length})
@@ -288,7 +288,7 @@ export default function InventoryAuditPanel() {
         <button
           onClick={() => setActiveFilter('incomplete')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${
-            activeFilter === 'incomplete' ? 'bg-rose-600 text-white shadow-md' : 'bg-surface-subtle text-stone-600 hover:bg-surface-hover'
+            activeFilter === 'incomplete' ? 'bg-rose-600 text-white shadow-md' : 'bg-surface-subtle text-muted hover:bg-surface-hover'
           }`}
         >
           <ShieldAlert size={14} /> 欠損・空項目あり ({incompleteList.length})
@@ -297,7 +297,7 @@ export default function InventoryAuditPanel() {
         <button
           onClick={() => setActiveFilter('knowledge')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${
-            activeFilter === 'knowledge' ? 'bg-amber-600 text-white shadow-md' : 'bg-surface-subtle text-stone-600 hover:bg-surface-hover'
+            activeFilter === 'knowledge' ? 'bg-amber-600 text-white shadow-md' : 'bg-surface-subtle text-muted hover:bg-surface-hover'
           }`}
         >
           <Database size={14} /> ナレッジDB棚卸し ({knowledgeItems.length})
@@ -306,8 +306,8 @@ export default function InventoryAuditPanel() {
 
       {/* --- 各ビューの表示 --- */}
       {loading ? (
-        <div className="p-12 text-center text-xs text-stone-400 font-bold flex flex-col items-center gap-2">
-          <RefreshCw className="animate-spin text-stone-400" size={24} />
+        <div className="p-12 text-center text-xs text-faint font-bold flex flex-col items-center gap-2">
+          <RefreshCw className="animate-spin text-faint" size={24} />
           棚卸しデータを全自動走査中...
         </div>
       ) : (
@@ -315,7 +315,7 @@ export default function InventoryAuditPanel() {
           {/* 1. 人間未確認リスト */}
           {activeFilter === 'unverified' && (
             <div className="space-y-3">
-              <p className="text-xs text-stone-500 font-bold">
+              <p className="text-xs text-muted-strong font-bold">
                 以下のチャンピオンはAIによる自動補全後、まだ人間が「最終点検」を行っていません。「確認済みに設定」または「辞典へ遷移」して棚卸しを完了させてください。
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-1">
@@ -325,7 +325,7 @@ export default function InventoryAuditPanel() {
                       <img src={getChampIcon(f.champion_name)} alt={f.display_name} className="w-10 h-10 rounded-xl border border-border object-cover shrink-0" />
                       <div className="min-w-0">
                         <span className="font-extrabold text-foreground text-xs truncate block">{f.display_name}</span>
-                        <span className="text-[10px] text-stone-400 block font-mono">{f.champion_name}</span>
+                        <span className="text-[10px] text-faint block font-mono">{f.champion_name}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
@@ -354,7 +354,7 @@ export default function InventoryAuditPanel() {
           {/* 2. 古いパッチトレンド */}
           {activeFilter === 'outdated' && (
             <div className="space-y-3">
-              <p className="text-xs text-stone-500 font-bold">
+              <p className="text-xs text-muted-strong font-bold">
                 解析から3日以上経っているため、情報が最新パッチとズレている可能性があるチャンピオン一覧です。
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-1">
@@ -384,7 +384,7 @@ export default function InventoryAuditPanel() {
           {/* 3. 欠損・空項目あり */}
           {activeFilter === 'incomplete' && (
             <div className="space-y-3">
-              <p className="text-xs text-stone-500 font-bold">
+              <p className="text-xs text-muted-strong font-bold">
                 強み、弱み、パワースパイク、コアビルドなどの基本項目の一部がまだ入力されていないチャンピオン一覧です。
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-1">
@@ -414,12 +414,12 @@ export default function InventoryAuditPanel() {
           {/* 4. ナレッジDB棚卸し */}
           {activeFilter === 'knowledge' && (
             <div className="space-y-3">
-              <p className="text-xs text-stone-500 font-bold">
+              <p className="text-xs text-muted-strong font-bold">
                 Discordコピペや外部から取り込まれた知見データ一覧です。不要になった項目や過去データの棚卸し・削除を行えます。
               </p>
               <div className="space-y-2.5 max-h-[500px] overflow-y-auto pr-1">
                 {knowledgeItems.length === 0 ? (
-                  <p className="text-xs text-stone-400 italic">取り込まれたナレッジデータはありません。</p>
+                  <p className="text-xs text-faint italic">取り込まれたナレッジデータはありません。</p>
                 ) : (
                   knowledgeItems.map((item) => (
                     <div key={item.id} className="p-3.5 rounded-2xl border border-border bg-background/60 flex items-start justify-between gap-3">
@@ -436,12 +436,12 @@ export default function InventoryAuditPanel() {
                           </span>
                         </div>
                         <span className="text-xs font-bold text-foreground-soft block">{item.title}</span>
-                        <p className="text-xs text-stone-600 line-clamp-2 leading-relaxed">{item.content}</p>
+                        <p className="text-xs text-muted line-clamp-2 leading-relaxed">{item.content}</p>
                       </div>
 
                       <button
                         onClick={() => handleDeleteKb(item.id)}
-                        className="p-1.5 rounded-lg bg-surface-hover hover:bg-rose-100 hover:text-rose-700 text-stone-600 transition shrink-0"
+                        className="p-1.5 rounded-lg bg-surface-hover hover:bg-rose-100 hover:text-rose-700 text-muted transition shrink-0"
                         title="このナレッジを削除"
                       >
                         <Trash2 size={14} />

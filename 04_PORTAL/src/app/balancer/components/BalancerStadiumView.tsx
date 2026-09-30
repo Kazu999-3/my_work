@@ -58,7 +58,7 @@ export default function BalancerStadiumView({
                 </span>
               </h2>
             </div>
-            <p className="text-xs text-stone-400 font-medium">
+            <p className="text-xs text-faint font-medium">
               MMR差: <strong className="text-amber-400 font-mono">{result.mmrDiff || 0}</strong> │ Blue代表MMR: {result.teamBlueMMR || 0} vs Red代表MMR: {result.teamRedMMR || 0}
             </p>
           </div>
@@ -142,7 +142,7 @@ export default function BalancerStadiumView({
                       <span className="text-[9px] font-black bg-teal-500 text-white px-1.5 rounded">YOU</span>
                     )}
                   </div>
-                  <div className="text-[10px] text-stone-400 font-mono">
+                  <div className="text-[10px] text-faint font-mono">
                     MMR {blueP?.mmr || 1200}
                   </div>
                 </div>
@@ -150,11 +150,11 @@ export default function BalancerStadiumView({
 
               {/* 中央レーンバッジ */}
               <div className="flex flex-col items-center justify-center px-2 shrink-0">
-                <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-stone-800 border border-stone-700 text-[10px] font-black font-mono text-stone-300">
+                <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-stone-800 border border-stone-700 text-[10px] font-black font-mono text-faint">
                   {ROLE_ICONS[role]}
                   <span>{role}</span>
                 </div>
-                <span className="text-[9px] text-stone-500 font-black mt-0.5">VS</span>
+                <span className="text-[9px] text-muted-strong font-black mt-0.5">VS</span>
               </div>
 
               {/* REDサイド選手 */}
@@ -168,7 +168,7 @@ export default function BalancerStadiumView({
                       {redP?.name || '未定'}
                     </span>
                   </div>
-                  <div className="text-[10px] text-stone-400 font-mono">
+                  <div className="text-[10px] text-faint font-mono">
                     MMR {redP?.mmr || 1200}
                   </div>
                 </div>
@@ -185,12 +185,12 @@ export default function BalancerStadiumView({
       {spectators.length > 0 && (
         <div className="pt-2 border-t border-stone-800 flex items-center justify-between flex-wrap gap-2 text-xs">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-stone-400 font-bold flex items-center gap-1">
-              <Users size={13} className="text-stone-400" />
+            <span className="text-faint font-bold flex items-center gap-1">
+              <Users size={13} className="text-faint" />
               <span>待機・観戦 ({spectators.length}人):</span>
             </span>
             {spectators.map((s: any, idx: number) => (
-              <span key={idx} className="bg-stone-800 text-stone-300 px-2 py-0.5 rounded-lg text-[11px] font-bold border border-stone-700">
+              <span key={idx} className="bg-stone-800 text-faint px-2 py-0.5 rounded-lg text-[11px] font-bold border border-stone-700">
                 {typeof s === 'string' ? s : s.name}
               </span>
             ))}

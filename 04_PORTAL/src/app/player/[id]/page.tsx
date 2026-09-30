@@ -669,7 +669,7 @@ export default function PlayerMyPage() {
         <div className="glass-panel border border-red-200 p-8 rounded-3xl max-w-md w-full text-center space-y-6">
           <div className="text-5xl text-red-600 flex justify-center"><Shield className="w-12 h-12" /></div>
           <h1 className="text-xl font-extrabold text-foreground">プレイヤーが見つかりません</h1>
-          <p className="text-stone-500 text-xs">指定された Discord ID ({id}) の名簿登録が存在しないか削除されました。</p>
+          <p className="text-muted-strong text-xs">指定された Discord ID ({id}) の名簿登録が存在しないか削除されました。</p>
           <Link href="/leaderboard" className="px-6 py-2.5 bg-surface-subtle border border-black/10 text-foreground-subtle rounded-xl hover:bg-[#c89b3c] hover:text-black font-bold transition-all text-xs inline-block">
             リーダーボードに戻る
           </Link>
@@ -720,7 +720,7 @@ export default function PlayerMyPage() {
                     <span>所持コイン: <strong>{(player.coins ?? 1000).toLocaleString()}</strong> pt</span>
                   </span>
                 </div>
-                <p className="text-xs text-stone-600">
+                <p className="text-xs text-muted">
                   希望レーン設定・師弟募集・所持コインの確認が可能です。
                 </p>
                 {dailyBonusMsg && (
@@ -739,11 +739,11 @@ export default function PlayerMyPage() {
                 disabled={claimingDaily || claimedDailyToday}
                 className={`px-4 py-2.5 rounded-2xl font-black text-xs transition-all shadow-sm flex items-center gap-1.5 cursor-pointer ${
                   claimedDailyToday
-                    ? 'bg-surface-hover text-stone-500 border border-border cursor-not-allowed'
+                    ? 'bg-surface-hover text-muted-strong border border-border cursor-not-allowed'
                     : 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-stone-950 shadow-amber-500/20 hover:scale-102 active:scale-98 animate-pulse'
                 }`}
               >
-                <Gift size={16} className={claimedDailyToday ? 'text-stone-400' : 'text-amber-900'} />
+                <Gift size={16} className={claimedDailyToday ? 'text-faint' : 'text-amber-900'} />
                 <span>
                   {claimingDaily
                     ? '受取中...'
@@ -867,7 +867,7 @@ export default function PlayerMyPage() {
                       </span>
                     </span>
                   ) : (
-                    <span className="text-xs text-stone-400 font-bold">データ収集中</span>
+                    <span className="text-xs text-faint font-bold">データ収集中</span>
                   )}
                 </div>
               </div>
@@ -879,7 +879,7 @@ export default function PlayerMyPage() {
                 <div className={`flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-black border ${
                   player.is_active 
                     ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
-                    : 'bg-black/5 text-stone-500 border-black/10'
+                    : 'bg-black/5 text-muted-strong border-black/10'
                 }`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${player.is_active ? 'bg-emerald-400 animate-pulse' : 'bg-gray-500'}`}></span>
                   {player.is_active ? '参加中' : '未参加'}
@@ -911,7 +911,7 @@ export default function PlayerMyPage() {
               {tierChange.up ? '🎉 昇格しました！' : '📉 降格しました…'}
               <span className="ml-2 text-foreground-subtle font-bold">{tierChange.from} → {tierChange.to}</span>
             </p>
-            <button onClick={() => setTierChange(null)} className="text-stone-500 hover:text-foreground text-xs font-bold shrink-0">✕</button>
+            <button onClick={() => setTierChange(null)} className="text-muted-strong hover:text-foreground text-xs font-bold shrink-0">✕</button>
           </div>
         )}
 
@@ -924,7 +924,7 @@ export default function PlayerMyPage() {
                 🏆
               </div>
               <div>
-                <div className="text-[10px] font-black text-stone-400 uppercase tracking-wider">KTM内戦レート ＆ Tier</div>
+                <div className="text-[10px] font-black text-faint uppercase tracking-wider">KTM内戦レート ＆ Tier</div>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="text-xl font-black font-mono text-foreground">{player.mmr || 1200}</span>
                   <span className="text-xs font-black text-amber-800 bg-amber-100 px-2 py-0.5 rounded border border-amber-200">
@@ -935,7 +935,7 @@ export default function PlayerMyPage() {
             </div>
             {(player.coins > 0 || (player.metadata?.coins && player.metadata.coins > 0)) && (
               <div className="text-right">
-                <div className="text-[10px] font-bold text-stone-400">所持コイン</div>
+                <div className="text-[10px] font-bold text-faint">所持コイン</div>
                 <div className="text-xs font-black font-mono text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 mt-0.5">
                   🪙 {player.coins || player.metadata?.coins}
                 </div>
@@ -946,10 +946,10 @@ export default function PlayerMyPage() {
           {/* 2. 得意チャンピオン TOP3 */}
           <div className="bg-surface/90 border border-border/90 rounded-2xl p-4 shadow-xs flex flex-col justify-between gap-1.5">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black text-stone-400 uppercase tracking-wider flex items-center gap-1">
+              <span className="text-[10px] font-black text-faint uppercase tracking-wider flex items-center gap-1">
                 <span>⚔️ 得意チャンピオン TOP3</span>
               </span>
-              <span className="text-[10px] font-bold text-stone-400 font-mono">勝率 (試合数)</span>
+              <span className="text-[10px] font-bold text-faint font-mono">勝率 (試合数)</span>
             </div>
             <div className="flex items-center gap-2 pt-0.5">
               {champPool.filter((c: any) => c.name && c.name !== 'Unknown').slice(0, 3).map((c: any, idx: number) => (
@@ -969,7 +969,7 @@ export default function PlayerMyPage() {
                 </div>
               ))}
               {champPool.filter((c: any) => c.name && c.name !== 'Unknown').length === 0 && (
-                <div className="text-xs text-stone-400 font-bold py-1">データ収集中</div>
+                <div className="text-xs text-faint font-bold py-1">データ収集中</div>
               )}
             </div>
           </div>
@@ -981,23 +981,23 @@ export default function PlayerMyPage() {
                 🎯
               </div>
               <div>
-                <div className="text-[10px] font-black text-stone-400 uppercase tracking-wider">主力希望レーン ＆ 勝率</div>
+                <div className="text-[10px] font-black text-faint uppercase tracking-wider">主力希望レーン ＆ 勝率</div>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="text-sm font-black text-foreground bg-surface-subtle px-2 py-0.5 rounded border border-border">
                     {player.role_preferences?.primary || 'ALL'}
                   </span>
-                  <span className="text-xs font-bold text-stone-400">/</span>
-                  <span className="text-xs font-bold text-stone-600">
+                  <span className="text-xs font-bold text-faint">/</span>
+                  <span className="text-xs font-bold text-muted">
                     {player.role_preferences?.secondary || 'ALL'}
                   </span>
                 </div>
               </div>
             </div>
             <div className="text-right">
-              <div className="text-[10px] font-bold text-stone-400">通算戦績</div>
+              <div className="text-[10px] font-bold text-faint">通算戦績</div>
               <div className="text-xs font-black font-mono text-foreground mt-0.5">
                 <span className="text-emerald-700 font-extrabold">{overallStats.winRate}%</span>
-                <span className="text-[10px] text-stone-500 ml-1">({overallStats.wins}勝{overallStats.losses}敗)</span>
+                <span className="text-[10px] text-muted-strong ml-1">({overallStats.wins}勝{overallStats.losses}敗)</span>
               </div>
             </div>
           </div>
@@ -1008,7 +1008,7 @@ export default function PlayerMyPage() {
           {/* 直近の調子・勝敗ストリーク */}
           <div className="bg-surface/90 border border-border/90 rounded-2xl p-4 shadow-xs flex flex-col justify-between gap-2">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black text-stone-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="text-[10px] font-black text-faint uppercase tracking-wider flex items-center gap-1.5">
                 <span>🔥 直近の調子 ＆ モメンタム</span>
               </span>
               {recentForm && (
@@ -1040,12 +1040,12 @@ export default function PlayerMyPage() {
                       {isWin ? 'W' : 'L'}
                     </span>
                   ))}
-                  <span className="text-[11px] font-bold text-stone-500 ml-1">
+                  <span className="text-[11px] font-bold text-muted-strong ml-1">
                     (直近10戦 {recentForm.last10Wins}勝{recentForm.last10Games - recentForm.last10Wins}敗)
                   </span>
                 </div>
               ) : (
-                <span className="text-xs text-stone-400 font-bold">試合データ収集中</span>
+                <span className="text-xs text-faint font-bold">試合データ収集中</span>
               )}
             </div>
           </div>
@@ -1053,10 +1053,10 @@ export default function PlayerMyPage() {
           {/* 🏆 名コンビ（最高勝率の相棒） */}
           <div className="bg-surface/90 border border-border/90 rounded-2xl p-4 shadow-xs flex flex-col justify-between gap-2">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black text-stone-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="text-[10px] font-black text-faint uppercase tracking-wider flex items-center gap-1.5">
                 <span>🤝 名コンビ（最高勝率の相棒）</span>
               </span>
-              <span className="text-[9px] font-bold text-stone-400">同チーム時</span>
+              <span className="text-[9px] font-bold text-faint">同チーム時</span>
             </div>
 
             <div className="pt-0.5">
@@ -1073,7 +1073,7 @@ export default function PlayerMyPage() {
                       <div className="text-xs font-black text-foreground group-hover:text-emerald-700 transition">
                         {synergyPair.best.name}
                       </div>
-                      <div className="text-[10px] text-stone-500 font-medium">
+                      <div className="text-[10px] text-muted-strong font-medium">
                         {synergyPair.best.games}試合 共にプレイ
                       </div>
                     </div>
@@ -1085,7 +1085,7 @@ export default function PlayerMyPage() {
                   </div>
                 </Link>
               ) : (
-                <div className="text-xs text-stone-400 font-bold py-1">相性データ収集中（3戦以上）</div>
+                <div className="text-xs text-faint font-bold py-1">相性データ収集中（3戦以上）</div>
               )}
             </div>
           </div>
@@ -1093,10 +1093,10 @@ export default function PlayerMyPage() {
           {/* ⚔️ 最大の天敵（苦戦中のライバル） */}
           <div className="bg-surface/90 border border-border/90 rounded-2xl p-4 shadow-xs flex flex-col justify-between gap-2">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black text-stone-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="text-[10px] font-black text-faint uppercase tracking-wider flex items-center gap-1.5">
                 <span>⚔️ 最大の天敵（対戦ライバル）</span>
               </span>
-              <span className="text-[9px] font-bold text-stone-400">敵対時</span>
+              <span className="text-[9px] font-bold text-faint">敵対時</span>
             </div>
 
             <div className="pt-0.5">
@@ -1113,7 +1113,7 @@ export default function PlayerMyPage() {
                       <div className="text-xs font-black text-foreground group-hover:text-rose-700 transition">
                         {matchupExtremes.worst[0].name || matchupExtremes.worst[0].champion}
                       </div>
-                      <div className="text-[10px] text-stone-500 font-medium">
+                      <div className="text-[10px] text-muted-strong font-medium">
                         {matchupExtremes.worst[0].games}試合 対戦
                       </div>
                     </div>
@@ -1125,7 +1125,7 @@ export default function PlayerMyPage() {
                   </div>
                 </Link>
               ) : (
-                <div className="text-xs text-stone-400 font-bold py-1">対戦データ収集中（3戦以上）</div>
+                <div className="text-xs text-faint font-bold py-1">対戦データ収集中（3戦以上）</div>
               )}
             </div>
           </div>
@@ -1150,7 +1150,7 @@ export default function PlayerMyPage() {
                 className={`flex items-center justify-center gap-2 shrink-0 px-3 sm:px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 whitespace-nowrap cursor-pointer ${
                   isActive
                     ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white font-black shadow-md scale-102'
-                    : 'text-stone-600 hover:text-foreground hover:bg-black/5'
+                    : 'text-muted hover:text-foreground hover:bg-black/5'
                 }`}
               >
                 {tab.icon}
@@ -1193,11 +1193,11 @@ export default function PlayerMyPage() {
                         </div>
                         <div>
                           <h2 className="text-lg font-black text-foreground">👑 KTMカスタム 通算戦績サマリー</h2>
-                          <p className="text-xs text-stone-500 font-bold">全対戦履歴から集計された公式スタッツ</p>
+                          <p className="text-xs text-muted-strong font-bold">全対戦履歴から集計された公式スタッツ</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-stone-500">総試合数:</span>
+                        <span className="text-xs font-bold text-muted-strong">総試合数:</span>
                         <span className="text-sm font-black px-3 py-1 bg-surface-subtle rounded-full border border-border text-foreground-soft">
                           {overallStats.total} 試合
                         </span>
@@ -1207,7 +1207,7 @@ export default function PlayerMyPage() {
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                       {/* 全体勝率 */}
                       <div className="bg-background/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
-                        <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">全体勝率</span>
+                        <span className="text-[11px] font-bold text-muted-strong uppercase tracking-wider">全体勝率</span>
                         <div className="my-2">
                           <span className={`text-3xl sm:text-4xl font-black ${
                             overallStats.winRate >= 60 ? 'text-amber-600' : overallStats.winRate >= 50 ? 'text-emerald-600' : 'text-rose-600'
@@ -1215,7 +1215,7 @@ export default function PlayerMyPage() {
                             {overallStats.winRate}<span className="text-lg font-bold">%</span>
                           </span>
                         </div>
-                        <div className="flex items-center justify-between text-[11px] font-bold text-stone-500">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-muted-strong">
                           <span className="text-emerald-700">{overallStats.wins} 勝</span>
                           <span>/</span>
                           <span className="text-rose-700">{overallStats.losses} 敗</span>
@@ -1224,33 +1224,33 @@ export default function PlayerMyPage() {
 
                       {/* 平均 KDA */}
                       <div className="bg-background/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
-                        <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">平均 KDA</span>
+                        <span className="text-[11px] font-bold text-muted-strong uppercase tracking-wider">平均 KDA</span>
                         <div className="my-2">
                           <span className="text-3xl sm:text-4xl font-black text-amber-700">
                             {overallStats.kda}
                           </span>
                         </div>
-                        <div className="text-[11px] font-bold text-stone-600 truncate">
+                        <div className="text-[11px] font-bold text-muted truncate">
                           {overallStats.avgK} / {overallStats.avgD} / {overallStats.avgA}
                         </div>
                       </div>
 
                       {/* 勝ちパターン判定 */}
                       <div className="bg-background/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
-                        <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">プレイスタイル</span>
+                        <span className="text-[11px] font-bold text-muted-strong uppercase tracking-wider">プレイスタイル</span>
                         <div className="my-2">
                           <span className="text-sm font-black text-foreground line-clamp-2">
                             {victoryBlueprint?.archetype.replace(/^[^\s]+ /, '') || "データ収集中"}
                           </span>
                         </div>
-                        <span className="text-[10px] font-bold text-stone-400">
+                        <span className="text-[10px] font-bold text-faint">
                           {victoryBlueprint ? 'スタッツ適性判定完了' : '未判定'}
                         </span>
                       </div>
 
                       {/* KTM代表MMR */}
                       <div className="bg-background/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
-                        <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">KTMカスタムMMR</span>
+                        <span className="text-[11px] font-bold text-muted-strong uppercase tracking-wider">KTMカスタムMMR</span>
                         <div className="my-2">
                           <span className="text-3xl sm:text-4xl font-black text-amber-700">
                             {player.mmr || 1200}
@@ -1277,11 +1277,11 @@ export default function PlayerMyPage() {
                           <span className="text-xs font-black px-2 py-0.5 rounded-md bg-teal-100 text-teal-800 border border-teal-300">
                             {player.highest_rank || "UNRANKED"}
                           </span>
-                          <span className="text-xs text-stone-500 font-mono">
+                          <span className="text-xs text-muted-strong font-mono">
                             {player.ign || "IGN未登録"}
                           </span>
                         </div>
-                        <p className="text-xs text-stone-500">
+                        <p className="text-xs text-muted-strong">
                           Riot公式マスタリーやソロキュー戦績は「🎮 ソロキュー戦績」タブで詳しく確認できます。
                         </p>
                       </div>
@@ -1432,9 +1432,9 @@ export default function PlayerMyPage() {
                             <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
                               <p className="text-[10px] text-emerald-700 font-black mb-1">🏆 最強のシナジー (高勝率)</p>
                               <p className="text-lg font-black text-foreground truncate">{synergyPair.best.name}</p>
-                              <p className="text-xs text-stone-500">同チーム{synergyPair.best.games}戦・勝率<span className="text-emerald-700 font-bold ml-1">{synergyPair.best.winRate}%</span></p>
+                              <p className="text-xs text-muted-strong">同チーム{synergyPair.best.games}戦・勝率<span className="text-emerald-700 font-bold ml-1">{synergyPair.best.winRate}%</span></p>
                               {synergyPair.best.games <= 3 && (
-                                <p className="text-[9px] text-stone-400 mt-0.5">※参考データ（3戦）</p>
+                                <p className="text-[9px] text-faint mt-0.5">※参考データ（3戦）</p>
                               )}
                             </div>
                             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
@@ -1442,13 +1442,13 @@ export default function PlayerMyPage() {
                               {synergyPair.challenging ? (
                                 <>
                                   <p className="text-lg font-black text-foreground truncate">{synergyPair.challenging.name}</p>
-                                  <p className="text-xs text-stone-500">同チーム{synergyPair.challenging.games}戦・勝率<span className="text-amber-700 font-bold ml-1">{synergyPair.challenging.winRate}%</span></p>
+                                  <p className="text-xs text-muted-strong">同チーム{synergyPair.challenging.games}戦・勝率<span className="text-amber-700 font-bold ml-1">{synergyPair.challenging.winRate}%</span></p>
                                   {synergyPair.challenging.games <= 3 && (
-                                    <p className="text-[9px] text-stone-400 mt-0.5">※参考データ（3戦）</p>
+                                    <p className="text-[9px] text-faint mt-0.5">※参考データ（3戦）</p>
                                   )}
                                 </>
                               ) : (
-                                <p className="text-xs text-stone-500 py-3">十分な対戦データがありません</p>
+                                <p className="text-xs text-muted-strong py-3">十分な対戦データがありません</p>
                               )}
                             </div>
                           </div>
@@ -1482,19 +1482,19 @@ export default function PlayerMyPage() {
                                   index === 4 ? 'col-span-2' : ''
                                 }`}
                               >
-                                <span className="text-stone-600">{d.subject}:</span>
+                                <span className="text-muted">{d.subject}:</span>
                                 <span className={`font-black text-xs ${
                                   d.value >= 4.0 ? 'text-amber-800' : d.value >= 3.0 ? 'text-foreground' : 'text-rose-600'
                                 }`}>
-                                  {d.value} <span className="text-[9px] font-normal text-stone-400">/ 5.0</span>
+                                  {d.value} <span className="text-[9px] font-normal text-faint">/ 5.0</span>
                                 </span>
                               </div>
                             ))}
                           </div>
                         </>
                       ) : (
-                        <div className="h-56 flex flex-col items-center justify-center text-center p-4 text-stone-400 text-xs">
-                          <Activity className="w-8 h-8 mb-2 opacity-40 text-stone-500" />
+                        <div className="h-56 flex flex-col items-center justify-center text-center p-4 text-faint text-xs">
+                          <Activity className="w-8 h-8 mb-2 opacity-40 text-muted-strong" />
                           <span>カスタム試合データが不足しているため、能力パラメーターは未計測です。</span>
                         </div>
                       )}
@@ -1556,7 +1556,7 @@ export default function PlayerMyPage() {
                           type="button"
                           onClick={() => setShowWinRate(v => !v)}
                           className={`px-2.5 py-1.5 rounded-xl text-[10px] font-black transition-all border ${
-                            showWinRate ? 'bg-emerald-500 text-white border-emerald-400' : 'bg-black/5 text-stone-500 border-black/10 hover:text-foreground'
+                            showWinRate ? 'bg-emerald-500 text-white border-emerald-400' : 'bg-black/5 text-muted-strong border-black/10 hover:text-foreground'
                           }`}
                           title="直近10戦の勝率を重ねて表示します"
                         >
@@ -1570,7 +1570,7 @@ export default function PlayerMyPage() {
                               onClick={() => setChartPeriod(v)}
                               type="button"
                               className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all ${
-                                chartPeriod === v ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20' : 'text-stone-500 hover:text-foreground hover:bg-black/5'
+                                chartPeriod === v ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20' : 'text-muted-strong hover:text-foreground hover:bg-black/5'
                               }`}
                             >
                               {label}
@@ -1587,7 +1587,7 @@ export default function PlayerMyPage() {
                               className={`px-2.5 py-1 rounded-lg text-[10px] font-black transition-all ${
                                 activeLane === lane
                                   ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20'
-                                  : 'text-stone-500 hover:text-foreground hover:bg-black/5'
+                                  : 'text-muted-strong hover:text-foreground hover:bg-black/5'
                               }`}
                             >
                               {lane === 'TOTAL' ? '総合' : lane === 'ALL' ? '全レーン' : lane}
@@ -1695,7 +1695,7 @@ export default function PlayerMyPage() {
                             className={`px-3 py-1 rounded-xl text-xs font-black transition-all ${
                               laneSortKey === k
                                 ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-black shadow-md shadow-emerald-500/20'
-                                : 'text-stone-500 hover:text-foreground hover:bg-black/5'
+                                : 'text-muted-strong hover:text-foreground hover:bg-black/5'
                             }`}
                           >
                             {label}
@@ -1798,7 +1798,7 @@ export default function PlayerMyPage() {
                     <h3 className="text-lg font-black flex items-center gap-2 mb-6 border-b border-black/10 pb-3">
                       <Crosshair className="w-5 h-5 text-rose-500" />
                       <span>⚔️ KTMカスタム 対面マッチアップ勝率</span>
-                      <span className="text-xs text-stone-500 font-bold ml-1">（内戦での直接対決データ）</span>
+                      <span className="text-xs text-muted-strong font-bold ml-1">（内戦での直接対決データ）</span>
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[460px] overflow-y-auto pr-1">
                       {matchups.length > 0 ? matchups.map((m, idx) => (
@@ -1850,7 +1850,7 @@ export default function PlayerMyPage() {
                               Riot API 連携
                             </span>
                           </div>
-                          <p className="text-xs text-stone-500 font-bold">サモナー公式ランク・マスタリー・OP.GGデータ</p>
+                          <p className="text-xs text-muted-strong font-bold">サモナー公式ランク・マスタリー・OP.GGデータ</p>
                         </div>
                       </div>
 
@@ -1881,46 +1881,46 @@ export default function PlayerMyPage() {
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                       {/* サモナー名 */}
                       <div className="bg-background/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
-                        <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">サモナー名 (IGN)</span>
+                        <span className="text-[11px] font-bold text-muted-strong uppercase tracking-wider">サモナー名 (IGN)</span>
                         <div className="my-2">
                           <span className="text-lg sm:text-xl font-black font-mono text-foreground truncate block">
                             {player.ign || "未登録"}
                           </span>
                         </div>
-                        <span className="text-[10px] font-bold text-stone-400">JP サーバー</span>
+                        <span className="text-[10px] font-bold text-faint">JP サーバー</span>
                       </div>
 
                       {/* 最高到達ランク */}
                       <div className="bg-background/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
-                        <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">最高到達ランク</span>
+                        <span className="text-[11px] font-bold text-muted-strong uppercase tracking-wider">最高到達ランク</span>
                         <div className="my-2">
                           <span className="text-2xl sm:text-3xl font-black text-amber-700">
                             {player.highest_rank || "UNRANKED"}
                           </span>
                         </div>
-                        <span className="text-[10px] font-bold text-stone-500">ソロ/デュオ ランク基準</span>
+                        <span className="text-[10px] font-bold text-muted-strong">ソロ/デュオ ランク基準</span>
                       </div>
 
                       {/* メインロール推定 */}
                       <div className="bg-background/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
-                        <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">得意ロール (マスタリー基準)</span>
+                        <span className="text-[11px] font-bold text-muted-strong uppercase tracking-wider">得意ロール (マスタリー基準)</span>
                         <div className="my-2">
                           <span className="text-xl sm:text-2xl font-black text-foreground">
                             {mainDisplayTag || "FLEX"}
                           </span>
                         </div>
-                        <span className="text-[10px] font-bold text-stone-400">主力ピック傾向</span>
+                        <span className="text-[10px] font-bold text-faint">主力ピック傾向</span>
                       </div>
 
                       {/* 総マスタリーチャンピオン数 */}
                       <div className="bg-background/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
-                        <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">登録マスタリー数</span>
+                        <span className="text-[11px] font-bold text-muted-strong uppercase tracking-wider">登録マスタリー数</span>
                         <div className="my-2">
                           <span className="text-2xl sm:text-3xl font-black text-teal-700">
-                            {riotMasteries.length} <span className="text-sm font-bold text-stone-500">体</span>
+                            {riotMasteries.length} <span className="text-sm font-bold text-muted-strong">体</span>
                           </span>
                         </div>
-                        <span className="text-[10px] font-bold text-stone-400">TOP チャンピオン表示</span>
+                        <span className="text-[10px] font-bold text-faint">TOP チャンピオン表示</span>
                       </div>
                     </div>
                   </div>
@@ -1934,7 +1934,7 @@ export default function PlayerMyPage() {
                           <Star className="w-5 h-5 text-amber-600" />
                           <span>魂のチャンピオン (Riot公式マスタリー)</span>
                         </h3>
-                        <span className="text-xs text-stone-500 font-bold">上位ピック</span>
+                        <span className="text-xs text-muted-strong font-bold">上位ピック</span>
                       </div>
                       <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
                         {riotMasteries.length > 0 ? riotMasteries.map((m, idx) => (
@@ -1976,7 +1976,7 @@ export default function PlayerMyPage() {
                           <Target className="w-5 h-5 text-teal-600" />
                           <span>スカウティング ＆ 傾向レポート</span>
                         </h3>
-                        <span className="text-xs text-stone-500 font-bold">プレイスタイル</span>
+                        <span className="text-xs text-muted-strong font-bold">プレイスタイル</span>
                       </div>
                       <div className="flex-1">
                         <ScoutingReport stats={stats} mmr={player.mmr || 1200} />
@@ -1999,14 +1999,14 @@ export default function PlayerMyPage() {
                       <span className="min-w-0">味方との相性（同チームで3戦以上）</span>
                     </h3>
                     {qualifiedChemistry.length === 0 ? (
-                      <p className="text-sm text-stone-500 py-6 text-center">
+                      <p className="text-sm text-muted-strong py-6 text-center">
                         まだデータが足りません。同じチームで3戦以上プレイすると表示されます。
                       </p>
                     ) : (
                       <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
                         <table className="w-full min-w-[420px] text-sm">
                           <thead>
-                            <tr className="text-left text-[11px] uppercase tracking-wide text-stone-500">
+                            <tr className="text-left text-[11px] uppercase tracking-wide text-muted-strong">
                               <th className="py-2 pr-3 font-black">メンバー</th>
                               <th className="py-2 pr-3 font-black text-right">試合数</th>
                               <th className="py-2 pr-3 font-black text-right">勝利</th>
@@ -2019,11 +2019,11 @@ export default function PlayerMyPage() {
                               .map((m: any) => (
                                 <tr key={m.name} className="border-t border-black/5">
                                   <td className="py-2 pr-3 font-bold text-foreground-soft truncate max-w-[160px]">{m.name}</td>
-                                  <td className="py-2 pr-3 text-right tabular-nums text-stone-600">{m.games}</td>
-                                  <td className="py-2 pr-3 text-right tabular-nums text-stone-600">{m.wins}</td>
+                                  <td className="py-2 pr-3 text-right tabular-nums text-muted">{m.games}</td>
+                                  <td className="py-2 pr-3 text-right tabular-nums text-muted">{m.wins}</td>
                                   <td className={`py-2 text-right tabular-nums font-black ${
                                     m.winRate >= 60 ? 'text-emerald-600'
-                                      : m.winRate >= 50 ? 'text-stone-600'
+                                      : m.winRate >= 50 ? 'text-muted'
                                       : 'text-rose-500'
                                   }`}>
                                     {Math.round(m.winRate)}%
@@ -2043,14 +2043,14 @@ export default function PlayerMyPage() {
                       <span className="min-w-0">好敵手（敵チームで3戦以上）</span>
                     </h3>
                     {(rivals || []).filter((r: any) => r.games >= 3).length === 0 ? (
-                      <p className="text-sm text-stone-500 py-6 text-center">
+                      <p className="text-sm text-muted-strong py-6 text-center">
                         まだデータが足りません。敵チームとして3戦以上当たると表示されます。
                       </p>
                     ) : (
                       <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
                         <table className="w-full min-w-[420px] text-sm">
                           <thead>
-                            <tr className="text-left text-[11px] uppercase tracking-wide text-stone-500">
+                            <tr className="text-left text-[11px] uppercase tracking-wide text-muted-strong">
                               <th className="py-2 pr-3 font-black">相手</th>
                               <th className="py-2 pr-3 font-black text-right">対戦数</th>
                               <th className="py-2 pr-3 font-black text-right">勝利</th>
@@ -2064,11 +2064,11 @@ export default function PlayerMyPage() {
                               .map((r: any) => (
                                 <tr key={r.name} className="border-t border-black/5">
                                   <td className="py-2 pr-3 font-bold text-foreground-soft truncate max-w-[160px]">{r.name}</td>
-                                  <td className="py-2 pr-3 text-right tabular-nums text-stone-600">{r.games}</td>
-                                  <td className="py-2 pr-3 text-right tabular-nums text-stone-600">{r.wins}</td>
+                                  <td className="py-2 pr-3 text-right tabular-nums text-muted">{r.games}</td>
+                                  <td className="py-2 pr-3 text-right tabular-nums text-muted">{r.wins}</td>
                                   <td className={`py-2 text-right tabular-nums font-black ${
                                     r.winRate >= 60 ? 'text-emerald-600'
-                                      : r.winRate >= 50 ? 'text-stone-600'
+                                      : r.winRate >= 50 ? 'text-muted'
                                       : 'text-rose-500'
                                   }`}>
                                     {Math.round(r.winRate)}%

@@ -178,11 +178,11 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
       {/* スタッツハイライト */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-surface border border-border rounded-xl p-3.5 text-center shadow-sm">
-          <span className="text-[11px] text-stone-500 font-medium block">総振り返り数</span>
-          <span className="text-xl font-extrabold text-foreground">{totalMatches} <span className="text-xs font-normal text-stone-500">試合</span></span>
+          <span className="text-[11px] text-muted-strong font-medium block">総振り返り数</span>
+          <span className="text-xl font-extrabold text-foreground">{totalMatches} <span className="text-xs font-normal text-muted-strong">試合</span></span>
         </div>
         <div className="bg-surface border border-border rounded-xl p-3.5 text-center shadow-sm">
-          <span className="text-[11px] text-stone-500 font-medium block">
+          <span className="text-[11px] text-muted-strong font-medium block">
             {realRecord ? `直近${realRecord.totalMatches}戦の勝率` : realRecordError ? '振り返り試合の勝率' : '取得中...'}
           </span>
           {realRecord ? (
@@ -192,12 +192,12 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
           ) : realRecordError ? (
             <span className={`text-xl font-extrabold ${winRate >= 50 ? 'text-emerald-700' : 'text-rose-700'}`}>{winRate}%</span>
           ) : (
-            <span className="text-xl font-extrabold text-stone-300">-</span>
+            <span className="text-xl font-extrabold text-faint">-</span>
           )}
         </div>
         <div className="bg-surface border border-border rounded-xl p-3.5 text-center shadow-sm">
-          <span className="text-[11px] text-stone-500 font-medium block">平均集中・メンタル度</span>
-          <span className="text-xl font-extrabold text-amber-800">{avgMental} <span className="text-xs font-normal text-stone-500">/ 5</span></span>
+          <span className="text-[11px] text-muted-strong font-medium block">平均集中・メンタル度</span>
+          <span className="text-xl font-extrabold text-amber-800">{avgMental} <span className="text-xs font-normal text-muted-strong">/ 5</span></span>
         </div>
       </div>
 
@@ -215,10 +215,10 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
         />
       </div>
 
-      {loading && <div className="text-center py-8 text-xs text-stone-500">ダッシュボードデータをロード中...</div>}
+      {loading && <div className="text-center py-8 text-xs text-muted-strong">ダッシュボードデータをロード中...</div>}
 
       {!loading && filtered.length === 0 && (
-        <div className="text-center py-8 text-xs text-stone-500 italic">該当する振り返りログが見つかりません。</div>
+        <div className="text-center py-8 text-xs text-muted-strong italic">該当する振り返りログが見つかりません。</div>
       )}
 
       {/* 🧠 メンタル評価と勝率の相関サマリー */}
@@ -237,17 +237,17 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div className="bg-surface p-3 rounded-xl border border-emerald-200 shadow-sm">
                 <div className="text-emerald-800 font-bold text-[11px] mb-0.5">🟢 冷静・安定時 (メンタル4〜5)</div>
-                <div className="text-xl font-black text-emerald-700">{highWinRate}% <span className="text-xs font-normal text-stone-500">({highMental.length}試合)</span></div>
+                <div className="text-xl font-black text-emerald-700">{highWinRate}% <span className="text-xs font-normal text-muted-strong">({highMental.length}試合)</span></div>
               </div>
               <div className="bg-surface p-3 rounded-xl border border-rose-200 shadow-sm">
                 <div className="text-rose-800 font-bold text-[11px] mb-0.5">🔴 焦り・イライラ時 (メンタル1〜2)</div>
-                <div className="text-xl font-black text-rose-700">{lowWinRate}% <span className="text-xs font-normal text-stone-500">({lowMental.length}試合)</span></div>
+                <div className="text-xl font-black text-rose-700">{lowWinRate}% <span className="text-xs font-normal text-muted-strong">({lowMental.length}試合)</span></div>
               </div>
             </div>
 
             {/* 直近10試合のメンタルスコア×勝敗の視覚的トレンドミニグラフ */}
             <div className="mt-3 bg-surface p-3 rounded-xl border border-border shadow-sm">
-              <span className="text-[10px] font-bold text-stone-500 block mb-2 uppercase">📈 直近10試合のメンタル ⇄ 勝敗トレンド</span>
+              <span className="text-[10px] font-bold text-muted-strong block mb-2 uppercase">📈 直近10試合のメンタル ⇄ 勝敗トレンド</span>
               <div className="flex items-end justify-between gap-1.5 h-16 pt-2 px-1">
                 {reflections.slice(0, 10).reverse().map((r, idx) => {
                   const rating = r.mental_rating || 3;
@@ -300,13 +300,13 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
           <div className="bg-surface border border-border rounded-2xl p-4 mb-4 shadow-sm">
             <div className="text-xs font-black text-foreground-soft mb-2 flex items-center justify-between">
               <span>🏷️ 勝因・敗因タグの傾向</span>
-              <span className="text-[10px] text-stone-500 font-normal">過去{reflections.length}戦のデータ</span>
+              <span className="text-[10px] text-muted-strong font-normal">過去{reflections.length}戦のデータ</span>
             </div>
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-200">
                 <div className="text-emerald-800 font-bold text-[11px] mb-1.5">🟢 勝因TOP{Math.min(5, winTags.length)}</div>
                 {winTags.length === 0 ? (
-                  <div className="text-stone-400 text-[11px]">データなし</div>
+                  <div className="text-faint text-[11px]">データなし</div>
                 ) : (
                   <ul className="space-y-1">
                     {winTags.map(([tag, count]) => (
@@ -321,7 +321,7 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
               <div className="bg-rose-50 p-3 rounded-xl border border-rose-200">
                 <div className="text-rose-800 font-bold text-[11px] mb-1.5">🔴 敗因TOP{Math.min(5, loseTags.length)}</div>
                 {loseTags.length === 0 ? (
-                  <div className="text-stone-400 text-[11px]">データなし</div>
+                  <div className="text-faint text-[11px]">データなし</div>
                 ) : (
                   <ul className="space-y-1">
                     {loseTags.map(([tag, count]) => (
@@ -348,10 +348,10 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
                     {ref.win ? 'WIN' : 'LOSE'}
                   </span>
                   <span className="font-bold text-foreground text-sm">{ref.champion}</span>
-                  <span className="text-xs text-stone-400">vs</span>
+                  <span className="text-xs text-faint">vs</span>
                   <span className="font-bold text-foreground-subtle text-sm">{ref.enemy_champion || 'Unknown'}</span>
                 </div>
-                <div className="text-[11px] text-stone-500">
+                <div className="text-[11px] text-muted-strong">
                   {new Date(ref.created_at).toLocaleString('ja-JP')}
                 </div>
               </div>

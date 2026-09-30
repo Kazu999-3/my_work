@@ -67,7 +67,7 @@ export default function ChampionFactCheckPanel({ champion }: { champion: string 
           <h3 className="text-sm font-black flex items-center gap-2 text-amber-600">
             <ShieldCheck size={18} /> ファクトチェック（1件ずつ集中して片付けるフォーカスモード）
           </h3>
-          <p className="text-[11px] text-stone-500 mt-0.5">
+          <p className="text-[11px] text-muted-strong mt-0.5">
             一度に大量にカードを出さず、最優先の1件ずつ順番に「確認・採択・却下」で片付けます
           </p>
         </div>
@@ -94,7 +94,7 @@ export default function ChampionFactCheckPanel({ champion }: { champion: string 
               <Sparkles size={14} className="text-amber-600" />
               残り {items.length} 件 （{processedCount + 1} / {initialTotal} 件目を片付け中）
             </span>
-            <span className="text-stone-500 font-mono">{progressPercent}% 完了</span>
+            <span className="text-muted-strong font-mono">{progressPercent}% 完了</span>
           </div>
           <div className="w-full bg-surface-hover rounded-full h-2 overflow-hidden">
             <div className="bg-amber-600 h-full transition-all duration-300" style={{ width: `${progressPercent}%` }}></div>
@@ -104,7 +104,7 @@ export default function ChampionFactCheckPanel({ champion }: { champion: string 
 
       {/* --- メインコンテンツ --- */}
       {loading ? (
-        <div className="py-8 text-center text-xs text-stone-500 font-bold flex items-center justify-center gap-2">
+        <div className="py-8 text-center text-xs text-muted-strong font-bold flex items-center justify-center gap-2">
           <RefreshCw size={14} className="animate-spin text-amber-600" />
           ファクトチェックデータをロード中...
         </div>
@@ -123,7 +123,7 @@ export default function ChampionFactCheckPanel({ champion }: { champion: string 
         <div className="space-y-3">
           <FactCheckQueueCard item={currentItem} onActed={handleActed} />
           {items.length > 1 && (
-            <p className="text-[11px] text-stone-400 text-right font-bold flex items-center justify-end gap-1">
+            <p className="text-[11px] text-faint text-right font-bold flex items-center justify-end gap-1">
               この1件を片付けると自動で次のカードに進みます <ArrowRight size={12} />
             </p>
           )}

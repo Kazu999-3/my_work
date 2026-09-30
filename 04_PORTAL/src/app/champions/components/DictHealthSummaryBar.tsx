@@ -124,7 +124,7 @@ export default function DictHealthSummaryBar({
 
   if (loading && !data) {
     return (
-      <div className="w-full bg-surface/60 border border-border/80 rounded-2xl p-3 flex items-center justify-between text-xs text-stone-400 animate-pulse">
+      <div className="w-full bg-surface/60 border border-border/80 rounded-2xl p-3 flex items-center justify-between text-xs text-faint animate-pulse">
         <div className="flex items-center gap-2">
           <RefreshCw size={14} className="animate-spin text-amber-600" />
           <span>辞典の健全性を照合中...</span>
@@ -176,7 +176,7 @@ export default function DictHealthSummaryBar({
                 適用率 {upToDatePercent}%
               </span>
             </div>
-            <p className="text-[11px] text-stone-500 mt-0.5">
+            <p className="text-[11px] text-muted-strong mt-0.5">
               全 {total} 体中、{verified} 体が実戦確定、{stale} 体がパッチ更新待ち
             </p>
           </div>
@@ -230,7 +230,7 @@ export default function DictHealthSummaryBar({
       {/* 下段: ステータス別のクイック絞り込みピル */}
       <div className="pt-2 border-t border-stone-100 flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[10px] font-bold text-stone-400 mr-1 flex items-center gap-1">
+          <span className="text-[10px] font-bold text-faint mr-1 flex items-center gap-1">
             <Filter size={11} /> 状態絞り込み:
           </span>
 
@@ -240,7 +240,7 @@ export default function DictHealthSummaryBar({
             className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer border ${
               activeStatusFilter === 'ALL'
                 ? 'bg-stone-900 border-stone-900 text-white shadow-xs'
-                : 'bg-background border-border text-stone-600 hover:bg-surface-subtle'
+                : 'bg-background border-border text-muted hover:bg-surface-subtle'
             }`}
           >
             すべて ({total})
@@ -290,7 +290,7 @@ export default function DictHealthSummaryBar({
             <div style={{ width: `${Math.max(0, upToDatePercent - verifiedPercent)}%` }} className="bg-amber-400 h-full" title={`AI生成: ${aiGen}体`} />
             <div style={{ width: `${Math.max(0, 100 - upToDatePercent)}%` }} className="bg-rose-500 h-full" title={`パッチ遅れ: ${stale}体`} />
           </div>
-          <span className="text-[10px] font-mono font-bold text-stone-500">{verified}/{total}</span>
+          <span className="text-[10px] font-mono font-bold text-muted-strong">{verified}/{total}</span>
         </div>
       </div>
     </div>

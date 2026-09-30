@@ -57,13 +57,13 @@ export default function DictReviewPanel() {
     <div className="space-y-5 animate-in">
       <div className="bg-surface border border-border rounded-3xl p-6">
         <h2 className="text-base font-bold text-foreground mb-1 flex items-center gap-2"><Sparkles size={18} className="text-pink-600" /> 辞典の鮮度レビュー</h2>
-        <p className="text-xs text-stone-500 mb-4">未レビュー/古い順に辞典データをLLMが「現パッチでも有効か」判定します。承認したものだけ反映され、削除はされません（アーカイブのみ）。</p>
+        <p className="text-xs text-muted-strong mb-4">未レビュー/古い順に辞典データをLLMが「現パッチでも有効か」判定します。承認したものだけ反映され、削除はされません（アーカイブのみ）。</p>
         <button onClick={runReview} disabled={loading}
           className="flex items-center gap-1.5 py-2.5 px-5 rounded-xl bg-pink-500 hover:bg-pink-600 text-white text-xs font-bold transition-all disabled:opacity-50">
           {loading ? <RefreshCw size={14} className="animate-spin" /> : <Sparkles size={14} />}
           {loading ? 'AI判定中...' : '5件レビュー実行'}
         </button>
-        {currentPatch && <span className="ml-3 text-xs text-stone-500">現パッチ: {currentPatch}</span>}
+        {currentPatch && <span className="ml-3 text-xs text-muted-strong">現パッチ: {currentPatch}</span>}
       </div>
 
       {msg && <p className="text-sm text-red-700">{msg}</p>}
@@ -74,7 +74,7 @@ export default function DictReviewPanel() {
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-foreground">{c.champion}</span>
-                <span className="text-[10px] text-stone-500">作成パッチ {c.patch || '不明'}</span>
+                <span className="text-[10px] text-muted-strong">作成パッチ {c.patch || '不明'}</span>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${verdictStyle[c.verdict] || verdictStyle.keep}`}>{verdictLabel[c.verdict] || c.verdict}</span>
               </div>
               <div className="flex gap-2">
@@ -92,7 +92,7 @@ export default function DictReviewPanel() {
                 </button>
               </div>
             </div>
-            {c.reason && <p className="text-xs text-stone-500 mt-2">判定理由: {c.reason}</p>}
+            {c.reason && <p className="text-xs text-muted-strong mt-2">判定理由: {c.reason}</p>}
             {c.note && <p className="text-xs text-amber-700/80 mt-1">要修正点: {c.note}</p>}
 
             {/* 現在の辞典内容: 中身を見ないと有効/アーカイブの判断ができないため展開できるようにする */}
@@ -110,9 +110,9 @@ export default function DictReviewPanel() {
                     ['戦略', c.current.strategy],
                   ] as const).map(([label, val]) => (
                     <div key={label}>
-                      <span className="text-stone-500">{label}: </span>
+                      <span className="text-muted-strong">{label}: </span>
                       <span className="text-foreground-subtle whitespace-pre-wrap">
-                        {val ? String(val).slice(0, 600) : <span className="text-stone-400">（未記入）</span>}
+                        {val ? String(val).slice(0, 600) : <span className="text-faint">（未記入）</span>}
                       </span>
                     </div>
                   ))}
@@ -122,16 +122,16 @@ export default function DictReviewPanel() {
             {c.regenerated && (
               <div className="mt-2 space-y-0.5 text-xs bg-amber-50 border border-amber-200 rounded-lg p-3">
                 <p className="text-amber-700 font-bold mb-1">🔄 再生成結果（保存済み）</p>
-                {c.regenerated.strengths && <p className="text-foreground-subtle"><span className="text-stone-500">強み:</span> {c.regenerated.strengths}</p>}
-                {c.regenerated.weaknesses && <p className="text-foreground-subtle"><span className="text-stone-500">弱み:</span> {c.regenerated.weaknesses}</p>}
-                {c.regenerated.power_spikes && <p className="text-foreground-subtle"><span className="text-stone-500">パワースパイク:</span> {c.regenerated.power_spikes}</p>}
-                {c.regenerated.build_runes && <p className="text-foreground-subtle"><span className="text-stone-500">ビルド/ルーン:</span> {c.regenerated.build_runes}</p>}
+                {c.regenerated.strengths && <p className="text-foreground-subtle"><span className="text-muted-strong">強み:</span> {c.regenerated.strengths}</p>}
+                {c.regenerated.weaknesses && <p className="text-foreground-subtle"><span className="text-muted-strong">弱み:</span> {c.regenerated.weaknesses}</p>}
+                {c.regenerated.power_spikes && <p className="text-foreground-subtle"><span className="text-muted-strong">パワースパイク:</span> {c.regenerated.power_spikes}</p>}
+                {c.regenerated.build_runes && <p className="text-foreground-subtle"><span className="text-muted-strong">ビルド/ルーン:</span> {c.regenerated.build_runes}</p>}
               </div>
             )}
           </div>
         ))}
         {candidates.length === 0 && !loading && (
-          <p className="text-center text-stone-500 text-sm py-10">「レビュー実行」を押すと、古い順に5件のAI判定が出ます。</p>
+          <p className="text-center text-muted-strong text-sm py-10">「レビュー実行」を押すと、古い順に5件のAI判定が出ます。</p>
         )}
       </div>
     </div>

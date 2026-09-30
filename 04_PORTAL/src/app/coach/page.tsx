@@ -137,7 +137,7 @@ function CoachPageContent() {
         <div className="text-center max-w-sm rounded-3xl border border-border/90 bg-surface p-8 shadow-xl">
           <div className="text-4xl mb-4">🔑</div>
           <h2 className="text-lg font-bold mb-2 text-foreground">認証が必要です</h2>
-          <p className="text-xs text-stone-500 mb-6 leading-relaxed">
+          <p className="text-xs text-muted-strong mb-6 leading-relaxed">
             このコーチング機能は管理者専用です。管理者パスコードでログインしてから再度アクセスしてください。
           </p>
           <a
@@ -182,7 +182,7 @@ function CoachPageContent() {
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-stone-500 font-medium">
+              <p className="text-[11px] text-muted-strong font-medium">
                 Riot API × ナレッジDB × Gemini AI による確定データコーチング
               </p>
             </div>
@@ -208,13 +208,13 @@ function CoachPageContent() {
                   className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2.5 sm:py-3 rounded-xl transition-all cursor-pointer min-w-0 overflow-hidden ${
                     isActive
                       ? 'bg-primary text-white shadow-md ring-2 ring-primary/40 scale-[1.01]'
-                      : 'bg-surface-subtle/70 text-stone-600 hover:bg-surface-hover/80 hover:text-foreground'
+                      : 'bg-surface-subtle/70 text-muted hover:bg-surface-hover/80 hover:text-foreground'
                   }`}
                 >
                   <span className="text-base shrink-0">{tab.icon}</span>
                   <div className="flex flex-col sm:flex-row sm:items-baseline sm:gap-1.5 min-w-0 text-center sm:text-left overflow-hidden">
                     <span className="text-xs font-black truncate">{tab.title}</span>
-                    <span className={`text-[10px] truncate hidden lg:inline font-medium ${isActive ? 'text-white/80' : 'text-stone-400'}`}>
+                    <span className={`text-[10px] truncate hidden lg:inline font-medium ${isActive ? 'text-white/80' : 'text-faint'}`}>
                       ({tab.sub})
                     </span>
                   </div>
@@ -324,7 +324,7 @@ function CoachPageContent() {
                   （2026-09-30修正）。状態の主張をやめ、使い方の説明だけに変えた。 */}
               <div>
                 <div className="font-black text-xs text-amber-400">Sovereign HUD（デスクトップ版）の使い方</div>
-                <p className="text-[11px] text-stone-300 mt-0.5">
+                <p className="text-[11px] text-faint mt-0.5">
                   ⌨️ HUDを起動していると、<span className="text-amber-300 font-bold">TABキー</span>で対面キルラインが表示され、チャットから敵スペル・Ultを自動検知します。
                 </p>
               </div>
@@ -376,7 +376,7 @@ function CoachPageContent() {
                 最終記録が2026-08-25、一方で自動側は直近30日に14件貯まっている。 */}
             <div className="min-w-0">
               <div className="text-sm font-black text-foreground">📝 自分の言葉で振り返りを残す</div>
-              <p className="text-xs text-stone-600 mt-0.5">
+              <p className="text-xs text-muted mt-0.5">
                 AIの自動振り返りは上の「🤖 自動振り返りの履歴」に貯まります。こちらは手書き用で、
                 レーン結果・メンタル・分岐点を自分の言葉で残せます（記録は下の履歴に蓄積されます）。
               </p>
@@ -435,7 +435,7 @@ function CoachPageContent() {
 //    下の visitedTabs と併用して「一度も開いていないタブは描画しない」ことで初めて効く。
 //    一度開いたタブはマウントしたままにするので、タブを往復しても入力や取得済みデータは消えない。
 const tabLoading = () => (
-  <div className="py-10 text-center text-xs text-stone-400">読み込み中…</div>
+  <div className="py-10 text-center text-xs text-faint">読み込み中…</div>
 );
 
 const ScoutTab = dynamic(() => import('./ScoutTab'), { ssr: false, loading: tabLoading });

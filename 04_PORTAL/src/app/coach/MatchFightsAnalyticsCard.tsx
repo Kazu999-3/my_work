@@ -98,7 +98,7 @@ export default function MatchFightsAnalyticsCard({
   if (loading) {
     return (
       <div className="bg-surface border border-border rounded-2xl p-5 shadow-xs">
-        <div className="flex items-center gap-2 text-xs font-bold text-stone-500">
+        <div className="flex items-center gap-2 text-xs font-bold text-muted-strong">
           <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
           <span>最新の集団戦ディープアナリティクスを読み込み中...</span>
         </div>
@@ -159,31 +159,31 @@ export default function MatchFightsAnalyticsCard({
             <span className="px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-200 rounded-md text-[10px] font-black uppercase tracking-wider">
               Fight Review
             </span>
-            <span className="text-stone-500 text-xs font-mono flex items-center gap-1 font-bold">
-              <Clock className="w-3.5 h-3.5 text-stone-400" /> {data.match_duration}
+            <span className="text-muted-strong text-xs font-mono flex items-center gap-1 font-bold">
+              <Clock className="w-3.5 h-3.5 text-faint" /> {data.match_duration}
             </span>
           </div>
           <h3 className="text-base font-extrabold text-foreground flex items-center gap-2">
             <span>⚔️ {data.champion}</span>
-            <span className="text-stone-500 text-xs font-bold">集団戦ディープレビュー（全{data.total_fights}戦）</span>
+            <span className="text-muted-strong text-xs font-bold">集団戦ディープレビュー（全{data.total_fights}戦）</span>
           </h3>
         </div>
 
         {/* スタッツバッジ */}
         <div className="flex items-center gap-2">
           <div className="bg-background border border-border rounded-xl px-3 py-1.5 text-center">
-            <div className="text-[10px] text-stone-500 font-bold">集団戦勝率</div>
+            <div className="text-[10px] text-muted-strong font-bold">集団戦勝率</div>
             <div className="text-sm font-black text-emerald-600 font-mono">{winRate}%</div>
           </div>
           <div className="bg-background border border-border rounded-xl px-3 py-1.5 text-center">
-            <div className="text-[10px] text-stone-500 font-bold">交戦総火力</div>
+            <div className="text-[10px] text-muted-strong font-bold">交戦総火力</div>
             <div className="text-sm font-black text-amber-700 font-mono">{data.total_fight_damage.toLocaleString()}</div>
           </div>
 
           <button
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="p-2 rounded-xl bg-surface-subtle hover:bg-surface-hover text-stone-600 transition ml-1 cursor-pointer"
+            className="p-2 rounded-xl bg-surface-subtle hover:bg-surface-hover text-muted transition ml-1 cursor-pointer"
             title={isExpanded ? '折りたたむ' : '展開する'}
           >
             {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -194,7 +194,7 @@ export default function MatchFightsAnalyticsCard({
 
       {/* 切替時ローディング */}
       {switching && (
-        <div className="flex items-center justify-center py-6 gap-2 text-xs font-bold text-stone-500">
+        <div className="flex items-center justify-center py-6 gap-2 text-xs font-bold text-muted-strong">
           <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
           <span>試合データを解析中...</span>
         </div>
@@ -224,7 +224,7 @@ export default function MatchFightsAnalyticsCard({
                       #{idx + 1}
                     </span>
                     <span className="font-extrabold text-foreground text-sm">{fight.title}</span>
-                    <span className="text-stone-500 font-mono text-[11px] font-bold">
+                    <span className="text-muted-strong font-mono text-[11px] font-bold">
                       (味方{fight.ally_kills}K vs 敵{fight.enemy_kills}D)
                     </span>
                   </div>
@@ -272,7 +272,7 @@ export default function MatchFightsAnalyticsCard({
                     <Target className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
                     <div>
                       <span className="font-extrabold text-foreground-soft">勝敗要因: </span>
-                      <span className="text-stone-600 font-medium">{fight.key_factor}</span>
+                      <span className="text-muted font-medium">{fight.key_factor}</span>
                     </div>
                   </div>
                   <div className="flex items-start gap-1.5">

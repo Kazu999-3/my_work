@@ -106,7 +106,7 @@ function GuideContent() {
                 公式ガイド
               </span>
             </div>
-            <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium mt-0.5">
+            <p className="text-[11px] text-muted-strong font-medium mt-0.5">
               Botコマンド・ポータル機能・カスタム参加手順から最新の更新情報まで網羅
             </p>
           </div>
@@ -115,7 +115,7 @@ function GuideContent() {
         {/* クイックマイページ検索 */}
         <form onSubmit={handleSearch} className="flex items-center gap-2 w-full md:w-auto">
           <div className="relative flex-1 md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 w-3.5 h-3.5" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-faint w-3.5 h-3.5" />
             <input
               type="text"
               placeholder="サモナー名で戦績検索..."
@@ -147,10 +147,10 @@ function GuideContent() {
               className={`px-3.5 py-2 rounded-lg font-bold text-xs transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 ${
                 isActive
                   ? 'bg-surface dark:bg-stone-800 text-foreground dark:text-stone-100 shadow-xs font-black'
-                  : 'text-stone-600 dark:text-stone-400 hover:text-foreground dark:hover:text-stone-200 hover:bg-surface-hover/60 dark:hover:bg-stone-800/60'
+                  : 'text-muted hover:text-foreground dark:hover:text-stone-200 hover:bg-surface-hover/60 dark:hover:bg-stone-800/60'
               }`}
             >
-              <Icon size={14} className={isActive ? tab.color : 'text-stone-400'} />
+              <Icon size={14} className={isActive ? tab.color : 'text-faint'} />
               <span className="hidden sm:inline">{tab.label}</span>
               <span className="sm:hidden">{tab.shortLabel}</span>
             </button>
@@ -174,7 +174,7 @@ export default function GuidePage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-background dark:bg-stone-950 flex items-center justify-center">
-        <div className="text-stone-600 dark:text-stone-400 text-xs font-bold animate-pulse">ガイドを読み込み中...</div>
+        <div className="text-muted text-xs font-bold animate-pulse">ガイドを読み込み中...</div>
       </div>
     }>
       <GuideContent />

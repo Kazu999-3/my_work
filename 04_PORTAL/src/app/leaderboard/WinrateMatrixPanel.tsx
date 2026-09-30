@@ -121,8 +121,8 @@ export default function WinrateMatrixPanel() {
     if (stats.games === 0) {
       return (
         <div className="flex flex-col items-center justify-center h-full opacity-30">
-          <Minus size={16} className="text-stone-400 mb-1" />
-          <span className="text-[10px] text-stone-400">0戦</span>
+          <Minus size={16} className="text-faint mb-1" />
+          <span className="text-[10px] text-faint">0戦</span>
         </div>
       );
     }
@@ -165,7 +165,7 @@ export default function WinrateMatrixPanel() {
           {winrate >= 60 || winrate <= 40 ? <Icon size={14} /> : null}
           {winrate.toFixed(1)}%
         </div>
-        <div className="text-[10px] text-stone-500 font-medium mb-1 flex gap-1">
+        <div className="text-[10px] text-muted-strong font-medium mb-1 flex gap-1">
           <span>{stats.games}戦</span> <span className="text-emerald-600">{stats.wins}W</span>
         </div>
         <div className="text-xs font-mono font-bold text-foreground-subtle bg-black/5 px-1.5 py-0.5 rounded border border-black/10">
@@ -190,13 +190,13 @@ export default function WinrateMatrixPanel() {
           </div>
           <div>
             <h2 className="text-xl font-bold text-foreground tracking-tight">レーン別 勝率マトリックス</h2>
-            <p className="text-sm text-stone-500 mt-1">ヘッダーのレーン名や勝率をクリックして、自由自在にランキングをソートできます！</p>
+            <p className="text-sm text-muted-strong mt-1">ヘッダーのレーン名や勝率をクリックして、自由自在にランキングをソートできます！</p>
           </div>
         </div>
 
         {/* クイックソートボタン */}
         <div className="flex flex-wrap items-center gap-1.5 bg-black/5 p-1.5 rounded-2xl border border-black/10 text-xs">
-          <span className="text-[10px] text-stone-500 font-bold px-1.5">並び替え:</span>
+          <span className="text-[10px] text-muted-strong font-bold px-1.5">並び替え:</span>
           {([
             ['overall', '総合勝率'],
             ['TOP', 'TOP勝率'],
@@ -213,7 +213,7 @@ export default function WinrateMatrixPanel() {
               className={`px-2.5 py-1 rounded-xl text-xs font-black transition-all ${
                 sortKey === k
                   ? 'bg-gradient-to-r from-amber-500 to-teal-500 text-white shadow-md shadow-amber-500/20'
-                  : 'text-stone-500 hover:text-foreground hover:bg-black/5'
+                  : 'text-muted-strong hover:text-foreground hover:bg-black/5'
               }`}
             >
               {label} {renderSortIndicator(k as any)}
@@ -228,7 +228,7 @@ export default function WinrateMatrixPanel() {
             <tr>
               <th
                 onClick={() => handleHeaderClick('name')}
-                className="px-4 py-3 text-left text-xs font-bold text-stone-500 hover:text-foreground cursor-pointer tracking-wider w-48 sticky left-0 z-20 bg-surface"
+                className="px-4 py-3 text-left text-xs font-bold text-muted-strong hover:text-foreground cursor-pointer tracking-wider w-48 sticky left-0 z-20 bg-surface"
               >
                 PLAYER {renderSortIndicator('name')}
               </th>
@@ -237,7 +237,7 @@ export default function WinrateMatrixPanel() {
                   key={role}
                   onClick={() => handleHeaderClick(role)}
                   className={`px-2 py-3 text-center text-xs font-bold cursor-pointer transition-colors ${
-                    sortKey === role ? 'text-teal-700 font-black bg-teal-100 rounded-t-xl' : 'text-stone-500 hover:text-foreground'
+                    sortKey === role ? 'text-teal-700 font-black bg-teal-100 rounded-t-xl' : 'text-muted-strong hover:text-foreground'
                   }`}
                 >
                   {role} {renderSortIndicator(role)}
@@ -246,7 +246,7 @@ export default function WinrateMatrixPanel() {
               <th
                 onClick={() => handleHeaderClick('overall')}
                 className={`px-4 py-3 text-right text-xs font-bold cursor-pointer transition-colors border-l border-black/10 ${
-                  sortKey === 'overall' ? 'text-amber-700 font-black bg-amber-100 rounded-t-xl' : 'text-stone-500 hover:text-foreground'
+                  sortKey === 'overall' ? 'text-amber-700 font-black bg-amber-100 rounded-t-xl' : 'text-muted-strong hover:text-foreground'
                 }`}
               >
                 OVERALL {renderSortIndicator('overall')}
@@ -286,11 +286,11 @@ export default function WinrateMatrixPanel() {
                       <div className={`text-lg font-black ${overallWr >= 55 ? 'text-teal-700' : overallWr < 45 && player.totalGames > 0 ? 'text-red-600' : 'text-foreground-subtle'}`}>
                         {player.totalGames > 0 ? `${overallWr.toFixed(1)}%` : '-'}
                       </div>
-                      <div className="text-[10px] text-stone-500 mb-1">
+                      <div className="text-[10px] text-muted-strong mb-1">
                         {player.totalGames}戦
                       </div>
                       <div className="text-xs font-mono font-bold text-foreground-subtle bg-black/5 px-2 py-0.5 rounded border border-black/10">
-                        {player.overallMmr.toLocaleString()} <span className="text-[10px] text-stone-500 font-normal">MMR</span>
+                        {player.overallMmr.toLocaleString()} <span className="text-[10px] text-muted-strong font-normal">MMR</span>
                       </div>
                     </div>
                   </td>

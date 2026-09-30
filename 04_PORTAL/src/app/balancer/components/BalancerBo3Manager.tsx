@@ -55,7 +55,7 @@ export const BalancerBo3Manager = memo(function BalancerBo3Manager({
         <button
           type="button"
           onClick={onResetBo3}
-          className="text-[11px] font-bold text-stone-500 hover:text-foreground-soft underline cursor-pointer"
+          className="text-[11px] font-bold text-muted-strong hover:text-foreground-soft underline cursor-pointer"
         >
           BO3を終了
         </button>

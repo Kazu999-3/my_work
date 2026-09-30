@@ -21,7 +21,7 @@ export default function MatchAnalyticsRedirectPage() {
         <h1 className="text-base font-black text-foreground">
           集団戦ディープアナリティクス統合ハブへ移動中...
         </h1>
-        <p className="text-xs text-stone-600 leading-relaxed">
+        <p className="text-xs text-muted leading-relaxed">
           集団戦・序盤15分メトリクス・リコール逆再生・1分振り返りカルテは、すべて「試合後アナリティクスハブ」に一本化されました。
         </p>
         <Link

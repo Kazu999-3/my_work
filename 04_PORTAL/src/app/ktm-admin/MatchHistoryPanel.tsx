@@ -267,7 +267,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
   };
 
   if (loading) {
-    return <div className="py-20 flex flex-col items-center justify-center text-stone-400"><RefreshCw className="h-8 w-8 animate-spin text-amber-500 mb-4" />戦績データを読み込み中...</div>;
+    return <div className="py-20 flex flex-col items-center justify-center text-faint"><RefreshCw className="h-8 w-8 animate-spin text-amber-500 mb-4" />戦績データを読み込み中...</div>;
   }
 
   if (error) {
@@ -280,7 +280,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
         </div>
         <div>
           <h2 className="text-2xl font-extrabold text-foreground">直近の試合履歴</h2>
-          <p className="text-stone-400 font-medium text-sm">最新30件の試合結果とMMR変動履歴</p>
+          <p className="text-faint font-medium text-sm">最新30件の試合結果とMMR変動履歴</p>
         </div>
       </div>
 
@@ -316,7 +316,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                     {match.winning_team} WIN
                   </span>
                 </div>
-                <div className="flex items-center gap-4 text-stone-400 text-sm font-bold">
+                <div className="flex items-center gap-4 text-faint text-sm font-bold">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
                     {dateStr}
@@ -349,7 +349,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                   <div className="space-y-3">
                     {blueSorted.map(p => (
                       <div key={p.player_name} className="flex items-center gap-3 bg-surface/70 p-2.5 rounded-xl border border-border/50 hover:bg-black/5 transition">
-                        <div className="w-8 text-center text-xs font-black text-stone-500 flex-shrink-0">{p.role}</div>
+                        <div className="w-8 text-center text-xs font-black text-muted-strong flex-shrink-0">{p.role}</div>
                         {p.champion_name ? (
                           <Image
                             src={getChampIcon(p.champion_name)}
@@ -360,11 +360,11 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                             onError={(e) => { e.currentTarget.style.display = 'none'; }}
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-black/5 flex-shrink-0 border border-border flex items-center justify-center text-[10px] text-stone-500">?</div>
+                          <div className="w-10 h-10 rounded-full bg-black/5 flex-shrink-0 border border-border flex items-center justify-center text-[10px] text-muted-strong">?</div>
                         )}
                         <div className="flex-1 min-w-0">
                           <div className="font-black text-foreground truncate text-sm">{p.player_name}</div>
-                          <div className="text-xs font-bold text-stone-500 mt-0.5">
+                          <div className="text-xs font-bold text-muted-strong mt-0.5">
                             {p.champion_name || 'Champion'}
                           </div>
                         </div>
@@ -373,14 +373,14 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                           <div className="text-xs font-bold text-foreground-subtle">
                             {p.kills} / <span className="text-red-700">{p.deaths}</span> / {p.assists}
                           </div>
-                          <div className="text-[10px] font-mono text-stone-400">
+                          <div className="text-[10px] font-mono text-faint">
                             KDA {p.kda_score ? p.kda_score.toFixed(2) : ((p.kills + p.assists) / Math.max(1, p.deaths)).toFixed(2)}
                           </div>
                         </div>
 
                         <div
                           title={formatMmrBreakdown(p.mmr_breakdown, p.mmr_delta)}
-                          className={`w-14 text-right font-black text-sm flex-shrink-0 cursor-help ${p.mmr_delta > 0 ? 'text-emerald-700' : p.mmr_delta < 0 ? 'text-red-700' : 'text-stone-500'}`}
+                          className={`w-14 text-right font-black text-sm flex-shrink-0 cursor-help ${p.mmr_delta > 0 ? 'text-emerald-700' : p.mmr_delta < 0 ? 'text-red-700' : 'text-muted-strong'}`}
                         >
                           {p.mmr_delta > 0 ? '+' : ''}{p.mmr_delta}
                         </div>
@@ -394,7 +394,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                   <div className="space-y-3">
                     {redSorted.map(p => (
                       <div key={p.player_name} className="flex items-center gap-3 bg-surface/70 p-2.5 rounded-xl border border-border/50 hover:bg-black/5 transition">
-                        <div className="w-8 text-center text-xs font-black text-stone-500 flex-shrink-0">{p.role}</div>
+                        <div className="w-8 text-center text-xs font-black text-muted-strong flex-shrink-0">{p.role}</div>
                         {p.champion_name ? (
                           <Image
                             src={getChampIcon(p.champion_name)}
@@ -405,11 +405,11 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                             onError={(e) => { e.currentTarget.style.display = 'none'; }}
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-black/5 flex-shrink-0 border border-border flex items-center justify-center text-[10px] text-stone-500">?</div>
+                          <div className="w-10 h-10 rounded-full bg-black/5 flex-shrink-0 border border-border flex items-center justify-center text-[10px] text-muted-strong">?</div>
                         )}
                         <div className="flex-1 min-w-0">
                           <div className="font-black text-foreground truncate text-sm">{p.player_name}</div>
-                          <div className="text-xs font-bold text-stone-500 mt-0.5">
+                          <div className="text-xs font-bold text-muted-strong mt-0.5">
                             {p.champion_name || 'Champion'}
                           </div>
                         </div>
@@ -418,14 +418,14 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                           <div className="text-xs font-bold text-foreground-subtle">
                             {p.kills} / <span className="text-red-700">{p.deaths}</span> / {p.assists}
                           </div>
-                          <div className="text-[10px] font-mono text-stone-400">
+                          <div className="text-[10px] font-mono text-faint">
                             KDA {p.kda_score ? p.kda_score.toFixed(2) : ((p.kills + p.assists) / Math.max(1, p.deaths)).toFixed(2)}
                           </div>
                         </div>
 
                         <div
                           title={formatMmrBreakdown(p.mmr_breakdown, p.mmr_delta)}
-                          className={`w-14 text-right font-black text-sm flex-shrink-0 cursor-help ${p.mmr_delta > 0 ? 'text-emerald-700' : p.mmr_delta < 0 ? 'text-red-700' : 'text-stone-500'}`}
+                          className={`w-14 text-right font-black text-sm flex-shrink-0 cursor-help ${p.mmr_delta > 0 ? 'text-emerald-700' : p.mmr_delta < 0 ? 'text-red-700' : 'text-muted-strong'}`}
                         >
                           {p.mmr_delta > 0 ? '+' : ''}{p.mmr_delta}
                         </div>
@@ -438,7 +438,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
           );
         })}
         {matches.length === 0 && (
-          <div className="text-center p-12 text-stone-500 font-bold border border-border border-dashed rounded-xl">試合履歴がありません</div>
+          <div className="text-center p-12 text-muted-strong font-bold border border-border border-dashed rounded-xl">試合履歴がありません</div>
         )}
       </div>
 
@@ -453,7 +453,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
               </h3>
               <button 
                 onClick={() => setEditingMatch(null)}
-                className="text-stone-400 hover:text-foreground bg-black/5 px-3 py-1.5 rounded-lg border border-border transition text-sm"
+                className="text-faint hover:text-foreground bg-black/5 px-3 py-1.5 rounded-lg border border-border transition text-sm"
               >
                 キャンセル
               </button>
@@ -481,10 +481,10 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                           isDragging ? 'opacity-40 border-dashed border-orange-500 bg-surface' : ''
                         }`}
                       >
-                        <div className="text-stone-500 hover:text-foreground-subtle transition cursor-grab shrink-0">
+                        <div className="text-muted-strong hover:text-foreground-subtle transition cursor-grab shrink-0">
                           <GripVertical className="h-4 w-4" />
                         </div>
-                        <div className="w-8 text-center font-bold text-stone-500 text-xs">{role}</div>
+                        <div className="w-8 text-center font-bold text-muted-strong text-xs">{role}</div>
                         <select
                           value={p.player_name}
                           onChange={e => handleEditingParticipantChange(idx, 'player_name', e.target.value)}
@@ -519,9 +519,9 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                         </button>
                         <div className="flex-1 flex gap-1 justify-end" onDragStart={e => e.stopPropagation()}>
                           <input type="number" value={p.kills} onChange={e => handleEditingParticipantChange(idx, 'kills', e.target.value)} className="w-10 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="K" />
-                          <span className="text-stone-500 text-xs self-center">/</span>
+                          <span className="text-muted-strong text-xs self-center">/</span>
                           <input type="number" value={p.deaths} onChange={e => handleEditingParticipantChange(idx, 'deaths', e.target.value)} className="w-10 bg-surface border border-red-200 text-red-700 text-center rounded text-xs py-0.5" placeholder="D" />
-                          <span className="text-stone-500 text-xs self-center">/</span>
+                          <span className="text-muted-strong text-xs self-center">/</span>
                           <input type="number" value={p.assists} onChange={e => handleEditingParticipantChange(idx, 'assists', e.target.value)} className="w-10 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="A" />
                         </div>
                       </div>
@@ -551,10 +551,10 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                           isDragging ? 'opacity-40 border-dashed border-red-500 bg-surface' : ''
                         }`}
                       >
-                        <div className="text-stone-500 hover:text-foreground-subtle transition cursor-grab shrink-0">
+                        <div className="text-muted-strong hover:text-foreground-subtle transition cursor-grab shrink-0">
                           <GripVertical className="h-4 w-4" />
                         </div>
-                        <div className="w-8 text-center font-bold text-stone-500 text-xs">{role}</div>
+                        <div className="w-8 text-center font-bold text-muted-strong text-xs">{role}</div>
                         <select
                           value={p.player_name}
                           onChange={e => handleEditingParticipantChange(idx, 'player_name', e.target.value)}
@@ -589,9 +589,9 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                         </button>
                         <div className="flex-1 flex gap-1 justify-end" onDragStart={e => e.stopPropagation()}>
                           <input type="number" value={p.kills} onChange={e => handleEditingParticipantChange(idx, 'kills', e.target.value)} className="w-10 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="K" />
-                          <span className="text-stone-500 text-xs self-center">/</span>
+                          <span className="text-muted-strong text-xs self-center">/</span>
                           <input type="number" value={p.deaths} onChange={e => handleEditingParticipantChange(idx, 'deaths', e.target.value)} className="w-10 bg-surface border border-red-200 text-red-700 text-center rounded text-xs py-0.5" placeholder="D" />
-                          <span className="text-stone-500 text-xs self-center">/</span>
+                          <span className="text-muted-strong text-xs self-center">/</span>
                           <input type="number" value={p.assists} onChange={e => handleEditingParticipantChange(idx, 'assists', e.target.value)} className="w-10 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="A" />
                         </div>
                       </div>
@@ -604,18 +604,18 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
             {/* 勝敗選択と保存 */}
             <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-4 bg-black/5 p-2 rounded-lg border border-border">
-                <span className="font-bold text-stone-500 px-2 text-sm">勝利チーム:</span>
+                <span className="font-bold text-muted-strong px-2 text-sm">勝利チーム:</span>
                 <button
                   onClick={() => setEditingMatch(prev => prev ? { ...prev, winning_team: 'BLUE' } : null)}
                   type="button"
-                  className={`px-6 py-2 rounded-lg font-bold transition text-xs ${editingMatch.winning_team === 'BLUE' ? 'bg-teal-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]' : 'bg-surface text-stone-500 border border-border hover:bg-black/5'}`}
+                  className={`px-6 py-2 rounded-lg font-bold transition text-xs ${editingMatch.winning_team === 'BLUE' ? 'bg-teal-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]' : 'bg-surface text-muted-strong border border-border hover:bg-black/5'}`}
                 >
                   BLUE WIN
                 </button>
                 <button
                   onClick={() => setEditingMatch(prev => prev ? { ...prev, winning_team: 'RED' } : null)}
                   type="button"
-                  className={`px-6 py-2 rounded-lg font-bold transition text-xs ${editingMatch.winning_team === 'RED' ? 'bg-red-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.4)]' : 'bg-surface text-stone-500 border border-border hover:bg-black/5'}`}
+                  className={`px-6 py-2 rounded-lg font-bold transition text-xs ${editingMatch.winning_team === 'RED' ? 'bg-red-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.4)]' : 'bg-surface text-muted-strong border border-border hover:bg-black/5'}`}
                 >
                   RED WIN
                 </button>
@@ -655,7 +655,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
               </h3>
               <button 
                 onClick={() => { setActiveChampSelectorPlayer(null); setChampSearchQuery(''); }}
-                className="text-stone-400 hover:text-foreground text-sm bg-black/5 px-3 py-1.5 rounded-lg border border-border transition"
+                className="text-faint hover:text-foreground text-sm bg-black/5 px-3 py-1.5 rounded-lg border border-border transition"
               >
                 閉じる
               </button>
@@ -695,7 +695,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                       className="w-12 h-12 rounded-xl border border-border group-hover:border-emerald-500 transition object-cover"
                       alt={c.name}
                     />
-                    <span className="text-[10px] text-stone-400 truncate w-14 text-center group-hover:text-foreground transition">
+                    <span className="text-[10px] text-faint truncate w-14 text-center group-hover:text-foreground transition">
                       {c.name}
                     </span>
                   </button>
@@ -705,7 +705,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                 c.name.toLowerCase().includes(champSearchQuery.toLowerCase()) || 
                 c.id.toLowerCase().includes(champSearchQuery.toLowerCase())
               ).length === 0 && (
-                <div className="col-span-full text-center py-12 text-stone-500 text-sm">
+                <div className="col-span-full text-center py-12 text-muted-strong text-sm">
                   該当するチャンピオンが見つかりません。
                 </div>
               )}

@@ -26,7 +26,7 @@ export default function MinimapPlotView({ events }: Props) {
             <h4 className="text-xs font-black tracking-wide text-amber-400 uppercase">
               サモナーズリフト 空間交戦マップ
             </h4>
-            <p className="text-[10px] text-stone-400">
+            <p className="text-[10px] text-faint">
               キル・デス・オブジェクト発生地点の空間分布
             </p>
           </div>
@@ -42,7 +42,7 @@ export default function MinimapPlotView({ events }: Props) {
               className={`px-2 py-0.5 rounded transition ${
                 filter === mode
                   ? 'bg-amber-600 text-white font-extrabold shadow'
-                  : 'text-stone-400 hover:text-stone-200'
+                  : 'text-faint hover:text-stone-200'
               }`}
             >
               {mode === 'ALL' && '全表示'}
@@ -115,7 +115,7 @@ export default function MinimapPlotView({ events }: Props) {
 
         {/* 座標なしの場合のメッセージ */}
         {filteredEvents.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center text-xs text-stone-500 font-bold">
+          <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-strong font-bold">
             該当する空間イベントはありません
           </div>
         )}
@@ -128,17 +128,17 @@ export default function MinimapPlotView({ events }: Props) {
             <span className={hoveredEvent.type === 'DEATH' ? 'text-rose-400' : hoveredEvent.type === 'KILL' ? 'text-emerald-400' : 'text-amber-400'}>
               {hoveredEvent.type === 'DEATH' ? '💀 被キル (デス)' : hoveredEvent.type === 'KILL' ? '⚔️ キル獲得' : '👑 オブジェクト'} ({hoveredEvent.min}分{hoveredEvent.sec}秒)
             </span>
-            <span className="text-[10px] text-stone-400 bg-stone-900 px-1.5 py-0.5 rounded">
+            <span className="text-[10px] text-faint bg-stone-900 px-1.5 py-0.5 rounded">
               {hoveredEvent.areaName}
             </span>
           </div>
 
-          <div className="text-[11px] text-stone-300">
+          <div className="text-[11px] text-faint">
             {hoveredEvent.summary}
           </div>
 
           {hoveredEvent.closestAllyDistance !== null && (
-            <div className="text-[10px] text-stone-400 flex items-center gap-2 pt-0.5">
+            <div className="text-[10px] text-faint flex items-center gap-2 pt-0.5">
               <span>味方最寄り距離: <strong className="text-amber-300">{hoveredEvent.closestAllyDistance}</strong></span>
               <span>周囲状況: <strong className="text-stone-200">味方{hoveredEvent.alliesCountNearby}人 vs 敵{hoveredEvent.enemiesCountNearby}人</strong></span>
               {hoveredEvent.isolationLevel === 'ISOLATED' && (
@@ -148,7 +148,7 @@ export default function MinimapPlotView({ events }: Props) {
           )}
         </div>
       ) : (
-        <div className="text-[11px] text-stone-400 text-center py-1 bg-stone-800/40 rounded-lg border border-stone-800">
+        <div className="text-[11px] text-faint text-center py-1 bg-stone-800/40 rounded-lg border border-stone-800">
           👆 マップ上のピンにカーソルを合わせると、交戦時の味方距離やエリア詳細を表示します
         </div>
       )}

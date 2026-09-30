@@ -94,7 +94,7 @@ export default function OmikujiModal({ isOpen, onClose, omikujiData, onClaimFini
         {!isSpinning && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 rounded-full text-stone-400 hover:text-foreground-subtle dark:hover:text-stone-200 hover:bg-surface-subtle dark:hover:bg-[#35373c] transition"
+            className="absolute top-4 right-4 p-2 rounded-full text-faint hover:text-foreground-subtle dark:hover:text-stone-200 hover:bg-surface-subtle dark:hover:bg-[#35373c] transition"
           >
             <X size={18} />
           </button>
@@ -137,14 +137,14 @@ export default function OmikujiModal({ isOpen, onClose, omikujiData, onClaimFini
           <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="p-3 rounded-2xl bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/30 flex items-center justify-center gap-2">
               <Coins className="w-6 h-6 text-amber-600 dark:text-amber-400" />
-              <span className="text-sm font-bold text-foreground-subtle dark:text-stone-300">獲得:</span>
+              <span className="text-sm font-bold text-foreground-subtle">獲得:</span>
               <strong className="text-2xl font-black text-amber-600 dark:text-amber-400 font-mono">
                 +{omikujiData.coins}
               </strong>
-              <span className="text-xs font-bold text-stone-600 dark:text-stone-300">コイン</span>
+              <span className="text-xs font-bold text-muted">コイン</span>
             </div>
 
-            <p className="text-xs text-stone-600 dark:text-stone-300 font-medium px-2 leading-relaxed">
+            <p className="text-xs text-muted font-medium px-2 leading-relaxed">
               {omikujiData.comment}
             </p>
           </div>
@@ -160,7 +160,7 @@ export default function OmikujiModal({ isOpen, onClose, omikujiData, onClaimFini
           }}
           className={`w-full py-3 px-4 rounded-2xl font-black text-xs transition flex items-center justify-center gap-2 shadow-lg cursor-pointer ${
             isSpinning
-              ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
+              ? 'bg-stone-300 text-muted-strong cursor-not-allowed'
               : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-stone-950 font-black scale-100 hover:scale-[1.02] active:scale-[0.98]'
           }`}
         >

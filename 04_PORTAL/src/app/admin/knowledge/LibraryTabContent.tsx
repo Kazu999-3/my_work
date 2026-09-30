@@ -1210,10 +1210,10 @@ export function LibraryTabContentInner() {
                 {/* 生字幕/文字起こしテキストがある場合の折りたたみ表示 */}
                 {selectedArticle.raw_content && selectedArticle.content && selectedArticle.raw_content !== selectedArticle.content && (
                   <details className="mt-6 border border-border rounded-2xl bg-background/60 p-4 text-xs">
-                    <summary className="font-bold text-stone-600 cursor-pointer hover:text-foreground select-none">
+                    <summary className="font-bold text-muted cursor-pointer hover:text-foreground select-none">
                       📄 元の動画字幕 / 生文字起こしテキストを確認（{selectedArticle.raw_content.length}文字）
                     </summary>
-                    <div className="mt-3 p-3 bg-surface border border-border rounded-xl max-h-60 overflow-y-auto font-mono text-[11px] text-stone-600 whitespace-pre-wrap leading-relaxed">
+                    <div className="mt-3 p-3 bg-surface border border-border rounded-xl max-h-60 overflow-y-auto font-mono text-[11px] text-muted whitespace-pre-wrap leading-relaxed">
                       {selectedArticle.raw_content}
                     </div>
                   </details>
@@ -1312,21 +1312,21 @@ export function LibraryTabContentInner() {
       {/* 統計サマリー & タグクラウド（コンパクトな折りたたみ） */}
       {articles.length > 0 && (
         <details className="group bg-surface dark:bg-stone-900 border border-border/90 dark:border-stone-800 rounded-2xl p-3 sm:p-4 shadow-xs transition-all">
-          <summary className="cursor-pointer flex items-center justify-between text-xs font-bold text-foreground-subtle dark:text-stone-300 select-none">
+          <summary className="cursor-pointer flex items-center justify-between text-xs font-bold text-foreground-subtle select-none">
             <div className="flex items-center gap-2">
               <span className="p-1 bg-amber-50 dark:bg-amber-950/40 rounded-lg text-amber-600 border border-amber-200/60">📊</span>
               <span className="font-black text-foreground dark:text-stone-100">ライブラリ統計 ＆ トレンドタグ</span>
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-surface-subtle dark:bg-stone-800 text-stone-600 dark:text-stone-400 font-extrabold">
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-surface-subtle dark:bg-stone-800 text-muted font-extrabold">
                 {statsSummary.total}件
               </span>
             </div>
-            <span className="text-[11px] text-stone-400 group-open:rotate-180 transition-transform">▼</span>
+            <span className="text-[11px] text-faint group-open:rotate-180 transition-transform">▼</span>
           </summary>
 
           <div className="mt-3 pt-3 border-t border-stone-100 dark:border-stone-800 grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* 主要チャンピオン */}
             <div>
-              <span className="text-[10px] text-stone-500 font-bold uppercase tracking-wider block mb-2">主要チャンピオン</span>
+              <span className="text-[10px] text-muted-strong font-bold uppercase tracking-wider block mb-2">主要チャンピオン</span>
               <div className="flex flex-wrap gap-1.5">
                 {statsSummary.champs.map(([champ, count]) => (
                   <button
@@ -1343,7 +1343,7 @@ export function LibraryTabContentInner() {
 
             {/* よく使われるキーワード (タグクラウド) */}
             <div className="md:col-span-2">
-              <span className="text-[10px] text-stone-500 font-bold uppercase tracking-wider block mb-2">トレンドキーワード</span>
+              <span className="text-[10px] text-muted-strong font-bold uppercase tracking-wider block mb-2">トレンドキーワード</span>
               <div className="flex flex-wrap gap-1.5">
                 {statsSummary.keywords.length > 0 ? statsSummary.keywords.map(([kw, count]) => (
                   <button
@@ -1353,10 +1353,10 @@ export function LibraryTabContentInner() {
                     className="text-xs bg-surface-subtle hover:bg-teal-50 border border-border hover:border-teal-300 text-foreground-subtle hover:text-teal-700 px-2.5 py-1 rounded-xl font-bold transition-all flex items-center gap-1 cursor-pointer"
                   >
                     <span>#{kw}</span>
-                    <span className="text-[10px] text-stone-400 font-mono bg-surface dark:bg-stone-800 px-1 py-0.2 rounded">{count}</span>
+                    <span className="text-[10px] text-faint font-mono bg-surface dark:bg-stone-800 px-1 py-0.2 rounded">{count}</span>
                   </button>
                 )) : (
-                  <span className="text-xs text-stone-400 italic">タグデータがありません</span>
+                  <span className="text-xs text-faint italic">タグデータがありません</span>
                 )}
               </div>
             </div>
@@ -1387,7 +1387,7 @@ export function LibraryTabContentInner() {
             className={`px-3 sm:px-4 py-2.5 rounded-2xl text-xs font-bold transition-all border flex-1 sm:flex-none text-center cursor-pointer ${
               showMoved
                 ? 'bg-amber-500 text-black border-amber-400 font-black shadow-xs'
-                : 'glass-panel glass-panel-hover text-stone-600 hover:text-foreground border-border'
+                : 'glass-panel glass-panel-hover text-muted hover:text-foreground border-border'
             }`}
           >
             🗄️ {showMoved ? 'ライブラリに戻る' : `移動済みアーカイブ${movedCount > 0 ? ` (${movedCount})` : ''}`}
@@ -1475,7 +1475,7 @@ export function LibraryTabContentInner() {
                               <div className="flex items-start gap-3 min-w-0 flex-1">
                                 <div className="flex flex-col gap-2 min-w-0 flex-1">
                                   <div className="flex items-start sm:items-center gap-2 flex-wrap">
-                                    <span className={`text-stone-500 transition-transform duration-300 shrink-0 mt-0.5 sm:mt-0 ${isExpanded ? 'rotate-90 text-amber-600' : 'rotate-0'}`}>
+                                    <span className={`text-muted-strong transition-transform duration-300 shrink-0 mt-0.5 sm:mt-0 ${isExpanded ? 'rotate-90 text-amber-600' : 'rotate-0'}`}>
                                       <ChevronDown size={16} />
                                     </span>
                                     {article.review_status === 'pending' ? (
@@ -1494,14 +1494,14 @@ export function LibraryTabContentInner() {
                                   </div>
                                   <div className="flex gap-1.5 flex-wrap pl-6">
                                     {article.tags && Array.isArray(article.tags) && article.tags.map((kw: string, kidx: number) => (
-                                      <span key={kidx} className="text-[10px] text-stone-500 bg-black/5 border border-black/10 px-2 py-0.5 rounded-md break-all">{kw}</span>
+                                      <span key={kidx} className="text-[10px] text-muted-strong bg-black/5 border border-black/10 px-2 py-0.5 rounded-md break-all">{kw}</span>
                                     ))}
                                   </div>
                                 </div>
                               </div>
                               <div className="flex items-center justify-between sm:justify-end gap-4 pl-6 sm:pl-0 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-black/10">
                                 <div className="text-xs text-gray-500 font-mono flex items-center gap-2"><Clock size={14} className="text-amber-700/50" /> {isMounted && article.created_at ? new Date(article.created_at).toLocaleDateString('ja-JP') : '日付不明'}</div>
-                                <button onClick={(e) => deleteArticle(article.id, e)} className="text-stone-500 hover:text-red-600 hover:bg-red-100 transition-all p-2 rounded-lg" title="削除"><Trash2 size={16} /></button>
+                                <button onClick={(e) => deleteArticle(article.id, e)} className="text-muted-strong hover:text-red-600 hover:bg-red-100 transition-all p-2 rounded-lg" title="削除"><Trash2 size={16} /></button>
                               </div>
                             </div>
                             {/* アコーディオン展開エリア（プレビュー + 操作ボタン） */}
@@ -1572,7 +1572,7 @@ export function LibraryTabContentInner() {
                                     className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all border ${
                                       favoriteArticles.includes(article.id)
                                         ? 'bg-amber-100 border-amber-300 text-amber-700'
-                                        : 'glass-panel text-stone-500 hover:text-foreground border-transparent'
+                                        : 'glass-panel text-muted-strong hover:text-foreground border-transparent'
                                     }`}
                                   >
                                     <StarIcon size={14} fill={favoriteArticles.includes(article.id) ? "currentColor" : "none"} />

@@ -109,7 +109,7 @@ export default function RevisionsPanel() {
         </div>
       </div>
 
-      <p className="text-[11px] text-stone-500">
+      <p className="text-[11px] text-muted-strong">
         AIが記事を統合したときの<strong className="text-amber-700">増えた行（緑）・減った行（赤）</strong>を確認できます。
         意図しない書き換えがあれば、その場で元に戻せます。
       </p>
@@ -117,9 +117,9 @@ export default function RevisionsPanel() {
       {error && <p className="text-xs text-rose-700 font-bold">❌ {error}</p>}
 
       {loading ? (
-        <p className="text-xs text-stone-500 py-6 text-center">読み込み中...</p>
+        <p className="text-xs text-muted-strong py-6 text-center">読み込み中...</p>
       ) : revisions.length === 0 ? (
-        <p className="text-xs text-stone-500 py-6 text-center">
+        <p className="text-xs text-muted-strong py-6 text-center">
           まだ履歴がありません。次に統合を実行したときから記録されます。
         </p>
       ) : (
@@ -133,7 +133,7 @@ export default function RevisionsPanel() {
                 </span>
                 <span className="text-sm font-bold text-foreground">{r.target_key}</span>
                 {r.field !== 'body' && (
-                  <span className="text-[10px] text-stone-600 bg-surface-subtle px-1.5 py-0.5 rounded">
+                  <span className="text-[10px] text-muted bg-surface-subtle px-1.5 py-0.5 rounded">
                     {FIELD_LABELS[r.field] || r.field}
                   </span>
                 )}
@@ -145,13 +145,13 @@ export default function RevisionsPanel() {
                     <span className="text-rose-700">-{r.removed}</span>
                   </span>
                 )}
-                <span className="text-[10px] text-stone-500 ml-auto shrink-0">
+                <span className="text-[10px] text-muted-strong ml-auto shrink-0">
                   {new Date(r.created_at).toLocaleString('ja-JP')}
                 </span>
               </button>
 
               {r.source_title && (
-                <p className="px-3 pb-2 text-[10px] text-stone-500 truncate" title={r.source_title}>
+                <p className="px-3 pb-2 text-[10px] text-muted-strong truncate" title={r.source_title}>
                   出典: {r.source_title}
                 </p>
               )}
@@ -159,7 +159,7 @@ export default function RevisionsPanel() {
               {openId === r.id && (
                 <div className="border-t border-border bg-background p-3">
                   {detailLoading ? (
-                    <p className="text-xs text-stone-500">差分を読み込み中...</p>
+                    <p className="text-xs text-muted-strong">差分を読み込み中...</p>
                   ) : detail ? (
                     <>
                       <div className="max-h-80 overflow-auto font-mono text-[11px] leading-relaxed rounded-lg border border-border">
@@ -167,7 +167,7 @@ export default function RevisionsPanel() {
                           <div key={i} className={
                             line.op === 'added' ? 'bg-emerald-100 text-emerald-700 px-2'
                             : line.op === 'removed' ? 'bg-rose-100 text-rose-700/80 px-2 line-through decoration-rose-400'
-                            : 'text-stone-500 px-2'
+                            : 'text-muted-strong px-2'
                           }>
                             <span className="select-none opacity-40 mr-2">
                               {line.op === 'added' ? '+' : line.op === 'removed' ? '-' : ' '}

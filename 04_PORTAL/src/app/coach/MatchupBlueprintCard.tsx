@@ -264,7 +264,7 @@ export default function MatchupBlueprintCard({
                 <span>🎯</span>
                 <span>{visionRule.title}</span>
               </p>
-              <p className="text-[11px] text-stone-600 leading-relaxed">
+              <p className="text-[11px] text-muted leading-relaxed">
                 {visionRule.reason}
               </p>
               <div className="pt-1 border-t border-stone-100 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
@@ -304,7 +304,7 @@ export default function MatchupBlueprintCard({
                 />
                 <span className="font-black text-xs text-foreground">{myChamp}</span>
               </div>
-              <span className="text-[10px] font-black text-stone-400">VS</span>
+              <span className="text-[10px] font-black text-faint">VS</span>
               <div className="flex items-center gap-1.5">
                 <Image
                   src={getChampIcon(enemyChamp)}
@@ -343,13 +343,13 @@ export default function MatchupBlueprintCard({
                       {data.kill_line.danger_badge}
                     </span>
                   </div>
-                  <p className="text-[10px] text-stone-400 font-medium">
+                  <p className="text-[10px] text-faint font-medium">
                     対面Lv6フルコンボ{data.kill_line.has_ignite ? ' ＋ イグナイト' : ''} 確定ダメージ（自防御力軽減済み）
                   </p>
                 </div>
               </div>
               <div className="text-right font-mono">
-                <span className="text-[10px] text-stone-400">確定最大火力: </span>
+                <span className="text-[10px] text-faint">確定最大火力: </span>
                 <span className="text-sm font-black text-rose-400">{data.kill_line.total_lethal_damage} DMG</span>
               </div>
             </div>
@@ -371,7 +371,7 @@ export default function MatchupBlueprintCard({
                   {data.kill_line.kill_hp_percent < 80 && `安全域: > ${data.kill_line.safe_hp_threshold} HP`}
                 </div>
               </div>
-              <div className="flex justify-between text-[10px] text-stone-400 font-mono px-0.5">
+              <div className="flex justify-between text-[10px] text-faint font-mono px-0.5">
                 <span>0 HP</span>
                 <span className="text-rose-400 font-bold">即死境界: {data.kill_line.total_lethal_damage} HP ({data.kill_line.kill_hp_percent}%)</span>
                 <span>最大 {data.kill_line.my_max_hp} HP</span>
@@ -443,14 +443,14 @@ export default function MatchupBlueprintCard({
                     <span className="font-extrabold text-amber-900 bg-amber-100/90 px-2 py-0.5 rounded border border-amber-200">
                       {p.phase}
                     </span>
-                    <span className="font-bold text-stone-600 text-[10px]">
+                    <span className="font-bold text-muted text-[10px]">
                       {p.badge}
                     </span>
                   </div>
                   <h4 className="text-xs font-black text-foreground leading-snug">
                     {p.title}
                   </h4>
-                  <p className="text-[11px] text-stone-600 leading-relaxed font-medium">
+                  <p className="text-[11px] text-muted leading-relaxed font-medium">
                     {p.action}
                   </p>
                 </div>
@@ -486,7 +486,7 @@ export default function MatchupBlueprintCard({
             <span>{myChamp} vs {enemyChamp} 推奨ルーン ＆ 初期ビルド</span>
           </div>
           {counterLoading ? (
-            <div className="p-8 text-center text-xs text-stone-500 font-bold animate-pulse">
+            <div className="p-8 text-center text-xs text-muted-strong font-bold animate-pulse">
               {myChamp} vs {enemyChamp} のビルド＆ルーン最適解を計算中...
             </div>
           ) : counterData ? (
@@ -501,7 +501,7 @@ export default function MatchupBlueprintCard({
                   <div className="text-xs font-black text-amber-950 bg-amber-100/70 p-2.5 rounded-lg border border-amber-300">
                     {counterData.recommendedRunes || '推奨ルーンデータ未取得（再読み込みしてください）'}
                   </div>
-                  <p className="text-[11px] text-stone-600 leading-relaxed font-medium">
+                  <p className="text-[11px] text-muted leading-relaxed font-medium">
                     {counterData.runeReason || '対面マッチアップに応じたルーンの選定理由が未取得です。'}
                   </p>
                 </div>
@@ -515,7 +515,7 @@ export default function MatchupBlueprintCard({
                   <div className="text-xs font-black text-emerald-950 bg-emerald-100/70 p-2.5 rounded-lg border border-emerald-300">
                     {counterData.recommendedItems || '推奨ビルドデータ未取得（再読み込みしてください）'}
                   </div>
-                  <p className="text-[11px] text-stone-600 leading-relaxed font-medium">
+                  <p className="text-[11px] text-muted leading-relaxed font-medium">
                     {counterData.itemReason || `${enemyChamp} に対するアイテム選定理由が未取得です。`}
                   </p>
                 </div>
@@ -530,7 +530,7 @@ export default function MatchupBlueprintCard({
               )}
             </div>
           ) : (
-            <div className="p-6 text-center text-xs text-stone-500">
+            <div className="p-6 text-center text-xs text-muted-strong">
               ビルドデータが取得できませんでした
             </div>
           )}
@@ -543,7 +543,7 @@ export default function MatchupBlueprintCard({
               <Compass className="w-4 h-4 text-teal-600" />
               <span>🌲 vs {enemyChamp} 敵JG初動3分ルート ＆ カニ争奪テンポ</span>
             </h4>
-            <span className="text-[10px] font-bold text-stone-500 font-mono">
+            <span className="text-[10px] font-bold text-muted-strong font-mono">
               2:55 カニ湧き / 5:00 ヴォイドグラブ基準
             </span>
           </div>
@@ -587,7 +587,7 @@ export default function MatchupBlueprintCard({
           {/* フルクリア時間比較カード */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-center text-xs">
             <div className="bg-background p-2.5 rounded-xl border border-border">
-              <div className="text-[10px] text-stone-500 font-bold">敵({enemyChamp})の最速フルクリア</div>
+              <div className="text-[10px] text-muted-strong font-bold">敵({enemyChamp})の最速フルクリア</div>
               <div className="text-xs font-black text-amber-700 mt-0.5 font-mono">
                 {enemyJungleTiming?.externalFastestClearSec
                   ? `${Math.floor(enemyJungleTiming.externalFastestClearSec / 60)}分${String(enemyJungleTiming.externalFastestClearSec % 60).padStart(2, '0')}秒`
@@ -596,7 +596,7 @@ export default function MatchupBlueprintCard({
             </div>
 
             <div className="bg-background p-2.5 rounded-xl border border-border">
-              <div className="text-[10px] text-stone-500 font-bold">自陣({myChamp})の最速フルクリア</div>
+              <div className="text-[10px] text-muted-strong font-bold">自陣({myChamp})の最速フルクリア</div>
               <div className="text-xs font-black text-emerald-700 mt-0.5 font-mono">
                 {myJungleTiming?.externalFastestClearSec
                   ? `${Math.floor(myJungleTiming.externalFastestClearSec / 60)}分${String(myJungleTiming.externalFastestClearSec % 60).padStart(2, '0')}秒`
@@ -605,7 +605,7 @@ export default function MatchupBlueprintCard({
             </div>
 
             <div className="bg-background p-2.5 rounded-xl border border-border col-span-2 sm:col-span-1">
-              <div className="text-[10px] text-stone-500 font-bold">敵のカニ(2:55)先行差</div>
+              <div className="text-[10px] text-muted-strong font-bold">敵のカニ(2:55)先行差</div>
               <div className="text-xs font-black text-foreground-soft mt-0.5 font-mono">
                 {enemyJungleTiming?.externalFastestClearSec
                   ? `${175 - enemyJungleTiming.externalFastestClearSec >= 0 ? '+' : ''}${175 - enemyJungleTiming.externalFastestClearSec}秒`
@@ -650,10 +650,10 @@ export default function MatchupBlueprintCard({
                   {data?.rejected_intel.weaknesses}
                 </p>
               ) : (
-                <p className="text-[11px] text-stone-500 leading-relaxed font-medium">
+                <p className="text-[11px] text-muted-strong leading-relaxed font-medium">
                   {myChamp} の弱点はまだ辞典に登録されていません。
                   <br />
-                  <span className="text-stone-400">（チャンピオン辞典の「AI更新」から取得できます）</span>
+                  <span className="text-faint">（チャンピオン辞典の「AI更新」から取得できます）</span>
                 </p>
               )}
             </div>
@@ -684,7 +684,7 @@ export default function MatchupBlueprintCard({
                   </p>
                 </>
               ) : (
-                <p className="text-[11px] text-stone-500 leading-relaxed font-medium">
+                <p className="text-[11px] text-muted-strong leading-relaxed font-medium">
                   {myChamp} の苦手な相手はまだ辞典に登録されていません。
                 </p>
               )}
@@ -706,7 +706,7 @@ export default function MatchupBlueprintCard({
 
           {/* 出典の明示（どのパッチ時点の、どの確度のデータか） */}
           {data?.rejected_intel?.source_patch && (
-            <p className="text-[10px] text-stone-400 font-medium">
+            <p className="text-[10px] text-faint font-medium">
               出典: チャンピオン辞典（パッチ {data?.rejected_intel.source_patch} 時点
               {data?.rejected_intel.confidence ? ` / 確度: ${data?.rejected_intel.confidence}` : ''}）
             </p>
@@ -721,9 +721,9 @@ export default function MatchupBlueprintCard({
                 <span>📜</span>
                 <span>対面共通の基本原則（一般論）</span>
               </span>
-              <span className="text-[10px] text-stone-400 font-mono">対面別データではありません</span>
+              <span className="text-[10px] text-faint font-mono">対面別データではありません</span>
             </div>
-            <p className="text-xs text-stone-300 leading-relaxed font-medium">
+            <p className="text-xs text-faint leading-relaxed font-medium">
               💡 <strong>序盤テンポ維持の鉄則:</strong> Lv1~2で無理なロングトレードを仕掛けず、自軍ミニオン有利を活かしたショートトレードを徹底すること。敵JGの位置がマップに見えるまでフラッシュを使ったオールインは禁止です。
             </p>
           </div>

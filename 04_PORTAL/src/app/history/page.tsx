@@ -13,7 +13,7 @@ export default function HistoryPage() {
         <div className="flex items-center justify-between gap-4">
           <Link
             href="/balancer"
-            className="inline-flex items-center gap-2 text-xs font-bold text-stone-600 hover:text-amber-700 transition cursor-pointer"
+            className="inline-flex items-center gap-2 text-xs font-bold text-muted hover:text-amber-700 transition cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>バランサーへ戻る</span>

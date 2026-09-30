@@ -60,7 +60,7 @@ function getColorFromRole(role: string): string {
   if (r.includes("ADC")) return "text-amber-700 font-bold";
   if (r.includes("SUPPORT") || r.includes("SUP")) return "text-teal-700 font-bold";
   if (r === "ALL") return "text-amber-700 font-bold";
-  return "text-stone-400 font-medium";
+  return "text-faint font-medium";
 }
 
 // 参加者の経験度（新規・ライト・常連・復帰勢）判定
@@ -876,7 +876,7 @@ export default function KtmAdminPage() {
         {sortConfig.key === sortKey && (
           <span className="text-amber-700 text-xs">{sortConfig.direction === "desc" ? "↓" : "↑"}</span>
         )}
-        {sortConfig.key !== sortKey && <span className="text-stone-500 opacity-30 text-xs">↕</span>}
+        {sortConfig.key !== sortKey && <span className="text-muted-strong opacity-30 text-xs">↕</span>}
       </div>
     </th>
   );
@@ -895,7 +895,7 @@ export default function KtmAdminPage() {
       <div className="min-h-screen bg-background text-foreground-soft flex items-center justify-center">
         <div className="text-center space-y-4">
           <RefreshCw className="h-8 w-8 text-amber-500 animate-spin mx-auto" />
-          <p className="text-sm text-stone-400 font-bold">認証情報を読み込み中...</p>
+          <p className="text-sm text-faint font-bold">認証情報を読み込み中...</p>
         </div>
       </div>
     );
@@ -908,7 +908,7 @@ export default function KtmAdminPage() {
           <Shield className="h-16 w-16 text-amber-500 mx-auto" />
           <div className="space-y-2">
             <h1 className="text-2xl font-bold text-foreground">KTM 管理ダッシュボード</h1>
-            <p className="text-sm text-stone-400 font-medium">この画面にアクセスするには、管理者パスコードでのログインが必要です。</p>
+            <p className="text-sm text-faint font-medium">この画面にアクセスするには、管理者パスコードでのログインが必要です。</p>
           </div>
           <button
             onClick={handleLogin}
@@ -931,7 +931,7 @@ export default function KtmAdminPage() {
             <span className="text-xs font-bold text-foreground">KTM 管理モード</span>
           </div>
           <div className="flex items-center gap-4 text-xs">
-            <span className="text-stone-400">
+            <span className="text-faint">
               ログイン中: <strong className="text-foreground font-bold">管理者</strong>
             </span>
             <button
@@ -950,7 +950,7 @@ export default function KtmAdminPage() {
             className={`px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 cursor-pointer ${
               activeTab === 'players' 
                 ? 'border-amber-500 text-amber-700 bg-amber-500/5' 
-                : 'border-transparent text-stone-500 hover:text-foreground-subtle hover:bg-black/5'
+                : 'border-transparent text-muted-strong hover:text-foreground-subtle hover:bg-black/5'
             }`}
           >
             <Users className="h-4 w-4" /> 👥 プレイヤー名簿・MMR編集 ({players.length}名)
@@ -960,7 +960,7 @@ export default function KtmAdminPage() {
             className={`px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 cursor-pointer ${
               activeTab === 'history' 
                 ? 'border-emerald-500 text-emerald-700 bg-emerald-500/5' 
-                : 'border-transparent text-stone-500 hover:text-foreground-subtle hover:bg-black/5'
+                : 'border-transparent text-muted-strong hover:text-foreground-subtle hover:bg-black/5'
             }`}
           >
             <History className="h-4 w-4" /> ⚔️ 戦績履歴・勝敗登録
@@ -980,7 +980,7 @@ export default function KtmAdminPage() {
                   <Users className="h-8 w-8 text-amber-500" />
                   KTM 管理ダッシュボード
                 </h1>
-                <p className="text-stone-400 mt-2 text-sm">
+                <p className="text-faint mt-2 text-sm">
                   管理者用: プレイヤー名簿の管理とMMRの手動調整
                 </p>
               </div>
@@ -995,11 +995,11 @@ export default function KtmAdminPage() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full bg-surface border border-border rounded-lg px-4 py-2 pl-9 text-xs text-foreground focus:outline-none focus:border-amber-500 transition"
                   />
-                  <Filter className="absolute left-3 top-2.5 h-3.5 w-3.5 text-stone-500" />
+                  <Filter className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-strong" />
                 </div>
 
                 {/* 自動保存ステータス */}
-                <div className="flex items-center gap-2 text-xs text-stone-500 font-medium">
+                <div className="flex items-center gap-2 text-xs text-muted-strong font-medium">
                   {saving ? (
                     <span className="flex items-center gap-1.5 text-amber-700">
                       <RefreshCw className="h-3.5 w-3.5 animate-spin" />
@@ -1048,7 +1048,7 @@ export default function KtmAdminPage() {
                   onClick={handleSyncCheck}
                   disabled={syncingDiscord || syncingAutoAll}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition border text-xs ${
-                    syncingDiscord ? 'bg-[#404eed]/50 border-[#404eed]/50 text-stone-400 cursor-not-allowed' : 'bg-[#5865F2]/20 border-[#5865F2] text-[#5865F2] hover:bg-[#5865F2] hover:text-white'
+                    syncingDiscord ? 'bg-[#404eed]/50 border-[#404eed]/50 text-faint cursor-not-allowed' : 'bg-[#5865F2]/20 border-[#5865F2] text-[#5865F2] hover:bg-[#5865F2] hover:text-white'
                   }`}
                 >
                   <Users className={`h-4 w-4 ${syncingDiscord && !syncData ? 'animate-spin' : ''}`} /> 
@@ -1066,7 +1066,7 @@ export default function KtmAdminPage() {
 
                 <button
                   onClick={() => setShowMmrInfo(!showMmrInfo)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition border text-xs ${showMmrInfo ? 'bg-amber-100 border-amber-500 text-amber-700' : 'bg-black/5 border-border text-stone-400 hover:text-foreground'}`}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition border text-xs ${showMmrInfo ? 'bg-amber-100 border-amber-500 text-amber-700' : 'bg-black/5 border-border text-faint hover:text-foreground'}`}
                   title="MMR計算ロジックを見る"
                 >
                   <Info className="h-5 w-5" />
@@ -1086,7 +1086,7 @@ export default function KtmAdminPage() {
                     <button 
                       onClick={() => { setSyncData(null); setSyncingDiscord(false); }} 
                       disabled={syncingDiscord}
-                      className="text-stone-500 hover:text-foreground disabled:opacity-20 disabled:cursor-not-allowed"
+                      className="text-muted-strong hover:text-foreground disabled:opacity-20 disabled:cursor-not-allowed"
                     >
                       <X className="h-6 w-6" />
                     </button>
@@ -1103,7 +1103,7 @@ export default function KtmAdminPage() {
                         <h3 className="text-green-700 font-bold mb-1 flex items-center gap-2">
                           <Plus className="h-4 w-4" /> 新規追加されるメンバー ({syncData.toAdd.length}人)
                         </h3>
-                        <p className="text-stone-400 text-xs mb-3">
+                        <p className="text-faint text-xs mb-3">
                           新メンバーの最高Rankおよび希望レーンを選択してください。同期時に初期MMRが自動計算されて登録されます。
                         </p>
                         <div className="space-y-3">
@@ -1115,7 +1115,7 @@ export default function KtmAdminPage() {
                               <div className="flex flex-wrap items-center gap-4">
                                 {/* 最高Rank選択 */}
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-stone-400">最高Rank:</span>
+                                  <span className="text-faint">最高Rank:</span>
                                   <select
                                     value={p.highest_rank || "UNRANKED"}
                                     onChange={(e) => {
@@ -1133,7 +1133,7 @@ export default function KtmAdminPage() {
 
                                 {/* メインロール選択 */}
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-stone-400">メイン:</span>
+                                  <span className="text-faint">メイン:</span>
                                   <select
                                     value={p.role_preferences?.primary || "ALL"}
                                     onChange={(e) => {
@@ -1156,7 +1156,7 @@ export default function KtmAdminPage() {
 
                                 {/* サブロール選択 */}
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-stone-400">サブ:</span>
+                                  <span className="text-faint">サブ:</span>
                                   <select
                                     value={p.role_preferences?.secondary || "-"}
                                     disabled={p.role_preferences?.primary === "ALL"}
@@ -1196,7 +1196,7 @@ export default function KtmAdminPage() {
                                 {/* Riot ID (ign) 入力 */}
                                 <div className="flex flex-col gap-1">
                                   <div className="flex items-center gap-1.5">
-                                    <span className="text-stone-400">Riot ID:</span>
+                                    <span className="text-faint">Riot ID:</span>
                                     <input
                                       type="text"
                                       placeholder="Name#TAG"
@@ -1247,8 +1247,8 @@ export default function KtmAdminPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {syncData.toUpdateName.map((p: any) => (
                             <div key={p.id} className="bg-amber-100 text-amber-700 px-3 py-1.5 rounded text-xs border border-amber-200 flex items-center justify-between">
-                              <span className="text-stone-400 truncate max-w-[45%]">{p.oldName}</span>
-                              <span className="text-stone-500 font-bold">→</span>
+                              <span className="text-faint truncate max-w-[45%]">{p.oldName}</span>
+                              <span className="text-muted-strong font-bold">→</span>
                               <span className="font-semibold text-amber-700 truncate max-w-[45%]">{p.newName}</span>
                             </div>
                           ))}
@@ -1275,7 +1275,7 @@ export default function KtmAdminPage() {
                     <button 
                       onClick={() => { setSyncData(null); setSyncingDiscord(false); }}
                       disabled={syncingDiscord}
-                      className="px-4 py-2 rounded-lg font-bold text-stone-400 hover:bg-black/5 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                      className="px-4 py-2 rounded-lg font-bold text-faint hover:bg-black/5 transition disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       キャンセル
                     </button>
@@ -1309,7 +1309,7 @@ export default function KtmAdminPage() {
                   <h2 className="text-xl font-bold text-amber-700 flex items-center gap-2">
                     <Info className="h-6 w-6" /> MMR計算ロジック
                   </h2>
-                  <button onClick={() => setShowMmrInfo(false)} className="text-stone-500 hover:text-foreground">
+                  <button onClick={() => setShowMmrInfo(false)} className="text-muted-strong hover:text-foreground">
                     <X className="h-5 w-5" />
                   </button>
                 </div>
@@ -1341,7 +1341,7 @@ export default function KtmAdminPage() {
                   </div>
                 </div>
                 
-                <div className="mt-4 pt-4 border-t border-border text-xs text-stone-500">
+                <div className="mt-4 pt-4 border-t border-border text-xs text-muted-strong">
                   ※ MMRは、手動またはDiscordからの戦績記録時、および管理ダッシュボードからの「🔄 Rebuild」実行時に過去の全試合から最新仕様で一括再計算されます。
                 </div>
               </div>
@@ -1366,12 +1366,12 @@ export default function KtmAdminPage() {
                   </h2>
                   <button 
                     onClick={() => setRiotSyncErrors([])} 
-                    className="text-stone-500 hover:text-foreground text-xs bg-surface border border-border rounded px-2 py-1 transition"
+                    className="text-muted-strong hover:text-foreground text-xs bg-surface border border-border rounded px-2 py-1 transition"
                   >
                     パネルを閉じる
                   </button>
                 </div>
-                <p className="text-stone-400 text-xs mb-4">
+                <p className="text-faint text-xs mb-4">
                   Riot APIとの同期中に「Riot IDが存在しない」「PUUIDが見つからない」等のエラーが発生しました。<br />
                   正しい Riot ID (Name#TAG 形式) に修正して「保存して再同期」を押してください。
                 </p>
@@ -1436,7 +1436,7 @@ export default function KtmAdminPage() {
                     </div>
                     <div>
                       <h4 className="font-bold text-sm">MMR整合性ステータス</h4>
-                      <p className="text-xs text-stone-400 mt-0.5">
+                      <p className="text-xs text-faint mt-0.5">
                         {integrityData.hasDiscrepancy 
                           ? `⚠️ ${integrityData.discrepancyCount}名のプレイヤーのMMRに過去の対戦履歴（累積値）とのズレが発生しています。Rebuildを実行して再計算してください。` 
                           : '✅ すべてのプレイヤーのMMRは過去の対戦履歴と完全に一致しています。'
@@ -1482,7 +1482,7 @@ export default function KtmAdminPage() {
                       <span className="text-base">🔰</span>
                       <div>
                         <h4 className="text-xs font-black text-emerald-950">参加メンバーの経験層分析</h4>
-                        <p className="text-[10px] text-stone-600">初心者・初参加の方も安心して参加できる環境です</p>
+                        <p className="text-[10px] text-muted">初心者・初参加の方も安心して参加できる環境です</p>
                       </div>
                     </div>
                     <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-500 text-stone-950">
@@ -1515,7 +1515,7 @@ export default function KtmAdminPage() {
               <div className="flex flex-col md:flex-row gap-3 items-start md:items-center justify-between">
                 {/* 左：ステータス絞り込み */}
                 <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto">
-                  <span className="text-xs text-stone-500 font-bold mr-1">絞り込み:</span>
+                  <span className="text-xs text-muted-strong font-bold mr-1">絞り込み:</span>
                   {[
                     { key: null, label: `全員 (${players.length})` },
                     { key: 'active', label: '参加予定' },
@@ -1528,7 +1528,7 @@ export default function KtmAdminPage() {
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                         statusFilter === tab.key
                           ? 'bg-amber-600 text-white shadow-md'
-                          : 'bg-black/5 text-stone-600 hover:text-foreground hover:bg-black/8'
+                          : 'bg-black/5 text-muted hover:text-foreground hover:bg-black/8'
                       }`}
                     >
                       {tab.label}
@@ -1550,13 +1550,13 @@ export default function KtmAdminPage() {
 
               {/* 希望ロール絞り込み */}
               <div className="pt-2 border-t border-border flex flex-wrap items-center gap-1.5">
-                <span className="text-xs text-stone-500 font-bold mr-1">希望ロール:</span>
+                <span className="text-xs text-muted-strong font-bold mr-1">希望ロール:</span>
                 <button
                   onClick={() => setRoleFilter(null)}
                   className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all cursor-pointer ${
                     roleFilter === null
                       ? 'bg-amber-500 text-black shadow-xs'
-                      : 'bg-black/5 text-stone-500 hover:text-foreground hover:bg-black/8'
+                      : 'bg-black/5 text-muted-strong hover:text-foreground hover:bg-black/8'
                   }`}
                 >
                   ALL
@@ -1568,7 +1568,7 @@ export default function KtmAdminPage() {
                     className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
                       roleFilter === role
                         ? 'bg-surface border-amber-500 text-amber-700 font-black shadow-xs'
-                        : 'bg-black/5 border-transparent text-stone-500 hover:text-foreground hover:bg-black/8'
+                        : 'bg-black/5 border-transparent text-muted-strong hover:text-foreground hover:bg-black/8'
                     }`}
                   >
                     <RoleIcon role={role} className="w-3 h-3" />
@@ -1615,7 +1615,7 @@ export default function KtmAdminPage() {
 
                     <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-border/60">
                       <label className="flex flex-col gap-0.5">
-                        <span className="text-[10px] text-stone-400 font-bold">最高Rank</span>
+                        <span className="text-[10px] text-faint font-bold">最高Rank</span>
                         <select
                           value={p.highest_rank || "UNRANKED"}
                           onChange={(e) => handleInputSave(uid, "highest_rank", e.target.value)}
@@ -1626,7 +1626,7 @@ export default function KtmAdminPage() {
                       </label>
 
                       <label className="flex flex-col gap-0.5">
-                        <span className="text-[10px] text-stone-400 font-bold">希望ロール (主/副)</span>
+                        <span className="text-[10px] text-faint font-bold">希望ロール (主/副)</span>
                         <div className="flex items-center gap-1">
                           <select
                             value={p.role_preferences?.primary || "ALL"}
@@ -1635,7 +1635,7 @@ export default function KtmAdminPage() {
                           >
                             {["ALL","TOP","JG","MID","ADC","SUP"].map(role => <option key={role} value={role}>{role}</option>)}
                           </select>
-                          <span className="text-stone-400">/</span>
+                          <span className="text-faint">/</span>
                           <select
                             value={p.role_preferences?.secondary || "-"}
                             disabled={p.role_preferences?.primary === "ALL"}
@@ -1650,22 +1650,22 @@ export default function KtmAdminPage() {
                   </div>
                 );
               })}
-              {sortedPlayers.length === 0 && <p className="text-center text-stone-500 text-sm py-8 bg-surface rounded-2xl border border-border">該当プレイヤーなし</p>}
+              {sortedPlayers.length === 0 && <p className="text-center text-muted-strong text-sm py-8 bg-surface rounded-2xl border border-border">該当プレイヤーなし</p>}
             </div>
 
             {/* Player Table (デスクトップ専用) */}
             <div className="hidden md:block bg-surface border border-border rounded-2xl overflow-hidden shadow-2xl">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm whitespace-nowrap">
-                  <thead className="bg-black/5 text-stone-400 uppercase text-xs tracking-wider sticky top-0 z-30 shadow-md backdrop-blur-sm">
+                  <thead className="bg-black/5 text-faint uppercase text-xs tracking-wider sticky top-0 z-30 shadow-md backdrop-blur-sm">
                     <tr>
                       <SortableHeader label="No." sortKey="no" />
                       <SortableHeader label="Active" sortKey="is_active" />
                       <SortableHeader label="名前" sortKey="name" sticky={true} />
                       <SortableHeader label="最高Rank" sortKey="highest_rank" />
-                      <th className="px-2 py-1.5 text-xs text-stone-400 font-semibold text-center">希望レーン</th>
-                      <th className="px-2 py-1.5 text-xs text-stone-400 font-semibold text-center">NG1</th>
-                      <th className="px-2 py-1.5 text-xs text-stone-400 font-semibold text-center">NG2</th>
+                      <th className="px-2 py-1.5 text-xs text-faint font-semibold text-center">希望レーン</th>
+                      <th className="px-2 py-1.5 text-xs text-faint font-semibold text-center">NG1</th>
+                      <th className="px-2 py-1.5 text-xs text-faint font-semibold text-center">NG2</th>
                       <SortableHeader label="平均MMR" sortKey="mmr" />
                       <SortableHeader label="Discord ID" sortKey="discord_id" />
                       <SortableHeader label="Riot IGN" sortKey="ign" />
@@ -1685,7 +1685,7 @@ export default function KtmAdminPage() {
                                 : ''
                             }`}
                           >
-                        <td className="px-2 py-1.5 text-center font-bold text-stone-500 text-xs">
+                        <td className="px-2 py-1.5 text-center font-bold text-muted-strong text-xs">
                           {p.no}
                         </td>
                         <td className="px-2 py-1.5 text-center">
@@ -1752,7 +1752,7 @@ export default function KtmAdminPage() {
                                 ))}
                               </select>
                             </div>
-                            <span className="text-stone-500">/</span>
+                            <span className="text-muted-strong">/</span>
                             {/* 第二希望 */}
                             <div className="flex items-center gap-1 bg-black/5 border border-border rounded px-1.5 py-0.5">
                               <RoleIcon role={p.role_preferences?.secondary || "-"} />
@@ -1803,7 +1803,7 @@ export default function KtmAdminPage() {
                             <button
                               type="button"
                               onClick={() => togglePlayerDetails(uid)}
-                              className={`p-0.5 rounded transition ${expandedPlayerIds.includes(uid) ? 'bg-amber-600 text-white' : 'text-stone-400 hover:text-foreground hover:bg-black/5'}`}
+                              className={`p-0.5 rounded transition ${expandedPlayerIds.includes(uid) ? 'bg-amber-600 text-white' : 'text-faint hover:text-foreground hover:bg-black/5'}`}
                               title="レーン別MMR詳細"
                             >
                               <ChevronDown className={`w-3.5 h-3.5 transform transition-transform duration-300 ${expandedPlayerIds.includes(uid) ? 'rotate-180' : ''}`} />
@@ -1846,7 +1846,7 @@ export default function KtmAdminPage() {
                         <tr key={`${uid}-mmr-details`} className="bg-black/3 border-b border-border">
                           <td colSpan={10} className="p-3">
                             <div className="flex flex-wrap items-center gap-6 pl-12">
-                              <div className="text-xs font-bold text-stone-400 flex items-center gap-1.5 border-r border-border pr-4">
+                              <div className="text-xs font-bold text-faint flex items-center gap-1.5 border-r border-border pr-4">
                                 <Settings className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
                                 レーン別 MMR 設定:
                               </div>
@@ -1885,7 +1885,7 @@ export default function KtmAdminPage() {
                     
                     {players.length === 0 && !loading && (
                       <tr>
-                        <td colSpan={13} className="px-6 py-12 text-center text-stone-500">
+                        <td colSpan={13} className="px-6 py-12 text-center text-muted-strong">
                           プレイヤーが登録されていません。Discord & Riot同期を実行して登録してください。
                         </td>
                       </tr>

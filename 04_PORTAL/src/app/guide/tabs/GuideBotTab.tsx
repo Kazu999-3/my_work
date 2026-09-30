@@ -103,14 +103,14 @@ export default function GuideBotTab() {
                   <span className="font-mono font-black text-sm text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-lg border border-amber-200">
                     {item.cmd}
                   </span>
-                  <span className="text-[10px] font-bold text-stone-500 bg-surface-hover/70 px-2 py-0.5 rounded-md">
+                  <span className="text-[10px] font-bold text-muted-strong bg-surface-hover/70 px-2 py-0.5 rounded-md">
                     {item.tag}
                   </span>
                 </div>
                 <p className="text-xs text-foreground-subtle font-medium">{item.desc}</p>
               </div>
               <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/60 text-[11px]">
-                <code className="font-mono text-stone-500 truncate">{item.example}</code>
+                <code className="font-mono text-muted-strong truncate">{item.example}</code>
                 <button
                   type="button"
                   onClick={() => copyCommand(item.cmd)}
@@ -150,10 +150,10 @@ export default function GuideBotTab() {
                 <h3 className="text-base font-black text-foreground">
                   1. メンバー募集コマンド <code className="font-mono text-amber-700">/recruit</code> とボタン操作
                 </h3>
-                <p className="text-xs text-stone-500">募集パネルの作り方と、表示される各種ボタンの役割</p>
+                <p className="text-xs text-muted-strong">募集パネルの作り方と、表示される各種ボタンの役割</p>
               </div>
             </div>
-            {openSection === 'recruit' ? <ChevronUp size={20} className="text-stone-400" /> : <ChevronDown size={20} className="text-stone-400" />}
+            {openSection === 'recruit' ? <ChevronUp size={20} className="text-faint" /> : <ChevronDown size={20} className="text-faint" />}
           </button>
 
           {openSection === 'recruit' && (
@@ -248,10 +248,10 @@ export default function GuideBotTab() {
                 <h3 className="text-base font-black text-foreground">
                   2. 週末定期カスタム募集（土曜本戦 ＆ 日曜お祭り）
                 </h3>
-                <p className="text-xs text-stone-500">毎週月曜12時に自動投稿される定期募集と参加ボタンの役割</p>
+                <p className="text-xs text-muted-strong">毎週月曜12時に自動投稿される定期募集と参加ボタンの役割</p>
               </div>
             </div>
-            {openSection === 'periodic' ? <ChevronUp size={20} className="text-stone-400" /> : <ChevronDown size={20} className="text-stone-400" />}
+            {openSection === 'periodic' ? <ChevronUp size={20} className="text-faint" /> : <ChevronDown size={20} className="text-faint" />}
           </button>
 
           {openSection === 'periodic' && (
@@ -261,7 +261,7 @@ export default function GuideBotTab() {
                   <Sparkles size={14} className="text-amber-600" />
                   定期カスタムの開催日程 ＆ 通知スケジュール
                 </div>
-                <ul className="space-y-1 text-stone-600">
+                <ul className="space-y-1 text-muted">
                   <li>・<strong className="text-foreground-soft">毎週月曜 12:00:</strong> 土日分の募集カードが自動投下されます。</li>
                   <li>・<strong className="text-foreground-soft">毎週水曜 12:00:</strong> 中間人数アナウンス（あと◯名で確定）。</li>
                   <li>・<strong className="text-foreground-soft">毎週金曜 19:00:</strong> 前日最終アナウンス（土曜開催の直前確認）。</li>
@@ -319,22 +319,22 @@ export default function GuideBotTab() {
                 <h3 className="text-base font-black text-foreground">
                   2. レーン設定コマンド <code className="font-mono text-amber-700">/lane</code> とこだわり度
                 </h3>
-                <p className="text-xs text-stone-500">希望ロール・NGロール・対面格上許可の設定方法</p>
+                <p className="text-xs text-muted-strong">希望ロール・NGロール・対面格上許可の設定方法</p>
               </div>
             </div>
-            {openSection === 'lane' ? <ChevronUp size={20} className="text-stone-400" /> : <ChevronDown size={20} className="text-stone-400" />}
+            {openSection === 'lane' ? <ChevronUp size={20} className="text-faint" /> : <ChevronDown size={20} className="text-faint" />}
           </button>
 
           {openSection === 'lane' && (
             <div className="p-6 pt-0 border-t border-stone-100 space-y-5">
-              <p className="text-xs text-stone-600 leading-relaxed">
+              <p className="text-xs text-muted leading-relaxed">
                 チーム分けAIはあなたの設定した希望レーンとNGレーンを参照し、全員が納得できる配置を自動計算します。ポータルの <strong className="text-foreground font-bold">マイページ</strong> からも同一設定が可能です。
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 rounded-2xl bg-background border border-border/80 space-y-2">
                   <h4 className="text-xs font-black text-foreground">設定パラメータ</h4>
-                  <ul className="text-xs text-stone-600 space-y-1.5">
+                  <ul className="text-xs text-muted space-y-1.5">
                     <li>・<strong className="text-foreground-soft">main:</strong> メインレーン（TOP / JG / MID / ADC / SUP / ALL）</li>
                     <li>・<strong className="text-foreground-soft">sub:</strong> サブレーン（2番目に得意な位置）</li>
                     <li>・<strong className="text-foreground-soft">ng1 / ng2:</strong> NGレーン（絶対に行きたくない位置）</li>
@@ -345,7 +345,7 @@ export default function GuideBotTab() {
 
                 <div className="p-4 rounded-2xl bg-background border border-border/80 space-y-2">
                   <h4 className="text-xs font-black text-foreground">こだわり度（weight）の目安</h4>
-                  <ul className="text-xs text-stone-600 space-y-1.5">
+                  <ul className="text-xs text-muted space-y-1.5">
                     <li>・<strong className="text-foreground-soft">1 (柔軟):</strong> チームバランス優先。他レーンでもOK</li>
                     <li>・<strong className="text-foreground-soft">2 (普通):</strong> なるべく希望レーンに行きたい（標準）</li>
                     <li>・<strong className="text-foreground-soft">3 (絶対):</strong> 何が何でも希望レーンでプレイしたい</li>
@@ -371,15 +371,15 @@ export default function GuideBotTab() {
                 <h3 className="text-base font-black text-foreground">
                   3. チーム分けコマンド <code className="font-mono text-emerald-700">/balance</code> と3つのプリセット
                 </h3>
-                <p className="text-xs text-stone-500">AIが提案する3タイプのチーム分け案と投票の仕組み</p>
+                <p className="text-xs text-muted-strong">AIが提案する3タイプのチーム分け案と投票の仕組み</p>
               </div>
             </div>
-            {openSection === 'balance' ? <ChevronUp size={20} className="text-stone-400" /> : <ChevronDown size={20} className="text-stone-400" />}
+            {openSection === 'balance' ? <ChevronUp size={20} className="text-faint" /> : <ChevronDown size={20} className="text-faint" />}
           </button>
 
           {openSection === 'balance' && (
             <div className="p-6 pt-0 border-t border-stone-100 space-y-4">
-              <p className="text-xs text-stone-600 leading-relaxed">
+              <p className="text-xs text-muted leading-relaxed">
                 定員に達した募集パネルから「🏆 チーム分け実行」を押すか、ボイスチャンネルに入った状態で <code className="bg-surface-subtle px-1 py-0.5 rounded font-mono font-bold text-emerald-900">/balance</code> を実行すると、AIが以下の3案を同時に提案します。
               </p>
 
@@ -393,14 +393,14 @@ export default function GuideBotTab() {
 
                 <div className="p-3.5 rounded-2xl bg-background border border-border space-y-1">
                   <div className="font-black text-xs text-foreground">案B: 戦力均等</div>
-                  <p className="text-[11px] text-stone-600 leading-relaxed">
+                  <p className="text-[11px] text-muted leading-relaxed">
                     レーン適性を無視し、チーム全体の総MMRが最も均等になるように配置。
                   </p>
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-background border border-border space-y-1">
                   <div className="font-black text-xs text-foreground">案C: 希望優先</div>
-                  <p className="text-[11px] text-stone-600 leading-relaxed">
+                  <p className="text-[11px] text-muted leading-relaxed">
                     参加者の希望メインレーン配置を最優先にした構成。
                   </p>
                 </div>
@@ -424,15 +424,15 @@ export default function GuideBotTab() {
                 <h3 className="text-base font-black text-foreground">
                   4. 師弟募集チャンネルのワンポチ登録 ＆ 先輩スカウト機能
                 </h3>
-                <p className="text-xs text-stone-500">#🤝師弟募集 チャンネルからWebログイン不要で即エントリー</p>
+                <p className="text-xs text-muted-strong">#🤝師弟募集 チャンネルからWebログイン不要で即エントリー</p>
               </div>
             </div>
-            {openSection === 'mentorship' ? <ChevronUp size={20} className="text-stone-400" /> : <ChevronDown size={20} className="text-stone-400" />}
+            {openSection === 'mentorship' ? <ChevronUp size={20} className="text-faint" /> : <ChevronDown size={20} className="text-faint" />}
           </button>
 
           {openSection === 'mentorship' && (
             <div className="p-6 pt-0 border-t border-stone-100 space-y-4">
-              <p className="text-xs text-stone-600 leading-relaxed">
+              <p className="text-xs text-muted leading-relaxed">
                 Discordの <code>#🤝師弟募集</code> チャンネルに常設されているピン留めメッセージから、Webポータルを開かずにワンタップでエントリーできます。
               </p>
 

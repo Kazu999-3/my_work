@@ -237,7 +237,7 @@ export default function ChampionQuickSelector({
               ワンタップ入力対応
             </span>
           </h3>
-          <p className="text-xs text-stone-500 mt-0.5">
+          <p className="text-xs text-muted-strong mt-0.5">
             自分と対面を選ぶだけで、カウンター・推奨ルーン・初動作戦が即座に同期展開されます。
           </p>
         </div>
@@ -245,7 +245,7 @@ export default function ChampionQuickSelector({
         <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
           {/* 🎮 Riot ID 管理チップ */}
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-surface-subtle border border-border text-foreground-subtle">
-            <span className="text-stone-400 font-medium">対象ID:</span>
+            <span className="text-faint font-medium">対象ID:</span>
             {isEditingRiotId ? (
               <div className="flex items-center gap-1">
                 <input
@@ -277,7 +277,7 @@ export default function ChampionQuickSelector({
                     setTempRiotId(currentRiotId || 'Kazurin#4036');
                     setIsEditingRiotId(true);
                   }}
-                  className="p-1 hover:bg-surface-hover rounded text-stone-400 hover:text-amber-700 transition cursor-pointer"
+                  className="p-1 hover:bg-surface-hover rounded text-faint hover:text-amber-700 transition cursor-pointer"
                   title="スキャン対象のRiot IDを変更"
                 >
                   <Edit3 size={12} />
@@ -301,7 +301,7 @@ export default function ChampionQuickSelector({
       {liveDetectMessage && (
         <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-xs font-bold text-amber-900 flex items-center justify-between animate-in fade-in">
           <span>{liveDetectMessage}</span>
-          <button onClick={() => setLiveDetectMessage(null)} className="text-stone-400 hover:text-stone-600">
+          <button onClick={() => setLiveDetectMessage(null)} className="text-faint hover:text-muted">
             <X size={13} />
           </button>
         </div>
@@ -320,7 +320,7 @@ export default function ChampionQuickSelector({
               <button
                 type="button"
                 onClick={() => { onMyChampionChange(''); setMyQuery(''); }}
-                className="text-[10px] text-stone-400 hover:text-foreground-subtle flex items-center gap-0.5"
+                className="text-[10px] text-faint hover:text-foreground-subtle flex items-center gap-0.5"
               >
                 <X size={11} /> クリア
               </button>
@@ -335,7 +335,7 @@ export default function ChampionQuickSelector({
                 onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
               />
             ) : (
-              <Search size={14} className="absolute left-3 text-stone-400 pointer-events-none" />
+              <Search size={14} className="absolute left-3 text-faint pointer-events-none" />
             )}
             <input
               type="text"
@@ -358,7 +358,7 @@ export default function ChampionQuickSelector({
           {isMyDropdownOpen && (
             <div className="absolute z-30 left-0 right-0 mt-1 max-h-56 overflow-y-auto rounded-2xl border border-border bg-surface p-1.5 shadow-xl space-y-0.5">
               {myFiltered.length === 0 ? (
-                <div className="p-3 text-center text-xs text-stone-400">見つかりませんでした</div>
+                <div className="p-3 text-center text-xs text-faint">見つかりませんでした</div>
               ) : (
                 myFiltered.map((c) => (
                   <button
@@ -374,7 +374,7 @@ export default function ChampionQuickSelector({
                       onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
                     />
                     <span className="font-bold">{c.nameJa}</span>
-                    <span className="text-[10px] text-stone-400 font-mono">({c.id})</span>
+                    <span className="text-[10px] text-faint font-mono">({c.id})</span>
                     {normalizeChampionName(myChampion) === c.id && (
                       <Check size={12} className="ml-auto text-teal-600" />
                     )}
@@ -391,7 +391,7 @@ export default function ChampionQuickSelector({
             type="button"
             onClick={handleSwap}
             title="自分と相手を入れ替え"
-            className="p-2 rounded-xl bg-surface-subtle hover:bg-surface-hover text-stone-600 hover:text-foreground transition-all border border-border/80 shadow-2xs cursor-pointer"
+            className="p-2 rounded-xl bg-surface-subtle hover:bg-surface-hover text-muted hover:text-foreground transition-all border border-border/80 shadow-2xs cursor-pointer"
           >
             <ArrowLeftRight size={14} />
           </button>
@@ -408,7 +408,7 @@ export default function ChampionQuickSelector({
               <button
                 type="button"
                 onClick={() => { onEnemyChampionChange(''); setEnemyQuery(''); }}
-                className="text-[10px] text-stone-400 hover:text-foreground-subtle flex items-center gap-0.5"
+                className="text-[10px] text-faint hover:text-foreground-subtle flex items-center gap-0.5"
               >
                 <X size={11} /> クリア
               </button>
@@ -423,7 +423,7 @@ export default function ChampionQuickSelector({
                 onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
               />
             ) : (
-              <Search size={14} className="absolute left-3 text-stone-400 pointer-events-none" />
+              <Search size={14} className="absolute left-3 text-faint pointer-events-none" />
             )}
             <input
               type="text"
@@ -446,7 +446,7 @@ export default function ChampionQuickSelector({
           {isEnemyDropdownOpen && (
             <div className="absolute z-30 left-0 right-0 mt-1 max-h-56 overflow-y-auto rounded-2xl border border-border bg-surface p-1.5 shadow-xl space-y-0.5">
               {enemyFiltered.length === 0 ? (
-                <div className="p-3 text-center text-xs text-stone-400">見つかりませんでした</div>
+                <div className="p-3 text-center text-xs text-faint">見つかりませんでした</div>
               ) : (
                 enemyFiltered.map((c) => (
                   <button
@@ -462,7 +462,7 @@ export default function ChampionQuickSelector({
                       onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
                     />
                     <span className="font-bold">{c.nameJa}</span>
-                    <span className="text-[10px] text-stone-400 font-mono">({c.id})</span>
+                    <span className="text-[10px] text-faint font-mono">({c.id})</span>
                     {normalizeChampionName(enemyChampion) === c.id && (
                       <Check size={12} className="ml-auto text-red-600" />
                     )}
@@ -478,7 +478,7 @@ export default function ChampionQuickSelector({
       <div className="space-y-2 pt-1 border-t border-stone-100">
         {/* 自分の主力プール */}
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[11px] font-bold text-stone-500 shrink-0">
+          <span className="text-[11px] font-bold text-muted-strong shrink-0">
             ⭐ 自分の主力:
           </span>
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -510,7 +510,7 @@ export default function ChampionQuickSelector({
 
         {/* 人気メタ対面 */}
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[11px] font-bold text-stone-500 shrink-0">
+          <span className="text-[11px] font-bold text-muted-strong shrink-0">
             ⚔️ メタ対面:
           </span>
           <div className="flex items-center gap-1.5 flex-wrap">

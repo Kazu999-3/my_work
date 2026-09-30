@@ -75,14 +75,14 @@ export function MentorshipRequestModal({
               <h2 className="text-base font-black text-foreground">
                 {isTargetMentor ? '弟子入りを申請する' : '師匠オファーを送る'}
               </h2>
-              <p className="text-xs text-stone-500 font-bold">
+              <p className="text-xs text-muted-strong font-bold">
                 相手が承認すると正式に師弟ペアが結成されます (+300🪙)
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-stone-400 hover:text-foreground-subtle p-1 rounded-full transition cursor-pointer"
+            className="text-faint hover:text-foreground-subtle p-1 rounded-full transition cursor-pointer"
           >
             <X size={20} />
           </button>
@@ -102,7 +102,7 @@ export function MentorshipRequestModal({
             </div>
 
             {targetProfile.lanes && targetProfile.lanes.length > 0 && (
-              <div className="flex items-center gap-1.5 text-xs text-stone-600 font-bold">
+              <div className="flex items-center gap-1.5 text-xs text-muted font-bold">
                 <span>レーン:</span>
                 <span className="text-foreground">{targetProfile.lanes.join(', ')}</span>
               </div>
@@ -123,7 +123,7 @@ export function MentorshipRequestModal({
 
             {/* 気軽な1回・お試しコース */}
             <div className="space-y-1">
-              <span className="text-[10px] font-black text-stone-500 uppercase tracking-wider">✨ 気軽な1回・お試しコース</span>
+              <span className="text-[10px] font-black text-muted-strong uppercase tracking-wider">✨ 気軽な1回・お試しコース</span>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
                 {Object.entries(MENTORSHIP_DURATIONS)
                   .filter(([_, item]) => item.isLight)
@@ -144,7 +144,7 @@ export function MentorshipRequestModal({
                           <span className="font-extrabold">{item.shortLabel}</span>
                           {isSelected && <span className="text-teal-600 text-xs font-black">✓</span>}
                         </div>
-                        <span className="text-[10px] text-stone-500 font-medium leading-tight">{item.label.split('（')[0]}</span>
+                        <span className="text-[10px] text-muted-strong font-medium leading-tight">{item.label.split('（')[0]}</span>
                       </button>
                     );
                   })}
@@ -153,7 +153,7 @@ export function MentorshipRequestModal({
 
             {/* しっかり継続コース */}
             <div className="space-y-1 pt-1">
-              <span className="text-[10px] font-black text-stone-500 uppercase tracking-wider">🔥 しっかり継続コース</span>
+              <span className="text-[10px] font-black text-muted-strong uppercase tracking-wider">🔥 しっかり継続コース</span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                 {Object.entries(MENTORSHIP_DURATIONS)
                   .filter(([_, item]) => !item.isLight)
@@ -200,7 +200,7 @@ export function MentorshipRequestModal({
                     }`}
                   >
                     <div className="text-xs font-black text-foreground">{item.label}</div>
-                    <div className="text-[10px] text-stone-500 font-medium leading-tight mt-0.5">{item.desc}</div>
+                    <div className="text-[10px] text-muted-strong font-medium leading-tight mt-0.5">{item.desc}</div>
                   </button>
                 );
               })}
@@ -214,7 +214,7 @@ export function MentorshipRequestModal({
                 <RefreshCw size={13} className="text-emerald-600" />
                 <span>期間満了時の設定</span>
               </div>
-              <p className="text-[11px] text-stone-500 font-medium">
+              <p className="text-[11px] text-muted-strong font-medium">
                 {autoRenew ? '期間終了後もワンクリックまたは自動でそのまま継続します' : '期間終了時に卒業手続きまたは延長を選択します'}
               </p>
             </div>
@@ -224,7 +224,7 @@ export function MentorshipRequestModal({
               className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer border shrink-0 ${
                 autoRenew
                   ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
-                  : 'bg-surface-hover border-border text-stone-600'
+                  : 'bg-surface-hover border-border text-muted'
               }`}
             >
               {autoRenew ? '⚡ そのまま継続' : '🎓 終了時に相談'}
@@ -235,7 +235,7 @@ export function MentorshipRequestModal({
           <div className="space-y-2">
             <label className="block text-xs font-black text-foreground-subtle flex items-center justify-between">
               <span>ひと言メッセージ（意気込みや教えてほしいこと）</span>
-              <span className="text-[11px] text-stone-400 font-normal">例文から選択可能</span>
+              <span className="text-[11px] text-faint font-normal">例文から選択可能</span>
             </label>
 
             {/* 定型文ボタン */}
@@ -266,7 +266,7 @@ export function MentorshipRequestModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-bold text-stone-600 hover:text-foreground rounded-xl transition cursor-pointer"
+              className="px-4 py-2 text-xs font-bold text-muted hover:text-foreground rounded-xl transition cursor-pointer"
             >
               キャンセル
             </button>

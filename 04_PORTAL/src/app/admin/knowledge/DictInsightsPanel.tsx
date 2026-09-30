@@ -199,9 +199,9 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
             {checking ? <RefreshCw size={13} className="animate-spin" /> : <AlertTriangle size={13} />} 検出実行
           </button>
         </div>
-        <p className="text-[11px] text-stone-500 mb-3">辞典の「苦手対面」「BAN推奨」と、実際のカスタム戦績を突き合わせて食い違いを探します（3戦以上のみ対象）。</p>
+        <p className="text-[11px] text-muted-strong mb-3">辞典の「苦手対面」「BAN推奨」と、実際のカスタム戦績を突き合わせて食い違いを探します（3戦以上のみ対象）。</p>
         {issues === null ? (
-          <p className="text-xs text-stone-500">「検出実行」を押すと結果が出ます。</p>
+          <p className="text-xs text-muted-strong">「検出実行」を押すと結果が出ます。</p>
         ) : issues.length === 0 ? (
           <p className="text-xs text-emerald-700">✅ 矛盾は見つかりませんでした。</p>
         ) : (
@@ -228,7 +228,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
           <span className="w-6 h-6 rounded-full bg-orange-500 text-black text-xs flex items-center justify-center font-black shrink-0">1</span>
           <Languages size={16} className="text-orange-600" /> 英語データの日本語化
         </h3>
-        <p className="text-[11px] text-stone-500 mb-3">
+        <p className="text-[11px] text-muted-strong mb-3">
           英語のまま保存されている辞典・記事・メモを日本語に変換します。完了するまで自動で繰り返し実行されます
           （文章中のチャンピオン名・アイテム名も日本語版クライアント準拠のカタカナ表記に翻訳されます。
           ただし辞典検索等で使うchampion列(キー)自体は変わりません）。
@@ -256,7 +256,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
           <span className="w-6 h-6 rounded-full bg-amber-500 text-black text-xs flex items-center justify-center font-black shrink-0">3</span>
           <MapIcon size={16} className="text-amber-600" /> レーン別ガイドへ統合
         </h3>
-        <p className="text-[11px] text-stone-500 mb-3">
+        <p className="text-[11px] text-muted-strong mb-3">
           ライブラリの<strong className="text-amber-700">チャンピオン記事ではない記事</strong>（レーンのマクロ・立ち回り）を、
           レーンごとに1本のガイドへ統合します。どのレーンにも当てはまらない普遍的な内容は
           <strong className="text-amber-700">「全レーン共通（上達の原則）」</strong>へまとめられます。
@@ -273,7 +273,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
             {restoring ? '復旧中...' : '↩️ 消えた記事をライブラリに戻す'}
           </button>
         </div>
-        <p className="text-[10px] text-stone-500 mt-2">
+        <p className="text-[10px] text-muted-strong mt-2">
           ※以前、テーブル未作成のまま統合を実行したため「ガイドが保存されないのに記事だけ片付く」不具合がありました。
           その記事は「戻す」で復元できます（チャンピオン辞典へ正常移動した記事は対象外）。
         </p>
@@ -288,7 +288,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
         <h3 className="font-black text-foreground flex items-center gap-2 mb-3">
           <Globe size={16} className="text-teal-600" /> 自動リサーチ（LoLalytics統計）
         </h3>
-        <p className="text-[11px] text-stone-500 mb-3">現パッチの勝率・ティア順位・得意/苦手対面・コアビルド・オブジェクト傾向を取得し、辞典の下書きを作ります。</p>
+        <p className="text-[11px] text-muted-strong mb-3">現パッチの勝率・ティア順位・得意/苦手対面・コアビルド・オブジェクト傾向を取得し、辞典の下書きを作ります。</p>
         <div className="flex gap-2 mb-3 flex-wrap">
           <input value={researchChamp} onChange={e => setResearchChamp(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') runResearch(false); }}
@@ -307,9 +307,9 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
           <div className="space-y-2 text-xs bg-teal-50 border border-teal-200 rounded-xl p-4">
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-teal-700 font-black">🌐 {research.champion}</span>
-              {research.patch && <span className="text-[10px] text-stone-500">Patch {research.patch}</span>}
+              {research.patch && <span className="text-[10px] text-muted-strong">Patch {research.patch}</span>}
               {research.tier && <span className="text-[10px] bg-black/5 px-2 py-0.5 rounded font-bold">{research.tier}</span>}
-              {research.rank && <span className="text-[10px] text-stone-500">順位 {research.rank}</span>}
+              {research.rank && <span className="text-[10px] text-muted-strong">順位 {research.rank}</span>}
             </div>
             <div className="flex gap-4 flex-wrap text-[11px]">
               {research.winRate && <span>勝率 <b className="text-emerald-700">{research.winRate}</b></span>}
@@ -323,7 +323,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
               ['苦手対面', research.counter_champions], ['得意対面', research.strong_against],
               ['オブジェクト傾向', research.objectives], ['総評', research.summary],
             ] as const).filter(([, v]) => v).map(([label, val]) => (
-              <div key={label}><span className="text-stone-500">{label}: </span><span className="text-foreground-subtle">{val}</span></div>
+              <div key={label}><span className="text-muted-strong">{label}: </span><span className="text-foreground-subtle">{val}</span></div>
             ))}
             <div className="flex items-center gap-2 pt-2 border-t border-black/5">
               <button onClick={() => runResearch(true)} disabled={researching}
@@ -331,7 +331,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
                 この内容で辞典に保存
               </button>
               {research.saved && <span className="text-emerald-700 text-[11px]">✅ 保存しました</span>}
-              {research.sourceUrl && <a href={research.sourceUrl} target="_blank" rel="noreferrer" className="text-[10px] text-stone-500 hover:text-teal-700 ml-auto">出典を開く ↗</a>}
+              {research.sourceUrl && <a href={research.sourceUrl} target="_blank" rel="noreferrer" className="text-[10px] text-muted-strong hover:text-teal-700 ml-auto">出典を開く ↗</a>}
             </div>
           </div>
         )}
@@ -344,7 +344,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
         <h3 className="font-black text-foreground flex items-center gap-2 mb-3">
           <Sparkles size={16} className="text-amber-600" /> 対面メモの自動要約
         </h3>
-        <p className="text-[11px] text-stone-500 mb-3">そのチャンピオンの対面メモをまとめて読み込み、共通する要点・繰り返す失敗パターンを抽出します。</p>
+        <p className="text-[11px] text-muted-strong mb-3">そのチャンピオンの対面メモをまとめて読み込み、共通する要点・繰り返す失敗パターンを抽出します。</p>
         <div className="flex gap-2 mb-3">
           <input value={champion} onChange={e => setChampion(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') runSummarize(); }}

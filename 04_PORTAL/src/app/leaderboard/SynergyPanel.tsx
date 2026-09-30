@@ -100,7 +100,7 @@ export default function SynergyPanel() {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-12">
-        <div className="text-stone-500 font-bold text-xs animate-pulse flex items-center gap-2">
+        <div className="text-muted-strong font-bold text-xs animate-pulse flex items-center gap-2">
           <span>🤝</span> 相性データを読み込み中...
         </div>
       </div>
@@ -127,7 +127,7 @@ export default function SynergyPanel() {
                 <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${
                   idx === 0 ? 'bg-amber-500 text-white' :
                   idx === 1 ? 'bg-stone-400 text-white' :
-                  idx === 2 ? 'bg-amber-700 text-white' : 'bg-surface-hover text-stone-600'
+                  idx === 2 ? 'bg-amber-700 text-white' : 'bg-surface-hover text-muted'
                 }`}>
                   {idx + 1}
                 </span>
@@ -135,7 +135,7 @@ export default function SynergyPanel() {
                   <div className="text-xs font-black text-foreground truncate">
                     {item.p1} × {item.p2}
                   </div>
-                  <div className="text-[10px] text-stone-500 font-medium">
+                  <div className="text-[10px] text-muted-strong font-medium">
                     {item.games}戦 {item.wins}勝
                   </div>
                 </div>
@@ -151,7 +151,7 @@ export default function SynergyPanel() {
         </div>
 
         {filteredBestAlly.length === 0 && (
-          <div className="text-center py-8 text-stone-400 text-xs font-bold">
+          <div className="text-center py-8 text-faint text-xs font-bold">
             条件に一致する相性データがありません。
           </div>
         )}

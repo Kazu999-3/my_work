@@ -276,7 +276,7 @@ export default function KtmBaccaratGame({
           <Sparkles size={12} className="text-amber-600" />
           KTM Sovereign Baccarat
         </div>
-        <p className="text-xs text-stone-500 font-medium">本格8デッキ / PLAYER・BANKER×1.95倍 / TIE×8.0倍</p>
+        <p className="text-xs text-muted-strong font-medium">本格8デッキ / PLAYER・BANKER×1.95倍 / TIE×8.0倍</p>
       </div>
 
       {/* エラー表示 */}
@@ -374,7 +374,7 @@ export default function KtmBaccaratGame({
             disabled={phase !== 'IDLE'}
             className="flex-1 px-3 py-2 rounded-xl border-2 border-border bg-surface text-foreground font-black text-sm text-right focus:border-amber-500 focus:outline-none disabled:opacity-50"
           />
-          <span className="text-xs text-stone-500 font-bold whitespace-nowrap">🪙</span>
+          <span className="text-xs text-muted-strong font-bold whitespace-nowrap">🪙</span>
         </div>
 
         {/* クイックベットボタン */}
@@ -433,7 +433,7 @@ export default function KtmBaccaratGame({
       )}
 
       {/* 残高表示 */}
-      <div className="text-center text-xs font-bold text-stone-500">
+      <div className="text-center text-xs font-bold text-muted-strong">
         💰 現在の残高:{' '}
         <strong className="text-amber-700 font-mono text-sm">
           {(lastResult ? lastResult.remainingCoins : userCoins).toLocaleString()}
@@ -442,7 +442,7 @@ export default function KtmBaccaratGame({
       </div>
 
       {/* ルール説明 */}
-      <div className="p-3 rounded-2xl bg-surface-subtle border border-border text-[10px] text-stone-500 font-medium leading-relaxed">
+      <div className="p-3 rounded-2xl bg-surface-subtle border border-border text-[10px] text-muted-strong font-medium leading-relaxed">
         <strong className="text-foreground-subtle">🃏 バカラ基本ルール:</strong> PLAYER・BANKERに各2枚配り、合計の下一桁（9が最高）が大きい方が勝ち。
         0〜5点の場合は3枚目をドロー（本格ルール準拠）。8・9点は「ナチュラル」で即勝負。TIEは引き分け（PLAYER/BANKERはプッシュ＝掛け金返還）。
       </div>

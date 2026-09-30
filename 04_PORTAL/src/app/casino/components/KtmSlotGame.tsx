@@ -115,14 +115,14 @@ export default function KtmSlotGame({ userCoins, onBalanceChange }: KtmSlotGameP
             <h2 className="text-base sm:text-lg font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500">
               KTM HEXTECH SLOTS
             </h2>
-            <p className="text-xs text-stone-400">
+            <p className="text-xs text-faint">
               3つの絵柄を揃えて一攫千金！ジェム揃いで最大 **50倍** ジャックポット！
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 bg-stone-800/70 border border-stone-700/60 px-3.5 py-1.5 rounded-xl self-start sm:self-center">
-          <span className="text-xs text-stone-400">所持コイン:</span>
+          <span className="text-xs text-faint">所持コイン:</span>
           <span className="text-sm font-black text-amber-400 font-mono">
             {userCoins.toLocaleString()} 🪙
           </span>
@@ -172,7 +172,7 @@ export default function KtmSlotGame({ userCoins, onBalanceChange }: KtmSlotGameP
                 ? 'bg-gradient-to-r from-amber-950/80 via-amber-950/80 to-amber-950/80 border-amber-500/80 text-yellow-300 shadow-lg shadow-amber-500/20'
                 : lastResult.payoutMultiplier > 0
                 ? 'bg-emerald-950/80 border-emerald-500/80 text-emerald-300'
-                : 'bg-stone-900/80 border-stone-800 text-stone-400'
+                : 'bg-stone-900/80 border-stone-800 text-faint'
             }`}
           >
             <p className="text-sm sm:text-base">{lastResult.message}</p>
@@ -194,7 +194,7 @@ export default function KtmSlotGame({ userCoins, onBalanceChange }: KtmSlotGameP
         {/* 操作パネル: ベット選択 ＆ スピンボタン */}
         <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-1.5">
-            <span className="text-xs font-bold text-stone-400 mr-1">ベット額:</span>
+            <span className="text-xs font-bold text-faint mr-1">ベット額:</span>
             {[100, 500, 1000].map((amt) => (
               <button
                 key={amt}
@@ -204,7 +204,7 @@ export default function KtmSlotGame({ userCoins, onBalanceChange }: KtmSlotGameP
                 className={`px-3 py-2 rounded-xl text-xs font-black transition cursor-pointer ${
                   betAmount === amt
                     ? 'bg-amber-500 text-stone-950 shadow-md shadow-amber-500/30 font-extrabold ring-2 ring-yellow-300'
-                    : 'bg-stone-800 hover:bg-stone-700 text-stone-300'
+                    : 'bg-stone-800 hover:bg-stone-700 text-faint'
                 } disabled:opacity-50`}
               >
                 {amt} 🪙
@@ -218,7 +218,7 @@ export default function KtmSlotGame({ userCoins, onBalanceChange }: KtmSlotGameP
             disabled={isSpinning || userCoins < betAmount}
             className={`w-full sm:w-44 py-3 sm:py-3.5 rounded-2xl font-black text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg ${
               isSpinning
-                ? 'bg-stone-800 text-stone-500 cursor-not-allowed'
+                ? 'bg-stone-800 text-muted-strong cursor-not-allowed'
                 : 'bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-400 hover:to-yellow-400 text-stone-950 shadow-amber-500/30 hover:shadow-amber-500/50 hover:scale-[1.02] active:scale-95'
             } disabled:opacity-50 disabled:cursor-not-allowed`}
           >
@@ -230,7 +230,7 @@ export default function KtmSlotGame({ userCoins, onBalanceChange }: KtmSlotGameP
 
       {/* 配当一覧（ペイアウト表） */}
       <div className="bg-stone-950/60 border border-stone-800/80 rounded-2xl p-4 space-y-2.5 text-xs">
-        <h4 className="font-extrabold text-stone-300 flex items-center gap-1.5 text-xs">
+        <h4 className="font-extrabold text-faint flex items-center gap-1.5 text-xs">
           <Trophy size={14} className="text-amber-400" />
           <span>絵柄と配当倍率一覧</span>
         </h4>

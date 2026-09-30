@@ -90,7 +90,7 @@ export const BalancerVcManager = memo(function BalancerVcManager({ onMessage }: 
           <span className="text-lg">🔊</span>
           <div>
             <h4 className="text-xs font-black text-amber-950">Discord VCチャンネル名の動的更新</h4>
-            <p className="text-[10px] text-stone-600">登録したチャンネル名をクリックしてVC名を即座に変更できます</p>
+            <p className="text-[10px] text-muted">登録したチャンネル名をクリックしてVC名を即座に変更できます</p>
           </div>
         </div>
         {updatingVc && <span className="text-[10px] font-bold text-amber-700 animate-pulse">更新中...</span>}
@@ -113,7 +113,7 @@ export const BalancerVcManager = memo(function BalancerVcManager({ onMessage }: 
               <button
                 type="button"
                 onClick={() => handleDeleteVcPreset(preset)}
-                className="px-1.5 py-1.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 border-l border-amber-100 text-[10px] transition cursor-pointer"
+                className="px-1.5 py-1.5 text-faint hover:text-rose-600 hover:bg-rose-50 border-l border-amber-100 text-[10px] transition cursor-pointer"
                 title="このプリセットを削除"
               >
                 ✕

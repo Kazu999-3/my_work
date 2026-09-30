@@ -38,7 +38,7 @@ export default function HomePage() {
                   Official
                 </span>
               </div>
-              <p className="text-xs text-stone-600 dark:text-stone-300 font-bold mt-1">
+              <p className="text-xs text-muted font-bold mt-1">
                 週末定期カスタム対戦の公平なチーム分け ＆ 師弟マッチング・個人戦績カルテ
               </p>
             </div>
@@ -80,7 +80,7 @@ export default function HomePage() {
                 <h2 className="text-lg sm:text-xl font-black text-foreground dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                   マイページ ＆ 希望レーン設定
                 </h2>
-                <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed mt-1 font-medium">
+                <p className="text-xs text-muted leading-relaxed mt-1 font-medium">
                   あなた専用の戦績カルテ。希望レーン・NGレーンの変更、プレイスタイル診断、所持コイン管理が可能です。
                 </p>
               </div>
@@ -111,7 +111,7 @@ export default function HomePage() {
                 <h2 className="text-lg sm:text-xl font-black text-foreground dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                   師弟自己紹介掲示板
                 </h2>
-                <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed mt-1 font-medium">
+                <p className="text-xs text-muted leading-relaxed mt-1 font-medium">
                   「もっと上達したい弟子」と「優しく教えたい師匠」を結ぶ掲示板。自己紹介カードの作成・オファー申請が可能です。
                 </p>
               </div>
@@ -142,7 +142,7 @@ export default function HomePage() {
                 <h2 className="text-lg sm:text-xl font-black text-foreground dark:text-white group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
                   チーム分けバランサー (5v5 Custom)
                 </h2>
-                <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed mt-1 font-medium">
+                <p className="text-xs text-muted leading-relaxed mt-1 font-medium">
                   参加メンバーの代表MMRと希望レーンに基づき、対面実力格差が最も小さくなる均等なチーム編成を自動生成します。
                 </p>
               </div>
@@ -173,7 +173,7 @@ export default function HomePage() {
                 <h2 className="text-lg sm:text-xl font-black text-foreground dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                   勝敗予想 ＆ KTMショップ
                 </h2>
-                <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed mt-1 font-medium">
+                <p className="text-xs text-muted leading-relaxed mt-1 font-medium">
                   カスタム対戦の勝敗にコインをベットして配当を獲得！貯まったコインで特殊アイテム（ロール指定など）を購入できます。
                 </p>
               </div>
@@ -236,7 +236,7 @@ export default function HomePage() {
                   <div className="font-extrabold text-xs text-foreground dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                     {item.title}
                   </div>
-                  <div className="text-[10px] text-stone-500 dark:text-stone-400 font-bold mt-0.5">
+                  <div className="text-[10px] text-muted-strong font-bold mt-0.5">
                     {item.sub}
                   </div>
                 </div>
@@ -246,7 +246,7 @@ export default function HomePage() {
         </div>
 
         {/* フッター */}
-        <footer className="text-center text-[11px] text-stone-500 dark:text-stone-400 font-bold border-t border-border/80 dark:border-[#3f4147] pt-6">
+        <footer className="text-center text-[11px] text-muted-strong font-bold border-t border-border/80 dark:border-[#3f4147] pt-6">
           <p>© 2026 KTM Custom Portal. All Rights Reserved.</p>
         </footer>
 

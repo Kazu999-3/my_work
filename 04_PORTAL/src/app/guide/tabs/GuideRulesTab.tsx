@@ -31,7 +31,7 @@ export default function GuideRulesTab() {
             <h2 className="text-xl font-black text-foreground tracking-tight">
               KTM カスタム公式ルールブック ＆ 特殊レギュレーション
             </h2>
-            <p className="text-xs md:text-sm text-stone-600 mt-1 leading-relaxed font-medium">
+            <p className="text-xs md:text-sm text-muted mt-1 leading-relaxed font-medium">
               KTMコミュニティで定期開催されるカスタムマッチのレギュレーション一覧です。<br />
               通常カスタムから日曜お祭りマッチ、アラームカスタム、BO3シリーズまで、安心して楽しくプレイするためのルールをまとめています。
             </p>
@@ -47,7 +47,7 @@ export default function GuideRulesTab() {
           </div>
           <div>
             <h3 className="text-lg font-black text-foreground dark:text-white">1. 定期カスタム 開催＆人数決め優先度ルール</h3>
-            <p className="text-xs text-stone-500 dark:text-stone-400">参加人数に応じた部屋分け・選出基準・開催判断の公式ガイドライン</p>
+            <p className="text-xs text-muted-strong">参加人数に応じた部屋分け・選出基準・開催判断の公式ガイドライン</p>
           </div>
         </div>
 
@@ -61,7 +61,7 @@ export default function GuideRulesTab() {
               <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">🎉 2部屋同時開催</span>
             </div>
             <h4 className="text-sm font-black text-foreground dark:text-white">👑 上位10名 ＆ 下位10名 スプリット</h4>
-            <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+            <p className="text-xs text-muted leading-relaxed">
               MMR上位10名（上級部屋）とMMR下位10名（初中級部屋）に綺麗に分かれて同時開催！実力差が離れず、両部屋とも最高に白熱するマッチになります。
             </p>
           </div>
@@ -75,7 +75,7 @@ export default function GuideRulesTab() {
               <span className="text-xs font-bold text-amber-800 dark:text-amber-300">⚔️ 1部屋 開催</span>
             </div>
             <h4 className="text-sm font-black text-foreground dark:text-white">🎯 1ティア差グループで10名選出</h4>
-            <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+            <p className="text-xs text-muted leading-relaxed">
               参加者の中で最も実力差が密集している（1ティア差以内の）10名を自動選出！<br />
               <span className="font-bold text-amber-900 dark:text-amber-200">※選考外となった方は「観戦・配信応援」または「2戦目に最優先で交代参加」となります。</span>
             </p>
@@ -92,10 +92,10 @@ export default function GuideRulesTab() {
               <span className="px-2.5 py-1 rounded-lg bg-stone-500 text-white text-xs font-black">
                 ③ 7名以下
               </span>
-              <span className="text-xs font-bold text-stone-600 dark:text-stone-400">💤 開催見送り（中止）</span>
+              <span className="text-xs font-bold text-muted">💤 開催見送り（中止）</span>
             </div>
             <h4 className="text-sm font-black text-foreground dark:text-white">⏰ 当日19:00で確定判断</h4>
-            <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+            <p className="text-xs text-muted leading-relaxed">
               当日19:00の時点で参加希望が7名以下の場合は開催中止とし、参加予定の方がソロキューや他の予定に切り替えられるようにします。
             </p>
           </div>
@@ -110,7 +110,7 @@ export default function GuideRulesTab() {
           </div>
           <div>
             <h3 className="text-lg font-black text-foreground dark:text-white">2. 週末定期カスタム（土曜・日曜）</h3>
-            <p className="text-xs text-stone-500 dark:text-stone-400">毎週土日 21:00〜 開催されるコミュニティ恒例マッチ</p>
+            <p className="text-xs text-muted-strong">毎週土日 21:00〜 開催されるコミュニティ恒例マッチ</p>
           </div>
         </div>
 
@@ -124,10 +124,10 @@ export default function GuideRulesTab() {
               <span className="text-xs font-bold text-amber-800 dark:text-amber-300">⚔️ ランク別ガチ勝負</span>
             </div>
             <h4 className="text-sm font-black text-foreground dark:text-white">👑 土曜：バランス重視・実力伯仲カスタム</h4>
-            <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+            <p className="text-xs text-muted leading-relaxed">
               KTM独自のMMRアルゴリズムに基づき、両チームの戦力が最も均等になるようにチーム分けを実施します。日頃の練習の成果を発揮する熱いバトルが楽しめます！
             </p>
-            <ul className="text-xs text-stone-600 dark:text-stone-300 space-y-1 pt-1">
+            <ul className="text-xs text-muted space-y-1 pt-1">
               <li className="flex items-center gap-1.5 font-bold">
                 <CheckCircle2 size={14} className="text-amber-600 shrink-0" />
                 <span>MMR自動均等分け（ロール適性・得意チャンピオン考慮）</span>
@@ -148,10 +148,10 @@ export default function GuideRulesTab() {
               <span className="text-xs font-bold text-amber-700 dark:text-amber-300">🎪 ランク無差別・お祭り</span>
             </div>
             <h4 className="text-sm font-black text-foreground dark:text-white">🎲 日曜：完全ランダム・お祭りカスタム</h4>
-            <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+            <p className="text-xs text-muted leading-relaxed">
               ランク・MMR・レート差を完全無視！ランダムシャッフルでチーム分けを行い、初心者から上級者までワイワイ盛り上がるお祭りナイトです。
             </p>
-            <ul className="text-xs text-stone-600 dark:text-stone-300 space-y-1 pt-1">
+            <ul className="text-xs text-muted space-y-1 pt-1">
               <li className="flex items-center gap-1.5 font-bold">
                 <CheckCircle2 size={14} className="text-amber-600 shrink-0" />
                 <span>MMR変動なし（完全カジュアル）</span>
@@ -173,7 +173,7 @@ export default function GuideRulesTab() {
           </div>
           <div>
             <h3 className="text-lg font-black text-foreground">2. スタイル別エントリー ＆ 2戦目交代システム</h3>
-            <p className="text-xs text-stone-500">仕事や予定に合わせて無理なく参加できる3つのスタイル</p>
+            <p className="text-xs text-muted-strong">仕事や予定に合わせて無理なく参加できる3つのスタイル</p>
           </div>
         </div>
 
@@ -184,7 +184,7 @@ export default function GuideRulesTab() {
                 🟢 フル参加
               </span>
             </div>
-            <p className="text-xs text-stone-600 leading-relaxed font-medium">
+            <p className="text-xs text-muted leading-relaxed font-medium">
               21:00の第1試合から最終戦までフルで参加する標準スタイルです。
             </p>
           </div>
@@ -195,7 +195,7 @@ export default function GuideRulesTab() {
                 ⏱️ 1戦のみ
               </span>
             </div>
-            <p className="text-xs text-stone-600 leading-relaxed font-medium">
+            <p className="text-xs text-muted leading-relaxed font-medium">
               「21時からは出られるけど次の日早いから1試合だけ」という方向け。第1試合終了後に自動で交代します。
             </p>
           </div>
@@ -206,7 +206,7 @@ export default function GuideRulesTab() {
                 🌙 途中参加 (2戦目〜)
               </span>
             </div>
-            <p className="text-xs text-stone-600 leading-relaxed font-medium">
+            <p className="text-xs text-muted leading-relaxed font-medium">
               「21時は間に合わないけど21:50頃からの第2試合なら出られる！」という方向け。第2試合開始時にスムーズに合流できます。
             </p>
           </div>
@@ -230,7 +230,7 @@ export default function GuideRulesTab() {
           </div>
           <div>
             <h3 className="text-lg font-black text-foreground">3. 特殊カスタムルール（企画マッチ）</h3>
-            <p className="text-xs text-stone-500">定期イベントや突発企画で開催される特別レギュレーション</p>
+            <p className="text-xs text-muted-strong">定期イベントや突発企画で開催される特別レギュレーション</p>
           </div>
         </div>
 
@@ -241,9 +241,9 @@ export default function GuideRulesTab() {
               <span className="px-2.5 py-0.5 rounded-full bg-rose-600 text-white text-xs font-black">
                 ⏰ アラームカスタム
               </span>
-              <span className="text-xs font-bold text-stone-500">（時間制限サドンデス）</span>
+              <span className="text-xs font-bold text-muted-strong">（時間制限サドンデス）</span>
             </div>
-            <p className="text-xs text-stone-600 leading-relaxed font-medium">
+            <p className="text-xs text-muted leading-relaxed font-medium">
               インゲームタイマーが一定分（例：25分）に達した瞬間、<strong>「全員リコールしてMIDレーンに集合・全員で最終決戦集団戦を行う」</strong>特別ルールです。<br />
               レーン戦での有利を活かすか、集団戦構成で逆転を狙うかの駆け引きが楽しめます。
             </p>
@@ -255,9 +255,9 @@ export default function GuideRulesTab() {
               <span className="px-2.5 py-0.5 rounded-full bg-amber-600 text-white text-xs font-black">
                 🏆 BO3 シリーズマッチ
               </span>
-              <span className="text-xs font-bold text-stone-500">（2本先取・サイド交代）</span>
+              <span className="text-xs font-bold text-muted-strong">（2本先取・サイド交代）</span>
             </div>
-            <p className="text-xs text-stone-600 leading-relaxed font-medium">
+            <p className="text-xs text-muted leading-relaxed font-medium">
               同一メンバーで2本先取（最大3試合）を戦う本格シリーズ。第1試合で敗北したチームが第2試合の<strong>「サイド選択権（Blue / Red）」</strong>を獲得します。
               ポータルのバランサー画面からスコアボード・サイド交代をワンクリックで管理できます。
             </p>
@@ -269,9 +269,9 @@ export default function GuideRulesTab() {
               <span className="px-2.5 py-0.5 rounded-full bg-amber-600 text-white text-xs font-black">
                 🎲 10人以上お祭り ＆ ロールランダム5v5
               </span>
-              <span className="text-xs font-bold text-stone-500">（ARAM公平交代 / いつもと違うロール）</span>
+              <span className="text-xs font-bold text-muted-strong">（ARAM公平交代 / いつもと違うロール）</span>
             </div>
-            <p className="text-xs text-stone-600 leading-relaxed font-medium">
+            <p className="text-xs text-muted leading-relaxed font-medium">
               参加者が10名を超えたお祭り・ARAMカスタムでは、全員の出場回数を公平化する自動交代システムが稼働します。<br />
               さらに新機能<strong>「ロールランダム5v5」</strong>を使えば、全員の希望レーンを完全ランダムにシャッフルしつつ、チーム間の総合MMRが互角になるよう自動調整！いつものメインレーンから離れて新鮮なバトルを楽しめます。
             </p>
@@ -285,7 +285,7 @@ export default function GuideRulesTab() {
           <ShieldAlert size={18} />
           <span>KTM カスタムの心得（マナー ＆ エチケット）</span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-stone-300 leading-relaxed font-medium">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-faint leading-relaxed font-medium">
           <div className="p-3.5 rounded-xl bg-surface/5 border border-white/10 space-y-1">
             <div className="font-bold text-white flex items-center gap-1.5">
               <span>🤝 リスペクトと楽しむ心</span>

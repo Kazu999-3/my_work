@@ -326,7 +326,7 @@ export function MentorshipProfileModal({
               <h2 className="text-base font-black text-foreground flex items-center gap-2">
                 師弟自己紹介カード {initialProfile ? '編集' : '作成'}
               </h2>
-              <p className="text-[11px] text-stone-600 font-medium">
+              <p className="text-[11px] text-muted font-medium">
                 あなたの得意分野や学びたい内容を公開して、相性の良いバディを見つけましょう
               </p>
             </div>
@@ -338,14 +338,14 @@ export function MentorshipProfileModal({
               <button
                 type="button"
                 onClick={() => setActiveTab('edit')}
-                className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${activeTab === 'edit' ? 'bg-surface text-foreground shadow-2xs' : 'text-stone-600 hover:text-foreground'}`}
+                className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${activeTab === 'edit' ? 'bg-surface text-foreground shadow-2xs' : 'text-muted hover:text-foreground'}`}
               >
                 ✏️ 入力
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('preview')}
-                className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${activeTab === 'preview' ? 'bg-surface text-foreground shadow-2xs' : 'text-stone-600 hover:text-foreground'}`}
+                className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${activeTab === 'preview' ? 'bg-surface text-foreground shadow-2xs' : 'text-muted hover:text-foreground'}`}
               >
                 👀 プレビュー
               </button>
@@ -353,7 +353,7 @@ export function MentorshipProfileModal({
 
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-xl bg-surface-subtle hover:bg-surface-hover text-stone-500 hover:text-foreground flex items-center justify-center font-bold text-sm transition cursor-pointer"
+              className="w-8 h-8 rounded-xl bg-surface-subtle hover:bg-surface-hover text-muted-strong hover:text-foreground flex items-center justify-center font-bold text-sm transition cursor-pointer"
             >
               ✕
             </button>
@@ -387,7 +387,7 @@ export function MentorshipProfileModal({
           {activeTab === 'preview' ? (
             /* プレビュー表示 */
             <div className="space-y-4">
-              <div className="text-xs font-bold text-stone-600 flex items-center gap-1.5">
+              <div className="text-xs font-bold text-muted flex items-center gap-1.5">
                 <span>✨ 掲示板に表示されるカードの見た目プレビュー:</span>
               </div>
 
@@ -430,7 +430,7 @@ export function MentorshipProfileModal({
 
                 {/* メインレーン */}
                 <div className="space-y-1">
-                  <div className="text-[11px] font-bold text-stone-500">プレイレーン</div>
+                  <div className="text-[11px] font-bold text-muted-strong">プレイレーン</div>
                   <div className="flex flex-wrap gap-1.5">
                     {lanes.length > 0 ? (
                       lanes.map((l) => (
@@ -439,7 +439,7 @@ export function MentorshipProfileModal({
                         </span>
                       ))
                     ) : (
-                      <span className="text-xs text-stone-400">未選択</span>
+                      <span className="text-xs text-faint">未選択</span>
                     )}
                   </div>
                 </div>
@@ -447,7 +447,7 @@ export function MentorshipProfileModal({
                 {/* 得意チャンピオン */}
                 {selectedChampions.length > 0 && (
                   <div className="space-y-1">
-                    <div className="text-[11px] font-bold text-stone-500">
+                    <div className="text-[11px] font-bold text-muted-strong">
                       {roleType === 'PUPIL' ? '練習中・使いたいチャンピオン' : '得意・指導可能チャンピオン'}
                     </div>
                     <div className="flex flex-wrap gap-1.5">
@@ -467,7 +467,7 @@ export function MentorshipProfileModal({
 
                 {/* 自己紹介文 */}
                 <div className="space-y-1">
-                  <div className="text-[11px] font-bold text-stone-500">自己紹介・意気込み</div>
+                  <div className="text-[11px] font-bold text-muted-strong">自己紹介・意気込み</div>
                   <p className="text-xs text-foreground-soft leading-relaxed whitespace-pre-wrap bg-background p-3 rounded-2xl border border-border font-medium">
                     {bio || '（自己紹介文が未記入です）'}
                   </p>
@@ -505,7 +505,7 @@ export function MentorshipProfileModal({
                     className={`p-3.5 rounded-2xl border text-left transition relative overflow-hidden cursor-pointer ${
                       roleType === 'PUPIL'
                         ? 'bg-emerald-50 border-emerald-500 text-emerald-950 ring-2 ring-emerald-500/30 shadow-md'
-                        : 'bg-background border-border text-stone-600 hover:bg-surface-subtle'
+                        : 'bg-background border-border text-muted hover:bg-surface-subtle'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -514,7 +514,7 @@ export function MentorshipProfileModal({
                       </div>
                       {roleType === 'PUPIL' && <Check size={16} className="text-emerald-600 font-bold" />}
                     </div>
-                    <div className="text-[11px] font-medium text-stone-600 mt-1">
+                    <div className="text-[11px] font-medium text-muted mt-1">
                       アドバイスをもらって上達したい・ランクを上げたい
                     </div>
                   </button>
@@ -525,7 +525,7 @@ export function MentorshipProfileModal({
                     className={`p-3.5 rounded-2xl border text-left transition relative overflow-hidden cursor-pointer ${
                       roleType === 'MENTOR'
                         ? 'bg-amber-50 border-amber-500 text-amber-950 ring-2 ring-amber-500/30 shadow-md'
-                        : 'bg-background border-border text-stone-600 hover:bg-surface-subtle'
+                        : 'bg-background border-border text-muted hover:bg-surface-subtle'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -534,7 +534,7 @@ export function MentorshipProfileModal({
                       </div>
                       {roleType === 'MENTOR' && <Check size={16} className="text-amber-600 font-bold" />}
                     </div>
-                    <div className="text-[11px] font-medium text-stone-600 mt-1">
+                    <div className="text-[11px] font-medium text-muted mt-1">
                       ノウハウや経験を教えたい・コミュニティを育てたい
                     </div>
                   </button>
@@ -675,7 +675,7 @@ export function MentorshipProfileModal({
 
                 {/* 気軽な1回・お試しコース */}
                 <div className="space-y-1">
-                  <span className="text-[10px] font-black text-stone-500 uppercase tracking-wider">✨ 気軽な1回・お試しコース</span>
+                  <span className="text-[10px] font-black text-muted-strong uppercase tracking-wider">✨ 気軽な1回・お試しコース</span>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
                     {Object.entries(MENTORSHIP_DURATIONS)
                       .filter(([_, item]) => item.isLight)
@@ -696,7 +696,7 @@ export function MentorshipProfileModal({
                               <span className="font-extrabold">{item.shortLabel}</span>
                               {isSelected && <span className="text-teal-600 text-xs font-black">✓</span>}
                             </div>
-                            <span className="text-[10px] text-stone-500 font-medium leading-tight">{item.label.split('（')[0]}</span>
+                            <span className="text-[10px] text-muted-strong font-medium leading-tight">{item.label.split('（')[0]}</span>
                           </button>
                         );
                       })}
@@ -705,7 +705,7 @@ export function MentorshipProfileModal({
 
                 {/* しっかり継続コース */}
                 <div className="space-y-1 pt-1 border-t border-border/60">
-                  <span className="text-[10px] font-black text-stone-500 uppercase tracking-wider">🔥 しっかり継続コース</span>
+                  <span className="text-[10px] font-black text-muted-strong uppercase tracking-wider">🔥 しっかり継続コース</span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                     {Object.entries(MENTORSHIP_DURATIONS)
                       .filter(([_, item]) => !item.isLight)
@@ -738,7 +738,7 @@ export function MentorshipProfileModal({
                     <span className="w-4.5 h-4.5 rounded-full bg-amber-500 text-white text-[11px] flex items-center justify-center font-black">5</span>
                     {roleType === 'PUPIL' ? '練習中・使いたいチャンピオン' : '得意・指導可能チャンピオン'} (最大8体)
                   </div>
-                  <span className="text-[11px] text-stone-500 font-bold">
+                  <span className="text-[11px] text-muted-strong font-bold">
                     {selectedChampions.length}/8体 選択中
                   </span>
                 </label>
@@ -761,7 +761,7 @@ export function MentorshipProfileModal({
                         <button
                           type="button"
                           onClick={() => removeChampion(champId)}
-                          className="text-stone-400 hover:text-rose-600 hover:bg-surface-subtle rounded-full w-4 h-4 flex items-center justify-center ml-0.5 transition cursor-pointer"
+                          className="text-faint hover:text-rose-600 hover:bg-surface-subtle rounded-full w-4 h-4 flex items-center justify-center ml-0.5 transition cursor-pointer"
                         >
                           ✕
                         </button>
@@ -773,7 +773,7 @@ export function MentorshipProfileModal({
                 {/* 検索入力欄＆ドロップダウン */}
                 <div className="relative" ref={dropdownRef}>
                   <div className="relative">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" />
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
                     <input
                       ref={searchInputRef}
                       type="text"
@@ -793,7 +793,7 @@ export function MentorshipProfileModal({
                           setChampSearchQuery('');
                           setIsChampDropdownOpen(false);
                         }}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 text-xs font-bold"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-faint hover:text-muted text-xs font-bold"
                       >
                         ✕
                       </button>
@@ -824,17 +824,17 @@ export function MentorshipProfileModal({
                                   <span className="text-xs font-bold text-foreground group-hover:text-amber-800">
                                     {ja}
                                   </span>
-                                  <span className="text-[10px] text-stone-500 ml-1.5 font-mono">
+                                  <span className="text-[10px] text-muted-strong ml-1.5 font-mono">
                                     ({champId})
                                   </span>
                                 </div>
                               </div>
-                              <Plus size={14} className="text-stone-400 group-hover:text-amber-600" />
+                              <Plus size={14} className="text-faint group-hover:text-amber-600" />
                             </button>
                           );
                         })
                       ) : (
-                        <div className="p-3 text-center text-xs text-stone-500 font-medium">
+                        <div className="p-3 text-center text-xs text-muted-strong font-medium">
                           該当するチャンピオンが見つかりません
                         </div>
                       )}
@@ -852,7 +852,7 @@ export function MentorshipProfileModal({
 
                 {currentCategories.map((cat) => (
                   <div key={cat.category} className="space-y-1.5 bg-background p-3 rounded-2xl border border-border">
-                    <div className="text-[11px] font-black text-stone-600">
+                    <div className="text-[11px] font-black text-muted">
                       {cat.category}
                     </div>
                     <div className="flex flex-wrap gap-1.5">
@@ -953,7 +953,7 @@ export function MentorshipProfileModal({
 
         {/* モーダルフッター */}
         <div className="p-4 md:px-6 md:py-3.5 bg-background border-t border-border flex items-center justify-between gap-3">
-          <div className="text-[11px] text-stone-500 font-medium">
+          <div className="text-[11px] text-muted-strong font-medium">
             {activeTab === 'edit' ? '入力内容を確認したい時は右上の「プレビュー」を押してください' : 'プレビューを確認後、右下のボタンで公開できます'}
           </div>
 

@@ -70,8 +70,8 @@ export default function GuideUpdatesTab() {
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-4 pb-3 border-b border-stone-100">
               <div className="space-y-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-mono font-bold text-stone-600 bg-surface-subtle px-2.5 py-0.5 rounded-lg flex items-center gap-1">
-                    <Calendar size={12} className="text-stone-400" />
+                  <span className="text-xs font-mono font-bold text-muted bg-surface-subtle px-2.5 py-0.5 rounded-lg flex items-center gap-1">
+                    <Calendar size={12} className="text-faint" />
                     {entry.date}
                   </span>
                   {entry.tag && (

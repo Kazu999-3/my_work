@@ -497,7 +497,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                               {/* 🛡️ 警戒・放置推奨レーン */}
                               {avoidTarget && avoidTarget.name !== primaryTarget?.name && (
                                 <div className="bg-surface p-3 rounded-xl border border-border shadow-2xs space-y-1">
-                                  <div className="text-[10px] font-black text-stone-600 flex items-center gap-1">
+                                  <div className="text-[10px] font-black text-muted flex items-center gap-1">
                                     <span>🛡️</span> 【警戒・カウンター警戒レーン】
                                   </div>
                                   <div className="flex items-center gap-2">
@@ -512,7 +512,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                                       <div className="font-black text-foreground">
                                         {avoidTarget.role}: {avoidTarget.championName} ({avoidTarget.name})
                                       </div>
-                                      <div className="text-[10px] text-stone-600 font-medium">
+                                      <div className="text-[10px] text-muted font-medium">
                                         熟練度が高いため、無理なダイブを避け味方の救援優先
                                       </div>
                                     </div>

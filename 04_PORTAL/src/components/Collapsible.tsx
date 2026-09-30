@@ -48,9 +48,9 @@ export default function Collapsible({
       >
         <div className="flex-1 min-w-0">{title}</div>
         {isOpen ? (
-          <ChevronUp className="w-4 h-4 text-stone-400 shrink-0" />
+          <ChevronUp className="w-4 h-4 text-faint shrink-0" />
         ) : (
-          <ChevronDown className="w-4 h-4 text-stone-400 shrink-0" />
+          <ChevronDown className="w-4 h-4 text-faint shrink-0" />
         )}
       </button>
       {hasOpenedRef.current && <div className={isOpen ? 'mt-3' : 'hidden'}>{children}</div>}

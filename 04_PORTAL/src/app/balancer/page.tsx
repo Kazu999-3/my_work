@@ -24,7 +24,7 @@ const ProfileModal = dynamic(() => import("../ktm-admin/ProfileModal"), { ssr: f
 const BalancerStadiumView = dynamic(() => import("./components/BalancerStadiumView"), { ssr: false });
 const AramRotationPanel = dynamic(() => import("./AramRotationPanel"), {
   ssr: false,
-  loading: () => <div className="py-10 text-center text-xs text-stone-400">読み込み中…</div>,
+  loading: () => <div className="py-10 text-center text-xs text-faint">読み込み中…</div>,
 });
 
 
@@ -1303,7 +1303,7 @@ export default function BalancerPage() {
         {sortConfig.key === sortKey && (
           <span className="text-amber-700 text-xs">{sortConfig.direction === "desc" ? "↓" : "↑"}</span>
         )}
-        {sortConfig.key !== sortKey && <span className="text-stone-500 text-xs">↕</span>}
+        {sortConfig.key !== sortKey && <span className="text-muted-strong text-xs">↕</span>}
       </div>
     </th>
   );
@@ -1330,7 +1330,7 @@ export default function BalancerPage() {
           <button
             type="button"
             onClick={() => setModeTab('standard')}
-            className="flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all cursor-pointer text-stone-400 hover:text-stone-200"
+            className="flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all cursor-pointer text-faint hover:text-stone-200"
           >
             <Swords className="w-4 h-4" />
             <span>⚔️ 通常 5v5 バランサー</span>
@@ -1368,7 +1368,7 @@ export default function BalancerPage() {
         <button
           type="button"
           onClick={() => setModeTab('aram_rotation')}
-          className="flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all cursor-pointer text-stone-400 hover:text-stone-200"
+          className="flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all cursor-pointer text-faint hover:text-stone-200"
         >
           <Shuffle className="w-4 h-4" />
           <span>🔄 大人数 ARAM ローテーション</span>
@@ -1418,7 +1418,7 @@ export default function BalancerPage() {
                   <span className="text-lg">🔰</span>
                   <div>
                     <h4 className="text-xs font-black text-emerald-950">参加メンバーの経験層分析</h4>
-                    <p className="text-[10px] text-stone-600">初心者・初参加の方も安心して参加できる環境です</p>
+                    <p className="text-[10px] text-muted">初心者・初参加の方も安心して参加できる環境です</p>
                   </div>
                 </div>
                 <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-500 text-stone-950">
@@ -1464,7 +1464,7 @@ export default function BalancerPage() {
                 <h2 className="text-lg md:text-xl font-black text-foreground flex items-center gap-2">
                   <Globe className="h-5 w-5 text-orange-700" />
                   マッチング結果
-                  <span className="hidden md:inline text-xs font-mono text-stone-500 ml-2">MMR差: <span className="text-foreground font-bold">{balanceResult.mmrDiff}</span></span>
+                  <span className="hidden md:inline text-xs font-mono text-muted-strong ml-2">MMR差: <span className="text-foreground font-bold">{balanceResult.mmrDiff}</span></span>
                 </h2>
                 {/* ピック形式バッジ */}
                 {(() => {
@@ -1525,11 +1525,11 @@ export default function BalancerPage() {
                   className="flex items-center gap-1.5 bg-surface-subtle hover:bg-surface-hover border border-border text-foreground-soft px-3 py-1.5 rounded-lg font-bold transition text-xs md:text-sm cursor-pointer"
                   title="チャットやメモに貼り付け可能な整形テキストをコピー"
                 >
-                  {copiedResult ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5 text-stone-600" />}
+                  {copiedResult ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5 text-muted" />}
                   <span>{copiedResult ? 'コピー完了！' : 'テキストコピー'}</span>
                 </button>
                 <button onClick={() => setShowResultModal(false)}
-                  className="p-1.5 rounded-lg bg-surface-subtle hover:bg-surface-hover text-stone-400 hover:text-foreground transition" title="閉じる (ESC)">
+                  className="p-1.5 rounded-lg bg-surface-subtle hover:bg-surface-hover text-faint hover:text-foreground transition" title="閉じる (ESC)">
                   <X className="h-5 w-5" />
                 </button>
               </div>
@@ -1547,12 +1547,12 @@ export default function BalancerPage() {
                     </span>
                   </div>
                   <p className="text-xs leading-relaxed">{analysis.message}</p>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-400">
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-faint">
                     <span>KTM平均MMR: <strong className="text-foreground font-mono">{analysis.averageMMR}</strong></span>
                     <span>最低: <strong className="text-foreground font-mono">{analysis.minMMR}</strong></span>
                     <span>最高: <strong className="text-foreground font-mono">{analysis.maxMMR}</strong></span>
                     <span>差: <strong className={`font-mono ${analysis.level === 'HIGH_DIFFERENCE' ? 'text-amber-700' : 'text-foreground'}`}>{analysis.mmrRange}</strong></span>
-                    <span className="text-[10px] text-stone-500 font-normal">※SoloQではなくKTM内戦独自のランクMMR基準です</span>
+                    <span className="text-[10px] text-muted-strong font-normal">※SoloQではなくKTM内戦独自のランクMMR基準です</span>
                   </div>
                 </div>
               )}
@@ -1586,7 +1586,7 @@ export default function BalancerPage() {
                           </span>
                         )}
                       </div>
-                      <span className="text-[10px] text-stone-500 font-bold">50%に近いほど理想的なバランス</span>
+                      <span className="text-[10px] text-muted-strong font-bold">50%に近いほど理想的なバランス</span>
                     </div>
 
                     {/* ゲージバー */}
@@ -1623,7 +1623,7 @@ export default function BalancerPage() {
                 <div className="flex border-b border-border gap-2 overflow-x-auto pb-1">
                   {proposals.map((prop, idx) => (
                     <button key={prop.id || idx} onClick={() => { setBalanceResult(prop); setSelectedProposalIdx(idx); }}
-                      className={`px-4 py-2 text-sm font-bold border-b-2 transition whitespace-nowrap ${selectedProposalIdx === idx ? 'border-amber-500 text-amber-700 font-black' : 'border-transparent text-stone-500 hover:text-foreground-subtle'}`}>
+                      className={`px-4 py-2 text-sm font-bold border-b-2 transition whitespace-nowrap ${selectedProposalIdx === idx ? 'border-amber-500 text-amber-700 font-black' : 'border-transparent text-muted-strong hover:text-foreground-subtle'}`}>
                       {prop.title || `案${prop.id || idx}`}
                       {prop.id === 'E' && <span className="ml-1 text-[10px] bg-amber-200 text-amber-900 px-1.5 py-0.2 rounded-full">🎗️ルール設定</span>}
                     </button>
@@ -1651,7 +1651,7 @@ export default function BalancerPage() {
                         <span className="font-black text-amber-900 text-xs">Lv.1 軽度ハンデ</span>
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800">実効MMR -150</span>
                       </div>
-                      <p className="text-[11px] text-stone-600 leading-relaxed">
+                      <p className="text-[11px] text-muted leading-relaxed">
                         ▫ <strong>フラッシュ禁止</strong>（ゴースト/TP強制）<br />
                         ▫ <strong>序盤5分間リコール禁止</strong>
                       </p>
@@ -1664,7 +1664,7 @@ export default function BalancerPage() {
                         <span className="font-black text-amber-950 text-xs">Lv.2 中度ハンデ</span>
                         <span className="text-[10px] font-black px-2 py-0.5 rounded bg-amber-500 text-white">実効MMR -300 (1ランク差)</span>
                       </div>
-                      <p className="text-[11px] text-stone-600 leading-relaxed">
+                      <p className="text-[11px] text-muted leading-relaxed">
                         ▫ <strong>ポーション購入禁止</strong>（回復封じ）<br />
                         ▫ <strong>メインチャンプBAN＆セカンド強制</strong>
                       </p>
@@ -1677,7 +1677,7 @@ export default function BalancerPage() {
                         <span className="font-black text-amber-900 text-xs">Lv.3 重度ハンデ</span>
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-800">実効MMR -500 (完全互角)</span>
                       </div>
-                      <p className="text-[11px] text-stone-600 leading-relaxed">
+                      <p className="text-[11px] text-muted leading-relaxed">
                         ▫ <strong>初手『女神の涙』スタート縛り</strong><br />
                         ▫ <strong>スキル1つ（Ult除く）使用禁止</strong>
                       </p>
@@ -1730,7 +1730,7 @@ export default function BalancerPage() {
                     <span className="text-base font-black text-teal-700">BLUE TEAM</span>
                     <span className="text-xs font-mono font-bold text-teal-600">合計MMR: {balanceResult.teamBlueMMR}</span>
                   </div>
-                  <div className="col-span-1 flex justify-center text-stone-500 font-black">VS</div>
+                  <div className="col-span-1 flex justify-center text-muted-strong font-black">VS</div>
                   <div className="col-span-5 bg-gradient-to-l from-red-100 to-transparent p-3 rounded-xl border-r-4 border-red-500 flex justify-between items-center">
                     <span className="text-xs font-mono font-bold text-red-600">合計MMR: {balanceResult.teamRedMMR}</span>
                     <span className="text-base font-black text-red-700">RED TEAM</span>
@@ -1765,7 +1765,7 @@ export default function BalancerPage() {
                         {pB?.name && handicapNames.has(pB.name) && <span className="text-[9px] bg-amber-100 border border-amber-300 text-amber-700 px-1.5 py-0.5 rounded font-black shrink-0" title="ハンデ参加（オフロール等の制約付き）">🎗️ハンデ</span>}
                         <CasinoBadges player={pBData} />
                         {pB?.name && (pB.mainLane !== 'ALL' || pB.subLane !== 'ALL') && (
-                          <span className="text-[9px] bg-black/5 border border-black/10 text-stone-500 px-1.5 py-0.5 rounded font-bold shrink-0" title="第一希望／第二希望レーン">
+                          <span className="text-[9px] bg-black/5 border border-black/10 text-muted-strong px-1.5 py-0.5 rounded font-bold shrink-0" title="第一希望／第二希望レーン">
                             {pB.mainLane !== 'ALL' && pB.mainLane !== '-' ? pB.mainLane : '指定無'}
                             {pB.subLane !== 'ALL' && pB.subLane !== '-' ? `/${pB.subLane}` : ''}
                           </span>
@@ -1774,7 +1774,7 @@ export default function BalancerPage() {
                       </div>
                       <div className="col-span-1 flex flex-col items-center py-1">
                         <div className="w-8 h-8 rounded-full bg-surface-subtle border border-border flex items-center justify-center shadow-lg"><RoleIcon role={role} className="w-4 h-4" /></div>
-                        <span className={`text-[10px] font-mono mt-1 font-extrabold ${diff>0?'text-teal-700':diff<0?'text-red-700':'text-stone-500'}`}>{diff>0?`+${diff}`:diff<0?diff:'±0'}</span>
+                        <span className={`text-[10px] font-mono mt-1 font-extrabold ${diff>0?'text-teal-700':diff<0?'text-red-700':'text-muted-strong'}`}>{diff>0?`+${diff}`:diff<0?diff:'±0'}</span>
                       </div>
                       <div draggable={!!pR?.name} onDragStart={e => handleDragStart(e,'teamRed',role,pR?.name||'')} onDragOver={e => handleDragOver(e,rKey)} onDragLeave={handleDragLeave} onDrop={e => handleDropPlayer(e,'teamRed',role)}
                         className={`col-span-5 flex items-center gap-2 p-2 rounded-xl border transition cursor-grab active:cursor-grabbing ${dragOverSlot===rKey?'border-red-500 bg-red-100 border-dashed':'bg-red-50 border-red-200 hover:bg-red-100'} ${swapSource?.name === pR?.name ? 'border-amber-500 bg-amber-100 animate-pulse' : ''}`}>
@@ -1783,7 +1783,7 @@ export default function BalancerPage() {
                         {pR?.name && handicapNames.has(pR.name) && <span className="text-[9px] bg-amber-100 border border-amber-300 text-amber-700 px-1.5 py-0.5 rounded font-black shrink-0" title="ハンデ参加（オフロール等の制約付き）">🎗️ハンデ</span>}
                         <CasinoBadges player={pRData} />
                         {pR?.name && (pR.mainLane !== 'ALL' || pR.subLane !== 'ALL') && (
-                          <span className="text-[9px] bg-black/5 border border-black/10 text-stone-500 px-1.5 py-0.5 rounded font-bold shrink-0" title="第一希望／第二希望レーン">
+                          <span className="text-[9px] bg-black/5 border border-black/10 text-muted-strong px-1.5 py-0.5 rounded font-bold shrink-0" title="第一希望／第二希望レーン">
                             {pR.mainLane !== 'ALL' && pR.mainLane !== '-' ? pR.mainLane : '指定無'}
                             {pR.subLane !== 'ALL' && pR.subLane !== '-' ? `/${pR.subLane}` : ''}
                           </span>
@@ -1838,7 +1838,7 @@ export default function BalancerPage() {
               {/* 観戦 */}
               {balanceResult.spectators && balanceResult.spectators.length > 0 && (
                 <div className="pt-3 border-t border-border">
-                  <h3 className="text-xs font-bold text-stone-500 mb-2 flex items-center gap-1"><Activity className="h-3.5 w-3.5" /> 観戦 / 待機メンバー</h3>
+                  <h3 className="text-xs font-bold text-muted-strong mb-2 flex items-center gap-1"><Activity className="h-3.5 w-3.5" /> 観戦 / 待機メンバー</h3>
                   <div className="flex flex-wrap gap-2">
                     {balanceResult.spectators.map((name: string, index: number) => {
                       const slotKey = `spectators-${index}`;
@@ -2025,10 +2025,10 @@ export default function BalancerPage() {
                 <span className="text-xs opacity-60">人</span>
               </div>
             )}
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-black/[0.03] text-stone-500 font-bold text-sm">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-black/[0.03] text-muted-strong font-bold text-sm">
               <span className="w-2 h-2 rounded-full bg-stone-600"></span>
               <span className="text-xs">不参加</span>
-              <span className="text-xl font-black text-stone-400">{inactiveCount}</span>
+              <span className="text-xl font-black text-faint">{inactiveCount}</span>
               <span className="text-xs opacity-60">人</span>
             </div>
 
@@ -2043,7 +2043,7 @@ export default function BalancerPage() {
                   <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-teal-100 text-teal-900 border border-teal-300">
                     🔵 {bo3State.team1IsCurrentlyBlue ? bo3State.team1Name : bo3State.team2Name}: {bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins}勝
                   </span>
-                  <span className="text-xs font-black text-stone-500">VS</span>
+                  <span className="text-xs font-black text-muted-strong">VS</span>
                   <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-rose-100 text-rose-900 border border-rose-300">
                     🔴 {!bo3State.team1IsCurrentlyBlue ? bo3State.team1Name : bo3State.team2Name}: {!bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins}勝
                   </span>
@@ -2065,7 +2065,7 @@ export default function BalancerPage() {
                   <button
                     type="button"
                     onClick={handleResetBo3}
-                    className="text-[11px] font-bold text-stone-500 hover:text-foreground-soft underline cursor-pointer"
+                    className="text-[11px] font-bold text-muted-strong hover:text-foreground-soft underline cursor-pointer"
                   >
                     終了
                   </button>
@@ -2177,7 +2177,7 @@ export default function BalancerPage() {
                 disabled={balancing || !canBalance}
                 className={`flex items-center justify-center gap-1.5 px-3 py-2 md:px-4 md:py-2.5 rounded-xl font-black transition text-xs md:text-sm border ${
                   balancing || !canBalance
-                    ? 'bg-surface-subtle text-stone-400 border-border cursor-not-allowed'
+                    ? 'bg-surface-subtle text-faint border-border cursor-not-allowed'
                     : 'bg-gradient-to-r from-amber-600 to-pink-600 hover:from-amber-500 hover:to-pink-500 text-white border-amber-400 shadow-md shadow-amber-500/20 cursor-pointer'
                 }`}
                 title="MMRやレーン希望に関係なく、10名を完全ランダムにBlue/Redへ振り分けます（公式MMR変動なし）"
@@ -2187,7 +2187,7 @@ export default function BalancerPage() {
 
               <button onClick={handleBalance} disabled={balancing || !canBalance}
                 className={`flex items-center justify-center gap-2 px-5 py-2.5 md:px-8 md:py-3 rounded-xl font-black transition text-sm md:text-base ${
-                  balancing || !canBalance ? 'bg-surface-subtle text-stone-500 cursor-not-allowed' : 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow-[0_0_20px_rgba(217,119,6,0.4)]'
+                  balancing || !canBalance ? 'bg-surface-subtle text-muted-strong cursor-not-allowed' : 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow-[0_0_20px_rgba(217,119,6,0.4)]'
                 }`}>
                 {balancing ? <RefreshCw className="h-5 w-5 animate-spin" /> : <Swords className="h-5 w-5" />}
                 {balancing ? 'AIが編成中...' : 'チーム分け実行'}
@@ -2205,17 +2205,17 @@ export default function BalancerPage() {
               <span className="text-[10px] text-amber-700">▼</span>
             </summary>
             <div className="mt-2.5 pt-2.5 border-t border-amber-500/20 space-y-2 text-foreground-subtle">
-              <p className="text-[11px] text-stone-600">
+              <p className="text-[11px] text-muted">
                 参加者がKTMショップで購入した特権（下剋上キャラ指定、特定レーンBAN、お祭りマッチ等）がある場合は、ここで確認しながらドラフトや試合記録を行えます。
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
                 <div className="p-2 rounded-xl bg-surface border border-amber-200">
                   <span className="font-bold text-amber-900">👑 下剋上キャラ指定:</span>
-                  <span className="ml-1 text-stone-600">対象の高レートに苦手チャンプを指定 (実効MMR -400)</span>
+                  <span className="ml-1 text-muted">対象の高レートに苦手チャンプを指定 (実効MMR -400)</span>
                 </div>
                 <div className="p-2 rounded-xl bg-surface border border-amber-200">
                   <span className="font-bold text-amber-900">🎪 お祭りカスタム:</span>
-                  <span className="ml-1 text-stone-600">結果記録時に「戦績ノーカウント保護」をONにする</span>
+                  <span className="ml-1 text-muted">結果記録時に「戦績ノーカウント保護」をONにする</span>
                 </div>
               </div>
             </div>
@@ -2237,13 +2237,13 @@ export default function BalancerPage() {
                 <AlertTriangle className={`h-4 w-4 ${integrityData?.hasDiscrepancy ? 'text-rose-700' : 'text-emerald-700'}`} />
                 <span className="text-sm font-bold text-foreground">MMR整合性ステータス</span>
                 {checkingIntegrity ? (
-                  <span className="text-xs text-stone-500">確認中...</span>
+                  <span className="text-xs text-muted-strong">確認中...</span>
                 ) : integrityData ? (
                   <span className={`text-xs font-bold ${integrityData.hasDiscrepancy ? 'text-rose-700' : 'text-emerald-700'}`}>
                     {integrityData.hasDiscrepancy ? `${integrityData.discrepancyCount}人にズレがあります` : '全員一致しています'}
                   </span>
                 ) : (
-                  <span className="text-xs text-stone-500">未確認</span>
+                  <span className="text-xs text-muted-strong">未確認</span>
                 )}
               </div>
               <div className="flex items-center gap-2">
@@ -2265,7 +2265,7 @@ export default function BalancerPage() {
               </div>
             </div>
             {integrityData?.hasDiscrepancy && (
-              <div className="text-xs text-stone-400">
+              <div className="text-xs text-faint">
                 名簿の編集・Riot/Discord同期・アフィリエイト管理などの詳細操作は
                 <Link href="/ktm-admin" prefetch={false} className="text-amber-700 hover:underline mx-1">KTM管理ダッシュボード</Link>
                 で行えます。
@@ -2285,35 +2285,35 @@ export default function BalancerPage() {
               </div>
               {predStats ? (
                 predStats.total === 0 ? (
-                  <p className="text-xs text-stone-500 mt-2">まだ結果と突き合わせ済みの予測がありません（チーム分け→試合結果記録が蓄積されると表示されます）。</p>
+                  <p className="text-xs text-muted-strong mt-2">まだ結果と突き合わせ済みの予測がありません（チーム分け→試合結果記録が蓄積されると表示されます）。</p>
                 ) : (
                   <>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
                     <div className="bg-black/[0.04] rounded-lg p-2 text-center">
-                      <div className="text-[10px] text-stone-500">予測的中率</div>
+                      <div className="text-[10px] text-muted-strong">予測的中率</div>
                       <div className="text-lg font-black text-emerald-700">{predStats.accuracy}%</div>
-                      <div className="text-[10px] text-stone-500">{predStats.correct}/{predStats.total}戦</div>
+                      <div className="text-[10px] text-muted-strong">{predStats.correct}/{predStats.total}戦</div>
                     </div>
                     <div className="bg-black/[0.04] rounded-lg p-2 text-center">
-                      <div className="text-[10px] text-stone-500">平均接戦度</div>
+                      <div className="text-[10px] text-muted-strong">平均接戦度</div>
                       <div className={`text-lg font-black ${predStats.avgCloseness >= 80 ? 'text-amber-700' : predStats.avgCloseness >= 60 ? 'text-amber-700' : 'text-rose-700'}`}>{predStats.avgCloseness}</div>
-                      <div className="text-[10px] text-stone-500">100=完全拮抗</div>
+                      <div className="text-[10px] text-muted-strong">100=完全拮抗</div>
                     </div>
                     <div className="bg-black/[0.04] rounded-lg p-2 text-center">
-                      <div className="text-[10px] text-stone-500">平均の偏り</div>
+                      <div className="text-[10px] text-muted-strong">平均の偏り</div>
                       <div className="text-lg font-black text-amber-700">±{predStats.avgConfidence}%</div>
-                      <div className="text-[10px] text-stone-500">低=拮抗</div>
+                      <div className="text-[10px] text-muted-strong">低=拮抗</div>
                     </div>
                     <div className="bg-black/[0.04] rounded-lg p-2 text-center">
-                      <div className="text-[10px] text-stone-500">サンプル</div>
+                      <div className="text-[10px] text-muted-strong">サンプル</div>
                       <div className="text-lg font-black text-foreground">{predStats.total}</div>
-                      <div className="text-[10px] text-stone-500">直近200戦</div>
+                      <div className="text-[10px] text-muted-strong">直近200戦</div>
                     </div>
                   </div>
                   {/* 直近10戦の接戦度（#82: 毎試合採点。左が最新） */}
                   {predStats.recentCloseness.length > 0 && (
                     <div className="mt-2">
-                      <div className="text-[10px] text-stone-500 mb-1">直近10戦の接戦度（左が最新）</div>
+                      <div className="text-[10px] text-muted-strong mb-1">直近10戦の接戦度（左が最新）</div>
                       <div className="flex gap-1">
                         {predStats.recentCloseness.map((c, i) => (
                           <div key={i} title={`接戦度 ${c}`} className={`flex-1 h-6 rounded flex items-center justify-center text-[9px] font-black ${c >= 80 ? 'bg-amber-100 text-amber-700 border border-amber-200' : c >= 60 ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-rose-100 text-rose-700 border border-rose-200'}`}>
@@ -2326,9 +2326,9 @@ export default function BalancerPage() {
                   </>
                 )
               ) : (
-                <p className="text-xs text-stone-500 mt-2">読み込み中...</p>
+                <p className="text-xs text-muted-strong mt-2">読み込み中...</p>
               )}
-              <p className="text-[10px] text-stone-500 mt-2">
+              <p className="text-[10px] text-muted-strong mt-2">
                 的中率が50%近い＝実力拮抗、極端に高い＝MMR差が大きいまま組んでいる可能性。平均の偏りが小さいほどバランサーが互角の試合を作れています。
               </p>
             </div>
@@ -2345,7 +2345,7 @@ export default function BalancerPage() {
                   </div>
                   <span className="text-xs font-black text-red-700 w-28">RED {Math.round((100 - sideStats.blueRate) * 10) / 10}%</span>
                 </div>
-                <p className="text-[10px] text-stone-500 mt-1.5">
+                <p className="text-[10px] text-muted-strong mt-1.5">
                   全{sideStats.total}戦（Blue {sideStats.blueWins}勝）。50%から大きくズレている場合はサイド有利かサイド公平化ロジックの見直し材料になります。
                 </p>
               </div>
@@ -2362,7 +2362,7 @@ export default function BalancerPage() {
                   {showInitialPrefs ? '閉じる' : '編集する'}
                 </button>
               </div>
-              <p className="text-[10px] text-stone-500 mt-1.5">
+              <p className="text-[10px] text-muted-strong mt-1.5">
                 初期MMRの計算に使う「本来のメイン/サブレーン」です。希望レーンを後から変えてもここは変わりません（Rebuildの出発点が固定されます）。
                 誤って凍結された人はここで直して、保存後にRebuildしてください。
               </p>
@@ -2415,27 +2415,27 @@ export default function BalancerPage() {
               </div>
               {satStats ? (
                 satStats.tallied === 0 ? (
-                  <p className="text-xs text-stone-500 mt-2">まだ記録がありません（試合成績を入力する画面で「今日のチーム分けは?」を選ぶと貯まります）。</p>
+                  <p className="text-xs text-muted-strong mt-2">まだ記録がありません（試合成績を入力する画面で「今日のチーム分けは?」を選ぶと貯まります）。</p>
                 ) : (
                   <>
                   <div className="grid grid-cols-3 gap-2 mt-2">
                     <div className="bg-black/[0.04] rounded-lg p-2 text-center">
-                      <div className="text-[10px] text-stone-500">満足度</div>
+                      <div className="text-[10px] text-muted-strong">満足度</div>
                       <div className="text-lg font-black text-emerald-700">{satStats.satisfactionRate !== null ? `${satStats.satisfactionRate}%` : '—'}</div>
                     </div>
                     <div className="bg-black/[0.04] rounded-lg p-2 text-center">
-                      <div className="text-[10px] text-stone-500">👍 / 😐 / 👎</div>
+                      <div className="text-[10px] text-muted-strong">👍 / 😐 / 👎</div>
                       <div className="text-lg font-black text-foreground">{satStats.totalUp} / {satStats.totalNeutral ?? 0} / {satStats.totalDown}</div>
                     </div>
                     <div className="bg-black/[0.04] rounded-lg p-2 text-center">
-                      <div className="text-[10px] text-stone-500">集計試合</div>
+                      <div className="text-[10px] text-muted-strong">集計試合</div>
                       <div className="text-lg font-black text-foreground">{satStats.tallied}</div>
                     </div>
                   </div>
                   {/* 直近の試合ごとの内訳（#76: 左が最新） */}
                   {(satStats.recent && satStats.recent.length > 0) && (
                     <div className="mt-2">
-                      <div className="text-[10px] text-stone-500 mb-1">直近の試合ごとの投票（左が最新）</div>
+                      <div className="text-[10px] text-muted-strong mb-1">直近の試合ごとの投票（左が最新）</div>
                       <div className="flex gap-1 flex-wrap">
                         {satStats.recent.map((r, i) => {
                           const votes = r.up + r.down;
@@ -2443,7 +2443,7 @@ export default function BalancerPage() {
                           const bad = votes > 0 && r.up / votes <= 0.4;
                           return (
                             <div key={i} title={`👍${r.up} 😐${r.neutral} 👎${r.down}`}
-                              className={`px-2 py-1 rounded text-[9px] font-black border ${votes === 0 ? 'bg-black/[0.04] text-stone-500 border-border' : good ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : bad ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-amber-100 text-amber-700 border-amber-200'}`}>
+                              className={`px-2 py-1 rounded text-[9px] font-black border ${votes === 0 ? 'bg-black/[0.04] text-muted-strong border-border' : good ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : bad ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-amber-100 text-amber-700 border-amber-200'}`}>
                               {votes === 0 ? '票なし' : `👍${r.up}/👎${r.down}`}
                             </div>
                           );
@@ -2454,7 +2454,7 @@ export default function BalancerPage() {
                   </>
                 )
               ) : (
-                <p className="text-xs text-stone-500 mt-2">「集計」を押すと、成績入力時に記録された満足度を直近50戦ぶん集計します。</p>
+                <p className="text-xs text-muted-strong mt-2">「集計」を押すと、成績入力時に記録された満足度を直近50戦ぶん集計します。</p>
               )}
             </div>
           </div>
@@ -2466,14 +2466,14 @@ export default function BalancerPage() {
           <div className="bg-surface border border-rose-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm font-black text-rose-700">⚠️ レート差の警告</span>
-              <span className="text-[10px] text-stone-500">MMR幅 {gapDiagnosis.spread} — 近い実力の相手がいない人がいます</span>
+              <span className="text-[10px] text-muted-strong">MMR幅 {gapDiagnosis.spread} — 近い実力の相手がいない人がいます</span>
             </div>
             <div className="space-y-2">
               {gapDiagnosis.orphans.map(({ player: p, gap, nearest }) => (
                 <div key={p.id} className="flex items-center justify-between gap-3 flex-wrap bg-black/[0.04] rounded-lg px-3 py-2 border border-border">
                   <div className="text-xs text-foreground-subtle min-w-0">
                     <span className="font-black text-foreground">{p.name}</span>
-                    <span className="text-stone-500 font-mono ml-2">{p.mmr || 1200}</span>
+                    <span className="text-muted-strong font-mono ml-2">{p.mmr || 1200}</span>
                     <span className="text-rose-700 ml-2">次点 {nearest}（差 {gap}）</span>
                   </div>
                   <div className="flex gap-1.5 shrink-0">
@@ -2491,7 +2491,7 @@ export default function BalancerPage() {
                 </div>
               ))}
             </div>
-            <p className="text-[10px] text-stone-500">
+            <p className="text-[10px] text-muted-strong">
               観戦に回した人は観戦Pityが溜まり次回は優先出場します。ハンデ参加は<strong className="text-amber-700">チーム分けの計算上のみMMRを{HANDICAP_MMR_PENALTY}下げて</strong>格差を緩和します（実際のMMR・戦績は変わりません）。結果とDiscord通知にも🎗️で明示されます。
             </p>
           </div>
@@ -2502,7 +2502,7 @@ export default function BalancerPage() {
           <div className="bg-surface border border-amber-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm font-black text-amber-700">🪑 参加者{tableSplit.total}人 — 2卓に分けられます</span>
-              <span className="text-[10px] text-stone-500">代表MMR順に上位卓／下位卓へ自動仕分け（卓を選んでからチーム分けを実行）</span>
+              <span className="text-[10px] text-muted-strong">代表MMR順に上位卓／下位卓へ自動仕分け（卓を選んでからチーム分けを実行）</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {[tableSplit.upper, tableSplit.lower].map((t: any) => (
@@ -2515,11 +2515,11 @@ export default function BalancerPage() {
                       {selectedTable?.label === t.label ? '選択中' : 'この卓を選ぶ'}
                     </button>
                   </div>
-                  <div className="text-[10px] text-stone-400 space-y-0.5 max-h-40 overflow-y-auto">
+                  <div className="text-[10px] text-faint space-y-0.5 max-h-40 overflow-y-auto">
                     {t.members.map((m: any) => (
                       <div key={m.id} className="flex justify-between gap-2">
                         <span className="truncate">{m.name}</span>
-                        <span className="font-mono text-stone-500 shrink-0">{m.mmr || 1200}</span>
+                        <span className="font-mono text-muted-strong shrink-0">{m.mmr || 1200}</span>
                       </div>
                     ))}
                   </div>
@@ -2542,7 +2542,7 @@ export default function BalancerPage() {
           <div className="p-3 md:p-4 border-b border-border flex items-center gap-2 bg-surface">
             <Users className="h-4 w-4 md:h-5 md:w-5 text-amber-700" />
             <h2 className="text-base md:text-xl font-bold text-foreground">参加者リスト</h2>
-            <span className="text-xs text-stone-500 font-normal hidden md:inline ml-1">
+            <span className="text-xs text-muted-strong font-normal hidden md:inline ml-1">
               ｜ <Crown className="inline w-3 h-3 text-amber-700" /> = 第1希望固定、<X className="inline w-3 h-3 text-orange-700" /> = 見学固定
             </span>
           </div>
@@ -2563,13 +2563,13 @@ export default function BalancerPage() {
                   <button
                     type="button"
                     onClick={() => setSearchQuery('')}
-                    className="p-1 text-stone-400 hover:text-foreground-subtle text-xs font-bold"
+                    className="p-1 text-faint hover:text-foreground-subtle text-xs font-bold"
                     title="検索クリア"
                   >
                     ✕
                   </button>
                 )}
-                <span className="text-[10px] font-mono font-bold text-stone-400 bg-surface-subtle px-1.5 py-0.5 rounded">
+                <span className="text-[10px] font-mono font-bold text-faint bg-surface-subtle px-1.5 py-0.5 rounded">
                   {filteredPlayers.length}
                 </span>
               </div>
@@ -2580,25 +2580,25 @@ export default function BalancerPage() {
               <div className="flex bg-surface rounded-lg p-0.5 border border-border text-xs">
                 <button
                   onClick={() => setStatusFilter(null)}
-                  className={`px-3 py-1.5 rounded-md font-bold transition ${!statusFilter ? 'bg-amber-600 text-white' : 'text-stone-400 hover:text-foreground'}`}
+                  className={`px-3 py-1.5 rounded-md font-bold transition ${!statusFilter ? 'bg-amber-600 text-white' : 'text-faint hover:text-foreground'}`}
                 >
                   全員
                 </button>
                 <button
                   onClick={() => setStatusFilter('active')}
-                  className={`px-3 py-1.5 rounded-md font-bold transition ${statusFilter === 'active' ? 'bg-amber-600 text-white' : 'text-stone-400 hover:text-foreground'}`}
+                  className={`px-3 py-1.5 rounded-md font-bold transition ${statusFilter === 'active' ? 'bg-amber-600 text-white' : 'text-faint hover:text-foreground'}`}
                 >
                   参加予定
                 </button>
                 <button
                   onClick={() => setStatusFilter('spectator')}
-                  className={`px-3 py-1.5 rounded-md font-bold transition ${statusFilter === 'spectator' ? 'bg-amber-600 text-white' : 'text-stone-400 hover:text-foreground'}`}
+                  className={`px-3 py-1.5 rounded-md font-bold transition ${statusFilter === 'spectator' ? 'bg-amber-600 text-white' : 'text-faint hover:text-foreground'}`}
                 >
                   見学のみ
                 </button>
                 <button
                   onClick={() => setStatusFilter('inactive')}
-                  className={`px-3 py-1.5 rounded-md font-bold transition ${statusFilter === 'inactive' ? 'bg-amber-600 text-white' : 'text-stone-400 hover:text-foreground'}`}
+                  className={`px-3 py-1.5 rounded-md font-bold transition ${statusFilter === 'inactive' ? 'bg-amber-600 text-white' : 'text-faint hover:text-foreground'}`}
                 >
                   不参加
                 </button>
@@ -2608,7 +2608,7 @@ export default function BalancerPage() {
               <div className="flex bg-surface rounded-lg p-0.5 border border-border text-xs">
                 <button
                   onClick={() => setRoleFilter(null)}
-                  className={`px-3 py-1.5 rounded-md font-bold transition ${!roleFilter ? 'bg-amber-600 text-white' : 'text-stone-400 hover:text-foreground'}`}
+                  className={`px-3 py-1.5 rounded-md font-bold transition ${!roleFilter ? 'bg-amber-600 text-white' : 'text-faint hover:text-foreground'}`}
                 >
                   すべてのロール
                 </button>
@@ -2616,7 +2616,7 @@ export default function BalancerPage() {
                   <button
                     key={role}
                     onClick={() => setRoleFilter(roleFilter === role ? null : role)}
-                    className={`px-2.5 py-1.5 rounded-md font-bold transition flex items-center gap-1 ${roleFilter === role ? 'bg-amber-600 text-white' : 'text-stone-400 hover:text-foreground'}`}
+                    className={`px-2.5 py-1.5 rounded-md font-bold transition flex items-center gap-1 ${roleFilter === role ? 'bg-amber-600 text-white' : 'text-faint hover:text-foreground'}`}
                   >
                     {role}
                   </button>
@@ -2632,7 +2632,7 @@ export default function BalancerPage() {
               まではモバイル用カード表示に寄せる(2026-08-15)。 */}
           <div className="hidden lg:block overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="text-xs text-stone-400 bg-surface-subtle border-b border-border">
+              <thead className="text-xs text-faint bg-surface-subtle border-b border-border">
                 <tr>
                   <th className="px-2 py-3 font-medium text-center w-28">参加設定</th>
                   <SortableHeader label="No." sortKey="no" className="w-10 text-center" />
@@ -2656,7 +2656,7 @@ export default function BalancerPage() {
                   const prevGroup = idx > 0 ? getGroup(filteredPlayers[idx - 1]) : -1;
                   const isBoundary = idx > 0 && curGroup !== prevGroup;
                   const groupLabelMap: Record<number,string> = { 0:'👑 固定メンバー', 2:'👁 観戦固定', 3:'⚫ 不参加' };
-                  const groupColorMap: Record<number,string> = { 0:'text-amber-700 bg-amber-100', 2:'text-orange-700 bg-orange-100', 3:'text-stone-500 bg-black/[0.03]' };
+                  const groupColorMap: Record<number,string> = { 0:'text-amber-700 bg-amber-100', 2:'text-orange-700 bg-orange-100', 3:'text-muted-strong bg-black/[0.03]' };
                   return (
                     <Fragment key={`balancer-row-${p.id}`}>
                       {isBoundary && groupLabelMap[curGroup] && (
@@ -2682,15 +2682,15 @@ export default function BalancerPage() {
                               className="w-4 h-4 rounded border-border bg-surface-subtle text-amber-700 focus:ring-amber-500/50 cursor-pointer transition-transform hover:scale-110 flex-shrink-0" title="参加/不参加" />
                             <div className={`flex items-center gap-1 transition-all duration-300 overflow-hidden ${p.is_active?'opacity-100 max-w-[50px]':'opacity-0 max-w-0 pointer-events-none'}`}>
                               <button onClick={() => { if(p.is_spectator_fixed) handleInputChange(p.id,'is_spectator_fixed',false); handleInputChange(p.id,'is_fixed',!p.is_fixed); }}
-                                className={`p-0.5 rounded border transition-all ${p.is_fixed?'bg-amber-100 border-amber-200 text-amber-700':'border-border text-stone-500 hover:text-amber-700 hover:bg-amber-100'}`}
+                                className={`p-0.5 rounded border transition-all ${p.is_fixed?'bg-amber-100 border-amber-200 text-amber-700':'border-border text-muted-strong hover:text-amber-700 hover:bg-amber-100'}`}
                                 title="第1希望レーンで固定する"><Crown className="w-3 h-3" /></button>
                               <button onClick={() => { if(p.is_fixed) handleInputChange(p.id,'is_fixed',false); handleInputChange(p.id,'is_spectator_fixed',!p.is_spectator_fixed); }}
-                                className={`p-0.5 rounded border transition-all ${p.is_spectator_fixed?'bg-orange-100 border-orange-200 text-orange-700':'border-border text-stone-500 hover:text-orange-700 hover:bg-orange-100'}`}
+                                className={`p-0.5 rounded border transition-all ${p.is_spectator_fixed?'bg-orange-100 border-orange-200 text-orange-700':'border-border text-muted-strong hover:text-orange-700 hover:bg-orange-100'}`}
                                 title="見学固定にする"><X className="w-3 h-3" /></button>
                             </div>
                           </div>
                         </td>
-                        <td className="px-2 py-1.5 text-center font-bold text-stone-500 text-xs">{p.no}</td>
+                        <td className="px-2 py-1.5 text-center font-bold text-muted-strong text-xs">{p.no}</td>
                         <td className="px-2 py-1.5 font-bold text-foreground text-xs max-w-[240px]">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <button onClick={() => setSelectedPlayer(p)} className="text-amber-700 hover:text-foreground p-0.5 hover:bg-surface-subtle rounded transition flex-shrink-0" title="プロフィール">
@@ -2797,7 +2797,7 @@ export default function BalancerPage() {
                           <div className="flex items-center gap-1 bg-surface-subtle border border-border rounded px-1 py-0.5 w-16 mx-auto">
                             <RoleIcon role={p.ng_lane_1 || ''} className="w-2.5 h-2.5 flex-shrink-0" />
                             <select value={p.ng_lane_1 || ''} onChange={e => handleInputChange(p.id,'ng_lane_1',e.target.value)} className="bg-transparent text-red-700 font-bold outline-none cursor-pointer w-full text-[10px]">
-                              <option value="" className="bg-surface-subtle text-stone-400">なし</option>
+                              <option value="" className="bg-surface-subtle text-faint">なし</option>
                               {['TOP','JG','MID','ADC','SUP'].map(r => <option key={r} value={r} className="bg-surface-subtle text-red-700">{r}</option>)}
                             </select>
                           </div>
@@ -2806,7 +2806,7 @@ export default function BalancerPage() {
                           <div className="flex items-center gap-1 bg-surface-subtle border border-border rounded px-1 py-0.5 w-16 mx-auto">
                             <RoleIcon role={p.ng_lane_2 || ''} className="w-2.5 h-2.5 flex-shrink-0" />
                             <select value={p.ng_lane_2 || ''} onChange={e => handleInputChange(p.id,'ng_lane_2',e.target.value)} className="bg-transparent text-red-700 font-bold outline-none cursor-pointer w-full text-[10px]">
-                              <option value="" className="bg-surface-subtle text-stone-400">なし</option>
+                              <option value="" className="bg-surface-subtle text-faint">なし</option>
                               {['TOP','JG','MID','ADC','SUP'].map(r => <option key={r} value={r} className="bg-surface-subtle text-red-700">{r}</option>)}
                             </select>
                           </div>
@@ -2836,11 +2836,11 @@ export default function BalancerPage() {
                 })}
                 {filteredPlayers.length === 0 && (
                   <tr>
-                    <td colSpan={13} className="p-8 text-center text-stone-500">
+                    <td colSpan={13} className="p-8 text-center text-muted-strong">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <span className="text-2xl">🔍</span>
                         <span className="text-sm font-bold text-foreground-subtle">条件に一致するプレイヤーが見つかりません</span>
-                        <p className="text-xs text-stone-400">検索文字やフィルター条件を変更してください。</p>
+                        <p className="text-xs text-faint">検索文字やフィルター条件を変更してください。</p>
                         <button
                           type="button"
                           onClick={() => {
@@ -2868,7 +2868,7 @@ export default function BalancerPage() {
               const prevGroup = idx > 0 ? getGroup(filteredPlayers[idx - 1]) : -1;
               const isBoundary = idx > 0 && curGroup !== prevGroup;
               const groupLabelMap: Record<number,string> = { 0:'👑 固定メンバー', 2:'👁 観戦固定', 3:'⚫ 不参加' };
-              const groupBgMap: Record<number,string> = { 0:'bg-amber-100 text-amber-700', 2:'bg-orange-100 text-orange-700', 3:'bg-surface-subtle text-stone-500' };
+              const groupBgMap: Record<number,string> = { 0:'bg-amber-100 text-amber-700', 2:'bg-orange-100 text-orange-700', 3:'bg-surface-subtle text-muted-strong' };
               const repMmr = p.mmr || 1200;
               const highestLaneMmr = getHighestLaneMmr(p);
               const ktmTier = getKtmRank(highestLaneMmr);
@@ -2894,9 +2894,9 @@ export default function BalancerPage() {
                       {p.is_active && (
                         <div className="flex gap-0.5">
                           <button onClick={() => { if(p.is_spectator_fixed) handleInputChange(p.id,'is_spectator_fixed',false); handleInputChange(p.id,'is_fixed',!p.is_fixed); }}
-                            className={`p-0.5 rounded border ${p.is_fixed?'bg-amber-100 border-amber-200 text-amber-700':'border-border text-stone-500'}`}><Crown className="w-3.5 h-3.5" /></button>
+                            className={`p-0.5 rounded border ${p.is_fixed?'bg-amber-100 border-amber-200 text-amber-700':'border-border text-muted-strong'}`}><Crown className="w-3.5 h-3.5" /></button>
                           <button onClick={() => { if(p.is_fixed) handleInputChange(p.id,'is_fixed',false); handleInputChange(p.id,'is_spectator_fixed',!p.is_spectator_fixed); }}
-                            className={`p-0.5 rounded border ${p.is_spectator_fixed?'bg-orange-100 border-orange-200 text-orange-700':'border-border text-stone-500'}`}><X className="w-3.5 h-3.5" /></button>
+                            className={`p-0.5 rounded border ${p.is_spectator_fixed?'bg-orange-100 border-orange-200 text-orange-700':'border-border text-muted-strong'}`}><X className="w-3.5 h-3.5" /></button>
                         </div>
                       )}
                     </div>
@@ -2953,10 +2953,10 @@ export default function BalancerPage() {
               );
             })}
             {filteredPlayers.length === 0 && (
-              <div className="p-8 text-center text-stone-500 space-y-2">
+              <div className="p-8 text-center text-muted-strong space-y-2">
                 <div className="text-xl">🔍</div>
                 <div className="text-sm font-bold text-foreground-subtle">条件に一致するプレイヤーが見つかりません</div>
-                <p className="text-xs text-stone-400">検索文字やフィルターを変更してください。</p>
+                <p className="text-xs text-faint">検索文字やフィルターを変更してください。</p>
                 <button
                   type="button"
                   onClick={() => {
@@ -2982,19 +2982,19 @@ export default function BalancerPage() {
           <div className="px-4 pb-4 grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
             <div className="bg-surface-subtle p-4 rounded border border-border">
               <span className="font-bold text-amber-700 mb-1 block">こだわり (1～3)</span>
-              <p className="text-stone-400">メインレーンをどれくらいやりたいかの度合い。1(絶対やりたい) ～ 3(どこでもいい)。</p>
+              <p className="text-faint">メインレーンをどれくらいやりたいかの度合い。1(絶対やりたい) ～ 3(どこでもいい)。</p>
             </div>
             <div className="bg-surface-subtle p-4 rounded border border-border">
               <span className="font-bold text-rose-700 mb-1 block">格上許可 (ON/OFF)</span>
-              <p className="text-stone-400">自分よりMMRが高い相手と対面することを許容するかどうかの設定です。</p>
+              <p className="text-faint">自分よりMMRが高い相手と対面することを許容するかどうかの設定です。</p>
             </div>
             <div className="bg-surface-subtle p-4 rounded border border-border">
               <span className="font-bold text-emerald-700 mb-1 block">PITY (ピティ)</span>
-              <p className="text-stone-400">「希望外レーン」に飛ばされた人に貯まる同情ポイント。高いほど次回優先的にメインレーンへ。</p>
+              <p className="text-faint">「希望外レーン」に飛ばされた人に貯まる同情ポイント。高いほど次回優先的にメインレーンへ。</p>
             </div>
             <div className="bg-surface-subtle p-4 rounded border border-border">
               <span className="font-bold text-amber-700 mb-1 block">OFF PITY (オフピティ)</span>
-              <p className="text-stone-400">「希望レーン」を連続でやっている人に貯まるポイント。一時的に他レーンへ飛ばされる確率が上がります。</p>
+              <p className="text-faint">「希望レーン」を連続でやっている人に貯まるポイント。一時的に他レーンへ飛ばされる確率が上がります。</p>
             </div>
           </div>
         </details>
@@ -3004,13 +3004,13 @@ export default function BalancerPage() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
               <Users className="w-4 h-4 text-amber-600" />
-              <span className="text-xs text-stone-600 font-bold">参加:</span>
+              <span className="text-xs text-muted font-bold">参加:</span>
               <strong className={`font-mono text-xs sm:text-sm px-2 py-0.5 rounded-lg ${canBalance ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-rose-100 text-rose-800 border border-rose-300'}`}>
                 {activeCount} / 10 人 {canBalance ? '✅' : `(あと${10 - activeCount}人)`}
               </strong>
             </div>
             {spectatorCount > 0 && (
-              <span className="text-[11px] text-stone-500 hidden sm:inline">
+              <span className="text-[11px] text-muted-strong hidden sm:inline">
                 (見学: {spectatorCount}人)
               </span>
             )}
@@ -3031,7 +3031,7 @@ export default function BalancerPage() {
               disabled={balancing || !canBalance}
               className={`px-3 py-2 rounded-xl font-black text-xs flex items-center gap-1.5 transition cursor-pointer shadow-md border ${
                 balancing || !canBalance
-                  ? 'bg-surface-subtle text-stone-400 border-border cursor-not-allowed opacity-50'
+                  ? 'bg-surface-subtle text-faint border-border cursor-not-allowed opacity-50'
                   : 'bg-gradient-to-r from-amber-600 to-pink-600 hover:from-amber-500 hover:to-pink-500 text-white border-amber-400 shadow-amber-500/20'
               }`}
               title="完全ランダムでお祭りチーム分け（MMRなし）"
@@ -3044,7 +3044,7 @@ export default function BalancerPage() {
               disabled={balancing || !canBalance}
               className={`px-4 sm:px-5 py-2 rounded-xl font-black text-xs sm:text-sm flex items-center gap-2 transition cursor-pointer shadow-lg ${
                 balancing || !canBalance
-                  ? 'bg-surface-hover text-stone-400 cursor-not-allowed opacity-50'
+                  ? 'bg-surface-hover text-faint cursor-not-allowed opacity-50'
                   : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 shadow-amber-500/30'
               }`}
             >

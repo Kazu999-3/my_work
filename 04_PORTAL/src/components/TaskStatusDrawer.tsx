@@ -185,7 +185,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
         }`}
       >
         <span className="relative flex items-center gap-1">
-          <Zap size={16} className={runningTasks.length > 0 ? 'text-amber-500 animate-pulse' : 'text-stone-600'} />
+          <Zap size={16} className={runningTasks.length > 0 ? 'text-amber-500 animate-pulse' : 'text-muted'} />
           {badgeCount > 0 && (
             <span className={`flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[9px] font-black ${badgeColor}`}>
               {failedTasks.length > 0 ? `⚠️${failedTasks.length}` : runningTasks.length}
@@ -212,10 +212,10 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
               <span className="font-extrabold text-sm text-foreground">リアルタイム・タスクキュー</span>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => fetchTaskStatus()} className="p-1 rounded hover:bg-black/5 text-stone-500" title="最新状態に更新">
+              <button onClick={() => fetchTaskStatus()} className="p-1 rounded hover:bg-black/5 text-muted-strong" title="最新状態に更新">
                 <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
               </button>
-              <button onClick={() => setOpen(false)} className="p-1 rounded hover:bg-black/5 text-stone-500">
+              <button onClick={() => setOpen(false)} className="p-1 rounded hover:bg-black/5 text-muted-strong">
                 <X size={16} />
               </button>
             </div>
@@ -227,7 +227,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
               <Cpu size={16} className={isWorkerActive ? 'text-emerald-600' : 'text-rose-500'} />
               <div>
                 <span className="font-bold text-foreground block">エッジワーカー</span>
-                <span className="text-[10px] text-stone-500">
+                <span className="text-[10px] text-muted-strong">
                   {systemData.worker.last_active ? `最終動作: ${new Date(systemData.worker.last_active).toLocaleTimeString()}` : '未起動'}
                 </span>
               </div>
@@ -276,7 +276,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
                       <div className="flex justify-between items-center gap-2">
                         <span className="font-bold text-foreground text-[11px] truncate">
                           {TASK_LABELS[t.task_type] || t.task_type}
-                          {t.payload?.champion && <span className="text-stone-500 font-normal"> ({t.payload.champion})</span>}
+                          {t.payload?.champion && <span className="text-muted-strong font-normal"> ({t.payload.champion})</span>}
                         </span>
                         <div className="flex items-center gap-1.5 shrink-0">
                           <span className="text-[9px] font-black text-rose-800 bg-rose-200/80 px-1.5 py-0.2 rounded">
@@ -313,7 +313,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
               </span>
             </div>
             {runningTasks.length === 0 ? (
-              <p className="text-[11px] text-stone-400 py-2 italic text-center bg-background rounded-xl border border-stone-100">現在実行中のタスクはありません</p>
+              <p className="text-[11px] text-faint py-2 italic text-center bg-background rounded-xl border border-stone-100">現在実行中のタスクはありません</p>
             ) : (
               <div className="space-y-1.5">
                 {runningTasks.map((t) => (
@@ -321,9 +321,9 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
                     <div>
                       <span className="font-bold text-foreground text-[11px] block">
                         {TASK_LABELS[t.task_type] || t.task_type}
-                        {t.payload?.champion && <span className="text-stone-600"> ({t.payload.champion})</span>}
+                        {t.payload?.champion && <span className="text-muted"> ({t.payload.champion})</span>}
                       </span>
-                      <span className="text-[9px] text-stone-500 font-mono">
+                      <span className="text-[9px] text-muted-strong font-mono">
                         開始: {new Date(t.updated_at).toLocaleTimeString()}
                       </span>
                     </div>
@@ -342,7 +342,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
               <span>待機中キュー ({pendingTasks.length}件)</span>
             </div>
             {pendingTasks.length === 0 ? (
-              <p className="text-[11px] text-stone-400 py-2 italic text-center bg-background rounded-xl border border-stone-100">順番待ちタスクはありません</p>
+              <p className="text-[11px] text-faint py-2 italic text-center bg-background rounded-xl border border-stone-100">順番待ちタスクはありません</p>
             ) : (
               <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
                 {pendingTasks.map((t, idx) => (
@@ -350,7 +350,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
                     <span className="font-bold text-foreground-soft">
                       #{idx + 1} {TASK_LABELS[t.task_type] || t.task_type}
                     </span>
-                    <span className="text-stone-400 font-mono">{new Date(t.created_at).toLocaleTimeString()}</span>
+                    <span className="text-faint font-mono">{new Date(t.created_at).toLocaleTimeString()}</span>
                   </div>
                 ))}
               </div>
@@ -360,7 +360,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
           {/* 5. 直近実行履歴 */}
           {systemData.history.length > 0 && (
             <div className="space-y-2 pt-2 border-t border-border">
-              <span className="font-bold text-stone-600 text-xs block">直近の実行履歴</span>
+              <span className="font-bold text-muted text-xs block">直近の実行履歴</span>
               <div className="space-y-1 max-h-36 overflow-y-auto pr-1">
                 {systemData.history.slice(0, 5).map((h) => (
                   <div key={h.id} className="p-2 rounded-lg border border-border bg-background flex justify-between items-center text-[10px]">
@@ -372,7 +372,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
                       )}
                       <span className="font-bold text-foreground-soft truncate">{TASK_LABELS[h.task_type] || h.task_type}</span>
                     </div>
-                    <span className="text-stone-400 font-mono shrink-0">{new Date(h.updated_at).toLocaleTimeString()}</span>
+                    <span className="text-faint font-mono shrink-0">{new Date(h.updated_at).toLocaleTimeString()}</span>
                   </div>
                 ))}
               </div>

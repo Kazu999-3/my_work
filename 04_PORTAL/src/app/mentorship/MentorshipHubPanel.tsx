@@ -807,7 +807,7 @@ export default function MentorshipHubPanel() {
           {/* 検索窓 */}
           {activeTab !== 'MATCHES' && (
             <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 w-3.5 h-3.5" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-faint w-3.5 h-3.5" />
               <input
                 type="text"
                 placeholder="名前・チャンプ・コメント検索..."
@@ -823,7 +823,7 @@ export default function MentorshipHubPanel() {
         {activeTab !== 'MATCHES' && (
           <div className="flex items-center justify-between gap-2 overflow-x-auto pt-1 border-t border-stone-100 scrollbar-none flex-wrap">
             <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
-              <span className="text-[11px] font-bold text-stone-400 shrink-0 mr-1">レーン:</span>
+              <span className="text-[11px] font-bold text-faint shrink-0 mr-1">レーン:</span>
               {LANE_FILTERS.map((f) => (
                 <button
                   key={f.id}
@@ -832,7 +832,7 @@ export default function MentorshipHubPanel() {
                   className={`px-2.5 py-1 rounded-lg text-xs font-black transition shrink-0 cursor-pointer ${
                     laneFilter === f.id
                       ? 'bg-stone-900 text-white shadow-xs'
-                      : 'bg-surface-subtle hover:bg-surface-hover text-stone-600'
+                      : 'bg-surface-subtle hover:bg-surface-hover text-muted'
                   }`}
                 >
                   {f.label}
@@ -895,7 +895,7 @@ export default function MentorshipHubPanel() {
                           {partner?.player_name || 'プレイヤー'} さんから
                         </span>
                       </div>
-                      <span className="text-[11px] font-bold text-stone-600 bg-surface-subtle px-2 py-0.5 rounded-md">
+                      <span className="text-[11px] font-bold text-muted bg-surface-subtle px-2 py-0.5 rounded-md">
                         {partner?.current_rank}
                       </span>
                     </div>
@@ -923,7 +923,7 @@ export default function MentorshipHubPanel() {
                       type="button"
                       disabled={Boolean(acceptingMatchId)}
                       onClick={() => handleRejectRequest(req.id)}
-                      className="px-3 py-1.5 text-xs font-bold text-stone-500 hover:text-foreground-soft hover:bg-surface-subtle rounded-xl transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1.5 text-xs font-bold text-muted-strong hover:text-foreground-soft hover:bg-surface-subtle rounded-xl transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       見送る
                     </button>
@@ -1015,7 +1015,7 @@ export default function MentorshipHubPanel() {
                     ? '弟子としての自己紹介カードを登録して、相性の良い師匠を探そう！'
                     : '師匠としての自己紹介カードを登録して、教えたい弟子を募集しよう！'}
                 </h4>
-                <p className="text-[11px] text-stone-600 font-medium">
+                <p className="text-[11px] text-muted font-medium">
                   得意チャンプや目標を登録すると、あなたにぴったりのバディが自動表示されます（初回ボーナス +500コイン🎁）。
                 </p>
               </div>
@@ -1038,7 +1038,7 @@ export default function MentorshipHubPanel() {
 
       {/* コンテンツ一覧 */}
       {isLoading ? (
-        <div className="py-12 text-center text-xs font-bold text-stone-500 animate-pulse">
+        <div className="py-12 text-center text-xs font-bold text-muted-strong animate-pulse">
           自己紹介カードを読み込み中...
         </div>
       ) : activeTab === 'MATCHES' ? (
@@ -1076,7 +1076,7 @@ export default function MentorshipHubPanel() {
                     <div className="flex items-center gap-2">
                       {/* ステータスバッジ */}
                       {isCompleted ? (
-                        <span className="text-[11px] font-bold text-stone-600 bg-surface-hover px-2.5 py-0.5 rounded-full">
+                        <span className="text-[11px] font-bold text-muted bg-surface-hover px-2.5 py-0.5 rounded-full">
                           🎓 卒業完了
                         </span>
                       ) : isExpired ? (
@@ -1106,7 +1106,7 @@ export default function MentorshipHubPanel() {
                   {/* ペア名 */}
                   <div className="text-sm font-black text-foreground flex items-center gap-2">
                     <span>👑 {match.mentor?.player_name || '師匠'}</span>
-                    <span className="text-stone-400">×</span>
+                    <span className="text-faint">×</span>
                     <span>🌱 {match.pupil?.player_name || '弟子'}</span>
                   </div>
 
@@ -1115,7 +1115,7 @@ export default function MentorshipHubPanel() {
                     <span className="px-2 py-0.5 rounded-lg bg-surface-subtle text-foreground-subtle font-bold">
                       {durationLabel}
                     </span>
-                    <span className="text-stone-500 font-medium">
+                    <span className="text-muted-strong font-medium">
                       開始: {new Date(match.started_at || match.created_at).toLocaleDateString('ja-JP')}
                     </span>
                     {match.meta?.autoRenew && !isCompleted && (
@@ -1217,7 +1217,7 @@ export default function MentorshipHubPanel() {
                         <button
                           type="button"
                           onClick={() => handleCancelMatch(match.id)}
-                          className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-surface-subtle hover:bg-rose-50 text-stone-500 hover:text-rose-700 transition flex items-center gap-1 cursor-pointer"
+                          className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-surface-subtle hover:bg-rose-50 text-muted-strong hover:text-rose-700 transition flex items-center gap-1 cursor-pointer"
                           title="お互いに合意の上でペナルティなく解散・再募集に戻します"
                         >
                           <Leaf size={12} />
@@ -1253,7 +1253,7 @@ export default function MentorshipHubPanel() {
           })}
 
           {matches.length === 0 && (
-            <div className="col-span-full py-12 text-center text-stone-400 text-xs font-bold bg-surface rounded-2xl border border-border">
+            <div className="col-span-full py-12 text-center text-faint text-xs font-bold bg-surface rounded-2xl border border-border">
               まだ成立した師弟ペアはありません。掲示板で相手を探してみましょう！
             </div>
           )}
@@ -1289,7 +1289,7 @@ export default function MentorshipHubPanel() {
           })}
 
           {filteredProfiles.length === 0 && (
-            <div className="col-span-full py-12 text-center text-stone-400 text-xs font-bold bg-surface rounded-2xl border border-border">
+            <div className="col-span-full py-12 text-center text-faint text-xs font-bold bg-surface rounded-2xl border border-border">
               該当する自己紹介カードが見つかりませんでした。
             </div>
           )}

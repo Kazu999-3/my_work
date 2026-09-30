@@ -92,7 +92,7 @@ function LoginContent() {
           <h1 className="text-2xl font-black tracking-tight text-foreground">
             Sovereign Portal 管理認証
           </h1>
-          <p className="text-xs text-stone-500 max-w-xs mx-auto leading-relaxed">
+          <p className="text-xs text-muted-strong max-w-xs mx-auto leading-relaxed">
             システムダッシュボードおよび管理機能へアクセスするには、ログインを行ってください。
           </p>
         </div>
@@ -104,7 +104,7 @@ function LoginContent() {
               <Sparkles size={14} className="text-amber-600" />
               おすすめ：Discordアカウントで認証
             </div>
-            <p className="text-[11px] text-stone-600 mt-0.5">
+            <p className="text-[11px] text-muted mt-0.5">
               管理者Discordアカウント（かずき）でログインすると、パスワード不要で即座に開きます🔥
             </p>
           </div>
@@ -121,7 +121,7 @@ function LoginContent() {
         {/* 区切り線 */}
         <div className="flex items-center gap-3 my-4">
           <div className="flex-1 h-px bg-surface-hover" />
-          <span className="text-[10px] font-bold text-stone-400">または パスコードで認証</span>
+          <span className="text-[10px] font-bold text-faint">または パスコードで認証</span>
           <div className="flex-1 h-px bg-surface-hover" />
         </div>
 
@@ -129,7 +129,7 @@ function LoginContent() {
         <form onSubmit={handleSubmit} className="space-y-4 text-left">
           <div>
             <label className="block text-xs font-bold text-foreground-subtle mb-1.5 flex items-center gap-1">
-              <Key size={13} className="text-stone-500" />
+              <Key size={13} className="text-muted-strong" />
               管理者パスコード
             </label>
             <input

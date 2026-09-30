@@ -112,7 +112,7 @@ export function MentorshipReviewModal({
               <h2 className="text-base font-black text-foreground flex items-center gap-1.5">
                 師弟の匿名評価 ＆ 感謝フィードバック
               </h2>
-              <p className="text-[11px] text-stone-600 font-medium">
+              <p className="text-[11px] text-muted font-medium">
                 完全匿名で集約され、相手の自己紹介カードの信頼指標に反映されます
               </p>
             </div>
@@ -120,7 +120,7 @@ export function MentorshipReviewModal({
 
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-xl bg-surface-subtle hover:bg-surface-hover text-stone-500 hover:text-foreground flex items-center justify-center font-bold text-sm transition cursor-pointer"
+            className="w-8 h-8 rounded-xl bg-surface-subtle hover:bg-surface-hover text-muted-strong hover:text-foreground flex items-center justify-center font-bold text-sm transition cursor-pointer"
           >
             ✕
           </button>
@@ -137,7 +137,7 @@ export function MentorshipReviewModal({
                 <div className="text-xs font-black text-foreground">
                   {partner?.player_name || 'お相手'} さん（{partnerRoleLabel}）への評価
                 </div>
-                <div className="text-[10px] text-stone-500 font-medium">
+                <div className="text-[10px] text-muted-strong font-medium">
                   🔒 あなたの個人名やDiscord IDは相手に公開されません
                 </div>
               </div>
@@ -165,7 +165,7 @@ export function MentorshipReviewModal({
                     className={`${
                       star <= rating
                         ? 'text-amber-500 fill-amber-400 drop-shadow-xs'
-                        : 'text-stone-300'
+                        : 'text-faint'
                     }`}
                   />
                 </button>
@@ -184,7 +184,7 @@ export function MentorshipReviewModal({
           <div className="space-y-2">
             <label className="block text-xs font-black text-foreground-subtle flex items-center justify-between">
               <span>良かったポイント（複数選択可）</span>
-              <span className="text-[10px] text-stone-500 font-bold">{selectedTags.length}個選択中</span>
+              <span className="text-[10px] text-muted-strong font-bold">{selectedTags.length}個選択中</span>
             </label>
             <div className="flex flex-wrap gap-1.5">
               {availableTags.map((tag) => {

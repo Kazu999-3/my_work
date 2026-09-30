@@ -64,7 +64,7 @@ export default function VisionAnalyticsCard() {
                 上位 {vision.visionRankPercentile}% (エメラルド級)
               </span>
             </div>
-            <p className="text-[11px] text-stone-500 font-medium">
+            <p className="text-[11px] text-muted-strong font-medium">
               視界診断とディープ配置戦略（{PROFILE_SNAPSHOT_DATE} 時点で手入力した固定値。自動更新はされません）
             </p>
           </div>
@@ -72,7 +72,7 @@ export default function VisionAnalyticsCard() {
 
         <div className="text-right shrink-0">
           <div className="text-xs font-black text-amber-700">
-            分間視界スコア {vision.visionScorePerMin} <span className="text-[10px] font-normal text-stone-400">/分</span>
+            分間視界スコア {vision.visionScorePerMin} <span className="text-[10px] font-normal text-faint">/分</span>
           </div>
           <div className="text-[10px] text-emerald-600 font-bold">
             同帯平均 (1.18) 対比 +37%
@@ -84,26 +84,26 @@ export default function VisionAnalyticsCard() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {/* 分間視界スコア */}
         <div className="p-3 bg-background/80 rounded-2xl border border-border/70 space-y-1">
-          <div className="text-[10px] font-bold text-stone-500 flex items-center justify-between">
+          <div className="text-[10px] font-bold text-muted-strong flex items-center justify-between">
             <span>分間視界 (VS/m)</span>
             <span className="text-amber-600 font-bold">上位18%</span>
           </div>
           <div className="text-base font-black text-foreground">
             {vision.visionScorePerMin}
           </div>
-          <div className="text-[10px] text-stone-500">
+          <div className="text-[10px] text-muted-strong">
             エメラルド帯上位水準
           </div>
         </div>
 
         {/* コントロールワード */}
         <div className="p-3 bg-background/80 rounded-2xl border border-border/70 space-y-1">
-          <div className="text-[10px] font-bold text-stone-500 flex items-center justify-between">
+          <div className="text-[10px] font-bold text-muted-strong flex items-center justify-between">
             <span>ピンクワード</span>
             <span className="text-emerald-600 font-bold">平均の2倍</span>
           </div>
           <div className="text-base font-black text-foreground">
-            {vision.controlWardsPerGame} <span className="text-xs font-normal text-stone-400">本/戦</span>
+            {vision.controlWardsPerGame} <span className="text-xs font-normal text-faint">本/戦</span>
           </div>
           <div className="text-[10px] text-emerald-700 font-bold">
             平均生存: {vision.controlWardAvgLifetimeSec}秒
@@ -112,26 +112,26 @@ export default function VisionAnalyticsCard() {
 
         {/* ワード設置 */}
         <div className="p-3 bg-background/80 rounded-2xl border border-border/70 space-y-1">
-          <div className="text-[10px] font-bold text-stone-500">
+          <div className="text-[10px] font-bold text-muted-strong">
             分間ワード設置
           </div>
           <div className="text-base font-black text-foreground">
-            {vision.wardsPlacedPerMin} <span className="text-xs font-normal text-stone-400">個/分</span>
+            {vision.wardsPlacedPerMin} <span className="text-xs font-normal text-faint">個/分</span>
           </div>
-          <div className="text-[10px] text-stone-500">
+          <div className="text-[10px] text-muted-strong">
             1戦 20〜25個
           </div>
         </div>
 
         {/* ワード破壊 */}
         <div className="p-3 bg-background/80 rounded-2xl border border-border/70 space-y-1">
-          <div className="text-[10px] font-bold text-stone-500">
+          <div className="text-[10px] font-bold text-muted-strong">
             分間ワード破壊
           </div>
           <div className="text-base font-black text-foreground">
-            {vision.wardsClearedPerMin} <span className="text-xs font-normal text-stone-400">個/分</span>
+            {vision.wardsClearedPerMin} <span className="text-xs font-normal text-faint">個/分</span>
           </div>
-          <div className="text-[10px] text-stone-500">
+          <div className="text-[10px] text-muted-strong">
             レンズ＆植物クリア
           </div>
         </div>
@@ -144,7 +144,7 @@ export default function VisionAnalyticsCard() {
             <Compass size={14} className="text-amber-600" />
             <span>視界配置バランス ＆ 侵入深度の客観データ</span>
           </span>
-          <span className="text-[10px] text-stone-500">
+          <span className="text-[10px] text-muted-strong">
             防衛 {vision.defensiveWardRatioPercent}% / 敵陣攻め {vision.deepWardRatioPercent}%
           </span>
         </div>
@@ -180,7 +180,7 @@ export default function VisionAnalyticsCard() {
             <span className="font-bold text-emerald-950 flex items-center gap-1">
               <span>✅</span> 驚異的な生存率（被デス 3.46）の源泉
             </span>
-            <p className="text-[11px] text-stone-600 leading-relaxed font-medium">
+            <p className="text-[11px] text-muted leading-relaxed font-medium">
               自陣侵入経路とオブジェクト前の防衛視界が鉄壁なため、敵JGのインベードや事故死を未然に防げています。
             </p>
           </div>
@@ -189,7 +189,7 @@ export default function VisionAnalyticsCard() {
             <span className="font-bold text-amber-950 flex items-center gap-1">
               <span>⚠️</span> 15分キル関与（KP@15 35%）向上の急所
             </span>
-            <p className="text-[11px] text-stone-600 leading-relaxed font-medium">
+            <p className="text-[11px] text-muted leading-relaxed font-medium">
               敵陣深部へのワードが24%に留まるため、敵JGの初動察知がレーン到達直前になりがちです。敵陣視界を増やすことで味方の被ガンクを劇的に減らせます。
             </p>
           </div>
@@ -223,7 +223,7 @@ export default function VisionAnalyticsCard() {
                 <div className="text-[10px] font-bold text-amber-700">
                   ⏰ {spot.timing}
                 </div>
-                <div className="text-[10px] text-stone-500 line-clamp-2">
+                <div className="text-[10px] text-muted-strong line-clamp-2">
                   {spot.target}
                 </div>
               </button>
@@ -257,7 +257,7 @@ export default function VisionAnalyticsCard() {
                   75Gの投資対効果最大化
                 </span>
               </h4>
-              <p className="text-[11px] text-stone-500 font-medium">
+              <p className="text-[11px] text-muted-strong font-medium">
                 「いつ買い、いつ買ってはいけないか」の明確な基準
               </p>
             </div>
@@ -279,9 +279,9 @@ export default function VisionAnalyticsCard() {
                 <span className="text-rose-700 flex items-center gap-1">
                   <Clock size={12} /> 1. 1stリコール時 (4:00〜5:30)
                 </span>
-                <span className="text-[10px] text-stone-400 font-normal">余剰75G〜150G時</span>
+                <span className="text-[10px] text-faint font-normal">余剰75G〜150G時</span>
               </div>
-              <p className="text-[11px] text-stone-600 leading-relaxed font-medium">
+              <p className="text-[11px] text-muted leading-relaxed font-medium">
                 素材アイテムや靴を買った後に75G以上余ったら即1本購入。敵ラプター裏やヴォイドグラブ連絡路に刺すことで、敵JGの初動を完全制圧できます。
               </p>
             </div>
@@ -291,9 +291,9 @@ export default function VisionAnalyticsCard() {
                 <span className="text-rose-700 flex items-center gap-1">
                   <Clock size={12} /> 2. 主要オブジェクト湧き1分前
                 </span>
-                <span className="text-[10px] text-stone-400 font-normal">ドラゴン / グラブ / バロン前</span>
+                <span className="text-[10px] text-faint font-normal">ドラゴン / グラブ / バロン前</span>
               </div>
-              <p className="text-[11px] text-stone-600 leading-relaxed font-medium">
+              <p className="text-[11px] text-muted leading-relaxed font-medium">
                 湧き45秒〜1分前のリコールで必ず1〜2本確保。敵の視界を消滅（デニス）させて相手フェイスチェックを誘い、先制エンゲージの起点を作ります。
               </p>
             </div>
@@ -303,9 +303,9 @@ export default function VisionAnalyticsCard() {
                 <span className="text-rose-700 flex items-center gap-1">
                   <Clock size={12} /> 3. 1コア完成パワースパイク直後
                 </span>
-                <span className="text-[10px] text-stone-400 font-normal">サイドプッシュ準備</span>
+                <span className="text-[10px] text-faint font-normal">サイドプッシュ準備</span>
               </div>
-              <p className="text-[11px] text-stone-600 leading-relaxed font-medium">
+              <p className="text-[11px] text-muted leading-relaxed font-medium">
                 第1コア完成のお釣りで購入。強い時間帯にサイドレーンを押し込む際、敵JGの裏回りルートに置くことで1v1でのキルチャンスと安全を両立できます。
               </p>
             </div>
@@ -315,9 +315,9 @@ export default function VisionAnalyticsCard() {
                 <span className="text-rose-700 flex items-center gap-1">
                   <Clock size={12} /> 4. 20分以降のバロンセットアップ
                 </span>
-                <span className="text-[10px] text-stone-400 font-normal">チーム全員で暗黒化</span>
+                <span className="text-[10px] text-faint font-normal">チーム全員で暗黒化</span>
               </div>
-              <p className="text-[11px] text-stone-600 leading-relaxed font-medium">
+              <p className="text-[11px] text-muted leading-relaxed font-medium">
                 サポートだけに任せず、チーム全員でピンクワードを1本ずつ持ち寄りバロンピット周囲を完全暗黒化。敵が視界を取りに来た瞬間をキャッチして試合を決定づけます。
               </p>
             </div>
@@ -352,19 +352,19 @@ export default function VisionAnalyticsCard() {
             </span>
             <div className="grid grid-cols-3 gap-1.5 text-center text-[10px] pt-0.5">
               <div className="p-1.5 bg-surface rounded-xl border border-border">
-                <span className="text-stone-400 font-bold block">TOP / BOT</span>
+                <span className="text-faint font-bold block">TOP / BOT</span>
                 <span className="text-foreground font-black text-xs">2〜3本</span>
-                <span className="text-[9px] text-stone-500 block">リバー防衛</span>
+                <span className="text-[9px] text-muted-strong block">リバー防衛</span>
               </div>
               <div className="p-1.5 bg-surface rounded-xl border border-border">
-                <span className="text-stone-400 font-bold block">JG / MID</span>
+                <span className="text-faint font-bold block">JG / MID</span>
                 <span className="text-amber-700 font-black text-xs">4〜6本</span>
-                <span className="text-[9px] text-stone-500 block">ディープ・オブジェクト</span>
+                <span className="text-[9px] text-muted-strong block">ディープ・オブジェクト</span>
               </div>
               <div className="p-1.5 bg-surface rounded-xl border border-border">
-                <span className="text-stone-400 font-bold block">SUPPORT</span>
+                <span className="text-faint font-bold block">SUPPORT</span>
                 <span className="text-emerald-700 font-black text-xs">6〜10本</span>
-                <span className="text-[9px] text-stone-500 block">常時2本所持・デニス</span>
+                <span className="text-[9px] text-muted-strong block">常時2本所持・デニス</span>
               </div>
             </div>
           </div>

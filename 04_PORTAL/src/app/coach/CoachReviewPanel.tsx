@@ -89,7 +89,7 @@ export default function CoachReviewPanel() {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-stone-600 dark:text-stone-400">
+      <p className="text-sm text-muted">
         試合終了が検知されるたびに自動生成された振り返りです。通知では要点だけが届くので、全文はここで読めます。
       </p>
 
@@ -98,7 +98,7 @@ export default function CoachReviewPanel() {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="min-w-0">
             <div className="text-xs font-black text-foreground dark:text-stone-100">📈 蓄積した振り返りの傾向分析</div>
-            <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5">
+            <p className="text-[11px] text-muted-strong mt-0.5">
               繰り返し出ている弱点と次のフォーカスをまとめます。AIを1回呼ぶので、押した時だけ実行します。
             </p>
           </div>
@@ -120,16 +120,16 @@ export default function CoachReviewPanel() {
 
       {/* 自動振り返りの一覧 */}
       {loading ? (
-        <div className="py-6 text-center text-xs text-stone-400">読み込み中…</div>
+        <div className="py-6 text-center text-xs text-faint">読み込み中…</div>
       ) : error ? (
         <p className="text-sm text-rose-600 dark:text-rose-400">❌ {error}</p>
       ) : analyses.length === 0 ? (
-        <p className="text-sm text-stone-500 py-4">
+        <p className="text-sm text-muted-strong py-4">
           まだ自動振り返りがありません。ランク戦が終わると自動で生成されます。
         </p>
       ) : (
         <div className="space-y-2">
-          <div className="text-[11px] text-stone-400">直近{analyses.length}件</div>
+          <div className="text-[11px] text-faint">直近{analyses.length}件</div>
           {analyses.map((a) => {
             const open = expanded === a.matchId;
             return (
@@ -155,15 +155,15 @@ export default function CoachReviewPanel() {
                     {a.champion}
                     {a.enemyChampion ? ` vs ${a.enemyChampion}` : ''}
                   </span>
-                  <span className="text-[11px] text-stone-500 dark:text-stone-400 font-mono">
+                  <span className="text-[11px] text-muted-strong font-mono">
                     {a.kda} ({a.kdaRatio})
                   </span>
-                  <span className="text-[10px] text-stone-400 ml-auto shrink-0">{fmtDate(a.createdAt)}</span>
+                  <span className="text-[10px] text-faint ml-auto shrink-0">{fmtDate(a.createdAt)}</span>
                 </button>
 
                 {open && (
                   <div className="px-3.5 pb-3 space-y-2 border-t border-border dark:border-stone-800 pt-2.5">
-                    <div className="flex flex-wrap gap-3 text-[11px] text-stone-600 dark:text-stone-300">
+                    <div className="flex flex-wrap gap-3 text-[11px] text-muted">
                       <span>ロール: {a.role || '—'}</span>
                       <span>CS/分: {a.csPerMin}</span>
                       <span>視界/分: {a.visionPerMin}</span>
@@ -171,15 +171,15 @@ export default function CoachReviewPanel() {
                     {a.weaknesses.length > 0 && (
                       <div className="text-xs">
                         <span className="font-bold text-foreground-subtle dark:text-stone-200">弱点: </span>
-                        <span className="text-stone-600 dark:text-stone-300">{a.weaknesses.join(' / ')}</span>
+                        <span className="text-muted">{a.weaknesses.join(' / ')}</span>
                       </div>
                     )}
                     {a.focus && (
                       <div className="text-xs">
                         <span className="font-bold text-foreground-subtle dark:text-stone-200">次のフォーカス: </span>
-                        <span className="text-stone-600 dark:text-stone-300">{a.focus}</span>
+                        <span className="text-muted">{a.focus}</span>
                         {a.focusAchieved !== null && (
-                          <span className={`ml-1.5 text-[10px] font-bold ${a.focusAchieved ? 'text-emerald-500' : 'text-stone-400'}`}>
+                          <span className={`ml-1.5 text-[10px] font-bold ${a.focusAchieved ? 'text-emerald-500' : 'text-faint'}`}>
                             {a.focusAchieved ? '（達成）' : '（未達）'}
                           </span>
                         )}

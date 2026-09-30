@@ -66,16 +66,16 @@ export default function PlayRecommendationCard() {
   useEffect(() => { load(); }, [load]);
 
   if (loading) {
-    return <div className="py-6 text-center text-xs text-stone-400">判定を読み込み中…</div>;
+    return <div className="py-6 text-center text-xs text-faint">判定を読み込み中…</div>;
   }
   if (error) {
     return <p className="text-sm text-rose-600 dark:text-rose-400">❌ {error}</p>;
   }
   if (!data?.available || !data.recommendation) {
     return (
-      <p className="text-sm text-stone-500 py-4">
+      <p className="text-sm text-muted-strong py-4">
         {data?.reason || '判定に使えるデータがありません。'}
-        <span className="block mt-1 text-xs text-stone-400">
+        <span className="block mt-1 text-xs text-faint">
           「🗓️ 今の時間帯は勝てているか」の同期ボタンでソロQ履歴を取り込むと判定できるようになります。
         </span>
       </p>
@@ -108,30 +108,30 @@ export default function PlayRecommendationCard() {
       {/* 判定の内訳。数値は必ず実測値のみを出す（推定値は出さない）。 */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
         <div className="rounded-xl border border-border dark:border-stone-700/60 bg-surface dark:bg-stone-900/60 px-3 py-2">
-          <div className="text-[10px] font-bold text-stone-500 dark:text-stone-400">メンタル負荷</div>
+          <div className="text-[10px] font-bold text-muted-strong">メンタル負荷</div>
           <div className="font-bold text-foreground dark:text-stone-100 mt-0.5">{data.tilt?.label}</div>
         </div>
         <div className="rounded-xl border border-border dark:border-stone-700/60 bg-surface dark:bg-stone-900/60 px-3 py-2">
-          <div className="text-[10px] font-bold text-stone-500 dark:text-stone-400">直近の流れ</div>
+          <div className="text-[10px] font-bold text-muted-strong">直近の流れ</div>
           <div className="font-bold text-foreground dark:text-stone-100 mt-0.5">
             {data.streak?.streakType === 'loss'
               ? `${data.streak.currentStreak}連敗中`
               : data.streak?.streakType === 'win'
                 ? `${data.streak.currentStreak}連勝中`
                 : '—'}
-            <span className="ml-1.5 font-normal text-stone-500 dark:text-stone-400">
+            <span className="ml-1.5 font-normal text-muted-strong">
               （直近{data.matchesUsed}試合の勝率 {data.streak?.overallWinRate}%）
             </span>
           </div>
         </div>
         <div className="rounded-xl border border-border dark:border-stone-700/60 bg-surface dark:bg-stone-900/60 px-3 py-2">
-          <div className="text-[10px] font-bold text-stone-500 dark:text-stone-400">今の時間帯</div>
+          <div className="text-[10px] font-bold text-muted-strong">今の時間帯</div>
           <div className="font-bold text-foreground dark:text-stone-100 mt-0.5">
             {data.timing?.winRate !== null && data.timing
               ? `${data.timing.winRate}% (${data.timing.wins}/${data.timing.games}勝)`
               : 'データ不足'}
             {data.timing && (
-              <span className="ml-1.5 font-normal text-stone-500 dark:text-stone-400">
+              <span className="ml-1.5 font-normal text-muted-strong">
                 （{data.timing.dayLabel}曜{data.timing.scope === 'hour' ? `${data.timing.hour}時台` : '全体'}）
               </span>
             )}
@@ -140,7 +140,7 @@ export default function PlayRecommendationCard() {
       </div>
 
       {/* 判定の根拠データの新しさ。古いまま気づかない状態を作らない。 */}
-      <div className={`text-[11px] ${stale ? 'text-rose-500 dark:text-rose-400 font-bold' : 'text-stone-400'}`}>
+      <div className={`text-[11px] ${stale ? 'text-rose-500 dark:text-rose-400 font-bold' : 'text-faint'}`}>
         {data.daysSinceNewest === null
           ? '※ 判定は同期済みのソロQ履歴に基づきます。'
           : stale

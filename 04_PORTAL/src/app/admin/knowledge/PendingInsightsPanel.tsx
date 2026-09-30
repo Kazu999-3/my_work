@@ -330,7 +330,7 @@ export default function PendingInsightsPanel() {
 
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-black text-foreground">🧩 未承認のナレッジ {items ? `(${items.length}件)` : ''}</h3>
-        <button onClick={load} disabled={loading} className="text-xs font-bold text-stone-600 hover:text-foreground bg-surface-subtle hover:bg-surface-hover/80 px-3 py-1.5 rounded-xl border border-border transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer">
+        <button onClick={load} disabled={loading} className="text-xs font-bold text-muted hover:text-foreground bg-surface-subtle hover:bg-surface-hover/80 px-3 py-1.5 rounded-xl border border-border transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer">
           <RefreshCw size={13} className={loading ? 'animate-spin' : ''} /> 再読み込み
         </button>
       </div>
@@ -393,10 +393,10 @@ export default function PendingInsightsPanel() {
 
       {error && <p className="text-xs text-rose-600 font-bold">{error}</p>}
 
-      {loading && !items && <p className="text-xs text-stone-400">読み込み中...</p>}
+      {loading && !items && <p className="text-xs text-faint">読み込み中...</p>}
 
       {items && items.length === 0 && (
-        <p className="text-xs text-stone-400 py-8 text-center">未承認のナレッジはありません。</p>
+        <p className="text-xs text-faint py-8 text-center">未承認のナレッジはありません。</p>
       )}
 
       <div className="space-y-4">
@@ -425,7 +425,7 @@ export default function PendingInsightsPanel() {
                       </span>
                     </div>
                   {item.parentTitle && (
-                    <p className="text-[11px] text-stone-400 mt-0.5">元記事: {item.parentTitle}</p>
+                    <p className="text-[11px] text-faint mt-0.5">元記事: {item.parentTitle}</p>
                   )}
                   {item.source_url && (
                     <a href={item.source_url} target="_blank" rel="noopener noreferrer"
@@ -446,7 +446,7 @@ export default function PendingInsightsPanel() {
 
               <div className="flex items-end justify-between gap-4 pt-3 border-t border-stone-100 flex-wrap">
                 <div className="flex flex-col gap-1 min-w-[220px]">
-                  <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">
+                  <label className="text-[10px] font-bold text-faint uppercase tracking-widest">
                     チャンピオン(空欄＝レーン一般論として保存)
                   </label>
                   <ChampSelect

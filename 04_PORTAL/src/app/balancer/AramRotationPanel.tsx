@@ -329,7 +329,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
             <Shuffle className="w-5 h-5 text-amber-600" />
             <span>🔄 10人以上 お祭り・ARAM公平ローテーション ＆ 観戦シャッフル</span>
           </h2>
-          <p className="text-xs sm:text-sm text-stone-600 mt-1 leading-relaxed">
+          <p className="text-xs sm:text-sm text-muted mt-1 leading-relaxed">
             大人数が集まった時に、毎試合自動で観戦者をスタメン交代させながら全員が均等にプレイできます。
             <strong className="text-amber-700"> 観戦したメンバーは次の試合で100%スタメン出場します。</strong>
           </p>
@@ -366,7 +366,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                 className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
                   customMode === 'random_roles'
                     ? 'bg-amber-600 text-white shadow-xs'
-                    : 'text-stone-600 hover:text-foreground'
+                    : 'text-muted hover:text-foreground'
                 }`}
                 title="10人をMMR均等にBLUE/REDへ分け、5ロール（TOP/JG/MID/BOT/SUP）をランダムに割り振ります"
               >
@@ -378,7 +378,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                 className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
                   customMode === 'party_chaos'
                     ? 'bg-surface text-foreground shadow-xs border border-border'
-                    : 'text-stone-500 hover:text-foreground-soft'
+                    : 'text-muted-strong hover:text-foreground-soft'
                 }`}
               >
                 🎲 カオス縛り付き
@@ -389,7 +389,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                 className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
                   customMode === 'aram'
                     ? 'bg-surface text-foreground shadow-xs border border-border'
-                    : 'text-stone-500 hover:text-foreground-soft'
+                    : 'text-muted-strong hover:text-foreground-soft'
                 }`}
               >
                 ❄️ 通常 ARAM
@@ -427,7 +427,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                   className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                     isSelected
                       ? "bg-amber-500/15 border-amber-500/60 text-amber-950 font-bold shadow-xs scale-[1.02]"
-                      : "bg-background border-border text-stone-600 hover:border-stone-400 hover:text-foreground"
+                      : "bg-background border-border text-muted hover:border-stone-400 hover:text-foreground"
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -436,14 +436,14 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                       {p.highest_rank || "UNR"}
                     </span>
                   </div>
-                  {p.ign && <div className="text-[10px] text-stone-500 truncate mt-1">{p.ign}</div>}
+                  {p.ign && <div className="text-[10px] text-muted-strong truncate mt-1">{p.ign}</div>}
                 </button>
               );
             })}
           </div>
 
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-xs text-stone-400">
+            <div className="text-xs text-faint">
               {selectedIds.length < 10 ? (
                 <span className="text-rose-400 font-bold">⚠️ 10人以上選択してください（あと {10 - selectedIds.length}人）</span>
               ) : (
@@ -487,7 +487,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                       {currentRule.title}
                     </h3>
                   </div>
-                  <p className="text-xs text-stone-300 leading-relaxed font-medium">
+                  <p className="text-xs text-faint leading-relaxed font-medium">
                     {currentRule.desc}
                   </p>
                 </div>
@@ -513,7 +513,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
               </div>
               <div>
                 <h3 className="text-base font-black text-foreground">第 {roundNumber} 試合</h3>
-                <p className="text-xs text-stone-600">
+                <p className="text-xs text-muted">
                   総参加者: {rotationPool.length}名 (スタメン10名 / 観戦{currentRound.benchedPlayers.length}名)
                 </p>
               </div>
@@ -560,13 +560,13 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                 <span>
                   チームMMR差: <strong className={`font-black ${(currentRound.mmrDiff ?? 0) <= 80 ? 'text-emerald-700' : 'text-amber-800'}`}>{currentRound.mmrDiff ?? Math.abs(currentRound.blueMmr - currentRound.redMmr)} pt</strong>
                 </span>
-                <span className="text-[10px] text-stone-500 font-normal">
+                <span className="text-[10px] text-muted-strong font-normal">
                   ({(currentRound.mmrDiff ?? 0) <= 80 ? '✨ 極小差・好バランス' : '良バランス'})
                 </span>
               </div>
               <div className="flex items-center gap-4 text-[11px] font-mono">
                 <span className="text-teal-700 font-black">BLUE: {currentRound.blueMmr}</span>
-                <span className="text-stone-400">vs</span>
+                <span className="text-faint">vs</span>
                 <span className="text-rose-700 font-black">RED: {currentRound.redMmr}</span>
               </div>
             </div>
@@ -610,7 +610,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                         )}
                         <span className="text-xs font-bold text-teal-950">{p.name}</span>
                         {p.highest_rank && (
-                          <span className="text-[10px] text-stone-400 font-mono">({p.highest_rank})</span>
+                          <span className="text-[10px] text-faint font-mono">({p.highest_rank})</span>
                         )}
                       </div>
                       <span className="text-[10px] text-teal-600 font-mono font-bold">出場: {p.gamesPlayed}回</span>
@@ -655,7 +655,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                         )}
                         <span className="text-xs font-bold text-rose-950">{p.name}</span>
                         {p.highest_rank && (
-                          <span className="text-[10px] text-stone-400 font-mono">({p.highest_rank})</span>
+                          <span className="text-[10px] text-faint font-mono">({p.highest_rank})</span>
                         )}
                       </div>
                       <span className="text-[10px] text-rose-600 font-mono font-bold">出場: {p.gamesPlayed}回</span>
@@ -686,7 +686,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                     className="p-3 rounded-xl bg-surface border border-amber-300/80 flex flex-col justify-between shadow-2xs"
                   >
                     <span className="text-xs font-black text-foreground">{p.name}</span>
-                    <span className="text-[10px] text-stone-500 mt-1">待機: {p.benchedCount}回</span>
+                    <span className="text-[10px] text-muted-strong mt-1">待機: {p.benchedCount}回</span>
                   </div>
                 ))}
               </div>
@@ -711,7 +711,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                     }`}
                   >
                     <div className="font-bold truncate">{p.name}</div>
-                    <div className="text-[10px] text-stone-500 mt-0.5">
+                    <div className="text-[10px] text-muted-strong mt-0.5">
                       {p.gamesPlayed}試合 / 待機{p.benchedCount}
                     </div>
                   </div>
@@ -741,7 +741,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
               <button
                 type="button"
                 onClick={() => setShowRuleManager(false)}
-                className="p-1 rounded-lg bg-surface-hover hover:bg-stone-300 text-stone-600 hover:text-foreground transition"
+                className="p-1 rounded-lg bg-surface-hover hover:bg-stone-300 text-muted hover:text-foreground transition"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -769,17 +769,17 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <div className="sm:col-span-2">
-                    <label className="block text-[10px] font-bold text-stone-600 mb-1">ルール名</label>
+                    <label className="block text-[10px] font-bold text-muted mb-1">ルール名</label>
                     <input
                       type="text"
                       value={newTitle}
                       onChange={(e) => setNewTitle(e.target.value)}
                       placeholder="例: ⚡ 全員ゴースト＋イグナイト戦"
-                      className="w-full bg-surface border border-border rounded-lg px-3 py-1.5 text-xs text-foreground-soft placeholder:text-stone-400 focus:outline-none focus:border-amber-500"
+                      className="w-full bg-surface border border-border rounded-lg px-3 py-1.5 text-xs text-foreground-soft placeholder:text-faint focus:outline-none focus:border-amber-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-stone-600 mb-1">タグ</label>
+                    <label className="block text-[10px] font-bold text-muted mb-1">タグ</label>
                     <select
                       value={newTag}
                       onChange={(e) => setNewTag(e.target.value)}
@@ -793,13 +793,13 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-stone-600 mb-1">ルール説明・達成条件</label>
+                  <label className="block text-[10px] font-bold text-muted mb-1">ルール説明・達成条件</label>
                   <textarea
                     value={newDesc}
                     onChange={(e) => setNewDesc(e.target.value)}
                     rows={2}
                     placeholder="例: フラッシュ禁止！全員サモナースペルをゴーストとイグナイトに統一して戦おう！"
-                    className="w-full bg-surface border border-border rounded-lg px-3 py-1.5 text-xs text-foreground-soft placeholder:text-stone-400 focus:outline-none focus:border-amber-500 resize-none"
+                    className="w-full bg-surface border border-border rounded-lg px-3 py-1.5 text-xs text-foreground-soft placeholder:text-faint focus:outline-none focus:border-amber-500 resize-none"
                   />
                 </div>
 
@@ -824,7 +824,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                   <button
                     type="button"
                     onClick={handleResetRules}
-                    className="text-[11px] text-stone-500 hover:text-foreground-soft transition cursor-pointer flex items-center gap-1"
+                    className="text-[11px] text-muted-strong hover:text-foreground-soft transition cursor-pointer flex items-center gap-1"
                   >
                     <RotateCcw className="w-3 h-3" />
                     <span>デフォルト初期化</span>
@@ -849,13 +849,13 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                             </span>
                           )}
                         </div>
-                        <p className="text-[11px] text-stone-600 leading-relaxed">{rule.desc}</p>
+                        <p className="text-[11px] text-muted leading-relaxed">{rule.desc}</p>
                       </div>
 
                       <button
                         type="button"
                         onClick={() => handleDeleteRule(rule.id)}
-                        className="p-1.5 rounded-lg bg-surface-hover hover:bg-rose-100 text-stone-500 hover:text-rose-600 border border-transparent hover:border-rose-300 transition cursor-pointer shrink-0"
+                        className="p-1.5 rounded-lg bg-surface-hover hover:bg-rose-100 text-muted-strong hover:text-rose-600 border border-transparent hover:border-rose-300 transition cursor-pointer shrink-0"
                         title="このルールを削除"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

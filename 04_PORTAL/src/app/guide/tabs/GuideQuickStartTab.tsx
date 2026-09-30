@@ -58,10 +58,10 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
               </span>
             </div>
             <h3 className="text-base font-black text-foreground">Riot ID（サモナー名）登録</h3>
-            <p className="text-stone-600 text-xs leading-relaxed">
+            <p className="text-muted text-xs leading-relaxed">
               ポータル右上の <strong className="text-foreground font-bold">「Discordログイン」</strong> から連携するか、マイページでゲーム内の <code className="bg-surface-subtle text-amber-900 px-1.5 py-0.5 rounded font-mono font-bold">名前#TAG</code> を入力します。
             </p>
-            <div className="bg-background border border-border/80 rounded-xl p-3 text-[11px] text-stone-600 space-y-1">
+            <div className="bg-background border border-border/80 rounded-xl p-3 text-[11px] text-muted space-y-1">
               <div className="font-bold text-foreground-soft flex items-center gap-1">
                 <CheckCircle2 size={13} className="text-emerald-600" />
                 登録するとできること
@@ -93,10 +93,10 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
               </span>
             </div>
             <h3 className="text-base font-black text-foreground">希望レーンの設定</h3>
-            <p className="text-stone-600 text-xs leading-relaxed">
+            <p className="text-muted text-xs leading-relaxed">
               あなたの得意レーンと行きたくないレーン（NG）を設定します。Discordで <code className="bg-surface-subtle text-amber-900 px-1.5 py-0.5 rounded font-mono font-bold">/lane</code> と打つか、マイページから登録可能です。
             </p>
-            <div className="bg-background border border-border/80 rounded-xl p-3 text-[11px] text-stone-600 space-y-1">
+            <div className="bg-background border border-border/80 rounded-xl p-3 text-[11px] text-muted space-y-1">
               <div className="font-bold text-foreground-soft flex items-center gap-1">
                 <Sliders size={13} className="text-amber-600" />
                 設定できる項目
@@ -129,10 +129,10 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
               </span>
             </div>
             <h3 className="text-base font-black text-foreground">Discord募集にワンタップ参加！</h3>
-            <p className="text-stone-600 text-xs leading-relaxed">
+            <p className="text-muted text-xs leading-relaxed">
               Discordのカスタム募集チャンネルにパネルが出たら、<strong className="text-foreground font-bold">[✋ どこでも参加]</strong> を押すだけ！10人集まると自動でチーム分けが始まります。
             </p>
-            <div className="bg-background border border-border/80 rounded-xl p-3 text-[11px] text-stone-600 space-y-1">
+            <div className="bg-background border border-border/80 rounded-xl p-3 text-[11px] text-muted space-y-1">
               <div className="font-bold text-foreground-soft flex items-center gap-1">
                 <Gamepad2 size={13} className="text-emerald-600" />
                 ゲーム中の流れ
@@ -166,7 +166,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
             <h4 className="text-xs font-black text-foreground flex items-center gap-1.5">
               <span>💡</span> 1戦だけのスポット参加や途中抜けはできますか？
             </h4>
-            <p className="text-[11px] text-stone-600 leading-relaxed">
+            <p className="text-[11px] text-muted leading-relaxed">
               大歓迎です！「1戦だけプレイしたい」「時間が合えば途中まで」という場合でも気軽に参加ボタンを押してください。交代や途中抜けも自由に行えます。
             </p>
           </div>
@@ -175,7 +175,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
             <h4 className="text-xs font-black text-foreground flex items-center gap-1.5">
               <span>🔲</span> シルバー以下のピック形式やルールはどうなっていますか？
             </h4>
-            <p className="text-[11px] text-stone-600 leading-relaxed">
+            <p className="text-[11px] text-muted leading-relaxed">
               シルバー以下カスタムは「ブラインドピック（MMR変動あり）」を採用しています！BANや相手のカウンターを気にせず、自分の使いたい得意チャンピオンで気楽に対戦しながらMMR勝負を楽しめます。
             </p>
           </div>
@@ -184,7 +184,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
             <h4 className="text-xs font-black text-foreground flex items-center gap-1.5">
               <span>❓</span> 初心者やランクの低い人でも楽しめますか？
             </h4>
-            <p className="text-[11px] text-stone-600 leading-relaxed">
+            <p className="text-[11px] text-muted leading-relaxed">
               はい！ゴルプラ帯とシルバー以下帯は完全に部屋を分けて開催されます。また、20:00時点で10名集まらなかった場合はカスタムを中止し、ノーマルやメイヘムでワイワイ遊ぶ形式へ切り替わります。
             </p>
           </div>
@@ -193,7 +193,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
             <h4 className="text-xs font-black text-foreground flex items-center gap-1.5">
               <span>🪙</span> コインはどうやって増やすのですか？
             </h4>
-            <p className="text-[11px] text-stone-600 leading-relaxed">
+            <p className="text-[11px] text-muted leading-relaxed">
               マイページで毎日受取できるデイリーボーナス（+100コイン）、カスタム参加で +100コイン、勝利で +150コインが手に入ります！貯めたコインは勝敗予想ベットやショップ特権で使えます。
             </p>
           </div>
@@ -202,7 +202,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
             <h4 className="text-xs font-black text-foreground flex items-center gap-1.5">
               <span>🔁</span> 連戦時（BO3形式）のチーム分けはどうなりますか？
             </h4>
-            <p className="text-[11px] text-stone-600 leading-relaxed">
+            <p className="text-[11px] text-muted leading-relaxed">
               バランサー画面の「BO3（チーム維持）」機能により、同じメンバー構成のままサイドを交代して第2戦・第3戦を行うことができます。
             </p>
           </div>
@@ -211,7 +211,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
             <h4 className="text-xs font-black text-foreground flex items-center gap-1.5">
               <span>🎪</span> お祭りカスタム（ネタ構成）の時は戦績に影響しますか？
             </h4>
-            <p className="text-[11px] text-stone-600 leading-relaxed">
+            <p className="text-[11px] text-muted leading-relaxed">
               「お祭りカスタム（完全戦績保護）」トグルがONになっている試合では、公式勝率・MMR変動が一切ノーカウントになります。安心してオフメタやランダムを楽しめます！
             </p>
           </div>

@@ -146,20 +146,20 @@ export default function ChampionRevisionHistory({
         <p className="text-xs font-bold text-foreground-subtle flex items-center gap-1.5">
           <History size={14} className="text-amber-600" />
           <span>{headerLabel}</span>
-          {revisions && <span className="text-stone-400 font-normal">({revisions.length}件)</span>}
+          {revisions && <span className="text-faint font-normal">({revisions.length}件)</span>}
         </p>
         {isModal && onClose && (
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-black/5 text-stone-500 hover:text-foreground transition-colors">
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-black/5 text-muted-strong hover:text-foreground transition-colors">
             <X size={16} />
           </button>
         )}
       </div>
 
-      {loading && <p className="text-xs text-stone-400 py-3">変更履歴を確認中...</p>}
+      {loading && <p className="text-xs text-faint py-3">変更履歴を確認中...</p>}
       {error && <p className="text-xs text-rose-600 py-3">履歴の取得に失敗: {error}</p>}
 
       {!loading && (!revisions || revisions.length === 0) && (
-        <p className="text-xs text-stone-400 py-3 flex items-center gap-1">
+        <p className="text-xs text-faint py-3 flex items-center gap-1">
           <History size={12} /> この項目の変更履歴はまだありません。
         </p>
       )}
@@ -186,14 +186,14 @@ export default function ChampionRevisionHistory({
                     <span className="text-emerald-700">+{r.added}</span> <span className="text-rose-700">-{r.removed}</span>
                   </span>
                 )}
-                <span className="text-stone-400 ml-auto shrink-0">{new Date(r.created_at).toLocaleString('ja-JP')}</span>
+                <span className="text-faint ml-auto shrink-0">{new Date(r.created_at).toLocaleString('ja-JP')}</span>
                 {openId === r.id ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
               </button>
 
               {openId === r.id && (
                 <div className="border-t border-border bg-background p-2.5">
                   {detailLoading ? (
-                    <p className="text-[11px] text-stone-500">差分を読み込み中...</p>
+                    <p className="text-[11px] text-muted-strong">差分を読み込み中...</p>
                   ) : detail ? (
                     <>
                       <div className="max-h-64 overflow-auto font-mono text-[10px] leading-relaxed rounded-lg border border-border bg-surface">
@@ -205,7 +205,7 @@ export default function ChampionRevisionHistory({
                                 ? 'bg-emerald-100 text-emerald-700 px-2'
                                 : line.op === 'removed'
                                 ? 'bg-rose-100 text-rose-700/80 px-2 line-through decoration-rose-400'
-                                : 'text-stone-500 px-2'
+                                : 'text-muted-strong px-2'
                             }
                           >
                             <span className="select-none opacity-40 mr-2">

@@ -86,11 +86,11 @@ export default function PlayerStyleRadarCard() {
           <div>
             <h3 className="font-black text-sm text-foreground flex items-center gap-2">
               <span>プレイスタイル深層特性カルテ</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 bg-surface-subtle text-stone-600 border border-border rounded-full" title="your.ggから手入力で記録した固定値です。試合ごとに自動更新はされません。">
+              <span className="text-[10px] font-bold px-2 py-0.5 bg-surface-subtle text-muted border border-border rounded-full" title="your.ggから手入力で記録した固定値です。試合ごとに自動更新はされません。">
                 {PROFILE_SNAPSHOT_DATE} 時点の手入力値
               </span>
             </h3>
-            <p className="text-[11px] text-stone-500 font-mono">
+            <p className="text-[11px] text-muted-strong font-mono">
               {p.summonerName} | {p.tier} ({p.role} メイン)
             </p>
           </div>
@@ -102,7 +102,7 @@ export default function PlayerStyleRadarCard() {
             type="button"
             onClick={() => setActiveTab('profile')}
             className={`px-2 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
-              activeTab === 'profile' ? 'bg-surface text-foreground shadow-2xs' : 'text-stone-500 hover:text-foreground-soft'
+              activeTab === 'profile' ? 'bg-surface text-foreground shadow-2xs' : 'text-muted-strong hover:text-foreground-soft'
             }`}
           >
             📈 現在
@@ -111,7 +111,7 @@ export default function PlayerStyleRadarCard() {
             type="button"
             onClick={() => setActiveTab('timeline')}
             className={`px-2 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
-              activeTab === 'timeline' ? 'bg-surface text-foreground shadow-2xs text-amber-700' : 'text-stone-500 hover:text-foreground-soft'
+              activeTab === 'timeline' ? 'bg-surface text-foreground shadow-2xs text-amber-700' : 'text-muted-strong hover:text-foreground-soft'
             }`}
           >
             📊 5大推移
@@ -120,7 +120,7 @@ export default function PlayerStyleRadarCard() {
             type="button"
             onClick={() => setActiveTab('vision')}
             className={`px-2 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
-              activeTab === 'vision' ? 'bg-surface text-amber-700 font-black shadow-2xs' : 'text-stone-500 hover:text-foreground-soft'
+              activeTab === 'vision' ? 'bg-surface text-amber-700 font-black shadow-2xs' : 'text-muted-strong hover:text-foreground-soft'
             }`}
           >
             👁️ 視界解析
@@ -129,7 +129,7 @@ export default function PlayerStyleRadarCard() {
             type="button"
             onClick={() => setActiveTab('types')}
             className={`px-2 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
-              activeTab === 'types' ? 'bg-surface text-foreground shadow-2xs' : 'text-stone-500 hover:text-foreground-soft'
+              activeTab === 'types' ? 'bg-surface text-foreground shadow-2xs' : 'text-muted-strong hover:text-foreground-soft'
             }`}
           >
             🧭 4大比較
@@ -152,7 +152,7 @@ export default function PlayerStyleRadarCard() {
                   安定度 S
                 </span>
               </div>
-              <p className="text-xs text-stone-600 leading-relaxed font-medium">
+              <p className="text-xs text-muted leading-relaxed font-medium">
                 {p.diagnosisSummary}
               </p>
             </div>
@@ -162,7 +162,7 @@ export default function PlayerStyleRadarCard() {
           <div className="rounded-2xl border border-border bg-background/50 p-4 space-y-3">
             <div className="text-xs font-black text-foreground-soft flex items-center justify-between">
               <span>📊 プレイスタイル 5大レーダー解析</span>
-              <span className="text-[10px] text-stone-400 font-normal">同ランク比較（{PROFILE_SNAPSHOT_DATE} 時点の手入力値）</span>
+              <span className="text-[10px] text-faint font-normal">同ランク比較（{PROFILE_SNAPSHOT_DATE} 時点の手入力値）</span>
             </div>
 
             <div className="space-y-2.5">
@@ -267,7 +267,7 @@ export default function PlayerStyleRadarCard() {
                 <TrendingUp size={14} className="text-amber-600" />
                 <span>時系列スコア推移（過去スプリット比較）</span>
               </span>
-              <span className="text-[10px] text-stone-400 font-medium">
+              <span className="text-[10px] text-faint font-medium">
                 期間をタップして比較
               </span>
             </div>
@@ -286,7 +286,7 @@ export default function PlayerStyleRadarCard() {
                         : 'border-border bg-background/70 hover:bg-surface-subtle hover:border-border'
                     }`}
                   >
-                    <div className="text-[10px] font-bold text-stone-500 truncate">
+                    <div className="text-[10px] font-bold text-muted-strong truncate">
                       {pt.period}
                     </div>
                     <div className="text-xs font-black text-foreground truncate">
@@ -311,7 +311,7 @@ export default function PlayerStyleRadarCard() {
                   <div className="text-xs font-black text-foreground">
                     {selectedPeriod.label} の特性 ＆ 総括
                   </div>
-                  <div className="text-[10px] text-stone-500">
+                  <div className="text-[10px] text-muted-strong">
                     {selectedPeriod.period} ({selectedPeriod.gamesCount}試合)
                   </div>
                 </div>
@@ -320,12 +320,12 @@ export default function PlayerStyleRadarCard() {
                 <div className="text-xs font-black text-emerald-700">
                   平均被デス {selectedPeriod.avgDeaths}
                 </div>
-                <div className="text-[10px] font-bold text-stone-500">
+                <div className="text-[10px] font-bold text-muted-strong">
                   CS差 +{selectedPeriod.csd15} / KP {selectedPeriod.kp15}%
                 </div>
               </div>
             </div>
-            <p className="text-xs text-stone-600 leading-relaxed font-medium bg-surface/80 p-2.5 rounded-xl border border-border/70">
+            <p className="text-xs text-muted leading-relaxed font-medium bg-surface/80 p-2.5 rounded-xl border border-border/70">
               {selectedPeriod.summary}
             </p>
           </div>
@@ -335,7 +335,7 @@ export default function PlayerStyleRadarCard() {
             <div className="text-xs font-black text-foreground-soft flex items-center justify-between border-b border-stone-100 pb-2">
               <span>📊 5大指標スコアの変化</span>
               {prevPeriod && (
-                <span className="text-[10px] text-stone-500 font-bold">
+                <span className="text-[10px] text-muted-strong font-bold">
                   （前期間 {prevPeriod.label} との比較）
                 </span>
               )}
@@ -489,12 +489,12 @@ export default function PlayerStyleRadarCard() {
           <div className="grid grid-cols-2 gap-2.5">
             {/* 分間視界スコア */}
             <div className="p-3 bg-surface rounded-2xl border border-border shadow-2xs space-y-1">
-              <div className="text-[10px] font-bold text-stone-500 flex items-center justify-between">
+              <div className="text-[10px] font-bold text-muted-strong flex items-center justify-between">
                 <span>分間視界スコア (VS/m)</span>
                 <span className="text-amber-600 font-bold">上位18%</span>
               </div>
               <div className="text-base font-black text-foreground">
-                {vision.visionScorePerMin} <span className="text-xs font-normal text-stone-400">/分</span>
+                {vision.visionScorePerMin} <span className="text-xs font-normal text-faint">/分</span>
               </div>
               <div className="text-[10px] text-emerald-700 font-bold">
                 同帯平均 (1.18) 対比 +37%
@@ -503,42 +503,42 @@ export default function PlayerStyleRadarCard() {
 
             {/* コントロールワード */}
             <div className="p-3 bg-surface rounded-2xl border border-border shadow-2xs space-y-1">
-              <div className="text-[10px] font-bold text-stone-500 flex items-center justify-between">
+              <div className="text-[10px] font-bold text-muted-strong flex items-center justify-between">
                 <span>ピンクワード購入</span>
                 <span className="text-emerald-600 font-bold">高水準</span>
               </div>
               <div className="text-base font-black text-foreground">
-                {vision.controlWardsPerGame} <span className="text-xs font-normal text-stone-400">本 / 試合</span>
+                {vision.controlWardsPerGame} <span className="text-xs font-normal text-faint">本 / 試合</span>
               </div>
-              <div className="text-[10px] text-stone-500 font-bold">
+              <div className="text-[10px] text-muted-strong font-bold">
                 平均生存: {vision.controlWardAvgLifetimeSec}秒
               </div>
             </div>
 
             {/* ワード設置 */}
             <div className="p-3 bg-surface rounded-2xl border border-border shadow-2xs space-y-1">
-              <div className="text-[10px] font-bold text-stone-500 flex items-center justify-between">
+              <div className="text-[10px] font-bold text-muted-strong flex items-center justify-between">
                 <span>分間ワード設置</span>
-                <span className="text-stone-400">Placing</span>
+                <span className="text-faint">Placing</span>
               </div>
               <div className="text-base font-black text-foreground">
-                {vision.wardsPlacedPerMin} <span className="text-xs font-normal text-stone-400">個 / 分</span>
+                {vision.wardsPlacedPerMin} <span className="text-xs font-normal text-faint">個 / 分</span>
               </div>
-              <div className="text-[10px] text-stone-500">
+              <div className="text-[10px] text-muted-strong">
                 1試合 約20〜25個
               </div>
             </div>
 
             {/* 敵ワード破壊 */}
             <div className="p-3 bg-surface rounded-2xl border border-border shadow-2xs space-y-1">
-              <div className="text-[10px] font-bold text-stone-500 flex items-center justify-between">
+              <div className="text-[10px] font-bold text-muted-strong flex items-center justify-between">
                 <span>分間ワード破壊</span>
-                <span className="text-stone-400">Clearing</span>
+                <span className="text-faint">Clearing</span>
               </div>
               <div className="text-base font-black text-foreground">
-                {vision.wardsClearedPerMin} <span className="text-xs font-normal text-stone-400">個 / 分</span>
+                {vision.wardsClearedPerMin} <span className="text-xs font-normal text-faint">個 / 分</span>
               </div>
-              <div className="text-[10px] text-stone-500">
+              <div className="text-[10px] text-muted-strong">
                 レンズ・植物活用
               </div>
             </div>
@@ -551,7 +551,7 @@ export default function PlayerStyleRadarCard() {
                 <MapPin size={13} className="text-amber-600" />
                 <span>視界配置バランス ＆ 侵入深度</span>
               </span>
-              <span className="text-[10px] text-stone-500">
+              <span className="text-[10px] text-muted-strong">
                 自陣防衛 {vision.defensiveWardRatioPercent}% / 敵陣ディープ {vision.deepWardRatioPercent}%
               </span>
             </div>
@@ -582,7 +582,7 @@ export default function PlayerStyleRadarCard() {
               </div>
             </div>
 
-            <p className="text-xs text-stone-600 leading-relaxed font-medium bg-background p-2.5 rounded-xl border border-border/60">
+            <p className="text-xs text-muted leading-relaxed font-medium bg-background p-2.5 rounded-xl border border-border/60">
               {vision.bottleneckSummary}
             </p>
           </div>
@@ -605,7 +605,7 @@ export default function PlayerStyleRadarCard() {
       {/* ========================================================================= */}
       {activeTab === 'types' && (
         <div className="space-y-3 animate-in fade-in">
-          <p className="text-xs text-stone-500">
+          <p className="text-xs text-muted-strong">
             ジャングラーの4つの基本プレイスタイルです。自分の強みを活かしつつ、敵構成や味方に合わせてスタイルを調整できます。
           </p>
 
@@ -628,24 +628,24 @@ export default function PlayerStyleRadarCard() {
                     className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                       t.id === 'farmer_scaler'
                         ? 'bg-emerald-200 text-emerald-900'
-                        : 'bg-surface-subtle text-stone-600'
+                        : 'bg-surface-subtle text-muted'
                     }`}
                   >
                     {t.badge}
                   </span>
                 </div>
 
-                <p className="text-xs text-stone-600 leading-relaxed font-medium">{t.desc}</p>
+                <p className="text-xs text-muted leading-relaxed font-medium">{t.desc}</p>
 
                 <div className="pt-1 space-y-1 text-[11px]">
                   <div className="text-emerald-700 font-bold">
-                    <span className="text-stone-400">強み:</span> {t.pros}
+                    <span className="text-faint">強み:</span> {t.pros}
                   </div>
                   <div className="text-rose-700 font-bold">
-                    <span className="text-stone-400">弱み:</span> {t.cons}
+                    <span className="text-faint">弱み:</span> {t.cons}
                   </div>
                   <div className="text-foreground-subtle font-bold pt-0.5">
-                    <span className="text-stone-400">相性◎:</span> {t.recommendedChamps.join(', ')}
+                    <span className="text-faint">相性◎:</span> {t.recommendedChamps.join(', ')}
                   </div>
                 </div>
               </div>

@@ -11,7 +11,7 @@ export default function NotFound() {
       <div>
         <p className="text-5xl font-black tracking-tight text-[#c89b3c]">404</p>
         <p className="mt-3 text-sm font-bold text-foreground-subtle">ページが見つかりませんでした</p>
-        <p className="mt-1 max-w-sm text-xs leading-relaxed text-stone-500">
+        <p className="mt-1 max-w-sm text-xs leading-relaxed text-muted-strong">
           URLが変更されたか、削除された可能性があります。下のボタンからホームに戻れます。
         </p>
       </div>

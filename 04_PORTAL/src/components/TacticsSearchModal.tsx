@@ -91,14 +91,14 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
                 戦術概念 逆引きインデックス
                 <span className="text-[10px] bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded-full font-bold">RAG</span>
               </h3>
-              <p className="text-xs text-stone-500">
+              <p className="text-xs text-muted-strong">
                 全30体のバイブル ＆ 170本超の動画解析からTips・立ち回りを即座に横断検索
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-stone-400 hover:text-foreground-subtle hover:bg-surface-hover/60 transition"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-faint hover:text-foreground-subtle hover:bg-surface-hover/60 transition"
           >
             <X size={18} />
           </button>
@@ -107,7 +107,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
         {/* 検索入力バー */}
         <div className="p-4 sm:p-5 border-b border-border/80 space-y-3">
           <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" size={18} />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-faint pointer-events-none" size={18} />
             <input
               type="text"
               autoFocus
@@ -119,7 +119,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
             {query && (
               <button
                 onClick={() => setQuery('')}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-foreground-subtle p-1 rounded-full hover:bg-surface-hover/60"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-faint hover:text-foreground-subtle p-1 rounded-full hover:bg-surface-hover/60"
               >
                 <X size={15} />
               </button>
@@ -128,7 +128,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
 
           {/* クイックサジェストピル */}
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] font-bold text-stone-400 mr-1 flex items-center gap-1">
+            <span className="text-[11px] font-bold text-faint mr-1 flex items-center gap-1">
               <Sparkles size={12} /> おすすめ:
             </span>
             {POPULAR_CONCEPTS.map(concept => (
@@ -139,7 +139,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
                 className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition cursor-pointer ${
                   query === concept
                     ? 'bg-amber-500 text-stone-950 border-amber-500'
-                    : 'bg-surface text-stone-600 border-border hover:bg-surface-subtle hover:text-foreground'
+                    : 'bg-surface text-muted border-border hover:bg-surface-subtle hover:text-foreground'
                 }`}
               >
                 {concept}
@@ -151,7 +151,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
         {/* 結果エリア */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3">
           {loading && (
-            <div className="py-12 flex flex-col items-center justify-center text-stone-400 gap-2">
+            <div className="py-12 flex flex-col items-center justify-center text-faint gap-2">
               <div className="w-6 h-6 border-3 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
               <span className="text-xs font-bold">戦術バイブルを横断検索中...</span>
             </div>
@@ -164,17 +164,17 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
           )}
 
           {!loading && !error && query.trim().length >= 2 && results.length === 0 && (
-            <div className="py-12 text-center text-stone-400">
+            <div className="py-12 text-center text-faint">
               <p className="text-sm font-bold">「{query}」に一致する戦術Tipsは見つかりませんでした</p>
-              <p className="text-xs mt-1 text-stone-500">別のキーワードや短い単語でお試しください</p>
+              <p className="text-xs mt-1 text-muted-strong">別のキーワードや短い単語でお試しください</p>
             </div>
           )}
 
           {!loading && !error && query.trim().length < 2 && (
-            <div className="py-12 text-center text-stone-400 space-y-2">
+            <div className="py-12 text-center text-faint space-y-2">
               <div className="text-3xl">🔍</div>
               <p className="text-sm font-bold text-foreground-subtle">戦術概念キーワードを2文字以上入力してください</p>
-              <p className="text-xs text-stone-500 max-w-sm mx-auto">
+              <p className="text-xs text-muted-strong max-w-sm mx-auto">
                 上のピルをタップするか、「インベード」「ガンク回避」「ウェーブ管理」などを検索すると該当チャンピオンのバイブルが即座に表示されます。
               </p>
             </div>
@@ -182,7 +182,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
 
           {!loading && results.length > 0 && (
             <div className="space-y-2.5">
-              <div className="text-xs font-black text-stone-500 px-1">
+              <div className="text-xs font-black text-muted-strong px-1">
                 ヒット件数: {results.length} 件
               </div>
 
@@ -219,7 +219,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
                       }`}>
                         {item.type === 'bible' ? '戦術バイブル' : '動画解析Tips'}
                       </span>
-                      <span className="text-[11px] font-bold text-stone-500 truncate">
+                      <span className="text-[11px] font-bold text-muted-strong truncate">
                         › {item.section}
                       </span>
                     </div>
@@ -241,7 +241,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
         </div>
 
         {/* フッター */}
-        <div className="p-3 bg-background border-t border-border text-center text-[11px] text-stone-400 font-bold">
+        <div className="p-3 bg-background border-t border-border text-center text-[11px] text-faint font-bold">
           ESCキーで閉じる • 該当チャンピオンをクリックして辞典へ直行
         </div>
       </div>

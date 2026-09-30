@@ -132,7 +132,7 @@ export default function OverlayLauncherButton() {
         className={`px-2.5 py-1.5 font-bold text-[11px] rounded-xl border transition-all flex items-center gap-1 cursor-pointer ${
           autostart
             ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/40'
-            : 'bg-stone-900/60 hover:bg-stone-800 text-stone-400 border-stone-800 hover:text-stone-300'
+            : 'bg-stone-900/60 hover:bg-stone-800 text-faint border-stone-800 hover:text-faint'
         }`}
         title={autostart ? 'LoL起動時自動表示: 有効 (Windows起動時に自動常駐)' : 'LoL起動時自動表示: 無効 (クリックで自動常駐を有効化)'}
       >

@@ -56,7 +56,7 @@ export default function FreshnessPanel() {
           <RefreshCw size={13} className={loading ? 'animate-spin' : ''} /> 再チェック
         </button>
       </div>
-      <p className="text-[11px] text-stone-500 mb-3">
+      <p className="text-[11px] text-muted-strong mb-3">
         自動生成・自動収集パイプラインが、想定より長く更新されていないテーブルが無いか確認します。
       </p>
       {error && <p className="text-sm text-rose-700 bg-rose-100 border border-rose-200 rounded-lg px-3 py-2 mb-3">{error}</p>}

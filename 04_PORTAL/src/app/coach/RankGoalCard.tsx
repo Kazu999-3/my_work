@@ -110,13 +110,13 @@ export default function RankGoalCard() {
     <div className="space-y-3">
       {/* 目標ランクの表示・変更 */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="text-xs text-stone-600 dark:text-stone-400">
+        <div className="text-xs text-muted">
           目標: <span className="font-black text-foreground dark:text-stone-100">{targetTier || '—'}</span>
         </div>
         {!editing ? (
           <button
             onClick={() => setEditing(true)}
-            className="text-[11px] px-2.5 py-1 rounded-lg border border-border dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-surface-subtle dark:hover:bg-stone-800 transition-colors cursor-pointer"
+            className="text-[11px] px-2.5 py-1 rounded-lg border border-border dark:border-stone-700 text-muted hover:bg-surface-subtle dark:hover:bg-stone-800 transition-colors cursor-pointer"
           >
             目標を変更
           </button>
@@ -137,7 +137,7 @@ export default function RankGoalCard() {
             </button>
             <button
               onClick={() => { setEditing(false); setDraft(targetTier); setSaveError(''); }}
-              className="text-[11px] px-2 py-1 rounded-lg text-stone-500 hover:text-foreground-soft cursor-pointer"
+              className="text-[11px] px-2 py-1 rounded-lg text-muted-strong hover:text-foreground-soft cursor-pointer"
             >
               取消
             </button>
@@ -147,16 +147,16 @@ export default function RankGoalCard() {
       {saveError && <p className="text-xs text-rose-600 dark:text-rose-400">❌ {saveError}</p>}
 
       {loading ? (
-        <div className="py-5 text-center text-xs text-stone-400">読み込み中…</div>
+        <div className="py-5 text-center text-xs text-faint">読み込み中…</div>
       ) : error ? (
         <p className="text-sm text-rose-600 dark:text-rose-400">❌ {error}</p>
       ) : !data?.ranked ? (
-        <p className="text-sm text-stone-500">{data?.message || 'ランク情報を取得できませんでした。'}</p>
+        <p className="text-sm text-muted-strong">{data?.message || 'ランク情報を取得できませんでした。'}</p>
       ) : (
         <div className="space-y-2.5">
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="rounded-xl border border-border dark:border-stone-700/60 bg-surface dark:bg-stone-900/60 px-3 py-2">
-              <div className="text-[10px] font-bold text-stone-500 dark:text-stone-400">現在</div>
+              <div className="text-[10px] font-bold text-muted-strong">現在</div>
               <div className="font-black text-foreground dark:text-stone-100 mt-0.5">{data.current?.label}</div>
             </div>
             <div className="rounded-xl border border-amber-800/60 bg-amber-950/30 px-3 py-2">
@@ -168,14 +168,14 @@ export default function RankGoalCard() {
           <div className="rounded-xl border border-border dark:border-stone-700/60 bg-surface dark:bg-stone-900/60 px-3.5 py-2.5 text-xs space-y-1">
             {typeof data.gap === 'number' && (
               <div>
-                <span className="text-stone-500 dark:text-stone-400">目標までの差: </span>
+                <span className="text-muted-strong">目標までの差: </span>
                 <span className="font-bold text-foreground dark:text-stone-100">{data.gap} LP相当</span>
               </div>
             )}
             {data.projection?.reached ? (
               <div className="font-bold text-emerald-500">🎉 目標に到達しています。</div>
             ) : data.projection?.insufficientTrend ? (
-              <div className="text-stone-500 dark:text-stone-400">
+              <div className="text-muted-strong">
                 到達見込みを出すにはLP推移の記録が足りません（記録 {data.snapshots ?? 0}日分）。
                 このカードを開くたびに当日のスナップショットが貯まります。
               </div>
@@ -183,18 +183,18 @@ export default function RankGoalCard() {
               <>
                 {typeof data.lpPerDay === 'number' && (
                   <div>
-                    <span className="text-stone-500 dark:text-stone-400">直近の伸び: </span>
+                    <span className="text-muted-strong">直近の伸び: </span>
                     <span className="font-bold text-foreground dark:text-stone-100">
                       {data.lpPerDay > 0 ? '+' : ''}{data.lpPerDay} LP/日
                     </span>
                     {typeof data.daySpan === 'number' && (
-                      <span className="text-stone-400 ml-1.5">（{data.daySpan}日間の記録から）</span>
+                      <span className="text-faint ml-1.5">（{data.daySpan}日間の記録から）</span>
                     )}
                   </div>
                 )}
                 {data.projection?.reachDate && (
                   <div>
-                    <span className="text-stone-500 dark:text-stone-400">到達見込み: </span>
+                    <span className="text-muted-strong">到達見込み: </span>
                     <span className="font-bold text-foreground dark:text-stone-100">
                       {data.projection.reachDate}
                       {typeof data.projection.days === 'number' ? `（約${data.projection.days}日後）` : ''}
@@ -203,12 +203,12 @@ export default function RankGoalCard() {
                 )}
                 {typeof data.projection?.gamesNeeded === 'number' && (
                   <div>
-                    <span className="text-stone-500 dark:text-stone-400">必要な勝ち数の目安: </span>
+                    <span className="text-muted-strong">必要な勝ち数の目安: </span>
                     <span className="font-bold text-foreground dark:text-stone-100">約{data.projection.gamesNeeded}勝</span>
                   </div>
                 )}
                 {data.projection?.note && (
-                  <div className="text-[10px] text-stone-400 pt-0.5">{data.projection.note}</div>
+                  <div className="text-[10px] text-faint pt-0.5">{data.projection.note}</div>
                 )}
               </>
             )}

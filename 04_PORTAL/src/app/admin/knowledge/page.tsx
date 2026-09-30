@@ -184,7 +184,7 @@ function KnowledgeBaseContent() {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
         <RefreshCw className="animate-spin text-pink-500" size={24} />
-        <p className="text-xs font-bold text-stone-400">認証状態を確認中...</p>
+        <p className="text-xs font-bold text-faint">認証状態を確認中...</p>
       </div>
     );
   }
@@ -195,7 +195,7 @@ function KnowledgeBaseContent() {
         <div className="text-center rounded-3xl border border-border/80 bg-surface p-8 shadow-sm">
           <div className="text-4xl mb-3">🔑</div>
           <h2 className="text-base font-black text-foreground mb-2">管理者認証が必要です</h2>
-          <p className="text-xs text-stone-500 mb-6 leading-relaxed">
+          <p className="text-xs text-muted-strong mb-6 leading-relaxed">
             戦術取り込み ＆ AI解析ハブは管理者専用です。Discord管理者アカウントでログインしてください。
           </p>
           <a
@@ -228,7 +228,7 @@ function KnowledgeBaseContent() {
                 管理者専用
               </span>
             </div>
-            <p className="text-[11px] text-stone-500 font-medium">
+            <p className="text-[11px] text-muted-strong font-medium">
               Web記事・X投稿・YouTube動画・実戦メモから知見を抽出し、チャンピオン辞典へ反映
             </p>
           </div>
@@ -277,10 +277,10 @@ function KnowledgeBaseContent() {
           className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
             activeTab === 'input'
               ? 'bg-surface text-foreground shadow-xs font-black'
-              : 'text-stone-600 hover:text-foreground hover:bg-surface-hover/60'
+              : 'text-muted hover:text-foreground hover:bg-surface-hover/60'
           }`}
         >
-          <Plus size={15} className={activeTab === 'input' ? 'text-amber-600' : 'text-stone-400'} />
+          <Plus size={15} className={activeTab === 'input' ? 'text-amber-600' : 'text-faint'} />
           <span>知見の追加</span>
         </button>
 
@@ -290,10 +290,10 @@ function KnowledgeBaseContent() {
           className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
             activeTab === 'queue'
               ? 'bg-surface text-foreground shadow-xs font-black'
-              : 'text-stone-600 hover:text-foreground hover:bg-surface-hover/60'
+              : 'text-muted hover:text-foreground hover:bg-surface-hover/60'
           }`}
         >
-          <Film size={14} className={activeTab === 'queue' ? 'text-amber-600' : 'text-stone-400'} />
+          <Film size={14} className={activeTab === 'queue' ? 'text-amber-600' : 'text-faint'} />
           <span>動画解析キュー</span>
         </button>
 
@@ -303,10 +303,10 @@ function KnowledgeBaseContent() {
           className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer relative ${
             activeTab === 'pending'
               ? 'bg-surface text-emerald-800 border border-emerald-300 shadow-xs font-black'
-              : 'text-stone-600 hover:text-foreground hover:bg-surface-hover/60'
+              : 'text-muted hover:text-foreground hover:bg-surface-hover/60'
           }`}
         >
-          <Sparkles size={14} className={activeTab === 'pending' ? 'text-emerald-600' : 'text-stone-400'} />
+          <Sparkles size={14} className={activeTab === 'pending' ? 'text-emerald-600' : 'text-faint'} />
           <span>承認待ちナレッジ</span>
           {pendingCount > 0 && (
             <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse shadow-xs">
@@ -336,7 +336,7 @@ function KnowledgeBaseContent() {
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     inputSubMode === 'url'
                       ? 'bg-surface text-foreground shadow-xs font-black'
-                      : 'text-stone-500 hover:text-foreground'
+                      : 'text-muted-strong hover:text-foreground'
                   }`}
                 >
                   🌐 Web / X / YouTube URL
@@ -347,7 +347,7 @@ function KnowledgeBaseContent() {
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     inputSubMode === 'memo'
                       ? 'bg-surface text-foreground shadow-xs font-black'
-                      : 'text-stone-500 hover:text-foreground'
+                      : 'text-muted-strong hover:text-foreground'
                   }`}
                 >
                   📝 テキスト自由メモ
@@ -358,7 +358,7 @@ function KnowledgeBaseContent() {
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     inputSubMode === 'discord'
                       ? 'bg-surface text-amber-900 shadow-xs font-black'
-                      : 'text-stone-500 hover:text-foreground'
+                      : 'text-muted-strong hover:text-foreground'
                   }`}
                 >
                   💬 Discordチャットログ解析
@@ -372,7 +372,7 @@ function KnowledgeBaseContent() {
               <form onSubmit={(e) => handleAddKnowledge(e, false)} className="space-y-4">
                 {inputSubMode === 'url' ? (
                   <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-stone-600">
+                    <label className="text-[11px] font-bold text-muted">
                       対象URL (Xポスト / Web攻略記事 / YouTube動画)
                     </label>
                     <input
@@ -401,14 +401,14 @@ function KnowledgeBaseContent() {
                       </div>
                     )}
 
-                    <p className="text-[10px] text-stone-500 pl-0.5">
+                    <p className="text-[10px] text-muted-strong pl-0.5">
                       ※ X(Twitter)画像・動画やWeb記事をAIが自動要約。YouTube動画は自動的に解析キューへ送信され、要約・実演シーン抽出が行われます。
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <label className="text-[11px] font-bold text-stone-600">
+                      <label className="text-[11px] font-bold text-muted">
                         戦術メモ・気付き・立ち回り（Discordの会話ログ貼り付けも対応）
                       </label>
                       <button
@@ -426,7 +426,7 @@ function KnowledgeBaseContent() {
                       onChange={(e) => setInputMemo(e.target.value)}
                       className="w-full px-4 py-3 bg-background/70 border border-border rounded-xl focus:outline-none focus:border-amber-500 focus:bg-surface focus:ring-2 focus:ring-amber-500/20 text-xs text-foreground placeholder-stone-400 resize-none leading-relaxed transition-all"
                     />
-                    <p className="text-[10px] text-stone-500 pl-0.5">
+                    <p className="text-[10px] text-muted-strong pl-0.5">
                       ※ 自由な戦術メモのほか、Discordのチャットログをそのまま貼り付けてもAIが雑談を除去して自動整形します。
                     </p>
                   </div>

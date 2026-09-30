@@ -116,7 +116,7 @@ export default function DictFactCheckPanel() {
       <h2 className="text-base font-bold text-foreground flex items-center gap-2">
         <ShieldCheck size={18} className="text-teal-600" /> 辞典・ナレッジの一斉ファクトチェック
       </h2>
-      <p className="text-xs text-stone-500">
+      <p className="text-xs text-muted-strong">
         辞典(matchup_sentinel)・コーチAI知識層(champion_facts/champion_notes)・ナレッジ(personal_knowledge)を横断し、
         表記ゆれ・矛盾・単一ソースのみの未確証な記述・公式データとの食い違いを検出します。
       </p>
@@ -129,7 +129,7 @@ export default function DictFactCheckPanel() {
           <ShieldCheck className="w-5 h-5 text-teal-600" />
           全168チャンプ過去キュー一括リセット ＋ 最新AI全自動一斉ファクトチェック完走
         </h3>
-        <p className="text-xs text-stone-600 leading-relaxed">
+        <p className="text-xs text-muted leading-relaxed">
           ボタン1つで「全168チャンピオンの過去の古い残留キュー（19件等）をキレイサッパリ一括消去」➔「表記ゆれ即時検知」➔「最新AIによる厳選一斉ファクトチェック」が全自動で完走します。
         </p>
 
@@ -163,7 +163,7 @@ export default function DictFactCheckPanel() {
             <button
               onClick={() => loadQueue()}
               disabled={loadingQueue}
-              className="text-xs text-stone-500 hover:text-foreground-soft flex items-center gap-1 font-bold"
+              className="text-xs text-muted-strong hover:text-foreground-soft flex items-center gap-1 font-bold"
             >
               <RefreshCw size={12} className={loadingQueue ? 'animate-spin' : ''} /> 再読込
             </button>
@@ -171,7 +171,7 @@ export default function DictFactCheckPanel() {
         </div>
 
         {loadingQueue ? (
-          <p className="text-xs text-stone-500 py-4 text-center">読み込み中...</p>
+          <p className="text-xs text-muted-strong py-4 text-center">読み込み中...</p>
         ) : items.length === 0 ? (
           <div className="p-6 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-1">
             <p className="text-xs font-bold text-emerald-800">🎉 未対応の検出項目はありません。すべてのファクトチェック点検が完了しています！</p>
@@ -179,7 +179,7 @@ export default function DictFactCheckPanel() {
         ) : (
           /* 1件ずつ集中処理のフォーカスカード */
           <div className="space-y-2">
-            <div className="bg-surface-subtle p-2.5 rounded-xl text-xs text-stone-600 font-extrabold flex justify-between items-center">
+            <div className="bg-surface-subtle p-2.5 rounded-xl text-xs text-muted font-extrabold flex justify-between items-center">
               <span>🎯 目の前の1件に集中して片付ける (1 / {items.length} 件目を点検中)</span>
               <span>1件片付けると自動で次のカードへ進みます</span>
             </div>

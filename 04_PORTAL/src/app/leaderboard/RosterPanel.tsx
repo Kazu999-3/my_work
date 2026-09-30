@@ -68,7 +68,7 @@ export default function RosterPanel() {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-12">
-        <div className="text-stone-500 font-bold text-xs animate-pulse flex items-center gap-2">
+        <div className="text-muted-strong font-bold text-xs animate-pulse flex items-center gap-2">
           <span>👥</span> 名簿データを読み込み中...
         </div>
       </div>
@@ -81,7 +81,7 @@ export default function RosterPanel() {
       <div className="bg-surface/90 backdrop-blur-md rounded-2xl p-4 md:p-5 border border-border/90 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
         {/* 検索窓 */}
         <div className="relative w-full md:w-80">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 w-4 h-4" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-faint w-4 h-4" />
           <input
             type="text"
             placeholder="プレイヤー名・Riot ID・ランクで検索..."
@@ -101,7 +101,7 @@ export default function RosterPanel() {
               className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer shrink-0 ${
                 roleFilter === role
                   ? "bg-amber-600 text-white shadow-xs"
-                  : "bg-surface-subtle hover:bg-surface-hover text-stone-600"
+                  : "bg-surface-subtle hover:bg-surface-hover text-muted"
               }`}
             >
               {role === "ALL" ? "全ロール" : role}
@@ -149,7 +149,7 @@ export default function RosterPanel() {
                       <h4 className="text-sm font-black text-foreground truncate group-hover:text-amber-800 transition">
                         {player.name}
                       </h4>
-                      <p className="text-[11px] font-mono text-stone-500 truncate">
+                      <p className="text-[11px] font-mono text-muted-strong truncate">
                         {player.ign || "Riot ID未連携"}
                       </p>
                     </div>
@@ -162,19 +162,19 @@ export default function RosterPanel() {
 
                 {/* レーン希望バッジ */}
                 <div className="flex items-center gap-1.5 text-[11px] font-bold">
-                  <span className="text-stone-500">希望:</span>
+                  <span className="text-muted-strong">希望:</span>
                   <span className="px-2 py-0.5 rounded-md bg-surface-subtle text-foreground-soft font-mono">
                     {primaryRole}
                   </span>
                   {secondaryRole !== "FILL" && (
-                    <span className="px-2 py-0.5 rounded-md bg-background text-stone-600 font-mono">
+                    <span className="px-2 py-0.5 rounded-md bg-background text-muted font-mono">
                       / {secondaryRole}
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between text-[11px] text-stone-500 font-medium">
+              <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between text-[11px] text-muted-strong font-medium">
                 <span>カルテを見る</span>
                 <span className="text-amber-600 font-black group-hover:translate-x-1 transition">→</span>
               </div>
@@ -184,7 +184,7 @@ export default function RosterPanel() {
       </div>
 
       {filteredPlayers.length === 0 && (
-        <div className="text-center py-12 bg-surface rounded-2xl border border-border text-stone-500 text-xs font-bold">
+        <div className="text-center py-12 bg-surface rounded-2xl border border-border text-muted-strong text-xs font-bold">
           該当するプレイヤーが見つかりませんでした。
         </div>
       )}

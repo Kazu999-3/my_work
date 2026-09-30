@@ -32,7 +32,7 @@ export default function ThemeToggle({ variant = 'compact', className = '' }: The
           className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
             theme === 'light'
               ? 'bg-surface text-foreground shadow-xs'
-              : 'text-stone-600 dark:text-stone-400 hover:text-foreground dark:hover:text-stone-200'
+              : 'text-muted hover:text-foreground dark:hover:text-stone-200'
           }`}
           title="ライトモード"
         >
@@ -45,7 +45,7 @@ export default function ThemeToggle({ variant = 'compact', className = '' }: The
           className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
             theme === 'dark'
               ? 'bg-[#1e1f22] text-white shadow-xs'
-              : 'text-stone-600 dark:text-stone-400 hover:text-foreground dark:hover:text-stone-200'
+              : 'text-muted hover:text-foreground dark:hover:text-stone-200'
           }`}
           title="ダークモード"
         >
@@ -58,11 +58,11 @@ export default function ThemeToggle({ variant = 'compact', className = '' }: The
           className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
             theme === 'system'
               ? 'bg-surface dark:bg-[#1e1f22] text-foreground dark:text-white shadow-xs'
-              : 'text-stone-600 dark:text-stone-400 hover:text-foreground dark:hover:text-stone-200'
+              : 'text-muted hover:text-foreground dark:hover:text-stone-200'
           }`}
           title="OS設定に連動"
         >
-          <Laptop size={14} className="text-stone-500 dark:text-stone-400" />
+          <Laptop size={14} className="text-muted-strong" />
           <span>自動</span>
         </button>
       </div>

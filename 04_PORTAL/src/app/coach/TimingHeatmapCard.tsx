@@ -161,7 +161,7 @@ export default function TimingHeatmapCard() {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-stone-600 dark:text-stone-400">
+      <p className="text-sm text-muted">
         同期したソロQ試合の開始時刻(JST)から、曜日×時間帯ごとの勝率を集計します。
       </p>
 
@@ -171,7 +171,7 @@ export default function TimingHeatmapCard() {
           className={`rounded-xl border px-3.5 py-2 text-xs ${
             isStale
               ? 'bg-rose-950/30 text-rose-400 border-rose-800/60'
-              : 'bg-surface-subtle dark:bg-stone-800/60 text-stone-600 dark:text-stone-300 border-border dark:border-stone-700/60'
+              : 'bg-surface-subtle dark:bg-stone-800/60 text-muted border-border dark:border-stone-700/60'
           }`}
         >
           <span className="font-bold">
@@ -203,7 +203,7 @@ export default function TimingHeatmapCard() {
       {loading ? (
         <Spinner />
       ) : totalGames === 0 ? (
-        <p className="text-sm text-stone-500 py-6 text-center">まだ同期されたデータがありません。上のボタンで同期してください。</p>
+        <p className="text-sm text-muted-strong py-6 text-center">まだ同期されたデータがありません。上のボタンで同期してください。</p>
       ) : (
         <div className="space-y-3">
           {(best || worst) && (
@@ -212,14 +212,14 @@ export default function TimingHeatmapCard() {
                 <div className="rounded-xl border border-emerald-800/60 bg-emerald-950/30 p-3">
                   <div className="text-[10px] font-bold text-emerald-400">👍 最も勝率が良い時間帯</div>
                   <div className="text-sm font-bold text-stone-100">{HEATMAP_DAYS[best.day]}曜 {best.hour}時台</div>
-                  <div className="text-xs text-stone-400">{best.winRate}% ({best.wins}/{best.games}勝)</div>
+                  <div className="text-xs text-faint">{best.winRate}% ({best.wins}/{best.games}勝)</div>
                 </div>
               )}
               {worst && (
                 <div className="rounded-xl border border-rose-800/60 bg-rose-950/30 p-3">
                   <div className="text-[10px] font-bold text-rose-400">👎 最も勝率が悪い時間帯</div>
                   <div className="text-sm font-bold text-stone-100">{HEATMAP_DAYS[worst.day]}曜 {worst.hour}時台</div>
-                  <div className="text-xs text-stone-400">{worst.winRate}% ({worst.wins}/{worst.games}勝)</div>
+                  <div className="text-xs text-faint">{worst.winRate}% ({worst.wins}/{worst.games}勝)</div>
                 </div>
               )}
             </div>
@@ -236,9 +236,9 @@ export default function TimingHeatmapCard() {
                   <span className="font-bold text-foreground dark:text-stone-100">
                     {HEATMAP_DAYS[activeCell.day]}曜 {activeCell.hour}時台:{' '}
                     {games > 0 ? (
-                      <span className="font-extrabold text-foreground-subtle dark:text-stone-300">{c!.winRate}% ({c!.wins}/{games}勝)</span>
+                      <span className="font-extrabold text-foreground-subtle">{c!.winRate}% ({c!.wins}/{games}勝)</span>
                     ) : (
-                      <span className="font-normal text-stone-400">データなし</span>
+                      <span className="font-normal text-faint">データなし</span>
                     )}
                   </span>
                   {isGood && (
@@ -254,7 +254,7 @@ export default function TimingHeatmapCard() {
                 </div>
               );
             })() : (
-              <span className="text-stone-400">マスにカーソルを合わせる（スマホはタップ）と詳細がここに表示されます</span>
+              <span className="text-faint">マスにカーソルを合わせる（スマホはタップ）と詳細がここに表示されます</span>
             )}
           </div>
 
@@ -264,7 +264,7 @@ export default function TimingHeatmapCard() {
           <div className="w-full overflow-x-auto -mx-1 px-1">
             <div className="min-w-[560px]">
             {/* 時間ヘッダー */}
-            <div className="grid grid-cols-[1.25rem_repeat(24,1fr)] gap-px text-[9px] text-stone-400 text-center mb-1">
+            <div className="grid grid-cols-[1.25rem_repeat(24,1fr)] gap-px text-[9px] text-faint text-center mb-1">
               <div className="w-5"></div>
               {Array.from({ length: 24 }, (_, h) => (
                 <div key={h} className="leading-none">
@@ -277,7 +277,7 @@ export default function TimingHeatmapCard() {
             <div className="space-y-0.5" onMouseLeave={() => setActiveCell(null)}>
               {HEATMAP_DAYS.map((dayLabel, day) => (
                 <div key={day} className="grid grid-cols-[1.25rem_repeat(24,1fr)] gap-px items-center">
-                  <div className="text-[10px] font-bold text-stone-500 dark:text-stone-400 text-center leading-none pr-0.5">
+                  <div className="text-[10px] font-bold text-muted-strong text-center leading-none pr-0.5">
                     {dayLabel}
                   </div>
                   {Array.from({ length: 24 }, (_, hour) => {
@@ -303,7 +303,7 @@ export default function TimingHeatmapCard() {
             </div>
             </div>
           </div>
-          <p className="text-[10px] text-stone-400">※ グレーは3試合未満のためサンプル不足。マスを選択・タップすると詳細が表示されます（横スクロールできます）。</p>
+          <p className="text-[10px] text-faint">※ グレーは3試合未満のためサンプル不足。マスを選択・タップすると詳細が表示されます（横スクロールできます）。</p>
         </div>
       )}
     </div>

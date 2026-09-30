@@ -28,14 +28,14 @@ export function MentorshipGuidelinesModal({
               <h2 className="text-base font-black text-foreground flex items-center gap-1.5">
                 <span>KTM 師弟の心得 ＆ ガイドライン</span>
               </h2>
-              <p className="text-xs text-stone-600 font-bold">
+              <p className="text-xs text-muted font-bold">
                 お互いが楽しく・気持ちよく上達するための安心ルール
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-stone-400 hover:text-foreground-subtle p-1 rounded-full transition cursor-pointer"
+            className="text-faint hover:text-foreground-subtle p-1 rounded-full transition cursor-pointer"
           >
             <X size={20} />
           </button>
@@ -83,10 +83,10 @@ export function MentorshipGuidelinesModal({
           {/* 円満解散について */}
           <div className="p-3.5 bg-surface-subtle rounded-2xl border border-border space-y-1 text-xs text-foreground-subtle">
             <div className="font-black text-foreground flex items-center gap-1.5">
-              <ShieldCheck size={14} className="text-stone-600" />
+              <ShieldCheck size={14} className="text-muted" />
               <span>🍃 スケジュールが合わなくなったときは？</span>
             </div>
-            <p className="text-[11px] text-stone-600 font-medium leading-relaxed">
+            <p className="text-[11px] text-muted font-medium leading-relaxed">
               リアル都合やモチベーションの変化などで活動継続が難しくなった場合は、いつでも気兼ねなく「円満解散（活動終了）」ボタンを押してリセットできます。ペナルティ等は一切ありません。
             </p>
           </div>

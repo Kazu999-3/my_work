@@ -127,7 +127,7 @@ export default function FactCheckSourceBlock({
               className="flex items-center gap-1 text-[11px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-lg hover:bg-emerald-200 disabled:opacity-50">
               <Save size={11} /> {saving ? '保存中...' : '保存'}
             </button>
-            <button onClick={() => setEditing(false)} disabled={saving} className="flex items-center gap-1 text-[11px] text-stone-500 hover:text-foreground-soft">
+            <button onClick={() => setEditing(false)} disabled={saving} className="flex items-center gap-1 text-[11px] text-muted-strong hover:text-foreground-soft">
               <X size={11} /> キャンセル
             </button>
           </div>

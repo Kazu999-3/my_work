@@ -73,7 +73,7 @@ function ChampionsShell() {
                 {isAuthenticated ? '管理者' : '攻略モード'}
               </span>
             </div>
-            <p className="text-[11px] text-stone-500 font-medium">
+            <p className="text-[11px] text-muted-strong font-medium">
               チャレンジャー実戦データ・立ち回り・ビルド・対面相性アーカイブ
             </p>
           </div>
@@ -87,7 +87,7 @@ function ChampionsShell() {
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               scope === 'champions'
                 ? 'bg-surface text-foreground shadow-xs font-black scale-101'
-                : 'text-stone-600 hover:text-foreground hover:bg-surface-hover/60'
+                : 'text-muted hover:text-foreground hover:bg-surface-hover/60'
             }`}
           >
             <span>👑 チャンピオン攻略</span>
@@ -98,7 +98,7 @@ function ChampionsShell() {
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               scope === 'health'
                 ? 'bg-surface text-amber-700 shadow-xs font-black scale-101'
-                : 'text-stone-600 hover:text-foreground hover:bg-surface-hover/60'
+                : 'text-muted hover:text-foreground hover:bg-surface-hover/60'
             }`}
           >
             <span>🩺 辞典ヘルス</span>
@@ -109,7 +109,7 @@ function ChampionsShell() {
         <div className="flex items-center gap-2 self-end md:self-auto flex-wrap">
           <Link
             href="/lane-guides"
-            className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-stone-600 hover:text-foreground hover:bg-surface-subtle border border-border transition flex items-center gap-1"
+            className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-muted hover:text-foreground hover:bg-surface-subtle border border-border transition flex items-center gap-1"
           >
             <span>📖 レーン攻略</span>
           </Link>

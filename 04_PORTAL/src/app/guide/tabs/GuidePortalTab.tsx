@@ -48,12 +48,12 @@ export default function GuidePortalTab() {
               <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-2xl group-hover:scale-105 transition">
                 👤
               </div>
-              <span className="text-[11px] font-bold text-stone-500 bg-surface-subtle px-2.5 py-1 rounded-full">
+              <span className="text-[11px] font-bold text-muted-strong bg-surface-subtle px-2.5 py-1 rounded-full">
                 プレイヤー設定・戦績
               </span>
             </div>
             <h3 className="text-base font-black text-foreground">マイページ ＆ プレイヤーカルテ</h3>
-            <p className="text-stone-600 text-xs leading-relaxed">
+            <p className="text-muted text-xs leading-relaxed">
               希望レーンやRiot ID連携、所持コイン・インベントリを管理。ロール別勝率と得意チャンピオン戦績を1画面で直感的に確認できます。
             </p>
             <div className="bg-background rounded-2xl p-3.5 border border-border/80 text-xs text-foreground-subtle space-y-1.5">
@@ -89,7 +89,7 @@ export default function GuidePortalTab() {
               </span>
             </div>
             <h3 className="text-base font-black text-foreground">チーム分けバランサー</h3>
-            <p className="text-stone-600 text-xs leading-relaxed">
+            <p className="text-muted text-xs leading-relaxed">
               MMRや希望ロールをもとに実力差を最小化する公平な5v5チーム分けを自動生成。ワンクリックで全員のOP.GG一括コピーやカスタムリンク生成が可能です。
             </p>
             <div className="bg-background rounded-2xl p-3.5 border border-border/80 text-xs text-foreground-subtle space-y-1.5">
@@ -124,7 +124,7 @@ export default function GuidePortalTab() {
               </span>
             </div>
             <h3 className="text-base font-black text-foreground">勝敗予想ベット ＆ KTMショップ</h3>
-            <p className="text-stone-600 text-xs leading-relaxed">
+            <p className="text-muted text-xs leading-relaxed">
               チーム分けが出たら [BLUE] か [RED] にコインを賭けて観戦！オッズは賭け金比率でリアルタイム変動します。貯めたコインはショップで特権チケットと交換可能！
             </p>
             <div className="bg-background rounded-2xl p-3.5 border border-border/80 text-xs text-foreground-subtle space-y-1.5">
@@ -154,12 +154,12 @@ export default function GuidePortalTab() {
               <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-2xl group-hover:scale-105 transition">
                 🤝
               </div>
-              <span className="text-[11px] font-bold text-stone-500 bg-surface-subtle px-2.5 py-1 rounded-full">
+              <span className="text-[11px] font-bold text-muted-strong bg-surface-subtle px-2.5 py-1 rounded-full">
                 統計・データ
               </span>
             </div>
             <h3 className="text-base font-black text-foreground">チーム相性 ＆ デュオ勝率シミュレーター</h3>
-            <p className="text-stone-600 text-xs leading-relaxed">
+            <p className="text-muted text-xs leading-relaxed">
               過去の全カスタム戦績から、誰と組んだときに最も勝率が高いか（シナジー）、逆に敵になった時の勝率（ライバル関係）をグラフィカルに分析します。
             </p>
             <div className="bg-background rounded-2xl p-3.5 border border-border/80 text-xs text-foreground-subtle space-y-1.5">
@@ -194,7 +194,7 @@ export default function GuidePortalTab() {
               </span>
             </div>
             <h3 className="text-base font-black text-foreground">リーダーボード ＆ チャンピオン・メタ統計</h3>
-            <p className="text-stone-600 text-xs leading-relaxed">
+            <p className="text-muted text-xs leading-relaxed">
               勝率・MMRランキング、ロール別勝率、コイン長者番付に加え、サーバー内の流行チャンピオン勝率と各プレイヤーの使用実績を一覧できます。
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-1">
@@ -202,7 +202,7 @@ export default function GuidePortalTab() {
                 <div className="font-bold text-foreground flex items-center gap-1 text-[11px]">
                   <span>👑</span> 総合順位表
                 </div>
-                <p className="text-[11px] text-stone-600">
+                <p className="text-[11px] text-muted">
                   勝率・MMR・総試合数・連勝記録で競う公式ランキング。
                 </p>
               </div>
@@ -210,7 +210,7 @@ export default function GuidePortalTab() {
                 <div className="font-bold text-foreground flex items-center gap-1 text-[11px]">
                   <span>🪙</span> コイン長者番付
                 </div>
-                <p className="text-[11px] text-stone-600">
+                <p className="text-[11px] text-muted">
                   予想ベットや日々の活動で貯めたKTMコイン資産TOP一覧。
                 </p>
               </div>
@@ -218,7 +218,7 @@ export default function GuidePortalTab() {
                 <div className="font-bold text-foreground flex items-center gap-1 text-[11px]">
                   <span>🛡️</span> ロール別覇者
                 </div>
-                <p className="text-[11px] text-stone-600">
+                <p className="text-[11px] text-muted">
                   TOP / JG / MID / ADC / SUP 各レーンの勝率トップを抽出。
                 </p>
               </div>
@@ -226,7 +226,7 @@ export default function GuidePortalTab() {
                 <div className="font-bold text-foreground flex items-center gap-1 text-[11px]">
                   <span>📊</span> チャンプ別メタ統計
                 </div>
-                <p className="text-[11px] text-stone-600">
+                <p className="text-[11px] text-muted">
                   各チャンプの勝率・ピック率と使用プレイヤー一覧を切替表示。
                 </p>
               </div>
@@ -256,7 +256,7 @@ export default function GuidePortalTab() {
             <h3 className="text-base md:text-lg font-black text-foreground">
               月刊KTMスポーツ速報（試合終了直後のAI実況ハイライトニュース）
             </h3>
-            <p className="text-stone-600 text-xs leading-relaxed">
+            <p className="text-muted text-xs leading-relaxed">
               内戦カスタムの試合結果が記録されると、Geminiがスポーツ新聞（東スポ・Number風）のユーモアと熱狂あふれる号外ダイジェストを自動執筆！Discord速報通知およびポータルトップに即座に掲示されます。
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
@@ -264,7 +264,7 @@ export default function GuidePortalTab() {
                 <div className="font-bold text-foreground flex items-center gap-1 text-[11px]">
                   <span>🏆</span> 本日のMVP寸評
                 </div>
-                <p className="text-[11px] text-stone-600">
+                <p className="text-[11px] text-muted">
                   キルレや集団戦の貢献度から、その試合で最も輝いたプレイヤーをピックアップして絶賛。
                 </p>
               </div>
@@ -272,7 +272,7 @@ export default function GuidePortalTab() {
                 <div className="font-bold text-foreground flex items-center gap-1 text-[11px]">
                   <span>🔥</span> 勝負の分水嶺
                 </div>
-                <p className="text-[11px] text-stone-600">
+                <p className="text-[11px] text-muted">
                   バロン争奪戦や逆転の集団戦など、勝敗を決定づけた運命のターニングポイントを解説。
                 </p>
               </div>
@@ -280,14 +280,14 @@ export default function GuidePortalTab() {
                 <div className="font-bold text-foreground flex items-center gap-1 text-[11px]">
                   <span>💬</span> 試合後コメント ＆ 小ネタ
                 </div>
-                <p className="text-[11px] text-stone-600">
+                <p className="text-[11px] text-muted">
                   選手の叫びや対面因縁の裏話など、VCで思わずツッコミたくなるクスッと笑えるエピソード。
                 </p>
               </div>
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between">
-            <span className="text-[11px] text-stone-500 font-medium">
+            <span className="text-[11px] text-muted-strong font-medium">
               ポータルのトップページですぐに最新号外を読めます！
             </span>
             <Link
@@ -313,7 +313,7 @@ export default function GuidePortalTab() {
             <h3 className="text-base md:text-lg font-black text-foreground">
               師弟マッチングハブ（Discord内完結登録 ＆ AI仲人・先輩スカウト）
             </h3>
-            <p className="text-stone-600 text-xs leading-relaxed">
+            <p className="text-muted text-xs leading-relaxed">
               教えたい師匠（Mentor）と学びたい弟子（Pupil）を繋ぐ公式掲示板です。Discordの <code>#🤝師弟募集</code> チャンネルの常設ボタンからワンタップで即座にエントリー可能！AI相性分析（70%以上で自動推薦）や「先輩スカウト機能」、ワンポチ指導引き受け（+300🪙）を完備しています。
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
@@ -321,7 +321,7 @@ export default function GuidePortalTab() {
                 <div className="font-bold text-foreground flex items-center gap-1 text-[11px]">
                   <span>💬</span> Discord完結ワンポチ登録
                 </div>
-                <p className="text-[11px] text-stone-600">
+                <p className="text-[11px] text-muted">
                   Webログイン不要！Discordの <code>#🤝師弟募集</code> から緑/青ボタンを押すだけでモーダル入力から即登録。
                 </p>
               </div>
@@ -329,7 +329,7 @@ export default function GuidePortalTab() {
                 <div className="font-bold text-foreground flex items-center gap-1 text-[11px]">
                   <span>🤖</span> AI仲人 ＆ 先輩スカウト
                 </div>
-                <p className="text-[11px] text-stone-600">
+                <p className="text-[11px] text-muted">
                   相性70%以上のベストマッチを自動お見合い推薦。師匠が未登録でも頼れる先輩をAIが自動指名スカウト！
                 </p>
               </div>
@@ -337,7 +337,7 @@ export default function GuidePortalTab() {
                 <div className="font-bold text-foreground flex items-center gap-1 text-[11px]">
                   <span>🤝</span> ワンポチ指導引き受け (+300🪙)
                 </div>
-                <p className="text-[11px] text-stone-600">
+                <p className="text-[11px] text-muted">
                   弟子カードの「師匠を引き受ける」ボタンを押すだけで、先輩登録がなくても即座にペア成立＆専用スレッド自動開設。
                 </p>
               </div>
@@ -374,7 +374,7 @@ export default function GuidePortalTab() {
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between">
-            <span className="text-[11px] text-stone-500 font-medium">
+            <span className="text-[11px] text-muted-strong font-medium">
               カードを登録して相性の良いバディを探してみましょう！
             </span>
             <Link
@@ -393,12 +393,12 @@ export default function GuidePortalTab() {
             <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-2xl">
               📊
             </div>
-            <span className="text-[11px] font-bold text-stone-500 bg-surface-subtle px-2.5 py-1 rounded-full">
+            <span className="text-[11px] font-bold text-muted-strong bg-surface-subtle px-2.5 py-1 rounded-full">
               レート ＆ ランク
             </span>
           </div>
           <h3 className="text-base font-black text-foreground">MMR（KTM内戦レート）の見方</h3>
-          <p className="text-stone-600 text-xs leading-relaxed">
+          <p className="text-muted text-xs leading-relaxed">
             MMRは<strong>KTM内戦の成績だけ</strong>で動く独自レートです。ソロQのランクとは別物で、
             全員1200からスタートします。<strong>レーンごとに別々</strong>に管理されるので、
             JGとTOPで違う数字を持ちます。カルテに出る「総合MMR」は、実際にプレイしたレーンの試合数で
@@ -422,7 +422,7 @@ export default function GuidePortalTab() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[320px] text-xs">
                 <thead>
-                  <tr className="text-left text-[11px] text-stone-500">
+                  <tr className="text-left text-[11px] text-muted-strong">
                     <th className="py-1.5 pr-3 font-black">ティア</th>
                     <th className="py-1.5 font-black">必要MMR</th>
                   </tr>
@@ -441,7 +441,7 @@ export default function GuidePortalTab() {
                 </tbody>
               </table>
             </div>
-            <p className="text-[11px] text-stone-500 leading-relaxed">
+            <p className="text-[11px] text-muted-strong leading-relaxed">
               各ティアはさらに IV → III → II → I の4段階に分かれます（例: GOLD IV は1350、GOLD I は1460から）。
               開始時の1200は SILVER IV にあたります。
             </p>

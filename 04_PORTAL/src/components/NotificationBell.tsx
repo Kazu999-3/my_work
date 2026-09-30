@@ -321,7 +321,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
                 type="button"
                 onClick={() => setOnlyUnread(!onlyUnread)}
                 className={`px-2 py-0.5 rounded-md transition cursor-pointer border ${
-                  onlyUnread ? 'bg-amber-600 text-white border-amber-600' : 'bg-surface text-stone-600 border-border hover:bg-surface-subtle'
+                  onlyUnread ? 'bg-amber-600 text-white border-amber-600' : 'bg-surface text-muted border-border hover:bg-surface-subtle'
                 }`}
               >
                 {onlyUnread ? '未読のみ' : 'すべて'}
@@ -343,7 +343,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
                   type="button"
                   onClick={clearAllRead}
                   disabled={deleting}
-                  className="text-stone-400 hover:text-rose-700 transition cursor-pointer"
+                  className="text-faint hover:text-rose-700 transition cursor-pointer"
                   title="既読の通知をすべて削除"
                 >
                   🗑️ 既読消去
@@ -355,7 +355,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
           {/* 通知リスト本体 */}
           <div className="overflow-y-auto flex-1 divide-y divide-stone-100">
             {displayedNotifications.length === 0 ? (
-              <div className="px-4 py-12 text-center text-xs text-stone-400 font-medium">
+              <div className="px-4 py-12 text-center text-xs text-faint font-medium">
                 {onlyUnread ? '未読の通知はありません 🎉' : '通知はありません'}
               </div>
             ) : (
@@ -380,7 +380,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
                           <span className={`text-[9px] font-black px-1.5 py-0.2 rounded border ${badge.bg}`}>
                             {badge.label}
                           </span>
-                          <span className="text-[9px] text-stone-400 font-mono">{timeAgo(n.created_at)}</span>
+                          <span className="text-[9px] text-faint font-mono">{timeAgo(n.created_at)}</span>
                         </div>
 
                         <div 
@@ -392,7 +392,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
                           </div>
 
                           {n.body && (
-                            <p className={`mt-1 text-[11px] text-stone-600 leading-relaxed ${isExpanded ? 'whitespace-pre-wrap' : 'truncate'}`}>
+                            <p className={`mt-1 text-[11px] text-muted leading-relaxed ${isExpanded ? 'whitespace-pre-wrap' : 'truncate'}`}>
                               {isExpanded ? stripMarkdown(n.body) : summarize(n.body)}
                             </p>
                           )}
@@ -413,7 +413,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
                             <button
                               type="button"
                               onClick={() => toggleExpand(n)}
-                              className="text-[9px] font-bold text-stone-400 hover:text-foreground-subtle cursor-pointer"
+                              className="text-[9px] font-bold text-faint hover:text-foreground-subtle cursor-pointer"
                             >
                               {isExpanded ? '閉じる ▲' : 'もっと見る ▼'}
                             </button>
