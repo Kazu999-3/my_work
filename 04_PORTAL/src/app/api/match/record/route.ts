@@ -439,7 +439,11 @@ export async function POST(request: Request) {
         const savedBlueActuallyWon = swapped ? !actualBlueWon : actualBlueWon;
         const correct = predictedBlueWon === savedBlueActuallyWon;
 
-        await supabase
+        // ⚠️ 戻り値の error を必ず見る。2026-09-30まで、ここは error を捨てていたため
+        // match_id の型が uuid→bigint に変わっていた（migration 24 の誤り）ことに
+        // 2か月以上気づけず、予測検証・満足度・結果メッセージIDの紐付けが
+        // すべて黙って失敗し続けていた（45件すべて actual_winner が NULL）。
+        const { error: predErr } = await supabase
           .from('balancer_predictions')
           .update({
             match_id: newMatchId,
@@ -447,6 +451,9 @@ export async function POST(request: Request) {
             correct,
           })
           .eq('id', match.id);
+        if (predErr) {
+          console.error('[match/record] 予測の突き合わせ保存に失敗:', predErr.message, predErr.details || '');
+        }
 
         // 結果が確定するたびに直近の的中率を確認し、コイントス並みまで落ちていれば通知する
         const { reviewBalancerPredictionAccuracy } = await import('../../../../lib/balancer');
@@ -705,10 +712,13 @@ export async function POST(request: Request) {
           try {
             const msg = whRes && whRes.ok ? await whRes.json() : null;
             if (msg?.id && msg?.channel_id) {
-              await supabase
+              const { error: linkDbErr } = await supabase
                 .from('balancer_predictions')
                 .update({ result_message_id: msg.id, result_channel_id: msg.channel_id })
                 .eq('match_id', newMatchId);
+              if (linkDbErr) {
+                console.error('[match/record] 結果メッセージIDの紐付けに失敗:', linkDbErr.message);
+              }
             }
           } catch (linkErr) {
             console.warn('[match/record] 結果メッセージIDの紐付けに失敗（続行）:', linkErr);
@@ -723,14 +733,26 @@ export async function POST(request: Request) {
     // 以前はDiscordのリアクションを後から集計していたが、集まりが悪く手間もかかったため入力時記録に変更。
     if (balanceSatisfaction === 'good' || balanceSatisfaction === 'normal' || balanceSatisfaction === 'bad') {
       try {
-        await supabase
+        // 更新行数まで確認する。型不一致(error)だけでなく「対象行が無い(0件更新)」も
+        // 起こり得るため。満足度は予測行に相乗りしているので、ロスター照合に失敗して
+        // match_id が埋まらなかった試合では保存先が存在しない。
+        const { data: satRows, error: satDbErr } = await supabase
           .from('balancer_predictions')
           .update({
             satisfaction_up: balanceSatisfaction === 'good' ? 1 : 0,
             satisfaction_down: balanceSatisfaction === 'bad' ? 1 : 0,
             satisfaction_updated_at: new Date().toISOString(),
           })
-          .eq('match_id', newMatchId);
+          .eq('match_id', newMatchId)
+          .select('id');
+        if (satDbErr) {
+          console.error('[match/record] 満足度の保存に失敗:', satDbErr.message, satDbErr.details || '');
+        } else if (!satRows || satRows.length === 0) {
+          console.warn(
+            '[match/record] 満足度の保存先が見つかりませんでした（この試合に紐づく予測行が無い）。' +
+            'チーム分けをバランサー経由で確定していない試合では起こり得ます。match_id=' + newMatchId,
+          );
+        }
       } catch (satErr: any) {
         console.warn('[match/record] 満足度の保存に失敗（続行）:', satErr?.message);
       }
