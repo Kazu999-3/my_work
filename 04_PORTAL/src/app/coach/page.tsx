@@ -14,7 +14,6 @@ import ChampionQuickSelector from '../../components/coach/ChampionQuickSelector'
 import MatchupBlueprintCard from './MatchupBlueprintCard';
 import OverlayLauncherButton from './OverlayLauncherButton';
 import SoloQDeepIntelSyncCard from '../../components/coach/SoloQDeepIntelSyncCard';
-import TimingHeatmapCard from './TimingHeatmapCard';
 
 function CoachPageContent() {
   const searchParams = useSearchParams();
@@ -223,6 +222,18 @@ function CoachPageContent() {
             </div>
           </div>
 
+          {/* 🗓️ 曜日×時間帯 勝率ヒートマップ
+              2026-09-30に復活（削除の経緯は TimingHeatmapCard の冒頭コメント）。
+              過去データの集計だが、使いどころは「今この時間に回すべきか」の判断なので
+              「試合後」ではなく「試合前」に置く。 */}
+          <div className="pt-2">
+            <Collapsible title="🗓️ 今の時間帯は勝てているか（曜日×時間帯 勝率ヒートマップ）" defaultOpen={false}>
+              <div className="pt-3 bg-white border border-stone-200 rounded-2xl p-4 shadow-xs">
+                <TimingHeatmapCard />
+              </div>
+            </Collapsible>
+          </div>
+
           {/* サブカルテ（視界・プレイスタイル詳細）: 折りたたみ */}
           <div className="pt-2">
             <Collapsible title="📊 詳細カルテ ＆ 視界マップ分析を展開" defaultOpen={false}>
@@ -325,15 +336,6 @@ function CoachPageContent() {
             </Collapsible>
           </div>
 
-          {/* 🗓️ 曜日×時間帯 勝率ヒートマップ（2026-09-30復活。詳細は TimingHeatmapCard の冒頭コメント） */}
-          <div className="pt-2">
-            <Collapsible title="🗓️ 曜日×時間帯 勝率ヒートマップを展開" defaultOpen={false}>
-              <div className="pt-3 bg-white border border-stone-200 rounded-2xl p-4 shadow-xs">
-                <TimingHeatmapCard />
-              </div>
-            </Collapsible>
-          </div>
-
           <SoloQReflectionModal
             isOpen={reflectionOpen}
             onClose={() => setReflectionOpen(false)}
@@ -368,6 +370,10 @@ const FiveVFiveSimTab = dynamic(() => import('./FiveVFiveSimTab'), { ssr: false,
 const PostGameDeepAnalyticsDashboard = dynamic(() => import('./PostGameDeepAnalyticsDashboard'), { ssr: false, loading: tabLoading });
 const MatchFightsAnalyticsCard = dynamic(() => import('./MatchFightsAnalyticsCard'), { ssr: false, loading: tabLoading });
 const MySoloQDashboard = dynamic(() => import('./MySoloQDashboard'), { ssr: false, loading: tabLoading });
+// 「試合前」タブは常にマウントされるため静的importだと初期バンドルに乗ってしまう。
+// Collapsible が初回に開かれるまで子をマウントしない作りなので、遅延読込と併せて
+// 「開くまで一切読み込まない」にできる。
+const TimingHeatmapCard = dynamic(() => import('./TimingHeatmapCard'), { ssr: false, loading: tabLoading });
 // モーダルは「振り返りを書く」を押すまで一切不要なので、開くまで読み込まない
 const SoloQReflectionModal = dynamic(() => import('./SoloQReflectionModal'), { ssr: false });
 
