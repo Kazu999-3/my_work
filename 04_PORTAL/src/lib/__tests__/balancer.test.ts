@@ -12,6 +12,7 @@ import {
   coreBalanceTeams,
   coreBalanceProposals,
   selectPlayersWithPity,
+  computeBalancerPredictionQuality,
   ROLES,
   type Player,
   type Role,
@@ -251,4 +252,94 @@ test('サイド公平化: 履歴が中立なら、特定プレイヤーのサイ
     p1Blue > 0 && p1Blue < TRIALS,
     `中立履歴なのにP1のBLUE入りが ${p1Blue}/${TRIALS} 回と完全に固定化している`
   );
+});
+
+// ============================================================
+// computeBalancerPredictionQuality: 予測の質の算出
+//
+// 2026-09-30に判定基準を「的中率55%未満で警告」から「常に50%と言う場合より
+// 当たっていない(Brier > 0.25)ときだけ警告」へ変えた。バランサーは50/50の拮抗した
+// 試合を作るのが目的なので、的中率が50%付近なのは失敗ではないという理由。
+// 「誤発火しないこと」まで含めて数値で固定する。
+// ============================================================
+
+test('拮抗した予測で的中率50%でも、Brierはベースライン内（警告対象にならない）', () => {
+  // すべて0.5ちょうどの予測。当たっても外れてもBrierは (0.5-1)^2 = (0.5-0)^2 = 0.25。
+  const rows = Array.from({ length: 20 }, (_, i) => ({
+    correct: i % 2 === 0,
+    predicted_blue_winprob: 0.5,
+  }));
+  const q = computeBalancerPredictionQuality(rows)!;
+  assert.equal(q.sampleSize, 20);
+  assert.equal(q.accuracy, 0.5);
+  assert.ok(Math.abs(q.brier - 0.25) < 1e-9, `brier=${q.brier}`);
+  assert.ok(q.brier <= 0.25 + 0.01, '旧基準では警告されたが、新基準では警告されない');
+  assert.equal(q.confidentSampleSize, 0);
+  assert.equal(q.confidentAccuracy, null);
+});
+
+test('予測が的中しているほどBrierは小さくなる（ベースラインより良い）', () => {
+  // 0.6と予測して当たった = 保存時の青が勝ち → (0.6-1)^2 = 0.16
+  const rows = Array.from({ length: 16 }, () => ({ correct: true, predicted_blue_winprob: 0.6 }));
+  const q = computeBalancerPredictionQuality(rows)!;
+  assert.ok(Math.abs(q.brier - 0.16) < 1e-9, `brier=${q.brier}`);
+  assert.ok(q.brier < 0.25);
+  assert.ok(q.brierSkill > 0);
+  assert.equal(q.confidentSampleSize, 16);
+  assert.equal(q.confidentAccuracy, 1);
+});
+
+test('踏み込んだ予測が外れ続けるとBrierがベースラインを超える（本当の異常だけ拾う）', () => {
+  // 0.7と予測して外れた = 保存時の青が負け → (0.7-0)^2 = 0.49
+  const rows = Array.from({ length: 16 }, () => ({ correct: false, predicted_blue_winprob: 0.7 }));
+  const q = computeBalancerPredictionQuality(rows)!;
+  assert.ok(Math.abs(q.brier - 0.49) < 1e-9, `brier=${q.brier}`);
+  assert.ok(q.brier > 0.25 + 0.01, '50%固定より悪いので警告対象');
+  assert.ok(q.brierSkill < 0);
+  assert.equal(q.confidentAccuracy, 0);
+});
+
+test('0.5未満の予測でも実際の結果の復元が正しく行われる', () => {
+  // 0.3と予測(=青が負けると予測)して的中 → 保存時の青は負け → (0.3-0)^2 = 0.09
+  const hit = computeBalancerPredictionQuality([{ correct: true, predicted_blue_winprob: 0.3 }])!;
+  assert.ok(Math.abs(hit.brier - 0.09) < 1e-9, `brier=${hit.brier}`);
+  // 0.3と予測して外れた → 保存時の青は勝ち → (0.3-1)^2 = 0.49
+  const miss = computeBalancerPredictionQuality([{ correct: false, predicted_blue_winprob: 0.3 }])!;
+  assert.ok(Math.abs(miss.brier - 0.49) < 1e-9, `brier=${miss.brier}`);
+});
+
+test('correct や予測勝率が欠けている行は除外される', () => {
+  const q = computeBalancerPredictionQuality([
+    { correct: true, predicted_blue_winprob: 0.6 },
+    { correct: null, predicted_blue_winprob: 0.6 },
+    { correct: false, predicted_blue_winprob: null },
+  ])!;
+  assert.equal(q.sampleSize, 1);
+  assert.equal(q.accuracy, 1);
+});
+
+test('使える行が無ければ null を返す', () => {
+  assert.equal(computeBalancerPredictionQuality([]), null);
+  assert.equal(computeBalancerPredictionQuality([{ correct: null, predicted_blue_winprob: null }]), null);
+});
+
+test('numeric型が文字列で返ってきても扱える', () => {
+  const q = computeBalancerPredictionQuality([{ correct: true, predicted_blue_winprob: '0.6' }])!;
+  assert.ok(Math.abs(q.brier - 0.16) < 1e-9, `brier=${q.brier}`);
+});
+
+test('実データ相当（予測勝率0.35〜0.64・的中率53.8%）でも誤発火しない', () => {
+  // 2026-09-30の遡り復旧後の実データに近い分布。旧基準(的中率55%未満)なら警告が出るが、
+  // 新基準では「50%固定より当たっている」ので出ないことを固定する。
+  const sample: Array<[boolean, number]> = [
+    [false, 0.5029], [false, 0.494], [true, 0.5006], [false, 0.5726], [false, 0.4975],
+    [true, 0.5092], [false, 0.5426], [true, 0.542], [true, 0.5202], [true, 0.4862],
+    [true, 0.642], [true, 0.352], [false, 0.51],
+  ];
+  const q = computeBalancerPredictionQuality(
+    sample.map(([correct, p]) => ({ correct, predicted_blue_winprob: p })),
+  )!;
+  assert.equal(q.sampleSize, 13);
+  assert.ok(q.accuracy < 0.55, `旧基準なら警告される水準: accuracy=${q.accuracy}`);
+  assert.ok(q.brier <= 0.25 + 0.01, `新基準では警告されない: brier=${q.brier}`);
 });

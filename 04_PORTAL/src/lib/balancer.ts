@@ -997,24 +997,116 @@ export function coreBalanceProposals(players: Player[], ctx: BalanceContext): Pr
 // ============================================================
 
 const BALANCER_ACCURACY_MIN_SAMPLES = 15; // これ未満は自動調整判断すら統計的に無意味なため何もしない
-const BALANCER_ACCURACY_ALERT_THRESHOLD = 0.55; // コイントス(50%)とほぼ変わらない水準
 const BALANCER_ACCURACY_NOTIFY_COOLDOWN_DAYS = 7; // 通知の連発防止
+
+// 「常に50%と予測する」ベースラインのBrierスコア。(0.5-0)^2 = (0.5-1)^2 = 0.25。
+const BALANCER_BRIER_BASELINE = 0.25;
+// ベースラインをこの分だけ上回った（=悪化した）ときだけ警告する。少数サンプルの
+// ゆらぎで誤発火しないための余裕。
+const BALANCER_BRIER_ALERT_MARGIN = 0.01;
+// 0.5から±この幅以上離れた予測を「踏み込んだ予測」とみなす（参考情報として的中率を出す）。
+const BALANCER_CONFIDENT_MARGIN = 0.05;
+
+export interface BalancerPredictionQuality {
+  sampleSize: number;
+  /** 単純な的中率。0.5付近が正常なので**警告の判断には使わない**（参考値）。 */
+  accuracy: number;
+  correctCount: number;
+  /** Brierスコア（低いほど良い）。予測確率と実際の結果の二乗誤差の平均。 */
+  brier: number;
+  /** 「常に50%」のBrier(0.25)。これより大きい＝50%と言うより当たっていない。 */
+  brierBaseline: number;
+  /** ベースライン比の改善度。正なら50%固定より良い、負なら悪い。 */
+  brierSkill: number;
+  /** 0.5から十分離れた「踏み込んだ予測」だけの件数と的中率（参考値）。 */
+  confidentSampleSize: number;
+  confidentAccuracy: number | null;
+}
+
+/**
+ * 予測の質を算出する純粋関数。
+ *
+ * 2026-09-30に判定基準を変更した。それまでは「的中率が55%未満なら警告」だったが、
+ * **バランサーの目的は50/50の拮抗した試合を作ること**なので、チーム分けが成功していれば
+ * 的中率は50%付近に収束するのが自然で、低いこと自体は失敗ではない。
+ * （実測: 予測勝率は0.352〜0.642でほぼ0.5付近に寄っており、的中率53.8%だった。
+ *   旧基準ではこれが「的中率が低下しています」という誤った警告になる。）
+ *
+ * 代わりに「**常に50%と予測する場合より当たっていないか**」を見る。これはBrierスコアを
+ * ベースライン0.25と比べることで判定でき、拮抗した試合を作れているかどうかとは独立に
+ * 「予測式が壊れている／符号が逆」といった本当の異常だけを拾える。
+ *
+ * @param rows correct と predicted_blue_winprob を持つ行（新しい順でなくてよい）
+ */
+export function computeBalancerPredictionQuality(
+  rows: Array<{ correct: boolean | null; predicted_blue_winprob: number | string | null }>,
+): BalancerPredictionQuality | null {
+  // correct と予測勝率の両方が揃っている行だけを使う。
+  // ⚠️ Number(null) と Number('') はどちらも 0 になるため、Number.isFinite だけでは
+  // 「予測勝率が無い行」を弾けない。0 は「青が確実に負ける」という極端な予測として
+  // 扱われてBrierを大きく歪めるので、数値化の前に null/空文字を明示的に除外する
+  // （2026-09-30: 追加したテストがこの取りこぼしを検出した）。
+  const usable = rows
+    .filter((r) => r.correct === true || r.correct === false)
+    .filter((r) => r.predicted_blue_winprob !== null && r.predicted_blue_winprob !== undefined && r.predicted_blue_winprob !== '')
+    .map((r) => ({ correct: r.correct as boolean, p: Number(r.predicted_blue_winprob) }))
+    .filter((r) => Number.isFinite(r.p));
+  if (usable.length === 0) return null;
+
+  let brierSum = 0;
+  let correctCount = 0;
+  let confidentTotal = 0;
+  let confidentCorrect = 0;
+
+  for (const { correct, p } of usable) {
+    if (correct) correctCount++;
+
+    // 保存時の青視点で実際に勝ったかを復元する。
+    // correct = (予測が青勝ちと言ったか) === (保存時の青が実際に勝ったか) なので逆算できる。
+    const predictedBlueWon = p >= 0.5;
+    const savedBlueActuallyWon = correct ? predictedBlueWon : !predictedBlueWon;
+    const outcome = savedBlueActuallyWon ? 1 : 0;
+    brierSum += (p - outcome) ** 2;
+
+    if (Math.abs(p - 0.5) >= BALANCER_CONFIDENT_MARGIN) {
+      confidentTotal++;
+      if (correct) confidentCorrect++;
+    }
+  }
+
+  const brier = brierSum / usable.length;
+  return {
+    sampleSize: usable.length,
+    accuracy: correctCount / usable.length,
+    correctCount,
+    brier,
+    brierBaseline: BALANCER_BRIER_BASELINE,
+    brierSkill: (BALANCER_BRIER_BASELINE - brier) / BALANCER_BRIER_BASELINE,
+    confidentSampleSize: confidentTotal,
+    confidentAccuracy: confidentTotal > 0 ? confidentCorrect / confidentTotal : null,
+  };
+}
 
 export async function reviewBalancerPredictionAccuracy(
   supabase: any
-): Promise<{ accuracy: number; sampleSize: number; notified: boolean } | null> {
+): Promise<(BalancerPredictionQuality & { notified: boolean }) | null> {
   const { data: rows } = await supabase
     .from('balancer_predictions')
-    .select('correct')
+    .select('correct, predicted_blue_winprob')
     .not('correct', 'is', null)
     .order('created_at', { ascending: false })
     .limit(50);
 
   if (!rows || rows.length < BALANCER_ACCURACY_MIN_SAMPLES) return null;
 
-  const correctCount = rows.filter((r: any) => r.correct === true).length;
-  const accuracy = correctCount / rows.length;
-  if (accuracy >= BALANCER_ACCURACY_ALERT_THRESHOLD) return { accuracy, sampleSize: rows.length, notified: false };
+  const q = computeBalancerPredictionQuality(rows);
+  if (!q || q.sampleSize < BALANCER_ACCURACY_MIN_SAMPLES) return null;
+
+  // 「50%固定より当たっていない」ときだけ異常とみなす。的中率が50%付近なだけなら
+  // むしろチーム分けが拮抗している証拠なので通知しない。
+  if (q.brier <= BALANCER_BRIER_BASELINE + BALANCER_BRIER_ALERT_MARGIN) {
+    return { ...q, notified: false };
+  }
 
   const { data: recentNotif } = await supabase
     .from('admin_notifications')
@@ -1022,18 +1114,34 @@ export async function reviewBalancerPredictionAccuracy(
     .eq('type', 'balancer_accuracy')
     .gt('created_at', new Date(Date.now() - BALANCER_ACCURACY_NOTIFY_COOLDOWN_DAYS * 24 * 60 * 60 * 1000).toISOString())
     .limit(1);
-  if (recentNotif && recentNotif.length > 0) return { accuracy, sampleSize: rows.length, notified: false };
+  if (recentNotif && recentNotif.length > 0) return { ...q, notified: false };
+
+  const confidentLine =
+    q.confidentAccuracy === null
+      ? '踏み込んだ予測（50%から±5%以上）はまだありません。'
+      : `踏み込んだ予測${q.confidentSampleSize}件の的中率は ${(q.confidentAccuracy * 100).toFixed(0)}% です。`;
 
   const { createAdminNotification } = await import('./notify');
   await createAdminNotification({
     type: 'balancer_accuracy',
-    title: `⚠️ チーム分け予測の的中率が低下しています（直近${rows.length}戦中${correctCount}戦的中）`,
-    body: `的中率 ${(accuracy * 100).toFixed(0)}%（目安: 55%以上）。予測式(Eloの定数400)の見直しを検討してください。`,
+    title: `⚠️ チーム分け予測が「常に50%」より当たっていません（直近${q.sampleSize}戦）`,
+    body:
+      `予測の二乗誤差(Brier) ${q.brier.toFixed(3)} が、常に50%と答えた場合の ${BALANCER_BRIER_BASELINE} を上回っています。` +
+      `単純な的中率は ${(q.accuracy * 100).toFixed(0)}% ですが、拮抗した試合では50%付近が正常なので判断には使いません。${confidentLine}` +
+      `予測式(Eloの定数400)の符号や係数の見直しを検討してください。`,
     url: '/balancer',
-    data: { accuracy, sampleSize: rows.length },
+    data: {
+      brier: q.brier,
+      brierBaseline: q.brierBaseline,
+      brierSkill: q.brierSkill,
+      accuracy: q.accuracy,
+      sampleSize: q.sampleSize,
+      confidentSampleSize: q.confidentSampleSize,
+      confidentAccuracy: q.confidentAccuracy,
+    },
   });
 
-  return { accuracy, sampleSize: rows.length, notified: true };
+  return { ...q, notified: true };
 }
 
 export { calculateBlueWinProbability } from './mmr';
