@@ -32,8 +32,13 @@ export async function POST(request: NextRequest) {
       targetTier = 'Emerald IV',
     } = body;
 
-    const cleanName = String(gameName || '').trim();
-    const cleanTag = String(tagLine || '').trim().replace(/^#/, '');
+    // Riot IDが指定されていなければ環境変数のオーナーIDにフォールバックする。
+    // 2026-09-30: 呼び出し側(SoloQDeepIntelSyncCard と coach/page.tsx)に
+    // "Kazurin#4036" が3箇所ハードコードされていた。他のソロQ系ルートは
+    // すべて RIOT_GAME_NAME / RIOT_TAG_LINE を使っているため、ここも同じ
+    // 単一の出所に揃える（Riot IDを変えたときの二重管理をなくす）。
+    const cleanName = String(gameName || process.env.RIOT_GAME_NAME || '').trim();
+    const cleanTag = String(tagLine || process.env.RIOT_TAG_LINE || '').trim().replace(/^#/, '');
 
     if (!cleanName) {
       return NextResponse.json({ error: 'プレイヤー名を入力してください。' }, { status: 400 });

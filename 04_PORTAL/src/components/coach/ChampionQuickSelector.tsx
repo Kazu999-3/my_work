@@ -102,19 +102,23 @@ export default function ChampionQuickSelector({
       return;
     }
 
-    // ログイン中のユーザー情報をフェッチして自動補完
+    // ログイン中のユーザー情報をフェッチして自動補完。
+    // 2026-09-30: 取得できなかった場合に 'Kazurin#4036' を直書きで入れていたが、
+    // 別の管理者がログインしていても黙ってそのIDを使ってしまう。
+    // /api/riot/live-game は riotId を省略すると「環境変数 → ktm_players照合」で
+    // オーナーのPUUIDを解決するため、分からない時は空のままにしてサーバーへ委ねる。
     fetch('/api/auth/me')
       .then((r) => r.json())
       .then((data) => {
         const u = data?.user;
-        const autoId = u?.ign || (u?.displayName && u.displayName.includes('#') ? u.displayName : '') || 'Kazurin#4036';
+        const autoId = u?.ign || (u?.displayName && u.displayName.includes('#') ? u.displayName : '');
         if (autoId) {
           setCurrentRiotId(autoId);
-          localStorage.setItem('coach_own_riot_id', autoId);
+          try { localStorage.setItem('coach_own_riot_id', autoId); } catch {}
         }
       })
       .catch(() => {
-        setCurrentRiotId('Kazurin#4036');
+        /* 取得できなくてもサーバー側が解決するので、ここでは何も入れない */
       });
   }, []);
 

@@ -63,10 +63,13 @@ function CoachPageContent() {
 
   // ライブ偵察検知時のチャンピオン＆ロースター自動連携
   const [liveRoster, setLiveRoster] = useState<LiveRosterEntry[] | null>(null);
+  // ヘッダーのバッジを実際の検知状態に連動させるための記録（2026-09-30）。
+  const [liveDetected, setLiveDetected] = useState<{ mine: string; enemy: string } | null>(null);
   const handleLiveMatchDetected = (myChampion: string, enemyChampion: string, roster?: LiveRosterEntry[]) => {
     if (myChampion) setSharedChampion(myChampion);
     if (enemyChampion) setSharedEnemyChampion(enemyChampion);
     if (roster && roster.length === 10) setLiveRoster(roster);
+    if (myChampion || enemyChampion) setLiveDetected({ mine: myChampion, enemy: enemyChampion });
   };
 
   // 試合後ディープアナリティクス ＆ 集団戦ディープレビューの同期用選択 matchId
@@ -141,10 +144,16 @@ function CoachPageContent() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-black tracking-tight text-stone-900">パーソナルコーチ</h1>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 text-[10px] font-extrabold shadow-2xs">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>ライブ連携中</span>
-                </span>
+                {/* 以前はここに「🟢 ライブ連携中」を条件なしで常時表示していた（点滅ドット付き）。
+                    何とも連携していなくても出るため、画面を信じて判断する側に嘘を伝えていた
+                    （2026-09-30修正）。ライブ検知は常時ポーリングではなく操作契機の取得なので、
+                    実際に検知できた時だけ、検知した対面を添えて表示する。 */}
+                {liveDetected && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 text-[10px] font-extrabold shadow-2xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>ライブ試合を検知{liveDetected.enemy ? `（対面: ${liveDetected.enemy}）` : ''}</span>
+                  </span>
+                )}
               </div>
               <p className="text-[11px] text-stone-500 font-medium">
                 Riot API × ナレッジDB × Gemini AI による確定データコーチング
@@ -192,6 +201,18 @@ function CoachPageContent() {
         {/* 1. 🎯 試合前 (バンピック・対面対策・5分作戦) */}
         {/* ========================================================================= */}
         <div className={activeStepTab === 'pregame' ? 'space-y-4 animate-in' : 'hidden'}>
+          {/* 🚦 次の試合に行くべきか（ティルト・連敗ストッパー・時間帯勝率の統合判定）
+              この判定はサーバー側で前から計算されていたが、レスポンスに入るだけで
+              どのUIからも参照されていなかった（2026-09-30に配線）。
+              表示専用の軽量API(/api/coach/play-recommendation)を使うため、
+              ここを開いてもGeminiは呼ばれない。 */}
+          <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-xs space-y-3">
+            <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5">
+              <span>🚦</span> 次の試合に行くべきか
+            </h3>
+            <PlayRecommendationCard />
+          </div>
+
           {/* 爆速チャンピオン高速セレクター (ワンタップ & 日本語検索 & ライブ連動) */}
           <ChampionQuickSelector
             myChampion={sharedChampion}
@@ -215,10 +236,9 @@ function CoachPageContent() {
 
             {/* 右側: 実測アナライザーSoloQ深層インテル ＆ 勝敗境界線・昇格処方箋 */}
             <div className="lg:col-span-5 xl:col-span-5 flex flex-col gap-4 lg:sticky lg:top-4">
-              <SoloQDeepIntelSyncCard
-                selectedChampion={sharedChampion}
-                summonerName="Kazurin#4036"
-              />
+              {/* Riot IDは渡さない。サーバー側が RIOT_GAME_NAME / RIOT_TAG_LINE から
+                  解決する（以前は "Kazurin#4036" がここに直書きされていた。2026-09-30） */}
+              <SoloQDeepIntelSyncCard selectedChampion={sharedChampion} />
             </div>
           </div>
 
@@ -260,15 +280,14 @@ function CoachPageContent() {
               <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-base shrink-0">
                 👑
               </div>
+              {/* 以前はここに「Sovereign HUD 自動同期中」＋「接続完了」を条件なしで表示していた。
+                  HUDはローカルPCで動くPyQtアプリで、デプロイ先(Vercel)からは起動状態を
+                  原理的に知れないため、HUDを立ち上げていなくても「接続完了」と出ていた
+                  （2026-09-30修正）。状態の主張をやめ、使い方の説明だけに変えた。 */}
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-black text-xs text-amber-400">Sovereign HUD 自動同期中</span>
-                  <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-bold px-1.5 py-0.2 rounded">
-                    接続完了
-                  </span>
-                </div>
+                <div className="font-black text-xs text-amber-400">Sovereign HUD（デスクトップ版）の使い方</div>
                 <p className="text-[11px] text-stone-300 mt-0.5">
-                  ⌨️ <span className="text-amber-300 font-bold">TABキー</span>で対面キルライン表示 / チャットから敵スペル・Ult自動検知
+                  ⌨️ HUDを起動していると、<span className="text-amber-300 font-bold">TABキー</span>で対面キルラインが表示され、チャットから敵スペル・Ultを自動検知します。
                 </p>
               </div>
             </div>
@@ -374,6 +393,9 @@ const MySoloQDashboard = dynamic(() => import('./MySoloQDashboard'), { ssr: fals
 // Collapsible が初回に開かれるまで子をマウントしない作りなので、遅延読込と併せて
 // 「開くまで一切読み込まない」にできる。
 const TimingHeatmapCard = dynamic(() => import('./TimingHeatmapCard'), { ssr: false, loading: tabLoading });
+// 「次の試合に行くべきか」は試合前タブの先頭に常時表示するため、折りたたみの中とは違い
+// 開いた時点で取得が走る。LLMを使わない軽量APIなのでコストは小さい。
+const PlayRecommendationCard = dynamic(() => import('./PlayRecommendationCard'), { ssr: false, loading: tabLoading });
 // モーダルは「振り返りを書く」を押すまで一切不要なので、開くまで読み込まない
 const SoloQReflectionModal = dynamic(() => import('./SoloQReflectionModal'), { ssr: false });
 

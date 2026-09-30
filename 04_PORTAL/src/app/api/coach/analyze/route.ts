@@ -17,6 +17,7 @@ import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { runPostGameReview } from '../../../../lib/coachPostGame';
 import { computeTrendAggregates, formatMainRoleLine, formatDeathContextBlock } from '../../../../lib/coachTrends';
 import { getTimingContext, buildPlayRecommendation } from '../../../../lib/soloqTiming';
+import { diagnoseTilt, analyzeStreak } from '../../../../lib/playRecommendation';
 
 // tilt/pre診断はRiot APIの複数回fetch(最大10並列)+Gemini呼び出し(429時最大3リトライで
 // 最大14秒消費)を直列実行するため、Vercelのデフォルト関数タイムアウトに抵触しうる。
@@ -283,48 +284,8 @@ async function getPlayerCounterStats(playerName: string, enemyChampion: string):
 // ============================
 // ティルト診断ロジック
 // ============================
-function diagnoseTilt(matches: any[]): {
-  level: 'green' | 'yellow' | 'red';
-  label: string;
-  score: number;
-  reasons: string[];
-} {
-  if (matches.length === 0) return { level: 'green', label: '正常', score: 0, reasons: [] };
-
-  const recent = matches.slice(0, 5);
-  const losses = recent.filter((m) => !m.win).length;
-  const reasons: string[] = [];
-  let score = 0;
-
-  // 連敗チェック
-  let streak = 0;
-  for (const m of recent) {
-    if (!m.win) streak++;
-    else break;
-  }
-  if (streak >= 3) { score += 40; reasons.push(`${streak}連敗中`); }
-  else if (streak === 2) { score += 20; reasons.push('2連敗中'); }
-
-  // 直近5試合の負け率
-  if (losses >= 4) { score += 30; reasons.push(`直近5試合で${losses}敗`); }
-  else if (losses >= 3) { score += 15; reasons.push(`直近5試合で${losses}敗`); }
-
-  // デス数が多い試合
-  const highDeathGames = recent.filter((m) => m.deaths >= 7).length;
-  if (highDeathGames >= 2) { score += 15; reasons.push(`デス7以上の試合が${highDeathGames}件`); }
-
-  // KDA悪化チェック
-  const avgKda = recent.reduce((s, m) => s + (m.kills + m.assists) / Math.max(m.deaths, 1), 0) / recent.length;
-  if (avgKda < 1.5) { score += 15; reasons.push(`平均KDA ${avgKda.toFixed(1)} (低下傾向)`); }
-
-  const level: 'green' | 'yellow' | 'red' =
-    score >= 50 ? 'red' : score >= 25 ? 'yellow' : 'green';
-  const label =
-    level === 'red' ? '🔴 要休憩（ティルト高）' :
-    level === 'yellow' ? '🟡 注意（やや負荷あり）' : '🟢 良好（続けてOK）';
-
-  return { level, label, score, reasons };
-}
+// diagnoseTilt / analyzeStreak は lib/playRecommendation.ts へ移動した（2026-09-30）。
+// 試合前タブ用の /api/coach/play-recommendation と同じ判定を共有するため。
 
 // ============================
 // ランクを「絶対LP」(ティア跨ぎで単調増加する数値)に正規化する (課題: シーズン目標トラッカー)
@@ -629,41 +590,10 @@ CS/min: 直近${agg.csTrend.recent} / 以前${agg.csTrend.older}　Vision/min: �
 
       const tilt = diagnoseTilt(myMatches);
 
-      // ティルト相関分析（課題: ティルト相関トラッカー）
-      // myMatches は新しい順。連敗と「連敗後の勝率」の相関から“やめどき”を判定する。
-      const chrono = [...myMatches].reverse(); // 古い→新しい
-      // 現在の連続記録（最新から同じ結果が何連続か）
-      let currentStreak = 0;
-      let streakType: 'win' | 'loss' | null = null;
-      if (myMatches.length > 0) {
-        streakType = myMatches[0].win ? 'win' : 'loss';
-        for (const m of myMatches) {
-          if ((m.win ? 'win' : 'loss') === streakType) currentStreak++;
-          else break;
-        }
-      }
-      // 「直前が負け」の次の試合の勝率 vs 全体勝率
-      let afterLossGames = 0, afterLossWins = 0;
-      let afterLossStreakGames = 0, afterLossStreakWins = 0; // 2連敗以上の直後
-      let lossRun = 0;
-      for (let i = 0; i < chrono.length; i++) {
-        if (i > 0) {
-          const prevLoss = !chrono[i - 1].win;
-          if (prevLoss) { afterLossGames++; if (chrono[i].win) afterLossWins++; }
-          if (lossRun >= 2) { afterLossStreakGames++; if (chrono[i].win) afterLossStreakWins++; }
-        }
-        lossRun = chrono[i].win ? 0 : lossRun + 1;
-      }
-      const overallWins = myMatches.filter((m) => m.win).length;
-      const streakAnalysis = {
-        currentStreak,
-        streakType,
-        overallWinRate: myMatches.length ? Math.round((overallWins / myMatches.length) * 100) : 0,
-        afterLossWinRate: afterLossGames ? Math.round((afterLossWins / afterLossGames) * 100) : null,
-        afterLossStreakWinRate: afterLossStreakGames ? Math.round((afterLossStreakWins / afterLossStreakGames) * 100) : null,
-        // “やめどき”判定: 現在2連敗以上、かつ連敗後勝率が全体を大きく下回る
-        stopRecommended: streakType === 'loss' && currentStreak >= 2,
-      };
+      // ティルト相関分析（連敗と「連敗後の勝率」の相関から“やめどき”を判定）。
+      // 2026-09-30: この計算は lib/playRecommendation.ts の analyzeStreak へ移動した。
+      // 試合前タブの /api/coach/play-recommendation と同じ判定を共有するため。
+      const streakAnalysis = analyzeStreak(myMatches);
 
       // 曜日×時間帯の過去勝率＋連敗ストッパーも加味して「次の試合に行くべきか」を判定する
       const timing = await getTimingContext(supabase, puuid);

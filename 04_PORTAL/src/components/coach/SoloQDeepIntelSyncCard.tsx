@@ -18,12 +18,14 @@ import {
 
 interface SoloQDeepIntelSyncCardProps {
   selectedChampion?: string;
-  summonerName?: string;
 }
 
+// 2026-09-30: Riot ID("Kazurin#4036")がこのコンポーネントの既定値・分解時の
+// フォールバック・呼び出し側のpropの3箇所にハードコードされていた。
+// 他のソロQ系ルートはすべて環境変数(RIOT_GAME_NAME / RIOT_TAG_LINE)を使うため、
+// クライアントからは渡さず、サーバー側(/api/analyzer/deep-intel)に解決させる。
 export default function SoloQDeepIntelSyncCard({
   selectedChampion = '',
-  summonerName = 'Kazurin#4036',
 }: SoloQDeepIntelSyncCardProps) {
   const [loading, setLoading] = useState(false);
   const [intel, setIntel] = useState<any>(null);
@@ -33,18 +35,12 @@ export default function SoloQDeepIntelSyncCard({
     setLoading(true);
     setError('');
     try {
-      const parts = summonerName.trim().split('#');
-      const gName = parts[0]?.trim() || 'Kazurin';
-      const tLine = parts[1]?.trim() || '4036';
-
+      // gameName / tagLine は送らない。サーバー側が環境変数のオーナーIDへ
+      // フォールバックする（Riot IDの出所を1箇所にする）。
       const res = await fetch('/api/analyzer/deep-intel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          gameName: gName,
-          tagLine: tLine,
-          targetTier: 'Emerald IV',
-        }),
+        body: JSON.stringify({ targetTier: 'Emerald IV' }),
       });
 
       if (!res.ok) throw new Error('アナライザーデータの取得に失敗しました');
@@ -62,7 +58,8 @@ export default function SoloQDeepIntelSyncCard({
 
   useEffect(() => {
     fetchDeepIntel();
-  }, [summonerName]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 選択中チャンピオンの固有スタッツを抽出
   const matchedChampProfile = intel?.championProfiles?.find((c: any) => {
