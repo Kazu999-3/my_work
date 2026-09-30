@@ -14,11 +14,23 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('system');
+  // 既定は 'light'。2026-09-30までは 'system'（OS設定に追従）だったため、
+  // 端末をダークにしている人には**自分で選んでいなくてもダークが適用**されていた。
+  //
+  // ダークモードの見た目は長らく「クラス名を列挙して後追いで !important 上書きする
+  // 中和レイヤー」に依存しており、列挙から漏れたものがそのまま不具合になっていた
+  // （同日だけで「鮮やかな背景379箇所が灰色に潰れる」「ページ全体が明るいまま白文字」
+  //   「バッジが読めない」の3件が報告された）。
+  // 現在その中和レイヤーをトークン方式へ移行中で、完了すれば列挙漏れという概念自体が
+  // 無くなるが、それまでは**自分で選んだ人だけがダークを見る**状態にしてリスクを抑える。
+  //
+  // ⚠️ 既に 'dark' / 'system' を選択済みの人の設定はそのまま尊重する（下の localStorage
+  //    読み込みで復元される）。変わるのは「一度も選んでいない人」の初期値だけ。
+  const [theme, setThemeState] = useState<Theme>('light');
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
   const [mounted, setMounted] = useState(false);
 
-  // 初期化: localStorage または システム設定の読み込み
+  // 初期化: localStorage に保存された選択があればそれを復元する
   useEffect(() => {
     try {
       const savedTheme = localStorage.getItem('ktm-theme') as Theme | null;

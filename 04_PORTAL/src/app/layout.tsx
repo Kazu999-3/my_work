@@ -63,7 +63,13 @@ export default function RootLayout({
               try {
                 var savedTheme = localStorage.getItem('ktm-theme');
                 var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                var isDark = savedTheme === 'dark' || (savedTheme !== 'light' && prefersDark);
+                // 2026-09-30: 既定を light に変更した。以前は保存が無ければ OS 設定に
+                // 追従していたため、自分で選んでいない人にもダークが適用されていた。
+                // ダークは中和レイヤーの列挙漏れ由来の不具合が続いており（同日3件報告）、
+                // トークン方式への移行が終わるまでは「自分で選んだ人だけ」に限定する。
+                // ⚠️ ここは ThemeContext の既定値と必ず揃えること（片方だけ変えると
+                //    初期描画とハイドレーション後で色が切り替わってちらつく）。
+                var isDark = savedTheme === 'dark' || (savedTheme === 'system' && prefersDark);
                 if (isDark) {
                   document.documentElement.classList.add('dark');
                   document.documentElement.style.colorScheme = 'dark';
