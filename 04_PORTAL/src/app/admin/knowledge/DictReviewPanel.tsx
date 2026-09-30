@@ -55,7 +55,7 @@ export default function DictReviewPanel() {
 
   return (
     <div className="space-y-5 animate-in">
-      <div className="bg-white border border-border rounded-3xl p-6">
+      <div className="bg-surface border border-border rounded-3xl p-6">
         <h2 className="text-base font-bold text-stone-900 mb-1 flex items-center gap-2"><Sparkles size={18} className="text-pink-600" /> 辞典の鮮度レビュー</h2>
         <p className="text-xs text-stone-500 mb-4">未レビュー/古い順に辞典データをLLMが「現パッチでも有効か」判定します。承認したものだけ反映され、削除はされません（アーカイブのみ）。</p>
         <button onClick={runReview} disabled={loading}
@@ -70,7 +70,7 @@ export default function DictReviewPanel() {
 
       <div className="space-y-3">
         {candidates.map((c) => (
-          <div key={c.champion} className="bg-white border border-border rounded-2xl p-4">
+          <div key={c.champion} className="bg-surface border border-border rounded-2xl p-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-stone-900">{c.champion}</span>

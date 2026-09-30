@@ -50,7 +50,7 @@ export function MiniMmrChart({ pts, lane }: { pts: any[]; lane: string }) {
             if (!active || !payload || payload.length === 0) return null;
             const d = payload[0].payload;
             return (
-              <div className="bg-white border border-black/10 rounded-lg p-2 text-[10px] shadow-xl">
+              <div className="bg-surface border border-black/10 rounded-lg p-2 text-[10px] shadow-xl">
                 <div className="font-bold text-stone-900">
                   {d.champion}{d.opponentChampion ? <span className="text-rose-600"> vs {d.opponentChampion}</span> : ''}
                 </div>
@@ -118,7 +118,7 @@ export function MainMmrChart({
             const d = payload[0].payload;
             const laneLabels: Record<string, string> = { TOTAL: '総合', ALL: '全レーン', TOP: 'TOP', JG: 'JG', MID: 'MID', ADC: 'ADC', SUP: 'SUP' };
             return (
-              <div className="bg-white border border-black/10 backdrop-blur-xl rounded-xl p-3 shadow-2xl text-xs min-w-[170px]">
+              <div className="bg-surface border border-black/10 backdrop-blur-xl rounded-xl p-3 shadow-2xl text-xs min-w-[170px]">
                 <div className="flex items-center gap-2 mb-1">
                   <Image
                     src={getChampIcon(d.champion)}

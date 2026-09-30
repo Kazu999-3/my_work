@@ -375,7 +375,7 @@ export default function LibraryMergePreviewModal({
           <button
             onClick={onCancel}
             disabled={saving || reAnalyzing}
-            className="text-stone-400 hover:text-stone-700 p-1.5 rounded-lg hover:bg-stone-100 disabled:opacity-50 transition self-end sm:self-auto"
+            className="text-stone-400 hover:text-stone-700 p-1.5 rounded-lg hover:bg-surface-subtle disabled:opacity-50 transition self-end sm:self-auto"
             title="閉じる"
           >
             <X size={20} />
@@ -383,10 +383,10 @@ export default function LibraryMergePreviewModal({
         </div>
 
         {/* 📄 元記事の即座確認アコーディオン */}
-        <div className="bg-stone-100/80 border border-border rounded-2xl overflow-hidden transition-all">
+        <div className="bg-surface-subtle/80 border border-border rounded-2xl overflow-hidden transition-all">
           <div
             onClick={() => setShowSourceArticle(v => !v)}
-            className="p-3.5 flex items-center justify-between cursor-pointer hover:bg-stone-200/50 transition-colors"
+            className="p-3.5 flex items-center justify-between cursor-pointer hover:bg-surface-hover/50 transition-colors"
           >
             <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
               <FileText size={16} className="text-amber-700 shrink-0" />
@@ -401,7 +401,7 @@ export default function LibraryMergePreviewModal({
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="text-[11px] font-bold text-amber-700 bg-white border border-amber-300 hover:bg-amber-50 px-2 py-1 rounded-lg flex items-center gap-1 shadow-sm transition"
+                  className="text-[11px] font-bold text-amber-700 bg-surface border border-amber-300 hover:bg-amber-50 px-2 py-1 rounded-lg flex items-center gap-1 shadow-sm transition"
                   title="元動画・記事を開く"
                 >
                   <span>元ソース</span>
@@ -416,7 +416,7 @@ export default function LibraryMergePreviewModal({
           </div>
 
           {showSourceArticle && (
-            <div className="p-4 border-t border-border bg-white max-h-[300px] overflow-y-auto text-xs leading-relaxed text-stone-700 prose prose-stone max-w-none">
+            <div className="p-4 border-t border-border bg-surface max-h-[300px] overflow-y-auto text-xs leading-relaxed text-stone-700 prose prose-stone max-w-none">
               {articleContent ? (
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{articleContent}</ReactMarkdown>
               ) : (
@@ -459,7 +459,7 @@ export default function LibraryMergePreviewModal({
               currentChampions.map((c) => (
                 <span
                   key={c}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-amber-300 rounded-lg text-xs font-bold text-stone-800 shadow-sm"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface border border-amber-300 rounded-lg text-xs font-bold text-stone-800 shadow-sm"
                 >
                   {getChampIcon(c) && (
                     <img
@@ -481,7 +481,7 @@ export default function LibraryMergePreviewModal({
                 </span>
               ))
             ) : (
-              <div className="flex items-center gap-2 flex-wrap w-full bg-white/90 border border-amber-300/80 p-2.5 rounded-xl">
+              <div className="flex items-center gap-2 flex-wrap w-full bg-surface/90 border border-amber-300/80 p-2.5 rounded-xl">
                 <span className="text-xs font-black text-amber-950 flex items-center gap-1">
                   <Map size={14} className="text-amber-600" />
                   <span>送り先レーンガイド:</span>
@@ -505,7 +505,7 @@ export default function LibraryMergePreviewModal({
                       className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 border ${
                         laneChoice === l.key
                           ? 'bg-amber-600 border-amber-600 text-white shadow-xs'
-                          : 'bg-stone-50 border-border text-stone-700 hover:bg-amber-50 hover:border-amber-300'
+                          : 'bg-background border-border text-stone-700 hover:bg-amber-50 hover:border-amber-300'
                       }`}
                     >
                       <span>{l.label}</span>
@@ -521,7 +521,7 @@ export default function LibraryMergePreviewModal({
                 value={champInput}
                 onChange={setChampInput}
                 placeholder="＋チャンプを追加して辞典へ..."
-                className="bg-white border-amber-300 focus:border-amber-500 py-1 text-xs"
+                className="bg-surface border-amber-300 focus:border-amber-500 py-1 text-xs"
                 onSelect={(champ: string) => handleAddChampion(champ)}
               />
             </div>
@@ -541,7 +541,7 @@ export default function LibraryMergePreviewModal({
                     type="button"
                     onClick={() => handleAddChampion(s.champion)}
                     disabled={saving || reAnalyzing}
-                    className="text-[11px] font-bold bg-white hover:bg-amber-100 border border-amber-300 text-stone-800 px-2 py-0.5 rounded-md flex items-center gap-1 shadow-xs hover:border-amber-400 transition"
+                    className="text-[11px] font-bold bg-surface hover:bg-amber-100 border border-amber-300 text-stone-800 px-2 py-0.5 rounded-md flex items-center gap-1 shadow-xs hover:border-amber-400 transition"
                     title={`${s.matchedAlias} (${s.count}回出現) を対象に追加して再解析`}
                   >
                     <span>＋ {s.matchedAlias}</span>
@@ -566,7 +566,7 @@ export default function LibraryMergePreviewModal({
             </div>
 
             {trendAnalyses.map((analysis) => (
-              <div key={analysis.champion} className="bg-white border border-border rounded-2xl p-4 shadow-sm space-y-3">
+              <div key={analysis.champion} className="bg-surface border border-border rounded-2xl p-4 shadow-sm space-y-3">
                 <div className="flex items-center justify-between border-b border-stone-100 pb-2">
                   <div className="flex items-center justify-between w-full flex-wrap gap-2">
                     <div className="flex items-center gap-2.5">
@@ -595,7 +595,7 @@ export default function LibraryMergePreviewModal({
                             const newRole = e.target.value;
                             setChampionRoles((prev) => ({ ...prev, [analysis.champion]: newRole }));
                           }}
-                          className="bg-white border border-amber-300 rounded-lg px-2 py-0.5 text-xs font-bold text-stone-900 outline-none cursor-pointer"
+                          className="bg-surface border border-amber-300 rounded-lg px-2 py-0.5 text-xs font-bold text-stone-900 outline-none cursor-pointer"
                         >
                           {[
                             { key: 'TOP', label: '⚔️ TOP（トップ）' },
@@ -633,8 +633,8 @@ export default function LibraryMergePreviewModal({
                                 isSelected
                                   ? 'bg-amber-600 border-amber-600 text-white shadow-xs'
                                   : isRecommended
-                                    ? 'bg-white border-amber-300 text-amber-900 hover:bg-amber-100'
-                                    : 'bg-stone-100/80 border-border text-stone-500 hover:bg-stone-200/80 hover:text-stone-800'
+                                    ? 'bg-surface border-amber-300 text-amber-900 hover:bg-amber-100'
+                                    : 'bg-surface-subtle/80 border-border text-stone-500 hover:bg-surface-hover/80 hover:text-stone-800'
                               }`}
                               title={isRecommended ? '推奨レーン' : 'このレーンとして統合'}
                             >
@@ -677,12 +677,12 @@ export default function LibraryMergePreviewModal({
                       return (
                         <div
                           key={field.fieldKey}
-                          className="border border-border rounded-xl bg-stone-50/50 overflow-hidden"
+                          className="border border-border rounded-xl bg-background/50 overflow-hidden"
                         >
                           <button
                             type="button"
                             onClick={() => toggleFieldExpand(expandKey)}
-                            className="w-full flex items-center justify-between p-3 text-left hover:bg-stone-100/60 transition"
+                            className="w-full flex items-center justify-between p-3 text-left hover:bg-surface-subtle/60 transition"
                           >
                             <div className="flex items-center gap-2">
                               <IconComp size={15} className="text-amber-700" />
@@ -704,11 +704,11 @@ export default function LibraryMergePreviewModal({
                           </button>
 
                           {isExpanded && (
-                            <div className="p-3 pt-0 border-t border-border bg-white space-y-2 text-xs">
+                            <div className="p-3 pt-0 border-t border-border bg-surface space-y-2 text-xs">
                               {!field.isNew && field.existingValue && (
                                 <div>
                                   <p className="text-[10px] font-bold text-stone-400 mb-0.5">現在の内容:</p>
-                                  <div className="bg-stone-50 border border-border rounded-lg p-2 text-stone-600 text-[11px] whitespace-pre-wrap max-h-24 overflow-y-auto">
+                                  <div className="bg-background border border-border rounded-lg p-2 text-stone-600 text-[11px] whitespace-pre-wrap max-h-24 overflow-y-auto">
                                     {field.existingValue}
                                   </div>
                                 </div>
@@ -732,14 +732,14 @@ export default function LibraryMergePreviewModal({
           /* フォールバック用プレビュー */
           <div className="space-y-3">
             {previews.map((p, idx) => (
-              <div key={idx} className="border border-border rounded-2xl p-4 bg-white">
+              <div key={idx} className="border border-border rounded-2xl p-4 bg-surface">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800">
                     🏆 {p.champion}
                   </span>
                   <span className="text-xs text-stone-500">項目: {p.fieldName}</span>
                 </div>
-                <div className="bg-stone-50 border border-border rounded-xl p-3 text-xs text-stone-700 whitespace-pre-wrap">
+                <div className="bg-background border border-border rounded-xl p-3 text-xs text-stone-700 whitespace-pre-wrap">
                   {p.mergedExcerpt}
                 </div>
               </div>
@@ -774,7 +774,7 @@ export default function LibraryMergePreviewModal({
                     className={`border rounded-2xl p-3.5 transition ${
                       isSelected
                         ? 'border-rose-300 bg-rose-50/40 shadow-sm'
-                        : 'border-border bg-stone-50/40 opacity-60'
+                        : 'border-border bg-background/40 opacity-60'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
@@ -801,7 +801,7 @@ export default function LibraryMergePreviewModal({
                       <span className="text-[10px] font-bold text-stone-500">{m.title}</span>
                     </div>
 
-                    <div className="bg-white border border-rose-200/80 rounded-xl p-2.5 text-xs text-stone-800 leading-relaxed whitespace-pre-wrap">
+                    <div className="bg-surface border border-rose-200/80 rounded-xl p-2.5 text-xs text-stone-800 leading-relaxed whitespace-pre-wrap">
                       {m.strategy}
                     </div>
                   </div>
@@ -845,7 +845,7 @@ export default function LibraryMergePreviewModal({
                 <select
                   value={laneChoice}
                   onChange={(e) => setLaneChoice(e.target.value)}
-                  className="bg-white border border-teal-300 rounded-lg px-2.5 py-1 text-xs text-teal-800 outline-none font-medium"
+                  className="bg-surface border border-teal-300 rounded-lg px-2.5 py-1 text-xs text-teal-800 outline-none font-medium"
                 >
                   {Object.entries(LANE_LABELS).map(([key, label]) => (
                     <option key={key} value={key}>
@@ -864,7 +864,7 @@ export default function LibraryMergePreviewModal({
                     key={idx}
                     className={`border rounded-2xl p-3.5 transition ${
                       !item.included
-                        ? 'border-border bg-stone-50/50 opacity-40'
+                        ? 'border-border bg-background/50 opacity-40'
                         : isLaneGeneral
                         ? 'border-teal-200 bg-teal-50/30'
                         : 'border-amber-300 bg-amber-50/40 shadow-sm'
@@ -917,7 +917,7 @@ export default function LibraryMergePreviewModal({
                               value={item.assignedChampion}
                               onChange={(val) => handleAssignChampion(idx, val)}
                               placeholder="チャンプ選択..."
-                              className="bg-white border-amber-300 py-0.5 text-xs h-7"
+                              className="bg-surface border-amber-300 py-0.5 text-xs h-7"
                             />
                           </div>
                         )}
@@ -926,7 +926,7 @@ export default function LibraryMergePreviewModal({
 
                     <div
                       className={`rounded-xl p-2.5 text-xs leading-relaxed whitespace-pre-wrap ${
-                        item.included ? 'bg-white text-stone-700 border border-border/80' : 'text-stone-400'
+                        item.included ? 'bg-surface text-stone-700 border border-border/80' : 'text-stone-400'
                       }`}
                     >
                       {item.summary}
@@ -970,7 +970,7 @@ export default function LibraryMergePreviewModal({
               type="button"
               onClick={onCancel}
               disabled={saving || reAnalyzing}
-              className="px-3.5 py-2.5 rounded-xl text-xs font-bold text-stone-500 hover:bg-stone-100 disabled:opacity-50 transition"
+              className="px-3.5 py-2.5 rounded-xl text-xs font-bold text-stone-500 hover:bg-surface-subtle disabled:opacity-50 transition"
             >
               {continuousReview ? '中断して閉じる' : 'キャンセル'}
             </button>
@@ -981,7 +981,7 @@ export default function LibraryMergePreviewModal({
                   type="button"
                   onClick={continuousReview.onSkipNext}
                   disabled={saving || reAnalyzing}
-                  className="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-stone-100 hover:bg-stone-200 text-stone-600 flex items-center gap-1.5 disabled:opacity-50 transition"
+                  className="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-surface-subtle hover:bg-surface-hover text-stone-600 flex items-center gap-1.5 disabled:opacity-50 transition"
                   title="この記事は統合せず、スキップして次の記事を表示します"
                 >
                   <span>⏭️ スキップ</span>

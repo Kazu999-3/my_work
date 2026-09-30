@@ -1378,7 +1378,7 @@ export default function KtmAdminPage() {
 
                 <div className="max-h-[300px] overflow-y-auto space-y-3 pr-2">
                   {riotSyncErrors.map((errorPlayer) => (
-                    <div key={errorPlayer.id} className="bg-white/60 border border-border rounded-lg p-3 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs hover:border-amber-200 transition">
+                    <div key={errorPlayer.id} className="bg-surface/60 border border-border rounded-lg p-3 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs hover:border-amber-200 transition">
                       <div className="space-y-1">
                         <span className="font-bold text-stone-900 text-sm">{errorPlayer.name}</span>
                         <div className="text-red-700 text-[11px] font-mono flex items-center gap-1">
@@ -1511,7 +1511,7 @@ export default function KtmAdminPage() {
             })()}
 
             {/* ★ フィルターUI ＆ 大会当日チェックイン操作バー */}
-            <div className="space-y-3 bg-white/70 p-4 rounded-2xl border border-border shadow-xs mb-4">
+            <div className="space-y-3 bg-surface/70 p-4 rounded-2xl border border-border shadow-xs mb-4">
               <div className="flex flex-col md:flex-row gap-3 items-start md:items-center justify-between">
                 {/* 左：ステータス絞り込み */}
                 <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto">

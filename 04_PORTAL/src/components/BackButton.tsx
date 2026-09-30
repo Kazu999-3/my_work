@@ -51,7 +51,7 @@ export default function BackButton() {
         <button
           type="button"
           onClick={handleClick}
-          className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-900 bg-white/90 hover:bg-white shadow-sm backdrop-blur px-3 py-1.5 rounded-xl border border-black/10 transition"
+          className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-900 bg-surface/90 hover:bg-surface shadow-sm backdrop-blur px-3 py-1.5 rounded-xl border border-black/10 transition"
         >
           <ChevronLeft className="w-4 h-4" />
           <span>戻る</span>

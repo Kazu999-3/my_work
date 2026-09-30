@@ -48,7 +48,7 @@ export default function VisionAnalyticsCard() {
   ];
 
   return (
-    <div className="rounded-3xl border border-border/90 bg-white/95 p-5 md:p-6 shadow-xs space-y-5">
+    <div className="rounded-3xl border border-border/90 bg-surface/95 p-5 md:p-6 shadow-xs space-y-5">
       {/* ヘッダー */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-3">
         <div className="flex items-center gap-3">
@@ -83,7 +83,7 @@ export default function VisionAnalyticsCard() {
       {/* 4大メトリクスグリッド */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {/* 分間視界スコア */}
-        <div className="p-3 bg-stone-50/80 rounded-2xl border border-border/70 space-y-1">
+        <div className="p-3 bg-background/80 rounded-2xl border border-border/70 space-y-1">
           <div className="text-[10px] font-bold text-stone-500 flex items-center justify-between">
             <span>分間視界 (VS/m)</span>
             <span className="text-amber-600 font-bold">上位18%</span>
@@ -97,7 +97,7 @@ export default function VisionAnalyticsCard() {
         </div>
 
         {/* コントロールワード */}
-        <div className="p-3 bg-stone-50/80 rounded-2xl border border-border/70 space-y-1">
+        <div className="p-3 bg-background/80 rounded-2xl border border-border/70 space-y-1">
           <div className="text-[10px] font-bold text-stone-500 flex items-center justify-between">
             <span>ピンクワード</span>
             <span className="text-emerald-600 font-bold">平均の2倍</span>
@@ -111,7 +111,7 @@ export default function VisionAnalyticsCard() {
         </div>
 
         {/* ワード設置 */}
-        <div className="p-3 bg-stone-50/80 rounded-2xl border border-border/70 space-y-1">
+        <div className="p-3 bg-background/80 rounded-2xl border border-border/70 space-y-1">
           <div className="text-[10px] font-bold text-stone-500">
             分間ワード設置
           </div>
@@ -124,7 +124,7 @@ export default function VisionAnalyticsCard() {
         </div>
 
         {/* ワード破壊 */}
-        <div className="p-3 bg-stone-50/80 rounded-2xl border border-border/70 space-y-1">
+        <div className="p-3 bg-background/80 rounded-2xl border border-border/70 space-y-1">
           <div className="text-[10px] font-bold text-stone-500">
             分間ワード破壊
           </div>
@@ -138,7 +138,7 @@ export default function VisionAnalyticsCard() {
       </div>
 
       {/* 視界配置バランス（自陣防衛 76% vs 敵陣ディープ 24%） */}
-      <div className="p-4 bg-stone-50/60 rounded-2xl border border-border/80 space-y-3">
+      <div className="p-4 bg-background/60 rounded-2xl border border-border/80 space-y-3">
         <div className="flex items-center justify-between text-xs font-black text-stone-800">
           <span className="flex items-center gap-1.5">
             <Compass size={14} className="text-amber-600" />
@@ -151,7 +151,7 @@ export default function VisionAnalyticsCard() {
 
         {/* スプリットバー */}
         <div className="space-y-1.5">
-          <div className="h-3.5 w-full rounded-full bg-stone-200 flex overflow-hidden shadow-inner">
+          <div className="h-3.5 w-full rounded-full bg-surface-hover flex overflow-hidden shadow-inner">
             <div
               className="h-full bg-emerald-500"
               style={{ width: `${vision.defensiveWardRatioPercent}%` }}
@@ -214,7 +214,7 @@ export default function VisionAnalyticsCard() {
                 className={`p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between gap-1.5 ${
                   isSelected
                     ? 'border-amber-500 bg-amber-50/80 shadow-xs ring-2 ring-amber-400/30'
-                    : 'border-border bg-white hover:bg-stone-50'
+                    : 'border-border bg-surface hover:bg-background'
                 }`}
               >
                 <div className="text-xs font-black text-stone-900 truncate">
@@ -262,7 +262,7 @@ export default function VisionAnalyticsCard() {
               </p>
             </div>
           </div>
-          <span className="text-[10px] font-mono font-bold text-rose-700 bg-white px-2 py-0.5 rounded-full border border-rose-200">
+          <span className="text-[10px] font-mono font-bold text-rose-700 bg-surface px-2 py-0.5 rounded-full border border-rose-200">
             常時1本所持推奨
           </span>
         </div>
@@ -274,7 +274,7 @@ export default function VisionAnalyticsCard() {
             <span>ベストな購入タイミング（迷わず買う瞬間）:</span>
           </span>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <div className="p-3 bg-white rounded-2xl border border-border shadow-2xs space-y-1">
+            <div className="p-3 bg-surface rounded-2xl border border-border shadow-2xs space-y-1">
               <div className="flex items-center justify-between text-[11px] font-black">
                 <span className="text-rose-700 flex items-center gap-1">
                   <Clock size={12} /> 1. 1stリコール時 (4:00〜5:30)
@@ -286,7 +286,7 @@ export default function VisionAnalyticsCard() {
               </p>
             </div>
 
-            <div className="p-3 bg-white rounded-2xl border border-border shadow-2xs space-y-1">
+            <div className="p-3 bg-surface rounded-2xl border border-border shadow-2xs space-y-1">
               <div className="flex items-center justify-between text-[11px] font-black">
                 <span className="text-rose-700 flex items-center gap-1">
                   <Clock size={12} /> 2. 主要オブジェクト湧き1分前
@@ -298,7 +298,7 @@ export default function VisionAnalyticsCard() {
               </p>
             </div>
 
-            <div className="p-3 bg-white rounded-2xl border border-border shadow-2xs space-y-1">
+            <div className="p-3 bg-surface rounded-2xl border border-border shadow-2xs space-y-1">
               <div className="flex items-center justify-between text-[11px] font-black">
                 <span className="text-rose-700 flex items-center gap-1">
                   <Clock size={12} /> 3. 1コア完成パワースパイク直後
@@ -310,7 +310,7 @@ export default function VisionAnalyticsCard() {
               </p>
             </div>
 
-            <div className="p-3 bg-white rounded-2xl border border-border shadow-2xs space-y-1">
+            <div className="p-3 bg-surface rounded-2xl border border-border shadow-2xs space-y-1">
               <div className="flex items-center justify-between text-[11px] font-black">
                 <span className="text-rose-700 flex items-center gap-1">
                   <Clock size={12} /> 4. 20分以降のバロンセットアップ
@@ -345,23 +345,23 @@ export default function VisionAnalyticsCard() {
           </div>
 
           {/* ロール別推奨購入目安 */}
-          <div className="p-3 bg-stone-50 rounded-2xl border border-border space-y-1.5">
+          <div className="p-3 bg-background rounded-2xl border border-border space-y-1.5">
             <span className="text-xs font-black text-stone-900 flex items-center gap-1">
               <Shield size={13} className="text-amber-600" />
               <span>ロール別 1試合あたりの推奨購入目安</span>
             </span>
             <div className="grid grid-cols-3 gap-1.5 text-center text-[10px] pt-0.5">
-              <div className="p-1.5 bg-white rounded-xl border border-border">
+              <div className="p-1.5 bg-surface rounded-xl border border-border">
                 <span className="text-stone-400 font-bold block">TOP / BOT</span>
                 <span className="text-stone-900 font-black text-xs">2〜3本</span>
                 <span className="text-[9px] text-stone-500 block">リバー防衛</span>
               </div>
-              <div className="p-1.5 bg-white rounded-xl border border-border">
+              <div className="p-1.5 bg-surface rounded-xl border border-border">
                 <span className="text-stone-400 font-bold block">JG / MID</span>
                 <span className="text-amber-700 font-black text-xs">4〜6本</span>
                 <span className="text-[9px] text-stone-500 block">ディープ・オブジェクト</span>
               </div>
-              <div className="p-1.5 bg-white rounded-xl border border-border">
+              <div className="p-1.5 bg-surface rounded-xl border border-border">
                 <span className="text-stone-400 font-bold block">SUPPORT</span>
                 <span className="text-emerald-700 font-black text-xs">6〜10本</span>
                 <span className="text-[9px] text-stone-500 block">常時2本所持・デニス</span>

@@ -71,7 +71,7 @@ export default function KnowledgePreviewModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white border border-gray-200 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl">
+      <div className="bg-surface border border-gray-200 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
             <BookOpen size={20} className="text-pink-500" /> 登録前プレビュー
@@ -108,7 +108,7 @@ export default function KnowledgePreviewModal({
               </p>
               <div className="space-y-2">
                 {insights.map((insight, idx) => (
-                  <div key={idx} className={`border rounded-xl p-3 transition ${insight.included ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-100 opacity-50'}`}>
+                  <div key={idx} className={`border rounded-xl p-3 transition ${insight.included ? 'bg-surface border-gray-200' : 'bg-gray-50 border-gray-100 opacity-50'}`}>
                     <div className="flex items-start justify-between gap-2 mb-1.5 flex-wrap sm:flex-nowrap">
                       <label className="flex items-start gap-2 flex-1 min-w-0 cursor-pointer">
                         <input

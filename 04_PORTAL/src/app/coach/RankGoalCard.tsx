@@ -116,7 +116,7 @@ export default function RankGoalCard() {
         {!editing ? (
           <button
             onClick={() => setEditing(true)}
-            className="text-[11px] px-2.5 py-1 rounded-lg border border-border dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors cursor-pointer"
+            className="text-[11px] px-2.5 py-1 rounded-lg border border-border dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-surface-subtle dark:hover:bg-stone-800 transition-colors cursor-pointer"
           >
             目標を変更
           </button>
@@ -126,7 +126,7 @@ export default function RankGoalCard() {
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               placeholder="例: EMERALD IV / MASTER"
-              className="px-2 py-1 text-xs rounded-lg border border-border dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 w-44"
+              className="px-2 py-1 text-xs rounded-lg border border-border dark:border-stone-700 bg-surface dark:bg-stone-900 text-stone-900 dark:text-stone-100 w-44"
             />
             <button
               onClick={saveTarget}
@@ -155,7 +155,7 @@ export default function RankGoalCard() {
       ) : (
         <div className="space-y-2.5">
           <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="rounded-xl border border-border dark:border-stone-700/60 bg-white dark:bg-stone-900/60 px-3 py-2">
+            <div className="rounded-xl border border-border dark:border-stone-700/60 bg-surface dark:bg-stone-900/60 px-3 py-2">
               <div className="text-[10px] font-bold text-stone-500 dark:text-stone-400">現在</div>
               <div className="font-black text-stone-900 dark:text-stone-100 mt-0.5">{data.current?.label}</div>
             </div>
@@ -165,7 +165,7 @@ export default function RankGoalCard() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-border dark:border-stone-700/60 bg-white dark:bg-stone-900/60 px-3.5 py-2.5 text-xs space-y-1">
+          <div className="rounded-xl border border-border dark:border-stone-700/60 bg-surface dark:bg-stone-900/60 px-3.5 py-2.5 text-xs space-y-1">
             {typeof data.gap === 'number' && (
               <div>
                 <span className="text-stone-500 dark:text-stone-400">目標までの差: </span>

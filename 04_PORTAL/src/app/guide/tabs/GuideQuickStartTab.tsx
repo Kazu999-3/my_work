@@ -47,7 +47,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
       {/* 3ステップ カード一覧 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* Step 1 */}
-        <div className="bg-white rounded-3xl p-6 border-2 border-amber-200/90 shadow-sm relative overflow-hidden flex flex-col justify-between hover:border-amber-400 transition-all group">
+        <div className="bg-surface rounded-3xl p-6 border-2 border-amber-200/90 shadow-sm relative overflow-hidden flex flex-col justify-between hover:border-amber-400 transition-all group">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-2xl group-hover:scale-105 transition">
@@ -59,9 +59,9 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
             </div>
             <h3 className="text-base font-black text-stone-900">Riot ID（サモナー名）登録</h3>
             <p className="text-stone-600 text-xs leading-relaxed">
-              ポータル右上の <strong className="text-stone-900 font-bold">「Discordログイン」</strong> から連携するか、マイページでゲーム内の <code className="bg-stone-100 text-amber-900 px-1.5 py-0.5 rounded font-mono font-bold">名前#TAG</code> を入力します。
+              ポータル右上の <strong className="text-stone-900 font-bold">「Discordログイン」</strong> から連携するか、マイページでゲーム内の <code className="bg-surface-subtle text-amber-900 px-1.5 py-0.5 rounded font-mono font-bold">名前#TAG</code> を入力します。
             </p>
-            <div className="bg-stone-50 border border-border/80 rounded-xl p-3 text-[11px] text-stone-600 space-y-1">
+            <div className="bg-background border border-border/80 rounded-xl p-3 text-[11px] text-stone-600 space-y-1">
               <div className="font-bold text-stone-800 flex items-center gap-1">
                 <CheckCircle2 size={13} className="text-emerald-600" />
                 登録するとできること
@@ -82,7 +82,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
         </div>
 
         {/* Step 2 */}
-        <div className="bg-white rounded-3xl p-6 border-2 border-amber-200/90 shadow-sm relative overflow-hidden flex flex-col justify-between hover:border-amber-400 transition-all group">
+        <div className="bg-surface rounded-3xl p-6 border-2 border-amber-200/90 shadow-sm relative overflow-hidden flex flex-col justify-between hover:border-amber-400 transition-all group">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-2xl group-hover:scale-105 transition">
@@ -94,9 +94,9 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
             </div>
             <h3 className="text-base font-black text-stone-900">希望レーンの設定</h3>
             <p className="text-stone-600 text-xs leading-relaxed">
-              あなたの得意レーンと行きたくないレーン（NG）を設定します。Discordで <code className="bg-stone-100 text-amber-900 px-1.5 py-0.5 rounded font-mono font-bold">/lane</code> と打つか、マイページから登録可能です。
+              あなたの得意レーンと行きたくないレーン（NG）を設定します。Discordで <code className="bg-surface-subtle text-amber-900 px-1.5 py-0.5 rounded font-mono font-bold">/lane</code> と打つか、マイページから登録可能です。
             </p>
-            <div className="bg-stone-50 border border-border/80 rounded-xl p-3 text-[11px] text-stone-600 space-y-1">
+            <div className="bg-background border border-border/80 rounded-xl p-3 text-[11px] text-stone-600 space-y-1">
               <div className="font-bold text-stone-800 flex items-center gap-1">
                 <Sliders size={13} className="text-amber-600" />
                 設定できる項目
@@ -118,7 +118,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
         </div>
 
         {/* Step 3 */}
-        <div className="bg-white rounded-3xl p-6 border-2 border-amber-200/90 shadow-sm relative overflow-hidden flex flex-col justify-between hover:border-amber-400 transition-all group">
+        <div className="bg-surface rounded-3xl p-6 border-2 border-amber-200/90 shadow-sm relative overflow-hidden flex flex-col justify-between hover:border-amber-400 transition-all group">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 font-bold text-2xl group-hover:scale-105 transition">
@@ -132,7 +132,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
             <p className="text-stone-600 text-xs leading-relaxed">
               Discordのカスタム募集チャンネルにパネルが出たら、<strong className="text-stone-900 font-bold">[✋ どこでも参加]</strong> を押すだけ！10人集まると自動でチーム分けが始まります。
             </p>
-            <div className="bg-stone-50 border border-border/80 rounded-xl p-3 text-[11px] text-stone-600 space-y-1">
+            <div className="bg-background border border-border/80 rounded-xl p-3 text-[11px] text-stone-600 space-y-1">
               <div className="font-bold text-stone-800 flex items-center gap-1">
                 <Gamepad2 size={13} className="text-emerald-600" />
                 ゲーム中の流れ
@@ -155,14 +155,14 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
       </div>
 
       {/* カスタム参加のルール＆よくある質問 */}
-      <div className="bg-white rounded-3xl p-6 md:p-8 border border-border shadow-xs space-y-6">
+      <div className="bg-surface rounded-3xl p-6 md:p-8 border border-border shadow-xs space-y-6">
         <h3 className="text-lg font-black text-stone-900 flex items-center gap-2">
           <ShieldCheck className="text-amber-600" size={20} />
           カスタム参加にあたっての安心ガイド
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="p-4 rounded-2xl bg-stone-50 border border-border/80 space-y-1.5">
+          <div className="p-4 rounded-2xl bg-background border border-border/80 space-y-1.5">
             <h4 className="text-xs font-black text-stone-900 flex items-center gap-1.5">
               <span>💡</span> 1戦だけのスポット参加や途中抜けはできますか？
             </h4>
@@ -171,7 +171,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
             </p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-stone-50 border border-border/80 space-y-1.5">
+          <div className="p-4 rounded-2xl bg-background border border-border/80 space-y-1.5">
             <h4 className="text-xs font-black text-stone-900 flex items-center gap-1.5">
               <span>🔲</span> シルバー以下のピック形式やルールはどうなっていますか？
             </h4>
@@ -180,7 +180,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
             </p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-stone-50 border border-border/80 space-y-1.5">
+          <div className="p-4 rounded-2xl bg-background border border-border/80 space-y-1.5">
             <h4 className="text-xs font-black text-stone-900 flex items-center gap-1.5">
               <span>❓</span> 初心者やランクの低い人でも楽しめますか？
             </h4>
@@ -189,7 +189,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
             </p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-stone-50 border border-border/80 space-y-1.5">
+          <div className="p-4 rounded-2xl bg-background border border-border/80 space-y-1.5">
             <h4 className="text-xs font-black text-stone-900 flex items-center gap-1.5">
               <span>🪙</span> コインはどうやって増やすのですか？
             </h4>
@@ -198,7 +198,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
             </p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-stone-50 border border-border/80 space-y-1.5">
+          <div className="p-4 rounded-2xl bg-background border border-border/80 space-y-1.5">
             <h4 className="text-xs font-black text-stone-900 flex items-center gap-1.5">
               <span>🔁</span> 連戦時（BO3形式）のチーム分けはどうなりますか？
             </h4>
@@ -207,7 +207,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
             </p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-stone-50 border border-border/80 space-y-1.5">
+          <div className="p-4 rounded-2xl bg-background border border-border/80 space-y-1.5">
             <h4 className="text-xs font-black text-stone-900 flex items-center gap-1.5">
               <span>🎪</span> お祭りカスタム（ネタ構成）の時は戦績に影響しますか？
             </h4>

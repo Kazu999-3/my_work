@@ -705,7 +705,7 @@ export default function MentorshipHubPanel() {
                 type="button"
                 onClick={handleSyncDiscord}
                 disabled={isSyncingDiscord}
-                className="px-2.5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition border border-border flex items-center gap-1 cursor-pointer disabled:opacity-50 shadow-2xs"
+                className="px-2.5 py-2.5 rounded-xl bg-surface-subtle hover:bg-surface-hover text-stone-700 font-bold text-xs transition border border-border flex items-center gap-1 cursor-pointer disabled:opacity-50 shadow-2xs"
                 title="Discordの常駐ダッシュボードを即座に再同期します"
               >
                 <RefreshCw size={13} className={isSyncingDiscord ? 'animate-spin text-amber-600' : ''} />
@@ -717,7 +717,7 @@ export default function MentorshipHubPanel() {
               type="button"
               title="指導・受講のガイドライン（褒めて伸ばす / 1試合1課題 など）を表示します"
               onClick={() => setIsGuidelinesModalOpen(true)}
-              className="px-3.5 py-2.5 rounded-xl bg-white border border-border hover:bg-stone-100 text-stone-700 font-bold text-xs transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2.5 rounded-xl bg-surface border border-border hover:bg-surface-subtle text-stone-700 font-bold text-xs transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
             >
               <BookOpen size={14} className="text-amber-600" />
               <span>📜 師弟の心得</span>
@@ -752,7 +752,7 @@ export default function MentorshipHubPanel() {
 
 
       {/* タブ切り替えバー */}
-      <div className="space-y-3 bg-white/90 p-4 rounded-2xl border border-border/90 shadow-2xs">
+      <div className="space-y-3 bg-surface/90 p-4 rounded-2xl border border-border/90 shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
             <button
@@ -762,11 +762,11 @@ export default function MentorshipHubPanel() {
               className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === 'PUPIL'
                   ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+                  : 'bg-surface-subtle hover:bg-surface-hover text-stone-700'
               }`}
             >
               <span>🌱 弟子募集・希望者</span>
-              <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded-full">
+              <span className="text-[10px] bg-surface/20 px-1.5 py-0.2 rounded-full">
                 {profiles.filter((p) => p.role_type === 'PUPIL').length}
               </span>
             </button>
@@ -778,11 +778,11 @@ export default function MentorshipHubPanel() {
               className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === 'MENTOR'
                   ? 'bg-amber-600 text-white shadow-xs'
-                  : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+                  : 'bg-surface-subtle hover:bg-surface-hover text-stone-700'
               }`}
             >
               <span>👑 師匠（メンター）一覧</span>
-              <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded-full">
+              <span className="text-[10px] bg-surface/20 px-1.5 py-0.2 rounded-full">
                 {profiles.filter((p) => p.role_type === 'MENTOR').length}
               </span>
             </button>
@@ -794,11 +794,11 @@ export default function MentorshipHubPanel() {
               className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === 'MATCHES'
                   ? 'bg-amber-600 text-white shadow-xs'
-                  : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
+                  : 'bg-surface-subtle hover:bg-surface-hover text-stone-700'
               }`}
             >
               <span>🤝 師弟ペア・活動状況</span>
-              <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded-full">
+              <span className="text-[10px] bg-surface/20 px-1.5 py-0.2 rounded-full">
                 {matches.length}
               </span>
             </button>
@@ -813,7 +813,7 @@ export default function MentorshipHubPanel() {
                 placeholder="名前・チャンプ・コメント検索..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-stone-50 border border-border rounded-xl pl-8 pr-3 py-1.5 text-xs font-bold text-stone-900 focus:outline-none focus:border-emerald-500"
+                className="w-full bg-background border border-border rounded-xl pl-8 pr-3 py-1.5 text-xs font-bold text-stone-900 focus:outline-none focus:border-emerald-500"
               />
             </div>
           )}
@@ -832,7 +832,7 @@ export default function MentorshipHubPanel() {
                   className={`px-2.5 py-1 rounded-lg text-xs font-black transition shrink-0 cursor-pointer ${
                     laneFilter === f.id
                       ? 'bg-stone-900 text-white shadow-xs'
-                      : 'bg-stone-100 hover:bg-stone-200 text-stone-600'
+                      : 'bg-surface-subtle hover:bg-surface-hover text-stone-600'
                   }`}
                 >
                   {f.label}
@@ -847,13 +847,13 @@ export default function MentorshipHubPanel() {
                 className={`px-3 py-1 rounded-lg text-xs font-black transition shrink-0 cursor-pointer flex items-center gap-1.5 border ${
                   lightOnlyFilter
                     ? 'bg-teal-500 text-white border-teal-600 shadow-xs ring-2 ring-teal-300'
-                    : 'bg-white hover:bg-teal-50 text-stone-700 border-teal-200 hover:border-teal-300'
+                    : 'bg-surface hover:bg-teal-50 text-stone-700 border-teal-200 hover:border-teal-300'
                 }`}
                 title="1試合のみやリプレイ添削など、気軽に参加できる単発お試しコースのみを表示します"
               >
                 <span>⚡</span>
                 <span>お試し・単発OKのみ</span>
-                {lightOnlyFilter && <span className="text-[10px] bg-white/20 px-1 rounded-full">ON</span>}
+                {lightOnlyFilter && <span className="text-[10px] bg-surface/20 px-1 rounded-full">ON</span>}
               </button>
             </div>
           </div>
@@ -885,7 +885,7 @@ export default function MentorshipHubPanel() {
               return (
                 <div
                   key={req.id}
-                  className="bg-white p-4 rounded-2xl border border-amber-300 shadow-xs flex flex-col justify-between gap-3"
+                  className="bg-surface p-4 rounded-2xl border border-amber-300 shadow-xs flex flex-col justify-between gap-3"
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -895,7 +895,7 @@ export default function MentorshipHubPanel() {
                           {partner?.player_name || 'プレイヤー'} さんから
                         </span>
                       </div>
-                      <span className="text-[11px] font-bold text-stone-600 bg-stone-100 px-2 py-0.5 rounded-md">
+                      <span className="text-[11px] font-bold text-stone-600 bg-surface-subtle px-2 py-0.5 rounded-md">
                         {partner?.current_rank}
                       </span>
                     </div>
@@ -923,7 +923,7 @@ export default function MentorshipHubPanel() {
                       type="button"
                       disabled={Boolean(acceptingMatchId)}
                       onClick={() => handleRejectRequest(req.id)}
-                      className="px-3 py-1.5 text-xs font-bold text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-xl transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1.5 text-xs font-bold text-stone-500 hover:text-stone-800 hover:bg-surface-subtle rounded-xl transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       見送る
                     </button>
@@ -969,7 +969,7 @@ export default function MentorshipHubPanel() {
                     🎯 あなたと相性抜群のバディ（AI相性分析）
                   </h3>
                 </div>
-                <span className="text-[10px] font-bold bg-white/90 dark:bg-[#2b2d31] text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold bg-surface/90 dark:bg-[#2b2d31] text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700 px-2 py-0.5 rounded-full">
                   リアルタイムマッチング
                 </span>
               </div>
@@ -1056,12 +1056,12 @@ export default function MentorshipHubPanel() {
                 key={match.id}
                 className={`rounded-2xl p-5 border shadow-xs flex flex-col justify-between gap-3.5 transition ${
                   isCompleted
-                    ? 'bg-stone-50/80 border-border opacity-90'
+                    ? 'bg-background/80 border-border opacity-90'
                     : isExpired
                     ? 'bg-amber-50/70 border-amber-300 ring-2 ring-amber-400/50'
                     : isMyMatch
                     ? 'bg-gradient-to-br from-amber-50/90 to-white border-amber-300'
-                    : 'bg-white border-amber-200'
+                    : 'bg-surface border-amber-200'
                 }`}
               >
                 <div className="space-y-2">
@@ -1076,7 +1076,7 @@ export default function MentorshipHubPanel() {
                     <div className="flex items-center gap-2">
                       {/* ステータスバッジ */}
                       {isCompleted ? (
-                        <span className="text-[11px] font-bold text-stone-600 bg-stone-200 px-2.5 py-0.5 rounded-full">
+                        <span className="text-[11px] font-bold text-stone-600 bg-surface-hover px-2.5 py-0.5 rounded-full">
                           🎓 卒業完了
                         </span>
                       ) : isExpired ? (
@@ -1112,7 +1112,7 @@ export default function MentorshipHubPanel() {
 
                   {/* 期間情報 */}
                   <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                    <span className="px-2 py-0.5 rounded-lg bg-stone-100 text-stone-700 font-bold">
+                    <span className="px-2 py-0.5 rounded-lg bg-surface-subtle text-stone-700 font-bold">
                       {durationLabel}
                     </span>
                     <span className="text-stone-500 font-medium">
@@ -1168,7 +1168,7 @@ export default function MentorshipHubPanel() {
                                 setSelectedKickoffMatch(match);
                                 setIsKickoffModalOpen(true);
                               }}
-                              className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-stone-100 hover:bg-stone-200 text-stone-800 transition flex items-center gap-1 cursor-pointer border border-border"
+                              className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-surface-subtle hover:bg-surface-hover text-stone-800 transition flex items-center gap-1 cursor-pointer border border-border"
                             >
                               <Rocket size={13} className="text-emerald-600" />
                               <span>🚀 ガイド</span>
@@ -1204,7 +1204,7 @@ export default function MentorshipHubPanel() {
                                 const partner = match.mentor_discord_id === myDiscordId ? match.pupil : match.mentor;
                                 handleContactDiscord(partner?.player_name || '相手');
                               }}
-                              className="px-2 py-1.5 rounded-xl font-bold text-xs bg-stone-100 hover:bg-stone-200 text-stone-700 transition flex items-center gap-1 cursor-pointer border border-border"
+                              className="px-2 py-1.5 rounded-xl font-bold text-xs bg-surface-subtle hover:bg-surface-hover text-stone-700 transition flex items-center gap-1 cursor-pointer border border-border"
                               title="相手のDiscord名を表示"
                             >
                               <span>DM</span>
@@ -1217,7 +1217,7 @@ export default function MentorshipHubPanel() {
                         <button
                           type="button"
                           onClick={() => handleCancelMatch(match.id)}
-                          className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-stone-100 hover:bg-rose-50 text-stone-500 hover:text-rose-700 transition flex items-center gap-1 cursor-pointer"
+                          className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-surface-subtle hover:bg-rose-50 text-stone-500 hover:text-rose-700 transition flex items-center gap-1 cursor-pointer"
                           title="お互いに合意の上でペナルティなく解散・再募集に戻します"
                         >
                           <Leaf size={12} />
@@ -1253,7 +1253,7 @@ export default function MentorshipHubPanel() {
           })}
 
           {matches.length === 0 && (
-            <div className="col-span-full py-12 text-center text-stone-400 text-xs font-bold bg-white rounded-2xl border border-border">
+            <div className="col-span-full py-12 text-center text-stone-400 text-xs font-bold bg-surface rounded-2xl border border-border">
               まだ成立した師弟ペアはありません。掲示板で相手を探してみましょう！
             </div>
           )}
@@ -1289,7 +1289,7 @@ export default function MentorshipHubPanel() {
           })}
 
           {filteredProfiles.length === 0 && (
-            <div className="col-span-full py-12 text-center text-stone-400 text-xs font-bold bg-white rounded-2xl border border-border">
+            <div className="col-span-full py-12 text-center text-stone-400 text-xs font-bold bg-surface rounded-2xl border border-border">
               該当する自己紹介カードが見つかりませんでした。
             </div>
           )}

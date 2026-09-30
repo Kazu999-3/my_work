@@ -95,7 +95,7 @@ export default function CoinsRankingPanel() {
       {/* 概要サマリーカード */}
       {stats && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-          <div className="bg-white/90 backdrop-blur-sm border border-border/90 rounded-2xl p-4 shadow-xs flex items-center gap-3.5">
+          <div className="bg-surface/90 backdrop-blur-sm border border-border/90 rounded-2xl p-4 shadow-xs flex items-center gap-3.5">
             <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold shrink-0">
               <Coins size={24} />
             </div>
@@ -107,7 +107,7 @@ export default function CoinsRankingPanel() {
             </div>
           </div>
 
-          <div className="bg-white/90 backdrop-blur-sm border border-border/90 rounded-2xl p-4 shadow-xs flex items-center gap-3.5">
+          <div className="bg-surface/90 backdrop-blur-sm border border-border/90 rounded-2xl p-4 shadow-xs flex items-center gap-3.5">
             <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold shrink-0">
               <Users size={24} />
             </div>
@@ -119,7 +119,7 @@ export default function CoinsRankingPanel() {
             </div>
           </div>
 
-          <div className="bg-white/90 backdrop-blur-sm border border-border/90 rounded-2xl p-4 shadow-xs flex items-center gap-3.5">
+          <div className="bg-surface/90 backdrop-blur-sm border border-border/90 rounded-2xl p-4 shadow-xs flex items-center gap-3.5">
             <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold shrink-0">
               <TrendingUp size={24} />
             </div>
@@ -141,7 +141,7 @@ export default function CoinsRankingPanel() {
             <div className="order-2 md:order-1 bg-gradient-to-b from-stone-100/90 to-white/90 border-2 border-border rounded-3xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-between">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-2xl">🥈</span>
-                <span className="text-[10px] font-black tracking-widest uppercase px-2.5 py-0.5 rounded-full bg-stone-200 text-stone-700">
+                <span className="text-[10px] font-black tracking-widest uppercase px-2.5 py-0.5 rounded-full bg-surface-hover text-stone-700">
                   第2位
                 </span>
               </div>
@@ -236,7 +236,7 @@ export default function CoinsRankingPanel() {
       )}
 
       {/* コントロールバー（検索・ソート） */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white/80 backdrop-blur-sm border border-border/90 rounded-2xl p-3 shadow-2xs">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-surface/80 backdrop-blur-sm border border-border/90 rounded-2xl p-3 shadow-2xs">
         <div className="flex items-center gap-2 flex-1 min-w-[240px]">
           <Search size={16} className="text-stone-400" />
           <input
@@ -249,7 +249,7 @@ export default function CoinsRankingPanel() {
           {search && (
             <button
               onClick={() => setSearch('')}
-              className="text-stone-400 hover:text-stone-700 text-xs px-2 py-0.5 rounded-md bg-stone-100 cursor-pointer"
+              className="text-stone-400 hover:text-stone-700 text-xs px-2 py-0.5 rounded-md bg-surface-subtle cursor-pointer"
             >
               クリア
             </button>
@@ -260,7 +260,7 @@ export default function CoinsRankingPanel() {
           <span>並び替え:</span>
           <button
             onClick={() => setSortDir((d) => (d === 'desc' ? 'asc' : 'desc'))}
-            className="px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-black transition flex items-center gap-1 cursor-pointer"
+            className="px-3 py-1.5 rounded-xl bg-surface-subtle hover:bg-surface-hover text-stone-800 font-black transition flex items-center gap-1 cursor-pointer"
           >
             <span>{sortDir === 'desc' ? 'コインが多い順 ↓' : 'コインが少ない順 ↑'}</span>
           </button>
@@ -268,8 +268,8 @@ export default function CoinsRankingPanel() {
       </div>
 
       {/* 全プレイヤー ランキング一覧 */}
-      <div className="bg-white/90 backdrop-blur-sm rounded-2xl border border-border/90 shadow-xs overflow-hidden">
-        <div className="flex items-center gap-3 px-4 py-3 bg-stone-50/90 border-b border-border text-[11px] font-black text-stone-500">
+      <div className="bg-surface/90 backdrop-blur-sm rounded-2xl border border-border/90 shadow-xs overflow-hidden">
+        <div className="flex items-center gap-3 px-4 py-3 bg-background/90 border-b border-border text-[11px] font-black text-stone-500">
           <span className="w-10 text-center shrink-0">順位</span>
           <span className="flex-1 min-w-0">プレイヤー</span>
           <span className="w-24 text-center shrink-0 hidden sm:block">最高ランク</span>
@@ -286,7 +286,7 @@ export default function CoinsRankingPanel() {
             filteredPlayers.map((player) => (
               <div
                 key={player.name}
-                className="flex items-center gap-3 px-4 py-3 hover:bg-stone-50/80 transition-colors group"
+                className="flex items-center gap-3 px-4 py-3 hover:bg-background/80 transition-colors group"
               >
                 {/* 順位バッジ */}
                 <div className="w-10 text-center shrink-0">
@@ -298,7 +298,7 @@ export default function CoinsRankingPanel() {
                         ? 'bg-stone-300 text-stone-800 font-bold'
                         : player.rank === 3
                         ? 'bg-amber-700 text-white font-bold'
-                        : 'text-stone-500 bg-stone-100'
+                        : 'text-stone-500 bg-surface-subtle'
                     }`}
                   >
                     {player.rank}
@@ -336,7 +336,7 @@ export default function CoinsRankingPanel() {
                 <div className="w-16 text-center shrink-0">
                   <Link
                     href={`/player/${player.discordId || player.name}`}
-                    className="inline-flex items-center justify-center p-1.5 rounded-lg bg-stone-100 hover:bg-amber-500 hover:text-white text-stone-500 transition cursor-pointer"
+                    className="inline-flex items-center justify-center p-1.5 rounded-lg bg-surface-subtle hover:bg-amber-500 hover:text-white text-stone-500 transition cursor-pointer"
                     title={`${player.name} の個人カルテ`}
                   >
                     <ArrowUpRight size={14} />

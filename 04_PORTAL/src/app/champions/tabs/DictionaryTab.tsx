@@ -1022,7 +1022,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
         {/* ── 左ペイン: マスターリスト (lg:col-span-4 xl:col-span-3) ── */}
         <div className={`lg:col-span-4 xl:col-span-3 flex flex-col gap-3.5 lg:sticky lg:top-4 ${selected ? 'hidden lg:flex' : 'flex'} w-full min-w-0`}>
           {/* 検索バー ＆ フィルター */}
-          <div className="bg-white border border-border/80 p-3 rounded-2xl shadow-xs space-y-2.5">
+          <div className="bg-surface border border-border/80 p-3 rounded-2xl shadow-xs space-y-2.5">
             {/* 1段目: 検索バー ＋ 目的別フィルター開閉ボタン */}
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
@@ -1032,13 +1032,13 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   placeholder="チャンピオン検索 (英・日対応)..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="w-full bg-stone-50 border border-border focus:border-[#c89b3c] focus:bg-white rounded-xl py-2 pl-8.5 pr-8 text-stone-900 font-bold outline-none transition-all text-xs"
+                  className="w-full bg-background border border-border focus:border-[#c89b3c] focus:bg-surface rounded-xl py-2 pl-8.5 pr-8 text-stone-900 font-bold outline-none transition-all text-xs"
                 />
                 {search && (
                   <button
                     type="button"
                     onClick={() => setSearch('')}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 p-0.5 rounded-full hover:bg-stone-200/60 transition"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 p-0.5 rounded-full hover:bg-surface-hover/60 transition"
                     title="検索をクリア"
                   >
                     <X size={13} />
@@ -1059,7 +1059,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 className={`relative px-2.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 border cursor-pointer ${
                   isFilterOpen || pickFilter !== 'ALL' || typeFilter !== 'ALL'
                     ? 'bg-[#c89b3c]/10 border-[#c89b3c] text-[#936d1b]'
-                    : 'bg-stone-50 border-border text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+                    : 'bg-background border-border text-stone-600 hover:text-stone-900 hover:bg-surface-subtle'
                 }`}
                 title="ドラフト適性や戦術スタイルで絞り込み"
               >
@@ -1092,7 +1092,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   className={`flex-1 py-1.5 rounded-lg text-[11px] font-bold transition text-center shrink-0 cursor-pointer ${
                     roleFilter === role
                       ? 'bg-stone-900 text-white shadow-xs font-black'
-                      : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+                      : 'text-stone-600 hover:text-stone-900 hover:bg-surface-subtle'
                   }`}
                 >
                   {role}
@@ -1110,7 +1110,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   transition={{ duration: 0.15 }}
                   className="overflow-hidden"
                 >
-                  <div className="p-3 bg-stone-50 border border-border/80 rounded-xl space-y-3 text-xs">
+                  <div className="p-3 bg-background border border-border/80 rounded-xl space-y-3 text-xs">
                     {/* ① ドラフト適性 */}
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
@@ -1130,8 +1130,8 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                             onClick={() => setPickFilter(p.key as any)}
                             className={`p-1.5 rounded-lg text-left transition border ${
                               pickFilter === p.key
-                                ? 'bg-white border-[#c89b3c] shadow-xs text-stone-950 font-bold'
-                                : 'bg-white/60 border-border/70 text-stone-600 hover:bg-white hover:text-stone-900'
+                                ? 'bg-surface border-[#c89b3c] shadow-xs text-stone-950 font-bold'
+                                : 'bg-surface/60 border-border/70 text-stone-600 hover:bg-surface hover:text-stone-900'
                             }`}
                           >
                             <div className="text-[10px] font-bold leading-tight">{p.label}</div>
@@ -1162,8 +1162,8 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                             onClick={() => setTypeFilter(t.key as any)}
                             className={`p-1.5 rounded-lg text-left transition border ${
                               typeFilter === t.key
-                                ? 'bg-white border-amber-500 shadow-xs text-stone-950 font-bold'
-                                : 'bg-white/60 border-border/70 text-stone-600 hover:bg-white hover:text-stone-900'
+                                ? 'bg-surface border-amber-500 shadow-xs text-stone-950 font-bold'
+                                : 'bg-surface/60 border-border/70 text-stone-600 hover:bg-surface hover:text-stone-900'
                             }`}
                           >
                             <div className="text-[10px] font-bold leading-tight">{t.label}</div>
@@ -1222,7 +1222,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 <select
                   value={sortOrder}
                   onChange={(e) => setSortOrder(e.target.value)}
-                  className="w-full bg-stone-50 border border-border rounded-lg px-1.5 py-1 text-[10px] font-bold text-stone-700 outline-none focus:border-[#c89b3c]"
+                  className="w-full bg-background border border-border rounded-lg px-1.5 py-1 text-[10px] font-bold text-stone-700 outline-none focus:border-[#c89b3c]"
                 >
                   <option value="updated_desc">🔄 更新が新しい順</option>
                   <option value="updated_asc">⏳ 更新が古い順</option>
@@ -1232,7 +1232,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   <option value="name_asc">🔤 名前順</option>
                 </select>
               </div>
-              <span className="text-stone-500 font-mono font-bold shrink-0 text-[10px] px-1.5 py-0.5 bg-stone-100 rounded-md">
+              <span className="text-stone-500 font-mono font-bold shrink-0 text-[10px] px-1.5 py-0.5 bg-surface-subtle rounded-md">
                 {filtered.length} 体
               </span>
             </div>
@@ -1257,7 +1257,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2.5 ${
                     isSelected
                       ? 'bg-amber-500/10 border-amber-500 shadow-xs ring-1 ring-amber-500/40'
-                      : 'bg-white border-border hover:border-border hover:bg-stone-50/80'
+                      : 'bg-surface border-border hover:border-border hover:bg-background/80'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
@@ -1294,7 +1294,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                             🟡 {patchVer && patchVer !== '未設定' ? patchVer : 'AI生成'}
                           </span>
                         ) : patchVer ? (
-                          <span className="px-1 py-0.2 rounded text-[9px] font-mono font-bold bg-stone-100 text-stone-600 border border-border">
+                          <span className="px-1 py-0.2 rounded text-[9px] font-mono font-bold bg-surface-subtle text-stone-600 border border-border">
                             ⚪ {patchVer}
                           </span>
                         ) : (
@@ -1311,7 +1311,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
                   <div className="flex flex-col items-end gap-1 shrink-0">
                     {jgStyle.type && (
-                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-stone-100 text-stone-700">
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-surface-subtle text-stone-700">
                         {jgStyle.type.replace('型', '')}
                       </span>
                     )}
@@ -1327,7 +1327,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               );
             })}
             {filtered.length === 0 && (
-              <div className="p-6 text-center bg-white border border-border rounded-2xl space-y-2 text-stone-500">
+              <div className="p-6 text-center bg-surface border border-border rounded-2xl space-y-2 text-stone-500">
                 <div className="text-2xl">🔍</div>
                 <div className="text-xs font-bold text-stone-700">条件に一致するチャンピオンが見つかりません</div>
                 <p className="text-[10px] text-stone-400">検索文字やフィルター条件を変更してお試しください。</p>
@@ -1340,7 +1340,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                     setTypeFilter('ALL');
                     setShowFavoritesOnly(false);
                   }}
-                  className="mt-2 px-3 py-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition cursor-pointer"
+                  className="mt-2 px-3 py-1.5 rounded-lg bg-surface-subtle hover:bg-surface-hover text-stone-700 font-bold text-xs transition cursor-pointer"
                 >
                   条件をすべてリセット
                 </button>
@@ -1352,7 +1352,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
         {/* ── 右ペイン: 詳細＆アクションキャンバス (lg:col-span-8 xl:col-span-9) ── */}
         <div className={`lg:col-span-8 xl:col-span-9 w-full min-w-0 ${!selected ? 'hidden lg:flex' : 'flex'} flex-col gap-5`}>
           {!selected ? (
-            <div className="bg-white border border-border rounded-3xl p-12 text-center flex flex-col items-center justify-center min-h-[500px] text-stone-400 space-y-3">
+            <div className="bg-surface border border-border rounded-3xl p-12 text-center flex flex-col items-center justify-center min-h-[500px] text-stone-400 space-y-3">
               <BookOpen size={48} className="text-stone-300 animate-pulse" />
               <h3 className="font-bold text-stone-700 text-lg">チャンピオンが選択されていません</h3>
               <p className="text-xs text-stone-400 max-w-sm">
@@ -1365,7 +1365,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               <div className="flex items-center justify-between flex-wrap gap-2 w-full">
                 <button
                   onClick={handleClearSelection}
-                  className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-200/80 text-stone-800 text-xs font-bold hover:bg-stone-300 transition cursor-pointer"
+                  className="lg:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-hover/80 text-stone-800 text-xs font-bold hover:bg-stone-300 transition cursor-pointer"
                 >
                   <ChevronLeft size={16} /> チャンピオン一覧へ戻る
                 </button>
@@ -1409,7 +1409,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                     className={`p-2 rounded-xl transition-all border ${
                       isFavorited
                         ? 'bg-amber-400/20 border-amber-400 text-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.3)]'
-                        : 'bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10'
+                        : 'bg-surface/5 border-white/10 text-gray-400 hover:text-white hover:bg-surface/10'
                     }`}
                     title={isFavorited ? "お気に入り解除" : "お気に入り登録"}
                   >
@@ -1448,7 +1448,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                         className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
                           isSelected
                             ? 'bg-[#c89b3c] text-stone-950 shadow-md font-black'
-                            : 'text-stone-300 hover:text-white hover:bg-white/10'
+                            : 'text-stone-300 hover:text-white hover:bg-surface/10'
                         }`}
                       >
                         <span>{r === 'TOP' ? '⚔️ TOP' : r === 'JG' ? '🌲 JG' : r === 'MID' ? '⚡ MID' : r === 'BOT' ? '🏹 BOT' : r === 'SUP' ? '🛡️ SUP' : r}</span>
@@ -1510,7 +1510,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                       <button
                         type="button"
                         onClick={() => setIsDataMenuOpen(prev => !prev)}
-                        className={`px-3 py-2 ${isDataMenuOpen ? 'bg-white/25 text-white ring-2 ring-white/30' : 'bg-white/10 hover:bg-white/15 text-stone-200 hover:text-white'} font-bold rounded-xl transition-all flex items-center gap-1.5 text-xs backdrop-blur-md border border-white/15 cursor-pointer shadow-sm active:scale-95`}
+                        className={`px-3 py-2 ${isDataMenuOpen ? 'bg-surface/25 text-white ring-2 ring-white/30' : 'bg-surface/10 hover:bg-surface/15 text-stone-200 hover:text-white'} font-bold rounded-xl transition-all flex items-center gap-1.5 text-xs backdrop-blur-md border border-white/15 cursor-pointer shadow-sm active:scale-95`}
                         title="高度AI・品質チェックなどの管理機能"
                       >
                         <Compass size={13} className="text-stone-400" />
@@ -1721,7 +1721,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 {/* 左側: あなたのチャンピオン */}
-                <div className="bg-white dark:bg-stone-900 border border-amber-500/40 rounded-2xl p-4 flex flex-col gap-3 shadow-xs">
+                <div className="bg-surface dark:bg-stone-900 border border-amber-500/40 rounded-2xl p-4 flex flex-col gap-3 shadow-xs">
                   <div className="flex items-center gap-3 border-b border-stone-100 dark:border-stone-800 pb-2.5">
                     <Image
                       src={getChampIcon(selected.id)}
@@ -1762,7 +1762,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 </div>
 
                 {/* 右側: 相手のチャンピオン */}
-                <div className="bg-white dark:bg-stone-900 border border-rose-500/40 rounded-2xl p-4 flex flex-col gap-3 shadow-xs">
+                <div className="bg-surface dark:bg-stone-900 border border-rose-500/40 rounded-2xl p-4 flex flex-col gap-3 shadow-xs">
                   <div className="flex items-center gap-3 border-b border-stone-100 dark:border-stone-800 pb-2.5">
                     <Image
                       src={getChampIcon(vsEnemyId)}
@@ -1840,7 +1840,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
         <div className="w-full pt-2">
           <button
             onClick={() => setShowDetailedEditor(!showDetailedEditor)}
-            className="w-full py-3 px-4 rounded-xl border border-dashed border-border dark:border-stone-700 bg-stone-50/80 dark:bg-stone-800/40 hover:bg-stone-100 dark:hover:bg-stone-800 transition-all flex items-center justify-between text-xs font-bold text-stone-600 dark:text-stone-300 shadow-2xs cursor-pointer"
+            className="w-full py-3 px-4 rounded-xl border border-dashed border-border dark:border-stone-700 bg-background/80 dark:bg-stone-800/40 hover:bg-surface-subtle dark:hover:bg-stone-800 transition-all flex items-center justify-between text-xs font-bold text-stone-600 dark:text-stone-300 shadow-2xs cursor-pointer"
           >
             <span className="flex items-center gap-2">
               <Edit2 size={14} className="text-amber-500" />
@@ -1870,19 +1870,19 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-                <div className="bg-white/80 rounded-xl p-2.5 border border-amber-200/60 shadow-2xs">
+                <div className="bg-surface/80 rounded-xl p-2.5 border border-amber-200/60 shadow-2xs">
                   <span className="text-[10px] font-black text-amber-800 block mb-0.5">💥 初動・パワースパイク</span>
                   <p className="text-stone-800 font-bold text-[11px] line-clamp-2">
                     {dataFields.powerSpikes ? dataFields.powerSpikes.split('\n')[0].replace(/^[#*-\s]+/, '') : 'レベル2-3および1コア完成時'}
                   </p>
                 </div>
-                <div className="bg-white/80 rounded-xl p-2.5 border border-amber-200/60 shadow-2xs">
+                <div className="bg-surface/80 rounded-xl p-2.5 border border-amber-200/60 shadow-2xs">
                   <span className="text-[10px] font-black text-rose-800 block mb-0.5">⚠️ 要注意スキル・弱点</span>
                   <p className="text-stone-800 font-bold text-[11px] line-clamp-2">
                     {dataFields.weaknesses ? dataFields.weaknesses.split('\n')[0].replace(/^[#*-\s]+/, '') : '序盤の被ガンク・CC耐性'}
                   </p>
                 </div>
-                <div className="bg-white/80 rounded-xl p-2.5 border border-amber-200/60 shadow-2xs">
+                <div className="bg-surface/80 rounded-xl p-2.5 border border-amber-200/60 shadow-2xs">
                   <span className="text-[10px] font-black text-emerald-800 block mb-0.5">🎯 勝つための1箇条</span>
                   <p className="text-stone-800 font-bold text-[11px] line-clamp-2">
                     {dataFields.pickRecommendation ? dataFields.pickRecommendation.split('\n')[0].replace(/^[#*-\s]+/, '') : 'パワースパイクに合わせた仕掛け'}
@@ -1928,7 +1928,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 <select
                   value={dataFields.jg_style?.role || 'JUNGLE'}
                   onChange={e => setJgStyleField('role', e.target.value)}
-                  className="w-full bg-white border border-border rounded-lg px-3 py-2 text-stone-900 text-xs focus:outline-none focus:border-emerald-500 transition-colors"
+                  className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-stone-900 text-xs focus:outline-none focus:border-emerald-500 transition-colors"
                 >
                   <option value="TOP">TOP</option>
                   <option value="JUNGLE">JUNGLE (Jg)</option>
@@ -1952,7 +1952,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                           setJgStyleField('type', e.target.value);
                         }
                       }}
-                      className="w-full bg-white border border-border rounded-lg px-3 py-2 text-stone-900 text-xs focus:outline-none focus:border-emerald-500 transition-colors"
+                      className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-stone-900 text-xs focus:outline-none focus:border-emerald-500 transition-colors"
                     >
                       <option value="">未設定</option>
                       <option value="侵入型">侵入型 (インベード・1v1)</option>
@@ -1967,7 +1967,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                         value={dataFields.jg_style?.type === 'その他' ? '' : (dataFields.jg_style?.type || '')}
                         onChange={e => setJgStyleField('type', e.target.value)}
                         placeholder="スタイルタイプを手動入力..."
-                        className="w-full mt-2 bg-white border border-border rounded-lg px-3 py-2 text-stone-900 text-xs focus:outline-none focus:border-emerald-500 transition-colors"
+                        className="w-full mt-2 bg-surface border border-border rounded-lg px-3 py-2 text-stone-900 text-xs focus:outline-none focus:border-emerald-500 transition-colors"
                       />
                     )}
                   </>
@@ -1977,7 +1977,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                     value={dataFields.jg_style?.type || ''}
                     onChange={e => setJgStyleField('type', e.target.value)}
                     placeholder="例: アサシン, コントロール"
-                    className="w-full bg-white border border-border rounded-lg px-3 py-2 text-stone-900 text-xs focus:outline-none focus:border-emerald-500 transition-colors"
+                    className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-stone-900 text-xs focus:outline-none focus:border-emerald-500 transition-colors"
                   />
                 )}
               </div>
@@ -1988,7 +1988,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 <select
                   value={dataFields.jg_style?.blind_pickable || 3}
                   onChange={e => setJgStyleField('blind_pickable', parseInt(e.target.value) || 3)}
-                  className="w-full bg-white border border-border rounded-lg px-3 py-2 text-stone-900 text-xs focus:outline-none focus:border-emerald-500 transition-colors font-mono"
+                  className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-stone-900 text-xs focus:outline-none focus:border-emerald-500 transition-colors font-mono"
                 >
                   <option value="1">★☆☆☆☆ (1)</option>
                   <option value="2">★★☆☆☆ (2)</option>
@@ -2004,7 +2004,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 <select
                   value={dataFields.jg_style?.counter_pickable || 3}
                   onChange={e => setJgStyleField('counter_pickable', parseInt(e.target.value) || 3)}
-                  className="w-full bg-white border border-border rounded-lg px-3 py-2 text-stone-900 text-xs focus:outline-none focus:border-emerald-500 transition-colors font-mono"
+                  className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-stone-900 text-xs focus:outline-none focus:border-emerald-500 transition-colors font-mono"
                 >
                   <option value="1">★☆☆☆☆ (1)</option>
                   <option value="2">★★☆☆☆ (2)</option>
@@ -2022,7 +2022,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 value={dataFields.jg_style?.description || ''}
                 onChange={e => setJgStyleField('description', e.target.value)}
                 placeholder="なぜその先出し・後出しの星評価になったのかの具体的な理由や、立ち回り上の強み・弱みを記述..."
-                className="w-full min-h-[90px] h-auto bg-white border border-border rounded-xl p-3 text-stone-900 text-xs leading-relaxed resize-y focus:outline-none focus:border-emerald-500 transition-colors shadow-2xs font-sans"
+                className="w-full min-h-[90px] h-auto bg-surface border border-border rounded-xl p-3 text-stone-900 text-xs leading-relaxed resize-y focus:outline-none focus:border-emerald-500 transition-colors shadow-2xs font-sans"
               />
             </div>
 
@@ -2124,7 +2124,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   </div>
 
                   {/* カウンター・マッチアップ方針 */}
-                  <div className="bg-white/90 rounded-xl p-3 border border-amber-200 shadow-2xs space-y-2">
+                  <div className="bg-surface/90 rounded-xl p-3 border border-amber-200 shadow-2xs space-y-2">
                     <div className="flex items-center gap-1.5 text-[11px] font-bold text-stone-800">
                       <ShieldAlert size={13} className="text-rose-600" />
                       <span>相性 ＆ カウンターファイト方針</span>
@@ -2457,7 +2457,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                             <History size={13} /> 📜 履歴
                           </button>
                         </div>
-                        <textarea value={val as string} onChange={e => updateCustomField(key, e.target.value)} className="w-full min-h-[140px] h-auto bg-white border border-black/10 rounded-xl p-3.5 text-sm text-stone-800 leading-relaxed outline-none focus:border-pink-500/60 resize-y shadow-inner transition-colors font-sans" placeholder={`${key}を記録...`} />
+                        <textarea value={val as string} onChange={e => updateCustomField(key, e.target.value)} className="w-full min-h-[140px] h-auto bg-surface border border-black/10 rounded-xl p-3.5 text-sm text-stone-800 leading-relaxed outline-none focus:border-pink-500/60 resize-y shadow-inner transition-colors font-sans" placeholder={`${key}を記録...`} />
                       </div>
                     ))}
                   </div>
@@ -2504,7 +2504,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   placeholder="対面チャンプ名で絞り込み (例: Lee Sin, Malphite)..."
                   value={matchupSearch}
                   onChange={(e) => setMatchupSearch(e.target.value)}
-                  className="w-full pl-9 pr-16 py-2 border border-border rounded-xl bg-white text-xs text-stone-900 font-bold outline-none focus:border-[#00cfef]"
+                  className="w-full pl-9 pr-16 py-2 border border-border rounded-xl bg-surface text-xs text-stone-900 font-bold outline-none focus:border-[#00cfef]"
                 />
                 <div className="absolute right-2 flex items-center gap-1">
                   {matchupSearch && (
@@ -2517,7 +2517,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                       ✕
                     </button>
                   )}
-                  <span className="text-[10px] font-mono font-bold text-stone-400 bg-stone-100 px-1.5 py-0.5 rounded">
+                  <span className="text-[10px] font-mono font-bold text-stone-400 bg-surface-subtle px-1.5 py-0.5 rounded">
                     {filteredMatchupsList.length} 件
                   </span>
                 </div>
@@ -2748,7 +2748,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                                                   {winRate}%
                                                 </td>
                                                 <td className="p-2 text-center font-mono">
-                                                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-black ${kda >= 3.0 ? 'bg-green-100 text-green-700' : kda <= 1.5 ? 'bg-red-100 text-red-700' : 'bg-stone-100 text-stone-700'}`}>
+                                                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-black ${kda >= 3.0 ? 'bg-green-100 text-green-700' : kda <= 1.5 ? 'bg-red-100 text-red-700' : 'bg-surface-subtle text-stone-700'}`}>
                                                     {kda}
                                                   </span>
                                                 </td>
@@ -2832,7 +2832,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                     <button
                       type="button"
                       onClick={() => setMatchupSearch('')}
-                      className="px-3 py-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition cursor-pointer"
+                      className="px-3 py-1.5 rounded-lg bg-surface-subtle hover:bg-surface-hover text-stone-700 font-bold text-xs transition cursor-pointer"
                     >
                       検索をクリア
                     </button>
@@ -2883,7 +2883,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
       {/* ✨ AI知見清書 処理中オーバーレイ */}
       {refiningFacts && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/70 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white border border-amber-300 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl flex flex-col items-center text-center space-y-4">
+          <div className="bg-surface border border-amber-300 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl flex flex-col items-center text-center space-y-4">
             <div className="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-600 shadow-inner">
               <Sparkles size={32} className="animate-spin text-amber-600" />
             </div>
@@ -2906,7 +2906,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-stone-950/80 backdrop-blur-md animate-fade-in touch-pan-y">
           <div className="bg-[#fcfbf9] dark:bg-[#2b2d31] border border-border rounded-2xl sm:rounded-3xl w-full max-w-[1550px] w-[96vw] h-[94vh] max-h-[94vh] shadow-2xl flex flex-col overflow-hidden">
             {/* ヘッダー */}
-            <div className="p-3.5 sm:p-5 border-b border-border flex items-center justify-between gap-2 shrink-0 bg-white">
+            <div className="p-3.5 sm:p-5 border-b border-border flex items-center justify-between gap-2 shrink-0 bg-surface">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="text-base sm:text-xl font-black text-stone-900 flex items-center gap-1.5 truncate">
@@ -2921,7 +2921,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               <button
                 onClick={() => setFactsRefinePreview(null)}
                 disabled={savingRefinedFacts}
-                className="text-stone-400 hover:text-stone-700 p-2 rounded-xl hover:bg-stone-100 transition shrink-0"
+                className="text-stone-400 hover:text-stone-700 p-2 rounded-xl hover:bg-surface-subtle transition shrink-0"
               >
                 <X size={20} />
               </button>
@@ -2932,7 +2932,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               {factsRefinePreview.diffs
                 .filter((d) => (d.before && d.before.trim().length > 0) || (d.after && d.after.trim().length > 0))
                 .map((d) => (
-                  <div key={d.fieldKey} className="bg-white border border-border rounded-2xl p-4 shadow-xs space-y-3">
+                  <div key={d.fieldKey} className="bg-surface border border-border rounded-2xl p-4 shadow-xs space-y-3">
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <span className="text-xs font-black text-amber-900 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg inline-block">
                         📌 {d.fieldLabel}
@@ -2945,7 +2945,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                     {/* 左右文章並列比較 */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                       {/* 清書前 */}
-                      <div className="bg-stone-50 border border-border rounded-xl p-3.5 space-y-1.5 flex flex-col">
+                      <div className="bg-background border border-border rounded-xl p-3.5 space-y-1.5 flex flex-col">
                         <span className="text-[10px] font-bold text-stone-500 flex items-center gap-1">
                           <span>📄</span> 清書前（蓄積された生知見）:
                         </span>
@@ -2969,12 +2969,12 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
             </div>
 
             {/* フッターアクション */}
-            <div className="p-3 sm:p-4 bg-white border-t border-border flex items-center justify-between gap-2 flex-wrap shrink-0">
+            <div className="p-3 sm:p-4 bg-surface border-t border-border flex items-center justify-between gap-2 flex-wrap shrink-0">
               <button
                 type="button"
                 onClick={() => setFactsRefinePreview(null)}
                 disabled={savingRefinedFacts}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-stone-500 hover:bg-stone-100 transition"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-stone-500 hover:bg-surface-subtle transition"
               >
                 破棄して閉じる
               </button>
@@ -3051,7 +3051,7 @@ const TextAreaCard = ({
               <button
                 type="button"
                 onClick={handleCopy}
-                className="text-[11px] font-bold px-2 py-1 rounded-lg bg-black/5 hover:bg-stone-200 text-stone-700 transition-all flex items-center gap-1 border border-black/10 shadow-xs cursor-pointer"
+                className="text-[11px] font-bold px-2 py-1 rounded-lg bg-black/5 hover:bg-surface-hover text-stone-700 transition-all flex items-center gap-1 border border-black/10 shadow-xs cursor-pointer"
                 title={`${title}のテキストをコピー`}
               >
                 {copied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
@@ -3091,7 +3091,7 @@ const TextAreaCard = ({
           <textarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="w-full min-h-[160px] bg-white border border-border rounded-xl p-3.5 text-sm text-stone-900 leading-relaxed outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 shadow-inner transition-colors resize-y font-sans"
+            className="w-full min-h-[160px] bg-surface border border-border rounded-xl p-3.5 text-sm text-stone-900 leading-relaxed outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 shadow-inner transition-colors resize-y font-sans"
             placeholder={`${title}を記録...`}
             autoFocus
           />

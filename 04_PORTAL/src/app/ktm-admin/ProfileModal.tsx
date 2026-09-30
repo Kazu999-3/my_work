@@ -133,7 +133,7 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
             {riotMasteries.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {riotMasteries.map((m, idx) => (
-                  <div key={idx} className="bg-white/60 border border-border rounded-lg p-4 flex items-center gap-4">
+                  <div key={idx} className="bg-surface/60 border border-border rounded-lg p-4 flex items-center gap-4">
                     <Image
                       src={m.iconUrl}
                       alt={m.name}
@@ -170,7 +170,7 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
               <div className="space-y-6">
                 
                 {/* プレイスタイル・AI分析 */}
-                <div className="bg-white/60 border border-border rounded-lg p-4 flex flex-col md:flex-row gap-6 items-center">
+                <div className="bg-surface/60 border border-border rounded-lg p-4 flex flex-col md:flex-row gap-6 items-center">
                   <div className="w-full md:w-1/3">
                     <ScoutingReport stats={stats} mmr={player.mmr || 1200} />
                   </div>

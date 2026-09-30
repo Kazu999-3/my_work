@@ -22,7 +22,7 @@ export default function GuideRulesTab() {
     <div className="space-y-8 animate-fade-in">
       
       {/* イントロダクション */}
-      <div className="bg-white/80 border border-border/90 rounded-3xl p-6 md:p-8 shadow-sm">
+      <div className="bg-surface/80 border border-border/90 rounded-3xl p-6 md:p-8 shadow-sm">
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 text-stone-950 flex items-center justify-center font-black text-2xl shadow-sm shrink-0">
             📜
@@ -40,7 +40,7 @@ export default function GuideRulesTab() {
       </div>
 
       {/* 1. 定期カスタム 人数決め ＆ 開催優先度ルール */}
-      <div className="bg-white/80 dark:bg-[#2b2d31]/80 border border-border/90 dark:border-[#3f4147] rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+      <div className="bg-surface/80 dark:bg-[#2b2d31]/80 border border-border/90 dark:border-[#3f4147] rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
         <div className="flex items-center gap-3 border-b border-stone-100 dark:border-[#3f4147] pb-4">
           <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-400">
             <Users size={22} />
@@ -87,7 +87,7 @@ export default function GuideRulesTab() {
           </div>
 
           {/* ③ 当日19時までに7名以下なら中止 */}
-          <div className="p-5 rounded-2xl bg-stone-50/80 dark:bg-stone-800/30 border border-border/80 dark:border-stone-700/50 space-y-2.5">
+          <div className="p-5 rounded-2xl bg-background/80 dark:bg-stone-800/30 border border-border/80 dark:border-stone-700/50 space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="px-2.5 py-1 rounded-lg bg-stone-500 text-white text-xs font-black">
                 ③ 7名以下
@@ -103,7 +103,7 @@ export default function GuideRulesTab() {
       </div>
 
       {/* 2. 週末定期カスタムの基本フォーマット */}
-      <div className="bg-white/80 dark:bg-[#2b2d31]/80 border border-border/90 dark:border-[#3f4147] rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+      <div className="bg-surface/80 dark:bg-[#2b2d31]/80 border border-border/90 dark:border-[#3f4147] rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
         <div className="flex items-center gap-3 border-b border-stone-100 dark:border-[#3f4147] pb-4">
           <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-700 dark:text-amber-400">
             <Swords size={22} />
@@ -166,7 +166,7 @@ export default function GuideRulesTab() {
       </div>
 
       {/* 2. スタイル別エントリー ＆ 途中参加システム */}
-      <div className="bg-white/80 border border-border/90 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+      <div className="bg-surface/80 border border-border/90 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
         <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
           <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-700">
             <Clock size={22} />
@@ -178,7 +178,7 @@ export default function GuideRulesTab() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 rounded-2xl bg-stone-50 border border-border/80 space-y-2">
+          <div className="p-4 rounded-2xl bg-background border border-border/80 space-y-2">
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-xs font-black">
                 🟢 フル参加
@@ -189,7 +189,7 @@ export default function GuideRulesTab() {
             </p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-stone-50 border border-border/80 space-y-2">
+          <div className="p-4 rounded-2xl bg-background border border-border/80 space-y-2">
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 text-xs font-black">
                 ⏱️ 1戦のみ
@@ -200,7 +200,7 @@ export default function GuideRulesTab() {
             </p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-stone-50 border border-border/80 space-y-2">
+          <div className="p-4 rounded-2xl bg-background border border-border/80 space-y-2">
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 text-xs font-black">
                 🌙 途中参加 (2戦目〜)
@@ -223,7 +223,7 @@ export default function GuideRulesTab() {
       </div>
 
       {/* 3. 特殊ルール（アラームカスタム・ハンディキャップ） */}
-      <div className="bg-white/80 border border-border/90 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+      <div className="bg-surface/80 border border-border/90 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
         <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
           <div className="p-2.5 rounded-xl bg-rose-500/10 text-rose-700">
             <Flame size={22} />
@@ -236,7 +236,7 @@ export default function GuideRulesTab() {
 
         <div className="space-y-4">
           {/* アラームカスタム */}
-          <div className="p-5 rounded-2xl bg-stone-50 border border-border/80 space-y-2.5">
+          <div className="p-5 rounded-2xl bg-background border border-border/80 space-y-2.5">
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full bg-rose-600 text-white text-xs font-black">
                 ⏰ アラームカスタム
@@ -250,7 +250,7 @@ export default function GuideRulesTab() {
           </div>
 
           {/* BO3 シリーズマッチ */}
-          <div className="p-5 rounded-2xl bg-stone-50 border border-border/80 space-y-2.5">
+          <div className="p-5 rounded-2xl bg-background border border-border/80 space-y-2.5">
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full bg-amber-600 text-white text-xs font-black">
                 🏆 BO3 シリーズマッチ
@@ -264,7 +264,7 @@ export default function GuideRulesTab() {
           </div>
 
           {/* 10人以上お祭り・ARAMローテーション ＆ ロールランダム5v5 */}
-          <div className="p-5 rounded-2xl bg-stone-50 border border-border/80 space-y-2.5">
+          <div className="p-5 rounded-2xl bg-background border border-border/80 space-y-2.5">
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full bg-amber-600 text-white text-xs font-black">
                 🎲 10人以上お祭り ＆ ロールランダム5v5
@@ -286,13 +286,13 @@ export default function GuideRulesTab() {
           <span>KTM カスタムの心得（マナー ＆ エチケット）</span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-stone-300 leading-relaxed font-medium">
-          <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 space-y-1">
+          <div className="p-3.5 rounded-xl bg-surface/5 border border-white/10 space-y-1">
             <div className="font-bold text-white flex items-center gap-1.5">
               <span>🤝 リスペクトと楽しむ心</span>
             </div>
             <p>ミスを責めず、良いプレイをお互いに称え合いましょう！</p>
           </div>
-          <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 space-y-1">
+          <div className="p-3.5 rounded-xl bg-surface/5 border border-white/10 space-y-1">
             <div className="font-bold text-white flex items-center gap-1.5">
               <span>🎁 GG＆お疲れ様コール</span>
             </div>

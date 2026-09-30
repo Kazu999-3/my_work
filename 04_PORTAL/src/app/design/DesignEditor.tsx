@@ -76,7 +76,7 @@ export default function DesignEditor() {
 
   if (isAuthenticated === null) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] bg-white/60 backdrop-blur-md rounded-3xl border border-black/10 p-12 max-w-7xl mx-auto shadow-2xl">
+      <div className="flex flex-col items-center justify-center min-h-[50vh] bg-surface/60 backdrop-blur-md rounded-3xl border border-black/10 p-12 max-w-7xl mx-auto shadow-2xl">
         <RefreshCw className="w-8 h-8 animate-spin text-[#c89b3c] mb-4" />
       </div>
     );
@@ -84,7 +84,7 @@ export default function DesignEditor() {
 
   if (isAuthenticated === false) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] bg-white/60 backdrop-blur-md rounded-3xl border border-black/10 p-12 max-w-7xl mx-auto shadow-2xl text-center max-w-sm">
+      <div className="flex flex-col items-center justify-center min-h-[50vh] bg-surface/60 backdrop-blur-md rounded-3xl border border-black/10 p-12 max-w-7xl mx-auto shadow-2xl text-center max-w-sm">
         <div className="text-4xl mb-4">🔑</div>
         <h2 className="text-lg font-bold mb-2 text-stone-900">認証が必要です</h2>
         <p className="text-sm text-stone-500 mb-6 leading-relaxed">システム設計書は管理者専用です。管理者パスコードでログインしてから再度アクセスしてください。</p>
@@ -95,7 +95,7 @@ export default function DesignEditor() {
 
   if (!mounted || loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] bg-white/60 backdrop-blur-md rounded-3xl border border-black/10 p-12 max-w-7xl mx-auto shadow-2xl">
+      <div className="flex flex-col items-center justify-center min-h-[50vh] bg-surface/60 backdrop-blur-md rounded-3xl border border-black/10 p-12 max-w-7xl mx-auto shadow-2xl">
         <RefreshCw className="w-8 h-8 animate-spin text-[#c89b3c] mb-4" />
         <span className="text-xs text-gray-500 font-bold">設計書モジュールをロード中...</span>
       </div>
@@ -156,7 +156,7 @@ export default function DesignEditor() {
     <div className="max-w-7xl mx-auto space-y-6">
       
       {/* 操作ヘッダーパネル */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white/70 backdrop-blur-md border border-black/10 rounded-2xl p-4 md:px-8 shadow-xl gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-surface/70 backdrop-blur-md border border-black/10 rounded-2xl p-4 md:px-8 shadow-xl gap-4">
         <div>
           <h2 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-[#c89b3c] to-yellow-700 flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-[#c89b3c]" />
@@ -181,7 +181,7 @@ export default function DesignEditor() {
               <button
                 onClick={handleCancelEdit}
                 disabled={saving}
-                className="flex items-center justify-center gap-2 bg-stone-100 hover:bg-stone-200 text-stone-700 px-4 py-2 rounded-xl font-bold text-xs transition cursor-pointer w-full sm:w-auto"
+                className="flex items-center justify-center gap-2 bg-surface-subtle hover:bg-surface-hover text-stone-700 px-4 py-2 rounded-xl font-bold text-xs transition cursor-pointer w-full sm:w-auto"
               >
                 <X size={16} />
                 キャンセル
@@ -216,7 +216,7 @@ export default function DesignEditor() {
         
         {/* 機能別目次サイドメニュー (左側) */}
         {!isEditing && (
-          <aside className="w-full md:w-72 shrink-0 bg-white/60 backdrop-blur-md rounded-3xl border border-black/10 p-4 space-y-1.5 shadow-xl">
+          <aside className="w-full md:w-72 shrink-0 bg-surface/60 backdrop-blur-md rounded-3xl border border-black/10 p-4 space-y-1.5 shadow-xl">
             <div className="px-3 py-2 text-[10px] font-black text-gray-500 uppercase tracking-widest border-b border-black/5 mb-2 flex items-center gap-1.5">
               <FileText className="w-4 h-4 text-gray-500" />
               <span>機能別設計書一覧</span>
@@ -246,7 +246,7 @@ export default function DesignEditor() {
         )}
 
         {/* コンテンツ描画エリア (右側) */}
-        <div className="flex-1 w-full bg-white/60 backdrop-blur-md rounded-3xl border border-black/10 p-6 md:p-12 shadow-2xl overflow-x-hidden">
+        <div className="flex-1 w-full bg-surface/60 backdrop-blur-md rounded-3xl border border-black/10 p-6 md:p-12 shadow-2xl overflow-x-hidden">
           {Object.keys(docs).length === 0 ? (
             <div className="text-center py-12 space-y-3">
               <AlertTriangle className="w-12 h-12 text-[#c89b3c] mx-auto animate-bounce" />
@@ -279,7 +279,7 @@ export default function DesignEditor() {
                     return inline ? (
                       <code className="bg-black/5 px-1.5 py-0.5 rounded text-gold font-mono text-xs" {...props}>{children}</code>
                     ) : (
-                      <pre className="bg-stone-50 border border-black/10 rounded-2xl p-4 overflow-x-auto my-4 font-mono text-xs text-stone-700 leading-relaxed shadow-inner"><code className={className} {...props}>{children}</code></pre>
+                      <pre className="bg-background border border-black/10 rounded-2xl p-4 overflow-x-auto my-4 font-mono text-xs text-stone-700 leading-relaxed shadow-inner"><code className={className} {...props}>{children}</code></pre>
                     );
                   },
                   table: ({node, ...props}) => <div className="overflow-x-auto my-4 rounded-2xl border border-black/10 bg-black/2"><table className="w-full text-left border-collapse" {...props} /></div>,
@@ -310,7 +310,7 @@ export default function DesignEditor() {
                   type="text"
                   value={editTitle}
                   onChange={e => setEditTitle(e.target.value)}
-                  className="w-full bg-white border border-black/10 rounded-xl p-3 text-sm text-stone-900 focus:outline-none focus:border-[#c89b3c] transition-colors"
+                  className="w-full bg-surface border border-black/10 rounded-xl p-3 text-sm text-stone-900 focus:outline-none focus:border-[#c89b3c] transition-colors"
                 />
               </div>
               <div className="space-y-2">
@@ -319,7 +319,7 @@ export default function DesignEditor() {
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
                   disabled={saving}
-                  className="w-full min-h-[60vh] bg-stone-50 border border-black/10 rounded-2xl p-6 font-mono text-sm text-stone-800 leading-relaxed focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all shadow-inner resize-y"
+                  className="w-full min-h-[60vh] bg-background border border-black/10 rounded-2xl p-6 font-mono text-sm text-stone-800 leading-relaxed focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all shadow-inner resize-y"
                   placeholder="# 設計書をここに入力..."
                 />
               </div>

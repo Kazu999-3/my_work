@@ -90,7 +90,7 @@ export default function FactCheckSourceBlock({
   if (deleted) return null;
 
   return (
-    <div className="rounded-lg border border-teal-200 bg-white p-2.5 text-[11px]">
+    <div className="rounded-lg border border-teal-200 bg-surface p-2.5 text-[11px]">
       <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
         <span className="font-bold text-teal-900">{block.label}</span>
         {!editing && (

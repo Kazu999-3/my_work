@@ -82,7 +82,7 @@ function LoginContent() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#f5f1e6] via-[#eae4d4] to-[#ded5be] text-stone-900">
-      <div className="w-full max-w-md bg-white/80 backdrop-blur-xl border border-black/10 rounded-3xl p-8 shadow-2xl space-y-6 text-center">
+      <div className="w-full max-w-md bg-surface/80 backdrop-blur-xl border border-black/10 rounded-3xl p-8 shadow-2xl space-y-6 text-center">
         
         {/* ロゴ ＆ タイトル */}
         <div className="space-y-2">
@@ -120,9 +120,9 @@ function LoginContent() {
 
         {/* 区切り線 */}
         <div className="flex items-center gap-3 my-4">
-          <div className="flex-1 h-px bg-stone-200" />
+          <div className="flex-1 h-px bg-surface-hover" />
           <span className="text-[10px] font-bold text-stone-400">または パスコードで認証</span>
-          <div className="flex-1 h-px bg-stone-200" />
+          <div className="flex-1 h-px bg-surface-hover" />
         </div>
 
         {/* 方法2: 🔑 パスワード認証フォーム */}
@@ -137,7 +137,7 @@ function LoginContent() {
               placeholder="••••••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-stone-50 border border-border rounded-xl px-4 py-3 text-sm font-mono text-stone-900 focus:outline-none focus:border-amber-500 focus:bg-white transition-all shadow-inner"
+              className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm font-mono text-stone-900 focus:outline-none focus:border-amber-500 focus:bg-surface transition-all shadow-inner"
               disabled={isLoading}
               required
             />

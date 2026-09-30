@@ -86,7 +86,7 @@ export default function ChampSelect({ value, onChange, onSelect, placeholder = "
       />
 
       {isOpen && filteredChamps.length > 0 && (
-        <div className="absolute z-50 w-full mt-2 bg-white border border-black/10 rounded-xl shadow-[0_8px_30px_rgba(32,28,43,0.15)] max-h-60 overflow-y-auto custom-scrollbar">
+        <div className="absolute z-50 w-full mt-2 bg-surface border border-black/10 rounded-xl shadow-[0_8px_30px_rgba(32,28,43,0.15)] max-h-60 overflow-y-auto custom-scrollbar">
           {filteredChamps.map((champ) => (
             <div
               key={champ}

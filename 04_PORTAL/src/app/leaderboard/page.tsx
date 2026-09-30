@@ -148,7 +148,7 @@ function LeaderboardContent() {
       <div className="max-w-[1680px] w-full mx-auto space-y-5">
 
         {/* ヘッダー */}
-        <div className="bg-white dark:bg-stone-900 border border-border/90 dark:border-stone-800 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
+        <div className="bg-surface dark:bg-stone-900 border border-border/90 dark:border-stone-800 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
           <div className="flex items-center gap-3">
             <div className="text-2xl p-2.5 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-200/80 dark:border-amber-800/60 shrink-0 text-amber-600">
               <Trophy size={24} />
@@ -172,15 +172,15 @@ function LeaderboardContent() {
         {/* メインタブナビゲーション（3大グループ） */}
         <div className="space-y-3">
           <div className="flex justify-center px-1">
-            <div className="inline-flex items-center gap-1.5 p-1 bg-stone-100 dark:bg-stone-900 rounded-2xl border border-border dark:border-stone-800 shadow-2xs max-w-full overflow-x-auto">
+            <div className="inline-flex items-center gap-1.5 p-1 bg-surface-subtle dark:bg-stone-900 rounded-2xl border border-border dark:border-stone-800 shadow-2xs max-w-full overflow-x-auto">
               {/* グループ1: ランキング */}
               <button
                 type="button"
                 onClick={() => handleTabChange(['ranking', 'coins'].includes(activeTab) ? activeTab : 'ranking')}
                 className={`flex items-center gap-1.5 px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
                   ['ranking', 'coins'].includes(activeTab)
-                    ? 'bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 shadow-xs font-black'
-                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-stone-200/60 dark:hover:bg-stone-800/60'
+                    ? 'bg-surface dark:bg-stone-800 text-stone-900 dark:text-stone-100 shadow-xs font-black'
+                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-surface-hover/60 dark:hover:bg-stone-800/60'
                 }`}
               >
                 <Trophy className="w-4 h-4 text-amber-500" />
@@ -193,8 +193,8 @@ function LeaderboardContent() {
                 onClick={() => handleTabChange('roster')}
                 className={`flex items-center gap-1.5 px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
                   activeTab === 'roster'
-                    ? 'bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 shadow-xs font-black'
-                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-stone-200/60 dark:hover:bg-stone-800/60'
+                    ? 'bg-surface dark:bg-stone-800 text-stone-900 dark:text-stone-100 shadow-xs font-black'
+                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-surface-hover/60 dark:hover:bg-stone-800/60'
                 }`}
               >
                 <Users className="w-4 h-4 text-amber-500" />
@@ -207,8 +207,8 @@ function LeaderboardContent() {
                 onClick={() => handleTabChange(['synergy', 'meta', 'winrate'].includes(activeTab) ? activeTab : 'synergy')}
                 className={`flex items-center gap-1.5 px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
                   ['synergy', 'meta', 'winrate'].includes(activeTab)
-                    ? 'bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 shadow-xs font-black'
-                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-stone-200/60 dark:hover:bg-stone-800/60'
+                    ? 'bg-surface dark:bg-stone-800 text-stone-900 dark:text-stone-100 shadow-xs font-black'
+                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-surface-hover/60 dark:hover:bg-stone-800/60'
                 }`}
               >
                 <Activity className="w-4 h-4 text-teal-500" />
@@ -220,13 +220,13 @@ function LeaderboardContent() {
           {/* サブタブ切り替え（親がランキングまたはデータ分析の時のみコンパクトに表示） */}
           {['ranking', 'coins'].includes(activeTab) && (
             <div className="flex justify-center">
-              <div className="inline-flex items-center gap-1 p-0.5 bg-stone-200/70 dark:bg-stone-800/80 rounded-xl border border-border dark:border-stone-700 text-xs">
+              <div className="inline-flex items-center gap-1 p-0.5 bg-surface-hover/70 dark:bg-stone-800/80 rounded-xl border border-border dark:border-stone-700 text-xs">
                 <button
                   type="button"
                   onClick={() => handleTabChange('ranking')}
                   className={`px-3 py-1 rounded-lg font-bold transition cursor-pointer ${
                     activeTab === 'ranking'
-                      ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-2xs font-extrabold'
+                      ? 'bg-surface dark:bg-stone-900 text-stone-900 dark:text-white shadow-2xs font-extrabold'
                       : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
                   }`}
                 >
@@ -237,7 +237,7 @@ function LeaderboardContent() {
                   onClick={() => handleTabChange('coins')}
                   className={`px-3 py-1 rounded-lg font-bold transition cursor-pointer flex items-center gap-1 ${
                     activeTab === 'coins'
-                      ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-2xs font-extrabold'
+                      ? 'bg-surface dark:bg-stone-900 text-stone-900 dark:text-white shadow-2xs font-extrabold'
                       : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
                   }`}
                 >
@@ -249,13 +249,13 @@ function LeaderboardContent() {
 
           {['synergy', 'meta', 'winrate'].includes(activeTab) && (
             <div className="flex justify-center">
-              <div className="inline-flex items-center gap-1 p-0.5 bg-stone-200/70 dark:bg-stone-800/80 rounded-xl border border-border dark:border-stone-700 text-xs">
+              <div className="inline-flex items-center gap-1 p-0.5 bg-surface-hover/70 dark:bg-stone-800/80 rounded-xl border border-border dark:border-stone-700 text-xs">
                 <button
                   type="button"
                   onClick={() => handleTabChange('synergy')}
                   className={`px-3 py-1 rounded-lg font-bold transition cursor-pointer ${
                     activeTab === 'synergy'
-                      ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-2xs font-extrabold'
+                      ? 'bg-surface dark:bg-stone-900 text-stone-900 dark:text-white shadow-2xs font-extrabold'
                       : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
                   }`}
                 >
@@ -266,7 +266,7 @@ function LeaderboardContent() {
                   onClick={() => handleTabChange('meta')}
                   className={`px-3 py-1 rounded-lg font-bold transition cursor-pointer ${
                     activeTab === 'meta'
-                      ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-2xs font-extrabold'
+                      ? 'bg-surface dark:bg-stone-900 text-stone-900 dark:text-white shadow-2xs font-extrabold'
                       : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
                   }`}
                 >
@@ -277,7 +277,7 @@ function LeaderboardContent() {
                   onClick={() => handleTabChange('winrate')}
                   className={`px-3 py-1 rounded-lg font-bold transition cursor-pointer ${
                     activeTab === 'winrate'
-                      ? 'bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-2xs font-extrabold'
+                      ? 'bg-surface dark:bg-stone-900 text-stone-900 dark:text-white shadow-2xs font-extrabold'
                       : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
                   }`}
                 >
@@ -303,7 +303,7 @@ function LeaderboardContent() {
         {/* メタ統計タブ */}
         {activeTab === 'meta' && (
           <div className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-white/90 p-4 rounded-2xl border border-border/90 shadow-2xs">
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-surface/90 p-4 rounded-2xl border border-border/90 shadow-2xs">
               <div className="flex items-center gap-3 flex-wrap">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-stone-600">最低ピック数:</span>
@@ -314,7 +314,7 @@ function LeaderboardContent() {
                       className={`px-3 py-1 rounded-xl text-xs font-black transition cursor-pointer ${
                         metaMinGames === cnt
                           ? 'bg-amber-600 text-white'
-                          : 'bg-stone-100 hover:bg-stone-200 text-stone-600'
+                          : 'bg-surface-subtle hover:bg-surface-hover text-stone-600'
                       }`}
                     >
                       {cnt}回以上
@@ -331,7 +331,7 @@ function LeaderboardContent() {
                   className={`px-3 py-1 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer ${
                     showMetaPlayers
                       ? 'bg-amber-600 text-white shadow-xs'
-                      : 'bg-stone-100 hover:bg-stone-200 text-stone-600'
+                      : 'bg-surface-subtle hover:bg-surface-hover text-stone-600'
                   }`}
                   title="各チャンピオンを誰が使用したかを表示/非表示に切り替えます"
                 >
@@ -350,15 +350,15 @@ function LeaderboardContent() {
                 メタ統計を集計中...
               </div>
             ) : !metaData || metaData.length === 0 ? (
-              <div className="py-12 text-center text-xs font-bold text-stone-400 bg-white rounded-2xl border border-border">
+              <div className="py-12 text-center text-xs font-bold text-stone-400 bg-surface rounded-2xl border border-border">
                 集計対象の試合データがありません
               </div>
             ) : (
-              <div className="bg-white rounded-2xl border border-border overflow-hidden shadow-xs">
+              <div className="bg-surface rounded-2xl border border-border overflow-hidden shadow-xs">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
-                      <tr className="bg-stone-100/80 text-stone-700 border-b border-border font-black">
+                      <tr className="bg-surface-subtle/80 text-stone-700 border-b border-border font-black">
                         <th className="p-3">チャンピオン</th>
                         <th className="p-3 cursor-pointer hover:text-amber-700 whitespace-nowrap" onClick={() => toggleMetaSort('games')}>
                           ピック数 {metaSortKey === 'games' && (metaSortDir === 'desc' ? '▼' : '▲')}
@@ -376,7 +376,7 @@ function LeaderboardContent() {
                     </thead>
                     <tbody className="divide-y divide-stone-100 text-stone-700">
                       {sortedMetaData(metaData.filter(r => r.games >= metaMinGames)).map((row) => (
-                        <tr key={row.champion} className="hover:bg-stone-50 transition">
+                        <tr key={row.champion} className="hover:bg-background transition">
                           <td className="p-3 font-black text-stone-900 flex items-center gap-2 whitespace-nowrap">
                             <img
                               src={getChampIcon(row.champion)}
@@ -400,7 +400,7 @@ function LeaderboardContent() {
                                     <Link
                                       key={p.name}
                                       href={`/player/${encodeURIComponent(p.name)}`}
-                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-stone-100 hover:bg-amber-100 hover:border-amber-300 border border-border text-stone-800 text-[11px] transition-colors"
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface-subtle hover:bg-amber-100 hover:border-amber-300 border border-border text-stone-800 text-[11px] transition-colors"
                                       title={`${p.name} のカルテを見る`}
                                     >
                                       <span className="font-bold">{p.name}</span>
@@ -429,7 +429,7 @@ function LeaderboardContent() {
         {activeTab === 'ranking' && (
           <div className="space-y-4">
             {/* コントロールバー */}
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-white/90 p-4 rounded-2xl border border-border/90 shadow-2xs">
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-surface/90 p-4 rounded-2xl border border-border/90 shadow-2xs">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-bold text-stone-600">最低試合数:</span>
                 {[1, 3, 5, 10].map((cnt) => (
@@ -439,7 +439,7 @@ function LeaderboardContent() {
                     className={`px-3 py-1 rounded-xl text-xs font-black transition cursor-pointer ${
                       minGames === cnt
                         ? 'bg-amber-600 text-white'
-                        : 'bg-stone-100 hover:bg-stone-200 text-stone-600'
+                        : 'bg-surface-subtle hover:bg-surface-hover text-stone-600'
                     }`}
                   >
                     {cnt}戦以上
@@ -454,12 +454,12 @@ function LeaderboardContent() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="プレイヤー名で絞り込み..."
-                  className="w-full bg-stone-50 border border-border rounded-xl px-3 py-1.5 text-xs font-bold text-stone-800 placeholder-stone-400 focus:outline-none focus:border-amber-500 focus:bg-white transition"
+                  className="w-full bg-background border border-border rounded-xl px-3 py-1.5 text-xs font-bold text-stone-800 placeholder-stone-400 focus:outline-none focus:border-amber-500 focus:bg-surface transition"
                 />
                 {search && (
                   <button
                     onClick={() => setSearch('')}
-                    className="text-stone-400 hover:text-stone-700 text-xs px-2 py-1 rounded-lg bg-stone-100 cursor-pointer"
+                    className="text-stone-400 hover:text-stone-700 text-xs px-2 py-1 rounded-lg bg-surface-subtle cursor-pointer"
                   >
                     クリア
                   </button>
@@ -475,7 +475,7 @@ function LeaderboardContent() {
                     className={`px-3 py-1 rounded-xl text-xs font-black transition cursor-pointer ${
                       sortMetric === metric
                         ? 'bg-stone-800 text-white'
-                        : 'bg-stone-100 hover:bg-stone-200 text-stone-600'
+                        : 'bg-surface-subtle hover:bg-surface-hover text-stone-600'
                     }`}
                   >
                     {metric === 'mmr' ? 'MMR順' : metric === 'winRate' ? '勝率順' : '試合数順'}
@@ -492,7 +492,7 @@ function LeaderboardContent() {
                 className={`px-3 py-1.5 rounded-xl text-xs font-black shrink-0 transition ${
                   mobileRole === 'ALL'
                     ? 'bg-amber-600 text-white shadow-xs'
-                    : 'bg-white border border-border text-stone-600'
+                    : 'bg-surface border border-border text-stone-600'
                 }`}
               >
                 🌐 全レーン並列
@@ -505,7 +505,7 @@ function LeaderboardContent() {
                   className={`px-3 py-1.5 rounded-xl text-xs font-black shrink-0 transition ${
                     mobileRole === role
                       ? 'bg-amber-600 text-white shadow-xs'
-                      : 'bg-white border border-border text-stone-600'
+                      : 'bg-surface border border-border text-stone-600'
                   }`}
                 >
                   {role} ({getSortedRows(data[role] || []).length})
@@ -520,14 +520,14 @@ function LeaderboardContent() {
                 return (
                   <div
                     key={role}
-                    className="bg-white rounded-2xl border border-border/90 overflow-hidden shadow-xs flex flex-col"
+                    className="bg-surface rounded-2xl border border-border/90 overflow-hidden shadow-xs flex flex-col"
                   >
                     <div className="bg-gradient-to-r from-stone-50 to-stone-100/60 border-b border-border p-3.5 flex items-center justify-between">
                       <span className="font-black text-sm text-stone-900 tracking-wider uppercase flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-amber-500"></span>
                         {role}
                       </span>
-                      <span className="text-[11px] font-black px-2 py-0.5 rounded-full bg-stone-200/70 text-stone-600">
+                      <span className="text-[11px] font-black px-2 py-0.5 rounded-full bg-surface-hover/70 text-stone-600">
                         {rows.length}名
                       </span>
                     </div>
@@ -547,7 +547,7 @@ function LeaderboardContent() {
                               <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${
                                 idx === 0 ? 'bg-amber-500 text-white shadow-xs' :
                                 idx === 1 ? 'bg-stone-400 text-white' :
-                                idx === 2 ? 'bg-amber-700 text-white' : 'bg-stone-100 text-stone-600 border border-border'
+                                idx === 2 ? 'bg-amber-700 text-white' : 'bg-surface-subtle text-stone-600 border border-border'
                               }`}>
                                 {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}
                               </span>

@@ -282,7 +282,7 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
   };
 
   return (
-    <div className="rounded-xl border border-border bg-white p-3.5 shadow-2xs space-y-3">
+    <div className="rounded-xl border border-border bg-surface p-3.5 shadow-2xs space-y-3">
       {/* ヘッダー */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2 flex-wrap">
@@ -310,15 +310,15 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
           <span>💡</span> この指摘への対応方法:
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 pt-1 text-[10px] font-bold">
-          <div className="bg-white/80 border border-amber-200 rounded-lg p-1.5 flex items-start gap-1">
+          <div className="bg-surface/80 border border-amber-200 rounded-lg p-1.5 flex items-start gap-1">
             <span className="text-emerald-600 font-black">①</span>
             <span><strong>AI修正案を採用</strong>: 修正プレビューを確認し1タップで安全に更新＆完了</span>
           </div>
-          <div className="bg-white/80 border border-amber-200 rounded-lg p-1.5 flex items-start gap-1">
+          <div className="bg-surface/80 border border-amber-200 rounded-lg p-1.5 flex items-start gap-1">
             <span className="text-rose-600 font-black">②</span>
             <span><strong>記載を削除</strong>: 誤った古い記述自体を消去して完了</span>
           </div>
-          <div className="bg-white/80 border border-amber-200 rounded-lg p-1.5 flex items-start gap-1">
+          <div className="bg-surface/80 border border-amber-200 rounded-lg p-1.5 flex items-start gap-1">
             <span className="text-stone-600 font-black">③</span>
             <span><strong>誤検知として却下</strong>: AIの誤判定の場合はそのまま却下</span>
           </div>
@@ -338,17 +338,17 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
           </div>
 
           {it.detail.conflict_reason && (
-            <p className="text-xs text-stone-800 bg-white/90 p-2.5 rounded-lg border border-rose-200 font-bold leading-relaxed">
+            <p className="text-xs text-stone-800 bg-surface/90 p-2.5 rounded-lg border border-rose-200 font-bold leading-relaxed">
               💡 <strong className="text-rose-900">食い違いの理由:</strong> {it.detail.conflict_reason}
             </p>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
             {it.detail.claim_a && (
-              <div className="p-3 rounded-xl bg-white border border-rose-200 space-y-2 flex flex-col justify-between shadow-2xs">
+              <div className="p-3 rounded-xl bg-surface border border-rose-200 space-y-2 flex flex-col justify-between shadow-2xs">
                 <div>
                   <span className="font-extrabold text-rose-800 text-[11px] block mb-1">【候補 A】</span>
-                  <p className="text-stone-800 leading-relaxed font-mono text-[11px] bg-stone-50 p-2 rounded border border-border">{it.detail.claim_a}</p>
+                  <p className="text-stone-800 leading-relaxed font-mono text-[11px] bg-background p-2 rounded border border-border">{it.detail.claim_a}</p>
                 </div>
                 <button
                   type="button"
@@ -361,10 +361,10 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
               </div>
             )}
             {it.detail.claim_b && (
-              <div className="p-3 rounded-xl bg-white border border-rose-200 space-y-2 flex flex-col justify-between shadow-2xs">
+              <div className="p-3 rounded-xl bg-surface border border-rose-200 space-y-2 flex flex-col justify-between shadow-2xs">
                 <div>
                   <span className="font-extrabold text-rose-800 text-[11px] block mb-1">【候補 B】</span>
-                  <p className="text-stone-800 leading-relaxed font-mono text-[11px] bg-stone-50 p-2 rounded border border-border">{it.detail.claim_b}</p>
+                  <p className="text-stone-800 leading-relaxed font-mono text-[11px] bg-background p-2 rounded border border-border">{it.detail.claim_b}</p>
                 </div>
                 <button
                   type="button"
@@ -402,11 +402,11 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
               {/* Before / After 比較 */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                 {/* Before: 現在の文章 */}
-                <div className="p-2.5 rounded-lg bg-stone-100 border border-border space-y-1">
+                <div className="p-2.5 rounded-lg bg-surface-subtle border border-border space-y-1">
                   <span className="text-[11px] font-extrabold text-stone-600 block">
                     【変更前（現在の記載）】: {aiSuggestion.targetLabel}
                   </span>
-                  <p className="text-[11px] font-mono text-stone-700 whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto bg-white p-2 rounded border border-border">
+                  <p className="text-[11px] font-mono text-stone-700 whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto bg-surface p-2 rounded border border-border">
                     {filteredEditable[0]?.value || '(空欄または未登録)'}
                   </p>
                 </div>
@@ -422,7 +422,7 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
                   <textarea
                     value={customDraft}
                     onChange={(e) => setCustomDraft(e.target.value)}
-                    className="w-full min-h-[90px] p-2 border border-emerald-400 rounded bg-white text-[11px] font-mono text-stone-900 outline-none focus:ring-1 focus:ring-emerald-500 leading-relaxed"
+                    className="w-full min-h-[90px] p-2 border border-emerald-400 rounded bg-surface text-[11px] font-mono text-stone-900 outline-none focus:ring-1 focus:ring-emerald-500 leading-relaxed"
                   />
                 </div>
               </div>
@@ -446,7 +446,7 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
                 <button
                   type="button"
                   onClick={() => setAiSuggestion(null)}
-                  className="px-3 py-2 bg-white border border-border hover:bg-stone-100 text-stone-600 rounded-lg text-xs font-bold transition"
+                  className="px-3 py-2 bg-surface border border-border hover:bg-surface-subtle text-stone-600 rounded-lg text-xs font-bold transition"
                 >
                   閉じる
                 </button>
@@ -477,11 +477,11 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
               <FactCheckSourceBlock key={b.key} block={b} />
             ))}
             {filteredLinked.map((b) => (
-              <div key={b.key} className="rounded-lg border border-amber-200 bg-white p-3 text-xs shadow-2xs">
+              <div key={b.key} className="rounded-lg border border-amber-200 bg-surface p-3 text-xs shadow-2xs">
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <span className="font-bold text-amber-900">{b.label}</span>
                 </div>
-                <p className="text-stone-800 font-mono text-[11px] whitespace-pre-wrap leading-relaxed bg-stone-50 p-2 rounded border border-border">{b.value.slice(0, 400)}{b.value.length >= 400 ? '…' : ''}</p>
+                <p className="text-stone-800 font-mono text-[11px] whitespace-pre-wrap leading-relaxed bg-background p-2 rounded border border-border">{b.value.slice(0, 400)}{b.value.length >= 400 ? '…' : ''}</p>
                 <a href={b.url} target="_blank" rel="noreferrer" className="text-teal-700 hover:underline flex items-center gap-0.5 mt-1.5 w-fit text-[10px] font-bold">
                   ナレッジ記事を直接編集する <ExternalLink size={10} />
                 </a>
@@ -517,7 +517,7 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
               value={fixInput}
               onChange={(e) => setFixInput(e.target.value)}
               placeholder="正しいチャンピオン名を英語表記で（例: Graves）"
-              className="text-xs px-2.5 py-1.5 border border-border rounded-lg bg-white text-stone-900 w-56"
+              className="text-xs px-2.5 py-1.5 border border-border rounded-lg bg-surface text-stone-900 w-56"
             />
             {['matchup_sentinel', 'champion_notes'].includes(it.source_refs?.[0]?.table) && (
               <input
@@ -525,7 +525,7 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
                 onChange={(e) => setEnemyInput(e.target.value)}
                 placeholder="対面がいれば入力（任意・例: Fizz）"
                 title="元の値に2チャンピオン分(例: 「Rek'Sai & Fizz」)が紛れていた場合、2体目をここに"
-                className="text-xs px-2.5 py-1.5 border border-border rounded-lg bg-white text-stone-900 w-48"
+                className="text-xs px-2.5 py-1.5 border border-border rounded-lg bg-surface text-stone-900 w-48"
               />
             )}
             <button onClick={() => act('fix_champion_tag')} disabled={acting || !fixInput.trim()}
@@ -561,7 +561,7 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
               value={fixInput}
               onChange={(e) => setFixInput(e.target.value)}
               placeholder="手動で文章を入力して反映する場合"
-              className="text-xs px-2.5 py-1.5 border border-border rounded-lg bg-white text-stone-900 flex-1 min-w-[200px]"
+              className="text-xs px-2.5 py-1.5 border border-border rounded-lg bg-surface text-stone-900 flex-1 min-w-[200px]"
             />
             <button onClick={() => pickCorrect('手動入力', fixInput)} disabled={acting || !fixInput.trim()}
               title="入力した内容で元データを更新し、再発防止記録に登録します"
@@ -570,7 +570,7 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
             </button>
             <button onClick={() => act('acknowledge')} disabled={acting}
               title="指摘の内容は把握・確認したとして完了にする（元テキストはそのまま）"
-              className="flex items-center gap-1 text-xs font-bold bg-stone-100 text-stone-700 border border-border px-2.5 py-1.5 rounded-lg hover:bg-stone-200 disabled:opacity-50 shrink-0">
+              className="flex items-center gap-1 text-xs font-bold bg-surface-subtle text-stone-700 border border-border px-2.5 py-1.5 rounded-lg hover:bg-surface-hover disabled:opacity-50 shrink-0">
               <Check size={12} /> 確認済みとして完了
             </button>
           </>

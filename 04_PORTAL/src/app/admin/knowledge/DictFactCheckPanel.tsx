@@ -112,7 +112,7 @@ export default function DictFactCheckPanel() {
   };
 
   return (
-    <div className="bg-white border border-border rounded-3xl p-6 space-y-5">
+    <div className="bg-surface border border-border rounded-3xl p-6 space-y-5">
       <h2 className="text-base font-bold text-stone-900 flex items-center gap-2">
         <ShieldCheck size={18} className="text-teal-600" /> 辞典・ナレッジの一斉ファクトチェック
       </h2>
@@ -179,7 +179,7 @@ export default function DictFactCheckPanel() {
         ) : (
           /* 1件ずつ集中処理のフォーカスカード */
           <div className="space-y-2">
-            <div className="bg-stone-100 p-2.5 rounded-xl text-xs text-stone-600 font-extrabold flex justify-between items-center">
+            <div className="bg-surface-subtle p-2.5 rounded-xl text-xs text-stone-600 font-extrabold flex justify-between items-center">
               <span>🎯 目の前の1件に集中して片付ける (1 / {items.length} 件目を点検中)</span>
               <span>1件片付けると自動で次のカードへ進みます</span>
             </div>

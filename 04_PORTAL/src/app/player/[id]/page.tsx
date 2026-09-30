@@ -670,7 +670,7 @@ export default function PlayerMyPage() {
           <div className="text-5xl text-red-600 flex justify-center"><Shield className="w-12 h-12" /></div>
           <h1 className="text-xl font-extrabold text-stone-900">プレイヤーが見つかりません</h1>
           <p className="text-stone-500 text-xs">指定された Discord ID ({id}) の名簿登録が存在しないか削除されました。</p>
-          <Link href="/leaderboard" className="px-6 py-2.5 bg-stone-100 border border-black/10 text-stone-700 rounded-xl hover:bg-[#c89b3c] hover:text-black font-bold transition-all text-xs inline-block">
+          <Link href="/leaderboard" className="px-6 py-2.5 bg-surface-subtle border border-black/10 text-stone-700 rounded-xl hover:bg-[#c89b3c] hover:text-black font-bold transition-all text-xs inline-block">
             リーダーボードに戻る
           </Link>
         </div>
@@ -739,7 +739,7 @@ export default function PlayerMyPage() {
                 disabled={claimingDaily || claimedDailyToday}
                 className={`px-4 py-2.5 rounded-2xl font-black text-xs transition-all shadow-sm flex items-center gap-1.5 cursor-pointer ${
                   claimedDailyToday
-                    ? 'bg-stone-200 text-stone-500 border border-border cursor-not-allowed'
+                    ? 'bg-surface-hover text-stone-500 border border-border cursor-not-allowed'
                     : 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-stone-950 shadow-amber-500/20 hover:scale-102 active:scale-98 animate-pulse'
                 }`}
               >
@@ -759,7 +759,7 @@ export default function PlayerMyPage() {
                 className={`px-4 py-2.5 rounded-2xl text-xs font-black flex items-center gap-1.5 transition border cursor-pointer ${
                   activeTab === 'settings'
                     ? 'bg-stone-900 text-white border-stone-800'
-                    : 'bg-white/90 hover:bg-white text-stone-800 border-border'
+                    : 'bg-surface/90 hover:bg-surface text-stone-800 border-border'
                 }`}
               >
                 <Settings size={14} />
@@ -770,7 +770,7 @@ export default function PlayerMyPage() {
         )}
 
         {/* Header / Control Panel (得意チャンピオンの公式スプラッシュアート背景 ＆ グラスモルフィズム) */}
-        <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-[0_8px_32px_0_rgba(32,28,43,0.08)] relative overflow-hidden group">
+        <div className="bg-surface/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-[0_8px_32px_0_rgba(32,28,43,0.08)] relative overflow-hidden group">
           {/* 公式スプラッシュアート背景 */}
           {topChampSplash && (
             <div 
@@ -843,7 +843,7 @@ export default function PlayerMyPage() {
             </div>
 
             {/* Participation Status & Recent Form */}
-            <div className="bg-white/70 border border-black/10 backdrop-blur-md rounded-2xl p-3 sm:p-4 w-full md:w-auto flex items-center justify-between md:justify-start gap-x-4 gap-y-3 sm:gap-6 shadow-xl flex-wrap">
+            <div className="bg-surface/70 border border-black/10 backdrop-blur-md rounded-2xl p-3 sm:p-4 w-full md:w-auto flex items-center justify-between md:justify-start gap-x-4 gap-y-3 sm:gap-6 shadow-xl flex-wrap">
               <div className="space-y-1">
                 <div className="text-[10px] text-gray-400 font-black tracking-wider uppercase">直近コンディション</div>
                 <div className="flex items-center gap-1.5">
@@ -855,7 +855,7 @@ export default function PlayerMyPage() {
                         ? 'bg-amber-100 text-amber-800 border-amber-300'
                         : recentForm.last10Rate <= 40
                         ? 'bg-rose-100 text-rose-800 border-rose-300'
-                        : 'bg-stone-100 text-stone-700 border-border'
+                        : 'bg-surface-subtle text-stone-700 border-border'
                     }`}>
                       <span>
                         {recentForm.streak >= 3 && recentForm.streakWin ? '🔥' : recentForm.last10Rate >= 60 ? '📈' : recentForm.last10Rate <= 40 ? '⚠️' : '⚖️'}
@@ -918,7 +918,7 @@ export default function PlayerMyPage() {
         {/* 👑 ファーストビュー: 3大戦闘力サマリー（KTMレート・得意チャンプTOP3・主力レーン適正） */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
           {/* 1. KTMレート ＆ 実力Tier */}
-          <div className="bg-white/90 border border-border/90 rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3">
+          <div className="bg-surface/90 border border-border/90 rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-xl shrink-0">
                 🏆
@@ -944,7 +944,7 @@ export default function PlayerMyPage() {
           </div>
 
           {/* 2. 得意チャンピオン TOP3 */}
-          <div className="bg-white/90 border border-border/90 rounded-2xl p-4 shadow-xs flex flex-col justify-between gap-1.5">
+          <div className="bg-surface/90 border border-border/90 rounded-2xl p-4 shadow-xs flex flex-col justify-between gap-1.5">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black text-stone-400 uppercase tracking-wider flex items-center gap-1">
                 <span>⚔️ 得意チャンピオン TOP3</span>
@@ -953,7 +953,7 @@ export default function PlayerMyPage() {
             </div>
             <div className="flex items-center gap-2 pt-0.5">
               {champPool.filter((c: any) => c.name && c.name !== 'Unknown').slice(0, 3).map((c: any, idx: number) => (
-                <div key={idx} className="flex-1 flex items-center gap-1.5 bg-stone-50 border border-border/80 p-1.5 rounded-xl">
+                <div key={idx} className="flex-1 flex items-center gap-1.5 bg-background border border-border/80 p-1.5 rounded-xl">
                   <Image
                     src={getChampIcon(c.name)}
                     alt={c.name}
@@ -975,7 +975,7 @@ export default function PlayerMyPage() {
           </div>
 
           {/* 3. 主力レーン適正 ＆ 通算勝率 */}
-          <div className="bg-white/90 border border-border/90 rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3">
+          <div className="bg-surface/90 border border-border/90 rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-xl shrink-0">
                 🎯
@@ -983,7 +983,7 @@ export default function PlayerMyPage() {
               <div>
                 <div className="text-[10px] font-black text-stone-400 uppercase tracking-wider">主力希望レーン ＆ 勝率</div>
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="text-sm font-black text-stone-900 bg-stone-100 px-2 py-0.5 rounded border border-border">
+                  <span className="text-sm font-black text-stone-900 bg-surface-subtle px-2 py-0.5 rounded border border-border">
                     {player.role_preferences?.primary || 'ALL'}
                   </span>
                   <span className="text-xs font-bold text-stone-400">/</span>
@@ -1006,7 +1006,7 @@ export default function PlayerMyPage() {
         {/* 🔥 直近の調子・連勝バッジ ＆ 🏆相棒・⚔️天敵ハイライト */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
           {/* 直近の調子・勝敗ストリーク */}
-          <div className="bg-white/90 border border-border/90 rounded-2xl p-4 shadow-xs flex flex-col justify-between gap-2">
+          <div className="bg-surface/90 border border-border/90 rounded-2xl p-4 shadow-xs flex flex-col justify-between gap-2">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black text-stone-400 uppercase tracking-wider flex items-center gap-1.5">
                 <span>🔥 直近の調子 ＆ モメンタム</span>
@@ -1017,7 +1017,7 @@ export default function PlayerMyPage() {
                     ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
                     : recentForm.streak >= 2 && !recentForm.streakWin
                     ? 'bg-rose-100 text-rose-800 border-rose-300'
-                    : 'bg-stone-100 text-stone-700 border-border'
+                    : 'bg-surface-subtle text-stone-700 border-border'
                 }`}>
                   {recentForm.streakWin ? `🔥 ${recentForm.streak}連勝中` : `❄️ ${recentForm.streak}連敗中`}
                 </span>
@@ -1051,7 +1051,7 @@ export default function PlayerMyPage() {
           </div>
 
           {/* 🏆 名コンビ（最高勝率の相棒） */}
-          <div className="bg-white/90 border border-border/90 rounded-2xl p-4 shadow-xs flex flex-col justify-between gap-2">
+          <div className="bg-surface/90 border border-border/90 rounded-2xl p-4 shadow-xs flex flex-col justify-between gap-2">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black text-stone-400 uppercase tracking-wider flex items-center gap-1.5">
                 <span>🤝 名コンビ（最高勝率の相棒）</span>
@@ -1091,7 +1091,7 @@ export default function PlayerMyPage() {
           </div>
 
           {/* ⚔️ 最大の天敵（苦戦中のライバル） */}
-          <div className="bg-white/90 border border-border/90 rounded-2xl p-4 shadow-xs flex flex-col justify-between gap-2">
+          <div className="bg-surface/90 border border-border/90 rounded-2xl p-4 shadow-xs flex flex-col justify-between gap-2">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-black text-stone-400 uppercase tracking-wider flex items-center gap-1.5">
                 <span>⚔️ 最大の天敵（対戦ライバル）</span>
@@ -1139,7 +1139,7 @@ export default function PlayerMyPage() {
         />
 
         {/* Tab Controls (横スライド対応、洗練されたグラスデザイン) */}
-        <div className="flex gap-1 bg-white/60 backdrop-blur-md p-1.5 rounded-2xl border border-black/10 overflow-x-auto scrollbar-none shadow-lg">
+        <div className="flex gap-1 bg-surface/60 backdrop-blur-md p-1.5 rounded-2xl border border-black/10 overflow-x-auto scrollbar-none shadow-lg">
           {tabItems.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -1185,7 +1185,7 @@ export default function PlayerMyPage() {
                   </div>
 
                   {/* 通算戦績サマリーカード (全体勝率 / 試合数 / KDA) */}
-                  <div className="lg:col-span-3 bg-white/70 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+                  <div className="lg:col-span-3 bg-surface/70 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl relative overflow-hidden">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/10 pb-4 mb-6">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white shadow-md">
@@ -1198,7 +1198,7 @@ export default function PlayerMyPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-stone-500">総試合数:</span>
-                        <span className="text-sm font-black px-3 py-1 bg-stone-100 rounded-full border border-border text-stone-800">
+                        <span className="text-sm font-black px-3 py-1 bg-surface-subtle rounded-full border border-border text-stone-800">
                           {overallStats.total} 試合
                         </span>
                       </div>
@@ -1206,7 +1206,7 @@ export default function PlayerMyPage() {
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                       {/* 全体勝率 */}
-                      <div className="bg-stone-50/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
+                      <div className="bg-background/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
                         <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">全体勝率</span>
                         <div className="my-2">
                           <span className={`text-3xl sm:text-4xl font-black ${
@@ -1223,7 +1223,7 @@ export default function PlayerMyPage() {
                       </div>
 
                       {/* 平均 KDA */}
-                      <div className="bg-stone-50/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
+                      <div className="bg-background/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
                         <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">平均 KDA</span>
                         <div className="my-2">
                           <span className="text-3xl sm:text-4xl font-black text-amber-700">
@@ -1236,7 +1236,7 @@ export default function PlayerMyPage() {
                       </div>
 
                       {/* 勝ちパターン判定 */}
-                      <div className="bg-stone-50/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
+                      <div className="bg-background/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
                         <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">プレイスタイル</span>
                         <div className="my-2">
                           <span className="text-sm font-black text-stone-900 line-clamp-2">
@@ -1249,7 +1249,7 @@ export default function PlayerMyPage() {
                       </div>
 
                       {/* KTM代表MMR */}
-                      <div className="bg-stone-50/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
+                      <div className="bg-background/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
                         <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">KTMカスタムMMR</span>
                         <div className="my-2">
                           <span className="text-3xl sm:text-4xl font-black text-amber-700">
@@ -1311,7 +1311,7 @@ export default function PlayerMyPage() {
                   {/* 直近の調子 & 対面の得意/苦手 */}
                   <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* 直近の調子 */}
-                    <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
+                    <div className="bg-surface/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
                       <h3 className="text-base font-black flex items-center gap-2 mb-4 border-b border-black/10 pb-3">
                         <TrendingUp className="w-5 h-5 text-emerald-600" />
                         <span>直近の調子</span>
@@ -1348,7 +1348,7 @@ export default function PlayerMyPage() {
                     </div>
 
                     {/* 対面の得意/苦手 */}
-                    <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
+                    <div className="bg-surface/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
                       <h3 className="text-base font-black flex items-center gap-2 mb-4 border-b border-black/10 pb-3">
                         <Swords className="w-5 h-5 text-amber-600" />
                         <span>対面の得意 / 苦手</span>
@@ -1393,7 +1393,7 @@ export default function PlayerMyPage() {
                   {(champPool.length > 0 || synergyPair) && (
                     <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
                       {champPool.length > 0 && (
-                        <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
+                        <div className="bg-surface/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
                           <h3 className="text-base font-black mb-4 border-b border-black/10 pb-3">🎯 チャンピオンプール</h3>
                           <div className="space-y-2">
                             {champPool.filter(c => c.name && c.name !== 'Unknown').map(c => (
@@ -1420,7 +1420,7 @@ export default function PlayerMyPage() {
                         </div>
                       )}
                       {synergyPair && (
-                        <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
+                        <div className="bg-surface/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
                           <h3 className="text-base font-black mb-4 border-b border-black/10 pb-3 flex items-center justify-between">
                             <span className="flex items-center gap-2">
                               <Users className="w-5 h-5 text-amber-700" />
@@ -1458,7 +1458,7 @@ export default function PlayerMyPage() {
                   )}
 
                   {/* 🎮 Hextech 5軸能力パラメーター (レーダーチャート) */}
-                  <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl lg:col-span-1 flex flex-col justify-between">
+                  <div className="bg-surface/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl lg:col-span-1 flex flex-col justify-between">
                     <div>
                       <h3 className="text-base font-black flex items-center justify-between gap-2 mb-4 border-b border-black/10 pb-3">
                         <span className="flex items-center gap-2">
@@ -1534,7 +1534,7 @@ export default function PlayerMyPage() {
                   )}
 
                   {/* 📋 週刊スタッツ・スカウティングレポート */}
-                  <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl lg:col-span-3">
+                  <div className="bg-surface/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl lg:col-span-3">
                     <h3 className="text-base font-black flex items-center gap-2 mb-4 border-b border-black/10 pb-3">
                       <Sparkles className="w-5 h-5 text-amber-600 animate-pulse" />
                       <span>週刊スタッツ・スカウティングレポート (KTM Weekly Scouting)</span>
@@ -1543,7 +1543,7 @@ export default function PlayerMyPage() {
                   </div>
 
                   {/* MMRグラフ */}
-                  <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl lg:col-span-2 space-y-6">
+                  <div className="bg-surface/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl lg:col-span-2 space-y-6">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-black/10 pb-3">
                       <h3 className="text-lg font-black flex items-center gap-2">
                         <TrendingUp className="w-5 h-5 text-amber-700" />
@@ -1652,7 +1652,7 @@ export default function PlayerMyPage() {
                             <span>5戦移動平均</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <div className="w-2.5 h-2.5 rounded-full bg-white/80 border border-gray-400"></div>
+                            <div className="w-2.5 h-2.5 rounded-full bg-surface/80 border border-gray-400"></div>
                             <span>大勝/大敗(±30)</span>
                           </div>
                         </div>
@@ -1672,7 +1672,7 @@ export default function PlayerMyPage() {
               {activeTab === 'analytics' && (
                 <div className="space-y-6">
                   {/* レーン別戦績詳細 */}
-                  <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
+                  <div className="bg-surface/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b border-black/10 pb-3">
                       <h3 className="text-lg font-black flex items-center gap-2">
                         <Swords className="w-5 h-5 text-emerald-600" />
@@ -1794,7 +1794,7 @@ export default function PlayerMyPage() {
                   </div>
 
                   {/* KTMカスタム対面マッチアップ勝率 */}
-                  <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
+                  <div className="bg-surface/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
                     <h3 className="text-lg font-black flex items-center gap-2 mb-6 border-b border-black/10 pb-3">
                       <Crosshair className="w-5 h-5 text-rose-500" />
                       <span>⚔️ KTMカスタム 対面マッチアップ勝率</span>
@@ -1837,7 +1837,7 @@ export default function PlayerMyPage() {
               {activeTab === 'soloq' && (
                 <div className="space-y-6">
                   {/* ソロキュー公式ステータス ＆ Riot連携カード */}
-                  <div className="bg-white/70 backdrop-blur-xl border border-teal-500/20 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+                  <div className="bg-surface/70 backdrop-blur-xl border border-teal-500/20 rounded-3xl p-6 shadow-xl relative overflow-hidden">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/10 pb-4 mb-6">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center text-white shadow-md">
@@ -1870,7 +1870,7 @@ export default function PlayerMyPage() {
                           type="button"
                           onClick={handleSyncSoloq}
                           disabled={syncingSoloq}
-                          className="px-3.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-black transition-all border border-border flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                          className="px-3.5 py-1.5 rounded-xl bg-surface-subtle hover:bg-surface-hover text-stone-800 text-xs font-black transition-all border border-border flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                         >
                           <RefreshCw size={13} className={syncingSoloq ? 'animate-spin text-teal-600' : ''} />
                           <span>{syncingSoloq ? '同期中...' : '最新戦績を同期'}</span>
@@ -1880,7 +1880,7 @@ export default function PlayerMyPage() {
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                       {/* サモナー名 */}
-                      <div className="bg-stone-50/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
+                      <div className="bg-background/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
                         <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">サモナー名 (IGN)</span>
                         <div className="my-2">
                           <span className="text-lg sm:text-xl font-black font-mono text-stone-900 truncate block">
@@ -1891,7 +1891,7 @@ export default function PlayerMyPage() {
                       </div>
 
                       {/* 最高到達ランク */}
-                      <div className="bg-stone-50/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
+                      <div className="bg-background/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
                         <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">最高到達ランク</span>
                         <div className="my-2">
                           <span className="text-2xl sm:text-3xl font-black text-amber-700">
@@ -1902,7 +1902,7 @@ export default function PlayerMyPage() {
                       </div>
 
                       {/* メインロール推定 */}
-                      <div className="bg-stone-50/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
+                      <div className="bg-background/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
                         <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">得意ロール (マスタリー基準)</span>
                         <div className="my-2">
                           <span className="text-xl sm:text-2xl font-black text-stone-900">
@@ -1913,7 +1913,7 @@ export default function PlayerMyPage() {
                       </div>
 
                       {/* 総マスタリーチャンピオン数 */}
-                      <div className="bg-stone-50/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
+                      <div className="bg-background/80 border border-border/80 rounded-2xl p-4 flex flex-col justify-between">
                         <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">登録マスタリー数</span>
                         <div className="my-2">
                           <span className="text-2xl sm:text-3xl font-black text-teal-700">
@@ -1928,7 +1928,7 @@ export default function PlayerMyPage() {
                   {/* 魂のチャンピオン (Riot公式マスタリー) ＆ スカウティングサマリー */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* 魂のチャンピオン (マスタリー一覧) */}
-                    <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
+                    <div className="bg-surface/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
                       <div className="flex items-center justify-between mb-6 border-b border-black/10 pb-3">
                         <h3 className="text-lg font-black flex items-center gap-2">
                           <Star className="w-5 h-5 text-amber-600" />
@@ -1970,7 +1970,7 @@ export default function PlayerMyPage() {
                     </div>
 
                     {/* スカウティングレポート (ScoutingReport) */}
-                    <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl flex flex-col justify-between">
+                    <div className="bg-surface/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl flex flex-col justify-between">
                       <div className="border-b border-black/10 pb-3 mb-4 flex items-center justify-between">
                         <h3 className="text-lg font-black flex items-center gap-2">
                           <Target className="w-5 h-5 text-teal-600" />
@@ -1993,7 +1993,7 @@ export default function PlayerMyPage() {
               {activeTab === 'chemistry' && (
                 <div className="space-y-6">
                   {/* 味方との相性 */}
-                  <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-4 sm:p-6 shadow-xl">
+                  <div className="bg-surface/60 backdrop-blur-xl border border-black/10 rounded-3xl p-4 sm:p-6 shadow-xl">
                     <h3 className="text-base sm:text-lg font-black flex items-center gap-2 mb-4 border-b border-black/10 pb-3">
                       <Users className="w-5 h-5 text-emerald-600 shrink-0" />
                       <span className="min-w-0">味方との相性（同チームで3戦以上）</span>
@@ -2037,7 +2037,7 @@ export default function PlayerMyPage() {
                   </div>
 
                   {/* 好敵手（対戦相手） */}
-                  <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-4 sm:p-6 shadow-xl">
+                  <div className="bg-surface/60 backdrop-blur-xl border border-black/10 rounded-3xl p-4 sm:p-6 shadow-xl">
                     <h3 className="text-base sm:text-lg font-black flex items-center gap-2 mb-4 border-b border-black/10 pb-3">
                       <Swords className="w-5 h-5 text-rose-500 shrink-0" />
                       <span className="min-w-0">好敵手（敵チームで3戦以上）</span>
@@ -2085,7 +2085,7 @@ export default function PlayerMyPage() {
 
               {/* 5. 試合履歴タブ */}
               {activeTab === 'history' && (
-                <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
+                <div className="bg-surface/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl">
                   <h3 className="text-lg font-black flex items-center gap-2 mb-6 border-b border-black/10 pb-3">
                     <Clock className="w-5 h-5 text-amber-700" />
                     <span>直近の戦績 (KTMカスタム)</span>

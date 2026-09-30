@@ -14,7 +14,7 @@ interface DeepDiveTask {
 }
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
-  pending: { label: '待機中', className: 'bg-stone-100 text-stone-700 border-border' },
+  pending: { label: '待機中', className: 'bg-surface-subtle text-stone-700 border-border' },
   running: { label: '解析中', className: 'bg-amber-50 text-amber-800 border-amber-300' },
   completed: { label: '完了', className: 'bg-emerald-50 text-emerald-800 border-emerald-300' },
   failed: { label: '失敗', className: 'bg-rose-50 text-rose-800 border-rose-300' },
@@ -76,7 +76,7 @@ export default function VideoDeepDiveRequestPanel() {
   };
 
   return (
-    <div className="bg-white border border-border/90 rounded-2xl p-5 shadow-xs space-y-4">
+    <div className="bg-surface border border-border/90 rounded-2xl p-5 shadow-xs space-y-4">
       <div>
         <div className="flex items-center gap-2.5">
           <div className="p-2 rounded-xl bg-amber-50 text-amber-600 border border-amber-200/60">
@@ -104,7 +104,7 @@ export default function VideoDeepDiveRequestPanel() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="bg-stone-50/70 border border-border/80 rounded-2xl p-4 space-y-3.5">
+      <form onSubmit={handleSubmit} className="bg-background/70 border border-border/80 rounded-2xl p-4 space-y-3.5">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <input
             type="text"
@@ -112,14 +112,14 @@ export default function VideoDeepDiveRequestPanel() {
             onChange={(e) => setVideoUrl(e.target.value)}
             placeholder="YouTube URL または動画ID"
             required
-            className="md:col-span-2 px-3.5 py-2.5 bg-white border border-border rounded-xl text-xs text-stone-900 placeholder-stone-400 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+            className="md:col-span-2 px-3.5 py-2.5 bg-surface border border-border rounded-xl text-xs text-stone-900 placeholder-stone-400 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
           />
           <input
             type="text"
             value={champion}
             onChange={(e) => setChampion(e.target.value)}
             placeholder="対象チャンピオン（省略時は自動判定）"
-            className="px-3.5 py-2.5 bg-white border border-border rounded-xl text-xs text-stone-900 placeholder-stone-400 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+            className="px-3.5 py-2.5 bg-surface border border-border rounded-xl text-xs text-stone-900 placeholder-stone-400 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
           />
         </div>
         <div className="flex justify-end pt-1">
@@ -146,7 +146,7 @@ export default function VideoDeepDiveRequestPanel() {
               return (
                 <div
                   key={task.id}
-                  className="flex items-center justify-between gap-2 px-3.5 py-2.5 bg-stone-50 border border-border rounded-xl text-xs"
+                  className="flex items-center justify-between gap-2 px-3.5 py-2.5 bg-background border border-border rounded-xl text-xs"
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     {task.status === 'running' && <Loader2 className="w-3.5 h-3.5 text-amber-500 animate-spin shrink-0" />}

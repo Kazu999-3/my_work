@@ -2558,10 +2558,29 @@ UI・送信・API受け取りはすべて正常で、壊れていたのは保存
 - 対応する中和ルール（`html.dark .border-stone-200 ...`）を **globals.css から削除**
 - 検証: tsc エラー0 / テスト83件全成功 / build 成功
 
-### 📌 残りのPhase（未着手）
+### ✅ Phase 2: 白背景を移行（完了）
 
-- [ ] **Phase 2**: `bg-white`（690箇所）→ `bg-surface`。対応する中和ルールを削除
-- [ ] **Phase 3**: `bg-stone-50/100/200`（734箇所）→ `bg-background` / `bg-surface-hover`
+- `bg-white` の **688箇所 / 97ファイル** を `bg-surface` へ置換
+- 対応する中和ルールを削除。旧ルールは `color` も一緒に指定していたが、
+  `html.dark body { color:#f2f3f5 }` が継承させるため文字色は変わらない
+- `dark:bg-white` の2件は意図的な反転指定として除外
+
+### ✅ Phase 3: stone系の淡色背景を移行（完了）
+
+ライトモードの見た目を1pxも変えないため、`stone-100` 相当のトークン
+`--color-surface-subtle`（ライト #f5f5f4 / ダーク #1e1f22）を新設してから置換した。
+
+| 移行前 | 移行後 | 箇所 | ライト値 | ダーク値 |
+|---|---|---|---|---|
+| `bg-stone-50` | `bg-background` | 289 | #fafaf9（同値） | #1e1f22（旧中和と同値） |
+| `bg-stone-100` | `bg-surface-subtle` | 288 | #f5f5f4（同値） | #1e1f22（同上） |
+| `bg-stone-150` | `bg-surface-subtle` | 1 | 同上 | 同上 |
+| `bg-stone-200` | `bg-surface-hover` | 158 | #e7e5e4（同値） | #35373c（旧中和と同値） |
+
+**ライト値は移行前と完全一致、ダーク値も旧中和ルールと同じ**にしてあるため見た目は変わらない。
+対応する中和ルールを削除（`dark:bg-stone-100` の1件は意図的な反転指定として残置）。
+
+### 📌 残りのPhase（未着手）
 - [ ] **Phase 4**: 文字色（約2,989箇所）→ `text-foreground` / `text-muted`。
   最大量かつ「本文か補足か」の判断が要るので、機械置換だけでは済まない可能性がある
 - [ ] **Phase 5**: アクセント色の淡色背景（amber/emerald/rose の50〜200）。

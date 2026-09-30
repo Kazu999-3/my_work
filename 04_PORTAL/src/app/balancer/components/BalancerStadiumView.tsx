@@ -107,7 +107,7 @@ export default function BalancerStadiumView({
           </div>
           <Link
             href={`/coach?champion=${encodeURIComponent(myBlueEntry?.primary || myRedEntry?.primary || 'JarvanIV')}`}
-            className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-white text-[11px] font-bold rounded-lg transition border border-white/20 shrink-0"
+            className="px-2.5 py-1 bg-surface/10 hover:bg-surface/20 text-white text-[11px] font-bold rounded-lg transition border border-white/20 shrink-0"
           >
             対面作戦を開く ➔
           </Link>

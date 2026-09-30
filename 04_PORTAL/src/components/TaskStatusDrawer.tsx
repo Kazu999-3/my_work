@@ -161,7 +161,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
   const isWorkerActive = systemData.worker.active;
 
   const badgeCount = runningTasks.length + failedTasks.length;
-  const badgeColor = failedTasks.length > 0 ? 'bg-rose-500 text-white' : runningTasks.length > 0 ? 'bg-amber-500 text-white animate-pulse' : 'bg-stone-200 text-stone-700';
+  const badgeColor = failedTasks.length > 0 ? 'bg-rose-500 text-white' : runningTasks.length > 0 ? 'bg-amber-500 text-white animate-pulse' : 'bg-surface-hover text-stone-700';
 
   const TASK_LABELS: Record<string, string> = {
     champion_trend: 'チャンピオントレンド更新',
@@ -203,7 +203,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
         <div
           ref={drawerRef}
           style={{ top: coords.top, left: coords.left, right: coords.right }}
-          className="fixed z-50 w-96 max-w-[92vw] max-h-[85vh] overflow-y-auto rounded-2xl border border-border bg-white shadow-2xl space-y-4 p-4 text-xs font-sans animate-fade-in"
+          className="fixed z-50 w-96 max-w-[92vw] max-h-[85vh] overflow-y-auto rounded-2xl border border-border bg-surface shadow-2xl space-y-4 p-4 text-xs font-sans animate-fade-in"
         >
           {/* ヘッダー */}
           <div className="flex items-center justify-between border-b border-border pb-2.5">
@@ -222,7 +222,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
           </div>
 
           {/* 1. ワーカー稼働状況 */}
-          <div className="flex items-center justify-between p-2.5 rounded-xl border border-border bg-stone-50">
+          <div className="flex items-center justify-between p-2.5 rounded-xl border border-border bg-background">
             <div className="flex items-center gap-2">
               <Cpu size={16} className={isWorkerActive ? 'text-emerald-600' : 'text-rose-500'} />
               <div>
@@ -313,7 +313,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
               </span>
             </div>
             {runningTasks.length === 0 ? (
-              <p className="text-[11px] text-stone-400 py-2 italic text-center bg-stone-50 rounded-xl border border-stone-100">現在実行中のタスクはありません</p>
+              <p className="text-[11px] text-stone-400 py-2 italic text-center bg-background rounded-xl border border-stone-100">現在実行中のタスクはありません</p>
             ) : (
               <div className="space-y-1.5">
                 {runningTasks.map((t) => (
@@ -342,11 +342,11 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
               <span>待機中キュー ({pendingTasks.length}件)</span>
             </div>
             {pendingTasks.length === 0 ? (
-              <p className="text-[11px] text-stone-400 py-2 italic text-center bg-stone-50 rounded-xl border border-stone-100">順番待ちタスクはありません</p>
+              <p className="text-[11px] text-stone-400 py-2 italic text-center bg-background rounded-xl border border-stone-100">順番待ちタスクはありません</p>
             ) : (
               <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
                 {pendingTasks.map((t, idx) => (
-                  <div key={t.id} className="p-2 rounded-lg border border-border bg-white flex justify-between items-center text-[10px]">
+                  <div key={t.id} className="p-2 rounded-lg border border-border bg-surface flex justify-between items-center text-[10px]">
                     <span className="font-bold text-stone-800">
                       #{idx + 1} {TASK_LABELS[t.task_type] || t.task_type}
                     </span>
@@ -363,7 +363,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
               <span className="font-bold text-stone-600 text-xs block">直近の実行履歴</span>
               <div className="space-y-1 max-h-36 overflow-y-auto pr-1">
                 {systemData.history.slice(0, 5).map((h) => (
-                  <div key={h.id} className="p-2 rounded-lg border border-border bg-stone-50 flex justify-between items-center text-[10px]">
+                  <div key={h.id} className="p-2 rounded-lg border border-border bg-background flex justify-between items-center text-[10px]">
                     <div className="flex items-center gap-1.5 min-w-0">
                       {h.status === 'completed' ? (
                         <CheckCircle2 size={12} className="text-emerald-600 shrink-0" />

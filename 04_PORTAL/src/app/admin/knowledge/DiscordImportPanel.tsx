@@ -111,7 +111,7 @@ export default function DiscordImportPanel() {
   };
 
   return (
-    <div className="bg-white border border-border rounded-3xl p-6 space-y-6 shadow-sm">
+    <div className="bg-surface border border-border rounded-3xl p-6 space-y-6 shadow-sm">
       <div className="flex items-center justify-between border-b border-stone-100 pb-4 flex-wrap gap-2">
         <div className="flex items-center gap-2.5">
           <div className="p-2 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700">
@@ -148,7 +148,7 @@ export default function DiscordImportPanel() {
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           placeholder="例: [15:30] UserA: アーリは対アサシンだと6前にW上げでハラスして押し切るのが強い。コアビルドはルーデン..."
-          className="w-full h-36 p-4 rounded-2xl border border-border bg-stone-50/50 text-xs font-mono text-stone-800 focus:bg-white focus:outline-none focus:border-amber-500 transition-all resize-y"
+          className="w-full h-36 p-4 rounded-2xl border border-border bg-background/50 text-xs font-mono text-stone-800 focus:bg-surface focus:outline-none focus:border-amber-500 transition-all resize-y"
         />
 
         <div className="flex justify-end">
@@ -186,7 +186,7 @@ export default function DiscordImportPanel() {
               <div
                 key={idx}
                 className={`p-4 rounded-2xl border transition-all ${
-                  item.selected ? 'bg-white border-amber-300 shadow-sm' : 'bg-stone-50 border-border opacity-60'
+                  item.selected ? 'bg-surface border-amber-300 shadow-sm' : 'bg-background border-border opacity-60'
                 }`}
               >
                 <div className="flex items-start justify-between gap-3 mb-2">
@@ -211,7 +211,7 @@ export default function DiscordImportPanel() {
                             vs {item.enemy_champion}
                           </span>
                         )}
-                        <span className="text-[10px] bg-stone-100 text-stone-700 font-bold px-2 py-0.5 rounded-full border border-border">
+                        <span className="text-[10px] bg-surface-subtle text-stone-700 font-bold px-2 py-0.5 rounded-full border border-border">
                           {CATEGORY_LABELS[item.category] || item.category}
                         </span>
                       </div>
@@ -222,7 +222,7 @@ export default function DiscordImportPanel() {
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button
                       onClick={() => setEditingIdx(editingIdx === idx ? null : idx)}
-                      className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-600 transition"
+                      className="p-1.5 rounded-lg hover:bg-surface-subtle text-stone-600 transition"
                       title="内容を微調整"
                     >
                       <Edit3 size={14} />
@@ -243,13 +243,13 @@ export default function DiscordImportPanel() {
                       type="text"
                       value={item.title}
                       onChange={(e) => updateItem(idx, 'title', e.target.value)}
-                      className="w-full text-xs font-bold p-2 border rounded-lg bg-stone-50"
+                      className="w-full text-xs font-bold p-2 border rounded-lg bg-background"
                       placeholder="タイトル"
                     />
                     <textarea
                       value={item.summary}
                       onChange={(e) => updateItem(idx, 'summary', e.target.value)}
-                      className="w-full h-24 text-xs p-2 border rounded-lg bg-stone-50 font-mono"
+                      className="w-full h-24 text-xs p-2 border rounded-lg bg-background font-mono"
                       placeholder="要約メモ"
                     />
                     <button
@@ -260,7 +260,7 @@ export default function DiscordImportPanel() {
                     </button>
                   </div>
                 ) : (
-                  <div className="text-xs text-stone-700 bg-stone-50/80 p-3 rounded-xl border border-stone-100 leading-relaxed whitespace-pre-wrap mt-2">
+                  <div className="text-xs text-stone-700 bg-background/80 p-3 rounded-xl border border-stone-100 leading-relaxed whitespace-pre-wrap mt-2">
                     {item.summary}
                   </div>
                 )}

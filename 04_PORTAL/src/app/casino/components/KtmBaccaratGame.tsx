@@ -63,7 +63,7 @@ function CardFace({
       style={{ transitionDelay: `${delay}ms` }}
     >
       {visible ? (
-        <div className="w-full h-full rounded-xl border-2 border-border bg-white shadow-md flex flex-col justify-between p-1.5 select-none">
+        <div className="w-full h-full rounded-xl border-2 border-border bg-surface shadow-md flex flex-col justify-between p-1.5 select-none">
           {/* 左上 */}
           <div className={`text-xs font-black leading-none ${suit.color}`}>
             <div>{card.rank}</div>
@@ -262,7 +262,7 @@ export default function KtmBaccaratGame({
   // 結果アクセント
   const resultAccent = lastResult
     ? lastResult.isPush
-      ? 'bg-stone-100 border-stone-400 text-stone-700'
+      ? 'bg-surface-subtle border-stone-400 text-stone-700'
       : lastResult.isWin
         ? 'bg-amber-100 border-amber-500 text-amber-900'
         : 'bg-rose-100 border-rose-400 text-rose-900'
@@ -372,7 +372,7 @@ export default function KtmBaccaratGame({
             max={userCoins}
             onChange={e => setBetAmount(Math.max(10, Math.floor(Number(e.target.value))))}
             disabled={phase !== 'IDLE'}
-            className="flex-1 px-3 py-2 rounded-xl border-2 border-border bg-white text-stone-900 font-black text-sm text-right focus:border-amber-500 focus:outline-none disabled:opacity-50"
+            className="flex-1 px-3 py-2 rounded-xl border-2 border-border bg-surface text-stone-900 font-black text-sm text-right focus:border-amber-500 focus:outline-none disabled:opacity-50"
           />
           <span className="text-xs text-stone-500 font-bold whitespace-nowrap">🪙</span>
         </div>
@@ -385,7 +385,7 @@ export default function KtmBaccaratGame({
               type="button"
               onClick={() => setBetAmount(Math.min(q, userCoins))}
               disabled={phase !== 'IDLE' || userCoins < q}
-              className="px-2.5 py-1 rounded-xl bg-stone-200 hover:bg-stone-300 text-stone-700 font-black text-xs transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="px-2.5 py-1 rounded-xl bg-surface-hover hover:bg-stone-300 text-stone-700 font-black text-xs transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               {q.toLocaleString()}
             </button>
@@ -442,7 +442,7 @@ export default function KtmBaccaratGame({
       </div>
 
       {/* ルール説明 */}
-      <div className="p-3 rounded-2xl bg-stone-100 border border-border text-[10px] text-stone-500 font-medium leading-relaxed">
+      <div className="p-3 rounded-2xl bg-surface-subtle border border-border text-[10px] text-stone-500 font-medium leading-relaxed">
         <strong className="text-stone-700">🃏 バカラ基本ルール:</strong> PLAYER・BANKERに各2枚配り、合計の下一桁（9が最高）が大きい方が勝ち。
         0〜5点の場合は3枚目をドロー（本格ルール準拠）。8・9点は「ナチュラル」で即勝負。TIEは引き分け（PLAYER/BANKERはプッシュ＝掛け金返還）。
       </div>

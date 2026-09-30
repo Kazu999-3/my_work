@@ -17,7 +17,7 @@ export function MentorshipGuidelinesModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-4 bg-stone-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white border border-border rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden text-stone-900 animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
+      <div className="bg-surface border border-border rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden text-stone-900 animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
         {/* ヘッダー */}
         <div className="p-5 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border-b border-amber-200 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
@@ -54,7 +54,7 @@ export function MentorshipGuidelinesModal({
               <span className="p-1 rounded-lg bg-amber-100 border border-amber-300">👨‍🏫</span>
               <span>師匠（メンター）の心得</span>
             </div>
-            <div className="p-3.5 rounded-2xl bg-stone-50 border border-border space-y-2">
+            <div className="p-3.5 rounded-2xl bg-background border border-border space-y-2">
               {MENTORSHIP_GUIDELINES.mentor.map((item, idx) => (
                 <div key={idx} className="flex items-start gap-2 text-xs text-stone-700">
                   <CheckCircle2 size={14} className="text-emerald-600 shrink-0 mt-0.5" />
@@ -70,7 +70,7 @@ export function MentorshipGuidelinesModal({
               <span className="p-1 rounded-lg bg-emerald-100 border border-emerald-300">🌱</span>
               <span>弟子（生徒）の心得</span>
             </div>
-            <div className="p-3.5 rounded-2xl bg-stone-50 border border-border space-y-2">
+            <div className="p-3.5 rounded-2xl bg-background border border-border space-y-2">
               {MENTORSHIP_GUIDELINES.pupil.map((item, idx) => (
                 <div key={idx} className="flex items-start gap-2 text-xs text-stone-700">
                   <CheckCircle2 size={14} className="text-emerald-600 shrink-0 mt-0.5" />
@@ -81,7 +81,7 @@ export function MentorshipGuidelinesModal({
           </div>
 
           {/* 円満解散について */}
-          <div className="p-3.5 bg-stone-100 rounded-2xl border border-border space-y-1 text-xs text-stone-700">
+          <div className="p-3.5 bg-surface-subtle rounded-2xl border border-border space-y-1 text-xs text-stone-700">
             <div className="font-black text-stone-900 flex items-center gap-1.5">
               <ShieldCheck size={14} className="text-stone-600" />
               <span>🍃 スケジュールが合わなくなったときは？</span>
@@ -93,7 +93,7 @@ export function MentorshipGuidelinesModal({
         </div>
 
         {/* フッター */}
-        <div className="p-4 bg-stone-50 border-t border-stone-100 flex items-center justify-end gap-2 shrink-0">
+        <div className="p-4 bg-background border-t border-stone-100 flex items-center justify-end gap-2 shrink-0">
           <button
             type="button"
             onClick={onClose}

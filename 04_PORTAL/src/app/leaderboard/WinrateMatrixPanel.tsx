@@ -103,7 +103,7 @@ export default function WinrateMatrixPanel() {
 
   if (loading) {
     return (
-      <div className="bg-white/60 backdrop-blur-md rounded-3xl border border-black/10">
+      <div className="bg-surface/60 backdrop-blur-md rounded-3xl border border-black/10">
         <Spinner label="戦績データを集計中..." />
       </div>
     );
@@ -111,7 +111,7 @@ export default function WinrateMatrixPanel() {
 
   if (error) {
     return (
-      <div className="bg-white/60 rounded-3xl border border-black/10">
+      <div className="bg-surface/60 rounded-3xl border border-black/10">
         <ErrorState title="読み込みエラー" message={error} onRetry={() => window.location.reload()} />
       </div>
     );
@@ -181,7 +181,7 @@ export default function WinrateMatrixPanel() {
   };
 
   return (
-    <div className="bg-white/60 backdrop-blur-md rounded-3xl p-6 md:p-8 shadow-xl border border-black/10">
+    <div className="bg-surface/60 backdrop-blur-md rounded-3xl p-6 md:p-8 shadow-xl border border-black/10">
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 pb-4 border-b border-black/10">
         <div className="flex items-center gap-3">
@@ -258,7 +258,7 @@ export default function WinrateMatrixPanel() {
               const overallWr = player.totalGames > 0 ? (player.totalWins / player.totalGames) * 100 : 0;
               return (
                 <tr key={player.name} className="group hover:bg-black/2 transition-colors rounded-2xl">
-                  <td className="px-4 py-3 align-middle rounded-l-2xl border-y border-l border-black/10 bg-white sticky left-0 z-10">
+                  <td className="px-4 py-3 align-middle rounded-l-2xl border-y border-l border-black/10 bg-surface sticky left-0 z-10">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-black/5 flex items-center justify-center text-xs font-bold text-stone-700 border border-black/10">
                         {idx + 1}

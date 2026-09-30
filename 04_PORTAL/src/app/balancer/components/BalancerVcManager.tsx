@@ -99,7 +99,7 @@ export const BalancerVcManager = memo(function BalancerVcManager({ onMessage }: 
       {/* 登録済みプリセット一覧 */}
       <div className="flex items-center gap-1.5 flex-wrap">
         {vcPresets.map((preset, idx) => (
-          <div key={idx} className="inline-flex items-center rounded-xl bg-white/90 border border-amber-200 shadow-2xs overflow-hidden group">
+          <div key={idx} className="inline-flex items-center rounded-xl bg-surface/90 border border-amber-200 shadow-2xs overflow-hidden group">
             <button
               type="button"
               disabled={updatingVc}
@@ -136,7 +136,7 @@ export const BalancerVcManager = memo(function BalancerVcManager({ onMessage }: 
           value={newPresetText}
           onChange={(e) => setNewPresetText(e.target.value)}
           placeholder="例: 🔊 カスタム【お祭りマッチ開催中！】"
-          className="flex-1 bg-white/90 border border-amber-200 text-stone-900 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-amber-500 shadow-inner"
+          className="flex-1 bg-surface/90 border border-amber-200 text-stone-900 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-amber-500 shadow-inner"
         />
         <button
           type="submit"

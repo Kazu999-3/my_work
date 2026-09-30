@@ -62,7 +62,7 @@ function ChampionsShell() {
         initial={{ y: -6, opacity: 0 }} 
         animate={{ y: 0, opacity: 1 }} 
         transition={{ duration: 0.2 }}
-        className="flex flex-col md:flex-row md:items-center justify-between gap-3 px-4 py-3 bg-white border border-border/80 rounded-2xl shadow-xs"
+        className="flex flex-col md:flex-row md:items-center justify-between gap-3 px-4 py-3 bg-surface border border-border/80 rounded-2xl shadow-xs"
       >
         <div className="flex items-center gap-3">
           <div className="text-2xl p-1.5 bg-amber-50 rounded-xl border border-amber-200/60 shrink-0">👑</div>
@@ -80,14 +80,14 @@ function ChampionsShell() {
         </div>
 
         {/* 中央: チャンピオン攻略 ＆ 辞典ヘルス 切替タブ */}
-        <div className="flex items-center gap-1.5 p-1 bg-stone-100 rounded-xl border border-border self-start md:self-auto">
+        <div className="flex items-center gap-1.5 p-1 bg-surface-subtle rounded-xl border border-border self-start md:self-auto">
           <button
             type="button"
             onClick={() => handleScopeChange('champions')}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               scope === 'champions'
-                ? 'bg-white text-stone-900 shadow-xs font-black scale-101'
-                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
+                ? 'bg-surface text-stone-900 shadow-xs font-black scale-101'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-surface-hover/60'
             }`}
           >
             <span>👑 チャンピオン攻略</span>
@@ -97,8 +97,8 @@ function ChampionsShell() {
             onClick={() => handleScopeChange('health')}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               scope === 'health'
-                ? 'bg-white text-amber-700 shadow-xs font-black scale-101'
-                : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
+                ? 'bg-surface text-amber-700 shadow-xs font-black scale-101'
+                : 'text-stone-600 hover:text-stone-900 hover:bg-surface-hover/60'
             }`}
           >
             <span>🩺 辞典ヘルス</span>
@@ -109,7 +109,7 @@ function ChampionsShell() {
         <div className="flex items-center gap-2 self-end md:self-auto flex-wrap">
           <Link
             href="/lane-guides"
-            className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-stone-600 hover:text-stone-900 hover:bg-stone-100 border border-border transition flex items-center gap-1"
+            className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-stone-600 hover:text-stone-900 hover:bg-surface-subtle border border-border transition flex items-center gap-1"
           >
             <span>📖 レーン攻略</span>
           </Link>

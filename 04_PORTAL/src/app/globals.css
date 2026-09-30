@@ -15,6 +15,7 @@
   --color-success: #10b981;
   --color-danger: #ef4444;
   --color-surface: #ffffff;
+  --color-surface-subtle: #f5f5f4; /* stone-100。わずかに沈めたパネル面(2026-09-30 Phase 3) */
   --color-surface-hover: #e7e5e4; /* stone-200 */
   --color-border: #e7e5e4;       /* stone-200 */
   --color-muted: #78716c;        /* stone-500 */
@@ -55,6 +56,7 @@ html.dark {
   --color-background: #1e1f22;
   --color-foreground: #f2f3f5;
   --color-surface: #2b2d31;
+  --color-surface-subtle: #1e1f22;
   --color-surface-hover: #35373c;
   --color-border: #3f4147;
   --color-muted: #949ba4;
@@ -88,30 +90,21 @@ html.dark select {
 
 /* 🌙 ダークモード時の白・淡色背景コンポーネントの自動ダークサーフェス適応 */
 /* bg-white/95 などの透明度バリアントも確実にダークサーフェス（#2b2d31）に変換 */
-html.dark .bg-white,
-html.dark [class*="bg-white/"],
-html.dark [class*="bg-white\\/"] {
-  background-color: #2b2d31 !important;
-  color: #f2f3f5;
-}
+/* ⬇️ 白背景の中和ルールは撤去した（2026-09-30 Phase 2）。
+   bg-white の688箇所を トークン bg-surface へ移行済みで、トークンは
+   ライト #ffffff / ダーク #2b2d31 に切り替わる。
+   旧ルールは color も一緒に指定していたが、html.dark body が color:#f2f3f5 を
+   継承させるため文字色は変わらない。
+   ※ dark:bg-white の2件は意図的な反転指定として残している。 */
 
-html.dark .bg-stone-50,
-html.dark [class*="bg-stone-50/"],
-html.dark [class*="bg-stone-50\\/"],
-html.dark .bg-stone-100,
-html.dark [class*="bg-stone-100/"],
-html.dark [class*="bg-stone-100\\/"] {
-  background-color: #1e1f22 !important;
-  color: #dbdee1;
-}
-
-html.dark .bg-stone-150,
-html.dark .bg-stone-200,
-html.dark [class*="bg-stone-200/"],
-html.dark [class*="bg-stone-200\\/"] {
-  background-color: #35373c !important;
-  color: #f2f3f5;
-}
+/* ⬇️ stone系の淡色背景の中和ルールは撤去した（2026-09-30 Phase 3）。
+   bg-stone-50/100/150/200 の736箇所をトークンへ移行済み:
+     bg-stone-50  → bg-background      (ライト #fafaf9 / ダーク #1e1f22)
+     bg-stone-100 → bg-surface-subtle  (ライト #f5f5f4 / ダーク #1e1f22) ※Phase 3で新設
+     bg-stone-200 → bg-surface-hover   (ライト #e7e5e4 / ダーク #35373c)
+   ライト値は移行前と完全一致、ダーク値も旧中和ルールと同じ値にしてあるため
+   見た目は変わらない。
+   ※ dark:bg-stone-100 の1件は意図的な反転指定として残している。 */
 
 /* 🌙 淡色アクセント背景（bg-amber-50 等）のダークモード対応
    ------------------------------------------------------------------

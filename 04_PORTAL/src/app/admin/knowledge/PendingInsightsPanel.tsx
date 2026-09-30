@@ -330,14 +330,14 @@ export default function PendingInsightsPanel() {
 
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-black text-stone-900">🧩 未承認のナレッジ {items ? `(${items.length}件)` : ''}</h3>
-        <button onClick={load} disabled={loading} className="text-xs font-bold text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200/80 px-3 py-1.5 rounded-xl border border-border transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer">
+        <button onClick={load} disabled={loading} className="text-xs font-bold text-stone-600 hover:text-stone-900 bg-surface-subtle hover:bg-surface-hover/80 px-3 py-1.5 rounded-xl border border-border transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer">
           <RefreshCw size={13} className={loading ? 'animate-spin' : ''} /> 再読み込み
         </button>
       </div>
 
       {/* 一括操作ツールバー */}
       {items && items.length > 0 && (
-        <div className="bg-white border border-border/90 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="bg-surface border border-border/90 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-stone-700 select-none">
               <input
@@ -404,7 +404,7 @@ export default function PendingInsightsPanel() {
           const editedChampion = championEdits[item.id] ?? (item.isLaneGeneral ? '' : (item.champion || ''));
           const busy = busyId === item.id;
           return (
-            <div key={item.id} className={`bg-white border rounded-2xl p-5 shadow-xs space-y-3 transition-colors ${
+            <div key={item.id} className={`bg-surface border rounded-2xl p-5 shadow-xs space-y-3 transition-colors ${
               selectedIds.has(item.id) ? 'border-amber-400 bg-amber-50/20 ring-1 ring-amber-300' : 'border-border'
             }`}>
               <div className="flex items-start justify-between gap-3 flex-wrap">

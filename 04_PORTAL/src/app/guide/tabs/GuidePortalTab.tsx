@@ -42,13 +42,13 @@ export default function GuidePortalTab() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
         {/* 1. マイページ & プレイヤーカルテ */}
-        <div className="bg-white rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group">
+        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-2xl group-hover:scale-105 transition">
                 👤
               </div>
-              <span className="text-[11px] font-bold text-stone-500 bg-stone-100 px-2.5 py-1 rounded-full">
+              <span className="text-[11px] font-bold text-stone-500 bg-surface-subtle px-2.5 py-1 rounded-full">
                 プレイヤー設定・戦績
               </span>
             </div>
@@ -56,7 +56,7 @@ export default function GuidePortalTab() {
             <p className="text-stone-600 text-xs leading-relaxed">
               希望レーンやRiot ID連携、所持コイン・インベントリを管理。ロール別勝率と得意チャンピオン戦績を1画面で直感的に確認できます。
             </p>
-            <div className="bg-stone-50 rounded-2xl p-3.5 border border-border/80 text-xs text-stone-700 space-y-1.5">
+            <div className="bg-background rounded-2xl p-3.5 border border-border/80 text-xs text-stone-700 space-y-1.5">
               <div className="font-bold text-stone-800 flex items-center gap-1.5 text-[11px]">
                 <Sparkles size={13} className="text-amber-600" />
                 主な機能
@@ -78,7 +78,7 @@ export default function GuidePortalTab() {
         </div>
 
         {/* 2. チーム分けバランサー */}
-        <div className="bg-white rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group">
+        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-600 font-bold text-2xl group-hover:scale-105 transition">
@@ -92,7 +92,7 @@ export default function GuidePortalTab() {
             <p className="text-stone-600 text-xs leading-relaxed">
               MMRや希望ロールをもとに実力差を最小化する公平な5v5チーム分けを自動生成。ワンクリックで全員のOP.GG一括コピーやカスタムリンク生成が可能です。
             </p>
-            <div className="bg-stone-50 rounded-2xl p-3.5 border border-border/80 text-xs text-stone-700 space-y-1.5">
+            <div className="bg-background rounded-2xl p-3.5 border border-border/80 text-xs text-stone-700 space-y-1.5">
               <div className="font-bold text-stone-800 flex items-center gap-1.5 text-[11px]">
                 <Swords size={13} className="text-teal-600" />
                 主な機能
@@ -113,7 +113,7 @@ export default function GuidePortalTab() {
         </div>
 
         {/* 3. カジノ・勝敗予想ベット & ショップ */}
-        <div className="bg-white rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group">
+        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-2xl group-hover:scale-105 transition">
@@ -127,7 +127,7 @@ export default function GuidePortalTab() {
             <p className="text-stone-600 text-xs leading-relaxed">
               チーム分けが出たら [BLUE] か [RED] にコインを賭けて観戦！オッズは賭け金比率でリアルタイム変動します。貯めたコインはショップで特権チケットと交換可能！
             </p>
-            <div className="bg-stone-50 rounded-2xl p-3.5 border border-border/80 text-xs text-stone-700 space-y-1.5">
+            <div className="bg-background rounded-2xl p-3.5 border border-border/80 text-xs text-stone-700 space-y-1.5">
               <div className="font-bold text-stone-800 flex items-center gap-1.5 text-[11px]">
                 <ShoppingBag size={13} className="text-amber-600" />
                 コインで交換できる特権
@@ -148,13 +148,13 @@ export default function GuidePortalTab() {
         </div>
 
         {/* 4. 相性分析 & デュオ勝率 */}
-        <div className="bg-white rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group">
+        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-2xl group-hover:scale-105 transition">
                 🤝
               </div>
-              <span className="text-[11px] font-bold text-stone-500 bg-stone-100 px-2.5 py-1 rounded-full">
+              <span className="text-[11px] font-bold text-stone-500 bg-surface-subtle px-2.5 py-1 rounded-full">
                 統計・データ
               </span>
             </div>
@@ -162,7 +162,7 @@ export default function GuidePortalTab() {
             <p className="text-stone-600 text-xs leading-relaxed">
               過去の全カスタム戦績から、誰と組んだときに最も勝率が高いか（シナジー）、逆に敵になった時の勝率（ライバル関係）をグラフィカルに分析します。
             </p>
-            <div className="bg-stone-50 rounded-2xl p-3.5 border border-border/80 text-xs text-stone-700 space-y-1.5">
+            <div className="bg-background rounded-2xl p-3.5 border border-border/80 text-xs text-stone-700 space-y-1.5">
               <div className="font-bold text-stone-800 flex items-center gap-1.5 text-[11px]">
                 <HeartHandshake size={13} className="text-amber-600" />
                 見どころ
@@ -183,7 +183,7 @@ export default function GuidePortalTab() {
         </div>
 
         {/* 5. リーダーボード & コイン長者番付 */}
-        <div className="bg-white rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group col-span-1 md:col-span-2">
+        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group col-span-1 md:col-span-2">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 font-bold text-2xl group-hover:scale-105 transition">
@@ -198,7 +198,7 @@ export default function GuidePortalTab() {
               勝率・MMRランキング、ロール別勝率、コイン長者番付に加え、サーバー内の流行チャンピオン勝率と各プレイヤーの使用実績を一覧できます。
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-1">
-              <div className="bg-stone-50 rounded-2xl p-3 border border-border/80 text-xs text-stone-700 space-y-1">
+              <div className="bg-background rounded-2xl p-3 border border-border/80 text-xs text-stone-700 space-y-1">
                 <div className="font-bold text-stone-900 flex items-center gap-1 text-[11px]">
                   <span>👑</span> 総合順位表
                 </div>
@@ -206,7 +206,7 @@ export default function GuidePortalTab() {
                   勝率・MMR・総試合数・連勝記録で競う公式ランキング。
                 </p>
               </div>
-              <div className="bg-stone-50 rounded-2xl p-3 border border-border/80 text-xs text-stone-700 space-y-1">
+              <div className="bg-background rounded-2xl p-3 border border-border/80 text-xs text-stone-700 space-y-1">
                 <div className="font-bold text-stone-900 flex items-center gap-1 text-[11px]">
                   <span>🪙</span> コイン長者番付
                 </div>
@@ -214,7 +214,7 @@ export default function GuidePortalTab() {
                   予想ベットや日々の活動で貯めたKTMコイン資産TOP一覧。
                 </p>
               </div>
-              <div className="bg-stone-50 rounded-2xl p-3 border border-border/80 text-xs text-stone-700 space-y-1">
+              <div className="bg-background rounded-2xl p-3 border border-border/80 text-xs text-stone-700 space-y-1">
                 <div className="font-bold text-stone-900 flex items-center gap-1 text-[11px]">
                   <span>🛡️</span> ロール別覇者
                 </div>
@@ -222,7 +222,7 @@ export default function GuidePortalTab() {
                   TOP / JG / MID / ADC / SUP 各レーンの勝率トップを抽出。
                 </p>
               </div>
-              <div className="bg-stone-50 rounded-2xl p-3 border border-border/80 text-xs text-stone-700 space-y-1">
+              <div className="bg-background rounded-2xl p-3 border border-border/80 text-xs text-stone-700 space-y-1">
                 <div className="font-bold text-stone-900 flex items-center gap-1 text-[11px]">
                   <span>📊</span> チャンプ別メタ統計
                 </div>
@@ -243,7 +243,7 @@ export default function GuidePortalTab() {
         </div>
 
         {/* 6. 📰 月刊KTMスポーツ速報（AIハイライト実況ニュース） */}
-        <div className="bg-white rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group col-span-1 md:col-span-2">
+        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group col-span-1 md:col-span-2">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-2xl group-hover:scale-105 transition">
@@ -260,7 +260,7 @@ export default function GuidePortalTab() {
               内戦カスタムの試合結果が記録されると、Geminiがスポーツ新聞（東スポ・Number風）のユーモアと熱狂あふれる号外ダイジェストを自動執筆！Discord速報通知およびポータルトップに即座に掲示されます。
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-              <div className="bg-stone-50 rounded-2xl p-3 border border-border/80 text-xs text-stone-700 space-y-1">
+              <div className="bg-background rounded-2xl p-3 border border-border/80 text-xs text-stone-700 space-y-1">
                 <div className="font-bold text-stone-900 flex items-center gap-1 text-[11px]">
                   <span>🏆</span> 本日のMVP寸評
                 </div>
@@ -268,7 +268,7 @@ export default function GuidePortalTab() {
                   キルレや集団戦の貢献度から、その試合で最も輝いたプレイヤーをピックアップして絶賛。
                 </p>
               </div>
-              <div className="bg-stone-50 rounded-2xl p-3 border border-border/80 text-xs text-stone-700 space-y-1">
+              <div className="bg-background rounded-2xl p-3 border border-border/80 text-xs text-stone-700 space-y-1">
                 <div className="font-bold text-stone-900 flex items-center gap-1 text-[11px]">
                   <span>🔥</span> 勝負の分水嶺
                 </div>
@@ -276,7 +276,7 @@ export default function GuidePortalTab() {
                   バロン争奪戦や逆転の集団戦など、勝敗を決定づけた運命のターニングポイントを解説。
                 </p>
               </div>
-              <div className="bg-stone-50 rounded-2xl p-3 border border-border/80 text-xs text-stone-700 space-y-1">
+              <div className="bg-background rounded-2xl p-3 border border-border/80 text-xs text-stone-700 space-y-1">
                 <div className="font-bold text-stone-900 flex items-center gap-1 text-[11px]">
                   <span>💬</span> 試合後コメント ＆ 小ネタ
                 </div>
@@ -300,7 +300,7 @@ export default function GuidePortalTab() {
         </div>
 
         {/* 7. 師弟マッチングハブ */}
-        <div className="bg-white rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group col-span-1 md:col-span-2">
+        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group col-span-1 md:col-span-2">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-2xl group-hover:scale-105 transition">
@@ -317,7 +317,7 @@ export default function GuidePortalTab() {
               教えたい師匠（Mentor）と学びたい弟子（Pupil）を繋ぐ公式掲示板です。Discordの <code>#🤝師弟募集</code> チャンネルの常設ボタンからワンタップで即座にエントリー可能！AI相性分析（70%以上で自動推薦）や「先輩スカウト機能」、ワンポチ指導引き受け（+300🪙）を完備しています。
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-              <div className="bg-stone-50 rounded-2xl p-3 border border-border/80 text-xs text-stone-700 space-y-1">
+              <div className="bg-background rounded-2xl p-3 border border-border/80 text-xs text-stone-700 space-y-1">
                 <div className="font-bold text-stone-900 flex items-center gap-1 text-[11px]">
                   <span>💬</span> Discord完結ワンポチ登録
                 </div>
@@ -325,7 +325,7 @@ export default function GuidePortalTab() {
                   Webログイン不要！Discordの <code>#🤝師弟募集</code> から緑/青ボタンを押すだけでモーダル入力から即登録。
                 </p>
               </div>
-              <div className="bg-stone-50 rounded-2xl p-3 border border-border/80 text-xs text-stone-700 space-y-1">
+              <div className="bg-background rounded-2xl p-3 border border-border/80 text-xs text-stone-700 space-y-1">
                 <div className="font-bold text-stone-900 flex items-center gap-1 text-[11px]">
                   <span>🤖</span> AI仲人 ＆ 先輩スカウト
                 </div>
@@ -333,7 +333,7 @@ export default function GuidePortalTab() {
                   相性70%以上のベストマッチを自動お見合い推薦。師匠が未登録でも頼れる先輩をAIが自動指名スカウト！
                 </p>
               </div>
-              <div className="bg-stone-50 rounded-2xl p-3 border border-border/80 text-xs text-stone-700 space-y-1">
+              <div className="bg-background rounded-2xl p-3 border border-border/80 text-xs text-stone-700 space-y-1">
                 <div className="font-bold text-stone-900 flex items-center gap-1 text-[11px]">
                   <span>🤝</span> ワンポチ指導引き受け (+300🪙)
                 </div>
@@ -388,12 +388,12 @@ export default function GuidePortalTab() {
 
 
         {/* 📊 MMR ＆ KTM内戦レートの説明（2026-09-23 追加） */}
-        <div className="md:col-span-2 bg-white rounded-3xl p-5 md:p-6 border border-border shadow-xs space-y-4">
+        <div className="md:col-span-2 bg-surface rounded-3xl p-5 md:p-6 border border-border shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-2xl">
               📊
             </div>
-            <span className="text-[11px] font-bold text-stone-500 bg-stone-100 px-2.5 py-1 rounded-full">
+            <span className="text-[11px] font-bold text-stone-500 bg-surface-subtle px-2.5 py-1 rounded-full">
               レート ＆ ランク
             </span>
           </div>
@@ -405,7 +405,7 @@ export default function GuidePortalTab() {
             重み付けした平均です。
           </p>
 
-          <div className="bg-stone-50 rounded-2xl p-4 border border-border/80 space-y-2.5">
+          <div className="bg-background rounded-2xl p-4 border border-border/80 space-y-2.5">
             <div className="font-bold text-stone-800 text-xs">🔢 勝敗でどれだけ動くか</div>
             <ul className="text-xs text-stone-700 space-y-1.5 list-disc list-inside leading-relaxed">
               <li><strong>勝利で +18 / 敗北で -20</strong> が基本。ここから下の補正が乗ります。</li>
@@ -417,7 +417,7 @@ export default function GuidePortalTab() {
             </ul>
           </div>
 
-          <div className="bg-stone-50 rounded-2xl p-4 border border-border/80 space-y-2.5">
+          <div className="bg-background rounded-2xl p-4 border border-border/80 space-y-2.5">
             <div className="font-bold text-stone-800 text-xs">🏅 MMRとティアの対応</div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[320px] text-xs">

@@ -88,7 +88,7 @@ export default function ChampionFactCheckPanel({ champion }: { champion: string 
 
       {/* 1件ずつ集中処理のプログレスバー */}
       {!loading && items.length > 0 && (
-        <div className="bg-stone-100 border border-border rounded-xl p-3 space-y-2">
+        <div className="bg-surface-subtle border border-border rounded-xl p-3 space-y-2">
           <div className="flex items-center justify-between text-xs font-extrabold text-stone-800">
             <span className="flex items-center gap-1.5 text-amber-900">
               <Sparkles size={14} className="text-amber-600" />
@@ -96,7 +96,7 @@ export default function ChampionFactCheckPanel({ champion }: { champion: string 
             </span>
             <span className="text-stone-500 font-mono">{progressPercent}% 完了</span>
           </div>
-          <div className="w-full bg-stone-200 rounded-full h-2 overflow-hidden">
+          <div className="w-full bg-surface-hover rounded-full h-2 overflow-hidden">
             <div className="bg-amber-600 h-full transition-all duration-300" style={{ width: `${progressPercent}%` }}></div>
           </div>
         </div>

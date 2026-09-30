@@ -118,14 +118,14 @@ export default function PwaRegister() {
           type="button"
           onClick={() => setMinimized(false)}
           title="ホーム画面にアプリ化"
-          className="hidden md:flex fixed bottom-6 right-6 z-40 w-10 h-10 rounded-full bg-white/90 border border-[#c89b3c]/40 text-[#c89b3c] items-center justify-center shadow-md hover:bg-white transition-colors cursor-pointer"
+          className="hidden md:flex fixed bottom-6 right-6 z-40 w-10 h-10 rounded-full bg-surface/90 border border-[#c89b3c]/40 text-[#c89b3c] items-center justify-center shadow-md hover:bg-surface transition-colors cursor-pointer"
         >
           <Download size={16} />
         </button>
       ) : (
         /* 📲 PWA インストール誘導カード（クリックで展開時のみ） */
         <div
-          className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-50 bg-white border border-[#c89b3c]/30 text-stone-900 p-3 rounded-xl shadow-xl flex items-center gap-3 max-w-xs"
+          className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-50 bg-surface border border-[#c89b3c]/30 text-stone-900 p-3 rounded-xl shadow-xl flex items-center gap-3 max-w-xs"
         >
           <div className="w-8 h-8 rounded-lg bg-[#c89b3c]/15 border border-[#c89b3c]/40 flex items-center justify-center shrink-0">
             <Download className="text-[#c89b3c]" size={16} />
@@ -172,7 +172,7 @@ export default function PwaRegister() {
           onClick={() => { setShowGuide(false); dismissBanner(); }}
         >
           <div
-            className="bg-white border border-[#c89b3c]/50 rounded-3xl p-6 max-w-md w-full shadow-2xl relative"
+            className="bg-surface border border-[#c89b3c]/50 rounded-3xl p-6 max-w-md w-full shadow-2xl relative"
             onClick={(e) => e.stopPropagation()}
           >
             <button

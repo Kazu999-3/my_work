@@ -18,7 +18,7 @@ export default function AdminGuidePage() {
       <motion.header
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs relative overflow-hidden"
+        className="bg-surface border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs relative overflow-hidden"
       >
         <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -27,7 +27,7 @@ export default function AdminGuidePage() {
               <span className="px-3 py-1 rounded-full bg-amber-100 border border-amber-300 text-amber-900 text-xs font-black">
                 管理者専用マニュアル
               </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-stone-100 border border-border text-stone-600 text-[11px] font-bold">
+              <span className="px-2.5 py-0.5 rounded-full bg-surface-subtle border border-border text-stone-600 text-[11px] font-bold">
                 Sovereign OS v2.6
               </span>
             </div>
@@ -54,7 +54,7 @@ export default function AdminGuidePage() {
             </Link>
             <Link
               href="/champions"
-              className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition-all border border-border flex items-center justify-center gap-2"
+              className="px-4 py-2 rounded-xl bg-surface-subtle hover:bg-surface-hover text-stone-700 font-bold text-xs transition-all border border-border flex items-center justify-center gap-2"
             >
               <BookOpen size={14} />
               <span>👑 チャンピオン辞典</span>
@@ -77,7 +77,7 @@ export default function AdminGuidePage() {
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
                 activeTab === tab.id
                   ? 'bg-amber-500 text-stone-950 shadow-xs font-black'
-                  : 'text-stone-600 hover:text-stone-900 hover:bg-stone-100'
+                  : 'text-stone-600 hover:text-stone-900 hover:bg-surface-subtle'
               }`}
             >
               {tab.label}
@@ -88,7 +88,7 @@ export default function AdminGuidePage() {
 
       {/* 🔄 1. 全体循環モデル (The Sovereign Victory Loop) */}
       {(activeTab === 'all' || activeTab === 'pipeline') && (
-        <section className="bg-white border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
+        <section className="bg-surface border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
           <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
             <span className="p-2 bg-amber-50 text-amber-600 rounded-xl font-bold border border-amber-200/60">
               🔄
@@ -153,7 +153,7 @@ export default function AdminGuidePage() {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xl">{node.icon}</span>
-                    <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded-full bg-white/80 border border-black/5">
+                    <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded-full bg-surface/80 border border-black/5">
                       STEP {node.step}
                     </span>
                   </div>
@@ -169,7 +169,7 @@ export default function AdminGuidePage() {
 
       {/* 📥 2. 3大データ収集パイプラインの詳細 */}
       {(activeTab === 'all' || activeTab === 'pipeline') && (
-        <section className="bg-white border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
+        <section className="bg-surface border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
           <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
             <span className="p-2 bg-pink-50 text-pink-600 rounded-xl font-bold border border-pink-200/60">
               📥
@@ -186,7 +186,7 @@ export default function AdminGuidePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {/* ルートA: YouTube動画解析 */}
-            <div className="p-5 rounded-2xl bg-stone-50 border border-border space-y-3">
+            <div className="p-5 rounded-2xl bg-background border border-border space-y-3">
               <div className="flex items-center gap-2 text-rose-600">
                 <Video size={20} />
                 <h3 className="text-sm font-black text-stone-900">ルートA: YouTube動画解析</h3>
@@ -194,7 +194,7 @@ export default function AdminGuidePage() {
               <p className="text-xs text-stone-600 leading-relaxed font-medium">
                 <strong>最も高密度な情報源。</strong> チャレンジャーやプロの実況解説動画から、立ち回り・ウェーブ管理・対面スキル回避タイミングを抽出します。
               </p>
-              <div className="bg-white p-3 rounded-xl border border-border/80 space-y-2 text-[11px] text-stone-600">
+              <div className="bg-surface p-3 rounded-xl border border-border/80 space-y-2 text-[11px] text-stone-600">
                 <div className="font-bold text-stone-900 flex items-center gap-1.5">
                   <span>⚙️</span> 内部パイプライン (`youtube_worker.py`):
                 </div>
@@ -211,7 +211,7 @@ export default function AdminGuidePage() {
             </div>
 
             {/* ルートB: Discord雑談・考察ログ抽出 */}
-            <div className="p-5 rounded-2xl bg-stone-50 border border-border space-y-3">
+            <div className="p-5 rounded-2xl bg-background border border-border space-y-3">
               <div className="flex items-center gap-2 text-amber-600">
                 <MessageSquare size={20} />
                 <h3 className="text-sm font-black text-stone-900">ルートB: Discord雑談・考察ログ抽出</h3>
@@ -219,7 +219,7 @@ export default function AdminGuidePage() {
               <p className="text-xs text-stone-600 leading-relaxed font-medium">
                 <strong>コミュニティの生きた声。</strong> 定期カスタムや雑談チャンネルでの「このビルド試したら強かった」「この対面は無理」といった議論をAIが自動検知。
               </p>
-              <div className="bg-white p-3 rounded-xl border border-border/80 space-y-2 text-[11px] text-stone-600">
+              <div className="bg-surface p-3 rounded-xl border border-border/80 space-y-2 text-[11px] text-stone-600">
                 <div className="font-bold text-stone-900 flex items-center gap-1.5">
                   <span>⚙️</span> 内部パイプライン (`DiscordImportPanel`):
                 </div>
@@ -236,7 +236,7 @@ export default function AdminGuidePage() {
             </div>
 
             {/* ルートC: Web記事・X (Twitter)・手動メモ */}
-            <div className="p-5 rounded-2xl bg-stone-50 border border-border space-y-3">
+            <div className="p-5 rounded-2xl bg-background border border-border space-y-3">
               <div className="flex items-center gap-2 text-teal-600">
                 <Globe size={20} />
                 <h3 className="text-sm font-black text-stone-900">ルートC: Web / X / 手動メモ</h3>
@@ -244,7 +244,7 @@ export default function AdminGuidePage() {
               <p className="text-xs text-stone-600 leading-relaxed font-medium">
                 <strong>速報性と即時メモ。</strong> パッチノート速報、X(Twitter)のチャレンジャーTips、自分の実戦メモをURLまたは自由文で瞬時に投入。
               </p>
-              <div className="bg-white p-3 rounded-xl border border-border/80 space-y-2 text-[11px] text-stone-600">
+              <div className="bg-surface p-3 rounded-xl border border-border/80 space-y-2 text-[11px] text-stone-600">
                 <div className="font-bold text-stone-900 flex items-center gap-1.5">
                   <span>⚙️</span> 内部パイプライン (`add/route.ts`):
                 </div>
@@ -265,7 +265,7 @@ export default function AdminGuidePage() {
 
       {/* 👑 3. チャンピオン辞典 ＆ 攻略ライブラリ */}
       {(activeTab === 'all' || activeTab === 'dict') && (
-        <section className="bg-white border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
+        <section className="bg-surface border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
           <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
             <span className="p-2 bg-amber-50 text-amber-600 rounded-xl font-bold border border-amber-200/60">
               👑
@@ -322,7 +322,7 @@ export default function AdminGuidePage() {
                 現在は以下の高速化ツールが配備されています：
               </p>
 
-              <div className="bg-stone-50 border border-border rounded-2xl p-4 space-y-3">
+              <div className="bg-background border border-border rounded-2xl p-4 space-y-3">
                 <div className="flex items-center justify-between text-xs font-bold text-stone-800 border-b border-border pb-2">
                   <span>機能</span>
                   <span>効果</span>
@@ -351,7 +351,7 @@ export default function AdminGuidePage() {
 
       {/* 🎮 4. AIコーチ ＆ リアルタイムHUDオーバーレイ連携 */}
       {(activeTab === 'all' || activeTab === 'coach') && (
-        <section className="bg-white border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
+        <section className="bg-surface border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
           <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
             <span className="p-2 bg-amber-50 text-amber-600 rounded-xl font-bold border border-amber-200/60">
               🎮
@@ -367,7 +367,7 @@ export default function AdminGuidePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div className="p-5 rounded-2xl bg-stone-50 border border-border space-y-3">
+            <div className="p-5 rounded-2xl bg-background border border-border space-y-3">
               <div className="flex items-center gap-2 text-amber-600 font-black text-xs">
                 <Gamepad2 size={18} />
                 <span>① Live Client Data API 連携</span>
@@ -378,7 +378,7 @@ export default function AdminGuidePage() {
               </p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-stone-50 border border-border space-y-3">
+            <div className="p-5 rounded-2xl bg-background border border-border space-y-3">
               <div className="flex items-center gap-2 text-rose-600 font-black text-xs">
                 <Swords size={18} />
                 <span>② キルライン ＆ パワースパイク警告</span>
@@ -389,7 +389,7 @@ export default function AdminGuidePage() {
               </p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-stone-50 border border-border space-y-3">
+            <div className="p-5 rounded-2xl bg-background border border-border space-y-3">
               <div className="flex items-center gap-2 text-amber-600 font-black text-xs">
                 <RefreshCw size={18} />
                 <span>③ 試合後レビュー ＆ ナレッジ還元</span>
@@ -405,7 +405,7 @@ export default function AdminGuidePage() {
 
       {/* ⚡ 5. 日常運用 ＆ エラーリカバリ */}
       {(activeTab === 'all' || activeTab === 'ops') && (
-        <section className="bg-white border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
+        <section className="bg-surface border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
           <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
             <span className="p-2 bg-emerald-50 text-emerald-600 rounded-xl font-bold border border-emerald-200/60">
               ⚡
@@ -421,7 +421,7 @@ export default function AdminGuidePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="p-5 rounded-2xl bg-stone-50 border border-border space-y-3">
+            <div className="p-5 rounded-2xl bg-background border border-border space-y-3">
               <h3 className="text-xs font-black text-stone-900 flex items-center gap-2">
                 <span>📋</span> 日常の3ステップ・ルーティン
               </h3>
@@ -444,24 +444,24 @@ export default function AdminGuidePage() {
               </ol>
             </div>
 
-            <div className="p-5 rounded-2xl bg-stone-50 border border-border space-y-3">
+            <div className="p-5 rounded-2xl bg-background border border-border space-y-3">
               <h3 className="text-xs font-black text-stone-900 flex items-center gap-2">
                 <span>🛠️</span> よくあるエラーと対処法
               </h3>
               <div className="space-y-2 text-xs text-stone-600 font-medium">
-                <div className="p-2.5 rounded-xl bg-white border border-border/80">
+                <div className="p-2.5 rounded-xl bg-surface border border-border/80">
                   <div className="font-bold text-stone-900 text-[11px] mb-0.5">⚠️ エッジワーカー未起動</div>
                   <p className="text-[10px] text-stone-500">
                     YouTube動画のWhisper解析などPCリソースが必要な処理のみワーカーが必要です。ダッシュボード上部の「ワーカー起動」またはコマンド実行で起動します。
                   </p>
                 </div>
-                <div className="p-2.5 rounded-xl bg-white border border-border/80">
+                <div className="p-2.5 rounded-xl bg-surface border border-border/80">
                   <div className="font-bold text-stone-900 text-[11px] mb-0.5">⚠️ Gemini API 429 (混雑エラー)</div>
                   <p className="text-[10px] text-stone-500">
                     Google APIの一時的な流量制限です。ワーカーが自動で待機・指数バックオフ再試行を行うため、通常は放置で自動解決します。
                   </p>
                 </div>
-                <div className="p-2.5 rounded-xl bg-white border border-border/80">
+                <div className="p-2.5 rounded-xl bg-surface border border-border/80">
                   <div className="font-bold text-stone-900 text-[11px] mb-0.5">⚠️ 動画キューがエラーで止まる</div>
                   <p className="text-[10px] text-stone-500">
                     「動画解析キュー」タブの「エラー動画を一括再試行」ボタンを押すことで、pending状態に戻して再実行できます。

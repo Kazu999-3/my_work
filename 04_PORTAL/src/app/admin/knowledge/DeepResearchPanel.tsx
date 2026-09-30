@@ -57,7 +57,7 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
   };
 
   return (
-    <div className="bg-white border border-border rounded-3xl p-6 sm:p-8 text-stone-900 shadow-2xl space-y-6">
+    <div className="bg-surface border border-border rounded-3xl p-6 sm:p-8 text-stone-900 shadow-2xl space-y-6">
       <div className="flex items-center gap-3 border-b border-black/5 pb-5">
         <div className="p-3 rounded-2xl bg-gradient-to-br from-amber-100 to-pink-100 text-amber-700 border border-amber-200">
           <Target size={26} />
@@ -87,7 +87,7 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
               placeholder="例: アーリ, リー・シン, Ahri, LeeSin, Viego"
               value={champion}
               onChange={(e) => setChampion(e.target.value)}
-              className="w-full px-4 py-3 bg-stone-50 border border-border rounded-2xl text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all font-mono"
+              className="w-full px-4 py-3 bg-background border border-border rounded-2xl text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all font-mono"
               required
             />
           </div>
@@ -100,7 +100,7 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
             <select
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="w-full px-4 py-3 bg-stone-50 border border-border rounded-2xl text-sm text-stone-900 focus:outline-none focus:border-amber-500 font-medium"
+              className="w-full px-4 py-3 bg-background border border-border rounded-2xl text-sm text-stone-900 focus:outline-none focus:border-amber-500 font-medium"
             >
               <option value="TOP">TOP (トップ)</option>
               <option value="JG">JUNGLE (ジャングル)</option>
@@ -117,7 +117,7 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
             id="fetchVideosPanel"
             checked={fetchVideos}
             onChange={(e) => setFetchVideos(e.target.checked)}
-            className="w-4 h-4 rounded bg-white border-border text-amber-500 focus:ring-amber-500 accent-amber-500 cursor-pointer"
+            className="w-4 h-4 rounded bg-surface border-border text-amber-500 focus:ring-amber-500 accent-amber-500 cursor-pointer"
           />
           <label htmlFor="fetchVideosPanel" className="text-xs text-stone-700 font-medium cursor-pointer flex items-center gap-1.5">
             <Video size={14} className="text-pink-600" />
@@ -162,8 +162,8 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
 
         {/* 生成された攻略バイブルをその場で表示（本当に中身があるか確認できるように） */}
         {resultMsg?.type === 'success' && resultMsg.details?.article && (
-          <div className="bg-stone-50 border border-border rounded-2xl overflow-hidden">
-            <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-black/5 bg-white/60">
+          <div className="bg-background border border-border rounded-2xl overflow-hidden">
+            <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-black/5 bg-surface/60">
               <span className="text-xs font-black text-stone-700 flex items-center gap-1.5">
                 <Sparkles size={14} className="text-amber-600" /> 生成された攻略バイブル（プレビュー）
               </span>

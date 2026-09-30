@@ -12,7 +12,7 @@ interface ScoutingReportProps {
 export default function ScoutingReport({ stats, mmr }: ScoutingReportProps) {
   if (!stats || Object.keys(stats).length === 0 || !Object.values(stats).some(s => s !== null)) {
     return (
-      <div className="w-full h-full bg-white rounded-lg p-6 flex flex-col items-center justify-center border border-black/10 text-gray-500 text-sm">
+      <div className="w-full h-full bg-surface rounded-lg p-6 flex flex-col items-center justify-center border border-black/10 text-gray-500 text-sm">
         試合データが不足しているため、スカウティングレポートを生成できません。
       </div>
     );
@@ -70,7 +70,7 @@ export default function ScoutingReport({ stats, mmr }: ScoutingReportProps) {
 
   // 2. レポートの構築
   return (
-    <div className="w-full bg-white rounded-lg p-5 border border-black/10 relative overflow-hidden">
+    <div className="w-full bg-surface rounded-lg p-5 border border-black/10 relative overflow-hidden">
       <div className="flex items-center gap-2 mb-4 text-emerald-700 font-bold tracking-widest text-sm border-b border-black/10 pb-2">
         <Activity className="w-4 h-4" />
         SCOUTING REPORT

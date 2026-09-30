@@ -94,7 +94,7 @@ export default function CoachReviewPanel() {
       </p>
 
       {/* 傾向分析（Geminiを使うのでボタン実行） */}
-      <div className="rounded-xl border border-border dark:border-stone-700/60 bg-white dark:bg-stone-900/60 p-3.5 space-y-2">
+      <div className="rounded-xl border border-border dark:border-stone-700/60 bg-surface dark:bg-stone-900/60 p-3.5 space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="min-w-0">
             <div className="text-xs font-black text-stone-900 dark:text-stone-100">📈 蓄積した振り返りの傾向分析</div>
@@ -112,7 +112,7 @@ export default function CoachReviewPanel() {
         </div>
         {trendError && <p className="text-xs text-rose-600 dark:text-rose-400">❌ {trendError}</p>}
         {trendSummary && (
-          <div className="rounded-lg bg-stone-100 dark:bg-stone-800/60 px-3 py-2 text-xs text-stone-800 dark:text-stone-200 whitespace-pre-wrap leading-relaxed">
+          <div className="rounded-lg bg-surface-subtle dark:bg-stone-800/60 px-3 py-2 text-xs text-stone-800 dark:text-stone-200 whitespace-pre-wrap leading-relaxed">
             {trendSummary}
           </div>
         )}
@@ -135,12 +135,12 @@ export default function CoachReviewPanel() {
             return (
               <div
                 key={a.matchId}
-                className="rounded-xl border border-border dark:border-stone-700/60 bg-white dark:bg-stone-900/60 overflow-hidden"
+                className="rounded-xl border border-border dark:border-stone-700/60 bg-surface dark:bg-stone-900/60 overflow-hidden"
               >
                 <button
                   type="button"
                   onClick={() => setExpanded(open ? null : a.matchId)}
-                  className="w-full flex flex-wrap items-center gap-2 px-3.5 py-2.5 text-left hover:bg-stone-50 dark:hover:bg-stone-800/40 transition-colors cursor-pointer"
+                  className="w-full flex flex-wrap items-center gap-2 px-3.5 py-2.5 text-left hover:bg-background dark:hover:bg-stone-800/40 transition-colors cursor-pointer"
                 >
                   <span
                     className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border shrink-0 ${
@@ -186,7 +186,7 @@ export default function CoachReviewPanel() {
                       </div>
                     )}
                     {a.advice && (
-                      <div className="rounded-lg bg-stone-100 dark:bg-stone-800/60 px-3 py-2 text-xs text-stone-800 dark:text-stone-200 whitespace-pre-wrap leading-relaxed">
+                      <div className="rounded-lg bg-surface-subtle dark:bg-stone-800/60 px-3 py-2 text-xs text-stone-800 dark:text-stone-200 whitespace-pre-wrap leading-relaxed">
                         {a.advice}
                       </div>
                     )}

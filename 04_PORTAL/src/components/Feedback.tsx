@@ -20,7 +20,7 @@ export function SkeletonList({ rows = 6, className = "" }: { rows?: number; clas
   return (
     <div className={`space-y-3 ${className}`}>
       {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="flex items-center gap-3 rounded-2xl border border-black/5 bg-white p-4">
+        <div key={i} className="flex items-center gap-3 rounded-2xl border border-black/5 bg-surface p-4">
           <Skeleton className="h-10 w-10 rounded-full shrink-0" />
           <div className="flex-1 space-y-2">
             <Skeleton className="h-3.5 w-1/3" />

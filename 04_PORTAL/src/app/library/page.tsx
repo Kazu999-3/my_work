@@ -35,7 +35,7 @@ export default function LibraryPage() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-[500px] flex items-center justify-center p-4">
-        <div className="text-center max-w-md rounded-2xl border border-border bg-white p-8 shadow-xs">
+        <div className="text-center max-w-md rounded-2xl border border-border bg-surface p-8 shadow-xs">
           <div className="text-4xl mb-3">🔑</div>
           <h2 className="text-base font-black mb-2 text-stone-900">管理者認証が必要です</h2>
           <p className="text-xs text-stone-600 mb-6 leading-relaxed">
@@ -45,7 +45,7 @@ export default function LibraryPage() {
           <div className="flex items-center justify-center gap-3">
             <Link
               href="/champions"
-              className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition"
+              className="px-4 py-2 rounded-xl bg-surface-subtle hover:bg-surface-hover text-stone-700 font-bold text-xs transition"
             >
               👑 チャンピオン辞典へ戻る
             </Link>
@@ -67,7 +67,7 @@ export default function LibraryPage() {
       <motion.header
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3.5 bg-white border border-border/90 rounded-2xl shadow-xs"
+        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3.5 bg-surface border border-border/90 rounded-2xl shadow-xs"
       >
         <div className="flex items-center gap-3">
           <div className="text-2xl p-2 bg-amber-50 rounded-xl border border-amber-200/80 shrink-0 text-amber-600">

@@ -82,7 +82,7 @@ export default function ArticleRevisionHistory({ articleId }: Props) {
       </p>
       <div className="space-y-1.5">
         {revisions.map((r) => (
-          <div key={r.id} className="border border-border rounded-lg overflow-hidden bg-white">
+          <div key={r.id} className="border border-border rounded-lg overflow-hidden bg-surface">
             <button onClick={(e) => { e.stopPropagation(); openDetail(r.id); }}
               className="w-full text-left px-2.5 py-2 hover:bg-black/5 transition-colors flex items-center gap-2 flex-wrap text-[11px]">
               <span className="font-black px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-200">
@@ -102,7 +102,7 @@ export default function ArticleRevisionHistory({ articleId }: Props) {
             </button>
 
             {openId === r.id && (
-              <div className="border-t border-border bg-stone-50 p-2.5">
+              <div className="border-t border-border bg-background p-2.5">
                 {detailLoading ? (
                   <p className="text-[11px] text-stone-500">差分を読み込み中...</p>
                 ) : detail ? (

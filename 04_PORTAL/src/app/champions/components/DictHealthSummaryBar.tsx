@@ -124,7 +124,7 @@ export default function DictHealthSummaryBar({
 
   if (loading && !data) {
     return (
-      <div className="w-full bg-white/60 border border-border/80 rounded-2xl p-3 flex items-center justify-between text-xs text-stone-400 animate-pulse">
+      <div className="w-full bg-surface/60 border border-border/80 rounded-2xl p-3 flex items-center justify-between text-xs text-stone-400 animate-pulse">
         <div className="flex items-center gap-2">
           <RefreshCw size={14} className="animate-spin text-amber-600" />
           <span>辞典の健全性を照合中...</span>
@@ -143,7 +143,7 @@ export default function DictHealthSummaryBar({
   const upToDatePercent = Math.round(((verified + aiGen) / total) * 100);
 
   return (
-    <div className="w-full bg-white border border-border/90 rounded-2xl p-3 sm:p-4 shadow-xs space-y-3 transition-all">
+    <div className="w-full bg-surface border border-border/90 rounded-2xl p-3 sm:p-4 shadow-xs space-y-3 transition-all">
       {/* 通知トースト */}
       <AnimatePresence>
         {message && (
@@ -169,7 +169,7 @@ export default function DictHealthSummaryBar({
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-black text-stone-900">辞典ヘルス ＆ パッチ整合度</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-stone-100 text-stone-700 border border-border">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-subtle text-stone-700 border border-border">
                 基準パッチ: {data.currentPatch || '最新'}
               </span>
               <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-800">
@@ -217,7 +217,7 @@ export default function DictHealthSummaryBar({
             <button
               type="button"
               onClick={onOpenFullHealth}
-              className="px-2.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200/80 text-stone-700 text-xs font-bold transition border border-border flex items-center gap-1 cursor-pointer"
+              className="px-2.5 py-1.5 rounded-xl bg-surface-subtle hover:bg-surface-hover/80 text-stone-700 text-xs font-bold transition border border-border flex items-center gap-1 cursor-pointer"
               title="監査ログ・ファクトチェック・変更履歴を開く"
             >
               <span>詳細点検</span>
@@ -240,7 +240,7 @@ export default function DictHealthSummaryBar({
             className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer border ${
               activeStatusFilter === 'ALL'
                 ? 'bg-stone-900 border-stone-900 text-white shadow-xs'
-                : 'bg-stone-50 border-border text-stone-600 hover:bg-stone-100'
+                : 'bg-background border-border text-stone-600 hover:bg-surface-subtle'
             }`}
           >
             すべて ({total})
@@ -285,7 +285,7 @@ export default function DictHealthSummaryBar({
 
         {/* ミニ進行度プログレスバー */}
         <div className="flex items-center gap-2">
-          <div className="w-24 sm:w-32 h-2 rounded-full bg-stone-100 border border-border overflow-hidden flex">
+          <div className="w-24 sm:w-32 h-2 rounded-full bg-surface-subtle border border-border overflow-hidden flex">
             <div style={{ width: `${verifiedPercent}%` }} className="bg-emerald-500 h-full" title={`実戦確定: ${verified}体`} />
             <div style={{ width: `${Math.max(0, upToDatePercent - verifiedPercent)}%` }} className="bg-amber-400 h-full" title={`AI生成: ${aiGen}体`} />
             <div style={{ width: `${Math.max(0, 100 - upToDatePercent)}%` }} className="bg-rose-500 h-full" title={`パッチ遅れ: ${stale}体`} />

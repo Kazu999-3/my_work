@@ -78,7 +78,7 @@ export default function RosterPanel() {
   return (
     <div className="space-y-6">
       {/* 検索 ＆ フィルターバー */}
-      <div className="bg-white/90 backdrop-blur-md rounded-2xl p-4 md:p-5 border border-border/90 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bg-surface/90 backdrop-blur-md rounded-2xl p-4 md:p-5 border border-border/90 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
         {/* 検索窓 */}
         <div className="relative w-full md:w-80">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 w-4 h-4" />
@@ -87,7 +87,7 @@ export default function RosterPanel() {
             placeholder="プレイヤー名・Riot ID・ランクで検索..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-stone-50 border border-border rounded-xl pl-10 pr-4 py-2 text-xs font-bold text-stone-900 focus:outline-none focus:border-amber-500 transition-colors"
+            className="w-full bg-background border border-border rounded-xl pl-10 pr-4 py-2 text-xs font-bold text-stone-900 focus:outline-none focus:border-amber-500 transition-colors"
           />
         </div>
 
@@ -101,19 +101,19 @@ export default function RosterPanel() {
               className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer shrink-0 ${
                 roleFilter === role
                   ? "bg-amber-600 text-white shadow-xs"
-                  : "bg-stone-100 hover:bg-stone-200 text-stone-600"
+                  : "bg-surface-subtle hover:bg-surface-hover text-stone-600"
               }`}
             >
               {role === "ALL" ? "全ロール" : role}
             </button>
           ))}
 
-          <div className="h-4 w-px bg-stone-200 mx-1 shrink-0" />
+          <div className="h-4 w-px bg-surface-hover mx-1 shrink-0" />
 
           <select
             value={statusFilter}
             onChange={(e: any) => setStatusFilter(e.target.value)}
-            className="bg-stone-100 border border-border text-stone-700 text-xs font-bold rounded-xl px-3 py-1.5 focus:outline-none shrink-0"
+            className="bg-surface-subtle border border-border text-stone-700 text-xs font-bold rounded-xl px-3 py-1.5 focus:outline-none shrink-0"
           >
             <option value="ALL">全ステータス</option>
             <option value="ACTIVE">アクティブのみ</option>
@@ -135,8 +135,8 @@ export default function RosterPanel() {
             <Link
               key={player.id || player.name}
               href={`/player/${encodeURIComponent(player.name || player.discord_id)}`}
-              className={`bg-white rounded-2xl p-5 border border-border/90 hover:border-amber-400 transition-all shadow-xs hover:shadow-md flex flex-col justify-between group ${
-                !isActive ? "opacity-60 bg-stone-50" : ""
+              className={`bg-surface rounded-2xl p-5 border border-border/90 hover:border-amber-400 transition-all shadow-xs hover:shadow-md flex flex-col justify-between group ${
+                !isActive ? "opacity-60 bg-background" : ""
               }`}
             >
               <div className="space-y-3">
@@ -163,11 +163,11 @@ export default function RosterPanel() {
                 {/* レーン希望バッジ */}
                 <div className="flex items-center gap-1.5 text-[11px] font-bold">
                   <span className="text-stone-500">希望:</span>
-                  <span className="px-2 py-0.5 rounded-md bg-stone-100 text-stone-800 font-mono">
+                  <span className="px-2 py-0.5 rounded-md bg-surface-subtle text-stone-800 font-mono">
                     {primaryRole}
                   </span>
                   {secondaryRole !== "FILL" && (
-                    <span className="px-2 py-0.5 rounded-md bg-stone-50 text-stone-600 font-mono">
+                    <span className="px-2 py-0.5 rounded-md bg-background text-stone-600 font-mono">
                       / {secondaryRole}
                     </span>
                   )}
@@ -184,7 +184,7 @@ export default function RosterPanel() {
       </div>
 
       {filteredPlayers.length === 0 && (
-        <div className="text-center py-12 bg-white rounded-2xl border border-border text-stone-500 text-xs font-bold">
+        <div className="text-center py-12 bg-surface rounded-2xl border border-border text-stone-500 text-xs font-bold">
           該当するプレイヤーが見つかりませんでした。
         </div>
       )}

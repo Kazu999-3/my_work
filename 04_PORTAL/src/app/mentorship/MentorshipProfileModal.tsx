@@ -314,10 +314,10 @@ export function MentorshipProfileModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-4 bg-stone-900/50 backdrop-blur-xs">
-      <div className="bg-white border border-border rounded-3xl w-full max-w-2xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden text-stone-900 animate-in fade-in zoom-in-95 duration-200">
+      <div className="bg-surface border border-border rounded-3xl w-full max-w-2xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden text-stone-900 animate-in fade-in zoom-in-95 duration-200">
         
         {/* モーダルヘッダー */}
-        <div className="p-4 md:px-6 md:py-4 bg-stone-50 border-b border-border flex items-center justify-between">
+        <div className="p-4 md:px-6 md:py-4 bg-background border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-xl shadow-2xs">
               🪪
@@ -334,18 +334,18 @@ export function MentorshipProfileModal({
 
           <div className="flex items-center gap-2">
             {/* 編集 / プレビュー切り替え */}
-            <div className="flex bg-stone-150 p-0.5 rounded-xl text-xs font-black border border-border">
+            <div className="flex bg-surface-subtle p-0.5 rounded-xl text-xs font-black border border-border">
               <button
                 type="button"
                 onClick={() => setActiveTab('edit')}
-                className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${activeTab === 'edit' ? 'bg-white text-stone-900 shadow-2xs' : 'text-stone-600 hover:text-stone-900'}`}
+                className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${activeTab === 'edit' ? 'bg-surface text-stone-900 shadow-2xs' : 'text-stone-600 hover:text-stone-900'}`}
               >
                 ✏️ 入力
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('preview')}
-                className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${activeTab === 'preview' ? 'bg-white text-stone-900 shadow-2xs' : 'text-stone-600 hover:text-stone-900'}`}
+                className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${activeTab === 'preview' ? 'bg-surface text-stone-900 shadow-2xs' : 'text-stone-600 hover:text-stone-900'}`}
               >
                 👀 プレビュー
               </button>
@@ -353,7 +353,7 @@ export function MentorshipProfileModal({
 
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-500 hover:text-stone-900 flex items-center justify-center font-bold text-sm transition cursor-pointer"
+              className="w-8 h-8 rounded-xl bg-surface-subtle hover:bg-surface-hover text-stone-500 hover:text-stone-900 flex items-center justify-center font-bold text-sm transition cursor-pointer"
             >
               ✕
             </button>
@@ -378,7 +378,7 @@ export function MentorshipProfileModal({
                   </p>
                 </div>
               </div>
-              <span className="text-[10px] font-bold text-amber-900 bg-white/80 px-2 py-1 rounded-xl border border-amber-300 shrink-0 hidden sm:inline">
+              <span className="text-[10px] font-bold text-amber-900 bg-surface/80 px-2 py-1 rounded-xl border border-amber-300 shrink-0 hidden sm:inline">
                 即時付与🪙
               </span>
             </div>
@@ -391,7 +391,7 @@ export function MentorshipProfileModal({
                 <span>✨ 掲示板に表示されるカードの見た目プレビュー:</span>
               </div>
 
-              <div className={`p-5 rounded-3xl border bg-white shadow-md ${isMentor ? 'border-amber-400' : 'border-emerald-400'} space-y-4`}>
+              <div className={`p-5 rounded-3xl border bg-surface shadow-md ${isMentor ? 'border-amber-400' : 'border-emerald-400'} space-y-4`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <div className={`px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase flex items-center gap-1.5 ${isMentor ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-emerald-100 text-emerald-900 border border-emerald-300'}`}>
@@ -399,7 +399,7 @@ export function MentorshipProfileModal({
                       <span>{isMentor ? '師匠 (Mentor)' : '弟子 (Pupil)'}</span>
                     </div>
                     {preferredDuration && MENTORSHIP_DURATIONS[preferredDuration] && (
-                      <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black border shadow-2xs ${MENTORSHIP_DURATIONS[preferredDuration].badgeColor || 'bg-stone-100 text-stone-800 border-border'}`}>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black border shadow-2xs ${MENTORSHIP_DURATIONS[preferredDuration].badgeColor || 'bg-surface-subtle text-stone-800 border-border'}`}>
                         {MENTORSHIP_DURATIONS[preferredDuration].shortLabel}
                       </span>
                     )}
@@ -434,7 +434,7 @@ export function MentorshipProfileModal({
                   <div className="flex flex-wrap gap-1.5">
                     {lanes.length > 0 ? (
                       lanes.map((l) => (
-                        <span key={l} className="px-2.5 py-0.5 rounded-lg bg-stone-100 text-stone-800 text-xs font-black border border-border">
+                        <span key={l} className="px-2.5 py-0.5 rounded-lg bg-surface-subtle text-stone-800 text-xs font-black border border-border">
                           {AVAILABLE_LANES.find((item) => item.id === l)?.label || l}
                         </span>
                       ))
@@ -452,7 +452,7 @@ export function MentorshipProfileModal({
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {selectedChampions.map((c) => (
-                        <div key={c} className="flex items-center gap-1 px-2 py-0.5 bg-stone-50 rounded-lg border border-border text-xs font-bold text-stone-800">
+                        <div key={c} className="flex items-center gap-1 px-2 py-0.5 bg-background rounded-lg border border-border text-xs font-bold text-stone-800">
                           <img
                             src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/${c}.png`}
                             alt={c}
@@ -468,7 +468,7 @@ export function MentorshipProfileModal({
                 {/* 自己紹介文 */}
                 <div className="space-y-1">
                   <div className="text-[11px] font-bold text-stone-500">自己紹介・意気込み</div>
-                  <p className="text-xs text-stone-800 leading-relaxed whitespace-pre-wrap bg-stone-50 p-3 rounded-2xl border border-border font-medium">
+                  <p className="text-xs text-stone-800 leading-relaxed whitespace-pre-wrap bg-background p-3 rounded-2xl border border-border font-medium">
                     {bio || '（自己紹介文が未記入です）'}
                   </p>
                 </div>
@@ -505,7 +505,7 @@ export function MentorshipProfileModal({
                     className={`p-3.5 rounded-2xl border text-left transition relative overflow-hidden cursor-pointer ${
                       roleType === 'PUPIL'
                         ? 'bg-emerald-50 border-emerald-500 text-emerald-950 ring-2 ring-emerald-500/30 shadow-md'
-                        : 'bg-stone-50 border-border text-stone-600 hover:bg-stone-100'
+                        : 'bg-background border-border text-stone-600 hover:bg-surface-subtle'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -525,7 +525,7 @@ export function MentorshipProfileModal({
                     className={`p-3.5 rounded-2xl border text-left transition relative overflow-hidden cursor-pointer ${
                       roleType === 'MENTOR'
                         ? 'bg-amber-50 border-amber-500 text-amber-950 ring-2 ring-amber-500/30 shadow-md'
-                        : 'bg-stone-50 border-border text-stone-600 hover:bg-stone-100'
+                        : 'bg-background border-border text-stone-600 hover:bg-surface-subtle'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -558,7 +558,7 @@ export function MentorshipProfileModal({
                         className={`px-3.5 py-2 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
                           isSelected
                             ? 'bg-amber-600 text-white border-amber-600 shadow-sm scale-105 ring-2 ring-amber-400'
-                            : 'bg-stone-50 border-border text-stone-700 hover:bg-stone-100'
+                            : 'bg-background border-border text-stone-700 hover:bg-surface-subtle'
                         }`}
                       >
                         {lane.label}
@@ -578,7 +578,7 @@ export function MentorshipProfileModal({
                   <select
                     value={currentRank}
                     onChange={(e) => setCurrentRank(e.target.value)}
-                    className="w-full bg-stone-50 border border-border rounded-xl px-3 py-2.5 text-stone-900 text-xs font-bold focus:border-amber-500 focus:bg-white focus:outline-hidden"
+                    className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-stone-900 text-xs font-bold focus:border-amber-500 focus:bg-surface focus:outline-hidden"
                   >
                     {RANKS.map((r) => (
                       <option key={r} value={r}>
@@ -597,7 +597,7 @@ export function MentorshipProfileModal({
                     <select
                       value={targetRank}
                       onChange={(e) => setTargetRank(e.target.value)}
-                      className="w-full bg-stone-50 border border-border rounded-xl px-3 py-2.5 text-stone-900 text-xs font-bold focus:border-emerald-600 focus:bg-white focus:outline-hidden"
+                      className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-stone-900 text-xs font-bold focus:border-emerald-600 focus:bg-surface focus:outline-hidden"
                     >
                       {RANKS.map((r) => (
                         <option key={r} value={r}>
@@ -615,7 +615,7 @@ export function MentorshipProfileModal({
                     <select
                       value={targetRank || '全ランク・初心者歓迎'}
                       onChange={(e) => setTargetRank(e.target.value)}
-                      className="w-full bg-stone-50 border border-border rounded-xl px-3 py-2.5 text-stone-900 text-xs font-bold focus:border-amber-500 focus:bg-white focus:outline-hidden"
+                      className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-stone-900 text-xs font-bold focus:border-amber-500 focus:bg-surface focus:outline-hidden"
                     >
                       {TARGET_STUDENT_RANKS.map((r) => (
                         <option key={r} value={r}>
@@ -635,7 +635,7 @@ export function MentorshipProfileModal({
                       <span>👥</span>
                       <span>同時に受け入れ可能な弟子の人数</span>
                     </label>
-                    <span className="text-[11px] font-black text-amber-700 bg-white px-2 py-0.5 rounded-md border border-amber-300">
+                    <span className="text-[11px] font-black text-amber-700 bg-surface px-2 py-0.5 rounded-md border border-amber-300">
                       現在設定: 最大 {maxPupils} 人まで
                     </span>
                   </div>
@@ -648,7 +648,7 @@ export function MentorshipProfileModal({
                         className={`flex-1 py-2 rounded-xl text-xs font-black border transition cursor-pointer ${
                           maxPupils === num
                             ? 'bg-amber-600 text-white border-amber-600 shadow-xs scale-[1.02]'
-                            : 'bg-white text-stone-700 border-amber-200 hover:bg-amber-100/50'
+                            : 'bg-surface text-stone-700 border-amber-200 hover:bg-amber-100/50'
                         }`}
                       >
                         {num === 1 ? '👤 1人（専任）' : num === 2 ? '👥 2人（兄弟弟子）' : '✨ 3人（ゼミ型・推奨）'}
@@ -662,7 +662,7 @@ export function MentorshipProfileModal({
               )}
 
               {/* 4. 希望する受講・指導スタイル / 期間コース */}
-              <div className="space-y-2 p-3.5 bg-stone-50 border border-border rounded-2xl">
+              <div className="space-y-2 p-3.5 bg-background border border-border rounded-2xl">
                 <label className="block text-xs font-black text-stone-800 flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
                     <span className="w-4.5 h-4.5 rounded-full bg-amber-500 text-white text-[11px] flex items-center justify-center font-black">4</span>
@@ -689,7 +689,7 @@ export function MentorshipProfileModal({
                             className={`p-2.5 rounded-xl text-left border text-xs font-bold transition flex flex-col justify-between gap-1 cursor-pointer ${
                               isSelected
                                 ? 'bg-gradient-to-br from-teal-50 to-amber-50 border-teal-500 text-stone-900 shadow-2xs ring-2 ring-teal-300 scale-[1.02]'
-                                : 'bg-white border-border text-stone-700 hover:bg-teal-50/50 hover:border-teal-300'
+                                : 'bg-surface border-border text-stone-700 hover:bg-teal-50/50 hover:border-teal-300'
                             }`}
                           >
                             <div className="flex items-center justify-between">
@@ -719,7 +719,7 @@ export function MentorshipProfileModal({
                             className={`p-2 rounded-xl text-left border text-xs font-bold transition flex items-center justify-between cursor-pointer ${
                               isSelected
                                 ? 'bg-amber-50 border-amber-400 text-amber-950 shadow-2xs ring-1 ring-amber-300'
-                                : 'bg-white border-border text-stone-700 hover:bg-stone-100'
+                                : 'bg-surface border-border text-stone-700 hover:bg-surface-subtle'
                             }`}
                           >
                             <span className="font-bold">{item.shortLabel}</span>
@@ -745,11 +745,11 @@ export function MentorshipProfileModal({
 
                 {/* 選択済みチャンピオンのチップ表示 */}
                 {selectedChampions.length > 0 && (
-                  <div className="flex flex-wrap gap-2 p-2.5 bg-stone-50 border border-border rounded-2xl">
+                  <div className="flex flex-wrap gap-2 p-2.5 bg-background border border-border rounded-2xl">
                     {selectedChampions.map((champId) => (
                       <div
                         key={champId}
-                        className="flex items-center gap-1.5 pl-1.5 pr-2 py-1 bg-white border border-border rounded-xl text-xs font-bold text-stone-900 shadow-2xs"
+                        className="flex items-center gap-1.5 pl-1.5 pr-2 py-1 bg-surface border border-border rounded-xl text-xs font-bold text-stone-900 shadow-2xs"
                       >
                         <img
                           src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/${champId}.png`}
@@ -761,7 +761,7 @@ export function MentorshipProfileModal({
                         <button
                           type="button"
                           onClick={() => removeChampion(champId)}
-                          className="text-stone-400 hover:text-rose-600 hover:bg-stone-100 rounded-full w-4 h-4 flex items-center justify-center ml-0.5 transition cursor-pointer"
+                          className="text-stone-400 hover:text-rose-600 hover:bg-surface-subtle rounded-full w-4 h-4 flex items-center justify-center ml-0.5 transition cursor-pointer"
                         >
                           ✕
                         </button>
@@ -784,7 +784,7 @@ export function MentorshipProfileModal({
                       }}
                       onFocus={() => setIsChampDropdownOpen(true)}
                       placeholder="日本語名（例: アーリ、ヤスオ）または英語名で検索..."
-                      className="w-full bg-stone-50 border border-border rounded-xl pl-9 pr-3 py-2 text-stone-900 text-xs font-medium focus:border-amber-500 focus:bg-white focus:outline-hidden"
+                      className="w-full bg-background border border-border rounded-xl pl-9 pr-3 py-2 text-stone-900 text-xs font-medium focus:border-amber-500 focus:bg-surface focus:outline-hidden"
                     />
                     {champSearchQuery && (
                       <button
@@ -802,7 +802,7 @@ export function MentorshipProfileModal({
 
                   {/* サジェストドロップダウン */}
                   {isChampDropdownOpen && (
-                    <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white border border-border rounded-2xl shadow-xl max-h-52 overflow-y-auto p-1.5 space-y-1">
+                    <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-surface border border-border rounded-2xl shadow-xl max-h-52 overflow-y-auto p-1.5 space-y-1">
                       {filteredChampions.length > 0 ? (
                         filteredChampions.map((champId) => {
                           const ja = CHAMPION_JA[champId]?.ja || champId;
@@ -851,7 +851,7 @@ export function MentorshipProfileModal({
                 </label>
 
                 {currentCategories.map((cat) => (
-                  <div key={cat.category} className="space-y-1.5 bg-stone-50 p-3 rounded-2xl border border-border">
+                  <div key={cat.category} className="space-y-1.5 bg-background p-3 rounded-2xl border border-border">
                     <div className="text-[11px] font-black text-stone-600">
                       {cat.category}
                     </div>
@@ -868,7 +868,7 @@ export function MentorshipProfileModal({
                                 ? isMentor
                                   ? 'bg-amber-100 text-amber-900 border-amber-400 shadow-2xs'
                                   : 'bg-emerald-100 text-emerald-900 border-emerald-400 shadow-2xs'
-                                : 'bg-white text-stone-700 border-border hover:border-border hover:bg-stone-50'
+                                : 'bg-surface text-stone-700 border-border hover:border-border hover:bg-background'
                             }`}
                           >
                             #{tag}
@@ -886,12 +886,12 @@ export function MentorshipProfileModal({
                     value={customTag}
                     onChange={(e) => setCustomTag(e.target.value)}
                     placeholder="自由なタグを追加 (例: #週1回希望)..."
-                    className="flex-1 bg-stone-50 border border-border rounded-xl px-3 py-1.5 text-stone-900 text-xs focus:border-amber-500 focus:bg-white focus:outline-hidden font-medium"
+                    className="flex-1 bg-background border border-border rounded-xl px-3 py-1.5 text-stone-900 text-xs focus:border-amber-500 focus:bg-surface focus:outline-hidden font-medium"
                   />
                   <button
                     type="button"
                     onClick={handleAddCustomTag}
-                    className="px-3.5 py-1.5 bg-stone-200 hover:bg-stone-300 text-stone-800 rounded-xl text-xs font-black transition cursor-pointer"
+                    className="px-3.5 py-1.5 bg-surface-hover hover:bg-stone-300 text-stone-800 rounded-xl text-xs font-black transition cursor-pointer"
                   >
                     追加
                   </button>
@@ -917,7 +917,7 @@ export function MentorshipProfileModal({
                       key={tmpl.title}
                       type="button"
                       onClick={() => applyTemplate(tmpl.text)}
-                      className="px-2.5 py-1 rounded-xl bg-stone-100 border border-border hover:border-amber-400 text-stone-700 hover:text-amber-900 text-[11px] font-bold transition flex items-center gap-1 cursor-pointer"
+                      className="px-2.5 py-1 rounded-xl bg-surface-subtle border border-border hover:border-amber-400 text-stone-700 hover:text-amber-900 text-[11px] font-bold transition flex items-center gap-1 cursor-pointer"
                     >
                       <span>📝</span> {tmpl.title}
                     </button>
@@ -929,7 +929,7 @@ export function MentorshipProfileModal({
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
                   placeholder="自己紹介や教えてほしいこと、どんな雰囲気でやりたいかを自由に記入してください（上の例文ボタンから簡単入力も可能です）..."
-                  className="w-full bg-stone-50 border border-border rounded-2xl p-3 text-stone-900 text-xs focus:border-amber-500 focus:bg-white focus:outline-hidden leading-relaxed font-medium"
+                  className="w-full bg-background border border-border rounded-2xl p-3 text-stone-900 text-xs focus:border-amber-500 focus:bg-surface focus:outline-hidden leading-relaxed font-medium"
                 />
               </div>
 
@@ -944,7 +944,7 @@ export function MentorshipProfileModal({
                   value={activeHours}
                   onChange={(e) => setActiveHours(e.target.value)}
                   placeholder="例: 平日 21:00〜24:00 / 休日 昼〜夜"
-                  className="w-full bg-stone-50 border border-border rounded-xl px-3 py-2 text-stone-900 text-xs font-medium focus:border-amber-500 focus:bg-white focus:outline-hidden"
+                  className="w-full bg-background border border-border rounded-xl px-3 py-2 text-stone-900 text-xs font-medium focus:border-amber-500 focus:bg-surface focus:outline-hidden"
                 />
               </div>
             </form>
@@ -952,7 +952,7 @@ export function MentorshipProfileModal({
         </div>
 
         {/* モーダルフッター */}
-        <div className="p-4 md:px-6 md:py-3.5 bg-stone-50 border-t border-border flex items-center justify-between gap-3">
+        <div className="p-4 md:px-6 md:py-3.5 bg-background border-t border-border flex items-center justify-between gap-3">
           <div className="text-[11px] text-stone-500 font-medium">
             {activeTab === 'edit' ? '入力内容を確認したい時は右上の「プレビュー」を押してください' : 'プレビューを確認後、右下のボタンで公開できます'}
           </div>
@@ -961,7 +961,7 @@ export function MentorshipProfileModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-stone-200 hover:bg-stone-300 rounded-xl text-xs font-black text-stone-700 transition cursor-pointer"
+              className="px-4 py-2 bg-surface-hover hover:bg-stone-300 rounded-xl text-xs font-black text-stone-700 transition cursor-pointer"
             >
               キャンセル
             </button>

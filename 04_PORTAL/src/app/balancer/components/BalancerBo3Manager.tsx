@@ -62,15 +62,15 @@ export const BalancerBo3Manager = memo(function BalancerBo3Manager({
       </div>
 
       {/* チーム別スコア比較 */}
-      <div className="grid grid-cols-2 gap-3 bg-white p-3 rounded-xl border border-amber-200">
+      <div className="grid grid-cols-2 gap-3 bg-surface p-3 rounded-xl border border-amber-200">
         {/* BLUEチーム */}
         <div className="text-center space-y-1">
           <span className="text-[11px] font-extrabold text-teal-700 block">
             🔵 BLUE: {bo3State.team1IsCurrentlyBlue ? bo3State.team1Name : bo3State.team2Name}
           </span>
           <div className="flex items-center justify-center gap-1.5 text-lg font-black">
-            <span className={`w-3.5 h-3.5 rounded-full border ${ (bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 1 ? 'bg-teal-600 border-teal-600' : 'bg-stone-200 border-border' }`} />
-            <span className={`w-3.5 h-3.5 rounded-full border ${ (bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 2 ? 'bg-teal-600 border-teal-600' : 'bg-stone-200 border-border' }`} />
+            <span className={`w-3.5 h-3.5 rounded-full border ${ (bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 1 ? 'bg-teal-600 border-teal-600' : 'bg-surface-hover border-border' }`} />
+            <span className={`w-3.5 h-3.5 rounded-full border ${ (bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 2 ? 'bg-teal-600 border-teal-600' : 'bg-surface-hover border-border' }`} />
             <span className="text-sm font-mono ml-1 text-teal-900">
               ({bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins}勝)
             </span>
@@ -92,8 +92,8 @@ export const BalancerBo3Manager = memo(function BalancerBo3Manager({
             🔴 RED: {!bo3State.team1IsCurrentlyBlue ? bo3State.team1Name : bo3State.team2Name}
           </span>
           <div className="flex items-center justify-center gap-1.5 text-lg font-black">
-            <span className={`w-3.5 h-3.5 rounded-full border ${ (!bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 1 ? 'bg-rose-600 border-rose-600' : 'bg-stone-200 border-border' }`} />
-            <span className={`w-3.5 h-3.5 rounded-full border ${ (!bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 2 ? 'bg-rose-600 border-rose-600' : 'bg-stone-200 border-border' }`} />
+            <span className={`w-3.5 h-3.5 rounded-full border ${ (!bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 1 ? 'bg-rose-600 border-rose-600' : 'bg-surface-hover border-border' }`} />
+            <span className={`w-3.5 h-3.5 rounded-full border ${ (!bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 2 ? 'bg-rose-600 border-rose-600' : 'bg-surface-hover border-border' }`} />
             <span className="text-sm font-mono ml-1 text-rose-900">
               ({!bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins}勝)
             </span>

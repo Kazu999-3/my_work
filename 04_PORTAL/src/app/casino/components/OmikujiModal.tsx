@@ -94,7 +94,7 @@ export default function OmikujiModal({ isOpen, onClose, omikujiData, onClaimFini
         {!isSpinning && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 rounded-full text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-[#35373c] transition"
+            className="absolute top-4 right-4 p-2 rounded-full text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-surface-subtle dark:hover:bg-[#35373c] transition"
           >
             <X size={18} />
           </button>
@@ -125,7 +125,7 @@ export default function OmikujiModal({ isOpen, onClose, omikujiData, onClaimFini
 
           {!isSpinning && (
             <div className="mt-3">
-              <span className="inline-block px-3 py-0.5 rounded-full text-[11px] font-black bg-white/90 dark:bg-[#1e1f22] text-stone-900 dark:text-white shadow-sm border border-border dark:border-[#3f4147]">
+              <span className="inline-block px-3 py-0.5 rounded-full text-[11px] font-black bg-surface/90 dark:bg-[#1e1f22] text-stone-900 dark:text-white shadow-sm border border-border dark:border-[#3f4147]">
                 {style.badge}
               </span>
             </div>

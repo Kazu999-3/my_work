@@ -338,7 +338,7 @@ export default function Sidebar() {
             {!isCollapsed && <ThemeToggle variant="compact" />}
             <button
               onClick={toggleSidebar}
-              className="p-2 rounded-xl hover:bg-stone-200/60 dark:hover:bg-[#35373c] text-stone-600 dark:text-stone-300 transition cursor-pointer"
+              className="p-2 rounded-xl hover:bg-surface-hover/60 dark:hover:bg-[#35373c] text-stone-600 dark:text-stone-300 transition cursor-pointer"
             >
               {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
             </button>
@@ -348,11 +348,11 @@ export default function Sidebar() {
         {/* 🛡️ 管理者の場合のみ表示されるタブ切り替え */}
         {isAdminUser && !isCollapsed && (
           <div className="p-3 border-b border-border/80 dark:border-[#3f4147]">
-            <div className="flex bg-stone-200/60 dark:bg-[#2b2d31] p-1 rounded-xl">
+            <div className="flex bg-surface-hover/60 dark:bg-[#2b2d31] p-1 rounded-xl">
               <button
                 onClick={() => handleTabChange('general')}
                 className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
-                  activeTab === 'general' ? 'bg-white dark:bg-[#1e1f22] text-stone-900 dark:text-white shadow-sm' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'
+                  activeTab === 'general' ? 'bg-surface dark:bg-[#1e1f22] text-stone-900 dark:text-white shadow-sm' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'
                 }`}
               >
                 一般
@@ -360,7 +360,7 @@ export default function Sidebar() {
               <button
                 onClick={() => handleTabChange('admin')}
                 className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
-                  activeTab === 'admin' ? 'bg-white dark:bg-[#1e1f22] text-stone-900 dark:text-white shadow-sm' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'
+                  activeTab === 'admin' ? 'bg-surface dark:bg-[#1e1f22] text-stone-900 dark:text-white shadow-sm' : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'
                 }`}
               >
                 管理者
@@ -388,7 +388,7 @@ export default function Sidebar() {
                 <Link
                   href={itemHref}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition ${
-                    isActive ? `${item.activeBg} ${item.color}` : 'text-stone-600 dark:text-stone-300 hover:bg-stone-200/50 dark:hover:bg-[#2b2d31] hover:text-stone-900 dark:hover:text-white'
+                    isActive ? `${item.activeBg} ${item.color}` : 'text-stone-600 dark:text-stone-300 hover:bg-surface-hover/50 dark:hover:bg-[#2b2d31] hover:text-stone-900 dark:hover:text-white'
                   }`}
                   title={isCollapsed ? (isMentorship && mentorshipCount > 0 ? `${item.label} (${mentorshipCount}名募集中)` : item.label) : undefined}
                 >
@@ -449,7 +449,7 @@ export default function Sidebar() {
               className={`flex flex-col items-center justify-center flex-1 py-1 rounded-xl transition-all duration-150 touch-manipulation select-none ${
                 isActive
                   ? `${item.color} font-black scale-105`
-                  : 'text-stone-500 dark:text-stone-400 active:bg-black/5 dark:active:bg-white/5 font-medium'
+                  : 'text-stone-500 dark:text-stone-400 active:bg-black/5 dark:active:bg-surface/5 font-medium'
               }`}
             >
               <div className={`relative p-1 rounded-xl transition-colors ${isActive ? item.activeBg : ''}`}>
@@ -469,7 +469,7 @@ export default function Sidebar() {
         <button
           type="button"
           onClick={() => setShowMobileDrawer(true)}
-          className="flex flex-col items-center justify-center flex-1 py-1 rounded-xl text-stone-500 dark:text-stone-400 active:bg-black/5 dark:active:bg-white/5 font-medium touch-manipulation select-none"
+          className="flex flex-col items-center justify-center flex-1 py-1 rounded-xl text-stone-500 dark:text-stone-400 active:bg-black/5 dark:active:bg-surface/5 font-medium touch-manipulation select-none"
         >
           <div className="p-1 rounded-xl">
             <MenuIcon size={20} className="text-stone-400 dark:text-stone-500" />
@@ -503,7 +503,7 @@ export default function Sidebar() {
                 <ThemeToggle variant="compact" />
                 <button
                   onClick={() => setShowMobileDrawer(false)}
-                  className="p-2 rounded-full bg-stone-200/60 dark:bg-[#2b2d31] text-stone-600 dark:text-stone-300 hover:bg-stone-300 dark:hover:bg-[#35373c] transition"
+                  className="p-2 rounded-full bg-surface-hover/60 dark:bg-[#2b2d31] text-stone-600 dark:text-stone-300 hover:bg-stone-300 dark:hover:bg-[#35373c] transition"
                   aria-label="閉じる"
                 >
                   <XIcon size={18} />
@@ -518,11 +518,11 @@ export default function Sidebar() {
 
             {/* 🛡️ 管理者の場合のみ表示する切り替えスイッチ */}
             {isAdminUser && (
-              <div className="mb-4 bg-stone-200/60 dark:bg-[#2b2d31] p-1 rounded-xl flex">
+              <div className="mb-4 bg-surface-hover/60 dark:bg-[#2b2d31] p-1 rounded-xl flex">
                 <button
                   onClick={() => handleTabChange('general')}
                   className={`flex-1 py-2 text-xs font-bold rounded-lg transition ${
-                    activeTab === 'general' ? 'bg-white dark:bg-[#1e1f22] text-stone-900 dark:text-white shadow-sm' : 'text-stone-600 dark:text-stone-400'
+                    activeTab === 'general' ? 'bg-surface dark:bg-[#1e1f22] text-stone-900 dark:text-white shadow-sm' : 'text-stone-600 dark:text-stone-400'
                   }`}
                 >
                   一般メニュー
@@ -530,7 +530,7 @@ export default function Sidebar() {
                 <button
                   onClick={() => handleTabChange('admin')}
                   className={`flex-1 py-2 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1 ${
-                    activeTab === 'admin' ? 'bg-white dark:bg-[#1e1f22] text-amber-600 dark:text-amber-400 shadow-sm' : 'text-stone-600 dark:text-stone-400'
+                    activeTab === 'admin' ? 'bg-surface dark:bg-[#1e1f22] text-amber-600 dark:text-amber-400 shadow-sm' : 'text-stone-600 dark:text-stone-400'
                   }`}
                 >
                   <Shield size={13} />
@@ -560,10 +560,10 @@ export default function Sidebar() {
                         className={`flex items-center gap-2.5 p-3 rounded-2xl border transition-all ${
                           isActive
                             ? `${item.activeBg} ${item.color} border-current font-black shadow-sm`
-                            : 'bg-white dark:bg-[#2b2d31] border-border/80 dark:border-[#3f4147] text-stone-700 dark:text-stone-200 hover:border-amber-500/40 font-bold'
+                            : 'bg-surface dark:bg-[#2b2d31] border-border/80 dark:border-[#3f4147] text-stone-700 dark:text-stone-200 hover:border-amber-500/40 font-bold'
                         }`}
                       >
-                        <div className={`p-1.5 rounded-xl shrink-0 ${isActive ? 'bg-white/20' : item.activeBg}`}>
+                        <div className={`p-1.5 rounded-xl shrink-0 ${isActive ? 'bg-surface/20' : item.activeBg}`}>
                           <Icon size={18} className={item.color} />
                         </div>
                         <div className="flex flex-col min-w-0 flex-1">
@@ -600,7 +600,7 @@ export default function Sidebar() {
                           className={`flex items-center gap-2.5 p-3 rounded-2xl border transition-all ${
                             isActive
                               ? `${item.activeBg} ${item.color} border-current font-black shadow-sm`
-                              : 'bg-white dark:bg-[#2b2d31] border-amber-200/60 dark:border-amber-900/40 text-stone-700 dark:text-stone-200 hover:border-amber-500 font-bold'
+                              : 'bg-surface dark:bg-[#2b2d31] border-amber-200/60 dark:border-amber-900/40 text-stone-700 dark:text-stone-200 hover:border-amber-500 font-bold'
                           }`}
                         >
                           <div className={`p-1.5 rounded-xl ${item.activeBg}`}>

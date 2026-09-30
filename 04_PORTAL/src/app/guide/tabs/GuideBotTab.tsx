@@ -50,7 +50,7 @@ export default function GuideBotTab() {
       </div>
 
       {/* 🚀 クイックコマンド一覧 */}
-      <div className="bg-white rounded-3xl p-6 md:p-8 border border-border shadow-xs space-y-4">
+      <div className="bg-surface rounded-3xl p-6 md:p-8 border border-border shadow-xs space-y-4">
         <h3 className="text-base font-black text-stone-900 flex items-center gap-2">
           <Terminal size={18} className="text-amber-600" />
           よく使うスラッシュコマンド一覧
@@ -96,14 +96,14 @@ export default function GuideBotTab() {
           ].map((item) => (
             <div
               key={item.cmd}
-              className="p-4 rounded-2xl bg-stone-50 border border-border/90 hover:border-amber-300 transition flex flex-col justify-between gap-2"
+              className="p-4 rounded-2xl bg-background border border-border/90 hover:border-amber-300 transition flex flex-col justify-between gap-2"
             >
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <span className="font-mono font-black text-sm text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-lg border border-amber-200">
                     {item.cmd}
                   </span>
-                  <span className="text-[10px] font-bold text-stone-500 bg-stone-200/70 px-2 py-0.5 rounded-md">
+                  <span className="text-[10px] font-bold text-stone-500 bg-surface-hover/70 px-2 py-0.5 rounded-md">
                     {item.tag}
                   </span>
                 </div>
@@ -114,7 +114,7 @@ export default function GuideBotTab() {
                 <button
                   type="button"
                   onClick={() => copyCommand(item.cmd)}
-                  className="px-2 py-1 rounded-lg bg-white border border-border hover:bg-stone-100 text-stone-700 text-[10px] font-bold flex items-center gap-1 shrink-0 cursor-pointer shadow-2xs"
+                  className="px-2 py-1 rounded-lg bg-surface border border-border hover:bg-surface-subtle text-stone-700 text-[10px] font-bold flex items-center gap-1 shrink-0 cursor-pointer shadow-2xs"
                   title="コマンドをコピー"
                 >
                   {copiedCmd === item.cmd ? (
@@ -136,11 +136,11 @@ export default function GuideBotTab() {
       {/* 📖 各機能の詳細アコーディオン */}
       <div className="space-y-4">
         {/* 1. /recruit 詳細 */}
-        <div className="bg-white rounded-3xl border border-border shadow-xs overflow-hidden">
+        <div className="bg-surface rounded-3xl border border-border shadow-xs overflow-hidden">
           <button
             type="button"
             onClick={() => toggleSection('recruit')}
-            className="w-full p-6 text-left flex items-center justify-between gap-4 hover:bg-stone-50 transition cursor-pointer"
+            className="w-full p-6 text-left flex items-center justify-between gap-4 hover:bg-background transition cursor-pointer"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-xl">
@@ -158,13 +158,13 @@ export default function GuideBotTab() {
 
           {openSection === 'recruit' && (
             <div className="p-6 pt-0 border-t border-stone-100 space-y-5">
-              <div className="bg-stone-50 rounded-2xl p-4 border border-border text-xs text-stone-700 space-y-2">
+              <div className="bg-background rounded-2xl p-4 border border-border text-xs text-stone-700 space-y-2">
                 <div className="font-bold text-stone-900 flex items-center gap-1.5">
                   <Sparkles size={14} className="text-amber-600" />
                   爆速AIメモ解析機能
                 </div>
                 <p>
-                  メモ欄に <code className="bg-white px-1.5 py-0.5 rounded font-mono font-bold text-amber-900 border border-border">21:30 カスタム 初心者歓迎！</code> のように書くだけで、AIが時間（21:30）・モード（カスタム）・人数（10人）を自動解析して即座にパネルを作成します。
+                  メモ欄に <code className="bg-surface px-1.5 py-0.5 rounded font-mono font-bold text-amber-900 border border-border">21:30 カスタム 初心者歓迎！</code> のように書くだけで、AIが時間（21:30）・モード（カスタム）・人数（10人）を自動解析して即座にパネルを作成します。
                 </p>
               </div>
 
@@ -173,7 +173,7 @@ export default function GuideBotTab() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead>
-                      <tr className="bg-stone-100/80 text-stone-700 border-b border-border">
+                      <tr className="bg-surface-subtle/80 text-stone-700 border-b border-border">
                         <th className="p-2.5 font-bold">ボタン</th>
                         <th className="p-2.5 font-bold">押せる人</th>
                         <th className="p-2.5 font-bold">動作・効果</th>
@@ -234,11 +234,11 @@ export default function GuideBotTab() {
         </div>
 
         {/* 1.5 週末定期カスタム募集 詳細 */}
-        <div className="bg-white rounded-3xl border border-border shadow-xs overflow-hidden">
+        <div className="bg-surface rounded-3xl border border-border shadow-xs overflow-hidden">
           <button
             type="button"
             onClick={() => toggleSection('periodic')}
-            className="w-full p-6 text-left flex items-center justify-between gap-4 hover:bg-stone-50 transition cursor-pointer"
+            className="w-full p-6 text-left flex items-center justify-between gap-4 hover:bg-background transition cursor-pointer"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-xl">
@@ -256,7 +256,7 @@ export default function GuideBotTab() {
 
           {openSection === 'periodic' && (
             <div className="p-6 pt-0 border-t border-stone-100 space-y-5">
-              <div className="bg-stone-50 rounded-2xl p-4 border border-border text-xs text-stone-700 space-y-2">
+              <div className="bg-background rounded-2xl p-4 border border-border text-xs text-stone-700 space-y-2">
                 <div className="font-bold text-stone-900 flex items-center gap-1.5">
                   <Sparkles size={14} className="text-amber-600" />
                   定期カスタムの開催日程 ＆ 通知スケジュール
@@ -305,11 +305,11 @@ export default function GuideBotTab() {
         </div>
 
         {/* 2. /lane 詳細 */}
-        <div className="bg-white rounded-3xl border border-border shadow-xs overflow-hidden">
+        <div className="bg-surface rounded-3xl border border-border shadow-xs overflow-hidden">
           <button
             type="button"
             onClick={() => toggleSection('lane')}
-            className="w-full p-6 text-left flex items-center justify-between gap-4 hover:bg-stone-50 transition cursor-pointer"
+            className="w-full p-6 text-left flex items-center justify-between gap-4 hover:bg-background transition cursor-pointer"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-xl">
@@ -332,7 +332,7 @@ export default function GuideBotTab() {
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 rounded-2xl bg-stone-50 border border-border/80 space-y-2">
+                <div className="p-4 rounded-2xl bg-background border border-border/80 space-y-2">
                   <h4 className="text-xs font-black text-stone-900">設定パラメータ</h4>
                   <ul className="text-xs text-stone-600 space-y-1.5">
                     <li>・<strong className="text-stone-800">main:</strong> メインレーン（TOP / JG / MID / ADC / SUP / ALL）</li>
@@ -343,7 +343,7 @@ export default function GuideBotTab() {
                   </ul>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-stone-50 border border-border/80 space-y-2">
+                <div className="p-4 rounded-2xl bg-background border border-border/80 space-y-2">
                   <h4 className="text-xs font-black text-stone-900">こだわり度（weight）の目安</h4>
                   <ul className="text-xs text-stone-600 space-y-1.5">
                     <li>・<strong className="text-stone-800">1 (柔軟):</strong> チームバランス優先。他レーンでもOK</li>
@@ -357,11 +357,11 @@ export default function GuideBotTab() {
         </div>
 
         {/* 3. /balance 詳細 */}
-        <div className="bg-white rounded-3xl border border-border shadow-xs overflow-hidden">
+        <div className="bg-surface rounded-3xl border border-border shadow-xs overflow-hidden">
           <button
             type="button"
             onClick={() => toggleSection('balance')}
-            className="w-full p-6 text-left flex items-center justify-between gap-4 hover:bg-stone-50 transition cursor-pointer"
+            className="w-full p-6 text-left flex items-center justify-between gap-4 hover:bg-background transition cursor-pointer"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 font-bold text-xl">
@@ -380,7 +380,7 @@ export default function GuideBotTab() {
           {openSection === 'balance' && (
             <div className="p-6 pt-0 border-t border-stone-100 space-y-4">
               <p className="text-xs text-stone-600 leading-relaxed">
-                定員に達した募集パネルから「🏆 チーム分け実行」を押すか、ボイスチャンネルに入った状態で <code className="bg-stone-100 px-1 py-0.5 rounded font-mono font-bold text-emerald-900">/balance</code> を実行すると、AIが以下の3案を同時に提案します。
+                定員に達した募集パネルから「🏆 チーム分け実行」を押すか、ボイスチャンネルに入った状態で <code className="bg-surface-subtle px-1 py-0.5 rounded font-mono font-bold text-emerald-900">/balance</code> を実行すると、AIが以下の3案を同時に提案します。
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -391,14 +391,14 @@ export default function GuideBotTab() {
                   </p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-stone-50 border border-border space-y-1">
+                <div className="p-3.5 rounded-2xl bg-background border border-border space-y-1">
                   <div className="font-black text-xs text-stone-900">案B: 戦力均等</div>
                   <p className="text-[11px] text-stone-600 leading-relaxed">
                     レーン適性を無視し、チーム全体の総MMRが最も均等になるように配置。
                   </p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-stone-50 border border-border space-y-1">
+                <div className="p-3.5 rounded-2xl bg-background border border-border space-y-1">
                   <div className="font-black text-xs text-stone-900">案C: 希望優先</div>
                   <p className="text-[11px] text-stone-600 leading-relaxed">
                     参加者の希望メインレーン配置を最優先にした構成。
@@ -410,11 +410,11 @@ export default function GuideBotTab() {
         </div>
 
         {/* 4. 師弟募集チャンネルボタン & 先輩スカウト */}
-        <div className="bg-white rounded-3xl border border-border shadow-xs overflow-hidden">
+        <div className="bg-surface rounded-3xl border border-border shadow-xs overflow-hidden">
           <button
             type="button"
             onClick={() => toggleSection('mentorship')}
-            className="w-full p-6 text-left flex items-center justify-between gap-4 hover:bg-stone-50 transition cursor-pointer"
+            className="w-full p-6 text-left flex items-center justify-between gap-4 hover:bg-background transition cursor-pointer"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-xl">

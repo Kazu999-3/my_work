@@ -470,7 +470,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                               {/* 🎯 最優先ガンクターゲット */}
                               {primaryTarget && (
-                                <div className="bg-white p-3 rounded-xl border border-rose-200 shadow-2xs space-y-1">
+                                <div className="bg-surface p-3 rounded-xl border border-rose-200 shadow-2xs space-y-1">
                                   <div className="text-[10px] font-black text-rose-600 flex items-center gap-1">
                                     <span>🎯</span> 【最優先破壊レーン】
                                   </div>
@@ -496,7 +496,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
 
                               {/* 🛡️ 警戒・放置推奨レーン */}
                               {avoidTarget && avoidTarget.name !== primaryTarget?.name && (
-                                <div className="bg-white p-3 rounded-xl border border-border shadow-2xs space-y-1">
+                                <div className="bg-surface p-3 rounded-xl border border-border shadow-2xs space-y-1">
                                   <div className="text-[10px] font-black text-stone-600 flex items-center gap-1">
                                     <span>🛡️</span> 【警戒・カウンター警戒レーン】
                                   </div>

@@ -41,7 +41,7 @@ export default function FreshnessPanel() {
   const staleCount = sources?.filter((s) => s.isStale).length ?? 0;
 
   return (
-    <div className="bg-white border border-border rounded-2xl p-5">
+    <div className="bg-surface border border-border rounded-2xl p-5">
       <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
         <h3 className="font-black text-stone-900 flex items-center gap-2">
           <Clock size={16} className="text-teal-600" /> データ鮮度モニター

@@ -175,7 +175,7 @@ export default function InventoryAuditPanel() {
   const incompleteList = facts.filter((f) => !f.has_strengths);
 
   return (
-    <div className="bg-white border border-border rounded-3xl p-6 space-y-6 shadow-sm">
+    <div className="bg-surface border border-border rounded-3xl p-6 space-y-6 shadow-sm">
       {/* タイトル ＆ アクション */}
       <div className="flex items-center justify-between border-b border-stone-100 pb-4 flex-wrap gap-3">
         <div>
@@ -201,7 +201,7 @@ export default function InventoryAuditPanel() {
           <button
             onClick={loadAuditData}
             disabled={loading}
-            className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold transition flex items-center gap-1.5"
+            className="px-4 py-2 rounded-xl bg-surface-subtle hover:bg-surface-hover text-stone-800 text-xs font-bold transition flex items-center gap-1.5"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> 再読み込み
           </button>
@@ -234,7 +234,7 @@ export default function InventoryAuditPanel() {
         <div
           onClick={() => setActiveFilter('unverified')}
           className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-            activeFilter === 'unverified' ? 'bg-amber-50 border-amber-300 ring-2 ring-amber-400/30' : 'bg-stone-50 border-border hover:bg-stone-100'
+            activeFilter === 'unverified' ? 'bg-amber-50 border-amber-300 ring-2 ring-amber-400/30' : 'bg-background border-border hover:bg-surface-subtle'
           }`}
         >
           <span className="text-[10px] font-extrabold text-amber-700 uppercase tracking-wider block">人間未確認 (要棚卸し)</span>
@@ -245,7 +245,7 @@ export default function InventoryAuditPanel() {
         <div
           onClick={() => setActiveFilter('outdated')}
           className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-            activeFilter === 'outdated' ? 'bg-teal-50 border-teal-300 ring-2 ring-teal-400/30' : 'bg-stone-50 border-border hover:bg-stone-100'
+            activeFilter === 'outdated' ? 'bg-teal-50 border-teal-300 ring-2 ring-teal-400/30' : 'bg-background border-border hover:bg-surface-subtle'
           }`}
         >
           <span className="text-[10px] font-extrabold text-teal-700 uppercase tracking-wider block">古いトレンド (3日以上経過)</span>
@@ -256,7 +256,7 @@ export default function InventoryAuditPanel() {
         <div
           onClick={() => setActiveFilter('incomplete')}
           className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-            activeFilter === 'incomplete' ? 'bg-rose-50 border-rose-300 ring-2 ring-rose-400/30' : 'bg-stone-50 border-border hover:bg-stone-100'
+            activeFilter === 'incomplete' ? 'bg-rose-50 border-rose-300 ring-2 ring-rose-400/30' : 'bg-background border-border hover:bg-surface-subtle'
           }`}
         >
           <span className="text-[10px] font-extrabold text-rose-700 uppercase tracking-wider block">空項目あり (欠損データ)</span>
@@ -270,7 +270,7 @@ export default function InventoryAuditPanel() {
         <button
           onClick={() => setActiveFilter('unverified')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${
-            activeFilter === 'unverified' ? 'bg-amber-600 text-white shadow-md' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+            activeFilter === 'unverified' ? 'bg-amber-600 text-white shadow-md' : 'bg-surface-subtle text-stone-600 hover:bg-surface-hover'
           }`}
         >
           <AlertCircle size={14} /> 人間未確認リスト ({unverifiedList.length})
@@ -279,7 +279,7 @@ export default function InventoryAuditPanel() {
         <button
           onClick={() => setActiveFilter('outdated')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${
-            activeFilter === 'outdated' ? 'bg-teal-600 text-white shadow-md' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+            activeFilter === 'outdated' ? 'bg-teal-600 text-white shadow-md' : 'bg-surface-subtle text-stone-600 hover:bg-surface-hover'
           }`}
         >
           <Clock size={14} /> 古いパッチ情報 ({outdatedList.length})
@@ -288,7 +288,7 @@ export default function InventoryAuditPanel() {
         <button
           onClick={() => setActiveFilter('incomplete')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${
-            activeFilter === 'incomplete' ? 'bg-rose-600 text-white shadow-md' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+            activeFilter === 'incomplete' ? 'bg-rose-600 text-white shadow-md' : 'bg-surface-subtle text-stone-600 hover:bg-surface-hover'
           }`}
         >
           <ShieldAlert size={14} /> 欠損・空項目あり ({incompleteList.length})
@@ -297,7 +297,7 @@ export default function InventoryAuditPanel() {
         <button
           onClick={() => setActiveFilter('knowledge')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${
-            activeFilter === 'knowledge' ? 'bg-amber-600 text-white shadow-md' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+            activeFilter === 'knowledge' ? 'bg-amber-600 text-white shadow-md' : 'bg-surface-subtle text-stone-600 hover:bg-surface-hover'
           }`}
         >
           <Database size={14} /> ナレッジDB棚卸し ({knowledgeItems.length})
@@ -320,7 +320,7 @@ export default function InventoryAuditPanel() {
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-1">
                 {unverifiedList.map((f) => (
-                  <div key={f.champion_name} className="p-3.5 rounded-2xl border border-border bg-stone-50/50 flex items-center justify-between gap-3 hover:bg-white hover:border-amber-300 transition">
+                  <div key={f.champion_name} className="p-3.5 rounded-2xl border border-border bg-background/50 flex items-center justify-between gap-3 hover:bg-surface hover:border-amber-300 transition">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <img src={getChampIcon(f.champion_name)} alt={f.display_name} className="w-10 h-10 rounded-xl border border-border object-cover shrink-0" />
                       <div className="min-w-0">
@@ -339,7 +339,7 @@ export default function InventoryAuditPanel() {
                       </button>
                       <Link
                         href={`/champions?select=${encodeURIComponent(f.champion_name)}`}
-                        className="p-1.5 rounded-lg bg-stone-200 hover:bg-stone-300 text-stone-700 transition text-[10px] font-bold"
+                        className="p-1.5 rounded-lg bg-surface-hover hover:bg-stone-300 text-stone-700 transition text-[10px] font-bold"
                         title="辞典を開いて直接編集"
                       >
                         <ExternalLink size={12} />
@@ -359,7 +359,7 @@ export default function InventoryAuditPanel() {
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-1">
                 {outdatedList.map((f) => (
-                  <div key={f.champion_name} className="p-3.5 rounded-2xl border border-border bg-stone-50/50 flex items-center justify-between gap-3">
+                  <div key={f.champion_name} className="p-3.5 rounded-2xl border border-border bg-background/50 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5">
                       <img src={getChampIcon(f.champion_name)} alt={f.display_name} className="w-10 h-10 rounded-xl border border-border object-cover shrink-0" />
                       <div>
@@ -389,7 +389,7 @@ export default function InventoryAuditPanel() {
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-1">
                 {incompleteList.map((f) => (
-                  <div key={f.champion_name} className="p-3.5 rounded-2xl border border-border bg-stone-50/50 flex items-center justify-between gap-3">
+                  <div key={f.champion_name} className="p-3.5 rounded-2xl border border-border bg-background/50 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5">
                       <img src={getChampIcon(f.champion_name)} alt={f.display_name} className="w-10 h-10 rounded-xl border border-border object-cover shrink-0" />
                       <div>
@@ -422,7 +422,7 @@ export default function InventoryAuditPanel() {
                   <p className="text-xs text-stone-400 italic">取り込まれたナレッジデータはありません。</p>
                 ) : (
                   knowledgeItems.map((item) => (
-                    <div key={item.id} className="p-3.5 rounded-2xl border border-border bg-stone-50/60 flex items-start justify-between gap-3">
+                    <div key={item.id} className="p-3.5 rounded-2xl border border-border bg-background/60 flex items-start justify-between gap-3">
                       <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-extrabold text-stone-900 text-xs">{item.champion}</span>
@@ -431,7 +431,7 @@ export default function InventoryAuditPanel() {
                               vs {item.enemy_champion}
                             </span>
                           )}
-                          <span className="text-[10px] bg-stone-200 text-stone-700 font-bold px-2 py-0.5 rounded-full">
+                          <span className="text-[10px] bg-surface-hover text-stone-700 font-bold px-2 py-0.5 rounded-full">
                             {item.category}
                           </span>
                         </div>
@@ -441,7 +441,7 @@ export default function InventoryAuditPanel() {
 
                       <button
                         onClick={() => handleDeleteKb(item.id)}
-                        className="p-1.5 rounded-lg bg-stone-200 hover:bg-rose-100 hover:text-rose-700 text-stone-600 transition shrink-0"
+                        className="p-1.5 rounded-lg bg-surface-hover hover:bg-rose-100 hover:text-rose-700 text-stone-600 transition shrink-0"
                         title="このナレッジを削除"
                       >
                         <Trash2 size={14} />

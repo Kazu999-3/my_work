@@ -204,7 +204,7 @@ export default function LaneGuidesPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/"
-            className="px-3 py-1.5 rounded-xl bg-white border border-border text-stone-700 hover:text-stone-900 font-bold text-xs shadow-2xs hover:bg-stone-50 transition"
+            className="px-3 py-1.5 rounded-xl bg-surface border border-border text-stone-700 hover:text-stone-900 font-bold text-xs shadow-2xs hover:bg-background transition"
           >
             ← ポータルトップへ戻る
           </Link>
@@ -222,7 +222,7 @@ export default function LaneGuidesPage() {
       ) : (
           <>
             {/* レーン切り替えタブバー ＆ AI清書ボタン */}
-            <div className="flex gap-3 flex-wrap items-center justify-between bg-white p-2.5 rounded-2xl border border-border/90 shadow-2xs">
+            <div className="flex gap-3 flex-wrap items-center justify-between bg-surface p-2.5 rounded-2xl border border-border/90 shadow-2xs">
               <div className="flex gap-2 flex-wrap">
                 {guides.map((g: any) => (
                   <button
@@ -231,12 +231,12 @@ export default function LaneGuidesPage() {
                     className={`px-4 py-2 rounded-xl text-xs md:text-sm font-black transition-all flex items-center gap-2 ${
                       active === g.lane
                         ? 'bg-amber-600 text-white shadow-sm'
-                        : 'bg-stone-100 text-stone-600 hover:text-stone-900 hover:bg-stone-200'
+                        : 'bg-surface-subtle text-stone-600 hover:text-stone-900 hover:bg-surface-hover'
                     }`}
                   >
                     <span>{laneLabel(g.lane)}</span>
                     <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
-                      active === g.lane ? 'bg-amber-700/60 text-white' : 'bg-stone-200 text-stone-600'
+                      active === g.lane ? 'bg-amber-700/60 text-white' : 'bg-surface-hover text-stone-600'
                     }`}>
                       {g.source_count || 0}
                     </span>
@@ -271,27 +271,27 @@ export default function LaneGuidesPage() {
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
-                <div className="bg-white p-3.5 rounded-2xl border border-amber-200/70 shadow-2xs">
+                <div className="bg-surface p-3.5 rounded-2xl border border-amber-200/70 shadow-2xs">
                   <span className="text-[10px] font-mono font-extrabold text-amber-700 block">2:55 〜</span>
                   <strong className="text-stone-900 block mt-0.5 text-sm">初動スカトル争奪</strong>
                   <p className="text-[11px] text-stone-500 mt-1">キャンプ湧き(0:55)から最速周回。レーン優先度を見て交戦判断</p>
                 </div>
-                <div className="bg-white p-3.5 rounded-2xl border border-amber-200/70 shadow-2xs">
+                <div className="bg-surface p-3.5 rounded-2xl border border-amber-200/70 shadow-2xs">
                   <span className="text-[10px] font-mono font-extrabold text-amber-700 block">5:00 〜</span>
                   <strong className="text-stone-900 block mt-0.5 text-sm">初代ドラゴン出現</strong>
                   <p className="text-[11px] text-stone-500 mt-1">Bot/MidプッシュとBot視界掌握で先手触り（5分リスポーン）</p>
                 </div>
-                <div className="bg-white p-3.5 rounded-2xl border border-amber-200/70 shadow-2xs">
+                <div className="bg-surface p-3.5 rounded-2xl border border-amber-200/70 shadow-2xs">
                   <span className="text-[10px] font-mono font-extrabold text-amber-700 block">8:00 〜</span>
                   <strong className="text-stone-900 block mt-0.5 text-sm">ヴォイドグラブ出現</strong>
                   <p className="text-[11px] text-stone-500 mt-1">1回のみ出現(14:45消滅)。Top/Midプライオリティで確保</p>
                 </div>
-                <div className="bg-white p-3.5 rounded-2xl border border-amber-200/70 shadow-2xs">
+                <div className="bg-surface p-3.5 rounded-2xl border border-amber-200/70 shadow-2xs">
                   <span className="text-[10px] font-mono font-extrabold text-amber-700 block">15:00 〜</span>
                   <strong className="text-stone-900 block mt-0.5 text-sm">リフトヘラルド出現</strong>
                   <p className="text-[11px] text-stone-500 mt-1">19:45消滅。永続タワープレート削りや外塔破壊の起点に</p>
                 </div>
-                <div className="bg-white p-3.5 rounded-2xl border border-amber-200/70 shadow-2xs">
+                <div className="bg-surface p-3.5 rounded-2xl border border-amber-200/70 shadow-2xs">
                   <span className="text-[10px] font-mono font-extrabold text-amber-700 block">20:00 〜</span>
                   <strong className="text-stone-900 block mt-0.5 text-sm">バロンナッシャー出現</strong>
                   <p className="text-[11px] text-stone-500 mt-1">視界制圧と人数有利（ピックアップ）からのバロン決戦</p>
@@ -304,7 +304,7 @@ export default function LaneGuidesPage() {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                 {/* 📌 左カラム: 目次（Sticky TOC） */}
                 <aside className="lg:col-span-3 lg:sticky lg:top-6 space-y-4">
-                  <div className="bg-white border border-border/90 rounded-3xl p-5 shadow-2xs">
+                  <div className="bg-surface border border-border/90 rounded-3xl p-5 shadow-2xs">
                     <h3 className="text-xs font-black text-stone-900 mb-3 flex items-center gap-1.5 uppercase tracking-wider">
                       <ListOrdered size={15} className="text-amber-600" />
                       <span>章立て・クイック目次</span>
@@ -334,7 +334,7 @@ export default function LaneGuidesPage() {
                   </div>
 
                   {/* ガイドメタ情報カード */}
-                  <div className="bg-stone-50 border border-border/80 rounded-2xl p-4 text-xs space-y-2 text-stone-600">
+                  <div className="bg-background border border-border/80 rounded-2xl p-4 text-xs space-y-2 text-stone-600">
                     <div className="flex justify-between">
                       <span className="text-stone-400">対象ロール</span>
                       <strong className="text-stone-800">{laneLabel(current.lane)}</strong>
@@ -351,7 +351,7 @@ export default function LaneGuidesPage() {
                 </aside>
 
                 {/* 📄 右カラム: ガイド本文 */}
-                <article className="lg:col-span-9 bg-white border border-border/90 rounded-3xl p-6 md:p-10 shadow-xs">
+                <article className="lg:col-span-9 bg-surface border border-border/90 rounded-3xl p-6 md:p-10 shadow-xs">
                   <div className="flex items-center justify-between border-b border-stone-100 pb-5 mb-8 flex-wrap gap-3">
                     <div>
                       <h2 className="text-2xl md:text-3xl font-black text-stone-900 tracking-tight mb-2">
@@ -397,7 +397,7 @@ export default function LaneGuidesPage() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-stone-950/80 backdrop-blur-md animate-fade-in touch-pan-y">
             <div className="bg-[#fcfbf9] dark:bg-[#2b2d31] border border-border rounded-2xl sm:rounded-3xl w-full max-w-[1550px] w-[96vw] h-[94vh] max-h-[94vh] shadow-2xl flex flex-col overflow-hidden">
               {/* ヘッダー */}
-              <div className="p-3.5 sm:p-5 border-b border-border flex items-center justify-between gap-2 shrink-0 bg-white">
+              <div className="p-3.5 sm:p-5 border-b border-border flex items-center justify-between gap-2 shrink-0 bg-surface">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-base sm:text-xl font-black text-stone-900 flex items-center gap-1.5 truncate">
@@ -415,14 +415,14 @@ export default function LaneGuidesPage() {
                 <button
                   onClick={() => setRefinePreview(null)}
                   disabled={savingRefined || refining}
-                  className="text-stone-400 hover:text-stone-700 p-2 rounded-xl hover:bg-stone-100 transition shrink-0"
+                  className="text-stone-400 hover:text-stone-700 p-2 rounded-xl hover:bg-surface-subtle transition shrink-0"
                 >
                   <X size={20} />
                 </button>
               </div>
 
               {/* 🧭 ビュー切り替えタブ */}
-              <div className="px-3 sm:px-5 py-2 bg-stone-100 border-b border-border flex items-center justify-between gap-2 flex-wrap shrink-0">
+              <div className="px-3 sm:px-5 py-2 bg-surface-subtle border-b border-border flex items-center justify-between gap-2 flex-wrap shrink-0">
                 <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                   <button
                     type="button"
@@ -430,7 +430,7 @@ export default function LaneGuidesPage() {
                     className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${
                       previewTab === 'annotations'
                         ? 'bg-amber-600 text-white shadow-xs'
-                        : 'bg-white text-stone-600 hover:text-stone-900 border border-border'
+                        : 'bg-surface text-stone-600 hover:text-stone-900 border border-border'
                     }`}
                   >
                     <span>📝 ① 朱入れ校閲ビュー（生知見＋判定）</span>
@@ -441,7 +441,7 @@ export default function LaneGuidesPage() {
                     className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 ${
                       previewTab === 'refined'
                         ? 'bg-amber-600 text-white shadow-xs'
-                        : 'bg-white text-stone-600 hover:text-stone-900 border border-border'
+                        : 'bg-surface text-stone-600 hover:text-stone-900 border border-border'
                     }`}
                   >
                     <Sparkles size={13} />
@@ -453,7 +453,7 @@ export default function LaneGuidesPage() {
                     className={`hidden md:flex px-3.5 py-1.5 rounded-xl text-xs font-black transition items-center gap-1.5 ${
                       previewTab === 'comparison'
                         ? 'bg-amber-600 text-white shadow-xs'
-                        : 'bg-white text-stone-600 hover:text-stone-900 border border-border'
+                        : 'bg-surface text-stone-600 hover:text-stone-900 border border-border'
                     }`}
                   >
                     <Columns size={13} />
@@ -500,7 +500,7 @@ export default function LaneGuidesPage() {
                                 ? 'bg-rose-50/70 border-rose-300'
                                 : is2026
                                 ? 'bg-amber-50/70 border-amber-300'
-                                : 'bg-white border-emerald-300/80'
+                                : 'bg-surface border-emerald-300/80'
                             }`}
                           >
                             {/* ブロック朱入れヘッダー */}
@@ -528,7 +528,7 @@ export default function LaneGuidesPage() {
                                 </span>
                               </div>
 
-                              <span className="text-[11px] font-bold text-stone-600 bg-white/90 px-2.5 py-0.5 rounded-md border border-black/10">
+                              <span className="text-[11px] font-bold text-stone-600 bg-surface/90 px-2.5 py-0.5 rounded-md border border-black/10">
                                 理由: {sec.reason}
                               </span>
                             </div>
@@ -550,7 +550,7 @@ export default function LaneGuidesPage() {
 
                 {/* ✨ タブ②: 清書後の完成攻略ガイド */}
                 {previewTab === 'refined' && (
-                  <div className="bg-white border-2 border-amber-400/80 rounded-2xl p-4 sm:p-8 shadow-md space-y-4">
+                  <div className="bg-surface border-2 border-amber-400/80 rounded-2xl p-4 sm:p-8 shadow-md space-y-4">
                     <div className="flex items-center justify-between pb-3 border-b border-amber-100 flex-wrap gap-2">
                       <span className="text-sm sm:text-base font-black text-amber-900 flex items-center gap-1.5">
                         <Sparkles size={18} className="text-amber-600" />
@@ -569,12 +569,12 @@ export default function LaneGuidesPage() {
                 {/* 📑 タブ③: PC向け 左右並列比較 */}
                 {previewTab === 'comparison' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-stone-50 border border-border rounded-2xl p-5 shadow-2xs space-y-3">
+                    <div className="bg-background border border-border rounded-2xl p-5 shadow-2xs space-y-3">
                       <div className="flex items-center justify-between pb-2 border-b border-border">
                         <span className="text-xs font-black text-stone-700 flex items-center gap-1.5">
                           <span>📄</span> 清書前（元の生知見全文）
                         </span>
-                        <span className="text-[10px] bg-stone-200 text-stone-700 px-2 py-0.5 rounded font-mono font-bold">
+                        <span className="text-[10px] bg-surface-hover text-stone-700 px-2 py-0.5 rounded font-mono font-bold">
                           {refinePreview.originalBody.length} 文字
                         </span>
                       </div>
@@ -583,7 +583,7 @@ export default function LaneGuidesPage() {
                       </div>
                     </div>
 
-                    <div className="bg-white border-2 border-amber-400/80 rounded-2xl p-5 shadow-md space-y-3">
+                    <div className="bg-surface border-2 border-amber-400/80 rounded-2xl p-5 shadow-md space-y-3">
                       <div className="flex items-center justify-between pb-2 border-b border-amber-100">
                         <span className="text-xs font-black text-amber-900 flex items-center gap-1.5">
                           <Sparkles size={14} className="text-amber-600" />
@@ -602,12 +602,12 @@ export default function LaneGuidesPage() {
               </div>
 
               {/* フッターアクション（スマホでも押しやすく固定） */}
-              <div className="p-3 sm:p-4 bg-white border-t border-border flex items-center justify-between gap-2 flex-wrap shrink-0">
+              <div className="p-3 sm:p-4 bg-surface border-t border-border flex items-center justify-between gap-2 flex-wrap shrink-0">
                 <button
                   type="button"
                   onClick={() => setRefinePreview(null)}
                   disabled={savingRefined || refining}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-stone-500 hover:bg-stone-100 transition"
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-stone-500 hover:bg-surface-subtle transition"
                 >
                   破棄して閉じる
                 </button>

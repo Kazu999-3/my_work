@@ -90,9 +90,9 @@ function GuideContent() {
   ];
 
   return (
-    <div className="min-h-screen pb-16 bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-stone-100 p-3 sm:p-5 md:p-6 space-y-5 max-w-[1300px] w-full mx-auto">
+    <div className="min-h-screen pb-16 bg-background dark:bg-stone-950 text-stone-900 dark:text-stone-100 p-3 sm:p-5 md:p-6 space-y-5 max-w-[1300px] w-full mx-auto">
       {/* 洗練されたコンパクトヘッダー */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 md:p-5 bg-white dark:bg-stone-900 border border-border/90 dark:border-stone-800 rounded-2xl shadow-xs">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 md:p-5 bg-surface dark:bg-stone-900 border border-border/90 dark:border-stone-800 rounded-2xl shadow-xs">
         <div className="flex items-center gap-3.5">
           <div className="text-2xl p-2.5 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-200/80 dark:border-amber-800/60 shrink-0 text-amber-600">
             <BookOpen size={24} />
@@ -121,7 +121,7 @@ function GuideContent() {
               placeholder="サモナー名で戦績検索..."
               value={searchName}
               onChange={(e) => setSearchName(e.target.value)}
-              className="w-full bg-stone-50 dark:bg-stone-800/80 border border-border dark:border-stone-700 text-stone-900 dark:text-stone-100 rounded-xl pl-9 pr-3 py-2 text-xs font-bold focus:outline-none focus:border-amber-500 transition-colors placeholder-stone-400"
+              className="w-full bg-background dark:bg-stone-800/80 border border-border dark:border-stone-700 text-stone-900 dark:text-stone-100 rounded-xl pl-9 pr-3 py-2 text-xs font-bold focus:outline-none focus:border-amber-500 transition-colors placeholder-stone-400"
             />
           </div>
           <button
@@ -135,7 +135,7 @@ function GuideContent() {
       </div>
 
       {/* タブナビゲーション（セグメントコントロール） */}
-      <div className="flex items-center gap-1.5 p-1 bg-stone-100 dark:bg-stone-900 rounded-xl border border-border dark:border-stone-800 overflow-x-auto">
+      <div className="flex items-center gap-1.5 p-1 bg-surface-subtle dark:bg-stone-900 rounded-xl border border-border dark:border-stone-800 overflow-x-auto">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -146,8 +146,8 @@ function GuideContent() {
               onClick={() => handleTabChange(tab.id)}
               className={`px-3.5 py-2 rounded-lg font-bold text-xs transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 ${
                 isActive
-                  ? 'bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 shadow-xs font-black'
-                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-stone-200/60 dark:hover:bg-stone-800/60'
+                  ? 'bg-surface dark:bg-stone-800 text-stone-900 dark:text-stone-100 shadow-xs font-black'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-surface-hover/60 dark:hover:bg-stone-800/60'
               }`}
             >
               <Icon size={14} className={isActive ? tab.color : 'text-stone-400'} />
@@ -173,7 +173,7 @@ function GuideContent() {
 export default function GuidePage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-stone-50 dark:bg-stone-950 flex items-center justify-center">
+      <div className="min-h-screen bg-background dark:bg-stone-950 flex items-center justify-center">
         <div className="text-stone-600 dark:text-stone-400 text-xs font-bold animate-pulse">ガイドを読み込み中...</div>
       </div>
     }>
