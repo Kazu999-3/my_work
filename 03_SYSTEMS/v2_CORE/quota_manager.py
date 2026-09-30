@@ -211,6 +211,44 @@ class QuotaManager:
             current_usage = max(local_today.get(feature_name, 0), remote_today.get(feature_name, 0))
             return current_usage < limit
 
+    def describe_block_reason(self, feature_name: str) -> str:
+        """check_quota() が False を返した理由を、実数付きの短い文で説明する。
+
+        以前は呼び出し元が一律に「本日のAPI利用上限に達しました」とログしていたため、
+        実際には日次予算に余裕があり(実測: 300枠中4件)サーキットブレーカーが
+        429を理由に止めているだけのケースを、予算切れと誤認する原因になっていた
+        (2026-09-30追加)。判定は行わず、表示のためだけに使う。
+        """
+        limit = getattr(settings, "DAILY_QUOTA_LIMITS", {}).get(feature_name, None)
+        if limit is None:
+            return "制限なし"
+        today = self._get_today_str()
+        try:
+            remote_today = self._fetch_remote_usage(today)
+        except Exception:
+            remote_today = {}
+        with self.file_lock:
+            local_today = self._load_data().get(today, {})
+
+        usage = max(local_today.get(feature_name, 0), remote_today.get(feature_name, 0))
+        error_key = f"error_429:{feature_name}"
+        errors = max(local_today.get(error_key, 0), remote_today.get(error_key, 0))
+
+        if usage >= limit:
+            return f"日次予算に到達（{usage}/{limit}）"
+        if errors >= settings.DAILY_ERROR_CIRCUIT_BREAKER:
+            ts_key = f"{error_key}:last_ts"
+            last_ts = max(local_today.get(ts_key, 0), remote_today.get(ts_key, 0))
+            elapsed = ""
+            if last_ts:
+                mins = (datetime.utcnow().timestamp() - last_ts) / 60.0
+                elapsed = f"、最終429から約{mins:.1f}分（解除まで{settings.DAILY_ERROR_COOLDOWN_MINUTES}分）"
+            return (
+                f"サーキットブレーカー作動（429が{errors}件 ≥ {settings.DAILY_ERROR_CIRCUIT_BREAKER}件{elapsed}）"
+                f"／日次予算は{usage}/{limit}でまだ余裕あり"
+            )
+        return f"理由不明（使用 {usage}/{limit}、429 {errors}件）"
+
     def check_quota_or_raise(self, feature_name: str):
         """クォータ上限に達している場合は例外を発生させる厳格なチェック"""
         if not self.check_quota(feature_name):

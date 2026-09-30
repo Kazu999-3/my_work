@@ -444,6 +444,11 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
 
         if not res_text or res_text.startswith("⚠️") or res_text.startswith("❌"):
             # ツール無しで標準再試行
+            # feature_nameを分けているのは意図的(2026-09-30)。グラウンディング有りの
+            # 呼び出しで出た429は、直前に error_429:oracle を閾値超えまで押し上げ、
+            # last_ts も「今」になる。同じ名前でここを呼ぶとサーキットブレーカーの
+            # 15分クールダウンが効いた状態になり、この再試行は必ず
+            # 「本日のAPI利用上限に達しました」で弾かれていた(=一度も実行されない)。
             logger.warning(f"Retrying Gemini API without search tools: {res_text}")
             _phase("Gemini APIへ再試行中（検索ツールなし）...")
             res_text = generate_content_safe(
@@ -451,7 +456,7 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
                 prompt,
                 model_id="gemini-3.1-flash-lite",
                 config=None,
-                feature_name="oracle"
+                feature_name="oracle_nosearch"
             )
 
         if not res_text or res_text.startswith("⚠️") or res_text.startswith("❌"):
@@ -466,7 +471,9 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
         logger.warning(f"⚠️ Gemini API with search failed: {e}. Retrying without search tools...")
         _phase("Gemini APIへ再試行中（検索ツールなし）...")
         try:
-            res_text = generate_content_safe(client, prompt, model_id="gemini-3.1-flash-lite", config=None, feature_name="oracle")
+            # 上と同じ理由で "oracle_nosearch" を使う（グラウンディング由来の429で
+            # このフォールバックが即ブロックされるのを防ぐ）。
+            res_text = generate_content_safe(client, prompt, model_id="gemini-3.1-flash-lite", config=None, feature_name="oracle_nosearch")
             _mark_if_quota_related(res_text)
             res_text = extract_json_object(res_text)
             trend_data = json.loads(res_text)

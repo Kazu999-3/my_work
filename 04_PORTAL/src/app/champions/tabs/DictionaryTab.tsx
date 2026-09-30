@@ -627,11 +627,17 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
     // PCと同期しなかった。お気に入りは誰でも安全にトグルできる個人設定なので、
     // 認証不要の専用エンドポイントを使う（raw_data全体の再構築・上書きもしない）。
     try {
-      await fetch('/api/champions/favorite', {
+      const res = await fetch('/api/champions/favorite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ champion: selected.id, is_favorited: isNowFav })
       });
+      // 通信できた上でサーバーが失敗した場合(4xx/5xx)は例外にならないため、
+      // 以前はここが静かに素通りし、localStorageだけ更新された状態＝
+      // 「端末間で同期されていないのに同期されたように見える」ままだった(2026-09-30)。
+      if (!res.ok) {
+        console.warn('⚠️ お気に入りのサーバー同期に失敗しました（この端末の表示のみ更新されています）:', res.status);
+      }
     } catch (err) {
       console.error('❌ Failed to sync favorite to Supabase:', err);
     }

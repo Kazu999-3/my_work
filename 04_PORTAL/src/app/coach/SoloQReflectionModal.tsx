@@ -99,6 +99,13 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
   const fetchSavedMatchIds = async () => {
     try {
       const res = await fetch('/api/soloq/reflections?limit=200');
+      // 失敗を完全に握りつぶしていたため、取得できないと「済み」判定が丸ごと無効になり、
+      // 上のコメントにある重複記録の問題がそのまま再発する状態だった(2026-09-30)。
+      // 画面を止めるほどの話ではないので表示はそのまま続けるが、原因は残す。
+      if (!res.ok) {
+        console.warn('⚠️ 記録済みマッチの取得に失敗しました。重複記録の判定が無効になります:', res.status);
+        return;
+      }
       const data = await res.json();
       const ids = new Set<string>();
       if (data.reflections) {
@@ -107,7 +114,9 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
         ids.add(data.reflection.match_id);
       }
       setSavedMatchIds(ids);
-    } catch {}
+    } catch (e) {
+      console.warn('⚠️ 記録済みマッチの取得に失敗しました。重複記録の判定が無効になります:', e);
+    }
   };
 
   // 1. 初回マウント時・モーダルオープン時に Riot ID のみロードし、フォームは常にクリーンに初期化

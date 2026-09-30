@@ -75,7 +75,13 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
     # (Redis/SQLiteによる分間レート制限、プロセスをまたいで共有)で必要な制御は
     # 既にGateway無しでも揃っているため、直接生成に一本化する。
     if not quota_manager.check_quota(feature_name):
-        logger.warning(f"⚠️ [AIHelper] 機能 '{feature_name}' は本日のAPI利用上限に達したためスキップされました。")
+        # 「上限に達した」と一律に出していたため、実際は日次予算に余裕があり
+        # サーキットブレーカーが429で止めているだけのケースを予算切れと誤認していた
+        # (2026-09-30: oracleが300枠中4件しか使っていないのに丸1日進まない原因の調査で判明)。
+        logger.warning(
+            f"⚠️ [AIHelper] 機能 '{feature_name}' をスキップしました: "
+            f"{quota_manager.describe_block_reason(feature_name)}"
+        )
         return "⚠️ 本日の利用上限に達しました。"
 
     if not client:

@@ -62,7 +62,14 @@ export default function PushOptIn({ collapsed = false, scope = 'general', label,
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.getSubscription();
       if (sub) {
-        await fetch('/api/push/subscribe', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) });
+        // サーバー側の購読レコード削除が失敗しても、ブラウザ側の解除は続行する
+        // （利用者にとっては「通知が止まる」ことが目的なので、そこは達成される）。
+        // ただし黙って無視するとサーバーには購読が残り続け、DB上は購読中のままに
+        // なるため、原因を追えるようログに残す(2026-09-30)。
+        const delRes = await fetch('/api/push/subscribe', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) });
+        if (!delRes.ok) {
+          console.warn('⚠️ サーバー側の購読レコード削除に失敗しました（ブラウザ側の解除は実行します）:', delRes.status);
+        }
         await sub.unsubscribe();
       }
       setSubscribed(false);
