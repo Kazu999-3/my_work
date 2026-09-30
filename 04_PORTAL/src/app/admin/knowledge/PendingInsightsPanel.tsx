@@ -419,7 +419,7 @@ export default function PendingInsightsPanel() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <h4 className="text-sm font-bold text-stone-900">{item.title}</h4>
                       <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border shrink-0 ${
-                        item.is_atomic ? 'bg-purple-50 border-purple-200 text-purple-700' : 'bg-blue-50 border-blue-200 text-blue-700'
+                        item.is_atomic ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-teal-50 border-teal-200 text-teal-700'
                       }`}>
                         {item.is_atomic ? '分割知見' : '動画解析記事'}
                       </span>
@@ -429,14 +429,14 @@ export default function PendingInsightsPanel() {
                   )}
                   {item.source_url && (
                     <a href={item.source_url} target="_blank" rel="noopener noreferrer"
-                      className="text-[11px] text-sky-600 hover:text-sky-800 mt-0.5 inline-flex items-center gap-1 font-bold">
+                      className="text-[11px] text-teal-600 hover:text-teal-800 mt-0.5 inline-flex items-center gap-1 font-bold">
                       <ExternalLink size={11} /> 元動画/記事を開く
                     </a>
                   )}
                   </div>
                 </div>
                 <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg border shrink-0 ${
-                  item.isLaneGeneral ? 'bg-sky-50 border-sky-200 text-sky-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                  item.isLaneGeneral ? 'bg-teal-50 border-teal-200 text-teal-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
                 }`}>
                   {item.isLaneGeneral ? 'AI判定: レーン一般論' : `AI判定: ${item.champion}固有`}
                 </span>

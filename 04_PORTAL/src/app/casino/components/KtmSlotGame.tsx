@@ -11,12 +11,12 @@ interface KtmSlotGameProps {
 }
 
 const SYMBOL_ICONS: Record<SlotSymbol, { emoji: string; name: string; color: string }> = {
-  gem: { emoji: '💎', name: 'ジェム', color: 'text-cyan-400' },
-  baron: { emoji: '👾', name: 'バロン', color: 'text-purple-400' },
+  gem: { emoji: '💎', name: 'ジェム', color: 'text-teal-400' },
+  baron: { emoji: '👾', name: 'バロン', color: 'text-amber-400' },
   dragon: { emoji: '🐉', name: 'ドラゴン', color: 'text-amber-500' },
   sword: { emoji: '🗡️', name: 'ソード', color: 'text-rose-400' },
   poro: { emoji: '🐹', name: 'ポロ', color: 'text-emerald-400' },
-  minion: { emoji: '🧙', name: 'ミニオン', color: 'text-blue-400' },
+  minion: { emoji: '🧙', name: 'ミニオン', color: 'text-teal-400' },
   potion: { emoji: '🧪', name: 'ポーション', color: 'text-red-400' },
 };
 
@@ -169,7 +169,7 @@ export default function KtmSlotGame({ userCoins, onBalanceChange }: KtmSlotGameP
           <div
             className={`p-3 rounded-2xl text-center text-xs font-black border transition-all animate-in zoom-in-95 ${
               lastResult.payoutMultiplier >= 15
-                ? 'bg-gradient-to-r from-purple-950/80 via-amber-950/80 to-purple-950/80 border-purple-500/80 text-yellow-300 shadow-lg shadow-amber-500/20'
+                ? 'bg-gradient-to-r from-amber-950/80 via-amber-950/80 to-amber-950/80 border-amber-500/80 text-yellow-300 shadow-lg shadow-amber-500/20'
                 : lastResult.payoutMultiplier > 0
                 ? 'bg-emerald-950/80 border-emerald-500/80 text-emerald-300'
                 : 'bg-stone-900/80 border-stone-800 text-stone-400'
@@ -237,11 +237,11 @@ export default function KtmSlotGame({ userCoins, onBalanceChange }: KtmSlotGameP
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
           <div className="bg-stone-900/70 p-2 rounded-xl border border-stone-800/80 flex items-center justify-between">
             <span>💎 x3 (ジェム)</span>
-            <span className="font-black text-cyan-400 font-mono">50倍 👑</span>
+            <span className="font-black text-teal-400 font-mono">50倍 👑</span>
           </div>
           <div className="bg-stone-900/70 p-2 rounded-xl border border-stone-800/80 flex items-center justify-between">
             <span>👾 x3 (バロン)</span>
-            <span className="font-black text-purple-400 font-mono">15倍 🔥</span>
+            <span className="font-black text-amber-400 font-mono">15倍 🔥</span>
           </div>
           <div className="bg-stone-900/70 p-2 rounded-xl border border-stone-800/80 flex items-center justify-between">
             <span>🐉 x3 (ドラゴン)</span>
@@ -257,7 +257,7 @@ export default function KtmSlotGame({ userCoins, onBalanceChange }: KtmSlotGameP
           </div>
           <div className="bg-stone-900/70 p-2 rounded-xl border border-stone-800/80 flex items-center justify-between">
             <span>💎 x2 (ジェム2個)</span>
-            <span className="font-bold text-cyan-300 font-mono">1.5倍</span>
+            <span className="font-bold text-teal-300 font-mono">1.5倍</span>
           </div>
           <div className="bg-stone-900/70 p-2 rounded-xl border border-stone-800/80 flex items-center justify-between col-span-2">
             <span>🐹 x2 (ポロ2個)</span>

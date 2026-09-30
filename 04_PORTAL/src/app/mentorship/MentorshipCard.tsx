@@ -153,14 +153,14 @@ export function MentorshipCard({
         : ''
     } ${
       isLightCourse
-        ? 'border-sky-400/60 ring-1 ring-sky-300/40 hover:border-sky-500 shadow-sky-900/5 hover:shadow-xl'
+        ? 'border-teal-400/60 ring-1 ring-teal-300/40 hover:border-teal-500 shadow-teal-900/5 hover:shadow-xl'
         : isMentor
           ? 'border-amber-400/40 hover:border-amber-500 shadow-amber-900/5 hover:shadow-lg'
           : 'border-emerald-400/40 hover:border-emerald-500 shadow-emerald-900/5 hover:shadow-lg'
     }`}>
       {/* 🚀 案1: 1試合・単発・ライトコースのアイキャッチ強調バナー（パッと見でわかるデザイン） */}
       {isLightCourse && (
-        <div className="bg-gradient-to-r from-sky-500 via-cyan-500 to-indigo-500 text-white px-3.5 py-1.5 flex items-center justify-between text-xs font-black shadow-inner tracking-tight">
+        <div className="bg-gradient-to-r from-teal-500 via-teal-500 to-amber-500 text-white px-3.5 py-1.5 flex items-center justify-between text-xs font-black shadow-inner tracking-tight">
           <div className="flex items-center gap-1.5">
             <Zap size={14} className="text-yellow-300 animate-pulse fill-yellow-300" />
             <span>
@@ -222,7 +222,7 @@ export function MentorshipCard({
             {/* ステータスバッジ（師匠は受入枠数を表示） */}
             {isMentor ? (
               (profile.active_pupils_count || 0) >= (profile.max_pupils || 3) ? (
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-950/50 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800 flex items-center gap-1">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 flex items-center gap-1">
                   <span>🈵</span>
                   <span>弟子枠満員 ({profile.active_pupils_count}/{profile.max_pupils || 3}人)</span>
                 </span>
@@ -238,7 +238,7 @@ export function MentorshipCard({
                 </span>
               )
             ) : profile.status === 'MATCHED' ? (
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-950/50 text-purple-800 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
                 🤝 ペア結成中
               </span>
             ) : (
@@ -278,7 +278,7 @@ export function MentorshipCard({
         <div className="flex items-center gap-3">
           <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center text-xl font-black shrink-0 shadow-2xs ${
             isLightCourse
-              ? 'bg-gradient-to-br from-sky-100 to-indigo-100 border-sky-300 text-sky-900'
+              ? 'bg-gradient-to-br from-teal-100 to-amber-100 border-teal-300 text-teal-900'
               : 'bg-gradient-to-br from-amber-100 to-amber-200 border-amber-300/80 text-amber-900'
           }`}>
             {profile.player_name.slice(0, 1).toUpperCase()}
@@ -313,7 +313,7 @@ export function MentorshipCard({
                 {profile.active_pupil_names.map((name, idx) => (
                   <span
                     key={`${name}-${idx}`}
-                    className="text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 px-1.5 py-0.2 rounded-md"
+                    className="text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 px-1.5 py-0.2 rounded-md"
                   >
                     🌱 {name}
                   </span>
@@ -396,7 +396,7 @@ export function MentorshipCard({
                 key={tag}
                 className={`px-2.5 py-0.5 rounded-lg text-xs font-semibold border ${
                   tag.includes('1試合') || tag.includes('リプレイ') || tag.includes('お試し')
-                    ? 'bg-sky-50 dark:bg-sky-950/40 text-sky-900 dark:text-sky-300 border-sky-300 dark:border-sky-800 font-bold'
+                    ? 'bg-teal-50 dark:bg-teal-950/40 text-teal-900 dark:text-teal-300 border-teal-300 dark:border-teal-800 font-bold'
                     : isMentor
                       ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border-amber-200 dark:border-amber-800'
                       : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
@@ -431,7 +431,7 @@ export function MentorshipCard({
             className="w-full py-1.5 px-3 rounded-xl bg-stone-100 dark:bg-[#1e1f22] hover:bg-stone-200/80 dark:hover:bg-[#35373c] text-stone-700 dark:text-stone-200 text-xs font-bold transition flex items-center justify-between cursor-pointer border border-stone-200/80 dark:border-[#3f4147]"
           >
             <span className="flex items-center gap-1.5">
-              <MessageSquare size={13} className="text-sky-600 dark:text-sky-400" />
+              <MessageSquare size={13} className="text-teal-600 dark:text-teal-400" />
               <span>💬 ワンポイント相談 / 応援コメント</span>
             </span>
             <span className="text-[11px] font-semibold bg-white dark:bg-[#2b2d31] text-stone-700 dark:text-stone-300 px-2 py-0.5 rounded-full border border-stone-200 dark:border-[#3f4147]">
@@ -506,12 +506,12 @@ export function MentorshipCard({
                   onChange={(e) => setCommentInput(e.target.value)}
                   placeholder="質問・アドバイス・一言応援を書く..."
                   maxLength={300}
-                  className="flex-1 px-3 py-1.5 text-xs rounded-xl border border-stone-300 bg-white focus:outline-none focus:ring-2 focus:ring-sky-500 text-stone-800 placeholder-stone-400"
+                  className="flex-1 px-3 py-1.5 text-xs rounded-xl border border-stone-300 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 text-stone-800 placeholder-stone-400"
                 />
                 <button
                   type="submit"
                   disabled={!commentInput.trim() || isSubmittingComment}
-                  className="px-3 py-1.5 bg-sky-600 hover:bg-sky-500 disabled:bg-stone-300 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:cursor-not-allowed shadow-2xs shrink-0"
+                  className="px-3 py-1.5 bg-teal-600 hover:bg-teal-500 disabled:bg-stone-300 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:cursor-not-allowed shadow-2xs shrink-0"
                 >
                   <Send size={12} />
                   <span>送信</span>
@@ -531,11 +531,11 @@ export function MentorshipCard({
         {isMine ? (
           <span className="text-xs text-stone-500 font-bold">（あなたのカード）</span>
         ) : !isMentor && profile.status === 'MATCHED' ? (
-          <span className="text-xs text-purple-700 font-bold bg-purple-50 px-2.5 py-1 rounded-xl border border-purple-200">
+          <span className="text-xs text-amber-700 font-bold bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200">
             🤝 ペア結成中
           </span>
         ) : isMentor && (profile.active_pupils_count || 0) >= (profile.max_pupils || 3) ? (
-          <span className="text-xs text-purple-700 font-bold bg-purple-50 px-2.5 py-1 rounded-xl border border-purple-200">
+          <span className="text-xs text-amber-700 font-bold bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200">
             🈵 弟子枠満員 ({profile.max_pupils || 3}人)
           </span>
         ) : isPendingSent ? (

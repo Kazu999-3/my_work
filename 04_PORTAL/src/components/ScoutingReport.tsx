@@ -80,11 +80,11 @@ export default function ScoutingReport({ stats, mmr }: ScoutingReportProps) {
         {/* メインロールの傾向 */}
         {mostPlayedRole.games > 0 && (
           <div className="flex gap-3 items-start">
-            <div className="mt-0.5"><Target className="w-5 h-5 text-blue-600" /></div>
+            <div className="mt-0.5"><Target className="w-5 h-5 text-teal-600" /></div>
             <div>
               <div className="text-xs font-bold text-gray-500 mb-1">MAIN ROLE & WINRATE</div>
               <p className="text-sm text-gray-700">
-                主に <span className="font-bold text-blue-700">{mostPlayedRole.role}</span> をプレイ ({mostPlayedRole.games}戦)。
+                主に <span className="font-bold text-teal-700">{mostPlayedRole.role}</span> をプレイ ({mostPlayedRole.games}戦)。
                 勝率は <span className={`font-bold ${overallWinRate >= 55 ? 'text-emerald-700' : overallWinRate <= 45 ? 'text-red-700' : 'text-gray-700'}`}>{overallWinRate}%</span>。
                 {overallWinRate >= 60 ? " チームの核となるキャリープレイヤーのため徹底マークが必要。" : 
                  overallWinRate >= 50 ? " 安定したパフォーマンスを発揮する。" : " 現在苦戦傾向にある。"}

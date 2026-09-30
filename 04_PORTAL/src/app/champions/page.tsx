@@ -117,7 +117,7 @@ function ChampionsShell() {
             <>
               <Link
                 href="/library"
-                className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-purple-700 hover:text-purple-900 bg-purple-50 hover:bg-purple-100/80 border border-purple-200 transition flex items-center gap-1"
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-amber-700 hover:text-amber-900 bg-amber-50 hover:bg-amber-100/80 border border-amber-200 transition flex items-center gap-1"
               >
                 <span>📒 攻略ライブラリ</span>
               </Link>

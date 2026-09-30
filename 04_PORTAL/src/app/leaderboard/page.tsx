@@ -197,7 +197,7 @@ function LeaderboardContent() {
                     : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-stone-200/60 dark:hover:bg-stone-800/60'
                 }`}
               >
-                <Users className="w-4 h-4 text-indigo-500" />
+                <Users className="w-4 h-4 text-amber-500" />
                 <span>👥 メンバー名簿</span>
               </button>
 
@@ -211,7 +211,7 @@ function LeaderboardContent() {
                     : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 hover:bg-stone-200/60 dark:hover:bg-stone-800/60'
                 }`}
               >
-                <Activity className="w-4 h-4 text-cyan-500" />
+                <Activity className="w-4 h-4 text-teal-500" />
                 <span>📊 詳細データ分析</span>
               </button>
             </div>
@@ -330,7 +330,7 @@ function LeaderboardContent() {
                   onClick={() => setShowMetaPlayers(!showMetaPlayers)}
                   className={`px-3 py-1 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer ${
                     showMetaPlayers
-                      ? 'bg-indigo-600 text-white shadow-xs'
+                      ? 'bg-amber-600 text-white shadow-xs'
                       : 'bg-stone-100 hover:bg-stone-200 text-stone-600'
                   }`}
                   title="各チャンピオンを誰が使用したかを表示/非表示に切り替えます"

@@ -98,10 +98,10 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                   } else if (daysAgo !== null && daysAgo > 30) {
                     if (daysAgo >= 60) {
                       label = '⏳ 復帰勢';
-                      color = 'bg-purple-100 text-purple-900 border-purple-300';
+                      color = 'bg-amber-100 text-amber-900 border-amber-300';
                     } else {
                       label = '🎖️ 経験者';
-                      color = 'bg-sky-100 text-sky-900 border-sky-300';
+                      color = 'bg-teal-100 text-teal-900 border-teal-300';
                     }
                   }
 

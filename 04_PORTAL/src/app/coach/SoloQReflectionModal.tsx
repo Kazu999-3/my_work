@@ -473,28 +473,28 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
           {/* AI自動分析(coach_analyses)。KDA/CS/Vision・弱点・アドバイスを、振り返りを
               書く前にその場で確認できるようにする。通知(ベル)に流れる内容と同じもの。 */}
           {currentMatch && (
-            <div className="bg-indigo-50/70 border border-indigo-200 rounded-lg p-3.5 space-y-2 shadow-sm">
-              <label className="font-bold text-indigo-950 text-xs block flex items-center gap-1.5">
+            <div className="bg-amber-50/70 border border-amber-200 rounded-lg p-3.5 space-y-2 shadow-sm">
+              <label className="font-bold text-amber-950 text-xs block flex items-center gap-1.5">
                 <span>🤖</span> AI自動分析（KDA / CS / Vision・弱点・アドバイス）
               </label>
 
               {analysisLoading ? (
                 <p className="text-xs text-stone-500 flex items-center gap-2">
-                  <span className="w-3.5 h-3.5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                  <span className="w-3.5 h-3.5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
                   確認中...
                 </p>
               ) : currentAnalysis?.found ? (
                 <div className="space-y-2.5">
                   <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                    <div className="bg-white rounded-lg p-2 border border-indigo-100">
+                    <div className="bg-white rounded-lg p-2 border border-amber-100">
                       <div className="text-stone-400">KDA</div>
                       <div className="font-bold text-stone-800">{currentAnalysis.result.kda} ({currentAnalysis.result.kdaRatio})</div>
                     </div>
-                    <div className="bg-white rounded-lg p-2 border border-indigo-100">
+                    <div className="bg-white rounded-lg p-2 border border-amber-100">
                       <div className="text-stone-400">CS/min</div>
                       <div className="font-bold text-stone-800">{currentAnalysis.result.csPerMin}</div>
                     </div>
-                    <div className="bg-white rounded-lg p-2 border border-indigo-100">
+                    <div className="bg-white rounded-lg p-2 border border-amber-100">
                       <div className="text-stone-400">Vision/min</div>
                       <div className="font-bold text-stone-800">{currentAnalysis.result.visionPerMin}</div>
                     </div>
@@ -637,7 +637,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                           currentAnalysis.recallEfficiency.grade === 'S'
                             ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
                             : currentAnalysis.recallEfficiency.grade === 'A'
-                            ? 'bg-sky-100 text-sky-800 border-sky-300'
+                            ? 'bg-teal-100 text-teal-800 border-teal-300'
                             : 'bg-amber-100 text-amber-900 border-amber-300'
                         }`}>
                           健全度: グレード {currentAnalysis.recallEfficiency.grade}
@@ -731,7 +731,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                   )}
 
                   {currentAnalysis.advice && (
-                    <p className="text-xs text-stone-700 bg-white/70 rounded border border-indigo-100 p-2 whitespace-pre-wrap leading-relaxed">
+                    <p className="text-xs text-stone-700 bg-white/70 rounded border border-amber-100 p-2 whitespace-pre-wrap leading-relaxed">
                       {currentAnalysis.advice}
                     </p>
                   )}
@@ -742,8 +742,8 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                   )}
 
                   {/* 💬 AIコーチにこの試合を質問する（JG深掘り） */}
-                  <div className="bg-white/90 rounded-lg p-2.5 border border-indigo-200 space-y-2">
-                    <div className="font-extrabold text-indigo-950 text-xs flex items-center gap-1">
+                  <div className="bg-white/90 rounded-lg p-2.5 border border-amber-200 space-y-2">
+                    <div className="font-extrabold text-amber-950 text-xs flex items-center gap-1">
                       <span>💬</span> AIコーチに質問する (JGの立ち回り・敗因深掘り)
                     </div>
 
@@ -752,7 +752,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                       <div className="space-y-2 max-h-36 overflow-y-auto pr-1">
                         {chatHistory[currentMatch.matchId].map((msg, i) => (
                           <div key={i} className="text-xs space-y-1">
-                            <div className="bg-indigo-50 text-indigo-900 font-bold p-1.5 rounded-lg text-left">
+                            <div className="bg-amber-50 text-amber-900 font-bold p-1.5 rounded-lg text-left">
                               Q: {msg.q}
                             </div>
                             <div className="bg-stone-50 text-stone-800 p-1.5 rounded-lg border border-stone-200 text-left leading-relaxed">
@@ -775,7 +775,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                         type="button"
                         onClick={handleAskCoach}
                         disabled={chatLoading || !chatQuestion.trim()}
-                        className="px-3 py-1.5 bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-bold rounded-md shadow-sm transition disabled:opacity-40"
+                        className="px-3 py-1.5 bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold rounded-md shadow-sm transition disabled:opacity-40"
                       >
                         {chatLoading ? '回答中...' : '質問する'}
                       </button>
@@ -789,7 +789,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                     type="button"
                     onClick={generateAnalysis}
                     disabled={generating}
-                    className="shrink-0 px-3 py-1.5 bg-indigo-700 hover:bg-indigo-800 text-white font-bold text-xs rounded-lg shadow transition-colors disabled:opacity-50"
+                    className="shrink-0 px-3 py-1.5 bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs rounded-lg shadow transition-colors disabled:opacity-50"
                   >
                     {generating ? '生成中...(最大1分)' : 'AI分析を生成する'}
                   </button>
@@ -941,7 +941,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                     const snippet = matchVs ? matchVs[0].trim() : advice.slice(0, 120);
                     setMatchupMemo((prev) => (prev ? `${prev}\n${snippet}` : snippet));
                   }}
-                  className="text-[10px] bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 font-bold px-2 py-0.5 rounded transition"
+                  className="text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold px-2 py-0.5 rounded transition"
                 >
                   🤖 AIアドバイスから対面対策を取り込む
                 </button>

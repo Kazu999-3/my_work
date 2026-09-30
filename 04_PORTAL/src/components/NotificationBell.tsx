@@ -215,13 +215,13 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
       return { icon: '🎮', label: 'ソロQ振り返り', bg: 'bg-amber-100 text-amber-800 border-amber-200' };
     }
     if (type.includes('dict_review')) {
-      return { icon: '📖', label: '辞典レビュー', bg: 'bg-sky-100 text-sky-800 border-sky-200' };
+      return { icon: '📖', label: '辞典レビュー', bg: 'bg-teal-100 text-teal-800 border-teal-200' };
     }
     if (type.includes('soloq') || title.includes('ソロq') || title.includes('振り返り')) {
       return { icon: '🎮', label: 'ソロQ', bg: 'bg-amber-100 text-amber-800 border-amber-200' };
     }
     if (type.includes('discord') || title.includes('メンバー') || title.includes('参加')) {
-      return { icon: '👤', label: '新メンバー', bg: 'bg-indigo-100 text-indigo-800 border-indigo-200' };
+      return { icon: '👤', label: '新メンバー', bg: 'bg-amber-100 text-amber-800 border-amber-200' };
     }
     if (type.includes('match') || title.includes('内戦') || title.includes('試合')) {
       return { icon: '🏆', label: '大会・内戦', bg: 'bg-emerald-100 text-emerald-800 border-emerald-200' };

@@ -44,7 +44,7 @@ export default function FreshnessPanel() {
     <div className="bg-white border border-stone-200 rounded-2xl p-5">
       <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
         <h3 className="font-black text-stone-900 flex items-center gap-2">
-          <Clock size={16} className="text-sky-600" /> データ鮮度モニター
+          <Clock size={16} className="text-teal-600" /> データ鮮度モニター
           {staleCount > 0 && (
             <span className="text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-full">
               {staleCount}件 停滞中
@@ -52,7 +52,7 @@ export default function FreshnessPanel() {
           )}
         </h3>
         <button onClick={load} disabled={loading}
-          className="flex items-center gap-1.5 text-xs font-bold bg-sky-100 text-sky-700 border border-sky-200 px-3 py-1.5 rounded-lg hover:bg-sky-200 disabled:opacity-50">
+          className="flex items-center gap-1.5 text-xs font-bold bg-teal-100 text-teal-700 border border-teal-200 px-3 py-1.5 rounded-lg hover:bg-teal-200 disabled:opacity-50">
           <RefreshCw size={13} className={loading ? 'animate-spin' : ''} /> 再チェック
         </button>
       </div>

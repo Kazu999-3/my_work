@@ -296,7 +296,7 @@ export default function MentorshipProgressCard({
                     href={match.meta.threadUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 px-3 py-1 rounded-xl text-xs font-black bg-indigo-600 hover:bg-indigo-500 text-white shadow-2xs transition cursor-pointer"
+                    className="inline-flex items-center gap-1 px-3 py-1 rounded-xl text-xs font-black bg-amber-600 hover:bg-amber-500 text-white shadow-2xs transition cursor-pointer"
                     title="Discordの専用指導スレッド（🎓コーチング・質問）を開く"
                   >
                     <MessageSquare className="w-3.5 h-3.5" />
@@ -307,7 +307,7 @@ export default function MentorshipProgressCard({
                     type="button"
                     onClick={() => handleCreateThread(match.id)}
                     disabled={creatingThreadMatchId === match.id}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 transition cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800 transition cursor-pointer disabled:opacity-50"
                     title="Discord (🎓コーチング・質問) に専用指導チャットを作成"
                   >
                     <MessageSquare className="w-3.5 h-3.5" />

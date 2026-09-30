@@ -160,7 +160,7 @@ export function MainMmrChart({
                   <span className={`font-black text-[10px] ${d.isWin ? 'text-emerald-600' : 'text-rose-600'}`}>
                     {d.isWin ? 'WIN' : 'LOSE'} ({d.role})
                   </span>
-                  <span className={`text-[9px] px-1.5 rounded font-bold bg-cyan-100 text-cyan-700 border border-cyan-200`}>
+                  <span className={`text-[9px] px-1.5 rounded font-bold bg-teal-100 text-teal-700 border border-teal-200`}>
                     {laneLabels[activeLane]}
                   </span>
                 </div>

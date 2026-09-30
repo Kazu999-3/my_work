@@ -9,27 +9,27 @@ export const MENTORSHIP_DURATIONS: Record<string, { label: string; shortLabel: s
     shortLabel: '🎮 1試合カスタム',
     days: 1,
     isLight: true,
-    badgeColor: 'bg-sky-100 text-sky-900 border-sky-300',
+    badgeColor: 'bg-teal-100 text-teal-900 border-teal-300',
   },
   'REPLAY': {
     label: '📺 1試合リプレイ添削（1回完結）',
     shortLabel: '📺 リプレイ添削',
     days: 1,
     isLight: true,
-    badgeColor: 'bg-purple-100 text-purple-900 border-purple-300',
+    badgeColor: 'bg-emerald-100 text-emerald-900 border-emerald-300',
   },
   '3_DAYS': {
     label: '☕ 3日間お試しバディ（3日）',
     shortLabel: '☕ 3日間お試し',
     days: 3,
     isLight: true,
-    badgeColor: 'bg-amber-100 text-amber-900 border-amber-300',
+    badgeColor: 'bg-stone-100 text-stone-900 border-stone-400',
   },
   '7_DAYS': {
     label: '⏱️ 1週間集中コース（7日）',
     shortLabel: '⏱️ 1週間集中',
     days: 7,
-    badgeColor: 'bg-blue-100 text-blue-900 border-blue-300',
+    badgeColor: 'bg-amber-100 text-amber-900 border-amber-300',
   },
   '14_DAYS': {
     label: '🔥 2週間育成コース（14日・推奨）',
@@ -41,13 +41,13 @@ export const MENTORSHIP_DURATIONS: Record<string, { label: string; shortLabel: s
     label: '🏆 1ヶ月ガチ特訓コース（30日）',
     shortLabel: '🏆 1ヶ月特訓',
     days: 30,
-    badgeColor: 'bg-amber-100 text-amber-900 border-amber-400',
+    badgeColor: 'bg-amber-200 text-amber-950 border-amber-500',
   },
   'INDEFINITE': {
     label: '♾️ 目標達成まで（期限なし）',
     shortLabel: '♾️ 期限なし',
     days: 90,
-    badgeColor: 'bg-stone-100 text-stone-900 border-stone-300',
+    badgeColor: 'bg-stone-200 text-stone-950 border-stone-500',
   },
 };
 

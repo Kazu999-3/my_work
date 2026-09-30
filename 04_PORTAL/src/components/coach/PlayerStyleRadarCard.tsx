@@ -120,7 +120,7 @@ export default function PlayerStyleRadarCard() {
             type="button"
             onClick={() => setActiveTab('vision')}
             className={`px-2 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
-              activeTab === 'vision' ? 'bg-white text-indigo-700 font-black shadow-2xs' : 'text-stone-500 hover:text-stone-800'
+              activeTab === 'vision' ? 'bg-white text-amber-700 font-black shadow-2xs' : 'text-stone-500 hover:text-stone-800'
             }`}
           >
             👁️ 視界解析
@@ -182,13 +182,13 @@ export default function PlayerStyleRadarCard() {
               {/* ファーム効率 */}
               <div className="space-y-1">
                 <div className="flex justify-between text-xs font-bold">
-                  <span className="text-sky-700 flex items-center gap-1">
+                  <span className="text-teal-700 flex items-center gap-1">
                     <Zap size={12} /> 15分CSリード (CSD@15)
                   </span>
-                  <span className="text-stone-900 font-black">88点 <span className="text-[10px] text-sky-600 font-normal">(上位12% / +13.9CS)</span></span>
+                  <span className="text-stone-900 font-black">88点 <span className="text-[10px] text-teal-600 font-normal">(上位12% / +13.9CS)</span></span>
                 </div>
                 <div className="h-2 w-full rounded-full bg-stone-200 overflow-hidden">
-                  <div className="h-full bg-sky-500 rounded-full" style={{ width: '88%' }} />
+                  <div className="h-full bg-teal-500 rounded-full" style={{ width: '88%' }} />
                 </div>
               </div>
 
@@ -221,13 +221,13 @@ export default function PlayerStyleRadarCard() {
               {/* 集団戦ポジショニング */}
               <div className="space-y-1">
                 <div className="flex justify-between text-xs font-bold">
-                  <span className="text-indigo-700 flex items-center gap-1">
+                  <span className="text-amber-700 flex items-center gap-1">
                     <Crosshair size={12} /> 集団戦ポジショニング (Teamfight)
                   </span>
-                  <span className="text-stone-900 font-black">82点 <span className="text-[10px] text-indigo-600 font-normal">(高KDA維持)</span></span>
+                  <span className="text-stone-900 font-black">82点 <span className="text-[10px] text-amber-600 font-normal">(高KDA維持)</span></span>
                 </div>
                 <div className="h-2 w-full rounded-full bg-stone-200 overflow-hidden">
-                  <div className="h-full bg-indigo-500 rounded-full" style={{ width: '82%' }} />
+                  <div className="h-full bg-amber-500 rounded-full" style={{ width: '82%' }} />
                 </div>
               </div>
             </div>
@@ -365,7 +365,7 @@ export default function PlayerStyleRadarCard() {
               {/* ② 15分CSリード */}
               <div className="space-y-1">
                 <div className="flex justify-between text-xs font-bold">
-                  <span className="text-sky-700 flex items-center gap-1">
+                  <span className="text-teal-700 flex items-center gap-1">
                     <Zap size={12} /> ② 15分CSリード (CSD@15)
                   </span>
                   <div className="flex items-center gap-2">
@@ -378,7 +378,7 @@ export default function PlayerStyleRadarCard() {
                   </div>
                 </div>
                 <div className="h-2 w-full rounded-full bg-stone-100 overflow-hidden">
-                  <div className="h-full bg-sky-500 rounded-full transition-all duration-500" style={{ width: `${selectedPeriod.farm}%` }} />
+                  <div className="h-full bg-teal-500 rounded-full transition-all duration-500" style={{ width: `${selectedPeriod.farm}%` }} />
                 </div>
               </div>
 
@@ -426,7 +426,7 @@ export default function PlayerStyleRadarCard() {
               {/* ⑤ 集団戦ポジショニング */}
               <div className="space-y-1">
                 <div className="flex justify-between text-xs font-bold">
-                  <span className="text-indigo-700 flex items-center gap-1">
+                  <span className="text-amber-700 flex items-center gap-1">
                     <Crosshair size={12} /> ⑤ 集団戦ポジショニング (Teamfight)
                   </span>
                   <div className="flex items-center gap-2">
@@ -439,7 +439,7 @@ export default function PlayerStyleRadarCard() {
                   </div>
                 </div>
                 <div className="h-2 w-full rounded-full bg-stone-100 overflow-hidden">
-                  <div className="h-full bg-indigo-500 rounded-full transition-all duration-500" style={{ width: `${selectedPeriod.teamfight}%` }} />
+                  <div className="h-full bg-amber-500 rounded-full transition-all duration-500" style={{ width: `${selectedPeriod.teamfight}%` }} />
                 </div>
               </div>
             </div>
@@ -466,15 +466,15 @@ export default function PlayerStyleRadarCard() {
       {activeTab === 'vision' && (
         <div className="space-y-4 animate-in fade-in">
           {/* 視界総合評価バナー */}
-          <div className="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4 flex items-start justify-between gap-3">
+          <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 flex items-start justify-between gap-3">
             <div className="flex items-start gap-3">
               <span className="text-2xl">👁️</span>
               <div className="space-y-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-black text-indigo-950">
+                  <span className="text-xs font-black text-amber-950">
                     視界総合評価: {vision.visionScoreTier}
                   </span>
-                  <span className="text-[10px] font-black px-2 py-0.5 bg-indigo-200 text-indigo-900 rounded-md">
+                  <span className="text-[10px] font-black px-2 py-0.5 bg-amber-200 text-amber-900 rounded-md">
                     上位 {vision.visionRankPercentile}%
                   </span>
                 </div>
@@ -491,7 +491,7 @@ export default function PlayerStyleRadarCard() {
             <div className="p-3 bg-white rounded-2xl border border-stone-200 shadow-2xs space-y-1">
               <div className="text-[10px] font-bold text-stone-500 flex items-center justify-between">
                 <span>分間視界スコア (VS/m)</span>
-                <span className="text-indigo-600 font-bold">上位18%</span>
+                <span className="text-amber-600 font-bold">上位18%</span>
               </div>
               <div className="text-base font-black text-stone-900">
                 {vision.visionScorePerMin} <span className="text-xs font-normal text-stone-400">/分</span>

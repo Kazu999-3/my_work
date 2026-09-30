@@ -206,11 +206,11 @@ const GENERAL_MENU_ITEMS: MenuItem[] = [
 // 🛡️ 管理者向け追加メニュー（攻略辞典・攻略ライブラリ・戦術取込・パーソナルコーチ・外部分析・大会管理・運用）
 const ADMIN_EXTRA_ITEMS: MenuItem[] = [
   { id: 'champions', label: 'チャンピオン攻略辞典', shortLabel: '攻略辞典', icon: BookHeart, href: '/champions', color: 'text-amber-600', activeBg: 'bg-amber-500/15', section: '管理者専用', adminOnly: true },
-  { id: 'library', label: '攻略ライブラリ (記事・戦術)', shortLabel: 'ライブラリ', icon: Library, href: '/library', color: 'text-purple-600', activeBg: 'bg-purple-500/15', section: '管理者専用', adminOnly: true },
+  { id: 'library', label: '攻略ライブラリ (記事・戦術)', shortLabel: 'ライブラリ', icon: Library, href: '/library', color: 'text-amber-600', activeBg: 'bg-amber-500/15', section: '管理者専用', adminOnly: true },
   { id: 'knowledge-ingest', label: '戦術取り込み (AI解析)', shortLabel: '戦術取込', icon: Download, href: '/admin/knowledge', color: 'text-pink-600', activeBg: 'bg-pink-500/15', section: '管理者専用', adminOnly: true },
-  { id: 'coach', label: 'パーソナルコーチ', shortLabel: 'コーチ', icon: Sparkles, href: '/coach', color: 'text-purple-600', activeBg: 'bg-purple-500/15', section: '管理者専用', adminOnly: true },
-  { id: 'analyzer', label: 'プレイヤー外部分析', shortLabel: '外部解析', icon: Globe, href: '/analyzer', color: 'text-sky-600', activeBg: 'bg-sky-500/15', section: '管理者専用', adminOnly: true },
-  { id: 'ktm-admin', label: 'KTM大会管理', shortLabel: '大会管理', icon: Shield, href: '/ktm-admin', color: 'text-indigo-600', activeBg: 'bg-indigo-500/15', section: '管理者専用', adminOnly: true },
+  { id: 'coach', label: 'パーソナルコーチ', shortLabel: 'コーチ', icon: Sparkles, href: '/coach', color: 'text-amber-600', activeBg: 'bg-amber-500/15', section: '管理者専用', adminOnly: true },
+  { id: 'analyzer', label: 'プレイヤー外部分析', shortLabel: '外部解析', icon: Globe, href: '/analyzer', color: 'text-teal-600', activeBg: 'bg-teal-500/15', section: '管理者専用', adminOnly: true },
+  { id: 'ktm-admin', label: 'KTM大会管理', shortLabel: '大会管理', icon: Shield, href: '/ktm-admin', color: 'text-amber-600', activeBg: 'bg-amber-500/15', section: '管理者専用', adminOnly: true },
   { id: 'admin-guide', label: 'システム全貌仕様ガイド', shortLabel: '仕様ガイド', icon: BookOpen, href: '/admin/guide', color: 'text-amber-600', activeBg: 'bg-amber-500/15', section: '管理者専用', adminOnly: true },
   { id: 'dashboard', label: 'システム運用', shortLabel: '運用設定', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-stone-800 dark:text-stone-200', activeBg: 'bg-black/10 dark:bg-white/10', section: '管理者専用', adminOnly: true },
 ];
@@ -530,7 +530,7 @@ export default function Sidebar() {
                 <button
                   onClick={() => handleTabChange('admin')}
                   className={`flex-1 py-2 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1 ${
-                    activeTab === 'admin' ? 'bg-white dark:bg-[#1e1f22] text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-stone-600 dark:text-stone-400'
+                    activeTab === 'admin' ? 'bg-white dark:bg-[#1e1f22] text-amber-600 dark:text-amber-400 shadow-sm' : 'text-stone-600 dark:text-stone-400'
                   }`}
                 >
                   <Shield size={13} />
@@ -584,7 +584,7 @@ export default function Sidebar() {
               {/* 🛡️ 管理者専用セクション (管理者かつAdminタブ選択時のみ表示) */}
               {isAdminUser && activeTab === 'admin' && (
                 <div className="pt-2 border-t border-stone-200 dark:border-[#3f4147]">
-                  <div className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-500 dark:text-indigo-400 mb-2 px-1 flex items-center gap-1">
+                  <div className="text-[11px] font-extrabold uppercase tracking-wider text-amber-500 dark:text-amber-400 mb-2 px-1 flex items-center gap-1">
                     <Shield size={12} />
                     <span>管理者コントロール</span>
                   </div>
@@ -600,7 +600,7 @@ export default function Sidebar() {
                           className={`flex items-center gap-2.5 p-3 rounded-2xl border transition-all ${
                             isActive
                               ? `${item.activeBg} ${item.color} border-current font-black shadow-sm`
-                              : 'bg-white dark:bg-[#2b2d31] border-indigo-200/60 dark:border-indigo-900/40 text-stone-700 dark:text-stone-200 hover:border-indigo-500 font-bold'
+                              : 'bg-white dark:bg-[#2b2d31] border-amber-200/60 dark:border-amber-900/40 text-stone-700 dark:text-stone-200 hover:border-amber-500 font-bold'
                           }`}
                         >
                           <div className={`p-1.5 rounded-xl ${item.activeBg}`}>

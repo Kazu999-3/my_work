@@ -179,7 +179,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
 
   const typeLabel: Record<string, { label: string; cls: string }> = {
     counter_but_winning: { label: '苦手と書いてあるが勝ってる', cls: 'bg-amber-100 text-amber-700 border-amber-200' },
-    ban_but_dominating: { label: 'BAN推奨だが圧倒してる', cls: 'bg-sky-100 text-sky-700 border-sky-200' },
+    ban_but_dominating: { label: 'BAN推奨だが圧倒してる', cls: 'bg-teal-100 text-teal-700 border-teal-200' },
     losing_but_unlisted: { label: '苦戦してるが辞典に記載なし', cls: 'bg-rose-100 text-rose-700 border-rose-200' },
   };
 
@@ -286,34 +286,34 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
       {mode === 'inspect' && (
       <div className="bg-white border border-stone-200 rounded-2xl p-5">
         <h3 className="font-black text-stone-900 flex items-center gap-2 mb-3">
-          <Globe size={16} className="text-cyan-600" /> 自動リサーチ（LoLalytics統計）
+          <Globe size={16} className="text-teal-600" /> 自動リサーチ（LoLalytics統計）
         </h3>
         <p className="text-[11px] text-stone-500 mb-3">現パッチの勝率・ティア順位・得意/苦手対面・コアビルド・オブジェクト傾向を取得し、辞典の下書きを作ります。</p>
         <div className="flex gap-2 mb-3 flex-wrap">
           <input value={researchChamp} onChange={e => setResearchChamp(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') runResearch(false); }}
             placeholder="チャンピオン名（英語ID 例: Graves）"
-            className="flex-1 min-w-[180px] bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm text-stone-900 outline-none focus:border-cyan-500" />
+            className="flex-1 min-w-[180px] bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm text-stone-900 outline-none focus:border-teal-500" />
           <select value={researchRole} onChange={e => setResearchRole(e.target.value)}
             className="bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm text-stone-700 outline-none">
             {['TOP', 'JG', 'MID', 'ADC', 'SUP'].map(r => <option key={r} value={r}>{r}</option>)}
           </select>
           <button onClick={() => runResearch(false)} disabled={researching || !researchChamp.trim()}
-            className="flex items-center gap-1.5 text-xs font-bold bg-cyan-100 text-cyan-700 border border-cyan-200 px-4 py-2 rounded-lg hover:bg-cyan-200 disabled:opacity-50">
+            className="flex items-center gap-1.5 text-xs font-bold bg-teal-100 text-teal-700 border border-teal-200 px-4 py-2 rounded-lg hover:bg-teal-200 disabled:opacity-50">
             {researching ? <RefreshCw size={13} className="animate-spin" /> : <Globe size={13} />} リサーチ
           </button>
         </div>
         {research && (
-          <div className="space-y-2 text-xs bg-cyan-50 border border-cyan-200 rounded-xl p-4">
+          <div className="space-y-2 text-xs bg-teal-50 border border-teal-200 rounded-xl p-4">
             <div className="flex items-center gap-3 flex-wrap">
-              <span className="text-cyan-700 font-black">🌐 {research.champion}</span>
+              <span className="text-teal-700 font-black">🌐 {research.champion}</span>
               {research.patch && <span className="text-[10px] text-stone-500">Patch {research.patch}</span>}
               {research.tier && <span className="text-[10px] bg-black/5 px-2 py-0.5 rounded font-bold">{research.tier}</span>}
               {research.rank && <span className="text-[10px] text-stone-500">順位 {research.rank}</span>}
             </div>
             <div className="flex gap-4 flex-wrap text-[11px]">
               {research.winRate && <span>勝率 <b className="text-emerald-700">{research.winRate}</b></span>}
-              {research.pickRate && <span>ピック率 <b className="text-sky-700">{research.pickRate}</b></span>}
+              {research.pickRate && <span>ピック率 <b className="text-teal-700">{research.pickRate}</b></span>}
               {research.banRate && <span>BAN率 <b className="text-rose-700">{research.banRate}</b></span>}
               {research.expertWinRate && <span>上位帯 <b className="text-amber-700">{research.expertWinRate}</b></span>}
             </div>
@@ -331,7 +331,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
                 この内容で辞典に保存
               </button>
               {research.saved && <span className="text-emerald-700 text-[11px]">✅ 保存しました</span>}
-              {research.sourceUrl && <a href={research.sourceUrl} target="_blank" rel="noreferrer" className="text-[10px] text-stone-500 hover:text-cyan-700 ml-auto">出典を開く ↗</a>}
+              {research.sourceUrl && <a href={research.sourceUrl} target="_blank" rel="noreferrer" className="text-[10px] text-stone-500 hover:text-teal-700 ml-auto">出典を開く ↗</a>}
             </div>
           </div>
         )}
@@ -342,22 +342,22 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
       {mode === 'inspect' && (
       <div className="bg-white border border-stone-200 rounded-2xl p-5">
         <h3 className="font-black text-stone-900 flex items-center gap-2 mb-3">
-          <Sparkles size={16} className="text-indigo-600" /> 対面メモの自動要約
+          <Sparkles size={16} className="text-amber-600" /> 対面メモの自動要約
         </h3>
         <p className="text-[11px] text-stone-500 mb-3">そのチャンピオンの対面メモをまとめて読み込み、共通する要点・繰り返す失敗パターンを抽出します。</p>
         <div className="flex gap-2 mb-3">
           <input value={champion} onChange={e => setChampion(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') runSummarize(); }}
             placeholder="チャンピオン名（英語ID 例: Graves）"
-            className="flex-1 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm text-stone-900 outline-none focus:border-indigo-500" />
+            className="flex-1 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-sm text-stone-900 outline-none focus:border-amber-500" />
           <button onClick={runSummarize} disabled={summarizing || !champion.trim()}
-            className="flex items-center gap-1.5 text-xs font-bold bg-indigo-100 text-indigo-700 border border-indigo-200 px-4 py-2 rounded-lg hover:bg-indigo-200 disabled:opacity-50">
+            className="flex items-center gap-1.5 text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 px-4 py-2 rounded-lg hover:bg-amber-200 disabled:opacity-50">
             {summarizing ? <RefreshCw size={13} className="animate-spin" /> : <Sparkles size={13} />} 要約
           </button>
         </div>
         {summary && (
-          <div className="space-y-3 text-xs bg-indigo-50 border border-indigo-200 rounded-xl p-4">
-            <p className="text-indigo-700 font-black">📝 {summary.champion} の要点（メモ{summary.memoCount}件から集約）</p>
+          <div className="space-y-3 text-xs bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <p className="text-amber-700 font-black">📝 {summary.champion} の要点（メモ{summary.memoCount}件から集約）</p>
             {summary.summary && <div className="text-stone-700 whitespace-pre-wrap leading-relaxed">{summary.summary}</div>}
             {summary.commonMistakes && (
               <div className="border-t border-black/5 pt-2">

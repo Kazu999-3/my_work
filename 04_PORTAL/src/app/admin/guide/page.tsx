@@ -90,7 +90,7 @@ export default function AdminGuidePage() {
       {(activeTab === 'all' || activeTab === 'pipeline') && (
         <section className="bg-white border border-stone-200/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
           <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
-            <span className="p-2 bg-indigo-50 text-indigo-600 rounded-xl font-bold border border-indigo-200/60">
+            <span className="p-2 bg-amber-50 text-amber-600 rounded-xl font-bold border border-amber-200/60">
               🔄
             </span>
             <div>
@@ -119,7 +119,7 @@ export default function AdminGuidePage() {
                 subtitle: 'Whisper ＆ Gemini 2.5',
                 desc: '音声文字起こし、実演シーン抽出、立ち回り・パワースパイク・没理由を構造化データとして抽出。',
                 icon: '🧠',
-                color: 'bg-purple-50 border-purple-200 text-purple-900',
+                color: 'bg-amber-50 border-amber-200 text-amber-900',
               },
               {
                 step: '03',
@@ -143,7 +143,7 @@ export default function AdminGuidePage() {
                 subtitle: '反省メモ ➔ 知見還元',
                 desc: '敗因・デス原因を自己検証し、改善点を個人マイページおよびコミュニティナレッジへ還元。',
                 icon: '📈',
-                color: 'bg-sky-50 border-sky-200 text-sky-900',
+                color: 'bg-teal-50 border-teal-200 text-teal-900',
               },
             ].map((node, i) => (
               <div
@@ -212,7 +212,7 @@ export default function AdminGuidePage() {
 
             {/* ルートB: Discord雑談・考察ログ抽出 */}
             <div className="p-5 rounded-2xl bg-stone-50 border border-stone-200 space-y-3">
-              <div className="flex items-center gap-2 text-indigo-600">
+              <div className="flex items-center gap-2 text-amber-600">
                 <MessageSquare size={20} />
                 <h3 className="text-sm font-black text-stone-900">ルートB: Discord雑談・考察ログ抽出</h3>
               </div>
@@ -230,14 +230,14 @@ export default function AdminGuidePage() {
                   <li><strong>未承認ナレッジ化</strong>: 承認待ちリストへ即時格納</li>
                 </ol>
               </div>
-              <div className="text-[10px] text-indigo-800 bg-indigo-50 p-2.5 rounded-xl border border-indigo-200 font-medium">
+              <div className="text-[10px] text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200 font-medium">
                 💡 <strong>利点</strong>: 身内のリアルなレベル帯（アイアン〜エメラルド）で本当に起きている課題が吸い上がります。
               </div>
             </div>
 
             {/* ルートC: Web記事・X (Twitter)・手動メモ */}
             <div className="p-5 rounded-2xl bg-stone-50 border border-stone-200 space-y-3">
-              <div className="flex items-center gap-2 text-sky-600">
+              <div className="flex items-center gap-2 text-teal-600">
                 <Globe size={20} />
                 <h3 className="text-sm font-black text-stone-900">ルートC: Web / X / 手動メモ</h3>
               </div>
@@ -255,7 +255,7 @@ export default function AdminGuidePage() {
                   <li><strong>ワンクリック保存</strong>: 修正・調整の上で即座に保存</li>
                 </ol>
               </div>
-              <div className="text-[10px] text-sky-800 bg-sky-50 p-2.5 rounded-xl border border-sky-200 font-medium">
+              <div className="text-[10px] text-teal-800 bg-teal-50 p-2.5 rounded-xl border border-teal-200 font-medium">
                 💡 <strong>利点</strong>: 「試合直後の気付き」を忘れないうちに30秒でインプット可能。
               </div>
             </div>
@@ -301,12 +301,12 @@ export default function AdminGuidePage() {
                   </p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-purple-50/60 border border-purple-200/80">
-                  <div className="flex items-center gap-2 text-xs font-black text-purple-900">
+                <div className="p-3.5 rounded-2xl bg-amber-50/60 border border-amber-200/80">
+                  <div className="flex items-center gap-2 text-xs font-black text-amber-900">
                     <FileText size={14} />
                     <span>層2: 戦術バイブル (`_tactics_bible.md`)</span>
                   </div>
-                  <p className="text-[11px] text-purple-950 mt-1 leading-relaxed">
+                  <p className="text-[11px] text-amber-950 mt-1 leading-relaxed">
                     Gitリポジトリ内に保管される不変の戦術原典。AIが記事を執筆したり、対面マクロを総合判断するための深い文脈（コンテキスト）として保持。
                   </p>
                 </div>
@@ -336,7 +336,7 @@ export default function AdminGuidePage() {
                   <span className="text-stone-600 text-[11px]">全知見を承認すると同時に、即座に該当チャンピオンの辞典へマージ反映</span>
                 </div>
                 <div className="flex items-start justify-between gap-3 text-xs">
-                  <span className="font-bold text-sky-700 shrink-0">🏷️ レーン一般論の自動仕分け</span>
+                  <span className="font-bold text-teal-700 shrink-0">🏷️ レーン一般論の自動仕分け</span>
                   <span className="text-stone-600 text-[11px]">チャンピオン固有でない知見は自動でレーン・マクロ攻略へ振り分け</span>
                 </div>
               </div>
@@ -353,7 +353,7 @@ export default function AdminGuidePage() {
       {(activeTab === 'all' || activeTab === 'coach') && (
         <section className="bg-white border border-stone-200/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
           <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
-            <span className="p-2 bg-purple-50 text-purple-600 rounded-xl font-bold border border-purple-200/60">
+            <span className="p-2 bg-amber-50 text-amber-600 rounded-xl font-bold border border-amber-200/60">
               🎮
             </span>
             <div>
@@ -390,7 +390,7 @@ export default function AdminGuidePage() {
             </div>
 
             <div className="p-5 rounded-2xl bg-stone-50 border border-stone-200 space-y-3">
-              <div className="flex items-center gap-2 text-indigo-600 font-black text-xs">
+              <div className="flex items-center gap-2 text-amber-600 font-black text-xs">
                 <RefreshCw size={18} />
                 <span>③ 試合後レビュー ＆ ナレッジ還元</span>
               </div>

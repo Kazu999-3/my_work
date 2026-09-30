@@ -242,8 +242,8 @@ export default function MatchFightsAnalyticsCard({
                     )}
 
                     {/* 与ダメージ */}
-                    <span className="text-purple-800 font-mono font-bold text-[11px] bg-purple-100/80 px-2.5 py-0.5 rounded-md border border-purple-200 flex items-center gap-1">
-                      <Flame className="w-3 h-3 text-purple-600" />
+                    <span className="text-amber-800 font-mono font-bold text-[11px] bg-amber-100/80 px-2.5 py-0.5 rounded-md border border-amber-200 flex items-center gap-1">
+                      <Flame className="w-3 h-3 text-amber-600" />
                       {fight.my_damage_dealt.toLocaleString()} dmg
                     </span>
 
@@ -276,9 +276,9 @@ export default function MatchFightsAnalyticsCard({
                     </div>
                   </div>
                   <div className="flex items-start gap-1.5">
-                    <Shield className="w-3.5 h-3.5 text-indigo-600 shrink-0 mt-0.5" />
+                    <Shield className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
                     <div>
-                      <span className="font-extrabold text-indigo-700">プレイ評価: </span>
+                      <span className="font-extrabold text-amber-700">プレイ評価: </span>
                       <span className="text-stone-700 font-medium">{fight.feedback}</span>
                     </div>
                   </div>

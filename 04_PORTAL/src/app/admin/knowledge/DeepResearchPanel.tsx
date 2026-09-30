@@ -59,13 +59,13 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
   return (
     <div className="bg-white border border-stone-200 rounded-3xl p-6 sm:p-8 text-stone-900 shadow-2xl space-y-6">
       <div className="flex items-center gap-3 border-b border-black/5 pb-5">
-        <div className="p-3 rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 text-purple-700 border border-purple-200">
+        <div className="p-3 rounded-2xl bg-gradient-to-br from-amber-100 to-pink-100 text-amber-700 border border-amber-200">
           <Target size={26} />
         </div>
         <div>
           <h3 className="font-extrabold text-xl text-stone-900 tracking-tight flex items-center gap-2">
             特定チャンプ ディープリサーチ
-            <span className="text-[10px] bg-purple-100 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full font-bold">
+            <span className="text-[10px] bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-bold">
               AI Deep Analysis
             </span>
           </h3>
@@ -79,7 +79,7 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-bold text-stone-700 mb-1.5 flex items-center gap-1">
-              <Search size={14} className="text-purple-600" />
+              <Search size={14} className="text-amber-600" />
               対象チャンピオン名 (日本語名・英語名OK)
             </label>
             <input
@@ -87,20 +87,20 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
               placeholder="例: アーリ, リー・シン, Ahri, LeeSin, Viego"
               value={champion}
               onChange={(e) => setChampion(e.target.value)}
-              className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-2xl text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all font-mono"
+              className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-2xl text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all font-mono"
               required
             />
           </div>
 
           <div>
             <label className="block text-xs font-bold text-stone-700 mb-1.5 flex items-center gap-1">
-              <Layers size={14} className="text-purple-600" />
+              <Layers size={14} className="text-amber-600" />
               想定メインレーン
             </label>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-2xl text-sm text-stone-900 focus:outline-none focus:border-purple-500 font-medium"
+              className="w-full px-4 py-3 bg-stone-50 border border-stone-200 rounded-2xl text-sm text-stone-900 focus:outline-none focus:border-amber-500 font-medium"
             >
               <option value="TOP">TOP (トップ)</option>
               <option value="JG">JUNGLE (ジャングル)</option>
@@ -117,7 +117,7 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
             id="fetchVideosPanel"
             checked={fetchVideos}
             onChange={(e) => setFetchVideos(e.target.checked)}
-            className="w-4 h-4 rounded bg-white border-stone-300 text-purple-500 focus:ring-purple-500 accent-purple-500 cursor-pointer"
+            className="w-4 h-4 rounded bg-white border-stone-300 text-amber-500 focus:ring-amber-500 accent-amber-500 cursor-pointer"
           />
           <label htmlFor="fetchVideosPanel" className="text-xs text-stone-700 font-medium cursor-pointer flex items-center gap-1.5">
             <Video size={14} className="text-pink-600" />
@@ -165,7 +165,7 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
           <div className="bg-stone-50 border border-stone-200 rounded-2xl overflow-hidden">
             <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-black/5 bg-white/60">
               <span className="text-xs font-black text-stone-700 flex items-center gap-1.5">
-                <Sparkles size={14} className="text-purple-600" /> 生成された攻略バイブル（プレビュー）
+                <Sparkles size={14} className="text-amber-600" /> 生成された攻略バイブル（プレビュー）
               </span>
               <div className="flex items-center gap-3 shrink-0">
                 <a
@@ -179,14 +179,14 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
                 {resultMsg.details.articleId && (
                   <a
                     href={`/admin/knowledge?tab=library&article=${resultMsg.details.articleId}`}
-                    className="text-[11px] font-bold text-purple-700 hover:text-purple-800 flex items-center gap-1"
+                    className="text-[11px] font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1"
                   >
                     ライブラリで開く <ExternalLink size={12} />
                   </a>
                 )}
               </div>
             </div>
-            <div className="max-h-[480px] overflow-auto p-5 prose prose-sm max-w-none prose-headings:text-purple-700 prose-strong:text-stone-900 prose-li:text-stone-700 prose-p:text-stone-700">
+            <div className="max-h-[480px] overflow-auto p-5 prose prose-sm max-w-none prose-headings:text-amber-700 prose-strong:text-stone-900 prose-li:text-stone-700 prose-p:text-stone-700">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{resultMsg.details.article}</ReactMarkdown>
             </div>
           </div>
@@ -196,7 +196,7 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
           <button
             type="submit"
             disabled={loading || !champion.trim()}
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-sm flex items-center justify-center gap-2.5 shadow-xl shadow-purple-600/20 hover:shadow-purple-600/40 disabled:opacity-50 transition-all"
+            className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-600 via-pink-600 to-amber-600 hover:from-amber-500 hover:to-amber-500 text-white font-extrabold text-sm flex items-center justify-center gap-2.5 shadow-xl shadow-amber-600/20 hover:shadow-amber-600/40 disabled:opacity-50 transition-all"
           >
             {loading ? (
               <>

@@ -108,12 +108,12 @@ function CasinoBadges({ player }: { player: any }) {
   return (
     <span className="flex items-center gap-1 shrink min-w-0 overflow-hidden" title={`カジノ特典: ${allLabels}`}>
       {visible.map(b => (
-        <span key={b.id} className="text-[9px] bg-purple-100 border border-purple-300 text-purple-900 px-1.5 py-0.5 rounded font-black shrink-0 whitespace-nowrap">
+        <span key={b.id} className="text-[9px] bg-amber-100 border border-amber-300 text-amber-900 px-1.5 py-0.5 rounded font-black shrink-0 whitespace-nowrap">
           {b.icon}{b.label}
         </span>
       ))}
       {hidden.length > 0 && (
-        <span className="text-[9px] bg-purple-50 border border-purple-200 text-purple-700 px-1.5 py-0.5 rounded font-black shrink-0 whitespace-nowrap">
+        <span className="text-[9px] bg-amber-50 border border-amber-200 text-amber-700 px-1.5 py-0.5 rounded font-black shrink-0 whitespace-nowrap">
           +{hidden.length}
         </span>
       )}
@@ -277,14 +277,14 @@ export default function BalancerPage() {
         return { 
           tier: 'returning',
           label: '⏳ 復帰勢', 
-          color: 'bg-purple-100 text-purple-900 border-purple-300', 
+          color: 'bg-amber-100 text-amber-900 border-amber-300', 
           tip: `通算${totalG}戦（最終参加: ${daysAgo}日前）：久しぶりの参加となる復帰プレイヤーです！大歓迎✨` 
         };
       }
       return { 
         tier: 'returning',
         label: '🎖️ 経験者', 
-        color: 'bg-sky-100 text-sky-900 border-sky-300', 
+        color: 'bg-teal-100 text-teal-900 border-teal-300', 
         tip: `通算${totalG}戦（最終参加: ${daysAgo}日前）：久しぶりに参加の経験者プレイヤーです` 
       };
     }
@@ -1224,7 +1224,7 @@ export default function BalancerPage() {
         {(!currentPlayerName) && <option value="" className="text-stone-900">選択</option>}
         {balanceResult && (
           <>
-            <optgroup label="Blue Team" className="text-stone-900 font-bold bg-blue-100">
+            <optgroup label="Blue Team" className="text-stone-900 font-bold bg-teal-100">
               {balanceResult.teamBlue.map((p:any) => (
                 <option key={`blue-${p.name}`} value={p.name} className="text-stone-900 bg-white">
                   {p.name}
@@ -1434,7 +1434,7 @@ export default function BalancerPage() {
                   🌱 ライト: <strong>{lightPlayers.length}名</strong>
                 </span>
                 {returningPlayers.length > 0 && (
-                  <span className="inline-flex items-center gap-1 font-bold text-purple-900 bg-purple-100/80 px-2 py-0.5 rounded-md text-[11px]">
+                  <span className="inline-flex items-center gap-1 font-bold text-amber-900 bg-amber-100/80 px-2 py-0.5 rounded-md text-[11px]">
                     ⏳ 復帰勢: <strong>{returningPlayers.length}名</strong>
                   </span>
                 )}
@@ -1470,7 +1470,7 @@ export default function BalancerPage() {
                 {(() => {
                   if (balanceResult.isFestivalMode) {
                     return (
-                      <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-purple-100 text-purple-900 border border-purple-300 flex items-center gap-1 shadow-xs">
+                      <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 shadow-xs">
                         🎪 ピック形式: <strong>日曜お祭り (完全ランダム / MMRなし)</strong>
                       </span>
                     );
@@ -1478,7 +1478,7 @@ export default function BalancerPage() {
                   const avgMMR = ((balanceResult.teamBlueMMR || 0) + (balanceResult.teamRedMMR || 0)) / 10;
                   const isSilverTier = avgMMR < 1350 || selectedTable?.label?.includes('シルバー');
                   return isSilverTier ? (
-                    <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-cyan-100 text-cyan-900 border border-cyan-300 flex items-center gap-1 shadow-xs">
+                    <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-teal-100 text-teal-900 border border-teal-300 flex items-center gap-1 shadow-xs">
                       🔲 ピック形式: <strong>ブラインドピック (MMRあり)</strong>
                     </span>
                   ) : (
@@ -1513,7 +1513,7 @@ export default function BalancerPage() {
                       toast.error(`VC更新エラー: ${res.error}`);
                     }
                   }}
-                  className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg font-bold transition text-xs md:text-sm cursor-pointer"
+                  className="flex items-center gap-1.5 bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg font-bold transition text-xs md:text-sm cursor-pointer"
                   title="DiscordのVCチャンネル名を「1戦目進行中・途中交代歓迎」に更新"
                 >
                   <span>🔊 VC更新 (1戦目)</span>
@@ -1592,12 +1592,12 @@ export default function BalancerPage() {
                     {/* ゲージバー */}
                     <div className="flex items-center gap-3">
                       <div className="text-right w-24 shrink-0">
-                        <span className="text-xs font-extrabold text-blue-700 block">🟦 BLUE TEAM</span>
-                        <strong className="text-base font-black text-blue-900 font-mono">{bluePct}%</strong>
+                        <span className="text-xs font-extrabold text-teal-700 block">🟦 BLUE TEAM</span>
+                        <strong className="text-base font-black text-teal-900 font-mono">{bluePct}%</strong>
                       </div>
                       <div className="flex-1 h-4 rounded-full overflow-hidden bg-stone-100 p-0.5 border border-stone-200 flex shadow-inner">
                         <div
-                          className="bg-gradient-to-r from-blue-600 to-cyan-500 rounded-l-full transition-all duration-700 flex items-center justify-center text-[9px] text-white font-black"
+                          className="bg-gradient-to-r from-teal-600 to-teal-500 rounded-l-full transition-all duration-700 flex items-center justify-center text-[9px] text-white font-black"
                           style={{ width: `${bluePct}%` }}
                         >
                           {bluePct >= 20 ? `${bluePct}%` : ''}
@@ -1726,9 +1726,9 @@ export default function BalancerPage() {
               {/* チーム表示 */}
               <div className="space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-11 gap-3 items-center border-b border-stone-200 pb-3">
-                  <div className="col-span-5 bg-gradient-to-r from-blue-100 to-transparent p-3 rounded-xl border-l-4 border-blue-500 flex justify-between items-center">
-                    <span className="text-base font-black text-blue-700">BLUE TEAM</span>
-                    <span className="text-xs font-mono font-bold text-blue-600">合計MMR: {balanceResult.teamBlueMMR}</span>
+                  <div className="col-span-5 bg-gradient-to-r from-teal-100 to-transparent p-3 rounded-xl border-l-4 border-teal-500 flex justify-between items-center">
+                    <span className="text-base font-black text-teal-700">BLUE TEAM</span>
+                    <span className="text-xs font-mono font-bold text-teal-600">合計MMR: {balanceResult.teamBlueMMR}</span>
                   </div>
                   <div className="col-span-1 flex justify-center text-stone-500 font-black">VS</div>
                   <div className="col-span-5 bg-gradient-to-l from-red-100 to-transparent p-3 rounded-xl border-r-4 border-red-500 flex justify-between items-center">
@@ -1748,14 +1748,14 @@ export default function BalancerPage() {
                   return (
                     <div key={role} className="grid grid-cols-1 md:grid-cols-11 gap-2 items-center bg-black/[0.03] p-2 md:p-3 rounded-2xl border border-black/5">
                       <div draggable={!!pB?.name} onDragStart={e => handleDragStart(e,'teamBlue',role,pB?.name||'')} onDragOver={e => handleDragOver(e,bKey)} onDragLeave={handleDragLeave} onDrop={e => handleDropPlayer(e,'teamBlue',role)}
-                        className={`col-span-5 flex items-center gap-2 p-2 rounded-xl border transition cursor-grab active:cursor-grabbing ${dragOverSlot===bKey?'border-blue-500 bg-blue-100 border-dashed':'bg-blue-50 border-blue-200 hover:bg-blue-100'} ${swapSource?.name === pB?.name ? 'border-amber-500 bg-amber-100 animate-pulse' : ''}`}>
+                        className={`col-span-5 flex items-center gap-2 p-2 rounded-xl border transition cursor-grab active:cursor-grabbing ${dragOverSlot===bKey?'border-teal-500 bg-teal-100 border-dashed':'bg-teal-50 border-teal-200 hover:bg-teal-100'} ${swapSource?.name === pB?.name ? 'border-amber-500 bg-amber-100 animate-pulse' : ''}`}>
                         {/* 名前は行の主役なので、バッジがいくつ増えても潰れないよう最低幅を確保する */}
                         <div className="flex-1 min-w-[5.5rem]">{renderSwapSelect('teamBlue',role,pB?.name||'')}</div>
                         {pB?.name && (
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); handleSelectSwapPlayer('teamBlue', role, pB.name); }}
-                            className={`p-1 rounded transition-colors text-xs font-black shrink-0 ${swapSource?.name === pB.name ? 'bg-amber-500 text-black' : 'text-blue-700 hover:text-stone-900 hover:bg-blue-200'}`}
+                            className={`p-1 rounded transition-colors text-xs font-black shrink-0 ${swapSource?.name === pB.name ? 'bg-amber-500 text-black' : 'text-teal-700 hover:text-stone-900 hover:bg-teal-200'}`}
                             title="タップして入れ替え"
                           >
                             ⇄
@@ -1770,11 +1770,11 @@ export default function BalancerPage() {
                             {pB.subLane !== 'ALL' && pB.subLane !== '-' ? `/${pB.subLane}` : ''}
                           </span>
                         )}
-                        <span className="font-mono text-xs font-bold text-blue-700 shrink-0 bg-blue-100 px-2 py-0.5 rounded border border-blue-300">{bMMR}</span>
+                        <span className="font-mono text-xs font-bold text-teal-700 shrink-0 bg-teal-100 px-2 py-0.5 rounded border border-teal-300">{bMMR}</span>
                       </div>
                       <div className="col-span-1 flex flex-col items-center py-1">
                         <div className="w-8 h-8 rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center shadow-lg"><RoleIcon role={role} className="w-4 h-4" /></div>
-                        <span className={`text-[10px] font-mono mt-1 font-extrabold ${diff>0?'text-blue-700':diff<0?'text-red-700':'text-stone-500'}`}>{diff>0?`+${diff}`:diff<0?diff:'±0'}</span>
+                        <span className={`text-[10px] font-mono mt-1 font-extrabold ${diff>0?'text-teal-700':diff<0?'text-red-700':'text-stone-500'}`}>{diff>0?`+${diff}`:diff<0?diff:'±0'}</span>
                       </div>
                       <div draggable={!!pR?.name} onDragStart={e => handleDragStart(e,'teamRed',role,pR?.name||'')} onDragOver={e => handleDragOver(e,rKey)} onDragLeave={handleDragLeave} onDrop={e => handleDropPlayer(e,'teamRed',role)}
                         className={`col-span-5 flex items-center gap-2 p-2 rounded-xl border transition cursor-grab active:cursor-grabbing ${dragOverSlot===rKey?'border-red-500 bg-red-100 border-dashed':'bg-red-50 border-red-200 hover:bg-red-100'} ${swapSource?.name === pR?.name ? 'border-amber-500 bg-amber-100 animate-pulse' : ''}`}>
@@ -1916,10 +1916,10 @@ export default function BalancerPage() {
                       });
                       setMessage({ type: 'success', text: '🔄 BLUE ⇄ RED の陣営を入れ替えました！' });
                     }}
-                    className="bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-800 px-4 py-3 rounded-xl font-bold transition flex items-center justify-center gap-1.5 cursor-pointer text-xs sm:text-sm"
+                    className="bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl font-bold transition flex items-center justify-center gap-1.5 cursor-pointer text-xs sm:text-sm"
                     title="BLUEとREDの陣営を丸ごと入れ替えます"
                   >
-                    <Shuffle className="h-4 w-4 text-indigo-600" />
+                    <Shuffle className="h-4 w-4 text-amber-600" />
                     サイド交代 (BLUE ⇄ RED)
                   </button>
 
@@ -2040,7 +2040,7 @@ export default function BalancerPage() {
                   <span className="text-xs font-black text-amber-950">
                     BO3 シリーズ進行中 [第{bo3State.gameNumber}戦]
                   </span>
-                  <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-blue-100 text-blue-900 border border-blue-300">
+                  <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-teal-100 text-teal-900 border border-teal-300">
                     🔵 {bo3State.team1IsCurrentlyBlue ? bo3State.team1Name : bo3State.team2Name}: {bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins}勝
                   </span>
                   <span className="text-xs font-black text-stone-500">VS</span>
@@ -2079,7 +2079,7 @@ export default function BalancerPage() {
                 <Info className="h-3.5 w-3.5 text-amber-700" />
                 カスタム方針:
               </span>
-              <span className="bg-white border border-amber-300/60 px-2 py-0.5 rounded-md font-bold text-[11px] text-cyan-900">
+              <span className="bg-white border border-amber-300/60 px-2 py-0.5 rounded-md font-bold text-[11px] text-teal-900">
                 🛡️ シルバー以下: <strong>ブラインドピック (MMRあり)</strong>
               </span>
               <span className="bg-white border border-amber-300/60 px-2 py-0.5 rounded-md font-bold text-[11px] text-amber-900">
@@ -2090,10 +2090,10 @@ export default function BalancerPage() {
                 <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-md">
                   🟢 フル: {players.filter(p => p.participation_style === 'full').length}名
                 </span>
-                <span className="bg-cyan-100 text-cyan-800 border border-cyan-300 px-2 py-0.5 rounded-md">
+                <span className="bg-teal-100 text-teal-800 border border-teal-300 px-2 py-0.5 rounded-md">
                   ⏱️ 1戦のみ: {players.filter(p => p.participation_style === 'single').length}名
                 </span>
-                <span className="bg-purple-100 text-purple-800 border border-purple-300 px-2 py-0.5 rounded-md">
+                <span className="bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 rounded-md">
                   🌙 途中参加: {players.filter(p => p.participation_style === 'late').length}名
                 </span>
               </div>
@@ -2104,7 +2104,7 @@ export default function BalancerPage() {
               <button
                 type="button"
                 onClick={handleSwitchToMatch2}
-                className="px-3 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-xs transition flex items-center gap-1"
+                className="px-3 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-600 hover:from-amber-500 hover:to-amber-500 text-white font-bold text-xs shadow-xs transition flex items-center gap-1"
                 title="1戦のみのメンバーを待機にし、途中参加メンバーを参加ONに一括交代します"
               >
                 🔄 2戦目メンバーへ交代
@@ -2178,7 +2178,7 @@ export default function BalancerPage() {
                 className={`flex items-center justify-center gap-1.5 px-3 py-2 md:px-4 md:py-2.5 rounded-xl font-black transition text-xs md:text-sm border ${
                   balancing || !canBalance
                     ? 'bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white border-purple-400 shadow-md shadow-purple-500/20 cursor-pointer'
+                    : 'bg-gradient-to-r from-amber-600 to-pink-600 hover:from-amber-500 hover:to-pink-500 text-white border-amber-400 shadow-md shadow-amber-500/20 cursor-pointer'
                 }`}
                 title="MMRやレーン希望に関係なく、10名を完全ランダムにBlue/Redへ振り分けます（公式MMR変動なし）"
               >
@@ -2338,9 +2338,9 @@ export default function BalancerPage() {
               <div className="border-t border-stone-200 pt-3">
                 <span className="text-sm font-bold text-stone-900">🎨 サイド偏り（Blue/Red勝率）</span>
                 <div className="flex items-center gap-3 mt-2">
-                  <span className="text-xs font-black text-blue-700 w-28 text-right">BLUE {sideStats.blueRate}%</span>
+                  <span className="text-xs font-black text-teal-700 w-28 text-right">BLUE {sideStats.blueRate}%</span>
                   <div className="flex-1 h-3 rounded-full overflow-hidden bg-stone-100 flex">
-                    <div className="bg-blue-500/80" style={{ width: `${sideStats.blueRate}%` }}></div>
+                    <div className="bg-teal-500/80" style={{ width: `${sideStats.blueRate}%` }}></div>
                     <div className="bg-red-500/80" style={{ width: `${100 - sideStats.blueRate}%` }}></div>
                   </div>
                   <span className="text-xs font-black text-red-700 w-28">RED {Math.round((100 - sideStats.blueRate) * 10) / 10}%</span>
@@ -2720,9 +2720,9 @@ export default function BalancerPage() {
                                 }}
                                 className={`text-[10px] font-black px-1.5 py-0.5 rounded border transition-transform hover:scale-105 cursor-pointer shadow-2xs ${
                                   p.participation_style === 'single'
-                                    ? 'bg-cyan-100 text-cyan-900 border-cyan-300'
+                                    ? 'bg-teal-100 text-teal-900 border-teal-300'
                                     : p.participation_style === 'late'
-                                    ? 'bg-purple-100 text-purple-900 border-purple-300'
+                                    ? 'bg-amber-100 text-amber-900 border-amber-300'
                                     : 'bg-emerald-100 text-emerald-900 border-emerald-300'
                                 }`}
                                 title="クリックで参加スタイルを切り替え (フル ➔ 1戦のみ ➔ 途中参加)"
@@ -2746,7 +2746,7 @@ export default function BalancerPage() {
                               return (
                                 <div className="flex items-center gap-1">
                                   {casinoBadges.map((badge, idx) => (
-                                    <span key={idx} className="text-[9px] font-black bg-purple-100 text-purple-900 border border-purple-300 px-1 py-0.2 rounded flex items-center gap-0.5 shadow-2xs" title={`カジノ特典: ${badge.label}`}>
+                                    <span key={idx} className="text-[9px] font-black bg-amber-100 text-amber-900 border border-amber-300 px-1 py-0.2 rounded flex items-center gap-0.5 shadow-2xs" title={`カジノ特典: ${badge.label}`}>
                                       <span>{badge.icon}</span>
                                       <span className="max-w-[65px] truncate">{badge.label}</span>
                                     </span>
@@ -2822,7 +2822,7 @@ export default function BalancerPage() {
                         <td className="px-1.5 py-1.5 text-center">
                           <div className="flex items-center justify-center gap-1 w-24 mx-auto">
                             <span className="px-1.5 py-0.5 rounded bg-emerald-100 border border-emerald-200 text-emerald-700 text-[10px] font-mono font-bold" title="Pity">{p.pity || 0}</span>
-                            <span className="px-1.5 py-0.5 rounded bg-fuchsia-100 border border-fuchsia-200 text-fuchsia-700 text-[10px] font-mono font-bold" title="OffPity">{p.off_role_pity || 0}</span>
+                            <span className="px-1.5 py-0.5 rounded bg-amber-100 border border-amber-200 text-amber-700 text-[10px] font-mono font-bold" title="OffPity">{p.off_role_pity || 0}</span>
                             <span className="px-1.5 py-0.5 rounded bg-amber-100 border border-amber-200 text-amber-700 text-[10px] font-mono font-bold" title="観戦Pity">{p.spectator_pity || 0}</span>
                           </div>
                         </td>
@@ -2913,7 +2913,7 @@ export default function BalancerPage() {
                           );
                         })()}
                         {p.participation_style && (
-                          <span className="text-[9px] font-black px-1.5 py-0.2 rounded border bg-purple-100 text-purple-900 border-purple-300">
+                          <span className="text-[9px] font-black px-1.5 py-0.2 rounded border bg-amber-100 text-amber-900 border-amber-300">
                             {p.participation_style === 'single' ? '⏱️1戦のみ' : p.participation_style === 'late' ? '🌙途中参加' : '🟢フル'}
                           </span>
                         )}
@@ -2943,7 +2943,7 @@ export default function BalancerPage() {
                         )}
                         <div className="flex items-center gap-0.5 ml-auto">
                           <span className="px-1 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[9px] font-mono" title="Pity">{p.pity || 0}</span>
-                          <span className="px-1 py-0.5 rounded bg-fuchsia-100 text-fuchsia-700 text-[9px] font-mono" title="OffPity">{p.off_role_pity || 0}</span>
+                          <span className="px-1 py-0.5 rounded bg-amber-100 text-amber-700 text-[9px] font-mono" title="OffPity">{p.off_role_pity || 0}</span>
                           <span className="px-1 py-0.5 rounded bg-amber-100 text-amber-700 text-[9px] font-mono" title="観戦Pity">{p.spectator_pity || 0}</span>
                         </div>
                       </div>
@@ -2993,7 +2993,7 @@ export default function BalancerPage() {
               <p className="text-stone-400">「希望外レーン」に飛ばされた人に貯まる同情ポイント。高いほど次回優先的にメインレーンへ。</p>
             </div>
             <div className="bg-stone-100 p-4 rounded border border-stone-200">
-              <span className="font-bold text-fuchsia-700 mb-1 block">OFF PITY (オフピティ)</span>
+              <span className="font-bold text-amber-700 mb-1 block">OFF PITY (オフピティ)</span>
               <p className="text-stone-400">「希望レーン」を連続でやっている人に貯まるポイント。一時的に他レーンへ飛ばされる確率が上がります。</p>
             </div>
           </div>
@@ -3032,7 +3032,7 @@ export default function BalancerPage() {
               className={`px-3 py-2 rounded-xl font-black text-xs flex items-center gap-1.5 transition cursor-pointer shadow-md border ${
                 balancing || !canBalance
                   ? 'bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed opacity-50'
-                  : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white border-purple-400 shadow-purple-500/20'
+                  : 'bg-gradient-to-r from-amber-600 to-pink-600 hover:from-amber-500 hover:to-pink-500 text-white border-amber-400 shadow-amber-500/20'
               }`}
               title="完全ランダムでお祭りチーム分け（MMRなし）"
             >

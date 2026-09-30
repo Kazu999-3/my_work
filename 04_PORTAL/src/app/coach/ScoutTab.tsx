@@ -90,8 +90,8 @@ export default function ScoutTab({ onLiveMatchDetected }: {
 
         {/* ヘッダー */}
         <div className="text-center space-y-2">
-          <h1 className="text-2xl md:text-4xl font-black bg-gradient-to-r from-cyan-600 via-amber-600 to-rose-600 bg-clip-text text-transparent flex items-center justify-center gap-2">
-            <Compass className="w-8 h-8 text-cyan-600" />
+          <h1 className="text-2xl md:text-4xl font-black bg-gradient-to-r from-teal-600 via-amber-600 to-rose-600 bg-clip-text text-transparent flex items-center justify-center gap-2">
+            <Compass className="w-8 h-8 text-teal-600" />
             <span>ソロキュー対戦相手偵察 (Live Lookup)</span>
           </h1>
           <p className="text-xs text-gray-400 max-w-md mx-auto leading-relaxed">
@@ -112,13 +112,13 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                 placeholder="SummonerName#TagLine"
                 value={riotId}
                 onChange={(e) => setRiotId(e.target.value)}
-                className="w-full bg-black/5 border border-black/10 rounded-2xl py-3 pl-12 pr-4 text-sm font-bold placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all text-stone-900"
+                className="w-full bg-black/5 border border-black/10 rounded-2xl py-3 pl-12 pr-4 text-sm font-bold placeholder-gray-500 focus:outline-none focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/50 transition-all text-stone-900"
               />
             </div>
             <button
               type="submit"
               disabled={loading}
-              className="bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-400 hover:to-indigo-400 disabled:from-gray-200 disabled:to-gray-200 text-black font-black px-6 py-3 rounded-2xl text-sm transition shadow-[0_4px_20px_rgba(6,182,212,0.25)] flex items-center gap-2 shrink-0 disabled:text-gray-400"
+              className="bg-gradient-to-r from-teal-500 to-amber-500 hover:from-teal-400 hover:to-amber-400 disabled:from-gray-200 disabled:to-gray-200 text-black font-black px-6 py-3 rounded-2xl text-sm transition shadow-[0_4px_20px_rgba(6,182,212,0.25)] flex items-center gap-2 shrink-0 disabled:text-gray-400"
             >
               {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Compass className="w-4 h-4" />}
               <span>{loading ? 'スキャン中...' : '偵察開始'}</span>
@@ -177,7 +177,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                         <div className="text-[10px] text-gray-500 font-black tracking-wider uppercase">{result.isPreMatch ? "分析対象 (Target Player)" : "敵ジャングラー (Opponent JG)"}</div>
                         <div className="text-lg font-black text-stone-900 flex flex-wrap items-center gap-2">
                           <span>{result.enemyJgName}</span>
-                          <span className="text-xs text-cyan-700 font-bold bg-cyan-100 px-2 py-0.5 rounded border border-cyan-200">
+                          <span className="text-xs text-teal-700 font-bold bg-teal-100 px-2 py-0.5 rounded border border-teal-200">
                             {result.championName}
                           </span>
 
@@ -190,7 +190,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
 
                           {/* ティルト警告アラートバッジ */}
                           {result.isTilted && (
-                            <span className="text-[10px] text-blue-700 bg-blue-100 px-2.5 py-1 rounded border border-blue-200 font-black animate-pulse flex items-center gap-1">
+                            <span className="text-[10px] text-teal-700 bg-teal-100 px-2.5 py-1 rounded border border-teal-200 font-black animate-pulse flex items-center gap-1">
                               ❄️ ティルト警戒 ({result.consecutiveLosses}連敗中)
                             </span>
                           )}
@@ -223,12 +223,12 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                         <div className="space-y-1.5">
                           <div className="flex justify-between text-xs font-bold">
                             <span className="text-emerald-600">Ganking (関与)</span>
-                            <span className="text-cyan-600 font-mono font-black">{result.playstyle.sliders.farming}%</span>
-                            <span className="text-blue-600">Farming (成長)</span>
+                            <span className="text-teal-600 font-mono font-black">{result.playstyle.sliders.farming}%</span>
+                            <span className="text-teal-600">Farming (成長)</span>
                           </div>
                           <div className="h-2.5 w-full bg-black/10 rounded-full overflow-hidden border border-black/10 p-[1px]">
                             <div 
-                              className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-cyan-500 to-blue-600 transition-all duration-500"
+                              className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-500 to-teal-600 transition-all duration-500"
                               style={{ width: `${result.playstyle.sliders.farming}%` }}
                             ></div>
                           </div>
@@ -242,9 +242,9 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                         {result.playstyle.tags.map((tag: any) => (
                           <div 
                             key={tag.id}
-                            className="bg-cyan-100 border border-cyan-200 px-3 py-2 rounded-2xl space-y-1"
+                            className="bg-teal-100 border border-teal-200 px-3 py-2 rounded-2xl space-y-1"
                           >
-                            <div className="text-xs font-black text-cyan-700">{tag.name}</div>
+                            <div className="text-xs font-black text-teal-700">{tag.name}</div>
                             <p className="text-[10px] text-gray-400 leading-relaxed">{tag.description}</p>
                             <div className="text-[8px] text-gray-500 font-mono text-right">{tag.reason}</div>
                           </div>
@@ -272,7 +272,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                         onClick={() => setActiveTab("knowledge")}
                         className={`px-4 py-2.5 text-xs font-black transition-all rounded-t-xl border-b-2 uppercase tracking-wider flex items-center gap-1.5 ${
                           activeTab === "knowledge"
-                            ? "border-cyan-500 text-cyan-700 bg-cyan-100"
+                            ? "border-teal-500 text-teal-700 bg-teal-100"
                             : "border-transparent text-gray-400 hover:text-stone-900"
                         }`}
                       >
@@ -339,7 +339,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                         )}
                         {/* 一般解説ヒント */}
                         <div className="bg-black/3 border border-black/10 p-4 rounded-2xl text-[11px] text-stone-700 leading-relaxed">
-                          <strong className="text-cyan-600 block mb-1">💡 全体対策アドバイス</strong>
+                          <strong className="text-teal-600 block mb-1">💡 全体対策アドバイス</strong>
                           {result.tips}
                         </div>
                       </div>
@@ -371,18 +371,18 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                                 <p className="text-[11px] text-stone-700 leading-relaxed">{result.knowledge.powerSpikes || "未登録"}</p>
                               </div>
                               <div className="bg-black/5 border border-black/10 p-4 rounded-2xl space-y-1.5">
-                                <span className="text-[10px] text-cyan-600 font-black tracking-wider uppercase block">🌲 周回クリアルート (2026 Full Clear Path)</span>
+                                <span className="text-[10px] text-teal-600 font-black tracking-wider uppercase block">🌲 周回クリアルート (2026 Full Clear Path)</span>
                                 <p className="text-[11px] text-stone-700 leading-relaxed font-bold">{result.knowledge.fullClearTime || "未登録"}</p>
                               </div>
                             </div>
 
                             <div className="bg-black/5 border border-black/10 p-4 rounded-2xl space-y-1.5">
-                              <span className="text-[10px] text-blue-600 font-black tracking-wider uppercase block">🛡️ 推奨ビルドとルーン (Build / Runes)</span>
+                              <span className="text-[10px] text-teal-600 font-black tracking-wider uppercase block">🛡️ 推奨ビルドとルーン (Build / Runes)</span>
                               <p className="text-[11px] text-stone-700 leading-relaxed whitespace-pre-wrap">{result.knowledge.buildRunes || "未登録"}</p>
                             </div>
 
                             <div className="bg-black/5 border border-black/10 p-4 rounded-2xl space-y-1.5">
-                              <span className="text-[10px] text-cyan-700 font-black tracking-wider uppercase block">📖 基本攻略・戦略 (Strategy)</span>
+                              <span className="text-[10px] text-teal-700 font-black tracking-wider uppercase block">📖 基本攻略・戦略 (Strategy)</span>
                               <p className="text-[11px] text-stone-700 leading-relaxed whitespace-pre-wrap">{result.knowledge.strategy || "未登録"}</p>
                             </div>
                           </div>
@@ -525,7 +525,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                       })()}
 
                       <h3 className="text-sm font-black text-stone-900 uppercase tracking-wider flex items-center gap-2 border-b border-black/10 pb-3">
-                        <Users className="w-4 h-4 text-cyan-600" />
+                        <Users className="w-4 h-4 text-teal-600" />
                         <span>敵チーム メンバー情報 & ガンク脆弱レーン特定</span>
                       </h3>
 
@@ -559,7 +559,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                                       />
                                       <div>
                                         <div className="font-black text-stone-900">{p.name}</div>
-                                        <div className="text-[10px] text-cyan-600 font-bold">{champName}</div>
+                                        <div className="text-[10px] text-teal-600 font-bold">{champName}</div>
                                       </div>
                                     </td>
                                     <td className="py-3 text-center font-mono font-bold text-gray-400">
@@ -583,7 +583,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                                         </span>
                                       )}
                                       {p.isTilted && (
-                                        <span className="inline-block text-[9px] text-blue-700 bg-blue-100 px-2 py-0.5 rounded border border-blue-200 font-black ml-1">
+                                        <span className="inline-block text-[9px] text-teal-700 bg-teal-100 px-2 py-0.5 rounded border border-teal-200 font-black ml-1">
                                           ❄️ 連敗ティルト ({p.consecutiveLosses}連敗)
                                         </span>
                                       )}
@@ -613,7 +613,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                 <div className="space-y-6">
                   <div className="bg-black/3 border border-black/10 rounded-3xl p-6 shadow-xl space-y-5">
                     <h3 className="text-sm font-black text-stone-900 uppercase tracking-wider flex items-center gap-2 border-b border-black/10 pb-3">
-                      <Compass className="w-4 h-4 text-cyan-600" />
+                      <Compass className="w-4 h-4 text-teal-600" />
                       <span>{result.isPreMatch ? "あなたのゲーム序盤傾向" : "ゲーム序盤戦術予測"}</span>
                     </h3>
 

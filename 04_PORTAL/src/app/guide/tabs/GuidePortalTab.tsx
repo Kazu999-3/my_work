@@ -23,10 +23,10 @@ export default function GuidePortalTab() {
   return (
     <div className="space-y-8">
       {/* イントロバナー */}
-      <div className="bg-gradient-to-r from-cyan-500/15 via-blue-500/10 to-cyan-500/15 border border-cyan-500/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-sm">
+      <div className="bg-gradient-to-r from-teal-500/15 via-teal-500/10 to-teal-500/15 border border-teal-500/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-sm">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-800 text-xs font-black border border-cyan-500/30">
-            <Globe size={14} className="text-cyan-600" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 text-teal-800 text-xs font-black border border-teal-500/30">
+            <Globe size={14} className="text-teal-600" />
             ポータルWeb機能ガイド
           </div>
           <h2 className="text-xl md:text-2xl font-black text-stone-900">
@@ -81,10 +81,10 @@ export default function GuidePortalTab() {
         <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-cyan-50 border border-cyan-200 flex items-center justify-center text-cyan-600 font-bold text-2xl group-hover:scale-105 transition">
+              <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-600 font-bold text-2xl group-hover:scale-105 transition">
                 ⚖️
               </div>
-              <span className="text-[11px] font-bold text-cyan-800 bg-cyan-100 px-2.5 py-1 rounded-full">
+              <span className="text-[11px] font-bold text-teal-800 bg-teal-100 px-2.5 py-1 rounded-full">
                 お祭り機能追加 ✨
               </span>
             </div>
@@ -94,7 +94,7 @@ export default function GuidePortalTab() {
             </p>
             <div className="bg-stone-50 rounded-2xl p-3.5 border border-stone-200/80 text-xs text-stone-700 space-y-1.5">
               <div className="font-bold text-stone-800 flex items-center gap-1.5 text-[11px]">
-                <Swords size={13} className="text-cyan-600" />
+                <Swords size={13} className="text-teal-600" />
                 主な機能
               </div>
               <p>・🎲 <strong>お祭りロールランダム</strong>: 10人のロールをランダムにシャッフルしつつチーム間MMRを拮抗させる新機能</p>
@@ -105,7 +105,7 @@ export default function GuidePortalTab() {
           <div className="mt-4 pt-3 border-t border-stone-100">
             <Link
               href="/balancer"
-              className="text-xs font-black text-cyan-700 hover:text-cyan-900 flex items-center gap-1 group-hover:translate-x-1 transition"
+              className="text-xs font-black text-teal-700 hover:text-teal-900 flex items-center gap-1 group-hover:translate-x-1 transition"
             >
               バランサーへ移動 <ArrowRight size={13} />
             </Link>
@@ -151,7 +151,7 @@ export default function GuidePortalTab() {
         <div className="bg-white rounded-3xl p-6 border border-stone-200 shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 font-bold text-2xl group-hover:scale-105 transition">
+              <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-2xl group-hover:scale-105 transition">
                 🤝
               </div>
               <span className="text-[11px] font-bold text-stone-500 bg-stone-100 px-2.5 py-1 rounded-full">
@@ -164,7 +164,7 @@ export default function GuidePortalTab() {
             </p>
             <div className="bg-stone-50 rounded-2xl p-3.5 border border-stone-200/80 text-xs text-stone-700 space-y-1.5">
               <div className="font-bold text-stone-800 flex items-center gap-1.5 text-[11px]">
-                <HeartHandshake size={13} className="text-indigo-600" />
+                <HeartHandshake size={13} className="text-amber-600" />
                 見どころ
               </div>
               <p>・2人を選んで共闘勝率を即座にシミュレーション</p>
@@ -175,7 +175,7 @@ export default function GuidePortalTab() {
           <div className="mt-4 pt-3 border-t border-stone-100">
             <Link
               href="/synergy"
-              className="text-xs font-black text-indigo-700 hover:text-indigo-900 flex items-center gap-1 group-hover:translate-x-1 transition"
+              className="text-xs font-black text-amber-700 hover:text-amber-900 flex items-center gap-1 group-hover:translate-x-1 transition"
             >
               相性分析ページへ移動 <ArrowRight size={13} />
             </Link>
@@ -353,8 +353,8 @@ export default function GuidePortalTab() {
                 </p>
               </div>
 
-              <div className="p-3 bg-indigo-50/70 rounded-2xl border border-indigo-200/80 text-xs text-stone-800 space-y-1">
-                <div className="font-black text-indigo-950 flex items-center gap-1.5 text-[11px]">
+              <div className="p-3 bg-amber-50/70 rounded-2xl border border-amber-200/80 text-xs text-stone-800 space-y-1">
+                <div className="font-black text-amber-950 flex items-center gap-1.5 text-[11px]">
                   <span>🌟</span> メンバー匿名評判・栄誉 (+50🪙)
                 </div>
                 <p className="text-[11px] text-stone-700 leading-relaxed font-medium">

@@ -752,7 +752,7 @@ function CustomRecordPageContent() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             {/* BLUE TEAM */}
             <div>
-              <h4 className="font-bold text-blue-700 mb-4 text-xl tracking-wider">🟦 BLUE TEAM</h4>
+              <h4 className="font-bold text-teal-700 mb-4 text-xl tracking-wider">🟦 BLUE TEAM</h4>
               <div className="space-y-3">
                 {[0, 1, 2, 3, 4].map(index => {
                   const s = stats[index];
@@ -763,14 +763,14 @@ function CustomRecordPageContent() {
                         <select
                           value={s.currentRole}
                           onChange={e => handleStatChangeByIndex(index, 'currentRole', e.target.value)}
-                          className="w-16 bg-white border border-border rounded px-1.5 py-1 text-stone-900 outline-none focus:border-blue-500 text-xs font-bold"
+                          className="w-16 bg-white border border-border rounded px-1.5 py-1 text-stone-900 outline-none focus:border-teal-500 text-xs font-bold"
                         >
                           {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                         <select
                           value={s.name}
                           onChange={e => handleStatChangeByIndex(index, 'name', e.target.value)}
-                          className="w-28 bg-white border border-border rounded px-2 py-1.5 text-stone-900 outline-none focus:border-blue-500 text-sm"
+                          className="w-28 bg-white border border-border rounded px-2 py-1.5 text-stone-900 outline-none focus:border-teal-500 text-sm"
                         >
                           <option value="">選択...</option>
                           {playersPool.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
@@ -778,7 +778,7 @@ function CustomRecordPageContent() {
                         <button
                           onClick={() => setActiveChampSelector({ team: 'BLUE', role: s.currentRole, slotIndex: index })}
                           type="button"
-                          className="w-32 bg-white border border-border hover:border-blue-500 rounded px-2 py-1.5 text-stone-500 hover:text-stone-900 text-xs flex items-center justify-between gap-1 transition shrink-0"
+                          className="w-32 bg-white border border-border hover:border-teal-500 rounded px-2 py-1.5 text-stone-500 hover:text-stone-900 text-xs flex items-center justify-between gap-1 transition shrink-0"
                         >
                           <span className="truncate">
                             {s.champion_name ? (championsList.find(c => c.id === s.champion_name)?.name || 'チャンプ') : 'チャンプ選択'}
@@ -803,7 +803,7 @@ function CustomRecordPageContent() {
                           <button
                             type="button"
                             onClick={() => toggleDetails(index)}
-                            className={`ml-2 p-1.5 rounded transition ${openDetails[index] ? 'bg-blue-600 text-white' : 'bg-black/5 text-stone-500 hover:text-stone-900'}`}
+                            className={`ml-2 p-1.5 rounded transition ${openDetails[index] ? 'bg-teal-600 text-white' : 'bg-black/5 text-stone-500 hover:text-stone-900'}`}
                             title="詳細スタッツ（CS・ダメージなど）"
                           >
                             <Settings className="h-4 w-4" />
@@ -933,7 +933,7 @@ function CustomRecordPageContent() {
               <span className="font-bold text-stone-500 text-sm">今日のチーム分けは?</span>
               {([
                 ['good', '👍 良かった', 'bg-emerald-600'],
-                ['normal', '😐 普通', 'bg-sky-600'],
+                ['normal', '😐 普通', 'bg-teal-600'],
                 ['bad', '👎 イマイチ', 'bg-rose-600'],
               ] as const).map(([val, label, activeCls]) => (
                 <button key={val} type="button"
@@ -951,7 +951,7 @@ function CustomRecordPageContent() {
               <span className="font-bold text-stone-500 px-2">勝利チーム:</span>
               <button
                 onClick={() => setWinningTeam('BLUE')}
-                className={`px-8 py-3 rounded-lg font-black transition ${winningTeam === 'BLUE' ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.6)]' : 'bg-white text-stone-500 border border-border hover:bg-black/5'}`}
+                className={`px-8 py-3 rounded-lg font-black transition ${winningTeam === 'BLUE' ? 'bg-teal-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.6)]' : 'bg-white text-stone-500 border border-border hover:bg-black/5'}`}
               >
                 BLUE WIN
               </button>
@@ -1072,7 +1072,7 @@ function CustomRecordPageContent() {
                 試合結果の記録が完了しました！
               </h2>
               <div className="flex items-center justify-center gap-2 text-xs font-bold text-stone-600">
-                <span className={`px-2.5 py-0.5 rounded-full font-black text-white ${savedMatchSummary.winningTeam === 'BLUE' ? 'bg-blue-600' : 'bg-rose-600'}`}>
+                <span className={`px-2.5 py-0.5 rounded-full font-black text-white ${savedMatchSummary.winningTeam === 'BLUE' ? 'bg-teal-600' : 'bg-rose-600'}`}>
                   {savedMatchSummary.winningTeam === 'BLUE' ? '🟦 BLUE 勝利' : '🟥 RED 勝利'}
                 </span>
                 <span>参加者: {savedMatchSummary.playersCount} 名</span>

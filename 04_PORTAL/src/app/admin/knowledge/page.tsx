@@ -293,7 +293,7 @@ function KnowledgeBaseContent() {
               : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
           }`}
         >
-          <Film size={14} className={activeTab === 'queue' ? 'text-indigo-600' : 'text-stone-400'} />
+          <Film size={14} className={activeTab === 'queue' ? 'text-amber-600' : 'text-stone-400'} />
           <span>動画解析キュー</span>
         </button>
 
@@ -357,7 +357,7 @@ function KnowledgeBaseContent() {
                   onClick={() => setInputSubMode('discord')}
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     inputSubMode === 'discord'
-                      ? 'bg-white text-indigo-900 shadow-xs font-black'
+                      ? 'bg-white text-amber-900 shadow-xs font-black'
                       : 'text-stone-500 hover:text-stone-900'
                   }`}
                 >
@@ -414,7 +414,7 @@ function KnowledgeBaseContent() {
                       <button
                         type="button"
                         onClick={() => setInputSubMode('discord')}
-                        className="text-[10px] text-indigo-700 hover:text-indigo-900 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                        className="text-[10px] text-amber-700 hover:text-amber-900 font-bold hover:underline flex items-center gap-1 cursor-pointer"
                       >
                         <span>💬 専用Discord抽出パネルを使う</span>
                       </button>

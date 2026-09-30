@@ -801,7 +801,7 @@ export default function PlayerMyPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 pt-1 flex-wrap">
                   {/* 🎮 ソロキュー情報 */}
                   <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/10 text-xs">
-                    <span className="text-[10px] font-black text-cyan-400 flex items-center gap-1">
+                    <span className="text-[10px] font-black text-teal-400 flex items-center gap-1">
                       <span>🎮 ソロキュー:</span>
                     </span>
                     <span className="text-white font-bold font-mono text-xs">{player.ign || "IGN未登録"}</span>
@@ -1264,9 +1264,9 @@ export default function PlayerMyPage() {
                   </div>
 
                   {/* 🎮 ソロキュー戦績クイックサマリーカード（案B: 混合を防ぐため独立配置） */}
-                  <div className="lg:col-span-3 bg-gradient-to-r from-cyan-950/10 via-blue-950/5 to-transparent border border-cyan-500/25 rounded-3xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="lg:col-span-3 bg-gradient-to-r from-teal-950/10 via-teal-950/5 to-transparent border border-teal-500/25 rounded-3xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-3.5">
-                      <div className="w-11 h-11 rounded-2xl bg-cyan-600 text-white flex items-center justify-center font-black text-xl shadow-xs shrink-0">
+                      <div className="w-11 h-11 rounded-2xl bg-teal-600 text-white flex items-center justify-center font-black text-xl shadow-xs shrink-0">
                         🎮
                       </div>
                       <div className="space-y-0.5">
@@ -1274,7 +1274,7 @@ export default function PlayerMyPage() {
                           <h4 className="text-sm font-black text-stone-900">
                             ソロキュー公式ステータス (Riot連携)
                           </h4>
-                          <span className="text-xs font-black px-2 py-0.5 rounded-md bg-cyan-100 text-cyan-800 border border-cyan-300">
+                          <span className="text-xs font-black px-2 py-0.5 rounded-md bg-teal-100 text-teal-800 border border-teal-300">
                             {player.highest_rank || "UNRANKED"}
                           </span>
                           <span className="text-xs text-stone-500 font-mono">
@@ -1301,7 +1301,7 @@ export default function PlayerMyPage() {
                       <button
                         type="button"
                         onClick={() => setActiveTab('soloq')}
-                        className="px-3.5 py-1.5 rounded-xl bg-cyan-50 hover:bg-cyan-100 text-cyan-900 text-xs font-black transition-all border border-cyan-200 cursor-pointer"
+                        className="px-3.5 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-900 text-xs font-black transition-all border border-teal-200 cursor-pointer"
                       >
                         <span>ソロキュー詳細を見る →</span>
                       </button>
@@ -1837,16 +1837,16 @@ export default function PlayerMyPage() {
               {activeTab === 'soloq' && (
                 <div className="space-y-6">
                   {/* ソロキュー公式ステータス ＆ Riot連携カード */}
-                  <div className="bg-white/70 backdrop-blur-xl border border-cyan-500/20 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+                  <div className="bg-white/70 backdrop-blur-xl border border-teal-500/20 rounded-3xl p-6 shadow-xl relative overflow-hidden">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/10 pb-4 mb-6">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-md">
+                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center text-white shadow-md">
                           <Award className="w-5 h-5" />
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
                             <h2 className="text-lg font-black text-stone-900">🎮 ソロキュー戦績 ＆ Riot公式データ</h2>
-                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-800 border border-cyan-300">
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-300">
                               Riot API 連携
                             </span>
                           </div>
@@ -1872,7 +1872,7 @@ export default function PlayerMyPage() {
                           disabled={syncingSoloq}
                           className="px-3.5 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-black transition-all border border-stone-300 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                         >
-                          <RefreshCw size={13} className={syncingSoloq ? 'animate-spin text-cyan-600' : ''} />
+                          <RefreshCw size={13} className={syncingSoloq ? 'animate-spin text-teal-600' : ''} />
                           <span>{syncingSoloq ? '同期中...' : '最新戦績を同期'}</span>
                         </button>
                       </div>
@@ -1916,7 +1916,7 @@ export default function PlayerMyPage() {
                       <div className="bg-stone-50/80 border border-stone-200/80 rounded-2xl p-4 flex flex-col justify-between">
                         <span className="text-[11px] font-bold text-stone-500 uppercase tracking-wider">登録マスタリー数</span>
                         <div className="my-2">
-                          <span className="text-2xl sm:text-3xl font-black text-cyan-700">
+                          <span className="text-2xl sm:text-3xl font-black text-teal-700">
                             {riotMasteries.length} <span className="text-sm font-bold text-stone-500">体</span>
                           </span>
                         </div>
@@ -1973,7 +1973,7 @@ export default function PlayerMyPage() {
                     <div className="bg-white/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl flex flex-col justify-between">
                       <div className="border-b border-black/10 pb-3 mb-4 flex items-center justify-between">
                         <h3 className="text-lg font-black flex items-center gap-2">
-                          <Target className="w-5 h-5 text-cyan-600" />
+                          <Target className="w-5 h-5 text-teal-600" />
                           <span>スカウティング ＆ 傾向レポート</span>
                         </h3>
                         <span className="text-xs text-stone-500 font-bold">プレイスタイル</span>

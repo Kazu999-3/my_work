@@ -141,8 +141,8 @@ export default function WinrateMatrixPanel() {
         bgClass = "bg-emerald-100 border-emerald-200";
         Icon = TrendingUp;
       } else if (winrate > 50) {
-        colorClass = "text-sky-700";
-        bgClass = "bg-sky-100 border-sky-200";
+        colorClass = "text-teal-700";
+        bgClass = "bg-teal-100 border-teal-200";
         Icon = Activity;
       } else if (winrate >= 45) {
         colorClass = "text-stone-700";
@@ -177,7 +177,7 @@ export default function WinrateMatrixPanel() {
 
   const renderSortIndicator = (key: typeof sortKey) => {
     if (sortKey !== key) return null;
-    return <span className="ml-1 inline-block text-cyan-700 font-black">{sortOrder === 'desc' ? '▼' : '▲'}</span>;
+    return <span className="ml-1 inline-block text-teal-700 font-black">{sortOrder === 'desc' ? '▼' : '▲'}</span>;
   };
 
   return (
@@ -185,8 +185,8 @@ export default function WinrateMatrixPanel() {
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 pb-4 border-b border-black/10">
         <div className="flex items-center gap-3">
-          <div className="bg-indigo-100 p-3 rounded-2xl">
-            <Swords className="text-indigo-700" size={24} />
+          <div className="bg-amber-100 p-3 rounded-2xl">
+            <Swords className="text-amber-700" size={24} />
           </div>
           <div>
             <h2 className="text-xl font-bold text-stone-900 tracking-tight">レーン別 勝率マトリックス</h2>
@@ -212,7 +212,7 @@ export default function WinrateMatrixPanel() {
               onClick={() => handleHeaderClick(k as any)}
               className={`px-2.5 py-1 rounded-xl text-xs font-black transition-all ${
                 sortKey === k
-                  ? 'bg-gradient-to-r from-indigo-500 to-cyan-500 text-white shadow-md shadow-indigo-500/20'
+                  ? 'bg-gradient-to-r from-amber-500 to-teal-500 text-white shadow-md shadow-amber-500/20'
                   : 'text-stone-500 hover:text-stone-900 hover:bg-black/5'
               }`}
             >
@@ -237,7 +237,7 @@ export default function WinrateMatrixPanel() {
                   key={role}
                   onClick={() => handleHeaderClick(role)}
                   className={`px-2 py-3 text-center text-xs font-bold cursor-pointer transition-colors ${
-                    sortKey === role ? 'text-cyan-700 font-black bg-cyan-100 rounded-t-xl' : 'text-stone-500 hover:text-stone-900'
+                    sortKey === role ? 'text-teal-700 font-black bg-teal-100 rounded-t-xl' : 'text-stone-500 hover:text-stone-900'
                   }`}
                 >
                   {role} {renderSortIndicator(role)}
@@ -246,7 +246,7 @@ export default function WinrateMatrixPanel() {
               <th
                 onClick={() => handleHeaderClick('overall')}
                 className={`px-4 py-3 text-right text-xs font-bold cursor-pointer transition-colors border-l border-black/10 ${
-                  sortKey === 'overall' ? 'text-indigo-700 font-black bg-indigo-100 rounded-t-xl' : 'text-stone-500 hover:text-stone-900'
+                  sortKey === 'overall' ? 'text-amber-700 font-black bg-amber-100 rounded-t-xl' : 'text-stone-500 hover:text-stone-900'
                 }`}
               >
                 OVERALL {renderSortIndicator('overall')}
@@ -266,24 +266,24 @@ export default function WinrateMatrixPanel() {
                       <div className="font-bold text-stone-800">{player.name}</div>
                     </div>
                   </td>
-                  <td className={`px-1 py-2 align-middle border-y border-black/10 ${sortKey === 'TOP' ? 'bg-cyan-50' : 'bg-black/2'}`}>
+                  <td className={`px-1 py-2 align-middle border-y border-black/10 ${sortKey === 'TOP' ? 'bg-teal-50' : 'bg-black/2'}`}>
                     {renderCell(player.lanes.TOP)}
                   </td>
-                  <td className={`px-1 py-2 align-middle border-y border-black/10 ${sortKey === 'JG' ? 'bg-cyan-50' : 'bg-black/2'}`}>
+                  <td className={`px-1 py-2 align-middle border-y border-black/10 ${sortKey === 'JG' ? 'bg-teal-50' : 'bg-black/2'}`}>
                     {renderCell(player.lanes.JG)}
                   </td>
-                  <td className={`px-1 py-2 align-middle border-y border-black/10 ${sortKey === 'MID' ? 'bg-cyan-50' : 'bg-black/2'}`}>
+                  <td className={`px-1 py-2 align-middle border-y border-black/10 ${sortKey === 'MID' ? 'bg-teal-50' : 'bg-black/2'}`}>
                     {renderCell(player.lanes.MID)}
                   </td>
-                  <td className={`px-1 py-2 align-middle border-y border-black/10 ${sortKey === 'ADC' ? 'bg-cyan-50' : 'bg-black/2'}`}>
+                  <td className={`px-1 py-2 align-middle border-y border-black/10 ${sortKey === 'ADC' ? 'bg-teal-50' : 'bg-black/2'}`}>
                     {renderCell(player.lanes.ADC)}
                   </td>
-                  <td className={`px-1 py-2 align-middle border-y border-black/10 ${sortKey === 'SUP' ? 'bg-cyan-50' : 'bg-black/2'}`}>
+                  <td className={`px-1 py-2 align-middle border-y border-black/10 ${sortKey === 'SUP' ? 'bg-teal-50' : 'bg-black/2'}`}>
                     {renderCell(player.lanes.SUP)}
                   </td>
-                  <td className={`px-4 py-3 align-middle text-right rounded-r-2xl border-y border-r border-black/10 border-l border-l-black/10 ${sortKey === 'overall' ? 'bg-indigo-50' : 'bg-black/2'}`}>
+                  <td className={`px-4 py-3 align-middle text-right rounded-r-2xl border-y border-r border-black/10 border-l border-l-black/10 ${sortKey === 'overall' ? 'bg-amber-50' : 'bg-black/2'}`}>
                     <div className="flex flex-col items-end">
-                      <div className={`text-lg font-black ${overallWr >= 55 ? 'text-sky-700' : overallWr < 45 && player.totalGames > 0 ? 'text-red-600' : 'text-stone-700'}`}>
+                      <div className={`text-lg font-black ${overallWr >= 55 ? 'text-teal-700' : overallWr < 45 && player.totalGames > 0 ? 'text-red-600' : 'text-stone-700'}`}>
                         {player.totalGames > 0 ? `${overallWr.toFixed(1)}%` : '-'}
                       </div>
                       <div className="text-[10px] text-stone-500 mb-1">

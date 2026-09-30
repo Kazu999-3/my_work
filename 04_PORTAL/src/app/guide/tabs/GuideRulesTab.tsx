@@ -140,12 +140,12 @@ export default function GuideRulesTab() {
           </div>
 
           {/* 日曜: お祭りカスタム */}
-          <div className="p-5 rounded-2xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200/80 dark:border-purple-800/40 space-y-3">
+          <div className="p-5 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-800/40 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="px-2.5 py-1 rounded-lg bg-purple-600 text-white text-xs font-black">
+              <span className="px-2.5 py-1 rounded-lg bg-amber-600 text-white text-xs font-black">
                 日曜日 21:00〜
               </span>
-              <span className="text-xs font-bold text-purple-700 dark:text-purple-300">🎪 ランク無差別・お祭り</span>
+              <span className="text-xs font-bold text-amber-700 dark:text-amber-300">🎪 ランク無差別・お祭り</span>
             </div>
             <h4 className="text-sm font-black text-stone-900 dark:text-white">🎲 日曜：完全ランダム・お祭りカスタム</h4>
             <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
@@ -153,11 +153,11 @@ export default function GuideRulesTab() {
             </p>
             <ul className="text-xs text-stone-600 dark:text-stone-300 space-y-1 pt-1">
               <li className="flex items-center gap-1.5 font-bold">
-                <CheckCircle2 size={14} className="text-purple-600 shrink-0" />
+                <CheckCircle2 size={14} className="text-amber-600 shrink-0" />
                 <span>MMR変動なし（完全カジュアル）</span>
               </li>
               <li className="flex items-center gap-1.5 font-bold">
-                <CheckCircle2 size={14} className="text-purple-600 shrink-0" />
+                <CheckCircle2 size={14} className="text-amber-600 shrink-0" />
                 <span>オフメタピック・新チャンピオン練習大歓迎✨</span>
               </li>
             </ul>
@@ -202,7 +202,7 @@ export default function GuideRulesTab() {
 
           <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-2">
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 text-xs font-black">
+              <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 text-xs font-black">
                 🌙 途中参加 (2戦目〜)
               </span>
             </div>
@@ -252,7 +252,7 @@ export default function GuideRulesTab() {
           {/* BO3 シリーズマッチ */}
           <div className="p-5 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-2.5">
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-indigo-600 text-white text-xs font-black">
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-600 text-white text-xs font-black">
                 🏆 BO3 シリーズマッチ
               </span>
               <span className="text-xs font-bold text-stone-500">（2本先取・サイド交代）</span>
@@ -266,7 +266,7 @@ export default function GuideRulesTab() {
           {/* 10人以上お祭り・ARAMローテーション ＆ ロールランダム5v5 */}
           <div className="p-5 rounded-2xl bg-stone-50 border border-stone-200/80 space-y-2.5">
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-purple-600 text-white text-xs font-black">
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-600 text-white text-xs font-black">
                 🎲 10人以上お祭り ＆ ロールランダム5v5
               </span>
               <span className="text-xs font-bold text-stone-500">（ARAM公平交代 / いつもと違うロール）</span>

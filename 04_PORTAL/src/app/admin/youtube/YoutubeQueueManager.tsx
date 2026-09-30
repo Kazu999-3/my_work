@@ -655,7 +655,7 @@ export default function YoutubeQueueManager() {
       classes += 'bg-gray-100 text-gray-500 border-gray-200';
       label = '優先度: 低';
     } else {
-      classes += 'bg-blue-100 text-blue-700 border-blue-200';
+      classes += 'bg-teal-100 text-teal-700 border-teal-200';
       label = '優先度: 中';
     }
     return <span className={classes}>{label}</span>;
@@ -676,7 +676,7 @@ export default function YoutubeQueueManager() {
       label = '⏸️ 保留中';
       hint = '処理が一時停止されています。解除すると次回巡回時に解析されます。';
     } else if (status === 'pending') {
-      classes += 'bg-cyan-100 text-cyan-700 border-cyan-200 animate-pulse';
+      classes += 'bg-teal-100 text-teal-700 border-teal-200 animate-pulse';
       label = '⏳ 解析待ち';
       hint = 'ローカルPC / SREデーモンが順次巡回して要約・文字起こしを行います。';
     } else if (status === 'error_generation') {
@@ -802,7 +802,7 @@ export default function YoutubeQueueManager() {
             <button
               onClick={handleCloseSelectedToPlaylist}
               disabled={closingToDiscord || closingSelected}
-              className="px-4 py-2.5 rounded-xl bg-indigo-100 hover:bg-indigo-200 border border-indigo-200 hover:border-indigo-300 text-indigo-700 text-xs font-bold shadow-[0_0_15px_rgba(99,102,241,0.1)] disabled:opacity-40 disabled:pointer-events-none transition-all duration-300 flex items-center gap-1.5 shrink-0"
+              className="px-4 py-2.5 rounded-xl bg-amber-100 hover:bg-amber-200 border border-amber-200 hover:border-amber-300 text-amber-700 text-xs font-bold shadow-[0_0_15px_rgba(99,102,241,0.1)] disabled:opacity-40 disabled:pointer-events-none transition-all duration-300 flex items-center gap-1.5 shrink-0"
             >
               📺 選択{selectedIds.size}件をプレイリストへ追加してクローズ
             </button>
@@ -820,7 +820,7 @@ export default function YoutubeQueueManager() {
             <button
               onClick={handleRetryAllErrors}
               disabled={actionLoading !== null}
-              className="px-4 py-2.5 rounded-xl bg-cyan-100 hover:bg-cyan-200 border border-cyan-200 hover:border-cyan-300 text-cyan-700 text-xs font-bold shadow-[0_0_15px_rgba(6,182,212,0.1)] hover:shadow-[0_0_20px_rgba(6,182,212,0.2)] disabled:opacity-40 disabled:pointer-events-none transition-all duration-300 flex items-center gap-1.5 shrink-0"
+              className="px-4 py-2.5 rounded-xl bg-teal-100 hover:bg-teal-200 border border-teal-200 hover:border-teal-300 text-teal-700 text-xs font-bold shadow-[0_0_15px_rgba(6,182,212,0.1)] hover:shadow-[0_0_20px_rgba(6,182,212,0.2)] disabled:opacity-40 disabled:pointer-events-none transition-all duration-300 flex items-center gap-1.5 shrink-0"
             >
               🔄 エラー動画を一括再試行 ({stats.error}件)
             </button>
@@ -858,9 +858,9 @@ export default function YoutubeQueueManager() {
               <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">総登録本数</span>
               <span className="text-2xl font-bold mt-1 text-gray-900">{stats.total} 本</span>
             </div>
-            <div className="bg-cyan-50 border border-cyan-200 rounded-xl p-4 flex flex-col justify-center shadow-[0_0_15px_rgba(6,182,212,0.02)]">
-              <span className="text-xs text-cyan-600 font-semibold uppercase tracking-wider">解析待ち</span>
-              <span className="text-2xl font-bold mt-1 text-cyan-700">{stats.pending} 本</span>
+            <div className="bg-teal-50 border border-teal-200 rounded-xl p-4 flex flex-col justify-center shadow-[0_0_15px_rgba(6,182,212,0.02)]">
+              <span className="text-xs text-teal-600 font-semibold uppercase tracking-wider">解析待ち</span>
+              <span className="text-2xl font-bold mt-1 text-teal-700">{stats.pending} 本</span>
             </div>
             <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex flex-col justify-center shadow-[0_0_15px_rgba(34,197,94,0.02)]">
               <span className="text-xs text-green-600 font-semibold uppercase tracking-wider">完了済み</span>
@@ -874,7 +874,7 @@ export default function YoutubeQueueManager() {
 
           {/* 動画追加フォーム */}
           <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-amber-500 via-amber-300 to-cyan-500" />
+            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-amber-500 via-amber-300 to-teal-500" />
             <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
               <span>➕ 攻略動画の自動解析指示</span>
             </h2>
@@ -885,7 +885,7 @@ export default function YoutubeQueueManager() {
                 value={newUrl}
                 onChange={(e) => setNewUrl(e.target.value)}
                 disabled={actionLoading === 'add'}
-                className="flex-1 px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-sm text-gray-900 placeholder-gray-400 transition-all"
+                className="flex-1 px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm text-gray-900 placeholder-gray-400 transition-all"
               />
               <button
                 type="submit"
@@ -913,7 +913,7 @@ export default function YoutubeQueueManager() {
             <div className="flex flex-wrap gap-1 bg-gray-100 p-1 rounded-xl border border-gray-200 w-full md:w-auto">
               {[
                 { id: 'all', label: 'すべて', count: stats.total },
-                { id: 'pending', label: '解析待ち', count: stats.pending, color: 'text-cyan-600' },
+                { id: 'pending', label: '解析待ち', count: stats.pending, color: 'text-teal-600' },
                 { id: 'completed', label: '完了', count: stats.completed, color: 'text-green-600' },
                 { id: 'error', label: 'エラー/失敗', count: stats.error, color: 'text-red-600' },
                 { id: 'closed', label: '手動クローズ済み', count: stats.closed, color: 'text-gray-400' }
@@ -946,7 +946,7 @@ export default function YoutubeQueueManager() {
                   value={filterChannel}
                   onChange={(e) => setFilterChannel(e.target.value)}
                   title="チャンネルで絞り込む"
-                  className="px-3 py-2 bg-white border border-gray-300 rounded-xl focus:outline-none focus:border-cyan-500 text-xs text-gray-700 w-full sm:w-auto sm:max-w-[220px] appearance-none pr-8 cursor-pointer font-bold"
+                  className="px-3 py-2 bg-white border border-gray-300 rounded-xl focus:outline-none focus:border-teal-500 text-xs text-gray-700 w-full sm:w-auto sm:max-w-[220px] appearance-none pr-8 cursor-pointer font-bold"
                 >
                   <option value="all">すべてのチャンネル ({queue.length})</option>
                   {channelOptions.map(([name, count]) => (
@@ -964,7 +964,7 @@ export default function YoutubeQueueManager() {
                 <select
                   value={sortBy}
                   onChange={(e) => handleSortChange(e.target.value as any)}
-                  className="px-3 py-2 bg-white border border-gray-300 rounded-xl focus:outline-none focus:border-cyan-500 text-xs text-gray-700 w-full sm:w-auto appearance-none pr-8 cursor-pointer font-bold"
+                  className="px-3 py-2 bg-white border border-gray-300 rounded-xl focus:outline-none focus:border-teal-500 text-xs text-gray-700 w-full sm:w-auto appearance-none pr-8 cursor-pointer font-bold"
                 >
                   <option value="date_added">登録日順</option>
                   <option value="published_at">投稿日順</option>
@@ -982,7 +982,7 @@ export default function YoutubeQueueManager() {
                   placeholder="タイトル、チャンネルで検索..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-xs text-gray-900"
+                  className="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-xl focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-xs text-gray-900"
                 />
                 <svg className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -1020,7 +1020,7 @@ export default function YoutubeQueueManager() {
                 <p>該当する動画がありません。</p>
                 {filterChannel !== 'all' && (
                   <button type="button" onClick={() => setFilterChannel('all')}
-                    className="text-xs font-bold text-cyan-600 hover:underline">
+                    className="text-xs font-bold text-teal-600 hover:underline">
                     チャンネル絞り込みを解除する
                   </button>
                 )}
@@ -1028,8 +1028,8 @@ export default function YoutubeQueueManager() {
             ) : (
               <>
                 {filterChannel !== 'all' && (
-                  <div className="px-4 py-2 bg-cyan-500/5 border-b border-cyan-500/20 flex items-center justify-between gap-3 text-xs">
-                    <span className="text-cyan-700 font-bold truncate">
+                  <div className="px-4 py-2 bg-teal-500/5 border-b border-teal-500/20 flex items-center justify-between gap-3 text-xs">
+                    <span className="text-teal-700 font-bold truncate">
                       「{filterChannel === '__none__' ? 'チャンネル不明' : filterChannel}」で絞り込み中 — {filteredQueue.length}件
                     </span>
                     <button type="button" onClick={() => setFilterChannel('all')}
@@ -1086,7 +1086,7 @@ export default function YoutubeQueueManager() {
                             </span>
                           )}
                           <ArticleLinks item={item} />
-                          <a href={item.url} target="_blank" rel="noreferrer" className="text-cyan-600 hover:underline flex items-center gap-1">
+                          <a href={item.url} target="_blank" rel="noreferrer" className="text-teal-600 hover:underline flex items-center gap-1">
                             <span>{item.id}</span>
                             <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -1154,7 +1154,7 @@ export default function YoutubeQueueManager() {
                             onClick={() => handleRetryVideo(item.id)}
                             disabled={actionLoading !== null}
                             type="button"
-                            className="flex-1 py-2 bg-cyan-100 hover:bg-cyan-200 border border-cyan-200 text-cyan-700 text-xs font-semibold rounded-lg disabled:opacity-40 transition-all text-center"
+                            className="flex-1 py-2 bg-teal-100 hover:bg-teal-200 border border-teal-200 text-teal-700 text-xs font-semibold rounded-lg disabled:opacity-40 transition-all text-center"
                           >
                             {actionLoading === item.id ? '処理中...' : '再試行'}
                           </button>
@@ -1243,7 +1243,7 @@ export default function YoutubeQueueManager() {
                                     </span>
                                   )}
                                   <ArticleLinks item={item} />
-                                  <a href={item.url} target="_blank" rel="noreferrer" className="text-cyan-600 hover:underline flex items-center gap-1 w-fit">
+                                  <a href={item.url} target="_blank" rel="noreferrer" className="text-teal-600 hover:underline flex items-center gap-1 w-fit">
                                     <span>{item.id}</span>
                                     <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -1288,7 +1288,7 @@ export default function YoutubeQueueManager() {
                                   onClick={() => handleRetryVideo(item.id)}
                                   disabled={actionLoading !== null}
                                   type="button"
-                                  className="px-3 py-1.5 bg-cyan-100 hover:bg-cyan-200 border border-cyan-200 hover:border-cyan-300 text-cyan-700 text-xs font-semibold rounded-lg disabled:opacity-40 disabled:pointer-events-none transition-all flex items-center gap-1"
+                                  className="px-3 py-1.5 bg-teal-100 hover:bg-teal-200 border border-teal-200 hover:border-teal-300 text-teal-700 text-xs font-semibold rounded-lg disabled:opacity-40 disabled:pointer-events-none transition-all flex items-center gap-1"
                                 >
                                   {actionLoading === item.id ? '処理中...' : '再試行'}
                                 </button>
@@ -1319,7 +1319,7 @@ export default function YoutubeQueueManager() {
         <>
           {/* チャンネル登録フォーム */}
           <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-amber-500 via-amber-300 to-cyan-500" />
+            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-amber-500 via-amber-300 to-teal-500" />
             <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
               <span>➕ 自動巡回監視チャンネルの追加</span>
             </h2>
@@ -1333,7 +1333,7 @@ export default function YoutubeQueueManager() {
                 value={newChannelUrl}
                 onChange={(e) => setNewChannelUrl(e.target.value)}
                 disabled={actionLoading === 'add_channel'}
-                className="flex-1 px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-sm text-gray-900 placeholder-gray-400 transition-all"
+                className="flex-1 px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm text-gray-900 placeholder-gray-400 transition-all"
               />
               <button
                 type="submit"
@@ -1406,7 +1406,7 @@ export default function YoutubeQueueManager() {
                                 href={`https://www.youtube.com/channel/${ch.id}`} 
                                 target="_blank" 
                                 rel="noreferrer" 
-                                className="text-cyan-600 hover:underline flex items-center gap-1"
+                                className="text-teal-600 hover:underline flex items-center gap-1"
                               >
                                 <span>{ch.id}</span>
                                 <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1469,7 +1469,7 @@ export default function YoutubeQueueManager() {
         <>
           {/* プレイリスト登録フォーム */}
           <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-amber-500 via-amber-300 to-cyan-500" />
+            <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-amber-500 via-amber-300 to-teal-500" />
             <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
               <span>➕ 自動巡回監視プレイリストの追加</span>
             </h2>
@@ -1483,7 +1483,7 @@ export default function YoutubeQueueManager() {
                 value={newPlaylistUrl}
                 onChange={(e) => setNewPlaylistUrl(e.target.value)}
                 disabled={actionLoading === 'add_playlist'}
-                className="flex-1 px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-sm text-gray-900 placeholder-gray-400 transition-all"
+                className="flex-1 px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-sm text-gray-900 placeholder-gray-400 transition-all"
               />
               <button
                 type="submit"
@@ -1555,7 +1555,7 @@ export default function YoutubeQueueManager() {
                                 href={pl.url} 
                                 target="_blank" 
                                 rel="noreferrer" 
-                                className="text-cyan-600 hover:underline flex items-center gap-1"
+                                className="text-teal-600 hover:underline flex items-center gap-1"
                               >
                                 <span>{pl.id}</span>
                                 <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">

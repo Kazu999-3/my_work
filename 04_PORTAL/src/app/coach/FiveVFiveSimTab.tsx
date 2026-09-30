@@ -316,9 +316,9 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
 
         <div className="grid grid-cols-1 lg:grid-cols-9 gap-6 items-center">
           {/* Blue Side */}
-          <div className="lg:col-span-4 space-y-4 bg-blue-50 p-5 rounded-2xl border border-blue-200">
-            <h4 className="font-black text-sm text-blue-700 tracking-wider uppercase mb-3 flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-pulse"></div> Blue Side (味方)
+          <div className="lg:col-span-4 space-y-4 bg-teal-50 p-5 rounded-2xl border border-teal-200">
+            <h4 className="font-black text-sm text-teal-700 tracking-wider uppercase mb-3 flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-teal-400 animate-pulse"></div> Blue Side (味方)
             </h4>
             {roles.map(role => (
               <div key={role} className="flex flex-col gap-1">
@@ -327,7 +327,7 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
                   value={blueChamps[role]}
                   onChange={(val) => setBlueChamps(prev => ({ ...prev, [role]: val }))}
                   placeholder="チャンピオンを選択"
-                  className="border-blue-500/20 focus:border-blue-500/50"
+                  className="border-teal-500/20 focus:border-teal-500/50"
                 />
               </div>
             ))}
@@ -454,7 +454,7 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
                 const laneData = simResult.lanes[role] || { priority: 'EVEN', reason: '' };
                 const getPriorityLabel = () => {
                   if (laneData.priority === 'BLUE_PRIORITY') {
-                    return { text: '味方有利 (Blue)', style: 'bg-blue-100 text-blue-700 border-blue-200' };
+                    return { text: '味方有利 (Blue)', style: 'bg-teal-100 text-teal-700 border-teal-200' };
                   }
                   if (laneData.priority === 'RED_PRIORITY') {
                     return { text: '敵有利 (Red)', style: 'bg-red-100 text-red-700 border-red-200' };
@@ -472,7 +472,7 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
                           src={getChampIcon(blueChamps[role])}
                           width={32}
                           height={32}
-                          className="w-8 h-8 rounded-full border border-blue-500/30"
+                          className="w-8 h-8 rounded-full border border-teal-500/30"
                           alt={blueChamps[role]}
                         />
                         <span className="text-[10px] text-gray-500 font-black italic">VS</span>
@@ -503,8 +503,8 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
 
           {/* 2. 両チームの構成タイプ ＆ シナジー分析 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="glass-panel p-6 rounded-2xl border-l-4 border-blue-500/50">
-              <h4 className="text-blue-700 font-black text-sm mb-4 flex items-center gap-2">
+            <div className="glass-panel p-6 rounded-2xl border-l-4 border-teal-500/50">
+              <h4 className="text-teal-700 font-black text-sm mb-4 flex items-center gap-2">
                 🛡️ Blue Side 構成分析
               </h4>
               <div className="space-y-3">
@@ -555,8 +555,8 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
                 <span className="text-xs font-black text-amber-600">序盤 (〜Lv6 / オブジェクト戦準備)</span>
                 <p className="text-xs leading-relaxed text-stone-700">{simResult.game_plan.early}</p>
               </div>
-              <div className="glass-panel p-5 rounded-2xl border-t-2 border-purple-500/30 flex flex-col gap-2">
-                <span className="text-xs font-black text-purple-600">中盤 (1stタワー破壊 / サイドプッシュ開始)</span>
+              <div className="glass-panel p-5 rounded-2xl border-t-2 border-amber-500/30 flex flex-col gap-2">
+                <span className="text-xs font-black text-amber-600">中盤 (1stタワー破壊 / サイドプッシュ開始)</span>
                 <p className="text-xs leading-relaxed text-stone-700">{simResult.game_plan.mid}</p>
               </div>
               <div className="glass-panel p-5 rounded-2xl border-t-2 border-emerald-500/30 flex flex-col gap-2">

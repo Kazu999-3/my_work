@@ -14,10 +14,10 @@ const KUDOS_TAGS = [
   { id: 'carry', label: '👑 キャリー力・頼れるエース', icon: '👑', color: 'bg-amber-50 text-amber-900 border-amber-300' },
   { id: 'manner', label: '💖 ナイスマナー・雰囲気◎（絶対に煽らない）', icon: '💖', color: 'bg-rose-50 text-rose-900 border-rose-300' },
   { id: 'peel', label: '🛡️ ナイスサポート・献身的なピール', icon: '🛡️', color: 'bg-emerald-50 text-emerald-900 border-emerald-300' },
-  { id: 'shotcall', label: '🗣️ 的確な指示・ピン出し', icon: '🗣️', color: 'bg-sky-50 text-sky-900 border-sky-300' },
+  { id: 'shotcall', label: '🗣️ 的確な指示・ピン出し', icon: '🗣️', color: 'bg-teal-50 text-teal-900 border-teal-300' },
   { id: 'mentor', label: '🔰 初心者・新規に優しい', icon: '🔰', color: 'bg-teal-50 text-teal-900 border-teal-300' },
-  { id: 'engage', label: '⚡ 神エンゲージ・仕掛けの鬼', icon: '⚡', color: 'bg-indigo-50 text-indigo-900 border-indigo-300' },
-  { id: 'snipe', label: '🎯 スナイパー・神スキルショット', icon: '🎯', color: 'bg-purple-50 text-purple-900 border-purple-300' },
+  { id: 'engage', label: '⚡ 神エンゲージ・仕掛けの鬼', icon: '⚡', color: 'bg-amber-50 text-amber-900 border-amber-300' },
+  { id: 'snipe', label: '🎯 スナイパー・神スキルショット', icon: '🎯', color: 'bg-amber-50 text-amber-900 border-amber-300' },
   { id: 'clutch', label: '🔥 勝負強さ・クラッチプレイ', icon: '🔥', color: 'bg-orange-50 text-orange-900 border-orange-300' },
 ];
 
@@ -227,7 +227,7 @@ export default function PlayerReputationCard({
               <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200 flex items-center justify-between">
                 <div className="space-y-0.5">
                   <div className="text-xs font-black text-stone-900 flex items-center gap-1.5">
-                    <Shield size={14} className="text-indigo-600" />
+                    <Shield size={14} className="text-amber-600" />
                     <span>送信モード</span>
                   </div>
                   <div className="text-[11px] text-stone-500 font-medium">

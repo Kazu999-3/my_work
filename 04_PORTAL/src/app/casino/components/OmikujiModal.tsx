@@ -38,9 +38,9 @@ const TIER_STYLES: Record<string, { bg: string; text: string; glow: string; badg
     badge: '🎯 好調！',
   },
   小吉: {
-    bg: 'from-sky-500 to-indigo-400',
-    text: 'text-sky-500',
-    glow: 'shadow-sky-500/30 ring-2 ring-sky-400',
+    bg: 'from-teal-500 to-amber-400',
+    text: 'text-teal-500',
+    glow: 'shadow-teal-500/30 ring-2 ring-teal-400',
     badge: '🍀 堅実運！',
   },
 };

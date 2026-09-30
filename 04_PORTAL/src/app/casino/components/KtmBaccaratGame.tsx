@@ -256,7 +256,7 @@ export default function KtmBaccaratGame({
     // 2026-09-23: 本場のバカラと同じ並び（左BANKER / 中央TIE / 右PLAYER）へ入れ替え。
     { id: 'BANKER', label: 'BANKER', subLabel: 'バンカー',   odds: '×1.95', accent: 'text-rose-700', bg: 'bg-rose-50 border-rose-300', selectedBg: 'bg-rose-600 border-rose-700 text-white' },
     { id: 'TIE',    label: 'TIE',    subLabel: 'タイ',       odds: '×9.0',  accent: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-300', selectedBg: 'bg-emerald-600 border-emerald-700 text-white' },
-    { id: 'PLAYER', label: 'PLAYER', subLabel: 'プレイヤー', odds: '×2.00', accent: 'text-blue-700', bg: 'bg-blue-50 border-blue-300', selectedBg: 'bg-blue-600 border-blue-700 text-white' },
+    { id: 'PLAYER', label: 'PLAYER', subLabel: 'プレイヤー', odds: '×2.00', accent: 'text-teal-700', bg: 'bg-teal-50 border-teal-300', selectedBg: 'bg-teal-600 border-teal-700 text-white' },
   ];
 
   // 結果アクセント
@@ -325,7 +325,7 @@ export default function KtmBaccaratGame({
             cards={displayPlayerCards}
             score={displayPlayerScore}
             visibleCount={playerVisible}
-            accent="text-blue-300"
+            accent="text-teal-300"
           />
         </div>
       </div>

@@ -220,14 +220,14 @@ export default function InventoryAuditPanel() {
 
       {/* サマリー指標カード */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-100 space-y-1">
-          <span className="text-[10px] font-extrabold text-indigo-600 uppercase tracking-wider block">人間確認網羅率</span>
+        <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-100 space-y-1">
+          <span className="text-[10px] font-extrabold text-amber-600 uppercase tracking-wider block">人間確認網羅率</span>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-black text-indigo-900">{completionRate}%</span>
-            <span className="text-xs text-indigo-600 font-bold">({verifiedCount}/{totalCount})</span>
+            <span className="text-2xl font-black text-amber-900">{completionRate}%</span>
+            <span className="text-xs text-amber-600 font-bold">({verifiedCount}/{totalCount})</span>
           </div>
-          <div className="w-full bg-indigo-200/50 rounded-full h-1.5 overflow-hidden">
-            <div className="bg-indigo-600 h-full transition-all" style={{ width: `${completionRate}%` }}></div>
+          <div className="w-full bg-amber-200/50 rounded-full h-1.5 overflow-hidden">
+            <div className="bg-amber-600 h-full transition-all" style={{ width: `${completionRate}%` }}></div>
           </div>
         </div>
 
@@ -245,12 +245,12 @@ export default function InventoryAuditPanel() {
         <div
           onClick={() => setActiveFilter('outdated')}
           className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-            activeFilter === 'outdated' ? 'bg-cyan-50 border-cyan-300 ring-2 ring-cyan-400/30' : 'bg-stone-50 border-stone-200 hover:bg-stone-100'
+            activeFilter === 'outdated' ? 'bg-teal-50 border-teal-300 ring-2 ring-teal-400/30' : 'bg-stone-50 border-stone-200 hover:bg-stone-100'
           }`}
         >
-          <span className="text-[10px] font-extrabold text-cyan-700 uppercase tracking-wider block">古いトレンド (3日以上経過)</span>
-          <span className="text-2xl font-black text-cyan-900 block">{outdatedCount} <span className="text-xs font-bold text-cyan-700">体</span></span>
-          <span className="text-[10px] text-cyan-600 font-bold">AI自動更新推奨</span>
+          <span className="text-[10px] font-extrabold text-teal-700 uppercase tracking-wider block">古いトレンド (3日以上経過)</span>
+          <span className="text-2xl font-black text-teal-900 block">{outdatedCount} <span className="text-xs font-bold text-teal-700">体</span></span>
+          <span className="text-[10px] text-teal-600 font-bold">AI自動更新推奨</span>
         </div>
 
         <div
@@ -279,7 +279,7 @@ export default function InventoryAuditPanel() {
         <button
           onClick={() => setActiveFilter('outdated')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${
-            activeFilter === 'outdated' ? 'bg-cyan-600 text-white shadow-md' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+            activeFilter === 'outdated' ? 'bg-teal-600 text-white shadow-md' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
           }`}
         >
           <Clock size={14} /> 古いパッチ情報 ({outdatedList.length})
@@ -297,7 +297,7 @@ export default function InventoryAuditPanel() {
         <button
           onClick={() => setActiveFilter('knowledge')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${
-            activeFilter === 'knowledge' ? 'bg-indigo-600 text-white shadow-md' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+            activeFilter === 'knowledge' ? 'bg-amber-600 text-white shadow-md' : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
           }`}
         >
           <Database size={14} /> ナレッジDB棚卸し ({knowledgeItems.length})
@@ -364,14 +364,14 @@ export default function InventoryAuditPanel() {
                       <img src={getChampIcon(f.champion_name)} alt={f.display_name} className="w-10 h-10 rounded-xl border border-stone-200 object-cover shrink-0" />
                       <div>
                         <span className="font-extrabold text-stone-900 text-xs block">{f.display_name}</span>
-                        <span className="text-[10px] text-cyan-700 font-bold bg-cyan-50 px-1.5 py-0.5 rounded border border-cyan-200">
+                        <span className="text-[10px] text-teal-700 font-bold bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200">
                           {f.patch_meta_patch ? `Patch ${f.patch_meta_patch}` : '未解析'}
                         </span>
                       </div>
                     </div>
                     <Link
                       href={`/champions?select=${encodeURIComponent(f.champion_name)}`}
-                      className="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-[10px] font-bold transition flex items-center gap-1 shadow-sm"
+                      className="px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-[10px] font-bold transition flex items-center gap-1 shadow-sm"
                     >
                       最新化する <ArrowRight size={12} />
                     </Link>

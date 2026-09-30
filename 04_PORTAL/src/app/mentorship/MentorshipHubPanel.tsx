@@ -708,7 +708,7 @@ export default function MentorshipHubPanel() {
                 className="px-2.5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs transition border border-stone-200 flex items-center gap-1 cursor-pointer disabled:opacity-50 shadow-2xs"
                 title="Discordの常駐ダッシュボードを即座に再同期します"
               >
-                <RefreshCw size={13} className={isSyncingDiscord ? 'animate-spin text-indigo-600' : ''} />
+                <RefreshCw size={13} className={isSyncingDiscord ? 'animate-spin text-amber-600' : ''} />
                 <span className="hidden sm:inline">Discord同期</span>
               </button>
             )}
@@ -793,7 +793,7 @@ export default function MentorshipHubPanel() {
               onClick={() => setActiveTab('MATCHES')}
               className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === 'MATCHES'
-                  ? 'bg-indigo-600 text-white shadow-xs'
+                  ? 'bg-amber-600 text-white shadow-xs'
                   : 'bg-stone-100 hover:bg-stone-200 text-stone-700'
               }`}
             >
@@ -846,8 +846,8 @@ export default function MentorshipHubPanel() {
                 onClick={() => setLightOnlyFilter(!lightOnlyFilter)}
                 className={`px-3 py-1 rounded-lg text-xs font-black transition shrink-0 cursor-pointer flex items-center gap-1.5 border ${
                   lightOnlyFilter
-                    ? 'bg-sky-500 text-white border-sky-600 shadow-xs ring-2 ring-sky-300'
-                    : 'bg-white hover:bg-sky-50 text-stone-700 border-sky-200 hover:border-sky-300'
+                    ? 'bg-teal-500 text-white border-teal-600 shadow-xs ring-2 ring-teal-300'
+                    : 'bg-white hover:bg-teal-50 text-stone-700 border-teal-200 hover:border-teal-300'
                 }`}
                 title="1試合のみやリプレイ添削など、気軽に参加できる単発お試しコースのみを表示します"
               >
@@ -1060,8 +1060,8 @@ export default function MentorshipHubPanel() {
                     : isExpired
                     ? 'bg-amber-50/70 border-amber-300 ring-2 ring-amber-400/50'
                     : isMyMatch
-                    ? 'bg-gradient-to-br from-indigo-50/90 to-white border-indigo-300'
-                    : 'bg-white border-indigo-200'
+                    ? 'bg-gradient-to-br from-amber-50/90 to-white border-amber-300'
+                    : 'bg-white border-amber-200'
                 }`}
               >
                 <div className="space-y-2">
@@ -1131,9 +1131,9 @@ export default function MentorshipHubPanel() {
                         href={match.meta.threadUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-black text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-black text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition"
                       >
-                        <MessageSquare size={12} className="text-indigo-600" />
+                        <MessageSquare size={12} className="text-amber-600" />
                         <span>💬 🎓コーチング専用スレッドを開く ➔</span>
                       </a>
                     </div>
@@ -1179,7 +1179,7 @@ export default function MentorshipHubPanel() {
                                 href={match.meta.threadUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="px-2.5 py-1.5 rounded-xl font-black text-xs bg-indigo-600 hover:bg-indigo-500 text-white transition flex items-center gap-1 cursor-pointer shadow-2xs"
+                                className="px-2.5 py-1.5 rounded-xl font-black text-xs bg-amber-600 hover:bg-amber-500 text-white transition flex items-center gap-1 cursor-pointer shadow-2xs"
                                 title="Discordの専用指導スレッドを開く"
                               >
                                 <MessageSquare size={13} />
@@ -1190,10 +1190,10 @@ export default function MentorshipHubPanel() {
                                 type="button"
                                 onClick={() => handleCreateThread(match.id)}
                                 disabled={creatingThreadMatchId === match.id}
-                                className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-800 transition flex items-center gap-1 cursor-pointer border border-indigo-200 disabled:opacity-50"
+                                className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-amber-50 hover:bg-amber-100 text-amber-800 transition flex items-center gap-1 cursor-pointer border border-amber-200 disabled:opacity-50"
                                 title="Discord (🎓コーチング・質問) に専用指導スレッドを作成"
                               >
-                                <MessageSquare size={13} className="text-indigo-600" />
+                                <MessageSquare size={13} className="text-amber-600" />
                                 <span>{creatingThreadMatchId === match.id ? '作成中...' : '💬 チャット作成'}</span>
                               </button>
                             )}

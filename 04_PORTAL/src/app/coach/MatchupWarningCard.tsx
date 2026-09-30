@@ -184,7 +184,7 @@ export default function MatchupWarningCard({ champion, enemyChampion }: MatchupW
                   {warning.laneRecord.gameWinRate}%
                 </span>
                 {warning.laneRecord.carryConversionRate !== null && (
-                  <span className="text-[10px] text-indigo-700 font-extrabold bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded">
+                  <span className="text-[10px] text-amber-700 font-extrabold bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
                     勝率変換 {warning.laneRecord.carryConversionRate}%
                   </span>
                 )}

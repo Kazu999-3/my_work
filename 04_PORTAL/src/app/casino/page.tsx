@@ -748,7 +748,7 @@ export default function CasinoPage() {
                     setTipToPlayer('');
                     setIsTipModalOpen(true);
                   }}
-                  className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-black text-xs shadow transition flex items-center gap-1.5 cursor-pointer"
+                  className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs shadow transition flex items-center gap-1.5 cursor-pointer"
                   title="フレンドや活躍したプレイヤーにコインをチップとして贈ります"
                 >
                   <Gift size={14} />
@@ -839,7 +839,7 @@ export default function CasinoPage() {
             </div>
           </div>
         ) : (
-          <div className="p-6 rounded-3xl bg-gradient-to-br from-indigo-950 via-stone-900 to-indigo-950 border border-indigo-500/30 text-white flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl text-center md:text-left">
+          <div className="p-6 rounded-3xl bg-gradient-to-br from-amber-950 via-stone-900 to-amber-950 border border-amber-500/30 text-white flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl text-center md:text-left">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-[#5865F2]/20 text-[#5865F2] border border-[#5865F2]/40 flex items-center justify-center text-2xl shrink-0">
                 🎮
@@ -892,7 +892,7 @@ export default function CasinoPage() {
                 {/* 📊 リアルタイム投票比率バー */}
                 <div className="p-4 rounded-2xl bg-white/95 text-stone-900 space-y-2 border border-stone-200 shadow-sm">
                   <div className="flex items-center justify-between text-xs font-black">
-                    <span className="text-indigo-600 flex items-center gap-1">
+                    <span className="text-amber-600 flex items-center gap-1">
                       <span>🟦 BLUE:</span>
                       <span className="font-mono">{betStats.blueRatio}%</span>
                       <span className="text-[10px] text-stone-500 font-normal">({betStats.blueAmount.toLocaleString()}pt / {betStats.blueCount}人)</span>
@@ -910,7 +910,7 @@ export default function CasinoPage() {
                   <div className="w-full h-3 bg-stone-200 rounded-full overflow-hidden flex border border-stone-300">
                     <div
                       style={{ width: `${betStats.blueRatio}%` }}
-                      className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 transition-all duration-500"
+                      className="h-full bg-gradient-to-r from-amber-500 to-amber-600 transition-all duration-500"
                     ></div>
                     <div
                       style={{ width: `${betStats.redRatio}%` }}
@@ -1008,10 +1008,10 @@ export default function CasinoPage() {
                   {/* 5v5 対戦メンバー */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                     {/* BLUE TEAM */}
-                    <div className="p-3.5 rounded-2xl bg-indigo-50/80 border-2 border-indigo-200 space-y-2">
-                      <div className="flex items-center justify-between border-b border-indigo-200 pb-1.5">
-                        <span className="text-xs font-black text-indigo-700">🟦 BLUE TEAM</span>
-                        <span className="text-[10px] font-mono text-indigo-600 font-bold">MMR: {activeMatch.teamBlue ? Math.round(activeMatch.teamBlue.reduce((s: number, p: any) => s + (p.mmr || 1200), 0) / activeMatch.teamBlue.length) : '-'}</span>
+                    <div className="p-3.5 rounded-2xl bg-amber-50/80 border-2 border-amber-200 space-y-2">
+                      <div className="flex items-center justify-between border-b border-amber-200 pb-1.5">
+                        <span className="text-xs font-black text-amber-700">🟦 BLUE TEAM</span>
+                        <span className="text-[10px] font-mono text-amber-600 font-bold">MMR: {activeMatch.teamBlue ? Math.round(activeMatch.teamBlue.reduce((s: number, p: any) => s + (p.mmr || 1200), 0) / activeMatch.teamBlue.length) : '-'}</span>
                       </div>
                       <div className="space-y-1.5 text-xs">
                         {(activeMatch.teamBlue || []).map((p: any, i: number) => (
@@ -1044,19 +1044,19 @@ export default function CasinoPage() {
                 {/* ベットフォーム */}
                 {user ? (
                   isParticipant ? (
-                    <div className="p-5 md:p-6 rounded-3xl bg-gradient-to-br from-indigo-50 via-white to-indigo-50 text-stone-900 border-2 border-indigo-200 shadow-md space-y-4 text-center">
-                      <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-700 border border-indigo-200 flex items-center justify-center mx-auto text-2xl">
+                    <div className="p-5 md:p-6 rounded-3xl bg-gradient-to-br from-amber-50 via-white to-amber-50 text-stone-900 border-2 border-amber-200 shadow-md space-y-4 text-center">
+                      <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 border border-amber-200 flex items-center justify-center mx-auto text-2xl">
                         ⚔️
                       </div>
                       <div className="space-y-1">
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-100 text-indigo-800 text-xs font-black border border-indigo-200">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-black border border-amber-200">
                           🛡️ 出場選手（プレイヤー）として参加中
                         </div>
                         <h4 className="text-base font-black text-stone-900 pt-2">
                           あなたは現在このカスタム対戦の選手です
                         </h4>
                         <p className="text-xs text-stone-600 leading-relaxed max-w-md mx-auto">
-                          試合の公平性・八百長防止のため、<strong className="text-indigo-700">出場選手本人は勝敗予想ベットを行うことができません。</strong><br />
+                          試合の公平性・八百長防止のため、<strong className="text-amber-700">出場選手本人は勝敗予想ベットを行うことができません。</strong><br />
                           勝敗予想は観戦者・コミュニティメンバー限定の機能となります。
                         </p>
                       </div>
@@ -1099,13 +1099,13 @@ export default function CasinoPage() {
                                 onClick={() => setBetTeam('BLUE')}
                                 className={`p-3 md:p-5 rounded-2xl md:rounded-3xl border-2 md:border-3 font-black text-xs md:text-sm transition-all flex flex-col items-center gap-1.5 md:gap-2 cursor-pointer ${
                                   betTeam === 'BLUE'
-                                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700 shadow-md scale-102'
-                                    : 'border-stone-200 hover:border-indigo-200 text-stone-600'
+                                    ? 'border-amber-600 bg-amber-50 text-amber-700 shadow-md scale-102'
+                                    : 'border-stone-200 hover:border-amber-200 text-stone-600'
                                 }`}
                               >
                                 <span className="text-xl md:text-2xl">🟦</span>
                                 <span className="truncate max-w-full">BLUE TEAM</span>
-                                <span className="text-[10px] md:text-xs px-2 md:px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 font-mono font-black">
+                                <span className="text-[10px] md:text-xs px-2 md:px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-mono font-black">
                                   x{calculatedOdds.blue}倍
                                 </span>
                               </button>
@@ -1280,7 +1280,7 @@ export default function CasinoPage() {
                             setTipToPlayer(p.name);
                             setIsTipModalOpen(true);
                           }}
-                          className="px-2 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-[10px] font-black transition flex items-center gap-1 cursor-pointer"
+                          className="px-2 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-[10px] font-black transition flex items-center gap-1 cursor-pointer"
                           title={`${p.name} さんにチップを贈る`}
                         >
                           <Gift size={11} />
@@ -1344,7 +1344,7 @@ export default function CasinoPage() {
           <div className="bg-white rounded-3xl p-6 md:p-8 border border-black/10 shadow-sm space-y-6">
             <div className="flex items-center justify-between border-b border-stone-100 pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
                   <ShoppingBag size={20} />
                 </div>
                 <div>
@@ -1355,8 +1355,8 @@ export default function CasinoPage() {
             </div>
 
             {shopMessage && (
-              <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-800 text-xs font-bold flex items-center gap-2">
-                <CheckCircle2 size={16} className="shrink-0 text-indigo-600" />
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold flex items-center gap-2">
+                <CheckCircle2 size={16} className="shrink-0 text-amber-600" />
                 {shopMessage}
               </div>
             )}
@@ -1404,7 +1404,7 @@ export default function CasinoPage() {
                         </button>
                         <button
                           onClick={() => handleBuyItem(item.id, item.name, item.price, 10)}
-                          className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-[11px] font-black transition-colors cursor-pointer shadow-xs"
+                          className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-600 to-amber-600 hover:from-amber-500 hover:to-amber-500 text-white text-[11px] font-black transition-colors cursor-pointer shadow-xs"
                           title="10口まとめ買い (1,000コイン)"
                         >
                           10口
@@ -1498,7 +1498,7 @@ export default function CasinoPage() {
           <div className="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-stone-200 space-y-5">
             <div className="flex items-center justify-between border-b border-stone-100 pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-2xl bg-purple-50 text-purple-600 border border-purple-200 flex items-center justify-center font-bold">
+                <div className="w-9 h-9 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center font-bold">
                   <Gift size={18} />
                 </div>
                 <div>
@@ -1525,7 +1525,7 @@ export default function CasinoPage() {
                   <select
                     value={tipToPlayer}
                     onChange={(e) => setTipToPlayer(e.target.value)}
-                    className="flex-1 bg-stone-50 border border-stone-300 rounded-xl px-3 py-2 text-xs font-bold text-stone-800 focus:outline-none focus:border-purple-500"
+                    className="flex-1 bg-stone-50 border border-stone-300 rounded-xl px-3 py-2 text-xs font-bold text-stone-800 focus:outline-none focus:border-amber-500"
                   >
                     <option value="">-- プレイヤー一覧から選択 --</option>
                     {allPlayersList
@@ -1542,7 +1542,7 @@ export default function CasinoPage() {
                   placeholder="または直接名前を入力..."
                   value={tipToPlayer}
                   onChange={(e) => setTipToPlayer(e.target.value)}
-                  className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800 focus:outline-none focus:border-purple-500"
+                  className="w-full bg-stone-50 border border-stone-200 rounded-xl px-3 py-1.5 text-xs text-stone-800 focus:outline-none focus:border-amber-500"
                 />
               </div>
 
@@ -1564,8 +1564,8 @@ export default function CasinoPage() {
                       onClick={() => setTipAmount(amt)}
                       className={`py-1.5 rounded-xl text-xs font-black border transition cursor-pointer ${
                         tipAmount === amt
-                          ? 'bg-purple-600 text-white border-purple-700 shadow-xs'
-                          : 'bg-stone-50 hover:bg-purple-50 text-stone-700 border-stone-200'
+                          ? 'bg-amber-600 text-white border-amber-700 shadow-xs'
+                          : 'bg-stone-50 hover:bg-amber-50 text-stone-700 border-stone-200'
                       }`}
                     >
                       {amt}
@@ -1578,7 +1578,7 @@ export default function CasinoPage() {
                   max={user?.coins ?? 1000}
                   value={tipAmount}
                   onChange={(e) => setTipAmount(Number(e.target.value))}
-                  className="w-full bg-white border border-stone-300 rounded-xl px-3 py-2 text-sm font-black text-stone-900 focus:outline-none focus:border-purple-500 font-mono"
+                  className="w-full bg-white border border-stone-300 rounded-xl px-3 py-2 text-sm font-black text-stone-900 focus:outline-none focus:border-amber-500 font-mono"
                 />
               </div>
 
@@ -1594,7 +1594,7 @@ export default function CasinoPage() {
                   placeholder="ナイスキャリーでした！ / いつもカスタムありがとう！"
                   value={tipMessage}
                   onChange={(e) => setTipMessage(e.target.value)}
-                  className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-purple-500"
+                  className="w-full bg-stone-50 border border-stone-300 rounded-xl px-3 py-2 text-xs text-stone-800 focus:outline-none focus:border-amber-500"
                 />
               </div>
 
@@ -1609,7 +1609,7 @@ export default function CasinoPage() {
                 <button
                   type="submit"
                   disabled={isTipSubmitting || !tipToPlayer.trim() || tipAmount <= 0}
-                  className="flex-1 py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-black text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  className="flex-1 py-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   <Send size={14} />
                   <span>{isTipSubmitting ? '送信中...' : `🪙 ${tipAmount}コインを贈る`}</span>

@@ -52,7 +52,7 @@ export default function VisionAnalyticsCard() {
       {/* ヘッダー */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-xl text-indigo-600 shadow-2xs shrink-0">
+          <div className="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-xl text-amber-600 shadow-2xs shrink-0">
             👁️
           </div>
           <div>
@@ -60,7 +60,7 @@ export default function VisionAnalyticsCard() {
               <h3 className="font-black text-sm sm:text-base text-stone-900">
                 視界・マップコントロール客観解析
               </h3>
-              <span className="text-[10px] font-black px-2 py-0.5 bg-indigo-100 text-indigo-900 border border-indigo-200 rounded-full">
+              <span className="text-[10px] font-black px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-200 rounded-full">
                 上位 {vision.visionRankPercentile}% (エメラルド級)
               </span>
             </div>
@@ -71,7 +71,7 @@ export default function VisionAnalyticsCard() {
         </div>
 
         <div className="text-right shrink-0">
-          <div className="text-xs font-black text-indigo-700">
+          <div className="text-xs font-black text-amber-700">
             分間視界スコア {vision.visionScorePerMin} <span className="text-[10px] font-normal text-stone-400">/分</span>
           </div>
           <div className="text-[10px] text-emerald-600 font-bold">
@@ -86,7 +86,7 @@ export default function VisionAnalyticsCard() {
         <div className="p-3 bg-stone-50/80 rounded-2xl border border-stone-200/70 space-y-1">
           <div className="text-[10px] font-bold text-stone-500 flex items-center justify-between">
             <span>分間視界 (VS/m)</span>
-            <span className="text-indigo-600 font-bold">上位18%</span>
+            <span className="text-amber-600 font-bold">上位18%</span>
           </div>
           <div className="text-base font-black text-stone-900">
             {vision.visionScorePerMin}
@@ -199,7 +199,7 @@ export default function VisionAnalyticsCard() {
       {/* 🎯 3:30 黄金のディープワードスポット3選 */}
       <div className="space-y-2.5">
         <div className="text-xs font-black text-stone-800 flex items-center gap-1.5">
-          <MapPin size={14} className="text-indigo-600" />
+          <MapPin size={14} className="text-amber-600" />
           <span>🎯 勝率を跳ね上げる「黄金のディープワードスポット 3選」</span>
         </div>
 
@@ -213,14 +213,14 @@ export default function VisionAnalyticsCard() {
                 onClick={() => setSelectedSpot(idx)}
                 className={`p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between gap-1.5 ${
                   isSelected
-                    ? 'border-indigo-500 bg-indigo-50/80 shadow-xs ring-2 ring-indigo-400/30'
+                    ? 'border-amber-500 bg-amber-50/80 shadow-xs ring-2 ring-amber-400/30'
                     : 'border-stone-200 bg-white hover:bg-stone-50'
                 }`}
               >
                 <div className="text-xs font-black text-stone-900 truncate">
                   {spot.title}
                 </div>
-                <div className="text-[10px] font-bold text-indigo-700">
+                <div className="text-[10px] font-bold text-amber-700">
                   ⏰ {spot.timing}
                 </div>
                 <div className="text-[10px] text-stone-500 line-clamp-2">
@@ -232,9 +232,9 @@ export default function VisionAnalyticsCard() {
         </div>
 
         {/* 選択スポットの詳細解説カード */}
-        <div className="p-3.5 bg-indigo-50/60 rounded-2xl border border-indigo-200/80 space-y-1.5 animate-in fade-in">
-          <div className="text-xs font-black text-indigo-950 flex items-center gap-1.5">
-            <CheckCircle2 size={13} className="text-indigo-600" />
+        <div className="p-3.5 bg-amber-50/60 rounded-2xl border border-amber-200/80 space-y-1.5 animate-in fade-in">
+          <div className="text-xs font-black text-amber-950 flex items-center gap-1.5">
+            <CheckCircle2 size={13} className="text-amber-600" />
             <span>{DEEP_WARD_SPOTS[selectedSpot].title} の戦術メリット:</span>
           </div>
           <p className="text-xs text-stone-800 font-medium leading-relaxed">
@@ -347,7 +347,7 @@ export default function VisionAnalyticsCard() {
           {/* ロール別推奨購入目安 */}
           <div className="p-3 bg-stone-50 rounded-2xl border border-stone-200 space-y-1.5">
             <span className="text-xs font-black text-stone-900 flex items-center gap-1">
-              <Shield size={13} className="text-indigo-600" />
+              <Shield size={13} className="text-amber-600" />
               <span>ロール別 1試合あたりの推奨購入目安</span>
             </span>
             <div className="grid grid-cols-3 gap-1.5 text-center text-[10px] pt-0.5">
@@ -358,7 +358,7 @@ export default function VisionAnalyticsCard() {
               </div>
               <div className="p-1.5 bg-white rounded-xl border border-stone-200">
                 <span className="text-stone-400 font-bold block">JG / MID</span>
-                <span className="text-indigo-700 font-black text-xs">4〜6本</span>
+                <span className="text-amber-700 font-black text-xs">4〜6本</span>
                 <span className="text-[9px] text-stone-500 block">ディープ・オブジェクト</span>
               </div>
               <div className="p-1.5 bg-white rounded-xl border border-stone-200">

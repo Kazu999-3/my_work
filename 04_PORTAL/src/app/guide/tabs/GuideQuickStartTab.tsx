@@ -85,20 +85,20 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
         <div className="bg-white rounded-3xl p-6 border-2 border-amber-200/90 shadow-sm relative overflow-hidden flex flex-col justify-between hover:border-amber-400 transition-all group">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 font-bold text-2xl group-hover:scale-105 transition">
+              <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-2xl group-hover:scale-105 transition">
                 🎯
               </div>
-              <span className="text-xs font-black text-indigo-800 bg-indigo-100 px-3 py-1 rounded-full border border-indigo-200">
+              <span className="text-xs font-black text-amber-800 bg-amber-100 px-3 py-1 rounded-full border border-amber-200">
                 STEP 2
               </span>
             </div>
             <h3 className="text-base font-black text-stone-900">希望レーンの設定</h3>
             <p className="text-stone-600 text-xs leading-relaxed">
-              あなたの得意レーンと行きたくないレーン（NG）を設定します。Discordで <code className="bg-stone-100 text-indigo-900 px-1.5 py-0.5 rounded font-mono font-bold">/lane</code> と打つか、マイページから登録可能です。
+              あなたの得意レーンと行きたくないレーン（NG）を設定します。Discordで <code className="bg-stone-100 text-amber-900 px-1.5 py-0.5 rounded font-mono font-bold">/lane</code> と打つか、マイページから登録可能です。
             </p>
             <div className="bg-stone-50 border border-stone-200/80 rounded-xl p-3 text-[11px] text-stone-600 space-y-1">
               <div className="font-bold text-stone-800 flex items-center gap-1">
-                <Sliders size={13} className="text-indigo-600" />
+                <Sliders size={13} className="text-amber-600" />
                 設定できる項目
               </div>
               <p>・<strong className="text-stone-800">メインレーン</strong>（最優先で配置）</p>
@@ -110,7 +110,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
             <button
               type="button"
               onClick={() => onSelectTab && onSelectTab('bot')}
-              className="text-xs font-black text-indigo-700 hover:text-indigo-900 flex items-center gap-1 group-hover:translate-x-1 transition cursor-pointer"
+              className="text-xs font-black text-amber-700 hover:text-amber-900 flex items-center gap-1 group-hover:translate-x-1 transition cursor-pointer"
             >
               /lane コマンドの詳細を見る <ArrowRight size={13} />
             </button>

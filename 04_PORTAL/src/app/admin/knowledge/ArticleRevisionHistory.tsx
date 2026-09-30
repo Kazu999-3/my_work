@@ -90,7 +90,7 @@ export default function ArticleRevisionHistory({ articleId }: Props) {
               </span>
               <span className="font-bold text-stone-900">{r.target_key}</span>
               {r.isNew ? (
-                <span className="font-black text-cyan-700">新規作成</span>
+                <span className="font-black text-teal-700">新規作成</span>
               ) : (
                 <span className="font-mono">
                   <span className="text-emerald-700">+{r.added}</span>{' '}

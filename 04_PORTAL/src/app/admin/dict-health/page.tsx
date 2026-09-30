@@ -270,21 +270,21 @@ function DictHealthDashboardContent() {
                   onClick={() => setHubTab('audit')}
                   className={`text-left p-3 sm:p-3.5 rounded-xl border-2 transition-all hover:shadow-md ${
                     hubTab === 'audit'
-                      ? 'border-cyan-400 bg-cyan-50 ring-2 ring-cyan-300/40'
-                      : 'border-stone-200 bg-white hover:border-cyan-300'
+                      ? 'border-teal-400 bg-teal-50 ring-2 ring-teal-300/40'
+                      : 'border-stone-200 bg-white hover:border-teal-300'
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-1.5">
-                    <ClipboardCheck className="w-4 h-4 text-cyan-600" />
-                    <span className="text-xs font-black text-cyan-900">🕵️ ファクトチェック & 棚卸し</span>
+                    <ClipboardCheck className="w-4 h-4 text-teal-600" />
+                    <span className="text-xs font-black text-teal-900">🕵️ ファクトチェック & 棚卸し</span>
                   </div>
                   <div className="text-[11px] text-stone-600 space-y-1 leading-relaxed">
                     <div className="flex items-start gap-1.5">
-                      <span className="text-cyan-500 font-bold shrink-0 mt-0.5">▸</span>
+                      <span className="text-teal-500 font-bold shrink-0 mt-0.5">▸</span>
                       <span><strong className="text-stone-800">やること:</strong> AIが検知した矛盾・誤記述を1件ずつ確認し修正</span>
                     </div>
                     <div className="flex items-start gap-1.5">
-                      <span className="text-cyan-500 font-bold shrink-0 mt-0.5">▸</span>
+                      <span className="text-teal-500 font-bold shrink-0 mt-0.5">▸</span>
                       <span><strong className="text-stone-800">タイミング:</strong> ヘルス概要で一括更新した後。指摘が0件になるまで</span>
                     </div>
                   </div>
@@ -695,7 +695,7 @@ function DictHealthDashboardContent() {
             <div className="space-y-6">
               <div className="space-y-3">
                 <h3 className="text-sm font-bold text-stone-900 flex items-center gap-1.5 px-1">
-                  <Target size={16} className="text-purple-600" />
+                  <Target size={16} className="text-amber-600" />
                   バトルリサーチ（特定チャンピオンのAIディープリサーチ）
                 </h3>
                 <p className="text-xs text-gray-400 px-1">
@@ -727,7 +727,7 @@ function DictHealthDashboardContent() {
             {/* AIファクトチェック */}
             <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
-                <FileCheck className="text-cyan-600 w-5 h-5" />
+                <FileCheck className="text-teal-600 w-5 h-5" />
                 <h2 className="text-sm font-extrabold text-stone-900">🕵️‍♂️ AIファクトチェック & 誤記述の自動検知キュー</h2>
               </div>
               <p className="text-xs text-stone-500 mb-4">
@@ -739,7 +739,7 @@ function DictHealthDashboardContent() {
             {/* レビューパネル */}
             <div className="bg-white rounded-3xl border border-stone-200 p-6 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
-                <ClipboardCheck className="text-violet-600 w-5 h-5" />
+                <ClipboardCheck className="text-amber-600 w-5 h-5" />
                 <h2 className="text-sm font-extrabold text-stone-900">📝 辞典データ人間レビュー</h2>
               </div>
               <p className="text-xs text-stone-500 mb-4">

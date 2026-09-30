@@ -98,7 +98,7 @@ export default function DictReviewPanel() {
             {/* 現在の辞典内容: 中身を見ないと有効/アーカイブの判断ができないため展開できるようにする */}
             {c.current && (
               <details className="mt-2 group">
-                <summary className="text-xs text-cyan-700 cursor-pointer hover:text-cyan-800 select-none">
+                <summary className="text-xs text-teal-700 cursor-pointer hover:text-teal-800 select-none">
                   📖 現在の辞典内容を確認する
                 </summary>
                 <div className="mt-2 space-y-1.5 text-xs bg-black/[0.04] border border-black/5 rounded-lg p-3">

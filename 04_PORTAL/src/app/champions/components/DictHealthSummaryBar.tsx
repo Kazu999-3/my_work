@@ -188,10 +188,10 @@ export default function DictHealthSummaryBar({
             type="button"
             onClick={handleCleanseTerms}
             disabled={actionLoading === 'cleanse'}
-            className="px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             title="残存する英語のアイテム名・ルーン名・スキル名を公式日本語名に一括正規化"
           >
-            {actionLoading === 'cleanse' ? <RefreshCw size={13} className="animate-spin text-purple-600" /> : <Wand2 size={13} className="text-purple-600" />}
+            {actionLoading === 'cleanse' ? <RefreshCw size={13} className="animate-spin text-amber-600" /> : <Wand2 size={13} className="text-amber-600" />}
             <span>🧹 用語正規化</span>
           </button>
 

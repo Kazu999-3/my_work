@@ -65,13 +65,13 @@ export const BalancerBo3Manager = memo(function BalancerBo3Manager({
       <div className="grid grid-cols-2 gap-3 bg-white p-3 rounded-xl border border-amber-200">
         {/* BLUEチーム */}
         <div className="text-center space-y-1">
-          <span className="text-[11px] font-extrabold text-blue-700 block">
+          <span className="text-[11px] font-extrabold text-teal-700 block">
             🔵 BLUE: {bo3State.team1IsCurrentlyBlue ? bo3State.team1Name : bo3State.team2Name}
           </span>
           <div className="flex items-center justify-center gap-1.5 text-lg font-black">
-            <span className={`w-3.5 h-3.5 rounded-full border ${ (bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 1 ? 'bg-blue-600 border-blue-600' : 'bg-stone-200 border-stone-300' }`} />
-            <span className={`w-3.5 h-3.5 rounded-full border ${ (bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 2 ? 'bg-blue-600 border-blue-600' : 'bg-stone-200 border-stone-300' }`} />
-            <span className="text-sm font-mono ml-1 text-blue-900">
+            <span className={`w-3.5 h-3.5 rounded-full border ${ (bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 1 ? 'bg-teal-600 border-teal-600' : 'bg-stone-200 border-stone-300' }`} />
+            <span className={`w-3.5 h-3.5 rounded-full border ${ (bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 2 ? 'bg-teal-600 border-teal-600' : 'bg-stone-200 border-stone-300' }`} />
+            <span className="text-sm font-mono ml-1 text-teal-900">
               ({bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins}勝)
             </span>
           </div>
@@ -79,7 +79,7 @@ export const BalancerBo3Manager = memo(function BalancerBo3Manager({
             <button
               type="button"
               onClick={() => onRecordBo3Win('BLUE')}
-              className="mt-1 px-2.5 py-1 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-900 font-bold text-[11px] border border-blue-300 transition cursor-pointer"
+              className="mt-1 px-2.5 py-1 rounded-lg bg-teal-100 hover:bg-teal-200 text-teal-900 font-bold text-[11px] border border-teal-300 transition cursor-pointer"
             >
               🔵 この試合 Blue勝利
             </button>

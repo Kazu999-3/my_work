@@ -214,8 +214,8 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
                       </span>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                         item.type === 'bible'
-                          ? 'bg-sky-50 text-sky-700 border-sky-200'
-                          : 'bg-purple-50 text-purple-700 border-purple-200'
+                          ? 'bg-teal-50 text-teal-700 border-teal-200'
+                          : 'bg-amber-50 text-amber-700 border-amber-200'
                       }`}>
                         {item.type === 'bible' ? '戦術バイブル' : '動画解析Tips'}
                       </span>

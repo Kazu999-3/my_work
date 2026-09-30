@@ -7,10 +7,10 @@ import { Swords, Trophy, Users, Coins, Sparkles, Shield, Zap, Star, Crosshair, A
 import { getChampIcon } from '../../../lib/ddragonClient';
 
 const ROLE_ICONS: Record<string, any> = {
-  TOP: <Shield className="w-3.5 h-3.5 text-purple-600" />,
+  TOP: <Shield className="w-3.5 h-3.5 text-amber-600" />,
   JG: <Zap className="w-3.5 h-3.5 text-emerald-600" />,
   MID: <Star className="w-3.5 h-3.5 text-rose-600" />,
-  ADC: <Crosshair className="w-3.5 h-3.5 text-sky-600" />,
+  ADC: <Crosshair className="w-3.5 h-3.5 text-teal-600" />,
   SUP: <Award className="w-3.5 h-3.5 text-amber-600" />,
 };
 
@@ -91,7 +91,7 @@ export default function BalancerStadiumView({
       {mySide && (
         <div className={`p-3 rounded-2xl border flex items-center justify-between gap-3 ${
           mySide === 'BLUE'
-            ? 'bg-blue-950/60 border-blue-500/50 text-blue-200'
+            ? 'bg-teal-950/60 border-teal-500/50 text-teal-200'
             : 'bg-red-950/60 border-rose-500/50 text-rose-200'
         }`}>
           <div className="flex items-center gap-2">
@@ -129,8 +129,8 @@ export default function BalancerStadiumView({
               className="bg-stone-900/90 border border-stone-800 rounded-2xl p-2.5 sm:p-3 flex items-center justify-between gap-2 hover:border-stone-700 transition"
             >
               {/* BLUEサイド選手 */}
-              <div className={`flex items-center gap-2.5 min-w-0 flex-1 ${isMyBlue ? 'p-1.5 rounded-xl bg-blue-900/40 border border-blue-500/50 ring-1 ring-blue-400/40' : ''}`}>
-                <div className="w-7 h-7 rounded-xl bg-blue-600/30 border border-blue-500/40 flex items-center justify-center text-xs font-black text-blue-300 shrink-0">
+              <div className={`flex items-center gap-2.5 min-w-0 flex-1 ${isMyBlue ? 'p-1.5 rounded-xl bg-teal-900/40 border border-teal-500/50 ring-1 ring-teal-400/40' : ''}`}>
+                <div className="w-7 h-7 rounded-xl bg-teal-600/30 border border-teal-500/40 flex items-center justify-center text-xs font-black text-teal-300 shrink-0">
                   {blueP?.highest_rank?.slice(0, 1) || 'B'}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -139,7 +139,7 @@ export default function BalancerStadiumView({
                       {blueP?.name || '未定'}
                     </span>
                     {isMyBlue && (
-                      <span className="text-[9px] font-black bg-blue-500 text-white px-1.5 rounded">YOU</span>
+                      <span className="text-[9px] font-black bg-teal-500 text-white px-1.5 rounded">YOU</span>
                     )}
                   </div>
                   <div className="text-[10px] text-stone-400 font-mono">

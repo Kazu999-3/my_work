@@ -91,6 +91,14 @@ export function getKtmRank(mmr: number): { name: string; color: string; bg: stri
 
 /**
  * 登録ランク（PLATINUM, GOLD IV 等）から直接バッジ配色を取得する共通関数
+ *
+ * ⚠️ ここの寒色（sky / purple / blue）は `.claude/rules/ui-conventions.md` の
+ * 寒色ネオン禁止に対する**意図的な例外**として維持している。
+ * 2026-09-30にポータル全体の色統一（寒色→teal/amber）を行った際にここも機械的に
+ * 置換したところ、CHALLENGER・DIAMOND・PLATINUM が3つとも teal になり、
+ * 階級を色で見分けられなくなった。ランク色は装飾ではなくプレイヤーが読む
+ * 意味のあるデータ（LoL公式の階級色）で、Diamondを金色にすると情報として誤りになる。
+ * なお発光やborder-glowは使っておらず、`bg-X/10` と `border-X/30` の淡い塗りのみ。
  */
 export function getRankBadgeStyle(rank?: string | null): { bg: string; color: string; border: string } {
   const r = (rank || '').toUpperCase().trim();

@@ -308,8 +308,8 @@ export default function ChampionQuickSelector({
         {/* 自分 (My Champion) */}
         <div className="md:col-span-5 relative" ref={myRef}>
           <label className="mb-1.5 flex items-center justify-between text-xs font-black text-stone-800">
-            <span className="flex items-center gap-1.5 text-blue-700">
-              <span className="inline-block w-2 h-2 rounded-full bg-blue-600" />
+            <span className="flex items-center gap-1.5 text-teal-700">
+              <span className="inline-block w-2 h-2 rounded-full bg-teal-600" />
               今日使うチャンピオン (自分)
             </span>
             {myChampion && (
@@ -327,7 +327,7 @@ export default function ChampionQuickSelector({
               <img
                 src={getDDragonIconUrl(myChampion)}
                 alt={myChampion}
-                className="absolute left-2.5 w-6 h-6 rounded-lg object-cover border border-blue-400 shadow-xs pointer-events-none"
+                className="absolute left-2.5 w-6 h-6 rounded-lg object-cover border border-teal-400 shadow-xs pointer-events-none"
                 onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
               />
             ) : (
@@ -344,7 +344,7 @@ export default function ChampionQuickSelector({
               placeholder="例: Graves, グレイブス"
               className={`w-full rounded-2xl border bg-stone-50/70 py-2.5 pr-8 text-xs font-bold text-stone-900 outline-none transition-all focus:bg-white focus:ring-2 ${
                 myChampion
-                  ? 'pl-11 border-blue-300 focus:border-blue-500 focus:ring-blue-100'
+                  ? 'pl-11 border-teal-300 focus:border-teal-500 focus:ring-teal-100'
                   : 'pl-9 border-stone-300 focus:border-amber-500 focus:ring-amber-100'
               }`}
             />
@@ -372,7 +372,7 @@ export default function ChampionQuickSelector({
                     <span className="font-bold">{c.nameJa}</span>
                     <span className="text-[10px] text-stone-400 font-mono">({c.id})</span>
                     {normalizeChampionName(myChampion) === c.id && (
-                      <Check size={12} className="ml-auto text-blue-600" />
+                      <Check size={12} className="ml-auto text-teal-600" />
                     )}
                   </button>
                 ))
@@ -487,8 +487,8 @@ export default function ChampionQuickSelector({
                   onClick={() => handleSelectMyChamp(c.id)}
                   className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
                     isSelected
-                      ? 'bg-blue-600 text-white border-blue-700 shadow-xs scale-[1.03]'
-                      : 'bg-stone-100/90 hover:bg-blue-50 hover:text-blue-800 hover:border-blue-200 text-stone-700 border-stone-200/80'
+                      ? 'bg-teal-600 text-white border-teal-700 shadow-xs scale-[1.03]'
+                      : 'bg-stone-100/90 hover:bg-teal-50 hover:text-teal-800 hover:border-teal-200 text-stone-700 border-stone-200/80'
                   }`}
                 >
                   <img

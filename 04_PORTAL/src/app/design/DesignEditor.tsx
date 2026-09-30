@@ -189,7 +189,7 @@ export default function DesignEditor() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-600/50 text-white px-5 py-2 rounded-xl font-bold text-xs transition shadow-lg shadow-indigo-500/20 cursor-pointer w-full sm:w-auto"
+                className="flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 disabled:bg-amber-600/50 text-white px-5 py-2 rounded-xl font-bold text-xs transition shadow-lg shadow-amber-500/20 cursor-pointer w-full sm:w-auto"
               >
                 {saving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
                 {saving ? "保存中..." : "保存して本番適用"}
@@ -319,7 +319,7 @@ export default function DesignEditor() {
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
                   disabled={saving}
-                  className="w-full min-h-[60vh] bg-stone-50 border border-black/10 rounded-2xl p-6 font-mono text-sm text-stone-800 leading-relaxed focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all shadow-inner resize-y"
+                  className="w-full min-h-[60vh] bg-stone-50 border border-black/10 rounded-2xl p-6 font-mono text-sm text-stone-800 leading-relaxed focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all shadow-inner resize-y"
                   placeholder="# 設計書をここに入力..."
                 />
               </div>

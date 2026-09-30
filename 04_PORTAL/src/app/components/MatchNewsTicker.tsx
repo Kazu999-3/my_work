@@ -113,7 +113,7 @@ export default function MatchNewsTicker() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
                       item.winningTeam === 'BLUE'
-                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-300'
+                        ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300 border border-teal-300'
                         : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-rose-300 border border-red-300'
                     }`}>
                       {item.winningTeam === 'BLUE' ? '🟦 BLUE勝利' : '🟥 RED勝利'}

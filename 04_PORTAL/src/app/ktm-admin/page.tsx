@@ -93,14 +93,14 @@ export const getPlayerExperienceBadge = (p: any) => {
       return { 
         tier: 'returning',
         label: '⏳ 復帰勢', 
-        color: 'bg-purple-100 text-purple-900 border-purple-300', 
+        color: 'bg-amber-100 text-amber-900 border-amber-300', 
         tip: `通算${totalG}戦（最終参加: ${daysAgo}日前）：久しぶりの参加となる復帰プレイヤーです！大歓迎✨` 
       };
     }
     return { 
       tier: 'returning',
       label: '🎖️ 経験者', 
-      color: 'bg-sky-100 text-sky-900 border-sky-300', 
+      color: 'bg-teal-100 text-teal-900 border-teal-300', 
       tip: `通算${totalG}戦（最終参加: ${daysAgo}日前）：久しぶりに参加の経験者プレイヤーです` 
     };
   }
@@ -1498,7 +1498,7 @@ export default function KtmAdminPage() {
                       🌱 ライト: <strong>{lightPlayers.length}名</strong>
                     </span>
                     {returningPlayers.length > 0 && (
-                      <span className="inline-flex items-center gap-1 font-bold text-purple-900 bg-purple-100/80 px-2 py-0.5 rounded-md text-[11px]">
+                      <span className="inline-flex items-center gap-1 font-bold text-amber-900 bg-amber-100/80 px-2 py-0.5 rounded-md text-[11px]">
                         ⏳ 復帰勢: <strong>{returningPlayers.length}名</strong>
                       </span>
                     )}

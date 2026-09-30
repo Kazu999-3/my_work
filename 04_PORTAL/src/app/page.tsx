@@ -206,8 +206,8 @@ export default function HomePage() {
                 title: 'デュオ・チーム相性',
                 sub: '勝率マトリクス・シナジー',
                 href: '/leaderboard?tab=synergy',
-                icon: <HeartHandshake className="w-5 h-5 text-fuchsia-600 dark:text-fuchsia-400" />,
-                borderHover: 'hover:border-fuchsia-400',
+                icon: <HeartHandshake className="w-5 h-5 text-amber-600 dark:text-amber-400" />,
+                borderHover: 'hover:border-amber-400',
               },
               {
                 title: '使い方 ＆ ルール',
@@ -220,8 +220,8 @@ export default function HomePage() {
                 title: '更新情報ログ',
                 sub: '最新アップデート履歴',
                 href: '/changelog',
-                icon: <ScrollText className="w-5 h-5 text-sky-600 dark:text-sky-400" />,
-                borderHover: 'hover:border-sky-400',
+                icon: <ScrollText className="w-5 h-5 text-teal-600 dark:text-teal-400" />,
+                borderHover: 'hover:border-teal-400',
               },
             ].map((item) => (
               <Link

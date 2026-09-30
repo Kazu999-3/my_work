@@ -92,11 +92,11 @@ export default function RevisionsPanel() {
     <div className="bg-white border border-stone-200 rounded-2xl p-5 space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h3 className="font-black text-stone-900 flex items-center gap-2">
-          <History size={16} className="text-indigo-600" /> 更新履歴・差分
+          <History size={16} className="text-amber-600" /> 更新履歴・差分
         </h3>
         <div className="flex gap-2 items-center">
           <select value={filterType} onChange={e => setFilterType(e.target.value)}
-            className="bg-stone-50 border border-stone-200 rounded-lg px-2 py-1.5 text-xs text-stone-700 outline-none focus:border-indigo-500">
+            className="bg-stone-50 border border-stone-200 rounded-lg px-2 py-1.5 text-xs text-stone-700 outline-none focus:border-amber-500">
             <option value="all">すべて</option>
             <option value="matchup_sentinel">チャンピオン辞典</option>
             <option value="champion_fact">チャンピオン辞典（対面タブ）</option>
@@ -110,7 +110,7 @@ export default function RevisionsPanel() {
       </div>
 
       <p className="text-[11px] text-stone-500">
-        AIが記事を統合したときの<strong className="text-indigo-700">増えた行（緑）・減った行（赤）</strong>を確認できます。
+        AIが記事を統合したときの<strong className="text-amber-700">増えた行（緑）・減った行（赤）</strong>を確認できます。
         意図しない書き換えがあれば、その場で元に戻せます。
       </p>
 
@@ -128,7 +128,7 @@ export default function RevisionsPanel() {
             <div key={r.id} className="border border-stone-200 rounded-xl overflow-hidden">
               <button onClick={() => openDetail(r.id)}
                 className="w-full text-left px-3 py-2.5 hover:bg-black/5 transition-colors flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 border border-indigo-200">
+                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-200">
                   {TYPE_LABELS[r.target_type] || r.target_type}
                 </span>
                 <span className="text-sm font-bold text-stone-900">{r.target_key}</span>
@@ -138,7 +138,7 @@ export default function RevisionsPanel() {
                   </span>
                 )}
                 {r.isNew ? (
-                  <span className="text-[10px] font-black text-cyan-700">新規作成</span>
+                  <span className="text-[10px] font-black text-teal-700">新規作成</span>
                 ) : (
                   <span className="text-[10px] font-mono">
                     <span className="text-emerald-700">+{r.added}</span>{' '}

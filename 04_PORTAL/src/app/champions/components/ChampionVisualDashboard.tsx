@@ -736,7 +736,7 @@ export default function ChampionVisualDashboard({
               <>
                 <div className="bg-stone-50 dark:bg-stone-800/60 px-2.5 py-1.5 rounded-xl border border-stone-200/80 dark:border-white/5">
                   <span className="text-[10px] text-stone-500 dark:text-stone-400 block font-bold">Lv2先行基準</span>
-                  <span className="text-xs font-black text-cyan-600 dark:text-cyan-400 font-mono">
+                  <span className="text-xs font-black text-teal-600 dark:text-teal-400 font-mono">
                     2波目前衛3体
                   </span>
                 </div>
@@ -766,7 +766,7 @@ export default function ChampionVisualDashboard({
               <>
                 <div className="bg-stone-50 dark:bg-stone-800/60 px-2.5 py-1.5 rounded-xl border border-stone-200/80 dark:border-white/5">
                   <span className="text-[10px] text-stone-500 dark:text-stone-400 block font-bold">ローム優先時</span>
-                  <span className="text-xs font-black text-purple-600 dark:text-purple-400 font-mono">
+                  <span className="text-xs font-black text-amber-600 dark:text-amber-400 font-mono">
                     キャノン波後
                   </span>
                 </div>
@@ -800,7 +800,7 @@ export default function ChampionVisualDashboard({
         <div className="bg-white dark:bg-stone-900/80 border border-stone-200 dark:border-stone-800 rounded-2xl p-3 sm:p-3.5 shadow-xs flex flex-col justify-center gap-1.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Activity size={15} className="text-cyan-600 dark:text-cyan-400" />
+              <Activity size={15} className="text-teal-600 dark:text-teal-400" />
               <span className="text-xs font-black text-stone-900 dark:text-white">パワースパイク推移</span>
             </div>
             <span className="text-[10px] text-stone-500 dark:text-stone-400 font-bold">10段階指標</span>
@@ -836,11 +836,11 @@ export default function ChampionVisualDashboard({
             <div className="bg-stone-50 dark:bg-stone-800/60 p-1.5 rounded-lg border border-stone-200/80 dark:border-white/5">
               <div className="flex justify-between items-center text-[10px] text-stone-500 dark:text-stone-400 mb-1 px-0.5">
                 <span>終盤</span>
-                <span className="font-bold text-purple-600 dark:text-purple-400">{spikeValues.late}/10</span>
+                <span className="font-bold text-amber-600 dark:text-amber-400">{spikeValues.late}/10</span>
               </div>
               <div className="w-full bg-stone-200 dark:bg-stone-800 h-1.5 rounded-full overflow-hidden">
                 <div 
-                  className="bg-purple-500 h-full rounded-full transition-all duration-500" 
+                  className="bg-amber-500 h-full rounded-full transition-all duration-500" 
                   style={{ width: `${(spikeValues.late / 10) * 100}%` }}
                 />
               </div>
@@ -909,12 +909,17 @@ export default function ChampionVisualDashboard({
                   シチュエーション別ビルド分岐
                 </span>
                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                  archetype === 'ap_mage' ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950/60 dark:text-cyan-300' :
-                  archetype === 'ap_assassin' ? 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300' :
+                  // 7種のアーキタイプが色で見分けられるよう、許可パレット(teal/amber/rose/
+                  // emerald/stone)内で番台を振り分ける。2026-09-30の色統一で
+                  // cyan/sky→teal、purple→amber と寄せた結果 ap_mage と marksman、
+                  // ap_assassin と既定(ADファイター)が同じ見た目になったため個別に調整した
+                  // (tank と enchanter が同じ emerald だったのは統一前からの状態)。
+                  archetype === 'ap_mage' ? 'bg-teal-100 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300' :
+                  archetype === 'ap_assassin' ? 'bg-amber-200 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200' :
                   archetype === 'ad_assassin' ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300' :
                   archetype === 'tank' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' :
-                  archetype === 'marksman' ? 'bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300' :
-                  archetype === 'enchanter' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' :
+                  archetype === 'marksman' ? 'bg-teal-200 text-teal-900 dark:bg-teal-900/60 dark:text-teal-200' :
+                  archetype === 'enchanter' ? 'bg-stone-100 text-stone-800 dark:bg-stone-800/60 dark:text-stone-300' :
                   'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
                 }`}>
                   {archetype === 'ap_mage' ? '⚡ APメイジ' :
@@ -954,7 +959,7 @@ export default function ChampionVisualDashboard({
                   onClick={() => setBuildPreset('burst')}
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                     buildPreset === 'burst'
-                      ? 'bg-white dark:bg-stone-700 text-sky-600 dark:text-sky-400 shadow-2xs'
+                      ? 'bg-white dark:bg-stone-700 text-teal-600 dark:text-teal-400 shadow-2xs'
                       : 'text-stone-500 hover:text-stone-800 dark:hover:text-white'
                   }`}
                 >
@@ -977,8 +982,8 @@ export default function ChampionVisualDashboard({
                 </span>
               </div>
 
-              <div className="p-3 rounded-xl bg-sky-50/70 dark:bg-stone-800/60 border border-sky-200 dark:border-stone-700">
-                <span className="text-[10px] font-black text-sky-800 dark:text-sky-400 uppercase block mb-1">
+              <div className="p-3 rounded-xl bg-teal-50/70 dark:bg-stone-800/60 border border-teal-200 dark:border-stone-700">
+                <span className="text-[10px] font-black text-teal-800 dark:text-teal-400 uppercase block mb-1">
                   2〜3コア (集団戦スパイク)
                 </span>
                 <p className="font-bold text-stone-900 dark:text-white text-sm">
@@ -989,8 +994,8 @@ export default function ChampionVisualDashboard({
                 </span>
               </div>
 
-              <div className="p-3 rounded-xl bg-purple-50/70 dark:bg-stone-800/60 border border-purple-200 dark:border-stone-700">
-                <span className="text-[10px] font-black text-purple-800 dark:text-purple-400 uppercase block mb-1">
+              <div className="p-3 rounded-xl bg-amber-50/70 dark:bg-stone-800/60 border border-amber-200 dark:border-stone-700">
+                <span className="text-[10px] font-black text-amber-800 dark:text-amber-400 uppercase block mb-1">
                   キーストーン推奨ルーン
                 </span>
                 <p className="font-bold text-stone-900 dark:text-white text-sm">
@@ -1022,7 +1027,7 @@ export default function ChampionVisualDashboard({
                 </p>
               </div>
               <div className="p-2.5 rounded-xl bg-stone-50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700">
-                <span className="font-black text-indigo-700 dark:text-indigo-400 block mb-0.5">集団戦 (終盤)</span>
+                <span className="font-black text-amber-700 dark:text-amber-400 block mb-0.5">集団戦 (終盤)</span>
                 <p className="text-stone-700 dark:text-stone-300 text-[11px] leading-relaxed">
                   正面から突っ込まず、側道から敵キャリーにCCを合わせ、耐久を活かして前線を維持。
                 </p>
@@ -1376,8 +1381,8 @@ export default function ChampionVisualDashboard({
                     </div>
 
                     {clip.macro && (
-                      <p className="text-cyan-800 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/40 p-2 rounded-lg text-[11px] leading-relaxed border border-cyan-200 dark:border-cyan-800/50">
-                        <span className="font-bold text-cyan-600 dark:text-cyan-400 mr-1">🗺️ マクロ判断:</span>
+                      <p className="text-teal-800 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 p-2 rounded-lg text-[11px] leading-relaxed border border-teal-200 dark:border-teal-800/50">
+                        <span className="font-bold text-teal-600 dark:text-teal-400 mr-1">🗺️ マクロ判断:</span>
                         {clip.macro}
                       </p>
                     )}

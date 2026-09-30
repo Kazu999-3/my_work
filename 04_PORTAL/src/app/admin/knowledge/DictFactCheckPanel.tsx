@@ -114,7 +114,7 @@ export default function DictFactCheckPanel() {
   return (
     <div className="bg-white border border-stone-200 rounded-3xl p-6 space-y-5">
       <h2 className="text-base font-bold text-stone-900 flex items-center gap-2">
-        <ShieldCheck size={18} className="text-sky-600" /> 辞典・ナレッジの一斉ファクトチェック
+        <ShieldCheck size={18} className="text-teal-600" /> 辞典・ナレッジの一斉ファクトチェック
       </h2>
       <p className="text-xs text-stone-500">
         辞典(matchup_sentinel)・コーチAI知識層(champion_facts/champion_notes)・ナレッジ(personal_knowledge)を横断し、
@@ -124,9 +124,9 @@ export default function DictFactCheckPanel() {
       {error && <p className="text-sm text-rose-700 bg-rose-100 border border-rose-200 rounded-lg px-3 py-2">{error}</p>}
 
       {/* 統合全自動ファクトチェックボタン */}
-      <div className="rounded-2xl border border-cyan-300 bg-gradient-to-r from-cyan-500/10 via-indigo-500/5 to-transparent p-5 shadow-sm space-y-3">
-        <h3 className="text-sm font-extrabold text-cyan-950 flex items-center gap-2">
-          <ShieldCheck className="w-5 h-5 text-cyan-600" />
+      <div className="rounded-2xl border border-teal-300 bg-gradient-to-r from-teal-500/10 via-amber-500/5 to-transparent p-5 shadow-sm space-y-3">
+        <h3 className="text-sm font-extrabold text-teal-950 flex items-center gap-2">
+          <ShieldCheck className="w-5 h-5 text-teal-600" />
           全168チャンプ過去キュー一括リセット ＋ 最新AI全自動一斉ファクトチェック完走
         </h3>
         <p className="text-xs text-stone-600 leading-relaxed">
@@ -136,7 +136,7 @@ export default function DictFactCheckPanel() {
         <button
           onClick={runResetAndFactCheck}
           disabled={scanning || running}
-          className="flex items-center gap-2 text-xs font-black bg-gradient-to-r from-cyan-600 via-indigo-600 to-amber-600 hover:from-cyan-700 hover:to-amber-700 active:scale-95 text-white px-6 py-3.5 rounded-xl shadow-md transition disabled:opacity-50"
+          className="flex items-center gap-2 text-xs font-black bg-gradient-to-r from-teal-600 via-amber-600 to-amber-600 hover:from-teal-700 hover:to-amber-700 active:scale-95 text-white px-6 py-3.5 rounded-xl shadow-md transition disabled:opacity-50"
         >
           <RefreshCw className={`w-4 h-4 ${(scanning || running) ? 'animate-spin' : ''}`} />
           {(scanning || running)

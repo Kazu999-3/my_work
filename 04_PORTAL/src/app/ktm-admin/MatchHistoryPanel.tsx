@@ -308,11 +308,11 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
             <div key={match.id} className="bg-surface border border-border rounded-xl overflow-hidden shadow-xl">
               {/* Header */}
               <div className={`p-4 flex items-center justify-between border-b ${
-                match.winning_team === 'BLUE' ? 'bg-blue-900/20 border-blue-900/50' : 'bg-red-900/20 border-red-900/50'
+                match.winning_team === 'BLUE' ? 'bg-teal-900/20 border-teal-900/50' : 'bg-red-900/20 border-red-900/50'
               }`}>
                 <div className="flex items-center gap-3">
-                  <Trophy className={`h-5 w-5 ${match.winning_team === 'BLUE' ? 'text-blue-400' : 'text-red-400'}`} />
-                  <span className={`font-black tracking-wider text-lg ${match.winning_team === 'BLUE' ? 'text-blue-400' : 'text-red-400'}`}>
+                  <Trophy className={`h-5 w-5 ${match.winning_team === 'BLUE' ? 'text-teal-400' : 'text-red-400'}`} />
+                  <span className={`font-black tracking-wider text-lg ${match.winning_team === 'BLUE' ? 'text-teal-400' : 'text-red-400'}`}>
                     {match.winning_team} WIN
                   </span>
                 </div>
@@ -462,7 +462,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6">
               {/* BLUE TEAM INPUT */}
               <div>
-                <h4 className="font-bold text-blue-400 mb-3 text-lg tracking-wider">🟦 BLUE TEAM</h4>
+                <h4 className="font-bold text-teal-400 mb-3 text-lg tracking-wider">🟦 BLUE TEAM</h4>
                 <div className="space-y-3">
                   {ROLES.map(role => {
                     const idx = editingMatch.participants.findIndex(p => p.team === 'BLUE' && p.role === role);
@@ -489,7 +489,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                           value={p.player_name}
                           onChange={e => handleEditingParticipantChange(idx, 'player_name', e.target.value)}
                           onDragStart={e => e.stopPropagation()}
-                          className="w-28 bg-surface border border-border rounded px-2 py-1 text-stone-900 outline-none focus:border-blue-500 text-xs"
+                          className="w-28 bg-surface border border-border rounded px-2 py-1 text-stone-900 outline-none focus:border-teal-500 text-xs"
                         >
                           <option value="">選択...</option>
                           {p.player_name && !playersPool.some(pl => pl.name === p.player_name) && (
@@ -501,7 +501,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                           onClick={() => setActiveChampSelectorPlayer(idx.toString())}
                           onDragStart={e => e.stopPropagation()}
                           type="button"
-                          className="w-28 bg-surface border border-border hover:border-blue-500 rounded px-1.5 py-1 text-stone-700 hover:text-stone-900 text-xs flex items-center justify-between gap-1 transition shrink-0"
+                          className="w-28 bg-surface border border-border hover:border-teal-500 rounded px-1.5 py-1 text-stone-700 hover:text-stone-900 text-xs flex items-center justify-between gap-1 transition shrink-0"
                         >
                           <span className="truncate">
                             {p.champion_name ? (championsList.find(c => c.id === p.champion_name)?.name || 'チャンプ') : '選択'}
@@ -608,7 +608,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                 <button
                   onClick={() => setEditingMatch(prev => prev ? { ...prev, winning_team: 'BLUE' } : null)}
                   type="button"
-                  className={`px-6 py-2 rounded-lg font-bold transition text-xs ${editingMatch.winning_team === 'BLUE' ? 'bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]' : 'bg-white text-stone-500 border border-border hover:bg-black/5'}`}
+                  className={`px-6 py-2 rounded-lg font-bold transition text-xs ${editingMatch.winning_team === 'BLUE' ? 'bg-teal-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]' : 'bg-white text-stone-500 border border-border hover:bg-black/5'}`}
                 >
                   BLUE WIN
                 </button>

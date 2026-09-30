@@ -242,10 +242,10 @@ export default function MatchupBlueprintCard({
           ? 'bg-gradient-to-r from-rose-500/15 via-red-500/10 to-rose-500/15 border-2 border-rose-500/60'
           : isHigh
           ? 'bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border-2 border-amber-500/60'
-          : 'bg-gradient-to-r from-blue-500/10 via-indigo-500/5 to-blue-500/10 border border-blue-500/40';
+          : 'bg-gradient-to-r from-teal-500/10 via-amber-500/5 to-teal-500/10 border border-teal-500/40';
 
-        const iconColor = isCritical ? 'text-rose-600' : isHigh ? 'text-amber-600' : 'text-blue-600';
-        const badgeBg = isCritical ? 'bg-rose-100 text-rose-900 border-rose-200' : isHigh ? 'bg-amber-100 text-amber-900 border-amber-200' : 'bg-blue-100 text-blue-900 border-blue-200';
+        const iconColor = isCritical ? 'text-rose-600' : isHigh ? 'text-amber-600' : 'text-teal-600';
+        const badgeBg = isCritical ? 'bg-rose-100 text-rose-900 border-rose-200' : isHigh ? 'bg-amber-100 text-amber-900 border-amber-200' : 'bg-teal-100 text-teal-900 border-teal-200';
 
         return (
           <div className={`${bgClass} rounded-xl p-3.5 shadow-2xs space-y-2.5 animate-in`}>
@@ -278,7 +278,7 @@ export default function MatchupBlueprintCard({
                 </div>
               </div>
               {visionRule.recommendedItem && (
-                <div className="pt-1 text-[11px] font-bold text-indigo-700 flex items-center gap-1">
+                <div className="pt-1 text-[11px] font-bold text-amber-700 flex items-center gap-1">
                   <span>🎒 推奨装備:</span>
                   <span>{visionRule.recommendedItem}</span>
                 </div>
@@ -409,7 +409,7 @@ export default function MatchupBlueprintCard({
             onClick={() => scrollToSection('section-jungle')}
             className="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shrink-0 bg-stone-100 text-stone-700 hover:bg-stone-200 hover:text-stone-900 border border-stone-200/60 shadow-2xs"
           >
-            <Compass className="w-3.5 h-3.5 text-sky-500" />
+            <Compass className="w-3.5 h-3.5 text-teal-500" />
             <span>🌲 敵JG初動ルート ＆ テンポ</span>
           </button>
           <button
@@ -540,7 +540,7 @@ export default function MatchupBlueprintCard({
         <div id="section-jungle" className="space-y-3.5 pt-5 border-t border-stone-200 scroll-mt-6">
           <div className="flex items-center justify-between border-b border-stone-100 pb-2">
             <h4 className="font-black text-stone-900 text-xs flex items-center gap-1.5">
-              <Compass className="w-4 h-4 text-sky-600" />
+              <Compass className="w-4 h-4 text-teal-600" />
               <span>🌲 vs {enemyChamp} 敵JG初動3分ルート ＆ カニ争奪テンポ</span>
             </h4>
             <span className="text-[10px] font-bold text-stone-500 font-mono">

@@ -79,7 +79,7 @@ export default function GuideUpdatesTab() {
                       className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
                         entry.tag === 'NEW'
                           ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                          : 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                          : 'bg-amber-100 text-amber-800 border border-amber-200'
                       }`}
                     >
                       {entry.tag}

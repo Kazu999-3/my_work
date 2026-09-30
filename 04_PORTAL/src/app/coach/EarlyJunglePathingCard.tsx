@@ -77,7 +77,7 @@ export default function EarlyJunglePathingCard({
           planType === 'contest'
             ? 'bg-rose-900/80 text-rose-200 border-rose-700'
             : planType === 'avoid'
-            ? 'bg-sky-900/80 text-sky-200 border-sky-700'
+            ? 'bg-teal-900/80 text-teal-200 border-teal-700'
             : 'bg-emerald-900/80 text-emerald-200 border-emerald-700'
         }`}>
           {planType === 'contest' ? '⚔️ 2:55 スカトル勝負型' : '🛡️ 逆サイド回避・ファーム型'}

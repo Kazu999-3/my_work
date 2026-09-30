@@ -524,10 +524,10 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                 <button
                   type="button"
                   onClick={rerollRoles}
-                  className="px-3.5 py-2.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-300 text-xs font-black flex items-center gap-1.5 transition cursor-pointer"
+                  className="px-3.5 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300 text-xs font-black flex items-center gap-1.5 transition cursor-pointer"
                   title="スタメン10人のMMRバランスを保ちつつ、ロールを再度ランダムにシャッフルします"
                 >
-                  <Dices className="w-4 h-4 text-purple-600" />
+                  <Dices className="w-4 h-4 text-amber-600" />
                   <span>ロール再抽選</span>
                 </button>
               )}
@@ -554,7 +554,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
 
           {/* ⚖️ チーム間MMRバランスサマリー */}
           {currentRound.blueMmr !== undefined && currentRound.redMmr !== undefined && (
-            <div className="flex items-center justify-between p-3.5 bg-gradient-to-r from-blue-50/60 via-stone-50 to-rose-50/60 border border-stone-200 rounded-xl text-xs font-bold text-stone-800">
+            <div className="flex items-center justify-between p-3.5 bg-gradient-to-r from-teal-50/60 via-stone-50 to-rose-50/60 border border-stone-200 rounded-xl text-xs font-bold text-stone-800">
               <div className="flex items-center gap-2">
                 <span className="text-base">⚖️</span>
                 <span>
@@ -565,7 +565,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                 </span>
               </div>
               <div className="flex items-center gap-4 text-[11px] font-mono">
-                <span className="text-blue-700 font-black">BLUE: {currentRound.blueMmr}</span>
+                <span className="text-teal-700 font-black">BLUE: {currentRound.blueMmr}</span>
                 <span className="text-stone-400">vs</span>
                 <span className="text-rose-700 font-black">RED: {currentRound.redMmr}</span>
               </div>
@@ -576,14 +576,14 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
             {/* BLUE TEAM */}
-            <div className="bg-blue-50/70 border border-blue-200 rounded-2xl p-5 space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-blue-200">
-                <span className="text-xs font-black text-blue-700 uppercase tracking-wider flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+            <div className="bg-teal-50/70 border border-teal-200 rounded-2xl p-5 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-teal-200">
+                <span className="text-xs font-black text-teal-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-teal-600" />
                   BLUE TEAM (5人)
                 </span>
                 {currentRound.blueMmr !== undefined && (
-                  <span className="text-[11px] font-mono font-bold text-blue-800 bg-blue-100 px-2 py-0.5 rounded-md">
+                  <span className="text-[11px] font-mono font-bold text-teal-800 bg-teal-100 px-2 py-0.5 rounded-md">
                     MMR {currentRound.blueMmr}
                   </span>
                 )}
@@ -594,13 +594,13 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                     TOP: { label: '🛡️ TOP', badge: 'bg-stone-200 text-stone-800 border-stone-300' },
                     JUNGLE: { label: '🌲 JG', badge: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
                     MID: { label: '⚡ MID', badge: 'bg-amber-100 text-amber-900 border-amber-300' },
-                    BOT: { label: '🏹 BOT', badge: 'bg-sky-100 text-sky-800 border-sky-300' },
+                    BOT: { label: '🏹 BOT', badge: 'bg-teal-100 text-teal-800 border-teal-300' },
                     SUPPORT: { label: '💖 SUP', badge: 'bg-pink-100 text-pink-800 border-pink-300' },
                   };
                   return (
                     <div
                       key={p.id}
-                      className="p-2.5 rounded-xl bg-white border border-blue-200/80 flex items-center justify-between shadow-2xs"
+                      className="p-2.5 rounded-xl bg-white border border-teal-200/80 flex items-center justify-between shadow-2xs"
                     >
                       <div className="flex items-center gap-2">
                         {p.assignedRole && currentRound.hasRoles && (
@@ -608,12 +608,12 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                             {roleConfig[p.assignedRole]?.label || p.assignedRole}
                           </span>
                         )}
-                        <span className="text-xs font-bold text-blue-950">{p.name}</span>
+                        <span className="text-xs font-bold text-teal-950">{p.name}</span>
                         {p.highest_rank && (
                           <span className="text-[10px] text-stone-400 font-mono">({p.highest_rank})</span>
                         )}
                       </div>
-                      <span className="text-[10px] text-blue-600 font-mono font-bold">出場: {p.gamesPlayed}回</span>
+                      <span className="text-[10px] text-teal-600 font-mono font-bold">出場: {p.gamesPlayed}回</span>
                     </div>
                   );
                 })}
@@ -639,7 +639,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                     TOP: { label: '🛡️ TOP', badge: 'bg-stone-200 text-stone-800 border-stone-300' },
                     JUNGLE: { label: '🌲 JG', badge: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
                     MID: { label: '⚡ MID', badge: 'bg-amber-100 text-amber-900 border-amber-300' },
-                    BOT: { label: '🏹 BOT', badge: 'bg-sky-100 text-sky-800 border-sky-300' },
+                    BOT: { label: '🏹 BOT', badge: 'bg-teal-100 text-teal-800 border-teal-300' },
                     SUPPORT: { label: '💖 SUP', badge: 'bg-pink-100 text-pink-800 border-pink-300' },
                   };
                   return (

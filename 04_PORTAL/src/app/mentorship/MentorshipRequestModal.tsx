@@ -136,13 +136,13 @@ export function MentorshipRequestModal({
                         onClick={() => setDurationKey(key)}
                         className={`p-2.5 rounded-xl text-left border text-xs font-bold transition flex flex-col justify-between gap-1 cursor-pointer ${
                           isSelected
-                            ? 'bg-gradient-to-br from-sky-50 to-amber-50 border-sky-400 text-stone-900 shadow-2xs ring-2 ring-sky-300'
-                            : 'bg-stone-50 border-stone-200 text-stone-700 hover:bg-sky-50/50 hover:border-sky-300'
+                            ? 'bg-gradient-to-br from-teal-50 to-amber-50 border-teal-400 text-stone-900 shadow-2xs ring-2 ring-teal-300'
+                            : 'bg-stone-50 border-stone-200 text-stone-700 hover:bg-teal-50/50 hover:border-teal-300'
                         }`}
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-extrabold">{item.shortLabel}</span>
-                          {isSelected && <span className="text-sky-600 text-xs font-black">✓</span>}
+                          {isSelected && <span className="text-teal-600 text-xs font-black">✓</span>}
                         </div>
                         <span className="text-[10px] text-stone-500 font-medium leading-tight">{item.label.split('（')[0]}</span>
                       </button>

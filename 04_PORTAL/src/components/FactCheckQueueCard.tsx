@@ -26,7 +26,7 @@ const ISSUE_LABEL: Record<string, { label: string; cls: string }> = {
   contradiction: { label: '⚠️ 矛盾', cls: 'bg-rose-100 text-rose-700 border-rose-200' },
   unconfirmed_source: { label: '❓ 単一ソースのみ(未確証)', cls: 'bg-amber-100 text-amber-700 border-amber-200' },
   possible_fact_error: { label: '🚫 事実誤りの疑い', cls: 'bg-red-100 text-red-700 border-red-200' },
-  invalid_champion_tag: { label: '🏷️ 不正チャンピオンタグ', cls: 'bg-sky-100 text-sky-700 border-sky-200' },
+  invalid_champion_tag: { label: '🏷️ 不正チャンピオンタグ', cls: 'bg-teal-100 text-teal-700 border-teal-200' },
 };
 
 // 一斉ファクトチェックのキュー1件分のカード。/admin/knowledge のレビュー画面と
@@ -296,7 +296,7 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
         </div>
         {it.issue_type !== 'invalid_champion_tag' && (
           <a href={`/champions?select=${encodeURIComponent(it.champion)}`} target="_blank" rel="noreferrer"
-            className="text-[10px] text-sky-700 hover:underline flex items-center gap-0.5 shrink-0 font-bold">
+            className="text-[10px] text-teal-700 hover:underline flex items-center gap-0.5 shrink-0 font-bold">
             辞典で確認 <ExternalLink size={10} />
           </a>
         )}
@@ -462,12 +462,12 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
 
       {/* 🎯 指摘該当記事・記載内容（確認対象） */}
       {it.issue_type !== 'invalid_champion_tag' && (filteredEditable.length > 0 || filteredLinked.length > 0) && (
-        <div className="p-3 rounded-xl border border-sky-300 bg-sky-50/70 space-y-2">
-          <div className="text-xs font-black text-sky-950 flex items-center justify-between border-b border-sky-200 pb-2">
+        <div className="p-3 rounded-xl border border-teal-300 bg-teal-50/70 space-y-2">
+          <div className="text-xs font-black text-teal-950 flex items-center justify-between border-b border-teal-200 pb-2">
             <span className="flex items-center gap-1.5">
               <span className="text-base">🎯</span> 指摘該当箇所の現在の記載（確認対象）
             </span>
-            <span className="text-[10px] bg-sky-200 text-sky-900 px-2 py-0.5 rounded-full font-bold">
+            <span className="text-[10px] bg-teal-200 text-teal-900 px-2 py-0.5 rounded-full font-bold">
               該当 {filteredEditable.length + filteredLinked.length} 件
             </span>
           </div>
@@ -477,12 +477,12 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
               <FactCheckSourceBlock key={b.key} block={b} />
             ))}
             {filteredLinked.map((b) => (
-              <div key={b.key} className="rounded-lg border border-violet-200 bg-white p-3 text-xs shadow-2xs">
+              <div key={b.key} className="rounded-lg border border-amber-200 bg-white p-3 text-xs shadow-2xs">
                 <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="font-bold text-violet-900">{b.label}</span>
+                  <span className="font-bold text-amber-900">{b.label}</span>
                 </div>
                 <p className="text-stone-800 font-mono text-[11px] whitespace-pre-wrap leading-relaxed bg-stone-50 p-2 rounded border border-stone-200">{b.value.slice(0, 400)}{b.value.length >= 400 ? '…' : ''}</p>
-                <a href={b.url} target="_blank" rel="noreferrer" className="text-sky-700 hover:underline flex items-center gap-0.5 mt-1.5 w-fit text-[10px] font-bold">
+                <a href={b.url} target="_blank" rel="noreferrer" className="text-teal-700 hover:underline flex items-center gap-0.5 mt-1.5 w-fit text-[10px] font-bold">
                   ナレッジ記事を直接編集する <ExternalLink size={10} />
                 </a>
               </div>
@@ -500,7 +500,7 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
           )}
           {it.sourcePreview.url && (
             <a href={it.sourcePreview.url} target="_blank" rel="noreferrer"
-              className="text-sky-700 hover:underline flex items-center gap-0.5 mt-1 w-fit">
+              className="text-teal-700 hover:underline flex items-center gap-0.5 mt-1 w-fit">
               元記事を開く <ExternalLink size={10} />
             </a>
           )}
@@ -565,7 +565,7 @@ export default function FactCheckQueueCard({ item, onActed }: { item: QueueItem;
             />
             <button onClick={() => pickCorrect('手動入力', fixInput)} disabled={acting || !fixInput.trim()}
               title="入力した内容で元データを更新し、再発防止記録に登録します"
-              className="flex items-center gap-1 text-xs font-bold bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-lg hover:bg-indigo-200 disabled:opacity-50 shrink-0">
+              className="flex items-center gap-1 text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-lg hover:bg-amber-200 disabled:opacity-50 shrink-0">
               <Check size={12} /> 手動入力で更新
             </button>
             <button onClick={() => act('acknowledge')} disabled={acting}

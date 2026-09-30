@@ -120,7 +120,7 @@ export default function CoinsRankingPanel() {
           </div>
 
           <div className="bg-white/90 backdrop-blur-sm border border-stone-200/90 rounded-2xl p-4 shadow-xs flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-600 flex items-center justify-center font-bold shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold shrink-0">
               <TrendingUp size={24} />
             </div>
             <div>

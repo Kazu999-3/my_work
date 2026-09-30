@@ -114,7 +114,7 @@ export default function DiscordImportPanel() {
     <div className="bg-white border border-stone-200 rounded-3xl p-6 space-y-6 shadow-sm">
       <div className="flex items-center justify-between border-b border-stone-100 pb-4 flex-wrap gap-2">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-700">
+          <div className="p-2 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700">
             <MessageSquare size={20} />
           </div>
           <div>
@@ -148,14 +148,14 @@ export default function DiscordImportPanel() {
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           placeholder="例: [15:30] UserA: アーリは対アサシンだと6前にW上げでハラスして押し切るのが強い。コアビルドはルーデン..."
-          className="w-full h-36 p-4 rounded-2xl border border-stone-200 bg-stone-50/50 text-xs font-mono text-stone-800 focus:bg-white focus:outline-none focus:border-indigo-500 transition-all resize-y"
+          className="w-full h-36 p-4 rounded-2xl border border-stone-200 bg-stone-50/50 text-xs font-mono text-stone-800 focus:bg-white focus:outline-none focus:border-amber-500 transition-all resize-y"
         />
 
         <div className="flex justify-end">
           <button
             onClick={handleParse}
             disabled={parsing || !inputText.trim()}
-            className="px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-indigo-800 hover:from-indigo-700 hover:to-indigo-900 active:scale-95 text-white text-xs font-black transition flex items-center gap-2 shadow-lg disabled:opacity-50"
+            className="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 hover:from-amber-700 hover:to-amber-900 active:scale-95 text-white text-xs font-black transition flex items-center gap-2 shadow-lg disabled:opacity-50"
           >
             <Sparkles className={`w-4 h-4 ${parsing ? 'animate-spin' : ''}`} />
             {parsing ? 'AIがチャットログを解読・抽出中...' : '🤖 AIで攻略知見を自動抽出'}
@@ -186,7 +186,7 @@ export default function DiscordImportPanel() {
               <div
                 key={idx}
                 className={`p-4 rounded-2xl border transition-all ${
-                  item.selected ? 'bg-white border-indigo-300 shadow-sm' : 'bg-stone-50 border-stone-200 opacity-60'
+                  item.selected ? 'bg-white border-amber-300 shadow-sm' : 'bg-stone-50 border-stone-200 opacity-60'
                 }`}
               >
                 <div className="flex items-start justify-between gap-3 mb-2">
@@ -195,7 +195,7 @@ export default function DiscordImportPanel() {
                       type="checkbox"
                       checked={!!item.selected}
                       onChange={(e) => updateItem(idx, 'selected', e.target.checked)}
-                      className="w-4 h-4 rounded border-stone-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                      className="w-4 h-4 rounded border-stone-300 text-amber-600 focus:ring-amber-500 cursor-pointer"
                     />
                     <img
                       src={getChampIcon(item.champion)}

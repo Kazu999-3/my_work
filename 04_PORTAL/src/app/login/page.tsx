@@ -98,10 +98,10 @@ function LoginContent() {
         </div>
 
         {/* 方法1: 🎮 Discord管理者アカウントで1秒ログイン */}
-        <div className="p-5 rounded-2xl bg-indigo-50/80 border border-indigo-200/80 space-y-3">
+        <div className="p-5 rounded-2xl bg-amber-50/80 border border-amber-200/80 space-y-3">
           <div className="text-left">
-            <div className="text-xs font-black text-indigo-950 flex items-center gap-1.5">
-              <Sparkles size={14} className="text-indigo-600" />
+            <div className="text-xs font-black text-amber-950 flex items-center gap-1.5">
+              <Sparkles size={14} className="text-amber-600" />
               おすすめ：Discordアカウントで認証
             </div>
             <p className="text-[11px] text-stone-600 mt-0.5">
@@ -111,7 +111,7 @@ function LoginContent() {
           <button
             type="button"
             onClick={() => loginWithDiscord(returnTo)}
-            className="w-full py-3.5 px-4 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] text-white font-black text-xs transition-all shadow-md hover:shadow-indigo-500/20 flex items-center justify-center gap-2 cursor-pointer transform active:scale-98"
+            className="w-full py-3.5 px-4 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] text-white font-black text-xs transition-all shadow-md hover:shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer transform active:scale-98"
           >
             <LogIn size={16} />
             Discordアカウントで管理者ログイン

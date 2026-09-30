@@ -691,7 +691,7 @@ export default function LibraryMergePreviewModal({
                                 className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${
                                   field.isNew
                                     ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                                    : 'bg-blue-50 border-blue-200 text-blue-700'
+                                    : 'bg-teal-50 border-teal-200 text-teal-700'
                                 }`}
                               >
                                 {field.isNew ? '新規追加' : '追記/統合'}
@@ -817,7 +817,7 @@ export default function LibraryMergePreviewModal({
             <div className="flex items-center justify-between border-t border-stone-200 pt-4 flex-wrap gap-2">
               <div>
                 <div className="flex items-center gap-2">
-                  <Map size={16} className="text-sky-600" />
+                  <Map size={16} className="text-teal-600" />
                   <h4 className="text-sm font-extrabold text-stone-900">
                     3. 抽出された一般論・戦術知見 ({laneInsightItems.length}件)
                   </h4>
@@ -828,7 +828,7 @@ export default function LibraryMergePreviewModal({
               </div>
 
               {laneGeneralCount > 0 && (
-                <label className="flex items-center gap-1.5 text-xs font-bold text-sky-700 cursor-pointer bg-sky-50 border border-sky-200 px-3 py-1.5 rounded-xl">
+                <label className="flex items-center gap-1.5 text-xs font-bold text-teal-700 cursor-pointer bg-teal-50 border border-teal-200 px-3 py-1.5 rounded-xl">
                   <input
                     type="checkbox"
                     checked={sendToLaneChecked}
@@ -840,12 +840,12 @@ export default function LibraryMergePreviewModal({
             </div>
 
             {sendToLaneChecked && laneGeneralCount > 0 && (
-              <div className="flex items-center gap-2 mb-2 bg-sky-50/50 p-2.5 rounded-xl border border-sky-100">
-                <span className="text-xs font-bold text-sky-900">送り先レーン:</span>
+              <div className="flex items-center gap-2 mb-2 bg-teal-50/50 p-2.5 rounded-xl border border-teal-100">
+                <span className="text-xs font-bold text-teal-900">送り先レーン:</span>
                 <select
                   value={laneChoice}
                   onChange={(e) => setLaneChoice(e.target.value)}
-                  className="bg-white border border-sky-300 rounded-lg px-2.5 py-1 text-xs text-sky-800 outline-none font-medium"
+                  className="bg-white border border-teal-300 rounded-lg px-2.5 py-1 text-xs text-teal-800 outline-none font-medium"
                 >
                   {Object.entries(LANE_LABELS).map(([key, label]) => (
                     <option key={key} value={key}>
@@ -866,7 +866,7 @@ export default function LibraryMergePreviewModal({
                       !item.included
                         ? 'border-stone-200 bg-stone-50/50 opacity-40'
                         : isLaneGeneral
-                        ? 'border-sky-200 bg-sky-50/30'
+                        ? 'border-teal-200 bg-teal-50/30'
                         : 'border-amber-300 bg-amber-50/40 shadow-sm'
                     }`}
                   >
@@ -876,7 +876,7 @@ export default function LibraryMergePreviewModal({
                           type="checkbox"
                           checked={item.included}
                           onChange={() => toggleLaneInsightIncluded(idx)}
-                          className="mt-0.5 rounded border-stone-300 text-sky-600 focus:ring-sky-400"
+                          className="mt-0.5 rounded border-stone-300 text-teal-600 focus:ring-teal-400"
                         />
                         <div className="min-w-0">
                           <span className="text-xs font-bold text-stone-900 block leading-tight">
@@ -894,7 +894,7 @@ export default function LibraryMergePreviewModal({
                           title="クリックでレーン一般論 ⇄ チャンピオン固有を切り替え"
                           className={`text-[11px] font-black px-2.5 py-1 rounded-lg border transition disabled:opacity-40 flex items-center gap-1 ${
                             isLaneGeneral
-                              ? 'bg-sky-100 border-sky-300 text-sky-800 hover:bg-sky-200'
+                              ? 'bg-teal-100 border-teal-300 text-teal-800 hover:bg-teal-200'
                               : 'bg-amber-100 border-amber-300 text-amber-900 hover:bg-amber-200'
                           }`}
                         >
@@ -949,8 +949,8 @@ export default function LibraryMergePreviewModal({
           <div className="text-xs text-stone-500">
             {currentChampions.length === 0 ? (
               sendToLaneChecked ? (
-                <span className="text-sky-800 font-bold flex items-center gap-1">
-                  <Map size={14} className="text-sky-600" />
+                <span className="text-teal-800 font-bold flex items-center gap-1">
+                  <Map size={14} className="text-teal-600" />
                   <span>送り先: <strong>{LANE_LABELS[laneChoice] || laneChoice} レーンガイド</strong></span>
                 </span>
               ) : (

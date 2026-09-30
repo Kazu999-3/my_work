@@ -1371,7 +1371,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 </button>
                 <div className="flex items-center gap-2 ml-auto">
                   {detailLoading && (
-                    <div className="px-2.5 py-1 rounded-lg bg-cyan-50 border border-cyan-200 text-cyan-800 text-xs font-bold flex items-center gap-1.5">
+                    <div className="px-2.5 py-1 rounded-lg bg-teal-50 border border-teal-200 text-teal-800 text-xs font-bold flex items-center gap-1.5">
                       <RefreshCw size={12} className="animate-spin" /> 読込中...
                     </div>
                   )}
@@ -1478,10 +1478,10 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 {/* 1. AIコーチ起動（対面相談・立ち回り質問） */}
                 <Link
                   href={`/coach?champion=${encodeURIComponent(selected.id)}`}
-                  className="px-3.5 py-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-200 hover:text-white font-bold rounded-xl transition-all flex items-center gap-2 text-xs border border-indigo-500/40 backdrop-blur-md shadow-sm group cursor-pointer"
+                  className="px-3.5 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 hover:text-white font-bold rounded-xl transition-all flex items-center gap-2 text-xs border border-amber-500/40 backdrop-blur-md shadow-sm group cursor-pointer"
                   title="このチャンピオンの立ち回りや対面対策をAIに対話形式で質問・相談"
                 >
-                  <Zap size={14} className="text-indigo-400 group-hover:scale-110 transition-transform" />
+                  <Zap size={14} className="text-amber-400 group-hover:scale-110 transition-transform" />
                   <div className="flex flex-col text-left">
                     <span className="leading-tight font-bold">AIコーチに相談</span>
                   </div>
@@ -1575,7 +1575,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                             }}
                             className="w-full text-left p-2 text-xs text-stone-200 hover:bg-stone-800/80 rounded-xl flex items-start gap-2.5 transition cursor-pointer"
                           >
-                            <Check size={14} className="text-sky-400 shrink-0 mt-0.5" />
+                            <Check size={14} className="text-teal-400 shrink-0 mt-0.5" />
                             <div>
                               <div className="font-bold text-stone-100">確認済みにマーク</div>
                               <div className="text-[10px] text-stone-400 font-normal">データ鮮度アラートをリセット</div>
@@ -1625,7 +1625,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 trendPhase === 'completed' ? 'bg-emerald-950/30 text-emerald-400 border-emerald-800/60' :
                 trendPhase === 'failed' || trendPhase === 'error' ? 'bg-red-950/30 text-red-400 border-red-800/60' :
                 trendPhase === 'offline' || trendPhase === 'timeout' ? 'bg-amber-950/30 text-amber-400 border-amber-800/60' :
-                'bg-cyan-950/30 text-cyan-300 border-cyan-800/60'
+                'bg-teal-950/30 text-teal-300 border-teal-800/60'
               }`}>
                 {trendPhase === 'running' && <RefreshCw size={14} className="animate-spin shrink-0" />}
                 {(trendPhase === 'pending' || trendPhase === 'queuing') && <Activity size={14} className="shrink-0 animate-pulse" />}
@@ -1752,8 +1752,8 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                       </p>
                     </div>
 
-                    <div className="bg-purple-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-purple-500/30">
-                      <span className="text-[10px] font-bold text-purple-700 dark:text-purple-400 block mb-1">🛡️ ビルド・ルーン構成</span>
+                    <div className="bg-amber-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-amber-500/30">
+                      <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 block mb-1">🛡️ ビルド・ルーン構成</span>
                       <p className="text-stone-800 dark:text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
                         {dataFields.buildRunes || 'ビルドデータ未登録'}
                       </p>
@@ -1793,8 +1793,8 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                       </p>
                     </div>
 
-                    <div className="bg-cyan-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-cyan-500/30">
-                      <span className="text-[10px] font-bold text-cyan-700 dark:text-cyan-400 block mb-1">🎯 相手側の対面推奨・特徴</span>
+                    <div className="bg-teal-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-teal-500/30">
+                      <span className="text-[10px] font-bold text-teal-700 dark:text-teal-400 block mb-1">🎯 相手側の対面推奨・特徴</span>
                       <p className="text-stone-800 dark:text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
                         {vsEnemyData?.pickRecommendation || vsEnemyData?.strengths || '特徴データ未登録'}
                       </p>
@@ -1895,7 +1895,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               <TextAreaCard title="強み (Strengths)" icon={Swords} color="text-[var(--color-success)] border-[var(--color-success)] shadow-[var(--color-success)]" value={dataFields.strengths} onChange={v => setField('strengths', v)} fieldKey="strengths" onOpenHistory={handleOpenHistory} />
               <TextAreaCard title="弱み (Weaknesses)" icon={ShieldAlert} color="text-[var(--color-danger)] border-[var(--color-danger)] shadow-[var(--color-danger)]" value={dataFields.weaknesses} onChange={v => setField('weaknesses', v)} fieldKey="weaknesses" onOpenHistory={handleOpenHistory} />
               <TextAreaCard title="パワースパイク" icon={Zap} color="text-[#c89b3c] border-[#c89b3c] shadow-[#c89b3c]" value={dataFields.powerSpikes} onChange={v => setField('powerSpikes', v)} fieldKey="powerSpikes" onOpenHistory={handleOpenHistory} />
-              <TextAreaCard title="コアビルド / ルーン" icon={Shield} color="text-purple-600 border-purple-500 shadow-purple-500" value={dataFields.buildRunes} onChange={v => setField('buildRunes', v)} fieldKey="buildRunes" onOpenHistory={handleOpenHistory} />
+              <TextAreaCard title="コアビルド / ルーン" icon={Shield} color="text-amber-600 border-amber-500 shadow-amber-500" value={dataFields.buildRunes} onChange={v => setField('buildRunes', v)} fieldKey="buildRunes" onOpenHistory={handleOpenHistory} />
               <TextAreaCard title="対面の有利・不利" icon={Swords} color="text-[#00cfef] border-[#00cfef] shadow-[#00cfef]" value={dataFields.counterChampions} onChange={v => setField('counterChampions', v)} fieldKey="counterChampions" onOpenHistory={handleOpenHistory} />
               <TextAreaCard title="ピック推奨 (先/後)" icon={Shield} color="text-emerald-600 border-emerald-500 shadow-emerald-500" value={dataFields.pickRecommendation} onChange={v => setField('pickRecommendation', v)} fieldKey="pickRecommendation" onOpenHistory={handleOpenHistory} />
             </div>
@@ -2066,7 +2066,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                     )}
                     <div className="flex gap-2 flex-wrap items-center">
                       {realJungleTiming.externalFastestClearSec != null && (
-                        <span className="px-3 py-1.5 bg-sky-50 border border-sky-200 rounded-lg text-xs font-bold text-sky-700 flex items-center gap-1.5">
+                        <span className="px-3 py-1.5 bg-teal-50 border border-teal-200 rounded-lg text-xs font-bold text-teal-700 flex items-center gap-1.5">
                           フルクリア(最速) {formatTimingSec(realJungleTiming.externalFastestClearSec)}
                           <span className={`text-[10px] px-1 py-0.2 rounded font-black ${175 - realJungleTiming.externalFastestClearSec >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
                             {175 - realJungleTiming.externalFastestClearSec >= 0
@@ -2076,12 +2076,12 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                         </span>
                       )}
                       {realJungleTiming.avgFirstCoreSec != null && (
-                        <span className="px-3 py-1.5 bg-sky-50 border border-sky-200 rounded-lg text-xs font-bold text-sky-700">
+                        <span className="px-3 py-1.5 bg-teal-50 border border-teal-200 rounded-lg text-xs font-bold text-teal-700">
                           1コア完成 {formatTimingSec(realJungleTiming.avgFirstCoreSec)}（{realJungleTiming.tier}帯・{realJungleTiming.sampleCount}試合）
                         </span>
                       )}
                       {realJungleTiming.avgSecondCoreSec != null && (
-                        <span className="px-3 py-1.5 bg-sky-50 border border-sky-200 rounded-lg text-xs font-bold text-sky-700">
+                        <span className="px-3 py-1.5 bg-teal-50 border border-teal-200 rounded-lg text-xs font-bold text-teal-700">
                           2コア完成 {formatTimingSec(realJungleTiming.avgSecondCoreSec)}（{realJungleTiming.tier}帯・{realJungleTiming.sampleCount}試合）
                         </span>
                       )}
@@ -2112,9 +2112,9 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                       </p>
                     </div>
 
-                    <div className="bg-sky-50/60 rounded-xl p-3 border border-sky-200/80 shadow-2xs space-y-1.5">
+                    <div className="bg-teal-50/60 rounded-xl p-3 border border-teal-200/80 shadow-2xs space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <span className="font-black text-blue-700 flex items-center gap-1">🔵 青バフ始動 (トップサイド推奨)</span>
+                        <span className="font-black text-teal-700 flex items-center gap-1">🔵 青バフ始動 (トップサイド推奨)</span>
                         <span className="text-[10px] font-bold text-stone-500">Lv3速攻ガンク対応</span>
                       </div>
                       <p className="text-[11px] text-stone-700 font-medium">
@@ -2150,9 +2150,9 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           </div>
 
           {/* 📈 最新パッチトレンド (自動収集) */}
-          <div className="glass-panel border-t-2 border-cyan-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-cyan-400/20 relative">
+          <div className="glass-panel border-t-2 border-teal-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-teal-400/20 relative">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-black flex items-center gap-2 text-cyan-600">
+              <h3 className="text-sm font-black flex items-center gap-2 text-teal-600">
                 <Activity size={16} /> 📈 最新パッチトレンド (自動収集)
               </h3>
               <button
@@ -2171,7 +2171,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
             {dataFields.patch_meta ? (
               <div className="flex flex-col gap-4 text-sm text-stone-800">
                 <div className="flex gap-2 flex-wrap items-center w-full">
-                  <span className="px-3 py-1 bg-cyan-100 border border-cyan-200 text-cyan-700 rounded-lg font-bold text-xs">
+                  <span className="px-3 py-1 bg-teal-100 border border-teal-200 text-teal-700 rounded-lg font-bold text-xs">
                     Patch {dataFields.patch_meta.patch || '不明'}
                   </span>
                   <span className="px-3 py-1 bg-amber-100 border border-amber-200 text-amber-700 rounded-lg font-bold text-xs">
@@ -2214,7 +2214,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   <div>
                     <h4 className="text-xs font-bold text-gray-400 mb-1">🧬 トレンドルーン</h4>
                     <p className="text-xs text-stone-700 font-bold">
-                      {dataFields.patch_meta.trend_runes.keystone && <span className="text-cyan-700 mr-2">[{dataFields.patch_meta.trend_runes.keystone}]</span>}
+                      {dataFields.patch_meta.trend_runes.keystone && <span className="text-teal-700 mr-2">[{dataFields.patch_meta.trend_runes.keystone}]</span>}
                       {dataFields.patch_meta.trend_runes.primary} / {dataFields.patch_meta.trend_runes.secondary}
                     </p>
                   </div>
@@ -2335,8 +2335,8 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
           {/* 🔎 AIリサーチの出典 (google_searchグラウンディング由来、参考・裏取り用) */}
           {dataFields.research_sources && dataFields.research_sources.length > 0 && (
-            <div className="glass-panel border-t-2 border-cyan-400 p-5 rounded-2xl col-span-1 md:col-span-2">
-              <h3 className="text-sm font-black flex items-center gap-2 text-cyan-700 mb-3">
+            <div className="glass-panel border-t-2 border-teal-400 p-5 rounded-2xl col-span-1 md:col-span-2">
+              <h3 className="text-sm font-black flex items-center gap-2 text-teal-700 mb-3">
                 🔎 AIリサーチの出典（参考・裏取り用）
               </h3>
               <ul className="space-y-1.5">
@@ -2346,7 +2346,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                       href={src.uri}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-cyan-700 hover:text-cyan-900 hover:underline break-all"
+                      className="text-teal-700 hover:text-teal-900 hover:underline break-all"
                     >
                       {src.title || src.uri}
                     </a>

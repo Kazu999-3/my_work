@@ -126,7 +126,7 @@ export default function KnowledgePreviewModal({
                           disabled={!insight.included}
                           className={`shrink-0 text-[10px] font-black px-2 py-1 rounded-lg border disabled:opacity-40 transition ${
                             insight.scope === 'lane_general'
-                              ? 'bg-sky-50 border-sky-200 text-sky-700'
+                              ? 'bg-teal-50 border-teal-200 text-teal-700'
                               : 'bg-amber-50 border-amber-200 text-amber-700'
                           }`}
                           title="クリックで切り替え"
@@ -134,13 +134,13 @@ export default function KnowledgePreviewModal({
                           {insight.scope === 'lane_general' ? 'レーン一般論' : 'チャンピオン固有'}
                         </button>
                         {insight.scope === 'lane_general' && (
-                          <div className="flex items-center gap-1 bg-sky-100/70 border border-sky-300 rounded-lg px-2 py-0.5">
-                            <span className="text-[10px] font-bold text-sky-800">統合先:</span>
+                          <div className="flex items-center gap-1 bg-teal-100/70 border border-teal-300 rounded-lg px-2 py-0.5">
+                            <span className="text-[10px] font-bold text-teal-800">統合先:</span>
                             <select
                               value={insight.targetLane || 'COMMON'}
                               onChange={(e) => changeTargetLane(idx, e.target.value)}
                               disabled={!insight.included}
-                              className="text-[10px] font-black bg-transparent text-sky-950 outline-none cursor-pointer"
+                              className="text-[10px] font-black bg-transparent text-teal-950 outline-none cursor-pointer"
                             >
                               {LANE_OPTIONS.map((opt) => (
                                 <option key={opt.key} value={opt.key}>
