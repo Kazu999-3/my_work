@@ -670,6 +670,25 @@ CS/min: 直近${agg.csTrend.recent} / 以前${agg.csTrend.older}　Vision/min: �
       const playRecommendation = buildPlayRecommendation(tilt, timing, streakAnalysis);
       const timingLabel = timing.scope === 'hour' ? `${timing.dayLabel}曜${timing.hour}時台` : `${timing.dayLabel}曜全体`;
 
+      // プロンプトへ渡す時間帯勝率のブロック。
+      //
+      // 2026-09-30: これまで出力要求だけが「時間帯勝率が低い場合は具体的に根拠を
+      // 数値で示してください」と指示しており、その数値をプロンプトに一切渡して
+      // いなかった。AIが指示に従おうとすると数値を捏造する経路になっていたため、
+      // 実数値（または「データ不足」の明示）を必ず渡す形に変えた。
+      // 集計元(soloq_match_history)は手動同期でしか更新されないため、古い場合は
+      // 古さも一緒に渡して「今の傾向」と断言させない。
+      const timingFreshness =
+        timing.daysSinceNewest === null
+          ? ''
+          : timing.daysSinceNewest >= 14
+            ? `（注意: この集計の最新試合は${timing.daysSinceNewest}日前で、現在の傾向を反映していない可能性があります）`
+            : `（最新試合は${timing.daysSinceNewest}日前まで反映）`;
+      const timingBlock =
+        timing.winRate === null
+          ? `${timingLabel}の過去勝率: データ不足（該当サンプル${timing.games}試合のみ）`
+          : `${timingLabel}の過去勝率: ${timing.winRate}% (${timing.wins}/${timing.games}勝)${timingFreshness}`;
+
       const knowledgeCtx = tilt.level !== 'green'
         ? await searchKnowledge(['メンタル', 'ティルト', '連敗', '休憩'])
         : '';
@@ -683,10 +702,11 @@ ${myMatches.map((m, i) => `${i + 1}. ${m.champion} ${m.win ? '✅勝' : '❌負'
 
 ティルト判定: ${tilt.label} (スコア: ${tilt.score})
 理由: ${tilt.reasons.join('、') || 'なし'}
+${timingBlock}
 ユーザーの振り返りテキスト・コメント: ${userText ? `"${userText}"` : '（なし）'}
 
 【出力フォーマット要求】
-1. メンタルアドバイス文 (日本語で150字程度。負けた後の勝率や時間帯勝率が低い場合は具体的に根拠を数値で示してください。)
+1. メンタルアドバイス文 (日本語で150字程度。上に与えられた数値（時間帯勝率・敗北直後の勝率など）が低い場合は、その数値をそのまま引用して根拠にしてください。与えられていない数値は絶対に書かないこと。「データ不足」と書かれている項目については、勝率を推測して述べてはいけません。)
 2. 文章の感情トーン解析結果を以下のJSON形式で末尾に付与してください:
 \`\`\`json
 {

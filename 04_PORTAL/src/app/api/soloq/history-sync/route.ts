@@ -16,8 +16,22 @@ const TOTAL_TARGET = 300;
 const CHUNK = 20;
 
 export async function POST(req: Request) {
-  const auth = await verifyAdminSession(req);
-  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
+  // 認証は「管理者セッション」または「Cron の Bearer CRON_SECRET」のどちらか。
+  //
+  // 2026-09-30: これまで管理者セッションのみを受け付けており、唯一の起票手段が
+  // コーチページの手動同期ボタンだった。そのボタンが2026-09-17のページスリム化で
+  // 消えた結果、soloq_match_history は 2026-08-17 を最後に6週間更新が止まり、
+  // それを使う時間帯勝率の判定が古いデータのまま動き続けていた。
+  // 定期同期（.github/workflows/soloq-history-sync.yml）から叩けるようにする。
+  // CRON_SECRET 未設定時に素通りしないよう、Bearer は「設定済みかつ一致」のみ通す
+  // （api/cron/soloq-coach と同じ fail-closed の書き方）。
+  const authHeader = req.headers.get('authorization') || '';
+  const cronSecret = process.env.CRON_SECRET;
+  const bearerOk = !!cronSecret && authHeader === `Bearer ${cronSecret}`;
+  if (!bearerOk) {
+    const auth = await verifyAdminSession(req);
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: 401 });
+  }
 
   try {
     const body = await req.json().catch(() => ({}));

@@ -1,0 +1,55 @@
+name: SoloQ History Sync
+
+# ソロQ試合履歴(soloq_match_history)の定期同期。
+#
+# 【なぜ新設したか】2026-09-30
+#   この履歴は /api/soloq/history-sync でしか書き込まれず、その唯一の起票手段が
+#   コーチページの手動同期ボタンだった。2026-09-17のページスリム化でボタンが消えた結果、
+#   履歴は 2026-08-17 を最後に6週間更新が止まり、曜日×時間帯の勝率ヒートマップも
+#   それを使う /api/coach/analyze の時間帯判定も、古いデータのまま動き続けていた。
+#
+# 【なぜ1回だけ叩くのか】
+#   history-sync は1回の呼び出しで CHUNK=20 試合ぶんを見て、既に保存済みのIDは
+#   スキップする。offset=0 で叩けば「直近20試合」が対象になるため、1日20試合以上
+#   回さない限り日次1回で最新まで追いつく。過去300試合の遡及バックフィルは
+#   コーチページの手動ボタン側（offsetを繰り上げながら完走する）に残している。
+#
+# 【なぜVercel Cronではないのか】
+#   Vercel Hobbyは1ジョブ1日1回までで、vercel.json には既に7本入っている。
+#   soloq-coach-poll.yml と同じ理由でGitHub Actions側に置く。
+#
+# 必要シークレット: VERCEL_CRON_SECRET（Vercel側の CRON_SECRET と同じ値）
+
+on:
+  schedule:
+    - cron: '40 20 * * *'   # 毎日 05:40 JST（前日夜のソロQを取り込む）
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Sync recent SoloQ match history
+        env:
+          CRON_SECRET: ${{ secrets.VERCEL_CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then echo "::warning::VERCEL_CRON_SECRET未設定のためスキップ"; exit 0; fi
+          # curlの終了コードだけを見ると、401/500でも「success」扱いになり
+          # 履歴が何週間も更新されないのにワークフローは緑のまま、という
+          # 今回まさに起きた状態を再現してしまう。本文とHTTPステータスを検査する。
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "https://my-work-8jbd.vercel.app/api/soloq/history-sync" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "Content-Type: application/json" \
+            -d '{"offset":0}')
+          BODY=$(echo "$RESPONSE" | head -n -1)
+          STATUS=$(echo "$RESPONSE" | tail -n 1)
+          echo "status=$STATUS body=$BODY"
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::soloq history-sync failed with HTTP $STATUS: $BODY"
+            exit 1
+          fi
+          # synced が取れない/0件でも異常ではない（新しい試合が無いだけ）。
+          # 取り込み件数はログに残して、後から「いつから増えていないか」を追えるようにする。
+          echo "synced=$(echo "$BODY" | grep -oE '"synced":[0-9]+' | head -1)"

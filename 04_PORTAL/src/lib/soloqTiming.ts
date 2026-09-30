@@ -17,6 +17,11 @@ export interface TimingContext {
   wins: number;
   winRate: number | null;
   scope: 'hour' | 'day' | 'none';
+  // 集計元データの新しさ。2026-09-30: soloq_match_history は手動同期でしか更新されず、
+  // 実際に6週間止まっていたのに、この勝率を使う側は「今の傾向」として扱っていた。
+  // 古いデータを根拠として断言しないよう、呼び出し元へ新しさも返す。
+  newestMatchAt: string | null;
+  daysSinceNewest: number | null;
 }
 
 const MIN_HOUR_SAMPLES = 3;
@@ -47,17 +52,26 @@ export async function getTimingContext(supabase: any, puuid: string, at: Date = 
     return { games, wins };
   };
 
+  // 集計元の最新試合日（古さの判断材料）
+  let newestMs = 0;
+  for (const row of rows) {
+    const ms = new Date(row.game_start_timestamp).getTime();
+    if (Number.isFinite(ms) && ms > newestMs) newestMs = ms;
+  }
+  const newestMatchAt = newestMs > 0 ? new Date(newestMs).toISOString() : null;
+  const daysSinceNewest = newestMs > 0 ? Math.floor((at.getTime() - newestMs) / 86400000) : null;
+
   const hourStats = tally(hour);
   if (hourStats.games >= MIN_HOUR_SAMPLES) {
-    return { day, hour, dayLabel, games: hourStats.games, wins: hourStats.wins, winRate: Math.round((hourStats.wins / hourStats.games) * 100), scope: 'hour' };
+    return { day, hour, dayLabel, games: hourStats.games, wins: hourStats.wins, winRate: Math.round((hourStats.wins / hourStats.games) * 100), scope: 'hour', newestMatchAt, daysSinceNewest };
   }
 
   const dayStats = tally(null);
   if (dayStats.games >= MIN_DAY_SAMPLES) {
-    return { day, hour, dayLabel, games: dayStats.games, wins: dayStats.wins, winRate: Math.round((dayStats.wins / dayStats.games) * 100), scope: 'day' };
+    return { day, hour, dayLabel, games: dayStats.games, wins: dayStats.wins, winRate: Math.round((dayStats.wins / dayStats.games) * 100), scope: 'day', newestMatchAt, daysSinceNewest };
   }
 
-  return { day, hour, dayLabel, games: hourStats.games, wins: hourStats.wins, winRate: null, scope: 'none' };
+  return { day, hour, dayLabel, games: hourStats.games, wins: hourStats.wins, winRate: null, scope: 'none', newestMatchAt, daysSinceNewest };
 }
 
 export interface PlayRecommendation {

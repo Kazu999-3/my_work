@@ -14,6 +14,7 @@ import ChampionQuickSelector from '../../components/coach/ChampionQuickSelector'
 import MatchupBlueprintCard from './MatchupBlueprintCard';
 import OverlayLauncherButton from './OverlayLauncherButton';
 import SoloQDeepIntelSyncCard from '../../components/coach/SoloQDeepIntelSyncCard';
+import TimingHeatmapCard from './TimingHeatmapCard';
 
 function CoachPageContent() {
   const searchParams = useSearchParams();
@@ -320,6 +321,15 @@ function CoachPageContent() {
             <Collapsible title="📂 過去の全ソロQカルテ・対戦ログ履歴を展開" defaultOpen={false}>
               <div className="pt-3 bg-white border border-stone-200 rounded-2xl p-4 shadow-xs">
                 <MySoloQDashboard refreshSignal={reflectionRefresh} />
+              </div>
+            </Collapsible>
+          </div>
+
+          {/* 🗓️ 曜日×時間帯 勝率ヒートマップ（2026-09-30復活。詳細は TimingHeatmapCard の冒頭コメント） */}
+          <div className="pt-2">
+            <Collapsible title="🗓️ 曜日×時間帯 勝率ヒートマップを展開" defaultOpen={false}>
+              <div className="pt-3 bg-white border border-stone-200 rounded-2xl p-4 shadow-xs">
+                <TimingHeatmapCard />
               </div>
             </Collapsible>
           </div>
