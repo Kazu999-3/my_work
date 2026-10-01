@@ -33,6 +33,11 @@ interface ParticipantStats {
   damageDealtToObjectives: number;
   totalHeal: number;
   damageSelfMitigated: number;
+  /** ビルド監査用: 敵の回復量(重傷の要否)とダメージ属性(靴の選択)を実測で判定する */
+  rawTotalHeal?: number;
+  physicalDamageDealtToChampions?: number;
+  magicDamageDealtToChampions?: number;
+  trueDamageDealtToChampions?: number;
   goldEarned?: number;
   /** ペンタキル数。ジャックポット金庫の総取り判定に使う（riot/match-sync が保存） */
   pentaKills?: number;
@@ -180,6 +185,11 @@ export async function fetchMatchDetails(matchId: string, apiKey: string): Promis
     damageDealtToObjectives: p.damageDealtToObjectives || 0,
     totalHeal: (p.totalHeal || 0) + (p.totalDamageShieldedOnTeammates || 0),
     damageSelfMitigated: p.damageSelfMitigated || 0,
+    // totalHeal は上で味方へのシールド量と合算しているため、回復量そのものは別に持つ
+    rawTotalHeal: p.totalHeal || 0,
+    physicalDamageDealtToChampions: p.physicalDamageDealtToChampions || 0,
+    magicDamageDealtToChampions: p.magicDamageDealtToChampions || 0,
+    trueDamageDealtToChampions: p.trueDamageDealtToChampions || 0,
     goldEarned: p.goldEarned || 0,
     // Riot Match-V5 の participant.pentaKills。ここでマッピングし忘れると
     // ジャックポットの総取り判定が永久に発火しない（2026-09-22に実際そうなっていた）。

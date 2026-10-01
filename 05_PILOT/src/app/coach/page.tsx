@@ -5,17 +5,18 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { 
   Bot, ArrowLeft, Swords, BookOpen, Compass, ShieldAlert, Sparkles, RefreshCw, Zap,
-  BarChart3, MessageSquareText
+  BarChart3, MessageSquareText, Rewind
 } from 'lucide-react';
 import MatchupBlueprintCard from './MatchupBlueprintCard';
 import StatsAnalyzerTab from './StatsAnalyzerTab';
 import SoloQReflectionTab from './SoloQReflectionTab';
+import PostGameTempoTab from './PostGameTempoTab';
 
 function CoachPageContent() {
   const searchParams = useSearchParams();
 
-  // 3大タブ管理
-  const [activeTab, setActiveTab] = useState<'blueprint' | 'analyzer' | 'reflection'>('blueprint');
+  // タブ管理
+  const [activeTab, setActiveTab] = useState<'blueprint' | 'analyzer' | 'tempo' | 'reflection'>('blueprint');
 
   // 対面設計図用ステート
   const [myChamp, setMyChamp] = useState('JarvanIV');
@@ -24,6 +25,7 @@ function CoachPageContent() {
   useEffect(() => {
     const qTab = searchParams.get('tab');
     if (qTab === 'analyzer') setActiveTab('analyzer');
+    else if (qTab === 'tempo') setActiveTab('tempo');
     else if (qTab === 'reflection') setActiveTab('reflection');
     else if (qTab === 'blueprint') setActiveTab('blueprint');
 
@@ -48,8 +50,8 @@ function CoachPageContent() {
           </p>
         </div>
 
-        {/* 3大ナビゲーションタブ */}
-        <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+        {/* ナビゲーションタブ（スマホでは横スクロール） */}
+        <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto [&>button]:shrink-0">
           <button
             onClick={() => setActiveTab('blueprint')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
@@ -72,6 +74,18 @@ function CoachPageContent() {
           >
             <BarChart3 className="w-4 h-4" />
             <span>📊 スタッツ深層分析（直近試合）</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('tempo')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'tempo'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-white'
+            }`}
+          >
+            <Rewind className="w-4 h-4" />
+            <span>🔁 試合後テンポ解析</span>
           </button>
 
           <button
@@ -136,7 +150,12 @@ function CoachPageContent() {
           <StatsAnalyzerTab />
         )}
 
-        {/* タブ 3: ソロQ反省ノート */}
+        {/* タブ 3: 試合後テンポ逆再生 ＆ ビルド監査 */}
+        {activeTab === 'tempo' && (
+          <PostGameTempoTab />
+        )}
+
+        {/* タブ 4: ソロQ反省ノート */}
         {activeTab === 'reflection' && (
           <SoloQReflectionTab />
         )}
