@@ -27,7 +27,7 @@ export const CHAMPION_TACTICS_DB: { [champName: string]: ChampionKitTactic } = {
     },
     favoredMatchups: [
       { enemy: 'Yuumi', reason: '圧倒的なCCチェインとダイブ圧力で序盤から完全にレーン崩壊可能。' },
-      { enemy: 'Sona', reason: '耐久力の低いソナに対してLv2から確定キルを奪取可能。' },
+      { enemy: 'Sona', reason: '耐久力の低いソナに対してLv2から圧倒的有利にキルを狙える。' },
       { enemy: 'Nami', reason: 'W着地からのエンゲージでナミのバブル発動前に拘束可能。' },
     ],
     hardMatchups: [
@@ -39,14 +39,14 @@ export const CHAMPION_TACTICS_DB: { [champName: string]: ChampionKitTactic } = {
   },
   Leona: {
     powerSpikes: {
-      earlyLvl1to5: 'Lv2先行でのE（ゼニスブレード）+ Qスタン + W耐久の確定キルコンボ。',
-      mid1to2Core: 'ソーンメイル/騎士の誓い完成時、長射程R（ソーラーフレア）からの確定エンゲージ。',
+      earlyLvl1to5: 'Lv2先行でのE（ゼニスブレード）+ Qスタン + W耐久の高火力バーストコンボ。',
+      mid1to2Core: 'ソーンメイル/騎士の誓い完成時、長射程R（ソーラーフレア）からの強力なエンゲージ。',
       late3CorePlus: '集団戦で味方ADCを完全密着ピール（Q-E）、または甘えた敵キャリーの長距離Rキャッチ。',
     },
     favoredMatchups: [
       { enemy: 'Sona', reason: 'Lv2からオールインで瞬殺し、レーン戦を完全に破壊可能。' },
       { enemy: 'Yuumi', reason: 'ユーミの相方をE-Qで拘束し、序盤からタワーダイブ可能。' },
-      { enemy: 'Senna', reason: 'セナの薄い耐久力を突き、Eが当たれば確定でキルを奪取。' },
+      { enemy: 'Senna', reason: 'セナの薄い耐久力を突き、Eが当たれば高確率でキルを奪取可能。' },
     ],
     hardMatchups: [
       { enemy: 'Morgana', counterPlay: 'ブラックシールドをEで釣ってからQを別の対象に入れるか、シールド切れを待つ。' },
@@ -278,7 +278,7 @@ export const CHAMPION_TACTICS_DB: { [champName: string]: ChampionKitTactic } = {
   Nocturne: {
     powerSpikes: {
       earlyLvl1to5: 'Q（黄昏の襲撃）攻撃力バフとWスペルシールドによる高速フルクリア。E（底知れぬ恐怖）確定恐怖。',
-      mid1to2Core: 'ストライドブレイカー / ヘクスプレート完成時、Lv6以降のR（パラノイア）暗転からの確定キルガンク。',
+      mid1to2Core: 'ストライドブレイカー / ヘクスプレート完成時、Lv6以降のR（パラノイア）暗転からの必殺の急襲ガンク。',
       late3CorePlus: '視界外からのR暗転による敵孤立キャリーのピンポイント暗殺と、ストライド広域スロー。',
     },
     favoredMatchups: [
@@ -336,7 +336,7 @@ export const CHAMPION_TACTICS_DB: { [champName: string]: ChampionKitTactic } = {
       late3CorePlus: '集団戦での敵バックライン拘束と、味方メイジ・ADCの範囲スキルとの黄金コンボ。',
     },
     favoredMatchups: [
-      { enemy: 'Karthus', reason: 'R天変地異で閉じ込め、フラッシュのないカーサスを確定キル。' },
+      { enemy: 'Karthus', reason: 'R天変地異で閉じ込め、フラッシュのないカーサスを確実に仕留める。' },
       { enemy: 'Lillia', reason: 'リリアの足の速さをRの壁で封じ、EQコンボで瞬殺。' },
       { enemy: 'Kindred', reason: 'キンドレッドのUlt発動中にEQで弾き出し、処刑可能。' },
     ],
@@ -466,7 +466,7 @@ export const CHAMPION_TACTICS_DB: { [champName: string]: ChampionKitTactic } = {
   Zed: {
     powerSpikes: {
       earlyLvl1to5: 'W（生ける影）+ E + Q手裏剣による遠距離電撃トレードと、エナジー管理。',
-      mid1to2Core: '妖夢 / プロフェンハイドラ完成時、R（死の刻印）による敵メイジ/ADCの確定ワンコンボ暗殺。',
+      mid1to2Core: '妖夢 / プロフェンハイドラ完成時、R（死の刻印）による敵メイジ/ADCのワンコンボ暗殺を狙える。',
       late3CorePlus: 'サイドレーンでのスプリットプッシュと、影の位置交換を利用した神出鬼没の集団戦撹乱。',
     },
     favoredMatchups: [

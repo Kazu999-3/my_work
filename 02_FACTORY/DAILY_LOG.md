@@ -28,6 +28,11 @@
        - `04_PORTAL/src/lib/sessionAnalyticsCalculator.ts`: 1〜2戦目のデータがない場合に `|| 50` で勝率比較して疲労落ちと誤判定するロジックを是正（`earlyFatigue?.hasData` の検証を厳密化）。
        - `04_PORTAL/src/app/admin/dict-health/page.tsx`: パッチ番号のハードコード（`26.15`）2箇所を `data?.currentPatch` に基づく動的取得・表示へ是正。
        - `04_PORTAL/src/app/ktm-admin/ProfileModal.tsx`: マスタリーアイコン読み込み失敗時（`onError`）に旧パッチ `14.1.1` を固定参照していたのを `getChampIcon('Unknown')` へ集約。
+     - **過度な断言・誤認表現の全量是正（第3弾・全9件）**:
+       - `03_SYSTEMS/v2_CORE/_LOL/overlay/kill_line_calculator.py`: HUDのキルライン計算で「即死確定」と断言していた文言を「即死警戒ライン（ワンコン圏内）」へ是正（サモスペ・シールド・味方ピール等の実戦変数に即した安全表現）。
+       - `03_SYSTEMS/v2_CORE/_LOL/overlay/gank_opportunity_engine.py` & `test_overlay_suite.py`: docstringの「キル確定判定」表記を「好機判定」へ是正。
+       - `04_PORTAL/src/lib/championKitTactics.ts`: レオナ・ノクターン・ジャーヴァンIV・ゼド等の戦術解説に残存していた「確定キル」「確定キルコンボ」「確定キルガンク」「確定ワンコンボ暗殺」など6箇所を「圧倒的有利にキルを狙える」「高火力バーストコンボ」「必殺の急襲ガンク」「ワンコンボ暗殺を狙える」等の現実的な表現へ是正。
+       - `04_PORTAL/src/lib/sessionAnalyticsCalculator.ts`: ノーチラスのシナジー解説「確定必中CC」「確定でキャッチ可能」を「必中CC」「強力にキャッチ可能」へ是正。
    - **師弟掲示板のUIシンプル化**:
      - `MentorshipCard.tsx`:
        - 長大なコメント一覧＆投稿フォームをカード本体から撤去し、下部バーの「💬 コメント ({count})」から開く独立モーダルへ分離。カード高さを約50%スリム化。

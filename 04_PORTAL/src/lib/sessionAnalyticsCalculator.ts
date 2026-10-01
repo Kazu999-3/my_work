@@ -1296,7 +1296,7 @@ export function calculateRealSessionAnalytics(
         poolArchetype = 'APメイジ ＆ エンチャンター偏重構成';
         missingPiece = '確定ハードCC / 高耐久イニシエーター';
         additions = filterAdditions([
-          { championName: 'Nautilus (ノーチラス)', role: 'SUPPORT', archetype: '確定必中CC＆フロントライン', synergyReason: '必中R爆雷とQフックにより、敵キャリーを逃さず確定でキャッチ可能。' },
+          { championName: 'Nautilus (ノーチラス)', role: 'SUPPORT', archetype: '必中CC＆フロントライン', synergyReason: '必中R爆雷とQフックにより、敵キャリーを逃さず強力にキャッチ可能。' },
           { championName: 'Leona (レオナ)', role: 'SUPPORT', archetype: '超高耐久オールインイニシエーター', synergyReason: 'Lv2から圧倒的耐久でタワーダイブを主導し、序盤からスノーボールを量産。' },
           { championName: 'Rell (レル)', role: 'SUPPORT', archetype: '広域磁気誘導＆シールド破壊', synergyReason: '集団戦でのフラッシュR+Wコンボで敵5人を一網打尽にできる最強の破壊力。' },
           { championName: 'Braum (ブラウム)', role: 'SUPPORT', archetype: '飛び道具完全遮断＆守護神', synergyReason: 'E不破の盾で敵主要スキルを吸い尽くし、ADCを完璧に生かし切る。' },

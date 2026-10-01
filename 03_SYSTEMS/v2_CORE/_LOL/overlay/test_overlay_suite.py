@@ -364,7 +364,7 @@ class TestOverlayWidgetsVisual(unittest.TestCase):
 
 
 class TestGankOpportunityEngine(unittest.TestCase):
-    """5. JG視点ガンク成功率 ＆ キル確定判定エンジンのテスト"""
+    """5. JG視点ガンク成功率 ＆ 好機判定エンジンのテスト"""
 
     def test_high_success_gank_case(self):
         """敵瀕死 ＋ Flashなし ＋ 味方確定CCありの場合、確実キル (90%以上) と判定されること"""

@@ -154,7 +154,7 @@ class KillLineCalculator:
         if kill_hp_percent >= 50:
             danger_badge = "超危険 🔴"
             danger_color = "#ef4444"
-            verb = "即死圏内" if is_estimated else "即死確定"
+            verb = "即死警戒ライン（ワンコン圏内）"
             advice = f"HP {kill_hp_percent}% ({total_lethal_damage}以下) で{verb}。タワー下でも甘えない！{est_mark}"
         elif kill_hp_percent >= 40:
             danger_badge = "警戒 🟠"

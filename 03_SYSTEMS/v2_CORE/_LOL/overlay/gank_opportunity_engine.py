@@ -105,7 +105,7 @@ class GankOpportunityEngine:
         lane: str = "MID"
     ) -> Dict[str, Any]:
         """
-        JG・ローム視点でのガンク成功率・キル確定判定をチャンピオン相性・HP・ゴールド差から流動的に算出。
+        JG・ローム視点でのガンク成功率・好機判定をチャンピオン相性・HP・ゴールド差から流動的に算出。
         """
         reasons: List[str] = []
         base_success_score = 50.0
