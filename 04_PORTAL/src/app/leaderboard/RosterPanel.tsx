@@ -87,7 +87,7 @@ export default function RosterPanel() {
             placeholder="プレイヤー名・Riot ID・ランクで検索..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-background border border-border rounded-xl pl-10 pr-4 py-2 text-xs font-bold text-foreground focus:outline-none focus:border-amber-500 transition-colors"
+            className="w-full bg-background border border-border rounded-xl pl-10 pr-4 py-2 text-xs font-bold text-foreground focus:outline-none focus:border-primary-edge-strong transition-colors"
           />
         </div>
 
@@ -135,14 +135,14 @@ export default function RosterPanel() {
             <Link
               key={player.id || player.name}
               href={`/player/${encodeURIComponent(player.name || player.discord_id)}`}
-              className={`bg-surface rounded-2xl p-5 border border-border/90 hover:border-amber-400 transition-all shadow-xs hover:shadow-md flex flex-col justify-between group ${
+              className={`bg-surface rounded-2xl p-5 border border-border/90 hover:border-primary-edge transition-all shadow-xs hover:shadow-md flex flex-col justify-between group ${
                 !isActive ? "opacity-60 bg-background" : ""
               }`}
             >
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-primary-50 border border-amber-200 flex items-center justify-center text-primary-700 font-bold text-sm shrink-0 group-hover:scale-105 transition">
+                    <div className="w-10 h-10 rounded-xl bg-primary-50 border border-primary-edge-soft flex items-center justify-center text-primary-700 font-bold text-sm shrink-0 group-hover:scale-105 transition">
                       <RoleIcon size={18} />
                     </div>
                     <div className="min-w-0">
@@ -155,7 +155,7 @@ export default function RosterPanel() {
                     </div>
                   </div>
 
-                  <span className="text-[10px] font-black text-primary-800 bg-primary-100/70 border border-amber-200/80 px-2 py-0.5 rounded-lg shrink-0">
+                  <span className="text-[10px] font-black text-primary-800 bg-primary-100/70 border border-primary-edge-soft/80 px-2 py-0.5 rounded-lg shrink-0">
                     {player.highest_rank || "UNRANKED"}
                   </span>
                 </div>

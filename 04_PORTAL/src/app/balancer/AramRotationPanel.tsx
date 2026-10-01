@@ -341,7 +341,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
             <button
               type="button"
               onClick={() => setShowRuleManager(true)}
-              className="px-3 py-1.5 rounded-xl bg-primary-50 hover:bg-primary-100 border border-amber-300 text-primary-800 text-xs font-black flex items-center gap-1.5 transition cursor-pointer"
+              className="px-3 py-1.5 rounded-xl bg-primary-50 hover:bg-primary-100 border border-primary-edge text-primary-800 text-xs font-black flex items-center gap-1.5 transition cursor-pointer"
               title="お祭りカスタムの縛りルールを追加・管理"
             >
               <Settings className="w-3.5 h-3.5" />
@@ -426,7 +426,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                   onClick={() => togglePlayer(p)}
                   className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
                     isSelected
-                      ? "bg-primary-500/15 border-amber-500/60 text-primary-950 font-bold shadow-xs scale-[1.02]"
+                      ? "bg-primary-500/15 border-primary-edge-strong/60 text-primary-950 font-bold shadow-xs scale-[1.02]"
                       : "bg-background border-border text-muted hover:border-stone-400 hover:text-foreground"
                   }`}
                 >
@@ -476,7 +476,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
           
           {/* スペシャル縛りルールバナー（お祭りカスタムモード時） */}
           {currentRule && customMode === 'party_chaos' && (
-            <div className="bg-gradient-to-r from-primary-950/40 via-stone-900 to-primary-950/40 border border-amber-500/40 rounded-2xl p-5 shadow-xl relative overflow-hidden">
+            <div className="bg-gradient-to-r from-primary-950/40 via-stone-900 to-primary-950/40 border border-primary-edge-strong/40 rounded-2xl p-5 shadow-xl relative overflow-hidden">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
@@ -496,7 +496,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                   type="button"
                   onClick={rerollRule}
                   title="縛りルールを再抽選"
-                  className="px-3 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-primary-400 text-xs font-bold flex items-center gap-1.5 transition self-start sm:self-center border border-amber-500/30 cursor-pointer shrink-0"
+                  className="px-3 py-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-primary-400 text-xs font-bold flex items-center gap-1.5 transition self-start sm:self-center border border-primary-edge-strong/30 cursor-pointer shrink-0"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                   <span>ルール再抽選</span>
@@ -508,7 +508,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
           {/* ラウンド表示 ＆ アクション */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-background border border-border rounded-xl p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary-500/15 border border-amber-500/30 flex items-center justify-center text-primary-800 font-black text-lg">
+              <div className="w-10 h-10 rounded-xl bg-primary-500/15 border border-primary-edge-strong/30 flex items-center justify-center text-primary-800 font-black text-lg">
                 #{roundNumber}
               </div>
               <div>
@@ -524,7 +524,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                 <button
                   type="button"
                   onClick={rerollRoles}
-                  className="px-3.5 py-2.5 rounded-xl bg-primary-50 hover:bg-primary-100 text-primary-700 border border-amber-300 text-xs font-black flex items-center gap-1.5 transition cursor-pointer"
+                  className="px-3.5 py-2.5 rounded-xl bg-primary-50 hover:bg-primary-100 text-primary-700 border border-primary-edge text-xs font-black flex items-center gap-1.5 transition cursor-pointer"
                   title="スタメン10人のMMRバランスを保ちつつ、ロールを再度ランダムにシャッフルします"
                 >
                   <Dices className="w-4 h-4 text-primary-600" />
@@ -576,8 +576,8 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
             {/* BLUE TEAM */}
-            <div className="bg-secondary-50/70 border border-teal-200 rounded-2xl p-5 space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-teal-200">
+            <div className="bg-secondary-50/70 border border-secondary-edge-soft rounded-2xl p-5 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-secondary-edge-soft">
                 <span className="text-xs font-black text-secondary-700 uppercase tracking-wider flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-secondary-600" />
                   BLUE TEAM (5人)
@@ -592,15 +592,15 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                 {currentRound.blueTeam.map((p) => {
                   const roleConfig: Record<string, { label: string; badge: string }> = {
                     TOP: { label: '🛡️ TOP', badge: 'bg-surface-hover text-foreground-soft border-border' },
-                    JUNGLE: { label: '🌲 JG', badge: 'bg-success-100 text-success-800 border-emerald-300' },
-                    MID: { label: '⚡ MID', badge: 'bg-primary-100 text-primary-900 border-amber-300' },
-                    BOT: { label: '🏹 BOT', badge: 'bg-secondary-100 text-secondary-800 border-teal-300' },
-                    SUPPORT: { label: '💖 SUP', badge: 'bg-danger-100 text-danger-800 border-rose-300' },
+                    JUNGLE: { label: '🌲 JG', badge: 'bg-success-100 text-success-800 border-success-edge' },
+                    MID: { label: '⚡ MID', badge: 'bg-primary-100 text-primary-900 border-primary-edge' },
+                    BOT: { label: '🏹 BOT', badge: 'bg-secondary-100 text-secondary-800 border-secondary-edge' },
+                    SUPPORT: { label: '💖 SUP', badge: 'bg-danger-100 text-danger-800 border-danger-edge' },
                   };
                   return (
                     <div
                       key={p.id}
-                      className="p-2.5 rounded-xl bg-surface border border-teal-200/80 flex items-center justify-between shadow-2xs"
+                      className="p-2.5 rounded-xl bg-surface border border-secondary-edge-soft/80 flex items-center justify-between shadow-2xs"
                     >
                       <div className="flex items-center gap-2">
                         {p.assignedRole && currentRound.hasRoles && (
@@ -621,8 +621,8 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
             </div>
 
             {/* RED TEAM */}
-            <div className="bg-danger-50/70 border border-rose-200 rounded-2xl p-5 space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-rose-200">
+            <div className="bg-danger-50/70 border border-danger-edge-soft rounded-2xl p-5 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-danger-edge-soft">
                 <span className="text-xs font-black text-danger-700 uppercase tracking-wider flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-danger-600" />
                   RED TEAM (5人)
@@ -637,15 +637,15 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                 {currentRound.redTeam.map((p) => {
                   const roleConfig: Record<string, { label: string; badge: string }> = {
                     TOP: { label: '🛡️ TOP', badge: 'bg-surface-hover text-foreground-soft border-border' },
-                    JUNGLE: { label: '🌲 JG', badge: 'bg-success-100 text-success-800 border-emerald-300' },
-                    MID: { label: '⚡ MID', badge: 'bg-primary-100 text-primary-900 border-amber-300' },
-                    BOT: { label: '🏹 BOT', badge: 'bg-secondary-100 text-secondary-800 border-teal-300' },
-                    SUPPORT: { label: '💖 SUP', badge: 'bg-danger-100 text-danger-800 border-rose-300' },
+                    JUNGLE: { label: '🌲 JG', badge: 'bg-success-100 text-success-800 border-success-edge' },
+                    MID: { label: '⚡ MID', badge: 'bg-primary-100 text-primary-900 border-primary-edge' },
+                    BOT: { label: '🏹 BOT', badge: 'bg-secondary-100 text-secondary-800 border-secondary-edge' },
+                    SUPPORT: { label: '💖 SUP', badge: 'bg-danger-100 text-danger-800 border-danger-edge' },
                   };
                   return (
                     <div
                       key={p.id}
-                      className="p-2.5 rounded-xl bg-surface border border-rose-200/80 flex items-center justify-between shadow-2xs"
+                      className="p-2.5 rounded-xl bg-surface border border-danger-edge-soft/80 flex items-center justify-between shadow-2xs"
                     >
                       <div className="flex items-center gap-2">
                         {p.assignedRole && currentRound.hasRoles && (
@@ -668,13 +668,13 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
 
           {/* 観戦・待機枠 */}
           {currentRound.benchedPlayers.length > 0 && (
-            <div className="bg-primary-50/70 border border-amber-200 rounded-2xl p-5 space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-amber-200">
+            <div className="bg-primary-50/70 border border-primary-edge-soft rounded-2xl p-5 space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-primary-edge-soft">
                 <span className="text-xs font-black text-primary-800 uppercase tracking-wider flex items-center gap-2">
                   <Eye className="w-4 h-4 text-primary-700" />
                   <span>👀 観戦・待機枠 ({currentRound.benchedPlayers.length}名)</span>
                 </span>
-                <span className="text-[11px] text-primary-900 font-bold bg-primary-200/60 px-2 py-0.5 rounded border border-amber-300">
+                <span className="text-[11px] text-primary-900 font-bold bg-primary-200/60 px-2 py-0.5 rounded border border-primary-edge">
                   次戦 100% スタメン確定出場
                 </span>
               </div>
@@ -683,7 +683,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                 {currentRound.benchedPlayers.map((p) => (
                   <div
                     key={p.id}
-                    className="p-3 rounded-xl bg-surface border border-amber-300/80 flex flex-col justify-between shadow-2xs"
+                    className="p-3 rounded-xl bg-surface border border-primary-edge/80 flex flex-col justify-between shadow-2xs"
                   >
                     <span className="text-xs font-black text-foreground">{p.name}</span>
                     <span className="text-[10px] text-muted-strong mt-1">待機: {p.benchedCount}回</span>
@@ -707,7 +707,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                     className={`p-2 rounded-lg border text-xs ${
                       isPlaying
                         ? "bg-surface border-border text-foreground-soft"
-                        : "bg-primary-100/60 border-amber-300 text-primary-900"
+                        : "bg-primary-100/60 border-primary-edge text-primary-900"
                     }`}
                   >
                     <div className="font-bold truncate">{p.name}</div>
@@ -753,8 +753,8 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
               {actionMessage && (
                 <div className={`p-3 rounded-xl border text-xs font-bold ${
                   actionMessage.type === 'success'
-                    ? 'bg-success-50 border-emerald-300 text-success-900'
-                    : 'bg-danger-50 border-rose-300 text-danger-900'
+                    ? 'bg-success-50 border-success-edge text-success-900'
+                    : 'bg-danger-50 border-danger-edge text-danger-900'
                 }`}>
                   {actionMessage.text}
                 </div>
@@ -775,7 +775,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                       value={newTitle}
                       onChange={(e) => setNewTitle(e.target.value)}
                       placeholder="例: ⚡ 全員ゴースト＋イグナイト戦"
-                      className="w-full bg-surface border border-border rounded-lg px-3 py-1.5 text-xs text-foreground-soft placeholder:text-faint focus:outline-none focus:border-amber-500"
+                      className="w-full bg-surface border border-border rounded-lg px-3 py-1.5 text-xs text-foreground-soft placeholder:text-faint focus:outline-none focus:border-primary-edge-strong"
                     />
                   </div>
                   <div>
@@ -783,7 +783,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                     <select
                       value={newTag}
                       onChange={(e) => setNewTag(e.target.value)}
-                      className="w-full bg-surface border border-border rounded-lg px-3 py-1.5 text-xs text-foreground-soft focus:outline-none focus:border-amber-500"
+                      className="w-full bg-surface border border-border rounded-lg px-3 py-1.5 text-xs text-foreground-soft focus:outline-none focus:border-primary-edge-strong"
                     >
                       {TAG_OPTIONS.map((t) => (
                         <option key={t} value={t}>{t}</option>
@@ -799,7 +799,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                     onChange={(e) => setNewDesc(e.target.value)}
                     rows={2}
                     placeholder="例: フラッシュ禁止！全員サモナースペルをゴーストとイグナイトに統一して戦おう！"
-                    className="w-full bg-surface border border-border rounded-lg px-3 py-1.5 text-xs text-foreground-soft placeholder:text-faint focus:outline-none focus:border-amber-500 resize-none"
+                    className="w-full bg-surface border border-border rounded-lg px-3 py-1.5 text-xs text-foreground-soft placeholder:text-faint focus:outline-none focus:border-primary-edge-strong resize-none"
                   />
                 </div>
 
@@ -855,7 +855,7 @@ export default function AramRotationPanel({ availablePlayers, isAdmin = false }:
                       <button
                         type="button"
                         onClick={() => handleDeleteRule(rule.id)}
-                        className="p-1.5 rounded-lg bg-surface-hover hover:bg-danger-100 text-muted-strong hover:text-danger-600 border border-transparent hover:border-rose-300 transition cursor-pointer shrink-0"
+                        className="p-1.5 rounded-lg bg-surface-hover hover:bg-danger-100 text-muted-strong hover:text-danger-600 border border-transparent hover:border-danger-edge transition cursor-pointer shrink-0"
                         title="このルールを削除"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

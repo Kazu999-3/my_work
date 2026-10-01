@@ -47,9 +47,9 @@ export default function DictReviewPanel() {
   };
 
   const verdictStyle: Record<string, string> = {
-    keep: 'bg-success-100 text-success-700 border-emerald-200',
-    update: 'bg-primary-100 text-primary-700 border-amber-200',
-    archive: 'bg-danger-100 text-danger-700 border-rose-200',
+    keep: 'bg-success-100 text-success-700 border-success-edge-soft',
+    update: 'bg-primary-100 text-primary-700 border-primary-edge-soft',
+    archive: 'bg-danger-100 text-danger-700 border-danger-edge-soft',
   };
   const verdictLabel: Record<string, string> = { keep: '✅ 有効', update: '⚠️ 要更新', archive: '🗑️ 古い' };
 
@@ -79,15 +79,15 @@ export default function DictReviewPanel() {
               </div>
               <div className="flex gap-2">
                 <button onClick={() => apply(c.champion, 'regenerate')} disabled={acting === c.champion + 'regenerate'}
-                  className="flex items-center gap-1 text-xs font-bold bg-primary-100 text-primary-700 border border-amber-200 px-3 py-1.5 rounded-lg hover:bg-primary-200 disabled:opacity-50">
+                  className="flex items-center gap-1 text-xs font-bold bg-primary-100 text-primary-700 border border-primary-edge-soft px-3 py-1.5 rounded-lg hover:bg-primary-200 disabled:opacity-50">
                   {acting === c.champion + 'regenerate' ? <RefreshCw size={13} className="animate-spin" /> : <RefreshCw size={13} />} 再生成
                 </button>
                 <button onClick={() => apply(c.champion, 'keep')} disabled={acting === c.champion + 'keep'}
-                  className="flex items-center gap-1 text-xs font-bold bg-success-100 text-success-700 border border-emerald-200 px-3 py-1.5 rounded-lg hover:bg-success-200 disabled:opacity-50">
+                  className="flex items-center gap-1 text-xs font-bold bg-success-100 text-success-700 border border-success-edge-soft px-3 py-1.5 rounded-lg hover:bg-success-200 disabled:opacity-50">
                   <Check size={13} /> 有効確認
                 </button>
                 <button onClick={() => apply(c.champion, 'archive')} disabled={acting === c.champion + 'archive'}
-                  className="flex items-center gap-1 text-xs font-bold bg-danger-100 text-danger-700 border border-rose-200 px-3 py-1.5 rounded-lg hover:bg-danger-200 disabled:opacity-50">
+                  className="flex items-center gap-1 text-xs font-bold bg-danger-100 text-danger-700 border border-danger-edge-soft px-3 py-1.5 rounded-lg hover:bg-danger-200 disabled:opacity-50">
                   <Archive size={13} /> アーカイブ
                 </button>
               </div>
@@ -120,7 +120,7 @@ export default function DictReviewPanel() {
               </details>
             )}
             {c.regenerated && (
-              <div className="mt-2 space-y-0.5 text-xs bg-primary-50 border border-amber-200 rounded-lg p-3">
+              <div className="mt-2 space-y-0.5 text-xs bg-primary-50 border border-primary-edge-soft rounded-lg p-3">
                 <p className="text-primary-700 font-bold mb-1">🔄 再生成結果（保存済み）</p>
                 {c.regenerated.strengths && <p className="text-foreground-subtle"><span className="text-muted-strong">強み:</span> {c.regenerated.strengths}</p>}
                 {c.regenerated.weaknesses && <p className="text-foreground-subtle"><span className="text-muted-strong">弱み:</span> {c.regenerated.weaknesses}</p>}

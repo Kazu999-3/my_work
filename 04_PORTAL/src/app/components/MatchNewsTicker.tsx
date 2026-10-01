@@ -57,8 +57,8 @@ export default function MatchNewsTicker() {
   if (!loading && newsList.length === 0) return null;
 
   return (
-    <div className="bg-gradient-to-br from-primary-500/10 via-primary-500/5 to-transparent border-2 border-amber-400/60 dark:border-amber-500/30 rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
-      <div className="flex items-center justify-between border-b border-amber-300/40 dark:border-amber-500/20 pb-3">
+    <div className="bg-gradient-to-br from-primary-500/10 via-primary-500/5 to-transparent border-2 border-primary-edge/60 dark:border-primary-edge-strong/30 rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
+      <div className="flex items-center justify-between border-b border-primary-edge/40 dark:border-primary-edge-strong/20 pb-3">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-primary-500 text-stone-950 flex items-center justify-center font-black text-sm shadow-xs">
             📰
@@ -99,8 +99,8 @@ export default function MatchNewsTicker() {
               key={item.id}
               className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
                 isExpanded
-                  ? 'bg-surface/95 dark:bg-[#2b2d31]/95 border-amber-400 dark:border-amber-500/40 shadow-md'
-                  : 'bg-surface/60 dark:bg-[#2b2d31]/60 border-border/80 dark:border-[#3f4147] hover:border-amber-300'
+                  ? 'bg-surface/95 dark:bg-[#2b2d31]/95 border-primary-edge dark:border-primary-edge-strong/40 shadow-md'
+                  : 'bg-surface/60 dark:bg-[#2b2d31]/60 border-border/80 dark:border-[#3f4147] hover:border-primary-edge'
               }`}
             >
               {/* ヘッドラインバー（クリックで展開・折りたたみ） */}
@@ -113,8 +113,8 @@ export default function MatchNewsTicker() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
                       item.winningTeam === 'BLUE'
-                        ? 'bg-secondary-100 text-secondary-800 dark:bg-secondary-900/40 dark:text-secondary-300 border border-teal-300'
-                        : 'bg-danger-100 text-danger-800 dark:bg-danger-900/40 dark:text-danger-300 border border-rose-300'
+                        ? 'bg-secondary-100 text-secondary-800 dark:bg-secondary-900/40 dark:text-secondary-300 border border-secondary-edge'
+                        : 'bg-danger-100 text-danger-800 dark:bg-danger-900/40 dark:text-danger-300 border border-danger-edge'
                     }`}>
                       {item.winningTeam === 'BLUE' ? '🟦 BLUE勝利' : '🟥 RED勝利'}
                     </span>
@@ -139,7 +139,7 @@ export default function MatchNewsTicker() {
               {isExpanded && (
                 <div className="px-4 pb-4 pt-1 border-t border-stone-100 dark:border-stone-800 space-y-3.5 text-xs text-foreground-subtle dark:text-stone-200 animate-in fade-in">
                   {/* リード文 */}
-                  <p className="leading-relaxed font-sans text-foreground-soft dark:text-stone-100 text-[13px] bg-primary-50/50 dark:bg-primary-950/20 p-3 rounded-xl border border-amber-200/40">
+                  <p className="leading-relaxed font-sans text-foreground-soft dark:text-stone-100 text-[13px] bg-primary-50/50 dark:bg-primary-950/20 p-3 rounded-xl border border-primary-edge-soft/40">
                     {art.lead}
                   </p>
 

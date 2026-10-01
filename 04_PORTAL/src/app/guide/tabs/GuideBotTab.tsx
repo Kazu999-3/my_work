@@ -34,9 +34,9 @@ export default function GuideBotTab() {
   return (
     <div className="space-y-8">
       {/* イントロバナー */}
-      <div className="bg-gradient-to-r from-primary-500/15 via-primary-500/10 to-primary-500/15 border border-amber-500/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-sm">
+      <div className="bg-gradient-to-r from-primary-500/15 via-primary-500/10 to-primary-500/15 border border-primary-edge-strong/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-sm">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-500/20 text-primary-800 text-xs font-black border border-amber-500/30">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-500/20 text-primary-800 text-xs font-black border border-primary-edge-strong/30">
             <Bot size={14} className="text-primary-600" />
             KTM Discord Bot マニュアル
           </div>
@@ -96,11 +96,11 @@ export default function GuideBotTab() {
           ].map((item) => (
             <div
               key={item.cmd}
-              className="p-4 rounded-2xl bg-background border border-border/90 hover:border-amber-300 transition flex flex-col justify-between gap-2"
+              className="p-4 rounded-2xl bg-background border border-border/90 hover:border-primary-edge transition flex flex-col justify-between gap-2"
             >
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono font-black text-sm text-primary-700 bg-primary-50 px-2.5 py-0.5 rounded-lg border border-amber-200">
+                  <span className="font-mono font-black text-sm text-primary-700 bg-primary-50 px-2.5 py-0.5 rounded-lg border border-primary-edge-soft">
                     {item.cmd}
                   </span>
                   <span className="text-[10px] font-bold text-muted-strong bg-surface-hover/70 px-2 py-0.5 rounded-md">
@@ -143,7 +143,7 @@ export default function GuideBotTab() {
             className="w-full p-6 text-left flex items-center justify-between gap-4 hover:bg-background transition cursor-pointer"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-primary-50 border border-amber-200 flex items-center justify-center text-primary-600 font-bold text-xl">
+              <div className="w-10 h-10 rounded-2xl bg-primary-50 border border-primary-edge-soft flex items-center justify-center text-primary-600 font-bold text-xl">
                 📢
               </div>
               <div>
@@ -241,7 +241,7 @@ export default function GuideBotTab() {
             className="w-full p-6 text-left flex items-center justify-between gap-4 hover:bg-background transition cursor-pointer"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-primary-50 border border-amber-200 flex items-center justify-center text-primary-600 font-bold text-xl">
+              <div className="w-10 h-10 rounded-2xl bg-primary-50 border border-primary-edge-soft flex items-center justify-center text-primary-600 font-bold text-xl">
                 ⚔️
               </div>
               <div>
@@ -272,7 +272,7 @@ export default function GuideBotTab() {
               <div>
                 <h4 className="text-xs font-black text-foreground mb-2">🔘 柔軟な参加スタイル（フル / 1戦のみ / 途中参加）</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="p-3.5 rounded-2xl bg-secondary-50/70 border border-teal-200 space-y-1.5">
+                  <div className="p-3.5 rounded-2xl bg-secondary-50/70 border border-secondary-edge-soft space-y-1.5">
                     <div className="font-black text-xs text-secondary-900 flex items-center gap-1.5">
                       <span>🟢</span> フル参加 (21:00〜)
                     </div>
@@ -281,7 +281,7 @@ export default function GuideBotTab() {
                     </p>
                   </div>
 
-                  <div className="p-3.5 rounded-2xl bg-secondary-50/70 border border-teal-200 space-y-1.5">
+                  <div className="p-3.5 rounded-2xl bg-secondary-50/70 border border-secondary-edge-soft space-y-1.5">
                     <div className="font-black text-xs text-secondary-900 flex items-center gap-1.5">
                       <span>⏱️</span> 1戦のみ参加 (21:00〜1戦)
                     </div>
@@ -290,7 +290,7 @@ export default function GuideBotTab() {
                     </p>
                   </div>
 
-                  <div className="p-3.5 rounded-2xl bg-primary-50/70 border border-amber-200 space-y-1.5">
+                  <div className="p-3.5 rounded-2xl bg-primary-50/70 border border-primary-edge-soft space-y-1.5">
                     <div className="font-black text-xs text-primary-900 flex items-center gap-1.5">
                       <span>🌙</span> 途中参加 (2戦目〜 / 21:45頃)
                     </div>
@@ -312,7 +312,7 @@ export default function GuideBotTab() {
             className="w-full p-6 text-left flex items-center justify-between gap-4 hover:bg-background transition cursor-pointer"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-primary-50 border border-amber-200 flex items-center justify-center text-primary-600 font-bold text-xl">
+              <div className="w-10 h-10 rounded-2xl bg-primary-50 border border-primary-edge-soft flex items-center justify-center text-primary-600 font-bold text-xl">
                 🎯
               </div>
               <div>
@@ -364,7 +364,7 @@ export default function GuideBotTab() {
             className="w-full p-6 text-left flex items-center justify-between gap-4 hover:bg-background transition cursor-pointer"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-success-50 border border-emerald-200 flex items-center justify-center text-success-600 font-bold text-xl">
+              <div className="w-10 h-10 rounded-2xl bg-success-50 border border-success-edge-soft flex items-center justify-center text-success-600 font-bold text-xl">
                 ⚔️
               </div>
               <div>
@@ -384,7 +384,7 @@ export default function GuideBotTab() {
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="p-3.5 rounded-2xl bg-success-50/60 border border-emerald-200 space-y-1">
+                <div className="p-3.5 rounded-2xl bg-success-50/60 border border-success-edge-soft space-y-1">
                   <div className="font-black text-xs text-success-900">案A: バランス（推奨）</div>
                   <p className="text-[11px] text-success-800 leading-relaxed">
                     レーン対面ごとの実力差（MMR）を最も均等にし、全体の勝率が50:50に近づく標準設定。
@@ -417,7 +417,7 @@ export default function GuideBotTab() {
             className="w-full p-6 text-left flex items-center justify-between gap-4 hover:bg-background transition cursor-pointer"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-primary-50 border border-amber-200 flex items-center justify-center text-primary-600 font-bold text-xl">
+              <div className="w-10 h-10 rounded-2xl bg-primary-50 border border-primary-edge-soft flex items-center justify-center text-primary-600 font-bold text-xl">
                 🤝
               </div>
               <div>
@@ -437,21 +437,21 @@ export default function GuideBotTab() {
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="p-3.5 rounded-2xl bg-success-50/60 border border-emerald-200 space-y-1">
+                <div className="p-3.5 rounded-2xl bg-success-50/60 border border-success-edge-soft space-y-1">
                   <div className="font-black text-xs text-success-900">🌱 弟子入りしたい（緑ボタン）</div>
                   <p className="text-[11px] text-success-800 leading-relaxed">
                     ボタンを押すとポップアップ（モーダル）が開きます。学びたいレーンや悩みを入力するだけで即時エントリー完了！
                   </p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-secondary-50/60 border border-teal-200 space-y-1">
+                <div className="p-3.5 rounded-2xl bg-secondary-50/60 border border-secondary-edge-soft space-y-1">
                   <div className="font-black text-xs text-secondary-900">🥋 弟子を取りたい（青ボタン）</div>
                   <p className="text-[11px] text-secondary-800 leading-relaxed">
                     指導可能レーンや得意チャンプ、活動可能時間を入力して師匠登録。AIが相性の良い弟子をマッチングします。
                   </p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-primary-50/60 border border-amber-200 space-y-1">
+                <div className="p-3.5 rounded-2xl bg-primary-50/60 border border-primary-edge-soft space-y-1">
                   <div className="font-black text-xs text-primary-900">🌟 頼れる先輩スカウト ＆ 指導引き受け</div>
                   <p className="text-[11px] text-primary-800 leading-relaxed">
                     弟子エントリーがあると、適任な先輩へAIからDMでスカウト通知が届きます。「🤝 師匠を引き受ける」ボタンを押せば即時ペア結成＆ボーナス <strong>+300🪙</strong>！

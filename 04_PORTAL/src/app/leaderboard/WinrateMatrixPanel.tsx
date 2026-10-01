@@ -138,11 +138,11 @@ export default function WinrateMatrixPanel() {
     if (stats.games >= 3) {
       if (winrate >= 60) {
         colorClass = "text-success-700";
-        bgClass = "bg-success-100 border-emerald-200";
+        bgClass = "bg-success-100 border-success-edge-soft";
         Icon = TrendingUp;
       } else if (winrate > 50) {
         colorClass = "text-secondary-700";
-        bgClass = "bg-secondary-100 border-teal-200";
+        bgClass = "bg-secondary-100 border-secondary-edge-soft";
         Icon = Activity;
       } else if (winrate >= 45) {
         colorClass = "text-foreground-subtle";
@@ -150,11 +150,11 @@ export default function WinrateMatrixPanel() {
         Icon = Activity;
       } else if (winrate >= 40) {
         colorClass = "text-primary-700";
-        bgClass = "bg-primary-100 border-amber-200";
+        bgClass = "bg-primary-100 border-primary-edge-soft";
         Icon = Activity;
       } else {
         colorClass = "text-danger-700";
-        bgClass = "bg-danger-100 border-rose-200";
+        bgClass = "bg-danger-100 border-danger-edge-soft";
         Icon = TrendingDown;
       }
     }

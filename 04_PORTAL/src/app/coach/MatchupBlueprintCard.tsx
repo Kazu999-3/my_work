@@ -198,7 +198,7 @@ export default function MatchupBlueprintCard({
     <div className="bg-surface border border-border/90 rounded-2xl p-5 shadow-sm text-foreground space-y-4">
       {/* ⚠️ 過去の自分の反省遺言バナー ＆ 純粋対面勝率（LDR/JDR） */}
       {matchupWarning && (matchupWarning.memo || matchupWarning.matchupMemo || matchupWarning.laneRecord) && (
-        <div className="bg-gradient-to-r from-primary-500/15 via-danger-500/10 to-primary-500/15 border-2 border-amber-500/60 rounded-xl p-3.5 shadow-2xs space-y-2 animate-in">
+        <div className="bg-gradient-to-r from-primary-500/15 via-danger-500/10 to-primary-500/15 border-2 border-primary-edge-strong/60 rounded-xl p-3.5 shadow-2xs space-y-2 animate-in">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-1.5 text-xs font-black text-primary-950">
               <AlertTriangle className="w-4 h-4 text-primary-600 animate-bounce shrink-0" />
@@ -206,7 +206,7 @@ export default function MatchupBlueprintCard({
             </div>
             {matchupWarning.laneRecord && (
               <div className="flex items-center gap-1 text-[10px] font-black font-mono">
-                <span className="bg-primary-100 text-primary-950 border border-amber-300 px-2 py-0.5 rounded">
+                <span className="bg-primary-100 text-primary-950 border border-primary-edge px-2 py-0.5 rounded">
                   純粋対面勝率 {matchupWarning.laneRecord.laneWinRate}% ({matchupWarning.laneRecord.wins}勝 {matchupWarning.laneRecord.losses}敗)
                 </span>
                 {matchupWarning.laneRecord.gameWinRate !== undefined && (
@@ -218,7 +218,7 @@ export default function MatchupBlueprintCard({
             )}
           </div>
           {(matchupWarning.memo || matchupWarning.matchupMemo) && (
-            <p className="text-xs font-bold text-foreground-soft bg-surface/95 p-2 rounded-lg border border-amber-200/80 leading-relaxed">
+            <p className="text-xs font-bold text-foreground-soft bg-surface/95 p-2 rounded-lg border border-primary-edge-soft/80 leading-relaxed">
               💬 <span className="text-primary-900 font-extrabold">メモ:</span> {matchupWarning.memo || matchupWarning.matchupMemo}
             </p>
           )}
@@ -239,13 +239,13 @@ export default function MatchupBlueprintCard({
         const isHigh = visionRule.threatLevel === 'HIGH';
 
         const bgClass = isCritical
-          ? 'bg-gradient-to-r from-danger-500/15 via-danger-500/10 to-danger-500/15 border-2 border-rose-500/60'
+          ? 'bg-gradient-to-r from-danger-500/15 via-danger-500/10 to-danger-500/15 border-2 border-danger-edge-strong/60'
           : isHigh
-          ? 'bg-gradient-to-r from-primary-500/15 via-primary-500/10 to-primary-500/15 border-2 border-amber-500/60'
-          : 'bg-gradient-to-r from-secondary-500/10 via-primary-500/5 to-secondary-500/10 border border-teal-500/40';
+          ? 'bg-gradient-to-r from-primary-500/15 via-primary-500/10 to-primary-500/15 border-2 border-primary-edge-strong/60'
+          : 'bg-gradient-to-r from-secondary-500/10 via-primary-500/5 to-secondary-500/10 border border-secondary-edge-strong/40';
 
         const iconColor = isCritical ? 'text-danger-600' : isHigh ? 'text-primary-600' : 'text-secondary-600';
-        const badgeBg = isCritical ? 'bg-danger-100 text-danger-900 border-rose-200' : isHigh ? 'bg-primary-100 text-primary-900 border-amber-200' : 'bg-secondary-100 text-secondary-900 border-teal-200';
+        const badgeBg = isCritical ? 'bg-danger-100 text-danger-900 border-danger-edge-soft' : isHigh ? 'bg-primary-100 text-primary-900 border-primary-edge-soft' : 'bg-secondary-100 text-secondary-900 border-secondary-edge-soft';
 
         return (
           <div className={`${bgClass} rounded-xl p-3.5 shadow-2xs space-y-2.5 animate-in`}>
@@ -299,7 +299,7 @@ export default function MatchupBlueprintCard({
                   alt={myChamp}
                   width={24}
                   height={24}
-                  className="w-6 h-6 rounded-full border border-amber-500 shrink-0"
+                  className="w-6 h-6 rounded-full border border-primary-edge-strong shrink-0"
                   onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
                 <span className="font-black text-xs text-foreground">{myChamp}</span>
@@ -311,13 +311,13 @@ export default function MatchupBlueprintCard({
                   alt={enemyChamp}
                   width={24}
                   height={24}
-                  className="w-6 h-6 rounded-full border border-rose-500 shrink-0"
+                  className="w-6 h-6 rounded-full border border-danger-edge-strong shrink-0"
                   onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
                 <span className="font-black text-xs text-danger-900">{enemyChamp}</span>
               </div>
             </div>
-            <span className="px-2 py-0.5 bg-primary-100 text-primary-900 border border-amber-300 rounded-md text-[10px] font-black uppercase tracking-wider">
+            <span className="px-2 py-0.5 bg-primary-100 text-primary-900 border border-primary-edge rounded-md text-[10px] font-black uppercase tracking-wider">
               マッチアップ戦術同期中
             </span>
           </div>
@@ -415,7 +415,7 @@ export default function MatchupBlueprintCard({
           <button
             type="button"
             onClick={() => scrollToSection('section-rejected')}
-            className="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shrink-0 bg-danger-50 text-danger-800 hover:bg-danger-100 border border-rose-200/80 shadow-2xs"
+            className="px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center gap-1.5 shrink-0 bg-danger-50 text-danger-800 hover:bg-danger-100 border border-danger-edge-soft/80 shadow-2xs"
           >
             <AlertTriangle className="w-3.5 h-3.5 text-danger-500" />
             <span>⚠️ 罠 ＆ 不採用ビルド</span>
@@ -436,11 +436,11 @@ export default function MatchupBlueprintCard({
             {blueprint.phases.map((p, idx) => (
               <div
                 key={idx}
-                className="bg-background/80 border border-border rounded-xl p-3.5 space-y-2 flex flex-col justify-between shadow-2xs hover:border-amber-300 transition-colors"
+                className="bg-background/80 border border-border rounded-xl p-3.5 space-y-2 flex flex-col justify-between shadow-2xs hover:border-primary-edge transition-colors"
               >
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-extrabold text-primary-900 bg-primary-100/90 px-2 py-0.5 rounded border border-amber-200">
+                    <span className="font-extrabold text-primary-900 bg-primary-100/90 px-2 py-0.5 rounded border border-primary-edge-soft">
                       {p.phase}
                     </span>
                     <span className="font-bold text-muted text-[10px]">
@@ -460,7 +460,7 @@ export default function MatchupBlueprintCard({
                     🎯 クリア条件: {p.win_trigger}
                   </div>
                   {idx === 2 && data?.kill_line && (
-                    <div className="text-[10px] font-bold text-danger-800 bg-danger-50/80 px-2 py-1 rounded border border-rose-200/80 flex items-center justify-between">
+                    <div className="text-[10px] font-bold text-danger-800 bg-danger-50/80 px-2 py-1 rounded border border-danger-edge-soft/80 flex items-center justify-between">
                       <span>💀 敵Lv6即死境界:</span>
                       <span className="font-mono font-black">{data.kill_line.total_lethal_damage} DMG (HP {data.kill_line.kill_hp_percent}%)</span>
                     </div>
@@ -472,7 +472,7 @@ export default function MatchupBlueprintCard({
 
           {/* 対面トレードの要点 */}
           {counterData?.tips && (
-            <div className="bg-primary-50/80 border border-amber-200 p-3 rounded-xl text-xs text-foreground-soft leading-relaxed font-medium">
+            <div className="bg-primary-50/80 border border-primary-edge-soft p-3 rounded-xl text-xs text-foreground-soft leading-relaxed font-medium">
               <span className="font-black text-primary-900 block mb-1">💡 対面トレードの極意:</span>
               {counterData.tips}
             </div>
@@ -498,7 +498,7 @@ export default function MatchupBlueprintCard({
                     <Sparkles className="w-4 h-4 text-primary-600" />
                     <span>{myChamp} 推奨ルーン構成</span>
                   </div>
-                  <div className="text-xs font-black text-primary-950 bg-primary-100/70 p-2.5 rounded-lg border border-amber-300">
+                  <div className="text-xs font-black text-primary-950 bg-primary-100/70 p-2.5 rounded-lg border border-primary-edge">
                     {counterData.recommendedRunes || '推奨ルーンデータ未取得（再読み込みしてください）'}
                   </div>
                   <p className="text-[11px] text-muted leading-relaxed font-medium">
@@ -512,7 +512,7 @@ export default function MatchupBlueprintCard({
                     <Shield className="w-4 h-4 text-success-600" />
                     <span>初手アイテム ＆ 対策コアビルド</span>
                   </div>
-                  <div className="text-xs font-black text-success-950 bg-success-100/70 p-2.5 rounded-lg border border-emerald-300">
+                  <div className="text-xs font-black text-success-950 bg-success-100/70 p-2.5 rounded-lg border border-success-edge">
                     {counterData.recommendedItems || '推奨ビルドデータ未取得（再読み込みしてください）'}
                   </div>
                   <p className="text-[11px] text-muted leading-relaxed font-medium">
@@ -523,7 +523,7 @@ export default function MatchupBlueprintCard({
 
               {/* カウンター留意点 */}
               {counterData.tips && (
-                <div className="bg-primary-50/80 border border-amber-200 p-3 rounded-xl text-xs text-foreground-soft leading-relaxed font-medium">
+                <div className="bg-primary-50/80 border border-primary-edge-soft p-3 rounded-xl text-xs text-foreground-soft leading-relaxed font-medium">
                   <span className="font-black text-primary-900 block mb-1">💡 対面トレードの極意:</span>
                   {counterData.tips}
                 </div>
@@ -559,9 +559,9 @@ export default function MatchupBlueprintCard({
 
             return (
               <div className={`p-3 rounded-xl border text-xs shadow-2xs ${
-                isAdvantage ? 'bg-success-50 border-emerald-300 text-success-900' :
-                isDanger ? 'bg-danger-50 border-rose-300 text-danger-900' :
-                'bg-primary-50 border-amber-300 text-primary-900'
+                isAdvantage ? 'bg-success-50 border-success-edge text-success-900' :
+                isDanger ? 'bg-danger-50 border-danger-edge text-danger-900' :
+                'bg-primary-50 border-primary-edge text-primary-900'
               }`}>
                 <div className="flex items-center justify-between font-black text-xs mb-1.5">
                   <span className="flex items-center gap-1">
@@ -640,7 +640,7 @@ export default function MatchupBlueprintCard({
               データが無い対面はそれらしい汎用文で埋めず「未登録」と明示する。 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* この対面で突かれる弱点（champion_facts.weaknesses） */}
-            <div className="bg-danger-50/60 border border-rose-200 rounded-xl p-4 space-y-2.5 shadow-2xs">
+            <div className="bg-danger-50/60 border border-danger-edge-soft rounded-xl p-4 space-y-2.5 shadow-2xs">
               <div className="flex items-center gap-1.5 text-xs font-black text-danger-950">
                 <span className="text-sm">🩸</span>
                 <span>{myChamp} の弱点・突かれどころ</span>
@@ -659,7 +659,7 @@ export default function MatchupBlueprintCard({
             </div>
 
             {/* 苦手な相手（champion_facts.counter_champions）＋ 今回の対面が該当するか */}
-            <div className="bg-primary-50/60 border border-amber-200 rounded-xl p-4 space-y-2.5 shadow-2xs">
+            <div className="bg-primary-50/60 border border-primary-edge-soft rounded-xl p-4 space-y-2.5 shadow-2xs">
               <div className="flex items-center gap-1.5 text-xs font-black text-primary-950">
                 <span className="text-sm">⚔️</span>
                 <span>苦手な相手・カウンター</span>
@@ -669,8 +669,8 @@ export default function MatchupBlueprintCard({
                   <div
                     className={`text-xs font-black p-2.5 rounded-lg border flex items-center justify-between gap-2 ${
                       data?.rejected_intel.is_enemy_counter
-                        ? 'text-danger-900 bg-danger-100/80 border-rose-300'
-                        : 'text-success-900 bg-success-100/80 border-emerald-300'
+                        ? 'text-danger-900 bg-danger-100/80 border-danger-edge'
+                        : 'text-success-900 bg-success-100/80 border-success-edge'
                     }`}
                   >
                     <span>

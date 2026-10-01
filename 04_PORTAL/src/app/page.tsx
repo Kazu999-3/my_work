@@ -26,7 +26,7 @@ export default function HomePage() {
         {/* トップヘッダー */}
         <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface/90 dark:bg-[#2b2d31]/90 backdrop-blur-md border border-border/90 dark:border-[#3f4147] rounded-3xl p-6 shadow-xs">
           <div className="flex items-center gap-4">
-            <div className="text-3xl sm:text-4xl p-3 bg-gradient-to-br from-primary-50 to-primary-100/80 dark:from-primary-500/20 dark:to-primary-500/10 rounded-2xl border border-amber-300/80 dark:border-amber-500/30 shadow-xs shrink-0">
+            <div className="text-3xl sm:text-4xl p-3 bg-gradient-to-br from-primary-50 to-primary-100/80 dark:from-primary-500/20 dark:to-primary-500/10 rounded-2xl border border-primary-edge/80 dark:border-primary-edge-strong/30 shadow-xs shrink-0">
               👑
             </div>
             <div>
@@ -64,14 +64,14 @@ export default function HomePage() {
           {/* 1. マイページ / 希望レーン */}
           <Link
             href="/mypage"
-            className="group relative bg-surface/90 dark:bg-[#2b2d31]/90 backdrop-blur-md border-2 border-amber-400/80 hover:border-amber-500 dark:border-amber-500/30 dark:hover:border-amber-500 p-6 rounded-3xl transition-all duration-300 shadow-xs hover:shadow-lg hover:shadow-primary-500/10 flex flex-col justify-between space-y-5 cursor-pointer"
+            className="group relative bg-surface/90 dark:bg-[#2b2d31]/90 backdrop-blur-md border-2 border-primary-edge/80 hover:border-primary-edge-strong dark:border-primary-edge-strong/30 dark:hover:border-primary-edge-strong p-6 rounded-3xl transition-all duration-300 shadow-xs hover:shadow-lg hover:shadow-primary-500/10 flex flex-col justify-between space-y-5 cursor-pointer"
           >
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-2xl bg-primary-500/15 border border-amber-500/30 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 rounded-2xl bg-primary-500/15 border border-primary-edge-strong/30 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                   👤
                 </div>
-                <span className="text-[11px] font-black text-primary-800 dark:text-primary-300 bg-primary-100 dark:bg-primary-500/20 border border-amber-300 dark:border-amber-500/30 px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1">
+                <span className="text-[11px] font-black text-primary-800 dark:text-primary-300 bg-primary-100 dark:bg-primary-500/20 border border-primary-edge dark:border-primary-edge-strong/30 px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1">
                   <Sparkles className="w-3 h-3 text-primary-600 dark:text-primary-400" />
                   公式カルテ
                 </span>
@@ -95,14 +95,14 @@ export default function HomePage() {
           {/* 2. 師弟自己紹介掲示板 */}
           <Link
             href="/mentorship"
-            className="group relative bg-surface/90 dark:bg-[#2b2d31]/90 backdrop-blur-md border-2 border-emerald-400/80 hover:border-emerald-500 dark:border-emerald-500/30 dark:hover:border-emerald-500 p-6 rounded-3xl transition-all duration-300 shadow-xs hover:shadow-lg hover:shadow-success-500/10 flex flex-col justify-between space-y-5 cursor-pointer"
+            className="group relative bg-surface/90 dark:bg-[#2b2d31]/90 backdrop-blur-md border-2 border-success-edge/80 hover:border-success-edge-strong dark:border-success-edge-strong/30 dark:hover:border-success-edge-strong p-6 rounded-3xl transition-all duration-300 shadow-xs hover:shadow-lg hover:shadow-success-500/10 flex flex-col justify-between space-y-5 cursor-pointer"
           >
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-2xl bg-success-500/15 border border-emerald-500/30 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 rounded-2xl bg-success-500/15 border border-success-edge-strong/30 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                   🤝
                 </div>
-                <span className="text-[11px] font-black text-success-800 dark:text-success-300 bg-success-100 dark:bg-success-500/20 border border-emerald-300 dark:border-emerald-500/30 px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1">
+                <span className="text-[11px] font-black text-success-800 dark:text-success-300 bg-success-100 dark:bg-success-500/20 border border-success-edge dark:border-success-edge-strong/30 px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1">
                   <HeartHandshake className="w-3 h-3 text-success-600 dark:text-success-400" />
                   初回+500pt進呈中
                 </span>
@@ -126,14 +126,14 @@ export default function HomePage() {
           {/* 3. チーム分けバランサー */}
           <Link
             href="/balancer"
-            className="group relative bg-surface/90 dark:bg-[#2b2d31]/90 backdrop-blur-md border border-border/90 hover:border-rose-400 dark:border-[#3f4147] dark:hover:border-rose-500 p-6 rounded-3xl transition-all duration-300 shadow-xs hover:shadow-lg hover:shadow-danger-500/10 flex flex-col justify-between space-y-5 cursor-pointer"
+            className="group relative bg-surface/90 dark:bg-[#2b2d31]/90 backdrop-blur-md border border-border/90 hover:border-danger-edge dark:border-[#3f4147] dark:hover:border-danger-edge-strong p-6 rounded-3xl transition-all duration-300 shadow-xs hover:shadow-lg hover:shadow-danger-500/10 flex flex-col justify-between space-y-5 cursor-pointer"
           >
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-2xl bg-danger-500/15 border border-rose-500/30 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 rounded-2xl bg-danger-500/15 border border-danger-edge-strong/30 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                   ⚔️
                 </div>
-                <span className="text-[11px] font-black text-danger-800 dark:text-danger-300 bg-danger-100 dark:bg-danger-500/20 border border-rose-300 dark:border-rose-500/30 px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1">
+                <span className="text-[11px] font-black text-danger-800 dark:text-danger-300 bg-danger-100 dark:bg-danger-500/20 border border-danger-edge dark:border-danger-edge-strong/30 px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1">
                   <Swords className="w-3 h-3 text-danger-600 dark:text-danger-400" />
                   公平チーム分け
                 </span>
@@ -157,14 +157,14 @@ export default function HomePage() {
           {/* 4. 勝敗予想 (カジノ) */}
           <Link
             href="/casino"
-            className="group relative bg-surface/90 dark:bg-[#2b2d31]/90 backdrop-blur-md border border-border/90 hover:border-amber-400 dark:border-[#3f4147] dark:hover:border-amber-500 p-6 rounded-3xl transition-all duration-300 shadow-xs hover:shadow-lg hover:shadow-primary-500/10 flex flex-col justify-between space-y-5 cursor-pointer"
+            className="group relative bg-surface/90 dark:bg-[#2b2d31]/90 backdrop-blur-md border border-border/90 hover:border-primary-edge dark:border-[#3f4147] dark:hover:border-primary-edge-strong p-6 rounded-3xl transition-all duration-300 shadow-xs hover:shadow-lg hover:shadow-primary-500/10 flex flex-col justify-between space-y-5 cursor-pointer"
           >
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-2xl bg-primary-500/15 border border-amber-500/30 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 rounded-2xl bg-primary-500/15 border border-primary-edge-strong/30 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
                   🪙
                 </div>
-                <span className="text-[11px] font-black text-primary-800 dark:text-primary-300 bg-primary-100 dark:bg-primary-500/20 border border-amber-300 dark:border-amber-500/30 px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1">
+                <span className="text-[11px] font-black text-primary-800 dark:text-primary-300 bg-primary-100 dark:bg-primary-500/20 border border-primary-edge dark:border-primary-edge-strong/30 px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1">
                   <Coins className="w-3 h-3 text-primary-600 dark:text-primary-400" />
                   コイン ＆ ショップ
                 </span>
@@ -200,28 +200,28 @@ export default function HomePage() {
                 sub: 'ロール別MMR・長者番付',
                 href: '/leaderboard',
                 icon: <Trophy className="w-5 h-5 text-primary-600 dark:text-primary-400" />,
-                borderHover: 'hover:border-amber-400',
+                borderHover: 'hover:border-primary-edge',
               },
               {
                 title: 'デュオ・チーム相性',
                 sub: '勝率マトリクス・シナジー',
                 href: '/leaderboard?tab=synergy',
                 icon: <HeartHandshake className="w-5 h-5 text-primary-600 dark:text-primary-400" />,
-                borderHover: 'hover:border-amber-400',
+                borderHover: 'hover:border-primary-edge',
               },
               {
                 title: '使い方 ＆ ルール',
                 sub: '参加ガイド・対戦仕様',
                 href: '/guide',
                 icon: <BookOpen className="w-5 h-5 text-success-600 dark:text-success-400" />,
-                borderHover: 'hover:border-emerald-400',
+                borderHover: 'hover:border-success-edge',
               },
               {
                 title: '更新情報ログ',
                 sub: '最新アップデート履歴',
                 href: '/changelog',
                 icon: <ScrollText className="w-5 h-5 text-secondary-600 dark:text-secondary-400" />,
-                borderHover: 'hover:border-teal-400',
+                borderHover: 'hover:border-secondary-edge',
               },
             ].map((item) => (
               <Link

@@ -23,9 +23,9 @@ export default function GuidePortalTab() {
   return (
     <div className="space-y-8">
       {/* イントロバナー */}
-      <div className="bg-gradient-to-r from-secondary-500/15 via-secondary-500/10 to-secondary-500/15 border border-teal-500/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-sm">
+      <div className="bg-gradient-to-r from-secondary-500/15 via-secondary-500/10 to-secondary-500/15 border border-secondary-edge-strong/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-sm">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary-500/20 text-secondary-800 text-xs font-black border border-teal-500/30">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary-500/20 text-secondary-800 text-xs font-black border border-secondary-edge-strong/30">
             <Globe size={14} className="text-secondary-600" />
             ポータルWeb機能ガイド
           </div>
@@ -42,10 +42,10 @@ export default function GuidePortalTab() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
         {/* 1. マイページ & プレイヤーカルテ */}
-        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group">
+        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-primary-edge transition-all group">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-amber-200 flex items-center justify-center text-primary-600 font-bold text-2xl group-hover:scale-105 transition">
+              <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-primary-edge-soft flex items-center justify-center text-primary-600 font-bold text-2xl group-hover:scale-105 transition">
                 👤
               </div>
               <span className="text-[11px] font-bold text-muted-strong bg-surface-subtle px-2.5 py-1 rounded-full">
@@ -78,10 +78,10 @@ export default function GuidePortalTab() {
         </div>
 
         {/* 2. チーム分けバランサー */}
-        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group">
+        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-primary-edge transition-all group">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-secondary-50 border border-teal-200 flex items-center justify-center text-secondary-600 font-bold text-2xl group-hover:scale-105 transition">
+              <div className="w-12 h-12 rounded-2xl bg-secondary-50 border border-secondary-edge-soft flex items-center justify-center text-secondary-600 font-bold text-2xl group-hover:scale-105 transition">
                 ⚖️
               </div>
               <span className="text-[11px] font-bold text-secondary-800 bg-secondary-100 px-2.5 py-1 rounded-full">
@@ -113,10 +113,10 @@ export default function GuidePortalTab() {
         </div>
 
         {/* 3. カジノ・勝敗予想ベット & ショップ */}
-        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group">
+        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-primary-edge transition-all group">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-amber-200 flex items-center justify-center text-primary-600 font-bold text-2xl group-hover:scale-105 transition">
+              <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-primary-edge-soft flex items-center justify-center text-primary-600 font-bold text-2xl group-hover:scale-105 transition">
                 🪙
               </div>
               <span className="text-[11px] font-bold text-primary-700 bg-primary-100 px-2.5 py-1 rounded-full">
@@ -148,10 +148,10 @@ export default function GuidePortalTab() {
         </div>
 
         {/* 4. 相性分析 & デュオ勝率 */}
-        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group">
+        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-primary-edge transition-all group">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-amber-200 flex items-center justify-center text-primary-600 font-bold text-2xl group-hover:scale-105 transition">
+              <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-primary-edge-soft flex items-center justify-center text-primary-600 font-bold text-2xl group-hover:scale-105 transition">
                 🤝
               </div>
               <span className="text-[11px] font-bold text-muted-strong bg-surface-subtle px-2.5 py-1 rounded-full">
@@ -183,10 +183,10 @@ export default function GuidePortalTab() {
         </div>
 
         {/* 5. リーダーボード & コイン長者番付 */}
-        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group col-span-1 md:col-span-2">
+        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-primary-edge transition-all group col-span-1 md:col-span-2">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-success-50 border border-emerald-200 flex items-center justify-center text-success-600 font-bold text-2xl group-hover:scale-105 transition">
+              <div className="w-12 h-12 rounded-2xl bg-success-50 border border-success-edge-soft flex items-center justify-center text-success-600 font-bold text-2xl group-hover:scale-105 transition">
                 🏆
               </div>
               <span className="text-[11px] font-bold text-success-700 bg-success-100 px-2.5 py-1 rounded-full">
@@ -243,13 +243,13 @@ export default function GuidePortalTab() {
         </div>
 
         {/* 6. 📰 月刊KTMスポーツ速報（AIハイライト実況ニュース） */}
-        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group col-span-1 md:col-span-2">
+        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-primary-edge transition-all group col-span-1 md:col-span-2">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-amber-200 flex items-center justify-center text-primary-600 font-bold text-2xl group-hover:scale-105 transition">
+              <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-primary-edge-soft flex items-center justify-center text-primary-600 font-bold text-2xl group-hover:scale-105 transition">
                 📰
               </div>
-              <span className="text-[11px] font-bold text-danger-700 bg-danger-100 px-2.5 py-1 rounded-full border border-rose-200 animate-pulse">
+              <span className="text-[11px] font-bold text-danger-700 bg-danger-100 px-2.5 py-1 rounded-full border border-danger-edge-soft animate-pulse">
                 号外配信中 ⚡
               </span>
             </div>
@@ -300,13 +300,13 @@ export default function GuidePortalTab() {
         </div>
 
         {/* 7. 師弟マッチングハブ */}
-        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group col-span-1 md:col-span-2">
+        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-primary-edge transition-all group col-span-1 md:col-span-2">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-amber-200 flex items-center justify-center text-primary-600 font-bold text-2xl group-hover:scale-105 transition">
+              <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-primary-edge-soft flex items-center justify-center text-primary-600 font-bold text-2xl group-hover:scale-105 transition">
                 🤝
               </div>
-              <span className="text-[11px] font-bold text-primary-800 bg-primary-100 px-2.5 py-1 rounded-full border border-amber-200">
+              <span className="text-[11px] font-bold text-primary-800 bg-primary-100 px-2.5 py-1 rounded-full border border-primary-edge-soft">
                 新登場 ✨
               </span>
             </div>
@@ -344,7 +344,7 @@ export default function GuidePortalTab() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-              <div className="p-3 bg-primary-50/70 rounded-2xl border border-amber-200/80 text-xs text-foreground-soft space-y-1">
+              <div className="p-3 bg-primary-50/70 rounded-2xl border border-primary-edge-soft/80 text-xs text-foreground-soft space-y-1">
                 <div className="font-black text-primary-950 flex items-center gap-1.5 text-[11px]">
                   <span>⭐</span> 師弟の匿名評価制度 (+100🪙)
                 </div>
@@ -353,7 +353,7 @@ export default function GuidePortalTab() {
                 </p>
               </div>
 
-              <div className="p-3 bg-primary-50/70 rounded-2xl border border-amber-200/80 text-xs text-foreground-soft space-y-1">
+              <div className="p-3 bg-primary-50/70 rounded-2xl border border-primary-edge-soft/80 text-xs text-foreground-soft space-y-1">
                 <div className="font-black text-primary-950 flex items-center gap-1.5 text-[11px]">
                   <span>🌟</span> メンバー匿名評判・栄誉 (+50🪙)
                 </div>
@@ -363,7 +363,7 @@ export default function GuidePortalTab() {
               </div>
             </div>
 
-            <div className="p-3 bg-primary-50/70 rounded-2xl border border-amber-200/80 text-xs text-foreground-soft space-y-1">
+            <div className="p-3 bg-primary-50/70 rounded-2xl border border-primary-edge-soft/80 text-xs text-foreground-soft space-y-1">
               <div className="font-black text-primary-950 flex items-center gap-1.5 text-[11px]">
                 <span>📜</span> 師弟の心得（ポジティブ指導文化）
               </div>
@@ -390,7 +390,7 @@ export default function GuidePortalTab() {
         {/* 📊 MMR ＆ KTM内戦レートの説明（2026-09-23 追加） */}
         <div className="md:col-span-2 bg-surface rounded-3xl p-5 md:p-6 border border-border shadow-xs space-y-4">
           <div className="flex items-center justify-between">
-            <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-amber-200 flex items-center justify-center text-primary-600 font-bold text-2xl">
+            <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-primary-edge-soft flex items-center justify-center text-primary-600 font-bold text-2xl">
               📊
             </div>
             <span className="text-[11px] font-bold text-muted-strong bg-surface-subtle px-2.5 py-1 rounded-full">
@@ -447,7 +447,7 @@ export default function GuidePortalTab() {
             </p>
           </div>
 
-          <div className="bg-primary-50 rounded-2xl p-3.5 border border-amber-200 text-[11px] text-primary-900 leading-relaxed">
+          <div className="bg-primary-50 rounded-2xl p-3.5 border border-primary-edge-soft text-[11px] text-primary-900 leading-relaxed">
             💡 チーム分けバランサーはこのMMRを使って両チームの戦力が釣り合うように組みます。
             レーンごとに管理しているのは「TOPは得意だがSUPは不慣れ」といった差を正しく反映するためです。
           </div>

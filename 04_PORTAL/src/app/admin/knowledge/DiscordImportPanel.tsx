@@ -114,7 +114,7 @@ export default function DiscordImportPanel() {
     <div className="bg-surface border border-border rounded-3xl p-6 space-y-6 shadow-sm">
       <div className="flex items-center justify-between border-b border-stone-100 pb-4 flex-wrap gap-2">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-2xl bg-primary-50 border border-amber-200 text-primary-700">
+          <div className="p-2 rounded-2xl bg-primary-50 border border-primary-edge-soft text-primary-700">
             <MessageSquare size={20} />
           </div>
           <div>
@@ -131,7 +131,7 @@ export default function DiscordImportPanel() {
       {message && (
         <div
           className={`p-3.5 rounded-2xl border text-xs font-bold flex items-center gap-2 ${
-            message.type === 'success' ? 'bg-success-50 text-success-800 border-emerald-200' : 'bg-danger-50 text-danger-800 border-rose-200'
+            message.type === 'success' ? 'bg-success-50 text-success-800 border-success-edge-soft' : 'bg-danger-50 text-danger-800 border-danger-edge-soft'
           }`}
         >
           {message.type === 'success' ? '✅' : '❌'} {message.text}
@@ -148,7 +148,7 @@ export default function DiscordImportPanel() {
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           placeholder="例: [15:30] UserA: アーリは対アサシンだと6前にW上げでハラスして押し切るのが強い。コアビルドはルーデン..."
-          className="w-full h-36 p-4 rounded-2xl border border-border bg-background/50 text-xs font-mono text-foreground-soft focus:bg-surface focus:outline-none focus:border-amber-500 transition-all resize-y"
+          className="w-full h-36 p-4 rounded-2xl border border-border bg-background/50 text-xs font-mono text-foreground-soft focus:bg-surface focus:outline-none focus:border-primary-edge-strong transition-all resize-y"
         />
 
         <div className="flex justify-end">
@@ -186,7 +186,7 @@ export default function DiscordImportPanel() {
               <div
                 key={idx}
                 className={`p-4 rounded-2xl border transition-all ${
-                  item.selected ? 'bg-surface border-amber-300 shadow-sm' : 'bg-background border-border opacity-60'
+                  item.selected ? 'bg-surface border-primary-edge shadow-sm' : 'bg-background border-border opacity-60'
                 }`}
               >
                 <div className="flex items-start justify-between gap-3 mb-2">
@@ -207,7 +207,7 @@ export default function DiscordImportPanel() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-extrabold text-foreground text-xs">{item.champion}</span>
                         {item.enemy_champion && (
-                          <span className="text-[10px] bg-danger-100 text-danger-800 font-bold px-2 py-0.5 rounded-full border border-rose-200">
+                          <span className="text-[10px] bg-danger-100 text-danger-800 font-bold px-2 py-0.5 rounded-full border border-danger-edge-soft">
                             vs {item.enemy_champion}
                           </span>
                         )}

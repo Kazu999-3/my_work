@@ -297,7 +297,7 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
           <div className="flex items-center gap-2">
             {liveRoster && liveRoster.length === 10 && (
               <span
-                className="text-[10px] font-black px-2.5 py-1.5 rounded-lg bg-success-100 border border-emerald-200 text-success-700"
+                className="text-[10px] font-black px-2.5 py-1.5 rounded-lg bg-success-100 border border-success-edge-soft text-success-700"
                 title="上の「リアルタイム偵察」で検出したライブ試合から自動反映しました。TOP/MID/BOT/SUPはチャンピオンの主戦ロール推定のため、実際と違う場合は手動で入れ替えてください。"
               >
                 🔴 ライブ試合から自動反映
@@ -316,7 +316,7 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
 
         <div className="grid grid-cols-1 lg:grid-cols-9 gap-6 items-center">
           {/* Blue Side */}
-          <div className="lg:col-span-4 space-y-4 bg-secondary-50 p-5 rounded-2xl border border-teal-200">
+          <div className="lg:col-span-4 space-y-4 bg-secondary-50 p-5 rounded-2xl border border-secondary-edge-soft">
             <h4 className="font-black text-sm text-secondary-700 tracking-wider uppercase mb-3 flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-secondary-400 animate-pulse"></div> Blue Side (味方)
             </h4>
@@ -327,7 +327,7 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
                   value={blueChamps[role]}
                   onChange={(val) => setBlueChamps(prev => ({ ...prev, [role]: val }))}
                   placeholder="チャンピオンを選択"
-                  className="border-teal-500/20 focus:border-teal-500/50"
+                  className="border-secondary-edge-strong/20 focus:border-secondary-edge-strong/50"
                 />
               </div>
             ))}
@@ -340,7 +340,7 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
           </div>
 
           {/* Red Side */}
-          <div className="lg:col-span-4 space-y-4 bg-danger-50 p-5 rounded-2xl border border-rose-200">
+          <div className="lg:col-span-4 space-y-4 bg-danger-50 p-5 rounded-2xl border border-danger-edge-soft">
             <h4 className="font-black text-sm text-danger-700 tracking-wider uppercase mb-3 flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-danger-400 animate-pulse"></div> Red Side (敵)
             </h4>
@@ -351,7 +351,7 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
                   value={redChamps[role]}
                   onChange={(val) => setRedChamps(prev => ({ ...prev, [role]: val }))}
                   placeholder="チャンピオンを選択"
-                  className="border-rose-500/20 focus:border-rose-500/50"
+                  className="border-danger-edge-strong/20 focus:border-danger-edge-strong/50"
                 />
               </div>
             ))}
@@ -397,7 +397,7 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
 
       {/* エラー表示 */}
       {simError && (
-        <div className="glass-panel p-6 border-l-4 border-rose-500 rounded-2xl flex items-center gap-4 text-danger-600">
+        <div className="glass-panel p-6 border-l-4 border-danger-edge-strong rounded-2xl flex items-center gap-4 text-danger-600">
           <AlertCircle size={24} />
           <div>
             <h4 className="font-bold">分析エラー</h4>
@@ -454,10 +454,10 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
                 const laneData = simResult.lanes[role] || { priority: 'EVEN', reason: '' };
                 const getPriorityLabel = () => {
                   if (laneData.priority === 'BLUE_PRIORITY') {
-                    return { text: '味方有利 (Blue)', style: 'bg-secondary-100 text-secondary-700 border-teal-200' };
+                    return { text: '味方有利 (Blue)', style: 'bg-secondary-100 text-secondary-700 border-secondary-edge-soft' };
                   }
                   if (laneData.priority === 'RED_PRIORITY') {
-                    return { text: '敵有利 (Red)', style: 'bg-danger-100 text-danger-700 border-rose-200' };
+                    return { text: '敵有利 (Red)', style: 'bg-danger-100 text-danger-700 border-danger-edge-soft' };
                   }
                   return { text: '互角 (Even)', style: 'bg-surface-subtle text-foreground-subtle border-border' };
                 };
@@ -472,7 +472,7 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
                           src={getChampIcon(blueChamps[role])}
                           width={32}
                           height={32}
-                          className="w-8 h-8 rounded-full border border-teal-500/30"
+                          className="w-8 h-8 rounded-full border border-secondary-edge-strong/30"
                           alt={blueChamps[role]}
                         />
                         <span className="text-[10px] text-muted-strong font-black italic">VS</span>
@@ -480,7 +480,7 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
                           src={getChampIcon(redChamps[role])}
                           width={32}
                           height={32}
-                          className="w-8 h-8 rounded-full border border-rose-500/30"
+                          className="w-8 h-8 rounded-full border border-danger-edge-strong/30"
                           alt={redChamps[role]}
                         />
                       </div>
@@ -503,7 +503,7 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
 
           {/* 2. 両チームの構成タイプ ＆ シナジー分析 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="glass-panel p-6 rounded-2xl border-l-4 border-teal-500/50">
+            <div className="glass-panel p-6 rounded-2xl border-l-4 border-secondary-edge-strong/50">
               <h4 className="text-secondary-700 font-black text-sm mb-4 flex items-center gap-2">
                 🛡️ Blue Side 構成分析
               </h4>
@@ -523,7 +523,7 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
               </div>
             </div>
 
-            <div className="glass-panel p-6 rounded-2xl border-l-4 border-rose-500/50">
+            <div className="glass-panel p-6 rounded-2xl border-l-4 border-danger-edge-strong/50">
               <h4 className="text-danger-700 font-black text-sm mb-4 flex items-center gap-2">
                 ⚔️ Red Side 構成分析
               </h4>
@@ -551,15 +551,15 @@ export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRoste
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="glass-panel p-5 rounded-2xl border-t-2 border-amber-500/30 flex flex-col gap-2">
+              <div className="glass-panel p-5 rounded-2xl border-t-2 border-primary-edge-strong/30 flex flex-col gap-2">
                 <span className="text-xs font-black text-primary-600">序盤 (〜Lv6 / オブジェクト戦準備)</span>
                 <p className="text-xs leading-relaxed text-foreground-subtle">{simResult.game_plan.early}</p>
               </div>
-              <div className="glass-panel p-5 rounded-2xl border-t-2 border-amber-500/30 flex flex-col gap-2">
+              <div className="glass-panel p-5 rounded-2xl border-t-2 border-primary-edge-strong/30 flex flex-col gap-2">
                 <span className="text-xs font-black text-primary-600">中盤 (1stタワー破壊 / サイドプッシュ開始)</span>
                 <p className="text-xs leading-relaxed text-foreground-subtle">{simResult.game_plan.mid}</p>
               </div>
-              <div className="glass-panel p-5 rounded-2xl border-t-2 border-emerald-500/30 flex flex-col gap-2">
+              <div className="glass-panel p-5 rounded-2xl border-t-2 border-success-edge-strong/30 flex flex-col gap-2">
                 <span className="text-xs font-black text-success-600">終盤 (集団戦 / ソウル・バロン決戦)</span>
                 <p className="text-xs leading-relaxed text-foreground-subtle">{simResult.game_plan.late}</p>
               </div>

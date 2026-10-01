@@ -137,7 +137,7 @@ export function MainMmrChart({
                         alt={d.opponentChampion}
                         width={24}
                         height={24}
-                        className="w-6 h-6 rounded-full border border-rose-500/40"
+                        className="w-6 h-6 rounded-full border border-danger-edge-strong/40"
                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                       />
                       <span className="font-bold text-danger-600">{d.opponentChampion}</span>
@@ -160,7 +160,7 @@ export function MainMmrChart({
                   <span className={`font-black text-[10px] ${d.isWin ? 'text-success-600' : 'text-danger-600'}`}>
                     {d.isWin ? 'WIN' : 'LOSE'} ({d.role})
                   </span>
-                  <span className={`text-[9px] px-1.5 rounded font-bold bg-secondary-100 text-secondary-700 border border-teal-200`}>
+                  <span className={`text-[9px] px-1.5 rounded font-bold bg-secondary-100 text-secondary-700 border border-secondary-edge-soft`}>
                     {laneLabels[activeLane]}
                   </span>
                 </div>

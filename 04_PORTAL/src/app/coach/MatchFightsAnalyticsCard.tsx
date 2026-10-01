@@ -99,7 +99,7 @@ export default function MatchFightsAnalyticsCard({
     return (
       <div className="bg-surface border border-border rounded-2xl p-5 shadow-xs">
         <div className="flex items-center gap-2 text-xs font-bold text-muted-strong">
-          <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-4 h-4 border-2 border-primary-edge-strong border-t-transparent rounded-full animate-spin" />
           <span>最新の集団戦ディープアナリティクスを読み込み中...</span>
         </div>
       </div>
@@ -130,8 +130,8 @@ export default function MatchFightsAnalyticsCard({
                   isSelected
                     ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
                     : m.isWin
-                    ? 'bg-success-50 text-success-800 border-emerald-200 hover:bg-success-100'
-                    : 'bg-danger-50 text-danger-800 border-rose-200 hover:bg-danger-100'
+                    ? 'bg-success-50 text-success-800 border-success-edge-soft hover:bg-success-100'
+                    : 'bg-danger-50 text-danger-800 border-danger-edge-soft hover:bg-danger-100'
                 }`}
               >
                 <span>#{idx + 1}</span>
@@ -156,7 +156,7 @@ export default function MatchFightsAnalyticsCard({
       <div className="flex items-center justify-between gap-3 border-b border-stone-100 pb-3 flex-wrap">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="px-2 py-0.5 bg-primary-100 text-primary-800 border border-amber-200 rounded-md text-[10px] font-black uppercase tracking-wider">
+            <span className="px-2 py-0.5 bg-primary-100 text-primary-800 border border-primary-edge-soft rounded-md text-[10px] font-black uppercase tracking-wider">
               Fight Review
             </span>
             <span className="text-muted-strong text-xs font-mono flex items-center gap-1 font-bold">
@@ -195,7 +195,7 @@ export default function MatchFightsAnalyticsCard({
       {/* 切替時ローディング */}
       {switching && (
         <div className="flex items-center justify-center py-6 gap-2 text-xs font-bold text-muted-strong">
-          <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-4 h-4 border-2 border-primary-edge-strong border-t-transparent rounded-full animate-spin" />
           <span>試合データを解析中...</span>
         </div>
       )}
@@ -207,10 +207,10 @@ export default function MatchFightsAnalyticsCard({
             const isVictory = fight.result === 'VICTORY';
             const isDefeat = fight.result === 'DEFEAT';
             const borderCol = isVictory
-              ? 'border-emerald-200 bg-success-50/40'
+              ? 'border-success-edge-soft bg-success-50/40'
               : isDefeat
-              ? 'border-rose-200 bg-danger-50/40'
-              : 'border-amber-200 bg-primary-50/40';
+              ? 'border-danger-edge-soft bg-danger-50/40'
+              : 'border-primary-edge-soft bg-primary-50/40';
 
             return (
               <div
@@ -232,17 +232,17 @@ export default function MatchFightsAnalyticsCard({
                   <div className="flex items-center gap-2 flex-wrap">
                     {/* ゴールド変動 */}
                     {fight.gold_swing >= 0 ? (
-                      <span className="text-success-700 font-mono font-bold text-[11px] flex items-center gap-0.5 bg-success-100/80 px-2.5 py-0.5 rounded-md border border-emerald-200">
+                      <span className="text-success-700 font-mono font-bold text-[11px] flex items-center gap-0.5 bg-success-100/80 px-2.5 py-0.5 rounded-md border border-success-edge-soft">
                         <TrendingUp className="w-3 h-3" /> +{fight.gold_swing}G
                       </span>
                     ) : (
-                      <span className="text-danger-700 font-mono font-bold text-[11px] flex items-center gap-0.5 bg-danger-100/80 px-2.5 py-0.5 rounded-md border border-rose-200">
+                      <span className="text-danger-700 font-mono font-bold text-[11px] flex items-center gap-0.5 bg-danger-100/80 px-2.5 py-0.5 rounded-md border border-danger-edge-soft">
                         <TrendingDown className="w-3 h-3" /> {fight.gold_swing}G
                       </span>
                     )}
 
                     {/* 与ダメージ */}
-                    <span className="text-primary-800 font-mono font-bold text-[11px] bg-primary-100/80 px-2.5 py-0.5 rounded-md border border-amber-200 flex items-center gap-1">
+                    <span className="text-primary-800 font-mono font-bold text-[11px] bg-primary-100/80 px-2.5 py-0.5 rounded-md border border-primary-edge-soft flex items-center gap-1">
                       <Flame className="w-3 h-3 text-primary-600" />
                       {fight.my_damage_dealt.toLocaleString()} dmg
                     </span>
@@ -251,10 +251,10 @@ export default function MatchFightsAnalyticsCard({
                     <span
                       className={`font-black px-2.5 py-0.5 rounded-md text-[11px] border ${
                         isVictory
-                          ? 'bg-success-600 text-white border-emerald-700'
+                          ? 'bg-success-600 text-white border-success-edge-strong'
                           : isDefeat
-                          ? 'bg-danger-600 text-white border-rose-700'
-                          : 'bg-primary-500 text-white border-amber-600'
+                          ? 'bg-danger-600 text-white border-danger-edge-strong'
+                          : 'bg-primary-500 text-white border-primary-edge-strong'
                       }`}
                     >
                       {fight.result_badge}

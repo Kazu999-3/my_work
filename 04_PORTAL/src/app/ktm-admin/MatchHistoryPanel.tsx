@@ -271,7 +271,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
   }
 
   if (error) {
-    return <div className="p-8 text-danger-700 font-bold bg-danger-100 rounded-xl border border-rose-200">Error: {error}</div>;
+    return <div className="p-8 text-danger-700 font-bold bg-danger-100 rounded-xl border border-danger-edge-soft">Error: {error}</div>;
   }  return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
@@ -285,7 +285,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
       </div>
 
       {actionMessage && (
-        <div className={`p-4 rounded-lg flex items-center gap-3 ${actionMessage.type === 'error' ? 'bg-danger-100 text-danger-700 border border-rose-200' : 'bg-success-100 text-success-700 border-emerald-200'}`}>
+        <div className={`p-4 rounded-lg flex items-center gap-3 ${actionMessage.type === 'error' ? 'bg-danger-100 text-danger-700 border border-danger-edge-soft' : 'bg-success-100 text-success-700 border-success-edge-soft'}`}>
           <AlertCircle className="h-5 w-5 flex-shrink-0" />
           <p className="text-sm font-medium whitespace-pre-wrap">{actionMessage.text}</p>
         </div>
@@ -308,7 +308,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
             <div key={match.id} className="bg-surface border border-border rounded-xl overflow-hidden shadow-xl">
               {/* Header */}
               <div className={`p-4 flex items-center justify-between border-b ${
-                match.winning_team === 'BLUE' ? 'bg-secondary-900/20 border-teal-900/50' : 'bg-danger-900/20 border-rose-900/50'
+                match.winning_team === 'BLUE' ? 'bg-secondary-900/20 border-secondary-edge-strong/50' : 'bg-danger-900/20 border-danger-edge-strong/50'
               }`}>
                 <div className="flex items-center gap-3">
                   <Trophy className={`h-5 w-5 ${match.winning_team === 'BLUE' ? 'text-secondary-400' : 'text-danger-400'}`} />
@@ -478,7 +478,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                         onDrop={(e) => handleDrop(e, idx)}
                         onDragEnd={() => setDraggedParticipantIndex(null)}
                         className={`flex items-center gap-2 bg-black/5 p-3 rounded-lg border border-border cursor-grab active:cursor-grabbing hover:bg-black/8 hover:border-border transition-all ${
-                          isDragging ? 'opacity-40 border-dashed border-amber-500 bg-surface' : ''
+                          isDragging ? 'opacity-40 border-dashed border-primary-edge-strong bg-surface' : ''
                         }`}
                       >
                         <div className="text-muted-strong hover:text-foreground-subtle transition cursor-grab shrink-0">
@@ -489,7 +489,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                           value={p.player_name}
                           onChange={e => handleEditingParticipantChange(idx, 'player_name', e.target.value)}
                           onDragStart={e => e.stopPropagation()}
-                          className="w-28 bg-surface border border-border rounded px-2 py-1 text-foreground outline-none focus:border-teal-500 text-xs"
+                          className="w-28 bg-surface border border-border rounded px-2 py-1 text-foreground outline-none focus:border-secondary-edge-strong text-xs"
                         >
                           <option value="">選択...</option>
                           {p.player_name && !playersPool.some(pl => pl.name === p.player_name) && (
@@ -501,7 +501,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                           onClick={() => setActiveChampSelectorPlayer(idx.toString())}
                           onDragStart={e => e.stopPropagation()}
                           type="button"
-                          className="w-28 bg-surface border border-border hover:border-teal-500 rounded px-1.5 py-1 text-foreground-subtle hover:text-foreground text-xs flex items-center justify-between gap-1 transition shrink-0"
+                          className="w-28 bg-surface border border-border hover:border-secondary-edge-strong rounded px-1.5 py-1 text-foreground-subtle hover:text-foreground text-xs flex items-center justify-between gap-1 transition shrink-0"
                         >
                           <span className="truncate">
                             {p.champion_name ? (championsList.find(c => c.id === p.champion_name)?.name || 'チャンプ') : '選択'}
@@ -520,7 +520,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                         <div className="flex-1 flex gap-1 justify-end" onDragStart={e => e.stopPropagation()}>
                           <input type="number" value={p.kills} onChange={e => handleEditingParticipantChange(idx, 'kills', e.target.value)} className="w-10 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="K" />
                           <span className="text-muted-strong text-xs self-center">/</span>
-                          <input type="number" value={p.deaths} onChange={e => handleEditingParticipantChange(idx, 'deaths', e.target.value)} className="w-10 bg-surface border border-rose-200 text-danger-700 text-center rounded text-xs py-0.5" placeholder="D" />
+                          <input type="number" value={p.deaths} onChange={e => handleEditingParticipantChange(idx, 'deaths', e.target.value)} className="w-10 bg-surface border border-danger-edge-soft text-danger-700 text-center rounded text-xs py-0.5" placeholder="D" />
                           <span className="text-muted-strong text-xs self-center">/</span>
                           <input type="number" value={p.assists} onChange={e => handleEditingParticipantChange(idx, 'assists', e.target.value)} className="w-10 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="A" />
                         </div>
@@ -548,7 +548,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                         onDrop={(e) => handleDrop(e, idx)}
                         onDragEnd={() => setDraggedParticipantIndex(null)}
                         className={`flex items-center gap-2 bg-black/5 p-3 rounded-lg border border-border cursor-grab active:cursor-grabbing hover:bg-black/8 hover:border-border transition-all ${
-                          isDragging ? 'opacity-40 border-dashed border-rose-500 bg-surface' : ''
+                          isDragging ? 'opacity-40 border-dashed border-danger-edge-strong bg-surface' : ''
                         }`}
                       >
                         <div className="text-muted-strong hover:text-foreground-subtle transition cursor-grab shrink-0">
@@ -559,7 +559,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                           value={p.player_name}
                           onChange={e => handleEditingParticipantChange(idx, 'player_name', e.target.value)}
                           onDragStart={e => e.stopPropagation()}
-                          className="w-28 bg-surface border border-border rounded px-2 py-1 text-foreground outline-none focus:border-rose-500 text-xs"
+                          className="w-28 bg-surface border border-border rounded px-2 py-1 text-foreground outline-none focus:border-danger-edge-strong text-xs"
                         >
                           <option value="">選択...</option>
                           {p.player_name && !playersPool.some(pl => pl.name === p.player_name) && (
@@ -571,7 +571,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                           onClick={() => setActiveChampSelectorPlayer(idx.toString())}
                           onDragStart={e => e.stopPropagation()}
                           type="button"
-                          className="w-28 bg-surface border border-border hover:border-rose-500 rounded px-1.5 py-1 text-foreground-subtle hover:text-foreground text-xs flex items-center justify-between gap-1 transition shrink-0"
+                          className="w-28 bg-surface border border-border hover:border-danger-edge-strong rounded px-1.5 py-1 text-foreground-subtle hover:text-foreground text-xs flex items-center justify-between gap-1 transition shrink-0"
                         >
                           <span className="truncate">
                             {p.champion_name ? (championsList.find(c => c.id === p.champion_name)?.name || 'チャンプ') : '選択'}
@@ -590,7 +590,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                         <div className="flex-1 flex gap-1 justify-end" onDragStart={e => e.stopPropagation()}>
                           <input type="number" value={p.kills} onChange={e => handleEditingParticipantChange(idx, 'kills', e.target.value)} className="w-10 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="K" />
                           <span className="text-muted-strong text-xs self-center">/</span>
-                          <input type="number" value={p.deaths} onChange={e => handleEditingParticipantChange(idx, 'deaths', e.target.value)} className="w-10 bg-surface border border-rose-200 text-danger-700 text-center rounded text-xs py-0.5" placeholder="D" />
+                          <input type="number" value={p.deaths} onChange={e => handleEditingParticipantChange(idx, 'deaths', e.target.value)} className="w-10 bg-surface border border-danger-edge-soft text-danger-700 text-center rounded text-xs py-0.5" placeholder="D" />
                           <span className="text-muted-strong text-xs self-center">/</span>
                           <input type="number" value={p.assists} onChange={e => handleEditingParticipantChange(idx, 'assists', e.target.value)} className="w-10 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="A" />
                         </div>
@@ -666,7 +666,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
               placeholder="チャンピオン名で検索 (ひらがな・カタカナ・英語名)..." 
               value={champSearchQuery}
               onChange={e => setChampSearchQuery(e.target.value)}
-              className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-foreground mb-4 outline-none focus:border-emerald-500 text-sm"
+              className="w-full bg-background border border-border rounded-lg px-4 py-2.5 text-foreground mb-4 outline-none focus:border-success-edge-strong text-sm"
               autoFocus
             />
             
@@ -692,7 +692,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                       src={getChampIcon(c.id)}
                       width={48}
                       height={48}
-                      className="w-12 h-12 rounded-xl border border-border group-hover:border-emerald-500 transition object-cover"
+                      className="w-12 h-12 rounded-xl border border-border group-hover:border-success-edge-strong transition object-cover"
                       alt={c.name}
                     />
                     <span className="text-[10px] text-faint truncate w-14 text-center group-hover:text-foreground transition">

@@ -86,7 +86,7 @@ function LoginContent() {
         
         {/* ロゴ ＆ タイトル */}
         <div className="space-y-2">
-          <div className="w-16 h-16 rounded-3xl bg-primary-500/10 text-primary-600 border border-amber-500/30 flex items-center justify-center mx-auto text-3xl shadow-sm">
+          <div className="w-16 h-16 rounded-3xl bg-primary-500/10 text-primary-600 border border-primary-edge-strong/30 flex items-center justify-center mx-auto text-3xl shadow-sm">
             <Shield size={32} />
           </div>
           <h1 className="text-2xl font-black tracking-tight text-foreground">
@@ -98,7 +98,7 @@ function LoginContent() {
         </div>
 
         {/* 方法1: 🎮 Discord管理者アカウントで1秒ログイン */}
-        <div className="p-5 rounded-2xl bg-primary-50/80 border border-amber-200/80 space-y-3">
+        <div className="p-5 rounded-2xl bg-primary-50/80 border border-primary-edge-soft/80 space-y-3">
           <div className="text-left">
             <div className="text-xs font-black text-primary-950 flex items-center gap-1.5">
               <Sparkles size={14} className="text-primary-600" />
@@ -137,14 +137,14 @@ function LoginContent() {
               placeholder="••••••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm font-mono text-foreground focus:outline-none focus:border-amber-500 focus:bg-surface transition-all shadow-inner"
+              className="w-full bg-background border border-border rounded-xl px-4 py-3 text-sm font-mono text-foreground focus:outline-none focus:border-primary-edge-strong focus:bg-surface transition-all shadow-inner"
               disabled={isLoading}
               required
             />
           </div>
 
           {errorMsg && (
-            <div className="p-3 rounded-xl bg-danger-50 border border-rose-200 text-danger-800 text-xs font-bold flex items-center gap-2">
+            <div className="p-3 rounded-xl bg-danger-50 border border-danger-edge-soft text-danger-800 text-xs font-bold flex items-center gap-2">
               <AlertTriangle size={15} className="shrink-0 text-danger-600" />
               {errorMsg}
             </div>

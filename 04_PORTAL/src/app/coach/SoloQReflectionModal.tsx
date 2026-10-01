@@ -374,7 +374,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-5 space-y-5 text-foreground-soft text-sm max-h-[82vh] overflow-y-auto">
           {saveSuccess && (
-            <div className="p-3.5 rounded-xl bg-success-100 border border-emerald-300 text-success-900 font-bold flex items-center justify-between gap-2 animate-fade-in shadow-md">
+            <div className="p-3.5 rounded-xl bg-success-100 border border-success-edge text-success-900 font-bold flex items-center justify-between gap-2 animate-fade-in shadow-md">
               <div className="flex items-center gap-2 text-xs">
                 <span>✅</span> 振り返りを保存し、対面メモをDBへ更新しました！
               </div>
@@ -420,7 +420,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
             {/* 直近5試合の選択カード */}
             {loadingMatches ? (
               <div className="py-6 text-center text-xs text-muted-strong flex items-center justify-center gap-2">
-                <div className="w-4 h-4 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-primary-edge-strong border-t-transparent rounded-full animate-spin" />
                 直近のソロQ対戦データを取得中...
               </div>
             ) : matches.length > 0 ? (
@@ -435,7 +435,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                       onClick={() => handleSelectMatch(idx)}
                       className={`w-full p-2.5 rounded-lg border text-left flex items-center justify-between transition-all ${
                         isSelected
-                          ? 'border-amber-500 bg-primary-50/90 ring-2 ring-primary-500/40 shadow-sm'
+                          ? 'border-primary-edge-strong bg-primary-50/90 ring-2 ring-primary-500/40 shadow-sm'
                           : 'border-border bg-background hover:bg-surface-subtle'
                       }`}
                     >
@@ -447,11 +447,11 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                         <span className="text-faint">vs</span>
                         <span className="font-bold text-foreground-subtle">{m.enemyChampion}</span>
                         {isDone ? (
-                          <span className="text-[10px] bg-success-100 text-success-800 font-bold px-1.5 py-0.5 rounded border border-emerald-300">
+                          <span className="text-[10px] bg-success-100 text-success-800 font-bold px-1.5 py-0.5 rounded border border-success-edge">
                             ✅ 振り返り完了
                           </span>
                         ) : (
-                          <span className="text-[10px] bg-primary-100 text-primary-900 font-bold px-1.5 py-0.5 rounded border border-amber-300">
+                          <span className="text-[10px] bg-primary-100 text-primary-900 font-bold px-1.5 py-0.5 rounded border border-primary-edge">
                             ⚠️ 未振り返り
                           </span>
                         )}
@@ -473,28 +473,28 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
           {/* AI自動分析(coach_analyses)。KDA/CS/Vision・弱点・アドバイスを、振り返りを
               書く前にその場で確認できるようにする。通知(ベル)に流れる内容と同じもの。 */}
           {currentMatch && (
-            <div className="bg-primary-50/70 border border-amber-200 rounded-lg p-3.5 space-y-2 shadow-sm">
+            <div className="bg-primary-50/70 border border-primary-edge-soft rounded-lg p-3.5 space-y-2 shadow-sm">
               <label className="font-bold text-primary-950 text-xs block flex items-center gap-1.5">
                 <span>🤖</span> AI自動分析（KDA / CS / Vision・弱点・アドバイス）
               </label>
 
               {analysisLoading ? (
                 <p className="text-xs text-muted-strong flex items-center gap-2">
-                  <span className="w-3.5 h-3.5 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                  <span className="w-3.5 h-3.5 border-2 border-primary-edge-strong border-t-transparent rounded-full animate-spin" />
                   確認中...
                 </p>
               ) : currentAnalysis?.found ? (
                 <div className="space-y-2.5">
                   <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                    <div className="bg-surface rounded-lg p-2 border border-amber-100">
+                    <div className="bg-surface rounded-lg p-2 border border-primary-edge-soft">
                       <div className="text-faint">KDA</div>
                       <div className="font-bold text-foreground-soft">{currentAnalysis.result.kda} ({currentAnalysis.result.kdaRatio})</div>
                     </div>
-                    <div className="bg-surface rounded-lg p-2 border border-amber-100">
+                    <div className="bg-surface rounded-lg p-2 border border-primary-edge-soft">
                       <div className="text-faint">CS/min</div>
                       <div className="font-bold text-foreground-soft">{currentAnalysis.result.csPerMin}</div>
                     </div>
-                    <div className="bg-surface rounded-lg p-2 border border-amber-100">
+                    <div className="bg-surface rounded-lg p-2 border border-primary-edge-soft">
                       <div className="text-faint">Vision/min</div>
                       <div className="font-bold text-foreground-soft">{currentAnalysis.result.visionPerMin}</div>
                     </div>
@@ -502,13 +502,13 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                   {currentAnalysis.weaknesses?.length > 0 && (
                     <div className="flex flex-wrap gap-1">
                       {currentAnalysis.weaknesses.map((w: string, i: number) => (
-                        <span key={i} className="text-[10px] bg-danger-100 text-danger-800 font-bold px-2 py-0.5 rounded-full border border-rose-200">⚠️ {w}</span>
+                        <span key={i} className="text-[10px] bg-danger-100 text-danger-800 font-bold px-2 py-0.5 rounded-full border border-danger-edge-soft">⚠️ {w}</span>
                       ))}
                     </div>
                   )}
                   {/* ⏱️ チャンピオン辞典基準 vs 今回の実測比較 */}
                   {currentAnalysis.timingComparison && (
-                    <div className="bg-primary-50/80 rounded-lg p-3 border border-amber-300 text-xs space-y-2">
+                    <div className="bg-primary-50/80 rounded-lg p-3 border border-primary-edge text-xs space-y-2">
                       <div className="font-extrabold text-primary-950 flex items-center justify-between">
                         <span className="flex items-center gap-1.5">
                           <span>⏱️</span> チャンピオン辞典基準 vs 実測テンポ比較
@@ -522,7 +522,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
                         {/* 1stコア */}
-                        <div className="bg-surface p-2 rounded border border-amber-200 space-y-1">
+                        <div className="bg-surface p-2 rounded border border-primary-edge-soft space-y-1">
                           <div className="font-bold text-foreground-subtle flex items-center justify-between">
                             <span>1stコア: {currentAnalysis.timingComparison.actualFirstCoreName || '未完成'}</span>
                             {currentAnalysis.timingComparison.firstCoreDiffSec !== null && (
@@ -546,7 +546,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                         </div>
 
                         {/* 2ndコア */}
-                        <div className="bg-surface p-2 rounded border border-amber-200 space-y-1">
+                        <div className="bg-surface p-2 rounded border border-primary-edge-soft space-y-1">
                           <div className="font-bold text-foreground-subtle flex items-center justify-between">
                             <span>2ndコア: {currentAnalysis.timingComparison.actualSecondCoreName || '未完成'}</span>
                             {currentAnalysis.timingComparison.secondCoreDiffSec !== null && (
@@ -580,7 +580,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
 
                   {/* 💥 致命傷となったワースト1デス (Game-Losing Death) */}
                   {currentAnalysis.worstDeath && (
-                    <div className="bg-danger-50/90 rounded-xl p-3.5 border border-rose-300 text-xs space-y-2 shadow-xs animate-in">
+                    <div className="bg-danger-50/90 rounded-xl p-3.5 border border-danger-edge text-xs space-y-2 shadow-xs animate-in">
                       <div className="flex items-center justify-between">
                         <div className="font-black text-danger-950 flex items-center gap-1.5">
                           <span className="text-base">💥</span> 致命傷となったワースト1デス (最重要敗因)
@@ -590,7 +590,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                         </span>
                       </div>
 
-                      <div className="bg-surface p-2.5 rounded-lg border border-rose-200 space-y-1.5">
+                      <div className="bg-surface p-2.5 rounded-lg border border-danger-edge-soft space-y-1.5">
                         <div className="flex items-center justify-between text-[11px] font-bold text-foreground">
                           <span>
                             ⏰ {currentAnalysis.worstDeath.min}分{String(currentAnalysis.worstDeath.sec).padStart(2, '0')}秒 ({currentAnalysis.worstDeath.phase}) vs {currentAnalysis.worstDeath.killer}
@@ -604,7 +604,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                           ⚠️ <strong className="text-danger-950">敗因分析:</strong> {currentAnalysis.worstDeath.reason}
                         </p>
 
-                        <div className="pt-1.5 border-t border-rose-100 flex items-center justify-between gap-2">
+                        <div className="pt-1.5 border-t border-danger-edge-soft flex items-center justify-between gap-2">
                           <p className="text-[11px] text-success-900 font-bold">
                             💡 <strong className="text-success-950">改善指針:</strong> {currentAnalysis.worstDeath.lesson}
                           </p>
@@ -628,23 +628,23 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
 
                   {/* 💰 リコール効率 ＆ 1500G抱え落ち診断 */}
                   {currentAnalysis.recallEfficiency && (
-                    <div className="bg-primary-50/70 rounded-xl p-3 border border-amber-300 text-xs space-y-2">
+                    <div className="bg-primary-50/70 rounded-xl p-3 border border-primary-edge text-xs space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="font-extrabold text-primary-950 flex items-center gap-1.5">
                           <span>💰</span> リコール効率 ＆ ゴールド抱え落ち診断
                         </div>
                         <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
                           currentAnalysis.recallEfficiency.grade === 'S'
-                            ? 'bg-success-100 text-success-800 border-emerald-300'
+                            ? 'bg-success-100 text-success-800 border-success-edge'
                             : currentAnalysis.recallEfficiency.grade === 'A'
-                            ? 'bg-secondary-100 text-secondary-800 border-teal-300'
-                            : 'bg-primary-100 text-primary-900 border-amber-300'
+                            ? 'bg-secondary-100 text-secondary-800 border-secondary-edge'
+                            : 'bg-primary-100 text-primary-900 border-primary-edge'
                         }`}>
                           健全度: グレード {currentAnalysis.recallEfficiency.grade}
                         </span>
                       </div>
 
-                      <div className="bg-surface p-2.5 rounded-lg border border-amber-200 text-[11px] space-y-1.5">
+                      <div className="bg-surface p-2.5 rounded-lg border border-primary-edge-soft text-[11px] space-y-1.5">
                         <div className="flex justify-between items-center text-foreground-subtle font-bold">
                           <span>平均リコール時ゴールド</span>
                           <span className="font-mono font-black text-primary-900">
@@ -657,12 +657,12 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                         </p>
 
                         {currentAnalysis.recallEfficiency.unspentGoldOver1500Events?.length > 0 && (
-                          <div className="pt-1.5 border-t border-amber-100 space-y-1">
+                          <div className="pt-1.5 border-t border-primary-edge-soft space-y-1">
                             <span className="text-[10px] font-bold text-danger-700 block">
                               ⚠️ 1500G以上の抱え落ち検知:
                             </span>
                             {currentAnalysis.recallEfficiency.unspentGoldOver1500Events.map((ev: any, idx: number) => (
-                              <div key={idx} className="text-[10px] text-danger-800 bg-danger-50 px-2 py-0.5 rounded border border-rose-200 font-semibold">
+                              <div key={idx} className="text-[10px] text-danger-800 bg-danger-50 px-2 py-0.5 rounded border border-danger-edge-soft font-semibold">
                                 ・{ev.summary}
                               </div>
                             ))}
@@ -674,7 +674,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
 
                   {/* ターニングポイント */}
                   {currentAnalysis.turningPoints?.length > 0 && (
-                    <div className="bg-surface/80 rounded-lg p-2.5 border border-amber-200 text-xs space-y-1">
+                    <div className="bg-surface/80 rounded-lg p-2.5 border border-primary-edge-soft text-xs space-y-1">
                       <div className="font-extrabold text-primary-900 flex items-center gap-1">
                         <span>⚡</span> 試合のターニングポイント (崩れた瞬間)
                       </div>
@@ -691,7 +691,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                     <div className="flex flex-wrap items-center gap-1.5 pt-1">
                       <span className="text-[10px] font-bold text-muted-strong">根本課題:</span>
                       {currentAnalysis.rootCauses.map((rc: string, idx: number) => (
-                        <span key={idx} className="text-[10px] bg-primary-100 text-primary-900 border border-amber-300 font-bold px-2 py-0.5 rounded-full">
+                        <span key={idx} className="text-[10px] bg-primary-100 text-primary-900 border border-primary-edge font-bold px-2 py-0.5 rounded-full">
                           🏷️ {rc}
                         </span>
                       ))}
@@ -700,13 +700,13 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
 
                   {/* 次戦修正アクション */}
                   {currentAnalysis.actionItems?.length > 0 && (
-                    <div className="bg-success-50/90 rounded-lg p-2.5 border border-emerald-300 space-y-1.5">
+                    <div className="bg-success-50/90 rounded-lg p-2.5 border border-success-edge space-y-1.5">
                       <div className="font-extrabold text-success-950 text-xs flex items-center justify-between">
                         <span className="flex items-center gap-1">🎯 次戦の修正アクション (即座に意識できる1〜2点)</span>
                       </div>
                       <div className="space-y-1.5">
                         {currentAnalysis.actionItems.map((item: { action: string; why: string }, idx: number) => (
-                          <div key={idx} className="bg-surface p-2 rounded border border-emerald-200 flex items-center justify-between gap-2 text-xs">
+                          <div key={idx} className="bg-surface p-2 rounded border border-success-edge-soft flex items-center justify-between gap-2 text-xs">
                             <div>
                               <div className="font-bold text-foreground">・{item.action}</div>
                               <div className="text-[10px] text-muted-strong">{item.why}</div>
@@ -731,7 +731,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                   )}
 
                   {currentAnalysis.advice && (
-                    <p className="text-xs text-foreground-subtle bg-surface/70 rounded border border-amber-100 p-2 whitespace-pre-wrap leading-relaxed">
+                    <p className="text-xs text-foreground-subtle bg-surface/70 rounded border border-primary-edge-soft p-2 whitespace-pre-wrap leading-relaxed">
                       {currentAnalysis.advice}
                     </p>
                   )}
@@ -742,7 +742,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                   )}
 
                   {/* 💬 AIコーチにこの試合を質問する（JG深掘り） */}
-                  <div className="bg-surface/90 rounded-lg p-2.5 border border-amber-200 space-y-2">
+                  <div className="bg-surface/90 rounded-lg p-2.5 border border-primary-edge-soft space-y-2">
                     <div className="font-extrabold text-primary-950 text-xs flex items-center gap-1">
                       <span>💬</span> AIコーチに質問する (JGの立ち回り・敗因深掘り)
                     </div>
@@ -807,9 +807,9 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
             </label>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { value: 'win' as const, label: '🟢 レーン勝ち', color: 'border-emerald-300 bg-success-50 text-success-900' },
+                { value: 'win' as const, label: '🟢 レーン勝ち', color: 'border-success-edge bg-success-50 text-success-900' },
                 { value: 'even' as const, label: '⚪ 互角', color: 'border-border bg-surface-subtle text-foreground-soft' },
-                { value: 'loss' as const, label: '🔴 レーン負け', color: 'border-rose-300 bg-danger-50 text-danger-900' },
+                { value: 'loss' as const, label: '🔴 レーン負け', color: 'border-danger-edge bg-danger-50 text-danger-900' },
               ].map((opt) => (
                 <button
                   type="button"
@@ -832,11 +832,11 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
             <label className="font-bold text-foreground-soft text-xs block">3. 集中度・メンタル評価 (1〜5)</label>
             <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
               {[
-                { rating: 1, label: '1 (絶望/ティルト)', color: 'border-rose-300 bg-danger-50 text-danger-900' },
-                { rating: 2, label: '2 (不調/焦り)', color: 'border-amber-300 bg-primary-50 text-primary-900' },
+                { rating: 1, label: '1 (絶望/ティルト)', color: 'border-danger-edge bg-danger-50 text-danger-900' },
+                { rating: 2, label: '2 (不調/焦り)', color: 'border-primary-edge bg-primary-50 text-primary-900' },
                 { rating: 3, label: '3 (普通)', color: 'border-border bg-background text-foreground' },
-                { rating: 4, label: '4 (集中)', color: 'border-amber-300 bg-primary-50 text-primary-900' },
-                { rating: 5, label: '5 (ゾーン/好調)', color: 'border-emerald-300 bg-success-50 text-success-900' },
+                { rating: 4, label: '4 (集中)', color: 'border-primary-edge bg-primary-50 text-primary-900' },
+                { rating: 5, label: '5 (ゾーン/好調)', color: 'border-success-edge bg-success-50 text-success-900' },
               ].map((item) => (
                 <button
                   type="button"
@@ -873,8 +873,8 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                     className={`px-2.5 py-1 text-xs rounded-full border transition-all ${
                       active
                         ? isWin
-                          ? 'bg-success-700 text-white border-emerald-700 font-bold shadow-sm'
-                          : 'bg-danger-700 text-white border-rose-700 font-bold shadow-sm'
+                          ? 'bg-success-700 text-white border-success-edge-strong font-bold shadow-sm'
+                          : 'bg-danger-700 text-white border-danger-edge-strong font-bold shadow-sm'
                         : 'bg-surface-subtle text-foreground-subtle border-border hover:bg-surface-hover'
                     }`}
                   >
@@ -941,7 +941,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
                     const snippet = matchVs ? matchVs[0].trim() : advice.slice(0, 120);
                     setMatchupMemo((prev) => (prev ? `${prev}\n${snippet}` : snippet));
                   }}
-                  className="text-[10px] bg-primary-50 hover:bg-primary-100 text-primary-800 border border-amber-200 font-bold px-2 py-0.5 rounded transition"
+                  className="text-[10px] bg-primary-50 hover:bg-primary-100 text-primary-800 border border-primary-edge-soft font-bold px-2 py-0.5 rounded transition"
                 >
                   🤖 AIアドバイスから対面対策を取り込む
                 </button>
@@ -957,7 +957,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
           </div>
 
           {/* 6. 次の1試合で意識すること */}
-          <div className="bg-primary-50/80 border border-amber-300 rounded-lg p-3.5 space-y-2 shadow-sm">
+          <div className="bg-primary-50/80 border border-primary-edge rounded-lg p-3.5 space-y-2 shadow-sm">
             <label className="font-bold text-primary-950 text-xs block flex items-center gap-1.5">
               <span>🔥</span> 6. 次の1試合で意識すること（次回テーマ）
             </label>
@@ -966,7 +966,7 @@ export default function SoloQReflectionModal({ isOpen, onClose, onSaved }: SoloQ
               placeholder="例: 8分ヘラルド前に必ずコントロールワードを指す / レーン戦で死なない"
               value={nextFocusPoint}
               onChange={(e) => setNextFocusPoint(e.target.value)}
-              className="w-full px-3 py-2 border border-amber-300 rounded-md bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 text-xs placeholder:text-faint font-medium"
+              className="w-full px-3 py-2 border border-primary-edge rounded-md bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-primary-500 text-xs placeholder:text-faint font-medium"
             />
           </div>
 

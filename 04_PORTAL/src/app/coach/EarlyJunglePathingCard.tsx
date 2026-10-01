@@ -75,10 +75,10 @@ export default function EarlyJunglePathingCard({
         </div>
         <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
           planType === 'contest'
-            ? 'bg-danger-900/80 text-danger-200 border-rose-700'
+            ? 'bg-danger-900/80 text-danger-200 border-danger-edge-strong'
             : planType === 'avoid'
-            ? 'bg-secondary-900/80 text-secondary-200 border-teal-700'
-            : 'bg-success-900/80 text-success-200 border-emerald-700'
+            ? 'bg-secondary-900/80 text-secondary-200 border-secondary-edge-strong'
+            : 'bg-success-900/80 text-success-200 border-success-edge-strong'
         }`}>
           {planType === 'contest' ? '⚔️ 2:55 スカトル勝負型' : '🛡️ 逆サイド回避・ファーム型'}
         </span>
@@ -104,7 +104,7 @@ export default function EarlyJunglePathingCard({
       <div className="space-y-2 pt-1">
         {/* Step 1 */}
         <div className="bg-stone-800/80 border border-stone-700/80 rounded-xl p-2.5 flex items-start gap-2.5">
-          <div className="w-5 h-5 rounded-full bg-primary-500/20 text-primary-300 font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5 border border-amber-500/40">
+          <div className="w-5 h-5 rounded-full bg-primary-500/20 text-primary-300 font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5 border border-primary-edge-strong/40">
             1
           </div>
           <div>
@@ -119,7 +119,7 @@ export default function EarlyJunglePathingCard({
 
         {/* Step 2 */}
         <div className="bg-stone-800/80 border border-stone-700/80 rounded-xl p-2.5 flex items-start gap-2.5">
-          <div className="w-5 h-5 rounded-full bg-primary-500/20 text-primary-300 font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5 border border-amber-500/40">
+          <div className="w-5 h-5 rounded-full bg-primary-500/20 text-primary-300 font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5 border border-primary-edge-strong/40">
             2
           </div>
           <div>
@@ -134,7 +134,7 @@ export default function EarlyJunglePathingCard({
 
         {/* Step 3 */}
         <div className="bg-stone-800/80 border border-stone-700/80 rounded-xl p-2.5 flex items-start gap-2.5">
-          <div className="w-5 h-5 rounded-full bg-primary-500/20 text-primary-300 font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5 border border-amber-500/40">
+          <div className="w-5 h-5 rounded-full bg-primary-500/20 text-primary-300 font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5 border border-primary-edge-strong/40">
             3
           </div>
           <div>

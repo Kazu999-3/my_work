@@ -121,10 +121,10 @@ export default function DictFactCheckPanel() {
         表記ゆれ・矛盾・単一ソースのみの未確証な記述・公式データとの食い違いを検出します。
       </p>
 
-      {error && <p className="text-sm text-danger-700 bg-danger-100 border border-rose-200 rounded-lg px-3 py-2">{error}</p>}
+      {error && <p className="text-sm text-danger-700 bg-danger-100 border border-danger-edge-soft rounded-lg px-3 py-2">{error}</p>}
 
       {/* 統合全自動ファクトチェックボタン */}
-      <div className="rounded-2xl border border-teal-300 bg-gradient-to-r from-secondary-500/10 via-primary-500/5 to-transparent p-5 shadow-sm space-y-3">
+      <div className="rounded-2xl border border-secondary-edge bg-gradient-to-r from-secondary-500/10 via-primary-500/5 to-transparent p-5 shadow-sm space-y-3">
         <h3 className="text-sm font-extrabold text-secondary-950 flex items-center gap-2">
           <ShieldCheck className="w-5 h-5 text-secondary-600" />
           全168チャンプ過去キュー一括リセット ＋ 最新AI全自動一斉ファクトチェック完走
@@ -173,7 +173,7 @@ export default function DictFactCheckPanel() {
         {loadingQueue ? (
           <p className="text-xs text-muted-strong py-4 text-center">読み込み中...</p>
         ) : items.length === 0 ? (
-          <div className="p-6 rounded-2xl bg-success-50 border border-emerald-200 text-center space-y-1">
+          <div className="p-6 rounded-2xl bg-success-50 border border-success-edge-soft text-center space-y-1">
             <p className="text-xs font-bold text-success-800">🎉 未対応の検出項目はありません。すべてのファクトチェック点検が完了しています！</p>
           </div>
         ) : (

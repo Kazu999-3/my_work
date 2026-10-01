@@ -178,14 +178,14 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
   };
 
   const typeLabel: Record<string, { label: string; cls: string }> = {
-    counter_but_winning: { label: '苦手と書いてあるが勝ってる', cls: 'bg-primary-100 text-primary-700 border-amber-200' },
-    ban_but_dominating: { label: 'BAN推奨だが圧倒してる', cls: 'bg-secondary-100 text-secondary-700 border-teal-200' },
-    losing_but_unlisted: { label: '苦戦してるが辞典に記載なし', cls: 'bg-danger-100 text-danger-700 border-rose-200' },
+    counter_but_winning: { label: '苦手と書いてあるが勝ってる', cls: 'bg-primary-100 text-primary-700 border-primary-edge-soft' },
+    ban_but_dominating: { label: 'BAN推奨だが圧倒してる', cls: 'bg-secondary-100 text-secondary-700 border-secondary-edge-soft' },
+    losing_but_unlisted: { label: '苦戦してるが辞典に記載なし', cls: 'bg-danger-100 text-danger-700 border-danger-edge-soft' },
   };
 
   return (
     <div className="space-y-6">
-      {error && <p className="text-sm text-danger-700 bg-danger-100 border border-rose-200 rounded-lg px-3 py-2">{error}</p>}
+      {error && <p className="text-sm text-danger-700 bg-danger-100 border border-danger-edge-soft rounded-lg px-3 py-2">{error}</p>}
 
       {/* 矛盾検出 */}
       {mode === 'inspect' && (
@@ -195,7 +195,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
             <AlertTriangle size={16} className="text-primary-600" /> 辞典の矛盾検出
           </h3>
           <button onClick={checkContradiction} disabled={checking}
-            className="flex items-center gap-1.5 text-xs font-bold bg-primary-100 text-primary-700 border border-amber-200 px-3 py-1.5 rounded-lg hover:bg-primary-200 disabled:opacity-50">
+            className="flex items-center gap-1.5 text-xs font-bold bg-primary-100 text-primary-700 border border-primary-edge-soft px-3 py-1.5 rounded-lg hover:bg-primary-200 disabled:opacity-50">
             {checking ? <RefreshCw size={13} className="animate-spin" /> : <AlertTriangle size={13} />} 検出実行
           </button>
         </div>
@@ -240,7 +240,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
             ['facts', 'チャンピオン辞典'], ['articles', '攻略ライブラリ記事'], ['memos', '対面メモ・チャンピオンノート'],
           ] as const).map(([key, label]) => (
             <button key={key} onClick={() => translateAll(key)} disabled={!!translating}
-              className="text-xs font-bold bg-primary-100 text-primary-700 border border-amber-200 px-3 py-2 rounded-lg hover:bg-primary-200 disabled:opacity-50">
+              className="text-xs font-bold bg-primary-100 text-primary-700 border border-primary-edge-soft px-3 py-2 rounded-lg hover:bg-primary-200 disabled:opacity-50">
               {translating === key ? `変換中... (${transProgress}件)` : label}
             </button>
           ))}
@@ -265,7 +265,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
         </p>
         <div className="flex gap-2 flex-wrap">
           <button onClick={mergeLaneGuides} disabled={laneMerging || restoring}
-            className="text-xs font-bold bg-primary-100 text-primary-700 border border-amber-200 px-4 py-2 rounded-lg hover:bg-primary-200 disabled:opacity-50">
+            className="text-xs font-bold bg-primary-100 text-primary-700 border border-primary-edge-soft px-4 py-2 rounded-lg hover:bg-primary-200 disabled:opacity-50">
             {laneMerging ? `統合中... (${laneProgress}本)` : '🗺️ レーン別ガイドへ統合'}
           </button>
           <button onClick={restoreLaneArticles} disabled={laneMerging || restoring}
@@ -293,18 +293,18 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
           <input value={researchChamp} onChange={e => setResearchChamp(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') runResearch(false); }}
             placeholder="チャンピオン名（英語ID 例: Graves）"
-            className="flex-1 min-w-[180px] bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-teal-500" />
+            className="flex-1 min-w-[180px] bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-secondary-edge-strong" />
           <select value={researchRole} onChange={e => setResearchRole(e.target.value)}
             className="bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground-subtle outline-none">
             {['TOP', 'JG', 'MID', 'ADC', 'SUP'].map(r => <option key={r} value={r}>{r}</option>)}
           </select>
           <button onClick={() => runResearch(false)} disabled={researching || !researchChamp.trim()}
-            className="flex items-center gap-1.5 text-xs font-bold bg-secondary-100 text-secondary-700 border border-teal-200 px-4 py-2 rounded-lg hover:bg-secondary-200 disabled:opacity-50">
+            className="flex items-center gap-1.5 text-xs font-bold bg-secondary-100 text-secondary-700 border border-secondary-edge-soft px-4 py-2 rounded-lg hover:bg-secondary-200 disabled:opacity-50">
             {researching ? <RefreshCw size={13} className="animate-spin" /> : <Globe size={13} />} リサーチ
           </button>
         </div>
         {research && (
-          <div className="space-y-2 text-xs bg-secondary-50 border border-teal-200 rounded-xl p-4">
+          <div className="space-y-2 text-xs bg-secondary-50 border border-secondary-edge-soft rounded-xl p-4">
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-secondary-700 font-black">🌐 {research.champion}</span>
               {research.patch && <span className="text-[10px] text-muted-strong">Patch {research.patch}</span>}
@@ -349,14 +349,14 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
           <input value={champion} onChange={e => setChampion(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') runSummarize(); }}
             placeholder="チャンピオン名（英語ID 例: Graves）"
-            className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-amber-500" />
+            className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-primary-edge-strong" />
           <button onClick={runSummarize} disabled={summarizing || !champion.trim()}
-            className="flex items-center gap-1.5 text-xs font-bold bg-primary-100 text-primary-700 border border-amber-200 px-4 py-2 rounded-lg hover:bg-primary-200 disabled:opacity-50">
+            className="flex items-center gap-1.5 text-xs font-bold bg-primary-100 text-primary-700 border border-primary-edge-soft px-4 py-2 rounded-lg hover:bg-primary-200 disabled:opacity-50">
             {summarizing ? <RefreshCw size={13} className="animate-spin" /> : <Sparkles size={13} />} 要約
           </button>
         </div>
         {summary && (
-          <div className="space-y-3 text-xs bg-primary-50 border border-amber-200 rounded-xl p-4">
+          <div className="space-y-3 text-xs bg-primary-50 border border-primary-edge-soft rounded-xl p-4">
             <p className="text-primary-700 font-black">📝 {summary.champion} の要点（メモ{summary.memoCount}件から集約）</p>
             {summary.summary && <div className="text-foreground-subtle whitespace-pre-wrap leading-relaxed">{summary.summary}</div>}
             {summary.commonMistakes && (

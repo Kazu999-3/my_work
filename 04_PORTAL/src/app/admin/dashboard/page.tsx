@@ -10,18 +10,18 @@ function summarizeError(errorStr?: string): { label: string; bg: string } {
   if (!errorStr) return { label: 'エラー発生', bg: 'bg-surface-subtle text-foreground-subtle border-border' };
   const s = errorStr.toLowerCase();
   if (s.includes('429') || s.includes('quota') || s.includes('resource_exhausted')) {
-    return { label: 'Gemini API 一時混雑 (429)', bg: 'bg-primary-100 text-primary-900 border-amber-300' };
+    return { label: 'Gemini API 一時混雑 (429)', bg: 'bg-primary-100 text-primary-900 border-primary-edge' };
   }
   if (s.includes('404') || s.includes('not found') || s.includes('private') || s.includes('deleted')) {
-    return { label: '動画が非公開/削除済み', bg: 'bg-danger-100 text-danger-900 border-rose-300' };
+    return { label: '動画が非公開/削除済み', bg: 'bg-danger-100 text-danger-900 border-danger-edge' };
   }
   if (s.includes('timeout') || s.includes('econnreset') || s.includes('network')) {
-    return { label: 'ネットワークタイムアウト', bg: 'bg-primary-100 text-primary-900 border-amber-300' };
+    return { label: 'ネットワークタイムアウト', bg: 'bg-primary-100 text-primary-900 border-primary-edge' };
   }
   if (s.includes('syntax') || s.includes('parse')) {
-    return { label: 'JSONパース不整合', bg: 'bg-primary-100 text-primary-900 border-amber-300' };
+    return { label: 'JSONパース不整合', bg: 'bg-primary-100 text-primary-900 border-primary-edge' };
   }
-  return { label: '処理失敗', bg: 'bg-danger-100 text-danger-900 border-rose-300' };
+  return { label: '処理失敗', bg: 'bg-danger-100 text-danger-900 border-danger-edge' };
 }
 
 export default function AdminDashboardPage() {
@@ -224,7 +224,7 @@ export default function AdminDashboardPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f7f5f0] dark:bg-[#1e1f22]">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-500/20 border-t-amber-600" />
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary-edge-strong/20 border-t-amber-600" />
           <p className="text-xs font-bold text-muted-strong">システム運用ダッシュボードを読み込み中...</p>
         </div>
       </div>
@@ -251,13 +251,13 @@ export default function AdminDashboardPage() {
         <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-4 border-b border-border/80">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <div className="p-2 rounded-xl bg-primary-500/15 border border-amber-500/30 text-primary-800 shadow-2xs">
+              <div className="p-2 rounded-xl bg-primary-500/15 border border-primary-edge-strong/30 text-primary-800 shadow-2xs">
                 <Shield size={20} />
               </div>
               <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground">
                 システム運用ダッシュボード
               </h1>
-              <span className="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-primary-500/10 text-primary-800 border border-amber-500/20">
+              <span className="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-primary-500/10 text-primary-800 border border-primary-edge-strong/20">
                 HQ v5.2
               </span>
             </div>
@@ -299,7 +299,7 @@ export default function AdminDashboardPage() {
 
             <Link
               href="/ktm-admin"
-              className="px-3.5 py-2 rounded-xl bg-primary-50/90 backdrop-blur-md border border-amber-200 hover:bg-primary-100 text-xs font-bold text-primary-700 transition shadow-xs flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-xl bg-primary-50/90 backdrop-blur-md border border-primary-edge-soft hover:bg-primary-100 text-xs font-bold text-primary-700 transition shadow-xs flex items-center gap-1.5"
             >
               <Trophy size={13} />
               <span>KTM大会管理</span>
@@ -307,7 +307,7 @@ export default function AdminDashboardPage() {
 
             <Link
               href="/admin/guide"
-              className="px-3.5 py-2 rounded-xl bg-primary-500/15 backdrop-blur-md border border-amber-300 hover:bg-primary-500/25 text-xs font-black text-primary-900 transition shadow-xs flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-xl bg-primary-500/15 backdrop-blur-md border border-primary-edge hover:bg-primary-500/25 text-xs font-black text-primary-900 transition shadow-xs flex items-center gap-1.5"
               title="LoLデータ収集・辞典・AIコーチ連携の全貌詳細仕様ガイド"
             >
               <BookOpen size={13} className="text-primary-700" />
@@ -324,7 +324,7 @@ export default function AdminDashboardPage() {
 
         {/* ⚠️ データ取得エラー通知（APIタイムアウト・ネットワーク障害時） */}
         {fetchError && (
-          <div className="p-3.5 rounded-2xl bg-danger-50/90 border border-rose-200/80 text-danger-950 flex items-center gap-2.5 shadow-2xs backdrop-blur-md">
+          <div className="p-3.5 rounded-2xl bg-danger-50/90 border border-danger-edge-soft/80 text-danger-950 flex items-center gap-2.5 shadow-2xs backdrop-blur-md">
             <ShieldAlert size={16} className="text-danger-600 shrink-0" />
             <span className="text-xs font-bold">{fetchError}</span>
           </div>
@@ -334,8 +334,8 @@ export default function AdminDashboardPage() {
         {healthStatus && (
           <div className={`p-3.5 rounded-2xl border flex flex-wrap items-center justify-between gap-3 shadow-2xs backdrop-blur-md ${
             healthStatus.allGreen 
-              ? 'bg-success-500/10 border-emerald-500/30 text-success-950' 
-              : 'bg-primary-500/10 border-amber-500/30 text-primary-950'
+              ? 'bg-success-500/10 border-success-edge-strong/30 text-success-950' 
+              : 'bg-primary-500/10 border-primary-edge-strong/30 text-primary-950'
           }`}>
             <div className="flex items-center gap-2.5">
               <span className="text-base">{healthStatus.allGreen ? '🛡️' : '⚠️'}</span>
@@ -346,8 +346,8 @@ export default function AdminDashboardPage() {
                   </span>
                   <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
                     healthStatus.allGreen 
-                      ? 'bg-success-500/20 text-success-900 border-emerald-500/40' 
-                      : 'bg-primary-500/20 text-primary-900 border-amber-500/40'
+                      ? 'bg-success-500/20 text-success-900 border-success-edge-strong/40' 
+                      : 'bg-primary-500/20 text-primary-900 border-primary-edge-strong/40'
                   }`}>
                     {healthStatus.allGreen ? 'ALL GREEN' : 'ATTENTION'}
                   </span>
@@ -361,7 +361,7 @@ export default function AdminDashboardPage() {
             <div className="flex items-center gap-2">
               <Link
                 href="/admin/guide"
-                className="text-xs font-bold px-3 py-1.5 rounded-xl bg-primary-50 hover:bg-primary-100 border border-amber-200 text-primary-900 shadow-2xs transition flex items-center gap-1"
+                className="text-xs font-bold px-3 py-1.5 rounded-xl bg-primary-50 hover:bg-primary-100 border border-primary-edge-soft text-primary-900 shadow-2xs transition flex items-center gap-1"
                 title="LoLデータ収集＆辞典＆コーチ連携の全貌仕様ガイド"
               >
                 <BookOpen size={12} className="text-primary-700" />
@@ -382,7 +382,7 @@ export default function AdminDashboardPage() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-4 rounded-2xl bg-primary-500/15 border-2 border-amber-500/30 text-primary-950 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-xs backdrop-blur-md"
+            className="p-4 rounded-2xl bg-primary-500/15 border-2 border-primary-edge-strong/30 text-primary-950 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-xs backdrop-blur-md"
           >
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-primary-500 text-white shadow-xs shrink-0">
@@ -421,9 +421,9 @@ export default function AdminDashboardPage() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-4 rounded-2xl bg-danger-50/90 border border-rose-200/80 text-danger-950 space-y-3 shadow-xs backdrop-blur-md"
+            className="p-4 rounded-2xl bg-danger-50/90 border border-danger-edge-soft/80 text-danger-950 space-y-3 shadow-xs backdrop-blur-md"
           >
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-rose-200/80 pb-2.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-danger-edge-soft/80 pb-2.5">
               <h3 className="text-xs font-black text-danger-800 flex items-center gap-1.5">
                 <ShieldAlert size={16} className="text-danger-600" />
                 <span>⚠️ 要対応タスク ({needsAttention.failedTasks.length + (needsAttention.youtubeErrorCount > 0 ? 1 : 0) + (needsAttention.dictReviewCount > 0 ? 1 : 0)}件)</span>
@@ -446,7 +446,7 @@ export default function AdminDashboardPage() {
               {needsAttention.failedTasks.map((task) => {
                 const errSummary = summarizeError(task.error_message);
                 return (
-                  <div key={task.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-xl bg-surface/90 border border-rose-100 shadow-2xs">
+                  <div key={task.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-xl bg-surface/90 border border-danger-edge-soft shadow-2xs">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap mb-0.5">
                         <span className="text-xs font-black text-foreground">
@@ -472,7 +472,7 @@ export default function AdminDashboardPage() {
               {needsAttention.youtubeErrorCount > 0 && (
                 <Link
                   href="/admin/youtube"
-                  className="flex items-center justify-between p-2.5 rounded-xl bg-surface/90 border border-rose-200 hover:border-rose-300 transition"
+                  className="flex items-center justify-between p-2.5 rounded-xl bg-surface/90 border border-danger-edge-soft hover:border-danger-edge transition"
                 >
                   <span className="text-xs font-bold text-foreground">YouTube動画キューのエラー・手動対応要 ({needsAttention.youtubeErrorCount}件)</span>
                   <span className="text-[11px] font-bold text-danger-700">管理画面へ →</span>
@@ -481,7 +481,7 @@ export default function AdminDashboardPage() {
               {needsAttention.dictReviewCount > 0 && (
                 <Link
                   href="/champions?scope=health"
-                  className="flex items-center justify-between p-2.5 rounded-xl bg-surface/90 border border-rose-200 hover:border-rose-300 transition"
+                  className="flex items-center justify-between p-2.5 rounded-xl bg-surface/90 border border-danger-edge-soft hover:border-danger-edge transition"
                 >
                   <span className="text-xs font-bold text-foreground">チャンピオン辞典 鮮度レビュー要対応 ({needsAttention.dictReviewCount}件)</span>
                   <span className="text-[11px] font-bold text-danger-700">データ整備へ →</span>
@@ -547,7 +547,7 @@ export default function AdminDashboardPage() {
                   {ktmStats.totalMatches.toLocaleString()} <span className="text-xs font-bold text-faint">試合</span>
                 </div>
                 {ktmStats.recentMatches > 0 && (
-                  <span className="text-[11px] font-black text-success-700 bg-success-100/80 px-2 py-0.5 rounded-full border border-emerald-300">
+                  <span className="text-[11px] font-black text-success-700 bg-success-100/80 px-2 py-0.5 rounded-full border border-success-edge">
                     直近7日: +{ktmStats.recentMatches}
                   </span>
                 )}
@@ -637,13 +637,13 @@ export default function AdminDashboardPage() {
               { id: 'youtube_absorber', name: 'YouTube解析', desc: '動画知識吸収ノード', kind: 'local' as const },
             ].map((service) => {
               let statusText = '稼働中';
-              let statusColor = 'text-success-700 bg-success-100/80 border-emerald-300';
+              let statusColor = 'text-success-700 bg-success-100/80 border-success-edge';
               let indicatorColor = 'bg-success-500';
 
               if (service.kind === 'worker') {
                 if (systemStatus.worker.active) {
                   statusText = '稼働中';
-                  statusColor = 'text-success-700 bg-success-100/80 border-emerald-300';
+                  statusColor = 'text-success-700 bg-success-100/80 border-success-edge';
                   indicatorColor = 'bg-success-500';
                 } else {
                   statusText = '待機中 (必要時起動)';
@@ -653,7 +653,7 @@ export default function AdminDashboardPage() {
               } else if (service.kind === 'local') {
                 if (systemStatus.worker.active) {
                   statusText = '待機中 (即時実行可)';
-                  statusColor = 'text-success-700 bg-success-100/80 border-emerald-300';
+                  statusColor = 'text-success-700 bg-success-100/80 border-success-edge';
                   indicatorColor = 'bg-success-500 animate-pulse';
                 } else {
                   statusText = '待機中';

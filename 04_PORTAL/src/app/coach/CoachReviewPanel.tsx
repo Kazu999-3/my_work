@@ -145,8 +145,8 @@ export default function CoachReviewPanel() {
                   <span
                     className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border shrink-0 ${
                       a.win
-                        ? 'bg-success-950/30 text-success-400 border-emerald-800/60'
-                        : 'bg-danger-950/30 text-danger-400 border-rose-800/60'
+                        ? 'bg-success-950/30 text-success-400 border-success-edge-strong/60'
+                        : 'bg-danger-950/30 text-danger-400 border-danger-edge-strong/60'
                     }`}
                   >
                     {a.win ? '勝' : '負'}

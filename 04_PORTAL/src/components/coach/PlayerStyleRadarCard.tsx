@@ -143,7 +143,7 @@ export default function PlayerStyleRadarCard() {
       {activeTab === 'profile' && (
         <div className="space-y-4 animate-in fade-in">
           {/* プレイスタイル総合評価バナー */}
-          <div className="rounded-2xl border border-emerald-200 bg-success-50/50 p-3.5 flex items-start gap-3">
+          <div className="rounded-2xl border border-success-edge-soft bg-success-50/50 p-3.5 flex items-start gap-3">
             <span className="text-2xl">🛡️</span>
             <div className="space-y-0.5">
               <div className="flex items-center gap-2">
@@ -234,7 +234,7 @@ export default function PlayerStyleRadarCard() {
           </div>
 
           {/* ボトルネック深掘り ＆ 典型的負け筋の克服 */}
-          <div className="rounded-2xl border border-amber-300 bg-primary-50/60 p-4 space-y-2.5">
+          <div className="rounded-2xl border border-primary-edge bg-primary-50/60 p-4 space-y-2.5">
             <div className="flex items-center gap-2 text-xs font-black text-primary-950">
               <span className="p-1 rounded-md bg-primary-200 text-primary-900">⚠️</span>
               <span>勝率を跳ね上げる「ボトルネック解消」の急所</span>
@@ -242,7 +242,7 @@ export default function PlayerStyleRadarCard() {
             <p className="text-xs text-foreground-subtle leading-relaxed font-medium">
               {p.coreBottleNeck}
             </p>
-            <div className="rounded-xl border border-amber-400/60 bg-surface p-3 space-y-1">
+            <div className="rounded-xl border border-primary-edge/60 bg-surface p-3 space-y-1">
               <div className="text-[11px] font-black text-primary-900 flex items-center gap-1">
                 <CheckCircle2 size={13} className="text-primary-600" />
                 <span>今日のソロQで実践する具体的アクション:</span>
@@ -282,7 +282,7 @@ export default function PlayerStyleRadarCard() {
                     onClick={() => setSelectedPeriodIdx(idx)}
                     className={`p-2.5 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between gap-1 ${
                       isSelected
-                        ? 'border-amber-500 bg-primary-50/80 shadow-xs ring-2 ring-primary-400/40'
+                        ? 'border-primary-edge-strong bg-primary-50/80 shadow-xs ring-2 ring-primary-400/40'
                         : 'border-border bg-background/70 hover:bg-surface-subtle hover:border-border'
                     }`}
                   >
@@ -446,7 +446,7 @@ export default function PlayerStyleRadarCard() {
           </div>
 
           {/* 成長トレンドの総括バナー */}
-          <div className="rounded-2xl border border-emerald-300 bg-success-50/70 p-3.5 flex items-start gap-2.5">
+          <div className="rounded-2xl border border-success-edge bg-success-50/70 p-3.5 flex items-start gap-2.5">
             <span className="text-xl">📈</span>
             <div className="space-y-0.5 text-xs text-foreground-subtle">
               <div className="font-black text-success-950">
@@ -466,7 +466,7 @@ export default function PlayerStyleRadarCard() {
       {activeTab === 'vision' && (
         <div className="space-y-4 animate-in fade-in">
           {/* 視界総合評価バナー */}
-          <div className="rounded-2xl border border-amber-200 bg-primary-50/60 p-4 flex items-start justify-between gap-3">
+          <div className="rounded-2xl border border-primary-edge-soft bg-primary-50/60 p-4 flex items-start justify-between gap-3">
             <div className="flex items-start gap-3">
               <span className="text-2xl">👁️</span>
               <div className="space-y-1">
@@ -588,7 +588,7 @@ export default function PlayerStyleRadarCard() {
           </div>
 
           {/* 視界アクションアドバイス */}
-          <div className="rounded-2xl border border-amber-300 bg-primary-50/70 p-3.5 space-y-1">
+          <div className="rounded-2xl border border-primary-edge bg-primary-50/70 p-3.5 space-y-1">
             <div className="text-xs font-black text-primary-950 flex items-center gap-1.5">
               <Sparkles size={13} className="text-primary-600" />
               <span>客観データから導く「視界の急所アクション」:</span>
@@ -615,7 +615,7 @@ export default function PlayerStyleRadarCard() {
                 key={t.id}
                 className={`rounded-2xl border p-4 space-y-2 transition ${
                   t.id === 'farmer_scaler'
-                    ? 'border-emerald-400 bg-success-50/40 shadow-xs'
+                    ? 'border-success-edge bg-success-50/40 shadow-xs'
                     : 'border-border bg-surface hover:border-border'
                 }`}
               >

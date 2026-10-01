@@ -39,9 +39,9 @@ interface Data {
 }
 
 const LEVEL_STYLE: Record<Level, string> = {
-  green: 'bg-success-950/30 text-success-400 border-emerald-800/60',
-  yellow: 'bg-primary-950/30 text-primary-400 border-amber-800/60',
-  red: 'bg-danger-950/30 text-danger-400 border-rose-800/60',
+  green: 'bg-success-950/30 text-success-400 border-success-edge-strong/60',
+  yellow: 'bg-primary-950/30 text-primary-400 border-primary-edge-strong/60',
+  red: 'bg-danger-950/30 text-danger-400 border-danger-edge-strong/60',
 };
 
 export default function PlayRecommendationCard() {

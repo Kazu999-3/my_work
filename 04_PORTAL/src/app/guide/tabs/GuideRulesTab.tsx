@@ -53,7 +53,7 @@ export default function GuideRulesTab() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* ① 20人揃えば2部屋開催 */}
-          <div className="p-5 rounded-2xl bg-success-50/50 dark:bg-success-950/20 border border-emerald-200/80 dark:border-emerald-800/40 space-y-2.5">
+          <div className="p-5 rounded-2xl bg-success-50/50 dark:bg-success-950/20 border border-success-edge-soft/80 dark:border-success-edge-strong/40 space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="px-2.5 py-1 rounded-lg bg-success-600 text-white text-xs font-black">
                 ① 20名以上
@@ -67,7 +67,7 @@ export default function GuideRulesTab() {
           </div>
 
           {/* ② 10名以上の場合は1ティア差グループ */}
-          <div className="p-5 rounded-2xl bg-primary-50/50 dark:bg-primary-950/20 border border-amber-200/80 dark:border-amber-800/40 space-y-2.5">
+          <div className="p-5 rounded-2xl bg-primary-50/50 dark:bg-primary-950/20 border border-primary-edge-soft/80 dark:border-primary-edge-strong/40 space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="px-2.5 py-1 rounded-lg bg-primary-500 text-stone-950 text-xs font-black">
                 ② 10名〜19名
@@ -79,7 +79,7 @@ export default function GuideRulesTab() {
               参加者の中で最も実力差が密集している（1ティア差以内の）10名を自動選出！<br />
               <span className="font-bold text-primary-900 dark:text-primary-200">※選考外となった方は「観戦・配信応援」または「2戦目に最優先で交代参加」となります。</span>
             </p>
-            <div className="mt-2 pt-2 border-t border-amber-200/60 text-[11px] text-primary-900 dark:text-primary-300 space-y-0.5">
+            <div className="mt-2 pt-2 border-t border-primary-edge-soft/60 text-[11px] text-primary-900 dark:text-primary-300 space-y-0.5">
               <p className="font-bold">📊 最多ランク帯（基準）の集計ルール：</p>
               <p>・<strong>エメラルド以上</strong>（エメラルド/ダイヤ/マスター等）はすべて<strong>「プラチナ」</strong>として合算カウント</p>
               <p>・<strong>アイアン・未ランク</strong>はすべて<strong>「ブロンズ」</strong>として合算カウント</p>
@@ -116,7 +116,7 @@ export default function GuideRulesTab() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* 土曜: ランク別・ガチカスタム */}
-          <div className="p-5 rounded-2xl bg-primary-50/50 dark:bg-primary-950/20 border border-amber-200/80 dark:border-amber-800/40 space-y-3">
+          <div className="p-5 rounded-2xl bg-primary-50/50 dark:bg-primary-950/20 border border-primary-edge-soft/80 dark:border-primary-edge-strong/40 space-y-3">
             <div className="flex items-center justify-between">
               <span className="px-2.5 py-1 rounded-lg bg-primary-500 text-stone-950 text-xs font-black">
                 土曜日 21:00〜
@@ -140,7 +140,7 @@ export default function GuideRulesTab() {
           </div>
 
           {/* 日曜: お祭りカスタム */}
-          <div className="p-5 rounded-2xl bg-primary-50/50 dark:bg-primary-950/20 border border-amber-200/80 dark:border-amber-800/40 space-y-3">
+          <div className="p-5 rounded-2xl bg-primary-50/50 dark:bg-primary-950/20 border border-primary-edge-soft/80 dark:border-primary-edge-strong/40 space-y-3">
             <div className="flex items-center justify-between">
               <span className="px-2.5 py-1 rounded-lg bg-primary-600 text-white text-xs font-black">
                 日曜日 21:00〜
@@ -213,7 +213,7 @@ export default function GuideRulesTab() {
         </div>
 
         {/* ピンポイント助っ人急募について */}
-        <div className="p-4 rounded-2xl bg-primary-500/10 border border-amber-500/30 flex items-start gap-3">
+        <div className="p-4 rounded-2xl bg-primary-500/10 border border-primary-edge-strong/30 flex items-start gap-3">
           <Sparkles className="w-5 h-5 text-primary-600 shrink-0 mt-0.5" />
           <div className="text-xs text-foreground-subtle leading-relaxed">
             <span className="font-black text-primary-950">🚨 20:00 ピンポイント助っ人通知システム：</span><br />

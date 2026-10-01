@@ -233,7 +233,7 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
       </div>
 
       {/* 盤面 */}
-      <div className="bg-stone-950 border-2 border-emerald-500/30 rounded-3xl p-4 sm:p-6 shadow-inner space-y-4">
+      <div className="bg-stone-950 border-2 border-success-edge-strong/30 rounded-3xl p-4 sm:p-6 shadow-inner space-y-4">
         {/* 進行状況バー */}
         <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-wider px-1">
           <span className="text-success-400/80">
@@ -258,19 +258,19 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
             const clickable = isPlaying && !opened && !busy;
 
             let face = '🌿';
-            let tone = 'bg-stone-900 border-stone-800 hover:border-emerald-600/60 hover:bg-stone-800';
+            let tone = 'bg-stone-900 border-stone-800 hover:border-success-edge-strong/60 hover:bg-stone-800';
 
             if (opened && !isMine) {
               face = '👁️';
-              tone = 'bg-success-950/60 border-emerald-700/70';
+              tone = 'bg-success-950/60 border-success-edge-strong/70';
             }
             if (isHit) {
               face = '🍄';
-              tone = 'bg-danger-950/70 border-rose-600 shadow-lg shadow-danger-900/40';
+              tone = 'bg-danger-950/70 border-danger-edge-strong shadow-lg shadow-danger-900/40';
             } else if (isFinished && isMine) {
               // 決着後に、踏まなかったキノコの位置も開示する
               face = '🍄';
-              tone = 'bg-stone-900 border-rose-900/60 opacity-70';
+              tone = 'bg-stone-900 border-danger-edge-strong/60 opacity-70';
             }
 
             return (
@@ -316,9 +316,9 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
           <div
             className={`p-3 rounded-2xl text-center text-xs font-black border ${
               state.status === 'settled'
-                ? 'bg-success-950/70 border-emerald-700/70 text-success-300'
+                ? 'bg-success-950/70 border-success-edge-strong/70 text-success-300'
                 : state.status === 'lost'
-                ? 'bg-danger-950/60 border-rose-800/70 text-danger-300'
+                ? 'bg-danger-950/60 border-danger-edge-strong/70 text-danger-300'
                 : 'bg-stone-900/80 border-stone-800 text-faint'
             }`}
           >
@@ -333,7 +333,7 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
         )}
 
         {errorMsg && (
-          <div className="p-2.5 rounded-xl bg-danger-950/60 border border-rose-800 text-danger-300 text-xs font-bold flex items-center gap-1.5 justify-center">
+          <div className="p-2.5 rounded-xl bg-danger-950/60 border border-danger-edge-strong text-danger-300 text-xs font-bold flex items-center gap-1.5 justify-center">
             <AlertCircle size={14} />
             <span>{errorMsg}</span>
           </div>
@@ -403,7 +403,7 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
                 key={row.revealCount}
                 className={`p-1.5 rounded-lg border flex items-center justify-between gap-1 ${
                   revealedCount === row.revealCount
-                    ? 'bg-success-950/60 border-emerald-700 text-success-300'
+                    ? 'bg-success-950/60 border-success-edge-strong text-success-300'
                     : 'bg-stone-900/70 border-stone-800/80 text-faint'
                 }`}
               >

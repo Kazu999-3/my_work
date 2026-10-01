@@ -331,8 +331,8 @@ export default function PostGameDeepAnalyticsDashboard({
                     isSelected
                       ? 'bg-stone-900 text-white border-stone-900 shadow-xs ring-2 ring-stone-700'
                       : m.isWin
-                      ? 'bg-success-50/70 border-emerald-200/80 hover:bg-success-100/60 hover:border-emerald-300'
-                      : 'bg-danger-50/70 border-rose-200/80 hover:bg-danger-100/60 hover:border-rose-300'
+                      ? 'bg-success-50/70 border-success-edge-soft/80 hover:bg-success-100/60 hover:border-success-edge'
+                      : 'bg-danger-50/70 border-danger-edge-soft/80 hover:bg-danger-100/60 hover:border-danger-edge'
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -374,7 +374,7 @@ export default function PostGameDeepAnalyticsDashboard({
 
       {/* 📊 直近数試合の横断スタッツサマリー */}
       {data.cross_match_summary && data.cross_match_summary.total_matches > 1 && (
-        <div className="bg-gradient-to-r from-primary-50/90 via-stone-50 to-primary-50/90 border border-amber-200/80 rounded-xl p-4 space-y-2.5 shadow-2xs">
+        <div className="bg-gradient-to-r from-primary-50/90 via-stone-50 to-primary-50/90 border border-primary-edge-soft/80 rounded-xl p-4 space-y-2.5 shadow-2xs">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <span className="text-xs font-black text-foreground flex items-center gap-1.5">
               <Activity className="w-4 h-4 text-primary-600" />
@@ -392,7 +392,7 @@ export default function PostGameDeepAnalyticsDashboard({
               </span>
             </div>
           </div>
-          <p className="text-xs text-foreground-subtle font-medium leading-relaxed bg-surface/80 p-2.5 rounded-lg border border-amber-200/50">
+          <p className="text-xs text-foreground-subtle font-medium leading-relaxed bg-surface/80 p-2.5 rounded-lg border border-primary-edge-soft/50">
             💡 {data.cross_match_summary.summary_text}
           </p>
         </div>
@@ -401,7 +401,7 @@ export default function PostGameDeepAnalyticsDashboard({
       {/* 選択中の試合ディープアナリティクス ヘッダー */}
       <div className="flex items-center justify-between border-b border-stone-100 pb-3 flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 bg-primary-100 text-primary-900 border border-amber-300 rounded-md text-[10px] font-black uppercase tracking-wider">
+          <span className="px-2 py-0.5 bg-primary-100 text-primary-900 border border-primary-edge rounded-md text-[10px] font-black uppercase tracking-wider">
             {currentMatchId === 'all' || data.selected_match_id === 'all' ? 'Multi-Match Aggregate' : 'Match Deep Dive'}
           </span>
           <h3 className="text-base font-black text-foreground flex items-center gap-1.5">
@@ -453,7 +453,7 @@ export default function PostGameDeepAnalyticsDashboard({
       </div>
 
       {/* 🚨 1-Action Takeaway (次戦への最重要改善アクション・最優先ファーストビュー) */}
-      <div className="bg-gradient-to-r from-danger-50 via-primary-50 to-danger-50 border-2 border-rose-400/80 rounded-xl p-4 shadow-sm space-y-2">
+      <div className="bg-gradient-to-r from-danger-50 via-primary-50 to-danger-50 border-2 border-danger-edge/80 rounded-xl p-4 shadow-sm space-y-2">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <span className="text-lg">🎯</span>
@@ -465,7 +465,7 @@ export default function PostGameDeepAnalyticsDashboard({
             ボトルネック: {data.biggest_bottleneck.metric}
           </span>
         </div>
-        <p className="text-xs md:text-sm font-black text-foreground leading-relaxed bg-surface/95 p-3 rounded-lg border border-rose-200">
+        <p className="text-xs md:text-sm font-black text-foreground leading-relaxed bg-surface/95 p-3 rounded-lg border border-danger-edge-soft">
           {data.biggest_bottleneck.advice}
         </p>
       </div>
@@ -478,7 +478,7 @@ export default function PostGameDeepAnalyticsDashboard({
               <Zap className="w-4 h-4 text-primary-600" />
               1. 序盤15分CS ＆ レーン戦推移
             </span>
-            <span className="text-[11px] font-black text-success-700 bg-success-100/80 px-2 py-0.5 rounded border border-emerald-200">
+            <span className="text-[11px] font-black text-success-700 bg-success-100/80 px-2 py-0.5 rounded border border-success-edge-soft">
               {data.early_game_metrics.lane_result}
             </span>
           </div>
@@ -545,11 +545,11 @@ export default function PostGameDeepAnalyticsDashboard({
             </span>
             <div className="flex items-center gap-2">
               {data.is_jungle ? (
-                <span className="text-[10px] font-black text-success-800 bg-success-50 px-2 py-0.5 rounded border border-emerald-200 font-mono">
+                <span className="text-[10px] font-black text-success-800 bg-success-50 px-2 py-0.5 rounded border border-success-edge-soft font-mono">
                   🌿 JG専任 (レーンウェーブ損失免除)
                 </span>
               ) : (
-                <span className="text-[10px] font-black text-danger-700 bg-danger-50 px-2 py-0.5 rounded border border-rose-200 font-mono">
+                <span className="text-[10px] font-black text-danger-700 bg-danger-50 px-2 py-0.5 rounded border border-danger-edge-soft font-mono">
                   総損失: -{data.recall_efficiency.total_loss_gold}G
                 </span>
               )}
@@ -624,7 +624,7 @@ export default function PostGameDeepAnalyticsDashboard({
                   <div className="mt-4 pt-3 border-t border-stone-100 space-y-2 animate-in fade-in">
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[11px] font-black bg-primary-100 text-primary-950 px-2 py-0.5 rounded border border-amber-200">
+                        <span className="text-[11px] font-black bg-primary-100 text-primary-950 px-2 py-0.5 rounded border border-primary-edge-soft">
                           リコール #{selectedRecallIdx + 1} ({activeEv.time_str})
                         </span>
                         <span className="text-[10px] font-black text-foreground-subtle bg-surface-subtle px-2 py-0.5 rounded">
@@ -670,7 +670,7 @@ export default function PostGameDeepAnalyticsDashboard({
                       </div>
                     </div>
 
-                    <p className="text-[11px] text-muted leading-relaxed font-medium bg-primary-50/50 p-2 rounded-lg border border-amber-100">
+                    <p className="text-[11px] text-muted leading-relaxed font-medium bg-primary-50/50 p-2 rounded-lg border border-primary-edge-soft">
                       💬 <span className="font-bold text-primary-950">判定:</span> {activeEv.detail}
                     </p>
                   </div>
@@ -682,20 +682,20 @@ export default function PostGameDeepAnalyticsDashboard({
 
         {/* 3.5: コントロールワード（ピンクワード）実戦購入タイミング監査 */}
         {data.control_ward_audit && (
-          <div className="bg-danger-50/40 border border-rose-200/80 rounded-xl p-4 space-y-3.5 shadow-2xs">
+          <div className="bg-danger-50/40 border border-danger-edge-soft/80 rounded-xl p-4 space-y-3.5 shadow-2xs">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <span className="text-xs font-black text-foreground flex items-center gap-1.5">
                 <Eye className="w-4 h-4 text-danger-600" />
                 <span>3.5 コントロールワード 実戦購入タイミング監査</span>
               </span>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black text-danger-800 bg-danger-100 px-2 py-0.5 rounded border border-rose-200 font-mono">
+                <span className="text-[10px] font-black text-danger-800 bg-danger-100 px-2 py-0.5 rounded border border-danger-edge-soft font-mono">
                   {data.control_ward_audit.total_purchased}本購入 (目標: {data.control_ward_audit.target_benchmark}本)
                 </span>
                 <span className={`text-[10px] font-black px-2 py-0.5 rounded font-mono ${
                   data.control_ward_audit.grade === 'S' || data.control_ward_audit.grade === 'A'
-                    ? 'bg-success-100 text-success-900 border border-emerald-300'
-                    : 'bg-primary-100 text-primary-900 border border-amber-300'
+                    ? 'bg-success-100 text-success-900 border border-success-edge'
+                    : 'bg-primary-100 text-primary-900 border border-primary-edge'
                 }`}>
                   評価: {data.control_ward_audit.grade} ({data.control_ward_audit.score}点)
                 </span>
@@ -706,12 +706,12 @@ export default function PostGameDeepAnalyticsDashboard({
             {data.control_ward_audit.purchases.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {data.control_ward_audit.purchases.map((p, pIdx) => (
-                  <div key={pIdx} className="bg-surface p-2.5 rounded-xl border border-rose-200/70 space-y-1 shadow-2xs">
+                  <div key={pIdx} className="bg-surface p-2.5 rounded-xl border border-danger-edge-soft/70 space-y-1 shadow-2xs">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-black text-danger-700 flex items-center gap-1">
                         <Clock className="w-3 h-3 text-danger-500" /> {p.time_str}
                       </span>
-                      <span className="text-[9px] font-black bg-success-50 text-success-800 px-1.5 py-0.2 rounded border border-emerald-200">
+                      <span className="text-[9px] font-black bg-success-50 text-success-800 px-1.5 py-0.2 rounded border border-success-edge-soft">
                         {p.audit}
                       </span>
                     </div>
@@ -725,7 +725,7 @@ export default function PostGameDeepAnalyticsDashboard({
                 ))}
               </div>
             ) : (
-              <div className="bg-surface p-3 rounded-xl border border-rose-200 text-center space-y-1">
+              <div className="bg-surface p-3 rounded-xl border border-danger-edge-soft text-center space-y-1">
                 <span className="text-xs font-bold text-danger-700">⚠️ 試合中のコントロールワード購入が 0本 でした</span>
                 <p className="text-[10px] text-muted-strong">
                   リコール時に余った75Gで常に1本所持し、オブジェクト前の先制視界取りを意識しましょう。
@@ -735,7 +735,7 @@ export default function PostGameDeepAnalyticsDashboard({
 
             {/* 逃したタイミング（改善ポイント） */}
             {data.control_ward_audit.missed_timings.length > 0 && (
-              <div className="bg-primary-50/80 p-2.5 rounded-xl border border-amber-200 space-y-1">
+              <div className="bg-primary-50/80 p-2.5 rounded-xl border border-primary-edge-soft space-y-1">
                 <span className="text-[10px] font-bold text-primary-950 flex items-center gap-1">
                   <AlertCircle className="w-3.5 h-3.5 text-primary-600" />
                   <span>逃した購入・配置タイミング（勝率向上の急所）:</span>
@@ -780,7 +780,7 @@ export default function PostGameDeepAnalyticsDashboard({
           </div>
 
           {/* 昇格ボトルネックアドバイス */}
-          <div className="bg-danger-50/80 border border-rose-200/80 rounded-xl p-3 text-[11px] space-y-1">
+          <div className="bg-danger-50/80 border border-danger-edge-soft/80 rounded-xl p-3 text-[11px] space-y-1">
             <div className="flex items-center gap-1.5 font-black text-danger-800">
               <ShieldAlert className="w-4 h-4 text-danger-600" />
               <span>改善急所: {data.biggest_bottleneck.metric}</span>
@@ -800,7 +800,7 @@ export default function PostGameDeepAnalyticsDashboard({
             <span>この試合の反省・気づきメモ（後からいつでも編集可能）</span>
           </span>
           {memoSaved && (
-            <span className="text-xs font-bold text-success-600 bg-success-50 border border-emerald-200 px-2 py-0.5 rounded-md animate-pulse">
+            <span className="text-xs font-bold text-success-600 bg-success-50 border border-success-edge-soft px-2 py-0.5 rounded-md animate-pulse">
               ✅ 保存完了！
             </span>
           )}
@@ -827,7 +827,7 @@ export default function PostGameDeepAnalyticsDashboard({
       </div>
 
       {/* 完全勝利サイクル: ナレッジ自動フィードバック同期バー */}
-      <div className="bg-gradient-to-r from-primary-50 via-primary-50 to-success-50 border border-amber-200/80 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
+      <div className="bg-gradient-to-r from-primary-50 via-primary-50 to-success-50 border border-primary-edge-soft/80 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
         <div className="space-y-0.5 text-center sm:text-left">
           <div className="flex items-center justify-center sm:justify-start gap-1.5 text-xs font-black text-foreground">
             <Sparkles className="w-4 h-4 text-primary-600" />
@@ -842,7 +842,7 @@ export default function PostGameDeepAnalyticsDashboard({
           disabled={syncing || synced}
           className={`px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 shadow-xs transition-all shrink-0 cursor-pointer ${
             synced
-              ? 'bg-success-600 text-white border border-emerald-500'
+              ? 'bg-success-600 text-white border border-success-edge-strong'
               : syncing
               ? 'bg-stone-700 text-faint animate-pulse'
               : 'bg-stone-900 hover:bg-stone-800 text-white'

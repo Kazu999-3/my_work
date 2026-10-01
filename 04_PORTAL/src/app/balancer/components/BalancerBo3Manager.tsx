@@ -34,7 +34,7 @@ export const BalancerBo3Manager = memo(function BalancerBo3Manager({
 
 
   return (
-    <div className="p-4 rounded-2xl bg-gradient-to-r from-primary-50 via-primary-50 to-primary-50 border-2 border-amber-300 shadow-md space-y-3">
+    <div className="p-4 rounded-2xl bg-gradient-to-r from-primary-50 via-primary-50 to-primary-50 border-2 border-primary-edge shadow-md space-y-3">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <span className="text-base">🏆</span>
@@ -62,15 +62,15 @@ export const BalancerBo3Manager = memo(function BalancerBo3Manager({
       </div>
 
       {/* チーム別スコア比較 */}
-      <div className="grid grid-cols-2 gap-3 bg-surface p-3 rounded-xl border border-amber-200">
+      <div className="grid grid-cols-2 gap-3 bg-surface p-3 rounded-xl border border-primary-edge-soft">
         {/* BLUEチーム */}
         <div className="text-center space-y-1">
           <span className="text-[11px] font-extrabold text-secondary-700 block">
             🔵 BLUE: {bo3State.team1IsCurrentlyBlue ? bo3State.team1Name : bo3State.team2Name}
           </span>
           <div className="flex items-center justify-center gap-1.5 text-lg font-black">
-            <span className={`w-3.5 h-3.5 rounded-full border ${ (bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 1 ? 'bg-secondary-600 border-teal-600' : 'bg-surface-hover border-border' }`} />
-            <span className={`w-3.5 h-3.5 rounded-full border ${ (bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 2 ? 'bg-secondary-600 border-teal-600' : 'bg-surface-hover border-border' }`} />
+            <span className={`w-3.5 h-3.5 rounded-full border ${ (bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 1 ? 'bg-secondary-600 border-secondary-edge-strong' : 'bg-surface-hover border-border' }`} />
+            <span className={`w-3.5 h-3.5 rounded-full border ${ (bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 2 ? 'bg-secondary-600 border-secondary-edge-strong' : 'bg-surface-hover border-border' }`} />
             <span className="text-sm font-mono ml-1 text-secondary-900">
               ({bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins}勝)
             </span>
@@ -79,7 +79,7 @@ export const BalancerBo3Manager = memo(function BalancerBo3Manager({
             <button
               type="button"
               onClick={() => onRecordBo3Win('BLUE')}
-              className="mt-1 px-2.5 py-1 rounded-lg bg-secondary-100 hover:bg-secondary-200 text-secondary-900 font-bold text-[11px] border border-teal-300 transition cursor-pointer"
+              className="mt-1 px-2.5 py-1 rounded-lg bg-secondary-100 hover:bg-secondary-200 text-secondary-900 font-bold text-[11px] border border-secondary-edge transition cursor-pointer"
             >
               🔵 この試合 Blue勝利
             </button>
@@ -92,8 +92,8 @@ export const BalancerBo3Manager = memo(function BalancerBo3Manager({
             🔴 RED: {!bo3State.team1IsCurrentlyBlue ? bo3State.team1Name : bo3State.team2Name}
           </span>
           <div className="flex items-center justify-center gap-1.5 text-lg font-black">
-            <span className={`w-3.5 h-3.5 rounded-full border ${ (!bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 1 ? 'bg-danger-600 border-rose-600' : 'bg-surface-hover border-border' }`} />
-            <span className={`w-3.5 h-3.5 rounded-full border ${ (!bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 2 ? 'bg-danger-600 border-rose-600' : 'bg-surface-hover border-border' }`} />
+            <span className={`w-3.5 h-3.5 rounded-full border ${ (!bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 1 ? 'bg-danger-600 border-danger-edge-strong' : 'bg-surface-hover border-border' }`} />
+            <span className={`w-3.5 h-3.5 rounded-full border ${ (!bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins) >= 2 ? 'bg-danger-600 border-danger-edge-strong' : 'bg-surface-hover border-border' }`} />
             <span className="text-sm font-mono ml-1 text-danger-900">
               ({!bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins}勝)
             </span>
@@ -102,7 +102,7 @@ export const BalancerBo3Manager = memo(function BalancerBo3Manager({
             <button
               type="button"
               onClick={() => onRecordBo3Win('RED')}
-              className="mt-1 px-2.5 py-1 rounded-lg bg-danger-100 hover:bg-danger-200 text-danger-900 font-bold text-[11px] border border-rose-300 transition cursor-pointer"
+              className="mt-1 px-2.5 py-1 rounded-lg bg-danger-100 hover:bg-danger-200 text-danger-900 font-bold text-[11px] border border-danger-edge transition cursor-pointer"
             >
               🔴 この試合 Red勝利
             </button>

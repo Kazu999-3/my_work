@@ -70,38 +70,38 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-border bg-black/5 sticky top-0 z-10 backdrop-blur-md">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-black/5 rounded-full flex items-center justify-center text-2xl font-bold border-2 border-amber-500 overflow-hidden">
+            <div className="w-16 h-16 bg-black/5 rounded-full flex items-center justify-center text-2xl font-bold border-2 border-primary-edge-strong overflow-hidden">
               {player.ign ? player.ign.charAt(0).toUpperCase() : player.name.charAt(0)}
             </div>
             <div>
               <h2 className="text-3xl font-extrabold text-foreground">{player.name}</h2>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-faint text-sm font-medium">{player.ign || "IGN未登録"}</span>
-                <span className="bg-primary-100 text-primary-700 border border-amber-200 px-2 py-0.5 rounded text-xs font-bold">
+                <span className="bg-primary-100 text-primary-700 border border-primary-edge-soft px-2 py-0.5 rounded text-xs font-bold">
                   {player.highest_rank || "UNRANKED"}
                 </span>
-                <span className="bg-primary-100 text-primary-700 border border-amber-200 px-2 py-0.5 rounded text-xs font-bold">
+                <span className="bg-primary-100 text-primary-700 border border-primary-edge-soft px-2 py-0.5 rounded text-xs font-bold">
                   MMR: {player.mmr || 1200}
                 </span>
                 {(() => {
                   const totalG = player.total_games ?? player.games ?? player.metadata?.games ?? stats?.totalMatches ?? 0;
                   const daysAgo = player.days_since_last_match;
                   let label = '👑 常連';
-                  let color = 'bg-primary-100 text-primary-900 border-amber-300';
+                  let color = 'bg-primary-100 text-primary-900 border-primary-edge';
 
                   if (totalG === 0) {
                     label = '🔰 初参加';
-                    color = 'bg-success-100 text-success-900 border-emerald-300';
+                    color = 'bg-success-100 text-success-900 border-success-edge';
                   } else if (totalG <= 4) {
                     label = '🌱 ライト';
-                    color = 'bg-secondary-100 text-secondary-900 border-teal-300';
+                    color = 'bg-secondary-100 text-secondary-900 border-secondary-edge';
                   } else if (daysAgo !== null && daysAgo > 30) {
                     if (daysAgo >= 60) {
                       label = '⏳ 復帰勢';
-                      color = 'bg-primary-100 text-primary-900 border-amber-300';
+                      color = 'bg-primary-100 text-primary-900 border-primary-edge';
                     } else {
                       label = '🎖️ 経験者';
-                      color = 'bg-secondary-100 text-secondary-900 border-teal-300';
+                      color = 'bg-secondary-100 text-secondary-900 border-secondary-edge';
                     }
                   }
 
@@ -139,7 +139,7 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                       alt={m.name}
                       width={56}
                       height={56}
-                      className="w-14 h-14 rounded-full border-2 border-amber-300 object-cover"
+                      className="w-14 h-14 rounded-full border-2 border-primary-edge object-cover"
                       onError={(e) => { (e.target as HTMLImageElement).src = 'https://ddragon.leagueoflegends.com/cdn/14.1.1/img/profileicon/29.png' }}
                     />
                     <div>

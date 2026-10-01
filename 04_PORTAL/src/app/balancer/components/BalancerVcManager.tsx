@@ -84,7 +84,7 @@ export const BalancerVcManager = memo(function BalancerVcManager({ onMessage }: 
 
 
   return (
-    <div className="p-4 rounded-2xl bg-gradient-to-br from-primary-500/10 via-primary-500/5 to-transparent border border-amber-500/30 flex flex-col justify-between gap-3 shadow-xs">
+    <div className="p-4 rounded-2xl bg-gradient-to-br from-primary-500/10 via-primary-500/5 to-transparent border border-primary-edge-strong/30 flex flex-col justify-between gap-3 shadow-xs">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-lg">🔊</span>
@@ -99,7 +99,7 @@ export const BalancerVcManager = memo(function BalancerVcManager({ onMessage }: 
       {/* 登録済みプリセット一覧 */}
       <div className="flex items-center gap-1.5 flex-wrap">
         {vcPresets.map((preset, idx) => (
-          <div key={idx} className="inline-flex items-center rounded-xl bg-surface/90 border border-amber-200 shadow-2xs overflow-hidden group">
+          <div key={idx} className="inline-flex items-center rounded-xl bg-surface/90 border border-primary-edge-soft shadow-2xs overflow-hidden group">
             <button
               type="button"
               disabled={updatingVc}
@@ -113,7 +113,7 @@ export const BalancerVcManager = memo(function BalancerVcManager({ onMessage }: 
               <button
                 type="button"
                 onClick={() => handleDeleteVcPreset(preset)}
-                className="px-1.5 py-1.5 text-faint hover:text-danger-600 hover:bg-danger-50 border-l border-amber-100 text-[10px] transition cursor-pointer"
+                className="px-1.5 py-1.5 text-faint hover:text-danger-600 hover:bg-danger-50 border-l border-primary-edge-soft text-[10px] transition cursor-pointer"
                 title="このプリセットを削除"
               >
                 ✕
@@ -129,14 +129,14 @@ export const BalancerVcManager = memo(function BalancerVcManager({ onMessage }: 
           e.preventDefault();
           handleAddVcPreset();
         }}
-        className="flex items-center gap-1.5 pt-2 border-t border-amber-500/20"
+        className="flex items-center gap-1.5 pt-2 border-t border-primary-edge-strong/20"
       >
         <input
           type="text"
           value={newPresetText}
           onChange={(e) => setNewPresetText(e.target.value)}
           placeholder="例: 🔊 カスタム【お祭りマッチ開催中！】"
-          className="flex-1 bg-surface/90 border border-amber-200 text-foreground rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-amber-500 shadow-inner"
+          className="flex-1 bg-surface/90 border border-primary-edge-soft text-foreground rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-primary-edge-strong shadow-inner"
         />
         <button
           type="submit"

@@ -100,10 +100,10 @@ export default function MinimapPlotView({ events }: Props) {
               onMouseLeave={() => setHoveredEvent(null)}
               className={`absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer z-10 transition-transform hover:scale-150 hover:z-30 ${
                 isDeath
-                  ? 'text-danger-400 bg-danger-950/90 border-2 border-rose-500 rounded-full p-1 shadow-lg shadow-danger-500/50'
+                  ? 'text-danger-400 bg-danger-950/90 border-2 border-danger-edge-strong rounded-full p-1 shadow-lg shadow-danger-500/50'
                   : isKill
-                  ? 'text-success-300 bg-success-950/90 border-2 border-emerald-400 rounded-full p-1 shadow-lg shadow-success-500/50'
-                  : 'text-primary-300 bg-primary-950/90 border-2 border-amber-400 rounded-full p-1 shadow-lg shadow-primary-500/50'
+                  ? 'text-success-300 bg-success-950/90 border-2 border-success-edge rounded-full p-1 shadow-lg shadow-success-500/50'
+                  : 'text-primary-300 bg-primary-950/90 border-2 border-primary-edge rounded-full p-1 shadow-lg shadow-primary-500/50'
               }`}
             >
               <span className="text-[10px] block leading-none font-black">

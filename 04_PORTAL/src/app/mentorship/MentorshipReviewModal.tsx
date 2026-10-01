@@ -142,13 +142,13 @@ export function MentorshipReviewModal({
                 </div>
               </div>
             </div>
-            <span className="text-[10px] font-bold bg-primary-100 text-primary-900 border border-amber-300 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-bold bg-primary-100 text-primary-900 border border-primary-edge px-2 py-0.5 rounded-full">
               +100🪙 付与
             </span>
           </div>
 
           {/* 1. 星評価 (1〜5) */}
-          <div className="space-y-2 text-center py-2 bg-primary-50/50 rounded-2xl border border-amber-200/80">
+          <div className="space-y-2 text-center py-2 bg-primary-50/50 rounded-2xl border border-primary-edge-soft/80">
             <label className="block text-xs font-black text-foreground-soft">
               総合満足度を選んでください
             </label>
@@ -196,7 +196,7 @@ export function MentorshipReviewModal({
                     onClick={() => toggleTag(tag)}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer flex items-center gap-1 ${
                       isSelected
-                        ? 'bg-primary-500 text-stone-950 border-amber-500 shadow-2xs'
+                        ? 'bg-primary-500 text-stone-950 border-primary-edge-strong shadow-2xs'
                         : 'bg-background text-foreground-subtle border-border hover:bg-surface-subtle'
                     }`}
                   >
@@ -218,7 +218,7 @@ export function MentorshipReviewModal({
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="一緒にプレイした感想や感謝の言葉をご記入ください（個人を特定できない形式で集約されます）..."
-              className="w-full bg-background border border-border rounded-2xl p-3 text-foreground text-xs focus:border-amber-500 focus:bg-surface focus:outline-hidden leading-relaxed font-medium"
+              className="w-full bg-background border border-border rounded-2xl p-3 text-foreground text-xs focus:border-primary-edge-strong focus:bg-surface focus:outline-hidden leading-relaxed font-medium"
             />
           </div>
 

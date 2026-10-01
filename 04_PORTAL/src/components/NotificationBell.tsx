@@ -212,22 +212,22 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
     // **どれにも一致せず**、dict_review は全件が無個性な「🔔 お知らせ」になっていた。
     // 実データの type を先に判定する。
     if (type.includes('coach_review')) {
-      return { icon: '🎮', label: 'ソロQ振り返り', bg: 'bg-primary-100 text-primary-800 border-amber-200' };
+      return { icon: '🎮', label: 'ソロQ振り返り', bg: 'bg-primary-100 text-primary-800 border-primary-edge-soft' };
     }
     if (type.includes('dict_review')) {
-      return { icon: '📖', label: '辞典レビュー', bg: 'bg-secondary-100 text-secondary-800 border-teal-200' };
+      return { icon: '📖', label: '辞典レビュー', bg: 'bg-secondary-100 text-secondary-800 border-secondary-edge-soft' };
     }
     if (type.includes('soloq') || title.includes('ソロq') || title.includes('振り返り')) {
-      return { icon: '🎮', label: 'ソロQ', bg: 'bg-primary-100 text-primary-800 border-amber-200' };
+      return { icon: '🎮', label: 'ソロQ', bg: 'bg-primary-100 text-primary-800 border-primary-edge-soft' };
     }
     if (type.includes('discord') || title.includes('メンバー') || title.includes('参加')) {
-      return { icon: '👤', label: '新メンバー', bg: 'bg-primary-100 text-primary-800 border-amber-200' };
+      return { icon: '👤', label: '新メンバー', bg: 'bg-primary-100 text-primary-800 border-primary-edge-soft' };
     }
     if (type.includes('match') || title.includes('内戦') || title.includes('試合')) {
-      return { icon: '🏆', label: '大会・内戦', bg: 'bg-success-100 text-success-800 border-emerald-200' };
+      return { icon: '🏆', label: '大会・内戦', bg: 'bg-success-100 text-success-800 border-success-edge-soft' };
     }
     if (type.includes('error') || title.includes('エラー') || title.includes('失敗')) {
-      return { icon: '⚠️', label: 'アラート', bg: 'bg-danger-100 text-danger-800 border-rose-200' };
+      return { icon: '⚠️', label: 'アラート', bg: 'bg-danger-100 text-danger-800 border-danger-edge-soft' };
     }
     return { icon: '🔔', label: 'お知らせ', bg: 'bg-surface-subtle text-foreground-soft border-border' };
   };
@@ -321,7 +321,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
                 type="button"
                 onClick={() => setOnlyUnread(!onlyUnread)}
                 className={`px-2 py-0.5 rounded-md transition cursor-pointer border ${
-                  onlyUnread ? 'bg-primary-600 text-white border-amber-600' : 'bg-surface text-muted border-border hover:bg-surface-subtle'
+                  onlyUnread ? 'bg-primary-600 text-white border-primary-edge-strong' : 'bg-surface text-muted border-border hover:bg-surface-subtle'
                 }`}
               >
                 {onlyUnread ? '未読のみ' : 'すべて'}

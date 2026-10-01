@@ -150,7 +150,7 @@ function LeaderboardContent() {
         {/* ヘッダー */}
         <div className="bg-surface dark:bg-stone-900 border border-border/90 dark:border-stone-800 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
           <div className="flex items-center gap-3">
-            <div className="text-2xl p-2.5 bg-primary-50 dark:bg-primary-950/40 rounded-xl border border-amber-200/80 dark:border-amber-800/60 shrink-0 text-primary-600">
+            <div className="text-2xl p-2.5 bg-primary-50 dark:bg-primary-950/40 rounded-xl border border-primary-edge-soft/80 dark:border-primary-edge-strong/60 shrink-0 text-primary-600">
               <Trophy size={24} />
             </div>
             <div>
@@ -158,7 +158,7 @@ function LeaderboardContent() {
                 <h1 className="text-base sm:text-lg font-black tracking-tight text-foreground dark:text-stone-100">
                   KTM 順位表 ＆ コミュニティ名簿
                 </h1>
-                <span className="px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900/40 border border-amber-300 dark:border-amber-700 text-primary-800 dark:text-primary-300 text-[10px] font-extrabold">
+                <span className="px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900/40 border border-primary-edge dark:border-primary-edge-strong text-primary-800 dark:text-primary-300 text-[10px] font-extrabold">
                   コミュニティ
                 </span>
               </div>
@@ -400,7 +400,7 @@ function LeaderboardContent() {
                                     <Link
                                       key={p.name}
                                       href={`/player/${encodeURIComponent(p.name)}`}
-                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface-subtle hover:bg-primary-100 hover:border-amber-300 border border-border text-foreground-soft text-[11px] transition-colors"
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface-subtle hover:bg-primary-100 hover:border-primary-edge border border-border text-foreground-soft text-[11px] transition-colors"
                                       title={`${p.name} のカルテを見る`}
                                     >
                                       <span className="font-bold">{p.name}</span>
@@ -454,7 +454,7 @@ function LeaderboardContent() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="プレイヤー名で絞り込み..."
-                  className="w-full bg-background border border-border rounded-xl px-3 py-1.5 text-xs font-bold text-foreground-soft placeholder-stone-400 focus:outline-none focus:border-amber-500 focus:bg-surface transition"
+                  className="w-full bg-background border border-border rounded-xl px-3 py-1.5 text-xs font-bold text-foreground-soft placeholder-stone-400 focus:outline-none focus:border-primary-edge-strong focus:bg-surface transition"
                 />
                 {search && (
                   <button

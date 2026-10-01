@@ -211,7 +211,7 @@ export default function InventoryAuditPanel() {
       {message && (
         <div
           className={`p-3.5 rounded-2xl border text-xs font-bold flex items-center gap-2 ${
-            message.type === 'success' ? 'bg-success-50 text-success-800 border-emerald-200' : 'bg-danger-50 text-danger-800 border-rose-200'
+            message.type === 'success' ? 'bg-success-50 text-success-800 border-success-edge-soft' : 'bg-danger-50 text-danger-800 border-danger-edge-soft'
           }`}
         >
           {message.type === 'success' ? '✅' : '❌'} {message.text}
@@ -220,7 +220,7 @@ export default function InventoryAuditPanel() {
 
       {/* サマリー指標カード */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl bg-primary-50/60 border border-amber-100 space-y-1">
+        <div className="p-4 rounded-2xl bg-primary-50/60 border border-primary-edge-soft space-y-1">
           <span className="text-[10px] font-extrabold text-primary-600 uppercase tracking-wider block">人間確認網羅率</span>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-black text-primary-900">{completionRate}%</span>
@@ -234,7 +234,7 @@ export default function InventoryAuditPanel() {
         <div
           onClick={() => setActiveFilter('unverified')}
           className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-            activeFilter === 'unverified' ? 'bg-primary-50 border-amber-300 ring-2 ring-primary-400/30' : 'bg-background border-border hover:bg-surface-subtle'
+            activeFilter === 'unverified' ? 'bg-primary-50 border-primary-edge ring-2 ring-primary-400/30' : 'bg-background border-border hover:bg-surface-subtle'
           }`}
         >
           <span className="text-[10px] font-extrabold text-primary-700 uppercase tracking-wider block">人間未確認 (要棚卸し)</span>
@@ -245,7 +245,7 @@ export default function InventoryAuditPanel() {
         <div
           onClick={() => setActiveFilter('outdated')}
           className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-            activeFilter === 'outdated' ? 'bg-secondary-50 border-teal-300 ring-2 ring-secondary-400/30' : 'bg-background border-border hover:bg-surface-subtle'
+            activeFilter === 'outdated' ? 'bg-secondary-50 border-secondary-edge ring-2 ring-secondary-400/30' : 'bg-background border-border hover:bg-surface-subtle'
           }`}
         >
           <span className="text-[10px] font-extrabold text-secondary-700 uppercase tracking-wider block">古いトレンド (3日以上経過)</span>
@@ -256,7 +256,7 @@ export default function InventoryAuditPanel() {
         <div
           onClick={() => setActiveFilter('incomplete')}
           className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-            activeFilter === 'incomplete' ? 'bg-danger-50 border-rose-300 ring-2 ring-danger-400/30' : 'bg-background border-border hover:bg-surface-subtle'
+            activeFilter === 'incomplete' ? 'bg-danger-50 border-danger-edge ring-2 ring-danger-400/30' : 'bg-background border-border hover:bg-surface-subtle'
           }`}
         >
           <span className="text-[10px] font-extrabold text-danger-700 uppercase tracking-wider block">空項目あり (欠損データ)</span>
@@ -320,7 +320,7 @@ export default function InventoryAuditPanel() {
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[500px] overflow-y-auto pr-1">
                 {unverifiedList.map((f) => (
-                  <div key={f.champion_name} className="p-3.5 rounded-2xl border border-border bg-background/50 flex items-center justify-between gap-3 hover:bg-surface hover:border-amber-300 transition">
+                  <div key={f.champion_name} className="p-3.5 rounded-2xl border border-border bg-background/50 flex items-center justify-between gap-3 hover:bg-surface hover:border-primary-edge transition">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <img src={getChampIcon(f.champion_name)} alt={f.display_name} className="w-10 h-10 rounded-xl border border-border object-cover shrink-0" />
                       <div className="min-w-0">
@@ -364,7 +364,7 @@ export default function InventoryAuditPanel() {
                       <img src={getChampIcon(f.champion_name)} alt={f.display_name} className="w-10 h-10 rounded-xl border border-border object-cover shrink-0" />
                       <div>
                         <span className="font-extrabold text-foreground text-xs block">{f.display_name}</span>
-                        <span className="text-[10px] text-secondary-700 font-bold bg-secondary-50 px-1.5 py-0.5 rounded border border-teal-200">
+                        <span className="text-[10px] text-secondary-700 font-bold bg-secondary-50 px-1.5 py-0.5 rounded border border-secondary-edge-soft">
                           {f.patch_meta_patch ? `Patch ${f.patch_meta_patch}` : '未解析'}
                         </span>
                       </div>
@@ -427,7 +427,7 @@ export default function InventoryAuditPanel() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-extrabold text-foreground text-xs">{item.champion}</span>
                           {item.enemy_champion && (
-                            <span className="text-[10px] bg-danger-100 text-danger-800 font-bold px-2 py-0.5 rounded-full border border-rose-200">
+                            <span className="text-[10px] bg-danger-100 text-danger-800 font-bold px-2 py-0.5 rounded-full border border-danger-edge-soft">
                               vs {item.enemy_champion}
                             </span>
                           )}

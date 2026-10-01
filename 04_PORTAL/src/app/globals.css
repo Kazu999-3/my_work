@@ -82,6 +82,22 @@
   --color-secondary-400: #2dd4bf;
   --color-secondary-500: #14b8a6;
   --color-secondary-950: #042f2e;
+
+  /* アクセント境界線（2026-10-01 Phase 6）。
+     背景用トークンはダークで #35373c に潰れる設計のため境界線には流用できない。
+     境界線はダークでも色相を保つ必要があるので別系統にし、濃淡3段階に集約した。 */
+  --color-primary-edge-soft: #fde68a;
+  --color-primary-edge: #fcd34d;
+  --color-primary-edge-strong: #f59e0b;
+  --color-success-edge-soft: #a7f3d0;
+  --color-success-edge: #6ee7b7;
+  --color-success-edge-strong: #10b981;
+  --color-danger-edge-soft: #fecdd3;
+  --color-danger-edge: #fda4af;
+  --color-danger-edge-strong: #f43f5e;
+  --color-secondary-edge-soft: #99f6e4;
+  --color-secondary-edge: #5eead4;
+  --color-secondary-edge-strong: #14b8a6;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
@@ -151,6 +167,20 @@ html.dark {
   --color-secondary-400: #2dd4bf;
   --color-secondary-500: #14b8a6;
   --color-secondary-950: #5eead4;
+
+  /* アクセント境界線（Phase 6）。ダークは色相を保った半透明。 */
+  --color-primary-edge-soft: rgba(245, 158, 11, 0.25);
+  --color-primary-edge: rgba(245, 158, 11, 0.4);
+  --color-primary-edge-strong: rgba(245, 158, 11, 0.55);
+  --color-success-edge-soft: rgba(16, 185, 129, 0.25);
+  --color-success-edge: rgba(16, 185, 129, 0.4);
+  --color-success-edge-strong: rgba(16, 185, 129, 0.55);
+  --color-danger-edge-soft: rgba(244, 63, 94, 0.25);
+  --color-danger-edge: rgba(244, 63, 94, 0.4);
+  --color-danger-edge-strong: rgba(244, 63, 94, 0.55);
+  --color-secondary-edge-soft: rgba(20, 184, 166, 0.25);
+  --color-secondary-edge: rgba(20, 184, 166, 0.4);
+  --color-secondary-edge-strong: rgba(20, 184, 166, 0.55);
   /* 役割ベースのアクセント階調（Phase 5） */
   --color-primary-50: #35373c;
   --color-primary-100: #35373c;
@@ -640,20 +670,7 @@ html.dark textarea::placeholder {
 }
 
 /* 🌙 ダークモード時の色付きバッジ・アクセントの視認性最適化 */
-html.dark .text-amber-900,
-html.dark .text-amber-950,
-html.dark .text-amber-800,
-html.dark .border-amber-300,
-html.dark .border-amber-400 {
-  border-color: rgba(245, 158, 11, 0.4);
-}
 
-html.dark .text-emerald-900,
-html.dark .text-emerald-800,
-html.dark .border-emerald-200,
-html.dark .border-emerald-300 {
-  border-color: rgba(16, 185, 129, 0.4);
-}
 
 
 @layer utilities {

@@ -130,7 +130,7 @@ export default function KtmSlotGame({ userCoins, onBalanceChange }: KtmSlotGameP
       </div>
 
       {/* スロットマシン筐体 */}
-      <div className="bg-stone-950 border-2 border-amber-500/40 rounded-3xl p-5 sm:p-7 shadow-inner relative overflow-hidden space-y-5">
+      <div className="bg-stone-950 border-2 border-primary-edge-strong/40 rounded-3xl p-5 sm:p-7 shadow-inner relative overflow-hidden space-y-5">
         {/* 電飾・筐体ヘッダー */}
         <div className="flex items-center justify-between text-[11px] font-black text-primary-400/80 px-1 uppercase tracking-wider">
           <span>● REEL 1</span>
@@ -147,9 +147,9 @@ export default function KtmSlotGame({ userCoins, onBalanceChange }: KtmSlotGameP
                 key={idx}
                 className={`h-28 sm:h-36 rounded-xl bg-gradient-to-b from-stone-950 to-stone-900 border-2 ${
                   isSpinning
-                    ? 'border-amber-400/80 shadow-md shadow-primary-500/20 animate-pulse'
+                    ? 'border-primary-edge/80 shadow-md shadow-primary-500/20 animate-pulse'
                     : lastResult && lastResult.payoutMultiplier > 0
-                    ? 'border-emerald-500 shadow-lg shadow-success-500/30'
+                    ? 'border-success-edge-strong shadow-lg shadow-success-500/30'
                     : 'border-stone-800'
                 } flex flex-col items-center justify-center transition-all`}
               >
@@ -169,9 +169,9 @@ export default function KtmSlotGame({ userCoins, onBalanceChange }: KtmSlotGameP
           <div
             className={`p-3 rounded-2xl text-center text-xs font-black border transition-all animate-in zoom-in-95 ${
               lastResult.payoutMultiplier >= 15
-                ? 'bg-gradient-to-r from-primary-950/80 via-primary-950/80 to-primary-950/80 border-amber-500/80 text-primary-300 shadow-lg shadow-primary-500/20'
+                ? 'bg-gradient-to-r from-primary-950/80 via-primary-950/80 to-primary-950/80 border-primary-edge-strong/80 text-primary-300 shadow-lg shadow-primary-500/20'
                 : lastResult.payoutMultiplier > 0
-                ? 'bg-success-950/80 border-emerald-500/80 text-success-300'
+                ? 'bg-success-950/80 border-success-edge-strong/80 text-success-300'
                 : 'bg-stone-900/80 border-stone-800 text-faint'
             }`}
           >
@@ -185,7 +185,7 @@ export default function KtmSlotGame({ userCoins, onBalanceChange }: KtmSlotGameP
         )}
 
         {errorMsg && (
-          <div className="p-2.5 rounded-xl bg-danger-950/60 border border-rose-800 text-danger-300 text-xs font-bold flex items-center gap-1.5 justify-center">
+          <div className="p-2.5 rounded-xl bg-danger-950/60 border border-danger-edge-strong text-danger-300 text-xs font-bold flex items-center gap-1.5 justify-center">
             <AlertCircle size={14} />
             <span>{errorMsg}</span>
           </div>

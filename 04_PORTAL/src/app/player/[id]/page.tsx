@@ -56,11 +56,11 @@ const roleIcons: Record<string, any> = {
 };
 
 const roleColors: Record<string, string> = {
-  TOP: "from-primary-100 to-primary-50 border-amber-300 text-primary-800",
-  JG: "from-success-100 to-success-50 border-emerald-200 text-success-700",
-  MID: "from-danger-100 to-danger-50 border-rose-200 text-danger-700",
-  ADC: "from-primary-100 to-primary-50 border-amber-300 text-primary-800",
-  SUP: "from-primary-100 to-primary-50 border-amber-200 text-primary-700"
+  TOP: "from-primary-100 to-primary-50 border-primary-edge text-primary-800",
+  JG: "from-success-100 to-success-50 border-success-edge-soft text-success-700",
+  MID: "from-danger-100 to-danger-50 border-danger-edge-soft text-danger-700",
+  ADC: "from-primary-100 to-primary-50 border-primary-edge text-primary-800",
+  SUP: "from-primary-100 to-primary-50 border-primary-edge-soft text-primary-700"
 };
 
 // 全レーン同時表示の各レーン色（RoleIconの色味に合わせる）
@@ -666,7 +666,7 @@ export default function PlayerMyPage() {
   if (!player) {
     return (
       <div className="flex-1 min-h-screen bg-background flex flex-col items-center justify-center p-4">
-        <div className="glass-panel border border-rose-200 p-8 rounded-3xl max-w-md w-full text-center space-y-6">
+        <div className="glass-panel border border-danger-edge-soft p-8 rounded-3xl max-w-md w-full text-center space-y-6">
           <div className="text-5xl text-danger-600 flex justify-center"><Shield className="w-12 h-12" /></div>
           <h1 className="text-xl font-extrabold text-foreground">プレイヤーが見つかりません</h1>
           <p className="text-muted-strong text-xs">指定された Discord ID ({id}) の名簿登録が存在しないか削除されました。</p>
@@ -704,7 +704,7 @@ export default function PlayerMyPage() {
         
         {/* 👑 ログイン中の自分自身のカルテを開いている場合のマイページ案内 ＆ デイリーボーナスバナー */}
         {isMe && (
-          <div className="bg-gradient-to-r from-primary-500/20 via-primary-500/10 to-transparent border border-amber-400/50 rounded-3xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-md animate-fade-in">
+          <div className="bg-gradient-to-r from-primary-500/20 via-primary-500/10 to-transparent border border-primary-edge/50 rounded-3xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-md animate-fade-in">
             <div className="flex items-center gap-3.5">
               <div className="w-12 h-12 rounded-2xl bg-primary-500 text-stone-950 flex items-center justify-center font-black text-2xl shadow-sm shrink-0">
                 👑
@@ -793,7 +793,7 @@ export default function PlayerMyPage() {
                     {player.name}
                   </h1>
                   {mainDisplayTag && mainDisplayTag !== 'Unknown' && mainDisplayTag !== 'unknown' && (
-                    <span className="bg-primary-100 border border-amber-300 text-primary-800 text-[10px] font-black px-2.5 py-0.5 rounded-full backdrop-blur-md">
+                    <span className="bg-primary-100 border border-primary-edge text-primary-800 text-[10px] font-black px-2.5 py-0.5 rounded-full backdrop-blur-md">
                       Main: {mainDisplayTag}
                     </span>
                   )}
@@ -805,7 +805,7 @@ export default function PlayerMyPage() {
                       <span>🎮 ソロキュー:</span>
                     </span>
                     <span className="text-white font-bold font-mono text-xs">{player.ign || "IGN未登録"}</span>
-                    <span className="text-primary-300 font-extrabold text-[11px] bg-primary-400/20 px-1.5 py-0.5 rounded border border-amber-400/30">
+                    <span className="text-primary-300 font-extrabold text-[11px] bg-primary-400/20 px-1.5 py-0.5 rounded border border-primary-edge/30">
                       {player.highest_rank || "UNRANKED"}
                     </span>
                     {opggUrl && (
@@ -822,14 +822,14 @@ export default function PlayerMyPage() {
                   </div>
 
                   {/* ⚔️ KTMカスタム内戦情報 */}
-                  <div className="flex items-center gap-1.5 bg-primary-950/40 backdrop-blur-md px-2.5 py-1 rounded-xl border border-amber-500/30 text-xs">
+                  <div className="flex items-center gap-1.5 bg-primary-950/40 backdrop-blur-md px-2.5 py-1 rounded-xl border border-primary-edge-strong/30 text-xs">
                     <span className="text-[10px] font-black text-primary-400 flex items-center gap-1">
                       <span>⚔️ KTMカスタム:</span>
                     </span>
                     <span className="text-white font-black font-mono">
                       MMR {player.mmr || 1200}
                     </span>
-                    <span className="text-[10px] font-bold text-primary-300 bg-primary-500/20 px-1.5 py-0.5 rounded border border-amber-500/30">
+                    <span className="text-[10px] font-bold text-primary-300 bg-primary-500/20 px-1.5 py-0.5 rounded border border-primary-edge-strong/30">
                       {getKtmRank(player.mmr || 1200).name}
                     </span>
                     {overallStats.total > 0 && (
@@ -850,11 +850,11 @@ export default function PlayerMyPage() {
                   {recentForm ? (
                     <span className={`text-xs font-black px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${
                       recentForm.streak >= 3 && recentForm.streakWin
-                        ? 'bg-success-100 text-success-800 border-emerald-300'
+                        ? 'bg-success-100 text-success-800 border-success-edge'
                         : recentForm.last10Rate >= 60
-                        ? 'bg-primary-100 text-primary-800 border-amber-300'
+                        ? 'bg-primary-100 text-primary-800 border-primary-edge'
                         : recentForm.last10Rate <= 40
-                        ? 'bg-danger-100 text-danger-800 border-rose-300'
+                        ? 'bg-danger-100 text-danger-800 border-danger-edge'
                         : 'bg-surface-subtle text-foreground-subtle border-border'
                     }`}>
                       <span>
@@ -878,7 +878,7 @@ export default function PlayerMyPage() {
                 <div className="text-[10px] text-faint font-black tracking-wider uppercase">内戦ステータス</div>
                 <div className={`flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-black border ${
                   player.is_active 
-                    ? 'bg-success-100 text-success-700 border-emerald-200'
+                    ? 'bg-success-100 text-success-700 border-success-edge-soft'
                     : 'bg-black/5 text-muted-strong border-black/10'
                 }`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${player.is_active ? 'bg-success-400 animate-pulse' : 'bg-gray-500'}`}></span>
@@ -906,7 +906,7 @@ export default function PlayerMyPage() {
 
         {/* 昇降格バナー(L-04) */}
         {tierChange && (
-          <div className={`rounded-2xl border p-4 flex items-center justify-between gap-3 ${tierChange.up ? 'bg-success-100 border-emerald-200' : 'bg-danger-100 border-rose-200'}`}>
+          <div className={`rounded-2xl border p-4 flex items-center justify-between gap-3 ${tierChange.up ? 'bg-success-100 border-success-edge-soft' : 'bg-danger-100 border-danger-edge-soft'}`}>
             <p className={`text-sm font-black ${tierChange.up ? 'text-success-700' : 'text-danger-700'}`}>
               {tierChange.up ? '🎉 昇格しました！' : '📉 降格しました…'}
               <span className="ml-2 text-foreground-subtle font-bold">{tierChange.from} → {tierChange.to}</span>
@@ -920,14 +920,14 @@ export default function PlayerMyPage() {
           {/* 1. KTMレート ＆ 実力Tier */}
           <div className="bg-surface/90 border border-border/90 rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary-100 border border-amber-300 flex items-center justify-center text-xl shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-primary-100 border border-primary-edge flex items-center justify-center text-xl shrink-0">
                 🏆
               </div>
               <div>
                 <div className="text-[10px] font-black text-faint uppercase tracking-wider">KTM内戦レート ＆ Tier</div>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="text-xl font-black font-mono text-foreground">{player.mmr || 1200}</span>
-                  <span className="text-xs font-black text-primary-800 bg-primary-100 px-2 py-0.5 rounded border border-amber-200">
+                  <span className="text-xs font-black text-primary-800 bg-primary-100 px-2 py-0.5 rounded border border-primary-edge-soft">
                     {getKtmRank(player.mmr || 1200).name}
                   </span>
                 </div>
@@ -936,7 +936,7 @@ export default function PlayerMyPage() {
             {(player.coins > 0 || (player.metadata?.coins && player.metadata.coins > 0)) && (
               <div className="text-right">
                 <div className="text-[10px] font-bold text-faint">所持コイン</div>
-                <div className="text-xs font-black font-mono text-primary-700 bg-primary-50 px-2 py-0.5 rounded border border-amber-200 mt-0.5">
+                <div className="text-xs font-black font-mono text-primary-700 bg-primary-50 px-2 py-0.5 rounded border border-primary-edge-soft mt-0.5">
                   🪙 {player.coins || player.metadata?.coins}
                 </div>
               </div>
@@ -977,7 +977,7 @@ export default function PlayerMyPage() {
           {/* 3. 主力レーン適正 ＆ 通算勝率 */}
           <div className="bg-surface/90 border border-border/90 rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary-100 border border-amber-300 flex items-center justify-center text-xl shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-primary-100 border border-primary-edge flex items-center justify-center text-xl shrink-0">
                 🎯
               </div>
               <div>
@@ -1014,9 +1014,9 @@ export default function PlayerMyPage() {
               {recentForm && (
                 <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${
                   recentForm.streak >= 3 && recentForm.streakWin
-                    ? 'bg-success-100 text-success-800 border-emerald-300'
+                    ? 'bg-success-100 text-success-800 border-success-edge'
                     : recentForm.streak >= 2 && !recentForm.streakWin
-                    ? 'bg-danger-100 text-danger-800 border-rose-300'
+                    ? 'bg-danger-100 text-danger-800 border-danger-edge'
                     : 'bg-surface-subtle text-foreground-subtle border-border'
                 }`}>
                   {recentForm.streakWin ? `🔥 ${recentForm.streak}連勝中` : `❄️ ${recentForm.streak}連敗中`}
@@ -1079,7 +1079,7 @@ export default function PlayerMyPage() {
                     </div>
                   </div>
                   <div className="text-right font-mono">
-                    <span className="text-xs font-black text-success-600 bg-success-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                    <span className="text-xs font-black text-success-600 bg-success-50 border border-success-edge-soft px-2 py-0.5 rounded-md">
                       {synergyPair.best.winRate}%
                     </span>
                   </div>
@@ -1119,7 +1119,7 @@ export default function PlayerMyPage() {
                     </div>
                   </div>
                   <div className="text-right font-mono">
-                    <span className="text-xs font-black text-danger-600 bg-danger-50 border border-rose-200 px-2 py-0.5 rounded-md">
+                    <span className="text-xs font-black text-danger-600 bg-danger-50 border border-danger-edge-soft px-2 py-0.5 rounded-md">
                       勝率 {matchupExtremes.worst[0].winRate}%
                     </span>
                   </div>
@@ -1256,7 +1256,7 @@ export default function PlayerMyPage() {
                             {player.mmr || 1200}
                           </span>
                         </div>
-                        <span className="text-[10px] font-bold text-primary-800 bg-primary-100 px-2 py-0.5 rounded border border-amber-200 inline-block self-start">
+                        <span className="text-[10px] font-bold text-primary-800 bg-primary-100 px-2 py-0.5 rounded border border-primary-edge-soft inline-block self-start">
                           Tier: {getKtmRank(player.mmr || 1200).name}
                         </span>
                       </div>
@@ -1264,7 +1264,7 @@ export default function PlayerMyPage() {
                   </div>
 
                   {/* 🎮 ソロキュー戦績クイックサマリーカード（案B: 混合を防ぐため独立配置） */}
-                  <div className="lg:col-span-3 bg-gradient-to-r from-secondary-950/10 via-secondary-950/5 to-transparent border border-teal-500/25 rounded-3xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="lg:col-span-3 bg-gradient-to-r from-secondary-950/10 via-secondary-950/5 to-transparent border border-secondary-edge-strong/25 rounded-3xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-3.5">
                       <div className="w-11 h-11 rounded-2xl bg-secondary-600 text-white flex items-center justify-center font-black text-xl shadow-xs shrink-0">
                         🎮
@@ -1274,7 +1274,7 @@ export default function PlayerMyPage() {
                           <h4 className="text-sm font-black text-foreground">
                             ソロキュー公式ステータス (Riot連携)
                           </h4>
-                          <span className="text-xs font-black px-2 py-0.5 rounded-md bg-secondary-100 text-secondary-800 border border-teal-300">
+                          <span className="text-xs font-black px-2 py-0.5 rounded-md bg-secondary-100 text-secondary-800 border border-secondary-edge">
                             {player.highest_rank || "UNRANKED"}
                           </span>
                           <span className="text-xs text-muted-strong font-mono">
@@ -1301,7 +1301,7 @@ export default function PlayerMyPage() {
                       <button
                         type="button"
                         onClick={() => setActiveTab('soloq')}
-                        className="px-3.5 py-1.5 rounded-xl bg-secondary-50 hover:bg-secondary-100 text-secondary-900 text-xs font-black transition-all border border-teal-200 cursor-pointer"
+                        className="px-3.5 py-1.5 rounded-xl bg-secondary-50 hover:bg-secondary-100 text-secondary-900 text-xs font-black transition-all border border-secondary-edge-soft cursor-pointer"
                       >
                         <span>ソロキュー詳細を見る →</span>
                       </button>
@@ -1335,7 +1335,7 @@ export default function PlayerMyPage() {
                             <p className="text-[10px] text-muted-strong font-bold uppercase tracking-widest mb-1.5">最近の流れ（左が最新）</p>
                             <div className="flex gap-1">
                               {recentForm.seq.map((w, i) => (
-                                <div key={i} title={w ? '勝ち' : '負け'} className={`w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-black ${w ? 'bg-success-500/20 text-success-600 border border-emerald-500/30' : 'bg-danger-500/20 text-danger-600 border border-rose-500/30'}`}>
+                                <div key={i} title={w ? '勝ち' : '負け'} className={`w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-black ${w ? 'bg-success-500/20 text-success-600 border border-success-edge-strong/30' : 'bg-danger-500/20 text-danger-600 border border-danger-edge-strong/30'}`}>
                                   {w ? 'W' : 'L'}
                                 </div>
                               ))}
@@ -1429,7 +1429,7 @@ export default function PlayerMyPage() {
                             <span className="text-[9px] text-muted-strong font-medium">(味方同チーム・3戦以上)</span>
                           </h3>
                           <div className="grid grid-cols-2 gap-4 text-center">
-                            <div className="bg-success-50 border border-emerald-200 rounded-2xl p-4">
+                            <div className="bg-success-50 border border-success-edge-soft rounded-2xl p-4">
                               <p className="text-[10px] text-success-700 font-black mb-1">🏆 最強のシナジー (高勝率)</p>
                               <p className="text-lg font-black text-foreground truncate">{synergyPair.best.name}</p>
                               <p className="text-xs text-muted-strong">同チーム{synergyPair.best.games}戦・勝率<span className="text-success-700 font-bold ml-1">{synergyPair.best.winRate}%</span></p>
@@ -1437,7 +1437,7 @@ export default function PlayerMyPage() {
                                 <p className="text-[9px] text-faint mt-0.5">※参考データ（3戦）</p>
                               )}
                             </div>
-                            <div className="bg-primary-50 border border-amber-200 rounded-2xl p-4">
+                            <div className="bg-primary-50 border border-primary-edge-soft rounded-2xl p-4">
                               <p className="text-[10px] text-primary-700 font-black mb-1">⚠️ 課題のシナジー (伸びしろ)</p>
                               {synergyPair.challenging ? (
                                 <>
@@ -1465,7 +1465,7 @@ export default function PlayerMyPage() {
                           <Zap className="w-5 h-5 text-primary-700" />
                           <span>Hextech 5軸能力</span>
                         </span>
-                        <span className="text-[10px] bg-primary-100 text-primary-800 px-2 py-0.5 rounded-full border border-amber-300 font-bold">
+                        <span className="text-[10px] bg-primary-100 text-primary-800 px-2 py-0.5 rounded-full border border-primary-edge font-bold">
                           平均 3.0 基準 (1〜5)
                         </span>
                       </h3>
@@ -1503,19 +1503,19 @@ export default function PlayerMyPage() {
 
                   {/* 📊 勝ちパターン分析 (Victory Blueprint) */}
                   {victoryBlueprint && (
-                    <div className="bg-gradient-to-br from-stone-900/30 via-stone-900/40 to-stone-800/30 backdrop-blur-xl border border-amber-500/20 rounded-3xl p-6 shadow-xl lg:col-span-2 flex flex-col justify-between">
+                    <div className="bg-gradient-to-br from-stone-900/30 via-stone-900/40 to-stone-800/30 backdrop-blur-xl border border-primary-edge-strong/20 rounded-3xl p-6 shadow-xl lg:col-span-2 flex flex-col justify-between">
                       <div>
                         <h3 className="text-base font-black flex items-center justify-between gap-2 mb-3 border-b border-black/10 pb-3">
                           <span className="flex items-center gap-2">
                             <Trophy className="w-5 h-5 text-primary-600" />
                             <span className="bg-gradient-to-r from-primary-700 via-primary-600 to-primary-700 bg-clip-text text-transparent">勝ちパターン分析 (Victory Blueprint)</span>
                           </span>
-                          <span className="text-[10px] bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full border border-amber-200 font-bold">
+                          <span className="text-[10px] bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full border border-primary-edge-soft font-bold">
                             通算勝率 {victoryBlueprint.winRate}%
                           </span>
                         </h3>
                         <div className="space-y-3">
-                          <div className="inline-block bg-primary-100 border border-amber-200 text-primary-700 text-sm font-black px-3.5 py-1 rounded-xl">
+                          <div className="inline-block bg-primary-100 border border-primary-edge-soft text-primary-700 text-sm font-black px-3.5 py-1 rounded-xl">
                             {victoryBlueprint.archetype}
                           </div>
                           <p className="text-xs text-foreground-subtle leading-relaxed font-medium">
@@ -1556,7 +1556,7 @@ export default function PlayerMyPage() {
                           type="button"
                           onClick={() => setShowWinRate(v => !v)}
                           className={`px-2.5 py-1.5 rounded-xl text-[10px] font-black transition-all border ${
-                            showWinRate ? 'bg-success-500 text-white border-emerald-400' : 'bg-black/5 text-muted-strong border-black/10 hover:text-foreground'
+                            showWinRate ? 'bg-success-500 text-white border-success-edge' : 'bg-black/5 text-muted-strong border-black/10 hover:text-foreground'
                           }`}
                           title="直近10戦の勝率を重ねて表示します"
                         >
@@ -1644,11 +1644,11 @@ export default function PlayerMyPage() {
                             <span>敗北</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <div className="w-6 border-t-2 border-dashed border-amber-400/50"></div>
+                            <div className="w-6 border-t-2 border-dashed border-primary-edge/50"></div>
                             <span>現在のMMR</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <div className="w-6 border-t-2 border-dashed border-amber-500"></div>
+                            <div className="w-6 border-t-2 border-dashed border-primary-edge-strong"></div>
                             <span>5戦移動平均</span>
                           </div>
                           <div className="flex items-center gap-1.5">
@@ -1725,7 +1725,7 @@ export default function PlayerMyPage() {
                                   </div>
                                   <span className="font-black text-lg tracking-wider text-foreground-soft">{role}</span>
                                 </div>
-                                <span className="text-[10px] text-primary-800 font-bold bg-primary-100 border border-amber-300 px-2 py-0.5 rounded-full">
+                                <span className="text-[10px] text-primary-800 font-bold bg-primary-100 border border-primary-edge px-2 py-0.5 rounded-full">
                                   MMR {player[`mmr_${role.toLowerCase()}`] || 1200}
                                 </span>
                               </div>
@@ -1837,7 +1837,7 @@ export default function PlayerMyPage() {
               {activeTab === 'soloq' && (
                 <div className="space-y-6">
                   {/* ソロキュー公式ステータス ＆ Riot連携カード */}
-                  <div className="bg-surface/70 backdrop-blur-xl border border-teal-500/20 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+                  <div className="bg-surface/70 backdrop-blur-xl border border-secondary-edge-strong/20 rounded-3xl p-6 shadow-xl relative overflow-hidden">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-black/10 pb-4 mb-6">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-secondary-500 to-secondary-600 flex items-center justify-center text-white shadow-md">
@@ -1846,7 +1846,7 @@ export default function PlayerMyPage() {
                         <div>
                           <div className="flex items-center gap-2">
                             <h2 className="text-lg font-black text-foreground">🎮 ソロキュー戦績 ＆ Riot公式データ</h2>
-                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-secondary-100 text-secondary-800 border border-teal-300">
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-secondary-100 text-secondary-800 border border-secondary-edge">
                               Riot API 連携
                             </span>
                           </div>
@@ -1956,7 +1956,7 @@ export default function PlayerMyPage() {
                               </div>
                             </div>
                             <div className="text-right">
-                              <span className="text-xs font-mono font-black text-primary-800 bg-primary-50 border border-amber-200 px-2 py-0.5 rounded-lg">
+                              <span className="text-xs font-mono font-black text-primary-800 bg-primary-50 border border-primary-edge-soft px-2 py-0.5 rounded-lg">
                                 {m.championPoints?.toLocaleString()} pt
                               </span>
                             </div>
@@ -2096,8 +2096,8 @@ export default function PlayerMyPage() {
                         key={idx} 
                         className={`flex flex-col sm:flex-row items-center justify-between p-4 rounded-2xl border transition-all duration-300 hover:scale-[1.005] ${
                           match.isWin 
-                            ? 'bg-success-500/[0.02] border-emerald-500/20 hover:border-emerald-500/40' 
-                            : 'bg-danger-500/[0.02] border-rose-500/20 hover:border-rose-500/40'
+                            ? 'bg-success-500/[0.02] border-success-edge-strong/20 hover:border-success-edge-strong/40' 
+                            : 'bg-danger-500/[0.02] border-danger-edge-strong/20 hover:border-danger-edge-strong/40'
                         }`}
                       >
                         <div className="flex items-center gap-5 w-full sm:w-auto">

@@ -30,8 +30,8 @@ export const toast = {
 // 現在の明るいクリーム基調の背景では文字が薄く読みづらかったため、
 // .claude/rules/ui-conventions.md の配色(成功=emerald / 警告=rose)に沿って不透明の明色系へ変更。
 const STYLE: Record<ToastType, string> = {
-  success: 'border-emerald-300 bg-success-50 text-success-900',
-  error: 'border-rose-300 bg-danger-50 text-danger-900',
+  success: 'border-success-edge bg-success-50 text-success-900',
+  error: 'border-danger-edge bg-danger-50 text-danger-900',
   info: 'border-border bg-surface text-foreground',
 };
 const ICON: Record<ToastType, string> = { success: '✅', error: '❌', info: 'ℹ️' };

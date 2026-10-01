@@ -96,7 +96,7 @@ export default function RevisionsPanel() {
         </h3>
         <div className="flex gap-2 items-center">
           <select value={filterType} onChange={e => setFilterType(e.target.value)}
-            className="bg-background border border-border rounded-lg px-2 py-1.5 text-xs text-foreground-subtle outline-none focus:border-amber-500">
+            className="bg-background border border-border rounded-lg px-2 py-1.5 text-xs text-foreground-subtle outline-none focus:border-primary-edge-strong">
             <option value="all">すべて</option>
             <option value="matchup_sentinel">チャンピオン辞典</option>
             <option value="champion_fact">チャンピオン辞典（対面タブ）</option>
@@ -128,7 +128,7 @@ export default function RevisionsPanel() {
             <div key={r.id} className="border border-border rounded-xl overflow-hidden">
               <button onClick={() => openDetail(r.id)}
                 className="w-full text-left px-3 py-2.5 hover:bg-black/5 transition-colors flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-primary-100 text-primary-700 border border-amber-200">
+                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-primary-100 text-primary-700 border border-primary-edge-soft">
                   {TYPE_LABELS[r.target_type] || r.target_type}
                 </span>
                 <span className="text-sm font-bold text-foreground">{r.target_key}</span>
@@ -178,7 +178,7 @@ export default function RevisionsPanel() {
                       </div>
                       {!r.isNew && (
                         <button onClick={() => revert(r.id)} disabled={reverting}
-                          className="mt-3 text-xs font-bold bg-danger-100 text-danger-700 border border-rose-200 px-3 py-1.5 rounded-lg hover:bg-danger-200 disabled:opacity-50 flex items-center gap-1.5">
+                          className="mt-3 text-xs font-bold bg-danger-100 text-danger-700 border border-danger-edge-soft px-3 py-1.5 rounded-lg hover:bg-danger-200 disabled:opacity-50 flex items-center gap-1.5">
                           <RotateCcw size={13} /> {reverting ? '戻しています...' : 'この更新を取り消す'}
                         </button>
                       )}

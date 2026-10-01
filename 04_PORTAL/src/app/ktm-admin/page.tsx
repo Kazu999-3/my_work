@@ -74,7 +74,7 @@ export const getPlayerExperienceBadge = (p: any) => {
     return { 
       tier: 'new',
       label: '🔰 初参加', 
-      color: 'bg-success-100 text-success-900 border-emerald-300', 
+      color: 'bg-success-100 text-success-900 border-success-edge', 
       tip: '通算0戦：初参加のプレイヤーです！大歓迎✨' 
     };
   }
@@ -83,7 +83,7 @@ export const getPlayerExperienceBadge = (p: any) => {
     return { 
       tier: 'light',
       label: '🌱 ライト', 
-      color: 'bg-secondary-100 text-secondary-900 border-teal-300', 
+      color: 'bg-secondary-100 text-secondary-900 border-secondary-edge', 
       tip: `通算${totalG}戦：参加回数がまだ浅いライトプレイヤーです` 
     };
   }
@@ -93,14 +93,14 @@ export const getPlayerExperienceBadge = (p: any) => {
       return { 
         tier: 'returning',
         label: '⏳ 復帰勢', 
-        color: 'bg-primary-100 text-primary-900 border-amber-300', 
+        color: 'bg-primary-100 text-primary-900 border-primary-edge', 
         tip: `通算${totalG}戦（最終参加: ${daysAgo}日前）：久しぶりの参加となる復帰プレイヤーです！大歓迎✨` 
       };
     }
     return { 
       tier: 'returning',
       label: '🎖️ 経験者', 
-      color: 'bg-secondary-100 text-secondary-900 border-teal-300', 
+      color: 'bg-secondary-100 text-secondary-900 border-secondary-edge', 
       tip: `通算${totalG}戦（最終参加: ${daysAgo}日前）：久しぶりに参加の経験者プレイヤーです` 
     };
   }
@@ -108,7 +108,7 @@ export const getPlayerExperienceBadge = (p: any) => {
   return { 
     tier: 'regular',
     label: '👑 常連', 
-    color: 'bg-primary-100 text-primary-900 border-amber-300', 
+    color: 'bg-primary-100 text-primary-900 border-primary-edge', 
     tip: `通算${totalG}戦（直近30日: ${recent30d}戦）：定期的に参加しているアクティブ常連メンバーです` 
   };
 };
@@ -124,7 +124,7 @@ const MmrBadgeInput = ({ value, onChange }: { value: number, onChange: (v: numbe
         onChange={(e) => onChange(parseInt(e.target.value) || 0)}
         onBlur={() => setEditing(false)}
         autoFocus
-        className="bg-background border border-amber-500 rounded px-1 py-0.5 outline-none w-14 text-center font-mono text-xs text-foreground"
+        className="bg-background border border-primary-edge-strong rounded px-1 py-0.5 outline-none w-14 text-center font-mono text-xs text-foreground"
       />
     );
   }
@@ -949,7 +949,7 @@ export default function KtmAdminPage() {
             onClick={() => handleTabChange('players')}
             className={`px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 cursor-pointer ${
               activeTab === 'players' 
-                ? 'border-amber-500 text-primary-700 bg-primary-500/5' 
+                ? 'border-primary-edge-strong text-primary-700 bg-primary-500/5' 
                 : 'border-transparent text-muted-strong hover:text-foreground-subtle hover:bg-black/5'
             }`}
           >
@@ -959,7 +959,7 @@ export default function KtmAdminPage() {
             onClick={() => handleTabChange('history')}
             className={`px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 cursor-pointer ${
               activeTab === 'history' 
-                ? 'border-emerald-500 text-success-700 bg-success-500/5' 
+                ? 'border-success-edge-strong text-success-700 bg-success-500/5' 
                 : 'border-transparent text-muted-strong hover:text-foreground-subtle hover:bg-black/5'
             }`}
           >
@@ -993,7 +993,7 @@ export default function KtmAdminPage() {
                     placeholder="名前・IGN・Discord IDで検索..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-surface border border-border rounded-lg px-4 py-2 pl-9 text-xs text-foreground focus:outline-none focus:border-amber-500 transition"
+                    className="w-full bg-surface border border-border rounded-lg px-4 py-2 pl-9 text-xs text-foreground focus:outline-none focus:border-primary-edge-strong transition"
                   />
                   <Filter className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-strong" />
                 </div>
@@ -1018,7 +1018,7 @@ export default function KtmAdminPage() {
                 <button
                   onClick={handleDeactivateAll}
                   disabled={loading || saving}
-                  className="flex items-center gap-2 bg-danger-100 hover:bg-danger-200 border border-rose-200 hover:border-rose-300 text-danger-700 px-4 py-2 rounded-lg font-bold transition text-xs"
+                  className="flex items-center gap-2 bg-danger-100 hover:bg-danger-200 border border-danger-edge-soft hover:border-danger-edge text-danger-700 px-4 py-2 rounded-lg font-bold transition text-xs"
                 >
                   <X className="h-4 w-4" />
                   全員非アクティブ
@@ -1036,7 +1036,7 @@ export default function KtmAdminPage() {
                       setLoading(false);
                       setMessage({ type: "info", text: "⚠️ 処理のローディング状態を強制解除しました。" });
                     }}
-                    className="flex items-center gap-1.5 bg-surface hover:bg-black/5 text-primary-500 border border-amber-200 px-3 py-2 rounded-lg font-bold transition text-xs animate-pulse"
+                    className="flex items-center gap-1.5 bg-surface hover:bg-black/5 text-primary-500 border border-primary-edge-soft px-3 py-2 rounded-lg font-bold transition text-xs animate-pulse"
                     title="通信が詰まってぐるぐるが終わらない場合に、強制的にボタンやローディングを元に戻します"
                   >
                     <X className="h-4 w-4 text-primary-500" />
@@ -1058,7 +1058,7 @@ export default function KtmAdminPage() {
                 <button
                   onClick={handleRebuildMmr}
                   disabled={syncingAutoAll}
-                  className="flex items-center gap-2 bg-danger-100 hover:bg-danger-200 text-danger-700 border border-rose-200 px-4 py-2 rounded-lg font-bold transition text-xs"
+                  className="flex items-center gap-2 bg-danger-100 hover:bg-danger-200 text-danger-700 border border-danger-edge-soft px-4 py-2 rounded-lg font-bold transition text-xs"
                   title="過去のすべての試合履歴を元にMMRを再計算し、全員のデータを上書きします"
                 >
                   <RefreshCw className="h-4 w-4" /> 🔄 Rebuild
@@ -1066,7 +1066,7 @@ export default function KtmAdminPage() {
 
                 <button
                   onClick={() => setShowMmrInfo(!showMmrInfo)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition border text-xs ${showMmrInfo ? 'bg-primary-100 border-amber-500 text-primary-700' : 'bg-black/5 border-border text-faint hover:text-foreground'}`}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition border text-xs ${showMmrInfo ? 'bg-primary-100 border-primary-edge-strong text-primary-700' : 'bg-black/5 border-border text-faint hover:text-foreground'}`}
                   title="MMR計算ロジックを見る"
                 >
                   <Info className="h-5 w-5" />
@@ -1099,7 +1099,7 @@ export default function KtmAdminPage() {
                     </p>
 
                     {syncData.toAdd.length > 0 && (
-                      <div className="bg-success-100 border border-emerald-200 rounded-lg p-4 space-y-3">
+                      <div className="bg-success-100 border border-success-edge-soft rounded-lg p-4 space-y-3">
                         <h3 className="text-success-700 font-bold mb-1 flex items-center gap-2">
                           <Plus className="h-4 w-4" /> 新規追加されるメンバー ({syncData.toAdd.length}人)
                         </h3>
@@ -1108,7 +1108,7 @@ export default function KtmAdminPage() {
                         </p>
                         <div className="space-y-3">
                           {syncData.toAdd.map((p: any, idx: number) => (
-                            <div key={p.discord_id} className="bg-success-100 border border-emerald-200 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                            <div key={p.discord_id} className="bg-success-100 border border-success-edge-soft rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                               <span className="font-bold text-success-700 text-sm flex items-center gap-1.5">
                                 {p.name}
                               </span>
@@ -1123,7 +1123,7 @@ export default function KtmAdminPage() {
                                       updatedAdd[idx].highest_rank = e.target.value;
                                       setSyncData({ ...syncData, toAdd: updatedAdd });
                                     }}
-                                    className="bg-surface border border-border text-foreground rounded px-2 py-1 outline-none focus:border-emerald-500 cursor-pointer"
+                                    className="bg-surface border border-border text-foreground rounded px-2 py-1 outline-none focus:border-success-edge-strong cursor-pointer"
                                   >
                                     {HIGHEST_RANK_OPTIONS.map(r => (
                                       <option key={r} value={r}>{r}</option>
@@ -1146,7 +1146,7 @@ export default function KtmAdminPage() {
                                       }
                                       setSyncData({ ...syncData, toAdd: updatedAdd });
                                     }}
-                                    className="bg-surface border border-border text-foreground rounded px-2 py-1 outline-none focus:border-emerald-500 cursor-pointer"
+                                    className="bg-surface border border-border text-foreground rounded px-2 py-1 outline-none focus:border-success-edge-strong cursor-pointer"
                                   >
                                     {["ALL", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
                                       <option key={role} value={role}>{role}</option>
@@ -1166,7 +1166,7 @@ export default function KtmAdminPage() {
                                       updatedAdd[idx].role_preferences.secondary = e.target.value;
                                       setSyncData({ ...syncData, toAdd: updatedAdd });
                                     }}
-                                    className="bg-surface border border-border text-foreground rounded px-2 py-1 outline-none focus:border-emerald-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="bg-surface border border-border text-foreground rounded px-2 py-1 outline-none focus:border-success-edge-strong cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
                                     {["-", "ALL", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
                                       <option key={role} value={role}>{role}</option>
@@ -1185,7 +1185,7 @@ export default function KtmAdminPage() {
                                       updatedAdd[idx].role_preferences.ignore_role = e.target.value;
                                       setSyncData({ ...syncData, toAdd: updatedAdd });
                                     }}
-                                    className="bg-surface border border-border text-danger-700 rounded px-2 py-1 outline-none focus:border-emerald-500 cursor-pointer"
+                                    className="bg-surface border border-border text-danger-700 rounded px-2 py-1 outline-none focus:border-success-edge-strong cursor-pointer"
                                   >
                                     {["-", "TOP", "JG", "MID", "ADC", "SUP"].map(role => (
                                       <option key={role} value={role}>{role}</option>
@@ -1208,8 +1208,8 @@ export default function KtmAdminPage() {
                                       }}
                                       className={`bg-surface border rounded px-2 py-1 outline-none w-36 placeholder-stone-600 font-mono ${
                                         !p.ign || !p.ign.includes('#') || p.ign.trim().split('#').length !== 2
-                                          ? 'border-rose-500 focus:border-rose-400 text-danger-700 shadow-[0_0_8px_rgba(239,68,68,0.2)]'
-                                          : 'border-border focus:border-emerald-500 text-foreground'
+                                          ? 'border-danger-edge-strong focus:border-danger-edge text-danger-700 shadow-[0_0_8px_rgba(239,68,68,0.2)]'
+                                          : 'border-border focus:border-success-edge-strong text-foreground'
                                       }`}
                                     />
                                   </div>
@@ -1225,13 +1225,13 @@ export default function KtmAdminPage() {
                     )}
 
                     {syncData.toDeactivate.length > 0 && (
-                      <div className="bg-danger-100 border border-rose-200 rounded-lg p-4">
+                      <div className="bg-danger-100 border border-danger-edge-soft rounded-lg p-4">
                         <h3 className="text-danger-700 font-bold mb-3 flex items-center gap-2">
                           <AlertCircle className="h-4 w-4" /> 削除 (名簿から完全消去) されるメンバー ({syncData.toDeactivate.length}人)
                         </h3>
                         <div className="flex flex-wrap gap-2">
                           {syncData.toDeactivate.map((p: any) => (
-                            <span key={p.id} className="bg-danger-100 text-danger-700 px-2 py-1 rounded text-xs border border-rose-200 line-through">
+                            <span key={p.id} className="bg-danger-100 text-danger-700 px-2 py-1 rounded text-xs border border-danger-edge-soft line-through">
                               {p.name}
                             </span>
                           ))}
@@ -1240,13 +1240,13 @@ export default function KtmAdminPage() {
                     )}
 
                     {syncData.toUpdateName && syncData.toUpdateName.length > 0 && (
-                      <div className="bg-primary-100 border border-amber-200 rounded-lg p-4">
+                      <div className="bg-primary-100 border border-primary-edge-soft rounded-lg p-4">
                         <h3 className="text-primary-700 font-bold mb-3 flex items-center gap-2">
                           <RefreshCw className="h-4 w-4" /> Discord名に修正されるメンバー ({syncData.toUpdateName.length}人)
                         </h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {syncData.toUpdateName.map((p: any) => (
-                            <div key={p.id} className="bg-primary-100 text-primary-700 px-3 py-1.5 rounded text-xs border border-amber-200 flex items-center justify-between">
+                            <div key={p.id} className="bg-primary-100 text-primary-700 px-3 py-1.5 rounded text-xs border border-primary-edge-soft flex items-center justify-between">
                               <span className="text-faint truncate max-w-[45%]">{p.oldName}</span>
                               <span className="text-muted-strong font-bold">→</span>
                               <span className="font-semibold text-primary-700 truncate max-w-[45%]">{p.newName}</span>
@@ -1257,7 +1257,7 @@ export default function KtmAdminPage() {
                     )}
 
                     {syncData.toAdd.length === 0 && syncData.toDeactivate.length === 0 && (!syncData.toUpdateName || syncData.toUpdateName.length === 0) && (
-                      <div className="bg-primary-100 border border-amber-200 rounded-lg p-6 text-center text-primary-700">
+                      <div className="bg-primary-100 border border-primary-edge-soft rounded-lg p-6 text-center text-primary-700">
                         メンバーの増減や名前の変更はありませんが、参加日時などの隠しデータ（メタデータ）を最新に更新するため「同期を実行する」を押してください。
                       </div>
                     )}
@@ -1303,7 +1303,7 @@ export default function KtmAdminPage() {
 
             {/* MMR Info Panel */}
             {showMmrInfo && (
-              <div className="bg-surface border border-amber-200 rounded-xl p-6 shadow-xl relative overflow-hidden">
+              <div className="bg-surface border border-primary-edge-soft rounded-xl p-6 shadow-xl relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-1 h-full bg-primary-500"></div>
                 <div className="flex justify-between items-start mb-4">
                   <h2 className="text-xl font-bold text-primary-700 flex items-center gap-2">
@@ -1349,7 +1349,7 @@ export default function KtmAdminPage() {
 
             {/* Message Banner */}
             {message.text && (
-              <div className={`p-4 rounded-lg flex items-center gap-3 ${message.type === 'error' ? 'bg-danger-100 text-danger-700 border border-rose-200' : 'bg-success-100 text-success-700 border border-emerald-200'}`}>
+              <div className={`p-4 rounded-lg flex items-center gap-3 ${message.type === 'error' ? 'bg-danger-100 text-danger-700 border border-danger-edge-soft' : 'bg-success-100 text-success-700 border border-success-edge-soft'}`}>
                 <AlertCircle className="h-5 w-5 flex-shrink-0" />
                 <p className="text-sm font-medium whitespace-pre-wrap">{message.text}</p>
               </div>
@@ -1357,7 +1357,7 @@ export default function KtmAdminPage() {
 
             {/* Riot API 同期エラー修正パネル */}
             {riotSyncErrors.length > 0 && (
-              <div className="bg-primary-100 border border-amber-200 rounded-xl p-5 shadow-xl relative overflow-hidden">
+              <div className="bg-primary-100 border border-primary-edge-soft rounded-xl p-5 shadow-xl relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-1 h-full bg-primary-500"></div>
                 <div className="flex justify-between items-start mb-4">
                   <h2 className="text-lg font-bold text-primary-700 flex items-center gap-2">
@@ -1378,7 +1378,7 @@ export default function KtmAdminPage() {
 
                 <div className="max-h-[300px] overflow-y-auto space-y-3 pr-2">
                   {riotSyncErrors.map((errorPlayer) => (
-                    <div key={errorPlayer.id} className="bg-surface/60 border border-border rounded-lg p-3 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs hover:border-amber-200 transition">
+                    <div key={errorPlayer.id} className="bg-surface/60 border border-border rounded-lg p-3 flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs hover:border-primary-edge-soft transition">
                       <div className="space-y-1">
                         <span className="font-bold text-foreground text-sm">{errorPlayer.name}</span>
                         <div className="text-danger-700 text-[11px] font-mono flex items-center gap-1">
@@ -1393,7 +1393,7 @@ export default function KtmAdminPage() {
                             placeholder="Name#TAG"
                             defaultValue={errorPlayer.ign}
                             id={`error-ign-${errorPlayer.id}`}
-                            className="w-full md:w-48 bg-background border border-border text-foreground rounded px-2 py-1.5 outline-none focus:border-amber-500 placeholder-stone-600 font-mono text-xs"
+                            className="w-full md:w-48 bg-background border border-border text-foreground rounded px-2 py-1.5 outline-none focus:border-primary-edge-strong placeholder-stone-600 font-mono text-xs"
                           />
                         </div>
                         <button
@@ -1426,8 +1426,8 @@ export default function KtmAdminPage() {
             {integrityData && (
               <div className={`p-4 rounded-xl border ${
                 integrityData.hasDiscrepancy 
-                  ? 'bg-primary-100 border-amber-200 text-primary-700' 
-                  : 'bg-success-100 border-emerald-200 text-success-700'
+                  ? 'bg-primary-100 border-primary-edge-soft text-primary-700' 
+                  : 'bg-success-100 border-success-edge-soft text-success-700'
               }`}>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div className="flex items-center gap-3">
@@ -1454,7 +1454,7 @@ export default function KtmAdminPage() {
                   )}
                 </div>
                 {integrityData.hasDiscrepancy && (
-                  <div className="mt-3 pt-3 border-t border-amber-200 text-[10px] text-primary-700 max-h-24 overflow-y-auto space-y-1 font-mono">
+                  <div className="mt-3 pt-3 border-t border-primary-edge-soft text-[10px] text-primary-700 max-h-24 overflow-y-auto space-y-1 font-mono">
                     {integrityData.discrepancies.map((d: any) => (
                       <div key={d.name}>
                         • {d.name}: 現在値と期待値にズレがあります (差分: TOP: {d.diff.TOP}, JG: {d.diff.JG}, MID: {d.diff.MID}, ADC: {d.diff.ADC}, SUP: {d.diff.SUP}, 総合: {d.diff.TOTAL})
@@ -1476,7 +1476,7 @@ export default function KtmAdminPage() {
               const newLightRatio = totalActive > 0 ? Math.round(((newPlayers.length + lightPlayers.length + returningPlayers.length) / totalActive) * 100) : 0;
 
               return (
-                <div className="p-3.5 rounded-2xl bg-gradient-to-br from-success-500/10 via-secondary-500/5 to-transparent border border-emerald-500/30 flex flex-col justify-between gap-2 shadow-xs mb-3">
+                <div className="p-3.5 rounded-2xl bg-gradient-to-br from-success-500/10 via-secondary-500/5 to-transparent border border-success-edge-strong/30 flex flex-col justify-between gap-2 shadow-xs mb-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-base">🔰</span>
@@ -1490,7 +1490,7 @@ export default function KtmAdminPage() {
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2 flex-wrap text-xs pt-1 border-t border-emerald-500/20">
+                  <div className="flex items-center gap-2 flex-wrap text-xs pt-1 border-t border-success-edge-strong/20">
                     <span className="inline-flex items-center gap-1 font-bold text-success-900 bg-success-100/80 px-2 py-0.5 rounded-md text-[11px]">
                       🔰 初参加: <strong>{newPlayers.length}名</strong>
                     </span>
@@ -1567,7 +1567,7 @@ export default function KtmAdminPage() {
                     onClick={() => setRoleFilter(role)}
                     className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
                       roleFilter === role
-                        ? 'bg-surface border-amber-500 text-primary-700 font-black shadow-xs'
+                        ? 'bg-surface border-primary-edge-strong text-primary-700 font-black shadow-xs'
                         : 'bg-black/5 border-transparent text-muted-strong hover:text-foreground hover:bg-black/8'
                     }`}
                   >
@@ -1585,7 +1585,7 @@ export default function KtmAdminPage() {
                 const exp = getPlayerExperienceBadge(p);
                 return (
                   <div key={uid} className={`bg-surface border rounded-2xl p-3.5 transition shadow-2xs space-y-2.5 ${
-                    p.is_active ? 'border-amber-400 bg-primary-50/30' : 'border-border'
+                    p.is_active ? 'border-primary-edge bg-primary-50/30' : 'border-border'
                   }`}>
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
@@ -1607,7 +1607,7 @@ export default function KtmAdminPage() {
                         <button onClick={() => setSelectedPlayer(p)} className="text-primary-700 p-1 hover:bg-black/5 rounded">
                           <Info className="w-4 h-4" />
                         </button>
-                        <span className="text-xs font-mono font-black text-primary-900 bg-primary-100 px-2 py-0.5 rounded-lg border border-amber-200">
+                        <span className="text-xs font-mono font-black text-primary-900 bg-primary-100 px-2 py-0.5 rounded-lg border border-primary-edge-soft">
                           MMR {p.mmr || 1200}
                         </span>
                       </div>
@@ -1681,7 +1681,7 @@ export default function KtmAdminPage() {
                           <tr 
                             className={`hover:bg-black/5 transition-all duration-300 ${
                               flashingPlayerIds.includes(uid) 
-                                ? 'bg-success-100 text-success-700 font-bold border-y border-emerald-300 shadow-[inset_0_0_15px_rgba(16,185,129,0.15)]' 
+                                ? 'bg-success-100 text-success-700 font-bold border-y border-success-edge shadow-[inset_0_0_15px_rgba(16,185,129,0.15)]' 
                                 : ''
                             }`}
                           >
@@ -1724,7 +1724,7 @@ export default function KtmAdminPage() {
                           <select
                             value={p.highest_rank || "UNRANKED"}
                             onChange={(e) => handleInputSave(uid, "highest_rank", e.target.value)}
-                            className={`bg-black/5 border border-border rounded px-1 py-0.5 outline-none focus:border-amber-500 w-24 text-xs ${getColorFromRankName(p.highest_rank)}`}
+                            className={`bg-black/5 border border-border rounded px-1 py-0.5 outline-none focus:border-primary-edge-strong w-24 text-xs ${getColorFromRankName(p.highest_rank)}`}
                           >
                             {HIGHEST_RANK_OPTIONS.map(r => (
                               <option key={r} value={r}>{r}</option>
@@ -1867,7 +1867,7 @@ export default function KtmAdminPage() {
                                   );
                                 })}
                                 
-                                <div className="flex items-center gap-2 bg-surface px-2 py-1.5 rounded border border-amber-200 ml-4">
+                                <div className="flex items-center gap-2 bg-surface px-2 py-1.5 rounded border border-primary-edge-soft ml-4">
                                   <span className="font-bold text-primary-700 w-12 text-center">平均MMR</span>
                                   <MmrBadgeInput
                                     value={p.mmr || 1200}

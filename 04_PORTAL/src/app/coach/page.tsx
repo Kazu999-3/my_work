@@ -167,7 +167,7 @@ function CoachPageContent() {
         {/* スリム化されたヘッダー */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface/80 border border-border/90 rounded-2xl p-4 shadow-xs backdrop-blur-sm">
           <div className="flex items-center gap-3">
-            <div className="text-3xl p-2 bg-primary-50 rounded-2xl border border-amber-200/80">🏆</div>
+            <div className="text-3xl p-2 bg-primary-50 rounded-2xl border border-primary-edge-soft/80">🏆</div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-black tracking-tight text-foreground">パーソナルコーチ</h1>
@@ -176,7 +176,7 @@ function CoachPageContent() {
                     （2026-09-30修正）。ライブ検知は常時ポーリングではなく操作契機の取得なので、
                     実際に検知できた時だけ、検知した対面を添えて表示する。 */}
                 {liveDetected && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-success-100 border border-emerald-300 text-success-800 text-[10px] font-extrabold shadow-2xs">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-success-100 border border-success-edge text-success-800 text-[10px] font-extrabold shadow-2xs">
                     <span className="w-1.5 h-1.5 rounded-full bg-success-500 animate-pulse" />
                     <span>ライブ試合を検知{liveDetected.enemy ? `（対面: ${liveDetected.enemy}）` : ''}</span>
                   </span>
@@ -315,7 +315,7 @@ function CoachPageContent() {
           {/* インゲームHUD連携ステータスバナー */}
           <div className="bg-gradient-to-r from-stone-900 to-stone-800 text-white rounded-2xl p-3.5 shadow-sm border border-stone-700/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-primary-500/20 border border-amber-500/40 flex items-center justify-center text-base shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-primary-500/20 border border-primary-edge-strong/40 flex items-center justify-center text-base shrink-0">
                 👑
               </div>
               {/* 以前はここに「Sovereign HUD 自動同期中」＋「接続完了」を条件なしで表示していた。

@@ -203,8 +203,8 @@ export default function DesignEditor() {
       {status.text && (
         <div className={`p-4 rounded-2xl flex items-center gap-3 border animate-fade-in ${
           status.type === 'error'
-            ? 'bg-danger-100 text-danger-700 border-rose-200'
-            : 'bg-success-100 text-success-700 border-emerald-200'
+            ? 'bg-danger-100 text-danger-700 border-danger-edge-soft'
+            : 'bg-success-100 text-success-700 border-success-edge-soft'
         }`}>
           {status.type === 'error' ? <AlertTriangle className="flex-shrink-0" size={20} /> : <CheckCircle className="flex-shrink-0" size={20} />}
           <p className="text-xs font-bold whitespace-pre-wrap">{status.text}</p>
@@ -251,7 +251,7 @@ export default function DesignEditor() {
             <div className="text-center py-12 space-y-3">
               <AlertTriangle className="w-12 h-12 text-[#c89b3c] mx-auto animate-bounce" />
               <h3 className="text-sm font-black text-primary-200">設計書ファイルが読み込めませんでした</h3>
-              <p className="text-xs text-danger-400 font-mono bg-danger-950/20 py-2.5 px-4 rounded-xl border border-rose-900/30 max-w-lg mx-auto leading-relaxed">
+              <p className="text-xs text-danger-400 font-mono bg-danger-950/20 py-2.5 px-4 rounded-xl border border-danger-edge-strong/30 max-w-lg mx-auto leading-relaxed">
                 {errorMsg || '詳細なエラー情報はありません。'}
               </p>
               <p className="text-[10px] text-muted-strong max-w-md mx-auto leading-relaxed">
@@ -319,7 +319,7 @@ export default function DesignEditor() {
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
                   disabled={saving}
-                  className="w-full min-h-[60vh] bg-background border border-black/10 rounded-2xl p-6 font-mono text-sm text-foreground-soft leading-relaxed focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-primary-500 transition-all shadow-inner resize-y"
+                  className="w-full min-h-[60vh] bg-background border border-black/10 rounded-2xl p-6 font-mono text-sm text-foreground-soft leading-relaxed focus:outline-none focus:border-primary-edge-strong focus:ring-1 focus:ring-primary-500 transition-all shadow-inner resize-y"
                   placeholder="# 設計書をここに入力..."
                 />
               </div>

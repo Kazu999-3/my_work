@@ -132,8 +132,8 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
         <div
           className={`rounded-2xl p-4.5 text-foreground shadow-lg border-2 transition-all ${
             consecutiveLosses >= 3
-              ? 'bg-danger-50 border-rose-500 shadow-danger-500/10 animate-pulse'
-              : 'bg-primary-50 border-amber-500 shadow-primary-500/10'
+              ? 'bg-danger-50 border-danger-edge-strong shadow-danger-500/10 animate-pulse'
+              : 'bg-primary-50 border-primary-edge-strong shadow-primary-500/10'
           }`}
         >
           <div className="flex items-start justify-between flex-wrap gap-3">
@@ -229,17 +229,17 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
         const lowWinRate = lowMental.length ? Math.round((lowMental.filter((r) => r.win).length / lowMental.length) * 100) : 0;
 
         return (
-          <div className="bg-gradient-to-r from-primary-500/10 to-success-500/10 border border-amber-300/40 rounded-2xl p-4 mb-4 shadow-sm">
+          <div className="bg-gradient-to-r from-primary-500/10 to-success-500/10 border border-primary-edge/40 rounded-2xl p-4 mb-4 shadow-sm">
             <div className="text-xs font-black text-primary-900 mb-2 flex items-center justify-between">
               <span>🧠 メンタル状態 × 勝率の可視化分析</span>
               <span className="text-[10px] text-primary-700 font-normal">過去{reflections.length}戦のデータ</span>
             </div>
             <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="bg-surface p-3 rounded-xl border border-emerald-200 shadow-sm">
+              <div className="bg-surface p-3 rounded-xl border border-success-edge-soft shadow-sm">
                 <div className="text-success-800 font-bold text-[11px] mb-0.5">🟢 冷静・安定時 (メンタル4〜5)</div>
                 <div className="text-xl font-black text-success-700">{highWinRate}% <span className="text-xs font-normal text-muted-strong">({highMental.length}試合)</span></div>
               </div>
-              <div className="bg-surface p-3 rounded-xl border border-rose-200 shadow-sm">
+              <div className="bg-surface p-3 rounded-xl border border-danger-edge-soft shadow-sm">
                 <div className="text-danger-800 font-bold text-[11px] mb-0.5">🔴 焦り・イライラ時 (メンタル1〜2)</div>
                 <div className="text-xl font-black text-danger-700">{lowWinRate}% <span className="text-xs font-normal text-muted-strong">({lowMental.length}試合)</span></div>
               </div>
@@ -303,7 +303,7 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
               <span className="text-[10px] text-muted-strong font-normal">過去{reflections.length}戦のデータ</span>
             </div>
             <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="bg-success-50 p-3 rounded-xl border border-emerald-200">
+              <div className="bg-success-50 p-3 rounded-xl border border-success-edge-soft">
                 <div className="text-success-800 font-bold text-[11px] mb-1.5">🟢 勝因TOP{Math.min(5, winTags.length)}</div>
                 {winTags.length === 0 ? (
                   <div className="text-faint text-[11px]">データなし</div>
@@ -318,7 +318,7 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
                   </ul>
                 )}
               </div>
-              <div className="bg-danger-50 p-3 rounded-xl border border-rose-200">
+              <div className="bg-danger-50 p-3 rounded-xl border border-danger-edge-soft">
                 <div className="text-danger-800 font-bold text-[11px] mb-1.5">🔴 敗因TOP{Math.min(5, loseTags.length)}</div>
                 {loseTags.length === 0 ? (
                   <div className="text-faint text-[11px]">データなし</div>
@@ -371,7 +371,7 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
                 </div>
               )}
               {ref.matchup_memo && (
-                <div className="text-xs bg-primary-50/90 p-2 rounded border border-amber-200/80 text-primary-950 font-medium">
+                <div className="text-xs bg-primary-50/90 p-2 rounded border border-primary-edge-soft/80 text-primary-950 font-medium">
                   <strong className="text-primary-900">対面メモ:</strong> {ref.matchup_memo}
                 </div>
               )}

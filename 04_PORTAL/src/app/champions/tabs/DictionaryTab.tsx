@@ -1048,7 +1048,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               <button
                 type="button"
                 onClick={() => setIsTacticsSearchOpen(true)}
-                className="px-2.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 shrink-0 border border-amber-300 bg-primary-50 text-primary-900 hover:bg-primary-100 cursor-pointer shadow-2xs"
+                className="px-2.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 shrink-0 border border-primary-edge bg-primary-50 text-primary-900 hover:bg-primary-100 cursor-pointer shadow-2xs"
                 title="インベード、Lv3ガンク、オブジェクトなどの戦術概念を横断検索"
               >
                 <Zap size={13} className="text-primary-600 fill-primary-500/20" />
@@ -1162,7 +1162,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                             onClick={() => setTypeFilter(t.key as any)}
                             className={`p-1.5 rounded-lg text-left transition border ${
                               typeFilter === t.key
-                                ? 'bg-surface border-amber-500 shadow-xs text-stone-950 font-bold'
+                                ? 'bg-surface border-primary-edge-strong shadow-xs text-stone-950 font-bold'
                                 : 'bg-surface/60 border-border/70 text-muted hover:bg-surface hover:text-foreground'
                             }`}
                           >
@@ -1202,7 +1202,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   </span>
                 )}
                 {typeFilter !== 'ALL' && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary-100 text-primary-900 font-bold text-[10px] border border-amber-200">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary-100 text-primary-900 font-bold text-[10px] border border-primary-edge-soft">
                     {typeFilter === 'FARM' && '🌾 ファーム型'}
                     {typeFilter === 'GANK' && '⚡ ガンク型'}
                     {typeFilter === 'INVASION' && '🗡️ 侵入型'}
@@ -1256,7 +1256,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   onClick={() => handleSelectChampion(c)}
                   className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2.5 ${
                     isSelected
-                      ? 'bg-primary-500/10 border-amber-500 shadow-xs ring-1 ring-primary-500/40'
+                      ? 'bg-primary-500/10 border-primary-edge-strong shadow-xs ring-1 ring-primary-500/40'
                       : 'bg-surface border-border hover:border-border hover:bg-background/80'
                   }`}
                 >
@@ -1268,7 +1268,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                         width={38}
                         height={38}
                         className={`w-9 h-9 rounded-lg border shrink-0 transition-colors ${
-                          isSelected ? 'border-amber-500 ring-1 ring-primary-500/30' : 'border-black/10'
+                          isSelected ? 'border-primary-edge-strong ring-1 ring-primary-500/30' : 'border-black/10'
                         }`}
                       />
                     </div>
@@ -1282,15 +1282,15 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                       <div className="flex items-center gap-1.5 text-[10px] text-faint flex-wrap">
                         <span className="truncate">{c.id}</span>
                         {healthStatus === 'verified' ? (
-                          <span className="px-1 py-0.2 rounded text-[9px] font-mono font-bold bg-success-100 text-success-800 border border-emerald-300" title="実戦確定（最新パッチ）">
+                          <span className="px-1 py-0.2 rounded text-[9px] font-mono font-bold bg-success-100 text-success-800 border border-success-edge" title="実戦確定（最新パッチ）">
                             🟢 {patchVer || '確定'}
                           </span>
                         ) : healthStatus === 'stale' ? (
-                          <span className="px-1 py-0.2 rounded text-[9px] font-mono font-bold bg-danger-100 text-danger-800 border border-rose-300 animate-pulse" title="パッチ遅れ（要対応）">
+                          <span className="px-1 py-0.2 rounded text-[9px] font-mono font-bold bg-danger-100 text-danger-800 border border-danger-edge animate-pulse" title="パッチ遅れ（要対応）">
                             🔴 {patchVer && patchVer !== '未設定' ? patchVer : '要対応'}
                           </span>
                         ) : healthStatus === 'ai_generated' ? (
-                          <span className="px-1 py-0.2 rounded text-[9px] font-mono font-bold bg-primary-100 text-primary-800 border border-amber-300" title="AI自動生成（要検証）">
+                          <span className="px-1 py-0.2 rounded text-[9px] font-mono font-bold bg-primary-100 text-primary-800 border border-primary-edge" title="AI自動生成（要検証）">
                             🟡 {patchVer && patchVer !== '未設定' ? patchVer : 'AI生成'}
                           </span>
                         ) : patchVer ? (
@@ -1371,22 +1371,22 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 </button>
                 <div className="flex items-center gap-2 ml-auto">
                   {detailLoading && (
-                    <div className="px-2.5 py-1 rounded-lg bg-secondary-50 border border-teal-200 text-secondary-800 text-xs font-bold flex items-center gap-1.5">
+                    <div className="px-2.5 py-1 rounded-lg bg-secondary-50 border border-secondary-edge-soft text-secondary-800 text-xs font-bold flex items-center gap-1.5">
                       <RefreshCw size={12} className="animate-spin" /> 読込中...
                     </div>
                   )}
                   {detailError && (
-                    <div className="px-2.5 py-1 rounded-lg bg-danger-50 border border-rose-200 text-danger-800 text-xs font-bold flex items-center gap-1.5">
+                    <div className="px-2.5 py-1 rounded-lg bg-danger-50 border border-danger-edge-soft text-danger-800 text-xs font-bold flex items-center gap-1.5">
                       <span>⚠️</span> {detailError}
                     </div>
                   )}
                   {saveSuccess && (
-                    <div className="px-2.5 py-1 rounded-lg bg-success-50 border border-emerald-300 text-success-800 text-xs font-bold flex items-center gap-1.5">
+                    <div className="px-2.5 py-1 rounded-lg bg-success-50 border border-success-edge text-success-800 text-xs font-bold flex items-center gap-1.5">
                       <Check size={12} /> 保存完了
                     </div>
                   )}
                   {draftRestored && (
-                    <div className="px-2.5 py-1 rounded-lg bg-primary-50 border border-amber-300 text-primary-900 text-xs font-bold flex items-center gap-1.5 animate-bounce">
+                    <div className="px-2.5 py-1 rounded-lg bg-primary-50 border border-primary-edge text-primary-900 text-xs font-bold flex items-center gap-1.5 animate-bounce">
                       <span>✏️</span> 下書き復元
                     </div>
                   )}
@@ -1408,7 +1408,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                     onClick={handleToggleFavorite}
                     className={`p-2 rounded-xl transition-all border ${
                       isFavorited
-                        ? 'bg-primary-400/20 border-amber-400 text-primary-400 shadow-[0_0_10px_rgba(251,191,36,0.3)]'
+                        ? 'bg-primary-400/20 border-primary-edge text-primary-400 shadow-[0_0_10px_rgba(251,191,36,0.3)]'
                         : 'bg-surface/5 border-white/10 text-faint hover:text-white hover:bg-surface/10'
                     }`}
                     title={isFavorited ? "お気に入り解除" : "お気に入り登録"}
@@ -1466,8 +1466,8 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   onClick={() => setVsMode(!vsMode)}
                   className={`px-3.5 py-2 font-bold rounded-xl transition-all flex items-center gap-2 text-xs border backdrop-blur-md shadow-sm cursor-pointer group ${
                     vsMode
-                      ? 'bg-danger-500/30 text-danger-200 border-rose-400 ring-2 ring-danger-500/50'
-                      : 'bg-danger-500/10 hover:bg-danger-500/20 text-danger-300 hover:text-white border-rose-500/30'
+                      ? 'bg-danger-500/30 text-danger-200 border-danger-edge ring-2 ring-danger-500/50'
+                      : 'bg-danger-500/10 hover:bg-danger-500/20 text-danger-300 hover:text-white border-danger-edge-strong/30'
                   }`}
                   title="敵チャンピオンを選択して左右に弱点・立ち回りを直接比較"
                 >
@@ -1478,7 +1478,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 {/* 1. AIコーチ起動（対面相談・立ち回り質問） */}
                 <Link
                   href={`/coach?champion=${encodeURIComponent(selected.id)}`}
-                  className="px-3.5 py-2 bg-primary-500/20 hover:bg-primary-500/30 text-primary-200 hover:text-white font-bold rounded-xl transition-all flex items-center gap-2 text-xs border border-amber-500/40 backdrop-blur-md shadow-sm group cursor-pointer"
+                  className="px-3.5 py-2 bg-primary-500/20 hover:bg-primary-500/30 text-primary-200 hover:text-white font-bold rounded-xl transition-all flex items-center gap-2 text-xs border border-primary-edge-strong/40 backdrop-blur-md shadow-sm group cursor-pointer"
                   title="このチャンピオンの立ち回りや対面対策をAIに対話形式で質問・相談"
                 >
                   <Zap size={14} className="text-primary-400 group-hover:scale-110 transition-transform" />
@@ -1591,7 +1591,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
             {qualityResult && (
               <div className={`flex flex-col gap-1.5 px-4 py-3 rounded-xl text-xs border ${
-                qualityResult.pass ? 'bg-success-950/30 text-success-400 border-emerald-800/60' : 'bg-danger-100 text-danger-700 border-rose-200'
+                qualityResult.pass ? 'bg-success-950/30 text-success-400 border-success-edge-strong/60' : 'bg-danger-100 text-danger-700 border-danger-edge-soft'
               }`}>
                 <div className="font-black flex items-center gap-2">
                   {qualityResult.pass ? '✅ 合格' : '⚠️ 要改善'}（スコア {qualityResult.score}/10、基準: {qualityResult.barChampion}）
@@ -1603,7 +1603,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   </ul>
                 )}
                 {!qualityResult.pass && (
-                  <div className="flex items-center gap-2 mt-2 pt-2 border-t border-rose-200/60">
+                  <div className="flex items-center gap-2 mt-2 pt-2 border-t border-danger-edge-soft/60">
                     <span className="text-[11px]">次にすること:</span>
                     <button
                       onClick={handleFetchTrend}
@@ -1622,10 +1622,10 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
             {/* トレンド取得の進行状況（「取得中から変わらない」という不透明さの指摘を受けて追加） */}
             {trendPhase !== 'idle' && (
               <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold border ${
-                trendPhase === 'completed' ? 'bg-success-950/30 text-success-400 border-emerald-800/60' :
-                trendPhase === 'failed' || trendPhase === 'error' ? 'bg-danger-950/30 text-danger-400 border-rose-800/60' :
-                trendPhase === 'offline' || trendPhase === 'timeout' ? 'bg-primary-950/30 text-primary-400 border-amber-800/60' :
-                'bg-secondary-950/30 text-secondary-300 border-teal-800/60'
+                trendPhase === 'completed' ? 'bg-success-950/30 text-success-400 border-success-edge-strong/60' :
+                trendPhase === 'failed' || trendPhase === 'error' ? 'bg-danger-950/30 text-danger-400 border-danger-edge-strong/60' :
+                trendPhase === 'offline' || trendPhase === 'timeout' ? 'bg-primary-950/30 text-primary-400 border-primary-edge-strong/60' :
+                'bg-secondary-950/30 text-secondary-300 border-secondary-edge-strong/60'
               }`}>
                 {trendPhase === 'running' && <RefreshCw size={14} className="animate-spin shrink-0" />}
                 {(trendPhase === 'pending' || trendPhase === 'queuing') && <Activity size={14} className="shrink-0 animate-pulse" />}
@@ -1646,12 +1646,12 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
         {/* ⚔️ 対面VS直接比較モード (Split View) */}
         {vsMode && (
-          <div className="bg-gradient-to-b from-[#12131a] to-[#0a0b10] border-2 border-rose-500/50 rounded-3xl p-5 shadow-2xl space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-rose-500/20 pb-3">
+          <div className="bg-gradient-to-b from-[#12131a] to-[#0a0b10] border-2 border-danger-edge-strong/50 rounded-3xl p-5 shadow-2xl space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-danger-edge-strong/20 pb-3">
               <div className="flex items-center gap-2">
                 <Swords size={20} className="text-danger-400" />
                 <h2 className="text-base font-black text-white">⚔️ 対面VS直接比較 (Split View)</h2>
-                <span className="text-[10px] font-bold bg-danger-500/20 text-danger-300 px-2 py-0.5 rounded-full border border-rose-500/30">
+                <span className="text-[10px] font-bold bg-danger-500/20 text-danger-300 px-2 py-0.5 rounded-full border border-danger-edge-strong/30">
                   リアルタイム比較
                 </span>
               </div>
@@ -1662,7 +1662,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 <select
                   value={vsEnemyId}
                   onChange={(e) => handleSelectVsEnemy(e.target.value)}
-                  className="bg-stone-900 text-white border border-stone-600 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-rose-400 w-full sm:w-56"
+                  className="bg-stone-900 text-white border border-stone-600 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-danger-edge w-full sm:w-56"
                 >
                   <option value="">-- 敵チャンピオンを選択 --</option>
                   {champions
@@ -1701,13 +1701,13 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   );
                   if (!specificMatchup) return null;
                   return (
-                    <div className="bg-gradient-to-r from-primary-500/20 via-success-500/20 to-stone-900 border-2 border-amber-400/80 rounded-2xl p-4 shadow-xl text-xs space-y-2 animate-in fade-in slide-in-from-top-2">
-                      <div className="flex items-center justify-between flex-wrap gap-2 border-b border-amber-400/30 pb-2">
+                    <div className="bg-gradient-to-r from-primary-500/20 via-success-500/20 to-stone-900 border-2 border-primary-edge/80 rounded-2xl p-4 shadow-xl text-xs space-y-2 animate-in fade-in slide-in-from-top-2">
+                      <div className="flex items-center justify-between flex-wrap gap-2 border-b border-primary-edge/30 pb-2">
                         <span className="font-black text-primary-300 flex items-center gap-1.5 text-sm">
                           🔥 【特化攻略】対 {champions.find(c => c.id === vsEnemyId)?.name || vsEnemyId} 戦の専用マッチアップ手順書
                         </span>
                         {specificMatchup.difficulty && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-primary-400/30 text-primary-200 border border-amber-300/40">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-primary-400/30 text-primary-200 border border-primary-edge/40">
                             難易度: {specificMatchup.difficulty}
                           </span>
                         )}
@@ -1721,14 +1721,14 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 {/* 左側: あなたのチャンピオン */}
-                <div className="bg-surface dark:bg-stone-900 border border-amber-500/40 rounded-2xl p-4 flex flex-col gap-3 shadow-xs">
+                <div className="bg-surface dark:bg-stone-900 border border-primary-edge-strong/40 rounded-2xl p-4 flex flex-col gap-3 shadow-xs">
                   <div className="flex items-center gap-3 border-b border-stone-100 dark:border-stone-800 pb-2.5">
                     <Image
                       src={getChampIcon(selected.id)}
                       alt={selected.name}
                       width={44}
                       height={44}
-                      className="w-11 h-11 rounded-xl border-2 border-amber-500 shadow-xs"
+                      className="w-11 h-11 rounded-xl border-2 border-primary-edge-strong shadow-xs"
                     />
                     <div>
                       <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400 uppercase">あなた側 (YOU)</span>
@@ -1738,21 +1738,21 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
                   {/* 強み ＆ パワースパイク */}
                   <div className="space-y-2.5 text-xs">
-                    <div className="bg-success-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-emerald-500/30">
+                    <div className="bg-success-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-success-edge-strong/30">
                       <span className="text-[10px] font-bold text-success-700 dark:text-success-400 block mb-1">💪 自チャンプの強み・勝ち筋</span>
                       <p className="text-foreground-soft dark:text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
                         {dataFields.strengths || '強みデータ未登録'}
                       </p>
                     </div>
 
-                    <div className="bg-primary-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-amber-500/30">
+                    <div className="bg-primary-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-primary-edge-strong/30">
                       <span className="text-[10px] font-bold text-primary-700 dark:text-primary-400 block mb-1">⚡ パワースパイク・仕掛け時</span>
                       <p className="text-foreground-soft dark:text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
                         {dataFields.powerSpikes || 'パワースパイク未登録'}
                       </p>
                     </div>
 
-                    <div className="bg-primary-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-amber-500/30">
+                    <div className="bg-primary-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-primary-edge-strong/30">
                       <span className="text-[10px] font-bold text-primary-700 dark:text-primary-400 block mb-1">🛡️ ビルド・ルーン構成</span>
                       <p className="text-foreground-soft dark:text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
                         {dataFields.buildRunes || 'ビルドデータ未登録'}
@@ -1762,14 +1762,14 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 </div>
 
                 {/* 右側: 相手のチャンピオン */}
-                <div className="bg-surface dark:bg-stone-900 border border-rose-500/40 rounded-2xl p-4 flex flex-col gap-3 shadow-xs">
+                <div className="bg-surface dark:bg-stone-900 border border-danger-edge-strong/40 rounded-2xl p-4 flex flex-col gap-3 shadow-xs">
                   <div className="flex items-center gap-3 border-b border-stone-100 dark:border-stone-800 pb-2.5">
                     <Image
                       src={getChampIcon(vsEnemyId)}
                       alt={vsEnemyId}
                       width={44}
                       height={44}
-                      className="w-11 h-11 rounded-xl border-2 border-rose-500 shadow-xs"
+                      className="w-11 h-11 rounded-xl border-2 border-danger-edge-strong shadow-xs"
                     />
                     <div>
                       <span className="text-[10px] font-bold text-danger-600 dark:text-danger-400 uppercase">対戦相手 (ENEMY)</span>
@@ -1779,21 +1779,21 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
                   {/* 相手の弱み ＆ 要注意スキル */}
                   <div className="space-y-2.5 text-xs">
-                    <div className="bg-danger-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-rose-500/30">
+                    <div className="bg-danger-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-danger-edge-strong/30">
                       <span className="text-[10px] font-bold text-danger-700 dark:text-danger-400 block mb-1">⚠️ 相手の弱み・突くべき隙</span>
                       <p className="text-foreground-soft dark:text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
                         {vsEnemyData?.weaknesses || '弱みデータ未登録'}
                       </p>
                     </div>
 
-                    <div className="bg-primary-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-amber-500/30">
+                    <div className="bg-primary-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-primary-edge-strong/30">
                       <span className="text-[10px] font-bold text-primary-700 dark:text-primary-400 block mb-1">💥 相手のパワースパイク・警戒タイミング</span>
                       <p className="text-foreground-soft dark:text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
                         {vsEnemyData?.powerSpikes || 'パワースパイク未登録'}
                       </p>
                     </div>
 
-                    <div className="bg-secondary-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-teal-500/30">
+                    <div className="bg-secondary-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-secondary-edge-strong/30">
                       <span className="text-[10px] font-bold text-secondary-700 dark:text-secondary-400 block mb-1">🎯 相手側の対面推奨・特徴</span>
                       <p className="text-foreground-soft dark:text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
                         {vsEnemyData?.pickRecommendation || vsEnemyData?.strengths || '特徴データ未登録'}
@@ -1861,7 +1861,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
         {showDetailedEditor && (
           <div className="space-y-6 pt-2 border-t border-border dark:border-stone-800">
             {/* ⚡ 15秒サクッと対策カード（ロード中15秒で頭に入る要点） */}
-            <div className="bg-gradient-to-r from-primary-500/15 via-primary-500/10 to-primary-500/15 border border-amber-400/50 rounded-2xl p-4 shadow-xs">
+            <div className="bg-gradient-to-r from-primary-500/15 via-primary-500/10 to-primary-500/15 border border-primary-edge/50 rounded-2xl p-4 shadow-xs">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-base">⚡</span>
                 <h3 className="text-sm font-black text-primary-950">15秒サクッと対策（試合前チェック）</h3>
@@ -1870,19 +1870,19 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-                <div className="bg-surface/80 rounded-xl p-2.5 border border-amber-200/60 shadow-2xs">
+                <div className="bg-surface/80 rounded-xl p-2.5 border border-primary-edge-soft/60 shadow-2xs">
                   <span className="text-[10px] font-black text-primary-800 block mb-0.5">💥 初動・パワースパイク</span>
                   <p className="text-foreground-soft font-bold text-[11px] line-clamp-2">
                     {dataFields.powerSpikes ? dataFields.powerSpikes.split('\n')[0].replace(/^[#*-\s]+/, '') : 'レベル2-3および1コア完成時'}
                   </p>
                 </div>
-                <div className="bg-surface/80 rounded-xl p-2.5 border border-amber-200/60 shadow-2xs">
+                <div className="bg-surface/80 rounded-xl p-2.5 border border-primary-edge-soft/60 shadow-2xs">
                   <span className="text-[10px] font-black text-danger-800 block mb-0.5">⚠️ 要注意スキル・弱点</span>
                   <p className="text-foreground-soft font-bold text-[11px] line-clamp-2">
                     {dataFields.weaknesses ? dataFields.weaknesses.split('\n')[0].replace(/^[#*-\s]+/, '') : '序盤の被ガンク・CC耐性'}
                   </p>
                 </div>
-                <div className="bg-surface/80 rounded-xl p-2.5 border border-amber-200/60 shadow-2xs">
+                <div className="bg-surface/80 rounded-xl p-2.5 border border-primary-edge-soft/60 shadow-2xs">
                   <span className="text-[10px] font-black text-success-800 block mb-0.5">🎯 勝つための1箇条</span>
                   <p className="text-foreground-soft font-bold text-[11px] line-clamp-2">
                     {dataFields.pickRecommendation ? dataFields.pickRecommendation.split('\n')[0].replace(/^[#*-\s]+/, '') : 'パワースパイクに合わせた仕掛け'}
@@ -1895,14 +1895,14 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               <TextAreaCard title="強み (Strengths)" icon={Swords} color="text-[var(--color-success)] border-[var(--color-success)] shadow-[var(--color-success)]" value={dataFields.strengths} onChange={v => setField('strengths', v)} fieldKey="strengths" onOpenHistory={handleOpenHistory} />
               <TextAreaCard title="弱み (Weaknesses)" icon={ShieldAlert} color="text-[var(--color-danger)] border-[var(--color-danger)] shadow-[var(--color-danger)]" value={dataFields.weaknesses} onChange={v => setField('weaknesses', v)} fieldKey="weaknesses" onOpenHistory={handleOpenHistory} />
               <TextAreaCard title="パワースパイク" icon={Zap} color="text-[#c89b3c] border-[#c89b3c] shadow-[#c89b3c]" value={dataFields.powerSpikes} onChange={v => setField('powerSpikes', v)} fieldKey="powerSpikes" onOpenHistory={handleOpenHistory} />
-              <TextAreaCard title="コアビルド / ルーン" icon={Shield} color="text-primary-600 border-amber-500 shadow-primary-500" value={dataFields.buildRunes} onChange={v => setField('buildRunes', v)} fieldKey="buildRunes" onOpenHistory={handleOpenHistory} />
+              <TextAreaCard title="コアビルド / ルーン" icon={Shield} color="text-primary-600 border-primary-edge-strong shadow-primary-500" value={dataFields.buildRunes} onChange={v => setField('buildRunes', v)} fieldKey="buildRunes" onOpenHistory={handleOpenHistory} />
               <TextAreaCard title="対面の有利・不利" icon={Swords} color="text-[#00cfef] border-[#00cfef] shadow-[#00cfef]" value={dataFields.counterChampions} onChange={v => setField('counterChampions', v)} fieldKey="counterChampions" onOpenHistory={handleOpenHistory} />
-              <TextAreaCard title="ピック推奨 (先/後)" icon={Shield} color="text-success-600 border-emerald-500 shadow-success-500" value={dataFields.pickRecommendation} onChange={v => setField('pickRecommendation', v)} fieldKey="pickRecommendation" onOpenHistory={handleOpenHistory} />
+              <TextAreaCard title="ピック推奨 (先/後)" icon={Shield} color="text-success-600 border-success-edge-strong shadow-success-500" value={dataFields.pickRecommendation} onChange={v => setField('pickRecommendation', v)} fieldKey="pickRecommendation" onOpenHistory={handleOpenHistory} />
             </div>
           
           {/* 🌲 ジャングルプレイスタイル分類 (自動判定) */}
           {/* 🎯 プレイスタイル分類 (手動編集・全ロール対応) */}
-          <div className="glass-panel border-t-2 border-emerald-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-success-400/20 relative col-span-1 md:col-span-2">
+          <div className="glass-panel border-t-2 border-success-edge p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-success-400/20 relative col-span-1 md:col-span-2">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-black flex items-center gap-2 text-success-600">
                 <Shield size={16} /> 🎯 プレイスタイル分類 ({(dataFields.jg_style?.role || 'JUNGLE').toUpperCase()}基準)
@@ -1928,7 +1928,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 <select
                   value={dataFields.jg_style?.role || 'JUNGLE'}
                   onChange={e => setJgStyleField('role', e.target.value)}
-                  className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-foreground text-xs focus:outline-none focus:border-emerald-500 transition-colors"
+                  className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-foreground text-xs focus:outline-none focus:border-success-edge-strong transition-colors"
                 >
                   <option value="TOP">TOP</option>
                   <option value="JUNGLE">JUNGLE (Jg)</option>
@@ -1952,7 +1952,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                           setJgStyleField('type', e.target.value);
                         }
                       }}
-                      className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-foreground text-xs focus:outline-none focus:border-emerald-500 transition-colors"
+                      className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-foreground text-xs focus:outline-none focus:border-success-edge-strong transition-colors"
                     >
                       <option value="">未設定</option>
                       <option value="侵入型">侵入型 (インベード・1v1)</option>
@@ -1967,7 +1967,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                         value={dataFields.jg_style?.type === 'その他' ? '' : (dataFields.jg_style?.type || '')}
                         onChange={e => setJgStyleField('type', e.target.value)}
                         placeholder="スタイルタイプを手動入力..."
-                        className="w-full mt-2 bg-surface border border-border rounded-lg px-3 py-2 text-foreground text-xs focus:outline-none focus:border-emerald-500 transition-colors"
+                        className="w-full mt-2 bg-surface border border-border rounded-lg px-3 py-2 text-foreground text-xs focus:outline-none focus:border-success-edge-strong transition-colors"
                       />
                     )}
                   </>
@@ -1977,7 +1977,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                     value={dataFields.jg_style?.type || ''}
                     onChange={e => setJgStyleField('type', e.target.value)}
                     placeholder="例: アサシン, コントロール"
-                    className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-foreground text-xs focus:outline-none focus:border-emerald-500 transition-colors"
+                    className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-foreground text-xs focus:outline-none focus:border-success-edge-strong transition-colors"
                   />
                 )}
               </div>
@@ -1988,7 +1988,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 <select
                   value={dataFields.jg_style?.blind_pickable || 3}
                   onChange={e => setJgStyleField('blind_pickable', parseInt(e.target.value) || 3)}
-                  className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-foreground text-xs focus:outline-none focus:border-emerald-500 transition-colors font-mono"
+                  className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-foreground text-xs focus:outline-none focus:border-success-edge-strong transition-colors font-mono"
                 >
                   <option value="1">★☆☆☆☆ (1)</option>
                   <option value="2">★★☆☆☆ (2)</option>
@@ -2004,7 +2004,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 <select
                   value={dataFields.jg_style?.counter_pickable || 3}
                   onChange={e => setJgStyleField('counter_pickable', parseInt(e.target.value) || 3)}
-                  className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-foreground text-xs focus:outline-none focus:border-emerald-500 transition-colors font-mono"
+                  className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-foreground text-xs focus:outline-none focus:border-success-edge-strong transition-colors font-mono"
                 >
                   <option value="1">★☆☆☆☆ (1)</option>
                   <option value="2">★★☆☆☆ (2)</option>
@@ -2022,7 +2022,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 value={dataFields.jg_style?.description || ''}
                 onChange={e => setJgStyleField('description', e.target.value)}
                 placeholder="なぜその先出し・後出しの星評価になったのかの具体的な理由や、立ち回り上の強み・弱みを記述..."
-                className="w-full min-h-[90px] h-auto bg-surface border border-border rounded-xl p-3 text-foreground text-xs leading-relaxed resize-y focus:outline-none focus:border-emerald-500 transition-colors shadow-2xs font-sans"
+                className="w-full min-h-[90px] h-auto bg-surface border border-border rounded-xl p-3 text-foreground text-xs leading-relaxed resize-y focus:outline-none focus:border-success-edge-strong transition-colors shadow-2xs font-sans"
               />
             </div>
 
@@ -2066,7 +2066,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                     )}
                     <div className="flex gap-2 flex-wrap items-center">
                       {realJungleTiming.externalFastestClearSec != null && (
-                        <span className="px-3 py-1.5 bg-secondary-50 border border-teal-200 rounded-lg text-xs font-bold text-secondary-700 flex items-center gap-1.5">
+                        <span className="px-3 py-1.5 bg-secondary-50 border border-secondary-edge-soft rounded-lg text-xs font-bold text-secondary-700 flex items-center gap-1.5">
                           フルクリア(最速) {formatTimingSec(realJungleTiming.externalFastestClearSec)}
                           <span className={`text-[10px] px-1 py-0.2 rounded font-black ${175 - realJungleTiming.externalFastestClearSec >= 0 ? 'bg-success-100 text-success-700' : 'bg-danger-100 text-danger-700'}`}>
                             {175 - realJungleTiming.externalFastestClearSec >= 0
@@ -2076,12 +2076,12 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                         </span>
                       )}
                       {realJungleTiming.avgFirstCoreSec != null && (
-                        <span className="px-3 py-1.5 bg-secondary-50 border border-teal-200 rounded-lg text-xs font-bold text-secondary-700">
+                        <span className="px-3 py-1.5 bg-secondary-50 border border-secondary-edge-soft rounded-lg text-xs font-bold text-secondary-700">
                           1コア完成 {formatTimingSec(realJungleTiming.avgFirstCoreSec)}（{realJungleTiming.tier}帯・{realJungleTiming.sampleCount}試合）
                         </span>
                       )}
                       {realJungleTiming.avgSecondCoreSec != null && (
-                        <span className="px-3 py-1.5 bg-secondary-50 border border-teal-200 rounded-lg text-xs font-bold text-secondary-700">
+                        <span className="px-3 py-1.5 bg-secondary-50 border border-secondary-edge-soft rounded-lg text-xs font-bold text-secondary-700">
                           2コア完成 {formatTimingSec(realJungleTiming.avgSecondCoreSec)}（{realJungleTiming.tier}帯・{realJungleTiming.sampleCount}試合）
                         </span>
                       )}
@@ -2090,19 +2090,19 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 )}
 
                 {/* 🌲 JGクリアルート ＆ カウンターマッチアップ表 (JG Route & Counter Guide) */}
-                <div className="mt-4 pt-4 border-t border-amber-500/20 space-y-3">
+                <div className="mt-4 pt-4 border-t border-primary-edge-strong/20 space-y-3">
                   <div className="flex items-center justify-between">
                     <p className="text-xs font-black text-primary-900 flex items-center gap-1.5">
                       <Compass size={14} className="text-primary-600" /> 🌲 JGクリアルート ＆ カウンター戦術
                     </p>
-                    <span className="text-[10px] font-bold bg-primary-100 text-primary-800 px-2 py-0.5 rounded-full border border-amber-300">
+                    <span className="text-[10px] font-bold bg-primary-100 text-primary-800 px-2 py-0.5 rounded-full border border-primary-edge">
                       パッチ対応戦術
                     </span>
                   </div>
 
                   {/* ルート選択カード */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-                    <div className="bg-primary-50/60 rounded-xl p-3 border border-amber-200/80 shadow-2xs space-y-1.5">
+                    <div className="bg-primary-50/60 rounded-xl p-3 border border-primary-edge-soft/80 shadow-2xs space-y-1.5">
                       <div className="flex items-center justify-between">
                         <span className="font-black text-danger-700 flex items-center gap-1">🔴 赤バフ始動 (ボットサイド推奨)</span>
                         <span className="text-[10px] font-bold text-muted-strong">標準 3:15〜3:25</span>
@@ -2112,7 +2112,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                       </p>
                     </div>
 
-                    <div className="bg-secondary-50/60 rounded-xl p-3 border border-teal-200/80 shadow-2xs space-y-1.5">
+                    <div className="bg-secondary-50/60 rounded-xl p-3 border border-secondary-edge-soft/80 shadow-2xs space-y-1.5">
                       <div className="flex items-center justify-between">
                         <span className="font-black text-secondary-700 flex items-center gap-1">🔵 青バフ始動 (トップサイド推奨)</span>
                         <span className="text-[10px] font-bold text-muted-strong">Lv3速攻ガンク対応</span>
@@ -2124,19 +2124,19 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   </div>
 
                   {/* カウンター・マッチアップ方針 */}
-                  <div className="bg-surface/90 rounded-xl p-3 border border-amber-200 shadow-2xs space-y-2">
+                  <div className="bg-surface/90 rounded-xl p-3 border border-primary-edge-soft shadow-2xs space-y-2">
                     <div className="flex items-center gap-1.5 text-[11px] font-bold text-foreground-soft">
                       <ShieldAlert size={13} className="text-danger-600" />
                       <span>相性 ＆ カウンターファイト方針</span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-                      <div className="p-2 rounded-lg bg-success-50/70 border border-emerald-200/60">
+                      <div className="p-2 rounded-lg bg-success-50/70 border border-success-edge-soft/60">
                         <span className="font-bold text-success-800 block mb-0.5">🟢 有利 (狩りやすい相手)</span>
                         <p className="text-foreground-subtle">
                           {dataFields.strengths ? dataFields.strengths.split('\n')[0].replace(/^[#*-\s]+/, '') : '序盤ファーム偏重チャンプ / CCに弱い相手'}
                         </p>
                       </div>
-                      <div className="p-2 rounded-lg bg-danger-50/70 border border-rose-200/60">
+                      <div className="p-2 rounded-lg bg-danger-50/70 border border-danger-edge-soft/60">
                         <span className="font-bold text-danger-800 block mb-0.5">🔴 要注意 (被インベード・不利)</span>
                         <p className="text-foreground-subtle">
                           {dataFields.weaknesses ? dataFields.weaknesses.split('\n')[0].replace(/^[#*-\s]+/, '') : '1v1強チャンプ / レベル2-3インベード得意な相手'}
@@ -2150,7 +2150,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           </div>
 
           {/* 📈 最新パッチトレンド (自動収集) */}
-          <div className="glass-panel border-t-2 border-teal-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-secondary-400/20 relative">
+          <div className="glass-panel border-t-2 border-secondary-edge p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-secondary-400/20 relative">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-black flex items-center gap-2 text-secondary-600">
                 <Activity size={16} /> 📈 最新パッチトレンド (自動収集)
@@ -2171,10 +2171,10 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
             {dataFields.patch_meta ? (
               <div className="flex flex-col gap-4 text-sm text-foreground-soft">
                 <div className="flex gap-2 flex-wrap items-center w-full">
-                  <span className="px-3 py-1 bg-secondary-100 border border-teal-200 text-secondary-700 rounded-lg font-bold text-xs">
+                  <span className="px-3 py-1 bg-secondary-100 border border-secondary-edge-soft text-secondary-700 rounded-lg font-bold text-xs">
                     Patch {dataFields.patch_meta.patch || '不明'}
                   </span>
-                  <span className="px-3 py-1 bg-primary-100 border border-amber-200 text-primary-700 rounded-lg font-bold text-xs">
+                  <span className="px-3 py-1 bg-primary-100 border border-primary-edge-soft text-primary-700 rounded-lg font-bold text-xs">
                     Tier {dataFields.patch_meta.tier || '-'}
                   </span>
                   <span className="px-3 py-1 bg-black/5 border border-black/10 text-foreground rounded-lg font-bold text-xs">
@@ -2226,13 +2226,13 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           </div>
 
           {/* 🚨 過去の敗戦からの反省・教訓 (Sovereign Interrogation) */}
-          <div className="glass-panel border-t-2 border-rose-500 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-danger-500/20 relative col-span-1 md:col-span-2">
+          <div className="glass-panel border-t-2 border-danger-edge-strong p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-danger-500/20 relative col-span-1 md:col-span-2">
             <h3 className="text-sm font-black mb-4 flex items-center gap-2 text-danger-600">
               <ShieldAlert size={16} className="text-danger-500 animate-pulse" /> 🚨 過去の敗因反省・教訓 (Sovereign Interrogation)
             </h3>
             {pastInterrogations && pastInterrogations.length > 0 ? (
               <div className="space-y-3">
-                <div className="bg-danger-100 border border-rose-200 p-4 rounded-xl text-xs text-danger-800 leading-relaxed flex items-start gap-2.5">
+                <div className="bg-danger-100 border border-danger-edge-soft p-4 rounded-xl text-xs text-danger-800 leading-relaxed flex items-start gap-2.5">
                   <ShieldAlert className="w-4 h-4 shrink-0 text-danger-600" />
                   <div>
                     <span className="font-bold block mb-1">過去にこの対面であなたが敗北した際にAIと交わした反省です。</span>
@@ -2241,7 +2241,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {pastInterrogations.map((lesson: any, idx: number) => (
-                    <div key={idx} className="bg-black/5 border border-rose-200 p-4 rounded-xl text-xs text-danger-800 leading-relaxed space-y-2">
+                    <div key={idx} className="bg-black/5 border border-danger-edge-soft p-4 rounded-xl text-xs text-danger-800 leading-relaxed space-y-2">
                       <div className="flex justify-between items-center border-b border-black/10 pb-1">
                         <span className="text-danger-600 font-bold font-mono">教訓 #{idx+1}</span>
                         <span className="text-[10px] text-muted-strong">
@@ -2267,7 +2267,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           </div>
 
           {/* 🏆 プロ推奨ルーン・ビルド (自動収集) */}
-          <div className="glass-panel border-t-2 border-amber-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-primary-400/20 relative col-span-1 md:col-span-2">
+          <div className="glass-panel border-t-2 border-primary-edge p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-primary-400/20 relative col-span-1 md:col-span-2">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-black flex items-center gap-2 text-primary-600">
                 <Award size={16} /> 🏆 プロ最先端ビルド (直近のソロキュー実例)
@@ -2290,7 +2290,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                         {pb.team && <span className="text-xs text-faint">({pb.team})</span>}
                       </div>
                       {pb.win_lose && (
-                        <span className="text-xs px-2 py-0.5 bg-primary-100 border border-amber-200 text-primary-700 rounded-full font-black">
+                        <span className="text-xs px-2 py-0.5 bg-primary-100 border border-primary-edge-soft text-primary-700 rounded-full font-black">
                           {pb.win_lose}
                         </span>
                       )}
@@ -2335,7 +2335,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
           {/* 🔎 AIリサーチの出典 (google_searchグラウンディング由来、参考・裏取り用) */}
           {dataFields.research_sources && dataFields.research_sources.length > 0 && (
-            <div className="glass-panel border-t-2 border-teal-400 p-5 rounded-2xl col-span-1 md:col-span-2">
+            <div className="glass-panel border-t-2 border-secondary-edge p-5 rounded-2xl col-span-1 md:col-span-2">
               <h3 className="text-sm font-black flex items-center gap-2 text-secondary-700 mb-3">
                 🔎 AIリサーチの出典（参考・裏取り用）
               </h3>
@@ -2416,7 +2416,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           </div>
 
           {/* 📄 AI生成ドラフト・追加メモ項目 (折りたたみアコーディオン) */}
-          <div className="glass-panel rounded-2xl border-l-4 border-rose-400 bg-danger-400/5 overflow-hidden col-span-1 md:col-span-2">
+          <div className="glass-panel rounded-2xl border-l-4 border-danger-edge bg-danger-400/5 overflow-hidden col-span-1 md:col-span-2">
             <div
               onClick={() => setIsDraftsCollapsed(!isDraftsCollapsed)}
               className="w-full p-5 flex items-center justify-between text-left hover:bg-black/5 transition-colors cursor-pointer select-none"
@@ -2440,7 +2440,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {Object.entries(dataFields.customFields || {}).map(([key, val]) => (
-                      <div key={key} className="glass-panel border-t-2 border-rose-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-danger-400/20 relative">
+                      <div key={key} className="glass-panel border-t-2 border-danger-edge p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-danger-400/20 relative">
                         <button onClick={() => removeCustomField(key)} className="absolute top-4 right-4 text-muted-strong hover:text-danger-600 transition-colors"><Trash size={14}/></button>
                         <div className="flex items-center justify-between mb-4 pr-6">
                           <h3 className="text-sm font-black flex items-center gap-2 text-danger-600"><FileText size={16} /> {key}</h3>
@@ -2457,7 +2457,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                             <History size={13} /> 📜 履歴
                           </button>
                         </div>
-                        <textarea value={val as string} onChange={e => updateCustomField(key, e.target.value)} className="w-full min-h-[140px] h-auto bg-surface border border-black/10 rounded-xl p-3.5 text-sm text-foreground-soft leading-relaxed outline-none focus:border-rose-500/60 resize-y shadow-inner transition-colors font-sans" placeholder={`${key}を記録...`} />
+                        <textarea value={val as string} onChange={e => updateCustomField(key, e.target.value)} className="w-full min-h-[140px] h-auto bg-surface border border-black/10 rounded-xl p-3.5 text-sm text-foreground-soft leading-relaxed outline-none focus:border-danger-edge-strong/60 resize-y shadow-inner transition-colors font-sans" placeholder={`${key}を記録...`} />
                       </div>
                     ))}
                   </div>
@@ -2564,9 +2564,9 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                             vs {m.enemy}
                             {hasData && (
                               <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ${
-                                isFavored ? 'bg-success-100 text-success-700 border border-emerald-200' :
-                                isUnfavored ? 'bg-danger-100 text-danger-700 border border-rose-200' :
-                                'bg-primary-100 text-primary-700 border border-amber-200'
+                                isFavored ? 'bg-success-100 text-success-700 border border-success-edge-soft' :
+                                isUnfavored ? 'bg-danger-100 text-danger-700 border border-danger-edge-soft' :
+                                'bg-primary-100 text-primary-700 border border-primary-edge-soft'
                               }`}>
                                 {isFavored ? '🟢 有利' : isUnfavored ? '🔴 不利' : '🟡 互角'}
                               </span>
@@ -2587,7 +2587,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                           if (ktmMatchup && ktmMatchup.games > 0) {
                             const winRate = ktmMatchup.win_rate;
                             return (
-                              <div className={`px-2 py-1 rounded-md border flex flex-col items-center justify-center min-w-[65px] ${winRate >= 60 ? 'bg-success-100 text-success-700 border-emerald-200' : winRate <= 40 ? 'bg-danger-100 text-danger-700 border-rose-200' : 'bg-primary-100 text-primary-700 border-amber-200'}`}>
+                              <div className={`px-2 py-1 rounded-md border flex flex-col items-center justify-center min-w-[65px] ${winRate >= 60 ? 'bg-success-100 text-success-700 border-success-edge-soft' : winRate <= 40 ? 'bg-danger-100 text-danger-700 border-danger-edge-soft' : 'bg-primary-100 text-primary-700 border-primary-edge-soft'}`}>
                                 <span className="text-[8px] text-faint font-bold uppercase tracking-wider scale-90 leading-none">KTM {ktmMatchup.games}戦</span>
                                 <span className="font-mono text-xs font-black mt-0.5 leading-none">{winRate}%</span>
                               </div>
@@ -2597,7 +2597,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                           const memoWinRate = eTotal > 0 ? Math.round((eWins / eTotal) * 100) : null;
                           if (memoWinRate !== null) {
                             return (
-                              <div className={`px-2 py-1 rounded-md border flex flex-col items-center justify-center min-w-[65px] ${memoWinRate >= 60 ? 'bg-success-100 text-success-700 border-emerald-200' : memoWinRate <= 40 ? 'bg-danger-100 text-danger-700 border-rose-200' : 'bg-black/5 text-foreground-subtle border-black/10'}`}>
+                              <div className={`px-2 py-1 rounded-md border flex flex-col items-center justify-center min-w-[65px] ${memoWinRate >= 60 ? 'bg-success-100 text-success-700 border-success-edge-soft' : memoWinRate <= 40 ? 'bg-danger-100 text-danger-700 border-danger-edge-soft' : 'bg-black/5 text-foreground-subtle border-black/10'}`}>
                                 <span className="text-[8px] text-muted-strong font-bold uppercase tracking-wider scale-90 leading-none">メモ {eTotal}戦</span>
                                 <span className="font-mono text-xs font-black mt-0.5 leading-none">{memoWinRate}%</span>
                               </div>
@@ -2711,7 +2711,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                                     <div className="flex items-center gap-1.5 overflow-x-auto py-1">
                                       {trendHistory.map((h: any, idx: number) => (
                                         <div key={idx} className="flex items-center gap-2 shrink-0">
-                                          <div className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border ${h.is_win ? 'bg-success-100 border-emerald-200 text-success-700' : 'bg-danger-100 border-rose-200 text-danger-700'}`}>
+                                          <div className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border ${h.is_win ? 'bg-success-100 border-success-edge-soft text-success-700' : 'bg-danger-100 border-danger-edge-soft text-danger-700'}`}>
                                             <span className="font-bold">{h.player_name}</span>
                                             <span className="font-mono text-[9px]">({new Date(h.created_at).toLocaleDateString('ja-JP', {month: '2-digit', day: '2-digit'})})</span>
                                           </div>
@@ -2847,7 +2847,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           {isAdmin && (
             <div className="flex justify-end items-center gap-3 pt-4 border-t border-border">
               {saveSuccess && (
-                <span className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-success-50 text-success-700 border border-emerald-300 text-xs font-bold">
+                <span className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-success-50 text-success-700 border border-success-edge text-xs font-bold">
                   <Check size={14} /> 保存しました
                 </span>
               )}
@@ -2883,7 +2883,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
       {/* ✨ AI知見清書 処理中オーバーレイ */}
       {refiningFacts && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/70 backdrop-blur-sm animate-fade-in">
-          <div className="bg-surface border border-amber-300 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl flex flex-col items-center text-center space-y-4">
+          <div className="bg-surface border border-primary-edge rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl flex flex-col items-center text-center space-y-4">
             <div className="w-16 h-16 rounded-2xl bg-primary-100 flex items-center justify-center text-primary-600 shadow-inner">
               <Sparkles size={32} className="animate-spin text-primary-600" />
             </div>
@@ -2893,7 +2893,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 重複表現を削ぎ落とし、2026年最新メタ仕様（スカトル2:55/グラブ8:00等）に合わせたプロ品質の文章へ再構成しています。
               </p>
             </div>
-            <div className="flex items-center gap-2 text-xs font-bold text-primary-800 bg-primary-50 px-3 py-1.5 rounded-xl border border-amber-200">
+            <div className="flex items-center gap-2 text-xs font-bold text-primary-800 bg-primary-50 px-3 py-1.5 rounded-xl border border-primary-edge-soft">
               <RefreshCw size={14} className="animate-spin" />
               <span>Gemini 3 が推敲中（数秒お待ちください）</span>
             </div>
@@ -2934,7 +2934,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 .map((d) => (
                   <div key={d.fieldKey} className="bg-surface border border-border rounded-2xl p-4 shadow-xs space-y-3">
                     <div className="flex items-center justify-between flex-wrap gap-2">
-                      <span className="text-xs font-black text-primary-900 bg-primary-50 border border-amber-200 px-2.5 py-1 rounded-lg inline-block">
+                      <span className="text-xs font-black text-primary-900 bg-primary-50 border border-primary-edge-soft px-2.5 py-1 rounded-lg inline-block">
                         📌 {d.fieldLabel}
                       </span>
                       <span className="text-[10px] text-faint font-mono">
@@ -2955,7 +2955,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                       </div>
 
                       {/* 清書後 */}
-                      <div className="bg-primary-50/40 border border-amber-300/80 rounded-xl p-3.5 space-y-1.5 flex flex-col shadow-2xs">
+                      <div className="bg-primary-50/40 border border-primary-edge/80 rounded-xl p-3.5 space-y-1.5 flex flex-col shadow-2xs">
                         <span className="text-[10px] font-bold text-primary-800 flex items-center gap-1">
                           <Sparkles size={12} className="text-primary-600" /> 清書後（AI推敲・重複排除版）:
                         </span>
@@ -3077,7 +3077,7 @@ const TextAreaCard = ({
               onClick={() => setIsEditing(!isEditing)}
               className={`text-[11px] font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 border shadow-xs cursor-pointer ${
                 isEditing
-                  ? 'bg-primary-600 text-white border-amber-600'
+                  ? 'bg-primary-600 text-white border-primary-edge-strong'
                   : 'bg-black/5 hover:bg-black/10 text-foreground-subtle border-black/10'
               }`}
             >
@@ -3091,7 +3091,7 @@ const TextAreaCard = ({
           <textarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="w-full min-h-[160px] bg-surface border border-border rounded-xl p-3.5 text-sm text-foreground leading-relaxed outline-none focus:border-amber-500 focus:ring-1 focus:ring-primary-500 shadow-inner transition-colors resize-y font-sans"
+            className="w-full min-h-[160px] bg-surface border border-border rounded-xl p-3.5 text-sm text-foreground leading-relaxed outline-none focus:border-primary-edge-strong focus:ring-1 focus:ring-primary-500 shadow-inner transition-colors resize-y font-sans"
             placeholder={`${title}を記録...`}
             autoFocus
           />

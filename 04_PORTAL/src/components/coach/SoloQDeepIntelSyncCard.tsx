@@ -77,9 +77,9 @@ export default function SoloQDeepIntelSyncCard({
   const pool = intel?.sessionAnalytics?.championPoolDiagnosis;
 
   return (
-    <div className="rounded-3xl border border-amber-300/80 bg-gradient-to-br from-primary-500/10 via-white to-primary-500/5 p-5 shadow-xs space-y-4">
+    <div className="rounded-3xl border border-primary-edge/80 bg-gradient-to-br from-primary-500/10 via-white to-primary-500/5 p-5 shadow-xs space-y-4">
       {/* ヘッダー */}
-      <div className="flex items-center justify-between border-b border-amber-200/60 pb-3 flex-wrap gap-2">
+      <div className="flex items-center justify-between border-b border-primary-edge-soft/60 pb-3 flex-wrap gap-2">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-600 to-primary-700 text-white flex items-center justify-center text-sm font-black shadow-2xs">
             🎯
@@ -89,7 +89,7 @@ export default function SoloQDeepIntelSyncCard({
               <h3 className="font-black text-sm text-foreground">
                 SoloQ実測アナライザー同期インテル
               </h3>
-              <span className="text-[10px] font-black px-2 py-0.5 bg-primary-100 text-primary-900 border border-amber-300 rounded-full">
+              <span className="text-[10px] font-black px-2 py-0.5 bg-primary-100 text-primary-900 border border-primary-edge rounded-full">
                 直近35戦実測
               </span>
             </div>
@@ -125,14 +125,14 @@ export default function SoloQDeepIntelSyncCard({
           <span>アナライザーから直近ソロQデータを同期中...</span>
         </div>
       ) : error && !intel ? (
-        <div className="p-3 bg-danger-50 border border-rose-200 text-danger-800 rounded-xl text-xs font-bold">
+        <div className="p-3 bg-danger-50 border border-danger-edge-soft text-danger-800 rounded-xl text-xs font-bold">
           {error}
         </div>
       ) : (
         <div className="space-y-3.5">
           {/* 1. 目標ランク到達度 ＆ 最大ボトルネック */}
           {gap && (
-            <div className="bg-surface rounded-2xl border border-amber-200/80 p-3.5 shadow-2xs space-y-2">
+            <div className="bg-surface rounded-2xl border border-primary-edge-soft/80 p-3.5 shadow-2xs space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-black text-primary-950">
@@ -142,14 +142,14 @@ export default function SoloQDeepIntelSyncCard({
                     {gap.targetReadinessScore}%
                   </span>
                 </div>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-success-100 text-success-900 border border-emerald-300">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-success-100 text-success-900 border border-success-edge">
                   {mbti?.typeName || '実測タイプ判定済み'}
                 </span>
               </div>
 
               {/* 最大の急所ボトルネック */}
               {intel?.analysis?.coreBottleNeck && (
-                <div className="p-2.5 rounded-xl bg-danger-50/80 border border-rose-200 text-xs text-danger-900 space-y-1">
+                <div className="p-2.5 rounded-xl bg-danger-50/80 border border-danger-edge-soft text-xs text-danger-900 space-y-1">
                   <div className="font-black flex items-center gap-1 text-[11px] text-danger-950">
                     <AlertTriangle size={13} className="text-danger-600 shrink-0" />
                     <span>⚠️ 試合前チェック: 昇格を阻む最大の急所</span>
@@ -174,7 +174,7 @@ export default function SoloQDeepIntelSyncCard({
                     ({matchedChampProfile.gamesCount}戦 勝率{matchedChampProfile.winRate}% / KDA {matchedChampProfile.kda})
                   </span>
                 </div>
-                <span className="text-[10px] font-black px-2 py-0.5 rounded bg-primary-100 text-primary-900 border border-amber-200">
+                <span className="text-[10px] font-black px-2 py-0.5 rounded bg-primary-100 text-primary-900 border border-primary-edge-soft">
                   {matchedChampProfile.powerRating}
                 </span>
               </div>
@@ -204,7 +204,7 @@ export default function SoloQDeepIntelSyncCard({
                     <Zap size={12} className="text-primary-600" />
                     <span>実戦パワースパイク立ち回り:</span>
                   </div>
-                  <div className="text-[11px] text-foreground-subtle bg-primary-50/60 p-2 rounded-xl border border-amber-200/60 leading-relaxed font-medium space-y-1">
+                  <div className="text-[11px] text-foreground-subtle bg-primary-50/60 p-2 rounded-xl border border-primary-edge-soft/60 leading-relaxed font-medium space-y-1">
                     <div>
                       <strong className="text-primary-900">【序盤 Lv1〜5】:</strong>{' '}
                       {matchedChampProfile.powerSpikes.earlyLvl1to5}

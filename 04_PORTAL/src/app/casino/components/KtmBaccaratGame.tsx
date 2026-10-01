@@ -79,7 +79,7 @@ function CardFace({
         </div>
       ) : (
         /* カード裏面 */
-        <div className="w-full h-full rounded-xl border-2 border-amber-400 bg-gradient-to-br from-primary-600 to-primary-800 shadow-md flex items-center justify-center">
+        <div className="w-full h-full rounded-xl border-2 border-primary-edge bg-gradient-to-br from-primary-600 to-primary-800 shadow-md flex items-center justify-center">
           <div className="text-primary-200 text-xl font-black">🂠</div>
         </div>
       )}
@@ -254,9 +254,9 @@ export default function KtmBaccaratGame({
 
   const BET_CONFIGS: { id: BetTarget; label: string; subLabel: string; odds: string; accent: string; bg: string; selectedBg: string }[] = [
     // 2026-09-23: 本場のバカラと同じ並び（左BANKER / 中央TIE / 右PLAYER）へ入れ替え。
-    { id: 'BANKER', label: 'BANKER', subLabel: 'バンカー',   odds: '×1.95', accent: 'text-danger-700', bg: 'bg-danger-50 border-rose-300', selectedBg: 'bg-danger-600 border-rose-700 text-white' },
-    { id: 'TIE',    label: 'TIE',    subLabel: 'タイ',       odds: '×9.0',  accent: 'text-success-700', bg: 'bg-success-50 border-emerald-300', selectedBg: 'bg-success-600 border-emerald-700 text-white' },
-    { id: 'PLAYER', label: 'PLAYER', subLabel: 'プレイヤー', odds: '×2.00', accent: 'text-secondary-700', bg: 'bg-secondary-50 border-teal-300', selectedBg: 'bg-secondary-600 border-teal-700 text-white' },
+    { id: 'BANKER', label: 'BANKER', subLabel: 'バンカー',   odds: '×1.95', accent: 'text-danger-700', bg: 'bg-danger-50 border-danger-edge', selectedBg: 'bg-danger-600 border-danger-edge-strong text-white' },
+    { id: 'TIE',    label: 'TIE',    subLabel: 'タイ',       odds: '×9.0',  accent: 'text-success-700', bg: 'bg-success-50 border-success-edge', selectedBg: 'bg-success-600 border-success-edge-strong text-white' },
+    { id: 'PLAYER', label: 'PLAYER', subLabel: 'プレイヤー', odds: '×2.00', accent: 'text-secondary-700', bg: 'bg-secondary-50 border-secondary-edge', selectedBg: 'bg-secondary-600 border-secondary-edge-strong text-white' },
   ];
 
   // 結果アクセント
@@ -264,15 +264,15 @@ export default function KtmBaccaratGame({
     ? lastResult.isPush
       ? 'bg-surface-subtle border-stone-400 text-foreground-subtle'
       : lastResult.isWin
-        ? 'bg-primary-100 border-amber-500 text-primary-900'
-        : 'bg-danger-100 border-rose-400 text-danger-900'
+        ? 'bg-primary-100 border-primary-edge-strong text-primary-900'
+        : 'bg-danger-100 border-danger-edge text-danger-900'
     : '';
 
   return (
     <div className="space-y-5">
       {/* ヘッダー */}
       <div className="text-center space-y-1">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-500/20 text-primary-900 text-xs font-black border border-amber-500/30">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-500/20 text-primary-900 text-xs font-black border border-primary-edge-strong/30">
           <Sparkles size={12} className="text-primary-600" />
           KTM Sovereign Baccarat
         </div>
@@ -281,7 +281,7 @@ export default function KtmBaccaratGame({
 
       {/* エラー表示 */}
       {errorMsg && (
-        <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-danger-100 border border-rose-400 text-danger-800 text-xs font-bold">
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-danger-100 border border-danger-edge text-danger-800 text-xs font-bold">
           <AlertCircle size={14} />
           {errorMsg}
         </div>
@@ -372,7 +372,7 @@ export default function KtmBaccaratGame({
             max={userCoins}
             onChange={e => setBetAmount(Math.max(10, Math.floor(Number(e.target.value))))}
             disabled={phase !== 'IDLE'}
-            className="flex-1 px-3 py-2 rounded-xl border-2 border-border bg-surface text-foreground font-black text-sm text-right focus:border-amber-500 focus:outline-none disabled:opacity-50"
+            className="flex-1 px-3 py-2 rounded-xl border-2 border-border bg-surface text-foreground font-black text-sm text-right focus:border-primary-edge-strong focus:outline-none disabled:opacity-50"
           />
           <span className="text-xs text-muted-strong font-bold whitespace-nowrap">🪙</span>
         </div>

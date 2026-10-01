@@ -85,7 +85,7 @@ export default function OmikujiModal({ isOpen, onClose, omikujiData, onClaimFini
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="relative w-full max-w-sm rounded-3xl bg-[#fdfcf9] dark:bg-[#2b2d31] border-2 border-amber-400/60 shadow-2xl p-6 text-center space-y-5 overflow-hidden">
+      <div className="relative w-full max-w-sm rounded-3xl bg-[#fdfcf9] dark:bg-[#2b2d31] border-2 border-primary-edge/60 shadow-2xl p-6 text-center space-y-5 overflow-hidden">
         
         {/* 背景の光彩演出 */}
         <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-48 h-48 bg-gradient-to-b from-primary-400/20 to-transparent rounded-full blur-2xl pointer-events-none" />
@@ -102,7 +102,7 @@ export default function OmikujiModal({ isOpen, onClose, omikujiData, onClaimFini
 
         {/* ヘッダー */}
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-500/15 border border-amber-500/30 text-primary-600 dark:text-primary-400 text-xs font-black">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-500/15 border border-primary-edge-strong/30 text-primary-600 dark:text-primary-400 text-xs font-black">
             <Sparkles size={13} className="animate-spin" />
             <span>KTM デイリーおみくじ</span>
           </div>
@@ -135,7 +135,7 @@ export default function OmikujiModal({ isOpen, onClose, omikujiData, onClaimFini
         {/* 獲得コインとコメント */}
         {!isSpinning && (
           <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="p-3 rounded-2xl bg-primary-500/10 dark:bg-primary-500/20 border border-amber-500/30 flex items-center justify-center gap-2">
+            <div className="p-3 rounded-2xl bg-primary-500/10 dark:bg-primary-500/20 border border-primary-edge-strong/30 flex items-center justify-center gap-2">
               <Coins className="w-6 h-6 text-primary-600 dark:text-primary-400" />
               <span className="text-sm font-bold text-foreground-subtle">獲得:</span>
               <strong className="text-2xl font-black text-primary-600 dark:text-primary-400 font-mono">

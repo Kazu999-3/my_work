@@ -19,10 +19,10 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
   return (
     <div className="space-y-8">
       {/* イントロバナー */}
-      <div className="bg-gradient-to-r from-primary-500/15 via-primary-500/10 to-primary-500/15 border border-amber-500/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-sm">
+      <div className="bg-gradient-to-r from-primary-500/15 via-primary-500/10 to-primary-500/15 border border-primary-edge-strong/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-sm">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-500/20 text-primary-800 text-xs font-black border border-amber-500/30">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-500/20 text-primary-800 text-xs font-black border border-primary-edge-strong/30">
               <Sparkles size={14} className="text-primary-600 animate-pulse" />
               初回1分！今すぐ遊べる3ステップ
             </div>
@@ -47,13 +47,13 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
       {/* 3ステップ カード一覧 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* Step 1 */}
-        <div className="bg-surface rounded-3xl p-6 border-2 border-amber-200/90 shadow-sm relative overflow-hidden flex flex-col justify-between hover:border-amber-400 transition-all group">
+        <div className="bg-surface rounded-3xl p-6 border-2 border-primary-edge-soft/90 shadow-sm relative overflow-hidden flex flex-col justify-between hover:border-primary-edge transition-all group">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-amber-200 flex items-center justify-center text-primary-600 font-bold text-2xl group-hover:scale-105 transition">
+              <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-primary-edge-soft flex items-center justify-center text-primary-600 font-bold text-2xl group-hover:scale-105 transition">
                 📝
               </div>
-              <span className="text-xs font-black text-primary-800 bg-primary-100 px-3 py-1 rounded-full border border-amber-200">
+              <span className="text-xs font-black text-primary-800 bg-primary-100 px-3 py-1 rounded-full border border-primary-edge-soft">
                 STEP 1
               </span>
             </div>
@@ -82,13 +82,13 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
         </div>
 
         {/* Step 2 */}
-        <div className="bg-surface rounded-3xl p-6 border-2 border-amber-200/90 shadow-sm relative overflow-hidden flex flex-col justify-between hover:border-amber-400 transition-all group">
+        <div className="bg-surface rounded-3xl p-6 border-2 border-primary-edge-soft/90 shadow-sm relative overflow-hidden flex flex-col justify-between hover:border-primary-edge transition-all group">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-amber-200 flex items-center justify-center text-primary-600 font-bold text-2xl group-hover:scale-105 transition">
+              <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-primary-edge-soft flex items-center justify-center text-primary-600 font-bold text-2xl group-hover:scale-105 transition">
                 🎯
               </div>
-              <span className="text-xs font-black text-primary-800 bg-primary-100 px-3 py-1 rounded-full border border-amber-200">
+              <span className="text-xs font-black text-primary-800 bg-primary-100 px-3 py-1 rounded-full border border-primary-edge-soft">
                 STEP 2
               </span>
             </div>
@@ -118,13 +118,13 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
         </div>
 
         {/* Step 3 */}
-        <div className="bg-surface rounded-3xl p-6 border-2 border-amber-200/90 shadow-sm relative overflow-hidden flex flex-col justify-between hover:border-amber-400 transition-all group">
+        <div className="bg-surface rounded-3xl p-6 border-2 border-primary-edge-soft/90 shadow-sm relative overflow-hidden flex flex-col justify-between hover:border-primary-edge transition-all group">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-success-50 border border-emerald-200 flex items-center justify-center text-success-600 font-bold text-2xl group-hover:scale-105 transition">
+              <div className="w-12 h-12 rounded-2xl bg-success-50 border border-success-edge-soft flex items-center justify-center text-success-600 font-bold text-2xl group-hover:scale-105 transition">
                 ⚔️
               </div>
-              <span className="text-xs font-black text-success-800 bg-success-100 px-3 py-1 rounded-full border border-emerald-200">
+              <span className="text-xs font-black text-success-800 bg-success-100 px-3 py-1 rounded-full border border-success-edge-soft">
                 STEP 3
               </span>
             </div>

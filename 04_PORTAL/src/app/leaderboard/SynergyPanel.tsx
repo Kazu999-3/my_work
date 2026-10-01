@@ -121,7 +121,7 @@ export default function SynergyPanel() {
           {filteredBestAlly.slice(0, 12).map((item, idx) => (
             <div
               key={item.p1 + item.p2}
-              className="p-3.5 rounded-2xl bg-background border border-border/80 hover:border-amber-300 transition flex items-center justify-between gap-3"
+              className="p-3.5 rounded-2xl bg-background border border-border/80 hover:border-primary-edge transition flex items-center justify-between gap-3"
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${

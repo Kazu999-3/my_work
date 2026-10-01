@@ -72,7 +72,7 @@ export default function CoinsRankingPanel() {
 
   if (error && players.length === 0) {
     return (
-      <div className="max-w-md mx-auto p-6 bg-danger-50/80 border border-rose-200 rounded-2xl text-center space-y-3">
+      <div className="max-w-md mx-auto p-6 bg-danger-50/80 border border-danger-edge-soft rounded-2xl text-center space-y-3">
         <AlertCircle size={32} className="text-danger-500 mx-auto" />
         <p className="text-sm font-bold text-danger-700">{error}</p>
         <button
@@ -170,7 +170,7 @@ export default function CoinsRankingPanel() {
 
           {/* 🥇 1位 (富豪チャンピオン) */}
           {top1 && (
-            <div className="order-1 md:order-2 bg-gradient-to-b from-primary-50 to-primary-100/40 border-2 border-amber-400 rounded-3xl p-6 shadow-md relative overflow-hidden flex flex-col justify-between md:-translate-y-2">
+            <div className="order-1 md:order-2 bg-gradient-to-b from-primary-50 to-primary-100/40 border-2 border-primary-edge rounded-3xl p-6 shadow-md relative overflow-hidden flex flex-col justify-between md:-translate-y-2">
               <div className="absolute top-0 right-0 w-24 h-24 bg-primary-400/10 rounded-full blur-xl pointer-events-none" />
               <div className="flex items-center justify-between mb-3">
                 <span className="text-3xl animate-bounce">👑</span>
@@ -192,7 +192,7 @@ export default function CoinsRankingPanel() {
                   </span>
                 </div>
               </div>
-              <div className="mt-4 pt-3.5 border-t border-amber-300/80 flex items-baseline justify-between">
+              <div className="mt-4 pt-3.5 border-t border-primary-edge/80 flex items-baseline justify-between">
                 <span className="text-xs text-primary-900 font-bold">富豪保有資産</span>
                 <span className="text-2xl font-black text-primary-600 font-mono tracking-tight">
                   🪙 {top1.coins.toLocaleString()}
@@ -203,7 +203,7 @@ export default function CoinsRankingPanel() {
 
           {/* 🥉 3位 */}
           {top3 && (
-            <div className="order-3 md:order-3 bg-gradient-to-b from-primary-900/5 to-white/90 border-2 border-amber-700/30 rounded-3xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-between">
+            <div className="order-3 md:order-3 bg-gradient-to-b from-primary-900/5 to-white/90 border-2 border-primary-edge-strong/30 rounded-3xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-between">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-2xl">🥉</span>
                 <span className="text-[10px] font-black tracking-widest uppercase px-2.5 py-0.5 rounded-full bg-primary-700/10 text-primary-800">
@@ -349,7 +349,7 @@ export default function CoinsRankingPanel() {
       </div>
 
       {/* カジノ/ベットへの案内バナー */}
-      <div className="p-4 rounded-2xl bg-gradient-to-r from-primary-500/10 via-primary-400/5 to-transparent border border-amber-300/40 flex flex-wrap items-center justify-between gap-3">
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-primary-500/10 via-primary-400/5 to-transparent border border-primary-edge/40 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-primary-500 text-white flex items-center justify-center font-bold shrink-0">
             <Coins size={18} />

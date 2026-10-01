@@ -11,14 +11,14 @@ interface PlayerReputationCardProps {
 }
 
 const KUDOS_TAGS = [
-  { id: 'carry', label: '👑 キャリー力・頼れるエース', icon: '👑', color: 'bg-primary-50 text-primary-900 border-amber-300' },
-  { id: 'manner', label: '💖 ナイスマナー・雰囲気◎（絶対に煽らない）', icon: '💖', color: 'bg-danger-50 text-danger-900 border-rose-300' },
-  { id: 'peel', label: '🛡️ ナイスサポート・献身的なピール', icon: '🛡️', color: 'bg-success-50 text-success-900 border-emerald-300' },
-  { id: 'shotcall', label: '🗣️ 的確な指示・ピン出し', icon: '🗣️', color: 'bg-secondary-50 text-secondary-900 border-teal-300' },
-  { id: 'mentor', label: '🔰 初心者・新規に優しい', icon: '🔰', color: 'bg-secondary-50 text-secondary-900 border-teal-300' },
-  { id: 'engage', label: '⚡ 神エンゲージ・仕掛けの鬼', icon: '⚡', color: 'bg-primary-50 text-primary-900 border-amber-300' },
-  { id: 'snipe', label: '🎯 スナイパー・神スキルショット', icon: '🎯', color: 'bg-primary-50 text-primary-900 border-amber-300' },
-  { id: 'clutch', label: '🔥 勝負強さ・クラッチプレイ', icon: '🔥', color: 'bg-primary-50 text-primary-900 border-amber-300' },
+  { id: 'carry', label: '👑 キャリー力・頼れるエース', icon: '👑', color: 'bg-primary-50 text-primary-900 border-primary-edge' },
+  { id: 'manner', label: '💖 ナイスマナー・雰囲気◎（絶対に煽らない）', icon: '💖', color: 'bg-danger-50 text-danger-900 border-danger-edge' },
+  { id: 'peel', label: '🛡️ ナイスサポート・献身的なピール', icon: '🛡️', color: 'bg-success-50 text-success-900 border-success-edge' },
+  { id: 'shotcall', label: '🗣️ 的確な指示・ピン出し', icon: '🗣️', color: 'bg-secondary-50 text-secondary-900 border-secondary-edge' },
+  { id: 'mentor', label: '🔰 初心者・新規に優しい', icon: '🔰', color: 'bg-secondary-50 text-secondary-900 border-secondary-edge' },
+  { id: 'engage', label: '⚡ 神エンゲージ・仕掛けの鬼', icon: '⚡', color: 'bg-primary-50 text-primary-900 border-primary-edge' },
+  { id: 'snipe', label: '🎯 スナイパー・神スキルショット', icon: '🎯', color: 'bg-primary-50 text-primary-900 border-primary-edge' },
+  { id: 'clutch', label: '🔥 勝負強さ・クラッチプレイ', icon: '🔥', color: 'bg-primary-50 text-primary-900 border-primary-edge' },
 ];
 
 export default function PlayerReputationCard({
@@ -124,7 +124,7 @@ export default function PlayerReputationCard({
       {/* ヘッダー */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary-500/20 to-primary-500/20 border border-amber-300 flex items-center justify-center text-xl shadow-2xs">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary-500/20 to-primary-500/20 border border-primary-edge flex items-center justify-center text-xl shadow-2xs">
             🌟
           </div>
           <div>
@@ -132,7 +132,7 @@ export default function PlayerReputationCard({
               <h3 className="text-base font-black text-foreground">
                 KTM 栄誉 ＆ メンバーからの評判
               </h3>
-              <span className="text-[10px] font-bold bg-primary-100 text-primary-900 border border-amber-300 px-2.5 py-0.5 rounded-full">
+              <span className="text-[10px] font-bold bg-primary-100 text-primary-900 border border-primary-edge px-2.5 py-0.5 rounded-full">
                 通算称賛 {totalKudos} 回
               </span>
             </div>
@@ -240,7 +240,7 @@ export default function PlayerReputationCard({
                   onClick={() => setIsReport(!isReport)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-black border transition cursor-pointer ${
                     isReport
-                      ? 'bg-danger-100 text-danger-900 border-rose-300'
+                      ? 'bg-danger-100 text-danger-900 border-danger-edge'
                       : 'bg-surface text-foreground-subtle border-border hover:bg-surface-subtle'
                   }`}
                 >
@@ -266,7 +266,7 @@ export default function PlayerReputationCard({
                           onClick={() => toggleTag(kudo.label)}
                           className={`p-2.5 rounded-xl border text-left text-xs font-bold transition flex items-center justify-between gap-1.5 cursor-pointer ${
                             isSelected
-                              ? 'bg-primary-500 text-stone-950 border-amber-500 shadow-2xs font-black'
+                              ? 'bg-primary-500 text-stone-950 border-primary-edge-strong shadow-2xs font-black'
                               : 'bg-background text-foreground-subtle border-border hover:bg-surface-subtle'
                           }`}
                         >
@@ -293,7 +293,7 @@ export default function PlayerReputationCard({
                       ? '管理者のみに届く相談・通報内容をご記入ください...'
                       : '「キャリーありがとう！」「また組もう！」など温かいメッセージをどうぞ（相手には匿名で届きます）...'
                   }
-                  className="w-full bg-background border border-border rounded-2xl p-3 text-foreground text-xs focus:border-amber-500 focus:bg-surface focus:outline-hidden leading-relaxed font-medium"
+                  className="w-full bg-background border border-border rounded-2xl p-3 text-foreground text-xs focus:border-primary-edge-strong focus:bg-surface focus:outline-hidden leading-relaxed font-medium"
                 />
               </div>
 

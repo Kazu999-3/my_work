@@ -665,8 +665,8 @@ function CustomRecordPageContent() {
           {message.text && (
             <div className={`mb-6 p-4 rounded-lg text-sm font-bold border ${
               message.type === 'success'
-                ? 'bg-success-100 text-success-700 border-emerald-200'
-                : 'bg-primary-100 border-amber-200 text-primary-700'
+                ? 'bg-success-100 text-success-700 border-success-edge-soft'
+                : 'bg-primary-100 border-primary-edge-soft text-primary-700'
             }`}>
               {message.text}
             </div>
@@ -679,7 +679,7 @@ function CustomRecordPageContent() {
             onDrop={handleDrop}
             className={`mb-8 p-8 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-3 transition-all ${
               isDragging
-                ? 'border-emerald-500 bg-success-50 text-success-700'
+                ? 'border-success-edge-strong bg-success-50 text-success-700'
                 : 'border-border bg-black/3 text-muted-strong hover:border-border hover:bg-black/5'
             }`}
           >
@@ -716,7 +716,7 @@ function CustomRecordPageContent() {
           </div>
 
           {/* 🎪 お祭りカスタム（戦績ノーカウント）トグル */}
-          <div className="mb-6 p-4 rounded-xl bg-primary-500/10 border border-amber-500/30 flex items-center justify-between">
+          <div className="mb-6 p-4 rounded-xl bg-primary-500/10 border border-primary-edge-strong/30 flex items-center justify-between">
             <div className="space-y-0.5">
               <div className="font-extrabold text-primary-900 text-sm flex items-center gap-2">
                 <span>🎪 お祭りカスタム（エキシビション）として記録</span>
@@ -763,14 +763,14 @@ function CustomRecordPageContent() {
                         <select
                           value={s.currentRole}
                           onChange={e => handleStatChangeByIndex(index, 'currentRole', e.target.value)}
-                          className="w-16 bg-surface border border-border rounded px-1.5 py-1 text-foreground outline-none focus:border-teal-500 text-xs font-bold"
+                          className="w-16 bg-surface border border-border rounded px-1.5 py-1 text-foreground outline-none focus:border-secondary-edge-strong text-xs font-bold"
                         >
                           {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                         <select
                           value={s.name}
                           onChange={e => handleStatChangeByIndex(index, 'name', e.target.value)}
-                          className="w-28 bg-surface border border-border rounded px-2 py-1.5 text-foreground outline-none focus:border-teal-500 text-sm"
+                          className="w-28 bg-surface border border-border rounded px-2 py-1.5 text-foreground outline-none focus:border-secondary-edge-strong text-sm"
                         >
                           <option value="">選択...</option>
                           {playersPool.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
@@ -778,7 +778,7 @@ function CustomRecordPageContent() {
                         <button
                           onClick={() => setActiveChampSelector({ team: 'BLUE', role: s.currentRole, slotIndex: index })}
                           type="button"
-                          className="w-32 bg-surface border border-border hover:border-teal-500 rounded px-2 py-1.5 text-muted-strong hover:text-foreground text-xs flex items-center justify-between gap-1 transition shrink-0"
+                          className="w-32 bg-surface border border-border hover:border-secondary-edge-strong rounded px-2 py-1.5 text-muted-strong hover:text-foreground text-xs flex items-center justify-between gap-1 transition shrink-0"
                         >
                           <span className="truncate">
                             {s.champion_name ? (championsList.find(c => c.id === s.champion_name)?.name || 'チャンプ') : 'チャンプ選択'}
@@ -797,7 +797,7 @@ function CustomRecordPageContent() {
                         <div className="flex-1 flex gap-1 justify-end items-center">
                           <input type="number" value={s.kills} onChange={e => handleStatChangeByIndex(index, 'kills', e.target.value)} className="w-11 bg-surface border border-border text-foreground text-center rounded py-1 text-sm" placeholder="K" />
                           <span className="text-muted-strong self-center text-xs">/</span>
-                          <input type="number" value={s.deaths} onChange={e => handleStatChangeByIndex(index, 'deaths', e.target.value)} className="w-11 bg-surface border border-rose-200 text-danger-700 text-center rounded py-1 text-sm" placeholder="D" />
+                          <input type="number" value={s.deaths} onChange={e => handleStatChangeByIndex(index, 'deaths', e.target.value)} className="w-11 bg-surface border border-danger-edge-soft text-danger-700 text-center rounded py-1 text-sm" placeholder="D" />
                           <span className="text-muted-strong self-center text-xs">/</span>
                           <input type="number" value={s.assists} onChange={e => handleStatChangeByIndex(index, 'assists', e.target.value)} className="w-11 bg-surface border border-border text-foreground text-center rounded py-1 text-sm" placeholder="A" />
                           <button
@@ -851,14 +851,14 @@ function CustomRecordPageContent() {
                         <select
                           value={s.currentRole}
                           onChange={e => handleStatChangeByIndex(index, 'currentRole', e.target.value)}
-                          className="w-16 bg-surface border border-border rounded px-1.5 py-1 text-foreground outline-none focus:border-rose-500 text-xs font-bold"
+                          className="w-16 bg-surface border border-border rounded px-1.5 py-1 text-foreground outline-none focus:border-danger-edge-strong text-xs font-bold"
                         >
                           {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                         <select
                           value={s.name}
                           onChange={e => handleStatChangeByIndex(index, 'name', e.target.value)}
-                          className="w-28 bg-surface border border-border rounded px-2 py-1.5 text-foreground outline-none focus:border-rose-500 text-sm"
+                          className="w-28 bg-surface border border-border rounded px-2 py-1.5 text-foreground outline-none focus:border-danger-edge-strong text-sm"
                         >
                           <option value="">選択...</option>
                           {playersPool.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
@@ -866,7 +866,7 @@ function CustomRecordPageContent() {
                         <button
                           onClick={() => setActiveChampSelector({ team: 'RED', role: s.currentRole, slotIndex: index })}
                           type="button"
-                          className="w-32 bg-surface border border-border hover:border-rose-500 rounded px-2 py-1.5 text-muted-strong hover:text-foreground text-xs flex items-center justify-between gap-1 transition shrink-0"
+                          className="w-32 bg-surface border border-border hover:border-danger-edge-strong rounded px-2 py-1.5 text-muted-strong hover:text-foreground text-xs flex items-center justify-between gap-1 transition shrink-0"
                         >
                           <span className="truncate">
                             {s.champion_name ? (championsList.find(c => c.id === s.champion_name)?.name || 'チャンプ') : 'チャンプ選択'}
@@ -885,7 +885,7 @@ function CustomRecordPageContent() {
                         <div className="flex-1 flex gap-1 justify-end items-center">
                           <input type="number" value={s.kills} onChange={e => handleStatChangeByIndex(index, 'kills', e.target.value)} className="w-11 bg-surface border border-border text-foreground text-center rounded py-1 text-sm" placeholder="K" />
                           <span className="text-muted-strong self-center text-xs">/</span>
-                          <input type="number" value={s.deaths} onChange={e => handleStatChangeByIndex(index, 'deaths', e.target.value)} className="w-11 bg-surface border border-rose-200 text-danger-700 text-center rounded py-1 text-sm" placeholder="D" />
+                          <input type="number" value={s.deaths} onChange={e => handleStatChangeByIndex(index, 'deaths', e.target.value)} className="w-11 bg-surface border border-danger-edge-soft text-danger-700 text-center rounded py-1 text-sm" placeholder="D" />
                           <span className="text-muted-strong self-center text-xs">/</span>
                           <input type="number" value={s.assists} onChange={e => handleStatChangeByIndex(index, 'assists', e.target.value)} className="w-11 bg-surface border border-border text-foreground text-center rounded py-1 text-sm" placeholder="A" />
                           <button
@@ -999,7 +999,7 @@ function CustomRecordPageContent() {
               placeholder="チャンピオン名で検索 (ひらがな・カタカナ・英語名)..."
               value={champSearchQuery}
               onChange={e => setChampSearchQuery(e.target.value)}
-              className="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-foreground mb-4 outline-none focus:border-emerald-500 text-sm"
+              className="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-foreground mb-4 outline-none focus:border-success-edge-strong text-sm"
               autoFocus
             />
 
@@ -1034,7 +1034,7 @@ function CustomRecordPageContent() {
                       src={getChampIcon(c.id)}
                       width={48}
                       height={48}
-                      className="w-12 h-12 rounded-xl border border-border group-hover:border-emerald-500 transition object-cover"
+                      className="w-12 h-12 rounded-xl border border-border group-hover:border-success-edge-strong transition object-cover"
                       alt={c.name}
                     />
                     <span className="text-[10px] text-muted-strong truncate w-14 text-center group-hover:text-foreground transition">
@@ -1063,7 +1063,7 @@ function CustomRecordPageContent() {
           onClick={e => { if (e.target === e.currentTarget) setSavedMatchSummary(null); }}
         >
           <div className="bg-surface border border-border rounded-3xl w-full max-w-lg shadow-2xl p-6 sm:p-8 space-y-6 text-center animate-scale-up">
-            <div className="w-16 h-16 rounded-3xl bg-success-100 border-2 border-emerald-300 flex items-center justify-center text-3xl mx-auto shadow-xs">
+            <div className="w-16 h-16 rounded-3xl bg-success-100 border-2 border-success-edge flex items-center justify-center text-3xl mx-auto shadow-xs">
               🏆
             </div>
 

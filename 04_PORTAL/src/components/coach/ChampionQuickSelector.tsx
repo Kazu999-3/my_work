@@ -233,7 +233,7 @@ export default function ChampionQuickSelector({
           <h3 className="text-sm font-black text-foreground flex items-center gap-2">
             <span>🎯</span>
             <span>試合前 マッチアップ高速セレクター</span>
-            <span className="text-[10px] font-bold px-2 py-0.5 bg-primary-100 text-primary-900 rounded-full border border-amber-200">
+            <span className="text-[10px] font-bold px-2 py-0.5 bg-primary-100 text-primary-900 rounded-full border border-primary-edge-soft">
               ワンタップ入力対応
             </span>
           </h3>
@@ -253,7 +253,7 @@ export default function ChampionQuickSelector({
                   value={tempRiotId}
                   onChange={(e) => setTempRiotId(e.target.value)}
                   placeholder="Name#TAG"
-                  className="px-1.5 py-0.5 text-xs bg-surface border border-amber-400 rounded outline-none w-28 text-foreground font-mono"
+                  className="px-1.5 py-0.5 text-xs bg-surface border border-primary-edge rounded outline-none w-28 text-foreground font-mono"
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleSaveRiotId();
@@ -299,7 +299,7 @@ export default function ChampionQuickSelector({
       </div>
 
       {liveDetectMessage && (
-        <div className="p-2.5 rounded-xl bg-primary-50 border border-amber-200 text-xs font-bold text-primary-900 flex items-center justify-between animate-in fade-in">
+        <div className="p-2.5 rounded-xl bg-primary-50 border border-primary-edge-soft text-xs font-bold text-primary-900 flex items-center justify-between animate-in fade-in">
           <span>{liveDetectMessage}</span>
           <button onClick={() => setLiveDetectMessage(null)} className="text-faint hover:text-muted">
             <X size={13} />
@@ -331,7 +331,7 @@ export default function ChampionQuickSelector({
               <img
                 src={getDDragonIconUrl(myChampion)}
                 alt={myChampion}
-                className="absolute left-2.5 w-6 h-6 rounded-lg object-cover border border-teal-400 shadow-xs pointer-events-none"
+                className="absolute left-2.5 w-6 h-6 rounded-lg object-cover border border-secondary-edge shadow-xs pointer-events-none"
                 onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
               />
             ) : (
@@ -348,8 +348,8 @@ export default function ChampionQuickSelector({
               placeholder="例: Graves, グレイブス"
               className={`w-full rounded-2xl border bg-background/70 py-2.5 pr-8 text-xs font-bold text-foreground outline-none transition-all focus:bg-surface focus:ring-2 ${
                 myChampion
-                  ? 'pl-11 border-teal-300 focus:border-teal-500 focus:ring-secondary-100'
-                  : 'pl-9 border-border focus:border-amber-500 focus:ring-primary-100'
+                  ? 'pl-11 border-secondary-edge focus:border-secondary-edge-strong focus:ring-secondary-100'
+                  : 'pl-9 border-border focus:border-primary-edge-strong focus:ring-primary-100'
               }`}
             />
           </div>
@@ -419,7 +419,7 @@ export default function ChampionQuickSelector({
               <img
                 src={getDDragonIconUrl(enemyChampion)}
                 alt={enemyChampion}
-                className="absolute left-2.5 w-6 h-6 rounded-lg object-cover border border-rose-400 shadow-xs pointer-events-none"
+                className="absolute left-2.5 w-6 h-6 rounded-lg object-cover border border-danger-edge shadow-xs pointer-events-none"
                 onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
               />
             ) : (
@@ -436,8 +436,8 @@ export default function ChampionQuickSelector({
               placeholder="例: LeeSin, リー・シン"
               className={`w-full rounded-2xl border bg-background/70 py-2.5 pr-8 text-xs font-bold text-foreground outline-none transition-all focus:bg-surface focus:ring-2 ${
                 enemyChampion
-                  ? 'pl-11 border-rose-300 focus:border-rose-500 focus:ring-danger-100'
-                  : 'pl-9 border-border focus:border-amber-500 focus:ring-primary-100'
+                  ? 'pl-11 border-danger-edge focus:border-danger-edge-strong focus:ring-danger-100'
+                  : 'pl-9 border-border focus:border-primary-edge-strong focus:ring-primary-100'
               }`}
             />
           </div>
@@ -491,8 +491,8 @@ export default function ChampionQuickSelector({
                   onClick={() => handleSelectMyChamp(c.id)}
                   className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
                     isSelected
-                      ? 'bg-secondary-600 text-white border-teal-700 shadow-xs scale-[1.03]'
-                      : 'bg-surface-subtle/90 hover:bg-secondary-50 hover:text-secondary-800 hover:border-teal-200 text-foreground-subtle border-border/80'
+                      ? 'bg-secondary-600 text-white border-secondary-edge-strong shadow-xs scale-[1.03]'
+                      : 'bg-surface-subtle/90 hover:bg-secondary-50 hover:text-secondary-800 hover:border-secondary-edge-soft text-foreground-subtle border-border/80'
                   }`}
                 >
                   <img
@@ -523,8 +523,8 @@ export default function ChampionQuickSelector({
                   onClick={() => handleSelectEnemyChamp(c.id)}
                   className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
                     isSelected
-                      ? 'bg-danger-600 text-white border-rose-700 shadow-xs scale-[1.03]'
-                      : 'bg-surface-subtle/90 hover:bg-danger-50 hover:text-danger-800 hover:border-rose-200 text-foreground-subtle border-border/80'
+                      ? 'bg-danger-600 text-white border-danger-edge-strong shadow-xs scale-[1.03]'
+                      : 'bg-surface-subtle/90 hover:bg-danger-50 hover:text-danger-800 hover:border-danger-edge-soft text-foreground-subtle border-border/80'
                   }`}
                 >
                   <img

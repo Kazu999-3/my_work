@@ -159,7 +159,7 @@ export default function RankGoalCard() {
               <div className="text-[10px] font-bold text-muted-strong">現在</div>
               <div className="font-black text-foreground dark:text-stone-100 mt-0.5">{data.current?.label}</div>
             </div>
-            <div className="rounded-xl border border-amber-800/60 bg-primary-950/30 px-3 py-2">
+            <div className="rounded-xl border border-primary-edge-strong/60 bg-primary-950/30 px-3 py-2">
               <div className="text-[10px] font-bold text-primary-400">目標</div>
               <div className="font-black text-stone-100 mt-0.5">{data.target?.label}</div>
             </div>

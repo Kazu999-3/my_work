@@ -189,10 +189,10 @@ export default function MentorshipProgressCard({
   if (matches.length === 0) {
     if (!isCurrentUser) return null;
     return (
-      <div className="bg-gradient-to-r from-success-500/10 via-secondary-500/5 to-transparent border border-emerald-500/30 rounded-3xl p-5 md:p-6 mb-6">
+      <div className="bg-gradient-to-r from-success-500/10 via-secondary-500/5 to-transparent border border-success-edge-strong/30 rounded-3xl p-5 md:p-6 mb-6">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-success-500/20 border border-emerald-500/40 flex items-center justify-center text-success-400 shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-success-500/20 border border-success-edge-strong/40 flex items-center justify-center text-success-400 shrink-0">
               <HeartHandshake className="w-6 h-6" />
             </div>
             <div>
@@ -200,7 +200,7 @@ export default function MentorshipProgressCard({
                 <span className="font-extrabold text-sm md:text-base text-foreground dark:text-stone-100">
                   師弟ハブで共闘パートナーを探しませんか？
                 </span>
-                <span className="px-2 py-0.5 text-[10px] font-black rounded-full bg-success-500/20 text-success-600 dark:text-success-400 border border-emerald-500/30">
+                <span className="px-2 py-0.5 text-[10px] font-black rounded-full bg-success-500/20 text-success-600 dark:text-success-400 border border-success-edge-strong/30">
                   募集中
                 </span>
               </div>
@@ -224,7 +224,7 @@ export default function MentorshipProgressCard({
   return (
     <div className="space-y-4 mb-6">
       {saveSuccess && (
-        <div className="p-3 rounded-2xl bg-success-500/20 border border-emerald-500/40 text-success-600 dark:text-success-300 text-xs font-bold flex items-center gap-2 animate-fade-in">
+        <div className="p-3 rounded-2xl bg-success-500/20 border border-success-edge-strong/40 text-success-600 dark:text-success-300 text-xs font-bold flex items-center gap-2 animate-fade-in">
           <CheckCircle2 className="w-4 h-4 text-success-500" />
           <span>指導メモ・目標ランクの進捗を更新しました！</span>
         </div>
@@ -256,12 +256,12 @@ export default function MentorshipProgressCard({
             {/* ヘッダー: 役職 ＆ パートナー情報 */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 dark:border-stone-800 pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-success-500/15 dark:bg-success-500/20 border border-emerald-500/30 flex items-center justify-center text-success-500 shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-success-500/15 dark:bg-success-500/20 border border-success-edge-strong/30 flex items-center justify-center text-success-500 shrink-0">
                   <HeartHandshake className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-black px-2 py-0.5 rounded-md bg-success-500/10 text-success-600 dark:text-success-400 border border-emerald-500/20">
+                    <span className="text-xs font-black px-2 py-0.5 rounded-md bg-success-500/10 text-success-600 dark:text-success-400 border border-success-edge-strong/20">
                       {isUserMentor ? '👑 師匠として指導中' : '🌱 弟子として修行中'}
                     </span>
                     <span className="text-xs text-faint font-bold">
@@ -307,7 +307,7 @@ export default function MentorshipProgressCard({
                     type="button"
                     onClick={() => handleCreateThread(match.id)}
                     disabled={creatingThreadMatchId === match.id}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-primary-50 hover:bg-primary-100 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300 border border-amber-200 dark:border-amber-800 transition cursor-pointer disabled:opacity-50"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-primary-50 hover:bg-primary-100 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300 border border-primary-edge-soft dark:border-primary-edge-strong transition cursor-pointer disabled:opacity-50"
                     title="Discord (🎓コーチング・質問) に専用指導チャットを作成"
                   >
                     <MessageSquare className="w-3.5 h-3.5" />
@@ -380,7 +380,7 @@ export default function MentorshipProgressCard({
               </div>
 
               {isEditing ? (
-                <div className="space-y-3 bg-background dark:bg-stone-900/60 p-3.5 rounded-2xl border border-amber-500/30">
+                <div className="space-y-3 bg-background dark:bg-stone-900/60 p-3.5 rounded-2xl border border-primary-edge-strong/30">
                   <div>
                     <label className="block text-[11px] font-bold text-muted-strong mb-1">
                       目標ランク
@@ -390,7 +390,7 @@ export default function MentorshipProgressCard({
                       value={editTargetRank}
                       onChange={(e) => setEditTargetRank(e.target.value)}
                       placeholder="例: GOLD IV, EMERALD IV"
-                      className="w-full text-xs font-bold px-3 py-2 rounded-xl bg-surface dark:bg-stone-800 border border-border dark:border-stone-700 text-foreground dark:text-stone-100 focus:outline-none focus:border-amber-500"
+                      className="w-full text-xs font-bold px-3 py-2 rounded-xl bg-surface dark:bg-stone-800 border border-border dark:border-stone-700 text-foreground dark:text-stone-100 focus:outline-none focus:border-primary-edge-strong"
                     />
                   </div>
                   <div>
@@ -402,7 +402,7 @@ export default function MentorshipProgressCard({
                       onChange={(e) => setEditNotes(e.target.value)}
                       rows={3}
                       placeholder="例: Lv3ガンク合わせのショートトレード意識。2デスしたらウェーブをフリーズしてJGを待つ。"
-                      className="w-full text-xs font-medium px-3 py-2 rounded-xl bg-surface dark:bg-stone-800 border border-border dark:border-stone-700 text-foreground dark:text-stone-100 focus:outline-none focus:border-amber-500"
+                      className="w-full text-xs font-medium px-3 py-2 rounded-xl bg-surface dark:bg-stone-800 border border-border dark:border-stone-700 text-foreground dark:text-stone-100 focus:outline-none focus:border-primary-edge-strong"
                     />
                   </div>
                   <div className="flex justify-end gap-2">

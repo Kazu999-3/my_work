@@ -90,7 +90,7 @@ function UserAuthWidget({ collapsed, inDrawer }: { collapsed?: boolean; inDrawer
 
     return (
       <div
-        className={`p-2.5 rounded-2xl bg-primary-500/10 dark:bg-primary-500/15 border border-amber-500/20 flex items-center gap-2 transition ${
+        className={`p-2.5 rounded-2xl bg-primary-500/10 dark:bg-primary-500/15 border border-primary-edge-strong/20 flex items-center gap-2 transition ${
           collapsed && !inDrawer ? 'justify-center' : ''
         }`}
       >
@@ -98,7 +98,7 @@ function UserAuthWidget({ collapsed, inDrawer }: { collapsed?: boolean; inDrawer
           <img
             src={user.avatar}
             alt={user.displayName}
-            className="w-8 h-8 rounded-full border border-amber-500/40 shrink-0 group-hover:scale-105 transition"
+            className="w-8 h-8 rounded-full border border-primary-edge-strong/40 shrink-0 group-hover:scale-105 transition"
           />
           {(!collapsed || inDrawer) && (
             <div className="min-w-0 flex-1">
@@ -119,7 +119,7 @@ function UserAuthWidget({ collapsed, inDrawer }: { collapsed?: boolean; inDrawer
             type="button"
             onClick={handleQuickDailyClaim}
             disabled={claiming}
-            className="px-2 py-1 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-stone-950 font-black text-[10px] rounded-xl shadow-xs transition-all animate-pulse flex items-center gap-1 cursor-pointer shrink-0 border border-amber-400"
+            className="px-2 py-1 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-stone-950 font-black text-[10px] rounded-xl shadow-xs transition-all animate-pulse flex items-center gap-1 cursor-pointer shrink-0 border border-primary-edge"
             title="本日のデイリーボーナス (+100pt) を受け取る"
           >
             <Gift size={12} className="shrink-0" />
@@ -404,7 +404,7 @@ export default function Sidebar() {
                     <>
                       <span className="truncate">{item.label}</span>
                       {isMentorship && mentorshipCount > 0 && (
-                        <span className="ml-auto px-2 py-0.5 text-[10px] font-black rounded-full bg-success-500/15 dark:bg-success-500/25 text-success-600 dark:text-success-400 border border-emerald-500/30 flex items-center gap-1 shrink-0 animate-pulse">
+                        <span className="ml-auto px-2 py-0.5 text-[10px] font-black rounded-full bg-success-500/15 dark:bg-success-500/25 text-success-600 dark:text-success-400 border border-success-edge-strong/30 flex items-center gap-1 shrink-0 animate-pulse">
                           <span className="w-1.5 h-1.5 rounded-full bg-success-500" />
                           <span>{mentorshipCount}名募集中</span>
                         </span>
@@ -560,7 +560,7 @@ export default function Sidebar() {
                         className={`flex items-center gap-2.5 p-3 rounded-2xl border transition-all ${
                           isActive
                             ? `${item.activeBg} ${item.color} border-current font-black shadow-sm`
-                            : 'bg-surface dark:bg-[#2b2d31] border-border/80 dark:border-[#3f4147] text-foreground-subtle dark:text-stone-200 hover:border-amber-500/40 font-bold'
+                            : 'bg-surface dark:bg-[#2b2d31] border-border/80 dark:border-[#3f4147] text-foreground-subtle dark:text-stone-200 hover:border-primary-edge-strong/40 font-bold'
                         }`}
                       >
                         <div className={`p-1.5 rounded-xl shrink-0 ${isActive ? 'bg-surface/20' : item.activeBg}`}>
@@ -600,7 +600,7 @@ export default function Sidebar() {
                           className={`flex items-center gap-2.5 p-3 rounded-2xl border transition-all ${
                             isActive
                               ? `${item.activeBg} ${item.color} border-current font-black shadow-sm`
-                              : 'bg-surface dark:bg-[#2b2d31] border-amber-200/60 dark:border-amber-900/40 text-foreground-subtle dark:text-stone-200 hover:border-amber-500 font-bold'
+                              : 'bg-surface dark:bg-[#2b2d31] border-primary-edge-soft/60 dark:border-primary-edge-strong/40 text-foreground-subtle dark:text-stone-200 hover:border-primary-edge-strong font-bold'
                           }`}
                         >
                           <div className={`p-1.5 rounded-xl ${item.activeBg}`}>

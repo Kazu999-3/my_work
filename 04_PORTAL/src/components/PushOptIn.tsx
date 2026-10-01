@@ -93,7 +93,7 @@ export default function PushOptIn({ collapsed = false, scope = 'general', label,
       disabled={busy}
       title={subscribed ? unsubTitle : '通知を有効化'}
       className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition-all disabled:opacity-50 border ${
-        subscribed ? 'text-success-700 border-emerald-300 hover:bg-success-50' : 'text-muted-strong border-black/10 hover:bg-black/5 hover:text-foreground'
+        subscribed ? 'text-success-700 border-success-edge hover:bg-success-50' : 'text-muted-strong border-black/10 hover:bg-black/5 hover:text-foreground'
       } ${collapsed ? 'justify-center' : inline ? 'w-auto' : 'w-full'}`}
     >
       {subscribed ? <Bell size={16} /> : <BellOff size={16} />}

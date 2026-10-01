@@ -60,7 +60,7 @@ export default function ChampionFactCheckPanel({ champion }: { champion: string 
   const progressPercent = initialTotal > 0 ? Math.round((processedCount / initialTotal) * 100) : 100;
 
   return (
-    <div className="glass-panel border-t-2 border-amber-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-primary-400/20 relative col-span-1 md:col-span-2 space-y-4">
+    <div className="glass-panel border-t-2 border-primary-edge p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-primary-400/20 relative col-span-1 md:col-span-2 space-y-4">
       {/* ヘッダー */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
@@ -83,8 +83,8 @@ export default function ChampionFactCheckPanel({ champion }: { champion: string 
         </button>
       </div>
 
-      {msg && <p className="text-xs text-success-700 font-bold bg-success-50 border border-emerald-200 p-2.5 rounded-xl">{msg}</p>}
-      {error && <p className="text-xs text-danger-700 font-bold bg-danger-50 border border-rose-200 p-2.5 rounded-xl">{error}</p>}
+      {msg && <p className="text-xs text-success-700 font-bold bg-success-50 border border-success-edge-soft p-2.5 rounded-xl">{msg}</p>}
+      {error && <p className="text-xs text-danger-700 font-bold bg-danger-50 border border-danger-edge-soft p-2.5 rounded-xl">{error}</p>}
 
       {/* 1件ずつ集中処理のプログレスバー */}
       {!loading && items.length > 0 && (
@@ -109,7 +109,7 @@ export default function ChampionFactCheckPanel({ champion }: { champion: string 
           ファクトチェックデータをロード中...
         </div>
       ) : items.length === 0 ? (
-        <div className="p-6 rounded-2xl bg-success-50/70 border border-emerald-200 text-center space-y-2">
+        <div className="p-6 rounded-2xl bg-success-50/70 border border-success-edge-soft text-center space-y-2">
           <CheckCircle2 size={32} className="text-success-600 mx-auto" />
           <h4 className="text-sm font-extrabold text-success-900">🎉 すべての矛盾・不整合の片付けが完了しました！</h4>
           <p className="text-xs text-success-800/80">

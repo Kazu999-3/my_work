@@ -112,7 +112,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                 placeholder="SummonerName#TagLine"
                 value={riotId}
                 onChange={(e) => setRiotId(e.target.value)}
-                className="w-full bg-black/5 border border-black/10 rounded-2xl py-3 pl-12 pr-4 text-sm font-bold placeholder-gray-500 focus:outline-none focus:border-teal-500/50 focus:ring-1 focus:ring-secondary-500/50 transition-all text-foreground"
+                className="w-full bg-black/5 border border-black/10 rounded-2xl py-3 pl-12 pr-4 text-sm font-bold placeholder-gray-500 focus:outline-none focus:border-secondary-edge-strong/50 focus:ring-1 focus:ring-secondary-500/50 transition-all text-foreground"
               />
             </div>
             <button
@@ -128,7 +128,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
 
         {/* エラー表示 */}
         {error && (
-          <div className="bg-danger-100 border border-rose-200 p-4 rounded-2xl flex items-start gap-3 text-sm text-danger-700 font-bold">
+          <div className="bg-danger-100 border border-danger-edge-soft p-4 rounded-2xl flex items-start gap-3 text-sm text-danger-700 font-bold">
             <ShieldAlert className="w-5 h-5 shrink-0 text-danger-600" />
             <div className="space-y-1">
               <div>エラーが発生しました</div>
@@ -141,7 +141,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
         {result && (
           <div className="space-y-6">
             {result.isPreMatch && (
-              <div className="bg-primary-100 border border-amber-200 p-4 rounded-2xl flex items-center gap-3 text-xs text-primary-700 font-bold">
+              <div className="bg-primary-100 border border-primary-edge-soft p-4 rounded-2xl flex items-center gap-3 text-xs text-primary-700 font-bold">
                 <Sparkles className="w-5 h-5 shrink-0 text-primary-600 animate-pulse" />
                 <div>現在ゲーム中ではありません。直近戦績に基づくプレマッチ（試合前）のスカウティング分析を表示しています。</div>
               </div>
@@ -177,20 +177,20 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                         <div className="text-[10px] text-muted-strong font-black tracking-wider uppercase">{result.isPreMatch ? "分析対象 (Target Player)" : "敵ジャングラー (Opponent JG)"}</div>
                         <div className="text-lg font-black text-foreground flex flex-wrap items-center gap-2">
                           <span>{result.enemyJgName}</span>
-                          <span className="text-xs text-secondary-700 font-bold bg-secondary-100 px-2 py-0.5 rounded border border-teal-200">
+                          <span className="text-xs text-secondary-700 font-bold bg-secondary-100 px-2 py-0.5 rounded border border-secondary-edge-soft">
                             {result.championName}
                           </span>
 
                           {/* OTP 警告アラートバッジ */}
                           {result.isOtp && (
-                            <span className="text-[10px] text-primary-700 bg-primary-100 px-2.5 py-1 rounded border border-amber-200 font-black animate-pulse flex items-center gap-1">
+                            <span className="text-[10px] text-primary-700 bg-primary-100 px-2.5 py-1 rounded border border-primary-edge-soft font-black animate-pulse flex items-center gap-1">
                               🔥 OTP警告: {result.otpChampion}
                             </span>
                           )}
 
                           {/* ティルト警告アラートバッジ */}
                           {result.isTilted && (
-                            <span className="text-[10px] text-secondary-700 bg-secondary-100 px-2.5 py-1 rounded border border-teal-200 font-black animate-pulse flex items-center gap-1">
+                            <span className="text-[10px] text-secondary-700 bg-secondary-100 px-2.5 py-1 rounded border border-secondary-edge-soft font-black animate-pulse flex items-center gap-1">
                               ❄️ ティルト警戒 ({result.consecutiveLosses}連敗中)
                             </span>
                           )}
@@ -201,7 +201,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                     <div className="space-y-5">
                       <h4 className="text-xs font-black text-faint uppercase tracking-wider">{result.isPreMatch ? "あなたのプレイスタイル・スライダー" : "敵のプレイスタイル・スライダー"} (Playstyle Sliders)</h4>
                       {result.playstyle.dataInsufficient && (
-                        <div className="text-[10px] font-bold text-primary-700 bg-primary-100 border border-amber-200 rounded-xl px-3 py-2">
+                        <div className="text-[10px] font-bold text-primary-700 bg-primary-100 border border-primary-edge-soft rounded-xl px-3 py-2">
                           ⚠️ 過去の対戦データが取得できなかったため、以下は実測値ではなく暫定的な推定値です。
                         </div>
                       )}
@@ -242,7 +242,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                         {result.playstyle.tags.map((tag: any) => (
                           <div 
                             key={tag.id}
-                            className="bg-secondary-100 border border-teal-200 px-3 py-2 rounded-2xl space-y-1"
+                            className="bg-secondary-100 border border-secondary-edge-soft px-3 py-2 rounded-2xl space-y-1"
                           >
                             <div className="text-xs font-black text-secondary-700">{tag.name}</div>
                             <p className="text-[10px] text-faint leading-relaxed">{tag.description}</p>
@@ -261,7 +261,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                         onClick={() => setActiveTab("advice")}
                         className={`px-4 py-2.5 text-xs font-black transition-all rounded-t-xl border-b-2 uppercase tracking-wider flex items-center gap-1.5 ${
                           activeTab === "advice"
-                            ? "border-rose-500 text-danger-700 bg-danger-100"
+                            ? "border-danger-edge-strong text-danger-700 bg-danger-100"
                             : "border-transparent text-faint hover:text-foreground"
                         }`}
                       >
@@ -272,7 +272,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                         onClick={() => setActiveTab("knowledge")}
                         className={`px-4 py-2.5 text-xs font-black transition-all rounded-t-xl border-b-2 uppercase tracking-wider flex items-center gap-1.5 ${
                           activeTab === "knowledge"
-                            ? "border-teal-500 text-secondary-700 bg-secondary-100"
+                            ? "border-secondary-edge-strong text-secondary-700 bg-secondary-100"
                             : "border-transparent text-faint hover:text-foreground"
                         }`}
                       >
@@ -283,7 +283,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                         onClick={() => setActiveTab("lessons")}
                         className={`px-4 py-2.5 text-xs font-black transition-all rounded-t-xl border-b-2 uppercase tracking-wider flex items-center gap-1.5 ${
                           activeTab === "lessons"
-                            ? "border-amber-500 text-primary-700 bg-primary-100"
+                            ? "border-primary-edge-strong text-primary-700 bg-primary-100"
                             : "border-transparent text-faint hover:text-foreground"
                         }`}
                       >
@@ -304,7 +304,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                             </div>
 
                             {/* スライド本文 */}
-                            <div className="min-h-[140px] bg-black/5 p-5 rounded-2xl border border-rose-200 flex flex-col justify-between space-y-4 relative overflow-hidden">
+                            <div className="min-h-[140px] bg-black/5 p-5 rounded-2xl border border-danger-edge-soft flex flex-col justify-between space-y-4 relative overflow-hidden">
                               <div className="space-y-2">
                                 <div className="text-xs font-black text-primary-700 flex items-center gap-1.5">
                                   <Sparkles className="w-3.5 h-3.5 text-primary-600" />
@@ -399,7 +399,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                           </div>
                         ) : (
                           <div className="space-y-3">
-                            <div className="bg-primary-100 border border-amber-200 p-4 rounded-2xl text-[11px] text-primary-800 leading-relaxed flex items-start gap-2.5">
+                            <div className="bg-primary-100 border border-primary-edge-soft p-4 rounded-2xl text-[11px] text-primary-800 leading-relaxed flex items-start gap-2.5">
                               <ShieldAlert className="w-4 h-4 shrink-0 text-primary-600" />
                               <div>
                                 <span className="font-black block">過去の教訓を活かして同じ失敗を防ぎなさい</span>
@@ -408,7 +408,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                             </div>
                             <div className="space-y-2">
                               {result.knowledge.pastInterrogation.map((lesson: string, idx: number) => (
-                                <div key={idx} className="bg-black/5 border border-rose-200 p-4 rounded-2xl text-xs text-danger-800 leading-relaxed flex gap-2">
+                                <div key={idx} className="bg-black/5 border border-danger-edge-soft p-4 rounded-2xl text-xs text-danger-800 leading-relaxed flex gap-2">
                                   <span className="text-danger-600 font-bold font-mono">#{idx+1}</span>
                                   <p className="font-medium whitespace-pre-wrap">{lesson}</p>
                                 </div>
@@ -456,7 +456,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                         const avoidTarget = [...scoredEnemies].reverse().find((e: any) => e.isOtp || e.gankScore < 40);
 
                         return (
-                          <div className="bg-gradient-to-r from-danger-900/10 via-primary-900/5 to-transparent border border-rose-300 rounded-2xl p-4 space-y-3">
+                          <div className="bg-gradient-to-r from-danger-900/10 via-primary-900/5 to-transparent border border-danger-edge rounded-2xl p-4 space-y-3">
                             <div className="flex items-center justify-between">
                               <h4 className="text-xs font-black text-danger-950 flex items-center gap-1.5 uppercase tracking-wider">
                                 <Zap className="w-4 h-4 text-danger-600 animate-pulse" />
@@ -470,7 +470,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                               {/* 🎯 最優先ガンクターゲット */}
                               {primaryTarget && (
-                                <div className="bg-surface p-3 rounded-xl border border-rose-200 shadow-2xs space-y-1">
+                                <div className="bg-surface p-3 rounded-xl border border-danger-edge-soft shadow-2xs space-y-1">
                                   <div className="text-[10px] font-black text-danger-600 flex items-center gap-1">
                                     <span>🎯</span> 【最優先破壊レーン】
                                   </div>
@@ -480,7 +480,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                                       alt={primaryTarget.championName || 'Champ'}
                                       width={28}
                                       height={28}
-                                      className="rounded-lg border border-rose-200"
+                                      className="rounded-lg border border-danger-edge-soft"
                                     />
                                     <div>
                                       <div className="font-black text-foreground">
@@ -578,17 +578,17 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                                     </td>
                                     <td className="py-3 text-right space-y-1">
                                       {p.isOtp && (
-                                        <span className="inline-block text-[9px] text-primary-700 bg-primary-100 px-2 py-0.5 rounded border border-amber-200 font-black">
+                                        <span className="inline-block text-[9px] text-primary-700 bg-primary-100 px-2 py-0.5 rounded border border-primary-edge-soft font-black">
                                           🔥 OTP ({p.otpChampion})
                                         </span>
                                       )}
                                       {p.isTilted && (
-                                        <span className="inline-block text-[9px] text-secondary-700 bg-secondary-100 px-2 py-0.5 rounded border border-teal-200 font-black ml-1">
+                                        <span className="inline-block text-[9px] text-secondary-700 bg-secondary-100 px-2 py-0.5 rounded border border-secondary-edge-soft font-black ml-1">
                                           ❄️ 連敗ティルト ({p.consecutiveLosses}連敗)
                                         </span>
                                       )}
                                       {p.isVulnerable && (
-                                        <span className="inline-block text-[9px] text-danger-700 bg-danger-100 px-2 py-0.5 rounded border border-rose-200 font-black ml-1 animate-pulse">
+                                        <span className="inline-block text-[9px] text-danger-700 bg-danger-100 px-2 py-0.5 rounded border border-danger-edge-soft font-black ml-1 animate-pulse">
                                           🎯 集中Gank推奨 ({p.fbRate ? `被FB: ${p.fbRate}%` : '直近不調'})
                                         </span>
                                       )}
@@ -640,7 +640,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                           <Zap className="w-3.5 h-3.5 text-primary-600" />
                           <span>対面カウンター情報（辞典データ）</span>
                         </h4>
-                        <div className="bg-black/5 p-4 rounded-2xl border border-amber-200">
+                        <div className="bg-black/5 p-4 rounded-2xl border border-primary-edge-soft">
                           <p className="text-[11px] text-foreground-subtle leading-relaxed whitespace-pre-wrap">{result.knowledge.counterChampions}</p>
                         </div>
                       </div>
@@ -654,7 +654,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                         </h4>
                         <div className="space-y-3">
                           {result.counters.map((c: any, idx: number) => (
-                            <div key={idx} className="bg-black/5 p-4 rounded-2xl border border-amber-200 space-y-2">
+                            <div key={idx} className="bg-black/5 p-4 rounded-2xl border border-primary-edge-soft space-y-2">
                               <div className="flex justify-between items-center">
                                 <div className="flex items-center gap-2">
                                   <Image
@@ -666,7 +666,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                                   />
                                   <span className="text-xs font-black text-primary-700">{c.championName}</span>
                                 </div>
-                                <span className="text-[10px] font-black text-success-800 bg-success-100/90 px-2 py-0.5 rounded border border-emerald-200/80">
+                                <span className="text-[10px] font-black text-success-800 bg-success-100/90 px-2 py-0.5 rounded border border-success-edge-soft/80">
                                   有利カウンター
                                 </span>
                               </div>

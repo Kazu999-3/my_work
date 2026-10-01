@@ -320,7 +320,7 @@ export default function PendingInsightsPanel() {
 
   return (
     <div className="space-y-6 animate-in">
-      <div className="bg-primary-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start gap-3">
+      <div className="bg-primary-500/10 border border-primary-edge-strong/30 rounded-2xl p-4 flex items-start gap-3">
         <HelpCircle size={18} className="text-primary-600 shrink-0 mt-0.5" />
         <p className="text-xs text-primary-950 leading-relaxed font-medium">
           AIが自動生成した知見・記事の一覧です（記事から分割された「独立した知見」と、動画解析で自動保存された攻略記事本体の両方）。承認するまでチャンピオン辞典の生成にもレーン別ガイドへの統合にも一切使われません。
@@ -348,12 +348,12 @@ export default function PendingInsightsPanel() {
               />
               <span>全選択 ({selectedIds.size}/{items.length}件)</span>
             </label>
-            <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-primary-800 bg-primary-50 border border-amber-200 px-2.5 py-1 rounded-lg select-none">
+            <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-primary-800 bg-primary-50 border border-primary-edge-soft px-2.5 py-1 rounded-lg select-none">
               <input
                 type="checkbox"
                 checked={autoMergeToDict}
                 onChange={(e) => setAutoMergeToDict(e.target.checked)}
-                className="w-3.5 h-3.5 rounded text-primary-600 focus:ring-primary-500 border-amber-300"
+                className="w-3.5 h-3.5 rounded text-primary-600 focus:ring-primary-500 border-primary-edge"
               />
               <span>承認時にチャンピオン辞典へ即時マージ</span>
             </label>
@@ -365,7 +365,7 @@ export default function PendingInsightsPanel() {
                 <button
                   onClick={() => actBatch('reject')}
                   disabled={batchActionRunning}
-                  className="px-3 py-1.5 bg-danger-50 text-danger-700 border border-rose-200 font-bold rounded-xl text-xs hover:bg-danger-100 transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                  className="px-3 py-1.5 bg-danger-50 text-danger-700 border border-danger-edge-soft font-bold rounded-xl text-xs hover:bg-danger-100 transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                 >
                   <XCircle size={13} /> 選択分を却下 ({selectedIds.size})
                 </button>
@@ -405,7 +405,7 @@ export default function PendingInsightsPanel() {
           const busy = busyId === item.id;
           return (
             <div key={item.id} className={`bg-surface border rounded-2xl p-5 shadow-xs space-y-3 transition-colors ${
-              selectedIds.has(item.id) ? 'border-amber-400 bg-primary-50/20 ring-1 ring-primary-300' : 'border-border'
+              selectedIds.has(item.id) ? 'border-primary-edge bg-primary-50/20 ring-1 ring-primary-300' : 'border-border'
             }`}>
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="flex items-start gap-3">
@@ -419,7 +419,7 @@ export default function PendingInsightsPanel() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <h4 className="text-sm font-bold text-foreground">{item.title}</h4>
                       <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border shrink-0 ${
-                        item.is_atomic ? 'bg-primary-50 border-amber-200 text-primary-700' : 'bg-secondary-50 border-teal-200 text-secondary-700'
+                        item.is_atomic ? 'bg-primary-50 border-primary-edge-soft text-primary-700' : 'bg-secondary-50 border-secondary-edge-soft text-secondary-700'
                       }`}>
                         {item.is_atomic ? '分割知見' : '動画解析記事'}
                       </span>
@@ -436,7 +436,7 @@ export default function PendingInsightsPanel() {
                   </div>
                 </div>
                 <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg border shrink-0 ${
-                  item.isLaneGeneral ? 'bg-secondary-50 border-teal-200 text-secondary-700' : 'bg-success-50 border-emerald-200 text-success-700'
+                  item.isLaneGeneral ? 'bg-secondary-50 border-secondary-edge-soft text-secondary-700' : 'bg-success-50 border-success-edge-soft text-success-700'
                 }`}>
                   {item.isLaneGeneral ? 'AI判定: レーン一般論' : `AI判定: ${item.champion}固有`}
                 </span>
@@ -460,7 +460,7 @@ export default function PendingInsightsPanel() {
                     type="button"
                     onClick={() => openMergePreview(item)}
                     disabled={busy || previewLoadingId === item.id}
-                    className="px-3.5 py-2.5 bg-primary-50 hover:bg-primary-100 text-primary-900 border border-amber-300 font-bold rounded-xl text-xs transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                    className="px-3.5 py-2.5 bg-primary-50 hover:bg-primary-100 text-primary-900 border border-primary-edge font-bold rounded-xl text-xs transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                     title="辞典や対面メモにどう反映されるかを事前に確認・調整します"
                   >
                     {previewLoadingId === item.id ? (
@@ -473,7 +473,7 @@ export default function PendingInsightsPanel() {
                   <button
                     onClick={() => act(item.id, 'reject')}
                     disabled={busy || previewLoadingId === item.id}
-                    className="px-3.5 py-2.5 bg-danger-50 text-danger-700 border border-rose-200 font-bold rounded-xl text-xs hover:bg-danger-100 transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                    className="px-3.5 py-2.5 bg-danger-50 text-danger-700 border border-danger-edge-soft font-bold rounded-xl text-xs hover:bg-danger-100 transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                   >
                     <XCircle size={14} /> 却下(削除)
                   </button>

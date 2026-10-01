@@ -964,12 +964,12 @@ export function LibraryTabContentInner() {
                 <button onClick={cancelEditing} className="px-4 py-2 glass-panel text-muted-strong hover:text-foreground rounded-xl text-sm font-bold flex items-center gap-2"><X size={14} /> キャンセル</button>
                 <button onClick={saveArticle} disabled={saving} className="px-4 py-2 bg-primary-600 text-white hover:-translate-y-0.5 shadow-lg shadow-primary-600/20 rounded-xl text-sm font-black flex items-center gap-2 transition-all"><Save size={14} /> {saving ? '保存中...' : '保存する'}</button>
                 {!showMoved && (
-                  <div className="flex items-center gap-1.5 glass-panel p-1 rounded-xl border border-amber-300 bg-primary-100">
+                  <div className="flex items-center gap-1.5 glass-panel p-1 rounded-xl border border-primary-edge bg-primary-100">
                     <select
                       value={laneChoice}
                       onChange={(e) => setLaneChoice(e.target.value)}
                       title="送り先のレーンを選びます"
-                      className="bg-surface border border-amber-300 rounded-lg px-2 py-1 text-xs text-primary-800 outline-none"
+                      className="bg-surface border border-primary-edge rounded-lg px-2 py-1 text-xs text-primary-800 outline-none"
                     >
                       {LANE_CHOICES.map(l => <option key={l.key} value={l.key}>{l.label}</option>)}
                     </select>
@@ -1010,7 +1010,7 @@ export function LibraryTabContentInner() {
                 <div className="flex flex-col gap-4 mb-6">
                   <div>
                     <label className="text-xs text-primary-700 font-bold">タイトル</label>
-                    <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)} className="w-full bg-surface border border-amber-300 rounded-xl p-3 text-2xl font-bold text-foreground outline-none focus:border-amber-500 transition-colors" />
+                    <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)} className="w-full bg-surface border border-primary-edge rounded-xl p-3 text-2xl font-bold text-foreground outline-none focus:border-primary-edge-strong transition-colors" />
                   </div>
                   <div className="flex gap-4 flex-wrap">
                     <div className="flex-1 min-w-[200px]">
@@ -1020,7 +1020,7 @@ export function LibraryTabContentInner() {
 
                       {/* 記事から自動検出されたチャンピオンの候補チップ */}
                       {detectedChampions.length > 0 && (
-                        <div className="mb-2.5 p-2.5 bg-primary-50/80 border border-amber-200 rounded-xl space-y-1.5 animate-fade-in">
+                        <div className="mb-2.5 p-2.5 bg-primary-50/80 border border-primary-edge-soft rounded-xl space-y-1.5 animate-fade-in">
                           <div className="flex items-center justify-between">
                             <span className="text-[11px] font-bold text-primary-900 flex items-center gap-1">
                               <Sparkles size={12} className="text-primary-600" />
@@ -1045,7 +1045,7 @@ export function LibraryTabContentInner() {
                                 onClick={() => {
                                   setEditChampions(prev => prev.includes(d.champion) ? prev : [...prev, d.champion]);
                                 }}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-surface border border-amber-300 rounded-md text-[11px] font-bold text-foreground-soft hover:bg-primary-100 hover:border-amber-400 transition shadow-2xs cursor-pointer"
+                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-surface border border-primary-edge rounded-md text-[11px] font-bold text-foreground-soft hover:bg-primary-100 hover:border-primary-edge transition shadow-2xs cursor-pointer"
                                 title={`出現: ${d.count}回 / マッチ表記: ${d.matchedAlias}${d.inTitle ? ' (タイトル内)' : ''}`}
                               >
                                 <span>{d.champion}</span>
@@ -1061,7 +1061,7 @@ export function LibraryTabContentInner() {
                       {editChampions.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 mb-2">
                           {editChampions.map(c => (
-                            <span key={c} className="flex items-center gap-1 px-2.5 py-1 bg-primary-100 border border-amber-300 rounded-full text-xs font-bold text-primary-700">
+                            <span key={c} className="flex items-center gap-1 px-2.5 py-1 bg-primary-100 border border-primary-edge rounded-full text-xs font-bold text-primary-700">
                               {c}
                               <button onClick={() => setEditChampions(prev => prev.filter(x => x !== c))} className="hover:text-primary-900 transition-colors ml-0.5"><X size={10} /></button>
                             </span>
@@ -1073,7 +1073,7 @@ export function LibraryTabContentInner() {
                         value={champInput}
                         onChange={v => setChampInput(v)}
                         placeholder={editChampions.length === 0 ? "未設定の場合は「その他」になります" : "追加するチャンピオン名..."}
-                        className="bg-surface border-amber-300 focus:border-amber-500"
+                        className="bg-surface border-primary-edge focus:border-primary-edge-strong"
                         onSelect={(champ: string) => {
                           if (champ && !editChampions.includes(champ)) {
                             setEditChampions(prev => [...prev, champ]);
@@ -1084,7 +1084,7 @@ export function LibraryTabContentInner() {
                     </div>
                     <div className="flex-1 min-w-[200px]">
                       <label className="text-xs text-primary-700 font-bold">キーワード (カンマ区切り)</label>
-                      <input type="text" value={editKeywords} onChange={e => setEditKeywords(e.target.value)} className="w-full bg-surface border border-amber-300 rounded-xl p-3 text-sm text-foreground outline-none focus:border-amber-500 transition-colors" placeholder="例: マクロ, 序盤, カウンター" />
+                      <input type="text" value={editKeywords} onChange={e => setEditKeywords(e.target.value)} className="w-full bg-surface border border-primary-edge rounded-xl p-3 text-sm text-foreground outline-none focus:border-primary-edge-strong transition-colors" placeholder="例: マクロ, 序盤, カウンター" />
                     </div>
                   </div>
                 </div>
@@ -1093,11 +1093,11 @@ export function LibraryTabContentInner() {
                   <div className="flex flex-col gap-1.5 flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       {selectedArticle.review_status === 'pending' ? (
-                        <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-primary-100 text-primary-900 border border-amber-300 shrink-0">
+                        <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-primary-100 text-primary-900 border border-primary-edge shrink-0">
                           ⏳ 審査中（未承認知見）
                         </span>
                       ) : (
-                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-success-50 text-success-800 border border-emerald-200 shrink-0">
+                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-success-50 text-success-800 border border-success-edge-soft shrink-0">
                           ✅ 辞典反映済
                         </span>
                       )}
@@ -1151,7 +1151,7 @@ export function LibraryTabContentInner() {
                       onClick={() => handleToggleFavorite(selectedArticle.id, selectedArticle.title || '')}
                       className={`p-2.5 rounded-xl transition-all border shrink-0 cursor-pointer ${
                         favoriteArticles.includes(selectedArticle.id)
-                          ? 'bg-primary-100 border-amber-300 text-primary-700 shadow-[0_0_10px_rgba(251,191,36,0.3)]'
+                          ? 'bg-primary-100 border-primary-edge text-primary-700 shadow-[0_0_10px_rgba(251,191,36,0.3)]'
                           : 'bg-black/5 border-black/10 text-faint hover:text-foreground hover:bg-black/10'
                       }`}
                       title={favoriteArticles.includes(selectedArticle.id) ? "お気に入り解除" : "お気に入り登録"}
@@ -1168,7 +1168,7 @@ export function LibraryTabContentInner() {
                   <span
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full font-bold border ${
                       usageCount > 0
-                        ? 'bg-success-100 text-success-700 border-emerald-200'
+                        ? 'bg-success-100 text-success-700 border-success-edge-soft'
                         : 'bg-surface-subtle text-faint border-border'
                     }`}
                     title="この記事が辞典生成のAIプロンプトに実際に採用された回数"
@@ -1177,7 +1177,7 @@ export function LibraryTabContentInner() {
                   </span>
                 )}
                 {selectedArticle.champion && (
-                  <span className="flex items-center gap-1.5 bg-primary-100 text-primary-700 border border-amber-200 px-3 py-1.5 rounded-full font-bold">
+                  <span className="flex items-center gap-1.5 bg-primary-100 text-primary-700 border border-primary-edge-soft px-3 py-1.5 rounded-full font-bold">
                     🏆 {selectedArticle.champion}
                   </span>
                 )}
@@ -1191,7 +1191,7 @@ export function LibraryTabContentInner() {
 
             {editing ? (
               <div className="flex flex-col gap-4">
-                <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} className="w-full min-h-[600px] p-6 bg-surface border border-amber-300 rounded-2xl text-sm leading-loose font-mono outline-none focus:border-amber-500 shadow-inner text-foreground transition-colors" />
+                <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} className="w-full min-h-[600px] p-6 bg-surface border border-primary-edge rounded-2xl text-sm leading-loose font-mono outline-none focus:border-primary-edge-strong shadow-inner text-foreground transition-colors" />
                 <div className="flex justify-end gap-3 pt-4 border-t border-black/10">
                   <button onClick={cancelEditing} className="px-4 py-2 glass-panel text-muted-strong hover:text-foreground rounded-xl text-sm font-bold flex items-center gap-2"><X size={14} /> キャンセル</button>
                   <button onClick={saveArticle} disabled={saving} className="px-4 py-2 bg-primary-600 text-white hover:-translate-y-0.5 shadow-lg shadow-primary-600/20 rounded-xl text-sm font-black flex items-center gap-2 transition-all"><Save size={14} /> {saving ? '保存中...' : '保存する'}</button>
@@ -1314,7 +1314,7 @@ export function LibraryTabContentInner() {
         <details className="group bg-surface dark:bg-stone-900 border border-border/90 dark:border-stone-800 rounded-2xl p-3 sm:p-4 shadow-xs transition-all">
           <summary className="cursor-pointer flex items-center justify-between text-xs font-bold text-foreground-subtle select-none">
             <div className="flex items-center gap-2">
-              <span className="p-1 bg-primary-50 dark:bg-primary-950/40 rounded-lg text-primary-600 border border-amber-200/60">📊</span>
+              <span className="p-1 bg-primary-50 dark:bg-primary-950/40 rounded-lg text-primary-600 border border-primary-edge-soft/60">📊</span>
               <span className="font-black text-foreground dark:text-stone-100">ライブラリ統計 ＆ トレンドタグ</span>
               <span className="text-[11px] px-2 py-0.5 rounded-full bg-surface-subtle dark:bg-stone-800 text-muted font-extrabold">
                 {statsSummary.total}件
@@ -1333,7 +1333,7 @@ export function LibraryTabContentInner() {
                     key={champ}
                     type="button"
                     onClick={() => setSearch(champ)}
-                    className="text-xs bg-surface-subtle hover:bg-primary-50 border border-border hover:border-amber-300 text-foreground-subtle hover:text-primary-700 font-bold px-2 py-0.5 rounded-lg transition-all cursor-pointer"
+                    className="text-xs bg-surface-subtle hover:bg-primary-50 border border-border hover:border-primary-edge text-foreground-subtle hover:text-primary-700 font-bold px-2 py-0.5 rounded-lg transition-all cursor-pointer"
                   >
                     {champ} ({count})
                   </button>
@@ -1350,7 +1350,7 @@ export function LibraryTabContentInner() {
                     key={kw}
                     type="button"
                     onClick={() => setSearch(kw)}
-                    className="text-xs bg-surface-subtle hover:bg-secondary-50 border border-border hover:border-teal-300 text-foreground-subtle hover:text-secondary-700 px-2.5 py-1 rounded-xl font-bold transition-all flex items-center gap-1 cursor-pointer"
+                    className="text-xs bg-surface-subtle hover:bg-secondary-50 border border-border hover:border-secondary-edge text-foreground-subtle hover:text-secondary-700 px-2.5 py-1 rounded-xl font-bold transition-all flex items-center gap-1 cursor-pointer"
                   >
                     <span>#{kw}</span>
                     <span className="text-[10px] text-faint font-mono bg-surface dark:bg-stone-800 px-1 py-0.2 rounded">{count}</span>
@@ -1370,7 +1370,7 @@ export function LibraryTabContentInner() {
         <div className="relative flex-1 w-full sm:min-w-[300px]">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-primary-700" size={20} />
           <input type="text" placeholder="キーワード、チャンピオン名で検索..." value={search} onChange={(e) => setSearch(e.target.value)}
-            className="w-full glass-panel border-2 border-transparent focus:border-amber-400 rounded-2xl py-4 pl-12 pr-4 text-foreground font-bold outline-none transition-colors shadow-lg" />
+            className="w-full glass-panel border-2 border-transparent focus:border-primary-edge rounded-2xl py-4 pl-12 pr-4 text-foreground font-bold outline-none transition-colors shadow-lg" />
           {search && (
             <button type="button" onClick={() => setSearch('')} title="検索条件をクリア"
               className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-strong hover:text-foreground text-sm font-black">
@@ -1386,7 +1386,7 @@ export function LibraryTabContentInner() {
             title="辞典へ移動してライブラリから消えた記事を表示し、必要なら元に戻せます"
             className={`px-3 sm:px-4 py-2.5 rounded-2xl text-xs font-bold transition-all border flex-1 sm:flex-none text-center cursor-pointer ${
               showMoved
-                ? 'bg-primary-500 text-black border-amber-400 font-black shadow-xs'
+                ? 'bg-primary-500 text-black border-primary-edge font-black shadow-xs'
                 : 'glass-panel glass-panel-hover text-muted hover:text-foreground border-border'
             }`}
           >
@@ -1447,7 +1447,7 @@ export function LibraryTabContentInner() {
                 <div className="w-full flex items-center justify-between p-4 sm:p-5 bg-black/2 hover:bg-black/5 transition-colors border-b border-black/10 flex-wrap sm:flex-nowrap gap-3">
                   <button onClick={() => toggleGroup(groupName)} className="flex items-center gap-3 text-left flex-1 min-w-0">
                     <span className="text-primary-700 transition-transform duration-300 shrink-0" style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0)' }}><ChevronDown size={20} /></span>
-                    <span className="bg-primary-100 text-primary-700 border border-amber-300 px-3 sm:px-4 py-1.5 rounded-lg font-black font-mono tracking-wider shadow-[0_0_10px_rgba(167,139,250,0.1)] text-xs sm:text-sm break-all">{groupName}</span>
+                    <span className="bg-primary-100 text-primary-700 border border-primary-edge px-3 sm:px-4 py-1.5 rounded-lg font-black font-mono tracking-wider shadow-[0_0_10px_rgba(167,139,250,0.1)] text-xs sm:text-sm break-all">{groupName}</span>
                     <span className="text-muted-strong text-xs sm:text-sm font-bold">({items.length} 記事)</span>
                   </button>
 
@@ -1479,11 +1479,11 @@ export function LibraryTabContentInner() {
                                       <ChevronDown size={16} />
                                     </span>
                                     {article.review_status === 'pending' ? (
-                                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-primary-100 text-primary-900 border border-amber-300 shrink-0">
+                                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-primary-100 text-primary-900 border border-primary-edge shrink-0">
                                         ⏳ 審査中
                                       </span>
                                     ) : (
-                                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-success-50 text-success-800 border border-emerald-200 shrink-0">
+                                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-success-50 text-success-800 border border-success-edge-soft shrink-0">
                                         ✅ 辞典反映済
                                       </span>
                                     )}
@@ -1510,7 +1510,7 @@ export function LibraryTabContentInner() {
                               style={{ maxHeight: isExpanded ? '1000px' : '0px', opacity: isExpanded ? 1 : 0 }}
                             >
                               {isExpanded && (
-                                <div className="px-3 sm:px-5 pb-5 ml-2 sm:ml-6 border-l-2 border-amber-200">
+                                <div className="px-3 sm:px-5 pb-5 ml-2 sm:ml-6 border-l-2 border-primary-edge-soft">
                                   {/* Markdownプレビュー */}
                                   <div className="prose prose-purple prose-sm max-w-none max-h-[400px] overflow-y-auto p-4 bg-black/5 border border-black/10 rounded-xl text-sm leading-relaxed mb-4 scrollbar-thin">
                                     {typeof (article.content || article.raw_content) === 'string' ? (
@@ -1571,7 +1571,7 @@ export function LibraryTabContentInner() {
                                     }}
                                     className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all border ${
                                       favoriteArticles.includes(article.id)
-                                        ? 'bg-primary-100 border-amber-300 text-primary-700'
+                                        ? 'bg-primary-100 border-primary-edge text-primary-700'
                                         : 'glass-panel text-muted-strong hover:text-foreground border-transparent'
                                     }`}
                                   >
@@ -1620,8 +1620,8 @@ export function LibraryTabContentInner() {
       {toast.show && (
         <div className="fixed bottom-6 right-6 z-50 animate-fade-in-up">
           <div className={`glass-panel p-4 rounded-2xl border flex items-center gap-3 shadow-[0_10px_30px_rgba(0,0,0,0.5)] ${
-            toast.type === 'success' ? 'border-teal-300 text-secondary-600 bg-secondary-100' :
-            toast.type === 'error' ? 'border-rose-300 text-danger-700 bg-danger-100' : 'border-amber-400 text-primary-700 bg-primary-100'
+            toast.type === 'success' ? 'border-secondary-edge text-secondary-600 bg-secondary-100' :
+            toast.type === 'error' ? 'border-danger-edge text-danger-700 bg-danger-100' : 'border-primary-edge text-primary-700 bg-primary-100'
           }`}>
             <span className="font-bold text-sm">{toast.message}</span>
           </div>

@@ -172,7 +172,7 @@ export default function FavoritesPanel({ isCollapsed = false, isAdmin = false }:
                 alt={champId}
                 width={32}
                 height={32}
-                className="w-8 h-8 rounded-full border border-amber-400/30 hover:border-amber-400 transition-all hover:scale-110 hover:shadow-[0_0_10px_rgba(200,155,60,0.3)]"
+                className="w-8 h-8 rounded-full border border-primary-edge/30 hover:border-primary-edge transition-all hover:scale-110 hover:shadow-[0_0_10px_rgba(200,155,60,0.3)]"
               />
               <button
                 onClick={(e) => {

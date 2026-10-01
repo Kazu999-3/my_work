@@ -59,13 +59,13 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
   return (
     <div className="bg-surface border border-border rounded-3xl p-6 sm:p-8 text-foreground shadow-2xl space-y-6">
       <div className="flex items-center gap-3 border-b border-black/5 pb-5">
-        <div className="p-3 rounded-2xl bg-gradient-to-br from-primary-100 to-danger-100 text-primary-700 border border-amber-200">
+        <div className="p-3 rounded-2xl bg-gradient-to-br from-primary-100 to-danger-100 text-primary-700 border border-primary-edge-soft">
           <Target size={26} />
         </div>
         <div>
           <h3 className="font-extrabold text-xl text-foreground tracking-tight flex items-center gap-2">
             特定チャンプ ディープリサーチ
-            <span className="text-[10px] bg-primary-100 text-primary-700 border border-amber-200 px-2 py-0.5 rounded-full font-bold">
+            <span className="text-[10px] bg-primary-100 text-primary-700 border border-primary-edge-soft px-2 py-0.5 rounded-full font-bold">
               AI Deep Analysis
             </span>
           </h3>
@@ -87,7 +87,7 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
               placeholder="例: アーリ, リー・シン, Ahri, LeeSin, Viego"
               value={champion}
               onChange={(e) => setChampion(e.target.value)}
-              className="w-full px-4 py-3 bg-background border border-border rounded-2xl text-sm text-foreground placeholder-stone-400 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-primary-500 transition-all font-mono"
+              className="w-full px-4 py-3 bg-background border border-border rounded-2xl text-sm text-foreground placeholder-stone-400 focus:outline-none focus:border-primary-edge-strong focus:ring-1 focus:ring-primary-500 transition-all font-mono"
               required
             />
           </div>
@@ -100,7 +100,7 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
             <select
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="w-full px-4 py-3 bg-background border border-border rounded-2xl text-sm text-foreground focus:outline-none focus:border-amber-500 font-medium"
+              className="w-full px-4 py-3 bg-background border border-border rounded-2xl text-sm text-foreground focus:outline-none focus:border-primary-edge-strong font-medium"
             >
               <option value="TOP">TOP (トップ)</option>
               <option value="JG">JUNGLE (ジャングル)</option>
@@ -129,8 +129,8 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
           <div
             className={`p-4 rounded-2xl text-xs space-y-2 border ${
               resultMsg.type === 'success'
-                ? 'bg-success-100 border-emerald-200 text-success-700'
-                : 'bg-danger-100 border-rose-200 text-danger-700'
+                ? 'bg-success-100 border-success-edge-soft text-success-700'
+                : 'bg-danger-100 border-danger-edge-soft text-danger-700'
             }`}
           >
             <div className="flex items-center gap-2 font-bold text-sm">
@@ -139,7 +139,7 @@ export default function DeepResearchPanel({ onSuccess }: DeepResearchPanelProps)
             </div>
             <p className="leading-relaxed text-foreground-subtle">{resultMsg.text}</p>
             {resultMsg.details && (
-              <div className="pt-2 border-t border-emerald-200 text-[11px] text-success-700/90 font-mono space-y-1">
+              <div className="pt-2 border-t border-success-edge-soft text-[11px] text-success-700/90 font-mono space-y-1">
                 <div>・記事タイトル: {resultMsg.details.articleTitle}</div>
                 <div>・本文の文字数: {(resultMsg.details.articleLength || 0).toLocaleString()}字</div>
                 <div>・パッチ情報: {resultMsg.details.patch}</div>

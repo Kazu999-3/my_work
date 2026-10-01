@@ -87,7 +87,7 @@ export default function KnowledgePreviewModal({
             <p className="text-sm font-bold text-foreground">{preview.title}</p>
           </div>
 
-          <div className="bg-success-50 border border-emerald-200 rounded-2xl p-4">
+          <div className="bg-success-50 border border-success-edge-soft rounded-2xl p-4">
             <p className="text-xs font-bold text-success-700 mb-2">
               🏆 このチャンピオンの辞典生成に使われます（空欄＝どのチャンピオンにも紐付きません）
             </p>
@@ -126,15 +126,15 @@ export default function KnowledgePreviewModal({
                           disabled={!insight.included}
                           className={`shrink-0 text-[10px] font-black px-2 py-1 rounded-lg border disabled:opacity-40 transition ${
                             insight.scope === 'lane_general'
-                              ? 'bg-secondary-50 border-teal-200 text-secondary-700'
-                              : 'bg-primary-50 border-amber-200 text-primary-700'
+                              ? 'bg-secondary-50 border-secondary-edge-soft text-secondary-700'
+                              : 'bg-primary-50 border-primary-edge-soft text-primary-700'
                           }`}
                           title="クリックで切り替え"
                         >
                           {insight.scope === 'lane_general' ? 'レーン一般論' : 'チャンピオン固有'}
                         </button>
                         {insight.scope === 'lane_general' && (
-                          <div className="flex items-center gap-1 bg-secondary-100/70 border border-teal-300 rounded-lg px-2 py-0.5">
+                          <div className="flex items-center gap-1 bg-secondary-100/70 border border-secondary-edge rounded-lg px-2 py-0.5">
                             <span className="text-[10px] font-bold text-secondary-800">統合先:</span>
                             <select
                               value={insight.targetLane || 'COMMON'}

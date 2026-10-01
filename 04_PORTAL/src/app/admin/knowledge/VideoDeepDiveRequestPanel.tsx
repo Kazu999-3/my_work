@@ -15,9 +15,9 @@ interface DeepDiveTask {
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
   pending: { label: '待機中', className: 'bg-surface-subtle text-foreground-subtle border-border' },
-  running: { label: '解析中', className: 'bg-primary-50 text-primary-800 border-amber-300' },
-  completed: { label: '完了', className: 'bg-success-50 text-success-800 border-emerald-300' },
-  failed: { label: '失敗', className: 'bg-danger-50 text-danger-800 border-rose-300' },
+  running: { label: '解析中', className: 'bg-primary-50 text-primary-800 border-primary-edge' },
+  completed: { label: '完了', className: 'bg-success-50 text-success-800 border-success-edge' },
+  failed: { label: '失敗', className: 'bg-danger-50 text-danger-800 border-danger-edge' },
 };
 
 export default function VideoDeepDiveRequestPanel() {
@@ -79,7 +79,7 @@ export default function VideoDeepDiveRequestPanel() {
     <div className="bg-surface border border-border/90 rounded-2xl p-5 shadow-xs space-y-4">
       <div>
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-primary-50 text-primary-600 border border-amber-200/60">
+          <div className="p-2 rounded-xl bg-primary-50 text-primary-600 border border-primary-edge-soft/60">
             <Microscope className="w-4 h-4" />
           </div>
           <div>
@@ -96,8 +96,8 @@ export default function VideoDeepDiveRequestPanel() {
       {message && (
         <div className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
           message.type === 'success'
-            ? 'bg-success-50 border border-emerald-300 text-success-800'
-            : 'bg-danger-50 border border-rose-300 text-danger-800'
+            ? 'bg-success-50 border border-success-edge text-success-800'
+            : 'bg-danger-50 border border-danger-edge text-danger-800'
         }`}>
           {message.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
           <span>{message.text}</span>
@@ -112,14 +112,14 @@ export default function VideoDeepDiveRequestPanel() {
             onChange={(e) => setVideoUrl(e.target.value)}
             placeholder="YouTube URL または動画ID"
             required
-            className="md:col-span-2 px-3.5 py-2.5 bg-surface border border-border rounded-xl text-xs text-foreground placeholder-stone-400 outline-none focus:border-amber-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
+            className="md:col-span-2 px-3.5 py-2.5 bg-surface border border-border rounded-xl text-xs text-foreground placeholder-stone-400 outline-none focus:border-primary-edge-strong focus:ring-2 focus:ring-primary-500/20 transition-all"
           />
           <input
             type="text"
             value={champion}
             onChange={(e) => setChampion(e.target.value)}
             placeholder="対象チャンピオン（省略時は自動判定）"
-            className="px-3.5 py-2.5 bg-surface border border-border rounded-xl text-xs text-foreground placeholder-stone-400 outline-none focus:border-amber-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
+            className="px-3.5 py-2.5 bg-surface border border-border rounded-xl text-xs text-foreground placeholder-stone-400 outline-none focus:border-primary-edge-strong focus:ring-2 focus:ring-primary-500/20 transition-all"
           />
         </div>
         <div className="flex justify-end pt-1">

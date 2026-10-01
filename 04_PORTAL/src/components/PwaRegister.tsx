@@ -208,7 +208,7 @@ export default function PwaRegister() {
                 </ol>
               </div>
 
-              <div className="bg-primary-100 p-3 rounded-xl border border-amber-200">
+              <div className="bg-primary-100 p-3 rounded-xl border border-primary-edge-soft">
                 <p className="text-primary-700 text-[11px] font-bold">
                   💡 Chrome で以前インストール画面を「キャンセル」した場合、しばらくの間ブラウザが自動プロンプトを表示しません。
                   上記の手動手順でインストールできます。

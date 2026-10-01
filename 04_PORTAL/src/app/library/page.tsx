@@ -9,7 +9,7 @@ import Link from 'next/link';
 const LibraryTabContent = dynamic(() => import('../admin/knowledge/LibraryTabContent'), {
   loading: () => (
     <div className="flex justify-center items-center py-24">
-      <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+      <div className="w-8 h-8 border-4 border-primary-edge-strong border-t-transparent rounded-full animate-spin"></div>
     </div>
   )
 });
@@ -27,7 +27,7 @@ export default function LibraryPage() {
   if (isAuthenticated === null) {
     return (
       <div className="flex justify-center items-center py-24">
-        <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-primary-edge-strong border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -70,13 +70,13 @@ export default function LibraryPage() {
         className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3.5 bg-surface border border-border/90 rounded-2xl shadow-xs"
       >
         <div className="flex items-center gap-3">
-          <div className="text-2xl p-2 bg-primary-50 rounded-xl border border-amber-200/80 shrink-0 text-primary-600">
+          <div className="text-2xl p-2 bg-primary-50 rounded-xl border border-primary-edge-soft/80 shrink-0 text-primary-600">
             <BookOpen size={24} />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-base sm:text-lg font-black tracking-tight text-foreground">攻略ライブラリ</h1>
-              <span className="px-2 py-0.5 rounded-full bg-primary-100 border border-amber-300 text-primary-800 text-[10px] font-extrabold">
+              <span className="px-2 py-0.5 rounded-full bg-primary-100 border border-primary-edge text-primary-800 text-[10px] font-extrabold">
                 管理者専用
               </span>
             </div>
@@ -90,7 +90,7 @@ export default function LibraryPage() {
       {/* 攻略ライブラリ本体 */}
       <Suspense fallback={
         <div className="flex justify-center items-center py-24">
-          <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-8 h-8 border-4 border-primary-edge-strong border-t-transparent rounded-full animate-spin"></div>
         </div>
       }>
         <LibraryTabContent />

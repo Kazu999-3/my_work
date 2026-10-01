@@ -83,13 +83,13 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
         {/* ヘッダー */}
         <div className="p-4 sm:p-5 border-b border-border/80 bg-background/70 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-primary-500/10 border border-amber-500/30 flex items-center justify-center text-primary-700">
+            <div className="w-8 h-8 rounded-xl bg-primary-500/10 border border-primary-edge-strong/30 flex items-center justify-center text-primary-700">
               <Zap size={18} className="fill-primary-500/20" />
             </div>
             <div>
               <h3 className="text-base font-black text-foreground flex items-center gap-1.5">
                 戦術概念 逆引きインデックス
-                <span className="text-[10px] bg-primary-100 text-primary-900 border border-amber-300 px-1.5 py-0.5 rounded-full font-bold">RAG</span>
+                <span className="text-[10px] bg-primary-100 text-primary-900 border border-primary-edge px-1.5 py-0.5 rounded-full font-bold">RAG</span>
               </h3>
               <p className="text-xs text-muted-strong">
                 全30体のバイブル ＆ 170本超の動画解析からTips・立ち回りを即座に横断検索
@@ -114,7 +114,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
               placeholder="戦術キーワードを入力 (例: インベード, Lv3ガンク, オブジェクト放棄, 没理由)..."
               value={query}
               onChange={e => setQuery(e.target.value)}
-              className="w-full bg-background border border-border focus:border-amber-500 focus:bg-surface rounded-2xl py-3 pl-10 pr-10 text-foreground font-bold outline-none transition text-sm shadow-2xs"
+              className="w-full bg-background border border-border focus:border-primary-edge-strong focus:bg-surface rounded-2xl py-3 pl-10 pr-10 text-foreground font-bold outline-none transition text-sm shadow-2xs"
             />
             {query && (
               <button
@@ -138,7 +138,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
                 onClick={() => setQuery(concept)}
                 className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition cursor-pointer ${
                   query === concept
-                    ? 'bg-primary-500 text-stone-950 border-amber-500'
+                    ? 'bg-primary-500 text-stone-950 border-primary-edge-strong'
                     : 'bg-surface text-muted border-border hover:bg-surface-subtle hover:text-foreground'
                 }`}
               >
@@ -152,13 +152,13 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3">
           {loading && (
             <div className="py-12 flex flex-col items-center justify-center text-faint gap-2">
-              <div className="w-6 h-6 border-3 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-6 h-6 border-3 border-primary-edge-strong border-t-transparent rounded-full animate-spin"></div>
               <span className="text-xs font-bold">戦術バイブルを横断検索中...</span>
             </div>
           )}
 
           {error && (
-            <div className="p-4 bg-danger-50 border border-rose-200 rounded-2xl text-xs text-danger-700 font-bold">
+            <div className="p-4 bg-danger-50 border border-danger-edge-soft rounded-2xl text-xs text-danger-700 font-bold">
               エラー: {error}
             </div>
           )}
@@ -195,7 +195,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
                       onClose();
                     }
                   }}
-                  className="group bg-background/70 hover:bg-primary-50/40 border border-border hover:border-amber-300 p-3.5 rounded-2xl transition cursor-pointer flex flex-col gap-2"
+                  className="group bg-background/70 hover:bg-primary-50/40 border border-border hover:border-primary-edge p-3.5 rounded-2xl transition cursor-pointer flex flex-col gap-2"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
@@ -214,8 +214,8 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
                       </span>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                         item.type === 'bible'
-                          ? 'bg-secondary-50 text-secondary-700 border-teal-200'
-                          : 'bg-primary-50 text-primary-700 border-amber-200'
+                          ? 'bg-secondary-50 text-secondary-700 border-secondary-edge-soft'
+                          : 'bg-primary-50 text-primary-700 border-primary-edge-soft'
                       }`}>
                         {item.type === 'bible' ? '戦術バイブル' : '動画解析Tips'}
                       </span>

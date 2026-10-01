@@ -271,8 +271,8 @@ export default function BulkUpdatePanel() {
             )}
             <span className={`text-[10px] font-black border px-2.5 py-0.5 rounded-full flex items-center gap-1.5 transition-all ${
               workerStatus.active
-                ? 'bg-success-100 border-emerald-200 text-success-700 shadow-[0_0_10px_rgba(16,185,129,0.1)]'
-                : 'bg-danger-100 border-rose-200 text-danger-700 animate-pulse'
+                ? 'bg-success-100 border-success-edge-soft text-success-700 shadow-[0_0_10px_rgba(16,185,129,0.1)]'
+                : 'bg-danger-100 border-danger-edge-soft text-danger-700 animate-pulse'
             }`}>
               <span className={`w-1.5 h-1.5 rounded-full ${workerStatus.active ? 'bg-success-400' : 'bg-danger-400'}`} />
               {workerStatus.active ? 'エッジワーカー: 稼働中' : 'エッジワーカー: 停止中'}
@@ -283,7 +283,7 @@ export default function BulkUpdatePanel() {
           </p>
 
           {champLoadError && (
-            <div className="flex items-center justify-between gap-3 mt-2 p-2.5 rounded-xl bg-danger-100 border border-rose-200 text-danger-700 text-xs font-bold">
+            <div className="flex items-center justify-between gap-3 mt-2 p-2.5 rounded-xl bg-danger-100 border border-danger-edge-soft text-danger-700 text-xs font-bold">
               <span className="flex items-center gap-1.5"><AlertTriangle size={14} /> チャンピオン一覧の取得に失敗しました（ネットワーク不安定の可能性）</span>
               <button onClick={loadChampions} className="shrink-0 px-2.5 py-1 bg-danger-200 hover:bg-danger-300 rounded-lg">再試行</button>
             </div>
@@ -363,7 +363,7 @@ export default function BulkUpdatePanel() {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.25 }}
-        className="glass-panel p-6 rounded-2xl border-t-2 border-rose-500/40"
+        className="glass-panel p-6 rounded-2xl border-t-2 border-danger-edge-strong/40"
       >
         <h3 className="text-lg font-bold text-foreground flex items-center gap-2 mb-4">
           <AlertTriangle size={20} className="text-danger-700" />
@@ -378,7 +378,7 @@ export default function BulkUpdatePanel() {
               <div
                 key={task.id}
                 className={`flex items-center justify-between gap-3 p-3 rounded-xl bg-black/[0.04] border ${
-                  isHighlighted ? 'border-rose-400/70 ring-1 ring-danger-400/40' : 'border-black/5'
+                  isHighlighted ? 'border-danger-edge/70 ring-1 ring-danger-400/40' : 'border-black/5'
                 }`}
               >
                 <div className="min-w-0">
@@ -400,7 +400,7 @@ export default function BulkUpdatePanel() {
                 <button
                   onClick={() => handleRetryFailedTask(task)}
                   disabled={retryingId === task.id}
-                  className="shrink-0 px-4 py-2 bg-danger-100 hover:bg-danger-200 border border-rose-200 text-danger-700 font-bold text-xs rounded-lg transition-all disabled:opacity-50 flex items-center gap-1.5"
+                  className="shrink-0 px-4 py-2 bg-danger-100 hover:bg-danger-200 border border-danger-edge-soft text-danger-700 font-bold text-xs rounded-lg transition-all disabled:opacity-50 flex items-center gap-1.5"
                 >
                   <RefreshCw size={14} className={retryingId === task.id ? 'animate-spin' : ''} />
                   再実行

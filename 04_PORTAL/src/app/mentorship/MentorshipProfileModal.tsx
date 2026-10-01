@@ -319,7 +319,7 @@ export function MentorshipProfileModal({
         {/* モーダルヘッダー */}
         <div className="p-4 md:px-6 md:py-4 bg-background border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-primary-100 border border-amber-300 flex items-center justify-center text-xl shadow-2xs">
+            <div className="w-10 h-10 rounded-2xl bg-primary-100 border border-primary-edge flex items-center justify-center text-xl shadow-2xs">
               🪪
             </div>
             <div>
@@ -365,7 +365,7 @@ export function MentorshipProfileModal({
           
           {/* 🎁 初回登録ボーナス告知バナー */}
           {!initialProfile && (
-            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-primary-500/15 via-primary-500/10 to-primary-500/15 border border-amber-400/50 flex items-center justify-between gap-3 shadow-2xs">
+            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-primary-500/15 via-primary-500/10 to-primary-500/15 border border-primary-edge/50 flex items-center justify-between gap-3 shadow-2xs">
               <div className="flex items-center gap-2.5">
                 <span className="text-2xl animate-bounce">🎁</span>
                 <div>
@@ -378,7 +378,7 @@ export function MentorshipProfileModal({
                   </p>
                 </div>
               </div>
-              <span className="text-[10px] font-bold text-primary-900 bg-surface/80 px-2 py-1 rounded-xl border border-amber-300 shrink-0 hidden sm:inline">
+              <span className="text-[10px] font-bold text-primary-900 bg-surface/80 px-2 py-1 rounded-xl border border-primary-edge shrink-0 hidden sm:inline">
                 即時付与🪙
               </span>
             </div>
@@ -391,10 +391,10 @@ export function MentorshipProfileModal({
                 <span>✨ 掲示板に表示されるカードの見た目プレビュー:</span>
               </div>
 
-              <div className={`p-5 rounded-3xl border bg-surface shadow-md ${isMentor ? 'border-amber-400' : 'border-emerald-400'} space-y-4`}>
+              <div className={`p-5 rounded-3xl border bg-surface shadow-md ${isMentor ? 'border-primary-edge' : 'border-success-edge'} space-y-4`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <div className={`px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase flex items-center gap-1.5 ${isMentor ? 'bg-primary-100 text-primary-900 border border-amber-300' : 'bg-success-100 text-success-900 border border-emerald-300'}`}>
+                    <div className={`px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase flex items-center gap-1.5 ${isMentor ? 'bg-primary-100 text-primary-900 border border-primary-edge' : 'bg-success-100 text-success-900 border border-success-edge'}`}>
                       <span>{isMentor ? '👨‍🏫' : '🔰'}</span>
                       <span>{isMentor ? '師匠 (Mentor)' : '弟子 (Pupil)'}</span>
                     </div>
@@ -404,13 +404,13 @@ export function MentorshipProfileModal({
                       </span>
                     )}
                   </div>
-                  <span className="text-xs text-success-700 font-black bg-success-50 px-2 py-0.5 rounded-full border border-emerald-200">🟢 募集中</span>
+                  <span className="text-xs text-success-700 font-black bg-success-50 px-2 py-0.5 rounded-full border border-success-edge-soft">🟢 募集中</span>
                 </div>
 
                 <div className="space-y-1">
                   <h3 className="text-base font-black text-foreground flex items-center gap-2">
                     {user?.displayName || user?.username || 'あなたのプレイヤー名'}
-                    <span className="text-xs font-mono font-bold text-primary-700 bg-primary-100 px-2 py-0.5 rounded-lg border border-amber-300">
+                    <span className="text-xs font-mono font-bold text-primary-700 bg-primary-100 px-2 py-0.5 rounded-lg border border-primary-edge">
                       🏆 {currentRank}
                     </span>
                   </h3>
@@ -479,7 +479,7 @@ export function MentorshipProfileModal({
                     {selectedTags.map((tag) => (
                       <span
                         key={tag}
-                        className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${isMentor ? 'bg-primary-50 text-primary-900 border-amber-300' : 'bg-success-50 text-success-900 border-emerald-300'}`}
+                        className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${isMentor ? 'bg-primary-50 text-primary-900 border-primary-edge' : 'bg-success-50 text-success-900 border-success-edge'}`}
                       >
                         #{tag}
                       </span>
@@ -504,7 +504,7 @@ export function MentorshipProfileModal({
                     onClick={() => handleRoleChange('PUPIL')}
                     className={`p-3.5 rounded-2xl border text-left transition relative overflow-hidden cursor-pointer ${
                       roleType === 'PUPIL'
-                        ? 'bg-success-50 border-emerald-500 text-success-950 ring-2 ring-success-500/30 shadow-md'
+                        ? 'bg-success-50 border-success-edge-strong text-success-950 ring-2 ring-success-500/30 shadow-md'
                         : 'bg-background border-border text-muted hover:bg-surface-subtle'
                     }`}
                   >
@@ -524,7 +524,7 @@ export function MentorshipProfileModal({
                     onClick={() => handleRoleChange('MENTOR')}
                     className={`p-3.5 rounded-2xl border text-left transition relative overflow-hidden cursor-pointer ${
                       roleType === 'MENTOR'
-                        ? 'bg-primary-50 border-amber-500 text-primary-950 ring-2 ring-primary-500/30 shadow-md'
+                        ? 'bg-primary-50 border-primary-edge-strong text-primary-950 ring-2 ring-primary-500/30 shadow-md'
                         : 'bg-background border-border text-muted hover:bg-surface-subtle'
                     }`}
                   >
@@ -557,7 +557,7 @@ export function MentorshipProfileModal({
                         onClick={() => selectLane(lane.id)}
                         className={`px-3.5 py-2 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
                           isSelected
-                            ? 'bg-primary-600 text-white border-amber-600 shadow-sm scale-105 ring-2 ring-primary-400'
+                            ? 'bg-primary-600 text-white border-primary-edge-strong shadow-sm scale-105 ring-2 ring-primary-400'
                             : 'bg-background border-border text-foreground-subtle hover:bg-surface-subtle'
                         }`}
                       >
@@ -578,7 +578,7 @@ export function MentorshipProfileModal({
                   <select
                     value={currentRank}
                     onChange={(e) => setCurrentRank(e.target.value)}
-                    className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-foreground text-xs font-bold focus:border-amber-500 focus:bg-surface focus:outline-hidden"
+                    className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-foreground text-xs font-bold focus:border-primary-edge-strong focus:bg-surface focus:outline-hidden"
                   >
                     {RANKS.map((r) => (
                       <option key={r} value={r}>
@@ -597,7 +597,7 @@ export function MentorshipProfileModal({
                     <select
                       value={targetRank}
                       onChange={(e) => setTargetRank(e.target.value)}
-                      className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-foreground text-xs font-bold focus:border-emerald-600 focus:bg-surface focus:outline-hidden"
+                      className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-foreground text-xs font-bold focus:border-success-edge-strong focus:bg-surface focus:outline-hidden"
                     >
                       {RANKS.map((r) => (
                         <option key={r} value={r}>
@@ -615,7 +615,7 @@ export function MentorshipProfileModal({
                     <select
                       value={targetRank || '全ランク・初心者歓迎'}
                       onChange={(e) => setTargetRank(e.target.value)}
-                      className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-foreground text-xs font-bold focus:border-amber-500 focus:bg-surface focus:outline-hidden"
+                      className="w-full bg-background border border-border rounded-xl px-3 py-2.5 text-foreground text-xs font-bold focus:border-primary-edge-strong focus:bg-surface focus:outline-hidden"
                     >
                       {TARGET_STUDENT_RANKS.map((r) => (
                         <option key={r} value={r}>
@@ -629,13 +629,13 @@ export function MentorshipProfileModal({
 
               {/* 師匠専用: 同時受入可能人数 (1〜3人) */}
               {roleType === 'MENTOR' && (
-                <div className="p-3.5 bg-primary-50/70 border border-amber-300/80 rounded-2xl space-y-2">
+                <div className="p-3.5 bg-primary-50/70 border border-primary-edge/80 rounded-2xl space-y-2">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-black text-primary-950 flex items-center gap-1.5">
                       <span>👥</span>
                       <span>同時に受け入れ可能な弟子の人数</span>
                     </label>
-                    <span className="text-[11px] font-black text-primary-700 bg-surface px-2 py-0.5 rounded-md border border-amber-300">
+                    <span className="text-[11px] font-black text-primary-700 bg-surface px-2 py-0.5 rounded-md border border-primary-edge">
                       現在設定: 最大 {maxPupils} 人まで
                     </span>
                   </div>
@@ -647,8 +647,8 @@ export function MentorshipProfileModal({
                         onClick={() => setMaxPupils(num)}
                         className={`flex-1 py-2 rounded-xl text-xs font-black border transition cursor-pointer ${
                           maxPupils === num
-                            ? 'bg-primary-600 text-white border-amber-600 shadow-xs scale-[1.02]'
-                            : 'bg-surface text-foreground-subtle border-amber-200 hover:bg-primary-100/50'
+                            ? 'bg-primary-600 text-white border-primary-edge-strong shadow-xs scale-[1.02]'
+                            : 'bg-surface text-foreground-subtle border-primary-edge-soft hover:bg-primary-100/50'
                         }`}
                       >
                         {num === 1 ? '👤 1人（専任）' : num === 2 ? '👥 2人（兄弟弟子）' : '✨ 3人（ゼミ型・推奨）'}
@@ -668,7 +668,7 @@ export function MentorshipProfileModal({
                     <span className="w-4.5 h-4.5 rounded-full bg-primary-500 text-white text-[11px] flex items-center justify-center font-black">4</span>
                     <span>{roleType === 'PUPIL' ? '希望する受講スタイル・期間' : '対応可能な指導スタイル・期間'}</span>
                   </span>
-                  <span className="text-[10px] text-secondary-700 font-bold bg-secondary-50 px-2 py-0.5 rounded-md border border-teal-200">
+                  <span className="text-[10px] text-secondary-700 font-bold bg-secondary-50 px-2 py-0.5 rounded-md border border-secondary-edge-soft">
                     ⚡ 1試合・単発OK
                   </span>
                 </label>
@@ -688,8 +688,8 @@ export function MentorshipProfileModal({
                             onClick={() => setPreferredDuration(key)}
                             className={`p-2.5 rounded-xl text-left border text-xs font-bold transition flex flex-col justify-between gap-1 cursor-pointer ${
                               isSelected
-                                ? 'bg-gradient-to-br from-secondary-50 to-primary-50 border-teal-500 text-foreground shadow-2xs ring-2 ring-secondary-300 scale-[1.02]'
-                                : 'bg-surface border-border text-foreground-subtle hover:bg-secondary-50/50 hover:border-teal-300'
+                                ? 'bg-gradient-to-br from-secondary-50 to-primary-50 border-secondary-edge-strong text-foreground shadow-2xs ring-2 ring-secondary-300 scale-[1.02]'
+                                : 'bg-surface border-border text-foreground-subtle hover:bg-secondary-50/50 hover:border-secondary-edge'
                             }`}
                           >
                             <div className="flex items-center justify-between">
@@ -718,7 +718,7 @@ export function MentorshipProfileModal({
                             onClick={() => setPreferredDuration(key)}
                             className={`p-2 rounded-xl text-left border text-xs font-bold transition flex items-center justify-between cursor-pointer ${
                               isSelected
-                                ? 'bg-primary-50 border-amber-400 text-primary-950 shadow-2xs ring-1 ring-primary-300'
+                                ? 'bg-primary-50 border-primary-edge text-primary-950 shadow-2xs ring-1 ring-primary-300'
                                 : 'bg-surface border-border text-foreground-subtle hover:bg-surface-subtle'
                             }`}
                           >
@@ -784,7 +784,7 @@ export function MentorshipProfileModal({
                       }}
                       onFocus={() => setIsChampDropdownOpen(true)}
                       placeholder="日本語名（例: アーリ、ヤスオ）または英語名で検索..."
-                      className="w-full bg-background border border-border rounded-xl pl-9 pr-3 py-2 text-foreground text-xs font-medium focus:border-amber-500 focus:bg-surface focus:outline-hidden"
+                      className="w-full bg-background border border-border rounded-xl pl-9 pr-3 py-2 text-foreground text-xs font-medium focus:border-primary-edge-strong focus:bg-surface focus:outline-hidden"
                     />
                     {champSearchQuery && (
                       <button
@@ -866,8 +866,8 @@ export function MentorshipProfileModal({
                             className={`px-2.5 py-1 rounded-xl text-xs font-bold border transition cursor-pointer ${
                               isSelected
                                 ? isMentor
-                                  ? 'bg-primary-100 text-primary-900 border-amber-400 shadow-2xs'
-                                  : 'bg-success-100 text-success-900 border-emerald-400 shadow-2xs'
+                                  ? 'bg-primary-100 text-primary-900 border-primary-edge shadow-2xs'
+                                  : 'bg-success-100 text-success-900 border-success-edge shadow-2xs'
                                 : 'bg-surface text-foreground-subtle border-border hover:border-border hover:bg-background'
                             }`}
                           >
@@ -886,7 +886,7 @@ export function MentorshipProfileModal({
                     value={customTag}
                     onChange={(e) => setCustomTag(e.target.value)}
                     placeholder="自由なタグを追加 (例: #週1回希望)..."
-                    className="flex-1 bg-background border border-border rounded-xl px-3 py-1.5 text-foreground text-xs focus:border-amber-500 focus:bg-surface focus:outline-hidden font-medium"
+                    className="flex-1 bg-background border border-border rounded-xl px-3 py-1.5 text-foreground text-xs focus:border-primary-edge-strong focus:bg-surface focus:outline-hidden font-medium"
                   />
                   <button
                     type="button"
@@ -917,7 +917,7 @@ export function MentorshipProfileModal({
                       key={tmpl.title}
                       type="button"
                       onClick={() => applyTemplate(tmpl.text)}
-                      className="px-2.5 py-1 rounded-xl bg-surface-subtle border border-border hover:border-amber-400 text-foreground-subtle hover:text-primary-900 text-[11px] font-bold transition flex items-center gap-1 cursor-pointer"
+                      className="px-2.5 py-1 rounded-xl bg-surface-subtle border border-border hover:border-primary-edge text-foreground-subtle hover:text-primary-900 text-[11px] font-bold transition flex items-center gap-1 cursor-pointer"
                     >
                       <span>📝</span> {tmpl.title}
                     </button>
@@ -929,7 +929,7 @@ export function MentorshipProfileModal({
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
                   placeholder="自己紹介や教えてほしいこと、どんな雰囲気でやりたいかを自由に記入してください（上の例文ボタンから簡単入力も可能です）..."
-                  className="w-full bg-background border border-border rounded-2xl p-3 text-foreground text-xs focus:border-amber-500 focus:bg-surface focus:outline-hidden leading-relaxed font-medium"
+                  className="w-full bg-background border border-border rounded-2xl p-3 text-foreground text-xs focus:border-primary-edge-strong focus:bg-surface focus:outline-hidden leading-relaxed font-medium"
                 />
               </div>
 
@@ -944,7 +944,7 @@ export function MentorshipProfileModal({
                   value={activeHours}
                   onChange={(e) => setActiveHours(e.target.value)}
                   placeholder="例: 平日 21:00〜24:00 / 休日 昼〜夜"
-                  className="w-full bg-background border border-border rounded-xl px-3 py-2 text-foreground text-xs font-medium focus:border-amber-500 focus:bg-surface focus:outline-hidden"
+                  className="w-full bg-background border border-border rounded-xl px-3 py-2 text-foreground text-xs font-medium focus:border-primary-edge-strong focus:bg-surface focus:outline-hidden"
                 />
               </div>
             </form>

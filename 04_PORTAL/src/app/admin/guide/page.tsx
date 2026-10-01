@@ -24,7 +24,7 @@ export default function AdminGuidePage() {
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <span className="px-3 py-1 rounded-full bg-primary-100 border border-amber-300 text-primary-900 text-xs font-black">
+              <span className="px-3 py-1 rounded-full bg-primary-100 border border-primary-edge text-primary-900 text-xs font-black">
                 管理者専用マニュアル
               </span>
               <span className="px-2.5 py-0.5 rounded-full bg-surface-subtle border border-border text-muted text-[11px] font-bold">
@@ -32,7 +32,7 @@ export default function AdminGuidePage() {
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground flex items-center gap-3">
-              <span className="p-2 bg-primary-50 text-primary-600 border border-amber-200/80 rounded-2xl shadow-xs">
+              <span className="p-2 bg-primary-50 text-primary-600 border border-primary-edge-soft/80 rounded-2xl shadow-xs">
                 🏛️
               </span>
               LoL データ収集・戦術辞典・AIコーチ連携 全貌仕様ガイド
@@ -90,7 +90,7 @@ export default function AdminGuidePage() {
       {(activeTab === 'all' || activeTab === 'pipeline') && (
         <section className="bg-surface border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
           <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
-            <span className="p-2 bg-primary-50 text-primary-600 rounded-xl font-bold border border-amber-200/60">
+            <span className="p-2 bg-primary-50 text-primary-600 rounded-xl font-bold border border-primary-edge-soft/60">
               🔄
             </span>
             <div>
@@ -111,7 +111,7 @@ export default function AdminGuidePage() {
                 subtitle: 'YouTube / Discord / Web',
                 desc: 'チャレンジャー動画、有識者のDiscord考察、パッチノートやWeb攻略記事を自動収集・キュー投入。',
                 icon: '📥',
-                color: 'bg-danger-50 border-rose-200 text-danger-900',
+                color: 'bg-danger-50 border-danger-edge-soft text-danger-900',
               },
               {
                 step: '02',
@@ -119,7 +119,7 @@ export default function AdminGuidePage() {
                 subtitle: 'Whisper ＆ Gemini 2.5',
                 desc: '音声文字起こし、実演シーン抽出、立ち回り・パワースパイク・没理由を構造化データとして抽出。',
                 icon: '🧠',
-                color: 'bg-primary-50 border-amber-200 text-primary-900',
+                color: 'bg-primary-50 border-primary-edge-soft text-primary-900',
               },
               {
                 step: '03',
@@ -127,7 +127,7 @@ export default function AdminGuidePage() {
                 subtitle: '未承認ナレッジ ➔ 辞典',
                 desc: '「⚡ 全件一括承認＆マージ」でSupabase DB（champion_facts）と戦術バイブルへ即座に統合。',
                 icon: '✅',
-                color: 'bg-success-50 border-emerald-200 text-success-900',
+                color: 'bg-success-50 border-success-edge-soft text-success-900',
               },
               {
                 step: '04',
@@ -135,7 +135,7 @@ export default function AdminGuidePage() {
                 subtitle: 'Live Client Data (2999)',
                 desc: 'LoLクライアントのリアルタイムデータと辞典を照合。対面パワースパイクやキルラインを画面に通知。',
                 icon: '🎮',
-                color: 'bg-primary-50 border-amber-200 text-primary-900',
+                color: 'bg-primary-50 border-primary-edge-soft text-primary-900',
               },
               {
                 step: '05',
@@ -143,7 +143,7 @@ export default function AdminGuidePage() {
                 subtitle: '反省メモ ➔ 知見還元',
                 desc: '敗因・デス原因を自己検証し、改善点を個人マイページおよびコミュニティナレッジへ還元。',
                 icon: '📈',
-                color: 'bg-secondary-50 border-teal-200 text-secondary-900',
+                color: 'bg-secondary-50 border-secondary-edge-soft text-secondary-900',
               },
             ].map((node, i) => (
               <div
@@ -171,7 +171,7 @@ export default function AdminGuidePage() {
       {(activeTab === 'all' || activeTab === 'pipeline') && (
         <section className="bg-surface border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
           <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
-            <span className="p-2 bg-danger-50 text-danger-600 rounded-xl font-bold border border-rose-200/60">
+            <span className="p-2 bg-danger-50 text-danger-600 rounded-xl font-bold border border-danger-edge-soft/60">
               📥
             </span>
             <div>
@@ -205,7 +205,7 @@ export default function AdminGuidePage() {
                   <li><strong>ナレッジ化</strong>: 攻略記事を生成し「未承認知見」へ起票</li>
                 </ol>
               </div>
-              <div className="text-[10px] text-primary-800 bg-primary-50 p-2.5 rounded-xl border border-amber-200 font-medium">
+              <div className="text-[10px] text-primary-800 bg-primary-50 p-2.5 rounded-xl border border-primary-edge-soft font-medium">
                 💡 <strong>ステータス管理</strong>: <code>pending</code> ➔ <code>downloading</code> ➔ <code>transcribing</code> ➔ <code>analyzing</code> ➔ <code>completed</code>
               </div>
             </div>
@@ -230,7 +230,7 @@ export default function AdminGuidePage() {
                   <li><strong>未承認ナレッジ化</strong>: 承認待ちリストへ即時格納</li>
                 </ol>
               </div>
-              <div className="text-[10px] text-primary-800 bg-primary-50 p-2.5 rounded-xl border border-amber-200 font-medium">
+              <div className="text-[10px] text-primary-800 bg-primary-50 p-2.5 rounded-xl border border-primary-edge-soft font-medium">
                 💡 <strong>利点</strong>: 身内のリアルなレベル帯（アイアン〜エメラルド）で本当に起きている課題が吸い上がります。
               </div>
             </div>
@@ -255,7 +255,7 @@ export default function AdminGuidePage() {
                   <li><strong>ワンクリック保存</strong>: 修正・調整の上で即座に保存</li>
                 </ol>
               </div>
-              <div className="text-[10px] text-secondary-800 bg-secondary-50 p-2.5 rounded-xl border border-teal-200 font-medium">
+              <div className="text-[10px] text-secondary-800 bg-secondary-50 p-2.5 rounded-xl border border-secondary-edge-soft font-medium">
                 💡 <strong>利点</strong>: 「試合直後の気付き」を忘れないうちに30秒でインプット可能。
               </div>
             </div>
@@ -267,7 +267,7 @@ export default function AdminGuidePage() {
       {(activeTab === 'all' || activeTab === 'dict') && (
         <section className="bg-surface border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
           <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
-            <span className="p-2 bg-primary-50 text-primary-600 rounded-xl font-bold border border-amber-200/60">
+            <span className="p-2 bg-primary-50 text-primary-600 rounded-xl font-bold border border-primary-edge-soft/60">
               👑
             </span>
             <div>
@@ -291,7 +291,7 @@ export default function AdminGuidePage() {
               </p>
 
               <div className="space-y-2.5">
-                <div className="p-3.5 rounded-2xl bg-primary-50/60 border border-amber-200/80">
+                <div className="p-3.5 rounded-2xl bg-primary-50/60 border border-primary-edge-soft/80">
                   <div className="flex items-center gap-2 text-xs font-black text-primary-900">
                     <Database size={14} />
                     <span>層1: Supabase DB (`champion_facts`)</span>
@@ -301,7 +301,7 @@ export default function AdminGuidePage() {
                   </p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-primary-50/60 border border-amber-200/80">
+                <div className="p-3.5 rounded-2xl bg-primary-50/60 border border-primary-edge-soft/80">
                   <div className="flex items-center gap-2 text-xs font-black text-primary-900">
                     <FileText size={14} />
                     <span>層2: 戦術バイブル (`_tactics_bible.md`)</span>
@@ -341,7 +341,7 @@ export default function AdminGuidePage() {
                 </div>
               </div>
 
-              <div className="p-3 bg-success-50 border border-emerald-200 rounded-xl text-[11px] text-success-900 font-medium">
+              <div className="p-3 bg-success-50 border border-success-edge-soft rounded-xl text-[11px] text-success-900 font-medium">
                 ✅ <strong>運用のコツ</strong>: 週に1回「未承認知見」タブを開き、タイトルに明らかな誤りが無ければ「⚡ 全件一括承認＆マージ」を押すだけで最新データが手に入ります。
               </div>
             </div>
@@ -353,7 +353,7 @@ export default function AdminGuidePage() {
       {(activeTab === 'all' || activeTab === 'coach') && (
         <section className="bg-surface border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
           <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
-            <span className="p-2 bg-primary-50 text-primary-600 rounded-xl font-bold border border-amber-200/60">
+            <span className="p-2 bg-primary-50 text-primary-600 rounded-xl font-bold border border-primary-edge-soft/60">
               🎮
             </span>
             <div>
@@ -407,7 +407,7 @@ export default function AdminGuidePage() {
       {(activeTab === 'all' || activeTab === 'ops') && (
         <section className="bg-surface border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
           <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
-            <span className="p-2 bg-success-50 text-success-600 rounded-xl font-bold border border-emerald-200/60">
+            <span className="p-2 bg-success-50 text-success-600 rounded-xl font-bold border border-success-edge-soft/60">
               ⚡
             </span>
             <div>

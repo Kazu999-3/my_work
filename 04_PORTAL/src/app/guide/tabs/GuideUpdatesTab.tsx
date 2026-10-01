@@ -34,7 +34,7 @@ export default function GuideUpdatesTab() {
     <div className="space-y-6 relative">
       {/* トースト通知 */}
       {toastMessage && (
-        <div className="fixed bottom-20 md:bottom-8 right-6 z-50 bg-stone-900 text-white px-5 py-3 rounded-2xl shadow-xl border border-amber-500/40 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
+        <div className="fixed bottom-20 md:bottom-8 right-6 z-50 bg-stone-900 text-white px-5 py-3 rounded-2xl shadow-xl border border-primary-edge-strong/40 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
           <div className="w-6 h-6 rounded-full bg-success-500/20 text-success-400 flex items-center justify-center">
             <Check size={14} />
           </div>
@@ -43,10 +43,10 @@ export default function GuideUpdatesTab() {
       )}
 
       {/* イントロバナー */}
-      <div className="bg-gradient-to-r from-primary-500/15 via-primary-500/10 to-primary-500/15 border border-amber-500/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-sm">
+      <div className="bg-gradient-to-r from-primary-500/15 via-primary-500/10 to-primary-500/15 border border-primary-edge-strong/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-sm">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-500/20 text-primary-800 text-xs font-black border border-amber-500/30">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-500/20 text-primary-800 text-xs font-black border border-primary-edge-strong/30">
               <ScrollText size={14} className="text-primary-600" />
               リリースノート ＆ 更新履歴
             </div>
@@ -65,7 +65,7 @@ export default function GuideUpdatesTab() {
         {CHANGELOG.map((entry, index) => (
           <div
             key={entry.date + entry.title}
-            className="bg-surface border border-border rounded-3xl p-6 relative overflow-hidden shadow-xs hover:border-amber-400 transition group"
+            className="bg-surface border border-border rounded-3xl p-6 relative overflow-hidden shadow-xs hover:border-primary-edge transition group"
           >
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-4 pb-3 border-b border-stone-100">
               <div className="space-y-1">
@@ -78,8 +78,8 @@ export default function GuideUpdatesTab() {
                     <span
                       className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
                         entry.tag === 'NEW'
-                          ? 'bg-primary-100 text-primary-800 border border-amber-200'
-                          : 'bg-primary-100 text-primary-800 border border-amber-200'
+                          ? 'bg-primary-100 text-primary-800 border border-primary-edge-soft'
+                          : 'bg-primary-100 text-primary-800 border border-primary-edge-soft'
                       }`}
                     >
                       {entry.tag}
@@ -117,7 +117,7 @@ export default function GuideUpdatesTab() {
               {entry.items.map((item, i) => (
                 <li
                   key={i}
-                  className="text-xs md:text-sm text-foreground-subtle leading-relaxed pl-3 border-l-2 border-amber-400/60"
+                  className="text-xs md:text-sm text-foreground-subtle leading-relaxed pl-3 border-l-2 border-primary-edge/60"
                 >
                   {item}
                 </li>

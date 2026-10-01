@@ -47,7 +47,7 @@ function MyPageContent() {
   return (
     <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
       <div className="max-w-md w-full bg-surface border border-border rounded-3xl p-8 text-center shadow-xl space-y-6 animate-fade-in">
-        <div className="w-16 h-16 rounded-2xl bg-primary-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-primary-500">
+        <div className="w-16 h-16 rounded-2xl bg-primary-500/10 border border-primary-edge-strong/30 flex items-center justify-center mx-auto text-primary-500">
           <Sparkles className="w-8 h-8" />
         </div>
         <div>

@@ -103,14 +103,14 @@ export function getKtmRank(mmr: number): { name: string; color: string; bg: stri
 export function getRankBadgeStyle(rank?: string | null): { bg: string; color: string; border: string } {
   const r = (rank || '').toUpperCase().trim();
   if (r.includes('CHALLENGER')) return { bg: 'bg-sky-500/10', color: 'text-sky-600 dark:text-sky-400', border: 'border-sky-500/30' };
-  if (r.includes('GRANDMASTER')) return { bg: 'bg-danger-500/10', color: 'text-danger-600 dark:text-danger-400', border: 'border-rose-500/30' };
+  if (r.includes('GRANDMASTER')) return { bg: 'bg-danger-500/10', color: 'text-danger-600 dark:text-danger-400', border: 'border-danger-edge-strong/30' };
   if (r.includes('MASTER')) return { bg: 'bg-purple-500/10', color: 'text-purple-600 dark:text-purple-400', border: 'border-purple-500/30' };
   if (r.includes('DIAMOND')) return { bg: 'bg-blue-500/10', color: 'text-blue-600 dark:text-blue-400', border: 'border-blue-500/30' };
-  if (r.includes('EMERALD')) return { bg: 'bg-success-500/10', color: 'text-success-600 dark:text-success-400', border: 'border-emerald-500/30' };
-  if (r.includes('PLATINUM')) return { bg: 'bg-secondary-500/10', color: 'text-secondary-600 dark:text-secondary-400', border: 'border-teal-500/30' };
-  if (r.includes('GOLD')) return { bg: 'bg-primary-500/10', color: 'text-primary-700 dark:text-primary-400', border: 'border-amber-500/30' };
+  if (r.includes('EMERALD')) return { bg: 'bg-success-500/10', color: 'text-success-600 dark:text-success-400', border: 'border-success-edge-strong/30' };
+  if (r.includes('PLATINUM')) return { bg: 'bg-secondary-500/10', color: 'text-secondary-600 dark:text-secondary-400', border: 'border-secondary-edge-strong/30' };
+  if (r.includes('GOLD')) return { bg: 'bg-primary-500/10', color: 'text-primary-700 dark:text-primary-400', border: 'border-primary-edge-strong/30' };
   if (r.includes('SILVER')) return { bg: 'bg-slate-400/10', color: 'text-muted dark:text-faint', border: 'border-border/30' };
-  if (r.includes('BRONZE')) return { bg: 'bg-primary-800/10', color: 'text-primary-800 dark:text-primary-600', border: 'border-amber-800/30' };
+  if (r.includes('BRONZE')) return { bg: 'bg-primary-800/10', color: 'text-primary-800 dark:text-primary-600', border: 'border-primary-edge-strong/30' };
   if (r.includes('IRON')) return { bg: 'bg-zinc-500/10', color: 'text-muted dark:text-faint', border: 'border-zinc-500/30' };
   return { bg: 'bg-stone-500/10', color: 'text-muted', border: 'border-stone-500/30' };
 }

@@ -52,7 +52,7 @@ export default function VisionAnalyticsCard() {
       {/* ヘッダー */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-primary-50 border border-amber-200 flex items-center justify-center text-xl text-primary-600 shadow-2xs shrink-0">
+          <div className="w-10 h-10 rounded-2xl bg-primary-50 border border-primary-edge-soft flex items-center justify-center text-xl text-primary-600 shadow-2xs shrink-0">
             👁️
           </div>
           <div>
@@ -60,7 +60,7 @@ export default function VisionAnalyticsCard() {
               <h3 className="font-black text-sm sm:text-base text-foreground">
                 視界・マップコントロール客観解析
               </h3>
-              <span className="text-[10px] font-black px-2 py-0.5 bg-primary-100 text-primary-900 border border-amber-200 rounded-full">
+              <span className="text-[10px] font-black px-2 py-0.5 bg-primary-100 text-primary-900 border border-primary-edge-soft rounded-full">
                 上位 {vision.visionRankPercentile}% (エメラルド級)
               </span>
             </div>
@@ -176,7 +176,7 @@ export default function VisionAnalyticsCard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-xs pt-1">
-          <div className="p-2.5 bg-success-50 rounded-xl border border-emerald-200 text-foreground-subtle space-y-1">
+          <div className="p-2.5 bg-success-50 rounded-xl border border-success-edge-soft text-foreground-subtle space-y-1">
             <span className="font-bold text-success-950 flex items-center gap-1">
               <span>✅</span> 驚異的な生存率（被デス 3.46）の源泉
             </span>
@@ -185,7 +185,7 @@ export default function VisionAnalyticsCard() {
             </p>
           </div>
 
-          <div className="p-2.5 bg-primary-50 rounded-xl border border-amber-200 text-foreground-subtle space-y-1">
+          <div className="p-2.5 bg-primary-50 rounded-xl border border-primary-edge-soft text-foreground-subtle space-y-1">
             <span className="font-bold text-primary-950 flex items-center gap-1">
               <span>⚠️</span> 15分キル関与（KP@15 35%）向上の急所
             </span>
@@ -213,7 +213,7 @@ export default function VisionAnalyticsCard() {
                 onClick={() => setSelectedSpot(idx)}
                 className={`p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between gap-1.5 ${
                   isSelected
-                    ? 'border-amber-500 bg-primary-50/80 shadow-xs ring-2 ring-primary-400/30'
+                    ? 'border-primary-edge-strong bg-primary-50/80 shadow-xs ring-2 ring-primary-400/30'
                     : 'border-border bg-surface hover:bg-background'
                 }`}
               >
@@ -232,7 +232,7 @@ export default function VisionAnalyticsCard() {
         </div>
 
         {/* 選択スポットの詳細解説カード */}
-        <div className="p-3.5 bg-primary-50/60 rounded-2xl border border-amber-200/80 space-y-1.5 animate-in fade-in">
+        <div className="p-3.5 bg-primary-50/60 rounded-2xl border border-primary-edge-soft/80 space-y-1.5 animate-in fade-in">
           <div className="text-xs font-black text-primary-950 flex items-center gap-1.5">
             <CheckCircle2 size={13} className="text-primary-600" />
             <span>{DEEP_WARD_SPOTS[selectedSpot].title} の戦術メリット:</span>
@@ -244,8 +244,8 @@ export default function VisionAnalyticsCard() {
       </div>
 
       {/* 🔴 コントロールワード（ピンクワード）最適購入タイミング＆運用黄金ルール */}
-      <div className="p-4 md:p-5 bg-danger-50/40 rounded-3xl border border-rose-200/80 space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-2 border-b border-rose-100 pb-2.5">
+      <div className="p-4 md:p-5 bg-danger-50/40 rounded-3xl border border-danger-edge-soft/80 space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-2 border-b border-danger-edge-soft pb-2.5">
           <div className="flex items-center gap-2">
             <span className="w-7 h-7 rounded-xl bg-danger-100 text-danger-700 flex items-center justify-center font-black text-xs shadow-2xs">
               🔴
@@ -262,7 +262,7 @@ export default function VisionAnalyticsCard() {
               </p>
             </div>
           </div>
-          <span className="text-[10px] font-mono font-bold text-danger-700 bg-surface px-2 py-0.5 rounded-full border border-rose-200">
+          <span className="text-[10px] font-mono font-bold text-danger-700 bg-surface px-2 py-0.5 rounded-full border border-danger-edge-soft">
             常時1本所持推奨
           </span>
         </div>
@@ -327,7 +327,7 @@ export default function VisionAnalyticsCard() {
         {/* ⚠️ 買ってはいけないNGタイミング ＆ ロール別基準 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
           {/* 買ってはいけないNGタイミング */}
-          <div className="p-3 bg-primary-50/80 rounded-2xl border border-amber-200 space-y-1.5">
+          <div className="p-3 bg-primary-50/80 rounded-2xl border border-primary-edge-soft space-y-1.5">
             <span className="text-xs font-black text-primary-950 flex items-center gap-1">
               <AlertTriangle size={13} className="text-primary-700" />
               <span>⚠️ 買ってはいけないNGタイミング（テンポロス）</span>

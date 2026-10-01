@@ -41,9 +41,9 @@ export function MentorshipKickoffModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-4 bg-stone-900/60 backdrop-blur-xs animate-in fade-in duration-150">
       <div className="bg-surface border border-border rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden text-foreground animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
         {/* ヘッダー */}
-        <div className="p-5 bg-gradient-to-r from-success-500/15 via-secondary-500/10 to-success-500/15 border-b border-emerald-200 flex items-center justify-between shrink-0">
+        <div className="p-5 bg-gradient-to-r from-success-500/15 via-secondary-500/10 to-success-500/15 border-b border-success-edge-soft flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-success-100 border border-emerald-300 flex items-center justify-center text-xl shadow-2xs">
+            <div className="w-10 h-10 rounded-2xl bg-success-100 border border-success-edge flex items-center justify-center text-xl shadow-2xs">
               🚀
             </div>
             <div>
@@ -67,7 +67,7 @@ export function MentorshipKickoffModal({
         {/* ボディ */}
         <div className="p-5 space-y-4 overflow-y-auto">
           {/* 説明バナー */}
-          <div className="p-3.5 bg-success-50/70 border border-emerald-200 rounded-2xl text-xs text-foreground-soft leading-relaxed font-medium">
+          <div className="p-3.5 bg-success-50/70 border border-success-edge-soft rounded-2xl text-xs text-foreground-soft leading-relaxed font-medium">
             💡 ペア結成おめでとうございます！まずは以下の3つのステップに沿って、気楽に最初の挨拶とプレイを進めてみましょう。
           </div>
 
@@ -76,7 +76,7 @@ export function MentorshipKickoffModal({
             {KICKOFF_STEPS.map((s, idx) => (
               <div
                 key={s.step}
-                className="p-4 rounded-2xl border border-border bg-background/60 space-y-2 hover:border-emerald-300 transition"
+                className="p-4 rounded-2xl border border-border bg-background/60 space-y-2 hover:border-success-edge transition"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -99,7 +99,7 @@ export function MentorshipKickoffModal({
                     <button
                       type="button"
                       onClick={() => copyToClipboard(templateGreeting, 1)}
-                      className="px-3.5 py-1.5 rounded-xl bg-surface border border-border hover:border-emerald-400 text-foreground-soft text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                      className="px-3.5 py-1.5 rounded-xl bg-surface border border-border hover:border-success-edge text-foreground-soft text-xs font-bold transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
                     >
                       {copiedIndex === 1 ? (
                         <>

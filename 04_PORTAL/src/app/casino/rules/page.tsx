@@ -27,10 +27,10 @@ const TD = 'px-3 py-2 text-foreground-soft border-t border-border';
 function RtpBadge({ rtp }: { rtp: number }) {
   const tone =
     rtp >= 0.95
-      ? 'bg-success-50 text-success-900 border-emerald-300'
+      ? 'bg-success-50 text-success-900 border-success-edge'
       : rtp >= 0.9
-      ? 'bg-primary-50 text-primary-900 border-amber-300'
-      : 'bg-danger-50 text-danger-900 border-rose-300';
+      ? 'bg-primary-50 text-primary-900 border-primary-edge'
+      : 'bg-danger-50 text-danger-900 border-danger-edge';
   return (
     <span className={`inline-block px-2 py-0.5 rounded-full border text-[11px] font-black ${tone}`}>
       RTP {(rtp * 100).toFixed(1)}%
@@ -77,7 +77,7 @@ export default function CasinoRulesPage() {
   return (
     <div className="min-h-screen pb-16 bg-[#eae4d4] dark:bg-[#1e1f22] text-[#201c2b] dark:text-[#f2f3f5]">
       {/* ヘッダー */}
-      <div className="bg-gradient-to-r from-primary-500/15 via-primary-400/10 to-primary-500/15 py-8 px-4 md:px-6 border-b border-amber-500/30">
+      <div className="bg-gradient-to-r from-primary-500/15 via-primary-400/10 to-primary-500/15 py-8 px-4 md:px-6 border-b border-primary-edge-strong/30">
         <div className="max-w-4xl mx-auto space-y-3">
           <Link
             href="/casino"
@@ -238,7 +238,7 @@ export default function CasinoRulesPage() {
               </tbody>
             </table>
           </div>
-          <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-300 bg-primary-50 p-3">
+          <div className="mt-3 flex items-start gap-2 rounded-xl border border-primary-edge bg-primary-50 p-3">
             <AlertTriangle size={15} className="text-primary-700 mt-0.5 shrink-0" />
             <p className="text-[11px] md:text-xs text-primary-900 leading-relaxed">
               <strong>TIE は配当9倍と大きい代わりに、ハウスエッジが 14.2% と他の2つの10倍以上あります。</strong>

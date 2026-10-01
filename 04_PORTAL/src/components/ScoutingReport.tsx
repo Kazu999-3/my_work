@@ -105,7 +105,7 @@ export default function ScoutingReport({ stats, mmr }: ScoutingReportProps) {
                   alt={warningChamp.name}
                   width={32}
                   height={32}
-                  className="w-8 h-8 rounded-full shadow-sm border border-amber-900/50"
+                  className="w-8 h-8 rounded-full shadow-sm border border-primary-edge-strong/50"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                 />
                 <div>

@@ -233,7 +233,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
               </div>
             </div>
             <span className={`px-2 py-0.5 rounded-full border text-[10px] font-black ${
-              isWorkerActive ? 'bg-success-100 border-emerald-300 text-success-700' : 'bg-danger-100 border-rose-300 text-danger-700'
+              isWorkerActive ? 'bg-success-100 border-success-edge text-success-700' : 'bg-danger-100 border-danger-edge text-danger-700'
             }`}>
               {isWorkerActive ? '🟢 稼働中' : '🔴 未起動'}
             </span>
@@ -272,7 +272,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
                   const errorMsg = (t.error_message || '').toLowerCase();
                   const errorLabel = errorMsg.includes('429') ? 'Gemini 429混雑' : errorMsg.includes('404') ? '動画削除' : '処理失敗';
                   return (
-                    <div key={t.id} className="p-2.5 rounded-xl border border-rose-200 bg-danger-50 space-y-1">
+                    <div key={t.id} className="p-2.5 rounded-xl border border-danger-edge-soft bg-danger-50 space-y-1">
                       <div className="flex justify-between items-center gap-2">
                         <span className="font-bold text-foreground text-[11px] truncate">
                           {TASK_LABELS[t.task_type] || t.task_type}
@@ -317,7 +317,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
             ) : (
               <div className="space-y-1.5">
                 {runningTasks.map((t) => (
-                  <div key={t.id} className="p-2.5 rounded-xl border border-amber-300 bg-primary-50 flex justify-between items-center gap-2">
+                  <div key={t.id} className="p-2.5 rounded-xl border border-primary-edge bg-primary-50 flex justify-between items-center gap-2">
                     <div>
                       <span className="font-bold text-foreground text-[11px] block">
                         {TASK_LABELS[t.task_type] || t.task_type}

@@ -170,7 +170,7 @@ export default function TimingHeatmapCard() {
         <div
           className={`rounded-xl border px-3.5 py-2 text-xs ${
             isStale
-              ? 'bg-danger-950/30 text-danger-400 border-rose-800/60'
+              ? 'bg-danger-950/30 text-danger-400 border-danger-edge-strong/60'
               : 'bg-surface-subtle dark:bg-stone-800/60 text-muted border-border dark:border-stone-700/60'
           }`}
         >
@@ -209,14 +209,14 @@ export default function TimingHeatmapCard() {
           {(best || worst) && (
             <div className="grid grid-cols-2 gap-2">
               {best && (
-                <div className="rounded-xl border border-emerald-800/60 bg-success-950/30 p-3">
+                <div className="rounded-xl border border-success-edge-strong/60 bg-success-950/30 p-3">
                   <div className="text-[10px] font-bold text-success-400">👍 最も勝率が良い時間帯</div>
                   <div className="text-sm font-bold text-stone-100">{HEATMAP_DAYS[best.day]}曜 {best.hour}時台</div>
                   <div className="text-xs text-faint">{best.winRate}% ({best.wins}/{best.games}勝)</div>
                 </div>
               )}
               {worst && (
-                <div className="rounded-xl border border-rose-800/60 bg-danger-950/30 p-3">
+                <div className="rounded-xl border border-danger-edge-strong/60 bg-danger-950/30 p-3">
                   <div className="text-[10px] font-bold text-danger-400">👎 最も勝率が悪い時間帯</div>
                   <div className="text-sm font-bold text-stone-100">{HEATMAP_DAYS[worst.day]}曜 {worst.hour}時台</div>
                   <div className="text-xs text-faint">{worst.winRate}% ({worst.wins}/{worst.games}勝)</div>
@@ -242,12 +242,12 @@ export default function TimingHeatmapCard() {
                     )}
                   </span>
                   {isGood && (
-                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-success-950/30 text-success-400 border border-emerald-800/60 flex items-center gap-1">
+                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-success-950/30 text-success-400 border border-success-edge-strong/60 flex items-center gap-1">
                       <span>🌟</span> 勝ち時（推奨時間帯）
                     </span>
                   )}
                   {isBad && (
-                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-danger-950/30 text-danger-400 border border-rose-800/60 flex items-center gap-1">
+                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-danger-950/30 text-danger-400 border border-danger-edge-strong/60 flex items-center gap-1">
                       <span>⚠️</span> 要警戒（勝率低下傾向）
                     </span>
                   )}

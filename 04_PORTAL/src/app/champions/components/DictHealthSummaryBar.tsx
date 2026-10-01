@@ -152,7 +152,7 @@ export default function DictHealthSummaryBar({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-2 ${
-              message.type === 'success' ? 'bg-success-50 text-success-800 border-emerald-300' : 'bg-danger-50 text-danger-800 border-rose-300'
+              message.type === 'success' ? 'bg-success-50 text-success-800 border-success-edge' : 'bg-danger-50 text-danger-800 border-danger-edge'
             }`}
           >
             {message.type === 'success' ? '✅' : '❌'} {message.text}
@@ -163,7 +163,7 @@ export default function DictHealthSummaryBar({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         {/* 左側: 全体健康度ステータス ＆ パッチ情報 */}
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary-50 rounded-xl border border-amber-200 text-primary-700 shrink-0">
+          <div className="p-2 bg-primary-50 rounded-xl border border-primary-edge-soft text-primary-700 shrink-0">
             <ShieldCheck size={20} />
           </div>
           <div>
@@ -172,7 +172,7 @@ export default function DictHealthSummaryBar({
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-subtle text-foreground-subtle border border-border">
                 基準パッチ: {data.currentPatch || '最新'}
               </span>
-              <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-success-50 border border-emerald-300 text-success-800">
+              <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-success-50 border border-success-edge text-success-800">
                 適用率 {upToDatePercent}%
               </span>
             </div>
@@ -188,7 +188,7 @@ export default function DictHealthSummaryBar({
             type="button"
             onClick={handleCleanseTerms}
             disabled={actionLoading === 'cleanse'}
-            className="px-3 py-1.5 rounded-xl bg-primary-50 hover:bg-primary-100 text-primary-700 border border-amber-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            className="px-3 py-1.5 rounded-xl bg-primary-50 hover:bg-primary-100 text-primary-700 border border-primary-edge-soft text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             title="残存する英語のアイテム名・ルーン名・スキル名を公式日本語名に一括正規化"
           >
             {actionLoading === 'cleanse' ? <RefreshCw size={13} className="animate-spin text-primary-600" /> : <Wand2 size={13} className="text-primary-600" />}
@@ -207,7 +207,7 @@ export default function DictHealthSummaryBar({
               <span>⚡ パッチ遅れ ({stale}体) を一括最新化</span>
             </button>
           ) : (
-            <span className="px-3 py-1.5 rounded-xl bg-success-50 text-success-800 border border-emerald-200 text-xs font-bold flex items-center gap-1.5">
+            <span className="px-3 py-1.5 rounded-xl bg-success-50 text-success-800 border border-success-edge-soft text-xs font-bold flex items-center gap-1.5">
               <CheckCircle2 size={13} />
               <span>全チャンピオン最新パッチ対応済</span>
             </span>
@@ -251,8 +251,8 @@ export default function DictHealthSummaryBar({
             onClick={() => onFilterChange('stale')}
             className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer border flex items-center gap-1 ${
               activeStatusFilter === 'stale'
-                ? 'bg-danger-600 border-rose-600 text-white shadow-xs'
-                : 'bg-danger-50 border-rose-200 text-danger-700 hover:bg-danger-100'
+                ? 'bg-danger-600 border-danger-edge-strong text-white shadow-xs'
+                : 'bg-danger-50 border-danger-edge-soft text-danger-700 hover:bg-danger-100'
             }`}
           >
             <span>🔴 パッチ遅れ ({stale})</span>
@@ -263,8 +263,8 @@ export default function DictHealthSummaryBar({
             onClick={() => onFilterChange('ai_generated')}
             className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer border flex items-center gap-1 ${
               activeStatusFilter === 'ai_generated'
-                ? 'bg-primary-600 border-amber-600 text-white shadow-xs'
-                : 'bg-primary-50 border-amber-200 text-primary-800 hover:bg-primary-100'
+                ? 'bg-primary-600 border-primary-edge-strong text-white shadow-xs'
+                : 'bg-primary-50 border-primary-edge-soft text-primary-800 hover:bg-primary-100'
             }`}
           >
             <span>🟡 AI生成・要確認 ({aiGen})</span>
@@ -275,8 +275,8 @@ export default function DictHealthSummaryBar({
             onClick={() => onFilterChange('verified')}
             className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer border flex items-center gap-1 ${
               activeStatusFilter === 'verified'
-                ? 'bg-success-600 border-emerald-600 text-white shadow-xs'
-                : 'bg-success-50 border-emerald-200 text-success-800 hover:bg-success-100'
+                ? 'bg-success-600 border-success-edge-strong text-white shadow-xs'
+                : 'bg-success-50 border-success-edge-soft text-success-800 hover:bg-success-100'
             }`}
           >
             <span>🟢 実戦確定 ({verified})</span>

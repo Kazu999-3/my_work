@@ -582,7 +582,7 @@ export default function ChampionVisualDashboard({
       <div className="bg-surface dark:bg-stone-900/90 border border-border dark:border-stone-800 rounded-2xl p-3.5 sm:p-4.5 shadow-xs text-foreground dark:text-white">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3 pb-3 border-b border-stone-100 dark:border-white/10">
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded-md bg-primary-500/15 text-primary-700 dark:text-primary-300 border border-amber-500/30 text-[11px] font-black tracking-wider uppercase">
+            <span className="px-2 py-0.5 rounded-md bg-primary-500/15 text-primary-700 dark:text-primary-300 border border-primary-edge-strong/30 text-[11px] font-black tracking-wider uppercase">
               Skill HUD
             </span>
             <span className="text-xs font-bold text-foreground-subtle">スキル構成 ＆ 推奨先行上げ順</span>
@@ -612,8 +612,8 @@ export default function ChampionVisualDashboard({
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
           {/* パッシブ */}
           {passive && (
-            <div className="flex items-center gap-2.5 p-2 rounded-xl bg-background dark:bg-stone-800/50 border border-border/80 dark:border-white/5 hover:border-amber-500/30 transition-all">
-              <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-amber-500/40 shrink-0">
+            <div className="flex items-center gap-2.5 p-2 rounded-xl bg-background dark:bg-stone-800/50 border border-border/80 dark:border-white/5 hover:border-primary-edge-strong/30 transition-all">
+              <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-primary-edge-strong/40 shrink-0">
                 <img
                   src={getPassiveIcon(passive.image?.full)}
                   alt={passive.name}
@@ -636,7 +636,7 @@ export default function ChampionVisualDashboard({
           {spells.slice(0, 4).map((spell: any, idx: number) => {
             const key = skillKeys[idx];
             return (
-              <div key={spell.id || idx} className="flex items-center gap-2.5 p-2 rounded-xl bg-background dark:bg-stone-800/50 border border-border/80 dark:border-white/5 hover:border-amber-500/30 transition-all">
+              <div key={spell.id || idx} className="flex items-center gap-2.5 p-2 rounded-xl bg-background dark:bg-stone-800/50 border border-border/80 dark:border-white/5 hover:border-primary-edge-strong/30 transition-all">
                 <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-border dark:border-white/20 shrink-0">
                   <img
                     src={getSpellIcon(spell.image?.full)}
@@ -668,7 +668,7 @@ export default function ChampionVisualDashboard({
         {/* レーン・ロール別実戦タイミング指標 */}
         <div className="bg-surface dark:bg-stone-900/80 border border-border dark:border-stone-800 rounded-2xl p-3 sm:p-3.5 shadow-xs flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-primary-500/10 border border-amber-500/30 flex items-center justify-center text-primary-500 shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-primary-500/10 border border-primary-edge-strong/30 flex items-center justify-center text-primary-500 shrink-0">
               {internalRole === 'JG' ? <Clock size={16} /> :
                internalRole === 'SUP' ? <Shield size={16} /> :
                internalRole === 'TOP' ? <Swords size={16} /> :
@@ -970,7 +970,7 @@ export default function ChampionVisualDashboard({
 
             {/* ビルド詳細カード */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-              <div className="p-3 rounded-xl bg-primary-50/70 dark:bg-stone-800/60 border border-amber-200 dark:border-stone-700">
+              <div className="p-3 rounded-xl bg-primary-50/70 dark:bg-stone-800/60 border border-primary-edge-soft dark:border-stone-700">
                 <span className="text-[10px] font-black text-primary-800 dark:text-primary-400 uppercase block mb-1">
                   1コア (ファースト完成)
                 </span>
@@ -982,7 +982,7 @@ export default function ChampionVisualDashboard({
                 </span>
               </div>
 
-              <div className="p-3 rounded-xl bg-secondary-50/70 dark:bg-stone-800/60 border border-teal-200 dark:border-stone-700">
+              <div className="p-3 rounded-xl bg-secondary-50/70 dark:bg-stone-800/60 border border-secondary-edge-soft dark:border-stone-700">
                 <span className="text-[10px] font-black text-secondary-800 dark:text-secondary-400 uppercase block mb-1">
                   2〜3コア (集団戦スパイク)
                 </span>
@@ -994,7 +994,7 @@ export default function ChampionVisualDashboard({
                 </span>
               </div>
 
-              <div className="p-3 rounded-xl bg-primary-50/70 dark:bg-stone-800/60 border border-amber-200 dark:border-stone-700">
+              <div className="p-3 rounded-xl bg-primary-50/70 dark:bg-stone-800/60 border border-primary-edge-soft dark:border-stone-700">
                 <span className="text-[10px] font-black text-primary-800 dark:text-primary-400 uppercase block mb-1">
                   キーストーン推奨ルーン
                 </span>
@@ -1043,7 +1043,7 @@ export default function ChampionVisualDashboard({
           {/* 有利・不利マトリクス */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* カモ（有利 TOP5） */}
-            <div className="bg-surface dark:bg-stone-900 border border-emerald-500/30 rounded-2xl p-4 shadow-xs">
+            <div className="bg-surface dark:bg-stone-900 border border-success-edge-strong/30 rounded-2xl p-4 shadow-xs">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <ShieldCheck size={16} className="text-success-500" />
@@ -1070,7 +1070,7 @@ export default function ChampionVisualDashboard({
                   return (
                     <div 
                       key={idx} 
-                      className="rounded-xl border border-emerald-100 dark:border-emerald-900/30 overflow-hidden transition-all bg-success-50/50 dark:bg-stone-800/50"
+                      className="rounded-xl border border-success-edge-soft dark:border-success-edge-strong/30 overflow-hidden transition-all bg-success-50/50 dark:bg-stone-800/50"
                     >
                       <div 
                         onClick={() => setExpandedEnemy(isExpanded ? null : item.name)}
@@ -1079,7 +1079,7 @@ export default function ChampionVisualDashboard({
                         <img
                           src={getChampIcon(item.name)}
                           alt={item.name}
-                          className="w-8 h-8 rounded-lg object-cover border border-emerald-400/40 shrink-0"
+                          className="w-8 h-8 rounded-lg object-cover border border-success-edge/40 shrink-0"
                         />
                         <div className="min-w-0 flex-1">
                           <span className="text-xs font-black text-foreground dark:text-white block">
@@ -1095,7 +1095,7 @@ export default function ChampionVisualDashboard({
                       </div>
 
                       {isExpanded && (
-                        <div className="p-3 bg-surface dark:bg-stone-950/90 border-t border-emerald-100 dark:border-emerald-900/30 text-xs space-y-1.5">
+                        <div className="p-3 bg-surface dark:bg-stone-950/90 border-t border-success-edge-soft dark:border-success-edge-strong/30 text-xs space-y-1.5">
                           <div className="flex items-center gap-1.5 text-success-700 dark:text-success-400 font-black text-[11px]">
                             <BookMarked size={13} />
                             <span>{matchupRecord?.strategy ? "対面Sentinel実戦攻略メモ" : "対面メモ（未登録）"}</span>
@@ -1119,7 +1119,7 @@ export default function ChampionVisualDashboard({
             </div>
 
             {/* 天敵（不利 TOP5） */}
-            <div className="bg-surface dark:bg-stone-900 border border-rose-500/30 rounded-2xl p-4 shadow-xs">
+            <div className="bg-surface dark:bg-stone-900 border border-danger-edge-strong/30 rounded-2xl p-4 shadow-xs">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <ShieldAlert size={16} className="text-danger-500" />
@@ -1146,7 +1146,7 @@ export default function ChampionVisualDashboard({
                   return (
                     <div 
                       key={idx} 
-                      className="rounded-xl border border-rose-100 dark:border-rose-900/30 overflow-hidden transition-all bg-danger-50/50 dark:bg-stone-800/50"
+                      className="rounded-xl border border-danger-edge-soft dark:border-danger-edge-strong/30 overflow-hidden transition-all bg-danger-50/50 dark:bg-stone-800/50"
                     >
                       <div 
                         onClick={() => setExpandedEnemy(isExpanded ? null : item.name)}
@@ -1155,7 +1155,7 @@ export default function ChampionVisualDashboard({
                         <img
                           src={getChampIcon(item.name)}
                           alt={item.name}
-                          className="w-8 h-8 rounded-lg object-cover border border-rose-400/40 shrink-0"
+                          className="w-8 h-8 rounded-lg object-cover border border-danger-edge/40 shrink-0"
                         />
                         <div className="min-w-0 flex-1">
                           <span className="text-xs font-black text-foreground dark:text-white block">
@@ -1171,7 +1171,7 @@ export default function ChampionVisualDashboard({
                       </div>
 
                       {isExpanded && (
-                        <div className="p-3 bg-surface dark:bg-stone-950/90 border-t border-rose-100 dark:border-rose-900/30 text-xs space-y-1.5">
+                        <div className="p-3 bg-surface dark:bg-stone-950/90 border-t border-danger-edge-soft dark:border-danger-edge-strong/30 text-xs space-y-1.5">
                           <div className="flex items-center gap-1.5 text-danger-700 dark:text-danger-400 font-black text-[11px]">
                             <BookMarked size={13} />
                             <span>{matchupRecord?.strategy ? "天敵対策・即死回避メモ" : "天敵対策メモ（未登録）"}</span>
@@ -1202,7 +1202,7 @@ export default function ChampionVisualDashboard({
       {activeTab === 'bible' && (
         <div className="space-y-4">
           {/* 罠・不採用ビルドの暴露エリア */}
-          <div className="bg-gradient-to-r from-danger-950/20 via-stone-900/90 to-danger-950/20 border border-rose-500/40 rounded-2xl p-4 shadow-md text-white">
+          <div className="bg-gradient-to-r from-danger-950/20 via-stone-900/90 to-danger-950/20 border border-danger-edge-strong/40 rounded-2xl p-4 shadow-md text-white">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <AlertTriangle size={18} className="text-danger-400" />
@@ -1211,7 +1211,7 @@ export default function ChampionVisualDashboard({
                 </h3>
               </div>
               {tacticsData?.traps && tacticsData.traps.length > 0 && (
-                <span className="text-[10px] bg-danger-500/20 border border-rose-500/40 text-danger-300 px-2 py-0.5 rounded-full font-bold">
+                <span className="text-[10px] bg-danger-500/20 border border-danger-edge-strong/40 text-danger-300 px-2 py-0.5 rounded-full font-bold">
                   実戦検証済み
                 </span>
               )}
@@ -1220,7 +1220,7 @@ export default function ChampionVisualDashboard({
             {tacticsData?.traps && tacticsData.traps.length > 0 ? (
               <div className="space-y-2">
                 {tacticsData.traps.map((trap, idx) => (
-                  <div key={idx} className="flex items-start gap-2 text-xs p-2.5 rounded-xl bg-danger-50 dark:bg-danger-950/20 border border-rose-200 dark:border-rose-500/20">
+                  <div key={idx} className="flex items-start gap-2 text-xs p-2.5 rounded-xl bg-danger-50 dark:bg-danger-950/20 border border-danger-edge-soft dark:border-danger-edge-strong/20">
                     <span className="text-danger-500 dark:text-danger-400 font-bold shrink-0">❌</span>
                     <p className="text-danger-950 dark:text-stone-200 leading-relaxed font-medium">{trap}</p>
                   </div>
@@ -1313,7 +1313,7 @@ export default function ChampionVisualDashboard({
 
           {/* 📺 インラインYouTubeプレイヤー（該当秒数から直接再生） */}
           {activeVideoPlayer && (
-            <div className="rounded-2xl overflow-hidden border border-rose-500/40 bg-black shadow-xl space-y-2 p-2">
+            <div className="rounded-2xl overflow-hidden border border-danger-edge-strong/40 bg-black shadow-xl space-y-2 p-2">
               <div className="flex items-center justify-between px-2 pt-1 text-xs">
                 <span className="text-white font-bold truncate flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-danger-500 animate-pulse" />
@@ -1381,7 +1381,7 @@ export default function ChampionVisualDashboard({
                     </div>
 
                     {clip.macro && (
-                      <p className="text-secondary-800 dark:text-secondary-300 bg-secondary-50 dark:bg-secondary-950/40 p-2 rounded-lg text-[11px] leading-relaxed border border-teal-200 dark:border-teal-800/50">
+                      <p className="text-secondary-800 dark:text-secondary-300 bg-secondary-50 dark:bg-secondary-950/40 p-2 rounded-lg text-[11px] leading-relaxed border border-secondary-edge-soft dark:border-secondary-edge-strong/50">
                         <span className="font-bold text-secondary-600 dark:text-secondary-400 mr-1">🗺️ マクロ判断:</span>
                         {clip.macro}
                       </p>

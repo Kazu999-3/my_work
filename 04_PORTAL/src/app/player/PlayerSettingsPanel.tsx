@@ -13,11 +13,11 @@ interface PlayerSettingsPanelProps {
 }
 
 const ROLES = [
-  { id: "TOP", name: "トップ", icon: Shield, color: "text-primary-600 border-amber-500/40 bg-primary-500/10" },
-  { id: "JG", name: "ジャングル", icon: Trees, color: "text-success-600 border-emerald-500/40 bg-success-500/10" },
-  { id: "MID", name: "ミッド", icon: Zap, color: "text-secondary-600 border-teal-500/40 bg-secondary-500/10" },
-  { id: "ADC", name: "ボット(ADC)", icon: Target, color: "text-danger-600 border-rose-500/40 bg-danger-500/10" },
-  { id: "SUP", name: "サポート", icon: Heart, color: "text-primary-600 border-amber-500/40 bg-primary-500/10" },
+  { id: "TOP", name: "トップ", icon: Shield, color: "text-primary-600 border-primary-edge-strong/40 bg-primary-500/10" },
+  { id: "JG", name: "ジャングル", icon: Trees, color: "text-success-600 border-success-edge-strong/40 bg-success-500/10" },
+  { id: "MID", name: "ミッド", icon: Zap, color: "text-secondary-600 border-secondary-edge-strong/40 bg-secondary-500/10" },
+  { id: "ADC", name: "ボット(ADC)", icon: Target, color: "text-danger-600 border-danger-edge-strong/40 bg-danger-500/10" },
+  { id: "SUP", name: "サポート", icon: Heart, color: "text-primary-600 border-primary-edge-strong/40 bg-primary-500/10" },
   { id: "FILL", name: "おまかせ(FILL)", icon: Shuffle, color: "text-muted border-stone-500/40 bg-stone-500/10" },
 ];
 
@@ -110,7 +110,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
           value={ign}
           onChange={(e) => setIgn(e.target.value)}
           placeholder="例: Hide on bush#KR1"
-          className="w-full bg-surface dark:bg-[#1e1f22] border border-border dark:border-[#3f4147] rounded-xl px-4 py-2.5 text-sm text-foreground dark:text-white font-mono placeholder:text-faint focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-primary-500 shadow-xs"
+          className="w-full bg-surface dark:bg-[#1e1f22] border border-border dark:border-[#3f4147] rounded-xl px-4 py-2.5 text-sm text-foreground dark:text-white font-mono placeholder:text-faint focus:outline-none focus:border-primary-edge-strong focus:ring-1 focus:ring-primary-500 shadow-xs"
         />
         <p className="text-[11px] text-faint font-medium">
           ※ LoLクライアント内の Riot ID と タグライン（#JP1など）を入力すると、OP.GGやカルテへの自動連携が有効になります。
@@ -134,7 +134,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
                 onClick={() => setPrimaryRole(r.id)}
                 className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border text-center transition-all cursor-pointer ${
                   isSelected
-                    ? "bg-primary-500 text-stone-950 font-black shadow-md border-amber-600 scale-[1.02]"
+                    ? "bg-primary-500 text-stone-950 font-black shadow-md border-primary-edge-strong scale-[1.02]"
                     : "bg-surface dark:bg-[#2b2d31] border-border dark:border-[#3f4147] text-muted hover:border-border hover:bg-background dark:hover:bg-[#313338] font-bold"
                 }`}
               >
@@ -197,7 +197,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
                 onClick={() => toggleNgRole(r.id)}
                 className={`flex items-center justify-center gap-2 p-3 rounded-2xl border text-center transition-all cursor-pointer ${
                   isNg
-                    ? "bg-danger-500 text-white font-black shadow-md border-rose-600 scale-[1.02]"
+                    ? "bg-danger-500 text-white font-black shadow-md border-danger-edge-strong scale-[1.02]"
                     : "bg-surface dark:bg-[#2b2d31] border-border dark:border-[#3f4147] text-muted hover:border-border hover:bg-background dark:hover:bg-[#313338] font-bold"
                 }`}
               >

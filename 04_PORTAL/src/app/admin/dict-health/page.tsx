@@ -193,7 +193,7 @@ function DictHealthDashboardContent() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f7f5f0] dark:bg-[#1e1f22] text-foreground font-sans">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-200 border-t-amber-600" />
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary-edge-soft border-t-amber-600" />
           <p className="text-sm font-semibold text-muted">SSOT ヘルス状態を照合中...</p>
         </div>
       </div>
@@ -211,8 +211,8 @@ function DictHealthDashboardContent() {
             exit={{ opacity: 0, y: -40 }}
             className={`fixed top-5 left-1/2 -translate-x-1/2 z-50 px-6 py-3.5 rounded-2xl shadow-xl border text-xs font-bold flex items-center gap-2 ${
               message.type === 'success'
-                ? 'bg-success-50 text-success-800 border-emerald-200'
-                : 'bg-danger-50 text-danger-800 border-rose-200'
+                ? 'bg-success-50 text-success-800 border-success-edge-soft'
+                : 'bg-danger-50 text-danger-800 border-danger-edge-soft'
             }`}
           >
             {message.type === 'success' ? '✅' : '❌'} {message.text}
@@ -245,8 +245,8 @@ function DictHealthDashboardContent() {
                   onClick={() => setHubTab('health')}
                   className={`text-left p-3 sm:p-3.5 rounded-xl border-2 transition-all hover:shadow-md ${
                     hubTab === 'health'
-                      ? 'border-amber-400 bg-primary-50 ring-2 ring-primary-300/40'
-                      : 'border-border bg-surface hover:border-amber-300'
+                      ? 'border-primary-edge bg-primary-50 ring-2 ring-primary-300/40'
+                      : 'border-border bg-surface hover:border-primary-edge'
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-1.5">
@@ -270,8 +270,8 @@ function DictHealthDashboardContent() {
                   onClick={() => setHubTab('audit')}
                   className={`text-left p-3 sm:p-3.5 rounded-xl border-2 transition-all hover:shadow-md ${
                     hubTab === 'audit'
-                      ? 'border-teal-400 bg-secondary-50 ring-2 ring-secondary-300/40'
-                      : 'border-border bg-surface hover:border-teal-300'
+                      ? 'border-secondary-edge bg-secondary-50 ring-2 ring-secondary-300/40'
+                      : 'border-border bg-surface hover:border-secondary-edge'
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-1.5">
@@ -295,8 +295,8 @@ function DictHealthDashboardContent() {
                   onClick={() => setHubTab('history')}
                   className={`text-left p-3 sm:p-3.5 rounded-xl border-2 transition-all hover:shadow-md ${
                     hubTab === 'history'
-                      ? 'border-rose-400 bg-danger-50 ring-2 ring-danger-300/40'
-                      : 'border-border bg-surface hover:border-rose-300'
+                      ? 'border-danger-edge bg-danger-50 ring-2 ring-danger-300/40'
+                      : 'border-border bg-surface hover:border-danger-edge'
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-1.5">
@@ -316,7 +316,7 @@ function DictHealthDashboardContent() {
                 </button>
               </div>
 
-              <div className="bg-primary-100/60 border border-amber-200 rounded-xl px-3 py-2 text-[10px] text-primary-900 font-bold flex items-center gap-2">
+              <div className="bg-primary-100/60 border border-primary-edge-soft rounded-xl px-3 py-2 text-[10px] text-primary-900 font-bold flex items-center gap-2">
                 <span className="text-base">💡</span>
                 おすすめの流れ: ① ヘルス概要で一括更新 → ② ファクトチェックで矛盾を片付け → ③ 履歴&鮮度で最終確認
               </div>
@@ -332,7 +332,7 @@ function DictHealthDashboardContent() {
               <h1 className="text-lg sm:text-2xl md:text-3xl font-extrabold tracking-tight text-foreground">
                 辞典 ＆ ナレッジヘルス
               </h1>
-              <span className="bg-primary-100 text-primary-800 border border-amber-300 px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold shrink-0">
+              <span className="bg-primary-100 text-primary-800 border border-primary-edge px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold shrink-0">
                 パッチ {data?.currentPatch || '26.15'}
               </span>
             </div>
@@ -410,8 +410,8 @@ function DictHealthDashboardContent() {
                 onClick={() => setStatusFilter('verified')}
                 className={`p-5 rounded-2xl border text-left transition ${
                   statusFilter === 'verified'
-                    ? 'bg-success-100/80 border-emerald-400 ring-2 ring-success-500/30'
-                    : 'bg-surface border-border hover:border-emerald-300'
+                    ? 'bg-success-100/80 border-success-edge ring-2 ring-success-500/30'
+                    : 'bg-surface border-border hover:border-success-edge'
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -428,8 +428,8 @@ function DictHealthDashboardContent() {
                 onClick={() => setStatusFilter('ai_generated')}
                 className={`p-5 rounded-2xl border text-left transition ${
                   statusFilter === 'ai_generated'
-                    ? 'bg-primary-100/80 border-amber-400 ring-2 ring-primary-500/30'
-                    : 'bg-surface border-border hover:border-amber-300'
+                    ? 'bg-primary-100/80 border-primary-edge ring-2 ring-primary-500/30'
+                    : 'bg-surface border-border hover:border-primary-edge'
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -446,8 +446,8 @@ function DictHealthDashboardContent() {
                 onClick={() => setStatusFilter('stale')}
                 className={`p-5 rounded-2xl border text-left transition ${
                   statusFilter === 'stale'
-                    ? 'bg-danger-100/80 border-rose-400 ring-2 ring-danger-500/30'
-                    : 'bg-surface border-border hover:border-rose-300'
+                    ? 'bg-danger-100/80 border-danger-edge ring-2 ring-danger-500/30'
+                    : 'bg-surface border-border hover:border-danger-edge'
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -463,7 +463,7 @@ function DictHealthDashboardContent() {
 
             {/* 今パッチ最優先確認チャンピオン Top 10 */}
             {data?.priorityChampions && data.priorityChampions.length > 0 && (
-              <div className="bg-primary-950/10 border border-amber-500/30 rounded-2xl p-4 bg-primary-50/50 shadow-sm">
+              <div className="bg-primary-950/10 border border-primary-edge-strong/30 rounded-2xl p-4 bg-primary-50/50 shadow-sm">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-black text-primary-900 flex items-center gap-1.5">
                     <span className="text-base">🔥</span>
@@ -476,7 +476,7 @@ function DictHealthDashboardContent() {
                   {data.priorityChampions.map((c: any) => (
                     <div
                       key={c.champion}
-                      className="shrink-0 bg-surface border border-amber-200 rounded-xl p-2.5 flex items-center gap-2.5 shadow-sm min-w-[170px]"
+                      className="shrink-0 bg-surface border border-primary-edge-soft rounded-xl p-2.5 flex items-center gap-2.5 shadow-sm min-w-[170px]"
                     >
                       <img
                         src={getChampIcon(c.champion)}
@@ -519,7 +519,7 @@ function DictHealthDashboardContent() {
                 placeholder="チャンピオン検索..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 rounded-xl bg-background border border-border text-xs font-medium focus:outline-none focus:border-amber-500"
+                className="w-full pl-9 pr-4 py-2 rounded-xl bg-background border border-border text-xs font-medium focus:outline-none focus:border-primary-edge-strong"
               />
             </div>
 
@@ -541,7 +541,7 @@ function DictHealthDashboardContent() {
               </div>
 
               {/* レーン別フィルター */}
-              <div className="flex items-center gap-0.5 sm:gap-1 bg-primary-100/60 border border-amber-200/80 p-1 rounded-xl shrink-0">
+              <div className="flex items-center gap-0.5 sm:gap-1 bg-primary-100/60 border border-primary-edge-soft/80 p-1 rounded-xl shrink-0">
                 {(['ALL', 'TOP', 'JG', 'MID', 'ADC', 'SUP'] as const).map((r) => (
                   <button
                     key={r}
@@ -581,10 +581,10 @@ function DictHealthDashboardContent() {
                 key={champ.champion}
                 className={`bg-surface rounded-2xl border p-4 shadow-sm transition hover:shadow-md flex flex-col justify-between ${
                   isVerified
-                    ? 'border-emerald-200 bg-success-50/20'
+                    ? 'border-success-edge-soft bg-success-50/20'
                     : isAiGenerated
-                    ? 'border-amber-200 bg-primary-50/20'
-                    : 'border-rose-200 bg-danger-50/20'
+                    ? 'border-primary-edge-soft bg-primary-50/20'
+                    : 'border-danger-edge-soft bg-danger-50/20'
                 }`}
               >
                 <div>
@@ -608,10 +608,10 @@ function DictHealthDashboardContent() {
                     <span
                       className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                         isVerified
-                          ? 'bg-success-100 text-success-800 border-emerald-300'
+                          ? 'bg-success-100 text-success-800 border-success-edge'
                           : isAiGenerated
-                          ? 'bg-primary-100 text-primary-800 border-amber-300'
-                          : 'bg-danger-100 text-danger-800 border-rose-300'
+                          ? 'bg-primary-100 text-primary-800 border-primary-edge'
+                          : 'bg-danger-100 text-danger-800 border-danger-edge'
                       }`}
                     >
                       {isVerified ? '🟢 確認済' : isAiGenerated ? '🟡 AI生成' : '🔴 要対応'}
@@ -787,7 +787,7 @@ export default function DictHealthDashboard() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-[#f7f5f0] dark:bg-[#1e1f22] flex items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-200 border-t-amber-600" />
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary-edge-soft border-t-amber-600" />
       </div>
     }>
       <DictHealthDashboardContent />
