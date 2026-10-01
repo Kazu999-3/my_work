@@ -23,7 +23,7 @@ DEFAULT_BLUEPRINTS: Dict[str, Dict[str, Any]] = {
             {
                 "phase": "Phase 1 (Lv1〜2)",
                 "title": "耐えてウェーブを手前に引く (Lv2先行厳禁)",
-                "action": "Lv1での殴り合いは100%負けるためCSを数体捨ててウェーブを引く。敵のQ外周だけ絶対に避ける。",
+                "action": "Lv1での殴り合いは極めて不利なためCSを数体捨ててウェーブを引く。敵のQ外周被弾を徹底回避する。",
                 "win_trigger": "自タワー手前にウェーブがフリーズできれば第1段階クリア",
                 "badge": "忍耐 🛡️"
             },
@@ -177,7 +177,7 @@ DEFAULT_BLUEPRINTS: Dict[str, Dict[str, Any]] = {
                 "badge": "制圧 👑"
             }
         ],
-        "trap_items": "重傷（回復阻害）なしの初手コアビルド（殴り合いで絶対に勝てなくなる）",
+        "trap_items": "重傷（回復阻害）なしの初手コアビルド（殴り合いで大幅に不利になる）",
         "forbidden_moves": "W（縄）に捕まった際に後方に直線移動して引き戻されること（斜め横に脱出）"
     }
 }

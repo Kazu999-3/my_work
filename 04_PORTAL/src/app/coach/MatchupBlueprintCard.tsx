@@ -344,12 +344,12 @@ export default function MatchupBlueprintCard({
                     </span>
                   </div>
                   <p className="text-[10px] text-faint font-medium">
-                    対面Lv6フルコンボ{data.kill_line.has_ignite ? ' ＋ イグナイト' : ''} 確定ダメージ（自防御力軽減済み）
+                    対面Lv6フルコンボ{data.kill_line.has_ignite ? ' ＋ イグナイト' : ''} 推定バーストダメージ（防御軽減適用済み）
                   </p>
                 </div>
               </div>
               <div className="text-right font-mono">
-                <span className="text-[10px] text-faint">確定最大火力: </span>
+                <span className="text-[10px] text-faint">推定最大火力: </span>
                 <span className="text-sm font-black text-danger-400">{data.kill_line.total_lethal_damage} DMG</span>
               </div>
             </div>

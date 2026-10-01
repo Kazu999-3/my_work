@@ -38,6 +38,10 @@
        - `04_PORTAL/src/app/api/analyzer/deep-intel/route.ts`: 未使用のまま放置されていた `ROLE_MATCHUP_DEFAULTS` 内の架空勝率ハードコード（勝率68%, 36%等）を完全削除・整理。
        - `04_PORTAL/src/lib/championKitTactics.ts`: ノーチラス・モルガナの解説に残存していた「確定バーストトレード」「不可避エンゲージ」「不可避の集団スタン」「100%完封可能」を「有利なバーストトレード」「強力な長距離エンゲージ」「広域集団スタン」「確実に防ぐことが可能」へ是正。
        - `03_SYSTEMS/v2_CORE/_LOL/power_spike_generator.py`: AIプロンプトの「情報不足のため判断できませんという記述は絶対に使用しないでください（ハルシネーション強制）」を「根拠となる情報が不足している場合は推測で断定せず、客観的事実および一般的なチャンピオン傾向に基づいて記述してください」へ是正。
+     - **対面攻略手順書＆即死メーターの過度な断言・用語混同是正（第5弾・全5件）**:
+       - `04_PORTAL/src/app/coach/MatchupBlueprintCard.tsx`: 即死キルライン境界メーター内の「確定ダメージ（自防御力軽減済み）」「確定最大火力」を「推定バーストダメージ（防御軽減適用済み）」「推定最大火力」へ是正（LoLのTrue Damage[確定ダメージ]との仕様混同、および全弾ヒット前提の断言を排除）。
+       - `04_PORTAL/src/app/api/lol/matchup-blueprint/route.ts` & `03_SYSTEMS/v2_CORE/_LOL/overlay/matchup_blueprint_engine.py`: 対ダリウス手順「Lv1での殴り合いは100%負ける...絶対に避ける」を「Lv1での殴り合いは極めて不利なため...徹底回避する」へ是正。
+       - `03_SYSTEMS/v2_CORE/_LOL/overlay/matchup_blueprint_engine.py`: エイトロックス対策「殴り合いで絶対に勝てなくなる」を「殴り合いで大幅に不利になる」へ是正。
    - **師弟掲示板のUIシンプル化**:
      - `MentorshipCard.tsx`:
        - 長大なコメント一覧＆投稿フォームをカード本体から撤去し、下部バーの「💬 コメント ({count})」から開く独立モーダルへ分離。カード高さを約50%スリム化。
