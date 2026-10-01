@@ -97,56 +97,90 @@ def _fetch_channel_name_from_rss(channel_id: str) -> str | None:
 
 # ============================================================
 # チャンネル解決機能 (yt-dlp を使用)
+def _resolve_channel_via_web(channel_url: str) -> tuple[str | None, str | None]:
+    """チャンネルURLのHTMLメタデータから channel_id と channel_name を直接高速取得する。
+    動画再生を行わないため、YouTubeのBot検知(429 / Sign in to confirm you're not a bot)を完全回避できる。"""
+    try:
+        clean_url = channel_url.strip()
+        if not clean_url.startswith("http://") and not clean_url.startswith("https://"):
+            clean_url = "https://" + clean_url
+            
+        req = urllib.request.Request(
+            clean_url,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept-Language": "ja-JP,ja;q=0.9,en-US;q=0.8,en;q=0.7"
+            }
+        )
+        with urllib.request.urlopen(req, timeout=10) as r:
+            html = r.read().decode("utf-8", errors="replace")
+
+        # チャンネルID探索
+        m_id = (
+            re.search(r'itemprop="channelId"\s+content="(UC[a-zA-Z0-9_-]+)"', html)
+            or re.search(r'"channelId":"(UC[a-zA-Z0-9_-]+)"', html)
+            or re.search(r'"externalId":"(UC[a-zA-Z0-9_-]+)"', html)
+            or re.search(r'https://www.youtube.com/channel/(UC[a-zA-Z0-9_-]+)', html)
+        )
+        channel_id = m_id.group(1) if m_id else None
+
+        # チャンネル名探索
+        m_title = (
+            re.search(r'<meta\s+property="og:title"\s+content="([^"]+)"', html)
+            or re.search(r'"channelMetadataRenderer":\s*\{[^}]*"title":\s*"([^"]+)"', html)
+            or re.search(r'<title>([^<]+)</title>', html)
+        )
+        channel_name = m_title.group(1).strip() if m_title else None
+        if channel_name and channel_name.endswith(" - YouTube"):
+            channel_name = channel_name[:-10].strip()
+
+        return channel_id, channel_name
+    except Exception as e:
+        logger.warning(f"Web経由のチャンネル解決で例外発生: {e}")
+        return None, None
+
 # ============================================================
 def resolve_and_register_channel(channel_url: str) -> bool:
     logger.info(f"🔍 チャンネルURLの解決を試行中: {channel_url}")
     try:
-        # yt-dlp で channel_id と channel 名を取得する。
-        # 以前は "%(channel_id)s\n%(channel)s" を1つの--printに詰め、出力を
-        # 空行フィルタ後の位置（0番目=ID、1番目=名前）で対応付けていたが、
-        # --playlist-items 1で取れた動画の%(channel)sが空文字になるケースがあり、
-        # 空行がフィルタで消えてchannel_idしか残らず「Unexpected yt-dlp output lines」で
-        # 誤って失敗扱いになっていた(2026-08-10発覚)。プレフィックス付きの別々の--printに
-        # 分離し、どちらの行かを内容で判定する方式に変更。
-        cmd = YT_DLP_CMD + [
-            "--extractor-args", "youtube:client=android",
-            "--playlist-items", "1", # 1番目の動画情報を取得（チャンネル解決が安定する）
-            "--print", "CHID:%(channel_id)s",
-            "--print", "CHNAME:%(channel)s",
-            channel_url
-        ]
-
-        res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)
-        if res.returncode != 0:
-            logger.error(f"yt-dlp resolution failed: {res.stderr}")
-            return False
-
-        channel_id = None
-        channel_name = None
-        for line in res.stdout.splitlines():
-            line = line.strip()
-            if line.startswith("CHID:"):
-                channel_id = line[len("CHID:"):].strip()
-            elif line.startswith("CHNAME:"):
-                channel_name = line[len("CHNAME:"):].strip()
-
-        if not channel_id or not channel_id.startswith("UC"):
-            logger.error(f"Unexpected yt-dlp output: {res.stdout!r}")
-            return False
-
         # ハンドル名の抽出 (例: @KireiLoL)
         handle = None
         handle_match = re.search(r'(@[a-zA-Z0-9_\-\.]+)', channel_url)
         if handle_match:
             handle = handle_match.group(1)
 
-        # channel名が空/NA(一部動画で%(channel)sが取得できないケースがある)の場合は、
-        # 解決自体を失敗させず、まずRSSフィードのチャンネル名で補完を試み、
-        # それも取れなければハンドル名またはIDで代用する
-        # (resolve_and_register_playlistの空タイトル時フォールバックと同じ方針)。
+        # 1. まず軽量・確実なWeb直接メタデータ解決を試みる（Bot検知・動画Sign-in要求を完全回避）
+        channel_id, channel_name = _resolve_channel_via_web(channel_url)
+
+        # 2. Web直接解決でIDが取れなかった場合のみ、従来のyt-dlpをフォールバックとして試行
+        if not channel_id or not channel_id.startswith("UC"):
+            logger.info("Web直接解決できなかったため、yt-dlpフォールバックを実行...")
+            cmd = YT_DLP_CMD + [
+                "--extractor-args", "youtube:client=android",
+                "--playlist-items", "1",
+                "--print", "CHID:%(channel_id)s",
+                "--print", "CHNAME:%(channel)s",
+                channel_url
+            ]
+            res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)
+            if res.returncode == 0:
+                for line in res.stdout.splitlines():
+                    line = line.strip()
+                    if line.startswith("CHID:"):
+                        channel_id = line[len("CHID:"):].strip()
+                    elif line.startswith("CHNAME:") and not channel_name:
+                        channel_name = line[len("CHNAME:"):].strip()
+            else:
+                logger.warning(f"yt-dlp resolution fallback failed: {res.stderr}")
+
+        if not channel_id or not channel_id.startswith("UC"):
+            logger.error(f"チャンネルIDを特定できませんでした: {channel_url}")
+            return False
+
+        # channel名が空/NAの場合は、RSSフィードまたはハンドル名で補完
         if not channel_name or channel_name.upper() == "NA":
             channel_name = _fetch_channel_name_from_rss(channel_id) or handle or channel_id
-            logger.warning(f"yt-dlpからchannel名が取得できなかったため代用値を使用: {channel_name}")
+            logger.warning(f"channel名が取得できなかったため代用値を使用: {channel_name}")
 
         logger.info(f"✨ チャンネル解決成功: {channel_name} (ID: {channel_id}, Handle: {handle})")
         

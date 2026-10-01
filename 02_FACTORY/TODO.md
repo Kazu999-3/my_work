@@ -23,6 +23,7 @@ Step 1〜4（対面計算基盤・オーバーレイ連動・ディープアナ�
 - [x] **即死メーターのTrue Damage用語混同・断言是正**: `MatchupBlueprintCard.tsx` の「確定ダメージ」「確定最大火力」を「推定バーストダメージ」「推定最大火力」へ是正
 - [x] **対面手順書の過度な断言是正**: `matchup-blueprint/route.ts` & `matchup_blueprint_engine.py` の「100%負ける」「殴り合いで絶対に勝てなくなる」を客観的表現へ改修
 - [x] **看板と実態が乖離した孤立モック完全削除**: `03_SYSTEMS/v2_CORE/_LOL/overlay/postgame_deep_analytics.py`（未参照のまま固定ダミー戦績を返していた試作ファイル）を安全に削除
+- [x] **YouTubeチャンネル登録のBot検知クラッシュ解消 ＆ 直接メタデータ解決エンジン実装**: `youtube_monitor.py` において、yt-dlp の動画読み込み起因による `Sign in to confirm you're not a bot` クラッシュを完全排除。軽量HTMLメタデータ（`itemprop="channelId"` / `og:title`）直接取得エンジンを新設し、`@lolwataneko`（watanekoLoL）の登録完了および新着動画15件の解析キュー自動投入を確認
 - [x] **全自動テスト完走**: Pythonテスト18件PASS、TypeScriptテスト83件PASS、Next.js 100ページフルビルドPASS
 
 ## ✅ 2026-09-25 対応済み（Sovereign HUD アイコン＆ビジュアル大改修 ＆ 総合整理）
