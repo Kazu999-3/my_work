@@ -176,7 +176,7 @@ export default function MatchNewsTicker() {
                   <div className="p-3 rounded-xl bg-black/[0.03] dark:bg-white/[0.03] border border-border/80 dark:border-stone-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-[11px]">
                     <div className="flex items-center gap-1.5 italic text-muted">
                       <MessageSquareQuote className="w-4 h-4 text-primary-500 shrink-0" />
-                      <span>「{art.interviewQuote}」</span>
+                      <span><span className="text-[10px] not-italic text-faint">※AI演出コメント:</span> 「{art.interviewQuote}」</span>
                     </div>
                     {art.sideStory && (
                       <span className="text-muted-strong font-medium">

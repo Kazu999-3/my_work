@@ -92,7 +92,7 @@ export async function syncMentorshipDashboard(): Promise<boolean> {
     const mentors = (profiles || []).filter((p: any) => p.role_type === 'MENTOR');
     const pupils = (profiles || []).filter((p: any) => p.role_type === 'PUPIL');
 
-    // 2. 師匠リストのテキスト整形
+    // 2. 師匠リストのテキスト整形（シンプル化: ランク ➔ レーン ＆ 得意チャンプ）
     let mentorFieldText = '';
     if (mentors.length === 0) {
       mentorFieldText = '現在募集中の師匠はいません。指導希望者はぜひポータルから立候補を！';
@@ -102,15 +102,10 @@ export async function syncMentorshipDashboard(): Promise<boolean> {
         .map((m: any) => {
           const lanes = Array.isArray(m.lanes) && m.lanes.length > 0 ? m.lanes.join('/') : 'ALL';
           const rank = m.current_rank || 'UNRANKED';
-          const dur = m.preferred_duration || 
-            (m.tags?.some((t: string) => t.includes('1試合') || t.includes('カスタム') || t.includes('単発')) ? '1_MATCH' :
-             m.tags?.some((t: string) => t.includes('リプレイ') || t.includes('添削')) ? 'REPLAY' :
-             m.tags?.some((t: string) => t.includes('3日') || t.includes('お試し')) ? '3_DAYS' : null);
-          const durBadge = dur && MENTORSHIP_DURATIONS[dur] ? ` [${MENTORSHIP_DURATIONS[dur].shortLabel}]` : '';
-          const tagList = Array.isArray(m.tags) && m.tags.length > 0
-            ? ` [${m.tags.filter((t: string) => !t.includes('1試合') && !t.includes('リプレイ') && !t.includes('3日')).slice(0, 2).join(', ')}]`
+          const champs = Array.isArray(m.champions) && m.champions.length > 0
+            ? ` (${m.champions.slice(0, 2).join(', ')})`
             : '';
-          return `• **${m.player_name}** (${rank}) | 🛡️ \`${lanes}\`${durBadge}${tagList}`;
+          return `• **${m.player_name}** (${rank}) ➔ 🛡️ \`${lanes}\`${champs}`;
         })
         .join('\n');
       if (mentors.length > 15) {
@@ -118,7 +113,7 @@ export async function syncMentorshipDashboard(): Promise<boolean> {
       }
     }
 
-    // 3. 弟子リストのテキスト整形
+    // 3. 弟子リストのテキスト整形（シンプル化: ランク ➔ レーン ＆ 練習チャンプ）
     let pupilFieldText = '';
     if (pupils.length === 0) {
       pupilFieldText = '現在募集中の弟子はいません。向上心あふれる弟子の参加を待っています！';
@@ -128,13 +123,11 @@ export async function syncMentorshipDashboard(): Promise<boolean> {
         .map((p: any) => {
           const lanes = Array.isArray(p.lanes) && p.lanes.length > 0 ? p.lanes.join('/') : 'ALL';
           const rank = p.current_rank || 'UNRANKED';
-          const target = p.target_rank ? ` ➔ 目標: **${p.target_rank}**` : '';
-          const dur = p.preferred_duration || 
-            (p.tags?.some((t: string) => t.includes('1試合') || t.includes('カスタム') || t.includes('単発')) ? '1_MATCH' :
-             p.tags?.some((t: string) => t.includes('リプレイ') || t.includes('添削')) ? 'REPLAY' :
-             p.tags?.some((t: string) => t.includes('3日') || t.includes('お試し')) ? '3_DAYS' : null);
-          const durBadge = dur && MENTORSHIP_DURATIONS[dur] ? ` [${MENTORSHIP_DURATIONS[dur].shortLabel}]` : '';
-          return `• **${p.player_name}** (${rank}${target}) | 🛡️ \`${lanes}\`${durBadge}`;
+          const target = p.target_rank ? ` ➔ 目標:**${p.target_rank}**` : '';
+          const champs = Array.isArray(p.champions) && p.champions.length > 0
+            ? ` (${p.champions.slice(0, 2).join(', ')})`
+            : '';
+          return `• **${p.player_name}** (${rank}${target}) ➔ 🛡️ \`${lanes}\`${champs}`;
         })
         .join('\n');
 
@@ -291,55 +284,28 @@ export async function notifyNewMentorshipProfile(params: {
 
     const embed = {
       title: `${icon} 【${roleLabel}募集】${profile.player_name} さんが${actionText}`,
-      description: profile.bio ? `> ${profile.bio.replace(/\n/g, '\n> ')}` : '*自己PRの登録はありません*',
       color,
       fields: [
         {
-          name: '👤 プレイヤー',
-          value: `${profile.player_name} (${mention})`,
-          inline: true,
-        },
-        {
-          name: isMentor ? '📈 現在のランク' : '📈 ランク / 目標',
+          name: isMentor ? '📈 ランク' : '📈 ランク / 目標',
           value: isMentor
             ? `**${profile.current_rank || 'UNRANKED'}**`
-            : `現在: **${profile.current_rank || 'UNRANKED'}**\n目標: **${profile.target_rank || '未設定'}**`,
+            : `現在: **${profile.current_rank || 'UNRANKED'}** ➔ 目標: **${profile.target_rank || '未設定'}**`,
           inline: true,
         },
         {
-          name: isMentor ? '🛡️ 指導可能レーン' : '🛡️ 希望レーン',
-          value: `\`${lanes}\``,
+          name: isMentor ? '🛡️ 指導レーン ＆ 得意' : '🛡️ 希望レーン ＆ 練習中',
+          value: `\`${lanes}\` | ${champs}`,
           inline: true,
         },
         {
-          name: isMentor ? '🏆 得意チャンピオン' : '🎯 練習中チャンピオン',
-          value: champs,
-          inline: true,
-        },
-        {
-          name: '⚡ 希望コース・スタイル',
-          value: (() => {
-            const dur = profile.preferred_duration || 
-              (profile.tags?.some((t: string) => t.includes('1試合') || t.includes('カスタム') || t.includes('単発')) ? '1_MATCH' :
-               profile.tags?.some((t: string) => t.includes('リプレイ') || t.includes('添削')) ? 'REPLAY' :
-               profile.tags?.some((t: string) => t.includes('3日') || t.includes('お試し')) ? '3_DAYS' : null);
-            return dur && MENTORSHIP_DURATIONS[dur] ? `**${MENTORSHIP_DURATIONS[dur].label}**` : '指定なし（柔軟対応）';
-          })(),
-          inline: true,
-        },
-        {
-          name: '🏷️ 特徴・タグ',
-          value: tags,
-          inline: true,
-        },
-        {
-          name: '⏰ 活動可能時間帯',
-          value: profile.active_hours || '指定なし',
-          inline: true,
+          name: '💬 ひとことPR',
+          value: profile.bio ? `> ${profile.bio.replace(/\n/g, '\n> ').slice(0, 150)}` : '*自己PRの登録はありません*',
+          inline: false,
         },
       ],
       footer: {
-        text: 'KTM Mentorship Hub | ポータルからオファーを送ると相手に直接DMが届きます',
+        text: `KTM Mentorship Hub • 活動時間: ${profile.active_hours || '未指定'} | ポータルからオファー送信可能`,
       },
     };
 

@@ -1405,7 +1405,7 @@ export default function PlayerMyPage() {
                                   height={24}
                                   className="w-6 h-6 rounded-full border border-black/10 shrink-0 bg-black/5 object-cover"
                                   onError={(e) => {
-                                    (e.target as HTMLImageElement).src = "https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/29.png";
+                                    (e.target as HTMLImageElement).src = getChampIcon('Unknown');
                                   }}
                                 />
                                 <span className="w-24 truncate font-bold text-foreground-soft">{c.name}</span>

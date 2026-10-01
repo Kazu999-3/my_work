@@ -141,7 +141,7 @@ export function formatChampId(champId: string): string {
  */
 export function getChampIcon(champId: string): string {
   if (!champId || champId === "Unknown" || champId === "未選択") {
-    return "https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/29.png";
+    return `https://ddragon.leagueoflegends.com/cdn/${cachedLatestPatch}/img/profileicon/29.png`;
   }
   const formattedId = formatChampId(champId);
   return `https://ddragon.leagueoflegends.com/cdn/${cachedLatestPatch}/img/champion/${formattedId}.png`;

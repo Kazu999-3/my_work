@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
 import { normalizeChampionName } from '../../../../lib/championNames';
 
-// 主要チャンピオンのLv6時フルコンボ公式基礎ダメージ ＋ スケーリング
+// 主要チャンピオンのLv6時フルコンボ推定バーストプロファイル ＋ スケーリング（手書き概算）
 interface BurstProfile {
   baseLvl6: number;
   adScale: number;
@@ -133,7 +133,7 @@ function calculateKillLine(
   if (killHpPercent >= 65) {
     dangerBadge = '極限警戒 💀';
     dangerColor = '#dc2626';
-    advice = `HP ${killHpPercent}% (${totalLethal}以下) で即死確定！ Flashなしでの不用意な接近は厳禁。`;
+    advice = `HP ${killHpPercent}% (${totalLethal}以下) で即死警戒ライン（推定）！ Flashなしでの不用意な接近は厳禁。`;
   } else if (killHpPercent >= 50) {
     dangerBadge = '超危険 🔴';
     dangerColor = '#ef4444';
@@ -288,7 +288,7 @@ export async function GET(request: NextRequest) {
   const myChamp = searchParams.get('my') || 'JarvanIV';
   const enemyChamp = searchParams.get('enemy') || 'LeeSin';
 
-  // 1. 即死キルライン確定計算
+  // 1. 即死キルライン推定計算
   const killLine = calculateKillLine(enemyChamp, myChamp);
 
   // 2. 3段階手順書

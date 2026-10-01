@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, RefreshCw, X, ArrowLeftRight, Check, Search, Edit3 } from 'lucide-react';
 import { CHAMPION_NAME_MAP, normalizeChampionName } from '../../lib/championNames';
+import { getChampIcon } from '../../lib/ddragonClient';
 
 interface ChampionQuickSelectorProps {
   myChampion: string;
@@ -66,8 +67,7 @@ const ALL_CHAMPIONS_LIST: { id: string; nameJa: string }[] = (() => {
 
 function getDDragonIconUrl(championId: string): string {
   if (!championId) return '';
-  const normalized = normalizeChampionName(championId);
-  return `https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/${normalized}.png`;
+  return getChampIcon(championId);
 }
 
 export default function ChampionQuickSelector({

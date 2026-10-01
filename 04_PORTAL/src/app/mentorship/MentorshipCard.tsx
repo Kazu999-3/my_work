@@ -5,7 +5,8 @@ import { toast } from '../../components/Toaster';
 import { MentorshipProfile } from '../api/mentorship/profiles/route';
 import { getRankBadgeStyle } from '../../lib/mmr';
 import { CHAMPION_JA } from '../../components/ChampSelect';
-import { Clock, MessageSquare, Send, Sparkles, Trash2, Zap } from 'lucide-react';
+import { getChampIcon } from '../../lib/ddragonClient';
+import { Clock, MessageSquare, Send, Sparkles, Trash2, Zap, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { MentorshipReviewSummary } from '../api/mentorship/reviews/route';
 import { MENTORSHIP_DURATIONS } from '../../lib/mentorshipConstants';
 
@@ -67,6 +68,7 @@ export function MentorshipCard({
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [commentInput, setCommentInput] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [isBioExpanded, setIsBioExpanded] = useState(false);
 
   // ライトコース（1試合、リプレイ、3日間）判定
   const preferredDuration = (profile as any).preferred_duration;
@@ -357,34 +359,36 @@ export function MentorshipCard({
           </div>
         )}
 
-        {/* チャンピオンアイコン一覧 */}
+        {/* チャンピオンアイコン一覧 (シンプル化: 最大4体 + getChampIcon) */}
         {profile.champions && profile.champions.length > 0 && (
-          <div className="space-y-1.5">
-            <span className="text-[11px] font-bold text-muted-strong">
-              {isMentor ? '⚔️ 指導可能チャンピオン:' : '🎯 練習中・得意チャンピオン:'}
+          <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+            <span className="text-[11px] font-bold text-muted-strong shrink-0">
+              {isMentor ? '⚔️ 指導可能:' : '🎯 練習中:'}
             </span>
-            <div className="flex flex-wrap gap-1.5 items-center">
-              {profile.champions.map((champ) => {
-                const champName = champ.trim();
-                const iconUrl = `https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/${champName}.png`;
-                return (
-                  <div
-                    key={champName}
-                    className="flex items-center gap-1.5 px-2 py-1 bg-background dark:bg-[#1e1f22] border border-border/90 dark:border-[#3f4147] rounded-xl text-xs font-bold text-foreground-soft dark:text-stone-200 shadow-2xs"
-                  >
-                    <img
-                      src={iconUrl}
-                      alt={champName}
-                      className="w-4.5 h-4.5 rounded-md object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
-                    <span>{CHAMPION_JA[champName]?.ja || champName}</span>
-                  </div>
-                );
-              })}
-            </div>
+            {profile.champions.slice(0, 4).map((champ) => {
+              const champName = champ.trim();
+              return (
+                <div
+                  key={champName}
+                  className="flex items-center gap-1 px-2 py-0.5 bg-background dark:bg-[#1e1f22] border border-border/90 dark:border-[#3f4147] rounded-lg text-xs font-bold text-foreground-soft dark:text-stone-200 shadow-2xs"
+                >
+                  <img
+                    src={getChampIcon(champName)}
+                    alt={champName}
+                    className="w-4 h-4 rounded-md object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                  <span>{CHAMPION_JA[champName]?.ja || champName}</span>
+                </div>
+              );
+            })}
+            {profile.champions.length > 4 && (
+              <span className="text-[10px] text-muted-strong font-bold bg-surface-subtle px-1.5 py-0.5 rounded-md border border-border">
+                +{profile.champions.length - 4}
+              </span>
+            )}
           </div>
         )}
 
@@ -408,125 +412,50 @@ export function MentorshipCard({
           </div>
         )}
 
-        {/* 自己紹介文 */}
+        {/* 自己紹介文 (シンプル化: 2行折りたたみ) */}
         {profile.bio && (
-          <div className="p-3.5 bg-background/90 dark:bg-[#1e1f22] rounded-2xl border border-border dark:border-[#3f4147] text-xs text-foreground-soft dark:text-stone-100 leading-relaxed whitespace-pre-wrap font-medium">
-            {profile.bio}
+          <div className="p-3 bg-background/90 dark:bg-[#1e1f22] rounded-2xl border border-border dark:border-[#3f4147] text-xs text-foreground-soft dark:text-stone-100 leading-relaxed font-medium">
+            <p className={`whitespace-pre-wrap ${!isBioExpanded ? 'line-clamp-2' : ''}`}>
+              {profile.bio}
+            </p>
+            {profile.bio.length > 80 && (
+              <button
+                type="button"
+                onClick={() => setIsBioExpanded(!isBioExpanded)}
+                className="mt-1 text-[11px] text-primary-700 dark:text-primary-400 font-bold hover:underline cursor-pointer flex items-center gap-0.5"
+              >
+                <span>{isBioExpanded ? '閉じる ▲' : '続きを読む ▼'}</span>
+              </button>
+            )}
           </div>
         )}
 
         {/* 活動時間帯 */}
         {profile.active_hours && (
-          <div className="flex items-center gap-1.5 text-xs text-muted bg-surface-subtle/70 dark:bg-[#1e1f22] p-2 rounded-xl border border-border/60 dark:border-[#3f4147]">
-            <Clock size={13} className="text-primary-600 dark:text-primary-400" />
+          <div className="flex items-center gap-1.5 text-xs text-muted">
+            <Clock size={12} className="text-primary-600 dark:text-primary-400" />
             <span className="font-bold text-muted-strong">活動時間:</span>
-            <span className="font-bold text-foreground-soft dark:text-stone-100">{profile.active_hours}</span>
+            <span className="font-semibold text-foreground-soft dark:text-stone-100">{profile.active_hours}</span>
           </div>
         )}
-
-        {/* 💬 案4: ワンポイント相談・コメント開閉ボタン */}
-        <div className="pt-1">
-          <button
-            onClick={handleToggleComments}
-            className="w-full py-1.5 px-3 rounded-xl bg-surface-subtle dark:bg-[#1e1f22] hover:bg-surface-hover/80 dark:hover:bg-[#35373c] text-foreground-subtle dark:text-stone-200 text-xs font-bold transition flex items-center justify-between cursor-pointer border border-border/80 dark:border-[#3f4147]"
-          >
-            <span className="flex items-center gap-1.5">
-              <MessageSquare size={13} className="text-secondary-600 dark:text-secondary-400" />
-              <span>💬 ワンポイント相談 / 応援コメント</span>
-            </span>
-            <span className="text-[11px] font-semibold bg-surface dark:bg-[#2b2d31] text-foreground-subtle px-2 py-0.5 rounded-full border border-border dark:border-[#3f4147]">
-              {showComments ? '閉じる ▲' : '見る・書く ▼'}
-            </span>
-          </button>
-
-          {/* コメントアコーディオン内側 */}
-          {showComments && (
-            <div className="mt-2.5 p-3 rounded-2xl bg-background/90 dark:bg-[#1e1f22] border border-border dark:border-[#3f4147] space-y-3 animate-in fade-in duration-200">
-              {isLoadingComments ? (
-                <div className="text-center py-2 text-xs text-muted-strong font-medium">
-                  コメントを読み込み中...
-                </div>
-              ) : comments.length === 0 ? (
-                <div className="text-center py-2 text-xs text-muted-strong font-medium">
-                  まだコメントはありません。気軽に「このチャンプ教えられます！」「1試合だけやりませんか？」と書き込んでみましょう！
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                  {comments.map((comment) => {
-                    const isMyComment = currentUserId === comment.author_id;
-                    return (
-                      <div
-                        key={comment.id}
-                        className="p-2.5 rounded-xl bg-surface border border-border/80 text-xs space-y-1 shadow-2xs"
-                      >
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="font-bold text-foreground flex items-center gap-1">
-                            <span>💬</span>
-                            <span>{comment.author_name}</span>
-                            {isMyComment && (
-                              <span className="text-[9px] bg-surface-subtle text-muted px-1 rounded font-normal">
-                                あなた
-                              </span>
-                            )}
-                          </span>
-                          <div className="flex items-center gap-1.5 text-faint">
-                            <span>
-                              {new Date(comment.created_at).toLocaleDateString('ja-JP', {
-                                month: 'numeric',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </span>
-                            {(isMyComment || isAdmin) && (
-                              <button
-                                onClick={() => handleDeleteComment(comment.id)}
-                                className="text-danger-500 hover:text-danger-700 p-0.5 cursor-pointer"
-                                title="コメントを削除"
-                              >
-                                <Trash2 size={11} />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        <p className="text-foreground-subtle leading-relaxed whitespace-pre-wrap">
-                          {comment.content}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* コメント投稿フォーム */}
-              <form onSubmit={handlePostComment} className="flex gap-1.5 pt-1">
-                <input
-                  type="text"
-                  value={commentInput}
-                  onChange={(e) => setCommentInput(e.target.value)}
-                  placeholder="質問・アドバイス・一言応援を書く..."
-                  maxLength={300}
-                  className="flex-1 px-3 py-1.5 text-xs rounded-xl border border-border bg-surface focus:outline-none focus:ring-2 focus:ring-secondary-500 text-foreground-soft placeholder-stone-400"
-                />
-                <button
-                  type="submit"
-                  disabled={!commentInput.trim() || isSubmittingComment}
-                  className="px-3 py-1.5 bg-secondary-600 hover:bg-secondary-500 disabled:bg-stone-300 text-white rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:cursor-not-allowed shadow-2xs shrink-0"
-                >
-                  <Send size={12} />
-                  <span>送信</span>
-                </button>
-              </form>
-            </div>
-          )}
-        </div>
       </div>
 
-      {/* 下部アクションボタン */}
-      <div className="p-3.5 bg-background border-t border-border/80 flex items-center justify-between gap-2">
-        <div className="text-[11px] text-muted-strong font-medium">
-          {new Date(profile.updated_at || profile.created_at).toLocaleDateString('ja-JP')} 更新
-        </div>
+      {/* 下部アクションバー (シンプル化: コメントボタン ＋ オファーボタン) */}
+      <div className="p-3 bg-background border-t border-border/80 flex items-center justify-between gap-2">
+        {/* 💬 コメント開閉ボタン (モーダル起動) */}
+        <button
+          type="button"
+          onClick={handleToggleComments}
+          className="px-2.5 py-1.5 rounded-xl bg-surface-subtle hover:bg-surface-hover text-foreground-subtle dark:text-stone-300 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-border"
+        >
+          <MessageSquare size={13} className="text-secondary-600 dark:text-secondary-400" />
+          <span>コメント</span>
+          {commentsCount > 0 && (
+            <span className="bg-secondary-100 dark:bg-secondary-950 text-secondary-800 dark:text-secondary-300 text-[10px] px-1.5 py-0.2 rounded-full font-black">
+              {commentsCount}
+            </span>
+          )}
+        </button>
 
         {isMine ? (
           <span className="text-xs text-muted-strong font-bold">（あなたのカード）</span>
@@ -555,6 +484,116 @@ export function MentorshipCard({
           </button>
         )}
       </div>
+
+      {/* 💬 コメントモーダル (シンプル化: カード本体から独立) */}
+      {showComments && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
+          onClick={() => setShowComments(false)}
+        >
+          <div
+            className="bg-surface dark:bg-[#2b2d31] border border-border dark:border-[#3f4147] rounded-3xl p-5 max-w-lg w-full shadow-2xl space-y-4 max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* モーダルヘッダー */}
+            <div className="flex items-center justify-between border-b border-border/80 dark:border-[#3f4147] pb-3 shrink-0">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-4 h-4 text-secondary-600 dark:text-secondary-400" />
+                <h3 className="font-black text-sm text-foreground dark:text-white">
+                  {profile.player_name} さんへのワンポイント相談・コメント
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowComments(false)}
+                className="text-faint hover:text-foreground dark:hover:text-white p-1 rounded-lg hover:bg-surface-subtle transition cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* コメント一覧 */}
+            <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 min-h-[120px]">
+              {isLoadingComments ? (
+                <div className="text-center py-8 text-xs text-muted-strong font-medium">
+                  コメントを読み込み中...
+                </div>
+              ) : comments.length === 0 ? (
+                <div className="text-center py-8 text-xs text-muted-strong font-medium">
+                  まだコメントはありません。気軽に「このチャンプ教えられます！」「1試合だけやりませんか？」と書き込んでみましょう！
+                </div>
+              ) : (
+                comments.map((comment) => {
+                  const isMyComment = currentUserId === comment.author_id;
+                  return (
+                    <div
+                      key={comment.id}
+                      className="p-3 rounded-2xl bg-surface-subtle dark:bg-[#1e1f22] border border-border/80 dark:border-[#3f4147] text-xs space-y-1 shadow-2xs"
+                    >
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="font-bold text-foreground dark:text-white flex items-center gap-1">
+                          <span>💬</span>
+                          <span>{comment.author_name}</span>
+                          {isMyComment && (
+                            <span className="text-[9px] bg-primary-100 dark:bg-primary-950 text-primary-800 dark:text-primary-300 px-1.5 py-0.2 rounded font-normal">
+                              あなた
+                            </span>
+                          )}
+                        </span>
+                        <div className="flex items-center gap-2 text-faint">
+                          <span>
+                            {new Date(comment.created_at).toLocaleDateString('ja-JP', {
+                              month: 'numeric',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                          {(isMyComment || isAdmin) && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteComment(comment.id)}
+                              className="text-danger-500 hover:text-danger-700 p-0.5 cursor-pointer"
+                              title="コメントを削除"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-foreground-soft dark:text-stone-200 leading-relaxed whitespace-pre-wrap font-medium">
+                        {comment.content}
+                      </p>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* コメント投稿フォーム */}
+            <form onSubmit={handlePostComment} className="flex gap-2 pt-2 border-t border-border/80 dark:border-[#3f4147] shrink-0">
+              <input
+                type="text"
+                value={commentInput}
+                onChange={(e) => setCommentInput(e.target.value)}
+                placeholder="質問・アドバイス・一言応援を書く..."
+                maxLength={300}
+                className="flex-1 px-3.5 py-2 text-xs rounded-xl border border-border dark:border-[#3f4147] bg-surface dark:bg-[#1e1f22] focus:outline-none focus:ring-2 focus:ring-secondary-500 text-foreground dark:text-white placeholder-stone-400"
+              />
+              <button
+                type="submit"
+                disabled={!commentInput.trim() || isSubmittingComment}
+                className="px-4 py-2 bg-secondary-600 hover:bg-secondary-500 disabled:bg-stone-300 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:cursor-not-allowed shadow-2xs shrink-0"
+              >
+                <Send size={13} />
+                <span>送信</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

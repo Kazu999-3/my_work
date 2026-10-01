@@ -654,7 +654,7 @@ export async function POST(request: Request) {
           ...(newsArticle ? [
             {
               name: `📰 【KTMスポーツ号外】${newsArticle.headline}`,
-              value: `**${newsArticle.subheadline}**\n${newsArticle.lead}\n\n👑 **本日のMVP**: **${newsArticle.mvp?.name}** (${newsArticle.mvp?.role} / KDA: ${newsArticle.mvp?.kda})\n💬 *「${newsArticle.interviewQuote}」*`,
+              value: `**${newsArticle.subheadline}**\n${newsArticle.lead}\n\n👑 **本日のMVP**: **${newsArticle.mvp?.name}** (${newsArticle.mvp?.role} / KDA: ${newsArticle.mvp?.kda})\n💬 *（※AI演出コメント）「${newsArticle.interviewQuote}」*`,
               inline: false
             }
           ] : []),

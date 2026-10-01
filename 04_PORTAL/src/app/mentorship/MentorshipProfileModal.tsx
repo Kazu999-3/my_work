@@ -5,6 +5,7 @@ import { MentorshipProfile } from '../api/mentorship/profiles/route';
 import { ALL_CHAMPIONS, CHAMPION_JA } from '../../components/ChampSelect';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { getKtmRank, RANKS as MMR_RANKS } from '../../lib/mmr';
+import { getChampIcon } from '../../lib/ddragonClient';
 import { MENTORSHIP_DURATIONS } from '../../lib/mentorshipConstants';
 import { Search, Plus, X, Sparkles, Volume2, Video, Swords, BookOpen, Clock, Shield, Check } from 'lucide-react';
 
@@ -454,7 +455,7 @@ export function MentorshipProfileModal({
                       {selectedChampions.map((c) => (
                         <div key={c} className="flex items-center gap-1 px-2 py-0.5 bg-background rounded-lg border border-border text-xs font-bold text-foreground-soft">
                           <img
-                            src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/${c}.png`}
+                            src={getChampIcon(c)}
                             alt={c}
                             className="w-4 h-4 rounded-full"
                           />
@@ -752,7 +753,7 @@ export function MentorshipProfileModal({
                         className="flex items-center gap-1.5 pl-1.5 pr-2 py-1 bg-surface border border-border rounded-xl text-xs font-bold text-foreground shadow-2xs"
                       >
                         <img
-                          src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/${champId}.png`}
+                          src={getChampIcon(champId)}
                           alt={champId}
                           className="w-5 h-5 rounded-lg object-cover"
                           onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
@@ -815,7 +816,7 @@ export function MentorshipProfileModal({
                             >
                               <div className="flex items-center gap-2.5">
                                 <img
-                                  src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/${champId}.png`}
+                                  src={getChampIcon(champId)}
                                   alt={champId}
                                   className="w-6 h-6 rounded-lg object-cover"
                                   onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
