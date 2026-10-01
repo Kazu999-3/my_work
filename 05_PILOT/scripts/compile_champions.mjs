@@ -6,10 +6,13 @@ import { createClient } from '@supabase/supabase-js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const OUTPUT_DIR = path.resolve(__dirname, '../src/data');
+const LOCAL_MASTER_DICT_PATH = path.join(OUTPUT_DIR, 'ddragon_master_dict.json');
 const INTEL_DIR = path.resolve(__dirname, '../../01_INTEL');
 const TACTICS_DIR = path.join(INTEL_DIR, 'tactics');
-const MASTER_DICT_PATH = path.join(INTEL_DIR, '_LOL/ddragon_master_dict.json');
-const OUTPUT_DIR = path.resolve(__dirname, '../src/data');
+const MASTER_DICT_PATH = fs.existsSync(LOCAL_MASTER_DICT_PATH)
+  ? LOCAL_MASTER_DICT_PATH
+  : path.join(INTEL_DIR, '_LOL/ddragon_master_dict.json');
 const SUMMARY_FILE = path.join(OUTPUT_DIR, 'champions_summary.json');
 const DETAILS_FILE = path.join(OUTPUT_DIR, 'champions_detail_map.json');
 const ENV_FILE = path.resolve(__dirname, '../.env.local');
@@ -126,6 +129,10 @@ async function main() {
   console.log('⚡ [Compile] 全173体DDragon公式辞書 ＋ Supabase(facts/sentinel/spikes/timing) ＋ バイブル全文を完全統合中...');
 
   if (!fs.existsSync(MASTER_DICT_PATH)) {
+    if (fs.existsSync(SUMMARY_FILE) && fs.existsSync(DETAILS_FILE)) {
+      console.log('ℹ️ [Vercel Build] マスター辞書がありませんが、事前生成済みデータが存在するためスキップします:', SUMMARY_FILE);
+      return;
+    }
     console.error('❌ マスター辞書が見つかりません:', MASTER_DICT_PATH);
     process.exit(1);
   }
