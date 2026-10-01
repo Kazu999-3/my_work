@@ -1,3 +1,13 @@
+---
+title: "ジャングルパス分析 v1"
+status: verified
+source_type: empirical
+published_at: 2026-04-19
+captured_at: 2026-04-19
+verified_at: 2026-10-01
+tags: [LoL, JG, Pathing]
+---
+
 ﻿#  Jungle Pathing Protocol v1.0
 
 ## 1. Optimal Routes

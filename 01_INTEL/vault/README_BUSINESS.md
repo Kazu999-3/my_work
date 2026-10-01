@@ -1,3 +1,13 @@
+---
+title: "ビジネス・アフィリエイト事業設計書"
+status: verified
+source_type: official
+published_at: 2026-04-19
+captured_at: 2026-04-19
+verified_at: 2026-10-01
+tags: [Business, Affiliate, Strategy]
+---
+
 # Antigravity OS: ビジネス運営・資産管理マニュアル
 
 ## 1. 事業の定義

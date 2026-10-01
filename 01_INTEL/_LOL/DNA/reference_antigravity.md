@@ -1,3 +1,13 @@
+---
+title: "Antigravity エージェント設計リファレンス"
+status: verified
+source_type: official
+published_at: 2026-04-19
+captured_at: 2026-04-19
+verified_at: 2026-10-01
+tags: [DNA, Antigravity, Architecture]
+---
+
 # 知識ベース: Antigravity 超・実践活用レシピ
 
 ## 概要

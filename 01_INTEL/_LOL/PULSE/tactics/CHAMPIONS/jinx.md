@@ -1,3 +1,13 @@
+---
+title: "ジンクス 戦術プロファイル"
+status: verified
+source_type: empirical
+published_at: 2026-04-19
+captured_at: 2026-04-19
+verified_at: 2026-10-01
+tags: [LoL, ADC, Jinx]
+---
+
 ﻿#  チャンピオン解析: Jinx (ジンクス)
 
 ## 概要

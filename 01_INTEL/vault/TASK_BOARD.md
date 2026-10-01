@@ -1,3 +1,13 @@
+---
+title: "タスクボード・作業アーカイブ"
+status: verified
+source_type: official
+published_at: 2026-04-19
+captured_at: 2026-04-19
+verified_at: 2026-10-01
+tags: [Task, Archive]
+---
+
 # 📊 Antigravity 共有タスクボード
 
 プロジェクトの全タスク（機能単位）を一括管理します。

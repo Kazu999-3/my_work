@@ -1,3 +1,13 @@
+---
+title: "プロジェクト運用ハンドオーバー文書"
+status: verified
+source_type: official
+published_at: 2026-04-19
+captured_at: 2026-04-19
+verified_at: 2026-10-01
+tags: [Operations, Handover, SSoT]
+---
+
 # 🛡️ Sovereign OS: 引継ぎログ (Handover Log)
 
 このファイルは、作業が中断された際やセッション終了時に、次回の作業をスムーズに再開するための「現在地」を記録します。

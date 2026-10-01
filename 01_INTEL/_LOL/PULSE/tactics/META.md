@@ -1,3 +1,13 @@
+---
+title: "LoL メタ分析アーカイブ"
+status: verified
+source_type: empirical
+published_at: 2026-04-19
+captured_at: 2026-04-19
+verified_at: 2026-10-01
+tags: [LoL, PULSE, Meta]
+---
+
 ﻿#  最新メタ解析レポート: Patch 14.x (Current)
 
 ## 概要

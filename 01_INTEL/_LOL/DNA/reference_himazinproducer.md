@@ -1,3 +1,13 @@
+---
+title: "ひまじんプロデューサー戦術思想リファレンス"
+status: verified
+source_type: official
+published_at: 2026-04-19
+captured_at: 2026-04-19
+verified_at: 2026-10-01
+tags: [DNA, Philosophy, Mentality]
+---
+
 # 知識ベース: テンペ流・超実用マネタイズ＆note運用術
 
 ## 概要

@@ -1,3 +1,13 @@
+---
+title: "チャンピオン設計テンプレート v1"
+status: verified
+source_type: official
+published_at: 2026-04-19
+captured_at: 2026-04-19
+verified_at: 2026-10-01
+tags: [LoL, Template]
+---
+
 ﻿#  Champion Tactical Protocol v1.0 (Template)
 
 ## 1. Core Profile

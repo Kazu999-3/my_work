@@ -1,3 +1,13 @@
+---
+title: "[旧] Lolalytics初期マルチ分析 (パッチ26.07)"
+status: deprecated
+source_type: official
+published_at: 2026-04-19
+captured_at: 2026-04-19
+verified_at: 2026-10-01
+tags: [LoL, Lolalytics, Patch26.07]
+---
+
 # Lolalytics Analysis: Jinx (Patch 26.07)
 - **取得日時**: 2026-04-06T19:40:00
 - **特徴**: S-tier Late Game Hypercarry

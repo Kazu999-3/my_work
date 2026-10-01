@@ -149,7 +149,7 @@ def parse_links_and_concepts(file_path):
 
     return links, frontmatter, content
 
-def run_linter(fix=False, report=False):
+def run_linter(fix=False, report=False, silent=False):
     md_files = get_all_md_files()
     filename_to_paths = {}
     for f in md_files:
@@ -199,6 +199,9 @@ def run_linter(fix=False, report=False):
                     referenced_paths.add(target.resolve())
             elif link["type"] == "wikilink":
                 tname = link["target_name"].lower()
+                # タグ表記（[[project-*]], [[known-*]] 等）はリンク切れ判定から除外
+                if any(tname.startswith(p) for p in ["project-", "known-", "rule-", "tag-", "ref-"]):
+                    continue
                 if tname in filename_to_paths:
                     for matched_file in filename_to_paths[tname]:
                         referenced_paths.add(matched_file.resolve())
@@ -244,35 +247,36 @@ def run_linter(fix=False, report=False):
                 knowledge_gaps.append((concept, count))
 
     # コンソール出力
-    print("\n" + "="*65)
-    print(" 🧠 Sovereign OS ナレッジLinter（LLM Wiki健全性点検）")
-    print("="*65)
-    print(f"📊 走査対象 Markdown ファイル数: {len(md_files)} 件\n")
+    if not silent:
+        print("\n" + "="*65)
+        print(" 🧠 Sovereign OS ナレッジLinter（LLM Wiki健全性点検）")
+        print("="*65)
+        print(f"📊 走査対象 Markdown ファイル数: {len(md_files)} 件\n")
 
-    print(f"🔗 【リンク切れ】: {len(broken_links)} 件")
-    for b in broken_links[:5]:
-        print(f"   - {b['source']}: [{b['text']}] -> {b['target']}")
-    if len(broken_links) > 5:
-        print(f"   ...他 {len(broken_links) - 5} 件")
+        print(f"🔗 【リンク切れ】: {len(broken_links)} 件")
+        for b in broken_links[:5]:
+            print(f"   - {b['source']}: [{b['text']}] -> {b['target']}")
+        if len(broken_links) > 5:
+            print(f"   ...他 {len(broken_links) - 5} 件")
 
-    print(f"\n🏝️  【孤立（未リンク）ノート】: {len(orphans)} 件")
-    for o in orphans[:5]:
-        print(f"   - {o.relative_to(REPO_ROOT)}")
-    if len(orphans) > 5:
-        print(f"   ...他 {len(orphans) - 5} 件")
+        print(f"\n🏝️  【孤立（未リンク）ノート】: {len(orphans)} 件")
+        for o in orphans[:5]:
+            print(f"   - {o.relative_to(REPO_ROOT)}")
+        if len(orphans) > 5:
+            print(f"   ...他 {len(orphans) - 5} 件")
 
-    print(f"\n📑 【Frontmatter規約点検】:")
-    print(f"   - 未付与 (01_INTEL内): {len(missing_frontmatter)} 件")
-    print(f"   - 必須フィールド欠落: {len(invalid_frontmatter)} 件")
+        print(f"\n📑 【Frontmatter規約点検】:")
+        print(f"   - 未付与 (01_INTEL内): {len(missing_frontmatter)} 件")
+        print(f"   - 必須フィールド欠落: {len(invalid_frontmatter)} 件")
 
-    print(f"\n💡 【知識ギャップ（リサーチバックログ）】:")
-    if knowledge_gaps:
-        for concept, count in sorted(knowledge_gaps, key=lambda x: x[1], reverse=True):
-            print(f"   - 「{concept}」: {count} 件のノートで言及（独立した解説ノートが未配備）")
-    else:
-        print("   - 検出されませんでした（主要概念はすべてノート化済み）")
+        print(f"\n💡 【知識ギャップ（リサーチバックログ）】:")
+        if knowledge_gaps:
+            for concept, count in sorted(knowledge_gaps, key=lambda x: x[1], reverse=True):
+                print(f"   - 「{concept}」: {count} 件のノートで言及（独立した解説ノートが未配備）")
+        else:
+            print("   - 検出されませんでした（主要概念はすべてノート化済み）")
 
-    print("\n" + "="*65)
+        print("\n" + "="*65)
 
     # 自動修復（--fix）
     if fix and orphans:

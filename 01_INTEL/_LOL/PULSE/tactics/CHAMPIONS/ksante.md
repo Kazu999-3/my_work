@@ -1,3 +1,13 @@
+---
+title: "カ・サンテ 戦術プロファイル"
+status: verified
+source_type: empirical
+published_at: 2026-04-19
+captured_at: 2026-04-19
+verified_at: 2026-10-01
+tags: [LoL, TOP, KSante]
+---
+
 ﻿#  チャンピオン解析: K'Sante (クサンテ)
 
 ## 概要

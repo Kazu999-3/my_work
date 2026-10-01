@@ -4,6 +4,7 @@ status: verified # verified（実戦確定）| experimenting（検証中）| dep
 source_type: official # official（公式SSoT）| empirical（実戦実測）| ai_derived（AI派生）
 published_at: 2026-XX-XX
 captured_at: 2026-XX-XX
+verified_at: 2026-XX-XX
 tags: ['LoL', 'Tactics', '[Role]', '[ChampName]']
 ---
 

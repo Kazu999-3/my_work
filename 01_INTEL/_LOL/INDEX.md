@@ -4,6 +4,7 @@ status: verified
 source_type: official
 published_at: 2026-09-18
 captured_at: 2026-09-18
+verified_at: 2026-10-01
 tags: [LoL, Tactics, Pulse, DNA]
 ---
 

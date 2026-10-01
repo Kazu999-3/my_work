@@ -1,3 +1,13 @@
+---
+title: "[旧] リリア戦術リサーチ (パッチ26.08)"
+status: deprecated
+source_type: empirical
+published_at: 2026-04-19
+captured_at: 2026-04-19
+verified_at: 2026-10-01
+tags: [LoL, Lillia, Patch26.08]
+---
+
 # 📊 軍師リサーチ報告書: Lillia JG パッチ26.8
 
 ## 対象情報

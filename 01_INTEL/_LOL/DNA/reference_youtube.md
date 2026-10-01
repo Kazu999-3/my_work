@@ -1,3 +1,13 @@
+---
+title: "YouTube 攻略動画リファレンスアーカイブ"
+status: verified
+source_type: official
+published_at: 2026-04-19
+captured_at: 2026-04-19
+verified_at: 2026-10-01
+tags: [DNA, YouTube, Reference]
+---
+
 # 知識ベース: YouTube運用・完全攻略ガイド
 
 ## 概要

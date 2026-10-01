@@ -1,3 +1,13 @@
+---
+title: "汎用戦術 2.0 (マクロ・ウェーブ判断)"
+status: verified
+source_type: empirical
+published_at: 2026-04-19
+captured_at: 2026-04-19
+verified_at: 2026-10-01
+tags: [LoL, Tactics, Macro]
+---
+
 ﻿#  Sovereign OS: General Tactics Protocol v2.0
 
 ## 1. 統治思想 (Core Philosophy)

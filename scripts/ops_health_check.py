@@ -124,20 +124,20 @@ def check_daily_log_freshness():
     return {"status": "PASS", "msg": f"最新のデイリーログ日付: {latest} ({age}日前 / 全{len(dates)}エントリ)"}
 
 def check_knowledge_links():
-    """ナレッジ全域のMarkdownリンク整合性を確認"""
-    script_path = REPO_ROOT / "scripts" / "audit_knowledge_links.py"
+    """ナレッジ全域のMarkdownリンク整合性 ＆ 孤立状態を確認 (Karpathy LLM Wiki準拠)"""
+    script_path = REPO_ROOT / "scripts" / "knowledge_linter.py"
     if not script_path.exists():
-        return {"status": "SKIP", "msg": "audit_knowledge_links.py が見つかりません"}
+        return {"status": "SKIP", "msg": "knowledge_linter.py が見つかりません"}
     try:
         sys.path.insert(0, str(REPO_ROOT / "scripts"))
-        from audit_knowledge_links import audit_links
-        broken = audit_links(include_archives=False, silent=True)
+        from knowledge_linter import run_linter
+        broken = run_linter(fix=False, report=False, silent=True)
         if broken == 0:
-            return {"status": "PASS", "msg": "Markdownリンク切れ: 0件 (完全健全)"}
+            return {"status": "PASS", "msg": "ナレッジリンク整合性: 完全健全 (リンク切れ0件)"}
         else:
             return {"status": "WARN", "msg": f"リンク切れが {broken} 件検出されました (要修復)"}
     except Exception as e:
-        return {"status": "WARN", "msg": f"リンク監査スキップ ({e})"}
+        return {"status": "WARN", "msg": f"ナレッジ監査スキップ ({e})"}
 
 def check_riot_patch_status():
     """Riot DataDragon 最新パッチ差分の確認"""

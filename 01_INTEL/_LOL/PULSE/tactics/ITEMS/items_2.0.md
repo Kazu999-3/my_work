@@ -1,3 +1,13 @@
+---
+title: "アイテム環境分析 2.0"
+status: verified
+source_type: empirical
+published_at: 2026-04-19
+captured_at: 2026-04-19
+verified_at: 2026-10-01
+tags: [LoL, Items]
+---
+
 ﻿#  Itemization Logic v2.0
 
 ## Core Rules

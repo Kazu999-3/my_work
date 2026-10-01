@@ -140,3 +140,5 @@ Antigravity（AIアシスタント）の行動規範、スキル、ワークフ�
 - **[プロモーション ＆ Xスレッド総合索引 (PROMO INDEX)](file:///d:/my_work/02_FACTORY/PROMO/INDEX.md)**
 - **[記事・コンテンツ下書き総合索引 (DRAFTS INDEX)](file:///d:/my_work/02_FACTORY/01_DRAFTS/INDEX.md)**
 
+
+- [テスト実戦メモ：ダリウス対面でのLv1ブッシュインベード対策](file:///D:/my_work/01_INTEL/_LOL/tactics/note_20261001_211000_darius_invade_test.md)

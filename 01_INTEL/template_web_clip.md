@@ -4,6 +4,7 @@ status: experimenting # verified（実戦確認済み）| experimenting（検証
 source_type: official # official（公式）| empirical（実戦実測）| community（外部コミュニティ/解説）
 published_at: 2026-XX-XX # 一次情報の公開日（不明なら unknown）
 captured_at: 2026-XX-XX  # 保存・取込日時
+verified_at: unverified  # 内容確認日・実測検証日（未確認なら unverified）
 author: "発信者名 / 組織名"
 source_url: "https://example.com/article"
 tags: [WebClip, Intel]
