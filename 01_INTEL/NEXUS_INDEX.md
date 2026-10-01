@@ -23,6 +23,16 @@
 
 ---
 
+
+
+## 🧠 戦術概念 ＆ 共通哲学ライブラリ (Concepts)
+全バイブルを横断する中核概念の定義と実戦原則集（Karpathy LLM Wiki準拠）。
+
+- **[パワースパイク戦術論（時間帯・レベル・完成アイテムによる主導権掌握）](file:///D:/my_work/01_INTEL/concepts/power_spike.md)**
+- **[タワーダイブ攻略論（ウェーブクラッシュ・ヘルス差・タワーアグロ管理）](file:///D:/my_work/01_INTEL/concepts/tower_dive.md)**
+- **[インベード戦術論（Lv1奇襲・敵ジャングル視界奪還・バフ強奪）](file:///D:/my_work/01_INTEL/concepts/invade.md)**
+- **[没理由・罠データベース哲学（なぜその案を捨てたかの記録）](file:///D:/my_work/01_INTEL/concepts/rejected_options_philosophy.md)**
+- **[イミュータブル（原本不変）原則とハルシネーション防波堤](file:///D:/my_work/01_INTEL/concepts/immutable_principles.md)**
 ## 📚 1. LoL 戦略 ＆ 攻略バイブル (Intel Domain)
 動画解析やプロ追跡から得られた最新の LoL メタ・攻略知識です。
 

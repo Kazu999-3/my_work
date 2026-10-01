@@ -221,8 +221,21 @@ def run_linter(fix=False, report=False):
     knowledge_gaps = []
     for concept, count in concept_mentions.items():
         if count >= 3:
-            # ファイル名に概念が含まれているかチェック
-            exists = any(concept.lower() in f.stem.lower() for f in md_files)
+            # ファイル名または概念ノートのタイトルに概念が含まれているかチェック
+            exists = False
+            for f in md_files:
+                if concept.lower() in f.stem.lower():
+                    exists = True
+                    break
+                if "concepts" in str(f) or "knowledge_second_brain_codex" in f.name:
+                    try:
+                        with open(f, "r", encoding="utf-8", errors="ignore") as cf:
+                            c_head = cf.read(500)
+                            if concept in c_head:
+                                exists = True
+                                break
+                    except Exception:
+                        pass
             if not exists:
                 knowledge_gaps.append((concept, count))
 

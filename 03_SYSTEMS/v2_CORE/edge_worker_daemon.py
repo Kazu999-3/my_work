@@ -790,6 +790,54 @@ class EdgeWorkerDaemon:
                 logger.error(f"❌ [BulkUpdateResumeScheduler] エラー: {e}")
             time.sleep(1800)  # 30分おき
 
+    def inbox_scheduler_loop(self):
+        """
+        01_INTEL/00_INBOX/ の未処理メモ・Webクリップを5分おきに自動検知し、
+        TOMO式3層（Core Concept / Structured Points / Actionable Steps）で構造化・原本退避する。
+        """
+        import sys
+        scripts_dir = str(Path("d:/my_work/scripts").resolve())
+        if scripts_dir not in sys.path:
+            sys.path.append(scripts_dir)
+        try:
+            from inbox_worker import process_inbox
+        except ImportError:
+            process_inbox = None
+
+        logger.info("📥 [InboxScheduler] 帝国インボックス自動仕分けスレッドを開始しました (5分間隔)。")
+        while getattr(self, "_heartbeat_active", True):
+            try:
+                time.sleep(300)  # 5分おき
+                if process_inbox:
+                    process_inbox()
+            except Exception as e:
+                logger.error(f"❌ [InboxScheduler] エラー: {e}")
+
+    def knowledge_lint_scheduler_loop(self):
+        """
+        毎日1回、Markdown知識ベース全体のリンク切れ・孤立ノート・知識ギャップを自律点検する。
+        """
+        import sys
+        scripts_dir = str(Path("d:/my_work/scripts").resolve())
+        if scripts_dir not in sys.path:
+            sys.path.append(scripts_dir)
+        try:
+            from knowledge_linter import run_linter
+        except ImportError:
+            run_linter = None
+
+        logger.info("🧠 [KnowledgeLintScheduler] ナレッジLinter自律点検スレッドを開始しました (24時間周期)。")
+        # 起動直後は少し待機（10分後から初回点検）
+        time.sleep(600)
+        while getattr(self, "_heartbeat_active", True):
+            try:
+                if run_linter:
+                    run_linter(fix=False, report=True)
+                time.sleep(86400)  # 24時間おき
+            except Exception as e:
+                logger.error(f"❌ [KnowledgeLintScheduler] エラー: {e}")
+                time.sleep(3600)
+
     def heartbeat_loop(self):
         """別スレッドで5秒おきにハートビートを送信し続ける"""
         logger.info("📡 バックグラウンド・ハートビート監視スレッドを開始しました。")
@@ -830,6 +878,14 @@ class EdgeWorkerDaemon:
         # バックグラウンドで辞典一括更新のsuspended自動再開スレッドを起動
         self.bulk_update_resume_scheduler_thread = threading.Thread(target=self.bulk_update_resume_scheduler_loop, daemon=True)
         self.bulk_update_resume_scheduler_thread.start()
+
+        # バックグラウンドでInbox自動仕分けスレッドを起動 (ハシ x TOMOフレームワーク)
+        self.inbox_scheduler_thread = threading.Thread(target=self.inbox_scheduler_loop, daemon=True)
+        self.inbox_scheduler_thread.start()
+
+        # バックグラウンドでナレッジLint定期点検スレッドを起動 (Karpathy LLM Wiki準拠)
+        self.knowledge_lint_scheduler_thread = threading.Thread(target=self.knowledge_lint_scheduler_loop, daemon=True)
+        self.knowledge_lint_scheduler_thread.start()
 
         # スリープ防止の開始
         self.prevent_sleep()
