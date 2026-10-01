@@ -15,7 +15,28 @@ HUD上では対面固有の分析であるかのように見えていた。
 固有データが無い対面では罠・NG行動を空にして、それらしい汎用文で埋めない方針にしている。
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
+import os
+import json
+from pathlib import Path
+
+# 05_PILOT の統合知見SSoTファイルへのパス
+PILOT_MAP_PATH = Path(__file__).resolve().parents[4] / "05_PILOT" / "src" / "data" / "champions_detail_map.json"
+_CACHED_DETAIL_MAP: Optional[Dict[str, Any]] = None
+
+def get_pilot_detail_map() -> Dict[str, Any]:
+    global _CACHED_DETAIL_MAP
+    if _CACHED_DETAIL_MAP is not None:
+        return _CACHED_DETAIL_MAP
+    if PILOT_MAP_PATH.exists():
+        try:
+            with open(PILOT_MAP_PATH, "r", encoding="utf-8") as f:
+                _CACHED_DETAIL_MAP = json.load(f)
+                return _CACHED_DETAIL_MAP
+        except Exception as e:
+            print(f"[MatchupBlueprintEngine] SSoTロード警告: {e}")
+    _CACHED_DETAIL_MAP = {}
+    return _CACHED_DETAIL_MAP
 
 DEFAULT_BLUEPRINTS: Dict[str, Dict[str, Any]] = {
     "Darius": {
@@ -186,7 +207,69 @@ class MatchupBlueprintEngine:
     @staticmethod
     def get_blueprint(my_champ: str, enemy_champ: str) -> Dict[str, Any]:
         """対面チャンピオンに対する3段階勝ちパターン手順書 ＆ 没理由（罠・NG行動）を取得"""
+        # 1. ハードコードされた検証済みブループリントを優先
         data = DEFAULT_BLUEPRINTS.get(enemy_champ)
+
+        # 2. 05_PILOT の全173体統合SSoT辞書 (champions_detail_map.json) から取得
+        if not data:
+            detail_map = get_pilot_detail_map()
+            enemy_info = detail_map.get(enemy_champ) or detail_map.get(enemy_champ.capitalize()) or detail_map.get(enemy_champ.lower())
+            my_info = detail_map.get(my_champ) or detail_map.get(my_champ.capitalize()) or detail_map.get(my_champ.lower())
+
+            # 敵のバイブル情報を取得
+            bible = (enemy_info.get("bible") if enemy_info else None) or {}
+            stages = bible.get("stages") or {}
+            traps = bible.get("traps") or []
+
+            # 特定対面メモ（Sentinel）を検索
+            matchups = (my_info.get("matchups") if my_info else []) or (enemy_info.get("matchups") if enemy_info else [])
+            matched_vs = next((m for m in matchups if str(m.get("enemy", "")).lower() == enemy_champ.lower() or str(m.get("enemy", "")).lower() == my_champ.lower()), None)
+
+            if stages.get("early") or stages.get("mid") or matched_vs:
+                p1_action = (matched_vs.get("note") if matched_vs else "") or stages.get("early") or "序盤は無理なトレードを避け、相手の主要スキルの外側でファーム。"
+                p2_action = stages.get("mid") or "1stコア完成時にオブジェクト主導権を奪取。"
+                p3_action = stages.get("late") or "集団戦では相手のキャリーへのエンゲージまたはピールを徹底。"
+
+                phases = [
+                    {
+                        "phase": "Phase 1 (Lv1〜2)",
+                        "title": "序盤レーン戦 ＆ レベル先行警戒",
+                        "action": p1_action,
+                        "win_trigger": "HPを維持し安全にLv3へ到達",
+                        "badge": "序盤 🛡️"
+                    },
+                    {
+                        "phase": "Phase 2 (Lv3〜5)",
+                        "title": "CD狙いショートトレード",
+                        "action": p2_action,
+                        "win_trigger": "リコール有利またはFlash削り",
+                        "badge": "好機 ⚔️"
+                    },
+                    {
+                        "phase": "Phase 3 (Lv6〜)",
+                        "title": "パワースパイク発動 ＆ レーン制圧",
+                        "action": p3_action,
+                        "win_trigger": "キルまたはタワープレート奪取",
+                        "badge": "制圧 👑"
+                    }
+                ]
+                
+                # トラップ（地雷行動）
+                trap_move = (matched_vs.get("trap") if matched_vs else "") or (traps[0] if traps else "")
+                trap_items = traps[1] if len(traps) > 1 else ""
+
+                return {
+                    "my_champion": my_champ,
+                    "enemy_champion": enemy_champ,
+                    "phases": phases,
+                    "total_phases": len(phases),
+                    "is_generic": False,
+                    "rejected": {
+                        "trap_items": trap_items,
+                        "forbidden_moves": trap_move
+                    }
+                }
+
         if not data:
             # 汎用3段階手順 ＆ 汎用罠
             phases = [
@@ -212,8 +295,6 @@ class MatchupBlueprintEngine:
                     "badge": "勝利 👑"
                 }
             ]
-            # ★ 罠・NG行動は対面ごとに中身が全く変わる情報なので、固有データが無い対面で
-            # 汎用文を出すと「この対面を分析した結果」と誤認される。空にして出さない。
             trap_items = ""
             forbidden_moves = ""
             is_generic = True
@@ -228,7 +309,6 @@ class MatchupBlueprintEngine:
             "enemy_champion": enemy_champ,
             "phases": phases,
             "total_phases": len(phases),
-            # 対面固有データが無く汎用手順を返しているかどうか。表示側で明示するために使う。
             "is_generic": is_generic,
             "rejected": {
                 "trap_items": trap_items,

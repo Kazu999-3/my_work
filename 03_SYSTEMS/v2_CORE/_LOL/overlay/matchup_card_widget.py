@@ -625,12 +625,24 @@ class MatchupCardWidget(QWidget):
             smite_tier = state.get("smite_tier_name", "Primal")
             for ind in self.step_indicators:
                 ind.setVisible(False)
-            self.phase_badge_label.setText(f"🌲 JG戦術: ⚡ スマイト {smite_dmg}dmg ({smite_tier})")
-            gank_list = state.get("jg_gank_targets", [])
-            gank_str = "\n".join(gank_list[:2]) if gank_list else "・各レーンのウェーブ状況・スペルを確認中..."
-            self.phase_action_label.setText(gank_str)
-            obj_plan = state.get("jg_objective_plan", "3:30 スカットル ➔ 5:00 グラブ")
-            self.phase_trigger_label.setText(f"🐉 目標: {obj_plan}")
+
+            route_plan = state.get("jg_route_plan")
+            game_time = state.get("game_time_sec", 0.0)
+            if route_plan and game_time < 240:
+                p_title = route_plan.get("plan_title", "初動ルート")
+                self.phase_badge_label.setText(f"🌲 {p_title} (⚡ スマイト {smite_dmg}dmg)")
+                summary = route_plan.get("plan_summary", "")
+                s1 = route_plan.get("step1", "")
+                s2 = route_plan.get("step2", "")
+                self.phase_action_label.setText(f"{summary}\n① {s1}\n② {s2}")
+                self.phase_trigger_label.setText(f"③ {route_plan.get('step3', '')}")
+            else:
+                self.phase_badge_label.setText(f"🌲 JG戦術: ⚡ スマイト {smite_dmg}dmg ({smite_tier})")
+                gank_list = state.get("jg_gank_targets", [])
+                gank_str = "\n".join(gank_list[:2]) if gank_list else "・各レーンのウェーブ状況・スペルを確認中..."
+                self.phase_action_label.setText(gank_str)
+                obj_plan = state.get("jg_objective_plan", "3:30 スカットル ➔ 5:00 グラブ")
+                self.phase_trigger_label.setText(f"🐉 目標: {obj_plan}")
             self.phase_frame.setVisible(True)
             curr_phase_str = "JG_MAIN"
         else:

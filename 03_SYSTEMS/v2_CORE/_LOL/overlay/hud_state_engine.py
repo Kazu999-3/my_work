@@ -67,6 +67,7 @@ from v2_CORE._LOL.overlay.macro_analytics import (
     MAGE_CHAMPIONS,
 )
 from v2_CORE._LOL.overlay.matchup_intel_provider import MatchupIntelProvider
+from v2_CORE._LOL.overlay.early_pathing_engine import analyze_early_jungle_pathing
 
 TYPICAL_TOP_CHAMPIONS = {
     "Aatrox", "Camille", "ChoGath", "Darius", "DrMundo", "Fiora", "Gangplank",
@@ -335,6 +336,8 @@ class HudStateEngine:
 
         enemy_champion = extract_champion_name(opponent_obj) if opponent_obj else "Enemy"
         enemy_jg_name = extract_champion_name(enemy_jg_obj) if enemy_jg_obj else "敵JG"
+        ally_jg_obj = ally_roles.get("JUNGLE")
+        ally_jg_name = extract_champion_name(ally_jg_obj) if ally_jg_obj else ""
 
         # JG判定 (ポジションまたはスマイト所持判定)
         my_spells_raw = []
@@ -390,19 +393,16 @@ class HudStateEngine:
             cs_rating = "LOW"
             cs_color = "#ef4444"
 
-        # --- 2. 敵JG危険ガンクタイマー（2:40〜3:30） ---
-        is_gank_danger = False
-        if 150 <= game_time_sec <= 215:
-            is_gank_danger = True
-            time_until_peak = int(210 - game_time_sec)
-            gank_warning_text = f"⚠️ 【初動ガンク警戒】 敵 {enemy_jg_name} のLv3ガンクに注意！ (あと{time_until_peak}s)"
-        elif game_time_sec < 150:
-            secs_until_danger = int(150 - game_time_sec)
-            m = secs_until_danger // 60
-            s = secs_until_danger % 60
-            gank_warning_text = f"🛡️ 敵JGガンク安全帯（危険ゾーンまで {m:02d}:{s:02d}）"
-        else:
-            gank_warning_text = "👁️ 視界確保・オブジェクト（グラブ/ドラゴン）意識"
+        # --- 2. 敵JG危険ガンクタイマー ＆ 初動3分ルート予測 (SSoTクリアタイム連動) ---
+        early_pathing = analyze_early_jungle_pathing(
+            my_champion=my_champion,
+            enemy_jg_name=enemy_jg_name,
+            my_jg_name=my_champion if is_jg else (ally_jg_name or "Unknown"),
+            is_self_jg=is_jg,
+            game_time_sec=game_time_sec
+        )
+        is_gank_danger = early_pathing["is_gank_danger"]
+        gank_warning_text = early_pathing["warning_text"]
 
         # --- 3. 1stリコール目標ゴールド (1100G) ---
         TARGET_1ST_RECALL_GOLD = 1100.0
@@ -818,6 +818,8 @@ class HudStateEngine:
             "enemy_jg": enemy_jg_name,
             "is_gank_danger": is_gank_danger,
             "gank_warning_text": gank_warning_text,
+            "early_pathing": early_pathing,
+            "jg_route_plan": early_pathing.get("jg_route_plan"),
             "matchup_memo": matchup_memo,
             # Step 2 追加要素
             "gold_diff_str": gold_diff_str,

@@ -209,16 +209,21 @@ class ToastAlertWidget(QWidget):
                     "text": sp_str.replace("⚠️ ", "").replace(" 完成！", ""),
                 })
 
-        # 2. 🚨 敵JG危険ガンクゾーン (2:30〜3:30)
+        # 2. 🚨 敵JG危険ガンクゾーン (SSoTクリアタイム連動)
         is_gank_danger = state.get("is_gank_danger", False)
         if is_gank_danger:
+            early_pathing = state.get("early_pathing", {})
             enemy_jg = state.get("enemy_jg", "")
+            badge = early_pathing.get("badge_text", "🚨 ガンク警戒")
+            clr_str = early_pathing.get("clear_time_str", "2:40〜3:30")
+            is_early = early_pathing.get("is_early_ganker", False)
+            detail_text = f"Lv3急襲警戒（敵クリア: {clr_str}）" if is_early else f"初動危険帯（敵クリア: {clr_str}）"
             events.append({
                 "type": "gank",
                 "champion": enemy_jg,
-                "badge": "🚨 ガンク警戒",
+                "badge": badge,
                 "badge_bg": "rgba(220, 38, 38, 0.90)",
-                "text": "2:30〜3:30 初回ガンク危険帯",
+                "text": detail_text,
             })
 
         # 3. 💣 大砲ミニオン接近 (15秒以内または現在大砲)

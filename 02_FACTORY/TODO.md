@@ -14,9 +14,11 @@
 > 2. 不確定情報（AI推測・でっち上げ）は100%排除。Riot公式 Live Client Data / DataDragon / 確定実戦データのみを使用。
 
 ### 📋 【ロードマップ・今後着手タスク】
-- [ ] **【候補1】インゲームHUD（Sovereign HUD）連動強化**:
-  - Python (PyQt6) 透過オーバーレイ（`03_SYSTEMS/v2_CORE/_LOL/overlay/`）と、`05_PILOT` の戦術データ（Lv6即死ライン・対面特化メモ・初動3分JGルート）のリアルタイム結合。
-  - Live Client Data API を用いて試合開始時に自動でゲーム画面上にキルラインとガンク警戒タイマーを描画。
+- [x] **【候補1】インゲームHUD（Sovereign HUD）連動強化**（2026-10-02 完了）:
+  - Python (PyQt6) 透過オーバーレイ（`03_SYSTEMS/v2_CORE/_LOL/overlay/`）と、`05_PILOT` のSSoT辞書（`champions_detail_map.json`）を0ms直結。
+  - 手書き6体分だったブループリント・対面メモを全173体DDragon+Supabase事実データから動的供給。通信ラグゼロ化。
+  - `early_pathing_engine.py` を新設し、敵JGの最速クリアタイム実測値（`fastestClearSec`）に基づく動的ガンク危険帯判定（Lv3急襲警戒など）およびJG視点のスカトル勝負・回避ルート予測（STEP 1〜3）をHUD・トースト通知に完全統合。
+  - テストスイート20件全PASS確認済み。
 - [x] **【候補2】試合後ディープアナリティクスの深化**（2026-10-02 実装・`/coach?tab=tempo`）:
   - `05_PILOT/src/app/coach` 内に、15分序盤のウェーブ＆リコールテンポロス逆再生機能を追加。
   - 重傷・靴購入タイミングの正否判定（ビルド分岐監査: Build Audit）の実装。

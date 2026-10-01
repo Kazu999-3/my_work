@@ -481,13 +481,43 @@ class TestMacroAnalyticsAndIntel(unittest.TestCase):
         """対面インテル未登録時のフォールバックテスト"""
         from v2_CORE._LOL.overlay.matchup_intel_provider import MatchupIntelProvider
         provider = MatchupIntelProvider(supabase_url="", supabase_key="")
-        memo = provider.get_matchup_memo("LeeSin", "Elise")
+        memo = provider.get_matchup_memo("UnknownChamp", "UnknownEnemy")
         self.assertTrue(memo.get("is_fallback"))
         self.assertIn("未登録", memo.get("title"))
 
+    def test_matchup_intel_ssot(self):
+        """SupabaseキーなしでもローカルSSoT辞書から0msで対面知見が取得できること"""
+        from v2_CORE._LOL.overlay.matchup_intel_provider import MatchupIntelProvider
+        provider = MatchupIntelProvider(supabase_url="", supabase_key="")
+        memo = provider.get_matchup_memo("Aatrox", "Darius")
+        self.assertFalse(memo.get("is_fallback", False))
+        self.assertEqual(memo["enemy"], "Darius")
+        self.assertGreater(len(memo["key_points"]), 0)
+        self.assertTrue(any("Q" in p or "R" in p or "ダリウス" in p or "弱点" in p for p in memo["key_points"]))
+
+    def test_early_pathing_engine(self):
+        """初動3分JGルート予測＆ガンク危険帯判定テスト"""
+        from v2_CORE._LOL.overlay.early_pathing_engine import analyze_early_jungle_pathing
+
+        # 1. 早期ガンカー (Elise) 160秒時点 ➔ 危険帯
+        r_elise = analyze_early_jungle_pathing("Darius", "Elise", game_time_sec=160.0)
+        self.assertTrue(r_elise["is_gank_danger"])
+        self.assertTrue(r_elise["is_early_ganker"])
+        self.assertIn("Lv3急襲警戒", r_elise["badge_text"])
+
+        # 2. フルクリア型 (Karthus) 60秒時点 ➔ 安全帯
+        r_karthus = analyze_early_jungle_pathing("Darius", "Karthus", game_time_sec=60.0)
+        self.assertFalse(r_karthus["is_gank_danger"])
+        self.assertIn("安全帯", r_karthus["warning_text"])
+
+        # 3. JG視点 (LeeSin vs Karthus) ➔ スカトル勝負型
+        r_jg = analyze_early_jungle_pathing("LeeSin", "Karthus", is_self_jg=True, game_time_sec=60.0)
+        self.assertIn("jg_route_plan", r_jg)
+        self.assertEqual(r_jg["jg_route_plan"]["plan_type"], "contest")
+        self.assertIn("スカトル", r_jg["jg_route_plan"]["plan_title"])
+
 
 def run_full_suite():
-    print("=" * 65)
     print("🧪 Sovereign HUD - オーバーレイ全自動テストスイート実行")
     print("=" * 65)
 
