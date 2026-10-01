@@ -92,7 +92,7 @@ export default function RevisionsPanel() {
     <div className="bg-surface border border-border rounded-2xl p-5 space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h3 className="font-black text-foreground flex items-center gap-2">
-          <History size={16} className="text-amber-600" /> 更新履歴・差分
+          <History size={16} className="text-primary-600" /> 更新履歴・差分
         </h3>
         <div className="flex gap-2 items-center">
           <select value={filterType} onChange={e => setFilterType(e.target.value)}
@@ -110,11 +110,11 @@ export default function RevisionsPanel() {
       </div>
 
       <p className="text-[11px] text-muted-strong">
-        AIが記事を統合したときの<strong className="text-amber-700">増えた行（緑）・減った行（赤）</strong>を確認できます。
+        AIが記事を統合したときの<strong className="text-primary-700">増えた行（緑）・減った行（赤）</strong>を確認できます。
         意図しない書き換えがあれば、その場で元に戻せます。
       </p>
 
-      {error && <p className="text-xs text-rose-700 font-bold">❌ {error}</p>}
+      {error && <p className="text-xs text-danger-700 font-bold">❌ {error}</p>}
 
       {loading ? (
         <p className="text-xs text-muted-strong py-6 text-center">読み込み中...</p>
@@ -128,7 +128,7 @@ export default function RevisionsPanel() {
             <div key={r.id} className="border border-border rounded-xl overflow-hidden">
               <button onClick={() => openDetail(r.id)}
                 className="w-full text-left px-3 py-2.5 hover:bg-black/5 transition-colors flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-200">
+                <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-primary-100 text-primary-700 border border-amber-200">
                   {TYPE_LABELS[r.target_type] || r.target_type}
                 </span>
                 <span className="text-sm font-bold text-foreground">{r.target_key}</span>
@@ -138,11 +138,11 @@ export default function RevisionsPanel() {
                   </span>
                 )}
                 {r.isNew ? (
-                  <span className="text-[10px] font-black text-teal-700">新規作成</span>
+                  <span className="text-[10px] font-black text-secondary-700">新規作成</span>
                 ) : (
                   <span className="text-[10px] font-mono">
-                    <span className="text-emerald-700">+{r.added}</span>{' '}
-                    <span className="text-rose-700">-{r.removed}</span>
+                    <span className="text-success-700">+{r.added}</span>{' '}
+                    <span className="text-danger-700">-{r.removed}</span>
                   </span>
                 )}
                 <span className="text-[10px] text-muted-strong ml-auto shrink-0">
@@ -165,8 +165,8 @@ export default function RevisionsPanel() {
                       <div className="max-h-80 overflow-auto font-mono text-[11px] leading-relaxed rounded-lg border border-border">
                         {(detail.diff || []).map((line: any, i: number) => (
                           <div key={i} className={
-                            line.op === 'added' ? 'bg-emerald-100 text-emerald-700 px-2'
-                            : line.op === 'removed' ? 'bg-rose-100 text-rose-700/80 px-2 line-through decoration-rose-400'
+                            line.op === 'added' ? 'bg-success-100 text-success-700 px-2'
+                            : line.op === 'removed' ? 'bg-danger-100 text-danger-700/80 px-2 line-through decoration-danger-400'
                             : 'text-muted-strong px-2'
                           }>
                             <span className="select-none opacity-40 mr-2">
@@ -178,7 +178,7 @@ export default function RevisionsPanel() {
                       </div>
                       {!r.isNew && (
                         <button onClick={() => revert(r.id)} disabled={reverting}
-                          className="mt-3 text-xs font-bold bg-rose-100 text-rose-700 border border-rose-200 px-3 py-1.5 rounded-lg hover:bg-rose-200 disabled:opacity-50 flex items-center gap-1.5">
+                          className="mt-3 text-xs font-bold bg-danger-100 text-danger-700 border border-rose-200 px-3 py-1.5 rounded-lg hover:bg-danger-200 disabled:opacity-50 flex items-center gap-1.5">
                           <RotateCcw size={13} /> {reverting ? '戻しています...' : 'この更新を取り消す'}
                         </button>
                       )}

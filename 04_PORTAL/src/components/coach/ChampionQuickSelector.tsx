@@ -233,7 +233,7 @@ export default function ChampionQuickSelector({
           <h3 className="text-sm font-black text-foreground flex items-center gap-2">
             <span>🎯</span>
             <span>試合前 マッチアップ高速セレクター</span>
-            <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 text-amber-900 rounded-full border border-amber-200">
+            <span className="text-[10px] font-bold px-2 py-0.5 bg-primary-100 text-primary-900 rounded-full border border-amber-200">
               ワンタップ入力対応
             </span>
           </h3>
@@ -263,7 +263,7 @@ export default function ChampionQuickSelector({
                 <button
                   type="button"
                   onClick={handleSaveRiotId}
-                  className="px-2 py-0.5 bg-amber-600 hover:bg-amber-500 text-white rounded text-[10px] font-black cursor-pointer"
+                  className="px-2 py-0.5 bg-primary-600 hover:bg-primary-500 text-white rounded text-[10px] font-black cursor-pointer"
                 >
                   保存
                 </button>
@@ -277,7 +277,7 @@ export default function ChampionQuickSelector({
                     setTempRiotId(currentRiotId || 'Kazurin#4036');
                     setIsEditingRiotId(true);
                   }}
-                  className="p-1 hover:bg-surface-hover rounded text-faint hover:text-amber-700 transition cursor-pointer"
+                  className="p-1 hover:bg-surface-hover rounded text-faint hover:text-primary-700 transition cursor-pointer"
                   title="スキャン対象のRiot IDを変更"
                 >
                   <Edit3 size={12} />
@@ -290,7 +290,7 @@ export default function ChampionQuickSelector({
             type="button"
             onClick={handleDetectLiveMatch}
             disabled={detectingLive}
-            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white shadow-sm transition-all disabled:opacity-50 shrink-0 cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-danger-600 to-primary-600 hover:from-danger-500 hover:to-primary-500 text-white shadow-sm transition-all disabled:opacity-50 shrink-0 cursor-pointer"
           >
             <RefreshCw size={13} className={detectingLive ? 'animate-spin' : ''} />
             <span>{detectingLive ? '試合スキャン中...' : '🔴 進行中の試合から自動取得'}</span>
@@ -299,7 +299,7 @@ export default function ChampionQuickSelector({
       </div>
 
       {liveDetectMessage && (
-        <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-xs font-bold text-amber-900 flex items-center justify-between animate-in fade-in">
+        <div className="p-2.5 rounded-xl bg-primary-50 border border-amber-200 text-xs font-bold text-primary-900 flex items-center justify-between animate-in fade-in">
           <span>{liveDetectMessage}</span>
           <button onClick={() => setLiveDetectMessage(null)} className="text-faint hover:text-muted">
             <X size={13} />
@@ -312,8 +312,8 @@ export default function ChampionQuickSelector({
         {/* 自分 (My Champion) */}
         <div className="md:col-span-5 relative" ref={myRef}>
           <label className="mb-1.5 flex items-center justify-between text-xs font-black text-foreground-soft">
-            <span className="flex items-center gap-1.5 text-teal-700">
-              <span className="inline-block w-2 h-2 rounded-full bg-teal-600" />
+            <span className="flex items-center gap-1.5 text-secondary-700">
+              <span className="inline-block w-2 h-2 rounded-full bg-secondary-600" />
               今日使うチャンピオン (自分)
             </span>
             {myChampion && (
@@ -348,8 +348,8 @@ export default function ChampionQuickSelector({
               placeholder="例: Graves, グレイブス"
               className={`w-full rounded-2xl border bg-background/70 py-2.5 pr-8 text-xs font-bold text-foreground outline-none transition-all focus:bg-surface focus:ring-2 ${
                 myChampion
-                  ? 'pl-11 border-teal-300 focus:border-teal-500 focus:ring-teal-100'
-                  : 'pl-9 border-border focus:border-amber-500 focus:ring-amber-100'
+                  ? 'pl-11 border-teal-300 focus:border-teal-500 focus:ring-secondary-100'
+                  : 'pl-9 border-border focus:border-amber-500 focus:ring-primary-100'
               }`}
             />
           </div>
@@ -376,7 +376,7 @@ export default function ChampionQuickSelector({
                     <span className="font-bold">{c.nameJa}</span>
                     <span className="text-[10px] text-faint font-mono">({c.id})</span>
                     {normalizeChampionName(myChampion) === c.id && (
-                      <Check size={12} className="ml-auto text-teal-600" />
+                      <Check size={12} className="ml-auto text-secondary-600" />
                     )}
                   </button>
                 ))
@@ -400,8 +400,8 @@ export default function ChampionQuickSelector({
         {/* 相手 (Enemy Champion) */}
         <div className="md:col-span-5 relative" ref={enemyRef}>
           <label className="mb-1.5 flex items-center justify-between text-xs font-black text-foreground-soft">
-            <span className="flex items-center gap-1.5 text-red-700">
-              <span className="inline-block w-2 h-2 rounded-full bg-red-600" />
+            <span className="flex items-center gap-1.5 text-danger-700">
+              <span className="inline-block w-2 h-2 rounded-full bg-danger-600" />
               対面の敵チャンピオン (相手)
             </span>
             {enemyChampion && (
@@ -419,7 +419,7 @@ export default function ChampionQuickSelector({
               <img
                 src={getDDragonIconUrl(enemyChampion)}
                 alt={enemyChampion}
-                className="absolute left-2.5 w-6 h-6 rounded-lg object-cover border border-red-400 shadow-xs pointer-events-none"
+                className="absolute left-2.5 w-6 h-6 rounded-lg object-cover border border-rose-400 shadow-xs pointer-events-none"
                 onError={(e) => { (e.currentTarget as HTMLElement).style.display = 'none'; }}
               />
             ) : (
@@ -436,8 +436,8 @@ export default function ChampionQuickSelector({
               placeholder="例: LeeSin, リー・シン"
               className={`w-full rounded-2xl border bg-background/70 py-2.5 pr-8 text-xs font-bold text-foreground outline-none transition-all focus:bg-surface focus:ring-2 ${
                 enemyChampion
-                  ? 'pl-11 border-red-300 focus:border-red-500 focus:ring-red-100'
-                  : 'pl-9 border-border focus:border-amber-500 focus:ring-amber-100'
+                  ? 'pl-11 border-rose-300 focus:border-rose-500 focus:ring-danger-100'
+                  : 'pl-9 border-border focus:border-amber-500 focus:ring-primary-100'
               }`}
             />
           </div>
@@ -464,7 +464,7 @@ export default function ChampionQuickSelector({
                     <span className="font-bold">{c.nameJa}</span>
                     <span className="text-[10px] text-faint font-mono">({c.id})</span>
                     {normalizeChampionName(enemyChampion) === c.id && (
-                      <Check size={12} className="ml-auto text-red-600" />
+                      <Check size={12} className="ml-auto text-danger-600" />
                     )}
                   </button>
                 ))
@@ -491,8 +491,8 @@ export default function ChampionQuickSelector({
                   onClick={() => handleSelectMyChamp(c.id)}
                   className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
                     isSelected
-                      ? 'bg-teal-600 text-white border-teal-700 shadow-xs scale-[1.03]'
-                      : 'bg-surface-subtle/90 hover:bg-teal-50 hover:text-teal-800 hover:border-teal-200 text-foreground-subtle border-border/80'
+                      ? 'bg-secondary-600 text-white border-teal-700 shadow-xs scale-[1.03]'
+                      : 'bg-surface-subtle/90 hover:bg-secondary-50 hover:text-secondary-800 hover:border-teal-200 text-foreground-subtle border-border/80'
                   }`}
                 >
                   <img
@@ -523,8 +523,8 @@ export default function ChampionQuickSelector({
                   onClick={() => handleSelectEnemyChamp(c.id)}
                   className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
                     isSelected
-                      ? 'bg-red-600 text-white border-red-700 shadow-xs scale-[1.03]'
-                      : 'bg-surface-subtle/90 hover:bg-red-50 hover:text-red-800 hover:border-red-200 text-foreground-subtle border-border/80'
+                      ? 'bg-danger-600 text-white border-rose-700 shadow-xs scale-[1.03]'
+                      : 'bg-surface-subtle/90 hover:bg-danger-50 hover:text-danger-800 hover:border-rose-200 text-foreground-subtle border-border/80'
                   }`}
                 >
                   <img

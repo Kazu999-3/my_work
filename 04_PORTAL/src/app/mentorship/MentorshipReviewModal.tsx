@@ -103,9 +103,9 @@ export function MentorshipReviewModal({
       <div className="bg-surface border border-border rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden text-foreground animate-in fade-in zoom-in-95 duration-200">
         
         {/* ヘッダー */}
-        <div className="p-4 md:px-6 md:py-4 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border-b border-border flex items-center justify-between">
+        <div className="p-4 md:px-6 md:py-4 bg-gradient-to-r from-primary-500/15 via-primary-500/10 to-primary-500/15 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500 text-stone-950 flex items-center justify-center text-xl shadow-xs font-black">
+            <div className="w-10 h-10 rounded-2xl bg-primary-500 text-stone-950 flex items-center justify-center text-xl shadow-xs font-black">
               ⭐
             </div>
             <div>
@@ -142,13 +142,13 @@ export function MentorshipReviewModal({
                 </div>
               </div>
             </div>
-            <span className="text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-bold bg-primary-100 text-primary-900 border border-amber-300 px-2 py-0.5 rounded-full">
               +100🪙 付与
             </span>
           </div>
 
           {/* 1. 星評価 (1〜5) */}
-          <div className="space-y-2 text-center py-2 bg-amber-50/50 rounded-2xl border border-amber-200/80">
+          <div className="space-y-2 text-center py-2 bg-primary-50/50 rounded-2xl border border-amber-200/80">
             <label className="block text-xs font-black text-foreground-soft">
               総合満足度を選んでください
             </label>
@@ -164,14 +164,14 @@ export function MentorshipReviewModal({
                     size={28}
                     className={`${
                       star <= rating
-                        ? 'text-amber-500 fill-amber-400 drop-shadow-xs'
+                        ? 'text-primary-500 fill-primary-400 drop-shadow-xs'
                         : 'text-faint'
                     }`}
                   />
                 </button>
               ))}
             </div>
-            <div className="text-xs font-bold text-amber-800">
+            <div className="text-xs font-bold text-primary-800">
               {rating === 5 && '🌟 大変満足（最高のバディでした！）'}
               {rating === 4 && '✨ 満足（とても助かりました）'}
               {rating === 3 && '👍 普通（問題なく活動できました）'}
@@ -196,7 +196,7 @@ export function MentorshipReviewModal({
                     onClick={() => toggleTag(tag)}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer flex items-center gap-1 ${
                       isSelected
-                        ? 'bg-amber-500 text-stone-950 border-amber-500 shadow-2xs'
+                        ? 'bg-primary-500 text-stone-950 border-amber-500 shadow-2xs'
                         : 'bg-background text-foreground-subtle border-border hover:bg-surface-subtle'
                     }`}
                   >
@@ -234,7 +234,7 @@ export function MentorshipReviewModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2 rounded-xl font-black text-xs bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className="px-5 py-2 rounded-xl font-black text-xs bg-success-600 hover:bg-success-500 text-white shadow-sm transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <Sparkles size={14} />
               <span>{isSubmitting ? '送信中...' : '匿名評価を送信 (+100🪙)'}</span>

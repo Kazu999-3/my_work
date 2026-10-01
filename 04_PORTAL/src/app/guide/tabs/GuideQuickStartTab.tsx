@@ -19,11 +19,11 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
   return (
     <div className="space-y-8">
       {/* イントロバナー */}
-      <div className="bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-500/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-sm">
+      <div className="bg-gradient-to-r from-primary-500/15 via-primary-500/10 to-primary-500/15 border border-amber-500/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-sm">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-800 text-xs font-black border border-amber-500/30">
-              <Sparkles size={14} className="text-amber-600 animate-pulse" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-500/20 text-primary-800 text-xs font-black border border-amber-500/30">
+              <Sparkles size={14} className="text-primary-600 animate-pulse" />
               初回1分！今すぐ遊べる3ステップ
             </div>
             <h2 className="text-xl md:text-2xl font-black text-foreground">
@@ -36,7 +36,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
           <div className="flex flex-wrap gap-2 shrink-0">
             <Link
               href="/mypage"
-              className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-black text-xs transition shadow-md flex items-center gap-1.5 cursor-pointer"
+              className="px-4 py-2.5 rounded-xl bg-primary-600 hover:bg-primary-500 text-white font-black text-xs transition shadow-md flex items-center gap-1.5 cursor-pointer"
             >
               マイページで設定する <ArrowRight size={14} />
             </Link>
@@ -50,31 +50,31 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
         <div className="bg-surface rounded-3xl p-6 border-2 border-amber-200/90 shadow-sm relative overflow-hidden flex flex-col justify-between hover:border-amber-400 transition-all group">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-2xl group-hover:scale-105 transition">
+              <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-amber-200 flex items-center justify-center text-primary-600 font-bold text-2xl group-hover:scale-105 transition">
                 📝
               </div>
-              <span className="text-xs font-black text-amber-800 bg-amber-100 px-3 py-1 rounded-full border border-amber-200">
+              <span className="text-xs font-black text-primary-800 bg-primary-100 px-3 py-1 rounded-full border border-amber-200">
                 STEP 1
               </span>
             </div>
             <h3 className="text-base font-black text-foreground">Riot ID（サモナー名）登録</h3>
             <p className="text-muted text-xs leading-relaxed">
-              ポータル右上の <strong className="text-foreground font-bold">「Discordログイン」</strong> から連携するか、マイページでゲーム内の <code className="bg-surface-subtle text-amber-900 px-1.5 py-0.5 rounded font-mono font-bold">名前#TAG</code> を入力します。
+              ポータル右上の <strong className="text-foreground font-bold">「Discordログイン」</strong> から連携するか、マイページでゲーム内の <code className="bg-surface-subtle text-primary-900 px-1.5 py-0.5 rounded font-mono font-bold">名前#TAG</code> を入力します。
             </p>
             <div className="bg-background border border-border/80 rounded-xl p-3 text-[11px] text-muted space-y-1">
               <div className="font-bold text-foreground-soft flex items-center gap-1">
-                <CheckCircle2 size={13} className="text-emerald-600" />
+                <CheckCircle2 size={13} className="text-success-600" />
                 登録するとできること
               </div>
               <p>・過去のソロQランク自動取得</p>
               <p>・カスタム勝率・MMRの自動集計</p>
-              <p>・初期 <strong className="text-amber-700 font-bold">1,000コイン</strong> の自動受取</p>
+              <p>・初期 <strong className="text-primary-700 font-bold">1,000コイン</strong> の自動受取</p>
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-stone-100">
             <Link
               href="/mypage"
-              className="text-xs font-black text-amber-700 hover:text-amber-900 flex items-center gap-1 group-hover:translate-x-1 transition"
+              className="text-xs font-black text-primary-700 hover:text-primary-900 flex items-center gap-1 group-hover:translate-x-1 transition"
             >
               マイページを開く <ArrowRight size={13} />
             </Link>
@@ -85,20 +85,20 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
         <div className="bg-surface rounded-3xl p-6 border-2 border-amber-200/90 shadow-sm relative overflow-hidden flex flex-col justify-between hover:border-amber-400 transition-all group">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-2xl group-hover:scale-105 transition">
+              <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-amber-200 flex items-center justify-center text-primary-600 font-bold text-2xl group-hover:scale-105 transition">
                 🎯
               </div>
-              <span className="text-xs font-black text-amber-800 bg-amber-100 px-3 py-1 rounded-full border border-amber-200">
+              <span className="text-xs font-black text-primary-800 bg-primary-100 px-3 py-1 rounded-full border border-amber-200">
                 STEP 2
               </span>
             </div>
             <h3 className="text-base font-black text-foreground">希望レーンの設定</h3>
             <p className="text-muted text-xs leading-relaxed">
-              あなたの得意レーンと行きたくないレーン（NG）を設定します。Discordで <code className="bg-surface-subtle text-amber-900 px-1.5 py-0.5 rounded font-mono font-bold">/lane</code> と打つか、マイページから登録可能です。
+              あなたの得意レーンと行きたくないレーン（NG）を設定します。Discordで <code className="bg-surface-subtle text-primary-900 px-1.5 py-0.5 rounded font-mono font-bold">/lane</code> と打つか、マイページから登録可能です。
             </p>
             <div className="bg-background border border-border/80 rounded-xl p-3 text-[11px] text-muted space-y-1">
               <div className="font-bold text-foreground-soft flex items-center gap-1">
-                <Sliders size={13} className="text-amber-600" />
+                <Sliders size={13} className="text-primary-600" />
                 設定できる項目
               </div>
               <p>・<strong className="text-foreground-soft">メインレーン</strong>（最優先で配置）</p>
@@ -110,7 +110,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
             <button
               type="button"
               onClick={() => onSelectTab && onSelectTab('bot')}
-              className="text-xs font-black text-amber-700 hover:text-amber-900 flex items-center gap-1 group-hover:translate-x-1 transition cursor-pointer"
+              className="text-xs font-black text-primary-700 hover:text-primary-900 flex items-center gap-1 group-hover:translate-x-1 transition cursor-pointer"
             >
               /lane コマンドの詳細を見る <ArrowRight size={13} />
             </button>
@@ -121,10 +121,10 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
         <div className="bg-surface rounded-3xl p-6 border-2 border-amber-200/90 shadow-sm relative overflow-hidden flex flex-col justify-between hover:border-amber-400 transition-all group">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 font-bold text-2xl group-hover:scale-105 transition">
+              <div className="w-12 h-12 rounded-2xl bg-success-50 border border-emerald-200 flex items-center justify-center text-success-600 font-bold text-2xl group-hover:scale-105 transition">
                 ⚔️
               </div>
-              <span className="text-xs font-black text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-200">
+              <span className="text-xs font-black text-success-800 bg-success-100 px-3 py-1 rounded-full border border-emerald-200">
                 STEP 3
               </span>
             </div>
@@ -134,7 +134,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
             </p>
             <div className="bg-background border border-border/80 rounded-xl p-3 text-[11px] text-muted space-y-1">
               <div className="font-bold text-foreground-soft flex items-center gap-1">
-                <Gamepad2 size={13} className="text-emerald-600" />
+                <Gamepad2 size={13} className="text-success-600" />
                 ゲーム中の流れ
               </div>
               <p>1. チーム分け結果がDiscordに届く</p>
@@ -146,7 +146,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
             <button
               type="button"
               onClick={() => onSelectTab && onSelectTab('bot')}
-              className="text-xs font-black text-emerald-700 hover:text-emerald-900 flex items-center gap-1 group-hover:translate-x-1 transition cursor-pointer"
+              className="text-xs font-black text-success-700 hover:text-success-900 flex items-center gap-1 group-hover:translate-x-1 transition cursor-pointer"
             >
               募集ボタンの全機能を見る <ArrowRight size={13} />
             </button>
@@ -157,7 +157,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
       {/* カスタム参加のルール＆よくある質問 */}
       <div className="bg-surface rounded-3xl p-6 md:p-8 border border-border shadow-xs space-y-6">
         <h3 className="text-lg font-black text-foreground flex items-center gap-2">
-          <ShieldCheck className="text-amber-600" size={20} />
+          <ShieldCheck className="text-primary-600" size={20} />
           カスタム参加にあたっての安心ガイド
         </h3>
 

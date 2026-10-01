@@ -23,7 +23,7 @@ export default function MinimapPlotView({ events }: Props) {
         <div className="flex items-center gap-2">
           <span className="text-lg">🗺️</span>
           <div>
-            <h4 className="text-xs font-black tracking-wide text-amber-400 uppercase">
+            <h4 className="text-xs font-black tracking-wide text-primary-400 uppercase">
               サモナーズリフト 空間交戦マップ
             </h4>
             <p className="text-[10px] text-faint">
@@ -41,7 +41,7 @@ export default function MinimapPlotView({ events }: Props) {
               onClick={() => setFilter(mode)}
               className={`px-2 py-0.5 rounded transition ${
                 filter === mode
-                  ? 'bg-amber-600 text-white font-extrabold shadow'
+                  ? 'bg-primary-600 text-white font-extrabold shadow'
                   : 'text-faint hover:text-stone-200'
               }`}
             >
@@ -100,10 +100,10 @@ export default function MinimapPlotView({ events }: Props) {
               onMouseLeave={() => setHoveredEvent(null)}
               className={`absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer z-10 transition-transform hover:scale-150 hover:z-30 ${
                 isDeath
-                  ? 'text-red-400 bg-red-950/90 border-2 border-red-500 rounded-full p-1 shadow-lg shadow-red-500/50'
+                  ? 'text-danger-400 bg-danger-950/90 border-2 border-rose-500 rounded-full p-1 shadow-lg shadow-danger-500/50'
                   : isKill
-                  ? 'text-emerald-300 bg-emerald-950/90 border-2 border-emerald-400 rounded-full p-1 shadow-lg shadow-emerald-500/50'
-                  : 'text-amber-300 bg-amber-950/90 border-2 border-amber-400 rounded-full p-1 shadow-lg shadow-amber-500/50'
+                  ? 'text-success-300 bg-success-950/90 border-2 border-emerald-400 rounded-full p-1 shadow-lg shadow-success-500/50'
+                  : 'text-primary-300 bg-primary-950/90 border-2 border-amber-400 rounded-full p-1 shadow-lg shadow-primary-500/50'
               }`}
             >
               <span className="text-[10px] block leading-none font-black">
@@ -125,7 +125,7 @@ export default function MinimapPlotView({ events }: Props) {
       {hoveredEvent ? (
         <div className="bg-stone-800/90 border border-stone-600 rounded-lg p-2.5 text-xs space-y-1 animate-fadeIn">
           <div className="flex items-center justify-between font-black">
-            <span className={hoveredEvent.type === 'DEATH' ? 'text-rose-400' : hoveredEvent.type === 'KILL' ? 'text-emerald-400' : 'text-amber-400'}>
+            <span className={hoveredEvent.type === 'DEATH' ? 'text-danger-400' : hoveredEvent.type === 'KILL' ? 'text-success-400' : 'text-primary-400'}>
               {hoveredEvent.type === 'DEATH' ? '💀 被キル (デス)' : hoveredEvent.type === 'KILL' ? '⚔️ キル獲得' : '👑 オブジェクト'} ({hoveredEvent.min}分{hoveredEvent.sec}秒)
             </span>
             <span className="text-[10px] text-faint bg-stone-900 px-1.5 py-0.5 rounded">
@@ -139,10 +139,10 @@ export default function MinimapPlotView({ events }: Props) {
 
           {hoveredEvent.closestAllyDistance !== null && (
             <div className="text-[10px] text-faint flex items-center gap-2 pt-0.5">
-              <span>味方最寄り距離: <strong className="text-amber-300">{hoveredEvent.closestAllyDistance}</strong></span>
+              <span>味方最寄り距離: <strong className="text-primary-300">{hoveredEvent.closestAllyDistance}</strong></span>
               <span>周囲状況: <strong className="text-stone-200">味方{hoveredEvent.alliesCountNearby}人 vs 敵{hoveredEvent.enemiesCountNearby}人</strong></span>
               {hoveredEvent.isolationLevel === 'ISOLATED' && (
-                <span className="text-rose-400 font-extrabold bg-rose-950 px-1 rounded">⚠️ 孤立死</span>
+                <span className="text-danger-400 font-extrabold bg-danger-950 px-1 rounded">⚠️ 孤立死</span>
               )}
             </div>
           )}

@@ -105,12 +105,12 @@ export default function CoachReviewPanel() {
           <button
             onClick={runTrends}
             disabled={trendLoading}
-            className="shrink-0 px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black transition-colors disabled:opacity-50 cursor-pointer"
+            className="shrink-0 px-3.5 py-2 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-xs font-black transition-colors disabled:opacity-50 cursor-pointer"
           >
             {trendLoading ? '分析中…' : '傾向を分析する'}
           </button>
         </div>
-        {trendError && <p className="text-xs text-rose-600 dark:text-rose-400">❌ {trendError}</p>}
+        {trendError && <p className="text-xs text-danger-600 dark:text-danger-400">❌ {trendError}</p>}
         {trendSummary && (
           <div className="rounded-lg bg-surface-subtle dark:bg-stone-800/60 px-3 py-2 text-xs text-foreground-soft dark:text-stone-200 whitespace-pre-wrap leading-relaxed">
             {trendSummary}
@@ -122,7 +122,7 @@ export default function CoachReviewPanel() {
       {loading ? (
         <div className="py-6 text-center text-xs text-faint">読み込み中…</div>
       ) : error ? (
-        <p className="text-sm text-rose-600 dark:text-rose-400">❌ {error}</p>
+        <p className="text-sm text-danger-600 dark:text-danger-400">❌ {error}</p>
       ) : analyses.length === 0 ? (
         <p className="text-sm text-muted-strong py-4">
           まだ自動振り返りがありません。ランク戦が終わると自動で生成されます。
@@ -145,8 +145,8 @@ export default function CoachReviewPanel() {
                   <span
                     className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border shrink-0 ${
                       a.win
-                        ? 'bg-emerald-950/30 text-emerald-400 border-emerald-800/60'
-                        : 'bg-rose-950/30 text-rose-400 border-rose-800/60'
+                        ? 'bg-success-950/30 text-success-400 border-emerald-800/60'
+                        : 'bg-danger-950/30 text-danger-400 border-rose-800/60'
                     }`}
                   >
                     {a.win ? '勝' : '負'}
@@ -179,7 +179,7 @@ export default function CoachReviewPanel() {
                         <span className="font-bold text-foreground-subtle dark:text-stone-200">次のフォーカス: </span>
                         <span className="text-muted">{a.focus}</span>
                         {a.focusAchieved !== null && (
-                          <span className={`ml-1.5 text-[10px] font-bold ${a.focusAchieved ? 'text-emerald-500' : 'text-faint'}`}>
+                          <span className={`ml-1.5 text-[10px] font-bold ${a.focusAchieved ? 'text-success-500' : 'text-faint'}`}>
                             {a.focusAchieved ? '（達成）' : '（未達）'}
                           </span>
                         )}

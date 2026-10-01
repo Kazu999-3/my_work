@@ -84,16 +84,16 @@ export const BalancerVcManager = memo(function BalancerVcManager({ onMessage }: 
 
 
   return (
-    <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 flex flex-col justify-between gap-3 shadow-xs">
+    <div className="p-4 rounded-2xl bg-gradient-to-br from-primary-500/10 via-primary-500/5 to-transparent border border-amber-500/30 flex flex-col justify-between gap-3 shadow-xs">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-lg">🔊</span>
           <div>
-            <h4 className="text-xs font-black text-amber-950">Discord VCチャンネル名の動的更新</h4>
+            <h4 className="text-xs font-black text-primary-950">Discord VCチャンネル名の動的更新</h4>
             <p className="text-[10px] text-muted">登録したチャンネル名をクリックしてVC名を即座に変更できます</p>
           </div>
         </div>
-        {updatingVc && <span className="text-[10px] font-bold text-amber-700 animate-pulse">更新中...</span>}
+        {updatingVc && <span className="text-[10px] font-bold text-primary-700 animate-pulse">更新中...</span>}
       </div>
 
       {/* 登録済みプリセット一覧 */}
@@ -104,7 +104,7 @@ export const BalancerVcManager = memo(function BalancerVcManager({ onMessage }: 
               type="button"
               disabled={updatingVc}
               onClick={() => handleUpdate(preset)}
-              className="px-2.5 py-1.5 text-[11px] font-black text-amber-950 hover:bg-amber-50 transition cursor-pointer disabled:opacity-50"
+              className="px-2.5 py-1.5 text-[11px] font-black text-primary-950 hover:bg-primary-50 transition cursor-pointer disabled:opacity-50"
               title={`VC名を「${preset}」に変更`}
             >
               {preset}
@@ -113,7 +113,7 @@ export const BalancerVcManager = memo(function BalancerVcManager({ onMessage }: 
               <button
                 type="button"
                 onClick={() => handleDeleteVcPreset(preset)}
-                className="px-1.5 py-1.5 text-faint hover:text-rose-600 hover:bg-rose-50 border-l border-amber-100 text-[10px] transition cursor-pointer"
+                className="px-1.5 py-1.5 text-faint hover:text-danger-600 hover:bg-danger-50 border-l border-amber-100 text-[10px] transition cursor-pointer"
                 title="このプリセットを削除"
               >
                 ✕
@@ -141,7 +141,7 @@ export const BalancerVcManager = memo(function BalancerVcManager({ onMessage }: 
         <button
           type="submit"
           disabled={!newPresetText.trim()}
-          className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-black text-xs transition shadow-xs cursor-pointer disabled:opacity-40"
+          className="px-3 py-1.5 rounded-xl bg-primary-600 hover:bg-primary-500 text-white font-black text-xs transition shadow-xs cursor-pointer disabled:opacity-40"
           title="新しいチャンネル名をプリセットに保存"
         >
           ＋ 追加保存
@@ -154,7 +154,7 @@ export const BalancerVcManager = memo(function BalancerVcManager({ onMessage }: 
             if (text) handleUpdate(text);
 
           }}
-          className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-black text-xs transition shadow-xs cursor-pointer disabled:opacity-40"
+          className="px-3 py-1.5 rounded-xl bg-primary-600 hover:bg-primary-500 text-white font-black text-xs transition shadow-xs cursor-pointer disabled:opacity-40"
           title="入力した名前で今すぐVC名を更新"
         >
           即時更新

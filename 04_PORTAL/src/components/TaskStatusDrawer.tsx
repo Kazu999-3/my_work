@@ -161,7 +161,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
   const isWorkerActive = systemData.worker.active;
 
   const badgeCount = runningTasks.length + failedTasks.length;
-  const badgeColor = failedTasks.length > 0 ? 'bg-rose-500 text-white' : runningTasks.length > 0 ? 'bg-amber-500 text-white animate-pulse' : 'bg-surface-hover text-foreground-subtle';
+  const badgeColor = failedTasks.length > 0 ? 'bg-danger-500 text-white' : runningTasks.length > 0 ? 'bg-primary-500 text-white animate-pulse' : 'bg-surface-hover text-foreground-subtle';
 
   const TASK_LABELS: Record<string, string> = {
     champion_trend: 'チャンピオントレンド更新',
@@ -185,7 +185,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
         }`}
       >
         <span className="relative flex items-center gap-1">
-          <Zap size={16} className={runningTasks.length > 0 ? 'text-amber-500 animate-pulse' : 'text-muted'} />
+          <Zap size={16} className={runningTasks.length > 0 ? 'text-primary-500 animate-pulse' : 'text-muted'} />
           {badgeCount > 0 && (
             <span className={`flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[9px] font-black ${badgeColor}`}>
               {failedTasks.length > 0 ? `⚠️${failedTasks.length}` : runningTasks.length}
@@ -208,7 +208,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
           {/* ヘッダー */}
           <div className="flex items-center justify-between border-b border-border pb-2.5">
             <div className="flex items-center gap-2">
-              <Zap size={18} className="text-amber-600" />
+              <Zap size={18} className="text-primary-600" />
               <span className="font-extrabold text-sm text-foreground">リアルタイム・タスクキュー</span>
             </div>
             <div className="flex items-center gap-2">
@@ -224,7 +224,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
           {/* 1. ワーカー稼働状況 */}
           <div className="flex items-center justify-between p-2.5 rounded-xl border border-border bg-background">
             <div className="flex items-center gap-2">
-              <Cpu size={16} className={isWorkerActive ? 'text-emerald-600' : 'text-rose-500'} />
+              <Cpu size={16} className={isWorkerActive ? 'text-success-600' : 'text-danger-500'} />
               <div>
                 <span className="font-bold text-foreground block">エッジワーカー</span>
                 <span className="text-[10px] text-muted-strong">
@@ -233,7 +233,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
               </div>
             </div>
             <span className={`px-2 py-0.5 rounded-full border text-[10px] font-black ${
-              isWorkerActive ? 'bg-emerald-100 border-emerald-300 text-emerald-700' : 'bg-rose-100 border-rose-300 text-rose-700'
+              isWorkerActive ? 'bg-success-100 border-emerald-300 text-success-700' : 'bg-danger-100 border-rose-300 text-danger-700'
             }`}>
               {isWorkerActive ? '🟢 稼働中' : '🔴 未起動'}
             </span>
@@ -243,7 +243,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
           {failedTasks.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-rose-700 text-xs flex items-center gap-1">
+                <span className="font-bold text-danger-700 text-xs flex items-center gap-1">
                   <AlertTriangle size={14} /> 要対応・失敗 ({failedTasks.length}件)
                 </span>
                 <button
@@ -261,7 +261,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
                       setLoading(false);
                     }
                   }}
-                  className="text-[10px] font-black text-rose-700 hover:text-rose-900 transition underline cursor-pointer"
+                  className="text-[10px] font-black text-danger-700 hover:text-danger-900 transition underline cursor-pointer"
                 >
                   ⚡ 全て再実行
                 </button>
@@ -272,21 +272,21 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
                   const errorMsg = (t.error_message || '').toLowerCase();
                   const errorLabel = errorMsg.includes('429') ? 'Gemini 429混雑' : errorMsg.includes('404') ? '動画削除' : '処理失敗';
                   return (
-                    <div key={t.id} className="p-2.5 rounded-xl border border-rose-200 bg-rose-50 space-y-1">
+                    <div key={t.id} className="p-2.5 rounded-xl border border-rose-200 bg-danger-50 space-y-1">
                       <div className="flex justify-between items-center gap-2">
                         <span className="font-bold text-foreground text-[11px] truncate">
                           {TASK_LABELS[t.task_type] || t.task_type}
                           {t.payload?.champion && <span className="text-muted-strong font-normal"> ({t.payload.champion})</span>}
                         </span>
                         <div className="flex items-center gap-1.5 shrink-0">
-                          <span className="text-[9px] font-black text-rose-800 bg-rose-200/80 px-1.5 py-0.2 rounded">
+                          <span className="text-[9px] font-black text-danger-800 bg-danger-200/80 px-1.5 py-0.2 rounded">
                             {errorLabel}
                           </span>
                           {(t.task_type === 'champion_trend' || RETRYABLE_TASK_TYPES.has(t.task_type)) && (
                             <button
                               onClick={() => handleRetryTask(t)}
                               disabled={retryingTaskId === t.id}
-                              className="px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-[10px] rounded-md shadow disabled:opacity-50 flex items-center gap-1 cursor-pointer"
+                              className="px-2 py-0.5 bg-danger-600 hover:bg-danger-700 text-white font-bold text-[10px] rounded-md shadow disabled:opacity-50 flex items-center gap-1 cursor-pointer"
                             >
                               <RefreshCw size={10} className={retryingTaskId === t.id ? 'animate-spin' : ''} /> 再実行
                             </button>
@@ -294,7 +294,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
                         </div>
                       </div>
                       {t.error_message && (
-                        <p className="text-[10px] text-rose-700 leading-tight truncate font-mono" title={t.error_message}>
+                        <p className="text-[10px] text-danger-700 leading-tight truncate font-mono" title={t.error_message}>
                           {t.error_message}
                         </p>
                       )}
@@ -308,7 +308,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
           {/* 3. 現在実行中のタスク */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="font-bold text-amber-700 text-xs flex items-center gap-1">
+              <span className="font-bold text-primary-700 text-xs flex items-center gap-1">
                 <Activity size={14} className="animate-pulse" /> 現在実行中 ({runningTasks.length}件)
               </span>
             </div>
@@ -317,7 +317,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
             ) : (
               <div className="space-y-1.5">
                 {runningTasks.map((t) => (
-                  <div key={t.id} className="p-2.5 rounded-xl border border-amber-300 bg-amber-50 flex justify-between items-center gap-2">
+                  <div key={t.id} className="p-2.5 rounded-xl border border-amber-300 bg-primary-50 flex justify-between items-center gap-2">
                     <div>
                       <span className="font-bold text-foreground text-[11px] block">
                         {TASK_LABELS[t.task_type] || t.task_type}
@@ -327,7 +327,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
                         開始: {new Date(t.updated_at).toLocaleTimeString()}
                       </span>
                     </div>
-                    <span className="text-[10px] font-bold text-amber-700 px-2 py-0.5 rounded bg-amber-200/80 animate-pulse shrink-0">
+                    <span className="text-[10px] font-bold text-primary-700 px-2 py-0.5 rounded bg-primary-200/80 animate-pulse shrink-0">
                       処理中...
                     </span>
                   </div>
@@ -366,9 +366,9 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
                   <div key={h.id} className="p-2 rounded-lg border border-border bg-background flex justify-between items-center text-[10px]">
                     <div className="flex items-center gap-1.5 min-w-0">
                       {h.status === 'completed' ? (
-                        <CheckCircle2 size={12} className="text-emerald-600 shrink-0" />
+                        <CheckCircle2 size={12} className="text-success-600 shrink-0" />
                       ) : (
-                        <AlertTriangle size={12} className="text-rose-500 shrink-0" />
+                        <AlertTriangle size={12} className="text-danger-500 shrink-0" />
                       )}
                       <span className="font-bold text-foreground-soft truncate">{TASK_LABELS[h.task_type] || h.task_type}</span>
                     </div>

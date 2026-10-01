@@ -20,11 +20,11 @@ export default function AdminGuidePage() {
         animate={{ opacity: 1, y: 0 }}
         className="bg-surface border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs relative overflow-hidden"
       >
-        <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-primary-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <span className="px-3 py-1 rounded-full bg-amber-100 border border-amber-300 text-amber-900 text-xs font-black">
+              <span className="px-3 py-1 rounded-full bg-primary-100 border border-amber-300 text-primary-900 text-xs font-black">
                 管理者専用マニュアル
               </span>
               <span className="px-2.5 py-0.5 rounded-full bg-surface-subtle border border-border text-muted text-[11px] font-bold">
@@ -32,7 +32,7 @@ export default function AdminGuidePage() {
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground flex items-center gap-3">
-              <span className="p-2 bg-amber-50 text-amber-600 border border-amber-200/80 rounded-2xl shadow-xs">
+              <span className="p-2 bg-primary-50 text-primary-600 border border-amber-200/80 rounded-2xl shadow-xs">
                 🏛️
               </span>
               LoL データ収集・戦術辞典・AIコーチ連携 全貌仕様ガイド
@@ -40,14 +40,14 @@ export default function AdminGuidePage() {
             <p className="text-xs sm:text-sm text-muted max-w-3xl leading-relaxed font-medium">
               チャレンジャーの解説動画・Discord議論・Web攻略から知見を自動抽出し、
               チャンピオン辞典へ統合して、インゲームHUDやAIコーチとしてリアルタイムに手元へ還元する
-              <strong className="text-amber-800 font-bold">「絶対勝利循環（The Sovereign Victory Loop）」</strong>の全貌を解説します。
+              <strong className="text-primary-800 font-bold">「絶対勝利循環（The Sovereign Victory Loop）」</strong>の全貌を解説します。
             </p>
           </div>
 
           <div className="flex flex-wrap md:flex-col gap-2 shrink-0">
             <Link
               href="/admin/knowledge"
-              className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xs transition-all shadow-xs flex items-center justify-center gap-2"
+              className="px-4 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-400 text-stone-950 font-black text-xs transition-all shadow-xs flex items-center justify-center gap-2"
             >
               <Sparkles size={14} />
               <span>📥 戦術取り込みを開く</span>
@@ -76,7 +76,7 @@ export default function AdminGuidePage() {
               onClick={() => setActiveTab(tab.id as any)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
                 activeTab === tab.id
-                  ? 'bg-amber-500 text-stone-950 shadow-xs font-black'
+                  ? 'bg-primary-500 text-stone-950 shadow-xs font-black'
                   : 'text-muted hover:text-foreground hover:bg-surface-subtle'
               }`}
             >
@@ -90,7 +90,7 @@ export default function AdminGuidePage() {
       {(activeTab === 'all' || activeTab === 'pipeline') && (
         <section className="bg-surface border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
           <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
-            <span className="p-2 bg-amber-50 text-amber-600 rounded-xl font-bold border border-amber-200/60">
+            <span className="p-2 bg-primary-50 text-primary-600 rounded-xl font-bold border border-amber-200/60">
               🔄
             </span>
             <div>
@@ -111,7 +111,7 @@ export default function AdminGuidePage() {
                 subtitle: 'YouTube / Discord / Web',
                 desc: 'チャレンジャー動画、有識者のDiscord考察、パッチノートやWeb攻略記事を自動収集・キュー投入。',
                 icon: '📥',
-                color: 'bg-rose-50 border-rose-200 text-rose-900',
+                color: 'bg-danger-50 border-rose-200 text-danger-900',
               },
               {
                 step: '02',
@@ -119,7 +119,7 @@ export default function AdminGuidePage() {
                 subtitle: 'Whisper ＆ Gemini 2.5',
                 desc: '音声文字起こし、実演シーン抽出、立ち回り・パワースパイク・没理由を構造化データとして抽出。',
                 icon: '🧠',
-                color: 'bg-amber-50 border-amber-200 text-amber-900',
+                color: 'bg-primary-50 border-amber-200 text-primary-900',
               },
               {
                 step: '03',
@@ -127,7 +127,7 @@ export default function AdminGuidePage() {
                 subtitle: '未承認ナレッジ ➔ 辞典',
                 desc: '「⚡ 全件一括承認＆マージ」でSupabase DB（champion_facts）と戦術バイブルへ即座に統合。',
                 icon: '✅',
-                color: 'bg-emerald-50 border-emerald-200 text-emerald-900',
+                color: 'bg-success-50 border-emerald-200 text-success-900',
               },
               {
                 step: '04',
@@ -135,7 +135,7 @@ export default function AdminGuidePage() {
                 subtitle: 'Live Client Data (2999)',
                 desc: 'LoLクライアントのリアルタイムデータと辞典を照合。対面パワースパイクやキルラインを画面に通知。',
                 icon: '🎮',
-                color: 'bg-amber-50 border-amber-200 text-amber-900',
+                color: 'bg-primary-50 border-amber-200 text-primary-900',
               },
               {
                 step: '05',
@@ -143,7 +143,7 @@ export default function AdminGuidePage() {
                 subtitle: '反省メモ ➔ 知見還元',
                 desc: '敗因・デス原因を自己検証し、改善点を個人マイページおよびコミュニティナレッジへ還元。',
                 icon: '📈',
-                color: 'bg-teal-50 border-teal-200 text-teal-900',
+                color: 'bg-secondary-50 border-teal-200 text-secondary-900',
               },
             ].map((node, i) => (
               <div
@@ -171,7 +171,7 @@ export default function AdminGuidePage() {
       {(activeTab === 'all' || activeTab === 'pipeline') && (
         <section className="bg-surface border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
           <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
-            <span className="p-2 bg-pink-50 text-pink-600 rounded-xl font-bold border border-pink-200/60">
+            <span className="p-2 bg-danger-50 text-danger-600 rounded-xl font-bold border border-rose-200/60">
               📥
             </span>
             <div>
@@ -187,7 +187,7 @@ export default function AdminGuidePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {/* ルートA: YouTube動画解析 */}
             <div className="p-5 rounded-2xl bg-background border border-border space-y-3">
-              <div className="flex items-center gap-2 text-rose-600">
+              <div className="flex items-center gap-2 text-danger-600">
                 <Video size={20} />
                 <h3 className="text-sm font-black text-foreground">ルートA: YouTube動画解析</h3>
               </div>
@@ -205,14 +205,14 @@ export default function AdminGuidePage() {
                   <li><strong>ナレッジ化</strong>: 攻略記事を生成し「未承認知見」へ起票</li>
                 </ol>
               </div>
-              <div className="text-[10px] text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200 font-medium">
+              <div className="text-[10px] text-primary-800 bg-primary-50 p-2.5 rounded-xl border border-amber-200 font-medium">
                 💡 <strong>ステータス管理</strong>: <code>pending</code> ➔ <code>downloading</code> ➔ <code>transcribing</code> ➔ <code>analyzing</code> ➔ <code>completed</code>
               </div>
             </div>
 
             {/* ルートB: Discord雑談・考察ログ抽出 */}
             <div className="p-5 rounded-2xl bg-background border border-border space-y-3">
-              <div className="flex items-center gap-2 text-amber-600">
+              <div className="flex items-center gap-2 text-primary-600">
                 <MessageSquare size={20} />
                 <h3 className="text-sm font-black text-foreground">ルートB: Discord雑談・考察ログ抽出</h3>
               </div>
@@ -230,14 +230,14 @@ export default function AdminGuidePage() {
                   <li><strong>未承認ナレッジ化</strong>: 承認待ちリストへ即時格納</li>
                 </ol>
               </div>
-              <div className="text-[10px] text-amber-800 bg-amber-50 p-2.5 rounded-xl border border-amber-200 font-medium">
+              <div className="text-[10px] text-primary-800 bg-primary-50 p-2.5 rounded-xl border border-amber-200 font-medium">
                 💡 <strong>利点</strong>: 身内のリアルなレベル帯（アイアン〜エメラルド）で本当に起きている課題が吸い上がります。
               </div>
             </div>
 
             {/* ルートC: Web記事・X (Twitter)・手動メモ */}
             <div className="p-5 rounded-2xl bg-background border border-border space-y-3">
-              <div className="flex items-center gap-2 text-teal-600">
+              <div className="flex items-center gap-2 text-secondary-600">
                 <Globe size={20} />
                 <h3 className="text-sm font-black text-foreground">ルートC: Web / X / 手動メモ</h3>
               </div>
@@ -255,7 +255,7 @@ export default function AdminGuidePage() {
                   <li><strong>ワンクリック保存</strong>: 修正・調整の上で即座に保存</li>
                 </ol>
               </div>
-              <div className="text-[10px] text-teal-800 bg-teal-50 p-2.5 rounded-xl border border-teal-200 font-medium">
+              <div className="text-[10px] text-secondary-800 bg-secondary-50 p-2.5 rounded-xl border border-teal-200 font-medium">
                 💡 <strong>利点</strong>: 「試合直後の気付き」を忘れないうちに30秒でインプット可能。
               </div>
             </div>
@@ -267,7 +267,7 @@ export default function AdminGuidePage() {
       {(activeTab === 'all' || activeTab === 'dict') && (
         <section className="bg-surface border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
           <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
-            <span className="p-2 bg-amber-50 text-amber-600 rounded-xl font-bold border border-amber-200/60">
+            <span className="p-2 bg-primary-50 text-primary-600 rounded-xl font-bold border border-amber-200/60">
               👑
             </span>
             <div>
@@ -291,22 +291,22 @@ export default function AdminGuidePage() {
               </p>
 
               <div className="space-y-2.5">
-                <div className="p-3.5 rounded-2xl bg-amber-50/60 border border-amber-200/80">
-                  <div className="flex items-center gap-2 text-xs font-black text-amber-900">
+                <div className="p-3.5 rounded-2xl bg-primary-50/60 border border-amber-200/80">
+                  <div className="flex items-center gap-2 text-xs font-black text-primary-900">
                     <Database size={14} />
                     <span>層1: Supabase DB (`champion_facts`)</span>
                   </div>
-                  <p className="text-[11px] text-amber-950 mt-1 leading-relaxed">
+                  <p className="text-[11px] text-primary-950 mt-1 leading-relaxed">
                     チャンピオン別・レーン別に細分化された構造化テーブル。Webポータルの辞典画面やインゲームHUDがミリ秒単位で高速逆引きするために使用。
                   </p>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-amber-50/60 border border-amber-200/80">
-                  <div className="flex items-center gap-2 text-xs font-black text-amber-900">
+                <div className="p-3.5 rounded-2xl bg-primary-50/60 border border-amber-200/80">
+                  <div className="flex items-center gap-2 text-xs font-black text-primary-900">
                     <FileText size={14} />
                     <span>層2: 戦術バイブル (`_tactics_bible.md`)</span>
                   </div>
-                  <p className="text-[11px] text-amber-950 mt-1 leading-relaxed">
+                  <p className="text-[11px] text-primary-950 mt-1 leading-relaxed">
                     Gitリポジトリ内に保管される不変の戦術原典。AIが記事を執筆したり、対面マクロを総合判断するための深い文脈（コンテキスト）として保持。
                   </p>
                 </div>
@@ -328,20 +328,20 @@ export default function AdminGuidePage() {
                   <span>効果</span>
                 </div>
                 <div className="flex items-start justify-between gap-3 text-xs">
-                  <span className="font-bold text-emerald-700 shrink-0">☑️ 全選択チェック</span>
+                  <span className="font-bold text-success-700 shrink-0">☑️ 全選択チェック</span>
                   <span className="text-muted text-[11px]">ページ内の未承認知見をワンクリックで一括選択</span>
                 </div>
                 <div className="flex items-start justify-between gap-3 text-xs">
-                  <span className="font-bold text-amber-700 shrink-0">⚡ 全件一括承認＆マージ</span>
+                  <span className="font-bold text-primary-700 shrink-0">⚡ 全件一括承認＆マージ</span>
                   <span className="text-muted text-[11px]">全知見を承認すると同時に、即座に該当チャンピオンの辞典へマージ反映</span>
                 </div>
                 <div className="flex items-start justify-between gap-3 text-xs">
-                  <span className="font-bold text-teal-700 shrink-0">🏷️ レーン一般論の自動仕分け</span>
+                  <span className="font-bold text-secondary-700 shrink-0">🏷️ レーン一般論の自動仕分け</span>
                   <span className="text-muted text-[11px]">チャンピオン固有でない知見は自動でレーン・マクロ攻略へ振り分け</span>
                 </div>
               </div>
 
-              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] text-emerald-900 font-medium">
+              <div className="p-3 bg-success-50 border border-emerald-200 rounded-xl text-[11px] text-success-900 font-medium">
                 ✅ <strong>運用のコツ</strong>: 週に1回「未承認知見」タブを開き、タイトルに明らかな誤りが無ければ「⚡ 全件一括承認＆マージ」を押すだけで最新データが手に入ります。
               </div>
             </div>
@@ -353,7 +353,7 @@ export default function AdminGuidePage() {
       {(activeTab === 'all' || activeTab === 'coach') && (
         <section className="bg-surface border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
           <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
-            <span className="p-2 bg-amber-50 text-amber-600 rounded-xl font-bold border border-amber-200/60">
+            <span className="p-2 bg-primary-50 text-primary-600 rounded-xl font-bold border border-amber-200/60">
               🎮
             </span>
             <div>
@@ -368,7 +368,7 @@ export default function AdminGuidePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div className="p-5 rounded-2xl bg-background border border-border space-y-3">
-              <div className="flex items-center gap-2 text-amber-600 font-black text-xs">
+              <div className="flex items-center gap-2 text-primary-600 font-black text-xs">
                 <Gamepad2 size={18} />
                 <span>① Live Client Data API 連携</span>
               </div>
@@ -379,7 +379,7 @@ export default function AdminGuidePage() {
             </div>
 
             <div className="p-5 rounded-2xl bg-background border border-border space-y-3">
-              <div className="flex items-center gap-2 text-rose-600 font-black text-xs">
+              <div className="flex items-center gap-2 text-danger-600 font-black text-xs">
                 <Swords size={18} />
                 <span>② キルライン ＆ パワースパイク警告</span>
               </div>
@@ -390,7 +390,7 @@ export default function AdminGuidePage() {
             </div>
 
             <div className="p-5 rounded-2xl bg-background border border-border space-y-3">
-              <div className="flex items-center gap-2 text-amber-600 font-black text-xs">
+              <div className="flex items-center gap-2 text-primary-600 font-black text-xs">
                 <RefreshCw size={18} />
                 <span>③ 試合後レビュー ＆ ナレッジ還元</span>
               </div>
@@ -407,7 +407,7 @@ export default function AdminGuidePage() {
       {(activeTab === 'all' || activeTab === 'ops') && (
         <section className="bg-surface border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
           <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
-            <span className="p-2 bg-emerald-50 text-emerald-600 rounded-xl font-bold border border-emerald-200/60">
+            <span className="p-2 bg-success-50 text-success-600 rounded-xl font-bold border border-emerald-200/60">
               ⚡
             </span>
             <div>
@@ -429,17 +429,17 @@ export default function AdminGuidePage() {
                 <li>
                   <strong>システム運用ダッシュボード確認</strong>:
                   <br />
-                  <Link href="/admin/dashboard" className="text-amber-700 underline font-bold">ダッシュボード</Link> で「ALL GREEN」になっているか、要対応タスクが無いかを見る。
+                  <Link href="/admin/dashboard" className="text-primary-700 underline font-bold">ダッシュボード</Link> で「ALL GREEN」になっているか、要対応タスクが無いかを見る。
                 </li>
                 <li>
                   <strong>承認待ちナレッジの処理</strong>:
                   <br />
-                  <Link href="/admin/knowledge?tab=pending" className="text-amber-700 underline font-bold">戦術取り込み ＞ 承認待ち</Link> で「⚡ 全件一括承認＆マージ」を実行。
+                  <Link href="/admin/knowledge?tab=pending" className="text-primary-700 underline font-bold">戦術取り込み ＞ 承認待ち</Link> で「⚡ 全件一括承認＆マージ」を実行。
                 </li>
                 <li>
                   <strong>辞典ヘルスチェック</strong>:
                   <br />
-                  <Link href="/champions?scope=health" className="text-amber-700 underline font-bold">辞典ヘルス</Link> でパッチ更新に伴う鮮度低下や重複知見が無いかを確認。
+                  <Link href="/champions?scope=health" className="text-primary-700 underline font-bold">辞典ヘルス</Link> でパッチ更新に伴う鮮度低下や重複知見が無いかを確認。
                 </li>
               </ol>
             </div>
@@ -495,7 +495,7 @@ export default function AdminGuidePage() {
             className="p-3 rounded-xl bg-stone-800/80 hover:bg-stone-800 border border-stone-700 text-xs font-bold text-stone-200 hover:text-white transition flex items-center justify-between group"
           >
             <span>📥 戦術取り込み</span>
-            <ChevronRight size={13} className="text-muted-strong group-hover:text-amber-400 group-hover:translate-x-0.5 transition" />
+            <ChevronRight size={13} className="text-muted-strong group-hover:text-primary-400 group-hover:translate-x-0.5 transition" />
           </Link>
 
           <Link
@@ -503,7 +503,7 @@ export default function AdminGuidePage() {
             className="p-3 rounded-xl bg-stone-800/80 hover:bg-stone-800 border border-stone-700 text-xs font-bold text-stone-200 hover:text-white transition flex items-center justify-between group"
           >
             <span>👑 チャンピオン辞典</span>
-            <ChevronRight size={13} className="text-muted-strong group-hover:text-amber-400 group-hover:translate-x-0.5 transition" />
+            <ChevronRight size={13} className="text-muted-strong group-hover:text-primary-400 group-hover:translate-x-0.5 transition" />
           </Link>
 
           <Link
@@ -511,7 +511,7 @@ export default function AdminGuidePage() {
             className="p-3 rounded-xl bg-stone-800/80 hover:bg-stone-800 border border-stone-700 text-xs font-bold text-stone-200 hover:text-white transition flex items-center justify-between group"
           >
             <span>🩺 辞典ヘルス</span>
-            <ChevronRight size={13} className="text-muted-strong group-hover:text-amber-400 group-hover:translate-x-0.5 transition" />
+            <ChevronRight size={13} className="text-muted-strong group-hover:text-primary-400 group-hover:translate-x-0.5 transition" />
           </Link>
 
           <Link
@@ -519,7 +519,7 @@ export default function AdminGuidePage() {
             className="p-3 rounded-xl bg-stone-800/80 hover:bg-stone-800 border border-stone-700 text-xs font-bold text-stone-200 hover:text-white transition flex items-center justify-between group"
           >
             <span>📊 運用ダッシュボード</span>
-            <ChevronRight size={13} className="text-muted-strong group-hover:text-amber-400 group-hover:translate-x-0.5 transition" />
+            <ChevronRight size={13} className="text-muted-strong group-hover:text-primary-400 group-hover:translate-x-0.5 transition" />
           </Link>
         </div>
       </footer>

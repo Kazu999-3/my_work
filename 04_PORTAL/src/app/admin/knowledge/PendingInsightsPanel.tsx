@@ -320,9 +320,9 @@ export default function PendingInsightsPanel() {
 
   return (
     <div className="space-y-6 animate-in">
-      <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start gap-3">
-        <HelpCircle size={18} className="text-amber-600 shrink-0 mt-0.5" />
-        <p className="text-xs text-amber-950 leading-relaxed font-medium">
+      <div className="bg-primary-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start gap-3">
+        <HelpCircle size={18} className="text-primary-600 shrink-0 mt-0.5" />
+        <p className="text-xs text-primary-950 leading-relaxed font-medium">
           AIが自動生成した知見・記事の一覧です（記事から分割された「独立した知見」と、動画解析で自動保存された攻略記事本体の両方）。承認するまでチャンピオン辞典の生成にもレーン別ガイドへの統合にも一切使われません。
           内容とチャンピオン判定(空欄＝レーン一般論としてレーン別ガイド側の対象になります)を確認し、必要なら修正してから承認してください。
         </p>
@@ -344,16 +344,16 @@ export default function PendingInsightsPanel() {
                 type="checkbox"
                 checked={selectedIds.size === items.length && items.length > 0}
                 onChange={toggleSelectAll}
-                className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-border"
+                className="w-4 h-4 rounded text-primary-600 focus:ring-primary-500 border-border"
               />
               <span>全選択 ({selectedIds.size}/{items.length}件)</span>
             </label>
-            <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg select-none">
+            <label className="flex items-center gap-1.5 cursor-pointer text-[11px] font-bold text-primary-800 bg-primary-50 border border-amber-200 px-2.5 py-1 rounded-lg select-none">
               <input
                 type="checkbox"
                 checked={autoMergeToDict}
                 onChange={(e) => setAutoMergeToDict(e.target.checked)}
-                className="w-3.5 h-3.5 rounded text-amber-600 focus:ring-amber-500 border-amber-300"
+                className="w-3.5 h-3.5 rounded text-primary-600 focus:ring-primary-500 border-amber-300"
               />
               <span>承認時にチャンピオン辞典へ即時マージ</span>
             </label>
@@ -365,14 +365,14 @@ export default function PendingInsightsPanel() {
                 <button
                   onClick={() => actBatch('reject')}
                   disabled={batchActionRunning}
-                  className="px-3 py-1.5 bg-rose-50 text-rose-700 border border-rose-200 font-bold rounded-xl text-xs hover:bg-rose-100 transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                  className="px-3 py-1.5 bg-danger-50 text-danger-700 border border-rose-200 font-bold rounded-xl text-xs hover:bg-danger-100 transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                 >
                   <XCircle size={13} /> 選択分を却下 ({selectedIds.size})
                 </button>
                 <button
                   onClick={() => actBatch('approve')}
                   disabled={batchActionRunning}
-                  className="px-3.5 py-1.5 bg-emerald-600 text-white font-bold rounded-xl text-xs hover:bg-emerald-500 transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                  className="px-3.5 py-1.5 bg-success-600 text-white font-bold rounded-xl text-xs hover:bg-success-500 transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                 >
                   {batchActionRunning ? <RefreshCw size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
                   選択分を一括承認 ({selectedIds.size})
@@ -382,7 +382,7 @@ export default function PendingInsightsPanel() {
             <button
               onClick={approveAllRemaining}
               disabled={batchActionRunning || items.length === 0}
-              className="px-3.5 py-1.5 bg-amber-500 text-stone-950 font-black rounded-xl text-xs hover:bg-amber-400 transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+              className="px-3.5 py-1.5 bg-primary-500 text-stone-950 font-black rounded-xl text-xs hover:bg-primary-400 transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
             >
               {batchActionRunning ? <RefreshCw size={13} className="animate-spin" /> : <span>⚡</span>}
               全件一括承認＆マージ
@@ -391,7 +391,7 @@ export default function PendingInsightsPanel() {
         </div>
       )}
 
-      {error && <p className="text-xs text-rose-600 font-bold">{error}</p>}
+      {error && <p className="text-xs text-danger-600 font-bold">{error}</p>}
 
       {loading && !items && <p className="text-xs text-faint">読み込み中...</p>}
 
@@ -405,7 +405,7 @@ export default function PendingInsightsPanel() {
           const busy = busyId === item.id;
           return (
             <div key={item.id} className={`bg-surface border rounded-2xl p-5 shadow-xs space-y-3 transition-colors ${
-              selectedIds.has(item.id) ? 'border-amber-400 bg-amber-50/20 ring-1 ring-amber-300' : 'border-border'
+              selectedIds.has(item.id) ? 'border-amber-400 bg-primary-50/20 ring-1 ring-primary-300' : 'border-border'
             }`}>
               <div className="flex items-start justify-between gap-3 flex-wrap">
                 <div className="flex items-start gap-3">
@@ -413,13 +413,13 @@ export default function PendingInsightsPanel() {
                     type="checkbox"
                     checked={selectedIds.has(item.id)}
                     onChange={() => toggleSelect(item.id)}
-                    className="mt-1 w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-border cursor-pointer"
+                    className="mt-1 w-4 h-4 rounded text-primary-600 focus:ring-primary-500 border-border cursor-pointer"
                   />
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <h4 className="text-sm font-bold text-foreground">{item.title}</h4>
                       <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border shrink-0 ${
-                        item.is_atomic ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-teal-50 border-teal-200 text-teal-700'
+                        item.is_atomic ? 'bg-primary-50 border-amber-200 text-primary-700' : 'bg-secondary-50 border-teal-200 text-secondary-700'
                       }`}>
                         {item.is_atomic ? '分割知見' : '動画解析記事'}
                       </span>
@@ -429,14 +429,14 @@ export default function PendingInsightsPanel() {
                   )}
                   {item.source_url && (
                     <a href={item.source_url} target="_blank" rel="noopener noreferrer"
-                      className="text-[11px] text-teal-600 hover:text-teal-800 mt-0.5 inline-flex items-center gap-1 font-bold">
+                      className="text-[11px] text-secondary-600 hover:text-secondary-800 mt-0.5 inline-flex items-center gap-1 font-bold">
                       <ExternalLink size={11} /> 元動画/記事を開く
                     </a>
                   )}
                   </div>
                 </div>
                 <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg border shrink-0 ${
-                  item.isLaneGeneral ? 'bg-teal-50 border-teal-200 text-teal-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                  item.isLaneGeneral ? 'bg-secondary-50 border-teal-200 text-secondary-700' : 'bg-success-50 border-emerald-200 text-success-700'
                 }`}>
                   {item.isLaneGeneral ? 'AI判定: レーン一般論' : `AI判定: ${item.champion}固有`}
                 </span>
@@ -460,27 +460,27 @@ export default function PendingInsightsPanel() {
                     type="button"
                     onClick={() => openMergePreview(item)}
                     disabled={busy || previewLoadingId === item.id}
-                    className="px-3.5 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold rounded-xl text-xs transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                    className="px-3.5 py-2.5 bg-primary-50 hover:bg-primary-100 text-primary-900 border border-amber-300 font-bold rounded-xl text-xs transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                     title="辞典や対面メモにどう反映されるかを事前に確認・調整します"
                   >
                     {previewLoadingId === item.id ? (
-                      <RefreshCw size={13} className="animate-spin text-amber-700" />
+                      <RefreshCw size={13} className="animate-spin text-primary-700" />
                     ) : (
-                      <Eye size={13} className="text-amber-700" />
+                      <Eye size={13} className="text-primary-700" />
                     )}
                     <span>🔍 辞典反映プレビュー</span>
                   </button>
                   <button
                     onClick={() => act(item.id, 'reject')}
                     disabled={busy || previewLoadingId === item.id}
-                    className="px-3.5 py-2.5 bg-rose-50 text-rose-700 border border-rose-200 font-bold rounded-xl text-xs hover:bg-rose-100 transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                    className="px-3.5 py-2.5 bg-danger-50 text-danger-700 border border-rose-200 font-bold rounded-xl text-xs hover:bg-danger-100 transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                   >
                     <XCircle size={14} /> 却下(削除)
                   </button>
                   <button
                     onClick={() => act(item.id, 'approve', editedChampion)}
                     disabled={busy || previewLoadingId === item.id}
-                    className="px-3.5 py-2.5 bg-emerald-600 text-white font-bold rounded-xl text-xs hover:bg-emerald-500 transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                    className="px-3.5 py-2.5 bg-success-600 text-white font-bold rounded-xl text-xs hover:bg-success-500 transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
                   >
                     {busy ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={14} />} 承認
                   </button>

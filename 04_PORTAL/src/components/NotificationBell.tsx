@@ -212,22 +212,22 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
     // **どれにも一致せず**、dict_review は全件が無個性な「🔔 お知らせ」になっていた。
     // 実データの type を先に判定する。
     if (type.includes('coach_review')) {
-      return { icon: '🎮', label: 'ソロQ振り返り', bg: 'bg-amber-100 text-amber-800 border-amber-200' };
+      return { icon: '🎮', label: 'ソロQ振り返り', bg: 'bg-primary-100 text-primary-800 border-amber-200' };
     }
     if (type.includes('dict_review')) {
-      return { icon: '📖', label: '辞典レビュー', bg: 'bg-teal-100 text-teal-800 border-teal-200' };
+      return { icon: '📖', label: '辞典レビュー', bg: 'bg-secondary-100 text-secondary-800 border-teal-200' };
     }
     if (type.includes('soloq') || title.includes('ソロq') || title.includes('振り返り')) {
-      return { icon: '🎮', label: 'ソロQ', bg: 'bg-amber-100 text-amber-800 border-amber-200' };
+      return { icon: '🎮', label: 'ソロQ', bg: 'bg-primary-100 text-primary-800 border-amber-200' };
     }
     if (type.includes('discord') || title.includes('メンバー') || title.includes('参加')) {
-      return { icon: '👤', label: '新メンバー', bg: 'bg-amber-100 text-amber-800 border-amber-200' };
+      return { icon: '👤', label: '新メンバー', bg: 'bg-primary-100 text-primary-800 border-amber-200' };
     }
     if (type.includes('match') || title.includes('内戦') || title.includes('試合')) {
-      return { icon: '🏆', label: '大会・内戦', bg: 'bg-emerald-100 text-emerald-800 border-emerald-200' };
+      return { icon: '🏆', label: '大会・内戦', bg: 'bg-success-100 text-success-800 border-emerald-200' };
     }
     if (type.includes('error') || title.includes('エラー') || title.includes('失敗')) {
-      return { icon: '⚠️', label: 'アラート', bg: 'bg-rose-100 text-rose-800 border-rose-200' };
+      return { icon: '⚠️', label: 'アラート', bg: 'bg-danger-100 text-danger-800 border-rose-200' };
     }
     return { icon: '🔔', label: 'お知らせ', bg: 'bg-surface-subtle text-foreground-soft border-border' };
   };
@@ -284,14 +284,14 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
       <button
         onClick={toggleOpen}
         title="通知"
-        className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition-all hover:bg-black/5 hover:text-foreground text-gray-400 relative cursor-pointer ${
+        className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold transition-all hover:bg-black/5 hover:text-foreground text-faint relative cursor-pointer ${
           collapsed ? 'justify-center' : 'w-full'
         }`}
       >
         <span className="relative">
           <Bell size={16} />
           {unreadCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 flex h-3.5 min-w-[0.875rem] items-center justify-center rounded-full bg-rose-500 px-1 text-[8px] font-black text-white shadow-2xs">
+            <span className="absolute -top-1.5 -right-1.5 flex h-3.5 min-w-[0.875rem] items-center justify-center rounded-full bg-danger-500 px-1 text-[8px] font-black text-white shadow-2xs">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
@@ -310,7 +310,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
             <div className="flex items-center gap-2">
               <span className="text-xs font-black text-foreground">通知センター</span>
               {unreadCount > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[9px] font-black">
+                <span className="px-1.5 py-0.5 rounded-full bg-danger-500 text-white text-[9px] font-black">
                   未読 {unreadCount}
                 </span>
               )}
@@ -321,7 +321,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
                 type="button"
                 onClick={() => setOnlyUnread(!onlyUnread)}
                 className={`px-2 py-0.5 rounded-md transition cursor-pointer border ${
-                  onlyUnread ? 'bg-amber-600 text-white border-amber-600' : 'bg-surface text-muted border-border hover:bg-surface-subtle'
+                  onlyUnread ? 'bg-primary-600 text-white border-amber-600' : 'bg-surface text-muted border-border hover:bg-surface-subtle'
                 }`}
               >
                 {onlyUnread ? '未読のみ' : 'すべて'}
@@ -331,7 +331,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
                 <button 
                   type="button"
                   onClick={markAllRead} 
-                  className="text-amber-800 hover:text-amber-950 transition cursor-pointer"
+                  className="text-primary-800 hover:text-primary-950 transition cursor-pointer"
                   title="すべて既読にする"
                 >
                   ✓ 全既読
@@ -343,7 +343,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
                   type="button"
                   onClick={clearAllRead}
                   disabled={deleting}
-                  className="text-faint hover:text-rose-700 transition cursor-pointer"
+                  className="text-faint hover:text-danger-700 transition cursor-pointer"
                   title="既読の通知をすべて削除"
                 >
                   🗑️ 既読消去
@@ -369,7 +369,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
                   <div 
                     key={n.id} 
                     className={`p-3.5 transition-colors ${
-                      !n.read ? 'bg-amber-50/50 hover:bg-amber-50' : 'hover:bg-background'
+                      !n.read ? 'bg-primary-50/50 hover:bg-primary-50' : 'hover:bg-background'
                     }`}
                   >
                     <div className="flex items-start gap-2.5">
@@ -387,7 +387,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
                           onClick={() => toggleExpand(n)}
                           className="cursor-pointer group"
                         >
-                          <div className={`text-xs font-black text-foreground group-hover:text-amber-800 transition ${!n.read ? 'font-black' : 'font-bold text-foreground-subtle'}`}>
+                          <div className={`text-xs font-black text-foreground group-hover:text-primary-800 transition ${!n.read ? 'font-black' : 'font-bold text-foreground-subtle'}`}>
                             {n.title}
                           </div>
 
@@ -403,7 +403,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
                             <a
                               href={action.url}
                               onClick={() => markRead(n)}
-                              className="text-[10px] font-black text-amber-800 hover:text-amber-950 transition hover:underline flex items-center gap-0.5"
+                              className="text-[10px] font-black text-primary-800 hover:text-primary-950 transition hover:underline flex items-center gap-0.5"
                             >
                               {action.label}
                             </a>

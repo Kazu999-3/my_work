@@ -68,17 +68,17 @@ export default function EarlyJunglePathingCard({
     <div className="bg-gradient-to-br from-stone-900 to-stone-950 text-white rounded-2xl p-4 border border-stone-800 space-y-3 shadow-md">
       <div className="flex items-center justify-between flex-wrap gap-2 border-b border-stone-800 pb-2.5">
         <div className="flex items-center gap-2">
-          <Compass className="w-4 h-4 text-amber-400 animate-pulse" />
-          <h4 className="text-xs font-black text-amber-300 uppercase tracking-wider">
+          <Compass className="w-4 h-4 text-primary-400 animate-pulse" />
+          <h4 className="text-xs font-black text-primary-300 uppercase tracking-wider">
             初動3分ルートの方針（{myChampion} vs {enemyChampion} / 一般的な指針）
           </h4>
         </div>
         <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
           planType === 'contest'
-            ? 'bg-rose-900/80 text-rose-200 border-rose-700'
+            ? 'bg-danger-900/80 text-danger-200 border-rose-700'
             : planType === 'avoid'
-            ? 'bg-teal-900/80 text-teal-200 border-teal-700'
-            : 'bg-emerald-900/80 text-emerald-200 border-emerald-700'
+            ? 'bg-secondary-900/80 text-secondary-200 border-teal-700'
+            : 'bg-success-900/80 text-success-200 border-emerald-700'
         }`}>
           {planType === 'contest' ? '⚔️ 2:55 スカトル勝負型' : '🛡️ 逆サイド回避・ファーム型'}
         </span>
@@ -88,27 +88,27 @@ export default function EarlyJunglePathingCard({
       <div className="grid grid-cols-2 gap-2 text-[11px] bg-stone-800/60 p-2 rounded-xl">
         <div className="flex justify-between items-center px-1">
           <span className="text-faint font-bold">自クリア基準 ({myChampion})</span>
-          <span className="font-mono font-black text-amber-300">{fmtSec(myFastestClearSec)}</span>
+          <span className="font-mono font-black text-primary-300">{fmtSec(myFastestClearSec)}</span>
         </div>
         <div className="flex justify-between items-center px-1 border-l border-stone-700">
           <span className="text-faint font-bold">敵クリア基準 ({enemyChampion})</span>
-          <span className="font-mono font-black text-rose-300">{fmtSec(enemyFastestClearSec)}</span>
+          <span className="font-mono font-black text-danger-300">{fmtSec(enemyFastestClearSec)}</span>
         </div>
       </div>
 
       <p className="text-xs text-faint leading-relaxed font-medium">
-        💡 <strong className="text-amber-300">戦術要約:</strong> {planSummary}
+        💡 <strong className="text-primary-300">戦術要約:</strong> {planSummary}
       </p>
 
       {/* 3ステップフローチャート */}
       <div className="space-y-2 pt-1">
         {/* Step 1 */}
         <div className="bg-stone-800/80 border border-stone-700/80 rounded-xl p-2.5 flex items-start gap-2.5">
-          <div className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-300 font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5 border border-amber-500/40">
+          <div className="w-5 h-5 rounded-full bg-primary-500/20 text-primary-300 font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5 border border-amber-500/40">
             1
           </div>
           <div>
-            <div className="text-[10px] font-bold text-amber-400 uppercase tracking-wide">
+            <div className="text-[10px] font-bold text-primary-400 uppercase tracking-wide">
               Step 1: スタート位置・フルクリア方針 (0:00〜2:30)
             </div>
             <p className="text-xs text-stone-200 font-semibold mt-0.5 leading-relaxed">
@@ -119,11 +119,11 @@ export default function EarlyJunglePathingCard({
 
         {/* Step 2 */}
         <div className="bg-stone-800/80 border border-stone-700/80 rounded-xl p-2.5 flex items-start gap-2.5">
-          <div className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-300 font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5 border border-amber-500/40">
+          <div className="w-5 h-5 rounded-full bg-primary-500/20 text-primary-300 font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5 border border-amber-500/40">
             2
           </div>
           <div>
-            <div className="text-[10px] font-bold text-amber-400 uppercase tracking-wide">
+            <div className="text-[10px] font-bold text-primary-400 uppercase tracking-wide">
               Step 2: 2:55 初代スカトル争奪判断 (2:55〜3:15)
             </div>
             <p className="text-xs text-stone-200 font-semibold mt-0.5 leading-relaxed">
@@ -134,11 +134,11 @@ export default function EarlyJunglePathingCard({
 
         {/* Step 3 */}
         <div className="bg-stone-800/80 border border-stone-700/80 rounded-xl p-2.5 flex items-start gap-2.5">
-          <div className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-300 font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5 border border-amber-500/40">
+          <div className="w-5 h-5 rounded-full bg-primary-500/20 text-primary-300 font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5 border border-amber-500/40">
             3
           </div>
           <div>
-            <div className="text-[10px] font-bold text-amber-400 uppercase tracking-wide">
+            <div className="text-[10px] font-bold text-primary-400 uppercase tracking-wide">
               Step 3: ファーストアクション ＆ リコール判断 (3:15〜4:00)
             </div>
             <p className="text-xs text-stone-200 font-semibold mt-0.5 leading-relaxed">

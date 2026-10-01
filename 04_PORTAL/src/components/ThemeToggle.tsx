@@ -36,7 +36,7 @@ export default function ThemeToggle({ variant = 'compact', className = '' }: The
           }`}
           title="ライトモード"
         >
-          <Sun size={14} className="text-amber-500" />
+          <Sun size={14} className="text-primary-500" />
           <span>ライト</span>
         </button>
         <button
@@ -49,7 +49,7 @@ export default function ThemeToggle({ variant = 'compact', className = '' }: The
           }`}
           title="ダークモード"
         >
-          <Moon size={14} className="text-amber-400" />
+          <Moon size={14} className="text-primary-400" />
           <span>ダーク</span>
         </button>
         <button
@@ -78,9 +78,9 @@ export default function ThemeToggle({ variant = 'compact', className = '' }: The
       aria-label="ダークモード切り替え"
     >
       {resolvedTheme === 'dark' ? (
-        <Moon size={16} className="text-amber-400 group-hover:rotate-12 transition-transform" />
+        <Moon size={16} className="text-primary-400 group-hover:rotate-12 transition-transform" />
       ) : (
-        <Sun size={16} className="text-amber-500 group-hover:rotate-45 transition-transform" />
+        <Sun size={16} className="text-primary-500 group-hover:rotate-45 transition-transform" />
       )}
     </button>
   );

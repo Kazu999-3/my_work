@@ -19,9 +19,9 @@ export function MentorshipGuidelinesModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-4 bg-stone-900/60 backdrop-blur-xs animate-in fade-in duration-150">
       <div className="bg-surface border border-border rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden text-foreground animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
         {/* ヘッダー */}
-        <div className="p-5 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border-b border-amber-200 flex items-center justify-between shrink-0">
+        <div className="p-5 bg-gradient-to-r from-primary-500/15 via-primary-500/10 to-primary-500/15 border-b border-amber-200 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-xl shadow-2xs">
+            <div className="w-10 h-10 rounded-2xl bg-primary-100 border border-amber-300 flex items-center justify-center text-xl shadow-2xs">
               📜
             </div>
             <div>
@@ -44,20 +44,20 @@ export function MentorshipGuidelinesModal({
         {/* ボディ */}
         <div className="p-5 space-y-5 overflow-y-auto">
           {/* 基本スタンス */}
-          <div className="p-3.5 bg-amber-50/70 border border-amber-200 rounded-2xl text-xs text-foreground-soft leading-relaxed font-medium">
+          <div className="p-3.5 bg-primary-50/70 border border-amber-200 rounded-2xl text-xs text-foreground-soft leading-relaxed font-medium">
             🌟 KTMの師弟制度は「褒めて伸ばす」「一緒に楽しむ」文化を最優先にしています。勝敗やレートに関係なく、楽しく上達できるバディ関係を育みましょう。
           </div>
 
           {/* 師匠の心得 */}
           <div className="space-y-2.5">
-            <div className="flex items-center gap-2 text-xs font-black text-amber-900">
-              <span className="p-1 rounded-lg bg-amber-100 border border-amber-300">👨‍🏫</span>
+            <div className="flex items-center gap-2 text-xs font-black text-primary-900">
+              <span className="p-1 rounded-lg bg-primary-100 border border-amber-300">👨‍🏫</span>
               <span>師匠（メンター）の心得</span>
             </div>
             <div className="p-3.5 rounded-2xl bg-background border border-border space-y-2">
               {MENTORSHIP_GUIDELINES.mentor.map((item, idx) => (
                 <div key={idx} className="flex items-start gap-2 text-xs text-foreground-subtle">
-                  <CheckCircle2 size={14} className="text-emerald-600 shrink-0 mt-0.5" />
+                  <CheckCircle2 size={14} className="text-success-600 shrink-0 mt-0.5" />
                   <span className="font-medium leading-relaxed">{item}</span>
                 </div>
               ))}
@@ -66,14 +66,14 @@ export function MentorshipGuidelinesModal({
 
           {/* 弟子の心得 */}
           <div className="space-y-2.5">
-            <div className="flex items-center gap-2 text-xs font-black text-emerald-900">
-              <span className="p-1 rounded-lg bg-emerald-100 border border-emerald-300">🌱</span>
+            <div className="flex items-center gap-2 text-xs font-black text-success-900">
+              <span className="p-1 rounded-lg bg-success-100 border border-emerald-300">🌱</span>
               <span>弟子（生徒）の心得</span>
             </div>
             <div className="p-3.5 rounded-2xl bg-background border border-border space-y-2">
               {MENTORSHIP_GUIDELINES.pupil.map((item, idx) => (
                 <div key={idx} className="flex items-start gap-2 text-xs text-foreground-subtle">
-                  <CheckCircle2 size={14} className="text-emerald-600 shrink-0 mt-0.5" />
+                  <CheckCircle2 size={14} className="text-success-600 shrink-0 mt-0.5" />
                   <span className="font-medium leading-relaxed">{item}</span>
                 </div>
               ))}

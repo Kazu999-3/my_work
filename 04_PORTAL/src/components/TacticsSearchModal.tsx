@@ -83,13 +83,13 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
         {/* ヘッダー */}
         <div className="p-4 sm:p-5 border-b border-border/80 bg-background/70 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-700">
-              <Zap size={18} className="fill-amber-500/20" />
+            <div className="w-8 h-8 rounded-xl bg-primary-500/10 border border-amber-500/30 flex items-center justify-center text-primary-700">
+              <Zap size={18} className="fill-primary-500/20" />
             </div>
             <div>
               <h3 className="text-base font-black text-foreground flex items-center gap-1.5">
                 戦術概念 逆引きインデックス
-                <span className="text-[10px] bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded-full font-bold">RAG</span>
+                <span className="text-[10px] bg-primary-100 text-primary-900 border border-amber-300 px-1.5 py-0.5 rounded-full font-bold">RAG</span>
               </h3>
               <p className="text-xs text-muted-strong">
                 全30体のバイブル ＆ 170本超の動画解析からTips・立ち回りを即座に横断検索
@@ -138,7 +138,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
                 onClick={() => setQuery(concept)}
                 className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition cursor-pointer ${
                   query === concept
-                    ? 'bg-amber-500 text-stone-950 border-amber-500'
+                    ? 'bg-primary-500 text-stone-950 border-amber-500'
                     : 'bg-surface text-muted border-border hover:bg-surface-subtle hover:text-foreground'
                 }`}
               >
@@ -158,7 +158,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
           )}
 
           {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-xs text-red-700 font-bold">
+            <div className="p-4 bg-danger-50 border border-rose-200 rounded-2xl text-xs text-danger-700 font-bold">
               エラー: {error}
             </div>
           )}
@@ -195,7 +195,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
                       onClose();
                     }
                   }}
-                  className="group bg-background/70 hover:bg-amber-50/40 border border-border hover:border-amber-300 p-3.5 rounded-2xl transition cursor-pointer flex flex-col gap-2"
+                  className="group bg-background/70 hover:bg-primary-50/40 border border-border hover:border-amber-300 p-3.5 rounded-2xl transition cursor-pointer flex flex-col gap-2"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
@@ -214,8 +214,8 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
                       </span>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                         item.type === 'bible'
-                          ? 'bg-teal-50 text-teal-700 border-teal-200'
-                          : 'bg-amber-50 text-amber-700 border-amber-200'
+                          ? 'bg-secondary-50 text-secondary-700 border-teal-200'
+                          : 'bg-primary-50 text-primary-700 border-amber-200'
                       }`}>
                         {item.type === 'bible' ? '戦術バイブル' : '動画解析Tips'}
                       </span>
@@ -224,7 +224,7 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
                       </span>
                     </div>
 
-                    <div className="shrink-0 flex items-center gap-1 text-[11px] font-bold text-amber-700 group-hover:translate-x-0.5 transition">
+                    <div className="shrink-0 flex items-center gap-1 text-[11px] font-bold text-primary-700 group-hover:translate-x-0.5 transition">
                       <span>辞典で開く</span>
                       <ExternalLink size={12} />
                     </div>

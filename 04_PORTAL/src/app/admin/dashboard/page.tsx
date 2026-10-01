@@ -10,18 +10,18 @@ function summarizeError(errorStr?: string): { label: string; bg: string } {
   if (!errorStr) return { label: 'エラー発生', bg: 'bg-surface-subtle text-foreground-subtle border-border' };
   const s = errorStr.toLowerCase();
   if (s.includes('429') || s.includes('quota') || s.includes('resource_exhausted')) {
-    return { label: 'Gemini API 一時混雑 (429)', bg: 'bg-amber-100 text-amber-900 border-amber-300' };
+    return { label: 'Gemini API 一時混雑 (429)', bg: 'bg-primary-100 text-primary-900 border-amber-300' };
   }
   if (s.includes('404') || s.includes('not found') || s.includes('private') || s.includes('deleted')) {
-    return { label: '動画が非公開/削除済み', bg: 'bg-rose-100 text-rose-900 border-rose-300' };
+    return { label: '動画が非公開/削除済み', bg: 'bg-danger-100 text-danger-900 border-rose-300' };
   }
   if (s.includes('timeout') || s.includes('econnreset') || s.includes('network')) {
-    return { label: 'ネットワークタイムアウト', bg: 'bg-orange-100 text-orange-900 border-orange-300' };
+    return { label: 'ネットワークタイムアウト', bg: 'bg-primary-100 text-primary-900 border-amber-300' };
   }
   if (s.includes('syntax') || s.includes('parse')) {
-    return { label: 'JSONパース不整合', bg: 'bg-amber-100 text-amber-900 border-amber-300' };
+    return { label: 'JSONパース不整合', bg: 'bg-primary-100 text-primary-900 border-amber-300' };
   }
-  return { label: '処理失敗', bg: 'bg-rose-100 text-rose-900 border-rose-300' };
+  return { label: '処理失敗', bg: 'bg-danger-100 text-danger-900 border-rose-300' };
 }
 
 export default function AdminDashboardPage() {
@@ -210,7 +210,7 @@ export default function AdminDashboardPage() {
           </p>
           <a
             href="/login"
-            className="inline-block w-full rounded-xl bg-amber-600 px-5 py-3 text-sm font-black text-white transition hover:bg-amber-500 shadow-md hover:shadow-amber-500/20"
+            className="inline-block w-full rounded-xl bg-primary-600 px-5 py-3 text-sm font-black text-white transition hover:bg-primary-500 shadow-md hover:shadow-primary-500/20"
           >
             ログインページへ
           </a>
@@ -240,9 +240,9 @@ export default function AdminDashboardPage() {
     <div className="min-h-screen w-full bg-[#f7f5f0] dark:bg-[#1e1f22] text-foreground relative overflow-hidden">
       {/* Background Decorative Ambient Orbs */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
-        <div className="absolute top-[-5%] right-[-5%] w-[45vw] h-[45vw] rounded-full bg-amber-500/10 blur-[130px] animate-pulse"></div>
-        <div className="absolute top-[30%] left-[-10%] w-[40vw] h-[40vw] rounded-full bg-orange-500/10 blur-[140px] animate-pulse" style={{ animationDelay: '2s' }}></div>
-        <div className="absolute bottom-[-10%] right-[10%] w-[50vw] h-[50vw] rounded-full bg-amber-600/8 blur-[150px] animate-pulse" style={{ animationDelay: '4s' }}></div>
+        <div className="absolute top-[-5%] right-[-5%] w-[45vw] h-[45vw] rounded-full bg-primary-500/10 blur-[130px] animate-pulse"></div>
+        <div className="absolute top-[30%] left-[-10%] w-[40vw] h-[40vw] rounded-full bg-primary-500/10 blur-[140px] animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute bottom-[-10%] right-[10%] w-[50vw] h-[50vw] rounded-full bg-primary-600/8 blur-[150px] animate-pulse" style={{ animationDelay: '4s' }}></div>
       </div>
 
       <div className="max-w-7xl mx-auto p-4 md:p-8 flex flex-col gap-6 relative z-10">
@@ -251,13 +251,13 @@ export default function AdminDashboardPage() {
         <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-4 border-b border-border/80">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <div className="p-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-800 shadow-2xs">
+              <div className="p-2 rounded-xl bg-primary-500/15 border border-amber-500/30 text-primary-800 shadow-2xs">
                 <Shield size={20} />
               </div>
               <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground">
                 システム運用ダッシュボード
               </h1>
-              <span className="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-800 border border-amber-500/20">
+              <span className="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-primary-500/10 text-primary-800 border border-amber-500/20">
                 HQ v5.2
               </span>
             </div>
@@ -273,13 +273,13 @@ export default function AdminDashboardPage() {
               className="px-3.5 py-2 rounded-xl bg-surface/80 backdrop-blur-md border border-border hover:bg-surface hover:border-border text-xs font-bold text-foreground-subtle transition shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               title="データを即時更新"
             >
-              <RefreshCw size={13} className={isRefreshing ? 'animate-spin text-amber-600' : 'text-muted-strong'} />
+              <RefreshCw size={13} className={isRefreshing ? 'animate-spin text-primary-600' : 'text-muted-strong'} />
               <span>{isRefreshing ? '更新中...' : '即時リフレッシュ'}</span>
             </button>
 
             <a
               href="sovereign-worker://start"
-              className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-xs font-black text-white transition shadow-xs flex items-center gap-1.5 cursor-pointer"
+              className="px-3.5 py-2 rounded-xl bg-primary-600 hover:bg-primary-500 text-xs font-black text-white transition shadow-xs flex items-center gap-1.5 cursor-pointer"
               title="ローカルエッジワーカーを起動"
             >
               <Zap size={13} />
@@ -299,7 +299,7 @@ export default function AdminDashboardPage() {
 
             <Link
               href="/ktm-admin"
-              className="px-3.5 py-2 rounded-xl bg-amber-50/90 backdrop-blur-md border border-amber-200 hover:bg-amber-100 text-xs font-bold text-amber-700 transition shadow-xs flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-xl bg-primary-50/90 backdrop-blur-md border border-amber-200 hover:bg-primary-100 text-xs font-bold text-primary-700 transition shadow-xs flex items-center gap-1.5"
             >
               <Trophy size={13} />
               <span>KTM大会管理</span>
@@ -307,10 +307,10 @@ export default function AdminDashboardPage() {
 
             <Link
               href="/admin/guide"
-              className="px-3.5 py-2 rounded-xl bg-amber-500/15 backdrop-blur-md border border-amber-300 hover:bg-amber-500/25 text-xs font-black text-amber-900 transition shadow-xs flex items-center gap-1.5"
+              className="px-3.5 py-2 rounded-xl bg-primary-500/15 backdrop-blur-md border border-amber-300 hover:bg-primary-500/25 text-xs font-black text-primary-900 transition shadow-xs flex items-center gap-1.5"
               title="LoLデータ収集・辞典・AIコーチ連携の全貌詳細仕様ガイド"
             >
-              <BookOpen size={13} className="text-amber-700" />
+              <BookOpen size={13} className="text-primary-700" />
               <span>📖 全貌仕様ガイド</span>
             </Link>
 
@@ -324,8 +324,8 @@ export default function AdminDashboardPage() {
 
         {/* ⚠️ データ取得エラー通知（APIタイムアウト・ネットワーク障害時） */}
         {fetchError && (
-          <div className="p-3.5 rounded-2xl bg-rose-50/90 border border-rose-200/80 text-rose-950 flex items-center gap-2.5 shadow-2xs backdrop-blur-md">
-            <ShieldAlert size={16} className="text-rose-600 shrink-0" />
+          <div className="p-3.5 rounded-2xl bg-danger-50/90 border border-rose-200/80 text-danger-950 flex items-center gap-2.5 shadow-2xs backdrop-blur-md">
+            <ShieldAlert size={16} className="text-danger-600 shrink-0" />
             <span className="text-xs font-bold">{fetchError}</span>
           </div>
         )}
@@ -334,8 +334,8 @@ export default function AdminDashboardPage() {
         {healthStatus && (
           <div className={`p-3.5 rounded-2xl border flex flex-wrap items-center justify-between gap-3 shadow-2xs backdrop-blur-md ${
             healthStatus.allGreen 
-              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-950' 
-              : 'bg-amber-500/10 border-amber-500/30 text-amber-950'
+              ? 'bg-success-500/10 border-emerald-500/30 text-success-950' 
+              : 'bg-primary-500/10 border-amber-500/30 text-primary-950'
           }`}>
             <div className="flex items-center gap-2.5">
               <span className="text-base">{healthStatus.allGreen ? '🛡️' : '⚠️'}</span>
@@ -346,14 +346,14 @@ export default function AdminDashboardPage() {
                   </span>
                   <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
                     healthStatus.allGreen 
-                      ? 'bg-emerald-500/20 text-emerald-900 border-emerald-500/40' 
-                      : 'bg-amber-500/20 text-amber-900 border-amber-500/40'
+                      ? 'bg-success-500/20 text-success-900 border-emerald-500/40' 
+                      : 'bg-primary-500/20 text-primary-900 border-amber-500/40'
                   }`}>
                     {healthStatus.allGreen ? 'ALL GREEN' : 'ATTENTION'}
                   </span>
                 </div>
                 <div className="text-[11px] text-muted flex items-center gap-3 mt-0.5 font-medium flex-wrap">
-                  <span>🔗 リンク切れ: <strong className="text-emerald-700 font-bold">{healthStatus.metrics.brokenLinks}件</strong></span>
+                  <span>🔗 リンク切れ: <strong className="text-success-700 font-bold">{healthStatus.metrics.brokenLinks}件</strong></span>
                   <span>📅 デイリー日誌: <strong className="text-foreground-soft font-bold">{healthStatus.metrics.latestDailyLog}</strong></span>
                 </div>
               </div>
@@ -361,10 +361,10 @@ export default function AdminDashboardPage() {
             <div className="flex items-center gap-2">
               <Link
                 href="/admin/guide"
-                className="text-xs font-bold px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 shadow-2xs transition flex items-center gap-1"
+                className="text-xs font-bold px-3 py-1.5 rounded-xl bg-primary-50 hover:bg-primary-100 border border-amber-200 text-primary-900 shadow-2xs transition flex items-center gap-1"
                 title="LoLデータ収集＆辞典＆コーチ連携の全貌仕様ガイド"
               >
-                <BookOpen size={12} className="text-amber-700" />
+                <BookOpen size={12} className="text-primary-700" />
                 <span>📖 仕様ガイド</span>
               </Link>
               <Link
@@ -382,10 +382,10 @@ export default function AdminDashboardPage() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-4 rounded-2xl bg-amber-500/15 border-2 border-amber-500/30 text-amber-950 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-xs backdrop-blur-md"
+            className="p-4 rounded-2xl bg-primary-500/15 border-2 border-amber-500/30 text-primary-950 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 shadow-xs backdrop-blur-md"
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-amber-500 text-white shadow-xs shrink-0">
+              <div className="p-2 rounded-xl bg-primary-500 text-white shadow-xs shrink-0">
                 <Zap size={18} className="animate-pulse" />
               </div>
               <div>
@@ -400,7 +400,7 @@ export default function AdminDashboardPage() {
             <div className="flex items-center gap-2 shrink-0 w-full md:w-auto justify-end">
               <a
                 href="sovereign-worker://start"
-                className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-black transition shadow-xs flex items-center gap-1.5"
+                className="px-3.5 py-1.5 rounded-xl bg-primary-600 hover:bg-primary-500 text-white text-xs font-black transition shadow-xs flex items-center gap-1.5"
               >
                 <Zap size={12} /> 起動
               </a>
@@ -421,11 +421,11 @@ export default function AdminDashboardPage() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-4 rounded-2xl bg-rose-50/90 border border-rose-200/80 text-rose-950 space-y-3 shadow-xs backdrop-blur-md"
+            className="p-4 rounded-2xl bg-danger-50/90 border border-rose-200/80 text-danger-950 space-y-3 shadow-xs backdrop-blur-md"
           >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-rose-200/80 pb-2.5">
-              <h3 className="text-xs font-black text-rose-800 flex items-center gap-1.5">
-                <ShieldAlert size={16} className="text-rose-600" />
+              <h3 className="text-xs font-black text-danger-800 flex items-center gap-1.5">
+                <ShieldAlert size={16} className="text-danger-600" />
                 <span>⚠️ 要対応タスク ({needsAttention.failedTasks.length + (needsAttention.youtubeErrorCount > 0 ? 1 : 0) + (needsAttention.dictReviewCount > 0 ? 1 : 0)}件)</span>
               </h3>
 
@@ -434,7 +434,7 @@ export default function AdminDashboardPage() {
                   type="button"
                   onClick={handleRetryAll}
                   disabled={isRetryingAll}
-                  className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-black text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer shrink-0"
+                  className="px-3 py-1.5 bg-danger-600 hover:bg-danger-700 disabled:opacity-50 text-white font-black text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer shrink-0"
                 >
                   <RefreshCw size={12} className={isRetryingAll ? 'animate-spin' : ''} />
                   <span>⚡ 失敗タスクを一括再実行 ({needsAttention.failedTasks.length}件)</span>
@@ -462,7 +462,7 @@ export default function AdminDashboardPage() {
                       </div>
                     </div>
 
-                    <Link href={TASK_LINKS[task.task_type] || '/admin/dashboard'} className="text-[11px] font-bold text-rose-700 hover:text-rose-900 underline shrink-0">
+                    <Link href={TASK_LINKS[task.task_type] || '/admin/dashboard'} className="text-[11px] font-bold text-danger-700 hover:text-danger-900 underline shrink-0">
                       詳細へ →
                     </Link>
                   </div>
@@ -475,7 +475,7 @@ export default function AdminDashboardPage() {
                   className="flex items-center justify-between p-2.5 rounded-xl bg-surface/90 border border-rose-200 hover:border-rose-300 transition"
                 >
                   <span className="text-xs font-bold text-foreground">YouTube動画キューのエラー・手動対応要 ({needsAttention.youtubeErrorCount}件)</span>
-                  <span className="text-[11px] font-bold text-rose-700">管理画面へ →</span>
+                  <span className="text-[11px] font-bold text-danger-700">管理画面へ →</span>
                 </Link>
               )}
               {needsAttention.dictReviewCount > 0 && (
@@ -484,7 +484,7 @@ export default function AdminDashboardPage() {
                   className="flex items-center justify-between p-2.5 rounded-xl bg-surface/90 border border-rose-200 hover:border-rose-300 transition"
                 >
                   <span className="text-xs font-bold text-foreground">チャンピオン辞典 鮮度レビュー要対応 ({needsAttention.dictReviewCount}件)</span>
-                  <span className="text-[11px] font-bold text-rose-700">データ整備へ →</span>
+                  <span className="text-[11px] font-bold text-danger-700">データ整備へ →</span>
                 </Link>
               )}
             </div>
@@ -495,17 +495,17 @@ export default function AdminDashboardPage() {
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-1.5 h-4 bg-amber-600 rounded-full"></div>
+              <div className="w-1.5 h-4 bg-primary-600 rounded-full"></div>
               <h2 className="text-sm font-black text-foreground uppercase tracking-wider">
                 🏆 大会 ＆ コミュニティ運用ステータス
               </h2>
             </div>
             <div className="flex items-center gap-2">
-              <Link href="/ktm-admin" className="text-xs font-bold text-amber-600 hover:underline">
+              <Link href="/ktm-admin" className="text-xs font-bold text-primary-600 hover:underline">
                 大会管理 ➔
               </Link>
               <span className="text-faint">|</span>
-              <Link href="/casino" className="text-xs font-bold text-amber-600 hover:underline">
+              <Link href="/casino" className="text-xs font-bold text-primary-600 hover:underline">
                 勝敗予想 ➔
               </Link>
             </div>
@@ -516,10 +516,10 @@ export default function AdminDashboardPage() {
             <div className="p-4 rounded-2xl bg-surface/80 backdrop-blur-md border border-border/80 shadow-xs flex flex-col justify-between hover:border-border transition">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-muted-strong flex items-center gap-1.5">
-                  <Users size={14} className="text-amber-600" />
+                  <Users size={14} className="text-primary-600" />
                   登録プレイヤー
                 </span>
-                <Link href="/player" className="text-[11px] font-bold text-amber-600 hover:underline">
+                <Link href="/player" className="text-[11px] font-bold text-primary-600 hover:underline">
                   名簿 →
                 </Link>
               </div>
@@ -535,10 +535,10 @@ export default function AdminDashboardPage() {
             <div className="p-4 rounded-2xl bg-surface/80 backdrop-blur-md border border-border/80 shadow-xs flex flex-col justify-between hover:border-border transition">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-muted-strong flex items-center gap-1.5">
-                  <Trophy size={14} className="text-amber-600" />
+                  <Trophy size={14} className="text-primary-600" />
                   カスタム大会 試合数
                 </span>
-                <Link href="/ktm-admin?tab=history" className="text-[11px] font-bold text-amber-600 hover:underline">
+                <Link href="/ktm-admin?tab=history" className="text-[11px] font-bold text-primary-600 hover:underline">
                   履歴 →
                 </Link>
               </div>
@@ -547,7 +547,7 @@ export default function AdminDashboardPage() {
                   {ktmStats.totalMatches.toLocaleString()} <span className="text-xs font-bold text-faint">試合</span>
                 </div>
                 {ktmStats.recentMatches > 0 && (
-                  <span className="text-[11px] font-black text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-300">
+                  <span className="text-[11px] font-black text-success-700 bg-success-100/80 px-2 py-0.5 rounded-full border border-emerald-300">
                     直近7日: +{ktmStats.recentMatches}
                   </span>
                 )}
@@ -561,14 +561,14 @@ export default function AdminDashboardPage() {
             <div className="p-4 rounded-2xl bg-surface/80 backdrop-blur-md border border-border/80 shadow-xs flex flex-col justify-between hover:border-border transition">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-muted-strong flex items-center gap-1.5">
-                  <Coins size={14} className="text-amber-500" />
+                  <Coins size={14} className="text-primary-500" />
                   総流通コイン量
                 </span>
-                <Link href="/leaderboard" className="text-[11px] font-bold text-amber-600 hover:underline">
+                <Link href="/leaderboard" className="text-[11px] font-bold text-primary-600 hover:underline">
                   順位表 →
                 </Link>
               </div>
-              <div className="text-2xl font-black text-amber-700">
+              <div className="text-2xl font-black text-primary-700">
                 🪙 {casinoStats.totalCirculatingCoins.toLocaleString()} <span className="text-xs font-bold text-faint">pt</span>
               </div>
               <p className="text-[10px] text-faint mt-1">
@@ -580,10 +580,10 @@ export default function AdminDashboardPage() {
             <div className="p-4 rounded-2xl bg-surface/80 backdrop-blur-md border border-border/80 shadow-xs flex flex-col justify-between hover:border-border transition">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-muted-strong flex items-center gap-1.5">
-                  <Flame size={14} className="text-rose-500" />
+                  <Flame size={14} className="text-danger-500" />
                   勝敗予想（未精算）
                 </span>
-                <Link href="/casino" className="text-[11px] font-bold text-rose-600 hover:underline">
+                <Link href="/casino" className="text-[11px] font-bold text-danger-600 hover:underline">
                   カジノ →
                 </Link>
               </div>
@@ -600,12 +600,12 @@ export default function AdminDashboardPage() {
                 {totalBetAmount > 0 && (
                   <div className="mt-2 space-y-1">
                     <div className="h-2 w-full bg-surface-hover/60 rounded-full overflow-hidden flex">
-                      <div style={{ width: `${bluePercent}%` }} className="bg-teal-500 h-full"></div>
-                      <div style={{ width: `${redPercent}%` }} className="bg-rose-500 h-full"></div>
+                      <div style={{ width: `${bluePercent}%` }} className="bg-secondary-500 h-full"></div>
+                      <div style={{ width: `${redPercent}%` }} className="bg-danger-500 h-full"></div>
                     </div>
                     <div className="flex justify-between text-[9px] font-bold text-muted-strong">
-                      <span className="text-teal-600">青 {bluePercent}% ({casinoStats.blueCount}票)</span>
-                      <span className="text-rose-600">赤 {redPercent}% ({casinoStats.redCount}票)</span>
+                      <span className="text-secondary-600">青 {bluePercent}% ({casinoStats.blueCount}票)</span>
+                      <span className="text-danger-600">赤 {redPercent}% ({casinoStats.redCount}票)</span>
                     </div>
                   </div>
                 )}
@@ -621,7 +621,7 @@ export default function AdminDashboardPage() {
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-1.5 h-4 bg-emerald-500 rounded-full"></div>
+              <div className="w-1.5 h-4 bg-success-500 rounded-full"></div>
               <h2 className="text-sm font-black text-foreground uppercase tracking-wider">
                 🛰️ システムインフラ ＆ 自動ワークフロー
               </h2>
@@ -637,14 +637,14 @@ export default function AdminDashboardPage() {
               { id: 'youtube_absorber', name: 'YouTube解析', desc: '動画知識吸収ノード', kind: 'local' as const },
             ].map((service) => {
               let statusText = '稼働中';
-              let statusColor = 'text-emerald-700 bg-emerald-100/80 border-emerald-300';
-              let indicatorColor = 'bg-emerald-500';
+              let statusColor = 'text-success-700 bg-success-100/80 border-emerald-300';
+              let indicatorColor = 'bg-success-500';
 
               if (service.kind === 'worker') {
                 if (systemStatus.worker.active) {
                   statusText = '稼働中';
-                  statusColor = 'text-emerald-700 bg-emerald-100/80 border-emerald-300';
-                  indicatorColor = 'bg-emerald-500';
+                  statusColor = 'text-success-700 bg-success-100/80 border-emerald-300';
+                  indicatorColor = 'bg-success-500';
                 } else {
                   statusText = '待機中 (必要時起動)';
                   statusColor = 'text-muted bg-surface-subtle border-border';
@@ -653,8 +653,8 @@ export default function AdminDashboardPage() {
               } else if (service.kind === 'local') {
                 if (systemStatus.worker.active) {
                   statusText = '待機中 (即時実行可)';
-                  statusColor = 'text-emerald-700 bg-emerald-100/80 border-emerald-300';
-                  indicatorColor = 'bg-emerald-500 animate-pulse';
+                  statusColor = 'text-success-700 bg-success-100/80 border-emerald-300';
+                  indicatorColor = 'bg-success-500 animate-pulse';
                 } else {
                   statusText = '待機中';
                   statusColor = 'text-muted bg-surface-subtle border-border';
@@ -675,7 +675,7 @@ export default function AdminDashboardPage() {
                       <div className="flex items-center gap-1.5 my-2">
                         <a
                           href="sovereign-worker://start"
-                          className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-black transition shadow-2xs flex items-center gap-1 cursor-pointer"
+                          className="px-2.5 py-1 rounded-lg bg-primary-600 hover:bg-primary-500 text-white text-[10px] font-black transition shadow-2xs flex items-center gap-1 cursor-pointer"
                           title="ローカルワーカーを起動"
                         >
                           <Zap size={11} /> 起動

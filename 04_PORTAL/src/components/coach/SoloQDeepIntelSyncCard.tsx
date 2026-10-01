@@ -77,11 +77,11 @@ export default function SoloQDeepIntelSyncCard({
   const pool = intel?.sessionAnalytics?.championPoolDiagnosis;
 
   return (
-    <div className="rounded-3xl border border-amber-300/80 bg-gradient-to-br from-amber-500/10 via-white to-orange-500/5 p-5 shadow-xs space-y-4">
+    <div className="rounded-3xl border border-amber-300/80 bg-gradient-to-br from-primary-500/10 via-white to-primary-500/5 p-5 shadow-xs space-y-4">
       {/* ヘッダー */}
       <div className="flex items-center justify-between border-b border-amber-200/60 pb-3 flex-wrap gap-2">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-600 to-amber-700 text-white flex items-center justify-center text-sm font-black shadow-2xs">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-600 to-primary-700 text-white flex items-center justify-center text-sm font-black shadow-2xs">
             🎯
           </div>
           <div>
@@ -89,7 +89,7 @@ export default function SoloQDeepIntelSyncCard({
               <h3 className="font-black text-sm text-foreground">
                 SoloQ実測アナライザー同期インテル
               </h3>
-              <span className="text-[10px] font-black px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 rounded-full">
+              <span className="text-[10px] font-black px-2 py-0.5 bg-primary-100 text-primary-900 border border-amber-300 rounded-full">
                 直近35戦実測
               </span>
             </div>
@@ -107,11 +107,11 @@ export default function SoloQDeepIntelSyncCard({
             className="p-1.5 rounded-lg bg-surface hover:bg-surface-subtle text-muted border border-border transition cursor-pointer disabled:opacity-50"
             title="最新データ再同期"
           >
-            <RefreshCw size={13} className={loading ? 'animate-spin text-amber-600' : ''} />
+            <RefreshCw size={13} className={loading ? 'animate-spin text-primary-600' : ''} />
           </button>
           <Link
             href="/analyzer"
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-black shadow-2xs transition hover:scale-105"
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-primary-600 hover:bg-primary-500 text-white text-xs font-black shadow-2xs transition hover:scale-105"
           >
             <span>全量カルテ</span>
             <ArrowRight size={13} />
@@ -121,11 +121,11 @@ export default function SoloQDeepIntelSyncCard({
 
       {loading && !intel ? (
         <div className="py-6 flex items-center justify-center gap-2 text-xs font-bold text-muted-strong">
-          <RefreshCw size={15} className="animate-spin text-amber-600" />
+          <RefreshCw size={15} className="animate-spin text-primary-600" />
           <span>アナライザーから直近ソロQデータを同期中...</span>
         </div>
       ) : error && !intel ? (
-        <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-bold">
+        <div className="p-3 bg-danger-50 border border-rose-200 text-danger-800 rounded-xl text-xs font-bold">
           {error}
         </div>
       ) : (
@@ -135,23 +135,23 @@ export default function SoloQDeepIntelSyncCard({
             <div className="bg-surface rounded-2xl border border-amber-200/80 p-3.5 shadow-2xs space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-black text-amber-950">
+                  <span className="text-xs font-black text-primary-950">
                     目標【{gap.targetTier}】到達度スコア:
                   </span>
-                  <span className="text-sm font-black font-mono text-emerald-700">
+                  <span className="text-sm font-black font-mono text-success-700">
                     {gap.targetReadinessScore}%
                   </span>
                 </div>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-success-100 text-success-900 border border-emerald-300">
                   {mbti?.typeName || '実測タイプ判定済み'}
                 </span>
               </div>
 
               {/* 最大の急所ボトルネック */}
               {intel?.analysis?.coreBottleNeck && (
-                <div className="p-2.5 rounded-xl bg-rose-50/80 border border-rose-200 text-xs text-rose-900 space-y-1">
-                  <div className="font-black flex items-center gap-1 text-[11px] text-rose-950">
-                    <AlertTriangle size={13} className="text-rose-600 shrink-0" />
+                <div className="p-2.5 rounded-xl bg-danger-50/80 border border-rose-200 text-xs text-danger-900 space-y-1">
+                  <div className="font-black flex items-center gap-1 text-[11px] text-danger-950">
+                    <AlertTriangle size={13} className="text-danger-600 shrink-0" />
                     <span>⚠️ 試合前チェック: 昇格を阻む最大の急所</span>
                   </div>
                   <p className="leading-relaxed font-medium">
@@ -174,7 +174,7 @@ export default function SoloQDeepIntelSyncCard({
                     ({matchedChampProfile.gamesCount}戦 勝率{matchedChampProfile.winRate}% / KDA {matchedChampProfile.kda})
                   </span>
                 </div>
-                <span className="text-[10px] font-black px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-200">
+                <span className="text-[10px] font-black px-2 py-0.5 rounded bg-primary-100 text-primary-900 border border-amber-200">
                   {matchedChampProfile.powerRating}
                 </span>
               </div>
@@ -200,17 +200,17 @@ export default function SoloQDeepIntelSyncCard({
               {/* 固有パワースパイク指南 */}
               {matchedChampProfile.powerSpikes && (
                 <div className="space-y-1 text-xs">
-                  <div className="font-black text-amber-950 flex items-center gap-1 text-[11px]">
-                    <Zap size={12} className="text-amber-600" />
+                  <div className="font-black text-primary-950 flex items-center gap-1 text-[11px]">
+                    <Zap size={12} className="text-primary-600" />
                     <span>実戦パワースパイク立ち回り:</span>
                   </div>
-                  <div className="text-[11px] text-foreground-subtle bg-amber-50/60 p-2 rounded-xl border border-amber-200/60 leading-relaxed font-medium space-y-1">
+                  <div className="text-[11px] text-foreground-subtle bg-primary-50/60 p-2 rounded-xl border border-amber-200/60 leading-relaxed font-medium space-y-1">
                     <div>
-                      <strong className="text-amber-900">【序盤 Lv1〜5】:</strong>{' '}
+                      <strong className="text-primary-900">【序盤 Lv1〜5】:</strong>{' '}
                       {matchedChampProfile.powerSpikes.earlyLvl1to5}
                     </div>
                     <div>
-                      <strong className="text-amber-900">【中盤 1〜2コア】:</strong>{' '}
+                      <strong className="text-primary-900">【中盤 1〜2コア】:</strong>{' '}
                       {matchedChampProfile.powerSpikes.mid1to2Core}
                     </div>
                   </div>
@@ -223,13 +223,13 @@ export default function SoloQDeepIntelSyncCard({
           {rules && rules.length > 0 && (
             <div className="bg-background/80 rounded-2xl border border-border/80 p-3 space-y-1.5">
               <span className="text-[10px] font-black uppercase tracking-wider text-faint flex items-center gap-1">
-                <Flame size={12} className="text-amber-600" />
+                <Flame size={12} className="text-primary-600" />
                 <span>実測セッション黄金ルール (連敗・疲労防止)</span>
               </span>
               <ul className="text-[11px] text-foreground-subtle space-y-1 font-medium">
                 {rules.slice(0, 2).map((r: string, idx: number) => (
                   <li key={idx} className="flex items-start gap-1.5">
-                    <span className="text-amber-600 font-bold shrink-0">✔</span>
+                    <span className="text-primary-600 font-bold shrink-0">✔</span>
                     <span>{r}</span>
                   </li>
                 ))}

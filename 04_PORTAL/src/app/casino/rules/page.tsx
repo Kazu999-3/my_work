@@ -27,10 +27,10 @@ const TD = 'px-3 py-2 text-foreground-soft border-t border-border';
 function RtpBadge({ rtp }: { rtp: number }) {
   const tone =
     rtp >= 0.95
-      ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
+      ? 'bg-success-50 text-success-900 border-emerald-300'
       : rtp >= 0.9
-      ? 'bg-amber-50 text-amber-900 border-amber-300'
-      : 'bg-rose-50 text-rose-900 border-rose-300';
+      ? 'bg-primary-50 text-primary-900 border-amber-300'
+      : 'bg-danger-50 text-danger-900 border-rose-300';
   return (
     <span className={`inline-block px-2 py-0.5 rounded-full border text-[11px] font-black ${tone}`}>
       RTP {(rtp * 100).toFixed(1)}%
@@ -77,7 +77,7 @@ export default function CasinoRulesPage() {
   return (
     <div className="min-h-screen pb-16 bg-[#eae4d4] dark:bg-[#1e1f22] text-[#201c2b] dark:text-[#f2f3f5]">
       {/* ヘッダー */}
-      <div className="bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-amber-500/15 py-8 px-4 md:px-6 border-b border-amber-500/30">
+      <div className="bg-gradient-to-r from-primary-500/15 via-primary-400/10 to-primary-500/15 py-8 px-4 md:px-6 border-b border-amber-500/30">
         <div className="max-w-4xl mx-auto space-y-3">
           <Link
             href="/casino"
@@ -87,7 +87,7 @@ export default function CasinoRulesPage() {
             カジノへ戻る
           </Link>
           <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground flex items-center gap-2.5">
-            <Coins className="text-amber-600" size={28} />
+            <Coins className="text-primary-600" size={28} />
             ルール ＆ 確率一覧
           </h1>
           <p className="text-foreground-subtle text-xs md:text-sm font-medium max-w-2xl">
@@ -238,9 +238,9 @@ export default function CasinoRulesPage() {
               </tbody>
             </table>
           </div>
-          <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3">
-            <AlertTriangle size={15} className="text-amber-700 mt-0.5 shrink-0" />
-            <p className="text-[11px] md:text-xs text-amber-900 leading-relaxed">
+          <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-300 bg-primary-50 p-3">
+            <AlertTriangle size={15} className="text-primary-700 mt-0.5 shrink-0" />
+            <p className="text-[11px] md:text-xs text-primary-900 leading-relaxed">
               <strong>TIE は配当9倍と大きい代わりに、ハウスエッジが 14.2% と他の2つの10倍以上あります。</strong>
               これは本場のバカラでも同じ性質です。コインを長持ちさせたいなら BANKER（エッジ 0.9%）が最も有利です。
             </p>

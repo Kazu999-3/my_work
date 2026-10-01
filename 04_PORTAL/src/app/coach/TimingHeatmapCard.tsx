@@ -145,11 +145,11 @@ export default function TimingHeatmapCard() {
   const cellColor = (winRate: number, games: number) => {
     if (games === 0) return 'bg-black/[0.03]';
     if (games < 3) return 'bg-surface-subtle';
-    if (winRate >= 60) return 'bg-emerald-500';
-    if (winRate >= 55) return 'bg-emerald-300';
-    if (winRate >= 45) return 'bg-amber-200';
-    if (winRate >= 40) return 'bg-amber-400';
-    return 'bg-rose-400';
+    if (winRate >= 60) return 'bg-success-500';
+    if (winRate >= 55) return 'bg-success-300';
+    if (winRate >= 45) return 'bg-primary-200';
+    if (winRate >= 40) return 'bg-primary-400';
+    return 'bg-danger-400';
   };
 
   const daysSinceNewest = newestMatch
@@ -170,7 +170,7 @@ export default function TimingHeatmapCard() {
         <div
           className={`rounded-xl border px-3.5 py-2 text-xs ${
             isStale
-              ? 'bg-rose-950/30 text-rose-400 border-rose-800/60'
+              ? 'bg-danger-950/30 text-danger-400 border-rose-800/60'
               : 'bg-surface-subtle dark:bg-stone-800/60 text-muted border-border dark:border-stone-700/60'
           }`}
         >
@@ -191,14 +191,14 @@ export default function TimingHeatmapCard() {
       <button
         onClick={runSync}
         disabled={syncing}
-        className="w-full rounded-xl bg-amber-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 cursor-pointer"
+        className="w-full rounded-xl bg-primary-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-primary-600 disabled:opacity-50 cursor-pointer"
       >
         {syncing
           ? `同期中... (${syncProgress?.processed || 0}件処理 / ${syncProgress?.synced || 0}件新規保存)`
           : totalGames > 0 ? `🔄 履歴を再同期 (現在${totalGames}試合分)` : '🔄 直近300試合を同期'}
       </button>
 
-      {error && <p className="text-sm text-rose-600 dark:text-rose-400">❌ {error}</p>}
+      {error && <p className="text-sm text-danger-600 dark:text-danger-400">❌ {error}</p>}
 
       {loading ? (
         <Spinner />
@@ -209,15 +209,15 @@ export default function TimingHeatmapCard() {
           {(best || worst) && (
             <div className="grid grid-cols-2 gap-2">
               {best && (
-                <div className="rounded-xl border border-emerald-800/60 bg-emerald-950/30 p-3">
-                  <div className="text-[10px] font-bold text-emerald-400">👍 最も勝率が良い時間帯</div>
+                <div className="rounded-xl border border-emerald-800/60 bg-success-950/30 p-3">
+                  <div className="text-[10px] font-bold text-success-400">👍 最も勝率が良い時間帯</div>
                   <div className="text-sm font-bold text-stone-100">{HEATMAP_DAYS[best.day]}曜 {best.hour}時台</div>
                   <div className="text-xs text-faint">{best.winRate}% ({best.wins}/{best.games}勝)</div>
                 </div>
               )}
               {worst && (
-                <div className="rounded-xl border border-rose-800/60 bg-rose-950/30 p-3">
-                  <div className="text-[10px] font-bold text-rose-400">👎 最も勝率が悪い時間帯</div>
+                <div className="rounded-xl border border-rose-800/60 bg-danger-950/30 p-3">
+                  <div className="text-[10px] font-bold text-danger-400">👎 最も勝率が悪い時間帯</div>
                   <div className="text-sm font-bold text-stone-100">{HEATMAP_DAYS[worst.day]}曜 {worst.hour}時台</div>
                   <div className="text-xs text-faint">{worst.winRate}% ({worst.wins}/{worst.games}勝)</div>
                 </div>
@@ -242,12 +242,12 @@ export default function TimingHeatmapCard() {
                     )}
                   </span>
                   {isGood && (
-                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-950/30 text-emerald-400 border border-emerald-800/60 flex items-center gap-1">
+                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-success-950/30 text-success-400 border border-emerald-800/60 flex items-center gap-1">
                       <span>🌟</span> 勝ち時（推奨時間帯）
                     </span>
                   )}
                   {isBad && (
-                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-rose-950/30 text-rose-400 border border-rose-800/60 flex items-center gap-1">
+                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-danger-950/30 text-danger-400 border border-rose-800/60 flex items-center gap-1">
                       <span>⚠️</span> 要警戒（勝率低下傾向）
                     </span>
                   )}
@@ -292,7 +292,7 @@ export default function TimingHeatmapCard() {
                         onMouseEnter={() => setActiveCell({ day, hour })}
                         onClick={() => setActiveCell(isActive ? null : { day, hour })}
                         className={`aspect-square w-full rounded-[2px] cursor-pointer transition-all ${cellColor(winRate, games)} ${
-                          isActive ? 'ring-2 ring-offset-1 ring-amber-500 scale-125 z-10 relative' : 'hover:scale-110'
+                          isActive ? 'ring-2 ring-offset-1 ring-primary-500 scale-125 z-10 relative' : 'hover:scale-110'
                         }`}
                         title={`${dayLabel}曜 ${hour}時: ${games > 0 ? `${winRate}% (${c!.wins}/${games}勝)` : 'データなし'}`}
                       />

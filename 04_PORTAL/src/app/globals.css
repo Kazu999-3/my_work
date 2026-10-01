@@ -30,6 +30,58 @@
   --color-muted-strong: #44403c;  /* 旧 text-stone-500 の実効値 */
   --color-muted: #57534e;         /* 旧 text-stone-600 の実効値 */
   --color-faint: #57534e;         /* 旧 text-stone-400 の実効値（ライトでは muted と同色） */
+
+  /* 役割ベースのアクセント階調（2026-09-30 Phase 5）。
+     ライト値は移行前の Tailwind 実値、ダーク値は旧中和レイヤーが出していた
+     実効値をそのまま踏襲しているため見た目は変わらない。
+     淡色背景(50/100/200)はダークでは色相を問わず #35373c に潰れるのが従来挙動。 */
+  --color-primary-50: #fffbeb;              /* amber-50 */
+  --color-primary-100: #fef3c7;             /* amber-100 */
+  --color-primary-200: #fde68a;             /* amber-200 */
+  --color-primary-600: #d97706;             /* amber-600 */
+  --color-primary-700: #b45309;             /* amber-700 */
+  --color-primary-800: #92400e;             /* amber-800 */
+  --color-primary-900: #78350f;             /* amber-900 */
+  --color-success-50: #ecfdf5;              /* emerald-50 */
+  --color-success-100: #d1fae5;             /* emerald-100 */
+  --color-success-200: #a7f3d0;             /* emerald-200 */
+  --color-success-600: #059669;             /* emerald-600 */
+  --color-success-700: #047857;             /* emerald-700 */
+  --color-success-800: #065f46;             /* emerald-800 */
+  --color-success-900: #064e3b;             /* emerald-900 */
+  --color-danger-50: #fff1f2;               /* rose-50 */
+  --color-danger-100: #ffe4e6;              /* rose-100 */
+  --color-danger-200: #fecdd3;              /* rose-200 */
+  --color-danger-600: #e11d48;              /* rose-600 */
+  --color-danger-700: #be123c;              /* rose-700 */
+  --color-danger-800: #9f1239;              /* rose-800 */
+  --color-danger-900: #881337;              /* rose-900 */
+  --color-secondary-50: #f0fdfa;            /* teal-50 */
+  --color-secondary-100: #ccfbf1;           /* teal-100 */
+  --color-secondary-200: #99f6e4;           /* teal-200 */
+  --color-secondary-600: #0d9488;           /* teal-600 */
+  --color-secondary-700: #0f766e;           /* teal-700 */
+  --color-secondary-800: #115e59;           /* teal-800 */
+  --color-secondary-900: #134e4a;           /* teal-900 */
+
+  /* アクセントの残り階調（Phase 5 仕上げ）。300/400/500 は旧実装でもダーク上書きが
+     無かったのでライト=ダーク同値。950 は文字用に旧中和が明るい値へ寄せていたため踏襲する。 */
+  --color-primary-300: #fcd34d;
+  --color-primary-400: #fbbf24;
+  --color-primary-500: #f59e0b;
+  --color-primary-950: #451a03;
+  --color-success-300: #6ee7b7;
+  --color-success-400: #34d399;
+  --color-success-500: #10b981;
+  --color-success-950: #022c22;
+  --color-danger-300: #fda4af;
+  --color-danger-400: #fb7185;
+  --color-danger-500: #f43f5e;
+  --color-danger-950: #4c0519;
+  --color-secondary-300: #5eead4;
+  --color-secondary-400: #2dd4bf;
+  --color-secondary-500: #14b8a6;
+  --color-secondary-950: #042f2e;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
@@ -80,6 +132,54 @@ html.dark {
   --color-accent: #f59e0b;
   --color-gold: #d4af37;
   --color-gold-glow: rgba(212, 175, 55, 0.35);
+
+
+  /* アクセントの残り階調（Phase 5 仕上げ） */
+  --color-primary-300: #fcd34d;
+  --color-primary-400: #fbbf24;
+  --color-primary-500: #f59e0b;
+  --color-primary-950: #fcd34d;
+  --color-success-300: #6ee7b7;
+  --color-success-400: #34d399;
+  --color-success-500: #10b981;
+  --color-success-950: #6ee7b7;
+  --color-danger-300: #fda4af;
+  --color-danger-400: #fb7185;
+  --color-danger-500: #f43f5e;
+  --color-danger-950: #fda4af;
+  --color-secondary-300: #5eead4;
+  --color-secondary-400: #2dd4bf;
+  --color-secondary-500: #14b8a6;
+  --color-secondary-950: #5eead4;
+  /* 役割ベースのアクセント階調（Phase 5） */
+  --color-primary-50: #35373c;
+  --color-primary-100: #35373c;
+  --color-primary-200: #35373c;
+  --color-primary-600: #fbbf24;
+  --color-primary-700: #fbbf24;
+  --color-primary-800: #fcd34d;
+  --color-primary-900: #fcd34d;
+  --color-success-50: #35373c;
+  --color-success-100: #35373c;
+  --color-success-200: #35373c;
+  --color-success-600: #34d399;
+  --color-success-700: #34d399;
+  --color-success-800: #6ee7b7;
+  --color-success-900: #6ee7b7;
+  --color-danger-50: #35373c;
+  --color-danger-100: #35373c;
+  --color-danger-200: #35373c;
+  --color-danger-600: #fb7185;
+  --color-danger-700: #fb7185;
+  --color-danger-800: #fda4af;
+  --color-danger-900: #fda4af;
+  --color-secondary-50: #35373c;
+  --color-secondary-100: #35373c;
+  --color-secondary-200: #35373c;
+  --color-secondary-600: #2dd4bf;
+  --color-secondary-700: #2dd4bf;
+  --color-secondary-800: #5eead4;
+  --color-secondary-900: #5eead4;
 
   background-color: #1e1f22;
   color: #f2f3f5;
@@ -142,134 +242,10 @@ html.dark select {
    また 200番台（bg-amber-200 等、計79箇所）は bg-stone-200 が中和済みなのに
    アクセント色だけ漏れており、ダークで「淡い背景＋明るくされた文字」になって
    読めなかった（例: カジノのGOLDバッジ）。あわせて対象に加えた。 */
-html.dark [class~="bg-amber-50"],
-html.dark [class*="bg-amber-50/"],
-html.dark [class*="bg-amber-50\\/"],
-html.dark [class~="bg-amber-100"],
-html.dark [class*="bg-amber-100/"],
-html.dark [class*="bg-amber-100\\/"],
-html.dark [class~="bg-amber-200"],
-html.dark [class*="bg-amber-200/"],
-html.dark [class*="bg-amber-200\\/"],
-html.dark [class~="bg-emerald-50"],
-html.dark [class*="bg-emerald-50/"],
-html.dark [class*="bg-emerald-50\\/"],
-html.dark [class~="bg-emerald-100"],
-html.dark [class*="bg-emerald-100/"],
-html.dark [class*="bg-emerald-100\\/"],
-html.dark [class~="bg-emerald-200"],
-html.dark [class*="bg-emerald-200/"],
-html.dark [class*="bg-emerald-200\\/"],
-html.dark [class~="bg-rose-50"],
-html.dark [class*="bg-rose-50/"],
-html.dark [class*="bg-rose-50\\/"],
-html.dark [class~="bg-rose-100"],
-html.dark [class*="bg-rose-100/"],
-html.dark [class*="bg-rose-100\\/"],
-html.dark [class~="bg-rose-200"],
-html.dark [class*="bg-rose-200/"],
-html.dark [class*="bg-rose-200\\/"],
-html.dark [class~="bg-sky-50"],
-html.dark [class*="bg-sky-50/"],
-html.dark [class*="bg-sky-50\\/"],
-html.dark [class~="bg-sky-100"],
-html.dark [class*="bg-sky-100/"],
-html.dark [class*="bg-sky-100\\/"],
-html.dark [class~="bg-sky-200"],
-html.dark [class*="bg-sky-200/"],
-html.dark [class*="bg-sky-200\\/"],
-html.dark [class~="bg-blue-50"],
-html.dark [class*="bg-blue-50/"],
-html.dark [class*="bg-blue-50\\/"],
-html.dark [class~="bg-blue-100"],
-html.dark [class*="bg-blue-100/"],
-html.dark [class*="bg-blue-100\\/"],
-html.dark [class~="bg-blue-200"],
-html.dark [class*="bg-blue-200/"],
-html.dark [class*="bg-blue-200\\/"],
-html.dark [class~="bg-teal-50"],
-html.dark [class*="bg-teal-50/"],
-html.dark [class*="bg-teal-50\\/"],
-html.dark [class~="bg-teal-100"],
-html.dark [class*="bg-teal-100/"],
-html.dark [class*="bg-teal-100\\/"],
-html.dark [class~="bg-teal-200"],
-html.dark [class*="bg-teal-200/"],
-html.dark [class*="bg-teal-200\\/"],
-html.dark [class~="bg-indigo-50"],
-html.dark [class*="bg-indigo-50/"],
-html.dark [class*="bg-indigo-50\\/"],
-html.dark [class~="bg-indigo-100"],
-html.dark [class*="bg-indigo-100/"],
-html.dark [class*="bg-indigo-100\\/"],
-html.dark [class~="bg-indigo-200"],
-html.dark [class*="bg-indigo-200/"],
-html.dark [class*="bg-indigo-200\\/"],
-html.dark [class~="bg-purple-50"],
-html.dark [class*="bg-purple-50/"],
-html.dark [class*="bg-purple-50\\/"],
-html.dark [class~="bg-purple-100"],
-html.dark [class*="bg-purple-100/"],
-html.dark [class*="bg-purple-100\\/"],
-html.dark [class~="bg-purple-200"],
-html.dark [class*="bg-purple-200/"],
-html.dark [class*="bg-purple-200\\/"],
-html.dark [class~="bg-pink-50"],
-html.dark [class*="bg-pink-50/"],
-html.dark [class*="bg-pink-50\\/"],
-html.dark [class~="bg-pink-100"],
-html.dark [class*="bg-pink-100/"],
-html.dark [class*="bg-pink-100\\/"],
-html.dark [class~="bg-pink-200"],
-html.dark [class*="bg-pink-200/"],
-html.dark [class*="bg-pink-200\\/"],
-html.dark [class~="bg-red-50"],
-html.dark [class*="bg-red-50/"],
-html.dark [class*="bg-red-50\\/"],
-html.dark [class~="bg-red-100"],
-html.dark [class*="bg-red-100/"],
-html.dark [class*="bg-red-100\\/"],
-html.dark [class~="bg-red-200"],
-html.dark [class*="bg-red-200/"],
-html.dark [class*="bg-red-200\\/"],
-html.dark [class~="bg-green-50"],
-html.dark [class*="bg-green-50/"],
-html.dark [class*="bg-green-50\\/"],
-html.dark [class~="bg-green-100"],
-html.dark [class*="bg-green-100/"],
-html.dark [class*="bg-green-100\\/"],
-html.dark [class~="bg-green-200"],
-html.dark [class*="bg-green-200/"],
-html.dark [class*="bg-green-200\\/"],
-html.dark [class~="bg-yellow-50"],
-html.dark [class*="bg-yellow-50/"],
-html.dark [class*="bg-yellow-50\\/"],
-html.dark [class~="bg-yellow-100"],
-html.dark [class*="bg-yellow-100/"],
-html.dark [class*="bg-yellow-100\\/"],
-html.dark [class~="bg-yellow-200"],
-html.dark [class*="bg-yellow-200/"],
-html.dark [class*="bg-yellow-200\\/"],
-html.dark [class~="bg-orange-50"],
-html.dark [class*="bg-orange-50/"],
-html.dark [class*="bg-orange-50\\/"],
-html.dark [class~="bg-orange-100"],
-html.dark [class*="bg-orange-100/"],
-html.dark [class*="bg-orange-100\\/"],
-html.dark [class~="bg-orange-200"],
-html.dark [class*="bg-orange-200/"],
-html.dark [class*="bg-orange-200\\/"],
-html.dark [class~="bg-cyan-50"],
-html.dark [class*="bg-cyan-50/"],
-html.dark [class*="bg-cyan-50\\/"],
-html.dark [class~="bg-cyan-100"],
-html.dark [class*="bg-cyan-100/"],
-html.dark [class*="bg-cyan-100\\/"],
-html.dark [class~="bg-cyan-200"],
-html.dark [class*="bg-cyan-200/"],
-html.dark [class*="bg-cyan-200\\/"] {
-  background-color: #35373c !important;
-}
+/* ⬇️ アクセント淡色背景の中和ブロックは撤去した（2026-09-30 Phase 5）。
+   bg-amber/emerald/rose/teal-50,100,200 は役割トークン
+   bg-primary/success/danger/secondary-50,100,200 へ移行済みで、
+   トークンがライト＝Tailwind実値 / ダーク＝#35373c を持つため後追い上書きが不要。 */
 
 /* ⬇️ 「淡色ブロック内の濃い文字色を明るくする」ルールは撤去した（2026-09-30 Phase 4b）。
    `.text-stone-900` を参照していたが、そのクラスは Phase 4a で全て
@@ -644,76 +620,18 @@ html:not(.dark) textarea::placeholder {
    色味は保ったまま明度だけ上げる（600/700→400相当、800以上→300相当）ので、
    意味づけ（警告=rose、成功=emerald 等）は崩れない。
    ※ filter だと背景・ボーダー・アイコンまで巻き込むため color を直接指定している。 */
-html.dark .text-amber-600, html.dark .text-amber-700 { color: #fbbf24 !important; }
-html.dark .text-amber-800, html.dark .text-amber-900, html.dark .text-amber-950 { color: #fcd34d !important; }
-html.dark .text-rose-600, html.dark .text-rose-700 { color: #fb7185 !important; }
-html.dark .text-rose-800, html.dark .text-rose-900, html.dark .text-rose-950 { color: #fda4af !important; }
-html.dark .text-emerald-600, html.dark .text-emerald-700 { color: #34d399 !important; }
-html.dark .text-emerald-800, html.dark .text-emerald-900, html.dark .text-emerald-950 { color: #6ee7b7 !important; }
-html.dark .text-indigo-600, html.dark .text-indigo-700 { color: #818cf8 !important; }
-html.dark .text-indigo-800, html.dark .text-indigo-900, html.dark .text-indigo-950 { color: #a5b4fc !important; }
-html.dark .text-red-600, html.dark .text-red-700 { color: #f87171 !important; }
-html.dark .text-red-800, html.dark .text-red-900, html.dark .text-red-950 { color: #fca5a5 !important; }
-html.dark .text-cyan-600, html.dark .text-cyan-700 { color: #22d3ee !important; }
-html.dark .text-cyan-800, html.dark .text-cyan-900, html.dark .text-cyan-950 { color: #67e8f9 !important; }
-html.dark .text-violet-600, html.dark .text-violet-700 { color: #a78bfa !important; }
-html.dark .text-violet-800, html.dark .text-violet-900, html.dark .text-violet-950 { color: #c4b5fd !important; }
 html.dark .text-sky-600, html.dark .text-sky-700 { color: #38bdf8 !important; }
-html.dark .text-sky-800, html.dark .text-sky-900, html.dark .text-sky-950 { color: #7dd3fc !important; }
 html.dark .text-blue-600, html.dark .text-blue-700 { color: #60a5fa !important; }
-html.dark .text-blue-800, html.dark .text-blue-900, html.dark .text-blue-950 { color: #93c5fd !important; }
-html.dark .text-teal-600, html.dark .text-teal-700 { color: #2dd4bf !important; }
-html.dark .text-teal-800, html.dark .text-teal-900, html.dark .text-teal-950 { color: #5eead4 !important; }
 html.dark .text-purple-600, html.dark .text-purple-700 { color: #c084fc !important; }
-html.dark .text-purple-800, html.dark .text-purple-900, html.dark .text-purple-950 { color: #d8b4fe !important; }
-html.dark .text-pink-600, html.dark .text-pink-700 { color: #f472b6 !important; }
-html.dark .text-pink-800, html.dark .text-pink-900, html.dark .text-pink-950 { color: #f9a8d4 !important; }
-html.dark .text-green-600, html.dark .text-green-700 { color: #4ade80 !important; }
-html.dark .text-green-800, html.dark .text-green-900, html.dark .text-green-950 { color: #86efac !important; }
-html.dark .text-yellow-600, html.dark .text-yellow-700 { color: #facc15 !important; }
-html.dark .text-yellow-800, html.dark .text-yellow-900, html.dark .text-yellow-950 { color: #fde047 !important; }
-html.dark .text-orange-600, html.dark .text-orange-700 { color: #fb923c !important; }
-html.dark .text-orange-800, html.dark .text-orange-900, html.dark .text-orange-950 { color: #fdba74 !important; }
-html.dark .text-lime-600, html.dark .text-lime-700 { color: #a3e635 !important; }
-html.dark .text-lime-800, html.dark .text-lime-900, html.dark .text-lime-950 { color: #bef264 !important; }
-html.dark .text-fuchsia-600, html.dark .text-fuchsia-700 { color: #e879f9 !important; }
-html.dark .text-fuchsia-800, html.dark .text-fuchsia-900, html.dark .text-fuchsia-950 { color: #f0abfc !important; }
 
 /* 🌙 ダークモード専用（暗色背景 #1e1f22 / カード #2b2d31）での文字コントラスト最適化 */
 /* 暗い背景上でも全文字が明るくハッキリ読める高コントラスト設定 */
 /* stone系(900/800/700)はトークン text-foreground / -soft / -subtle へ移行済みのため
    ここから外した（2026-09-30 Phase 4a）。gray/slate/zinc は未移行なので残す。 */
-html.dark .text-gray-900,
-html.dark .text-gray-800,
-html.dark .text-gray-700,
-html.dark .text-slate-900,
-html.dark .text-slate-800,
-html.dark .text-slate-700,
-html.dark .text-zinc-900,
-html.dark .text-zinc-800,
-html.dark .text-zinc-700 {
-  color: #f8fafc !important; /* 鮮明なホワイト */
-}
 
 /* stone系(600/500)はトークン text-muted / text-muted-strong へ移行済み（Phase 4b）。 */
-html.dark .text-gray-600,
-html.dark .text-gray-500,
-html.dark .text-slate-600,
-html.dark .text-slate-500,
-html.dark .text-zinc-600,
-html.dark .text-zinc-500 {
-  color: #e2e8f0 !important; /* 明るいライトスレート */
-}
 
 /* stone系(400/300)はトークン text-faint へ移行済み（Phase 4b）。 */
-html.dark .text-gray-400,
-html.dark .text-gray-300,
-html.dark .text-slate-400,
-html.dark .text-slate-300,
-html.dark .text-zinc-400,
-html.dark .text-zinc-300 {
-  color: #cbd5e1 !important; /* はっきり読めるシルバーグレー */
-}
 
 html.dark input::placeholder,
 html.dark textarea::placeholder {
@@ -722,45 +640,21 @@ html.dark textarea::placeholder {
 }
 
 /* 🌙 ダークモード時の色付きバッジ・アクセントの視認性最適化 */
-html.dark .bg-amber-100 {
-  background-color: rgba(245, 158, 11, 0.2);
-  color: #fbbf24;
-}
 html.dark .text-amber-900,
 html.dark .text-amber-950,
 html.dark .text-amber-800,
-html.dark .text-amber-700 {
-  color: #fbbf24;
-}
 html.dark .border-amber-300,
 html.dark .border-amber-400 {
   border-color: rgba(245, 158, 11, 0.4);
 }
 
-html.dark .bg-emerald-100,
-html.dark .bg-emerald-50 {
-  background-color: rgba(16, 185, 129, 0.2);
-  color: #34d399;
-}
 html.dark .text-emerald-900,
 html.dark .text-emerald-800,
-html.dark .text-emerald-700 {
-  color: #34d399;
-}
 html.dark .border-emerald-200,
 html.dark .border-emerald-300 {
   border-color: rgba(16, 185, 129, 0.4);
 }
 
-html.dark .bg-indigo-100 {
-  background-color: rgba(99, 102, 241, 0.2);
-  color: #a5b4fc;
-}
-html.dark .text-indigo-900,
-html.dark .text-indigo-800,
-html.dark .text-indigo-700 {
-  color: #a5b4fc;
-}
 
 @layer utilities {
   .glass-panel {

@@ -114,19 +114,19 @@ export default function DictFactCheckPanel() {
   return (
     <div className="bg-surface border border-border rounded-3xl p-6 space-y-5">
       <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-        <ShieldCheck size={18} className="text-teal-600" /> 辞典・ナレッジの一斉ファクトチェック
+        <ShieldCheck size={18} className="text-secondary-600" /> 辞典・ナレッジの一斉ファクトチェック
       </h2>
       <p className="text-xs text-muted-strong">
         辞典(matchup_sentinel)・コーチAI知識層(champion_facts/champion_notes)・ナレッジ(personal_knowledge)を横断し、
         表記ゆれ・矛盾・単一ソースのみの未確証な記述・公式データとの食い違いを検出します。
       </p>
 
-      {error && <p className="text-sm text-rose-700 bg-rose-100 border border-rose-200 rounded-lg px-3 py-2">{error}</p>}
+      {error && <p className="text-sm text-danger-700 bg-danger-100 border border-rose-200 rounded-lg px-3 py-2">{error}</p>}
 
       {/* 統合全自動ファクトチェックボタン */}
-      <div className="rounded-2xl border border-teal-300 bg-gradient-to-r from-teal-500/10 via-amber-500/5 to-transparent p-5 shadow-sm space-y-3">
-        <h3 className="text-sm font-extrabold text-teal-950 flex items-center gap-2">
-          <ShieldCheck className="w-5 h-5 text-teal-600" />
+      <div className="rounded-2xl border border-teal-300 bg-gradient-to-r from-secondary-500/10 via-primary-500/5 to-transparent p-5 shadow-sm space-y-3">
+        <h3 className="text-sm font-extrabold text-secondary-950 flex items-center gap-2">
+          <ShieldCheck className="w-5 h-5 text-secondary-600" />
           全168チャンプ過去キュー一括リセット ＋ 最新AI全自動一斉ファクトチェック完走
         </h3>
         <p className="text-xs text-muted leading-relaxed">
@@ -136,7 +136,7 @@ export default function DictFactCheckPanel() {
         <button
           onClick={runResetAndFactCheck}
           disabled={scanning || running}
-          className="flex items-center gap-2 text-xs font-black bg-gradient-to-r from-teal-600 via-amber-600 to-amber-600 hover:from-teal-700 hover:to-amber-700 active:scale-95 text-white px-6 py-3.5 rounded-xl shadow-md transition disabled:opacity-50"
+          className="flex items-center gap-2 text-xs font-black bg-gradient-to-r from-secondary-600 via-primary-600 to-primary-600 hover:from-secondary-700 hover:to-primary-700 active:scale-95 text-white px-6 py-3.5 rounded-xl shadow-md transition disabled:opacity-50"
         >
           <RefreshCw className={`w-4 h-4 ${(scanning || running) ? 'animate-spin' : ''}`} />
           {(scanning || running)
@@ -145,12 +145,12 @@ export default function DictFactCheckPanel() {
         </button>
 
         {(scanning || running) && (
-          <p className="text-xs text-amber-700 font-bold mt-2">
+          <p className="text-xs text-primary-700 font-bold mt-2">
             ⚠️ 実行中にタブを閉じる・リロードすると中断されます。完走まで開いたままにしていただくか、完了をお待ちください。
           </p>
         )}
-        {scanMsg && <p className="text-xs text-emerald-700 font-bold mt-2">{scanMsg}</p>}
-        {runMsg && <p className="text-xs text-emerald-700 font-bold mt-2">{runMsg}</p>}
+        {scanMsg && <p className="text-xs text-success-700 font-bold mt-2">{scanMsg}</p>}
+        {runMsg && <p className="text-xs text-success-700 font-bold mt-2">{runMsg}</p>}
       </div>
 
       {/* レビューキュー */}
@@ -173,8 +173,8 @@ export default function DictFactCheckPanel() {
         {loadingQueue ? (
           <p className="text-xs text-muted-strong py-4 text-center">読み込み中...</p>
         ) : items.length === 0 ? (
-          <div className="p-6 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-1">
-            <p className="text-xs font-bold text-emerald-800">🎉 未対応の検出項目はありません。すべてのファクトチェック点検が完了しています！</p>
+          <div className="p-6 rounded-2xl bg-success-50 border border-emerald-200 text-center space-y-1">
+            <p className="text-xs font-bold text-success-800">🎉 未対応の検出項目はありません。すべてのファクトチェック点検が完了しています！</p>
           </div>
         ) : (
           /* 1件ずつ集中処理のフォーカスカード */

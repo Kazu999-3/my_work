@@ -1048,10 +1048,10 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               <button
                 type="button"
                 onClick={() => setIsTacticsSearchOpen(true)}
-                className="px-2.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 shrink-0 border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100 cursor-pointer shadow-2xs"
+                className="px-2.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 shrink-0 border border-amber-300 bg-primary-50 text-primary-900 hover:bg-primary-100 cursor-pointer shadow-2xs"
                 title="インベード、Lv3ガンク、オブジェクトなどの戦術概念を横断検索"
               >
-                <Zap size={13} className="text-amber-600 fill-amber-500/20" />
+                <Zap size={13} className="text-primary-600 fill-primary-500/20" />
                 <span className="text-[11px] hidden sm:inline">概念逆引き</span>
               </button>
               <button
@@ -1078,8 +1078,8 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 onClick={() => setShowFavoritesOnly(prev => !prev)}
                 className={`px-2 py-1.5 rounded-lg text-[11px] font-bold transition shrink-0 flex items-center gap-1 cursor-pointer ${
                   showFavoritesOnly
-                    ? 'bg-amber-400 text-stone-950 shadow-xs font-black'
-                    : 'text-amber-700 bg-amber-50 hover:bg-amber-100'
+                    ? 'bg-primary-400 text-stone-950 shadow-xs font-black'
+                    : 'text-primary-700 bg-primary-50 hover:bg-primary-100'
                 }`}
                 title="お気に入りのみ表示 (⭐️)"
               >
@@ -1202,7 +1202,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   </span>
                 )}
                 {typeFilter !== 'ALL' && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 font-bold text-[10px] border border-amber-200">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary-100 text-primary-900 font-bold text-[10px] border border-amber-200">
                     {typeFilter === 'FARM' && '🌾 ファーム型'}
                     {typeFilter === 'GANK' && '⚡ ガンク型'}
                     {typeFilter === 'INVASION' && '🗡️ 侵入型'}
@@ -1256,7 +1256,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   onClick={() => handleSelectChampion(c)}
                   className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2.5 ${
                     isSelected
-                      ? 'bg-amber-500/10 border-amber-500 shadow-xs ring-1 ring-amber-500/40'
+                      ? 'bg-primary-500/10 border-amber-500 shadow-xs ring-1 ring-primary-500/40'
                       : 'bg-surface border-border hover:border-border hover:bg-background/80'
                   }`}
                 >
@@ -1268,29 +1268,29 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                         width={38}
                         height={38}
                         className={`w-9 h-9 rounded-lg border shrink-0 transition-colors ${
-                          isSelected ? 'border-amber-500 ring-1 ring-amber-500/30' : 'border-black/10'
+                          isSelected ? 'border-amber-500 ring-1 ring-primary-500/30' : 'border-black/10'
                         }`}
                       />
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
                         <span className={`text-xs truncate ${
-                          isSelected ? 'font-black text-amber-950 dark:text-amber-200' : 'font-bold text-foreground'
+                          isSelected ? 'font-black text-primary-950 dark:text-primary-200' : 'font-bold text-foreground'
                         }`}>{c.name}</span>
-                        {isFav && <span className="text-amber-500 text-xs">★</span>}
+                        {isFav && <span className="text-primary-500 text-xs">★</span>}
                       </div>
                       <div className="flex items-center gap-1.5 text-[10px] text-faint flex-wrap">
                         <span className="truncate">{c.id}</span>
                         {healthStatus === 'verified' ? (
-                          <span className="px-1 py-0.2 rounded text-[9px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300" title="実戦確定（最新パッチ）">
+                          <span className="px-1 py-0.2 rounded text-[9px] font-mono font-bold bg-success-100 text-success-800 border border-emerald-300" title="実戦確定（最新パッチ）">
                             🟢 {patchVer || '確定'}
                           </span>
                         ) : healthStatus === 'stale' ? (
-                          <span className="px-1 py-0.2 rounded text-[9px] font-mono font-bold bg-rose-100 text-rose-800 border border-rose-300 animate-pulse" title="パッチ遅れ（要対応）">
+                          <span className="px-1 py-0.2 rounded text-[9px] font-mono font-bold bg-danger-100 text-danger-800 border border-rose-300 animate-pulse" title="パッチ遅れ（要対応）">
                             🔴 {patchVer && patchVer !== '未設定' ? patchVer : '要対応'}
                           </span>
                         ) : healthStatus === 'ai_generated' ? (
-                          <span className="px-1 py-0.2 rounded text-[9px] font-mono font-bold bg-amber-100 text-amber-800 border border-amber-300" title="AI自動生成（要検証）">
+                          <span className="px-1 py-0.2 rounded text-[9px] font-mono font-bold bg-primary-100 text-primary-800 border border-amber-300" title="AI自動生成（要検証）">
                             🟡 {patchVer && patchVer !== '未設定' ? patchVer : 'AI生成'}
                           </span>
                         ) : patchVer ? (
@@ -1317,9 +1317,9 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                     )}
                     {powerSpike && (
                       <div className="flex items-center gap-0.5 text-[8px] font-mono">
-                        <span className={`px-1 rounded ${powerSpike.early_game_score >= 4 ? 'bg-emerald-100 text-emerald-800 font-bold' : 'text-faint'}`}>E</span>
-                        <span className={`px-1 rounded ${powerSpike.mid_game_score >= 4 ? 'bg-amber-100 text-amber-800 font-bold' : 'text-faint'}`}>M</span>
-                        <span className={`px-1 rounded ${powerSpike.late_game_score >= 4 ? 'bg-rose-100 text-rose-800 font-bold' : 'text-faint'}`}>L</span>
+                        <span className={`px-1 rounded ${powerSpike.early_game_score >= 4 ? 'bg-success-100 text-success-800 font-bold' : 'text-faint'}`}>E</span>
+                        <span className={`px-1 rounded ${powerSpike.mid_game_score >= 4 ? 'bg-primary-100 text-primary-800 font-bold' : 'text-faint'}`}>M</span>
+                        <span className={`px-1 rounded ${powerSpike.late_game_score >= 4 ? 'bg-danger-100 text-danger-800 font-bold' : 'text-faint'}`}>L</span>
                       </div>
                     )}
                   </div>
@@ -1371,22 +1371,22 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 </button>
                 <div className="flex items-center gap-2 ml-auto">
                   {detailLoading && (
-                    <div className="px-2.5 py-1 rounded-lg bg-teal-50 border border-teal-200 text-teal-800 text-xs font-bold flex items-center gap-1.5">
+                    <div className="px-2.5 py-1 rounded-lg bg-secondary-50 border border-teal-200 text-secondary-800 text-xs font-bold flex items-center gap-1.5">
                       <RefreshCw size={12} className="animate-spin" /> 読込中...
                     </div>
                   )}
                   {detailError && (
-                    <div className="px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center gap-1.5">
+                    <div className="px-2.5 py-1 rounded-lg bg-danger-50 border border-rose-200 text-danger-800 text-xs font-bold flex items-center gap-1.5">
                       <span>⚠️</span> {detailError}
                     </div>
                   )}
                   {saveSuccess && (
-                    <div className="px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center gap-1.5">
+                    <div className="px-2.5 py-1 rounded-lg bg-success-50 border border-emerald-300 text-success-800 text-xs font-bold flex items-center gap-1.5">
                       <Check size={12} /> 保存完了
                     </div>
                   )}
                   {draftRestored && (
-                    <div className="px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 text-xs font-bold flex items-center gap-1.5 animate-bounce">
+                    <div className="px-2.5 py-1 rounded-lg bg-primary-50 border border-amber-300 text-primary-900 text-xs font-bold flex items-center gap-1.5 animate-bounce">
                       <span>✏️</span> 下書き復元
                     </div>
                   )}
@@ -1408,8 +1408,8 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                     onClick={handleToggleFavorite}
                     className={`p-2 rounded-xl transition-all border ${
                       isFavorited
-                        ? 'bg-amber-400/20 border-amber-400 text-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.3)]'
-                        : 'bg-surface/5 border-white/10 text-gray-400 hover:text-white hover:bg-surface/10'
+                        ? 'bg-primary-400/20 border-amber-400 text-primary-400 shadow-[0_0_10px_rgba(251,191,36,0.3)]'
+                        : 'bg-surface/5 border-white/10 text-faint hover:text-white hover:bg-surface/10'
                     }`}
                     title={isFavorited ? "お気に入り解除" : "お気に入り登録"}
                   >
@@ -1466,22 +1466,22 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   onClick={() => setVsMode(!vsMode)}
                   className={`px-3.5 py-2 font-bold rounded-xl transition-all flex items-center gap-2 text-xs border backdrop-blur-md shadow-sm cursor-pointer group ${
                     vsMode
-                      ? 'bg-rose-500/30 text-rose-200 border-rose-400 ring-2 ring-rose-500/50'
-                      : 'bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 hover:text-white border-rose-500/30'
+                      ? 'bg-danger-500/30 text-danger-200 border-rose-400 ring-2 ring-danger-500/50'
+                      : 'bg-danger-500/10 hover:bg-danger-500/20 text-danger-300 hover:text-white border-rose-500/30'
                   }`}
                   title="敵チャンピオンを選択して左右に弱点・立ち回りを直接比較"
                 >
-                  <Swords size={14} className="text-rose-400 group-hover:scale-110 transition-transform" />
+                  <Swords size={14} className="text-danger-400 group-hover:scale-110 transition-transform" />
                   <span className="leading-tight font-bold">{vsMode ? '通常表示に戻る' : '⚔️ 対面VS直接比較'}</span>
                 </button>
 
                 {/* 1. AIコーチ起動（対面相談・立ち回り質問） */}
                 <Link
                   href={`/coach?champion=${encodeURIComponent(selected.id)}`}
-                  className="px-3.5 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 hover:text-white font-bold rounded-xl transition-all flex items-center gap-2 text-xs border border-amber-500/40 backdrop-blur-md shadow-sm group cursor-pointer"
+                  className="px-3.5 py-2 bg-primary-500/20 hover:bg-primary-500/30 text-primary-200 hover:text-white font-bold rounded-xl transition-all flex items-center gap-2 text-xs border border-amber-500/40 backdrop-blur-md shadow-sm group cursor-pointer"
                   title="このチャンピオンの立ち回りや対面対策をAIに対話形式で質問・相談"
                 >
-                  <Zap size={14} className="text-amber-400 group-hover:scale-110 transition-transform" />
+                  <Zap size={14} className="text-primary-400 group-hover:scale-110 transition-transform" />
                   <div className="flex flex-col text-left">
                     <span className="leading-tight font-bold">AIコーチに相談</span>
                   </div>
@@ -1494,10 +1494,10 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                     <button
                       onClick={handleFetchTrend}
                       disabled={fetchingTrend}
-                      className="px-3.5 py-2 bg-[#c89b3c]/20 hover:bg-[#c89b3c]/30 text-amber-200 hover:text-white font-bold rounded-xl transition-all flex items-center gap-2 text-xs border border-[#c89b3c]/40 backdrop-blur-md shadow-sm disabled:opacity-50 cursor-pointer group"
+                      className="px-3.5 py-2 bg-[#c89b3c]/20 hover:bg-[#c89b3c]/30 text-primary-200 hover:text-white font-bold rounded-xl transition-all flex items-center gap-2 text-xs border border-[#c89b3c]/40 backdrop-blur-md shadow-sm disabled:opacity-50 cursor-pointer group"
                       title="最新パッチのメタ・プロビルド・トレンド情報をAIで自動同期"
                     >
-                      <RefreshCw size={13} className={`text-amber-400 group-hover:rotate-180 transition-transform ${fetchingTrend ? 'animate-spin' : ''}`} />
+                      <RefreshCw size={13} className={`text-primary-400 group-hover:rotate-180 transition-transform ${fetchingTrend ? 'animate-spin' : ''}`} />
                       <div className="flex flex-col text-left">
                         <span className="leading-tight font-bold">
                           {trendPhase === 'running' ? 'AI生成中...' : trendPhase === 'pending' ? '順番待ち...' : fetchingTrend ? '登録中...' : '最新パッチ同期'}
@@ -1532,7 +1532,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                             disabled={refiningFacts}
                             className="w-full text-left p-2 text-xs text-stone-200 hover:bg-stone-800/80 rounded-xl flex items-start gap-2.5 transition disabled:opacity-50 cursor-pointer"
                           >
-                            <Sparkles size={14} className="text-amber-400 shrink-0 mt-0.5" />
+                            <Sparkles size={14} className="text-primary-400 shrink-0 mt-0.5" />
                             <div>
                               <div className="font-bold text-stone-100">AI洗練・重複排除</div>
                               <div className="text-[10px] text-faint font-normal">知識の重複を整理・読みやすく要約</div>
@@ -1546,7 +1546,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                             disabled={checkingQuality}
                             className="w-full text-left p-2 text-xs text-stone-200 hover:bg-stone-800/80 rounded-xl flex items-start gap-2.5 transition disabled:opacity-50 cursor-pointer"
                           >
-                            <Activity size={14} className="text-emerald-400 shrink-0 mt-0.5" />
+                            <Activity size={14} className="text-success-400 shrink-0 mt-0.5" />
                             <div>
                               <div className="font-bold text-stone-100">{checkingQuality ? '品質診断中...' : '品質スコア診断'}</div>
                               <div className="text-[10px] text-faint font-normal">基準・網羅度のチェックを実行</div>
@@ -1575,7 +1575,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                             }}
                             className="w-full text-left p-2 text-xs text-stone-200 hover:bg-stone-800/80 rounded-xl flex items-start gap-2.5 transition cursor-pointer"
                           >
-                            <Check size={14} className="text-teal-400 shrink-0 mt-0.5" />
+                            <Check size={14} className="text-secondary-400 shrink-0 mt-0.5" />
                             <div>
                               <div className="font-bold text-stone-100">確認済みにマーク</div>
                               <div className="text-[10px] text-faint font-normal">データ鮮度アラートをリセット</div>
@@ -1591,7 +1591,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
             {qualityResult && (
               <div className={`flex flex-col gap-1.5 px-4 py-3 rounded-xl text-xs border ${
-                qualityResult.pass ? 'bg-emerald-950/30 text-emerald-400 border-emerald-800/60' : 'bg-rose-100 text-rose-700 border-rose-200'
+                qualityResult.pass ? 'bg-success-950/30 text-success-400 border-emerald-800/60' : 'bg-danger-100 text-danger-700 border-rose-200'
               }`}>
                 <div className="font-black flex items-center gap-2">
                   {qualityResult.pass ? '✅ 合格' : '⚠️ 要改善'}（スコア {qualityResult.score}/10、基準: {qualityResult.barChampion}）
@@ -1608,12 +1608,12 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                     <button
                       onClick={handleFetchTrend}
                       disabled={fetchingTrend}
-                      className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-[11px] disabled:opacity-50 flex items-center gap-1"
+                      className="px-3 py-1.5 bg-danger-600 hover:bg-danger-700 text-white font-bold rounded-lg text-[11px] disabled:opacity-50 flex items-center gap-1"
                     >
                       <RefreshCw size={11} className={fetchingTrend ? "animate-spin" : ""} />
                       🔄 最新トレンド取得で再生成
                     </button>
-                    <span className="text-[11px] text-rose-600/70">または上記の問題点を見て手動で編集・保存</span>
+                    <span className="text-[11px] text-danger-600/70">または上記の問題点を見て手動で編集・保存</span>
                   </div>
                 )}
               </div>
@@ -1622,10 +1622,10 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
             {/* トレンド取得の進行状況（「取得中から変わらない」という不透明さの指摘を受けて追加） */}
             {trendPhase !== 'idle' && (
               <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold border ${
-                trendPhase === 'completed' ? 'bg-emerald-950/30 text-emerald-400 border-emerald-800/60' :
-                trendPhase === 'failed' || trendPhase === 'error' ? 'bg-red-950/30 text-red-400 border-red-800/60' :
-                trendPhase === 'offline' || trendPhase === 'timeout' ? 'bg-amber-950/30 text-amber-400 border-amber-800/60' :
-                'bg-teal-950/30 text-teal-300 border-teal-800/60'
+                trendPhase === 'completed' ? 'bg-success-950/30 text-success-400 border-emerald-800/60' :
+                trendPhase === 'failed' || trendPhase === 'error' ? 'bg-danger-950/30 text-danger-400 border-rose-800/60' :
+                trendPhase === 'offline' || trendPhase === 'timeout' ? 'bg-primary-950/30 text-primary-400 border-amber-800/60' :
+                'bg-secondary-950/30 text-secondary-300 border-teal-800/60'
               }`}>
                 {trendPhase === 'running' && <RefreshCw size={14} className="animate-spin shrink-0" />}
                 {(trendPhase === 'pending' || trendPhase === 'queuing') && <Activity size={14} className="shrink-0 animate-pulse" />}
@@ -1649,9 +1649,9 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           <div className="bg-gradient-to-b from-[#12131a] to-[#0a0b10] border-2 border-rose-500/50 rounded-3xl p-5 shadow-2xl space-y-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-rose-500/20 pb-3">
               <div className="flex items-center gap-2">
-                <Swords size={20} className="text-rose-400" />
+                <Swords size={20} className="text-danger-400" />
                 <h2 className="text-base font-black text-white">⚔️ 対面VS直接比較 (Split View)</h2>
-                <span className="text-[10px] font-bold bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded-full border border-rose-500/30">
+                <span className="text-[10px] font-bold bg-danger-500/20 text-danger-300 px-2 py-0.5 rounded-full border border-rose-500/30">
                   リアルタイム比較
                 </span>
               </div>
@@ -1677,7 +1677,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
             </div>
 
             {vsEnemyLoading && (
-              <div className="py-12 text-center text-rose-300 flex items-center justify-center gap-2">
+              <div className="py-12 text-center text-danger-300 flex items-center justify-center gap-2">
                 <RefreshCw size={18} className="animate-spin" />
                 <span className="text-sm font-bold">敵チャンピオンの対策知見を読み込み中...</span>
               </div>
@@ -1701,13 +1701,13 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   );
                   if (!specificMatchup) return null;
                   return (
-                    <div className="bg-gradient-to-r from-amber-500/20 via-emerald-500/20 to-stone-900 border-2 border-amber-400/80 rounded-2xl p-4 shadow-xl text-xs space-y-2 animate-in fade-in slide-in-from-top-2">
+                    <div className="bg-gradient-to-r from-primary-500/20 via-success-500/20 to-stone-900 border-2 border-amber-400/80 rounded-2xl p-4 shadow-xl text-xs space-y-2 animate-in fade-in slide-in-from-top-2">
                       <div className="flex items-center justify-between flex-wrap gap-2 border-b border-amber-400/30 pb-2">
-                        <span className="font-black text-amber-300 flex items-center gap-1.5 text-sm">
+                        <span className="font-black text-primary-300 flex items-center gap-1.5 text-sm">
                           🔥 【特化攻略】対 {champions.find(c => c.id === vsEnemyId)?.name || vsEnemyId} 戦の専用マッチアップ手順書
                         </span>
                         {specificMatchup.difficulty && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-400/30 text-amber-200 border border-amber-300/40">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-primary-400/30 text-primary-200 border border-amber-300/40">
                             難易度: {specificMatchup.difficulty}
                           </span>
                         )}
@@ -1731,29 +1731,29 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                       className="w-11 h-11 rounded-xl border-2 border-amber-500 shadow-xs"
                     />
                     <div>
-                      <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase">あなた側 (YOU)</span>
+                      <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400 uppercase">あなた側 (YOU)</span>
                       <h3 className="text-base font-black text-foreground dark:text-white">{selected.name}</h3>
                     </div>
                   </div>
 
                   {/* 強み ＆ パワースパイク */}
                   <div className="space-y-2.5 text-xs">
-                    <div className="bg-emerald-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-emerald-500/30">
-                      <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 block mb-1">💪 自チャンプの強み・勝ち筋</span>
+                    <div className="bg-success-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-emerald-500/30">
+                      <span className="text-[10px] font-bold text-success-700 dark:text-success-400 block mb-1">💪 自チャンプの強み・勝ち筋</span>
                       <p className="text-foreground-soft dark:text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
                         {dataFields.strengths || '強みデータ未登録'}
                       </p>
                     </div>
 
-                    <div className="bg-amber-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-amber-500/30">
-                      <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 block mb-1">⚡ パワースパイク・仕掛け時</span>
+                    <div className="bg-primary-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-amber-500/30">
+                      <span className="text-[10px] font-bold text-primary-700 dark:text-primary-400 block mb-1">⚡ パワースパイク・仕掛け時</span>
                       <p className="text-foreground-soft dark:text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
                         {dataFields.powerSpikes || 'パワースパイク未登録'}
                       </p>
                     </div>
 
-                    <div className="bg-amber-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-amber-500/30">
-                      <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 block mb-1">🛡️ ビルド・ルーン構成</span>
+                    <div className="bg-primary-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-amber-500/30">
+                      <span className="text-[10px] font-bold text-primary-700 dark:text-primary-400 block mb-1">🛡️ ビルド・ルーン構成</span>
                       <p className="text-foreground-soft dark:text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
                         {dataFields.buildRunes || 'ビルドデータ未登録'}
                       </p>
@@ -1772,29 +1772,29 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                       className="w-11 h-11 rounded-xl border-2 border-rose-500 shadow-xs"
                     />
                     <div>
-                      <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 uppercase">対戦相手 (ENEMY)</span>
+                      <span className="text-[10px] font-bold text-danger-600 dark:text-danger-400 uppercase">対戦相手 (ENEMY)</span>
                       <h3 className="text-base font-black text-foreground dark:text-white">{champions.find(c => c.id === vsEnemyId)?.name || vsEnemyId}</h3>
                     </div>
                   </div>
 
                   {/* 相手の弱み ＆ 要注意スキル */}
                   <div className="space-y-2.5 text-xs">
-                    <div className="bg-rose-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-rose-500/30">
-                      <span className="text-[10px] font-bold text-rose-700 dark:text-rose-400 block mb-1">⚠️ 相手の弱み・突くべき隙</span>
+                    <div className="bg-danger-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-rose-500/30">
+                      <span className="text-[10px] font-bold text-danger-700 dark:text-danger-400 block mb-1">⚠️ 相手の弱み・突くべき隙</span>
                       <p className="text-foreground-soft dark:text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
                         {vsEnemyData?.weaknesses || '弱みデータ未登録'}
                       </p>
                     </div>
 
-                    <div className="bg-amber-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-amber-500/30">
-                      <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 block mb-1">💥 相手のパワースパイク・警戒タイミング</span>
+                    <div className="bg-primary-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-amber-500/30">
+                      <span className="text-[10px] font-bold text-primary-700 dark:text-primary-400 block mb-1">💥 相手のパワースパイク・警戒タイミング</span>
                       <p className="text-foreground-soft dark:text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
                         {vsEnemyData?.powerSpikes || 'パワースパイク未登録'}
                       </p>
                     </div>
 
-                    <div className="bg-teal-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-teal-500/30">
-                      <span className="text-[10px] font-bold text-teal-700 dark:text-teal-400 block mb-1">🎯 相手側の対面推奨・特徴</span>
+                    <div className="bg-secondary-50/50 dark:bg-stone-950/60 rounded-xl p-3 border border-teal-500/30">
+                      <span className="text-[10px] font-bold text-secondary-700 dark:text-secondary-400 block mb-1">🎯 相手側の対面推奨・特徴</span>
                       <p className="text-foreground-soft dark:text-stone-200 text-[11px] whitespace-pre-wrap leading-relaxed">
                         {vsEnemyData?.pickRecommendation || vsEnemyData?.strengths || '特徴データ未登録'}
                       </p>
@@ -1843,10 +1843,10 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
             className="w-full py-3 px-4 rounded-xl border border-dashed border-border dark:border-stone-700 bg-background/80 dark:bg-stone-800/40 hover:bg-surface-subtle dark:hover:bg-stone-800 transition-all flex items-center justify-between text-xs font-bold text-muted shadow-2xs cursor-pointer"
           >
             <span className="flex items-center gap-2">
-              <Edit2 size={14} className="text-amber-500" />
+              <Edit2 size={14} className="text-primary-500" />
               <span>📝 詳細テキスト編集 ＆ パッチトレンド設定 (Wikiエディタ)</span>
               {isAdmin && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-extrabold">
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary-100 text-primary-800 font-extrabold">
                   管理者モード
                 </span>
               )}
@@ -1861,29 +1861,29 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
         {showDetailedEditor && (
           <div className="space-y-6 pt-2 border-t border-border dark:border-stone-800">
             {/* ⚡ 15秒サクッと対策カード（ロード中15秒で頭に入る要点） */}
-            <div className="bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-400/50 rounded-2xl p-4 shadow-xs">
+            <div className="bg-gradient-to-r from-primary-500/15 via-primary-500/10 to-primary-500/15 border border-amber-400/50 rounded-2xl p-4 shadow-xs">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-base">⚡</span>
-                <h3 className="text-sm font-black text-amber-950">15秒サクッと対策（試合前チェック）</h3>
-                <span className="text-[10px] font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded-full ml-auto">
+                <h3 className="text-sm font-black text-primary-950">15秒サクッと対策（試合前チェック）</h3>
+                <span className="text-[10px] font-bold bg-primary-200/80 text-primary-900 px-2 py-0.5 rounded-full ml-auto">
                   ロード画面用
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
                 <div className="bg-surface/80 rounded-xl p-2.5 border border-amber-200/60 shadow-2xs">
-                  <span className="text-[10px] font-black text-amber-800 block mb-0.5">💥 初動・パワースパイク</span>
+                  <span className="text-[10px] font-black text-primary-800 block mb-0.5">💥 初動・パワースパイク</span>
                   <p className="text-foreground-soft font-bold text-[11px] line-clamp-2">
                     {dataFields.powerSpikes ? dataFields.powerSpikes.split('\n')[0].replace(/^[#*-\s]+/, '') : 'レベル2-3および1コア完成時'}
                   </p>
                 </div>
                 <div className="bg-surface/80 rounded-xl p-2.5 border border-amber-200/60 shadow-2xs">
-                  <span className="text-[10px] font-black text-rose-800 block mb-0.5">⚠️ 要注意スキル・弱点</span>
+                  <span className="text-[10px] font-black text-danger-800 block mb-0.5">⚠️ 要注意スキル・弱点</span>
                   <p className="text-foreground-soft font-bold text-[11px] line-clamp-2">
                     {dataFields.weaknesses ? dataFields.weaknesses.split('\n')[0].replace(/^[#*-\s]+/, '') : '序盤の被ガンク・CC耐性'}
                   </p>
                 </div>
                 <div className="bg-surface/80 rounded-xl p-2.5 border border-amber-200/60 shadow-2xs">
-                  <span className="text-[10px] font-black text-emerald-800 block mb-0.5">🎯 勝つための1箇条</span>
+                  <span className="text-[10px] font-black text-success-800 block mb-0.5">🎯 勝つための1箇条</span>
                   <p className="text-foreground-soft font-bold text-[11px] line-clamp-2">
                     {dataFields.pickRecommendation ? dataFields.pickRecommendation.split('\n')[0].replace(/^[#*-\s]+/, '') : 'パワースパイクに合わせた仕掛け'}
                   </p>
@@ -1895,16 +1895,16 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               <TextAreaCard title="強み (Strengths)" icon={Swords} color="text-[var(--color-success)] border-[var(--color-success)] shadow-[var(--color-success)]" value={dataFields.strengths} onChange={v => setField('strengths', v)} fieldKey="strengths" onOpenHistory={handleOpenHistory} />
               <TextAreaCard title="弱み (Weaknesses)" icon={ShieldAlert} color="text-[var(--color-danger)] border-[var(--color-danger)] shadow-[var(--color-danger)]" value={dataFields.weaknesses} onChange={v => setField('weaknesses', v)} fieldKey="weaknesses" onOpenHistory={handleOpenHistory} />
               <TextAreaCard title="パワースパイク" icon={Zap} color="text-[#c89b3c] border-[#c89b3c] shadow-[#c89b3c]" value={dataFields.powerSpikes} onChange={v => setField('powerSpikes', v)} fieldKey="powerSpikes" onOpenHistory={handleOpenHistory} />
-              <TextAreaCard title="コアビルド / ルーン" icon={Shield} color="text-amber-600 border-amber-500 shadow-amber-500" value={dataFields.buildRunes} onChange={v => setField('buildRunes', v)} fieldKey="buildRunes" onOpenHistory={handleOpenHistory} />
+              <TextAreaCard title="コアビルド / ルーン" icon={Shield} color="text-primary-600 border-amber-500 shadow-primary-500" value={dataFields.buildRunes} onChange={v => setField('buildRunes', v)} fieldKey="buildRunes" onOpenHistory={handleOpenHistory} />
               <TextAreaCard title="対面の有利・不利" icon={Swords} color="text-[#00cfef] border-[#00cfef] shadow-[#00cfef]" value={dataFields.counterChampions} onChange={v => setField('counterChampions', v)} fieldKey="counterChampions" onOpenHistory={handleOpenHistory} />
-              <TextAreaCard title="ピック推奨 (先/後)" icon={Shield} color="text-emerald-600 border-emerald-500 shadow-emerald-500" value={dataFields.pickRecommendation} onChange={v => setField('pickRecommendation', v)} fieldKey="pickRecommendation" onOpenHistory={handleOpenHistory} />
+              <TextAreaCard title="ピック推奨 (先/後)" icon={Shield} color="text-success-600 border-emerald-500 shadow-success-500" value={dataFields.pickRecommendation} onChange={v => setField('pickRecommendation', v)} fieldKey="pickRecommendation" onOpenHistory={handleOpenHistory} />
             </div>
           
           {/* 🌲 ジャングルプレイスタイル分類 (自動判定) */}
           {/* 🎯 プレイスタイル分類 (手動編集・全ロール対応) */}
-          <div className="glass-panel border-t-2 border-emerald-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-emerald-400/20 relative col-span-1 md:col-span-2">
+          <div className="glass-panel border-t-2 border-emerald-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-success-400/20 relative col-span-1 md:col-span-2">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-black flex items-center gap-2 text-emerald-600">
+              <h3 className="text-sm font-black flex items-center gap-2 text-success-600">
                 <Shield size={16} /> 🎯 プレイスタイル分類 ({(dataFields.jg_style?.role || 'JUNGLE').toUpperCase()}基準)
               </h3>
               <button
@@ -1914,7 +1914,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   e.preventDefault();
                   handleOpenHistory('jg_style', 'プレイスタイル分類');
                 }}
-                className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-foreground-subtle transition-all flex items-center gap-1 border border-black/10 shadow-xs cursor-pointer opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-black/5 hover:bg-primary-100 hover:text-primary-800 text-foreground-subtle transition-all flex items-center gap-1 border border-black/10 shadow-xs cursor-pointer opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                 title="この項目の変更履歴を確認"
               >
                 <History size={13} /> 📜 履歴
@@ -1924,7 +1924,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-4">
               {/* 基準ロール */}
               <div>
-                <label className="block text-xs text-gray-400 font-bold mb-1">基準ロール</label>
+                <label className="block text-xs text-faint font-bold mb-1">基準ロール</label>
                 <select
                   value={dataFields.jg_style?.role || 'JUNGLE'}
                   onChange={e => setJgStyleField('role', e.target.value)}
@@ -1940,7 +1940,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
               {/* タイプ名 */}
               <div>
-                <label className="block text-xs text-gray-400 font-bold mb-1">プレイスタイルタイプ</label>
+                <label className="block text-xs text-faint font-bold mb-1">プレイスタイルタイプ</label>
                 {(dataFields.jg_style?.role || 'JUNGLE') === 'JUNGLE' ? (
                   <>
                     <select
@@ -1984,7 +1984,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
               {/* 先出し安定度 */}
               <div>
-                <label className="block text-xs text-gray-400 font-bold mb-1">先出し安定度</label>
+                <label className="block text-xs text-faint font-bold mb-1">先出し安定度</label>
                 <select
                   value={dataFields.jg_style?.blind_pickable || 3}
                   onChange={e => setJgStyleField('blind_pickable', parseInt(e.target.value) || 3)}
@@ -2000,7 +2000,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
               {/* 後出し有利度 */}
               <div>
-                <label className="block text-xs text-gray-400 font-bold mb-1">後出し有利度</label>
+                <label className="block text-xs text-faint font-bold mb-1">後出し有利度</label>
                 <select
                   value={dataFields.jg_style?.counter_pickable || 3}
                   onChange={e => setJgStyleField('counter_pickable', parseInt(e.target.value) || 3)}
@@ -2017,7 +2017,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
             {/* 立ち回り解説 */}
             <div>
-              <label className="block text-xs text-gray-500 font-bold mb-1.5">先出し・後出し評価の根拠 ＆ 立ち回り解説</label>
+              <label className="block text-xs text-muted-strong font-bold mb-1.5">先出し・後出し評価の根拠 ＆ 立ち回り解説</label>
               <textarea
                 value={dataFields.jg_style?.description || ''}
                 onChange={e => setJgStyleField('description', e.target.value)}
@@ -2029,7 +2029,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
             {/* ⏱ ジャングル序盤タイミング（AI自動取得のみ・手動編集不可・ジャングルロールのみ表示） */}
             {(dataFields.jg_style?.role === 'JUNGLE' || (selected && champLaneRoles[selected.id]?.includes('JG') && !champLaneRoles[selected.id]?.includes('MID'))) && (
               <div className="mt-4 pt-4 border-t border-black/10">
-                <p className="text-xs text-gray-400 font-bold mb-2 flex items-center gap-1.5">
+                <p className="text-xs text-faint font-bold mb-2 flex items-center gap-1.5">
                   <Clock size={13} /> ジャングル序盤タイミング（自動取得）
                 </p>
                 <div className="flex gap-2 flex-wrap items-center">
@@ -2044,7 +2044,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   </span>
                 </div>
                 {(dataFields.jg_style?.full_clear_time_sec == null) && (
-                  <p className="text-[11px] text-gray-400 mt-2">
+                  <p className="text-[11px] text-faint mt-2">
                     未取得の項目は、上部の「最新トレンド取得」ボタンでAIが攻略サイトを調査して自動入力します。
                   </p>
                 )}
@@ -2060,15 +2060,15 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 {(realJungleTiming && (realJungleTiming.externalFastestClearSec != null || realJungleTiming.avgFirstCoreSec != null)) && (
                   <div className="mt-3 pt-3 border-t border-black/10 space-y-1.5">
                     {realJungleTiming.externalFastestClearSec != null && (
-                      <p className="text-[11px] text-gray-400 font-bold flex items-center gap-1.5">
+                      <p className="text-[11px] text-faint font-bold flex items-center gap-1.5">
                         🎮 2026年実測値（キャンプ0:55湧き・カニ2:55争奪基準 / {realJungleTiming.externalSource || 'junglepedia.lol'}・全ティア{realJungleTiming.externalSampleSize ? `・${realJungleTiming.externalSampleSize.toLocaleString()}試合` : ''}）
                       </p>
                     )}
                     <div className="flex gap-2 flex-wrap items-center">
                       {realJungleTiming.externalFastestClearSec != null && (
-                        <span className="px-3 py-1.5 bg-teal-50 border border-teal-200 rounded-lg text-xs font-bold text-teal-700 flex items-center gap-1.5">
+                        <span className="px-3 py-1.5 bg-secondary-50 border border-teal-200 rounded-lg text-xs font-bold text-secondary-700 flex items-center gap-1.5">
                           フルクリア(最速) {formatTimingSec(realJungleTiming.externalFastestClearSec)}
-                          <span className={`text-[10px] px-1 py-0.2 rounded font-black ${175 - realJungleTiming.externalFastestClearSec >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                          <span className={`text-[10px] px-1 py-0.2 rounded font-black ${175 - realJungleTiming.externalFastestClearSec >= 0 ? 'bg-success-100 text-success-700' : 'bg-danger-100 text-danger-700'}`}>
                             {175 - realJungleTiming.externalFastestClearSec >= 0
                               ? `カニ+${175 - realJungleTiming.externalFastestClearSec}s先行`
                               : `カニ${175 - realJungleTiming.externalFastestClearSec}s`}
@@ -2076,12 +2076,12 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                         </span>
                       )}
                       {realJungleTiming.avgFirstCoreSec != null && (
-                        <span className="px-3 py-1.5 bg-teal-50 border border-teal-200 rounded-lg text-xs font-bold text-teal-700">
+                        <span className="px-3 py-1.5 bg-secondary-50 border border-teal-200 rounded-lg text-xs font-bold text-secondary-700">
                           1コア完成 {formatTimingSec(realJungleTiming.avgFirstCoreSec)}（{realJungleTiming.tier}帯・{realJungleTiming.sampleCount}試合）
                         </span>
                       )}
                       {realJungleTiming.avgSecondCoreSec != null && (
-                        <span className="px-3 py-1.5 bg-teal-50 border border-teal-200 rounded-lg text-xs font-bold text-teal-700">
+                        <span className="px-3 py-1.5 bg-secondary-50 border border-teal-200 rounded-lg text-xs font-bold text-secondary-700">
                           2コア完成 {formatTimingSec(realJungleTiming.avgSecondCoreSec)}（{realJungleTiming.tier}帯・{realJungleTiming.sampleCount}試合）
                         </span>
                       )}
@@ -2092,19 +2092,19 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 {/* 🌲 JGクリアルート ＆ カウンターマッチアップ表 (JG Route & Counter Guide) */}
                 <div className="mt-4 pt-4 border-t border-amber-500/20 space-y-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-black text-amber-900 flex items-center gap-1.5">
-                      <Compass size={14} className="text-amber-600" /> 🌲 JGクリアルート ＆ カウンター戦術
+                    <p className="text-xs font-black text-primary-900 flex items-center gap-1.5">
+                      <Compass size={14} className="text-primary-600" /> 🌲 JGクリアルート ＆ カウンター戦術
                     </p>
-                    <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-300">
+                    <span className="text-[10px] font-bold bg-primary-100 text-primary-800 px-2 py-0.5 rounded-full border border-amber-300">
                       パッチ対応戦術
                     </span>
                   </div>
 
                   {/* ルート選択カード */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-                    <div className="bg-amber-50/60 rounded-xl p-3 border border-amber-200/80 shadow-2xs space-y-1.5">
+                    <div className="bg-primary-50/60 rounded-xl p-3 border border-amber-200/80 shadow-2xs space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <span className="font-black text-red-700 flex items-center gap-1">🔴 赤バフ始動 (ボットサイド推奨)</span>
+                        <span className="font-black text-danger-700 flex items-center gap-1">🔴 赤バフ始動 (ボットサイド推奨)</span>
                         <span className="text-[10px] font-bold text-muted-strong">標準 3:15〜3:25</span>
                       </div>
                       <p className="text-[11px] text-foreground-subtle font-medium">
@@ -2112,9 +2112,9 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                       </p>
                     </div>
 
-                    <div className="bg-teal-50/60 rounded-xl p-3 border border-teal-200/80 shadow-2xs space-y-1.5">
+                    <div className="bg-secondary-50/60 rounded-xl p-3 border border-teal-200/80 shadow-2xs space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <span className="font-black text-teal-700 flex items-center gap-1">🔵 青バフ始動 (トップサイド推奨)</span>
+                        <span className="font-black text-secondary-700 flex items-center gap-1">🔵 青バフ始動 (トップサイド推奨)</span>
                         <span className="text-[10px] font-bold text-muted-strong">Lv3速攻ガンク対応</span>
                       </div>
                       <p className="text-[11px] text-foreground-subtle font-medium">
@@ -2126,18 +2126,18 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   {/* カウンター・マッチアップ方針 */}
                   <div className="bg-surface/90 rounded-xl p-3 border border-amber-200 shadow-2xs space-y-2">
                     <div className="flex items-center gap-1.5 text-[11px] font-bold text-foreground-soft">
-                      <ShieldAlert size={13} className="text-rose-600" />
+                      <ShieldAlert size={13} className="text-danger-600" />
                       <span>相性 ＆ カウンターファイト方針</span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-                      <div className="p-2 rounded-lg bg-emerald-50/70 border border-emerald-200/60">
-                        <span className="font-bold text-emerald-800 block mb-0.5">🟢 有利 (狩りやすい相手)</span>
+                      <div className="p-2 rounded-lg bg-success-50/70 border border-emerald-200/60">
+                        <span className="font-bold text-success-800 block mb-0.5">🟢 有利 (狩りやすい相手)</span>
                         <p className="text-foreground-subtle">
                           {dataFields.strengths ? dataFields.strengths.split('\n')[0].replace(/^[#*-\s]+/, '') : '序盤ファーム偏重チャンプ / CCに弱い相手'}
                         </p>
                       </div>
-                      <div className="p-2 rounded-lg bg-rose-50/70 border border-rose-200/60">
-                        <span className="font-bold text-rose-800 block mb-0.5">🔴 要注意 (被インベード・不利)</span>
+                      <div className="p-2 rounded-lg bg-danger-50/70 border border-rose-200/60">
+                        <span className="font-bold text-danger-800 block mb-0.5">🔴 要注意 (被インベード・不利)</span>
                         <p className="text-foreground-subtle">
                           {dataFields.weaknesses ? dataFields.weaknesses.split('\n')[0].replace(/^[#*-\s]+/, '') : '1v1強チャンプ / レベル2-3インベード得意な相手'}
                         </p>
@@ -2150,9 +2150,9 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           </div>
 
           {/* 📈 最新パッチトレンド (自動収集) */}
-          <div className="glass-panel border-t-2 border-teal-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-teal-400/20 relative">
+          <div className="glass-panel border-t-2 border-teal-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-secondary-400/20 relative">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-black flex items-center gap-2 text-teal-600">
+              <h3 className="text-sm font-black flex items-center gap-2 text-secondary-600">
                 <Activity size={16} /> 📈 最新パッチトレンド (自動収集)
               </h3>
               <button
@@ -2162,7 +2162,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                   e.preventDefault();
                   handleOpenHistory('patch_meta', '最新パッチトレンド');
                 }}
-                className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-foreground-subtle transition-all flex items-center gap-1 border border-black/10 shadow-xs cursor-pointer"
+                className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-black/5 hover:bg-primary-100 hover:text-primary-800 text-foreground-subtle transition-all flex items-center gap-1 border border-black/10 shadow-xs cursor-pointer"
                 title="この項目の変更履歴を確認"
               >
                 <History size={13} /> 📜 履歴
@@ -2171,10 +2171,10 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
             {dataFields.patch_meta ? (
               <div className="flex flex-col gap-4 text-sm text-foreground-soft">
                 <div className="flex gap-2 flex-wrap items-center w-full">
-                  <span className="px-3 py-1 bg-teal-100 border border-teal-200 text-teal-700 rounded-lg font-bold text-xs">
+                  <span className="px-3 py-1 bg-secondary-100 border border-teal-200 text-secondary-700 rounded-lg font-bold text-xs">
                     Patch {dataFields.patch_meta.patch || '不明'}
                   </span>
-                  <span className="px-3 py-1 bg-amber-100 border border-amber-200 text-amber-700 rounded-lg font-bold text-xs">
+                  <span className="px-3 py-1 bg-primary-100 border border-amber-200 text-primary-700 rounded-lg font-bold text-xs">
                     Tier {dataFields.patch_meta.tier || '-'}
                   </span>
                   <span className="px-3 py-1 bg-black/5 border border-black/10 text-foreground rounded-lg font-bold text-xs">
@@ -2184,7 +2184,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                     ピック {dataFields.patch_meta.pick_rate ? `${dataFields.patch_meta.pick_rate}%` : '-'}
                   </span>
                   {(dataFields.patch_meta?.updated_at || dataFields.updated_at || dataFields.created_at) && (
-                    <span className="px-3 py-1 bg-black/5 border border-black/10 text-gray-400 rounded-lg font-bold text-xs ml-auto">
+                    <span className="px-3 py-1 bg-black/5 border border-black/10 text-faint rounded-lg font-bold text-xs ml-auto">
                       最終更新: {(() => {
                         const val = dataFields.patch_meta?.updated_at || dataFields.updated_at || dataFields.created_at;
                         const d = typeof val === 'number' ? new Date(val * 1000) : new Date(val);
@@ -2196,14 +2196,14 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 
                 {dataFields.patch_meta?.trend_items && dataFields.patch_meta.trend_items.length > 0 && (
                   <div>
-                    <h4 className="text-xs font-bold text-gray-400 mb-2">🔥 コアアイテムビルド</h4>
+                    <h4 className="text-xs font-bold text-faint mb-2">🔥 コアアイテムビルド</h4>
                     <div className="flex items-center gap-2 flex-wrap">
                       {dataFields.patch_meta.trend_items.map((item: string, idx: number) => (
                         <div key={idx} className="flex items-center gap-2">
                           <span className="px-3 py-1.5 bg-black/5 border border-black/10 rounded-lg text-xs font-bold text-foreground-subtle">
                             {item}
                           </span>
-                          {idx < dataFields.patch_meta.trend_items.length - 1 && <span className="text-gray-500 font-bold">→</span>}
+                          {idx < dataFields.patch_meta.trend_items.length - 1 && <span className="text-muted-strong font-bold">→</span>}
                         </div>
                       ))}
                     </div>
@@ -2212,28 +2212,28 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
                 {dataFields.patch_meta.trend_runes && (
                   <div>
-                    <h4 className="text-xs font-bold text-gray-400 mb-1">🧬 トレンドルーン</h4>
+                    <h4 className="text-xs font-bold text-faint mb-1">🧬 トレンドルーン</h4>
                     <p className="text-xs text-foreground-subtle font-bold">
-                      {dataFields.patch_meta.trend_runes.keystone && <span className="text-teal-700 mr-2">[{dataFields.patch_meta.trend_runes.keystone}]</span>}
+                      {dataFields.patch_meta.trend_runes.keystone && <span className="text-secondary-700 mr-2">[{dataFields.patch_meta.trend_runes.keystone}]</span>}
                       {dataFields.patch_meta.trend_runes.primary} / {dataFields.patch_meta.trend_runes.secondary}
                     </p>
                   </div>
                 )}
               </div>
             ) : (
-              <p className="text-gray-500 italic text-xs py-4">最新パッチのトレンドデータは未収集です。上の「最新トレンド取得」ボタンを押してロードしてください。</p>
+              <p className="text-muted-strong italic text-xs py-4">最新パッチのトレンドデータは未収集です。上の「最新トレンド取得」ボタンを押してロードしてください。</p>
             )}
           </div>
 
           {/* 🚨 過去の敗戦からの反省・教訓 (Sovereign Interrogation) */}
-          <div className="glass-panel border-t-2 border-red-500 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-red-500/20 relative col-span-1 md:col-span-2">
-            <h3 className="text-sm font-black mb-4 flex items-center gap-2 text-red-600">
-              <ShieldAlert size={16} className="text-red-500 animate-pulse" /> 🚨 過去の敗因反省・教訓 (Sovereign Interrogation)
+          <div className="glass-panel border-t-2 border-rose-500 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-danger-500/20 relative col-span-1 md:col-span-2">
+            <h3 className="text-sm font-black mb-4 flex items-center gap-2 text-danger-600">
+              <ShieldAlert size={16} className="text-danger-500 animate-pulse" /> 🚨 過去の敗因反省・教訓 (Sovereign Interrogation)
             </h3>
             {pastInterrogations && pastInterrogations.length > 0 ? (
               <div className="space-y-3">
-                <div className="bg-red-100 border border-red-200 p-4 rounded-xl text-xs text-red-800 leading-relaxed flex items-start gap-2.5">
-                  <ShieldAlert className="w-4 h-4 shrink-0 text-red-600" />
+                <div className="bg-danger-100 border border-rose-200 p-4 rounded-xl text-xs text-danger-800 leading-relaxed flex items-start gap-2.5">
+                  <ShieldAlert className="w-4 h-4 shrink-0 text-danger-600" />
                   <div>
                     <span className="font-bold block mb-1">過去にこの対面であなたが敗北した際にAIと交わした反省です。</span>
                     同じ過ちを繰り返さないよう、立ち回りやジャングルルート選択時に十分注意しなさい。
@@ -2241,10 +2241,10 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {pastInterrogations.map((lesson: any, idx: number) => (
-                    <div key={idx} className="bg-black/5 border border-red-200 p-4 rounded-xl text-xs text-red-800 leading-relaxed space-y-2">
+                    <div key={idx} className="bg-black/5 border border-rose-200 p-4 rounded-xl text-xs text-danger-800 leading-relaxed space-y-2">
                       <div className="flex justify-between items-center border-b border-black/10 pb-1">
-                        <span className="text-red-600 font-bold font-mono">教訓 #{idx+1}</span>
-                        <span className="text-[10px] text-gray-500">
+                        <span className="text-danger-600 font-bold font-mono">教訓 #{idx+1}</span>
+                        <span className="text-[10px] text-muted-strong">
                           {lesson.created_at ? new Date(lesson.created_at).toLocaleDateString('ja-JP') : ""}
                         </span>
                       </div>
@@ -2254,7 +2254,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 </div>
               </div>
             ) : (
-              <p className="text-gray-500 italic text-xs py-4">このチャンピオン対面での過去の敗北・反省点（教訓）はありません。良好な状態です！</p>
+              <p className="text-muted-strong italic text-xs py-4">このチャンピオン対面での過去の敗北・反省点（教訓）はありません。良好な状態です！</p>
             )}
           </div>
 
@@ -2267,14 +2267,14 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           </div>
 
           {/* 🏆 プロ推奨ルーン・ビルド (自動収集) */}
-          <div className="glass-panel border-t-2 border-amber-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-amber-400/20 relative col-span-1 md:col-span-2">
+          <div className="glass-panel border-t-2 border-amber-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-primary-400/20 relative col-span-1 md:col-span-2">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-black flex items-center gap-2 text-amber-600">
+              <h3 className="text-sm font-black flex items-center gap-2 text-primary-600">
                 <Award size={16} /> 🏆 プロ最先端ビルド (直近のソロキュー実例)
               </h3>
               <button
                 onClick={() => handleOpenHistory('pro_builds', 'プロ最先端ビルド')}
-                className="text-[11px] font-bold px-2 py-0.5 rounded bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-muted transition-colors flex items-center gap-1 border border-black/10"
+                className="text-[11px] font-bold px-2 py-0.5 rounded bg-black/5 hover:bg-primary-100 hover:text-primary-800 text-muted transition-colors flex items-center gap-1 border border-black/10"
                 title="この項目の変更履歴を確認"
               >
                 <History size={12} /> 履歴
@@ -2287,10 +2287,10 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                     <div className="flex justify-between items-center flex-wrap gap-2">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-black text-foreground">{pb.player}</span>
-                        {pb.team && <span className="text-xs text-gray-400">({pb.team})</span>}
+                        {pb.team && <span className="text-xs text-faint">({pb.team})</span>}
                       </div>
                       {pb.win_lose && (
-                        <span className="text-xs px-2 py-0.5 bg-amber-100 border border-amber-200 text-amber-700 rounded-full font-black">
+                        <span className="text-xs px-2 py-0.5 bg-primary-100 border border-amber-200 text-primary-700 rounded-full font-black">
                           {pb.win_lose}
                         </span>
                       )}
@@ -2303,15 +2303,15 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                             <span className="text-xs px-2.5 py-1 bg-black/5 border border-black/10 rounded-md text-foreground-subtle font-medium">
                               {item}
                             </span>
-                            {i < pb.build.length - 1 && <span className="text-gray-700 text-xs">→</span>}
+                            {i < pb.build.length - 1 && <span className="text-foreground-subtle text-xs">→</span>}
                           </div>
                         ))}
                       </div>
                     )}
 
                     {pb.runes && pb.runes.length > 0 && (
-                      <div className="text-xs text-gray-400 flex items-center gap-1.5 flex-wrap">
-                        <span className="font-bold text-gray-500">ルーン:</span>
+                      <div className="text-xs text-faint flex items-center gap-1.5 flex-wrap">
+                        <span className="font-bold text-muted-strong">ルーン:</span>
                         {pb.runes.map((rune: string, i: number) => (
                           <span key={i} className="px-1.5 py-0.5 bg-black/5 rounded border border-black/10 text-foreground-subtle">
                             {rune}
@@ -2329,14 +2329,14 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 italic text-xs py-4">プロの採用ビルドデータは未収集です。上の「最新トレンド取得」ボタンを押してロードしてください。</p>
+              <p className="text-muted-strong italic text-xs py-4">プロの採用ビルドデータは未収集です。上の「最新トレンド取得」ボタンを押してロードしてください。</p>
             )}
           </div>
 
           {/* 🔎 AIリサーチの出典 (google_searchグラウンディング由来、参考・裏取り用) */}
           {dataFields.research_sources && dataFields.research_sources.length > 0 && (
             <div className="glass-panel border-t-2 border-teal-400 p-5 rounded-2xl col-span-1 md:col-span-2">
-              <h3 className="text-sm font-black flex items-center gap-2 text-teal-700 mb-3">
+              <h3 className="text-sm font-black flex items-center gap-2 text-secondary-700 mb-3">
                 🔎 AIリサーチの出典（参考・裏取り用）
               </h3>
               <ul className="space-y-1.5">
@@ -2346,7 +2346,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                       href={src.uri}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-teal-700 hover:text-teal-900 hover:underline break-all"
+                      className="text-secondary-700 hover:text-secondary-900 hover:underline break-all"
                     >
                       {src.title || src.uri}
                     </a>
@@ -2369,13 +2369,13 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); handleOpenHistory('strategy', '全体的な立ち回りメモ'); }}
-                  className="text-[11px] font-bold px-2 py-0.5 rounded bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-muted transition-colors flex items-center gap-1 border border-black/10"
+                  className="text-[11px] font-bold px-2 py-0.5 rounded bg-black/5 hover:bg-primary-100 hover:text-primary-800 text-muted transition-colors flex items-center gap-1 border border-black/10"
                   title="この項目の変更履歴を確認"
                 >
                   <History size={12} /> 履歴
                 </button>
               </div>
-              <span className="text-xs text-gray-400 font-bold flex items-center gap-1">
+              <span className="text-xs text-faint font-bold flex items-center gap-1">
                 {isStrategyCollapsed ? '▼ 開く' : '▲ 閉じる'}
               </span>
             </div>
@@ -2399,7 +2399,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                     {dataFields.strategy ? (
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>{dataFields.strategy}</ReactMarkdown>
                     ) : (
-                      <p className="text-gray-500 italic text-xs">全体的な立ち回り・統合トレンドメモはまだ記載されていません。{isAdmin && '「直感編集」ボタンを押して追加してください。'}</p>
+                      <p className="text-muted-strong italic text-xs">全体的な立ち回り・統合トレンドメモはまだ記載されていません。{isAdmin && '「直感編集」ボタンを押して追加してください。'}</p>
                     )}
                     {isAdmin && (
                       <button
@@ -2416,19 +2416,19 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           </div>
 
           {/* 📄 AI生成ドラフト・追加メモ項目 (折りたたみアコーディオン) */}
-          <div className="glass-panel rounded-2xl border-l-4 border-pink-400 bg-pink-400/5 overflow-hidden col-span-1 md:col-span-2">
+          <div className="glass-panel rounded-2xl border-l-4 border-rose-400 bg-danger-400/5 overflow-hidden col-span-1 md:col-span-2">
             <div
               onClick={() => setIsDraftsCollapsed(!isDraftsCollapsed)}
               className="w-full p-5 flex items-center justify-between text-left hover:bg-black/5 transition-colors cursor-pointer select-none"
             >
               <div className="flex items-center gap-3">
-                <FileText className="text-pink-600" size={20} />
+                <FileText className="text-danger-600" size={20} />
                 <h3 className="text-base font-black text-foreground">AI生成ドラフト ＆ カスタム追加メモ一覧</h3>
-                <span className="text-xs bg-pink-100 text-pink-700 px-2.5 py-0.5 rounded-full font-bold">
+                <span className="text-xs bg-danger-100 text-danger-700 px-2.5 py-0.5 rounded-full font-bold">
                   {Object.keys(dataFields.customFields || {}).length} 件
                 </span>
               </div>
-              <span className="text-xs text-gray-400 font-bold flex items-center gap-1">
+              <span className="text-xs text-faint font-bold flex items-center gap-1">
                 {isDraftsCollapsed ? '▼ 開く' : '▲ 閉じる'}
               </span>
             </div>
@@ -2436,14 +2436,14 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
             {!isDraftsCollapsed && (
               <div className="p-6 border-t border-black/10 space-y-4">
                 {Object.entries(dataFields.customFields || {}).length === 0 ? (
-                  <p className="text-gray-500 italic text-xs">追加のカスタムメモやAIドラフト項目はありません。</p>
+                  <p className="text-muted-strong italic text-xs">追加のカスタムメモやAIドラフト項目はありません。</p>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {Object.entries(dataFields.customFields || {}).map(([key, val]) => (
-                      <div key={key} className="glass-panel border-t-2 border-pink-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-pink-400/20 relative">
-                        <button onClick={() => removeCustomField(key)} className="absolute top-4 right-4 text-gray-500 hover:text-red-600 transition-colors"><Trash size={14}/></button>
+                      <div key={key} className="glass-panel border-t-2 border-rose-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-danger-400/20 relative">
+                        <button onClick={() => removeCustomField(key)} className="absolute top-4 right-4 text-muted-strong hover:text-danger-600 transition-colors"><Trash size={14}/></button>
                         <div className="flex items-center justify-between mb-4 pr-6">
-                          <h3 className="text-sm font-black flex items-center gap-2 text-pink-600"><FileText size={16} /> {key}</h3>
+                          <h3 className="text-sm font-black flex items-center gap-2 text-danger-600"><FileText size={16} /> {key}</h3>
                           <button
                             type="button"
                             onClick={(e) => {
@@ -2451,13 +2451,13 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                               e.preventDefault();
                               handleOpenHistory('customFields', `カスタム項目: ${key}`);
                             }}
-                            className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-foreground-subtle transition-all flex items-center gap-1 border border-black/10 shadow-xs cursor-pointer opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                            className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-black/5 hover:bg-primary-100 hover:text-primary-800 text-foreground-subtle transition-all flex items-center gap-1 border border-black/10 shadow-xs cursor-pointer opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
                             title="この項目の変更履歴を確認"
                           >
                             <History size={13} /> 📜 履歴
                           </button>
                         </div>
-                        <textarea value={val as string} onChange={e => updateCustomField(key, e.target.value)} className="w-full min-h-[140px] h-auto bg-surface border border-black/10 rounded-xl p-3.5 text-sm text-foreground-soft leading-relaxed outline-none focus:border-pink-500/60 resize-y shadow-inner transition-colors font-sans" placeholder={`${key}を記録...`} />
+                        <textarea value={val as string} onChange={e => updateCustomField(key, e.target.value)} className="w-full min-h-[140px] h-auto bg-surface border border-black/10 rounded-xl p-3.5 text-sm text-foreground-soft leading-relaxed outline-none focus:border-rose-500/60 resize-y shadow-inner transition-colors font-sans" placeholder={`${key}を記録...`} />
                       </div>
                     ))}
                   </div>
@@ -2489,7 +2489,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 {matchupsList.length} 件
               </span>
             </div>
-            <span className="text-xs text-gray-400 font-bold flex items-center gap-1">
+            <span className="text-xs text-faint font-bold flex items-center gap-1">
               {isMatchupsCollapsed ? '▼ 開く' : '▲ 閉じる'}
             </span>
           </div>
@@ -2547,9 +2547,9 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 const isFavored = winRate >= 60;
                 const isUnfavored = winRate <= 40;
                 
-                const cardBorderColor = isFavored ? 'border-l-green-500 bg-green-500/5 hover:bg-[#22c55e]/10' : 
-                                       isUnfavored ? 'border-l-red-500 bg-red-500/5 hover:bg-[#ef4444]/10' : 
-                                       'border-l-amber-500 bg-amber-500/5 hover:bg-amber-500/10';
+                const cardBorderColor = isFavored ? 'border-l-green-500 bg-success-500/5 hover:bg-[#22c55e]/10' : 
+                                       isUnfavored ? 'border-l-red-500 bg-danger-500/5 hover:bg-[#ef4444]/10' : 
+                                       'border-l-amber-500 bg-primary-500/5 hover:bg-primary-500/10';
                 
                 return (
                   <div key={m.matchup_id} className={`glass-panel border-l-4 rounded-xl transition-all ${cardBorderColor}`}>
@@ -2564,15 +2564,15 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                             vs {m.enemy}
                             {hasData && (
                               <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ${
-                                isFavored ? 'bg-green-100 text-green-700 border border-green-200' :
-                                isUnfavored ? 'bg-red-100 text-red-700 border border-red-200' :
-                                'bg-amber-100 text-amber-700 border border-amber-200'
+                                isFavored ? 'bg-success-100 text-success-700 border border-emerald-200' :
+                                isUnfavored ? 'bg-danger-100 text-danger-700 border border-rose-200' :
+                                'bg-primary-100 text-primary-700 border border-amber-200'
                               }`}>
                                 {isFavored ? '🟢 有利' : isUnfavored ? '🔴 不利' : '🟡 互角'}
                               </span>
                             )}
                           </p>
-                          <p className="text-xs text-gray-400">{m.title || `${m.champion} vs ${m.enemy}`}</p>
+                          <p className="text-xs text-faint">{m.title || `${m.champion} vs ${m.enemy}`}</p>
                         </div>
                       </div>
                       
@@ -2587,8 +2587,8 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                           if (ktmMatchup && ktmMatchup.games > 0) {
                             const winRate = ktmMatchup.win_rate;
                             return (
-                              <div className={`px-2 py-1 rounded-md border flex flex-col items-center justify-center min-w-[65px] ${winRate >= 60 ? 'bg-green-100 text-green-700 border-green-200' : winRate <= 40 ? 'bg-red-100 text-red-700 border-red-200' : 'bg-amber-100 text-amber-700 border-amber-200'}`}>
-                                <span className="text-[8px] text-gray-400 font-bold uppercase tracking-wider scale-90 leading-none">KTM {ktmMatchup.games}戦</span>
+                              <div className={`px-2 py-1 rounded-md border flex flex-col items-center justify-center min-w-[65px] ${winRate >= 60 ? 'bg-success-100 text-success-700 border-emerald-200' : winRate <= 40 ? 'bg-danger-100 text-danger-700 border-rose-200' : 'bg-primary-100 text-primary-700 border-amber-200'}`}>
+                                <span className="text-[8px] text-faint font-bold uppercase tracking-wider scale-90 leading-none">KTM {ktmMatchup.games}戦</span>
                                 <span className="font-mono text-xs font-black mt-0.5 leading-none">{winRate}%</span>
                               </div>
                             );
@@ -2597,8 +2597,8 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                           const memoWinRate = eTotal > 0 ? Math.round((eWins / eTotal) * 100) : null;
                           if (memoWinRate !== null) {
                             return (
-                              <div className={`px-2 py-1 rounded-md border flex flex-col items-center justify-center min-w-[65px] ${memoWinRate >= 60 ? 'bg-green-100 text-green-700 border-green-200' : memoWinRate <= 40 ? 'bg-red-100 text-red-700 border-red-200' : 'bg-black/5 text-foreground-subtle border-black/10'}`}>
-                                <span className="text-[8px] text-gray-500 font-bold uppercase tracking-wider scale-90 leading-none">メモ {eTotal}戦</span>
+                              <div className={`px-2 py-1 rounded-md border flex flex-col items-center justify-center min-w-[65px] ${memoWinRate >= 60 ? 'bg-success-100 text-success-700 border-emerald-200' : memoWinRate <= 40 ? 'bg-danger-100 text-danger-700 border-rose-200' : 'bg-black/5 text-foreground-subtle border-black/10'}`}>
+                                <span className="text-[8px] text-muted-strong font-bold uppercase tracking-wider scale-90 leading-none">メモ {eTotal}戦</span>
                                 <span className="font-mono text-xs font-black mt-0.5 leading-none">{memoWinRate}%</span>
                               </div>
                             );
@@ -2619,7 +2619,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                             <StarIcon 
                               key={idx} 
                               size={14} 
-                              className={idx < difficulty ? "text-amber-600 fill-amber-600" : "text-faint"}
+                              className={idx < difficulty ? "text-primary-600 fill-primary-600" : "text-faint"}
                             />
                           ))}
                         </div>
@@ -2631,7 +2631,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                             e.preventDefault();
                             handleOpenHistory(undefined, `対面 ${m.enemy} の変更履歴`, m.matchup_id);
                           }}
-                          className="px-3 py-1 bg-black/5 hover:bg-amber-100 hover:text-amber-800 border border-black/10 rounded-lg text-xs font-bold transition-all flex items-center gap-1 text-foreground-subtle cursor-pointer"
+                          className="px-3 py-1 bg-black/5 hover:bg-primary-100 hover:text-primary-800 border border-black/10 rounded-lg text-xs font-bold transition-all flex items-center gap-1 text-foreground-subtle cursor-pointer"
                           title="この対面の変更履歴を確認"
                         >
                           <History size={13} /> 📜 履歴
@@ -2671,7 +2671,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                               </div>
                             )}
                             {!rd.winCondition && !m.strategy && (
-                              <p className="text-gray-500 italic text-xs">このマッチアップに関する詳細な立ち回りメモは登録されていません。</p>
+                              <p className="text-muted-strong italic text-xs">このマッチアップに関する詳細な立ち回りメモは登録されていません。</p>
                             )}
                 {champStats[m.champion] && (() => {
                               const history = champStats[m.champion].match_history?.filter((h: any) => h.enemy_champion === m.enemy) || [];
@@ -2700,34 +2700,34 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                                       <Swords size={12} className="text-[#00cfef]" /> KTM直接対決データ分析 ({m.champion} vs {m.enemy})
                                     </span>
                                     {champStats[m.champion].matchup_stats?.[m.enemy] && (
-                                      <span className="font-mono font-bold text-amber-600">
+                                      <span className="font-mono font-bold text-primary-600">
                                         直接勝率: {champStats[m.champion].matchup_stats[m.enemy].win_rate}% ({champStats[m.champion].matchup_stats[m.enemy].games}戦)
                                       </span>
                                     )}
                                   </div>
 
                                   <div className="space-y-1">
-                                    <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider block">📈 勝敗トレンド</span>
+                                    <span className="text-[9px] text-muted-strong font-bold uppercase tracking-wider block">📈 勝敗トレンド</span>
                                     <div className="flex items-center gap-1.5 overflow-x-auto py-1">
                                       {trendHistory.map((h: any, idx: number) => (
                                         <div key={idx} className="flex items-center gap-2 shrink-0">
-                                          <div className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border ${h.is_win ? 'bg-green-100 border-green-200 text-green-700' : 'bg-red-100 border-red-200 text-red-700'}`}>
+                                          <div className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border ${h.is_win ? 'bg-success-100 border-emerald-200 text-success-700' : 'bg-danger-100 border-rose-200 text-danger-700'}`}>
                                             <span className="font-bold">{h.player_name}</span>
                                             <span className="font-mono text-[9px]">({new Date(h.created_at).toLocaleDateString('ja-JP', {month: '2-digit', day: '2-digit'})})</span>
                                           </div>
-                                          {idx < trendHistory.length - 1 && <span className="text-gray-700 font-bold">➔</span>}
+                                          {idx < trendHistory.length - 1 && <span className="text-foreground-subtle font-bold">➔</span>}
                                         </div>
                                       ))}
                                     </div>
                                   </div>
 
                                   <div className="space-y-1">
-                                    <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider block">📊 プレイヤー別の実績</span>
+                                    <span className="text-[9px] text-muted-strong font-bold uppercase tracking-wider block">📊 プレイヤー別の実績</span>
                                     {/* 2026-09-23: overflow-hidden だと狭い画面で表の右側が切れて読めなくなるため横スクロールへ */}
                                     <div className="overflow-x-auto rounded-lg border border-black/10 bg-black/5">
                                       <table className="w-full min-w-[320px] text-left border-collapse text-[10px]">
                                         <thead>
-                                          <tr className="bg-black/5 text-gray-400 font-bold uppercase border-b border-black/10 text-[8px]">
+                                          <tr className="bg-black/5 text-faint font-bold uppercase border-b border-black/10 text-[8px]">
                                             <th className="p-2">プレイヤー</th>
                                             <th className="p-2 text-center">ロール</th>
                                             <th className="p-2 text-center">試合数</th>
@@ -2742,13 +2742,13 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                                             return (
                                               <tr key={name} className="hover:bg-black/2 transition-colors">
                                                 <td className="p-2 font-bold text-foreground">{name}</td>
-                                                <td className="p-2 text-center font-mono text-gray-500">{pa.role}</td>
+                                                <td className="p-2 text-center font-mono text-muted-strong">{pa.role}</td>
                                                 <td className="p-2 text-center text-foreground-subtle font-bold">{pa.games}</td>
-                                                <td className={`p-2 text-center font-black ${winRate >= 60 ? 'text-green-600' : winRate <= 40 ? 'text-red-600' : 'text-foreground-subtle'}`}>
+                                                <td className={`p-2 text-center font-black ${winRate >= 60 ? 'text-success-600' : winRate <= 40 ? 'text-danger-600' : 'text-foreground-subtle'}`}>
                                                   {winRate}%
                                                 </td>
                                                 <td className="p-2 text-center font-mono">
-                                                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-black ${kda >= 3.0 ? 'bg-green-100 text-green-700' : kda <= 1.5 ? 'bg-red-100 text-red-700' : 'bg-surface-subtle text-foreground-subtle'}`}>
+                                                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-black ${kda >= 3.0 ? 'bg-success-100 text-success-700' : kda <= 1.5 ? 'bg-danger-100 text-danger-700' : 'bg-surface-subtle text-foreground-subtle'}`}>
                                                     {kda}
                                                   </span>
                                                 </td>
@@ -2780,29 +2780,29 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
 
                                     const cell = (label: string, value: string, tone = 'text-foreground') => (
                                       <div className="bg-black/5 border border-black/10 rounded-lg px-3 py-2">
-                                        <p className="text-[8px] text-gray-500 font-bold uppercase tracking-wider">{label}</p>
+                                        <p className="text-[8px] text-muted-strong font-bold uppercase tracking-wider">{label}</p>
                                         <p className={`text-sm font-black ${tone}`}>{value}</p>
                                       </div>
                                     );
 
                                     return (
                                       <div className="space-y-2">
-                                        <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider block">
+                                        <span className="text-[9px] text-muted-strong font-bold uppercase tracking-wider block">
                                           ⚔️ この対面の通算成績
                                         </span>
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                           {cell('試合数', `${games}戦`)}
-                                          {cell('勝率', `${winRate}%`, winRate >= 50 ? 'text-emerald-600' : 'text-rose-600')}
+                                          {cell('勝率', `${winRate}%`, winRate >= 50 ? 'text-success-600' : 'text-danger-600')}
                                           {cell('戦績', `${wins}勝 ${games - wins}敗`)}
-                                          {cell('平均KDA', `${kda}`, kda >= 3 ? 'text-emerald-600' : 'text-foreground-soft')}
+                                          {cell('平均KDA', `${kda}`, kda >= 3 ? 'text-success-600' : 'text-foreground-soft')}
                                         </div>
-                                        <div className="flex items-center gap-2 flex-wrap text-[9px] text-gray-500 pt-1">
+                                        <div className="flex items-center gap-2 flex-wrap text-[9px] text-muted-strong pt-1">
                                           <span className="font-bold uppercase tracking-wider">直近</span>
                                           {recent.map((h: any, i: number) => (
                                             <span key={i}
                                               title={`${new Date(h.created_at).toLocaleDateString('ja-JP')} ${h.player_name} ${h.score}`}
                                               className={`w-5 h-5 rounded flex items-center justify-center font-black text-[9px] ${
-                                                h.is_win ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                                                h.is_win ? 'bg-success-100 text-success-700' : 'bg-danger-100 text-danger-700'
                                               }`}>
                                               {h.is_win ? 'W' : 'L'}
                                             </span>
@@ -2847,14 +2847,14 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
           {isAdmin && (
             <div className="flex justify-end items-center gap-3 pt-4 border-t border-border">
               {saveSuccess && (
-                <span className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-300 text-xs font-bold">
+                <span className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-success-50 text-success-700 border border-emerald-300 text-xs font-bold">
                   <Check size={14} /> 保存しました
                 </span>
               )}
               <button
                 onClick={saveMemo}
                 disabled={saving}
-                className="px-6 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 text-stone-950 font-black rounded-xl hover:shadow-md transition-all flex items-center gap-2 text-xs cursor-pointer"
+                className="px-6 py-2.5 bg-gradient-to-r from-primary-400 to-primary-500 text-stone-950 font-black rounded-xl hover:shadow-md transition-all flex items-center gap-2 text-xs cursor-pointer"
               >
                 {saving ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />} チャンピオン辞典の変更を保存する
               </button>
@@ -2884,8 +2884,8 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
       {refiningFacts && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/70 backdrop-blur-sm animate-fade-in">
           <div className="bg-surface border border-amber-300 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl flex flex-col items-center text-center space-y-4">
-            <div className="w-16 h-16 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-600 shadow-inner">
-              <Sparkles size={32} className="animate-spin text-amber-600" />
+            <div className="w-16 h-16 rounded-2xl bg-primary-100 flex items-center justify-center text-primary-600 shadow-inner">
+              <Sparkles size={32} className="animate-spin text-primary-600" />
             </div>
             <div className="space-y-1.5">
               <h3 className="text-lg font-black text-foreground">✨ 蓄積知見をAI清書・整理中...</h3>
@@ -2893,7 +2893,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 重複表現を削ぎ落とし、2026年最新メタ仕様（スカトル2:55/グラブ8:00等）に合わせたプロ品質の文章へ再構成しています。
               </p>
             </div>
-            <div className="flex items-center gap-2 text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200">
+            <div className="flex items-center gap-2 text-xs font-bold text-primary-800 bg-primary-50 px-3 py-1.5 rounded-xl border border-amber-200">
               <RefreshCw size={14} className="animate-spin" />
               <span>Gemini 3 が推敲中（数秒お待ちください）</span>
             </div>
@@ -2910,7 +2910,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="text-base sm:text-xl font-black text-foreground flex items-center gap-1.5 truncate">
-                    <Sparkles size={20} className="text-amber-600 shrink-0" />
+                    <Sparkles size={20} className="text-primary-600 shrink-0" />
                     <span>{factsRefinePreview.champion} 蓄積知見 AI清書プレビュー</span>
                   </h3>
                 </div>
@@ -2934,7 +2934,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 .map((d) => (
                   <div key={d.fieldKey} className="bg-surface border border-border rounded-2xl p-4 shadow-xs space-y-3">
                     <div className="flex items-center justify-between flex-wrap gap-2">
-                      <span className="text-xs font-black text-amber-900 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg inline-block">
+                      <span className="text-xs font-black text-primary-900 bg-primary-50 border border-amber-200 px-2.5 py-1 rounded-lg inline-block">
                         📌 {d.fieldLabel}
                       </span>
                       <span className="text-[10px] text-faint font-mono">
@@ -2955,9 +2955,9 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                       </div>
 
                       {/* 清書後 */}
-                      <div className="bg-amber-50/40 border border-amber-300/80 rounded-xl p-3.5 space-y-1.5 flex flex-col shadow-2xs">
-                        <span className="text-[10px] font-bold text-amber-800 flex items-center gap-1">
-                          <Sparkles size={12} className="text-amber-600" /> 清書後（AI推敲・重複排除版）:
+                      <div className="bg-primary-50/40 border border-amber-300/80 rounded-xl p-3.5 space-y-1.5 flex flex-col shadow-2xs">
+                        <span className="text-[10px] font-bold text-primary-800 flex items-center gap-1">
+                          <Sparkles size={12} className="text-primary-600" /> 清書後（AI推敲・重複排除版）:
                         </span>
                         <div className="text-foreground whitespace-pre-wrap leading-relaxed font-medium text-xs flex-1">
                           {d.after || '（未記載）'}
@@ -2982,7 +2982,7 @@ function ChampionsContent({ isAdmin }: { isAdmin: boolean }) {
                 type="button"
                 onClick={handleConfirmRefineFacts}
                 disabled={savingRefinedFacts}
-                className="px-5 sm:px-6 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-xs sm:text-sm transition flex items-center gap-2 shadow-md shadow-amber-600/20 disabled:opacity-50"
+                className="px-5 sm:px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl text-xs sm:text-sm transition flex items-center gap-2 shadow-md shadow-primary-600/20 disabled:opacity-50"
               >
                 {savingRefinedFacts ? <RefreshCw size={14} className="animate-spin" /> : <Check size={16} />}
                 <span>{savingRefinedFacts ? '反映処理中...' : '✨ この清書版で辞典を更新'}</span>
@@ -3054,7 +3054,7 @@ const TextAreaCard = ({
                 className="text-[11px] font-bold px-2 py-1 rounded-lg bg-black/5 hover:bg-surface-hover text-foreground-subtle transition-all flex items-center gap-1 border border-black/10 shadow-xs cursor-pointer"
                 title={`${title}のテキストをコピー`}
               >
-                {copied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                {copied ? <Check size={12} className="text-success-600" /> : <Copy size={12} />}
                 <span>{copied ? '済' : 'コピー'}</span>
               </button>
             )}
@@ -3066,7 +3066,7 @@ const TextAreaCard = ({
                   e.preventDefault();
                   onOpenHistory(fieldKey, title);
                 }}
-                className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-black/5 hover:bg-amber-100 hover:text-amber-800 text-foreground-subtle transition-all flex items-center gap-1 border border-black/10 shadow-xs cursor-pointer"
+                className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-black/5 hover:bg-primary-100 hover:text-primary-800 text-foreground-subtle transition-all flex items-center gap-1 border border-black/10 shadow-xs cursor-pointer"
                 title="この項目の変更履歴を確認"
               >
                 <History size={12} /> 📜 履歴
@@ -3077,7 +3077,7 @@ const TextAreaCard = ({
               onClick={() => setIsEditing(!isEditing)}
               className={`text-[11px] font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 border shadow-xs cursor-pointer ${
                 isEditing
-                  ? 'bg-amber-600 text-white border-amber-600'
+                  ? 'bg-primary-600 text-white border-amber-600'
                   : 'bg-black/5 hover:bg-black/10 text-foreground-subtle border-black/10'
               }`}
             >
@@ -3091,7 +3091,7 @@ const TextAreaCard = ({
           <textarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="w-full min-h-[160px] bg-surface border border-border rounded-xl p-3.5 text-sm text-foreground leading-relaxed outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 shadow-inner transition-colors resize-y font-sans"
+            className="w-full min-h-[160px] bg-surface border border-border rounded-xl p-3.5 text-sm text-foreground leading-relaxed outline-none focus:border-amber-500 focus:ring-1 focus:ring-primary-500 shadow-inner transition-colors resize-y font-sans"
             placeholder={`${title}を記録...`}
             autoFocus
           />

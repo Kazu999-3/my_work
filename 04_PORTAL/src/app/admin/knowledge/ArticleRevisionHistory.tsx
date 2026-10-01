@@ -66,7 +66,7 @@ export default function ArticleRevisionHistory({ articleId }: Props) {
   };
 
   if (loading) return <p className="text-[11px] text-faint mt-3">この記事の変化履歴を確認中...</p>;
-  if (error) return <p className="text-[11px] text-rose-600 mt-3">履歴の取得に失敗: {error}</p>;
+  if (error) return <p className="text-[11px] text-danger-600 mt-3">履歴の取得に失敗: {error}</p>;
   if (!revisions || revisions.length === 0) {
     return (
       <p className="text-[11px] text-faint mt-3 flex items-center gap-1">
@@ -85,16 +85,16 @@ export default function ArticleRevisionHistory({ articleId }: Props) {
           <div key={r.id} className="border border-border rounded-lg overflow-hidden bg-surface">
             <button onClick={(e) => { e.stopPropagation(); openDetail(r.id); }}
               className="w-full text-left px-2.5 py-2 hover:bg-black/5 transition-colors flex items-center gap-2 flex-wrap text-[11px]">
-              <span className="font-black px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-200">
+              <span className="font-black px-1.5 py-0.5 rounded bg-primary-100 text-primary-700 border border-amber-200">
                 {TYPE_LABELS[r.target_type] || r.target_type}
               </span>
               <span className="font-bold text-foreground">{r.target_key}</span>
               {r.isNew ? (
-                <span className="font-black text-teal-700">新規作成</span>
+                <span className="font-black text-secondary-700">新規作成</span>
               ) : (
                 <span className="font-mono">
-                  <span className="text-emerald-700">+{r.added}</span>{' '}
-                  <span className="text-rose-700">-{r.removed}</span>
+                  <span className="text-success-700">+{r.added}</span>{' '}
+                  <span className="text-danger-700">-{r.removed}</span>
                 </span>
               )}
               <span className="text-faint ml-auto shrink-0">{new Date(r.created_at).toLocaleString('ja-JP')}</span>
@@ -110,8 +110,8 @@ export default function ArticleRevisionHistory({ articleId }: Props) {
                     <div className="max-h-64 overflow-auto font-mono text-[10px] leading-relaxed rounded-lg border border-border">
                       {(detail.diff || []).map((line: any, i: number) => (
                         <div key={i} className={
-                          line.op === 'added' ? 'bg-emerald-100 text-emerald-700 px-2'
-                          : line.op === 'removed' ? 'bg-rose-100 text-rose-700/80 px-2 line-through decoration-rose-400'
+                          line.op === 'added' ? 'bg-success-100 text-success-700 px-2'
+                          : line.op === 'removed' ? 'bg-danger-100 text-danger-700/80 px-2 line-through decoration-danger-400'
                           : 'text-muted-strong px-2'
                         }>
                           <span className="select-none opacity-40 mr-2">
@@ -123,7 +123,7 @@ export default function ArticleRevisionHistory({ articleId }: Props) {
                     </div>
                     {!r.isNew && (
                       <button onClick={(e) => { e.stopPropagation(); revert(r.id); }} disabled={reverting}
-                        className="mt-2 text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-200 px-2.5 py-1 rounded-lg hover:bg-rose-200 disabled:opacity-50 flex items-center gap-1">
+                        className="mt-2 text-[11px] font-bold bg-danger-100 text-danger-700 border border-rose-200 px-2.5 py-1 rounded-lg hover:bg-danger-200 disabled:opacity-50 flex items-center gap-1">
                         <RotateCcw size={11} /> {reverting ? '戻しています...' : 'この更新を取り消す'}
                       </button>
                     )}

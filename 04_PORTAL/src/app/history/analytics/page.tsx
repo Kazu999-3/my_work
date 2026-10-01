@@ -15,7 +15,7 @@ export default function MatchAnalyticsRedirectPage() {
   return (
     <div className="min-h-screen bg-[#eae4d4] dark:bg-[#1e1f22] text-[#201c2b] dark:text-[#f2f3f5] flex items-center justify-center p-4">
       <div className="text-center max-w-md bg-surface/95 border border-border/80 rounded-3xl p-8 shadow-xl space-y-4">
-        <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-2xl mx-auto">
+        <div className="w-12 h-12 rounded-2xl bg-primary-500/10 border border-amber-500/30 flex items-center justify-center text-2xl mx-auto">
           👑
         </div>
         <h1 className="text-base font-black text-foreground">
@@ -26,7 +26,7 @@ export default function MatchAnalyticsRedirectPage() {
         </p>
         <Link
           href="/coach?tab=postgame"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-black text-xs transition shadow-sm"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-600 hover:bg-primary-500 text-white font-black text-xs transition shadow-sm"
         >
           <span>ディープアナリティクスを開く</span>
           <ArrowRight className="h-4 w-4" />

@@ -540,7 +540,7 @@ export default function ChampionVisualDashboard({
       {/* 🎮 0. 分析対象レーン・ロール選択セレクター */}
       <div className="flex flex-wrap items-center justify-between gap-2.5 p-2 sm:p-2.5 rounded-2xl bg-surface dark:bg-stone-900/90 border border-border dark:border-stone-800 shadow-xs backdrop-blur-md">
         <div className="flex items-center gap-2 px-1.5">
-          <span className="text-xs font-black text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+          <span className="text-xs font-black text-primary-600 dark:text-primary-400 flex items-center gap-1.5">
             <span>🎮</span> <span>分析レーン:</span>
           </span>
           <span className="text-[11px] text-muted-strong font-bold hidden sm:inline">
@@ -567,7 +567,7 @@ export default function ChampionVisualDashboard({
                 }}
                 className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap ${
                   isSelected
-                    ? 'bg-amber-500 text-stone-950 shadow-xs font-black scale-102'
+                    ? 'bg-primary-500 text-stone-950 shadow-xs font-black scale-102'
                     : 'bg-surface-subtle dark:bg-stone-800/80 text-muted hover:text-foreground dark:hover:text-white hover:bg-surface-hover/80 dark:hover:bg-stone-700 border border-border/80 dark:border-white/5'
                 }`}
               >
@@ -582,7 +582,7 @@ export default function ChampionVisualDashboard({
       <div className="bg-surface dark:bg-stone-900/90 border border-border dark:border-stone-800 rounded-2xl p-3.5 sm:p-4.5 shadow-xs text-foreground dark:text-white">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3 pb-3 border-b border-stone-100 dark:border-white/10">
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[11px] font-black tracking-wider uppercase">
+            <span className="px-2 py-0.5 rounded-md bg-primary-500/15 text-primary-700 dark:text-primary-300 border border-amber-500/30 text-[11px] font-black tracking-wider uppercase">
               Skill HUD
             </span>
             <span className="text-xs font-bold text-foreground-subtle">スキル構成 ＆ 推奨先行上げ順</span>
@@ -592,7 +592,7 @@ export default function ChampionVisualDashboard({
           <div className="flex items-center gap-1.5 text-xs">
             <span className="text-[11px] text-muted-strong font-bold">先行上げ:</span>
             <div className="flex items-center gap-1">
-              <span className="px-2 py-0.5 rounded-md bg-amber-500 text-stone-950 font-black text-xs shadow-xs">
+              <span className="px-2 py-0.5 rounded-md bg-primary-500 text-stone-950 font-black text-xs shadow-xs">
                 {skillPriority[0] || 'Q'}
               </span>
               <ChevronRight size={14} className="text-faint" />
@@ -619,7 +619,7 @@ export default function ChampionVisualDashboard({
                   alt={passive.name}
                   className="w-full h-full object-cover"
                 />
-                <span className="absolute bottom-0 right-0 bg-stone-900/90 text-amber-400 text-[9px] font-black px-1 rounded-tl">
+                <span className="absolute bottom-0 right-0 bg-stone-900/90 text-primary-400 text-[9px] font-black px-1 rounded-tl">
                   P
                 </span>
               </div>
@@ -644,7 +644,7 @@ export default function ChampionVisualDashboard({
                     className="w-full h-full object-cover"
                   />
                   <span className={`absolute bottom-0 right-0 text-[10px] font-black px-1.5 rounded-tl ${
-                    key === 'R' ? 'bg-rose-600 text-white' : 'bg-stone-900/90 text-amber-300'
+                    key === 'R' ? 'bg-danger-600 text-white' : 'bg-stone-900/90 text-primary-300'
                   }`}>
                     {key}
                   </span>
@@ -668,7 +668,7 @@ export default function ChampionVisualDashboard({
         {/* レーン・ロール別実戦タイミング指標 */}
         <div className="bg-surface dark:bg-stone-900/80 border border-border dark:border-stone-800 rounded-2xl p-3 sm:p-3.5 shadow-xs flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-primary-500/10 border border-amber-500/30 flex items-center justify-center text-primary-500 shrink-0">
               {internalRole === 'JG' ? <Clock size={16} /> :
                internalRole === 'SUP' ? <Shield size={16} /> :
                internalRole === 'TOP' ? <Swords size={16} /> :
@@ -710,14 +710,14 @@ export default function ChampionVisualDashboard({
                 <div className="bg-background dark:bg-stone-800/60 px-2.5 py-1.5 rounded-xl border border-border/80 dark:border-white/5">
                   <div className="flex items-center justify-end gap-1">
                     <span className="text-[10px] text-muted-strong block font-bold">最速フルクリア</span>
-                    <span className="text-[9px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold">2026仕様</span>
+                    <span className="text-[9px] px-1 py-0.2 rounded bg-primary-500/20 text-primary-700 dark:text-primary-300 font-bold">2026仕様</span>
                   </div>
                   <div className="flex items-baseline justify-end gap-1.5">
-                    <span className="text-xs font-black text-amber-600 dark:text-amber-400 font-mono">
+                    <span className="text-xs font-black text-primary-600 dark:text-primary-400 font-mono">
                       {formatSec(realJungleTiming?.externalFastestClearSec || 160)}
                     </span>
                     {realJungleTiming?.externalFastestClearSec && (
-                      <span className={`text-[9px] font-bold ${175 - realJungleTiming.externalFastestClearSec >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                      <span className={`text-[9px] font-bold ${175 - realJungleTiming.externalFastestClearSec >= 0 ? 'text-success-600 dark:text-success-400' : 'text-danger-600 dark:text-danger-400'}`}>
                         {175 - realJungleTiming.externalFastestClearSec >= 0
                           ? `カニ+${175 - realJungleTiming.externalFastestClearSec}s`
                           : `カニ${175 - realJungleTiming.externalFastestClearSec}s`}
@@ -727,7 +727,7 @@ export default function ChampionVisualDashboard({
                 </div>
                 <div className="bg-background dark:bg-stone-800/60 px-2.5 py-1.5 rounded-xl border border-border/80 dark:border-white/5">
                   <span className="text-[10px] text-muted-strong block font-bold">1stコア平均</span>
-                  <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                  <span className="text-xs font-black text-success-600 dark:text-success-400 font-mono">
                     {formatSec(realJungleTiming?.avgFirstCoreSec || 680)}
                   </span>
                 </div>
@@ -736,13 +736,13 @@ export default function ChampionVisualDashboard({
               <>
                 <div className="bg-background dark:bg-stone-800/60 px-2.5 py-1.5 rounded-xl border border-border/80 dark:border-white/5">
                   <span className="text-[10px] text-muted-strong block font-bold">Lv2先行基準</span>
-                  <span className="text-xs font-black text-teal-600 dark:text-teal-400 font-mono">
+                  <span className="text-xs font-black text-secondary-600 dark:text-secondary-400 font-mono">
                     2波目前衛3体
                   </span>
                 </div>
                 <div className="bg-background dark:bg-stone-800/60 px-2.5 py-1.5 rounded-xl border border-border/80 dark:border-white/5">
                   <span className="text-[10px] text-muted-strong block font-bold">目標視界(20分)</span>
-                  <span className="text-xs font-black text-amber-600 dark:text-amber-400 font-mono">
+                  <span className="text-xs font-black text-primary-600 dark:text-primary-400 font-mono">
                     45+ スコア
                   </span>
                 </div>
@@ -751,13 +751,13 @@ export default function ChampionVisualDashboard({
               <>
                 <div className="bg-background dark:bg-stone-800/60 px-2.5 py-1.5 rounded-xl border border-border/80 dark:border-white/5">
                   <span className="text-[10px] text-muted-strong block font-bold">1stリコール目標</span>
-                  <span className="text-xs font-black text-amber-600 dark:text-amber-400 font-mono">
+                  <span className="text-xs font-black text-primary-600 dark:text-primary-400 font-mono">
                     1,200G〜1,300G
                   </span>
                 </div>
                 <div className="bg-background dark:bg-stone-800/60 px-2.5 py-1.5 rounded-xl border border-border/80 dark:border-white/5">
                   <span className="text-[10px] text-muted-strong block font-bold">フリーズ維持</span>
-                  <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                  <span className="text-xs font-black text-success-600 dark:text-success-400 font-mono">
                     タワー前4体
                   </span>
                 </div>
@@ -766,13 +766,13 @@ export default function ChampionVisualDashboard({
               <>
                 <div className="bg-background dark:bg-stone-800/60 px-2.5 py-1.5 rounded-xl border border-border/80 dark:border-white/5">
                   <span className="text-[10px] text-muted-strong block font-bold">ローム優先時</span>
-                  <span className="text-xs font-black text-amber-600 dark:text-amber-400 font-mono">
+                  <span className="text-xs font-black text-primary-600 dark:text-primary-400 font-mono">
                     キャノン波後
                   </span>
                 </div>
                 <div className="bg-background dark:bg-stone-800/60 px-2.5 py-1.5 rounded-xl border border-border/80 dark:border-white/5">
                   <span className="text-[10px] text-muted-strong block font-bold">パワースパイク</span>
-                  <span className="text-xs font-black text-rose-600 dark:text-rose-400 font-mono">
+                  <span className="text-xs font-black text-danger-600 dark:text-danger-400 font-mono">
                     Lv6 即死
                   </span>
                 </div>
@@ -781,13 +781,13 @@ export default function ChampionVisualDashboard({
               <>
                 <div className="bg-background dark:bg-stone-800/60 px-2.5 py-1.5 rounded-xl border border-border/80 dark:border-white/5">
                   <span className="text-[10px] text-muted-strong block font-bold">1コア目標</span>
-                  <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                  <span className="text-xs font-black text-success-600 dark:text-success-400 font-mono">
                     10:30 (最速)
                   </span>
                 </div>
                 <div className="bg-background dark:bg-stone-800/60 px-2.5 py-1.5 rounded-xl border border-border/80 dark:border-white/5">
                   <span className="text-[10px] text-muted-strong block font-bold">目標CS</span>
-                  <span className="text-xs font-black text-amber-600 dark:text-amber-400 font-mono">
+                  <span className="text-xs font-black text-primary-600 dark:text-primary-400 font-mono">
                     8.5+ /分
                   </span>
                 </div>
@@ -800,7 +800,7 @@ export default function ChampionVisualDashboard({
         <div className="bg-surface dark:bg-stone-900/80 border border-border dark:border-stone-800 rounded-2xl p-3 sm:p-3.5 shadow-xs flex flex-col justify-center gap-1.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Activity size={15} className="text-teal-600 dark:text-teal-400" />
+              <Activity size={15} className="text-secondary-600 dark:text-secondary-400" />
               <span className="text-xs font-black text-foreground dark:text-white">パワースパイク推移</span>
             </div>
             <span className="text-[10px] text-muted-strong font-bold">10段階指標</span>
@@ -810,11 +810,11 @@ export default function ChampionVisualDashboard({
             <div className="bg-background dark:bg-stone-800/60 p-1.5 rounded-lg border border-border/80 dark:border-white/5">
               <div className="flex justify-between items-center text-[10px] text-muted-strong mb-1 px-0.5">
                 <span>序盤</span>
-                <span className="font-bold text-amber-600 dark:text-amber-400">{spikeValues.early}/10</span>
+                <span className="font-bold text-primary-600 dark:text-primary-400">{spikeValues.early}/10</span>
               </div>
               <div className="w-full bg-surface-hover dark:bg-stone-800 h-1.5 rounded-full overflow-hidden">
                 <div 
-                  className="bg-amber-500 h-full rounded-full transition-all duration-500" 
+                  className="bg-primary-500 h-full rounded-full transition-all duration-500" 
                   style={{ width: `${(spikeValues.early / 10) * 100}%` }}
                 />
               </div>
@@ -823,11 +823,11 @@ export default function ChampionVisualDashboard({
             <div className="bg-background dark:bg-stone-800/60 p-1.5 rounded-lg border border-border/80 dark:border-white/5">
               <div className="flex justify-between items-center text-[10px] text-muted-strong mb-1 px-0.5">
                 <span>中盤</span>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">{spikeValues.mid}/10</span>
+                <span className="font-bold text-success-600 dark:text-success-400">{spikeValues.mid}/10</span>
               </div>
               <div className="w-full bg-surface-hover dark:bg-stone-800 h-1.5 rounded-full overflow-hidden">
                 <div 
-                  className="bg-emerald-500 h-full rounded-full transition-all duration-500" 
+                  className="bg-success-500 h-full rounded-full transition-all duration-500" 
                   style={{ width: `${(spikeValues.mid / 10) * 100}%` }}
                 />
               </div>
@@ -836,11 +836,11 @@ export default function ChampionVisualDashboard({
             <div className="bg-background dark:bg-stone-800/60 p-1.5 rounded-lg border border-border/80 dark:border-white/5">
               <div className="flex justify-between items-center text-[10px] text-muted-strong mb-1 px-0.5">
                 <span>終盤</span>
-                <span className="font-bold text-amber-600 dark:text-amber-400">{spikeValues.late}/10</span>
+                <span className="font-bold text-primary-600 dark:text-primary-400">{spikeValues.late}/10</span>
               </div>
               <div className="w-full bg-surface-hover dark:bg-stone-800 h-1.5 rounded-full overflow-hidden">
                 <div 
-                  className="bg-amber-500 h-full rounded-full transition-all duration-500" 
+                  className="bg-primary-500 h-full rounded-full transition-all duration-500" 
                   style={{ width: `${(spikeValues.late / 10) * 100}%` }}
                 />
               </div>
@@ -855,7 +855,7 @@ export default function ChampionVisualDashboard({
           onClick={() => setActiveTab('build')}
           className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-black transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'build'
-              ? 'bg-amber-500 text-stone-950 shadow-xs'
+              ? 'bg-primary-500 text-stone-950 shadow-xs'
               : 'text-muted hover:text-foreground dark:hover:text-white'
           }`}
         >
@@ -865,7 +865,7 @@ export default function ChampionVisualDashboard({
           onClick={() => setActiveTab('matchup')}
           className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-black transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'matchup'
-              ? 'bg-amber-500 text-stone-950 shadow-xs'
+              ? 'bg-primary-500 text-stone-950 shadow-xs'
               : 'text-muted hover:text-foreground dark:hover:text-white'
           }`}
         >
@@ -875,20 +875,20 @@ export default function ChampionVisualDashboard({
           onClick={() => setActiveTab('bible')}
           className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-black transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'bible'
-              ? 'bg-amber-500 text-stone-950 shadow-xs'
+              ? 'bg-primary-500 text-stone-950 shadow-xs'
               : 'text-muted hover:text-foreground dark:hover:text-white'
           }`}
         >
           <BookOpen size={14} /> 📜 実戦バイブル ＆ 罠・没理由
           {tacticsData?.exists && (
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-success-500 animate-pulse" />
           )}
         </button>
         <button
           onClick={() => setActiveTab('video')}
           className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-black transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'video'
-              ? 'bg-amber-500 text-stone-950 shadow-xs'
+              ? 'bg-primary-500 text-stone-950 shadow-xs'
               : 'text-muted hover:text-foreground dark:hover:text-white'
           }`}
         >
@@ -914,13 +914,13 @@ export default function ChampionVisualDashboard({
                   // cyan/sky→teal、purple→amber と寄せた結果 ap_mage と marksman、
                   // ap_assassin と既定(ADファイター)が同じ見た目になったため個別に調整した
                   // (tank と enchanter が同じ emerald だったのは統一前からの状態)。
-                  archetype === 'ap_mage' ? 'bg-teal-100 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300' :
-                  archetype === 'ap_assassin' ? 'bg-amber-200 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200' :
-                  archetype === 'ad_assassin' ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300' :
-                  archetype === 'tank' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' :
-                  archetype === 'marksman' ? 'bg-teal-200 text-teal-900 dark:bg-teal-900/60 dark:text-teal-200' :
+                  archetype === 'ap_mage' ? 'bg-secondary-100 text-secondary-800 dark:bg-secondary-950/60 dark:text-secondary-300' :
+                  archetype === 'ap_assassin' ? 'bg-primary-200 text-primary-900 dark:bg-primary-900/60 dark:text-primary-200' :
+                  archetype === 'ad_assassin' ? 'bg-danger-100 text-danger-800 dark:bg-danger-950/60 dark:text-danger-300' :
+                  archetype === 'tank' ? 'bg-success-100 text-success-800 dark:bg-success-950/60 dark:text-success-300' :
+                  archetype === 'marksman' ? 'bg-secondary-200 text-secondary-900 dark:bg-secondary-900/60 dark:text-secondary-200' :
                   archetype === 'enchanter' ? 'bg-surface-subtle text-foreground-soft dark:bg-stone-800/60' :
-                  'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                  'bg-primary-100 text-primary-800 dark:bg-primary-950/60 dark:text-primary-300'
                 }`}>
                   {archetype === 'ap_mage' ? '⚡ APメイジ' :
                    archetype === 'ap_assassin' ? '🗡️ APアサシン' :
@@ -939,7 +939,7 @@ export default function ChampionVisualDashboard({
                   onClick={() => setBuildPreset('standard')}
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                     buildPreset === 'standard'
-                      ? 'bg-surface dark:bg-stone-700 text-amber-600 dark:text-amber-400 shadow-2xs'
+                      ? 'bg-surface dark:bg-stone-700 text-primary-600 dark:text-primary-400 shadow-2xs'
                       : 'text-muted-strong hover:text-foreground-soft dark:hover:text-white'
                   }`}
                 >
@@ -949,7 +949,7 @@ export default function ChampionVisualDashboard({
                   onClick={() => setBuildPreset('tank')}
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                     buildPreset === 'tank'
-                      ? 'bg-surface dark:bg-stone-700 text-rose-600 dark:text-rose-400 shadow-2xs'
+                      ? 'bg-surface dark:bg-stone-700 text-danger-600 dark:text-danger-400 shadow-2xs'
                       : 'text-muted-strong hover:text-foreground-soft dark:hover:text-white'
                   }`}
                 >
@@ -959,7 +959,7 @@ export default function ChampionVisualDashboard({
                   onClick={() => setBuildPreset('burst')}
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                     buildPreset === 'burst'
-                      ? 'bg-surface dark:bg-stone-700 text-teal-600 dark:text-teal-400 shadow-2xs'
+                      ? 'bg-surface dark:bg-stone-700 text-secondary-600 dark:text-secondary-400 shadow-2xs'
                       : 'text-muted-strong hover:text-foreground-soft dark:hover:text-white'
                   }`}
                 >
@@ -970,8 +970,8 @@ export default function ChampionVisualDashboard({
 
             {/* ビルド詳細カード */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-              <div className="p-3 rounded-xl bg-amber-50/70 dark:bg-stone-800/60 border border-amber-200 dark:border-stone-700">
-                <span className="text-[10px] font-black text-amber-800 dark:text-amber-400 uppercase block mb-1">
+              <div className="p-3 rounded-xl bg-primary-50/70 dark:bg-stone-800/60 border border-amber-200 dark:border-stone-700">
+                <span className="text-[10px] font-black text-primary-800 dark:text-primary-400 uppercase block mb-1">
                   1コア (ファースト完成)
                 </span>
                 <p className="font-bold text-foreground dark:text-white text-sm">
@@ -982,8 +982,8 @@ export default function ChampionVisualDashboard({
                 </span>
               </div>
 
-              <div className="p-3 rounded-xl bg-teal-50/70 dark:bg-stone-800/60 border border-teal-200 dark:border-stone-700">
-                <span className="text-[10px] font-black text-teal-800 dark:text-teal-400 uppercase block mb-1">
+              <div className="p-3 rounded-xl bg-secondary-50/70 dark:bg-stone-800/60 border border-teal-200 dark:border-stone-700">
+                <span className="text-[10px] font-black text-secondary-800 dark:text-secondary-400 uppercase block mb-1">
                   2〜3コア (集団戦スパイク)
                 </span>
                 <p className="font-bold text-foreground dark:text-white text-sm">
@@ -994,8 +994,8 @@ export default function ChampionVisualDashboard({
                 </span>
               </div>
 
-              <div className="p-3 rounded-xl bg-amber-50/70 dark:bg-stone-800/60 border border-amber-200 dark:border-stone-700">
-                <span className="text-[10px] font-black text-amber-800 dark:text-amber-400 uppercase block mb-1">
+              <div className="p-3 rounded-xl bg-primary-50/70 dark:bg-stone-800/60 border border-amber-200 dark:border-stone-700">
+                <span className="text-[10px] font-black text-primary-800 dark:text-primary-400 uppercase block mb-1">
                   キーストーン推奨ルーン
                 </span>
                 <p className="font-bold text-foreground dark:text-white text-sm">
@@ -1011,23 +1011,23 @@ export default function ChampionVisualDashboard({
           {/* パワースパイク分析 */}
           <div className="bg-surface dark:bg-stone-900 border border-border dark:border-stone-800 rounded-2xl p-4 shadow-xs">
             <h3 className="text-sm font-black text-foreground dark:text-white mb-2 flex items-center gap-2">
-              <Zap size={16} className="text-amber-500" /> 時間帯別パワースパイク ＆ 立ち回り
+              <Zap size={16} className="text-primary-500" /> 時間帯別パワースパイク ＆ 立ち回り
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
               <div className="p-2.5 rounded-xl bg-background dark:bg-stone-800/50 border border-border dark:border-stone-700">
-                <span className="font-black text-amber-700 dark:text-amber-400 block mb-0.5">Lv1〜3 (序盤レーン戦)</span>
+                <span className="font-black text-primary-700 dark:text-primary-400 block mb-0.5">Lv1〜3 (序盤レーン戦)</span>
                 <p className="text-foreground-subtle text-[11px] leading-relaxed">
                   {dataFields?.powerSpikes ? dataFields.powerSpikes.split('\n')[0] : 'スキルを当てて主導権を取り、Lv2先行でウェーブをフリーズ。'}
                 </p>
               </div>
               <div className="p-2.5 rounded-xl bg-background dark:bg-stone-800/50 border border-border dark:border-stone-700">
-                <span className="font-black text-emerald-700 dark:text-emerald-400 block mb-0.5">1コア〜Lv9 (中盤ローム)</span>
+                <span className="font-black text-success-700 dark:text-success-400 block mb-0.5">1コア〜Lv9 (中盤ローム)</span>
                 <p className="text-foreground-subtle text-[11px] leading-relaxed">
                   最も戦闘力が高いパワースパイク。ヘラルド・ドラゴン前にプッシュして視界制圧。
                 </p>
               </div>
               <div className="p-2.5 rounded-xl bg-background dark:bg-stone-800/50 border border-border dark:border-stone-700">
-                <span className="font-black text-amber-700 dark:text-amber-400 block mb-0.5">集団戦 (終盤)</span>
+                <span className="font-black text-primary-700 dark:text-primary-400 block mb-0.5">集団戦 (終盤)</span>
                 <p className="text-foreground-subtle text-[11px] leading-relaxed">
                   正面から突っ込まず、側道から敵キャリーにCCを合わせ、耐久を活かして前線を維持。
                 </p>
@@ -1046,12 +1046,12 @@ export default function ChampionVisualDashboard({
             <div className="bg-surface dark:bg-stone-900 border border-emerald-500/30 rounded-2xl p-4 shadow-xs">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <ShieldCheck size={16} className="text-emerald-500" />
-                  <h3 className="text-sm font-black text-emerald-950 dark:text-emerald-300">
+                  <ShieldCheck size={16} className="text-success-500" />
+                  <h3 className="text-sm font-black text-success-950 dark:text-success-300">
                     🟢 有利な相手 (カモ TOP)
                   </h3>
                 </div>
-                <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-100 dark:bg-emerald-950/80 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] text-success-700 dark:text-success-400 font-bold bg-success-100 dark:bg-success-950/80 px-2 py-0.5 rounded-full">
                   クリックで対面メモ展開
                 </span>
               </div>
@@ -1070,11 +1070,11 @@ export default function ChampionVisualDashboard({
                   return (
                     <div 
                       key={idx} 
-                      className="rounded-xl border border-emerald-100 dark:border-emerald-900/30 overflow-hidden transition-all bg-emerald-50/50 dark:bg-stone-800/50"
+                      className="rounded-xl border border-emerald-100 dark:border-emerald-900/30 overflow-hidden transition-all bg-success-50/50 dark:bg-stone-800/50"
                     >
                       <div 
                         onClick={() => setExpandedEnemy(isExpanded ? null : item.name)}
-                        className="flex items-center gap-2.5 p-2 cursor-pointer hover:bg-emerald-100/50 dark:hover:bg-stone-850 transition-colors"
+                        className="flex items-center gap-2.5 p-2 cursor-pointer hover:bg-success-100/50 dark:hover:bg-stone-850 transition-colors"
                       >
                         <img
                           src={getChampIcon(item.name)}
@@ -1085,7 +1085,7 @@ export default function ChampionVisualDashboard({
                           <span className="text-xs font-black text-foreground dark:text-white block">
                             {item.name}
                           </span>
-                          <span className="text-[11px] text-emerald-800 dark:text-emerald-400 font-medium block truncate">
+                          <span className="text-[11px] text-success-800 dark:text-success-400 font-medium block truncate">
                             {item.note}
                           </span>
                         </div>
@@ -1096,7 +1096,7 @@ export default function ChampionVisualDashboard({
 
                       {isExpanded && (
                         <div className="p-3 bg-surface dark:bg-stone-950/90 border-t border-emerald-100 dark:border-emerald-900/30 text-xs space-y-1.5">
-                          <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-black text-[11px]">
+                          <div className="flex items-center gap-1.5 text-success-700 dark:text-success-400 font-black text-[11px]">
                             <BookMarked size={13} />
                             <span>{matchupRecord?.strategy ? "対面Sentinel実戦攻略メモ" : "対面メモ（未登録）"}</span>
                           </div>
@@ -1122,12 +1122,12 @@ export default function ChampionVisualDashboard({
             <div className="bg-surface dark:bg-stone-900 border border-rose-500/30 rounded-2xl p-4 shadow-xs">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <ShieldAlert size={16} className="text-rose-500" />
-                  <h3 className="text-sm font-black text-rose-950 dark:text-rose-300">
+                  <ShieldAlert size={16} className="text-danger-500" />
+                  <h3 className="text-sm font-black text-danger-950 dark:text-danger-300">
                     🔴 不利・天敵 (要注意 TOP)
                   </h3>
                 </div>
-                <span className="text-[10px] text-rose-700 dark:text-rose-400 font-bold bg-rose-100 dark:bg-rose-950/80 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] text-danger-700 dark:text-danger-400 font-bold bg-danger-100 dark:bg-danger-950/80 px-2 py-0.5 rounded-full">
                   クリックで対面メモ展開
                 </span>
               </div>
@@ -1146,11 +1146,11 @@ export default function ChampionVisualDashboard({
                   return (
                     <div 
                       key={idx} 
-                      className="rounded-xl border border-rose-100 dark:border-rose-900/30 overflow-hidden transition-all bg-rose-50/50 dark:bg-stone-800/50"
+                      className="rounded-xl border border-rose-100 dark:border-rose-900/30 overflow-hidden transition-all bg-danger-50/50 dark:bg-stone-800/50"
                     >
                       <div 
                         onClick={() => setExpandedEnemy(isExpanded ? null : item.name)}
-                        className="flex items-center gap-2.5 p-2 cursor-pointer hover:bg-rose-100/50 dark:hover:bg-stone-850 transition-colors"
+                        className="flex items-center gap-2.5 p-2 cursor-pointer hover:bg-danger-100/50 dark:hover:bg-stone-850 transition-colors"
                       >
                         <img
                           src={getChampIcon(item.name)}
@@ -1161,7 +1161,7 @@ export default function ChampionVisualDashboard({
                           <span className="text-xs font-black text-foreground dark:text-white block">
                             {item.name}
                           </span>
-                          <span className="text-[11px] text-rose-800 dark:text-rose-400 font-medium block truncate">
+                          <span className="text-[11px] text-danger-800 dark:text-danger-400 font-medium block truncate">
                             {item.note}
                           </span>
                         </div>
@@ -1172,7 +1172,7 @@ export default function ChampionVisualDashboard({
 
                       {isExpanded && (
                         <div className="p-3 bg-surface dark:bg-stone-950/90 border-t border-rose-100 dark:border-rose-900/30 text-xs space-y-1.5">
-                          <div className="flex items-center gap-1.5 text-rose-700 dark:text-rose-400 font-black text-[11px]">
+                          <div className="flex items-center gap-1.5 text-danger-700 dark:text-danger-400 font-black text-[11px]">
                             <BookMarked size={13} />
                             <span>{matchupRecord?.strategy ? "天敵対策・即死回避メモ" : "天敵対策メモ（未登録）"}</span>
                           </div>
@@ -1202,16 +1202,16 @@ export default function ChampionVisualDashboard({
       {activeTab === 'bible' && (
         <div className="space-y-4">
           {/* 罠・不採用ビルドの暴露エリア */}
-          <div className="bg-gradient-to-r from-rose-950/20 via-stone-900/90 to-rose-950/20 border border-rose-500/40 rounded-2xl p-4 shadow-md text-white">
+          <div className="bg-gradient-to-r from-danger-950/20 via-stone-900/90 to-danger-950/20 border border-rose-500/40 rounded-2xl p-4 shadow-md text-white">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <AlertTriangle size={18} className="text-rose-400" />
-                <h3 className="text-sm font-black text-rose-200">
+                <AlertTriangle size={18} className="text-danger-400" />
+                <h3 className="text-sm font-black text-danger-200">
                   🚫 避けるべき罠・不採用ビルド（没理由）
                 </h3>
               </div>
               {tacticsData?.traps && tacticsData.traps.length > 0 && (
-                <span className="text-[10px] bg-rose-500/20 border border-rose-500/40 text-rose-300 px-2 py-0.5 rounded-full font-bold">
+                <span className="text-[10px] bg-danger-500/20 border border-rose-500/40 text-danger-300 px-2 py-0.5 rounded-full font-bold">
                   実戦検証済み
                 </span>
               )}
@@ -1220,9 +1220,9 @@ export default function ChampionVisualDashboard({
             {tacticsData?.traps && tacticsData.traps.length > 0 ? (
               <div className="space-y-2">
                 {tacticsData.traps.map((trap, idx) => (
-                  <div key={idx} className="flex items-start gap-2 text-xs p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-500/20">
-                    <span className="text-rose-500 dark:text-rose-400 font-bold shrink-0">❌</span>
-                    <p className="text-rose-950 dark:text-stone-200 leading-relaxed font-medium">{trap}</p>
+                  <div key={idx} className="flex items-start gap-2 text-xs p-2.5 rounded-xl bg-danger-50 dark:bg-danger-950/20 border border-rose-200 dark:border-rose-500/20">
+                    <span className="text-danger-500 dark:text-danger-400 font-bold shrink-0">❌</span>
+                    <p className="text-danger-950 dark:text-stone-200 leading-relaxed font-medium">{trap}</p>
                   </div>
                 ))}
               </div>
@@ -1240,7 +1240,7 @@ export default function ChampionVisualDashboard({
           <div className="bg-surface dark:bg-stone-900 border border-border dark:border-stone-800 rounded-2xl p-4 shadow-xs">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <BookOpen size={16} className="text-amber-500" />
+                <BookOpen size={16} className="text-primary-500" />
                 <h3 className="text-sm font-black text-foreground dark:text-white">
                   ⚔️ 実戦対面アーカイブ (Matchup Logs)
                 </h3>
@@ -1266,8 +1266,8 @@ export default function ChampionVisualDashboard({
                         </span>
                         <span className={`px-2 py-0.5 rounded text-[10px] font-black ${
                           m.result === 'WIN'
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                            : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                            ? 'bg-success-100 text-success-800 dark:bg-success-950 dark:text-success-300'
+                            : 'bg-danger-100 text-danger-800 dark:bg-danger-950 dark:text-danger-300'
                         }`}>
                           {m.result === 'WIN' ? '🏆 勝利 (WIN)' : '💀 敗北 (LOSS)'}
                         </span>
@@ -1280,7 +1280,7 @@ export default function ChampionVisualDashboard({
                       💡 {m.learning}
                     </p>
                     {m.trap && (
-                      <p className="text-rose-600 dark:text-rose-400 text-[11px] mt-1">
+                      <p className="text-danger-600 dark:text-danger-400 text-[11px] mt-1">
                         ⚠️ 罠: {m.trap}
                       </p>
                     )}
@@ -1301,12 +1301,12 @@ export default function ChampionVisualDashboard({
         <div className="bg-surface dark:bg-stone-900 border border-border dark:border-stone-800 rounded-2xl p-4 shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Play size={16} className="text-rose-500" />
+              <Play size={16} className="text-danger-500" />
               <h3 className="text-sm font-black text-foreground dark:text-white">
                 🎥 チャレンジャー／プロ実演アクションクリップ
               </h3>
             </div>
-            <span className="text-[10px] bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 px-2.5 py-0.5 rounded-full font-bold">
+            <span className="text-[10px] bg-danger-100 text-danger-800 dark:bg-danger-950 dark:text-danger-300 px-2.5 py-0.5 rounded-full font-bold">
               {tacticsData?.videoClips?.length || 0} 件の重要シーン
             </span>
           </div>
@@ -1316,7 +1316,7 @@ export default function ChampionVisualDashboard({
             <div className="rounded-2xl overflow-hidden border border-rose-500/40 bg-black shadow-xl space-y-2 p-2">
               <div className="flex items-center justify-between px-2 pt-1 text-xs">
                 <span className="text-white font-bold truncate flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                  <span className="w-2 h-2 rounded-full bg-danger-500 animate-pulse" />
                   再生中: {activeVideoPlayer.title} ({Math.floor(activeVideoPlayer.startSeconds / 60)}:{(activeVideoPlayer.startSeconds % 60).toString().padStart(2, '0')}〜)
                 </span>
                 <button
@@ -1351,7 +1351,7 @@ export default function ChampionVisualDashboard({
                   <div key={idx} className="p-3.5 rounded-xl bg-background dark:bg-stone-800/50 border border-border dark:border-stone-700 space-y-2">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 dark:border-stone-700/60 pb-2">
                       <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded-md bg-rose-500 text-white font-black text-[11px] shadow-2xs">
+                        <span className="px-2 py-0.5 rounded-md bg-danger-500 text-white font-black text-[11px] shadow-2xs">
                           {clip.timestamp}
                         </span>
                         <span className="font-black text-foreground dark:text-white text-xs">
@@ -1362,7 +1362,7 @@ export default function ChampionVisualDashboard({
                         {vid && (
                           <button
                             onClick={() => setActiveVideoPlayer({ videoId: vid, startSeconds: startSec, title: clip.title })}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-500 hover:bg-rose-600 text-white font-bold text-[11px] transition-all shadow-2xs cursor-pointer"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-danger-500 hover:bg-danger-600 text-white font-bold text-[11px] transition-all shadow-2xs cursor-pointer"
                           >
                             <Play size={12} fill="currentColor" />
                             <span>ここで再生</span>
@@ -1381,25 +1381,25 @@ export default function ChampionVisualDashboard({
                     </div>
 
                     {clip.macro && (
-                      <p className="text-teal-800 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 p-2 rounded-lg text-[11px] leading-relaxed border border-teal-200 dark:border-teal-800/50">
-                        <span className="font-bold text-teal-600 dark:text-teal-400 mr-1">🗺️ マクロ判断:</span>
+                      <p className="text-secondary-800 dark:text-secondary-300 bg-secondary-50 dark:bg-secondary-950/40 p-2 rounded-lg text-[11px] leading-relaxed border border-teal-200 dark:border-teal-800/50">
+                        <span className="font-bold text-secondary-600 dark:text-secondary-400 mr-1">🗺️ マクロ判断:</span>
                         {clip.macro}
                       </p>
                     )}
                     {clip.why && (
                       <p className="text-foreground-subtle text-[11px] leading-relaxed">
-                        <span className="font-bold text-amber-600 dark:text-amber-400 mr-1">💡 理由:</span>
+                        <span className="font-bold text-primary-600 dark:text-primary-400 mr-1">💡 理由:</span>
                         {clip.why}
                       </p>
                     )}
                     {clip.how && (
                       <p className="text-foreground-subtle text-[11px] leading-relaxed">
-                        <span className="font-bold text-emerald-600 dark:text-emerald-400 mr-1">🎯 コツ:</span>
+                        <span className="font-bold text-success-600 dark:text-success-400 mr-1">🎯 コツ:</span>
                         {clip.how}
                       </p>
                     )}
                     {clip.rejected && (
-                      <p className="text-rose-600 dark:text-rose-400 text-[11px] leading-relaxed">
+                      <p className="text-danger-600 dark:text-danger-400 text-[11px] leading-relaxed">
                         <span className="font-bold mr-1">🚫 没理由:</span>
                         {clip.rejected}
                       </p>
@@ -1416,7 +1416,7 @@ export default function ChampionVisualDashboard({
                   href={`https://www.youtube.com/results?search_query=${encodeURIComponent(champId + ' challenger gameplay guide')}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-surface-subtle hover:bg-rose-500 hover:text-white text-foreground-subtle text-xs font-bold transition-all border border-border"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-surface-subtle hover:bg-danger-500 hover:text-white text-foreground-subtle text-xs font-bold transition-all border border-border"
                 >
                   YouTubeで攻略動画を探す <ArrowUpRight size={14} />
                 </a>

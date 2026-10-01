@@ -265,27 +265,27 @@ export default function BulkUpdatePanel() {
             <Sparkles size={20} className="text-[#c89b3c]" />
             AIチャンピオン辞典一括更新システム
             {bulkStatus.patch_version && (
-              <span className="text-xs bg-black/[0.03] border border-black/10 text-gray-400 px-2 py-0.5 rounded-md font-mono">
+              <span className="text-xs bg-black/[0.03] border border-black/10 text-faint px-2 py-0.5 rounded-md font-mono">
                 パッチ: {bulkStatus.patch_version}
               </span>
             )}
             <span className={`text-[10px] font-black border px-2.5 py-0.5 rounded-full flex items-center gap-1.5 transition-all ${
               workerStatus.active
-                ? 'bg-emerald-100 border-emerald-200 text-emerald-700 shadow-[0_0_10px_rgba(16,185,129,0.1)]'
-                : 'bg-rose-100 border-rose-200 text-rose-700 animate-pulse'
+                ? 'bg-success-100 border-emerald-200 text-success-700 shadow-[0_0_10px_rgba(16,185,129,0.1)]'
+                : 'bg-danger-100 border-rose-200 text-danger-700 animate-pulse'
             }`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${workerStatus.active ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+              <span className={`w-1.5 h-1.5 rounded-full ${workerStatus.active ? 'bg-success-400' : 'bg-danger-400'}`} />
               {workerStatus.active ? 'エッジワーカー: 稼働中' : 'エッジワーカー: 停止中'}
             </span>
           </h3>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-faint">
             全チャンピオンの統計・ルーン・ビルドをGemini APIで自動リサーチし、既存のユーザーメモを保護しながら辞書を一括更新します。
           </p>
 
           {champLoadError && (
-            <div className="flex items-center justify-between gap-3 mt-2 p-2.5 rounded-xl bg-rose-100 border border-rose-200 text-rose-700 text-xs font-bold">
+            <div className="flex items-center justify-between gap-3 mt-2 p-2.5 rounded-xl bg-danger-100 border border-rose-200 text-danger-700 text-xs font-bold">
               <span className="flex items-center gap-1.5"><AlertTriangle size={14} /> チャンピオン一覧の取得に失敗しました（ネットワーク不安定の可能性）</span>
-              <button onClick={loadChampions} className="shrink-0 px-2.5 py-1 bg-rose-200 hover:bg-rose-300 rounded-lg">再試行</button>
+              <button onClick={loadChampions} className="shrink-0 px-2.5 py-1 bg-danger-200 hover:bg-danger-300 rounded-lg">再試行</button>
             </div>
           )}
 
@@ -293,7 +293,7 @@ export default function BulkUpdatePanel() {
             <div className="space-y-2 mt-2 w-full">
               <div className="flex justify-between text-xs font-bold text-foreground-subtle flex-wrap gap-2">
                 <span>ジョブ進捗率: {Math.round((bulkStatus.completed / bulkStatus.total) * 100) || 0}% ({bulkStatus.completed} / {bulkStatus.total} 体)</span>
-                <span className="text-gray-400">
+                <span className="text-faint">
                   {bulkStatus.status === 'running'
                     ? `🔥 ${bulkStatus.current_champ || '調査中'}${bulkStatus.current_phase ? ` — ${bulkStatus.current_phase}` : ' をリサーチ中...'}`
                     : bulkStatus.status === 'suspended' ? '⏸️ API制限により一時停止中' :
@@ -302,21 +302,21 @@ export default function BulkUpdatePanel() {
               </div>
               <div className="w-full bg-black/[0.03] rounded-full h-2 overflow-hidden border border-black/5">
                 <div
-                  className={`h-full transition-all duration-500 ${isBulkRunning ? 'bg-gradient-to-r from-amber-500 to-[#c89b3c] animate-pulse' : 'bg-[#c89b3c]'}`}
+                  className={`h-full transition-all duration-500 ${isBulkRunning ? 'bg-gradient-to-r from-primary-500 to-[#c89b3c] animate-pulse' : 'bg-[#c89b3c]'}`}
                   style={{ width: `${(bulkStatus.completed / bulkStatus.total) * 100 || 0}%` }}
                 />
               </div>
-              <div className="flex gap-4 text-[10px] text-gray-500 font-semibold font-mono flex-wrap items-center">
+              <div className="flex gap-4 text-[10px] text-muted-strong font-semibold font-mono flex-wrap items-center">
                 <span>未処理: {bulkStatus.pending}</span>
-                <span className="text-amber-600">実行中: {bulkStatus.running}</span>
-                <span className="text-emerald-700">完了: {bulkStatus.completed}</span>
-                <span className="text-red-700">失敗: {bulkStatus.failed}</span>
+                <span className="text-primary-600">実行中: {bulkStatus.running}</span>
+                <span className="text-success-700">完了: {bulkStatus.completed}</span>
+                <span className="text-danger-700">失敗: {bulkStatus.failed}</span>
                 {lastUpdatedSec !== null && (
-                  <span className="text-gray-400 ml-auto">最終更新: {lastUpdatedSec}秒前</span>
+                  <span className="text-faint ml-auto">最終更新: {lastUpdatedSec}秒前</span>
                 )}
               </div>
               {bulkStatus.status === 'running' && bulkLogs && (
-                <pre className="mt-1 w-full max-h-32 overflow-y-auto rounded-lg bg-black/[0.04] border border-black/5 p-2 text-[10px] leading-relaxed text-gray-500 font-mono whitespace-pre-wrap">
+                <pre className="mt-1 w-full max-h-32 overflow-y-auto rounded-lg bg-black/[0.04] border border-black/5 p-2 text-[10px] leading-relaxed text-muted-strong font-mono whitespace-pre-wrap">
                   {bulkLogs}
                 </pre>
               )}
@@ -325,11 +325,11 @@ export default function BulkUpdatePanel() {
             <div className="space-y-2 mt-2 w-full">
               <div className="flex justify-between text-xs font-bold text-foreground-subtle flex-wrap gap-2">
                 <span>辞典データベース構築率: {dbProgress.percentage}% ({dbProgress.completed} / {dbProgress.total} 体 構築完了)</span>
-                <span className="text-gray-400">未構築: {dbProgress.pending} 体</span>
+                <span className="text-faint">未構築: {dbProgress.pending} 体</span>
               </div>
               <div className="w-full bg-black/[0.03] rounded-full h-2 overflow-hidden border border-black/5">
                 <div
-                  className="h-full bg-emerald-500/80 transition-all duration-500"
+                  className="h-full bg-success-500/80 transition-all duration-500"
                   style={{ width: `${dbProgress.percentage}%` }}
                 />
               </div>
@@ -341,7 +341,7 @@ export default function BulkUpdatePanel() {
           <button
             onClick={handleStartBulkUpdate}
             disabled={isBulkRunning}
-            className="px-5 py-3 bg-gradient-to-r from-amber-500 to-[#c89b3c] hover:from-amber-400 hover:to-[#b78b2c] text-black font-black text-sm rounded-xl transition-all shadow-[0_0_15px_rgba(200,155,60,0.2)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+            className="px-5 py-3 bg-gradient-to-r from-primary-500 to-[#c89b3c] hover:from-primary-400 hover:to-[#b78b2c] text-black font-black text-sm rounded-xl transition-all shadow-[0_0_15px_rgba(200,155,60,0.2)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
           >
             <RefreshCw size={16} className={isBulkRunning ? 'animate-spin' : ''} />
             {isBulkRunning ? '更新を実行中...' : bulkStatus.status === 'suspended' ? '更新を再開' : '一括更新を開始'}
@@ -349,7 +349,7 @@ export default function BulkUpdatePanel() {
 
           <button
             onClick={handleResetQueue}
-            className="px-4 py-3 glass-panel glass-panel-hover text-gray-400 hover:text-foreground rounded-xl text-sm font-bold transition-all"
+            className="px-4 py-3 glass-panel glass-panel-hover text-faint hover:text-foreground rounded-xl text-sm font-bold transition-all"
           >
             キュー初期化
           </button>
@@ -366,7 +366,7 @@ export default function BulkUpdatePanel() {
         className="glass-panel p-6 rounded-2xl border-t-2 border-rose-500/40"
       >
         <h3 className="text-lg font-bold text-foreground flex items-center gap-2 mb-4">
-          <AlertTriangle size={20} className="text-rose-700" />
+          <AlertTriangle size={20} className="text-danger-700" />
           チャンピオントレンド更新の失敗タスク（{failedTasks.length}件）
         </h3>
         <div className="space-y-2">
@@ -378,29 +378,29 @@ export default function BulkUpdatePanel() {
               <div
                 key={task.id}
                 className={`flex items-center justify-between gap-3 p-3 rounded-xl bg-black/[0.04] border ${
-                  isHighlighted ? 'border-rose-400/70 ring-1 ring-rose-400/40' : 'border-black/5'
+                  isHighlighted ? 'border-rose-400/70 ring-1 ring-danger-400/40' : 'border-black/5'
                 }`}
               >
                 <div className="min-w-0">
                   <div className="text-sm font-bold text-foreground">
-                    {champion} <span className="text-gray-500 font-normal">/ {role}</span>
+                    {champion} <span className="text-muted-strong font-normal">/ {role}</span>
                     {task.executor && (
-                      <span className="ml-2 text-[10px] text-gray-500 font-normal">
+                      <span className="ml-2 text-[10px] text-muted-strong font-normal">
                         ({task.executor === 'cloud' ? 'クラウド実行' : 'ローカルPC実行'})
                       </span>
                     )}
                   </div>
-                  <div className="text-xs text-gray-500 mt-0.5 truncate" title={task.error_message || ''}>
+                  <div className="text-xs text-muted-strong mt-0.5 truncate" title={task.error_message || ''}>
                     {(task.error_message || '').slice(0, 120) || '(エラー詳細なし)'}
                   </div>
-                  <div className="text-[10px] text-gray-500 mt-0.5">
+                  <div className="text-[10px] text-muted-strong mt-0.5">
                     {task.updated_at && new Date(task.updated_at).toLocaleString('ja-JP')}
                   </div>
                 </div>
                 <button
                   onClick={() => handleRetryFailedTask(task)}
                   disabled={retryingId === task.id}
-                  className="shrink-0 px-4 py-2 bg-rose-100 hover:bg-rose-200 border border-rose-200 text-rose-700 font-bold text-xs rounded-lg transition-all disabled:opacity-50 flex items-center gap-1.5"
+                  className="shrink-0 px-4 py-2 bg-danger-100 hover:bg-danger-200 border border-rose-200 text-danger-700 font-bold text-xs rounded-lg transition-all disabled:opacity-50 flex items-center gap-1.5"
                 >
                   <RefreshCw size={14} className={retryingId === task.id ? 'animate-spin' : ''} />
                   再実行

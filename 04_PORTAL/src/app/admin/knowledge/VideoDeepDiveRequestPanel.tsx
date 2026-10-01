@@ -15,9 +15,9 @@ interface DeepDiveTask {
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
   pending: { label: '待機中', className: 'bg-surface-subtle text-foreground-subtle border-border' },
-  running: { label: '解析中', className: 'bg-amber-50 text-amber-800 border-amber-300' },
-  completed: { label: '完了', className: 'bg-emerald-50 text-emerald-800 border-emerald-300' },
-  failed: { label: '失敗', className: 'bg-rose-50 text-rose-800 border-rose-300' },
+  running: { label: '解析中', className: 'bg-primary-50 text-primary-800 border-amber-300' },
+  completed: { label: '完了', className: 'bg-success-50 text-success-800 border-emerald-300' },
+  failed: { label: '失敗', className: 'bg-danger-50 text-danger-800 border-rose-300' },
 };
 
 export default function VideoDeepDiveRequestPanel() {
@@ -79,7 +79,7 @@ export default function VideoDeepDiveRequestPanel() {
     <div className="bg-surface border border-border/90 rounded-2xl p-5 shadow-xs space-y-4">
       <div>
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-amber-50 text-amber-600 border border-amber-200/60">
+          <div className="p-2 rounded-xl bg-primary-50 text-primary-600 border border-amber-200/60">
             <Microscope className="w-4 h-4" />
           </div>
           <div>
@@ -96,8 +96,8 @@ export default function VideoDeepDiveRequestPanel() {
       {message && (
         <div className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
           message.type === 'success'
-            ? 'bg-emerald-50 border border-emerald-300 text-emerald-800'
-            : 'bg-rose-50 border border-rose-300 text-rose-800'
+            ? 'bg-success-50 border border-emerald-300 text-success-800'
+            : 'bg-danger-50 border border-rose-300 text-danger-800'
         }`}>
           {message.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
           <span>{message.text}</span>
@@ -112,21 +112,21 @@ export default function VideoDeepDiveRequestPanel() {
             onChange={(e) => setVideoUrl(e.target.value)}
             placeholder="YouTube URL または動画ID"
             required
-            className="md:col-span-2 px-3.5 py-2.5 bg-surface border border-border rounded-xl text-xs text-foreground placeholder-stone-400 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+            className="md:col-span-2 px-3.5 py-2.5 bg-surface border border-border rounded-xl text-xs text-foreground placeholder-stone-400 outline-none focus:border-amber-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
           />
           <input
             type="text"
             value={champion}
             onChange={(e) => setChampion(e.target.value)}
             placeholder="対象チャンピオン（省略時は自動判定）"
-            className="px-3.5 py-2.5 bg-surface border border-border rounded-xl text-xs text-foreground placeholder-stone-400 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
+            className="px-3.5 py-2.5 bg-surface border border-border rounded-xl text-xs text-foreground placeholder-stone-400 outline-none focus:border-amber-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
           />
         </div>
         <div className="flex justify-end pt-1">
           <button
             type="submit"
             disabled={submitting || !videoUrl.trim()}
-            className="flex items-center gap-1.5 px-5 py-2.5 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-black text-xs rounded-xl shadow-xs transition cursor-pointer"
+            className="flex items-center gap-1.5 px-5 py-2.5 bg-primary-600 hover:bg-primary-500 disabled:opacity-50 text-white font-black text-xs rounded-xl shadow-xs transition cursor-pointer"
           >
             <Send className="w-3.5 h-3.5" />
             <span>{submitting ? 'リクエスト送信中...' : '深掘り解析をリクエスト'}</span>
@@ -149,7 +149,7 @@ export default function VideoDeepDiveRequestPanel() {
                   className="flex items-center justify-between gap-2 px-3.5 py-2.5 bg-background border border-border rounded-xl text-xs"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    {task.status === 'running' && <Loader2 className="w-3.5 h-3.5 text-amber-500 animate-spin shrink-0" />}
+                    {task.status === 'running' && <Loader2 className="w-3.5 h-3.5 text-primary-500 animate-spin shrink-0" />}
                     <span className="text-foreground-soft font-medium truncate">
                       {task.payload?.champion || '(自動判定)'} — {task.payload?.video_url}
                     </span>

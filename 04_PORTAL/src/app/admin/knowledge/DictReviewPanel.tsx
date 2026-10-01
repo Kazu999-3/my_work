@@ -47,26 +47,26 @@ export default function DictReviewPanel() {
   };
 
   const verdictStyle: Record<string, string> = {
-    keep: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-    update: 'bg-amber-100 text-amber-700 border-amber-200',
-    archive: 'bg-rose-100 text-rose-700 border-rose-200',
+    keep: 'bg-success-100 text-success-700 border-emerald-200',
+    update: 'bg-primary-100 text-primary-700 border-amber-200',
+    archive: 'bg-danger-100 text-danger-700 border-rose-200',
   };
   const verdictLabel: Record<string, string> = { keep: '✅ 有効', update: '⚠️ 要更新', archive: '🗑️ 古い' };
 
   return (
     <div className="space-y-5 animate-in">
       <div className="bg-surface border border-border rounded-3xl p-6">
-        <h2 className="text-base font-bold text-foreground mb-1 flex items-center gap-2"><Sparkles size={18} className="text-pink-600" /> 辞典の鮮度レビュー</h2>
+        <h2 className="text-base font-bold text-foreground mb-1 flex items-center gap-2"><Sparkles size={18} className="text-danger-600" /> 辞典の鮮度レビュー</h2>
         <p className="text-xs text-muted-strong mb-4">未レビュー/古い順に辞典データをLLMが「現パッチでも有効か」判定します。承認したものだけ反映され、削除はされません（アーカイブのみ）。</p>
         <button onClick={runReview} disabled={loading}
-          className="flex items-center gap-1.5 py-2.5 px-5 rounded-xl bg-pink-500 hover:bg-pink-600 text-white text-xs font-bold transition-all disabled:opacity-50">
+          className="flex items-center gap-1.5 py-2.5 px-5 rounded-xl bg-danger-500 hover:bg-danger-600 text-white text-xs font-bold transition-all disabled:opacity-50">
           {loading ? <RefreshCw size={14} className="animate-spin" /> : <Sparkles size={14} />}
           {loading ? 'AI判定中...' : '5件レビュー実行'}
         </button>
         {currentPatch && <span className="ml-3 text-xs text-muted-strong">現パッチ: {currentPatch}</span>}
       </div>
 
-      {msg && <p className="text-sm text-red-700">{msg}</p>}
+      {msg && <p className="text-sm text-danger-700">{msg}</p>}
 
       <div className="space-y-3">
         {candidates.map((c) => (
@@ -79,26 +79,26 @@ export default function DictReviewPanel() {
               </div>
               <div className="flex gap-2">
                 <button onClick={() => apply(c.champion, 'regenerate')} disabled={acting === c.champion + 'regenerate'}
-                  className="flex items-center gap-1 text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-lg hover:bg-amber-200 disabled:opacity-50">
+                  className="flex items-center gap-1 text-xs font-bold bg-primary-100 text-primary-700 border border-amber-200 px-3 py-1.5 rounded-lg hover:bg-primary-200 disabled:opacity-50">
                   {acting === c.champion + 'regenerate' ? <RefreshCw size={13} className="animate-spin" /> : <RefreshCw size={13} />} 再生成
                 </button>
                 <button onClick={() => apply(c.champion, 'keep')} disabled={acting === c.champion + 'keep'}
-                  className="flex items-center gap-1 text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg hover:bg-emerald-200 disabled:opacity-50">
+                  className="flex items-center gap-1 text-xs font-bold bg-success-100 text-success-700 border border-emerald-200 px-3 py-1.5 rounded-lg hover:bg-success-200 disabled:opacity-50">
                   <Check size={13} /> 有効確認
                 </button>
                 <button onClick={() => apply(c.champion, 'archive')} disabled={acting === c.champion + 'archive'}
-                  className="flex items-center gap-1 text-xs font-bold bg-rose-100 text-rose-700 border border-rose-200 px-3 py-1.5 rounded-lg hover:bg-rose-200 disabled:opacity-50">
+                  className="flex items-center gap-1 text-xs font-bold bg-danger-100 text-danger-700 border border-rose-200 px-3 py-1.5 rounded-lg hover:bg-danger-200 disabled:opacity-50">
                   <Archive size={13} /> アーカイブ
                 </button>
               </div>
             </div>
             {c.reason && <p className="text-xs text-muted-strong mt-2">判定理由: {c.reason}</p>}
-            {c.note && <p className="text-xs text-amber-700/80 mt-1">要修正点: {c.note}</p>}
+            {c.note && <p className="text-xs text-primary-700/80 mt-1">要修正点: {c.note}</p>}
 
             {/* 現在の辞典内容: 中身を見ないと有効/アーカイブの判断ができないため展開できるようにする */}
             {c.current && (
               <details className="mt-2 group">
-                <summary className="text-xs text-teal-700 cursor-pointer hover:text-teal-800 select-none">
+                <summary className="text-xs text-secondary-700 cursor-pointer hover:text-secondary-800 select-none">
                   📖 現在の辞典内容を確認する
                 </summary>
                 <div className="mt-2 space-y-1.5 text-xs bg-black/[0.04] border border-black/5 rounded-lg p-3">
@@ -120,8 +120,8 @@ export default function DictReviewPanel() {
               </details>
             )}
             {c.regenerated && (
-              <div className="mt-2 space-y-0.5 text-xs bg-amber-50 border border-amber-200 rounded-lg p-3">
-                <p className="text-amber-700 font-bold mb-1">🔄 再生成結果（保存済み）</p>
+              <div className="mt-2 space-y-0.5 text-xs bg-primary-50 border border-amber-200 rounded-lg p-3">
+                <p className="text-primary-700 font-bold mb-1">🔄 再生成結果（保存済み）</p>
                 {c.regenerated.strengths && <p className="text-foreground-subtle"><span className="text-muted-strong">強み:</span> {c.regenerated.strengths}</p>}
                 {c.regenerated.weaknesses && <p className="text-foreground-subtle"><span className="text-muted-strong">弱み:</span> {c.regenerated.weaknesses}</p>}
                 {c.regenerated.power_spikes && <p className="text-foreground-subtle"><span className="text-muted-strong">パワースパイク:</span> {c.regenerated.power_spikes}</p>}

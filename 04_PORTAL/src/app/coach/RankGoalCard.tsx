@@ -131,7 +131,7 @@ export default function RankGoalCard() {
             <button
               onClick={saveTarget}
               disabled={saving}
-              className="text-[11px] px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold disabled:opacity-50 cursor-pointer"
+              className="text-[11px] px-2.5 py-1 rounded-lg bg-primary-500 hover:bg-primary-600 text-white font-bold disabled:opacity-50 cursor-pointer"
             >
               {saving ? '保存中…' : '保存'}
             </button>
@@ -144,12 +144,12 @@ export default function RankGoalCard() {
           </div>
         )}
       </div>
-      {saveError && <p className="text-xs text-rose-600 dark:text-rose-400">❌ {saveError}</p>}
+      {saveError && <p className="text-xs text-danger-600 dark:text-danger-400">❌ {saveError}</p>}
 
       {loading ? (
         <div className="py-5 text-center text-xs text-faint">読み込み中…</div>
       ) : error ? (
-        <p className="text-sm text-rose-600 dark:text-rose-400">❌ {error}</p>
+        <p className="text-sm text-danger-600 dark:text-danger-400">❌ {error}</p>
       ) : !data?.ranked ? (
         <p className="text-sm text-muted-strong">{data?.message || 'ランク情報を取得できませんでした。'}</p>
       ) : (
@@ -159,8 +159,8 @@ export default function RankGoalCard() {
               <div className="text-[10px] font-bold text-muted-strong">現在</div>
               <div className="font-black text-foreground dark:text-stone-100 mt-0.5">{data.current?.label}</div>
             </div>
-            <div className="rounded-xl border border-amber-800/60 bg-amber-950/30 px-3 py-2">
-              <div className="text-[10px] font-bold text-amber-400">目標</div>
+            <div className="rounded-xl border border-amber-800/60 bg-primary-950/30 px-3 py-2">
+              <div className="text-[10px] font-bold text-primary-400">目標</div>
               <div className="font-black text-stone-100 mt-0.5">{data.target?.label}</div>
             </div>
           </div>
@@ -173,7 +173,7 @@ export default function RankGoalCard() {
               </div>
             )}
             {data.projection?.reached ? (
-              <div className="font-bold text-emerald-500">🎉 目標に到達しています。</div>
+              <div className="font-bold text-success-500">🎉 目標に到達しています。</div>
             ) : data.projection?.insufficientTrend ? (
               <div className="text-muted-strong">
                 到達見込みを出すにはLP推移の記録が足りません（記録 {data.snapshots ?? 0}日分）。

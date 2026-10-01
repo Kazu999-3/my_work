@@ -92,23 +92,23 @@ export default function FactCheckSourceBlock({
   return (
     <div className="rounded-lg border border-teal-200 bg-surface p-2.5 text-[11px]">
       <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
-        <span className="font-bold text-teal-900">{block.label}</span>
+        <span className="font-bold text-secondary-900">{block.label}</span>
         {!editing && (
           <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
             {onPickAsCorrect && (
-              <button onClick={() => onPickAsCorrect(block.label, value)} className="text-emerald-700 hover:text-emerald-900 font-bold flex items-center gap-0.5">
+              <button onClick={() => onPickAsCorrect(block.label, value)} className="text-success-700 hover:text-success-900 font-bold flex items-center gap-0.5">
                 <CheckCircle2 size={11} /> これが正しい
               </button>
             )}
-            <button onClick={() => { setDraft(value); setEditing(true); }} className="px-2 py-0.5 rounded bg-teal-100 text-teal-800 border border-teal-200 font-bold hover:bg-teal-200 flex items-center gap-1 transition">
+            <button onClick={() => { setDraft(value); setEditing(true); }} className="px-2 py-0.5 rounded bg-secondary-100 text-secondary-800 border border-teal-200 font-bold hover:bg-secondary-200 flex items-center gap-1 transition">
               <Edit2 size={11} /> ✏️ 修正
             </button>
             {block.deletable ? (
-              <button onClick={remove} disabled={saving} className="px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 font-bold flex items-center gap-0.5 disabled:opacity-50 transition">
+              <button onClick={remove} disabled={saving} className="px-2 py-0.5 rounded bg-danger-50 text-danger-700 border border-rose-200 hover:bg-danger-100 font-bold flex items-center gap-0.5 disabled:opacity-50 transition">
                 <Trash2 size={11} /> 記事を削除
               </button>
             ) : (
-              <button onClick={clearContent} disabled={saving || !value} className="px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 font-bold flex items-center gap-0.5 disabled:opacity-50 transition" title="このフィールドの文章を空にして削除">
+              <button onClick={clearContent} disabled={saving || !value} className="px-2 py-0.5 rounded bg-danger-50 text-danger-700 border border-rose-200 hover:bg-danger-100 font-bold flex items-center gap-0.5 disabled:opacity-50 transition" title="このフィールドの文章を空にして削除">
                 <Trash2 size={11} /> 記載をクリア
               </button>
             )}
@@ -124,7 +124,7 @@ export default function FactCheckSourceBlock({
           />
           <div className="flex items-center gap-2">
             <button onClick={save} disabled={saving}
-              className="flex items-center gap-1 text-[11px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-lg hover:bg-emerald-200 disabled:opacity-50">
+              className="flex items-center gap-1 text-[11px] font-bold bg-success-100 text-success-700 border border-emerald-200 px-2.5 py-1 rounded-lg hover:bg-success-200 disabled:opacity-50">
               <Save size={11} /> {saving ? '保存中...' : '保存'}
             </button>
             <button onClick={() => setEditing(false)} disabled={saving} className="flex items-center gap-1 text-[11px] text-muted-strong hover:text-foreground-soft">
@@ -135,7 +135,7 @@ export default function FactCheckSourceBlock({
       ) : (
         <p className="text-foreground-subtle whitespace-pre-wrap leading-relaxed">{value}</p>
       )}
-      {error && <p className="text-rose-700 mt-1">{error}</p>}
+      {error && <p className="text-danger-700 mt-1">{error}</p>}
     </div>
   );
 }

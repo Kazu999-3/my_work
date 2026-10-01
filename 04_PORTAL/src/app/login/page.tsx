@@ -86,7 +86,7 @@ function LoginContent() {
         
         {/* ロゴ ＆ タイトル */}
         <div className="space-y-2">
-          <div className="w-16 h-16 rounded-3xl bg-amber-500/10 text-amber-600 border border-amber-500/30 flex items-center justify-center mx-auto text-3xl shadow-sm">
+          <div className="w-16 h-16 rounded-3xl bg-primary-500/10 text-primary-600 border border-amber-500/30 flex items-center justify-center mx-auto text-3xl shadow-sm">
             <Shield size={32} />
           </div>
           <h1 className="text-2xl font-black tracking-tight text-foreground">
@@ -98,10 +98,10 @@ function LoginContent() {
         </div>
 
         {/* 方法1: 🎮 Discord管理者アカウントで1秒ログイン */}
-        <div className="p-5 rounded-2xl bg-amber-50/80 border border-amber-200/80 space-y-3">
+        <div className="p-5 rounded-2xl bg-primary-50/80 border border-amber-200/80 space-y-3">
           <div className="text-left">
-            <div className="text-xs font-black text-amber-950 flex items-center gap-1.5">
-              <Sparkles size={14} className="text-amber-600" />
+            <div className="text-xs font-black text-primary-950 flex items-center gap-1.5">
+              <Sparkles size={14} className="text-primary-600" />
               おすすめ：Discordアカウントで認証
             </div>
             <p className="text-[11px] text-muted mt-0.5">
@@ -111,7 +111,7 @@ function LoginContent() {
           <button
             type="button"
             onClick={() => loginWithDiscord(returnTo)}
-            className="w-full py-3.5 px-4 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] text-white font-black text-xs transition-all shadow-md hover:shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer transform active:scale-98"
+            className="w-full py-3.5 px-4 rounded-xl bg-[#5865F2] hover:bg-[#4752C4] text-white font-black text-xs transition-all shadow-md hover:shadow-primary-500/20 flex items-center justify-center gap-2 cursor-pointer transform active:scale-98"
           >
             <LogIn size={16} />
             Discordアカウントで管理者ログイン
@@ -144,8 +144,8 @@ function LoginContent() {
           </div>
 
           {errorMsg && (
-            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center gap-2">
-              <AlertTriangle size={15} className="shrink-0 text-rose-600" />
+            <div className="p-3 rounded-xl bg-danger-50 border border-rose-200 text-danger-800 text-xs font-bold flex items-center gap-2">
+              <AlertTriangle size={15} className="shrink-0 text-danger-600" />
               {errorMsg}
             </div>
           )}
@@ -153,7 +153,7 @@ function LoginContent() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3.5 px-4 rounded-xl bg-stone-900 hover:bg-amber-600 text-white font-black text-xs transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            className="w-full py-3.5 px-4 rounded-xl bg-stone-900 hover:bg-primary-600 text-white font-black text-xs transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             {isLoading ? "検証中..." : "パスコードでゲートを通過する ➔"}
           </button>

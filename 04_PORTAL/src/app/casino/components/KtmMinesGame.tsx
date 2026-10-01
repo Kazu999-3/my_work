@@ -161,13 +161,13 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
       {/* タイトルヘッダー */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-800/80 pb-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-700 to-emerald-400 p-0.5 shadow-lg shadow-emerald-500/20">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-success-700 to-success-400 p-0.5 shadow-lg shadow-success-500/20">
             <div className="w-full h-full bg-stone-900 rounded-[14px] flex items-center justify-center text-2xl">
               🌿
             </div>
           </div>
           <div>
-            <h2 className="text-base sm:text-lg font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-emerald-200 via-emerald-400 to-teal-500">
+            <h2 className="text-base sm:text-lg font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-success-200 via-success-400 to-secondary-500">
               ブッシュ・スカウト
             </h2>
             <p className="text-xs text-faint">
@@ -178,7 +178,7 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
 
         <div className="flex items-center gap-2 bg-stone-800/70 border border-stone-700/60 px-3.5 py-1.5 rounded-xl self-start sm:self-center">
           <span className="text-xs text-faint">所持コイン:</span>
-          <span className="text-sm font-black text-amber-400 font-mono">
+          <span className="text-sm font-black text-primary-400 font-mono">
             {userCoins.toLocaleString()} 🪙
           </span>
         </div>
@@ -197,7 +197,7 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
               title={MINE_COUNT_LABELS[m]?.hint}
               className={`px-3 py-2 rounded-xl text-xs font-black transition cursor-pointer ${
                 activeMineCount === m
-                  ? 'bg-emerald-500 text-stone-950 shadow-md shadow-emerald-500/30 ring-2 ring-emerald-300'
+                  ? 'bg-success-500 text-stone-950 shadow-md shadow-success-500/30 ring-2 ring-success-300'
                   : 'bg-stone-800 hover:bg-stone-700 text-faint'
               } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
@@ -219,7 +219,7 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
               disabled={isPlaying || !!busy}
               className={`px-3 py-2 rounded-xl text-xs font-black transition cursor-pointer ${
                 activeBet === amt
-                  ? 'bg-amber-500 text-stone-950 shadow-md shadow-amber-500/30 ring-2 ring-yellow-300'
+                  ? 'bg-primary-500 text-stone-950 shadow-md shadow-primary-500/30 ring-2 ring-primary-300'
                   : 'bg-stone-800 hover:bg-stone-700 text-faint'
               } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
@@ -236,7 +236,7 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
       <div className="bg-stone-950 border-2 border-emerald-500/30 rounded-3xl p-4 sm:p-6 shadow-inner space-y-4">
         {/* 進行状況バー */}
         <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-wider px-1">
-          <span className="text-emerald-400/80">
+          <span className="text-success-400/80">
             ● {revealedCount} / {activeMax} マス
           </span>
           <span className="text-faint">
@@ -262,11 +262,11 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
 
             if (opened && !isMine) {
               face = '👁️';
-              tone = 'bg-emerald-950/60 border-emerald-700/70';
+              tone = 'bg-success-950/60 border-emerald-700/70';
             }
             if (isHit) {
               face = '🍄';
-              tone = 'bg-rose-950/70 border-rose-600 shadow-lg shadow-rose-900/40';
+              tone = 'bg-danger-950/70 border-rose-600 shadow-lg shadow-danger-900/40';
             } else if (isFinished && isMine) {
               // 決着後に、踏まなかったキノコの位置も開示する
               face = '🍄';
@@ -284,7 +284,7 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
                 } disabled:cursor-default`}
               >
                 {isLoadingTile ? (
-                  <Loader2 size={18} className="animate-spin text-emerald-400" />
+                  <Loader2 size={18} className="animate-spin text-success-400" />
                 ) : (
                   <span className="select-none">{face}</span>
                 )}
@@ -298,13 +298,13 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
           <div className="grid grid-cols-2 gap-2.5">
             <div className="bg-stone-900/80 border border-stone-800 rounded-2xl p-3 text-center">
               <div className="text-[10px] text-faint font-bold">現在の倍率</div>
-              <div className="text-xl font-black font-mono text-emerald-400">
+              <div className="text-xl font-black font-mono text-success-400">
                 {state.multiplier > 0 ? `${state.multiplier}倍` : '—'}
               </div>
             </div>
             <div className="bg-stone-900/80 border border-stone-800 rounded-2xl p-3 text-center">
               <div className="text-[10px] text-faint font-bold">引き返すともらえる額</div>
-              <div className="text-xl font-black font-mono text-amber-400">
+              <div className="text-xl font-black font-mono text-primary-400">
                 {state.payout > 0 ? `${state.payout.toLocaleString()}🪙` : '—'}
               </div>
             </div>
@@ -316,15 +316,15 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
           <div
             className={`p-3 rounded-2xl text-center text-xs font-black border ${
               state.status === 'settled'
-                ? 'bg-emerald-950/70 border-emerald-700/70 text-emerald-300'
+                ? 'bg-success-950/70 border-emerald-700/70 text-success-300'
                 : state.status === 'lost'
-                ? 'bg-rose-950/60 border-rose-800/70 text-rose-300'
+                ? 'bg-danger-950/60 border-rose-800/70 text-danger-300'
                 : 'bg-stone-900/80 border-stone-800 text-faint'
             }`}
           >
             <p className="text-sm">{state.message}</p>
             {state.status === 'settled' && (
-              <p className="text-[11px] text-amber-400 font-extrabold mt-1">
+              <p className="text-[11px] text-primary-400 font-extrabold mt-1">
                 払い戻し +{state.payout.toLocaleString()}🪙 （手取り {state.payout - state.betAmount >= 0 ? '+' : ''}
                 {(state.payout - state.betAmount).toLocaleString()}🪙）
               </p>
@@ -333,7 +333,7 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
         )}
 
         {errorMsg && (
-          <div className="p-2.5 rounded-xl bg-rose-950/60 border border-rose-800 text-rose-300 text-xs font-bold flex items-center gap-1.5 justify-center">
+          <div className="p-2.5 rounded-xl bg-danger-950/60 border border-rose-800 text-danger-300 text-xs font-bold flex items-center gap-1.5 justify-center">
             <AlertCircle size={14} />
             <span>{errorMsg}</span>
           </div>
@@ -351,7 +351,7 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
               type="button"
               onClick={handleCashout}
               disabled={!!busy || revealedCount === 0}
-              className="w-full py-3.5 rounded-2xl font-black text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-stone-950 shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-[1.01] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="w-full py-3.5 rounded-2xl font-black text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg bg-gradient-to-r from-success-600 via-success-500 to-secondary-500 hover:from-success-500 hover:to-secondary-400 text-stone-950 shadow-success-500/30 hover:shadow-success-500/50 hover:scale-[1.01] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               {busy === 'cashout' ? <Loader2 size={16} className="animate-spin" /> : <Undo2 size={16} />}
               <span>
@@ -365,7 +365,7 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
               type="button"
               onClick={isFinished ? handleReset : handleStart}
               disabled={!!busy || (!isFinished && userCoins < betAmount)}
-              className="w-full py-3.5 rounded-2xl font-black text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-400 hover:to-yellow-400 text-stone-950 shadow-amber-500/30 hover:shadow-amber-500/50 hover:scale-[1.01] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="w-full py-3.5 rounded-2xl font-black text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg bg-gradient-to-r from-primary-500 via-primary-500 to-primary-600 hover:from-primary-400 hover:to-primary-400 text-stone-950 shadow-primary-500/30 hover:shadow-primary-500/50 hover:scale-[1.01] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               {busy === 'start' ? (
                 <Loader2 size={16} className="animate-spin" />
@@ -388,7 +388,7 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
           className="w-full font-extrabold text-faint flex items-center justify-between gap-1.5 text-xs cursor-pointer"
         >
           <span className="flex items-center gap-1.5">
-            <Trophy size={14} className="text-amber-400" />
+            <Trophy size={14} className="text-primary-400" />
             <span>
               倍率表（キノコ{activeMineCount}個 / ベット{activeBet}🪙）
             </span>
@@ -403,7 +403,7 @@ export default function KtmMinesGame({ userCoins, onBalanceChange }: KtmMinesGam
                 key={row.revealCount}
                 className={`p-1.5 rounded-lg border flex items-center justify-between gap-1 ${
                   revealedCount === row.revealCount
-                    ? 'bg-emerald-950/60 border-emerald-700 text-emerald-300'
+                    ? 'bg-success-950/60 border-emerald-700 text-success-300'
                     : 'bg-stone-900/70 border-stone-800/80 text-faint'
                 }`}
               >

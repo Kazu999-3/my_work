@@ -65,11 +65,11 @@ function ChampionsShell() {
         className="flex flex-col md:flex-row md:items-center justify-between gap-3 px-4 py-3 bg-surface border border-border/80 rounded-2xl shadow-xs"
       >
         <div className="flex items-center gap-3">
-          <div className="text-2xl p-1.5 bg-amber-50 rounded-xl border border-amber-200/60 shrink-0">👑</div>
+          <div className="text-2xl p-1.5 bg-primary-50 rounded-xl border border-amber-200/60 shrink-0">👑</div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-base sm:text-lg font-black tracking-tight text-foreground">チャンピオン攻略辞典</h1>
-              <span className="px-2 py-0.5 rounded-full bg-amber-100/70 border border-amber-300/60 text-amber-800 text-[10px] font-extrabold">
+              <span className="px-2 py-0.5 rounded-full bg-primary-100/70 border border-amber-300/60 text-primary-800 text-[10px] font-extrabold">
                 {isAuthenticated ? '管理者' : '攻略モード'}
               </span>
             </div>
@@ -97,7 +97,7 @@ function ChampionsShell() {
             onClick={() => handleScopeChange('health')}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               scope === 'health'
-                ? 'bg-surface text-amber-700 shadow-xs font-black scale-101'
+                ? 'bg-surface text-primary-700 shadow-xs font-black scale-101'
                 : 'text-muted hover:text-foreground hover:bg-surface-hover/60'
             }`}
           >
@@ -117,19 +117,19 @@ function ChampionsShell() {
             <>
               <Link
                 href="/library"
-                className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-amber-700 hover:text-amber-900 bg-amber-50 hover:bg-amber-100/80 border border-amber-200 transition flex items-center gap-1"
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-primary-700 hover:text-primary-900 bg-primary-50 hover:bg-primary-100/80 border border-amber-200 transition flex items-center gap-1"
               >
                 <span>📒 攻略ライブラリ</span>
               </Link>
               <Link
                 href="/admin/knowledge"
-                className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-pink-700 hover:text-pink-900 bg-pink-50 hover:bg-pink-100/80 border border-pink-200 transition flex items-center gap-1"
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-danger-700 hover:text-danger-900 bg-danger-50 hover:bg-danger-100/80 border border-rose-200 transition flex items-center gap-1"
               >
                 <span>📥 戦術取込</span>
               </Link>
               <Link
                 href="/admin/guide"
-                className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-amber-800 hover:text-amber-950 bg-amber-50 hover:bg-amber-100/80 border border-amber-200 transition flex items-center gap-1"
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-primary-800 hover:text-primary-950 bg-primary-50 hover:bg-primary-100/80 border border-amber-200 transition flex items-center gap-1"
                 title="LoLデータ収集＆辞典＆コーチ連携の全貌仕様ガイド"
               >
                 <span>📖 全貌ガイド</span>

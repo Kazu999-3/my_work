@@ -178,24 +178,24 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
   };
 
   const typeLabel: Record<string, { label: string; cls: string }> = {
-    counter_but_winning: { label: '苦手と書いてあるが勝ってる', cls: 'bg-amber-100 text-amber-700 border-amber-200' },
-    ban_but_dominating: { label: 'BAN推奨だが圧倒してる', cls: 'bg-teal-100 text-teal-700 border-teal-200' },
-    losing_but_unlisted: { label: '苦戦してるが辞典に記載なし', cls: 'bg-rose-100 text-rose-700 border-rose-200' },
+    counter_but_winning: { label: '苦手と書いてあるが勝ってる', cls: 'bg-primary-100 text-primary-700 border-amber-200' },
+    ban_but_dominating: { label: 'BAN推奨だが圧倒してる', cls: 'bg-secondary-100 text-secondary-700 border-teal-200' },
+    losing_but_unlisted: { label: '苦戦してるが辞典に記載なし', cls: 'bg-danger-100 text-danger-700 border-rose-200' },
   };
 
   return (
     <div className="space-y-6">
-      {error && <p className="text-sm text-rose-700 bg-rose-100 border border-rose-200 rounded-lg px-3 py-2">{error}</p>}
+      {error && <p className="text-sm text-danger-700 bg-danger-100 border border-rose-200 rounded-lg px-3 py-2">{error}</p>}
 
       {/* 矛盾検出 */}
       {mode === 'inspect' && (
       <div className="bg-surface border border-border rounded-2xl p-5">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
           <h3 className="font-black text-foreground flex items-center gap-2">
-            <AlertTriangle size={16} className="text-amber-600" /> 辞典の矛盾検出
+            <AlertTriangle size={16} className="text-primary-600" /> 辞典の矛盾検出
           </h3>
           <button onClick={checkContradiction} disabled={checking}
-            className="flex items-center gap-1.5 text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 px-3 py-1.5 rounded-lg hover:bg-amber-200 disabled:opacity-50">
+            className="flex items-center gap-1.5 text-xs font-bold bg-primary-100 text-primary-700 border border-amber-200 px-3 py-1.5 rounded-lg hover:bg-primary-200 disabled:opacity-50">
             {checking ? <RefreshCw size={13} className="animate-spin" /> : <AlertTriangle size={13} />} 検出実行
           </button>
         </div>
@@ -203,7 +203,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
         {issues === null ? (
           <p className="text-xs text-muted-strong">「検出実行」を押すと結果が出ます。</p>
         ) : issues.length === 0 ? (
-          <p className="text-xs text-emerald-700">✅ 矛盾は見つかりませんでした。</p>
+          <p className="text-xs text-success-700">✅ 矛盾は見つかりませんでした。</p>
         ) : (
           <div className="space-y-2">
             {issues.map((it, i) => (
@@ -225,8 +225,8 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
       {mode === 'maintenance' && (
       <div className="bg-surface border border-border rounded-2xl p-5">
         <h3 className="font-black text-foreground flex items-center gap-2 mb-3">
-          <span className="w-6 h-6 rounded-full bg-orange-500 text-black text-xs flex items-center justify-center font-black shrink-0">1</span>
-          <Languages size={16} className="text-orange-600" /> 英語データの日本語化
+          <span className="w-6 h-6 rounded-full bg-primary-500 text-black text-xs flex items-center justify-center font-black shrink-0">1</span>
+          <Languages size={16} className="text-primary-600" /> 英語データの日本語化
         </h3>
         <p className="text-[11px] text-muted-strong mb-3">
           英語のまま保存されている辞典・記事・メモを日本語に変換します。完了するまで自動で繰り返し実行されます
@@ -240,12 +240,12 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
             ['facts', 'チャンピオン辞典'], ['articles', '攻略ライブラリ記事'], ['memos', '対面メモ・チャンピオンノート'],
           ] as const).map(([key, label]) => (
             <button key={key} onClick={() => translateAll(key)} disabled={!!translating}
-              className="text-xs font-bold bg-orange-100 text-orange-700 border border-orange-200 px-3 py-2 rounded-lg hover:bg-orange-200 disabled:opacity-50">
+              className="text-xs font-bold bg-primary-100 text-primary-700 border border-amber-200 px-3 py-2 rounded-lg hover:bg-primary-200 disabled:opacity-50">
               {translating === key ? `変換中... (${transProgress}件)` : label}
             </button>
           ))}
         </div>
-        {transResult && <p className="text-xs text-emerald-700 mt-3">{transResult}</p>}
+        {transResult && <p className="text-xs text-success-700 mt-3">{transResult}</p>}
       </div>
       )}
 
@@ -253,19 +253,19 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
       {mode === 'maintenance' && (
       <div className="bg-surface border border-border rounded-2xl p-5">
         <h3 className="font-black text-foreground flex items-center gap-2 mb-3">
-          <span className="w-6 h-6 rounded-full bg-amber-500 text-black text-xs flex items-center justify-center font-black shrink-0">3</span>
-          <MapIcon size={16} className="text-amber-600" /> レーン別ガイドへ統合
+          <span className="w-6 h-6 rounded-full bg-primary-500 text-black text-xs flex items-center justify-center font-black shrink-0">3</span>
+          <MapIcon size={16} className="text-primary-600" /> レーン別ガイドへ統合
         </h3>
         <p className="text-[11px] text-muted-strong mb-3">
-          ライブラリの<strong className="text-amber-700">チャンピオン記事ではない記事</strong>（レーンのマクロ・立ち回り）を、
+          ライブラリの<strong className="text-primary-700">チャンピオン記事ではない記事</strong>（レーンのマクロ・立ち回り）を、
           レーンごとに1本のガイドへ統合します。どのレーンにも当てはまらない普遍的な内容は
-          <strong className="text-amber-700">「全レーン共通（上達の原則）」</strong>へまとめられます。
+          <strong className="text-primary-700">「全レーン共通（上達の原則）」</strong>へまとめられます。
           統合した記事はライブラリから片付き、結果は
-          <a href="/lane-guides" className="text-amber-700 hover:underline mx-1">レーン別ガイド</a>で読めます。
+          <a href="/lane-guides" className="text-primary-700 hover:underline mx-1">レーン別ガイド</a>で読めます。
         </p>
         <div className="flex gap-2 flex-wrap">
           <button onClick={mergeLaneGuides} disabled={laneMerging || restoring}
-            className="text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 px-4 py-2 rounded-lg hover:bg-amber-200 disabled:opacity-50">
+            className="text-xs font-bold bg-primary-100 text-primary-700 border border-amber-200 px-4 py-2 rounded-lg hover:bg-primary-200 disabled:opacity-50">
             {laneMerging ? `統合中... (${laneProgress}本)` : '🗺️ レーン別ガイドへ統合'}
           </button>
           <button onClick={restoreLaneArticles} disabled={laneMerging || restoring}
@@ -277,7 +277,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
           ※以前、テーブル未作成のまま統合を実行したため「ガイドが保存されないのに記事だけ片付く」不具合がありました。
           その記事は「戻す」で復元できます（チャンピオン辞典へ正常移動した記事は対象外）。
         </p>
-        {laneResult && <p className="text-xs text-emerald-700 mt-3">{laneResult}</p>}
+        {laneResult && <p className="text-xs text-success-700 mt-3">{laneResult}</p>}
       </div>
       )}
 
@@ -286,7 +286,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
       {mode === 'inspect' && (
       <div className="bg-surface border border-border rounded-2xl p-5">
         <h3 className="font-black text-foreground flex items-center gap-2 mb-3">
-          <Globe size={16} className="text-teal-600" /> 自動リサーチ（LoLalytics統計）
+          <Globe size={16} className="text-secondary-600" /> 自動リサーチ（LoLalytics統計）
         </h3>
         <p className="text-[11px] text-muted-strong mb-3">現パッチの勝率・ティア順位・得意/苦手対面・コアビルド・オブジェクト傾向を取得し、辞典の下書きを作ります。</p>
         <div className="flex gap-2 mb-3 flex-wrap">
@@ -299,23 +299,23 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
             {['TOP', 'JG', 'MID', 'ADC', 'SUP'].map(r => <option key={r} value={r}>{r}</option>)}
           </select>
           <button onClick={() => runResearch(false)} disabled={researching || !researchChamp.trim()}
-            className="flex items-center gap-1.5 text-xs font-bold bg-teal-100 text-teal-700 border border-teal-200 px-4 py-2 rounded-lg hover:bg-teal-200 disabled:opacity-50">
+            className="flex items-center gap-1.5 text-xs font-bold bg-secondary-100 text-secondary-700 border border-teal-200 px-4 py-2 rounded-lg hover:bg-secondary-200 disabled:opacity-50">
             {researching ? <RefreshCw size={13} className="animate-spin" /> : <Globe size={13} />} リサーチ
           </button>
         </div>
         {research && (
-          <div className="space-y-2 text-xs bg-teal-50 border border-teal-200 rounded-xl p-4">
+          <div className="space-y-2 text-xs bg-secondary-50 border border-teal-200 rounded-xl p-4">
             <div className="flex items-center gap-3 flex-wrap">
-              <span className="text-teal-700 font-black">🌐 {research.champion}</span>
+              <span className="text-secondary-700 font-black">🌐 {research.champion}</span>
               {research.patch && <span className="text-[10px] text-muted-strong">Patch {research.patch}</span>}
               {research.tier && <span className="text-[10px] bg-black/5 px-2 py-0.5 rounded font-bold">{research.tier}</span>}
               {research.rank && <span className="text-[10px] text-muted-strong">順位 {research.rank}</span>}
             </div>
             <div className="flex gap-4 flex-wrap text-[11px]">
-              {research.winRate && <span>勝率 <b className="text-emerald-700">{research.winRate}</b></span>}
-              {research.pickRate && <span>ピック率 <b className="text-teal-700">{research.pickRate}</b></span>}
-              {research.banRate && <span>BAN率 <b className="text-rose-700">{research.banRate}</b></span>}
-              {research.expertWinRate && <span>上位帯 <b className="text-amber-700">{research.expertWinRate}</b></span>}
+              {research.winRate && <span>勝率 <b className="text-success-700">{research.winRate}</b></span>}
+              {research.pickRate && <span>ピック率 <b className="text-secondary-700">{research.pickRate}</b></span>}
+              {research.banRate && <span>BAN率 <b className="text-danger-700">{research.banRate}</b></span>}
+              {research.expertWinRate && <span>上位帯 <b className="text-primary-700">{research.expertWinRate}</b></span>}
             </div>
             {([
               ['強み', research.strengths], ['弱み', research.weaknesses],
@@ -327,11 +327,11 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
             ))}
             <div className="flex items-center gap-2 pt-2 border-t border-black/5">
               <button onClick={() => runResearch(true)} disabled={researching}
-                className="text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-lg disabled:opacity-50">
+                className="text-xs font-black bg-success-600 hover:bg-success-500 text-white px-4 py-1.5 rounded-lg disabled:opacity-50">
                 この内容で辞典に保存
               </button>
-              {research.saved && <span className="text-emerald-700 text-[11px]">✅ 保存しました</span>}
-              {research.sourceUrl && <a href={research.sourceUrl} target="_blank" rel="noreferrer" className="text-[10px] text-muted-strong hover:text-teal-700 ml-auto">出典を開く ↗</a>}
+              {research.saved && <span className="text-success-700 text-[11px]">✅ 保存しました</span>}
+              {research.sourceUrl && <a href={research.sourceUrl} target="_blank" rel="noreferrer" className="text-[10px] text-muted-strong hover:text-secondary-700 ml-auto">出典を開く ↗</a>}
             </div>
           </div>
         )}
@@ -342,7 +342,7 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
       {mode === 'inspect' && (
       <div className="bg-surface border border-border rounded-2xl p-5">
         <h3 className="font-black text-foreground flex items-center gap-2 mb-3">
-          <Sparkles size={16} className="text-amber-600" /> 対面メモの自動要約
+          <Sparkles size={16} className="text-primary-600" /> 対面メモの自動要約
         </h3>
         <p className="text-[11px] text-muted-strong mb-3">そのチャンピオンの対面メモをまとめて読み込み、共通する要点・繰り返す失敗パターンを抽出します。</p>
         <div className="flex gap-2 mb-3">
@@ -351,23 +351,23 @@ export default function DictInsightsPanel({ mode = 'inspect' }: { mode?: 'mainte
             placeholder="チャンピオン名（英語ID 例: Graves）"
             className="flex-1 bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground outline-none focus:border-amber-500" />
           <button onClick={runSummarize} disabled={summarizing || !champion.trim()}
-            className="flex items-center gap-1.5 text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 px-4 py-2 rounded-lg hover:bg-amber-200 disabled:opacity-50">
+            className="flex items-center gap-1.5 text-xs font-bold bg-primary-100 text-primary-700 border border-amber-200 px-4 py-2 rounded-lg hover:bg-primary-200 disabled:opacity-50">
             {summarizing ? <RefreshCw size={13} className="animate-spin" /> : <Sparkles size={13} />} 要約
           </button>
         </div>
         {summary && (
-          <div className="space-y-3 text-xs bg-amber-50 border border-amber-200 rounded-xl p-4">
-            <p className="text-amber-700 font-black">📝 {summary.champion} の要点（メモ{summary.memoCount}件から集約）</p>
+          <div className="space-y-3 text-xs bg-primary-50 border border-amber-200 rounded-xl p-4">
+            <p className="text-primary-700 font-black">📝 {summary.champion} の要点（メモ{summary.memoCount}件から集約）</p>
             {summary.summary && <div className="text-foreground-subtle whitespace-pre-wrap leading-relaxed">{summary.summary}</div>}
             {summary.commonMistakes && (
               <div className="border-t border-black/5 pt-2">
-                <span className="text-rose-700 font-bold">⚠️ 繰り返す失敗: </span>
+                <span className="text-danger-700 font-bold">⚠️ 繰り返す失敗: </span>
                 <span className="text-foreground-subtle">{summary.commonMistakes}</span>
               </div>
             )}
             {Array.isArray(summary.keyTips) && summary.keyTips.length > 0 && (
               <div className="border-t border-black/5 pt-2">
-                <p className="text-emerald-700 font-bold mb-1">✨ 重要な指針</p>
+                <p className="text-success-700 font-bold mb-1">✨ 重要な指針</p>
                 <ul className="list-disc list-inside space-y-0.5 text-foreground-subtle">
                   {summary.keyTips.map((t: string, i: number) => <li key={i}>{t}</li>)}
                 </ul>

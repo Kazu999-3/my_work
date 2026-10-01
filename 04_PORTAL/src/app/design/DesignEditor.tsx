@@ -88,7 +88,7 @@ export default function DesignEditor() {
         <div className="text-4xl mb-4">🔑</div>
         <h2 className="text-lg font-bold mb-2 text-foreground">認証が必要です</h2>
         <p className="text-sm text-muted-strong mb-6 leading-relaxed">システム設計書は管理者専用です。管理者パスコードでログインしてから再度アクセスしてください。</p>
-        <a href="/login" className="inline-block w-full rounded-xl bg-[#c89b3c] px-5 py-3 text-sm font-semibold text-black transition hover:bg-yellow-400">ログインページへ</a>
+        <a href="/login" className="inline-block w-full rounded-xl bg-[#c89b3c] px-5 py-3 text-sm font-semibold text-black transition hover:bg-primary-400">ログインページへ</a>
       </div>
     );
   }
@@ -97,7 +97,7 @@ export default function DesignEditor() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] bg-surface/60 backdrop-blur-md rounded-3xl border border-black/10 p-12 max-w-7xl mx-auto shadow-2xl">
         <RefreshCw className="w-8 h-8 animate-spin text-[#c89b3c] mb-4" />
-        <span className="text-xs text-gray-500 font-bold">設計書モジュールをロード中...</span>
+        <span className="text-xs text-muted-strong font-bold">設計書モジュールをロード中...</span>
       </div>
     );
   }
@@ -158,11 +158,11 @@ export default function DesignEditor() {
       {/* 操作ヘッダーパネル */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-surface/70 backdrop-blur-md border border-black/10 rounded-2xl p-4 md:px-8 shadow-xl gap-4">
         <div>
-          <h2 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-[#c89b3c] to-yellow-700 flex items-center gap-2">
+          <h2 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-[#c89b3c] to-primary-700 flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-[#c89b3c]" />
             <span>SOVEREIGN SYSTEM DESIGN</span>
           </h2>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-muted-strong">
             {isEditing ? `「${activeDoc.title}」を編集中です。変更後は自動デプロイされます。` : "各機能ごとの個別詳細設計書プレビュー"}
           </p>
         </div>
@@ -189,7 +189,7 @@ export default function DesignEditor() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 disabled:bg-amber-600/50 text-white px-5 py-2 rounded-xl font-bold text-xs transition shadow-lg shadow-amber-500/20 cursor-pointer w-full sm:w-auto"
+                className="flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-500 disabled:bg-primary-600/50 text-white px-5 py-2 rounded-xl font-bold text-xs transition shadow-lg shadow-primary-500/20 cursor-pointer w-full sm:w-auto"
               >
                 {saving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
                 {saving ? "保存中..." : "保存して本番適用"}
@@ -203,8 +203,8 @@ export default function DesignEditor() {
       {status.text && (
         <div className={`p-4 rounded-2xl flex items-center gap-3 border animate-fade-in ${
           status.type === 'error'
-            ? 'bg-red-100 text-red-700 border-red-200'
-            : 'bg-green-100 text-green-700 border-green-200'
+            ? 'bg-danger-100 text-danger-700 border-rose-200'
+            : 'bg-success-100 text-success-700 border-emerald-200'
         }`}>
           {status.type === 'error' ? <AlertTriangle className="flex-shrink-0" size={20} /> : <CheckCircle className="flex-shrink-0" size={20} />}
           <p className="text-xs font-bold whitespace-pre-wrap">{status.text}</p>
@@ -217,8 +217,8 @@ export default function DesignEditor() {
         {/* 機能別目次サイドメニュー (左側) */}
         {!isEditing && (
           <aside className="w-full md:w-72 shrink-0 bg-surface/60 backdrop-blur-md rounded-3xl border border-black/10 p-4 space-y-1.5 shadow-xl">
-            <div className="px-3 py-2 text-[10px] font-black text-gray-500 uppercase tracking-widest border-b border-black/5 mb-2 flex items-center gap-1.5">
-              <FileText className="w-4 h-4 text-gray-500" />
+            <div className="px-3 py-2 text-[10px] font-black text-muted-strong uppercase tracking-widest border-b border-black/5 mb-2 flex items-center gap-1.5">
+              <FileText className="w-4 h-4 text-muted-strong" />
               <span>機能別設計書一覧</span>
             </div>
             <div className="space-y-1 max-h-[70vh] overflow-y-auto custom-scrollbar pr-1">
@@ -231,13 +231,13 @@ export default function DesignEditor() {
                   }}
                   className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${
                     activeKey === key
-                      ? 'bg-[#c89b3c]/15 border border-[#c89b3c]/30 text-yellow-800'
-                      : 'border border-transparent text-gray-500 hover:text-foreground hover:bg-black/[0.03]'
+                      ? 'bg-[#c89b3c]/15 border border-[#c89b3c]/30 text-primary-800'
+                      : 'border border-transparent text-muted-strong hover:text-foreground hover:bg-black/[0.03]'
                   }`}
                 >
                   <span className="truncate pr-2">{sec.title}</span>
                   <ChevronRight className={`w-3.5 h-3.5 shrink-0 transition-transform ${
-                    activeKey === key ? 'text-yellow-800 translate-x-0.5' : 'text-gray-500 group-hover:text-gray-700'
+                    activeKey === key ? 'text-primary-800 translate-x-0.5' : 'text-muted-strong group-hover:text-foreground-subtle'
                   }`} />
                 </button>
               ))}
@@ -250,11 +250,11 @@ export default function DesignEditor() {
           {Object.keys(docs).length === 0 ? (
             <div className="text-center py-12 space-y-3">
               <AlertTriangle className="w-12 h-12 text-[#c89b3c] mx-auto animate-bounce" />
-              <h3 className="text-sm font-black text-yellow-200">設計書ファイルが読み込めませんでした</h3>
-              <p className="text-xs text-red-400 font-mono bg-red-950/20 py-2.5 px-4 rounded-xl border border-red-900/30 max-w-lg mx-auto leading-relaxed">
+              <h3 className="text-sm font-black text-primary-200">設計書ファイルが読み込めませんでした</h3>
+              <p className="text-xs text-danger-400 font-mono bg-danger-950/20 py-2.5 px-4 rounded-xl border border-rose-900/30 max-w-lg mx-auto leading-relaxed">
                 {errorMsg || '詳細なエラー情報はありません。'}
               </p>
-              <p className="text-[10px] text-gray-500 max-w-md mx-auto leading-relaxed">
+              <p className="text-[10px] text-muted-strong max-w-md mx-auto leading-relaxed">
                 サーバー上の public/design_docs フォルダ内の配置、または API (/api/design) の応答状態を確認してください。
               </p>
             </div>
@@ -265,7 +265,7 @@ export default function DesignEditor() {
                 remarkPlugins={[remarkGfm]}
                 components={{
                   h1: ({node, ...props}) => <h1 className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-gold to-primary mb-8 pb-4 border-b border-black/10 mt-2" {...props} />,
-                  h2: ({node, ...props}) => <h2 className="text-xl font-bold text-amber-800 mt-8 mb-4 pb-2 border-b border-black/10 flex items-center gap-2" {...props} />,
+                  h2: ({node, ...props}) => <h2 className="text-xl font-bold text-primary-800 mt-8 mb-4 pb-2 border-b border-black/10 flex items-center gap-2" {...props} />,
                   h3: ({node, ...props}) => <h3 className="text-lg font-bold text-[#00cfef] mt-6 mb-3" {...props} />,
                   p: ({node, ...props}) => <p className="text-foreground-subtle leading-relaxed mb-4 text-xs md:text-sm" {...props} />,
                   ul: ({node, ...props}) => <ul className="list-disc list-inside pl-4 mb-4 text-foreground-subtle space-y-1.5 text-xs md:text-sm" {...props} />,
@@ -319,7 +319,7 @@ export default function DesignEditor() {
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
                   disabled={saving}
-                  className="w-full min-h-[60vh] bg-background border border-black/10 rounded-2xl p-6 font-mono text-sm text-foreground-soft leading-relaxed focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all shadow-inner resize-y"
+                  className="w-full min-h-[60vh] bg-background border border-black/10 rounded-2xl p-6 font-mono text-sm text-foreground-soft leading-relaxed focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-primary-500 transition-all shadow-inner resize-y"
                   placeholder="# 設計書をここに入力..."
                 />
               </div>

@@ -57,17 +57,17 @@ export default function MatchNewsTicker() {
   if (!loading && newsList.length === 0) return null;
 
   return (
-    <div className="bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent border-2 border-amber-400/60 dark:border-amber-500/30 rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
+    <div className="bg-gradient-to-br from-primary-500/10 via-primary-500/5 to-transparent border-2 border-amber-400/60 dark:border-amber-500/30 rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
       <div className="flex items-center justify-between border-b border-amber-300/40 dark:border-amber-500/20 pb-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-amber-500 text-stone-950 flex items-center justify-center font-black text-sm shadow-xs">
+          <div className="w-8 h-8 rounded-xl bg-primary-500 text-stone-950 flex items-center justify-center font-black text-sm shadow-xs">
             📰
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-sm sm:text-base font-black text-foreground dark:text-white flex items-center gap-1.5">
                 <span>月刊KTMスポーツ速報</span>
-                <span className="text-[10px] bg-red-600 text-white font-black px-2 py-0.5 rounded-full animate-pulse">
+                <span className="text-[10px] bg-danger-600 text-white font-black px-2 py-0.5 rounded-full animate-pulse">
                   号外
                 </span>
               </h3>
@@ -80,7 +80,7 @@ export default function MatchNewsTicker() {
 
         <Link
           href="/history"
-          className="text-xs font-black text-amber-700 dark:text-amber-400 hover:underline flex items-center gap-0.5"
+          className="text-xs font-black text-primary-700 dark:text-primary-400 hover:underline flex items-center gap-0.5"
         >
           <span>過去の試合</span>
           <ChevronRight className="w-3.5 h-3.5" />
@@ -113,8 +113,8 @@ export default function MatchNewsTicker() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
                       item.winningTeam === 'BLUE'
-                        ? 'bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300 border border-teal-300'
-                        : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-rose-300 border border-red-300'
+                        ? 'bg-secondary-100 text-secondary-800 dark:bg-secondary-900/40 dark:text-secondary-300 border border-teal-300'
+                        : 'bg-danger-100 text-danger-800 dark:bg-danger-900/40 dark:text-danger-300 border border-rose-300'
                     }`}>
                       {item.winningTeam === 'BLUE' ? '🟦 BLUE勝利' : '🟥 RED勝利'}
                     </span>
@@ -122,7 +122,7 @@ export default function MatchNewsTicker() {
                       {new Date(item.createdAt).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
-                  <h4 className="text-sm sm:text-base font-black text-foreground dark:text-white leading-snug hover:text-amber-700 dark:hover:text-amber-400 transition-colors">
+                  <h4 className="text-sm sm:text-base font-black text-foreground dark:text-white leading-snug hover:text-primary-700 dark:hover:text-primary-400 transition-colors">
                     {art.headline}
                   </h4>
                   <p className="text-xs text-muted-strong font-bold truncate">
@@ -139,7 +139,7 @@ export default function MatchNewsTicker() {
               {isExpanded && (
                 <div className="px-4 pb-4 pt-1 border-t border-stone-100 dark:border-stone-800 space-y-3.5 text-xs text-foreground-subtle dark:text-stone-200 animate-in fade-in">
                   {/* リード文 */}
-                  <p className="leading-relaxed font-sans text-foreground-soft dark:text-stone-100 text-[13px] bg-amber-50/50 dark:bg-amber-950/20 p-3 rounded-xl border border-amber-200/40">
+                  <p className="leading-relaxed font-sans text-foreground-soft dark:text-stone-100 text-[13px] bg-primary-50/50 dark:bg-primary-950/20 p-3 rounded-xl border border-amber-200/40">
                     {art.lead}
                   </p>
 
@@ -147,7 +147,7 @@ export default function MatchNewsTicker() {
                     {/* MVP寸評 */}
                     {art.mvp && (
                       <div className="p-3 rounded-xl bg-background dark:bg-[#1e1f22] border border-border dark:border-stone-700 space-y-1">
-                        <div className="flex items-center gap-1.5 font-black text-amber-700 dark:text-amber-400">
+                        <div className="flex items-center gap-1.5 font-black text-primary-700 dark:text-primary-400">
                           <Trophy className="w-3.5 h-3.5" />
                           <span>本日のMVP: {art.mvp.name} 選手 ({art.mvp.role})</span>
                         </div>
@@ -162,7 +162,7 @@ export default function MatchNewsTicker() {
 
                     {/* ターニングポイント */}
                     <div className="p-3 rounded-xl bg-background dark:bg-[#1e1f22] border border-border dark:border-stone-700 space-y-1">
-                      <div className="flex items-center gap-1.5 font-black text-rose-700 dark:text-rose-400">
+                      <div className="flex items-center gap-1.5 font-black text-danger-700 dark:text-danger-400">
                         <Flame className="w-3.5 h-3.5" />
                         <span>勝負の分水嶺</span>
                       </div>
@@ -175,7 +175,7 @@ export default function MatchNewsTicker() {
                   {/* 試合後インタビュー ＆ サイドストーリー */}
                   <div className="p-3 rounded-xl bg-black/[0.03] dark:bg-white/[0.03] border border-border/80 dark:border-stone-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-[11px]">
                     <div className="flex items-center gap-1.5 italic text-muted">
-                      <MessageSquareQuote className="w-4 h-4 text-amber-500 shrink-0" />
+                      <MessageSquareQuote className="w-4 h-4 text-primary-500 shrink-0" />
                       <span>「{art.interviewQuote}」</span>
                     </div>
                     {art.sideStory && (

@@ -36,7 +36,7 @@ export function SkeletonList({ rows = 6, className = "" }: { rows?: number; clas
 // --- スピナー（中央寄せの読み込み表示） ---
 export function Spinner({ label = "読み込み中...", className = "" }: { label?: string; className?: string }) {
   return (
-    <div className={`flex flex-col items-center justify-center gap-3 py-16 text-gray-400 ${className}`}>
+    <div className={`flex flex-col items-center justify-center gap-3 py-16 text-faint ${className}`}>
       <Loader2 className="animate-spin text-[#c89b3c]" size={28} />
       {label && <p className="text-xs font-bold tracking-wide">{label}</p>}
     </div>
@@ -57,11 +57,11 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-black/5 text-gray-500">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-black/5 text-muted-strong">
         {icon || <Inbox size={26} />}
       </div>
-      <p className="text-sm font-bold text-gray-700">{title}</p>
-      {message && <p className="max-w-sm text-xs leading-relaxed text-gray-500">{message}</p>}
+      <p className="text-sm font-bold text-foreground-subtle">{title}</p>
+      {message && <p className="max-w-sm text-xs leading-relaxed text-muted-strong">{message}</p>}
       {action && <div className="mt-2">{action}</div>}
     </div>
   );
@@ -79,11 +79,11 @@ export function ErrorState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-100 text-rose-700">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-danger-100 text-danger-700">
         <AlertTriangle size={26} />
       </div>
-      <p className="text-sm font-bold text-rose-700">{title}</p>
-      {message && <p className="max-w-sm text-xs leading-relaxed text-gray-500">{message}</p>}
+      <p className="text-sm font-bold text-danger-700">{title}</p>
+      {message && <p className="max-w-sm text-xs leading-relaxed text-muted-strong">{message}</p>}
       {onRetry && (
         <button
           onClick={onRetry}

@@ -37,7 +37,7 @@ function MyPageContent() {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
         <div className="flex flex-col items-center gap-4">
-          <RefreshCw className="w-8 h-8 text-amber-500 animate-spin" />
+          <RefreshCw className="w-8 h-8 text-primary-500 animate-spin" />
           <p className="text-muted text-sm font-bold">マイページ（公式カルテ）を読み込み中...</p>
         </div>
       </div>
@@ -47,7 +47,7 @@ function MyPageContent() {
   return (
     <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6">
       <div className="max-w-md w-full bg-surface border border-border rounded-3xl p-8 text-center shadow-xl space-y-6 animate-fade-in">
-        <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-500">
+        <div className="w-16 h-16 rounded-2xl bg-primary-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-primary-500">
           <Sparkles className="w-8 h-8" />
         </div>
         <div>
@@ -72,7 +72,7 @@ export default function MyPageRedirect() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <RefreshCw className="w-8 h-8 text-amber-500 animate-spin" />
+        <RefreshCw className="w-8 h-8 text-primary-500 animate-spin" />
       </div>
     }>
       <MyPageContent />

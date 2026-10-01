@@ -11,14 +11,14 @@ interface PlayerReputationCardProps {
 }
 
 const KUDOS_TAGS = [
-  { id: 'carry', label: '👑 キャリー力・頼れるエース', icon: '👑', color: 'bg-amber-50 text-amber-900 border-amber-300' },
-  { id: 'manner', label: '💖 ナイスマナー・雰囲気◎（絶対に煽らない）', icon: '💖', color: 'bg-rose-50 text-rose-900 border-rose-300' },
-  { id: 'peel', label: '🛡️ ナイスサポート・献身的なピール', icon: '🛡️', color: 'bg-emerald-50 text-emerald-900 border-emerald-300' },
-  { id: 'shotcall', label: '🗣️ 的確な指示・ピン出し', icon: '🗣️', color: 'bg-teal-50 text-teal-900 border-teal-300' },
-  { id: 'mentor', label: '🔰 初心者・新規に優しい', icon: '🔰', color: 'bg-teal-50 text-teal-900 border-teal-300' },
-  { id: 'engage', label: '⚡ 神エンゲージ・仕掛けの鬼', icon: '⚡', color: 'bg-amber-50 text-amber-900 border-amber-300' },
-  { id: 'snipe', label: '🎯 スナイパー・神スキルショット', icon: '🎯', color: 'bg-amber-50 text-amber-900 border-amber-300' },
-  { id: 'clutch', label: '🔥 勝負強さ・クラッチプレイ', icon: '🔥', color: 'bg-orange-50 text-orange-900 border-orange-300' },
+  { id: 'carry', label: '👑 キャリー力・頼れるエース', icon: '👑', color: 'bg-primary-50 text-primary-900 border-amber-300' },
+  { id: 'manner', label: '💖 ナイスマナー・雰囲気◎（絶対に煽らない）', icon: '💖', color: 'bg-danger-50 text-danger-900 border-rose-300' },
+  { id: 'peel', label: '🛡️ ナイスサポート・献身的なピール', icon: '🛡️', color: 'bg-success-50 text-success-900 border-emerald-300' },
+  { id: 'shotcall', label: '🗣️ 的確な指示・ピン出し', icon: '🗣️', color: 'bg-secondary-50 text-secondary-900 border-teal-300' },
+  { id: 'mentor', label: '🔰 初心者・新規に優しい', icon: '🔰', color: 'bg-secondary-50 text-secondary-900 border-teal-300' },
+  { id: 'engage', label: '⚡ 神エンゲージ・仕掛けの鬼', icon: '⚡', color: 'bg-primary-50 text-primary-900 border-amber-300' },
+  { id: 'snipe', label: '🎯 スナイパー・神スキルショット', icon: '🎯', color: 'bg-primary-50 text-primary-900 border-amber-300' },
+  { id: 'clutch', label: '🔥 勝負強さ・クラッチプレイ', icon: '🔥', color: 'bg-primary-50 text-primary-900 border-amber-300' },
 ];
 
 export default function PlayerReputationCard({
@@ -124,7 +124,7 @@ export default function PlayerReputationCard({
       {/* ヘッダー */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-300 flex items-center justify-center text-xl shadow-2xs">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary-500/20 to-primary-500/20 border border-amber-300 flex items-center justify-center text-xl shadow-2xs">
             🌟
           </div>
           <div>
@@ -132,7 +132,7 @@ export default function PlayerReputationCard({
               <h3 className="text-base font-black text-foreground">
                 KTM 栄誉 ＆ メンバーからの評判
               </h3>
-              <span className="text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-0.5 rounded-full">
+              <span className="text-[10px] font-bold bg-primary-100 text-primary-900 border border-amber-300 px-2.5 py-0.5 rounded-full">
                 通算称賛 {totalKudos} 回
               </span>
             </div>
@@ -149,7 +149,7 @@ export default function PlayerReputationCard({
             onClick={() => setIsModalOpen(true)}
             className={`px-4 py-2 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 shadow-sm cursor-pointer shrink-0 ${
               canSendToday
-                ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 shadow-amber-500/20 hover:scale-102 active:scale-98 animate-pulse'
+                ? 'bg-gradient-to-r from-primary-500 via-primary-500 to-primary-500 hover:from-primary-400 hover:to-primary-400 text-stone-950 shadow-primary-500/20 hover:scale-102 active:scale-98 animate-pulse'
                 : 'bg-surface-subtle text-muted-strong border border-border hover:bg-surface-hover'
             }`}
           >
@@ -197,9 +197,9 @@ export default function PlayerReputationCard({
           <div className="bg-surface border border-border rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden text-foreground animate-in fade-in zoom-in-95 duration-200">
             
             {/* モーダルヘッダー */}
-            <div className="p-4 md:px-6 md:py-4 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border-b border-border flex items-center justify-between">
+            <div className="p-4 md:px-6 md:py-4 bg-gradient-to-r from-primary-500/15 via-primary-500/10 to-primary-500/15 border-b border-border flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-amber-500 text-stone-950 flex items-center justify-center text-xl shadow-xs font-black">
+                <div className="w-10 h-10 rounded-2xl bg-primary-500 text-stone-950 flex items-center justify-center text-xl shadow-xs font-black">
                   🌟
                 </div>
                 <div>
@@ -227,7 +227,7 @@ export default function PlayerReputationCard({
               <div className="p-3 bg-background rounded-2xl border border-border flex items-center justify-between">
                 <div className="space-y-0.5">
                   <div className="text-xs font-black text-foreground flex items-center gap-1.5">
-                    <Shield size={14} className="text-amber-600" />
+                    <Shield size={14} className="text-primary-600" />
                     <span>送信モード</span>
                   </div>
                   <div className="text-[11px] text-muted-strong font-medium">
@@ -240,7 +240,7 @@ export default function PlayerReputationCard({
                   onClick={() => setIsReport(!isReport)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-black border transition cursor-pointer ${
                     isReport
-                      ? 'bg-rose-100 text-rose-900 border-rose-300'
+                      ? 'bg-danger-100 text-danger-900 border-rose-300'
                       : 'bg-surface text-foreground-subtle border-border hover:bg-surface-subtle'
                   }`}
                 >
@@ -266,7 +266,7 @@ export default function PlayerReputationCard({
                           onClick={() => toggleTag(kudo.label)}
                           className={`p-2.5 rounded-xl border text-left text-xs font-bold transition flex items-center justify-between gap-1.5 cursor-pointer ${
                             isSelected
-                              ? 'bg-amber-500 text-stone-950 border-amber-500 shadow-2xs font-black'
+                              ? 'bg-primary-500 text-stone-950 border-amber-500 shadow-2xs font-black'
                               : 'bg-background text-foreground-subtle border-border hover:bg-surface-subtle'
                           }`}
                         >
@@ -311,8 +311,8 @@ export default function PlayerReputationCard({
                   disabled={isSubmitting}
                   className={`px-5 py-2 rounded-xl font-black text-xs text-white shadow-sm transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50 ${
                     isReport
-                      ? 'bg-rose-600 hover:bg-rose-500'
-                      : 'bg-emerald-600 hover:bg-emerald-500'
+                      ? 'bg-danger-600 hover:bg-danger-500'
+                      : 'bg-success-600 hover:bg-success-500'
                   }`}
                 >
                   <Send size={13} />

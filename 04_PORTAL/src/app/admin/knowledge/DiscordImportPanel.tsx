@@ -114,7 +114,7 @@ export default function DiscordImportPanel() {
     <div className="bg-surface border border-border rounded-3xl p-6 space-y-6 shadow-sm">
       <div className="flex items-center justify-between border-b border-stone-100 pb-4 flex-wrap gap-2">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700">
+          <div className="p-2 rounded-2xl bg-primary-50 border border-amber-200 text-primary-700">
             <MessageSquare size={20} />
           </div>
           <div>
@@ -131,7 +131,7 @@ export default function DiscordImportPanel() {
       {message && (
         <div
           className={`p-3.5 rounded-2xl border text-xs font-bold flex items-center gap-2 ${
-            message.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200'
+            message.type === 'success' ? 'bg-success-50 text-success-800 border-emerald-200' : 'bg-danger-50 text-danger-800 border-rose-200'
           }`}
         >
           {message.type === 'success' ? '✅' : '❌'} {message.text}
@@ -155,7 +155,7 @@ export default function DiscordImportPanel() {
           <button
             onClick={handleParse}
             disabled={parsing || !inputText.trim()}
-            className="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 hover:from-amber-700 hover:to-amber-900 active:scale-95 text-white text-xs font-black transition flex items-center gap-2 shadow-lg disabled:opacity-50"
+            className="px-6 py-3 rounded-2xl bg-gradient-to-r from-primary-600 via-primary-700 to-primary-800 hover:from-primary-700 hover:to-primary-900 active:scale-95 text-white text-xs font-black transition flex items-center gap-2 shadow-lg disabled:opacity-50"
           >
             <Sparkles className={`w-4 h-4 ${parsing ? 'animate-spin' : ''}`} />
             {parsing ? 'AIがチャットログを解読・抽出中...' : '🤖 AIで攻略知見を自動抽出'}
@@ -168,13 +168,13 @@ export default function DiscordImportPanel() {
         <div className="space-y-4 pt-4 border-t border-border">
           <div className="flex items-center justify-between">
             <span className="text-xs font-extrabold text-foreground flex items-center gap-2">
-              <ShieldCheck size={16} className="text-emerald-600" />
+              <ShieldCheck size={16} className="text-success-600" />
               抽出されたナレッジ候補 ({extractedItems.length}件)
             </span>
             <button
               onClick={handleCommit}
               disabled={committing || extractedItems.filter((i) => i.selected).length === 0}
-              className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black transition flex items-center gap-2 shadow-md disabled:opacity-50"
+              className="px-5 py-2.5 rounded-xl bg-success-600 hover:bg-success-700 text-white text-xs font-black transition flex items-center gap-2 shadow-md disabled:opacity-50"
             >
               <Check size={14} />
               {committing ? '取り込み中...' : `✅ 選択した ${extractedItems.filter((i) => i.selected).length} 件をナレッジベースに登録`}
@@ -195,7 +195,7 @@ export default function DiscordImportPanel() {
                       type="checkbox"
                       checked={!!item.selected}
                       onChange={(e) => updateItem(idx, 'selected', e.target.checked)}
-                      className="w-4 h-4 rounded border-border text-amber-600 focus:ring-amber-500 cursor-pointer"
+                      className="w-4 h-4 rounded border-border text-primary-600 focus:ring-primary-500 cursor-pointer"
                     />
                     <img
                       src={getChampIcon(item.champion)}
@@ -207,7 +207,7 @@ export default function DiscordImportPanel() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-extrabold text-foreground text-xs">{item.champion}</span>
                         {item.enemy_champion && (
-                          <span className="text-[10px] bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded-full border border-rose-200">
+                          <span className="text-[10px] bg-danger-100 text-danger-800 font-bold px-2 py-0.5 rounded-full border border-rose-200">
                             vs {item.enemy_champion}
                           </span>
                         )}
@@ -229,7 +229,7 @@ export default function DiscordImportPanel() {
                     </button>
                     <button
                       onClick={() => removeItem(idx)}
-                      className="p-1.5 rounded-lg hover:bg-rose-50 text-rose-600 transition"
+                      className="p-1.5 rounded-lg hover:bg-danger-50 text-danger-600 transition"
                       title="除外する"
                     >
                       <Trash2 size={14} />

@@ -40,8 +40,8 @@ type GamePhase = 'IDLE' | 'DEALING' | 'RESULT';
 // ============================================================
 const SUIT_ICONS: Record<string, { icon: string; color: string }> = {
   spades:   { icon: '♠', color: 'text-foreground' },
-  hearts:   { icon: '♥', color: 'text-rose-600' },
-  diamonds: { icon: '♦', color: 'text-rose-600' },
+  hearts:   { icon: '♥', color: 'text-danger-600' },
+  diamonds: { icon: '♦', color: 'text-danger-600' },
   clubs:    { icon: '♣', color: 'text-foreground' },
 };
 
@@ -79,8 +79,8 @@ function CardFace({
         </div>
       ) : (
         /* カード裏面 */
-        <div className="w-full h-full rounded-xl border-2 border-amber-400 bg-gradient-to-br from-amber-600 to-amber-800 shadow-md flex items-center justify-center">
-          <div className="text-amber-200 text-xl font-black">🂠</div>
+        <div className="w-full h-full rounded-xl border-2 border-amber-400 bg-gradient-to-br from-primary-600 to-primary-800 shadow-md flex items-center justify-center">
+          <div className="text-primary-200 text-xl font-black">🂠</div>
         </div>
       )}
     </div>
@@ -254,9 +254,9 @@ export default function KtmBaccaratGame({
 
   const BET_CONFIGS: { id: BetTarget; label: string; subLabel: string; odds: string; accent: string; bg: string; selectedBg: string }[] = [
     // 2026-09-23: 本場のバカラと同じ並び（左BANKER / 中央TIE / 右PLAYER）へ入れ替え。
-    { id: 'BANKER', label: 'BANKER', subLabel: 'バンカー',   odds: '×1.95', accent: 'text-rose-700', bg: 'bg-rose-50 border-rose-300', selectedBg: 'bg-rose-600 border-rose-700 text-white' },
-    { id: 'TIE',    label: 'TIE',    subLabel: 'タイ',       odds: '×9.0',  accent: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-300', selectedBg: 'bg-emerald-600 border-emerald-700 text-white' },
-    { id: 'PLAYER', label: 'PLAYER', subLabel: 'プレイヤー', odds: '×2.00', accent: 'text-teal-700', bg: 'bg-teal-50 border-teal-300', selectedBg: 'bg-teal-600 border-teal-700 text-white' },
+    { id: 'BANKER', label: 'BANKER', subLabel: 'バンカー',   odds: '×1.95', accent: 'text-danger-700', bg: 'bg-danger-50 border-rose-300', selectedBg: 'bg-danger-600 border-rose-700 text-white' },
+    { id: 'TIE',    label: 'TIE',    subLabel: 'タイ',       odds: '×9.0',  accent: 'text-success-700', bg: 'bg-success-50 border-emerald-300', selectedBg: 'bg-success-600 border-emerald-700 text-white' },
+    { id: 'PLAYER', label: 'PLAYER', subLabel: 'プレイヤー', odds: '×2.00', accent: 'text-secondary-700', bg: 'bg-secondary-50 border-teal-300', selectedBg: 'bg-secondary-600 border-teal-700 text-white' },
   ];
 
   // 結果アクセント
@@ -264,16 +264,16 @@ export default function KtmBaccaratGame({
     ? lastResult.isPush
       ? 'bg-surface-subtle border-stone-400 text-foreground-subtle'
       : lastResult.isWin
-        ? 'bg-amber-100 border-amber-500 text-amber-900'
-        : 'bg-rose-100 border-rose-400 text-rose-900'
+        ? 'bg-primary-100 border-amber-500 text-primary-900'
+        : 'bg-danger-100 border-rose-400 text-danger-900'
     : '';
 
   return (
     <div className="space-y-5">
       {/* ヘッダー */}
       <div className="text-center space-y-1">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-900 text-xs font-black border border-amber-500/30">
-          <Sparkles size={12} className="text-amber-600" />
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-500/20 text-primary-900 text-xs font-black border border-amber-500/30">
+          <Sparkles size={12} className="text-primary-600" />
           KTM Sovereign Baccarat
         </div>
         <p className="text-xs text-muted-strong font-medium">本格8デッキ / PLAYER・BANKER×1.95倍 / TIE×8.0倍</p>
@@ -281,14 +281,14 @@ export default function KtmBaccaratGame({
 
       {/* エラー表示 */}
       {errorMsg && (
-        <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-rose-100 border border-rose-400 text-rose-800 text-xs font-bold">
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-danger-100 border border-rose-400 text-danger-800 text-xs font-bold">
           <AlertCircle size={14} />
           {errorMsg}
         </div>
       )}
 
       {/* ── カードテーブル ── */}
-      <div className="rounded-3xl overflow-hidden border-2 border-border bg-gradient-to-b from-emerald-800 to-emerald-900 shadow-lg">
+      <div className="rounded-3xl overflow-hidden border-2 border-border bg-gradient-to-b from-success-800 to-success-900 shadow-lg">
         {/* フェルト面 */}
         <div className="p-6 flex items-center justify-around gap-4">
           {/* BANKER側 */}
@@ -297,7 +297,7 @@ export default function KtmBaccaratGame({
             cards={displayBankerCards}
             score={displayBankerScore}
             visibleCount={bankerVisible}
-            accent="text-rose-300"
+            accent="text-danger-300"
           />
 
           {/* 中央スコアボード */}
@@ -315,7 +315,7 @@ export default function KtmBaccaratGame({
               </div>
             )}
             {lastResult?.isNatural && (
-              <div className="text-xs font-black text-amber-300 animate-pulse">⚡ NATURAL!</div>
+              <div className="text-xs font-black text-primary-300 animate-pulse">⚡ NATURAL!</div>
             )}
           </div>
 
@@ -325,7 +325,7 @@ export default function KtmBaccaratGame({
             cards={displayPlayerCards}
             score={displayPlayerScore}
             visibleCount={playerVisible}
-            accent="text-teal-300"
+            accent="text-secondary-300"
           />
         </div>
       </div>
@@ -394,7 +394,7 @@ export default function KtmBaccaratGame({
             type="button"
             onClick={() => setBetAmount(userCoins)}
             disabled={phase !== 'IDLE'}
-            className="px-2.5 py-1 rounded-xl bg-amber-200 hover:bg-amber-300 text-amber-900 font-black text-xs transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            className="px-2.5 py-1 rounded-xl bg-primary-200 hover:bg-primary-300 text-primary-900 font-black text-xs transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
             MAX
           </button>
@@ -407,7 +407,7 @@ export default function KtmBaccaratGame({
           type="button"
           onClick={handleDeal}
           disabled={phase === 'DEALING'}
-          className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 disabled:opacity-60 disabled:cursor-not-allowed text-stone-950 font-black text-base shadow-md transition transform active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+          className="w-full py-4 rounded-2xl bg-gradient-to-r from-primary-500 to-primary-500 hover:from-primary-600 hover:to-primary-600 disabled:opacity-60 disabled:cursor-not-allowed text-stone-950 font-black text-base shadow-md transition transform active:scale-95 cursor-pointer flex items-center justify-center gap-2"
         >
           {phase === 'DEALING' ? (
             <>
@@ -435,7 +435,7 @@ export default function KtmBaccaratGame({
       {/* 残高表示 */}
       <div className="text-center text-xs font-bold text-muted-strong">
         💰 現在の残高:{' '}
-        <strong className="text-amber-700 font-mono text-sm">
+        <strong className="text-primary-700 font-mono text-sm">
           {(lastResult ? lastResult.remainingCoins : userCoins).toLocaleString()}
         </strong>{' '}
         コイン

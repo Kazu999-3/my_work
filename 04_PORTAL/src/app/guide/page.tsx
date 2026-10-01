@@ -52,40 +52,40 @@ function GuideContent() {
       label: '⚡ クイックスタート',
       shortLabel: 'スタート',
       icon: Zap,
-      color: 'text-amber-700',
-      activeBg: 'bg-amber-500/15 border-amber-500/40 text-amber-900',
+      color: 'text-primary-700',
+      activeBg: 'bg-primary-500/15 border-amber-500/40 text-primary-900',
     },
     {
       id: 'rules',
       label: '📜 公式ルール ＆ 特殊マッチ',
       shortLabel: 'ルール',
       icon: BookOpen,
-      color: 'text-rose-700',
-      activeBg: 'bg-rose-500/15 border-rose-500/40 text-rose-900',
+      color: 'text-danger-700',
+      activeBg: 'bg-danger-500/15 border-rose-500/40 text-danger-900',
     },
     {
       id: 'bot',
       label: '🤖 Discord Bot 使い方',
       shortLabel: 'Bot',
       icon: Bot,
-      color: 'text-amber-700',
-      activeBg: 'bg-amber-500/15 border-amber-500/40 text-amber-900',
+      color: 'text-primary-700',
+      activeBg: 'bg-primary-500/15 border-amber-500/40 text-primary-900',
     },
     {
       id: 'portal',
       label: '🌐 ポータル機能ガイド',
       shortLabel: 'ポータル',
       icon: Globe,
-      color: 'text-teal-700',
-      activeBg: 'bg-teal-500/15 border-teal-500/40 text-teal-900',
+      color: 'text-secondary-700',
+      activeBg: 'bg-secondary-500/15 border-teal-500/40 text-secondary-900',
     },
     {
       id: 'updates',
       label: '🚀 アップデート情報',
       shortLabel: '更新情報',
       icon: ScrollText,
-      color: 'text-orange-700',
-      activeBg: 'bg-orange-500/15 border-orange-500/40 text-orange-900',
+      color: 'text-primary-700',
+      activeBg: 'bg-primary-500/15 border-amber-500/40 text-primary-900',
     },
   ];
 
@@ -94,7 +94,7 @@ function GuideContent() {
       {/* 洗練されたコンパクトヘッダー */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 md:p-5 bg-surface dark:bg-stone-900 border border-border/90 dark:border-stone-800 rounded-2xl shadow-xs">
         <div className="flex items-center gap-3.5">
-          <div className="text-2xl p-2.5 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-200/80 dark:border-amber-800/60 shrink-0 text-amber-600">
+          <div className="text-2xl p-2.5 bg-primary-50 dark:bg-primary-950/40 rounded-xl border border-amber-200/80 dark:border-amber-800/60 shrink-0 text-primary-600">
             <BookOpen size={24} />
           </div>
           <div>
@@ -102,7 +102,7 @@ function GuideContent() {
               <h1 className="text-base sm:text-lg font-black tracking-tight text-foreground dark:text-stone-100">
                 KTM 総合使い方ガイド ＆ リリースノート
               </h1>
-              <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300 text-[10px] font-extrabold">
+              <span className="px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900/40 border border-amber-300 dark:border-amber-700 text-primary-800 dark:text-primary-300 text-[10px] font-extrabold">
                 公式ガイド
               </span>
             </div>
@@ -126,7 +126,7 @@ function GuideContent() {
           </div>
           <button
             type="submit"
-            className="bg-amber-500 hover:bg-amber-400 text-stone-950 px-3.5 py-2 rounded-xl font-black text-xs transition-all shadow-xs flex items-center gap-1 shrink-0 cursor-pointer"
+            className="bg-primary-500 hover:bg-primary-400 text-stone-950 px-3.5 py-2 rounded-xl font-black text-xs transition-all shadow-xs flex items-center gap-1 shrink-0 cursor-pointer"
           >
             <span>検索</span>
             <ArrowRight size={13} />

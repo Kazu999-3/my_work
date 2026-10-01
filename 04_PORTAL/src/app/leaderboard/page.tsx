@@ -150,7 +150,7 @@ function LeaderboardContent() {
         {/* ヘッダー */}
         <div className="bg-surface dark:bg-stone-900 border border-border/90 dark:border-stone-800 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
           <div className="flex items-center gap-3">
-            <div className="text-2xl p-2.5 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-200/80 dark:border-amber-800/60 shrink-0 text-amber-600">
+            <div className="text-2xl p-2.5 bg-primary-50 dark:bg-primary-950/40 rounded-xl border border-amber-200/80 dark:border-amber-800/60 shrink-0 text-primary-600">
               <Trophy size={24} />
             </div>
             <div>
@@ -158,7 +158,7 @@ function LeaderboardContent() {
                 <h1 className="text-base sm:text-lg font-black tracking-tight text-foreground dark:text-stone-100">
                   KTM 順位表 ＆ コミュニティ名簿
                 </h1>
-                <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300 text-[10px] font-extrabold">
+                <span className="px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900/40 border border-amber-300 dark:border-amber-700 text-primary-800 dark:text-primary-300 text-[10px] font-extrabold">
                   コミュニティ
                 </span>
               </div>
@@ -183,7 +183,7 @@ function LeaderboardContent() {
                     : 'text-muted hover:text-foreground dark:hover:text-stone-200 hover:bg-surface-hover/60 dark:hover:bg-stone-800/60'
                 }`}
               >
-                <Trophy className="w-4 h-4 text-amber-500" />
+                <Trophy className="w-4 h-4 text-primary-500" />
                 <span>🏆 ランキング</span>
               </button>
 
@@ -197,7 +197,7 @@ function LeaderboardContent() {
                     : 'text-muted hover:text-foreground dark:hover:text-stone-200 hover:bg-surface-hover/60 dark:hover:bg-stone-800/60'
                 }`}
               >
-                <Users className="w-4 h-4 text-amber-500" />
+                <Users className="w-4 h-4 text-primary-500" />
                 <span>👥 メンバー名簿</span>
               </button>
 
@@ -211,7 +211,7 @@ function LeaderboardContent() {
                     : 'text-muted hover:text-foreground dark:hover:text-stone-200 hover:bg-surface-hover/60 dark:hover:bg-stone-800/60'
                 }`}
               >
-                <Activity className="w-4 h-4 text-teal-500" />
+                <Activity className="w-4 h-4 text-secondary-500" />
                 <span>📊 詳細データ分析</span>
               </button>
             </div>
@@ -313,7 +313,7 @@ function LeaderboardContent() {
                       onClick={() => setMetaMinGames(cnt)}
                       className={`px-3 py-1 rounded-xl text-xs font-black transition cursor-pointer ${
                         metaMinGames === cnt
-                          ? 'bg-amber-600 text-white'
+                          ? 'bg-primary-600 text-white'
                           : 'bg-surface-subtle hover:bg-surface-hover text-muted'
                       }`}
                     >
@@ -330,7 +330,7 @@ function LeaderboardContent() {
                   onClick={() => setShowMetaPlayers(!showMetaPlayers)}
                   className={`px-3 py-1 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer ${
                     showMetaPlayers
-                      ? 'bg-amber-600 text-white shadow-xs'
+                      ? 'bg-primary-600 text-white shadow-xs'
                       : 'bg-surface-subtle hover:bg-surface-hover text-muted'
                   }`}
                   title="各チャンピオンを誰が使用したかを表示/非表示に切り替えます"
@@ -360,13 +360,13 @@ function LeaderboardContent() {
                     <thead>
                       <tr className="bg-surface-subtle/80 text-foreground-subtle border-b border-border font-black">
                         <th className="p-3">チャンピオン</th>
-                        <th className="p-3 cursor-pointer hover:text-amber-700 whitespace-nowrap" onClick={() => toggleMetaSort('games')}>
+                        <th className="p-3 cursor-pointer hover:text-primary-700 whitespace-nowrap" onClick={() => toggleMetaSort('games')}>
                           ピック数 {metaSortKey === 'games' && (metaSortDir === 'desc' ? '▼' : '▲')}
                         </th>
-                        <th className="p-3 cursor-pointer hover:text-amber-700 whitespace-nowrap" onClick={() => toggleMetaSort('winRate')}>
+                        <th className="p-3 cursor-pointer hover:text-primary-700 whitespace-nowrap" onClick={() => toggleMetaSort('winRate')}>
                           勝率 {metaSortKey === 'winRate' && (metaSortDir === 'desc' ? '▼' : '▲')}
                         </th>
-                        <th className="p-3 cursor-pointer hover:text-amber-700 whitespace-nowrap" onClick={() => toggleMetaSort('avgKda')}>
+                        <th className="p-3 cursor-pointer hover:text-primary-700 whitespace-nowrap" onClick={() => toggleMetaSort('avgKda')}>
                           平均KDA {metaSortKey === 'avgKda' && (metaSortDir === 'desc' ? '▼' : '▲')}
                         </th>
                         {showMetaPlayers && (
@@ -387,7 +387,7 @@ function LeaderboardContent() {
                           </td>
                           <td className="p-3 font-bold whitespace-nowrap">{row.games}試合</td>
                           <td className="p-3 font-black whitespace-nowrap">
-                            <span className={row.winRate >= 60 ? 'text-emerald-600' : row.winRate <= 40 ? 'text-rose-600' : 'text-foreground-soft'}>
+                            <span className={row.winRate >= 60 ? 'text-success-600' : row.winRate <= 40 ? 'text-danger-600' : 'text-foreground-soft'}>
                               {row.winRate}%
                             </span>
                           </td>
@@ -400,7 +400,7 @@ function LeaderboardContent() {
                                     <Link
                                       key={p.name}
                                       href={`/player/${encodeURIComponent(p.name)}`}
-                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface-subtle hover:bg-amber-100 hover:border-amber-300 border border-border text-foreground-soft text-[11px] transition-colors"
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-surface-subtle hover:bg-primary-100 hover:border-amber-300 border border-border text-foreground-soft text-[11px] transition-colors"
                                       title={`${p.name} のカルテを見る`}
                                     >
                                       <span className="font-bold">{p.name}</span>
@@ -438,7 +438,7 @@ function LeaderboardContent() {
                     onClick={() => setMinGames(cnt)}
                     className={`px-3 py-1 rounded-xl text-xs font-black transition cursor-pointer ${
                       minGames === cnt
-                        ? 'bg-amber-600 text-white'
+                        ? 'bg-primary-600 text-white'
                         : 'bg-surface-subtle hover:bg-surface-hover text-muted'
                     }`}
                   >
@@ -491,7 +491,7 @@ function LeaderboardContent() {
                 onClick={() => setMobileRole('ALL')}
                 className={`px-3 py-1.5 rounded-xl text-xs font-black shrink-0 transition ${
                   mobileRole === 'ALL'
-                    ? 'bg-amber-600 text-white shadow-xs'
+                    ? 'bg-primary-600 text-white shadow-xs'
                     : 'bg-surface border border-border text-muted'
                 }`}
               >
@@ -504,7 +504,7 @@ function LeaderboardContent() {
                   onClick={() => setMobileRole(role)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-black shrink-0 transition ${
                     mobileRole === role
-                      ? 'bg-amber-600 text-white shadow-xs'
+                      ? 'bg-primary-600 text-white shadow-xs'
                       : 'bg-surface border border-border text-muted'
                   }`}
                 >
@@ -524,7 +524,7 @@ function LeaderboardContent() {
                   >
                     <div className="bg-gradient-to-r from-stone-50 to-stone-100/60 border-b border-border p-3.5 flex items-center justify-between">
                       <span className="font-black text-sm text-foreground tracking-wider uppercase flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                        <span className="w-2 h-2 rounded-full bg-primary-500"></span>
                         {role}
                       </span>
                       <span className="text-[11px] font-black px-2 py-0.5 rounded-full bg-surface-hover/70 text-muted">
@@ -539,26 +539,26 @@ function LeaderboardContent() {
                           <Link
                             key={player.name + idx}
                             href={`/player/${encodeURIComponent(player.name)}`}
-                            className={`p-3 flex items-center justify-between gap-2 hover:bg-amber-50/40 transition group ${
-                              idx === 0 ? 'bg-amber-50/30' : ''
+                            className={`p-3 flex items-center justify-between gap-2 hover:bg-primary-50/40 transition group ${
+                              idx === 0 ? 'bg-primary-50/30' : ''
                             }`}
                           >
                             <div className="flex items-center gap-2.5 min-w-0">
                               <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${
-                                idx === 0 ? 'bg-amber-500 text-white shadow-xs' :
+                                idx === 0 ? 'bg-primary-500 text-white shadow-xs' :
                                 idx === 1 ? 'bg-stone-400 text-white' :
-                                idx === 2 ? 'bg-amber-700 text-white' : 'bg-surface-subtle text-muted border border-border'
+                                idx === 2 ? 'bg-primary-700 text-white' : 'bg-surface-subtle text-muted border border-border'
                               }`}>
                                 {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}
                               </span>
                               <div className="min-w-0">
-                                <div className="text-xs sm:text-sm font-black text-foreground truncate group-hover:text-amber-700 transition">
+                                <div className="text-xs sm:text-sm font-black text-foreground truncate group-hover:text-primary-700 transition">
                                   {player.name}
                                 </div>
                                 <div className="text-[10px] text-muted-strong font-medium flex items-center gap-1.5">
                                   <span>{player.games}戦</span>
                                   <span className={`font-bold ${
-                                    winRateNum >= 60 ? 'text-emerald-600' : winRateNum <= 40 ? 'text-rose-600' : 'text-muted'
+                                    winRateNum >= 60 ? 'text-success-600' : winRateNum <= 40 ? 'text-danger-600' : 'text-muted'
                                   }`}>
                                     {player.winRate}%
                                   </span>
@@ -567,7 +567,7 @@ function LeaderboardContent() {
                             </div>
 
                             <div className="text-right shrink-0">
-                              <div className="text-xs sm:text-sm font-black font-mono text-amber-800">
+                              <div className="text-xs sm:text-sm font-black font-mono text-primary-800">
                                 {player.mmr}
                               </div>
                               <div className="text-[9px] font-bold text-faint">

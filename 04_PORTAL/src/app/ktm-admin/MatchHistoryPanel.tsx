@@ -267,16 +267,16 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
   };
 
   if (loading) {
-    return <div className="py-20 flex flex-col items-center justify-center text-faint"><RefreshCw className="h-8 w-8 animate-spin text-amber-500 mb-4" />戦績データを読み込み中...</div>;
+    return <div className="py-20 flex flex-col items-center justify-center text-faint"><RefreshCw className="h-8 w-8 animate-spin text-primary-500 mb-4" />戦績データを読み込み中...</div>;
   }
 
   if (error) {
-    return <div className="p-8 text-red-700 font-bold bg-red-100 rounded-xl border border-red-200">Error: {error}</div>;
+    return <div className="p-8 text-danger-700 font-bold bg-danger-100 rounded-xl border border-rose-200">Error: {error}</div>;
   }  return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-3 bg-emerald-100 rounded-xl">
-          <History className="h-6 w-6 text-emerald-700" />
+        <div className="p-3 bg-success-100 rounded-xl">
+          <History className="h-6 w-6 text-success-700" />
         </div>
         <div>
           <h2 className="text-2xl font-extrabold text-foreground">直近の試合履歴</h2>
@@ -285,7 +285,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
       </div>
 
       {actionMessage && (
-        <div className={`p-4 rounded-lg flex items-center gap-3 ${actionMessage.type === 'error' ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-emerald-100 text-emerald-700 border-emerald-200'}`}>
+        <div className={`p-4 rounded-lg flex items-center gap-3 ${actionMessage.type === 'error' ? 'bg-danger-100 text-danger-700 border border-rose-200' : 'bg-success-100 text-success-700 border-emerald-200'}`}>
           <AlertCircle className="h-5 w-5 flex-shrink-0" />
           <p className="text-sm font-medium whitespace-pre-wrap">{actionMessage.text}</p>
         </div>
@@ -308,11 +308,11 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
             <div key={match.id} className="bg-surface border border-border rounded-xl overflow-hidden shadow-xl">
               {/* Header */}
               <div className={`p-4 flex items-center justify-between border-b ${
-                match.winning_team === 'BLUE' ? 'bg-teal-900/20 border-teal-900/50' : 'bg-red-900/20 border-red-900/50'
+                match.winning_team === 'BLUE' ? 'bg-secondary-900/20 border-teal-900/50' : 'bg-danger-900/20 border-rose-900/50'
               }`}>
                 <div className="flex items-center gap-3">
-                  <Trophy className={`h-5 w-5 ${match.winning_team === 'BLUE' ? 'text-teal-400' : 'text-red-400'}`} />
-                  <span className={`font-black tracking-wider text-lg ${match.winning_team === 'BLUE' ? 'text-teal-400' : 'text-red-400'}`}>
+                  <Trophy className={`h-5 w-5 ${match.winning_team === 'BLUE' ? 'text-secondary-400' : 'text-danger-400'}`} />
+                  <span className={`font-black tracking-wider text-lg ${match.winning_team === 'BLUE' ? 'text-secondary-400' : 'text-danger-400'}`}>
                     {match.winning_team} WIN
                   </span>
                 </div>
@@ -325,14 +325,14 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                     <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => setEditingMatch(JSON.parse(JSON.stringify(match)))}
-                        className="p-1.5 bg-black/5 hover:bg-black/8 border border-border text-orange-700 hover:text-foreground rounded transition cursor-pointer"
+                        className="p-1.5 bg-black/5 hover:bg-black/8 border border-border text-primary-700 hover:text-foreground rounded transition cursor-pointer"
                         title="試合履歴を編集"
                       >
                         <Edit className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => handleDeleteMatch(match.id)}
-                        className="p-1.5 bg-black/5 hover:bg-red-100 border border-border text-red-700 hover:text-foreground rounded transition cursor-pointer"
+                        className="p-1.5 bg-black/5 hover:bg-danger-100 border border-border text-danger-700 hover:text-foreground rounded transition cursor-pointer"
                         title="試合履歴を削除"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -371,7 +371,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                         
                         <div className="flex flex-col items-end justify-center flex-shrink-0">
                           <div className="text-xs font-bold text-foreground-subtle">
-                            {p.kills} / <span className="text-red-700">{p.deaths}</span> / {p.assists}
+                            {p.kills} / <span className="text-danger-700">{p.deaths}</span> / {p.assists}
                           </div>
                           <div className="text-[10px] font-mono text-faint">
                             KDA {p.kda_score ? p.kda_score.toFixed(2) : ((p.kills + p.assists) / Math.max(1, p.deaths)).toFixed(2)}
@@ -380,7 +380,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
 
                         <div
                           title={formatMmrBreakdown(p.mmr_breakdown, p.mmr_delta)}
-                          className={`w-14 text-right font-black text-sm flex-shrink-0 cursor-help ${p.mmr_delta > 0 ? 'text-emerald-700' : p.mmr_delta < 0 ? 'text-red-700' : 'text-muted-strong'}`}
+                          className={`w-14 text-right font-black text-sm flex-shrink-0 cursor-help ${p.mmr_delta > 0 ? 'text-success-700' : p.mmr_delta < 0 ? 'text-danger-700' : 'text-muted-strong'}`}
                         >
                           {p.mmr_delta > 0 ? '+' : ''}{p.mmr_delta}
                         </div>
@@ -416,7 +416,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                         
                         <div className="flex flex-col items-end justify-center flex-shrink-0">
                           <div className="text-xs font-bold text-foreground-subtle">
-                            {p.kills} / <span className="text-red-700">{p.deaths}</span> / {p.assists}
+                            {p.kills} / <span className="text-danger-700">{p.deaths}</span> / {p.assists}
                           </div>
                           <div className="text-[10px] font-mono text-faint">
                             KDA {p.kda_score ? p.kda_score.toFixed(2) : ((p.kills + p.assists) / Math.max(1, p.deaths)).toFixed(2)}
@@ -425,7 +425,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
 
                         <div
                           title={formatMmrBreakdown(p.mmr_breakdown, p.mmr_delta)}
-                          className={`w-14 text-right font-black text-sm flex-shrink-0 cursor-help ${p.mmr_delta > 0 ? 'text-emerald-700' : p.mmr_delta < 0 ? 'text-red-700' : 'text-muted-strong'}`}
+                          className={`w-14 text-right font-black text-sm flex-shrink-0 cursor-help ${p.mmr_delta > 0 ? 'text-success-700' : p.mmr_delta < 0 ? 'text-danger-700' : 'text-muted-strong'}`}
                         >
                           {p.mmr_delta > 0 ? '+' : ''}{p.mmr_delta}
                         </div>
@@ -448,7 +448,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
           <div className="bg-surface border border-border rounded-2xl w-full max-w-4xl p-6 shadow-2xl my-8 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-border pb-4 mb-6">
               <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
-                <Edit className="h-5 w-5 text-orange-700" />
+                <Edit className="h-5 w-5 text-primary-700" />
                 試合履歴の編集 (Match #{editingMatch.id})
               </h3>
               <button 
@@ -462,7 +462,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6">
               {/* BLUE TEAM INPUT */}
               <div>
-                <h4 className="font-bold text-teal-400 mb-3 text-lg tracking-wider">🟦 BLUE TEAM</h4>
+                <h4 className="font-bold text-secondary-400 mb-3 text-lg tracking-wider">🟦 BLUE TEAM</h4>
                 <div className="space-y-3">
                   {ROLES.map(role => {
                     const idx = editingMatch.participants.findIndex(p => p.team === 'BLUE' && p.role === role);
@@ -478,7 +478,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                         onDrop={(e) => handleDrop(e, idx)}
                         onDragEnd={() => setDraggedParticipantIndex(null)}
                         className={`flex items-center gap-2 bg-black/5 p-3 rounded-lg border border-border cursor-grab active:cursor-grabbing hover:bg-black/8 hover:border-border transition-all ${
-                          isDragging ? 'opacity-40 border-dashed border-orange-500 bg-surface' : ''
+                          isDragging ? 'opacity-40 border-dashed border-amber-500 bg-surface' : ''
                         }`}
                       >
                         <div className="text-muted-strong hover:text-foreground-subtle transition cursor-grab shrink-0">
@@ -520,7 +520,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                         <div className="flex-1 flex gap-1 justify-end" onDragStart={e => e.stopPropagation()}>
                           <input type="number" value={p.kills} onChange={e => handleEditingParticipantChange(idx, 'kills', e.target.value)} className="w-10 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="K" />
                           <span className="text-muted-strong text-xs self-center">/</span>
-                          <input type="number" value={p.deaths} onChange={e => handleEditingParticipantChange(idx, 'deaths', e.target.value)} className="w-10 bg-surface border border-red-200 text-red-700 text-center rounded text-xs py-0.5" placeholder="D" />
+                          <input type="number" value={p.deaths} onChange={e => handleEditingParticipantChange(idx, 'deaths', e.target.value)} className="w-10 bg-surface border border-rose-200 text-danger-700 text-center rounded text-xs py-0.5" placeholder="D" />
                           <span className="text-muted-strong text-xs self-center">/</span>
                           <input type="number" value={p.assists} onChange={e => handleEditingParticipantChange(idx, 'assists', e.target.value)} className="w-10 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="A" />
                         </div>
@@ -532,7 +532,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
 
               {/* RED TEAM INPUT */}
               <div>
-                <h4 className="font-bold text-red-400 mb-3 text-lg tracking-wider">🟥 RED TEAM</h4>
+                <h4 className="font-bold text-danger-400 mb-3 text-lg tracking-wider">🟥 RED TEAM</h4>
                 <div className="space-y-3">
                   {ROLES.map(role => {
                     const idx = editingMatch.participants.findIndex(p => p.team === 'RED' && p.role === role);
@@ -548,7 +548,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                         onDrop={(e) => handleDrop(e, idx)}
                         onDragEnd={() => setDraggedParticipantIndex(null)}
                         className={`flex items-center gap-2 bg-black/5 p-3 rounded-lg border border-border cursor-grab active:cursor-grabbing hover:bg-black/8 hover:border-border transition-all ${
-                          isDragging ? 'opacity-40 border-dashed border-red-500 bg-surface' : ''
+                          isDragging ? 'opacity-40 border-dashed border-rose-500 bg-surface' : ''
                         }`}
                       >
                         <div className="text-muted-strong hover:text-foreground-subtle transition cursor-grab shrink-0">
@@ -559,7 +559,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                           value={p.player_name}
                           onChange={e => handleEditingParticipantChange(idx, 'player_name', e.target.value)}
                           onDragStart={e => e.stopPropagation()}
-                          className="w-28 bg-surface border border-border rounded px-2 py-1 text-foreground outline-none focus:border-red-500 text-xs"
+                          className="w-28 bg-surface border border-border rounded px-2 py-1 text-foreground outline-none focus:border-rose-500 text-xs"
                         >
                           <option value="">選択...</option>
                           {p.player_name && !playersPool.some(pl => pl.name === p.player_name) && (
@@ -571,7 +571,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                           onClick={() => setActiveChampSelectorPlayer(idx.toString())}
                           onDragStart={e => e.stopPropagation()}
                           type="button"
-                          className="w-28 bg-surface border border-border hover:border-red-500 rounded px-1.5 py-1 text-foreground-subtle hover:text-foreground text-xs flex items-center justify-between gap-1 transition shrink-0"
+                          className="w-28 bg-surface border border-border hover:border-rose-500 rounded px-1.5 py-1 text-foreground-subtle hover:text-foreground text-xs flex items-center justify-between gap-1 transition shrink-0"
                         >
                           <span className="truncate">
                             {p.champion_name ? (championsList.find(c => c.id === p.champion_name)?.name || 'チャンプ') : '選択'}
@@ -590,7 +590,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                         <div className="flex-1 flex gap-1 justify-end" onDragStart={e => e.stopPropagation()}>
                           <input type="number" value={p.kills} onChange={e => handleEditingParticipantChange(idx, 'kills', e.target.value)} className="w-10 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="K" />
                           <span className="text-muted-strong text-xs self-center">/</span>
-                          <input type="number" value={p.deaths} onChange={e => handleEditingParticipantChange(idx, 'deaths', e.target.value)} className="w-10 bg-surface border border-red-200 text-red-700 text-center rounded text-xs py-0.5" placeholder="D" />
+                          <input type="number" value={p.deaths} onChange={e => handleEditingParticipantChange(idx, 'deaths', e.target.value)} className="w-10 bg-surface border border-rose-200 text-danger-700 text-center rounded text-xs py-0.5" placeholder="D" />
                           <span className="text-muted-strong text-xs self-center">/</span>
                           <input type="number" value={p.assists} onChange={e => handleEditingParticipantChange(idx, 'assists', e.target.value)} className="w-10 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="A" />
                         </div>
@@ -608,14 +608,14 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                 <button
                   onClick={() => setEditingMatch(prev => prev ? { ...prev, winning_team: 'BLUE' } : null)}
                   type="button"
-                  className={`px-6 py-2 rounded-lg font-bold transition text-xs ${editingMatch.winning_team === 'BLUE' ? 'bg-teal-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]' : 'bg-surface text-muted-strong border border-border hover:bg-black/5'}`}
+                  className={`px-6 py-2 rounded-lg font-bold transition text-xs ${editingMatch.winning_team === 'BLUE' ? 'bg-secondary-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]' : 'bg-surface text-muted-strong border border-border hover:bg-black/5'}`}
                 >
                   BLUE WIN
                 </button>
                 <button
                   onClick={() => setEditingMatch(prev => prev ? { ...prev, winning_team: 'RED' } : null)}
                   type="button"
-                  className={`px-6 py-2 rounded-lg font-bold transition text-xs ${editingMatch.winning_team === 'RED' ? 'bg-red-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.4)]' : 'bg-surface text-muted-strong border border-border hover:bg-black/5'}`}
+                  className={`px-6 py-2 rounded-lg font-bold transition text-xs ${editingMatch.winning_team === 'RED' ? 'bg-danger-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.4)]' : 'bg-surface text-muted-strong border border-border hover:bg-black/5'}`}
                 >
                   RED WIN
                 </button>
@@ -633,7 +633,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                   onClick={handleSaveMatch}
                   disabled={saving}
                   type="button"
-                  className="px-8 py-2.5 rounded-xl font-black bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white transition shadow-xl shadow-emerald-900/20 text-sm flex items-center gap-2"
+                  className="px-8 py-2.5 rounded-xl font-black bg-gradient-to-r from-success-500 to-secondary-600 hover:from-success-400 hover:to-secondary-500 text-white transition shadow-xl shadow-success-900/20 text-sm flex items-center gap-2"
                 >
                   {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : null}
                   変更を保存
@@ -650,7 +650,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
           <div className="bg-surface border border-border rounded-2xl w-full max-w-2xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-extrabold text-foreground flex items-center gap-2">
-                <Target className="h-5 w-5 text-emerald-700" />
+                <Target className="h-5 w-5 text-success-700" />
                 チャンピオン選択
               </h3>
               <button 

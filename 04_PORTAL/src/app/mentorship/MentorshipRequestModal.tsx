@@ -63,11 +63,11 @@ export function MentorshipRequestModal({
       <div className="bg-surface border border-border rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden text-foreground animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
         {/* ヘッダー */}
         <div className={`p-5 flex items-center justify-between border-b shrink-0 ${
-          isTargetMentor ? 'bg-amber-50/70 border-amber-200' : 'bg-emerald-50/70 border-emerald-200'
+          isTargetMentor ? 'bg-primary-50/70 border-amber-200' : 'bg-success-50/70 border-emerald-200'
         }`}>
           <div className="flex items-center gap-2.5">
             <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-xl shadow-2xs ${
-              isTargetMentor ? 'bg-amber-100 border border-amber-300' : 'bg-emerald-100 border border-emerald-300'
+              isTargetMentor ? 'bg-primary-100 border border-amber-300' : 'bg-success-100 border border-emerald-300'
             }`}>
               {isTargetMentor ? '🙋' : '🤝'}
             </div>
@@ -113,10 +113,10 @@ export function MentorshipRequestModal({
           <div className="space-y-2.5">
             <label className="block text-xs font-black text-foreground-subtle flex items-center justify-between">
               <span className="flex items-center gap-1.5">
-                <Clock size={14} className="text-amber-600" />
+                <Clock size={14} className="text-primary-600" />
                 <span>希望するペア活動・指導の期間</span>
               </span>
-              <span className="text-[10px] text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+              <span className="text-[10px] text-primary-700 font-bold bg-primary-50 px-2 py-0.5 rounded-md border border-amber-200">
                 1試合だけでも大歓迎！
               </span>
             </label>
@@ -136,13 +136,13 @@ export function MentorshipRequestModal({
                         onClick={() => setDurationKey(key)}
                         className={`p-2.5 rounded-xl text-left border text-xs font-bold transition flex flex-col justify-between gap-1 cursor-pointer ${
                           isSelected
-                            ? 'bg-gradient-to-br from-teal-50 to-amber-50 border-teal-400 text-foreground shadow-2xs ring-2 ring-teal-300'
-                            : 'bg-background border-border text-foreground-subtle hover:bg-teal-50/50 hover:border-teal-300'
+                            ? 'bg-gradient-to-br from-secondary-50 to-primary-50 border-teal-400 text-foreground shadow-2xs ring-2 ring-secondary-300'
+                            : 'bg-background border-border text-foreground-subtle hover:bg-secondary-50/50 hover:border-teal-300'
                         }`}
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-extrabold">{item.shortLabel}</span>
-                          {isSelected && <span className="text-teal-600 text-xs font-black">✓</span>}
+                          {isSelected && <span className="text-secondary-600 text-xs font-black">✓</span>}
                         </div>
                         <span className="text-[10px] text-muted-strong font-medium leading-tight">{item.label.split('（')[0]}</span>
                       </button>
@@ -166,12 +166,12 @@ export function MentorshipRequestModal({
                         onClick={() => setDurationKey(key)}
                         className={`p-2 rounded-xl text-left border text-xs font-bold transition flex items-center justify-between cursor-pointer ${
                           isSelected
-                            ? 'bg-amber-50 border-amber-400 text-amber-950 shadow-2xs'
+                            ? 'bg-primary-50 border-amber-400 text-primary-950 shadow-2xs'
                             : 'bg-background border-border text-foreground-subtle hover:bg-surface-subtle'
                         }`}
                       >
                         <span>{item.label}</span>
-                        {isSelected && <span className="text-amber-600 text-xs">✓</span>}
+                        {isSelected && <span className="text-primary-600 text-xs">✓</span>}
                       </button>
                     );
                   })}
@@ -195,7 +195,7 @@ export function MentorshipRequestModal({
                     onClick={() => setCommStyle(key)}
                     className={`p-2.5 rounded-2xl border text-left transition cursor-pointer ${
                       isSelected
-                        ? 'bg-amber-100 border-amber-400 ring-2 ring-amber-300'
+                        ? 'bg-primary-100 border-amber-400 ring-2 ring-primary-300'
                         : 'bg-surface border-border hover:border-border'
                     }`}
                   >
@@ -211,7 +211,7 @@ export function MentorshipRequestModal({
           <div className="p-3 bg-background rounded-2xl border border-border flex items-center justify-between gap-3">
             <div className="space-y-0.5">
               <div className="flex items-center gap-1.5 text-xs font-black text-foreground">
-                <RefreshCw size={13} className="text-emerald-600" />
+                <RefreshCw size={13} className="text-success-600" />
                 <span>期間満了時の設定</span>
               </div>
               <p className="text-[11px] text-muted-strong font-medium">
@@ -223,7 +223,7 @@ export function MentorshipRequestModal({
               onClick={() => setAutoRenew(!autoRenew)}
               className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer border shrink-0 ${
                 autoRenew
-                  ? 'bg-emerald-100 border-emerald-300 text-emerald-800'
+                  ? 'bg-success-100 border-emerald-300 text-success-800'
                   : 'bg-surface-hover border-border text-muted'
               }`}
             >
@@ -275,8 +275,8 @@ export function MentorshipRequestModal({
               disabled={isSubmitting}
               className={`px-5 py-2.5 rounded-xl font-black text-xs text-white shadow-md transition flex items-center gap-2 cursor-pointer disabled:opacity-50 ${
                 isTargetMentor
-                  ? 'bg-amber-600 hover:bg-amber-500 shadow-amber-900/20'
-                  : 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/20'
+                  ? 'bg-primary-600 hover:bg-primary-500 shadow-primary-900/20'
+                  : 'bg-success-600 hover:bg-success-500 shadow-success-900/20'
               }`}
             >
               <Send size={13} />

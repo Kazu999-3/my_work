@@ -7,11 +7,11 @@ import { Swords, Trophy, Users, Coins, Sparkles, Shield, Zap, Star, Crosshair, A
 import { getChampIcon } from '../../../lib/ddragonClient';
 
 const ROLE_ICONS: Record<string, any> = {
-  TOP: <Shield className="w-3.5 h-3.5 text-amber-600" />,
-  JG: <Zap className="w-3.5 h-3.5 text-emerald-600" />,
-  MID: <Star className="w-3.5 h-3.5 text-rose-600" />,
-  ADC: <Crosshair className="w-3.5 h-3.5 text-teal-600" />,
-  SUP: <Award className="w-3.5 h-3.5 text-amber-600" />,
+  TOP: <Shield className="w-3.5 h-3.5 text-primary-600" />,
+  JG: <Zap className="w-3.5 h-3.5 text-success-600" />,
+  MID: <Star className="w-3.5 h-3.5 text-danger-600" />,
+  ADC: <Crosshair className="w-3.5 h-3.5 text-secondary-600" />,
+  SUP: <Award className="w-3.5 h-3.5 text-primary-600" />,
 };
 
 interface BalancerStadiumViewProps {
@@ -46,20 +46,20 @@ export default function BalancerStadiumView({
       {/* スタジアムヘッダー */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-800 pb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/40 flex items-center justify-center text-xl shrink-0">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-primary-500/20 to-primary-600/10 border border-amber-500/40 flex items-center justify-center text-xl shrink-0">
             🏟️
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-1.5">
                 <span>本日のチーム分け対戦カード</span>
-                <span className="text-[10px] bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 font-extrabold px-2 py-0.5 rounded-full">
+                <span className="text-[10px] bg-success-500/20 border border-emerald-500/40 text-success-400 font-extrabold px-2 py-0.5 rounded-full">
                   進行中
                 </span>
               </h2>
             </div>
             <p className="text-xs text-faint font-medium">
-              MMR差: <strong className="text-amber-400 font-mono">{result.mmrDiff || 0}</strong> │ Blue代表MMR: {result.teamBlueMMR || 0} vs Red代表MMR: {result.teamRedMMR || 0}
+              MMR差: <strong className="text-primary-400 font-mono">{result.mmrDiff || 0}</strong> │ Blue代表MMR: {result.teamBlueMMR || 0} vs Red代表MMR: {result.teamRedMMR || 0}
             </p>
           </div>
         </div>
@@ -69,7 +69,7 @@ export default function BalancerStadiumView({
 
           <Link
             href="/casino"
-            className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer border border-amber-400"
+            className="px-3 py-1.5 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-stone-950 font-black text-xs rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer border border-amber-400"
           >
             <Coins size={14} />
             <span>勝敗予想にベット</span>
@@ -91,8 +91,8 @@ export default function BalancerStadiumView({
       {mySide && (
         <div className={`p-3 rounded-2xl border flex items-center justify-between gap-3 ${
           mySide === 'BLUE'
-            ? 'bg-teal-950/60 border-teal-500/50 text-teal-200'
-            : 'bg-red-950/60 border-rose-500/50 text-rose-200'
+            ? 'bg-secondary-950/60 border-teal-500/50 text-secondary-200'
+            : 'bg-danger-950/60 border-rose-500/50 text-danger-200'
         }`}>
           <div className="flex items-center gap-2">
             <span className="text-xl">{mySide === 'BLUE' ? '🟦' : '🟥'}</span>
@@ -129,8 +129,8 @@ export default function BalancerStadiumView({
               className="bg-stone-900/90 border border-stone-800 rounded-2xl p-2.5 sm:p-3 flex items-center justify-between gap-2 hover:border-stone-700 transition"
             >
               {/* BLUEサイド選手 */}
-              <div className={`flex items-center gap-2.5 min-w-0 flex-1 ${isMyBlue ? 'p-1.5 rounded-xl bg-teal-900/40 border border-teal-500/50 ring-1 ring-teal-400/40' : ''}`}>
-                <div className="w-7 h-7 rounded-xl bg-teal-600/30 border border-teal-500/40 flex items-center justify-center text-xs font-black text-teal-300 shrink-0">
+              <div className={`flex items-center gap-2.5 min-w-0 flex-1 ${isMyBlue ? 'p-1.5 rounded-xl bg-secondary-900/40 border border-teal-500/50 ring-1 ring-secondary-400/40' : ''}`}>
+                <div className="w-7 h-7 rounded-xl bg-secondary-600/30 border border-teal-500/40 flex items-center justify-center text-xs font-black text-secondary-300 shrink-0">
                   {blueP?.highest_rank?.slice(0, 1) || 'B'}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -139,7 +139,7 @@ export default function BalancerStadiumView({
                       {blueP?.name || '未定'}
                     </span>
                     {isMyBlue && (
-                      <span className="text-[9px] font-black bg-teal-500 text-white px-1.5 rounded">YOU</span>
+                      <span className="text-[9px] font-black bg-secondary-500 text-white px-1.5 rounded">YOU</span>
                     )}
                   </div>
                   <div className="text-[10px] text-faint font-mono">
@@ -158,11 +158,11 @@ export default function BalancerStadiumView({
               </div>
 
               {/* REDサイド選手 */}
-              <div className={`flex items-center justify-end gap-2.5 min-w-0 flex-1 text-right ${isMyRed ? 'p-1.5 rounded-xl bg-red-900/40 border border-rose-500/50 ring-1 ring-rose-400/40' : ''}`}>
+              <div className={`flex items-center justify-end gap-2.5 min-w-0 flex-1 text-right ${isMyRed ? 'p-1.5 rounded-xl bg-danger-900/40 border border-rose-500/50 ring-1 ring-danger-400/40' : ''}`}>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-end gap-1.5">
                     {isMyRed && (
-                      <span className="text-[9px] font-black bg-rose-500 text-white px-1.5 rounded">YOU</span>
+                      <span className="text-[9px] font-black bg-danger-500 text-white px-1.5 rounded">YOU</span>
                     )}
                     <span className="text-xs sm:text-sm font-black text-white truncate">
                       {redP?.name || '未定'}
@@ -172,7 +172,7 @@ export default function BalancerStadiumView({
                     MMR {redP?.mmr || 1200}
                   </div>
                 </div>
-                <div className="w-7 h-7 rounded-xl bg-red-600/30 border border-rose-500/40 flex items-center justify-center text-xs font-black text-rose-300 shrink-0">
+                <div className="w-7 h-7 rounded-xl bg-danger-600/30 border border-rose-500/40 flex items-center justify-center text-xs font-black text-danger-300 shrink-0">
                   {redP?.highest_rank?.slice(0, 1) || 'R'}
                 </div>
               </div>
@@ -195,7 +195,7 @@ export default function BalancerStadiumView({
               </span>
             ))}
           </div>
-          <span className="text-[10px] text-amber-400 font-bold">
+          <span className="text-[10px] text-primary-400 font-bold">
             ※次戦優先選出Pity付与中
           </span>
         </div>

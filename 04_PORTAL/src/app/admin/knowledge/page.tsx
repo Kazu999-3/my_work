@@ -183,7 +183,7 @@ function KnowledgeBaseContent() {
   if (isAuthenticated === null) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
-        <RefreshCw className="animate-spin text-pink-500" size={24} />
+        <RefreshCw className="animate-spin text-danger-500" size={24} />
         <p className="text-xs font-bold text-faint">認証状態を確認中...</p>
       </div>
     );
@@ -200,7 +200,7 @@ function KnowledgeBaseContent() {
           </p>
           <a
             href="/login"
-            className="inline-block w-full rounded-xl bg-amber-500 hover:bg-amber-400 px-5 py-3 text-xs font-black text-stone-950 transition shadow-xs"
+            className="inline-block w-full rounded-xl bg-primary-500 hover:bg-primary-400 px-5 py-3 text-xs font-black text-stone-950 transition shadow-xs"
           >
             ログインページへ
           </a>
@@ -218,13 +218,13 @@ function KnowledgeBaseContent() {
         className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 bg-surface border border-border/90 rounded-2xl shadow-xs"
       >
         <div className="flex items-center gap-3">
-          <div className="text-2xl p-2.5 bg-amber-50 rounded-xl border border-amber-200/80 shrink-0 text-amber-600">
+          <div className="text-2xl p-2.5 bg-primary-50 rounded-xl border border-amber-200/80 shrink-0 text-primary-600">
             <Sparkles size={24} />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-base sm:text-lg font-black tracking-tight text-foreground">戦術取り込み ＆ AI解析ハブ</h1>
-              <span className="px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-900 text-[10px] font-extrabold">
+              <span className="px-2 py-0.5 rounded-full bg-primary-100 border border-amber-300 text-primary-900 text-[10px] font-extrabold">
                 管理者専用
               </span>
             </div>
@@ -244,10 +244,10 @@ function KnowledgeBaseContent() {
           </Link>
           <Link
             href="/admin/guide"
-            className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs"
+            className="px-3 py-1.5 rounded-xl bg-primary-50 hover:bg-primary-100 text-primary-900 border border-amber-200 text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs"
             title="LoLデータ収集＆辞典＆コーチ連携の全貌仕様ガイドを開く"
           >
-            <BookOpen size={14} className="text-amber-700" />
+            <BookOpen size={14} className="text-primary-700" />
             <span>📖 全貌ガイド</span>
           </Link>
         </div>
@@ -261,7 +261,7 @@ function KnowledgeBaseContent() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -50 }}
             className={`fixed top-5 left-1/2 -translate-x-1/2 z-50 px-6 py-3.5 rounded-2xl shadow-2xl border text-xs font-semibold flex items-center gap-2 ${
-              message.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : 'bg-rose-50 text-rose-800 border-rose-300'
+              message.type === 'success' ? 'bg-success-50 text-success-800 border-emerald-300' : 'bg-danger-50 text-danger-800 border-rose-300'
             }`}
           >
             {message.type === 'success' ? '✅' : '❌'} {message.text}
@@ -280,7 +280,7 @@ function KnowledgeBaseContent() {
               : 'text-muted hover:text-foreground hover:bg-surface-hover/60'
           }`}
         >
-          <Plus size={15} className={activeTab === 'input' ? 'text-amber-600' : 'text-faint'} />
+          <Plus size={15} className={activeTab === 'input' ? 'text-primary-600' : 'text-faint'} />
           <span>知見の追加</span>
         </button>
 
@@ -293,7 +293,7 @@ function KnowledgeBaseContent() {
               : 'text-muted hover:text-foreground hover:bg-surface-hover/60'
           }`}
         >
-          <Film size={14} className={activeTab === 'queue' ? 'text-amber-600' : 'text-faint'} />
+          <Film size={14} className={activeTab === 'queue' ? 'text-primary-600' : 'text-faint'} />
           <span>動画解析キュー</span>
         </button>
 
@@ -302,14 +302,14 @@ function KnowledgeBaseContent() {
           onClick={() => setActiveTab('pending')}
           className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer relative ${
             activeTab === 'pending'
-              ? 'bg-surface text-emerald-800 border border-emerald-300 shadow-xs font-black'
+              ? 'bg-surface text-success-800 border border-emerald-300 shadow-xs font-black'
               : 'text-muted hover:text-foreground hover:bg-surface-hover/60'
           }`}
         >
-          <Sparkles size={14} className={activeTab === 'pending' ? 'text-emerald-600' : 'text-faint'} />
+          <Sparkles size={14} className={activeTab === 'pending' ? 'text-success-600' : 'text-faint'} />
           <span>承認待ちナレッジ</span>
           {pendingCount > 0 && (
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse shadow-xs">
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-danger-500 text-white animate-pulse shadow-xs">
               {pendingCount}
             </span>
           )}
@@ -322,7 +322,7 @@ function KnowledgeBaseContent() {
           <div className="bg-surface border border-border/90 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-3">
               <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
-                <span className="p-1.5 bg-amber-50 rounded-lg text-amber-600 border border-amber-200/60">
+                <span className="p-1.5 bg-primary-50 rounded-lg text-primary-600 border border-amber-200/60">
                   <Plus size={15} />
                 </span>
                 <span>新しい知見を取り込む</span>
@@ -357,7 +357,7 @@ function KnowledgeBaseContent() {
                   onClick={() => setInputSubMode('discord')}
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     inputSubMode === 'discord'
-                      ? 'bg-surface text-amber-900 shadow-xs font-black'
+                      ? 'bg-surface text-primary-900 shadow-xs font-black'
                       : 'text-muted-strong hover:text-foreground'
                   }`}
                 >
@@ -380,12 +380,12 @@ function KnowledgeBaseContent() {
                       placeholder="https://x.com/... または Web攻略記事 / YouTube URL を入力..."
                       value={inputUrl}
                       onChange={(e) => setInputUrl(e.target.value)}
-                      className="w-full px-4 py-3 bg-background/70 border border-border rounded-xl focus:outline-none focus:border-amber-500 focus:bg-surface focus:ring-2 focus:ring-amber-500/20 text-xs text-foreground placeholder-stone-400 font-mono transition-all"
+                      className="w-full px-4 py-3 bg-background/70 border border-border rounded-xl focus:outline-none focus:border-amber-500 focus:bg-surface focus:ring-2 focus:ring-primary-500/20 text-xs text-foreground placeholder-stone-400 font-mono transition-all"
                     />
 
                     {/* YouTube検知バナー */}
                     {isYoutubeUrl(inputUrl) && (
-                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-center justify-between gap-3">
+                      <div className="p-3 bg-primary-50 border border-amber-200 rounded-xl text-xs text-primary-900 flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2">
                           <span className="text-base">🎥</span>
                           <span>YouTube動画が検出されました。動画解析キューへ追加して非同期に処理できます。</span>
@@ -394,7 +394,7 @@ function KnowledgeBaseContent() {
                           type="button"
                           disabled={actionLoading}
                           onClick={(e) => handleAddKnowledge(e, true)}
-                          className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-[11px] transition shadow-xs shrink-0 cursor-pointer disabled:opacity-50"
+                          className="px-3 py-1.5 rounded-lg bg-primary-500 hover:bg-primary-400 text-stone-950 font-black text-[11px] transition shadow-xs shrink-0 cursor-pointer disabled:opacity-50"
                         >
                           ⏳ キューに追加
                         </button>
@@ -414,7 +414,7 @@ function KnowledgeBaseContent() {
                       <button
                         type="button"
                         onClick={() => setInputSubMode('discord')}
-                        className="text-[10px] text-amber-700 hover:text-amber-900 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                        className="text-[10px] text-primary-700 hover:text-primary-900 font-bold hover:underline flex items-center gap-1 cursor-pointer"
                       >
                         <span>💬 専用Discord抽出パネルを使う</span>
                       </button>
@@ -424,7 +424,7 @@ function KnowledgeBaseContent() {
                       placeholder="マッチアップの気付き、ビルドの没理由、立ち回りノウハウ、または Discordのチャットログをそのまま貼り付け..."
                       value={inputMemo}
                       onChange={(e) => setInputMemo(e.target.value)}
-                      className="w-full px-4 py-3 bg-background/70 border border-border rounded-xl focus:outline-none focus:border-amber-500 focus:bg-surface focus:ring-2 focus:ring-amber-500/20 text-xs text-foreground placeholder-stone-400 resize-none leading-relaxed transition-all"
+                      className="w-full px-4 py-3 bg-background/70 border border-border rounded-xl focus:outline-none focus:border-amber-500 focus:bg-surface focus:ring-2 focus:ring-primary-500/20 text-xs text-foreground placeholder-stone-400 resize-none leading-relaxed transition-all"
                     />
                     <p className="text-[10px] text-muted-strong pl-0.5">
                       ※ 自由な戦術メモのほか、Discordのチャットログをそのまま貼り付けてもAIが雑談を除去して自動整形します。
@@ -436,7 +436,7 @@ function KnowledgeBaseContent() {
                   <button
                     type="submit"
                     disabled={actionLoading}
-                    className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-black text-xs transition-all shadow-xs flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                    className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-400 text-stone-950 font-black text-xs transition-all shadow-xs flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
                   >
                     {actionLoading ? <RefreshCw size={14} className="animate-spin" /> : <Sparkles size={14} />}
                     <span>{inputSubMode === 'url' ? 'AI解析を実行' : 'AIによる分類・保存'}</span>

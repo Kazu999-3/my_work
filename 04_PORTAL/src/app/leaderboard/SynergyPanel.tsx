@@ -113,7 +113,7 @@ export default function SynergyPanel() {
       {/* 🏆 ベストデュオ相性ランキング */}
       <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs space-y-4">
         <h3 className="text-base font-black text-foreground flex items-center gap-2">
-          <Crown className="w-5 h-5 text-amber-500" />
+          <Crown className="w-5 h-5 text-primary-500" />
           最強デュオ相性ランキング (勝率順)
         </h3>
 
@@ -125,9 +125,9 @@ export default function SynergyPanel() {
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${
-                  idx === 0 ? 'bg-amber-500 text-white' :
+                  idx === 0 ? 'bg-primary-500 text-white' :
                   idx === 1 ? 'bg-stone-400 text-white' :
-                  idx === 2 ? 'bg-amber-700 text-white' : 'bg-surface-hover text-muted'
+                  idx === 2 ? 'bg-primary-700 text-white' : 'bg-surface-hover text-muted'
                 }`}>
                   {idx + 1}
                 </span>
@@ -142,7 +142,7 @@ export default function SynergyPanel() {
               </div>
 
               <div className="text-right shrink-0">
-                <span className="text-sm font-black text-emerald-600">
+                <span className="text-sm font-black text-success-600">
                   {Math.round(item.winRate)}%
                 </span>
               </div>

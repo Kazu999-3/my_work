@@ -191,7 +191,7 @@ export default function InventoryAuditPanel() {
           <button
             onClick={handleRunCleanup}
             disabled={cleanupLoading || loading}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-rose-600 hover:from-amber-700 hover:to-rose-700 text-white text-xs font-black transition flex items-center gap-1.5 shadow-md disabled:opacity-50"
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-primary-600 to-danger-600 hover:from-primary-700 hover:to-danger-700 text-white text-xs font-black transition flex items-center gap-1.5 shadow-md disabled:opacity-50"
             title="空テキスト、重複項目、古い下書きゴミデータを一発で完全削除・クリーンアップします"
           >
             <Trash2 size={14} className={cleanupLoading ? 'animate-spin' : ''} />
@@ -211,7 +211,7 @@ export default function InventoryAuditPanel() {
       {message && (
         <div
           className={`p-3.5 rounded-2xl border text-xs font-bold flex items-center gap-2 ${
-            message.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200'
+            message.type === 'success' ? 'bg-success-50 text-success-800 border-emerald-200' : 'bg-danger-50 text-danger-800 border-rose-200'
           }`}
         >
           {message.type === 'success' ? '✅' : '❌'} {message.text}
@@ -220,48 +220,48 @@ export default function InventoryAuditPanel() {
 
       {/* サマリー指標カード */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-100 space-y-1">
-          <span className="text-[10px] font-extrabold text-amber-600 uppercase tracking-wider block">人間確認網羅率</span>
+        <div className="p-4 rounded-2xl bg-primary-50/60 border border-amber-100 space-y-1">
+          <span className="text-[10px] font-extrabold text-primary-600 uppercase tracking-wider block">人間確認網羅率</span>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-black text-amber-900">{completionRate}%</span>
-            <span className="text-xs text-amber-600 font-bold">({verifiedCount}/{totalCount})</span>
+            <span className="text-2xl font-black text-primary-900">{completionRate}%</span>
+            <span className="text-xs text-primary-600 font-bold">({verifiedCount}/{totalCount})</span>
           </div>
-          <div className="w-full bg-amber-200/50 rounded-full h-1.5 overflow-hidden">
-            <div className="bg-amber-600 h-full transition-all" style={{ width: `${completionRate}%` }}></div>
+          <div className="w-full bg-primary-200/50 rounded-full h-1.5 overflow-hidden">
+            <div className="bg-primary-600 h-full transition-all" style={{ width: `${completionRate}%` }}></div>
           </div>
         </div>
 
         <div
           onClick={() => setActiveFilter('unverified')}
           className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-            activeFilter === 'unverified' ? 'bg-amber-50 border-amber-300 ring-2 ring-amber-400/30' : 'bg-background border-border hover:bg-surface-subtle'
+            activeFilter === 'unverified' ? 'bg-primary-50 border-amber-300 ring-2 ring-primary-400/30' : 'bg-background border-border hover:bg-surface-subtle'
           }`}
         >
-          <span className="text-[10px] font-extrabold text-amber-700 uppercase tracking-wider block">人間未確認 (要棚卸し)</span>
-          <span className="text-2xl font-black text-amber-900 block">{unverifiedCount} <span className="text-xs font-bold text-amber-700">体</span></span>
-          <span className="text-[10px] text-amber-600 font-bold">要人間レビュー</span>
+          <span className="text-[10px] font-extrabold text-primary-700 uppercase tracking-wider block">人間未確認 (要棚卸し)</span>
+          <span className="text-2xl font-black text-primary-900 block">{unverifiedCount} <span className="text-xs font-bold text-primary-700">体</span></span>
+          <span className="text-[10px] text-primary-600 font-bold">要人間レビュー</span>
         </div>
 
         <div
           onClick={() => setActiveFilter('outdated')}
           className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-            activeFilter === 'outdated' ? 'bg-teal-50 border-teal-300 ring-2 ring-teal-400/30' : 'bg-background border-border hover:bg-surface-subtle'
+            activeFilter === 'outdated' ? 'bg-secondary-50 border-teal-300 ring-2 ring-secondary-400/30' : 'bg-background border-border hover:bg-surface-subtle'
           }`}
         >
-          <span className="text-[10px] font-extrabold text-teal-700 uppercase tracking-wider block">古いトレンド (3日以上経過)</span>
-          <span className="text-2xl font-black text-teal-900 block">{outdatedCount} <span className="text-xs font-bold text-teal-700">体</span></span>
-          <span className="text-[10px] text-teal-600 font-bold">AI自動更新推奨</span>
+          <span className="text-[10px] font-extrabold text-secondary-700 uppercase tracking-wider block">古いトレンド (3日以上経過)</span>
+          <span className="text-2xl font-black text-secondary-900 block">{outdatedCount} <span className="text-xs font-bold text-secondary-700">体</span></span>
+          <span className="text-[10px] text-secondary-600 font-bold">AI自動更新推奨</span>
         </div>
 
         <div
           onClick={() => setActiveFilter('incomplete')}
           className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-            activeFilter === 'incomplete' ? 'bg-rose-50 border-rose-300 ring-2 ring-rose-400/30' : 'bg-background border-border hover:bg-surface-subtle'
+            activeFilter === 'incomplete' ? 'bg-danger-50 border-rose-300 ring-2 ring-danger-400/30' : 'bg-background border-border hover:bg-surface-subtle'
           }`}
         >
-          <span className="text-[10px] font-extrabold text-rose-700 uppercase tracking-wider block">空項目あり (欠損データ)</span>
-          <span className="text-2xl font-black text-rose-900 block">{incompleteCount} <span className="text-xs font-bold text-rose-700">体</span></span>
-          <span className="text-[10px] text-rose-600 font-bold">要補全</span>
+          <span className="text-[10px] font-extrabold text-danger-700 uppercase tracking-wider block">空項目あり (欠損データ)</span>
+          <span className="text-2xl font-black text-danger-900 block">{incompleteCount} <span className="text-xs font-bold text-danger-700">体</span></span>
+          <span className="text-[10px] text-danger-600 font-bold">要補全</span>
         </div>
       </div>
 
@@ -270,7 +270,7 @@ export default function InventoryAuditPanel() {
         <button
           onClick={() => setActiveFilter('unverified')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${
-            activeFilter === 'unverified' ? 'bg-amber-600 text-white shadow-md' : 'bg-surface-subtle text-muted hover:bg-surface-hover'
+            activeFilter === 'unverified' ? 'bg-primary-600 text-white shadow-md' : 'bg-surface-subtle text-muted hover:bg-surface-hover'
           }`}
         >
           <AlertCircle size={14} /> 人間未確認リスト ({unverifiedList.length})
@@ -279,7 +279,7 @@ export default function InventoryAuditPanel() {
         <button
           onClick={() => setActiveFilter('outdated')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${
-            activeFilter === 'outdated' ? 'bg-teal-600 text-white shadow-md' : 'bg-surface-subtle text-muted hover:bg-surface-hover'
+            activeFilter === 'outdated' ? 'bg-secondary-600 text-white shadow-md' : 'bg-surface-subtle text-muted hover:bg-surface-hover'
           }`}
         >
           <Clock size={14} /> 古いパッチ情報 ({outdatedList.length})
@@ -288,7 +288,7 @@ export default function InventoryAuditPanel() {
         <button
           onClick={() => setActiveFilter('incomplete')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${
-            activeFilter === 'incomplete' ? 'bg-rose-600 text-white shadow-md' : 'bg-surface-subtle text-muted hover:bg-surface-hover'
+            activeFilter === 'incomplete' ? 'bg-danger-600 text-white shadow-md' : 'bg-surface-subtle text-muted hover:bg-surface-hover'
           }`}
         >
           <ShieldAlert size={14} /> 欠損・空項目あり ({incompleteList.length})
@@ -297,7 +297,7 @@ export default function InventoryAuditPanel() {
         <button
           onClick={() => setActiveFilter('knowledge')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 ${
-            activeFilter === 'knowledge' ? 'bg-amber-600 text-white shadow-md' : 'bg-surface-subtle text-muted hover:bg-surface-hover'
+            activeFilter === 'knowledge' ? 'bg-primary-600 text-white shadow-md' : 'bg-surface-subtle text-muted hover:bg-surface-hover'
           }`}
         >
           <Database size={14} /> ナレッジDB棚卸し ({knowledgeItems.length})
@@ -332,7 +332,7 @@ export default function InventoryAuditPanel() {
                       <button
                         onClick={() => handleVerify(f.champion_name)}
                         disabled={actionLoading === f.champion_name}
-                        className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold transition flex items-center gap-1"
+                        className="px-2.5 py-1.5 rounded-lg bg-success-600 hover:bg-success-700 text-white text-[10px] font-bold transition flex items-center gap-1"
                         title="人間確認済みにマーク"
                       >
                         <Check size={12} /> 確認
@@ -364,14 +364,14 @@ export default function InventoryAuditPanel() {
                       <img src={getChampIcon(f.champion_name)} alt={f.display_name} className="w-10 h-10 rounded-xl border border-border object-cover shrink-0" />
                       <div>
                         <span className="font-extrabold text-foreground text-xs block">{f.display_name}</span>
-                        <span className="text-[10px] text-teal-700 font-bold bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200">
+                        <span className="text-[10px] text-secondary-700 font-bold bg-secondary-50 px-1.5 py-0.5 rounded border border-teal-200">
                           {f.patch_meta_patch ? `Patch ${f.patch_meta_patch}` : '未解析'}
                         </span>
                       </div>
                     </div>
                     <Link
                       href={`/champions?select=${encodeURIComponent(f.champion_name)}`}
-                      className="px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-[10px] font-bold transition flex items-center gap-1 shadow-sm"
+                      className="px-3 py-1.5 rounded-xl bg-secondary-600 hover:bg-secondary-700 text-white text-[10px] font-bold transition flex items-center gap-1 shadow-sm"
                     >
                       最新化する <ArrowRight size={12} />
                     </Link>
@@ -394,14 +394,14 @@ export default function InventoryAuditPanel() {
                       <img src={getChampIcon(f.champion_name)} alt={f.display_name} className="w-10 h-10 rounded-xl border border-border object-cover shrink-0" />
                       <div>
                         <span className="font-extrabold text-foreground text-xs block">{f.display_name}</span>
-                        <div className="flex gap-1 text-[9px] font-bold text-rose-600 mt-0.5">
+                        <div className="flex gap-1 text-[9px] font-bold text-danger-600 mt-0.5">
                           {!f.has_strengths && <span>[要コンテンツ入力]</span>}
                         </div>
                       </div>
                     </div>
                     <Link
                       href={`/champions?select=${encodeURIComponent(f.champion_name)}`}
-                      className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold transition flex items-center gap-1 shadow-sm"
+                      className="px-3 py-1.5 rounded-xl bg-danger-600 hover:bg-danger-700 text-white text-[10px] font-bold transition flex items-center gap-1 shadow-sm"
                     >
                       補全する <ArrowRight size={12} />
                     </Link>
@@ -427,7 +427,7 @@ export default function InventoryAuditPanel() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-extrabold text-foreground text-xs">{item.champion}</span>
                           {item.enemy_champion && (
-                            <span className="text-[10px] bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded-full border border-rose-200">
+                            <span className="text-[10px] bg-danger-100 text-danger-800 font-bold px-2 py-0.5 rounded-full border border-rose-200">
                               vs {item.enemy_champion}
                             </span>
                           )}
@@ -441,7 +441,7 @@ export default function InventoryAuditPanel() {
 
                       <button
                         onClick={() => handleDeleteKb(item.id)}
-                        className="p-1.5 rounded-lg bg-surface-hover hover:bg-rose-100 hover:text-rose-700 text-muted transition shrink-0"
+                        className="p-1.5 rounded-lg bg-surface-hover hover:bg-danger-100 hover:text-danger-700 text-muted transition shrink-0"
                         title="このナレッジを削除"
                       >
                         <Trash2 size={14} />

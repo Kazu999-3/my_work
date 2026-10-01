@@ -90,35 +90,35 @@ export default function ScoutTab({ onLiveMatchDetected }: {
 
         {/* ヘッダー */}
         <div className="text-center space-y-2">
-          <h1 className="text-2xl md:text-4xl font-black bg-gradient-to-r from-teal-600 via-amber-600 to-rose-600 bg-clip-text text-transparent flex items-center justify-center gap-2">
-            <Compass className="w-8 h-8 text-teal-600" />
+          <h1 className="text-2xl md:text-4xl font-black bg-gradient-to-r from-secondary-600 via-primary-600 to-danger-600 bg-clip-text text-transparent flex items-center justify-center gap-2">
+            <Compass className="w-8 h-8 text-secondary-600" />
             <span>ソロキュー対戦相手偵察 (Live Lookup)</span>
           </h1>
-          <p className="text-xs text-gray-400 max-w-md mx-auto leading-relaxed">
+          <p className="text-xs text-faint max-w-md mx-auto leading-relaxed">
             現在進行中のライブゲームを検知し、敵ジャングラーの開始ルート、プレイ傾向、およびメタ対策ヒントをリアルタイム抽出します。
           </p>
         </div>
 
         {/* 検索フォーム */}
         <form onSubmit={handleSearch} className="bg-black/3 backdrop-blur-xl border border-black/10 p-5 rounded-3xl shadow-2xl space-y-3">
-          <label className="block text-xs font-black text-gray-400 uppercase tracking-wider">
+          <label className="block text-xs font-black text-faint uppercase tracking-wider">
             自身の Riot ID
           </label>
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-4 top-3.5 w-5 h-5 text-gray-500" />
+              <Search className="absolute left-4 top-3.5 w-5 h-5 text-muted-strong" />
               <input 
                 type="text"
                 placeholder="SummonerName#TagLine"
                 value={riotId}
                 onChange={(e) => setRiotId(e.target.value)}
-                className="w-full bg-black/5 border border-black/10 rounded-2xl py-3 pl-12 pr-4 text-sm font-bold placeholder-gray-500 focus:outline-none focus:border-teal-500/50 focus:ring-1 focus:ring-teal-500/50 transition-all text-foreground"
+                className="w-full bg-black/5 border border-black/10 rounded-2xl py-3 pl-12 pr-4 text-sm font-bold placeholder-gray-500 focus:outline-none focus:border-teal-500/50 focus:ring-1 focus:ring-secondary-500/50 transition-all text-foreground"
               />
             </div>
             <button
               type="submit"
               disabled={loading}
-              className="bg-gradient-to-r from-teal-500 to-amber-500 hover:from-teal-400 hover:to-amber-400 disabled:from-gray-200 disabled:to-gray-200 text-black font-black px-6 py-3 rounded-2xl text-sm transition shadow-[0_4px_20px_rgba(6,182,212,0.25)] flex items-center gap-2 shrink-0 disabled:text-gray-400"
+              className="bg-gradient-to-r from-secondary-500 to-primary-500 hover:from-secondary-400 hover:to-primary-400 disabled:from-gray-200 disabled:to-gray-200 text-black font-black px-6 py-3 rounded-2xl text-sm transition shadow-[0_4px_20px_rgba(6,182,212,0.25)] flex items-center gap-2 shrink-0 disabled:text-faint"
             >
               {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Compass className="w-4 h-4" />}
               <span>{loading ? 'スキャン中...' : '偵察開始'}</span>
@@ -128,11 +128,11 @@ export default function ScoutTab({ onLiveMatchDetected }: {
 
         {/* エラー表示 */}
         {error && (
-          <div className="bg-red-100 border border-red-200 p-4 rounded-2xl flex items-start gap-3 text-sm text-red-700 font-bold">
-            <ShieldAlert className="w-5 h-5 shrink-0 text-red-600" />
+          <div className="bg-danger-100 border border-rose-200 p-4 rounded-2xl flex items-start gap-3 text-sm text-danger-700 font-bold">
+            <ShieldAlert className="w-5 h-5 shrink-0 text-danger-600" />
             <div className="space-y-1">
               <div>エラーが発生しました</div>
-              <p className="text-xs font-medium text-gray-400 leading-relaxed">{error}</p>
+              <p className="text-xs font-medium text-faint leading-relaxed">{error}</p>
             </div>
           </div>
         )}
@@ -141,20 +141,20 @@ export default function ScoutTab({ onLiveMatchDetected }: {
         {result && (
           <div className="space-y-6">
             {result.isPreMatch && (
-              <div className="bg-amber-100 border border-amber-200 p-4 rounded-2xl flex items-center gap-3 text-xs text-amber-700 font-bold">
-                <Sparkles className="w-5 h-5 shrink-0 text-amber-600 animate-pulse" />
+              <div className="bg-primary-100 border border-amber-200 p-4 rounded-2xl flex items-center gap-3 text-xs text-primary-700 font-bold">
+                <Sparkles className="w-5 h-5 shrink-0 text-primary-600 animate-pulse" />
                 <div>現在ゲーム中ではありません。直近戦績に基づくプレマッチ（試合前）のスカウティング分析を表示しています。</div>
               </div>
             )}
 
             {(!result.isGameActive && !result.isPreMatch) ? (
               <div className="bg-black/3 border border-black/10 rounded-3xl p-10 text-center space-y-4 shadow-xl">
-                <div className="w-16 h-16 rounded-full bg-black/5 flex items-center justify-center mx-auto border border-black/10 text-gray-500">
+                <div className="w-16 h-16 rounded-full bg-black/5 flex items-center justify-center mx-auto border border-black/10 text-muted-strong">
                   <Activity className="w-8 h-8" />
                 </div>
                 <div className="space-y-1">
                   <h3 className="text-lg font-black text-foreground">ゲーム中ではありません</h3>
-                  <p className="text-xs text-gray-400 max-w-sm mx-auto leading-relaxed">
+                  <p className="text-xs text-faint max-w-sm mx-auto leading-relaxed">
                     {result.message || '指定されたプレイヤーは現在進行中のマッチが見つかりませんでした。'}
                   </p>
                 </div>
@@ -174,23 +174,23 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                         className="w-16 h-16 rounded-2xl border border-black/10 shadow-lg"
                       />
                       <div className="space-y-1 flex-1">
-                        <div className="text-[10px] text-gray-500 font-black tracking-wider uppercase">{result.isPreMatch ? "分析対象 (Target Player)" : "敵ジャングラー (Opponent JG)"}</div>
+                        <div className="text-[10px] text-muted-strong font-black tracking-wider uppercase">{result.isPreMatch ? "分析対象 (Target Player)" : "敵ジャングラー (Opponent JG)"}</div>
                         <div className="text-lg font-black text-foreground flex flex-wrap items-center gap-2">
                           <span>{result.enemyJgName}</span>
-                          <span className="text-xs text-teal-700 font-bold bg-teal-100 px-2 py-0.5 rounded border border-teal-200">
+                          <span className="text-xs text-secondary-700 font-bold bg-secondary-100 px-2 py-0.5 rounded border border-teal-200">
                             {result.championName}
                           </span>
 
                           {/* OTP 警告アラートバッジ */}
                           {result.isOtp && (
-                            <span className="text-[10px] text-orange-700 bg-orange-100 px-2.5 py-1 rounded border border-orange-200 font-black animate-pulse flex items-center gap-1">
+                            <span className="text-[10px] text-primary-700 bg-primary-100 px-2.5 py-1 rounded border border-amber-200 font-black animate-pulse flex items-center gap-1">
                               🔥 OTP警告: {result.otpChampion}
                             </span>
                           )}
 
                           {/* ティルト警告アラートバッジ */}
                           {result.isTilted && (
-                            <span className="text-[10px] text-teal-700 bg-teal-100 px-2.5 py-1 rounded border border-teal-200 font-black animate-pulse flex items-center gap-1">
+                            <span className="text-[10px] text-secondary-700 bg-secondary-100 px-2.5 py-1 rounded border border-teal-200 font-black animate-pulse flex items-center gap-1">
                               ❄️ ティルト警戒 ({result.consecutiveLosses}連敗中)
                             </span>
                           )}
@@ -199,22 +199,22 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                     </div>
 
                     <div className="space-y-5">
-                      <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider">{result.isPreMatch ? "あなたのプレイスタイル・スライダー" : "敵のプレイスタイル・スライダー"} (Playstyle Sliders)</h4>
+                      <h4 className="text-xs font-black text-faint uppercase tracking-wider">{result.isPreMatch ? "あなたのプレイスタイル・スライダー" : "敵のプレイスタイル・スライダー"} (Playstyle Sliders)</h4>
                       {result.playstyle.dataInsufficient && (
-                        <div className="text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-200 rounded-xl px-3 py-2">
+                        <div className="text-[10px] font-bold text-primary-700 bg-primary-100 border border-amber-200 rounded-xl px-3 py-2">
                           ⚠️ 過去の対戦データが取得できなかったため、以下は実測値ではなく暫定的な推定値です。
                         </div>
                       )}
                       <div className="space-y-4">
                         <div className="space-y-1.5">
                           <div className="flex justify-between text-xs font-bold">
-                            <span className="text-gray-400">Passive (自重)</span>
-                            <span className="text-amber-600 font-mono font-black">{result.playstyle.sliders.aggressive}%</span>
-                            <span className="text-rose-600">Aggressive (攻撃)</span>
+                            <span className="text-faint">Passive (自重)</span>
+                            <span className="text-primary-600 font-mono font-black">{result.playstyle.sliders.aggressive}%</span>
+                            <span className="text-danger-600">Aggressive (攻撃)</span>
                           </div>
                           <div className="h-2.5 w-full bg-black/10 rounded-full overflow-hidden border border-black/10 p-[1px]">
                             <div 
-                              className="h-full rounded-full bg-gradient-to-r from-gray-700 via-amber-500 to-rose-600 transition-all duration-500"
+                              className="h-full rounded-full bg-gradient-to-r from-gray-700 via-primary-500 to-danger-600 transition-all duration-500"
                               style={{ width: `${result.playstyle.sliders.aggressive}%` }}
                             ></div>
                           </div>
@@ -222,13 +222,13 @@ export default function ScoutTab({ onLiveMatchDetected }: {
 
                         <div className="space-y-1.5">
                           <div className="flex justify-between text-xs font-bold">
-                            <span className="text-emerald-600">Ganking (関与)</span>
-                            <span className="text-teal-600 font-mono font-black">{result.playstyle.sliders.farming}%</span>
-                            <span className="text-teal-600">Farming (成長)</span>
+                            <span className="text-success-600">Ganking (関与)</span>
+                            <span className="text-secondary-600 font-mono font-black">{result.playstyle.sliders.farming}%</span>
+                            <span className="text-secondary-600">Farming (成長)</span>
                           </div>
                           <div className="h-2.5 w-full bg-black/10 rounded-full overflow-hidden border border-black/10 p-[1px]">
                             <div 
-                              className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-500 to-teal-600 transition-all duration-500"
+                              className="h-full rounded-full bg-gradient-to-r from-success-500 via-secondary-500 to-secondary-600 transition-all duration-500"
                               style={{ width: `${result.playstyle.sliders.farming}%` }}
                             ></div>
                           </div>
@@ -237,16 +237,16 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                     </div>
 
                     <div className="space-y-3 pt-3 border-t border-black/10">
-                      <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider">{result.isPreMatch ? "あなたのプレイスタイルタグ" : "プレイスタイルタグ"} (Playstyle Tags)</h4>
+                      <h4 className="text-xs font-black text-faint uppercase tracking-wider">{result.isPreMatch ? "あなたのプレイスタイルタグ" : "プレイスタイルタグ"} (Playstyle Tags)</h4>
                       <div className="flex flex-wrap gap-2">
                         {result.playstyle.tags.map((tag: any) => (
                           <div 
                             key={tag.id}
-                            className="bg-teal-100 border border-teal-200 px-3 py-2 rounded-2xl space-y-1"
+                            className="bg-secondary-100 border border-teal-200 px-3 py-2 rounded-2xl space-y-1"
                           >
-                            <div className="text-xs font-black text-teal-700">{tag.name}</div>
-                            <p className="text-[10px] text-gray-400 leading-relaxed">{tag.description}</p>
-                            <div className="text-[8px] text-gray-500 font-mono text-right">{tag.reason}</div>
+                            <div className="text-xs font-black text-secondary-700">{tag.name}</div>
+                            <p className="text-[10px] text-faint leading-relaxed">{tag.description}</p>
+                            <div className="text-[8px] text-muted-strong font-mono text-right">{tag.reason}</div>
                           </div>
                         ))}
                       </div>
@@ -261,8 +261,8 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                         onClick={() => setActiveTab("advice")}
                         className={`px-4 py-2.5 text-xs font-black transition-all rounded-t-xl border-b-2 uppercase tracking-wider flex items-center gap-1.5 ${
                           activeTab === "advice"
-                            ? "border-red-500 text-red-700 bg-red-100"
-                            : "border-transparent text-gray-400 hover:text-foreground"
+                            ? "border-rose-500 text-danger-700 bg-danger-100"
+                            : "border-transparent text-faint hover:text-foreground"
                         }`}
                       >
                         <Flame className="w-4 h-4" />
@@ -272,8 +272,8 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                         onClick={() => setActiveTab("knowledge")}
                         className={`px-4 py-2.5 text-xs font-black transition-all rounded-t-xl border-b-2 uppercase tracking-wider flex items-center gap-1.5 ${
                           activeTab === "knowledge"
-                            ? "border-teal-500 text-teal-700 bg-teal-100"
-                            : "border-transparent text-gray-400 hover:text-foreground"
+                            ? "border-teal-500 text-secondary-700 bg-secondary-100"
+                            : "border-transparent text-faint hover:text-foreground"
                         }`}
                       >
                         <Compass className="w-4 h-4" />
@@ -283,8 +283,8 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                         onClick={() => setActiveTab("lessons")}
                         className={`px-4 py-2.5 text-xs font-black transition-all rounded-t-xl border-b-2 uppercase tracking-wider flex items-center gap-1.5 ${
                           activeTab === "lessons"
-                            ? "border-amber-500 text-amber-700 bg-amber-100"
-                            : "border-transparent text-gray-400 hover:text-foreground"
+                            ? "border-amber-500 text-primary-700 bg-primary-100"
+                            : "border-transparent text-faint hover:text-foreground"
                         }`}
                       >
                         <ShieldAlert className="w-4 h-4" />
@@ -298,19 +298,19 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                         {/* 鬼コーチAIの対面対策3箇条 (スライダー形式) */}
                         {result.coachAdvice && result.coachAdvice.length > 0 && (
                           <div className="space-y-4">
-                            <div className="flex justify-between items-center text-xs font-bold text-gray-400">
+                            <div className="flex justify-between items-center text-xs font-bold text-faint">
                               <span>{result.isPreMatch ? "鬼コーチあなたへのアドバイス3箇条" : "鬼コーチ緊急指令3箇条"}</span>
                               <span className="font-mono">{adviceIndex + 1} / {result.coachAdvice.length}</span>
                             </div>
 
                             {/* スライド本文 */}
-                            <div className="min-h-[140px] bg-black/5 p-5 rounded-2xl border border-red-200 flex flex-col justify-between space-y-4 relative overflow-hidden">
+                            <div className="min-h-[140px] bg-black/5 p-5 rounded-2xl border border-rose-200 flex flex-col justify-between space-y-4 relative overflow-hidden">
                               <div className="space-y-2">
-                                <div className="text-xs font-black text-amber-700 flex items-center gap-1.5">
-                                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                                <div className="text-xs font-black text-primary-700 flex items-center gap-1.5">
+                                  <Sparkles className="w-3.5 h-3.5 text-primary-600" />
                                   <span>{result.coachAdvice[adviceIndex]?.title}</span>
                                 </div>
-                                <p className="text-[11px] text-red-800 leading-relaxed font-medium">
+                                <p className="text-[11px] text-danger-800 leading-relaxed font-medium">
                                   {result.coachAdvice[adviceIndex]?.detail}
                                 </p>
                               </div>
@@ -323,7 +323,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                                   onClick={() => setAdviceIndex((prev) => prev - 1)}
                                   className="bg-black/5 hover:bg-black/10 disabled:opacity-30 border border-black/10 p-1.5 rounded-lg transition"
                                 >
-                                  <ChevronLeft className="w-4 h-4 text-gray-400" />
+                                  <ChevronLeft className="w-4 h-4 text-faint" />
                                 </button>
                                 <button
                                   type="button"
@@ -331,7 +331,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                                   onClick={() => setAdviceIndex((prev) => prev + 1)}
                                   className="bg-black/5 hover:bg-black/10 disabled:opacity-30 border border-black/10 p-1.5 rounded-lg transition"
                                 >
-                                  <ChevronRight className="w-4 h-4 text-gray-400" />
+                                  <ChevronRight className="w-4 h-4 text-faint" />
                                 </button>
                               </div>
                             </div>
@@ -339,7 +339,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                         )}
                         {/* 一般解説ヒント */}
                         <div className="bg-black/3 border border-black/10 p-4 rounded-2xl text-[11px] text-foreground-subtle leading-relaxed">
-                          <strong className="text-teal-600 block mb-1">💡 全体対策アドバイス</strong>
+                          <strong className="text-secondary-600 block mb-1">💡 全体対策アドバイス</strong>
                           {result.tips}
                         </div>
                       </div>
@@ -349,40 +349,40 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                       <div className="space-y-4">
                         {/* ナレッジマニュアル表示 */}
                         {!result.knowledge?.strategy && !result.knowledge?.strengths ? (
-                          <div className="text-center py-8 text-xs text-gray-500">
+                          <div className="text-center py-8 text-xs text-muted-strong">
                             このチャンピオンのGLOBAL攻略データはまだ登録されていません。
                           </div>
                         ) : (
                           <div className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div className="bg-black/5 border border-black/10 p-4 rounded-2xl space-y-1.5">
-                                <span className="text-[10px] text-emerald-600 font-black tracking-wider uppercase block">💪 対面の強み (Strengths)</span>
+                                <span className="text-[10px] text-success-600 font-black tracking-wider uppercase block">💪 対面の強み (Strengths)</span>
                                 <p className="text-[11px] text-foreground-subtle leading-relaxed">{result.knowledge.strengths || "未登録"}</p>
                               </div>
                               <div className="bg-black/5 border border-black/10 p-4 rounded-2xl space-y-1.5">
-                                <span className="text-[10px] text-rose-600 font-black tracking-wider uppercase block">☠️ 対面の弱み (Weaknesses)</span>
+                                <span className="text-[10px] text-danger-600 font-black tracking-wider uppercase block">☠️ 対面の弱み (Weaknesses)</span>
                                 <p className="text-[11px] text-foreground-subtle leading-relaxed">{result.knowledge.weaknesses || "未登録"}</p>
                               </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div className="bg-black/5 border border-black/10 p-4 rounded-2xl space-y-1.5">
-                                <span className="text-[10px] text-amber-600 font-black tracking-wider uppercase block">⚡ パワースパイク (Power Spikes)</span>
+                                <span className="text-[10px] text-primary-600 font-black tracking-wider uppercase block">⚡ パワースパイク (Power Spikes)</span>
                                 <p className="text-[11px] text-foreground-subtle leading-relaxed">{result.knowledge.powerSpikes || "未登録"}</p>
                               </div>
                               <div className="bg-black/5 border border-black/10 p-4 rounded-2xl space-y-1.5">
-                                <span className="text-[10px] text-teal-600 font-black tracking-wider uppercase block">🌲 周回クリアルート (2026 Full Clear Path)</span>
+                                <span className="text-[10px] text-secondary-600 font-black tracking-wider uppercase block">🌲 周回クリアルート (2026 Full Clear Path)</span>
                                 <p className="text-[11px] text-foreground-subtle leading-relaxed font-bold">{result.knowledge.fullClearTime || "未登録"}</p>
                               </div>
                             </div>
 
                             <div className="bg-black/5 border border-black/10 p-4 rounded-2xl space-y-1.5">
-                              <span className="text-[10px] text-teal-600 font-black tracking-wider uppercase block">🛡️ 推奨ビルドとルーン (Build / Runes)</span>
+                              <span className="text-[10px] text-secondary-600 font-black tracking-wider uppercase block">🛡️ 推奨ビルドとルーン (Build / Runes)</span>
                               <p className="text-[11px] text-foreground-subtle leading-relaxed whitespace-pre-wrap">{result.knowledge.buildRunes || "未登録"}</p>
                             </div>
 
                             <div className="bg-black/5 border border-black/10 p-4 rounded-2xl space-y-1.5">
-                              <span className="text-[10px] text-teal-700 font-black tracking-wider uppercase block">📖 基本攻略・戦略 (Strategy)</span>
+                              <span className="text-[10px] text-secondary-700 font-black tracking-wider uppercase block">📖 基本攻略・戦略 (Strategy)</span>
                               <p className="text-[11px] text-foreground-subtle leading-relaxed whitespace-pre-wrap">{result.knowledge.strategy || "未登録"}</p>
                             </div>
                           </div>
@@ -394,13 +394,13 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                       <div className="space-y-4">
                         {/* 過去の反省点表示 */}
                         {!result.knowledge?.pastInterrogation || result.knowledge.pastInterrogation.length === 0 ? (
-                          <div className="text-center py-8 text-xs text-gray-500">
+                          <div className="text-center py-8 text-xs text-muted-strong">
                             このチャンピオン対面での過去の敗因反省データ（教訓）はありません。良好な状態です！
                           </div>
                         ) : (
                           <div className="space-y-3">
-                            <div className="bg-amber-100 border border-amber-200 p-4 rounded-2xl text-[11px] text-amber-800 leading-relaxed flex items-start gap-2.5">
-                              <ShieldAlert className="w-4 h-4 shrink-0 text-amber-600" />
+                            <div className="bg-primary-100 border border-amber-200 p-4 rounded-2xl text-[11px] text-primary-800 leading-relaxed flex items-start gap-2.5">
+                              <ShieldAlert className="w-4 h-4 shrink-0 text-primary-600" />
                               <div>
                                 <span className="font-black block">過去の教訓を活かして同じ失敗を防ぎなさい</span>
                                 ユーザーが対戦後に記録したリアルな敗因データです。戦術アドバイザーがこれらを加味した指令を生成しています。
@@ -408,8 +408,8 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                             </div>
                             <div className="space-y-2">
                               {result.knowledge.pastInterrogation.map((lesson: string, idx: number) => (
-                                <div key={idx} className="bg-black/5 border border-red-200 p-4 rounded-2xl text-xs text-red-800 leading-relaxed flex gap-2">
-                                  <span className="text-red-600 font-bold font-mono">#{idx+1}</span>
+                                <div key={idx} className="bg-black/5 border border-rose-200 p-4 rounded-2xl text-xs text-danger-800 leading-relaxed flex gap-2">
+                                  <span className="text-danger-600 font-bold font-mono">#{idx+1}</span>
                                   <p className="font-medium whitespace-pre-wrap">{lesson}</p>
                                 </div>
                               ))}
@@ -456,13 +456,13 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                         const avoidTarget = [...scoredEnemies].reverse().find((e: any) => e.isOtp || e.gankScore < 40);
 
                         return (
-                          <div className="bg-gradient-to-r from-rose-900/10 via-amber-900/5 to-transparent border border-rose-300 rounded-2xl p-4 space-y-3">
+                          <div className="bg-gradient-to-r from-danger-900/10 via-primary-900/5 to-transparent border border-rose-300 rounded-2xl p-4 space-y-3">
                             <div className="flex items-center justify-between">
-                              <h4 className="text-xs font-black text-rose-950 flex items-center gap-1.5 uppercase tracking-wider">
-                                <Zap className="w-4 h-4 text-rose-600 animate-pulse" />
+                              <h4 className="text-xs font-black text-danger-950 flex items-center gap-1.5 uppercase tracking-wider">
+                                <Zap className="w-4 h-4 text-danger-600 animate-pulse" />
                                 <span>ローディング速報: JGガンク優先ターゲット診断</span>
                               </h4>
-                              <span className="text-[10px] font-black bg-rose-600 text-white px-2 py-0.5 rounded-full">
+                              <span className="text-[10px] font-black bg-danger-600 text-white px-2 py-0.5 rounded-full">
                                 敵の隙を自動検知
                               </span>
                             </div>
@@ -471,7 +471,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                               {/* 🎯 最優先ガンクターゲット */}
                               {primaryTarget && (
                                 <div className="bg-surface p-3 rounded-xl border border-rose-200 shadow-2xs space-y-1">
-                                  <div className="text-[10px] font-black text-rose-600 flex items-center gap-1">
+                                  <div className="text-[10px] font-black text-danger-600 flex items-center gap-1">
                                     <span>🎯</span> 【最優先破壊レーン】
                                   </div>
                                   <div className="flex items-center gap-2">
@@ -486,7 +486,7 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                                       <div className="font-black text-foreground">
                                         {primaryTarget.role}: {primaryTarget.championName} ({primaryTarget.name})
                                       </div>
-                                      <div className="text-[10px] text-rose-700 font-bold">
+                                      <div className="text-[10px] text-danger-700 font-bold">
                                         ⚠️ 理由: {primaryTarget.reasons.join('、') || '立ち位置の甘さを突く'}
                                       </div>
                                     </div>
@@ -525,14 +525,14 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                       })()}
 
                       <h3 className="text-sm font-black text-foreground uppercase tracking-wider flex items-center gap-2 border-b border-black/10 pb-3">
-                        <Users className="w-4 h-4 text-teal-600" />
+                        <Users className="w-4 h-4 text-secondary-600" />
                         <span>敵チーム メンバー情報 & ガンク脆弱レーン特定</span>
                       </h3>
 
                       <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs">
                           <thead>
-                            <tr className="text-gray-500 border-b border-black/10 pb-2">
+                            <tr className="text-muted-strong border-b border-black/10 pb-2">
                               <th className="pb-2 font-bold uppercase tracking-wider">プレイヤー / チャンピオン</th>
                               <th className="pb-2 font-bold uppercase tracking-wider text-center">ロール</th>
                               <th className="pb-2 font-bold uppercase tracking-wider text-center">ソロQ勝率</th>
@@ -559,18 +559,18 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                                       />
                                       <div>
                                         <div className="font-black text-foreground">{p.name}</div>
-                                        <div className="text-[10px] text-teal-600 font-bold">{champName}</div>
+                                        <div className="text-[10px] text-secondary-600 font-bold">{champName}</div>
                                       </div>
                                     </td>
-                                    <td className="py-3 text-center font-mono font-bold text-gray-400">
+                                    <td className="py-3 text-center font-mono font-bold text-faint">
                                       {p.role}
                                     </td>
                                     <td className="py-3 text-center">
                                       {p.dataInsufficient ? (
-                                        <span className="text-[10px] text-gray-500 font-bold">データ不足</span>
+                                        <span className="text-[10px] text-muted-strong font-bold">データ不足</span>
                                       ) : (
                                         <span className={`font-mono font-black ${
-                                          p.winRate >= 55 ? 'text-emerald-600' : p.winRate <= 40 ? 'text-rose-600 animate-pulse' : 'text-amber-600'
+                                          p.winRate >= 55 ? 'text-success-600' : p.winRate <= 40 ? 'text-danger-600 animate-pulse' : 'text-primary-600'
                                         }`}>
                                           {p.winRate}%
                                         </span>
@@ -578,25 +578,25 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                                     </td>
                                     <td className="py-3 text-right space-y-1">
                                       {p.isOtp && (
-                                        <span className="inline-block text-[9px] text-orange-700 bg-orange-100 px-2 py-0.5 rounded border border-orange-200 font-black">
+                                        <span className="inline-block text-[9px] text-primary-700 bg-primary-100 px-2 py-0.5 rounded border border-amber-200 font-black">
                                           🔥 OTP ({p.otpChampion})
                                         </span>
                                       )}
                                       {p.isTilted && (
-                                        <span className="inline-block text-[9px] text-teal-700 bg-teal-100 px-2 py-0.5 rounded border border-teal-200 font-black ml-1">
+                                        <span className="inline-block text-[9px] text-secondary-700 bg-secondary-100 px-2 py-0.5 rounded border border-teal-200 font-black ml-1">
                                           ❄️ 連敗ティルト ({p.consecutiveLosses}連敗)
                                         </span>
                                       )}
                                       {p.isVulnerable && (
-                                        <span className="inline-block text-[9px] text-rose-700 bg-rose-100 px-2 py-0.5 rounded border border-rose-200 font-black ml-1 animate-pulse">
+                                        <span className="inline-block text-[9px] text-danger-700 bg-danger-100 px-2 py-0.5 rounded border border-rose-200 font-black ml-1 animate-pulse">
                                           🎯 集中Gank推奨 ({p.fbRate ? `被FB: ${p.fbRate}%` : '直近不調'})
                                         </span>
                                       )}
                                       {p.dataInsufficient && !p.isOtp && !p.isTilted && !p.isVulnerable && (
-                                        <span className="text-[10px] text-gray-500 font-bold">戦績データなし</span>
+                                        <span className="text-[10px] text-muted-strong font-bold">戦績データなし</span>
                                       )}
                                       {!p.dataInsufficient && !p.isOtp && !p.isTilted && !p.isVulnerable && (
-                                        <span className="text-[10px] text-gray-500 font-bold">特記事項なし</span>
+                                        <span className="text-[10px] text-muted-strong font-bold">特記事項なし</span>
                                       )}
                                     </td>
                                   </tr>
@@ -613,20 +613,20 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                 <div className="space-y-6">
                   <div className="bg-black/3 border border-black/10 rounded-3xl p-6 shadow-xl space-y-5">
                     <h3 className="text-sm font-black text-foreground uppercase tracking-wider flex items-center gap-2 border-b border-black/10 pb-3">
-                      <Compass className="w-4 h-4 text-teal-600" />
+                      <Compass className="w-4 h-4 text-secondary-600" />
                       <span>{result.isPreMatch ? "あなたのゲーム序盤傾向" : "ゲーム序盤戦術予測"}</span>
                     </h3>
 
                     <div className="space-y-2 bg-black/5 p-4 rounded-2xl border border-black/10">
-                      <div className="text-[10px] text-gray-500 font-black tracking-wider uppercase">{result.isPreMatch ? "あなたの開始バフ傾向" : "予測開始位置"}</div>
-                      <div className="text-xs font-black text-amber-600 leading-relaxed">
+                      <div className="text-[10px] text-muted-strong font-black tracking-wider uppercase">{result.isPreMatch ? "あなたの開始バフ傾向" : "予測開始位置"}</div>
+                      <div className="text-xs font-black text-primary-600 leading-relaxed">
                         {result.startBuffPrediction}
                       </div>
                     </div>
 
                     <div className="space-y-2 bg-black/5 p-4 rounded-2xl border border-black/10">
-                      <div className="text-[10px] text-gray-500 font-black tracking-wider uppercase">{result.isPreMatch ? "あなたのファーストGank傾向" : "ファーストGank予測"}</div>
-                      <div className="text-xs font-black text-rose-600 leading-relaxed">
+                      <div className="text-[10px] text-muted-strong font-black tracking-wider uppercase">{result.isPreMatch ? "あなたのファーストGank傾向" : "ファーストGank予測"}</div>
+                      <div className="text-xs font-black text-danger-600 leading-relaxed">
                         {result.firstGankTarget}
                       </div>
                     </div>
@@ -636,8 +636,8 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                         （以前は数体だけの手書きデータで、それ以外は毎回同じ結果になっていた）。 */}
                     {result.hasRealCounterData && result.knowledge?.counterChampions && (
                       <div className="space-y-2 pt-3 border-t border-black/10">
-                        <h4 className="text-[10px] text-gray-500 font-black tracking-wider uppercase flex items-center gap-1.5">
-                          <Zap className="w-3.5 h-3.5 text-amber-600" />
+                        <h4 className="text-[10px] text-muted-strong font-black tracking-wider uppercase flex items-center gap-1.5">
+                          <Zap className="w-3.5 h-3.5 text-primary-600" />
                           <span>対面カウンター情報（辞典データ）</span>
                         </h4>
                         <div className="bg-black/5 p-4 rounded-2xl border border-amber-200">
@@ -648,8 +648,8 @@ export default function ScoutTab({ onLiveMatchDetected }: {
 
                     {!result.hasRealCounterData && result.counters && result.counters.length > 0 && (
                       <div className="space-y-3 pt-3 border-t border-black/10">
-                        <h4 className="text-[10px] text-gray-500 font-black tracking-wider uppercase flex items-center gap-1.5">
-                          <Zap className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+                        <h4 className="text-[10px] text-muted-strong font-black tracking-wider uppercase flex items-center gap-1.5">
+                          <Zap className="w-3.5 h-3.5 text-primary-600 animate-pulse" />
                           <span>{result.isPreMatch ? "あなたに対する推奨カウンター & 弱点対策" : "対JG推奨カウンター & 解説"}</span>
                         </h4>
                         <div className="space-y-3">
@@ -664,9 +664,9 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                                     height={28}
                                     className="w-7 h-7 rounded-lg border border-black/10"
                                   />
-                                  <span className="text-xs font-black text-amber-700">{c.championName}</span>
+                                  <span className="text-xs font-black text-primary-700">{c.championName}</span>
                                 </div>
-                                <span className="text-[10px] font-black text-emerald-800 bg-emerald-100/90 px-2 py-0.5 rounded border border-emerald-200/80">
+                                <span className="text-[10px] font-black text-success-800 bg-success-100/90 px-2 py-0.5 rounded border border-emerald-200/80">
                                   有利カウンター
                                 </span>
                               </div>
@@ -680,25 +680,25 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                     )}
 
                     <div className="space-y-3 pt-3 border-t border-black/10">
-                      <h4 className="text-[10px] text-gray-500 font-black tracking-wider uppercase">{result.isPreMatch ? "あなたの平均9分スタッツ先行度" : "敵の平均9分スタッツ先行度"}</h4>
+                      <h4 className="text-[10px] text-muted-strong font-black tracking-wider uppercase">{result.isPreMatch ? "あなたの平均9分スタッツ先行度" : "敵の平均9分スタッツ先行度"}</h4>
                       <div className="space-y-2.5">
                         <div className="space-y-1">
                           <div className="flex justify-between text-[10px] font-bold">
-                            <span className="text-gray-400">ゴールド先行度</span>
-                            <span className="text-amber-600">+{result.playstyle.diffs.goldDiff} G</span>
+                            <span className="text-faint">ゴールド先行度</span>
+                            <span className="text-primary-600">+{result.playstyle.diffs.goldDiff} G</span>
                           </div>
                           <div className="h-1.5 w-full bg-black/10 rounded-full overflow-hidden">
-                            <div className="h-full bg-amber-500" style={{ width: `${Math.min(100, (result.playstyle.diffs.goldDiff / 600) * 100)}%` }}></div>
+                            <div className="h-full bg-primary-500" style={{ width: `${Math.min(100, (result.playstyle.diffs.goldDiff / 600) * 100)}%` }}></div>
                           </div>
                         </div>
 
                         <div className="space-y-1">
                           <div className="flex justify-between text-[10px] font-bold">
-                            <span className="text-gray-400">CS先行度</span>
-                            <span className="text-emerald-600">+{result.playstyle.diffs.csDiff} CS</span>
+                            <span className="text-faint">CS先行度</span>
+                            <span className="text-success-600">+{result.playstyle.diffs.csDiff} CS</span>
                           </div>
                           <div className="h-1.5 w-full bg-black/10 rounded-full overflow-hidden">
-                            <div className="h-full bg-emerald-500" style={{ width: `${Math.min(100, (result.playstyle.csDiff || result.playstyle.diffs.csDiff || 1) * 10)}%` }}></div>
+                            <div className="h-full bg-success-500" style={{ width: `${Math.min(100, (result.playstyle.csDiff || result.playstyle.diffs.csDiff || 1) * 10)}%` }}></div>
                           </div>
                         </div>
                       </div>

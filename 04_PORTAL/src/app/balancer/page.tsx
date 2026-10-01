@@ -31,11 +31,11 @@ const AramRotationPanel = dynamic(() => import("./AramRotationPanel"), {
 const RoleIcon = ({ role, className = "w-3.5 h-3.5" }: { role: string; className?: string }) => {
   const r = role.toUpperCase();
   switch (r) {
-    case 'TOP': return <Shield className={`${className} text-orange-700`} />;
-    case 'JG': return <Trees className={`${className} text-green-700`} />;
-    case 'MID': return <Zap className={`${className} text-red-700`} />;
-    case 'ADC': return <Target className={`${className} text-amber-700`} />;
-    case 'SUP': return <Heart className={`${className} text-teal-700`} />;
+    case 'TOP': return <Shield className={`${className} text-primary-700`} />;
+    case 'JG': return <Trees className={`${className} text-success-700`} />;
+    case 'MID': return <Zap className={`${className} text-danger-700`} />;
+    case 'ADC': return <Target className={`${className} text-primary-700`} />;
+    case 'SUP': return <Heart className={`${className} text-secondary-700`} />;
     default: return null;
   }
 };
@@ -108,12 +108,12 @@ function CasinoBadges({ player }: { player: any }) {
   return (
     <span className="flex items-center gap-1 shrink min-w-0 overflow-hidden" title={`カジノ特典: ${allLabels}`}>
       {visible.map(b => (
-        <span key={b.id} className="text-[9px] bg-amber-100 border border-amber-300 text-amber-900 px-1.5 py-0.5 rounded font-black shrink-0 whitespace-nowrap">
+        <span key={b.id} className="text-[9px] bg-primary-100 border border-amber-300 text-primary-900 px-1.5 py-0.5 rounded font-black shrink-0 whitespace-nowrap">
           {b.icon}{b.label}
         </span>
       ))}
       {hidden.length > 0 && (
-        <span className="text-[9px] bg-amber-50 border border-amber-200 text-amber-700 px-1.5 py-0.5 rounded font-black shrink-0 whitespace-nowrap">
+        <span className="text-[9px] bg-primary-50 border border-amber-200 text-primary-700 px-1.5 py-0.5 rounded font-black shrink-0 whitespace-nowrap">
           +{hidden.length}
         </span>
       )}
@@ -258,7 +258,7 @@ export default function BalancerPage() {
       return { 
         tier: 'new',
         label: '🔰 初参加', 
-        color: 'bg-emerald-100 text-emerald-900 border-emerald-300', 
+        color: 'bg-success-100 text-success-900 border-emerald-300', 
         tip: '通算0戦：初参加のプレイヤーです！大歓迎✨' 
       };
     }
@@ -267,7 +267,7 @@ export default function BalancerPage() {
       return { 
         tier: 'light',
         label: '🌱 ライト', 
-        color: 'bg-teal-100 text-teal-900 border-teal-300', 
+        color: 'bg-secondary-100 text-secondary-900 border-teal-300', 
         tip: `通算${totalG}戦：参加経験が浅いライトプレイヤーです` 
       };
     }
@@ -277,14 +277,14 @@ export default function BalancerPage() {
         return { 
           tier: 'returning',
           label: '⏳ 復帰勢', 
-          color: 'bg-amber-100 text-amber-900 border-amber-300', 
+          color: 'bg-primary-100 text-primary-900 border-amber-300', 
           tip: `通算${totalG}戦（最終参加: ${daysAgo}日前）：久しぶりの参加となる復帰プレイヤーです！大歓迎✨` 
         };
       }
       return { 
         tier: 'returning',
         label: '🎖️ 経験者', 
-        color: 'bg-teal-100 text-teal-900 border-teal-300', 
+        color: 'bg-secondary-100 text-secondary-900 border-teal-300', 
         tip: `通算${totalG}戦（最終参加: ${daysAgo}日前）：久しぶりに参加の経験者プレイヤーです` 
       };
     }
@@ -292,7 +292,7 @@ export default function BalancerPage() {
     return { 
       tier: 'regular',
       label: '👑 常連', 
-      color: 'bg-amber-100 text-amber-900 border-amber-300', 
+      color: 'bg-primary-100 text-primary-900 border-amber-300', 
       tip: `通算${totalG}戦（直近30日: ${recent30d}戦）：定期的に参加しているアクティブ常連メンバーです` 
     };
   };
@@ -1224,14 +1224,14 @@ export default function BalancerPage() {
         {(!currentPlayerName) && <option value="" className="text-foreground">選択</option>}
         {balanceResult && (
           <>
-            <optgroup label="Blue Team" className="text-foreground font-bold bg-teal-100">
+            <optgroup label="Blue Team" className="text-foreground font-bold bg-secondary-100">
               {balanceResult.teamBlue.map((p:any) => (
                 <option key={`blue-${p.name}`} value={p.name} className="text-foreground bg-surface">
                   {p.name}
                 </option>
               ))}
             </optgroup>
-            <optgroup label="Red Team" className="text-foreground font-bold bg-red-100">
+            <optgroup label="Red Team" className="text-foreground font-bold bg-danger-100">
               {balanceResult.teamRed.map((p:any) => (
                 <option key={`red-${p.name}`} value={p.name} className="text-foreground bg-surface">
                   {p.name}
@@ -1301,7 +1301,7 @@ export default function BalancerPage() {
       <div className="flex items-center gap-1 justify-center">
         {label}
         {sortConfig.key === sortKey && (
-          <span className="text-amber-700 text-xs">{sortConfig.direction === "desc" ? "↓" : "↑"}</span>
+          <span className="text-primary-700 text-xs">{sortConfig.direction === "desc" ? "↓" : "↑"}</span>
         )}
         {sortConfig.key !== sortKey && <span className="text-muted-strong text-xs">↕</span>}
       </div>
@@ -1339,7 +1339,7 @@ export default function BalancerPage() {
           <button
             type="button"
             onClick={() => setModeTab('aram_rotation')}
-            className="flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all cursor-pointer bg-gradient-to-r from-amber-500 to-amber-600 text-stone-950 shadow-md shadow-amber-500/20"
+            className="flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all cursor-pointer bg-gradient-to-r from-primary-500 to-primary-600 text-stone-950 shadow-md shadow-primary-500/20"
           >
             <Shuffle className="w-4 h-4" />
             <span>🔄 大人数 ARAM ローテーション</span>
@@ -1359,7 +1359,7 @@ export default function BalancerPage() {
         <button
           type="button"
           onClick={() => setModeTab('standard')}
-          className="flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all cursor-pointer bg-amber-500 text-stone-950 shadow-md shadow-amber-500/20"
+          className="flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all cursor-pointer bg-primary-500 text-stone-950 shadow-md shadow-primary-500/20"
         >
           <Swords className="w-4 h-4" />
           <span>⚔️ 通常 5v5 バランサー</span>
@@ -1376,16 +1376,16 @@ export default function BalancerPage() {
       </div>
 
       {/* 🔰 チーム分けツールの使い方ガイド */}
-      <div className="bg-amber-500/10 border border-amber-300/60 rounded-2xl p-3.5 text-foreground shadow-xs">
+      <div className="bg-primary-500/10 border border-amber-300/60 rounded-2xl p-3.5 text-foreground shadow-xs">
         <button
           onClick={() => setIsGuideOpen(!isGuideOpen)}
-          className="w-full flex items-center justify-between font-bold text-xs text-amber-900 hover:text-amber-950 transition cursor-pointer"
+          className="w-full flex items-center justify-between font-bold text-xs text-primary-900 hover:text-primary-950 transition cursor-pointer"
         >
           <div className="flex items-center gap-2">
             <span className="text-base">⚡</span>
             <span className="font-black text-xs sm:text-sm">3秒でわかるチーム分け手順</span>
           </div>
-          <span className="text-[10px] bg-amber-200/80 px-2 py-0.5 rounded-full font-black">
+          <span className="text-[10px] bg-primary-200/80 px-2 py-0.5 rounded-full font-black">
             {isGuideOpen ? '閉じる ▲' : '見る ▼'}
           </span>
         </button>
@@ -1412,33 +1412,33 @@ export default function BalancerPage() {
           const newLightRatio = totalActive > 0 ? Math.round(((newPlayers.length + lightPlayers.length + returningPlayers.length) / totalActive) * 100) : 0;
 
           return (
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/30 flex flex-col justify-between gap-2 shadow-xs">
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-success-500/10 via-secondary-500/5 to-transparent border border-emerald-500/30 flex flex-col justify-between gap-2 shadow-xs">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-lg">🔰</span>
                   <div>
-                    <h4 className="text-xs font-black text-emerald-950">参加メンバーの経験層分析</h4>
+                    <h4 className="text-xs font-black text-success-950">参加メンバーの経験層分析</h4>
                     <p className="text-[10px] text-muted">初心者・初参加の方も安心して参加できる環境です</p>
                   </div>
                 </div>
-                <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-500 text-stone-950">
+                <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-success-500 text-stone-950">
                   新規・ライト・復帰層 {newLightRatio}%
                 </span>
               </div>
 
               <div className="flex items-center gap-2 flex-wrap text-xs pt-1 border-t border-emerald-500/20">
-                <span className="inline-flex items-center gap-1 font-bold text-emerald-900 bg-emerald-100/80 px-2 py-0.5 rounded-md text-[11px]">
+                <span className="inline-flex items-center gap-1 font-bold text-success-900 bg-success-100/80 px-2 py-0.5 rounded-md text-[11px]">
                   🔰 初参加: <strong>{newPlayers.length}名</strong>
                 </span>
-                <span className="inline-flex items-center gap-1 font-bold text-teal-900 bg-teal-100/80 px-2 py-0.5 rounded-md text-[11px]">
+                <span className="inline-flex items-center gap-1 font-bold text-secondary-900 bg-secondary-100/80 px-2 py-0.5 rounded-md text-[11px]">
                   🌱 ライト: <strong>{lightPlayers.length}名</strong>
                 </span>
                 {returningPlayers.length > 0 && (
-                  <span className="inline-flex items-center gap-1 font-bold text-amber-900 bg-amber-100/80 px-2 py-0.5 rounded-md text-[11px]">
+                  <span className="inline-flex items-center gap-1 font-bold text-primary-900 bg-primary-100/80 px-2 py-0.5 rounded-md text-[11px]">
                     ⏳ 復帰勢: <strong>{returningPlayers.length}名</strong>
                   </span>
                 )}
-                <span className="inline-flex items-center gap-1 font-bold text-amber-900 bg-amber-100/80 px-2 py-0.5 rounded-md text-[11px]">
+                <span className="inline-flex items-center gap-1 font-bold text-primary-900 bg-primary-100/80 px-2 py-0.5 rounded-md text-[11px]">
                   👑 常連: <strong>{regularPlayers.length}名</strong>
                 </span>
               </div>
@@ -1462,7 +1462,7 @@ export default function BalancerPage() {
             <div className="sticky top-0 z-10 bg-surface/95 backdrop-blur-sm border-b border-border px-4 md:px-6 py-3 flex items-center justify-between rounded-t-2xl">
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-lg md:text-xl font-black text-foreground flex items-center gap-2">
-                  <Globe className="h-5 w-5 text-orange-700" />
+                  <Globe className="h-5 w-5 text-primary-700" />
                   マッチング結果
                   <span className="hidden md:inline text-xs font-mono text-muted-strong ml-2">MMR差: <span className="text-foreground font-bold">{balanceResult.mmrDiff}</span></span>
                 </h2>
@@ -1470,7 +1470,7 @@ export default function BalancerPage() {
                 {(() => {
                   if (balanceResult.isFestivalMode) {
                     return (
-                      <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 shadow-xs">
+                      <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-primary-100 text-primary-900 border border-amber-300 flex items-center gap-1 shadow-xs">
                         🎪 ピック形式: <strong>日曜お祭り (完全ランダム / MMRなし)</strong>
                       </span>
                     );
@@ -1478,11 +1478,11 @@ export default function BalancerPage() {
                   const avgMMR = ((balanceResult.teamBlueMMR || 0) + (balanceResult.teamRedMMR || 0)) / 10;
                   const isSilverTier = avgMMR < 1350 || selectedTable?.label?.includes('シルバー');
                   return isSilverTier ? (
-                    <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-teal-100 text-teal-900 border border-teal-300 flex items-center gap-1 shadow-xs">
+                    <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-secondary-100 text-secondary-900 border border-teal-300 flex items-center gap-1 shadow-xs">
                       🔲 ピック形式: <strong>ブラインドピック (MMRあり)</strong>
                     </span>
                   ) : (
-                    <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1 shadow-xs">
+                    <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-primary-100 text-primary-900 border border-amber-300 flex items-center gap-1 shadow-xs">
                       ⚔️ ピック形式: <strong>ドラフトピック (MMRあり)</strong>
                     </span>
                   );
@@ -1491,7 +1491,7 @@ export default function BalancerPage() {
               <div className="flex items-center gap-2">
                 {proposals.length > 1 && (
                   <button onClick={handleSendProposals} disabled={sendingProposals}
-                    className="flex items-center gap-1.5 bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg font-bold transition text-xs md:text-sm"
+                    className="flex items-center gap-1.5 bg-primary-600 hover:bg-primary-500 text-white px-3 py-1.5 rounded-lg font-bold transition text-xs md:text-sm"
                     title="全候補をDiscordに投稿してリアクション投票してもらう">
                     {sendingProposals ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <>🗳️</>}
                     <span className="hidden sm:inline">{proposals.length}案を投稿</span>
@@ -1513,7 +1513,7 @@ export default function BalancerPage() {
                       toast.error(`VC更新エラー: ${res.error}`);
                     }
                   }}
-                  className="flex items-center gap-1.5 bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg font-bold transition text-xs md:text-sm cursor-pointer"
+                  className="flex items-center gap-1.5 bg-primary-600 hover:bg-primary-500 text-white px-3 py-1.5 rounded-lg font-bold transition text-xs md:text-sm cursor-pointer"
                   title="DiscordのVCチャンネル名を「1戦目進行中・途中交代歓迎」に更新"
                 >
                   <span>🔊 VC更新 (1戦目)</span>
@@ -1525,7 +1525,7 @@ export default function BalancerPage() {
                   className="flex items-center gap-1.5 bg-surface-subtle hover:bg-surface-hover border border-border text-foreground-soft px-3 py-1.5 rounded-lg font-bold transition text-xs md:text-sm cursor-pointer"
                   title="チャットやメモに貼り付け可能な整形テキストをコピー"
                 >
-                  {copiedResult ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5 text-muted" />}
+                  {copiedResult ? <Check className="h-3.5 w-3.5 text-success-600" /> : <Copy className="h-3.5 w-3.5 text-muted" />}
                   <span>{copiedResult ? 'コピー完了！' : 'テキストコピー'}</span>
                 </button>
                 <button onClick={() => setShowResultModal(false)}
@@ -1538,11 +1538,11 @@ export default function BalancerPage() {
             <div className="p-4 md:p-6 space-y-4">
               {/* 環境分析 */}
               {analysis && (
-                <div className={`p-3 rounded-xl border text-sm flex flex-col gap-2 ${analysis.level === 'HIGH_DIFFERENCE' ? 'bg-amber-100 border-amber-200 text-amber-700' : analysis.level === 'CLOSE' ? 'bg-emerald-100 border-emerald-200 text-emerald-700' : 'bg-orange-100 border-orange-200 text-orange-700'}`}>
+                <div className={`p-3 rounded-xl border text-sm flex flex-col gap-2 ${analysis.level === 'HIGH_DIFFERENCE' ? 'bg-primary-100 border-amber-200 text-primary-700' : analysis.level === 'CLOSE' ? 'bg-success-100 border-emerald-200 text-success-700' : 'bg-primary-100 border-amber-200 text-primary-700'}`}>
                   <div className="flex items-center gap-2 font-bold">
-                    {analysis.level === 'HIGH_DIFFERENCE' ? <AlertTriangle className="h-4 w-4 text-amber-700 shrink-0" /> : <Globe className="h-4 w-4 text-emerald-700 shrink-0" />}
+                    {analysis.level === 'HIGH_DIFFERENCE' ? <AlertTriangle className="h-4 w-4 text-primary-700 shrink-0" /> : <Globe className="h-4 w-4 text-success-700 shrink-0" />}
                     <span>本日のカスタム環境:</span>
-                    <span className={`px-2 py-0.5 rounded text-xs font-black ${analysis.level === 'HIGH_DIFFERENCE' ? 'bg-amber-800 text-amber-100' : analysis.level === 'CLOSE' ? 'bg-emerald-800 text-emerald-100' : 'bg-orange-800 text-orange-100'}`}>
+                    <span className={`px-2 py-0.5 rounded text-xs font-black ${analysis.level === 'HIGH_DIFFERENCE' ? 'bg-primary-800 text-primary-100' : analysis.level === 'CLOSE' ? 'bg-success-800 text-success-100' : 'bg-primary-800 text-primary-100'}`}>
                       {analysis.level === 'HIGH_DIFFERENCE' ? '格差大' : analysis.level === 'CLOSE' ? '実力拮抗' : '標準的'}
                     </span>
                   </div>
@@ -1551,7 +1551,7 @@ export default function BalancerPage() {
                     <span>KTM平均MMR: <strong className="text-foreground font-mono">{analysis.averageMMR}</strong></span>
                     <span>最低: <strong className="text-foreground font-mono">{analysis.minMMR}</strong></span>
                     <span>最高: <strong className="text-foreground font-mono">{analysis.maxMMR}</strong></span>
-                    <span>差: <strong className={`font-mono ${analysis.level === 'HIGH_DIFFERENCE' ? 'text-amber-700' : 'text-foreground'}`}>{analysis.mmrRange}</strong></span>
+                    <span>差: <strong className={`font-mono ${analysis.level === 'HIGH_DIFFERENCE' ? 'text-primary-700' : 'text-foreground'}`}>{analysis.mmrRange}</strong></span>
                     <span className="text-[10px] text-muted-strong font-normal">※SoloQではなくKTM内戦独自のランクMMR基準です</span>
                   </div>
                 </div>
@@ -1573,11 +1573,11 @@ export default function BalancerPage() {
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-black text-foreground">🔮 Elo勝率予測 ＆ 接戦度診断</span>
                         {isCloseMatch ? (
-                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-success-100 text-success-800 border border-emerald-300">
                             🔥 超接戦（名勝負の予感！）
                           </span>
                         ) : mmrDiff <= 120 ? (
-                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-primary-100 text-primary-800 border border-amber-300">
                             ⚔️ 互角（実力拮抗）
                           </span>
                         ) : (
@@ -1592,26 +1592,26 @@ export default function BalancerPage() {
                     {/* ゲージバー */}
                     <div className="flex items-center gap-3">
                       <div className="text-right w-24 shrink-0">
-                        <span className="text-xs font-extrabold text-teal-700 block">🟦 BLUE TEAM</span>
-                        <strong className="text-base font-black text-teal-900 font-mono">{bluePct}%</strong>
+                        <span className="text-xs font-extrabold text-secondary-700 block">🟦 BLUE TEAM</span>
+                        <strong className="text-base font-black text-secondary-900 font-mono">{bluePct}%</strong>
                       </div>
                       <div className="flex-1 h-4 rounded-full overflow-hidden bg-surface-subtle p-0.5 border border-border flex shadow-inner">
                         <div
-                          className="bg-gradient-to-r from-teal-600 to-teal-500 rounded-l-full transition-all duration-700 flex items-center justify-center text-[9px] text-white font-black"
+                          className="bg-gradient-to-r from-secondary-600 to-secondary-500 rounded-l-full transition-all duration-700 flex items-center justify-center text-[9px] text-white font-black"
                           style={{ width: `${bluePct}%` }}
                         >
                           {bluePct >= 20 ? `${bluePct}%` : ''}
                         </div>
                         <div
-                          className="bg-gradient-to-l from-rose-600 to-pink-500 rounded-r-full transition-all duration-700 flex items-center justify-center text-[9px] text-white font-black"
+                          className="bg-gradient-to-l from-danger-600 to-danger-500 rounded-r-full transition-all duration-700 flex items-center justify-center text-[9px] text-white font-black"
                           style={{ width: `${redPct}%` }}
                         >
                           {redPct >= 20 ? `${redPct}%` : ''}
                         </div>
                       </div>
                       <div className="text-left w-24 shrink-0">
-                        <span className="text-xs font-extrabold text-rose-700 block">🟥 RED TEAM</span>
-                        <strong className="text-base font-black text-rose-900 font-mono">{redPct}%</strong>
+                        <span className="text-xs font-extrabold text-danger-700 block">🟥 RED TEAM</span>
+                        <strong className="text-base font-black text-danger-900 font-mono">{redPct}%</strong>
                       </div>
                     </div>
                   </div>
@@ -1623,9 +1623,9 @@ export default function BalancerPage() {
                 <div className="flex border-b border-border gap-2 overflow-x-auto pb-1">
                   {proposals.map((prop, idx) => (
                     <button key={prop.id || idx} onClick={() => { setBalanceResult(prop); setSelectedProposalIdx(idx); }}
-                      className={`px-4 py-2 text-sm font-bold border-b-2 transition whitespace-nowrap ${selectedProposalIdx === idx ? 'border-amber-500 text-amber-700 font-black' : 'border-transparent text-muted-strong hover:text-foreground-subtle'}`}>
+                      className={`px-4 py-2 text-sm font-bold border-b-2 transition whitespace-nowrap ${selectedProposalIdx === idx ? 'border-amber-500 text-primary-700 font-black' : 'border-transparent text-muted-strong hover:text-foreground-subtle'}`}>
                       {prop.title || `案${prop.id || idx}`}
-                      {prop.id === 'E' && <span className="ml-1 text-[10px] bg-amber-200 text-amber-900 px-1.5 py-0.2 rounded-full">🎗️ルール設定</span>}
+                      {prop.id === 'E' && <span className="ml-1 text-[10px] bg-primary-200 text-primary-900 px-1.5 py-0.2 rounded-full">🎗️ルール設定</span>}
                     </button>
                   ))}
                 </div>
@@ -1633,13 +1633,13 @@ export default function BalancerPage() {
 
               {/* 🎗️ 案E選択時: 実践的レーン戦ハンデ縛り ＆ 再微調整パネル */}
               {balanceResult.id === 'E' && (
-                <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 shadow-sm space-y-3">
+                <div className="p-4 rounded-2xl bg-primary-50 border-2 border-amber-300 shadow-sm space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-xl">🎗️</span>
                       <div>
-                        <h3 className="text-xs font-black text-amber-950">案E：実践的レーン戦ハンデ縛り設定 ＆ 再微調整</h3>
-                        <p className="text-[11px] text-amber-800">不利対面（2ランク格差等）の格上プレイヤーに縛りルールを設定し、戦力を完全に均等化します。</p>
+                        <h3 className="text-xs font-black text-primary-950">案E：実践的レーン戦ハンデ縛り設定 ＆ 再微調整</h3>
+                        <p className="text-[11px] text-primary-800">不利対面（2ランク格差等）の格上プレイヤーに縛りルールを設定し、戦力を完全に均等化します。</p>
                       </div>
                     </div>
                   </div>
@@ -1648,45 +1648,45 @@ export default function BalancerPage() {
                     {/* Lv.1 */}
                     <div className="p-3 rounded-xl bg-surface border border-amber-200 space-y-1.5 shadow-xs">
                       <div className="flex items-center justify-between">
-                        <span className="font-black text-amber-900 text-xs">Lv.1 軽度ハンデ</span>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800">実効MMR -150</span>
+                        <span className="font-black text-primary-900 text-xs">Lv.1 軽度ハンデ</span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-primary-100 text-primary-800">実効MMR -150</span>
                       </div>
                       <p className="text-[11px] text-muted leading-relaxed">
                         ▫ <strong>フラッシュ禁止</strong>（ゴースト/TP強制）<br />
                         ▫ <strong>序盤5分間リコール禁止</strong>
                       </p>
-                      <div className="text-[10px] text-amber-700 font-bold">消費: 300 コイン</div>
+                      <div className="text-[10px] text-primary-700 font-bold">消費: 300 コイン</div>
                     </div>
 
                     {/* Lv.2 */}
                     <div className="p-3 rounded-xl bg-surface border-2 border-amber-400 space-y-1.5 shadow-xs">
                       <div className="flex items-center justify-between">
-                        <span className="font-black text-amber-950 text-xs">Lv.2 中度ハンデ</span>
-                        <span className="text-[10px] font-black px-2 py-0.5 rounded bg-amber-500 text-white">実効MMR -300 (1ランク差)</span>
+                        <span className="font-black text-primary-950 text-xs">Lv.2 中度ハンデ</span>
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded bg-primary-500 text-white">実効MMR -300 (1ランク差)</span>
                       </div>
                       <p className="text-[11px] text-muted leading-relaxed">
                         ▫ <strong>ポーション購入禁止</strong>（回復封じ）<br />
                         ▫ <strong>メインチャンプBAN＆セカンド強制</strong>
                       </p>
-                      <div className="text-[10px] text-amber-700 font-bold">消費: 600 コイン</div>
+                      <div className="text-[10px] text-primary-700 font-bold">消費: 600 コイン</div>
                     </div>
 
                     {/* Lv.3 */}
                     <div className="p-3 rounded-xl bg-surface border border-amber-200 space-y-1.5 shadow-xs">
                       <div className="flex items-center justify-between">
-                        <span className="font-black text-amber-900 text-xs">Lv.3 重度ハンデ</span>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-800">実効MMR -500 (完全互角)</span>
+                        <span className="font-black text-primary-900 text-xs">Lv.3 重度ハンデ</span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-danger-100 text-danger-800">実効MMR -500 (完全互角)</span>
                       </div>
                       <p className="text-[11px] text-muted leading-relaxed">
                         ▫ <strong>初手『女神の涙』スタート縛り</strong><br />
                         ▫ <strong>スキル1つ（Ult除く）使用禁止</strong>
                       </p>
-                      <div className="text-[10px] text-amber-700 font-bold">消費: 1,200 コイン</div>
+                      <div className="text-[10px] text-primary-700 font-bold">消費: 1,200 コイン</div>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between pt-2 border-t border-amber-200/60">
-                    <span className="text-[11px] text-amber-900 font-bold">
+                    <span className="text-[11px] text-primary-900 font-bold">
                       ※この設定で推定MMRが再計算され、対面格差がピタッと埋まります。
                     </span>
                     <button
@@ -1714,7 +1714,7 @@ export default function BalancerPage() {
                         setBalanceResult(updatedRes);
                         toast.success("⚡ 【案E微調整完了】 ハンデ補正（実効MMR -300）を適用し、対面格差と勝率予想を再計算しました！");
                       }}
-                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-black text-xs transition-all shadow-sm cursor-pointer flex items-center gap-1.5"
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white font-black text-xs transition-all shadow-sm cursor-pointer flex items-center gap-1.5"
                     >
                       <Sparkles size={14} />
                       推定MMRを反映してチーム分けを微調整する
@@ -1726,14 +1726,14 @@ export default function BalancerPage() {
               {/* チーム表示 */}
               <div className="space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-11 gap-3 items-center border-b border-border pb-3">
-                  <div className="col-span-5 bg-gradient-to-r from-teal-100 to-transparent p-3 rounded-xl border-l-4 border-teal-500 flex justify-between items-center">
-                    <span className="text-base font-black text-teal-700">BLUE TEAM</span>
-                    <span className="text-xs font-mono font-bold text-teal-600">合計MMR: {balanceResult.teamBlueMMR}</span>
+                  <div className="col-span-5 bg-gradient-to-r from-secondary-100 to-transparent p-3 rounded-xl border-l-4 border-teal-500 flex justify-between items-center">
+                    <span className="text-base font-black text-secondary-700">BLUE TEAM</span>
+                    <span className="text-xs font-mono font-bold text-secondary-600">合計MMR: {balanceResult.teamBlueMMR}</span>
                   </div>
                   <div className="col-span-1 flex justify-center text-muted-strong font-black">VS</div>
-                  <div className="col-span-5 bg-gradient-to-l from-red-100 to-transparent p-3 rounded-xl border-r-4 border-red-500 flex justify-between items-center">
-                    <span className="text-xs font-mono font-bold text-red-600">合計MMR: {balanceResult.teamRedMMR}</span>
-                    <span className="text-base font-black text-red-700">RED TEAM</span>
+                  <div className="col-span-5 bg-gradient-to-l from-danger-100 to-transparent p-3 rounded-xl border-r-4 border-rose-500 flex justify-between items-center">
+                    <span className="text-xs font-mono font-bold text-danger-600">合計MMR: {balanceResult.teamRedMMR}</span>
+                    <span className="text-base font-black text-danger-700">RED TEAM</span>
                   </div>
                 </div>
                 {['TOP','JG','MID','ADC','SUP'].map(role => {
@@ -1748,21 +1748,21 @@ export default function BalancerPage() {
                   return (
                     <div key={role} className="grid grid-cols-1 md:grid-cols-11 gap-2 items-center bg-black/[0.03] p-2 md:p-3 rounded-2xl border border-black/5">
                       <div draggable={!!pB?.name} onDragStart={e => handleDragStart(e,'teamBlue',role,pB?.name||'')} onDragOver={e => handleDragOver(e,bKey)} onDragLeave={handleDragLeave} onDrop={e => handleDropPlayer(e,'teamBlue',role)}
-                        className={`col-span-5 flex items-center gap-2 p-2 rounded-xl border transition cursor-grab active:cursor-grabbing ${dragOverSlot===bKey?'border-teal-500 bg-teal-100 border-dashed':'bg-teal-50 border-teal-200 hover:bg-teal-100'} ${swapSource?.name === pB?.name ? 'border-amber-500 bg-amber-100 animate-pulse' : ''}`}>
+                        className={`col-span-5 flex items-center gap-2 p-2 rounded-xl border transition cursor-grab active:cursor-grabbing ${dragOverSlot===bKey?'border-teal-500 bg-secondary-100 border-dashed':'bg-secondary-50 border-teal-200 hover:bg-secondary-100'} ${swapSource?.name === pB?.name ? 'border-amber-500 bg-primary-100 animate-pulse' : ''}`}>
                         {/* 名前は行の主役なので、バッジがいくつ増えても潰れないよう最低幅を確保する */}
                         <div className="flex-1 min-w-[5.5rem]">{renderSwapSelect('teamBlue',role,pB?.name||'')}</div>
                         {pB?.name && (
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); handleSelectSwapPlayer('teamBlue', role, pB.name); }}
-                            className={`p-1 rounded transition-colors text-xs font-black shrink-0 ${swapSource?.name === pB.name ? 'bg-amber-500 text-black' : 'text-teal-700 hover:text-foreground hover:bg-teal-200'}`}
+                            className={`p-1 rounded transition-colors text-xs font-black shrink-0 ${swapSource?.name === pB.name ? 'bg-primary-500 text-black' : 'text-secondary-700 hover:text-foreground hover:bg-secondary-200'}`}
                             title="タップして入れ替え"
                           >
                             ⇄
                           </button>
                         )}
-                        {offB && <span className="text-[9px] bg-red-100 border border-red-300 text-red-700 px-1.5 py-0.5 rounded font-black shrink-0">⚠️OFF</span>}
-                        {pB?.name && handicapNames.has(pB.name) && <span className="text-[9px] bg-amber-100 border border-amber-300 text-amber-700 px-1.5 py-0.5 rounded font-black shrink-0" title="ハンデ参加（オフロール等の制約付き）">🎗️ハンデ</span>}
+                        {offB && <span className="text-[9px] bg-danger-100 border border-rose-300 text-danger-700 px-1.5 py-0.5 rounded font-black shrink-0">⚠️OFF</span>}
+                        {pB?.name && handicapNames.has(pB.name) && <span className="text-[9px] bg-primary-100 border border-amber-300 text-primary-700 px-1.5 py-0.5 rounded font-black shrink-0" title="ハンデ参加（オフロール等の制約付き）">🎗️ハンデ</span>}
                         <CasinoBadges player={pBData} />
                         {pB?.name && (pB.mainLane !== 'ALL' || pB.subLane !== 'ALL') && (
                           <span className="text-[9px] bg-black/5 border border-black/10 text-muted-strong px-1.5 py-0.5 rounded font-bold shrink-0" title="第一希望／第二希望レーン">
@@ -1770,17 +1770,17 @@ export default function BalancerPage() {
                             {pB.subLane !== 'ALL' && pB.subLane !== '-' ? `/${pB.subLane}` : ''}
                           </span>
                         )}
-                        <span className="font-mono text-xs font-bold text-teal-700 shrink-0 bg-teal-100 px-2 py-0.5 rounded border border-teal-300">{bMMR}</span>
+                        <span className="font-mono text-xs font-bold text-secondary-700 shrink-0 bg-secondary-100 px-2 py-0.5 rounded border border-teal-300">{bMMR}</span>
                       </div>
                       <div className="col-span-1 flex flex-col items-center py-1">
                         <div className="w-8 h-8 rounded-full bg-surface-subtle border border-border flex items-center justify-center shadow-lg"><RoleIcon role={role} className="w-4 h-4" /></div>
-                        <span className={`text-[10px] font-mono mt-1 font-extrabold ${diff>0?'text-teal-700':diff<0?'text-red-700':'text-muted-strong'}`}>{diff>0?`+${diff}`:diff<0?diff:'±0'}</span>
+                        <span className={`text-[10px] font-mono mt-1 font-extrabold ${diff>0?'text-secondary-700':diff<0?'text-danger-700':'text-muted-strong'}`}>{diff>0?`+${diff}`:diff<0?diff:'±0'}</span>
                       </div>
                       <div draggable={!!pR?.name} onDragStart={e => handleDragStart(e,'teamRed',role,pR?.name||'')} onDragOver={e => handleDragOver(e,rKey)} onDragLeave={handleDragLeave} onDrop={e => handleDropPlayer(e,'teamRed',role)}
-                        className={`col-span-5 flex items-center gap-2 p-2 rounded-xl border transition cursor-grab active:cursor-grabbing ${dragOverSlot===rKey?'border-red-500 bg-red-100 border-dashed':'bg-red-50 border-red-200 hover:bg-red-100'} ${swapSource?.name === pR?.name ? 'border-amber-500 bg-amber-100 animate-pulse' : ''}`}>
-                        <span className="font-mono text-xs font-bold text-red-700 shrink-0 bg-red-100 px-2 py-0.5 rounded border border-red-300">{rMMR}</span>
-                        {offR && <span className="text-[9px] bg-red-100 border border-red-300 text-red-700 px-1.5 py-0.5 rounded font-black shrink-0">⚠️OFF</span>}
-                        {pR?.name && handicapNames.has(pR.name) && <span className="text-[9px] bg-amber-100 border border-amber-300 text-amber-700 px-1.5 py-0.5 rounded font-black shrink-0" title="ハンデ参加（オフロール等の制約付き）">🎗️ハンデ</span>}
+                        className={`col-span-5 flex items-center gap-2 p-2 rounded-xl border transition cursor-grab active:cursor-grabbing ${dragOverSlot===rKey?'border-rose-500 bg-danger-100 border-dashed':'bg-danger-50 border-rose-200 hover:bg-danger-100'} ${swapSource?.name === pR?.name ? 'border-amber-500 bg-primary-100 animate-pulse' : ''}`}>
+                        <span className="font-mono text-xs font-bold text-danger-700 shrink-0 bg-danger-100 px-2 py-0.5 rounded border border-rose-300">{rMMR}</span>
+                        {offR && <span className="text-[9px] bg-danger-100 border border-rose-300 text-danger-700 px-1.5 py-0.5 rounded font-black shrink-0">⚠️OFF</span>}
+                        {pR?.name && handicapNames.has(pR.name) && <span className="text-[9px] bg-primary-100 border border-amber-300 text-primary-700 px-1.5 py-0.5 rounded font-black shrink-0" title="ハンデ参加（オフロール等の制約付き）">🎗️ハンデ</span>}
                         <CasinoBadges player={pRData} />
                         {pR?.name && (pR.mainLane !== 'ALL' || pR.subLane !== 'ALL') && (
                           <span className="text-[9px] bg-black/5 border border-black/10 text-muted-strong px-1.5 py-0.5 rounded font-bold shrink-0" title="第一希望／第二希望レーン">
@@ -1792,7 +1792,7 @@ export default function BalancerPage() {
                           <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); handleSelectSwapPlayer('teamRed', role, pR.name); }}
-                            className={`p-1 rounded transition-colors text-xs font-black shrink-0 ${swapSource?.name === pR.name ? 'bg-amber-500 text-black' : 'text-red-700 hover:text-foreground hover:bg-red-200'}`}
+                            className={`p-1 rounded transition-colors text-xs font-black shrink-0 ${swapSource?.name === pR.name ? 'bg-primary-500 text-black' : 'text-danger-700 hover:text-foreground hover:bg-danger-200'}`}
                             title="タップして入れ替え"
                           >
                             ⇄
@@ -1808,9 +1808,9 @@ export default function BalancerPage() {
 
               {/* AIレポート */}
               {balanceResult.balanceReport && (
-                <div className="p-4 bg-gradient-to-br from-amber-50 to-orange-50/60 border border-amber-300/80 rounded-2xl shadow-2xs space-y-2">
-                  <h3 className="text-sm font-extrabold text-amber-950 flex items-center gap-2">
-                    <Activity className="h-4 w-4 text-amber-600" />
+                <div className="p-4 bg-gradient-to-br from-primary-50 to-primary-50/60 border border-amber-300/80 rounded-2xl shadow-2xs space-y-2">
+                  <h3 className="text-sm font-extrabold text-primary-950 flex items-center gap-2">
+                    <Activity className="h-4 w-4 text-primary-600" />
                     <span>AIバランス分析 ＆ 勝敗予想レポート</span>
                   </h3>
                   <div className="text-xs text-foreground-soft leading-relaxed font-sans space-y-1.5 bg-surface/80 p-3.5 rounded-xl border border-amber-200/60">
@@ -1821,8 +1821,8 @@ export default function BalancerPage() {
                       if (!line) return <div key={i} className="h-1" />;
                       // **太字** や `コード` の簡易リッチテキスト変換
                       const formatted = line
-                        .replace(/\*\*(.*?)\*\*/g, '<strong class="font-black text-amber-950">$1</strong>')
-                        .replace(/`(.*?)`/g, '<code class="bg-amber-100 text-amber-900 font-mono px-1 py-0.5 rounded text-[11px] font-bold border border-amber-200">$1</code>');
+                        .replace(/\*\*(.*?)\*\*/g, '<strong class="font-black text-primary-950">$1</strong>')
+                        .replace(/`(.*?)`/g, '<code class="bg-primary-100 text-primary-900 font-mono px-1 py-0.5 rounded text-[11px] font-bold border border-amber-200">$1</code>');
                       return (
                         <div
                           key={i}
@@ -1846,16 +1846,16 @@ export default function BalancerPage() {
                       const specMmr = specP?.mmr || 1200;
                       return (
                         <div key={`spec-${index}`} draggable onDragStart={e => handleDragStart(e,'spectators',index.toString(),name)} onDragOver={e => handleDragOver(e,slotKey)} onDragLeave={handleDragLeave} onDrop={e => handleDropPlayer(e,'spectators',index.toString())}
-                          className={`border rounded px-2.5 py-1.5 min-w-[140px] flex items-center justify-between gap-1.5 transition cursor-grab ${dragOverSlot===slotKey?'border-orange-400 bg-orange-100 border-dashed':'bg-surface-subtle border-border hover:bg-surface-subtle'} ${swapSource?.name === name ? 'border-amber-500 bg-amber-100 animate-pulse' : ''}`}>
+                          className={`border rounded px-2.5 py-1.5 min-w-[140px] flex items-center justify-between gap-1.5 transition cursor-grab ${dragOverSlot===slotKey?'border-amber-400 bg-primary-100 border-dashed':'bg-surface-subtle border-border hover:bg-surface-subtle'} ${swapSource?.name === name ? 'border-amber-500 bg-primary-100 animate-pulse' : ''}`}>
                           <div className="flex-1 min-w-0">{renderSwapSelect('spectators',index.toString(),name)}</div>
-                          <span className="font-mono text-[10px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded shrink-0" title="KTM代表MMR">
+                          <span className="font-mono text-[10px] font-bold text-primary-800 bg-primary-100 px-1.5 py-0.5 rounded shrink-0" title="KTM代表MMR">
                             {specMmr}
                           </span>
                           {name && (
                             <button
                               type="button"
                               onClick={(e) => { e.stopPropagation(); handleSelectSwapPlayer('spectators', index.toString(), name); }}
-                              className={`p-0.5 rounded transition-colors text-xs font-black shrink-0 ${swapSource?.name === name ? 'bg-amber-500 text-black' : 'text-orange-700 hover:text-foreground hover:bg-surface-subtle'}`}
+                              className={`p-0.5 rounded transition-colors text-xs font-black shrink-0 ${swapSource?.name === name ? 'bg-primary-500 text-black' : 'text-primary-700 hover:text-foreground hover:bg-surface-subtle'}`}
                               title="タップして入れ替え"
                             >
                               ⇄
@@ -1885,7 +1885,7 @@ export default function BalancerPage() {
                     onClick={handleRecordNavigate}
                     disabled={savingPending}
                     type="button"
-                    className="flex-1 min-w-[200px] bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 text-white px-5 py-3 rounded-xl font-black transition flex items-center justify-center gap-2 shadow-lg cursor-pointer text-xs sm:text-sm"
+                    className="flex-1 min-w-[200px] bg-success-600 hover:bg-success-500 disabled:bg-success-800 text-white px-5 py-3 rounded-xl font-black transition flex items-center justify-center gap-2 shadow-lg cursor-pointer text-xs sm:text-sm"
                   >
                     <Trophy className="h-4 w-4" />
                     {savingPending ? '一時保存中...' : 'この編成で試合結果を記録 🏆'}
@@ -1895,10 +1895,10 @@ export default function BalancerPage() {
                     <button
                       type="button"
                       onClick={handleStartBo3}
-                      className="bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-950 px-4 py-3 rounded-xl font-black transition flex items-center justify-center gap-1.5 cursor-pointer text-xs sm:text-sm shadow-xs"
+                      className="bg-primary-100 hover:bg-primary-200 border border-amber-300 text-primary-950 px-4 py-3 rounded-xl font-black transition flex items-center justify-center gap-1.5 cursor-pointer text-xs sm:text-sm shadow-xs"
                       title="このチーム編成のままBO3（2本先取）マッチを開始します"
                     >
-                      <Trophy className="h-4 w-4 text-amber-700" />
+                      <Trophy className="h-4 w-4 text-primary-700" />
                       🏆 BO3シリーズ開始 (2本先取)
                     </button>
                   )}
@@ -1916,16 +1916,16 @@ export default function BalancerPage() {
                       });
                       setMessage({ type: 'success', text: '🔄 BLUE ⇄ RED の陣営を入れ替えました！' });
                     }}
-                    className="bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl font-bold transition flex items-center justify-center gap-1.5 cursor-pointer text-xs sm:text-sm"
+                    className="bg-primary-50 hover:bg-primary-100 border border-amber-200 text-primary-800 px-4 py-3 rounded-xl font-bold transition flex items-center justify-center gap-1.5 cursor-pointer text-xs sm:text-sm"
                     title="BLUEとREDの陣営を丸ごと入れ替えます"
                   >
-                    <Shuffle className="h-4 w-4 text-amber-600" />
+                    <Shuffle className="h-4 w-4 text-primary-600" />
                     サイド交代 (BLUE ⇄ RED)
                   </button>
 
                   <Link
                     href="/coach?tab=live"
-                    className="bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white px-5 py-3 rounded-xl font-black transition flex items-center justify-center gap-2 shadow-lg cursor-pointer text-xs sm:text-sm"
+                    className="bg-gradient-to-r from-secondary-600 to-success-600 hover:from-secondary-500 hover:to-success-500 text-white px-5 py-3 rounded-xl font-black transition flex items-center justify-center gap-2 shadow-lg cursor-pointer text-xs sm:text-sm"
                     title="コーチ画面の5v5シミュレータ・勝ち筋診断へ直結"
                   >
                     <Sparkles className="h-4 w-4" />
@@ -1961,15 +1961,15 @@ export default function BalancerPage() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
               <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-2">
-                <Users className="h-6 w-6 md:h-8 md:w-8 text-amber-700" /> チーム分けバランサー
+                <Users className="h-6 w-6 md:h-8 md:w-8 text-primary-700" /> チーム分けバランサー
               </h1>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              {saving && <span className="flex items-center gap-1 text-amber-700 text-xs"><RefreshCw className="h-3 w-3 animate-spin" /> 保存中...</span>}
+              {saving && <span className="flex items-center gap-1 text-primary-700 text-xs"><RefreshCw className="h-3 w-3 animate-spin" /> 保存中...</span>}
               {/* 2026-09-23: 飛び先を /ktm-admin?tab=history（管理者専用）から一般公開の /history へ変更。
                   リンク自体は isAdmin の外にあり全員に見えていたため、一般メンバーが押すと
                   管理者パスコードを求められて行き止まりになっていた。 */}
-              <Link href="/history" className="flex items-center gap-1.5 bg-surface-subtle hover:bg-surface-hover text-orange-700 px-3 py-1.5 rounded-lg font-bold transition text-xs border border-orange-200 whitespace-nowrap shrink-0">
+              <Link href="/history" className="flex items-center gap-1.5 bg-surface-subtle hover:bg-surface-hover text-primary-700 px-3 py-1.5 rounded-lg font-bold transition text-xs border border-amber-200 whitespace-nowrap shrink-0">
                 <History className="h-3.5 w-3.5" /> 過去の試合
               </Link>
               {isAdmin && (
@@ -1978,13 +1978,13 @@ export default function BalancerPage() {
                   title="管理者専用操作"
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition text-xs border whitespace-nowrap shrink-0 ${
                     integrityData?.hasDiscrepancy
-                      ? 'bg-rose-100 hover:bg-rose-100 border-rose-200 text-rose-700'
-                      : 'bg-amber-100 hover:bg-amber-100 border-amber-200 text-amber-700'
+                      ? 'bg-danger-100 hover:bg-danger-100 border-rose-200 text-danger-700'
+                      : 'bg-primary-100 hover:bg-primary-100 border-amber-200 text-primary-700'
                   }`}
                 >
                   <Shield className="h-3.5 w-3.5" /> 管理者パネル
                   {integrityData?.hasDiscrepancy && (
-                    <span className="bg-rose-500 text-white rounded-full px-1.5 text-[10px] font-black">{integrityData.discrepancyCount}</span>
+                    <span className="bg-danger-500 text-white rounded-full px-1.5 text-[10px] font-black">{integrityData.discrepancyCount}</span>
                   )}
                 </button>
               )}
@@ -1994,7 +1994,7 @@ export default function BalancerPage() {
               <button
                 onClick={handleAnnounceStats}
                 disabled={announcingStats}
-                className="flex items-center gap-1.5 bg-orange-100 hover:bg-orange-100 border border-orange-200 text-orange-700 px-3 py-1.5 rounded-lg font-bold transition text-xs disabled:opacity-50 whitespace-nowrap shrink-0"
+                className="flex items-center gap-1.5 bg-primary-100 hover:bg-primary-100 border border-amber-200 text-primary-700 px-3 py-1.5 rounded-lg font-bold transition text-xs disabled:opacity-50 whitespace-nowrap shrink-0"
               >
                 <MessageSquare className="h-3.5 w-3.5" />
                 {announcingStats ? '通知中...' : '募集状況を通知 📢'}
@@ -2005,23 +2005,23 @@ export default function BalancerPage() {
           {/* ★ リアルタイム参加者バッジ */}
           <div className="flex flex-wrap items-center gap-2">
             <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border font-bold text-sm transition-all ${
-              canBalance ? 'bg-emerald-100 border-emerald-300/60 text-emerald-700 shadow-[0_0_12px_rgba(16,185,129,0.15)]' : 'bg-amber-100 border-amber-300/60 text-amber-700'
+              canBalance ? 'bg-success-100 border-emerald-300/60 text-success-700 shadow-[0_0_12px_rgba(16,185,129,0.15)]' : 'bg-primary-100 border-amber-300/60 text-primary-700'
             }`}>
-              <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${canBalance ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'}`}></span>
+              <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${canBalance ? 'bg-success-400' : 'bg-primary-400 animate-pulse'}`}></span>
               <span className="text-xs">参加</span>
-              <span className={`text-2xl font-black leading-none ${canBalance ? 'text-emerald-700' : 'text-amber-700'}`}>{activeCount}</span>
+              <span className={`text-2xl font-black leading-none ${canBalance ? 'text-success-700' : 'text-primary-700'}`}>{activeCount}</span>
               <span className="text-xs opacity-60">人</span>
               {canBalance ? (
-                <span className="text-xs text-emerald-700 font-black border-l border-emerald-300 pl-2">✅ 準備完了！</span>
+                <span className="text-xs text-success-700 font-black border-l border-emerald-300 pl-2">✅ 準備完了！</span>
               ) : (
-                <span className="text-xs text-amber-700 font-bold border-l border-amber-300 pl-2">あと {10 - activeCount} 人必要</span>
+                <span className="text-xs text-primary-700 font-bold border-l border-amber-300 pl-2">あと {10 - activeCount} 人必要</span>
               )}
             </div>
             {spectatorCount > 0 && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-amber-200 bg-amber-100 text-amber-700 font-bold text-sm">
-                <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-amber-200 bg-primary-100 text-primary-700 font-bold text-sm">
+                <span className="w-2 h-2 rounded-full bg-primary-400"></span>
                 <span className="text-xs">観戦</span>
-                <span className="text-xl font-black text-amber-700">{spectatorCount}</span>
+                <span className="text-xl font-black text-primary-700">{spectatorCount}</span>
                 <span className="text-xs opacity-60">人</span>
               </div>
             )}
@@ -2034,21 +2034,21 @@ export default function BalancerPage() {
 
             {/* 🏆 BO3 シリーズ進行状況バナー (アクティブ時) */}
             {bo3State && (
-              <div className="w-full flex flex-wrap items-center justify-between gap-3 p-3 bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-amber-500/15 border-2 border-amber-500/40 rounded-2xl shadow-sm">
+              <div className="w-full flex flex-wrap items-center justify-between gap-3 p-3 bg-gradient-to-r from-primary-500/15 via-primary-500/15 to-primary-500/15 border-2 border-amber-500/40 rounded-2xl shadow-sm">
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <span className="text-xl">🏆</span>
-                  <span className="text-xs font-black text-amber-950">
+                  <span className="text-xs font-black text-primary-950">
                     BO3 シリーズ進行中 [第{bo3State.gameNumber}戦]
                   </span>
-                  <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-teal-100 text-teal-900 border border-teal-300">
+                  <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-secondary-100 text-secondary-900 border border-teal-300">
                     🔵 {bo3State.team1IsCurrentlyBlue ? bo3State.team1Name : bo3State.team2Name}: {bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins}勝
                   </span>
                   <span className="text-xs font-black text-muted-strong">VS</span>
-                  <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-rose-100 text-rose-900 border border-rose-300">
+                  <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-danger-100 text-danger-900 border border-rose-300">
                     🔴 {!bo3State.team1IsCurrentlyBlue ? bo3State.team1Name : bo3State.team2Name}: {!bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins}勝
                   </span>
                   {bo3State.gameNumber === 3 && (
-                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-600 text-white animate-pulse">
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-danger-600 text-white animate-pulse">
                       🔥 1-1 最終決戦！
                     </span>
                   )}
@@ -2058,7 +2058,7 @@ export default function BalancerPage() {
                   <button
                     type="button"
                     onClick={() => setShowResultModal(true)}
-                    className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-black text-xs shadow-xs transition cursor-pointer flex items-center gap-1"
+                    className="px-3 py-1.5 rounded-xl bg-primary-600 hover:bg-primary-500 text-white font-black text-xs shadow-xs transition cursor-pointer flex items-center gap-1"
                   >
                     <span>スコアボードを開く 📊</span>
                   </button>
@@ -2074,26 +2074,26 @@ export default function BalancerPage() {
             )}
 
             {/* 📢 KTMカスタム新方針・ルール案内チップ */}
-            <div className="w-full flex flex-wrap items-center gap-2 text-xs bg-amber-50/80 border border-amber-200/80 rounded-xl p-2.5 text-amber-950">
-              <span className="font-black flex items-center gap-1 text-amber-900">
-                <Info className="h-3.5 w-3.5 text-amber-700" />
+            <div className="w-full flex flex-wrap items-center gap-2 text-xs bg-primary-50/80 border border-amber-200/80 rounded-xl p-2.5 text-primary-950">
+              <span className="font-black flex items-center gap-1 text-primary-900">
+                <Info className="h-3.5 w-3.5 text-primary-700" />
                 カスタム方針:
               </span>
-              <span className="bg-surface border border-amber-300/60 px-2 py-0.5 rounded-md font-bold text-[11px] text-teal-900">
+              <span className="bg-surface border border-amber-300/60 px-2 py-0.5 rounded-md font-bold text-[11px] text-secondary-900">
                 🛡️ シルバー以下: <strong>ブラインドピック (MMRあり)</strong>
               </span>
-              <span className="bg-surface border border-amber-300/60 px-2 py-0.5 rounded-md font-bold text-[11px] text-amber-900">
+              <span className="bg-surface border border-amber-300/60 px-2 py-0.5 rounded-md font-bold text-[11px] text-primary-900">
                 👑 ゴルプラ: <strong>ドラフトピック (MMRあり)</strong>
               </span>
               {/* スタイル別集計チップ */}
               <div className="flex items-center gap-1.5 ml-auto text-[11px] font-bold">
-                <span className="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-md">
+                <span className="bg-success-100 text-success-800 border border-emerald-300 px-2 py-0.5 rounded-md">
                   🟢 フル: {players.filter(p => p.participation_style === 'full').length}名
                 </span>
-                <span className="bg-teal-100 text-teal-800 border border-teal-300 px-2 py-0.5 rounded-md">
+                <span className="bg-secondary-100 text-secondary-800 border border-teal-300 px-2 py-0.5 rounded-md">
                   ⏱️ 1戦のみ: {players.filter(p => p.participation_style === 'single').length}名
                 </span>
-                <span className="bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 rounded-md">
+                <span className="bg-primary-100 text-primary-800 border border-amber-300 px-2 py-0.5 rounded-md">
                   🌙 途中参加: {players.filter(p => p.participation_style === 'late').length}名
                 </span>
               </div>
@@ -2104,7 +2104,7 @@ export default function BalancerPage() {
               <button
                 type="button"
                 onClick={handleSwitchToMatch2}
-                className="px-3 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-600 hover:from-amber-500 hover:to-amber-500 text-white font-bold text-xs shadow-xs transition flex items-center gap-1"
+                className="px-3 py-2 rounded-xl bg-gradient-to-r from-primary-600 to-primary-600 hover:from-primary-500 hover:to-primary-500 text-white font-bold text-xs shadow-xs transition flex items-center gap-1"
                 title="1戦のみのメンバーを待機にし、途中参加メンバーを参加ONに一括交代します"
               >
                 🔄 2戦目メンバーへ交代
@@ -2118,7 +2118,7 @@ export default function BalancerPage() {
                   setPlayers(updated);
                   try { localStorage.setItem('balancer_active_ids', JSON.stringify(updated.filter(p => p.is_active).map(p => p.id))); } catch {}
                 }}
-                className="px-3 py-2 rounded-xl bg-emerald-100 hover:bg-emerald-200 border border-emerald-200 text-emerald-800 font-bold text-xs transition"
+                className="px-3 py-2 rounded-xl bg-success-100 hover:bg-success-200 border border-emerald-200 text-success-800 font-bold text-xs transition"
                 title="観戦固定メンバーを除く全員の参加チェックをONにします"
               >
                 ✅ 全員参加ON
@@ -2149,7 +2149,7 @@ export default function BalancerPage() {
                     toast.error('復元に失敗しました。');
                   }
                 }}
-                className="px-3 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-900 font-bold text-xs transition"
+                className="px-3 py-2 rounded-xl bg-primary-100 hover:bg-primary-200 border border-amber-300 text-primary-900 font-bold text-xs transition"
                 title="前回のチーム分け時に参加していたメンバー構成を一元復元します"
               >
                 ⏪ 前回構成を復元
@@ -2157,9 +2157,9 @@ export default function BalancerPage() {
 
               {/* 卓分割の選択状態表示 */}
               {selectedTable && (
-                <span className="text-xs font-black px-3 py-2 rounded-lg bg-amber-100 text-amber-700 border border-amber-200 flex items-center gap-1.5">
+                <span className="text-xs font-black px-3 py-2 rounded-lg bg-primary-100 text-primary-700 border border-amber-200 flex items-center gap-1.5">
                   {selectedTable.label}でチーム分け
-                  <button onClick={() => setSelectedTable(null)} className="text-amber-700/70 hover:text-foreground">✕</button>
+                  <button onClick={() => setSelectedTable(null)} className="text-primary-700/70 hover:text-foreground">✕</button>
                 </span>
               )}
               {/* BL-02: 探索強度 */}
@@ -2178,7 +2178,7 @@ export default function BalancerPage() {
                 className={`flex items-center justify-center gap-1.5 px-3 py-2 md:px-4 md:py-2.5 rounded-xl font-black transition text-xs md:text-sm border ${
                   balancing || !canBalance
                     ? 'bg-surface-subtle text-faint border-border cursor-not-allowed'
-                    : 'bg-gradient-to-r from-amber-600 to-pink-600 hover:from-amber-500 hover:to-pink-500 text-white border-amber-400 shadow-md shadow-amber-500/20 cursor-pointer'
+                    : 'bg-gradient-to-r from-primary-600 to-danger-600 hover:from-primary-500 hover:to-danger-500 text-white border-amber-400 shadow-md shadow-primary-500/20 cursor-pointer'
                 }`}
                 title="MMRやレーン希望に関係なく、10名を完全ランダムにBlue/Redへ振り分けます（公式MMR変動なし）"
               >
@@ -2187,7 +2187,7 @@ export default function BalancerPage() {
 
               <button onClick={handleBalance} disabled={balancing || !canBalance}
                 className={`flex items-center justify-center gap-2 px-5 py-2.5 md:px-8 md:py-3 rounded-xl font-black transition text-sm md:text-base ${
-                  balancing || !canBalance ? 'bg-surface-subtle text-muted-strong cursor-not-allowed' : 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow-[0_0_20px_rgba(217,119,6,0.4)]'
+                  balancing || !canBalance ? 'bg-surface-subtle text-muted-strong cursor-not-allowed' : 'bg-gradient-to-r from-primary-600 to-primary-600 hover:from-primary-500 hover:to-primary-500 text-white shadow-[0_0_20px_rgba(217,119,6,0.4)]'
                 }`}>
                 {balancing ? <RefreshCw className="h-5 w-5 animate-spin" /> : <Swords className="h-5 w-5" />}
                 {balancing ? 'AIが編成中...' : 'チーム分け実行'}
@@ -2196,13 +2196,13 @@ export default function BalancerPage() {
           </div>
 
           {/* 🛒 発動中の特権・ハンデ確認メモ */}
-          <details className="mt-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl p-3 text-xs">
-            <summary className="font-bold text-amber-900 cursor-pointer select-none flex items-center justify-between">
+          <details className="mt-3 bg-primary-500/10 border border-amber-500/20 rounded-2xl p-3 text-xs">
+            <summary className="font-bold text-primary-900 cursor-pointer select-none flex items-center justify-between">
               <span className="flex items-center gap-2">
                 <span>🛒 発動中の特権・ハンデを確認する</span>
-                <span className="text-[10px] bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full font-bold">KTMショップ連動</span>
+                <span className="text-[10px] bg-primary-200 text-primary-900 px-2 py-0.5 rounded-full font-bold">KTMショップ連動</span>
               </span>
-              <span className="text-[10px] text-amber-700">▼</span>
+              <span className="text-[10px] text-primary-700">▼</span>
             </summary>
             <div className="mt-2.5 pt-2.5 border-t border-amber-500/20 space-y-2 text-foreground-subtle">
               <p className="text-[11px] text-muted">
@@ -2210,11 +2210,11 @@ export default function BalancerPage() {
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
                 <div className="p-2 rounded-xl bg-surface border border-amber-200">
-                  <span className="font-bold text-amber-900">👑 下剋上キャラ指定:</span>
+                  <span className="font-bold text-primary-900">👑 下剋上キャラ指定:</span>
                   <span className="ml-1 text-muted">対象の高レートに苦手チャンプを指定 (実効MMR -400)</span>
                 </div>
                 <div className="p-2 rounded-xl bg-surface border border-amber-200">
-                  <span className="font-bold text-amber-900">🎪 お祭りカスタム:</span>
+                  <span className="font-bold text-primary-900">🎪 お祭りカスタム:</span>
                   <span className="ml-1 text-muted">結果記録時に「戦績ノーカウント保護」をONにする</span>
                 </div>
               </div>
@@ -2223,7 +2223,7 @@ export default function BalancerPage() {
           {/* 前回結果の再表示ボタン */}
           {balanceResult && !showResultModal && (
             <button onClick={() => setShowResultModal(true)}
-              className="flex items-center gap-2 bg-orange-100 hover:bg-orange-100 border border-orange-300/50 text-orange-700 px-4 py-2 rounded-lg font-bold transition text-sm">
+              className="flex items-center gap-2 bg-primary-100 hover:bg-primary-100 border border-amber-300/50 text-primary-700 px-4 py-2 rounded-lg font-bold transition text-sm">
               <Globe className="h-4 w-4" /> 前回のチーム分け結果を再表示
             </button>
           )}
@@ -2234,12 +2234,12 @@ export default function BalancerPage() {
           <div className="bg-surface border border-amber-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
-                <AlertTriangle className={`h-4 w-4 ${integrityData?.hasDiscrepancy ? 'text-rose-700' : 'text-emerald-700'}`} />
+                <AlertTriangle className={`h-4 w-4 ${integrityData?.hasDiscrepancy ? 'text-danger-700' : 'text-success-700'}`} />
                 <span className="text-sm font-bold text-foreground">MMR整合性ステータス</span>
                 {checkingIntegrity ? (
                   <span className="text-xs text-muted-strong">確認中...</span>
                 ) : integrityData ? (
-                  <span className={`text-xs font-bold ${integrityData.hasDiscrepancy ? 'text-rose-700' : 'text-emerald-700'}`}>
+                  <span className={`text-xs font-bold ${integrityData.hasDiscrepancy ? 'text-danger-700' : 'text-success-700'}`}>
                     {integrityData.hasDiscrepancy ? `${integrityData.discrepancyCount}人にズレがあります` : '全員一致しています'}
                   </span>
                 ) : (
@@ -2257,7 +2257,7 @@ export default function BalancerPage() {
                 <button
                   onClick={handleRebuildMmr}
                   disabled={rebuildingMmr}
-                  className="flex items-center gap-1.5 bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 px-3 py-1.5 rounded-lg font-bold transition text-xs disabled:opacity-50"
+                  className="flex items-center gap-1.5 bg-danger-100 hover:bg-danger-200 text-danger-700 border border-rose-300 px-3 py-1.5 rounded-lg font-bold transition text-xs disabled:opacity-50"
                   title="過去のすべての試合履歴を元にMMRを再計算し、全員のデータを上書きします"
                 >
                   <RefreshCw className={`h-3.5 w-3.5 ${rebuildingMmr ? 'animate-spin' : ''}`} /> 🔄 Rebuild
@@ -2267,7 +2267,7 @@ export default function BalancerPage() {
             {integrityData?.hasDiscrepancy && (
               <div className="text-xs text-faint">
                 名簿の編集・Riot/Discord同期・アフィリエイト管理などの詳細操作は
-                <Link href="/ktm-admin" prefetch={false} className="text-amber-700 hover:underline mx-1">KTM管理ダッシュボード</Link>
+                <Link href="/ktm-admin" prefetch={false} className="text-primary-700 hover:underline mx-1">KTM管理ダッシュボード</Link>
                 で行えます。
               </div>
             )}
@@ -2291,17 +2291,17 @@ export default function BalancerPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
                     <div className="bg-black/[0.04] rounded-lg p-2 text-center">
                       <div className="text-[10px] text-muted-strong">予測的中率</div>
-                      <div className="text-lg font-black text-emerald-700">{predStats.accuracy}%</div>
+                      <div className="text-lg font-black text-success-700">{predStats.accuracy}%</div>
                       <div className="text-[10px] text-muted-strong">{predStats.correct}/{predStats.total}戦</div>
                     </div>
                     <div className="bg-black/[0.04] rounded-lg p-2 text-center">
                       <div className="text-[10px] text-muted-strong">平均接戦度</div>
-                      <div className={`text-lg font-black ${predStats.avgCloseness >= 80 ? 'text-amber-700' : predStats.avgCloseness >= 60 ? 'text-amber-700' : 'text-rose-700'}`}>{predStats.avgCloseness}</div>
+                      <div className={`text-lg font-black ${predStats.avgCloseness >= 80 ? 'text-primary-700' : predStats.avgCloseness >= 60 ? 'text-primary-700' : 'text-danger-700'}`}>{predStats.avgCloseness}</div>
                       <div className="text-[10px] text-muted-strong">100=完全拮抗</div>
                     </div>
                     <div className="bg-black/[0.04] rounded-lg p-2 text-center">
                       <div className="text-[10px] text-muted-strong">平均の偏り</div>
-                      <div className="text-lg font-black text-amber-700">±{predStats.avgConfidence}%</div>
+                      <div className="text-lg font-black text-primary-700">±{predStats.avgConfidence}%</div>
                       <div className="text-[10px] text-muted-strong">低=拮抗</div>
                     </div>
                     <div className="bg-black/[0.04] rounded-lg p-2 text-center">
@@ -2316,7 +2316,7 @@ export default function BalancerPage() {
                       <div className="text-[10px] text-muted-strong mb-1">直近10戦の接戦度（左が最新）</div>
                       <div className="flex gap-1">
                         {predStats.recentCloseness.map((c, i) => (
-                          <div key={i} title={`接戦度 ${c}`} className={`flex-1 h-6 rounded flex items-center justify-center text-[9px] font-black ${c >= 80 ? 'bg-amber-100 text-amber-700 border border-amber-200' : c >= 60 ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-rose-100 text-rose-700 border border-rose-200'}`}>
+                          <div key={i} title={`接戦度 ${c}`} className={`flex-1 h-6 rounded flex items-center justify-center text-[9px] font-black ${c >= 80 ? 'bg-primary-100 text-primary-700 border border-amber-200' : c >= 60 ? 'bg-primary-100 text-primary-700 border border-amber-200' : 'bg-danger-100 text-danger-700 border border-rose-200'}`}>
                             {c}
                           </div>
                         ))}
@@ -2338,12 +2338,12 @@ export default function BalancerPage() {
               <div className="border-t border-border pt-3">
                 <span className="text-sm font-bold text-foreground">🎨 サイド偏り（Blue/Red勝率）</span>
                 <div className="flex items-center gap-3 mt-2">
-                  <span className="text-xs font-black text-teal-700 w-28 text-right">BLUE {sideStats.blueRate}%</span>
+                  <span className="text-xs font-black text-secondary-700 w-28 text-right">BLUE {sideStats.blueRate}%</span>
                   <div className="flex-1 h-3 rounded-full overflow-hidden bg-surface-subtle flex">
-                    <div className="bg-teal-500/80" style={{ width: `${sideStats.blueRate}%` }}></div>
-                    <div className="bg-red-500/80" style={{ width: `${100 - sideStats.blueRate}%` }}></div>
+                    <div className="bg-secondary-500/80" style={{ width: `${sideStats.blueRate}%` }}></div>
+                    <div className="bg-danger-500/80" style={{ width: `${100 - sideStats.blueRate}%` }}></div>
                   </div>
-                  <span className="text-xs font-black text-red-700 w-28">RED {Math.round((100 - sideStats.blueRate) * 10) / 10}%</span>
+                  <span className="text-xs font-black text-danger-700 w-28">RED {Math.round((100 - sideStats.blueRate) * 10) / 10}%</span>
                 </div>
                 <p className="text-[10px] text-muted-strong mt-1.5">
                   全{sideStats.total}戦（Blue {sideStats.blueWins}勝）。50%から大きくズレている場合はサイド有利かサイド公平化ロジックの見直し材料になります。
@@ -2392,7 +2392,7 @@ export default function BalancerPage() {
                   <div className="flex justify-end gap-2">
                     <button onClick={() => setShowInitialPrefs(false)} className="px-4 py-2 rounded-lg text-xs font-bold bg-surface-subtle text-foreground-subtle hover:bg-surface-hover">キャンセル</button>
                     <button onClick={saveInitialPrefs} disabled={savingInitial}
-                      className="px-4 py-2 rounded-lg text-xs font-black bg-amber-600 hover:bg-amber-500 text-white disabled:opacity-50 flex items-center gap-1.5">
+                      className="px-4 py-2 rounded-lg text-xs font-black bg-primary-600 hover:bg-primary-500 text-white disabled:opacity-50 flex items-center gap-1.5">
                       {savingInitial && <RefreshCw className="h-3.5 w-3.5 animate-spin" />}
                       保存（要Rebuild）
                     </button>
@@ -2421,7 +2421,7 @@ export default function BalancerPage() {
                   <div className="grid grid-cols-3 gap-2 mt-2">
                     <div className="bg-black/[0.04] rounded-lg p-2 text-center">
                       <div className="text-[10px] text-muted-strong">満足度</div>
-                      <div className="text-lg font-black text-emerald-700">{satStats.satisfactionRate !== null ? `${satStats.satisfactionRate}%` : '—'}</div>
+                      <div className="text-lg font-black text-success-700">{satStats.satisfactionRate !== null ? `${satStats.satisfactionRate}%` : '—'}</div>
                     </div>
                     <div className="bg-black/[0.04] rounded-lg p-2 text-center">
                       <div className="text-[10px] text-muted-strong">👍 / 😐 / 👎</div>
@@ -2443,7 +2443,7 @@ export default function BalancerPage() {
                           const bad = votes > 0 && r.up / votes <= 0.4;
                           return (
                             <div key={i} title={`👍${r.up} 😐${r.neutral} 👎${r.down}`}
-                              className={`px-2 py-1 rounded text-[9px] font-black border ${votes === 0 ? 'bg-black/[0.04] text-muted-strong border-border' : good ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : bad ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-amber-100 text-amber-700 border-amber-200'}`}>
+                              className={`px-2 py-1 rounded text-[9px] font-black border ${votes === 0 ? 'bg-black/[0.04] text-muted-strong border-border' : good ? 'bg-success-100 text-success-700 border-emerald-200' : bad ? 'bg-danger-100 text-danger-700 border-rose-200' : 'bg-primary-100 text-primary-700 border-amber-200'}`}>
                               {votes === 0 ? '票なし' : `👍${r.up}/👎${r.down}`}
                             </div>
                           );
@@ -2465,7 +2465,7 @@ export default function BalancerPage() {
         {isAdmin && gapDiagnosis && (
           <div className="bg-surface border border-rose-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-black text-rose-700">⚠️ レート差の警告</span>
+              <span className="text-sm font-black text-danger-700">⚠️ レート差の警告</span>
               <span className="text-[10px] text-muted-strong">MMR幅 {gapDiagnosis.spread} — 近い実力の相手がいない人がいます</span>
             </div>
             <div className="space-y-2">
@@ -2474,17 +2474,17 @@ export default function BalancerPage() {
                   <div className="text-xs text-foreground-subtle min-w-0">
                     <span className="font-black text-foreground">{p.name}</span>
                     <span className="text-muted-strong font-mono ml-2">{p.mmr || 1200}</span>
-                    <span className="text-rose-700 ml-2">次点 {nearest}（差 {gap}）</span>
+                    <span className="text-danger-700 ml-2">次点 {nearest}（差 {gap}）</span>
                   </div>
                   <div className="flex gap-1.5 shrink-0">
                     <button
                       onClick={() => handleInputChange(p.id, 'is_spectator_fixed', true)}
-                      className="text-[10px] font-bold px-2.5 py-1.5 rounded-lg bg-orange-100 text-orange-700 border border-orange-200 hover:bg-orange-100">
+                      className="text-[10px] font-bold px-2.5 py-1.5 rounded-lg bg-primary-100 text-primary-700 border border-amber-200 hover:bg-primary-100">
                       観戦に回す
                     </button>
                     <button
                       onClick={() => toggleHandicap(p.id)}
-                      className={`text-[10px] font-bold px-2.5 py-1.5 rounded-lg border ${handicapIds.includes(p.id) ? 'bg-amber-600 text-white border-amber-500' : 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100'}`}>
+                      className={`text-[10px] font-bold px-2.5 py-1.5 rounded-lg border ${handicapIds.includes(p.id) ? 'bg-primary-600 text-white border-amber-500' : 'bg-primary-100 text-primary-700 border-amber-200 hover:bg-primary-100'}`}>
                       {handicapIds.includes(p.id) ? '✓ ハンデ参加' : 'ハンデ参加'}
                     </button>
                   </div>
@@ -2492,7 +2492,7 @@ export default function BalancerPage() {
               ))}
             </div>
             <p className="text-[10px] text-muted-strong">
-              観戦に回した人は観戦Pityが溜まり次回は優先出場します。ハンデ参加は<strong className="text-amber-700">チーム分けの計算上のみMMRを{HANDICAP_MMR_PENALTY}下げて</strong>格差を緩和します（実際のMMR・戦績は変わりません）。結果とDiscord通知にも🎗️で明示されます。
+              観戦に回した人は観戦Pityが溜まり次回は優先出場します。ハンデ参加は<strong className="text-primary-700">チーム分けの計算上のみMMRを{HANDICAP_MMR_PENALTY}下げて</strong>格差を緩和します（実際のMMR・戦績は変わりません）。結果とDiscord通知にも🎗️で明示されます。
             </p>
           </div>
         )}
@@ -2501,17 +2501,17 @@ export default function BalancerPage() {
         {isAdmin && tableSplit && (
           <div className="bg-surface border border-amber-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-black text-amber-700">🪑 参加者{tableSplit.total}人 — 2卓に分けられます</span>
+              <span className="text-sm font-black text-primary-700">🪑 参加者{tableSplit.total}人 — 2卓に分けられます</span>
               <span className="text-[10px] text-muted-strong">代表MMR順に上位卓／下位卓へ自動仕分け（卓を選んでからチーム分けを実行）</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {[tableSplit.upper, tableSplit.lower].map((t: any) => (
-                <div key={t.label} className={`rounded-xl border p-3 ${selectedTable?.label === t.label ? 'border-amber-500 bg-amber-100' : 'border-border bg-black/[0.03]'}`}>
+                <div key={t.label} className={`rounded-xl border p-3 ${selectedTable?.label === t.label ? 'border-amber-500 bg-primary-100' : 'border-border bg-black/[0.03]'}`}>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-black text-foreground">{t.label}</span>
                     <button
                       onClick={() => setSelectedTable({ label: t.label, ids: t.ids })}
-                      className={`text-[10px] font-black px-3 py-1.5 rounded-lg transition ${selectedTable?.label === t.label ? 'bg-amber-600 text-white' : 'bg-surface-subtle text-foreground-subtle hover:bg-surface-hover'}`}>
+                      className={`text-[10px] font-black px-3 py-1.5 rounded-lg transition ${selectedTable?.label === t.label ? 'bg-primary-600 text-white' : 'bg-surface-subtle text-foreground-subtle hover:bg-surface-hover'}`}>
                       {selectedTable?.label === t.label ? '選択中' : 'この卓を選ぶ'}
                     </button>
                   </div>
@@ -2531,7 +2531,7 @@ export default function BalancerPage() {
 
         {/* メッセージ */}
         {message.text && (
-          <div className={`p-3 rounded-lg font-bold border text-sm flex items-start justify-between gap-3 ${message.type === 'error' ? 'bg-red-100 border-red-300 text-red-700' : 'bg-emerald-100 border-emerald-800 text-emerald-700'}`}>
+          <div className={`p-3 rounded-lg font-bold border text-sm flex items-start justify-between gap-3 ${message.type === 'error' ? 'bg-danger-100 border-rose-300 text-danger-700' : 'bg-success-100 border-emerald-800 text-success-700'}`}>
             <span>{message.text}</span>
             <button onClick={() => setMessage({ type:'', text:'' })} className="flex-shrink-0 opacity-60 hover:opacity-100 transition"><X className="h-4 w-4" /></button>
           </div>
@@ -2540,10 +2540,10 @@ export default function BalancerPage() {
         {/* 参加者リスト */}
         <div className="bg-surface border border-border rounded-xl overflow-hidden shadow-2xl">
           <div className="p-3 md:p-4 border-b border-border flex items-center gap-2 bg-surface">
-            <Users className="h-4 w-4 md:h-5 md:w-5 text-amber-700" />
+            <Users className="h-4 w-4 md:h-5 md:w-5 text-primary-700" />
             <h2 className="text-base md:text-xl font-bold text-foreground">参加者リスト</h2>
             <span className="text-xs text-muted-strong font-normal hidden md:inline ml-1">
-              ｜ <Crown className="inline w-3 h-3 text-amber-700" /> = 第1希望固定、<X className="inline w-3 h-3 text-orange-700" /> = 見学固定
+              ｜ <Crown className="inline w-3 h-3 text-primary-700" /> = 第1希望固定、<X className="inline w-3 h-3 text-primary-700" /> = 見学固定
             </span>
           </div>
 
@@ -2580,25 +2580,25 @@ export default function BalancerPage() {
               <div className="flex bg-surface rounded-lg p-0.5 border border-border text-xs">
                 <button
                   onClick={() => setStatusFilter(null)}
-                  className={`px-3 py-1.5 rounded-md font-bold transition ${!statusFilter ? 'bg-amber-600 text-white' : 'text-faint hover:text-foreground'}`}
+                  className={`px-3 py-1.5 rounded-md font-bold transition ${!statusFilter ? 'bg-primary-600 text-white' : 'text-faint hover:text-foreground'}`}
                 >
                   全員
                 </button>
                 <button
                   onClick={() => setStatusFilter('active')}
-                  className={`px-3 py-1.5 rounded-md font-bold transition ${statusFilter === 'active' ? 'bg-amber-600 text-white' : 'text-faint hover:text-foreground'}`}
+                  className={`px-3 py-1.5 rounded-md font-bold transition ${statusFilter === 'active' ? 'bg-primary-600 text-white' : 'text-faint hover:text-foreground'}`}
                 >
                   参加予定
                 </button>
                 <button
                   onClick={() => setStatusFilter('spectator')}
-                  className={`px-3 py-1.5 rounded-md font-bold transition ${statusFilter === 'spectator' ? 'bg-amber-600 text-white' : 'text-faint hover:text-foreground'}`}
+                  className={`px-3 py-1.5 rounded-md font-bold transition ${statusFilter === 'spectator' ? 'bg-primary-600 text-white' : 'text-faint hover:text-foreground'}`}
                 >
                   見学のみ
                 </button>
                 <button
                   onClick={() => setStatusFilter('inactive')}
-                  className={`px-3 py-1.5 rounded-md font-bold transition ${statusFilter === 'inactive' ? 'bg-amber-600 text-white' : 'text-faint hover:text-foreground'}`}
+                  className={`px-3 py-1.5 rounded-md font-bold transition ${statusFilter === 'inactive' ? 'bg-primary-600 text-white' : 'text-faint hover:text-foreground'}`}
                 >
                   不参加
                 </button>
@@ -2608,7 +2608,7 @@ export default function BalancerPage() {
               <div className="flex bg-surface rounded-lg p-0.5 border border-border text-xs">
                 <button
                   onClick={() => setRoleFilter(null)}
-                  className={`px-3 py-1.5 rounded-md font-bold transition ${!roleFilter ? 'bg-amber-600 text-white' : 'text-faint hover:text-foreground'}`}
+                  className={`px-3 py-1.5 rounded-md font-bold transition ${!roleFilter ? 'bg-primary-600 text-white' : 'text-faint hover:text-foreground'}`}
                 >
                   すべてのロール
                 </button>
@@ -2616,7 +2616,7 @@ export default function BalancerPage() {
                   <button
                     key={role}
                     onClick={() => setRoleFilter(roleFilter === role ? null : role)}
-                    className={`px-2.5 py-1.5 rounded-md font-bold transition flex items-center gap-1 ${roleFilter === role ? 'bg-amber-600 text-white' : 'text-faint hover:text-foreground'}`}
+                    className={`px-2.5 py-1.5 rounded-md font-bold transition flex items-center gap-1 ${roleFilter === role ? 'bg-primary-600 text-white' : 'text-faint hover:text-foreground'}`}
                   >
                     {role}
                   </button>
@@ -2641,8 +2641,8 @@ export default function BalancerPage() {
                   <SortableHeader label="KTM内戦MMR" sortKey="mmr" className="px-2" />
                   <th className="px-2 py-3 font-medium text-center">第1希望</th>
                   <th className="px-2 py-3 font-medium text-center">第2希望</th>
-                  <th className="px-1.5 py-3 font-medium text-center text-red-700">NG 1</th>
-                  <th className="px-1.5 py-3 font-medium text-center text-red-700">NG 2</th>
+                  <th className="px-1.5 py-3 font-medium text-center text-danger-700">NG 1</th>
+                  <th className="px-1.5 py-3 font-medium text-center text-danger-700">NG 2</th>
                   <SortableHeader label="こだわり" sortKey="weight" className="px-1.5 text-center" />
                   <SortableHeader label="格上" sortKey="allow_higher" className="px-1.5 text-center" />
                   <th className="px-2 py-3 font-medium text-center">Pity (正/負/観)</th>
@@ -2656,7 +2656,7 @@ export default function BalancerPage() {
                   const prevGroup = idx > 0 ? getGroup(filteredPlayers[idx - 1]) : -1;
                   const isBoundary = idx > 0 && curGroup !== prevGroup;
                   const groupLabelMap: Record<number,string> = { 0:'👑 固定メンバー', 2:'👁 観戦固定', 3:'⚫ 不参加' };
-                  const groupColorMap: Record<number,string> = { 0:'text-amber-700 bg-amber-100', 2:'text-orange-700 bg-orange-100', 3:'text-muted-strong bg-black/[0.03]' };
+                  const groupColorMap: Record<number,string> = { 0:'text-primary-700 bg-primary-100', 2:'text-primary-700 bg-primary-100', 3:'text-muted-strong bg-black/[0.03]' };
                   return (
                     <Fragment key={`balancer-row-${p.id}`}>
                       {isBoundary && groupLabelMap[curGroup] && (
@@ -2668,10 +2668,10 @@ export default function BalancerPage() {
                       )}
                       <tr key={p.id}
                         className={`hover:bg-black/[0.04] transition-all duration-500 ${
-                          flashingPlayerIds.includes(p.id) ? 'bg-emerald-100 border-y border-emerald-500/50' :
-                          p.is_fixed ? 'bg-amber-100 border-l-2 border-amber-500/70' :
-                          p.is_spectator_fixed ? 'bg-orange-100 border-l-2 border-orange-600/60 opacity-70' :
-                          p.is_active ? 'bg-amber-100 border-l-2 border-amber-500 text-foreground-soft' :
+                          flashingPlayerIds.includes(p.id) ? 'bg-success-100 border-y border-emerald-500/50' :
+                          p.is_fixed ? 'bg-primary-100 border-l-2 border-amber-500/70' :
+                          p.is_spectator_fixed ? 'bg-primary-100 border-l-2 border-amber-600/60 opacity-70' :
+                          p.is_active ? 'bg-primary-100 border-l-2 border-amber-500 text-foreground-soft' :
                           'opacity-40 hover:opacity-100'
                         }`}
                       >
@@ -2679,13 +2679,13 @@ export default function BalancerPage() {
                           <div className="flex items-center justify-center gap-1.5 min-w-[76px] h-7 mx-auto">
                             <input type="checkbox" checked={p.is_active}
                               onChange={e => { const a = e.target.checked; handleInputChange(p.id,'is_active',a); if(!a){handleInputChange(p.id,'is_fixed',false);handleInputChange(p.id,'is_spectator_fixed',false);} }}
-                              className="w-4 h-4 rounded border-border bg-surface-subtle text-amber-700 focus:ring-amber-500/50 cursor-pointer transition-transform hover:scale-110 flex-shrink-0" title="参加/不参加" />
+                              className="w-4 h-4 rounded border-border bg-surface-subtle text-primary-700 focus:ring-primary-500/50 cursor-pointer transition-transform hover:scale-110 flex-shrink-0" title="参加/不参加" />
                             <div className={`flex items-center gap-1 transition-all duration-300 overflow-hidden ${p.is_active?'opacity-100 max-w-[50px]':'opacity-0 max-w-0 pointer-events-none'}`}>
                               <button onClick={() => { if(p.is_spectator_fixed) handleInputChange(p.id,'is_spectator_fixed',false); handleInputChange(p.id,'is_fixed',!p.is_fixed); }}
-                                className={`p-0.5 rounded border transition-all ${p.is_fixed?'bg-amber-100 border-amber-200 text-amber-700':'border-border text-muted-strong hover:text-amber-700 hover:bg-amber-100'}`}
+                                className={`p-0.5 rounded border transition-all ${p.is_fixed?'bg-primary-100 border-amber-200 text-primary-700':'border-border text-muted-strong hover:text-primary-700 hover:bg-primary-100'}`}
                                 title="第1希望レーンで固定する"><Crown className="w-3 h-3" /></button>
                               <button onClick={() => { if(p.is_fixed) handleInputChange(p.id,'is_fixed',false); handleInputChange(p.id,'is_spectator_fixed',!p.is_spectator_fixed); }}
-                                className={`p-0.5 rounded border transition-all ${p.is_spectator_fixed?'bg-orange-100 border-orange-200 text-orange-700':'border-border text-muted-strong hover:text-orange-700 hover:bg-orange-100'}`}
+                                className={`p-0.5 rounded border transition-all ${p.is_spectator_fixed?'bg-primary-100 border-amber-200 text-primary-700':'border-border text-muted-strong hover:text-primary-700 hover:bg-primary-100'}`}
                                 title="見学固定にする"><X className="w-3 h-3" /></button>
                             </div>
                           </div>
@@ -2693,7 +2693,7 @@ export default function BalancerPage() {
                         <td className="px-2 py-1.5 text-center font-bold text-muted-strong text-xs">{p.no}</td>
                         <td className="px-2 py-1.5 font-bold text-foreground text-xs max-w-[240px]">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <button onClick={() => setSelectedPlayer(p)} className="text-amber-700 hover:text-foreground p-0.5 hover:bg-surface-subtle rounded transition flex-shrink-0" title="プロフィール">
+                            <button onClick={() => setSelectedPlayer(p)} className="text-primary-700 hover:text-foreground p-0.5 hover:bg-surface-subtle rounded transition flex-shrink-0" title="プロフィール">
                               <Info className="w-3.5 h-3.5" /></button>
                             <span className="font-extrabold text-foreground truncate max-w-[130px]" title={p.name}>{p.name}</span>
                             
@@ -2720,10 +2720,10 @@ export default function BalancerPage() {
                                 }}
                                 className={`text-[10px] font-black px-1.5 py-0.5 rounded border transition-transform hover:scale-105 cursor-pointer shadow-2xs ${
                                   p.participation_style === 'single'
-                                    ? 'bg-teal-100 text-teal-900 border-teal-300'
+                                    ? 'bg-secondary-100 text-secondary-900 border-teal-300'
                                     : p.participation_style === 'late'
-                                    ? 'bg-amber-100 text-amber-900 border-amber-300'
-                                    : 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                                    ? 'bg-primary-100 text-primary-900 border-amber-300'
+                                    : 'bg-success-100 text-success-900 border-emerald-300'
                                 }`}
                                 title="クリックで参加スタイルを切り替え (フル ➔ 1戦のみ ➔ 途中参加)"
                               >
@@ -2733,8 +2733,8 @@ export default function BalancerPage() {
 
                             {/* 🪙 所持コイン */}
                             {(p.coins > 0 || (p.metadata?.coins && p.metadata.coins > 0)) && (
-                              <span className="text-[10px] font-mono font-black bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.2 rounded-full flex items-center gap-0.5 shadow-2xs" title={`所持コイン: ${p.coins || p.metadata?.coins}枚`}>
-                                <Coins className="w-2.5 h-2.5 text-amber-600" />
+                              <span className="text-[10px] font-mono font-black bg-primary-100 text-primary-900 border border-amber-300 px-1.5 py-0.2 rounded-full flex items-center gap-0.5 shadow-2xs" title={`所持コイン: ${p.coins || p.metadata?.coins}枚`}>
+                                <Coins className="w-2.5 h-2.5 text-primary-600" />
                                 {p.coins || p.metadata?.coins}
                               </span>
                             )}
@@ -2746,7 +2746,7 @@ export default function BalancerPage() {
                               return (
                                 <div className="flex items-center gap-1">
                                   {casinoBadges.map((badge, idx) => (
-                                    <span key={idx} className="text-[9px] font-black bg-amber-100 text-amber-900 border border-amber-300 px-1 py-0.2 rounded flex items-center gap-0.5 shadow-2xs" title={`カジノ特典: ${badge.label}`}>
+                                    <span key={idx} className="text-[9px] font-black bg-primary-100 text-primary-900 border border-amber-300 px-1 py-0.2 rounded flex items-center gap-0.5 shadow-2xs" title={`カジノ特典: ${badge.label}`}>
                                       <span>{badge.icon}</span>
                                       <span className="max-w-[65px] truncate">{badge.label}</span>
                                     </span>
@@ -2769,7 +2769,7 @@ export default function BalancerPage() {
                               : `KTMランク: ${ktmTier.name} (MMR: ${repMmr})`;
                             return (
                               <div className="flex items-center justify-center gap-1.5" title={tooltip}>
-                                <span className="font-mono text-xs font-black text-amber-800 dark:text-amber-300">{repMmr}</span>
+                                <span className="font-mono text-xs font-black text-primary-800 dark:text-primary-300">{repMmr}</span>
                                 <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${badgeStyle.bg} ${badgeStyle.color} ${badgeStyle.border}`}>
                                   {ktmTier.name.split(' ')[0]}
                                 </span>
@@ -2796,39 +2796,39 @@ export default function BalancerPage() {
                         <td className="px-1.5 py-1.5 text-center">
                           <div className="flex items-center gap-1 bg-surface-subtle border border-border rounded px-1 py-0.5 w-16 mx-auto">
                             <RoleIcon role={p.ng_lane_1 || ''} className="w-2.5 h-2.5 flex-shrink-0" />
-                            <select value={p.ng_lane_1 || ''} onChange={e => handleInputChange(p.id,'ng_lane_1',e.target.value)} className="bg-transparent text-red-700 font-bold outline-none cursor-pointer w-full text-[10px]">
+                            <select value={p.ng_lane_1 || ''} onChange={e => handleInputChange(p.id,'ng_lane_1',e.target.value)} className="bg-transparent text-danger-700 font-bold outline-none cursor-pointer w-full text-[10px]">
                               <option value="" className="bg-surface-subtle text-faint">なし</option>
-                              {['TOP','JG','MID','ADC','SUP'].map(r => <option key={r} value={r} className="bg-surface-subtle text-red-700">{r}</option>)}
+                              {['TOP','JG','MID','ADC','SUP'].map(r => <option key={r} value={r} className="bg-surface-subtle text-danger-700">{r}</option>)}
                             </select>
                           </div>
                         </td>
                         <td className="px-1.5 py-1.5 text-center">
                           <div className="flex items-center gap-1 bg-surface-subtle border border-border rounded px-1 py-0.5 w-16 mx-auto">
                             <RoleIcon role={p.ng_lane_2 || ''} className="w-2.5 h-2.5 flex-shrink-0" />
-                            <select value={p.ng_lane_2 || ''} onChange={e => handleInputChange(p.id,'ng_lane_2',e.target.value)} className="bg-transparent text-red-700 font-bold outline-none cursor-pointer w-full text-[10px]">
+                            <select value={p.ng_lane_2 || ''} onChange={e => handleInputChange(p.id,'ng_lane_2',e.target.value)} className="bg-transparent text-danger-700 font-bold outline-none cursor-pointer w-full text-[10px]">
                               <option value="" className="bg-surface-subtle text-faint">なし</option>
-                              {['TOP','JG','MID','ADC','SUP'].map(r => <option key={r} value={r} className="bg-surface-subtle text-red-700">{r}</option>)}
+                              {['TOP','JG','MID','ADC','SUP'].map(r => <option key={r} value={r} className="bg-surface-subtle text-danger-700">{r}</option>)}
                             </select>
                           </div>
                         </td>
                         <td className="px-1.5 py-1.5 text-center">
-                          <select value={p.weight || 2} disabled={!isAdmin} onChange={e => handleInputChange(p.id,'weight',parseInt(e.target.value))} title={isAdmin ? '' : 'こだわり度の変更は管理者のみ可能です'} className="bg-surface-subtle border border-border rounded px-1.5 py-0.5 text-amber-700 font-bold outline-none focus:border-amber-500 w-12 cursor-pointer text-xs disabled:opacity-40 disabled:cursor-not-allowed">
+                          <select value={p.weight || 2} disabled={!isAdmin} onChange={e => handleInputChange(p.id,'weight',parseInt(e.target.value))} title={isAdmin ? '' : 'こだわり度の変更は管理者のみ可能です'} className="bg-surface-subtle border border-border rounded px-1.5 py-0.5 text-primary-700 font-bold outline-none focus:border-amber-500 w-12 cursor-pointer text-xs disabled:opacity-40 disabled:cursor-not-allowed">
                             {[1,2,3].map(n => <option key={n} value={n}>{n}</option>)}
                           </select>
                         </td>
                         <td className="px-1.5 py-1.5 text-center">
-                          <input type="checkbox" checked={!!p.allow_higher} onChange={e => handleInputChange(p.id,'allow_higher',e.target.checked)} className="w-4 h-4 rounded border-border bg-surface-subtle text-rose-700 focus:ring-rose-500/50 cursor-pointer transition-transform hover:scale-110" />
+                          <input type="checkbox" checked={!!p.allow_higher} onChange={e => handleInputChange(p.id,'allow_higher',e.target.checked)} className="w-4 h-4 rounded border-border bg-surface-subtle text-danger-700 focus:ring-danger-500/50 cursor-pointer transition-transform hover:scale-110" />
                         </td>
                         <td className="px-1.5 py-1.5 text-center">
                           <div className="flex items-center justify-center gap-1 w-24 mx-auto">
-                            <span className="px-1.5 py-0.5 rounded bg-emerald-100 border border-emerald-200 text-emerald-700 text-[10px] font-mono font-bold" title="Pity">{p.pity || 0}</span>
-                            <span className="px-1.5 py-0.5 rounded bg-amber-100 border border-amber-200 text-amber-700 text-[10px] font-mono font-bold" title="OffPity">{p.off_role_pity || 0}</span>
-                            <span className="px-1.5 py-0.5 rounded bg-amber-100 border border-amber-200 text-amber-700 text-[10px] font-mono font-bold" title="観戦Pity">{p.spectator_pity || 0}</span>
+                            <span className="px-1.5 py-0.5 rounded bg-success-100 border border-emerald-200 text-success-700 text-[10px] font-mono font-bold" title="Pity">{p.pity || 0}</span>
+                            <span className="px-1.5 py-0.5 rounded bg-primary-100 border border-amber-200 text-primary-700 text-[10px] font-mono font-bold" title="OffPity">{p.off_role_pity || 0}</span>
+                            <span className="px-1.5 py-0.5 rounded bg-primary-100 border border-amber-200 text-primary-700 text-[10px] font-mono font-bold" title="観戦Pity">{p.spectator_pity || 0}</span>
                           </div>
                         </td>
                         <td className="px-2 py-1.5">
                           <input type="text" value={p.metadata?.notes || ''} onChange={e => handleInputChange(p.id,'notes',e.target.value)} placeholder="備考"
-                            className="bg-transparent border border-transparent hover:border-border focus:border-border hover:bg-black/[0.04] focus:bg-surface focus:ring-1 focus:ring-amber-500/30 rounded px-2 py-0.5 outline-none text-xs text-foreground-subtle w-20 transition-all" />
+                            className="bg-transparent border border-transparent hover:border-border focus:border-border hover:bg-black/[0.04] focus:bg-surface focus:ring-1 focus:ring-primary-500/30 rounded px-2 py-0.5 outline-none text-xs text-foreground-subtle w-20 transition-all" />
                         </td>
                       </tr>
                     </Fragment>
@@ -2868,7 +2868,7 @@ export default function BalancerPage() {
               const prevGroup = idx > 0 ? getGroup(filteredPlayers[idx - 1]) : -1;
               const isBoundary = idx > 0 && curGroup !== prevGroup;
               const groupLabelMap: Record<number,string> = { 0:'👑 固定メンバー', 2:'👁 観戦固定', 3:'⚫ 不参加' };
-              const groupBgMap: Record<number,string> = { 0:'bg-amber-100 text-amber-700', 2:'bg-orange-100 text-orange-700', 3:'bg-surface-subtle text-muted-strong' };
+              const groupBgMap: Record<number,string> = { 0:'bg-primary-100 text-primary-700', 2:'bg-primary-100 text-primary-700', 3:'bg-surface-subtle text-muted-strong' };
               const repMmr = p.mmr || 1200;
               const highestLaneMmr = getHighestLaneMmr(p);
               const ktmTier = getKtmRank(highestLaneMmr);
@@ -2883,20 +2883,20 @@ export default function BalancerPage() {
                     <div className={`px-4 py-2 text-[11px] font-bold ${groupBgMap[curGroup]}`}>{groupLabelMap[curGroup]}</div>
                   )}
                   <div className={`p-3 flex items-start gap-3 transition-all ${
-                    p.is_fixed ? 'bg-amber-100 border-l-2 border-amber-500/70' :
-                    p.is_spectator_fixed ? 'bg-orange-100 border-l-2 border-orange-600/60 opacity-70' :
-                    p.is_active ? 'bg-amber-100 border-l-2 border-amber-500' : 'opacity-40'
+                    p.is_fixed ? 'bg-primary-100 border-l-2 border-amber-500/70' :
+                    p.is_spectator_fixed ? 'bg-primary-100 border-l-2 border-amber-600/60 opacity-70' :
+                    p.is_active ? 'bg-primary-100 border-l-2 border-amber-500' : 'opacity-40'
                   }`}>
                     <div className="flex flex-col items-center gap-1.5 flex-shrink-0 pt-1">
                       <input type="checkbox" checked={p.is_active}
                         onChange={e => { const a = e.target.checked; handleInputChange(p.id,'is_active',a); if(!a){handleInputChange(p.id,'is_fixed',false);handleInputChange(p.id,'is_spectator_fixed',false);} }}
-                        className="w-5 h-5 rounded border-border bg-surface-subtle text-amber-700 cursor-pointer" />
+                        className="w-5 h-5 rounded border-border bg-surface-subtle text-primary-700 cursor-pointer" />
                       {p.is_active && (
                         <div className="flex gap-0.5">
                           <button onClick={() => { if(p.is_spectator_fixed) handleInputChange(p.id,'is_spectator_fixed',false); handleInputChange(p.id,'is_fixed',!p.is_fixed); }}
-                            className={`p-0.5 rounded border ${p.is_fixed?'bg-amber-100 border-amber-200 text-amber-700':'border-border text-muted-strong'}`}><Crown className="w-3.5 h-3.5" /></button>
+                            className={`p-0.5 rounded border ${p.is_fixed?'bg-primary-100 border-amber-200 text-primary-700':'border-border text-muted-strong'}`}><Crown className="w-3.5 h-3.5" /></button>
                           <button onClick={() => { if(p.is_fixed) handleInputChange(p.id,'is_fixed',false); handleInputChange(p.id,'is_spectator_fixed',!p.is_spectator_fixed); }}
-                            className={`p-0.5 rounded border ${p.is_spectator_fixed?'bg-orange-100 border-orange-200 text-orange-700':'border-border text-muted-strong'}`}><X className="w-3.5 h-3.5" /></button>
+                            className={`p-0.5 rounded border ${p.is_spectator_fixed?'bg-primary-100 border-amber-200 text-primary-700':'border-border text-muted-strong'}`}><X className="w-3.5 h-3.5" /></button>
                         </div>
                       )}
                     </div>
@@ -2913,7 +2913,7 @@ export default function BalancerPage() {
                           );
                         })()}
                         {p.participation_style && (
-                          <span className="text-[9px] font-black px-1.5 py-0.2 rounded border bg-amber-100 text-amber-900 border-amber-300">
+                          <span className="text-[9px] font-black px-1.5 py-0.2 rounded border bg-primary-100 text-primary-900 border-amber-300">
                             {p.participation_style === 'single' ? '⏱️1戦のみ' : p.participation_style === 'late' ? '🌙途中参加' : '🟢フル'}
                           </span>
                         )}
@@ -2921,7 +2921,7 @@ export default function BalancerPage() {
                         
                         {/* MMR ＆ KTMランクバッジ */}
                         <div className="ml-auto flex items-center gap-1" title={tooltip}>
-                          <span className="font-mono text-amber-700 text-xs font-bold">{repMmr}</span>
+                          <span className="font-mono text-primary-700 text-xs font-bold">{repMmr}</span>
                           <span className={`text-[9px] font-black px-1.5 py-0.2 rounded border ${badgeStyle.bg} ${badgeStyle.color} ${badgeStyle.border}`}>
                             {ktmTier.name.split(' ')[0]}
                           </span>
@@ -2935,16 +2935,16 @@ export default function BalancerPage() {
                           </select>
                         </div>
                         {(p.ng_lane_1 || p.ng_lane_2) && (
-                          <div className="flex items-center gap-1 text-red-700 text-xs font-bold">
+                          <div className="flex items-center gap-1 text-danger-700 text-xs font-bold">
                             <span className="opacity-60">NG:</span>
-                            {p.ng_lane_1 && <span className="bg-red-50 border border-red-200 px-1.5 rounded">{p.ng_lane_1}</span>}
-                            {p.ng_lane_2 && <span className="bg-red-50 border border-red-200 px-1.5 rounded">{p.ng_lane_2}</span>}
+                            {p.ng_lane_1 && <span className="bg-danger-50 border border-rose-200 px-1.5 rounded">{p.ng_lane_1}</span>}
+                            {p.ng_lane_2 && <span className="bg-danger-50 border border-rose-200 px-1.5 rounded">{p.ng_lane_2}</span>}
                           </div>
                         )}
                         <div className="flex items-center gap-0.5 ml-auto">
-                          <span className="px-1 py-0.5 rounded bg-emerald-100 text-emerald-700 text-[9px] font-mono" title="Pity">{p.pity || 0}</span>
-                          <span className="px-1 py-0.5 rounded bg-amber-100 text-amber-700 text-[9px] font-mono" title="OffPity">{p.off_role_pity || 0}</span>
-                          <span className="px-1 py-0.5 rounded bg-amber-100 text-amber-700 text-[9px] font-mono" title="観戦Pity">{p.spectator_pity || 0}</span>
+                          <span className="px-1 py-0.5 rounded bg-success-100 text-success-700 text-[9px] font-mono" title="Pity">{p.pity || 0}</span>
+                          <span className="px-1 py-0.5 rounded bg-primary-100 text-primary-700 text-[9px] font-mono" title="OffPity">{p.off_role_pity || 0}</span>
+                          <span className="px-1 py-0.5 rounded bg-primary-100 text-primary-700 text-[9px] font-mono" title="観戦Pity">{p.spectator_pity || 0}</span>
                         </div>
                       </div>
                     </div>
@@ -2975,25 +2975,25 @@ export default function BalancerPage() {
 
         {/* 用語解説（折りたたみ） */}
         <details className="bg-surface border border-border rounded-xl text-sm group">
-          <summary className="p-4 cursor-pointer flex items-center gap-2 font-bold text-amber-700 list-none select-none">
+          <summary className="p-4 cursor-pointer flex items-center gap-2 font-bold text-primary-700 list-none select-none">
             <Info className="h-4 w-4" /> KTM専用マッチング用語
             <ChevronDown className="h-4 w-4 ml-auto transition-transform duration-300 group-open:rotate-180" />
           </summary>
           <div className="px-4 pb-4 grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
             <div className="bg-surface-subtle p-4 rounded border border-border">
-              <span className="font-bold text-amber-700 mb-1 block">こだわり (1～3)</span>
+              <span className="font-bold text-primary-700 mb-1 block">こだわり (1～3)</span>
               <p className="text-faint">メインレーンをどれくらいやりたいかの度合い。1(絶対やりたい) ～ 3(どこでもいい)。</p>
             </div>
             <div className="bg-surface-subtle p-4 rounded border border-border">
-              <span className="font-bold text-rose-700 mb-1 block">格上許可 (ON/OFF)</span>
+              <span className="font-bold text-danger-700 mb-1 block">格上許可 (ON/OFF)</span>
               <p className="text-faint">自分よりMMRが高い相手と対面することを許容するかどうかの設定です。</p>
             </div>
             <div className="bg-surface-subtle p-4 rounded border border-border">
-              <span className="font-bold text-emerald-700 mb-1 block">PITY (ピティ)</span>
+              <span className="font-bold text-success-700 mb-1 block">PITY (ピティ)</span>
               <p className="text-faint">「希望外レーン」に飛ばされた人に貯まる同情ポイント。高いほど次回優先的にメインレーンへ。</p>
             </div>
             <div className="bg-surface-subtle p-4 rounded border border-border">
-              <span className="font-bold text-amber-700 mb-1 block">OFF PITY (オフピティ)</span>
+              <span className="font-bold text-primary-700 mb-1 block">OFF PITY (オフピティ)</span>
               <p className="text-faint">「希望レーン」を連続でやっている人に貯まるポイント。一時的に他レーンへ飛ばされる確率が上がります。</p>
             </div>
           </div>
@@ -3003,9 +3003,9 @@ export default function BalancerPage() {
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[95%] max-w-4xl bg-surface/95 text-foreground backdrop-blur-md border border-border rounded-2xl p-3 px-5 shadow-2xl flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
-              <Users className="w-4 h-4 text-amber-600" />
+              <Users className="w-4 h-4 text-primary-600" />
               <span className="text-xs text-muted font-bold">参加:</span>
-              <strong className={`font-mono text-xs sm:text-sm px-2 py-0.5 rounded-lg ${canBalance ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-rose-100 text-rose-800 border border-rose-300'}`}>
+              <strong className={`font-mono text-xs sm:text-sm px-2 py-0.5 rounded-lg ${canBalance ? 'bg-success-100 text-success-800 border border-emerald-300' : 'bg-danger-100 text-danger-800 border border-rose-300'}`}>
                 {activeCount} / 10 人 {canBalance ? '✅' : `(あと${10 - activeCount}人)`}
               </strong>
             </div>
@@ -3022,7 +3022,7 @@ export default function BalancerPage() {
                 onClick={() => setShowResultModal(true)}
                 className="px-3 py-2 rounded-xl bg-surface-subtle hover:bg-surface-hover text-foreground-soft font-bold text-xs border border-border transition flex items-center gap-1.5 cursor-pointer"
               >
-                <Globe className="w-3.5 h-3.5 text-amber-600" /> <span className="hidden sm:inline">結果表示</span>
+                <Globe className="w-3.5 h-3.5 text-primary-600" /> <span className="hidden sm:inline">結果表示</span>
               </button>
             )}
             <button
@@ -3032,7 +3032,7 @@ export default function BalancerPage() {
               className={`px-3 py-2 rounded-xl font-black text-xs flex items-center gap-1.5 transition cursor-pointer shadow-md border ${
                 balancing || !canBalance
                   ? 'bg-surface-subtle text-faint border-border cursor-not-allowed opacity-50'
-                  : 'bg-gradient-to-r from-amber-600 to-pink-600 hover:from-amber-500 hover:to-pink-500 text-white border-amber-400 shadow-amber-500/20'
+                  : 'bg-gradient-to-r from-primary-600 to-danger-600 hover:from-primary-500 hover:to-danger-500 text-white border-amber-400 shadow-primary-500/20'
               }`}
               title="完全ランダムでお祭りチーム分け（MMRなし）"
             >
@@ -3045,7 +3045,7 @@ export default function BalancerPage() {
               className={`px-4 sm:px-5 py-2 rounded-xl font-black text-xs sm:text-sm flex items-center gap-2 transition cursor-pointer shadow-lg ${
                 balancing || !canBalance
                   ? 'bg-surface-hover text-faint cursor-not-allowed opacity-50'
-                  : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-stone-950 shadow-amber-500/30'
+                  : 'bg-gradient-to-r from-primary-500 to-primary-500 hover:from-primary-400 hover:to-primary-400 text-stone-950 shadow-primary-500/30'
               }`}
             >
               {balancing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Swords className="w-4 h-4" />}

@@ -51,7 +51,7 @@ export default function LibraryPage() {
             </Link>
             <a
               href="/login"
-              className="rounded-xl bg-amber-500 hover:bg-amber-400 px-4 py-2 text-xs font-black text-stone-950 transition"
+              className="rounded-xl bg-primary-500 hover:bg-primary-400 px-4 py-2 text-xs font-black text-stone-950 transition"
             >
               管理者ログイン
             </a>
@@ -70,13 +70,13 @@ export default function LibraryPage() {
         className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 py-3.5 bg-surface border border-border/90 rounded-2xl shadow-xs"
       >
         <div className="flex items-center gap-3">
-          <div className="text-2xl p-2 bg-amber-50 rounded-xl border border-amber-200/80 shrink-0 text-amber-600">
+          <div className="text-2xl p-2 bg-primary-50 rounded-xl border border-amber-200/80 shrink-0 text-primary-600">
             <BookOpen size={24} />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-base sm:text-lg font-black tracking-tight text-foreground">攻略ライブラリ</h1>
-              <span className="px-2 py-0.5 rounded-full bg-amber-100 border border-amber-300 text-amber-800 text-[10px] font-extrabold">
+              <span className="px-2 py-0.5 rounded-full bg-primary-100 border border-amber-300 text-primary-800 text-[10px] font-extrabold">
                 管理者専用
               </span>
             </div>

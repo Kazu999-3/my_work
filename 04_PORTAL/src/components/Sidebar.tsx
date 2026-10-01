@@ -90,7 +90,7 @@ function UserAuthWidget({ collapsed, inDrawer }: { collapsed?: boolean; inDrawer
 
     return (
       <div
-        className={`p-2.5 rounded-2xl bg-amber-500/10 dark:bg-amber-500/15 border border-amber-500/20 flex items-center gap-2 transition ${
+        className={`p-2.5 rounded-2xl bg-primary-500/10 dark:bg-primary-500/15 border border-amber-500/20 flex items-center gap-2 transition ${
           collapsed && !inDrawer ? 'justify-center' : ''
         }`}
       >
@@ -102,10 +102,10 @@ function UserAuthWidget({ collapsed, inDrawer }: { collapsed?: boolean; inDrawer
           />
           {(!collapsed || inDrawer) && (
             <div className="min-w-0 flex-1">
-              <div className="text-xs font-black text-foreground dark:text-stone-100 truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition">
+              <div className="text-xs font-black text-foreground dark:text-stone-100 truncate group-hover:text-primary-600 dark:group-hover:text-primary-400 transition">
                 {user.displayName}
               </div>
-              <div className="text-[11px] font-bold text-amber-700 dark:text-amber-300 flex items-center gap-1">
+              <div className="text-[11px] font-bold text-primary-700 dark:text-primary-300 flex items-center gap-1">
                 <span>🪙</span>
                 <span>{(user.coins ?? 1000).toLocaleString()} pt</span>
               </div>
@@ -119,7 +119,7 @@ function UserAuthWidget({ collapsed, inDrawer }: { collapsed?: boolean; inDrawer
             type="button"
             onClick={handleQuickDailyClaim}
             disabled={claiming}
-            className="px-2 py-1 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-950 font-black text-[10px] rounded-xl shadow-xs transition-all animate-pulse flex items-center gap-1 cursor-pointer shrink-0 border border-amber-400"
+            className="px-2 py-1 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-stone-950 font-black text-[10px] rounded-xl shadow-xs transition-all animate-pulse flex items-center gap-1 cursor-pointer shrink-0 border border-amber-400"
             title="本日のデイリーボーナス (+100pt) を受け取る"
           >
             <Gift size={12} className="shrink-0" />
@@ -133,7 +133,7 @@ function UserAuthWidget({ collapsed, inDrawer }: { collapsed?: boolean; inDrawer
             type="button"
             onClick={handleQuickDailyClaim}
             disabled={claiming}
-            className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 text-stone-950 rounded-full flex items-center justify-center text-[9px] font-black border border-white animate-pulse"
+            className="absolute -top-1 -right-1 w-4 h-4 bg-primary-500 text-stone-950 rounded-full flex items-center justify-center text-[9px] font-black border border-white animate-pulse"
             title="本日のデイリーボーナス受取可能！"
           >
             🎁
@@ -149,7 +149,7 @@ function UserAuthWidget({ collapsed, inDrawer }: { collapsed?: boolean; inDrawer
               logout();
             }}
             title="ログアウト"
-            className="p-1.5 rounded-lg text-faint hover:text-rose-600 hover:bg-rose-500/10 transition shrink-0"
+            className="p-1.5 rounded-lg text-faint hover:text-danger-600 hover:bg-danger-500/10 transition shrink-0"
           >
             <LogOut size={15} />
           </button>
@@ -188,30 +188,30 @@ interface MenuItem {
 // 🌐 一般ユーザー向けメニュー（7大機能）
 const GENERAL_MENU_ITEMS: MenuItem[] = [
   // メイン
-  { id: 'home', label: 'ホーム / トップ', shortLabel: 'ホーム', icon: Home, href: '/', color: 'text-amber-500', activeBg: 'bg-amber-500/15', section: 'メイン' },
+  { id: 'home', label: 'ホーム / トップ', shortLabel: 'ホーム', icon: Home, href: '/', color: 'text-primary-500', activeBg: 'bg-primary-500/15', section: 'メイン' },
   // ユーザー・師弟
-  { id: 'mypage', label: 'マイページ / 希望レーン', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-amber-500', activeBg: 'bg-amber-500/15', section: 'ユーザー' },
-  { id: 'mentorship', label: '師弟自己紹介掲示板', shortLabel: '師弟掲示板', icon: HeartHandshake, href: '/mentorship', color: 'text-emerald-500', activeBg: 'bg-emerald-500/15', section: 'ユーザー' },
+  { id: 'mypage', label: 'マイページ / 希望レーン', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-primary-500', activeBg: 'bg-primary-500/15', section: 'ユーザー' },
+  { id: 'mentorship', label: '師弟自己紹介掲示板', shortLabel: '師弟掲示板', icon: HeartHandshake, href: '/mentorship', color: 'text-success-500', activeBg: 'bg-success-500/15', section: 'ユーザー' },
   // 対戦・大会
-  { id: 'balancer', label: 'チーム分けバランサー', shortLabel: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-rose-600', activeBg: 'bg-rose-500/15', section: '対戦 ＆ 大会' },
-  { id: 'casino', label: '勝敗予想 (カジノ)', shortLabel: '勝敗予想', icon: Coins, href: '/casino', color: 'text-amber-600', activeBg: 'bg-amber-500/15', section: '対戦 ＆ 大会' },
+  { id: 'balancer', label: 'チーム分けバランサー', shortLabel: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-danger-600', activeBg: 'bg-danger-500/15', section: '対戦 ＆ 大会' },
+  { id: 'casino', label: '勝敗予想 (カジノ)', shortLabel: '勝敗予想', icon: Coins, href: '/casino', color: 'text-primary-600', activeBg: 'bg-primary-500/15', section: '対戦 ＆ 大会' },
   // 2026-09-23: サイドメニューからは外した（バランサーの「過去の試合」ボタンから開く導線に一本化）。
   // ページ自体は /history に残っており、一般メンバーも閲覧できる。
   // コミュニティ・戦績
-  { id: 'leaderboard', label: '順位表 ＆ 名簿', shortLabel: '順位・名簿', icon: Trophy, href: '/leaderboard', color: 'text-yellow-600', activeBg: 'bg-yellow-500/15', section: 'コミュニティ' },
+  { id: 'leaderboard', label: '順位表 ＆ 名簿', shortLabel: '順位・名簿', icon: Trophy, href: '/leaderboard', color: 'text-primary-600', activeBg: 'bg-primary-500/15', section: 'コミュニティ' },
   // ガイド
-  { id: 'guide', label: '使い方 ＆ 更新情報', shortLabel: 'ガイド', icon: BookOpen, href: '/guide', color: 'text-emerald-600', activeBg: 'bg-emerald-500/15', section: 'ガイド' },
+  { id: 'guide', label: '使い方 ＆ 更新情報', shortLabel: 'ガイド', icon: BookOpen, href: '/guide', color: 'text-success-600', activeBg: 'bg-success-500/15', section: 'ガイド' },
 ];
 
 // 🛡️ 管理者向け追加メニュー（攻略辞典・攻略ライブラリ・戦術取込・パーソナルコーチ・外部分析・大会管理・運用）
 const ADMIN_EXTRA_ITEMS: MenuItem[] = [
-  { id: 'champions', label: 'チャンピオン攻略辞典', shortLabel: '攻略辞典', icon: BookHeart, href: '/champions', color: 'text-amber-600', activeBg: 'bg-amber-500/15', section: '管理者専用', adminOnly: true },
-  { id: 'library', label: '攻略ライブラリ (記事・戦術)', shortLabel: 'ライブラリ', icon: Library, href: '/library', color: 'text-amber-600', activeBg: 'bg-amber-500/15', section: '管理者専用', adminOnly: true },
-  { id: 'knowledge-ingest', label: '戦術取り込み (AI解析)', shortLabel: '戦術取込', icon: Download, href: '/admin/knowledge', color: 'text-pink-600', activeBg: 'bg-pink-500/15', section: '管理者専用', adminOnly: true },
-  { id: 'coach', label: 'パーソナルコーチ', shortLabel: 'コーチ', icon: Sparkles, href: '/coach', color: 'text-amber-600', activeBg: 'bg-amber-500/15', section: '管理者専用', adminOnly: true },
-  { id: 'analyzer', label: 'プレイヤー外部分析', shortLabel: '外部解析', icon: Globe, href: '/analyzer', color: 'text-teal-600', activeBg: 'bg-teal-500/15', section: '管理者専用', adminOnly: true },
-  { id: 'ktm-admin', label: 'KTM大会管理', shortLabel: '大会管理', icon: Shield, href: '/ktm-admin', color: 'text-amber-600', activeBg: 'bg-amber-500/15', section: '管理者専用', adminOnly: true },
-  { id: 'admin-guide', label: 'システム全貌仕様ガイド', shortLabel: '仕様ガイド', icon: BookOpen, href: '/admin/guide', color: 'text-amber-600', activeBg: 'bg-amber-500/15', section: '管理者専用', adminOnly: true },
+  { id: 'champions', label: 'チャンピオン攻略辞典', shortLabel: '攻略辞典', icon: BookHeart, href: '/champions', color: 'text-primary-600', activeBg: 'bg-primary-500/15', section: '管理者専用', adminOnly: true },
+  { id: 'library', label: '攻略ライブラリ (記事・戦術)', shortLabel: 'ライブラリ', icon: Library, href: '/library', color: 'text-primary-600', activeBg: 'bg-primary-500/15', section: '管理者専用', adminOnly: true },
+  { id: 'knowledge-ingest', label: '戦術取り込み (AI解析)', shortLabel: '戦術取込', icon: Download, href: '/admin/knowledge', color: 'text-danger-600', activeBg: 'bg-danger-500/15', section: '管理者専用', adminOnly: true },
+  { id: 'coach', label: 'パーソナルコーチ', shortLabel: 'コーチ', icon: Sparkles, href: '/coach', color: 'text-primary-600', activeBg: 'bg-primary-500/15', section: '管理者専用', adminOnly: true },
+  { id: 'analyzer', label: 'プレイヤー外部分析', shortLabel: '外部解析', icon: Globe, href: '/analyzer', color: 'text-secondary-600', activeBg: 'bg-secondary-500/15', section: '管理者専用', adminOnly: true },
+  { id: 'ktm-admin', label: 'KTM大会管理', shortLabel: '大会管理', icon: Shield, href: '/ktm-admin', color: 'text-primary-600', activeBg: 'bg-primary-500/15', section: '管理者専用', adminOnly: true },
+  { id: 'admin-guide', label: 'システム全貌仕様ガイド', shortLabel: '仕様ガイド', icon: BookOpen, href: '/admin/guide', color: 'text-primary-600', activeBg: 'bg-primary-500/15', section: '管理者専用', adminOnly: true },
   { id: 'dashboard', label: 'システム運用', shortLabel: '運用設定', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-foreground-soft dark:text-stone-200', activeBg: 'bg-black/10 dark:bg-white/10', section: '管理者専用', adminOnly: true },
 ];
 
@@ -314,10 +314,10 @@ export default function Sidebar() {
 
   // スマホ用ボトムバー固定項目（主要画面）
   const mobileBottomBarItems: MenuItem[] = [
-    { id: 'home', label: 'ホーム', shortLabel: 'ホーム', icon: Home, href: '/', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
-    { id: 'mypage', label: 'マイページ', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
-    { id: 'mentorship', label: '師弟掲示板', shortLabel: '師弟掲示板', icon: HeartHandshake, href: '/mentorship', color: 'text-emerald-500', activeBg: 'bg-emerald-500/15' },
-    { id: 'balancer', label: 'チーム分け', shortLabel: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-rose-600', activeBg: 'bg-rose-500/15' },
+    { id: 'home', label: 'ホーム', shortLabel: 'ホーム', icon: Home, href: '/', color: 'text-primary-500', activeBg: 'bg-primary-500/15' },
+    { id: 'mypage', label: 'マイページ', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-primary-500', activeBg: 'bg-primary-500/15' },
+    { id: 'mentorship', label: '師弟掲示板', shortLabel: '師弟掲示板', icon: HeartHandshake, href: '/mentorship', color: 'text-success-500', activeBg: 'bg-success-500/15' },
+    { id: 'balancer', label: 'チーム分け', shortLabel: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-danger-600', activeBg: 'bg-danger-500/15' },
   ];
 
   return (
@@ -395,7 +395,7 @@ export default function Sidebar() {
                   <div className="relative shrink-0 flex items-center justify-center">
                     <Icon size={18} />
                     {isCollapsed && isMentorship && mentorshipCount > 0 && (
-                      <span className="absolute -top-1.5 -right-2 px-1 text-[9px] font-black rounded-full bg-emerald-500 text-white min-w-[15px] h-[15px] flex items-center justify-center shadow-xs">
+                      <span className="absolute -top-1.5 -right-2 px-1 text-[9px] font-black rounded-full bg-success-500 text-white min-w-[15px] h-[15px] flex items-center justify-center shadow-xs">
                         {mentorshipCount}
                       </span>
                     )}
@@ -404,8 +404,8 @@ export default function Sidebar() {
                     <>
                       <span className="truncate">{item.label}</span>
                       {isMentorship && mentorshipCount > 0 && (
-                        <span className="ml-auto px-2 py-0.5 text-[10px] font-black rounded-full bg-emerald-500/15 dark:bg-emerald-500/25 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1 shrink-0 animate-pulse">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        <span className="ml-auto px-2 py-0.5 text-[10px] font-black rounded-full bg-success-500/15 dark:bg-success-500/25 text-success-600 dark:text-success-400 border border-emerald-500/30 flex items-center gap-1 shrink-0 animate-pulse">
+                          <span className="w-1.5 h-1.5 rounded-full bg-success-500" />
                           <span>{mentorshipCount}名募集中</span>
                         </span>
                       )}
@@ -455,7 +455,7 @@ export default function Sidebar() {
               <div className={`relative p-1 rounded-xl transition-colors ${isActive ? item.activeBg : ''}`}>
                 <Icon size={20} className={isActive ? item.color : 'text-faint'} />
                 {isMentorship && mentorshipCount > 0 && (
-                  <span className="absolute -top-0.5 -right-1 px-1 text-[9px] font-black rounded-full bg-emerald-500 text-white min-w-[14px] h-[14px] flex items-center justify-center shadow-xs">
+                  <span className="absolute -top-0.5 -right-1 px-1 text-[9px] font-black rounded-full bg-success-500 text-white min-w-[14px] h-[14px] flex items-center justify-center shadow-xs">
                     {mentorshipCount}
                   </span>
                 )}
@@ -495,7 +495,7 @@ export default function Sidebar() {
                 className="flex items-center gap-2 group cursor-pointer"
               >
                 <span className="text-lg">👑</span>
-                <span className="font-extrabold text-base text-foreground dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition">
+                <span className="font-extrabold text-base text-foreground dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition">
                   KTM ポータル
                 </span>
               </Link>
@@ -530,7 +530,7 @@ export default function Sidebar() {
                 <button
                   onClick={() => handleTabChange('admin')}
                   className={`flex-1 py-2 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1 ${
-                    activeTab === 'admin' ? 'bg-surface dark:bg-[#1e1f22] text-amber-600 dark:text-amber-400 shadow-sm' : 'text-muted'
+                    activeTab === 'admin' ? 'bg-surface dark:bg-[#1e1f22] text-primary-600 dark:text-primary-400 shadow-sm' : 'text-muted'
                   }`}
                 >
                   <Shield size={13} />
@@ -569,8 +569,8 @@ export default function Sidebar() {
                         <div className="flex flex-col min-w-0 flex-1">
                           <span className="text-xs truncate">{item.label}</span>
                           {isMentorship && mentorshipCount > 0 && (
-                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-black flex items-center gap-1 mt-0.5">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-[10px] text-success-600 dark:text-success-400 font-black flex items-center gap-1 mt-0.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-success-500 animate-pulse" />
                               <span>{mentorshipCount}名募集中</span>
                             </span>
                           )}
@@ -584,7 +584,7 @@ export default function Sidebar() {
               {/* 🛡️ 管理者専用セクション (管理者かつAdminタブ選択時のみ表示) */}
               {isAdminUser && activeTab === 'admin' && (
                 <div className="pt-2 border-t border-border dark:border-[#3f4147]">
-                  <div className="text-[11px] font-extrabold uppercase tracking-wider text-amber-500 dark:text-amber-400 mb-2 px-1 flex items-center gap-1">
+                  <div className="text-[11px] font-extrabold uppercase tracking-wider text-primary-500 dark:text-primary-400 mb-2 px-1 flex items-center gap-1">
                     <Shield size={12} />
                     <span>管理者コントロール</span>
                   </div>

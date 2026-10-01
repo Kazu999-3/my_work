@@ -23,10 +23,10 @@ export default function GuidePortalTab() {
   return (
     <div className="space-y-8">
       {/* イントロバナー */}
-      <div className="bg-gradient-to-r from-teal-500/15 via-teal-500/10 to-teal-500/15 border border-teal-500/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-sm">
+      <div className="bg-gradient-to-r from-secondary-500/15 via-secondary-500/10 to-secondary-500/15 border border-teal-500/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-sm">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 text-teal-800 text-xs font-black border border-teal-500/30">
-            <Globe size={14} className="text-teal-600" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary-500/20 text-secondary-800 text-xs font-black border border-teal-500/30">
+            <Globe size={14} className="text-secondary-600" />
             ポータルWeb機能ガイド
           </div>
           <h2 className="text-xl md:text-2xl font-black text-foreground">
@@ -45,7 +45,7 @@ export default function GuidePortalTab() {
         <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-2xl group-hover:scale-105 transition">
+              <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-amber-200 flex items-center justify-center text-primary-600 font-bold text-2xl group-hover:scale-105 transition">
                 👤
               </div>
               <span className="text-[11px] font-bold text-muted-strong bg-surface-subtle px-2.5 py-1 rounded-full">
@@ -58,7 +58,7 @@ export default function GuidePortalTab() {
             </p>
             <div className="bg-background rounded-2xl p-3.5 border border-border/80 text-xs text-foreground-subtle space-y-1.5">
               <div className="font-bold text-foreground-soft flex items-center gap-1.5 text-[11px]">
-                <Sparkles size={13} className="text-amber-600" />
+                <Sparkles size={13} className="text-primary-600" />
                 主な機能
               </div>
               <p>・希望レーン（Main/Sub/NG/こだわり度）の柔軟な変更</p>
@@ -70,7 +70,7 @@ export default function GuidePortalTab() {
           <div className="mt-4 pt-3 border-t border-stone-100">
             <Link
               href="/mypage"
-              className="text-xs font-black text-amber-700 hover:text-amber-900 flex items-center gap-1 group-hover:translate-x-1 transition"
+              className="text-xs font-black text-primary-700 hover:text-primary-900 flex items-center gap-1 group-hover:translate-x-1 transition"
             >
               マイページへ移動 <ArrowRight size={13} />
             </Link>
@@ -81,10 +81,10 @@ export default function GuidePortalTab() {
         <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-600 font-bold text-2xl group-hover:scale-105 transition">
+              <div className="w-12 h-12 rounded-2xl bg-secondary-50 border border-teal-200 flex items-center justify-center text-secondary-600 font-bold text-2xl group-hover:scale-105 transition">
                 ⚖️
               </div>
-              <span className="text-[11px] font-bold text-teal-800 bg-teal-100 px-2.5 py-1 rounded-full">
+              <span className="text-[11px] font-bold text-secondary-800 bg-secondary-100 px-2.5 py-1 rounded-full">
                 お祭り機能追加 ✨
               </span>
             </div>
@@ -94,7 +94,7 @@ export default function GuidePortalTab() {
             </p>
             <div className="bg-background rounded-2xl p-3.5 border border-border/80 text-xs text-foreground-subtle space-y-1.5">
               <div className="font-bold text-foreground-soft flex items-center gap-1.5 text-[11px]">
-                <Swords size={13} className="text-teal-600" />
+                <Swords size={13} className="text-secondary-600" />
                 主な機能
               </div>
               <p>・🎲 <strong>お祭りロールランダム</strong>: 10人のロールをランダムにシャッフルしつつチーム間MMRを拮抗させる新機能</p>
@@ -105,7 +105,7 @@ export default function GuidePortalTab() {
           <div className="mt-4 pt-3 border-t border-stone-100">
             <Link
               href="/balancer"
-              className="text-xs font-black text-teal-700 hover:text-teal-900 flex items-center gap-1 group-hover:translate-x-1 transition"
+              className="text-xs font-black text-secondary-700 hover:text-secondary-900 flex items-center gap-1 group-hover:translate-x-1 transition"
             >
               バランサーへ移動 <ArrowRight size={13} />
             </Link>
@@ -116,10 +116,10 @@ export default function GuidePortalTab() {
         <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-2xl group-hover:scale-105 transition">
+              <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-amber-200 flex items-center justify-center text-primary-600 font-bold text-2xl group-hover:scale-105 transition">
                 🪙
               </div>
-              <span className="text-[11px] font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full">
+              <span className="text-[11px] font-bold text-primary-700 bg-primary-100 px-2.5 py-1 rounded-full">
                 大人気
               </span>
             </div>
@@ -129,7 +129,7 @@ export default function GuidePortalTab() {
             </p>
             <div className="bg-background rounded-2xl p-3.5 border border-border/80 text-xs text-foreground-subtle space-y-1.5">
               <div className="font-bold text-foreground-soft flex items-center gap-1.5 text-[11px]">
-                <ShoppingBag size={13} className="text-amber-600" />
+                <ShoppingBag size={13} className="text-primary-600" />
                 コインで交換できる特権
               </div>
               <p>・<strong className="text-foreground-soft">第一希望確約チケット</strong>（次回必ず希望レーンへ）</p>
@@ -140,7 +140,7 @@ export default function GuidePortalTab() {
           <div className="mt-4 pt-3 border-t border-stone-100">
             <Link
               href="/casino"
-              className="text-xs font-black text-amber-700 hover:text-amber-900 flex items-center gap-1 group-hover:translate-x-1 transition"
+              className="text-xs font-black text-primary-700 hover:text-primary-900 flex items-center gap-1 group-hover:translate-x-1 transition"
             >
               勝敗ベット・ショップへ移動 <ArrowRight size={13} />
             </Link>
@@ -151,7 +151,7 @@ export default function GuidePortalTab() {
         <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-2xl group-hover:scale-105 transition">
+              <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-amber-200 flex items-center justify-center text-primary-600 font-bold text-2xl group-hover:scale-105 transition">
                 🤝
               </div>
               <span className="text-[11px] font-bold text-muted-strong bg-surface-subtle px-2.5 py-1 rounded-full">
@@ -164,7 +164,7 @@ export default function GuidePortalTab() {
             </p>
             <div className="bg-background rounded-2xl p-3.5 border border-border/80 text-xs text-foreground-subtle space-y-1.5">
               <div className="font-bold text-foreground-soft flex items-center gap-1.5 text-[11px]">
-                <HeartHandshake size={13} className="text-amber-600" />
+                <HeartHandshake size={13} className="text-primary-600" />
                 見どころ
               </div>
               <p>・2人を選んで共闘勝率を即座にシミュレーション</p>
@@ -175,7 +175,7 @@ export default function GuidePortalTab() {
           <div className="mt-4 pt-3 border-t border-stone-100">
             <Link
               href="/synergy"
-              className="text-xs font-black text-amber-700 hover:text-amber-900 flex items-center gap-1 group-hover:translate-x-1 transition"
+              className="text-xs font-black text-primary-700 hover:text-primary-900 flex items-center gap-1 group-hover:translate-x-1 transition"
             >
               相性分析ページへ移動 <ArrowRight size={13} />
             </Link>
@@ -186,10 +186,10 @@ export default function GuidePortalTab() {
         <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group col-span-1 md:col-span-2">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 font-bold text-2xl group-hover:scale-105 transition">
+              <div className="w-12 h-12 rounded-2xl bg-success-50 border border-emerald-200 flex items-center justify-center text-success-600 font-bold text-2xl group-hover:scale-105 transition">
                 🏆
               </div>
-              <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
+              <span className="text-[11px] font-bold text-success-700 bg-success-100 px-2.5 py-1 rounded-full">
                 ランキング ＆ メタ統計
               </span>
             </div>
@@ -235,7 +235,7 @@ export default function GuidePortalTab() {
           <div className="mt-4 pt-3 border-t border-stone-100">
             <Link
               href="/leaderboard"
-              className="text-xs font-black text-emerald-700 hover:text-emerald-900 flex items-center gap-1 group-hover:translate-x-1 transition"
+              className="text-xs font-black text-success-700 hover:text-success-900 flex items-center gap-1 group-hover:translate-x-1 transition"
             >
               リーダーボードへ移動 <ArrowRight size={13} />
             </Link>
@@ -246,10 +246,10 @@ export default function GuidePortalTab() {
         <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group col-span-1 md:col-span-2">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-2xl group-hover:scale-105 transition">
+              <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-amber-200 flex items-center justify-center text-primary-600 font-bold text-2xl group-hover:scale-105 transition">
                 📰
               </div>
-              <span className="text-[11px] font-bold text-red-700 bg-red-100 px-2.5 py-1 rounded-full border border-red-200 animate-pulse">
+              <span className="text-[11px] font-bold text-danger-700 bg-danger-100 px-2.5 py-1 rounded-full border border-rose-200 animate-pulse">
                 号外配信中 ⚡
               </span>
             </div>
@@ -292,7 +292,7 @@ export default function GuidePortalTab() {
             </span>
             <Link
               href="/"
-              className="text-xs font-black text-amber-700 hover:text-amber-900 flex items-center gap-1 group-hover:translate-x-1 transition"
+              className="text-xs font-black text-primary-700 hover:text-primary-900 flex items-center gap-1 group-hover:translate-x-1 transition"
             >
               トップの速報を見る <ArrowRight size={13} />
             </Link>
@@ -303,10 +303,10 @@ export default function GuidePortalTab() {
         <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-amber-400 transition-all group col-span-1 md:col-span-2">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-2xl group-hover:scale-105 transition">
+              <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-amber-200 flex items-center justify-center text-primary-600 font-bold text-2xl group-hover:scale-105 transition">
                 🤝
               </div>
-              <span className="text-[11px] font-bold text-amber-800 bg-amber-100 px-2.5 py-1 rounded-full border border-amber-200">
+              <span className="text-[11px] font-bold text-primary-800 bg-primary-100 px-2.5 py-1 rounded-full border border-amber-200">
                 新登場 ✨
               </span>
             </div>
@@ -344,8 +344,8 @@ export default function GuidePortalTab() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-              <div className="p-3 bg-amber-50/70 rounded-2xl border border-amber-200/80 text-xs text-foreground-soft space-y-1">
-                <div className="font-black text-amber-950 flex items-center gap-1.5 text-[11px]">
+              <div className="p-3 bg-primary-50/70 rounded-2xl border border-amber-200/80 text-xs text-foreground-soft space-y-1">
+                <div className="font-black text-primary-950 flex items-center gap-1.5 text-[11px]">
                   <span>⭐</span> 師弟の匿名評価制度 (+100🪙)
                 </div>
                 <p className="text-[11px] text-foreground-subtle leading-relaxed font-medium">
@@ -353,8 +353,8 @@ export default function GuidePortalTab() {
                 </p>
               </div>
 
-              <div className="p-3 bg-amber-50/70 rounded-2xl border border-amber-200/80 text-xs text-foreground-soft space-y-1">
-                <div className="font-black text-amber-950 flex items-center gap-1.5 text-[11px]">
+              <div className="p-3 bg-primary-50/70 rounded-2xl border border-amber-200/80 text-xs text-foreground-soft space-y-1">
+                <div className="font-black text-primary-950 flex items-center gap-1.5 text-[11px]">
                   <span>🌟</span> メンバー匿名評判・栄誉 (+50🪙)
                 </div>
                 <p className="text-[11px] text-foreground-subtle leading-relaxed font-medium">
@@ -363,8 +363,8 @@ export default function GuidePortalTab() {
               </div>
             </div>
 
-            <div className="p-3 bg-amber-50/70 rounded-2xl border border-amber-200/80 text-xs text-foreground-soft space-y-1">
-              <div className="font-black text-amber-950 flex items-center gap-1.5 text-[11px]">
+            <div className="p-3 bg-primary-50/70 rounded-2xl border border-amber-200/80 text-xs text-foreground-soft space-y-1">
+              <div className="font-black text-primary-950 flex items-center gap-1.5 text-[11px]">
                 <span>📜</span> 師弟の心得（ポジティブ指導文化）
               </div>
               <p className="text-[11px] text-foreground-subtle leading-relaxed font-medium">
@@ -379,7 +379,7 @@ export default function GuidePortalTab() {
             </span>
             <Link
               href="/mentorship"
-              className="text-xs font-black text-amber-700 hover:text-amber-900 flex items-center gap-1 group-hover:translate-x-1 transition"
+              className="text-xs font-black text-primary-700 hover:text-primary-900 flex items-center gap-1 group-hover:translate-x-1 transition"
             >
               師弟ハブへ移動 <ArrowRight size={13} />
             </Link>
@@ -390,7 +390,7 @@ export default function GuidePortalTab() {
         {/* 📊 MMR ＆ KTM内戦レートの説明（2026-09-23 追加） */}
         <div className="md:col-span-2 bg-surface rounded-3xl p-5 md:p-6 border border-border shadow-xs space-y-4">
           <div className="flex items-center justify-between">
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-2xl">
+            <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-amber-200 flex items-center justify-center text-primary-600 font-bold text-2xl">
               📊
             </div>
             <span className="text-[11px] font-bold text-muted-strong bg-surface-subtle px-2.5 py-1 rounded-full">
@@ -447,7 +447,7 @@ export default function GuidePortalTab() {
             </p>
           </div>
 
-          <div className="bg-amber-50 rounded-2xl p-3.5 border border-amber-200 text-[11px] text-amber-900 leading-relaxed">
+          <div className="bg-primary-50 rounded-2xl p-3.5 border border-amber-200 text-[11px] text-primary-900 leading-relaxed">
             💡 チーム分けバランサーはこのMMRを使って両チームの戦力が釣り合うように組みます。
             レーンごとに管理しているのは「TOPは得意だがSUPは不慣れ」といった差を正しく反映するためです。
           </div>

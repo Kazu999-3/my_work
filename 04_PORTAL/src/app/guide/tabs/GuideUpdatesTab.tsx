@@ -35,7 +35,7 @@ export default function GuideUpdatesTab() {
       {/* トースト通知 */}
       {toastMessage && (
         <div className="fixed bottom-20 md:bottom-8 right-6 z-50 bg-stone-900 text-white px-5 py-3 rounded-2xl shadow-xl border border-amber-500/40 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
-          <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+          <div className="w-6 h-6 rounded-full bg-success-500/20 text-success-400 flex items-center justify-center">
             <Check size={14} />
           </div>
           <span className="text-xs font-bold">{toastMessage}</span>
@@ -43,11 +43,11 @@ export default function GuideUpdatesTab() {
       )}
 
       {/* イントロバナー */}
-      <div className="bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border border-amber-500/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-sm">
+      <div className="bg-gradient-to-r from-primary-500/15 via-primary-500/10 to-primary-500/15 border border-amber-500/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-sm">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-800 text-xs font-black border border-amber-500/30">
-              <ScrollText size={14} className="text-amber-600" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-500/20 text-primary-800 text-xs font-black border border-amber-500/30">
+              <ScrollText size={14} className="text-primary-600" />
               リリースノート ＆ 更新履歴
             </div>
             <h2 className="text-xl md:text-2xl font-black text-foreground">
@@ -78,8 +78,8 @@ export default function GuideUpdatesTab() {
                     <span
                       className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
                         entry.tag === 'NEW'
-                          ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                          : 'bg-amber-100 text-amber-800 border border-amber-200'
+                          ? 'bg-primary-100 text-primary-800 border border-amber-200'
+                          : 'bg-primary-100 text-primary-800 border border-amber-200'
                       }`}
                     >
                       {entry.tag}
@@ -100,8 +100,8 @@ export default function GuideUpdatesTab() {
               >
                 {copiedDate === entry.date ? (
                   <>
-                    <Check size={14} className="text-emerald-600" />
-                    <span className="text-emerald-700 font-bold">コピー完了！</span>
+                    <Check size={14} className="text-success-600" />
+                    <span className="text-success-700 font-bold">コピー完了！</span>
                   </>
                 ) : (
                   <>

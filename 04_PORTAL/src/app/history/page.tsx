@@ -13,7 +13,7 @@ export default function HistoryPage() {
         <div className="flex items-center justify-between gap-4">
           <Link
             href="/balancer"
-            className="inline-flex items-center gap-2 text-xs font-bold text-muted hover:text-amber-700 transition cursor-pointer"
+            className="inline-flex items-center gap-2 text-xs font-bold text-muted hover:text-primary-700 transition cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>バランサーへ戻る</span>
@@ -23,7 +23,7 @@ export default function HistoryPage() {
               href="/leaderboard"
               className="px-3 py-1.5 rounded-xl bg-surface-subtle hover:bg-surface-hover border border-border text-xs font-bold text-foreground-subtle transition flex items-center gap-1.5 cursor-pointer"
             >
-              <Trophy className="w-3.5 h-3.5 text-amber-600" />
+              <Trophy className="w-3.5 h-3.5 text-primary-600" />
               <span>順位表を見る</span>
             </Link>
           </div>

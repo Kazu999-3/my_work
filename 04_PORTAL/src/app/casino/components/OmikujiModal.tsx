@@ -20,27 +20,27 @@ interface OmikujiModalProps {
 
 const TIER_STYLES: Record<string, { bg: string; text: string; glow: string; badge: string }> = {
   大大吉: {
-    bg: 'from-amber-400 via-orange-500 to-rose-500',
-    text: 'text-amber-500',
-    glow: 'shadow-amber-500/50 ring-4 ring-amber-400',
+    bg: 'from-primary-400 via-primary-500 to-danger-500',
+    text: 'text-primary-500',
+    glow: 'shadow-primary-500/50 ring-4 ring-primary-400',
     badge: '👑 超絶神引き！',
   },
   大吉: {
-    bg: 'from-amber-500 to-yellow-400',
-    text: 'text-amber-500',
-    glow: 'shadow-yellow-500/40 ring-2 ring-yellow-400',
+    bg: 'from-primary-500 to-primary-400',
+    text: 'text-primary-500',
+    glow: 'shadow-primary-500/40 ring-2 ring-primary-400',
     badge: '🌟 大幸運！',
   },
   中吉: {
-    bg: 'from-emerald-500 to-teal-400',
-    text: 'text-emerald-500',
-    glow: 'shadow-emerald-500/30 ring-2 ring-emerald-400',
+    bg: 'from-success-500 to-secondary-400',
+    text: 'text-success-500',
+    glow: 'shadow-success-500/30 ring-2 ring-success-400',
     badge: '🎯 好調！',
   },
   小吉: {
-    bg: 'from-teal-500 to-amber-400',
-    text: 'text-teal-500',
-    glow: 'shadow-teal-500/30 ring-2 ring-teal-400',
+    bg: 'from-secondary-500 to-primary-400',
+    text: 'text-secondary-500',
+    glow: 'shadow-secondary-500/30 ring-2 ring-secondary-400',
     badge: '🍀 堅実運！',
   },
 };
@@ -88,7 +88,7 @@ export default function OmikujiModal({ isOpen, onClose, omikujiData, onClaimFini
       <div className="relative w-full max-w-sm rounded-3xl bg-[#fdfcf9] dark:bg-[#2b2d31] border-2 border-amber-400/60 shadow-2xl p-6 text-center space-y-5 overflow-hidden">
         
         {/* 背景の光彩演出 */}
-        <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-48 h-48 bg-gradient-to-b from-amber-400/20 to-transparent rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-48 h-48 bg-gradient-to-b from-primary-400/20 to-transparent rounded-full blur-2xl pointer-events-none" />
 
         {/* 閉じるボタン */}
         {!isSpinning && (
@@ -102,7 +102,7 @@ export default function OmikujiModal({ isOpen, onClose, omikujiData, onClaimFini
 
         {/* ヘッダー */}
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-black">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-500/15 border border-amber-500/30 text-primary-600 dark:text-primary-400 text-xs font-black">
             <Sparkles size={13} className="animate-spin" />
             <span>KTM デイリーおみくじ</span>
           </div>
@@ -135,10 +135,10 @@ export default function OmikujiModal({ isOpen, onClose, omikujiData, onClaimFini
         {/* 獲得コインとコメント */}
         {!isSpinning && (
           <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="p-3 rounded-2xl bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/30 flex items-center justify-center gap-2">
-              <Coins className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+            <div className="p-3 rounded-2xl bg-primary-500/10 dark:bg-primary-500/20 border border-amber-500/30 flex items-center justify-center gap-2">
+              <Coins className="w-6 h-6 text-primary-600 dark:text-primary-400" />
               <span className="text-sm font-bold text-foreground-subtle">獲得:</span>
-              <strong className="text-2xl font-black text-amber-600 dark:text-amber-400 font-mono">
+              <strong className="text-2xl font-black text-primary-600 dark:text-primary-400 font-mono">
                 +{omikujiData.coins}
               </strong>
               <span className="text-xs font-bold text-muted">コイン</span>
@@ -161,7 +161,7 @@ export default function OmikujiModal({ isOpen, onClose, omikujiData, onClaimFini
           className={`w-full py-3 px-4 rounded-2xl font-black text-xs transition flex items-center justify-center gap-2 shadow-lg cursor-pointer ${
             isSpinning
               ? 'bg-stone-300 text-muted-strong cursor-not-allowed'
-              : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-stone-950 font-black scale-100 hover:scale-[1.02] active:scale-[0.98]'
+              : 'bg-gradient-to-r from-primary-500 to-primary-500 hover:from-primary-600 hover:to-primary-600 text-stone-950 font-black scale-100 hover:scale-[1.02] active:scale-[0.98]'
           }`}
         >
           <span>{isSpinning ? 'おみくじを開封中...' : 'コインを受け取って閉じる ✨'}</span>

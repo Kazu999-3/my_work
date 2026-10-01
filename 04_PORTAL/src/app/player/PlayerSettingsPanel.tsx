@@ -13,11 +13,11 @@ interface PlayerSettingsPanelProps {
 }
 
 const ROLES = [
-  { id: "TOP", name: "トップ", icon: Shield, color: "text-amber-600 border-amber-500/40 bg-amber-500/10" },
-  { id: "JG", name: "ジャングル", icon: Trees, color: "text-emerald-600 border-emerald-500/40 bg-emerald-500/10" },
-  { id: "MID", name: "ミッド", icon: Zap, color: "text-teal-600 border-teal-500/40 bg-teal-500/10" },
-  { id: "ADC", name: "ボット(ADC)", icon: Target, color: "text-rose-600 border-rose-500/40 bg-rose-500/10" },
-  { id: "SUP", name: "サポート", icon: Heart, color: "text-amber-600 border-amber-500/40 bg-amber-500/10" },
+  { id: "TOP", name: "トップ", icon: Shield, color: "text-primary-600 border-amber-500/40 bg-primary-500/10" },
+  { id: "JG", name: "ジャングル", icon: Trees, color: "text-success-600 border-emerald-500/40 bg-success-500/10" },
+  { id: "MID", name: "ミッド", icon: Zap, color: "text-secondary-600 border-teal-500/40 bg-secondary-500/10" },
+  { id: "ADC", name: "ボット(ADC)", icon: Target, color: "text-danger-600 border-rose-500/40 bg-danger-500/10" },
+  { id: "SUP", name: "サポート", icon: Heart, color: "text-primary-600 border-amber-500/40 bg-primary-500/10" },
   { id: "FILL", name: "おまかせ(FILL)", icon: Shuffle, color: "text-muted border-stone-500/40 bg-stone-500/10" },
 ];
 
@@ -92,7 +92,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
     <div className="bg-surface/80 dark:bg-[#232428]/80 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-3xl p-6 sm:p-8 shadow-xl space-y-8">
       <div>
         <h2 className="text-xl font-black text-foreground dark:text-white flex items-center gap-2">
-          <Shield className="w-5 h-5 text-amber-600" />
+          <Shield className="w-5 h-5 text-primary-600" />
           <span>アカウント設定 ＆ 希望・NGレーン設定</span>
         </h2>
         <p className="text-xs sm:text-sm text-muted-strong font-medium mt-1">
@@ -110,7 +110,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
           value={ign}
           onChange={(e) => setIgn(e.target.value)}
           placeholder="例: Hide on bush#KR1"
-          className="w-full bg-surface dark:bg-[#1e1f22] border border-border dark:border-[#3f4147] rounded-xl px-4 py-2.5 text-sm text-foreground dark:text-white font-mono placeholder:text-faint focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 shadow-xs"
+          className="w-full bg-surface dark:bg-[#1e1f22] border border-border dark:border-[#3f4147] rounded-xl px-4 py-2.5 text-sm text-foreground dark:text-white font-mono placeholder:text-faint focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-primary-500 shadow-xs"
         />
         <p className="text-[11px] text-faint font-medium">
           ※ LoLクライアント内の Riot ID と タグライン（#JP1など）を入力すると、OP.GGやカルテへの自動連携が有効になります。
@@ -119,7 +119,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
 
       {/* 第1希望レーン */}
       <div className="space-y-3">
-        <label className="block text-xs font-black text-amber-800 dark:text-amber-400 uppercase tracking-wider flex items-center justify-between">
+        <label className="block text-xs font-black text-primary-800 dark:text-primary-400 uppercase tracking-wider flex items-center justify-between">
           <span>⭐ 第1希望レーン (Primary Role)</span>
           <span className="text-[11px] text-muted-strong normal-case font-bold">最優先で割り当てられます</span>
         </label>
@@ -134,7 +134,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
                 onClick={() => setPrimaryRole(r.id)}
                 className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border text-center transition-all cursor-pointer ${
                   isSelected
-                    ? "bg-amber-500 text-stone-950 font-black shadow-md border-amber-600 scale-[1.02]"
+                    ? "bg-primary-500 text-stone-950 font-black shadow-md border-amber-600 scale-[1.02]"
                     : "bg-surface dark:bg-[#2b2d31] border-border dark:border-[#3f4147] text-muted hover:border-border hover:bg-background dark:hover:bg-[#313338] font-bold"
                 }`}
               >
@@ -177,7 +177,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
 
       {/* NGレーン設定 */}
       <div className="space-y-3 pt-4 border-t border-border dark:border-[#3f4147]">
-        <label className="block text-xs font-black text-rose-700 dark:text-rose-400 uppercase tracking-wider flex items-center justify-between">
+        <label className="block text-xs font-black text-danger-700 dark:text-danger-400 uppercase tracking-wider flex items-center justify-between">
           <span className="flex items-center gap-1.5">
             <Ban className="w-4 h-4" />
             <span>🚫 NGレーン設定 (最大2つまで)</span>
@@ -197,7 +197,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
                 onClick={() => toggleNgRole(r.id)}
                 className={`flex items-center justify-center gap-2 p-3 rounded-2xl border text-center transition-all cursor-pointer ${
                   isNg
-                    ? "bg-rose-500 text-white font-black shadow-md border-rose-600 scale-[1.02]"
+                    ? "bg-danger-500 text-white font-black shadow-md border-rose-600 scale-[1.02]"
                     : "bg-surface dark:bg-[#2b2d31] border-border dark:border-[#3f4147] text-muted hover:border-border hover:bg-background dark:hover:bg-[#313338] font-bold"
                 }`}
               >
@@ -209,7 +209,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
           })}
         </div>
         {ngRoles.length > 0 && (
-          <p className="text-[11px] text-rose-600 dark:text-rose-400 font-bold">
+          <p className="text-[11px] text-danger-600 dark:text-danger-400 font-bold">
             現在設定中のNGレーン: {ngRoles.join(", ")}
           </p>
         )}
@@ -219,7 +219,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
       <div className="bg-background/80 dark:bg-[#2b2d31]/80 border border-border/80 dark:border-[#3f4147] rounded-3xl p-6 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-2xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center font-black">
+            <div className="w-9 h-9 rounded-2xl bg-primary-500/10 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 flex items-center justify-center font-black">
               <Moon size={18} />
             </div>
             <div>
@@ -235,13 +235,13 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
       <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border dark:border-[#3f4147]">
         <div>
           {saveSuccess && (
-            <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 text-xs font-black animate-fade-in">
+            <div className="flex items-center gap-2 text-success-700 dark:text-success-400 text-xs font-black animate-fade-in">
               <CheckCircle2 className="w-4 h-4" />
               <span>設定を正常に保存しました！次回のカスタムから即時反映されます。</span>
             </div>
           )}
           {error && (
-            <div className="flex items-center gap-2 text-rose-700 dark:text-rose-400 text-xs font-black animate-fade-in">
+            <div className="flex items-center gap-2 text-danger-700 dark:text-danger-400 text-xs font-black animate-fade-in">
               <AlertTriangle className="w-4 h-4" />
               <span>{error}</span>
             </div>
@@ -252,7 +252,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 disabled:opacity-50 transition-all cursor-pointer"
+          className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-400 hover:to-primary-500 text-stone-950 font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary-500/20 disabled:opacity-50 transition-all cursor-pointer"
         >
           {saving ? (
             <>

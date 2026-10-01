@@ -144,7 +144,7 @@ export default function ChampionRevisionHistory({
     <div className="space-y-3">
       <div className="flex items-center justify-between border-b border-black/10 pb-2">
         <p className="text-xs font-bold text-foreground-subtle flex items-center gap-1.5">
-          <History size={14} className="text-amber-600" />
+          <History size={14} className="text-primary-600" />
           <span>{headerLabel}</span>
           {revisions && <span className="text-faint font-normal">({revisions.length}件)</span>}
         </p>
@@ -156,7 +156,7 @@ export default function ChampionRevisionHistory({
       </div>
 
       {loading && <p className="text-xs text-faint py-3">変更履歴を確認中...</p>}
-      {error && <p className="text-xs text-rose-600 py-3">履歴の取得に失敗: {error}</p>}
+      {error && <p className="text-xs text-danger-600 py-3">履歴の取得に失敗: {error}</p>}
 
       {!loading && (!revisions || revisions.length === 0) && (
         <p className="text-xs text-faint py-3 flex items-center gap-1">
@@ -175,15 +175,15 @@ export default function ChampionRevisionHistory({
                 }}
                 className="w-full text-left px-2.5 py-2 hover:bg-black/5 transition-colors flex items-center gap-2 flex-wrap text-[11px]"
               >
-                <span className="font-black px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 border border-amber-200">
+                <span className="font-black px-1.5 py-0.5 rounded bg-primary-100 text-primary-700 border border-amber-200">
                   {TYPE_LABELS[r.target_type] || r.target_type}
                 </span>
                 <span className="font-bold text-foreground">{FIELD_LABELS[r.field] || r.field}</span>
                 {r.isNew ? (
-                  <span className="font-black text-teal-700">新規作成</span>
+                  <span className="font-black text-secondary-700">新規作成</span>
                 ) : (
                   <span className="font-mono">
-                    <span className="text-emerald-700">+{r.added}</span> <span className="text-rose-700">-{r.removed}</span>
+                    <span className="text-success-700">+{r.added}</span> <span className="text-danger-700">-{r.removed}</span>
                   </span>
                 )}
                 <span className="text-faint ml-auto shrink-0">{new Date(r.created_at).toLocaleString('ja-JP')}</span>
@@ -202,9 +202,9 @@ export default function ChampionRevisionHistory({
                             key={i}
                             className={
                               line.op === 'added'
-                                ? 'bg-emerald-100 text-emerald-700 px-2'
+                                ? 'bg-success-100 text-success-700 px-2'
                                 : line.op === 'removed'
-                                ? 'bg-rose-100 text-rose-700/80 px-2 line-through decoration-rose-400'
+                                ? 'bg-danger-100 text-danger-700/80 px-2 line-through decoration-danger-400'
                                 : 'text-muted-strong px-2'
                             }
                           >
@@ -222,7 +222,7 @@ export default function ChampionRevisionHistory({
                             revert(r.id);
                           }}
                           disabled={reverting}
-                          className="mt-2 text-[11px] font-black bg-rose-600 hover:bg-rose-700 active:scale-95 text-white border border-rose-500 px-3 py-1.5 rounded-lg disabled:opacity-50 flex items-center gap-1.5 shadow transition"
+                          className="mt-2 text-[11px] font-black bg-danger-600 hover:bg-danger-700 active:scale-95 text-white border border-rose-500 px-3 py-1.5 rounded-lg disabled:opacity-50 flex items-center gap-1.5 shadow transition"
                           title="この修正時点のデータへワンタップで安全に巻き戻します"
                         >
                           <RotateCcw size={12} /> {reverting ? '復元中...' : '⏪ このバージョンにワンタップ復元'}

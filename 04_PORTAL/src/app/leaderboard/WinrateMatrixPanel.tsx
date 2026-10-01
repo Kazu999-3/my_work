@@ -137,24 +137,24 @@ export default function WinrateMatrixPanel() {
     // 3試合以上プレイしている場合に色を付ける（試行回数が少ないノイズを除外）
     if (stats.games >= 3) {
       if (winrate >= 60) {
-        colorClass = "text-emerald-700";
-        bgClass = "bg-emerald-100 border-emerald-200";
+        colorClass = "text-success-700";
+        bgClass = "bg-success-100 border-emerald-200";
         Icon = TrendingUp;
       } else if (winrate > 50) {
-        colorClass = "text-teal-700";
-        bgClass = "bg-teal-100 border-teal-200";
+        colorClass = "text-secondary-700";
+        bgClass = "bg-secondary-100 border-teal-200";
         Icon = Activity;
       } else if (winrate >= 45) {
         colorClass = "text-foreground-subtle";
         bgClass = "bg-black/5 border-black/10";
         Icon = Activity;
       } else if (winrate >= 40) {
-        colorClass = "text-orange-700";
-        bgClass = "bg-orange-100 border-orange-200";
+        colorClass = "text-primary-700";
+        bgClass = "bg-primary-100 border-amber-200";
         Icon = Activity;
       } else {
-        colorClass = "text-red-700";
-        bgClass = "bg-red-100 border-red-200";
+        colorClass = "text-danger-700";
+        bgClass = "bg-danger-100 border-rose-200";
         Icon = TrendingDown;
       }
     }
@@ -166,7 +166,7 @@ export default function WinrateMatrixPanel() {
           {winrate.toFixed(1)}%
         </div>
         <div className="text-[10px] text-muted-strong font-medium mb-1 flex gap-1">
-          <span>{stats.games}戦</span> <span className="text-emerald-600">{stats.wins}W</span>
+          <span>{stats.games}戦</span> <span className="text-success-600">{stats.wins}W</span>
         </div>
         <div className="text-xs font-mono font-bold text-foreground-subtle bg-black/5 px-1.5 py-0.5 rounded border border-black/10">
           {stats.mmr.toLocaleString()}
@@ -177,7 +177,7 @@ export default function WinrateMatrixPanel() {
 
   const renderSortIndicator = (key: typeof sortKey) => {
     if (sortKey !== key) return null;
-    return <span className="ml-1 inline-block text-teal-700 font-black">{sortOrder === 'desc' ? '▼' : '▲'}</span>;
+    return <span className="ml-1 inline-block text-secondary-700 font-black">{sortOrder === 'desc' ? '▼' : '▲'}</span>;
   };
 
   return (
@@ -185,8 +185,8 @@ export default function WinrateMatrixPanel() {
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 pb-4 border-b border-black/10">
         <div className="flex items-center gap-3">
-          <div className="bg-amber-100 p-3 rounded-2xl">
-            <Swords className="text-amber-700" size={24} />
+          <div className="bg-primary-100 p-3 rounded-2xl">
+            <Swords className="text-primary-700" size={24} />
           </div>
           <div>
             <h2 className="text-xl font-bold text-foreground tracking-tight">レーン別 勝率マトリックス</h2>
@@ -212,7 +212,7 @@ export default function WinrateMatrixPanel() {
               onClick={() => handleHeaderClick(k as any)}
               className={`px-2.5 py-1 rounded-xl text-xs font-black transition-all ${
                 sortKey === k
-                  ? 'bg-gradient-to-r from-amber-500 to-teal-500 text-white shadow-md shadow-amber-500/20'
+                  ? 'bg-gradient-to-r from-primary-500 to-secondary-500 text-white shadow-md shadow-primary-500/20'
                   : 'text-muted-strong hover:text-foreground hover:bg-black/5'
               }`}
             >
@@ -237,7 +237,7 @@ export default function WinrateMatrixPanel() {
                   key={role}
                   onClick={() => handleHeaderClick(role)}
                   className={`px-2 py-3 text-center text-xs font-bold cursor-pointer transition-colors ${
-                    sortKey === role ? 'text-teal-700 font-black bg-teal-100 rounded-t-xl' : 'text-muted-strong hover:text-foreground'
+                    sortKey === role ? 'text-secondary-700 font-black bg-secondary-100 rounded-t-xl' : 'text-muted-strong hover:text-foreground'
                   }`}
                 >
                   {role} {renderSortIndicator(role)}
@@ -246,7 +246,7 @@ export default function WinrateMatrixPanel() {
               <th
                 onClick={() => handleHeaderClick('overall')}
                 className={`px-4 py-3 text-right text-xs font-bold cursor-pointer transition-colors border-l border-black/10 ${
-                  sortKey === 'overall' ? 'text-amber-700 font-black bg-amber-100 rounded-t-xl' : 'text-muted-strong hover:text-foreground'
+                  sortKey === 'overall' ? 'text-primary-700 font-black bg-primary-100 rounded-t-xl' : 'text-muted-strong hover:text-foreground'
                 }`}
               >
                 OVERALL {renderSortIndicator('overall')}
@@ -266,24 +266,24 @@ export default function WinrateMatrixPanel() {
                       <div className="font-bold text-foreground-soft">{player.name}</div>
                     </div>
                   </td>
-                  <td className={`px-1 py-2 align-middle border-y border-black/10 ${sortKey === 'TOP' ? 'bg-teal-50' : 'bg-black/2'}`}>
+                  <td className={`px-1 py-2 align-middle border-y border-black/10 ${sortKey === 'TOP' ? 'bg-secondary-50' : 'bg-black/2'}`}>
                     {renderCell(player.lanes.TOP)}
                   </td>
-                  <td className={`px-1 py-2 align-middle border-y border-black/10 ${sortKey === 'JG' ? 'bg-teal-50' : 'bg-black/2'}`}>
+                  <td className={`px-1 py-2 align-middle border-y border-black/10 ${sortKey === 'JG' ? 'bg-secondary-50' : 'bg-black/2'}`}>
                     {renderCell(player.lanes.JG)}
                   </td>
-                  <td className={`px-1 py-2 align-middle border-y border-black/10 ${sortKey === 'MID' ? 'bg-teal-50' : 'bg-black/2'}`}>
+                  <td className={`px-1 py-2 align-middle border-y border-black/10 ${sortKey === 'MID' ? 'bg-secondary-50' : 'bg-black/2'}`}>
                     {renderCell(player.lanes.MID)}
                   </td>
-                  <td className={`px-1 py-2 align-middle border-y border-black/10 ${sortKey === 'ADC' ? 'bg-teal-50' : 'bg-black/2'}`}>
+                  <td className={`px-1 py-2 align-middle border-y border-black/10 ${sortKey === 'ADC' ? 'bg-secondary-50' : 'bg-black/2'}`}>
                     {renderCell(player.lanes.ADC)}
                   </td>
-                  <td className={`px-1 py-2 align-middle border-y border-black/10 ${sortKey === 'SUP' ? 'bg-teal-50' : 'bg-black/2'}`}>
+                  <td className={`px-1 py-2 align-middle border-y border-black/10 ${sortKey === 'SUP' ? 'bg-secondary-50' : 'bg-black/2'}`}>
                     {renderCell(player.lanes.SUP)}
                   </td>
-                  <td className={`px-4 py-3 align-middle text-right rounded-r-2xl border-y border-r border-black/10 border-l border-l-black/10 ${sortKey === 'overall' ? 'bg-amber-50' : 'bg-black/2'}`}>
+                  <td className={`px-4 py-3 align-middle text-right rounded-r-2xl border-y border-r border-black/10 border-l border-l-black/10 ${sortKey === 'overall' ? 'bg-primary-50' : 'bg-black/2'}`}>
                     <div className="flex flex-col items-end">
-                      <div className={`text-lg font-black ${overallWr >= 55 ? 'text-teal-700' : overallWr < 45 && player.totalGames > 0 ? 'text-red-600' : 'text-foreground-subtle'}`}>
+                      <div className={`text-lg font-black ${overallWr >= 55 ? 'text-secondary-700' : overallWr < 45 && player.totalGames > 0 ? 'text-danger-600' : 'text-foreground-subtle'}`}>
                         {player.totalGames > 0 ? `${overallWr.toFixed(1)}%` : '-'}
                       </div>
                       <div className="text-[10px] text-muted-strong mb-1">

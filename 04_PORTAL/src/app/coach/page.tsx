@@ -167,7 +167,7 @@ function CoachPageContent() {
         {/* スリム化されたヘッダー */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-surface/80 border border-border/90 rounded-2xl p-4 shadow-xs backdrop-blur-sm">
           <div className="flex items-center gap-3">
-            <div className="text-3xl p-2 bg-amber-50 rounded-2xl border border-amber-200/80">🏆</div>
+            <div className="text-3xl p-2 bg-primary-50 rounded-2xl border border-amber-200/80">🏆</div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-black tracking-tight text-foreground">パーソナルコーチ</h1>
@@ -176,8 +176,8 @@ function CoachPageContent() {
                     （2026-09-30修正）。ライブ検知は常時ポーリングではなく操作契機の取得なので、
                     実際に検知できた時だけ、検知した対面を添えて表示する。 */}
                 {liveDetected && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 text-[10px] font-extrabold shadow-2xs">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-success-100 border border-emerald-300 text-success-800 text-[10px] font-extrabold shadow-2xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-success-500 animate-pulse" />
                     <span>ライブ試合を検知{liveDetected.enemy ? `（対面: ${liveDetected.enemy}）` : ''}</span>
                   </span>
                 )}
@@ -315,7 +315,7 @@ function CoachPageContent() {
           {/* インゲームHUD連携ステータスバナー */}
           <div className="bg-gradient-to-r from-stone-900 to-stone-800 text-white rounded-2xl p-3.5 shadow-sm border border-stone-700/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-base shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-primary-500/20 border border-amber-500/40 flex items-center justify-center text-base shrink-0">
                 👑
               </div>
               {/* 以前はここに「Sovereign HUD 自動同期中」＋「接続完了」を条件なしで表示していた。
@@ -323,9 +323,9 @@ function CoachPageContent() {
                   原理的に知れないため、HUDを立ち上げていなくても「接続完了」と出ていた
                   （2026-09-30修正）。状態の主張をやめ、使い方の説明だけに変えた。 */}
               <div>
-                <div className="font-black text-xs text-amber-400">Sovereign HUD（デスクトップ版）の使い方</div>
+                <div className="font-black text-xs text-primary-400">Sovereign HUD（デスクトップ版）の使い方</div>
                 <p className="text-[11px] text-faint mt-0.5">
-                  ⌨️ HUDを起動していると、<span className="text-amber-300 font-bold">TABキー</span>で対面キルラインが表示され、チャットから敵スペル・Ultを自動検知します。
+                  ⌨️ HUDを起動していると、<span className="text-primary-300 font-bold">TABキー</span>で対面キルラインが表示され、チャットから敵スペル・Ultを自動検知します。
                 </p>
               </div>
             </div>
@@ -383,7 +383,7 @@ function CoachPageContent() {
             </div>
             <button
               onClick={() => setReflectionOpen(true)}
-              className="shrink-0 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black transition-colors cursor-pointer"
+              className="shrink-0 px-4 py-2 rounded-xl bg-primary-500 hover:bg-primary-600 text-white text-xs font-black transition-colors cursor-pointer"
             >
               振り返りを書く
             </button>

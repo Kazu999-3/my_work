@@ -103,7 +103,7 @@ export default function ChampSelect({ value, onChange, onSelect, placeholder = "
               />
               <div className="flex flex-col">
                 <span className="font-bold text-sm text-foreground-soft">{CHAMPION_JA[champ]?.ja || champ}</span>
-                <span className="text-[10px] text-gray-500 font-mono">{champ}</span>
+                <span className="text-[10px] text-muted-strong font-mono">{champ}</span>
               </div>
             </div>
           ))}

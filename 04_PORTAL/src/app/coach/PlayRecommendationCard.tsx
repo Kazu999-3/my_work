@@ -39,9 +39,9 @@ interface Data {
 }
 
 const LEVEL_STYLE: Record<Level, string> = {
-  green: 'bg-emerald-950/30 text-emerald-400 border-emerald-800/60',
-  yellow: 'bg-amber-950/30 text-amber-400 border-amber-800/60',
-  red: 'bg-rose-950/30 text-rose-400 border-rose-800/60',
+  green: 'bg-success-950/30 text-success-400 border-emerald-800/60',
+  yellow: 'bg-primary-950/30 text-primary-400 border-amber-800/60',
+  red: 'bg-danger-950/30 text-danger-400 border-rose-800/60',
 };
 
 export default function PlayRecommendationCard() {
@@ -69,7 +69,7 @@ export default function PlayRecommendationCard() {
     return <div className="py-6 text-center text-xs text-faint">判定を読み込み中…</div>;
   }
   if (error) {
-    return <p className="text-sm text-rose-600 dark:text-rose-400">❌ {error}</p>;
+    return <p className="text-sm text-danger-600 dark:text-danger-400">❌ {error}</p>;
   }
   if (!data?.available || !data.recommendation) {
     return (
@@ -140,7 +140,7 @@ export default function PlayRecommendationCard() {
       </div>
 
       {/* 判定の根拠データの新しさ。古いまま気づかない状態を作らない。 */}
-      <div className={`text-[11px] ${stale ? 'text-rose-500 dark:text-rose-400 font-bold' : 'text-faint'}`}>
+      <div className={`text-[11px] ${stale ? 'text-danger-500 dark:text-danger-400 font-bold' : 'text-faint'}`}>
         {data.daysSinceNewest === null
           ? '※ 判定は同期済みのソロQ履歴に基づきます。'
           : stale

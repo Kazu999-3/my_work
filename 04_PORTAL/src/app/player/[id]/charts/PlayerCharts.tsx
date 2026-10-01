@@ -52,12 +52,12 @@ export function MiniMmrChart({ pts, lane }: { pts: any[]; lane: string }) {
             return (
               <div className="bg-surface border border-black/10 rounded-lg p-2 text-[10px] shadow-xl">
                 <div className="font-bold text-foreground">
-                  {d.champion}{d.opponentChampion ? <span className="text-rose-600"> vs {d.opponentChampion}</span> : ''}
+                  {d.champion}{d.opponentChampion ? <span className="text-danger-600"> vs {d.opponentChampion}</span> : ''}
                 </div>
-                {d.opponentName && <div className="text-gray-500">対面: {d.opponentName}</div>}
-                <div className={d.isWin ? 'text-emerald-600' : 'text-rose-600'}>{d.isWin ? 'WIN' : 'LOSE'}</div>
-                <div className="text-foreground-subtle">MMR {d.mmr} <span className={d.mmrDelta >= 0 ? 'text-emerald-600' : 'text-rose-600'}>({d.mmrDelta > 0 ? '+' : ''}{d.mmrDelta})</span></div>
-                <div className="text-gray-500">{d.date}</div>
+                {d.opponentName && <div className="text-muted-strong">対面: {d.opponentName}</div>}
+                <div className={d.isWin ? 'text-success-600' : 'text-danger-600'}>{d.isWin ? 'WIN' : 'LOSE'}</div>
+                <div className="text-foreground-subtle">MMR {d.mmr} <span className={d.mmrDelta >= 0 ? 'text-success-600' : 'text-danger-600'}>({d.mmrDelta > 0 ? '+' : ''}{d.mmrDelta})</span></div>
+                <div className="text-muted-strong">{d.date}</div>
               </div>
             );
           }}
@@ -131,7 +131,7 @@ export function MainMmrChart({
                   <span className="font-bold text-foreground">{d.champion}</span>
                   {d.opponentChampion && (
                     <>
-                      <span className="text-[9px] font-black text-gray-500 italic">VS</span>
+                      <span className="text-[9px] font-black text-muted-strong italic">VS</span>
                       <Image
                         src={getChampIcon(d.opponentChampion)}
                         alt={d.opponentChampion}
@@ -140,16 +140,16 @@ export function MainMmrChart({
                         className="w-6 h-6 rounded-full border border-rose-500/40"
                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                       />
-                      <span className="font-bold text-rose-600">{d.opponentChampion}</span>
+                      <span className="font-bold text-danger-600">{d.opponentChampion}</span>
                     </>
                   )}
                 </div>
                 {d.opponentName && (
-                  <div className="text-[9px] text-gray-500 mb-1">対面: {d.opponentName}</div>
+                  <div className="text-[9px] text-muted-strong mb-1">対面: {d.opponentName}</div>
                 )}
                 {/* M-03: MMR変動の内訳 */}
                 {d.breakdown && d.role === activeLane && (
-                  <div className="text-[9px] text-gray-400 mb-1 bg-black/5 rounded px-1.5 py-1">
+                  <div className="text-[9px] text-faint mb-1 bg-black/5 rounded px-1.5 py-1">
                     内訳: 勝敗{d.breakdown.base > 0 ? '+' : ''}{d.breakdown.base} / 相手{d.breakdown.elo >= 0 ? '+' : ''}{d.breakdown.elo} / KDA+{d.breakdown.kda}
                     {d.breakdown.wrAdjust !== 0 && ` / 勝率補正${d.breakdown.wrAdjust}`}
                     {d.breakdown.dampener < 1 && ` / ×${d.breakdown.dampener}`}
@@ -157,22 +157,22 @@ export function MainMmrChart({
                   </div>
                 )}
                 <div className="flex justify-between items-center mt-1">
-                  <span className={`font-black text-[10px] ${d.isWin ? 'text-emerald-600' : 'text-rose-600'}`}>
+                  <span className={`font-black text-[10px] ${d.isWin ? 'text-success-600' : 'text-danger-600'}`}>
                     {d.isWin ? 'WIN' : 'LOSE'} ({d.role})
                   </span>
-                  <span className={`text-[9px] px-1.5 rounded font-bold bg-teal-100 text-teal-700 border border-teal-200`}>
+                  <span className={`text-[9px] px-1.5 rounded font-bold bg-secondary-100 text-secondary-700 border border-teal-200`}>
                     {laneLabels[activeLane]}
                   </span>
                 </div>
                 <div className="text-foreground-subtle mt-2 pt-2 border-t border-black/10 space-y-1">
                   <div>
                     MMR: <span className="font-bold text-foreground">{d.mmr}</span>
-                    <span className={`ml-2 font-bold ${d.mmrDelta > 0 && d.role === activeLane ? 'text-emerald-600' : d.mmrDelta < 0 && d.role === activeLane ? 'text-rose-600' : 'text-gray-500'}`}>
+                    <span className={`ml-2 font-bold ${d.mmrDelta > 0 && d.role === activeLane ? 'text-success-600' : d.mmrDelta < 0 && d.role === activeLane ? 'text-danger-600' : 'text-muted-strong'}`}>
                       ({d.mmrDelta > 0 ? '+' : ''}{d.mmrDelta})
                     </span>
                   </div>
                   {d.allMmr && (
-                    <div className="text-[9px] text-gray-500 grid grid-cols-2 gap-x-2 gap-y-0.5 pt-1.5 border-t border-black/10 mt-1">
+                    <div className="text-[9px] text-muted-strong grid grid-cols-2 gap-x-2 gap-y-0.5 pt-1.5 border-t border-black/10 mt-1">
                       <div>総合: {d.allMmr.TOTAL}</div>
                       <div>TOP: {d.allMmr.TOP}</div>
                       <div>JG: {d.allMmr.JG}</div>
@@ -182,7 +182,7 @@ export function MainMmrChart({
                     </div>
                   )}
                 </div>
-                <div className="text-gray-500 text-[9px] mt-2 text-right">{d.date}</div>
+                <div className="text-muted-strong text-[9px] mt-2 text-right">{d.date}</div>
               </div>
             );
           }}

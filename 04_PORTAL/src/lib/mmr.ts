@@ -72,21 +72,21 @@ export const KTM_TIERS: KtmTier[] = rawKtmTiers as KtmTier[];
 export function getColorFromRankName(rank: string): string {
   const r = (rank || "").toUpperCase();
   if (r.includes("IRON")) return "text-muted-strong font-bold";
-  if (r.includes("BRONZE")) return "text-amber-700 font-bold";
+  if (r.includes("BRONZE")) return "text-primary-700 font-bold";
   if (r.includes("SILVER")) return "text-foreground-subtle font-bold";
-  if (r.includes("GOLD")) return "text-yellow-700 font-bold";
-  if (r.includes("PLATINUM")) return "text-teal-700 font-bold";
-  if (r.includes("EMERALD")) return "text-emerald-700 font-bold";
-  if (r.includes("DIAMOND")) return "text-amber-700 font-bold";
-  if (r.includes("MASTER")) return "text-orange-700 font-bold";
-  if (r.includes("GRANDMASTER")) return "text-red-500 font-bold";
-  if (r.includes("CHALLENGER")) return "text-amber-700 font-bold";
+  if (r.includes("GOLD")) return "text-primary-700 font-bold";
+  if (r.includes("PLATINUM")) return "text-secondary-700 font-bold";
+  if (r.includes("EMERALD")) return "text-success-700 font-bold";
+  if (r.includes("DIAMOND")) return "text-primary-700 font-bold";
+  if (r.includes("MASTER")) return "text-primary-700 font-bold";
+  if (r.includes("GRANDMASTER")) return "text-danger-500 font-bold";
+  if (r.includes("CHALLENGER")) return "text-primary-700 font-bold";
   return "text-faint font-medium";
 }
 
 export function getKtmRank(mmr: number): { name: string; color: string; bg: string } {
   const tier = KTM_TIERS.find(t => mmr >= t.min);
-  return tier ? { name: tier.name, color: tier.color, bg: tier.bg } : { name: 'UNRANKED', color: 'text-gray-400', bg: 'bg-gray-800' };
+  return tier ? { name: tier.name, color: tier.color, bg: tier.bg } : { name: 'UNRANKED', color: 'text-faint', bg: 'bg-gray-800' };
 }
 
 /**
@@ -103,15 +103,15 @@ export function getKtmRank(mmr: number): { name: string; color: string; bg: stri
 export function getRankBadgeStyle(rank?: string | null): { bg: string; color: string; border: string } {
   const r = (rank || '').toUpperCase().trim();
   if (r.includes('CHALLENGER')) return { bg: 'bg-sky-500/10', color: 'text-sky-600 dark:text-sky-400', border: 'border-sky-500/30' };
-  if (r.includes('GRANDMASTER')) return { bg: 'bg-red-500/10', color: 'text-red-600 dark:text-red-400', border: 'border-red-500/30' };
+  if (r.includes('GRANDMASTER')) return { bg: 'bg-danger-500/10', color: 'text-danger-600 dark:text-danger-400', border: 'border-rose-500/30' };
   if (r.includes('MASTER')) return { bg: 'bg-purple-500/10', color: 'text-purple-600 dark:text-purple-400', border: 'border-purple-500/30' };
   if (r.includes('DIAMOND')) return { bg: 'bg-blue-500/10', color: 'text-blue-600 dark:text-blue-400', border: 'border-blue-500/30' };
-  if (r.includes('EMERALD')) return { bg: 'bg-emerald-500/10', color: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-500/30' };
-  if (r.includes('PLATINUM')) return { bg: 'bg-teal-500/10', color: 'text-teal-600 dark:text-teal-400', border: 'border-teal-500/30' };
-  if (r.includes('GOLD')) return { bg: 'bg-yellow-500/10', color: 'text-yellow-700 dark:text-yellow-400', border: 'border-yellow-500/30' };
-  if (r.includes('SILVER')) return { bg: 'bg-slate-400/10', color: 'text-slate-600 dark:text-slate-300', border: 'border-slate-400/30' };
-  if (r.includes('BRONZE')) return { bg: 'bg-amber-800/10', color: 'text-amber-800 dark:text-amber-600', border: 'border-amber-800/30' };
-  if (r.includes('IRON')) return { bg: 'bg-zinc-500/10', color: 'text-zinc-600 dark:text-zinc-400', border: 'border-zinc-500/30' };
+  if (r.includes('EMERALD')) return { bg: 'bg-success-500/10', color: 'text-success-600 dark:text-success-400', border: 'border-emerald-500/30' };
+  if (r.includes('PLATINUM')) return { bg: 'bg-secondary-500/10', color: 'text-secondary-600 dark:text-secondary-400', border: 'border-teal-500/30' };
+  if (r.includes('GOLD')) return { bg: 'bg-primary-500/10', color: 'text-primary-700 dark:text-primary-400', border: 'border-amber-500/30' };
+  if (r.includes('SILVER')) return { bg: 'bg-slate-400/10', color: 'text-muted dark:text-faint', border: 'border-border/30' };
+  if (r.includes('BRONZE')) return { bg: 'bg-primary-800/10', color: 'text-primary-800 dark:text-primary-600', border: 'border-amber-800/30' };
+  if (r.includes('IRON')) return { bg: 'bg-zinc-500/10', color: 'text-muted dark:text-faint', border: 'border-zinc-500/30' };
   return { bg: 'bg-stone-500/10', color: 'text-muted', border: 'border-stone-500/30' };
 }
 

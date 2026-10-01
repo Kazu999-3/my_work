@@ -100,7 +100,7 @@ export default function RosterPanel() {
               onClick={() => setRoleFilter(role)}
               className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer shrink-0 ${
                 roleFilter === role
-                  ? "bg-amber-600 text-white shadow-xs"
+                  ? "bg-primary-600 text-white shadow-xs"
                   : "bg-surface-subtle hover:bg-surface-hover text-muted"
               }`}
             >
@@ -142,11 +142,11 @@ export default function RosterPanel() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700 font-bold text-sm shrink-0 group-hover:scale-105 transition">
+                    <div className="w-10 h-10 rounded-xl bg-primary-50 border border-amber-200 flex items-center justify-center text-primary-700 font-bold text-sm shrink-0 group-hover:scale-105 transition">
                       <RoleIcon size={18} />
                     </div>
                     <div className="min-w-0">
-                      <h4 className="text-sm font-black text-foreground truncate group-hover:text-amber-800 transition">
+                      <h4 className="text-sm font-black text-foreground truncate group-hover:text-primary-800 transition">
                         {player.name}
                       </h4>
                       <p className="text-[11px] font-mono text-muted-strong truncate">
@@ -155,7 +155,7 @@ export default function RosterPanel() {
                     </div>
                   </div>
 
-                  <span className="text-[10px] font-black text-amber-800 bg-amber-100/70 border border-amber-200/80 px-2 py-0.5 rounded-lg shrink-0">
+                  <span className="text-[10px] font-black text-primary-800 bg-primary-100/70 border border-amber-200/80 px-2 py-0.5 rounded-lg shrink-0">
                     {player.highest_rank || "UNRANKED"}
                   </span>
                 </div>
@@ -176,7 +176,7 @@ export default function RosterPanel() {
 
               <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between text-[11px] text-muted-strong font-medium">
                 <span>カルテを見る</span>
-                <span className="text-amber-600 font-black group-hover:translate-x-1 transition">→</span>
+                <span className="text-primary-600 font-black group-hover:translate-x-1 transition">→</span>
               </div>
             </Link>
           );

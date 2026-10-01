@@ -10,11 +10,11 @@ interface ProfileModalProps {
 }
 
 const roleIcons: Record<string, any> = {
-  TOP: <Shield className="w-5 h-5 text-orange-700" />,
-  JG: <Zap className="w-5 h-5 text-green-700" />,
-  MID: <Star className="w-5 h-5 text-red-400" />,
-  ADC: <Crosshair className="w-5 h-5 text-amber-700" />,
-  SUP: <Star className="w-5 h-5 text-yellow-700" />
+  TOP: <Shield className="w-5 h-5 text-primary-700" />,
+  JG: <Zap className="w-5 h-5 text-success-700" />,
+  MID: <Star className="w-5 h-5 text-danger-400" />,
+  ADC: <Crosshair className="w-5 h-5 text-primary-700" />,
+  SUP: <Star className="w-5 h-5 text-primary-700" />
 };
 
 export default function ProfileModal({ player, onClose }: ProfileModalProps) {
@@ -77,31 +77,31 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
               <h2 className="text-3xl font-extrabold text-foreground">{player.name}</h2>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-faint text-sm font-medium">{player.ign || "IGN未登録"}</span>
-                <span className="bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded text-xs font-bold">
+                <span className="bg-primary-100 text-primary-700 border border-amber-200 px-2 py-0.5 rounded text-xs font-bold">
                   {player.highest_rank || "UNRANKED"}
                 </span>
-                <span className="bg-orange-100 text-orange-700 border border-orange-200 px-2 py-0.5 rounded text-xs font-bold">
+                <span className="bg-primary-100 text-primary-700 border border-amber-200 px-2 py-0.5 rounded text-xs font-bold">
                   MMR: {player.mmr || 1200}
                 </span>
                 {(() => {
                   const totalG = player.total_games ?? player.games ?? player.metadata?.games ?? stats?.totalMatches ?? 0;
                   const daysAgo = player.days_since_last_match;
                   let label = '👑 常連';
-                  let color = 'bg-amber-100 text-amber-900 border-amber-300';
+                  let color = 'bg-primary-100 text-primary-900 border-amber-300';
 
                   if (totalG === 0) {
                     label = '🔰 初参加';
-                    color = 'bg-emerald-100 text-emerald-900 border-emerald-300';
+                    color = 'bg-success-100 text-success-900 border-emerald-300';
                   } else if (totalG <= 4) {
                     label = '🌱 ライト';
-                    color = 'bg-teal-100 text-teal-900 border-teal-300';
+                    color = 'bg-secondary-100 text-secondary-900 border-teal-300';
                   } else if (daysAgo !== null && daysAgo > 30) {
                     if (daysAgo >= 60) {
                       label = '⏳ 復帰勢';
-                      color = 'bg-amber-100 text-amber-900 border-amber-300';
+                      color = 'bg-primary-100 text-primary-900 border-amber-300';
                     } else {
                       label = '🎖️ 経験者';
-                      color = 'bg-teal-100 text-teal-900 border-teal-300';
+                      color = 'bg-secondary-100 text-secondary-900 border-teal-300';
                     }
                   }
 
@@ -127,7 +127,7 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
           {/* Riot API Mastery */}
           <section>
             <h3 className="text-xl font-bold text-foreground-soft mb-4 flex items-center gap-2">
-              <Star className="w-5 h-5 text-yellow-500" />
+              <Star className="w-5 h-5 text-primary-500" />
               得意チャンピオン (Riotマスタリー)
             </h3>
             {riotMasteries.length > 0 ? (
@@ -139,7 +139,7 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                       alt={m.name}
                       width={56}
                       height={56}
-                      className="w-14 h-14 rounded-full border-2 border-yellow-300 object-cover"
+                      className="w-14 h-14 rounded-full border-2 border-amber-300 object-cover"
                       onError={(e) => { (e.target as HTMLImageElement).src = 'https://ddragon.leagueoflegends.com/cdn/14.1.1/img/profileicon/29.png' }}
                     />
                     <div>
@@ -158,13 +158,13 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
 
           <section>
             <h3 className="text-xl font-bold text-foreground-soft mb-4 flex items-center gap-2">
-              <Swords className="w-5 h-5 text-emerald-500" />
+              <Swords className="w-5 h-5 text-success-500" />
               KTM 戦績 ＆ プレイスタイル分析
             </h3>
             
             {loading ? (
               <div className="flex justify-center p-8">
-                <RefreshCw className="w-8 h-8 text-amber-500 animate-spin" />
+                <RefreshCw className="w-8 h-8 text-primary-500 animate-spin" />
               </div>
             ) : stats && Object.keys(stats).some(k => stats[k] !== null) ? (
               <div className="space-y-6">
@@ -176,7 +176,7 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                   </div>
                   <div className="w-full md:w-2/3 space-y-3">
                     <h4 className="text-lg font-bold text-foreground flex items-center gap-2">
-                      <Activity className="w-5 h-5 text-amber-700" />
+                      <Activity className="w-5 h-5 text-primary-700" />
                       AI プレイスタイル分析
                     </h4>
                     <p className="text-faint text-sm">
@@ -185,7 +185,7 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                     <div className="grid grid-cols-2 gap-4 mt-2">
                       <div className="bg-surface p-3 rounded border border-border">
                         <div className="text-xs text-muted-strong font-bold mb-1">総合勝率</div>
-                        <div className="text-2xl font-black text-emerald-700">
+                        <div className="text-2xl font-black text-success-700">
                           {Math.round(
                             Object.values(stats as Record<string, any>).reduce((acc:any, s:any) => acc + (s ? s.totalWins : 0), 0) /
                             Math.max(1, Object.values(stats as Record<string, any>).reduce((acc:any, s:any) => acc + (s ? s.totalGames : 0), 0)) * 100
@@ -194,7 +194,7 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                       </div>
                       <div className="bg-surface p-3 rounded border border-border">
                         <div className="text-xs text-muted-strong font-bold mb-1">総試合数</div>
-                        <div className="text-2xl font-black text-amber-700">
+                        <div className="text-2xl font-black text-primary-700">
                           {Object.values(stats as Record<string, any>).reduce((acc:any, s:any) => acc + (s ? s.totalGames : 0), 0)}戦
                         </div>
                       </div>
@@ -223,13 +223,13 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                       <div className="mb-4">
                         <div className="flex justify-between text-sm mb-1">
                           <span className="text-faint">勝率 ({s.totalWins}W {s.totalGames - s.totalWins}L)</span>
-                          <span className={`font-bold ${s.winRate >= 50 ? 'text-emerald-700' : 'text-red-700'}`}>
+                          <span className={`font-bold ${s.winRate >= 50 ? 'text-success-700' : 'text-danger-700'}`}>
                             {s.winRate}%
                           </span>
                         </div>
                         <div className="w-full bg-surface rounded-full h-2">
                           <div 
-                            className={`h-2 rounded-full ${s.winRate >= 50 ? 'bg-emerald-500' : 'bg-red-500'}`} 
+                            className={`h-2 rounded-full ${s.winRate >= 50 ? 'bg-success-500' : 'bg-danger-500'}`} 
                             style={{ width: `${s.winRate}%` }}
                           ></div>
                         </div>

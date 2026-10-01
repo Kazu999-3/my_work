@@ -131,14 +131,14 @@ export default function PwaRegister() {
             <Download className="text-[#c89b3c]" size={16} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] text-gray-700 font-bold leading-snug">ホーム画面にアプリ化</p>
+            <p className="text-[11px] text-foreground-subtle font-bold leading-snug">ホーム画面にアプリ化</p>
           </div>
           <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={onInstall}
               style={{ pointerEvents: 'auto', position: 'relative', zIndex: 100000 }}
-              className="px-2.5 py-1 rounded-lg bg-[#c89b3c] text-black text-[11px] font-black hover:bg-yellow-400 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+              className="px-2.5 py-1 rounded-lg bg-[#c89b3c] text-black text-[11px] font-black hover:bg-primary-400 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
             >
               インストール
             </button>
@@ -146,7 +146,7 @@ export default function PwaRegister() {
               type="button"
               onClick={() => setMinimized(true)}
               style={{ pointerEvents: 'auto' }}
-              className="p-1 rounded-lg text-gray-400 hover:text-foreground hover:bg-black/5 transition-colors cursor-pointer"
+              className="p-1 rounded-lg text-faint hover:text-foreground hover:bg-black/5 transition-colors cursor-pointer"
               title="小さくする"
             >
               <X size={14} />
@@ -155,7 +155,7 @@ export default function PwaRegister() {
               type="button"
               onClick={dismissBanner}
               style={{ pointerEvents: 'auto' }}
-              className="text-[9px] text-gray-500 hover:text-gray-700 underline whitespace-nowrap"
+              className="text-[9px] text-muted-strong hover:text-foreground-subtle underline whitespace-nowrap"
               title="7日間表示しない"
             >
               7日間非表示
@@ -177,7 +177,7 @@ export default function PwaRegister() {
           >
             <button
               onClick={() => { setShowGuide(false); dismissBanner(); }}
-              className="absolute top-4 right-4 text-gray-400 hover:text-foreground p-1 cursor-pointer"
+              className="absolute top-4 right-4 text-faint hover:text-foreground p-1 cursor-pointer"
             >
               <X size={20} />
             </button>
@@ -187,14 +187,14 @@ export default function PwaRegister() {
               <h3 className="text-base font-black text-foreground">アプリのインストール方法</h3>
             </div>
 
-            <div className="space-y-4 text-xs text-gray-700">
+            <div className="space-y-4 text-xs text-foreground-subtle">
               <div className="bg-black/3 p-3 rounded-xl border border-black/10">
                 <div className="font-bold text-foreground mb-1.5 flex items-center gap-2">
                   <span className="text-base">🌐</span> Chrome / Edge (PC・スマホ)
                 </div>
-                <ol className="list-decimal list-inside space-y-1 text-gray-700 leading-relaxed">
-                  <li>アドレスバー右端の <span className="inline-flex items-center bg-black/5 px-1.5 py-0.5 rounded text-amber-700 font-mono text-[10px]">⊕</span> アイコンをクリック</li>
-                  <li>または右上の <span className="font-mono text-amber-700">⋮</span> → 「<span className="text-foreground font-bold">アプリをインストール</span>」</li>
+                <ol className="list-decimal list-inside space-y-1 text-foreground-subtle leading-relaxed">
+                  <li>アドレスバー右端の <span className="inline-flex items-center bg-black/5 px-1.5 py-0.5 rounded text-primary-700 font-mono text-[10px]">⊕</span> アイコンをクリック</li>
+                  <li>または右上の <span className="font-mono text-primary-700">⋮</span> → 「<span className="text-foreground font-bold">アプリをインストール</span>」</li>
                 </ol>
               </div>
 
@@ -202,14 +202,14 @@ export default function PwaRegister() {
                 <div className="font-bold text-foreground mb-1.5 flex items-center gap-2">
                   <span className="text-base">📱</span> Safari (iOS)
                 </div>
-                <ol className="list-decimal list-inside space-y-1 text-gray-700 leading-relaxed">
-                  <li>画面下部の共有アイコン <span className="font-mono text-amber-700">⬆</span> をタップ</li>
+                <ol className="list-decimal list-inside space-y-1 text-foreground-subtle leading-relaxed">
+                  <li>画面下部の共有アイコン <span className="font-mono text-primary-700">⬆</span> をタップ</li>
                   <li>「<span className="text-foreground font-bold">ホーム画面に追加</span>」を選択</li>
                 </ol>
               </div>
 
-              <div className="bg-amber-100 p-3 rounded-xl border border-amber-200">
-                <p className="text-amber-700 text-[11px] font-bold">
+              <div className="bg-primary-100 p-3 rounded-xl border border-amber-200">
+                <p className="text-primary-700 text-[11px] font-bold">
                   💡 Chrome で以前インストール画面を「キャンセル」した場合、しばらくの間ブラウザが自動プロンプトを表示しません。
                   上記の手動手順でインストールできます。
                 </p>
@@ -218,7 +218,7 @@ export default function PwaRegister() {
 
             <button
               onClick={() => { setShowGuide(false); dismissBanner(); }}
-              className="w-full mt-5 py-2.5 rounded-xl bg-[#c89b3c] text-black font-black text-xs hover:bg-yellow-400 transition cursor-pointer"
+              className="w-full mt-5 py-2.5 rounded-xl bg-[#c89b3c] text-black font-black text-xs hover:bg-primary-400 transition cursor-pointer"
             >
               了解しました
             </button>

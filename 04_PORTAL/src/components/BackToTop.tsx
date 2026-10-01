@@ -32,7 +32,7 @@ export default function BackToTop() {
     <button
       onClick={scrollToTop}
       aria-label="ページ最上部へ戻る"
-      className="fixed bottom-20 md:bottom-8 right-5 z-40 p-3 bg-amber-700 hover:bg-amber-800 active:scale-95 text-white rounded-full shadow-2xl transition-all border border-amber-400/40 flex items-center justify-center animate-fade-in group"
+      className="fixed bottom-20 md:bottom-8 right-5 z-40 p-3 bg-primary-700 hover:bg-primary-800 active:scale-95 text-white rounded-full shadow-2xl transition-all border border-amber-400/40 flex items-center justify-center animate-fade-in group"
     >
       <ArrowUp className="w-5 h-5 group-hover:-translate-y-0.5 transition-transform" />
     </button>

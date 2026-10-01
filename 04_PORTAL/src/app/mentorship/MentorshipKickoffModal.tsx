@@ -41,15 +41,15 @@ export function MentorshipKickoffModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-4 bg-stone-900/60 backdrop-blur-xs animate-in fade-in duration-150">
       <div className="bg-surface border border-border rounded-3xl w-full max-w-xl shadow-2xl overflow-hidden text-foreground animate-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
         {/* ヘッダー */}
-        <div className="p-5 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-emerald-500/15 border-b border-emerald-200 flex items-center justify-between shrink-0">
+        <div className="p-5 bg-gradient-to-r from-success-500/15 via-secondary-500/10 to-success-500/15 border-b border-emerald-200 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-xl shadow-2xs">
+            <div className="w-10 h-10 rounded-2xl bg-success-100 border border-emerald-300 flex items-center justify-center text-xl shadow-2xs">
               🚀
             </div>
             <div>
               <h2 className="text-base font-black text-foreground flex items-center gap-1.5">
                 <span>師弟スタート・キックオフガイド</span>
-                <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full">3ステップ</span>
+                <span className="text-[10px] bg-success-600 text-white px-2 py-0.5 rounded-full">3ステップ</span>
               </h2>
               <p className="text-xs text-muted font-bold">
                 👑 {mentorName} × 🌱 {pupilName} ({durationLabel})
@@ -67,7 +67,7 @@ export function MentorshipKickoffModal({
         {/* ボディ */}
         <div className="p-5 space-y-4 overflow-y-auto">
           {/* 説明バナー */}
-          <div className="p-3.5 bg-emerald-50/70 border border-emerald-200 rounded-2xl text-xs text-foreground-soft leading-relaxed font-medium">
+          <div className="p-3.5 bg-success-50/70 border border-emerald-200 rounded-2xl text-xs text-foreground-soft leading-relaxed font-medium">
             💡 ペア結成おめでとうございます！まずは以下の3つのステップに沿って、気楽に最初の挨拶とプレイを進めてみましょう。
           </div>
 
@@ -80,7 +80,7 @@ export function MentorshipKickoffModal({
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs font-black flex items-center justify-center shadow-2xs">
+                    <span className="w-6 h-6 rounded-full bg-success-600 text-white text-xs font-black flex items-center justify-center shadow-2xs">
                       {s.step}
                     </span>
                     <h3 className="text-xs font-black text-foreground">
@@ -103,8 +103,8 @@ export function MentorshipKickoffModal({
                     >
                       {copiedIndex === 1 ? (
                         <>
-                          <Check size={13} className="text-emerald-600" />
-                          <span className="text-emerald-700">コピー完了！</span>
+                          <Check size={13} className="text-success-600" />
+                          <span className="text-success-700">コピー完了！</span>
                         </>
                       ) : (
                         <>

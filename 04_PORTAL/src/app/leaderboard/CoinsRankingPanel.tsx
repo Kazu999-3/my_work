@@ -72,12 +72,12 @@ export default function CoinsRankingPanel() {
 
   if (error && players.length === 0) {
     return (
-      <div className="max-w-md mx-auto p-6 bg-red-50/80 border border-red-200 rounded-2xl text-center space-y-3">
-        <AlertCircle size={32} className="text-red-500 mx-auto" />
-        <p className="text-sm font-bold text-red-700">{error}</p>
+      <div className="max-w-md mx-auto p-6 bg-danger-50/80 border border-rose-200 rounded-2xl text-center space-y-3">
+        <AlertCircle size={32} className="text-danger-500 mx-auto" />
+        <p className="text-sm font-bold text-danger-700">{error}</p>
         <button
           onClick={fetchCoinsRanking}
-          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-black rounded-xl transition inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
+          className="px-4 py-2 bg-danger-600 hover:bg-danger-700 text-white text-xs font-black rounded-xl transition inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
         >
           <RefreshCw size={14} />
           再読み込み
@@ -96,19 +96,19 @@ export default function CoinsRankingPanel() {
       {stats && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
           <div className="bg-surface/90 backdrop-blur-sm border border-border/90 rounded-2xl p-4 shadow-xs flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-primary-500/10 text-primary-600 flex items-center justify-center font-bold shrink-0">
               <Coins size={24} />
             </div>
             <div>
               <p className="text-[11px] font-bold text-muted-strong">総流通コイン</p>
-              <p className="text-xl font-black text-amber-600 font-mono tracking-tight">
+              <p className="text-xl font-black text-primary-600 font-mono tracking-tight">
                 {stats.totalCoins.toLocaleString()} <span className="text-xs font-bold text-faint">🪙</span>
               </p>
             </div>
           </div>
 
           <div className="bg-surface/90 backdrop-blur-sm border border-border/90 rounded-2xl p-4 shadow-xs flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-success-500/10 text-success-600 flex items-center justify-center font-bold shrink-0">
               <Users size={24} />
             </div>
             <div>
@@ -120,7 +120,7 @@ export default function CoinsRankingPanel() {
           </div>
 
           <div className="bg-surface/90 backdrop-blur-sm border border-border/90 rounded-2xl p-4 shadow-xs flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-primary-500/10 text-primary-600 flex items-center justify-center font-bold shrink-0">
               <TrendingUp size={24} />
             </div>
             <div>
@@ -148,7 +148,7 @@ export default function CoinsRankingPanel() {
               <div className="space-y-1 my-2">
                 <Link
                   href={`/player/${top2.discordId || top2.name}`}
-                  className="text-base font-black text-foreground hover:text-amber-600 transition flex items-center gap-1.5 group"
+                  className="text-base font-black text-foreground hover:text-primary-600 transition flex items-center gap-1.5 group"
                 >
                   <span className="truncate">{top2.name}</span>
                   <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 transition" />
@@ -170,18 +170,18 @@ export default function CoinsRankingPanel() {
 
           {/* 🥇 1位 (富豪チャンピオン) */}
           {top1 && (
-            <div className="order-1 md:order-2 bg-gradient-to-b from-amber-50 to-amber-100/40 border-2 border-amber-400 rounded-3xl p-6 shadow-md relative overflow-hidden flex flex-col justify-between md:-translate-y-2">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-amber-400/10 rounded-full blur-xl pointer-events-none" />
+            <div className="order-1 md:order-2 bg-gradient-to-b from-primary-50 to-primary-100/40 border-2 border-amber-400 rounded-3xl p-6 shadow-md relative overflow-hidden flex flex-col justify-between md:-translate-y-2">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-primary-400/10 rounded-full blur-xl pointer-events-none" />
               <div className="flex items-center justify-between mb-3">
                 <span className="text-3xl animate-bounce">👑</span>
-                <span className="text-[10px] font-black tracking-widest uppercase px-3 py-1 rounded-full bg-amber-500 text-white shadow-xs">
+                <span className="text-[10px] font-black tracking-widest uppercase px-3 py-1 rounded-full bg-primary-500 text-white shadow-xs">
                   🏆 長者番付 第1位
                 </span>
               </div>
               <div className="space-y-1.5 my-2">
                 <Link
                   href={`/player/${top1.discordId || top1.name}`}
-                  className="text-lg font-black text-stone-950 hover:text-amber-700 transition flex items-center gap-1.5 group"
+                  className="text-lg font-black text-stone-950 hover:text-primary-700 transition flex items-center gap-1.5 group"
                 >
                   <span className="truncate">{top1.name}</span>
                   <ArrowUpRight size={16} className="opacity-0 group-hover:opacity-100 transition" />
@@ -193,8 +193,8 @@ export default function CoinsRankingPanel() {
                 </div>
               </div>
               <div className="mt-4 pt-3.5 border-t border-amber-300/80 flex items-baseline justify-between">
-                <span className="text-xs text-amber-900 font-bold">富豪保有資産</span>
-                <span className="text-2xl font-black text-amber-600 font-mono tracking-tight">
+                <span className="text-xs text-primary-900 font-bold">富豪保有資産</span>
+                <span className="text-2xl font-black text-primary-600 font-mono tracking-tight">
                   🪙 {top1.coins.toLocaleString()}
                 </span>
               </div>
@@ -203,17 +203,17 @@ export default function CoinsRankingPanel() {
 
           {/* 🥉 3位 */}
           {top3 && (
-            <div className="order-3 md:order-3 bg-gradient-to-b from-amber-900/5 to-white/90 border-2 border-amber-700/30 rounded-3xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-between">
+            <div className="order-3 md:order-3 bg-gradient-to-b from-primary-900/5 to-white/90 border-2 border-amber-700/30 rounded-3xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-between">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-2xl">🥉</span>
-                <span className="text-[10px] font-black tracking-widest uppercase px-2.5 py-0.5 rounded-full bg-amber-700/10 text-amber-800">
+                <span className="text-[10px] font-black tracking-widest uppercase px-2.5 py-0.5 rounded-full bg-primary-700/10 text-primary-800">
                   第3位
                 </span>
               </div>
               <div className="space-y-1 my-2">
                 <Link
                   href={`/player/${top3.discordId || top3.name}`}
-                  className="text-base font-black text-foreground hover:text-amber-600 transition flex items-center gap-1.5 group"
+                  className="text-base font-black text-foreground hover:text-primary-600 transition flex items-center gap-1.5 group"
                 >
                   <span className="truncate">{top3.name}</span>
                   <ArrowUpRight size={14} className="opacity-0 group-hover:opacity-100 transition" />
@@ -226,7 +226,7 @@ export default function CoinsRankingPanel() {
               </div>
               <div className="mt-3 pt-3 border-t border-border/80 flex items-baseline justify-between">
                 <span className="text-[11px] text-faint font-bold">所持コイン</span>
-                <span className="text-lg font-black text-amber-800 font-mono">
+                <span className="text-lg font-black text-primary-800 font-mono">
                   🪙 {top3.coins.toLocaleString()}
                 </span>
               </div>
@@ -293,11 +293,11 @@ export default function CoinsRankingPanel() {
                   <span
                     className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-black font-mono ${
                       player.rank === 1
-                        ? 'bg-amber-400 text-amber-950 shadow-2xs font-extrabold'
+                        ? 'bg-primary-400 text-primary-950 shadow-2xs font-extrabold'
                         : player.rank === 2
                         ? 'bg-stone-300 text-foreground-soft font-bold'
                         : player.rank === 3
-                        ? 'bg-amber-700 text-white font-bold'
+                        ? 'bg-primary-700 text-white font-bold'
                         : 'text-muted-strong bg-surface-subtle'
                     }`}
                   >
@@ -309,7 +309,7 @@ export default function CoinsRankingPanel() {
                 <div className="flex-1 min-w-0">
                   <Link
                     href={`/player/${player.discordId || player.name}`}
-                    className="font-extrabold text-foreground group-hover:text-amber-600 transition text-xs sm:text-sm truncate block"
+                    className="font-extrabold text-foreground group-hover:text-primary-600 transition text-xs sm:text-sm truncate block"
                   >
                     {player.name}
                   </Link>
@@ -327,7 +327,7 @@ export default function CoinsRankingPanel() {
 
                 {/* コイン枚数 */}
                 <div className="w-32 text-right shrink-0">
-                  <span className="text-xs sm:text-sm font-black text-amber-600 font-mono tracking-tight">
+                  <span className="text-xs sm:text-sm font-black text-primary-600 font-mono tracking-tight">
                     🪙 {player.coins.toLocaleString()}
                   </span>
                 </div>
@@ -336,7 +336,7 @@ export default function CoinsRankingPanel() {
                 <div className="w-16 text-center shrink-0">
                   <Link
                     href={`/player/${player.discordId || player.name}`}
-                    className="inline-flex items-center justify-center p-1.5 rounded-lg bg-surface-subtle hover:bg-amber-500 hover:text-white text-muted-strong transition cursor-pointer"
+                    className="inline-flex items-center justify-center p-1.5 rounded-lg bg-surface-subtle hover:bg-primary-500 hover:text-white text-muted-strong transition cursor-pointer"
                     title={`${player.name} の個人カルテ`}
                   >
                     <ArrowUpRight size={14} />
@@ -349,9 +349,9 @@ export default function CoinsRankingPanel() {
       </div>
 
       {/* カジノ/ベットへの案内バナー */}
-      <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-transparent border border-amber-300/40 flex flex-wrap items-center justify-between gap-3">
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-primary-500/10 via-primary-400/5 to-transparent border border-amber-300/40 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-primary-500 text-white flex items-center justify-center font-bold shrink-0">
             <Coins size={18} />
           </div>
           <div>
@@ -361,7 +361,7 @@ export default function CoinsRankingPanel() {
         </div>
         <Link
           href="/casino"
-          className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-stone-950 font-black text-xs transition shadow-2xs hover:shadow-xs flex items-center gap-1.5"
+          className="px-4 py-2 rounded-xl bg-primary-500 hover:bg-primary-600 text-stone-950 font-black text-xs transition shadow-2xs hover:shadow-xs flex items-center gap-1.5"
         >
           <span>🎯 カジノ ＆ 勝敗予想へ</span>
           <ArrowUpRight size={14} />

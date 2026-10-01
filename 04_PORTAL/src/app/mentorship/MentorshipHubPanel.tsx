@@ -673,11 +673,11 @@ export default function MentorshipHubPanel() {
   return (
     <div className="space-y-6">
       {/* ヒーローバナー */}
-      <div className="bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-emerald-500/15 border border-emerald-500/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-xs">
+      <div className="bg-gradient-to-r from-success-500/15 via-secondary-500/10 to-success-500/15 border border-emerald-500/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-xs">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/20 text-emerald-800 text-xs font-black border border-emerald-500/30">
-              <HeartHandshake size={14} className="text-emerald-600" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-success-500/20 text-success-800 text-xs font-black border border-emerald-500/30">
+              <HeartHandshake size={14} className="text-success-600" />
               KTM 師弟マッチング ＆ 自己紹介ハブ
             </div>
             <h2 className="text-xl md:text-2xl font-black text-foreground">
@@ -708,7 +708,7 @@ export default function MentorshipHubPanel() {
                 className="px-2.5 py-2.5 rounded-xl bg-surface-subtle hover:bg-surface-hover text-foreground-subtle font-bold text-xs transition border border-border flex items-center gap-1 cursor-pointer disabled:opacity-50 shadow-2xs"
                 title="Discordの常駐ダッシュボードを即座に再同期します"
               >
-                <RefreshCw size={13} className={isSyncingDiscord ? 'animate-spin text-amber-600' : ''} />
+                <RefreshCw size={13} className={isSyncingDiscord ? 'animate-spin text-primary-600' : ''} />
                 <span className="hidden sm:inline">Discord同期</span>
               </button>
             )}
@@ -719,7 +719,7 @@ export default function MentorshipHubPanel() {
               onClick={() => setIsGuidelinesModalOpen(true)}
               className="px-3.5 py-2.5 rounded-xl bg-surface border border-border hover:bg-surface-subtle text-foreground-subtle font-bold text-xs transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
             >
-              <BookOpen size={14} className="text-amber-600" />
+              <BookOpen size={14} className="text-primary-600" />
               <span>📜 師弟の心得</span>
             </button>
 
@@ -729,7 +729,7 @@ export default function MentorshipHubPanel() {
                 setEditingProfile(currentTabMyProfile || null);
                 setIsModalOpen(true);
               }}
-              className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition shadow-md flex items-center gap-1.5 shrink-0 cursor-pointer"
+              className="px-4 py-2.5 rounded-xl bg-success-600 hover:bg-success-500 text-white font-black text-xs transition shadow-md flex items-center gap-1.5 shrink-0 cursor-pointer"
             >
               <Plus size={15} />
               <span>
@@ -761,7 +761,7 @@ export default function MentorshipHubPanel() {
               onClick={() => setActiveTab('PUPIL')}
               className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === 'PUPIL'
-                  ? 'bg-emerald-600 text-white shadow-xs'
+                  ? 'bg-success-600 text-white shadow-xs'
                   : 'bg-surface-subtle hover:bg-surface-hover text-foreground-subtle'
               }`}
             >
@@ -777,7 +777,7 @@ export default function MentorshipHubPanel() {
               onClick={() => setActiveTab('MENTOR')}
               className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === 'MENTOR'
-                  ? 'bg-amber-600 text-white shadow-xs'
+                  ? 'bg-primary-600 text-white shadow-xs'
                   : 'bg-surface-subtle hover:bg-surface-hover text-foreground-subtle'
               }`}
             >
@@ -793,7 +793,7 @@ export default function MentorshipHubPanel() {
               onClick={() => setActiveTab('MATCHES')}
               className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === 'MATCHES'
-                  ? 'bg-amber-600 text-white shadow-xs'
+                  ? 'bg-primary-600 text-white shadow-xs'
                   : 'bg-surface-subtle hover:bg-surface-hover text-foreground-subtle'
               }`}
             >
@@ -846,8 +846,8 @@ export default function MentorshipHubPanel() {
                 onClick={() => setLightOnlyFilter(!lightOnlyFilter)}
                 className={`px-3 py-1 rounded-lg text-xs font-black transition shrink-0 cursor-pointer flex items-center gap-1.5 border ${
                   lightOnlyFilter
-                    ? 'bg-teal-500 text-white border-teal-600 shadow-xs ring-2 ring-teal-300'
-                    : 'bg-surface hover:bg-teal-50 text-foreground-subtle border-teal-200 hover:border-teal-300'
+                    ? 'bg-secondary-500 text-white border-teal-600 shadow-xs ring-2 ring-secondary-300'
+                    : 'bg-surface hover:bg-secondary-50 text-foreground-subtle border-teal-200 hover:border-teal-300'
                 }`}
                 title="1試合のみやリプレイ添削など、気軽に参加できる単発お試しコースのみを表示します"
               >
@@ -862,7 +862,7 @@ export default function MentorshipHubPanel() {
 
       {/* 📨 あなた宛の未承諾申請（届いているオファー） */}
       {pendingReceived.length > 0 && (
-        <div className="p-4 md:p-5 rounded-3xl bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-amber-500/20 border-2 border-amber-400 shadow-md space-y-3 animate-in fade-in duration-200">
+        <div className="p-4 md:p-5 rounded-3xl bg-gradient-to-r from-primary-500/20 via-primary-500/15 to-primary-500/20 border-2 border-amber-400 shadow-md space-y-3 animate-in fade-in duration-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-xl animate-bounce">📨</span>
@@ -870,7 +870,7 @@ export default function MentorshipHubPanel() {
                 あなた宛の師弟オファーが届いています！（{pendingReceived.length}件）
               </h3>
             </div>
-            <span className="text-[10px] font-bold bg-amber-500 text-white px-2.5 py-0.5 rounded-full shadow-2xs">
+            <span className="text-[10px] font-bold bg-primary-500 text-white px-2.5 py-0.5 rounded-full shadow-2xs">
               承諾待ち
             </span>
           </div>
@@ -901,18 +901,18 @@ export default function MentorshipHubPanel() {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                      <span className="px-2 py-0.5 rounded-lg bg-amber-100 text-amber-900 font-bold border border-amber-200">
+                      <span className="px-2 py-0.5 rounded-lg bg-primary-100 text-primary-900 font-bold border border-amber-200">
                         ⏱️ 希望期間: {durationLabel}
                       </span>
                       {req.meta?.autoRenew && (
-                        <span className="px-2 py-0.5 rounded-lg bg-emerald-100 text-emerald-800 font-bold border border-emerald-200">
+                        <span className="px-2 py-0.5 rounded-lg bg-success-100 text-success-800 font-bold border border-emerald-200">
                           ⚡ 満了時そのまま継続
                         </span>
                       )}
                     </div>
 
                     {cleanNotes && (
-                      <div className="p-2.5 bg-amber-50/60 rounded-xl border border-amber-200 text-xs text-foreground-soft italic leading-relaxed">
+                      <div className="p-2.5 bg-primary-50/60 rounded-xl border border-amber-200 text-xs text-foreground-soft italic leading-relaxed">
                         「{cleanNotes}」
                       </div>
                     )}
@@ -935,7 +935,7 @@ export default function MentorshipHubPanel() {
                       className={`px-4 py-1.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 ${
                         acceptingMatchId === req.id
                           ? 'bg-stone-400 text-white cursor-not-allowed'
-                          : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm cursor-pointer disabled:opacity-50'
+                          : 'bg-success-600 hover:bg-success-500 text-white shadow-sm cursor-pointer disabled:opacity-50'
                       }`}
                     >
                       {acceptingMatchId === req.id ? (
@@ -961,15 +961,15 @@ export default function MentorshipHubPanel() {
       {activeTab !== 'MATCHES' && (
         baseProfileForRecommendation ? (
           recommendedProfiles.length > 0 && (
-            <div className="p-5 rounded-3xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border-2 border-amber-400/40 shadow-sm space-y-3">
+            <div className="p-5 rounded-3xl bg-gradient-to-r from-primary-500/15 via-primary-500/10 to-primary-500/15 border-2 border-amber-400/40 shadow-sm space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-amber-600 animate-bounce" />
+                  <Sparkles className="w-5 h-5 text-primary-600 animate-bounce" />
                   <h3 className="text-sm font-black text-foreground dark:text-stone-100">
                     🎯 あなたと相性抜群のバディ（AI相性分析）
                   </h3>
                 </div>
-                <span className="text-[10px] font-bold bg-surface/90 dark:bg-[#2b2d31] text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold bg-surface/90 dark:bg-[#2b2d31] text-primary-900 dark:text-primary-300 border border-amber-300 dark:border-amber-700 px-2 py-0.5 rounded-full">
                   リアルタイムマッチング
                 </span>
               </div>
@@ -1004,9 +1004,9 @@ export default function MentorshipHubPanel() {
             </div>
           )
         ) : (
-          <div className="p-4 md:p-5 rounded-3xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-emerald-500/10 border border-emerald-400/30 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xs">
+          <div className="p-4 md:p-5 rounded-3xl bg-gradient-to-r from-success-500/10 via-secondary-500/10 to-success-500/10 border border-emerald-400/30 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xs">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-xl shrink-0 font-bold shadow-2xs">
+              <div className="w-10 h-10 rounded-2xl bg-success-100 text-success-800 flex items-center justify-center text-xl shrink-0 font-bold shadow-2xs">
                 💡
               </div>
               <div className="space-y-0.5 text-center sm:text-left">
@@ -1027,7 +1027,7 @@ export default function MentorshipHubPanel() {
                 setEditingProfile(null);
                 setIsModalOpen(true);
               }}
-              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition shadow-sm shrink-0 flex items-center gap-1.5 cursor-pointer active:scale-95"
+              className="px-4 py-2 rounded-xl bg-success-600 hover:bg-success-500 text-white font-black text-xs transition shadow-sm shrink-0 flex items-center gap-1.5 cursor-pointer active:scale-95"
             >
               <Plus size={14} />
               <span>{activeTab === 'PUPIL' ? '弟子カードを登録' : '師匠カードを登録'}</span>
@@ -1058,9 +1058,9 @@ export default function MentorshipHubPanel() {
                   isCompleted
                     ? 'bg-background/80 border-border opacity-90'
                     : isExpired
-                    ? 'bg-amber-50/70 border-amber-300 ring-2 ring-amber-400/50'
+                    ? 'bg-primary-50/70 border-amber-300 ring-2 ring-primary-400/50'
                     : isMyMatch
-                    ? 'bg-gradient-to-br from-amber-50/90 to-white border-amber-300'
+                    ? 'bg-gradient-to-br from-primary-50/90 to-white border-amber-300'
                     : 'bg-surface border-amber-200'
                 }`}
               >
@@ -1080,11 +1080,11 @@ export default function MentorshipHubPanel() {
                           🎓 卒業完了
                         </span>
                       ) : isExpired ? (
-                        <span className="text-[11px] font-black text-amber-800 bg-amber-200 px-2.5 py-0.5 rounded-full animate-pulse">
+                        <span className="text-[11px] font-black text-primary-800 bg-primary-200 px-2.5 py-0.5 rounded-full animate-pulse">
                           ⚠️ 期間満了
                         </span>
                       ) : (
-                        <span className="text-[11px] font-black text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">
+                        <span className="text-[11px] font-black text-success-800 bg-success-100 px-2.5 py-0.5 rounded-full">
                           🔥 残り {remainingDays} 日
                         </span>
                       )}
@@ -1094,7 +1094,7 @@ export default function MentorshipHubPanel() {
                         <button
                           type="button"
                           onClick={() => handleAdminDeleteMatch(match.id)}
-                          className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-rose-100 hover:bg-rose-200 text-rose-800 border border-rose-300 transition cursor-pointer"
+                          className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-danger-100 hover:bg-danger-200 text-danger-800 border border-rose-300 transition cursor-pointer"
                           title="管理者権限でこの師弟ペアを強制解散・削除します"
                         >
                           🗑️ 管理者削除
@@ -1119,7 +1119,7 @@ export default function MentorshipHubPanel() {
                       開始: {new Date(match.started_at || match.created_at).toLocaleDateString('ja-JP')}
                     </span>
                     {match.meta?.autoRenew && !isCompleted && (
-                      <span className="text-emerald-700 font-bold text-[10px]">
+                      <span className="text-success-700 font-bold text-[10px]">
                         (自動継続ON)
                       </span>
                     )}
@@ -1131,9 +1131,9 @@ export default function MentorshipHubPanel() {
                         href={match.meta.threadUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-black text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-black text-primary-700 bg-primary-50 hover:bg-primary-100 border border-amber-200 transition"
                       >
-                        <MessageSquare size={12} className="text-amber-600" />
+                        <MessageSquare size={12} className="text-primary-600" />
                         <span>💬 🎓コーチング専用スレッドを開く ➔</span>
                       </a>
                     </div>
@@ -1153,9 +1153,9 @@ export default function MentorshipHubPanel() {
                             setSelectedReviewMatch(match);
                             setIsReviewModalOpen(true);
                           }}
-                          className="px-2.5 py-1.5 rounded-xl font-black text-xs bg-amber-50 hover:bg-amber-100 text-amber-900 transition flex items-center gap-1 cursor-pointer border border-amber-300 shadow-2xs"
+                          className="px-2.5 py-1.5 rounded-xl font-black text-xs bg-primary-50 hover:bg-primary-100 text-primary-900 transition flex items-center gap-1 cursor-pointer border border-amber-300 shadow-2xs"
                         >
-                          <Star size={13} className="text-amber-600 fill-amber-400" />
+                          <Star size={13} className="text-primary-600 fill-primary-400" />
                           <span>⭐ 匿名評価を送る (+100🪙)</span>
                         </button>
 
@@ -1170,7 +1170,7 @@ export default function MentorshipHubPanel() {
                               }}
                               className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-surface-subtle hover:bg-surface-hover text-foreground-soft transition flex items-center gap-1 cursor-pointer border border-border"
                             >
-                              <Rocket size={13} className="text-emerald-600" />
+                              <Rocket size={13} className="text-success-600" />
                               <span>🚀 ガイド</span>
                             </button>
 
@@ -1179,7 +1179,7 @@ export default function MentorshipHubPanel() {
                                 href={match.meta.threadUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="px-2.5 py-1.5 rounded-xl font-black text-xs bg-amber-600 hover:bg-amber-500 text-white transition flex items-center gap-1 cursor-pointer shadow-2xs"
+                                className="px-2.5 py-1.5 rounded-xl font-black text-xs bg-primary-600 hover:bg-primary-500 text-white transition flex items-center gap-1 cursor-pointer shadow-2xs"
                                 title="Discordの専用指導スレッドを開く"
                               >
                                 <MessageSquare size={13} />
@@ -1190,10 +1190,10 @@ export default function MentorshipHubPanel() {
                                 type="button"
                                 onClick={() => handleCreateThread(match.id)}
                                 disabled={creatingThreadMatchId === match.id}
-                                className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-amber-50 hover:bg-amber-100 text-amber-800 transition flex items-center gap-1 cursor-pointer border border-amber-200 disabled:opacity-50"
+                                className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-primary-50 hover:bg-primary-100 text-primary-800 transition flex items-center gap-1 cursor-pointer border border-amber-200 disabled:opacity-50"
                                 title="Discord (🎓コーチング・質問) に専用指導スレッドを作成"
                               >
-                                <MessageSquare size={13} className="text-amber-600" />
+                                <MessageSquare size={13} className="text-primary-600" />
                                 <span>{creatingThreadMatchId === match.id ? '作成中...' : '💬 チャット作成'}</span>
                               </button>
                             )}
@@ -1217,7 +1217,7 @@ export default function MentorshipHubPanel() {
                         <button
                           type="button"
                           onClick={() => handleCancelMatch(match.id)}
-                          className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-surface-subtle hover:bg-rose-50 text-muted-strong hover:text-rose-700 transition flex items-center gap-1 cursor-pointer"
+                          className="px-2.5 py-1.5 rounded-xl font-bold text-xs bg-surface-subtle hover:bg-danger-50 text-muted-strong hover:text-danger-700 transition flex items-center gap-1 cursor-pointer"
                           title="お互いに合意の上でペナルティなく解散・再募集に戻します"
                         >
                           <Leaf size={12} />
@@ -1231,7 +1231,7 @@ export default function MentorshipHubPanel() {
                         <button
                           type="button"
                           onClick={() => handleExtendMatch(match.id, 14)}
-                          className="px-3 py-1.5 rounded-xl font-black text-xs bg-amber-600 hover:bg-amber-500 text-white shadow-xs transition flex items-center gap-1 cursor-pointer"
+                          className="px-3 py-1.5 rounded-xl font-black text-xs bg-primary-600 hover:bg-primary-500 text-white shadow-xs transition flex items-center gap-1 cursor-pointer"
                           title="現在の期間をさらに14日間そのまま延長します"
                         >
                           <span>⚡ そのまま実行（+14日延長）</span>
@@ -1239,7 +1239,7 @@ export default function MentorshipHubPanel() {
                         <button
                           type="button"
                           onClick={() => handleCompleteMatch(match.id)}
-                          className="px-3 py-1.5 rounded-xl font-black text-xs bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition flex items-center gap-1 cursor-pointer"
+                          className="px-3 py-1.5 rounded-xl font-black text-xs bg-success-600 hover:bg-success-500 text-white shadow-xs transition flex items-center gap-1 cursor-pointer"
                           title="目標達成として円満卒業し、両者に+200コインを付与します"
                         >
                           <span>🎓 卒業・完了 (+200🪙)</span>

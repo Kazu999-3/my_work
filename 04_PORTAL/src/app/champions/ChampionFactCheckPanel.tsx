@@ -60,11 +60,11 @@ export default function ChampionFactCheckPanel({ champion }: { champion: string 
   const progressPercent = initialTotal > 0 ? Math.round((processedCount / initialTotal) * 100) : 100;
 
   return (
-    <div className="glass-panel border-t-2 border-amber-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-amber-400/20 relative col-span-1 md:col-span-2 space-y-4">
+    <div className="glass-panel border-t-2 border-amber-400 p-5 rounded-2xl group transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.3)] shadow-primary-400/20 relative col-span-1 md:col-span-2 space-y-4">
       {/* ヘッダー */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h3 className="text-sm font-black flex items-center gap-2 text-amber-600">
+          <h3 className="text-sm font-black flex items-center gap-2 text-primary-600">
             <ShieldCheck size={18} /> ファクトチェック（1件ずつ集中して片付けるフォーカスモード）
           </h3>
           <p className="text-[11px] text-muted-strong mt-0.5">
@@ -75,7 +75,7 @@ export default function ChampionFactCheckPanel({ champion }: { champion: string 
         <button
           onClick={runCheck}
           disabled={running}
-          className="flex items-center gap-1.5 text-xs font-extrabold bg-gradient-to-r from-amber-600 to-teal-600 hover:from-amber-700 hover:to-teal-700 active:scale-95 text-white px-3.5 py-2 rounded-xl transition disabled:opacity-50 shadow-md"
+          className="flex items-center gap-1.5 text-xs font-extrabold bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700 active:scale-95 text-white px-3.5 py-2 rounded-xl transition disabled:opacity-50 shadow-md"
           title="過去に蓄積された古い19件等の未処理データを一発でリセットし、最新のAIで厳選された1〜2件のみに最新化します"
         >
           {running ? <RefreshCw size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
@@ -83,21 +83,21 @@ export default function ChampionFactCheckPanel({ champion }: { champion: string 
         </button>
       </div>
 
-      {msg && <p className="text-xs text-emerald-700 font-bold bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl">{msg}</p>}
-      {error && <p className="text-xs text-rose-700 font-bold bg-rose-50 border border-rose-200 p-2.5 rounded-xl">{error}</p>}
+      {msg && <p className="text-xs text-success-700 font-bold bg-success-50 border border-emerald-200 p-2.5 rounded-xl">{msg}</p>}
+      {error && <p className="text-xs text-danger-700 font-bold bg-danger-50 border border-rose-200 p-2.5 rounded-xl">{error}</p>}
 
       {/* 1件ずつ集中処理のプログレスバー */}
       {!loading && items.length > 0 && (
         <div className="bg-surface-subtle border border-border rounded-xl p-3 space-y-2">
           <div className="flex items-center justify-between text-xs font-extrabold text-foreground-soft">
-            <span className="flex items-center gap-1.5 text-amber-900">
-              <Sparkles size={14} className="text-amber-600" />
+            <span className="flex items-center gap-1.5 text-primary-900">
+              <Sparkles size={14} className="text-primary-600" />
               残り {items.length} 件 （{processedCount + 1} / {initialTotal} 件目を片付け中）
             </span>
             <span className="text-muted-strong font-mono">{progressPercent}% 完了</span>
           </div>
           <div className="w-full bg-surface-hover rounded-full h-2 overflow-hidden">
-            <div className="bg-amber-600 h-full transition-all duration-300" style={{ width: `${progressPercent}%` }}></div>
+            <div className="bg-primary-600 h-full transition-all duration-300" style={{ width: `${progressPercent}%` }}></div>
           </div>
         </div>
       )}
@@ -105,14 +105,14 @@ export default function ChampionFactCheckPanel({ champion }: { champion: string 
       {/* --- メインコンテンツ --- */}
       {loading ? (
         <div className="py-8 text-center text-xs text-muted-strong font-bold flex items-center justify-center gap-2">
-          <RefreshCw size={14} className="animate-spin text-amber-600" />
+          <RefreshCw size={14} className="animate-spin text-primary-600" />
           ファクトチェックデータをロード中...
         </div>
       ) : items.length === 0 ? (
-        <div className="p-6 rounded-2xl bg-emerald-50/70 border border-emerald-200 text-center space-y-2">
-          <CheckCircle2 size={32} className="text-emerald-600 mx-auto" />
-          <h4 className="text-sm font-extrabold text-emerald-900">🎉 すべての矛盾・不整合の片付けが完了しました！</h4>
-          <p className="text-xs text-emerald-800/80">
+        <div className="p-6 rounded-2xl bg-success-50/70 border border-emerald-200 text-center space-y-2">
+          <CheckCircle2 size={32} className="text-success-600 mx-auto" />
+          <h4 className="text-sm font-extrabold text-success-900">🎉 すべての矛盾・不整合の片付けが完了しました！</h4>
+          <p className="text-xs text-success-800/80">
             {everChecked
               ? 'このチャンピオンに関する全ての要レビュー項目は人間確認・採択・訂正が完了しています。'
               : 'まだこのチャンピオンのファクトチェックは実行されていません。「再チェック」ボタンを押して点検を開始できます。'}
