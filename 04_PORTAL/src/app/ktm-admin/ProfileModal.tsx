@@ -140,7 +140,7 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                       width={56}
                       height={56}
                       className="w-14 h-14 rounded-full border-2 border-primary-edge object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).src = 'https://ddragon.leagueoflegends.com/cdn/14.1.1/img/profileicon/29.png' }}
+                      onError={(e) => { (e.target as HTMLImageElement).src = getChampIcon('Unknown'); }}
                     />
                     <div>
                       <div className="text-lg font-bold text-foreground">{m.name === 'Unknown' ? `ID:${m.championId}` : m.name}</div>

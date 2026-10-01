@@ -333,7 +333,7 @@ function DictHealthDashboardContent() {
                 辞典 ＆ ナレッジヘルス
               </h1>
               <span className="bg-primary-100 text-primary-800 border border-primary-edge px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold shrink-0">
-                パッチ {data?.currentPatch || '26.15'}
+                {data?.currentPatch ? `パッチ ${data.currentPatch}` : 'パッチ取得中...'}
               </span>
             </div>
             <p className="text-[11px] sm:text-xs text-muted-strong mt-1">
@@ -621,7 +621,7 @@ function DictHealthDashboardContent() {
                   {/* 詳細情報 (1秒インライン展開) */}
                   <div className="space-y-1 text-[11px] text-muted bg-background p-2.5 rounded-xl border border-stone-100 mb-3">
                     <p className="truncate" title={champ.sourceSummary || ''}>
-                      <span className="font-bold text-foreground-subtle">根拠・ステータス:</span> {champ.sourceSummary || '現行パッチ26.15データ統合済み'}
+                      <span className="font-bold text-foreground-subtle">根拠・ステータス:</span> {champ.sourceSummary || (data?.currentPatch ? `現行パッチ${data.currentPatch}データ統合済み` : '現行パッチデータ統合済み')}
                     </p>
                     {champ.lastVerifiedAt && (
                       <p>

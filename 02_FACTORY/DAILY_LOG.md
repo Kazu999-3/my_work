@@ -23,6 +23,11 @@
      - AIハイライトニュース（東スポ風号外）の選手コメントに、Discord速報・Webティッカーともに「※AI演出コメント」の注記を明記（本人の実発言であるかのような誤認・虚偽報告リスクを根本根絶）。
      - `matchup-blueprint/route.ts` の「即死確定」「確定計算」文言を「即死警戒ライン（推定）」「推定計算」へ是正（手書きプロファイル＋汎用値による推定である実態と100%整合）。
      - HUD `gank_opportunity_engine.py` のdocstringにおける「キル確定判定」表記を「好機判定」へ是正。
+     - **深層再監査による残存4箇所の是正（第2弾）**:
+       - `04_PORTAL/src/app/api/admin/players/ai-profile/route.ts`: 試合数0（未対戦）のプレイヤーに対してAIプロンプトへ「勝率50%」「KDA 2.0」を勝手に注入していたプロンプト汚染を是正（`stats?.totalGames > 0 ? ... : '未対戦（データなし）'` へ置き換え、新人向け寸評プロンプトへ適正化）。
+       - `04_PORTAL/src/lib/sessionAnalyticsCalculator.ts`: 1〜2戦目のデータがない場合に `|| 50` で勝率比較して疲労落ちと誤判定するロジックを是正（`earlyFatigue?.hasData` の検証を厳密化）。
+       - `04_PORTAL/src/app/admin/dict-health/page.tsx`: パッチ番号のハードコード（`26.15`）2箇所を `data?.currentPatch` に基づく動的取得・表示へ是正。
+       - `04_PORTAL/src/app/ktm-admin/ProfileModal.tsx`: マスタリーアイコン読み込み失敗時（`onError`）に旧パッチ `14.1.1` を固定参照していたのを `getChampIcon('Unknown')` へ集約。
    - **師弟掲示板のUIシンプル化**:
      - `MentorshipCard.tsx`:
        - 長大なコメント一覧＆投稿フォームをカード本体から撤去し、下部バーの「💬 コメント ({count})」から開く独立モーダルへ分離。カード高さを約50%スリム化。

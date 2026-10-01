@@ -35,13 +35,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, profile: meta.ai_profile, cached: true });
     }
 
+    const hasMatchData = (stats?.totalGames || 0) > 0;
+    const winRateText = hasMatchData ? `${stats.winRate}% (${stats.totalGames}戦)` : '未対戦（データなし）';
+    const kdaText = hasMatchData ? `${stats.avgKda} (平均 ${stats.avgKills || 0}/${stats.avgDeaths || 0}/${stats.avgAssists || 0})` : '未対戦（データなし）';
+
     // AI による週刊アナリスト一言プロファイルの生成
     const prompt = `あなたはKTM League of Legendsコミュニティの専属辛口プロアナリストです。
 プレイヤー「${playerName}」の直近の統計データを分析し、彼のプレイスタイル・立ち回りの強みや特徴を【愛のあるくすっと笑えるキャッチーな一言プロファイル（120文字以内）】として作成してください。
+※もし試合データが「未対戦（データなし）」の場合は、架空の戦績をでっち上げず、これから参戦する期待の新人・チャレンジャーとしての姿勢や希望レーンに焦点を当ててください。
 
 【プレイヤー統計】
-- 勝率: ${stats?.winRate || 50}% (${stats?.totalGames || 0}戦)
-- 通算KDA: ${stats?.avgKda || '2.0'} (平均 ${stats?.avgKills || 0}/${stats?.avgDeaths || 0}/${stats?.avgAssists || 0})
+- 勝率: ${winRateText}
+- 通算KDA: ${kdaText}
 - 得意チャンピオン: ${stats?.topChampion || '未登録'}
 - メイン希望レーン: ${stats?.mainLane || 'FILL'}
 

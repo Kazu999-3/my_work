@@ -1024,14 +1024,14 @@ export function calculateRealSessionAnalytics(
 
   // 黄金律1: セッション・連戦疲労
   let rule1 = '【黄金律1: セッション管理】集中力の持続に合わせて1セッションを区切り、安定したプレイを維持すること。';
-  if (lateFatigue && lateFatigue.hasData && lateFatigue.gamesCount >= 3 && lateFatigue.winRate < (earlyFatigue?.winRate || 50) - 5) {
-    rule1 = `【黄金律1: 5連戦以上の疲労管理】実測で5戦目以降は勝率が${lateFatigue.winRate}% (平均${lateFatigue.avgDeaths}デス) に低下（1〜2戦目: ${earlyFatigue?.winRate || 0}%）。1セッション最大${midFatigue?.hasData && midFatigue.winRate > lateFatigue.winRate ? '3〜4' : '2〜3'}戦で小休止を入れるのが最も効率的。`;
-  } else if (midFatigue && midFatigue.hasData && midFatigue.gamesCount >= 3 && midFatigue.winRate >= (earlyFatigue?.winRate || 50)) {
+  if (lateFatigue && lateFatigue.hasData && lateFatigue.gamesCount >= 3 && earlyFatigue?.hasData && lateFatigue.winRate < earlyFatigue.winRate - 5) {
+    rule1 = `【黄金律1: 5連戦以上の疲労管理】実測で5戦目以降は勝率が${lateFatigue.winRate}% (平均${lateFatigue.avgDeaths}デス) に低下（1〜2戦目: ${earlyFatigue.winRate}%）。1セッション最大${midFatigue?.hasData && midFatigue.winRate > lateFatigue.winRate ? '3〜4' : '2〜3'}戦で小休止を入れるのが最も効率的。`;
+  } else if (midFatigue && midFatigue.hasData && midFatigue.gamesCount >= 3 && earlyFatigue?.hasData && midFatigue.winRate >= earlyFatigue.winRate) {
     rule1 = `【黄金律1: 3〜4戦目ピーク型】実測で3〜4戦目が勝率${midFatigue.winRate}% (平均${midFatigue.avgDeaths}デス) と最も覚醒。ウォーミングアップ後のこの時間帯に集中して連勝を狙うこと。`;
   } else if (earlyFatigue && earlyFatigue.hasData && earlyFatigue.winRate >= 55) {
     rule1 = `【黄金律1: 立ち上がり集中型】実測で1〜2戦目が勝率${earlyFatigue.winRate}% (平均${earlyFatigue.avgDeaths}デス) と最も安定。疲労のない初戦〜2戦目に全力を注ぎ、無理な連戦は避ける。`;
-  } else if (lateFatigue && !lateFatigue.hasData) {
-    rule1 = `【黄金律1: 短時間集中プレイの維持】1セッション1〜4戦以内でプレイしており、連戦疲労を完璧に回避（1〜2戦目勝率${earlyFatigue?.winRate || 0}%）。この健康的なセッション規律を維持すること。`;
+  } else if (lateFatigue && !lateFatigue.hasData && earlyFatigue?.hasData) {
+    rule1 = `【黄金律1: 短時間集中プレイの維持】1セッション1〜4戦以内でプレイしており、連戦疲労を完璧に回避（1〜2戦目勝率${earlyFatigue.winRate}%）。この健康的なセッション規律を維持すること。`;
   } else if (earlyFatigue && earlyFatigue.hasData) {
     rule1 = `【黄金律1: セッションペース維持】1〜2戦目勝率${earlyFatigue.winRate}%、3〜4戦目勝率${midFatigue?.hasData ? midFatigue.winRate + '%' : 'データなし'}と安定。連戦時も集中力を切らさずプレイすること。`;
   }
