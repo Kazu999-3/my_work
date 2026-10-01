@@ -199,41 +199,56 @@ export default function TacticsSearchModal({ isOpen, onClose, onSelectChampion }
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      {item.champion && (
-                        <Image
-                          src={getChampIcon(item.champion)}
-                          alt={item.champion}
-                          width={28}
-                          height={28}
-                          className="w-7 h-7 rounded-full border border-border shrink-0 object-cover"
-                          onError={e => { e.currentTarget.style.display = 'none'; }}
-                        />
+                      {item.type === 'concept' ? (
+                        <div className="w-7 h-7 rounded-full bg-amber-500/15 border border-amber-500/40 flex items-center justify-center text-sm shrink-0">
+                          🧠
+                        </div>
+                      ) : (
+                        item.champion && (
+                          <Image
+                            src={getChampIcon(item.champion)}
+                            alt={item.champion}
+                            width={28}
+                            height={28}
+                            className="w-7 h-7 rounded-full border border-border shrink-0 object-cover"
+                            onError={e => { e.currentTarget.style.display = 'none'; }}
+                          />
+                        )
                       )}
                       <span className="font-black text-foreground text-xs truncate">
-                        {item.championJa} ({item.champion})
+                        {item.type === 'concept' ? item.title : `${item.championJa} (${item.champion})`}
                       </span>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                        item.type === 'bible'
+                        item.type === 'concept'
+                          ? 'bg-amber-100 text-amber-900 border-amber-400 font-extrabold'
+                          : item.type === 'bible'
                           ? 'bg-secondary-50 text-secondary-700 border-secondary-edge-soft'
                           : 'bg-primary-50 text-primary-700 border-primary-edge-soft'
                       }`}>
-                        {item.type === 'bible' ? '戦術バイブル' : '動画解析Tips'}
+                        {item.type === 'concept' ? '🧠 概念バイブル' : item.type === 'bible' ? '戦術バイブル' : '動画解析Tips'}
                       </span>
-                      <span className="text-[11px] font-bold text-muted-strong truncate">
-                        › {item.section}
-                      </span>
+                      {item.type !== 'concept' && (
+                        <span className="text-[11px] font-bold text-muted-strong truncate">
+                          › {item.section}
+                        </span>
+                      )}
                     </div>
 
                     <div className="shrink-0 flex items-center gap-1 text-[11px] font-bold text-primary-700 group-hover:translate-x-0.5 transition">
-                      <span>辞典で開く</span>
+                      <span>{item.type === 'concept' ? '戦術原則を読む' : '辞典で開く'}</span>
                       <ExternalLink size={12} />
                     </div>
                   </div>
 
                   {/* スニペット本文 */}
-                  <p className="text-xs text-foreground-subtle leading-relaxed pl-9 bg-surface/60 p-2 rounded-xl border border-border/60 font-medium">
-                    {item.snippet}
-                  </p>
+                  <div className="text-xs text-foreground-subtle leading-relaxed pl-9 bg-surface/60 p-2.5 rounded-xl border border-border/60 font-medium">
+                    {item.type === 'concept' && (
+                      <div className="text-[11px] font-black text-amber-800 mb-1 flex items-center gap-1">
+                        ⚡ {item.section}
+                      </div>
+                    )}
+                    <p>{item.snippet}</p>
+                  </div>
                 </div>
               ))}
             </div>

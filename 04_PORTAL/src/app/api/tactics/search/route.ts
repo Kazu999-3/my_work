@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export interface TacticsSearchResult {
   id: string;
-  type: 'bible' | 'video';
+  type: 'bible' | 'video' | 'concept';
   champion: string;
   championJa: string;
   section: string;
@@ -46,7 +46,7 @@ function extractSnippet(text: string, keyword: string, snippetLength = 120): str
 
 interface CachedTacticsItem {
   id: string;
-  type: 'bible' | 'video';
+  type: 'bible' | 'video' | 'concept';
   champion: string;
   championJa: string;
   section: string;
@@ -184,6 +184,62 @@ function loadTacticsItems(repoRoot: string): CachedTacticsItem[] {
     }
   }
 
+  // 4. 概念バイブル（01_INTEL/concepts/）を走査 (Karpathy LLM Wiki準拠)
+  const conceptsDir = path.join(repoRoot, '01_INTEL', 'concepts');
+  if (fs.existsSync(/*turbopackIgnore: true*/ conceptsDir)) {
+    try {
+      const files = fs.readdirSync(/*turbopackIgnore: true*/ conceptsDir).filter(f => f.endsWith('.md'));
+      for (const f of files) {
+        const filePath = path.join(conceptsDir, f);
+        try {
+          const raw = fs.readFileSync(/*turbopackIgnore: true*/ filePath, 'utf-8');
+          const titleMatch = raw.match(/^title:\s*"?(.*?)"?$/m);
+          const conceptTitle = titleMatch ? titleMatch[1] : f.replace(/\.md$/, '');
+          const sections = raw.split(/\n(?=##\s+)/);
+
+          // 概念全体の要約カード
+          items.push({
+            id: `concept-${f.replace(/\.md$/, '')}`,
+            type: 'concept',
+            champion: 'Concept',
+            championJa: '🧠 概念バイブル',
+            section: '中核概念・実戦原則',
+            title: conceptTitle,
+            body: raw.slice(0, 500),
+            fullTextLower: raw.toLowerCase(),
+            headerLower: conceptTitle.toLowerCase(),
+            tags: ['概念バイブル', '戦術原則', '必読マクロ'],
+          });
+
+          // 各セクションも分割インデックス
+          for (const sec of sections) {
+            const lines = sec.trim().split('\n');
+            const header = lines[0].replace(/^##\s+/, '').trim();
+            if (!header || header.startsWith('---') || header.startsWith('#')) continue;
+            const body = lines.slice(1).join('\n');
+
+            items.push({
+              id: `concept-${f.replace(/\.md$/, '')}-${header.slice(0, 15)}`,
+              type: 'concept',
+              champion: 'Concept',
+              championJa: '🧠 概念バイブル',
+              section: header,
+              title: `${conceptTitle} › ${header}`,
+              body,
+              fullTextLower: sec.toLowerCase(),
+              headerLower: header.toLowerCase(),
+              tags: ['概念バイブル', header],
+            });
+          }
+        } catch (err) {
+          console.warn(`[tactics/search] Failed to load concept file ${f}:`, err);
+        }
+      }
+    } catch (err) {
+      console.warn('[tactics/search] Failed to read concepts directory:', err);
+    }
+  }
+
   cachedItems = items;
   lastCacheTime = now;
   return items;
@@ -231,6 +287,11 @@ export async function GET(req: Request) {
       if (item.champion.toLowerCase().includes(lowerQuery) || item.championJa.includes(lowerQuery)) {
         score += 8;
         matched = true;
+      }
+
+      // 概念バイブル自体のヘッダーがマッチした場合は最優先ブースト
+      if (item.type === 'concept' && matched) {
+        score += 20;
       }
 
       if (matched && score > 0) {
