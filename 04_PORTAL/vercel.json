@@ -3,16 +3,12 @@
   "regions": ["hnd1"],
   "crons": [
     {
-      "path": "/api/cron",
-      "schedule": "0 12 * * *"
-    },
-    {
-      "path": "/api/cron/soloq-coach",
-      "schedule": "0 22 * * *"
-    },
-    {
       "path": "/api/cron/sync-matches",
-      "schedule": "0 0 * * *"
+      "schedule": "0 0 * * 1"
+    },
+    {
+      "path": "/api/cron/freshness-check",
+      "schedule": "0 15 * * 2"
     },
     {
       "path": "/api/cron/soloq-trends",
@@ -21,10 +17,6 @@
     {
       "path": "/api/cron/dict-review-check",
       "schedule": "0 23 * * 2"
-    },
-    {
-      "path": "/api/cron/freshness-check",
-      "schedule": "0 15 * * *"
     },
     {
       "path": "/api/cron/lottery",
