@@ -8,6 +8,7 @@
 > - **[業務ダッシュボード (TODO.md)](file:///d:/my_work/02_FACTORY/TODO.md)**: 進行中タスク・完了タスク一覧。
 > - **[ナレッジ訂正インボックス (FEEDBACK_INBOX.md)](file:///d:/my_work/02_FACTORY/FEEDBACK_INBOX.md)**: 誤り・古い情報の単一投函ポスト。
 > - **[Webクリップ制式雛形 (template_web_clip.md)](file:///d:/my_work/01_INTEL/template_web_clip.md)**: 外部情報・パッチノートの標準取込フォーマット。
+> - **[帝国インボックス (00_INBOX/)](file:///d:/my_work/01_INTEL/00_INBOX/README.md)**: 未整理メモ・Webクリップの自動仕分け投函ポスト。
 
 
 ---
@@ -115,4 +116,3 @@ Antigravity（AIアシスタント）の行動規範、スキル、ワークフ�
 - **[事業構想 ＆ ロードマップ (README_BUSINESS.md)](file:///d:/my_work/01_INTEL/vault/README_BUSINESS.md)**: 帝国の収益化・事業多角化のロードマップ。
 - **[システム引継書 ＆ 緊急プロトコル (HANDOVER.md)](file:///d:/my_work/01_INTEL/vault/HANDOVER.md)**: 緊急時対応・運用引き継ぎの要点書。
 - **[全社タスクボード (TASK_BOARD.md)](file:///d:/my_work/01_INTEL/vault/TASK_BOARD.md)**: 開発・運用タスクの全社管理ボード。
-
