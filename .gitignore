@@ -35,6 +35,7 @@ scratch/
 # src/shared/ 配下はソースコードが import するデータファイル（例: ktm_tiers.json）。
 # これを無視すると手元では動くのにVercel/Botのクリーンビルドで Module not found になる。
 !**/src/shared/*.json
+!05_PILOT/src/data/*.json
 # 辞典一括更新のキュー進捗(champ_db_bulk_updater.py)。champ-dict-update.ymlが
 # 実行後にgit commitで永続化する設計だが、*.jsonに巻き込まれてgit add自体が
 # 常に黙って失敗しており、GitHub Actions実行のたびにキューが失われ、
@@ -57,6 +58,7 @@ scratch/
 
 .agent/playwright_data/
 .vercel
+.next/
 **/.env.bak
 
 # Generated products & temporary assets

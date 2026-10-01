@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --background: #0a0d14;
+    --foreground: #f8fafc;
+  }
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* スマホ用スクロールバーの非表示 */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

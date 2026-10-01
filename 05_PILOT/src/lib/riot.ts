@@ -1,0 +1,292 @@
+/**
+ * Riot API クライアント
+ * Match-V5などからKTM用のカスタムゲームスタッツを取得する
+ */
+
+const RIOT_API_BASE_ASIA = "https://asia.api.riotgames.com";
+
+// 429を他のエラーと区別できないと、呼び出し側は「1件失敗」として黙って握りつぶし、
+// レート制限に当たった試合が二度と再試行されないまま欠落する(soloq/history-sync等)。
+export class RiotRateLimitError extends Error {
+  retryAfterSec: number | null;
+  constructor(message: string, retryAfterSec: number | null = null) {
+    super(message);
+    this.name = 'RiotRateLimitError';
+    this.retryAfterSec = retryAfterSec;
+  }
+}
+
+interface ParticipantStats {
+  puuid: string;
+  riotIdName: string;
+  riotIdTagline: string;
+  championName: string;
+  teamId: number; // 100=Blue, 200=Red
+  kills: number;
+  deaths: number;
+  assists: number;
+  visionScore: number;
+  totalMinionsKilled: number;
+  neutralMinionsKilled: number;
+  damageDealtToChampions: number;
+  totalDamageTaken: number;
+  damageDealtToObjectives: number;
+  totalHeal: number;
+  damageSelfMitigated: number;
+  goldEarned?: number;
+  /** ペンタキル数。ジャックポット金庫の総取り判定に使う（riot/match-sync が保存） */
+  pentaKills?: number;
+  win: boolean;
+  lane: string; // TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY
+}
+
+interface MatchResult {
+  matchId: string;
+  gameDuration: number; // seconds
+  gameStartTimestamp: number; // epoch ms (UTC)
+  participants: ParticipantStats[];
+  teams?: any[];
+  queueId?: number;
+  gameType?: string;
+}
+
+export async function fetchPuuidByRiotId(gameName: string, tagLine: string, apiKey: string): Promise<string> {
+  const url = `${RIOT_API_BASE_ASIA}/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}?api_key=${apiKey}`;
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) {
+    throw new Error(`Riot IDの検索に失敗しました (${gameName}#${tagLine}): ${res.statusText}`);
+  }
+  const data = await res.json();
+  return data.puuid;
+}
+
+export async function fetchRecentCustomMatchId(puuid: string, apiKey: string): Promise<string> {
+  // 直近20試合から検索 (type=custom は Riot APIでエラーになるため指定しない)
+  const url = `${RIOT_API_BASE_ASIA}/lol/match/v5/matches/by-puuid/${puuid}/ids?start=0&count=20&api_key=${apiKey}`;
+  const res = await fetch(url, { cache: 'no-store' });
+  
+  if (!res.ok) {
+    throw new Error(`Riot API: 試合履歴の取得に失敗しました。(${res.statusText})`);
+  }
+
+  let data = await res.json();
+
+  if (data.length === 0) {
+    throw new Error("Riot API: 試合履歴がありません。");
+  }
+  
+  return data[0]; // 最新の試合ID
+}
+
+export async function fetchRecentMatchIds(puuid: string, apiKey: string, count: number = 20, queue?: number, start: number = 0): Promise<string[]> {
+  let url = `${RIOT_API_BASE_ASIA}/lol/match/v5/matches/by-puuid/${puuid}/ids?start=${start}&count=${count}&api_key=${apiKey}`;
+  if (queue !== undefined) {
+    url += `&queue=${queue}`;
+  }
+  const res = await fetch(url, { cache: 'no-store' });
+  
+  if (!res.ok) {
+    throw new Error(`Riot API: 試合履歴の取得に失敗しました。(${res.statusText})`);
+  }
+
+  return await res.json();
+}
+
+// ランクソロ(queue=420)の試合だけを取得する。
+// パーソナルコーチはランク戦を前提に助言するため、ノーマル/ARAM等を混ぜない。
+// 以前は「420で取得 → 失敗したらキュー無指定で再取得」というフォールバックがあり、
+// ランク戦が無い人にはノーマルの試合が紛れ込んでいた。ここでは失敗時も空を返す。
+export async function fetchRankedSoloMatchIds(puuid: string, apiKey: string, count: number = 20, start: number = 0): Promise<string[]> {
+  try {
+    return await fetchRecentMatchIds(puuid, apiKey, count, 420, start);
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchMatchDetails(matchId: string, apiKey: string): Promise<MatchResult> {
+  const url = `${RIOT_API_BASE_ASIA}/lol/match/v5/matches/${matchId}?api_key=${apiKey}`;
+  const res = await fetch(url, { cache: 'no-store' });
+  if (res.status === 429) {
+    const retryAfter = Number(res.headers.get('retry-after'));
+    throw new RiotRateLimitError(`Riot APIレート制限 (${matchId})`, Number.isFinite(retryAfter) ? retryAfter : null);
+  }
+  if (!res.ok) {
+    throw new Error(`試合詳細の取得に失敗しました (${matchId}): ${res.statusText}`);
+  }
+  const data = await res.json();
+  
+  const gameDuration = data.info.gameDuration;
+  const gameStartTimestamp = data.info.gameStartTimestamp || data.info.gameCreation;
+
+  const SUPPORT_ITEM_IDS = new Set([
+    3865, 3866, 3867, 3869, 3870, 3871, 3876, 3877, // S14 World Atlas & upgrades
+    3850, 3851, 3853, 3854, 3855, 3857, 3858, 3859, 3860, // S13 Supp items
+    3301, 3302, 3303, // Legacy
+  ]);
+
+  const detectPosition = (p: any): string => {
+    // 1. Smite (ID 11) 所持なら100% ジャングル
+    if (p.summoner1Id === 11 || p.summoner2Id === 11) {
+      return 'JUNGLE';
+    }
+
+    // 2. teamPosition / individualPosition の正規化
+    const rawPos = (p.teamPosition || p.individualPosition || '').toUpperCase();
+    if (rawPos === 'TOP') return 'TOP';
+    if (rawPos === 'JUNGLE' || rawPos === 'JUG') return 'JUNGLE';
+    if (rawPos === 'MIDDLE' || rawPos === 'MID') return 'MIDDLE';
+    if (rawPos === 'BOTTOM' || rawPos === 'BOT' || rawPos === 'ADC') return 'BOTTOM';
+    if (rawPos === 'UTILITY' || rawPos === 'SUPPORT' || rawPos === 'SUP') return 'UTILITY';
+
+    // 3. サポートアイテム所持チェック
+    const items = [p.item0, p.item1, p.item2, p.item3, p.item4, p.item5, p.item6];
+    const hasSupportItem = items.some((it) => SUPPORT_ITEM_IDS.has(it));
+    if (hasSupportItem || p.role === 'SUPPORT') {
+      return 'UTILITY';
+    }
+
+    // 4. lane と role のフォールバック
+    const rawLane = (p.lane || '').toUpperCase();
+    if (rawLane === 'TOP') return 'TOP';
+    if (rawLane === 'JUNGLE') return 'JUNGLE';
+    if (rawLane === 'MIDDLE' || rawLane === 'MID') return 'MIDDLE';
+    if (rawLane === 'BOTTOM' || rawLane === 'BOT') {
+      return p.role === 'SUPPORT' ? 'UTILITY' : 'BOTTOM';
+    }
+
+    // 5. ニュートラルCS多ければジャングル
+    if ((p.neutralMinionsKilled || 0) > 40) {
+      return 'JUNGLE';
+    }
+
+    return 'MIDDLE';
+  };
+
+  const participants: ParticipantStats[] = data.info.participants.map((p: any) => ({
+    puuid: p.puuid,
+    riotIdName: p.riotIdGameName || p.summonerName,
+    riotIdTagline: p.riotIdTagline || '',
+    championName: p.championName,
+    teamId: p.teamId,
+    kills: p.kills,
+    deaths: p.deaths,
+    assists: p.assists,
+    visionScore: p.visionScore || 0,
+    totalMinionsKilled: p.totalMinionsKilled || 0,
+    neutralMinionsKilled: p.neutralMinionsKilled || 0,
+    damageDealtToChampions: p.totalDamageDealtToChampions || 0,
+    totalDamageTaken: p.totalDamageTaken || 0,
+    damageDealtToObjectives: p.damageDealtToObjectives || 0,
+    totalHeal: (p.totalHeal || 0) + (p.totalDamageShieldedOnTeammates || 0),
+    damageSelfMitigated: p.damageSelfMitigated || 0,
+    goldEarned: p.goldEarned || 0,
+    // Riot Match-V5 の participant.pentaKills。ここでマッピングし忘れると
+    // ジャックポットの総取り判定が永久に発火しない（2026-09-22に実際そうなっていた）。
+    pentaKills: p.pentaKills || 0,
+    win: p.win,
+    lane: detectPosition(p) // TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY
+  }));
+
+  return {
+    matchId,
+    gameDuration,
+    gameStartTimestamp,
+    participants,
+    teams: data.info.teams,
+    queueId: data.info.queueId,
+    gameType: data.info.gameType
+  };
+}
+
+
+// ==========================================
+// 追加: League-V4 (Rank Sync)
+// ※ Summoner ID への変換が必要
+// ==========================================
+const RIOT_API_BASE_JP = "https://jp1.api.riotgames.com";
+
+export async function fetchSummonerByPuuid(puuid: string, apiKey: string): Promise<any> {
+  const url = `${RIOT_API_BASE_JP}/lol/summoner/v4/summoners/by-puuid/${puuid}?api_key=${apiKey}`;
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`Summoner fetch error: ${res.statusText}`);
+  return await res.json();
+}
+
+/**
+ * @deprecated Riotが2025年6月20日にこのエンドポイント(by-summoner)を廃止済み。
+ * さらにsummoner-v4のby-puuidレスポンスも同時期に`id`フィールドを返さなくなったため、
+ * このencryptedSummonerId経由のルートは事実上ずっと404/410で失敗し続けていた。
+ * 新規実装は必ず fetchLeagueByPuuid を使うこと。
+ */
+export async function fetchLeagueBySummonerId(summonerId: string, apiKey: string): Promise<any[]> {
+  const url = `${RIOT_API_BASE_JP}/lol/league/v4/entries/by-summoner/${summonerId}?api_key=${apiKey}`;
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`League fetch error: ${res.statusText}`);
+  return await res.json();
+}
+
+/**
+ * PUUIDからランク情報(League-V4 entries)を取得する。
+ * by-summoner系エンドポイントの廃止に伴う正式な後継エンドポイント。
+ */
+export async function fetchLeagueByPuuid(puuid: string, apiKey: string): Promise<any[]> {
+  const url = `${RIOT_API_BASE_JP}/lol/league/v4/entries/by-puuid/${puuid}?api_key=${apiKey}`;
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`League fetch error: ${res.statusText}`);
+  return await res.json();
+}
+
+/**
+ * PUUIDからチャンピオンマスタリー(熟練度)の上位3件を取得します
+ */
+export async function fetchChampionMasteryByPuuid(puuid: string, apiKey: string, count: number = 3): Promise<any[]> {
+  const url = `${RIOT_API_BASE_JP}/lol/champion-mastery/v4/champion-masteries/by-puuid/${puuid}/top?count=${count}&api_key=${apiKey}`;
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) {
+    if (res.status === 404) return []; // マスタリーがないプレイヤー
+    throw new Error(`Mastery fetch error: ${res.statusText}`);
+  }
+  return await res.json();
+}
+
+/**
+ * PUUIDから最新の Riot ID（gameName, tagLine）を取得します
+ */
+export async function fetchRiotIdByPuuid(puuid: string, apiKey: string): Promise<{ gameName: string; tagLine: string }> {
+  const url = `${RIOT_API_BASE_ASIA}/riot/account/v1/accounts/by-puuid/${puuid}?api_key=${apiKey}`;
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) {
+    throw new Error(`Riot IDの逆引きに失敗しました (PUUID: ${puuid}): ${res.statusText}`);
+  }
+  const data = await res.json();
+  return { gameName: data.gameName, tagLine: data.tagLine };
+}
+
+/**
+ * 試合のタイムラインデータを取得します (9分時点のゴールド/XP/CS差の計算用)
+ */
+export async function fetchMatchTimeline(matchId: string, apiKey: string): Promise<any> {
+  const url = `${RIOT_API_BASE_ASIA}/lol/match/v5/matches/${matchId}/timeline?api_key=${apiKey}`;
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) {
+    throw new Error(`タイムラインの取得に失敗しました (${matchId}): ${res.statusText}`);
+  }
+  return await res.json();
+}
+
+/**
+ * PUUIDから現在進行中のアクティブゲーム情報を取得します (Spectator-V5)
+ */
+export async function fetchActiveGameByPuuid(puuid: string, apiKey: string): Promise<any> {
+  const url = `${RIOT_API_BASE_JP}/lol/spectator/v5/active-games/by-summoner/${puuid}?api_key=${apiKey}`;
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) {
+    if (res.status === 404) {
+      throw new Error("ACTIVE_GAME_NOT_FOUND");
+    }
+    throw new Error(`進行中の試合取得に失敗しました: ${res.statusText}`);
+  }
+  return await res.json();
+}
+
