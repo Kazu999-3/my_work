@@ -21,10 +21,10 @@ tags: [Tactics, Concept, SSoT, KnowledgeLoop]
 ---
 
 ## 📋 2. Principles & Execution（実戦原則と成立条件）
+- **実戦知見**: [インベード戦術論（Lv1奇襲・敵ジャングル視界奪還・バフ強奪）](file:///D:/my_work/01_INTEL/concepts/invade.md)** （出典: [NEXUS_INDEX](file:///D:/my_work/01_INTEL/NEXUS_INDEX.md)）
 - **実戦知見**: 苦手・カウンター**: シヴィアのようなスペルシールド持ちに対してはスキルを剥がす工夫が必要。グレイブスのようなインベード能力が高い相手には、序盤の視界確保と適切な立ち回りが求められる。 （出典: [brand_tactics_bible](file:///D:/my_work/01_INTEL/tactics/brand_tactics_bible.md)）
 - **実戦知見**: インベード中にQスキルを空振りし、キャンプスティールに失敗する、または不利な状況で戦闘を始めてしまう。 （出典: [jarvaniv_tactics_bible](file:///D:/my_work/01_INTEL/tactics/jarvaniv_tactics_bible.md)）
 - **実戦知見**: インベードがバレた際に、引き際を見誤る。 （出典: [jarvaniv_tactics_bible](file:///D:/my_work/01_INTEL/tactics/jarvaniv_tactics_bible.md)）
-- **実戦知見**: Bot Prioがあることで、Mid Gankや敵Raptorキャンプへのインベードが安全に行える。敵Botレーナーが寄ってくるリスクがないため、よりアグレッシブな判断が可能。 （出典: [jarvaniv_tactics_bible](file:///D:/my_work/01_INTEL/tactics/jarvaniv_tactics_bible.md)）
 
 ---
 
@@ -42,6 +42,7 @@ tags: [Tactics, Concept, SSoT, KnowledgeLoop]
 
 ## 🔗 5. 関連バイブル・言及ファイル（Cross References）
 本概念に言及している代表的な戦術バイブルおよびドキュメント：
+- [NEXUS_INDEX](file:///D:/my_work/01_INTEL/NEXUS_INDEX.md)
 - [brand_tactics_bible](file:///D:/my_work/01_INTEL/tactics/brand_tactics_bible.md)
 - [jarvaniv_tactics_bible](file:///D:/my_work/01_INTEL/tactics/jarvaniv_tactics_bible.md)
 - [khazix_tactics_bible](file:///D:/my_work/01_INTEL/tactics/khazix_tactics_bible.md)
@@ -51,7 +52,6 @@ tags: [Tactics, Concept, SSoT, KnowledgeLoop]
 - [monkeyking_tactics_bible](file:///D:/my_work/01_INTEL/tactics/monkeyking_tactics_bible.md)
 - [talon_tactics_bible](file:///D:/my_work/01_INTEL/tactics/talon_tactics_bible.md)
 - [viego_tactics_bible](file:///D:/my_work/01_INTEL/tactics/viego_tactics_bible.md)
-- [xinzhao_tactics_bible](file:///D:/my_work/01_INTEL/tactics/xinzhao_tactics_bible.md)
 
 ---
 

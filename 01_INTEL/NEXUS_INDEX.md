@@ -33,9 +33,17 @@
 - **[インベード戦術論（Lv1奇襲・敵ジャングル視界奪還・バフ強奪）](file:///D:/my_work/01_INTEL/concepts/invade.md)**
 - **[没理由・罠データベース哲学（なぜその案を捨てたかの記録）](file:///D:/my_work/01_INTEL/concepts/rejected_options_philosophy.md)**
 - **[イミュータブル（原本不変）原則とハルシネーション防波堤](file:///D:/my_work/01_INTEL/concepts/immutable_principles.md)**
+- **[ローム戦術論（サイド介入・ウェーブ押し込み・リターン計算）](file:///D:/my_work/01_INTEL/concepts/roam.md)**
+- **[オブジェクト管理論（ドラゴン・ヘラルド・バロンの視界セットアップと主導権）](file:///D:/my_work/01_INTEL/concepts/objective_control.md)**
+- **[スプリットプッシュ戦術論（サイドレーン単独進行・1v1優位・マップ牽引）](file:///D:/my_work/01_INTEL/concepts/split_push.md)**
+- **[スロープッシュ戦術論（ビッグウェーブ構築・ダイブプレッシャー・安全なリコール）](file:///D:/my_work/01_INTEL/concepts/slow_push.md)**
+- **[レーンプライオリティ論（先手合流権・プッシュ主導権・JG支援）](file:///D:/my_work/01_INTEL/concepts/lane_priority.md)**
+- **[ディープワード戦術論（敵JG深部視界・ルート早期察知・ガンク無力化）](file:///D:/my_work/01_INTEL/concepts/deep_ward.md)**
+
 ## 📚 1. LoL 戦略 ＆ 攻略バイブル (Intel Domain)
 動画解析やプロ追跡から得られた最新の LoL メタ・攻略知識です。
 
+- **[帝国オートメーション全体構成図 (AUTOMATION_MAP.md)](file:///d:/my_work/02_FACTORY/AUTOMATION_MAP.md)**: 全自動パイプライン・常駐デーモン・DB連携マップ。
 - **[総合システムデザイン](file:///d:/my_work/SYSTEM_DESIGN_BY_FUNCTION.md)**: Sovereign OS の全体の機能・設計書。
 - **[プロジェクト憲法 (ANTIGRAVITY.md)](file:///d:/my_work/ANTIGRAVITY.md)**: プロジェクトの開発・運営憲法（ルール）。
 - **[KRチャレンジャーの頭脳：LoLの教科書 (kr_challenger_textbook.md)](file:///d:/my_work/01_INTEL/_LOL/tactics/kr_challenger_textbook.md)**:
@@ -126,3 +134,9 @@ Antigravity（AIアシスタント）の行動規範、スキル、ワークフ�
 - **[事業構想 ＆ ロードマップ (README_BUSINESS.md)](file:///d:/my_work/01_INTEL/vault/README_BUSINESS.md)**: 帝国の収益化・事業多角化のロードマップ。
 - **[システム引継書 ＆ 緊急プロトコル (HANDOVER.md)](file:///d:/my_work/01_INTEL/vault/HANDOVER.md)**: 緊急時対応・運用引き継ぎの要点書。
 - **[全社タスクボード (TASK_BOARD.md)](file:///d:/my_work/01_INTEL/vault/TASK_BOARD.md)**: 開発・運用タスクの全社管理ボード。
+
+
+## 🏭 2. コンテンツ生産 ＆ プロモーション (Factory Domain)
+- **[プロモーション ＆ Xスレッド総合索引 (PROMO INDEX)](file:///d:/my_work/02_FACTORY/PROMO/INDEX.md)**
+- **[記事・コンテンツ下書き総合索引 (DRAFTS INDEX)](file:///d:/my_work/02_FACTORY/01_DRAFTS/INDEX.md)**
+

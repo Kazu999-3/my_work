@@ -21,10 +21,10 @@ tags: [Tactics, Concept, SSoT, KnowledgeLoop]
 ---
 
 ## 📋 2. Principles & Execution（実戦原則と成立条件）
+- **実戦知見**: [パワースパイク戦術論（時間帯・レベル・完成アイテムによる主導権掌握）](file:///D:/my_work/01_INTEL/concepts/power_spike.md)** （出典: [NEXUS_INDEX](file:///D:/my_work/01_INTEL/NEXUS_INDEX.md)）
 - **実戦知見**: 主要パワースパイク**: Lv4 (Qランク2), Lv9 (QランクMAX・CD大幅短縮), 1stコア (ショウジンの矛 / サンダースカイ) （出典: [aatrox_tactics_bible](file:///D:/my_work/01_INTEL/tactics/aatrox_tactics_bible.md)）
 - **実戦知見**: 没理由*: 対面のパワースパイクや防御ステータスを軽視したビルドは失速の原因になるため非推奨。 （出典: [aatrox_tactics_bible](file:///D:/my_work/01_INTEL/tactics/aatrox_tactics_bible.md)）
 - **実戦知見**: パワースパイク**: Aatroxは序盤のLv3以降、Qの多段ヒットとWの引き寄せによる強力なCCとバーストダメージを持ち、2v2や2v3の状況でも高い戦闘能力を発揮します。 （出典: [aatrox_tactics_bible](file:///D:/my_work/01_INTEL/tactics/aatrox_tactics_bible.md)）
-- **実戦知見**: パワースパイク**: AatroxはR（ワールドエンダー）がある状態で、高いサステインとダメージを持つため、集団戦で非常に強力です。 （出典: [aatrox_tactics_bible](file:///D:/my_work/01_INTEL/tactics/aatrox_tactics_bible.md)）
 
 ---
 
@@ -42,6 +42,7 @@ tags: [Tactics, Concept, SSoT, KnowledgeLoop]
 
 ## 🔗 5. 関連バイブル・言及ファイル（Cross References）
 本概念に言及している代表的な戦術バイブルおよびドキュメント：
+- [NEXUS_INDEX](file:///D:/my_work/01_INTEL/NEXUS_INDEX.md)
 - [aatrox_tactics_bible](file:///D:/my_work/01_INTEL/tactics/aatrox_tactics_bible.md)
 - [akshan_tactics_bible](file:///D:/my_work/01_INTEL/tactics/akshan_tactics_bible.md)
 - [alistar_tactics_bible](file:///D:/my_work/01_INTEL/tactics/alistar_tactics_bible.md)
@@ -51,7 +52,6 @@ tags: [Tactics, Concept, SSoT, KnowledgeLoop]
 - [brand_tactics_bible](file:///D:/my_work/01_INTEL/tactics/brand_tactics_bible.md)
 - [caitlyn_tactics_bible](file:///D:/my_work/01_INTEL/tactics/caitlyn_tactics_bible.md)
 - [darius_tactics_bible](file:///D:/my_work/01_INTEL/tactics/darius_tactics_bible.md)
-- [diana_tactics_bible](file:///D:/my_work/01_INTEL/tactics/diana_tactics_bible.md)
 
 ---
 

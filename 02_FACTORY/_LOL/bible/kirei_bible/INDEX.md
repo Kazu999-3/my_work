@@ -393,3 +393,35 @@ tags: [LoL, Tactics, Video, Kirei, Bible]
 ## 🛡️ リー・シン (1本)
 - [`How to hit RANK 1 Episode 8- Watch Every lane!`](./fiKUNafAA9c.md)
   - *要約*: 優れたベースタイミングとジャングルトレッキング（敵ジャングルのトラッキング）を基本とし、ウェーブ状態に基づいた賢明なガンク判断とチームへの明確な指示によって、メカニクスに頼らずともゲームをキャリーでき
+
+
+---
+
+## 📦 字幕未取得・待機アーカイブ (25本)
+字幕未取得またはIP制限等の理由で待機中の解析アーカイブです。
+
+- [Does this INVADE work? [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]](./27t49A38l6I.md)
+- [3 Minute Wukong Guide - A Guide for League of Legends [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]](./2k_Afn_F24Q.md)
+- [SECRET Aatrox Tips & Tricks [エラー: 日本語/英語字幕が動画に見つかりません]](./5uPebPSFnns.md)
+- [How to Play KHA'ZIX JUNGLE and PLAY AS A ASSASIN [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]](./BG-LtgqwU6Y.md)
+- [【LOL】不利な中盤以降でやることが分からない人は今すぐこの動画を見てね【ジャングル】 [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]](./BSFniQL1Dwk.md)
+- [[ディープリサーチ] Diana 解説動画 (BWELW5xTtTU) [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]](./BWELW5xTtTU.md)
+- [THIS AKSHAN BUILD IS PERFECT FOR RANKED! - 2026 AKSHAN MID GAMEPLAY GUIDE [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]](./eNU22ef9T4M.md)
+- [How To PLAY Talon Jungle | FREE GUIDE [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]](./HCsyadHH7c4.md)
+- [【マクロ解説】全てのLoLプレイヤーは必ず見てください。プロだけが理解している、ターンとは何か？【LoL/リーグ･オブ･レジェンド】 [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]](./jL-8M42Y034.md)
+- [Shyvana Jungle vs Trundle - KR Challenger Patch 26.14 [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]](./jP0FRxS1U3A.md)
+- [How to NEVER Lose Teamfights as AKALI | Complete Guide [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]](./jpl1b8lT3vA.md)
+- [hetel's Alistar puts on a Support clinic | Master SoloQ [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]](./lrx1X6QtJ7U.md)
+- [WUKONG JUNGLE is a 1v9 CARRYING POWERHOUSE! — Wukong Jungle Guide [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]](./nDGZTq5ly5c.md)
+- [UNRANKED to MASTER in 30 Hours - Graves Gameplay Guide [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]](./OBjIiVhzlis.md)
+- [AMBESSA Advanced Tips & Tricks and Combos - LoL Guide [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]](./OdttUIfSm9A.md)
+- [DROPPED TO GM XDDDDDDDDDDDDDDDD](./OFJ-UINYjXk.md)
+- [An Actual Ambessa Guide [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]](./OhmG-jdx_gM.md)
+- [[ディープリサーチ] ヴァイ 解説動画 (rweX_f-ic8M) [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]](./rweX_f-ic8M.md)
+- [[ディープリサーチ] ヴァイ 解説動画 (THzMDZljjuk) [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]](./THzMDZljjuk.md)
+- [How to WIN Your Games With FULL LETHALITY JARVAN IV [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]](./TZ_Dy8iWEAQ.md)
+- [Akshan 101 - The BEST Akshan Guide [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]](./v5HXoENSfmE.md)
+- [Brand Jungle vs Graves - EUW Challenger Patch 26.10 [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]](./V6NalLt74D4.md)
+- [Preparing my Kha'Zix for NA Trip [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]](./V733cbuaz54.md)
+- [インベードに失敗した相手をレネクトンで破壊するらいじん【らいじん切り抜き】 [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]](./WyA1CdmmJRc.md)
+- [[ディープリサーチ] グレイブス 解説動画 (xgIhwNwQmvk) [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]](./xgIhwNwQmvk.md)

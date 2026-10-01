@@ -21,10 +21,10 @@ tags: [Philosophy, Concept, SSoT, KnowledgeLoop]
 ---
 
 ## 📋 2. Principles & Execution（実戦原則と成立条件）
+- **実戦知見**: [イミュータブル（原本不変）原則とハルシネーション防波堤](file:///D:/my_work/01_INTEL/concepts/immutable_principles.md)** （出典: [NEXUS_INDEX](file:///D:/my_work/01_INTEL/NEXUS_INDEX.md)）
 - **実戦知見**: [`template_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/template_tactics_bible.md): 没理由・イミュータブル履歴を備えた制式戦術雛形。 （出典: [NEXUS_INDEX](file:///D:/my_work/01_INTEL/NEXUS_INDEX.md)）
 - **実戦知見**: > **イミュータブル原則**: 過去の対面データを上書きせず、追記履歴として蓄積する。 （出典: [yorick_tactics_bible](file:///D:/my_work/01_INTEL/tactics/yorick_tactics_bible.md)）
 - **実戦知見**: 放り込むだけで原本を `_archive/` へイミュータブル退避し、TOMO式3層（Core Concept / Structured Points / Actionable Steps）で構造化ノートを生成して自動配置・索引リンクするパイプラインを確立・実測動作確認。 （出典: [DAILY_LOG](file:///D:/my_work/02_FACTORY/DAILY_LOG.md)）
-- **実戦知見**: 3. **原本は絶対に不可逆編集せず、AIの成果物はすべて元ソースへの出典リンクを持たせよ**: AIの要約だけで原本を直接書き換えると、ハルシネーション発生時に事実確認の拠り所を失う。raw層はイミュータブル（不変）に保ち、派生ノートから常に原本を辿れる構造を担保せよ。 （出典: [DAILY_LOG](file:///D:/my_work/02_FACTORY/DAILY_LOG.md)）
 
 ---
 

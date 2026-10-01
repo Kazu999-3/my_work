@@ -21,10 +21,10 @@ tags: [Tactics, Concept, SSoT, KnowledgeLoop]
 ---
 
 ## 📋 2. Principles & Execution（実戦原則と成立条件）
+- **実戦知見**: [タワーダイブ攻略論（ウェーブクラッシュ・ヘルス差・タワーアグロ管理）](file:///D:/my_work/01_INTEL/concepts/tower_dive.md)** （出典: [NEXUS_INDEX](file:///D:/my_work/01_INTEL/NEXUS_INDEX.md)）
 - **実戦知見**: ウェーブ管理のミス**: 味方ミニオンがタワーに押し付けられている状況や、逆に大きくプッシュしている状況では、ガンクが難しくなります。特にタワーダイブはリスクが高く、相手にキルを与えかねません。 （出典: [aatrox_tactics_bible](file:///D:/my_work/01_INTEL/tactics/aatrox_tactics_bible.md)）
 - **実戦知見**: > 先出し（ブラインドピック）でも負担がないハイパーキャリー型アサシン。序盤の耐えからLv3トレード、Lv6のワンコンボキル・ダイブまでの確定手順を網羅。 （出典: [akali_tactics_bible](file:///D:/my_work/01_INTEL/tactics/akali_tactics_bible.md)）
 - **実戦知見**: タワーダイブコンボ**: 敵タワー下にW展開 ➔ タワー外方向へEを使って離脱 ➔ 外からスキルダメージ ➔ E2でタワー下へ再進入してキル＆離脱。 （出典: [akali_tactics_bible](file:///D:/my_work/01_INTEL/tactics/akali_tactics_bible.md)）
-- **実戦知見**: 🚫 避けるべき罠・没理由 (Rejected)**: 育っている時と同じ感覚で敵バックラインへダイブすること。装備差がない/負けている状態では、一人も倒せず自滅する可能性が高い。 （出典: [akali_tactics_bible](file:///D:/my_work/01_INTEL/tactics/akali_tactics_bible.md)）
 
 ---
 
@@ -42,6 +42,7 @@ tags: [Tactics, Concept, SSoT, KnowledgeLoop]
 
 ## 🔗 5. 関連バイブル・言及ファイル（Cross References）
 本概念に言及している代表的な戦術バイブルおよびドキュメント：
+- [NEXUS_INDEX](file:///D:/my_work/01_INTEL/NEXUS_INDEX.md)
 - [aatrox_tactics_bible](file:///D:/my_work/01_INTEL/tactics/aatrox_tactics_bible.md)
 - [akali_tactics_bible](file:///D:/my_work/01_INTEL/tactics/akali_tactics_bible.md)
 - [ambessa_tactics_bible](file:///D:/my_work/01_INTEL/tactics/ambessa_tactics_bible.md)
@@ -51,7 +52,6 @@ tags: [Tactics, Concept, SSoT, KnowledgeLoop]
 - [nocturne_tactics_bible](file:///D:/my_work/01_INTEL/tactics/nocturne_tactics_bible.md)
 - [viego_tactics_bible](file:///D:/my_work/01_INTEL/tactics/viego_tactics_bible.md)
 - [vi_tactics_bible](file:///D:/my_work/01_INTEL/tactics/vi_tactics_bible.md)
-- [yorick_tactics_bible](file:///D:/my_work/01_INTEL/tactics/yorick_tactics_bible.md)
 
 ---
 

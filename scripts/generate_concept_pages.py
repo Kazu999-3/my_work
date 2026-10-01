@@ -70,6 +70,54 @@ TARGET_CONCEPTS = [
         "definition": "一次ソース（公式データ・生メモ・Web記事原本）をAIが直接上書き・破壊することを固く禁じ、常に不変（Immutable）の正本（SSoT）として保持するデータ設計思想。",
         "actionable": "AIの要約や構造化データは派生ノートとして別名保存し、必ず原本への相対パス・出典リンクを付与してファクトチェックの動線を物理的に維持する。"
     },
+    {
+        "keyword": "ローム",
+        "slug": "roam",
+        "title": "ローム戦術論（サイド介入・ウェーブ押し込み・リターン計算）",
+        "category": "Tactics",
+        "definition": "自レーンのミニオンウェーブをタワーに押し込んだタイミング等で他レーンや敵ジャングルへ急襲・合流し、数的有利を作ってキルやタワーを獲得する介入戦術。",
+        "actionable": "自レーンのロスト（タワープレートやミニオンCS）以上のリターン（キル・ドラゴン・タワー）が確実に見込める状況でのみ実行し、失敗時は速やかに復帰する。"
+    },
+    {
+        "keyword": "オブジェクト管理",
+        "slug": "objective_control",
+        "title": "オブジェクト管理論（ドラゴン・ヘラルド・バロンの視界セットアップと主導権）",
+        "category": "Tactics",
+        "definition": "ドラゴン、ヘラルド、ヴォイドグラブ、バロン等の中立モンスターの出現時間に合わせて、事前にレーン主導権と視界を確保し、集団戦または確定テイクを狙う大局観戦術。",
+        "actionable": "出現1分〜45秒前にリコールしてアイテムを揃え、周辺のデウォードとワード設置（ディープワード）を完了させ、先にエリアを占有する。"
+    },
+    {
+        "keyword": "スプリットプッシュ",
+        "slug": "split_push",
+        "title": "スプリットプッシュ戦術論（サイドレーン単独進行・1v1優位・マップ牽引）",
+        "category": "Tactics",
+        "definition": "1対1で勝てるチャンピオンが本隊と離れたサイドレーンを単独で押し込み、敵チームを分断して人数差やタワー破壊を強要するマクロ戦術。",
+        "actionable": "敵が2人以上寄ってきた時に安全に退避できる視界（ディープワード）を確保し、本隊が逆サイドのオブジェクト（バロン/ドラゴン）に圧力をかけている時のみ深くプッシュする。"
+    },
+    {
+        "keyword": "スロープッシュ",
+        "slug": "slow_push",
+        "title": "スロープッシュ戦術論（ビッグウェーブ構築・ダイブプレッシャー・安全なリコール）",
+        "category": "Tactics",
+        "definition": "後衛ミニオンのみを間引いて自軍ミニオンを徐々に溜め、2〜3ウェーブ分の巨大なミニオン塊（ビッグウェーブ）を作って敵タワーへ衝突させるウェーブコントロール。",
+        "actionable": "対面を倒した直後やローム・リコールを狙う際にスロープッシュを開始し、タワー下へ衝突した瞬間にダイブ、ローム、または安全なベース帰還を行う。"
+    },
+    {
+        "keyword": "プライオリティ",
+        "slug": "lane_priority",
+        "title": "レーンプライオリティ論（先手合流権・プッシュ主導権・JG支援）",
+        "category": "Tactics",
+        "definition": "相手よりも先にミニオンウェーブを押し込み、相手がタワー下でCSを取っている間に自由に動ける権利（先手合流権・優先権）。",
+        "actionable": "川のスカトルやインベード、オブジェクト戦の前にプライオリティを意識的に確保し、味方ジャングラーの遭遇戦に相手レーナーより3〜5秒早く寄る。"
+    },
+    {
+        "keyword": "ディープワード",
+        "slug": "deep_ward",
+        "title": "ディープワード戦術論（敵JG深部視界・ルート早期察知・ガンク無力化）",
+        "category": "Tactics",
+        "definition": "レーン周辺の草むら（川）ではなく、敵ジャングルのキャンプ付近や交差点の深部に設置し、敵ジャングラーやロームの動向を15〜30秒早く察知する視界戦術。",
+        "actionable": "プライオリティを取って敵レーナーが動けない時、または敵JGが逆サイドに見えた安全な瞬間に敵陣営へ侵入して設置する。"
+    },
 ]
 
 def scan_context_snippets(keyword):
@@ -200,27 +248,31 @@ tags: [{c['category']}, Concept, SSoT, KnowledgeLoop]
         print(f"   ✅ 生成完了: {out_file.relative_to(REPO_ROOT)}")
         generated_concepts.append((title, out_file))
 
-    # NEXUS_INDEX.md に概念ハブを追記
+    # NEXUS_INDEX.md に概念ハブを追記・同期
     if NEXUS_PATH.exists():
         with open(NEXUS_PATH, "r", encoding="utf-8") as nf:
             nexus_content = nf.read()
 
         concept_section_header = "## 🧠 戦術概念 ＆ 共通哲学ライブラリ (Concepts)"
-        if concept_section_header not in nexus_content:
-            section_md = f"\n\n{concept_section_header}\n全バイブルを横断する中核概念の定義と実戦原則集（Karpathy LLM Wiki準拠）。\n\n"
-            for t, p in generated_concepts:
-                section_md += f"- **[{t}](file:///{p.as_posix()})**\n"
+        section_md = f"{concept_section_header}\n全バイブルを横断する中核概念の定義と実戦原則集（Karpathy LLM Wiki準拠）。\n\n"
+        for t, p in generated_concepts:
+            section_md += f"- **[{t}](file:///{p.as_posix()})**\n"
+        section_md += "\n"
 
-            # 適切な位置に挿入（ナレッジ管理憲章の後）
-            insert_marker = "## 📚 1. LoL 戦略 ＆ 攻略バイブル (Intel Domain)"
-            if insert_marker in nexus_content:
-                nexus_content = nexus_content.replace(insert_marker, section_md + insert_marker)
-            else:
-                nexus_content += section_md
+        insert_marker = "## 📚 1. LoL 戦略 ＆ 攻略バイブル (Intel Domain)"
 
-            with open(NEXUS_PATH, "w", encoding="utf-8") as nf:
-                nf.write(nexus_content)
-            print("\n✅ NEXUS_INDEX.md に『戦術概念＆共通哲学ライブラリ』を配備しました。")
+        if concept_section_header in nexus_content:
+            # 既存セクションを最新の一覧に置換
+            pattern = re.compile(r"## 🧠 戦術概念 ＆ 共通哲学ライブラリ \(Concepts\)[\s\S]*?(?=## 📚 1\. LoL 戦略 ＆ 攻略バイブル)")
+            nexus_content = pattern.sub(section_md, nexus_content)
+        elif insert_marker in nexus_content:
+            nexus_content = nexus_content.replace(insert_marker, section_md + insert_marker)
+        else:
+            nexus_content += "\n\n" + section_md
+
+        with open(NEXUS_PATH, "w", encoding="utf-8") as nf:
+            nf.write(nexus_content)
+        print("\n✅ NEXUS_INDEX.md に『戦術概念＆共通哲学ライブラリ』を同期しました。")
 
     print(f"\n=======================================================")
     print(f"🎉 合計 {len(generated_concepts)} 件の中核概念ノートをコンパイルしました。")

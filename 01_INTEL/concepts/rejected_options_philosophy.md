@@ -23,8 +23,8 @@ tags: [Philosophy, Concept, SSoT, KnowledgeLoop]
 ## 📋 2. Principles & Execution（実戦原則と成立条件）
 - **実戦知見**: 5. **作業結果の何を、どこへ戻すか**: 没理由・判断経緯・次回アクションの還流先の定義。 （出典: [knowledge_second_brain_codex](file:///D:/my_work/01_INTEL/knowledge_second_brain_codex.md)）
 - **実戦知見**: AIエージェントとの対話や作業を通じて生まれた「優れた分析結果」「比較検証」「設計判断」「没理由」は、チャットログの彼方に消去させてはならない。 （出典: [knowledge_second_brain_codex](file:///D:/my_work/01_INTEL/knowledge_second_brain_codex.md)）
+- **実戦知見**: [没理由・罠データベース哲学（なぜその案を捨てたかの記録）](file:///D:/my_work/01_INTEL/concepts/rejected_options_philosophy.md)** （出典: [NEXUS_INDEX](file:///D:/my_work/01_INTEL/NEXUS_INDEX.md)）
 - **実戦知見**: [`template_tactics_bible.md`](file:///d:/my_work/01_INTEL/tactics/template_tactics_bible.md): 没理由・イミュータブル履歴を備えた制式戦術雛形。 （出典: [NEXUS_INDEX](file:///D:/my_work/01_INTEL/NEXUS_INDEX.md)）
-- **実戦知見**: 没理由*: 対面のパワースパイクや防御ステータスを軽視したビルドは失速の原因になるため非推奨。 （出典: [aatrox_tactics_bible](file:///D:/my_work/01_INTEL/tactics/aatrox_tactics_bible.md)）
 
 ---
 

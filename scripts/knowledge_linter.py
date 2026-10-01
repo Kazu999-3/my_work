@@ -104,10 +104,14 @@ def parse_links_and_concepts(file_path):
     with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
         content = f.read()
 
+    # コードブロック（```...```）およびインラインコード（`...`）をマスク（誤検知防止）
+    masked_content = re.sub(r"```[\s\S]*?```", "", content)
+    masked_content = re.sub(r"`[^`\n]+`", "", masked_content)
+
     links = []
-    # 1. Markdown Links [text](target)
-    md_pattern = r"\[([^\]]+)\]\(([^)]+)\)"
-    for m in re.finditer(md_pattern, content):
+    # 1. Markdown Links [text](target) - 1段階の入れ子角括弧（例: [タイトル [注記]](url)）にも対応
+    md_pattern = r"\[((?:[^\[\]]|\[[^\[\]]*\])*)\]\(([^)]+)\)"
+    for m in re.finditer(md_pattern, masked_content):
         text = m.group(1).strip()
         target = m.group(2).strip()
         if target.startswith("http://") or target.startswith("https://") or target.startswith("#"):
@@ -128,7 +132,7 @@ def parse_links_and_concepts(file_path):
 
     # 2. Obsidian WikiLinks [[target|text]] or [[target]]
     wiki_pattern = r"\[\[([^\]]+)\]\]"
-    for m in re.finditer(wiki_pattern, content):
+    for m in re.finditer(wiki_pattern, masked_content):
         inner = m.group(1).strip()
         if "|" in inner:
             target_name, text = inner.split("|", 1)
