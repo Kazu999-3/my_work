@@ -75,8 +75,8 @@ export const CHAMPION_TACTICS_DB: { [champName: string]: ChampionKitTactic } = {
   },
   Nautilus: {
     powerSpikes: {
-      earlyLvl1to5: 'Lv2先行でのQフック + AAパッシブスネア + Wシールドの確定バーストトレード。',
-      mid1to2Core: '騎士の誓い / ソーンメイル完成時、必中R（爆雷水流）からの不可避エンゲージ。',
+      earlyLvl1to5: 'Lv2先行でのQフック + AAパッシブスネア + Wシールドの有利なバーストトレード。',
+      mid1to2Core: '騎士の誓い / ソーンメイル完成時、必中R（爆雷水流）からの強力な長距離エンゲージ。',
       late3CorePlus: '集団戦での敵キャリーへの必中R拘束と、フロントラインでのCC連鎖。',
     },
     favoredMatchups: [
@@ -202,11 +202,11 @@ export const CHAMPION_TACTICS_DB: { [champName: string]: ChampionKitTactic } = {
   Morgana: {
     powerSpikes: {
       earlyLvl1to5: 'Q（ダークバインド）3秒拘束と、E（ブラックシールド）による敵フック・CC完全無効化。',
-      mid1to2Core: 'ゾーニャの砂時計完成時、フラッシュ + R（魂の足枷）+ ゾーニャ発動による不可避の集団スタン。',
+      mid1to2Core: 'ゾーニャの砂時計完成時、フラッシュ + R（魂の足枷）+ ゾーニャ発動による広域集団スタン。',
       late3CorePlus: '狭いチョークポイントでのQキャッチと、味方ハイパーキャリーへのEブラックシールド付与。',
     },
     favoredMatchups: [
-      { enemy: 'Blitzcrank', reason: 'Eブラックシールドを貼るだけでブリッツのフックを100%完封可能。' },
+      { enemy: 'Blitzcrank', reason: 'Eブラックシールドを貼るだけでブリッツのフックを確実に防ぐことが可能。' },
       { enemy: 'Nautilus', reason: 'ノーチラスのQ・Rを両方ともブラックシールドで完全無力化。' },
       { enemy: 'Thresh', reason: 'スレッシュのフックとランタン引き込みを完封。' },
     ],

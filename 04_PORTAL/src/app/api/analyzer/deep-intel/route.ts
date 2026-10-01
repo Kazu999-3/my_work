@@ -383,68 +383,7 @@ export async function POST(request: NextRequest) {
     // 4. 実測タイムスタンプからのコンディション・心理DNA・目標ランクギャップ自動計算
     const calculatedSessionAnalytics = calculateRealSessionAnalytics(rawMatches, targetTier, role);
 
-    // 5. ロール適合の天敵・得意マッチアップ辞書（AIフォールバック用）
-    const ROLE_MATCHUP_DEFAULTS: {
-      [role: string]: {
-        favored: Array<{ enemy: string; winRate: number; reason: string }>;
-        hard: Array<{ enemy: string; winRate: number; counterPlay: string }>;
-      };
-    } = {
-      UTILITY: {
-        favored: [
-          { enemy: 'Yuumi', winRate: 68, reason: '序盤のレーン戦圧殺とオブジェクト先制視界で完全に圧倒可能。' },
-          { enemy: 'Sona', winRate: 64, reason: '高いCC圧力とガンク合わせで耐久力の低さを突いて完封。' },
-        ],
-        hard: [
-          { enemy: 'Morgana', winRate: 36, counterPlay: 'ブラックシールド展開時はCCを温存し、通常スキルでシールドを剥がしてから本命CCを当てる。' },
-          { enemy: 'Blitzcrank', winRate: 38, counterPlay: 'ミニオンの壁を維持してフック射線を切り、敵フック空振り直後にオールインを仕掛ける。' },
-        ],
-      },
-      JUNGLE: {
-        favored: [
-          { enemy: 'Amumu', winRate: 66, reason: 'ファーム速度差と序盤のカウンタージャングルでリソース差を拡大。' },
-          { enemy: 'Sejuani', winRate: 62, reason: '高いDPSと機動力で接近を拒絶し、リバー主導権を奪取可能。' },
-        ],
-        hard: [
-          { enemy: 'Nocturne', winRate: 34, counterPlay: 'Ult暗転時に即座に味方と固まり、足元へCCを敷いて防御アイテムを優先。' },
-          { enemy: 'XinZhao', winRate: 38, counterPlay: '序盤のタイマンを避け、逆サイドフルクリアと味方合流を徹底。' },
-        ],
-      },
-      MIDDLE: {
-        favored: [
-          { enemy: 'Twisted Fate', winRate: 67, reason: 'レーンでのキルプレッシャーとプッシュ速度でロームを封殺。' },
-          { enemy: 'Veigar', winRate: 63, reason: '序盤の射程差とパワースパイクの早さでスノーボール可能。' },
-        ],
-        hard: [
-          { enemy: 'Zed', winRate: 35, counterPlay: 'アームガード等の物理防御を早期に積み、影の位置を常に警戒して無理なトレードを避ける。' },
-          { enemy: 'Yasuo', winRate: 39, counterPlay: '風の壁を釣ってから本命スキルを撃ち、タワー下で安全にファームする。' },
-        ],
-      },
-      TOP: {
-        favored: [
-          { enemy: 'Sion', winRate: 68, reason: '割合ダメージと機動力で相手のエンゲージを回避し有利にトレード可能。' },
-          { enemy: 'Cho\'Gath', winRate: 64, reason: 'スキル回避の容易さとDPS差でサイドレーンを完封。' },
-        ],
-        hard: [
-          { enemy: 'Fiora', winRate: 34, counterPlay: '急所を壁で隠し、相手のWパリィをスカしてから本命コンボを叩き込む。' },
-          { enemy: 'Darius', winRate: 37, counterPlay: '出血スタックが溜まる前のショートトレードに留め、ウェーブをフリーズ管理する。' },
-        ],
-      },
-      BOTTOM: {
-        favored: [
-          { enemy: 'Aphelios', winRate: 66, reason: '序盤の射程差と仕掛けの早さでパワースパイク前に主導権を奪取。' },
-          { enemy: 'Zeri', winRate: 63, reason: '集団戦前のポークとバースト力で相手のスケーリングを封殺。' },
-        ],
-        hard: [
-          { enemy: 'Draven', winRate: 33, counterPlay: '序盤のダメージ交換を極力拒否し、ガンク待ちとファーム徹底で中盤以降に逆転を狙う。' },
-          { enemy: 'Samira', winRate: 37, counterPlay: '敵のWブレードスピンが落ちるまでCCを温存し、接近戦を徹底回避する。' },
-        ],
-      },
-    };
-
-    const defaultMatchup = ROLE_MATCHUP_DEFAULTS[role] || ROLE_MATCHUP_DEFAULTS.JUNGLE;
-
-    // 6. Gemini AIによる動的総合診断 ＆ 目標ランク到達処方箋の生成
+    // 5. Gemini AIによる動的総合診断 ＆ 目標ランク到達処方箋の生成
     const aiPrompt = `あなたはLoL（League of Legends）の最高峰データアナリスト兼パーソナルコーチです。
 プレイヤー「${cleanName}#${cleanTag}」（メインロール: ${calculatedSessionAnalytics.roleConfig.roleName}、現在ランク: ${tier}）は、目標ランク【${targetTier}】への昇格を目指しています。
 以下の実測スタッツおよびロール特化の目標ランク基準値とのギャップをもとに、【目標ランク到達処方箋レポート】を作成してください。
