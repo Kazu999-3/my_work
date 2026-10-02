@@ -3,10 +3,35 @@ import { supabase } from '@/lib/supabaseClient';
 
 export const dynamic = 'force-dynamic';
 
-function extractVideoId(url: string): string | null {
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|shorts\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-  const match = url.match(regExp);
-  return (match && match[2].length === 11) ? match[2] : null;
+function extractMediaId(url: string): { type: 'youtube' | 'x'; id: string; normalizedUrl: string; defaultTitle: string; channelName: string } | null {
+  // 1. YouTube判定 (通常URL, 短縮URL, shorts, live, embed等)
+  const ytMatch = url.match(/^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|shorts\/|live\/|watch\?v=|\&v=)([^#\&\?]*).*/i);
+  if (ytMatch && ytMatch[2].length === 11) {
+    const vid = ytMatch[2];
+    return {
+      type: 'youtube',
+      id: vid,
+      normalizedUrl: `https://www.youtube.com/watch?v=${vid}`,
+      defaultTitle: `YouTube Video (${vid})`,
+      channelName: 'YouTube'
+    };
+  }
+
+  // 2. X (旧Twitter) 判定 (x.com または twitter.com)
+  const xMatch = url.match(/(?:x\.com|twitter\.com)\/(?:#!\/)?(\w+)\/status\/(\d+)/i);
+  if (xMatch) {
+    const username = xMatch[1];
+    const tweetId = xMatch[2];
+    return {
+      type: 'x',
+      id: `x_${tweetId}`,
+      normalizedUrl: `https://x.com/${username}/status/${tweetId}`,
+      defaultTitle: `X Post (@${username})`,
+      channelName: `@${username}`
+    };
+  }
+
+  return null;
 }
 
 // 1. キュー一覧取得
@@ -29,12 +54,12 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ success: true, items: data || [] });
   } catch (e: any) {
-    console.error('YouTube Queue取得エラー:', e);
+    console.error('Queue取得エラー:', e);
     return NextResponse.json({ error: e.message || '内部エラー' }, { status: 500 });
   }
 }
 
-// 2. キュー追加
+// 2. キュー追加 (YouTube / X 両対応)
 export async function POST(req: NextRequest) {
   try {
     if (!supabase) {
@@ -48,22 +73,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'URLが必要です' }, { status: 400 });
     }
 
-    const videoId = extractVideoId(url);
-    if (!videoId) {
-      return NextResponse.json({ error: '有効なYouTube URLではありません' }, { status: 400 });
+    const media = extractMediaId(url);
+    if (!media) {
+      return NextResponse.json({ error: '有効なYouTubeまたはX(Twitter)のURLではありません' }, { status: 400 });
     }
 
     // 既に存在するか確認
     const { data: existing } = await supabase
       .from('youtube_queue')
-      .select('id, status')
-      .eq('id', videoId)
+      .select('id, status, title')
+      .eq('id', media.id)
       .maybeSingle();
 
     if (existing) {
       return NextResponse.json({
         success: true,
-        message: `この動画は既にキューに登録されています (ステータス: ${existing.status})`,
+        message: `既にキューに登録されています (ステータス: ${existing.status})`,
         item: existing
       });
     }
@@ -72,9 +97,10 @@ export async function POST(req: NextRequest) {
     const { data: inserted, error: insertErr } = await supabase
       .from('youtube_queue')
       .insert({
-        id: videoId,
-        url: `https://www.youtube.com/watch?v=${videoId}`,
-        title: title || `YouTube Video (${videoId})`,
+        id: media.id,
+        url: media.normalizedUrl,
+        title: title || media.defaultTitle,
+        channel_name: media.channelName,
         status: 'pending',
         priority,
         retry_count: 0,

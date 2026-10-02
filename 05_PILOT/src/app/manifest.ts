@@ -32,5 +32,15 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: 'maskable',
       },
     ],
-  };
+    // Web Share Target API: スマホのYouTube/Xから共有先として認識させる
+    share_target: {
+      action: '/share-target',
+      method: 'GET',
+      params: {
+        title: 'title',
+        text: 'text',
+        url: 'url',
+      },
+    },
+  } as any;
 }

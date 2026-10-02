@@ -6742,9 +6742,9 @@
       "summary": "高い機動力と攻撃速度で中盤以降の集団戦を制圧するジャングラー"
     },
     "jungleTiming": {
-      "sampleCount": 3,
-      "avgFirstCoreSec": 642,
-      "avgSecondCoreSec": 1127,
+      "sampleCount": 4,
+      "avgFirstCoreSec": 650,
+      "avgSecondCoreSec": 1213,
       "tier": "EMERALD",
       "fastestClearSec": 164
     }
@@ -7012,9 +7012,9 @@
       "summary": "高い機動力と攻撃速度で中盤以降の集団戦を制圧するジャングラー"
     },
     "jungleTiming": {
-      "sampleCount": 3,
-      "avgFirstCoreSec": 642,
-      "avgSecondCoreSec": 1127,
+      "sampleCount": 4,
+      "avgFirstCoreSec": 650,
+      "avgSecondCoreSec": 1213,
       "tier": "EMERALD",
       "fastestClearSec": 164
     }
@@ -8169,9 +8169,9 @@
       "summary": "高い機動力とサステインで中盤の小規模戦を制圧するファイター"
     },
     "jungleTiming": {
-      "sampleCount": 8,
-      "avgFirstCoreSec": 558,
-      "avgSecondCoreSec": 984,
+      "sampleCount": 9,
+      "avgFirstCoreSec": 571,
+      "avgSecondCoreSec": 1026,
       "tier": "EMERALD",
       "fastestClearSec": 164
     }
@@ -8328,9 +8328,9 @@
       "summary": "高い機動力とサステインで中盤の小規模戦を制圧するファイター"
     },
     "jungleTiming": {
-      "sampleCount": 8,
-      "avgFirstCoreSec": 558,
-      "avgSecondCoreSec": 984,
+      "sampleCount": 9,
+      "avgFirstCoreSec": 571,
+      "avgSecondCoreSec": 1026,
       "tier": "EMERALD",
       "fastestClearSec": 164
     }
@@ -9332,9 +9332,9 @@
       "summary": "高い耐久力と確定ダメージによる集団戦の制圧力が魅力のタンク。"
     },
     "jungleTiming": {
-      "sampleCount": 3,
-      "avgFirstCoreSec": 646,
-      "avgSecondCoreSec": 1176,
+      "sampleCount": 4,
+      "avgFirstCoreSec": 664,
+      "avgSecondCoreSec": 1228,
       "tier": "EMERALD",
       "fastestClearSec": 161
     }
@@ -9480,9 +9480,9 @@
       "summary": "高い耐久力と確定ダメージによる集団戦の制圧力が魅力のタンク。"
     },
     "jungleTiming": {
-      "sampleCount": 3,
-      "avgFirstCoreSec": 646,
-      "avgSecondCoreSec": 1176,
+      "sampleCount": 4,
+      "avgFirstCoreSec": 664,
+      "avgSecondCoreSec": 1228,
       "tier": "EMERALD",
       "fastestClearSec": 161
     }
@@ -11901,9 +11901,9 @@
       "summary": "Lv6のステルス解禁後、中盤の暗殺能力が極めて高い。"
     },
     "jungleTiming": {
-      "sampleCount": 9,
-      "avgFirstCoreSec": 720,
-      "avgSecondCoreSec": 1213,
+      "sampleCount": 10,
+      "avgFirstCoreSec": 725,
+      "avgSecondCoreSec": 1217,
       "tier": "EMERALD",
       "fastestClearSec": 161
     }
@@ -12072,9 +12072,9 @@
       "summary": "Lv6のステルス解禁後、中盤の暗殺能力が極めて高い。"
     },
     "jungleTiming": {
-      "sampleCount": 9,
-      "avgFirstCoreSec": 720,
-      "avgSecondCoreSec": 1213,
+      "sampleCount": 10,
+      "avgFirstCoreSec": 725,
+      "avgSecondCoreSec": 1217,
       "tier": "EMERALD",
       "fastestClearSec": 161
     }
@@ -20456,9 +20456,9 @@
       "summary": "ファーム重視で育ち、集団戦で圧倒的な火力を出すレイトゲームキャリー"
     },
     "jungleTiming": {
-      "sampleCount": 2,
-      "avgFirstCoreSec": 583,
-      "avgSecondCoreSec": 1186,
+      "sampleCount": 3,
+      "avgFirstCoreSec": 600,
+      "avgSecondCoreSec": 1185,
       "tier": "EMERALD",
       "fastestClearSec": 147
     }
@@ -20620,9 +20620,9 @@
       "summary": "ファーム重視で育ち、集団戦で圧倒的な火力を出すレイトゲームキャリー"
     },
     "jungleTiming": {
-      "sampleCount": 2,
-      "avgFirstCoreSec": 583,
-      "avgSecondCoreSec": 1186,
+      "sampleCount": 3,
+      "avgFirstCoreSec": 600,
+      "avgSecondCoreSec": 1185,
       "tier": "EMERALD",
       "fastestClearSec": 147
     }
@@ -21635,9 +21635,9 @@
       "summary": "変身前は弱いが、変身後の機動力とバーストで中盤の主導権を握る。"
     },
     "jungleTiming": {
-      "sampleCount": 13,
-      "avgFirstCoreSec": 605,
-      "avgSecondCoreSec": 1052,
+      "sampleCount": 15,
+      "avgFirstCoreSec": 633,
+      "avgSecondCoreSec": 1050,
       "tier": "EMERALD",
       "fastestClearSec": 162
     }
@@ -21808,9 +21808,9 @@
       "summary": "変身前は弱いが、変身後の機動力とバーストで中盤の主導権を握る。"
     },
     "jungleTiming": {
-      "sampleCount": 13,
-      "avgFirstCoreSec": 605,
-      "avgSecondCoreSec": 1052,
+      "sampleCount": 15,
+      "avgFirstCoreSec": 633,
+      "avgSecondCoreSec": 1050,
       "tier": "EMERALD",
       "fastestClearSec": 162
     }
@@ -22325,9 +22325,9 @@
       "summary": "孤立対象への高いバーストと進化による機動力で中盤の小規模戦を支配する。"
     },
     "jungleTiming": {
-      "sampleCount": 2,
-      "avgFirstCoreSec": 610,
-      "avgSecondCoreSec": 580,
+      "sampleCount": 4,
+      "avgFirstCoreSec": 580,
+      "avgSecondCoreSec": 754,
       "tier": "EMERALD",
       "fastestClearSec": 163
     }
@@ -22572,9 +22572,9 @@
       "summary": "孤立対象への高いバーストと進化による機動力で中盤の小規模戦を支配する。"
     },
     "jungleTiming": {
-      "sampleCount": 2,
-      "avgFirstCoreSec": 610,
-      "avgSecondCoreSec": 580,
+      "sampleCount": 4,
+      "avgFirstCoreSec": 580,
+      "avgSecondCoreSec": 754,
       "tier": "EMERALD",
       "fastestClearSec": 163
     }
@@ -24467,9 +24467,9 @@
       "summary": "高い機動力と序盤の爆発力でゲームを支配するが、終盤は失速する。"
     },
     "jungleTiming": {
-      "sampleCount": 24,
+      "sampleCount": 25,
       "avgFirstCoreSec": 597,
-      "avgSecondCoreSec": 1114,
+      "avgSecondCoreSec": 1110,
       "tier": "EMERALD",
       "fastestClearSec": 163
     }
@@ -24800,9 +24800,9 @@
       "summary": "高い機動力と序盤の爆発力でゲームを支配するが、終盤は失速する。"
     },
     "jungleTiming": {
-      "sampleCount": 24,
+      "sampleCount": 25,
       "avgFirstCoreSec": 597,
-      "avgSecondCoreSec": 1114,
+      "avgSecondCoreSec": 1110,
       "tier": "EMERALD",
       "fastestClearSec": 163
     }
@@ -25285,9 +25285,9 @@
       "summary": "高い機動力と集団睡眠による中盤の集団戦で圧倒的な影響力を発揮する。"
     },
     "jungleTiming": {
-      "sampleCount": 7,
-      "avgFirstCoreSec": 655,
-      "avgSecondCoreSec": 1193,
+      "sampleCount": 8,
+      "avgFirstCoreSec": 651,
+      "avgSecondCoreSec": 1184,
       "tier": "EMERALD",
       "fastestClearSec": 164
     }
@@ -25490,9 +25490,9 @@
       "summary": "高い機動力と集団睡眠による中盤の集団戦で圧倒的な影響力を発揮する。"
     },
     "jungleTiming": {
-      "sampleCount": 7,
-      "avgFirstCoreSec": 655,
-      "avgSecondCoreSec": 1193,
+      "sampleCount": 8,
+      "avgFirstCoreSec": 651,
+      "avgSecondCoreSec": 1184,
       "tier": "EMERALD",
       "fastestClearSec": 164
     }
@@ -28075,9 +28075,9 @@
       "summary": "序盤は脆いが、装備依存度が高く後半のキャリー性能は最高峰。"
     },
     "jungleTiming": {
-      "sampleCount": 3,
-      "avgFirstCoreSec": 666,
-      "avgSecondCoreSec": 1021,
+      "sampleCount": 4,
+      "avgFirstCoreSec": 682,
+      "avgSecondCoreSec": 1011,
       "tier": "EMERALD",
       "fastestClearSec": 163
     }
@@ -28232,9 +28232,9 @@
       "summary": "序盤は脆いが、装備依存度が高く後半のキャリー性能は最高峰。"
     },
     "jungleTiming": {
-      "sampleCount": 3,
-      "avgFirstCoreSec": 666,
-      "avgSecondCoreSec": 1021,
+      "sampleCount": 4,
+      "avgFirstCoreSec": 682,
+      "avgSecondCoreSec": 1011,
       "tier": "EMERALD",
       "fastestClearSec": 163
     }
@@ -29337,9 +29337,9 @@
       "summary": "高い機動力と強力な集団戦CCで中盤の主導権を握るファイター"
     },
     "jungleTiming": {
-      "sampleCount": 11,
-      "avgFirstCoreSec": 719,
-      "avgSecondCoreSec": 1229,
+      "sampleCount": 12,
+      "avgFirstCoreSec": 715,
+      "avgSecondCoreSec": 1208,
       "tier": "EMERALD",
       "fastestClearSec": 163
     }
@@ -29640,9 +29640,9 @@
       "summary": "高い機動力と強力な集団戦CCで中盤の主導権を握るファイター"
     },
     "jungleTiming": {
-      "sampleCount": 11,
-      "avgFirstCoreSec": 719,
-      "avgSecondCoreSec": 1229,
+      "sampleCount": 12,
+      "avgFirstCoreSec": 715,
+      "avgSecondCoreSec": 1208,
       "tier": "EMERALD",
       "fastestClearSec": 163
     }
@@ -32111,9 +32111,9 @@
       "summary": "圧倒的な序盤の機動力とバーストで敵ジャングルを制圧するスノーボール型。"
     },
     "jungleTiming": {
-      "sampleCount": 7,
-      "avgFirstCoreSec": 662,
-      "avgSecondCoreSec": 1139,
+      "sampleCount": 8,
+      "avgFirstCoreSec": 656,
+      "avgSecondCoreSec": 1145,
       "tier": "EMERALD",
       "fastestClearSec": 160
     }
@@ -32338,9 +32338,9 @@
       "summary": "圧倒的な序盤の機動力とバーストで敵ジャングルを制圧するスノーボール型。"
     },
     "jungleTiming": {
-      "sampleCount": 7,
-      "avgFirstCoreSec": 662,
-      "avgSecondCoreSec": 1139,
+      "sampleCount": 8,
+      "avgFirstCoreSec": 656,
+      "avgSecondCoreSec": 1145,
       "tier": "EMERALD",
       "fastestClearSec": 160
     }
@@ -32764,9 +32764,9 @@
       "summary": "ULTによる孤立狩りと中盤の視界制圧で試合を決定づける。"
     },
     "jungleTiming": {
-      "sampleCount": 12,
-      "avgFirstCoreSec": 622,
-      "avgSecondCoreSec": 1159,
+      "sampleCount": 14,
+      "avgFirstCoreSec": 626,
+      "avgSecondCoreSec": 1149,
       "tier": "EMERALD",
       "fastestClearSec": 162
     }
@@ -32924,9 +32924,9 @@
       "summary": "ULTによる孤立狩りと中盤の視界制圧で試合を決定づける。"
     },
     "jungleTiming": {
-      "sampleCount": 12,
-      "avgFirstCoreSec": 622,
-      "avgSecondCoreSec": 1159,
+      "sampleCount": 14,
+      "avgFirstCoreSec": 626,
+      "avgSecondCoreSec": 1149,
       "tier": "EMERALD",
       "fastestClearSec": 162
     }
@@ -33067,9 +33067,9 @@
       "summary": "圧倒的な機動力とCCで序盤に試合を動かすジャングラー。"
     },
     "jungleTiming": {
-      "sampleCount": 7,
-      "avgFirstCoreSec": 713,
-      "avgSecondCoreSec": 1213,
+      "sampleCount": 8,
+      "avgFirstCoreSec": 709,
+      "avgSecondCoreSec": 1211,
       "tier": "EMERALD",
       "fastestClearSec": 162
     }
@@ -33210,9 +33210,9 @@
       "summary": "圧倒的な機動力とCCで序盤に試合を動かすジャングラー。"
     },
     "jungleTiming": {
-      "sampleCount": 7,
-      "avgFirstCoreSec": 713,
-      "avgSecondCoreSec": 1213,
+      "sampleCount": 8,
+      "avgFirstCoreSec": 709,
+      "avgSecondCoreSec": 1211,
       "tier": "EMERALD",
       "fastestClearSec": 162
     }
@@ -36495,9 +36495,9 @@
       "summary": "高い機動力と奇襲性能で序盤に圧倒し、試合の主導権を握るジャングラー。"
     },
     "jungleTiming": {
-      "sampleCount": 6,
-      "avgFirstCoreSec": 700,
-      "avgSecondCoreSec": 1020,
+      "sampleCount": 7,
+      "avgFirstCoreSec": 684,
+      "avgSecondCoreSec": 1039,
       "tier": "EMERALD",
       "fastestClearSec": 166
     }
@@ -36638,9 +36638,9 @@
       "summary": "高い機動力と奇襲性能で序盤に圧倒し、試合の主導権を握るジャングラー。"
     },
     "jungleTiming": {
-      "sampleCount": 6,
-      "avgFirstCoreSec": 700,
-      "avgSecondCoreSec": 1020,
+      "sampleCount": 7,
+      "avgFirstCoreSec": 684,
+      "avgSecondCoreSec": 1039,
       "tier": "EMERALD",
       "fastestClearSec": 166
     }
@@ -40237,8 +40237,8 @@
       "summary": "序盤の奇襲と視界攪乱で有利を築くが、終盤の集団戦では失速しやすい。"
     },
     "jungleTiming": {
-      "sampleCount": 4,
-      "avgFirstCoreSec": 812,
+      "sampleCount": 5,
+      "avgFirstCoreSec": 795,
       "avgSecondCoreSec": 1303,
       "tier": "EMERALD",
       "fastestClearSec": 157
@@ -40408,8 +40408,8 @@
       "summary": "序盤の奇襲と視界攪乱で有利を築くが、終盤の集団戦では失速しやすい。"
     },
     "jungleTiming": {
-      "sampleCount": 4,
-      "avgFirstCoreSec": 812,
+      "sampleCount": 5,
+      "avgFirstCoreSec": 795,
       "avgSecondCoreSec": 1303,
       "tier": "EMERALD",
       "fastestClearSec": 157
@@ -44288,9 +44288,9 @@
       "summary": "奪ったULTによる高い柔軟性と中盤の小規模戦での圧倒的制圧力"
     },
     "jungleTiming": {
-      "sampleCount": 10,
-      "avgFirstCoreSec": 641,
-      "avgSecondCoreSec": 1213,
+      "sampleCount": 12,
+      "avgFirstCoreSec": 626,
+      "avgSecondCoreSec": 1212,
       "tier": "EMERALD",
       "fastestClearSec": 172
     }
@@ -44548,9 +44548,9 @@
       "summary": "奪ったULTによる高い柔軟性と中盤の小規模戦での圧倒的制圧力"
     },
     "jungleTiming": {
-      "sampleCount": 10,
-      "avgFirstCoreSec": 641,
-      "avgSecondCoreSec": 1213,
+      "sampleCount": 12,
+      "avgFirstCoreSec": 626,
+      "avgSecondCoreSec": 1212,
       "tier": "EMERALD",
       "fastestClearSec": 172
     }
@@ -45815,9 +45815,9 @@
       "summary": "高い機動力とバーストで中盤の小規模戦を制圧するアサシン。"
     },
     "jungleTiming": {
-      "sampleCount": 16,
-      "avgFirstCoreSec": 601,
-      "avgSecondCoreSec": 1002,
+      "sampleCount": 17,
+      "avgFirstCoreSec": 609,
+      "avgSecondCoreSec": 1016,
       "tier": "EMERALD",
       "fastestClearSec": 165
     }
@@ -46038,9 +46038,9 @@
       "summary": "高い機動力とバーストで中盤の小規模戦を制圧するアサシン。"
     },
     "jungleTiming": {
-      "sampleCount": 16,
-      "avgFirstCoreSec": 601,
-      "avgSecondCoreSec": 1002,
+      "sampleCount": 17,
+      "avgFirstCoreSec": 609,
+      "avgSecondCoreSec": 1016,
       "tier": "EMERALD",
       "fastestClearSec": 165
     }
@@ -51018,9 +51018,9 @@
       "summary": "キル回収による連鎖的な集団戦制圧力と中盤の圧倒的なスノーボール性能が強み。"
     },
     "jungleTiming": {
-      "sampleCount": 12,
-      "avgFirstCoreSec": 624,
-      "avgSecondCoreSec": 1136,
+      "sampleCount": 13,
+      "avgFirstCoreSec": 621,
+      "avgSecondCoreSec": 1121,
       "tier": "EMERALD",
       "fastestClearSec": 161
     }
@@ -51224,9 +51224,9 @@
       "summary": "キル回収による連鎖的な集団戦制圧力と中盤の圧倒的なスノーボール性能が強み。"
     },
     "jungleTiming": {
-      "sampleCount": 12,
-      "avgFirstCoreSec": 624,
-      "avgSecondCoreSec": 1136,
+      "sampleCount": 13,
+      "avgFirstCoreSec": 621,
+      "avgSecondCoreSec": 1121,
       "tier": "EMERALD",
       "fastestClearSec": 161
     }
@@ -55632,9 +55632,9 @@
       "summary": "高い機動力とバーストで中盤の小規模戦を制する暗殺者。"
     },
     "jungleTiming": {
-      "sampleCount": 1,
-      "avgFirstCoreSec": 675,
-      "avgSecondCoreSec": 1255,
+      "sampleCount": 2,
+      "avgFirstCoreSec": 666,
+      "avgSecondCoreSec": 1038,
       "tier": "EMERALD",
       "fastestClearSec": 142
     }
@@ -55818,9 +55818,9 @@
       "summary": "高い機動力とバーストで中盤の小規模戦を制する暗殺者。"
     },
     "jungleTiming": {
-      "sampleCount": 1,
-      "avgFirstCoreSec": 675,
-      "avgSecondCoreSec": 1255,
+      "sampleCount": 2,
+      "avgFirstCoreSec": 666,
+      "avgSecondCoreSec": 1038,
       "tier": "EMERALD",
       "fastestClearSec": 142
     }
