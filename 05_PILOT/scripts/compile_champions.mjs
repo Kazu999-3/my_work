@@ -18,6 +18,7 @@ const DETAILS_FILE = path.join(OUTPUT_DIR, 'champions_detail_map.json');
 const ENV_FILE = path.resolve(__dirname, '../.env.local');
 const FACTORY_DIR = path.resolve(__dirname, '../../02_FACTORY');
 const NOTE_STOCKS_DIR = path.join(FACTORY_DIR, '_LOL/note_stocks');
+const CUSTOM_ROLES_FILE = path.join(OUTPUT_DIR, 'custom_roles.json');
 
 const FALLBACK_PATCH = '14.24.1';
 
@@ -451,6 +452,16 @@ async function main() {
   const totalStocksCount = Object.values(allNoteStocksMap).reduce((acc, list) => acc + list.length, 0);
   console.log(`✅ 動画バイブル読み込み完了: 関連付け延べ ${totalStocksCount} 件`);
 
+  let customRolesMap = {};
+  if (fs.existsSync(CUSTOM_ROLES_FILE)) {
+    try {
+      customRolesMap = JSON.parse(fs.readFileSync(CUSTOM_ROLES_FILE, 'utf-8'));
+      console.log(`🛠️ カスタムレーン設定ロード成功: ${Object.keys(customRolesMap).length} 体`);
+    } catch (e) {
+      console.warn('⚠️ custom_roles.json パース失敗:', e.message);
+    }
+  }
+
   for (const champKey of champKeys) {
     const raw = ddragonChampions[champKey];
     const champId = raw.id;
@@ -514,9 +525,12 @@ async function main() {
       }
     }
 
-    const roles = dbRoles || (bibleData && bibleData.roles && bibleData.roles.length > 0
-      ? bibleData.roles
-      : (DEFAULT_ROLES_MAP[champId] || ['TOP']));
+    const customRole = customRolesMap[champId] || customRolesMap[lowerId];
+    const roles = (customRole && Array.isArray(customRole) && customRole.length > 0)
+      ? customRole
+      : (dbRoles || (bibleData && bibleData.roles && bibleData.roles.length > 0
+        ? bibleData.roles
+        : (DEFAULT_ROLES_MAP[champId] || ['TOP'])));
 
     const nameJa = raw.name_ja || champId;
     const titleJa = raw.title_ja || '';

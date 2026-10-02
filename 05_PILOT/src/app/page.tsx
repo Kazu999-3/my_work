@@ -11,10 +11,11 @@ import {
   Search, ShieldAlert, Swords, Zap, Skull, Shield, BookOpen, 
   ArrowLeft, ArrowRight, Clock, Activity, AlertTriangle, Layers,
   CheckCircle2, ChevronDown, ChevronUp, Timer, Star,
-  X, Check, Flame, Sparkles, Plus, Download, Bot, Target, ExternalLink, Video, Eye, Waves, Compass
+  X, Check, Flame, Sparkles, Plus, Download, Bot, Target, ExternalLink, Video, Eye, Waves, Compass, Wrench
 } from "lucide-react";
 import KnowledgeIngestModal from "@/components/KnowledgeIngestModal";
 import { MatchupPicker } from "@/components/MatchupPicker";
+import LaneMaintenanceModal from "@/components/LaneMaintenanceModal";
 
 // 通称・略称・エイリアス辞書
 const CHAMP_ALIASES: Record<string, string[]> = {
@@ -178,18 +179,50 @@ function PilotApp() {
   // 🎯 対面相性チェッカー (Matchup Picker) モード
   const [showMatchupPicker, setShowMatchupPicker] = useState(false);
 
+  // 🛠️ レーン所属メンテナンスモーダル
+  const [isLaneModalOpen, setIsLaneModalOpen] = useState(false);
+  const [focusedLaneChampId, setFocusedLaneChampId] = useState<string | undefined>(undefined);
+  const [customRoles, setCustomRoles] = useState<Record<string, string[]>>({});
+
   // 📥 戦術取込モーダル状態
   const [isIngestOpen, setIsIngestOpen] = useState(false);
 
-  // localStorage からお気に入りを読み込み
+  // localStorage からお気に入りとカスタムレーン設定を読み込み
   useEffect(() => {
     try {
-      const stored = localStorage.getItem("pilot_fav_champions");
-      if (stored) {
-        setFavorites(JSON.parse(stored));
+      const storedFav = localStorage.getItem("pilot_fav_champions");
+      if (storedFav) {
+        setFavorites(JSON.parse(storedFav));
+      }
+      const storedRoles = localStorage.getItem("pilot_custom_roles");
+      if (storedRoles) {
+        setCustomRoles(JSON.parse(storedRoles));
       }
     } catch {}
+
+    // サーバーからも最新のカスタムレーン設定をバックグラウンド取得
+    fetch("/api/champions/roles")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.customRoles && Object.keys(data.customRoles).length > 0) {
+          setCustomRoles((prev) => {
+            const merged = { ...prev, ...data.customRoles };
+            try {
+              localStorage.setItem("pilot_custom_roles", JSON.stringify(merged));
+            } catch {}
+            return merged;
+          });
+        }
+      })
+      .catch(() => {});
   }, []);
+
+  const handleRolesSaved = (newRoles: Record<string, string[]>) => {
+    setCustomRoles(newRoles);
+    try {
+      localStorage.setItem("pilot_custom_roles", JSON.stringify(newRoles));
+    } catch {}
+  };
 
   const toggleFavorite = (champId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -268,10 +301,21 @@ function PilotApp() {
     }
   }, [archetype]);
 
-  // チャンピオン一覧フィルタ（通称エイリアス辞書 ＆ お気に入り対応）
-  const filteredChampions = useMemo(() => {
+  // カスタムレーン設定を反映したチャンピオン一覧
+  const displayChampions = useMemo(() => {
     const list = championsSummary as ChampionSummary[];
-    return list.filter((c) => {
+    return list.map((c) => {
+      const override = customRoles[c.id];
+      if (override && Array.isArray(override) && override.length > 0) {
+        return { ...c, roles: override };
+      }
+      return c;
+    });
+  }, [customRoles]);
+
+  // チャンピオン一覧フィルタ（通称エイリアス辞書 ＆ お気に入り ＆ カスタムレーン対応）
+  const filteredChampions = useMemo(() => {
+    return displayChampions.filter((c) => {
       const q = search.trim().toLowerCase();
       
       // 通称・エイリアス判定
@@ -294,7 +338,7 @@ function PilotApp() {
 
       return matchSearch && matchRole && matchFav;
     });
-  }, [search, roleFilter, showFavoritesOnly, favorites]);
+  }, [displayChampions, search, roleFilter, showFavoritesOnly, favorites]);
 
   // 特定対面の特化メモ（Matchup Sentinelから検索）
   const matchedVsNote = useMemo(() => {
@@ -488,6 +532,19 @@ function PilotApp() {
                   >
                     <Plus size={14} />
                     <span>知見取込</span>
+                  </button>
+
+                  {/* 🛠️ 所属レーン編集 */}
+                  <button
+                    onClick={() => {
+                      setFocusedLaneChampId(selectedDetail.id);
+                      setIsLaneModalOpen(true);
+                    }}
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold border border-zinc-700 transition cursor-pointer"
+                    title={`${selectedDetail.jpName}の所属レーン（TOP/JG/MID/ADC/SUP）を編集`}
+                  >
+                    <Wrench size={14} className="text-amber-400" />
+                    <span>レーンメンテ</span>
                   </button>
 
                   {/* レーンセレクター */}
@@ -1529,6 +1586,19 @@ function PilotApp() {
                   <Target size={14} />
                   <span>🎯 対面チェッカー</span>
                 </button>
+
+                {/* 🛠️ レーン所属メンテボタン */}
+                <button
+                  onClick={() => {
+                    setFocusedLaneChampId(undefined);
+                    setIsLaneModalOpen(true);
+                  }}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-zinc-950 text-zinc-300 border border-zinc-800 hover:border-amber-500/50 hover:text-amber-400 transition cursor-pointer shrink-0 shadow-sm"
+                  title="全チャンピオンの所属レーン（TOP/JG/MID/ADC/SUP）を編集"
+                >
+                  <Wrench size={13} className="text-amber-400" />
+                  <span className="hidden sm:inline">レーン編集</span>
+                </button>
               </div>
 
               {/* ロールタブ */}
@@ -1552,7 +1622,7 @@ function PilotApp() {
             {/* 一覧カウンター */}
             <div className="flex items-center justify-between text-[11px] text-zinc-400 px-1">
               <span>全 <strong className="text-zinc-200">{filteredChampions.length}</strong> 体</span>
-              <span>通称エイリアス・お気に入り・Q/R素CDプレビュー対応</span>
+              <span>通称エイリアス・お気に入り・レーン所属カスタム対応</span>
             </div>
 
             {/* コンパクトなチャンピオンカードグリッド */}
@@ -1600,21 +1670,39 @@ function PilotApp() {
                         <span className="text-[10px] text-zinc-500 font-mono truncate">
                           {c.id}
                         </span>
-                        <span className="text-[9px] px-1 py-0.2 rounded bg-zinc-950 text-zinc-400 border border-zinc-800 shrink-0">
-                          {c.roles[0] || "TOP"}
-                        </span>
+                        {/* レーンバッジ（クリックでクイックメンテ可能） */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFocusedLaneChampId(c.id);
+                            setIsLaneModalOpen(true);
+                          }}
+                          className="text-[9px] px-1.5 py-0.2 rounded bg-zinc-950 text-zinc-300 border border-zinc-800 hover:border-amber-500/50 hover:text-amber-400 transition shrink-0 cursor-pointer flex items-center gap-0.5 font-bold"
+                          title={`${c.jpName}のレーン所属を編集`}
+                        >
+                          <span>{c.roles[0] || "TOP"}</span>
+                          {c.roles.length > 1 && (
+                            <span className="text-[8px] text-zinc-500">+{c.roles.length - 1}</span>
+                          )}
+                        </button>
                       </div>
 
-                      {/* スキルCDミニ表示 ＆ AIコーチ直結 */}
-                      <div className="flex items-center justify-between mt-1 text-[9px] font-mono text-zinc-400">
-                        <span>Q:{c.skills?.q?.cooldown?.[0] != null ? `${c.skills.q.cooldown[0]}` : "-"} R:{c.skills?.r?.cooldown?.[0] != null ? `${c.skills.r.cooldown[0]}` : "-"}</span>
+                      {/* サブロール一覧 ＆ AIコーチ直結（スキルのCD表示は完全排除） */}
+                      <div className="flex items-center justify-between mt-1 pt-1 border-t border-zinc-800/40 text-[9px]">
+                        <div className="flex items-center gap-1 overflow-hidden">
+                          {c.roles.slice(1).map((r) => (
+                            <span key={r} className="text-[8px] px-1 rounded bg-zinc-800/80 text-zinc-400 font-mono">
+                              {r}
+                            </span>
+                          ))}
+                        </div>
                         <Link
                           href={`/coach?my=${c.id}`}
                           onClick={(e) => e.stopPropagation()}
-                          className="px-1 py-0.2 rounded bg-indigo-950/70 hover:bg-indigo-900 text-indigo-300 border border-indigo-800/60 font-sans font-bold hover:scale-105 transition"
+                          className="px-1.5 py-0.2 rounded bg-indigo-950/70 hover:bg-indigo-900 text-indigo-300 border border-indigo-800/60 font-sans font-bold hover:scale-105 transition text-[10px] ml-auto flex items-center gap-0.5"
                           title={`${c.jpName}のAI戦術コーチを開く`}
                         >
-                          🤖
+                          <span>🤖</span>
                         </Link>
                       </div>
                     </div>
@@ -1634,6 +1722,16 @@ function PilotApp() {
         onSaved={() => {
           // 保存完了時にクエリ再読み込みや通知
         }}
+      />
+
+      {/* 🛠️ レーン所属メンテナンスモーダル */}
+      <LaneMaintenanceModal
+        isOpen={isLaneModalOpen}
+        onClose={() => setIsLaneModalOpen(false)}
+        champions={displayChampions}
+        focusedChampionId={focusedLaneChampId}
+        currentCustomRoles={customRoles}
+        onRolesSaved={handleRolesSaved}
       />
     </div>
   );
