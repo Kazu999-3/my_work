@@ -16,6 +16,8 @@ const MASTER_DICT_PATH = fs.existsSync(LOCAL_MASTER_DICT_PATH)
 const SUMMARY_FILE = path.join(OUTPUT_DIR, 'champions_summary.json');
 const DETAILS_FILE = path.join(OUTPUT_DIR, 'champions_detail_map.json');
 const ENV_FILE = path.resolve(__dirname, '../.env.local');
+const FACTORY_DIR = path.resolve(__dirname, '../../02_FACTORY');
+const NOTE_STOCKS_DIR = path.join(FACTORY_DIR, '_LOL/note_stocks');
 
 const FALLBACK_PATCH = '14.24.1';
 
@@ -123,6 +125,114 @@ function parseBibleContent(filePath) {
     matchupTip: matchupTipsMatch ? matchupTipsMatch[1].trim() : '',
     fullMarkdown: content,
   };
+}
+
+function cleanTacticText(str) {
+  if (!str) return '';
+  const s = str.trim();
+  if (s.includes('該当言及なし') || s === '※なし' || s === 'なし' || s === '※') return '';
+  return s;
+}
+
+function parseNoteStockFile(filePath) {
+  if (!fs.existsSync(filePath)) return null;
+  const content = fs.readFileSync(filePath, 'utf-8');
+
+  // タイトル
+  const titleMatch = content.match(/^#\s+(.+)$/m);
+  const title = titleMatch ? titleMatch[1].trim() : path.basename(filePath, '.md');
+
+  // 元動画 URL & ID
+  const videoMatch = content.match(/📺\s*\*\*元動画\*\*:\s*\[([^\]]+)\]\((https:\/\/www\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]+))/);
+  const videoTitle = videoMatch ? videoMatch[1].trim() : '';
+  const videoUrl = videoMatch ? videoMatch[2].trim() : '';
+  const videoId = videoMatch ? videoMatch[3].trim() : '';
+
+  // キラーエピソード
+  const quoteMatch = content.match(/## 📌 note記事で使えるキラーエピソード[^\n\r]*[\r\n]+([\s\S]*?)(?=---|\n## )/);
+  const killerQuote = quoteMatch ? quoteMatch[1].trim() : '';
+
+  // 5大極意
+  const cameraMatch = content.match(/モンスター狩り中のカメラワーク[^:]*:\s*([^\n\r]+)/);
+  const smiteMatch = content.match(/スマイト管理[^\n\r]*:\s*([^\n\r]+)/);
+  const waveMatch = content.match(/ガンク後のウェーブ介入ルール[^:]*:\s*([^\n\r]+)/);
+  const shadowMatch = content.match(/14分以降（中盤）のJGの居場所[^:]*:\s*([^\n\r]+)/);
+  const comebackMatch = content.match(/崩壊した試合を拾う逆転シナリオ[^:]*:\s*([^\n\r]+)/);
+  const pingsMatch = content.match(/レーナーを動かすピン[^:]*:\s*([^\n\r]+)/);
+  const muteMatch = content.match(/冷徹なオペレーターメンタル[^:]*:\s*([^\n\r]+)/);
+  const triggerMatch = content.match(/\*思考トリガー:\s*([^*]+)\*/);
+
+  // 対象チャンピオン特定
+  const targetMatch = content.match(/> 🎯 \*\*対象チャンピオン\*\*:\s*([^\n\r]+)/);
+  const rawTarget = targetMatch ? targetMatch[1].trim() : '';
+
+  const tagsMatch = content.match(/tags:\s*\[([^\]]+)\]/);
+  const tags = tagsMatch ? tagsMatch[1].split(',').map(t => t.trim().replace(/['"]/g, '')) : [];
+
+  return {
+    id: videoId || path.basename(filePath, '.md'),
+    title,
+    videoTitle,
+    videoUrl,
+    videoId,
+    rawTarget,
+    tags,
+    killerQuote: cleanTacticText(killerQuote),
+    keyTactics: {
+      cameraWork: cleanTacticText(cameraMatch ? cameraMatch[1] : ''),
+      smiteRule: cleanTacticText(smiteMatch ? smiteMatch[1] : ''),
+      waveRule: cleanTacticText(waveMatch ? waveMatch[1] : ''),
+      shadowRule: cleanTacticText(shadowMatch ? shadowMatch[1] : ''),
+      comebackRule: cleanTacticText(comebackMatch ? comebackMatch[1] : ''),
+      pingsRule: cleanTacticText(pingsMatch ? pingsMatch[1] : ''),
+      muteRule: cleanTacticText(muteMatch ? muteMatch[1] : ''),
+    },
+    thoughtTrigger: triggerMatch ? triggerMatch[1].trim() : '',
+  };
+}
+
+function loadAllNoteStocks(champKeys) {
+  const map = {};
+  for (const k of champKeys) {
+    map[k] = [];
+    map[k.toLowerCase()] = map[k];
+  }
+
+  if (!fs.existsSync(NOTE_STOCKS_DIR)) return map;
+
+  const files = fs.readdirSync(NOTE_STOCKS_DIR).filter(f => f.endsWith('.md'));
+  for (const file of files) {
+    const fullPath = path.join(NOTE_STOCKS_DIR, file);
+    const parsed = parseNoteStockFile(fullPath);
+    if (!parsed) continue;
+
+    // 紐付くチャンピオンを検出
+    const matchedChampKeys = new Set();
+    const lowerFile = file.toLowerCase();
+
+    for (const key of champKeys) {
+      const lowerKey = key.toLowerCase();
+      // 1. ファイル名に含む (例: Viego_-b3o... や LeeSin_... または Lee_Sin)
+      const underscoreKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+      if (lowerFile.startsWith(lowerKey + '_') || lowerFile.includes('_' + lowerKey + '_') || lowerFile.includes(underscoreKey)) {
+        matchedChampKeys.add(key);
+      }
+      // 2. rawTarget に含む
+      if (parsed.rawTarget.toLowerCase().includes(lowerKey)) {
+        matchedChampKeys.add(key);
+      }
+      // 3. tags に含む
+      if (parsed.tags.some(t => t.toLowerCase() === lowerKey)) {
+        matchedChampKeys.add(key);
+      }
+    }
+
+    for (const key of matchedChampKeys) {
+      map[key].push(parsed);
+    }
+  }
+
+  return map;
 }
 
 const JG_PICK_GUIDES = {
@@ -336,6 +446,11 @@ async function main() {
   const summaries = [];
   const detailMap = {};
 
+  console.log('📚 note発信ストック・動画バイブルをロード中...');
+  const allNoteStocksMap = loadAllNoteStocks(champKeys);
+  const totalStocksCount = Object.values(allNoteStocksMap).reduce((acc, list) => acc + list.length, 0);
+  console.log(`✅ 動画バイブル読み込み完了: 関連付け延べ ${totalStocksCount} 件`);
+
   for (const champKey of champKeys) {
     const raw = ddragonChampions[champKey];
     const champId = raw.id;
@@ -407,6 +522,8 @@ async function main() {
     const titleJa = raw.title_ja || '';
 
     // サマリーオブジェクト
+    const champVideoBibles = allNoteStocksMap[champId] || allNoteStocksMap[lowerId] || [];
+
     const summaryItem = {
       id: champId,
       name: champId,
@@ -415,6 +532,7 @@ async function main() {
       roles,
       skills,
       hasBible: !!bibleData,
+      videoBibleCount: champVideoBibles.length,
       tier: dbFact?.patch_meta?.tier || undefined,
       winRate: dbFact?.patch_meta?.win_rate || undefined,
     };
@@ -461,6 +579,7 @@ async function main() {
         traps: bibleData.traps.length > 0 ? bibleData.traps : (bibleData.trap ? [bibleData.trap] : []),
         rawMarkdown: bibleData.fullMarkdown,
       } : undefined,
+      videoBibles: champVideoBibles,
       matchups: dbMatchups,
       powerSpikes: dbSpikes,
       jungleTiming: dbTiming,

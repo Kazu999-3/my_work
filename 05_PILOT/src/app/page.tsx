@@ -11,7 +11,7 @@ import {
   Search, ShieldAlert, Swords, Zap, Skull, Shield, BookOpen, 
   ArrowLeft, ArrowRight, Clock, Activity, AlertTriangle, Layers,
   CheckCircle2, ChevronDown, ChevronUp, Timer, Star,
-  X, Check, Flame, Sparkles, Plus, Download, Bot, Target
+  X, Check, Flame, Sparkles, Plus, Download, Bot, Target, ExternalLink, Video, Eye, Waves, Compass
 } from "lucide-react";
 import KnowledgeIngestModal from "@/components/KnowledgeIngestModal";
 import { MatchupPicker } from "@/components/MatchupPicker";
@@ -134,6 +134,27 @@ interface ChampionDetail {
     };
   };
   matchups?: MatchupItem[];
+  videoBibles?: VideoBibleItem[];
+}
+
+interface VideoBibleItem {
+  id: string;
+  title: string;
+  videoTitle?: string;
+  videoUrl?: string;
+  videoId?: string;
+  killerQuote?: string;
+  keyTactics: {
+    cameraWork?: string;
+    smiteRule?: string;
+    waveRule?: string;
+    shadowRule?: string;
+    comebackRule?: string;
+    pingsRule?: string;
+    muteRule?: string;
+  };
+  traps?: string[];
+  thoughtTrigger?: string;
 }
 
 function PilotApp() {
@@ -962,10 +983,14 @@ function PilotApp() {
                     : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
                 }`}
               >
-                <BookOpen size={14} /> 📜 実戦バイブル ＆ 罠・没理由
-                {selectedDetail.bible && (
+                <BookOpen size={14} /> 🧠 プロの思考録・バイブル
+                {selectedDetail.videoBibles && selectedDetail.videoBibles.length > 0 ? (
+                  <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px] font-mono font-bold">
+                    動画{selectedDetail.videoBibles.length}本
+                  </span>
+                ) : selectedDetail.bible ? (
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                )}
+                ) : null}
               </button>
             </div>
 
@@ -1205,6 +1230,155 @@ function PilotApp() {
             {/* タブ 3: 実戦バイブル ＆ 罠・没理由 */}
             {activeTab === "bible" && (
               <div className="space-y-4">
+                {/* 🎬 最新再蒸留：実戦動画 プロの思考録 (Video Bibles) */}
+                {selectedDetail.videoBibles && selectedDetail.videoBibles.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Video size={18} className="text-rose-400" />
+                        <h3 className="text-sm sm:text-base font-black text-zinc-100">
+                          🎬 実戦動画 プロの思考録・生々しいWhy ({selectedDetail.videoBibles.length}本収録)
+                        </h3>
+                      </div>
+                      <span className="text-[11px] text-zinc-400 font-bold bg-zinc-900 px-2.5 py-1 rounded-lg border border-zinc-800">
+                        YouTube高レート実戦から蒸留
+                      </span>
+                    </div>
+
+                    <div className="space-y-4">
+                      {selectedDetail.videoBibles.map((vb, idx) => (
+                        <div
+                          key={vb.id || idx}
+                          className="bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-lg space-y-4 relative overflow-hidden"
+                        >
+                          {/* 動画タイトル ＆ リンク */}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-800/80 pb-3">
+                            <div className="flex items-center gap-2">
+                              <span className="px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-400 border border-rose-500/40 text-[10px] font-black">
+                                #{idx + 1}
+                              </span>
+                              <h4 className="text-xs sm:text-sm font-black text-zinc-200">
+                                {vb.videoTitle || vb.title}
+                              </h4>
+                            </div>
+                            {vb.videoUrl && (
+                              <a
+                                href={vb.videoUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-rose-400 hover:text-rose-300 border border-zinc-700 text-xs font-bold transition w-fit"
+                              >
+                                <span>YouTubeで動画を見る</span>
+                                <ExternalLink size={12} />
+                              </a>
+                            )}
+                          </div>
+
+                          {/* 📌 キラーエピソード（特大名言カード） */}
+                          {vb.killerQuote && (
+                            <div className="bg-gradient-to-r from-amber-950/30 via-zinc-950/60 to-zinc-950/30 border-l-4 border-amber-500 p-3.5 rounded-r-xl space-y-1">
+                              <span className="text-[11px] font-black text-amber-400 flex items-center gap-1">
+                                📌 実戦で使えるプロのキラー思考（Whyの言語化）
+                              </span>
+                              <p className="text-xs sm:text-sm text-zinc-200 font-medium leading-relaxed italic">
+                                {vb.killerQuote}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* 5大極意グリッド（言及がある項目のみ表示） */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                            {vb.keyTactics.cameraWork && (
+                              <div className="bg-zinc-950/80 border border-zinc-800/80 p-3 rounded-xl space-y-1">
+                                <span className="text-[10px] font-black text-sky-400 flex items-center gap-1 uppercase">
+                                  <Eye size={12} /> モンスター狩り中のカメラワーク
+                                </span>
+                                <p className="text-xs text-zinc-300 leading-relaxed">
+                                  {vb.keyTactics.cameraWork}
+                                </p>
+                              </div>
+                            )}
+
+                            {vb.keyTactics.waveRule && (
+                              <div className="bg-zinc-950/80 border border-zinc-800/80 p-3 rounded-xl space-y-1">
+                                <span className="text-[10px] font-black text-emerald-400 flex items-center gap-1 uppercase">
+                                  <Waves size={12} /> ガンク後のウェーブ介入ルール
+                                </span>
+                                <p className="text-xs text-zinc-300 leading-relaxed">
+                                  {vb.keyTactics.waveRule}
+                                </p>
+                              </div>
+                            )}
+
+                            {vb.keyTactics.smiteRule && (
+                              <div className="bg-zinc-950/80 border border-zinc-800/80 p-3 rounded-xl space-y-1">
+                                <span className="text-[10px] font-black text-amber-400 flex items-center gap-1 uppercase">
+                                  <Zap size={12} /> スマイト50/50回避の鉄則
+                                </span>
+                                <p className="text-xs text-zinc-300 leading-relaxed">
+                                  {vb.keyTactics.smiteRule}
+                                </p>
+                              </div>
+                            )}
+
+                            {vb.keyTactics.comebackRule && (
+                              <div className="bg-zinc-950/80 border border-zinc-800/80 p-3 rounded-xl space-y-1">
+                                <span className="text-[10px] font-black text-purple-400 flex items-center gap-1 uppercase">
+                                  <Sparkles size={12} /> 劣勢・崩壊時の逆転シナリオ
+                                </span>
+                                <p className="text-xs text-zinc-300 leading-relaxed">
+                                  {vb.keyTactics.comebackRule}
+                                </p>
+                              </div>
+                            )}
+
+                            {vb.keyTactics.shadowRule && (
+                              <div className="bg-zinc-950/80 border border-zinc-800/80 p-3 rounded-xl space-y-1">
+                                <span className="text-[10px] font-black text-indigo-400 flex items-center gap-1 uppercase">
+                                  <Compass size={12} /> 14分以降の中盤シャドウ（迷子防止）
+                                </span>
+                                <p className="text-xs text-zinc-300 leading-relaxed">
+                                  {vb.keyTactics.shadowRule}
+                                </p>
+                              </div>
+                            )}
+
+                            {vb.keyTactics.muteRule && (
+                              <div className="bg-zinc-950/80 border border-zinc-800/80 p-3 rounded-xl space-y-1">
+                                <span className="text-[10px] font-black text-rose-400 flex items-center gap-1 uppercase">
+                                  🤫 冷徹なオペレーターメンタル（ミュート基準）
+                                </span>
+                                <p className="text-xs text-zinc-300 leading-relaxed">
+                                  {vb.keyTactics.muteRule}
+                                </p>
+                              </div>
+                            )}
+
+                            {vb.keyTactics.pingsRule && (
+                              <div className="bg-zinc-950/80 border border-zinc-800/80 p-3 rounded-xl space-y-1">
+                                <span className="text-[10px] font-black text-teal-400 flex items-center gap-1 uppercase">
+                                  📢 味方を動かすピン誘導術
+                                </span>
+                                <p className="text-xs text-zinc-300 leading-relaxed">
+                                  {vb.keyTactics.pingsRule}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* 思考トリガー */}
+                          {vb.thoughtTrigger && (
+                            <div className="bg-zinc-950/50 border border-zinc-800/60 p-2.5 rounded-xl text-[11px] text-zinc-400 flex items-center gap-2">
+                              <span className="text-amber-400 font-black shrink-0">💡 思考トリガー:</span>
+                              <span className="text-zinc-300 italic">{vb.thoughtTrigger}</span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* ⚠️ 絶対地雷行動（トラップ） */}
                 {selectedDetail.bible?.traps && selectedDetail.bible.traps.length > 0 && (
                   <div className="bg-zinc-900 border border-rose-500/30 rounded-2xl p-4 shadow-sm">
