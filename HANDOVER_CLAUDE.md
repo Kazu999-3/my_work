@@ -237,6 +237,38 @@ DBを直接見ると自動再開は正常に動作していた（毎時再起票
   作業ツリーはクリーンだった。**他者の作業状態は時間が経つと変わるため、報告直前に必ず
   読み直すこと。**
 
+## 📜 2.12. Claude Code期間 (2026-10-02) での主な実装・修正
+
+05_PILOTへの移行で「画面は移したが中身が動いていない」箇所を洗い直した日。見つかった不備の多くは、**設定の欠落を黙って握りつぶす作り**（未設定ならスキップして成功表示、管理者キーが無ければ公開キーに切り替え）が原因で、表面上は動いているように見えていた。
+
+### 🔁 (1) 候補2: 試合後テンポ逆再生 ＆ ビルド監査（コミット `61c1ce58`）
+
+`/coach?tab=tempo`。旧ポータルの同機能はリコール評価・ビルド評価が固定値や勝敗から出したダミーだったため流用せず、`lib/postgameTempo.ts`（純粋関数）でタイムラインの実測値だけから計算する。重傷アイテム・靴はIDを手書きせずDDragonの英語説明文（"Wounds"）と`Boots`タグで判定。靴の属性判定は購入時点の敵ダメージ内訳を使う（試合終了時の値だと後知恵になる）。Riot APIに帰還イベントは無いため「購入のまとまり＝帰還」とみなしている。
+
+### 🔐 (2) 05_PILOTに認証が一切無かった ＆ YouTubeキュー追加が全件失敗していた（コミット `fcd11b9d`）
+
+- 05_PILOTは公開URLなのに認証が組み込まれておらず、service roleキーで動くAPIを誰でも叩けた。`src/proxy.ts`（Next.js 16でmiddlewareから改名）で全ページ・全APIを保護（`/login` か `?token=`、Cookie 1年）。
+- **リポジトリは公開**で、`tokenAuth.ts`の開発用既定値`pilot_dev_secret_2026`がローカル・本番の`PILOT_SECRET_TOKEN`にそのまま入っていた。本番ではこの値を未設定扱いにして拒否する（ユーザーが本番の値を変更済み）。
+- `youtube_queue.date_added`はbigint（UNIX秒）なのにISO文字列を入れていて、05からの動画追加は1件も成功していなかった。削除も物理削除になっていたため、旧ポータルと同じ`manually_closed`方式に戻した。
+
+### 📼 (3) YouTube管理と生成記事の承認画面を05へ移行（コミット `6db6d962`）
+
+`/admin/youtube`（解析キュー・監視チャンネル/プレイリスト・PCワーカー稼働状況）と`/admin/review`。稼働状況は**ローカル専用ハートビート（edge_tasks id `…0005`）**で判定する。旧ポータルが見ていた共有行`…0000`はGitHub Actionsも更新するため、デーモンが止まっていても稼働中に見えていた。Geminiを使う「辞典反映プレビュー」、確認用プレイリスト送信、動画深掘りリクエストは移していない。
+
+### 🖥️ (4) PCデーモンが約44時間止まっていた → 自動起動化（コミット `41843ec1`）
+
+2026-07-31以降、動画解析はPCの`edge_worker_daemon.py`だけが担当（GitHub Actions側はYouTubeにIPを弾かれるため定期実行停止）。9/30 17:54(UTC)から止まっていたことに誰も気づけなかった。`03_SYSTEMS/start_edge_worker.vbs`（窓なし起動、ログは`03_SYSTEMS/logs/edge_worker.log`）、`stop_edge_worker.bat`、`install_edge_worker_shortcuts.bat`（デスクトップのStart/Stop/Log＋スタートアップ登録、実行済み）を追加。`start_all.ps1`に`-LogFile`を追加（PowerShell 5.1のリダイレクトはUTF-16になるため`cmd /c`でリダイレクト）。
+
+### 📚 (5) 「承認するまで辞典に入らない」は守られていなかった（コミット `73d2ed54`）
+
+- 旧ポータルの辞典同期（`/api/admin/knowledge/sync`）は`review_status`を見ずに統合しており、承認待ち450件中197件が既に辞典へ統合済みだった（DBで承認済みに是正済み）。
+- 3時間おきの`ktm-cloud-worker.yml` dict-syncは`KTM_CRON_SECRET`未設定で**9月から毎回スキップして成功表示**だった。05の`/api/knowledge/integrate`（承認済みのみ統合、Bearer=`PILOT_SECRET_TOKEN`）へ切り替え、未設定時・エラー時は失敗させるようにした。
+- 05では「承認＝辞典へ統合」に一本化。旧同期の不具合2件（統合した記事が検索対象から外れてoffsetがずれ記事を飛ばす／`tags`がNULLの記事が`.not('tags','cs',..)`で常に除外される）も修正。
+
+### ⚠️ (6) Vercel ktm-pilot に `SUPABASE_SERVICE_ROLE_KEY` が無い（未解決・ユーザー作業待ち）
+
+05の`supabaseClient.ts`は管理者キーが無いと黙って公開キーに切り替える作りで、本番だけ`youtube_queue`/`edge_tasks`/`matchup_sentinel`等が`permission denied`になる（読み取りも不可）。dict-syncの手動実行で発覚（統合0件、データ変更なし）。本番でフォールバックした場合にエラーログを出すよう変更した。**Vercelへ設定→再デプロイ→dict-syncを手動実行して確認**が必要。初回で承認済み・未統合のチャンピオン付き記事144件が統合される。
+
 ## 🗺️ 3. システム構造 ＆ ディレクトリマップ
 
 ```text
@@ -279,6 +311,7 @@ my_work/
 - **既知の修正済みバグ**: `start_all.ps1` の既定モード（`-Mode edge`）は「Edge Worker Daemon起動」を謳いながら実際は SQLite時代の遺物 `task_worker.py` を起動しており、`SovereignQueue._get_conn()` 不在で起動直後にクラッシュしていた（2026-07-26修正済み）。
 - **`start_all.ps1` の簡素化 (2026-07-26)**: `-Mode all`（ポータル/Bot/Ollama/Core APIのローカル重複起動＋`sre_daemon.py`）を廃止し、Edge Worker Daemon単独起動のみに一本化した。`sre_daemon.py`はGatewayバイパス問題とクラウド側との重複巡回タスクを抱えていたため削除。唯一有用だった「字幕なし動画(youtube_absorb)の15分おき自動起票」ロジックは `edge_worker_daemon.py` 自身（`youtube_absorb_scheduler_loop`）に統合済み。
 - **2026-09-20時点の追加確認**: ローカル常駐`edge_worker_daemon.py`自体が41時間以上起票停止していたことが判明（PC起動依存という構造上、気づかれず止まり続けるリスクが現在進行形）。`scripts/ops_health_check.py`に`check_youtube_automation_freshness()`を追加済みだが動作確認は未実施（`TODO.md`のPhase2節参照）。
+- **2026-10-02時点の実態**: YouTube解析（pending処理）はPCの`edge_worker_daemon.py`のみが担当（GitHub Actionsの`youtube`ジョブは2026-07-31から手動のみ）。デーモンはスタートアップ登録済みで、稼働状況は05_PILOT `/admin/youtube` 上部で確認できる。辞典統合（dict-sync）は05_PILOTの`/api/knowledge/integrate`を3時間おきに呼ぶ。
 - 詳細な移行経緯・落とし穴は `AI_HANDOFF.md` を参照。同ファイルの方が本書より新しい場合がある。
 
 ---

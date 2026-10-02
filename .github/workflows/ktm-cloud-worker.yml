@@ -116,7 +116,9 @@ jobs:
           for i in $(seq 1 40); do
             RES=$(curl -s -X POST "$BASE" -H "Authorization: Bearer $PILOT_TOKEN" -H "Content-Type: application/json"               -d "{\"mode\":\"batch\",\"onlyApproved\":true,\"afterId\":$AFTER,\"limit\":15}")
             echo "$RES"
-            ERR=$(echo "$RES" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d.get('error') or '')" 2>/dev/null || echo "invalid response")
+            # error(全体の失敗) と errors(記事・チャンピオン単位の失敗) の両方を見る。
+            # 2026-10-02の初回実行は errors だけが返り、全件失敗なのにジョブが成功表示になった。
+            ERR=$(echo "$RES" | python3 -c "import sys,json;d=json.load(sys.stdin);e=d.get('error') or ' / '.join(d.get('errors') or []);print(e)" 2>/dev/null || echo "invalid response")
             if [ -n "$ERR" ]; then echo "::error::統合APIがエラーを返しました: $ERR"; exit 1; fi
             N=$(echo "$RES" | python3 -c "import sys,json;print(json.load(sys.stdin).get('integrated',0))")
             TOTAL=$((TOTAL + N))
