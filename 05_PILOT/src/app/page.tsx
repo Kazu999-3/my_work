@@ -11,7 +11,7 @@ import {
   Search, ShieldAlert, Swords, Zap, Skull, Shield, BookOpen, 
   ArrowLeft, ArrowRight, Clock, Activity, AlertTriangle, Layers,
   CheckCircle2, ChevronDown, ChevronUp, Timer, Star,
-  X, Check, Flame, Sparkles, Plus, Download, Bot, Target, ExternalLink, Video, Eye, Waves, Compass, Wrench, Edit3
+  X, Check, Flame, Sparkles, Plus, Download, Bot, Target, ExternalLink, Video, Eye, Waves, Compass, Wrench, Edit3, Copy
 } from "lucide-react";
 import KnowledgeIngestModal from "@/components/KnowledgeIngestModal";
 import { MatchupPicker } from "@/components/MatchupPicker";
@@ -204,6 +204,41 @@ function PilotApp() {
 
   // 📥 戦術取込モーダル状態
   const [isIngestOpen, setIsIngestOpen] = useState(false);
+
+  // 📒 攻略知見詳細ポップアップモーダル状態
+  const [selectedKnowledgeId, setSelectedKnowledgeId] = useState<string | number | null>(null);
+  const [knowledgeDetail, setKnowledgeDetail] = useState<{
+    id: string | number;
+    title: string;
+    content?: string;
+    raw_content?: string;
+    source_url?: string;
+    tags?: string[];
+    created_at?: string;
+  } | null>(null);
+  const [knowledgeLoading, setKnowledgeLoading] = useState(false);
+  const [knowledgeCopied, setKnowledgeCopied] = useState(false);
+
+  const openKnowledgeModal = async (id: string | number) => {
+    setSelectedKnowledgeId(id);
+    setKnowledgeLoading(true);
+    setKnowledgeCopied(false);
+    try {
+      const res = await fetch("/api/library", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const data = await res.json();
+      if (res.ok && data.article) {
+        setKnowledgeDetail(data.article);
+      }
+    } catch (e) {
+      console.error("知見詳細取得失敗:", e);
+    } finally {
+      setKnowledgeLoading(false);
+    }
+  };
 
   // localStorage からお気に入り、カスタムレーン設定、アイテム辞書を読み込み
   useEffect(() => {
@@ -1684,28 +1719,39 @@ function PilotApp() {
                     {selectedDetail.libraryKnowledge.map((item) => (
                       <div
                         key={item.id}
-                        className="bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-800 hover:border-zinc-700 rounded-2xl p-4 shadow-sm flex flex-col justify-between gap-3 transition group"
+                        onClick={() => openKnowledgeModal(item.id)}
+                        className="bg-gradient-to-b from-zinc-900 to-zinc-950 border border-zinc-800 hover:border-amber-500/60 rounded-2xl p-4 shadow-sm flex flex-col justify-between gap-3 transition group cursor-pointer"
+                        title="クリックしてこの知見の全文・詳細を読む"
                       >
                         <div className="space-y-2">
                           <div className="flex items-start justify-between gap-2">
                             <h4 className="text-xs sm:text-sm font-black text-zinc-200 group-hover:text-amber-400 transition leading-snug">
                               {item.title}
                             </h4>
-                            {item.sourceUrl && (
-                              <a
-                                href={item.sourceUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-zinc-500 hover:text-amber-400 transition shrink-0 p-1 rounded-lg hover:bg-zinc-800"
-                                title="元ソースを開く"
+                            <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                              {item.sourceUrl && (
+                                <a
+                                  href={item.sourceUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-zinc-500 hover:text-amber-400 transition p-1.5 rounded-lg hover:bg-zinc-800"
+                                  title="元動画・元ソースを開く"
+                                >
+                                  <ExternalLink size={13} />
+                                </a>
+                              )}
+                              <Link
+                                href={`/library?id=${item.id}`}
+                                className="text-zinc-500 hover:text-indigo-400 transition p-1.5 rounded-lg hover:bg-zinc-800"
+                                title="ライブラリ専用ページで開く"
                               >
-                                <ExternalLink size={13} />
-                              </a>
-                            )}
+                                <BookOpen size={13} />
+                              </Link>
+                            </div>
                           </div>
 
                           {item.snippet && (
-                            <p className="text-xs text-zinc-300 leading-relaxed bg-zinc-950/60 p-2.5 rounded-xl border border-zinc-900 font-mono whitespace-pre-wrap">
+                            <p className="text-xs text-zinc-300 leading-relaxed bg-zinc-950/60 p-2.5 rounded-xl border border-zinc-900 font-mono whitespace-pre-wrap group-hover:border-zinc-800 transition">
                               {item.snippet}
                             </p>
                           )}
@@ -1723,13 +1769,17 @@ function PilotApp() {
                             ))}
                           </div>
 
-                          <Link
-                            href={`/library?q=${encodeURIComponent(item.title)}`}
-                            className="text-[11px] font-bold text-amber-400/90 hover:text-amber-300 flex items-center gap-1 ml-auto"
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openKnowledgeModal(item.id);
+                            }}
+                            className="text-[11px] font-bold text-amber-400 group-hover:text-amber-300 flex items-center gap-1 ml-auto hover:underline cursor-pointer"
                           >
                             <span>詳細を読む</span>
                             <span>→</span>
-                          </Link>
+                          </button>
                         </div>
                       </div>
                     ))}
@@ -1984,6 +2034,108 @@ function PilotApp() {
         currentCustomDict={customItemDict}
         onDictionarySaved={handleDictionarySaved}
       />
+
+      {/* 📒 攻略知見詳細ポップアップモーダル */}
+      {selectedKnowledgeId && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+          onClick={() => setSelectedKnowledgeId(null)}
+        >
+          <div
+            className="bg-zinc-900 border border-zinc-800 rounded-3xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* モーダルヘッダー */}
+            <div className="p-4 sm:p-5 border-b border-zinc-800 flex items-center justify-between gap-3 bg-zinc-950/60">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="p-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 shrink-0">
+                  <BookOpen size={18} />
+                </div>
+                <h3 className="text-sm sm:text-base font-black text-zinc-100 truncate">
+                  {knowledgeDetail?.title || "攻略知見の詳細"}
+                </h3>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <Link
+                  href={`/library?id=${selectedKnowledgeId}`}
+                  className="px-2.5 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold border border-zinc-700 transition flex items-center gap-1"
+                  title="ライブラリ専用ページで開く"
+                >
+                  <ExternalLink size={12} />
+                  <span className="hidden sm:inline">ライブラリで開く</span>
+                </Link>
+                <button
+                  onClick={() => setSelectedKnowledgeId(null)}
+                  className="p-1.5 rounded-xl text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* モーダル本文 */}
+            <div className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1 text-xs sm:text-sm">
+              {knowledgeLoading ? (
+                <div className="py-20 flex flex-col items-center justify-center gap-3 text-amber-400">
+                  <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-xs text-zinc-400 font-bold">知見を読み込み中...</span>
+                </div>
+              ) : knowledgeDetail ? (
+                <>
+                  {/* メタ情報バー */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-2xl bg-zinc-950 border border-zinc-800">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {knowledgeDetail.tags?.map((t, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300 border border-zinc-700 text-[10px] font-bold"
+                        >
+                          #{t}
+                        </span>
+                      ))}
+                    </div>
+                    {knowledgeDetail.source_url && (
+                      <a
+                        href={knowledgeDetail.source_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-bold text-amber-400 hover:text-amber-300 transition"
+                      >
+                        <span>元ソース・動画を見る</span>
+                        <ExternalLink size={12} />
+                      </a>
+                    )}
+                  </div>
+
+                  {/* 本文コピーボタン */}
+                  <div className="flex justify-end">
+                    <button
+                      onClick={() => {
+                        const body = knowledgeDetail.content || knowledgeDetail.raw_content || "";
+                        navigator.clipboard.writeText(`# ${knowledgeDetail.title}\n\n${body}`).then(() => {
+                          setKnowledgeCopied(true);
+                          setTimeout(() => setKnowledgeCopied(false), 2000);
+                        });
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold border border-zinc-700 transition cursor-pointer"
+                    >
+                      {knowledgeCopied ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                      <span>{knowledgeCopied ? "コピー完了！" : "本文をコピー"}</span>
+                    </button>
+                  </div>
+
+                  {/* 本文 */}
+                  <div className="p-4 sm:p-5 rounded-2xl bg-zinc-950/70 border border-zinc-800 text-zinc-200 leading-relaxed font-mono whitespace-pre-wrap text-xs sm:text-sm">
+                    {knowledgeDetail.content || knowledgeDetail.raw_content || "本文がありません"}
+                  </div>
+                </>
+              ) : (
+                <div className="py-16 text-center text-zinc-500">知見の取得に失敗しました。</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

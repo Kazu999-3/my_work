@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { 
   BookOpen, Search, RefreshCw, ChevronRight, X, ExternalLink, 
   Sparkles, Calendar, Tag, FileText, ArrowLeft, Copy, Check
@@ -31,9 +32,13 @@ interface ArticleDetail {
 }
 
 function LibraryApp() {
+  const searchParams = useSearchParams();
+  const initialQ = searchParams?.get("q") || "";
+  const initialId = searchParams?.get("id") || null;
+
   const [articles, setArticles] = useState<ArticleItem[]>([]);
   const [totalCount, setTotalCount] = useState(0);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialQ);
   const [loading, setLoading] = useState(true);
   const [isIngestOpen, setIsIngestOpen] = useState(false);
 
@@ -42,7 +47,7 @@ function LibraryApp() {
   const [counts, setCounts] = useState({ lol: 0, general: 0, all: 0 });
 
   // 選択中記事の詳細モーダル
-  const [selectedId, setSelectedId] = useState<number | string | null>(null);
+  const [selectedId, setSelectedId] = useState<number | string | null>(initialId);
   const [detailArticle, setDetailArticle] = useState<ArticleDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -71,8 +76,17 @@ function LibraryApp() {
   };
 
   useEffect(() => {
-    fetchArticles("", "lol");
-  }, []);
+    if (initialQ) {
+      setSearch(initialQ);
+      fetchArticles(initialQ, "lol");
+    } else {
+      fetchArticles("", "lol");
+    }
+
+    if (initialId) {
+      openDetail(initialId);
+    }
+  }, [initialQ, initialId]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
