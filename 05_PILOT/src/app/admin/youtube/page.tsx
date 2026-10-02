@@ -7,6 +7,7 @@ import { Video, ListVideo, Tv, ListChecks } from 'lucide-react';
 import QueueTab from './QueueTab';
 import WatchTab from './WatchTab';
 import WorkerStatusPanel from './WorkerStatusPanel';
+import BookmarkletPanel from './BookmarkletPanel';
 
 type Tab = 'queue' | 'channel' | 'playlist';
 
@@ -61,7 +62,12 @@ function YoutubeAdminContent() {
           ))}
         </div>
 
-        {tab === 'queue' && <QueueTab />}
+        {tab === 'queue' && (
+          <div className="space-y-4">
+            <BookmarkletPanel />
+            <QueueTab />
+          </div>
+        )}
         {tab === 'channel' && <WatchTab kind="channel" />}
         {tab === 'playlist' && <WatchTab kind="playlist" />}
       </div>

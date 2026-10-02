@@ -13,6 +13,8 @@ function ShareTargetContent() {
   const [message, setMessage] = useState<string>('共有データを受信中...');
   const [manualUrl, setManualUrl] = useState<string>('');
   const [detectedTitle, setDetectedTitle] = useState<string>('');
+  // PCのブックマークレットから小窓で開かれた場合。登録後に自動で閉じて元の動画画面に戻す
+  const isPopup = searchParams?.get('popup') === '1';
 
   useEffect(() => {
     if (!searchParams) return;
@@ -51,10 +53,14 @@ function ShareTargetContent() {
         setStatus('success');
         setMessage(data.message || '✅ 解析キューに追加しました！バックグラウンドで自動解析を開始します。');
 
-        // 2秒後に自動でライブラリまたはトップへ遷移
-        setTimeout(() => {
-          router.push('/library');
-        }, 2200);
+        if (isPopup) {
+          setTimeout(() => window.close(), 1500);
+        } else {
+          // 2秒後に自動でライブラリへ遷移
+          setTimeout(() => {
+            router.push('/library');
+          }, 2200);
+        }
       } else {
         setStatus('error');
         setMessage(data.error || 'キューへの登録に失敗しました');
@@ -89,7 +95,7 @@ function ShareTargetContent() {
             <h1 className="text-sm font-black tracking-wide text-white uppercase">
               戦術インポート・クイック投函
             </h1>
-            <p className="text-[11px] text-slate-400">YouTube ＆ X (Twitter) 動画・戦術解析</p>
+            <p className="text-[11px] text-slate-400">YouTube動画を解析キューへ登録</p>
           </div>
         </div>
 
@@ -110,7 +116,7 @@ function ShareTargetContent() {
               <p className="text-xs font-bold text-emerald-300 leading-relaxed px-2">
                 {message}
               </p>
-              <p className="text-[10px] text-slate-500">間もなくライブラリへ自動移動します...</p>
+              <p className="text-[10px] text-slate-500">{isPopup ? 'この画面は自動で閉じます...' : '間もなくライブラリへ自動移動します...'}</p>
               <Link
                 href="/library"
                 className="mt-2 inline-flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 font-bold"
