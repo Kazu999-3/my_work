@@ -19,6 +19,13 @@ function ShareTargetContent() {
   useEffect(() => {
     if (!searchParams) return;
 
+    // プレイリストのまとめて登録（ブックマークレットが ids=動画ID,動画ID,... を渡す）
+    const rawIds = searchParams.get('ids') || '';
+    if (rawIds) {
+      handleBulkSubmit(rawIds.split(',').filter(Boolean), searchParams.get('title') || '');
+      return;
+    }
+
     const rawTitle = searchParams.get('title') || '';
     const rawText = searchParams.get('text') || '';
     const rawUrl = searchParams.get('url') || '';
@@ -70,6 +77,27 @@ function ShareTargetContent() {
       setStatus('error');
       setMessage(e.message || '通信エラーが発生しました');
       setManualUrl(url);
+    }
+  };
+
+  const handleBulkSubmit = async (videoIds: string[], playlistTitle: string) => {
+    setStatus('processing');
+    setMessage(`🚀 プレイリストの${videoIds.length}本を登録中...`);
+    try {
+      const res = await fetch('/api/youtube/queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoIds, source: playlistTitle }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'まとめて登録に失敗しました');
+      setStatus('success');
+      setMessage(data.message);
+      // 件数を確認できるよう、単体登録より少し長く表示してから閉じる
+      if (isPopup) setTimeout(() => window.close(), 3000);
+    } catch (e: any) {
+      setStatus('error');
+      setMessage(e.message || '通信エラーが発生しました');
     }
   };
 

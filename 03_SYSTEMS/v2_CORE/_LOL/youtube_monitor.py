@@ -357,6 +357,8 @@ def monitor_channels():
                     "channel_name": ch_name,
                     "retry_count": 0,
                     "created_at": datetime.now(timezone.utc).isoformat(),
+                    # date_added(UNIX秒)が無いとキュー一覧の並び替えで末尾に回り、追加日時も表示されない(2026-10-03)
+                    "date_added": int(time.time()),
                     "updated_at": datetime.now(timezone.utc).isoformat(),
                     "duration_sec": None
                 }
@@ -464,6 +466,8 @@ def monitor_playlists():
                     "channel_name": f"[PL] {pl_name}",
                     "retry_count": 0,
                     "created_at": datetime.now(timezone.utc).isoformat(),
+                    # date_added(UNIX秒)が無いとキュー一覧の並び替えで末尾に回り、追加日時も表示されない(2026-10-03)
+                    "date_added": int(time.time()),
                     "updated_at": datetime.now(timezone.utc).isoformat(),
                     "duration_sec": None
                 }

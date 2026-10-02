@@ -84,6 +84,66 @@ export async function GET(req: NextRequest) {
   }
 }
 
+const BULK_MAX = 200;
+
+async function fetchOEmbed(videoId: string): Promise<{ title: string | null; channel: string | null }> {
+  try {
+    const res = await fetch(
+      `https://www.youtube.com/oembed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${videoId}`)}&format=json`,
+      { cache: 'no-store' },
+    );
+    if (!res.ok) return { title: null, channel: null };
+    const o = await res.json();
+    return { title: o.title || null, channel: o.author_name || null };
+  } catch {
+    return { title: null, channel: null };
+  }
+}
+
+async function addMany(rawIds: unknown[], priority: string, source: string) {
+  const ids = Array.from(new Set(rawIds.map(String).filter((v) => /^[A-Za-z0-9_-]{11}$/.test(v)))).slice(0, BULK_MAX);
+  if (ids.length === 0) {
+    return NextResponse.json({ error: '有効な動画IDがありません' }, { status: 400 });
+  }
+
+  // 既に登録済み（解析済み・クローズ済みを含む）の動画は飛ばす
+  const { data: existing, error: exErr } = await supabase!.from('youtube_queue').select('id').in('id', ids);
+  if (exErr) throw exErr;
+  const known = new Set((existing || []).map((r: any) => r.id));
+  const fresh = ids.filter((id) => !known.has(id));
+
+  // oEmbed は1本ずつなので8件ずつ並行で取る
+  const rows: any[] = [];
+  const now = Math.floor(Date.now() / 1000);
+  for (let i = 0; i < fresh.length; i += 8) {
+    const chunk = fresh.slice(i, i + 8);
+    const metas = await Promise.all(chunk.map(fetchOEmbed));
+    chunk.forEach((id, j) => rows.push({
+      id,
+      url: `https://www.youtube.com/watch?v=${id}`,
+      title: metas[j].title || `YouTube Video (${id})`,
+      channel_name: metas[j].channel || (source ? `[PL] ${source}` : 'Unknown'),
+      status: 'pending',
+      priority,
+      retry_count: 0,
+      date_added: now,
+    }));
+  }
+
+  if (rows.length > 0) {
+    // 同時に別経路（監視など）が同じ動画を入れていても失敗しないよう、重複は無視する
+    const { error } = await supabase!.from('youtube_queue').upsert(rows, { onConflict: 'id', ignoreDuplicates: true });
+    if (error) throw error;
+  }
+
+  return NextResponse.json({
+    success: true,
+    added: rows.length,
+    skipped: ids.length - rows.length,
+    message: `${rows.length}本を解析キューに追加しました${ids.length - rows.length ? `（登録済み${ids.length - rows.length}本は飛ばしました）` : ''}。`,
+  });
+}
+
 // 2. キュー追加 (YouTubeのみ)
 export async function POST(req: NextRequest) {
   try {
@@ -92,6 +152,12 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
+
+    // プレイリストのまとめて登録（ブックマークレットがページ上の動画IDを集めて渡す）
+    if (Array.isArray(body.videoIds)) {
+      return await addMany(body.videoIds, PRIORITIES.includes(body.priority) ? body.priority : 'medium', String(body.source || ''));
+    }
+
     const { url, title } = body;
     const priority = PRIORITIES.includes(body.priority) ? body.priority : 'medium';
 

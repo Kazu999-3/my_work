@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, RefreshCw, ExternalLink, CheckCircle2, AlertTriangle, Power, Trash2 } from 'lucide-react';
+import { Plus, RefreshCw, ExternalLink, CheckCircle2, AlertTriangle, Power, Trash2, Radar, Inbox } from 'lucide-react';
 
 interface WatchItem {
   id: string;
@@ -92,6 +92,20 @@ export default function WatchTab({ kind }: { kind: 'channel' | 'playlist' }) {
         </div>
       )}
 
+      {kind === 'playlist' && (
+        <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/30 space-y-1.5">
+          <div className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+            <Inbox className="w-4 h-4" /> 受け箱プレイリストの使い方
+          </div>
+          <ol className="text-[11px] text-slate-300 space-y-0.5 list-decimal pl-4">
+            <li>YouTubeで解析用のプレイリストを作ります。公開範囲は<b>「公開」か「限定公開」</b>にしてください（非公開は読み取れません）。</li>
+            <li>そのプレイリストのURLを下に登録します（登録済みなら不要）。</li>
+            <li>あとはPCでもスマホでも、YouTubeの「保存」でそのプレイリストに入れるだけです。3時間おきの巡回でキューに追加されます。すぐ入れたいときは「今すぐ巡回」を押してください。</li>
+          </ol>
+          <p className="text-[10px] text-slate-500">巡回と解析はPCのエッジワーカーが行います。キューに入った動画はプレイリストから外しても問題ありません（解析済みの記録が残るため二重に登録されません）。</p>
+        </div>
+      )}
+
       <form
         onSubmit={(e) => { e.preventDefault(); if (url.trim()) call('add', { method: 'POST', body: JSON.stringify({ url: url.trim() }) }).then(() => setUrl('')); }}
         className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2"
@@ -137,9 +151,19 @@ export default function WatchTab({ kind }: { kind: 'channel' | 'playlist' }) {
 
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold text-slate-300">登録済みの{label}（{items.length}件）</span>
-        <button onClick={load} disabled={loading} className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer">
-          <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} /> 更新
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => call('scan', { method: 'POST', body: JSON.stringify({ action: 'scan' }) })}
+            disabled={busy !== null}
+            className="px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[11px] font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50"
+            title="チャンネルとプレイリストの新着を今すぐキューへ追加します（通常は3時間おき）"
+          >
+            <Radar className="w-3.5 h-3.5" /> 今すぐ巡回
+          </button>
+          <button onClick={load} disabled={loading} className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer">
+            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} /> 更新
+          </button>
+        </div>
       </div>
 
       <div className="space-y-2">

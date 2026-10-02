@@ -8,9 +8,30 @@ import { Bookmark, Copy, CheckCircle2 } from 'lucide-react';
 // 今開いている動画のURLを /share-target?popup=1 に小窓で渡して登録する。
 // 別サイト(youtube.com)からの fetch では Cookie(SameSite=Lax) が送られず認証が通らないため、小窓方式にしている。
 function buildBookmarklet(origin: string): string {
-  const code = `(()=>{const u=location.href;if(!/youtube\\.com|youtu\\.be/.test(u)){alert('YouTubeの動画ページで押してください');return;}`
-    + `window.open('${origin}/share-target?popup=1&url='+encodeURIComponent(u)+'&title='+encodeURIComponent(document.title.replace(/ - YouTube$/,'')),`
-    + `'ktm_pilot_share','width=440,height=520');})()`;
+  // ブックマークレットは1行に詰めるため、// コメントは使わない。
+  // プレイリストのページ、またはプレイリスト再生中の右側の一覧から動画IDを集める。
+  // URLは % を含むと javascript: URL として展開時に化けるため % を使わない書き方にしている。
+  const code = [
+    "(()=>{",
+    "const u=location.href;",
+    "if(!/youtube\\.com|youtu\\.be/.test(u)){alert('YouTubeのページで押してください');return;}",
+    `const W=q=>window.open('${origin}/share-target?popup=1&'+q,'ktm_pilot_share','width=440,height=560');`,
+    "const onPl=location.pathname==='/playlist';",
+    "const scope=onPl?document:document.querySelector('ytd-playlist-panel-renderer');",
+    `const ids=[...new Set([...(scope?scope.querySelectorAll('a[href*="/watch?v="]'):[])]`,
+    ".filter(a=>!onPl||a.href.includes('list='))",
+    ".map(a=>{try{return new URL(a.href).searchParams.get('v')}catch(e){return null}}).filter(Boolean))].slice(0,200);",
+    "if(onPl){",
+    "if(!ids.length){alert('プレイリストの動画が見つかりませんでした');return;}",
+    "if(confirm('このプレイリストの'+ids.length+'本をまとめて解析キューに登録しますか？\\n（登録済みの動画は飛ばします）'))",
+    "W('ids='+ids.join(',')+'&title='+encodeURIComponent(document.title.replace(/ - YouTube$/,'')));",
+    "return;}",
+    "if(ids.length>1&&confirm('再生中のプレイリストの'+ids.length+'本をまとめて登録しますか？\\n（キャンセルすると今の動画だけ登録します）')){",
+    "const h=document.querySelector('ytd-playlist-panel-renderer #header-description h3, ytd-playlist-panel-renderer .title');",
+    "W('ids='+ids.join(',')+'&title='+encodeURIComponent(h?h.textContent.trim():''));return;}",
+    "W('url='+encodeURIComponent(u)+'&title='+encodeURIComponent(document.title.replace(/ - YouTube$/,'')));",
+    "})()",
+  ].join('');
   return `javascript:${code}`;
 }
 
@@ -50,8 +71,8 @@ export default function BookmarkletPanel() {
         </a>
         <ol className="text-[11px] text-slate-300 space-y-0.5 list-decimal pl-4">
           <li>左のボタンを、ブラウザのブックマークバーへドラッグして登録します（バーが無ければ Ctrl+Shift+B で表示）。</li>
-          <li>YouTubeで動画（通常・Shorts・ライブ）を開いた状態で、ブックマークの「KTMに登録」を押します。</li>
-          <li>小窓が開いて解析キューに登録され、1.5秒後に自動で閉じます。</li>
+          <li>YouTubeで動画（通常・Shorts・ライブ）を開いた状態で、ブックマークの「KTMに登録」を押します。小窓で登録され、自動で閉じます。</li>
+          <li><b>プレイリスト</b>のページ（またはプレイリスト再生中）で押すと、並んでいる動画をまとめて登録できます（登録済みは飛ばします）。YouTubeは最初の約100本しか表示しないので、それ以上ある場合は下までスクロールしてから押してください。</li>
         </ol>
       </div>
       <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-500">

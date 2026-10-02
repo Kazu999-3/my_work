@@ -65,7 +65,24 @@ export async function POST(req: NextRequest) {
     if (!supabase) return NextResponse.json({ error: 'Supabaseクライアントが未初期化です' }, { status: 500 });
     const { task, label } = KINDS[kind];
 
-    const { url } = await req.json();
+    const body = await req.json();
+
+    // 今すぐ巡回: チャンネル・プレイリストの監視タスクを即時に積む（通常は3時間おき）。
+    // 受け箱プレイリストに保存した動画をすぐキューへ入れたいとき用。
+    if (body.action === 'scan') {
+      const { data: waiting } = await supabase
+        .from('edge_tasks').select('id').eq('task_type', 'youtube_channel_monitor')
+        .in('status', ['pending', 'running']).limit(1);
+      if (waiting && waiting.length > 0) {
+        return NextResponse.json({ success: true, message: '巡回は既に依頼済みです。PCのエッジワーカーが順番に処理します。' });
+      }
+      const { error } = await supabase.from('edge_tasks')
+        .insert({ task_type: 'youtube_channel_monitor', payload: { trigger: 'manual' }, status: 'pending' });
+      if (error) throw error;
+      return NextResponse.json({ success: true, message: '巡回を依頼しました。PCのエッジワーカーが数分以内にチャンネルとプレイリストの新着をキューへ追加します。' });
+    }
+
+    const { url } = body;
     if (!url || !String(url).trim()) {
       return NextResponse.json({ error: `${label}のURLを入力してください` }, { status: 400 });
     }
