@@ -300,20 +300,41 @@ const JG_PICK_GUIDES = {
   }
 };
 
+const AP_MAGICIANS = [
+  'zyra', 'lillia', 'karthus', 'evelynn', 'elise', 'nidalee', 'taliyah', 'fiddlesticks',
+  'brand', 'morgana', 'cassiopeia', 'orianna', 'syndra', 'veigar', 'viktor', 'xerath',
+  'lux', 'vex', 'aurora', 'anivia', 'ahri', 'velkoz', 'zoe', 'hwei', 'swain', 'vladimir',
+  'heimerdinger', 'teemo', 'rumble', 'kennen', 'ekko', 'diana', 'kassadin', 'leblanc', 'fizz',
+  'malzahar', 'lissandra', 'ryze', 'twistedfate', 'annie'
+];
+const ENCHANTERS = ['lulu', 'nami', 'janna', 'soraka', 'sona', 'milio', 'yuumi', 'renataglasc', 'taric', 'seraphine', 'karma', 'zilean'];
+const TANKS = ['leona', 'nautilus', 'alistar', 'braum', 'rell', 'thresh', 'blitzcrank', 'tahmkench', 'poppy', 'maokai', 'sejuani', 'zac', 'amumu', 'rammus', 'sion', 'chogath', 'ornn', 'malphite', 'shen', 'ksante'];
+const ASSASSINS = ['khazix', 'rengar', 'talon', 'zed', 'kayn', 'qiyana', 'naafiri', 'pyke', 'shaco', 'nocturne', 'katarina', 'akali', 'yone'];
+const MARKSMEN = ['jinx', 'kaisa', 'caitlyn', 'ezreal', 'vayne', 'lucian', 'sivir', 'tristana', 'ashe', 'varus', 'samira', 'zeri', 'aphelios', 'kalista', 'kogmaw', 'draven', 'missfortune', 'jhin', 'xayah', 'graves', 'kindred'];
+
 function getPickGuide(champId, roles = []) {
   if (JG_PICK_GUIDES[champId]) {
     return JG_PICK_GUIDES[champId];
   }
-  const isTank = roles.includes('Tank') || roles.includes('SUP');
-  const isAssassin = roles.includes('Assassin');
-  const isMage = roles.includes('Mage');
-  const isFighter = roles.includes('Fighter') || roles.includes('TOP') || roles.includes('JG');
+  const id = champId.toLowerCase();
+  const isTank = TANKS.includes(id);
+  const isAssassin = ASSASSINS.includes(id);
+  const isMage = AP_MAGICIANS.includes(id);
+  const isSupportEnchanter = ENCHANTERS.includes(id);
+  const isMarksman = MARKSMEN.includes(id);
+  const isFighter = !isTank && !isAssassin && !isMage && !isSupportEnchanter && !isMarksman;
 
   if (isTank) {
     return {
-      blindPick: { rating: 'A', label: '先出し安定', reason: '防具ビルドの安定感とCCによる集団戦貢献が高く、対面を選ばずに役割を果たせる。' },
+      blindPick: { rating: 'A', label: '先出し安定', reason: '高い耐久力とハードCCによる集団戦貢献が高く、対面を選ばずに役割を果たせる。' },
       counterPick: { targets: ['アサシン全般', '低耐久キャリー'], situation: '敵にアサシンや瞬間火力職が多く、味方キャリーを守るピールが必要な時。' },
       whenToPick: { teamSynergy: '味方にフロントライン（前衛）やイニシエーター（仕掛け役）が不在の時。', winCondition: '集団戦で敵の攻撃を受け止めつつCCを叩き込み、味方キャリーにダメージを出させる。' }
+    };
+  } else if (isMage) {
+    return {
+      blindPick: { rating: 'A', label: '先出し安定', reason: '長射程スキルとゾーン制圧力により、安全にウェーブクリアや牽制を行いやすい。' },
+      counterPick: { targets: ['近接メレー', '低機動力タンク'], situation: '敵が接近戦を好む構成に対し、射程外からのポークや範囲CC（足止め）が刺さる時。' },
+      whenToPick: { teamSynergy: '味方にAP魔法ダメージが不足している時、またはオブジェクト周りの視界・ゾーン制圧力を高めたい時。', winCondition: 'オブジェクト前の牽制で敵の体力を削り、不用意に入ってきた敵をフォーカスして人数差を作る。' }
     };
   } else if (isAssassin) {
     return {
@@ -321,17 +342,23 @@ function getPickGuide(champId, roles = []) {
       counterPick: { targets: ['逃げ場のないマークスマン', '低機動力メイジ'], situation: '敵のキャリーラインが薄く、一瞬のバーストで人数有利を作りやすい時。' },
       whenToPick: { teamSynergy: '敵に柔らかいキャリーが多く、味方にダメージの追従手段がある時。', winCondition: '視界の隙間から敵キャリーを暗殺し、オブジェクト戦の前に人数差を作る。' }
     };
-  } else if (isMage) {
+  } else if (isSupportEnchanter) {
     return {
-      blindPick: { rating: 'B', label: '状況見てピック', reason: '序盤の孤立戦や高機動アサシンの侵入に注意が必要。' },
-      counterPick: { targets: ['近接メレー過多', '低射程構成'], situation: '敵が近寄ってくる構成に対し、射程外からポークやAoE（範囲攻撃）で削れる時。' },
-      whenToPick: { teamSynergy: '味方チームにAP魔法ダメージが不足している時のダメージバランス補正枠。', winCondition: 'オブジェクト前の視界戦で敵を遠距離から削り、有利な集団戦を展開する。' }
+      blindPick: { rating: 'A', label: '先出し安定', reason: 'シールド・ヒール・バフによる味方キャリーの保護能力が高く、構成を選ばず活躍できる。' },
+      counterPick: { targets: ['ポーク構成', '継続戦闘型'], situation: 'サステイン（回復）勝負で優位に立てる時、または味方ハイパーキャリーを全力育成したい時。' },
+      whenToPick: { teamSynergy: '味方ADCやファイターに十分な火力があり、生存能力を高めれば勝てる構成の時。', winCondition: '集団戦で味方キャリーを徹底的にピール・強化し、敵のフォーカスを無力化して勝ち切る。' }
+    };
+  } else if (isMarksman) {
+    return {
+      blindPick: { rating: 'A', label: '先出し安定', reason: '継続的な遠距離DPSを提供し、後半スケールで試合を決定づける主戦力となる。' },
+      counterPick: { targets: ['タンク主体の低射程構成'], situation: '敵の前衛を安全圏から溶かせる時、または射程有利を押し付けられる時。' },
+      whenToPick: { teamSynergy: 'チームに安定したフロントライン（盾）やピール役が揃っている時。', winCondition: '中盤〜終盤までファームを継続し、アイテム完成後の集団戦で継続ダメージを叩き出す。' }
     };
   } else {
     return {
-      blindPick: { rating: isFighter ? 'A' : 'B', label: isFighter ? '先出し安定' : '状況見てピック', reason: 'タイマン能力とファーム速度のバランスが良く、標準的なSoloQ構成に対応可能。' },
-      counterPick: { targets: ['特定対面'], situation: '敵の弱点スキルを突けるマッチアップ、または小規模戦で有利を取れる時。' },
-      whenToPick: { teamSynergy: '小規模戦（2v2 / 3v3）を起こしやすく、味方と連携してリバーを制圧できる時。', winCondition: '序盤〜中盤の有利を広げ、パワースパイクを活かしてオブジェクトを制圧する。' }
+      blindPick: { rating: 'A', label: '先出し安定', reason: 'タイマン能力と耐久・火力のバランスが良く、SoloQでのサイドレーン主導権を握りやすい。' },
+      counterPick: { targets: ['低機動力ファイター', '特定対面'], situation: '1v1で主導権を握れるマッチアップ、または小規模戦で有利を取れる時。' },
+      whenToPick: { teamSynergy: '小規模戦（2v2 / 3v3）を起こしやすく、サイドプッシュで敵を引きつけられる時。', winCondition: 'レーン戦で有利を築き、サイドレーンの圧力または裏回りエンゲージで集団戦を崩壊させる。' }
     };
   }
 }
@@ -609,11 +636,29 @@ async function main() {
 
     summaries.push(summaryItem);
 
-    // 強み・弱み・カウンター・BANのパース
+    // 強み・弱み・カウンター・BANのパース（読点「、」で文章を切断しない安全な処理）
     const parseList = (val) => {
       if (!val) return [];
       if (Array.isArray(val)) return val;
-      return String(val).split(/[\n,、]+/).map(s => s.trim().replace(/^[-*•\s\d.]+/, '')).filter(Boolean);
+      const str = String(val).trim();
+      if (!str) return [];
+      // 改行がある場合は改行で分割
+      if (str.includes('\n')) {
+        return str.split('\n').map(s => s.trim().replace(/^[-*•\s\d.]+/, '')).filter(Boolean);
+      }
+      // 句点「。」がある文章の場合は、句点単位で分割
+      if (str.includes('。')) {
+        return str.split('。').map(s => s.trim()).filter(Boolean).map(s => s + '。');
+      }
+      // 各要素が短いキーワード（20文字未満）の場合のみカンマ/読点分割
+      if (str.includes(',') || str.includes('、')) {
+        const parts = str.split(/[,、]/).map(s => s.trim()).filter(Boolean);
+        const isShortKeywords = parts.every(p => p.length < 20);
+        if (isShortKeywords) {
+          return parts;
+        }
+      }
+      return [str];
     };
 
     // 詳細オブジェクト
@@ -648,13 +693,26 @@ async function main() {
         },
         traps: bibleData.traps.length > 0 ? bibleData.traps : (bibleData.trap ? [bibleData.trap] : []),
         rawMarkdown: bibleData.fullMarkdown,
+      } : (dbFact && (dbFact.strategy || Object.keys(dbFact).some(k => k.startsWith('sovereign_draft')))) ? {
+        playstyleSummary: dbFact.strategy || `${nameJa}のプロ戦術考察`,
+        killCombo: dbFact.power_spikes || '',
+        stages: {
+          early: '序盤の有利を築き、主導権を確保。',
+          mid: 'パワースパイクを活かしてオブジェクトに圧力をかける。',
+          late: '集団戦でキャリーを守るか敵後衛を無力化。',
+        },
+        traps: parseList(dbFact.weaknesses),
+        rawMarkdown: Object.entries(dbFact)
+          .filter(([k, v]) => (k.startsWith('sovereign_draft') || k === 'strategy') && typeof v === 'string')
+          .map(([k, v]) => v)
+          .join('\n\n---\n\n'),
       } : undefined,
       videoBibles: champVideoBibles,
       libraryKnowledge: libraryKnowledgeMap[lowerId] || libraryKnowledgeMap[champId.toLowerCase()] || [],
       matchups: dbMatchups,
       powerSpikes: dbSpikes,
       jungleTiming: dbTiming,
-      pickGuide: getPickGuide(champId, roles),
+      pickGuide: getPickGuide(champId, roles, raw.tags || []),
     };
 
     // 小文字キーでも引けるように登録

@@ -336,19 +336,26 @@ function PilotApp() {
     return map[vsEnemyId] || null;
   }, [vsEnemyId]);
 
-  // 選択中チャンピオンのロール
-  const [currentRole, setCurrentRole] = useState<string>("TOP");
-  useEffect(() => {
-    if (selectedDetail) {
-      const roles = selectedDetail.tags || [];
-      if (roles.includes("Fighter")) setCurrentRole("TOP");
-      else if (roles.includes("Assassin")) setCurrentRole("MID");
-      else if (roles.includes("Mage")) setCurrentRole("MID");
-      else if (roles.includes("Marksman")) setCurrentRole("BOT");
-      else if (roles.includes("Support")) setCurrentRole("SUP");
-      else if (roles.includes("Tank")) setCurrentRole("TOP");
+  // 選択中チャンピオンの利用可能レーン（ユーザーカスタム設定優先）
+  const availableRoles = useMemo(() => {
+    if (!selectedDetail) return ["MID"];
+    const custom = customRoles[selectedDetail.id];
+    if (custom && Array.isArray(custom) && custom.length > 0) return custom;
+    if (selectedDetail.tags && Array.isArray(selectedDetail.tags) && selectedDetail.tags.length > 0) {
+      return selectedDetail.tags;
     }
-  }, [selectedDetail]);
+    return ["MID"];
+  }, [selectedDetail, customRoles]);
+
+  // 選択中チャンピオンのロール
+  const [currentRole, setCurrentRole] = useState<string>("MID");
+  useEffect(() => {
+    if (availableRoles.length > 0) {
+      if (!availableRoles.includes(currentRole)) {
+        setCurrentRole(availableRoles[0]);
+      }
+    }
+  }, [availableRoles, currentRole]);
 
   // アーキタイプ判定
   const archetype: ChampionArchetype = useMemo(() => {
@@ -637,22 +644,28 @@ function PilotApp() {
                     <span>レーンメンテ</span>
                   </button>
 
-                  {/* レーンセレクター */}
+                  {/* レーンセレクター（対象チャンピオンの所属レーンのみ表示） */}
                   <div className="flex items-center gap-1 bg-zinc-950/80 p-1 rounded-xl border border-zinc-800">
                     <span className="text-[11px] text-zinc-400 font-bold px-1.5">レーン:</span>
-                    {["TOP", "JG", "MID", "BOT", "SUP"].map((r) => (
-                      <button
-                        key={r}
-                        onClick={() => setCurrentRole(r)}
-                        className={`px-2 py-0.5 rounded-lg text-xs font-black transition cursor-pointer ${
-                          currentRole === r
-                            ? "bg-amber-500 text-zinc-950 shadow-sm"
-                            : "text-zinc-400 hover:text-zinc-200"
-                        }`}
-                      >
-                        {r}
-                      </button>
-                    ))}
+                    {availableRoles.length === 1 ? (
+                      <span className="px-2 py-0.5 rounded-lg text-xs font-black bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        {availableRoles[0]}
+                      </span>
+                    ) : (
+                      availableRoles.map((r) => (
+                        <button
+                          key={r}
+                          onClick={() => setCurrentRole(r)}
+                          className={`px-2 py-0.5 rounded-lg text-xs font-black transition cursor-pointer ${
+                            currentRole === r
+                              ? "bg-amber-500 text-zinc-950 shadow-sm"
+                              : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+                          }`}
+                        >
+                          {r}
+                        </button>
+                      ))
+                    )}
                   </div>
                 </div>
               </div>
@@ -1339,52 +1352,66 @@ function PilotApp() {
 
                 {/* カモ vs 天敵 */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* カモ（有利） */}
-                  <div className="bg-zinc-900 border border-emerald-500/30 rounded-2xl p-4 shadow-sm">
-                    <div className="flex items-center gap-2 mb-3">
-                      <CheckCircle2 size={16} className="text-emerald-400" />
-                      <h3 className="text-sm font-black text-emerald-300">
-                        🟢 有利な相手 (カモ TOP5)
-                      </h3>
+                  {/* カモ（有利な展開・強み） */}
+                  <div className="bg-zinc-900 border border-emerald-500/30 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <CheckCircle2 size={16} className="text-emerald-400" />
+                        <h3 className="text-sm font-black text-emerald-300">
+                          🟢 有利な展開 ＆ 活かすべき強み
+                        </h3>
+                      </div>
+                      {selectedDetail.facts?.strengths && selectedDetail.facts.strengths.length > 0 ? (
+                        <div className="space-y-2 text-xs">
+                          {selectedDetail.facts.strengths.map((s, idx) => (
+                            <div key={idx} className="flex items-start gap-2 bg-zinc-950 p-2.5 rounded-xl border border-zinc-800/80 text-zinc-300 leading-relaxed">
+                              <span className="text-emerald-400 font-black mt-0.5">✓</span>
+                              <span className="leading-relaxed">{s}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-zinc-500">強み・カモ情報登録なし</p>
+                      )}
                     </div>
-                    {selectedDetail.facts?.strengths && selectedDetail.facts.strengths.length > 0 ? (
-                      <ul className="space-y-1.5 text-xs">
-                        {selectedDetail.facts.strengths.map((s, idx) => (
-                          <li key={idx} className="flex items-start gap-2 bg-zinc-950 p-2 rounded-lg border border-zinc-800/80 text-zinc-300">
-                            <span className="text-emerald-400 font-bold">✓</span>
-                            <span>{s}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-xs text-zinc-500">強み・カモ情報登録なし</p>
-                    )}
                   </div>
 
-                  {/* 天敵（不利・マストBAN） */}
-                  <div className="bg-zinc-900 border border-rose-500/30 rounded-2xl p-4 shadow-sm">
-                    <div className="flex items-center gap-2 mb-3">
-                      <ShieldAlert size={16} className="text-rose-400" />
-                      <h3 className="text-sm font-black text-rose-300">
-                        🔴 不利・天敵 (カウンター ＆ マストBAN)
-                      </h3>
-                    </div>
-                    <div className="space-y-2 text-xs">
+                  {/* 天敵（不利・カウンター・マストBAN） */}
+                  <div className="bg-zinc-900 border border-rose-500/30 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+                    <div className="space-y-2.5 text-xs">
+                      <div className="flex items-center gap-2 mb-1">
+                        <ShieldAlert size={16} className="text-rose-400" />
+                        <h3 className="text-sm font-black text-rose-300">
+                          🔴 不利・天敵 ＆ マストBAN推奨
+                        </h3>
+                      </div>
+
+                      {/* マストBAN */}
                       {selectedDetail.facts?.mustBan && selectedDetail.facts.mustBan.length > 0 && (
-                        <div className="bg-rose-950/30 p-2 rounded-lg border border-rose-500/40 text-rose-200">
-                          <span className="font-bold block text-[10px] text-rose-400 uppercase">マストBAN推奨:</span>
-                          <span className="font-bold">{selectedDetail.facts.mustBan.join(" / ")}</span>
+                        <div className="bg-rose-950/40 p-2.5 rounded-xl border border-rose-500/50 text-rose-200">
+                          <span className="font-black block text-[10px] text-rose-400 uppercase mb-0.5">🚨 マストBAN推奨</span>
+                          <span className="font-bold leading-relaxed">{selectedDetail.facts.mustBan.join(" / ")}</span>
                         </div>
                       )}
+
+                      {/* 警戒すべきカウンタータイプ */}
                       {selectedDetail.facts?.counters && selectedDetail.facts.counters.length > 0 && (
-                        <ul className="space-y-1.5">
+                        <div className="space-y-1.5">
                           {selectedDetail.facts.counters.map((c, idx) => (
-                            <li key={idx} className="flex items-start gap-2 bg-zinc-950 p-2 rounded-lg border border-zinc-800/80 text-zinc-300">
-                              <span className="text-rose-400 font-bold">✕</span>
-                              <span>{c}</span>
-                            </li>
+                            <div key={idx} className="flex items-start gap-2 bg-zinc-950 p-2.5 rounded-xl border border-rose-500/20 text-zinc-300 leading-relaxed">
+                              <span className="text-rose-400 font-black mt-0.5">✕</span>
+                              <span className="leading-relaxed">{c}</span>
+                            </div>
                           ))}
-                        </ul>
+                        </div>
+                      )}
+
+                      {/* 弱点・脆さ */}
+                      {selectedDetail.facts?.weaknesses && selectedDetail.facts.weaknesses.length > 0 && (
+                        <div className="mt-2 bg-zinc-950/60 p-2.5 rounded-xl border border-zinc-800/80 text-zinc-400 text-[11px] leading-relaxed">
+                          <span className="text-amber-400 font-bold block mb-0.5">⚠️ 立ち回りの注意点・弱点</span>
+                          {selectedDetail.facts.weaknesses.join(" ")}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1590,28 +1617,83 @@ function PilotApp() {
                   </div>
                 )}
 
-                {/* 動画バイブルがない場合のライブラリ逆引きバナー */}
+                {/* 動画バイブル（videoBibles）がない場合、ライブラリ知見を展開 */}
                 {(!selectedDetail.videoBibles || selectedDetail.videoBibles.length === 0) && (
-                  <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
-                    <div className="flex items-center gap-2.5">
-                      <BookOpen size={16} className="text-zinc-400" />
-                      <div>
-                        <h4 className="text-xs sm:text-sm font-black text-zinc-200">
-                          ライブラリから {selectedDetail.jpName} の過去記事・動画を探す
-                        </h4>
-                        <p className="text-[11px] text-zinc-400">
-                          全952件のナレッジアーカイブから関連戦術を逆引き検索できます
-                        </p>
+                  selectedDetail.libraryKnowledge && selectedDetail.libraryKnowledge.length > 0 ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <BookOpen size={18} className="text-amber-400" />
+                          <h3 className="text-sm sm:text-base font-black text-zinc-100">
+                            🧠 プロ・チャレンジャー実戦思考録（ライブラリ連携: {selectedDetail.libraryKnowledge.length}件）
+                          </h3>
+                        </div>
+                        <span className="text-[11px] text-zinc-400 font-bold bg-zinc-900 px-2.5 py-1 rounded-lg border border-zinc-800">
+                          個人ナレッジ連動
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {selectedDetail.libraryKnowledge.map((item) => (
+                          <div
+                            key={item.id}
+                            onClick={() => openKnowledgeModal(item.id)}
+                            className="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 hover:border-amber-500/50 transition cursor-pointer group flex flex-col justify-between"
+                          >
+                            <div className="space-y-1.5">
+                              <div className="flex items-start justify-between gap-2">
+                                <h4 className="text-xs font-black text-zinc-200 group-hover:text-amber-400 transition leading-snug">
+                                  {item.title}
+                                </h4>
+                                {item.sourceUrl && (
+                                  <a
+                                    href={item.sourceUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="text-zinc-500 hover:text-amber-400 shrink-0 p-1 rounded hover:bg-zinc-800"
+                                    title="元ソースを開く"
+                                  >
+                                    <ExternalLink size={12} />
+                                  </a>
+                                )}
+                              </div>
+                              {item.snippet && (
+                                <p className="text-[11px] text-zinc-400 leading-relaxed font-mono line-clamp-3">
+                                  {item.snippet}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-zinc-900 text-[10px]">
+                              <span className="text-zinc-500">{item.tags?.slice(0, 3).map(t => `#${t}`).join(' ')}</span>
+                              <span className="text-amber-400 font-bold group-hover:translate-x-0.5 transition">詳細を読む →</span>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                    <Link
-                      href={`/library?q=${encodeURIComponent(selectedDetail.id)}`}
-                      className="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-bold transition flex items-center gap-1.5 shrink-0"
-                    >
-                      <Search size={13} />
-                      <span>ライブラリで検索 ↗</span>
-                    </Link>
-                  </div>
+                  ) : (
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+                      <div className="flex items-center gap-2.5">
+                        <BookOpen size={16} className="text-zinc-400" />
+                        <div>
+                          <h4 className="text-xs sm:text-sm font-black text-zinc-200">
+                            ライブラリから {selectedDetail.jpName} の過去記事・動画を探す
+                          </h4>
+                          <p className="text-[11px] text-zinc-400">
+                            全952件のナレッジアーカイブから関連戦術を逆引き検索できます
+                          </p>
+                        </div>
+                      </div>
+                      <Link
+                        href={`/library?q=${encodeURIComponent(selectedDetail.id)}`}
+                        className="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-bold transition flex items-center gap-1.5 shrink-0"
+                      >
+                        <Search size={13} />
+                        <span>ライブラリで検索 ↗</span>
+                      </Link>
+                    </div>
+                  )
                 )}
 
                 {/* ⚠️ 絶対地雷行動（トラップ） */}
