@@ -131,13 +131,13 @@ function ShareTargetContent() {
 
               <form onSubmit={handleManualSubmit} className="space-y-3">
                 <label className="block text-[11px] font-bold text-slate-300">
-                  動画またはXのポストURL
+                  YouTube動画のURL
                 </label>
                 <input
                   type="url"
                   value={manualUrl}
                   onChange={(e) => setManualUrl(e.target.value)}
-                  placeholder="https://youtube.com/watch?v=... または https://x.com/..."
+                  placeholder="https://youtube.com/watch?v=..."
                   className="w-full bg-[#101014] border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                   required
                 />

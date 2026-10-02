@@ -15,7 +15,8 @@ interface QueueItem {
   status: 'pending' | 'processing' | 'completed' | 'failed';
   priority?: 'high' | 'medium' | 'low';
   retry_count: number;
-  date_added: string;
+  /** UNIX秒（DBはbigint） */
+  date_added: number | null;
   published_at?: string;
 }
 
@@ -83,15 +84,15 @@ function YoutubeQueueManagerContent() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('この動画をキューから削除しますか？')) return;
+    if (!confirm('この動画をキューからクローズしますか？（記録は残り、監視で再登録されなくなります）')) return;
     setActionLoading('delete_' + id);
     try {
       const res = await fetch(`/api/youtube/queue?id=${id}`, { method: 'DELETE' });
       if (res.ok) {
-        showMessage('削除しました', 'success');
+        showMessage('クローズしました', 'success');
         setQueue((prev) => prev.filter((item) => item.id !== id));
       } else {
-        showMessage('削除に失敗しました', 'error');
+        showMessage('クローズに失敗しました', 'error');
       }
     } catch {
       showMessage('通信エラーが発生しました', 'error');
@@ -383,7 +384,7 @@ function YoutubeQueueManagerContent() {
                       </td>
 
                       <td className="py-3 px-3 hidden md:table-cell text-[11px] text-slate-500">
-                        {item.date_added ? new Date(item.date_added).toLocaleString('ja-JP') : '-'}
+                        {item.date_added ? new Date(Number(item.date_added) * 1000).toLocaleString('ja-JP') : '-'}
                       </td>
 
                       <td className="py-3 px-4 text-right">
@@ -410,7 +411,7 @@ function YoutubeQueueManagerContent() {
                           <button
                             onClick={() => handleDelete(item.id)}
                             disabled={actionLoading === 'delete_' + item.id}
-                            title="キューから削除"
+                            title="キューからクローズ"
                             className="p-1.5 rounded bg-slate-950 border border-slate-800 text-rose-400 hover:bg-slate-800 transition-colors disabled:opacity-50"
                           >
                             <Trash2 className="w-3.5 h-3.5" />

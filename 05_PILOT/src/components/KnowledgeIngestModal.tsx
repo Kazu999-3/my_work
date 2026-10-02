@@ -22,7 +22,7 @@ interface QueueItem {
   status: string;
   retry_count: number;
   priority?: string;
-  date_added?: string;
+  date_added?: number;
 }
 
 export default function KnowledgeIngestModal({
@@ -197,7 +197,7 @@ export default function KnowledgeIngestModal({
     }
   };
 
-  // YouTubeキュー削除
+  // YouTubeキューからクローズ（行は残して manually_closed にする）
   const handleDeleteQueue = async (id: string) => {
     try {
       await fetch(`/api/youtube/queue?id=${encodeURIComponent(id)}`, { method: "DELETE" });
@@ -576,7 +576,7 @@ export default function KnowledgeIngestModal({
                         <button
                           onClick={() => handleDeleteQueue(item.id)}
                           className="p-1.5 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-zinc-800 transition cursor-pointer"
-                          title="キューから削除"
+                          title="キューからクローズ"
                         >
                           <Trash2 size={13} />
                         </button>

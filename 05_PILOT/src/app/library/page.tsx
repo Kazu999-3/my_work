@@ -223,7 +223,7 @@ function LibraryApp() {
                       alert(d.error || 'キュー追加に失敗しました');
                     }
                   } else {
-                    const manual = prompt('YouTubeまたはXのURLを入力してください:');
+                    const manual = prompt('YouTubeのURLを入力してください（Xの投稿は「ナレッジ取り込み」から）:');
                     if (manual) {
                       const res = await fetch('/api/youtube/queue', {
                         method: 'POST',
@@ -239,7 +239,7 @@ function LibraryApp() {
                     }
                   }
                 } catch {
-                  const manual = prompt('YouTubeまたはXのURLを入力してください:');
+                  const manual = prompt('YouTubeのURLを入力してください（Xの投稿は「ナレッジ取り込み」から）:');
                   if (manual) {
                     const res = await fetch('/api/youtube/queue', {
                       method: 'POST',
@@ -256,7 +256,7 @@ function LibraryApp() {
                 }
               }}
               className="px-3 py-1.5 rounded-xl bg-indigo-900/60 hover:bg-indigo-800 border border-indigo-700/60 text-indigo-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
-              title="コピーしたYouTube/XのURLを解析キューに即追加"
+              title="コピーしたYouTubeのURLを解析キューに即追加"
             >
               <Sparkles size={13} className="text-indigo-400" />
               <span>📋 URL投函</span>
