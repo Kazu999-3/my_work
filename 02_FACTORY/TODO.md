@@ -53,6 +53,9 @@
   - プロンプト第8柱（`youtube_bible_forge` / Supabase ＆ ローカルフォールバック）に「ピック判断基準」を統合。
   - `compile_champions.mjs` および `champions_detail_map.json`: 全173体へ `pickGuide`（先出し適性/後出しカウンター/構成トリガー）を注入。
   - `05_PILOT/src/app/page.tsx`: 詳細画面へ「🎯 ピック判断ガイド」カードを新設。先出しS/A/B/C、後出し刺さり相手、味方構成シナジーを直感表示。
+- [x] **動画解析プロンプトの5大キラー要素（劣勢逆転・スキル温存・視界赤トリ・買い物判断・ピン誘導）完全網羅統合**:
+  - Supabase `agent_prompts` および `youtube_absorber.py` のローカルフォールバックへ、JG勝率直結の5大アドリブ要素（崩壊試合のクロストレード、CC/移動スキルの温存我慢、オラクルレンズ切り替え秒数、端数ゴールドの妥協買い、味方を動かすピン誘導）を体系的に統合。
+  - `bible_dispatcher.py` のnoteストック構成ドラフトを改修し、劣勢逆転エピソードとスキル温存のWhyを標準装備化。
 - [x] **既存176本の超高速・ゼロコスト棚卸しバッチ実行（`bible_restructure_batch.py`）**:
   - 重い動画DLやGemini APIを一切使わず、ローカルの既存Markdown（176本）から7秒で再仕分けを完遂。
   - `note_stocks/` に **176本** のnote執筆ストックを即時生成。
