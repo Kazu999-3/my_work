@@ -37,6 +37,10 @@ function LibraryApp() {
   const [loading, setLoading] = useState(true);
   const [isIngestOpen, setIsIngestOpen] = useState(false);
 
+  // 🧭 カテゴリ切り替え ('lol' | 'general')
+  const [activeCategory, setActiveCategory] = useState<'lol' | 'general'>('lol');
+  const [counts, setCounts] = useState({ lol: 0, general: 0, all: 0 });
+
   // 選択中記事の詳細モーダル
   const [selectedId, setSelectedId] = useState<number | string | null>(null);
   const [detailArticle, setDetailArticle] = useState<ArticleDetail | null>(null);
@@ -44,14 +48,15 @@ function LibraryApp() {
   const [copied, setCopied] = useState(false);
 
   // 記事一覧フェッチ
-  const fetchArticles = async (query = "") => {
+  const fetchArticles = async (query = "", cat: 'lol' | 'general' = activeCategory) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/library?q=${encodeURIComponent(query)}&limit=60`);
+      const res = await fetch(`/api/library?q=${encodeURIComponent(query)}&category=${cat}&limit=60`);
       const data = await res.json();
       if (res.ok && data.articles) {
         setArticles(data.articles);
         setTotalCount(data.total || data.articles.length);
+        if (data.counts) setCounts(data.counts);
       }
     } catch (e) {
       console.error("ライブラリ取得エラー:", e);
@@ -60,8 +65,13 @@ function LibraryApp() {
     }
   };
 
+  const handleCategoryChange = (cat: 'lol' | 'general') => {
+    setActiveCategory(cat);
+    fetchArticles(search, cat);
+  };
+
   useEffect(() => {
-    fetchArticles();
+    fetchArticles("", "lol");
   }, []);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -105,6 +115,59 @@ function LibraryApp() {
 
       {/* 📖 メインコンテンツ */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 space-y-4">
+        {/* 🧭 カテゴリ切り替えタブ (LoL戦術 vs 一般・AIナレッジ) */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-zinc-800/80 pb-3">
+          <div className="flex items-center gap-1.5 p-1 bg-zinc-900 rounded-xl border border-zinc-800 w-fit">
+            <button
+              onClick={() => handleCategoryChange('lol')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black transition cursor-pointer ${
+                activeCategory === 'lol'
+                  ? 'bg-amber-500 text-zinc-950 shadow-md scale-102'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+              }`}
+            >
+              <span>🎮 LoL戦術アーカイブ</span>
+              {counts.lol > 0 && (
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                  activeCategory === 'lol' ? 'bg-zinc-950/20 text-zinc-950' : 'bg-zinc-800 text-amber-300'
+                }`}>
+                  {counts.lol}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => handleCategoryChange('general')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black transition cursor-pointer ${
+                activeCategory === 'general'
+                  ? 'bg-indigo-600 text-white shadow-md scale-102'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+              }`}
+            >
+              <span>💡 AI・一般ナレッジ</span>
+              {counts.general > 0 && (
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                  activeCategory === 'general' ? 'bg-indigo-950 text-indigo-200' : 'bg-zinc-800 text-zinc-300'
+                }`}>
+                  {counts.general}
+                </span>
+              )}
+            </button>
+          </div>
+
+          <div className="text-xs text-zinc-400 font-bold px-1">
+            {activeCategory === 'lol' ? (
+              <span className="text-emerald-400 flex items-center gap-1">
+                ✓ 全てチャンピオン辞典またはレーンガイドに直結済み
+              </span>
+            ) : (
+              <span className="text-indigo-300">
+                過去のAI開発・ChatGPT・note制作メモ（独立退避エリア）
+              </span>
+            )}
+          </div>
+        </div>
+
         {/* 検索バー ＆ カウンター */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-zinc-900/90 p-2.5 rounded-2xl border border-zinc-800 shadow-sm">
           <form onSubmit={handleSearchSubmit} className="relative w-full sm:w-96 flex gap-2">
