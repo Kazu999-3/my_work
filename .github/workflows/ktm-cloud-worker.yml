@@ -7,11 +7,11 @@ name: KTM Cloud Worker
 #             GitHub Actionsの共有IP自体がYouTube側から低信用と判定され、動画に
 #             よって取得に失敗し続ける（同じ動画を別IPから叩くと成功する）。
 #             クラウドで安定しないため、workflow_dispatchでの手動実行のみ残す。
-#  - dict-sync: 3時間おきにナレッジ→チャンピオン辞典の同期（knowledge/sync をチャンクで回す）
+#  - dict-sync: 3時間おきに承認済みのナレッジをチャンピオン辞典へ統合（05_PILOT /api/knowledge/integrate）
 #
 # 元々は prospect が動画を見つける → youtube が解析する → dict-sync が辞典へ反映する、
 # という流れだったが、youtubeジョブの定期実行停止により現在は手動実行が必要。
-# 必要シークレット: SUPABASE_URL, SUPABASE_SERVICE_KEY, GEMINI_API_KEY, KTM_CRON_SECRET
+# 必要シークレット: SUPABASE_URL, SUPABASE_SERVICE_KEY, GEMINI_API_KEY, PILOT_SECRET_TOKEN
 
 on:
   schedule:
@@ -97,21 +97,32 @@ jobs:
         run: python scripts/youtube_worker.py
 
   dict-sync:
+    # 2026-10-02: 旧ポータル(my-work-8jbd)の knowledge/sync を呼んでいたが、KTM_CRON_SECRET が
+    # 未設定のため毎回「スキップ」して成功表示になっており、9月以降何も同期していなかった。
+    # 05_PILOT の /api/knowledge/integrate（承認済みの記事だけを辞典へ統合）へ切り替えた。
+    # 必要シークレット: PILOT_SECRET_TOKEN（Vercel ktm-pilot の同名の環境変数と同じ値）
+    # 未設定のときはスキップではなく失敗させ、止まっていることに気づけるようにする。
     if: github.event_name == 'workflow_dispatch' && (github.event.inputs.job == 'dict-sync' || github.event.inputs.job == 'both') || (github.event_name == 'schedule' && github.event.schedule == '7 */3 * * *')
     runs-on: ubuntu-latest
     steps:
-      - name: Run knowledge -> dictionary sync (chunked)
+      - name: Integrate approved library articles into the champion dictionary
         env:
-          CRON_SECRET: ${{ secrets.KTM_CRON_SECRET }}
+          PILOT_TOKEN: ${{ secrets.PILOT_SECRET_TOKEN }}
         run: |
-          if [ -z "$CRON_SECRET" ]; then echo "::warning::KTM_CRON_SECRET未設定のためスキップ"; exit 0; fi
-          BASE="https://my-work-8jbd.vercel.app/api/admin/knowledge/sync"
-          OFFSET=0
-          for i in $(seq 1 30); do
-            RES=$(curl -s -X POST "$BASE" -H "Authorization: Bearer $CRON_SECRET" -H "Content-Type: application/json" -d "{\"offset\":$OFFSET,\"limit\":15}")
+          if [ -z "$PILOT_TOKEN" ]; then echo "::error::PILOT_SECRET_TOKEN が未設定のため辞典への統合を実行できません"; exit 1; fi
+          BASE="https://ktm-pilot.vercel.app/api/knowledge/integrate"
+          AFTER=0
+          TOTAL=0
+          for i in $(seq 1 40); do
+            RES=$(curl -s -X POST "$BASE" -H "Authorization: Bearer $PILOT_TOKEN" -H "Content-Type: application/json"               -d "{\"mode\":\"batch\",\"onlyApproved\":true,\"afterId\":$AFTER,\"limit\":15}")
             echo "$RES"
-            DONE=$(echo "$RES" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d.get('done',True))" 2>/dev/null || echo True)
-            NEXT=$(echo "$RES" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d.get('nextOffset') or '')" 2>/dev/null || echo '')
-            if [ "$DONE" = "True" ] || [ -z "$NEXT" ]; then echo "同期完了"; break; fi
-            OFFSET=$NEXT
+            ERR=$(echo "$RES" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d.get('error') or '')" 2>/dev/null || echo "invalid response")
+            if [ -n "$ERR" ]; then echo "::error::統合APIがエラーを返しました: $ERR"; exit 1; fi
+            N=$(echo "$RES" | python3 -c "import sys,json;print(json.load(sys.stdin).get('integrated',0))")
+            TOTAL=$((TOTAL + N))
+            DONE=$(echo "$RES" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d.get('done',True))")
+            NEXT=$(echo "$RES" | python3 -c "import sys,json;print(json.load(sys.stdin).get('nextAfterId') or '')")
+            if [ "$DONE" = "True" ] || [ -z "$NEXT" ]; then break; fi
+            AFTER=$NEXT
           done
+          echo "辞典へ統合した記事: ${TOTAL}件"

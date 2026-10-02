@@ -18,8 +18,8 @@ interface ReviewItem {
 interface RosterChampion { id: string; name: string }
 
 // AIが自動生成した記事（動画解析の記事本体・記事から分割した知見）の承認画面。
-// 承認するまで辞典同期にもトレンド集計にも使われない。旧ポータル /admin/knowledge の
-// 「未承認ナレッジ」パネルを移植したもの（Geminiを使う辞典反映プレビューは移していない）。
+// 承認すると、ほかの記事と同じようにチャンピオン辞典へ統合される（チャンピオン無しは
+// レーン一般論としてライブラリに残る）。旧ポータル /admin/knowledge の「未承認ナレッジ」を移植。
 export default function ReviewPage() {
   const [items, setItems] = useState<ReviewItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -28,7 +28,7 @@ export default function ReviewPage() {
   const [type, setType] = useState<'' | 'video' | 'atomic'>('');
   const [edits, setEdits] = useState<Record<number, string>>({});
   const [selected, setSelected] = useState<Set<number>>(new Set());
-  const [mergeToDict, setMergeToDict] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -91,7 +91,7 @@ export default function ReviewPage() {
 
   const approveOne = async (item: ReviewItem) => {
     const champion = edits[item.id] ?? (item.isLaneGeneral ? '' : nameOf(item.champion));
-    if (await post({ id: item.id, action: 'approve', champion, mergeToDict })) removeFromList([item.id]);
+    if (await post({ id: item.id, action: 'approve', champion })) removeFromList([item.id]);
   };
   const rejectOne = async (item: ReviewItem) => {
     if (!confirm(`「${item.title}」を却下して削除しますか？`)) return;
@@ -101,9 +101,41 @@ export default function ReviewPage() {
     const ids = Array.from(selected);
     if (ids.length === 0) return;
     if (!confirm(action === 'approve'
-      ? `選択した${ids.length}件を承認しますか？（チャンピオン判定はAIの判定のまま保存されます）`
+      ? `選択した${ids.length}件を承認して辞典へ統合しますか？（チャンピオン判定はAIの判定のまま使います）`
       : `選択した${ids.length}件を却下して削除しますか？`)) return;
-    if (await post({ ids, action, mergeToDict })) removeFromList(ids);
+    if (await post({ ids, action })) removeFromList(ids);
+  };
+
+  // チャンピオンが付いている承認待ちの記事を、id順に少しずつ辞典へ統合する
+  const integrateAllPending = async () => {
+    if (!confirm('チャンピオンが付いている承認待ちの記事を、AIの判定のまますべて辞典へ統合しますか？\n（チャンピオン無しの記事は対象外です）')) return;
+    setBusy(true);
+    let afterId = 0;
+    let integrated = 0;
+    const errors: string[] = [];
+    try {
+      for (let i = 0; i < 100; i++) {
+        setBulkProgress(`統合中… ${integrated}件完了`);
+        const res = await fetch('/api/knowledge/integrate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode: 'batch', onlyPending: true, afterId, limit: 15 }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || '統合に失敗しました');
+        integrated += json.integrated || 0;
+        errors.push(...(json.errors || []));
+        if (json.done || !json.nextAfterId) break;
+        afterId = json.nextAfterId;
+      }
+      showMessage(`${integrated}件を辞典へ統合しました${errors.length ? `（失敗 ${errors.length}件: ${errors.slice(0, 2).join(' / ')}）` : ''}`, errors.length ? 'error' : 'success');
+    } catch (e: any) {
+      showMessage(`${integrated}件まで統合して停止しました: ${e.message}`, 'error');
+    } finally {
+      setBusy(false);
+      setBulkProgress(null);
+      load();
+    }
   };
 
   const toggle = (set: Set<number>, id: number) => {
@@ -121,8 +153,8 @@ export default function ReviewPage() {
               <ClipboardCheck className="w-6 h-6 text-amber-400" /> 生成記事の承認
             </h1>
             <p className="text-xs text-slate-400 mt-1">
-              動画解析などでAIが自動生成した記事です。承認するまで辞典への同期やトレンド集計には使われません。
-              チャンピオン判定を確認し、違っていれば直してから承認してください（空欄＝レーン一般論）。
+              動画解析などでAIが自動生成した記事です。承認すると、ほかの記事と同じようにチャンピオン辞典へ統合されます。
+              チャンピオン判定を確認し、違っていれば直してから承認してください（空欄＝レーン一般論としてライブラリに残ります）。
             </p>
           </div>
           <Link href="/admin/youtube" className="shrink-0 text-xs text-slate-400 hover:text-white">← 動画解析センター</Link>
@@ -153,10 +185,13 @@ export default function ReviewPage() {
             <span className="text-xs text-slate-400">承認待ち <b className="text-amber-300 font-mono">{total}</b>件（古い順）</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <label className="flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer select-none" title="承認時に champion_facts の戦略欄へ要約を1行追記します（上限4,000字を超える場合は追記しません）">
-              <input type="checkbox" checked={mergeToDict} onChange={(e) => setMergeToDict(e.target.checked)} className="accent-amber-500" />
-              承認時に辞典の戦略欄へ1行追記
-            </label>
+            <button
+              onClick={integrateAllPending}
+              disabled={busy || loading || total === 0}
+              className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50"
+            >
+              {bulkProgress || 'チャンピオン付きをまとめて統合'}
+            </button>
             <button onClick={load} disabled={loading} className="px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-300 flex items-center gap-1 cursor-pointer">
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> 更新
             </button>
@@ -177,7 +212,7 @@ export default function ReviewPage() {
             {selected.size > 0 && (
               <>
                 <button onClick={() => batch('approve')} disabled={busy} className="px-3 py-1.5 rounded-lg bg-emerald-950/30 border border-emerald-800/60 text-emerald-400 text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> 選択分を承認
+                  <CheckCircle2 className="w-3.5 h-3.5" /> 選択分を承認して統合
                 </button>
                 <button onClick={() => batch('reject')} disabled={busy} className="px-3 py-1.5 rounded-lg bg-rose-950/30 border border-rose-800/60 text-rose-400 text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50">
                   <XCircle className="w-3.5 h-3.5" /> 選択分を却下
@@ -246,7 +281,7 @@ export default function ReviewPage() {
                       <XCircle className="w-3.5 h-3.5" /> 却下
                     </button>
                     <button onClick={() => approveOne(item)} disabled={busy} className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> 承認
+                      <CheckCircle2 className="w-3.5 h-3.5" /> 承認して統合
                     </button>
                   </div>
                 </div>

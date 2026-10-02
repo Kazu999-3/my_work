@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 import { getRoster, resolveRosterChampion } from '@/lib/championRoster';
+import { integrateArticles } from '@/lib/knowledgeIntegrate';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,12 +9,14 @@ export const dynamic = 'force-dynamic';
 // 承認するまで辞典同期(knowledge/sync)にもトレンド集計にも使われない（2026-08-15/16 に導入）。
 // 旧ポータルの pending-review を移植したもの。Gemini を使う「辞典反映プレビュー」は移していない。
 //
+// 2026-10-02: 旧ポータルの辞典同期は review_status を見ずに統合しており、「承認するまで辞典に
+// 入らない」は実際には守られていなかった（承認待ち450件中197件が統合済みだった）。
+// そこで「承認＝辞典へ統合」に一本化した。チャンピオンが無い記事(レーン一般論)は
+// 統合先が無いため、承認済みとしてライブラリに残す。
+//
 // personal_knowledge で「特定チャンピオンではない（レーン一般論）」を表す値
 const NO_CHAMPION = 'Unknown';
 const PAGE_SIZE = 30;
-// champion_facts.strategy の上限。旧実装は追記後に先頭4000字で切っていたため、
-// 上限に達すると今回の追記分が黙って消えていた。超える場合は追記しない。
-const STRATEGY_MAX = 4000;
 
 export async function GET(req: NextRequest) {
   try {
@@ -26,7 +29,9 @@ export async function GET(req: NextRequest) {
     let query = supabase
       .from('personal_knowledge')
       .select('id, title, content, champion, parent_id, is_atomic, source_url, created_at', { count: 'exact' })
-      .eq('review_status', 'pending');
+      .eq('review_status', 'pending')
+      // 統合済み（ライブラリ側で削除扱い）の記事は承認待ちに出さない
+      .or('tags.is.null,tags.not.cs.{__DELETED__}');
     if (champion) query = query.eq('champion', champion);
     if (type === 'atomic') query = query.eq('is_atomic', true);
     if (type === 'video') query = query.eq('is_atomic', false);
@@ -64,7 +69,7 @@ export async function POST(req: NextRequest) {
   try {
     if (!supabase) return NextResponse.json({ error: 'Supabaseクライアントが未初期化です' }, { status: 500 });
     const body = await req.json();
-    const { action, champion, mergeToDict } = body;
+    const { action, champion } = body;
     const ids: number[] = (Array.isArray(body.ids) ? body.ids : body.id ? [body.id] : [])
       .map(Number).filter((n: number) => Number.isFinite(n) && n > 0).slice(0, 200);
     if (ids.length === 0) return NextResponse.json({ error: '対象の id / ids が必要です' }, { status: 400 });
@@ -101,34 +106,22 @@ export async function POST(req: NextRequest) {
       .update(update)
       .in('id', ids)
       .eq('review_status', 'pending')
-      .select('id, title, content, champion');
+      .select('id, title, content, raw_content, champion');
     if (error) throw error;
 
-    // 任意: 承認と同時に champion_facts.strategy へ要約を1行追記する（旧ポータルの「即時マージ」）
-    let merged = 0;
-    let skippedFull = 0;
-    if (mergeToDict) {
-      for (const row of rows || []) {
-        if (!row.champion || row.champion === NO_CHAMPION) continue;
-        const { data: fact } = await supabase
-          .from('champion_facts').select('champion, strategy').ilike('champion', row.champion).maybeSingle();
-        if (!fact) continue;
-        const snippet = `\n- 【知見】${row.title}: ${String(row.content || '').slice(0, 150)}`;
-        const next = (fact.strategy || '') + snippet;
-        if (next.length > STRATEGY_MAX) { skippedFull++; continue; }
-        const { error: upErr } = await supabase
-          .from('champion_facts').update({ strategy: next, updated_at: new Date().toISOString() }).eq('champion', fact.champion);
-        if (!upErr) merged++;
-      }
-    }
-
+    // 承認した記事を辞典へ統合する（チャンピオンの無い記事は承認済みのままライブラリに残る）
+    const result = await integrateArticles(supabase, rows || []);
     const n = rows?.length || 0;
+    const kept = result.skippedNoChampion.length;
     return NextResponse.json({
-      success: true,
+      success: result.errors.length === 0,
       count: n,
-      merged,
-      skippedFull,
-      message: `${n}件を承認しました${mergeToDict ? `（辞典へ追記 ${merged}件${skippedFull ? `・上限のため見送り ${skippedFull}件` : ''}）` : ''}`,
+      integrated: result.integrated.length,
+      keptAsLaneGeneral: kept,
+      errors: result.errors,
+      message: `${n}件を承認し、${result.integrated.length}件を辞典へ統合しました`
+        + (kept ? `（チャンピオン無し${kept}件はレーン一般論としてライブラリに残しました）` : '')
+        + (result.errors.length ? `。失敗: ${result.errors.join(' / ')}` : ''),
     });
   } catch (e: any) {
     console.error('[knowledge/review] POST Error:', e);

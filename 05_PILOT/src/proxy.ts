@@ -26,6 +26,12 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // GitHub Actions の定期実行（辞典への統合）だけは Cookie を持てないため Bearer で受け付ける
+  if (nextUrl.pathname === '/api/knowledge/integrate') {
+    const auth = request.headers.get('authorization') || '';
+    if (auth.startsWith('Bearer ') && verifyToken(auth.slice(7))) return NextResponse.next();
+  }
+
   if (nextUrl.pathname.startsWith('/api/')) {
     return NextResponse.json({ error: '認証が必要です。/login から合言葉を入力してください。' }, { status: 401 });
   }
