@@ -222,15 +222,39 @@ function LibraryApp() {
                       )}
                     </div>
 
-                    {/* タグ ＆ 関連チャンピオン */}
-                    <div className="flex items-center gap-1.5 flex-wrap text-[10px]">
-                      {champs.map((c) => (
-                        <span key={c} className="px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-300 font-bold border border-amber-500/20">
-                          {c}
-                        </span>
+                    {/* 🎯 紐付き先ジャンプ（チャンピオン辞典 または レーンガイド） */}
+                    <div className="flex items-center gap-1.5 flex-wrap text-[11px] pt-1">
+                      {champs.filter(c => c !== "Unknown").map((c) => (
+                        <Link
+                          key={c}
+                          href={`/?c=${encodeURIComponent(c)}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 border border-amber-500/30 transition font-black"
+                          title={`${c} のチャンピオン辞典・ビルドへジャンプ`}
+                        >
+                          <img
+                            src={getChampIcon(c)}
+                            alt={c}
+                            className="w-4 h-4 rounded-full object-cover border border-amber-400/40"
+                            onError={(ev) => { (ev.target as HTMLElement).style.display = 'none'; }}
+                          />
+                          <span>{c} 辞典 ↗</span>
+                        </Link>
                       ))}
-                      {a.tags && Array.isArray(a.tags) && a.tags.slice(0, 3).map((t) => (
-                        <span key={t} className="px-1.5 py-0.2 rounded bg-zinc-950 text-zinc-400 border border-zinc-800">
+
+                      {(!a.champion || a.champion === "Unknown" || champs.length === 0) && (
+                        <Link
+                          href="/lane-guides"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 hover:text-emerald-200 border border-emerald-500/30 transition font-black"
+                          title="全JG共通の普遍的マクロ（レーンガイド）へジャンプ"
+                        >
+                          <span>📚 レーンガイド(JG) ↗</span>
+                        </Link>
+                      )}
+
+                      {a.tags && Array.isArray(a.tags) && a.tags.slice(0, 2).map((t) => (
+                        <span key={t} className="px-1.5 py-0.5 rounded bg-zinc-950 text-zinc-400 border border-zinc-800 text-[10px]">
                           {t}
                         </span>
                       ))}
@@ -286,8 +310,8 @@ function LibraryApp() {
                 <div className="py-20 text-center text-zinc-500">記事データを取得中...</div>
               ) : detailArticle ? (
                 <>
-                  {/* 双方向連携バナー（該当チャンピオンが存在する場合） */}
-                  {detailArticle.champion && (
+                  {/* 双方向連携バナー */}
+                  {detailArticle.champion && detailArticle.champion !== "Unknown" ? (
                     <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-xs">
                       <div className="flex items-center gap-2">
                         <img
@@ -304,7 +328,7 @@ function LibraryApp() {
                           href={`/?c=${encodeURIComponent(detailArticle.champion)}`}
                           className="px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-[11px] font-bold transition flex items-center gap-1"
                         >
-                          👑 辞典でスキル詳細を見る
+                          👑 辞典でビルド・思考録を見る
                         </Link>
                         <Link
                           href={`/coach?my=${encodeURIComponent(detailArticle.champion)}`}
@@ -313,6 +337,21 @@ function LibraryApp() {
                           🤖 AIコーチで設計図を見る
                         </Link>
                       </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-xs">
+                      <div className="flex items-center gap-2">
+                        <BookOpen size={16} className="text-emerald-400" />
+                        <span className="font-bold text-emerald-200">
+                          分類: 全JG共通の普遍的マクロ知見
+                        </span>
+                      </div>
+                      <Link
+                        href="/lane-guides"
+                        className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-[11px] font-bold transition flex items-center gap-1"
+                      >
+                        📚 レーンガイド（JG章）で読む ↗
+                      </Link>
                     </div>
                   )}
 

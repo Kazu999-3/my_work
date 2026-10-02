@@ -1240,9 +1240,19 @@ function PilotApp() {
                           🎬 実戦動画 プロの思考録・生々しいWhy ({selectedDetail.videoBibles.length}本収録)
                         </h3>
                       </div>
-                      <span className="text-[11px] text-zinc-400 font-bold bg-zinc-900 px-2.5 py-1 rounded-lg border border-zinc-800">
-                        YouTube高レート実戦から蒸留
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/library?q=${encodeURIComponent(selectedDetail.id)}`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-bold transition shadow-sm"
+                          title="ライブラリ全952件からこのチャンピオンの記事・動画を検索"
+                        >
+                          <BookOpen size={13} />
+                          <span>📚 ライブラリで全件検索 ↗</span>
+                        </Link>
+                        <span className="hidden sm:inline-block text-[11px] text-zinc-400 font-bold bg-zinc-900 px-2.5 py-1 rounded-lg border border-zinc-800">
+                          YouTube高レート実戦から蒸留
+                        </span>
+                      </div>
                     </div>
 
                     <div className="space-y-4">
@@ -1376,6 +1386,30 @@ function PilotApp() {
                         </div>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {/* 動画バイブルがない場合のライブラリ逆引きバナー */}
+                {(!selectedDetail.videoBibles || selectedDetail.videoBibles.length === 0) && (
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+                    <div className="flex items-center gap-2.5">
+                      <BookOpen size={16} className="text-zinc-400" />
+                      <div>
+                        <h4 className="text-xs sm:text-sm font-black text-zinc-200">
+                          ライブラリから {selectedDetail.jpName} の過去記事・動画を探す
+                        </h4>
+                        <p className="text-[11px] text-zinc-400">
+                          全952件のナレッジアーカイブから関連戦術を逆引き検索できます
+                        </p>
+                      </div>
+                    </div>
+                    <Link
+                      href={`/library?q=${encodeURIComponent(selectedDetail.id)}`}
+                      className="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-bold transition flex items-center gap-1.5 shrink-0"
+                    >
+                      <Search size={13} />
+                      <span>ライブラリで検索 ↗</span>
+                    </Link>
                   </div>
                 )}
 
