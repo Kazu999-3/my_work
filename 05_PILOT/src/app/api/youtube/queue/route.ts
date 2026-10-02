@@ -15,7 +15,16 @@ function isXUrl(url: string): boolean {
   return /(?:^|\/\/|\.)(x\.com|twitter\.com)\//i.test(url);
 }
 
+export const QUEUE_STATUSES = [
+  'pending', 'processing', 'completed', 'on_hold',
+  'error_generation', 'error_no_transcript', 'failed', 'manually_closed',
+] as const;
+const ERROR_STATUSES = ['error_generation', 'error_no_transcript', 'failed'];
+const PRIORITIES = ['high', 'medium', 'low'];
+
 // 1. キュー一覧取得
+// 一覧はサーバー側で絞り込み・ページ送りする（全1,300件超を毎回送らない）。
+// 件数(counts)は絞り込みと無関係に全件から数える。以前は先頭100件だけで集計しており不正確だった。
 export async function GET(req: NextRequest) {
   try {
     if (!supabase) {
@@ -23,24 +32,59 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const limit = parseInt(searchParams.get('limit') || '30', 10);
+    const limit = Math.min(200, Math.max(1, parseInt(searchParams.get('limit') || '30', 10) || 30));
+    const offset = Math.max(0, parseInt(searchParams.get('offset') || '0', 10) || 0);
+    const status = searchParams.get('status') || '';
+    const channel = searchParams.get('channel') || '';
+    const sort = searchParams.get('sort') === 'published_at' ? 'published_at' : 'date_added';
+    // PostgREST の or() 構文を壊す文字は除去する
+    const q = (searchParams.get('q') || '').replace(/[,()*%\\]/g, ' ').trim();
+    const withMeta = searchParams.get('meta') === '1';
 
-    const { data, error } = await supabase
-      .from('youtube_queue')
-      .select('*')
-      .order('date_added', { ascending: false })
-      .limit(limit);
+    let query = supabase.from('youtube_queue').select('*', { count: 'exact' });
+    if (status === 'errors') query = query.in('status', ERROR_STATUSES);
+    else if (status && status !== 'all') query = query.eq('status', status);
+    if (channel) query = query.eq('channel_name', channel);
+    if (q) query = query.or(`title.ilike.%${q}%,channel_name.ilike.%${q}%,id.ilike.%${q}%`);
+    query = query
+      .order(sort, { ascending: false, nullsFirst: false })
+      .order('id', { ascending: true })
+      .range(offset, offset + limit - 1);
 
+    const { data, error, count } = await query;
     if (error) throw error;
 
-    return NextResponse.json({ success: true, items: data || [] });
+    let counts: Record<string, number> | undefined;
+    let channels: string[] | undefined;
+    if (withMeta) {
+      const results = await Promise.all(
+        QUEUE_STATUSES.map((st) =>
+          supabase!.from('youtube_queue').select('id', { count: 'exact', head: true }).eq('status', st),
+        ),
+      );
+      counts = {};
+      QUEUE_STATUSES.forEach((st, i) => { counts![st] = results[i].count || 0; });
+
+      // Supabase は1回1,000行までなので分割して取得する
+      const names = new Set<string>();
+      for (let from = 0; ; from += 1000) {
+        const { data: rows, error: chErr } = await supabase
+          .from('youtube_queue').select('channel_name').order('id').range(from, from + 999);
+        if (chErr) throw chErr;
+        (rows || []).forEach((r: any) => r.channel_name && names.add(r.channel_name));
+        if (!rows || rows.length < 1000) break;
+      }
+      channels = Array.from(names).sort((x, y) => x.localeCompare(y, 'ja'));
+    }
+
+    return NextResponse.json({ success: true, items: data || [], total: count ?? 0, counts, channels });
   } catch (e: any) {
     console.error('Queue取得エラー:', e);
     return NextResponse.json({ error: e.message || '内部エラー' }, { status: 500 });
   }
 }
 
-// 2. キュー追加 (YouTube / X 両対応)
+// 2. キュー追加 (YouTubeのみ)
 export async function POST(req: NextRequest) {
   try {
     if (!supabase) {
@@ -48,7 +92,8 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { url, title, priority = 'medium' } = body;
+    const { url, title } = body;
+    const priority = PRIORITIES.includes(body.priority) ? body.priority : 'medium';
 
     if (!url) {
       return NextResponse.json({ error: 'URLが必要です' }, { status: 400 });
@@ -155,7 +200,11 @@ export async function DELETE(req: NextRequest) {
   }
 }
 
-// 4. キューステータス更新 (再試行/ステータス変更)
+// 4. キューの更新
+//   { id, status, resetRetries }       … 単体のステータス変更（再試行・保留・保留解除）
+//   { action: 'retry_all_errors' }     … エラー系をまとめて pending に戻す
+//   { action: 'set_priority', id, priority }
+//   { action: 'close', ids: [...] }    … まとめて manually_closed にする
 export async function PATCH(req: NextRequest) {
   try {
     if (!supabase) {
@@ -163,14 +212,46 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { id, status, resetRetries } = body;
+    const { action } = body;
 
-    if (!id || !status) {
-      return NextResponse.json({ error: 'id と status が必要です' }, { status: 400 });
+    if (action === 'retry_all_errors') {
+      const { data, error } = await supabase
+        .from('youtube_queue')
+        .update({ status: 'pending', retry_count: 0 })
+        .in('status', ERROR_STATUSES)
+        .select('id');
+      if (error) throw error;
+      return NextResponse.json({ success: true, count: data?.length || 0, message: `${data?.length || 0}件のエラー動画を解析待ちに戻しました。` });
+    }
+
+    if (action === 'set_priority') {
+      if (!body.id || !PRIORITIES.includes(body.priority)) {
+        return NextResponse.json({ error: 'id と priority(high/medium/low) が必要です' }, { status: 400 });
+      }
+      const { data, error } = await supabase
+        .from('youtube_queue').update({ priority: body.priority }).eq('id', body.id).select().single();
+      if (error) throw error;
+      return NextResponse.json({ success: true, item: data });
+    }
+
+    if (action === 'close') {
+      const ids: string[] = Array.isArray(body.ids) ? body.ids.map(String).slice(0, 500) : [];
+      if (ids.length === 0) {
+        return NextResponse.json({ error: '対象の動画が指定されていません' }, { status: 400 });
+      }
+      const { data, error } = await supabase
+        .from('youtube_queue').update({ status: 'manually_closed' }).in('id', ids).select('id');
+      if (error) throw error;
+      return NextResponse.json({ success: true, count: data?.length || 0, message: `${data?.length || 0}件をクローズしました。` });
+    }
+
+    const { id, status, resetRetries } = body;
+    if (!id || !QUEUE_STATUSES.includes(status)) {
+      return NextResponse.json({ error: 'id と有効な status が必要です' }, { status: 400 });
     }
 
     const updates: any = { status };
-    if (resetRetries) updates.retry_count = 0;
+    if (resetRetries || status === 'pending') updates.retry_count = 0;
 
     const { data, error } = await supabase
       .from('youtube_queue')
