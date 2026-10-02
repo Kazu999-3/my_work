@@ -285,13 +285,10 @@ function PilotApp() {
         c.id.toLowerCase().includes(q) ||
         matchAlias;
 
+      const targetRoles = roleFilter === "ADC" ? ["ADC", "BOT"] : [roleFilter];
       const matchRole =
         roleFilter === "ALL" ||
-        (roleFilter === "TOP" && c.roles.some((r) => ["Fighter", "Tank"].includes(r))) ||
-        (roleFilter === "JG" && c.roles.some((r) => ["Fighter", "Assassin", "Tank"].includes(r))) ||
-        (roleFilter === "MID" && c.roles.some((r) => ["Mage", "Assassin"].includes(r))) ||
-        (roleFilter === "ADC" && c.roles.includes("Marksman")) ||
-        (roleFilter === "SUP" && c.roles.some((r) => ["Support", "Tank", "Mage"].includes(r)));
+        c.roles.some((r) => targetRoles.includes(r));
 
       const matchFav = !showFavoritesOnly || favorites.includes(c.id);
 

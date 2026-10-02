@@ -73,6 +73,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 46.2
   },
@@ -150,6 +151,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 2,
     "tier": "C",
     "winRate": 44.2
   },
@@ -227,6 +229,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "A",
     "winRate": 51.8
   },
@@ -305,6 +308,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 4,
     "tier": "C",
     "winRate": 45
   },
@@ -382,6 +386,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 4,
     "tier": "C",
     "winRate": 48.9
   },
@@ -459,6 +464,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 4,
     "tier": "C"
   },
   {
@@ -536,6 +542,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "S",
     "winRate": 50.2
   },
@@ -613,6 +620,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 44.5
   },
@@ -691,6 +699,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 2,
     "tier": "C"
   },
   {
@@ -770,6 +779,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 41.2
   },
@@ -848,6 +858,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 5,
     "tier": "A",
     "winRate": 50.8
   },
@@ -925,6 +936,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 2,
     "tier": "C",
     "winRate": 48.5
   },
@@ -1002,6 +1014,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 2,
     "tier": "A",
     "winRate": 49.8
   },
@@ -1079,6 +1092,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 3,
     "tier": "A",
     "winRate": 50.8
   },
@@ -1156,6 +1170,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 46.8
   },
@@ -1234,6 +1249,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 45.8
   },
@@ -1311,6 +1327,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 16,
     "tier": "A",
     "winRate": 49.8
   },
@@ -1388,6 +1405,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 46.8
   },
@@ -1465,6 +1483,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 7,
     "tier": "A",
     "winRate": 49.8
   },
@@ -1543,6 +1562,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 3,
     "tier": "B",
     "winRate": 49.8
   },
@@ -1620,6 +1640,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "C",
     "winRate": 46.8
   },
@@ -1697,6 +1718,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "C",
     "winRate": 48.7
   },
@@ -1776,6 +1798,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 48.2
   },
@@ -1859,6 +1882,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "B",
     "winRate": 49.8
   },
@@ -1937,6 +1961,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 3,
     "tier": "C",
     "winRate": 48.2
   },
@@ -2015,6 +2040,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "A",
     "winRate": 50.1
   },
@@ -2092,6 +2118,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "C",
     "winRate": 42.8
   },
@@ -2171,6 +2198,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 9,
     "tier": "A",
     "winRate": 49.8
   },
@@ -2249,6 +2277,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 48.9
   },
@@ -2326,6 +2355,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 48.1
   },
@@ -2403,6 +2433,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 2,
     "tier": "A",
     "winRate": 51.4
   },
@@ -2480,6 +2511,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 2,
     "tier": "C",
     "winRate": 46.8
   },
@@ -2558,6 +2590,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C"
   },
   {
@@ -2634,6 +2667,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "C",
     "winRate": 46.8
   },
@@ -2711,6 +2745,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 14,
     "tier": "A",
     "winRate": 50.8
   },
@@ -2788,6 +2823,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "B",
     "winRate": 49.5
   },
@@ -2865,6 +2901,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "C",
     "winRate": 48.5
   },
@@ -2942,6 +2979,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 41.2
   },
@@ -3020,6 +3058,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 44.1
   },
@@ -3098,6 +3137,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 3,
     "tier": "C",
     "winRate": 48.5
   },
@@ -3176,6 +3216,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "C",
     "winRate": 48.9
   },
@@ -3254,6 +3295,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 3,
     "tier": "C",
     "winRate": 48.9
   },
@@ -3331,6 +3373,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 46.8
   },
@@ -3409,6 +3452,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 47.1
   },
@@ -3487,6 +3531,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 2,
     "tier": "C",
     "winRate": 46.8
   },
@@ -3565,6 +3610,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 45.8
   },
@@ -3643,6 +3689,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "B",
     "winRate": 48.9
   },
@@ -3720,6 +3767,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 10,
     "tier": "A",
     "winRate": 51.2
   },
@@ -3798,6 +3846,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 46.8
   },
@@ -3877,6 +3926,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "B",
     "winRate": 48.7
   },
@@ -3956,6 +4006,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 2,
     "tier": "B",
     "winRate": 49.6
   },
@@ -4033,6 +4084,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 5,
     "tier": "A",
     "winRate": 49.8
   },
@@ -4110,6 +4162,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 48.7
   },
@@ -4187,6 +4240,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 3,
     "tier": "C",
     "winRate": 48.7
   },
@@ -4265,6 +4319,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 46.8
   },
@@ -4342,6 +4397,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 3,
     "tier": "A",
     "winRate": 50.1
   },
@@ -4419,6 +4475,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "C",
     "winRate": 44.5
   },
@@ -4496,6 +4553,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 45.1
   },
@@ -4574,6 +4632,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 48.7
   },
@@ -4651,6 +4710,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "B",
     "winRate": 50
   },
@@ -4729,6 +4789,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "A",
     "winRate": 51.3
   },
@@ -4807,6 +4868,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 2,
     "tier": "A",
     "winRate": 51.2
   },
@@ -4886,6 +4948,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 3,
     "tier": "B",
     "winRate": 48.9
   },
@@ -4964,6 +5027,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "A",
     "winRate": 50.8
   },
@@ -5041,6 +5105,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 44.2
   },
@@ -5118,6 +5183,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "S"
   },
   {
@@ -5194,6 +5260,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 9,
     "tier": "A",
     "winRate": 50.8
   },
@@ -5271,6 +5338,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 49.8
   },
@@ -5350,6 +5418,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 2,
     "tier": "C",
     "winRate": 44.8
   },
@@ -5428,6 +5497,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "C",
     "winRate": 48.7
   },
@@ -5506,6 +5576,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 44.2
   },
@@ -5583,6 +5654,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 9,
     "tier": "B",
     "winRate": 49.8
   },
@@ -5661,6 +5733,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 2,
     "tier": "A",
     "winRate": 51.1
   },
@@ -5739,6 +5812,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "B",
     "winRate": 49.8
   },
@@ -5816,6 +5890,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 48.5
   },
@@ -5893,6 +5968,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "C"
   },
   {
@@ -5969,6 +6045,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C"
   },
   {
@@ -6045,6 +6122,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "A",
     "winRate": 50.8
   },
@@ -6122,6 +6200,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "C"
   },
   {
@@ -6198,6 +6277,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 48.7
   },
@@ -6276,6 +6356,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "S",
     "winRate": 50.8
   },
@@ -6355,6 +6436,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 48.9
   },
@@ -6432,6 +6514,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "A",
     "winRate": 49.8
   },
@@ -6509,6 +6592,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 44.8
   },
@@ -6586,6 +6670,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "C",
     "winRate": 48.7
   },
@@ -6663,6 +6748,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "A",
     "winRate": 49.8
   },
@@ -6740,6 +6826,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "C",
     "winRate": 48.6
   },
@@ -6818,6 +6905,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 2,
     "tier": "C",
     "winRate": 48.7
   },
@@ -6895,6 +6983,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 2,
     "tier": "C",
     "winRate": 44.1
   },
@@ -6974,6 +7063,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 46.2
   },
@@ -7052,6 +7142,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 44.1
   },
@@ -7129,6 +7220,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "C",
     "winRate": 48.5
   },
@@ -7207,6 +7299,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "C",
     "winRate": 44.1
   },
@@ -7284,6 +7377,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "A",
     "winRate": 51.4
   },
@@ -7361,6 +7455,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "A",
     "winRate": 51.2
   },
@@ -7439,6 +7534,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 9,
     "tier": "A",
     "winRate": 50.8
   },
@@ -7517,6 +7613,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 48.5
   },
@@ -7595,6 +7692,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 2,
     "tier": "B",
     "winRate": 48.5
   },
@@ -7672,6 +7770,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 48.5
   },
@@ -7750,6 +7849,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 5,
     "tier": "A",
     "winRate": 49.8
   },
@@ -7828,6 +7928,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 6,
     "tier": "B",
     "winRate": 49.8
   },
@@ -7906,6 +8007,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 48.7
   },
@@ -7983,6 +8085,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 3,
     "tier": "C",
     "winRate": 48.2
   },
@@ -8061,6 +8164,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "C",
     "winRate": 48.5
   },
@@ -8138,6 +8242,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "B",
     "winRate": 49.8
   },
@@ -8215,6 +8320,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "B",
     "winRate": 48.9
   },
@@ -8293,6 +8399,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "S",
     "winRate": 51.4
   },
@@ -8371,6 +8478,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 48.7
   },
@@ -8448,6 +8556,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 2,
     "tier": "C",
     "winRate": 48.9
   },
@@ -8525,6 +8634,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "C",
     "winRate": 48.2
   },
@@ -8602,6 +8712,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 44.5
   },
@@ -8680,6 +8791,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 4,
     "tier": "B",
     "winRate": 48.9
   },
@@ -8758,6 +8870,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "B",
     "winRate": 49.8
   },
@@ -8835,6 +8948,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C"
   },
   {
@@ -8911,6 +9025,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 48.9
   },
@@ -8988,6 +9103,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 48.9
   },
@@ -9066,6 +9182,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 3,
     "tier": "A",
     "winRate": 48.7
   },
@@ -9143,6 +9260,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "A",
     "winRate": 51.4
   },
@@ -9220,6 +9338,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "C",
     "winRate": 48.7
   },
@@ -9297,6 +9416,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 5,
     "tier": "A",
     "winRate": 49.8
   },
@@ -9374,6 +9494,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 48.2
   },
@@ -9451,6 +9572,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 2,
     "tier": "C",
     "winRate": 46.8
   },
@@ -9528,6 +9650,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "C",
     "winRate": 48.9
   },
@@ -9607,6 +9730,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "B",
     "winRate": 49.6
   },
@@ -9685,6 +9809,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "A",
     "winRate": 50.1
   },
@@ -9762,6 +9887,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 43.1
   },
@@ -9840,6 +9966,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "C",
     "winRate": 48.7
   },
@@ -9918,6 +10045,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "A",
     "winRate": 51.4
   },
@@ -9997,6 +10125,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 48.5
   },
@@ -10074,6 +10203,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "A",
     "winRate": 50.8
   },
@@ -10151,6 +10281,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 48.1
   },
@@ -10230,6 +10361,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 3,
     "tier": "C",
     "winRate": 42.1
   },
@@ -10309,6 +10441,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 4,
     "tier": "A",
     "winRate": 51.2
   },
@@ -10386,6 +10519,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 46.8
   },
@@ -10464,6 +10598,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "A",
     "winRate": 50.1
   },
@@ -10541,6 +10676,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "B",
     "winRate": 49.8
   },
@@ -10618,6 +10754,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 3,
     "tier": "A",
     "winRate": 51.4
   },
@@ -10696,6 +10833,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "A",
     "winRate": 50.8
   },
@@ -10774,6 +10912,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 7,
     "tier": "A",
     "winRate": 49.8
   },
@@ -10852,6 +10991,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 2,
     "tier": "A",
     "winRate": 50.8
   },
@@ -10930,6 +11070,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "A",
     "winRate": 50.8
   },
@@ -11007,6 +11148,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 46.8
   },
@@ -11086,6 +11228,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "C",
     "winRate": 48.6
   },
@@ -11163,6 +11306,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 48.4
   },
@@ -11240,6 +11384,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 2,
     "tier": "C",
     "winRate": 41.2
   },
@@ -11318,6 +11463,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 48.9
   },
@@ -11395,6 +11541,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "C",
     "winRate": 48.9
   },
@@ -11472,6 +11619,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "B",
     "winRate": 49.6
   },
@@ -11551,6 +11699,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "C",
     "winRate": 44.5
   },
@@ -11629,6 +11778,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 2,
     "tier": "B",
     "winRate": 48.7
   },
@@ -11706,6 +11856,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "S",
     "winRate": 50.2
   },
@@ -11784,6 +11935,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 46.8
   },
@@ -11861,6 +12013,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "C",
     "winRate": 48.2
   },
@@ -11939,6 +12092,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 44.8
   },
@@ -12016,6 +12170,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 41.2
   },
@@ -12095,6 +12250,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "C",
     "winRate": 42.1
   },
@@ -12172,6 +12328,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "A",
     "winRate": 51.4
   },
@@ -12251,6 +12408,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 48.9
   },
@@ -12328,6 +12486,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 7,
     "tier": "A",
     "winRate": 48.9
   },
@@ -12405,6 +12564,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "C",
     "winRate": 47.1
   },
@@ -12483,6 +12643,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 46.2
   },
@@ -12560,6 +12721,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 8,
     "tier": "A",
     "winRate": 50.1
   },
@@ -12637,6 +12799,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 2,
     "tier": "C",
     "winRate": 41.2
   },
@@ -12715,6 +12878,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "B",
     "winRate": 48.5
   },
@@ -12792,6 +12956,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 2,
     "tier": "C",
     "winRate": 41.2
   },
@@ -12869,6 +13034,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 48.7
   },
@@ -12946,6 +13112,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 2,
     "tier": "B",
     "winRate": 49.8
   },
@@ -13023,6 +13190,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 48.9
   },
@@ -13100,6 +13268,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 1,
     "tier": "C",
     "winRate": 48.2
   },
@@ -13177,6 +13346,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "C",
     "winRate": 48.9
   },
@@ -13254,6 +13424,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 3,
     "tier": "A",
     "winRate": 49.8
   },
@@ -13331,6 +13502,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 0,
     "tier": "A",
     "winRate": 49.8
   },
@@ -13409,6 +13581,7 @@
       }
     },
     "hasBible": true,
+    "videoBibleCount": 5,
     "tier": "A",
     "winRate": 51.4
   }
