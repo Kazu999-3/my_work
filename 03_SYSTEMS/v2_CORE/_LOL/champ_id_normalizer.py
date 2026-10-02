@@ -84,6 +84,8 @@ KNOWN_ALIASES: Dict[str, str] = {
     "naafiri": "Naafiri",
     "ailious": "Aphelios",
     "aphelios": "Aphelios",
+    "zahan": "Zaahen",
+    "zaahen": "Zaahen",
 }
 
 _ddragon_id_map: Optional[Dict[str, str]] = None
@@ -178,3 +180,25 @@ def normalize_champion_id(champ_name_or_id: str) -> str:
     
     # 見つからない場合は元の文字列を返す
     return s
+
+
+def resolve_roster_champion(champ_name_or_id: str) -> Optional[str]:
+    """
+    正規化したうえで、DDragon に実在するチャンピオンIDだけを返す（実在しなければ None）。
+    normalize_champion_id() は見つからない文字列をそのまま返すため、ファイル名の断片
+    （"D", "ji", "genre" 等）が「チャンピオン名」として保存されていた(2026-10-02発覚)。
+    DDragon の一覧が取得できないときも None を返すので、呼び出し側で
+    is_roster_available() を確認して処理自体を見送ること。
+    """
+    if not champ_name_or_id or not str(champ_name_or_id).strip():
+        return None
+    mapping = load_ddragon_mapping()
+    if not mapping:
+        return None
+    cid = normalize_champion_id(champ_name_or_id)
+    return cid if cid in set(mapping.values()) else None
+
+
+def is_roster_available() -> bool:
+    """DDragon のチャンピオン一覧を取得できているか"""
+    return bool(load_ddragon_mapping())

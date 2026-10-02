@@ -14,7 +14,7 @@ import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from v2_CORE.knowledge_revisions import record_matchup_sentinel_revision
-from v2_CORE._LOL.champ_id_normalizer import normalize_champion_id
+from v2_CORE._LOL.champ_id_normalizer import normalize_champion_id, resolve_roster_champion, is_roster_available
 from v2_CORE.settings import settings
 
 dotenv.load_dotenv(settings.ROOT_DIR / ".env")
@@ -160,6 +160,20 @@ class SovereignSync:
             logger.error(f"❌ 辞典同期失敗 ({champion}): {res.status_code} {res.text[:200]}")
             return False
 
+    @staticmethod
+    def _source_url(md_file, content: str, is_kirei: bool) -> str:
+        """
+        元動画へ辿れるURLを返す。以前は常にPCのファイルパス(D:/my_work/...md)を保存しており、
+        ライブラリから元動画を開けなかった。kirei_bible はファイル名が動画IDなのでそれを使い、
+        それ以外は本文中の最初の YouTube URL、どちらも無ければファイルパスにする。
+        """
+        if is_kirei and re.fullmatch(r"[A-Za-z0-9_-]{11}", md_file.stem):
+            return f"https://www.youtube.com/watch?v={md_file.stem}"
+        m = re.search(r"https?://(?:www\.)?(?:youtube\.com/watch\?v=|youtu\.be/)[A-Za-z0-9_-]{11}", content)
+        if m:
+            return m.group(0)
+        return str(md_file)
+
     def sync_articles(self):
         """02_FACTORY/PRODUCTS/ARTICLES 内の .md ファイルを全て同期"""
         if not self.ready:
@@ -180,6 +194,12 @@ class SovereignSync:
             logger.warning("⚠️ 記事フォルダに.mdファイルが見つかりません。")
             return
 
+        # 記事は title で upsert するため、チャンピオン一覧が取れないまま進むと
+        # 全記事の champion を None で上書きしてしまう。その場合は今回の同期を見送る。
+        if not is_roster_available():
+            logger.error("❌ DDragonのチャンピオン一覧を取得できないため、記事同期を見送ります。")
+            return
+
         logger.info(f"📂 {len(md_files)} 件の記事ファイルを検出 (複数ディレクトリ合計)")
 
         synced = 0
@@ -197,7 +217,16 @@ class SovereignSync:
                     # カンマ区切りで複数チャンピオン名をパース
                     candidates = [c.strip() for c in raw.split(",") if c.strip()]
                     fake_champs = {"unknown", "[youtube]", "youtube", "jungle", "jg", "lol", "article", "draft", "system", "live", "global", "test", "sns", "macro"}
-                    valid = [c for c in candidates if c.lower() not in fake_champs]
+                    # 実在チャンピオンだけを残す（綴り違いは別名表で正規化、架空の値は捨てる）
+                    valid = []
+                    for c in candidates:
+                        if c.lower() in fake_champs:
+                            continue
+                        cid = resolve_roster_champion(c)
+                        if cid and cid not in valid:
+                            valid.append(cid)
+                        elif not cid:
+                            logger.warning(f"  ⚠️ {md_file.name}: 実在しないチャンピオン指定を無視しました: {c}")
                     if valid:
                         explicit_champions = valid
                         explicit_champion = valid[0]  # 先頭を代表チャンピオンとして使用
@@ -215,8 +244,13 @@ class SovereignSync:
                         break
 
                 # --- チャンピオン名の解析ロジックを強化 ---
+                is_kirei = "kirei_bible" in md_file.parts
                 if explicit_champion:
                     champion = explicit_champion
+                elif is_kirei:
+                    # kirei_bible のファイル名は動画ID・genre_xxx・INDEX で、チャンピオン名を含まない。
+                    # ファイル名から推測すると "O1W_XG5nvYU.md" → "O1W" のような断片が保存されていた。
+                    champion = "Unknown"
                 else:
                     parts = title.split("_")
                     champion = "Unknown"
@@ -245,9 +279,10 @@ class SovereignSync:
                     if champion in fake_champions or champion.lower() in fake_champions:
                         champion = "Unknown"
                         
-                    # YouTube動画ID等（Kirei_bible等での英数字羅列）の誤検知を防止
-                    if len(champion) >= 6 and not re.match(r"^[A-Z][a-z]+$", champion) and ("kirei_bible" in md_file.parts or len(parts) == 1):
-                        champion = "Unknown"
+                    # 最後に実在チャンピオンか確認する（以前は6文字以上の英数字だけを弾いており、
+                    # 短い断片や汎用語がすり抜けていた）
+                    if champion != "Unknown":
+                        champion = resolve_roster_champion(champion) or "Unknown"
 
                 # キーワード抽出
                 keywords = self.extract_keywords(content)
@@ -255,8 +290,6 @@ class SovereignSync:
                     if champ_name not in keywords:
                         keywords.insert(0, champ_name)
 
-                # Kireiバイブル判定
-                is_kirei = "kirei_bible" in md_file.parts
 
                 # チャンピオン辞典へ統合を試みる（複数チャンピオン対応）
                 champions_to_sync = explicit_champions if explicit_champions else ([champion] if champion != "Unknown" else [])
@@ -289,7 +322,7 @@ class SovereignSync:
                     "raw_content": content,
                     "champion": champion if champion != "Unknown" else None,
                     "tags": keywords,
-                    "source_url": str(md_file)
+                    "source_url": self._source_url(md_file, content, is_kirei),
                 }
 
                 res = httpx.post(
