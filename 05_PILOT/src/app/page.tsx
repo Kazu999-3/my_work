@@ -14,6 +14,7 @@ import {
   X, Check, Flame, Sparkles, Plus, Download, Bot, Target
 } from "lucide-react";
 import KnowledgeIngestModal from "@/components/KnowledgeIngestModal";
+import { MatchupPicker } from "@/components/MatchupPicker";
 
 // 通称・略称・エイリアス辞書
 const CHAMP_ALIASES: Record<string, string[]> = {
@@ -152,6 +153,9 @@ function PilotApp() {
   // ⚔️ 対面VS直接比較モード (Split View)
   const [vsMode, setVsMode] = useState(false);
   const [vsEnemyId, setVsEnemyId] = useState("");
+
+  // 🎯 対面相性チェッカー (Matchup Picker) モード
+  const [showMatchupPicker, setShowMatchupPicker] = useState(false);
 
   // 📥 戦術取込モーダル状態
   const [isIngestOpen, setIsIngestOpen] = useState(false);
@@ -313,8 +317,21 @@ function PilotApp() {
             >
               <ArrowLeft size={14} /> <span>← チャンピオン一覧へ戻る</span>
             </button>
-            <div className="text-xs font-bold text-amber-400">
-              {selectedDetail.jpName}（{selectedDetail.title}）
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowMatchupPicker(!showMatchupPicker)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer shadow-sm ${
+                  showMatchupPicker
+                    ? "bg-rose-500 text-white border-rose-400"
+                    : "bg-rose-950/40 text-rose-300 border-rose-800/60 hover:bg-rose-900/50"
+                }`}
+                title="相手JGを選択して最適ピックを逆引き"
+              >
+                <Target size={13} /> <span>🎯 対面チェッカー</span>
+              </button>
+              <div className="text-xs font-bold text-amber-400">
+                {selectedDetail.jpName}（{selectedDetail.title}）
+              </div>
             </div>
           </div>
         </div>
@@ -322,6 +339,18 @@ function PilotApp() {
 
       {/* 📖 メインコンテンツ */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4">
+        {/* 🎯 対面相性チェッカー (Matchup Picker) */}
+        {showMatchupPicker && (
+          <div className="mb-4 animate-in fade-in slide-in-from-top-2 duration-200">
+            <MatchupPicker
+              favorites={favorites}
+              onSelectMyChampion={(champId) => {
+                selectChampion(champId);
+              }}
+            />
+          </div>
+        )}
+
         {selectedDetail ? (
           /* =========================================================
              👑 チャンピオン詳細ビュー (VS直接比較機能搭載)
@@ -1280,6 +1309,20 @@ function PilotApp() {
                       {favorites.length}
                     </span>
                   )}
+                </button>
+
+                {/* 🎯 対面相性チェッカートグル */}
+                <button
+                  onClick={() => setShowMatchupPicker(!showMatchupPicker)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer shrink-0 shadow-sm ${
+                    showMatchupPicker
+                      ? "bg-rose-500 text-white border-rose-400 shadow-rose-500/20"
+                      : "bg-rose-950/40 text-rose-300 border-rose-800/60 hover:bg-rose-900/50"
+                  }`}
+                  title="相手JGを選択して最適ピックを逆引き"
+                >
+                  <Target size={14} />
+                  <span>🎯 対面チェッカー</span>
                 </button>
               </div>
 
