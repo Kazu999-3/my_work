@@ -1,4 +1,4 @@
-# ============================================================
+﻿# ============================================================
 # Sovereign OS - Local Services Startup Script (start_all.ps1)
 #
 # ポータルとBotはクラウド(Vercel / Cloudflare Workers)で常時稼働しており、
@@ -10,7 +10,13 @@
 #   ローカル版ポータル/Bot起動や、Gatewayをバイパスしていた sre_daemon.py を
 #   含んでいたため廃止した。sre_daemon.py が担っていた「字幕なし動画の
 #   自動巡回起票」機能は edge_worker_daemon.py 自身に統合済み。）
+#
+# -LogFile を指定すると、出力をそのファイルへ追記する（窓を出さずに起動する
+# 03_SYSTEMS/start_edge_worker.vbs から使う。窓が無いとログが残らないため）。
 # ============================================================
+param(
+    [string]$LogFile = ""
+)
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
@@ -64,7 +70,22 @@ try {
     Write-Host "[Edge Worker Daemon] Starting (foreground)..." -ForegroundColor Cyan
     Set-Location "d:\my_work\03_SYSTEMS"
     $env:PYTHONPATH = "d:\my_work\03_SYSTEMS"
-    & "d:\my_work\.venv\Scripts\python.exe" -m v2_CORE.edge_worker_daemon
+    if ($LogFile) {
+        $logDir = Split-Path -Parent $LogFile
+        if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Force -Path $logDir | Out-Null }
+        # 10MBを超えたら1世代だけ残してローテーションする
+        if ((Test-Path $LogFile) -and ((Get-Item $LogFile).Length -gt 10MB)) {
+            Move-Item -Force $LogFile "$LogFile.1"
+        }
+        $env:PYTHONUNBUFFERED = "1"
+        $env:PYTHONIOENCODING = "utf-8"
+        Add-Content -Path $LogFile -Encoding UTF8 -Value "===== $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') Edge Worker Daemon 起動 (PID $PID) ====="
+        # PowerShell 5.1 のリダイレクトは UTF-16 で書き出すため、バイト列のまま渡せる cmd でリダイレクトする
+        # （パスに空白が無い前提。cmd の引用符解釈の癖を避けるため引用符は付けない）
+        cmd /c "d:\my_work\.venv\Scripts\python.exe -m v2_CORE.edge_worker_daemon >> $LogFile 2>&1"
+    } else {
+        & "d:\my_work\.venv\Scripts\python.exe" -m v2_CORE.edge_worker_daemon
+    }
 } finally {
     Remove-Item $lockFile -Force -ErrorAction SilentlyContinue
 }
