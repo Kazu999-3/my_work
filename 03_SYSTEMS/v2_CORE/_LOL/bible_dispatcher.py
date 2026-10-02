@@ -70,6 +70,7 @@ def parse_bible(text: str, video_id: str = "", default_title: str = "") -> dict:
         "micro_insights": "",
         "gank_lane_insights": "",
         "ng_traps": "",
+        "pick_conditions": "",
         "note_stock_text": "",
         "raw_text": text
     }
@@ -99,15 +100,19 @@ def parse_bible(text: str, video_id: str = "", default_title: str = "") -> dict:
         except Exception:
             pass
 
-    # 4. セクションの抽出（新フォーマット: JG特化7大柱）
+    # 4. セクションの抽出（新フォーマット: JG特化8大柱）
     p1 = re.search(r"【第1柱:[^】]+】(.*?)(?=【第2柱|\Z)", text, re.DOTALL)
     p2 = re.search(r"【第2柱:[^】]+】(.*?)(?=【第3柱|\Z)", text, re.DOTALL)
     p3 = re.search(r"【第3柱:[^】]+】(.*?)(?=【第4柱|\Z)", text, re.DOTALL)
     p4 = re.search(r"【第4柱:[^】]+】(.*?)(?=【第5柱|\Z)", text, re.DOTALL)
     p5 = re.search(r"【第5柱:[^】]+】(.*?)(?=【第6柱|\Z)", text, re.DOTALL)
     p6 = re.search(r"【第6柱:[^】]+】(.*?)(?=【第7柱|\Z)", text, re.DOTALL)
-    p7 = re.search(r"【第7柱:[^】]+】(.*?)(?=【note発信ストック|\Z)", text, re.DOTALL)
+    p7 = re.search(r"【第7柱:[^】]+】(.*?)(?=【第8柱|【note発信ストック|\Z)", text, re.DOTALL)
+    p8 = re.search(r"【第8柱:[^】]+】(.*?)(?=【note発信ストック|\Z)", text, re.DOTALL)
     p_note = re.search(r"【note発信ストック:[^】]+】(.*?)(?=\Z)", text, re.DOTALL)
+
+    # 番号付きヘッダー形式（## 8. ピック判断基準 等）の検出
+    h8_match = re.search(r"##\s*[🎯\d\.]*\s*8\.\s*ピック判断基準[^\n]*\n(.*?)(?=\n## |\Z)", text, re.DOTALL)
 
     if p2 or p3 or p4 or p5:
         # 新フォーマットが検出された場合
@@ -120,6 +125,8 @@ def parse_bible(text: str, video_id: str = "", default_title: str = "") -> dict:
 
         if p3: result["gank_lane_insights"] = p3.group(1).strip()
         if p7: result["ng_traps"] = p7.group(1).strip()
+        if p8: result["pick_conditions"] = p8.group(1).strip()
+        elif h8_match: result["pick_conditions"] = h8_match.group(1).strip()
         if p1: result["micro_insights"] = p1.group(1).strip()
         if p_note: result["note_stock_text"] = p_note.group(1).strip()
     else:
@@ -135,6 +142,9 @@ def parse_bible(text: str, video_id: str = "", default_title: str = "") -> dict:
 
         tips_match = re.search(r"## 💡\s*重要[^\n]*\n(.*?)(?=\n## |\Z)", text, re.DOTALL)
         if tips_match: result["ng_traps"] = tips_match.group(1).strip()
+
+        if h8_match:
+            result["pick_conditions"] = h8_match.group(1).strip()
 
     return result
 
@@ -154,9 +164,10 @@ def merge_to_lane_guides(parsed: dict) -> bool:
     macro = parsed.get("macro_insights", "").strip()
     gank = parsed.get("gank_lane_insights", "").strip()
     traps = parsed.get("ng_traps", "").strip()
+    pick = parsed.get("pick_conditions", "").strip()
 
-    if not macro and not gank and not traps:
-        logger.info(f"ℹ️ {title}: マクロ知見が空のためレーンガイドへのマージをスキップします。")
+    if not macro and not gank and not traps and not pick:
+        logger.info(f"ℹ️ {title}: マクロ・ピック知見が空のためレーンガイドへのマージをスキップします。")
         return False
 
     try:
@@ -185,6 +196,8 @@ def merge_to_lane_guides(parsed: dict) -> bool:
             f"### 📺 {title}",
             f"- **出典・チャンピオン**: {link_str} （対象: **{champ}**）",
         ]
+        if pick:
+            block_lines.append(f"- **🎯 ピック判断基準（先出し/後出し/構成マッチング）**:\n{pick}")
         if macro:
             block_lines.append(f"- **マクロ・トラッキング判断**:\n{macro}")
         if gank:
@@ -267,6 +280,11 @@ tags: [LoL, JG, note発信ネタ, {champ}]
 
 ## ⚔️ 各レーンの有利度とガンクタイミング
 {parsed.get('gank_lane_insights') or '（レーン介入判断）'}
+
+---
+
+## 🎯 ピック判断基準（先出し・後出し・構成マッチング）
+{parsed.get('pick_conditions') or '（先出し適性・後出しカウンター・味方構成とのシナジー判断）'}
 
 ---
 

@@ -49,6 +49,10 @@
   - トラックB（レーンガイド JG章）: 普遍的JGマクロ（ガンク条件・敵JGトラッキング・リコールテンポ・罠NG行動）を抽出し、Supabase `lane_guides`（`lane = 'JG'`）の第8章へ出典URL付きで自動追記。
   - トラックC（note発信ストック）: `02_FACTORY/_LOL/note_stocks/` へ、フロントマター標準・32文字タイトル・キラーWhy・罠回避を盛り込んだ独立Markdownを自動保存。
   - `youtube_absorber.py` にローカルフォールバックと `bible_dispatcher` 連携を組み込み、新規投函時に全自動マージされるパイプラインを確立。
+- [x] **チャンピオン別ピック判断ガイド（先出し/後出し/構成マッチング）の全層配備**:
+  - プロンプト第8柱（`youtube_bible_forge` / Supabase ＆ ローカルフォールバック）に「ピック判断基準」を統合。
+  - `compile_champions.mjs` および `champions_detail_map.json`: 全173体へ `pickGuide`（先出し適性/後出しカウンター/構成トリガー）を注入。
+  - `05_PILOT/src/app/page.tsx`: 詳細画面へ「🎯 ピック判断ガイド」カードを新設。先出しS/A/B/C、後出し刺さり相手、味方構成シナジーを直感表示。
 - [x] **既存176本の超高速・ゼロコスト棚卸しバッチ実行（`bible_restructure_batch.py`）**:
   - 重い動画DLやGemini APIを一切使わず、ローカルの既存Markdown（176本）から7秒で再仕分けを完遂。
   - `note_stocks/` に **176本** のnote執筆ストックを即時生成。

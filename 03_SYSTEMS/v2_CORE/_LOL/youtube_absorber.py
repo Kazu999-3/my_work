@@ -535,7 +535,7 @@ class YouTubeAbsorber:
                 logger.warning(f"⚠️ Supabaseからのプロンプト取得に失敗 ({pe})。ローカルフォールバックを使用します。")
 
             if not user_prompt_template:
-                # JG特化7大柱ローカルフォールバック
+                # JG特化8大柱ローカルフォールバック
                 user_prompt_template = (
                     "動画「{title}」（URL: {url}）の字幕テキストから、JG専の勝率向上とnote発信のための詳細な攻略バイブルを日本語で作成してください。\n\n"
                     "【出力フォーマット】\n"
@@ -547,6 +547,7 @@ class YouTubeAbsorber:
                     "【第5柱: リコールテンポ ＆ オブジェクト判断のWhy】\n"
                     "【第6柱: 集団戦・中盤以降の勝ち筋（Win Condition）】\n"
                     "【第7柱: やってはいけないNG行動・没判断（罠の回避）】\n"
+                    "【第8柱: ピック判断基準（先出し・後出し・構成マッチング）】\n"
                     "【note発信ストック: 有料級エピソード・思考の言語化】\n\n"
                     "【対象字幕テキスト】\n{transcript}\n"
                 )
