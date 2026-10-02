@@ -518,18 +518,38 @@ class YouTubeAbsorber:
                 "apikey": settings.SUPABASE_KEY,
                 "Authorization": f"Bearer {settings.SUPABASE_KEY}",
             }
-            res = httpx.get(prompt_url, headers=headers, timeout=10)
-            if res.status_code != 200 or not res.json():
-                logger.error(f"❌ プロンプト 'youtube_bible_forge' の取得に失敗しました (HTTP {res.status_code})")
-                return None
-            prompt_data = res.json()[0]
+            system_prompt = ""
+            user_prompt_template = ""
+            model_id = "gemini-3.1-flash-lite"
+            fallback_model = ""
 
-            system_prompt = prompt_data.get("system_prompt") or ""
-            user_prompt_template = prompt_data.get("user_prompt_template")
-            # gemini-2.5-flashはこのアカウントで無料枠0/0(割り当てなし)と判明済み(2026-08-10)。
-            # generate_content_safe()経由で最終的にフォールバックはされるが、無駄な失敗試行を避ける。
-            model_id = prompt_data.get("default_model") or "gemini-3.1-flash-lite"
-            fallback_model = prompt_data.get("fallback_model") or ""
+            try:
+                res = httpx.get(prompt_url, headers=headers, timeout=10)
+                if res.status_code == 200 and res.json():
+                    prompt_data = res.json()[0]
+                    system_prompt = prompt_data.get("system_prompt") or ""
+                    user_prompt_template = prompt_data.get("user_prompt_template") or ""
+                    model_id = prompt_data.get("default_model") or "gemini-3.1-flash-lite"
+                    fallback_model = prompt_data.get("fallback_model") or ""
+            except Exception as pe:
+                logger.warning(f"⚠️ Supabaseからのプロンプト取得に失敗 ({pe})。ローカルフォールバックを使用します。")
+
+            if not user_prompt_template:
+                # JG特化7大柱ローカルフォールバック
+                user_prompt_template = (
+                    "動画「{title}」（URL: {url}）の字幕テキストから、JG専の勝率向上とnote発信のための詳細な攻略バイブルを日本語で作成してください。\n\n"
+                    "【出力フォーマット】\n"
+                    "[Champion: (タイトルまたは動画内の主要チャンピオン名)]\n\n"
+                    "【第1柱: チャンピオン情報・ロール・基本方針】\n"
+                    "【第2柱: 初動3分ルート ＆ スカトル衝突判断 (Why & When)】\n"
+                    "【第3柱: レーン別マッチアップ有利度 ＆ ガンク成立条件】\n"
+                    "【第4柱: 敵JGトラッキング ＆ カウンタージャングル根拠】\n"
+                    "【第5柱: リコールテンポ ＆ オブジェクト判断のWhy】\n"
+                    "【第6柱: 集団戦・中盤以降の勝ち筋（Win Condition）】\n"
+                    "【第7柱: やってはいけないNG行動・没判断（罠の回避）】\n"
+                    "【note発信ストック: 有料級エピソード・思考の言語化】\n\n"
+                    "【対象字幕テキスト】\n{transcript}\n"
+                )
 
             user_prompt = user_prompt_template.format(**variables)
             final_prompt = f"【指示・ペルソナ】\n{system_prompt}\n\n【本文】\n{user_prompt}" if system_prompt else user_prompt
@@ -744,6 +764,17 @@ class YouTubeAbsorber:
                 with open(file_path, "w", encoding="utf-8") as f:
                     f.write(final_bible_text)
                     
+                # 二系統自動マージ & noteストック保存 (JGマクロ知見をレーンガイドへ、記事ネタをnote_stocksへ)
+                try:
+                    from v2_CORE._LOL.bible_dispatcher import dispatch_bible
+                    dispatch_res = dispatch_bible(final_bible_text, video_id=item['id'], title=clean_title)
+                    if dispatch_res.get("lane_merged"):
+                        logger.info(f"🌲 [Dispatch] レーンガイド(JG)へマクロ知見を統合しました: {clean_title}")
+                    if dispatch_res.get("note_stock_path"):
+                        logger.info(f"📝 [Dispatch] note発信ストックを保存しました: {dispatch_res['note_stock_path']}")
+                except Exception as de:
+                    logger.warning(f"⚠️ [Dispatch] レーンガイド/noteストックへのディスパッチに失敗: {de}")
+
                 self.update_video(item["id"], {"status": "completed", "title": clean_title})
                 success_count += 1
                 dur = item.get('duration_sec')
