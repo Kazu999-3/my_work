@@ -1,4 +1,5 @@
 // チャンピオンの特性・戦闘スタイル分類とビルドプリセット生成
+import { translateItem } from './itemTranslator';
 
 export type ChampionArchetype = 'ap_mage' | 'ap_assassin' | 'ad_assassin' | 'ad_fighter' | 'tank' | 'marksman' | 'enchanter';
 
@@ -103,13 +104,16 @@ export function getPresetBuildDetails(
   archetype: ChampionArchetype,
   preset: 'standard' | 'tank' | 'burst',
   trendItems: string[] = [],
-  trendKeystone: string = ''
+  trendKeystone: string = '',
+  customDict?: Record<string, string>
 ): PresetBuildResult {
+  const items = (trendItems || []).map((it) => translateItem(it, customDict));
+
   switch (archetype) {
     case 'ap_mage': {
-      const first = trendItems[0] || 'ライアンドリーの苦悶';
-      const second = trendItems[1] || 'シャドウフレイム';
-      const third = trendItems[2] || 'ゾーニャの砂時計';
+      const first = items[0] || 'ライアンドリーの苦悶';
+      const second = items[1] || 'シャドウフレイム';
+      const third = items[2] || 'ゾーニャの砂時計';
       const keystone = trendKeystone || '電撃 / 秘術の彗星';
 
       if (preset === 'standard') {
@@ -143,9 +147,9 @@ export function getPresetBuildDetails(
     }
 
     case 'ap_assassin': {
-      const first = trendItems[0] || 'リッチベイン / ロケットベルト';
-      const second = trendItems[1] || 'シャドウフレイム';
-      const third = trendItems[2] || 'ゾーニャの砂時計';
+      const first = items[0] || 'リッチベイン / ロケットベルト';
+      const second = items[1] || 'シャドウフレイム';
+      const third = items[2] || 'ゾーニャの砂時計';
       const keystone = trendKeystone || '電撃 (Electrocute)';
 
       if (preset === 'standard') {
@@ -179,9 +183,9 @@ export function getPresetBuildDetails(
     }
 
     case 'ad_assassin': {
-      const first = trendItems[0] || '妖夢の霊剣 / ヒュドリスの貪食者';
-      const second = trendItems[1] || 'オポチュニティー';
-      const third = trendItems[2] || 'セリルの怨恨';
+      const first = items[0] || '妖夢の霊剣 / ヒュドリスの貪食者';
+      const second = items[1] || 'オポチュニティー';
+      const third = items[2] || 'セリルの怨恨';
       const keystone = trendKeystone || '電撃 / 征服者';
 
       if (preset === 'standard') {
@@ -215,9 +219,9 @@ export function getPresetBuildDetails(
     }
 
     case 'tank': {
-      const first = trendItems[0] || 'サンファイアイージス / バミシンダー';
-      const second = trendItems[1] || '終わりなき絶望';
-      const third = trendItems[2] || 'ソーンメイル / ケストレル';
+      const first = items[0] || 'サンファイアイージス / バミシンダー';
+      const second = items[1] || '終わりなき絶望';
+      const third = items[2] || 'ソーンメイル / ケストレル';
       const keystone = trendKeystone || 'アフターショック';
 
       if (preset === 'standard') {
@@ -251,9 +255,9 @@ export function getPresetBuildDetails(
     }
 
     case 'marksman': {
-      const first = trendItems[0] || 'クラーケンスレイヤー / コレクター';
-      const second = trendItems[1] || 'インフィニティエッジ';
-      const third = trendItems[2] || 'ドミニクリガード';
+      const first = items[0] || 'クラーケンスレイヤー / コレクター';
+      const second = items[1] || 'インフィニティエッジ';
+      const third = items[2] || 'ドミニクリガード';
       const keystone = trendKeystone || 'プレスアタック / フリート';
 
       if (preset === 'standard') {
@@ -287,9 +291,9 @@ export function getPresetBuildDetails(
     }
 
     case 'enchanter': {
-      const first = trendItems[0] || '月石の再生器';
-      const second = trendItems[1] || 'リデンプション';
-      const third = trendItems[2] || 'シュレリアの戦歌';
+      const first = items[0] || '月石の再生器';
+      const second = items[1] || 'リデンプション';
+      const third = items[2] || 'シュレリアの戦歌';
       const keystone = trendKeystone || '召喚: エアリー';
 
       if (preset === 'standard') {
@@ -324,9 +328,9 @@ export function getPresetBuildDetails(
 
     case 'ad_fighter':
     default: {
-      const first = trendItems[0] || '赤月の刃 / サンダードスカイ';
-      const second = trendItems[1] || 'ショウジンの矛';
-      const third = trendItems[2] || 'デスダンス / ステラック';
+      const first = items[0] || '赤月の刃 / サンダードスカイ';
+      const second = items[1] || 'ショウジンの矛';
+      const third = items[2] || 'デスダンス / ステラック';
       const keystone = trendKeystone || '征服者 (Conqueror)';
 
       if (preset === 'standard') {

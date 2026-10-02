@@ -19,6 +19,7 @@ const ENV_FILE = path.resolve(__dirname, '../.env.local');
 const FACTORY_DIR = path.resolve(__dirname, '../../02_FACTORY');
 const NOTE_STOCKS_DIR = path.join(FACTORY_DIR, '_LOL/note_stocks');
 const CUSTOM_ROLES_FILE = path.join(OUTPUT_DIR, 'custom_roles.json');
+const ITEM_DICT_FILE = path.join(OUTPUT_DIR, 'item_dictionary.json');
 
 const FALLBACK_PATCH = '14.24.1';
 
@@ -462,6 +463,27 @@ async function main() {
     }
   }
 
+  let itemDictionaryMap = {};
+  if (fs.existsSync(ITEM_DICT_FILE)) {
+    try {
+      itemDictionaryMap = JSON.parse(fs.readFileSync(ITEM_DICT_FILE, 'utf-8'));
+      console.log(`📖 アイテム翻訳辞書ロード成功: ${Object.keys(itemDictionaryMap).length} 語`);
+    } catch (e) {
+      console.warn('⚠️ item_dictionary.json パース失敗:', e.message);
+    }
+  }
+
+  const translateTrendItem = (name) => {
+    if (!name) return '';
+    const trimmed = String(name).trim();
+    if (itemDictionaryMap[trimmed]) return itemDictionaryMap[trimmed];
+    const lower = trimmed.toLowerCase();
+    for (const [k, v] of Object.entries(itemDictionaryMap)) {
+      if (k.toLowerCase() === lower) return v;
+    }
+    return trimmed;
+  };
+
   for (const champKey of champKeys) {
     const raw = ddragonChampions[champKey];
     const champId = raw.id;
@@ -576,7 +598,7 @@ async function main() {
         mustBan: parseList(dbFact?.must_ban_champions),
         tier: dbFact?.patch_meta?.tier || undefined,
         winRate: dbFact?.patch_meta?.win_rate || undefined,
-        trendItems: dbFact?.patch_meta?.trend_items || [],
+        trendItems: (dbFact?.patch_meta?.trend_items || []).map(translateTrendItem),
         trendRunes: dbFact?.patch_meta?.trend_runes || undefined,
         gameplayGuide: dbFact?.strategy || '',
         powerSpikes: dbFact?.power_spikes || '',

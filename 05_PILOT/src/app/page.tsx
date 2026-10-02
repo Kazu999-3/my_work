@@ -11,11 +11,13 @@ import {
   Search, ShieldAlert, Swords, Zap, Skull, Shield, BookOpen, 
   ArrowLeft, ArrowRight, Clock, Activity, AlertTriangle, Layers,
   CheckCircle2, ChevronDown, ChevronUp, Timer, Star,
-  X, Check, Flame, Sparkles, Plus, Download, Bot, Target, ExternalLink, Video, Eye, Waves, Compass, Wrench
+  X, Check, Flame, Sparkles, Plus, Download, Bot, Target, ExternalLink, Video, Eye, Waves, Compass, Wrench, Edit3
 } from "lucide-react";
 import KnowledgeIngestModal from "@/components/KnowledgeIngestModal";
 import { MatchupPicker } from "@/components/MatchupPicker";
 import LaneMaintenanceModal from "@/components/LaneMaintenanceModal";
+import ItemDictionaryModal from "@/components/ItemDictionaryModal";
+import { translateItem } from "@/lib/itemTranslator";
 
 // 通称・略称・エイリアス辞書
 const CHAMP_ALIASES: Record<string, string[]> = {
@@ -184,10 +186,16 @@ function PilotApp() {
   const [focusedLaneChampId, setFocusedLaneChampId] = useState<string | undefined>(undefined);
   const [customRoles, setCustomRoles] = useState<Record<string, string[]>>({});
 
+  // 📖 アイテム翻訳辞書モーダル
+  const [isItemDictModalOpen, setIsItemDictModalOpen] = useState(false);
+  const [dictFocusKey, setDictFocusKey] = useState<string | undefined>(undefined);
+  const [dictFocusValue, setDictFocusValue] = useState<string | undefined>(undefined);
+  const [customItemDict, setCustomItemDict] = useState<Record<string, string>>({});
+
   // 📥 戦術取込モーダル状態
   const [isIngestOpen, setIsIngestOpen] = useState(false);
 
-  // localStorage からお気に入りとカスタムレーン設定を読み込み
+  // localStorage からお気に入り、カスタムレーン設定、アイテム辞書を読み込み
   useEffect(() => {
     try {
       const storedFav = localStorage.getItem("pilot_fav_champions");
@@ -197,6 +205,10 @@ function PilotApp() {
       const storedRoles = localStorage.getItem("pilot_custom_roles");
       if (storedRoles) {
         setCustomRoles(JSON.parse(storedRoles));
+      }
+      const storedItemDict = localStorage.getItem("pilot_custom_item_dict");
+      if (storedItemDict) {
+        setCustomItemDict(JSON.parse(storedItemDict));
       }
     } catch {}
 
@@ -215,12 +227,35 @@ function PilotApp() {
         }
       })
       .catch(() => {});
+
+    // サーバーからも最新のアイテム辞書設定をバックグラウンド取得
+    fetch("/api/items/dictionary")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.dictionary && Object.keys(data.dictionary).length > 0) {
+          setCustomItemDict((prev) => {
+            const merged = { ...prev, ...data.dictionary };
+            try {
+              localStorage.setItem("pilot_custom_item_dict", JSON.stringify(merged));
+            } catch {}
+            return merged;
+          });
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const handleRolesSaved = (newRoles: Record<string, string[]>) => {
     setCustomRoles(newRoles);
     try {
       localStorage.setItem("pilot_custom_roles", JSON.stringify(newRoles));
+    } catch {}
+  };
+
+  const handleDictionarySaved = (newDict: Record<string, string>) => {
+    setCustomItemDict(newDict);
+    try {
+      localStorage.setItem("pilot_custom_item_dict", JSON.stringify(newDict));
     } catch {}
   };
 
@@ -282,12 +317,13 @@ function PilotApp() {
     );
   }, [selectedDetail, currentRole]);
 
-  // シチュエーション別ビルド
+  // シチュエーション別ビルド（アイテム辞書翻訳をリアルタイム適用）
   const currentBuild = useMemo(() => {
-    const trendItems = selectedDetail?.facts?.trendItems || [];
+    const rawItems = selectedDetail?.facts?.trendItems || [];
+    const trendItems = rawItems.map((it) => translateItem(it, customItemDict));
     const trendKeystone = selectedDetail?.facts?.trendRunes?.keystone || "";
-    return getPresetBuildDetails(archetype, buildPreset, trendItems, trendKeystone);
-  }, [archetype, buildPreset, selectedDetail]);
+    return getPresetBuildDetails(archetype, buildPreset, trendItems, trendKeystone, customItemDict);
+  }, [archetype, buildPreset, selectedDetail, customItemDict]);
 
   // パワースパイク推定値
   const spikeValues = useMemo(() => {
@@ -1104,6 +1140,20 @@ function PilotApp() {
                         対バースト (高耐久)
                       </button>
                     </div>
+
+                    {/* 📖 アイテム辞書モーダル起動ボタン */}
+                    <button
+                      onClick={() => {
+                        setDictFocusKey(undefined);
+                        setDictFocusValue(undefined);
+                        setIsItemDictModalOpen(true);
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-950 hover:bg-zinc-800 text-amber-300 border border-amber-500/40 text-xs font-bold transition cursor-pointer shadow-xs ml-auto sm:ml-0"
+                      title="アイテム名の翻訳・辞書登録を開く"
+                    >
+                      <BookOpen size={13} className="text-amber-400" />
+                      <span>アイテム辞書</span>
+                    </button>
                   </div>
 
                   {/* ビルド詳細3カラムカード */}
@@ -1112,9 +1162,22 @@ function PilotApp() {
                       <span className="text-[10px] font-black text-amber-400 uppercase block mb-1">
                         1コア (ファースト完成)
                       </span>
-                      <p className="font-bold text-zinc-100 text-sm">
-                        {currentBuild.firstCore}
-                      </p>
+                      <div className="flex items-center justify-between gap-1">
+                        <p className="font-bold text-zinc-100 text-sm truncate">
+                          {currentBuild.firstCore}
+                        </p>
+                        <button
+                          onClick={() => {
+                            setDictFocusKey(currentBuild.firstCore);
+                            setDictFocusValue(currentBuild.firstCore);
+                            setIsItemDictModalOpen(true);
+                          }}
+                          className="p-1 rounded text-zinc-500 hover:text-amber-400 hover:bg-zinc-800 transition cursor-pointer shrink-0"
+                          title="このアイテム名を辞書登録・編集"
+                        >
+                          <Edit3 size={12} />
+                        </button>
+                      </div>
                       <span className="text-[11px] text-zinc-400 mt-1 block">
                         {currentBuild.firstCoreDesc}
                       </span>
@@ -1124,9 +1187,22 @@ function PilotApp() {
                       <span className="text-[10px] font-black text-cyan-400 uppercase block mb-1">
                         2〜3コア (集団戦スパイク)
                       </span>
-                      <p className="font-bold text-zinc-100 text-sm">
-                        {currentBuild.coreSpike}
-                      </p>
+                      <div className="flex items-center justify-between gap-1">
+                        <p className="font-bold text-zinc-100 text-sm truncate">
+                          {currentBuild.coreSpike}
+                        </p>
+                        <button
+                          onClick={() => {
+                            setDictFocusKey(currentBuild.coreSpike);
+                            setDictFocusValue(currentBuild.coreSpike);
+                            setIsItemDictModalOpen(true);
+                          }}
+                          className="p-1 rounded text-zinc-500 hover:text-amber-400 hover:bg-zinc-800 transition cursor-pointer shrink-0"
+                          title="このアイテム名を辞書登録・編集"
+                        >
+                          <Edit3 size={12} />
+                        </button>
+                      </div>
                       <span className="text-[11px] text-zinc-400 mt-1 block">
                         {currentBuild.coreSpikeDesc}
                       </span>
@@ -1732,6 +1808,16 @@ function PilotApp() {
         focusedChampionId={focusedLaneChampId}
         currentCustomRoles={customRoles}
         onRolesSaved={handleRolesSaved}
+      />
+
+      {/* 📖 アイテム翻訳辞書モーダル */}
+      <ItemDictionaryModal
+        isOpen={isItemDictModalOpen}
+        onClose={() => setIsItemDictModalOpen(false)}
+        initialKey={dictFocusKey}
+        initialValue={dictFocusValue}
+        currentCustomDict={customItemDict}
+        onDictionarySaved={handleDictionarySaved}
       />
     </div>
   );
