@@ -359,22 +359,25 @@ async function main() {
   const powerSpikesMap = {};
   const jungleTimingMap = {};
   const laneRolesMap = {};
+  const libraryKnowledgeMap = {};
 
   if (supabase) {
     try {
-      console.log('☁️ Supabase から champion_facts, matchup_sentinel, power_spikes, jungle_timing を取得中...');
+      console.log('☁️ Supabase から facts, matchups, spikes, timings, roles, personal_knowledge を取得中...');
       const [
         { data: factsData, error: factsErr },
         { data: sentinelData, error: sentinelErr },
         { data: powerSpikesData },
         { data: jungleTimingData },
-        { data: laneRolesData }
+        { data: laneRolesData },
+        { data: knowledgeData }
       ] = await Promise.all([
         supabase.from('champion_facts').select('*'),
         supabase.from('matchup_sentinel').select('id, champion, enemy, title, strategy, raw_data').neq('enemy', 'GLOBAL').neq('enemy', 'PROCESS_INTERROGATION'),
         supabase.from('champion_power_spikes').select('champion, early_game_score, mid_game_score, late_game_score, peak_window, summary'),
         supabase.from('champion_jungle_timing_agg').select('champion, sample_count, avg_first_core_sec, avg_second_core_sec, tier, external_fastest_clear_sec'),
         supabase.from('champion_lane_roles').select('champion, role, rank'),
+        supabase.from('personal_knowledge').select('id, champion, title, content, tags, source_url, created_at').order('created_at', { ascending: false }).limit(2000),
       ]);
 
       if (factsErr) {
@@ -439,6 +442,36 @@ async function main() {
             laneRolesMap[k].push(normalized);
           }
         }
+      }
+
+      if (knowledgeData) {
+        for (const row of knowledgeData) {
+          if (row.champion && row.champion !== 'Unknown' && row.champion !== 'null') {
+            const k = String(row.champion).toLowerCase();
+            if (!libraryKnowledgeMap[k]) libraryKnowledgeMap[k] = [];
+            // サロゲートペアを分断しない安全なUnicode文字配列スライス
+            const rawText = (row.content || '')
+              .replace(/<[^>]*>/g, '')
+              .replace(/[#*`_]/g, '')
+              .replace(/\s+/g, ' ')
+              .trim();
+            const safeChars = Array.from(rawText);
+            let snippet = safeChars.slice(0, 200).join('');
+            if (typeof snippet.toWellFormed === 'function') {
+              snippet = snippet.toWellFormed();
+            }
+
+            libraryKnowledgeMap[k].push({
+              id: row.id,
+              title: typeof row.title?.toWellFormed === 'function' ? row.title.toWellFormed() : (row.title || ''),
+              snippet,
+              tags: row.tags || [],
+              sourceUrl: row.source_url || '',
+              createdAt: row.created_at || '',
+            });
+          }
+        }
+        console.log(`✅ personal_knowledge マッピング成功: 関連チャンピオン ${Object.keys(libraryKnowledgeMap).length} 体`);
       }
     } catch (e) {
       console.warn('⚠️ Supabase 接続スキップ (オフライン動作継続):', e.message);
@@ -569,6 +602,7 @@ async function main() {
       skills,
       hasBible: !!bibleData,
       videoBibleCount: champVideoBibles.length,
+      libraryKnowledgeCount: (libraryKnowledgeMap[lowerId] || []).length,
       tier: dbFact?.patch_meta?.tier || undefined,
       winRate: dbFact?.patch_meta?.win_rate || undefined,
     };
@@ -616,6 +650,7 @@ async function main() {
         rawMarkdown: bibleData.fullMarkdown,
       } : undefined,
       videoBibles: champVideoBibles,
+      libraryKnowledge: libraryKnowledgeMap[lowerId] || libraryKnowledgeMap[champId.toLowerCase()] || [],
       matchups: dbMatchups,
       powerSpikes: dbSpikes,
       jungleTiming: dbTiming,
@@ -633,9 +668,11 @@ async function main() {
     fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   }
 
-  // 出力
-  fs.writeFileSync(SUMMARY_FILE, JSON.stringify(summaries, null, 2), 'utf-8');
-  fs.writeFileSync(DETAILS_FILE, JSON.stringify(detailMap, null, 2), 'utf-8');
+  // 出力（TurbopackのJSON破損防止のためtoWellFormedを適用）
+  const summaryJson = JSON.stringify(summaries, null, 2);
+  const detailsJson = JSON.stringify(detailMap, null, 2);
+  fs.writeFileSync(SUMMARY_FILE, typeof summaryJson.toWellFormed === 'function' ? summaryJson.toWellFormed() : summaryJson, 'utf-8');
+  fs.writeFileSync(DETAILS_FILE, typeof detailsJson.toWellFormed === 'function' ? detailsJson.toWellFormed() : detailsJson, 'utf-8');
 
   console.log(`✅ [Success] 2段階コンパイル完了:`);
   console.log(`   ・一覧用サマリー: ${SUMMARY_FILE} (${summaries.length}体)`);

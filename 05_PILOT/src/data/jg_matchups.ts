@@ -25,7 +25,7 @@ export const JG_MATCHUP_PROFILES: Record<string, EnemyJgProfile> = {
     archetype: 'アサシン',
     dangerLevel: 'S',
     invadeRisk: '極高 (Lv2/3インベード)',
-    clearStyle: '3キャンプ即ガンク または 3:15スカトル直行',
+    clearStyle: '3キャンプ最速ガンク (2:15) または 2:45スカトル前着・2:55争奪',
     coreWeakness: '序盤にキルを取れないと後半急速に失速する。Lv3リバー衝突を避け、逆サイドでリソース差をつければ中盤以降無力化できる。',
     adviceList: [
       {
@@ -84,7 +84,7 @@ export const JG_MATCHUP_PROFILES: Record<string, EnemyJgProfile> = {
     archetype: 'スカーミッシャー',
     dangerLevel: 'B',
     invadeRisk: '中 (スカトル衝突)',
-    clearStyle: '3:15〜3:20 フルクリア優先',
+    clearStyle: '最速2:45〜2:50フルクリア ➔ 2:55スカトル先着',
     coreWeakness: 'ハードCCに極めて脆く、集団戦で最初の1キル（リセット）を取らせなければ何もできずに溶ける。',
     adviceList: [
       {
@@ -135,7 +135,7 @@ export const JG_MATCHUP_PROFILES: Record<string, EnemyJgProfile> = {
     archetype: 'アサシン',
     dangerLevel: 'B',
     invadeRisk: '低 (自陣フルクリア)',
-    clearStyle: '最速3:15フルクリア ➔ Lv6までファーム最優先',
+    clearStyle: '最速2:45フルクリア ➔ Lv6までファーム最優先',
     coreWeakness: 'Lv6前のガンク圧力がほぼゼロ。Lv6ウルトのCD中は集団戦への介入が弱い。',
     adviceList: [
       {
@@ -307,7 +307,7 @@ export const JG_MATCHUP_PROFILES: Record<string, EnemyJgProfile> = {
     archetype: 'ファーム型',
     dangerLevel: 'C',
     invadeRisk: '低 (自陣フルクリア)',
-    clearStyle: '最速3:10フルクリア ➔ スカトル無視で即リコール・周回継続',
+    clearStyle: '最速2:40フルクリア ➔ スカトル無視で即リコール・周回継続',
     coreWeakness: '序盤のインベード耐性が皆無。接近されるとQを当てるのが困難で簡単にキルできる。',
     adviceList: [
       {
@@ -393,7 +393,7 @@ export const JG_MATCHUP_PROFILES: Record<string, EnemyJgProfile> = {
     archetype: 'アサシン',
     dangerLevel: 'S',
     invadeRisk: '高 (赤・青荒らし)',
-    clearStyle: '3キャンプ最速Lv3 ➔ 2:50〜3:00 タワーダイブ',
+    clearStyle: '3キャンプ最速Lv3 (2:15) ➔ 2:20〜2:30 タワーダイブ',
     coreWeakness: '集団戦の正面衝突が極めて弱い。序盤のダイブをカウンターガンクで防がれると失速する。',
     adviceList: [
       {
@@ -436,7 +436,7 @@ export const JG_MATCHUP_PROFILES: Record<string, EnemyJgProfile> = {
     archetype: 'スカーミッシャー',
     dangerLevel: 'C',
     invadeRisk: '低 (自陣フルクリア)',
-    clearStyle: '最速3:15フルクリア ➔ スピードで敵森荒らし',
+    clearStyle: '最速2:45フルクリア ➔ スピードで敵森荒らし',
     coreWeakness: 'ポイント＆クリックの確定CCやバーストアサシンに捕まると一瞬で溶ける。',
     adviceList: [
       {
@@ -522,7 +522,7 @@ export const JG_MATCHUP_PROFILES: Record<string, EnemyJgProfile> = {
     archetype: 'アサシン',
     dangerLevel: 'C',
     invadeRisk: '低 (自陣フルクリア)',
-    clearStyle: '最速3:15フルクリア ➔ Lv6まで自陣周回',
+    clearStyle: '最速2:45フルクリア ➔ Lv6まで自陣周回',
     coreWeakness: 'Lv6前のステルスがない間は極めて弱い。序盤インベードとコントロールワードで森を照らされると無力化。',
     adviceList: [
       {
