@@ -76,12 +76,25 @@ def _write_cache(version: str) -> None:
         logger.warning(f"バージョンキャッシュの保存に失敗（動作には影響なし）: {e}")
 
 
+try:
+    from v2_CORE._LOL.ddragon_resolver import (
+        get_latest_ddragon_version as _unified_get_version,
+        FALLBACK_VERSION as _UNIFIED_FALLBACK
+    )
+except ImportError:
+    _unified_get_version = None
+    _UNIFIED_FALLBACK = FALLBACK_VERSION
+
+
 def get_ddragon_version(allow_network: bool = True, timeout: float = 3.0) -> str:
     """参照すべきDDragonバージョンを返す。例外は投げない。
 
     allow_network=False の場合は通信せず、キャッシュが無ければ
     FALLBACK_VERSION を返す（HUD起動時のブロックを避けるため）。
     """
+    if _unified_get_version:
+        return _unified_get_version(allow_network=allow_network, timeout=timeout)
+
     global _memo
     if _memo:
         return _memo
@@ -92,7 +105,6 @@ def get_ddragon_version(allow_network: bool = True, timeout: float = 3.0) -> str
         return cached
 
     if not allow_network:
-        # ここではキャッシュを書かない。次に通信可の経路が呼ばれた時に正しい値を入れる。
         return FALLBACK_VERSION
 
     try:
@@ -104,7 +116,6 @@ def get_ddragon_version(allow_network: bool = True, timeout: float = 3.0) -> str
                 _write_cache(latest)
                 _memo = latest
                 return latest
-        logger.warning(f"versions.json が想定外の応答: status={r.status_code}")
     except Exception as e:
         logger.warning(f"DDragon最新バージョンの取得に失敗（FALLBACKを使用）: {e}")
 
@@ -115,3 +126,4 @@ def cdn_base(version: str | None = None) -> str:
     """画像CDNのベースURL。"""
     v = version or get_ddragon_version(allow_network=False)
     return f"https://ddragon.leagueoflegends.com/cdn/{v}/img"
+

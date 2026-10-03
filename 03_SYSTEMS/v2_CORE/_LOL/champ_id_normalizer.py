@@ -102,15 +102,25 @@ KNOWN_ALIASES: Dict[str, str] = {
 
 _ddragon_id_map: Optional[Dict[str, str]] = None
 
+try:
+    from v2_CORE._LOL.ddragon_resolver import get_latest_ddragon_version as _resolver_get_version
+except ImportError:
+    try:
+        from ddragon_resolver import get_latest_ddragon_version as _resolver_get_version
+    except ImportError:
+        _resolver_get_version = None
+
 def get_latest_ddragon_version(timeout: int = 5) -> Optional[str]:
-    """DDragonの最新パッチバージョン文字列を取得する（例: '16.11.1'）"""
+    """DDragonの最新パッチバージョン文字列を取得する（キャッシュ＆動的取得SSoT）"""
+    if _resolver_get_version:
+        return _resolver_get_version(allow_network=True, timeout=float(timeout))
     try:
         ver_res = requests.get("https://ddragon.leagueoflegends.com/api/versions.json", timeout=timeout)
         if ver_res.status_code == 200:
             return ver_res.json()[0]
     except Exception as e:
         logging.warning(f"⚠️ DDragonからの最新バージョン取得に失敗しました: {e}")
-    return None
+    return "16.19.1"
 
 
 def to_display_patch_version(version: Optional[str]) -> Optional[str]:
