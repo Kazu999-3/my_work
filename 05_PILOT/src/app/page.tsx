@@ -18,6 +18,7 @@ import { MatchupPicker } from "@/components/MatchupPicker";
 import LaneMaintenanceModal from "@/components/LaneMaintenanceModal";
 import ItemDictionaryModal from "@/components/ItemDictionaryModal";
 import { translateItem } from "@/lib/itemTranslator";
+import opggLaneMetaDefault from "@/data/opgg_lane_meta.json";
 
 // 通称・略称・エイリアス辞書
 const CHAMP_ALIASES: Record<string, string[]> = {
@@ -202,6 +203,9 @@ function PilotApp() {
   const [dictFocusValue, setDictFocusValue] = useState<string | undefined>(undefined);
   const [customItemDict, setCustomItemDict] = useState<Record<string, string>>({});
 
+  // 📊 OP.GG 公式メタデータ (全レーンの勝率・Tier・BAN率・順位)
+  const [opggMeta, setOpggMeta] = useState<any>(opggLaneMetaDefault);
+
   // 📥 戦術取込モーダル状態
   const [isIngestOpen, setIsIngestOpen] = useState(false);
 
@@ -326,6 +330,10 @@ function PilotApp() {
             localStorage.setItem("pilot_custom_item_dict", JSON.stringify(finalItemDict));
           } catch {}
         }
+
+        if (data.opggMeta && typeof data.opggMeta === 'object') {
+          setOpggMeta(data.opggMeta);
+        }
       })
       .catch((err) => {
         console.warn("DB設定同期スキップ（オフライン/通信エラー）:", err);
@@ -408,6 +416,13 @@ function PilotApp() {
       }
     }
   }, [availableRoles, currentRole]);
+
+  // 選択中レーンに対応する OP.GG 公式メタデータ
+  const currentLaneMeta = useMemo(() => {
+    if (!selectedDetail) return null;
+    const laneKey = currentRole === "BOT" ? "ADC" : currentRole;
+    return opggMeta?.lanes?.[laneKey]?.[selectedDetail.id] || null;
+  }, [selectedDetail, currentRole, opggMeta]);
 
   // アーキタイプ判定
   const archetype: ChampionArchetype = useMemo(() => {
@@ -605,14 +620,53 @@ function PilotApp() {
                           {t}
                         </span>
                       ))}
-                      {selectedDetail.facts?.tier && (
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40">
-                          Tier: {selectedDetail.facts.tier}
-                        </span>
-                      )}
-                      {selectedDetail.facts?.winRate && (
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40">
-                          勝率: {selectedDetail.facts.winRate}%
+                      {/* 📊 OP.GG 公式メタデータ（選択中レーン連動） */}
+                      {currentLaneMeta ? (
+                        <>
+                          <span
+                            className={`text-[10px] px-1.5 py-0.2 rounded font-black border ${
+                              currentLaneMeta.tierNum === 0 || currentLaneMeta.tierNum === 1
+                                ? "bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-xs"
+                                : currentLaneMeta.tierNum === 2
+                                ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                                : currentLaneMeta.tierNum === 3
+                                ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/40"
+                                : "bg-zinc-800 text-zinc-400 border-zinc-700"
+                            }`}
+                          >
+                            {currentLaneMeta.tier}
+                          </span>
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-850 text-zinc-200 font-bold border border-zinc-700/80">
+                            {currentRole} {currentLaneMeta.rank}位
+                          </span>
+                          <span
+                            className={`text-[10px] px-1.5 py-0.2 rounded font-bold border ${
+                              currentLaneMeta.winRate >= 52
+                                ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                                : currentLaneMeta.winRate >= 50
+                                ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/40"
+                                : "bg-rose-500/20 text-rose-300 border-rose-500/40"
+                            }`}
+                          >
+                            勝率: {currentLaneMeta.winRate}%
+                          </span>
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-400 border border-zinc-700 font-medium">
+                            BAN: {currentLaneMeta.banRate}%
+                          </span>
+                          <a
+                            href={`https://www.op.gg/champions/${selectedDetail.id.toLowerCase()}/build/${(currentRole === "BOT" ? "adc" : currentRole).toLowerCase()}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[10px] px-1.5 py-0.2 rounded bg-indigo-500/10 hover:bg-indigo-500/25 text-indigo-300 border border-indigo-500/30 font-semibold flex items-center gap-1 transition"
+                            title={`OP.GG公式の${selectedDetail.jpName} (${currentRole}) ビルド・スタッツを開く`}
+                          >
+                            <span>出典: OP.GG</span>
+                            <ExternalLink size={9} />
+                          </a>
+                        </>
+                      ) : (
+                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-850 text-zinc-400 border border-zinc-700/60 font-medium">
+                          {currentRole}統計: 圏外 / データ僅少
                         </span>
                       )}
                     </div>
@@ -2054,6 +2108,9 @@ function PilotApp() {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
               {filteredChampions.map((c) => {
                 const isFav = favorites.includes(c.id);
+                const cardRole = roleFilter !== "ALL" ? (roleFilter === "BOT" ? "ADC" : roleFilter) : (c.roles[0] === "BOT" ? "ADC" : c.roles[0] || "TOP");
+                const cardMeta = opggMeta?.lanes?.[cardRole]?.[c.id];
+
                 return (
                   <div
                     key={c.id}
@@ -2112,19 +2169,38 @@ function PilotApp() {
                         </button>
                       </div>
 
-                      {/* サブロール一覧 ＆ AIコーチ直結（スキルのCD表示は完全排除） */}
-                      <div className="flex items-center justify-between mt-1 pt-1 border-t border-zinc-800/40 text-[9px]">
-                        <div className="flex items-center gap-1 overflow-hidden">
-                          {c.roles.slice(1).map((r) => (
-                            <span key={r} className="text-[8px] px-1 rounded bg-zinc-800/80 text-zinc-400 font-mono">
-                              {r}
+                      {/* OP.GGメタ指標 ＆ サブロール ＆ AIコーチ */}
+                      <div className="flex items-center justify-between mt-1 pt-1 border-t border-zinc-800/40 text-[9px] gap-1">
+                        {cardMeta ? (
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span
+                              className={`px-1 py-0.2 rounded font-black text-[9px] ${
+                                cardMeta.tierNum === 0 || cardMeta.tierNum === 1
+                                  ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                                  : cardMeta.tierNum === 2
+                                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                                  : "bg-zinc-800 text-zinc-400 border border-zinc-700/60"
+                              }`}
+                            >
+                              {cardMeta.tier === "OP" ? "OP" : `T${cardMeta.tierNum}`}
                             </span>
-                          ))}
-                        </div>
+                            <span className="text-[9px] text-zinc-400 font-medium">
+                              {cardMeta.winRate}%
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 overflow-hidden">
+                            {c.roles.slice(1).map((r) => (
+                              <span key={r} className="text-[8px] px-1 rounded bg-zinc-800/80 text-zinc-400 font-mono">
+                                {r}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                         <Link
                           href={`/coach?my=${c.id}`}
                           onClick={(e) => e.stopPropagation()}
-                          className="px-1.5 py-0.2 rounded bg-indigo-950/70 hover:bg-indigo-900 text-indigo-300 border border-indigo-800/60 font-sans font-bold hover:scale-105 transition text-[10px] ml-auto flex items-center gap-0.5"
+                          className="px-1.5 py-0.2 rounded bg-indigo-950/70 hover:bg-indigo-900 text-indigo-300 border border-indigo-800/60 font-sans font-bold hover:scale-105 transition text-[10px] ml-auto flex items-center gap-0.5 shrink-0"
                           title={`${c.jpName}のAI戦術コーチを開く`}
                         >
                           <span>🤖</span>

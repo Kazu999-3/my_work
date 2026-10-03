@@ -434,6 +434,14 @@ class EdgeWorkerDaemon:
                 )
                 self.update_task_status(task_id, "completed", result=result)
                 
+            elif task_type == "opgg_meta_sync":
+                logger.info("📊 [opgg_meta_sync] OP.GG公式メタデータ（勝率・Tier）収集を実行...")
+                result = self._run_subprocess_task(
+                    "03_SYSTEMS/v2_CORE/_LOL/opgg_meta_collector.py",
+                    timeout=180
+                )
+                self.update_task_status(task_id, "completed", result=result)
+
             elif task_type == "resolve_youtube_channel":
                 channel_url = payload.get("url")
                 logger.info(f"📺 [resolve_youtube_channel] チャンネルURLの解決を開始: {channel_url}")
@@ -838,6 +846,29 @@ class EdgeWorkerDaemon:
                 logger.error(f"❌ [KnowledgeLintScheduler] エラー: {e}")
                 time.sleep(3600)
 
+    def opgg_meta_sync_scheduler_loop(self):
+        """
+        OP.GG公式MCPから勝率・Tier・BAN率メタデータを日次（24時間おき）で自動取得・同期する。
+        """
+        logger.info("📊 [OPGGMetaSyncScheduler] 日次メタデータ同期スケジューラを開始しました。")
+        time.sleep(60)  # 起動直後の他スケジューラと時間をずらす
+        while getattr(self, "_heartbeat_active", True):
+            try:
+                logger.info("📊 [OPGGMetaSyncScheduler] OP.GGメタデータ日次収集を起票します...")
+                httpx.post(
+                    f"{self.supabase_url}/rest/v1/edge_tasks",
+                    headers=self.headers,
+                    json={
+                        "task_type": "opgg_meta_sync",
+                        "payload": {},
+                        "status": "pending"
+                    },
+                    timeout=10
+                )
+            except Exception as e:
+                logger.error(f"❌ [OPGGMetaSyncScheduler] エラー: {e}")
+            time.sleep(86400)  # 24時間
+
     def heartbeat_loop(self):
         """別スレッドで5秒おきにハートビートを送信し続ける"""
         logger.info("📡 バックグラウンド・ハートビート監視スレッドを開始しました。")
@@ -886,6 +917,10 @@ class EdgeWorkerDaemon:
         # バックグラウンドでナレッジLint定期点検スレッドを起動 (Karpathy LLM Wiki準拠)
         self.knowledge_lint_scheduler_thread = threading.Thread(target=self.knowledge_lint_scheduler_loop, daemon=True)
         self.knowledge_lint_scheduler_thread.start()
+
+        # バックグラウンドでOP.GG公式メタデータ日次同期スレッドを起動
+        self.opgg_meta_sync_scheduler_thread = threading.Thread(target=self.opgg_meta_sync_scheduler_loop, daemon=True)
+        self.opgg_meta_sync_scheduler_thread.start()
 
         # スリープ防止の開始
         self.prevent_sleep()

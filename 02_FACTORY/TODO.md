@@ -33,14 +33,10 @@
   - お気に入り（`favorites`）とアイテム辞書（`pilot_item_dict`）を Supabase `ktm_settings` に保存、レーン所属を `champion_lane_roles` に一本化。
   - 新設API `/api/pilot/settings`（GET/PUT）により、ロード時にDBから一括取得。初回端末移行処理でローカルの `localStorage` とDBの和集合マージを自動実行。
   - お気に入りトグル（★）および編集モーダル保存時に即座にDBへ永続化され、スマホ（PWA）とPC間の双方向同期が完了。Turbopackビルド全PASS。
-- [ ] **【05辞典②】勝率・Tierを外部サイトの実データに置き換える（AI調べは廃止）**（2026-10-03 調査済み・未実装）:
-  - 現状: `champion_facts.patch_meta` の勝率・採用率・BAN率・Tierは、Gemini(google_search、失敗時は検索なし=推測)がチャンピオンごとに1つ答えた値。レーン別ではなく、ランク帯・地域も不明。Jinx勝率0.0%等の異常値あり。AI推測排除の誓約に反する → 表示も生成（`champion_trend_worker.py`）もやめる。
-  - ユーザー判断: 「出典リンク＋自分の実戦成績」だけの第1段階は不要。外部サイトの実データを引用したい。
-  - 候補調査結果:
-    - **OP.GG 公式MCPサーバー（最有力）**: `https://mcp-api.op.gg/mcp`（Streamable HTTP、APIキー不要の模様、opgginc公式、リポジトリMITライセンス）。`lol_list_lane_meta_champions` でレーン別の勝率・採用率・BAN率・Tierが取れる。AIエージェント向けに公式提供されている口なので規約リスクが最も小さい。要確認: データ利用規約・レート制限・ランク帯/地域の指定可否。
-    - DPM.lol: 自動アクセスは403（ボット対策）、ToSページはクローラー非公開で未確認。公式APIなし（parse.botの非公式ラッパーのみ）。
-    - your.gg: robots.txtは試合/マルチサーチ以外許可。転載規約は見つからず。過去に旧ポータルで「your.gg実戦データ連動」を騙っていた経緯あり。
-  - 設計案: PCデーモン（または定期ジョブ）が1日1回OP.GG MCPからレーン別メタを取得 → 新テーブル `champion_lane_stats`（source / patch / rank_filter / region / lane / win_rate / pick_rate / ban_rate / tier / fetched_at / source_url）に保存 → 辞典はレーン切替に連動して表示し「出典: OP.GG（ランク帯 / パッチ / 取得日）」を必ず表示。
+- [x] **【05辞典②】勝率・Tierを外部サイトの実データに置き換える（AI調べは廃止）**（2026-10-03 完了）:
+  - OP.GG公式MCPサーバー（`https://mcp-api.op.gg/mcp` / `lol_list_lane_meta_champions`）から全5レーン計268体の実測メタデータ（勝率・採用率・BAN率・Tier・順位）を収集するパイプライン（`opgg_meta_collector.py`）を新設。
+  - Supabase `ktm_settings`（`opgg_lane_meta_stats`）および `opgg_lane_meta.json` に永続化し、PC常駐デーモン（`edge_worker_daemon.py`）へ日次自動同期スレッドを組み込み。
+  - AI推測値（`patch_meta`のJinx 0.0%等の妄想）を完全排除。辞典詳細でレーン選択に連動したリアルタイムTier・勝率・BAN率・順位およびOP.GG公式出典リンクを表示。一覧カードにもTierバッジを直感配備。Turbopackビルド全PASS。
 - [ ] **【05辞典③】辞典の整理とメンテナンス画面**（2026-10-03 叩き台のみ・ユーザーと別途相談）:
   - ⚠️ 判明事実: 05辞典はビルド時に `compile_champions.mjs` でJSON化しており、`matchup_sentinel` の `enemy='GLOBAL'` 行を読み込み対象から除外している。**承認画面・自動統合で辞典に入れた本文（`champ_<ID>_global`）は05の辞典画面に表示されていない**（旧ポータルでは見える）。
   - 叩き台 `/admin/dict-maintenance`（チャンピオン単位）: 所属レーン編集 / 辞典本文を節（統合記事）単位で編集・削除・付け替え / 紐づくライブラリ記事の付け替え・除外 / 基本情報（強み・弱み・パワースパイク等）編集 / `knowledge_revisions` の履歴表示と1つ前に戻す / 変更後の再ビルド（Vercel Deploy Hook）。

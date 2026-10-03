@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import fs from 'node:fs';
+import path from 'node:path';
 import { supabase } from '@/lib/supabaseClient';
 
 export async function GET() {
@@ -13,11 +15,11 @@ export async function GET() {
       }, { status: 500 });
     }
 
-    // 1. ktm_settings からお気に入りとアイテム辞書を取得
+    // 1. ktm_settings からお気に入り、アイテム辞書、OP.GGメタを取得
     const { data: settingsData, error: settingsError } = await supabase
       .from('ktm_settings')
       .select('key, value')
-      .in('key', ['pilot_fav_champions', 'pilot_item_dict']);
+      .in('key', ['pilot_fav_champions', 'pilot_item_dict', 'opgg_lane_meta_stats']);
 
     if (settingsError) {
       console.warn('ktm_settings 取得エラー:', settingsError);
@@ -25,6 +27,7 @@ export async function GET() {
 
     let favorites: string[] = [];
     let itemDict: Record<string, string> = {};
+    let opggMeta: any = null;
 
     if (settingsData) {
       for (const row of settingsData) {
@@ -32,6 +35,8 @@ export async function GET() {
           favorites = row.value;
         } else if (row.key === 'pilot_item_dict' && row.value && typeof row.value === 'object') {
           itemDict = row.value;
+        } else if (row.key === 'opgg_lane_meta_stats' && row.value && typeof row.value === 'object') {
+          opggMeta = row.value;
         }
       }
     }
@@ -59,11 +64,21 @@ export async function GET() {
       }
     }
 
+    if (!opggMeta) {
+      try {
+        const localPath = path.resolve(process.cwd(), 'src/data/opgg_lane_meta.json');
+        if (fs.existsSync(localPath)) {
+          opggMeta = JSON.parse(fs.readFileSync(localPath, 'utf-8'));
+        }
+      } catch {}
+    }
+
     return NextResponse.json({
       success: true,
       favorites,
       itemDict,
       laneRoles,
+      opggMeta,
     });
   } catch (err: any) {
     console.error('pilot/settings GET エラー:', err);

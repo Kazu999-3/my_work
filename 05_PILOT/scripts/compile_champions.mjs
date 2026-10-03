@@ -20,6 +20,7 @@ const FACTORY_DIR = path.resolve(__dirname, '../../02_FACTORY');
 const NOTE_STOCKS_DIR = path.join(FACTORY_DIR, '_LOL/note_stocks');
 const CUSTOM_ROLES_FILE = path.join(OUTPUT_DIR, 'custom_roles.json');
 const ITEM_DICT_FILE = path.join(OUTPUT_DIR, 'item_dictionary.json');
+const OPGG_META_FILE = path.join(OUTPUT_DIR, 'opgg_lane_meta.json');
 
 const FALLBACK_PATCH = '14.24.1';
 
@@ -533,6 +534,16 @@ async function main() {
     }
   }
 
+  let opggLaneMeta = null;
+  if (fs.existsSync(OPGG_META_FILE)) {
+    try {
+      opggLaneMeta = JSON.parse(fs.readFileSync(OPGG_META_FILE, 'utf-8'));
+      console.log(`📊 OP.GG 公式メタデータロード成功: 合計 ${opggLaneMeta.totalEntries} 件`);
+    } catch (e) {
+      console.warn('⚠️ opgg_lane_meta.json パース失敗:', e.message);
+    }
+  }
+
   const translateTrendItem = (name) => {
     if (!name) return '';
     const trimmed = String(name).trim();
@@ -620,6 +631,21 @@ async function main() {
     // サマリーオブジェクト
     const champVideoBibles = allNoteStocksMap[champId] || allNoteStocksMap[lowerId] || [];
 
+    // OP.GG実データから最有力ロールの勝率・Tierを取得 (AI推測値は完全排除)
+    let opggWinRate = undefined;
+    let opggTier = undefined;
+    if (opggLaneMeta?.lanes) {
+      for (const r of roles) {
+        const laneKey = r === 'BOT' ? 'ADC' : r;
+        const meta = opggLaneMeta.lanes[laneKey]?.[champId];
+        if (meta) {
+          opggWinRate = meta.winRate;
+          opggTier = meta.tier;
+          break;
+        }
+      }
+    }
+
     const summaryItem = {
       id: champId,
       name: champId,
@@ -630,8 +656,8 @@ async function main() {
       hasBible: !!bibleData,
       videoBibleCount: champVideoBibles.length,
       libraryKnowledgeCount: (libraryKnowledgeMap[lowerId] || []).length,
-      tier: dbFact?.patch_meta?.tier || undefined,
-      winRate: dbFact?.patch_meta?.win_rate || undefined,
+      tier: opggTier || undefined,
+      winRate: opggWinRate || undefined,
     };
 
     summaries.push(summaryItem);
@@ -675,8 +701,8 @@ async function main() {
         weaknesses: parseList(dbFact?.weaknesses),
         counters: parseList(dbFact?.counter_champions),
         mustBan: parseList(dbFact?.must_ban_champions),
-        tier: dbFact?.patch_meta?.tier || undefined,
-        winRate: dbFact?.patch_meta?.win_rate || undefined,
+        tier: opggTier || undefined,
+        winRate: opggWinRate || undefined,
         trendItems: (dbFact?.patch_meta?.trend_items || []).map(translateTrendItem),
         trendRunes: dbFact?.patch_meta?.trend_runes || undefined,
         gameplayGuide: dbFact?.strategy || '',
