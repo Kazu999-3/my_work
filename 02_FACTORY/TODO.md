@@ -88,10 +88,15 @@
   - Discord REST API経由で公式Botよりけんちさんへ状況説明DMを自動送信完了。
   - 旧ポータル（`04_PORTAL`）のサイドバー管理メニューを内戦・大会専用へ純化し、トップに新鋭パイロット（`https://ktm-pilot.vercel.app`）をリンク配備。
   - 旧ポータル内の旧辞典（`/champions`）・旧ライブラリ（`/library`）画面に新鋭パイロットへの完全移行バナー＆ワンクリック遷移ボタンを配備。内戦や宝くじCronを一切破壊しない安全な段階的役目終了を完了。
-- [ ] **【Step 4】PC常駐デーモン（`edge_worker_daemon.py`）の長尺動画タイムアウト調整**:
-  - `edge_worker_daemon.py` 内の `youtube_queue_process` / `youtube_absorber` における長時間動画解析のタイムアウト値・再試行ハンドリングの最適化。
-- [ ] **【Step 5】Pythonコード側のDDragonバージョン自動取得**:
-  - ハードコードされているDDragonバージョン（`16.19.1` 等）をDDragon公式APIから最新バージョンを動的取得する仕様へ統一。
+- [x] **【Step 4】PC常駐デーモン（`edge_worker_daemon.py`）の長尺動画タイムアウト調整**（2026-10-04 完了）:
+  - `edge_worker_daemon.py` の全体監視タイムアウトを1800秒から3600秒（60分）へ拡張し、ゾンビタスク誤判定を排除。
+  - `youtube_queue_process` を900秒から2400秒（40分）へ、`youtube_absorber.py` を1800秒から3600秒へ緩和。
+  - `youtube_worker.py` の `yt-dlp` 字幕取得（180s→300s）、Gemini API要約（120s→240s）のタイムアウトを拡張。
+  - 新設定で常駐デーモンを再起動し、安定稼働を確認済み。
+- [x] **【Step 5】Pythonコード側のDDragonバージョン動的自動取得**（2026-10-04 完了）:
+  - `03_SYSTEMS/v2_CORE/_LOL/ddragon_resolver.py` を新設し、Riot公式 `versions.json` から最新バージョン（現在 `16.19.1`）を動的に自動取得・24時間ディスクキャッシュする統合SSoTリゾルバーを配備。
+  - `champ_id_normalizer.py` および `overlay/ddragon_version.py` を共通リゾルバーへ完全接続。
+  - HUDオーバーレイの全20テストスイート完全PASS確認済み。Git commit & push完了。
 
 ## ✅ 2026-10-02 対応済み（Sovereign Pilot [05_PILOT] 完全移行・双方向連携・PWA・Vercel本番公開）
 - [x] **既存バイブル全176本最新9大柱フォーマット一括再蒸留完了**:
