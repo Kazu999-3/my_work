@@ -58,22 +58,33 @@ function LibraryApp() {
   const [detailArticle, setDetailArticle] = useState<ArticleDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // 記事一覧フェッチ
   const fetchArticles = async (
     query = search,
     cat: 'lol' | 'general' = activeCategory,
     chan = selectedChannel,
-    sort = selectedSort
+    sort = selectedSort,
+    append = false,
+    offset = 0
   ) => {
-    setLoading(true);
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
     try {
       const res = await fetch(
-        `/api/library?q=${encodeURIComponent(query)}&category=${cat}&channel=${encodeURIComponent(chan)}&sort=${sort}&limit=60`
+        `/api/library?q=${encodeURIComponent(query)}&category=${cat}&channel=${encodeURIComponent(chan)}&sort=${sort}&limit=60&offset=${offset}`
       );
       const data = await res.json();
       if (res.ok && data.articles) {
-        setArticles(data.articles);
+        if (append) {
+          setArticles((prev) => [...prev, ...data.articles]);
+        } else {
+          setArticles(data.articles);
+        }
         setTotalCount(data.total || data.articles.length);
         if (data.counts) setCounts(data.counts);
         if (data.channels) setChannels(data.channels);
@@ -81,24 +92,33 @@ function LibraryApp() {
     } catch (e) {
       console.error("ライブラリ取得エラー:", e);
     } finally {
-      setLoading(false);
+      if (append) {
+        setLoadingMore(false);
+      } else {
+        setLoading(false);
+      }
     }
+  };
+
+  const handleLoadMore = () => {
+    if (loadingMore || loading || articles.length >= totalCount) return;
+    fetchArticles(search, activeCategory, selectedChannel, selectedSort, true, articles.length);
   };
 
   const handleCategoryChange = (cat: 'lol' | 'general') => {
     setActiveCategory(cat);
     setSelectedChannel(""); // カテゴリ変更時はチャンネルリセット
-    fetchArticles(search, cat, "", selectedSort);
+    fetchArticles(search, cat, "", selectedSort, false, 0);
   };
 
   const handleChannelChange = (chan: string) => {
     setSelectedChannel(chan);
-    fetchArticles(search, activeCategory, chan, selectedSort);
+    fetchArticles(search, activeCategory, chan, selectedSort, false, 0);
   };
 
   const handleSortChange = (sort: 'date_desc' | 'volume_desc' | 'date_asc' | 'title_asc') => {
     setSelectedSort(sort);
-    fetchArticles(search, activeCategory, selectedChannel, sort);
+    fetchArticles(search, activeCategory, selectedChannel, sort, false, 0);
   };
 
   useEffect(() => {
@@ -350,93 +370,129 @@ function LibraryApp() {
             <span className="text-sm font-bold">攻略ライブラリを検索中...</span>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {articles.map((a) => {
-              const champs = a.champion ? a.champion.split(",").map(c => c.trim()).filter(Boolean) : [];
-              return (
-                <div
-                  key={a.id}
-                  onClick={() => openDetail(a.id)}
-                  className="p-3.5 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-amber-500/50 transition cursor-pointer flex flex-col justify-between gap-3 shadow-xs hover:bg-zinc-850"
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {articles.map((a) => {
+                const champs = a.champion ? a.champion.split(",").map(c => c.trim()).filter(Boolean) : [];
+                return (
+                  <div
+                    key={a.id}
+                    onClick={() => openDetail(a.id)}
+                    className="p-3.5 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-amber-500/50 transition cursor-pointer flex flex-col justify-between gap-3 shadow-xs hover:bg-zinc-850"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-bold text-xs text-zinc-100 line-clamp-2 leading-snug hover:text-amber-300 transition">
+                          {a.title}
+                        </h3>
+                        {champs.length > 0 && (
+                          <div className="relative w-7 h-7 rounded-lg overflow-hidden border border-zinc-700 shrink-0">
+                            <img
+                              src={getChampIcon(champs[0])}
+                              alt={champs[0]}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 📺 チャンネル ＆ 文字数バッジ */}
+                      <div className="flex items-center gap-2 text-[10px] text-zinc-400 pt-0.5 flex-wrap">
+                        {a.channel && a.channel !== "その他・一般" && (
+                          <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300 font-bold border border-zinc-700/60 truncate max-w-40">
+                            📺 {a.channel}
+                          </span>
+                        )}
+                        {a.char_count && a.char_count > 0 && (
+                          <span className="px-1.5 py-0.5 rounded-md bg-zinc-950 text-amber-400/90 font-mono border border-zinc-800 font-bold">
+                            約{a.char_count.toLocaleString()}字
+                          </span>
+                        )}
+                      </div>
+
+                      {/* 🎯 紐付き先ジャンプ（チャンピオン辞典 または レーンガイド） */}
+                      <div className="flex items-center gap-1.5 flex-wrap text-[11px] pt-1">
+                        {champs.filter(c => c !== "Unknown").map((c) => (
+                          <Link
+                            key={c}
+                            href={`/?c=${encodeURIComponent(c)}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 border border-amber-500/30 transition font-black"
+                            title={`${c} のチャンピオン辞典・ビルドへジャンプ`}
+                          >
+                            <img
+                              src={getChampIcon(c)}
+                              alt={c}
+                              className="w-4 h-4 rounded-full object-cover border border-amber-400/40"
+                              onError={(ev) => { (ev.target as HTMLElement).style.display = 'none'; }}
+                            />
+                            <span>{c} 辞典 ↗</span>
+                          </Link>
+                        ))}
+
+                        {(!a.champion || a.champion === "Unknown" || champs.length === 0) && (
+                          <Link
+                            href="/lane-guides"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 hover:text-emerald-200 border border-emerald-500/30 transition font-black"
+                            title="全JG共通の普遍的マクロ（レーンガイド）へジャンプ"
+                          >
+                            <span>📚 レーンガイド(JG) ↗</span>
+                          </Link>
+                        )}
+
+                        {a.tags && Array.isArray(a.tags) && a.tags.slice(0, 2).map((t) => (
+                          <span key={t} className="px-1.5 py-0.5 rounded bg-zinc-950 text-zinc-400 border border-zinc-800 text-[10px]">
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10px] text-zinc-500 border-t border-zinc-800/80 pt-2">
+                      <span>{a.created_at ? a.created_at.split("T")[0] : "-"}</span>
+                      <span className="flex items-center gap-0.5 text-amber-400 font-bold">
+                        詳細を読む <ChevronRight size={12} />
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* さらに読み込む（Load More）ボタン */}
+            {articles.length < totalCount && (
+              <div className="pt-4 pb-8 flex flex-col items-center justify-center gap-2">
+                <button
+                  onClick={handleLoadMore}
+                  disabled={loadingMore}
+                  className="px-6 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-amber-400 font-bold border border-zinc-700/80 hover:border-amber-500/50 transition cursor-pointer flex items-center gap-2 shadow-sm text-xs disabled:opacity-50"
                 >
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-bold text-xs text-zinc-100 line-clamp-2 leading-snug hover:text-amber-300 transition">
-                        {a.title}
-                      </h3>
-                      {champs.length > 0 && (
-                        <div className="relative w-7 h-7 rounded-lg overflow-hidden border border-zinc-700 shrink-0">
-                          <img
-                            src={getChampIcon(champs[0])}
-                            alt={champs[0]}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* 📺 チャンネル ＆ 文字数バッジ */}
-                    <div className="flex items-center gap-2 text-[10px] text-zinc-400 pt-0.5 flex-wrap">
-                      {a.channel && a.channel !== "その他・一般" && (
-                        <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300 font-bold border border-zinc-700/60 truncate max-w-40">
-                          📺 {a.channel}
-                        </span>
-                      )}
-                      {a.char_count && a.char_count > 0 && (
-                        <span className="px-1.5 py-0.5 rounded-md bg-zinc-950 text-amber-400/90 font-mono border border-zinc-800 font-bold">
-                          約{a.char_count.toLocaleString()}字
-                        </span>
-                      )}
-                    </div>
-
-                    {/* 🎯 紐付き先ジャンプ（チャンピオン辞典 または レーンガイド） */}
-                    <div className="flex items-center gap-1.5 flex-wrap text-[11px] pt-1">
-                      {champs.filter(c => c !== "Unknown").map((c) => (
-                        <Link
-                          key={c}
-                          href={`/?c=${encodeURIComponent(c)}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 border border-amber-500/30 transition font-black"
-                          title={`${c} のチャンピオン辞典・ビルドへジャンプ`}
-                        >
-                          <img
-                            src={getChampIcon(c)}
-                            alt={c}
-                            className="w-4 h-4 rounded-full object-cover border border-amber-400/40"
-                            onError={(ev) => { (ev.target as HTMLElement).style.display = 'none'; }}
-                          />
-                          <span>{c} 辞典 ↗</span>
-                        </Link>
-                      ))}
-
-                      {(!a.champion || a.champion === "Unknown" || champs.length === 0) && (
-                        <Link
-                          href="/lane-guides"
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 hover:text-emerald-200 border border-emerald-500/30 transition font-black"
-                          title="全JG共通の普遍的マクロ（レーンガイド）へジャンプ"
-                        >
-                          <span>📚 レーンガイド(JG) ↗</span>
-                        </Link>
-                      )}
-
-                      {a.tags && Array.isArray(a.tags) && a.tags.slice(0, 2).map((t) => (
-                        <span key={t} className="px-1.5 py-0.5 rounded bg-zinc-950 text-zinc-400 border border-zinc-800 text-[10px]">
-                          {t}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between text-[10px] text-zinc-500 border-t border-zinc-800/80 pt-2">
-                    <span>{a.created_at ? a.created_at.split("T")[0] : "-"}</span>
-                    <span className="flex items-center gap-0.5 text-amber-400 font-bold">
-                      詳細を読む <ChevronRight size={12} />
-                    </span>
-                  </div>
+                  {loadingMore ? (
+                    <>
+                      <RefreshCw size={14} className="animate-spin" />
+                      <span>読み込み中...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>⬇️ さらに読み込む (+60件)</span>
+                      <span className="text-[11px] text-zinc-400 font-mono">
+                        (残り {totalCount - articles.length} 件)
+                      </span>
+                    </>
+                  )}
+                </button>
+                <div className="text-[11px] text-zinc-500 font-mono">
+                  {articles.length} / {totalCount} 件表示中
                 </div>
-              );
-            })}
+              </div>
+            )}
+
+            {articles.length >= totalCount && articles.length > 0 && (
+              <div className="py-6 text-center text-xs text-zinc-500">
+                ✅ 全 {totalCount} 件のアーカイブをすべて表示しました
+              </div>
+            )}
           </div>
         )}
       </main>

@@ -776,7 +776,15 @@ function PilotApp() {
 
                   {/* 📒 攻略ライブラリ記事・知見タブを開く */}
                   <button
-                    onClick={() => setActiveTab("library")}
+                    onClick={() => {
+                      setActiveTab("library");
+                      setTimeout(() => {
+                        const el = document.getElementById("champ-tabs-nav");
+                        if (el) {
+                          el.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }
+                      }, 50);
+                    }}
                     className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
                       activeTab === "library"
                         ? "bg-amber-500/20 text-amber-300 border-amber-500/50"
@@ -1338,7 +1346,7 @@ function PilotApp() {
             )}
 
             {/* 3. 🧭 4大タブナビゲーション */}
-            <div className="flex items-center gap-1.5 p-1 bg-zinc-900 rounded-xl border border-zinc-800 overflow-x-auto">
+            <div id="champ-tabs-nav" className="flex items-center gap-1.5 p-1 bg-zinc-900 rounded-xl border border-zinc-800 overflow-x-auto scroll-mt-4">
               <button
                 onClick={() => setActiveTab("build")}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-black transition cursor-pointer whitespace-nowrap ${

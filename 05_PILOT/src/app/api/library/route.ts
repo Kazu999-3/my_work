@@ -22,6 +22,12 @@ function isLolRecord(item: any): boolean {
   return lolWords.some(w => title.includes(w));
 }
 
+function extractYoutubeId(url: string): string | null {
+  if (!url) return null;
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
 export async function GET(req: NextRequest) {
   try {
     if (!supabase) {
@@ -37,7 +43,7 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '60', 10);
     const offset = parseInt(searchParams.get('offset') || '0', 10);
 
-    // チャンネル名辞書を youtube_queue からロード（URL → channel_name）
+    // チャンネル名辞書を youtube_queue からロード（URL → channel_name、および 動画ID → channel_name）
     const { data: queueRows } = await supabase
       .from('youtube_queue')
       .select('url, channel_name')
@@ -45,10 +51,17 @@ export async function GET(req: NextRequest) {
       .limit(2000);
 
     const channelMap: Record<string, string> = {};
+    const videoIdMap: Record<string, string> = {};
     if (queueRows) {
       for (const qr of queueRows) {
         if (qr.url && qr.channel_name) {
-          channelMap[qr.url.trim()] = qr.channel_name.trim();
+          const trimmedUrl = qr.url.trim();
+          const trimmedCh = qr.channel_name.trim();
+          channelMap[trimmedUrl] = trimmedCh;
+          const vid = extractYoutubeId(trimmedUrl);
+          if (vid) {
+            videoIdMap[vid] = trimmedCh;
+          }
         }
       }
     }
@@ -74,14 +87,26 @@ export async function GET(req: NextRequest) {
     let lolCount = 0;
     let generalCount = 0;
 
-    // 各記事のチャンネル名と文字数を解決
+    // 各記事のチャンネル名と文字数を解決（URL一致 ➔ 動画ID一致 ➔ 本文メタデータ ➔ 本文URL動画ID の順でフォールバック）
     const enrichedRows = allRows.map((r: any) => {
       let ch = '';
-      if (r.source_url && channelMap[r.source_url.trim()]) {
-        ch = channelMap[r.source_url.trim()];
+      const src = (r.source_url || '').trim();
+      const srcVid = extractYoutubeId(src);
+
+      if (src && channelMap[src]) {
+        ch = channelMap[src];
+      } else if (srcVid && videoIdMap[srcVid]) {
+        ch = videoIdMap[srcVid];
       } else if (r.content) {
         const m = r.content.match(/>\s*-\s*\*\*チャンネル\*\*:\s*([^\n\r]+)/);
-        if (m) ch = m[1].trim();
+        if (m) {
+          ch = m[1].trim();
+        } else {
+          const vidMatch = r.content.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([a-zA-Z0-9_-]{11})/);
+          if (vidMatch && videoIdMap[vidMatch[1]]) {
+            ch = videoIdMap[vidMatch[1]];
+          }
+        }
       }
 
       // チャンネル名正規化（Kireiの表記揺れ統一など）
