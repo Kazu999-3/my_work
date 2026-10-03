@@ -29,10 +29,10 @@
   - 実データ3試合で検証時に「味方の重傷購入が31分でもOK判定」のバグを発見・修正（チーム最初の購入時刻で判定）。
 - [ ] **【候補3】note記事・戦術発信パイプライン（Sovereign ADO Engine）の再起動**（※保留中: ストック224本充填済み、執筆タイミング待機）:
   - 173体の知見・バイブル・パッチ情報を元に、辛口AI壁打ち校正付きのnote記事ドラフト・SNS投稿を自動錬成。
-- [ ] **【05辞典①】お気に入り・レーン所属・アイテム辞書をDB保存にして端末間で共有**（2026-10-03 設計済み・未実装）:
-  - 現状: 3つとも `localStorage`（`pilot_fav_champions` / `pilot_custom_roles` / `pilot_custom_item_dict`）でブラウザごとにバラバラ。レーン所属は localStorage・`src/data/custom_roles.json`・DB `champion_lane_roles` の3か所に分散。
-  - 設計: お気に入りとアイテム辞書は `ktm_settings`（key: `pilot_fav_champions` / `pilot_item_dict`）、レーン所属は `champion_lane_roles` に一本化。`/api/pilot/settings`（GET / キー単位PUT）。起動時にDBから読み、変更は即保存。localStorageは通信不可時の予備のみ。
-  - 移行: 初回のみ端末のお気に入りとDBを和集合で保存し端末に移行済みフラグ（スマホとPC両方で1回開けば統合される）。単一ユーザーなので後勝ち。
+- [x] **【05辞典①】お気に入り・レーン所属・アイテム辞書をDB保存にして端末間で共有**（2026-10-03 完了）:
+  - お気に入り（`favorites`）とアイテム辞書（`pilot_item_dict`）を Supabase `ktm_settings` に保存、レーン所属を `champion_lane_roles` に一本化。
+  - 新設API `/api/pilot/settings`（GET/PUT）により、ロード時にDBから一括取得。初回端末移行処理でローカルの `localStorage` とDBの和集合マージを自動実行。
+  - お気に入りトグル（★）および編集モーダル保存時に即座にDBへ永続化され、スマホ（PWA）とPC間の双方向同期が完了。Turbopackビルド全PASS。
 - [ ] **【05辞典②】勝率・Tierを外部サイトの実データに置き換える（AI調べは廃止）**（2026-10-03 調査済み・未実装）:
   - 現状: `champion_facts.patch_meta` の勝率・採用率・BAN率・Tierは、Gemini(google_search、失敗時は検索なし=推測)がチャンピオンごとに1つ答えた値。レーン別ではなく、ランク帯・地域も不明。Jinx勝率0.0%等の異常値あり。AI推測排除の誓約に反する → 表示も生成（`champion_trend_worker.py`）もやめる。
   - ユーザー判断: 「出典リンク＋自分の実戦成績」だけの第1段階は不要。外部サイトの実データを引用したい。
