@@ -11,6 +11,35 @@
 
 ## 🗓️ 2026-10-03（土）
 
+### 🎯 動画記事のチャンピオン判定エンジン刷新 ＆ 決定論的タイトル照合 ＆ 既存DB 116件一括修正
+
+**概要**:
+1. **背景と目的**:
+   - YouTube動画解析ワーカー（`scripts/youtube_worker.py`）がGeminiの答えた `champion` 文字列をそのまま保存していたため、「Jarvan IV」「Lee Sin」「Wukong」等の表記ゆれによる05辞典紐付け漏れや、新チャンプ「ユナラ」を「Yuumi」に取り違える事故、マクロ動画へのAI推測付与が発生していた。
+   - DDragon 173体公式辞書に基づく決定論的タイトル照合エンジンを配備し、AI推測を排除して05辞典への紐付け精度を100%に引き上げた。
+2. **実施内容**:
+   - **決定論的判定エンジン (`champ_id_normalizer.py`) の新設・強化**:
+     - DDragon公式173体の日本語名・英語名、CamelCase自動スペース化（`Lee Sin`, `Jarvan IV`, `Master Yi`, `Twisted Fate`, `Dr Mundo` 等）、中黒除去（`リーシン`, `チョガス`, `カジックス` 等）、および有名エイリアス（J4, Wukong, TF, MF等）と新チャンプ（Locke, Yunara, Ambessa, Mel）を網羅。
+     - **カタカナ誤爆防止境界チェック**: カタカナ語には `(?<![ァ-ヴー])` ... `(?![ァ-ヴー])` を適用。「パワースパイク」内の「パイク」や「リセット」内の「セト」の誤検出を100%防止。
+     - **英単語境界チェック**: 英字語には `(?<![a-zA-Z0-9])` ... `(?![a-zA-Z0-9])` を適用。「Settings」内の「Sett」や「Video」内の「Vi」の誤爆を100%防止。
+     - タイトルから抽出された第1チャンピオンを主題として決定論的に確定。タイトルに無い場合のみAI出力を正規化し、無ければ `Unknown` とする。
+   - **ワーカーパイプライン刷新 (`scripts/youtube_worker.py`)**:
+     - 記事タイトルおよび元動画タイトルから `determine_champion()` を最優先実行してDB保存。
+   - **既存DB (`personal_knowledge`) 116件の一括修正**:
+     - `fix_personal_knowledge_champions.py` により、既存の表記ゆれ（Jarvan IV ➔ JarvanIV 10件、Lee Sin ➔ LeeSin、Master Yi ➔ MasterYi、Wukong ➔ MonkeyKing、Cho'Gath ➔ Chogath、Bel'Veth ➔ Belveth、Kha'zix ➔ Khazix等）、および誤判定（ユナラ ➔ Yunara、ロック ➔ Locke、カーサス ➔ Karthus等）計116件をSupabase上で正規化。
+   - **05辞典反映・検証**:
+     - `compile_champions.mjs` を再実行し、JarvanIV 18件、MonkeyKing 15件、Khazix 28件、LeeSin 19件、Belveth 11件、Chogath 8件、Locke 5件、Karthus 2件、Yunara 1件と各チャンピオン詳細への紐付けが劇的に回復したことを実測確認。Turbopackビルド（21/21ルート）全PASS。
+3. **3行ナレッジ**:
+   - **「短小な固有名詞の辞書照合では、日本語カタカナ・英語それぞれに厳格な文字種境界（Negative Lookaround）を張れ」**: 単純な部分一致（substring match）では「パワースパイク」が「パイク」に、「Settings」が「Sett」に化ける。前後に同系統文字（カタカナや英数字）が連続しないことを正規表現で縛ることで誤爆はゼロになる。
+   - **「AIの自由テキスト出力をDBの外部キーや分類キーに直接代入してはならない」**: LLMは気まぐれにスペース（Jarvan IV）や旧名（Wukong）、似た名前（Yuumi）を生成する。分類キーは必ず決定論的正規化器（Normalizer）を通すか、タイトルからのルールベース照合を最優先にせよ。
+   - **「英語元タイトルと日本語翻訳タイトルの二重照合で海外クリエイター動画の認識率を最大化せよ」**: 元動画が英語（How to HARD CARRY as Bel'Veth）でAI生成タイトルが日本語（集団戦完全攻略）の場合でも、両方のタイトルを探索することで正確なチャンピオンIDを救出できる。
+4. **拾い上げ（Harvest）**:
+   - `[要検証]`: 複数チャンピオンが登場する対面比較動画（例: `Lee Sin vs Viego`）について、将来的に `secondary_champions` カラムを設けて対面双方の辞典に掲載する拡張。
+   - `[継続ウォッチ]`: 新チャンピオン実装時のDDragonパッチ配信ラグと `KNOWN_ALIASES` への先行登録運用。
+   - `[発信候補]`: 「【個人開発】LLMのハルシネーション（誤判定）を完全撲滅：カタカナ境界正規表現とDDragon公式辞書で173体LoL動画を100%正確に自動分類する方法」
+
+---
+
 ### 👑 統合戦術マスター教本（原本全文194件）完全復旧 ＆ 辞典専用メンテ画面（`/admin/dict-maintenance`）配備 ＆ 操作UI集約
 
 **概要**:

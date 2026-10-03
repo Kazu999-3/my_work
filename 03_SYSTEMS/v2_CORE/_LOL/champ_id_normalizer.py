@@ -1,5 +1,6 @@
 import logging
 import requests
+import re
 from typing import Dict, Optional
 
 # Riot DDragonの特殊IDや各種誤表記・旧表記・別名マッピング
@@ -14,6 +15,12 @@ KNOWN_ALIASES: Dict[str, str] = {
     "renata": "Renata",
 
     # AI誤訳・ピンイン・スペルミス・旧表記マッピング
+    "lee sin": "LeeSin",
+    "leesin": "LeeSin",
+    "lee": "LeeSin",
+    "j4": "JarvanIV",
+    "jarvan 4": "JarvanIV",
+    "jarvan": "JarvanIV",
     "kisante": "KSante",
     "ksante": "KSante",
     "k'sante": "KSante",
@@ -86,6 +93,11 @@ KNOWN_ALIASES: Dict[str, str] = {
     "aphelios": "Aphelios",
     "zahan": "Zaahen",
     "zaahen": "Zaahen",
+    "locke": "Locke",
+    "yunara": "Yunara",
+    "ambessa": "Ambessa",
+    "anbessa": "Ambessa",
+    "mel": "Mel",
 }
 
 _ddragon_id_map: Optional[Dict[str, str]] = None
@@ -145,11 +157,21 @@ def load_ddragon_mapping() -> Dict[str, str]:
                     # 2. 小文字・英数字のみ (e.g. missfortune -> MissFortune, ksante -> KSante)
                     norm = champ_id.lower().replace("'", "").replace(" ", "").replace(".", "")
                     mapping[norm] = champ_id
+                    # 2b. CamelCase 分割スペース表記 (e.g. "Lee Sin" -> "LeeSin", "Master Yi" -> "MasterYi")
+                    spaced = re.sub(r"([a-z])([A-Z])", r"\1 \2", champ_id)
+                    if spaced != champ_id:
+                        mapping[spaced] = champ_id
+                        mapping[spaced.lower()] = champ_id
                     # 3. 日本語名 (e.g. アーゴット -> Urgot, ウーコン -> MonkeyKing)
                     name = info.get("name")
                     if name:
                         mapping[name] = champ_id
                         mapping[name.lower()] = champ_id
+                        # 3b. 中黒・イコール等の記号抜き日本語名 (e.g. "リー・シン" -> "リーシン", "チョ＝ガス" -> "チョガス")
+                        name_clean = name.replace("・", "").replace("＝", "").replace("=", "").replace(" ", "")
+                        if name_clean != name:
+                            mapping[name_clean] = champ_id
+                            mapping[name_clean.lower()] = champ_id
     except Exception as e:
         logging.warning(f"⚠️ DDragonからのチャンピオンマッピングロードに失敗しました: {e}")
     
@@ -185,10 +207,6 @@ def normalize_champion_id(champ_name_or_id: str) -> str:
 def resolve_roster_champion(champ_name_or_id: str) -> Optional[str]:
     """
     正規化したうえで、DDragon に実在するチャンピオンIDだけを返す（実在しなければ None）。
-    normalize_champion_id() は見つからない文字列をそのまま返すため、ファイル名の断片
-    （"D", "ji", "genre" 等）が「チャンピオン名」として保存されていた(2026-10-02発覚)。
-    DDragon の一覧が取得できないときも None を返すので、呼び出し側で
-    is_roster_available() を確認して処理自体を見送ること。
     """
     if not champ_name_or_id or not str(champ_name_or_id).strip():
         return None
@@ -202,3 +220,114 @@ def resolve_roster_champion(champ_name_or_id: str) -> Optional[str]:
 def is_roster_available() -> bool:
     """DDragon のチャンピオン一覧を取得できているか"""
     return bool(load_ddragon_mapping())
+
+
+_compiled_title_rules = None
+
+def _get_title_matching_rules():
+    global _compiled_title_rules
+    if _compiled_title_rules is not None:
+        return _compiled_title_rules
+
+    dd_map = load_ddragon_mapping()
+    
+    raw_rules = []
+    # 1. KNOWN_ALIASES
+    for alias, cid in KNOWN_ALIASES.items():
+        raw_rules.append((alias, cid))
+        unpunct = alias.replace("'", "").replace(" ", "").replace("-", "")
+        if unpunct != alias:
+            raw_rules.append((unpunct, cid))
+    # 2. DDragon
+    for name, cid in dd_map.items():
+        raw_rules.append((name, cid))
+
+    # 最長一致優先でソート
+    raw_rules.sort(key=lambda x: len(x[0]), reverse=True)
+    seen_kw = set()
+    compiled = []
+
+    for kw, cid in raw_rules:
+        norm_kw = kw.strip()
+        if not norm_kw or len(norm_kw) < 2:
+            continue
+        k_lower = norm_kw.lower()
+        if k_lower in seen_kw:
+            continue
+        seen_kw.add(k_lower)
+
+        # カタカナ語: 前後にカタカナ・長音符がないこと（パワースパイク等の誤爆防止）
+        if re.fullmatch(r"[ァ-ヴー・＝]+", norm_kw):
+            pattern = re.compile(r"(?<![ァ-ヴー])" + re.escape(norm_kw) + r"(?![ァ-ヴー])", re.IGNORECASE)
+        else:
+            # 英数字記号: 単語境界（Setting等の誤爆防止）
+            pattern = re.compile(r"(?<![a-zA-Z0-9])" + re.escape(norm_kw) + r"(?![a-zA-Z0-9])", re.IGNORECASE)
+
+        compiled.append((pattern, cid, norm_kw))
+
+    _compiled_title_rules = compiled
+    return compiled
+
+
+def detect_champions_from_text(text: str) -> list[str]:
+    """
+    動画タイトル等のテキストから、含まれる正規チャンピオンIDを出現位置順に検出する。
+    カタカナ誤爆防止（パワースパイク等）および英単語境界チェック済み。
+    """
+    if not text:
+        return []
+    
+    rules = _get_title_matching_rules()
+    matches = []
+    for pattern, cid, kw in rules:
+        for m in pattern.finditer(text):
+            matches.append((m.start(), m.end(), cid, kw))
+    
+    if not matches:
+        return []
+
+    # 出現位置昇順、長さ降順でソート
+    matches.sort(key=lambda x: (x[0], -(x[1] - x[0])))
+    filtered = []
+    for m in matches:
+        overlap = any(not (m[1] <= f[0] or m[0] >= f[1]) for f in filtered)
+        if not overlap:
+            filtered.append(m)
+    filtered.sort(key=lambda x: x[0])
+
+    detected = []
+    seen = set()
+    for _, _, cid, _ in filtered:
+        if cid not in seen:
+            seen.add(cid)
+            detected.append(cid)
+    return detected
+
+
+def determine_champion(title: str, fallback_champ: Optional[str] = None) -> str:
+    """
+    記事のタイトルとフォールバック（Geminiの出力など）から、最も信頼できる正規チャンピオンIDを決定する。
+    1. タイトルからDDragon公式辞書で検出されたチャンピオン（最優先・決定論的）
+       - 1体ならそれ
+       - 複数体なら先頭（第1登場）チャンピオン
+    2. タイトルから検出できない場合:
+       - fallback_champ を resolve_roster_champion で正規化
+       - 複数カンマ区切りなら最初の有効な1体を解決
+       - それでも無効なら 'Unknown'
+    """
+    from_title = detect_champions_from_text(title)
+    if from_title:
+        return from_title[0]
+
+    if fallback_champ and fallback_champ != "Unknown":
+        resolved = resolve_roster_champion(fallback_champ)
+        if resolved:
+            return resolved
+        # カンマ区切りの複数があれば最初の有効なチャンプを拾う
+        parts = [p.strip() for p in fallback_champ.split(",")]
+        for part in parts:
+            first_resolved = resolve_roster_champion(part)
+            if first_resolved:
+                return first_resolved
+
+    return "Unknown"

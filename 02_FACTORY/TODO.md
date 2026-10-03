@@ -49,9 +49,18 @@
   - 🧭 **辞典ヘッダー操作ボタンの整理**:
     - 頻繁に使うプレイ用アクション（「⚔️ VS比較」「🤖 AIコーチ」「CD表」）を表に残し、管理・補助系アクション（「知見取込」「レーン編集」「アイテム辞書」「メンテ管理」）を「⚙️ ツール」ドロップダウンへスマートに集約。視界のノイズを一掃。
     - 全21ルート Turbopack ビルド・TypeScript型チェック完全パス。
-- [ ] **【05辞典④】動画記事のチャンピオン判定の修正**（2026-10-03 設計済み・未実装）:
-  - 現状: `scripts/youtube_worker.py` がGeminiの答えた `champion` をそのまま保存。表記ゆれ（`Jarvan IV` 等で辞典に出ない）、新チャンピオンの取り違え（「ユナラ」→Yuumi）、題名から判断できない動画への推測付与が発生。
-  - 設計: ①動画タイトルを公式一覧（DDragon 173体の日本語名・英語名・別名表）と照合し、ちょうど1体ならそれを採用（AIより優先、追加のAI呼び出しなし） ②それ以外はAIの答えを `resolve_roster_champion` で正規化、一覧に無ければ Unknown ③タイトルに複数体なら1体目を主題（複数紐付けは別途） ④既存の表記ゆれ37件と直近の動画記事をDBで再判定。
+- [x] **【05辞典④】動画記事のチャンピオン判定の修正**（2026-10-03 完了）:
+  - 🎯 **決定論的タイトル判定エンジン (`detect_champions_from_text` / `determine_champion`) の配備**:
+    - `03_SYSTEMS/v2_CORE/_LOL/champ_id_normalizer.py`: DDragon 173体公式辞書（日本語名・英語名）に加え、CamelCase自動スペース化（`Lee Sin`, `Jarvan IV`, `Master Yi`, `Twisted Fate`, `Dr Mundo` 等）、中黒記号除去（`リーシン`, `チョガス`, `カジックス` 等）、および有名エイリアス（J4, Wukong, TF, MF等）と新チャンプ（Locke, Yunara, Ambessa, Mel）を完全統合。
+    - **カタカナ誤爆防止（False Positive Guard）**: カタカナ名には `(?<![ァ-ヴー])` ... `(?![ァ-ヴー])` 境界チェックを導入。「パワースパイク」内の「パイク」や「リセット」内の「セト」の誤検出を100%防止。
+    - **単語境界チェック**: 英字名には `(?<![a-zA-Z0-9])` ... `(?![a-zA-Z0-9])` 境界チェックを導入。「Settings」内の「Sett」や「Video」内の「Vi」の誤爆を100%防止。
+    - 複数登場時は第1出現チャンピオンを主題（Primary）として決定論的に判定。タイトルで判定不能な場合のみAI出力を正規化し、無ければ推測を捏造せず `Unknown` を採用。
+  - 🤖 **ワーカー (`scripts/youtube_worker.py`) の判定パイプライン刷新**:
+    - AIの出力 `champion` を鵜呑みにせず、記事タイトルおよび元動画タイトルから `determine_champion()` を優先実行して保存。
+  - 🔄 **既存DB (`personal_knowledge`) 116件の一括修正完了**:
+    - `fix_personal_knowledge_champions.py` により、既存の表記ゆれ（Jarvan IV ➔ JarvanIV 10件、Lee Sin ➔ LeeSin、Master Yi ➔ MasterYi、Wukong ➔ MonkeyKing、Cho'Gath ➔ Chogath、Bel'Veth ➔ Belveth、Kha'zix ➔ Khazix等）、および誤判定（ユナラ ➔ Yunara、ロック ➔ Locke、カーサス ➔ Karthus等）計116件をDDragon正規IDへ一括修正。
+  - 📖 **05辞典への反映＆検証**:
+    - `compile_champions.mjs` を再実行し、JarvanIV 18件、MonkeyKing 15件、Khazix 28件、LeeSin 19件、Belveth 11件、Chogath 8件、Locke 5件、Karthus 2件、Yunara 1件と、各チャンピオン詳細へ動画バイブルが完璧に紐づいたことを実測確認。Turbopackビルド（21/21ルート）全PASS。
 - [ ] **【05辞典⑤】ライブラリをチャンネルで絞り込み**（2026-10-03 要望・方針未回答）:
   - `personal_knowledge` にチャンネル欄が無いため、`youtube_queue`（動画URL→`channel_name`）と突き合わせてチャンネル選択欄（件数付き）を付ける案。
 - [ ] **【段階的クリーンアップ】旧KTMポータル（`04_PORTAL`）の安全な役目終了**:

@@ -40,6 +40,16 @@ except ImportError:
 from notify import notify, COLOR_OK, COLOR_WARN
 from video_filter import is_shorts_video
 
+# チャンピオン判定モジュール（DDragon公式173体＋タイトル照合）
+_lol_core_dir = Path(__file__).resolve().parent.parent / "03_SYSTEMS" / "v2_CORE" / "_LOL"
+if str(_lol_core_dir) not in sys.path:
+    sys.path.insert(0, str(_lol_core_dir))
+try:
+    from champ_id_normalizer import determine_champion, detect_champions_from_text, resolve_roster_champion
+except ImportError:
+    def determine_champion(t, f=None): return f or "Unknown"
+    def resolve_roster_champion(c): return c
+
 SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
 # シークレット名は環境によって揺れる（Vercelは SUPABASE_SERVICE_ROLE_KEY、
 # 旧バッチは SUPABASE_KEY 等）。どれでも拾えるようにする。
@@ -784,6 +794,12 @@ def main():
             # /admin/knowledgeの「未承認」パネルで人間が承認するまではfetch_personal_knowledge
             # (champion_trend_worker.py)の対象から外れるようにする(2026-08-16、ユーザー要望)。
             # 既存の承認済み記事はそのまま維持し、今後の新規分だけが対象。
+            # チャンピオン判定: タイトル（記事タイトル＋元動画タイトル）照合を最優先、AI推測を正規化、無ければUnknown
+            raw_champ = a.get("champion") or "Unknown"
+            final_champ = determine_champion(video_title, raw_champ)
+            if final_champ == "Unknown" and it.get("title"):
+                final_champ = determine_champion(it.get("title"), raw_champ)
+
             # personal_knowledge へ保存 (review_status='pending')
             created_row = sb("POST", "personal_knowledge", [{
                 "title": video_title,
@@ -792,7 +808,7 @@ def main():
                 "source_url": url,
                 "genre": a.get("genre") or "LoL攻略",
                 "tags": tags,
-                "champion": a.get("champion") or "Unknown",
+                "champion": final_champ,
                 "review_status": "pending",
             }], prefer="return=representation")
             created_id = created_row[0].get("id") if (created_row and isinstance(created_row, list)) else None
