@@ -7,6 +7,7 @@ import {
   Crown, Bot, BookOpen, Library, Activity, Video, Plus, Menu, X, ChevronRight, Sparkles 
 } from 'lucide-react';
 import KnowledgeIngestModal from './KnowledgeIngestModal';
+import NotificationBell from './NotificationBell';
 
 interface NavItem {
   name: string;
@@ -77,8 +78,10 @@ export default function GlobalNavbar() {
             })}
           </nav>
 
-          {/* 右端アクション（戦術取込 ＋ スマホハンバーガー） */}
+          {/* 右端アクション（通知ベル ＋ 戦術取込 ＋ スマホハンバーガー） */}
           <div className="flex items-center gap-2">
+            <NotificationBell />
+
             <button
               onClick={() => setIsIngestModalOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-xs font-bold transition border border-amber-500/40 cursor-pointer shadow-sm"

@@ -37,7 +37,6 @@ import PushOptIn from './PushOptIn';
 import NotificationBell from './NotificationBell';
 import TaskStatusDrawer from './TaskStatusDrawer';
 import ThemeToggle from './ThemeToggle';
-import QuickInboxModal from './QuickInboxModal';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 
 function UserAuthWidget({ collapsed, inDrawer }: { collapsed?: boolean; inDrawer?: boolean }) {
@@ -225,7 +224,6 @@ export default function Sidebar() {
   const [activeTab, setActiveTab] = useState<'general' | 'admin'>('general');
   const [isAdminUser, setIsAdminUser] = useState(false);
   const [showMobileDrawer, setShowMobileDrawer] = useState(false);
-  const [showInboxModal, setShowInboxModal] = useState(false);
 
   const resolveItemHref = (item: MenuItem) => {
     if (item.id === 'mypage') {
@@ -428,17 +426,6 @@ export default function Sidebar() {
               <ThemeToggle variant="compact" />
             </div>
           )}
-          <button
-            type="button"
-            onClick={() => setShowInboxModal(true)}
-            className={`w-full py-2 px-3 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-black text-xs transition flex items-center justify-center gap-2 cursor-pointer ${
-              isCollapsed ? 'px-0' : ''
-            }`}
-            title="帝国インボックスにメモを投函"
-          >
-            <Inbox size={15} />
-            {!isCollapsed && <span>📥 メモ投函</span>}
-          </button>
           <UserAuthWidget collapsed={isCollapsed} />
           {isAdminUser && (
             <>
@@ -524,21 +511,6 @@ export default function Sidebar() {
                   <XIcon size={18} />
                 </button>
               </div>
-            </div>
-
-            {/* 📥 帝国インボックス クイックメモ投函ボタン */}
-            <div className="mb-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowMobileDrawer(false);
-                  setShowInboxModal(true);
-                }}
-                className="w-full py-2.5 px-3 rounded-2xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-300 border border-amber-500/40 font-black text-xs transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
-              >
-                <Inbox size={16} />
-                <span>📥 帝国インボックスへメモ投函</span>
-              </button>
             </div>
 
             {/* ユーザーアカウント情報 */}
@@ -647,12 +619,6 @@ export default function Sidebar() {
           </div>
         </div>
       )}
-
-      {/* 📥 帝国インボックス クイックメモ投函モーダル */}
-      <QuickInboxModal
-        isOpen={showInboxModal}
-        onClose={() => setShowInboxModal(false)}
-      />
     </>
   );
 }
