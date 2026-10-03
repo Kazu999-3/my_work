@@ -131,7 +131,7 @@ export async function integrateArticles(sb: SupabaseClient, articles: IntegrateA
       if (insErr) throw new Error(`champion_notes: ${insErr.message}`);
 
       const { error: tagErr } = await sb
-        .from('personal_knowledge').update({ tags: ['__DELETED__'], review_status: 'approved' }).eq('id', r.a.id);
+        .from('personal_knowledge').update({ review_status: 'approved' }).eq('id', r.a.id);
       if (tagErr) throw new Error(`personal_knowledge: ${tagErr.message}`);
       result.integrated.push(r.a.id);
     } catch (e: any) {
