@@ -205,16 +205,17 @@ const GENERAL_MENU_ITEMS: MenuItem[] = [
   { id: 'guide', label: '使い方 ＆ 更新情報', shortLabel: 'ガイド', icon: BookOpen, href: '/guide', color: 'text-success-600', activeBg: 'bg-success-500/15', section: 'ガイド' },
 ];
 
-// 🛡️ 管理者向け追加メニュー（攻略辞典・攻略ライブラリ・戦術取込・パーソナルコーチ・外部分析・大会管理・運用）
+// 🛡️ 管理者向け追加メニュー（新鋭戦術パイロット・大会管理・運用）
 const ADMIN_EXTRA_ITEMS: MenuItem[] = [
-  { id: 'champions', label: 'チャンピオン攻略辞典', shortLabel: '攻略辞典', icon: BookHeart, href: '/champions', color: 'text-primary-600', activeBg: 'bg-primary-500/15', section: '管理者専用', adminOnly: true },
-  { id: 'library', label: '攻略ライブラリ (記事・戦術)', shortLabel: 'ライブラリ', icon: Library, href: '/library', color: 'text-primary-600', activeBg: 'bg-primary-500/15', section: '管理者専用', adminOnly: true },
-  { id: 'knowledge-ingest', label: '戦術取り込み (AI解析)', shortLabel: '戦術取込', icon: Download, href: '/admin/knowledge', color: 'text-danger-600', activeBg: 'bg-danger-500/15', section: '管理者専用', adminOnly: true },
-  { id: 'coach', label: 'パーソナルコーチ', shortLabel: 'コーチ', icon: Sparkles, href: '/coach', color: 'text-primary-600', activeBg: 'bg-primary-500/15', section: '管理者専用', adminOnly: true },
-  { id: 'analyzer', label: 'プレイヤー外部分析', shortLabel: '外部解析', icon: Globe, href: '/analyzer', color: 'text-secondary-600', activeBg: 'bg-secondary-500/15', section: '管理者専用', adminOnly: true },
-  { id: 'ktm-admin', label: 'KTM大会管理', shortLabel: '大会管理', icon: Shield, href: '/ktm-admin', color: 'text-primary-600', activeBg: 'bg-primary-500/15', section: '管理者専用', adminOnly: true },
-  { id: 'admin-guide', label: 'システム全貌仕様ガイド', shortLabel: '仕様ガイド', icon: BookOpen, href: '/admin/guide', color: 'text-primary-600', activeBg: 'bg-primary-500/15', section: '管理者専用', adminOnly: true },
-  { id: 'dashboard', label: 'システム運用', shortLabel: '運用設定', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-foreground-soft dark:text-stone-200', activeBg: 'bg-black/10 dark:bg-white/10', section: '管理者専用', adminOnly: true },
+  { id: 'ktm-pilot', label: '🚀 戦術パイロット (新コックピット)', shortLabel: 'Pilot', icon: Sparkles, href: 'https://ktm-pilot.vercel.app', color: 'text-amber-500 font-bold', activeBg: 'bg-amber-500/15', section: '新戦術コックピット' },
+  { id: 'ktm-admin', label: 'KTM大会管理', shortLabel: '大会管理', icon: Shield, href: '/ktm-admin', color: 'text-primary-600', activeBg: 'bg-primary-500/15', section: '大会・運用' },
+  { id: 'analyzer', label: 'プレイヤー外部分析', shortLabel: '外部解析', icon: Globe, href: '/analyzer', color: 'text-secondary-600', activeBg: 'bg-secondary-500/15', section: '大会・運用' },
+  { id: 'admin-guide', label: 'システム全貌仕様ガイド', shortLabel: '仕様ガイド', icon: BookOpen, href: '/admin/guide', color: 'text-primary-600', activeBg: 'bg-primary-500/15', section: '大会・運用' },
+  { id: 'dashboard', label: 'システム運用', shortLabel: '運用設定', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-foreground-soft dark:text-stone-200', activeBg: 'bg-black/10 dark:bg-white/10', section: '大会・運用' },
+  // 旧個人機能（新鋭パイロットへ完全移行済み・参照用）
+  { id: 'champions', label: '【旧】チャンピオン辞典 (移転済)', shortLabel: '旧辞典', icon: BookHeart, href: '/champions', color: 'text-stone-400', activeBg: 'bg-stone-500/15', section: '旧機能 (移転済)', adminOnly: true },
+  { id: 'library', label: '【旧】攻略ライブラリ (移転済)', shortLabel: '旧ライブラリ', icon: Library, href: '/library', color: 'text-stone-400', activeBg: 'bg-stone-500/15', section: '旧機能 (移転済)', adminOnly: true },
+  { id: 'coach', label: '【旧】パーソナルコーチ (移転済)', shortLabel: '旧コーチ', icon: Sparkles, href: '/coach', color: 'text-stone-400', activeBg: 'bg-stone-500/15', section: '旧機能 (移転済)', adminOnly: true },
 ];
 
 export default function Sidebar() {

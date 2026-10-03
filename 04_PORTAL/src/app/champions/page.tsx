@@ -57,6 +57,29 @@ function ChampionsShell() {
 
   return (
     <div className="min-h-screen p-2 sm:p-4 md:p-6 max-w-[1760px] w-full mx-auto flex flex-col gap-4">
+      {/* 🚀 新鋭パイロット完全移行バナー */}
+      <div className="bg-gradient-to-r from-amber-500/15 via-primary-500/10 to-amber-500/15 border border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl p-2 bg-amber-500/20 rounded-xl border border-amber-500/30 shrink-0">🚀</span>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-black text-sm sm:text-base text-amber-500">新鋭戦術パイロット (KTM Pilot) へ完全移行しました</span>
+              <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 text-[10px] font-bold">新SSoT</span>
+            </div>
+            <p className="text-xs text-foreground-soft mt-0.5">
+              173体全チャンプのOP.GG公式Tier・勝率、動画バイブル、HUD直結機能は新コックピットで稼働中です。
+            </p>
+          </div>
+        </div>
+        <a
+          href="https://ktm-pilot.vercel.app"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs rounded-xl flex items-center justify-center gap-1.5 shrink-0 transition shadow-sm"
+        >
+          KTM Pilotを開く ➔
+        </a>
+      </div>
       {/* 洗練されたクリーンな辞典ヘッダー */}
       <motion.header 
         initial={{ y: -6, opacity: 0 }} 
