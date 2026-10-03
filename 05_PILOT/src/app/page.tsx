@@ -650,12 +650,15 @@ function PilotApp() {
              ========================================================= */
           <div className="space-y-4 animate-in fade-in duration-150">
             {/* 1. ヒーローバナー＆基本情報 */}
-            <div className="relative rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800 shadow-md">
-              <div
-                className="absolute inset-0 bg-cover bg-center opacity-25 filter blur-xs"
-                style={{ backgroundImage: `url(${getChampSplash(selectedDetail.id)})` }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/80 to-transparent" />
+            <div className="relative rounded-2xl bg-zinc-900 border border-zinc-800 shadow-md">
+              {/* 背景スプラッシュ（角丸クリップ） */}
+              <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
+                <div
+                  className="absolute inset-0 bg-cover bg-center opacity-25 filter blur-xs"
+                  style={{ backgroundImage: `url(${getChampSplash(selectedDetail.id)})` }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/80 to-transparent" />
+              </div>
 
               <div className="relative p-4 sm:p-5 flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div className="flex items-center gap-3.5">
@@ -857,54 +860,60 @@ function PilotApp() {
                     </button>
 
                     {isToolMenuOpen && (
-                      <div className="absolute right-0 mt-1.5 w-52 rounded-xl bg-[#16161c] border border-zinc-700 shadow-2xl py-1.5 z-40 animate-in fade-in duration-150 backdrop-blur-md">
-                        <button
-                          onClick={() => {
-                            setIsToolMenuOpen(false);
-                            setIsIngestOpen(true);
-                          }}
-                          className="w-full px-3 py-2 text-left text-xs text-zinc-200 hover:bg-zinc-800/80 hover:text-amber-300 transition flex items-center gap-2 cursor-pointer font-medium"
-                        >
-                          <Plus size={14} className="text-amber-400 shrink-0" />
-                          <span>📥 このチャンプの知見取込</span>
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            setIsToolMenuOpen(false);
-                            setFocusedLaneChampId(selectedDetail.id);
-                            setIsLaneModalOpen(true);
-                          }}
-                          className="w-full px-3 py-2 text-left text-xs text-zinc-200 hover:bg-zinc-800/80 hover:text-amber-300 transition flex items-center gap-2 cursor-pointer font-medium"
-                        >
-                          <Wrench size={14} className="text-amber-400 shrink-0" />
-                          <span>🛠️ 所属レーン編集</span>
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            setIsToolMenuOpen(false);
-                            setDictFocusKey(undefined);
-                            setDictFocusValue(undefined);
-                            setIsItemDictModalOpen(true);
-                          }}
-                          className="w-full px-3 py-2 text-left text-xs text-zinc-200 hover:bg-zinc-800/80 hover:text-amber-300 transition flex items-center gap-2 cursor-pointer font-medium"
-                        >
-                          <BookOpen size={14} className="text-amber-400 shrink-0" />
-                          <span>📖 アイテム翻訳辞書</span>
-                        </button>
-
-                        <div className="border-t border-zinc-800 my-1" />
-
-                        <Link
-                          href={`/admin/dict-maintenance?c=${encodeURIComponent(selectedDetail.id)}`}
+                      <>
+                        <div
+                          className="fixed inset-0 z-40"
                           onClick={() => setIsToolMenuOpen(false)}
-                          className="w-full px-3 py-2 text-left text-xs text-amber-300 hover:bg-amber-500/10 transition flex items-center gap-2 cursor-pointer font-bold"
-                        >
-                          <Layers size={14} className="text-amber-400 shrink-0" />
-                          <span>⚙️ 辞典メンテナンス管理 ↗</span>
-                        </Link>
-                      </div>
+                        />
+                        <div className="absolute right-0 mt-1.5 w-52 rounded-xl bg-[#16161c] border border-zinc-700 shadow-2xl py-1.5 z-50 animate-in fade-in duration-150 backdrop-blur-md">
+                          <button
+                            onClick={() => {
+                              setIsToolMenuOpen(false);
+                              setIsIngestOpen(true);
+                            }}
+                            className="w-full px-3 py-2 text-left text-xs text-zinc-200 hover:bg-zinc-800/80 hover:text-amber-300 transition flex items-center gap-2 cursor-pointer font-medium"
+                          >
+                            <Plus size={14} className="text-amber-400 shrink-0" />
+                            <span>📥 このチャンプの知見取込</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setIsToolMenuOpen(false);
+                              setFocusedLaneChampId(selectedDetail.id);
+                              setIsLaneModalOpen(true);
+                            }}
+                            className="w-full px-3 py-2 text-left text-xs text-zinc-200 hover:bg-zinc-800/80 hover:text-amber-300 transition flex items-center gap-2 cursor-pointer font-medium"
+                          >
+                            <Wrench size={14} className="text-amber-400 shrink-0" />
+                            <span>🛠️ 所属レーン編集</span>
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setIsToolMenuOpen(false);
+                              setDictFocusKey(undefined);
+                              setDictFocusValue(undefined);
+                              setIsItemDictModalOpen(true);
+                            }}
+                            className="w-full px-3 py-2 text-left text-xs text-zinc-200 hover:bg-zinc-800/80 hover:text-amber-300 transition flex items-center gap-2 cursor-pointer font-medium"
+                          >
+                            <BookOpen size={14} className="text-amber-400 shrink-0" />
+                            <span>📖 アイテム翻訳辞書</span>
+                          </button>
+
+                          <div className="border-t border-zinc-800 my-1" />
+
+                          <Link
+                            href={`/admin/dict-maintenance?c=${encodeURIComponent(selectedDetail.id)}`}
+                            onClick={() => setIsToolMenuOpen(false)}
+                            className="w-full px-3 py-2 text-left text-xs text-amber-300 hover:bg-amber-500/10 transition flex items-center gap-2 cursor-pointer font-bold"
+                          >
+                            <Layers size={14} className="text-amber-400 shrink-0" />
+                            <span>⚙️ 辞典メンテナンス管理 ↗</span>
+                          </Link>
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>
