@@ -105,9 +105,11 @@ export function getPresetBuildDetails(
   preset: 'standard' | 'tank' | 'burst',
   trendItems: string[] = [],
   trendKeystone: string = '',
-  customDict?: Record<string, string>
+  customDict?: Record<string, string>,
+  champId?: string
 ): PresetBuildResult {
   const items = (trendItems || []).map((it) => translateItem(it, customDict));
+  const id = (champId || '').toLowerCase();
 
   switch (archetype) {
     case 'ap_mage': {
@@ -271,6 +273,17 @@ export function getPresetBuildDetails(
         };
       }
       if (preset === 'tank') {
+        const isOnhit = ['kogmaw', 'vayne', 'varus', 'kaisa'].includes(id);
+        if (isOnhit) {
+          return {
+            firstCore: 'ルインドキング・ブレード (王剣)',
+            firstCoreDesc: '現在HP割合ダメージ＋MS奪取で巨体タンクをカイト',
+            coreSpike: 'グインソー・レイジブレード ➔ テルミヌス',
+            coreSpikeDesc: '通常攻撃2回発動とAR/MR両貫通でどんな硬い前衛も溶かす',
+            runes: 'リーサルテンポ / プレスアタック + 切り崩し',
+            runesDesc: '切り崩し（Cut Down）と手数で最大HP差を突破',
+          };
+        }
         return {
           firstCore: 'クラーケンスレイヤー / ボルク (王剣)',
           firstCoreDesc: '現在HP割合物理ダメージで前衛を削り倒す',
@@ -344,6 +357,17 @@ export function getPresetBuildDetails(
         };
       }
       if (preset === 'tank') {
+        const isOnhitFighter = ['masteryi', 'belveth', 'warwick', 'briar'].includes(id);
+        if (isOnhitFighter) {
+          return {
+            firstCore: 'ルインドキング・ブレード (王剣)',
+            firstCoreDesc: '現在HP割合ダメージ＋通常攻撃毎の確定・魔法ダメージでタンクを圧倒',
+            coreSpike: 'グインソー・レイジブレード ➔ タイタン・ハイドラ / テルミヌス',
+            coreSpikeDesc: 'オンヒット効果2回発動と割合貫通で秒殺',
+            runes: '征服者 / リーサルテンポ + 切り崩し',
+            runesDesc: '切り崩し（Cut Down）とスタック最大化で超耐久前衛を溶かす',
+          };
+        }
         return {
           firstCore: '黒斧 (Black Cleaver)',
           firstCoreDesc: '多段スキルヒットによるAR破砕＆MS加速で前衛を圧倒',

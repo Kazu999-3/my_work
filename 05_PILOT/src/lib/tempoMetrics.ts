@@ -504,3 +504,123 @@ export function getLaneTempoMetrics(input: ChampionTempoInput): LaneTempoMetrics
     },
   };
 }
+
+export interface StageTactics {
+  early: string;
+  mid: string;
+  late: string;
+}
+
+interface StageTacticsInput {
+  id: string;
+  jpName?: string;
+  role: string;
+  archetype: ChampionArchetype;
+  bibleStages?: { early?: string; mid?: string; late?: string };
+  powerSpikesText?: string;
+  strengths?: string[];
+  weaknesses?: string[];
+}
+
+/**
+ * 序盤・中盤・終盤の立ち回り指南をチャンピオン特性から動的生成
+ */
+export function getStageTactics(input: StageTacticsInput): StageTactics {
+  const { id, archetype, role, bibleStages, powerSpikesText, strengths } = input;
+  const champId = (id || "").toLowerCase();
+  const normalizedRole = (role || "MID").toUpperCase();
+
+  // 1. 序盤 (early)
+  let earlyText = bibleStages?.early?.trim() || "";
+  if (!earlyText || earlyText.length < 5) {
+    if (powerSpikesText && !powerSpikesText.includes("情報不足")) {
+      const firstLine = powerSpikesText.split(/[。\n]/)[0].trim();
+      if (firstLine.length > 5) {
+        earlyText = `${firstLine}。序盤は無理な突入を避け、CS回収とウェーブコントロールに集中。`;
+      }
+    }
+  }
+  if (!earlyText) {
+    switch (archetype) {
+      case "ad_assassin":
+      case "ap_assassin":
+        earlyText = "Lv2〜3のショートトレードで主導権を握り、Lv6のバーストキルラインに向けてウェーブを自陣寄りに管理。";
+        break;
+      case "ap_mage":
+        earlyText = "長射程スキルで安全にラストヒットを取りつつ、敵の接近にスキルを合わせてウェーブ主導権を維持。";
+        break;
+      case "marksman":
+        earlyText = "サポートの仕掛けに合わせてトレードし、CS回収を最優先に1コア完成を目指す。";
+        break;
+      case "tank":
+        earlyText = "タワー前フリーズでウェーブを受け、敵の無理な突入にCCを合わせてガンクを待つ。";
+        break;
+      case "enchanter":
+        earlyText = "ADCの射程に合わせてショートハラスを行い、敵の仕掛けをディスエンゲージしてADCの体力を保持。";
+        break;
+      default:
+        earlyText = "Lv1〜2から前方に圧力をかけ、スロープッシュからのダイブまたはロームを狙う。";
+        break;
+    }
+  }
+
+  // 2. 中盤 (mid)
+  let midText = bibleStages?.mid?.trim() || "";
+  if (!midText || midText.length < 5) {
+    const strengthHint = strengths && strengths[0] ? `（強み: ${strengths[0]}）` : "";
+    switch (archetype) {
+      case "ad_assassin":
+      case "ap_assassin":
+        midText = "1コア完成による圧倒的バーストを活かし、サイドレーンの孤立キャリーを暗殺して人数差を作る。";
+        break;
+      case "ap_mage":
+        midText = "主要1コア完成でドラゴン・ヴォイドグラブ前に先制配置し、狭所でのスキル回転とポークで敵を追い詰める。";
+        break;
+      case "marksman":
+        midText = "MIDレーンに合流して安全にファームし、オブジェクト周りの集団戦でフロントラインから削り始める。";
+        break;
+      case "tank":
+        midText = "防具完成で集団戦のイニシエートを担当。味方キャリーへのアサシンをピールしつつエンゲージを狙う。";
+        break;
+      case "enchanter":
+        midText = "味方ADCに張り付き、シールド・ヒール・加速でキャリーの生存とDPSを最大化する。";
+        break;
+      default:
+        midText = `サイドレーンを強くプッシュして敵を引きつけ、1v1の有利を押し付けるかTPで集団戦に駆けつける${strengthHint}。`;
+        break;
+    }
+  }
+
+  // 3. 終盤 (late)
+  let lateText = bibleStages?.late?.trim() || "";
+  if (!lateText || lateText.length < 5) {
+    switch (archetype) {
+      case "ad_assassin":
+      case "ap_assassin":
+        lateText = "正面集団戦には突入せず、側面や裏の死角に潜んで敵主要キャリーのスキル発動後に急襲・離脱。";
+        break;
+      case "ap_mage":
+        lateText = "フロントラインの後方から広範囲CCと高火力を叩き込み、敵の進入経路をゾーニングして分断する。";
+        break;
+      case "marksman":
+        lateText = "最長射程を維持し、死なない位置取りを徹底しながら前衛から順に溶かして集団戦を制圧。";
+        break;
+      case "tank":
+        lateText = "味方後衛へのダイブを身体を張って防ぎつつ、敵キャリー陣に決定的なハードCCを叩き込む。";
+        break;
+      case "enchanter":
+        lateText = "バロン・ドラゴン周りの視界を完全掌握し、消耗戦で味方のヘルスを維持しつつ決戦を支える。";
+        break;
+      default:
+        lateText = "スプリットプッシュで拠点を破壊するか、敵の陣形が崩れた瞬間に裏回りして敵後衛を挟み撃ちにする。";
+        break;
+    }
+  }
+
+  return {
+    early: earlyText,
+    mid: midText,
+    late: lateText,
+  };
+}
+

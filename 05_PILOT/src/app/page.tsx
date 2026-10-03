@@ -18,7 +18,8 @@ import { MatchupPicker } from "@/components/MatchupPicker";
 import LaneMaintenanceModal from "@/components/LaneMaintenanceModal";
 import ItemDictionaryModal from "@/components/ItemDictionaryModal";
 import { translateItem } from "@/lib/itemTranslator";
-import { getLaneTempoMetrics } from "@/lib/tempoMetrics";
+import { getLaneTempoMetrics, getStageTactics } from "@/lib/tempoMetrics";
+import { getDynamicPickGuide } from "@/lib/pickGuideDynamic";
 import opggLaneMetaDefault from "@/data/opgg_lane_meta.json";
 
 // 通称・略称・エイリアス辞書
@@ -462,8 +463,20 @@ function PilotApp() {
     const rawItems = selectedDetail?.facts?.trendItems || [];
     const trendItems = rawItems.map((it) => translateItem(it, customItemDict));
     const trendKeystone = selectedDetail?.facts?.trendRunes?.keystone || "";
-    return getPresetBuildDetails(archetype, buildPreset, trendItems, trendKeystone, customItemDict);
+    return getPresetBuildDetails(archetype, buildPreset, trendItems, trendKeystone, customItemDict, selectedDetail?.id);
   }, [archetype, buildPreset, selectedDetail, customItemDict]);
+
+  // 対戦相手（VS）のアーキタイプ判定
+  const vsEnemyArchetype: ChampionArchetype = useMemo(() => {
+    if (!vsEnemyDetail) return "ad_fighter";
+    return detectChampionArchetype(
+      vsEnemyDetail.id,
+      vsEnemyDetail.tags || [],
+      vsEnemyDetail.info,
+      "",
+      currentRole
+    );
+  }, [vsEnemyDetail, currentRole]);
 
   // パワースパイク推定値
   const spikeValues = useMemo(() => {
@@ -490,6 +503,39 @@ function PilotApp() {
       earlyStageText: selectedDetail.bible?.stages?.early,
     });
   }, [selectedDetail, archetype, currentRole, spikeValues]);
+
+  // 📖 序盤・中盤・終盤の立ち回り指南（動的生成）
+  const stageTactics = useMemo(() => {
+    if (!selectedDetail) return null;
+    return getStageTactics({
+      id: selectedDetail.id,
+      jpName: selectedDetail.jpName,
+      role: currentRole,
+      archetype,
+      bibleStages: selectedDetail.bible?.stages,
+      powerSpikesText: selectedDetail.facts?.powerSpikes,
+      strengths: selectedDetail.facts?.strengths,
+      weaknesses: selectedDetail.facts?.weaknesses,
+    });
+  }, [selectedDetail, currentRole, archetype]);
+
+  // 🎯 ピック判断ガイド（先出し・後出し・勝ち筋の動的生成）
+  const dynamicPickGuide = useMemo(() => {
+    if (!selectedDetail) return null;
+    return getDynamicPickGuide({
+      id: selectedDetail.id,
+      jpName: selectedDetail.jpName,
+      archetype,
+      role: currentRole,
+      strengths: selectedDetail.facts?.strengths,
+      weaknesses: selectedDetail.facts?.weaknesses,
+      counters: selectedDetail.facts?.counters,
+      mustBan: selectedDetail.facts?.mustBan,
+      winRate: currentLaneMeta?.winRate,
+      tier: currentLaneMeta?.tier,
+      staticPickGuide: selectedDetail.pickGuide,
+    });
+  }, [selectedDetail, archetype, currentRole, currentLaneMeta]);
 
   // カスタムレーン設定を反映したチャンピオン一覧
   const displayChampions = useMemo(() => {
@@ -1016,14 +1062,23 @@ function PilotApp() {
                           <div className="bg-zinc-900 p-2.5 rounded-lg border border-zinc-800">
                             <span className="text-[10px] font-bold text-emerald-400 block mb-0.5">💥 自分の即死キルライン・強み</span>
                             <p className="text-zinc-300 text-[11px] leading-relaxed">
-                              {selectedDetail.bible?.killCombo || selectedDetail.facts?.strengths?.[0] || 'Lv6からのバーストコンボで有利獲得'}
+                              {selectedDetail.bible?.killCombo || selectedDetail.facts?.strengths?.[0] || (
+                                archetype.includes("assassin") ? "Lv6からのフルバーストで孤立ターゲットを確殺。" :
+                                archetype === "marksman" ? "サポのCCに合わせて長射程から連続AAでキルライン到達。" :
+                                archetype === "tank" ? "CCチェインからのタワーダイブまたは味方の追従でキル獲得。" :
+                                "Lv6ウルト解禁からのスキルコンボで圧倒的有利を獲得。"
+                              )}
                             </p>
                           </div>
 
                           <div className="bg-zinc-900 p-2.5 rounded-lg border border-zinc-800">
                             <span className="text-[10px] font-bold text-emerald-400 block mb-0.5">⚡ 自分のパワースパイク</span>
                             <p className="text-zinc-300 text-[11px] leading-relaxed">
-                              {selectedDetail.facts?.powerSpikes ? selectedDetail.facts.powerSpikes.split('\n')[0] : '1stコア完成時に最大スパイク'}
+                              {selectedDetail.facts?.powerSpikes ? selectedDetail.facts.powerSpikes.split('\n')[0] : (
+                                archetype === "marksman" ? "2〜3コア完成時およびIE獲得時に最大DPSを発揮。" :
+                                archetype.includes("assassin") ? "1st脅威コア完成およびLv6到達時に最大スパイク。" :
+                                "1stコア完成およびLv6到達時に最大パワースパイク。"
+                              )}
                             </p>
                           </div>
                         </div>
@@ -1050,7 +1105,12 @@ function PilotApp() {
                             <p className="text-zinc-200 text-[11px] leading-relaxed">
                               {vsEnemyDetail.facts?.weaknesses && vsEnemyDetail.facts.weaknesses.length > 0
                                 ? vsEnemyDetail.facts.weaknesses.join(' / ')
-                                : 'スキル空振り後のCD中、および低マナ時の仕掛けが有効。'}
+                                : (
+                                  vsEnemyArchetype.includes("assassin") ? "耐久が低いため、飛び込みに合わせてハードCCで即フォーカスして返り討ちにする。" :
+                                  vsEnemyArchetype === "tank" ? "序盤の低火力・スキルCD中を狙い、割合ダメージで寄りを封じる。" :
+                                  vsEnemyArchetype === "marksman" ? "単独行動中の接近戦に弱いため、死角からの急襲やエンゲージで即死を狙う。" :
+                                  "スキル空振り後の長いCD中、および低マナ時の仕掛けが極めて有効。"
+                                )}
                             </p>
                           </div>
 
@@ -1058,7 +1118,11 @@ function PilotApp() {
                           <div className="bg-zinc-900 p-2.5 rounded-lg border border-zinc-800">
                             <span className="text-[10px] font-bold text-amber-400 block mb-0.5">💥 相手のパワースパイク・警戒タイミング</span>
                             <p className="text-zinc-300 text-[11px] leading-relaxed">
-                              {vsEnemyDetail.facts?.powerSpikes ? vsEnemyDetail.facts.powerSpikes.split('\n')[0] : 'Lv6ウルト取得時および主要1コア完成時に警戒。'}
+                              {vsEnemyDetail.facts?.powerSpikes ? vsEnemyDetail.facts.powerSpikes.split('\n')[0] : (
+                                vsEnemyArchetype.includes("assassin") ? "Lv6到達時および脅威1コア完成時の急襲に警戒。" :
+                                vsEnemyArchetype === "marksman" ? "2コア完成以降の集団戦長射程DPSに警戒。" :
+                                "Lv6ウルト取得時および主要1コア完成時に警戒。"
+                              )}
                             </p>
                           </div>
                         </div>
@@ -1187,7 +1251,7 @@ function PilotApp() {
             </div>
 
             {/* 🎯 ピック判断ガイド (先出し / 後出し / 構成マッチング) */}
-            {selectedDetail.pickGuide && (
+            {dynamicPickGuide && (
               <div className="bg-gradient-to-r from-zinc-900 via-zinc-900 to-zinc-950 border border-zinc-800 rounded-2xl p-3.5 sm:p-4 shadow-sm space-y-3">
                 <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2">
                   <div className="flex items-center gap-2">
@@ -1208,17 +1272,17 @@ function PilotApp() {
                           🛡️ 先出し適性
                         </span>
                         <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border ${
-                          selectedDetail.pickGuide.blindPick?.rating === "S"
+                          dynamicPickGuide.blindPick?.rating === "S"
                             ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
-                            : selectedDetail.pickGuide.blindPick?.rating === "A"
+                            : dynamicPickGuide.blindPick?.rating === "A"
                             ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/40"
                             : "bg-amber-500/20 text-amber-300 border-amber-500/40"
                         }`}>
-                          ランク {selectedDetail.pickGuide.blindPick?.rating || "A"} : {selectedDetail.pickGuide.blindPick?.label || "先出し安定"}
+                          ランク {dynamicPickGuide.blindPick?.rating || "A"} : {dynamicPickGuide.blindPick?.label || "先出し安定"}
                         </span>
                       </div>
                       <p className="text-[11px] text-zinc-400 leading-relaxed">
-                        {selectedDetail.pickGuide.blindPick?.reason}
+                        {dynamicPickGuide.blindPick?.reason}
                       </p>
                     </div>
                   </div>
@@ -1235,13 +1299,13 @@ function PilotApp() {
                         </span>
                       </div>
                       <p className="text-[11px] text-zinc-400 leading-relaxed mb-2">
-                        {selectedDetail.pickGuide.counterPick?.situation}
+                        {dynamicPickGuide.counterPick?.situation}
                       </p>
                     </div>
-                    {selectedDetail.pickGuide.counterPick?.targets && selectedDetail.pickGuide.counterPick.targets.length > 0 && (
+                    {dynamicPickGuide.counterPick?.targets && dynamicPickGuide.counterPick.targets.length > 0 && (
                       <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-zinc-900">
                         <span className="text-[10px] text-zinc-500">有利:</span>
-                        {selectedDetail.pickGuide.counterPick.targets.map((tgt, i) => (
+                        {dynamicPickGuide.counterPick.targets.map((tgt, i) => (
                           <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-purple-300 font-bold">
                             {tgt}
                           </span>
@@ -1262,12 +1326,12 @@ function PilotApp() {
                         </span>
                       </div>
                       <p className="text-[11px] text-zinc-300 font-medium leading-relaxed mb-1.5">
-                        {selectedDetail.pickGuide.whenToPick?.teamSynergy}
+                        {dynamicPickGuide.whenToPick?.teamSynergy}
                       </p>
                     </div>
-                    {selectedDetail.pickGuide.whenToPick?.winCondition && (
+                    {dynamicPickGuide.whenToPick?.winCondition && (
                       <div className="text-[10px] text-zinc-500 bg-zinc-900/60 p-1.5 rounded-lg border border-zinc-900">
-                        🎯 勝ち筋: <span className="text-zinc-300">{selectedDetail.pickGuide.whenToPick.winCondition}</span>
+                        🎯 勝ち筋: <span className="text-zinc-300">{dynamicPickGuide.whenToPick.winCondition}</span>
                       </div>
                     )}
                   </div>
@@ -1483,21 +1547,21 @@ function PilotApp() {
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
                     <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800">
-                      <span className="font-black text-amber-400 block mb-1">Lv1〜3 (序盤レーン戦)</span>
+                      <span className="font-black text-amber-400 block mb-1">Lv1〜3 (序盤・初動)</span>
                       <p className="text-zinc-300 text-[11px] leading-relaxed">
-                        {selectedDetail.facts?.powerSpikes ? selectedDetail.facts.powerSpikes.split('\n')[0] : 'スキルを当てて主導権を取り、Lv2先行でウェーブをフリーズ。'}
+                        {stageTactics?.early || (selectedDetail.facts?.powerSpikes ? selectedDetail.facts.powerSpikes.split('\n')[0] : 'スキルを当てて主導権を取り、Lv2先行でウェーブをフリーズ。')}
                       </p>
                     </div>
                     <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800">
-                      <span className="font-black text-emerald-400 block mb-1">1コア〜Lv9 (中盤ローム)</span>
+                      <span className="font-black text-emerald-400 block mb-1">1コア〜Lv9 (中盤・主導権)</span>
                       <p className="text-zinc-300 text-[11px] leading-relaxed">
-                        最も戦闘力が高いパワースパイク。ヘラルド・ドラゴン前にプッシュして視界制圧。
+                        {stageTactics?.mid || '最も戦闘力が高いパワースパイク。ヘラルド・ドラゴン前にプッシュして視界制圧。'}
                       </p>
                     </div>
                     <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800">
-                      <span className="font-black text-cyan-400 block mb-1">集団戦 (終盤)</span>
+                      <span className="font-black text-cyan-400 block mb-1">集団戦 (終盤・決戦)</span>
                       <p className="text-zinc-300 text-[11px] leading-relaxed">
-                        正面から突っ込まず、側道から敵キャリーにCCを合わせ、耐久を活かして前線を維持。
+                        {stageTactics?.late || '正面から突っ込まず、側道から敵キャリーにCCを合わせ、耐久を活かして前線を維持。'}
                       </p>
                     </div>
                   </div>
@@ -1982,7 +2046,7 @@ function PilotApp() {
                 )}
 
                 {/* 3段階手順（序盤・中盤・終盤） */}
-                {selectedDetail.bible?.stages && (
+                {(selectedDetail.bible?.stages || stageTactics) && (
                   <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 shadow-sm">
                     <h3 className="text-sm font-black text-zinc-100 mb-3 flex items-center gap-2">
                       <Layers size={16} className="text-amber-400" /> ゲーム展開 3段階手順書
@@ -1991,19 +2055,19 @@ function PilotApp() {
                       <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800">
                         <span className="font-black text-amber-400 block mb-1">【序盤・レーン戦】</span>
                         <p className="text-zinc-300 leading-relaxed text-[11px]">
-                          {selectedDetail.bible.stages.early || "Lv2/3先行で有利トレード。"}
+                          {selectedDetail.bible?.stages?.early || stageTactics?.early || "Lv2/3先行で有利トレード。"}
                         </p>
                       </div>
                       <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800">
                         <span className="font-black text-emerald-400 block mb-1">【中盤・オブジェクト】</span>
                         <p className="text-zinc-300 leading-relaxed text-[11px]">
-                          {selectedDetail.bible.stages.mid || "1コア完成でドラゴン・ヘラルド主導。"}
+                          {selectedDetail.bible?.stages?.mid || stageTactics?.mid || "1コア完成でドラゴン・ヘラルド主導。"}
                         </p>
                       </div>
                       <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800">
                         <span className="font-black text-cyan-400 block mb-1">【終盤・集団戦】</span>
                         <p className="text-zinc-300 leading-relaxed text-[11px]">
-                          {selectedDetail.bible.stages.late || "側面・後方からキャリーにCC合わせ。"}
+                          {selectedDetail.bible?.stages?.late || stageTactics?.late || "側面・後方からキャリーにCC合わせ。"}
                         </p>
                       </div>
                     </div>
