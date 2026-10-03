@@ -116,6 +116,37 @@ export async function addToJackpot(amountToAdd: number): Promise<number> {
 }
 
 /**
+ * ジャックポット金庫からコインを引き出す（宝くじ2等の1,000コイン保証補充など）
+ */
+export async function deductFromJackpot(amountToDeduct: number): Promise<{ deducted: number; remaining: number }> {
+  if (amountToDeduct <= 0) {
+    const cur = (await getJackpotPool()).amount;
+    return { deducted: 0, remaining: cur };
+  }
+  try {
+    const current = await getJackpotPool();
+    const actualDeduct = Math.min(current.amount, Math.floor(amountToDeduct));
+    const newAmount = Math.max(0, current.amount - actualDeduct);
+
+    await supabase
+      .from('ktm_settings')
+      .upsert({
+        key: 'casino_jackpot_pool',
+        value: {
+          ...current,
+          amount: newAmount,
+        },
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'key' });
+
+    return { deducted: actualDeduct, remaining: newAmount };
+  } catch (err) {
+    console.warn('[jackpot] deductFromJackpot error:', err);
+    return { deducted: 0, remaining: 0 };
+  }
+}
+
+/**
  * ペンタキル達成時のジャックポット総取り払い戻し処理
  */
 export async function claimJackpot(winnerName: string, discordId?: string | null): Promise<{ success: boolean; payout: number; newJackpot: number }> {

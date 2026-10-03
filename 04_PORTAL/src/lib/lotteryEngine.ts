@@ -1,5 +1,5 @@
 import { supabaseAdmin as supabase } from './supabaseAdmin';
-import { getJackpotPool, addToJackpot } from './jackpot';
+import { getJackpotPool, addToJackpot, deductFromJackpot } from './jackpot';
 import { getPlayerCoins, getPlayerInventory, updatePlayerCoinsAndInventory } from './playerCoins';
 import { sendShopNotification } from './discordNotify';
 
@@ -108,40 +108,39 @@ export async function executeLotteryDraw(): Promise<LotteryResult> {
   const coinGains: Map<number, number> = new Map();
   participants.forEach(pt => coinGains.set(pt.player.id, 0));
 
-  // ── 賞金原資の配分（2026-09-22 是正） ───────────────────────────────
-  // 旧仕様は「1等リセット額10,000」と「2等1,000」をどこからも徴収せずに発行し、
-  // 3等も全口へ30コイン還元していたため、1回の抽選あたりの期待収支が
-  //   100T - (64.4T + 800 + 1000 + 30T) = 5.6T - 1800
-  // となり、収支が釣り合うのは321口以上のときだけだった。
-  // 総流通量が約15,000コインの経済では到達不可能で、開催のたびに約1,500〜1,700コインを
-  // 新規発行し続ける「インフレ装置」になっていた。
-  //
-  // 現在は賞金をすべて売上（1口100コイン × 口数）の内訳から拠出する。
-  //   3等（参加還元）: 売上の30% → 1口あたり30コイン（据え置き）
-  //   2等（ラッキー賞）: 売上の10%（上限1,000コイン）
-  //   1等原資（金庫積立）: 残り60%
-  // これにより払い戻し総額が売上を超えなくなり、宝くじは純粋なコインの再分配になる。
+  // ── 賞金原資の配分（2026-10-04 改定: 2等1,000コイン保証＆金庫プール補充） ─────────────────────────
+  // 3等（参加還元）: 売上の30% → 1口あたり30コイン
+  // 2等（ラッキー賞）: 固定 1,000 コイン！
+  //   ・まず売上の10%を充当
+  //   ・不足分は金庫プール（jackpot_pool）から補充
+  // 1等原資（金庫積立）: 残り売上の60%を金庫へ積み立て
   const ticketSales = totalTickets * TICKET_PRICE;
   const REFUND_PER_TICKET = 30;                                  // 売上の30%
   const totalRefund = totalTickets * REFUND_PER_TICKET;
-  const SECOND_PRIZE_COINS = Math.floor(Math.min(1000, ticketSales * 0.10));
-  const jackpotContribution = Math.max(0, ticketSales - totalRefund - SECOND_PRIZE_COINS);
+
+  const TARGET_SECOND_PRIZE = 1000;
+  const salesForSecond = Math.floor(ticketSales * 0.10);
+  const neededFromPool = Math.max(0, TARGET_SECOND_PRIZE - salesForSecond);
+
+  // 金庫プールから不足分を引き出して補填
+  const { deducted: poolCover, remaining: poolAfterCover } = await deductFromJackpot(neededFromPool);
+  const SECOND_PRIZE_COINS = salesForSecond + poolCover;
+
+  const jackpotContribution = Math.max(0, ticketSales - totalRefund - salesForSecond);
 
   // 🥇 1等 (MEGA JACKPOT): 当選確率 8%
   const isFirstPrizeWon = Math.random() < 0.08;
   let firstPrizeWinner: any = null;
   let firstPrizePayout = 0;
-  let nextJackpotAmount = curJackpotAmount;
+  let nextJackpotAmount = poolAfterCover;
 
   if (isFirstPrizeWon) {
     const winningTicket = flatTickets[Math.floor(Math.random() * flatTickets.length)];
     firstPrizeWinner = winningTicket.player;
-    // 当選時は「前週までの金庫 ＋ 今回の売上からの積立」を総取りする
-    firstPrizePayout = curJackpotAmount + jackpotContribution;
+    // 当選時は「2等補填後の金庫 ＋ 今回の売上からの積立」を総取りする
+    firstPrizePayout = poolAfterCover + jackpotContribution;
     coinGains.set(firstPrizeWinner.id, (coinGains.get(firstPrizeWinner.id) || 0) + firstPrizePayout);
 
-    // 金庫はゼロから積み直す。
-    // 旧実装はここで10,000コインを無条件に生成しており、これがインフレの主因だった。
     const RESET_JACKPOT = 0;
     nextJackpotAmount = RESET_JACKPOT;
     await supabase
@@ -157,7 +156,7 @@ export async function executeLotteryDraw(): Promise<LotteryResult> {
         updated_at: new Date().toISOString(),
       }, { onConflict: 'key' });
   } else {
-    // キャリーオーバー！ 売上から3等・2等を差し引いた残りを金庫へ積み立て
+    // キャリーオーバー！ 売上積立分を金庫へ積み立て
     nextJackpotAmount = await addToJackpot(jackpotContribution);
   }
 
@@ -206,7 +205,7 @@ export async function executeLotteryDraw(): Promise<LotteryResult> {
 
   const embed = {
     title: '🎟️ 【週末メガ宝くじ】 当選結果速報！',
-    description: `今週のメガ宝くじ抽選が完了いたしました！\n総購入口数: **${totalTickets} 口** （参加者: **${totalParticipants} 名**）\n\n━━━━━━━━━━━━━━━━━━━\n🥇 **1等: MEGA JACKPOT (総取り)**\n${firstPrizeText}\n\n🥈 **2等: ラッキー賞 (1,000 コイン)**\n🎯 当選者: **${secondPrizeWinnerName}** さん (+1,000コイン)\n\n🥉 **3等: 参加還元賞**\n🛡️ 参加者全員へ 1口につき **${REFUND_PER_TICKET} コイン** をキャッシュバック還元！\n━━━━━━━━━━━━━━━━━━━`,
+    description: `今週のメガ宝くじ抽選が完了いたしました！\n総購入口数: **${totalTickets} 口** （参加者: **${totalParticipants} 名**）\n\n━━━━━━━━━━━━━━━━━━━\n🥇 **1等: MEGA JACKPOT (総取り)**\n${firstPrizeText}\n\n🥈 **2等: ラッキー賞 (${SECOND_PRIZE_COINS.toLocaleString()} コイン)**\n🎯 当選者: **${secondPrizeWinnerName}** さん (+${SECOND_PRIZE_COINS.toLocaleString()}コイン)\n\n🥉 **3等: 参加還元賞**\n🛡️ 参加者全員へ 1口につき **${REFUND_PER_TICKET} コイン** をキャッシュバック還元！\n━━━━━━━━━━━━━━━━━━━`,
     color: isFirstPrizeWon ? 0x10b981 : 0xec4899,
     fields: [
       {
