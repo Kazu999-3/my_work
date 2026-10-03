@@ -18,6 +18,7 @@ import { MatchupPicker } from "@/components/MatchupPicker";
 import LaneMaintenanceModal from "@/components/LaneMaintenanceModal";
 import ItemDictionaryModal from "@/components/ItemDictionaryModal";
 import { translateItem } from "@/lib/itemTranslator";
+import { getLaneTempoMetrics } from "@/lib/tempoMetrics";
 import opggLaneMetaDefault from "@/data/opgg_lane_meta.json";
 
 // 通称・略称・エイリアス辞書
@@ -475,6 +476,20 @@ function PilotApp() {
       default: return { early: 7, mid: 9, late: 7 };
     }
   }, [archetype]);
+
+  // ⚡ レーン別・チャンピオン固有のテンポ指標（動的算出）
+  const laneTempo = useMemo(() => {
+    if (!selectedDetail) return null;
+    return getLaneTempoMetrics({
+      id: selectedDetail.id,
+      jpName: selectedDetail.jpName,
+      archetype,
+      role: currentRole,
+      spikeValues,
+      powerSpikesText: selectedDetail.facts?.powerSpikes,
+      earlyStageText: selectedDetail.bible?.stages?.early,
+    });
+  }, [selectedDetail, archetype, currentRole, spikeValues]);
 
   // カスタムレーン設定を反映したチャンピオン一覧
   const displayChampions = useMemo(() => {
@@ -1069,82 +1084,51 @@ function PilotApp() {
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-black text-zinc-100">
-                        {currentRole === "JG" ? "🌲 JG周回実戦基準" :
-                         currentRole === "SUP" ? "🛡️ SUP視界・初動指標" :
-                         currentRole === "TOP" ? "⚔️ TOPウェーブ管理指標" :
-                         currentRole === "MID" ? "⚡ MIDローム・テンポ指標" :
-                         "🏹 BOT/ADC指標"}
+                        {laneTempo?.title || (
+                          currentRole === "JG" ? "🌲 JG周回実戦基準" :
+                          currentRole === "SUP" ? "🛡️ SUP視界・初動指標" :
+                          currentRole === "TOP" ? "⚔️ TOPウェーブ管理指標" :
+                          currentRole === "MID" ? "⚡ MIDローム・テンポ指標" :
+                          "🏹 BOT/ADC指標"
+                        )}
                       </span>
-                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-400 font-bold border border-zinc-700">
-                        {currentRole}標準
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-300 font-bold border border-zinc-700">
+                        {laneTempo?.badge || `${currentRole}標準`}
                       </span>
                     </div>
                     <span className="text-[10px] text-zinc-400 block mt-0.5">
-                      {currentRole === "JG" ? "2026仕様: キャンプ0:55湧き / カニ2:55争奪" :
-                       currentRole === "SUP" ? "Lv2先行プッシュ ＆ 視界スコア目標" :
-                       currentRole === "TOP" ? "1stリコール目標 ＆ フリーズ基準" :
-                       currentRole === "MID" ? "キャノン押し込み ＆ オブジェクト寄り" :
-                       "1stコア目標 ＆ CSレート"}
+                      {laneTempo?.subtitle || (
+                        currentRole === "JG" ? "2026仕様: キャンプ0:55湧き / カニ2:55争奪" :
+                        currentRole === "SUP" ? "Lv2先行プッシュ ＆ 視界スコア目標" :
+                        currentRole === "TOP" ? "1stリコール目標 ＆ フリーズ基準" :
+                        currentRole === "MID" ? "キャノン押し込み ＆ オブジェクト寄り" :
+                        "1stコア目標 ＆ CSレート"
+                      )}
                     </span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 text-right">
-                  {currentRole === "JG" ? (
+                  {laneTempo ? (
                     <>
                       <div className="bg-zinc-950 px-2.5 py-1.5 rounded-xl border border-zinc-800">
-                        <span className="text-[10px] text-zinc-400 block font-bold">最速フルクリア</span>
-                        <span className="text-xs font-black text-amber-400 font-mono">02:45〜02:50</span>
+                        <span className="text-[10px] text-zinc-400 block font-bold">{laneTempo.metric1.label}</span>
+                        <span className={`text-xs font-black ${laneTempo.metric1.color} font-mono`}>
+                          {laneTempo.metric1.value}
+                        </span>
                       </div>
                       <div className="bg-zinc-950 px-2.5 py-1.5 rounded-xl border border-zinc-800">
-                        <span className="text-[10px] text-zinc-400 block font-bold">1stコア平均</span>
-                        <span className="text-xs font-black text-emerald-400 font-mono">11:20</span>
-                      </div>
-                    </>
-                  ) : currentRole === "TOP" ? (
-                    <>
-                      <div className="bg-zinc-950 px-2.5 py-1.5 rounded-xl border border-zinc-800">
-                        <span className="text-[10px] text-zinc-400 block font-bold">1stリコール</span>
-                        <span className="text-xs font-black text-amber-400 font-mono">1,200G</span>
-                      </div>
-                      <div className="bg-zinc-950 px-2.5 py-1.5 rounded-xl border border-zinc-800">
-                        <span className="text-[10px] text-zinc-400 block font-bold">フリーズ維持</span>
-                        <span className="text-xs font-black text-emerald-400 font-mono">タワー前4体</span>
-                      </div>
-                    </>
-                  ) : currentRole === "SUP" ? (
-                    <>
-                      <div className="bg-zinc-950 px-2.5 py-1.5 rounded-xl border border-zinc-800">
-                        <span className="text-[10px] text-zinc-400 block font-bold">Lv2先行</span>
-                        <span className="text-xs font-black text-amber-400 font-mono">2波目前衛3体</span>
-                      </div>
-                      <div className="bg-zinc-950 px-2.5 py-1.5 rounded-xl border border-zinc-800">
-                        <span className="text-[10px] text-zinc-400 block font-bold">目標視界(20分)</span>
-                        <span className="text-xs font-black text-cyan-400 font-mono">45+ スコア</span>
-                      </div>
-                    </>
-                  ) : currentRole === "MID" ? (
-                    <>
-                      <div className="bg-zinc-950 px-2.5 py-1.5 rounded-xl border border-zinc-800">
-                        <span className="text-[10px] text-zinc-400 block font-bold">ローム優先時</span>
-                        <span className="text-xs font-black text-amber-400 font-mono">キャノン波後</span>
-                      </div>
-                      <div className="bg-zinc-950 px-2.5 py-1.5 rounded-xl border border-zinc-800">
-                        <span className="text-[10px] text-zinc-400 block font-bold">パワースパイク</span>
-                        <span className="text-xs font-black text-rose-400 font-mono">Lv6 即死</span>
+                        <span className="text-[10px] text-zinc-400 block font-bold">{laneTempo.metric2.label}</span>
+                        <span className={`text-xs font-black ${laneTempo.metric2.color} font-mono`}>
+                          {laneTempo.metric2.value}
+                        </span>
                       </div>
                     </>
                   ) : (
-                    <>
-                      <div className="bg-zinc-950 px-2.5 py-1.5 rounded-xl border border-zinc-800">
-                        <span className="text-[10px] text-zinc-400 block font-bold">1コア目標</span>
-                        <span className="text-xs font-black text-emerald-400 font-mono">10:30</span>
-                      </div>
-                      <div className="bg-zinc-950 px-2.5 py-1.5 rounded-xl border border-zinc-800">
-                        <span className="text-[10px] text-zinc-400 block font-bold">目標CS</span>
-                        <span className="text-xs font-black text-amber-400 font-mono">8.5+ /分</span>
-                      </div>
-                    </>
+                    <div className="bg-zinc-950 px-2.5 py-1.5 rounded-xl border border-zinc-800">
+                      <span className="text-[10px] text-zinc-400 block font-bold">指標読込中</span>
+                      <span className="text-xs font-black text-zinc-500 font-mono">--:--</span>
+                    </div>
                   )}
                 </div>
               </div>
