@@ -502,6 +502,27 @@ function findLegacyCards(messages) {
 
 const CLOSED_PREFIX = '🔒 [受付終了]';
 
+/** 定期カスタムのカード1枚を受付終了にする（タイトルに印・灰色・ボタン無効化・DBもclosed） */
+async function closePeriodicCard(env, channelId, messageId) {
+  const url = `https://discord.com/api/v10/channels/${channelId}/messages/${messageId}`;
+  const res = await fetchWithRetry(url, { headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` } });
+  if (!res.ok) throw new Error(`カードの取得に失敗 (HTTP ${res.status})`);
+  const m = await res.json();
+  if (isClosedCard(m)) return;
+  const closedEmbed = { ...m.embeds[0], title: markTitleClosed(m.embeds?.[0]?.title || ''), color: 0x7f8c8d };
+  const disabledComponents = (m.components || []).map((row) => ({
+    ...row,
+    components: row.components.map((btn) => ({ ...btn, disabled: true }))
+  }));
+  const patch = await fetchWithRetry(url, {
+    method: 'PATCH',
+    headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ embeds: [closedEmbed], components: disabledComponents })
+  });
+  if (!patch.ok) throw new Error(`カードの更新に失敗 (HTTP ${patch.status})`);
+  await markRecruitmentStatus(env, messageId, 'closed').catch(() => {});
+}
+
 /** 受付終了の見出しを付ける。既に付いていれば二重に付けない（移行の再実行対策） */
 function markTitleClosed(title) {
   const t = (title || '').trim();
@@ -1254,7 +1275,10 @@ export async function checkCustomStatusAt2000(env) {
         const isDuplicate = recent.some((m) =>
           m.author?.bot &&
           new Date(m.timestamp).getTime() > thirtyMinAgo &&
-          (m.content?.includes('本日20:00 判定') || m.content?.includes('助っ人をピンポイント募集中'))
+          // 中止の告知も含める（2026-10-03まで中止側の文言がここに無く、Cloudflare 20:00 と
+          // GitHub Actions 20:09 の両方が中止告知を投稿しうる状態だった）
+          (m.content?.includes('本日20:00 判定') || m.content?.includes('助っ人をピンポイント募集中') ||
+            m.content?.includes('定期カスタムは中止とします'))
         );
         if (isDuplicate) {
           console.log('[Check2000] 直近30分以内に同種の判定メッセージがあるためスキップ（二重発火防止）');
@@ -1358,22 +1382,24 @@ export async function checkCustomStatusAt2000(env) {
       return;
     }
 
-    // C. 中止 ＆ 代替募集
+    // C. 中止
+    // 2026-10-03: 以前は「21:00まで参加枠を開放しています／別モードで遊ぶことも可能です」という
+    // 状況案内とノーマル・ARAMのクイック募集ボタンだったが、開催するのかしないのかが曖昧だった。
+    // ユーザー指示により「中止」と明言し、遊びたい人向けに通常募集を立てるボタンだけを付ける。
     const substituteComponents = [
       {
         type: 1,
         components: [
-          { type: 2, label: "🎮 ノーマル行く人！ (1/5)", style: 1, custom_id: "quick_substitute_normal" },
-          { type: 2, label: "🔥 ARAM / メイヘムやる人！ (1/5)", style: 3, custom_id: "quick_substitute_aram" }
+          // portal_recruit は募集作成モーダル（モード・時刻・人数・メモ）を開く。どのメッセージからでも動作する
+          { type: 2, label: "⚔️ 通常募集を立てる", style: 1, custom_id: "portal_recruit" }
         ]
       }
     ];
 
-    const cancelContent = `⚠️ **【本日20:00 状況案内: ${def.name}】**\n\n` +
-      `20:00時点で第1戦が ${firstMatchCount}/${DAY_CAPACITY}名 と人数が不足しています。\n` +
-      `開始（21:00）まで引き続き参加枠を開放していますが、人数が集まらない場合はノーマルやARAM等の別モードで遊ぶことも可能です！\n` +
-      `\n💡 **別モードへ切り替えて遊ぶ場合はこちら:**\n` +
-      `下のボタンからワンクリックで「ノーマル」または「ARAM / メイヘム」のクイック募集に合流できます。`;
+    const cancelContent = `🛑 **【本日の${def.name}は中止です】**\n\n` +
+      `20:00時点で第1試合の参加者が ${firstMatchCount}/${DAY_CAPACITY}名 と集まらなかったため、本日の定期カスタムは中止とします。\n` +
+      `エントリーしてくださった皆さん、ありがとうございました。\n` +
+      `\n💡 集まれる人で遊びたい場合は、下のボタンから通常募集を立てられます。`;
 
     // 中止はエントリー済みの当事者に最も届くべき通知なので、募集カードへの返信としてぶら下げ、
     // メンションはその人たちだけに限定する(@募集通知ロール全体には鳴らさない)。
@@ -1397,7 +1423,14 @@ export async function checkCustomStatusAt2000(env) {
         ...(summary.messageId ? { message_reference: { message_id: summary.messageId, fail_if_not_exists: false } } : {})
       })
     });
-    console.log(`[Check2000] 中止告知＆代替募集ボタンを投稿しました: ${def.name}（通知対象 ${entryIds.length}名）`);
+    console.log(`[Check2000] 中止告知と通常募集ボタンを投稿しました: ${def.name}（通知対象 ${entryIds.length}名）`);
+
+    // 中止したのにカードが開いたままだと、20時以降のエントリーで開催するのか分からなくなるため締め切る。
+    // 方式は月曜朝の定期カスタム締め切りと同じ（タイトルに受付終了を付け、ボタンを無効化、DBもclosed）。
+    if (summary.messageId) {
+      await closePeriodicCard(env, cancelChannelId, summary.messageId)
+        .catch((e) => console.warn('[Check2000] 中止したカードの締め切りに失敗:', e));
+    }
 
   } catch (err) {
     console.error('[Check2000] error:', err);
