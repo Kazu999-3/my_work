@@ -61,8 +61,14 @@
     - `fix_personal_knowledge_champions.py` により、既存の表記ゆれ（Jarvan IV ➔ JarvanIV 10件、Lee Sin ➔ LeeSin、Master Yi ➔ MasterYi、Wukong ➔ MonkeyKing、Cho'Gath ➔ Chogath、Bel'Veth ➔ Belveth、Kha'zix ➔ Khazix等）、および誤判定（ユナラ ➔ Yunara、ロック ➔ Locke、カーサス ➔ Karthus等）計116件をDDragon正規IDへ一括修正。
   - 📖 **05辞典への反映＆検証**:
     - `compile_champions.mjs` を再実行し、JarvanIV 18件、MonkeyKing 15件、Khazix 28件、LeeSin 19件、Belveth 11件、Chogath 8件、Locke 5件、Karthus 2件、Yunara 1件と、各チャンピオン詳細へ動画バイブルが完璧に紐づいたことを実測確認。Turbopackビルド（21/21ルート）全PASS。
-- [ ] **【05辞典⑤】ライブラリをチャンネルで絞り込み**（2026-10-03 要望・方針未回答）:
-  - `personal_knowledge` にチャンネル欄が無いため、`youtube_queue`（動画URL→`channel_name`）と突き合わせてチャンネル選択欄（件数付き）を付ける案。
+- [x] **【05辞典⑤】ライブラリのチャンネル絞り込み ＆ 4種ソート機能**（2026-10-03 完了）:
+  - `05_PILOT/src/app/api/library/route.ts`: `youtube_queue`（動画URL ➔ `channel_name`）と動的突合し、各記事へ正規化チャンネル名（`Coach Kirei`, `Agurin` 等）および文字数を付与。
+  - クエリパラメータ `channel`（件数バッジ付きドロップダウン）と `sort`（`date_desc` 新しい順, `volume_desc` ボリューム順, `date_asc` 古い順, `title_asc` タイトル五十音順）を配備。
+  - 記事カードにチャンネル名バッジ（`📺 Coach Kirei`）と文字数バッジ（`約4,500字`）を美しく配置。
+- [x] **【05辞典⑥】チャンピオン辞典側（トップ画面 `/`）のソート機能（Tier順・名前順等）**（2026-10-03 完了）:
+  - `05_PILOT/src/app/page.tsx`: 選択中レーン連動のOP.GG実測Tier順（OP〜T5・同Tier内勝率順）、五十音順、英語名順、勝率順、ナレッジ数順の5種ソートセレクターを配備。
+  - チャンピオン詳細モーダルでローカル要約（`videoBibles`）とDB知見（`libraryKnowledge`）の排他制御を解除し、美しい共存表示を実現。カード内にチャンネル名・文字数バッジを配備。
+  - Turbopackビルド（21/21ルート）＆型チェック全PASS。
 - [ ] **【段階的クリーンアップ】旧KTMポータル（`04_PORTAL`）の安全な役目終了**:
   - `05_PILOT` の実戦運用が完全に安定するまで旧ポータルは並行稼働（読み取り専用・保険）として維持。
   - 1〜2週間の安定稼働確認後、内戦大会用機能のみを残して個人機能のデッドコードを一括削除・軽量化。

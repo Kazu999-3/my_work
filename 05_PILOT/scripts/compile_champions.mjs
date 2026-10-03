@@ -500,7 +500,8 @@ async function main() {
             const k = String(row.champion).toLowerCase();
             if (!libraryKnowledgeMap[k]) libraryKnowledgeMap[k] = [];
             // サロゲートペアを分断しない安全なUnicode文字配列スライス
-            const rawText = (row.content || '')
+            const rawContent = row.content || '';
+            const rawText = rawContent
               .replace(/<[^>]*>/g, '')
               .replace(/[#*`_]/g, '')
               .replace(/\s+/g, ' ')
@@ -511,6 +512,13 @@ async function main() {
               snippet = snippet.toWellFormed();
             }
 
+            // チャンネル名の抽出
+            let ch = '';
+            const chMatch = rawContent.match(/>\s*-\s*\*\*チャンネル\*\*:\s*([^\n\r]+)/);
+            if (chMatch) ch = chMatch[1].trim();
+            if (ch.toLowerCase() === 'kireilol') ch = 'Coach Kirei';
+            if (ch.toLowerCase() === 'coach kirei') ch = 'Coach Kirei';
+
             libraryKnowledgeMap[k].push({
               id: row.id,
               title: typeof row.title?.toWellFormed === 'function' ? row.title.toWellFormed() : (row.title || ''),
@@ -518,6 +526,8 @@ async function main() {
               tags: row.tags || [],
               sourceUrl: row.source_url || '',
               createdAt: row.created_at || '',
+              channel: ch || 'その他・一般',
+              charCount: rawContent.length,
             });
           }
         }

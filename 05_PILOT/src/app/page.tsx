@@ -66,6 +66,8 @@ interface ChampionSummary {
     r?: { name: string; cooldown: number[]; imageFull?: string };
   };
   hasBible: boolean;
+  videoBibleCount?: number;
+  libraryKnowledgeCount?: number;
   tier?: string;
   winRate?: number;
 }
@@ -157,6 +159,8 @@ interface LibraryKnowledgeItem {
   tags?: string[];
   sourceUrl?: string;
   createdAt?: string;
+  channel?: string;
+  charCount?: number;
 }
 
 interface VideoBibleItem {
@@ -188,6 +192,7 @@ function PilotApp() {
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [champSort, setChampSort] = useState<"tier" | "name_ja" | "name_en" | "win_rate" | "knowledge">("tier");
 
   const [activeTab, setActiveTab] = useState<"build" | "matchup" | "bible" | "library">("build");
   const [buildPreset, setBuildPreset] = useState<"standard" | "tank" | "burst">("standard");
@@ -483,9 +488,9 @@ function PilotApp() {
     });
   }, [customRoles]);
 
-  // チャンピオン一覧フィルタ（通称エイリアス辞書 ＆ お気に入り ＆ カスタムレーン対応）
+  // チャンピオン一覧フィルタ ＆ ソート（Tier・名前・勝率・ナレッジ数対応）
   const filteredChampions = useMemo(() => {
-    return displayChampions.filter((c) => {
+    const list = displayChampions.filter((c) => {
       const q = search.trim().toLowerCase();
       
       // 通称・エイリアス判定
@@ -508,7 +513,63 @@ function PilotApp() {
 
       return matchSearch && matchRole && matchFav;
     });
-  }, [displayChampions, search, roleFilter, showFavoritesOnly, favorites]);
+
+    // 選択中レーンのレーンキー（OP.GG連動）
+    const getLaneKey = (role: string) => {
+      if (role === "TOP") return "TOP";
+      if (role === "JG") return "JUNGLE";
+      if (role === "MID") return "MID";
+      if (role === "ADC" || role === "BOT") return "ADC";
+      if (role === "SUP") return "SUPPORT";
+      return null;
+    };
+    const currentLaneKey = getLaneKey(roleFilter);
+
+    // 各チャンピオンの該当レーン（または第1ロール）のTierと勝率を取得
+    const getChampMeta = (c: ChampionSummary) => {
+      if (!opggMeta?.lanes) return { tier: undefined, winRate: undefined, tierScore: 0 };
+      const laneKey = currentLaneKey || getLaneKey(c.roles[0]) || "JUNGLE";
+      const m = opggMeta.lanes[laneKey]?.[c.id];
+      if (!m) return { tier: undefined, winRate: undefined, tierScore: 0 };
+
+      let score = 10;
+      const t = String(m.tier || "").toUpperCase();
+      if (t === "OP") score = 100;
+      else if (t === "1" || t === "T1") score = 90;
+      else if (t === "2" || t === "T2") score = 80;
+      else if (t === "3" || t === "T3") score = 70;
+      else if (t === "4" || t === "T4") score = 60;
+      else if (t === "5" || t === "T5") score = 50;
+
+      return { tier: m.tier, winRate: m.winRate, tierScore: score };
+    };
+
+    list.sort((a, b) => {
+      if (champSort === "tier") {
+        const metaA = getChampMeta(a);
+        const metaB = getChampMeta(b);
+        if (metaB.tierScore !== metaA.tierScore) {
+          return metaB.tierScore - metaA.tierScore;
+        }
+        return (metaB.winRate || 0) - (metaA.winRate || 0);
+      } else if (champSort === "name_ja") {
+        return a.jpName.localeCompare(b.jpName, "ja");
+      } else if (champSort === "name_en") {
+        return a.id.localeCompare(b.id);
+      } else if (champSort === "win_rate") {
+        const metaA = getChampMeta(a);
+        const metaB = getChampMeta(b);
+        return (metaB.winRate || 0) - (metaA.winRate || 0);
+      } else if (champSort === "knowledge") {
+        const countA = (a.videoBibleCount || 0) + (a.libraryKnowledgeCount || 0);
+        const countB = (b.videoBibleCount || 0) + (b.libraryKnowledgeCount || 0);
+        return countB - countA;
+      }
+      return 0;
+    });
+
+    return list;
+  }, [displayChampions, search, roleFilter, showFavoritesOnly, favorites, champSort, opggMeta]);
 
   // 特定対面の特化メモ（Matchup Sentinelから検索）
   const matchedVsNote = useMemo(() => {
@@ -1873,84 +1934,97 @@ function PilotApp() {
                   </div>
                 )}
 
-                {/* 動画バイブル（videoBibles）がない場合、ライブラリ知見を展開 */}
-                {(!selectedDetail.videoBibles || selectedDetail.videoBibles.length === 0) && (
-                  selectedDetail.libraryKnowledge && selectedDetail.libraryKnowledge.length > 0 ? (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <BookOpen size={18} className="text-amber-400" />
-                          <h3 className="text-sm sm:text-base font-black text-zinc-100">
-                            🧠 プロ・チャレンジャー実戦思考録（ライブラリ連携: {selectedDetail.libraryKnowledge.length}件）
-                          </h3>
-                        </div>
-                        <span className="text-[11px] text-zinc-400 font-bold bg-zinc-900 px-2.5 py-1 rounded-lg border border-zinc-800">
-                          個人ナレッジ連動
-                        </span>
+                {/* 📒 プロ・チャレンジャー実戦思考録（最新ナレッジ連携） */}
+                {selectedDetail.libraryKnowledge && selectedDetail.libraryKnowledge.length > 0 ? (
+                  <div className="space-y-3 pt-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <BookOpen size={18} className="text-amber-400" />
+                        <h3 className="text-sm sm:text-base font-black text-zinc-100">
+                          🧠 プロ・チャレンジャー実戦思考録（最新ナレッジ: {selectedDetail.libraryKnowledge.length}件）
+                        </h3>
                       </div>
+                      <span className="text-[11px] text-zinc-400 font-bold bg-zinc-900 px-2.5 py-1 rounded-lg border border-zinc-800">
+                        個人ナレッジ連動
+                      </span>
+                    </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {selectedDetail.libraryKnowledge.map((item) => (
-                          <div
-                            key={item.id}
-                            onClick={() => openKnowledgeModal(item.id)}
-                            className="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 hover:border-amber-500/50 transition cursor-pointer group flex flex-col justify-between"
-                          >
-                            <div className="space-y-1.5">
-                              <div className="flex items-start justify-between gap-2">
-                                <h4 className="text-xs font-black text-zinc-200 group-hover:text-amber-400 transition leading-snug">
-                                  {item.title}
-                                </h4>
-                                {item.sourceUrl && (
-                                  <a
-                                    href={item.sourceUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="text-zinc-500 hover:text-amber-400 shrink-0 p-1 rounded hover:bg-zinc-800"
-                                    title="元ソースを開く"
-                                  >
-                                    <ExternalLink size={12} />
-                                  </a>
-                                )}
-                              </div>
-                              {item.snippet && (
-                                <p className="text-[11px] text-zinc-400 leading-relaxed font-mono line-clamp-3">
-                                  {item.snippet}
-                                </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {selectedDetail.libraryKnowledge.map((item) => (
+                        <div
+                          key={item.id}
+                          onClick={() => openKnowledgeModal(item.id)}
+                          className="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 hover:border-amber-500/50 transition cursor-pointer group flex flex-col justify-between"
+                        >
+                          <div className="space-y-1.5">
+                            <div className="flex items-start justify-between gap-2">
+                              <h4 className="text-xs font-black text-zinc-200 group-hover:text-amber-400 transition leading-snug">
+                                {item.title}
+                              </h4>
+                              {item.sourceUrl && (
+                                <a
+                                  href={item.sourceUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-zinc-500 hover:text-amber-400 shrink-0 p-1 rounded hover:bg-zinc-800"
+                                  title="元ソースを開く"
+                                >
+                                  <ExternalLink size={12} />
+                                </a>
                               )}
                             </div>
-                            <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-zinc-900 text-[10px]">
-                              <span className="text-zinc-500">{item.tags?.slice(0, 3).map(t => `#${t}`).join(' ')}</span>
-                              <span className="text-amber-400 font-bold group-hover:translate-x-0.5 transition">詳細を読む →</span>
+
+                            {/* 📺 チャンネル ＆ 文字数バッジ */}
+                            <div className="flex items-center gap-2 text-[10px] text-zinc-400 flex-wrap">
+                              {item.channel && item.channel !== "その他・一般" && (
+                                <span className="px-2 py-0.5 rounded-md bg-zinc-900 text-zinc-300 font-bold border border-zinc-800">
+                                  📺 {item.channel}
+                                </span>
+                              )}
+                              {item.charCount && item.charCount > 0 && (
+                                <span className="px-1.5 py-0.5 rounded-md bg-zinc-900 text-amber-400 font-mono border border-zinc-800 font-bold">
+                                  約{item.charCount.toLocaleString()}字
+                                </span>
+                              )}
                             </div>
+
+                            {item.snippet && (
+                              <p className="text-[11px] text-zinc-400 leading-relaxed font-mono line-clamp-3">
+                                {item.snippet}
+                              </p>
+                            )}
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
-                      <div className="flex items-center gap-2.5">
-                        <BookOpen size={16} className="text-zinc-400" />
-                        <div>
-                          <h4 className="text-xs sm:text-sm font-black text-zinc-200">
-                            ライブラリから {selectedDetail.jpName} の過去記事・動画を探す
-                          </h4>
-                          <p className="text-[11px] text-zinc-400">
-                            全952件のナレッジアーカイブから関連戦術を逆引き検索できます
-                          </p>
+                          <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-zinc-900 text-[10px]">
+                            <span className="text-zinc-500">{item.tags?.slice(0, 3).map(t => `#${t}`).join(' ')}</span>
+                            <span className="text-amber-400 font-bold group-hover:translate-x-0.5 transition">詳細を読む →</span>
+                          </div>
                         </div>
-                      </div>
-                      <Link
-                        href={`/library?q=${encodeURIComponent(selectedDetail.id)}`}
-                        className="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-bold transition flex items-center gap-1.5 shrink-0"
-                      >
-                        <Search size={13} />
-                        <span>ライブラリで検索 ↗</span>
-                      </Link>
+                      ))}
                     </div>
-                  )
-                )}
+                  </div>
+                ) : (!selectedDetail.videoBibles || selectedDetail.videoBibles.length === 0) ? (
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+                    <div className="flex items-center gap-2.5">
+                      <BookOpen size={16} className="text-zinc-400" />
+                      <div>
+                        <h4 className="text-xs sm:text-sm font-black text-zinc-200">
+                          ライブラリから {selectedDetail.jpName} の過去記事・動画を探す
+                        </h4>
+                        <p className="text-[11px] text-zinc-400">
+                          全952件のナレッジアーカイブから関連戦術を逆引き検索できます
+                        </p>
+                      </div>
+                    </div>
+                    <Link
+                      href={`/library?q=${encodeURIComponent(selectedDetail.id)}`}
+                      className="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-bold transition flex items-center gap-1.5 shrink-0"
+                    >
+                      <Search size={13} />
+                      <span>ライブラリで検索 ↗</span>
+                    </Link>
+                  </div>
+                ) : null}
 
                 {/* ⚠️ 絶対地雷行動（トラップ） */}
                 {selectedDetail.bible?.traps && selectedDetail.bible.traps.length > 0 && (
@@ -2230,21 +2304,38 @@ function PilotApp() {
                 </button>
               </div>
 
-              {/* ロールタブ */}
-              <div className="flex items-center gap-1 overflow-x-auto w-full sm:w-auto p-1 bg-zinc-950 rounded-xl border border-zinc-800">
-                {["ALL", "TOP", "JG", "MID", "ADC", "SUP"].map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => setRoleFilter(r)}
-                    className={`px-3 py-1 rounded-lg text-xs font-black transition cursor-pointer whitespace-nowrap ${
-                      roleFilter === r
-                        ? "bg-amber-500 text-zinc-950 shadow-sm font-black scale-102"
-                        : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/80"
-                    }`}
+              {/* ロールタブ ＆ ソートセレクター */}
+              <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto">
+                <div className="flex items-center gap-1 p-1 bg-zinc-950 rounded-xl border border-zinc-800">
+                  {["ALL", "TOP", "JG", "MID", "ADC", "SUP"].map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => setRoleFilter(r)}
+                      className={`px-3 py-1 rounded-lg text-xs font-black transition cursor-pointer whitespace-nowrap ${
+                        roleFilter === r
+                          ? "bg-amber-500 text-zinc-950 shadow-sm font-black scale-102"
+                          : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/80"
+                      }`}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-1.5 p-1 bg-zinc-950 rounded-xl border border-zinc-800 shrink-0">
+                  <span className="text-[11px] font-bold text-zinc-400 pl-1.5 hidden sm:inline">⇅ 並び替え:</span>
+                  <select
+                    value={champSort}
+                    onChange={(e) => setChampSort(e.target.value as any)}
+                    className="bg-zinc-900 text-zinc-200 border border-zinc-700/80 rounded-lg px-2.5 py-1 text-xs font-bold focus:outline-none focus:border-amber-500 cursor-pointer"
                   >
-                    {r}
-                  </button>
-                ))}
+                    <option value="tier">👑 ティア順 (OP.GG)</option>
+                    <option value="name_ja">🔤 名前順 (五十音)</option>
+                    <option value="name_en">🔤 英語名 (A-Z)</option>
+                    <option value="win_rate">📈 勝率順</option>
+                    <option value="knowledge">📚 ナレッジ数順</option>
+                  </select>
+                </div>
               </div>
             </div>
 

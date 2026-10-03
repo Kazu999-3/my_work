@@ -14,6 +14,8 @@ interface ArticleItem {
   id: number | string;
   title: string;
   champion?: string;
+  channel?: string;
+  char_count?: number;
   source_url?: string;
   tags?: string[];
   created_at: string;
@@ -46,6 +48,11 @@ function LibraryApp() {
   const [activeCategory, setActiveCategory] = useState<'lol' | 'general'>('lol');
   const [counts, setCounts] = useState({ lol: 0, general: 0, all: 0 });
 
+  // 📺 チャンネル絞り込み ＆ ⇅ ソート
+  const [channels, setChannels] = useState<{ name: string; count: number }[]>([]);
+  const [selectedChannel, setSelectedChannel] = useState<string>("");
+  const [selectedSort, setSelectedSort] = useState<'date_desc' | 'volume_desc' | 'date_asc' | 'title_asc'>('date_desc');
+
   // 選択中記事の詳細モーダル
   const [selectedId, setSelectedId] = useState<number | string | null>(initialId);
   const [detailArticle, setDetailArticle] = useState<ArticleDetail | null>(null);
@@ -53,15 +60,23 @@ function LibraryApp() {
   const [copied, setCopied] = useState(false);
 
   // 記事一覧フェッチ
-  const fetchArticles = async (query = "", cat: 'lol' | 'general' = activeCategory) => {
+  const fetchArticles = async (
+    query = search,
+    cat: 'lol' | 'general' = activeCategory,
+    chan = selectedChannel,
+    sort = selectedSort
+  ) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/library?q=${encodeURIComponent(query)}&category=${cat}&limit=60`);
+      const res = await fetch(
+        `/api/library?q=${encodeURIComponent(query)}&category=${cat}&channel=${encodeURIComponent(chan)}&sort=${sort}&limit=60`
+      );
       const data = await res.json();
       if (res.ok && data.articles) {
         setArticles(data.articles);
         setTotalCount(data.total || data.articles.length);
         if (data.counts) setCounts(data.counts);
+        if (data.channels) setChannels(data.channels);
       }
     } catch (e) {
       console.error("ライブラリ取得エラー:", e);
@@ -72,15 +87,26 @@ function LibraryApp() {
 
   const handleCategoryChange = (cat: 'lol' | 'general') => {
     setActiveCategory(cat);
-    fetchArticles(search, cat);
+    setSelectedChannel(""); // カテゴリ変更時はチャンネルリセット
+    fetchArticles(search, cat, "", selectedSort);
+  };
+
+  const handleChannelChange = (chan: string) => {
+    setSelectedChannel(chan);
+    fetchArticles(search, activeCategory, chan, selectedSort);
+  };
+
+  const handleSortChange = (sort: 'date_desc' | 'volume_desc' | 'date_asc' | 'title_asc') => {
+    setSelectedSort(sort);
+    fetchArticles(search, activeCategory, selectedChannel, sort);
   };
 
   useEffect(() => {
     if (initialQ) {
       setSearch(initialQ);
-      fetchArticles(initialQ, "lol");
+      fetchArticles(initialQ, "lol", "", "date_desc");
     } else {
-      fetchArticles("", "lol");
+      fetchArticles("", "lol", "", "date_desc");
     }
 
     if (initialId) {
@@ -267,6 +293,56 @@ function LibraryApp() {
           </div>
         </div>
 
+        {/* 📺 チャンネル絞り込み ＆ ⇅ ソートバー */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 bg-zinc-950/80 p-2.5 rounded-2xl border border-zinc-800/80 shadow-xs">
+          {/* 📺 チャンネルセレクター */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+            <span className="text-xs font-bold text-zinc-400 shrink-0 flex items-center gap-1">
+              <span>📺</span>
+              <span>チャンネル:</span>
+            </span>
+            <select
+              value={selectedChannel}
+              onChange={(e) => handleChannelChange(e.target.value)}
+              className="bg-zinc-900 text-zinc-200 border border-zinc-700/80 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-amber-500/80 max-w-64 cursor-pointer"
+            >
+              <option value="">全チャンネル ({totalCount}件)</option>
+              {channels.map((ch) => (
+                <option key={ch.name} value={ch.name}>
+                  {ch.name} ({ch.count}件)
+                </option>
+              ))}
+            </select>
+            {selectedChannel && (
+              <button
+                onClick={() => handleChannelChange("")}
+                className="text-[11px] text-zinc-400 hover:text-rose-400 px-2 py-1 rounded-lg bg-zinc-900 border border-zinc-800 transition cursor-pointer"
+                title="チャンネル絞り込み解除"
+              >
+                ✕ 解除
+              </button>
+            )}
+          </div>
+
+          {/* ⇅ ソートセレクター */}
+          <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+            <span className="text-xs font-bold text-zinc-400 flex items-center gap-1">
+              <span>⇅</span>
+              <span>並び替え:</span>
+            </span>
+            <select
+              value={selectedSort}
+              onChange={(e) => handleSortChange(e.target.value as any)}
+              className="bg-zinc-900 text-zinc-200 border border-zinc-700/80 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-amber-500/80 cursor-pointer"
+            >
+              <option value="date_desc">📅 新しい順 (最新メタ)</option>
+              <option value="volume_desc">📚 ボリューム順 (文字数)</option>
+              <option value="date_asc">⏳ 古い順 (時系列)</option>
+              <option value="title_asc">🔤 タイトル順 (五十音)</option>
+            </select>
+          </div>
+        </div>
+
         {/* 記事一覧グリッド */}
         {loading ? (
           <div className="py-24 text-center text-amber-400 flex items-center justify-center gap-2">
@@ -296,6 +372,20 @@ function LibraryApp() {
                             className="w-full h-full object-cover"
                           />
                         </div>
+                      )}
+                    </div>
+
+                    {/* 📺 チャンネル ＆ 文字数バッジ */}
+                    <div className="flex items-center gap-2 text-[10px] text-zinc-400 pt-0.5 flex-wrap">
+                      {a.channel && a.channel !== "その他・一般" && (
+                        <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300 font-bold border border-zinc-700/60 truncate max-w-40">
+                          📺 {a.channel}
+                        </span>
+                      )}
+                      {a.char_count && a.char_count > 0 && (
+                        <span className="px-1.5 py-0.5 rounded-md bg-zinc-950 text-amber-400/90 font-mono border border-zinc-800 font-bold">
+                          約{a.char_count.toLocaleString()}字
+                        </span>
                       )}
                     </div>
 
