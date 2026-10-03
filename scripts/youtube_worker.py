@@ -112,6 +112,52 @@ def _set_quota_pause(reason: str):
         print(f"⚠️ 一時停止ファイルの書き込みに失敗: {e}", file=sys.stderr)
 
 
+# 処理中の動画を記録するファイル。デーモンは900秒でこのスクリプトを強制終了するため、
+# そのとき処理していた動画は失敗として記録されず pending のまま残り、次の回も同じ動画から
+# 始まって同じところで止まり続けていた（2026-09-26〜10-02 に毎日数件〜23件のタイムアウト）。
+# 着手時に書き、処理を終えたら消す。次の回に残っていれば「前回これで時間切れになった」と分かる。
+INFLIGHT_FILE = Path(__file__).resolve().parent.parent / "03_SYSTEMS" / "logs" / "youtube_worker_inflight.json"
+
+
+def _set_inflight(vid: str):
+    try:
+        INFLIGHT_FILE.parent.mkdir(parents=True, exist_ok=True)
+        INFLIGHT_FILE.write_text(json.dumps({"vid": vid, "started": time.time()}), encoding="utf-8")
+    except Exception as e:
+        print(f"⚠️ 処理中ファイルの書き込みに失敗: {e}", file=sys.stderr)
+
+
+def _clear_inflight():
+    try:
+        INFLIGHT_FILE.unlink(missing_ok=True)
+    except Exception:
+        pass
+
+
+def _penalize_timed_out_video():
+    """前回の実行が時間切れで強制終了されていたら、その動画の再試行回数を増やして優先度を下げる"""
+    try:
+        data = json.loads(INFLIGHT_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return
+    _clear_inflight()
+    vid = data.get("vid")
+    if not vid:
+        return
+    rows = sb("GET", f"youtube_queue?id=eq.{vid}&select=id,title,status,retry_count") or []
+    if not rows or rows[0].get("status") != "pending":
+        return  # 既に別の経路で完了・失敗が記録されている
+    row = rows[0]
+    retry = (row.get("retry_count") or 0) + 1
+    payload = {"retry_count": retry, "priority": "low"}
+    if retry >= MAX_RETRY:
+        base = re.sub(r"\s*\[エラー:.*\]", "", row.get("title") or "").strip()
+        payload["status"] = "error_generation"
+        payload["title"] = f"{base} [エラー: 処理が時間切れ(900秒)で{retry}回中断されたため打ち切り]"
+    sb("PATCH", f"youtube_queue?id=eq.{vid}", payload)
+    print(f"⏬ 前回時間切れになった動画の優先度を下げました ({retry}/{MAX_RETRY}): {vid}")
+
+
 class RateLimited(RuntimeError):
     """YouTube側のレート制限(429)やbot判定によるエラー。「字幕が存在しない」動画とは異なり、
     時間を置けば成功する可能性が高いため、NoTranscriptとは区別してリトライ対象(pending)に戻す。
@@ -620,6 +666,8 @@ def main():
         print(f"⏸ Gemini の利用上限に達したため {time.strftime('%H:%M', time.localtime(paused))} まで処理を見送ります。")
         return
 
+    _penalize_timed_out_video()
+
     # 優先度の高いものから、次に登録が古いものから処理する。
     # priority は文字列なのでDB側のソートだと high→low→medium になってしまう。
     # 候補を多めに取ってから、Python側で正しい優先順に並べ替える。
@@ -644,6 +692,7 @@ def main():
             time.sleep(5)
         processed += 1
         print(f"▶ 処理開始: {it.get('title')} ({vid})")
+        _set_inflight(vid)
         # 注意: status は CHECK 制約付きで、許可値は
         #   pending / completed / error_generation / error_no_transcript / failed / on_hold
         # 'processing' は許可されていないため、着手中フラグは立てない。
@@ -751,6 +800,7 @@ def main():
             title = video_title
             done.append({"title": title, "id": created_id})
             print(f"✅ 完了 (ID: {created_id}): {title}")
+            _clear_inflight()
         except GeminiQuotaExceeded as e:
             # 動画ではなくAPIの利用上限の問題なので retry_count を消費せず pending に戻し、
             # 一定時間は実行自体を止める（以降の動画も同じ429で回数を失うため、この回も打ち切る）
@@ -758,6 +808,7 @@ def main():
             _set_quota_pause(str(e))
             failed.append((it.get("title") or vid, "quota", str(e)[:80]))
             print(f"⏸ Gemini の利用上限のため中断（{QUOTA_PAUSE_MIN}分停止・pendingのまま据え置き）: {e}", file=sys.stderr)
+            _clear_inflight()
             break
         except RateLimited as e:
             # ⚠️ 2026-09-23: レート制限は「この動画の問題」ではなく「今このIPが
@@ -768,6 +819,7 @@ def main():
             sb("PATCH", f"youtube_queue?id=eq.{vid}", {"status": "pending"})
             failed.append((it.get("title") or vid, "rate_limited", str(e)[:80]))
             print(f"⏸ レート制限のため中断（pendingのまま据え置き）: {e}", file=sys.stderr)
+            _clear_inflight()
             break
         except Exception as e:
             # ⚠️ 2026-09-23: 要約の保存(POST)が成功した後の工程で落ちると、
@@ -782,6 +834,7 @@ def main():
                     recovered_title = saved[0].get("title") or it.get("title") or vid
                     done.append({"title": recovered_title, "id": recovered_id})
                     print("✅ 完了（保存済みを検出し復旧 ID: %s）: %s" % (recovered_id, recovered_title))
+                    _clear_inflight()
                     continue
             except Exception:
                 pass  # 復旧の確認自体に失敗したら通常の失敗処理へ進む
@@ -796,11 +849,15 @@ def main():
 
             base = re.sub(r"\s*\[エラー:.*\]", "", it.get("title") or "").strip()
             payload = {"status": status, "retry_count": retry}
+            if status == "pending":
+                # 失敗した動画は後回しにして、新しく登録された動画を先に処理する
+                payload["priority"] = "low"
             if status != "pending":
                 payload["title"] = f"{base} [エラー: {str(e)[:120]}]"
             sb("PATCH", f"youtube_queue?id=eq.{vid}", payload)
             failed.append((it.get("title") or vid, status, str(e)[:80]))
             print(f"❌ 失敗({retry}/{MAX_RETRY}→{status}): {e}", file=sys.stderr)
+            _clear_inflight()
 
     # 結果をDiscordへ通知する（完了か失敗があったときだけ）
     if done or failed:
