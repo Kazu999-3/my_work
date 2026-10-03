@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, Suspense } from "react";
+import { useState, useMemo, useEffect, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import championsSummary from "@/data/champions_summary.json";
@@ -226,8 +226,30 @@ function PilotApp() {
   const [isGlobalGuideExpanded, setIsGlobalGuideExpanded] = useState(false);
   const [globalGuideCopied, setGlobalGuideCopied] = useState(false);
 
-  // ⚙️ ヘッダーツールメニュー開閉状態
+  // ⚙️ 詳細ヘッダーツールメニュー開閉状態
   const [isToolMenuOpen, setIsToolMenuOpen] = useState(false);
+  const toolMenuRef = useRef<HTMLDivElement>(null);
+
+  // ⚙️ 一覧バーツールメニュー開閉状態
+  const [isListToolMenuOpen, setIsListToolMenuOpen] = useState(false);
+  const listToolMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (toolMenuRef.current && !toolMenuRef.current.contains(event.target as Node)) {
+        setIsToolMenuOpen(false);
+      }
+      if (listToolMenuRef.current && !listToolMenuRef.current.contains(event.target as Node)) {
+        setIsListToolMenuOpen(false);
+      }
+    }
+    if (isToolMenuOpen || isListToolMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isToolMenuOpen, isListToolMenuOpen]);
 
   // 📒 攻略知見詳細ポップアップモーダル状態
   const [selectedKnowledgeId, setSelectedKnowledgeId] = useState<string | number | null>(null);
@@ -650,7 +672,7 @@ function PilotApp() {
              ========================================================= */
           <div className="space-y-4 animate-in fade-in duration-150">
             {/* 1. ヒーローバナー＆基本情報 */}
-            <div className="relative rounded-2xl bg-zinc-900 border border-zinc-800 shadow-md">
+            <div className={`relative rounded-2xl bg-zinc-900 border border-zinc-800 shadow-md ${isToolMenuOpen ? "z-30" : ""}`}>
               {/* 背景スプラッシュ（角丸クリップ） */}
               <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
                 <div
@@ -844,12 +866,16 @@ function PilotApp() {
                   </div>
 
                   {/* ⚙️ ツール・編集 ドロップダウンメニュー */}
-                  <div className="relative">
+                  <div className="relative" ref={toolMenuRef}>
                     <button
-                      onClick={() => setIsToolMenuOpen(!isToolMenuOpen)}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsToolMenuOpen(!isToolMenuOpen);
+                      }}
                       className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
                         isToolMenuOpen
-                          ? "bg-zinc-700 text-zinc-100 border-zinc-500"
+                          ? "bg-zinc-700 text-zinc-100 border-zinc-500 shadow-md"
                           : "bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border-zinc-700"
                       }`}
                       title="知見取込・レーン設定・アイテム辞書・管理メニュー"
@@ -860,60 +886,57 @@ function PilotApp() {
                     </button>
 
                     {isToolMenuOpen && (
-                      <>
-                        <div
-                          className="fixed inset-0 z-40"
+                      <div className="absolute right-0 top-full mt-1.5 w-56 rounded-xl bg-[#16161c] border border-zinc-700 shadow-2xl py-1.5 z-50 animate-in fade-in duration-150 backdrop-blur-md">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsToolMenuOpen(false);
+                            setIsIngestOpen(true);
+                          }}
+                          className="w-full px-3 py-2 text-left text-xs text-zinc-200 hover:bg-zinc-800/80 hover:text-amber-300 transition flex items-center gap-2 cursor-pointer font-medium"
+                        >
+                          <Plus size={14} className="text-amber-400 shrink-0" />
+                          <span>📥 このチャンプの知見取込</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsToolMenuOpen(false);
+                            setFocusedLaneChampId(selectedDetail.id);
+                            setIsLaneModalOpen(true);
+                          }}
+                          className="w-full px-3 py-2 text-left text-xs text-zinc-200 hover:bg-zinc-800/80 hover:text-amber-300 transition flex items-center gap-2 cursor-pointer font-medium"
+                        >
+                          <Wrench size={14} className="text-amber-400 shrink-0" />
+                          <span>🛠️ 所属レーン編集</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsToolMenuOpen(false);
+                            setDictFocusKey(undefined);
+                            setDictFocusValue(undefined);
+                            setIsItemDictModalOpen(true);
+                          }}
+                          className="w-full px-3 py-2 text-left text-xs text-zinc-200 hover:bg-zinc-800/80 hover:text-amber-300 transition flex items-center gap-2 cursor-pointer font-medium"
+                        >
+                          <BookOpen size={14} className="text-amber-400 shrink-0" />
+                          <span>📖 アイテム翻訳辞書</span>
+                        </button>
+
+                        <div className="border-t border-zinc-800 my-1" />
+
+                        <Link
+                          href={`/admin/dict-maintenance?c=${encodeURIComponent(selectedDetail.id)}`}
                           onClick={() => setIsToolMenuOpen(false)}
-                        />
-                        <div className="absolute right-0 mt-1.5 w-52 rounded-xl bg-[#16161c] border border-zinc-700 shadow-2xl py-1.5 z-50 animate-in fade-in duration-150 backdrop-blur-md">
-                          <button
-                            onClick={() => {
-                              setIsToolMenuOpen(false);
-                              setIsIngestOpen(true);
-                            }}
-                            className="w-full px-3 py-2 text-left text-xs text-zinc-200 hover:bg-zinc-800/80 hover:text-amber-300 transition flex items-center gap-2 cursor-pointer font-medium"
-                          >
-                            <Plus size={14} className="text-amber-400 shrink-0" />
-                            <span>📥 このチャンプの知見取込</span>
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              setIsToolMenuOpen(false);
-                              setFocusedLaneChampId(selectedDetail.id);
-                              setIsLaneModalOpen(true);
-                            }}
-                            className="w-full px-3 py-2 text-left text-xs text-zinc-200 hover:bg-zinc-800/80 hover:text-amber-300 transition flex items-center gap-2 cursor-pointer font-medium"
-                          >
-                            <Wrench size={14} className="text-amber-400 shrink-0" />
-                            <span>🛠️ 所属レーン編集</span>
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              setIsToolMenuOpen(false);
-                              setDictFocusKey(undefined);
-                              setDictFocusValue(undefined);
-                              setIsItemDictModalOpen(true);
-                            }}
-                            className="w-full px-3 py-2 text-left text-xs text-zinc-200 hover:bg-zinc-800/80 hover:text-amber-300 transition flex items-center gap-2 cursor-pointer font-medium"
-                          >
-                            <BookOpen size={14} className="text-amber-400 shrink-0" />
-                            <span>📖 アイテム翻訳辞書</span>
-                          </button>
-
-                          <div className="border-t border-zinc-800 my-1" />
-
-                          <Link
-                            href={`/admin/dict-maintenance?c=${encodeURIComponent(selectedDetail.id)}`}
-                            onClick={() => setIsToolMenuOpen(false)}
-                            className="w-full px-3 py-2 text-left text-xs text-amber-300 hover:bg-amber-500/10 transition flex items-center gap-2 cursor-pointer font-bold"
-                          >
-                            <Layers size={14} className="text-amber-400 shrink-0" />
-                            <span>⚙️ 辞典メンテナンス管理 ↗</span>
-                          </Link>
-                        </div>
-                      </>
+                          className="w-full px-3 py-2 text-left text-xs text-amber-300 hover:bg-amber-500/10 transition flex items-center gap-2 cursor-pointer font-bold"
+                        >
+                          <Layers size={14} className="text-amber-400 shrink-0" />
+                          <span>⚙️ 辞典メンテナンス管理 ↗</span>
+                        </Link>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -2253,7 +2276,7 @@ function PilotApp() {
              ========================================================= */
           <div className="space-y-3">
             {/* 検索 ＆ フィルターバー */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 bg-zinc-900/90 p-2.5 rounded-2xl border border-zinc-800 shadow-sm">
+            <div className={`flex flex-col sm:flex-row items-center justify-between gap-2.5 bg-zinc-900/90 p-2.5 rounded-2xl border border-zinc-800 shadow-sm relative ${isListToolMenuOpen ? "z-30" : ""}`}>
               <div className="flex items-center gap-2 w-full sm:w-auto flex-1">
                 <div className="relative w-full sm:w-80">
                   <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
@@ -2307,18 +2330,80 @@ function PilotApp() {
                   <span>🎯 対面チェッカー</span>
                 </button>
 
-                {/* 🛠️ レーン所属メンテボタン */}
-                <button
-                  onClick={() => {
-                    setFocusedLaneChampId(undefined);
-                    setIsLaneModalOpen(true);
-                  }}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-zinc-950 text-zinc-300 border border-zinc-800 hover:border-amber-500/50 hover:text-amber-400 transition cursor-pointer shrink-0 shadow-sm"
-                  title="全チャンピオンの所属レーン（TOP/JG/MID/ADC/SUP）を編集"
-                >
-                  <Wrench size={13} className="text-amber-400" />
-                  <span className="hidden sm:inline">レーン編集</span>
-                </button>
+                {/* ⚙️ ツール・編集 ドロップダウンメニュー（一覧側） */}
+                <div className="relative shrink-0" ref={listToolMenuRef}>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsListToolMenuOpen(!isListToolMenuOpen);
+                    }}
+                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer shadow-sm ${
+                      isListToolMenuOpen
+                        ? "bg-zinc-700 text-zinc-100 border-zinc-500 shadow-md"
+                        : "bg-zinc-950 text-zinc-300 border-zinc-800 hover:border-amber-500/50 hover:text-amber-400"
+                    }`}
+                    title="知見取込・レーン設定・アイテム辞書・管理メニュー"
+                  >
+                    <Wrench size={13} className="text-amber-400" />
+                    <span>ツール</span>
+                    <ChevronDown size={13} className={`transition duration-200 ${isListToolMenuOpen ? "rotate-180" : ""}`} />
+                  </button>
+
+                  {isListToolMenuOpen && (
+                    <div className="absolute right-0 top-full mt-1.5 w-56 rounded-xl bg-[#16161c] border border-zinc-700 shadow-2xl py-1.5 z-50 animate-in fade-in duration-150 backdrop-blur-md">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsListToolMenuOpen(false);
+                          setIsIngestOpen(true);
+                        }}
+                        className="w-full px-3 py-2 text-left text-xs text-zinc-200 hover:bg-zinc-800/80 hover:text-amber-300 transition flex items-center gap-2 cursor-pointer font-medium"
+                      >
+                        <Plus size={14} className="text-amber-400 shrink-0" />
+                        <span>📥 新規戦術の知見取込</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsListToolMenuOpen(false);
+                          setFocusedLaneChampId(undefined);
+                          setIsLaneModalOpen(true);
+                        }}
+                        className="w-full px-3 py-2 text-left text-xs text-zinc-200 hover:bg-zinc-800/80 hover:text-amber-300 transition flex items-center gap-2 cursor-pointer font-medium"
+                      >
+                        <Wrench size={14} className="text-amber-400 shrink-0" />
+                        <span>🛠️ 所属レーン編集</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsListToolMenuOpen(false);
+                          setDictFocusKey(undefined);
+                          setDictFocusValue(undefined);
+                          setIsItemDictModalOpen(true);
+                        }}
+                        className="w-full px-3 py-2 text-left text-xs text-zinc-200 hover:bg-zinc-800/80 hover:text-amber-300 transition flex items-center gap-2 cursor-pointer font-medium"
+                      >
+                        <BookOpen size={14} className="text-amber-400 shrink-0" />
+                        <span>📖 アイテム翻訳辞書</span>
+                      </button>
+
+                      <div className="border-t border-zinc-800 my-1" />
+
+                      <Link
+                        href="/admin/dict-maintenance"
+                        onClick={() => setIsListToolMenuOpen(false)}
+                        className="w-full px-3 py-2 text-left text-xs text-amber-300 hover:bg-amber-500/10 transition flex items-center gap-2 cursor-pointer font-bold"
+                      >
+                        <Layers size={14} className="text-amber-400 shrink-0" />
+                        <span>⚙️ 辞典メンテナンス管理 ↗</span>
+                      </Link>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* ロールタブ ＆ ソートセレクター */}
