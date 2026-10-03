@@ -37,10 +37,18 @@
   - OP.GG公式MCPサーバー（`https://mcp-api.op.gg/mcp` / `lol_list_lane_meta_champions`）から全5レーン計268体の実測メタデータ（勝率・採用率・BAN率・Tier・順位）を収集するパイプライン（`opgg_meta_collector.py`）を新設。
   - Supabase `ktm_settings`（`opgg_lane_meta_stats`）および `opgg_lane_meta.json` に永続化し、PC常駐デーモン（`edge_worker_daemon.py`）へ日次自動同期スレッドを組み込み。
   - AI推測値（`patch_meta`のJinx 0.0%等の妄想）を完全排除。辞典詳細でレーン選択に連動したリアルタイムTier・勝率・BAN率・順位およびOP.GG公式出典リンクを表示。一覧カードにもTierバッジを直感配備。Turbopackビルド全PASS。
-- [ ] **【05辞典③】辞典の整理とメンテナンス画面**（2026-10-03 叩き台のみ・ユーザーと別途相談）:
-  - ⚠️ 判明事実: 05辞典はビルド時に `compile_champions.mjs` でJSON化しており、`matchup_sentinel` の `enemy='GLOBAL'` 行を読み込み対象から除外している。**承認画面・自動統合で辞典に入れた本文（`champ_<ID>_global`）は05の辞典画面に表示されていない**（旧ポータルでは見える）。
-  - 叩き台 `/admin/dict-maintenance`（チャンピオン単位）: 所属レーン編集 / 辞典本文を節（統合記事）単位で編集・削除・付け替え / 紐づくライブラリ記事の付け替え・除外 / 基本情報（強み・弱み・パワースパイク等）編集 / `knowledge_revisions` の履歴表示と1つ前に戻す / 変更後の再ビルド（Vercel Deploy Hook）。
-  - 相談論点: 統合本文を05辞典にどう見せるか / 詳細画面上部のボタン10個の整理方針 / 既存「辞典ヘルス監査」画面との統合可否。
+- [x] **【05辞典③】辞典の整理とメンテナンス画面**（2026-10-03 完了）:
+  - 👑 **統合戦術マスター教本（原本全文）の完全復旧**: `compile_champions.mjs` を改修し、Supabase `matchup_sentinel`（`enemy='GLOBAL'`）に保存されていた承認済み巨大統合本文194件をコンパイル対象へ正式統合。辞典詳細の「プロの思考録・バイブル」タブ最上部に目玉カードとして配置（展開/折りたたみ、文字数バッジ、クリップボードコピー、直接メンテ遷移ボタン付き）。
+  - 🛠️ **専用メンテナンス画面 `/admin/dict-maintenance` の新設**:
+    - 全173体の即座インクリメンタル検索＆セレクター。
+    - レーン所属のワンクリックトグル（Top, Jungle, Mid, ADC, Support）とDB（`champion_lane_roles`）直接同期。
+    - 👑統合マスター教本のMarkdownフルエディタ（リアルタイム文字数・プレビュー・Supabase `matchup_sentinel` 保存）。
+    - 基礎戦術情報（パワースパイク、強み・弱み、序盤戦術）のJSON編集・保存（`champion_facts`）。
+    - 改定履歴ロールバック機能（`knowledge_revisions` からワンクリックで以前のバージョンに復元）。
+    - Next.js API `/api/admin/dict-maintenance`（GET/PUT）を配備。
+  - 🧭 **辞典ヘッダー操作ボタンの整理**:
+    - 頻繁に使うプレイ用アクション（「⚔️ VS比較」「🤖 AIコーチ」「CD表」）を表に残し、管理・補助系アクション（「知見取込」「レーン編集」「アイテム辞書」「メンテ管理」）を「⚙️ ツール」ドロップダウンへスマートに集約。視界のノイズを一掃。
+    - 全21ルート Turbopack ビルド・TypeScript型チェック完全パス。
 - [ ] **【05辞典④】動画記事のチャンピオン判定の修正**（2026-10-03 設計済み・未実装）:
   - 現状: `scripts/youtube_worker.py` がGeminiの答えた `champion` をそのまま保存。表記ゆれ（`Jarvan IV` 等で辞典に出ない）、新チャンピオンの取り違え（「ユナラ」→Yuumi）、題名から判断できない動画への推測付与が発生。
   - 設計: ①動画タイトルを公式一覧（DDragon 173体の日本語名・英語名・別名表）と照合し、ちょうど1体ならそれを採用（AIより優先、追加のAI呼び出しなし） ②それ以外はAIの答えを `resolve_roster_champion` で正規化、一覧に無ければ Unknown ③タイトルに複数体なら1体目を主題（複数紐付けは別途） ④既存の表記ゆれ37件と直近の動画記事をDBで再判定。

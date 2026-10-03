@@ -11,7 +11,7 @@ import {
   Search, ShieldAlert, Swords, Zap, Skull, Shield, BookOpen, 
   ArrowLeft, ArrowRight, Clock, Activity, AlertTriangle, Layers,
   CheckCircle2, ChevronDown, ChevronUp, Timer, Star,
-  X, Check, Flame, Sparkles, Plus, Download, Bot, Target, ExternalLink, Video, Eye, Waves, Compass, Wrench, Edit3, Copy
+  X, Check, Flame, Sparkles, Plus, Download, Bot, Target, ExternalLink, Video, Eye, Waves, Compass, Wrench, Edit3, Copy, Crown
 } from "lucide-react";
 import KnowledgeIngestModal from "@/components/KnowledgeIngestModal";
 import { MatchupPicker } from "@/components/MatchupPicker";
@@ -140,6 +140,14 @@ interface ChampionDetail {
   matchups?: MatchupItem[];
   videoBibles?: VideoBibleItem[];
   libraryKnowledge?: LibraryKnowledgeItem[];
+  globalGuide?: {
+    id: number | string;
+    title: string;
+    strategy: string;
+    sections?: any[];
+    noteDraft?: string;
+    createdAt?: string;
+  };
 }
 
 interface LibraryKnowledgeItem {
@@ -208,6 +216,13 @@ function PilotApp() {
 
   // 📥 戦術取込モーダル状態
   const [isIngestOpen, setIsIngestOpen] = useState(false);
+
+  // 👑 統合戦術マスター教本（GLOBAL本文）の展開・コピー状態
+  const [isGlobalGuideExpanded, setIsGlobalGuideExpanded] = useState(false);
+  const [globalGuideCopied, setGlobalGuideCopied] = useState(false);
+
+  // ⚙️ ヘッダーツールメニュー開閉状態
+  const [isToolMenuOpen, setIsToolMenuOpen] = useState(false);
 
   // 📒 攻略知見詳細ポップアップモーダル状態
   const [selectedKnowledgeId, setSelectedKnowledgeId] = useState<string | number | null>(null);
@@ -720,34 +735,16 @@ function PilotApp() {
                   {/* CD早見表トグル */}
                   <button
                     onClick={() => setShowCdTable(!showCdTable)}
-                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold border border-zinc-700 transition cursor-pointer"
+                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                      showCdTable
+                        ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                        : "bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border-zinc-700"
+                    }`}
+                    title="全スキルのCD秒数早見表を開閉"
                   >
                     <Timer size={14} className="text-amber-400" />
-                    <span>{showCdTable ? "CD表を閉じる" : "全スキルCD表"}</span>
-                    {showCdTable ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                  </button>
-
-                  {/* 📥 このチャンピオンの知見を取込 */}
-                  <button
-                    onClick={() => setIsIngestOpen(true)}
-                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-xs font-bold border border-amber-500/40 transition cursor-pointer"
-                    title={`${selectedDetail.jpName}のメモ・URLを取込`}
-                  >
-                    <Plus size={14} />
-                    <span>知見取込</span>
-                  </button>
-
-                  {/* 🛠️ 所属レーン編集 */}
-                  <button
-                    onClick={() => {
-                      setFocusedLaneChampId(selectedDetail.id);
-                      setIsLaneModalOpen(true);
-                    }}
-                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold border border-zinc-700 transition cursor-pointer"
-                    title={`${selectedDetail.jpName}の所属レーン（TOP/JG/MID/ADC/SUP）を編集`}
-                  >
-                    <Wrench size={14} className="text-amber-400" />
-                    <span>レーンメンテ</span>
+                    <span>{showCdTable ? "CD表を閉じる" : "CD表"}</span>
+                    {showCdTable ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
                   </button>
 
                   {/* レーンセレクター（対象チャンピオンの所属レーンのみ表示） */}
@@ -771,6 +768,74 @@ function PilotApp() {
                           {r}
                         </button>
                       ))
+                    )}
+                  </div>
+
+                  {/* ⚙️ ツール・編集 ドロップダウンメニュー */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setIsToolMenuOpen(!isToolMenuOpen)}
+                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                        isToolMenuOpen
+                          ? "bg-zinc-700 text-zinc-100 border-zinc-500"
+                          : "bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border-zinc-700"
+                      }`}
+                      title="知見取込・レーン設定・アイテム辞書・管理メニュー"
+                    >
+                      <Wrench size={13} className="text-amber-400" />
+                      <span>ツール</span>
+                      <ChevronDown size={13} className={`transition duration-200 ${isToolMenuOpen ? "rotate-180" : ""}`} />
+                    </button>
+
+                    {isToolMenuOpen && (
+                      <div className="absolute right-0 mt-1.5 w-52 rounded-xl bg-[#16161c] border border-zinc-700 shadow-2xl py-1.5 z-40 animate-in fade-in duration-150 backdrop-blur-md">
+                        <button
+                          onClick={() => {
+                            setIsToolMenuOpen(false);
+                            setIsIngestOpen(true);
+                          }}
+                          className="w-full px-3 py-2 text-left text-xs text-zinc-200 hover:bg-zinc-800/80 hover:text-amber-300 transition flex items-center gap-2 cursor-pointer font-medium"
+                        >
+                          <Plus size={14} className="text-amber-400 shrink-0" />
+                          <span>📥 このチャンプの知見取込</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setIsToolMenuOpen(false);
+                            setFocusedLaneChampId(selectedDetail.id);
+                            setIsLaneModalOpen(true);
+                          }}
+                          className="w-full px-3 py-2 text-left text-xs text-zinc-200 hover:bg-zinc-800/80 hover:text-amber-300 transition flex items-center gap-2 cursor-pointer font-medium"
+                        >
+                          <Wrench size={14} className="text-amber-400 shrink-0" />
+                          <span>🛠️ 所属レーン編集</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setIsToolMenuOpen(false);
+                            setDictFocusKey(undefined);
+                            setDictFocusValue(undefined);
+                            setIsItemDictModalOpen(true);
+                          }}
+                          className="w-full px-3 py-2 text-left text-xs text-zinc-200 hover:bg-zinc-800/80 hover:text-amber-300 transition flex items-center gap-2 cursor-pointer font-medium"
+                        >
+                          <BookOpen size={14} className="text-amber-400 shrink-0" />
+                          <span>📖 アイテム翻訳辞書</span>
+                        </button>
+
+                        <div className="border-t border-zinc-800 my-1" />
+
+                        <Link
+                          href={`/admin/dict-maintenance?c=${encodeURIComponent(selectedDetail.id)}`}
+                          onClick={() => setIsToolMenuOpen(false)}
+                          className="w-full px-3 py-2 text-left text-xs text-amber-300 hover:bg-amber-500/10 transition flex items-center gap-2 cursor-pointer font-bold"
+                        >
+                          <Layers size={14} className="text-amber-400 shrink-0" />
+                          <span>⚙️ 辞典メンテナンス管理 ↗</span>
+                        </Link>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1561,9 +1626,94 @@ function PilotApp() {
               </div>
             )}
 
-            {/* タブ 3: 実戦バイブル ＆ 罠・没理由 */}
+            {/* タブ 3: 実戦バイブル ＆ 統合マスター戦術書 */}
             {activeTab === "bible" && (
-              <div className="space-y-4">
+              <div className="space-y-5">
+                {/* 👑 統合戦術マスター教本 (enemy=GLOBAL 由来の原本全文) */}
+                {selectedDetail.globalGuide && selectedDetail.globalGuide.strategy && (
+                  <div className="bg-gradient-to-b from-amber-950/20 via-zinc-900 to-zinc-950 border border-amber-500/30 rounded-2xl p-4 sm:p-6 shadow-xl relative overflow-hidden">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-500/20 pb-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
+                          <Crown size={20} className="text-amber-400" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                              👑 統合戦術マスター教本
+                            </span>
+                            <span className="text-[11px] font-mono text-zinc-400">
+                              約{selectedDetail.globalGuide.strategy.length.toLocaleString()}文字
+                            </span>
+                          </div>
+                          <h3 className="text-sm sm:text-base font-black text-zinc-100 mt-1">
+                            {selectedDetail.globalGuide.title}
+                          </h3>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                        <button
+                          onClick={() => {
+                            if (!selectedDetail.globalGuide?.strategy) return;
+                            navigator.clipboard.writeText(selectedDetail.globalGuide.strategy);
+                            setGlobalGuideCopied(true);
+                            setTimeout(() => setGlobalGuideCopied(false), 2000);
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold border border-zinc-700 transition cursor-pointer"
+                          title="教本全文をクリップボードにコピー"
+                        >
+                          {globalGuideCopied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                          <span>{globalGuideCopied ? "コピー完了" : "教本をコピー"}</span>
+                        </button>
+
+                        <Link
+                          href={`/admin/dict-maintenance?c=${encodeURIComponent(selectedDetail.id)}`}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-xs font-bold border border-amber-500/30 transition shadow-sm"
+                          title="この教本を編集・節管理"
+                        >
+                          <Edit3 size={13} />
+                          <span className="hidden sm:inline">メンテ編集 ↗</span>
+                        </Link>
+                      </div>
+                    </div>
+
+                    {/* 教本本文（折りたたみ・展開） */}
+                    <div className="mt-4 relative">
+                      <div
+                        className={`text-xs sm:text-sm text-zinc-300 leading-relaxed font-sans whitespace-pre-wrap transition-all duration-300 ${
+                          !isGlobalGuideExpanded ? "max-h-56 overflow-hidden mask-bottom" : ""
+                        }`}
+                      >
+                        {selectedDetail.globalGuide.strategy}
+                      </div>
+
+                      {!isGlobalGuideExpanded && (
+                        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-zinc-950 via-zinc-950/80 to-transparent flex items-end justify-center pb-2 pointer-events-none">
+                          <button
+                            onClick={() => setIsGlobalGuideExpanded(true)}
+                            className="pointer-events-auto px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-xs shadow-lg hover:shadow-amber-500/20 transition cursor-pointer flex items-center gap-2"
+                          >
+                            <span>📖 統合マスター教本を全文展開（約{selectedDetail.globalGuide.strategy.length.toLocaleString()}文字）</span>
+                            <ChevronDown size={14} />
+                          </button>
+                        </div>
+                      )}
+
+                      {isGlobalGuideExpanded && (
+                        <div className="mt-4 pt-3 border-t border-zinc-800/80 flex justify-center">
+                          <button
+                            onClick={() => setIsGlobalGuideExpanded(false)}
+                            className="px-4 py-1.5 rounded-xl bg-zinc-850 hover:bg-zinc-800 text-zinc-300 font-bold text-xs border border-zinc-700 transition cursor-pointer flex items-center gap-1.5"
+                          >
+                            <span>▲ 教本を折りたたむ</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* 🎬 最新再蒸留：実戦動画 プロの思考録 (Video Bibles) */}
                 {selectedDetail.videoBibles && selectedDetail.videoBibles.length > 0 && (
                   <div className="space-y-4">

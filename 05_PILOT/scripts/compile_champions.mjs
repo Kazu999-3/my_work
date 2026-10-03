@@ -388,6 +388,7 @@ async function main() {
   const jungleTimingMap = {};
   const laneRolesMap = {};
   const libraryKnowledgeMap = {};
+  const globalGuideMap = {};
 
   if (supabase) {
     try {
@@ -398,7 +399,8 @@ async function main() {
         { data: powerSpikesData },
         { data: jungleTimingData },
         { data: laneRolesData },
-        { data: knowledgeData }
+        { data: knowledgeData },
+        { data: globalSentinelData, error: globalSentinelErr }
       ] = await Promise.all([
         supabase.from('champion_facts').select('*'),
         supabase.from('matchup_sentinel').select('id, champion, enemy, title, strategy, raw_data').neq('enemy', 'GLOBAL').neq('enemy', 'PROCESS_INTERROGATION'),
@@ -406,6 +408,7 @@ async function main() {
         supabase.from('champion_jungle_timing_agg').select('champion, sample_count, avg_first_core_sec, avg_second_core_sec, tier, external_fastest_clear_sec'),
         supabase.from('champion_lane_roles').select('champion, role, rank'),
         supabase.from('personal_knowledge').select('id, champion, title, content, tags, source_url, created_at').order('created_at', { ascending: false }).limit(2000),
+        supabase.from('matchup_sentinel').select('id, champion, enemy, title, strategy, raw_data, created_at').eq('enemy', 'GLOBAL'),
       ]);
 
       if (factsErr) {
@@ -433,6 +436,25 @@ async function main() {
           });
         }
         console.log(`✅ matchup_sentinel 取得成功: ${sentinelData.length} 件`);
+      }
+
+      if (globalSentinelErr) {
+        console.warn('⚠️ matchup_sentinel(GLOBAL) 取得エラー:', globalSentinelErr.message);
+      } else if (globalSentinelData) {
+        for (const row of globalSentinelData) {
+          const k = String(row.champion || '').toLowerCase();
+          let strat = row.strategy || '';
+          if (typeof strat.toWellFormed === 'function') strat = strat.toWellFormed();
+          globalGuideMap[k] = {
+            id: row.id,
+            title: row.title || '基本戦略・総合ガイド',
+            strategy: strat,
+            sections: row.raw_data?.customFields || [],
+            noteDraft: row.raw_data?.note_draft || '',
+            createdAt: row.created_at,
+          };
+        }
+        console.log(`✅ 統合本文 (enemy=GLOBAL) 取得成功: ${globalSentinelData.length} 件`);
       }
 
       if (powerSpikesData) {
@@ -739,6 +761,7 @@ async function main() {
       powerSpikes: dbSpikes,
       jungleTiming: dbTiming,
       pickGuide: getPickGuide(champId, roles, raw.tags || []),
+      globalGuide: globalGuideMap[lowerId] || globalGuideMap[champId.toLowerCase()] || undefined,
     };
 
     // 小文字キーでも引けるように登録
