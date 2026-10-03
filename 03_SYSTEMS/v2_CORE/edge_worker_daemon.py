@@ -24,7 +24,7 @@ if not logger.handlers:
 import signal
 import atexit
 
-TASK_TIMEOUT_SECONDS = 1800  # 30分（クラッシュ・スタックタスクの自律解放）
+TASK_TIMEOUT_SECONDS = 3600  # 60分（長尺動画解析や巨大一括バッチの自律解放）
 
 def _cleanup_daemon():
     try:
@@ -405,7 +405,7 @@ class EdgeWorkerDaemon:
                 
             elif task_type == "youtube_absorb":
                 logger.info("🎥 [youtube_absorb] YouTube自動解析（Whisper GPU）を実行...")
-                result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/_LOL/youtube_absorber.py", timeout=1800)
+                result = self._run_subprocess_task("03_SYSTEMS/v2_CORE/_LOL/youtube_absorber.py", timeout=3600)
                 self.update_task_status(task_id, "completed", result=result)
                 
             elif task_type == "reddit_scout":
@@ -481,7 +481,7 @@ class EdgeWorkerDaemon:
                 if champion:
                     args.extend(["--champ", champion])
                 args.append("--deep-dive")
-                result = self._run_subprocess_task("scripts/extract_video_tactics.py", args=args, timeout=600)
+                result = self._run_subprocess_task("scripts/extract_video_tactics.py", args=args, timeout=1200)
                 self.update_task_status(task_id, "completed" if result.get("success") else "failed", result=result)
 
             elif task_type == "youtube_rotation":
@@ -503,7 +503,7 @@ class EdgeWorkerDaemon:
                 # scripts/youtube_worker.py側の既定値(3件/回)で少量ずつ処理し、
                 # 連続リクエストによる429を避ける。
                 logger.info("🎬 [youtube_queue_process] YouTube動画解析キューの処理を実行...")
-                result = self._run_subprocess_task("scripts/youtube_worker.py", timeout=900)
+                result = self._run_subprocess_task("scripts/youtube_worker.py", timeout=2400)
                 self.update_task_status(task_id, "completed", result=result)
                 
             elif task_type == "champion_db_bulk_update":

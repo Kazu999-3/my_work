@@ -235,7 +235,7 @@ def fetch_subtitles(url, vid):
     # 固定されていた（2026-09-22 16:53〜2026-09-23 08:54 に発生）。
     BACKOFF_SEC = [10, 30]
     for attempt in range(len(BACKOFF_SEC) + 1):
-        res = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
         files = sorted(glob.glob(f"{out}*.vtt"), key=lambda f: (0 if ".ja" in f else 1))
         if files:
             break
@@ -558,7 +558,7 @@ def gemini_summarize(title, channel, transcript):
                 f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_KEY}",
                 data=json.dumps(body).encode(), method="POST")
             req.add_header("Content-Type", "application/json")
-            with urllib.request.urlopen(req, timeout=120) as r:
+            with urllib.request.urlopen(req, timeout=240) as r:
                 res = json.loads(r.read().decode())
             text = res["candidates"][0]["content"]["parts"][0]["text"].strip()
             text = re.sub(r"^```[a-z]*\n?|```$", "", text).strip()
@@ -641,7 +641,7 @@ summary は次の構成にすること:
                 f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_KEY}",
                 data=json.dumps(body).encode(), method="POST")
             req.add_header("Content-Type", "application/json")
-            with urllib.request.urlopen(req, timeout=60) as r:
+            with urllib.request.urlopen(req, timeout=180) as r:
                 res = json.loads(r.read().decode())
             text = res["candidates"][0]["content"]["parts"][0]["text"].strip()
             text = re.sub(r"^```[a-z]*\n?|```$", "", text).strip()
