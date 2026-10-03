@@ -79,6 +79,39 @@ MAX_RETRY = 3
 class NoTranscript(RuntimeError):
     """字幕が取得できなかった。再試行しても回復しないので区別する。"""
 
+class GeminiQuotaExceeded(RuntimeError):
+    """Gemini API の利用上限(429 RESOURCE_EXHAUSTED)。動画の問題ではないため retry_count を消費しない。
+    (2026-10-03: 映像解析の経路に429の扱いが無く、日次上限に達していた数時間で13本が
+    retry_count を使い切って error_generation に固定された)"""
+
+
+# 利用上限に当たったら、この時刻までワーカーの実行自体を見送る（数分おきに429を叩き続けないため）
+QUOTA_PAUSE_FILE = Path(__file__).resolve().parent.parent / "03_SYSTEMS" / "logs" / "gemini_quota_pause.json"
+QUOTA_PAUSE_MIN = 60
+
+
+def _is_quota_error(err) -> bool:
+    code = getattr(err, "code", None)
+    return code == 429 or "RESOURCE_EXHAUSTED" in str(err)
+
+
+def _quota_paused_until():
+    try:
+        until = json.loads(QUOTA_PAUSE_FILE.read_text(encoding="utf-8")).get("until", 0)
+        return until if until > time.time() else None
+    except Exception:
+        return None
+
+
+def _set_quota_pause(reason: str):
+    try:
+        QUOTA_PAUSE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        until = time.time() + QUOTA_PAUSE_MIN * 60
+        QUOTA_PAUSE_FILE.write_text(json.dumps({"until": until, "reason": reason[:300]}, ensure_ascii=False), encoding="utf-8")
+    except Exception as e:
+        print(f"⚠️ 一時停止ファイルの書き込みに失敗: {e}", file=sys.stderr)
+
+
 class RateLimited(RuntimeError):
     """YouTube側のレート制限(429)やbot判定によるエラー。「字幕が存在しない」動画とは異なり、
     時間を置けば成功する可能性が高いため、NoTranscriptとは区別してリトライ対象(pending)に戻す。
@@ -350,7 +383,18 @@ def gemini_analyze_video(url, title, channel, is_short=False):
     client = genai.Client(api_key=GEMINI_KEY)
     head = f"動画タイトル: {title}\nチャンネル: {channel}\n\n"
     prompt_text = SHORTS_PROMPT if is_short else VIDEO_PROMPT
-    res = client.models.generate_content(
+    try:
+        res = _generate_video(client, types, url, head, prompt_text)
+    except Exception as e:
+        if _is_quota_error(e):
+            raise GeminiQuotaExceeded(str(e)[:200]) from e
+        raise
+    txt = (res.text or "").strip()
+    return _finish_video_result(res, txt, url, is_short)
+
+
+def _generate_video(client, types, url, head, prompt_text):
+    return client.models.generate_content(
         model=VIDEO_MODEL,
         contents=types.Content(parts=[
             types.Part(file_data=types.FileData(file_uri=url)),
@@ -363,7 +407,9 @@ def gemini_analyze_video(url, title, channel, is_short=False):
             temperature=0.2,
         ),
     )
-    txt = (res.text or "").strip()
+
+
+def _finish_video_result(res, txt, url, is_short):
     for pre in ("```json", "```"):
         if txt.startswith(pre):
             txt = txt[len(pre):]
@@ -480,6 +526,8 @@ def gemini_summarize(title, channel, transcript):
             print(f"[gemini_summarize] JSONパース失敗/エラー: {err} ({attempt+1}/3)")
             time.sleep(2)
 
+    if last_err is not None and _is_quota_error(last_err):
+        raise GeminiQuotaExceeded(f"Gemini 429 (3回待機しても回復せず): {last_err}")
     raise RuntimeError(f"Gemini出力の構造化バリデーションに失敗しました: {last_err}")
 
 
@@ -561,10 +609,17 @@ summary は次の構成にすること:
             print(f"[gemini_summarize_short] JSONパース失敗/エラー: {err} ({attempt+1}/3)")
             time.sleep(2)
 
+    if last_err is not None and _is_quota_error(last_err):
+        raise GeminiQuotaExceeded(f"Gemini 429 (3回待機しても回復せず): {last_err}")
     raise RuntimeError(f"Gemini出力の構造化バリデーションに失敗しました: {last_err}")
 
 
 def main():
+    paused = _quota_paused_until()
+    if paused:
+        print(f"⏸ Gemini の利用上限に達したため {time.strftime('%H:%M', time.localtime(paused))} まで処理を見送ります。")
+        return
+
     # 優先度の高いものから、次に登録が古いものから処理する。
     # priority は文字列なのでDB側のソートだと high→low→medium になってしまう。
     # 候補を多めに取ってから、Python側で正しい優先順に並べ替える。
@@ -696,6 +751,14 @@ def main():
             title = video_title
             done.append({"title": title, "id": created_id})
             print(f"✅ 完了 (ID: {created_id}): {title}")
+        except GeminiQuotaExceeded as e:
+            # 動画ではなくAPIの利用上限の問題なので retry_count を消費せず pending に戻し、
+            # 一定時間は実行自体を止める（以降の動画も同じ429で回数を失うため、この回も打ち切る）
+            sb("PATCH", f"youtube_queue?id=eq.{vid}", {"status": "pending"})
+            _set_quota_pause(str(e))
+            failed.append((it.get("title") or vid, "quota", str(e)[:80]))
+            print(f"⏸ Gemini の利用上限のため中断（{QUOTA_PAUSE_MIN}分停止・pendingのまま据え置き）: {e}", file=sys.stderr)
+            break
         except RateLimited as e:
             # ⚠️ 2026-09-23: レート制限は「この動画の問題」ではなく「今このIPが
             # 叩きすぎている」という環境要因なので、retry_count を消費させない。
