@@ -101,6 +101,10 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
         "gemini-3.1-flash-lite",
         "gemini-3.5-flash-lite",
     ]
+    # settings.DEFAULT_MODEL 等の "ollama/..." はローカルOllama用の名前で、Gemini APIに
+    # 送ると毎回404になり1リクエスト無駄撃ちしていた(2026-10-05、Pulseのログで発覚)。
+    if model_id and model_id.startswith("ollama/"):
+        model_id = None
     if model_id and model_id in base_models:
         models_to_try = [model_id] + [m for m in base_models if m != model_id]
     elif model_id:
