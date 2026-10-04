@@ -1,0 +1,41 @@
+name: Daily Health Report
+
+# 本番の毎朝の健康診断（scripts/production_health_report.py）。2026-10-04 新設。
+# バックアップ・定期ワークフロー・PCデーモン・タスク失敗・動画解析・辞典統合・ソロQ振り返り・DB容量・RLSの穴を
+# 実測し、05/04 の通知ベルへ毎朝必ず結果を出す（来ない＝この診断自体が止まった）。異常(FAIL)があれば Issue を立てる。
+# あわせて変更履歴(knowledge_revisions)の間引きを行う（90日超・対象ごとに最新5件を残す）。
+
+on:
+  schedule:
+    - cron: '30 21 * * *'  # 毎日 UTC21:30 = JST 06:30（バックアップ 03:00・戦績同期 05:40 の後）
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: '通知・Issue・削除をせず結果だけ表示する'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  actions: read   # 各ワークフローの実行履歴・ログを読む
+  issues: write   # 異常時にIssueを立てる
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install "psycopg[binary]>=3.2"
+
+      - name: Run health report
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python scripts/production_health_report.py ${{ inputs.dry_run && '--dry-run' || '' }}
