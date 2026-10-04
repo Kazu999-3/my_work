@@ -34,29 +34,35 @@ const STATUS_STYLE: Record<BuildAuditCheck['status'], { label: string; cls: stri
   na: { label: '判定対象外', cls: 'bg-slate-900 text-slate-400 border-slate-700' },
 };
 
-export default function PostGameTempoTab() {
+// initialMatchId: ソロQ試合後の通知（/coach?tab=postgame&matchId=...）から開いた時に、その試合を自動で解析する
+export default function PostGameTempoTab({ initialMatchId }: { initialMatchId?: string | null }) {
   const [summonerInput, setSummonerInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [report, setReport] = useState<PostgameTempoReport | null>(null);
   const [recentMatches, setRecentMatches] = useState<RecentMatch[]>([]);
-
   useEffect(() => {
+    let saved: string | null = null;
     try {
-      const saved = localStorage.getItem('coach_riot_id');
-      if (saved) setSummonerInput(saved);
+      saved = localStorage.getItem('coach_riot_id');
     } catch {}
-  }, []);
+    if (saved) {
+      setSummonerInput(saved);
+      // 保存済みRiot IDがある時だけ自動解析する（未保存なら入力→解析ボタンの通常フロー）
+      if (initialMatchId) load(initialMatchId, saved);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialMatchId]);
 
-  const load = async (matchId?: string) => {
-    if (!summonerInput.trim()) return;
+  const load = async (matchId?: string, riotId: string = summonerInput) => {
+    if (!riotId.trim()) return;
     setLoading(true);
     setError('');
     try {
-      localStorage.setItem('coach_riot_id', summonerInput);
+      localStorage.setItem('coach_riot_id', riotId);
     } catch {}
 
-    const [gameName, tagLine] = summonerInput.trim().split('#');
+    const [gameName, tagLine] = riotId.trim().split('#');
     const qs = new URLSearchParams({ gameName: gameName || '', tagLine: tagLine || 'JP1' });
     if (matchId) qs.set('matchId', matchId);
 

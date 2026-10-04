@@ -18,6 +18,19 @@ export interface AdminNotification {
   created_at: string;
 }
 
+// 通知は旧ポータル(04)と同じ admin_notifications を共有しており、url は04のページを前提にした相対パスが混ざる
+// （/history /balancer /admin/knowledge 等）。05に無いページはそのままだと404になるため、旧ポータルの絶対URLへ振り替える。
+const LEGACY_PORTAL_URL = 'https://my-work-8jbd.vercel.app';
+const PILOT_PATHS = ['/coach', '/library', '/lane-guides', '/admin/dict-health', '/admin/dict-maintenance', '/admin/review', '/admin/youtube'];
+
+function resolveNotificationUrl(url: string): { href: string; external: boolean } {
+  if (/^https?:\/\//.test(url)) return { href: url, external: true };
+  const path = url.split(/[?#]/)[0];
+  if (path === '/' || path === '/champions') return { href: '/', external: false }; // 05の辞典はトップ
+  if (PILOT_PATHS.some((p) => path === p || path.startsWith(`${p}/`))) return { href: url, external: false };
+  return { href: `${LEGACY_PORTAL_URL}${url}`, external: true };
+}
+
 function timeAgo(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diffMs / 60000);
@@ -312,7 +325,8 @@ export default function NotificationBell() {
                     {targetUrl && (
                       <div className="pl-7 pt-1 flex justify-end">
                         <Link
-                          href={targetUrl}
+                          href={resolveNotificationUrl(targetUrl).href}
+                          {...(resolveNotificationUrl(targetUrl).external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                           onClick={() => {
                             if (!n.read) markAsRead(n.id);
                             setIsOpen(false);

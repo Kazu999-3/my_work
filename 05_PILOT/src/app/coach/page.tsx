@@ -25,7 +25,8 @@ function CoachPageContent() {
   useEffect(() => {
     const qTab = searchParams.get('tab');
     if (qTab === 'analyzer') setActiveTab('analyzer');
-    else if (qTab === 'tempo') setActiveTab('tempo');
+    // postgame は旧ポータルの「試合後」タブ。ソロQ試合後の通知がこの名前でリンクしてくるのでテンポ解析へ寄せる
+    else if (qTab === 'tempo' || qTab === 'postgame') setActiveTab('tempo');
     else if (qTab === 'reflection') setActiveTab('reflection');
     else if (qTab === 'blueprint') setActiveTab('blueprint');
 
@@ -152,7 +153,7 @@ function CoachPageContent() {
 
         {/* タブ 3: 試合後テンポ逆再生 ＆ ビルド監査 */}
         {activeTab === 'tempo' && (
-          <PostGameTempoTab />
+          <PostGameTempoTab initialMatchId={searchParams.get('matchId')} />
         )}
 
         {/* タブ 4: ソロQ反省ノート */}
