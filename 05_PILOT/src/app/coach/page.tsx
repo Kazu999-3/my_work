@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { 
   Bot, ArrowLeft, Swords, BookOpen, Compass, ShieldAlert, Sparkles, RefreshCw, Zap,
   BarChart3, MessageSquareText, Rewind, TrendingUp, Radar
@@ -30,29 +30,37 @@ const TABS: { key: TabKey; label: string; Icon: React.ComponentType<{ className?
 
 function CoachPageContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
 
-  // タブ管理
-  const [activeTab, setActiveTab] = useState<TabKey>('blueprint');
+  // タブはURL(?tab=)に持たせる。再読み込み・戻るボタン・リンク共有でも同じタブが開く(2026-10-05)
+  const qTab = searchParams.get('tab');
+  // matchup-memo は旧ポータルの通知リンク互換
+  const activeTab: TabKey =
+    qTab === 'matchup-memo' ? 'postgame'
+    : TABS.some((t) => t.key === qTab) ? (qTab as TabKey)
+    : 'blueprint';
+  const setActiveTab = (tab: TabKey) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (tab === 'blueprint') params.delete('tab');
+    else params.set('tab', tab);
+    const qs = params.toString();
+    router.push(qs ? `/coach?${qs}` : '/coach', { scroll: false });
+  };
 
   // 対面設計図用ステート
   const [myChamp, setMyChamp] = useState('JarvanIV');
   const [enemyChamp, setEnemyChamp] = useState('LeeSin');
 
+  // URLのチャンピオン指定は、その値が変わった時だけ反映する
+  // （タブ切替でURLが変わるたびに、画面で選び直したチャンピオンが戻されないように）
+  const qMy = searchParams.get('my') || searchParams.get('champion');
+  const qEnemy = searchParams.get('enemy');
   useEffect(() => {
-    const qTab = searchParams.get('tab');
-    if (qTab === 'analyzer') setActiveTab('analyzer');
-    else if (qTab === 'live') setActiveTab('live');
-    // postgame はソロQ試合後の通知（/coach?tab=postgame&matchId=...）のリンク先
-    else if (qTab === 'postgame' || qTab === 'matchup-memo') setActiveTab('postgame');
-    else if (qTab === 'tempo') setActiveTab('tempo');
-    else if (qTab === 'reflection') setActiveTab('reflection');
-    else if (qTab === 'blueprint') setActiveTab('blueprint');
-
-    const qMy = searchParams.get('my') || searchParams.get('champion');
-    const qEnemy = searchParams.get('enemy');
     if (qMy) setMyChamp(qMy);
+  }, [qMy]);
+  useEffect(() => {
     if (qEnemy) setEnemyChamp(qEnemy);
-  }, [searchParams]);
+  }, [qEnemy]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8">

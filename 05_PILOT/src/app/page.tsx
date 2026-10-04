@@ -196,7 +196,19 @@ function PilotApp() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [champSort, setChampSort] = useState<"tier" | "name_ja" | "name_en" | "win_rate" | "knowledge">("tier");
 
-  const [activeTab, setActiveTab] = useState<"build" | "matchup" | "bible" | "library">("build");
+  // 詳細タブはURL(?t=)に持たせる。再読み込みやリンク共有でも同じタブが開くように(2026-10-05)。
+  // チャンピオン詳細の中の小タブなので、履歴は積まずに置き換える(戻るボタンで一覧へ戻れるように)
+  type DetailTab = "build" | "matchup" | "bible" | "library";
+  const tabParam = searchParams.get("t");
+  const activeTab: DetailTab =
+    tabParam === "matchup" || tabParam === "bible" || tabParam === "library" ? tabParam : "build";
+  const setActiveTab = (tab: DetailTab) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (tab === "build") params.delete("t");
+    else params.set("t", tab);
+    const qs = params.toString();
+    router.replace(qs ? `/?${qs}` : "/", { scroll: false });
+  };
   const [buildPreset, setBuildPreset] = useState<"standard" | "tank" | "burst">("standard");
   const [showCdTable, setShowCdTable] = useState(false);
 
@@ -654,6 +666,7 @@ function PilotApp() {
   const clearSelection = () => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("c");
+    params.delete("t");
     setVsMode(false);
     setVsEnemyId("");
     router.push(`/?${params.toString()}`);
