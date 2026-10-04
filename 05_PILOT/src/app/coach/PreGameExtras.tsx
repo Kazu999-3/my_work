@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import PlayRecommendationCard from './PlayRecommendationCard';
 import TimingHeatmapCard from './TimingHeatmapCard';
 import RankGoalCard from './RankGoalCard';
 import OverlayLauncherButton from './OverlayLauncherButton';
+import { useCoachRiotId } from './riotIdContext';
 
 // 試合前タブの補助カード（旧ポータル /coach「1. 試合前」の残り部品の移植）。2026-10-04
 // 「次の試合に行くべきか」・時間帯ヒートマップ・ランク目標・HUD起動ボタン。
@@ -56,18 +57,11 @@ export function PreGameBottom() {
 function NeedRiotId() {
   return (
     <p className="text-xs text-slate-400">
-      「📈 試合後」か「🔁 テンポ解析」タブで Riot ID（名前#タグ）を一度入力すると、ここに直近の戦績から判定を表示します。
+      画面上部の「自分のRiot ID」を入力すると、ここに直近の戦績から判定を表示します。
     </p>
   );
 }
 
 function useSavedRiotId(): string {
-  const [riotId, setRiotId] = useState('');
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('coach_riot_id');
-      if (saved && saved.includes('#')) setRiotId(saved);
-    } catch {}
-  }, []);
-  return riotId;
+  return useCoachRiotId().riotId;
 }

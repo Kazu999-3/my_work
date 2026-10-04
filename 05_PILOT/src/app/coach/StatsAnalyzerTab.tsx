@@ -7,6 +7,7 @@ import {
   Brain, Shield, Swords, Target, Clock, Zap, Activity, Award, User, BookOpen
 } from 'lucide-react';
 import { getChampIcon } from '@/lib/ddragonClient';
+import { useCoachRiotId } from './riotIdContext';
 
 export default function StatsAnalyzerTab() {
   const [summonerInput, setSummonerInput] = useState('');
@@ -15,12 +16,11 @@ export default function StatsAnalyzerTab() {
   const [error, setError] = useState('');
   const [activeSubTab, setActiveSubTab] = useState<'overview' | 'champions' | 'session' | 'psychology'>('overview');
 
+  const { riotId: ownRiotId } = useCoachRiotId();
+  // 画面上部の「自分のRiot ID」を初期値にする。ここで書き換えても共有の値は変えない
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('coach_riot_id');
-      if (saved) setSummonerInput(saved);
-    } catch {}
-  }, []);
+    if (ownRiotId) setSummonerInput(ownRiotId);
+  }, [ownRiotId]);
 
   const handleAnalyze = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -28,10 +28,6 @@ export default function StatsAnalyzerTab() {
 
     setLoading(true);
     setError('');
-
-    try {
-      localStorage.setItem('coach_riot_id', summonerInput);
-    } catch {}
 
     const parts = summonerInput.trim().split('#');
     const gameName = parts[0];

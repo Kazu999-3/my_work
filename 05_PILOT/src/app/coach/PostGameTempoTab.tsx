@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { getChampIcon } from '@/lib/ddragonClient';
 import type { PostgameTempoReport, BuildAuditCheck, MinuteRow } from '@/lib/postgameTempo';
+import { useCoachRiotId } from './riotIdContext';
 
 interface RecentMatch {
   matchId: string;
@@ -41,27 +42,19 @@ export default function PostGameTempoTab({ initialMatchId }: { initialMatchId?: 
   const [error, setError] = useState('');
   const [report, setReport] = useState<PostgameTempoReport | null>(null);
   const [recentMatches, setRecentMatches] = useState<RecentMatch[]>([]);
+  const { riotId: ownRiotId } = useCoachRiotId();
   useEffect(() => {
-    let saved: string | null = null;
-    try {
-      saved = localStorage.getItem('coach_riot_id');
-    } catch {}
-    if (saved) {
-      setSummonerInput(saved);
-      // 保存済みRiot IDがある時だけ自動解析する（未保存なら入力→解析ボタンの通常フロー）
-      if (initialMatchId) load(initialMatchId, saved);
-    }
+    if (!ownRiotId) return;
+    setSummonerInput(ownRiotId);
+    // 自分のRiot IDが設定済みの時だけ、通知から開いた試合を自動解析する
+    if (initialMatchId) load(initialMatchId, ownRiotId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialMatchId]);
+  }, [initialMatchId, ownRiotId]);
 
   const load = async (matchId?: string, riotId: string = summonerInput) => {
     if (!riotId.trim()) return;
     setLoading(true);
     setError('');
-    try {
-      localStorage.setItem('coach_riot_id', riotId);
-    } catch {}
-
     const [gameName, tagLine] = riotId.trim().split('#');
     const qs = new URLSearchParams({ gameName: gameName || '', tagLine: tagLine || 'JP1' });
     if (matchId) qs.set('matchId', matchId);

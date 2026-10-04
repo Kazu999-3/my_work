@@ -14,12 +14,25 @@ import PostGameTempoTab from './PostGameTempoTab';
 import PostGameTab from './PostGameTab';
 import LiveTab from './LiveTab';
 import { PreGameTop, PreGameBottom } from './PreGameExtras';
+import { CoachRiotIdProvider, CoachRiotIdBar } from './riotIdContext';
+
+type TabKey = 'blueprint' | 'live' | 'postgame' | 'tempo' | 'reflection' | 'analyzer';
+
+// 試合の流れ（前 → 中 → 後 → 振り返り）の順に並べる。スタッツ分析は試合単位でないので最後
+const TABS: { key: TabKey; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
+  { key: 'blueprint', label: '⚔️ 試合前', Icon: Swords },
+  { key: 'live', label: '🧭 試合中', Icon: Radar },
+  { key: 'postgame', label: '📈 試合後: 詳細分析', Icon: TrendingUp },
+  { key: 'tempo', label: '🔁 試合後: テンポ', Icon: Rewind },
+  { key: 'reflection', label: '📝 振り返りノート', Icon: MessageSquareText },
+  { key: 'analyzer', label: '📊 スタッツ分析', Icon: BarChart3 },
+];
 
 function CoachPageContent() {
   const searchParams = useSearchParams();
 
   // タブ管理
-  const [activeTab, setActiveTab] = useState<'blueprint' | 'live' | 'analyzer' | 'postgame' | 'tempo' | 'reflection'>('blueprint');
+  const [activeTab, setActiveTab] = useState<TabKey>('blueprint');
 
   // 対面設計図用ステート
   const [myChamp, setMyChamp] = useState('JarvanIV');
@@ -48,87 +61,32 @@ function CoachPageContent() {
         {/* ページタイトル */}
         <div className="border-b border-slate-800 pb-4">
           <h1 className="text-xl md:text-2xl font-black tracking-tight text-white flex items-center gap-2">
-            <Bot className="w-6 h-6 md:w-7 md:h-7 text-indigo-400" />
+            <Bot className="w-6 h-6 md:w-7 md:h-7 text-amber-400" />
             🤖 AI戦術コーチング・コクピット
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            試合前設計図・スタッツ深層分析・試合後反省ノートを1画面に統合したAIコーチです。
+            試合前の対面設計図から、試合中の偵察、試合後の分析・振り返りまでを1画面にまとめたコーチです。
           </p>
         </div>
 
-        {/* ナビゲーションタブ（スマホでは横スクロール） */}
+        <CoachRiotIdBar />
+
+        {/* ナビゲーションタブ（時系列順。スマホでは横スクロール） */}
         <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto [&>button]:shrink-0">
-          <button
-            onClick={() => setActiveTab('blueprint')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'blueprint'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-white'
-            }`}
-          >
-            <Swords className="w-4 h-4" />
-            <span>⚔️ 試合前（対面設計図）</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('live')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'live'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-white'
-            }`}
-          >
-            <Radar className="w-4 h-4" />
-            <span>🧭 試合中（ライブ偵察）</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('analyzer')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'analyzer'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-white'
-            }`}
-          >
-            <BarChart3 className="w-4 h-4" />
-            <span>📊 スタッツ深層分析（直近試合）</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('postgame')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'postgame'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-white'
-            }`}
-          >
-            <TrendingUp className="w-4 h-4" />
-            <span>📈 試合後（詳細分析・メモ）</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('tempo')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'tempo'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-white'
-            }`}
-          >
-            <Rewind className="w-4 h-4" />
-            <span>🔁 試合後テンポ解析</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('reflection')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'reflection'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-white'
-            }`}
-          >
-            <MessageSquareText className="w-4 h-4" />
-            <span>📝 ソロQ反省ノート</span>
-          </button>
+          {TABS.map(({ key, label, Icon }) => (
+            <button
+              key={key}
+              onClick={() => setActiveTab(key)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === key
+                  ? 'bg-amber-600 text-white shadow-md'
+                  : 'bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-white'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              <span>{label}</span>
+            </button>
+          ))}
         </div>
 
         {/* タブ 1: 試合前（対面設計図） */}
@@ -143,25 +101,25 @@ function CoachPageContent() {
               </span>
               <button
                 onClick={() => { setMyChamp('Darius'); setEnemyChamp('Aatrox'); }}
-                className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 hover:border-indigo-500 text-slate-300 font-bold shrink-0 transition-colors"
+                className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 hover:border-amber-500 text-slate-300 font-bold shrink-0 transition-colors"
               >
                 Darius vs Aatrox (TOP)
               </button>
               <button
                 onClick={() => { setMyChamp('JarvanIV'); setEnemyChamp('LeeSin'); }}
-                className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 hover:border-indigo-500 text-slate-300 font-bold shrink-0 transition-colors"
+                className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 hover:border-amber-500 text-slate-300 font-bold shrink-0 transition-colors"
               >
                 JarvanIV vs LeeSin (JG)
               </button>
               <button
                 onClick={() => { setMyChamp('Zed'); setEnemyChamp('Ahri'); }}
-                className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 hover:border-indigo-500 text-slate-300 font-bold shrink-0 transition-colors"
+                className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 hover:border-amber-500 text-slate-300 font-bold shrink-0 transition-colors"
               >
                 Zed vs Ahri (MID)
               </button>
               <button
                 onClick={() => { setMyChamp('Jinx'); setEnemyChamp('Lucian'); }}
-                className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 hover:border-indigo-500 text-slate-300 font-bold shrink-0 transition-colors"
+                className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 hover:border-amber-500 text-slate-300 font-bold shrink-0 transition-colors"
               >
                 Jinx vs Lucian (ADC)
               </button>
@@ -212,7 +170,9 @@ function CoachPageContent() {
 export default function CoachPage() {
   return (
     <Suspense fallback={<div className="p-8 text-center text-slate-500 text-xs">ロード中...</div>}>
-      <CoachPageContent />
+      <CoachRiotIdProvider>
+        <CoachPageContent />
+      </CoachRiotIdProvider>
     </Suspense>
   );
 }

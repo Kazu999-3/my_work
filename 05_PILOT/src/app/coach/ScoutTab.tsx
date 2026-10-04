@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { getChampIcon } from "../../lib/ddragonClient";
+import { useCoachRiotId } from './riotIdContext';
 
 // 5v5シミュレータの自動反映(リアルタイム連携)用に、ライブ試合の参加者10人を
 // {champion, isEnemy, isJungle}のシンプルな形へ整形して呼び出し元へ渡す型。
@@ -35,13 +36,11 @@ export default function ScoutTab({ onLiveMatchDetected }: {
   const [adviceIndex, setAdviceIndex] = useState(0);
   const [activeTab, setActiveTab] = useState("advice");
 
-  // 常に「自身のRiot ID」を入力する運用のため、毎回入力させず前回値を記憶する。
+  // 画面上部の「自分のRiot ID」を初期値にする。ここで他人のIDを調べても共有の値は変えない
+  const { riotId: ownRiotId } = useCoachRiotId();
   useEffect(() => {
-    try {
-      const saved = (localStorage.getItem('coach_riot_id') || localStorage.getItem('scout_own_riot_id'));
-      if (saved) setRiotId(saved);
-    } catch {}
-  }, []);
+    if (ownRiotId) setRiotId(ownRiotId);
+  }, [ownRiotId]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +48,6 @@ export default function ScoutTab({ onLiveMatchDetected }: {
       setError("Riot IDは「名前#タグ」の形式で入力してください (例: Koike#JP1)。");
       return;
     }
-    try { localStorage.setItem('coach_riot_id', riotId); } catch {}
 
     setLoading(true);
     setError("");

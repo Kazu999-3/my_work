@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useCoachRiotId } from './riotIdContext';
 
 interface SoloQReflection {
   id: string;
@@ -19,6 +20,7 @@ interface SoloQReflection {
 }
 
 export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: number } = {}) {
+  const { riotId: ownRiotId } = useCoachRiotId();
   const [reflections, setReflections] = useState<SoloQReflection[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,7 +44,7 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
   };
 
   const fetchRealRecord = async () => {
-    const savedIgn = localStorage.getItem('coach_riot_id') || '';
+    const savedIgn = ownRiotId;
     if (!savedIgn) { setRealRecordError(true); return; }
     try {
       const res = await fetch('/api/soloq/recent-matches', {
@@ -67,8 +69,9 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
     fetchRealRecord();
     // refreshSignalは振り返り保存完了時にインクリメントされる。このダッシュボードは
     // 常時マウントのため、保存後も再fetchせず「保存したのに一覧が更新されない」状態に
-    // なっていた(2026-08-05発覚)。
-  }, [refreshSignal]);
+    // なっていた(2026-08-05発覚)。自分のRiot IDの読み込み・変更時も取り直す。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshSignal, ownRiotId]);
 
   const filtered = reflections.filter((r) => {
     if (!searchQuery) return true;
