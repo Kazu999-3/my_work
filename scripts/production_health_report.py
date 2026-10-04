@@ -26,6 +26,7 @@ import argparse
 import json
 import os
 import sys
+import urllib.error
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
@@ -97,13 +98,28 @@ def gh_get(path):
         return json.loads(res.read().decode())
 
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+
 def gh_get_text(path):
+    """ログ系APIはストレージ(Azure Blob)の署名付きURLへ302で転送される。標準の転送処理は
+    GitHubの認証ヘッダーを転送先にも付けて拒否されるため、転送先へは認証なしで取りに行く。"""
     token = os.environ.get("GITHUB_TOKEN", "")
     repo = os.environ.get("GITHUB_REPOSITORY", "Kazu999-3/my_work")
     req = urllib.request.Request(f"https://api.github.com/repos/{repo}{path}")
     if token:
         req.add_header("Authorization", f"Bearer {token}")
-    with urllib.request.urlopen(req, timeout=60) as res:
+    opener = urllib.request.build_opener(_NoRedirect)
+    try:
+        with opener.open(req, timeout=60) as res:
+            return res.read().decode("utf-8", errors="replace")
+    except urllib.error.HTTPError as e:
+        if e.code not in (301, 302, 303, 307, 308):
+            raise
+        location = e.headers.get("Location")
+    with urllib.request.urlopen(location, timeout=60) as res:
         return res.read().decode("utf-8", errors="replace")
 
 
@@ -160,8 +176,10 @@ def check_workflows(r: Report):
             try:
                 jobs = gh_get(f"/actions/runs/{latest['id']}/jobs").get("jobs", [])
                 log = "".join(gh_get_text(f"/actions/jobs/{j['id']}/logs") for j in jobs)
-            except Exception:
-                log = ""
+            except Exception as e:
+                # 読めなかったことを黙って「問題なし」にしない
+                problems.append(f"{label}: ログを読めず「何もしていない」かを判定できない（{e}）")
+                continue
             if marker in log:
                 problems.append(f"{label}: 「成功」だがログに「{marker}」＝実際には何もしていない")
     if problems:
