@@ -5,19 +5,20 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { 
   Bot, ArrowLeft, Swords, BookOpen, Compass, ShieldAlert, Sparkles, RefreshCw, Zap,
-  BarChart3, MessageSquareText, Rewind, TrendingUp
+  BarChart3, MessageSquareText, Rewind, TrendingUp, Radar
 } from 'lucide-react';
 import MatchupBlueprintCard from './MatchupBlueprintCard';
 import StatsAnalyzerTab from './StatsAnalyzerTab';
 import SoloQReflectionTab from './SoloQReflectionTab';
 import PostGameTempoTab from './PostGameTempoTab';
 import PostGameTab from './PostGameTab';
+import LiveTab from './LiveTab';
 
 function CoachPageContent() {
   const searchParams = useSearchParams();
 
   // タブ管理
-  const [activeTab, setActiveTab] = useState<'blueprint' | 'analyzer' | 'postgame' | 'tempo' | 'reflection'>('blueprint');
+  const [activeTab, setActiveTab] = useState<'blueprint' | 'live' | 'analyzer' | 'postgame' | 'tempo' | 'reflection'>('blueprint');
 
   // 対面設計図用ステート
   const [myChamp, setMyChamp] = useState('JarvanIV');
@@ -26,6 +27,7 @@ function CoachPageContent() {
   useEffect(() => {
     const qTab = searchParams.get('tab');
     if (qTab === 'analyzer') setActiveTab('analyzer');
+    else if (qTab === 'live') setActiveTab('live');
     // postgame はソロQ試合後の通知（/coach?tab=postgame&matchId=...）のリンク先
     else if (qTab === 'postgame' || qTab === 'matchup-memo') setActiveTab('postgame');
     else if (qTab === 'tempo') setActiveTab('tempo');
@@ -65,6 +67,18 @@ function CoachPageContent() {
           >
             <Swords className="w-4 h-4" />
             <span>⚔️ 試合前（対面設計図）</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('live')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'live'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-white'
+            }`}
+          >
+            <Radar className="w-4 h-4" />
+            <span>🧭 試合中（ライブ偵察）</span>
           </button>
 
           <button
@@ -158,6 +172,11 @@ function CoachPageContent() {
               onEnemyChampionChange={setEnemyChamp}
             />
           </div>
+        )}
+
+        {/* タブ: 試合中（ライブ偵察・5v5シミュレーター）。検出した対面は試合前タブの設計図にも反映する */}
+        {activeTab === 'live' && (
+          <LiveTab onLiveMatchDetected={(my, enemy) => { setMyChamp(my); setEnemyChamp(enemy); }} />
         )}
 
         {/* タブ 2: スタッツ深層分析 */}

@@ -1,0 +1,766 @@
+// 05移植(2026-10-04): 旧ポータルから移植。認証は 05 の proxy.ts（全API保護）が担うため管理者チェックは外した。
+import { NextResponse } from 'next/server';
+import { fetchPuuidByRiotId, fetchActiveGameByPuuid, fetchRecentMatchIds, fetchMatchDetails, fetchMatchTimeline } from '@/lib/riot';
+import { calculatePlaystyle } from '@/lib/playstyle';
+import { supabase as supabaseClient } from '@/lib/supabaseClient';
+const supabase = supabaseClient!;
+import { callGeminiWithRetry } from '@/lib/geminiClient';
+import { getChampNameById as getChampionNameById } from '@/lib/ddragonClient';
+
+// 敵最大5人の順次分析(1人あたり複数回のRiot API呼び出し)＋各人の直近試合詳細・タイムライン
+// 取得を意図的に直列化しているため、実行時間がVercelのデフォルト関数タイムアウトに
+// 抵触するリスクがある。同じくGemini/Riot APIを多用するmatch/simulate(60s)より重いため長めに確保。
+export const maxDuration = 120;
+
+export async function POST(req: Request) {
+  try {
+  // ===== 管理者セッション確認 =====
+  // =================================
+    const body = await req.json();
+    const { riotId } = body; // "Name#Tag" 形式
+
+    if (!riotId || !riotId.includes('#')) {
+      return NextResponse.json({ error: 'Riot IDは「名前#タグ」の形式で入力してください。' }, { status: 400 });
+    }
+
+    const [gameName, tagLine] = riotId.split('#');
+    const apiKey = process.env.RIOT_API_KEY;
+    const geminiApiKey = process.env.GEMINI_API_KEY;
+
+    // APIキーが無い場合はエラーを返す
+    if (!apiKey) {
+      return NextResponse.json({ error: "Riot APIキーが環境変数に設定されていません。管理画面、または環境変数 RIOT_API_KEY を設定してください。" }, { status: 400 });
+    }
+
+    // 1. PUUID の解決
+    let myPuuid = '';
+    try {
+      myPuuid = await fetchPuuidByRiotId(gameName, tagLine, apiKey);
+    } catch (err: any) {
+      if (err.message && (err.message.includes('Forbidden') || err.message.includes('403') || err.message.includes('Unauthorized'))) {
+        return NextResponse.json({ error: "Riot APIキーが失効またはアクセス制限（Forbidden / 403）されています。管理者画面でAPIキーを更新してください。" }, { status: 403 });
+      }
+      return NextResponse.json({ error: `Riot ID の検索に失敗しました: ${err.message}` }, { status: 404 });
+    }
+
+    // 2. 進行中ゲーム (Active Game) の取得
+    let activeGame: any = null;
+    try {
+      activeGame = await fetchActiveGameByPuuid(myPuuid, apiKey);
+    } catch (err: any) {
+      if (err.message === 'ACTIVE_GAME_NOT_FOUND') {
+        try {
+          // 1. 直近5試合のソロキュー履歴 (420) の取得を試行
+          let myMatchIds: string[] = [];
+          let matchIdFetchError: any = null;
+          try {
+            myMatchIds = await fetchRecentMatchIds(myPuuid, apiKey, 5, 420);
+          } catch (e) {
+            matchIdFetchError = e;
+            console.warn('[live-match] 直近ソロキュー履歴の取得に失敗:', e);
+          }
+
+          // 2. ソロキュー履歴が無い場合は、全ゲームモード（ノーマル・カスタム等）から再取得
+          if (!myMatchIds || myMatchIds.length === 0) {
+            try {
+              myMatchIds = await fetchRecentMatchIds(myPuuid, apiKey, 5);
+              matchIdFetchError = null;
+            } catch (e) {
+              matchIdFetchError = e;
+              console.warn('[live-match] 全ゲームモードでの対戦履歴取得に失敗:', e);
+            }
+          }
+
+          if (!myMatchIds || myMatchIds.length === 0) {
+            // APIキー失効・レート制限等が「見つかりませんでした」に丸め込まれ、真因が
+            // ログにもUIにも出ないまま握りつぶされていた問題を修正(known-regression-patterns系)。
+            const errMsg = matchIdFetchError?.message || '';
+            if (errMsg.includes('Forbidden') || errMsg.includes('403') || errMsg.includes('Unauthorized')) {
+              return NextResponse.json({ error: 'Riot APIキーが失効またはアクセス制限（Forbidden / 403）されています。管理者画面でAPIキーを更新してください。' }, { status: 403 });
+            }
+            return NextResponse.json({
+              isGameActive: false,
+              isPreMatch: false,
+              message: `${gameName}#${tagLine} の直近の対戦履歴（ソロキュー・ノーマル等）が見つかりませんでした。${errMsg ? `（詳細: ${errMsg}）` : ''}`
+            });
+          }
+
+          let myMatches: any[] = [];
+          const batchSize = 3;
+          for (let i = 0; i < myMatchIds.length; i += batchSize) {
+            const batchIds = myMatchIds.slice(i, i + batchSize);
+            const promises = batchIds.map(async (id) => {
+              try {
+                const detail = await fetchMatchDetails(id, apiKey);
+                const detailMe = detail.participants.find((p: any) => p.puuid === myPuuid);
+                if (detailMe) {
+                  return {
+                    ...detailMe,
+                    game_duration: detail.gameDuration,
+                    win: detailMe.win,
+                    // 9分差分は実測できないため渡さない（旧版は固定値0を渡していた）
+                  };
+                }
+              } catch (e) {}
+              return null;
+            });
+            const batchResults = await Promise.all(promises);
+            batchResults.forEach(r => { if (r) myMatches.push(r); });
+            await new Promise(res => setTimeout(res, 50));
+          }
+
+          if (myMatches.length === 0) {
+            return NextResponse.json({ 
+              isGameActive: false, 
+              message: `${gameName}#${tagLine} の直近の試合詳細の読み込みに失敗しました。` 
+            });
+          }
+
+          // 最多プレイチャンピオンの特定
+          const champCounts: Record<string, number> = {};
+          myMatches.forEach((m: any) => {
+            const cName = m.championName || 'Unknown';
+            champCounts[cName] = (champCounts[cName] || 0) + 1;
+          });
+          const sortedChamps = Object.entries(champCounts).sort((a, b) => b[1] - a[1]);
+          const favChamp = sortedChamps[0]?.[0] || 'Graves'; // デフォルト
+
+          // プレイスタイル計算
+          const myPlaystyle = calculatePlaystyle(myMatches);
+
+          // OTP & Tilt 判定
+          let isOtp = false;
+          let otpChampion = "";
+          let isTilted = false;
+          let consecutiveLosses = 0;
+          if (sortedChamps[0] && sortedChamps[0][1] >= 7) {
+            isOtp = true;
+            otpChampion = sortedChamps[0][0];
+          }
+          for (let i = 0; i < myMatches.length; i++) {
+            if (myMatches[i].win === false) {
+              consecutiveLosses++;
+            } else {
+              break;
+            }
+          }
+          if (consecutiveLosses >= 3) {
+            isTilted = true;
+          }
+
+          // GLOBALマニュアルのロード (favorite champを敵とみなす)
+          let matchupBible = "";
+          try {
+            const { data: bData } = await supabase
+              .from('matchup_sentinel')
+              .select('strategy')
+              .eq('matchup_id', `champ_${favChamp}_global`)
+              .maybeSingle();
+            if (bData && bData.strategy) {
+              matchupBible = bData.strategy;
+            }
+          } catch (dbErr) {
+            console.warn('[live-match] GLOBALマニュアルの取得に失敗（続行）:', dbErr);
+          }
+
+          // 過去の教訓メモのロード
+          let personalMemo = "";
+          try {
+            const { data: mData } = await supabase
+              .from('personal_knowledge')
+              .select('content')
+              .eq('champion', favChamp)
+              .order('created_at', { ascending: false });
+            if (mData && mData.length > 0) {
+              personalMemo = mData.map((m: any) => `- ${m.content}`).join("\n");
+            }
+          } catch (dbErr) {
+            console.warn('[live-match] 過去の教訓メモの取得に失敗（続行）:', dbErr);
+          }
+
+          // Gemini 対策3箇条の生成
+          let coachAdvice: any[] = [];
+          if (geminiApiKey) {
+            try {
+              const primaryTag = myPlaystyle.tags[0] || { name: "バランス型" };
+              const knowledgeObj = {
+                pastInterrogation: personalMemo ? personalMemo.split("\n").map(l => l.replace(/^- /, '')) : [],
+                strategy: matchupBible
+              };
+              coachAdvice = await generateCoachAdviceWithGemini(
+                favChamp,
+                primaryTag,
+                geminiApiKey,
+                knowledgeObj
+              );
+            } catch (aiErr) {}
+          }
+
+          // プレマッチ用の簡易分析および推奨カウンターを算出
+          const analysis = generateLiveAnalysis(favChamp, myPlaystyle.tags[0] || { name: "バランス型" });
+          const counters = generateCountersForJg(favChamp);
+
+          // プレマッチ分析のレスポンスを返す (UIプロパティ要件に完全追従)
+          return NextResponse.json({
+            isGameActive: false,
+            isPreMatch: true,
+            message: `${gameName}#${tagLine} は現在対戦中ではありませんが、プレマッチ分析を表示しています。`,
+            riotId: `${gameName}#${tagLine}`,
+            championName: favChamp,
+            enemyJgName: `${gameName}#${tagLine}`,
+            playstyle: myPlaystyle,
+            startBuffPrediction: analysis.startBuff,
+            firstGankTarget: analysis.firstGank,
+            tips: analysis.tips,
+            counters,
+            enemyJg: {
+              summonerName: gameName,
+              riotIdGameName: gameName,
+              riotIdTagline: tagLine,
+              championName: favChamp,
+              championId: favChamp
+            },
+            isOtp,
+            otpChampion,
+            isTilted,
+            consecutiveLosses,
+            coachAdvice,
+            knowledge: {
+              strengths: matchupBible ? "グローバル対策を参照してください" : "",
+              weaknesses: "",
+              powerSpikes: "",
+              buildRunes: "",
+              fullClearTime: "",
+              strategy: matchupBible,
+              pastInterrogation: personalMemo ? personalMemo.split("\n").map(l => l.replace(/^- /, '')) : []
+            },
+            activeGame: {
+              gameId: 0,
+              gameLength: 0,
+              participants: [
+                {
+                  summonerName: gameName,
+                  riotIdGameName: gameName,
+                  riotIdTagline: tagLine,
+                  championName: favChamp,
+                  teamId: 100,
+                  spell1Id: 11,
+                  spell2Id: 4
+                }
+              ]
+            }
+          });
+
+        } catch (fallbackErr: any) {
+          console.error("Fallback PreMatch lookup failed:", fallbackErr);
+          return NextResponse.json({ 
+            isGameActive: false, 
+            message: `${gameName}#${tagLine} は現在ゲーム中ではありません (プレマッチ分析に失敗しました: ${fallbackErr.message})。` 
+          });
+        }
+      }
+      if (err.message && (err.message.includes('Forbidden') || err.message.includes('403') || err.message.includes('Unauthorized'))) {
+        return NextResponse.json({ error: "ライブゲームの取得中にRiot APIキーのアクセス制限（Forbidden / 403）を検出しました。APIキーを更新してください。" }, { status: 403 });
+      }
+      return NextResponse.json({ error: `ライブゲーム取得エラー: ${err.message}` }, { status: 502 });
+    }
+
+    // 3. 参加者データから自分と敵ジャングラーを特定
+    const myParticipant = activeGame.participants.find((p: any) => p.puuid === myPuuid);
+    if (!myParticipant) {
+      return NextResponse.json({ error: 'ゲーム情報に自身のサモナー情報が見つかりませんでした。' }, { status: 500 });
+    }
+
+    const myTeamId = myParticipant.teamId;
+    const enemyParticipants = activeGame.participants.filter((p: any) => p.teamId !== myTeamId);
+
+    // 敵ジャングラーの特定 (スペルに Smite [SummonerSmite=11] を持っているプレイヤーを優先)
+    let enemyJg = enemyParticipants.find((p: any) => p.spell1Id === 11 || p.spell2Id === 11);
+    if (!enemyJg) {
+      enemyJg = enemyParticipants[0];
+    }
+
+    const enemyName = enemyJg.riotIdGameName || enemyJg.summonerName || 'Unknown';
+    const enemyTag = enemyJg.riotIdTagline || '';
+    const enemyChampName = await getChampionNameById(enemyJg.championId);
+    // 偵察結果から自動でマッチアップ分析(自分 vs 対面)を走らせられるよう、自分の
+    // チャンピオンも解決しておく(#① マッチアップタブ廃止に伴う自動化)。
+    const myChampName = await getChampionNameById(myParticipant.championId);
+
+    // 4. 敵ジャングラーの過去ソロキュー履歴を取得してプレイスタイルを分析 (直近10試合)
+    // ランクソロ(420)を優先するが、直近にランクを打っていない相手（ノーマル/フレックス中心
+    // 等）だと0件になり、以前は問答無用でダミー推定値行きになっていた。自分自身の事前分析
+    // パス(51-61行目)と同じく、ランクが空なら全ゲームモードで再取得するフォールバックを足す。
+    let enemyPlaystyle = null;
+    let enemyMatches: any[] = [];
+    try {
+      let enemyMatchIds = await fetchRecentMatchIds(enemyJg.puuid, apiKey, 10, 420); // Solo/Duo
+      if (!enemyMatchIds || enemyMatchIds.length === 0) {
+        try {
+          enemyMatchIds = await fetchRecentMatchIds(enemyJg.puuid, apiKey, 10);
+        } catch { enemyMatchIds = []; }
+      }
+
+      const batchSize = 3;
+      for (let i = 0; i < enemyMatchIds.length; i += batchSize) {
+        const batchIds = enemyMatchIds.slice(i, i + batchSize);
+        const promises = batchIds.map(async (id) => {
+          try {
+            const detail = await fetchMatchDetails(id, apiKey);
+            // 以前はriotIdName(表記ゆれ・大文字小文字・改名で簡単に不一致になる)や
+            // championNameでの一致判定だったため、一致に失敗した試合は黙って
+            // スキップされ続けていた。この試合ID自体が enemyJg.puuid で取得した
+            // ものなので、puuidで直接突き合わせるのが確実（#② ランクを打っていても
+            // 取得できない問題の根本原因）。
+            const detailMe = detail.participants.find(p => p.puuid === enemyJg.puuid);
+
+            // タイムラインで実測できた時だけ値が入る（旧版は実測しない試合も0として平均に混ぜていた）
+            let gold_diff_9: number | undefined, xp_diff_9: number | undefined, cs_diff_9: number | undefined;
+            if (i === 0) {
+              try {
+                const timeline = await fetchMatchTimeline(id, apiKey);
+                const frame = timeline.info?.frames?.[9];
+                if (frame && detailMe) {
+                  const myPartIdx = detail.participants.findIndex(p => p.puuid === enemyJg.puuid);
+                  const myPartId = myPartIdx !== -1 ? myPartIdx + 1 : -1;
+                  const oppPartIdx = detail.participants.findIndex(p => p.lane === detailMe.lane && p.teamId !== detailMe.teamId);
+                  const oppPartId = oppPartIdx !== -1 ? oppPartIdx + 1 : -1;
+                  
+                  if (myPartId !== -1 && oppPartId !== -1) {
+                    const myFrame = frame.participantFrames?.[String(myPartId)];
+                    const oppFrame = frame.participantFrames?.[String(oppPartId)];
+                    if (myFrame && oppFrame) {
+                      gold_diff_9 = (myFrame.currentGold || 0) - (oppFrame.currentGold || 0);
+                      xp_diff_9 = (myFrame.xp || 0) - (oppFrame.xp || 0);
+                      const myCs9 = (myFrame.minionsKilled || 0) + (myFrame.jungleMinionsKilled || 0);
+                      const oppCs9 = (oppFrame.minionsKilled || 0) + (oppFrame.jungleMinionsKilled || 0);
+                      cs_diff_9 = myCs9 - oppCs9;
+                    }
+                  }
+                }
+              } catch (te) {}
+            }
+
+            if (detailMe) {
+              return {
+                ...detailMe,
+                game_duration: detail.gameDuration,
+                win: detailMe.win,
+                gold_diff_9,
+                xp_diff_9,
+                cs_diff_9
+              };
+            }
+          } catch (e) {}
+          return null;
+        });
+
+        const batchResults = await Promise.all(promises);
+        batchResults.forEach(r => { if (r) enemyMatches.push(r); });
+        await new Promise(res => setTimeout(res, 100));
+      }
+
+      if (enemyMatches.length > 0) {
+        enemyPlaystyle = calculatePlaystyle(enemyMatches);
+      }
+    } catch (err) {
+      console.warn("敵ジャングラーの過去戦績分析に失敗しました:", err);
+    }
+
+    if (!enemyPlaystyle) {
+      enemyPlaystyle = {
+        sliders: { aggressive: 0, farming: 0, supportive: 0 },
+        tags: [{ id: 'insufficient-data', name: 'データ未計測', description: '直近の戦績データが非公開または不足しています。', reason: 'データ制限のため' }],
+        lastUpdated: new Date().toISOString(),
+        dataInsufficient: true,
+      };
+    }
+
+    // OTP ＆ ティルト判定
+    let isOtp = false;
+    let otpChampion = "";
+    let isTilted = false;
+    let consecutiveLosses = 0;
+
+    if (enemyMatches.length > 0) {
+      const champCounts: Record<string, number> = {};
+      enemyMatches.forEach((m: any) => {
+        const cName = m.championName || enemyChampName;
+        champCounts[cName] = (champCounts[cName] || 0) + 1;
+      });
+      const topChamp = Object.entries(champCounts).sort((a, b) => b[1] - a[1])[0];
+      if (topChamp && topChamp[1] >= 7) {
+        isOtp = true;
+        otpChampion = topChamp[0];
+      }
+
+      for (let i = 0; i < enemyMatches.length; i++) {
+        if (enemyMatches[i].win === false) {
+          consecutiveLosses++;
+        } else {
+          break;
+        }
+      }
+      if (consecutiveLosses >= 3) {
+        isTilted = true;
+      }
+    }
+
+    // 敵チーム全員の簡易分析 (勝率・OTP・ガンク耐性)
+    // 以前は全参加者(最大10人)を Promise.all で同時分析しており、敵5人分だと
+    // 1人あたり最大6リクエスト(直近5戦ID取得+試合詳細5件)×5人=最大30リクエストが
+    // 一瞬で飛んでいた。個人用APIキーの秒間制限(概ね20req/1s)を簡単に超え、
+    // 「データ不足」表示が頻発する主因になっていたため、1人ずつ順番に処理し、
+    // 敵プレイヤーの間だけ小休止を挟んでバーストを分散させる。
+    const analyzedParticipants: any[] = [];
+    for (const p of activeGame.participants) {
+      const result = await (async () => {
+        const isEnemy = p.teamId !== myTeamId;
+        const role = p.puuid === enemyJg.puuid ? 'JG' : (p.teamId === myTeamId ? (p.puuid === myPuuid ? 'JG' : 'LANER') : 'LANER');
+        
+        let winRate: number | null = null;
+        let pIsOtp = false;
+        let pOtpChamp = "";
+        let pConsecutiveLosses = 0;
+        let pIsTilted = false;
+        let isVulnerable = false;
+        let fbRate: number | null = null;
+        // 実データが1件も取れずwinRate/fbRateが固定値のままの場合に立てる。
+        // 以前はこの状態でも「勝率50%」「特記事項なし」を本物のように表示していた。
+        let dataInsufficient = false;
+
+        if (isEnemy && apiKey) {
+          try {
+            // 直近5戦のみ取得してAPI負荷と速度を最適化。ランクソロが無い相手向けに
+            // 全ゲームモードへのフォールバックも行う(#② ダミーデータ化対策)。
+            let matchIds = await fetchRecentMatchIds(p.puuid, apiKey, 5, 420);
+            if (!matchIds || matchIds.length === 0) {
+              try {
+                matchIds = await fetchRecentMatchIds(p.puuid, apiKey, 5);
+              } catch { matchIds = []; }
+            }
+            let wins = 0;
+            let losses = 0;
+            let recentLosses = 0;
+            let stopLossCount = false;
+            const chCounts: Record<string, number> = {};
+            
+            const details = await Promise.all(
+              matchIds.map(async (mid) => {
+                try {
+                  const d = await fetchMatchDetails(mid, apiKey);
+                  return d.participants.find((part: any) => part.puuid === p.puuid);
+                } catch { return null; }
+              })
+            );
+            
+            details.forEach((partDetail) => {
+              if (partDetail) {
+                if (partDetail.win) {
+                  wins++;
+                  stopLossCount = true;
+                } else {
+                  losses++;
+                  if (!stopLossCount) {
+                    recentLosses++;
+                  }
+                }
+                const cName = partDetail.championName;
+                if (cName) {
+                  chCounts[cName] = (chCounts[cName] || 0) + 1;
+                }
+              }
+            });
+            
+            const total = wins + losses;
+            if (total > 0) {
+              winRate = Math.round((wins / total) * 100);
+              pConsecutiveLosses = recentLosses;
+              pIsTilted = pConsecutiveLosses >= 3;
+
+              const topCh = Object.entries(chCounts).sort((a, b) => b[1] - a[1])[0];
+              if (topCh && topCh[1] >= 4) {
+                pIsOtp = true;
+                pOtpChamp = topCh[0];
+              }
+
+              if (losses >= 3 || winRate <= 35) {
+                isVulnerable = true;
+                // 実測FBデータがない場合は架空パーセントを捏造せずnullを保持
+                fbRate = null;
+              }
+            } else {
+              // 直近5戦の詳細が1件も取れなかった（新規アカウント・API制限等）
+              dataInsufficient = true;
+            }
+          } catch {
+            winRate = null;
+            pIsTilted = false;
+            isVulnerable = false;
+            fbRate = null;
+            dataInsufficient = true;
+          }
+        } else if (isEnemy) {
+          winRate = null;
+          pIsTilted = false;
+          isVulnerable = false;
+          fbRate = null;
+          dataInsufficient = true;
+        }
+
+        return {
+          name: p.riotIdGameName || p.summonerName,
+          championId: p.championId,
+          // フロント側(ScoutTab.tsx)が独自の19体だけのハードコードマップでchampionIdを
+          // 名前へ変換しており、それ以外のチャンピオンは全部LeeSin表示になっていた。
+          // ここでDDragon正式実装(getChampionNameById)により名前解決して渡す(#②)。
+          championName: await getChampionNameById(p.championId),
+          teamId: p.teamId,
+          isEnemy,
+          role,
+          winRate,
+          isOtp: pIsOtp,
+          otpChampion: pOtpChamp,
+          consecutiveLosses: pConsecutiveLosses,
+          isTilted: pIsTilted,
+          isVulnerable,
+          fbRate,
+          dataInsufficient
+        };
+      })();
+      analyzedParticipants.push(result);
+      // 敵プレイヤー分析の直後だけ小休止を挟み、次の敵の6リクエストと衝突させない。
+      if (result.isEnemy) {
+        await new Promise((res) => setTimeout(res, 150));
+      }
+    }
+
+    // 敵チャンピオンの GLOBAL ナレッジと過去の反省点を Supabase から取得
+    let knowledgeData = {
+      strengths: "",
+      weaknesses: "",
+      powerSpikes: "",
+      buildRunes: "",
+      fullClearTime: "",
+      strategy: "",
+      counterChampions: "",
+      jgStyle: null as null | { type?: string; description?: string; blind_pickable?: number; counter_pickable?: number },
+      pastInterrogation: [] as string[]
+    };
+
+    try {
+      // 1. GLOBAL 攻略ナレッジの取得 (matchup_sentinel テーブル)
+      const { data: globalMatchup, error: gError } = await supabase
+        .from('matchup_sentinel')
+        .select('strategy, raw_data')
+        .eq('champion', enemyChampName)
+        .eq('enemy', 'GLOBAL')
+        .maybeSingle(); // 1件もない場合でもクラッシュしないように maybeSingle を利用
+
+      if (globalMatchup && !gError) {
+        const raw = globalMatchup.raw_data || {};
+        knowledgeData.strengths = raw.strengths || "";
+        knowledgeData.weaknesses = raw.weaknesses || "";
+        knowledgeData.powerSpikes = raw.powerSpikes || "";
+        knowledgeData.buildRunes = raw.buildRunes || "";
+        knowledgeData.fullClearTime = raw.fullClearTime || "";
+        knowledgeData.strategy = globalMatchup.strategy || "";
+        // 推奨カウンター/Tipsのハードコード(数体のみ対応・それ以外は毎回同じ汎用文言)を
+        // やめ、辞典が既に持っている実データ(弱点・カウンター・ジャングルスタイル)を使う。
+        knowledgeData.counterChampions = raw.counterChampions || "";
+        knowledgeData.jgStyle = raw.jg_style || null;
+      }
+
+      // 2. 過去の反省点 (INTERROGATION) の取得 (enemy=PROCESS_INTERROGATION のレコード)
+      const { data: pastRecords, error: pError } = await supabase
+        .from('matchup_sentinel')
+        .select('strategy, raw_data')
+        .eq('enemy', 'PROCESS_INTERROGATION');
+        
+      if (pastRecords && !pError) {
+        pastRecords.forEach((r: any) => {
+          const target = r.raw_data?.target_enemy || "";
+          if (target.toLowerCase() === enemyChampName.toLowerCase()) {
+            if (r.strategy) {
+              knowledgeData.pastInterrogation.push(r.strategy);
+            }
+          }
+        });
+      }
+    } catch (dbErr) {
+      console.warn("⚠️ 攻略ナレッジまたは反省データの取得に失敗しました:", dbErr);
+    }
+
+    // 鬼コーチ対策3箇条の生成
+    const enemyPlaystyleTag = enemyPlaystyle.tags?.[0] || { id: 'balanced-player', name: 'バランス型', description: '標準的' };
+    
+    let coachAdvice: any[] = [];
+    if (geminiApiKey) {
+      coachAdvice = await generateCoachAdviceWithGemini(
+        enemyChampName, 
+        enemyPlaystyleTag, 
+        geminiApiKey,
+        knowledgeData
+      );
+    }
+
+    // startBuff/firstGankはそもそも「試合前に確定させようのない予測」なので
+    // アーキタイプ(jg_style)ベースの推測のまま残すが、実データがあればそちらを優先する。
+    const analysis = generateLiveAnalysis(enemyChampName, enemyPlaystyleTag);
+    const realJgTypeText = knowledgeData.jgStyle?.type ? `辞典データ上のスタイル: ${knowledgeData.jgStyle.type}。${knowledgeData.jgStyle.description || ''}` : '';
+    const tips = realJgTypeText || analysis.tips;
+
+    // 推奨カウンターは以前 Lee Sin/Khazix/Graves 等ごく数体だけの手書き分岐で、
+    // それ以外の150体以上は全員同じ「Graves/LeeSin」固定表示になっていた(#①)。
+    // 辞典の実データ(counterChampions)があればそちらを使い、無い場合のみ
+    // 汎用フォールバックに留める(スカウト対象は毎回変わるので偽の個別感を出さない)。
+    const hasRealCounterData = !!knowledgeData.counterChampions;
+    const counters = hasRealCounterData ? [] : generateCountersForJg(enemyChampName);
+
+    return NextResponse.json({
+      isGameActive: true,
+      gameLength: activeGame.gameLength,
+      mapId: activeGame.mapId,
+      championName: enemyChampName,
+      myChampionName: myChampName,
+      enemyJgName: `${enemyName}#${enemyTag}`,
+      playstyle: enemyPlaystyle,
+      startBuffPrediction: analysis.startBuff,
+      firstGankTarget: analysis.firstGank,
+      tips,
+      isOtp,
+      otpChampion,
+      isTilted,
+      consecutiveLosses,
+      coachAdvice,
+      counters,
+      hasRealCounterData,
+      allParticipants: analyzedParticipants,
+      knowledge: knowledgeData
+    });
+
+  } catch (error: any) {
+    console.error('Live Match API Error:', error);
+    const msg = String(error?.message || '');
+    let friendlyError = 'ライブゲームのロードに失敗しました。';
+    if (msg.includes('404') || msg.includes('Data not found')) {
+      friendlyError = '現在進行中のライブゲームが見つかりませんでした。試合のローディング画面または開始後に再実行してください。';
+    } else if (msg.includes('403') || msg.includes('Forbidden')) {
+      friendlyError = 'Riot APIキーが無効または期限切れです。最新のキーを設定してください。';
+    } else if (msg.includes('429') || msg.includes('Rate limit')) {
+      friendlyError = 'Riot APIのリクエスト上限に達しました。1〜2分待ってから再度お試しください。';
+    } else if (msg) {
+      friendlyError = `エラー: ${msg}`;
+    }
+    return NextResponse.json({ error: friendlyError }, { status: 500 });
+  }
+}
+
+async function generateCoachAdviceWithGemini(
+  champ: string, 
+  tag: any, 
+  apiKey: string,
+  knowledge: any
+): Promise<any[]> {
+  try {
+    // 過去の敗北からの反省メッセージを統合
+    const pastLessonsText = knowledge.pastInterrogation && knowledge.pastInterrogation.length > 0
+      ? `\n【重要！プレイヤーが過去にこの対面で敗北した際、AIコーチと交わした反省・教訓（※これを踏まえた具体的な指示を1点含めなさい）】:\n` + knowledge.pastInterrogation.map((t: string) => `- ${t}`).join("\n")
+      : "";
+
+    // GLOBAL攻略ナレッジを統合
+    const globalKnowledgeText = knowledge.strategy || knowledge.strengths
+      ? `\n【攻略データベースのナレッジ】:\n- 強み: ${knowledge.strengths}\n- 弱み: ${knowledge.weaknesses}\n- パワースパイク: ${knowledge.powerSpikes}\n- 推奨ビルド/ルーン: ${knowledge.buildRunes}\n- クリア周回: ${knowledge.fullClearTime}\n- 基本立ち回り: ${knowledge.strategy}`
+      : "";
+
+    const prompt = `
+    
+あなたはLeague of Legendsの「AI鬼コーチ」です。厳しい口調（「〜しなさい」「〜は厳禁だ」）だが、勝利のための具体的かつ愛のある対面対策アドバイスを授けます。
+対戦相手の情報は以下の通りです：
+- 敵のチャンピオン: ${champ}
+- 敵のプレイスタイル傾向: ${tag.name} (${tag.description})
+${globalKnowledgeText}
+${pastLessonsText}
+
+上記の情報と、これまでの対面ナレッジおよび過去の教訓を統合し、ジャングラー対面時に絶対に実践すべき【対面対策3箇条】を、スライド形式（JSON配列。3つの要素）で生成してください。
+※過去の反省点（教訓）が提示されている場合は、必ずそれに基づいた指示を3箇条の中に1つ以上含め、過去の失敗（デスの仕方等）を繰り返さないよう厳しく忠告しなさい。
+
+各箇条は必ず以下の構造にしてください：
+- title: 箇条のタイトル（例: 「1. Lv3インベイドを徹底警戒せよ」）
+- detail: 具体的な理由と取るべき行動（例: 「相手は序盤の戦闘狂タグを持っています。Lv3で自陣の青バフに侵入してくる可能性が極めて高いため、味方レーナーにリバーの視界を置かせるか、逆サイドからスタートして衝突を回避しなさい。」）
+
+JSONの出力フォーマットは必ず以下の通りにしてください。解説やマークダウンの \`\`\`json などの装飾は一切含めないでください：
+[
+  { "title": "1. ...", "detail": "..." },
+  { "title": "2. ...", "detail": "..." },
+  { "title": "3. ...", "detail": "..." }
+]
+`;
+
+    const text = await callGeminiWithRetry(prompt, {
+      model: "gemini-3.1-flash-lite",
+      temperature: 0.3,
+      responseMimeType: "application/json"
+    });
+    return JSON.parse(text.trim());
+  } catch (e) {
+    console.error("Gemini API call failed for coach advice:", e);
+    return [];
+  }
+}
+
+function generateCountersForJg(enemyChamp: string) {
+  const lowercaseChamp = enemyChamp.toLowerCase();
+  if (lowercaseChamp.includes('lee') || lowercaseChamp.includes('sin')) {
+    return [
+      { championName: "Graves", reason: "Lee Sin の射程外から高火力の物理バーストを出せ、序盤の機動力勝負で有利を取れます。" },
+      { championName: "Jax", reason: "スキル『反撃の風暴』で Lee Sin のQの追加ダメージや通常攻撃を完全に無効化でき、インベイドへの強力な抑止力になります。" }
+    ];
+  } else if (lowercaseChamp.includes('khazix') || lowercaseChamp.includes('khal')) {
+    return [
+      { championName: "Nidalee", reason: "トラップによる視界確保で孤立無援パッシブの発動を防ぎ、圧倒的なクリア速度で森の主導権を握れます。" },
+      { championName: "JarvanIV", reason: "Khazixのジャンプ（E）の後にアルティメットで安全に拘束でき、高い防御ステータスで暗殺を完全に封じ込めます。" }
+    ];
+  } else if (lowercaseChamp.includes('grave')) {
+    return [
+      { championName: "Khazix", reason: "Gravesがリロードする隙に孤立パッシブを乗せたバーストダメージで一撃暗殺が可能です。" },
+      { championName: "Nunu", reason: "凄まじい回復力と継続的なスロウで、Gravesの引き撃ち（カイト）を完全に無力化できます。" }
+    ];
+  } else {
+    // 固定チャンピオン(Graves/LeeSin)の決め打ちを廃止し、未登録であることを正直に返す
+    return [];
+  }
+}
+
+/**
+ * 敵JGの初動を推定する。
+ *
+ * ★ 2026-09-22: ここは実データを一切参照せず、手書きの5体リストに含まれるかどうかだけで
+ * 開始バフとガンク先を出している。レスポンスのフィールド名が `startBuffPrediction` /
+ * `firstGankTarget` で、スカウト画面では敵個人の分析の一部として表示されるため、
+ * 実データに基づく予測に見えていた。推定である旨を文面に含めるようにした。
+ */
+function generateLiveAnalysis(champ: string, tag: any) {
+  const isEarlyJg = ['LeeSin', 'Khazix', 'JarvanIV', 'Shaco', 'Vi'].includes(champ);
+  const isBrawler = tag?.id === 'early-brawler';
+
+  let startBuff = '標準周回ルート（味方の配置やマッチアップに応じて変動）';
+  let firstGank = 'レーン状況に応じた関与（またはLv4スカトル・オブジェクト）';
+  let tips = '';
+
+  if (isEarlyJg) {
+    startBuff = '青バフ (バフ3キャンプ速攻) スタートの可能性（チャンピオン特性からの一般的な推定）';
+    firstGank = 'トップまたはミッドへのLv3早期ガンクの可能性（一般的な推定）';
+    tips = '相手は序盤が非常に強力なチャンピオンです。LV2またはLV3の早い段階でプレッシャーをかけてくる傾向があるため、サイドレーンは開始3分前後にリバーの視界を確保してください。自軍ジャングルへのインベイドにも注意し、孤立した戦闘を避けましょう。';
+  } else if (isBrawler) {
+    startBuff = 'ボット側リーシュあり赤バフスタート予測';
+    firstGank = '対面レーンでのLV3小規模戦の発生';
+    tips = '相手プレイヤーは戦闘意欲が極めて高い戦闘狂タグを持っています。フルクリアよりも遭遇戦や強引なガンクを好む傾向があるため、相手ジャングルの位置が割れるまではレーンでの深追いは禁物です。味方ジャングラーはカウンターガンクの意識を強めましょう。';
+  } else {
+    startBuff = '赤バフまたは青バフ（フルクリア周回目安・リーシュ依存）';
+    firstGank = 'LV4以降のスカトル（川のカニ）争い、または最初のオブジェクト';
+    tips = '特定の早期強襲チャンピオン以外の一般的な周回パターンです。レーンのプッシュ状況や味方のリーシュ位置によってスタート位置が変わるため、開始直後の敵レーナーの登場タイミングでスタート地点を特定してください。';
+  }
+
+  return { startBuff, firstGank, tips };
+}

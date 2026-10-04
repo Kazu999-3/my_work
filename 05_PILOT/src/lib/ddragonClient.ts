@@ -126,3 +126,24 @@ export function getPassiveIcon(passiveImageFull: string): string {
   if (!passiveImageFull) return "";
   return `https://ddragon.leagueoflegends.com/cdn/${cachedLatestPatch}/img/passive/${passiveImageFull}`;
 }
+
+// 数値のチャンピオンキー（例: 103）→ 英語ID（例: "Ahri"）。ライブ偵察（Spectator API はキーしか返さない）用。
+// 旧ポータル lib/ddragonClient.ts からの移植（2026-10-04）。
+let champKeyToIdCache: Record<string, string> | null = null;
+export async function getChampNameById(id: number): Promise<string> {
+  if (!champKeyToIdCache) {
+    try {
+      const patch = await getLatestPatch();
+      const res = await fetch(`https://ddragon.leagueoflegends.com/cdn/${patch}/data/en_US/champion.json`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()).data || {};
+      const dict: Record<string, string> = {};
+      for (const key in data) dict[data[key].key] = data[key].id;
+      champKeyToIdCache = dict;
+    } catch (e) {
+      console.error('[ddragonClient] champion.json の取得に失敗:', e);
+      return 'Unknown';
+    }
+  }
+  return champKeyToIdCache[String(id)] || 'Unknown';
+}

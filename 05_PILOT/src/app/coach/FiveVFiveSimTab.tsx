@@ -1,0 +1,588 @@
+"use client";
+
+import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
+import { getChampIcon } from '@/lib/ddragonClient';
+import { Swords, Zap, AlertCircle, RefreshCw, History, Save, Activity, Target, Award } from 'lucide-react';
+import ChampSelect from '@/components/ChampSelect';
+import type { LiveRosterEntry } from './ScoutTab';
+
+export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRosterEntry[] | null }) {
+  // 5v5 AIシミュレータ用ステート
+  const [blueChamps, setBlueChamps] = useState<Record<string, string>>({
+    TOP: '', JG: '', MID: '', BOT: '', SUP: ''
+  });
+  const [redChamps, setRedChamps] = useState<Record<string, string>>({
+    TOP: '', JG: '', MID: '', BOT: '', SUP: ''
+  });
+  const [simLoading, setSimLoading] = useState(false);
+  const [simError, setSimError] = useState<string | null>(null);
+  const [simResult, setSimResult] = useState<any>(null);
+  const [simStatus, setSimStatus] = useState('');
+  const [savingSim, setSavingSim] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [savedSims, setSavedSims] = useState<any[] | null>(null);
+  const [loadingRecent, setLoadingRecent] = useState(false);
+  const simIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // アンマウント時にポーリングを止め、離脱後もSupabaseへ問い合わせ続けるのを防ぐ
+  useEffect(() => {
+    return () => {
+      if (simIntervalRef.current) clearInterval(simIntervalRef.current);
+    };
+  }, []);
+
+  // シミュレータ結果を保存して共有リンクを生成
+  const saveSimulation = async () => {
+    if (!simResult) return;
+    setSavingSim(true);
+    setSimError(null);
+    try {
+      const res = await fetch('/api/match/simulation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ blue: blueChamps, red: redChamps, result: simResult }),
+      });
+      const d = await res.json();
+      if (!d.success) throw new Error(d.error || '保存に失敗しました。');
+      const url = `${window.location.origin}${window.location.pathname}?sim=${d.id}`;
+      setShareUrl(url);
+      try { await navigator.clipboard.writeText(url); } catch { /* クリップボード不可でもURL表示 */ }
+    } catch (e: any) {
+      setSimError('保存に失敗: ' + e.message);
+    } finally {
+      setSavingSim(false);
+    }
+  };
+
+  // 共有リンク(?sim=<id>)で開かれたら、その保存結果を読み込む
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const simId = new URLSearchParams(window.location.search).get('sim');
+    if (!simId) return;
+    fetch(`/api/match/simulation?id=${simId}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) {
+          if (d.blue) setBlueChamps(d.blue);
+          if (d.red) setRedChamps(d.red);
+          if (d.result) setSimResult(d.result);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // 保存済みシミュレーション一覧のロード
+  useEffect(() => {
+    fetch('/api/match/simulation')
+      .then(r => r.json())
+      .then(d => setSavedSims(d.success ? d.list : []))
+      .catch(() => setSavedSims([]));
+  }, []);
+
+  const loadSavedSim = async (simId: string) => {
+    try {
+      const d = await (await fetch(`/api/match/simulation?id=${simId}`)).json();
+      if (d.success) {
+        if (d.blue) setBlueChamps(d.blue);
+        if (d.red) setRedChamps(d.red);
+        if (d.result) setSimResult(d.result);
+        setSimError(null);
+      }
+    } catch { /* noop */ }
+  };
+
+  const normSimRole = (r: string): 'TOP' | 'JG' | 'MID' | 'BOT' | 'SUP' | null => {
+    const u = String(r || '').toUpperCase();
+    if (u.startsWith('TOP')) return 'TOP';
+    if (u.startsWith('JG') || u.startsWith('JUNG')) return 'JG';
+    if (u.startsWith('MID')) return 'MID';
+    if (u.startsWith('BOT') || u === 'ADC' || u.startsWith('BOTTOM') || u === 'CARRY') return 'BOT';
+    if (u.startsWith('SUP') || u === 'UTILITY') return 'SUP';
+    return null;
+  };
+
+  const loadFromRecentMatch = async () => {
+    setLoadingRecent(true);
+    setSimError(null);
+    try {
+      const res = await fetch('/api/match/history?limit=1');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '取得に失敗しました');
+      const parts: any[] = (data.matches && data.matches[0]?.participants) || [];
+      if (parts.length === 0) { setSimError('直近の試合データが見つかりませんでした。'); return; }
+      const blue: Record<string, string> = { TOP: '', JG: '', MID: '', BOT: '', SUP: '' };
+      const red: Record<string, string> = { TOP: '', JG: '', MID: '', BOT: '', SUP: '' };
+      let filled = 0;
+      parts.forEach((p) => {
+        const role = normSimRole(p.role);
+        if (!role || !p.champion_name) return;
+        if (p.team === 'BLUE') { blue[role] = p.champion_name; filled++; }
+        else if (p.team === 'RED') { red[role] = p.champion_name; filled++; }
+      });
+      if (filled === 0) { setSimError('直近の試合にチャンピオン情報が無く、読み込めませんでした。'); return; }
+      setBlueChamps(blue);
+      setRedChamps(red);
+    } catch (e: any) {
+      setSimError('直近の試合の読み込みに失敗しました: ' + e.message);
+    } finally {
+      setLoadingRecent(false);
+    }
+  };
+
+  const startSimulation = async () => {
+    const roles = ['TOP', 'JG', 'MID', 'BOT', 'SUP'] as const;
+    const blueMissing = roles.filter(r => !blueChamps[r]);
+    const redMissing = roles.filter(r => !redChamps[r]);
+
+    if (blueMissing.length > 0 || redMissing.length > 0) {
+      alert('すべてのポジション（味方5名、敵5名）のチャンピオンを選択してください。');
+      return;
+    }
+
+    setSimLoading(true);
+    setSimError(null);
+    setSimResult(null);
+    setSimStatus('5v5シミュレーションタスクを登録中...');
+
+    try {
+      const res = await fetch('/api/match/simulate', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ blue: blueChamps, red: redChamps })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'シミュレーションタスクの登録に失敗しました。');
+
+      const taskId = data.task_id;
+      setSimStatus('10名のスキル・相性データを集計中...');
+
+      let attempts = 0;
+      const interval = setInterval(async () => {
+        // アンマウント後にこのタイマーが生き残っていた場合は何もしない
+        if (simIntervalRef.current !== interval) return;
+        attempts++;
+        if (attempts > 50) {
+          clearInterval(interval);
+          setSimError('シミュレーションがタイムアウトしました。もう一度お試しください。');
+          setSimLoading(false);
+          return;
+        }
+
+        if (attempts === 5) setSimStatus('各レーンの主導権バランスを計算中...');
+        if (attempts === 12) setSimStatus('チーム構成スタイルとシナジーを分析中...');
+        if (attempts === 20) setSimStatus('勝利条件と時間帯別ゲームプランを構築中...');
+
+        const statusRes = await fetch(`/api/tasks/status?id=${taskId}`, { credentials: 'include' });
+        const statusData = await statusRes.json();
+        const task = statusData.task;
+
+        if (!statusRes.ok || !task) {
+          clearInterval(interval);
+          setSimError(`タスク監視エラー: ${statusData.error || 'タスクが見つかりません'}`);
+          setSimLoading(false);
+          return;
+        }
+
+        if (task.status === 'completed') {
+          clearInterval(interval);
+          setSimResult(task.result);
+          setSimLoading(false);
+        } else if (task.status === 'failed') {
+          clearInterval(interval);
+          setSimError(task.error_message || 'AI 5v5シミュレーションの実行中にエラーが発生しました。');
+          setSimLoading(false);
+        }
+      }, 1500);
+      simIntervalRef.current = interval;
+
+    } catch (err: any) {
+      setSimError(err.message || '通信エラーが発生しました。');
+      setSimLoading(false);
+    }
+  };
+
+  // リアルタイム偵察(ScoutTab)がライブ試合を検知すると、10人分のチャンピオンが自動で
+  // ここに流れてくる(2026-08-15、「5v5シミュレータをリアルタイムで取得更新できるように
+  // したい」という要望への対応)。ジャングルは事前にRiot側で確実に判定済みだが、残り4人
+  // (TOP/MID/BOT/SUP)はRiotのライブ試合データ上"LANER"としか区別が付かないため、
+  // champion_lane_roles(op.ggの実データ)の最有力ロールで推定して割り当てる。推定が
+  // 外れることもあるため、割り当て後も各スロットは手動で入れ替え可能。
+  const autoTriggerPendingRef = useRef(false);
+
+  useEffect(() => {
+    if (!liveRoster || liveRoster.length !== 10) return;
+
+    const assignTeam = async (isEnemy: boolean): Promise<Record<string, string>> => {
+      const teamRoster = liveRoster.filter((p) => p.isEnemy === isEnemy);
+      const jgEntry = teamRoster.find((p) => p.isJungle);
+      const laners = teamRoster.filter((p) => !p.isJungle);
+
+      const assigned: Record<string, string> = { TOP: '', JG: jgEntry?.champion || '', MID: '', BOT: '', SUP: '' };
+      let remainingSlots: string[] = ['TOP', 'MID', 'BOT', 'SUP'];
+      let remainingLaners = [...laners];
+
+      if (laners.length > 0) {
+        try {
+          const res = await fetch(`/api/champions/primary-roles?champions=${laners.map((l) => l.champion).join(',')}`, { credentials: 'include' });
+          const data = await res.json();
+          const preferredRole: Record<string, string> = data.roles || {};
+
+          // 1巡目: 希望ロールがまだ空いているレーナーだけを埋める(重複希望は先勝ち)
+          remainingLaners = remainingLaners.filter((l) => {
+            const pref = preferredRole[l.champion];
+            if (pref && remainingSlots.includes(pref) && !assigned[pref]) {
+              assigned[pref] = l.champion;
+              remainingSlots = remainingSlots.filter((s) => s !== pref);
+              return false;
+            }
+            return true;
+          });
+        } catch { /* 推定に失敗しても2巡目で機械的に埋める */ }
+      }
+
+      // 2巡目: 希望が競合/不明だった残りを、空いているスロットへ機械的に割り当てる
+      remainingLaners.forEach((l, i) => {
+        const slot = remainingSlots[i];
+        if (slot) assigned[slot] = l.champion;
+      });
+
+      return assigned;
+    };
+
+    (async () => {
+      const [blue, red] = await Promise.all([assignTeam(false), assignTeam(true)]);
+      autoTriggerPendingRef.current = true;
+      setBlueChamps(blue);
+      setRedChamps(red);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveRoster]);
+
+  // ライブ試合からの自動反映が完了し、10枠すべて埋まった直後だけ自動でシミュレーションを
+  // 開始する(ユーザーが手動で埋めた場合は自動起動しない、という区別のためフラグ経由にする)。
+  useEffect(() => {
+    if (!autoTriggerPendingRef.current) return;
+    const allFilled = [...Object.values(blueChamps), ...Object.values(redChamps)].every((v) => !!v);
+    if (allFilled) {
+      autoTriggerPendingRef.current = false;
+      startSimulation();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blueChamps, redChamps]);
+
+  const roles = ['TOP', 'JG', 'MID', 'BOT', 'SUP'] as const;
+
+  return (
+    <div className="flex flex-col gap-8">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-6">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight mb-2 flex items-center gap-3">
+            <Swords className="text-[#00cfef]" size={28} /> 5v5 AIチームシミュレータ
+          </h1>
+          <p className="text-slate-500 font-medium text-xs">
+            両チームの5対5構成から相性・主導権・ゲームプランをAIが総合診断
+          </p>
+        </div>
+      </header>
+
+      {/* 入力パネル (Blue vs Red) */}
+      <div className="glass-panel p-6 md:p-8 rounded-3xl relative overflow-hidden border-t-2 border-[#a78bfa]/20">
+        <div className="absolute -right-20 -top-20 w-48 h-48 bg-[#a78bfa]/5 rounded-full blur-3xl"></div>
+        <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
+          <h3 className="text-[#a78bfa] font-black text-lg flex items-center gap-2">
+            <Swords size={20} /> 5v5 チーム構成＆勝利プラン・アナライザー
+          </h3>
+          <div className="flex items-center gap-2">
+            {liveRoster && liveRoster.length === 10 && (
+              <span
+                className="text-[10px] font-black px-2.5 py-1.5 rounded-lg bg-emerald-950/30 border border-emerald-800/60 text-emerald-300"
+                title="上の「リアルタイム偵察」で検出したライブ試合から自動反映しました。TOP/MID/BOT/SUPはチャンピオンの主戦ロール推定のため、実際と違う場合は手動で入れ替えてください。"
+              >
+                🔴 ライブ試合から自動反映
+              </span>
+            )}
+            <button
+              onClick={loadFromRecentMatch}
+              disabled={loadingRecent || simLoading}
+              title="直近の試合のチーム構成を読み込む"
+              className="glass-panel glass-panel-hover rounded-xl px-4 py-2 text-xs font-bold text-[#00cfef] flex items-center gap-2 disabled:opacity-50 active:scale-95 transition-transform"
+            >
+              {loadingRecent ? <RefreshCw size={14} className="animate-spin" /> : <History size={14} />} 直近の試合から読み込む
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-9 gap-6 items-center">
+          {/* Blue Side */}
+          <div className="lg:col-span-4 space-y-4 bg-teal-950/30 p-5 rounded-2xl border border-teal-800/60">
+            <h4 className="font-black text-sm text-teal-300 tracking-wider uppercase mb-3 flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-teal-400 animate-pulse"></div> Blue Side (味方)
+            </h4>
+            {roles.map(role => (
+              <div key={role} className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{role}</label>
+                <ChampSelect
+                  value={blueChamps[role]}
+                  onChange={(val) => setBlueChamps(prev => ({ ...prev, [role]: val }))}
+                  placeholder="チャンピオンを選択"
+                  className="border-teal-700 focus:border-teal-700"
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* VS Divider */}
+          <div className="lg:col-span-1 flex flex-col items-center justify-center py-4">
+            <span className="text-2xl font-black italic text-slate-400 tracking-widest">VS</span>
+            <div className="w-px h-20 bg-gradient-to-b from-transparent via-gray-700 to-transparent hidden lg:block my-4"></div>
+          </div>
+
+          {/* Red Side */}
+          <div className="lg:col-span-4 space-y-4 bg-rose-950/30 p-5 rounded-2xl border border-rose-800/60">
+            <h4 className="font-black text-sm text-rose-300 tracking-wider uppercase mb-3 flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full bg-rose-400 animate-pulse"></div> Red Side (敵)
+            </h4>
+            {roles.map(role => (
+              <div key={role} className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{role}</label>
+                <ChampSelect
+                  value={redChamps[role]}
+                  onChange={(val) => setRedChamps(prev => ({ ...prev, [role]: val }))}
+                  placeholder="チャンピオンを選択"
+                  className="border-rose-700 focus:border-rose-700"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="text-right mt-8 border-t border-slate-800 pt-6">
+          {(() => {
+            const missingCount = [...Object.values(blueChamps), ...Object.values(redChamps)].filter(v => !v).length;
+            return (
+              <>
+                {missingCount > 0 && (
+                  <p className="text-[11px] text-slate-400 mb-2">あと{missingCount}人のチャンピオンを選択してください</p>
+                )}
+                <button
+                  onClick={startSimulation}
+                  disabled={simLoading || missingCount > 0}
+                  title={missingCount > 0 ? `あと${missingCount}人のチャンピオンを選択してください` : undefined}
+                  className="px-8 py-4 bg-gradient-to-r from-[#a78bfa] to-[#818cf8] text-black font-black rounded-xl hover:shadow-[0_0_25px_rgba(167,139,250,0.4)] transition-all flex items-center gap-3 ml-auto disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <Zap size={18} /> 構成相性 ＆ 勝利プランを分析
+                </button>
+              </>
+            );
+          })()}
+        </div>
+      </div>
+
+      {/* 保存済みシミュレーション一覧 */}
+      {savedSims && savedSims.length > 0 && (
+        <div className="glass-panel rounded-2xl p-4">
+          <p className="text-xs font-black text-slate-500 mb-2">📚 保存済みの分析（クリックで再表示）</p>
+          <div className="flex flex-wrap gap-2">
+            {savedSims.map((s: any) => (
+              <button key={s.id} onClick={() => loadSavedSim(s.id)}
+                className="text-[10px] font-bold px-3 py-1.5 rounded-lg bg-slate-800/60 border border-slate-800 text-slate-300 hover:bg-slate-800/60">
+                {s.blue?.JG || '?'}組 vs {s.red?.JG || '?'}組 ・ {new Date(s.created_at).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' })}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* エラー表示 */}
+      {simError && (
+        <div className="glass-panel p-6 border-l-4 border-rose-700 rounded-2xl flex items-center gap-4 text-rose-400">
+          <AlertCircle size={24} />
+          <div>
+            <h4 className="font-bold">分析エラー</h4>
+            <p className="text-sm">{simError}</p>
+          </div>
+        </div>
+      )}
+
+      {/* ローディング */}
+      {simLoading && (
+        <div className="glass-panel py-20 rounded-2xl flex flex-col items-center justify-center gap-6">
+          <div className="relative w-24 h-24 flex items-center justify-center">
+            <Swords className="text-[#a78bfa] animate-spin absolute animate-duration-3000" size={56} />
+            <div className="absolute inset-0 border-4 border-t-[#a78bfa] border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
+          </div>
+          <div className="text-center">
+            <h4 className="text-lg font-black text-slate-100 animate-pulse mb-1">{simStatus}</h4>
+            <p className="text-xs text-slate-400 font-mono">通常 15秒〜25秒 で完了します</p>
+          </div>
+        </div>
+      )}
+
+      {/* シミュレーション結果表示 */}
+      {simResult && (
+        <div className="flex flex-col gap-8">
+          <div className="glass-panel rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+            <span className="text-xs text-slate-500 font-bold">この分析結果を保存して共有できます</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              {shareUrl && (
+                <div className="flex items-center gap-2 bg-slate-800/60 border border-slate-800 rounded-lg px-3 py-1.5">
+                  <span className="text-[10px] text-emerald-300 font-mono truncate max-w-[220px]">{shareUrl}</span>
+                  <button onClick={() => { navigator.clipboard.writeText(shareUrl).catch(() => {}); }} className="text-[10px] font-black text-[#00cfef] hover:text-slate-100">コピー</button>
+                </div>
+              )}
+              <button
+                onClick={saveSimulation}
+                disabled={savingSim}
+                className="px-4 py-2 bg-[#a78bfa]/15 text-[#a78bfa] border border-[#a78bfa]/30 font-black rounded-xl text-xs hover:bg-[#a78bfa]/25 transition-all flex items-center gap-2 disabled:opacity-50"
+              >
+                {savingSim ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
+                {savingSim ? '保存中...' : '💾 保存して共有リンク作成'}
+              </button>
+            </div>
+          </div>
+
+          {/* 1. 各レーンの主導権マップ */}
+          <div className="glass-panel p-6 md:p-8 rounded-3xl relative">
+            <h3 className="text-slate-100 font-black text-base mb-6 flex items-center gap-2">
+              <Activity className="text-[#00cfef]" size={20} /> ⚖️ 各レーン主導権分析 (Lane Priority Map)
+            </h3>
+
+            <div className="divide-y divide-black/10 space-y-4">
+              {roles.map(role => {
+                const laneData = simResult.lanes[role] || { priority: 'EVEN', reason: '' };
+                const getPriorityLabel = () => {
+                  if (laneData.priority === 'BLUE_PRIORITY') {
+                    return { text: '味方有利 (Blue)', style: 'bg-teal-950/30 text-teal-300 border-teal-800/60' };
+                  }
+                  if (laneData.priority === 'RED_PRIORITY') {
+                    return { text: '敵有利 (Red)', style: 'bg-rose-950/30 text-rose-300 border-rose-800/60' };
+                  }
+                  return { text: '互角 (Even)', style: 'bg-slate-900 text-slate-300 border-slate-800' };
+                };
+                const label = getPriorityLabel();
+
+                return (
+                  <div key={role} className="flex flex-col md:flex-row md:items-center gap-4 pt-4 first:pt-0">
+                    <div className="flex items-center gap-3 w-full md:w-[240px] shrink-0">
+                      <span className="w-10 text-xs font-black text-slate-500 font-mono tracking-wider">{role}</span>
+                      <div className="flex items-center gap-1.5">
+                        <Image
+                          src={getChampIcon(blueChamps[role])}
+                          width={32}
+                          height={32}
+                          className="w-8 h-8 rounded-full border border-teal-700"
+                          alt={blueChamps[role]}
+                        />
+                        <span className="text-[10px] text-slate-400 font-black italic">VS</span>
+                        <Image
+                          src={getChampIcon(redChamps[role])}
+                          width={32}
+                          height={32}
+                          className="w-8 h-8 rounded-full border border-rose-700"
+                          alt={redChamps[role]}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="shrink-0 w-[140px]">
+                      <span className={`px-3 py-1 rounded-full border text-[10px] font-black inline-block ${label.style}`}>
+                        {label.text}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-slate-300 leading-relaxed flex-1">
+                      {laneData.reason}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 2. 両チームの構成タイプ ＆ シナジー分析 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="glass-panel p-6 rounded-2xl border-l-4 border-teal-700">
+              <h4 className="text-teal-300 font-black text-sm mb-4 flex items-center gap-2">
+                🛡️ Blue Side 構成分析
+              </h4>
+              <div className="space-y-3">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">構成タイプ</span>
+                  <p className="text-sm font-black text-slate-100 mt-0.5">{simResult.blue_team.composition_style}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">強みと狙い</span>
+                  <p className="text-xs text-slate-300 leading-relaxed mt-0.5">{simResult.blue_team.strengths}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">弱点・警戒点</span>
+                  <p className="text-xs text-slate-300 leading-relaxed mt-0.5">{simResult.blue_team.weaknesses}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="glass-panel p-6 rounded-2xl border-l-4 border-rose-700">
+              <h4 className="text-rose-300 font-black text-sm mb-4 flex items-center gap-2">
+                ⚔️ Red Side 構成分析
+              </h4>
+              <div className="space-y-3">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">構成タイプ</span>
+                  <p className="text-sm font-black text-slate-100 mt-0.5">{simResult.red_team.composition_style}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">強みと狙い</span>
+                  <p className="text-xs text-slate-300 leading-relaxed mt-0.5">{simResult.red_team.strengths}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">弱点・警戒点</span>
+                  <p className="text-xs text-slate-300 leading-relaxed mt-0.5">{simResult.red_team.weaknesses}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. 勝利へのロードマップ */}
+          <div className="glass-panel p-6 md:p-8 rounded-3xl">
+            <h3 className="text-slate-100 font-black text-base mb-6 flex items-center gap-2">
+              <Target className="text-[#a78bfa]" size={20} /> 🗺️ 勝利へのロードマップ (Game Plan)
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="glass-panel p-5 rounded-2xl border-t-2 border-amber-700 flex flex-col gap-2">
+                <span className="text-xs font-black text-amber-400">序盤 (〜Lv6 / オブジェクト戦準備)</span>
+                <p className="text-xs leading-relaxed text-slate-300">{simResult.game_plan.early}</p>
+              </div>
+              <div className="glass-panel p-5 rounded-2xl border-t-2 border-amber-700 flex flex-col gap-2">
+                <span className="text-xs font-black text-amber-400">中盤 (1stタワー破壊 / サイドプッシュ開始)</span>
+                <p className="text-xs leading-relaxed text-slate-300">{simResult.game_plan.mid}</p>
+              </div>
+              <div className="glass-panel p-5 rounded-2xl border-t-2 border-emerald-700 flex flex-col gap-2">
+                <span className="text-xs font-black text-emerald-400">終盤 (集団戦 / ソウル・バロン決戦)</span>
+                <p className="text-xs leading-relaxed text-slate-300">{simResult.game_plan.late}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* 4. 勝利条件 */}
+          <div className="glass-panel p-6 md:p-8 rounded-3xl border-b-2 border-[#c89b3c]/20">
+            <h3 className="text-[#c89b3c] font-black text-base mb-6 flex items-center gap-2">
+              <Award size={22} /> 🎯 勝利条件 (Win Conditions)
+            </h3>
+            <ul className="space-y-4">
+              {simResult.win_conditions && simResult.win_conditions.map((cond: string, idx: number) => (
+                <li key={idx} className="flex items-start gap-4 text-sm text-slate-200">
+                  <div className="w-6 h-6 rounded-full bg-[#c89b3c]/15 text-[#c89b3c] border border-[#c89b3c]/30 flex items-center justify-center shrink-0 text-xs font-bold font-mono">
+                    {idx + 1}
+                  </div>
+                  <span className="pt-0.5 font-bold leading-relaxed">{cond}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

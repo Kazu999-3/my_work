@@ -1,0 +1,726 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import {
+  Users, 
+  Search, 
+  RefreshCw, 
+  Activity, 
+  Sparkles, 
+  ShieldAlert, 
+  Compass, 
+  Flame, 
+  TrendingUp, 
+  Zap, 
+  Award,
+  ChevronLeft,
+  ChevronRight
+} from "lucide-react";
+import Image from "next/image";
+import { getChampIcon } from "../../lib/ddragonClient";
+
+// 5v5シミュレータの自動反映(リアルタイム連携)用に、ライブ試合の参加者10人を
+// {champion, isEnemy, isJungle}のシンプルな形へ整形して呼び出し元へ渡す型。
+export type LiveRosterEntry = { champion: string; isEnemy: boolean; isJungle: boolean };
+
+export default function ScoutTab({ onLiveMatchDetected }: {
+  onLiveMatchDetected?: (myChampion: string, enemyChampion: string, roster?: LiveRosterEntry[]) => void
+}) {
+  const [riotId, setRiotId] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState("");
+
+  // 鬼コーチ対策3箇条用のスライドインデックス
+  const [adviceIndex, setAdviceIndex] = useState(0);
+  const [activeTab, setActiveTab] = useState("advice");
+
+  // 常に「自身のRiot ID」を入力する運用のため、毎回入力させず前回値を記憶する。
+  useEffect(() => {
+    try {
+      const saved = (localStorage.getItem('coach_riot_id') || localStorage.getItem('scout_own_riot_id'));
+      if (saved) setRiotId(saved);
+    } catch {}
+  }, []);
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!riotId || !riotId.includes('#')) {
+      setError("Riot IDは「名前#タグ」の形式で入力してください (例: Koike#JP1)。");
+      return;
+    }
+    try { localStorage.setItem('coach_riot_id', riotId); } catch {}
+
+    setLoading(true);
+    setError("");
+    setResult(null);
+    setAdviceIndex(0); // 検索時にアドバイスインデックスをリセット
+
+    try {
+      const res = await fetch('/api/admin/live-match', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ riotId })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '検索エラーが発生しました。');
+
+      setResult(data);
+
+      // 実際に進行中のライブゲームで自分・対面の両チャンピオンが判明した場合のみ、
+      // コーチページのマッチアップ分析を自動起動する(#① 手動タブ廃止に伴う自動化)。
+      // プレマッチ(推定表示)時は本当の対面が存在しないため対象外。
+      if (data.isGameActive && data.myChampionName && data.championName && onLiveMatchDetected) {
+        const roster: LiveRosterEntry[] | undefined = Array.isArray(data.allParticipants)
+          ? data.allParticipants
+              .filter((p: any) => !!p.championName)
+              .map((p: any) => ({ champion: p.championName, isEnemy: !!p.isEnemy, isJungle: p.role === 'JG' }))
+          : undefined;
+        onLiveMatchDetected(data.myChampionName, data.championName, roster);
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-8">
+
+        {/* ヘッダー */}
+        <div className="text-center space-y-2">
+          <h1 className="text-2xl md:text-4xl font-black bg-gradient-to-r from-teal-600 via-amber-600 to-rose-600 bg-clip-text text-transparent flex items-center justify-center gap-2">
+            <Compass className="w-8 h-8 text-teal-400" />
+            <span>ソロキュー対戦相手偵察 (Live Lookup)</span>
+          </h1>
+          <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+            現在進行中のライブゲームを検知し、敵ジャングラーの開始ルート、プレイ傾向、およびメタ対策ヒントをリアルタイム抽出します。
+          </p>
+        </div>
+
+        {/* 検索フォーム */}
+        <form onSubmit={handleSearch} className="bg-black/3 backdrop-blur-xl border border-slate-800 p-5 rounded-3xl shadow-2xl space-y-3">
+          <label className="block text-xs font-black text-slate-500 uppercase tracking-wider">
+            自身の Riot ID
+          </label>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-3.5 w-5 h-5 text-slate-400" />
+              <input 
+                type="text"
+                placeholder="SummonerName#TagLine"
+                value={riotId}
+                onChange={(e) => setRiotId(e.target.value)}
+                className="w-full bg-slate-800/60 border border-slate-800 rounded-2xl py-3 pl-12 pr-4 text-sm font-bold placeholder-gray-500 focus:outline-none focus:border-teal-700 focus:ring-1 focus:ring-teal-500/50 transition-all text-slate-100"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-gradient-to-r from-teal-500 to-amber-500 hover:from-teal-400 hover:to-amber-400 disabled:from-gray-200 disabled:to-gray-200 text-black font-black px-6 py-3 rounded-2xl text-sm transition shadow-[0_4px_20px_rgba(6,182,212,0.25)] flex items-center gap-2 shrink-0 disabled:text-slate-500"
+            >
+              {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Compass className="w-4 h-4" />}
+              <span>{loading ? 'スキャン中...' : '偵察開始'}</span>
+            </button>
+          </div>
+        </form>
+
+        {/* エラー表示 */}
+        {error && (
+          <div className="bg-rose-950/30 border border-rose-800/60 p-4 rounded-2xl flex items-start gap-3 text-sm text-rose-300 font-bold">
+            <ShieldAlert className="w-5 h-5 shrink-0 text-rose-400" />
+            <div className="space-y-1">
+              <div>エラーが発生しました</div>
+              <p className="text-xs font-medium text-slate-500 leading-relaxed">{error}</p>
+            </div>
+          </div>
+        )}
+
+        {/* 結果表示 */}
+        {result && (
+          <div className="space-y-6">
+            {result.isPreMatch && (
+              <div className="bg-amber-950/30 border border-amber-800/60 p-4 rounded-2xl flex items-center gap-3 text-xs text-amber-300 font-bold">
+                <Sparkles className="w-5 h-5 shrink-0 text-amber-400 animate-pulse" />
+                <div>現在ゲーム中ではありません。直近戦績に基づくプレマッチ（試合前）のスカウティング分析を表示しています。</div>
+              </div>
+            )}
+
+            {(!result.isGameActive && !result.isPreMatch) ? (
+              <div className="bg-black/3 border border-slate-800 rounded-3xl p-10 text-center space-y-4 shadow-xl">
+                <div className="w-16 h-16 rounded-full bg-slate-800/60 flex items-center justify-center mx-auto border border-slate-800 text-slate-400">
+                  <Activity className="w-8 h-8" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-lg font-black text-slate-100">ゲーム中ではありません</h3>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
+                    {result.message || '指定されたプレイヤーは現在進行中のマッチが見つかりませんでした。'}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="md:col-span-2 space-y-6">
+                  
+                  {/* 敵ジャングラープロフィール */}
+                  <div className="bg-black/3 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+                    <div className="flex items-center gap-4 border-b border-slate-800 pb-4">
+                      <Image
+                        src={getChampIcon(result.championName)}
+                        alt={result.championName}
+                        width={64}
+                        height={64}
+                        className="w-16 h-16 rounded-2xl border border-slate-800 shadow-lg"
+                      />
+                      <div className="space-y-1 flex-1">
+                        <div className="text-[10px] text-slate-400 font-black tracking-wider uppercase">{result.isPreMatch ? "分析対象 (Target Player)" : "敵ジャングラー (Opponent JG)"}</div>
+                        <div className="text-lg font-black text-slate-100 flex flex-wrap items-center gap-2">
+                          <span>{result.enemyJgName}</span>
+                          <span className="text-xs text-teal-300 font-bold bg-teal-950/30 px-2 py-0.5 rounded border border-teal-800/60">
+                            {result.championName}
+                          </span>
+
+                          {/* OTP 警告アラートバッジ */}
+                          {result.isOtp && (
+                            <span className="text-[10px] text-amber-300 bg-amber-950/30 px-2.5 py-1 rounded border border-amber-800/60 font-black animate-pulse flex items-center gap-1">
+                              🔥 OTP警告: {result.otpChampion}
+                            </span>
+                          )}
+
+                          {/* ティルト警告アラートバッジ */}
+                          {result.isTilted && (
+                            <span className="text-[10px] text-teal-300 bg-teal-950/30 px-2.5 py-1 rounded border border-teal-800/60 font-black animate-pulse flex items-center gap-1">
+                              ❄️ ティルト警戒 ({result.consecutiveLosses}連敗中)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-5">
+                      <h4 className="text-xs font-black text-slate-500 uppercase tracking-wider">{result.isPreMatch ? "あなたのプレイスタイル・スライダー" : "敵のプレイスタイル・スライダー"} (Playstyle Sliders)</h4>
+                      {result.playstyle.dataInsufficient && (
+                        <div className="text-[10px] font-bold text-amber-300 bg-amber-950/30 border border-amber-800/60 rounded-xl px-3 py-2">
+                          ⚠️ 過去の対戦データが取得できなかったため、以下は実測値ではなく暫定的な推定値です。
+                        </div>
+                      )}
+                      <div className="space-y-4">
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between text-xs font-bold">
+                            <span className="text-slate-500">Passive (自重)</span>
+                            <span className="text-amber-400 font-mono font-black">{result.playstyle.sliders.aggressive}%</span>
+                            <span className="text-rose-400">Aggressive (攻撃)</span>
+                          </div>
+                          <div className="h-2.5 w-full bg-slate-800 rounded-full overflow-hidden border border-slate-800 p-[1px]">
+                            <div 
+                              className="h-full rounded-full bg-gradient-to-r from-gray-700 via-amber-500 to-rose-600 transition-all duration-500"
+                              style={{ width: `${result.playstyle.sliders.aggressive}%` }}
+                            ></div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between text-xs font-bold">
+                            <span className="text-emerald-400">Ganking (関与)</span>
+                            <span className="text-teal-400 font-mono font-black">{result.playstyle.sliders.farming}%</span>
+                            <span className="text-teal-400">Farming (成長)</span>
+                          </div>
+                          <div className="h-2.5 w-full bg-slate-800 rounded-full overflow-hidden border border-slate-800 p-[1px]">
+                            <div 
+                              className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-500 to-teal-600 transition-all duration-500"
+                              style={{ width: `${result.playstyle.sliders.farming}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 pt-3 border-t border-slate-800">
+                      <h4 className="text-xs font-black text-slate-500 uppercase tracking-wider">{result.isPreMatch ? "あなたのプレイスタイルタグ" : "プレイスタイルタグ"} (Playstyle Tags)</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {result.playstyle.tags.map((tag: any) => (
+                          <div 
+                            key={tag.id}
+                            className="bg-teal-950/30 border border-teal-800/60 px-3 py-2 rounded-2xl space-y-1"
+                          >
+                            <div className="text-xs font-black text-teal-300">{tag.name}</div>
+                            <p className="text-[10px] text-slate-500 leading-relaxed">{tag.description}</p>
+                            <div className="text-[8px] text-slate-400 font-mono text-right">{tag.reason}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sovereign Advisor タクティカルパネル */}
+                  <div className="bg-black/3 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+                    {/* タブヘッダー */}
+                    <div className="flex border-b border-slate-800 pb-1 gap-2">
+                      <button
+                        onClick={() => setActiveTab("advice")}
+                        className={`px-4 py-2.5 text-xs font-black transition-all rounded-t-xl border-b-2 uppercase tracking-wider flex items-center gap-1.5 ${
+                          activeTab === "advice"
+                            ? "border-rose-700 text-rose-300 bg-rose-950/30"
+                            : "border-transparent text-slate-500 hover:text-slate-100"
+                        }`}
+                      >
+                        <Flame className="w-4 h-4" />
+                        <span>AIリアルタイム指示</span>
+                      </button>
+                      <button
+                        onClick={() => setActiveTab("knowledge")}
+                        className={`px-4 py-2.5 text-xs font-black transition-all rounded-t-xl border-b-2 uppercase tracking-wider flex items-center gap-1.5 ${
+                          activeTab === "knowledge"
+                            ? "border-teal-700 text-teal-300 bg-teal-950/30"
+                            : "border-transparent text-slate-500 hover:text-slate-100"
+                        }`}
+                      >
+                        <Compass className="w-4 h-4" />
+                        <span>攻略マニュアル</span>
+                      </button>
+                      <button
+                        onClick={() => setActiveTab("lessons")}
+                        className={`px-4 py-2.5 text-xs font-black transition-all rounded-t-xl border-b-2 uppercase tracking-wider flex items-center gap-1.5 ${
+                          activeTab === "lessons"
+                            ? "border-amber-700 text-amber-300 bg-amber-950/30"
+                            : "border-transparent text-slate-500 hover:text-slate-100"
+                        }`}
+                      >
+                        <ShieldAlert className="w-4 h-4" />
+                        <span>過去の教訓 ({result.knowledge?.pastInterrogation?.length || 0})</span>
+                      </button>
+                    </div>
+
+                    {/* タブコンテンツ */}
+                    {activeTab === "advice" && (
+                      <div className="space-y-4">
+                        {/* 鬼コーチAIの対面対策3箇条 (スライダー形式) */}
+                        {result.coachAdvice && result.coachAdvice.length > 0 && (
+                          <div className="space-y-4">
+                            <div className="flex justify-between items-center text-xs font-bold text-slate-500">
+                              <span>{result.isPreMatch ? "鬼コーチあなたへのアドバイス3箇条" : "鬼コーチ緊急指令3箇条"}</span>
+                              <span className="font-mono">{adviceIndex + 1} / {result.coachAdvice.length}</span>
+                            </div>
+
+                            {/* スライド本文 */}
+                            <div className="min-h-[140px] bg-slate-800/60 p-5 rounded-2xl border border-rose-800/60 flex flex-col justify-between space-y-4 relative overflow-hidden">
+                              <div className="space-y-2">
+                                <div className="text-xs font-black text-amber-300 flex items-center gap-1.5">
+                                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                                  <span>{result.coachAdvice[adviceIndex]?.title}</span>
+                                </div>
+                                <p className="text-[11px] text-rose-300 leading-relaxed font-medium">
+                                  {result.coachAdvice[adviceIndex]?.detail}
+                                </p>
+                              </div>
+
+                              {/* スライド切替ボタン */}
+                              <div className="flex justify-end gap-1.5 pt-2">
+                                <button
+                                  type="button"
+                                  disabled={adviceIndex === 0}
+                                  onClick={() => setAdviceIndex((prev) => prev - 1)}
+                                  className="bg-slate-800/60 hover:bg-slate-800 disabled:opacity-30 border border-slate-800 p-1.5 rounded-lg transition"
+                                >
+                                  <ChevronLeft className="w-4 h-4 text-slate-500" />
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={adviceIndex === result.coachAdvice.length - 1}
+                                  onClick={() => setAdviceIndex((prev) => prev + 1)}
+                                  className="bg-slate-800/60 hover:bg-slate-800 disabled:opacity-30 border border-slate-800 p-1.5 rounded-lg transition"
+                                >
+                                  <ChevronRight className="w-4 h-4 text-slate-500" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        {/* 一般解説ヒント */}
+                        <div className="bg-black/3 border border-slate-800 p-4 rounded-2xl text-[11px] text-slate-300 leading-relaxed">
+                          <strong className="text-teal-400 block mb-1">💡 全体対策アドバイス</strong>
+                          {result.tips}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeTab === "knowledge" && (
+                      <div className="space-y-4">
+                        {/* ナレッジマニュアル表示 */}
+                        {!result.knowledge?.strategy && !result.knowledge?.strengths ? (
+                          <div className="text-center py-8 text-xs text-slate-400">
+                            このチャンピオンのGLOBAL攻略データはまだ登録されていません。
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="bg-slate-800/60 border border-slate-800 p-4 rounded-2xl space-y-1.5">
+                                <span className="text-[10px] text-emerald-400 font-black tracking-wider uppercase block">💪 対面の強み (Strengths)</span>
+                                <p className="text-[11px] text-slate-300 leading-relaxed">{result.knowledge.strengths || "未登録"}</p>
+                              </div>
+                              <div className="bg-slate-800/60 border border-slate-800 p-4 rounded-2xl space-y-1.5">
+                                <span className="text-[10px] text-rose-400 font-black tracking-wider uppercase block">☠️ 対面の弱み (Weaknesses)</span>
+                                <p className="text-[11px] text-slate-300 leading-relaxed">{result.knowledge.weaknesses || "未登録"}</p>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="bg-slate-800/60 border border-slate-800 p-4 rounded-2xl space-y-1.5">
+                                <span className="text-[10px] text-amber-400 font-black tracking-wider uppercase block">⚡ パワースパイク (Power Spikes)</span>
+                                <p className="text-[11px] text-slate-300 leading-relaxed">{result.knowledge.powerSpikes || "未登録"}</p>
+                              </div>
+                              <div className="bg-slate-800/60 border border-slate-800 p-4 rounded-2xl space-y-1.5">
+                                <span className="text-[10px] text-teal-400 font-black tracking-wider uppercase block">🌲 周回クリアルート (2026 Full Clear Path)</span>
+                                <p className="text-[11px] text-slate-300 leading-relaxed font-bold">{result.knowledge.fullClearTime || "未登録"}</p>
+                              </div>
+                            </div>
+
+                            <div className="bg-slate-800/60 border border-slate-800 p-4 rounded-2xl space-y-1.5">
+                              <span className="text-[10px] text-teal-400 font-black tracking-wider uppercase block">🛡️ 推奨ビルドとルーン (Build / Runes)</span>
+                              <p className="text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap">{result.knowledge.buildRunes || "未登録"}</p>
+                            </div>
+
+                            <div className="bg-slate-800/60 border border-slate-800 p-4 rounded-2xl space-y-1.5">
+                              <span className="text-[10px] text-teal-300 font-black tracking-wider uppercase block">📖 基本攻略・戦略 (Strategy)</span>
+                              <p className="text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap">{result.knowledge.strategy || "未登録"}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {activeTab === "lessons" && (
+                      <div className="space-y-4">
+                        {/* 過去の反省点表示 */}
+                        {!result.knowledge?.pastInterrogation || result.knowledge.pastInterrogation.length === 0 ? (
+                          <div className="text-center py-8 text-xs text-slate-400">
+                            このチャンピオン対面での過去の敗因反省データ（教訓）はありません。良好な状態です！
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            <div className="bg-amber-950/30 border border-amber-800/60 p-4 rounded-2xl text-[11px] text-amber-300 leading-relaxed flex items-start gap-2.5">
+                              <ShieldAlert className="w-4 h-4 shrink-0 text-amber-400" />
+                              <div>
+                                <span className="font-black block">過去の教訓を活かして同じ失敗を防ぎなさい</span>
+                                ユーザーが対戦後に記録したリアルな敗因データです。戦術アドバイザーがこれらを加味した指令を生成しています。
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              {result.knowledge.pastInterrogation.map((lesson: string, idx: number) => (
+                                <div key={idx} className="bg-slate-800/60 border border-rose-800/60 p-4 rounded-2xl text-xs text-rose-300 leading-relaxed flex gap-2">
+                                  <span className="text-rose-400 font-bold font-mono">#{idx+1}</span>
+                                  <p className="font-medium whitespace-pre-wrap">{lesson}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 敵チーム全員の簡易分析グリッド */}
+                  {result.allParticipants && result.allParticipants.some((p: any) => p.isEnemy) && (
+                    <div className="bg-black/3 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-5">
+                      {/* 🎯 敵の穴特定 ＆ JGガンク優先度サマリー */}
+                      {(() => {
+                        const enemies = result.allParticipants.filter((p: any) => p.isEnemy);
+                        // ガンク優先度スコアの算出 (連敗ティルト: +35, 被FB率高: +30, 低勝率: +20, OTP: -30)
+                        const scoredEnemies = enemies.map((e: any) => {
+                          let score = 50;
+                          const reasons: string[] = [];
+                          if (e.isTilted || (e.consecutiveLosses && e.consecutiveLosses >= 3)) {
+                            score += 35;
+                            reasons.push(`${e.consecutiveLosses || 3}連敗中(ティルト警戒)`);
+                          }
+                          if (e.fbRate && e.fbRate >= 25) {
+                            score += 30;
+                            reasons.push(`被ファーストブラッド率高(${e.fbRate}%)`);
+                          } else if (e.isVulnerable) {
+                            score += 25;
+                            reasons.push(`直近戦績不調(狙い目)`);
+                          }
+                          if (e.winRate && e.winRate <= 40) {
+                            score += 20;
+                            reasons.push(`直近勝率低迷(${e.winRate}%)`);
+                          }
+                          if (e.isOtp) {
+                            score -= 30;
+                            reasons.push(`直近ピック集中(${e.otpChampion || e.championName})`);
+                          }
+                          return { ...e, gankScore: score, reasons };
+                        }).sort((a: any, b: any) => b.gankScore - a.gankScore);
+
+                        const primaryTarget = scoredEnemies[0];
+                        const avoidTarget = [...scoredEnemies].reverse().find((e: any) => e.isOtp || e.gankScore < 40);
+
+                        return (
+                          <div className="bg-gradient-to-r from-rose-950/10 via-amber-950/5 to-transparent border border-rose-800/60 rounded-2xl p-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <h4 className="text-xs font-black text-rose-300 flex items-center gap-1.5 uppercase tracking-wider">
+                                <Zap className="w-4 h-4 text-rose-400 animate-pulse" />
+                                <span>ローディング速報: JGガンク優先ターゲット診断</span>
+                              </h4>
+                              <span className="text-[10px] font-black bg-rose-600 text-white px-2 py-0.5 rounded-full">
+                                敵の隙を自動検知
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                              {/* 🎯 最優先ガンクターゲット */}
+                              {primaryTarget && (
+                                <div className="bg-slate-900/60 p-3 rounded-xl border border-rose-800/60 shadow-2xs space-y-1">
+                                  <div className="text-[10px] font-black text-rose-400 flex items-center gap-1">
+                                    <span>🎯</span> 【最優先破壊レーン】
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Image
+                                      src={getChampIcon(primaryTarget.championName || 'Unknown')}
+                                      alt={primaryTarget.championName || 'Champ'}
+                                      width={28}
+                                      height={28}
+                                      className="rounded-lg border border-rose-800/60"
+                                    />
+                                    <div>
+                                      <div className="font-black text-slate-100">
+                                        {primaryTarget.role}: {primaryTarget.championName} ({primaryTarget.name})
+                                      </div>
+                                      <div className="text-[10px] text-rose-300 font-bold">
+                                        ⚠️ 理由: {primaryTarget.reasons.join('、') || '立ち位置の甘さを突く'}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* 🛡️ 警戒・放置推奨レーン */}
+                              {avoidTarget && avoidTarget.name !== primaryTarget?.name && (
+                                <div className="bg-slate-900/60 p-3 rounded-xl border border-slate-800 shadow-2xs space-y-1">
+                                  <div className="text-[10px] font-black text-slate-400 flex items-center gap-1">
+                                    <span>🛡️</span> 【警戒・カウンター警戒レーン】
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Image
+                                      src={getChampIcon(avoidTarget.championName || 'Unknown')}
+                                      alt={avoidTarget.championName || 'Champ'}
+                                      width={28}
+                                      height={28}
+                                      className="rounded-lg border border-slate-800"
+                                    />
+                                    <div>
+                                      <div className="font-black text-slate-100">
+                                        {avoidTarget.role}: {avoidTarget.championName} ({avoidTarget.name})
+                                      </div>
+                                      <div className="text-[10px] text-slate-400 font-medium">
+                                        熟練度が高いため、無理なダイブを避け味方の救援優先
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      <h3 className="text-sm font-black text-slate-100 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-3">
+                        <Users className="w-4 h-4 text-teal-400" />
+                        <span>敵チーム メンバー情報 & ガンク脆弱レーン特定</span>
+                      </h3>
+
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead>
+                            <tr className="text-slate-400 border-b border-slate-800 pb-2">
+                              <th className="pb-2 font-bold uppercase tracking-wider">プレイヤー / チャンピオン</th>
+                              <th className="pb-2 font-bold uppercase tracking-wider text-center">ロール</th>
+                              <th className="pb-2 font-bold uppercase tracking-wider text-center">ソロQ勝率</th>
+                              <th className="pb-2 font-bold uppercase tracking-wider text-right">ステータス / アラート</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-black/10">
+                            {result.allParticipants
+                              .filter((p: any) => p.isEnemy)
+                              .map((p: any, idx: number) => {
+                                // championNameはバックエンドがDDragonで正式に名前解決した値。
+                                // 以前はここで19体だけのハードコードマップを使っており、
+                                // それ以外のチャンピオンは全部LeeSin表示になっていた(#②)。
+                                const champName = p.championName || 'Unknown';
+                                return (
+                                  <tr key={idx} className="hover:bg-black/3 transition-colors">
+                                    <td className="py-3 flex items-center gap-2.5">
+                                      <Image
+                                        src={getChampIcon(champName)}
+                                        alt={champName}
+                                        width={32}
+                                        height={32}
+                                        className="w-8 h-8 rounded-lg border border-slate-800 shadow"
+                                      />
+                                      <div>
+                                        <div className="font-black text-slate-100">{p.name}</div>
+                                        <div className="text-[10px] text-teal-400 font-bold">{champName}</div>
+                                      </div>
+                                    </td>
+                                    <td className="py-3 text-center font-mono font-bold text-slate-500">
+                                      {p.role}
+                                    </td>
+                                    <td className="py-3 text-center">
+                                      {p.dataInsufficient ? (
+                                        <span className="text-[10px] text-slate-400 font-bold">データ不足</span>
+                                      ) : (
+                                        <span className={`font-mono font-black ${
+                                          p.winRate >= 55 ? 'text-emerald-400' : p.winRate <= 40 ? 'text-rose-400 animate-pulse' : 'text-amber-400'
+                                        }`}>
+                                          {p.winRate}%
+                                        </span>
+                                      )}
+                                    </td>
+                                    <td className="py-3 text-right space-y-1">
+                                      {p.isOtp && (
+                                        <span className="inline-block text-[9px] text-amber-300 bg-amber-950/30 px-2 py-0.5 rounded border border-amber-800/60 font-black">
+                                          🔥 OTP ({p.otpChampion})
+                                        </span>
+                                      )}
+                                      {p.isTilted && (
+                                        <span className="inline-block text-[9px] text-teal-300 bg-teal-950/30 px-2 py-0.5 rounded border border-teal-800/60 font-black ml-1">
+                                          ❄️ 連敗ティルト ({p.consecutiveLosses}連敗)
+                                        </span>
+                                      )}
+                                      {p.isVulnerable && (
+                                        <span className="inline-block text-[9px] text-rose-300 bg-rose-950/30 px-2 py-0.5 rounded border border-rose-800/60 font-black ml-1 animate-pulse">
+                                          🎯 集中Gank推奨 ({p.fbRate ? `被FB: ${p.fbRate}%` : '直近不調'})
+                                        </span>
+                                      )}
+                                      {p.dataInsufficient && !p.isOtp && !p.isTilted && !p.isVulnerable && (
+                                        <span className="text-[10px] text-slate-400 font-bold">戦績データなし</span>
+                                      )}
+                                      {!p.dataInsufficient && !p.isOtp && !p.isTilted && !p.isVulnerable && (
+                                        <span className="text-[10px] text-slate-400 font-bold">特記事項なし</span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+
+                <div className="space-y-6">
+                  <div className="bg-black/3 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-5">
+                    <h3 className="text-sm font-black text-slate-100 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-3">
+                      <Compass className="w-4 h-4 text-teal-400" />
+                      <span>{result.isPreMatch ? "あなたのゲーム序盤傾向" : "ゲーム序盤戦術予測"}</span>
+                    </h3>
+
+                    <div className="space-y-2 bg-slate-800/60 p-4 rounded-2xl border border-slate-800">
+                      <div className="text-[10px] text-slate-400 font-black tracking-wider uppercase">{result.isPreMatch ? "あなたの開始バフ傾向" : "予測開始位置"}</div>
+                      <div className="text-xs font-black text-amber-400 leading-relaxed">
+                        {result.startBuffPrediction}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 bg-slate-800/60 p-4 rounded-2xl border border-slate-800">
+                      <div className="text-[10px] text-slate-400 font-black tracking-wider uppercase">{result.isPreMatch ? "あなたのファーストGank傾向" : "ファーストGank予測"}</div>
+                      <div className="text-xs font-black text-rose-400 leading-relaxed">
+                        {result.firstGankTarget}
+                      </div>
+                    </div>
+
+                    {/* 対JG推奨カウンター & 解説。辞典に実データ(counterChampions)がある場合は
+                        そちらをそのまま表示する。無い場合のみ下の汎用フォールバックを使う
+                        （以前は数体だけの手書きデータで、それ以外は毎回同じ結果になっていた）。 */}
+                    {result.hasRealCounterData && result.knowledge?.counterChampions && (
+                      <div className="space-y-2 pt-3 border-t border-slate-800">
+                        <h4 className="text-[10px] text-slate-400 font-black tracking-wider uppercase flex items-center gap-1.5">
+                          <Zap className="w-3.5 h-3.5 text-amber-400" />
+                          <span>対面カウンター情報（辞典データ）</span>
+                        </h4>
+                        <div className="bg-slate-800/60 p-4 rounded-2xl border border-amber-800/60">
+                          <p className="text-[11px] text-slate-300 leading-relaxed whitespace-pre-wrap">{result.knowledge.counterChampions}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {!result.hasRealCounterData && result.counters && result.counters.length > 0 && (
+                      <div className="space-y-3 pt-3 border-t border-slate-800">
+                        <h4 className="text-[10px] text-slate-400 font-black tracking-wider uppercase flex items-center gap-1.5">
+                          <Zap className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                          <span>{result.isPreMatch ? "あなたに対する推奨カウンター & 弱点対策" : "対JG推奨カウンター & 解説"}</span>
+                        </h4>
+                        <div className="space-y-3">
+                          {result.counters.map((c: any, idx: number) => (
+                            <div key={idx} className="bg-slate-800/60 p-4 rounded-2xl border border-amber-800/60 space-y-2">
+                              <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-2">
+                                  <Image
+                                    src={getChampIcon(c.championName)}
+                                    alt={c.championName}
+                                    width={28}
+                                    height={28}
+                                    className="w-7 h-7 rounded-lg border border-slate-800"
+                                  />
+                                  <span className="text-xs font-black text-amber-300">{c.championName}</span>
+                                </div>
+                                <span className="text-[10px] font-black text-emerald-300 bg-emerald-950/30 px-2 py-0.5 rounded border border-emerald-800/60">
+                                  有利カウンター
+                                </span>
+                              </div>
+                              <p className="text-[10px] text-slate-300 leading-relaxed font-medium">
+                                {c.reason}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-3 pt-3 border-t border-slate-800">
+                      <h4 className="text-[10px] text-slate-400 font-black tracking-wider uppercase">{result.isPreMatch ? "あなたの平均9分スタッツ先行度" : "敵の平均9分スタッツ先行度"}</h4>
+                      {/* 05移植時(2026-10-04): 旧版は実測できない試合を0や推定値で埋め、マイナスでも「+」を付けて表示していた。
+                          タイムラインで実測できた試合だけを使い、無ければ「実測なし」と出す。 */}
+                      {!result.playstyle?.diffs ? (
+                        <p className="text-[10px] text-slate-500">9分時点の差分は実測データがありません（タイムラインを取得できた試合のみ集計）。</p>
+                      ) : (
+                      <div className="space-y-2.5">
+                        <p className="text-[10px] text-slate-500">直近{result.playstyle.diffs.sampleCount ?? '?'}試合の実測平均</p>
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-[10px] font-bold">
+                            <span className="text-slate-500">ゴールド差</span>
+                            <span className={result.playstyle.diffs.goldDiff >= 0 ? 'text-amber-400' : 'text-rose-400'}>
+                              {result.playstyle.diffs.goldDiff >= 0 ? '+' : ''}{result.playstyle.diffs.goldDiff} G
+                            </span>
+                          </div>
+                          <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                            <div className={`h-full ${result.playstyle.diffs.goldDiff >= 0 ? 'bg-amber-500' : 'bg-rose-500'}`} style={{ width: `${Math.min(100, (Math.abs(result.playstyle.diffs.goldDiff) / 600) * 100)}%` }}></div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-[10px] font-bold">
+                            <span className="text-slate-500">CS差</span>
+                            <span className={result.playstyle.diffs.csDiff >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                              {result.playstyle.diffs.csDiff >= 0 ? '+' : ''}{result.playstyle.diffs.csDiff} CS
+                            </span>
+                          </div>
+                          <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                            <div className={`h-full ${result.playstyle.diffs.csDiff >= 0 ? 'bg-emerald-500' : 'bg-rose-500'}`} style={{ width: `${Math.min(100, Math.abs(result.playstyle.diffs.csDiff) * 10)}%` }}></div>
+                          </div>
+                        </div>
+                      </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+    </div>
+  );
+}
