@@ -72,6 +72,8 @@ MAX_ITEMS = int(os.environ.get("MAX_ITEMS", "3"))
 # 字幕が無い動画をWhisperで文字起こしするか。CPUで走るため1本あたり数分かかる。
 ENABLE_WHISPER = os.environ.get("ENABLE_WHISPER", "1") not in ("0", "false", "False")
 WHISPER_MODEL = os.environ.get("WHISPER_MODEL", "base")
+# Whisper(CPU)で文字起こしする動画の最大長。これを超える・長さ不明の動画は映像解析へ回す（40分のタスク制限対策）
+WHISPER_MAX_SEC = int(os.environ.get("WHISPER_MAX_SEC", "1200"))
 # 字幕が取れない動画を Gemini の映像解析で処理するか。
 # Gemini が YouTube URL を直接読むため yt-dlp を使わず、cookie も bot判定も無関係。
 # 2026-09-23 実測: 12分の動画・低解像度で 約88,000トークン / 79秒。
@@ -883,7 +885,13 @@ def main():
                 transcript = fetch_subtitles(url, vid)
 
             # ③ 字幕が無ければWhisper文字起こし
-            if a is None and not transcript and ENABLE_WHISPER:
+            # 長さ不明・WHISPER_MAX_SEC 超の動画はWhisperを飛ばして④の映像解析へ（CPUの文字起こしが
+            # 40分のタスク制限に収まらず、強制終了→再試行を繰り返していた。2026-10-04: 29分・44分の動画と配信アーカイブで実測）
+            dur = it.get("duration_sec")
+            whisper_ok = bool(dur) and dur < DURATION_UNKNOWN and dur <= WHISPER_MAX_SEC
+            if a is None and not transcript and ENABLE_WHISPER and not whisper_ok:
+                print(f"  ⏭️ 長さ{'不明' if not dur or dur >= DURATION_UNKNOWN else f'{dur // 60}分'}のためWhisperを飛ばして映像解析へ進みます")
+            if a is None and not transcript and ENABLE_WHISPER and whisper_ok:
                 try:
                     from whisper_transcriber import transcribe_youtube_video_fallback
                     print(f"  🎙️ 字幕が無いのでWhisperで文字起こしします: {vid}")
