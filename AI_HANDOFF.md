@@ -44,7 +44,6 @@
 | 動画の自動発掘 | GitHub Actions (`scripts/prospector.py`) | 1日3回 |
 | ナレッジ→辞典 同期 | GitHub Actions (Vercel APIをcurlで叩く) | 3時間おき |
 | 海外情報スカウト | GitHub Actions (`_LOL/overseas_scout.py`) | 1日3回 |
-| Sovereign Pulse | GitHub Actions (`v2_CORE/run_pulse_once.py`) | 6時間おき |
 | Edge Worker / whisper文字起こし | ローカルPC (`start_all.bat`) | 必要時のみ |
 
 **ローカルPCが必要なのは、字幕なし動画のwhisper文字起こしだけ。** それ以外はPCを閉じていても動く。`start_all.bat` は既定でEdge Workerのみ起動する（フル起動は `start_all.ps1 -Mode all`）。
@@ -52,7 +51,6 @@
 ### cron一覧（`.github/workflows/`）
 - `ktm-cloud-worker.yml`: youtube(`*/30 * * * *`) / dict-sync(`7 */3 * * *`) / prospect(`30 18,2,10 * * *`)
 - `scout.yml`: `0 19,3,11 * * *`（1日3回）
-- `pulse.yml`: `0 */6 * * *`
 - `migrate.yml`: push時にマイグレーション適用
 - **停止中（手動のみ）**: `absorber.yml`（youtube解析と重複）, `monetization.yml`（参照先スクリプトが存在しない）
 

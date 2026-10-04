@@ -48,7 +48,6 @@ WATCHED_WORKFLOWS = {
     "patch-watchdog.yml": "パッチ番犬",
     "migrate.yml": "マイグレーション自動適用",
     "sentinel.yml": "Sentinel",
-    "pulse.yml": "Pulse",
     "champ-dict-update.yml": "辞典一括更新(週次)",
     "lane-role-update.yml": "レーン所属更新(週次)",
     "riot-jungle-timing-update.yml": "JG周回タイム更新(週次)",

@@ -10,7 +10,7 @@ name: Riot Patch Watchdog
 #   公式最新 16.19.1 との差分検知・検証キュー更新・Discord速報が自動では一度も
 #   走っていなかった。
 #
-#   なお pulse.yml の「パッチ更新の検知」(pulse.check_lol_patches) はこれとは別物で、
+#   なお旧 pulse.yml（2026-10-05削除）の「パッチ更新の検知」(pulse.check_lol_patches) はこれとは別物で、
 #   公式パッチノートのHTMLを見て前回URLを self.last_patch_url に持つ実装のため、
 #   単発実行では毎回「初回」扱いになり通知条件に入らない（クラウドでは検知できない）。
 #   DataDragon の versions.json ＋ current_patch.json による永続的な比較を行う

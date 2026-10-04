@@ -30,7 +30,6 @@ grep -A12 "\[triggers\]" 03_SYSTEMS/ktm_bot/wrangler.toml
 |---|---|---|---|---|
 | **Edge Cloud Worker**<br>(`edge-cloud-worker.yml`) | 5分おき | `*/5 * * * *` | ポータルのボタン操作で `edge_tasks` に積まれたタスク（個別トレンド取得・構成シミュ・YouTube登録・Redditスカウト・辞典シンセ等）をクラウド側で処理 | `scripts/edge_cloud_worker.py` |
 | **SoloQ Coach Poll**<br>(`soloq-coach-poll.yml`) | 15分おき | `*/15 * * * *` | 試合終了を早めに検知して振り返りを生成。Vercel HobbyのCronが1日1回制限のため、高頻度呼び出しをこちらで代替 | `/api/cron/soloq-coach` を叩く |
-| **Antigravity Sovereign Pulse**<br>(`pulse.yml`) | 6時間おき | `0 */6 * * *` | パッチ更新検知・LoLalytics統計取得・Discordメンバー同期 | `03_SYSTEMS/v2_CORE/run_pulse_once.py` |
 | **KTM Cloud Worker / dict-sync**<br>(`ktm-cloud-worker.yml`) | 3時間おき | `7 */3 * * *` | 承認済みの攻略ライブラリ記事をチャンピオン辞典（`matchup_sentinel`）へ統合（統合済みは `__INTEGRATED__` で除外） | 05 `/api/knowledge/integrate`（2026-10-02 切替） |
 | **KTM Cloud Worker / prospect**<br>(`ktm-cloud-worker.yml`) | 1日3回<br>03:30 / 11:30 / 19:30 | `30 18,2,10 * * *` | 辞典が古いチャンピオンの解説動画をYouTube全体から発掘し `youtube_queue` へ起票 | `scripts/prospector.py` |
 | **YouTube Channel Monitor**<br>(`youtube-monitor.yml`) | 1日3回<br>08:00 / 14:00 / 20:00 | `0 23,5,11 * * *` | 登録チャンネルの新着をAtom RSSで巡回し `youtube_queue` へ起票 | `scripts/cloud_youtube_monitor.py` |
@@ -101,7 +100,7 @@ grep -A12 "\[triggers\]" 03_SYSTEMS/ktm_bot/wrangler.toml
 | スクリプト | 本来の役割 | 現状 |
 |---|---|---|
 | `scripts/check_patch_update.py` | DataDragon最新パッチの巡回検知、差分チャンピオン抽出、検証キュー更新、Discord速報 | ✅ **2026-09-30に `patch-watchdog.yml` を新設して解消**。それまではどのワークフローにも登録されておらず（旧版のこのファイルには「GitHub Actions 1日2回」と書かれていたが事実ではなかった）、`current_patch.json` の記録が 16.18.1（最終確認 2026-09-18）で止まっていた。 |
-| `pulse.check_lol_patches()`<br>(`pulse.yml` の第1ステップ) | 公式パッチノートHTMLの巡回 | ⚠️ **単発実行では構造的に検知できない**。前回URLを `self.last_patch_url` にメモリで保持し、`last_patch_url is not None` のときだけ通知する実装のため、6時間おきの単発実行では毎回「初回」扱いで何もせず終了する（2026-09-30確認）。パッチ検知の正規の経路は上記 `patch-watchdog.yml`。 |
+| `pulse.check_lol_patches()`<br>(旧 `pulse.yml` の第1ステップ) | 公式パッチノートHTMLの巡回 | 🗑️ **2026-10-05に `pulse.yml` ごと削除**（下記の通り何もしておらず、LoLalytics統計は実データを取らずGeminiだけ消費、Discordメンバー同期はトークン未登録で一度も動いていなかった。メンバー登録はKTM管理画面の「Discord同期」が担う）。⚠️ **単発実行では構造的に検知できない**。前回URLを `self.last_patch_url` にメモリで保持し、`last_patch_url is not None` のときだけ通知する実装のため、6時間おきの単発実行では毎回「初回」扱いで何もせず終了する（2026-09-30確認）。パッチ検知の正規の経路は上記 `patch-watchdog.yml`。 |
 | `scripts/ops_health_check.py` | 上記の記録パッチと公式最新の乖離を含む、運用状態の点検 | ⚠️ 同様にどのワークフローにも登録されていない。パッチ番犬の停止を検知できるはずの点検自体も自動実行されていない。 |
 
 ---
