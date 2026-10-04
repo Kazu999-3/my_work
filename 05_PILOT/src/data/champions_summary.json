@@ -153,7 +153,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 2,
-    "libraryKnowledgeCount": 9,
+    "libraryKnowledgeCount": 11,
     "tier": "Tier 1",
     "winRate": 51
   },
@@ -1108,7 +1108,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 3,
-    "libraryKnowledgeCount": 3,
+    "libraryKnowledgeCount": 4,
     "tier": "Tier 3",
     "winRate": 51
   },
@@ -1504,7 +1504,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 7,
-    "libraryKnowledgeCount": 24,
+    "libraryKnowledgeCount": 25,
     "tier": "Tier 3",
     "winRate": 49
   },
@@ -1584,7 +1584,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 3,
-    "libraryKnowledgeCount": 15,
+    "libraryKnowledgeCount": 16,
     "tier": "Tier 3",
     "winRate": 51
   },
@@ -1823,7 +1823,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 0,
-    "libraryKnowledgeCount": 1,
+    "libraryKnowledgeCount": 0,
     "tier": "Tier 4",
     "winRate": 53
   },
@@ -2228,7 +2228,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 9,
-    "libraryKnowledgeCount": 15,
+    "libraryKnowledgeCount": 16,
     "tier": "Tier 3",
     "winRate": 51
   },
@@ -2466,7 +2466,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 2,
-    "libraryKnowledgeCount": 8,
+    "libraryKnowledgeCount": 9,
     "tier": "Tier 2",
     "winRate": 51
   },
@@ -4297,7 +4297,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 3,
-    "libraryKnowledgeCount": 7,
+    "libraryKnowledgeCount": 8,
     "tier": "Tier 2",
     "winRate": 49
   },
@@ -5730,7 +5730,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 9,
-    "libraryKnowledgeCount": 18,
+    "libraryKnowledgeCount": 19,
     "tier": "Tier 3",
     "winRate": 49
   },
@@ -5890,7 +5890,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 1,
-    "libraryKnowledgeCount": 2,
+    "libraryKnowledgeCount": 3,
     "tier": "Tier 2",
     "winRate": 49
   },
@@ -6683,7 +6683,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 0,
-    "libraryKnowledgeCount": 2,
+    "libraryKnowledgeCount": 1,
     "tier": "Tier 4",
     "winRate": 49
   },
@@ -8195,7 +8195,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 3,
-    "libraryKnowledgeCount": 7,
+    "libraryKnowledgeCount": 8,
     "tier": "Tier 1",
     "winRate": 51
   },
@@ -9542,7 +9542,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 5,
-    "libraryKnowledgeCount": 10,
+    "libraryKnowledgeCount": 14,
     "tier": "Tier 4",
     "winRate": 49
   },
@@ -10339,7 +10339,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 0,
-    "libraryKnowledgeCount": 5,
+    "libraryKnowledgeCount": 7,
     "tier": "Tier 2",
     "winRate": 51
   },
@@ -10659,7 +10659,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 0,
-    "libraryKnowledgeCount": 0,
+    "libraryKnowledgeCount": 1,
     "tier": "Tier 1",
     "winRate": 52
   },
@@ -10897,7 +10897,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 3,
-    "libraryKnowledgeCount": 11,
+    "libraryKnowledgeCount": 10,
     "tier": "Tier 3",
     "winRate": 50
   },
@@ -12651,7 +12651,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 7,
-    "libraryKnowledgeCount": 19,
+    "libraryKnowledgeCount": 21,
     "tier": "Tier 2",
     "winRate": 49
   },
