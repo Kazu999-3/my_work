@@ -231,18 +231,14 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
                         delay *= 2
                         
                     else:
-                        if key_name != "Main Key":
-                            logger.error(f"❌ [AIHelper] モデル {model} ({key_name}) で致命的エラー: {e.code} {e.status}. {e.message}")
-                        else:
-                            logger.debug(f"[AIHelper] モデル {model} ({key_name}) でのメインキーエラー (表示抑制): {e.code} {e.status}. {e.message}")
+                        # 2026-10-04: 以前はメインキーのエラーを debug に落として表示抑制していた。GitHub Actions には
+                        # メインキーしか無いため、どのモデルが404を返しているのかがログに一切出なかった。キーを問わず出す。
+                        logger.error(f"❌ [AIHelper] モデル {model} ({key_name}) で致命的エラー: {e.code} {e.status}. {e.message}")
                         break  # 次のキーへ移行するが、400や404ならモデル自体がダメなのでキーもスキップすべき
                         
                 except Exception as e:
                     last_error = e
-                    if key_name != "Main Key":
-                        logger.error(f"❌ [AIHelper] 予期せぬエラーが発生しました ({model} / {key_name}): {e}")
-                    else:
-                        logger.debug(f"[AIHelper] 予期せぬエラーが発生しました ({model} / {key_name}): {e}")
+                    logger.error(f"❌ [AIHelper] 予期せぬエラーが発生しました ({model} / {key_name}): {e}")
                     break  # 次のキーへ移行
             
             # APIキー単位でのループ終了後、もし404や400なら、別キーでも同じエラーになるため、キー切り替えを打ち切って次のモデルへ行く
