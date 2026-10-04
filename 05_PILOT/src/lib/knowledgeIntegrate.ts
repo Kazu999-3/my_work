@@ -3,7 +3,7 @@ import { resolveRosterChampion } from './championRoster';
 
 // 攻略ライブラリ(personal_knowledge)の記事をチャンピオン辞典へ統合する。
 // 旧ポータル /api/admin/knowledge/sync の移植。統合すると:
-//   1. matchup_sentinel(champ_<ID>_global) の strategy に「## 【記事】タイトル」節として追記（同名節は置き換え）
+//   1. matchup_sentinel(champ_<ID>_global) の strategy に「## 【記事】タイトル」節として追記（同じ記事の節は置き換え。タイトル・動画ID・元URLで判定）
 //   2. knowledge_revisions に変更履歴を残す
 //   3. champion_notes に構造化メモとして登録（同じ記事の分は入れ替え）
 //   4. 記事に INTEGRATED_TAG を足し（既存タグは残す）、review_status を approved にする
@@ -26,6 +26,7 @@ export interface IntegrateArticle {
   raw_content: string | null;
   champion: string | null;
   tags?: string[] | null;
+  source_url?: string | null;
 }
 
 export const INTEGRATED_TAG = '__INTEGRATED__';
@@ -67,23 +68,57 @@ async function recordRevision(sb: SupabaseClient, key: string, field: string, be
   }
 }
 
-const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function extractYoutubeId(url: string | null | undefined): string | null {
+  const m = String(url || '').match(/(?:youtu\.be\/|[?&]v=)([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+/**
+ * 統合戦術マスター教本(strategy)に【記事】節を追加、または同じ記事の節を置き換える。
+ *
+ * 同じ記事かどうかは「見出しのタイトル」だけでなく「動画ID／元URL」でも判定する。
+ * 2026-10-04: タイトルだけで判定していたため、英語名→日本語名の翻訳でタイトルが変わった記事が別の節として
+ * 二重に追記されていた（19体・20節）。また置き換え範囲を「最初の --- まで」にしていたため本文途中で止まり、
+ * 新旧の本文が1つの節に同居していた。節は「次の【記事】見出し」で区切る。
+ */
+export function upsertArticleSection(strategy: string, title: string, body: string, sourceUrl?: string | null): string {
+  const header = `## 【記事】${title}`;
+  const section = `${header}\n\n${body}`;
+  if (!strategy.trim()) return section;
+
+  const vid = extractYoutubeId(sourceUrl);
+  const url = String(sourceUrl || '').trim();
+  const isSameArticle = (p: string) => p.startsWith('## 【記事】') && (
+    p.split('\n', 1)[0].trim() === header ||
+    (!!vid && p.includes(vid)) ||
+    (!vid && url.length > 0 && p.includes(url))
+  );
+
+  const parts = strategy.split(/\n(?=## 【記事】)/);
+  const idx = parts.findIndex(isSameArticle);
+  if (idx === -1) return `${strategy}\n\n---\n\n${section}`;
+
+  const trailing = parts[idx].match(/\n\n---\n?$/)?.[0] || '';
+  parts[idx] = section + trailing;
+  // 同じ記事の節がほかにも残っていれば落とす
+  return parts.filter((p, i) => i <= idx || !isSameArticle(p)).join('\n');
+}
 
 export async function integrateArticles(sb: SupabaseClient, articles: IntegrateArticle[]): Promise<IntegrateResult> {
   const result: IntegrateResult = { integrated: [], skippedNoChampion: [], errors: [], champions: [] };
 
-  const resolved: { a: IntegrateArticle; champions: string[]; body: string; title: string }[] = [];
+  const resolved: { a: IntegrateArticle; champions: string[]; body: string; title: string; sourceUrl: string | null }[] = [];
   for (const a of articles) {
     const champions = await resolveChampions(a.champion);
     if (champions.length === 0) { result.skippedNoChampion.push(a.id); continue; }
-    resolved.push({ a, champions, title: a.title || '(無題)', body: a.raw_content || a.content || '' });
+    resolved.push({ a, champions, title: a.title || '(無題)', body: a.raw_content || a.content || '', sourceUrl: a.source_url || null });
   }
 
   // チャンピオン単位でまとめて1回だけ読み書きする
-  const byChampion = new Map<string, { title: string; body: string }[]>();
+  const byChampion = new Map<string, { title: string; body: string; sourceUrl: string | null }[]>();
   for (const r of resolved) {
     for (const c of r.champions) {
-      byChampion.set(c, [...(byChampion.get(c) || []), { title: r.title, body: r.body }]);
+      byChampion.set(c, [...(byChampion.get(c) || []), { title: r.title, body: r.body, sourceUrl: r.sourceUrl }]);
     }
   }
 
@@ -96,18 +131,8 @@ export async function integrateArticles(sb: SupabaseClient, articles: IntegrateA
       if (selErr) throw selErr;
 
       let strategy: string = existing?.strategy || '';
-      for (const { title, body } of items) {
-        const header = `## 【記事】${title}`;
-        if (!strategy.trim()) {
-          strategy = `${header}\n\n${body}`;
-        } else if (strategy.includes(header)) {
-          // 節の終わりは「次の【記事】見出し」。以前は最初の "\n---" までにしていたが、記事本文の中にも
-          // "---" があるため本文の途中までしか置き換わらず、再統合のたびに残りが二重に積み上がる作りだった。
-          const pattern = new RegExp(`## 【記事】${escapeRegExp(title)}\\s*\\n[\\s\\S]*?(?=\\n\\n---\\n\\n## 【記事】|\\n## 【記事】|$)`);
-          strategy = strategy.replace(pattern, () => `${header}\n\n${body}`);
-        } else {
-          strategy = `${strategy}\n\n---\n\n${header}\n\n${body}`;
-        }
+      for (const { title, body, sourceUrl } of items) {
+        strategy = upsertArticleSection(strategy, title, body, sourceUrl);
       }
 
       const { error: upErr } = await sb.from('matchup_sentinel').upsert({

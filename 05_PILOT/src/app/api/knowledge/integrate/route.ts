@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 const BATCH_LIMIT_MAX = 30;
-const SELECT = 'id, title, content, raw_content, champion, tags';
+const SELECT = 'id, title, content, raw_content, champion, tags, source_url';
 
 // 攻略ライブラリの記事をチャンピオン辞典へ統合する（旧ポータル knowledge/sync の後継）。
 //   { ids: [..] }                          … 指定した記事を統合（承認画面の「承認して統合」）
