@@ -44,9 +44,7 @@
   - 9/26の4試合はいずれも `riot_match_id` 空・`game_duration=0` で、match-sync が一度も走っていない。KDAが入っていたので Bot の終了ボタン以外の経路で記録されたとみられる。
   - **次に Bot の終了ボタンで試合を記録したら** `SELECT * FROM pending_match_sync ORDER BY id DESC LIMIT 3;` を確認。0行なら管理者チャンネルに `pending_match_sync の予約に失敗` の通知が出ているはず。
 - [ ] **Cloudflare本命cronが空振りした理由**（2026-09-23 発見）: 水曜12:00 JST前後をエラー集約チャンネル(1550118540038774865)か `wrangler tail` で観測する。バックアップ経路が投稿した場合は管理者チャンネルに通知が飛ぶようにしてある。
-- [ ] **`__INTEGRATED__` の効果確認**（2026-10-04 修正 `e46914e9`）: 次の `dict-sync`（毎時7分・3時間おき）の後、
-  `champion_notes` の `created_at` が実行のたびに187件まとめて作り直されていないこと、`personal_knowledge` の統合済み記事に `__INTEGRATED__` が付いたことを確認。
-- [ ] **PCデーモンのタイムアウト延長の効果**（2026-10-04 に 900s→2400s）: 延長後の失敗は0件・完了35件（同日実測）。数日分たまったら `edge_tasks` の `youtube_queue_process` の failed 件数を再確認して閉じる。
+- [ ] **PCデーモンの動画解析タイムアウト**（2026-10-04）: 08:27〜11:38に40分制限で4連続強制終了。原因は字幕の無い長い動画でCPUのWhisperが回り続けること → 長さ不明・20分超はWhisperを飛ばして映像解析へ（`b19023e8`）。次回以降 `edge_tasks` の `youtube_queue_process` failed が止まったか確認
 
 ---
 
