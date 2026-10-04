@@ -5,7 +5,7 @@
 #   → personal_knowledge へ保存 → queueをcompletedに更新
 # 必要な環境変数: SUPABASE_URL, SUPABASE_SERVICE_KEY, GEMINI_API_KEY
 # ============================================================
-import os, re, json, glob, subprocess, sys, time
+import os, re, json, glob, math, subprocess, sys, time
 import urllib.request, urllib.error
 from pathlib import Path
 
@@ -86,6 +86,10 @@ VIDEO_MODEL = os.environ.get("VIDEO_MODEL", "gemini-2.5-flash")
 # 400 INVALID_ARGUMENT で失敗し続けていた（2026-10-04: "KHA SHYVANA TO RANK 1" 等）。長い動画は先頭だけを解析する。
 # 35分(約22万トークン)にしているのは、無料枠の 1分あたり25万トークン(TPM) に1回で収めるため。
 MAX_VIDEO_ANALYSIS_SEC = int(os.environ.get("MAX_VIDEO_ANALYSIS_SEC", "2100"))
+# 長さが分かっている動画は35分ずつ最大この区間数まで分割して読む（2026-10-04 ユーザー判断: 上限付き分割）
+MAX_VIDEO_CHUNKS = int(os.environ.get("MAX_VIDEO_CHUNKS", "3"))
+# 区間の間隔。無料枠の 1分あたり25万トークン を超えないよう1分以上空ける
+VIDEO_CHUNK_INTERVAL_SEC = int(os.environ.get("VIDEO_CHUNK_INTERVAL_SEC", "65"))
 DURATION_UNKNOWN = 99999
 # これ未満の文字数なら「実況なし」とみなしてGeminiへ渡さない
 WHISPER_MIN_CHARS = int(os.environ.get("WHISPER_MIN_CHARS", "500"))
@@ -438,6 +442,11 @@ def gemini_analyze_video(url, title, channel, is_short=False, duration_sec=None)
     yt-dlp を経由しないので cookie も bot判定も関係しない。
     ⚠️ トークン消費は動画の長さにほぼ比例する（低解像度で1秒あたり約103トークン）。
     Shorts(60秒未満)の場合は格安（数千トークン）で解析可能。
+
+    長さの扱い（2026-10-04）:
+    - MAX_VIDEO_ANALYSIS_SEC(35分)以下 … 丸ごと1回で読む
+    - 長さが分かっていて 35分×MAX_VIDEO_CHUNKS(=105分) 以下 … 35分ずつ区切って読み、最後に1本の記事へまとめる
+    - 長さ不明・それ以上（主に長時間配信のアーカイブ）… 先頭35分だけを読む
     """
     from google import genai
     from google.genai import types
@@ -445,28 +454,135 @@ def gemini_analyze_video(url, title, channel, is_short=False, duration_sec=None)
     client = genai.Client(api_key=GEMINI_KEY)
     head = f"動画タイトル: {title}\nチャンネル: {channel}\n\n"
     prompt_text = SHORTS_PROMPT if is_short else VIDEO_PROMPT
-    # 長さ不明・上限超えの動画は先頭 MAX_VIDEO_ANALYSIS_SEC 秒だけを読む
+    known = bool(duration_sec) and duration_sec < DURATION_UNKNOWN
+
+    if not is_short and known and MAX_VIDEO_ANALYSIS_SEC < duration_sec <= MAX_VIDEO_ANALYSIS_SEC * MAX_VIDEO_CHUNKS:
+        return _analyze_video_in_chunks(client, types, url, head, prompt_text, title, int(duration_sec))
+
     clip_end = None
-    if not is_short and (not duration_sec or duration_sec >= DURATION_UNKNOWN or duration_sec > MAX_VIDEO_ANALYSIS_SEC):
+    if not is_short and (not known or duration_sec > MAX_VIDEO_ANALYSIS_SEC):
         clip_end = MAX_VIDEO_ANALYSIS_SEC
         head += f"（注意: 長時間の動画のため、冒頭{MAX_VIDEO_ANALYSIS_SEC // 60}分のみを解析対象としています。それ以降の内容に触れないこと）\n\n"
-        print(f"  ✂️ 長さ{'不明' if not duration_sec or duration_sec >= DURATION_UNKNOWN else f'{duration_sec // 60}分'}のため、冒頭{MAX_VIDEO_ANALYSIS_SEC // 60}分だけを映像解析します")
+        print(f"  ✂️ 長さ{'不明' if not known else f'{duration_sec // 60}分'}のため、冒頭{MAX_VIDEO_ANALYSIS_SEC // 60}分だけを映像解析します")
     try:
-        res = _generate_video(client, types, url, head, prompt_text, clip_end)
+        res = _generate_video(client, types, url, head, prompt_text, clip_end=clip_end)
     except Exception as e:
         if _is_quota_error(e):
             raise GeminiQuotaExceeded(str(e)[:200]) from e
         raise
-    txt = (res.text or "").strip()
-    return _finish_video_result(res, txt, url, is_short)
+    return _finish_video_result(res, (res.text or "").strip(), url, is_short)
 
 
-def _generate_video(client, types, url, head, prompt_text, clip_end=None):
+def _fmt_ts(sec):
+    sec = int(sec)
+    h, m, s = sec // 3600, (sec % 3600) // 60, sec % 60
+    return f"{h}:{m:02d}:{s:02d}" if h else f"{m:02d}:{s:02d}"
+
+
+def _ts_to_sec(ts):
+    try:
+        parts = [int(p) for p in str(ts).strip().split(":")]
+    except ValueError:
+        return None
+    if len(parts) == 2:
+        return parts[0] * 60 + parts[1]
+    if len(parts) == 3:
+        return parts[0] * 3600 + parts[1] * 60 + parts[2]
+    return None
+
+
+def _analyze_video_in_chunks(client, types, url, head, prompt_text, title, duration_sec):
+    """35分ずつ区切って映像解析し、区間ごとの結果を1本の記事にまとめる。
+
+    無料枠は1分あたり約25万トークンなので、区間の間は VIDEO_CHUNK_INTERVAL_SEC 空ける。
+    2区間目以降で利用上限(429)などに当たったら、そこで打ち切って読めた区間だけで記事を作る
+    （残り利用枠を数える仕組みは無いため、事前予測ではなく実際の応答で判断する）。
+    """
+    n = math.ceil(duration_sec / MAX_VIDEO_ANALYSIS_SEC)
+    print(f"  🧩 {duration_sec // 60}分の動画を{n}区間（{MAX_VIDEO_ANALYSIS_SEC // 60}分ずつ）に分けて映像解析します")
+    results, stopped_reason = [], None
+    for i in range(n):
+        start = i * MAX_VIDEO_ANALYSIS_SEC
+        end = min(duration_sec, (i + 1) * MAX_VIDEO_ANALYSIS_SEC)
+        if i > 0:
+            time.sleep(VIDEO_CHUNK_INTERVAL_SEC)
+        chunk_head = head + (
+            f"（この映像は動画全体（{duration_sec // 60}分）のうち {_fmt_ts(start)}〜{_fmt_ts(end)} の区間です。"
+            f"この区間の内容だけを扱い、タイムスタンプは動画の先頭からの時刻で書くこと）\n\n")
+        try:
+            res = _generate_video(client, types, url, chunk_head, prompt_text, clip_start=start, clip_end=end)
+            data = _parse_video_json(res, False)
+        except Exception as e:
+            if i == 0:
+                if _is_quota_error(e):
+                    raise GeminiQuotaExceeded(str(e)[:200]) from e
+                raise
+            stopped_reason = "Geminiの利用上限" if _is_quota_error(e) else f"エラー（{str(e)[:80]}）"
+            if _is_quota_error(e):
+                _set_quota_pause(str(e))
+            print(f"  ⚠️ 区間{i + 1}/{n}で{stopped_reason}のため打ち切り、読めた{len(results)}区間で記事を作ります", file=sys.stderr)
+            break
+        # 区間の先頭からの時刻で返ってきた場合は動画全体の時刻に直す
+        for c in data.get("key_clips") or []:
+            sec = _ts_to_sec(c.get("timestamp")) if isinstance(c, dict) else None
+            if sec is not None:
+                c["timestamp"] = _fmt_ts(sec + start if sec < start else sec)
+        results.append({"range": f"{_fmt_ts(start)}〜{_fmt_ts(end)}", "data": data})
+        print(f"  ✅ 区間{i + 1}/{n}（{_fmt_ts(start)}〜{_fmt_ts(end)}）を解析しました")
+
+    analyzed_until = results[-1]["range"].split("〜")[1]
+    note = (f"区間{len(results)}/{n}まで解析。{stopped_reason}のため {analyzed_until} 以降は未解析"
+            if stopped_reason else "")
+    merged = _merge_chunk_results(client, types, title, results, note)
+    key_clips = merged.get("key_clips") or []
+    if merged.get("summary"):
+        merged["summary"] = enrich_summary_with_timestamps(merged["summary"], key_clips, url)
+    return merged
+
+
+def _merge_chunk_results(client, types, title, results, note):
+    """区間ごとの解析結果を、同じJSON形式の記事1本にまとめる（文字だけのやり取りなので安い）。"""
+    if len(results) == 1:
+        data = results[0]["data"]
+        if note and data.get("summary"):
+            data["summary"] += f"\n\n> ⚠️ {note}"
+        return data
+    parts = "\n\n".join(
+        f"### 区間 {r['range']}\n{json.dumps(r['data'], ensure_ascii=False)}" for r in results)
+    prompt = (
+        f"以下は動画「{title}」を時間帯ごとに区切って解析した結果（JSON）です。\n"
+        "これらを1本の記事にまとめ、各区間と同じJSON形式（title/summary/genre/tags/champion/key_clips）だけを出力してください。\n"
+        "- summary の章立ては各区間と同じにし、判断ルールは動画全体で重要なものを選び直すこと（重複は統合）\n"
+        "- 優先順位は動画全体で最大5件\n"
+        "- [実演: 時刻] と key_clips の時刻は各区間の値をそのまま使い、新しい時刻を作らないこと\n"
+        "- 区間に書かれていない内容を足さないこと\n"
+        + (f"- 「📌 前提」に次の注記をそのまま入れること: {note}\n" if note else "")
+        + "\n" + parts)
+    try:
+        res = client.models.generate_content(
+            model=VIDEO_MODEL, contents=prompt,
+            config=types.GenerateContentConfig(temperature=0.2),
+        )
+        merged = _parse_video_json(res, False)
+        if validate_article_json(merged):
+            return merged
+        print("  ⚠️ まとめの出力が形式を満たさないため、区間ごとの結果を連結します", file=sys.stderr)
+    except Exception as e:
+        print(f"  ⚠️ まとめに失敗したため、区間ごとの結果を連結します: {e}", file=sys.stderr)
+    # まとめに失敗しても解析済みの区間は捨てない: 先頭区間を本体にし、残りを区間ごとに追記する
+    base = dict(results[0]["data"])
+    extra = "\n\n".join(f"## 🎞️ 区間 {r['range']}\n\n{r['data'].get('summary', '')}" for r in results[1:])
+    base["summary"] = (base.get("summary") or "") + "\n\n" + extra + (f"\n\n> ⚠️ {note}" if note else "")
+    base["key_clips"] = [c for r in results for c in (r["data"].get("key_clips") or [])]
+    return base
+
+
+def _generate_video(client, types, url, head, prompt_text, clip_start=0, clip_end=None):
     video_part = types.Part(file_data=types.FileData(file_uri=url))
     if clip_end:
         video_part = types.Part(
             file_data=types.FileData(file_uri=url),
-            video_metadata=types.VideoMetadata(start_offset="0s", end_offset=f"{int(clip_end)}s"),
+            video_metadata=types.VideoMetadata(start_offset=f"{int(clip_start)}s", end_offset=f"{int(clip_end)}s"),
         )
     return client.models.generate_content(
         model=VIDEO_MODEL,
@@ -483,7 +599,8 @@ def _generate_video(client, types, url, head, prompt_text, clip_end=None):
     )
 
 
-def _finish_video_result(res, txt, url, is_short):
+def _parse_video_json(res, is_short):
+    txt = (res.text or "").strip()
     for pre in ("```json", "```"):
         if txt.startswith(pre):
             txt = txt[len(pre):]
@@ -493,12 +610,15 @@ def _finish_video_result(res, txt, url, is_short):
     um = getattr(res, "usage_metadata", None)
     if um:
         print(f"  📊 映像解析 ({'Shorts' if is_short else '通常'}): 入力{um.prompt_token_count} 出力{um.candidates_token_count} トークン")
+    return data
 
+
+def _finish_video_result(res, txt, url, is_short):
+    data = _parse_video_json(res, is_short)
     # 実演タイムスタンプを本文にリンクとして埋め込む
     key_clips = data.get("key_clips") or []
     if data.get("summary"):
         data["summary"] = enrich_summary_with_timestamps(data["summary"], key_clips, url)
-
     return data
 
 
