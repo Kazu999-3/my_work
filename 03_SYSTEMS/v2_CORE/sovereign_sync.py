@@ -449,16 +449,7 @@ class SovereignSync:
         self.sync_articles()
         self.sync_matchups()
         logger.info("🏁 クラウド同期 完了。")
-        
-        # 完了通知
-        try:
-            from v2_CORE.pulse import pulse
-            pulse.send_discord_notification(
-                title="クラウド同期 (Sovereign Sync) 完了",
-                description="ローカルの知識資産（攻略記事・Kireiバイブル・マッチアップデータ）を Supabase へ同期しました。"
-            )
-        except Exception as e:
-            logger.error(f"通知送信エラー: {e}")
+        # 完了時のDiscord通知(pulse経由)は2026-10-05に pulse.py ごと削除した。
 
 
 

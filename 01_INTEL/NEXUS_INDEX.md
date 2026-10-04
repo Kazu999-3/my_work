@@ -99,7 +99,6 @@ Sovereign OS のポータルサイト、API、エッジワーカーなど。
 - **[KTM Bot 利用ガイド (KTM_USER_GUIDE.md)](file:///d:/my_work/03_SYSTEMS/ktm_bot/KTM_USER_GUIDE.md)**:
   Discord コマンド（`/recruit` `/lane` `/balance` `/bet` `/tip` 等）のメンバー向け説明書。
 - **[03_SYSTEMS/v2_CORE (コアエンジン)](file:///d:/my_work/03_SYSTEMS/v2_CORE/)**:
-  - **[api.py (API Gateway)](file:///d:/my_work/03_SYSTEMS/v2_CORE/api.py)**: 冷却キーローテーション搭載の AI ゲートウェイ。
   - **[edge_worker_daemon.py (エッジワーカー)](file:///d:/my_work/03_SYSTEMS/v2_CORE/edge_worker_daemon.py)**: Webhook 割り込み駆動の自動処理デーモン。
 - **[00_LOGS (実行ログ)](file:///d:/my_work/00_LOGS/)**:
   - 各自動化ジョブやワーカーの稼働ログの保存場所。

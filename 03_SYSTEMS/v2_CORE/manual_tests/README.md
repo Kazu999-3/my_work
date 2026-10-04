@@ -12,7 +12,7 @@ CI では実行されない。**本番のSupabase・Gemini・noteに実際に接
 
 ```bash
 cd 03_SYSTEMS
-PYTHONPATH=. python v2_CORE/manual_tests/test_pulse_sync.py
+PYTHONPATH=. python v2_CORE/manual_tests/test_task_queue_supabase.py
 ```
 
 ## 各テストの前提
@@ -24,7 +24,6 @@ PYTHONPATH=. python v2_CORE/manual_tests/test_pulse_sync.py
 | `test_db_players.py` | `ktm_players` の中身の確認 | SUPABASE_URL / KEY |
 | `test_evolution_pgvector.py` | 埋め込み生成と類似検索（1536次元） | GEMINI_API_KEY + pgvector |
 | `test_note_publish_direct.py` | noteへの投稿 ⚠️**実際に投稿される** | NOTE_EMAIL / NOTE_PASSWORD |
-| `test_pulse_sync.py` | Discordメンバー同期 | DISCORD_BOT_TOKEN |
 | `test_task_queue_supabase.py` | タスクキューの登録・取得 | SUPABASE_URL / KEY |
 
 `test_note_publish_direct.py` は**本番のnoteに記事が投稿される**ので、

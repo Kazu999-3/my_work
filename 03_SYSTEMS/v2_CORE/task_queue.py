@@ -30,13 +30,6 @@ class SovereignQueue:
 
         headers = self._get_supabase_headers()
 
-        # タスク追加時に API Gateway 側のトリガーイベントをキックして即時通知
-        try:
-            from v2_CORE.api import task_trigger_event
-            task_trigger_event.set()
-        except ImportError:
-            pass
-
         data = {
             "task_type": task_type,
             "payload": payload or {},

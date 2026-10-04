@@ -291,7 +291,7 @@ my_work/
 │   └── 03_ASSETS/                 # アフィリエイト知識、note執筆プロトコル等
 │
 ├── 03_SYSTEMS/                    # [実行エンジン・プログラム層]
-│   ├── v2_CORE/                   # API Gateway (api.py), EdgeWorkerDaemon, 各種バッチ
+│   ├── v2_CORE/                   # EdgeWorkerDaemon, 各種バッチ（API Gateway api.py は2026-10-05削除）
 │   └── ktm_bot/                   # 大会運営用 Discord Bot
 │
 └── 04_PORTAL/                     # [Web表示層 (Next.js)]

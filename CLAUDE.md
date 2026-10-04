@@ -75,7 +75,7 @@
 
 ## 💻 4. コマンドリファレンス (Command Reference)
 
-下記3つは `.claude/commands/` にスラッシュコマンド化済みです（`/dev-portal` `/dev-api` `/dev-edge`）。
+下記2つは `.claude/commands/` にスラッシュコマンド化済みです（`/dev-portal` `/dev-edge`）。
 
 ### 🌐 ポータル (Next.js Web Portal)
 ```bash
@@ -84,11 +84,8 @@ cd 04_PORTAL
 npm run dev
 ```
 
-### ⚙️ コアエンジン ＆ API Gateway
+### ⚙️ コアエンジン
 ```bash
-# FastAPI Agent Gateway の起動 (Port: 8000)
-python 03_SYSTEMS/v2_CORE/api.py
-
 # エッジワーカーデモンの起動
 python 03_SYSTEMS/v2_CORE/edge_worker_daemon.py
 ```
