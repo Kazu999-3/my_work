@@ -19,7 +19,7 @@
 
 ## ⏳ 次のイベント待ちの確認（コードでは判断できないもの）
 
-- [ ] **`pending_match_sync` が次の試合で書き込まれるか**（2026-10-04 実測: 0行のまま）
+- [ ] **【次の内戦の後に実施】`pending_match_sync` が書き込まれるか確認**（2026-10-04 実測: 0行のまま。ユーザーが「pending_match_sync 確認して」と声をかける約束）
   - 鍵は直っている（RLSポリシーが同じく無い `recruitments` には書けている）ので、構造上は書けるはず。
   - 9/26の4試合はいずれも `riot_match_id` 空・`game_duration=0` で、match-sync が一度も走っていない。KDAが入っていたので Bot の終了ボタン以外の経路で記録されたとみられる。
   - **次に Bot の終了ボタンで試合を記録したら** `SELECT * FROM pending_match_sync ORDER BY id DESC LIMIT 3;` を確認。0行なら管理者チャンネルに `pending_match_sync の予約に失敗` の通知が出ているはず。
@@ -32,7 +32,7 @@
 
 ## 🙋 ユーザー判断・ユーザー作業待ち
 
-- [ ] **`matchup_sentinel` のゴミ行19件の削除**（2026-10-04 発見・削除SQLは権限確認で未実行）
+- [ ] **`matchup_sentinel` のゴミ行19件の削除**（2026-10-04 発見。ユーザー承認済みだがClaude側のSQL実行は権限設定で3回却下 → Supabase SQL Editorで下記を実行すれば完了）
   - 9/27の取り込みで動画IDの断片等をチャンピオン名と誤認した行（`O1W` `RBKRF` `INDEX` `genre` `TF` `ztmtK` 等、`strategy` は全て空）。原因の `sovereign_sync.py` は10/03 `fe97d0d8` で修正済み、`sync_to_markdown.mjs` にもガード追加済みなので**放置しても再発・害はない**。元記事は kirei_bible に残っている。
   - 削除SQL: `DELETE FROM matchup_sentinel WHERE enemy='GLOBAL' AND coalesce(strategy,'')='' AND champion IN ('Anbe','cV7','D','elite','Elite','genre','INDEX','ji','Mal','Mede','O1W','OLE','RBKRF','Renek','TF','Zahan','ztmtK','Zu');`（`SYSTEM` の2行は正規データなので対象外）
 - [ ] **手動の振り返りフォーム（`SoloQReflectionModal.tsx`・997行）を畳むか**: 手動記録は直近30日0件、自動振り返りは14件。自動側を使ってから判断する。
@@ -60,7 +60,7 @@
 - [ ] **`cloud_youtube_monitor.py` の `last_fetched_at` に読み手がいない**: 管理画面に出すか列を整理するか。
 - [ ] **ダークモードのトークン移行の残り**（完遂する場合のみ）: Phase 6 任意値HEX（`bg-[#...]` 165箇所）、`html.dark` 332行の内訳精査、Phase完了ごとの中和ルール削除。
 - [ ] **`__DELETED__` の旧データ173件は「削除」か「レーンガイド統合」か区別できない**（2026-10-04 調査）: 旧実装がタグを `['__DELETED__']` で丸ごと置き換えていたため。470件は `champion_notes` があり統合済みと判別できる。旧ポータル退役と合わせて扱いを決める（05のライブラリは現状これらも表示している）。
-- [ ] **作業ツリーに残した未コミット**: `03_SYSTEMS/v2_CORE/_LOL/bible_dispatcher.py`（番号付き見出し形式への対応。2026-10-04時点で中身未検証のため未コミット）。
+- [ ] **JGレーンガイドの膨張を見守る**（2026-10-04 ユーザー判断で追記継続）: `bible_dispatcher.py` 修正で動画1本ごとに約1,400字が「第8章」へ追記されるようになった（修正前は本番の見出し形式を読めず空だった）。待ち47本で約7,700字→約7万字の見込み。読みにくくなったら要約・間引きを検討。
 
 ### 意図的に放置しているもの（再調査不要）
 - `wrangler` 由来の moderate 3件（`undici`）: npm の提案は破壊的ダウングレード。本番Workerには含まれない。上流が `undici` を上げたら `npm update wrangler` で解消。`npm audit fix --force` は実行しないこと。

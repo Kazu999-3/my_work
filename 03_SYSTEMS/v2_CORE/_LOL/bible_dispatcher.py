@@ -100,7 +100,21 @@ def parse_bible(text: str, video_id: str = "", default_title: str = "") -> dict:
         except Exception:
             pass
 
-    # 4. セクションの抽出（新フォーマット: JG特化8大柱）
+    # 4. セクションの抽出（柱形式: 【第X柱: ...】または ## X. ...）
+    h_conc = re.search(r"##\s*[📌\s]*戦術の核心[^\n]*\n(.*?)(?=\n## |\Z)", text, re.DOTALL)
+    h1 = re.search(r"##\s*[🌲\d\.]*\s*1\.\s*初動3分[^\n]*\n(.*?)(?=\n## |\Z)", text, re.DOTALL)
+    h2 = re.search(r"##\s*[🎯\d\.]*\s*2\.\s*各レーン[^\n]*\n(.*?)(?=\n## |\Z)", text, re.DOTALL)
+    h3 = re.search(r"##\s*[👁️\d\.]*\s*3\.\s*敵JG[^\n]*\n(.*?)(?=\n## |\Z)", text, re.DOTALL)
+    h4 = re.search(r"##\s*[⚔️\d\.]*\s*4\.\s*戦闘ミクロ[^\n]*\n(.*?)(?=\n## |\Z)", text, re.DOTALL)
+    h5 = re.search(r"##\s*[🛒\d\.]*\s*5\.\s*リコール[^\n]*\n(.*?)(?=\n## |\Z)", text, re.DOTALL)
+    h6 = re.search(r"##\s*[⚖️\d\.]*\s*6\.\s*ウィンコンディション[^\n]*\n(.*?)(?=\n## |\Z)", text, re.DOTALL)
+    h7 = re.search(r"##\s*[⚠️\d\.]*\s*7\.\s*JGの罠[^\n]*\n(.*?)(?=\n## |\Z)", text, re.DOTALL)
+    h8 = re.search(r"##\s*[🎯\d\.]*\s*8\.\s*ピック判断[^\n]*\n(.*?)(?=\n## |【note発信ストック|\Z)", text, re.DOTALL)
+    p_note = re.search(r"【note発信ストック:[^】]+】\s*\n(.*?)(?=\Z)", text, re.DOTALL)
+
+    # 柱タグ形式（【第1柱: ...】〜【第9柱: ...】）。youtube_absorber.py のローカルフォールバック
+    # プロンプトが出力する形式。2026-10-04: プロンプトは9本柱なのにここが8本柱前提のままで、
+    # 第5柱(戦闘ミクロ)をリコール、第8柱(JGの罠)をピック判断として1本ずつずれて読んでいた。
     p1 = re.search(r"【第1柱:[^】]+】(.*?)(?=【第2柱|\Z)", text, re.DOTALL)
     p2 = re.search(r"【第2柱:[^】]+】(.*?)(?=【第3柱|\Z)", text, re.DOTALL)
     p3 = re.search(r"【第3柱:[^】]+】(.*?)(?=【第4柱|\Z)", text, re.DOTALL)
@@ -108,26 +122,39 @@ def parse_bible(text: str, video_id: str = "", default_title: str = "") -> dict:
     p5 = re.search(r"【第5柱:[^】]+】(.*?)(?=【第6柱|\Z)", text, re.DOTALL)
     p6 = re.search(r"【第6柱:[^】]+】(.*?)(?=【第7柱|\Z)", text, re.DOTALL)
     p7 = re.search(r"【第7柱:[^】]+】(.*?)(?=【第8柱|【note発信ストック|\Z)", text, re.DOTALL)
-    p8 = re.search(r"【第8柱:[^】]+】(.*?)(?=【note発信ストック|\Z)", text, re.DOTALL)
-    p_note = re.search(r"【note発信ストック:[^】]+】(.*?)(?=\Z)", text, re.DOTALL)
+    p8 = re.search(r"【第8柱:[^】]+】(.*?)(?=【第9柱|【note発信ストック|\Z)", text, re.DOTALL)
+    p9 = re.search(r"【第9柱:[^】]+】(.*?)(?=【note発信ストック|\Z)", text, re.DOTALL)
 
-    # 番号付きヘッダー形式（## 8. ピック判断基準 等）の検出
-    h8_match = re.search(r"##\s*[🎯\d\.]*\s*8\.\s*ピック判断基準[^\n]*\n(.*?)(?=\n## |\Z)", text, re.DOTALL)
-
-    if p2 or p3 or p4 or p5:
-        # 新フォーマットが検出された場合
+    if h1 or h2 or h3 or h4 or h5 or h6:
+        # 番号付きヘッダー形式が検出された場合
+        if h_conc: result["conclusion"] = h_conc.group(1).strip()
         macro_parts = []
-        if p2: macro_parts.append(f"#### 初動ルート & スカトル判断 (Why & When)\n{p2.group(1).strip()}")
-        if p4: macro_parts.append(f"#### 敵JGトラッキング & カウンタージャングル根拠\n{p4.group(1).strip()}")
-        if p5: macro_parts.append(f"#### リコールテンポ & オブジェクト判断のWhy\n{p5.group(1).strip()}")
-        if p6: macro_parts.append(f"#### 集団戦・勝ち筋 (Win Condition)\n{p6.group(1).strip()}")
+        if h1: macro_parts.append(f"#### 初動ルート & スカトル判断 & カメラワーク\n{h1.group(1).strip()}")
+        if h3: macro_parts.append(f"#### 敵JGトラッキング & 視界セットアップ\n{h3.group(1).strip()}")
+        if h5: macro_parts.append(f"#### リコールテンポ & スマイト管理 & 即興買い物\n{h5.group(1).strip()}")
+        if h6: macro_parts.append(f"#### ウィンコンディション & 中盤の居場所 & 劣勢逆転\n{h6.group(1).strip()}")
+        result["macro_insights"] = "\n\n".join(macro_parts)
+
+        if h2: result["gank_lane_insights"] = h2.group(1).strip()
+        if h4: result["micro_insights"] = h4.group(1).strip()
+        if h7: result["ng_traps"] = h7.group(1).strip()
+        if h8: result["pick_conditions"] = h8.group(1).strip()
+        if p_note: result["note_stock_text"] = p_note.group(1).strip()
+    elif p2 or p3 or p4 or p5:
+        # 柱タグ形式が検出された場合
+        # 見出しラベルは番号付きヘッダー形式と揃える
+        if p1: result["conclusion"] = p1.group(1).strip()
+        macro_parts = []
+        if p2: macro_parts.append(f"#### 初動ルート & スカトル判断 & カメラワーク\n{p2.group(1).strip()}")
+        if p4: macro_parts.append(f"#### 敵JGトラッキング & 視界セットアップ\n{p4.group(1).strip()}")
+        if p6: macro_parts.append(f"#### リコールテンポ & スマイト管理 & 即興買い物\n{p6.group(1).strip()}")
+        if p7: macro_parts.append(f"#### ウィンコンディション & 中盤の居場所 & 劣勢逆転\n{p7.group(1).strip()}")
         result["macro_insights"] = "\n\n".join(macro_parts)
 
         if p3: result["gank_lane_insights"] = p3.group(1).strip()
-        if p7: result["ng_traps"] = p7.group(1).strip()
-        if p8: result["pick_conditions"] = p8.group(1).strip()
-        elif h8_match: result["pick_conditions"] = h8_match.group(1).strip()
-        if p1: result["micro_insights"] = p1.group(1).strip()
+        if p5: result["micro_insights"] = p5.group(1).strip()
+        if p8: result["ng_traps"] = p8.group(1).strip()
+        if p9: result["pick_conditions"] = p9.group(1).strip()
         if p_note: result["note_stock_text"] = p_note.group(1).strip()
     else:
         # 旧フォーマット（## 📌 動画の結論 / ## 🧠 マクロ戦略 / ## 🗡️ ミクロ等）
@@ -142,9 +169,6 @@ def parse_bible(text: str, video_id: str = "", default_title: str = "") -> dict:
 
         tips_match = re.search(r"## 💡\s*重要[^\n]*\n(.*?)(?=\n## |\Z)", text, re.DOTALL)
         if tips_match: result["ng_traps"] = tips_match.group(1).strip()
-
-        if h8_match:
-            result["pick_conditions"] = h8_match.group(1).strip()
 
     return result
 
