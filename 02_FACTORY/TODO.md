@@ -26,7 +26,7 @@
 **04に残す**: プレイヤー外部分析 `/analyzer`、仕様ガイド `/admin/guide`（ユーザー判断）
 ✅ 戦術取り込みハブ（2026-10-04 判断）: Discord取り込み→05知見取込のメモ欄、保留中の知見→05 `/admin/review` で代替できるため移さず。代替の無い動画深掘り依頼だけ05 `/admin/youtube` へ移植。
 ✅ `04 /admin/soloq` 削除、`04 /admin/dict-health` は05への転送ページに置換（2026-10-04）
-- [ ] **コーチ「試合前」の残り部品**（2026-10-04 移す決定）: `PlayRecommendationCard`(153) `TimingHeatmapCard`(311) `RankGoalCard`(220) `OverlayLauncherButton`(150)。API: `coach/play-recommendation` `soloq/heatmap` `coach/target-tier` `overlay`
+✅ コーチ「試合前」の残り4部品は移植済み（05 `/coach` 試合前タブ、2026-10-04）。Riot IDは端末保存値で渡す方式に統一（lib/riotIdParam.ts）
 
 ✅ コーチ「試合中」は移植済み（05 `/coach?tab=live`、2026-10-04）。9分差分の0埋め・推定式による捏造を除去し実測のみに。ChampSelectの手書き173体一覧（Wukong誤ID）はDDragon由来データへ
 ✅ コーチ「試合後」は移植済み（05 `/coach?tab=postgame`、2026-10-04）。試合メモは旧版が存在しない `notes` 列を使っており一度も動いていなかったため migration 85 で列を追加。手動振り返りフォームは05の反省ノートタブで代替し移さず

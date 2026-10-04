@@ -13,6 +13,7 @@ import SoloQReflectionTab from './SoloQReflectionTab';
 import PostGameTempoTab from './PostGameTempoTab';
 import PostGameTab from './PostGameTab';
 import LiveTab from './LiveTab';
+import { PreGameTop, PreGameBottom } from './PreGameExtras';
 
 function CoachPageContent() {
   const searchParams = useSearchParams();
@@ -133,6 +134,8 @@ function CoachPageContent() {
         {/* タブ 1: 試合前（対面設計図） */}
         {activeTab === 'blueprint' && (
           <div className="space-y-6">
+            <PreGameTop />
+
             {/* クイック選択プリセット */}
             <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-xl flex items-center gap-3 overflow-x-auto text-xs">
               <span className="text-[11px] font-bold text-slate-400 shrink-0 flex items-center gap-1">
@@ -171,6 +174,8 @@ function CoachPageContent() {
               onMyChampionChange={setMyChamp}
               onEnemyChampionChange={setEnemyChamp}
             />
+
+            <PreGameBottom />
           </div>
         )}
 
