@@ -12,7 +12,7 @@ name: Edge Cloud Worker
 #
 # 必要シークレット: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY(またはSUPABASE_KEY),
 #                   GEMINI_API_KEY
-# 任意: GEMINI_API_KEY_FREE, DISCORD_WEBHOOK, DISCORD_BOT_TOKEN, PORTAL_BOT_SECRET
+# 任意: GEMINI_API_KEY_FREE, PORTAL_BOT_SECRET（通知は通知ベルへ。Discordには送らない）
 
 on:
   schedule:
@@ -48,8 +48,6 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_KEY || secrets.SUPABASE_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_API_KEY_FREE: ${{ secrets.GEMINI_API_KEY_FREE }}
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           PORTAL_URL: https://my-work-8jbd.vercel.app
           PORTAL_BOT_SECRET: ${{ secrets.PORTAL_BOT_SECRET }}
         run: python scripts/edge_cloud_worker.py

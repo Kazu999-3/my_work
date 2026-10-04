@@ -11,7 +11,7 @@ PC常駐に依存せず、GitHub Actions や Cloudflare から実行可能。
 2. YouTube RSS フィード (https://www.youtube.com/feeds/videos.xml?channel_id={id})
    から各チャンネルの最新動画（最大15件）を軽量取得（yt-dlp不要・bot判定なし）。
 3. 既に youtube_queue / personal_knowledge に存在する動画を除外し、新着のみを起票。
-4. 新着があれば Discord へ通知。
+4. 新着は解析キューに積む（個別の通知は送らない。結果は通知ベル・健康診断で確認する）。
 --------------------------------------------------------------------------------
 """
 

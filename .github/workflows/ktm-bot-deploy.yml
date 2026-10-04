@@ -53,7 +53,6 @@ jobs:
       #
       # 新しいシークレットを必要としない GitHub Issue を主たる通知手段にする
       # (標準の GITHUB_TOKEN で動き、Issueは通知が飛ぶ上に消えずに残る)。
-      # DISCORD_KTM_WEBHOOK_URL が登録されていればDiscordへも送る。
       # ───────────────────────────────────────────────────────────────
       - name: 失敗をIssueで通知
         if: failure()
@@ -83,18 +82,3 @@ jobs:
           else
             gh issue create --title "$TITLE" --body "$BODY"
           fi
-
-      - name: 失敗をDiscordへ通知 (webhook未設定ならスキップ)
-        if: failure()
-        working-directory: .
-        env:
-          WEBHOOK: ${{ secrets.DISCORD_KTM_WEBHOOK_URL }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          if [ -z "$WEBHOOK" ]; then
-            echo "::warning::DISCORD_KTM_WEBHOOK_URL が未登録のためDiscord通知はスキップしました（Issueは作成済み）。登録すればここからも飛びます。"
-            exit 0
-          fi
-          curl -s -X POST "$WEBHOOK" -H 'Content-Type: application/json' \
-            -d "$(printf '{"content":"🚨 **KTM Botのデプロイが失敗しました**\\n本番Workerは古いコードのままです（画面上は壊れないので見落としやすい）。\\n%s"}' "$RUN_URL")" \
-            > /dev/null && echo "Discordへ通知しました"

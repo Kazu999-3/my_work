@@ -61,10 +61,9 @@ jobs:
 
       - name: Run patch watchdog
         env:
-          # notify_discord.py が読むのは DISCORD_WEBHOOK_URL。
-          # 他のワークフローは DISCORD_WEBHOOK という名前で同じシークレットを
-          # 渡しているが、あちらは各スクリプトが自前で DISCORD_WEBHOOK を読むため。
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK }}
+          # 新パッチの通知は通知ベルへ送る（以前のDiscord用シークレットは未登録で届いていなかった）
+          PORTAL_URL: https://my-work-8jbd.vercel.app
+          PORTAL_BOT_SECRET: ${{ secrets.PORTAL_BOT_SECRET }}
         run: |
           case "${{ github.event.inputs.mode }}" in
             check-only) FLAGS="--check-only" ;;
@@ -75,6 +74,8 @@ jobs:
           python scripts/check_patch_update.py $FLAGS
 
       - name: Commit patch record and queue progress
+        # 通知だけ失敗した場合も、記録とキューは保存する
+        if: always()
         run: |
           git config --global user.name 'KTM Patch Watchdog'
           git config --global user.email 'actions@ktm.local'

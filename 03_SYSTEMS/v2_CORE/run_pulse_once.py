@@ -6,8 +6,11 @@
 # 順に1回ずつ実行する。
 #
 #   - パッチ更新の検知
-#   - LoLalytics の統計取得
 #   - Discordサーバーメンバーの同期
+#
+# LoLalytics の統計取得(check_lolalytics_stats)は2026-10-05に外した。5体分を毎回Geminiで
+# 調べて記事を書くが、生成物は実行環境ごと捨てられ何も残らず、日次クォータだけを
+# 消費していた(しかも戻り値の数が合わず毎回最後に落ちていた)。
 #
 # ローカルのファイル監視(check_file_changes)はPC上のファイルが対象なので呼ばない。
 # ============================================================
@@ -35,7 +38,6 @@ def main() -> int:
         # current_patch.json を比較する scripts/check_patch_update.py
         # （.github/workflows/patch-watchdog.yml で1日2回実行）である。
         ("パッチ更新の検知(単発実行では通知条件に入らない)", lambda: pulse.check_lol_patches()),
-        ("LoLalytics統計の取得", lambda: pulse.check_lolalytics_stats()),
         ("Discordメンバー同期", lambda: asyncio.run(pulse.sync_server_members())),
     ]
 

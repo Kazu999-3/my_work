@@ -13,6 +13,7 @@ Riot DataDragon 公式APIから最新パッチバージョンを定期巡回・�
 --------------------------------------------------------------------------------
 """
 
+import os
 import sys
 import json
 import urllib.request
@@ -239,47 +240,37 @@ def update_champion_queue(new_patch, modified_champions=None, dry_run=False):
         print(f"[ERROR] キュー更新失敗: {e}")
 
 def notify_patch_change(old_patch, new_patch, dry_run=False):
-    """Discord にパッチ速報を送信"""
-    msg = (
-        f"🚨 **Riot最新パッチ検知: `{old_patch}` ➔ `{new_patch}`**\n"
-        f"主力10体（Aatrox, Darius, Fiora 等）の戦術バイブル再検証キューを自動発火しました。\n"
-        f"ゲーム内HUDオーバーレイおよび対面勝率データへの反映準備を開始します。"
-    )
+    """ポータルの通知ベル(admin_notifications)にパッチ速報を送る。
 
-    notify_script = REPO_ROOT / "scripts" / "notify_discord.py"
-    if not notify_script.exists():
-        print(f"[WARN] notify script not found: {notify_script}")
-        return
-
-    cmd = [
-        sys.executable, str(notify_script),
-        "--type", "alert",
-        "--level", "warn",
-        "-m", msg
-    ]
+    以前は notify_discord.py 経由でDiscordへ送っていたが、Actionsに DISCORD_WEBHOOK が
+    登録されておらず毎回スキップされ、新パッチを誰にも知らせていなかった(2026-10-05)。
+    通知は通知ベルに一本化する方針のため、edge_cloud_worker と同じ /api/push/notify-admin を使う。
+    """
+    title = f"🚨 新パッチ検知: {old_patch} → {new_patch}"
+    body = "主力チャンピオンの戦術バイブル再検証キューを自動で積みました。辞典・対面データへの反映を順に進めます。"
+    portal_url = os.environ.get("PORTAL_URL", "").rstrip("/")
     if dry_run:
-        cmd.append("--dry-run")
-
-    print(f"  📢 Discord 通知実行中...")
-    # 終了コードを見ずに stdout を流すだけだと、Webhook未設定や送信失敗でも
-    # 成功したように見えてしまう（この調査で最も多く見つかった型）。
-    # 番犬が黙って通知を落としていると新パッチに気づけないため、明示的に判定する。
+        print(f"  🔍 [DRY-RUN] 通知ベルへは送っていません: {title}")
+        return True
+    if not portal_url:
+        # 黙って抜けると新パッチに誰も気づけないため、失敗として扱う
+        print("[ERROR] PORTAL_URL が未設定のため通知ベルへ送れませんでした。")
+        return False
+    req = urllib.request.Request(
+        f"{portal_url}/api/push/notify-admin",
+        data=json.dumps({"type": "patch_update", "title": title, "body": body, "url": "/admin/dict-health"}).encode(),
+        method="POST",
+    )
+    req.add_header("Content-Type", "application/json")
+    secret = os.environ.get("PORTAL_BOT_SECRET", "")
+    if secret:
+        req.add_header("x-bot-secret", secret)
     try:
-        res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
-        if res.stdout:
-            print(res.stdout.rstrip())
-        if res.returncode != 0:
-            print(f"[ERROR] Discord通知が失敗しました (exit={res.returncode})")
-            if res.stderr:
-                print(f"        stderr: {res.stderr.strip()[-500:]}")
-            return False
-        if dry_run:
-            print("  🔍 [DRY-RUN] 実際には送信していません。")
-        else:
-            print("  ✅ Discord通知を送信しました。")
+        urllib.request.urlopen(req, timeout=15)
+        print("  ✅ 通知ベルへ送信しました。")
         return True
     except Exception as e:
-        print(f"[ERROR] 通知失敗: {e}")
+        print(f"[ERROR] 通知ベルへの送信に失敗しました: {e}")
         return False
 
 def check_patch(force=False, dry_run=False, check_only=False):
@@ -329,9 +320,12 @@ def check_patch(force=False, dry_run=False, check_only=False):
     # 飛び続ける状態だった(追跡対象に変更して解消)。同じことが再発しても
     # 通知だけは荒れないようにするための安全弁。
     if current == "unknown":
-        print("  ℹ️ 前回の記録が無いため、今回は記録の初期化のみ行い Discord通知は行いません。")
-    else:
-        notify_patch_change(current, latest, dry_run=dry_run)
+        print("  ℹ️ 前回の記録が無いため、今回は記録の初期化のみ行い通知は行いません。")
+    elif not notify_patch_change(current, latest, dry_run=dry_run):
+        # 通知が届かないまま成功扱いにすると新パッチに誰も気づけない。ワークフローを
+        # 失敗させ、毎朝の健康診断で拾えるようにする（記録の保存は always で行う）
+        print("\n❌ パッチ記録は更新しましたが、通知ベルへの送信に失敗しました。")
+        return 1
 
     print("\n✨ パッチ更新プロセスが正常に完了しました。")
     return 0

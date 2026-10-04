@@ -37,7 +37,6 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 PORTAL_URL = os.environ.get("PORTAL_URL", "").rstrip("/")
 PORTAL_BOT_SECRET = os.environ.get("PORTAL_BOT_SECRET", "")
-DISCORD_WEBHOOK = os.environ.get("DISCORD_WEBHOOK", "")
 
 # edge_worker_daemon.py専用のハートビートID(共有の...000000はこのワーカー自身も
 # 5分おきにフォールバック更新するため、ローカルデーモン単体の生死判定には使えない)。
@@ -184,6 +183,25 @@ def notify_portal(task_type, payload, success, detail="", task_id=None):
         print(f"  [通知送信失敗] {e}", file=sys.stderr)
 
 
+def notify_bell(ntype, title, body, url="/"):
+    """任意の内容をポータルの通知ベルへ送る(送信失敗は握りつぶさずログに残す)。"""
+    if not PORTAL_URL:
+        print(f"  [通知ベル未送信] PORTAL_URL未設定: {title}", file=sys.stderr)
+        return
+    req = urllib.request.Request(
+        f"{PORTAL_URL}/api/push/notify-admin",
+        data=json.dumps({"type": ntype, "title": title, "body": body, "url": url}).encode(),
+        method="POST",
+    )
+    req.add_header("Content-Type", "application/json")
+    if PORTAL_BOT_SECRET:
+        req.add_header("x-bot-secret", PORTAL_BOT_SECRET)
+    try:
+        urllib.request.urlopen(req, timeout=10)
+    except Exception as e:
+        print(f"  [通知ベル送信失敗] {e}", file=sys.stderr)
+
+
 def run_script(rel_path, args, timeout):
     env = os.environ.copy()
     env["PYTHONPATH"] = os.path.join(REPO_ROOT, "03_SYSTEMS")
@@ -252,32 +270,6 @@ def ensure_bulk_update_resumed():
         print(f"❌ [BulkUpdateResumer] 再起票失敗: {status}", file=sys.stderr)
 
 
-def notify_discord_direct(title: str, description: str, color: int = 0xe74c3c):
-    """ポータル経由ではなく、Discord Webhookへ直接投稿する(このワーカーは通常
-    notify_portal()でポータルの通知ベルにしか投げないが、ローカルデーモン死活監視は
-    ユーザーがDiscordで気づく想定のため直接投稿する)。"""
-    if not DISCORD_WEBHOOK:
-        return
-    payload = {
-        "embeds": [{
-            "title": title,
-            "description": description,
-            "color": color,
-            "timestamp": now_iso(),
-            "footer": {"text": "Antigravity OS (Edge Cloud Worker)"},
-        }]
-    }
-    req = urllib.request.Request(DISCORD_WEBHOOK, data=json.dumps(payload).encode(), method="POST")
-    req.add_header("Content-Type", "application/json")
-    # ⚠️ 2026-09-23: User-Agent が無いと Discord の前段(Cloudflare)が 403 で弾く。
-    # notify.py と同じ問題（実測: UAなし→403 / UAあり→APIに到達）。
-    req.add_header("User-Agent", "SovereignOS-Notifier/1.0 (+https://github.com/Kazu999-3/my_work)")
-    try:
-        urllib.request.urlopen(req, timeout=10)
-    except Exception as e:
-        print(f"  [Discord直接通知失敗] {e}", file=sys.stderr)
-
-
 def ensure_local_daemon_healthy():
     """
     ローカル常駐デーモン(edge_worker_daemon.py)は5秒おきに専用のハートビート行
@@ -286,7 +278,9 @@ def ensure_local_daemon_healthy():
     バッファ)更新されていなければ「PCがオフか、デーモンだけがクラッシュしたか」を
     区別はできないが、少なくとも今動いていないことを検知して知らせる(2026-08-12、
     「デーモンが落ちても誰も気づけない」という報告を受けて追加)。
-    連続アラートを防ぐため3時間に1回だけ通知する。
+    通知は通知ベル(admin_notifications)へ、停止1回につき1通だけ送る。以前は3時間おきに
+    Discordへ直接送っていたが、Actionsに DISCORD_WEBHOOK が登録されておらず誰にも
+    届いていなかった(2026-10-05、通知ベルへ一本化)。
     """
     status, rows = sb("GET", f"edge_tasks?id=eq.{LOCAL_DAEMON_HEARTBEAT_ID}&select=updated_at")
     if status != 200 or not rows or not rows[0].get("updated_at"):
@@ -303,13 +297,15 @@ def ensure_local_daemon_healthy():
     if age_minutes < 10:
         return  # 生きている
 
-    cutoff = (datetime.now(timezone.utc) - timedelta(hours=3)).isoformat()
+    # 最後のハートビート以降に通知済みなら、同じ停止についてはもう送らない
+    # (PCを切っている間に3時間おきに通知が積み上がるのを防ぐ)
+    from urllib.parse import quote
     status, existing = sb(
         "GET",
-        f"edge_tasks?task_type=eq.local_daemon_down_alert&created_at=gt.{cutoff}&select=id&limit=1",
+        f"edge_tasks?task_type=eq.local_daemon_down_alert&created_at=gt.{quote(updated_at.isoformat())}&select=id&limit=1",
     )
     if status == 200 and existing:
-        print("🔧 [LocalDaemonWatchdog] 直近3時間以内に通知済みのためスキップします。")
+        print("🔧 [LocalDaemonWatchdog] この停止については通知済みのためスキップします。")
         return
 
     sb("POST", "edge_tasks", {
@@ -318,10 +314,12 @@ def ensure_local_daemon_healthy():
         "status": "completed",
     })
     print(f"🔴 [LocalDaemonWatchdog] ローカルデーモンのハートビートが{round(age_minutes)}分以上更新されていません。")
-    notify_discord_direct(
-        "🔴 ローカル常駐デーモンが応答していません",
-        f"edge_worker_daemon.pyのハートビートが{round(age_minutes)}分以上更新されていません。"
-        f"PCがオフ/スリープか、デーモンだけがクラッシュしている可能性があります。",
+    notify_bell(
+        "local_daemon_down",
+        "🔴 PCの常駐デーモンが応答していません",
+        f"edge_worker_daemon.py のハートビートが{round(age_minutes)}分以上更新されていません。"
+        f"PCがオフ/スリープか、デーモンだけが落ちている可能性があります。"
+        f"PCを使っているのにこの通知が来たら、Sovereign Edge Worker を起動し直してください。",
     )
 
 
