@@ -1,1054 +1,1054 @@
 {
   "patch_version": "26.19",
-  "updated_at": "2026-09-30T02:51:53.219253+00:00",
+  "updated_at": "2026-10-04T21:50:36.734148+00:00",
   "status": "completed",
   "queue": {
     "Aatrox": {
       "name": "エイトロックス",
       "status": "completed",
-      "updated_at": "2026-09-28T03:03:07.035958+00:00",
+      "updated_at": "2026-10-04T20:41:18.115704+00:00",
       "error": null,
       "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
     },
     "Ahri": {
       "name": "アーリ",
       "status": "completed",
-      "updated_at": "2026-09-28T03:03:54.030356+00:00",
+      "updated_at": "2026-10-04T20:42:08.311841+00:00",
       "error": null
     },
     "Akali": {
       "name": "アカリ",
       "status": "completed",
-      "updated_at": "2026-09-28T03:04:44.028390+00:00",
+      "updated_at": "2026-10-04T20:42:50.941605+00:00",
       "error": null
     },
     "Akshan": {
       "name": "アクシャン",
       "status": "completed",
-      "updated_at": "2026-09-28T03:05:33.239452+00:00",
+      "updated_at": "2026-10-04T20:43:34.066521+00:00",
       "error": null
     },
     "Alistar": {
       "name": "アリスター",
       "status": "completed",
-      "updated_at": "2026-09-28T03:06:20.756137+00:00",
+      "updated_at": "2026-10-04T20:44:16.997530+00:00",
       "error": null
     },
     "Ambessa": {
       "name": "アンベッサ",
       "status": "completed",
-      "updated_at": "2026-09-28T03:07:10.092710+00:00",
+      "updated_at": "2026-10-04T20:44:43.424406+00:00",
       "error": null
     },
     "Amumu": {
       "name": "アムム",
       "status": "completed",
-      "updated_at": "2026-09-28T03:08:06.714949+00:00",
+      "updated_at": "2026-10-04T20:45:06.606139+00:00",
       "error": null
     },
     "Anivia": {
       "name": "アニビア",
       "status": "completed",
-      "updated_at": "2026-09-28T03:09:13.993521+00:00",
+      "updated_at": "2026-10-04T20:45:31.603694+00:00",
       "error": null
     },
     "Annie": {
       "name": "アニー",
       "status": "completed",
-      "updated_at": "2026-09-28T03:10:01.101525+00:00",
+      "updated_at": "2026-10-04T20:46:12.548963+00:00",
       "error": null
     },
     "Aphelios": {
       "name": "アフェリオス",
       "status": "completed",
-      "updated_at": "2026-09-28T03:10:50.648633+00:00",
+      "updated_at": "2026-10-04T20:46:34.019593+00:00",
       "error": null
     },
     "Ashe": {
       "name": "アッシュ",
       "status": "completed",
-      "updated_at": "2026-09-28T03:11:39.292258+00:00",
+      "updated_at": "2026-10-04T20:46:55.761564+00:00",
       "error": null
     },
     "AurelionSol": {
       "name": "オレリオン・ソル",
       "status": "completed",
-      "updated_at": "2026-09-28T03:12:26.184866+00:00",
+      "updated_at": "2026-10-04T20:47:22.534820+00:00",
       "error": null
     },
     "Aurora": {
       "name": "オーロラ",
       "status": "completed",
-      "updated_at": "2026-09-28T03:13:15.162697+00:00",
+      "updated_at": "2026-10-04T20:47:45.081765+00:00",
       "error": null
     },
     "Azir": {
       "name": "アジール",
       "status": "completed",
-      "updated_at": "2026-09-28T03:14:04.603204+00:00",
+      "updated_at": "2026-10-04T20:48:10.517818+00:00",
       "error": null
     },
     "Bard": {
       "name": "バード",
       "status": "completed",
-      "updated_at": "2026-09-28T03:14:52.724075+00:00",
+      "updated_at": "2026-10-04T20:48:34.721295+00:00",
       "error": null
     },
     "Belveth": {
       "name": "ベル＝ヴェス",
       "status": "completed",
-      "updated_at": "2026-09-28T03:15:42.548130+00:00",
+      "updated_at": "2026-10-04T20:48:58.122334+00:00",
       "error": null
     },
     "Blitzcrank": {
       "name": "ブリッツクランク",
       "status": "completed",
-      "updated_at": "2026-09-28T03:16:31.608599+00:00",
+      "updated_at": "2026-10-04T20:49:22.970335+00:00",
       "error": null
     },
     "Brand": {
       "name": "ブランド",
       "status": "completed",
-      "updated_at": "2026-09-28T03:17:20.032304+00:00",
+      "updated_at": "2026-10-04T20:49:48.911133+00:00",
       "error": null
     },
     "Braum": {
       "name": "ブラウム",
       "status": "completed",
-      "updated_at": "2026-09-28T03:18:07.188070+00:00",
+      "updated_at": "2026-10-04T20:50:10.826364+00:00",
       "error": null
     },
     "Briar": {
       "name": "ブライアー",
       "status": "completed",
-      "updated_at": "2026-09-28T03:18:56.414096+00:00",
+      "updated_at": "2026-10-04T20:50:37.077414+00:00",
       "error": null
     },
     "Caitlyn": {
       "name": "ケイトリン",
       "status": "completed",
-      "updated_at": "2026-09-28T03:19:47.770745+00:00",
+      "updated_at": "2026-10-04T20:51:05.253808+00:00",
       "error": null
     },
     "Camille": {
       "name": "カミール",
       "status": "completed",
-      "updated_at": "2026-09-28T03:20:38.780449+00:00",
+      "updated_at": "2026-10-04T20:51:28.150573+00:00",
       "error": null
     },
     "Cassiopeia": {
       "name": "カシオペア",
       "status": "completed",
-      "updated_at": "2026-09-28T03:21:27.504774+00:00",
+      "updated_at": "2026-10-04T20:51:49.767288+00:00",
       "error": null
     },
     "Chogath": {
       "name": "チョ＝ガス",
       "status": "completed",
-      "updated_at": "2026-09-28T03:22:17.381298+00:00",
+      "updated_at": "2026-10-04T20:52:12.741455+00:00",
       "error": null
     },
     "Corki": {
       "name": "コーキ",
       "status": "completed",
-      "updated_at": "2026-09-28T03:23:04.907093+00:00",
+      "updated_at": "2026-10-04T20:52:58.346981+00:00",
       "error": null
     },
     "Darius": {
       "name": "ダリウス",
       "status": "completed",
-      "updated_at": "2026-09-28T03:23:53.133831+00:00",
+      "updated_at": "2026-10-04T20:53:20.965942+00:00",
       "error": null,
       "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
     },
     "Diana": {
       "name": "ダイアナ",
       "status": "completed",
-      "updated_at": "2026-09-28T03:24:42.227371+00:00",
+      "updated_at": "2026-10-04T20:53:43.976865+00:00",
       "error": null
     },
     "Draven": {
       "name": "ドレイヴン",
       "status": "completed",
-      "updated_at": "2026-09-28T03:25:29.448742+00:00",
+      "updated_at": "2026-10-04T20:54:08.393868+00:00",
       "error": null
     },
     "DrMundo": {
       "name": "ドクター・ムンド",
       "status": "completed",
-      "updated_at": "2026-09-28T03:26:18.419763+00:00",
+      "updated_at": "2026-10-04T20:54:30.021550+00:00",
       "error": null
     },
     "Ekko": {
       "name": "エコー",
       "status": "completed",
-      "updated_at": "2026-09-28T03:27:08.603404+00:00",
+      "updated_at": "2026-10-04T20:54:52.186449+00:00",
       "error": null
     },
     "Elise": {
       "name": "エリス",
       "status": "completed",
-      "updated_at": "2026-09-28T03:27:57.032210+00:00",
+      "updated_at": "2026-10-04T20:55:15.463525+00:00",
       "error": null
     },
     "Evelynn": {
       "name": "イブリン",
       "status": "completed",
-      "updated_at": "2026-09-28T03:28:46.616213+00:00",
+      "updated_at": "2026-10-04T20:55:37.627117+00:00",
       "error": null
     },
     "Ezreal": {
       "name": "エズリアル",
       "status": "completed",
-      "updated_at": "2026-09-28T03:29:35.001586+00:00",
+      "updated_at": "2026-10-04T20:55:59.846499+00:00",
       "error": null
     },
     "Fiddlesticks": {
       "name": "フィドルスティックス",
       "status": "completed",
-      "updated_at": "2026-09-28T03:30:24.447516+00:00",
+      "updated_at": "2026-10-04T20:56:21.838301+00:00",
       "error": null
     },
     "Fiora": {
       "name": "フィオラ",
       "status": "completed",
-      "updated_at": "2026-09-28T03:31:14.948638+00:00",
+      "updated_at": "2026-10-04T20:56:43.118124+00:00",
       "error": null,
       "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
     },
     "Fizz": {
       "name": "フィズ",
       "status": "completed",
-      "updated_at": "2026-09-28T03:32:03.800136+00:00",
+      "updated_at": "2026-10-04T20:57:05.412019+00:00",
       "error": null
     },
     "Galio": {
       "name": "ガリオ",
       "status": "completed",
-      "updated_at": "2026-09-28T03:32:52.321126+00:00",
+      "updated_at": "2026-10-04T20:57:29.766190+00:00",
       "error": null
     },
     "Gangplank": {
       "name": "ガングプランク",
       "status": "completed",
-      "updated_at": "2026-09-28T03:33:47.538134+00:00",
+      "updated_at": "2026-10-04T20:57:51.697364+00:00",
       "error": null
     },
     "Garen": {
       "name": "ガレン",
       "status": "completed",
-      "updated_at": "2026-09-28T03:34:40.437260+00:00",
+      "updated_at": "2026-10-04T20:58:15.859997+00:00",
       "error": null
     },
     "Gnar": {
       "name": "ナー",
       "status": "completed",
-      "updated_at": "2026-09-28T03:35:28.474934+00:00",
+      "updated_at": "2026-10-04T20:58:41.328400+00:00",
       "error": null
     },
     "Gragas": {
       "name": "グラガス",
       "status": "completed",
-      "updated_at": "2026-09-28T03:36:22.114091+00:00",
+      "updated_at": "2026-10-04T20:59:04.178633+00:00",
       "error": null
     },
     "Graves": {
       "name": "グレイブス",
       "status": "completed",
-      "updated_at": "2026-09-28T03:37:11.743705+00:00",
+      "updated_at": "2026-10-04T20:59:47.773393+00:00",
       "error": null
     },
     "Gwen": {
       "name": "グウェン",
       "status": "completed",
-      "updated_at": "2026-09-28T03:38:00.244976+00:00",
+      "updated_at": "2026-10-04T21:00:13.782169+00:00",
       "error": null
     },
     "Hecarim": {
       "name": "ヘカリム",
       "status": "completed",
-      "updated_at": "2026-09-28T03:38:50.386905+00:00",
+      "updated_at": "2026-10-04T21:00:38.031440+00:00",
       "error": null
     },
     "Heimerdinger": {
       "name": "ハイマーディンガー",
       "status": "completed",
-      "updated_at": "2026-09-28T03:39:38.802754+00:00",
+      "updated_at": "2026-10-04T21:01:00.073639+00:00",
       "error": null
     },
     "Hwei": {
       "name": "フェイ",
       "status": "completed",
-      "updated_at": "2026-09-28T03:40:26.251491+00:00",
+      "updated_at": "2026-10-04T21:01:22.989693+00:00",
       "error": null
     },
     "Illaoi": {
       "name": "イラオイ",
       "status": "completed",
-      "updated_at": "2026-09-28T03:41:17.609640+00:00",
+      "updated_at": "2026-10-04T21:01:44.794758+00:00",
       "error": null
     },
     "Irelia": {
       "name": "イレリア",
       "status": "completed",
-      "updated_at": "2026-09-28T03:42:06.889452+00:00",
+      "updated_at": "2026-10-04T21:02:06.944649+00:00",
       "error": null
     },
     "Ivern": {
       "name": "アイバーン",
       "status": "completed",
-      "updated_at": "2026-09-28T03:42:57.319104+00:00",
+      "updated_at": "2026-10-04T21:02:30.762727+00:00",
       "error": null
     },
     "Janna": {
       "name": "ジャンナ",
       "status": "completed",
-      "updated_at": "2026-09-28T03:43:47.236839+00:00",
+      "updated_at": "2026-10-04T21:02:58.185942+00:00",
       "error": null
     },
     "JarvanIV": {
       "name": "ジャーヴァンⅣ",
       "status": "completed",
-      "updated_at": "2026-09-28T03:44:36.644247+00:00",
+      "updated_at": "2026-10-04T21:03:24.175992+00:00",
       "error": null,
       "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
     },
     "Jax": {
       "name": "ジャックス",
       "status": "completed",
-      "updated_at": "2026-09-28T03:45:27.089542+00:00",
+      "updated_at": "2026-10-04T21:03:49.129550+00:00",
       "error": null,
       "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
     },
     "Jayce": {
       "name": "ジェイス",
       "status": "completed",
-      "updated_at": "2026-09-28T03:46:15.543709+00:00",
+      "updated_at": "2026-10-04T21:04:11.428511+00:00",
       "error": null
     },
     "Jhin": {
       "name": "ジン",
       "status": "completed",
-      "updated_at": "2026-09-28T03:47:03.302080+00:00",
+      "updated_at": "2026-10-04T21:04:33.754837+00:00",
       "error": null
     },
     "Jinx": {
       "name": "ジンクス",
       "status": "completed",
-      "updated_at": "2026-09-28T03:47:52.421335+00:00",
+      "updated_at": "2026-10-04T21:04:55.677721+00:00",
       "error": null
     },
     "Kaisa": {
       "name": "カイ＝サ",
       "status": "completed",
-      "updated_at": "2026-09-28T03:48:43.942190+00:00",
+      "updated_at": "2026-10-04T21:05:16.711947+00:00",
       "error": null
     },
     "Kalista": {
       "name": "カリスタ",
       "status": "completed",
-      "updated_at": "2026-09-28T03:49:32.743476+00:00",
+      "updated_at": "2026-10-04T21:05:41.961458+00:00",
       "error": null
     },
     "Karma": {
       "name": "カルマ",
       "status": "completed",
-      "updated_at": "2026-09-28T03:50:23.551078+00:00",
+      "updated_at": "2026-10-04T21:06:02.558551+00:00",
       "error": null
     },
     "Karthus": {
       "name": "カーサス",
       "status": "completed",
-      "updated_at": "2026-09-28T03:51:25.593485+00:00",
+      "updated_at": "2026-10-04T21:06:24.423817+00:00",
       "error": null
     },
     "Kassadin": {
       "name": "カサディン",
       "status": "completed",
-      "updated_at": "2026-09-28T03:52:13.130155+00:00",
+      "updated_at": "2026-10-04T21:06:46.087122+00:00",
       "error": null
     },
     "Katarina": {
       "name": "カタリナ",
       "status": "completed",
-      "updated_at": "2026-09-28T03:53:03.478615+00:00",
+      "updated_at": "2026-10-04T21:07:08.171015+00:00",
       "error": null
     },
     "Kayle": {
       "name": "ケイル",
       "status": "completed",
-      "updated_at": "2026-09-28T03:53:52.800491+00:00",
+      "updated_at": "2026-10-04T21:07:29.809560+00:00",
       "error": null
     },
     "Kayn": {
       "name": "ケイン",
       "status": "completed",
-      "updated_at": "2026-09-28T03:54:41.688640+00:00",
+      "updated_at": "2026-10-04T21:07:52.906716+00:00",
       "error": null
     },
     "Kennen": {
       "name": "ケネン",
       "status": "completed",
-      "updated_at": "2026-09-28T03:55:29.473031+00:00",
+      "updated_at": "2026-10-04T21:08:14.193675+00:00",
       "error": null
     },
     "Khazix": {
       "name": "カ＝ジックス",
       "status": "completed",
-      "updated_at": "2026-09-28T03:56:22.597700+00:00",
+      "updated_at": "2026-10-04T21:08:40.248352+00:00",
       "error": null
     },
     "Kindred": {
       "name": "キンドレッド",
       "status": "completed",
-      "updated_at": "2026-09-28T03:57:21.575694+00:00",
+      "updated_at": "2026-10-04T21:09:03.011388+00:00",
       "error": null
     },
     "Kled": {
       "name": "クレッド",
       "status": "completed",
-      "updated_at": "2026-09-28T03:58:09.297243+00:00",
+      "updated_at": "2026-10-04T21:09:25.174103+00:00",
       "error": null
     },
     "KogMaw": {
       "name": "コグ＝マウ",
       "status": "completed",
-      "updated_at": "2026-09-28T03:58:59.704482+00:00",
+      "updated_at": "2026-10-04T21:09:47.084613+00:00",
       "error": null
     },
     "KSante": {
       "name": "カ・サンテ",
       "status": "completed",
-      "updated_at": "2026-09-28T03:59:52.688335+00:00",
+      "updated_at": "2026-10-04T21:10:13.634897+00:00",
       "error": null
     },
     "Leblanc": {
       "name": "ルブラン",
       "status": "completed",
-      "updated_at": "2026-09-28T04:00:41.242392+00:00",
+      "updated_at": "2026-10-04T21:10:34.060129+00:00",
       "error": null
     },
     "LeeSin": {
       "name": "リー・シン",
       "status": "completed",
-      "updated_at": "2026-09-28T04:01:30.612738+00:00",
+      "updated_at": "2026-10-04T21:11:00.804839+00:00",
       "error": null,
       "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
     },
     "Leona": {
       "name": "レオナ",
       "status": "completed",
-      "updated_at": "2026-09-28T04:03:08.521193+00:00",
+      "updated_at": "2026-10-04T21:11:21.899597+00:00",
       "error": null
     },
     "Lillia": {
       "name": "リリア",
       "status": "completed",
-      "updated_at": "2026-09-28T04:04:03.472193+00:00",
+      "updated_at": "2026-10-04T21:11:47.843543+00:00",
       "error": null,
       "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
     },
     "Lissandra": {
       "name": "リサンドラ",
       "status": "completed",
-      "updated_at": "2026-09-28T04:04:51.878022+00:00",
+      "updated_at": "2026-10-04T21:12:13.314133+00:00",
       "error": null
     },
     "Locke": {
       "name": "ロック",
       "status": "completed",
-      "updated_at": "2026-09-28T04:05:39.756792+00:00",
+      "updated_at": "2026-10-04T21:12:39.096167+00:00",
       "error": null
     },
     "Lucian": {
       "name": "ルシアン",
       "status": "completed",
-      "updated_at": "2026-09-28T04:06:31.714742+00:00",
+      "updated_at": "2026-10-04T21:13:00.477431+00:00",
       "error": null
     },
     "Lulu": {
       "name": "ルル",
       "status": "completed",
-      "updated_at": "2026-09-28T04:07:18.934842+00:00",
+      "updated_at": "2026-10-04T21:13:22.538864+00:00",
       "error": null
     },
     "Lux": {
       "name": "ラックス",
       "status": "completed",
-      "updated_at": "2026-09-28T04:08:08.367606+00:00",
+      "updated_at": "2026-10-04T21:13:43.144271+00:00",
       "error": null
     },
     "Malphite": {
       "name": "マルファイト",
       "status": "completed",
-      "updated_at": "2026-09-28T04:09:00.013009+00:00",
+      "updated_at": "2026-10-04T21:14:19.246928+00:00",
       "error": null
     },
     "Malzahar": {
       "name": "マルザハール",
       "status": "completed",
-      "updated_at": "2026-09-28T04:09:52.599885+00:00",
+      "updated_at": "2026-10-04T21:14:42.608864+00:00",
       "error": null
     },
     "Maokai": {
       "name": "マオカイ",
       "status": "completed",
-      "updated_at": "2026-09-28T04:10:43.732958+00:00",
+      "updated_at": "2026-10-04T21:15:25.143579+00:00",
       "error": null
     },
     "MasterYi": {
       "name": "マスター・イー",
       "status": "completed",
-      "updated_at": "2026-09-28T04:11:32.755339+00:00",
+      "updated_at": "2026-10-04T21:15:47.803591+00:00",
       "error": null
     },
     "Mel": {
       "name": "メル",
       "status": "completed",
-      "updated_at": "2026-09-28T04:12:24.313354+00:00",
+      "updated_at": "2026-10-04T21:16:09.154814+00:00",
       "error": null
     },
     "Milio": {
       "name": "ミリオ",
       "status": "completed",
-      "updated_at": "2026-09-28T04:13:11.530777+00:00",
+      "updated_at": "2026-10-04T21:16:29.959327+00:00",
       "error": null
     },
     "MissFortune": {
       "name": "ミス・フォーチュン",
       "status": "completed",
-      "updated_at": "2026-09-28T04:14:06.983916+00:00",
+      "updated_at": "2026-10-04T21:16:50.497517+00:00",
       "error": null
     },
     "MonkeyKing": {
       "name": "ウーコン",
       "status": "completed",
-      "updated_at": "2026-09-28T04:14:56.990747+00:00",
+      "updated_at": "2026-10-04T21:17:12.726169+00:00",
       "error": null
     },
     "Mordekaiser": {
       "name": "モルデカイザー",
       "status": "completed",
-      "updated_at": "2026-09-28T04:15:47.448820+00:00",
+      "updated_at": "2026-10-04T21:17:34.333927+00:00",
       "error": null
     },
     "Morgana": {
       "name": "モルガナ",
       "status": "completed",
-      "updated_at": "2026-09-28T04:16:38.041060+00:00",
+      "updated_at": "2026-10-04T21:17:57.172869+00:00",
       "error": null
     },
     "Naafiri": {
       "name": "ナフィーリ",
       "status": "completed",
-      "updated_at": "2026-09-28T04:17:32.628333+00:00",
+      "updated_at": "2026-10-04T21:18:19.757091+00:00",
       "error": null
     },
     "Nami": {
       "name": "ナミ",
       "status": "completed",
-      "updated_at": "2026-09-28T04:18:21.553498+00:00",
+      "updated_at": "2026-10-04T21:18:50.363992+00:00",
       "error": null
     },
     "Nasus": {
       "name": "ナサス",
       "status": "completed",
-      "updated_at": "2026-09-28T04:19:11.903107+00:00",
+      "updated_at": "2026-10-04T21:19:13.049118+00:00",
       "error": null
     },
     "Nautilus": {
       "name": "ノーチラス",
       "status": "completed",
-      "updated_at": "2026-09-28T04:20:06.757467+00:00",
+      "updated_at": "2026-10-04T21:19:34.986614+00:00",
       "error": null
     },
     "Neeko": {
       "name": "ニーコ",
       "status": "completed",
-      "updated_at": "2026-09-28T04:20:55.851194+00:00",
+      "updated_at": "2026-10-04T21:19:56.388313+00:00",
       "error": null
     },
     "Nidalee": {
       "name": "ニダリー",
       "status": "completed",
-      "updated_at": "2026-09-28T04:21:44.113177+00:00",
+      "updated_at": "2026-10-04T21:20:19.616346+00:00",
       "error": null
     },
     "Nilah": {
       "name": "ニーラ",
       "status": "completed",
-      "updated_at": "2026-09-28T04:22:31.035546+00:00",
+      "updated_at": "2026-10-04T21:20:44.303995+00:00",
       "error": null
     },
     "Nocturne": {
       "name": "ノクターン",
       "status": "completed",
-      "updated_at": "2026-09-28T04:23:24.725133+00:00",
+      "updated_at": "2026-10-04T21:21:07.456491+00:00",
       "error": null,
       "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
     },
     "Nunu": {
       "name": "ヌヌ＆ウィルンプ",
       "status": "completed",
-      "updated_at": "2026-09-28T04:24:13.503386+00:00",
+      "updated_at": "2026-10-04T21:21:29.248551+00:00",
       "error": null
     },
     "Olaf": {
       "name": "オラフ",
       "status": "completed",
-      "updated_at": "2026-09-28T04:25:04.761085+00:00",
+      "updated_at": "2026-10-04T21:21:52.095954+00:00",
       "error": null
     },
     "Orianna": {
       "name": "オリアナ",
       "status": "completed",
-      "updated_at": "2026-09-28T04:25:54.183866+00:00",
+      "updated_at": "2026-10-04T21:22:13.607159+00:00",
       "error": null
     },
     "Ornn": {
       "name": "オーン",
       "status": "completed",
-      "updated_at": "2026-09-28T04:26:43.564130+00:00",
+      "updated_at": "2026-10-04T21:22:35.516720+00:00",
       "error": null
     },
     "Pantheon": {
       "name": "パンテオン",
       "status": "completed",
-      "updated_at": "2026-09-28T04:27:33.971431+00:00",
+      "updated_at": "2026-10-04T21:22:58.837087+00:00",
       "error": null
     },
     "Poppy": {
       "name": "ポッピー",
       "status": "completed",
-      "updated_at": "2026-09-28T04:28:23.738830+00:00",
+      "updated_at": "2026-10-04T21:23:21.649512+00:00",
       "error": null
     },
     "Pyke": {
       "name": "パイク",
       "status": "completed",
-      "updated_at": "2026-09-28T04:29:12.998390+00:00",
+      "updated_at": "2026-10-04T21:23:45.134769+00:00",
       "error": null
     },
     "Qiyana": {
       "name": "キヤナ",
       "status": "completed",
-      "updated_at": "2026-09-28T04:30:00.553639+00:00",
+      "updated_at": "2026-10-04T21:24:09.086290+00:00",
       "error": null
     },
     "Quinn": {
       "name": "クイン",
       "status": "completed",
-      "updated_at": "2026-09-28T04:30:54.384014+00:00",
+      "updated_at": "2026-10-04T21:24:30.723555+00:00",
       "error": null
     },
     "Rakan": {
       "name": "ラカン",
       "status": "completed",
-      "updated_at": "2026-09-28T04:31:45.517843+00:00",
+      "updated_at": "2026-10-04T21:24:54.423601+00:00",
       "error": null
     },
     "Rammus": {
       "name": "ラムス",
       "status": "completed",
-      "updated_at": "2026-09-28T04:32:38.073435+00:00",
+      "updated_at": "2026-10-04T21:25:16.762845+00:00",
       "error": null
     },
     "RekSai": {
       "name": "レク＝サイ",
       "status": "completed",
-      "updated_at": "2026-09-28T04:33:34.487921+00:00",
+      "updated_at": "2026-10-04T21:25:39.554487+00:00",
       "error": null
     },
     "Rell": {
       "name": "レル",
       "status": "completed",
-      "updated_at": "2026-09-28T04:34:21.837557+00:00",
+      "updated_at": "2026-10-04T21:26:01.674191+00:00",
       "error": null
     },
     "Renata": {
       "name": "レナータ・グラスク",
       "status": "completed",
-      "updated_at": "2026-09-28T04:35:08.911341+00:00",
+      "updated_at": "2026-10-04T21:26:22.493288+00:00",
       "error": null
     },
     "Renekton": {
       "name": "レネクトン",
       "status": "completed",
-      "updated_at": "2026-09-28T04:35:58.696901+00:00",
+      "updated_at": "2026-10-04T21:26:44.792713+00:00",
       "error": null
     },
     "Rengar": {
       "name": "レンガー",
       "status": "completed",
-      "updated_at": "2026-09-28T04:36:50.154092+00:00",
+      "updated_at": "2026-10-04T21:27:07.674380+00:00",
       "error": null
     },
     "Riven": {
       "name": "リヴェン",
       "status": "completed",
-      "updated_at": "2026-09-28T04:37:37.360526+00:00",
+      "updated_at": "2026-10-04T21:27:30.066080+00:00",
       "error": null
     },
     "Rumble": {
       "name": "ランブル",
       "status": "completed",
-      "updated_at": "2026-09-28T04:38:28.195761+00:00",
+      "updated_at": "2026-10-04T21:27:51.644226+00:00",
       "error": null
     },
     "Ryze": {
       "name": "ライズ",
       "status": "completed",
-      "updated_at": "2026-09-28T04:39:16.495049+00:00",
+      "updated_at": "2026-10-04T21:28:13.238847+00:00",
       "error": null
     },
     "Samira": {
       "name": "サミーラ",
       "status": "completed",
-      "updated_at": "2026-09-28T04:40:04.820279+00:00",
+      "updated_at": "2026-10-04T21:28:39.960232+00:00",
       "error": null
     },
     "Sejuani": {
       "name": "セジュアニ",
       "status": "completed",
-      "updated_at": "2026-09-28T04:40:56.312437+00:00",
+      "updated_at": "2026-10-04T21:29:02.299146+00:00",
       "error": null
     },
     "Senna": {
       "name": "セナ",
       "status": "completed",
-      "updated_at": "2026-09-28T04:41:47.049918+00:00",
+      "updated_at": "2026-10-04T21:29:24.135643+00:00",
       "error": null
     },
     "Seraphine": {
       "name": "セラフィーン",
       "status": "completed",
-      "updated_at": "2026-09-28T04:42:35.672892+00:00",
+      "updated_at": "2026-10-04T21:29:44.715432+00:00",
       "error": null
     },
     "Sett": {
       "name": "セト",
       "status": "completed",
-      "updated_at": "2026-09-28T04:43:23.775409+00:00",
+      "updated_at": "2026-10-04T21:30:08.288706+00:00",
       "error": null
     },
     "Shaco": {
       "name": "シャコ",
       "status": "completed",
-      "updated_at": "2026-09-28T04:44:13.782147+00:00",
+      "updated_at": "2026-10-04T21:30:51.163876+00:00",
       "error": null
     },
     "Shen": {
       "name": "シェン",
       "status": "completed",
-      "updated_at": "2026-09-28T04:45:02.889378+00:00",
+      "updated_at": "2026-10-04T21:31:13.336007+00:00",
       "error": null
     },
     "Shyvana": {
       "name": "シヴァーナ",
       "status": "completed",
-      "updated_at": "2026-09-28T04:45:52.208630+00:00",
+      "updated_at": "2026-10-04T21:31:38.348021+00:00",
       "error": null
     },
     "Singed": {
       "name": "シンジド",
       "status": "completed",
-      "updated_at": "2026-09-28T04:46:40.525277+00:00",
+      "updated_at": "2026-10-04T21:32:01.320839+00:00",
       "error": null
     },
     "Sion": {
       "name": "サイオン",
       "status": "completed",
-      "updated_at": "2026-09-28T04:47:39.421311+00:00",
+      "updated_at": "2026-10-04T21:32:23.318417+00:00",
       "error": null
     },
     "Sivir": {
       "name": "シヴィア",
       "status": "completed",
-      "updated_at": "2026-09-28T04:48:26.708581+00:00",
+      "updated_at": "2026-10-04T21:32:45.218495+00:00",
       "error": null
     },
     "Skarner": {
       "name": "スカーナー",
       "status": "completed",
-      "updated_at": "2026-09-28T04:49:18.076080+00:00",
+      "updated_at": "2026-10-04T21:33:07.648758+00:00",
       "error": null
     },
     "Smolder": {
       "name": "スモルダー",
       "status": "completed",
-      "updated_at": "2026-09-28T04:50:08.684313+00:00",
+      "updated_at": "2026-10-04T21:33:28.676060+00:00",
       "error": null
     },
     "Sona": {
       "name": "ソナ",
       "status": "completed",
-      "updated_at": "2026-09-28T04:51:00.584731+00:00",
+      "updated_at": "2026-10-04T21:33:53.466238+00:00",
       "error": null
     },
     "Soraka": {
       "name": "ソラカ",
       "status": "completed",
-      "updated_at": "2026-09-28T04:51:53.590566+00:00",
+      "updated_at": "2026-10-04T21:34:14.965436+00:00",
       "error": null
     },
     "Swain": {
       "name": "スウェイン",
       "status": "completed",
-      "updated_at": "2026-09-28T04:52:41.747277+00:00",
+      "updated_at": "2026-10-04T21:34:36.272984+00:00",
       "error": null
     },
     "Sylas": {
       "name": "サイラス",
       "status": "completed",
-      "updated_at": "2026-09-28T04:53:31.688431+00:00",
+      "updated_at": "2026-10-04T21:34:58.847767+00:00",
       "error": null
     },
     "Syndra": {
       "name": "シンドラ",
       "status": "completed",
-      "updated_at": "2026-09-28T04:54:18.511194+00:00",
+      "updated_at": "2026-10-04T21:35:25.207850+00:00",
       "error": null
     },
     "TahmKench": {
       "name": "タム・ケンチ",
       "status": "completed",
-      "updated_at": "2026-09-28T04:55:17.815133+00:00",
+      "updated_at": "2026-10-04T21:35:47.147391+00:00",
       "error": null
     },
     "Taliyah": {
       "name": "タリヤ",
       "status": "completed",
-      "updated_at": "2026-09-28T04:56:08.050158+00:00",
+      "updated_at": "2026-10-04T21:36:19.479061+00:00",
       "error": null
     },
     "Talon": {
       "name": "タロン",
       "status": "completed",
-      "updated_at": "2026-09-28T05:03:20.153136+00:00",
+      "updated_at": "2026-10-04T21:36:42.235338+00:00",
       "error": null
     },
     "Taric": {
       "name": "タリック",
       "status": "completed",
-      "updated_at": "2026-09-28T05:04:17.397670+00:00",
+      "updated_at": "2026-10-04T21:37:03.881683+00:00",
       "error": null
     },
     "Teemo": {
       "name": "ティーモ",
       "status": "completed",
-      "updated_at": "2026-09-28T05:05:15.414697+00:00",
+      "updated_at": "2026-10-04T21:37:25.203951+00:00",
       "error": null
     },
     "Thresh": {
       "name": "スレッシュ",
       "status": "completed",
-      "updated_at": "2026-09-28T08:13:38.072435+00:00",
+      "updated_at": "2026-10-04T21:37:47.087465+00:00",
       "error": null
     },
     "Tristana": {
       "name": "トリスターナ",
       "status": "completed",
-      "updated_at": "2026-09-28T08:14:28.068304+00:00",
+      "updated_at": "2026-10-04T21:38:08.909636+00:00",
       "error": null
     },
     "Trundle": {
       "name": "トランドル",
       "status": "completed",
-      "updated_at": "2026-09-28T08:15:19.178877+00:00",
+      "updated_at": "2026-10-04T21:38:31.299077+00:00",
       "error": null
     },
     "Tryndamere": {
       "name": "トリンダメア",
       "status": "completed",
-      "updated_at": "2026-09-28T08:16:07.474137+00:00",
+      "updated_at": "2026-10-04T21:38:53.446824+00:00",
       "error": null
     },
     "TwistedFate": {
       "name": "ツイステッド・フェイト",
       "status": "completed",
-      "updated_at": "2026-09-29T08:44:04.007047+00:00",
+      "updated_at": "2026-10-04T21:39:14.187236+00:00",
       "error": null
     },
     "Twitch": {
       "name": "トゥイッチ",
       "status": "completed",
-      "updated_at": "2026-09-29T08:44:54.980276+00:00",
+      "updated_at": "2026-10-04T21:39:36.406326+00:00",
       "error": null
     },
     "Udyr": {
       "name": "ウディア",
       "status": "completed",
-      "updated_at": "2026-09-29T08:45:46.550496+00:00",
+      "updated_at": "2026-10-04T21:39:58.410149+00:00",
       "error": null
     },
     "Urgot": {
       "name": "アーゴット",
       "status": "completed",
-      "updated_at": "2026-09-29T08:46:36.572530+00:00",
+      "updated_at": "2026-10-04T21:40:19.723855+00:00",
       "error": null
     },
     "Varus": {
       "name": "ヴァルス",
       "status": "completed",
-      "updated_at": "2026-09-30T02:39:19.650947+00:00",
+      "updated_at": "2026-10-04T21:40:41.147693+00:00",
       "error": null
     },
     "Vayne": {
       "name": "ヴェイン",
       "status": "completed",
-      "updated_at": "2026-09-30T02:39:50.876158+00:00",
+      "updated_at": "2026-10-04T21:41:03.981610+00:00",
       "error": null
     },
     "Veigar": {
       "name": "ベイガー",
       "status": "completed",
-      "updated_at": "2026-09-30T02:40:24.875269+00:00",
+      "updated_at": "2026-10-04T21:41:25.553455+00:00",
       "error": null
     },
     "Velkoz": {
       "name": "ヴェル＝コズ",
       "status": "completed",
-      "updated_at": "2026-09-30T02:40:53.031590+00:00",
+      "updated_at": "2026-10-04T21:41:48.027797+00:00",
       "error": null
     },
     "Vex": {
       "name": "ヴェックス",
       "status": "completed",
-      "updated_at": "2026-09-30T02:41:22.894528+00:00",
+      "updated_at": "2026-10-04T21:42:10.594380+00:00",
       "error": null
     },
     "Vi": {
       "name": "ヴァイ",
       "status": "completed",
-      "updated_at": "2026-09-30T02:41:52.865798+00:00",
+      "updated_at": "2026-10-04T21:42:33.065052+00:00",
       "error": null
     },
     "Viego": {
       "name": "ヴィエゴ",
       "status": "completed",
-      "updated_at": "2026-09-30T02:42:24.038274+00:00",
+      "updated_at": "2026-10-04T21:42:56.203645+00:00",
       "error": null,
       "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
     },
     "Viktor": {
       "name": "ビクター",
       "status": "completed",
-      "updated_at": "2026-09-30T02:42:51.043465+00:00",
+      "updated_at": "2026-10-04T21:43:18.014402+00:00",
       "error": null
     },
     "Vladimir": {
       "name": "ブラッドミア",
       "status": "completed",
-      "updated_at": "2026-09-30T02:43:21.359499+00:00",
+      "updated_at": "2026-10-04T21:43:40.113991+00:00",
       "error": null
     },
     "Volibear": {
       "name": "ボリベア",
       "status": "completed",
-      "updated_at": "2026-09-30T02:43:53.115292+00:00",
+      "updated_at": "2026-10-04T21:44:02.340814+00:00",
       "error": null
     },
     "Warwick": {
       "name": "ワーウィック",
       "status": "completed",
-      "updated_at": "2026-09-30T02:44:22.620294+00:00",
+      "updated_at": "2026-10-04T21:44:25.331109+00:00",
       "error": null
     },
     "Xayah": {
       "name": "ザヤ",
       "status": "completed",
-      "updated_at": "2026-09-30T02:44:51.404652+00:00",
+      "updated_at": "2026-10-04T21:44:46.453948+00:00",
       "error": null
     },
     "Xerath": {
       "name": "ゼラス",
       "status": "completed",
-      "updated_at": "2026-09-30T02:45:19.182080+00:00",
+      "updated_at": "2026-10-04T21:45:07.341853+00:00",
       "error": null
     },
     "XinZhao": {
       "name": "シン・ジャオ",
       "status": "completed",
-      "updated_at": "2026-09-30T02:45:46.251047+00:00",
+      "updated_at": "2026-10-04T21:45:30.033296+00:00",
       "error": null,
       "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
     },
     "Yasuo": {
       "name": "ヤスオ",
       "status": "completed",
-      "updated_at": "2026-09-30T02:46:12.208159+00:00",
+      "updated_at": "2026-10-04T21:46:10.861606+00:00",
       "error": null
     },
     "Yone": {
       "name": "ヨネ",
       "status": "completed",
-      "updated_at": "2026-09-30T02:46:49.879648+00:00",
+      "updated_at": "2026-10-04T21:46:31.486613+00:00",
       "error": null
     },
     "Yorick": {
       "name": "ヨリック",
       "status": "completed",
-      "updated_at": "2026-09-30T02:47:17.187167+00:00",
+      "updated_at": "2026-10-04T21:46:54.075580+00:00",
       "error": null
     },
     "Yunara": {
       "name": "ユナラ",
       "status": "completed",
-      "updated_at": "2026-09-30T02:47:43.797014+00:00",
+      "updated_at": "2026-10-04T21:47:15.428586+00:00",
       "error": null
     },
     "Yuumi": {
       "name": "ユーミ",
       "status": "completed",
-      "updated_at": "2026-09-30T02:48:10.764446+00:00",
+      "updated_at": "2026-10-04T21:47:36.026592+00:00",
       "error": null
     },
     "Zaahen": {
       "name": "ザーヘン",
       "status": "completed",
-      "updated_at": "2026-09-30T02:48:35.407054+00:00",
+      "updated_at": "2026-10-04T21:47:58.042618+00:00",
       "error": null
     },
     "Zac": {
       "name": "ザック",
       "status": "completed",
-      "updated_at": "2026-09-30T02:49:02.194569+00:00",
+      "updated_at": "2026-10-04T21:48:19.513734+00:00",
       "error": null
     },
     "Zed": {
       "name": "ゼド",
       "status": "completed",
-      "updated_at": "2026-09-30T02:49:28.130844+00:00",
+      "updated_at": "2026-10-04T21:48:41.151554+00:00",
       "error": null
     },
     "Zeri": {
       "name": "ゼリ",
       "status": "completed",
-      "updated_at": "2026-09-30T02:49:53.866932+00:00",
+      "updated_at": "2026-10-04T21:49:02.666881+00:00",
       "error": null
     },
     "Ziggs": {
       "name": "ジグス",
       "status": "completed",
-      "updated_at": "2026-09-30T02:50:21.431383+00:00",
+      "updated_at": "2026-10-04T21:49:24.072926+00:00",
       "error": null
     },
     "Zilean": {
       "name": "ジリアン",
       "status": "completed",
-      "updated_at": "2026-09-30T02:50:46.844385+00:00",
+      "updated_at": "2026-10-04T21:49:44.642781+00:00",
       "error": null
     },
     "Zoe": {
       "name": "ゾーイ",
       "status": "completed",
-      "updated_at": "2026-09-30T02:51:12.584685+00:00",
+      "updated_at": "2026-10-04T21:50:07.167275+00:00",
       "error": null
     },
     "Zyra": {
       "name": "ザイラ",
       "status": "completed",
-      "updated_at": "2026-09-30T02:51:44.127189+00:00",
+      "updated_at": "2026-10-04T21:50:30.216650+00:00",
       "error": null
     }
   }
