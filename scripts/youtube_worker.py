@@ -81,6 +81,12 @@ ENABLE_VIDEO_ANALYSIS = os.environ.get("ENABLE_VIDEO_ANALYSIS", "1") not in ("0"
 ENABLE_VIDEO_ANALYSIS_ALWAYS = os.environ.get("ENABLE_VIDEO_ANALYSIS_ALWAYS", "0") in ("1", "true", "True")
 # 映像解析に使うモデル。gemini-model-health-check で実クォータを確認したものだけを書くこと。
 VIDEO_MODEL = os.environ.get("VIDEO_MODEL", "gemini-2.5-flash")
+# 映像解析で読む最大秒数。低解像度で約103トークン/秒（2026-09-23実測: 12分で74,179）。
+# 長さ不明(99999)の動画は長時間配信のアーカイブが多く、丸ごと渡すと入力上限(約100万)超過の
+# 400 INVALID_ARGUMENT で失敗し続けていた（2026-10-04: "KHA SHYVANA TO RANK 1" 等）。長い動画は先頭だけを解析する。
+# 35分(約22万トークン)にしているのは、無料枠の 1分あたり25万トークン(TPM) に1回で収めるため。
+MAX_VIDEO_ANALYSIS_SEC = int(os.environ.get("MAX_VIDEO_ANALYSIS_SEC", "2100"))
+DURATION_UNKNOWN = 99999
 # これ未満の文字数なら「実況なし」とみなしてGeminiへ渡さない
 WHISPER_MIN_CHARS = int(os.environ.get("WHISPER_MIN_CHARS", "500"))
 
@@ -425,7 +431,7 @@ def enrich_summary_with_timestamps(summary, key_clips, video_url):
     return enriched
 
 
-def gemini_analyze_video(url, title, channel, is_short=False):
+def gemini_analyze_video(url, title, channel, is_short=False, duration_sec=None):
     """YouTube URL を Gemini に直接渡して解析する。
 
     字幕も音声も無い動画（テロップのみ・実況なし）でも中身を読み取れる。
@@ -439,8 +445,14 @@ def gemini_analyze_video(url, title, channel, is_short=False):
     client = genai.Client(api_key=GEMINI_KEY)
     head = f"動画タイトル: {title}\nチャンネル: {channel}\n\n"
     prompt_text = SHORTS_PROMPT if is_short else VIDEO_PROMPT
+    # 長さ不明・上限超えの動画は先頭 MAX_VIDEO_ANALYSIS_SEC 秒だけを読む
+    clip_end = None
+    if not is_short and (not duration_sec or duration_sec >= DURATION_UNKNOWN or duration_sec > MAX_VIDEO_ANALYSIS_SEC):
+        clip_end = MAX_VIDEO_ANALYSIS_SEC
+        head += f"（注意: 長時間の動画のため、冒頭{MAX_VIDEO_ANALYSIS_SEC // 60}分のみを解析対象としています。それ以降の内容に触れないこと）\n\n"
+        print(f"  ✂️ 長さ{'不明' if not duration_sec or duration_sec >= DURATION_UNKNOWN else f'{duration_sec // 60}分'}のため、冒頭{MAX_VIDEO_ANALYSIS_SEC // 60}分だけを映像解析します")
     try:
-        res = _generate_video(client, types, url, head, prompt_text)
+        res = _generate_video(client, types, url, head, prompt_text, clip_end)
     except Exception as e:
         if _is_quota_error(e):
             raise GeminiQuotaExceeded(str(e)[:200]) from e
@@ -449,11 +461,17 @@ def gemini_analyze_video(url, title, channel, is_short=False):
     return _finish_video_result(res, txt, url, is_short)
 
 
-def _generate_video(client, types, url, head, prompt_text):
+def _generate_video(client, types, url, head, prompt_text, clip_end=None):
+    video_part = types.Part(file_data=types.FileData(file_uri=url))
+    if clip_end:
+        video_part = types.Part(
+            file_data=types.FileData(file_uri=url),
+            video_metadata=types.VideoMetadata(start_offset="0s", end_offset=f"{int(clip_end)}s"),
+        )
     return client.models.generate_content(
         model=VIDEO_MODEL,
         contents=types.Content(parts=[
-            types.Part(file_data=types.FileData(file_uri=url)),
+            video_part,
             types.Part(text=head + prompt_text),
         ]),
         config=types.GenerateContentConfig(
@@ -714,7 +732,11 @@ def main():
             # personal_knowledge の重複行を生むため、既存の有無を先に確認する。
             existing = sb("GET", f"personal_knowledge?source_url=eq.{url}&select=id,title")
             if existing:
-                sb("PATCH", f"youtube_queue?id=eq.{vid}", {"status": "completed"})
+                done_patch = {"status": "completed"}
+                clean_title = re.sub(r"\s*\[エラー:.*\]", "", it.get("title") or "").strip()
+                if clean_title and clean_title != (it.get("title") or ""):
+                    done_patch["title"] = clean_title  # 以前の失敗で付いたエラー表記を外す
+                sb("PATCH", f"youtube_queue?id=eq.{vid}", done_patch)
                 title = existing[0].get("title") or it.get("title") or "(無題)"
                 done.append(title)
                 print(f"✅ 完了（既存の要約を検出、再生成をスキップ）: {title}")
@@ -730,7 +752,7 @@ def main():
             if (ENABLE_VIDEO_ANALYSIS_ALWAYS or is_short) and ENABLE_VIDEO_ANALYSIS:
                 print(f"  🎬 映像解析で読み取ります ({'Shorts特化' if is_short else '常用設定'}): {vid}")
                 try:
-                    a = gemini_analyze_video(url, it.get("title") or "", it.get("channel_name") or "", is_short=is_short)
+                    a = gemini_analyze_video(url, it.get("title") or "", it.get("channel_name") or "", is_short=is_short, duration_sec=it.get("duration_sec"))
                 except Exception as ve:
                     print(f"  ⚠️ 映像解析に失敗: {ve}。字幕取得へフォールバックします。", file=sys.stderr)
                     a = None
@@ -760,7 +782,7 @@ def main():
             # ④ 通常動画で字幕・Whisperが取れなかった場合は映像解析
             if a is None and not transcript and ENABLE_VIDEO_ANALYSIS:
                 print(f"  🎬 字幕が無いので映像解析で読み取ります: {vid}")
-                a = gemini_analyze_video(url, it.get("title") or "", it.get("channel_name") or "", is_short=is_short)
+                a = gemini_analyze_video(url, it.get("title") or "", it.get("channel_name") or "", is_short=is_short, duration_sec=it.get("duration_sec"))
 
             if a is None:
                 if not transcript:
@@ -812,7 +834,12 @@ def main():
                 "review_status": "pending",
             }], prefer="return=representation")
             created_id = created_row[0].get("id") if (created_row and isinstance(created_row, list)) else None
-            sb("PATCH", f"youtube_queue?id=eq.{vid}", {"status": "completed"})
+            # 以前の失敗で付いた「[エラー: …]」を外す（成功しても残っていたため、失敗したように見えていた）
+            clean_title = re.sub(r"\s*\[エラー:.*\]", "", it.get("title") or "").strip()
+            done_patch = {"status": "completed"}
+            if clean_title and clean_title != (it.get("title") or ""):
+                done_patch["title"] = clean_title
+            sb("PATCH", f"youtube_queue?id=eq.{vid}", done_patch)
             title = video_title
             done.append({"title": title, "id": created_id})
             print(f"✅ 完了 (ID: {created_id}): {title}")

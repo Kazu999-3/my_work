@@ -1733,7 +1733,7 @@ IQ50。 職業はなんですか？
 
 ---
 
-## 【記事】[YouTube] How to Play カ＝ジックス JUNGLE and PLAY AS A ASSASIN [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]
+## 【記事】[YouTube] How to Play カ＝ジックス JUNGLE and PLAY AS A ASSASIN
 
 > 📺 **元動画情報**
 > - **動画ID**: BG-LtgqwU6Y
@@ -1749,7 +1749,7 @@ IQ50。 職業はなんですか？
 ---
 
 [Champions: カ＝ジックス, タロン, ガレン, サイラス, ドレイヴン, ベイガー, セト, アニビア]
-# How to Play カ＝ジックス JUNGLE and PLAY AS A ASSASIN [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]
+# How to Play カ＝ジックス JUNGLE and PLAY AS A ASSASIN
 ## 📌 動画の結論（1行サマリー）
 カ＝ジックスで序盤から敵ジャングルに積極的に侵入し、「15分ルール」を活用して敵ジャングラーを無力化、レーン優先権とオブジェクトコントロールを徹底してゲームをスノーボールさせる。
 
@@ -1804,7 +1804,7 @@ IQ50。 職業はなんですか？
 
 ---
 
-## 【記事】[YouTube] Preparing my カ＝ジックス for NA Trip [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]
+## 【記事】[YouTube] Preparing my カ＝ジックス for NA Trip
 
 > 📺 **元動画情報**
 > - **動画ID**: V733cbuaz54
@@ -1820,7 +1820,7 @@ IQ50。 職業はなんですか？
 ---
 
 [Champions: カ＝ジックス, シヴァーナ, アーリ]
-# Preparing my カ＝ジックス for NA Trip [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]
+# Preparing my カ＝ジックス for NA Trip
 
 ## 📌 動画の結論（1行サマリー）
 ドラゴンへの誤った判断と、その後の無理なファイトが敗因として分析されており、特にオブジェクトの優先順位付け、敵チャンピオンの構成に応じた判断、そして視界管理の徹底が重要であることが示唆される。

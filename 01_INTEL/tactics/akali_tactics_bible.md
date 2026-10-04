@@ -2908,7 +2908,7 @@ Q でラストヒットを取られないように、相手をゾーンコント
 
 ---
 
-## 【記事】[YouTube] How to NEVER Lose Teamfights as アカリ | Complete Guide [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]
+## 【記事】[YouTube] How to NEVER Lose Teamfights as アカリ | Complete Guide
 
 > 📺 **元動画情報**
 > - **動画ID**: jpl1b8lT3vA
@@ -2924,7 +2924,7 @@ Q でラストヒットを取られないように、相手をゾーンコント
 ---
 
 [Champions: アカリ, アーリ, マオカイ, グウェン, パンテオン, ミリオ, サイラス, リリア]
-# How to NEVER Lose Teamfights as アカリ | Complete Guide [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]
+# How to NEVER Lose Teamfights as アカリ | Complete Guide
 
 ## 📌 動画の結論（1行サマリー）
 アカリでチームファイトを制するには、自身の役割理解、適切なエンゲージタイミングとターゲット選択、そしてWとRの巧みな運用が不可欠であり、特に自身の育ち具合に応じた柔軟なプレイスタイルが鍵となる。

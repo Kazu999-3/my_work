@@ -337,7 +337,7 @@ Wukongの集団戦における最大の強みは、その破壊的なUlt（R）�
 
 ---
 
-## 【記事】[YouTube] 3 Minute ウーコン Guide - A Guide for League of Legends [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]
+## 【記事】[YouTube] 3 Minute ウーコン Guide - A Guide for League of Legends
 
 > 📺 **元動画情報**
 > - **動画ID**: 2k_Afn_F24Q
@@ -353,7 +353,7 @@ Wukongの集団戦における最大の強みは、その破壊的なUlt（R）�
 ---
 
 [Champion: ウーコン]
-# 3 Minute ウーコン Guide - A Guide for League of Legends [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]
+# 3 Minute ウーコン Guide - A Guide for League of Legends
 ## 📌 動画の結論（1行サマリー）
 ウーコンは卓越したデュエル能力と高い機動性、自然な耐久性を併せ持つジャングラーであり、特にADチャンピオンに対して強く、トリニティフォースのパワースパイクを活かしてミッドゲームの小規模戦を支配し、レイトゲームでは変幻自在の立ち回りで敵バックラインを壊滅させる。
 
@@ -399,7 +399,7 @@ Wukongの集団戦における最大の強みは、その破壊的なUlt（R）�
 
 ---
 
-## 【記事】[YouTube] ウーコン JUNGLE is a 1v9 CARRYING POWERHOUSE! — ウーコン Jungle Guide [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]
+## 【記事】[YouTube] ウーコン JUNGLE is a 1v9 CARRYING POWERHOUSE! — ウーコン Jungle Guide
 
 > 📺 **元動画情報**
 > - **動画ID**: nDGZTq5ly5c
@@ -415,7 +415,7 @@ Wukongの集団戦における最大の強みは、その破壊的なUlt（R）�
 ---
 
 [Champion: ウーコン]
-# ウーコン JUNGLE is a 1v9 CARRYING POWERHOUSE! — ウーコン Jungle Guide [エラー: 字幕を取得できませんでした（字幕なし or IP制限の可能性）]
+# ウーコン JUNGLE is a 1v9 CARRYING POWERHOUSE! — ウーコン Jungle Guide
 
 ## 📌 動画の結論（1行サマリー）
 ウーコンは高いゴールド・経験値依存度を持つが、効率的なファームとパッシブを活かしたオブジェクトコントロール、そしてミッドゲームのパワースパイクを駆使してチームをキャリーするジャングラーである。
