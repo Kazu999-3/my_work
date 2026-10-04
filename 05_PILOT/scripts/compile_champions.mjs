@@ -523,7 +523,8 @@ async function main() {
               id: row.id,
               title: typeof row.title?.toWellFormed === 'function' ? row.title.toWellFormed() : (row.title || ''),
               snippet,
-              tags: row.tags || [],
+              // __DELETED__ / __INTEGRATED__ 等の内部状態タグは画面に出さない
+              tags: (row.tags || []).filter((t) => !/^__.+__$/.test(t)),
               sourceUrl: row.source_url || '',
               createdAt: row.created_at || '',
               channel: ch || 'その他・一般',

@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
       .update(update)
       .in('id', ids)
       .eq('review_status', 'pending')
-      .select('id, title, content, raw_content, champion');
+      .select('id, title, content, raw_content, champion, tags');
     if (error) throw error;
 
     // 承認した記事を辞典へ統合する（チャンピオンの無い記事は承認済みのままライブラリに残る）

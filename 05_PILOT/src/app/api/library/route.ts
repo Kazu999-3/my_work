@@ -119,6 +119,8 @@ export async function GET(req: NextRequest) {
       const { content, ...rest } = r;
       return {
         ...rest,
+        // __DELETED__ / __INTEGRATED__ 等の内部状態タグは画面に出さない
+        tags: (r.tags || []).filter((t: string) => !/^__.+__$/.test(t)),
         channel: ch || 'その他・一般',
         char_count: charCount,
       };

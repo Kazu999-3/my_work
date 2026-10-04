@@ -56,11 +56,19 @@ async function syncDbToMarkdown() {
 
   let updatedCount = 0;
 
+  // 実在チャンピオン(DDragon 公式ID)以外はファイルを作らない。
+  // 2026-10-04: matchup_sentinel に動画IDの断片等を誤認した champion（"O1W" "RBKRF" "INDEX" "genre"等）が
+  // 本文空で入っており、このスクリプトが中身の無い status: verified のバイブルを18件作っていた。
+  const ddragon = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../src/data/ddragon_master_dict.json'), 'utf-8'));
+  const validIds = new Set(Object.keys(ddragon.champions || {}));
+  const skippedInvalid = new Set();
+
   // チャンピオンごとにグループ化
   const grouped = {};
   for (const m of matchups) {
     const champ = m.champion;
     if (!champ) continue;
+    if (!validIds.has(champ)) { skippedInvalid.add(champ); continue; }
     if (!grouped[champ]) grouped[champ] = [];
     grouped[champ].push(m);
   }
@@ -148,6 +156,9 @@ tags: [LoL, Tactics, ${champ}]
     }
   }
 
+  if (skippedInvalid.size > 0) {
+    console.warn(`⚠️ 実在しないチャンピオンIDのため対象外: ${[...skippedInvalid].join(', ')}`);
+  }
   console.log(`\n🎉 [完了] ${updatedCount} ファイルのMarkdown原本を最新同期しました！`);
 }
 

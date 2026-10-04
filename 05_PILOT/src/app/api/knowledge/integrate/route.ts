@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 const BATCH_LIMIT_MAX = 30;
-const SELECT = 'id, title, content, raw_content, champion';
+const SELECT = 'id, title, content, raw_content, champion, tags';
 
 // 攻略ライブラリの記事をチャンピオン辞典へ統合する（旧ポータル knowledge/sync の後継）。
 //   { ids: [..] }                          … 指定した記事を統合（承認画面の「承認して統合」）
@@ -38,7 +38,8 @@ export async function POST(req: NextRequest) {
         .gt('id', afterId)
         // tags が NULL の記事に .not('tags','cs',..) を別に掛けると比較結果が NULL になって除外されるため、
         // 1つの or 条件にまとめる（旧ポータルの同期ではタグ無しの記事が永久に対象外だった）
-        .or('tags.is.null,and(tags.not.cs.{__DELETED__},tags.not.cs.{__MERGED__})')
+        // __INTEGRATED__ は統合済み。外さないと3時間おきに同じ記事を統合し直す
+        .or('tags.is.null,and(tags.not.cs.{__DELETED__},tags.not.cs.{__MERGED__},tags.not.cs.{__INTEGRATED__})')
         .order('id', { ascending: true })
         .limit(limit);
       if (body.onlyPending) q = q.eq('review_status', 'pending');

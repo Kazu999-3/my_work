@@ -6,10 +6,15 @@ import { resolveRosterChampion } from './championRoster';
 //   1. matchup_sentinel(champ_<ID>_global) の strategy に「## 【記事】タイトル」節として追記（同名節は置き換え）
 //   2. knowledge_revisions に変更履歴を残す
 //   3. champion_notes に構造化メモとして登録（同じ記事の分は入れ替え）
-//   4. ライブラリ側は __DELETED__ タグで削除扱い、review_status は approved にする
+//   4. 記事に INTEGRATED_TAG を足し（既存タグは残す）、review_status を approved にする
+//
+// タグの意味:
+// - __DELETED__   … 旧ポータルで「削除」または「統合」したもの（旧実装はタグを丸ごと置き換えていたため両者を区別できない）
+// - __INTEGRATED__ … 05で辞典へ統合したもの。ライブラリには残し、定期統合の対象からは外す。
+//   印が無いと3時間おきの定期統合が同じ記事を毎回統合し直し、メンテ画面で直した【記事】節を元に戻してしまう（2026-10-04 発見）。
 //
 // 旧実装から変えた点:
-// - offset でページ送りしていたが、統合した記事は __DELETED__ で検索対象から外れるため
+// - offset でページ送りしていたが、統合した記事が検索対象から外れると
 //   次のページの開始位置がずれ、未処理の記事を飛ばしていた。id の昇順で進める方式にした。
 // - 承認状態(review_status)を見ずに統合していた。呼び出し側で対象を選ぶ前提にし、統合した記事は approved にする。
 // - Gemini を使う「項目マージ」と「矛盾チェック」は移していない（Geminiの利用枠を使うため）。
@@ -20,7 +25,10 @@ export interface IntegrateArticle {
   content: string | null;
   raw_content: string | null;
   champion: string | null;
+  tags?: string[] | null;
 }
+
+export const INTEGRATED_TAG = '__INTEGRATED__';
 
 export interface IntegrateResult {
   integrated: number[];
@@ -130,8 +138,11 @@ export async function integrateArticles(sb: SupabaseClient, articles: IntegrateA
       );
       if (insErr) throw new Error(`champion_notes: ${insErr.message}`);
 
+      const tags = Array.isArray(r.a.tags) ? r.a.tags : [];
       const { error: tagErr } = await sb
-        .from('personal_knowledge').update({ review_status: 'approved' }).eq('id', r.a.id);
+        .from('personal_knowledge')
+        .update({ review_status: 'approved', tags: tags.includes(INTEGRATED_TAG) ? tags : [...tags, INTEGRATED_TAG] })
+        .eq('id', r.a.id);
       if (tagErr) throw new Error(`personal_knowledge: ${tagErr.message}`);
       result.integrated.push(r.a.id);
     } catch (e: any) {
