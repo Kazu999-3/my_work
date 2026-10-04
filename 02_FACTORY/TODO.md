@@ -32,9 +32,7 @@
 
 ## 🙋 ユーザー判断・ユーザー作業待ち
 
-- [ ] **`matchup_sentinel` のゴミ行19件の削除**（2026-10-04 発見。ユーザー承認済みだがClaude側のSQL実行は権限設定で3回却下 → Supabase SQL Editorで下記を実行すれば完了）
-  - 9/27の取り込みで動画IDの断片等をチャンピオン名と誤認した行（`O1W` `RBKRF` `INDEX` `genre` `TF` `ztmtK` 等、`strategy` は全て空）。原因の `sovereign_sync.py` は10/03 `fe97d0d8` で修正済み、`sync_to_markdown.mjs` にもガード追加済みなので**放置しても再発・害はない**。元記事は kirei_bible に残っている。
-  - 削除SQL: `DELETE FROM matchup_sentinel WHERE enemy='GLOBAL' AND coalesce(strategy,'')='' AND champion IN ('Anbe','cV7','D','elite','Elite','genre','INDEX','ji','Mal','Mede','O1W','OLE','RBKRF','Renek','TF','Zahan','ztmtK','Zu');`（`SYSTEM` の2行は正規データなので対象外）
+
 - [ ] **手動の振り返りフォーム（`SoloQReflectionModal.tsx`・997行）を畳むか**: 手動記録は直近30日0件、自動振り返りは14件。自動側を使ってから判断する。
 - [ ] **実画面での目視確認**: 色統一後のライト表示、「🤖 自動振り返りの履歴」の読みやすさ、「🚦 次の試合に行くべきか」の判定しきい値、ライブ検知バッジが実際の検知時だけ出るか。
 - [ ] **予測的中率アラートの指標が妥当か**: バランサーは50/50を狙うので的中率は50%付近が自然。キャリブレーション（Brierスコア等）か「0.5から十分離れた予測だけの的中率」に変えるか。
