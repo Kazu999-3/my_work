@@ -11,70 +11,67 @@ tags: [LoL, JG, note発信ネタ, Taliyah]
 
 # 【LoL/JG】Taliyah実戦思考と勝率UPマクロ
 
-> 📺 **元動画**: [FNC XL GAME 5 LIVE ANALYSIS](https://www.youtube.com/watch?v=HQf9-_ceXI8)
+> 📺 **元動画**: [FNC XL GAME 5 LIVE ANALYSIS](https://www.youtube.com/watch?v=HQf9-_ceXI8](https://www.youtube.com/watch?v=HQf9-_ceXI8)
 > 🎯 **対象チャンピオン**: Taliyah
 > 📅 **抽出日**: 2026-10-02
 
 ---
 
 ## 📌 note記事で使えるキラーエピソード（Whyの言語化）
-LoLの最上位ジャングラーは、試合開始前の構成分析、敵の動きの予測、そして常にマップ全体の「テンポ」を意識したジャングルルート、オブジェクト判断、ローテーションを行うことで、チームに持続的なアドバンテージをもたらす。
+ジャングラーが最も意識すべきは「自分のキャンプの湧き時間」と「敵の動きへのアンサー」の同期です。多くのプレイヤーはガンクを狙いすぎてテンポを崩しますが、プロは「敵がレーンに顔を出している時間＝自分のキャンプを確実に回収してリードを広げる時間」と定義しています。この思考こそが、無駄なローテーションを排除し、30秒という致命的な差を生み出し、最終的に相手を自陣に釘付けにする支配力を生むのです。
 
 ---
 
 ## 🧠 JGマクロ思考・アクションの根拠 (Why & When)
-### 1. 試合開始前の徹底した分析
-*   **チームコンポジションの評価:** 互いのチームがどのような勝利条件（集団戦型か、サイドレーン重視か、パワースパイクがPre-6かPost-6か、4-1プッシュ構成か）を持っているかを把握する。
-*   **ジャングラーの強み:** Sejuaniのようなタンク型エンゲージとTaliyahのようなメイジ型キャリーで、それぞれのチャンピオンがPre-6/Post-6でどのようにゲームを変えるかを考慮する。
-*   **レベル1インベートの検討:** レベル1で強いチャンピオン（例: Taliyah, Nautilus）がいる場合、インベートの機会を探る。
+#### 初動ルート & スカトル判断 & カメラワーク
+- **周回ルートと最速クリア秒数**: ※該当言及なし（ただし、ラプタースタート等が最適となり得ることへの言及あり）
+- **2:55〜3:30 スカトル衝突の判断根拠**: ※該当言及なし（ただし、敵ジャングラーのスタート位置予測とレーン状況の分析が判断基準とされている）
+- **モンスター狩り中のカメラワーク（情報収集の視線）**: 敵ジャングラーがどのレーンをカバーしているかを常に推論し、視界（敵ラプターへのワード等）で初動を確認する。
 
-### 2. ジャングルルートとテンポの管理
-*   **初動ルートの選択:** レーン状況（ミッド・トップが安全か、ボットがプッシュ可能か）と、敵ジャングラーの予測されるスタート位置から、ラプタースタートなど最適と考えるルートを選択する。
-*   **敵ジャングラーの予測:** ワードで敵の初動（例: 敵ラプターへのワード）を確認し、フルクリアかガンクルートかを判断する。
-*   **テンポの重要性:**
-    *   不必要なファイトやガンクミスによるCS/キャンプのロスは、敵ジャングラーに対して大きなテンポロスとなる。ベースのタイミング、キャンプのリサイクルを最適化し、常にマップ上のゴールド・経験値を最大化する。
-    *   Taliyahがボットサイドに顔を出してガンクチャンスがないと判断した場合、すぐにキャンプを回してリサイクルし、次のウェーブでプレッシャーをかけるべき。無駄なローテーションは30～40秒のテンポロスに繋がり、敵に自陣キャンプへのインベート機会を与える。
-*   **相手の動きを読んだカウンタープレイ:** 敵ジャングラーが特定のレーンをカバーしていると判断した場合、その逆サイドのキャンプをフルクリアする、あるいは別のオブジェクトにプレッシャーをかけるなど、一歩先の思考で行動する。
+#### 敵JGトラッキング & 視界セットアップ
+- **敵JGの位置特定（推論の根拠）**: 敵のカバー行動から逆算する。「敵JGがカバーにリソースを使っている間に、自分はフルクリアでリードを広げ、相手をそのレーンに釘付けにする」という一歩先の思考を用いる。
+- **不在の証明（クロスアクション）**: 敵がヘラルド等のオブジェクトを開始した際、同時にボットダイブを狙うか、あるいはドラゴンを取得する等のトレードプランを即座に実行する。
+- **視界管理と赤トリ（オラクルレンズ）への変更タイミング**: ※該当言及なし
 
-### 3. オブジェクト判断とローテーション
-*   **オブジェクトのトレードオフ:** ヘラルドやドラゴンをコンテストできないと判断した場合、無理にファイトせず、その間に別のサイドレーンでアドバンテージ（タワーダメージ、キル、ミニオン）を確保するトレードプランを立てる。
-*   **ヘラルド後のローテーション:**
-    *   XLの模範的なローテーション: ヘラルド取得後、トップレーンでK'SanteがOrnnをキルし、その後ヘラルドバフを持ったZeriをボットレーンに送る。これにより、敵をトップに引きつけつつ、別のサイドで優位を築く。
-    *   Midレーンへの即時プッシュ: ヘラルド取得後、Midレーンタワーを最優先で破壊することで、マップコントロールを確立し、サイドレーンへのプレッシャーを強める。ジャングラーは可能な限り早くMidに合流し、ウェーブプッシュを支援すべき。
-*   **マップテンポの最大化:** ヘラルドやUltのタイミングが合った場合、最短ルートでオブジェクトやレーンに移動し、マップ上のテンポを最大限に活用して、敵にプレッシャーをかける。
+#### リコールテンポ & スマイト管理 & 即興買い物
+- **リコール（Bキー）の引き金**: キャンプのリサイクルを最適化するタイミング（30〜40秒のロスを防ぐため）。
+- **スマイト管理 ＆ 50/50（運ゲー）勝負の絶対回避法**: ※該当言及なし
+- **端数ゴールドと敵の育ちに応じたアドリブ購入**: ※該当言及なし
+
+#### ウィンコンディション & 中盤の居場所 & 劣勢逆転
+- **勝たせるレーン（ストロングサイド）と捨てるレーン（ウィークサイド）**: 試合開始前に構成（集団戦型、サイドレーン重視、パワースパイクのタイミング）を評価し決定する。
+- **14分以降（中盤）のJGの居場所・迷子防止（シャドウの基準）**: ヘラルド取得後は最短ルートでオブジェクトやレーンに移動し、ミッドタワー破壊を優先してマップコントロールを確立する。
+- **崩壊した試合を拾う逆転シナリオ（劣勢時の耐え方・クロストレード）**: 負けているオブジェクトは放棄し、その間に別のサイドでタワーダメージやキル、ミニオンの利益を確保するトレードを行う。
 
 ---
 
 ## ⚔️ 各レーンの有利度とガンクタイミング
-（レーン介入判断）
+- **各レーンの盤面状況とガンク判断の因果関係**: 強引なガンクはテンポロスを招くため、チャンスがないと判断すれば即座にキャンプリサイクルへ切り替えるべき。
+- **ガンク後のウェーブ介入ルール（触る vs 触らないの基準）**: ※該当言及なし
+- **レーナーを動かすピン（Pings）誘導術**: チームの各個人が「テンポ」をコールし、ヘラルド取得後のミッドプッシュなど、マップ全体のテンポを共有する。
+
+---
+
+## 🎯 ピック判断基準（先出し・後出し・構成マッチング）
+- **先出し適性（Blind Pick: ◎/◯/△）と理由**: ※該当言及なし
+- **後出し刺さり条件（Counter Pick）**: ※該当言及なし
+- **こういう時にピックおすすめ（構成トリガー）**: レベル1でのインベートを検討する場合、TaliyahやNautilusのような強力なチャンピオンを選択する。
 
 ---
 
 ## ⚠️ 初心者が陥るNG行動・没理由（罠の回避）
-*   「You always have to look at the team compositions right so left side right side what if each team steam condition win condition they don't know team fight they don't pay sideline did they win pre-six they're doing after six are they like a four on team comp you have to think about those things which is very important right」
-    *   （常にチーム構成を見るべきだ。左右のチームがそれぞれどのような勝利条件を持っているか。集団戦か、サイドレーンか、レベル6前か後か、4-1構成か。これらのことを考えるのは非常に重要だ。）
-*   「You always want to be thinking what does the enemy want to do every death you will know is that what you can do right」
-    *   （常に敵が何をしたいのかを考えるべきだ。それが敵のデッドごとに何をすべきかを知ることに繋がる。）
-*   「The general rule always is that support wants to tank always Focus enemy to carry if they can and the most support tanks they send it」
-    *   （一般的なルールとして、サポートは常にタワーダメージをタンクし、可能であれば敵のキャリーをフォーカスする。サポートがタンクすれば、彼らはそれを利用する。）
-*   「These small things right actually make a huge difference because I'm telling you that if it's not that resets the boss that camps here on every single wave he can do this but he will chill the enemies here because his camps could have been respawned at let's say 5 50 if you went to his wolves… right now it's like close to like 8 45 which is 30 to 40 seconds later which is not really ideal」
-    *   （こうした小さなこと一つ一つが大きな違いを生む。もし彼がボットサイドのキャンプを毎回リセットしていれば、敵は休むことができない。彼のキャンプは例えば5分50秒にリスポーンしたはずが、8分45秒になってしまう。これは30～40秒のロスであり、理想的ではない。）
-*   「Especially if you're in a winning position and enemy team has to defend if if it's good and you're good enemy drowners using his resources to cover while you think one step ahead as Thalia and be like okay he has to cover so I'm gonna use that to full clear and just force him to be there」
-    *   （特に優勢な状況で敵チームが防衛を強いられている場合、敵ジャングラーがリソースを使ってカバーしている間に、タムケン（Taliyah）として一歩先を読み、「彼はカバーしなければならないから、俺はフルクリアして彼をそこに釘付けにする」と考える。）
-*   「If you know you lose it just work The Herald and Lucid trade and the moment they start the herald okay they should already have like an idea okay if you start the herald let's dive bullet on this wave or the Swift is coming so ideally right now if they can dive him on this wave go for it if not then they should just take the Drake here and play for a trade because that's what it is right you also think can you play first yes or no」
-    *   （もし負けると分かっているなら、ヘラルドにワードを置いてトレードする。敵がヘラルドを開始した瞬間、彼らはすでに考えを持っているはずだ。「ヘラルドを開始したなら、このウェーブでボットをダイブしよう」と。もし可能なら、そのウェーブでダイブする。そうでなければ、ドラゴンを取ってトレードする。それがゲームだ。ファーストプレイできるかどうかも考える。）
-*   「It's so important that each single individual in the team is calling tempo」
-    *   （チームの各個人がテンポをコールすることが非常に重要だ。）
-*   「It's all about just giving your teammates a space to send it even though recon's like a little bit far away they could easily look to do this and I think Recon here as well should not walk through Journal you should right click into mid lane here because there's so much Tempo on the map」
-    *   （それは全て、チームメイトに動くスペースを与えることだ。Rek'Saiが少し遠くにいても、彼らは簡単にこれを試みることができる。Rek'Saiもジャングルを通るべきではない。Midレーンに直接右クリックで向かうべきだ。なぜなら、マップ上に非常に多くのテンポがあるからだ。）
+- **JGの罠・NG行動（やってはいけない没理由）**: キャンプのリサイクルを怠ること。例：本来5分50秒でリスポーンするキャンプを放置し、8分45秒まで回収しないのは30〜40秒の深刻なテンポロス。
+- **冷徹なオペレーターメンタル（ミュート基準）**: ※該当言及なし
 
 ---
 
 ## 💡 note記事の見出し案（構成ドラフト）
-1. **はじめに**: なぜ今Taliyahで勝てるのか？
-2. **多くのJGが勘違いしている罠**: やりがちなNG行動
-3. **プロが実戦でやっている「Why（根拠）」**: 画面には映らない判断基準
-4. **まとめ**: 次のランク戦で即実践できるアクションリスト
+1. **はじめに**: なぜ今Taliyahで勝てるのか？（先出し・後出しの条件）
+2. **多くのJGが勘違いしている罠**: 初心者が陥るNG行動と「ガンク後ウェーブ触るな問題」の真相
+3. **プロが実戦でやっている「Why（根拠）」**: 画面には映らないスキル温存とカメラワーク
+4. **オブジェクト戦の極意**: スマイト50/50勝負を絶対に避けるセットアップ
+5. **味方が崩壊した時の逆転シナリオ**: 劣勢時に試合を長引かせるクロストレード
+6. **まとめ**: 次のランク戦で即実践できるアクションリスト
 
 ---
 *思考トリガー: 敵JGが逆サイドに見えた瞬間、自分のアクション（オブジェクト/カウンターJG/ガンク）を0.5秒で選べるか？*
