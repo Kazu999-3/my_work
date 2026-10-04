@@ -169,7 +169,7 @@ LoL カスタムマッチ（内戦）の運営、メンバー管理、プレイ�
 ## 3-1. ソロキュー対戦相手偵察 (Live Lookup)
 * **役割**: プレイヤーがマッチに入った瞬間（または検索時）に稼働し、敵ジャングラーを特定、過去戦績とDB内の攻略マニュアル、過去の敗因メモを融合してAIが戦術対策を3箇条で生成する。
 * **主要コード・ファイルパス**:
-  - 偵察画面UI: `04_PORTAL/src/app/admin/soloq/page.tsx`
+  - 偵察画面UI: `04_PORTAL/src/app/coach/ScoutTab.tsx`（コーチ画面「試合中」タブ。旧 `admin/soloq` は2026-10-04削除）
   - 偵察API: `04_PORTAL/src/app/api/admin/live-match/route.ts`
 * **詳細仕様**:
   - PUUID取得、Spectator API経由の進行中の試合データ取得、Smite装備の敵を「敵ジャングラー」として自動特定。

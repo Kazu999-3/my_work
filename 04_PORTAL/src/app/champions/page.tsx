@@ -11,12 +11,10 @@ import dynamic from 'next/dynamic';
 const DictionaryTab = dynamic(() => import('./tabs/DictionaryTab'), {
   loading: () => <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-[#c89b3c] border-t-transparent rounded-full animate-spin"></div></div>
 });
-const DictHealthView = dynamic(() => import('../admin/dict-health/page'), {
-  ssr: false,
-  loading: () => <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-primary-edge-strong border-t-transparent rounded-full animate-spin"></div></div>
-});
+// 辞典ヘルスは05(KTM Pilot)へ移植済み（2026-10-04）。タブは05への外部リンクにした
+const PILOT_DICT_HEALTH_URL = 'https://ktm-pilot.vercel.app/admin/dict-health';
 
-type KnowledgeScope = 'champions' | 'health';
+type KnowledgeScope = 'champions';
 
 function ChampionsShell() {
   const searchParams = useSearchParams();
@@ -25,7 +23,9 @@ function ChampionsShell() {
 
   // 後方互換：古い埋め込みスコープでアクセスされた場合は独立URLへ安全にリダイレクト
   useEffect(() => {
-    if (rawScope === 'lane-guides') {
+    if (rawScope === 'health' || rawScope === 'maintenance') {
+      window.location.replace(PILOT_DICT_HEALTH_URL);
+    } else if (rawScope === 'lane-guides') {
       router.replace('/lane-guides');
     } else if (rawScope === 'library') {
       router.replace('/library');
@@ -34,9 +34,7 @@ function ChampionsShell() {
     }
   }, [rawScope, router]);
 
-  const [scope, setScope] = useState<KnowledgeScope>(
-    rawScope === 'health' || rawScope === 'maintenance' ? 'health' : 'champions'
-  );
+  const [scope, setScope] = useState<KnowledgeScope>('champions');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [authChecking, setAuthChecking] = useState<boolean>(true);
 
@@ -115,17 +113,14 @@ function ChampionsShell() {
           >
             <span>👑 チャンピオン攻略</span>
           </button>
-          <button
-            type="button"
-            onClick={() => handleScopeChange('health')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              scope === 'health'
-                ? 'bg-surface text-primary-700 shadow-xs font-black scale-101'
-                : 'text-muted hover:text-foreground hover:bg-surface-hover/60'
-            }`}
+          <a
+            href={PILOT_DICT_HEALTH_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-muted hover:text-foreground hover:bg-surface-hover/60"
           >
-            <span>🩺 辞典ヘルス</span>
-          </button>
+            <span>🩺 辞典ヘルス ↗</span>
+          </a>
         </div>
 
         {/* 右側の整理されたクイックリンク */}
@@ -165,7 +160,6 @@ function ChampionsShell() {
       {/* メインコンテンツ */}
       <div className="flex-1 min-w-0">
         {scope === 'champions' && <DictionaryTab isAdmin={isAuthenticated} />}
-        {scope === 'health' && <DictHealthView />}
       </div>
     </div>
   );
