@@ -17,6 +17,27 @@
 
 ---
 
+## 🚚 進行中: 個人用機能の 04 → 05 移植（2026-10-04 ユーザーと仕分け決定）
+
+方針: 内戦・カジノ・師弟など会員向けは04に残し、個人用は05へ。画面約5,000行＋API約15本のため複数セッションで進める。
+
+**05へ移す**（上から順に着手を推奨。小さく独立したものから）
+- [ ] **運用ダッシュボード** `04 /admin/dashboard`（710行）: Bot・PCデーモン・ワーカー稼働監視、失敗タスク一括再実行。API: `admin/dashboard-stats` `admin/health` `admin/tasks/retry-all`
+- [ ] **戦術取り込みハブ** `04 /admin/knowledge` の3パネル（計1,444行）: Discord取り込み・保留中の知見・動画深掘り依頼。API: `admin/knowledge/{add,confirm,pending-review,import-discord,merge-article}` `admin/video-analysis/deep-dive`
+- [ ] **コーチ「試合後」**: `PostGameDeepAnalyticsDashboard`(857) `MatchFightsAnalyticsCard`(294) `CoachReviewPanel`(202) `MySoloQDashboard`(384)。試合メモ含む。API: `lol/postgame-deep-analytics` `lol/match-memo` `lol/sync-match-feedback` `lol/match-fights` `coach/analyze` 等。
+  05は `tab=postgame` を暫定でテンポ解析タブへ寄せている（`e39376a4`）ので、移植後はこちらへ向け直す
+- [ ] **コーチ「試合中」**: `ScoutTab`(715) `FiveVFiveSimTab`(589)。API: `admin/live-match` `match/simulate` `match/simulation` `riot/live-game`。
+  `riot/live-game` のオーナー決め打ち（`KAZURIN_PUUID`/`name='かずき'`）は移植時に解消する
+
+**04に残す**: プレイヤー外部分析 `/analyzer`、仕様ガイド `/admin/guide`（ユーザー判断）
+**削除候補（要y/n）**: `04 /admin/soloq`（/coachへの転送のみ）、`04 /admin/dict-health`（05へ移植済み）
+**未判断**: 04コーチ「試合前」の `PlayRecommendationCard` `TimingHeatmapCard` `RankGoalCard` `OverlayLauncherButton`（05の試合前タブは対面設計図のみ）
+
+**04の役目終了前に05へ移す裏方**（今は04上で動いており05はデータを読むだけ）:
+`soloq-coach-poll.yml`→04 `/api/cron/soloq-coach`、`soloq-history-sync.yml`→04、04のVercel Cron `soloq-trends` `freshness-check` `dict-review-check`、ワーカー通知の送り先 04 `/api/push/notify-admin`（`edge-cloud-worker.yml` `absorber.yml` の `PORTAL_URL`）
+
+---
+
 ## ⏳ 次のイベント待ちの確認（コードでは判断できないもの）
 
 - [ ] **【次の内戦の後に実施】`pending_match_sync` が書き込まれるか確認**（2026-10-04 実測: 0行のまま。ユーザーが「pending_match_sync 確認して」と声をかける約束）
