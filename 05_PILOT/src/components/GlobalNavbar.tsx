@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
-  Crown, Bot, BookOpen, Library, Activity, Video, Plus, Menu, X, ChevronRight, Sparkles 
+  Crown, Bot, BookOpen, Library, Activity, Video, Plus, Menu, X, ChevronRight, Sparkles, Shield 
 } from 'lucide-react';
 import KnowledgeIngestModal from './KnowledgeIngestModal';
 import NotificationBell from './NotificationBell';
@@ -23,6 +23,7 @@ const NAV_ITEMS: NavItem[] = [
   { name: '攻略ライブラリ', href: '/library', icon: Library },
   { name: '辞典ヘルス監査', href: '/admin/dict-health', icon: Activity },
   { name: 'YouTube解析', href: '/admin/youtube', icon: Video },
+  { name: '運用ダッシュボード', href: '/admin/dashboard', icon: Shield },
 ];
 
 export default function GlobalNavbar() {

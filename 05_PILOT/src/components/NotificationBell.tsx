@@ -21,7 +21,7 @@ export interface AdminNotification {
 // 通知は旧ポータル(04)と同じ admin_notifications を共有しており、url は04のページを前提にした相対パスが混ざる
 // （/history /balancer /admin/knowledge 等）。05に無いページはそのままだと404になるため、旧ポータルの絶対URLへ振り替える。
 const LEGACY_PORTAL_URL = 'https://my-work-8jbd.vercel.app';
-const PILOT_PATHS = ['/coach', '/library', '/lane-guides', '/admin/dict-health', '/admin/dict-maintenance', '/admin/review', '/admin/youtube'];
+const PILOT_PATHS = ['/coach', '/library', '/lane-guides', '/admin/dict-health', '/admin/dict-maintenance', '/admin/review', '/admin/youtube', '/admin/dashboard'];
 
 function resolveNotificationUrl(url: string): { href: string; external: boolean } {
   if (/^https?:\/\//.test(url)) return { href: url, external: true };
