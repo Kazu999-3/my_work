@@ -42,6 +42,8 @@ export async function GET(req: NextRequest) {
     const sort = searchParams.get('sort') || 'date_desc'; // 'date_desc' | 'date_asc' | 'volume_desc' | 'title_asc'
     const limit = parseInt(searchParams.get('limit') || '60', 10);
     const offset = parseInt(searchParams.get('offset') || '0', 10);
+    // 元動画URLで記事を特定する（動画解析センターの「記事を見る」から詳細を直接開くため）
+    const source = searchParams.get('source') || '';
 
     // チャンネル名辞書を youtube_queue からロード（URL → channel_name、および 動画ID → channel_name）
     const { data: queueRows } = await supabase
@@ -77,6 +79,10 @@ export async function GET(req: NextRequest) {
 
     if (champion) {
       query = query.ilike('champion', `%${champion}%`);
+    }
+
+    if (source) {
+      query = query.eq('source_url', source);
     }
 
     // 全件取得してカテゴリ集計＆チャンネル抽出＆フィルタリング

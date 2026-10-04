@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { 
   Activity, CheckCircle2, AlertTriangle, RefreshCw, Search, ShieldCheck, 
   Sparkles, Filter, ExternalLink, ArrowLeft, Play, ShieldAlert, Award
@@ -32,7 +33,9 @@ function DictHealthDashboardContent() {
   } | null>(null);
 
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  // ?q=<チャンピオン> で開くと、そのチャンピオンに絞り込んだ状態で表示する（通知からの遷移用）
+  const searchParams = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get('q') || '');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'verified' | 'ai_generated' | 'stale'>('ALL');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -444,7 +447,7 @@ function DictHealthDashboardContent() {
                             </button>
 
                             <Link
-                              href={`/?champ=${c.champion}`}
+                              href={`/?c=${encodeURIComponent(c.champion)}`}
                               className="p-1 rounded bg-slate-950 border border-slate-800 text-slate-400 hover:text-white transition-colors"
                               title="辞典詳細を見る"
                             >

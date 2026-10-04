@@ -26,7 +26,8 @@ const PILOT_PATHS = ['/coach', '/library', '/lane-guides', '/admin/dict-health',
 function resolveNotificationUrl(url: string): { href: string; external: boolean } {
   if (/^https?:\/\//.test(url)) return { href: url, external: true };
   const path = url.split(/[?#]/)[0];
-  if (path === '/' || path === '/champions') return { href: '/', external: false }; // 05の辞典はトップ
+  // 05の辞典はトップ。?c=<チャンピオン> 等のクエリは残して、そのチャンピオンの詳細まで開く
+  if (path === '/' || path === '/champions') return { href: `/${url.slice(path.length)}`, external: false };
   if (PILOT_PATHS.some((p) => path === p || path.startsWith(`${p}/`))) return { href: url, external: false };
   return { href: `${LEGACY_PORTAL_URL}${url}`, external: true };
 }

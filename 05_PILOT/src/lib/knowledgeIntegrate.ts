@@ -18,6 +18,9 @@ import { resolveRosterChampion } from './championRoster';
 //   次のページの開始位置がずれ、未処理の記事を飛ばしていた。id の昇順で進める方式にした。
 // - 承認状態(review_status)を見ずに統合していた。呼び出し側で対象を選ぶ前提にし、統合した記事は approved にする。
 // - Gemini を使う「項目マージ」と「矛盾チェック」は移していない（Geminiの利用枠を使うため）。
+// - 本文は要約(content)を優先する。旧実装は raw_content を優先していたが、動画解析の記事では raw_content が
+//   字幕の生テキストか「映像直接解析による自動抽出 (ID: …)」という仮の1行で、辞典に要約ではなくそれが
+//   載っていた（2026-10-05 発見: 33体の辞典に仮の1行だけの節があった）。
 
 export interface IntegrateArticle {
   id: number;
@@ -111,7 +114,7 @@ export async function integrateArticles(sb: SupabaseClient, articles: IntegrateA
   for (const a of articles) {
     const champions = await resolveChampions(a.champion);
     if (champions.length === 0) { result.skippedNoChampion.push(a.id); continue; }
-    resolved.push({ a, champions, title: a.title || '(無題)', body: a.raw_content || a.content || '', sourceUrl: a.source_url || null });
+    resolved.push({ a, champions, title: a.title || '(無題)', body: a.content || a.raw_content || '', sourceUrl: a.source_url || null });
   }
 
   // チャンピオン単位でまとめて1回だけ読み書きする

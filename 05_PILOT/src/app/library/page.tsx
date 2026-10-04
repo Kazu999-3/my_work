@@ -37,6 +37,8 @@ function LibraryApp() {
   const searchParams = useSearchParams();
   const initialQ = searchParams?.get("q") || "";
   const initialId = searchParams?.get("id") || null;
+  // ?src=<元動画URL> … その動画から作られた記事の詳細を直接開く
+  const initialSrc = searchParams?.get("src") || null;
 
   const [articles, setArticles] = useState<ArticleItem[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -131,8 +133,17 @@ function LibraryApp() {
 
     if (initialId) {
       openDetail(initialId);
+    } else if (initialSrc) {
+      fetch(`/api/library?source=${encodeURIComponent(initialSrc)}&category=all&limit=1`)
+        .then((r) => r.json())
+        .then((d) => {
+          const id = d?.articles?.[0]?.id;
+          if (id) openDetail(id);
+        })
+        .catch(() => {});
     }
-  }, [initialQ, initialId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialQ, initialId, initialSrc]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();

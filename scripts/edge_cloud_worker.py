@@ -157,13 +157,12 @@ def notify_portal(task_type, payload, success, detail="", task_id=None):
         champion = payload.get("champion", "")
         role = payload.get("role", "")
         label += f"（{champion}/{role}）"
-        # 失敗通知をクリックした際に、辞典ヘルスダッシュボードの失敗タスク一覧で該当タスクを
-        # 直接ハイライト表示できるよう、クエリパラメータで引き継ぐ。2026-08-13、辞典ページの
-        # AI更新タブ廃止に伴いリンク先を/admin/dict-healthへ変更。
-        if not success:
-            from urllib.parse import urlencode
-            qs = urlencode({"failed_task": task_id or ""})
-            url_path = f"/admin/dict-health?{qs}"
+        # 通知から該当チャンピオンの詳細まで直接開く（一覧のトップに落とさない）。2026-10-05:
+        # 失敗時の ?failed_task= は05の辞典監査が読んでおらず、トップが開くだけだった。
+        # 成功時は辞典の詳細、失敗時は辞典監査をそのチャンピオンで絞り込んだ状態で開く。
+        from urllib.parse import quote
+        if champion:
+            url_path = f"/?c={quote(champion)}" if success else f"/admin/dict-health?q={quote(champion)}"
     title = f"{'✅' if success else '❌'} {label}{'完了' if success else '失敗'}"
     body = (detail or "")[:400] or None
 

@@ -352,7 +352,7 @@ export default function QueueTab() {
                 <div className="ml-6 flex flex-wrap gap-1.5">
                   {item.status === 'completed' && (
                     <Link
-                      href={`/library?q=${encodeURIComponent(title.slice(0, 30))}`}
+                      href={`/library?src=${encodeURIComponent(item.url)}`}
                       className="px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-bold flex items-center gap-1"
                     >
                       <Sparkles className="w-3 h-3" /> 記事を見る
