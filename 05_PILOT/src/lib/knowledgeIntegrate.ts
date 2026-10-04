@@ -101,7 +101,9 @@ export async function integrateArticles(sb: SupabaseClient, articles: IntegrateA
         if (!strategy.trim()) {
           strategy = `${header}\n\n${body}`;
         } else if (strategy.includes(header)) {
-          const pattern = new RegExp(`## 【記事】${escapeRegExp(title)}\\s*\\n[\\s\\S]*?(?=\\n---|$)`);
+          // 節の終わりは「次の【記事】見出し」。以前は最初の "\n---" までにしていたが、記事本文の中にも
+          // "---" があるため本文の途中までしか置き換わらず、再統合のたびに残りが二重に積み上がる作りだった。
+          const pattern = new RegExp(`## 【記事】${escapeRegExp(title)}\\s*\\n[\\s\\S]*?(?=\\n\\n---\\n\\n## 【記事】|\\n## 【記事】|$)`);
           strategy = strategy.replace(pattern, () => `${header}\n\n${body}`);
         } else {
           strategy = `${strategy}\n\n---\n\n${header}\n\n${body}`;

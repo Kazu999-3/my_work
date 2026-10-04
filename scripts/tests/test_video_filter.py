@@ -55,6 +55,17 @@ class TestVideoFilter(unittest.TestCase):
             is_bad, kw = is_blacklisted_title(title, allow_shorts=True)
             self.assertTrue(is_bad, f"キル集やミームはShorts許可時でも除外されるべきです: {title} (kw: {kw})")
 
+    def test_WildRiftは登録チャンネルからでも除外される(self):
+        for title in [
+            "Wild Rift Ahri Guide - Beginner to Pro - Build, Combo",
+            "【Wild Rift】Ahri完全攻略",
+            "【ワイルドリフト】ジャングル講座",
+            "ワイリフ アーリ 立ち回り解説",
+            "WildRift Lee Sin combo tips",
+        ]:
+            is_bad, kw = is_blacklisted_title(title, allow_shorts=True)
+            self.assertTrue(is_bad, f"Wild Rift動画が通過しました: {title}")
+
     def test_is_shorts_videoの判定(self):
         self.assertTrue(is_shorts_video("小技解説 #shorts"))
         self.assertTrue(is_shorts_video("1分Tips (SHORTS)"))

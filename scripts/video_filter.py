@@ -28,6 +28,12 @@ NOISE_KEYWORDS = [
     "skin spotlight", "skin review", "teaser", "cinematic", "trailer",
 ]
 
+# PC版LoL以外のタイトル（2026-10-04 ユーザー判断: Wild Rift は不要）。
+# スマホ版はマップ・アイテム・チャンピオン性能が別物で、辞典やレーンガイドに混ざると誤情報になる。
+OTHER_GAME_KEYWORDS = [
+    "wild rift", "wildrift", "ワイルドリフト", "ワイリフ",
+]
+
 # 解説・戦術を示すポジティブキーワード（prospector等の外部検索用）
 GUIDE_KEYWORDS = [
     # 日本語
@@ -76,6 +82,11 @@ def is_blacklisted_title(title: str, allow_shorts: bool = False) -> Tuple[bool, 
 
     # 1. 純粋なノイズキーワード（キル集、ミーム、生放送垂れ流し等）は常に除外
     for kw in NOISE_KEYWORDS:
+        if kw in lower:
+            return True, kw
+
+    # 1b. PC版LoL以外（Wild Rift 等）は登録チャンネルからでも常に除外
+    for kw in OTHER_GAME_KEYWORDS:
         if kw in lower:
             return True, kw
 
