@@ -17,6 +17,10 @@ on:
     - cron: '0 18 * * *'  # 毎日 UTC18:00 = JST 03:00
   workflow_dispatch:
 
+permissions:
+  contents: read
+  issues: write   # 失敗時にIssueを立てて気づけるようにする
+
 jobs:
   backup:
     runs-on: ubuntu-latest
@@ -52,3 +56,21 @@ jobs:
           name: supabase-backup-${{ github.run_id }}
           path: backup.dump
           retention-days: 30
+
+      # 失敗しても気づける仕組みが無く、2026-09-22〜10-04の12日間、DBパスワード不一致で毎日失敗していた
+      # （GitHubの失敗メールだけでは見落とした）。失敗時はIssueを立て、同じIssueが開いていれば追記する。
+      - name: 失敗をIssueで知らせる
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          TITLE="🚨 DBバックアップが失敗しています"
+          BODY=$(printf '%s\n' "Supabaseの日次バックアップ(pg_dump)が失敗しました。バックアップは30日で失効するため、放置すると復元手段が無くなります。よくある原因: Secrets の DATABASE_URL のパスワードがDB側と食い違っている。" "" "- 実行ログ: $RUN_URL" "- 日時(UTC): $(date -u +%Y-%m-%dT%H:%MZ)")
+          EXISTING=$(gh issue list --state open --search "$TITLE in:title" --json number --jq '.[0].number' || echo "")
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh issue create --title "$TITLE" --body "$BODY"
+          fi

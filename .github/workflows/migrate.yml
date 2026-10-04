@@ -11,6 +11,10 @@ on:
       - '04_PORTAL/supabase/migrations/**'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  issues: write   # 失敗時にIssueを立てて気づけるようにする
+
 jobs:
   migrate:
     runs-on: ubuntu-latest
@@ -30,3 +34,21 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: node scripts/migrate.mjs
+
+      # 失敗しても気づける仕組みが無く、2026-09-22〜10-04の12日間、DBパスワード不一致で毎日失敗していた
+      # （GitHubの失敗メールだけでは見落とした）。失敗時はIssueを立て、同じIssueが開いていれば追記する。
+      - name: 失敗をIssueで知らせる
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          TITLE="🚨 DBマイグレーションの自動適用が失敗しています"
+          BODY=$(printf '%s\n' "04_PORTAL/supabase/migrations の自動適用が失敗しました。新しいマイグレーションが本番に反映されていない可能性があります。よくある原因: Secrets の DATABASE_URL のパスワードがDB側と食い違っている。手で適用した場合は _migrations に記録すること（再実行で DROP を含むものが流れ直すため）。" "" "- 実行ログ: $RUN_URL" "- 日時(UTC): $(date -u +%Y-%m-%dT%H:%MZ)")
+          EXISTING=$(gh issue list --state open --search "$TITLE in:title" --json number --jq '.[0].number' || echo "")
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh issue create --title "$TITLE" --body "$BODY"
+          fi
