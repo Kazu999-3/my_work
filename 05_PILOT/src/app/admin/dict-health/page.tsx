@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useEffect, useState, useMemo, Suspense } from 'react';
+import React, { useEffect, useState, useMemo, useRef, Suspense } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { 
   Activity, CheckCircle2, AlertTriangle, RefreshCw, Search, ShieldCheck, 
-  Sparkles, Filter, ExternalLink, ArrowLeft, Play, ShieldAlert, Award
+  Sparkles, Filter, ExternalLink, ArrowLeft, Play, ShieldAlert, Award, Pencil, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { getChampIcon } from '../../../lib/ddragonClient';
 
@@ -23,6 +23,72 @@ interface ChampHealth {
   priorityScore: number;
 }
 
+type StatusFilter = 'ALL' | 'verified' | 'ai_generated' | 'stale';
+const STATUS_FILTERS: StatusFilter[] = ['ALL', 'verified', 'ai_generated', 'stale'];
+
+const DETAIL_FIELDS: { key: string; label: string }[] = [
+  { key: 'strengths', label: '強み' },
+  { key: 'weaknesses', label: '弱み' },
+  { key: 'power_spikes', label: 'パワースパイク' },
+  { key: 'build_runes', label: 'ビルド・ルーン' },
+  { key: 'full_clear_time', label: 'フルクリア' },
+  { key: 'counter_champions', label: 'カウンター' },
+  { key: 'pick_recommendation', label: 'ピック推奨' },
+  { key: 'strategy', label: '立ち回り' },
+];
+
+// 行を開いた時に、その場で辞典の中身を見せる（確認のために別ページへ行かなくて済むように）
+function ChampDetailPanel({ champion }: { champion: string }) {
+  const [fact, setFact] = useState<Record<string, any> | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setFact(null);
+    setError(null);
+    fetch(`/api/admin/dict-health/detail?champion=${encodeURIComponent(champion)}`)
+      .then(async (r) => {
+        const j = await r.json();
+        if (cancelled) return;
+        if (r.ok) setFact(j.fact);
+        else setError(j.error || '取得に失敗しました');
+      })
+      .catch(() => {
+        if (!cancelled) setError('通信エラーが発生しました');
+      });
+    return () => { cancelled = true; };
+  }, [champion]);
+
+  if (error) return <p className="text-xs text-rose-400">{error}</p>;
+  if (!fact) return <p className="text-xs text-slate-500">辞典の中身を読み込み中...</p>;
+
+  const filled = DETAIL_FIELDS.filter((f) => String(fact[f.key] || '').trim());
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-3 text-[11px] text-slate-400">
+        {fact.role && <span>ロール: {fact.role}</span>}
+        {fact.jg_type && <span>タイプ: {fact.jg_type}</span>}
+        {fact.updated_at && <span>最終更新: {new Date(fact.updated_at).toLocaleDateString('ja-JP')}</span>}
+      </div>
+      {filled.length === 0 ? (
+        <p className="text-xs text-rose-400">⚠️ 中身が空です。「AI再リサーチ」か「編集」で埋めてください。</p>
+      ) : (
+        <dl className="grid md:grid-cols-2 gap-3">
+          {filled.map((f) => (
+            <div key={f.key} className={`p-3 rounded-lg bg-slate-950 border border-slate-800 ${f.key === 'strategy' ? 'md:col-span-2' : ''}`}>
+              <dt className="text-[11px] font-bold text-amber-400 mb-1">{f.label}</dt>
+              <dd className="text-xs text-slate-200 whitespace-pre-wrap break-words max-h-60 overflow-y-auto">{String(fact[f.key])}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+      {fact.source_summary && (
+        <p className="text-[11px] text-slate-500 whitespace-pre-wrap">出典: {fact.source_summary}</p>
+      )}
+    </div>
+  );
+}
+
 function DictHealthDashboardContent() {
   const [data, setData] = useState<{
     currentPatch: string;
@@ -34,9 +100,34 @@ function DictHealthDashboardContent() {
 
   const [loading, setLoading] = useState(true);
   // ?q=<チャンピオン> で開くと、そのチャンピオンに絞り込んだ状態で表示する（通知からの遷移用）
+  // 絞り込み(?q= ?status=)と開いている行(?open=)はURLに残し、再読み込み・共有・通知からの遷移で同じ状態を開く
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [search, setSearch] = useState(searchParams.get('q') || '');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'verified' | 'ai_generated' | 'stale'>('ALL');
+  const initialStatus = searchParams.get('status') as StatusFilter | null;
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(
+    initialStatus && STATUS_FILTERS.includes(initialStatus) ? initialStatus : 'ALL'
+  );
+  const [openChamp, setOpenChamp] = useState<string | null>(searchParams.get('open'));
+  const tableRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (search) params.set('q', search);
+    if (statusFilter !== 'ALL') params.set('status', statusFilter);
+    if (openChamp) params.set('open', openChamp);
+    const qs = params.toString();
+    router.replace(qs ? `/admin/dict-health?${qs}` : '/admin/dict-health', { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, statusFilter, openChamp]);
+
+  // 上位10体などから1体を開く: そのチャンピオンに絞り込んで中身を開き、一覧までスクロールする
+  const focusChampion = (champion: string) => {
+    setSearch(champion);
+    setStatusFilter('ALL');
+    setOpenChamp(champion);
+    setTimeout(() => tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  };
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
@@ -132,7 +223,7 @@ function DictHealthDashboardContent() {
         <div className="flex items-center justify-between gap-4 border-b border-slate-800 pb-4">
           <div>
             <h1 className="text-xl md:text-2xl font-black tracking-tight text-white flex items-center gap-2">
-              <Activity className="w-6 h-6 md:w-7 md:h-7 text-indigo-400" />
+              <Activity className="w-6 h-6 md:w-7 md:h-7 text-amber-400" />
               🩺 辞典ヘルス監査センター
             </h1>
             <p className="text-xs text-slate-400 mt-1">
@@ -169,7 +260,7 @@ function DictHealthDashboardContent() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-1">
               <span className="text-[11px] text-slate-400 font-medium">現行パッチ</span>
-              <div className="text-xl font-black text-indigo-400 tracking-tight">
+              <div className="text-xl font-black text-amber-400 tracking-tight">
                 Patch {data.currentPatch}
               </div>
               <p className="text-[10px] text-slate-500">西暦パッチSSoT</p>
@@ -262,8 +353,15 @@ function DictHealthDashboardContent() {
                   key={c.champion}
                   className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 hover:border-slate-700 text-xs"
                 >
-                  <img src={getChampIcon(c.champion)} alt={c.champion} className="w-5 h-5 rounded-md object-cover" />
-                  <span className="font-bold text-slate-200">{c.champion}</span>
+                  <button
+                    type="button"
+                    onClick={() => focusChampion(c.champion)}
+                    title="一覧で中身を開く"
+                    className="flex items-center gap-2 cursor-pointer group"
+                  >
+                    <img src={getChampIcon(c.champion)} alt={c.champion} className="w-5 h-5 rounded-md object-cover" />
+                    <span className="font-bold text-slate-200 group-hover:text-amber-300">{c.champion}</span>
+                  </button>
                   <span className="text-[10px] px-1.5 py-0.2 rounded bg-rose-950/80 text-rose-300 border border-rose-800/50">
                     P{c.patch}
                   </span>
@@ -290,7 +388,7 @@ function DictHealthDashboardContent() {
               placeholder="チャンピオン名で検索..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+              className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
             />
           </div>
 
@@ -298,13 +396,13 @@ function DictHealthDashboardContent() {
             <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1">
               <Filter className="w-3 h-3" /> 状態:
             </span>
-            {(['ALL', 'verified', 'ai_generated', 'stale'] as const).map((st) => (
+            {STATUS_FILTERS.map((st) => (
               <button
                 key={st}
                 onClick={() => setStatusFilter(st)}
                 className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
                   statusFilter === st
-                    ? 'bg-indigo-600 text-white shadow-sm'
+                    ? 'bg-amber-600 text-white shadow-sm'
                     : 'bg-slate-950 border border-slate-800 text-slate-400 hover:text-slate-200'
                 }`}
               >
@@ -318,7 +416,7 @@ function DictHealthDashboardContent() {
         </div>
 
         {/* チャンピオン一覧テーブル */}
-        <div className="bg-slate-900/80 rounded-xl border border-slate-800 overflow-hidden shadow-sm">
+        <div ref={tableRef} className="bg-slate-900/80 rounded-xl border border-slate-800 overflow-hidden shadow-sm scroll-mt-4">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
@@ -335,7 +433,7 @@ function DictHealthDashboardContent() {
                 {loading ? (
                   <tr>
                     <td colSpan={6} className="py-12 text-center text-slate-500">
-                      <div className="inline-block animate-spin w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full mr-2 align-middle" />
+                      <div className="inline-block animate-spin w-5 h-5 border-2 border-amber-500 border-t-transparent rounded-full mr-2 align-middle" />
                       辞典データを集計中...
                     </td>
                   </tr>
@@ -350,22 +448,33 @@ function DictHealthDashboardContent() {
                     const isVerified = c.status === 'verified';
                     const isStale = c.status === 'stale';
 
+                    const isOpen = openChamp === c.champion;
+
                     return (
-                      <tr key={c.champion} className="hover:bg-slate-800/40 transition-colors">
+                      <React.Fragment key={c.champion}>
+                      <tr className={`transition-colors ${isOpen ? 'bg-slate-800/40' : 'hover:bg-slate-800/40'}`}>
                         <td className="py-2.5 px-4">
-                          <div className="flex items-center gap-2.5">
+                          <button
+                            type="button"
+                            onClick={() => setOpenChamp(isOpen ? null : c.champion)}
+                            title={isOpen ? '中身を閉じる' : '中身をここで開く'}
+                            className="flex items-center gap-2.5 text-left cursor-pointer group"
+                          >
+                            {isOpen
+                              ? <ChevronUp className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                              : <ChevronDown className="w-3.5 h-3.5 text-slate-500 group-hover:text-amber-400 shrink-0" />}
                             <img
                               src={getChampIcon(c.champion)}
                               alt={c.champion}
                               className="w-8 h-8 rounded-lg object-cover border border-slate-800"
                             />
                             <div>
-                              <div className="font-bold text-slate-200">{c.champion}</div>
+                              <div className="font-bold text-slate-200 group-hover:text-amber-300">{c.champion}</div>
                               <div className="text-[10px] text-slate-500">
                                 {c.hasContent ? '知見データあり' : '⚠️ 空データ'}
                               </div>
                             </div>
-                          </div>
+                          </button>
                         </td>
 
                         <td className="py-2.5 px-3">
@@ -447,15 +556,32 @@ function DictHealthDashboardContent() {
                             </button>
 
                             <Link
+                              href={`/admin/dict-maintenance?c=${encodeURIComponent(c.champion)}`}
+                              className="flex items-center gap-1 px-2 py-1 rounded bg-slate-950 border border-slate-800 text-slate-300 hover:text-white text-[10px] font-medium transition-colors"
+                              title="辞典メンテでこのチャンピオンを編集"
+                            >
+                              <Pencil className="w-3 h-3" />
+                              編集
+                            </Link>
+
+                            <Link
                               href={`/?c=${encodeURIComponent(c.champion)}`}
                               className="p-1 rounded bg-slate-950 border border-slate-800 text-slate-400 hover:text-white transition-colors"
-                              title="辞典詳細を見る"
+                              title="チャンピオン辞典の詳細ページで見る"
                             >
                               <ExternalLink className="w-3.5 h-3.5" />
                             </Link>
                           </div>
                         </td>
                       </tr>
+                      {isOpen && (
+                        <tr className="bg-slate-900/60">
+                          <td colSpan={6} className="px-4 py-4 border-t border-slate-800/60">
+                            <ChampDetailPanel champion={c.champion} />
+                          </td>
+                        </tr>
+                      )}
+                      </React.Fragment>
                     );
                   })
                 )}
