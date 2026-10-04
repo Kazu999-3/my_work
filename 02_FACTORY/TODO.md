@@ -44,7 +44,7 @@
   - 9/26の4試合はいずれも `riot_match_id` 空・`game_duration=0` で、match-sync が一度も走っていない。KDAが入っていたので Bot の終了ボタン以外の経路で記録されたとみられる。
   - **次に Bot の終了ボタンで試合を記録したら** `SELECT * FROM pending_match_sync ORDER BY id DESC LIMIT 3;` を確認。0行なら管理者チャンネルに `pending_match_sync の予約に失敗` の通知が出ているはず。
 - [ ] **Cloudflare本命cronが空振りした理由**（2026-09-23 発見）: 水曜12:00 JST前後をエラー集約チャンネル(1550118540038774865)か `wrangler tail` で観測する。バックアップ経路が投稿した場合は管理者チャンネルに通知が飛ぶようにしてある。
-- [ ] **PCデーモンの動画解析タイムアウト**（2026-10-04）: 08:27〜11:38に40分制限で4連続強制終了。原因は字幕の無い長い動画でCPUのWhisperが回り続けること → 長さ不明・20分超はWhisperを飛ばして映像解析へ（`b19023e8`）。次回以降 `edge_tasks` の `youtube_queue_process` failed が止まったか確認
+- [x] **PCデーモンの動画解析タイムアウト**（2026-10-04）: 08:27〜11:38に40分制限で4連続強制終了。原因は字幕の無い長い動画でCPUのWhisperが回り続けること → 長さ不明・20分超はWhisperを飛ばして映像解析へ（`b19023e8`）。次回以降 `edge_tasks` の `youtube_queue_process` failed が止まったか確認 → ✅ 2026-10-05確認: 10/4 14時台(UTC)を最後に failed なし、以降 completed 10件
 
 ---
 
@@ -67,7 +67,7 @@
 ## 🧹 データ掃除（次の作業候補）
 
 - [ ] **承認待ちの Wild Rift 記事（id 37501）を05承認画面で却下**（統合済み2件はSQLで除去済み・`knowledge_revisions` に履歴あり）
-- [ ] **長時間動画の先頭35分解析の効果確認**（2026-10-04 `9c70dc84`）: 再挑戦キューへ戻した te3MYbcYNtw（KHA SHYVANA TO RANK 1）が次のPCデーモン実行で完了するか、`youtube_queue` の status と personal_knowledge で確認
+- [x] **長時間動画の先頭35分解析の効果確認**（2026-10-04 `9c70dc84`）: 再挑戦キューへ戻した te3MYbcYNtw（KHA SHYVANA TO RANK 1）が次のPCデーモン実行で完了するか、`youtube_queue` の status と personal_knowledge で確認 → ✅ 2026-10-05確認: 10/4 12:49 UTC に completed
 
 ## 🛠️ 新規機能（未着手）
 
