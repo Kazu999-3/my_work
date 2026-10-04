@@ -396,8 +396,9 @@ class SovereignSync:
                     )
                     if get_res.status_code == 200 and get_res.json():
                         existing = get_res.json()[0]
-                except Exception:
-                    pass
+                except Exception as ge:
+                    # 取得に失敗すると変更履歴の「変更前」が空で記録されるため、少なくともログに残す
+                    logger.warning(f"⚠️ {matchup_id} の既存データ取得に失敗（変更履歴の変更前が空になります）: {ge}")
 
                 res = httpx.post(
                     self._api("matchup_sentinel"),

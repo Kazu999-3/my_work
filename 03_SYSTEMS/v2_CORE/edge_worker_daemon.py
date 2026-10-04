@@ -635,13 +635,17 @@ class EdgeWorkerDaemon:
                 headers={**self.headers, "Prefer": "count=exact", "Range": "0-0"},
                 timeout=15
             )
-            pending_count = 0
+            # 件数が取れない時は「0件」とみなさず見送る（2026-10-04: 以前は取得失敗を0件扱いにしており、
+            # 待ちが溜まっていても安全弁が開いたまま完了済み動画を差し戻していた）
             content_range = pending_res.headers.get("content-range", "")
-            if "/" in content_range:
-                try:
-                    pending_count = int(content_range.split("/")[-1])
-                except ValueError:
-                    pending_count = 0
+            try:
+                pending_count = int(content_range.split("/")[-1]) if "/" in content_range else None
+            except ValueError:
+                pending_count = None
+            if pending_res.status_code not in (200, 206) or pending_count is None:
+                msg = f"未処理キュー件数を取得できないためローテーションを見送りました (HTTP {pending_res.status_code}, content-range={content_range!r})"
+                logger.warning(f"♻️ [Rotation] {msg}")
+                return {"success": False, "rotated": 0, "error": msg}
             if pending_count >= self.ROTATION_PENDING_CAP:
                 msg = f"未処理キューが{pending_count}件あるためローテーションをスキップしました(上限{self.ROTATION_PENDING_CAP}件)"
                 logger.info(f"♻️ [Rotation] {msg}")
@@ -809,7 +813,9 @@ class EdgeWorkerDaemon:
             sys.path.append(scripts_dir)
         try:
             from inbox_worker import process_inbox
-        except ImportError:
+        except ImportError as e:
+            # 以前は黙って None にしており、スレッドは「開始しました」と出したまま何もしなかった
+            logger.error(f"❌ [InboxScheduler] inbox_worker を読み込めないため受信箱の自動仕分けは動きません: {e}")
             process_inbox = None
 
         logger.info("📥 [InboxScheduler] 帝国インボックス自動仕分けスレッドを開始しました (5分間隔)。")
@@ -831,7 +837,8 @@ class EdgeWorkerDaemon:
             sys.path.append(scripts_dir)
         try:
             from knowledge_linter import run_linter
-        except ImportError:
+        except ImportError as e:
+            logger.error(f"❌ [KnowledgeLintScheduler] knowledge_linter を読み込めないため自律点検は動きません: {e}")
             run_linter = None
 
         logger.info("🧠 [KnowledgeLintScheduler] ナレッジLinter自律点検スレッドを開始しました (24時間周期)。")

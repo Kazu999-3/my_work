@@ -294,7 +294,9 @@ def ensure_local_daemon_healthy():
 
     try:
         updated_at = datetime.fromisoformat(rows[0]["updated_at"].replace("Z", "+00:00"))
-    except Exception:
+    except Exception as e:
+        # 黙って抜けると、デーモンが止まっていても誰にも通知されない
+        print(f"⚠️ [LocalDaemonWatchdog] ハートビート時刻を解釈できず死活判定をスキップしました: {rows[0].get('updated_at')!r} ({e})")
         return
 
     age_minutes = (datetime.now(timezone.utc) - updated_at).total_seconds() / 60
