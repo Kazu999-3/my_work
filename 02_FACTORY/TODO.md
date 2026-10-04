@@ -50,7 +50,6 @@
 
 ## 🙋 ユーザー判断・ユーザー作業待ち
 
-- [ ] **【最優先】GitHub Secrets の `DATABASE_URL` を今のDBパスワードで更新**（2026-10-04 発見）: DBバックアップが 9/22〜10/04 の12日間毎日失敗（`password authentication failed`）。最後の成功は 9/21 で、そのバックアップも **10/21 に失効**。マイグレーション自動適用も同じ原因で 9/22 から停止。Secret の最終更新は 7/17。Supabase ダッシュボード → Connect → Session pooler の接続文字列で更新し、`gh workflow run db-backup.yml` で成功を確認。※ 81〜85番は手動適用済みのため `_migrations` に記録済み（84番は DROP COLUMN を含み、流し直すと予測と試合の紐付け10件が消えるため）
 
 
 - [ ] **手動の振り返りフォーム（`SoloQReflectionModal.tsx`・997行）を畳むか**: 手動記録は直近30日0件、自動振り返りは14件。自動側を使ってから判断する。
