@@ -66,7 +66,7 @@
 ## 🧹 データ掃除（次の作業候補）
 
 - [ ] **承認待ちの Wild Rift 記事（id 37501）を05承認画面で却下**（統合済み2件はSQLで除去済み・`knowledge_revisions` に履歴あり）
-- [ ] **長尺動画が入力トークン上限超えで解析失敗**（2026-10-04、KHA SHYVANA TO RANK 1）: 字幕を分割・要約してから渡す等の対策が必要
+- [ ] **長時間動画の先頭35分解析の効果確認**（2026-10-04 `9c70dc84`）: 再挑戦キューへ戻した te3MYbcYNtw（KHA SHYVANA TO RANK 1）が次のPCデーモン実行で完了するか、`youtube_queue` の status と personal_knowledge で確認
 
 ## 🛠️ 新規機能（未着手）
 
