@@ -52,12 +52,11 @@ WATCHED_WORKFLOWS = {
     "champ-dict-update.yml": "辞典一括更新(週次)",
     "lane-role-update.yml": "レーン所属更新(週次)",
     "riot-jungle-timing-update.yml": "JG周回タイム更新(週次)",
-    "sync.yml": "Sovereign DB Sync",
 }
-# 「成功」扱いでも、ログにこの文言があれば実際には何もしていない（鍵の未登録など）
-SILENT_SKIP_MARKERS = {
-    "sync.yml": "同期スキップ",
-}
+# 「成功」扱いでも、ログにこの文言があれば実際には何もしていない（鍵の未登録など）。
+# 2026-10-04: sync.yml（Sovereign DB Sync）が「同期スキップ」のまま毎日成功していたのを検出→ユーザー判断で削除。
+# 同じ型の黙ったスキップを持つワークフローが見つかったら、ここへ { "ファイル名": "ログの文言" } で追加する。
+SILENT_SKIP_MARKERS = {}
 
 
 class Report:

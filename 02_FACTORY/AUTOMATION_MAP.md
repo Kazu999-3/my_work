@@ -31,12 +31,13 @@ grep -A12 "\[triggers\]" 03_SYSTEMS/ktm_bot/wrangler.toml
 | **Edge Cloud Worker**<br>(`edge-cloud-worker.yml`) | 5分おき | `*/5 * * * *` | ポータルのボタン操作で `edge_tasks` に積まれたタスク（個別トレンド取得・構成シミュ・YouTube登録・Redditスカウト・辞典シンセ等）をクラウド側で処理 | `scripts/edge_cloud_worker.py` |
 | **SoloQ Coach Poll**<br>(`soloq-coach-poll.yml`) | 15分おき | `*/15 * * * *` | 試合終了を早めに検知して振り返りを生成。Vercel HobbyのCronが1日1回制限のため、高頻度呼び出しをこちらで代替 | `/api/cron/soloq-coach` を叩く |
 | **Antigravity Sovereign Pulse**<br>(`pulse.yml`) | 6時間おき | `0 */6 * * *` | パッチ更新検知・LoLalytics統計取得・Discordメンバー同期 | `03_SYSTEMS/v2_CORE/run_pulse_once.py` |
-| **KTM Cloud Worker / dict-sync**<br>(`ktm-cloud-worker.yml`) | 3時間おき | `7 */3 * * *` | ナレッジ → チャンピオン辞典（`matchup_sentinel`）の同期をチャンクで実行 | `/api/admin/knowledge/sync` |
+| **KTM Cloud Worker / dict-sync**<br>(`ktm-cloud-worker.yml`) | 3時間おき | `7 */3 * * *` | 承認済みの攻略ライブラリ記事をチャンピオン辞典（`matchup_sentinel`）へ統合（統合済みは `__INTEGRATED__` で除外） | 05 `/api/knowledge/integrate`（2026-10-02 切替） |
 | **KTM Cloud Worker / prospect**<br>(`ktm-cloud-worker.yml`) | 1日3回<br>03:30 / 11:30 / 19:30 | `30 18,2,10 * * *` | 辞典が古いチャンピオンの解説動画をYouTube全体から発掘し `youtube_queue` へ起票 | `scripts/prospector.py` |
 | **YouTube Channel Monitor**<br>(`youtube-monitor.yml`) | 1日3回<br>08:00 / 14:00 / 20:00 | `0 23,5,11 * * *` | 登録チャンネルの新着をAtom RSSで巡回し `youtube_queue` へ起票 | `scripts/cloud_youtube_monitor.py` |
 | **Sovereign Sentinel**<br>(`sentinel.yml`) | 毎日 12:00 | `0 3 * * *` | APIキー・Botトークン・秘密鍵のハードコード検知、基幹ディレクトリ構成チェック | `03_SYSTEMS/INFRA/sentinel.py` |
-| **Sovereign DB Sync**<br>(`sync.yml`) | 毎日 13:00 | `0 4 * * *` | ローカル資産とSupabaseの同期 | `03_SYSTEMS/v2_CORE/sovereign_sync.py` |
+| ~~Sovereign DB Sync~~<br>(`sync.yml`) | **2026-10-04 削除** | — | 鍵の未登録で毎日「同期スキップ」のまま成功扱いだった。動かすと手元のバイブル約370件をライブラリへタイトル基準で上書きし今の仕組みと衝突するため廃止（`sovereign_sync.py` は残置） | `03_SYSTEMS/v2_CORE/sovereign_sync.py` |
 | **Database Backup**<br>(`db-backup.yml`) | 毎日 03:00 | `0 18 * * *` | `pg_dump` による論理バックアップ（Supabase無料プランはPITRが使えないため） | Supabase → Artifact |
+| **Daily Health Report**<br>(`health-report.yml`) | 毎日 06:30 | `30 21 * * *` | 本番の健康診断（バックアップ・定期WF・PCデーモン・タスク失敗・動画解析・辞典統合・ソロQ振り返り・DB容量・RLSの穴）を実測し通知ベルへ毎朝報告、異常はIssue。変更履歴の間引きも実施（2026-10-04 新設） | `scripts/production_health_report.py` |
 | **KTM Bot Cron Backup**<br>(`ktm-bot-cron-backup.yml`) | 毎週水 12:07 | `7 3 * * 3` | Cloudflare Cronの発火漏れ（best-effort）に対する保険。`/trigger-scheduled` を冗長キック | ktm-os-worker |
 | **Riot Patch Watchdog**<br>(`patch-watchdog.yml`) | 1日2回<br>07:20 / 15:20 | `20 6,22 * * *` | DataDragon最新パッチの巡回検知、差分チャンピオン抽出、検証キュー更新（`review_needed`）、Discord速報。記録は `current_patch.json` にコミットで永続化 | `scripts/check_patch_update.py` |
 | **Champion Dictionary Bulk Update**<br>(`champ-dict-update.yml`) | 毎週月 03:00 | `0 18 * * 0` | チャンピオン辞典の一括更新 | `champ_db_bulk_updater.py` |
