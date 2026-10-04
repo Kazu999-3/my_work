@@ -320,7 +320,7 @@ def notify(cur, report: Report):
     title = f"🩺 毎朝の健康診断: {head}"
     cur.execute(
         "insert into admin_notifications (type, title, body, url, data) values (%s, %s, %s, %s, %s)",
-        ("system_health", title, report.markdown()[:4000], "/admin/dashboard",
+        ("system_health", title, report.markdown().replace("**", "")[:4000], "/admin/dashboard",
          json.dumps({"counts": c, "worst": report.worst}, ensure_ascii=False)),
     )
     return title

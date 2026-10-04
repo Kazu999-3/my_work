@@ -95,3 +95,5 @@ scratch/
 
 # ローカル専用の認証情報置き場（YouTubeのcookies.txt等）。絶対にコミットしない
 .secrets/
+# PCデーモンの多重起動防止ロック（起動中のみ存在）
+03_SYSTEMS/v2_CORE/edge_worker_daemon.lock

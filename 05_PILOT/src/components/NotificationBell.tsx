@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
   Bell, Check, Trash2, ChevronDown, ChevronUp, ExternalLink,
-  Trophy, RefreshCw, Video, AlertCircle, Info, Sparkles
+  Trophy, RefreshCw, Video, AlertCircle, Info, Sparkles, HeartPulse
 } from 'lucide-react';
 
 export interface AdminNotification {
@@ -70,6 +70,18 @@ function getNotificationMeta(n: AdminNotification) {
       border: 'border-indigo-500/30',
       label: '動画解析',
       defaultUrl: '/admin/youtube',
+    };
+  }
+  if (n.type === 'system_health') {
+    // 毎朝の健康診断（scripts/production_health_report.py）。異常があれば赤、無ければ緑で出す
+    const bad = (n.data as any)?.worst && (n.data as any).worst !== 'OK';
+    return {
+      icon: HeartPulse,
+      color: bad ? 'text-rose-400' : 'text-emerald-400',
+      bg: bad ? 'bg-rose-500/10' : 'bg-emerald-500/10',
+      border: bad ? 'border-rose-500/30' : 'border-emerald-500/30',
+      label: '健康診断',
+      defaultUrl: '/admin/dashboard',
     };
   }
   return {
