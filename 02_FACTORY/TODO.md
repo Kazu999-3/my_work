@@ -22,8 +22,6 @@
 方針: 内戦・カジノ・師弟など会員向けは04に残し、個人用は05へ。画面約5,000行＋API約15本のため複数セッションで進める。
 
 **05へ移す**（上から順に着手を推奨。小さく独立したものから）
-- [ ] **コーチ「試合後」**: `PostGameDeepAnalyticsDashboard`(857) `MatchFightsAnalyticsCard`(294) `CoachReviewPanel`(202) `MySoloQDashboard`(384)。試合メモ含む。API: `lol/postgame-deep-analytics` `lol/match-memo` `lol/sync-match-feedback` `lol/match-fights` `coach/analyze` 等。
-  05は `tab=postgame` を暫定でテンポ解析タブへ寄せている（`e39376a4`）ので、移植後はこちらへ向け直す
 - [ ] **コーチ「試合中」**: `ScoutTab`(715) `FiveVFiveSimTab`(589)。API: `admin/live-match` `match/simulate` `match/simulation` `riot/live-game`。
   `riot/live-game` のオーナー決め打ち（`KAZURIN_PUUID`/`name='かずき'`）は移植時に解消する
 
@@ -32,6 +30,7 @@
 ✅ `04 /admin/soloq` 削除、`04 /admin/dict-health` は05への転送ページに置換（2026-10-04）
 - [ ] **コーチ「試合前」の残り部品**（2026-10-04 移す決定）: `PlayRecommendationCard`(153) `TimingHeatmapCard`(311) `RankGoalCard`(220) `OverlayLauncherButton`(150)。API: `coach/play-recommendation` `soloq/heatmap` `coach/target-tier` `overlay`
 
+✅ コーチ「試合後」は移植済み（05 `/coach?tab=postgame`、2026-10-04）。試合メモは旧版が存在しない `notes` 列を使っており一度も動いていなかったため migration 85 で列を追加。手動振り返りフォームは05の反省ノートタブで代替し移さず
 ✅ 運用ダッシュボードは移植済み（05 `/admin/dashboard`、2026-10-04）。旧版の常時「稼働中」カード・固定値ヘルスは移さず実測値のみ。04側の削除は他の移植と合わせて判断
 
 **04の役目終了前に05へ移す裏方**（今は04上で動いており05はデータを読むだけ）:

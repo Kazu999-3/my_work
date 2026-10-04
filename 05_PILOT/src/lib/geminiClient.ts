@@ -1,6 +1,10 @@
-// Gemini API 呼び出しヘルパー（Gemini 3.5 Flash-Lite / 3.1 Flash-Lite 自動フォールバック）
-
-const FALLBACK_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+// Gemini API 呼び出しヘルパー（上から順に試す自動フォールバック）
+//
+// 2026-10-04 gemini-model-health-check で実測: gemini-3.1-flash-lite / gemini-3.5-flash-lite / gemini-2.5-flash は動作OK。
+// それまでの一覧 ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'] は後ろ2つが 404（廃止済み）で、
+// 冒頭コメントの「3.5/3.1 Flash-Lite 自動フォールバック」とも食い違っていた（実質 2.5-flash 1本だけ）。
+// 枠に余裕のある 3.1-flash-lite を先頭にする。モデルを変える時は必ず実測スクリプトで確認すること（.claude/rules/llm-health.md）。
+const FALLBACK_MODELS = ['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-2.5-flash'];
 
 export interface GeminiOptions {
   model?: string;
