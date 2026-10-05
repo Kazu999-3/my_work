@@ -42,6 +42,143 @@ function timeAgo(iso: string): string {
   return `${Math.floor(hours / 24)}日前`;
 }
 
+interface HealthItem {
+  status: 'FAIL' | 'WARN' | 'OK';
+  title: string;
+  detail: string;
+}
+
+function parseHealthBody(body: string): { fails: HealthItem[]; warns: HealthItem[]; oks: HealthItem[] } {
+  const fails: HealthItem[] = [];
+  const warns: HealthItem[] = [];
+  const oks: HealthItem[] = [];
+
+  const lines = body.split('\n').map((l) => l.trim()).filter(Boolean);
+  for (const line of lines) {
+    let status: 'FAIL' | 'WARN' | 'OK' | null = null;
+    let clean = line.replace(/^-\s*/, '');
+    if (clean.includes('🚨')) {
+      status = 'FAIL';
+      clean = clean.replace(/🚨\s*/, '');
+    } else if (clean.includes('⚠️')) {
+      status = 'WARN';
+      clean = clean.replace(/⚠️\s*/, '');
+    } else if (clean.includes('✅')) {
+      status = 'OK';
+      clean = clean.replace(/✅\s*/, '');
+    }
+
+    if (!status) continue;
+
+    // "**タイトル**: 詳細" または "タイトル: 詳細"
+    const m = clean.match(/^\**([^*:：]+)\**[:：]\s*(.*)$/);
+    const title = m ? m[1].trim() : clean;
+    const detail = m ? m[2].trim() : '';
+
+    const item: HealthItem = { status, title, detail };
+    if (status === 'FAIL') fails.push(item);
+    else if (status === 'WARN') warns.push(item);
+    else oks.push(item);
+  }
+
+  return { fails, warns, oks };
+}
+
+function HealthReportBody({ body, isExpanded }: { body: string; isExpanded: boolean }) {
+  const [showOks, setShowOks] = useState(false);
+  const parsed = React.useMemo(() => parseHealthBody(body), [body]);
+
+  // パースできなかった場合の安全フォールバック
+  if (parsed.fails.length === 0 && parsed.warns.length === 0 && parsed.oks.length === 0) {
+    return (
+      <p className={`text-[11px] text-zinc-400 whitespace-pre-wrap leading-relaxed ${!isExpanded ? 'line-clamp-2' : ''}`}>
+        {body}
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-2 mt-1">
+      {/* 📊 サマリーピルバッジ */}
+      <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-bold">
+        {parsed.fails.length > 0 && (
+          <span className="px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1">
+            🚨 異常 {parsed.fails.length}件
+          </span>
+        )}
+        {parsed.warns.length > 0 && (
+          <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+            ⚠️ 注意 {parsed.warns.length}件
+          </span>
+        )}
+        <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 flex items-center gap-1">
+          ✅ 正常 {parsed.oks.length}項目
+        </span>
+      </div>
+
+      {/* 🚨 異常項目（最優先・赤枠ハイライトで詳細表示） */}
+      {parsed.fails.map((f, i) => (
+        <div key={i} className="p-2.5 rounded-xl bg-rose-950/40 border border-rose-800/60 text-rose-200 text-xs space-y-1">
+          <div className="flex items-center gap-1.5 font-black text-rose-300">
+            <AlertCircle size={14} className="shrink-0 text-rose-400" />
+            <span>{f.title}</span>
+          </div>
+          {f.detail && (
+            <p className="text-[11px] text-rose-200/90 leading-relaxed font-sans pl-5 break-words">
+              {f.detail}
+            </p>
+          )}
+        </div>
+      ))}
+
+      {/* ⚠️ 注意項目 */}
+      {parsed.warns.map((w, i) => (
+        <div key={i} className="p-2.5 rounded-xl bg-amber-950/40 border border-amber-800/60 text-amber-200 text-xs space-y-1">
+          <div className="flex items-center gap-1.5 font-black text-amber-300">
+            <AlertCircle size={14} className="shrink-0 text-amber-400" />
+            <span>{w.title}</span>
+          </div>
+          {w.detail && (
+            <p className="text-[11px] text-amber-200/90 leading-relaxed font-sans pl-5 break-words">
+              {w.detail}
+            </p>
+          )}
+        </div>
+      ))}
+
+      {/* ✅ 正常項目（コンパクトなトグル展開） */}
+      {parsed.oks.length > 0 && (
+        <div className="pt-0.5">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowOks(!showOks);
+            }}
+            className="text-[10px] text-zinc-400 hover:text-zinc-200 font-bold flex items-center gap-1 py-0.5 cursor-pointer"
+          >
+            <span>{showOks ? '▼ 正常項目を閉じる' : `▶ 正常項目（全${parsed.oks.length}件）の内訳を表示`}</span>
+          </button>
+
+          {showOks && (
+            <div className="mt-1.5 space-y-1 bg-zinc-950/60 p-2 rounded-xl border border-zinc-800/80 animate-in fade-in duration-100">
+              {parsed.oks.map((ok, i) => (
+                <div key={i} className="text-[10px] text-zinc-300 flex items-start gap-1.5 py-0.5">
+                  <Check size={11} className="text-emerald-400 shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <span className="font-bold text-zinc-200">{ok.title}:</span>{' '}
+                    <span className="text-zinc-400">{ok.detail}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function getNotificationMeta(n: AdminNotification) {
   if (n.type === 'coach_review') {
     return {
@@ -94,6 +231,7 @@ function getNotificationMeta(n: AdminNotification) {
     defaultUrl: null,
   };
 }
+
 
 export default function NotificationBell() {
   const [notifications, setNotifications] = useState<AdminNotification[]>([]);
@@ -208,7 +346,7 @@ export default function NotificationBell() {
 
       {/* 📋 通知一覧ドロップダウンパネル */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 max-h-[82vh] rounded-2xl bg-[#141418] border border-zinc-700/80 shadow-2xl flex flex-col z-50 animate-in fade-in duration-150 backdrop-blur-md overflow-hidden">
+        <div className="absolute -right-12 sm:right-0 top-full mt-2 w-[calc(100vw-24px)] max-w-[360px] sm:max-w-md max-h-[82vh] rounded-2xl bg-[#141418] border border-zinc-700/80 shadow-2xl flex flex-col z-50 animate-in fade-in duration-150 backdrop-blur-md overflow-hidden">
           {/* パネルヘッダー */}
           <div className="p-3.5 border-b border-zinc-800 bg-zinc-900/60 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -311,28 +449,35 @@ export default function NotificationBell() {
                       </div>
                     </div>
 
-                    {/* 本文（開閉トグル対応） */}
+                    {/* 本文（健康診断は構造化UI、その他はテキスト） */}
                     {n.body && (
                       <div className="pl-7">
-                        <p
-                          className={`text-[11px] text-zinc-400 whitespace-pre-wrap leading-relaxed ${
-                            !isExpanded ? 'line-clamp-2' : ''
-                          }`}
-                        >
-                          {n.body}
-                        </p>
-                        {n.body.length > 80 && (
-                          <button
-                            type="button"
-                            onClick={(e) => toggleExpand(n.id, e)}
-                            className="text-[10px] text-amber-400/80 hover:text-amber-300 font-bold mt-1 inline-flex items-center gap-0.5"
-                          >
-                            <span>{isExpanded ? '閉じる' : '続きを読む'}</span>
-                            {isExpanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
-                          </button>
+                        {n.type === 'system_health' ? (
+                          <HealthReportBody body={n.body} isExpanded={isExpanded} />
+                        ) : (
+                          <>
+                            <p
+                              className={`text-[11px] text-zinc-400 whitespace-pre-wrap leading-relaxed ${
+                                !isExpanded ? 'line-clamp-2' : ''
+                              }`}
+                            >
+                              {n.body}
+                            </p>
+                            {n.body.length > 80 && (
+                              <button
+                                type="button"
+                                onClick={(e) => toggleExpand(n.id, e)}
+                                className="text-[10px] text-amber-400/80 hover:text-amber-300 font-bold mt-1 inline-flex items-center gap-0.5"
+                              >
+                                <span>{isExpanded ? '閉じる' : '続きを読む'}</span>
+                                {isExpanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+                              </button>
+                            )}
+                          </>
                         )}
                       </div>
                     )}
+
 
                     {/* 直行アクションリンク */}
                     {targetUrl && (

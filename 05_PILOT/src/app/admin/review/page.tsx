@@ -492,13 +492,15 @@ export default function ReviewPage() {
                       <XCircle className="w-3.5 h-3.5" /> 却下
                     </button>
                     <button
-                      onClick={() => approveOne(item)}
+                      onClick={() => openPreview(item)}
                       disabled={busy}
-                      className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50 shadow-sm"
+                      className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-sm"
+                      title="統合先をプレビュー確認してから承認を実行します"
                     >
-                      <CheckCircle2 className="w-3.5 h-3.5" /> 承認して統合
+                      <Eye className="w-3.5 h-3.5" /> プレビューして承認統合
                     </button>
                   </div>
+
                 </div>
               </div>
             );
