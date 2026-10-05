@@ -2,14 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { getChampIcon } from '@/lib/ddragonClient';
-import { AlertCircle, RefreshCw, Layers, Activity, Zap, BarChart3, Eye, Rewind, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, RefreshCw, Layers, Activity, Zap, BarChart3, Eye, CheckCircle2, Info } from 'lucide-react';
+import type { PostgameTempoReport } from '@/lib/postgameTempo';
+import PostGameTempoSections from './PostGameTempoSections';
 
 // 試合後: 詳細分析（2026-10-05 全面見直し）
 // 旧版はリコールのテンポ損失・ワード監査の採点・ランク水準ラベル・「最重要改善アクション」など、
 // 実データを見ていない数値や定型文を表示していた。ここでは試合データに実在する数値だけを
-// 対面と並べて出し、良し悪しの判断はプレイヤーに委ねる。リコール/ビルドは「テンポ」タブが担当。
+// 対面と並べて出し、良し悪しの判断はプレイヤーに委ねる。
+// 2026-10-06: 「試合後: テンポ」タブを統合し、15分テンポ逆再生・帰還・ビルド監査もこの下に表示する。
 
 interface RecentMatchMeta {
   matchId: string;
@@ -66,6 +68,8 @@ interface PostGameData {
   } | null;
   match_stats: { me: MatchStats; enemy: MatchStats | null };
   control_ward_times: string[];
+  tempo: PostgameTempoReport | null;
+  tempo_error: string | null;
 }
 
 interface PostGameDashboardProps {
@@ -487,20 +491,17 @@ export default function PostGameDeepAnalyticsDashboard({
           )}
         </div>
 
-        {/* 4. テンポタブへの導線 */}
-        <Link
-          href={`/coach?tab=tempo&matchId=${encodeURIComponent(data.selected_match_id)}`}
-          className="bg-stone-950 border border-stone-800 hover:border-amber-700/60 rounded-xl p-4 space-y-1 transition block"
-        >
-          <span className="text-xs font-black text-stone-100 flex items-center gap-1.5">
-            <Rewind className="w-4 h-4 text-amber-400" />
-            リコール・ビルドの分析は「🔁 試合後: テンポ」へ
-          </span>
-          <p className="text-[11px] text-stone-400">
-            帰還ごとの所持金・購入品・前後のゴールド差の変化と、ビルドのチェックをこの試合で開きます。
-          </p>
-        </Link>
       </div>
+
+      {/* 15分テンポ逆再生・帰還テンポ・ビルド監査（旧「テンポ」タブ） */}
+      {data.tempo ? (
+        <PostGameTempoSections report={data.tempo} />
+      ) : (
+        <div className="p-3 rounded-xl bg-stone-950 border border-stone-800 text-[11px] text-stone-400 flex items-center gap-2">
+          <Info className="w-4 h-4 shrink-0" />
+          テンポ逆再生・帰還・ビルド監査を表示できません（{data.tempo_error || '理由不明'}）。
+        </div>
+      )}
 
       {/* 試合メモ ＆ 対面メモへの同期 */}
       <div className="bg-stone-950 border border-stone-800 rounded-xl p-4 space-y-3">

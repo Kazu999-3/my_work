@@ -6,6 +6,7 @@ import {
   fetchMatchDetails,
   fetchMatchTimeline,
 } from '@/lib/riot';
+import { analyzePostgameTempo, loadItemMeta, type PostgameTempoReport } from '@/lib/postgameTempo';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 45;
@@ -15,7 +16,9 @@ export const maxDuration = 45;
 // 「ダイヤ級」等のランク水準ラベル・勝率から出したレーダー値・合算モードの固定リコール3件など、
 // 実データを見ていない値を多数返していた。ここでは Match-V5 の試合詳細とタイムラインに
 // 実在する数値だけを、対面（敵チームの同ポジション）と並べて返す。良し悪しの採点はしない。
-// リコール・ビルドの分析は実測ベースで作り直した「🔁 試合後: テンポ」タブ(lib/postgameTempo.ts)が担当する。
+// 2026-10-06: 別タブだった「試合後: テンポ」を統合。同じ試合詳細・タイムラインから
+// lib/postgameTempo.ts の15分テンポ逆再生・帰還テンポ・ビルド監査も算出して一緒に返す
+// （以前は2つのタブがそれぞれ試合詳細6件＋タイムラインを取り直していた）。
 
 type MatchResult = Awaited<ReturnType<typeof fetchMatchDetails>>;
 type Participant = MatchResult['participants'][number];
@@ -103,7 +106,10 @@ export async function GET(request: NextRequest) {
     if (!match) {
       return NextResponse.json({ error: '選択された試合詳細を取得できませんでした。' }, { status: 404 });
     }
-    const timeline = await fetchMatchTimeline(targetMatchId, apiKey).catch(() => null);
+    const [timeline, itemMeta] = await Promise.all([
+      fetchMatchTimeline(targetMatchId, apiKey).catch(() => null),
+      loadItemMeta().catch((e) => { console.warn('[postgame-deep-analytics] item meta:', e); return null; }),
+    ]);
 
     const me = match.participants.find((p) => p.puuid === puuid);
     if (!me) {
@@ -189,6 +195,19 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // テンポ解析はタイムラインが必須。失敗しても詳細分析の残りは返す
+    let tempo: PostgameTempoReport | null = null;
+    let tempo_error: string | null = null;
+    if (timeline && itemMeta) {
+      try {
+        tempo = analyzePostgameTempo(match, timeline, puuid, itemMeta);
+      } catch (e: any) {
+        tempo_error = e?.message || 'テンポ解析に失敗しました';
+      }
+    } else {
+      tempo_error = timeline ? 'アイテム辞書(DDragon)を取得できませんでした' : 'タイムラインを取得できませんでした';
+    }
+
     return NextResponse.json({
       success: true,
       selected_match_id: targetMatchId,
@@ -204,6 +223,8 @@ export async function GET(request: NextRequest) {
       lane_snapshot,
       match_stats: { me: statsOf(me), enemy: enemy ? statsOf(enemy) : null },
       control_ward_times: controlWardTimes.map(fmtTs),
+      tempo,
+      tempo_error,
     });
   } catch (error: any) {
     console.error('[postgame-deep-analytics] Error:', error);

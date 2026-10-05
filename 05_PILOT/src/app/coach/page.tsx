@@ -5,25 +5,23 @@ import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { 
   Bot, ArrowLeft, Swords, BookOpen, Compass, ShieldAlert, Sparkles, RefreshCw, Zap,
-  BarChart3, MessageSquareText, Rewind, TrendingUp, Radar
+  BarChart3, MessageSquareText, TrendingUp, Radar
 } from 'lucide-react';
 import MatchupBlueprintCard from './MatchupBlueprintCard';
 import StatsAnalyzerTab from './StatsAnalyzerTab';
 import SoloQReflectionTab from './SoloQReflectionTab';
-import PostGameTempoTab from './PostGameTempoTab';
 import PostGameTab from './PostGameTab';
 import LiveTab from './LiveTab';
 import { PreGameTop, PreGameBottom } from './PreGameExtras';
 import { CoachRiotIdProvider, CoachRiotIdBar } from './riotIdContext';
 
-type TabKey = 'blueprint' | 'live' | 'postgame' | 'tempo' | 'reflection' | 'analyzer';
+type TabKey = 'blueprint' | 'live' | 'postgame' | 'reflection' | 'analyzer';
 
 // 試合の流れ（前 → 中 → 後 → 振り返り）の順に並べる。スタッツ分析は試合単位でないので最後
 const TABS: { key: TabKey; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
   { key: 'blueprint', label: '⚔️ 試合前', Icon: Swords },
   { key: 'live', label: '🧭 試合中', Icon: Radar },
-  { key: 'postgame', label: '📈 試合後: 詳細分析', Icon: TrendingUp },
-  { key: 'tempo', label: '🔁 試合後: テンポ', Icon: Rewind },
+  { key: 'postgame', label: '📈 試合後', Icon: TrendingUp },
   { key: 'reflection', label: '📝 振り返りノート', Icon: MessageSquareText },
   { key: 'analyzer', label: '📊 スタッツ分析', Icon: BarChart3 },
 ];
@@ -34,9 +32,9 @@ function CoachPageContent() {
 
   // タブはURL(?tab=)に持たせる。再読み込み・戻るボタン・リンク共有でも同じタブが開く(2026-10-05)
   const qTab = searchParams.get('tab');
-  // matchup-memo は旧ポータルの通知リンク互換
+  // matchup-memo は旧ポータルの通知リンク互換、tempo は「試合後」へ統合した旧テンポタブ(2026-10-06)
   const activeTab: TabKey =
-    qTab === 'matchup-memo' ? 'postgame'
+    qTab === 'matchup-memo' || qTab === 'tempo' ? 'postgame'
     : TABS.some((t) => t.key === qTab) ? (qTab as TabKey)
     : 'blueprint';
   const setActiveTab = (tab: TabKey) => {
@@ -158,11 +156,6 @@ function CoachPageContent() {
         {/* タブ: 試合後（詳細分析・試合メモ・集団戦・自動振り返り） */}
         {activeTab === 'postgame' && (
           <PostGameTab initialMatchId={searchParams.get('matchId')} />
-        )}
-
-        {/* タブ 3: 試合後テンポ逆再生 ＆ ビルド監査 */}
-        {activeTab === 'tempo' && (
-          <PostGameTempoTab initialMatchId={activeTab === 'tempo' ? searchParams.get('matchId') : null} />
         )}
 
         {/* タブ 4: ソロQ反省ノート */}
