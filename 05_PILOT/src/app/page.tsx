@@ -11,12 +11,13 @@ import {
   Search, ShieldAlert, Swords, Zap, Skull, Shield, BookOpen, 
   ArrowLeft, ArrowRight, Clock, Activity, AlertTriangle, Layers,
   CheckCircle2, ChevronDown, ChevronUp, Timer, Star,
-  X, Check, Flame, Sparkles, Plus, Download, Bot, Target, ExternalLink, Video, Eye, Waves, Compass, Wrench, Edit3, Copy, Crown
+  X, Check, Flame, Sparkles, Plus, Download, Bot, Target, ExternalLink, Video, Eye, Waves, Compass, Wrench, Edit3, Copy, Crown, History
 } from "lucide-react";
 import KnowledgeIngestModal from "@/components/KnowledgeIngestModal";
 import { MatchupPicker } from "@/components/MatchupPicker";
 import LaneMaintenanceModal from "@/components/LaneMaintenanceModal";
 import ItemDictionaryModal from "@/components/ItemDictionaryModal";
+import RevisionHistoryModal from "@/components/RevisionHistoryModal";
 import { translateItem } from "@/lib/itemTranslator";
 import { getLaneTempoMetrics, getStageTactics } from "@/lib/tempoMetrics";
 import { getDynamicPickGuide } from "@/lib/pickGuideDynamic";
@@ -242,6 +243,9 @@ function PilotApp() {
 
   // ⚙️ ツール・管理クイックパレット モーダル開閉状態（絶対に見切れない中央モーダル）
   const [isToolModalOpen, setIsToolModalOpen] = useState(false);
+
+  // 📜 編集・統合履歴モーダル状態
+  const [isRevisionModalOpen, setIsRevisionModalOpen] = useState(false);
 
   // 📒 攻略知見詳細ポップアップモーダル状態
   const [selectedKnowledgeId, setSelectedKnowledgeId] = useState<string | number | null>(null);
@@ -916,6 +920,17 @@ function PilotApp() {
                       ))
                     )}
                   </div>
+
+                  {/* 📜 編集履歴確認ボタン */}
+                  <button
+                    type="button"
+                    onClick={() => setIsRevisionModalOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-amber-300 border border-zinc-700 hover:border-amber-500/50 transition cursor-pointer shadow-sm"
+                    title="各項目のAI統合・編集履歴を確認"
+                  >
+                    <History size={13} className="text-amber-400" />
+                    <span className="hidden sm:inline">履歴</span>
+                  </button>
 
                   {/* ⚙️ ツール・管理メニュー起動ボタン */}
                   <button
@@ -2713,9 +2728,31 @@ function PilotApp() {
                 </div>
               </button>
 
+              {/* 4. 編集・統合履歴 */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsToolModalOpen(false);
+                  setIsRevisionModalOpen(true);
+                }}
+                className="w-full p-3.5 rounded-2xl bg-zinc-900 hover:bg-zinc-855 border border-zinc-800 hover:border-amber-500/50 text-left transition flex items-center gap-3.5 cursor-pointer group shadow-xs"
+              >
+                <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 group-hover:bg-amber-500/20 group-hover:scale-105 transition shrink-0">
+                  <History size={17} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-black text-zinc-200 group-hover:text-amber-300 transition">
+                    {selectedDetail ? `📜 ${selectedDetail.jpName} の編集・統合履歴` : "📜 編集・統合履歴"}
+                  </div>
+                  <p className="text-[11px] text-zinc-400 mt-0.5 truncate">
+                    AI統合による強み・弱み・パワースパイク等の変更履歴
+                  </p>
+                </div>
+              </button>
+
               <div className="border-t border-zinc-800/80 my-1" />
 
-              {/* 4. 辞典メンテナンス管理 */}
+              {/* 5. 辞典メンテナンス管理 */}
               <Link
                 href={selectedDetail ? `/admin/dict-maintenance?c=${encodeURIComponent(selectedDetail.id)}` : "/admin/dict-maintenance"}
                 onClick={() => setIsToolModalOpen(false)}
@@ -2738,6 +2775,14 @@ function PilotApp() {
           </div>
         </div>
       )}
+
+      {/* 📜 チャンピオン各項目 編集・統合履歴モーダル */}
+      <RevisionHistoryModal
+        championId={selectedDetail?.id || ""}
+        championName={selectedDetail?.jpName || ""}
+        isOpen={isRevisionModalOpen}
+        onClose={() => setIsRevisionModalOpen(false)}
+      />
     </div>
   );
 }

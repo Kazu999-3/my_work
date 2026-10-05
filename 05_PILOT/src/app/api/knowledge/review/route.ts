@@ -4,8 +4,10 @@ import { getRoster, resolveRosterChampions, getChampionNameJa } from '@/lib/cham
 import { integrateArticles, formatChampionArticleSection } from '@/lib/knowledgeIntegrate';
 import { detectArticleLane, LANE_CONFIG, LaneKey } from '@/lib/laneDetector';
 import { formatLaneGuideSection, mergeArticleToLaneGuide } from '@/lib/laneGuideIntegrate';
+import { previewChampionFactsMerge, executeChampionFactsMerge } from '@/lib/championFactsMerge';
 
 export const dynamic = 'force-dynamic';
+
 
 const NO_CHAMPION = 'Unknown';
 const PAGE_SIZE = 30;
@@ -95,6 +97,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     if (!supabase) return NextResponse.json({ error: 'Supabaseクライアントが未初期化です' }, { status: 500 });
+    const db = supabase;
     const body = await req.json();
     const { action } = body;
 
@@ -102,12 +105,12 @@ export async function POST(req: NextRequest) {
     // 1. プレビュー生成アクション
     // ──────────────────────────────────────────
     if (action === 'preview') {
-      const { title, content, champion, lane, includeLaneGuide, source_url } = body;
+      const { title, content, champion, lane, includeLaneGuide, includeFactMerge, source_url } = body;
       const cleanTitle = String(title || '(無題)').trim();
       const cleanContent = String(content || '').trim();
       const targetLane = (lane || 'COMMON') as LaneKey;
 
-      // チャンピオンプレビュー
+      // チャンピオン教本プレビュー
       const resolvedChamps = await resolveRosterChampions(champion);
       const championPreviews = await Promise.all(
         resolvedChamps.map(async (champId) => {
@@ -120,6 +123,16 @@ export async function POST(req: NextRequest) {
           };
         })
       );
+
+      // 各項目（champion_facts: 強み・弱み等）のマージプレビュー
+      let factPreviews: any[] = [];
+      if (includeFactMerge !== false && resolvedChamps.length > 0 && cleanContent.length >= 100) {
+        factPreviews = await Promise.all(
+          resolvedChamps.map((champId) =>
+            previewChampionFactsMerge(db, champId, cleanTitle, cleanContent)
+          )
+        );
+      }
 
       // レーンガイドプレビュー
       let laneGuidePreview = null;
@@ -144,6 +157,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         championPreviews,
+        factPreviews,
         laneGuidePreview,
       });
     }
@@ -166,13 +180,14 @@ export async function POST(req: NextRequest) {
     }
 
     // ──────────────────────────────────────────
-    // 3. 承認 ＆ 二系統統合アクション
+    // 3. 承認 ＆ 二系統統合（＋各項目マージ）アクション
     // ──────────────────────────────────────────
     if (action !== 'approve') return NextResponse.json({ error: '無効な action です' }, { status: 400 });
 
     const update: Record<string, any> = { review_status: 'approved' };
     let explicitLane: LaneKey | null = null;
     let explicitIncludeLaneGuide: boolean | null = null;
+    let explicitIncludeFactMerge: boolean = true;
 
     // 単一記事承認時の手動修正パラメータ
     if (ids.length === 1) {
@@ -187,6 +202,9 @@ export async function POST(req: NextRequest) {
       }
       if (typeof body.includeLaneGuide === 'boolean') {
         explicitIncludeLaneGuide = body.includeLaneGuide;
+      }
+      if (typeof body.includeFactMerge === 'boolean') {
+        explicitIncludeFactMerge = body.includeFactMerge;
       }
 
       if (typeof body.champion === 'string') {
@@ -216,15 +234,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, count: 0, message: '対象記事がありませんでした' });
     }
 
-    // トラックA: チャンピオン辞典（matchup_sentinel & champion_notes）へ統合
-    const champResult = await integrateArticles(supabase, targetRows);
+    // トラックA: チャンピオン教本（matchup_sentinel & champion_notes）へ統合
+    const champResult = await integrateArticles(db, targetRows);
 
-    // トラックB: レーンガイド（lane_guides テーブル）へ統合
+    // トラックB: 各項目（champion_facts: 強み・弱み・スパイク等）のAIマージ更新＆履歴記録
+    let factUpdatedChamps = 0;
+    if (explicitIncludeFactMerge) {
+      for (const row of targetRows) {
+        const champList = await resolveRosterChampions(row.champion);
+        const articleText = row.content || row.raw_content || '';
+        if (champList.length > 0 && articleText.length >= 100) {
+          for (const champId of champList) {
+            const factRes = await executeChampionFactsMerge(
+              db,
+              champId,
+              row.title || '(無題)',
+              articleText,
+              row.id
+            );
+            if (factRes.success && factRes.updatedFields.length > 0) {
+              factUpdatedChamps++;
+            }
+          }
+        }
+      }
+    }
+
+    // トラックC: レーンガイド（lane_guides テーブル）へ統合
     let laneIntegratedCount = 0;
     const laneDetails: string[] = [];
 
     for (const row of targetRows) {
-      // レーンおよびマクロ判定
       const detection = await detectArticleLane({
         title: row.title,
         content: row.content,
@@ -263,10 +303,12 @@ export async function POST(req: NextRequest) {
 
     const message = [
       `${totalCount}件を承認しました。`,
-      champCount > 0 ? `📖 チャンピオン辞典へ${champCount}件統合` : '',
+      champCount > 0 ? `📖 教本へ${champCount}件統合` : '',
+      factUpdatedChamps > 0 ? `🧬 辞典各項目（強み・弱み等）を更新・履歴保存` : '',
       laneIntegratedCount > 0 ? `🗺️ レーンガイド（${laneDetails.join(', ')}）へ${laneIntegratedCount}件マージ` : '',
-      champResult.skippedNoChampion.length > 0 && laneIntegratedCount === 0 ? `（チャンピオン無し${champResult.skippedNoChampion.length}件はライブラリに保持）` : '',
+      champResult.skippedNoChampion.length > 0 && laneIntegratedCount === 0 ? `（チャンピオン無しはライブラリに保持）` : '',
     ].filter(Boolean).join('、');
+
 
     return NextResponse.json({
       success: errors.length === 0,
