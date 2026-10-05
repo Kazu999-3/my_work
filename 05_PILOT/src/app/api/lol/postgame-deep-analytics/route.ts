@@ -6,6 +6,7 @@ import {
   fetchMatchDetails,
   fetchMatchTimeline,
 } from '@/lib/riot';
+import { extractFights, FIGHT_RULES } from '@/lib/matchFights';
 import { analyzePostgameTempo, loadItemMeta, type PostgameTempoReport } from '@/lib/postgameTempo';
 
 export const dynamic = 'force-dynamic';
@@ -106,8 +107,10 @@ export async function GET(request: NextRequest) {
     if (!match) {
       return NextResponse.json({ error: '選択された試合詳細を取得できませんでした。' }, { status: 404 });
     }
+    let timelineError: string | null = null;
     const [timeline, itemMeta] = await Promise.all([
-      fetchMatchTimeline(targetMatchId, apiKey).catch(() => null),
+      // 失敗理由（Riotの回数制限など）を画面に出すため握りつぶさない
+      fetchMatchTimeline(targetMatchId, apiKey).catch((e) => { timelineError = e?.message || String(e); return null; }),
       loadItemMeta().catch((e) => { console.warn('[postgame-deep-analytics] item meta:', e); return null; }),
     ]);
 
@@ -225,7 +228,7 @@ export async function GET(request: NextRequest) {
         tempo_error = e?.message || 'テンポ解析に失敗しました';
       }
     } else {
-      tempo_error = timeline ? 'アイテム辞書(DDragon)を取得できませんでした' : 'タイムラインを取得できませんでした';
+      tempo_error = timeline ? 'アイテム辞書(DDragon)を取得できませんでした' : (timelineError || 'タイムラインを取得できませんでした');
     }
 
     return NextResponse.json({
@@ -246,6 +249,10 @@ export async function GET(request: NextRequest) {
       match_stats: { me: statsOf(me), enemy: enemy ? statsOf(enemy) : null },
       control_ward_times: controlWardTimes.map(fmtTs),
       role_recent,
+      // 集団戦レビュー（以前は別API /api/lol/match-fights が試合詳細とタイムラインを取り直していた）
+      fights: timeline ? extractFights(match, timeline, puuid) : null,
+      fight_rules: FIGHT_RULES,
+      timeline_error: timelineError,
       tempo,
       tempo_error,
     });

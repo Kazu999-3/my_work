@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import PostGameDeepAnalyticsDashboard from './PostGameDeepAnalyticsDashboard';
-import MatchFightsAnalyticsCard from './MatchFightsAnalyticsCard';
 import CoachReviewPanel from './CoachReviewPanel';
 import MySoloQDashboard from './MySoloQDashboard';
 import { useCoachRiotId } from './riotIdContext';
@@ -49,7 +48,6 @@ export default function PostGameTab({ initialMatchId }: { initialMatchId?: strin
         // Riot ID を変えたら部品ごと作り直して、前の人のデータが残らないようにする
         <div key={riotId} className="space-y-4">
           <PostGameDeepAnalyticsDashboard summonerName={riotId} controlledMatchId={matchId || undefined} onSelectMatchId={setMatchId} />
-          <MatchFightsAnalyticsCard summonerName={riotId} controlledMatchId={matchId || undefined} />
           <Collapsible title="🤖 自動振り返りの履歴 ＆ 傾向分析">
             <CoachReviewPanel summonerName={riotId} />
           </Collapsible>

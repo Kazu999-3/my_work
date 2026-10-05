@@ -8,6 +8,7 @@ import type { PostgameTempoReport } from '@/lib/postgameTempo';
 import PostGameTempoSections from './PostGameTempoSections';
 import TargetComparisonCard from './TargetComparisonCard';
 import PostGameReflectionForm from './PostGameReflectionForm';
+import MatchFightsAnalyticsCard, { type FightsData } from './MatchFightsAnalyticsCard';
 
 // 試合後: 詳細分析（2026-10-05 全面見直し）
 // 旧版はリコールのテンポ損失・ワード監査の採点・ランク水準ラベル・「最重要改善アクション」など、
@@ -75,6 +76,9 @@ interface PostGameData {
   control_ward_times: string[];
   tempo: PostgameTempoReport | null;
   tempo_error: string | null;
+  timeline_error: string | null;
+  fights: FightsData | null;
+  fight_rules: { fight_gap_sec: number; objective_attach_sec: number };
   role_recent: {
     count: number;
     avg: Record<'cs_per_min' | 'deaths' | 'vision_per_min' | 'kill_participation' | 'damage_share' | 'control_wards_bought', number | null>;
@@ -339,7 +343,7 @@ export default function PostGameDeepAnalyticsDashboard({
 
           {!lane ? (
             <p className="text-[11px] text-stone-400">
-              {data.timeline_available ? 'この試合のタイムラインに自分のデータがありませんでした。' : 'この試合のタイムラインを取得できませんでした。'}
+              {data.timeline_available ? 'この試合のタイムラインに自分のデータがありませんでした。' : `この試合のタイムラインを取得できませんでした（${data.timeline_error || '理由不明'}）。`}
             </p>
           ) : (
             <>
@@ -434,7 +438,7 @@ export default function PostGameDeepAnalyticsDashboard({
             </div>
           ) : (
             <p className="text-[11px] text-stone-400">
-              {data.timeline_available ? 'この試合ではコントロールワードを購入していません。' : 'タイムラインを取得できなかったため不明です。'}
+              {data.timeline_available ? 'この試合ではコントロールワードを購入していません。' : 'タイムラインを取得できなかったため不明です（上のレーン戦の欄に理由を表示）。'}
             </p>
           )}
         </div>
@@ -450,6 +454,9 @@ export default function PostGameDeepAnalyticsDashboard({
           テンポ逆再生・帰還・ビルド監査を表示できません（{data.tempo_error || '理由不明'}）。
         </div>
       )}
+
+      {/* 集団戦レビュー（同じタイムラインから計算） */}
+      <MatchFightsAnalyticsCard data={data.fights} rules={data.fight_rules} error={data.timeline_error} />
 
       {/* この試合の振り返り（旧「振り返りノート」タブ） */}
       <PostGameReflectionForm

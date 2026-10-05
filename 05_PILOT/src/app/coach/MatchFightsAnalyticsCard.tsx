@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Swords, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
 
 // 集団戦レビュー（2026-10-05 見直し）。タイムラインに記録された事実だけを表示する。
 // 旧版の推定ダメージ・ゴールド変動・原因を断定する定型文は根拠が無いため削除した（API側コメント参照）。
-// 試合の選択は上の詳細分析カードが持ち、ここは選ばれた試合を表示するだけ。
+// 2026-10-06: データは詳細分析(postgame-deep-analytics)が同じ試合詳細・タイムラインから計算して渡す。
+// 以前はこの部品が /api/lol/match-fights を別に呼び、Riot API の回数制限(2分100回)を余計に消費していた。
 
 interface FightData {
   fight_id: number;
@@ -21,25 +22,19 @@ interface FightData {
   my_died: boolean;
 }
 
-interface FightsResponse {
-  success: boolean;
-  error?: string;
+export interface FightsData {
   champion: string;
-  total_fights: number;
-  won_fights: number;
-  lost_fights: number;
-  even_fights: number;
-  involved_fights: number;
   fights: FightData[];
-  rules: { fight_gap_sec: number; objective_attach_sec: number };
+  won: number;
+  lost: number;
+  even: number;
 }
 
 interface MatchFightsAnalyticsCardProps {
-  controlledMatchId?: string;
-  summonerName?: string;
-  puuid?: string;
-  /** 旧版との互換用（試合選択は詳細分析カードに一本化したため未使用） */
-  onSelectMatchId?: (mId: string) => void;
+  data: FightsData | null;
+  rules: { fight_gap_sec: number; objective_attach_sec: number };
+  /** data が無い時に表示する理由（タイムライン取得失敗など） */
+  error?: string | null;
 }
 
 const RESULT_STYLE = {
@@ -48,47 +43,10 @@ const RESULT_STYLE = {
   EVEN: { label: '互角', box: 'border-stone-700/60 bg-stone-900/60', badge: 'bg-stone-600' },
 } as const;
 
-export default function MatchFightsAnalyticsCard({ controlledMatchId, summonerName, puuid }: MatchFightsAnalyticsCardProps = {}) {
-  const [data, setData] = useState<FightsResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+export default function MatchFightsAnalyticsCard({ data: raw, rules, error }: MatchFightsAnalyticsCardProps) {
   const [isExpanded, setIsExpanded] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const params = new URLSearchParams();
-        if (controlledMatchId) params.set('matchId', controlledMatchId);
-        if (summonerName) params.set('summoner', summonerName);
-        if (puuid) params.set('puuid', puuid);
-        const res = await fetch(`/api/lol/match-fights?${params.toString()}`);
-        const json = await res.json();
-        if (!res.ok || !json.success) throw new Error(json.error || '集団戦データの取得に失敗しました');
-        if (!cancelled) setData(json);
-      } catch (e: any) {
-        if (!cancelled) { setData(null); setError(e.message || '集団戦データの取得に失敗しました'); }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [controlledMatchId, summonerName, puuid]);
-
-  if (loading) {
-    return (
-      <div className="bg-stone-900/60 border border-stone-800 rounded-2xl p-5">
-        <div className="flex items-center gap-2 text-xs font-bold text-stone-400">
-          <div className="w-4 h-4 border-2 border-amber-700 border-t-transparent rounded-full animate-spin" />
-          <span>集団戦データを読み込み中...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !data) {
+  if (!raw) {
     return (
       <div className="bg-stone-900/60 border border-stone-800 rounded-2xl p-4 flex items-center gap-2 text-xs text-stone-400">
         <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
@@ -96,6 +54,16 @@ export default function MatchFightsAnalyticsCard({ controlledMatchId, summonerNa
       </div>
     );
   }
+  const data = {
+    champion: raw.champion,
+    fights: raw.fights,
+    total_fights: raw.fights.length,
+    won_fights: raw.won,
+    lost_fights: raw.lost,
+    even_fights: raw.even,
+    involved_fights: raw.fights.filter((f) => f.involved).length,
+    rules,
+  };
 
   return (
     <div className="bg-stone-900/60 border border-stone-800 rounded-2xl p-5 text-stone-100 space-y-4">

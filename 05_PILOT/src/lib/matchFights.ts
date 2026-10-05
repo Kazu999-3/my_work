@@ -1,22 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
-import {
-  fetchPuuidByRiotId,
-  fetchRankedSoloMatchIds,
-  fetchRecentMatchIds,
-  fetchMatchDetails,
-  fetchMatchTimeline,
-} from '@/lib/riot';
+import type { fetchMatchDetails } from './riot';
 
-export const dynamic = 'force-dynamic';
-export const maxDuration = 45;
-
-// 集団戦レビュー。2026-10-05 見直し。
-// 旧版は交戦ごとの「XXX dmg」(実際は試合全体の与ダメ÷交戦数×1.2/0.8)、ゴールド変動(キル差×400±600)、
-// 時刻だけで決めた交戦名(「バロン/インヒビター決戦」等)、原因を断定する定型文(「CCチェーンを受け」等)、
-// Shyvana専用の文面を返していた。タイムラインに記録されている事実(キル・デス・アシスト・
-// エリートモンスター獲得・自分の関与)だけを返す。
-// また killerId=0(タワー/ミニオンによる処刑)を「killerId<=5 なら味方」で判定していたため、
-// 敵タワーに処刑されても味方キルに数えていた。キルの帰属は倒された側のチームで判定する。
+// 集団戦レビューの解析（2026-10-06、/api/lol/match-fights から移動）。
+// タイムラインに記録された事実(キル・デス・アシスト・エリートモンスター獲得・自分の関与)だけを返す。
+// 旧版の推定ダメージ・ゴールド変動・原因を断定する定型文は根拠が無いため2026-10-05に削除した。
+// キルの帰属は倒された側のチームで判定する（killerId=0 のタワー/ミニオン処刑を味方キルに数えないため）。
+// 詳細分析(postgame-deep-analytics)が同じ試合詳細・タイムラインから一緒に計算して返す。
 
 type MatchResult = Awaited<ReturnType<typeof fetchMatchDetails>>;
 
@@ -24,6 +12,7 @@ type MatchResult = Awaited<ReturnType<typeof fetchMatchDetails>>;
 const FIGHT_GAP_MS = 25_000;
 /** 交戦の前後この時間以内のエリートモンスター獲得は、その交戦に含める */
 const OBJECTIVE_ATTACH_MS = 30_000;
+export const FIGHT_RULES = { fight_gap_sec: FIGHT_GAP_MS / 1000, objective_attach_sec: OBJECTIVE_ATTACH_MS / 1000 };
 
 const fmtTs = (ms: number) => {
   const s = Math.floor(ms / 1000);
@@ -53,7 +42,7 @@ const monsterName = (ev: any) => {
 interface KillEv { ts: number; allyKill: boolean; mine: 'kill' | 'assist' | 'death' | null }
 interface ObjEv { ts: number; name: string; ally: boolean }
 
-function extractFights(details: MatchResult, timeline: any, puuid: string) {
+export function extractFights(details: MatchResult, timeline: any, puuid: string) {
   const me = details.participants.find((p) => p.puuid === puuid);
   const tlParticipants: any[] = timeline?.info?.participants || [];
   const myPid = tlParticipants.find((p) => p.puuid === puuid)?.participantId;
@@ -147,66 +136,4 @@ function extractFights(details: MatchResult, timeline: any, puuid: string) {
   });
 
   return { champion: me.championName, fights, won, lost, even };
-}
-
-export async function GET(request: NextRequest) {
-  try {
-    const apiKey = process.env.RIOT_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ error: 'RIOT_API_KEY が未設定です。' }, { status: 500 });
-    }
-
-    const { searchParams } = new URL(request.url);
-    const requestedMatchId = searchParams.get('matchId') || '';
-    const requestedSummoner = searchParams.get('summoner') || '';
-    let puuid = searchParams.get('puuid') || '';
-
-    if (!puuid && requestedSummoner) {
-      const [gName = '', tLine = 'JP1'] = requestedSummoner.split('#').map((s) => s.trim());
-      puuid = await fetchPuuidByRiotId(gName, tLine || 'JP1', apiKey);
-    }
-    // 旧ポータルは Riot ID 未指定時に特定プレイヤーへ黙って切り替えていたため、05では必須にしている(2026-10-04)
-    if (!puuid) {
-      return NextResponse.json({ error: 'Riot ID（名前#タグ）を入力してください。' }, { status: 400 });
-    }
-
-    // 試合の選択肢は詳細分析カード側が持つため、ここでは対象1試合だけを解析する
-    let matchId = requestedMatchId;
-    if (!matchId) {
-      let ids = await fetchRankedSoloMatchIds(puuid, apiKey, 1);
-      if (ids.length === 0) ids = await fetchRecentMatchIds(puuid, apiKey, 1);
-      matchId = ids[0];
-    }
-    if (!matchId) {
-      return NextResponse.json({ error: '直近の試合履歴が見つかりませんでした。' }, { status: 404 });
-    }
-
-    const [details, timeline] = await Promise.all([
-      fetchMatchDetails(matchId, apiKey),
-      fetchMatchTimeline(matchId, apiKey).catch(() => null),
-    ]);
-    if (!timeline) {
-      return NextResponse.json({ error: 'この試合のタイムラインを取得できませんでした。' }, { status: 404 });
-    }
-    const res = extractFights(details, timeline, puuid);
-    if (!res) {
-      return NextResponse.json({ error: '試合内に該当プレイヤーが見つかりませんでした。' }, { status: 404 });
-    }
-
-    return NextResponse.json({
-      success: true,
-      selected_match_id: matchId,
-      champion: res.champion,
-      total_fights: res.fights.length,
-      won_fights: res.won,
-      lost_fights: res.lost,
-      even_fights: res.even,
-      involved_fights: res.fights.filter((f) => f.involved).length,
-      fights: res.fights,
-      rules: { fight_gap_sec: FIGHT_GAP_MS / 1000, objective_attach_sec: OBJECTIVE_ATTACH_MS / 1000 },
-    });
-  } catch (error: any) {
-    console.error('[match-fights] Error:', error);
-    return NextResponse.json({ error: error?.message || '集団戦解析エラー' }, { status: 500 });
-  }
 }

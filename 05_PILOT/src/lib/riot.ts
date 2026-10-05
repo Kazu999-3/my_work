@@ -113,17 +113,47 @@ export async function fetchRankedSoloMatchIds(puuid: string, apiKey: string, cou
   }
 }
 
+// ---- 終わった試合の詳細・タイムラインのメモリキャッシュ（2026-10-06）----
+// RIOT_API_KEY は開発者キーで「2分間に100回」まで。コーチの試合後タブは開く・試合を切り替えるたびに
+// 試合詳細6件＋タイムラインを取り直しており、数回切り替えると上限に達してタイムラインだけ拒否されていた
+// （画面には理由の無い「タイムラインを取得できませんでした」）。終わった試合のデータは変わらないので、
+// 同じサーバーインスタンス内では使い回す。タイムラインは1件1MB前後あるため件数を絞る。
+const MATCH_CACHE_MAX = 200;
+const TIMELINE_CACHE_MAX = 30;
+const matchDetailsCache = new Map<string, MatchResult>();
+const timelineCache = new Map<string, any>();
+function cachePut<T>(cache: Map<string, T>, key: string, value: T, max: number) {
+  cache.delete(key);
+  cache.set(key, value);
+  while (cache.size > max) cache.delete(cache.keys().next().value as string);
+}
+
+/** Riot API GET。429 は待ち時間が短ければ1回だけ待って再試行し、それでも駄目なら RiotRateLimitError */
+async function riotFetchJson(url: string, label: string): Promise<any> {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (res.status === 429) {
+      const retryAfter = Number(res.headers.get('retry-after'));
+      const sec = Number.isFinite(retryAfter) ? retryAfter : null;
+      if (attempt === 0 && sec !== null && sec <= 3) {
+        await new Promise((r) => setTimeout(r, (sec + 0.5) * 1000));
+        continue;
+      }
+      throw new RiotRateLimitError(
+        `Riot APIの回数制限に達しました（${label}）。${sec !== null ? `${sec}秒後に` : 'しばらくしてから'}再読み込みしてください`,
+        sec,
+      );
+    }
+    if (!res.ok) throw new Error(`${label}の取得に失敗しました: HTTP ${res.status} ${res.statusText}`);
+    return res.json();
+  }
+}
+
 export async function fetchMatchDetails(matchId: string, apiKey: string): Promise<MatchResult> {
+  const cached = matchDetailsCache.get(matchId);
+  if (cached) return cached;
   const url = `${RIOT_API_BASE_ASIA}/lol/match/v5/matches/${matchId}?api_key=${apiKey}`;
-  const res = await fetch(url, { cache: 'no-store' });
-  if (res.status === 429) {
-    const retryAfter = Number(res.headers.get('retry-after'));
-    throw new RiotRateLimitError(`Riot APIレート制限 (${matchId})`, Number.isFinite(retryAfter) ? retryAfter : null);
-  }
-  if (!res.ok) {
-    throw new Error(`試合詳細の取得に失敗しました (${matchId}): ${res.statusText}`);
-  }
-  const data = await res.json();
+  const data = await riotFetchJson(url, `試合詳細 ${matchId}`);
   
   const gameDuration = data.info.gameDuration;
   const gameStartTimestamp = data.info.gameStartTimestamp || data.info.gameCreation;
@@ -205,7 +235,7 @@ export async function fetchMatchDetails(matchId: string, apiKey: string): Promis
     lane: detectPosition(p) // TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY
   }));
 
-  return {
+  const result: MatchResult = {
     matchId,
     gameDuration,
     gameStartTimestamp,
@@ -214,6 +244,8 @@ export async function fetchMatchDetails(matchId: string, apiKey: string): Promis
     queueId: data.info.queueId,
     gameType: data.info.gameType
   };
+  cachePut(matchDetailsCache, matchId, result, MATCH_CACHE_MAX);
+  return result;
 }
 
 
@@ -284,12 +316,12 @@ export async function fetchRiotIdByPuuid(puuid: string, apiKey: string): Promise
  * 試合のタイムラインデータを取得します (9分時点のゴールド/XP/CS差の計算用)
  */
 export async function fetchMatchTimeline(matchId: string, apiKey: string): Promise<any> {
+  const cached = timelineCache.get(matchId);
+  if (cached) return cached;
   const url = `${RIOT_API_BASE_ASIA}/lol/match/v5/matches/${matchId}/timeline?api_key=${apiKey}`;
-  const res = await fetch(url, { cache: 'no-store' });
-  if (!res.ok) {
-    throw new Error(`タイムラインの取得に失敗しました (${matchId}): ${res.statusText}`);
-  }
-  return await res.json();
+  const data = await riotFetchJson(url, `タイムライン ${matchId}`);
+  cachePut(timelineCache, matchId, data, TIMELINE_CACHE_MAX);
+  return data;
 }
 
 /**
