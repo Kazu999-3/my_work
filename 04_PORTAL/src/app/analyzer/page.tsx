@@ -38,9 +38,11 @@ import {
   ShieldAlert,
   ChevronDown,
 } from 'lucide-react';
+import { PlayerCompareView } from './PlayerCompareView';
 
 export default function PlayerAnalyzerPage() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [analyzerMode, setAnalyzerMode] = useState<'single' | 'compare'>('single');
   const [summonerInput, setSummonerInput] = useState('');
   const [targetTier, setTargetTier] = useState<string>('Emerald IV');
   const [loading, setLoading] = useState(false);
@@ -234,8 +236,40 @@ export default function PlayerAnalyzerPage() {
         </div>
       </div>
 
-      {/* サモナー検索バー ＆ 条件指定 */}
-      <div className="rounded-3xl border border-border bg-surface p-4 md:p-5 shadow-xs space-y-3">
+      {/* 解析モード切替タブ */}
+      <div className="flex items-center gap-2 border-b border-border pb-3">
+        <button
+          type="button"
+          onClick={() => setAnalyzerMode('single')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-xs transition cursor-pointer ${
+            analyzerMode === 'single'
+              ? 'bg-stone-900 text-white shadow-sm dark:bg-stone-100 dark:text-stone-900'
+              : 'bg-surface text-stone-500 hover:text-foreground border border-border'
+          }`}
+        >
+          <Target size={14} className={analyzerMode === 'single' ? 'text-amber-400 dark:text-amber-600' : ''} />
+          <span>🎯 個人目標分析 (目標ランク対比)</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setAnalyzerMode('compare')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-xs transition cursor-pointer ${
+            analyzerMode === 'compare'
+              ? 'bg-stone-900 text-white shadow-sm dark:bg-stone-100 dark:text-stone-900'
+              : 'bg-surface text-stone-500 hover:text-foreground border border-border'
+          }`}
+        >
+          <Swords size={14} className={analyzerMode === 'compare' ? 'text-amber-400 dark:text-amber-600' : ''} />
+          <span>⚔️ 2人プレイヤー直接比較 (VS Head-to-Head)</span>
+        </button>
+      </div>
+
+      {analyzerMode === 'compare' ? (
+        <PlayerCompareView recentSearches={recentSearches} onSaveRecent={saveRecentSearch} />
+      ) : (
+        <>
+          {/* サモナー検索バー ＆ 条件指定 */}
+          <div className="rounded-3xl border border-border bg-surface p-4 md:p-5 shadow-xs space-y-3">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -2021,6 +2055,8 @@ export default function PlayerAnalyzerPage() {
             </div>
           )}
         </div>
+      )}
+        </>
       )}
     </div>
   );

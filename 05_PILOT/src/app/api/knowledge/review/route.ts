@@ -7,6 +7,7 @@ import { formatLaneGuideSection, mergeArticleToLaneGuide } from '@/lib/laneGuide
 import { previewChampionFactsMerge, executeChampionFactsMerge } from '@/lib/championFactsMerge';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 
 const NO_CHAMPION = 'Unknown';
@@ -241,70 +242,79 @@ export async function POST(req: NextRequest) {
     // トラックA: チャンピオン教本（matchup_sentinel & champion_notes）へ統合
     const champResult = await integrateArticles(db, targetRows);
 
-    // トラックB: 各項目（champion_facts: 強み・弱み・スパイク等）のAIマージ更新＆履歴記録
+    // トラックB（各項目AI差分マージ）とトラックC（レーンガイド統合）を並行実行して高速化
     let factUpdatedChamps = 0;
-    if (explicitIncludeFactMerge) {
-      for (const row of targetRows) {
-        const champList = await resolveRosterChampions(row.champion);
-        const articleText = row.content || row.raw_content || '';
-        if (champList.length > 0 && articleText.length >= 100) {
-          for (const champId of champList) {
-            const factRes = await executeChampionFactsMerge(
-              db,
-              champId,
-              row.title || '(無題)',
-              articleText,
-              row.id
-            );
-            if (factRes.success && factRes.updatedFields.length > 0) {
-              factUpdatedChamps++;
-            }
-          }
-        }
-      }
-    }
-
-    // トラックC: レーンガイド（lane_guides テーブル）へ統合
     let laneIntegratedCount = 0;
     const laneDetails: string[] = [];
 
-    for (const row of targetRows) {
-      const detection = await detectArticleLane({
-        title: row.title,
-        content: row.content,
-        tags: row.tags,
-        champion: row.champion,
-      });
+    const factTasks = explicitIncludeFactMerge
+      ? targetRows.map(async (row) => {
+          const champList = await resolveRosterChampions(row.champion);
+          const articleText = row.content || row.raw_content || '';
+          if (champList.length > 0 && articleText.length >= 100) {
+            for (const champId of champList) {
+              try {
+                const factRes = await executeChampionFactsMerge(
+                  db,
+                  champId,
+                  row.title || '(無題)',
+                  articleText,
+                  row.id
+                );
+                if (factRes.success && factRes.updatedFields.length > 0) {
+                  factUpdatedChamps++;
+                }
+              } catch (factErr) {
+                console.warn(`[knowledge/review] 項目マージ失敗 (${champId}):`, factErr);
+              }
+            }
+          }
+        })
+      : [];
 
-      const shouldIntegrateLane = (explicitIncludeLaneGuide !== null && ids.length === 1)
-        ? explicitIncludeLaneGuide
-        : detection.isLaneMacro;
+    const laneTasks = targetRows.map(async (row) => {
+      try {
+        const detection = await detectArticleLane({
+          title: row.title,
+          content: row.content,
+          tags: row.tags,
+          champion: row.champion,
+        });
 
-      const targetLane = (explicitLane !== null && ids.length === 1)
-        ? explicitLane
-        : detection.lane;
+        const shouldIntegrateLane = (explicitIncludeLaneGuide !== null && ids.length === 1)
+          ? explicitIncludeLaneGuide
+          : detection.isLaneMacro;
 
-      if (shouldIntegrateLane) {
-        const laneRes = await mergeArticleToLaneGuide(
-          db,
-          targetLane,
-          {
-            id: row.id,
-            title: row.title,
-            content: row.content,
-            raw_content: row.raw_content,
-            champion: row.champion,
-            source_url: row.source_url,
-          },
-          customLaneSectionText
-        );
+        const targetLane = (explicitLane !== null && ids.length === 1)
+          ? explicitLane
+          : detection.lane;
 
-        if (laneRes.success && laneRes.updated) {
-          laneIntegratedCount++;
-          if (!laneDetails.includes(targetLane)) laneDetails.push(targetLane);
+        if (shouldIntegrateLane) {
+          const laneRes = await mergeArticleToLaneGuide(
+            db,
+            targetLane,
+            {
+              id: row.id,
+              title: row.title,
+              content: row.content,
+              raw_content: row.raw_content,
+              champion: row.champion,
+              source_url: row.source_url,
+            },
+            customLaneSectionText
+          );
+
+          if (laneRes.success && laneRes.updated) {
+            laneIntegratedCount++;
+            if (!laneDetails.includes(targetLane)) laneDetails.push(targetLane);
+          }
         }
+      } catch (laneErr) {
+        console.warn(`[knowledge/review] レーンガイドマージ失敗:`, laneErr);
       }
-    }
+    });
+
+    await Promise.all([...factTasks, ...laneTasks]);
 
     const totalCount = targetRows.length;
     const champCount = champResult.integrated.length;

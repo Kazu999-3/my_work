@@ -97,6 +97,7 @@ export default function ReviewPage() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewTab, setPreviewTab] = useState<'facts' | 'strategy' | 'lane'>('strategy');
   const [editedLaneSectionText, setEditedLaneSectionText] = useState<string>('');
+  const [modalError, setModalError] = useState<string | null>(null);
 
   const showMessage = (text: string, t: 'success' | 'error') => {
     setMessage({ text, type: t });
@@ -111,7 +112,7 @@ export default function ReviewPage() {
       const res = await fetch(`/api/knowledge/review?${qs.toString()}`);
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || '取得に失敗しました');
-      
+
       const loadedItems: ReviewItem[] = json.items || [];
       setItems(loadedItems);
       setTotal(json.total || 0);
@@ -140,7 +141,7 @@ export default function ReviewPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const post = async (payload: Record<string, any>) => {
+  const post = async (payload: Record<string, any>): Promise<{ ok: boolean; message?: string; error?: string }> => {
     setBusy(true);
     try {
       const res = await fetch('/api/knowledge/review', {
@@ -149,12 +150,17 @@ export default function ReviewPage() {
         body: JSON.stringify(payload),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || '処理に失敗しました');
+      if (!res.ok) {
+        const errText = json.error || '処理に失敗しました';
+        showMessage(errText, 'error');
+        return { ok: false, error: errText };
+      }
       showMessage(json.message, 'success');
-      return true;
+      return { ok: true, message: json.message };
     } catch (e: any) {
-      showMessage(e.message, 'error');
-      return false;
+      const errText = e.message || '通信エラーが発生しました';
+      showMessage(errText, 'error');
+      return { ok: false, error: errText };
     } finally {
       setBusy(false);
     }
@@ -168,7 +174,10 @@ export default function ReviewPage() {
   };
 
   // 1件承認（編集内容＋二系統統合＋項目マージパラメータを送信）
-  const approveOne = async (item: ReviewItem) => {
+  const approveOne = async (item: ReviewItem | null) => {
+    if (!item) return;
+    setModalError(null);
+
     const edit = edits[item.id] || {
       champion: item.currentChampNamesJa || '',
       title: item.title,
@@ -190,18 +199,22 @@ export default function ReviewPage() {
       customLaneSectionText: (previewModalItem?.id === item.id && editedLaneSectionText) ? editedLaneSectionText : undefined,
     };
 
-    if (await post(payload)) {
+    const result = await post(payload);
+    if (result.ok) {
       removeFromList([item.id]);
       if (previewModalItem?.id === item.id) {
         setPreviewModalItem(null);
       }
+    } else {
+      setModalError(result.error || '承認統合に失敗しました');
     }
   };
 
   // 1件却下
   const rejectOne = async (item: ReviewItem) => {
     if (!confirm(`「${item.title}」を却下して削除しますか？`)) return;
-    if (await post({ id: item.id, action: 'reject' })) {
+    const result = await post({ id: item.id, action: 'reject' });
+    if (result.ok) {
       removeFromList([item.id]);
       if (previewModalItem?.id === item.id) {
         setPreviewModalItem(null);
@@ -224,6 +237,7 @@ export default function ReviewPage() {
     setPreviewModalItem(item);
     setPreviewLoading(true);
     setPreviewData(null);
+    setModalError(null);
     try {
       const edit = edits[item.id] || {
         champion: item.currentChampNamesJa || '',
@@ -586,6 +600,16 @@ export default function ReviewPage() {
 
               {/* モーダルコンテンツ */}
               <div className="p-4 sm:p-5 overflow-y-auto space-y-4 text-xs flex-1">
+                {modalError && (
+                  <div className="p-3 rounded-xl bg-rose-950/80 border border-rose-600 text-rose-200 text-xs flex items-start gap-2 shadow-sm animate-in fade-in">
+                    <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="block text-rose-300 font-bold">承認・統合エラー</strong>
+                      <span>{modalError}</span>
+                    </div>
+                  </div>
+                )}
+
                 {previewLoading ? (
                   <div className="py-20 text-center text-amber-400 flex items-center justify-center gap-2">
                     <RefreshCw className="w-5 h-5 animate-spin" />
@@ -830,16 +854,32 @@ export default function ReviewPage() {
               <div className="p-4 border-t border-zinc-800 bg-zinc-950 flex items-center justify-between gap-3">
                 <button
                   onClick={() => setPreviewModalItem(null)}
-                  className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold cursor-pointer"
+                  disabled={busy}
+                  className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold cursor-pointer transition disabled:opacity-50"
                 >
                   キャンセル
                 </button>
                 <button
-                  onClick={() => approveOne(previewModalItem)}
+                  onClick={() => previewModalItem && approveOne(previewModalItem)}
                   disabled={busy || previewLoading}
-                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-md"
+                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-md transition"
                 >
-                  <CheckCircle2 className="w-4 h-4" /> この完全な文面で承認して統合を実行
+                  {busy ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin text-amber-300" />
+                      <span>二系統統合 ＆ AI差分マージを実行中...</span>
+                    </>
+                  ) : previewLoading ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin text-amber-300" />
+                      <span>プレビュー生成中...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>この完全な文面で承認して統合を実行</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
