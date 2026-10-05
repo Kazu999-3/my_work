@@ -210,11 +210,6 @@ const ADMIN_EXTRA_ITEMS: MenuItem[] = [
   { id: 'ktm-admin', label: 'KTM大会管理', shortLabel: '大会管理', icon: Shield, href: '/ktm-admin', color: 'text-primary-600', activeBg: 'bg-primary-500/15', section: '大会・運用' },
   { id: 'analyzer', label: 'プレイヤー外部分析', shortLabel: '外部解析', icon: Globe, href: '/analyzer', color: 'text-secondary-600', activeBg: 'bg-secondary-500/15', section: '大会・運用' },
   { id: 'admin-guide', label: 'システム全貌仕様ガイド', shortLabel: '仕様ガイド', icon: BookOpen, href: '/admin/guide', color: 'text-primary-600', activeBg: 'bg-primary-500/15', section: '大会・運用' },
-  { id: 'dashboard', label: 'システム運用', shortLabel: '運用設定', icon: LayoutDashboard, href: '/admin/dashboard', color: 'text-foreground-soft dark:text-stone-200', activeBg: 'bg-black/10 dark:bg-white/10', section: '大会・運用' },
-  // 旧個人機能（新鋭パイロットへ完全移行済み・参照用）
-  { id: 'champions', label: '【旧】チャンピオン辞典 (移転済)', shortLabel: '旧辞典', icon: BookHeart, href: '/champions', color: 'text-stone-400', activeBg: 'bg-stone-500/15', section: '旧機能 (移転済)', adminOnly: true },
-  { id: 'library', label: '【旧】攻略ライブラリ (移転済)', shortLabel: '旧ライブラリ', icon: Library, href: '/library', color: 'text-stone-400', activeBg: 'bg-stone-500/15', section: '旧機能 (移転済)', adminOnly: true },
-  { id: 'coach', label: '【旧】パーソナルコーチ (移転済)', shortLabel: '旧コーチ', icon: Sparkles, href: '/coach', color: 'text-stone-400', activeBg: 'bg-stone-500/15', section: '旧機能 (移転済)', adminOnly: true },
 ];
 
 export default function Sidebar() {
