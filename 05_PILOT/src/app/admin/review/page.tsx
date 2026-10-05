@@ -151,6 +151,14 @@ export default function ReviewPage() {
       });
       const json = await res.json();
       if (!res.ok) {
+        if (res.status === 401) {
+          const errText = 'ログインセッションが切れました。ログイン画面へ移動します...';
+          showMessage(errText, 'error');
+          setTimeout(() => {
+            window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname);
+          }, 1200);
+          return { ok: false, error: errText };
+        }
         const errText = json.error || '処理に失敗しました';
         showMessage(errText, 'error');
         return { ok: false, error: errText };
@@ -263,7 +271,13 @@ export default function ReviewPage() {
         }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'プレビューの生成に失敗しました');
+      if (!res.ok) {
+        if (res.status === 401) {
+          window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname);
+          return;
+        }
+        throw new Error(json.error || 'プレビューの生成に失敗しました');
+      }
       setPreviewData(json);
       setEditedLaneSectionText(json.laneGuidePreview?.sectionText || '');
 
