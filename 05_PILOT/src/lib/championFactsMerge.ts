@@ -26,6 +26,8 @@ export interface ChampionFactsMergePreview {
   championNameJa: string;
   diffs: FactFieldDiff[];
   addedHighlights: string[];
+  /** AI生成に失敗した理由。以前は addedHighlights に混ぜて「追記される知見」として表示していた(2026-10-06) */
+  error?: string;
 }
 
 export interface ChampionFactsMergeResult {
@@ -152,7 +154,8 @@ export async function previewChampionFactsMerge(
         after: existing[f.key] || '',
         isChanged: false,
       })),
-      addedHighlights: [`AI生成に一時的に失敗したため既存項目を維持します (${e.message})`],
+      addedHighlights: [],
+      error: e.message || String(e),
     };
   }
 }

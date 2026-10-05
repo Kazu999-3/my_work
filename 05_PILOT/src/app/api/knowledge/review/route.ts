@@ -254,6 +254,9 @@ export async function POST(req: NextRequest) {
     // トラックB（各項目AI差分マージ）とトラックC（レーンガイド統合）を並行実行して高速化
     let factUpdatedChamps = 0;
     let laneIntegratedCount = 0;
+    // 以前は項目マージ・レーンガイド統合の失敗を console.warn だけで捨て、画面には「承認しました」と
+    // だけ出ていた（本番に GEMINI_API_KEY が無く全件失敗していても気づけなかった。2026-10-06）
+    const subErrors: string[] = [];
     const laneDetails: string[] = [];
 
     const factTasks = explicitIncludeFactMerge
@@ -272,9 +275,12 @@ export async function POST(req: NextRequest) {
                 );
                 if (factRes.success && factRes.updatedFields.length > 0) {
                   factUpdatedChamps++;
+                } else if (!factRes.success) {
+                  subErrors.push(`${champId} 辞典項目マージ失敗: ${factRes.error || '不明'}`);
                 }
-              } catch (factErr) {
+              } catch (factErr: any) {
                 console.warn(`[knowledge/review] 項目マージ失敗 (${champId}):`, factErr);
+                subErrors.push(`${champId} 辞典項目マージ失敗: ${factErr?.message || factErr}`);
               }
             }
           }
@@ -317,9 +323,13 @@ export async function POST(req: NextRequest) {
             laneIntegratedCount++;
             if (!laneDetails.includes(targetLane)) laneDetails.push(targetLane);
           }
+          if (!laneRes.success) {
+            subErrors.push(`レーンガイド(${targetLane})統合失敗: ${laneRes.error || '不明'}`);
+          }
         }
-      } catch (laneErr) {
+      } catch (laneErr: any) {
         console.warn(`[knowledge/review] レーンガイドマージ失敗:`, laneErr);
+        subErrors.push(`レーンガイド統合失敗: ${laneErr?.message || laneErr}`);
       }
     });
 
@@ -327,7 +337,7 @@ export async function POST(req: NextRequest) {
 
     const totalCount = targetRows.length;
     const champCount = champResult.integrated.length;
-    const errors = champResult.errors;
+    const errors = [...champResult.errors, ...subErrors];
 
     const message = [
       `${totalCount}件を承認しました。`,

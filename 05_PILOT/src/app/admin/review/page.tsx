@@ -53,6 +53,7 @@ interface ChampionFactPreview {
   championNameJa: string;
   diffs: FactFieldDiff[];
   addedHighlights: string[];
+  error?: string;
 }
 
 interface PreviewResult {
@@ -786,6 +787,14 @@ export default function ReviewPage() {
                                   <span>{fp.championNameJa}（{fp.champion}）の各項目マージ予定</span>
                                 </span>
                               </div>
+
+                              {/* AI生成の失敗（設定漏れ等）は知見と混ぜずにエラーとして出す */}
+                              {fp.error && (
+                                <div className="p-2.5 rounded-lg bg-rose-950/30 border border-rose-800/60 text-[11px] text-rose-400">
+                                  <span className="font-bold">AIによる項目マージ案を作れませんでした。既存の内容は変更されません。</span>
+                                  <span className="block text-rose-300/80 mt-0.5">理由: {fp.error}</span>
+                                </div>
+                              )}
 
                               {/* ハイライト */}
                               {fp.addedHighlights.length > 0 && (
