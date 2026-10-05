@@ -28,3 +28,25 @@ export async function resolveRosterChampion(raw: string | null | undefined): Pro
   const id = formatChampId(s).toLowerCase();
   return roster.find((c) => c.id.toLowerCase() === id)?.id || null;
 }
+
+/** カンマ・読点・スラッシュ等で区切られた複数チャンピオン名を全件解決する（実在IDの配列） */
+export async function resolveRosterChampions(raw: string | null | undefined): Promise<string[]> {
+  const s = String(raw || '').trim();
+  if (!s) return [];
+  const parts = s.split(/[,、/|]\s*|\s+/).map((p) => p.trim()).filter(Boolean);
+  const out: string[] = [];
+  for (const part of parts) {
+    const id = await resolveRosterChampion(part);
+    if (id && !out.includes(id)) out.push(id);
+  }
+  return out;
+}
+
+/** チャンピオンIDから日本語表示名を取得する（見つからなければそのままIDを返す） */
+export async function getChampionNameJa(id: string | null | undefined): Promise<string> {
+  if (!id) return '';
+  const roster = await getRoster().catch(() => []);
+  const found = roster.find((c) => c.id.toLowerCase() === id.toLowerCase() || c.name === id);
+  return found?.name || id;
+}
+

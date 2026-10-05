@@ -153,7 +153,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 2,
-    "libraryKnowledgeCount": 11,
+    "libraryKnowledgeCount": 13,
     "tier": "Tier 1",
     "winRate": 51
   },
@@ -1825,7 +1825,7 @@
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
     "tier": "Tier 4",
-    "winRate": 53
+    "winRate": 52
   },
   {
     "id": "Udyr",
@@ -1908,7 +1908,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 0,
-    "libraryKnowledgeCount": 1,
+    "libraryKnowledgeCount": 2,
     "tier": "Tier 3",
     "winRate": 51
   },
@@ -2310,7 +2310,7 @@
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 1,
     "tier": "Tier 4",
-    "winRate": 50
+    "winRate": 51
   },
   {
     "id": "Ornn",
@@ -2704,7 +2704,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 1,
-    "libraryKnowledgeCount": 1,
+    "libraryKnowledgeCount": 2,
     "tier": "Tier 4",
     "winRate": 47
   },
@@ -2942,7 +2942,7 @@
     "hasBible": true,
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 2",
+    "tier": "Tier 1",
     "winRate": 49
   },
   {
@@ -3180,7 +3180,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 3,
-    "libraryKnowledgeCount": 1,
+    "libraryKnowledgeCount": 2,
     "tier": "Tier 4",
     "winRate": 52
   },
@@ -3900,7 +3900,7 @@
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
     "tier": "Tier 2",
-    "winRate": 52
+    "winRate": 53
   },
   {
     "id": "Gwen",
@@ -5730,7 +5730,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 9,
-    "libraryKnowledgeCount": 19,
+    "libraryKnowledgeCount": 20,
     "tier": "Tier 3",
     "winRate": 49
   },
@@ -5810,9 +5810,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 2,
-    "libraryKnowledgeCount": 7,
+    "libraryKnowledgeCount": 8,
     "tier": "Tier 3",
-    "winRate": 51
+    "winRate": 50
   },
   {
     "id": "Jax",
@@ -6128,7 +6128,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 2",
+    "tier": "Tier 1",
     "winRate": 50
   },
   {
@@ -6683,7 +6683,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 0,
-    "libraryKnowledgeCount": 1,
+    "libraryKnowledgeCount": 0,
     "tier": "Tier 4",
     "winRate": 49
   },
@@ -6922,7 +6922,7 @@
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 0,
     "tier": "Tier 1",
-    "winRate": 51
+    "winRate": 50
   },
   {
     "id": "Zed",
@@ -8118,7 +8118,7 @@
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 9,
     "tier": "Tier 2",
-    "winRate": 50
+    "winRate": 51
   },
   {
     "id": "TwistedFate",
@@ -8515,7 +8515,7 @@
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 11,
     "tier": "Tier 4",
-    "winRate": 48
+    "winRate": 49
   },
   {
     "id": "Tristana",
@@ -9779,8 +9779,8 @@
     },
     "hasBible": true,
     "videoBibleCount": 1,
-    "libraryKnowledgeCount": 0,
-    "tier": "Tier 4",
+    "libraryKnowledgeCount": 1,
+    "tier": "Tier 3",
     "winRate": 50
   },
   {
@@ -10181,7 +10181,7 @@
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 2,
     "tier": "Tier 3",
-    "winRate": 52
+    "winRate": 51
   },
   {
     "id": "Hwei",
@@ -10339,7 +10339,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 0,
-    "libraryKnowledgeCount": 7,
+    "libraryKnowledgeCount": 8,
     "tier": "Tier 2",
     "winRate": 51
   },
@@ -10741,7 +10741,7 @@
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 3,
     "tier": "Tier 3",
-    "winRate": 51
+    "winRate": 52
   },
   {
     "id": "Hecarim",
@@ -10899,7 +10899,7 @@
     "videoBibleCount": 3,
     "libraryKnowledgeCount": 10,
     "tier": "Tier 3",
-    "winRate": 50
+    "winRate": 51
   },
   {
     "id": "Poppy",
@@ -11138,7 +11138,7 @@
     "hasBible": true,
     "videoBibleCount": 2,
     "libraryKnowledgeCount": 4,
-    "tier": "Tier 4",
+    "tier": "Tier 5",
     "winRate": 51
   },
   {
@@ -12573,7 +12573,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 5",
+    "tier": "Tier 4",
     "winRate": 48
   },
   {

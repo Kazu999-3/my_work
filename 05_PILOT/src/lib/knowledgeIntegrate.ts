@@ -1,26 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { resolveRosterChampion } from './championRoster';
-
-// 攻略ライブラリ(personal_knowledge)の記事をチャンピオン辞典へ統合する。
-// 旧ポータル /api/admin/knowledge/sync の移植。統合すると:
-//   1. matchup_sentinel(champ_<ID>_global) の strategy に「## 【記事】タイトル」節として追記（同じ記事の節は置き換え。タイトル・動画ID・元URLで判定）
-//   2. knowledge_revisions に変更履歴を残す
-//   3. champion_notes に構造化メモとして登録（同じ記事の分は入れ替え）
-//   4. 記事に INTEGRATED_TAG を足し（既存タグは残す）、review_status を approved にする
-//
-// タグの意味:
-// - __DELETED__   … 旧ポータルで「削除」または「統合」したもの（旧実装はタグを丸ごと置き換えていたため両者を区別できない）
-// - __INTEGRATED__ … 05で辞典へ統合したもの。ライブラリには残し、定期統合の対象からは外す。
-//   印が無いと3時間おきの定期統合が同じ記事を毎回統合し直し、メンテ画面で直した【記事】節を元に戻してしまう（2026-10-04 発見）。
-//
-// 旧実装から変えた点:
-// - offset でページ送りしていたが、統合した記事が検索対象から外れると
-//   次のページの開始位置がずれ、未処理の記事を飛ばしていた。id の昇順で進める方式にした。
-// - 承認状態(review_status)を見ずに統合していた。呼び出し側で対象を選ぶ前提にし、統合した記事は approved にする。
-// - Gemini を使う「項目マージ」と「矛盾チェック」は移していない（Geminiの利用枠を使うため）。
-// - 本文は要約(content)を優先する。旧実装は raw_content を優先していたが、動画解析の記事では raw_content が
-//   字幕の生テキストか「映像直接解析による自動抽出 (ID: …)」という仮の1行で、辞典に要約ではなくそれが
-//   載っていた（2026-10-05 発見: 33体の辞典に仮の1行だけの節があった）。
+import { resolveRosterChampion, resolveRosterChampions } from './championRoster';
 
 export interface IntegrateArticle {
   id: number;
@@ -41,18 +20,22 @@ export interface IntegrateResult {
   champions: string[];
 }
 
+/** チャンピオン辞典の strategy に追加するセクションブロックのフォーマット */
+export function formatChampionArticleSection(title: string, body: string): string {
+  const header = `## 【記事】${title.trim()}`;
+  return `${header}\n\n${body.trim()}`;
+}
+
+
 const NON_CHAMPION = new Set(['', 'UNKNOWN', 'GENERAL', 'NULL', 'NONE']);
 
-/** "Ahri, Zed" のような複数指定も含め、実在チャンピオンIDの配列にする */
+/** "Ahri, Zed"、"アーリ、ゼド" のような複数指定も含め、実在チャンピオンIDの配列にする */
 async function resolveChampions(raw: string | null): Promise<string[]> {
-  const out: string[] = [];
-  for (const part of String(raw || '').split(',').map((s) => s.trim())) {
-    if (NON_CHAMPION.has(part.toUpperCase())) continue;
-    const id = await resolveRosterChampion(part);
-    if (id && !out.includes(id)) out.push(id);
-  }
-  return out;
+  if (!raw) return [];
+  const resolved = await resolveRosterChampions(raw);
+  return resolved.filter((id) => !NON_CHAMPION.has(id.toUpperCase()));
 }
+
 
 async function recordRevision(sb: SupabaseClient, key: string, field: string, before: string | null, after: string, sourceTitle: string) {
   if (before === after) return;
