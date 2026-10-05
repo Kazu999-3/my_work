@@ -11,7 +11,7 @@ function LoginContent() {
   const rawReturnTo = searchParams.get('returnTo');
   const returnTo = (rawReturnTo && rawReturnTo.startsWith('/') && !rawReturnTo.startsWith('//'))
     ? rawReturnTo
-    : '/admin/dashboard';
+    : '/ktm-admin';
 
   const { user, loginWithDiscord } = useCurrentUser();
   const [password, setPassword] = useState("");

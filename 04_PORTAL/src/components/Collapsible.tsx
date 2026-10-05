@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, ReactNode } from 'react';
+import { useState, ReactNode } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 // 長い一覧(全ログ・AI分析ログ等)をデフォルトで折りたたみ、必要な時だけ開けるようにする
@@ -26,8 +26,10 @@ export default function Collapsible({
   // 真偽で子要素ごと条件レンダーしていたため、閉じるたびに内部state(検索キーワード等)が
   // 破棄され、再度開くたびにMySoloQDashboard等が再マウント→一覧を再取得していた
   // (2026-08-05発覚)。
-  const hasOpenedRef = useRef(defaultOpen || isOpen);
-  if (isOpen) hasOpenedRef.current = true;
+  const [hasOpened, setHasOpened] = useState(defaultOpen || isOpen);
+  if (isOpen && !hasOpened) {
+    setHasOpened(true);
+  }
 
   const handleToggle = () => {
     const next = !isOpen;
@@ -53,7 +55,7 @@ export default function Collapsible({
           <ChevronDown className="w-4 h-4 text-faint shrink-0" />
         )}
       </button>
-      {hasOpenedRef.current && <div className={isOpen ? 'mt-3' : 'hidden'}>{children}</div>}
+      {hasOpened && <div className={isOpen ? 'mt-3' : 'hidden'}>{children}</div>}
     </div>
   );
 }
