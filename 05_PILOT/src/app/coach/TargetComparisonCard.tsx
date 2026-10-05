@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Target, Pencil, X } from 'lucide-react';
-import { TARGET_METRICS, type RoleTargets, type TargetMetricKey, type CoachTargets } from '@/lib/coachTargetMetrics';
+import { Target } from 'lucide-react';
+import {
+  TARGET_METRICS, BENCHMARK_MIN_SAMPLES,
+  type TargetMetricKey, type RoleBenchmark, type TargetRole,
+} from '@/lib/coachTargetMetrics';
 
-// 目標との比較（2026-10-06）。目標値はランク帯の実在の平均ではなく、プレイヤー自身が決めた値。
-// 実測の「この試合」「直近の同じロールの平均」と並べて、足りていない指標を出す。
+// 目標との比較（2026-10-06）。目標ランク・同じロールのプレイヤーの実測平均（毎日収集）と、
+// この試合・自分の直近平均を並べ、目標ランク平均に届いていない指標を出す。
 
 const ROLE_LABEL: Record<string, string> = { TOP: 'TOP', JUNGLE: 'JG', MIDDLE: 'MID', BOTTOM: 'ADC', UTILITY: 'SUP' };
 
@@ -17,137 +20,82 @@ interface Props {
 }
 
 const fmt = (v: number | null | undefined) =>
-  v == null ? '-' : Number.isInteger(v) ? v.toLocaleString() : v.toFixed(v < 10 ? 2 : 1).replace(/\.?0+$/, '');
+  v == null ? '-' : Number.isInteger(v) ? v.toLocaleString() : String(Number(v.toFixed(v < 10 ? 2 : 1)));
 
 export default function TargetComparisonCard({ role, thisMatch, recentAvg, recentCount }: Props) {
-  const [targets, setTargets] = useState<RoleTargets>({});
+  const [bench, setBench] = useState<RoleBenchmark | null>(null);
   const [targetTier, setTargetTier] = useState('');
-  const [loadError, setLoadError] = useState('');
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState<Record<string, string>>({});
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState('');
+  const [windowDays, setWindowDays] = useState(30);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
+      setLoading(true);
+      setError('');
       try {
-        const res = await fetch('/api/coach/targets', { credentials: 'include' });
+        const res = await fetch('/api/coach/rank-benchmark', { credentials: 'include' });
         const json = await res.json();
-        if (!res.ok) throw new Error(json.error || '目標値の取得に失敗しました');
-        setTargets(((json.targets || {}) as CoachTargets)[role as keyof CoachTargets] || {});
+        if (!res.ok) throw new Error(json.error || '目標ランク平均の取得に失敗しました');
+        if (cancelled) return;
         setTargetTier(json.targetTier || '');
+        setWindowDays(json.windowDays || 30);
+        setBench((json.roles || {})[role as TargetRole] || null);
       } catch (e: any) {
-        setLoadError(e.message);
+        if (!cancelled) setError(e.message);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     })();
+    return () => { cancelled = true; };
   }, [role]);
 
-  const startEdit = () => {
-    setDraft(Object.fromEntries(TARGET_METRICS.map((m) => [m.key, targets[m.key] != null ? String(targets[m.key]) : ''])));
-    setSaveError('');
-    setEditing(true);
-  };
-
-  const save = async () => {
-    setSaving(true);
-    setSaveError('');
-    try {
-      const res = await fetch('/api/coach/targets', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role, values: draft }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || '保存に失敗しました');
-      setTargets((json.targets || {})[role] || {});
-      setEditing(false);
-    } catch (e: any) {
-      setSaveError(e.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const configured = TARGET_METRICS.filter((m) => targets[m.key] != null);
-  const shortOf = (key: TargetMetricKey, v: number | null | undefined) => {
-    const m = TARGET_METRICS.find((x) => x.key === key)!;
-    const t = targets[key];
-    if (t == null || v == null) return null;
-    return m.lowerIsBetter ? v > t : v < t;
-  };
-  const missing = configured.filter((m) => shortOf(m.key, thisMatch[m.key]) === true);
   const roleLabel = ROLE_LABEL[role] || role;
+  const shortOf = (key: TargetMetricKey, v: number | null | undefined) => {
+    const avg = bench?.values[key];
+    if (avg == null || v == null) return null;
+    const m = TARGET_METRICS.find((x) => x.key === key)!;
+    return m.lowerIsBetter ? v > avg : v < avg;
+  };
+  const missing = TARGET_METRICS.filter((m) => shortOf(m.key, thisMatch[m.key]) === true);
+  const lowSample = !!bench && bench.sample_count < BENCHMARK_MIN_SAMPLES;
+  const lastDate = bench?.last_collected_at ? new Date(bench.last_collected_at).toLocaleDateString('ja-JP') : null;
 
   return (
     <div className="bg-stone-950 border border-stone-800 rounded-xl p-4 space-y-3">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <span className="text-xs font-black text-stone-100 flex items-center gap-1.5">
           <Target className="w-4 h-4 text-amber-400" />
-          目標との比較（{roleLabel}）
-          {targetTier && <span className="text-[10px] font-bold text-stone-500">目標ランク: {targetTier}</span>}
+          目標ランク平均との比較（{targetTier || '目標ランク'}・{roleLabel}）
         </span>
-        {!editing && (
-          <button
-            type="button"
-            onClick={startEdit}
-            className="text-[11px] font-bold text-stone-300 hover:text-stone-100 bg-stone-900 hover:bg-stone-800 border border-stone-800 px-2 py-1 rounded-lg flex items-center gap-1 cursor-pointer"
-          >
-            <Pencil className="w-3 h-3" /> 目標値を{configured.length ? '編集' : '設定'}
-          </button>
+        {bench && (
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+            lowSample ? 'text-amber-300 bg-amber-950/30 border-amber-800/60' : 'text-stone-400 bg-stone-900 border-stone-800'
+          }`}>
+            {lowSample ? '参考値・' : ''}{bench.sample_count}試合{lastDate ? `・最終収集 ${lastDate}` : ''}
+          </span>
         )}
       </div>
 
-      {loadError && <p className="text-[11px] text-rose-400">{loadError}</p>}
-
-      {editing ? (
-        <div className="space-y-3">
-          <p className="text-[11px] text-stone-400">
-            {roleLabel}で目指す値を入力してください。空欄の指標は比較しません。
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {TARGET_METRICS.map((m) => (
-              <label key={m.key} className="flex items-center justify-between gap-2 bg-stone-900/60 border border-stone-800 rounded-lg px-2.5 py-1.5">
-                <span className="text-[11px] text-stone-300 font-bold">
-                  {m.label}
-                  <span className="text-[10px] text-stone-500 font-normal ml-1">{m.lowerIsBetter ? '以下' : '以上'}</span>
-                </span>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  min={0}
-                  step={m.step}
-                  value={draft[m.key] ?? ''}
-                  onChange={(e) => setDraft((d) => ({ ...d, [m.key]: e.target.value }))}
-                  className="w-20 px-2 py-1 bg-stone-950 border border-stone-700 rounded text-right text-xs font-mono text-stone-100 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                />
-              </label>
-            ))}
-          </div>
-          {saveError && <p className="text-[11px] text-rose-400">{saveError}</p>}
-          <div className="flex gap-2 justify-end">
-            <button type="button" onClick={() => setEditing(false)} className="px-3 py-1.5 rounded-lg text-xs font-bold text-stone-300 bg-stone-900 hover:bg-stone-800 flex items-center gap-1 cursor-pointer">
-              <X className="w-3 h-3" /> キャンセル
-            </button>
-            <button type="button" onClick={save} disabled={saving} className="px-3 py-1.5 rounded-lg text-xs font-black text-white bg-amber-700 hover:bg-amber-600 disabled:opacity-50 cursor-pointer">
-              {saving ? '保存中...' : '保存'}
-            </button>
-          </div>
-        </div>
-      ) : configured.length === 0 ? (
+      {loading ? (
+        <p className="text-[11px] text-stone-400">読み込み中...</p>
+      ) : error ? (
+        <p className="text-[11px] text-rose-400">{error}</p>
+      ) : !bench ? (
         <p className="text-[11px] text-stone-400">
-          {roleLabel}の目標値がまだありません。「目標値を設定」から、目標ランクに上がるために目指すCS/分・デス数などを入力すると、この試合で足りなかった指標が表示されます。
+          {targetTier}の{roleLabel}のデータがまだありません。毎日の自動収集（目標ランクのプレイヤーの試合を1日約60試合）で貯まり次第、ここに平均との比較が表示されます。
         </p>
       ) : (
         <>
           {missing.length > 0 ? (
             <div className="bg-rose-950/30 border border-rose-800/60 rounded-lg p-2.5 text-[11px]">
-              <span className="font-black text-rose-400">この試合で目標に届かなかった指標: </span>
+              <span className="font-black text-rose-400">この試合で{targetTier}平均に届かなかった指標: </span>
               <span className="text-stone-200">{missing.map((m) => m.label).join('・')}</span>
             </div>
           ) : (
             <div className="bg-emerald-950/30 border border-emerald-800/60 rounded-lg p-2.5 text-[11px] text-emerald-400 font-bold">
-              この試合は、設定した目標をすべて満たしています。
+              この試合は、すべての指標で{targetTier}の平均以上でした。
             </div>
           )}
           <div className="overflow-x-auto">
@@ -155,13 +103,13 @@ export default function TargetComparisonCard({ role, thisMatch, recentAvg, recen
               <thead>
                 <tr className="text-stone-500 text-[10px]">
                   <th className="text-left font-bold py-1"></th>
-                  <th className="text-right font-bold py-1">目標</th>
+                  <th className="text-right font-bold py-1">{targetTier}平均</th>
                   <th className="text-right font-bold py-1">この試合</th>
-                  <th className="text-right font-bold py-1">直近{recentCount}戦平均</th>
+                  <th className="text-right font-bold py-1">自分の直近{recentCount}戦</th>
                 </tr>
               </thead>
               <tbody>
-                {configured.map((m) => {
+                {TARGET_METRICS.map((m) => {
                   const cell = (v: number | null | undefined) => {
                     const s = shortOf(m.key, v);
                     return <span className={s == null ? 'text-stone-400' : s ? 'text-rose-400 font-bold' : 'text-emerald-400 font-bold'}>{fmt(v)}</span>;
@@ -169,9 +117,7 @@ export default function TargetComparisonCard({ role, thisMatch, recentAvg, recen
                   return (
                     <tr key={m.key} className="border-t border-stone-800/60">
                       <td className="py-1.5 text-stone-400 font-sans font-bold">{m.label}</td>
-                      <td className="py-1.5 text-right text-stone-200">
-                        {fmt(targets[m.key])}<span className="text-[9px] text-stone-500 ml-0.5">{m.lowerIsBetter ? '以下' : '以上'}</span>
-                      </td>
+                      <td className="py-1.5 text-right text-stone-200">{fmt(bench.values[m.key])}</td>
                       <td className="py-1.5 text-right">{cell(thisMatch[m.key])}</td>
                       <td className="py-1.5 text-right">{cell(recentAvg[m.key])}</td>
                     </tr>
@@ -183,7 +129,9 @@ export default function TargetComparisonCard({ role, thisMatch, recentAvg, recen
         </>
       )}
       <p className="text-[10px] text-stone-500">
-        目標値はランク帯の実際の平均ではなく、自分で決めた値です。直近平均は直近のソロQのうち{roleLabel}で出た{recentCount}試合（15分CSは試合ごとのタイムラインが必要なため、この試合のみ）。
+        平均は、{targetTier || '目標ランク'}の一覧から選んだプレイヤー本人の直近ランクソロ（直近{windowDays}日・同じロール）の実測値です。
+        {lowSample && `試合数が${BENCHMARK_MIN_SAMPLES}未満のうちはぶれが大きいため参考値として見てください。`}
+        自分の直近平均は直近のソロQのうち{roleLabel}で出た試合（15分CSはこの試合のみ）。
       </p>
     </div>
   );
