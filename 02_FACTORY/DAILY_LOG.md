@@ -9,6 +9,44 @@
 4. **拾い上げ（Harvest）の義務化（kame原則）**: 毎回の作業から「要検証（未検証仮説）」「継続ウォッチ（定点観測）」「発信候補（note/SNSネタ）」を抽出し、思考・アイデアを埋もれさせずストックする。
 
 
+## 🗓️ 2026-10-05（月）
+
+### 🧹 旧ポータル（04_PORTAL）個人機能の05完全転送化 ＆ デッドコード約1.6万行の大掃除・サイドバー純化
+
+**概要**:
+1. **背景と目的**:
+   - ユーザーから「旧ポータルの整理行いたい」との要求。方針2（移転済み個人ページの撤去、サイドバー純化、未使用コンポーネント・コードの大掃除）を確定。
+   - 05（KTM Pilot）へ移植完了した個人機能（チャンピオン辞典、攻略ライブラリ、パーソナルコーチ、運用ダッシュボード、レーン別ガイド）が04側に残存し、重い子コンポーネントやサイドバーの重複表示が存在していた。
+   - 古い通知やURLからのアクセスで404を出さないよう、安全な05即時転送（`redirect()`）に置換しつつ、不要となった24ファイル・16,722行の旧コードを完全撤去した。
+2. **実施内容**:
+   - **サイドバーの純化 (`04_PORTAL/src/components/Sidebar.tsx`)**:
+     - `ADMIN_EXTRA_ITEMS` から移転済みの旧メニュー（`champions`, `library`, `coach`, `dashboard`）を完全撤去。
+     - 「🚀 戦術パイロット (KTM Pilot)」「🛡️ 大会管理」「🌐 外部解析」「📖 仕様ガイド」の4項目にスッキリ純化。
+   - **各ページの05即時転送化**:
+     - `src/app/champions/page.tsx` ➔ `redirect('https://ktm-pilot.vercel.app')`
+     - `src/app/library/page.tsx` ➔ `redirect('https://ktm-pilot.vercel.app/library')`
+     - `src/app/coach/page.tsx` ➔ `redirect('https://ktm-pilot.vercel.app/coach')`
+     - `src/app/admin/dashboard/page.tsx` ➔ `redirect('https://ktm-pilot.vercel.app/admin/dashboard')`
+     - `src/app/lane-guides/page.tsx` ➔ `redirect('https://ktm-pilot.vercel.app/lane-guides')`
+   - **デッドコード・旧コンポーネントの完全撤去（計24ファイル・16,722行削減）**:
+     - `src/app/coach/*`（13ファイル）
+     - `src/components/coach/*`（5ファイル）
+     - `src/app/champions/*`（5ファイル）
+     - `src/app/admin/knowledge/LibraryTabContent.tsx`（1ファイル）
+   - **ビルド＆デプロイ検証**:
+     - Turbopack ビルド（全99ルート静的生成・TypeScript型チェック）エラー0件で完全合格。
+     - コミット `3f872ff5` ➔ `ae6cb2dc` を `origin/master` および `origin/main`（Vercel本番）へ Push 完了。
+3. **3行ナレッジ**:
+   - **「旧システムの退役は『削除』ではなく『新SSoTへの1行redirect置換』で実施せよ」**: 画面フォルダごと消去すると過去の通知やブックマークが404エラーになる。シンプルなリダイレクトに置き換えることで、数千行の子コンポーネントは安全に全消去しつつ、ユーザーの導線を100%保護できる。
+   - **「子コンポーネントの外部依存は、事前grep実測でゼロを確認してから一括断捨離せよ」**: 画面直下の部品であっても他画面から流用されているリスクがある。正規表現でインポート箇所を機械的に実測確認することで、デグレリスク5%以下の安全な大規模リファクタが可能になる。
+   - **「定期処理（Cron）やWebhook受信用APIは、UI画面の削除と連動させず最後まで維持せよ」**: 表側の画面（ページ）が不要になっても、裏方で他システムが叩いているAPIを巻き込んで消すと障害になる。UI層とAPI層を分離して整理するのがマイクロサービス移行の鉄則である。
+4. **拾い上げ（Harvest）**:
+   - `[要検証]`: 04ポータル側で旧URL（`/coach` や `/champions` 等）を開いた際、瞬時に `ktm-pilot.vercel.app` の該当画面へ転送されることの実機確認。
+   - `[継続ウォッチ]`: 04ポータルで稼働している裏方Cron（`soloq-coach` や `dict-review-check`）の次回実行ログ推移。
+   - `[発信候補]`: 「【Next.jsリファクタ】旧Webポータルから新コックピットへの安全移行術：1.6万行のデッドコードを消しつつ404を出さないリダイレクト設計」
+
+---
+
 ## 🗓️ 2026-10-04（日）
 
 ### 👑 チャンピオン辞典の全方位「脱・決め打ち」完全動的化（立ち回り3段階・ピック判断・ビルド分岐・VS直接比較）

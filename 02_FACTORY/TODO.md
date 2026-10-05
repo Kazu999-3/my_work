@@ -30,7 +30,11 @@
 
 ✅ コーチ「試合中」は移植済み（05 `/coach?tab=live`、2026-10-04）。9分差分の0埋め・推定式による捏造を除去し実測のみに。ChampSelectの手書き173体一覧（Wukong誤ID）はDDragon由来データへ
 ✅ コーチ「試合後」は移植済み（05 `/coach?tab=postgame`、2026-10-04）。試合メモは旧版が存在しない `notes` 列を使っており一度も動いていなかったため migration 85 で列を追加。手動振り返りフォームは05の反省ノートタブで代替し移さず
-✅ 運用ダッシュボードは移植済み（05 `/admin/dashboard`、2026-10-04）。旧版の常時「稼働中」カード・固定値ヘルスは移さず実測値のみ。04側の削除は他の移植と合わせて判断
+✅ 運用ダッシュボードは移植済み（05 `/admin/dashboard`、2026-10-04）。旧版の常時「稼働中」カード・固定値ヘルスは移さず実測値のみ。
+✅ 旧ポータル個人画面の完全05転送化 ＆ デッドコード約1.6万行の大掃除完了（2026-10-05）:
+  - 04側の `/champions`, `/library`, `/coach`, `/admin/dashboard`, `/lane-guides` を 05 への即時リダイレクトに置換。
+  - `src/components/Sidebar.tsx` から旧個人メニューを完全撤去し、内戦・カジノ・師弟専用に純化。
+  - 旧コーチ部品18ファイル、旧辞典部品5ファイル、旧ライブラリ部品1ファイル（計24ファイル・16,722行）を完全削除。Turbopackビルド（99ルート全PASS）検証済み。
 
 **04の役目終了前に05へ移す裏方**（2026-10-04 判断: 今は移さない。移すきっかけ＝04停止が決まった／04障害で05のソロQ機能が止まった／自動振り返りの中身を大きく直す時）（今は04上で動いており05はデータを読むだけ）:
 `soloq-coach-poll.yml`→04 `/api/cron/soloq-coach`、`soloq-history-sync.yml`→04、04のVercel Cron `soloq-trends` `freshness-check` `dict-review-check`、ワーカー通知の送り先 04 `/api/push/notify-admin`（`edge-cloud-worker.yml` `absorber.yml` の `PORTAL_URL`）
