@@ -214,14 +214,23 @@ export async function POST(req: NextRequest) {
 
       if (typeof body.champion === 'string') {
         const rawChamp = body.champion.trim();
-        if (!rawChamp) {
+        const upper = rawChamp.toUpperCase();
+        const isNonChamp = !rawChamp || ['UNKNOWN', 'NONE', 'NULL', 'なし', '未設定', '全般', '共通', '未指定'].includes(upper);
+        
+        if (isNonChamp) {
           update.champion = NO_CHAMPION;
         } else {
           const resolved = await resolveRosterChampions(rawChamp);
           if (resolved.length === 0) {
-            return NextResponse.json({ error: `「${rawChamp}」に該当するチャンピオンが見つかりません` }, { status: 400 });
+            // レーンガイド統合がONなら、チャンピオン無しとして許容して統合を続行する
+            if (explicitIncludeLaneGuide) {
+              update.champion = NO_CHAMPION;
+            } else {
+              return NextResponse.json({ error: `「${rawChamp}」に該当するチャンピオンが見つかりません（チャンピオン無しの場合は空欄または「Unknown」にしてください）` }, { status: 400 });
+            }
+          } else {
+            update.champion = resolved.join(', ');
           }
-          update.champion = resolved.join(', ');
         }
       }
     }
