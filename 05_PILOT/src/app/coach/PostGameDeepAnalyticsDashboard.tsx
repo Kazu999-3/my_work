@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { getChampIcon } from '@/lib/ddragonClient';
-import { AlertCircle, RefreshCw, Layers, Activity, Zap, BarChart3, Eye, CheckCircle2, Info } from 'lucide-react';
+import { AlertCircle, RefreshCw, Layers, Activity, Zap, BarChart3, Eye, Info } from 'lucide-react';
 import type { PostgameTempoReport } from '@/lib/postgameTempo';
 import PostGameTempoSections from './PostGameTempoSections';
+import TargetComparisonCard from './TargetComparisonCard';
+import PostGameReflectionForm from './PostGameReflectionForm';
 
 // 試合後: 詳細分析（2026-10-05 全面見直し）
 // 旧版はリコールのテンポ損失・ワード監査の採点・ランク水準ラベル・「最重要改善アクション」など、
@@ -32,6 +34,7 @@ interface MatchStats {
   kill_participation: number;
   deaths: number;
   vision_score: number;
+  vision_per_min: number;
   wards_placed: number;
   wards_killed: number;
   control_wards_bought: number;
@@ -54,6 +57,8 @@ interface PostGameData {
   my_position: string;
   is_win: boolean;
   match_duration_str: string;
+  game_duration_sec: number;
+  my_cs: number;
   kda_str: string;
   timeline_available: boolean;
   lane_snapshot: {
@@ -70,6 +75,10 @@ interface PostGameData {
   control_ward_times: string[];
   tempo: PostgameTempoReport | null;
   tempo_error: string | null;
+  role_recent: {
+    count: number;
+    avg: Record<'cs_per_min' | 'deaths' | 'vision_per_min' | 'kill_participation' | 'damage_share' | 'control_wards_bought', number | null>;
+  };
 }
 
 interface PostGameDashboardProps {
@@ -111,32 +120,11 @@ export default function PostGameDeepAnalyticsDashboard({
   const [switching, setSwitching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [memoText, setMemoText] = useState('');
-  const [savedMemo, setSavedMemo] = useState('');
-  const [savingMemo, setSavingMemo] = useState(false);
-  const [memoStatus, setMemoStatus] = useState<{ ok: boolean; text: string } | null>(null);
-  const [syncing, setSyncing] = useState(false);
-  const [syncStatus, setSyncStatus] = useState<{ ok: boolean; text: string } | null>(null);
-
   const currentMatchId = controlledMatchId || internalMatchId;
-
-  const fetchMemo = async (mId: string) => {
-    try {
-      const res = await fetch(`/api/lol/match-memo?matchId=${encodeURIComponent(mId)}`);
-      const d = await res.json();
-      const memo = d.success ? d.memo || '' : '';
-      setMemoText(memo);
-      setSavedMemo(memo);
-    } catch (e) {
-      console.error(e);
-    }
-  };
 
   const fetchAnalytics = async (matchId?: string) => {
     setSwitching(true);
     setError(null);
-    setMemoStatus(null);
-    setSyncStatus(null);
     try {
       const params = new URLSearchParams();
       if (matchId) params.set('matchId', matchId);
@@ -147,7 +135,6 @@ export default function PostGameDeepAnalyticsDashboard({
       if (!res.ok || json.error || !json.success) throw new Error(json.error || '解析データの取得に失敗しました');
       setData(json);
       if (!internalMatchId && json.selected_match_id) setInternalMatchId(json.selected_match_id);
-      fetchMemo(json.selected_match_id);
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'データ取得エラー');
@@ -165,60 +152,6 @@ export default function PostGameDeepAnalyticsDashboard({
   const handleSelect = (mId: string) => {
     if (onSelectMatchId) onSelectMatchId(mId);
     else setInternalMatchId(mId);
-  };
-
-  const handleSaveMemo = async () => {
-    if (!data) return;
-    setSavingMemo(true);
-    setMemoStatus(null);
-    try {
-      const res = await fetch('/api/lol/match-memo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          matchId: data.selected_match_id,
-          memo: memoText,
-          summoner: summonerName,
-          champion: data.my_champion,
-          enemyChampion: data.enemy_champion,
-          isWin: data.is_win,
-        }),
-      });
-      const d = await res.json();
-      if (!res.ok || !d.success) throw new Error(d.error || '保存に失敗しました');
-      setSavedMemo(memoText);
-      setMemoStatus({ ok: true, text: '保存しました' });
-    } catch (e: any) {
-      setMemoStatus({ ok: false, text: e.message || '保存に失敗しました' });
-    } finally {
-      setSavingMemo(false);
-    }
-  };
-
-  // 自分で書いたメモだけを対面メモへ送る。旧版は自動生成の定型アドバイスを送っており、
-  // 対面に関係ない文面が matchup_sentinel に溜まっていた(2026-10-05 変更)。
-  const handleSyncMemo = async () => {
-    if (!data || !data.enemy_champion || !savedMemo.trim()) return;
-    setSyncing(true);
-    setSyncStatus(null);
-    try {
-      const res = await fetch('/api/lol/sync-match-feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          myChampion: data.my_champion,
-          enemyChampion: data.enemy_champion,
-          keyLearning: savedMemo.trim(),
-        }),
-      });
-      const d = await res.json();
-      if (!res.ok || !d.success) throw new Error(d.error || '同期に失敗しました');
-      setSyncStatus({ ok: true, text: d.message || '対面メモへ保存しました' });
-    } catch (e: any) {
-      setSyncStatus({ ok: false, text: e.message || '同期に失敗しました' });
-    } finally {
-      setSyncing(false);
-    }
   };
 
   if (loading) {
@@ -257,7 +190,6 @@ export default function PostGameDeepAnalyticsDashboard({
   const sm = data.match_stats;
   const pos = POSITION_LABEL[data.my_position] || data.my_position;
   const cms = data.cross_match_summary;
-  const memoDirty = memoText !== savedMemo;
 
   return (
     <div className="bg-stone-900/60 border border-stone-800 rounded-2xl p-5 md:p-6 text-stone-100 space-y-6">
@@ -368,6 +300,22 @@ export default function PostGameDeepAnalyticsDashboard({
           <RefreshCw size={13} />
         </button>
       </div>
+
+      {/* 目標との比較（自分で決めた目標値） */}
+      <TargetComparisonCard
+        role={data.my_position}
+        thisMatch={{
+          cs_per_min: sm.me.cs_per_min,
+          cs_at_15: lane && lane.minute === 15 ? lane.me.cs : null,
+          deaths: sm.me.deaths,
+          vision_per_min: sm.me.vision_per_min,
+          kill_participation: sm.me.kill_participation,
+          damage_share: sm.me.damage_share,
+          control_wards_bought: sm.me.control_wards_bought,
+        }}
+        recentAvg={data.role_recent.avg}
+        recentCount={data.role_recent.count}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* 1. レーン戦 */}
@@ -503,55 +451,16 @@ export default function PostGameDeepAnalyticsDashboard({
         </div>
       )}
 
-      {/* 試合メモ ＆ 対面メモへの同期 */}
-      <div className="bg-stone-950 border border-stone-800 rounded-xl p-4 space-y-3">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <span className="text-xs font-black text-stone-100">📝 この試合のメモ</span>
-          {memoStatus && (
-            <span className={`text-xs font-bold px-2 py-0.5 rounded-md border ${
-              memoStatus.ok ? 'text-emerald-400 bg-emerald-950/30 border-emerald-800/60' : 'text-rose-400 bg-rose-950/30 border-rose-800/60'
-            }`}>
-              {memoStatus.text}
-            </span>
-          )}
-        </div>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <input
-            type="text"
-            value={memoText}
-            onChange={(e) => setMemoText(e.target.value)}
-            placeholder="例: 6レベル前にオールインされた。対面のレベル6を意識して下がる"
-            className="flex-1 px-3.5 py-2.5 bg-stone-900/60 border border-stone-800 rounded-xl text-xs text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
-          />
-          <button
-            type="button"
-            onClick={handleSaveMemo}
-            disabled={savingMemo || !memoDirty}
-            className="px-4 py-2.5 bg-amber-700 hover:bg-amber-600 disabled:opacity-50 text-white rounded-xl text-xs font-black transition whitespace-nowrap cursor-pointer shrink-0"
-          >
-            {savingMemo ? '保存中...' : '💾 メモを保存'}
-          </button>
-        </div>
-
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-stone-800">
-          <p className="text-[11px] text-stone-400">
-            保存したメモを {data.enemy_champion ? `「${data.my_champion} vs ${data.enemy_champion}」の` : ''}対面メモへ追記します。次にこの対面と当たった時の試合前タブに表示されます。
-          </p>
-          <button
-            type="button"
-            onClick={handleSyncMemo}
-            disabled={syncing || !data.enemy_champion || !savedMemo.trim() || memoDirty || syncStatus?.ok}
-            title={!savedMemo.trim() ? '先にメモを保存してください' : memoDirty ? '変更を保存してから同期してください' : undefined}
-            className="px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 shrink-0 cursor-pointer bg-stone-800 hover:bg-stone-700 text-stone-100 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            {syncing ? '同期中...' : syncStatus?.ok ? '同期済み' : 'メモを対面メモへ同期'}
-          </button>
-        </div>
-        {syncStatus && (
-          <p className={`text-[11px] font-bold ${syncStatus.ok ? 'text-emerald-400' : 'text-rose-400'}`}>{syncStatus.text}</p>
-        )}
-      </div>
+      {/* この試合の振り返り（旧「振り返りノート」タブ） */}
+      <PostGameReflectionForm
+        matchId={data.selected_match_id}
+        champion={data.my_champion}
+        enemyChampion={data.enemy_champion}
+        isWin={data.is_win}
+        kda={data.kda_str}
+        cs={data.my_cs}
+        gameDurationSec={data.game_duration_sec}
+      />
     </div>
   );
 }

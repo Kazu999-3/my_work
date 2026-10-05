@@ -162,13 +162,12 @@ export async function GET(request: NextRequest) {
     }
 
     // ---- 試合全体の比較（自分 vs 対面） ----
-    const teamKills = (teamId: number) =>
-      match!.participants.filter((p) => p.teamId === teamId).reduce((a, p) => a + p.kills, 0);
-    const teamDamage = (teamId: number) =>
-      match!.participants.filter((p) => p.teamId === teamId).reduce((a, p) => a + p.damageDealtToChampions, 0);
-    const statsOf = (p: Participant) => {
-      const tk = teamKills(p.teamId);
-      const td = teamDamage(p.teamId);
+    const statsOf = (p: Participant, m: MatchResult = match!) => {
+      const sum = (teamId: number, f: (x: Participant) => number) =>
+        m.participants.filter((x) => x.teamId === teamId).reduce((a, x) => a + f(x), 0);
+      const tk = sum(p.teamId, (x) => x.kills);
+      const td = sum(p.teamId, (x) => x.damageDealtToChampions);
+      const durationMin = m.gameDuration / 60;
       return {
         cs_per_min: Number(((p.totalMinionsKilled + p.neutralMinionsKilled) / Math.max(1, durationMin)).toFixed(1)),
         gold_earned: p.goldEarned || 0,
@@ -177,10 +176,31 @@ export async function GET(request: NextRequest) {
         kill_participation: tk > 0 ? Math.round(((p.kills + p.assists) / tk) * 100) : 0,
         deaths: p.deaths,
         vision_score: p.visionScore,
+        vision_per_min: Number((p.visionScore / Math.max(1, durationMin)).toFixed(2)),
         wards_placed: p.wardsPlaced || 0,
         wards_killed: p.wardsKilled || 0,
         control_wards_bought: p.visionWardsBoughtInGame || 0,
       };
+    };
+
+    // ---- 目標との比較用: 直近の同じロールの試合の平均（試合詳細だけで出せる指標） ----
+    const sameRole = matchIds
+      .map((_, idx) => detailsList[idx])
+      .map((d) => (d ? { d, p: d.participants.find((x) => x.puuid === puuid) } : null))
+      .filter((x): x is { d: MatchResult; p: Participant } => !!x && !!x.p && x.p.lane === me.lane);
+    const roleStats = sameRole.map(({ d, p }) => statsOf(p, d));
+    const avgOf = (k: keyof ReturnType<typeof statsOf>) =>
+      roleStats.length ? Number((roleStats.reduce((a, s) => a + s[k], 0) / roleStats.length).toFixed(2)) : null;
+    const role_recent = {
+      count: roleStats.length,
+      avg: {
+        cs_per_min: avgOf('cs_per_min'),
+        deaths: avgOf('deaths'),
+        vision_per_min: avgOf('vision_per_min'),
+        kill_participation: avgOf('kill_participation'),
+        damage_share: avgOf('damage_share'),
+        control_wards_bought: avgOf('control_wards_bought'),
+      },
     };
 
     // ---- コントロールワード購入時刻（ITEM_UNDO を反映） ----
@@ -218,11 +238,14 @@ export async function GET(request: NextRequest) {
       my_position: me.lane,
       is_win: me.win,
       match_duration_str: fmtDuration(match.gameDuration),
+      game_duration_sec: match.gameDuration,
+      my_cs: me.totalMinionsKilled + me.neutralMinionsKilled,
       kda_str: `${me.kills}/${me.deaths}/${me.assists}`,
       timeline_available: frames.length > 0,
       lane_snapshot,
       match_stats: { me: statsOf(me), enemy: enemy ? statsOf(enemy) : null },
       control_ward_times: controlWardTimes.map(fmtTs),
+      role_recent,
       tempo,
       tempo_error,
     });

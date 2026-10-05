@@ -5,24 +5,22 @@ import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { 
   Bot, ArrowLeft, Swords, BookOpen, Compass, ShieldAlert, Sparkles, RefreshCw, Zap,
-  BarChart3, MessageSquareText, TrendingUp, Radar
+  BarChart3, TrendingUp, Radar
 } from 'lucide-react';
 import MatchupBlueprintCard from './MatchupBlueprintCard';
 import StatsAnalyzerTab from './StatsAnalyzerTab';
-import SoloQReflectionTab from './SoloQReflectionTab';
 import PostGameTab from './PostGameTab';
 import LiveTab from './LiveTab';
 import { PreGameTop, PreGameBottom } from './PreGameExtras';
 import { CoachRiotIdProvider, CoachRiotIdBar } from './riotIdContext';
 
-type TabKey = 'blueprint' | 'live' | 'postgame' | 'reflection' | 'analyzer';
+type TabKey = 'blueprint' | 'live' | 'postgame' | 'analyzer';
 
 // 試合の流れ（前 → 中 → 後 → 振り返り）の順に並べる。スタッツ分析は試合単位でないので最後
 const TABS: { key: TabKey; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
   { key: 'blueprint', label: '⚔️ 試合前', Icon: Swords },
   { key: 'live', label: '🧭 試合中', Icon: Radar },
   { key: 'postgame', label: '📈 試合後', Icon: TrendingUp },
-  { key: 'reflection', label: '📝 振り返りノート', Icon: MessageSquareText },
   { key: 'analyzer', label: '📊 スタッツ分析', Icon: BarChart3 },
 ];
 
@@ -32,9 +30,10 @@ function CoachPageContent() {
 
   // タブはURL(?tab=)に持たせる。再読み込み・戻るボタン・リンク共有でも同じタブが開く(2026-10-05)
   const qTab = searchParams.get('tab');
-  // matchup-memo は旧ポータルの通知リンク互換、tempo は「試合後」へ統合した旧テンポタブ(2026-10-06)
+  // matchup-memo は旧ポータルの通知リンク互換。tempo（テンポ）と reflection（振り返りノート）は
+  // 「試合後」へ統合した旧タブ(2026-10-06)
   const activeTab: TabKey =
-    qTab === 'matchup-memo' || qTab === 'tempo' ? 'postgame'
+    qTab === 'matchup-memo' || qTab === 'tempo' || qTab === 'reflection' ? 'postgame'
     : TABS.some((t) => t.key === qTab) ? (qTab as TabKey)
     : 'blueprint';
   const setActiveTab = (tab: TabKey) => {
@@ -158,10 +157,6 @@ function CoachPageContent() {
           <PostGameTab initialMatchId={searchParams.get('matchId')} />
         )}
 
-        {/* タブ 4: ソロQ反省ノート */}
-        {activeTab === 'reflection' && (
-          <SoloQReflectionTab />
-        )}
 
       </div>
     </div>

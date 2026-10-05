@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
-import { normalizeChampionName } from '@/lib/championNames';
+import { appendMatchupMemo } from '@/lib/matchupMemo';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 500;
@@ -9,6 +9,15 @@ export async function GET(request: NextRequest) {
   try {
     if (!supabase) {
       return NextResponse.json({ error: 'Supabase client not initialized' }, { status: 500 });
+    }
+
+    // 試合後タブ: その試合の振り返り1件だけを返す
+    const matchIdParam = request.nextUrl.searchParams.get('matchId');
+    if (matchIdParam) {
+      const { data, error } = await supabase
+        .from('soloq_reflections').select('*').eq('match_id', matchIdParam).maybeSingle();
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ reflection: data || null });
     }
 
     const limitParam = Number(request.nextUrl.searchParams.get('limit'));
@@ -85,6 +94,14 @@ export async function POST(request: Request) {
       match_id: matchId || null,
     };
 
+    // 対面メモは「前回保存時から変わった時だけ」対面メモ帳へ追記する（再保存で同じ文が重複しないように）
+    let previousMatchupMemo: string | null = null;
+    if (matchId) {
+      const { data: prev } = await supabase
+        .from('soloq_reflections').select('matchup_memo').eq('match_id', matchId).maybeSingle();
+      previousMatchupMemo = prev?.matchup_memo ?? null;
+    }
+
     const { data, error } = await supabase
       .from('soloq_reflections')
       .upsert(reflectionPayload, {
@@ -99,28 +116,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // 対面メモが入力されていれば matchup_sentinel にも同期
-    if (matchupMemo && champion && enemyChampion) {
-      const normalizedMy = normalizeChampionName(champion);
-      const normalizedEnemy = normalizeChampionName(enemyChampion);
-
-      if (normalizedMy && normalizedEnemy) {
-        try {
-          await supabase
-            .from('matchup_sentinel')
-            .upsert({
-              champion: normalizedMy,
-              enemy: normalizedEnemy,
-              strategy: matchupMemo,
-              updated_at: new Date().toISOString(),
-            }, { onConflict: 'champion,enemy' });
-        } catch (e: any) {
-          console.warn('matchup_sentinel sync warning:', e);
-        }
-      }
+    // 対面メモ帳への追記。失敗しても振り返り自体は保存済みなので、結果を返して画面に出す
+    let matchupSync: { ok: boolean; message: string } | null = null;
+    const memo = String(matchupMemo || '').trim();
+    if (memo && enemyChampion && memo !== (previousMatchupMemo || '').trim()) {
+      const r = await appendMatchupMemo({
+        myChampion: champion, enemyChampion, text: memo,
+        label: '試合後の振り返り', source: 'soloq_reflection',
+      });
+      matchupSync = r.ok
+        ? { ok: true, message: `「${r.champion} vs ${r.enemy}」の対面メモに追記しました` }
+        : { ok: false, message: `対面メモへの追記に失敗しました: ${r.error}` };
+      if (!r.ok) console.warn('[soloq/reflections] matchup memo sync failed:', r.error);
     }
 
-    return NextResponse.json({ success: true, reflection: data });
+    return NextResponse.json({ success: true, reflection: data, matchupSync });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Server error' }, { status: 500 });
   }
