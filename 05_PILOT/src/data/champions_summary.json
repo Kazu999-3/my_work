@@ -153,7 +153,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 2,
-    "libraryKnowledgeCount": 13,
+    "libraryKnowledgeCount": 14,
     "tier": "Tier 1",
     "winRate": 51
   },
@@ -1268,7 +1268,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 2",
+    "tier": "Tier 1",
     "winRate": 50
   },
   {
@@ -1584,7 +1584,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 3,
-    "libraryKnowledgeCount": 16,
+    "libraryKnowledgeCount": 18,
     "tier": "Tier 3",
     "winRate": 51
   },
@@ -3182,7 +3182,7 @@
     "videoBibleCount": 3,
     "libraryKnowledgeCount": 2,
     "tier": "Tier 4",
-    "winRate": 52
+    "winRate": 51
   },
   {
     "id": "Camille",
@@ -3900,7 +3900,7 @@
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
     "tier": "Tier 2",
-    "winRate": 53
+    "winRate": 52
   },
   {
     "id": "Gwen",
@@ -4062,7 +4062,7 @@
     "videoBibleCount": 2,
     "libraryKnowledgeCount": 2,
     "tier": "Tier 2",
-    "winRate": 51
+    "winRate": 50
   },
   {
     "id": "Graves",
@@ -4933,7 +4933,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 2,
-    "libraryKnowledgeCount": 13,
+    "libraryKnowledgeCount": 14,
     "tier": "Tier 3",
     "winRate": 52
   },
@@ -7480,7 +7480,7 @@
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 0,
     "tier": "Tier 2",
-    "winRate": 52
+    "winRate": 51
   },
   {
     "id": "Soraka",
@@ -8118,7 +8118,7 @@
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 10,
     "tier": "Tier 2",
-    "winRate": 51
+    "winRate": 50
   },
   {
     "id": "TwistedFate",
@@ -9070,7 +9070,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 10,
-    "tier": "Tier 1",
+    "tier": "Tier 2",
     "winRate": 51
   },
   {
@@ -9701,7 +9701,7 @@
     "hasBible": true,
     "videoBibleCount": 2,
     "libraryKnowledgeCount": 2,
-    "tier": "Tier 2",
+    "tier": "Tier 3",
     "winRate": 49
   },
   {
@@ -11379,7 +11379,7 @@
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 2,
     "tier": "Tier 1",
-    "winRate": 51
+    "winRate": 52
   },
   {
     "id": "MissFortune",
@@ -12812,7 +12812,7 @@
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 2,
     "tier": "Tier 3",
-    "winRate": 52
+    "winRate": 51
   },
   {
     "id": "Lillia",
@@ -13048,7 +13048,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 0,
-    "libraryKnowledgeCount": 1,
+    "libraryKnowledgeCount": 2,
     "tier": "Tier 4",
     "winRate": 49
   },
