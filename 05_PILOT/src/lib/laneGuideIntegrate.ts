@@ -48,15 +48,24 @@ ${rawBody.slice(0, 15000)}
    - #### 💡 【思考ロジック＆定石の根拠（Why & When）】
 3. Markdown形式で出力してください（コードブロック \`\`\` は不要です）。`;
 
-  try {
-    const res = await callGeminiWithRetry(prompt, { temperature: 0.2, maxOutputTokens: 3500 });
-    const cleaned = (res || '').trim().replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
-    return cleaned || rawBody;
-  } catch (e) {
-    console.warn('[laneGuideIntegrate] Geminiマクロ知見抽出失敗。生テキストを使用します:', e);
-    return rawBody;
-  }
+  // ★ 2026-10-06: 以前は失敗時に記事本文をそのまま返し、レーンガイドへ全文（1万字超・記事の大見出し込み）が
+  // 「成功」として貼り付けられていた（Gemini の 503 混雑時に COMMON/JG で実際に発生）。失敗は呼び出し元へ伝える。
+  const res = await callGeminiWithRetry(prompt, { temperature: 0.2, maxOutputTokens: 3500 });
+  const cleaned = (res || '').trim().replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
+  if (!cleaned) throw new Error('AIの応答が空でした');
+  return demoteHeadings(cleaned);
 }
+
+/**
+ * AI出力の見出し（#〜###）を ####以下へ下げる。節タイトルが「### 📺」のため、AIが ### を使うと
+ * ガイド内の階層が崩れる（2026-10-06、プロンプトで #### を指定しても ### で返ってきた実例あり）。
+ */
+export function demoteHeadings(md: string): string {
+  return md.replace(/^(#{1,3})(\s)/gm, '####$2');
+}
+
+/** チャンピオン欄の「Unknown」等はチャンピオン無しとして扱う（ガイド上に「対象: Unknown」と出さない） */
+const NO_CHAMPION_VALUES = new Set(['unknown', 'none', 'なし', '-', 'n/a']);
 
 /** レーンガイドに追記するためのMarkdownブロックを生成する */
 export async function formatLaneGuideSection(
@@ -73,7 +82,8 @@ export async function formatLaneGuideSection(
     : await extractLaneGuideKnowledge(article, lane);
 
   // 対象チャンピオン名の日本語表示
-  const champParts = String(article.champion || '').split(/[,、/|]\s*|\s+/).filter(Boolean);
+  const champParts = String(article.champion || '').split(/[,、/|]\s*|\s+/)
+    .filter((c) => c && !NO_CHAMPION_VALUES.has(c.toLowerCase()));
   const champNames = await Promise.all(champParts.map((c) => getChampionNameJa(c)));
   const champLabel = champNames.length > 0 ? champNames.join(', ') : `${LANE_CONFIG[lane].name}全般`;
 

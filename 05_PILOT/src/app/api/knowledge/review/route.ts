@@ -138,7 +138,11 @@ export async function POST(req: NextRequest) {
       // レーンガイドプレビュー
       let laneGuidePreview = null;
       if (includeLaneGuide) {
-        const laneSectionText = await formatLaneGuideSection(
+        // AI抽出に失敗したら本文を流用せず、理由をプレビューに出す（2026-10-06）
+        let laneSectionText = '';
+        let laneError: string | null = null;
+        try {
+          laneSectionText = await formatLaneGuideSection(
           {
             id: 0,
             title: cleanTitle,
@@ -148,10 +152,14 @@ export async function POST(req: NextRequest) {
           },
           targetLane
         );
+        } catch (e: any) {
+          laneError = e?.message || String(e);
+        }
         laneGuidePreview = {
           lane: targetLane,
           laneLabel: LANE_CONFIG[targetLane]?.label || targetLane,
           sectionText: laneSectionText,
+          error: laneError,
         };
       }
 

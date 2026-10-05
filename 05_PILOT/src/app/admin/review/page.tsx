@@ -68,6 +68,8 @@ interface PreviewResult {
     lane: LaneKey;
     laneLabel: string;
     sectionText: string;
+    /** AI抽出の失敗理由（2026-10-06）。全文の流用はせず、空欄のまま承認すると承認時に再抽出を試みる */
+    error?: string | null;
   } | null;
 }
 
@@ -851,6 +853,13 @@ export default function ReviewPage() {
                               </span>
                               <span className="text-[10px] text-zinc-400">✏️ この文面を直接手直し可能</span>
                             </div>
+                            {previewData.laneGuidePreview.error && (
+                              <div className="p-2.5 rounded-lg bg-rose-950/30 border border-rose-800/60 text-[11px] text-rose-400">
+                                <span className="font-bold">AIによる知見の抽出に失敗しました。記事の全文は統合しません。</span>
+                                <span className="block text-rose-300/80 mt-0.5">理由: {previewData.laneGuidePreview.error}</span>
+                                <span className="block text-zinc-400 mt-0.5">少し待ってプレビューを開き直すか、下の欄に統合したい文面を書いてから承認してください（空欄のまま承認すると、承認時にもう一度AI抽出を試み、失敗したらエラーを表示します）。</span>
+                              </div>
+                            )}
                             <div className="space-y-1">
                               <label className="text-[10px] font-bold text-zinc-400">統合するマクロ知見（Markdown形式で編集可能）</label>
                               <textarea
