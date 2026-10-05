@@ -6,6 +6,7 @@ import {
   fetchMatchDetails,
   fetchMatchTimeline,
 } from '@/lib/riot';
+import { supabase } from '@/lib/supabaseClient';
 import { extractFights, FIGHT_RULES } from '@/lib/matchFights';
 import { analyzePostgameTempo, loadItemMeta, type PostgameTempoReport } from '@/lib/postgameTempo';
 
@@ -218,6 +219,26 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // 自動振り返り（ソロQ試合後の通知と同じ内容。cron が coach_analyses に保存）。DB読みのみでLLMは使わない。
+    // 以前は通知から開いても、折りたたまれた「自動振り返りの履歴」を開いて行を押さないと見えなかった（2026-10-06）
+    let auto_review: { weaknesses: string[]; focus: string | null; advice: string; created_at: string } | null = null;
+    if (supabase) {
+      const { data: rev } = await supabase
+        .from('coach_analyses')
+        .select('weaknesses, focus, advice, created_at')
+        .eq('puuid', puuid).eq('match_id', targetMatchId)
+        .not('advice', 'is', null)
+        .maybeSingle();
+      if (rev?.advice) {
+        auto_review = {
+          weaknesses: Array.isArray(rev.weaknesses) ? rev.weaknesses : [],
+          focus: rev.focus || null,
+          advice: rev.advice,
+          created_at: rev.created_at,
+        };
+      }
+    }
+
     // テンポ解析はタイムラインが必須。失敗しても詳細分析の残りは返す
     let tempo: PostgameTempoReport | null = null;
     let tempo_error: string | null = null;
@@ -249,6 +270,7 @@ export async function GET(request: NextRequest) {
       match_stats: { me: statsOf(me), enemy: enemy ? statsOf(enemy) : null },
       control_ward_times: controlWardTimes.map(fmtTs),
       role_recent,
+      auto_review,
       // 集団戦レビュー（以前は別API /api/lol/match-fights が試合詳細とタイムラインを取り直していた）
       fights: timeline ? extractFights(match, timeline, puuid) : null,
       fight_rules: FIGHT_RULES,

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { getChampIcon } from '@/lib/ddragonClient';
-import { AlertCircle, RefreshCw, Layers, Activity, Zap, BarChart3, Eye, Info } from 'lucide-react';
+import { AlertCircle, RefreshCw, Layers, Activity, Zap, BarChart3, Eye, Info, Bot, ChevronDown, ChevronUp } from 'lucide-react';
 import type { PostgameTempoReport } from '@/lib/postgameTempo';
 import PostGameTempoSections from './PostGameTempoSections';
 import TargetComparisonCard from './TargetComparisonCard';
@@ -77,6 +77,7 @@ interface PostGameData {
   tempo: PostgameTempoReport | null;
   tempo_error: string | null;
   timeline_error: string | null;
+  auto_review: { weaknesses: string[]; focus: string | null; advice: string; created_at: string } | null;
   fights: FightsData | null;
   fight_rules: { fight_gap_sec: number; objective_attach_sec: number };
   role_recent: {
@@ -125,6 +126,7 @@ export default function PostGameDeepAnalyticsDashboard({
   const [error, setError] = useState<string | null>(null);
 
   const currentMatchId = controlledMatchId || internalMatchId;
+  const [reviewExpanded, setReviewExpanded] = useState(false);
 
   const fetchAnalytics = async (matchId?: string) => {
     setSwitching(true);
@@ -138,6 +140,7 @@ export default function PostGameDeepAnalyticsDashboard({
       const json = await res.json();
       if (!res.ok || json.error || !json.success) throw new Error(json.error || '解析データの取得に失敗しました');
       setData(json);
+      setReviewExpanded(false);
       if (!internalMatchId && json.selected_match_id) setInternalMatchId(json.selected_match_id);
     } catch (err: any) {
       console.error(err);
@@ -305,7 +308,38 @@ export default function PostGameDeepAnalyticsDashboard({
         </button>
       </div>
 
-      {/* 目標との比較（自分で決めた目標値） */}
+      {/* 自動振り返り（ソロQ試合後の通知と同じ内容） */}
+      {data.auto_review && (
+        <div className="bg-stone-950 border border-amber-800/60 rounded-xl p-4 space-y-2">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <span className="text-xs font-black text-stone-100 flex items-center gap-1.5">
+              <Bot className="w-4 h-4 text-amber-400" />
+              AIの自動振り返り
+            </span>
+            <span className="text-[10px] text-stone-500">
+              {new Date(data.auto_review.created_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })} 作成（通知と同じ内容）
+            </span>
+          </div>
+          {data.auto_review.weaknesses.length > 0 && (
+            <p className="text-[11px]"><span className="font-bold text-rose-400">弱点: </span><span className="text-stone-300">{data.auto_review.weaknesses.join(' / ')}</span></p>
+          )}
+          {data.auto_review.focus && (
+            <p className="text-[11px]"><span className="font-bold text-amber-300">次に意識すること: </span><span className="text-stone-300">{data.auto_review.focus}</span></p>
+          )}
+          <p className={`text-[11px] text-stone-300 leading-relaxed whitespace-pre-wrap ${reviewExpanded ? '' : 'line-clamp-4'}`}>
+            {data.auto_review.advice}
+          </p>
+          <button
+            type="button"
+            onClick={() => setReviewExpanded((v) => !v)}
+            className="text-[11px] font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 cursor-pointer"
+          >
+            {reviewExpanded ? <><ChevronUp className="w-3 h-3" /> 折りたたむ</> : <><ChevronDown className="w-3 h-3" /> 全文を表示</>}
+          </button>
+        </div>
+      )}
+
+      {/* 目標ランク平均との比較 */}
       <TargetComparisonCard
         role={data.my_position}
         thisMatch={{
