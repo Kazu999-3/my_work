@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { 
   BookOpen, Search, RefreshCw, ChevronRight, X, ExternalLink, 
-  Sparkles, Calendar, Tag, FileText, ArrowLeft, Copy, Check
+  Sparkles, Calendar, Tag, FileText, ArrowLeft, Copy, Check, Trash2, Undo2
 } from "lucide-react";
 import KnowledgeIngestModal from "@/components/KnowledgeIngestModal";
 import { getChampIcon } from "@/lib/ddragonClient";
@@ -61,6 +61,9 @@ function LibraryApp() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  // 記事の削除（論理削除）と取り消し（2026-10-06）
+  const [deleting, setDeleting] = useState(false);
+  const [notice, setNotice] = useState<{ ok: boolean; text: string; undoId?: number | string } | null>(null);
 
   // 記事一覧フェッチ
   const fetchArticles = async (
@@ -168,6 +171,48 @@ function LibraryApp() {
     } catch {}
     finally {
       setDetailLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!detailArticle || deleting) return;
+    if (!window.confirm(`「${detailArticle.title}」をライブラリから削除しますか？
+（辞典・レーンガイドに統合済みの内容は消えません。直後なら元に戻せます）`)) return;
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/library", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: detailArticle.id }),
+      });
+      const d = await res.json();
+      if (!res.ok || !d.success) throw new Error(d.error || "削除に失敗しました");
+      const removedId = detailArticle.id;
+      setArticles((prev) => prev.filter((a) => a.id !== removedId));
+      setTotalCount((n) => Math.max(0, n - 1));
+      setSelectedId(null);
+      setDetailArticle(null);
+      setNotice({ ok: true, text: d.message, undoId: removedId });
+    } catch (e: any) {
+      setNotice({ ok: false, text: e.message || "削除に失敗しました" });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleUndoDelete = async (id: number | string) => {
+    try {
+      const res = await fetch("/api/library", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, restore: true }),
+      });
+      const d = await res.json();
+      if (!res.ok || !d.success) throw new Error(d.error || "元に戻せませんでした");
+      setNotice({ ok: true, text: d.message });
+      fetchArticles(search);
+    } catch (e: any) {
+      setNotice({ ok: false, text: e.message || "元に戻せませんでした" });
     }
   };
 
@@ -508,6 +553,26 @@ function LibraryApp() {
         )}
       </main>
 
+      {/* 削除・取り消しの通知 */}
+      {notice && (
+        <div className={`fixed bottom-4 left-1/2 -translate-x-1/2 z-[60] max-w-[calc(100%-2rem)] px-4 py-2.5 rounded-xl border text-xs font-bold shadow-lg flex items-center gap-3 ${
+          notice.ok ? "bg-emerald-950/90 border-emerald-800/60 text-emerald-400" : "bg-rose-950/90 border-rose-800/60 text-rose-400"
+        }`}>
+          <span className="min-w-0 break-words">{notice.text}</span>
+          {notice.undoId != null && (
+            <button
+              onClick={() => handleUndoDelete(notice.undoId!)}
+              className="shrink-0 px-2 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 flex items-center gap-1 cursor-pointer"
+            >
+              <Undo2 size={12} /> 元に戻す
+            </button>
+          )}
+          <button onClick={() => setNotice(null)} className="shrink-0 text-zinc-400 hover:text-zinc-200 cursor-pointer" title="閉じる">
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       {/* 記事詳細モーダル */}
       {selectedId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
@@ -529,6 +594,15 @@ function LibraryApp() {
                 >
                   {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
                   <span>{copied ? "コピー完了" : "コピー"}</span>
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={!detailArticle || deleting}
+                  className="px-2.5 py-1 rounded-lg bg-rose-950/30 hover:bg-rose-900/40 border border-rose-800/60 text-rose-400 text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  title="この記事をライブラリから削除"
+                >
+                  <Trash2 size={13} />
+                  <span>{deleting ? "削除中..." : "削除"}</span>
                 </button>
                 <button
                   onClick={() => { setSelectedId(null); setDetailArticle(null); }}

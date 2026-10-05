@@ -71,6 +71,9 @@ export async function GET(req: NextRequest) {
     let query = supabase
       .from('personal_knowledge')
       .select('id, title, champion, source_url, tags, genre, created_at, content')
+      // 削除済み(__DELETED__)は出さない。以前は除外しておらず、旧ポータルで辞典統合時に
+      // 「ライブラリから削除」された643件(2026-10-06時点)が一覧に出続けていた
+      .or('tags.is.null,tags.not.cs.{__DELETED__}')
       .order('created_at', { ascending: false });
 
     if (q) {
@@ -217,5 +220,49 @@ export async function POST(req: NextRequest) {
   } catch (e: any) {
     console.error('library 単一記事取得エラー:', e);
     return NextResponse.json({ error: e.message || '内部エラー' }, { status: 500 });
+  }
+}
+
+const DELETED_TAG = '__DELETED__';
+
+// 記事の削除（2026-10-06）。既存の運用に合わせ、行は消さず __DELETED__ タグを付ける論理削除にする。
+// 辞典・レーンガイドに統合済みの記事は knowledge_revisions 等から出典として参照されているため、物理削除しない。
+// 既存のタグは残す（旧ポータルの退避処理は tags を ['__DELETED__'] で丸ごと置き換えていたため、復元時にタグが失われた）。
+async function setDeleted(id: unknown, deleted: boolean) {
+  if (!supabase) throw new Error('Supabaseクライアントが未初期化です');
+  if (!id) throw Object.assign(new Error('idが必要です'), { status: 400 });
+  const { data: row, error: selErr } = await supabase.from('personal_knowledge').select('id, title, tags').eq('id', id).maybeSingle();
+  if (selErr) throw selErr;
+  if (!row) throw Object.assign(new Error('記事が見つかりません'), { status: 404 });
+  const current: string[] = Array.isArray(row.tags) ? row.tags : [];
+  const tags = deleted
+    ? (current.includes(DELETED_TAG) ? current : [...current, DELETED_TAG])
+    : current.filter((t) => t !== DELETED_TAG);
+  const { error } = await supabase.from('personal_knowledge').update({ tags }).eq('id', id);
+  if (error) throw error;
+  return row.title as string;
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { id } = await req.json().catch(() => ({}));
+    const title = await setDeleted(id, true);
+    return NextResponse.json({ success: true, message: `「${title}」をライブラリから削除しました` });
+  } catch (e: any) {
+    console.error('library 削除エラー:', e);
+    return NextResponse.json({ error: e.message || '削除に失敗しました' }, { status: e.status || 500 });
+  }
+}
+
+// 削除の取り消し
+export async function PATCH(req: NextRequest) {
+  try {
+    const { id, restore } = await req.json().catch(() => ({}));
+    if (restore !== true) return NextResponse.json({ error: 'restore: true を指定してください' }, { status: 400 });
+    const title = await setDeleted(id, false);
+    return NextResponse.json({ success: true, message: `「${title}」を元に戻しました` });
+  } catch (e: any) {
+    console.error('library 復元エラー:', e);
+    return NextResponse.json({ error: e.message || '復元に失敗しました' }, { status: e.status || 500 });
   }
 }
