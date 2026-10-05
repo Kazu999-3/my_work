@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { LaneKey, LANE_CONFIG } from './laneDetector';
 import { getChampionNameJa } from './championRoster';
+import { callGeminiWithRetry } from './geminiClient';
 
 export interface LaneGuideMergeArticle {
   id: number;
@@ -24,11 +25,52 @@ function extractYoutubeId(url: string | null | undefined): string | null {
   return m ? m[1] : null;
 }
 
+/** 記事からレーン攻略に役立つ本質的知見（Why & When、ウェーブ、オブジェクト、立ち回り）を漏らさず全て構造化抽出 */
+export async function extractLaneGuideKnowledge(article: LaneGuideMergeArticle, lane: LaneKey): Promise<string> {
+  const rawBody = (article.content || article.raw_content || '').trim();
+  if (rawBody.length < 150) return rawBody;
+
+  const laneInfo = LANE_CONFIG[lane] || LANE_CONFIG.COMMON;
+  const prompt = `あなたはLeague of Legendsのトッププロコーチです。以下の記事から、【${laneInfo.name}】レーンをプレイする上で役立つ本質的なマクロ知見、立ち回り、状況判断（Why & When）を、重要な情報を一切端折らずに漏らさず全て抽出・構造化してください。
+
+【対象記事: ${article.title || '無題'}】
+${rawBody.slice(0, 15000)}
+
+【抽出指針（最重要・絶対遵守）】:
+1. **重要知見の完全網羅（薄い要約・端折りの厳禁）**:
+   - 動画や解説の前置き、挨拶、雑談などのノイズのみを除去し、戦術的な知見、判断根拠（Why）、状況・条件（When）、ウェーブ管理、視界確保、寄りの判断、時間帯ごとの定石は余すところなく全て網羅してください。
+   - 数行の浅いまとめにせず、実戦で迷った時に読めばそのまま答えになる充実した分量・具体性で記述してください。
+2. **体系的な構造化見出し**:
+   記事の内容に合わせて、該当する項目を見出し付きで記述してください（該当しない項目は省略可）:
+   - #### 🌊 【レーン戦・ウェーブ＆テンポ管理】
+   - #### 🗺️ 【オブジェクト・寄り・ローム判断】
+   - #### ⚔️ 【集団戦・立ち回り・仕掛けの条件】
+   - #### 💡 【思考ロジック＆定石の根拠（Why & When）】
+3. Markdown形式で出力してください（コードブロック \`\`\` は不要です）。`;
+
+  try {
+    const res = await callGeminiWithRetry(prompt, { temperature: 0.2, maxOutputTokens: 3500 });
+    const cleaned = (res || '').trim().replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
+    return cleaned || rawBody;
+  } catch (e) {
+    console.warn('[laneGuideIntegrate] Geminiマクロ知見抽出失敗。生テキストを使用します:', e);
+    return rawBody;
+  }
+}
+
 /** レーンガイドに追記するためのMarkdownブロックを生成する */
-export async function formatLaneGuideSection(article: LaneGuideMergeArticle, lane: LaneKey): Promise<string> {
+export async function formatLaneGuideSection(
+  article: LaneGuideMergeArticle,
+  lane: LaneKey,
+  customExtractedText?: string
+): Promise<string> {
   const title = article.title?.trim() || '実戦解説';
   const url = article.source_url?.trim() || '';
-  const body = (article.content || article.raw_content || '').trim();
+
+  // customExtractedTextが指定されていればそれを使用。無ければGeminiで本質知見を漏らさず抽出
+  const extractedBody = customExtractedText
+    ? customExtractedText.trim()
+    : await extractLaneGuideKnowledge(article, lane);
 
   // 対象チャンピオン名の日本語表示
   const champParts = String(article.champion || '').split(/[,、/|]\s*|\s+/).filter(Boolean);
@@ -40,9 +82,8 @@ export async function formatLaneGuideSection(article: LaneGuideMergeArticle, lan
   return [
     `### 📺 ${title}`,
     `- **出典・チャンピオン**: ${linkStr} （対象: **${champLabel}**）`,
-    `- **マクロ・立ち回り知見**:`,
-    body,
-  ].join('\n');
+    extractedBody,
+  ].join('\n\n');
 }
 
 /** 既存のレーンガイド本文に新しい知見ブロックを安全に統合する */
@@ -62,7 +103,8 @@ export function appendSectionToLaneGuide(existingBody: string, newSection: strin
 export async function mergeArticleToLaneGuide(
   sb: SupabaseClient,
   lane: LaneKey,
-  article: LaneGuideMergeArticle
+  article: LaneGuideMergeArticle,
+  customSectionText?: string
 ): Promise<LaneGuideMergeResult> {
   try {
     const { data: record, error: selErr } = await sb
@@ -95,7 +137,9 @@ export async function mergeArticleToLaneGuide(
       };
     }
 
-    const newSection = await formatLaneGuideSection(article, lane);
+    const newSection = customSectionText
+      ? customSectionText.trim()
+      : await formatLaneGuideSection(article, lane);
     const updatedBody = appendSectionToLaneGuide(currentBody, newSection);
 
     const { error: upErr } = await sb

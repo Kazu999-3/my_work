@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { 
   BookOpen, Sparkles, RefreshCw, ChevronRight, Layers, 
   Clock, ArrowLeft, ExternalLink, Compass, Swords, Shield, Zap, Filter
 } from 'lucide-react';
+import LaneGuideOptimizeModal from '@/components/LaneGuideOptimizeModal';
 
 interface LaneGuide {
   lane: string;
@@ -26,24 +27,30 @@ function LaneGuidesApp() {
   const [activeLane, setActiveLane] = useState<string>('JG');
   const [activeSectionFilter, setActiveSectionFilter] = useState<string>('ALL');
   const [loading, setLoading] = useState(true);
+  const [isOptimizeModalOpen, setIsOptimizeModalOpen] = useState(false);
+
+  const fetchGuides = useCallback(async (selectJgDefault = false) => {
+    try {
+      const res = await fetch('/api/lane-guides');
+      const data = await res.json();
+      if (data.success) {
+        setGuides(data.guides || []);
+        setLanes(data.lanes || []);
+        if (selectJgDefault && data.guides && data.guides.length > 0) {
+          const hasJg = data.guides.some((g: LaneGuide) => g.lane === 'JG');
+          setActiveLane(hasJg ? 'JG' : data.guides[0].lane);
+        }
+      }
+    } catch (e) {
+      console.error('レーンガイド取得エラー:', e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    fetch('/api/lane-guides')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setGuides(data.guides || []);
-          setLanes(data.lanes || []);
-          if (data.guides && data.guides.length > 0) {
-            // JGが存在すればJGを優先選択
-            const hasJg = data.guides.some((g: LaneGuide) => g.lane === 'JG');
-            setActiveLane(hasJg ? 'JG' : data.guides[0].lane);
-          }
-        }
-      })
-      .catch((e) => console.error('レーンガイド取得エラー:', e))
-      .finally(() => setLoading(false));
-  }, []);
+    fetchGuides(true);
+  }, [fetchGuides]);
 
   const currentGuide = useMemo(() => {
     return guides.find((g) => g.lane === activeLane) || null;
@@ -209,9 +216,19 @@ function LaneGuidesApp() {
                     </button>
                   )}
                 </div>
-                <h1 className="text-lg sm:text-xl font-black text-zinc-100">
-                  {currentGuide.title}
-                </h1>
+                <div className="flex items-center justify-between gap-3 mt-1 flex-wrap">
+                  <h1 className="text-lg sm:text-xl font-black text-zinc-100">
+                    {currentGuide.title}
+                  </h1>
+                  <button
+                    onClick={() => setIsOptimizeModalOpen(true)}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 hover:border-amber-500/50 text-amber-300 text-xs font-black transition cursor-pointer shadow-sm"
+                    title="第8章の蓄積知見を体系的各章へ統合・再構築"
+                  >
+                    <Sparkles size={13} className="text-amber-400" />
+                    <span>🧠 AIガイド最適化・再構築</span>
+                  </button>
+                </div>
               </div>
 
               {/* 章ごとの構造化カード一覧 */}
@@ -244,6 +261,15 @@ function LaneGuidesApp() {
           </div>
         )}
       </main>
+
+      {/* 🧠 レーンガイドAI最適化・再構築モーダル */}
+      <LaneGuideOptimizeModal
+        lane={activeLane}
+        laneLabel={currentGuide?.title || activeLane}
+        isOpen={isOptimizeModalOpen}
+        onClose={() => setIsOptimizeModalOpen(false)}
+        onSuccess={() => fetchGuides(false)}
+      />
     </div>
   );
 }

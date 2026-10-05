@@ -188,6 +188,7 @@ export async function POST(req: NextRequest) {
     let explicitLane: LaneKey | null = null;
     let explicitIncludeLaneGuide: boolean | null = null;
     let explicitIncludeFactMerge: boolean = true;
+    let customLaneSectionText: string | undefined = undefined;
 
     // 単一記事承認時の手動修正パラメータ
     if (ids.length === 1) {
@@ -205,6 +206,9 @@ export async function POST(req: NextRequest) {
       }
       if (typeof body.includeFactMerge === 'boolean') {
         explicitIncludeFactMerge = body.includeFactMerge;
+      }
+      if (typeof body.customLaneSectionText === 'string' && body.customLaneSectionText.trim()) {
+        customLaneSectionText = body.customLaneSectionText.trim();
       }
 
       if (typeof body.champion === 'string') {
@@ -281,14 +285,19 @@ export async function POST(req: NextRequest) {
         : detection.lane;
 
       if (shouldIntegrateLane) {
-        const laneRes = await mergeArticleToLaneGuide(supabase, targetLane, {
-          id: row.id,
-          title: row.title,
-          content: row.content,
-          raw_content: row.raw_content,
-          champion: row.champion,
-          source_url: row.source_url,
-        });
+        const laneRes = await mergeArticleToLaneGuide(
+          db,
+          targetLane,
+          {
+            id: row.id,
+            title: row.title,
+            content: row.content,
+            raw_content: row.raw_content,
+            champion: row.champion,
+            source_url: row.source_url,
+          },
+          customLaneSectionText
+        );
 
         if (laneRes.success && laneRes.updated) {
           laneIntegratedCount++;

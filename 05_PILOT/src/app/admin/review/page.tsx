@@ -96,6 +96,7 @@ export default function ReviewPage() {
   const [previewData, setPreviewData] = useState<PreviewResult | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewTab, setPreviewTab] = useState<'facts' | 'strategy' | 'lane'>('strategy');
+  const [editedLaneSectionText, setEditedLaneSectionText] = useState<string>('');
 
   const showMessage = (text: string, t: 'success' | 'error') => {
     setMessage({ text, type: t });
@@ -186,6 +187,7 @@ export default function ReviewPage() {
       lane: edit.lane,
       includeLaneGuide: edit.includeLaneGuide,
       includeFactMerge: edit.includeFactMerge,
+      customLaneSectionText: (previewModalItem?.id === item.id && editedLaneSectionText) ? editedLaneSectionText : undefined,
     };
 
     if (await post(payload)) {
@@ -249,6 +251,7 @@ export default function ReviewPage() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'プレビューの生成に失敗しました');
       setPreviewData(json);
+      setEditedLaneSectionText(json.laneGuidePreview?.sectionText || '');
 
       // 初期タブの決定（教本優先、無ければレーン）
       if (json.championPreviews?.length > 0) {
@@ -790,19 +793,26 @@ export default function ReviewPage() {
                     {previewTab === 'lane' && (
                       <div className="space-y-3">
                         <div className="text-[11px] text-zinc-400">
-                          攻略バイブル（`lane_guides`）の第8章（実戦動画・プロ解説マクロ知見）に、以下のフォーマットで追記されます。
+                          AI（Gemini）が記事から抽出した本質的なマクロ・立ち回り知見です。攻略バイブル（`lane_guides`）の第8章に追記されます。必要に応じて文面を直接編集してから承認できます。
                         </div>
                         {previewData?.laneGuidePreview ? (
-                          <div className="p-4 rounded-xl bg-zinc-950 border border-emerald-900/50 space-y-2">
+                          <div className="p-4 rounded-xl bg-zinc-950 border border-emerald-900/50 space-y-3">
                             <div className="flex items-center justify-between text-xs text-emerald-300 font-bold border-b border-zinc-800 pb-2">
                               <span className="flex items-center gap-1.5">
                                 <Compass size={14} />
                                 <span>統合先: {previewData.laneGuidePreview.laneLabel}</span>
                               </span>
-                              <span className="text-[10px] text-zinc-500">第8章 マクロアーカイブへ追記</span>
+                              <span className="text-[10px] text-zinc-400">✏️ この文面を直接手直し可能</span>
                             </div>
-                            <div className="p-3 bg-[#111115] rounded-lg border border-zinc-800/80 max-h-72 overflow-y-auto font-sans leading-relaxed text-zinc-200 text-xs whitespace-pre-wrap select-text">
-                              {previewData.laneGuidePreview.sectionText}
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold text-zinc-400">統合するマクロ知見（Markdown形式で編集可能）</label>
+                              <textarea
+                                value={editedLaneSectionText}
+                                onChange={(e) => setEditedLaneSectionText(e.target.value)}
+                                rows={12}
+                                className="w-full p-3 bg-[#111115] rounded-lg border border-zinc-800 text-zinc-200 text-xs font-mono leading-relaxed focus:border-emerald-500 focus:outline-none resize-y"
+                                placeholder="レーンガイドに統合する知見文面..."
+                              />
                             </div>
                           </div>
                         ) : (
