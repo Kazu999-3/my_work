@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
+import { normalizeYoutubeUrl } from '@/lib/youtubeUrl';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,20 +18,8 @@ function getKind(req: NextRequest): Kind | null {
   return k === 'channel' || k === 'playlist' ? k : null;
 }
 
-// 共有ボタン由来の ?si=... などの追跡パラメータを落とす。プレイリストは list= だけ残す。
-// 2026-10-01 に ?si= 付きのチャンネルURLの解決タスクが2回続けて失敗していた。
-function normalizeUrl(raw: string, kind: Kind): string {
-  try {
-    const u = new URL(raw.trim());
-    if (kind === 'playlist') {
-      const list = u.searchParams.get('list');
-      return list ? `https://www.youtube.com/playlist?list=${list}` : raw.trim();
-    }
-    return `${u.origin}${u.pathname}`.replace(/\/$/, '');
-  } catch {
-    return raw.trim();
-  }
-}
+// URLの正規化（?si= 等の除去）は lib/youtubeUrl.ts
+const normalizeUrl = normalizeYoutubeUrl;
 
 export async function GET(req: NextRequest) {
   try {

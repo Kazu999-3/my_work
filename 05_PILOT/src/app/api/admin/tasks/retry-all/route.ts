@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
+import { normalizeTaskPayload, taskKey } from '@/lib/youtubeUrl';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,14 +28,16 @@ export async function POST(req: NextRequest) {
 
     const { data: active } = await supabase
       .from('edge_tasks').select('task_type, payload').in('status', ['pending', 'running']);
-    const activeKeys = new Set((active || []).map((t) => `${t.task_type}|${JSON.stringify(t.payload || {})}`));
+    const activeKeys = new Set((active || []).map((t) => taskKey(t.task_type, t.payload)));
 
     let retried = 0, skipped = 0;
     const errors: string[] = [];
     for (const t of failed || []) {
-      const key = `${t.task_type}|${JSON.stringify(t.payload || {})}`;
+      const key = taskKey(t.task_type, t.payload);
       if (!RETRYABLE_TASK_TYPES.has(t.task_type) || activeKeys.has(key)) { skipped++; continue; }
-      const { error: insErr } = await supabase.from('edge_tasks').insert({ task_type: t.task_type, payload: t.payload || {}, status: 'pending' });
+      // 登録系はURLの ?si= 等を除いて積み直す（同じURLのまま再実行して同じ理由で失敗し続けていた。2026-10-06）
+      const payload = normalizeTaskPayload(t.task_type, t.payload);
+      const { error: insErr } = await supabase.from('edge_tasks').insert({ task_type: t.task_type, payload, status: 'pending' });
       if (insErr) { errors.push(`${t.task_type}: ${insErr.message}`); continue; }
       activeKeys.add(key);
       retried++;

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
+import { taskKey } from '@/lib/youtubeUrl';
 import { getCalendarPatch } from '@/lib/ddragonClient';
 
 export const dynamic = 'force-dynamic';
@@ -77,10 +78,11 @@ export async function GET() {
       supabase.from('recruitments').select('created_at').order('created_at', { ascending: false }).limit(1).maybeSingle(),
     ]);
 
-    // (task_type, payload) ごとに最新の1件だけを見て、それが失敗のままのものを「要対応」とする
+    // (task_type, payload) ごとに最新の1件だけを見て、それが失敗のままのものを「要対応」とする。
+    // チャンネル/プレイリスト登録はURLの ?si= 等を除いてから比べる（後から ?si 無しで成功しても失敗が残り続けていた。2026-10-06）
     const latestByKey = new Map<string, any>();
     for (const t of recentTasks.data || []) {
-      const key = `${t.task_type}|${JSON.stringify(t.payload || {})}`;
+      const key = taskKey(t.task_type, t.payload);
       if (!latestByKey.has(key)) latestByKey.set(key, t);
     }
     const failedTasks = [...latestByKey.values()]
