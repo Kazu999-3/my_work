@@ -496,29 +496,59 @@ export async function POST(req: Request) {
         const rawStrategy = m.strategy || '';
         const rawTitle = m.title || `${targetChamp} vs ${enemyChamp} 対策メモ`;
 
-        const matchupRecord = {
-          matchup_id: matchupIdPrimary,
-          champion: targetChamp,
-          enemy: enemyChamp,
-          title: normalizeLoLTerms(rawTitle, targetChamp),
-          strategy: normalizeLoLTerms(rawStrategy, targetChamp),
-          raw_data: {
-            source: 'library_article',
-            source_article_id: articleId,
-            source_title: title,
-            extracted_at: new Date().toISOString(),
-          },
-        };
+        const articleTitle = normalizeLoLTerms(rawTitle, targetChamp);
+        const articleStrategy = normalizeLoLTerms(rawStrategy, targetChamp);
 
-        // プライマリID (champ_A_vs_B) で upsert
-        await supabase
-          .from('matchup_sentinel')
-          .upsert(matchupRecord, { onConflict: 'matchup_id' });
+        // ★ 2026-10-06: 以前は {strategy: 記事の対策文} を upsert しており、既存の対面メモ
+        // （振り返りノートや試合後の教訓として本人が書いたもの）を丸ごと上書きしていた。履歴も
+        // 残しておらず、error も見ていなかった（Shyvana_vs_Kayn の本人メモが2026-08-18に消えた実例、
+        // 既存行の上書きは計63件で元の内容は復元不能）。既存行には【記事】節として追記する
+        // （同じ記事の再統合は節の置き換え）。新規行のみ記事の内容で作る。
+        for (const matchupId of [matchupIdPrimary, matchupIdSecondary]) {
+          const { data: existing, error: selErr } = await supabase
+            .from('matchup_sentinel')
+            .select('title, strategy, raw_data')
+            .eq('matchup_id', matchupId)
+            .maybeSingle();
+          if (selErr) throw selErr;
 
-        // 互換性のためレガシーID (A_vs_B) でも upsert
-        await supabase
-          .from('matchup_sentinel')
-          .upsert({ ...matchupRecord, matchup_id: matchupIdSecondary }, { onConflict: 'matchup_id' });
+          const mergedInfo = { article_id: articleId, title, merged_at: new Date().toISOString() };
+          if (existing) {
+            const nextStrategy = mergeContent(existing.strategy || '', articleStrategy, title);
+            if (nextStrategy === (existing.strategy || '')) continue;
+            const nextRaw = { ...(existing.raw_data || {}), last_merged_article: mergedInfo };
+            const { error: updErr } = await supabase
+              .from('matchup_sentinel')
+              .update({ strategy: nextStrategy, raw_data: nextRaw })
+              .eq('matchup_id', matchupId);
+            if (updErr) throw updErr;
+            await recordMatchupSentinelRevision(
+              matchupId,
+              existing,
+              { title: existing.title, strategy: nextStrategy, raw_data: nextRaw },
+              title,
+              articleId
+            );
+          } else {
+            const record = {
+              matchup_id: matchupId,
+              champion: targetChamp,
+              enemy: enemyChamp,
+              title: articleTitle,
+              strategy: articleStrategy,
+              raw_data: {
+                source: 'library_article',
+                source_article_id: articleId,
+                source_title: title,
+                extracted_at: mergedInfo.merged_at,
+              },
+            };
+            // id は GENERATED ALWAYS AS IDENTITY のため指定しない
+            const { error: insErr } = await supabase.from('matchup_sentinel').insert(record);
+            if (insErr) throw insErr;
+            await recordMatchupSentinelRevision(matchupId, null, record, title, articleId);
+          }
+        }
 
         savedMatchupsCount++;
       } catch (matchupErr) {
