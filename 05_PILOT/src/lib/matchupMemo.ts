@@ -2,10 +2,10 @@ import { supabase } from './supabaseClient';
 import { resolveRosterChampion } from './championRoster';
 
 // 対面メモ（matchup_sentinel の <自分>_vs_<対面> 行の strategy）へ追記する共通処理。2026-10-06
-// 元は /api/lol/sync-match-feedback の中にあった。/api/soloq/reflections は別実装で
-// upsert({champion, enemy, strategy, updated_at}, onConflict 'champion,enemy') をしていたが、
+// 元は /api/lol/sync-match-feedback の中にあった。05の /api/soloq/reflections は移植時(2026-10-02)に
+// upsert({champion, enemy, strategy, updated_at}, onConflict 'champion,enemy') という別実装になっていたが、
 // matchup_sentinel には (champion, enemy) のユニーク制約も updated_at 列も無いため毎回エラーになり、
-// その error を見ていなかったので、振り返りノートの対面メモは2026-08以降ほぼ一度も同期されていなかった。
+// その error を見ていなかった（04の旧実装は正常。05で該当期間に保存された振り返りは0件のため実害は無し）。
 // また成功しても strategy を丸ごと上書きする作りだった。ここでは追記のみ・失敗は呼び出し元へ返す。
 
 export type AppendMatchupMemoResult =
