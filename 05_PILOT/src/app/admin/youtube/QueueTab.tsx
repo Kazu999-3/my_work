@@ -173,7 +173,7 @@ export default function QueueTab() {
 
   const retryAllErrors = async () => {
     const n = (counts.error_generation || 0) + (counts.error_no_transcript || 0) + (counts.failed || 0);
-    if (!confirm(`エラー状態の動画${n}件をすべて解析待ちに戻しますか？`)) return;
+    if (!confirm(`エラー状態の動画（最大${n}件）を解析待ちに戻しますか？\n字幕も音声も取得できず諦めた動画は対象外です（個別の再試行ボタンで戻せます）。`)) return;
     const json = await callApi('retry_all', { method: 'PATCH', body: JSON.stringify({ action: 'retry_all_errors' }) });
     if (json) { showMessage(json.message, 'success'); load(true); }
   };

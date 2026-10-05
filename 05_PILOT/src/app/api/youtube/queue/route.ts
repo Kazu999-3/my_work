@@ -281,13 +281,29 @@ export async function PATCH(req: NextRequest) {
     const { action } = body;
 
     if (action === 'retry_all_errors') {
-      const { data, error } = await supabase
-        .from('youtube_queue')
-        .update({ status: 'pending', retry_count: 0 })
-        .in('status', ERROR_STATUSES)
-        .select('id');
-      if (error) throw error;
-      return NextResponse.json({ success: true, count: data?.length || 0, message: `${data?.length || 0}件のエラー動画を解析待ちに戻しました。` });
+      // ★ 2026-10-06: 以前はエラー系を理由に関係なく全件 pending・retry 0 に戻しており、
+      // 「字幕もWhisperも3回失敗して諦めた動画」まで戻って同じ処理を最初からやり直していた
+      // （2026-10-03 に16件が戻され、PCワーカーが再び字幕取得→Whisperを繰り返していた）。
+      // まとめて戻すのは時間で解消し得るもの（AI要約の失敗・利用枠切れ等）だけにする。
+      // 字幕が無い動画を試し直したい時は、個別の「再試行」ボタンを使う。
+      // error_no_transcript は PC側の Whisper 処理(youtube_absorber)が自動で拾うので戻さない。
+      const { data: rows, error: selErr } = await supabase
+        .from('youtube_queue').select('id, status, title').in('status', ['error_generation', 'failed']);
+      if (selErr) throw selErr;
+      const isPermanent = (r: any) => /字幕・Whisper文字起こしともに失敗|字幕が動画に見つかりません/.test(r.title || '');
+      const targets = (rows || []).filter((r: any) => !isPermanent(r)).map((r: any) => r.id);
+      const skipped = (rows || []).length - targets.length;
+      if (targets.length > 0) {
+        const { error } = await supabase.from('youtube_queue').update({ status: 'pending', retry_count: 0 }).in('id', targets);
+        if (error) throw error;
+      }
+      return NextResponse.json({
+        success: true,
+        count: targets.length,
+        skipped,
+        message: `${targets.length}件のエラー動画を解析待ちに戻しました。` +
+          (skipped > 0 ? `字幕・音声が取得できず諦めた${skipped}件は対象外です（必要なら個別に再試行してください）。` : ''),
+      });
     }
 
     if (action === 'set_priority') {
