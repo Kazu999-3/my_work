@@ -27,7 +27,7 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
   // 「振り返り試合の勝率」(手動記録分のみの集計)を実際の直近成績と誤認させていた問題
   // (2026-08-10発覚)。記録し忘れた試合が母数に入らず実態とズレるため、Riot APIの
   // 実試合履歴から別途正しく集計し直す。取得できない間は手動記録側の値を暫定表示する。
-  const [realRecord, setRealRecord] = useState<{ totalMatches: number; wins: number } | null>(null);
+  const [realRecord, setRealRecord] = useState<{ totalMatches: number; wins: number; lossStreak: number } | null>(null);
   const [realRecordError, setRealRecordError] = useState(false);
 
   const fetchAllReflections = async () => {
@@ -54,9 +54,12 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
       });
       const data = await res.json();
       if (!res.ok || !Array.isArray(data.matches)) throw new Error(data.error || '取得失敗');
+      const matches: { win: boolean }[] = data.matches; // Riot の試合ID順（新しい順）
+      const firstWin = matches.findIndex((m) => m.win);
       setRealRecord({
-        totalMatches: data.matches.length,
-        wins: data.matches.filter((m: { win: boolean }) => m.win).length,
+        totalMatches: matches.length,
+        wins: matches.filter((m) => m.win).length,
+        lossStreak: firstWin === -1 ? matches.length : firstWin,
       });
       setRealRecordError(false);
     } catch {
@@ -93,9 +96,9 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
       ? (reflections.reduce((acc, r) => acc + (r.mental_rating || 3), 0) / totalMatches).toFixed(1)
       : '3.0';
 
-  // 直近の連敗数を算出 (最新の試合から連続で敗北している数)
-  // APIのソート順に依存しないよう、created_at降順で明示的にソートしてから判定する
-  const consecutiveLosses = (() => {
+  // 直近の連敗数。Riot API の実戦績を優先し、取れない時だけ手動の振り返り記録から数える
+  // （振り返り記録だけだと、記録し忘れた勝ち試合を挟んでも連敗に見えてしまう。2026-10-05）
+  const reflectionLossStreak = (() => {
     const sorted = [...reflections].sort(
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
@@ -106,6 +109,7 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
     }
     return count;
   })();
+  const consecutiveLosses = realRecord ? realRecord.lossStreak : reflectionLossStreak;
 
   // クールダウンタイマー状態 (秒)
   const [dashboardCooldownSec, setDashboardCooldownSec] = useState<number | null>(null);
@@ -145,13 +149,12 @@ export default function MySoloQDashboard({ refreshSignal }: { refreshSignal?: nu
               <div>
                 <div className={`font-black text-sm flex items-center gap-2 ${consecutiveLosses >= 3 ? 'text-rose-300' : 'text-amber-300'}`}>
                   <span>{consecutiveLosses >= 3 ? `現在 ${consecutiveLosses} 連敗中！ 本日はここでランク終了を推奨` : '現在 2連敗中！ 15分間のクールダウン推奨'}</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-900/60 border">
-                    JG安全装置発動
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-stone-900/60 border">
+                    {realRecord ? 'Riot APIの戦績' : '振り返り記録'}より
                   </span>
                 </div>
                 <p className={`text-xs mt-1 leading-relaxed ${consecutiveLosses >= 3 ? 'text-rose-300' : 'text-amber-300'}`}>
-                  JGは判断力とメンタルが試合の8割を握ります。連敗中の連続プレイは勝率が平均35%以下に急落します。
-                  {consecutiveLosses >= 3 ? ' 本日のランク戦はここで終了し、リプレイ確認かノーマルに切り替えてください。' : ' 最低15分はキューを入れず、水分補給か散歩を挟みましょう。'}
+                  {consecutiveLosses >= 3 ? '本日のランク戦はここで終了し、リプレイ確認かノーマルに切り替えてください。' : '最低15分はキューを入れず、水分補給か散歩を挟みましょう。'}
                 </p>
               </div>
             </div>

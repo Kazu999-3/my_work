@@ -41,6 +41,10 @@ interface ParticipantStats {
   goldEarned?: number;
   /** ペンタキル数。ジャックポット金庫の総取り判定に使う（riot/match-sync が保存） */
   pentaKills?: number;
+  /** 試合後詳細分析で対面と並べて比較する視界系の実測値 */
+  wardsPlaced?: number;
+  wardsKilled?: number;
+  visionWardsBoughtInGame?: number;
   win: boolean;
   lane: string; // TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY
 }
@@ -194,6 +198,9 @@ export async function fetchMatchDetails(matchId: string, apiKey: string): Promis
     // Riot Match-V5 の participant.pentaKills。ここでマッピングし忘れると
     // ジャックポットの総取り判定が永久に発火しない（2026-09-22に実際そうなっていた）。
     pentaKills: p.pentaKills || 0,
+    wardsPlaced: p.wardsPlaced || 0,
+    wardsKilled: p.wardsKilled || 0,
+    visionWardsBoughtInGame: p.visionWardsBoughtInGame || 0,
     win: p.win,
     lane: detectPosition(p) // TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY
   }));

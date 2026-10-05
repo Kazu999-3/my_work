@@ -2,127 +2,70 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { getChampIcon } from '@/lib/ddragonClient';
-import {
-  TrendingUp,
-  Clock,
-  ShoppingBag,
-  Eye,
-  ShieldAlert,
-  Sparkles,
-  Award,
-  Zap,
-  CheckCircle2,
-  AlertCircle,
-  RefreshCw,
-  Swords,
-  Layers,
-  Calendar,
-  Activity,
-  ChevronRight,
-} from 'lucide-react';
+import { AlertCircle, RefreshCw, Layers, Activity, Zap, BarChart3, Eye, Rewind, CheckCircle2 } from 'lucide-react';
+
+// 試合後: 詳細分析（2026-10-05 全面見直し）
+// 旧版はリコールのテンポ損失・ワード監査の採点・ランク水準ラベル・「最重要改善アクション」など、
+// 実データを見ていない数値や定型文を表示していた。ここでは試合データに実在する数値だけを
+// 対面と並べて出し、良し悪しの判断はプレイヤーに委ねる。リコール/ビルドは「テンポ」タブが担当。
 
 interface RecentMatchMeta {
   matchId: string;
   championName: string;
-  enemyChampionName: string;
-  lane: string;
   isWin: boolean;
   kdaStr: string;
-  kills: number;
-  deaths: number;
-  assists: number;
-  cs: number;
-  visionScore: number;
   gameDurationStr: string;
-  gameDurationSec: number;
   gameStartTimestamp: number;
 }
 
-interface CrossMatchSummary {
-  total_matches: number;
-  win_rate: number;
-  avg_kda: string;
-  avg_deaths: number;
-  avg_total_cs: number;
-  avg_vision_score: number;
-  summary_text: string;
+interface LaneSide { cs: number; gold: number; xp: number; level: number }
+
+interface MatchStats {
+  cs_per_min: number;
+  gold_earned: number;
+  damage_to_champions: number;
+  damage_share: number;
+  kill_participation: number;
+  deaths: number;
+  vision_score: number;
+  wards_placed: number;
+  wards_killed: number;
+  control_wards_bought: number;
 }
 
 interface PostGameData {
   success: boolean;
-  selected_match_id?: string;
-  recent_matches?: RecentMatchMeta[];
-  cross_match_summary?: CrossMatchSummary;
+  selected_match_id: string;
+  recent_matches: RecentMatchMeta[];
+  cross_match_summary: {
+    total_matches: number;
+    wins: number;
+    win_rate: number;
+    avg_kda: string;
+    avg_cs_per_min: number;
+    avg_vision_score: number;
+  };
   my_champion: string;
-  enemy_champion: string;
-  is_win?: boolean;
-  is_jungle?: boolean;
-  my_position?: string;
+  enemy_champion: string | null;
+  my_position: string;
+  is_win: boolean;
   match_duration_str: string;
   kda_str: string;
-  early_game_metrics: {
-    cs_timeline: { minute: number; cs: number; benchmark: number }[];
-    cs_at_15: number;
-    cs_per_min_at_15: number;
-    trade_ratio: number;
-    gold_diff_at_15: number;
+  timeline_available: boolean;
+  lane_snapshot: {
+    minute: number;
+    me: LaneSide;
+    enemy: LaneSide | null;
+    gold_diff: number | null;
+    cs_diff: number | null;
+    xp_diff: number | null;
     lane_result: string;
-  };
-  recall_efficiency: {
-    events: {
-      time_str: string;
-      gold_at_recall: number;
-      bought_items: string[];
-      wave_state: string;
-      loss_cs: number;
-      loss_gold: number;
-      evaluation: string;
-      detail: string;
-    }[];
-    total_loss_gold: number;
-    rating: string;
-  };
-  build_audit: {
-    summary: string;
-    items_audited: {
-      item_name: string;
-      timing: string;
-      audit: string;
-      reason: string;
-    }[];
-  };
-  timing_scaling: {
-    phase: string;
-    impact: string;
-    status: string;
-  }[];
-  radar_metrics: {
-    subject: string;
-    my_score: number;
-    target_score: number;
-    diff: string;
-    status: string;
-  }[];
-  biggest_bottleneck: {
-    metric: string;
-    advice: string;
-  };
-  control_ward_audit?: {
-    total_purchased: number;
-    target_benchmark: number;
-    score: number;
-    grade: string;
-    purchases: {
-      time_str: string;
-      minute: number;
-      timing_tag: string;
-      audit: string;
-      reason: string;
-    }[];
-    missed_timings: string[];
-    verdict: string;
-  };
+    thresholds: { big: number; small: number };
+  } | null;
+  match_stats: { me: MatchStats; enemy: MatchStats | null };
+  control_ward_times: string[];
 }
 
 interface PostGameDashboardProps {
@@ -131,6 +74,26 @@ interface PostGameDashboardProps {
   summonerName?: string;
   puuid?: string;
 }
+
+const POSITION_LABEL: Record<string, string> = {
+  TOP: 'TOP', JUNGLE: 'JG', MIDDLE: 'MID', BOTTOM: 'ADC', UTILITY: 'SUP',
+};
+
+const COMPARE_ROWS: { key: keyof MatchStats; label: string; unit?: string; lowerIsBetter?: boolean }[] = [
+  { key: 'cs_per_min', label: 'CS/分' },
+  { key: 'gold_earned', label: '獲得ゴールド', unit: 'G' },
+  { key: 'damage_to_champions', label: 'チャンピオンへの与ダメージ' },
+  { key: 'damage_share', label: 'チーム内ダメージ割合', unit: '%' },
+  { key: 'kill_participation', label: 'キル関与率', unit: '%' },
+  { key: 'deaths', label: 'デス', lowerIsBetter: true },
+  { key: 'vision_score', label: '視界スコア' },
+  { key: 'wards_placed', label: 'ワード設置' },
+  { key: 'wards_killed', label: 'ワード破壊' },
+  { key: 'control_wards_bought', label: 'コントロールワード購入' },
+];
+
+const signed = (v: number) => (v > 0 ? `+${v.toLocaleString()}` : v.toLocaleString());
+const diffColor = (v: number | null) => (v == null || v === 0 ? 'text-stone-300' : v > 0 ? 'text-emerald-400' : 'text-rose-400');
 
 export default function PostGameDeepAnalyticsDashboard({
   controlledMatchId,
@@ -143,43 +106,44 @@ export default function PostGameDeepAnalyticsDashboard({
   const [loading, setLoading] = useState(true);
   const [switching, setSwitching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [syncing, setSyncing] = useState(false);
-  const [synced, setSynced] = useState(false);
 
-  // メモ編集用の状態
-  const [memoText, setMemoText] = useState<string>('');
+  const [memoText, setMemoText] = useState('');
+  const [savedMemo, setSavedMemo] = useState('');
   const [savingMemo, setSavingMemo] = useState(false);
-  const [memoSaved, setMemoSaved] = useState(false);
-
-  // リコール逆再生タイムライン選択インデックス
-  const [selectedRecallIdx, setSelectedRecallIdx] = useState<number>(0);
+  const [memoStatus, setMemoStatus] = useState<{ ok: boolean; text: string } | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<{ ok: boolean; text: string } | null>(null);
 
   const currentMatchId = controlledMatchId || internalMatchId;
+
+  const fetchMemo = async (mId: string) => {
+    try {
+      const res = await fetch(`/api/lol/match-memo?matchId=${encodeURIComponent(mId)}`);
+      const d = await res.json();
+      const memo = d.success ? d.memo || '' : '';
+      setMemoText(memo);
+      setSavedMemo(memo);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const fetchAnalytics = async (matchId?: string) => {
     setSwitching(true);
     setError(null);
+    setMemoStatus(null);
+    setSyncStatus(null);
     try {
       const params = new URLSearchParams();
-      if (matchId && matchId !== 'all') params.set('matchId', matchId);
+      if (matchId) params.set('matchId', matchId);
       if (summonerName) params.set('summoner', summonerName);
       if (puuid) params.set('puuid', puuid);
-
-      const url = `/api/lol/postgame-deep-analytics?${params.toString()}`;
-      const res = await fetch(url);
+      const res = await fetch(`/api/lol/postgame-deep-analytics?${params.toString()}`);
       const json = await res.json();
-      if (!res.ok || json.error || !json.success) {
-        throw new Error(json.error || '解析データの取得に失敗しました');
-      }
+      if (!res.ok || json.error || !json.success) throw new Error(json.error || '解析データの取得に失敗しました');
       setData(json);
-      if (!internalMatchId && json.selected_match_id) {
-        setInternalMatchId(json.selected_match_id);
-      }
-      // メモを取得
-      const mId = matchId || json.selected_match_id;
-      if (mId) {
-        fetchMemo(mId);
-      }
+      if (!internalMatchId && json.selected_match_id) setInternalMatchId(json.selected_match_id);
+      fetchMemo(json.selected_match_id);
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'データ取得エラー');
@@ -189,62 +153,50 @@ export default function PostGameDeepAnalyticsDashboard({
     }
   };
 
-  const fetchMemo = async (mId: string) => {
-    try {
-      const res = await fetch(`/api/lol/match-memo?matchId=${mId}`);
-      const d = await res.json();
-      if (d.success) {
-        setMemoText(d.memo || '');
-      }
-    } catch (e) {
-      console.error(e);
-    }
+  useEffect(() => {
+    fetchAnalytics(currentMatchId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentMatchId]);
+
+  const handleSelect = (mId: string) => {
+    if (onSelectMatchId) onSelectMatchId(mId);
+    else setInternalMatchId(mId);
   };
 
   const handleSaveMemo = async () => {
-    const targetId = currentMatchId || data?.selected_match_id;
-    if (!targetId) return;
+    if (!data) return;
     setSavingMemo(true);
+    setMemoStatus(null);
     try {
       const res = await fetch('/api/lol/match-memo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          matchId: targetId,
+          matchId: data.selected_match_id,
           memo: memoText,
           summoner: summonerName,
-          champion: data?.my_champion,
-          enemyChampion: data?.enemy_champion,
-          isWin: data?.is_win,
+          champion: data.my_champion,
+          enemyChampion: data.enemy_champion,
+          isWin: data.is_win,
         }),
       });
       const d = await res.json();
-      if (d.success) {
-        setMemoSaved(true);
-        setTimeout(() => setMemoSaved(false), 2500);
-      }
-    } catch (e) {
-      console.error(e);
+      if (!res.ok || !d.success) throw new Error(d.error || '保存に失敗しました');
+      setSavedMemo(memoText);
+      setMemoStatus({ ok: true, text: '保存しました' });
+    } catch (e: any) {
+      setMemoStatus({ ok: false, text: e.message || '保存に失敗しました' });
     } finally {
       setSavingMemo(false);
     }
   };
 
-  useEffect(() => {
-    fetchAnalytics(currentMatchId);
-  }, [currentMatchId]);
-
-  const handleSelect = (mId: string) => {
-    if (onSelectMatchId) {
-      onSelectMatchId(mId);
-    } else {
-      setInternalMatchId(mId);
-    }
-  };
-
-  const handleSyncFeedback = async () => {
-    if (!data || syncing || synced) return;
+  // 自分で書いたメモだけを対面メモへ送る。旧版は自動生成の定型アドバイスを送っており、
+  // 対面に関係ない文面が matchup_sentinel に溜まっていた(2026-10-05 変更)。
+  const handleSyncMemo = async () => {
+    if (!data || !data.enemy_champion || !savedMemo.trim()) return;
     setSyncing(true);
+    setSyncStatus(null);
     try {
       const res = await fetch('/api/lol/sync-match-feedback', {
         method: 'POST',
@@ -252,16 +204,14 @@ export default function PostGameDeepAnalyticsDashboard({
         body: JSON.stringify({
           myChampion: data.my_champion,
           enemyChampion: data.enemy_champion,
-          keyLearning: `${data.biggest_bottleneck.metric}: ${data.biggest_bottleneck.advice}`,
-          bottleneck: data.biggest_bottleneck.metric
-        })
+          keyLearning: savedMemo.trim(),
+        }),
       });
       const d = await res.json();
-      if (d.success) {
-        setSynced(true);
-      }
-    } catch (e) {
-      console.error(e);
+      if (!res.ok || !d.success) throw new Error(d.error || '同期に失敗しました');
+      setSyncStatus({ ok: true, text: d.message || '対面メモへ保存しました' });
+    } catch (e: any) {
+      setSyncStatus({ ok: false, text: e.message || '同期に失敗しました' });
     } finally {
       setSyncing(false);
     }
@@ -269,15 +219,12 @@ export default function PostGameDeepAnalyticsDashboard({
 
   if (loading) {
     return (
-      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 md:p-6 shadow-xs animate-pulse space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="h-5 bg-slate-800 rounded w-1/3"></div>
-          <div className="h-5 bg-slate-800 rounded w-1/4"></div>
-        </div>
-        <div className="h-20 bg-slate-900 rounded-xl"></div>
+      <div className="bg-stone-900/60 border border-stone-800 rounded-2xl p-5 md:p-6 animate-pulse space-y-4">
+        <div className="h-5 bg-stone-800 rounded w-1/3" />
+        <div className="h-20 bg-stone-900 rounded-xl" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="h-44 bg-slate-900 rounded-xl"></div>
-          <div className="h-44 bg-slate-900 rounded-xl"></div>
+          <div className="h-44 bg-stone-900 rounded-xl" />
+          <div className="h-44 bg-stone-900 rounded-xl" />
         </div>
       </div>
     );
@@ -285,573 +232,324 @@ export default function PostGameDeepAnalyticsDashboard({
 
   if (error || !data) {
     return (
-      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 shadow-xs text-center space-y-3">
-        <AlertCircle className="w-8 h-8 text-amber-400 mx-auto" />
-        <h4 className="text-sm font-bold text-slate-100">試合後ディープアナリティクス</h4>
-        <p className="text-xs text-slate-400 max-w-md mx-auto">
-          {error || '直近のランク戦タイムラインデータが見つかりませんでした。ソロQをプレイ後に再度お試しください。'}
+      <div className="bg-stone-900/60 border border-stone-800 rounded-2xl p-5 text-center space-y-3">
+        <AlertCircle className="w-8 h-8 text-rose-400 mx-auto" />
+        <h4 className="text-sm font-bold text-stone-100">試合後の詳細分析</h4>
+        <p className="text-xs text-stone-400 max-w-md mx-auto">
+          {error || '直近のランク戦データが見つかりませんでした。'}
         </p>
         <button
           onClick={() => fetchAnalytics(currentMatchId)}
-          className="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-bold transition inline-flex items-center gap-1.5"
+          className="px-4 py-2 bg-stone-800 hover:bg-stone-700 text-stone-100 rounded-xl text-xs font-bold transition inline-flex items-center gap-1.5"
         >
           <RefreshCw size={12} />
-          <span>最新の試合を再読み込み</span>
+          <span>再読み込み</span>
         </button>
       </div>
     );
   }
 
+  const lane = data.lane_snapshot;
+  const sm = data.match_stats;
+  const pos = POSITION_LABEL[data.my_position] || data.my_position;
+  const cms = data.cross_match_summary;
+  const memoDirty = memoText !== savedMemo;
+
   return (
-    <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 md:p-6 shadow-xs text-slate-100 space-y-6">
-      {/* 🎮 直近マッチ選択セレクターバー */}
-      {data.recent_matches && data.recent_matches.length > 0 && (
+    <div className="bg-stone-900/60 border border-stone-800 rounded-2xl p-5 md:p-6 text-stone-100 space-y-6">
+      {/* 直近の試合選択 */}
+      {data.recent_matches.length > 0 && (
         <div className="space-y-2.5">
-          <div className="flex items-center justify-between">
-            <h4 className="text-xs font-black text-slate-200 flex items-center gap-1.5 uppercase tracking-wider">
-              <Layers className="w-4 h-4 text-amber-400" />
-              <span>直近のソロQマッチ選択 (全{data.recent_matches.length}試合)</span>
-            </h4>
-            <span className="text-[10px] text-slate-500 font-bold">クリックで各試合の深層解析に即時切り替え</span>
-          </div>
-
+          <h4 className="text-xs font-black text-stone-200 flex items-center gap-1.5">
+            <Layers className="w-4 h-4 text-amber-400" />
+            <span>直近のソロQ（{data.recent_matches.length}試合）</span>
+          </h4>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
-            {/* 個別試合カード一覧 */}
             {data.recent_matches.map((m, idx) => {
-              const isSelected = currentMatchId === m.matchId || (!currentMatchId && idx === 0);
-              const dateObj = new Date(m.gameStartTimestamp);
-              const timeStr = `${dateObj.getMonth() + 1}/${dateObj.getDate()} ${dateObj.getHours()}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
-
+              const isSelected = data.selected_match_id === m.matchId;
+              const d = new Date(m.gameStartTimestamp);
+              const timeStr = `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
               return (
                 <button
-                  key={m.matchId || idx}
+                  key={m.matchId}
                   type="button"
                   onClick={() => handleSelect(m.matchId)}
                   disabled={switching}
-                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5 relative overflow-hidden ${
+                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1.5 ${
                     isSelected
-                      ? 'bg-stone-900 text-white border-stone-900 shadow-xs ring-2 ring-stone-700'
+                      ? 'bg-stone-800 border-amber-500/70 ring-1 ring-amber-500/50'
                       : m.isWin
-                      ? 'bg-emerald-950/30 border-emerald-800/60 hover:bg-emerald-950/30 hover:border-emerald-800/60'
-                      : 'bg-rose-950/30 border-rose-800/60 hover:bg-rose-950/30 hover:border-rose-800/60'
+                      ? 'bg-emerald-950/30 border-emerald-800/60 hover:border-emerald-600/60'
+                      : 'bg-rose-950/30 border-rose-800/60 hover:border-rose-600/60'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span
-                      className={`text-[9px] font-black px-1.5 py-0.2 rounded font-mono ${
-                        m.isWin ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'
-                      }`}
-                    >
+                    <span className={`text-[9px] font-black px-1.5 rounded font-mono text-white ${m.isWin ? 'bg-emerald-600' : 'bg-rose-600'}`}>
                       {m.isWin ? 'WIN' : 'LOSS'}
                     </span>
-                    <span className={`text-[9px] font-mono ${isSelected ? 'text-slate-500' : 'text-slate-500'}`}>
-                      #{idx + 1}
-                    </span>
+                    <span className="text-[9px] font-mono text-stone-500">{timeStr}</span>
                   </div>
-
-                  <div className="flex items-center gap-1.5 my-0.5">
+                  <div className="flex items-center gap-1.5">
                     <Image
                       src={getChampIcon(m.championName)}
                       alt={m.championName}
                       width={24}
                       height={24}
-                      className="w-6 h-6 rounded-full border border-slate-800 shadow-2xs shrink-0"
+                      className="w-6 h-6 rounded-full border border-stone-700 shrink-0"
                       onError={(e) => { e.currentTarget.style.display = 'none'; }}
                     />
                     <span className="text-[11px] font-black truncate">{m.championName}</span>
                   </div>
-
-                  <div className={`flex items-center justify-between text-[10px] font-mono ${isSelected ? 'text-slate-500' : 'text-slate-400'}`}>
+                  <div className="flex items-center justify-between text-[10px] font-mono text-stone-400">
                     <span className="font-bold">{m.kdaStr}</span>
                     <span>{m.gameDurationStr}</span>
                   </div>
+                  <span className="sr-only">#{idx + 1}</span>
                 </button>
               );
             })}
           </div>
-
         </div>
       )}
 
-      {/* 📊 直近数試合の横断スタッツサマリー */}
-      {data.cross_match_summary && data.cross_match_summary.total_matches > 1 && (
-        <div className="bg-gradient-to-r from-amber-950/30 via-stone-50 to-amber-950/30 border border-amber-800/60 rounded-xl p-4 space-y-2.5 shadow-2xs">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <span className="text-xs font-black text-slate-100 flex items-center gap-1.5">
-              <Activity className="w-4 h-4 text-amber-400" />
-              <span>直近 {data.cross_match_summary.total_matches} 試合の横断パフォーマンス総括</span>
-            </span>
-            <div className="flex items-center gap-3 text-[11px] font-bold">
-              <span className="text-slate-300 font-mono">
-                勝率: <strong className={data.cross_match_summary.win_rate >= 50 ? 'text-emerald-300' : 'text-rose-400'}>{data.cross_match_summary.win_rate}%</strong>
-              </span>
-              <span className="text-slate-300 font-mono">
-                平均KDA: <strong>{data.cross_match_summary.avg_kda}</strong>
-              </span>
-              <span className="text-slate-300 font-mono">
-                平均視界: <strong>{data.cross_match_summary.avg_vision_score}pt</strong>
-              </span>
-            </div>
-          </div>
-          <p className="text-xs text-slate-300 font-medium leading-relaxed bg-slate-900/60 p-2.5 rounded-lg border border-amber-800/60">
-            💡 {data.cross_match_summary.summary_text}
-          </p>
-        </div>
-      )}
-
-      {/* 選択中の試合ディープアナリティクス ヘッダー */}
-      <div className="flex items-center justify-between border-b border-stone-100 pb-3 flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 bg-amber-950/30 text-amber-300 border border-amber-800/60 rounded-md text-[10px] font-black uppercase tracking-wider">
-            {currentMatchId === 'all' || data.selected_match_id === 'all' ? 'Multi-Match Aggregate' : 'Match Deep Dive'}
+      {/* 直近の通算 */}
+      {cms.total_matches > 1 && (
+        <div className="bg-stone-950/60 border border-stone-800 rounded-xl p-3 flex items-center gap-x-4 gap-y-1 flex-wrap text-[11px]">
+          <span className="font-black text-stone-200 flex items-center gap-1.5">
+            <Activity className="w-4 h-4 text-amber-400" />
+            直近{cms.total_matches}試合
           </span>
-          <h3 className="text-base font-black text-slate-100 flex items-center gap-1.5">
-            <span>
-              {currentMatchId === 'all' || data.selected_match_id === 'all'
-                ? `⚡ 直近${data.recent_matches?.length || ''}戦 統合ディープアナリティクス`
-                : '⚡ 選択マッチの精密ディープアナリティクス'}
-            </span>
-          </h3>
+          <span className="text-stone-300 font-mono">
+            {cms.wins}勝{cms.total_matches - cms.wins}敗（
+            <strong className={cms.win_rate >= 50 ? 'text-emerald-400' : 'text-rose-400'}>{cms.win_rate}%</strong>）
+          </span>
+          <span className="text-stone-300 font-mono">平均KDA {cms.avg_kda}</span>
+          <span className="text-stone-300 font-mono">平均CS/分 {cms.avg_cs_per_min}</span>
+          <span className="text-stone-300 font-mono">平均視界 {cms.avg_vision_score}</span>
+        </div>
+      )}
+
+      {/* 選択中の試合ヘッダー */}
+      <div className="flex items-center justify-between border-b border-stone-800 pb-3 flex-wrap gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={`px-2 py-0.5 rounded text-[10px] font-black text-white ${data.is_win ? 'bg-emerald-600' : 'bg-rose-600'}`}>
+            {data.is_win ? 'VICTORY' : 'DEFEAT'}
+          </span>
+          <span className="bg-stone-900 px-2 py-0.5 rounded border border-stone-800 text-stone-200 text-xs font-bold flex items-center gap-1.5">
+            <Image
+              src={getChampIcon(data.my_champion)}
+              alt={data.my_champion}
+              width={16}
+              height={16}
+              className="w-4 h-4 rounded-full"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            />
+            {data.my_champion}
+            {data.enemy_champion && <span className="text-stone-400">vs {data.enemy_champion}</span>}
+            <span className="text-stone-500 font-mono text-[10px]">({pos})</span>
+          </span>
+          <span className="text-xs font-mono text-stone-400">KDA {data.kda_str}</span>
+          <span className="text-xs font-mono text-stone-400">{data.match_duration_str}</span>
           {switching && (
-            <span className="text-xs text-amber-400 font-bold flex items-center gap-1 animate-pulse ml-2">
-              <RefreshCw size={12} className="animate-spin" /> 解析展開中...
+            <span className="text-xs text-amber-400 font-bold flex items-center gap-1">
+              <RefreshCw size={12} className="animate-spin" /> 読み込み中...
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2 text-xs font-mono font-bold text-slate-400 flex-wrap">
-          <span className={`px-2 py-0.5 rounded text-[10px] font-black text-white ${data.is_win ? 'bg-emerald-600' : 'bg-rose-600'}`}>
-            {currentMatchId === 'all' || data.selected_match_id === 'all'
-              ? `勝率 ${data.cross_match_summary?.win_rate || 0}%`
-              : data.is_win
-              ? 'VICTORY'
-              : 'DEFEAT'}
-          </span>
-          <span className="bg-slate-900 px-2 py-0.5 rounded border border-slate-800 text-slate-200 flex items-center gap-1.5">
-            {currentMatchId !== 'all' && (
-              <Image
-                src={getChampIcon(data.my_champion)}
-                alt={data.my_champion}
-                width={16}
-                height={16}
-                className="w-4 h-4 rounded-full"
-                onError={(e) => { e.currentTarget.style.display = 'none'; }}
-              />
-            )}
-            {data.my_champion} {currentMatchId !== 'all' && `vs ${data.enemy_champion}`}
-          </span>
-          <span>•</span>
-          <span>KDA: {data.kda_str}</span>
-          <span>•</span>
-          <span>{data.match_duration_str}</span>
-          <button
-            onClick={() => fetchAnalytics(currentMatchId)}
-            title="最新の試合を再読み込み"
-            className="p-1 rounded-lg hover:bg-slate-900 text-slate-400 hover:text-slate-100 transition ml-1"
-          >
-            <RefreshCw size={13} />
-          </button>
-        </div>
-      </div>
-
-      {/* 🚨 1-Action Takeaway (次戦への最重要改善アクション・最優先ファーストビュー) */}
-      <div className="bg-gradient-to-r from-rose-950/30 via-amber-950/30 to-rose-950/30 border-2 border-rose-800/60 rounded-xl p-4 shadow-sm space-y-2">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">🎯</span>
-            <span className="text-xs font-black text-rose-300 uppercase tracking-wide">
-              【実戦からの抽出】次戦で必ず意識する最重要改善アクション
-            </span>
-          </div>
-          <span className="text-[10px] font-black bg-rose-600 text-white px-2 py-0.5 rounded font-mono">
-            ボトルネック: {data.biggest_bottleneck.metric}
-          </span>
-        </div>
-        <p className="text-xs md:text-sm font-black text-slate-100 leading-relaxed bg-slate-900/60 p-3 rounded-lg border border-rose-800/60">
-          {data.biggest_bottleneck.advice}
-        </p>
+        <button
+          onClick={() => fetchAnalytics(currentMatchId)}
+          title="再読み込み"
+          className="p-1 rounded-lg hover:bg-stone-800 text-stone-400 hover:text-stone-100 transition"
+        >
+          <RefreshCw size={13} />
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* 1: 序盤15分メトリクス */}
-        <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-black text-slate-100 flex items-center gap-1.5">
-              <Zap className="w-4 h-4 text-amber-400" />
-              1. 序盤15分CS ＆ レーン戦推移
-            </span>
-            <span className="text-[11px] font-black text-emerald-300 bg-emerald-950/30 px-2 py-0.5 rounded border border-emerald-800/60">
-              {data.early_game_metrics.lane_result}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="bg-slate-900/60 p-2.5 rounded-lg border border-slate-800">
-              <div className="text-[10px] font-bold text-slate-500">15分CS数</div>
-              <div className="text-base font-black text-slate-100 font-mono">{data.early_game_metrics.cs_at_15}</div>
-              <div className="text-[9px] text-slate-400 font-bold">{data.early_game_metrics.cs_per_min_at_15} CS/分</div>
-            </div>
-            <div className="bg-slate-900/60 p-2.5 rounded-lg border border-slate-800">
-              <div className="text-[10px] font-bold text-slate-500">ダメージ効率</div>
-              <div className="text-base font-black text-emerald-300 font-mono">{data.early_game_metrics.trade_ratio}倍</div>
-              <div className="text-[9px] text-slate-400">与ダメ / 被ダメ</div>
-            </div>
-            <div className="bg-slate-900/60 p-2.5 rounded-lg border border-slate-800">
-              <div className="text-[10px] font-bold text-slate-500">15分差分</div>
-              <div className={`text-base font-black font-mono ${data.early_game_metrics.gold_diff_at_15 >= 0 ? 'text-emerald-300' : 'text-rose-400'}`}>
-                {data.early_game_metrics.gold_diff_at_15 >= 0 ? `+${data.early_game_metrics.gold_diff_at_15}` : data.early_game_metrics.gold_diff_at_15}G
-              </div>
-              <div className="text-[9px] text-slate-400 font-bold">対面ゴールド差</div>
-            </div>
-          </div>
-        </div>
-
-        {/* 2: アイテムビルド選択の分岐監査 (Build Audit) */}
-        <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-black text-slate-100 flex items-center gap-1.5">
-              <ShoppingBag className="w-4 h-4 text-teal-400" />
-              2. アイテム購入タイムライン
-            </span>
-            <span className="text-[10px] font-bold text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
-              購入記録（自動評価なし）
-            </span>
-          </div>
-
-          <div className="space-y-1.5 text-[11px]">
-            {data.build_audit.items_audited.map((item, idx) => (
-              <div key={idx} className="bg-slate-900/60 p-2 rounded-lg border border-slate-800 flex items-center justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <span className="font-extrabold text-slate-200">{item.item_name}</span>
-                  <span className="text-[10px] text-slate-500 ml-1.5 font-mono">({item.timing})</span>
-                  <p className="text-[10px] text-slate-400 truncate mt-0.5">{item.reason}</p>
-                </div>
-                <span className="text-[10px] font-black text-emerald-300 bg-emerald-950/30 px-2 py-0.5 rounded shrink-0">
-                  {item.audit}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* 3: リコール＆ウェーブ テンポロス逆再生 (インタラクティブ・タイムライン視覚化) */}
-        <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3.5 shadow-2xs">
+        {/* 1. レーン戦 */}
+        <div className="bg-stone-950 border border-stone-800 rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <span className="text-xs font-black text-slate-100 flex items-center gap-1.5">
-              <Clock className="w-4 h-4 text-amber-400" />
-              <span>
-                {data.is_jungle
-                  ? '3. ジャングル周回 ＆ リコールテンポ監査'
-                  : '3. テンポロス逆再生 (タイムラインリコール監査)'}
-              </span>
+            <span className="text-xs font-black text-stone-100 flex items-center gap-1.5">
+              <Zap className="w-4 h-4 text-amber-400" />
+              {lane ? `${lane.minute}分時点の対面比較` : 'レーン戦（15分時点）'}
             </span>
-            <div className="flex items-center gap-2">
-              {data.is_jungle ? (
-                <span className="text-[10px] font-black text-emerald-300 bg-emerald-950/30 px-2 py-0.5 rounded border border-emerald-800/60 font-mono">
-                  🌿 JG専任 (レーンウェーブ損失免除)
-                </span>
-              ) : (
-                <span className="text-[10px] font-black text-rose-300 bg-rose-950/30 px-2 py-0.5 rounded border border-rose-800/60 font-mono">
-                  総損失: -{data.recall_efficiency.total_loss_gold}G
-                </span>
-              )}
-              <span className="text-[10px] font-bold text-slate-400 font-mono hidden sm:inline">
-                {data.recall_efficiency.rating}
+            {lane && (
+              <span className={`text-[11px] font-black px-2 py-0.5 rounded border ${
+                lane.gold_diff == null ? 'text-stone-300 bg-stone-900 border-stone-700'
+                : lane.gold_diff >= lane.thresholds.small ? 'text-emerald-400 bg-emerald-950/30 border-emerald-800/60'
+                : lane.gold_diff > -lane.thresholds.small ? 'text-stone-200 bg-stone-900 border-stone-700'
+                : 'text-rose-400 bg-rose-950/30 border-rose-800/60'
+              }`}>
+                {lane.lane_result}
               </span>
-            </div>
+            )}
           </div>
 
-          {/* 橫型タイムラインルーラー (各リコール地点のピン留め) */}
-          {data.recall_efficiency.events.length > 0 && (
-            <div className="space-y-2 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
-              <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono px-0.5">
-                <span>00:00 (開始)</span>
-                <span className="text-amber-300 font-bold">全 {data.recall_efficiency.events.length} 回のリコール</span>
-                <span>{data.match_duration_str || '試合終了'}</span>
+          {!lane ? (
+            <p className="text-[11px] text-stone-400">
+              {data.timeline_available ? 'この試合のタイムラインに自分のデータがありませんでした。' : 'この試合のタイムラインを取得できませんでした。'}
+            </p>
+          ) : (
+            <>
+              {lane.minute < 15 && (
+                <p className="text-[10px] text-amber-300">試合が15分より前に終わったため、{lane.minute}分時点の値です。</p>
+              )}
+              <div className="overflow-x-auto">
+                <table className="w-full text-[11px] font-mono">
+                  <thead>
+                    <tr className="text-stone-500 text-[10px]">
+                      <th className="text-left font-bold py-1"></th>
+                      <th className="text-right font-bold py-1">自分</th>
+                      <th className="text-right font-bold py-1">{data.enemy_champion || '対面'}</th>
+                      <th className="text-right font-bold py-1">差</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {([
+                      ['CS', 'cs', lane.cs_diff],
+                      ['ゴールド', 'gold', lane.gold_diff],
+                      ['経験値', 'xp', lane.xp_diff],
+                      ['レベル', 'level', lane.enemy ? lane.me.level - lane.enemy.level : null],
+                    ] as const).map(([label, key, diff]) => (
+                      <tr key={key} className="border-t border-stone-800/60">
+                        <td className="py-1.5 text-stone-400 font-sans font-bold">{label}</td>
+                        <td className="py-1.5 text-right text-stone-100">{lane.me[key].toLocaleString()}</td>
+                        <td className="py-1.5 text-right text-stone-400">{lane.enemy ? lane.enemy[key].toLocaleString() : '-'}</td>
+                        <td className={`py-1.5 text-right font-bold ${diffColor(diff)}`}>{diff == null ? '-' : signed(diff)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
+              <p className="text-[10px] text-stone-500">
+                判定はゴールド差の目安です（±{lane.thresholds.small}G 未満でほぼ互角、±{lane.thresholds.big}G 以上で「大きく」）。
+              </p>
+            </>
+          )}
+        </div>
 
-              {/* タイムライントラック */}
-              <div className="relative w-full h-3 bg-slate-900 rounded-full my-3 border border-slate-800">
-                {/* 各リコールのピン */}
-                {data.recall_efficiency.events.map((ev, idx) => {
-                  // 分秒からパーセンテージ位置を計算（基準: 最大時間または25分）
-                  const parts = ev.time_str.split(':').map(Number);
-                  const sec = (parts[0] || 0) * 60 + (parts[1] || 0);
-                  const durParts = (data.match_duration_str || '25:00').split(':').map(Number);
-                  const totalSec = Math.max(1200, (durParts[0] || 25) * 60 + (durParts[1] || 0));
-                  const pct = Math.min(96, Math.max(4, Math.round((sec / totalSec) * 100)));
-
-                  const isSelected = selectedRecallIdx === idx;
-                  const hasLoss = (ev.loss_gold || 0) > 0;
-
+        {/* 2. 試合全体の対面比較 */}
+        <div className="bg-stone-950 border border-stone-800 rounded-xl p-4 space-y-3">
+          <span className="text-xs font-black text-stone-100 flex items-center gap-1.5">
+            <BarChart3 className="w-4 h-4 text-amber-400" />
+            試合全体の対面比較
+          </span>
+          <div className="overflow-x-auto">
+            <table className="w-full text-[11px] font-mono">
+              <thead>
+                <tr className="text-stone-500 text-[10px]">
+                  <th className="text-left font-bold py-1"></th>
+                  <th className="text-right font-bold py-1">自分</th>
+                  <th className="text-right font-bold py-1">{data.enemy_champion || '対面'}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {COMPARE_ROWS.map((row) => {
+                  const mine = sm.me[row.key];
+                  const theirs = sm.enemy ? sm.enemy[row.key] : null;
+                  const better = theirs == null || mine === theirs ? null : row.lowerIsBetter ? mine < theirs : mine > theirs;
                   return (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => setSelectedRecallIdx(idx)}
-                      style={{ left: `${pct}%` }}
-                      className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 transition-all cursor-pointer flex flex-col items-center group ${
-                        isSelected ? 'z-20 scale-125' : 'z-10 hover:scale-110'
-                      }`}
-                      title={`リコール #${idx + 1} (${ev.time_str})`}
-                    >
-                      <span
-                        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center text-[9px] font-black shadow-xs ${
-                          isSelected
-                            ? 'bg-amber-600 text-white border-white ring-2 ring-amber-400'
-                            : hasLoss
-                            ? 'bg-amber-500 text-stone-950 border-white'
-                            : 'bg-emerald-500 text-white border-white'
-                        }`}
-                      >
-                        {idx + 1}
-                      </span>
-                      <span
-                        className={`text-[9px] font-mono font-bold mt-1 whitespace-nowrap px-1 rounded transition-colors ${
-                          isSelected ? 'bg-amber-950/30 text-amber-300' : 'text-slate-500 group-hover:text-slate-300'
-                        }`}
-                      >
-                        {ev.time_str}
-                      </span>
-                    </button>
+                    <tr key={row.key} className="border-t border-stone-800/60">
+                      <td className="py-1.5 text-stone-400 font-sans font-bold">{row.label}</td>
+                      <td className={`py-1.5 text-right font-bold ${better == null ? 'text-stone-100' : better ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        {mine.toLocaleString()}{row.unit || ''}
+                      </td>
+                      <td className="py-1.5 text-right text-stone-400">
+                        {theirs == null ? '-' : `${theirs.toLocaleString()}${row.unit || ''}`}
+                      </td>
+                    </tr>
                   );
                 })}
-              </div>
+              </tbody>
+            </table>
+          </div>
+          {!sm.enemy && <p className="text-[10px] text-stone-500">敵チームに同じポジションのプレイヤーが見つからなかったため、自分の値のみ表示しています。</p>}
+        </div>
 
-              {/* 選択中のリコール詳細インスペクター */}
-              {(() => {
-                const activeEv = data.recall_efficiency.events[selectedRecallIdx] || data.recall_efficiency.events[0];
-                if (!activeEv) return null;
-                return (
-                  <div className="mt-4 pt-3 border-t border-stone-100 space-y-2 animate-in fade-in">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[11px] font-black bg-amber-950/30 text-amber-300 px-2 py-0.5 rounded border border-amber-800/60">
-                          リコール #{selectedRecallIdx + 1} ({activeEv.time_str})
-                        </span>
-                        <span className="text-[10px] font-black text-slate-300 bg-slate-900 px-2 py-0.5 rounded">
-                          所持G: {activeEv.gold_at_recall ? `${activeEv.gold_at_recall}G` : '未記録'}
-                        </span>
-                      </div>
-                      <span className="text-[10px] font-bold text-slate-200">
-                        {activeEv.evaluation}
-                      </span>
-                    </div>
-
-                    {/* 購入アイテム一覧 */}
-                    {activeEv.bought_items && activeEv.bought_items.length > 0 && (
-                      <div className="flex items-center gap-1 flex-wrap pt-0.5">
-                        <span className="text-[10px] font-bold text-slate-500">購入:</span>
-                        {activeEv.bought_items.map((item, i) => (
-                          <span key={i} className="text-[10px] font-bold bg-slate-900 text-slate-200 px-1.5 py-0.2 rounded border border-slate-800">
-                            🛒 {item}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* ウェーブ状況＆損失メトリクス */}
-                    <div className="grid grid-cols-2 gap-2 text-[10px] pt-1">
-                      <div className="bg-slate-950 p-1.5 rounded border border-slate-800">
-                        <span className="text-slate-500 font-bold block">
-                          {data.is_jungle ? '帰還時周回状況:' : '帰還時ウェーブ:'}
-                        </span>
-                        <span className="font-black text-slate-200">{activeEv.wave_state || (data.is_jungle ? 'キャンプ周回後' : 'ウェーブ押し込み後')}</span>
-                      </div>
-                      <div className="bg-slate-950 p-1.5 rounded border border-slate-800">
-                        <span className="text-slate-500 font-bold block">
-                          {data.is_jungle ? '周回テンポ損失:' : 'テンポ損失:'}
-                        </span>
-                        <span className={`font-mono font-black ${(activeEv.loss_gold || 0) > 0 ? 'text-rose-400' : 'text-emerald-300'}`}>
-                          {data.is_jungle
-                            ? '中立キャンプ損失なし (良好) 🟢'
-                            : (activeEv.loss_gold || 0) > 0
-                            ? `-${activeEv.loss_gold}G (ミニオン${activeEv.loss_cs || 0}体損)`
-                            : '損失なし (適格帰還)'}
-                        </span>
-                      </div>
-                    </div>
-
-                    <p className="text-[11px] text-slate-400 leading-relaxed font-medium bg-amber-950/30 p-2 rounded-lg border border-amber-800/60">
-                      💬 <span className="font-bold text-amber-300">判定:</span> {activeEv.detail}
-                    </p>
-                  </div>
-                );
-              })()}
+        {/* 3. コントロールワード購入時刻 */}
+        <div className="bg-stone-950 border border-stone-800 rounded-xl p-4 space-y-2">
+          <span className="text-xs font-black text-stone-100 flex items-center gap-1.5">
+            <Eye className="w-4 h-4 text-amber-400" />
+            コントロールワードの購入時刻
+          </span>
+          {data.control_ward_times.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {data.control_ward_times.map((t, i) => (
+                <span key={i} className="text-[11px] font-mono font-bold bg-stone-900 text-stone-200 px-2 py-0.5 rounded border border-stone-800">
+                  {t}
+                </span>
+              ))}
             </div>
+          ) : (
+            <p className="text-[11px] text-stone-400">
+              {data.timeline_available ? 'この試合ではコントロールワードを購入していません。' : 'タイムラインを取得できなかったため不明です。'}
+            </p>
           )}
         </div>
 
-        {/* 3.5: コントロールワード（ピンクワード）実戦購入タイミング監査 */}
-        {data.control_ward_audit && (
-          <div className="bg-rose-950/30 border border-rose-800/60 rounded-xl p-4 space-y-3.5 shadow-2xs">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <span className="text-xs font-black text-slate-100 flex items-center gap-1.5">
-                <Eye className="w-4 h-4 text-rose-400" />
-                <span>3.5 コントロールワード 実戦購入タイミング監査</span>
-              </span>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black text-rose-300 bg-rose-950/30 px-2 py-0.5 rounded border border-rose-800/60 font-mono">
-                  {data.control_ward_audit.total_purchased}本購入 (目標: {data.control_ward_audit.target_benchmark}本)
-                </span>
-                <span className={`text-[10px] font-black px-2 py-0.5 rounded font-mono ${
-                  data.control_ward_audit.grade === 'S' || data.control_ward_audit.grade === 'A'
-                    ? 'bg-emerald-950/30 text-emerald-300 border border-emerald-800/60'
-                    : 'bg-amber-950/30 text-amber-300 border border-amber-800/60'
-                }`}>
-                  評価: {data.control_ward_audit.grade} ({data.control_ward_audit.score}点)
-                </span>
-              </div>
-            </div>
-
-            {/* 実戦購入イベント一覧 */}
-            {data.control_ward_audit.purchases.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {data.control_ward_audit.purchases.map((p, pIdx) => (
-                  <div key={pIdx} className="bg-slate-900/60 p-2.5 rounded-xl border border-rose-800/60 space-y-1 shadow-2xs">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-black text-rose-300 flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-rose-400" /> {p.time_str}
-                      </span>
-                      <span className="text-[9px] font-black bg-emerald-950/30 text-emerald-300 px-1.5 py-0.2 rounded border border-emerald-800/60">
-                        {p.audit}
-                      </span>
-                    </div>
-                    <div className="text-[10px] font-bold text-slate-200">
-                      {p.timing_tag}
-                    </div>
-                    <p className="text-[9px] text-slate-400 leading-relaxed">
-                      {p.reason}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="bg-slate-900/60 p-3 rounded-xl border border-rose-800/60 text-center space-y-1">
-                <span className="text-xs font-bold text-rose-300">⚠️ 試合中のコントロールワード購入が 0本 でした</span>
-                <p className="text-[10px] text-slate-400">
-                  リコール時に余った75Gで常に1本所持し、オブジェクト前の先制視界取りを意識しましょう。
-                </p>
-              </div>
-            )}
-
-            {/* 逃したタイミング（改善ポイント） */}
-            {data.control_ward_audit.missed_timings.length > 0 && (
-              <div className="bg-amber-950/30 p-2.5 rounded-xl border border-amber-800/60 space-y-1">
-                <span className="text-[10px] font-bold text-amber-300 flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
-                  <span>逃した購入・配置タイミング（勝率向上の急所）:</span>
-                </span>
-                <ul className="text-[10px] text-slate-300 space-y-0.5 pl-4 list-disc font-medium">
-                  {data.control_ward_audit.missed_timings.map((miss, mIdx) => (
-                    <li key={mIdx}>{miss}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* 総評テキスト */}
-            <p className="text-[11px] text-slate-300 leading-relaxed font-medium bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
-              💬 <span className="font-bold text-slate-100">コーチ総評:</span> {data.control_ward_audit.verdict}
-            </p>
-          </div>
-        )}
-
-        {/* 4: レーダー多角形指標 */}
-        <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-black text-slate-100 flex items-center gap-1.5">
-              <Award className="w-4 h-4 text-amber-400" />
-              4. 目標ランク水準とのギャップ比較
-            </span>
-            <span className="text-[10px] font-black text-amber-300 bg-amber-950/30 px-2 py-0.5 rounded">
-              実戦スタッツ照合
-            </span>
-          </div>
-
-          {/* レーダーメトリクスグリッド */}
-          <div className="grid grid-cols-2 gap-1.5 text-[11px]">
-            {data.radar_metrics.map((m, idx) => (
-              <div key={idx} className="bg-slate-900/60 p-2 rounded-lg border border-slate-800 flex items-center justify-between">
-                <span className="font-bold text-slate-300">{m.subject}</span>
-                <span className={`font-mono font-bold text-[10px] ${m.diff.startsWith('+') ? 'text-emerald-300' : 'text-rose-400'}`}>
-                  {m.diff}pt ({m.status})
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* 昇格ボトルネックアドバイス */}
-          <div className="bg-rose-950/30 border border-rose-800/60 rounded-xl p-3 text-[11px] space-y-1">
-            <div className="flex items-center gap-1.5 font-black text-rose-300">
-              <ShieldAlert className="w-4 h-4 text-rose-400" />
-              <span>改善急所: {data.biggest_bottleneck.metric}</span>
-            </div>
-            <p className="text-slate-300 text-[10px] leading-relaxed">
-              {data.biggest_bottleneck.advice}
-            </p>
-          </div>
-        </div>
+        {/* 4. テンポタブへの導線 */}
+        <Link
+          href={`/coach?tab=tempo&matchId=${encodeURIComponent(data.selected_match_id)}`}
+          className="bg-stone-950 border border-stone-800 hover:border-amber-700/60 rounded-xl p-4 space-y-1 transition block"
+        >
+          <span className="text-xs font-black text-stone-100 flex items-center gap-1.5">
+            <Rewind className="w-4 h-4 text-amber-400" />
+            リコール・ビルドの分析は「🔁 試合後: テンポ」へ
+          </span>
+          <p className="text-[11px] text-stone-400">
+            帰還ごとの所持金・購入品・前後のゴールド差の変化と、ビルドのチェックをこの試合で開きます。
+          </p>
+        </Link>
       </div>
 
-      {/* 📝 この試合の気づき・反省メモ（後からいつでも追加・編集・保存可能） */}
-      <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3 shadow-2xs">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-black text-slate-100 flex items-center gap-1.5">
-            <span>📝</span>
-            <span>この試合の反省・気づきメモ（後からいつでも編集可能）</span>
-          </span>
-          {memoSaved && (
-            <span className="text-xs font-bold text-emerald-400 bg-emerald-950/30 border border-emerald-800/60 px-2 py-0.5 rounded-md animate-pulse">
-              ✅ 保存完了！
+      {/* 試合メモ ＆ 対面メモへの同期 */}
+      <div className="bg-stone-950 border border-stone-800 rounded-xl p-4 space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <span className="text-xs font-black text-stone-100">📝 この試合のメモ</span>
+          {memoStatus && (
+            <span className={`text-xs font-bold px-2 py-0.5 rounded-md border ${
+              memoStatus.ok ? 'text-emerald-400 bg-emerald-950/30 border-emerald-800/60' : 'text-rose-400 bg-rose-950/30 border-rose-800/60'
+            }`}>
+              {memoStatus.text}
             </span>
           )}
         </div>
-
         <div className="flex flex-col sm:flex-row gap-2">
           <input
             type="text"
             value={memoText}
             onChange={(e) => setMemoText(e.target.value)}
-            placeholder="例: レベル3ガンク時の寄り遅れを反省 / 敵JGの位置予測が当たってテンポ取れた"
-            className="flex-1 px-3.5 py-2.5 bg-slate-900/60 border border-slate-800 rounded-xl text-xs font-medium text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            placeholder="例: 6レベル前にオールインされた。対面のレベル6を意識して下がる"
+            className="flex-1 px-3.5 py-2.5 bg-stone-900/60 border border-stone-800 rounded-xl text-xs text-stone-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
           />
           <button
             type="button"
             onClick={handleSaveMemo}
-            disabled={savingMemo}
-            className="px-4 py-2.5 bg-amber-700 hover:bg-amber-800 disabled:opacity-50 text-white rounded-xl text-xs font-black transition whitespace-nowrap cursor-pointer shadow-xs flex items-center justify-center gap-1.5 shrink-0"
+            disabled={savingMemo || !memoDirty}
+            className="px-4 py-2.5 bg-amber-700 hover:bg-amber-600 disabled:opacity-50 text-white rounded-xl text-xs font-black transition whitespace-nowrap cursor-pointer shrink-0"
           >
-            <span>💾</span>
-            <span>{savingMemo ? '保存中...' : 'メモを保存'}</span>
+            {savingMemo ? '保存中...' : '💾 メモを保存'}
           </button>
         </div>
-      </div>
 
-      {/* 完全勝利サイクル: ナレッジ自動フィードバック同期バー */}
-      <div className="bg-gradient-to-r from-amber-950/30 via-amber-950/30 to-emerald-950/30 border border-amber-800/60 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
-        <div className="space-y-0.5 text-center sm:text-left">
-          <div className="flex items-center justify-center sm:justify-start gap-1.5 text-xs font-black text-slate-100">
-            <Sparkles className="w-4 h-4 text-amber-400" />
-            <span>完全勝利サイクル (The Sovereign Victory Loop) 連動</span>
-          </div>
-          <p className="text-[11px] text-slate-400 font-medium">
-            この試合で得た確定データ（対面攻略 ＆ 改善点）をナレッジ辞典へ自動蓄積し、次回プレイ前へ循環させます。
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-stone-800">
+          <p className="text-[11px] text-stone-400">
+            保存したメモを {data.enemy_champion ? `「${data.my_champion} vs ${data.enemy_champion}」の` : ''}対面メモへ追記します。次にこの対面と当たった時の試合前タブに表示されます。
           </p>
+          <button
+            type="button"
+            onClick={handleSyncMemo}
+            disabled={syncing || !data.enemy_champion || !savedMemo.trim() || memoDirty || syncStatus?.ok}
+            title={!savedMemo.trim() ? '先にメモを保存してください' : memoDirty ? '変更を保存してから同期してください' : undefined}
+            className="px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 shrink-0 cursor-pointer bg-stone-800 hover:bg-stone-700 text-stone-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            {syncing ? '同期中...' : syncStatus?.ok ? '同期済み' : 'メモを対面メモへ同期'}
+          </button>
         </div>
-        <button
-          onClick={handleSyncFeedback}
-          disabled={syncing || synced}
-          className={`px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 shadow-xs transition-all shrink-0 cursor-pointer ${
-            synced
-              ? 'bg-emerald-600 text-white border border-emerald-700'
-              : syncing
-              ? 'bg-stone-700 text-slate-500 animate-pulse'
-              : 'bg-stone-900 hover:bg-stone-800 text-white'
-          }`}
-        >
-          <CheckCircle2 className={`w-4 h-4 ${synced ? 'text-white' : 'text-emerald-400'}`} />
-          <span>{synced ? '✅ ナレッジ辞典に自動同期完了！' : syncing ? '同期中...' : '教訓をナレッジ辞典に自動同期'}</span>
-        </button>
+        {syncStatus && (
+          <p className={`text-[11px] font-bold ${syncStatus.ok ? 'text-emerald-400' : 'text-rose-400'}`}>{syncStatus.text}</p>
+        )}
       </div>
     </div>
   );
