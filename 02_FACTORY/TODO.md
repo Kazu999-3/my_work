@@ -43,11 +43,13 @@
   - `/api/youtube/queue`: `close_to_playlist` アクション実装。YouTube Data APIでプレイリストへ自動挿入し `manually_closed` へ更新。
   - `/api/youtube/oauth` & `/callback`: リフレッシュトークン発行用の認可フローを05に配備。
   - `/admin/youtube`: 一括操作バーおよび各アイテムに「📋 プレイリストへ送る」ボタンを配備。URLクリップボードコピー＆プレイリスト直通リンクのフォールバック付き。
-✅ Discord 5区分メンバーロール自動管理 ＆ 一発セットアップ・即時同期システム配備（2026-10-06）:
-  - `playerTier.ts`: 初参加・ライト・常連・経験者・復帰勢の5段階判定ロジックを一元化（SSoT）。
-  - `discordRoleSync.ts` & `/api/discord/role-sync`: Discord REST API経由で5つのロール（色・権限設定付き）を一括自動作成＆ID自動保存。排他的なロール付け替え（1枠維持）とレート制限保護を完備。
+✅ Discord メンバーロール自動管理（経験度5種＋プレイスタイル5種＋初中級交流1種）＆ /welcome案内・限定ラウンジ配備（2026-10-06）:
+  - `playerTier.ts` / `discordRoleSync.ts`: 初参加・ライト・常連・経験者・復帰勢の5段階、およびプレイスタイル5種（ソロ・フレックス・ARAM・エンジョイ・教わりたい）、初中級交流ロール（アイアン〜ゴールド＆初参加/ライト/復帰専用）の一括管理。
+  - Discord REST API経由で計11ロールを自動作成・ID自動保存。経験度ロールの排他制御、初中級交流ロールの自動付与＆上位昇格・常連化時の自動卒業を完備。
+  - `ktm_bot`: `/welcome` コマンドで案内・3ステップ・ルール＋各種設定ボタン群（サモナー名登録・通知・プレイスタイル設定等）を配備。旧 `/portal` `/roles` は完全削除。
+  - Discord上に専用カテゴリー・チャンネル `#🌱・初参加・ライト・復帰交流` および安心ウェルカム投稿を設置・ピン留め完了。全員一括同期を実施。
   - `/api/match/record`: 試合終了時に参加10名を即時バックグラウンド同期（Cron不使用）。
-  - `/ktm-admin`: 「🎭 ロール連携」モーダルを配備し、ワンクリックでロール作成＆全員同期を実行可能に。
+  - `/ktm-admin`: 「🎭 ロール連携」モーダルからワンクリックでロール作成＆全員同期を実行可能に。
 
 **04の役目終了前に05へ移す裏方**（2026-10-04 判断: 今は移さない。移すきっかけ＝04停止が決まった／04障害で05のソロQ機能が止まった／自動振り返りの中身を大きく直す時）（今は04上で動いており05はデータを読むだけ）:
 `soloq-coach-poll.yml`→04 `/api/cron/soloq-coach`、`soloq-history-sync.yml`→04、04のVercel Cron `soloq-trends` `freshness-check` `dict-review-check`、ワーカー通知の送り先 04 `/api/push/notify-admin`（`edge-cloud-worker.yml` `absorber.yml` の `PORTAL_URL`）
