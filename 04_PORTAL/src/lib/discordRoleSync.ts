@@ -1,5 +1,6 @@
 import { supabaseAdmin } from './supabaseAdmin';
 import { discordFetch } from './discordFetch';
+import { fetchAllRows } from './fetchAll';
 import { getPlayerTier, ExperienceTier } from './playerTier';
 
 export interface DiscordRoleConfig {
@@ -327,10 +328,10 @@ export async function syncPlayersDiscordRoles(options?: {
     return { total: 0, synced: 0, changed: 0, errors: 0, details: [] };
   }
 
-  // 1. プレイヤー情報を取得
+  // 1. プレイヤー情報と試合参加実績を並行取得
   let query = supabaseAdmin
     .from('ktm_players')
-    .select('id, name, discord_id, total_games, recent_games_30d, days_since_last_match, metadata')
+    .select('id, name, discord_id, metadata')
     .not('discord_id', 'is', null)
     .not('discord_id', 'eq', '');
 
@@ -340,11 +341,58 @@ export async function syncPlayersDiscordRoles(options?: {
     query = query.in('discord_id', options.discordIds);
   }
 
-  const { data: players, error } = await query;
-  if (error || !players) {
-    console.error('[discordRoleSync] プレイヤー一覧取得失敗:', error);
+  const [{ data: players, error: pError }, { data: participants, error: mError }] = await Promise.all([
+    query,
+    fetchAllRows((from, to) =>
+      supabaseAdmin
+        .from('ktm_match_participants')
+        .select('player_name, discord_id, created_at')
+        .range(from, to)
+    ),
+  ]);
+
+  if (pError || !players) {
+    console.error('[discordRoleSync] プレイヤー一覧取得失敗:', pError);
     return { total: 0, synced: 0, changed: 0, errors: 1, details: [] };
   }
+
+  // 2. 参加実績の集計（通算・直近30日・最終参加日）
+  const now = Date.now();
+  const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+
+  interface PlayerHistoryStats {
+    total: number;
+    recent30d: number;
+    lastPlayedAt: number | null;
+  }
+
+  const statsByDiscord = new Map<string, PlayerHistoryStats>();
+  const statsByNameLower = new Map<string, PlayerHistoryStats>();
+
+  const updateStats = (map: Map<string, PlayerHistoryStats>, key: string, time: number) => {
+    let stat = map.get(key);
+    if (!stat) {
+      stat = { total: 0, recent30d: 0, lastPlayedAt: null };
+      map.set(key, stat);
+    }
+    stat.total += 1;
+    if (time >= thirtyDaysAgo) {
+      stat.recent30d += 1;
+    }
+    if (!stat.lastPlayedAt || time > stat.lastPlayedAt) {
+      stat.lastPlayedAt = time;
+    }
+  };
+
+  (participants || []).forEach((row: any) => {
+    const matchTime = row.created_at ? new Date(row.created_at).getTime() : 0;
+    if (row.discord_id) {
+      updateStats(statsByDiscord, String(row.discord_id).trim(), matchTime);
+    }
+    if (row.player_name) {
+      updateStats(statsByNameLower, String(row.player_name).trim().toLowerCase(), matchTime);
+    }
+  });
 
   const results: Array<{ name: string; tier: ExperienceTier; changed: boolean; error?: string }> = [];
   let synced = 0;
@@ -353,7 +401,26 @@ export async function syncPlayersDiscordRoles(options?: {
 
   // Discord レート制限を避けるため、1人ずつ少しインターバルを挟んで処理
   for (const player of players) {
-    const tierInfo = getPlayerTier(player);
+    let historyStat: PlayerHistoryStats = { total: 0, recent30d: 0, lastPlayedAt: null };
+
+    if (player.discord_id && statsByDiscord.has(String(player.discord_id).trim())) {
+      historyStat = statsByDiscord.get(String(player.discord_id).trim())!;
+    } else if (player.name && statsByNameLower.has(String(player.name).trim().toLowerCase())) {
+      historyStat = statsByNameLower.get(String(player.name).trim().toLowerCase())!;
+    }
+
+    const daysSinceLast = historyStat.lastPlayedAt
+      ? Math.floor((now - historyStat.lastPlayedAt) / (24 * 60 * 60 * 1000))
+      : null;
+
+    const enrichedStats = {
+      total_games: historyStat.total,
+      recent_games_30d: historyStat.recent30d,
+      days_since_last_match: daysSinceLast,
+      metadata: player.metadata,
+    };
+
+    const tierInfo = getPlayerTier(enrichedStats);
     const syncRes = await syncMemberDiscordRole(player.discord_id, tierInfo.tier, config);
 
     if (syncRes.success) {
