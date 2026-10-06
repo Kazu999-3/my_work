@@ -591,34 +591,63 @@ function PilotApp() {
       return matchSearch && matchRole && matchFav;
     });
 
-    // 選択中レーンのレーンキー（OP.GG連動）
-    const getLaneKey = (role: string) => {
-      if (role === "TOP") return "TOP";
-      if (role === "JG") return "JUNGLE";
-      if (role === "MID") return "MID";
-      if (role === "ADC" || role === "BOT") return "ADC";
-      if (role === "SUP") return "SUPPORT";
-      return null;
+    // OP.GG レーンメタキー正規化 (TOP, JG, MID, ADC, SUP)
+    const normalizeLaneKey = (role: string): string => {
+      if (!role) return "TOP";
+      const upper = role.toUpperCase();
+      if (upper === "JUNGLE") return "JG";
+      if (upper === "BOT") return "ADC";
+      if (upper === "SUPPORT") return "SUP";
+      return upper;
     };
-    const currentLaneKey = getLaneKey(roleFilter);
 
     // 各チャンピオンの該当レーン（または第1ロール）のTierと勝率を取得
     const getChampMeta = (c: ChampionSummary) => {
-      if (!opggMeta?.lanes) return { tier: undefined, winRate: undefined, tierScore: 0 };
-      const laneKey = currentLaneKey || getLaneKey(c.roles[0]) || "JUNGLE";
-      const m = opggMeta.lanes[laneKey]?.[c.id];
-      if (!m) return { tier: undefined, winRate: undefined, tierScore: 0 };
+      if (!opggMeta?.lanes) return { tier: undefined, tierNum: 99, rank: 999, winRate: 0, tierScore: 0 };
 
-      let score = 10;
-      const t = String(m.tier || "").toUpperCase();
-      if (t === "OP") score = 100;
-      else if (t === "1" || t === "T1") score = 90;
-      else if (t === "2" || t === "T2") score = 80;
-      else if (t === "3" || t === "T3") score = 70;
-      else if (t === "4" || t === "T4") score = 60;
-      else if (t === "5" || t === "T5") score = 50;
+      let m: any = null;
+      if (roleFilter !== "ALL") {
+        const laneKey = normalizeLaneKey(roleFilter);
+        m = opggMeta.lanes[laneKey]?.[c.id];
+      } else {
+        // 全ロール表示時: 第1ロールを優先、無ければ他レーンから最も高い評価を探す
+        const primaryKey = normalizeLaneKey(c.roles[0] || "TOP");
+        m = opggMeta.lanes[primaryKey]?.[c.id];
+        if (!m) {
+          for (const lane of ["TOP", "JG", "MID", "ADC", "SUP"]) {
+            const candidate = opggMeta.lanes[lane]?.[c.id];
+            if (candidate) {
+              if (!m || (candidate.tierNum ?? 5) < (m.tierNum ?? 5)) {
+                m = candidate;
+              }
+            }
+          }
+        }
+      }
 
-      return { tier: m.tier, winRate: m.winRate, tierScore: score };
+      if (!m) return { tier: undefined, tierNum: 99, rank: 999, winRate: 0, tierScore: 0 };
+
+      let tierNum = typeof m.tierNum === "number" ? m.tierNum : 5;
+      const tierStr = String(m.tier || "").toUpperCase();
+      if (tierStr === "OP" || tierStr.includes("OP")) {
+        tierNum = 0;
+      } else {
+        const match = tierStr.match(/\d+/);
+        if (match) tierNum = parseInt(match[0], 10);
+      }
+
+      const rank = typeof m.rank === "number" ? m.rank : 999;
+      const winRate = typeof m.winRate === "number" ? m.winRate : 0;
+      // tierScore: OP (0) -> 60000点台, Tier 1 -> 50000点台 ... 圏外 -> 0点
+      const tierScore = (6 - Math.min(6, tierNum)) * 10000 + Math.max(0, 1000 - rank * 10) + winRate;
+
+      return {
+        tier: m.tier,
+        tierNum,
+        rank,
+        winRate,
+        tierScore,
+      };
     };
 
     list.sort((a, b) => {
@@ -628,7 +657,7 @@ function PilotApp() {
         if (metaB.tierScore !== metaA.tierScore) {
           return metaB.tierScore - metaA.tierScore;
         }
-        return (metaB.winRate || 0) - (metaA.winRate || 0);
+        return a.jpName.localeCompare(b.jpName, "ja");
       } else if (champSort === "name_ja") {
         return a.jpName.localeCompare(b.jpName, "ja");
       } else if (champSort === "name_en") {
@@ -636,7 +665,10 @@ function PilotApp() {
       } else if (champSort === "win_rate") {
         const metaA = getChampMeta(a);
         const metaB = getChampMeta(b);
-        return (metaB.winRate || 0) - (metaA.winRate || 0);
+        const wrA = metaA.winRate || 0;
+        const wrB = metaB.winRate || 0;
+        if (wrB !== wrA) return wrB - wrA;
+        return a.jpName.localeCompare(b.jpName, "ja");
       } else if (champSort === "knowledge") {
         const countA = (a.videoBibleCount || 0) + (a.libraryKnowledgeCount || 0);
         const countB = (b.videoBibleCount || 0) + (b.libraryKnowledgeCount || 0);
@@ -2378,7 +2410,15 @@ function PilotApp() {
               {filteredChampions.map((c) => {
                 const isFav = favorites.includes(c.id);
                 const cardRole = roleFilter !== "ALL" ? (roleFilter === "BOT" ? "ADC" : roleFilter) : (c.roles[0] === "BOT" ? "ADC" : c.roles[0] || "TOP");
-                const cardMeta = opggMeta?.lanes?.[cardRole]?.[c.id];
+                let cardMeta = opggMeta?.lanes?.[cardRole]?.[c.id];
+                if (!cardMeta && roleFilter === "ALL") {
+                  for (const lane of ["TOP", "JG", "MID", "ADC", "SUP"]) {
+                    if (opggMeta?.lanes?.[lane]?.[c.id]) {
+                      cardMeta = opggMeta.lanes[lane][c.id];
+                      break;
+                    }
+                  }
+                }
 
                 return (
                   <div
