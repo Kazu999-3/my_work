@@ -109,8 +109,20 @@ export default function ReviewPage() {
   const [previewData, setPreviewData] = useState<PreviewResult | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewTab, setPreviewTab] = useState<'facts' | 'strategy' | 'lane'>('strategy');
+  const [factsViewMode, setFactsViewMode] = useState<'highlight' | 'split'>('highlight');
   const [editedLaneSectionText, setEditedLaneSectionText] = useState<string>('');
   const [modalError, setModalError] = useState<string | null>(null);
+
+  /** 項目マージ差分で行が新規追加されたかを判定 */
+  const isLineNewlyAdded = (line: string, before: string, beforeSet: Set<string>): boolean => {
+    const trimmed = line.trim();
+    if (!trimmed) return false;
+    if (beforeSet.has(trimmed)) return false;
+    // 箇条書きプレフィックスや見出し記号を除去した中身で判定
+    const core = trimmed.replace(/^[-*・•\d.()（）:：【】\[\]]+\s*/, '').trim();
+    if (core.length >= 6 && before.includes(core)) return false;
+    return true;
+  };
 
   const showMessage = (text: string, t: 'success' | 'error') => {
     setMessage({ text, type: t });
@@ -930,9 +942,36 @@ export default function ReviewPage() {
                     {/* 2. 各項目マージ差分プレビュー */}
                     {previewTab === 'facts' && (
                       <div className="space-y-3">
-                        <div className="text-[11px] text-zinc-400">
-                          AI（Gemini）が記事から抽出した「強み・弱み・スパイク等」の新知見です。既存記述を残したまま安全に追記マージされます。
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-zinc-800/80">
+                          <div className="text-[11px] text-zinc-400">
+                            AI（Gemini）が記事から抽出した「強み・弱み・スパイク等」の新知見です。既存記述を保持したまま安全に追記マージされます。
+                          </div>
+                          <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded-lg border border-zinc-800 shrink-0 self-start sm:self-auto">
+                            <button
+                              type="button"
+                              onClick={() => setFactsViewMode('highlight')}
+                              className={`px-2.5 py-1 rounded-md text-[11px] font-bold cursor-pointer transition ${
+                                factsViewMode === 'highlight'
+                                  ? 'bg-purple-600 text-white shadow-sm'
+                                  : 'text-zinc-400 hover:text-white'
+                              }`}
+                            >
+                              ✨ 追記箇所を強調
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setFactsViewMode('split')}
+                              className={`px-2.5 py-1 rounded-md text-[11px] font-bold cursor-pointer transition ${
+                                factsViewMode === 'split'
+                                  ? 'bg-purple-600 text-white shadow-sm'
+                                  : 'text-zinc-400 hover:text-white'
+                              }`}
+                            >
+                              ⇄ 変更前・後を比較
+                            </button>
+                          </div>
                         </div>
+
                         {previewData?.factPreviews && previewData.factPreviews.length > 0 ? (
                           previewData.factPreviews.map((fp) => (
                             <div key={fp.champion} className="p-4 rounded-xl bg-zinc-950 border border-purple-900/50 space-y-3">
@@ -955,7 +994,7 @@ export default function ReviewPage() {
                               {fp.addedHighlights.length > 0 && (
                                 <div className="p-2.5 rounded-lg bg-purple-950/30 border border-purple-800/40 text-[11px] text-purple-200 space-y-1">
                                   <span className="font-bold flex items-center gap-1 text-purple-300">
-                                    <Sparkles size={12} /> 今回新たに追記される知見:
+                                    <Sparkles size={12} /> 今回新たに追記される知見のサマリー:
                                   </span>
                                   <ul className="list-disc list-inside space-y-0.5 pl-1 text-zinc-300">
                                     {fp.addedHighlights.map((h, i) => <li key={i}>{h}</li>)}
@@ -964,22 +1003,127 @@ export default function ReviewPage() {
                               )}
 
                               {/* 各フィールド差分 */}
-                              <div className="space-y-2">
-                                {fp.diffs.map((diff) => (
-                                  <div key={diff.key} className="p-3 rounded-lg bg-zinc-900/80 border border-zinc-800 text-xs space-y-1.5">
-                                    <div className="flex items-center justify-between">
-                                      <span className="font-bold text-amber-300 text-[11px]">{diff.label}</span>
-                                      <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${
-                                        diff.isChanged ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'text-zinc-500'
-                                      }`}>
-                                        {diff.isChanged ? '更新あり' : '変更なし（既存維持）'}
-                                      </span>
+                              <div className="space-y-3">
+                                {fp.diffs.map((diff) => {
+                                  const before = diff.before || '';
+                                  const after = diff.after || '';
+                                  const beforeLines = before.split('\n').map((l) => l.trim()).filter(Boolean);
+                                  const beforeSet = new Set(beforeLines);
+                                  const afterLines = after.split('\n');
+
+                                  // 新規追加行のカウント
+                                  let newlyAddedCount = 0;
+                                  if (diff.isChanged && before.trim()) {
+                                    afterLines.forEach((l) => {
+                                      if (isLineNewlyAdded(l, before, beforeSet)) newlyAddedCount++;
+                                    });
+                                  }
+
+                                  return (
+                                    <div key={diff.key} className="p-3 rounded-xl bg-zinc-900/80 border border-zinc-800 text-xs space-y-2">
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-bold text-amber-300 text-xs">{diff.label}</span>
+                                          {diff.isChanged && newlyAddedCount > 0 && (
+                                            <span className="text-[10px] px-1.5 py-0.2 rounded font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                                              +{newlyAddedCount}行を新規追記
+                                            </span>
+                                          )}
+                                        </div>
+                                        <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${
+                                          diff.isChanged ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'text-zinc-500 bg-zinc-950/60'
+                                        }`}>
+                                          {diff.isChanged ? '✨ 更新あり' : '変更なし（既存維持）'}
+                                        </span>
+                                      </div>
+
+                                      {/* コンテンツ表示エリア */}
+                                      {!diff.isChanged || !after.trim() ? (
+                                        <div className="p-2.5 rounded-lg bg-zinc-950/80 border border-zinc-800 text-[11px] text-zinc-400 whitespace-pre-wrap leading-relaxed max-h-36 overflow-y-auto font-sans">
+                                          {after.trim() || '（未記入）'}
+                                        </div>
+                                      ) : !before.trim() ? (
+                                        /* 初回登録（Beforeが空）の場合 */
+                                        <div className="p-2.5 rounded-lg bg-zinc-950 border border-emerald-900/60 text-[11px] space-y-1.5 max-h-60 overflow-y-auto font-sans">
+                                          <div className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                                            <span className="px-1.5 py-0.5 bg-emerald-500/20 rounded border border-emerald-500/40">
+                                              ✨ 初回登録（全行が新規追記）
+                                            </span>
+                                          </div>
+                                          <div className="space-y-1">
+                                            {afterLines.map((line, idx) => (
+                                              <div key={idx} className="bg-emerald-950/40 text-emerald-200 px-2 py-0.5 rounded border-l-2 border-emerald-400">
+                                                {line || '\u00A0'}
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      ) : factsViewMode === 'split' ? (
+                                        /* 2カラム比較モード */
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] font-sans">
+                                          <div className="p-2.5 rounded-lg bg-zinc-950 border border-zinc-800/80 text-zinc-400 space-y-1 max-h-60 overflow-y-auto">
+                                            <span className="text-[10px] font-bold text-zinc-500 block border-b border-zinc-800/80 pb-1">
+                                              変更前（既存データ）
+                                            </span>
+                                            <div className="whitespace-pre-wrap leading-relaxed">{before}</div>
+                                          </div>
+                                          <div className="p-2.5 rounded-lg bg-zinc-950 border border-purple-900/40 space-y-1 max-h-60 overflow-y-auto">
+                                            <span className="text-[10px] font-bold text-emerald-400 block border-b border-zinc-800/80 pb-1">
+                                              マージ後（+新知見ハイライト）
+                                            </span>
+                                            <div className="space-y-1">
+                                              {afterLines.map((line, idx) => {
+                                                const isAdded = isLineNewlyAdded(line, before, beforeSet);
+                                                if (isAdded) {
+                                                  return (
+                                                    <div
+                                                      key={idx}
+                                                      className="bg-emerald-950/70 text-emerald-200 font-medium px-2 py-0.5 rounded border-l-2 border-emerald-400"
+                                                    >
+                                                      {line}
+                                                    </div>
+                                                  );
+                                                }
+                                                return (
+                                                  <div key={idx} className="text-zinc-400 px-1 py-0.5">
+                                                    {line || '\u00A0'}
+                                                  </div>
+                                                );
+                                              })}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        /* ハイライト強調表示モード（デフォルト） */
+                                        <div className="p-2.5 rounded-lg bg-zinc-950 border border-zinc-800/90 text-[11px] space-y-1 max-h-60 overflow-y-auto font-sans leading-relaxed">
+                                          <div className="space-y-1">
+                                            {afterLines.map((line, idx) => {
+                                              const isAdded = isLineNewlyAdded(line, before, beforeSet);
+                                              if (isAdded) {
+                                                return (
+                                                  <div
+                                                    key={idx}
+                                                    className="bg-emerald-950/80 text-emerald-200 font-medium px-2.5 py-1.5 rounded-md border-l-4 border-emerald-400 shadow-sm flex items-start gap-2 my-1.5"
+                                                  >
+                                                    <span className="text-[9px] font-black uppercase px-1.5 py-0.2 bg-emerald-500/30 text-emerald-300 rounded border border-emerald-500/50 shrink-0 mt-0.5 shadow-sm">
+                                                      + 今回の追記
+                                                    </span>
+                                                    <span className="flex-1 break-words">{line}</span>
+                                                  </div>
+                                                );
+                                              }
+                                              return (
+                                                <div key={idx} className="text-zinc-400 px-1 py-0.5 opacity-90 break-words">
+                                                  {line || '\u00A0'}
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+                                        </div>
+                                      )}
                                     </div>
-                                    <div className="p-2 rounded bg-zinc-950 border border-zinc-800/80 text-[11px] text-zinc-200 whitespace-pre-wrap leading-relaxed max-h-32 overflow-y-auto font-sans">
-                                      {diff.after}
-                                    </div>
-                                  </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             </div>
                           ))
