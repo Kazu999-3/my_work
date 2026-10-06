@@ -115,6 +115,8 @@ export default function ReviewPage() {
   const [factsViewMode, setFactsViewMode] = useState<'highlight' | 'split'>('highlight');
   const [laneViewMode, setLaneViewMode] = useState<'highlight' | 'split' | 'edit'>('highlight');
   const [selectedFactFields, setSelectedFactFields] = useState<Record<string, boolean>>({});
+  // 文単位の宛先管理: `${champId}::${diffKey}::${lineIdx}` -> 'champion' | 'lane' | 'skip'
+  const [lineDestinations, setLineDestinations] = useState<Record<string, 'champion' | 'lane' | 'skip'>>({});
   const [editedLaneSectionText, setEditedLaneSectionText] = useState<string>('');
   const [modalError, setModalError] = useState<string | null>(null);
 
@@ -233,19 +235,75 @@ export default function ReviewPage() {
       includeFactMerge: true,
     };
 
-    // モーダルでプレビュー表示中の場合、各フィールドの選択状態（反映/スキップ）を辞書化
+    // モーダルでプレビュー表示中の場合、各行（文）の宛先（辞典/レーン/スキップ）に応じてテキストを合成
     let customFactOverrides: Record<string, Record<string, string>> | undefined = undefined;
+    const routedToLaneLines: Array<{ champion: string; fieldLabel: string; text: string }> = [];
+
     if (previewModalItem?.id === item.id && previewData?.factPreviews) {
       customFactOverrides = {};
       for (const fp of previewData.factPreviews) {
         customFactOverrides[fp.champion] = {};
         for (const diff of fp.diffs) {
-          const key = `${fp.champion}::${diff.key}`;
-          const isSelected = selectedFactFields[key] ?? diff.isChanged;
-          // 選択されていれば追記テキスト(after)、外されていれば既存テキスト(before)を採用
-          customFactOverrides[fp.champion][diff.key] = isSelected ? diff.after : diff.before;
+          const fieldKeyId = `${fp.champion}::${diff.key}`;
+          const isFieldActive = selectedFactFields[fieldKeyId] ?? diff.isChanged;
+
+          // フィールド全体がスキップの場合、既存テキスト(before)を維持
+          if (!isFieldActive || !diff.isChanged) {
+            customFactOverrides[fp.champion][diff.key] = diff.before || '';
+            continue;
+          }
+
+          const before = diff.before || '';
+          const beforeLines = before.split('\n').map((l) => l.trim()).filter(Boolean);
+          const beforeSet = new Set(beforeLines);
+          const afterLines = (diff.after || '').split('\n');
+
+          // 新規追加行のうち、destination に応じて振り分け
+          const keptNewLinesForChamp: string[] = [];
+
+          afterLines.forEach((line, idx) => {
+            const isAdded = isLineNewlyAdded(line, before, beforeSet);
+            if (isAdded) {
+              const lineKey = `${fp.champion}::${diff.key}::${idx}`;
+              const dest = lineDestinations[lineKey] || 'champion';
+              if (dest === 'champion') {
+                keptNewLinesForChamp.push(line);
+              } else if (dest === 'lane') {
+                routedToLaneLines.push({
+                  champion: fp.championNameJa || fp.champion,
+                  fieldLabel: diff.label,
+                  text: line,
+                });
+              }
+              // dest === 'skip' は除外
+            }
+          });
+
+          // チャンピオン辞典用テキストの組み立て（既存＋champion宛ての新規行）
+          if (keptNewLinesForChamp.length > 0) {
+            customFactOverrides[fp.champion][diff.key] = before.trim()
+              ? `${before.trim()}\n${keptNewLinesForChamp.join('\n')}`
+              : keptNewLinesForChamp.join('\n');
+          } else {
+            // 新規行が1つもチャンピオン宛てに残らなかった場合は既存テキストそのまま
+            customFactOverrides[fp.champion][diff.key] = before;
+          }
         }
       }
+    }
+
+    // レーンガイドへ振り分けられた文があれば、レーンガイドテキスト末尾へ合流
+    let finalLaneSectionText = (previewModalItem?.id === item.id && editedLaneSectionText) ? editedLaneSectionText : undefined;
+    let shouldIncludeLaneGuide = edit.includeLaneGuide;
+
+    if (routedToLaneLines.length > 0) {
+      shouldIncludeLaneGuide = true; // レーン宛ての行があるなら自動でレーンガイド統合をON
+      const appendedLaneBlock = [
+        `\n\n#### 💡 【各項目から振り分けられた戦術・マクロ知見】`,
+        ...routedToLaneLines.map((r) => `- **[${r.champion} / ${r.fieldLabel}]**: ${r.text.replace(/^[-*・•\d.()（）:：【】\[\]]+\s*/, '')}`),
+      ].join('\n');
+
+      finalLaneSectionText = (finalLaneSectionText || (previewData?.laneGuidePreview?.sectionText || '')) + appendedLaneBlock;
     }
 
     const payload = {
@@ -255,9 +313,9 @@ export default function ReviewPage() {
       title: edit.title,
       content: edit.content,
       lane: edit.lane,
-      includeLaneGuide: edit.includeLaneGuide,
+      includeLaneGuide: shouldIncludeLaneGuide,
       includeFactMerge: edit.includeFactMerge,
-      customLaneSectionText: (previewModalItem?.id === item.id && editedLaneSectionText) ? editedLaneSectionText : undefined,
+      customLaneSectionText: finalLaneSectionText,
       customFactOverrides,
     };
 
@@ -337,16 +395,30 @@ export default function ReviewPage() {
 
       // 各フィールドの選択ステート初期化（更新がある項目はデフォルトでチェックON）
       const initialFieldSelection: Record<string, boolean> = {};
+      const initialLineDests: Record<string, 'champion' | 'lane' | 'skip'> = {};
+
       if (Array.isArray(json.factPreviews)) {
         for (const fp of json.factPreviews) {
           if (Array.isArray(fp.diffs)) {
             for (const diff of fp.diffs) {
               initialFieldSelection[`${fp.champion}::${diff.key}`] = !!diff.isChanged;
+              if (diff.isChanged) {
+                const before = diff.before || '';
+                const beforeLines = before.split('\n').map((l: string) => l.trim()).filter(Boolean);
+                const beforeSet = new Set<string>(beforeLines);
+                const afterLines = (diff.after || '').split('\n');
+                afterLines.forEach((line: string, idx: number) => {
+                  if (isLineNewlyAdded(line, before, beforeSet)) {
+                    initialLineDests[`${fp.champion}::${diff.key}::${idx}`] = 'champion';
+                  }
+                });
+              }
             }
           }
         }
       }
       setSelectedFactFields(initialFieldSelection);
+      setLineDestinations(initialLineDests);
 
       // 初期タブの決定（教本優先、無ければレーン）
       if (json.championPreviews?.length > 0) {
@@ -1083,11 +1155,118 @@ export default function ReviewPage() {
 
                                   // 新規追加行のカウント
                                   let newlyAddedCount = 0;
-                                  if (diff.isChanged && before.trim()) {
+                                  if (diff.isChanged) {
                                     afterLines.forEach((l) => {
                                       if (isLineNewlyAdded(l, before, beforeSet)) newlyAddedCount++;
                                     });
                                   }
+
+                                   // 文ごとの行レンダラー（新規追記行なら反映/除外チェック＋宛先切り替えボタンを表示）
+                                   const renderFactLine = (line: string, idx: number, isAdded: boolean) => {
+                                     if (!isAdded) {
+                                       return (
+                                         <div key={idx} className="text-zinc-400 px-1 py-0.5 opacity-90 break-words font-sans">
+                                           {line || '\u00A0'}
+                                         </div>
+                                       );
+                                     }
+
+                                     const lineKey = `${fp.champion}::${diff.key}::${idx}`;
+                                     const dest = lineDestinations[lineKey] || 'champion';
+                                     const isSkip = dest === 'skip';
+                                     const isChamp = dest === 'champion';
+                                     const isLane = dest === 'lane';
+
+                                     return (
+                                       <div
+                                         key={idx}
+                                         className={`p-2 rounded-lg border transition space-y-1.5 my-1.5 ${
+                                           isSkip
+                                             ? 'bg-zinc-950/40 border-zinc-800/60 opacity-50'
+                                             : isLane
+                                             ? 'bg-emerald-950/40 border-emerald-500/60 shadow-sm'
+                                             : 'bg-purple-950/30 border-purple-500/60 shadow-sm'
+                                         }`}
+                                       >
+                                         <div className="flex items-center justify-between gap-2 flex-wrap">
+                                           {/* 反映 / スキップ チェックボックス */}
+                                           <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                                             <input
+                                               type="checkbox"
+                                               checked={!isSkip}
+                                               onChange={() => {
+                                                 setLineDestinations((prev) => ({
+                                                   ...prev,
+                                                   [lineKey]: isSkip ? 'champion' : 'skip',
+                                                 }));
+                                               }}
+                                               className="w-3.5 h-3.5 accent-purple-500 rounded cursor-pointer"
+                                             />
+                                             <span className={`text-[10px] font-bold ${!isSkip ? 'text-zinc-200' : 'text-zinc-500'}`}>
+                                               {!isSkip ? '反映' : 'スキップ（除外）'}
+                                             </span>
+                                             <span
+                                               className={`text-[9px] px-1.5 py-0.2 rounded font-black uppercase border ${
+                                                 isSkip
+                                                   ? 'bg-zinc-800 text-zinc-500 border-zinc-700'
+                                                   : isLane
+                                                   ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                                                   : 'bg-purple-500/20 text-purple-300 border-purple-500/40'
+                                               }`}
+                                             >
+                                               {isSkip ? '✕ 除外' : isLane ? '🗺️ レーンガイドへ' : '🏆 辞典へ'}
+                                             </span>
+                                           </label>
+
+                                           {/* 宛先切り替えボタン */}
+                                           <div className="flex items-center gap-1">
+                                             <button
+                                               type="button"
+                                               onClick={() => {
+                                                 setLineDestinations((prev) => ({ ...prev, [lineKey]: 'champion' }));
+                                               }}
+                                               className={`px-2 py-0.5 rounded text-[10px] font-bold border transition cursor-pointer flex items-center gap-1 ${
+                                                 isChamp
+                                                   ? 'bg-purple-600 text-white border-purple-400 shadow-sm'
+                                                   : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-purple-300'
+                                               }`}
+                                               title="チャンピオン辞典の該当項目へマージ"
+                                             >
+                                               <span>🏆 辞典へ</span>
+                                             </button>
+
+                                             <button
+                                               type="button"
+                                               onClick={() => {
+                                                 setLineDestinations((prev) => ({ ...prev, [lineKey]: 'lane' }));
+                                               }}
+                                               className={`px-2 py-0.5 rounded text-[10px] font-bold border transition cursor-pointer flex items-center gap-1 ${
+                                                 isLane
+                                                   ? 'bg-emerald-600 text-white border-emerald-400 shadow-sm'
+                                                   : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-emerald-300'
+                                               }`}
+                                               title="レーンガイド（攻略バイブル）の第8章へマクロ知見として合流"
+                                             >
+                                               <span>🗺️ レーンガイドへ</span>
+                                             </button>
+                                           </div>
+                                         </div>
+
+                                         {/* テキスト行 */}
+                                         <div
+                                           className={`text-xs pl-5 break-words font-sans ${
+                                             isSkip
+                                               ? 'line-through text-zinc-500'
+                                               : isLane
+                                               ? 'text-emerald-200 font-medium'
+                                               : 'text-purple-200 font-medium'
+                                           }`}
+                                         >
+                                           {line}
+                                         </div>
+                                       </div>
+                                     );
+                                   };
 
                                   return (
                                     <div
@@ -1119,6 +1298,67 @@ export default function ReviewPage() {
                                             </span>
                                           )}
                                         </label>
+
+                                        {/* 一括設定ボタン */}
+                                        {diff.isChanged && newlyAddedCount > 0 && isFieldSelected && (
+                                          <div className="flex items-center gap-1 text-[10px] pl-2 border-l border-zinc-800">
+                                            <span className="text-zinc-500 text-[9px]">一括:</span>
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setLineDestinations((prev) => {
+                                                  const next = { ...prev };
+                                                  afterLines.forEach((l, i) => {
+                                                    if (isLineNewlyAdded(l, before, beforeSet)) {
+                                                      next[`${fp.champion}::${diff.key}::${i}`] = 'champion';
+                                                    }
+                                                  });
+                                                  return next;
+                                                });
+                                              }}
+                                              className="px-1.5 py-0.5 rounded bg-purple-950/60 text-purple-300 border border-purple-800/80 hover:bg-purple-900/60 transition cursor-pointer text-[9px] font-bold"
+                                              title="新規行をすべてチャンピオン辞典へ"
+                                            >
+                                              全行🏆辞典
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setLineDestinations((prev) => {
+                                                  const next = { ...prev };
+                                                  afterLines.forEach((l, i) => {
+                                                    if (isLineNewlyAdded(l, before, beforeSet)) {
+                                                      next[`${fp.champion}::${diff.key}::${i}`] = 'lane';
+                                                    }
+                                                  });
+                                                  return next;
+                                                });
+                                              }}
+                                              className="px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-800/80 hover:bg-emerald-900/60 transition cursor-pointer text-[9px] font-bold"
+                                              title="新規行をすべてレーンガイドへ"
+                                            >
+                                              全行🗺️レーン
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setLineDestinations((prev) => {
+                                                  const next = { ...prev };
+                                                  afterLines.forEach((l, i) => {
+                                                    if (isLineNewlyAdded(l, before, beforeSet)) {
+                                                      next[`${fp.champion}::${diff.key}::${i}`] = 'skip';
+                                                    }
+                                                  });
+                                                  return next;
+                                                });
+                                              }}
+                                              className="px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800 hover:text-zinc-200 transition cursor-pointer text-[9px] font-bold"
+                                              title="新規行をすべて除外"
+                                            >
+                                              全行✕除外
+                                            </button>
+                                          </div>
+                                        )}
                                         <div className="flex items-center gap-1.5">
                                           {diff.isChanged ? (
                                             <button
@@ -1176,11 +1416,9 @@ export default function ReviewPage() {
                                               </span>
                                             </div>
                                             <div className="space-y-1">
-                                              {afterLines.map((line, idx) => (
-                                                <div key={idx} className="bg-emerald-950/40 text-emerald-200 px-2 py-0.5 rounded border-l-2 border-emerald-400">
-                                                  {line || '\u00A0'}
-                                                </div>
-                                              ))}
+                                              {afterLines.map((line, idx) =>
+                                                renderFactLine(line, idx, isLineNewlyAdded(line, before, beforeSet))
+                                              )}
                                             </div>
                                           </div>
                                         ) : factsViewMode === 'split' ? (
@@ -1197,24 +1435,9 @@ export default function ReviewPage() {
                                                 マージ後（+新知見ハイライト）
                                               </span>
                                               <div className="space-y-1">
-                                                {afterLines.map((line, idx) => {
-                                                  const isAdded = isLineNewlyAdded(line, before, beforeSet);
-                                                  if (isAdded) {
-                                                    return (
-                                                      <div
-                                                        key={idx}
-                                                        className="bg-emerald-950/70 text-emerald-200 font-medium px-2 py-0.5 rounded border-l-2 border-emerald-400"
-                                                      >
-                                                        {line}
-                                                      </div>
-                                                    );
-                                                  }
-                                                  return (
-                                                    <div key={idx} className="text-zinc-400 px-1 py-0.5">
-                                                      {line || '\u00A0'}
-                                                    </div>
-                                                  );
-                                                })}
+                                                {afterLines.map((line, idx) =>
+                                                  renderFactLine(line, idx, isLineNewlyAdded(line, before, beforeSet))
+                                                )}
                                               </div>
                                             </div>
                                           </div>
@@ -1222,27 +1445,9 @@ export default function ReviewPage() {
                                           /* ハイライト強調表示モード（デフォルト） */
                                           <div className="p-2.5 rounded-lg bg-zinc-950 border border-zinc-800/90 text-[11px] space-y-1 max-h-60 overflow-y-auto font-sans leading-relaxed">
                                             <div className="space-y-1">
-                                              {afterLines.map((line, idx) => {
-                                                const isAdded = isLineNewlyAdded(line, before, beforeSet);
-                                                if (isAdded) {
-                                                  return (
-                                                    <div
-                                                      key={idx}
-                                                      className="bg-emerald-950/80 text-emerald-200 font-medium px-2.5 py-1.5 rounded-md border-l-4 border-emerald-400 shadow-sm flex items-start gap-2 my-1.5"
-                                                    >
-                                                      <span className="text-[9px] font-black uppercase px-1.5 py-0.2 bg-emerald-500/30 text-emerald-300 rounded border border-emerald-500/50 shrink-0 mt-0.5 shadow-sm">
-                                                        + 今回の追記
-                                                      </span>
-                                                      <span className="flex-1 break-words">{line}</span>
-                                                    </div>
-                                                  );
-                                                }
-                                                return (
-                                                  <div key={idx} className="text-zinc-400 px-1 py-0.5 opacity-90 break-words">
-                                                    {line || '\u00A0'}
-                                                  </div>
-                                                );
-                                              })}
+                                              {afterLines.map((line, idx) =>
+                                                renderFactLine(line, idx, isLineNewlyAdded(line, before, beforeSet))
+                                              )}
                                             </div>
                                           </div>
                                         )}
