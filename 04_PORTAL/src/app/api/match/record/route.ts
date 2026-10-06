@@ -4,6 +4,7 @@ import { calculateNewMMRDetailed, calculateKdaScore, MmrCalcContext, calculateIn
 import { fetchAllRows } from '../../../../lib/fetchAll';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { verifyBotSecret } from '../../../../lib/botAuth';
+import { syncPlayersDiscordRoles } from '../../../../lib/discordRoleSync';
 
 export async function POST(request: Request) {
   try {
@@ -794,6 +795,22 @@ export async function POST(request: Request) {
       });
     } catch (pushErr: any) {
       console.warn('[match/record] push skipped:', pushErr?.message);
+    }
+
+    // Discord ロール自動同期: 試合参加者の戦績更新に伴い、5区分ロール（初参加/ライト/常連等）を即時更新
+    try {
+      const participantPlayerIds = results
+        .map((r: any) => r.dbPlayer?.id)
+        .filter((id: any) => typeof id === 'number');
+
+      if (participantPlayerIds.length > 0) {
+        // レスポンス遅延を防ぐため、バックグラウンド的に同期を実行
+        syncPlayersDiscordRoles({ playerIds: participantPlayerIds }).catch((syncErr) => {
+          console.warn('[match/record] Discordロール同期エラー（続行）:', syncErr?.message);
+        });
+      }
+    } catch (roleErr: any) {
+      console.warn('[match/record] Discordロール同期呼び出し失敗（続行）:', roleErr?.message);
     }
 
     return NextResponse.json({ success: true, matchId: newMatchId, updates: results });

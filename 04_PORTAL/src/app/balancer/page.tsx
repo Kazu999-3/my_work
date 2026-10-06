@@ -7,6 +7,7 @@ import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
 import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Settings, Sparkles, Coins, Copy, Check, Shuffle } from "lucide-react";
 import { getColorFromRankName, calculateBlueWinProbability, getKtmRank, getRankBadgeStyle, getHighestLaneMmr } from "../../lib/mmr";
+import { getPlayerTier } from "../../lib/playerTier";
 import { BalancerVcManager, updateVcStatus } from "./components/BalancerVcManager";
 import { BalancerBo3Manager } from "./components/BalancerBo3Manager";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
@@ -247,53 +248,14 @@ export default function BalancerPage() {
     setMessage({ type: 'success', text: 'BO3シリーズを終了しました。' });
   };
 
-  // 参加者の経験度（新規・ライト・常連・復帰勢）判定
+  // 参加者の経験度（新規・ライト・常連・経験者・復帰勢）判定（共通ロジックに集約）
   const getPlayerExperienceBadge = (p: any) => {
-    const totalG = p.total_games ?? p.games ?? p.metadata?.games ?? 0;
-    const recent30d = p.recent_games_30d ?? (p.days_since_last_match !== null && p.days_since_last_match <= 30 ? 1 : 0);
-    const daysAgo = p.days_since_last_match;
-
-    // 1. 初参加（通算0戦）
-    if (totalG === 0) {
-      return { 
-        tier: 'new',
-        label: '🔰 初参加', 
-        color: 'bg-success-100 text-success-900 border-success-edge', 
-        tip: '通算0戦：初参加のプレイヤーです！大歓迎✨' 
-      };
-    }
-    // 2. ライト層（通算1〜4戦）
-    if (totalG <= 4) {
-      return { 
-        tier: 'light',
-        label: '🌱 ライト', 
-        color: 'bg-secondary-100 text-secondary-900 border-secondary-edge', 
-        tip: `通算${totalG}戦：参加経験が浅いライトプレイヤーです` 
-      };
-    }
-    // 3. 通算5戦以上だが直近参加がない（30日以上ブランク）
-    if (daysAgo !== null && daysAgo > 30) {
-      if (daysAgo >= 60) {
-        return { 
-          tier: 'returning',
-          label: '⏳ 復帰勢', 
-          color: 'bg-primary-100 text-primary-900 border-primary-edge', 
-          tip: `通算${totalG}戦（最終参加: ${daysAgo}日前）：久しぶりの参加となる復帰プレイヤーです！大歓迎✨` 
-        };
-      }
-      return { 
-        tier: 'returning',
-        label: '🎖️ 経験者', 
-        color: 'bg-secondary-100 text-secondary-900 border-secondary-edge', 
-        tip: `通算${totalG}戦（最終参加: ${daysAgo}日前）：久しぶりに参加の経験者プレイヤーです` 
-      };
-    }
-    // 4. 直近も定期参加している現役常連
-    return { 
-      tier: 'regular',
-      label: '👑 常連', 
-      color: 'bg-primary-100 text-primary-900 border-primary-edge', 
-      tip: `通算${totalG}戦（直近30日: ${recent30d}戦）：定期的に参加しているアクティブ常連メンバーです` 
+    const info = getPlayerTier(p);
+    return {
+      tier: info.tier,
+      label: info.label,
+      color: info.colorClass,
+      tip: info.tip,
     };
   };
 

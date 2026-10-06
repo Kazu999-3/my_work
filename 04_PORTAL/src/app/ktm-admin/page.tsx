@@ -6,6 +6,8 @@ import MatchHistoryPanel from "./MatchHistoryPanel";
 import ProfileModal from "./ProfileModal";
 import { Info, Users, RefreshCw, Save, Trophy, Filter, Plus, AlertCircle, X, History, Globe, ChevronDown, Shield, Trees, Zap, Target, Heart, Sparkles, Settings, AlertTriangle } from "lucide-react";
 import { getKtmRank, RANKS, calculateInitialMmr, HIGHEST_RANK_OPTIONS, getColorFromRankName } from "../../lib/mmr";
+import { getPlayerTier } from "../../lib/playerTier";
+import DiscordRoleSyncModal from "./DiscordRoleSyncModal";
 
 async function fetchWithTimeout(resource: RequestInfo, options: RequestInit & { timeout?: number } = {}) {
   const { timeout = 15000 } = options; // デフォルト15秒でタイムアウト
@@ -63,53 +65,14 @@ function getColorFromRole(role: string): string {
   return "text-faint font-medium";
 }
 
-// 参加者の経験度（新規・ライト・常連・復帰勢）判定
+// 参加者の経験度（新規・ライト・常連・経験者・復帰勢）判定（共通ロジックに集約）
 export const getPlayerExperienceBadge = (p: any) => {
-  const totalG = p.total_games ?? p.games ?? p.metadata?.games ?? 0;
-  const recent30d = p.recent_games_30d ?? (p.days_since_last_match !== null && p.days_since_last_match <= 30 ? 1 : 0);
-  const daysAgo = p.days_since_last_match;
-
-  // 1. 初参加（通算0戦）
-  if (totalG === 0) {
-    return { 
-      tier: 'new',
-      label: '🔰 初参加', 
-      color: 'bg-success-100 text-success-900 border-success-edge', 
-      tip: '通算0戦：初参加のプレイヤーです！大歓迎✨' 
-    };
-  }
-  // 2. ライト層（通算1〜4戦）
-  if (totalG <= 4) {
-    return { 
-      tier: 'light',
-      label: '🌱 ライト', 
-      color: 'bg-secondary-100 text-secondary-900 border-secondary-edge', 
-      tip: `通算${totalG}戦：参加回数がまだ浅いライトプレイヤーです` 
-    };
-  }
-  // 3. 通算5戦以上だが直近参加がない（30日以上ブランク）
-  if (daysAgo !== null && daysAgo > 30) {
-    if (daysAgo >= 60) {
-      return { 
-        tier: 'returning',
-        label: '⏳ 復帰勢', 
-        color: 'bg-primary-100 text-primary-900 border-primary-edge', 
-        tip: `通算${totalG}戦（最終参加: ${daysAgo}日前）：久しぶりの参加となる復帰プレイヤーです！大歓迎✨` 
-      };
-    }
-    return { 
-      tier: 'returning',
-      label: '🎖️ 経験者', 
-      color: 'bg-secondary-100 text-secondary-900 border-secondary-edge', 
-      tip: `通算${totalG}戦（最終参加: ${daysAgo}日前）：久しぶりに参加の経験者プレイヤーです` 
-    };
-  }
-  // 4. 直近も定期参加している現役常連
-  return { 
-    tier: 'regular',
-    label: '👑 常連', 
-    color: 'bg-primary-100 text-primary-900 border-primary-edge', 
-    tip: `通算${totalG}戦（直近30日: ${recent30d}戦）：定期的に参加しているアクティブ常連メンバーです` 
+  const info = getPlayerTier(p);
+  return {
+    tier: info.tier,
+    label: info.label,
+    color: info.colorClass,
+    tip: info.tip,
   };
 };
 const MmrBadgeInput = ({ value, onChange }: { value: number, onChange: (v: number) => void }) => {
@@ -172,6 +135,7 @@ export default function KtmAdminPage() {
   const [roleFilter, setRoleFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [showMmrInfo, setShowMmrInfo] = useState(false);
+  const [showRoleSyncModal, setShowRoleSyncModal] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
   
   const [expandedPlayerIds, setExpandedPlayerIds] = useState<string[]>([]);
@@ -1056,6 +1020,16 @@ export default function KtmAdminPage() {
                 </button>
 
                 <button
+                  onClick={() => setShowRoleSyncModal(true)}
+                  disabled={syncingAutoAll}
+                  className="flex items-center gap-2 bg-[#5865F2]/10 hover:bg-[#5865F2]/20 text-[#5865F2] border border-[#5865F2]/40 px-3 py-2 rounded-lg font-bold transition text-xs shadow-sm"
+                  title="内戦の通算試合数に応じた5種類のDiscordロール（初参加/ライト/常連/経験者/復帰勢）を作成・同期します"
+                >
+                  <Sparkles className="h-4 w-4 text-[#5865F2]" />
+                  🎭 ロール連携
+                </button>
+
+                <button
                   onClick={handleRebuildMmr}
                   disabled={syncingAutoAll}
                   className="flex items-center gap-2 bg-danger-100 hover:bg-danger-200 text-danger-700 border border-danger-edge-soft px-4 py-2 rounded-lg font-bold transition text-xs"
@@ -1073,6 +1047,11 @@ export default function KtmAdminPage() {
                 </button>
               </div>
             </div>
+
+            {/* Discord Role Sync Modal */}
+            {showRoleSyncModal && (
+              <DiscordRoleSyncModal onClose={() => setShowRoleSyncModal(false)} />
+            )}
 
             {/* Sync Preview Modal */}
             {syncData && (
