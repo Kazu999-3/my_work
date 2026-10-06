@@ -1,5 +1,5 @@
 import { verifySignature } from './utils/security.js';
-import { handleAnnounceMatch, handleLaneCommand, handleRecruitDirect, handleSetIgn, handleStatsCommand, handlePortalPanel, handleRolesCommand, handleWelcomeCommand } from './handlers/commands.js';
+import { handleAnnounceMatch, handleLaneCommand, handleRecruitDirect, handleSetIgn, handleStatsCommand, handleWelcomeCommand } from './handlers/commands.js';
 import { handleButtonInteraction } from './handlers/components.js';
 import { handleModalSubmit } from './handlers/modals.js';
 import { handleScheduledEvent } from './handlers/scheduled.js';
@@ -170,12 +170,6 @@ export default {
         if (name === 'tip') {
           const { handleTipCommand } = await import('./handlers/bet.js');
           return await handleTipCommand(interaction, context, ctx);
-        }
-        if (name === 'portal') {
-          return await handlePortalPanel(interaction, context, ctx);
-        }
-        if (name === 'roles') {
-          return await handleRolesCommand(interaction, context, ctx);
         }
         if (name === 'welcome') {
           return await handleWelcomeCommand(interaction, context, ctx);

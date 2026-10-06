@@ -32,8 +32,8 @@
  */
 export const COMMAND_DEFINITIONS = [
   {
-    name: 'portal',
-    description: 'カスタムの募集と各種設定をまとめたパネルを開きます（まずはここから）',
+    name: 'welcome',
+    description: '新メンバー向け利用案内（はじめの3ステップ・ルール・設定ボタン）を投稿します',
   },
   {
     name: 'ign',
@@ -66,14 +66,6 @@ export const COMMAND_DEFINITIONS = [
   {
     name: 'tip',
     description: '他のメンバーにKTMコインを贈ります（送る相手と金額を指定）',
-  },
-  {
-    name: 'roles',
-    description: 'プレイスタイル・志向性ロール（ソロキュー中、練習中等）の付与パネルを表示します',
-  },
-  {
-    name: 'welcome',
-    description: '新メンバー向け利用案内（はじめの3ステップ・ルール・設定ボタン）を投稿します',
   },
 ];
 
