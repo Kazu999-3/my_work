@@ -6,8 +6,9 @@
 rank_benchmark_averages が直近30日分から計算する。
 
 【サンプルの取り方】
-- 目標ランク: ktm_settings の coach_target_tier（05 の試合前タブで設定）。未設定なら EMERALD IV
-  （05 lib/coachSettings.ts の DEFAULT_TARGET_TIER と同じ）。
+- 対象ランク: ktm_settings の coach_target_tier（05 の試合前タブで設定。未設定なら EMERALD IV、
+  05 lib/coachSettings.ts の DEFAULT_TARGET_TIER と同じ）＋ 04 プレイヤー外部分析で選べる ANALYZER_TIERS。
+  ランクごとに最大200人を見る（2026-10-07 に外部分析の目標ランク比較を実測化したため複数ランクに拡張）。
 - League-V4 の目標ランク一覧からプレイヤーを選び、その本人の直近ランクソロ1試合の成績だけを記録する。
   同じ試合の他の9人はランクが違い得るため使わない（目標ランクの平均として正確さを優先）。
 - 直近14日以内の試合のみ（休んでいるプレイヤーの古い試合は当時のランクが違い得るため）。
@@ -51,6 +52,9 @@ SUPABASE_KEY = settings.SUPABASE_KEY or os.environ.get("SUPABASE_KEY") or os.env
 REGION = "asia"
 PLATFORM = "jp1"
 DEFAULT_TARGET_TIER = "EMERALD IV"
+# 04 プレイヤー外部分析(/analyzer)で選べる目標ランク（2026-10-07追加）。コーチの目標ランクと合わせて毎日収集する。
+# 04 の画面の選択肢を変えたらここも変えること（04_PORTAL/src/app/analyzer/page.tsx の targetTier の <option>）
+ANALYZER_TIERS = ["GOLD IV", "PLATINUM IV", "EMERALD IV", "DIAMOND IV"]
 APEX_TIERS = {"MASTER", "GRANDMASTER", "CHALLENGER"}
 # 1回の実行で処理するプレイヤー数。直近14日に試合のある人は約3割（2026-10-06実測 6/20）で、
 # 休んでいる人は試合ID取得1回で判定できるため、200人で Riot API 約320回・新規約60試合の見込み
@@ -208,64 +212,86 @@ def save_sample(row: dict) -> bool:
     return True
 
 
+def collect_tier(tier: str, division: str) -> tuple[int, int, int, dict]:
+    """1つのランクを収集する。戻り値: (保存, 除外, 保存失敗, ロール別件数)。キー失効は KeyExpired を投げる"""
+    label = f"{tier} {division}".strip()
+    collected = load_collected_keys(tier, division)
+    logger.info(f"[{label}] 収集済み（直近{DEDUP_WINDOW_DAYS}日）: {len(collected)}件")
+    pool = fetch_player_pool(tier, division)
+    if not pool:
+        logger.error(f"[{label}] プレイヤー一覧を取得できませんでした。")
+        return 0, 0, 0, {}
+    logger.info(f"[{label}] 候補プレイヤー: {len(pool)}人（うち最大{PLAYER_BUDGET}人を処理）")
+
+    saved, skipped, failed = 0, 0, 0
+    by_role: dict[str, int] = {}
+    start_time = int((datetime.now(timezone.utc) - timedelta(days=RECENT_DAYS)).timestamp())
+    for i, puuid in enumerate(pool[:PLAYER_BUDGET], start=1):
+        ids = riot_get(
+            f"https://{REGION}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids"
+            f"?queue=420&startTime={start_time}&count={RECENT_MATCH_CANDIDATES}"
+        ) or []
+        match_id = next((m for m in ids if (m, puuid) not in collected), None)
+        if not match_id:
+            skipped += 1
+            continue
+        detail = riot_get(f"https://{REGION}.api.riotgames.com/lol/match/v5/matches/{match_id}")
+        if not detail:
+            skipped += 1
+            continue
+        timeline = riot_get(f"https://{REGION}.api.riotgames.com/lol/match/v5/matches/{match_id}/timeline")
+        sample = extract_sample(detail, timeline, puuid)
+        if not sample:
+            skipped += 1
+            continue
+        row = {"tier": tier, "division": division, "match_id": match_id, "puuid": puuid, **sample}
+        if save_sample(row):
+            saved += 1
+            collected.add((match_id, puuid))
+            by_role[sample["role"]] = by_role.get(sample["role"], 0) + 1
+        else:
+            failed += 1
+        if i % 50 == 0:
+            logger.info(f"  [{label}] 進捗 {i}人: 保存{saved} / 除外{skipped} / 失敗{failed}")
+    logger.info(f"[{label}] 完了: 保存{saved}件 / 除外{skipped}件 / 保存失敗{failed}件 / ロール別 {by_role}")
+    return saved, skipped, failed, by_role
+
+
+def split_tier(raw: str) -> tuple[str, str]:
+    parts = raw.strip().upper().split()
+    tier = parts[0]
+    division = "" if tier in APEX_TIERS else (parts[1] if len(parts) > 1 else "IV")
+    return tier, division
+
+
 def run() -> int:
     if not RIOT_KEY or not SUPABASE_URL or not SUPABASE_KEY:
         logger.error("RIOT_API_KEY / SUPABASE_URL / SUPABASE_KEY が未設定です。")
         return 1
 
-    tier, division = load_target_tier()
-    label = f"{tier} {division}".strip()
-    logger.info(f"目標ランク: {label}")
+    coach_tier = load_target_tier()
+    targets: list[tuple[str, str]] = [coach_tier]
+    for raw in ANALYZER_TIERS:
+        t = split_tier(raw)
+        if t not in targets:
+            targets.append(t)
+    logger.info(f"収集対象: {', '.join(f'{t} {d}'.strip() for t, d in targets)}（コーチの目標ランク＋外部分析の選択肢）")
 
-    collected = load_collected_keys(tier, division)
-    logger.info(f"収集済み（直近{DEDUP_WINDOW_DAYS}日）: {len(collected)}件")
-
+    problems: list[str] = []
     try:
-        pool = fetch_player_pool(tier, division)
-        if not pool:
-            logger.error(f"{label} のプレイヤー一覧を取得できませんでした。")
-            return 1
-        logger.info(f"候補プレイヤー: {len(pool)}人（うち最大{PLAYER_BUDGET}人を処理）")
-
-        saved, skipped, failed = 0, 0, 0
-        by_role: dict[str, int] = {}
-        start_time = int((datetime.now(timezone.utc) - timedelta(days=RECENT_DAYS)).timestamp())
-        for i, puuid in enumerate(pool[:PLAYER_BUDGET], start=1):
-            ids = riot_get(
-                f"https://{REGION}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids"
-                f"?queue=420&startTime={start_time}&count={RECENT_MATCH_CANDIDATES}"
-            ) or []
-            match_id = next((m for m in ids if (m, puuid) not in collected), None)
-            if not match_id:
-                skipped += 1
-                continue
-            detail = riot_get(f"https://{REGION}.api.riotgames.com/lol/match/v5/matches/{match_id}")
-            if not detail:
-                skipped += 1
-                continue
-            timeline = riot_get(f"https://{REGION}.api.riotgames.com/lol/match/v5/matches/{match_id}/timeline")
-            sample = extract_sample(detail, timeline, puuid)
-            if not sample:
-                skipped += 1
-                continue
-            row = {"tier": tier, "division": division, "match_id": match_id, "puuid": puuid, **sample}
-            if save_sample(row):
-                saved += 1
-                collected.add((match_id, puuid))
-                by_role[sample["role"]] = by_role.get(sample["role"], 0) + 1
-            else:
-                failed += 1
-            if i % 20 == 0:
-                logger.info(f"  進捗 {i}人: 保存{saved} / 除外{skipped} / 失敗{failed}")
+        for tier, division in targets:
+            saved, _skipped, failed, _ = collect_tier(tier, division)
+            label = f"{tier} {division}".strip()
+            if failed > 0:
+                problems.append(f"{label}: 保存失敗{failed}件")
+            if saved == 0:
+                problems.append(f"{label}: 新規サンプル0件")
     except KeyExpired as e:
         logger.error(str(e))
         return 1
 
-    logger.info(f"完了: 保存{saved}件 / 除外{skipped}件 / 保存失敗{failed}件 / ロール別 {by_role}")
-    if failed > 0:
-        return 1
-    if saved == 0:
-        logger.error("新規サンプルが0件でした（Riot APIかデータ取得に問題がある可能性）。")
+    if problems:
+        logger.error("問題のあったランク: " + " / ".join(problems))
         return 1
     return 0
 

@@ -187,7 +187,7 @@ export default function StatsAnalyzerTab() {
               {/* レーダースコアバー */}
               <div className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
                 <h4 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-indigo-400" /> 5大スキル指数（100点満点基準）
+                  <Activity className="w-4 h-4 text-indigo-400" /> スキル指数（実測値を100点換算）
                 </h4>
                 <div className="space-y-2 text-xs">
                   {Object.entries(report.radarScores).map(([key, score]: [string, any]) => {
@@ -195,8 +195,7 @@ export default function StatsAnalyzerTab() {
                       survival: '🛡️ 生存力・デス回避',
                       farming: '🌾 ファーム効率',
                       combat: '⚔️ キル関与・戦闘力',
-                      objectives: '🐲 オブジェクト統率',
-                      teamfighting: '👑 集団戦ポジショニング',
+                      teamfighting: '👑 KDA指数',
                     };
                     return (
                       <div key={key} className="space-y-1">
@@ -285,16 +284,55 @@ export default function StatsAnalyzerTab() {
               <h4 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
                 <Clock className="w-4 h-4 text-amber-400" /> 連戦疲労度 ＆ ティルト傾向
               </h4>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                直近試合のタイムスタンプから、連戦による勝率の推移や連続敗北時の「即時キュー（ティルト）」を解析します。
-              </p>
-              {report.sessionAnalytics?.tiltSummary && (
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 space-y-1">
-                  <span className="font-bold text-amber-400 flex items-center gap-1.5 text-[11px]">
-                    <Zap className="w-3.5 h-3.5" /> プレイ傾向アドバイス
-                  </span>
-                  <p>{report.sessionAnalytics.tiltSummary}</p>
-                </div>
+              {report.sessionStats ? (
+                <>
+                  <p className="text-[11px] text-slate-400">
+                    直近{report.sessionStats.totalGames}試合（{report.sessionStats.sessions}回の連戦）の開始・終了時刻から集計。
+                    前の試合の終了から{report.sessionStats.rules.sessionGapMin}分以内に始めた試合を同じ連戦とみなしています。
+                  </p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs font-mono">
+                      <thead>
+                        <tr className="text-slate-500 text-[10px]">
+                          <th className="text-left py-1">連戦の何戦目か</th>
+                          <th className="text-right py-1">試合数</th>
+                          <th className="text-right py-1">勝率</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {report.sessionStats.byIndex.map((b: any) => (
+                          <tr key={b.label} className="border-t border-slate-800/60">
+                            <td className="py-1.5 text-slate-300 font-sans font-bold">{b.label}</td>
+                            <td className="py-1.5 text-right text-slate-400">{b.games}</td>
+                            <td className={`py-1.5 text-right font-bold ${b.winRate == null ? 'text-slate-500' : b.winRate >= 50 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              {b.winRate == null ? '-' : `${b.winRate}%`}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    {([
+                      ['quick', `負けた後${report.sessionStats.rules.quickRequeueMin}分以内に次へ`],
+                      ['later', `負けた後${report.sessionStats.rules.quickRequeueMin}分より空けて次へ`],
+                    ] as const).map(([k, label]) => {
+                      const b = report.sessionStats.afterLoss[k];
+                      return (
+                        <div key={k} className="p-3 rounded-xl bg-slate-950 border border-slate-800">
+                          <div className="text-[11px] text-slate-400 font-bold">{label}</div>
+                          <div className="font-mono font-black text-slate-100">
+                            {b.winRate == null ? '該当なし' : `勝率 ${b.winRate}%`}
+                            <span className="text-[10px] text-slate-500 font-normal ml-1">（{b.games}試合）</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[10px] text-slate-500">試合数が少ない区分の勝率はぶれが大きいので、傾向の目安として見てください。</p>
+                </>
+              ) : (
+                <p className="text-xs text-slate-400">連戦分析のデータがありません。</p>
               )}
             </div>
           )}
@@ -306,7 +344,7 @@ export default function StatsAnalyzerTab() {
         <div className="p-12 text-center bg-slate-900/40 border border-slate-800/60 rounded-2xl text-slate-500 text-xs space-y-2">
           <Brain className="w-8 h-8 mx-auto text-slate-600 mb-2" />
           <p className="font-bold text-slate-400">Riot ID を入力して「深層スタッツ分析」を実行してください</p>
-          <p className="text-[11px] text-slate-500">直近35試合の生データから、勝率・KDA・ファーム・連戦疲労度を完全解析します</p>
+          <p className="text-[11px] text-slate-500">直近35試合の生データから、勝率・KDA・ファーム・連戦ごとの勝率を集計します</p>
         </div>
       )}
 

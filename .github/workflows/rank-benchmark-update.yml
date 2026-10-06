@@ -4,7 +4,8 @@ name: Rank Benchmark Update
 #
 # 05 コーチ「試合後」タブの「目標との比較」は、目標ランク・同じロールのプレイヤーの実際の平均値と
 # 自分の成績を並べる。その平均の元データ(rank_benchmark_samples, migration 88)をここで毎日貯める。
-# 1回で約200人を見て、直近14日に試合のある人の1試合ずつ（Riot API 約320回・新規約60試合）。
+# 対象はコーチの目標ランク＋04外部分析の選択肢（GOLD/PLATINUM/EMERALD/DIAMOND IV）。
+# ランクごとに約200人を見て、直近14日に試合のある人の1試合ずつ（1ランクあたり Riot API 約320回・約7分・新規約60試合）。
 # 平均はDB関数が直近30日分から計算する。
 #
 # 【失敗を隠さない】キー失効・新規0件・保存失敗はスクリプトが終了コード1を返し、このジョブが赤くなる。
@@ -19,7 +20,7 @@ on:
 jobs:
   collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7

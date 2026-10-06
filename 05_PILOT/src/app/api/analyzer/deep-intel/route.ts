@@ -7,10 +7,74 @@ import {
   fetchMatchDetails,
   fetchLeagueByPuuid,
 } from '@/lib/riot';
-import {
-  RawMatchRecord,
-  calculateRealSessionAnalytics,
-} from '@/lib/sessionAnalyticsCalculator';
+
+// 1試合分の集計用レコード。2026-10-07 まで 04 と共通の lib/sessionAnalyticsCalculator.ts（1,774行）を
+// 05 にも複製して使っていたが、05 の画面はその結果を1つも表示していなかった（表示しようとしていた
+// tiltSummary は計算されていなかった）ため、05 からは外して連戦分析だけをここで実測計算する。
+interface RawMatchRecord {
+  matchId: string;
+  gameStartTimestamp: number;
+  gameDuration: number;
+  gameEndTimestamp: number;
+  win: boolean;
+  kills: number;
+  deaths: number;
+  assists: number;
+  championName: string;
+  lane: string;
+  visionScore: number;
+  totalMinionsKilled: number;
+  neutralMinionsKilled: number;
+  teamDamage: number;
+  playerDamage: number;
+  teamKills: number;
+  goldEarned?: number;
+  teamHordeKills?: number;
+  teamDragonKills?: number;
+  enemyHordeKills?: number;
+  enemyDragonKills?: number;
+  firstDragon?: boolean;
+}
+
+/** 前の試合の終了からこの分数以内に始まった試合は同じ連戦とみなす */
+const SESSION_GAP_MIN = 30;
+/** 負けた後、この分数以内に次の試合を始めたら「すぐ次へ」とみなす */
+const QUICK_REQUEUE_MIN = 5;
+
+/** 連戦の何戦目か・負けた直後の再キューごとの勝率（試合の開始/終了時刻だけから計算） */
+function calcSessionStats(matches: RawMatchRecord[]) {
+  const sorted = [...matches].sort((a, b) => a.gameStartTimestamp - b.gameStartTimestamp);
+  const byIndex = [1, 2, 3, 4].map((n) => ({ label: n === 4 ? '4戦目以降' : `${n}戦目`, games: 0, wins: 0 }));
+  const afterLoss = { quick: { games: 0, wins: 0 }, later: { games: 0, wins: 0 } };
+  let sessions = 0;
+  let idx = 0;
+  for (let i = 0; i < sorted.length; i++) {
+    const m = sorted[i];
+    const prev = sorted[i - 1];
+    const gapMin = prev ? (m.gameStartTimestamp - prev.gameEndTimestamp) / 60000 : Infinity;
+    if (gapMin > SESSION_GAP_MIN) { sessions++; idx = 0; }
+    idx++;
+    const bucket = byIndex[Math.min(idx, 4) - 1];
+    bucket.games++;
+    if (m.win) bucket.wins++;
+    if (prev && !prev.win && gapMin <= SESSION_GAP_MIN) {
+      const b = gapMin <= QUICK_REQUEUE_MIN ? afterLoss.quick : afterLoss.later;
+      b.games++;
+      if (m.win) b.wins++;
+    }
+  }
+  const rate = (b: { games: number; wins: number }) => (b.games > 0 ? Math.round((b.wins / b.games) * 100) : null);
+  return {
+    totalGames: sorted.length,
+    sessions,
+    rules: { sessionGapMin: SESSION_GAP_MIN, quickRequeueMin: QUICK_REQUEUE_MIN },
+    byIndex: byIndex.map((b) => ({ ...b, winRate: rate(b) })),
+    afterLoss: {
+      quick: { ...afterLoss.quick, winRate: rate(afterLoss.quick) },
+      later: { ...afterLoss.later, winRate: rate(afterLoss.later) },
+    },
+  };
+}
 import { getChampionKitTactics } from '@/lib/championKitTactics';
 import { callGeminiWithRetry } from '@/lib/geminiClient';
 
@@ -212,7 +276,7 @@ export async function POST(request: NextRequest) {
     const survivalScore = Math.max(20, Math.min(100, Math.round(100 - avgDeaths * 14)));
     const farmScore = Math.max(30, Math.min(100, Math.round(avgCsPerMin * 11.5)));
     const combatScore = Math.max(20, Math.min(100, Math.round(avgKpPercent * 1.3)));
-    const objScore = Math.min(95, Math.max(50, Math.round(60 + (overallWinRate - 50) * 0.8)));
+    // ★ 2026-10-07: 「オブジェクト統率」点は総合勝率から作った値（60+(勝率-50)×0.8）だったため削除
     const teamfightScore = Math.min(98, Math.max(40, Math.round(avgKda * 12)));
 
     // 3. チャンピオン別実測集計
@@ -261,8 +325,8 @@ export async function POST(request: NextRequest) {
       })
       .sort((a, b) => b.gamesCount - a.gamesCount);
 
-    // 4. セッション＆心理分析計算
-    const sessionData = calculateRealSessionAnalytics(rawMatches, targetTier);
+    // 4. 連戦分析（試合の開始/終了時刻からの実測）
+    const sessionStats = calcSessionStats(rawMatches);
 
     // 5. レポート組み立て
     const reportData = {
@@ -278,7 +342,6 @@ export async function POST(request: NextRequest) {
         survival: survivalScore,
         farming: farmScore,
         combat: combatScore,
-        objectives: objScore,
         teamfighting: teamfightScore,
       },
       averages: {
@@ -292,7 +355,7 @@ export async function POST(request: NextRequest) {
         killParticipation: avgKpPercent,
       },
       champions: detailedChampions,
-      sessionAnalytics: sessionData,
+      sessionStats,
     };
 
     return NextResponse.json({ success: true, report: reportData });

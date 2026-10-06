@@ -142,414 +142,95 @@ export function getRoleConfig(lane: string): RoleConfig {
 // ==========================================
 // 🎯 目標ランク ベンチマーク ＆ ギャップ診断
 // ==========================================
+//
+// ★ 2026-10-07: 比較相手を「手入力の目標値(ROLE_RANK_BENCHMARKS)」から「目標ランクの実測平均」に置き換えた。
+// 平均は rank_benchmark_samples（migration 88、毎日 rank-benchmark-update.yml で収集）から
+// DB関数 rank_benchmark_averages が直近30日分を計算する（lib/rankBenchmarks.ts）。
+// 以前の表はコード内に「手入力」と明記されていながら、画面と Gemini への指示では「目標基準」として
+// 扱われていた。また「敵陣ディープ視界比率」は計測しておらず「視界スコア/分×12」を15〜45に収めた値、
+// 「15分キル関与」は実際には試合全体のキル関与率だったため、いずれも修正・削除した。
+// 達成判定は「目標ランク平均と同等以上か」のみ（許容幅などの独自基準は置かない）。
 
-export interface RankBenchmark {
-  tierName: string;
+/** 目標ランク・同じロールの実測平均（rank_benchmark_averages の1行） */
+export interface MeasuredRankBenchmark {
+  tierName: string;          // 例: "Emerald IV"
+  role: string;              // TOP / JUNGLE / MIDDLE / BOTTOM / UTILITY
+  sampleCount: number;
+  lastCollectedAt: string | null;
   avgDeaths: number;
   csPerMin: number;
-  kp15: number;
+  killParticipation: number; // %
   visionScorePerMin: number;
-  deepWardRatio: number;
-  kda: number;
 }
 
-/**
- * ロール×ランク帯ごとの目標スタッツ。
- *
- * ⚠️ 出典について(2026-09-22追記): これらの数値はRiot公式統計やサードパーティ集計から
- * 取得したものではなく、**手入力で設定した目標値**です。UI上で「達成/要改善」の判定に
- * 使われるため、実在のランク平均値であるかのように受け取られやすい点に注意してください。
- * 実測統計へ置き換える場合は、出典と取得日を併記できる形にしてから差し替えること。
- */
-export const ROLE_RANK_BENCHMARKS: {
-  [role: string]: {
-    [tier: string]: RankBenchmark;
-  };
-} = {
-  UTILITY: {
-    'Gold IV': {
-      tierName: 'Gold IV (サポート)',
-      avgDeaths: 4.8,
-      csPerMin: 1.2,
-      kp15: 45,
-      visionScorePerMin: 1.90,
-      deepWardRatio: 24,
-      kda: 3.0,
-    },
-    'Platinum IV': {
-      tierName: 'Platinum IV (サポート)',
-      avgDeaths: 4.2,
-      csPerMin: 1.2,
-      kp15: 50,
-      visionScorePerMin: 2.30,
-      deepWardRatio: 30,
-      kda: 3.6,
-    },
-    'Emerald IV': {
-      tierName: 'Emerald IV (サポート推奨目標)',
-      avgDeaths: 3.6,
-      csPerMin: 1.2,
-      kp15: 55,
-      visionScorePerMin: 2.70,
-      deepWardRatio: 36,
-      kda: 4.0,
-    },
-    'Diamond IV': {
-      tierName: 'Diamond IV (サポート)',
-      avgDeaths: 3.0,
-      csPerMin: 1.2,
-      kp15: 60,
-      visionScorePerMin: 3.10,
-      deepWardRatio: 42,
-      kda: 4.8,
-    },
-    'Master': {
-      tierName: 'Master (サポート)',
-      avgDeaths: 2.6,
-      csPerMin: 1.2,
-      kp15: 65,
-      visionScorePerMin: 3.50,
-      deepWardRatio: 50,
-      kda: 5.4,
-    },
-  },
-  JUNGLE: {
-    'Gold IV': {
-      tierName: 'Gold IV (ジャングル)',
-      avgDeaths: 4.6,
-      csPerMin: 5.8,
-      kp15: 42,
-      visionScorePerMin: 1.30,
-      deepWardRatio: 25,
-      kda: 3.0,
-    },
-    'Platinum IV': {
-      tierName: 'Platinum IV (ジャングル)',
-      avgDeaths: 4.0,
-      csPerMin: 6.5,
-      kp15: 48,
-      visionScorePerMin: 1.50,
-      deepWardRatio: 32,
-      kda: 3.6,
-    },
-    'Emerald IV': {
-      tierName: 'Emerald IV (ジャングル推奨目標)',
-      avgDeaths: 3.4,
-      csPerMin: 7.0,
-      kp15: 52,
-      visionScorePerMin: 1.80,
-      deepWardRatio: 40,
-      kda: 4.2,
-    },
-    'Diamond IV': {
-      tierName: 'Diamond IV (ジャングル)',
-      avgDeaths: 2.9,
-      csPerMin: 7.6,
-      kp15: 58,
-      visionScorePerMin: 2.05,
-      deepWardRatio: 46,
-      kda: 4.8,
-    },
-    'Master': {
-      tierName: 'Master (ジャングル)',
-      avgDeaths: 2.5,
-      csPerMin: 8.2,
-      kp15: 62,
-      visionScorePerMin: 2.30,
-      deepWardRatio: 52,
-      kda: 5.4,
-    },
-  },
-  BOTTOM: {
-    'Gold IV': {
-      tierName: 'Gold IV (ADC)',
-      avgDeaths: 4.8,
-      csPerMin: 6.6,
-      kp15: 38,
-      visionScorePerMin: 1.00,
-      deepWardRatio: 18,
-      kda: 2.8,
-    },
-    'Platinum IV': {
-      tierName: 'Platinum IV (ADC)',
-      avgDeaths: 4.2,
-      csPerMin: 7.4,
-      kp15: 44,
-      visionScorePerMin: 1.20,
-      deepWardRatio: 22,
-      kda: 3.4,
-    },
-    'Emerald IV': {
-      tierName: 'Emerald IV (ADC推奨目標)',
-      avgDeaths: 3.5,
-      csPerMin: 8.0,
-      kp15: 48,
-      visionScorePerMin: 1.40,
-      deepWardRatio: 26,
-      kda: 3.8,
-    },
-    'Diamond IV': {
-      tierName: 'Diamond IV (ADC)',
-      avgDeaths: 2.9,
-      csPerMin: 8.6,
-      kp15: 52,
-      visionScorePerMin: 1.60,
-      deepWardRatio: 30,
-      kda: 4.5,
-    },
-    'Master': {
-      tierName: 'Master (ADC)',
-      avgDeaths: 2.5,
-      csPerMin: 9.2,
-      kp15: 56,
-      visionScorePerMin: 1.80,
-      deepWardRatio: 35,
-      kda: 5.2,
-    },
-  },
-  MIDDLE: {
-    'Gold IV': {
-      tierName: 'Gold IV (ミッド)',
-      avgDeaths: 4.8,
-      csPerMin: 6.4,
-      kp15: 42,
-      visionScorePerMin: 1.15,
-      deepWardRatio: 20,
-      kda: 2.8,
-    },
-    'Platinum IV': {
-      tierName: 'Platinum IV (ミッド)',
-      avgDeaths: 4.2,
-      csPerMin: 7.2,
-      kp15: 48,
-      visionScorePerMin: 1.40,
-      deepWardRatio: 26,
-      kda: 3.4,
-    },
-    'Emerald IV': {
-      tierName: 'Emerald IV (ミッド推奨目標)',
-      avgDeaths: 3.5,
-      csPerMin: 7.8,
-      kp15: 52,
-      visionScorePerMin: 1.65,
-      deepWardRatio: 32,
-      kda: 3.8,
-    },
-    'Diamond IV': {
-      tierName: 'Diamond IV (ミッド)',
-      avgDeaths: 2.9,
-      csPerMin: 8.4,
-      kp15: 56,
-      visionScorePerMin: 1.90,
-      deepWardRatio: 38,
-      kda: 4.6,
-    },
-    'Master': {
-      tierName: 'Master (ミッド)',
-      avgDeaths: 2.5,
-      csPerMin: 9.0,
-      kp15: 60,
-      visionScorePerMin: 2.15,
-      deepWardRatio: 45,
-      kda: 5.3,
-    },
-  },
-  TOP: {
-    'Gold IV': {
-      tierName: 'Gold IV (トップ)',
-      avgDeaths: 4.8,
-      csPerMin: 6.2,
-      kp15: 36,
-      visionScorePerMin: 1.10,
-      deepWardRatio: 18,
-      kda: 2.6,
-    },
-    'Platinum IV': {
-      tierName: 'Platinum IV (トップ)',
-      avgDeaths: 4.2,
-      csPerMin: 7.0,
-      kp15: 42,
-      visionScorePerMin: 1.30,
-      deepWardRatio: 24,
-      kda: 3.2,
-    },
-    'Emerald IV': {
-      tierName: 'Emerald IV (トップ推奨目標)',
-      avgDeaths: 3.6,
-      csPerMin: 7.6,
-      kp15: 46,
-      visionScorePerMin: 1.50,
-      deepWardRatio: 30,
-      kda: 3.6,
-    },
-    'Diamond IV': {
-      tierName: 'Diamond IV (トップ)',
-      avgDeaths: 3.0,
-      csPerMin: 8.2,
-      kp15: 50,
-      visionScorePerMin: 1.75,
-      deepWardRatio: 36,
-      kda: 4.2,
-    },
-    'Master': {
-      tierName: 'Master (トップ)',
-      avgDeaths: 2.6,
-      csPerMin: 8.8,
-      kp15: 54,
-      visionScorePerMin: 2.00,
-      deepWardRatio: 42,
-      kda: 4.8,
-    },
-  },
-};
-
-export const RANK_BENCHMARKS = ROLE_RANK_BENCHMARKS.JUNGLE;
+/** この試合数未満は「参考値」として扱う（05 BENCHMARK_MIN_SAMPLES と同じ） */
+export const BENCHMARK_MIN_SAMPLES = 30;
 
 export interface TargetRankGapAnalysis {
   targetTier: string;
   currentActual: {
     avgDeaths: number;
     csPerMin: number;
-    kp15: number;
+    killParticipation: number;
     visionScorePerMin: number;
-    deepWardRatio: number;
     kda: number;
   };
-  benchmark: RankBenchmark;
+  benchmark: MeasuredRankBenchmark;
+  /** 試合数が BENCHMARK_MIN_SAMPLES 未満 */
+  lowSample: boolean;
   gaps: {
     deathsDiff: { value: number; passed: boolean; label: string };
     csDiff: { value: number; passed: boolean; label: string };
     kpDiff: { value: number; passed: boolean; label: string };
     visionDiff: { value: number; passed: boolean; label: string };
-    deepWardDiff: { value: number; passed: boolean; label: string };
   };
-  targetReadinessScore: number;
+  passedCount: number;
+  totalCount: number;
   keyActionToPromote: string[];
 }
 
 export function calculateTargetRankGap(
-  actual: {
-    avgDeaths: number;
-    csPerMin: number;
-    kp15: number;
-    visionScorePerMin: number;
-    deepWardRatio: number;
-    kda: number;
-  },
-  targetTier: string = 'Emerald IV',
-  role: string = 'JUNGLE'
-): TargetRankGapAnalysis {
-  const normRole = (role || 'JUNGLE').toUpperCase();
-  const roleTable = ROLE_RANK_BENCHMARKS[normRole] || ROLE_RANK_BENCHMARKS.JUNGLE;
-  const benchmark = roleTable[targetTier] || roleTable['Emerald IV'] || RANK_BENCHMARKS['Emerald IV'];
-
-  const isSupport = normRole === 'UTILITY' || normRole === 'SUPPORT';
+  actual: TargetRankGapAnalysis['currentActual'],
+  targetTier: string,
+  role: string,
+  benchmark: MeasuredRankBenchmark | null,
+): TargetRankGapAnalysis | null {
+  if (!benchmark) return null;
+  const isSupport = ['UTILITY', 'SUPPORT'].includes((role || '').toUpperCase());
 
   const deathsDiffVal = Number((actual.avgDeaths - benchmark.avgDeaths).toFixed(2));
   const csDiffVal = Number((actual.csPerMin - benchmark.csPerMin).toFixed(1));
-  const kpDiffVal = Math.round(actual.kp15 - benchmark.kp15);
+  const kpDiffVal = Math.round(actual.killParticipation - benchmark.killParticipation);
   const visionDiffVal = Number((actual.visionScorePerMin - benchmark.visionScorePerMin).toFixed(2));
-  const deepWardDiffVal = Math.round(actual.deepWardRatio - benchmark.deepWardRatio);
 
-  const deathsPassed = deathsDiffVal <= 0.3;
-  // サポートの場合はCSが多すぎないこと (<= 2.2)、それ以外は目標CSを満たすこと
-  const csPassed = isSupport ? actual.csPerMin <= 2.2 : csDiffVal >= -0.2;
-  const kpPassed = kpDiffVal >= -3;
-  const visionPassed = visionDiffVal >= -0.15;
-  const deepWardPassed = deepWardDiffVal >= -4;
+  const deathsPassed = deathsDiffVal <= 0;
+  const csPassed = csDiffVal >= 0;
+  const kpPassed = kpDiffVal >= 0;
+  const visionPassed = visionDiffVal >= 0;
+  const passedList = [deathsPassed, csPassed, kpPassed, visionPassed];
 
-  // 🎯 各項目の目標到達率（0〜100%）を連続・精密に算出（目標ランクの難易度に応じてダイナミックに変化）
-  const deathsRate = actual.avgDeaths <= benchmark.avgDeaths
-    ? 100
-    : Math.max(30, Math.round(100 - (actual.avgDeaths - benchmark.avgDeaths) * 22));
-
-  const csRate = isSupport
-    ? (actual.csPerMin <= 1.5 ? 100 : Math.max(40, Math.round(100 - (actual.csPerMin - 1.5) * 35)))
-    : Math.max(30, Math.min(100, Math.round((actual.csPerMin / benchmark.csPerMin) * 100)));
-
-  const kpRate = Math.max(30, Math.min(100, Math.round((actual.kp15 / benchmark.kp15) * 100)));
-  const visionRate = Math.max(30, Math.min(100, Math.round((actual.visionScorePerMin / benchmark.visionScorePerMin) * 100)));
-  const deepWardRate = Math.max(30, Math.min(100, Math.round((actual.deepWardRatio / benchmark.deepWardRatio) * 100)));
-
-  // 重み付け総合到達度スコア（Gold/Plat/Emeraldで明確に難易度差が出る設計）
-  const targetReadinessScore = Math.min(
-    100,
-    Math.max(
-      20,
-      Math.round(
-        deathsRate * 0.25 +
-        csRate * 0.20 +
-        kpRate * 0.25 +
-        visionRate * 0.15 +
-        deepWardRate * 0.15
-      )
-    )
-  );
-
+  const avgLabel = `${benchmark.tierName}平均`;
   const keyActions: string[] = [];
-  if (!kpPassed) {
-    if (isSupport) {
-      keyActions.push(`【最優先課題】戦闘関与率（現在 ${actual.kp15}% ➔ 目標 ${benchmark.kp15}%）: レーン戦終了後のADC/MIDへのローム合流と集団戦エンゲージ・ピール参加を増やすこと。`);
-    } else {
-      keyActions.push(`【最優先課題】15分戦闘関与率（現在 ${actual.kp15}% ➔ 目標 ${benchmark.kp15}%）: 序盤のレーン主導権・カウンターアクションを1回必ず増やすこと。`);
-    }
-  }
-  if (!visionPassed) {
-    if (isSupport) {
-      keyActions.push(`【視界支配課題】分間視界スコア（現在 ${actual.visionScorePerMin}/分 ➔ 目標 ${benchmark.visionScorePerMin}/分）: リコール毎のピンクワード2本購入と、ドラゴン/バロン湧き60秒前の先制視界奪取を徹底すること。`);
-    } else {
-      keyActions.push(`【視界課題】分間視界スコア（現在 ${actual.visionScorePerMin}/分 ➔ 目標 ${benchmark.visionScorePerMin}/分）: ワードを腐らせず要所に設置すること。`);
-    }
-  }
-  if (!deepWardPassed) {
-    keyActions.push(`【ディープ視界】敵陣視界比率（現在 ${actual.deepWardRatio}% ➔ 目標 ${benchmark.deepWardRatio}%）: オブジェクト前や敵ジャングル深部へ事前視界を1本刺して敵の進行を察知すること。`);
-  }
-  if (!csPassed && !isSupport) {
-    keyActions.push(`【リソース課題】分間CS（現在 ${actual.csPerMin} ➔ 目標 ${benchmark.csPerMin}）: 中盤サイドレーンのウェーブ回収効率を向上させること。`);
-  }
-  if (!csPassed && isSupport) {
-    keyActions.push(`【CS配分注意】サポートの分間CSが ${actual.csPerMin} と高めです。ラストヒットは味方キャリーに譲り、ゴールドとEXPをキャリーに集中させましょう。`);
-  }
-  if (keyActions.length === 0) {
-    keyActions.push(`主要スタッツは既に【${benchmark.tierName}基準】を完全にクリアしています！連戦を3〜4戦で抑え、メンタルを維持して試合数を重ねるだけで昇格可能です。`);
-  }
+  if (!kpPassed) keyActions.push(`キル関与率: 現在 ${actual.killParticipation}%（${avgLabel} ${benchmark.killParticipation}%）`);
+  if (!visionPassed) keyActions.push(`視界スコア/分: 現在 ${actual.visionScorePerMin}（${avgLabel} ${benchmark.visionScorePerMin}）`);
+  if (!deathsPassed) keyActions.push(`平均デス: 現在 ${actual.avgDeaths}（${avgLabel} ${benchmark.avgDeaths}）`);
+  if (!csPassed) keyActions.push(`CS/分: 現在 ${actual.csPerMin}（${avgLabel} ${benchmark.csPerMin}）${isSupport ? ' ※サポートはCSが少ないのが通常' : ''}`);
+  if (keyActions.length === 0) keyActions.push(`4項目とも${avgLabel}以上です。`);
 
-  const csLabel = isSupport
-    ? (actual.csPerMin <= 2.2 ? `適正（キャリーにCS譲渡達成 ${actual.csPerMin}/分）` : `CS取りすぎ注意 (${actual.csPerMin}/分)`)
-    : (csDiffVal >= 0 ? `基準クリア (+${csDiffVal})` : `${Math.abs(csDiffVal)} 不足`);
-
+  const signed = (v: number, unit = '') => `${v > 0 ? '+' : ''}${v}${unit}`;
   return {
     targetTier,
     currentActual: actual,
     benchmark,
+    lowSample: benchmark.sampleCount < BENCHMARK_MIN_SAMPLES,
     gaps: {
-      deathsDiff: {
-        value: deathsDiffVal,
-        passed: deathsPassed,
-        label: deathsDiffVal <= 0 ? `基準クリア (${Math.abs(deathsDiffVal)} 低デス)` : `${deathsDiffVal} 超過 (要削減)`,
-      },
-      csDiff: {
-        value: csDiffVal,
-        passed: csPassed,
-        label: csLabel,
-      },
-      kpDiff: {
-        value: kpDiffVal,
-        passed: kpPassed,
-        label: kpDiffVal >= 0 ? `基準クリア (+${kpDiffVal}%)` : `${Math.abs(kpDiffVal)}% 不足 (最大ボトルネック)`,
-      },
-      visionDiff: {
-        value: visionDiffVal,
-        passed: visionPassed,
-        label: visionDiffVal >= 0 ? `基準クリア (+${visionDiffVal})` : `${Math.abs(visionDiffVal)} 不足`,
-      },
-      deepWardDiff: {
-        value: deepWardDiffVal,
-        passed: deepWardPassed,
-        label: deepWardDiffVal >= 0 ? `基準クリア (+${deepWardDiffVal}%)` : `${Math.abs(deepWardDiffVal)}% 不足`,
-      },
+      deathsDiff: { value: deathsDiffVal, passed: deathsPassed, label: `平均との差 ${signed(deathsDiffVal)}` },
+      csDiff: { value: csDiffVal, passed: csPassed, label: `平均との差 ${signed(csDiffVal)}` },
+      kpDiff: { value: kpDiffVal, passed: kpPassed, label: `平均との差 ${signed(kpDiffVal, '%')}` },
+      visionDiff: { value: visionDiffVal, passed: visionPassed, label: `平均との差 ${signed(visionDiffVal)}` },
     },
-    targetReadinessScore,
+    passedCount: passedList.filter(Boolean).length,
+    totalCount: passedList.length,
     keyActionToPromote: keyActions,
   };
 }
@@ -681,7 +362,8 @@ export interface CalculatedSessionAnalytics {
   goldEfficiency: GoldEfficiency;
   adversityBehavior: AdversityBehavior;
   cognitiveBiases: CognitiveBiases;
-  targetRankGap: TargetRankGapAnalysis;
+  /** 目標ランクの実測平均が無い時は null（画面は「データ収集中」と表示） */
+  targetRankGap: TargetRankGapAnalysis | null;
   roleConfig: RoleConfig;
 }
 
@@ -691,7 +373,9 @@ export interface CalculatedSessionAnalytics {
 export function calculateRealSessionAnalytics(
   matches: RawMatchRecord[],
   targetTier: string = 'Emerald IV',
-  detectedRole: string = 'JUNGLE'
+  detectedRole: string = 'JUNGLE',
+  /** 目標ランク・同ロールの実測平均（lib/rankBenchmarks.ts）。無ければ目標ランク比較は出さない */
+  benchmark: MeasuredRankBenchmark | null = null,
 ): CalculatedSessionAnalytics {
   const roleConfig = getRoleConfig(detectedRole);
 
@@ -1086,11 +770,12 @@ export function calculateRealSessionAnalytics(
   const kdaActual = totalDeaths > 0 ? Number(((totalKills + totalAssists) / totalDeaths).toFixed(2)) : (totalKills + totalAssists);
   const avgDeathsOverall = totalDeaths / totalG;
 
-  const totalKp = sorted.reduce((sum, m) => {
-    const kp = m.teamKills > 0 ? ((m.kills + m.assists) / m.teamKills) * 100 : 40;
-    return sum + kp;
-  }, 0);
-  const kp15Actual = Math.round(totalKp / totalG);
+  // 試合全体のキル関与率。味方の総キルが0の試合は計算できないので平均から外す
+  // （以前は 40% を当てはめていた。変数名 kp15 は互換のため残しているが15分時点の値ではない）
+  const kpMatches = sorted.filter((m) => m.teamKills > 0);
+  const kp15Actual = kpMatches.length > 0
+    ? Math.round(kpMatches.reduce((sum, m) => sum + ((m.kills + m.assists) / m.teamKills) * 100, 0) / kpMatches.length)
+    : 0;
 
   // 平均ダメージシェア
   const totalDmgShare = sorted.reduce((sum, m) => {
@@ -1573,13 +1258,13 @@ export function calculateRealSessionAnalytics(
     {
       avgDeaths: Number(avgDeathsOverall.toFixed(2)),
       csPerMin: csPerMinActual,
-      kp15: kp15Actual,
+      killParticipation: kp15Actual,
       visionScorePerMin: visionPerMinActual,
-      deepWardRatio: Math.min(45, Math.max(15, Math.round(visionPerMinActual * 12))),
       kda: kdaActual,
     },
     targetTier,
-    detectedRole
+    detectedRole,
+    benchmark,
   );
 
   return {
@@ -1605,18 +1290,8 @@ export function calculateRealSessionAnalytics(
 function getFallbackSessionAnalytics(targetTier: string = 'Emerald IV', detectedRole: string = 'JUNGLE'): CalculatedSessionAnalytics {
   const roleConfig = getRoleConfig(detectedRole);
   const isSup = (detectedRole || '').toUpperCase() === 'UTILITY' || (detectedRole || '').toUpperCase() === 'SUPPORT';
-  const targetRankGap = calculateTargetRankGap(
-    {
-      avgDeaths: 0,
-      csPerMin: 0,
-      kp15: 0,
-      visionScorePerMin: 0,
-      deepWardRatio: 0,
-      kda: 0,
-    },
-    targetTier,
-    detectedRole
-  );
+  // 試合データが無い時は比較できないので目標ランク比較は出さない
+  const targetRankGap = null;
 
   return {
     timeOfDayPerformance: [

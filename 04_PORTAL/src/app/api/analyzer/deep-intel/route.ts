@@ -14,6 +14,7 @@ import {
 } from '../../../../lib/sessionAnalyticsCalculator';
 import { getChampionKitTactics } from '../../../../lib/championKitTactics';
 import { callGeminiWithRetry } from '../../../../lib/geminiClient';
+import { fetchRankBenchmark } from '../../../../lib/rankBenchmarks';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -231,7 +232,8 @@ export async function POST(request: NextRequest) {
       ? Math.max(40, Math.min(100, Math.round(avgCsPerMin <= 1.8 ? 95 : 100 - (avgCsPerMin - 1.8) * 20)))
       : Math.max(30, Math.min(100, Math.round(avgCsPerMin * 11.5)));
     const combatScore = Math.max(20, Math.min(100, Math.round(avgKpPercent * 1.3)));
-    const objScore = Math.min(95, Math.max(50, Math.round(60 + (overallWinRate - 50) * 0.8)));
+    // ★ 2026-10-07: 以前は総合勝率から「オブジェクト管理点」を作っていた（60+(勝率-50)×0.8）。計測していないため点数は出さない
+    const objScore: number | null = null;
     const teamfightScore = Math.min(98, Math.max(40, Math.round(avgKda * 12)));
 
     // 3. チャンピオン別実測集計（勝利時 vs 敗北時の詳細スタッツも完全分離集計）
@@ -381,12 +383,26 @@ export async function POST(request: NextRequest) {
     });
 
     // 4. 実測タイムスタンプからのコンディション・心理DNA・目標ランクギャップ自動計算
-    const calculatedSessionAnalytics = calculateRealSessionAnalytics(rawMatches, targetTier, role);
+    // 目標ランク・同ロールの実測平均（毎日収集）。無ければ目標ランク比較は出さない（2026-10-07、以前は手入力の値）
+    const rankBenchmark = await fetchRankBenchmark(targetTier, role);
+    const calculatedSessionAnalytics = calculateRealSessionAnalytics(rawMatches, targetTier, role, rankBenchmark);
+    const gap = calculatedSessionAnalytics.targetRankGap;
+    const benchmarkPromptBlock = gap
+      ? `【プレイヤー実測スタッツ vs 目標ランク（${targetTier}）・同ロールの実測平均】
+※平均は ${targetTier} のプレイヤー本人の直近ランクソロ ${gap.benchmark.sampleCount}試合（直近30日）の実測値です${gap.lowSample ? '（試合数が少ないため参考値）' : ''}。
+・平均デス: 実測 ${avgDeaths}（${targetTier}平均 ${gap.benchmark.avgDeaths}）
+・分間CS: 実測 ${avgCsPerMin}（${targetTier}平均 ${gap.benchmark.csPerMin}）${isSupportRole ? ' ※サポートは低CSが通常' : ''}
+・キル関与率（試合全体）: 実測 ${avgKpPercent}%（${targetTier}平均 ${gap.benchmark.killParticipation}%）
+・分間視界スコア: 実測 ${avgVisionPerMin}（${targetTier}平均 ${gap.benchmark.visionScorePerMin}）
+・平均以上の項目: ${gap.passedCount}/${gap.totalCount}`
+      : `【プレイヤー実測スタッツ】（${targetTier} の実測平均はまだ収集中のため比較値はありません。目標ランクの水準に達している・いないとは断定しないこと）
+・平均デス: ${avgDeaths} / 分間CS: ${avgCsPerMin} / キル関与率（試合全体）: ${avgKpPercent}% / 分間視界スコア: ${avgVisionPerMin}`;
 
     // 5. Gemini AIによる動的総合診断 ＆ 目標ランク到達処方箋の生成
     const aiPrompt = `あなたはLoL（League of Legends）の最高峰データアナリスト兼パーソナルコーチです。
 プレイヤー「${cleanName}#${cleanTag}」（メインロール: ${calculatedSessionAnalytics.roleConfig.roleName}、現在ランク: ${tier}）は、目標ランク【${targetTier}】への昇格を目指しています。
-以下の実測スタッツおよびロール特化の目標ランク基準値とのギャップをもとに、【目標ランク到達処方箋レポート】を作成してください。
+以下の実測スタッツ（と、あれば目標ランクの実測平均との差）をもとに、【目標ランク到達処方箋レポート】を作成してください。
+数値は下に示したものだけを使い、示していない数値（ワードの位置・ソロキル数・時間帯別の値など）を作らないこと。
 ${isSupportRole ? '※重要: このプレイヤーは【サポート (Support)】です。CSは取らないのが正解（1.5以下が適正）ですので、CSを求めるアドバイスは絶対にせず、分間視界スコア・ピンクワード購入・戦闘関与率（KP）・味方キャリーのピール/エンゲージを評価・指南してください。' : ''}
 
 【マッチアップ ＆ パワースパイク生成の厳格ルール】
@@ -395,13 +411,7 @@ ${isSupportRole ? '※重要: このプレイヤーは【サポート (Support)�
 ・ジャングルキャラ（Zyra JG, Shyvana, Viego, Lillia等）の対面は【LeeSin, Nocturne, XinZhao, Amumu, Sejuani, Graves】などのジャングルキャラにすること。
 2. 「powerSpikes」は、各チャンピオン固有のスキル名（例: RellのWフェロマンシー/R磁気誘導、ShyvanaのLv6ドラゴンフォーム/Eブレス、LeonaのEゼニス/Rソーラーフレアなど）を含め、具体的かつ実戦的な時間軸立ち回りを記述してください。抽象的・定型的な文言は禁止です。
 
-【プレイヤー実測スタッツ vs 目標ランク（${targetTier}）基準値】
-・ロール: ${calculatedSessionAnalytics.roleConfig.roleName}
-・生存力（平均被デス）: 実測 ${avgDeaths} (目標基準: ${calculatedSessionAnalytics.targetRankGap.benchmark.avgDeaths})
-・ファーム効率 (分間CS): 実測 ${avgCsPerMin} (目標基準: ${calculatedSessionAnalytics.targetRankGap.benchmark.csPerMin}${isSupportRole ? ' ※サポートのため低CSで適正' : ''})
-・キル関与率 (KP@15): 実測 ${avgKpPercent}% (目標基準: ${calculatedSessionAnalytics.targetRankGap.benchmark.kp15}%)
-・分間視界スコア: 実測 ${avgVisionPerMin}/分 (目標基準: ${calculatedSessionAnalytics.targetRankGap.benchmark.visionScorePerMin})
-・目標到達度スコア: ${calculatedSessionAnalytics.targetRankGap.targetReadinessScore}%
+${benchmarkPromptBlock}
 
 以下のJSONフォーマットのみを返してください（コードブロックなしの純粋なJSON）:
 {
@@ -410,7 +420,7 @@ ${isSupportRole ? '※重要: このプレイヤーは【サポート (Support)�
   "coreDiagnosis": "（現状と目標ランク【${targetTier}】に向けた客観総括 2〜3文）",
   "strengths": ["実測データに基づく強み1", "実測データに基づく強み2", "実測データに基づく強み3"],
   "coreBottleNeck": "（目標ランク到達を阻んでいる最大のボトルネック・負け筋 1〜2文）",
-  "visionAnalysis": "（防衛視界と敵陣ディープ視界の評価）",
+  "visionAnalysis": "（分間視界スコアの評価。ワードの設置位置のデータは無いので、位置の良し悪しは断定しない）",
   "actionPlan": "（【${targetTier}】昇格のために次戦から変えるべき具体的急所アクション）",
   "goldenDeepWard": {
     "spot": "（推奨ワード場所）",
@@ -457,24 +467,19 @@ ${isSupportRole ? '※重要: このプレイヤーは【サポート (Support)�
       aiResult = {
         styleTypeName: isSupportRole ? '視界制圧＆味方ピール守護神' : 'ファームスケーリング＆セーフティ型',
         styleBadge: isSupportRole ? '視界スコア Sランク' : '安定度 Sランク',
-        coreDiagnosis: isSupportRole
-          ? `平均被デス${avgDeaths}と分間視界${avgVisionPerMin}は既に【${targetTier}水準】に到達しています。昇格への最大の鍵は、ドラゴン湧き60秒前の先制視界奪取と集団戦でのピール参加率をさらに高めることです。`
-          : `平均被デス${avgDeaths}と分間CS ${avgCsPerMin}は既に【${targetTier}水準】に到達しています。昇格への最大の鍵は、序盤15分の戦闘関与（KP@15）を目標値の${calculatedSessionAnalytics.targetRankGap.benchmark.kp15}%へ引き上げることです。`,
-        strengths: isSupportRole
-          ? [
-              `平均被デス ${avgDeaths} による【${targetTier}級】の安全な視界展開`,
-              `分間視界 ${avgVisionPerMin} による視界制圧網の維持`,
-              `キル関与率 ${avgKpPercent}% による高いチーム貢献度`,
-            ]
-          : [
-              `平均被デス ${avgDeaths} による【${targetTier}級】の安全な立ち回り`,
-              `分間CS ${avgCsPerMin} の高いリソース回収精度`,
-              `分間視界 ${avgVisionPerMin} による防衛網の維持`,
-            ],
-        coreBottleNeck: isSupportRole
-          ? `敵陣ディープ視界（目標 ${calculatedSessionAnalytics.targetRankGap.benchmark.deepWardRatio}%）の展開が不足しており、敵JGのロームを察知しきれずADCが被ガンク死するケースが最大の負け筋です。`
-          : `キル関与率（${avgKpPercent}%）が目標基準（${calculatedSessionAnalytics.targetRankGap.benchmark.kp15}%）を下回っており、味方レーンの序盤崩壊に干渉しきれていない点が昇格のボトルネックです。`,
-        visionAnalysis: `自陣防衛視界は万全ですが、敵陣ディープ視界（目標 ${calculatedSessionAnalytics.targetRankGap.benchmark.deepWardRatio}%）を増やすことで敵の位置を事前特定できます。`,
+        // ★ 2026-10-07: 以前はAI失敗時に実測値と無関係に「既に【目標】水準に到達」と断定していた。実測値だけを示す
+        coreDiagnosis: gap
+          ? `AIによる総合診断を生成できませんでした。実測値では、${targetTier}の同ロール平均に対して ${gap.totalCount}項目中 ${gap.passedCount}項目が平均以上です。`
+          : `AIによる総合診断を生成できませんでした（${targetTier}の実測平均は収集中です）。`,
+        strengths: [
+          `平均デス ${avgDeaths}`,
+          `分間CS ${avgCsPerMin}`,
+          `キル関与率 ${avgKpPercent}% / 分間視界 ${avgVisionPerMin}`,
+        ],
+        coreBottleNeck: gap && gap.keyActionToPromote.length > 0 && gap.passedCount < gap.totalCount
+          ? `${targetTier}平均を下回っている項目: ${gap.keyActionToPromote.join(' / ')}`
+          : 'AIによる分析を生成できませんでした。',
+        visionAnalysis: `分間視界スコア ${avgVisionPerMin}${gap ? `（${targetTier}平均 ${gap.benchmark.visionScorePerMin}）` : ''}。`,
         actionPlan: calculatedSessionAnalytics.roleConfig.defaultActionGuideline,
         goldenDeepWard: {
           spot: isSupportRole ? '敵トライブッシュ＆ドラゴン裏' : '敵ラプター裏ブッシュ',
@@ -583,9 +588,7 @@ ${isSupportRole ? '※重要: このプレイヤーは【サポート (Support)�
         teamfight: { score: teamfightScore, avgKda },
         vision: {
           visionScorePerMin: avgVisionPerMin,
-          controlWardsPerGame: isSupportRole ? Number((avgVisionPerMin * 1.6).toFixed(1)) : Number((avgVisionPerMin * 0.9).toFixed(1)),
-          defensiveWardPercent: 100 - calculatedSessionAnalytics.targetRankGap.currentActual.deepWardRatio,
-          deepWardPercent: calculatedSessionAnalytics.targetRankGap.currentActual.deepWardRatio,
+          // ★ 2026-10-07: 「ピンク推計（視界×1.6/0.9）」と「自陣/敵陣ワード比率（視界×12）」は計測していない値だったため削除
           percentile: 20,
         },
       },

@@ -507,172 +507,79 @@ export default function PlayerAnalyzerPage() {
             </div>
           </div>
 
-          {/* 🎯 目標ランク基準ギャップ診断 メインHUDカード */}
-          {report.sessionAnalytics?.targetRankGap && (
-            <div className="rounded-3xl border border-success-edge bg-gradient-to-br from-success-50/90 via-white to-secondary-50/70 p-6 md:p-8 shadow-xs space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-success-edge-soft gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-success-600 text-white flex items-center justify-center text-xl font-black shadow-md shrink-0">
-                    🎯
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-success-100 text-success-900 border border-success-edge">
-                        目標基準: {report.sessionAnalytics.targetRankGap.benchmark.tierName}
-                      </span>
-                      <h3 className="text-lg font-black text-foreground">
-                        目標ランク到達度 ＆ スタッツギャップ診断
-                      </h3>
+          {/* 🎯 目標ランク基準ギャップ診断（2026-10-07: 目標ランク・同ロールの実測平均と比較。以前は手入力の目標値） */}
+          {report.sessionAnalytics?.targetRankGap ? (() => {
+            const g = report.sessionAnalytics.targetRankGap;
+            const items = [
+              { key: 'deaths', title: '① 平均デス', gap: g.gaps.deathsDiff, actual: g.currentActual.avgDeaths, avg: g.benchmark.avgDeaths, unit: '' },
+              { key: 'cs', title: '② 分間CS', gap: g.gaps.csDiff, actual: g.currentActual.csPerMin, avg: g.benchmark.csPerMin, unit: '' },
+              { key: 'kp', title: '③ キル関与率', gap: g.gaps.kpDiff, actual: g.currentActual.killParticipation, avg: g.benchmark.killParticipation, unit: '%' },
+              { key: 'vision', title: '④ 分間視界スコア', gap: g.gaps.visionDiff, actual: g.currentActual.visionScorePerMin, avg: g.benchmark.visionScorePerMin, unit: '' },
+            ];
+            return (
+              <div className="rounded-3xl border border-success-edge bg-gradient-to-br from-success-50/90 via-white to-secondary-50/70 p-6 md:p-8 shadow-xs space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-success-edge-soft gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-success-600 text-white flex items-center justify-center text-xl font-black shadow-md shrink-0">
+                      🎯
                     </div>
-                    <p className="text-xs text-muted font-medium mt-0.5">
-                      同ランク帯比較ではなく、目標【{targetTier}】の目標スタッツと現在の実測値を直接照合
-                      <br />
-                      <span className="text-[10px] text-faint">※目標スタッツは手動設定した基準値です（公式のランク平均統計ではありません）</span>
-                    </p>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-success-100 text-success-900 border border-success-edge">
+                          比較相手: {g.benchmark.tierName}・同ロールの実測平均
+                        </span>
+                        <h3 className="text-lg font-black text-foreground">目標ランク平均との比較</h3>
+                      </div>
+                      <p className="text-xs text-muted font-medium mt-0.5">
+                        {g.benchmark.tierName} のプレイヤー本人の直近ランクソロ {g.benchmark.sampleCount}試合（直近30日）の平均と、現在の実測値を比べています
+                        {g.lowSample && <span className="block text-[10px] text-danger-700 font-bold">※試合数が少ないため参考値です</span>}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span className="text-[10px] text-faint font-bold">平均以上の項目</span>
+                    <div className="text-2xl font-black text-success-700 font-mono">
+                      {g.passedCount} / {g.totalCount}
+                    </div>
                   </div>
                 </div>
 
-                <div className="text-right shrink-0">
-                  <span className="text-[10px] text-faint font-bold">目標到達レディネス</span>
-                  <div className="text-2xl font-black text-success-700 font-mono">
-                    {report.sessionAnalytics.targetRankGap.targetReadinessScore}%
-                  </div>
-                </div>
-              </div>
-
-              {/* 5大スタッツ ギャップカード */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
-                {/* 生存率 */}
-                <div className="p-3.5 bg-surface rounded-2xl border border-border/80 space-y-1">
-                  <div className="flex justify-between items-center">
-                    <span className="font-black text-muted">① 平均被デス</span>
-                    <span
-                      className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
-                        report.sessionAnalytics.targetRankGap.gaps.deathsDiff.passed
-                          ? 'bg-success-100 text-success-900'
-                          : 'bg-danger-100 text-danger-900'
-                      }`}
-                    >
-                      {report.sessionAnalytics.targetRankGap.gaps.deathsDiff.passed ? '達成' : '要改善'}
-                    </span>
-                  </div>
-                  <div className="text-foreground font-black font-mono">
-                    実測 {report.sessionAnalytics.targetRankGap.currentActual.avgDeaths} / 目標{' '}
-                    {report.sessionAnalytics.targetRankGap.benchmark.avgDeaths}
-                  </div>
-                  <div className="text-[10px] text-muted-strong">
-                    {report.sessionAnalytics.targetRankGap.gaps.deathsDiff.label}
-                  </div>
-                </div>
-
-                {/* CS効率 */}
-                <div className="p-3.5 bg-surface rounded-2xl border border-border/80 space-y-1">
-                  <div className="flex justify-between items-center">
-                    <span className="font-black text-muted">② 分間CS</span>
-                    <span
-                      className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
-                        report.sessionAnalytics.targetRankGap.gaps.csDiff.passed
-                          ? 'bg-success-100 text-success-900'
-                          : 'bg-danger-100 text-danger-900'
-                      }`}
-                    >
-                      {report.sessionAnalytics.targetRankGap.gaps.csDiff.passed ? '達成' : '要改善'}
-                    </span>
-                  </div>
-                  <div className="text-foreground font-black font-mono">
-                    実測 {report.sessionAnalytics.targetRankGap.currentActual.csPerMin} / 目標{' '}
-                    {report.sessionAnalytics.targetRankGap.benchmark.csPerMin}
-                  </div>
-                  <div className="text-[10px] text-muted-strong">
-                    {report.sessionAnalytics.targetRankGap.gaps.csDiff.label}
-                  </div>
-                </div>
-
-                {/* キル関与率 */}
-                <div className="p-3.5 bg-surface rounded-2xl border border-border/80 space-y-1">
-                  <div className="flex justify-between items-center">
-                    <span className="font-black text-muted">③ 15分キル関与 (KP)</span>
-                    <span
-                      className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
-                        report.sessionAnalytics.targetRankGap.gaps.kpDiff.passed
-                          ? 'bg-success-100 text-success-900'
-                          : 'bg-danger-100 text-danger-900'
-                      }`}
-                    >
-                      {report.sessionAnalytics.targetRankGap.gaps.kpDiff.passed ? '達成' : '最重要'}
-                    </span>
-                  </div>
-                  <div className="text-foreground font-black font-mono">
-                    実測 {report.sessionAnalytics.targetRankGap.currentActual.kp15}% / 目標{' '}
-                    {report.sessionAnalytics.targetRankGap.benchmark.kp15}%
-                  </div>
-                  <div className="text-[10px] text-muted-strong">
-                    {report.sessionAnalytics.targetRankGap.gaps.kpDiff.label}
-                  </div>
-                </div>
-
-                {/* 分間視界 */}
-                <div className="p-3.5 bg-surface rounded-2xl border border-border/80 space-y-1">
-                  <div className="flex justify-between items-center">
-                    <span className="font-black text-muted">④ 分間視界</span>
-                    <span
-                      className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
-                        report.sessionAnalytics.targetRankGap.gaps.visionDiff.passed
-                          ? 'bg-success-100 text-success-900'
-                          : 'bg-danger-100 text-danger-900'
-                      }`}
-                    >
-                      {report.sessionAnalytics.targetRankGap.gaps.visionDiff.passed ? '達成' : '要改善'}
-                    </span>
-                  </div>
-                  <div className="text-foreground font-black font-mono">
-                    実測 {report.sessionAnalytics.targetRankGap.currentActual.visionScorePerMin} / 目標{' '}
-                    {report.sessionAnalytics.targetRankGap.benchmark.visionScorePerMin}
-                  </div>
-                  <div className="text-[10px] text-muted-strong">
-                    {report.sessionAnalytics.targetRankGap.gaps.visionDiff.label}
-                  </div>
-                </div>
-
-                {/* 敵陣ディープ視界 */}
-                <div className="p-3.5 bg-surface rounded-2xl border border-border/80 space-y-1">
-                  <div className="flex justify-between items-center">
-                    <span className="font-black text-muted">⑤ 敵陣ディープ視界</span>
-                    <span
-                      className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
-                        report.sessionAnalytics.targetRankGap.gaps.deepWardDiff.passed
-                          ? 'bg-success-100 text-success-900'
-                          : 'bg-danger-100 text-danger-900'
-                      }`}
-                    >
-                      {report.sessionAnalytics.targetRankGap.gaps.deepWardDiff.passed ? '達成' : '要改善'}
-                    </span>
-                  </div>
-                  <div className="text-foreground font-black font-mono">
-                    実測 {report.sessionAnalytics.targetRankGap.currentActual.deepWardRatio}% / 目標{' '}
-                    {report.sessionAnalytics.targetRankGap.benchmark.deepWardRatio}%
-                  </div>
-                  <div className="text-[10px] text-muted-strong">
-                    {report.sessionAnalytics.targetRankGap.gaps.deepWardDiff.label}
-                  </div>
-                </div>
-              </div>
-
-              {/* 昇格に必要な急所アクション処方箋 */}
-              <div className="p-4 rounded-2xl bg-surface border border-success-edge-soft space-y-2">
-                <div className="text-xs font-black text-success-950 flex items-center gap-1.5">
-                  <Sparkles size={14} className="text-success-600" />
-                  <span>【{targetTier}】昇格への逆算処方箋:</span>
-                </div>
-                <ul className="space-y-1 text-xs text-foreground-subtle font-medium">
-                  {report.sessionAnalytics.targetRankGap.keyActionToPromote?.map((act: string, idx: number) => (
-                    <li key={idx} className="flex items-start gap-1.5">
-                      <CheckCircle2 size={13} className="text-success-600 shrink-0 mt-0.5" />
-                      <span>{act}</span>
-                    </li>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                  {items.map((it) => (
+                    <div key={it.key} className="p-3.5 bg-surface rounded-2xl border border-border/80 space-y-1">
+                      <div className="flex justify-between items-center">
+                        <span className="font-black text-muted">{it.title}</span>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${it.gap.passed ? 'bg-success-100 text-success-900' : 'bg-danger-100 text-danger-900'}`}>
+                          {it.gap.passed ? '平均以上' : '平均未満'}
+                        </span>
+                      </div>
+                      <div className="text-foreground font-black font-mono">
+                        実測 {it.actual}{it.unit} / 平均 {it.avg}{it.unit}
+                      </div>
+                      <div className="text-[10px] text-muted-strong">{it.gap.label}</div>
+                    </div>
                   ))}
-                </ul>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-surface border border-success-edge-soft space-y-2">
+                  <div className="text-xs font-black text-success-950 flex items-center gap-1.5">
+                    <Sparkles size={14} className="text-success-600" />
+                    <span>{g.benchmark.tierName}平均を下回っている項目:</span>
+                  </div>
+                  <ul className="space-y-1 text-xs text-foreground-subtle font-medium">
+                    {g.keyActionToPromote?.map((act: string, idx: number) => (
+                      <li key={idx} className="flex items-start gap-1.5">
+                        <CheckCircle2 size={13} className="text-success-600 shrink-0 mt-0.5" />
+                        <span>{act}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
+            );
+          })() : (
+            <div className="rounded-2xl border border-border bg-surface p-4 text-xs text-muted">
+              🎯 目標ランク【{targetTier}】の実測平均はまだ収集中のため、目標ランクとの比較は表示していません（毎日自動で収集しています）。
             </div>
           )}
 
@@ -894,7 +801,7 @@ export default function PlayerAnalyzerPage() {
 
                         let radarItems: Array<{
                           label: string;
-                          score: number;
+                          score: number | null;
                           valueText: string;
                           barBg: string;
                           textColor: string;
@@ -910,7 +817,7 @@ export default function PlayerAnalyzerPage() {
                             {
                               label: '① 視界支配・ピンクワード購入',
                               score: visionScore,
-                              valueText: `分間視界 ${report.metrics.vision.visionScorePerMin}/分 (ピンク推計 ${report.metrics.vision.controlWardsPerGame}本/試合)`,
+                              valueText: `分間視界 ${report.metrics.vision.visionScorePerMin}/分`,
                               barBg: 'bg-success-500',
                               textColor: 'text-success-700',
                               subTextColor: 'text-success-600',
@@ -1168,7 +1075,7 @@ export default function PlayerAnalyzerPage() {
                                   )}
                                 </span>
                                 <span className="text-foreground font-black">
-                                  {item.score}点{' '}
+                                  {item.score == null ? '—' : `${item.score}点`}{' '}
                                   <span className={`text-[10px] ${item.subTextColor} font-normal`}>
                                     ({item.valueText})
                                   </span>
@@ -1177,7 +1084,7 @@ export default function PlayerAnalyzerPage() {
                               <div className="h-2.5 w-full rounded-full bg-surface-subtle overflow-hidden">
                                 <div
                                   className={`h-full ${item.barBg} rounded-full`}
-                                  style={{ width: `${Math.min(100, Math.max(5, item.score))}%` }}
+                                  style={{ width: item.score == null ? '0%' : `${Math.min(100, Math.max(5, item.score))}%` }}
                                 />
                               </div>
                             </div>
@@ -1267,38 +1174,7 @@ export default function PlayerAnalyzerPage() {
                       </span>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <div className="flex justify-between text-xs font-bold text-foreground-subtle">
-                        <span>視界侵入深度バランス:</span>
-                        <span>
-                          {report.sessionAnalytics?.roleConfig?.visionLabelA || '自陣防衛'}{' '}
-                          {report.metrics.vision.defensiveWardPercent}% /{' '}
-                          {report.sessionAnalytics?.roleConfig?.visionLabelB || '敵陣ディープ'}{' '}
-                          {report.metrics.vision.deepWardPercent}%
-                        </span>
-                      </div>
-                      <div className="h-3.5 w-full rounded-full bg-surface-subtle flex overflow-hidden shadow-inner">
-                        <div
-                          className="h-full bg-success-500"
-                          style={{ width: `${report.metrics.vision.defensiveWardPercent}%` }}
-                          title={`${report.sessionAnalytics?.roleConfig?.visionLabelA || '自陣防衛'}: ${report.metrics.vision.defensiveWardPercent}%`}
-                        />
-                        <div
-                          className="h-full bg-primary-500"
-                          style={{ width: `${report.metrics.vision.deepWardPercent}%` }}
-                          title={`${report.sessionAnalytics?.roleConfig?.visionLabelB || '敵陣ディープ'}: ${report.metrics.vision.deepWardPercent}%`}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between text-[11px] font-bold">
-                        <span className="text-success-700">
-                          {report.sessionAnalytics?.roleConfig?.visionLabelA || '🛡️ 自陣防衛'} ({report.metrics.vision.defensiveWardPercent}%)
-                        </span>
-                        <span className="text-primary-700">
-                          {report.sessionAnalytics?.roleConfig?.visionLabelB || '⚡ 敵陣ディープ'} ({report.metrics.vision.deepWardPercent}%)
-                        </span>
-                      </div>
-                    </div>
-
+                    {/* 2026-10-07: 「自陣防衛/敵陣ディープ」のワード比率は計測しておらず視界スコアから作った値だったため削除 */}
                     <p className="text-xs text-muted leading-relaxed font-medium bg-background p-3 rounded-2xl border border-border/60">
                       {report.analysis.visionAnalysis}
                     </p>
