@@ -39,6 +39,10 @@
   - `patchFreshness.ts`: 公開日・明示表記からカレンダーパッチ（`26.X`）を推定し、fresh(30日以内) / moderate(31-60日) / stale(61日超) の3段階分類。
   - `/library` & `/api/library`: 記事カード・詳細モーダルにパッチバッジ・公開日・旧パッチ警告バナーを表示。「動画公開順 (最新)」ソートを追加。
   - `youtube_worker.py`: 60日以上前・旧バージョンの動画解析時に `[旧]` プレフィックスを自動付与し、旧パッチ警告プロンプトを注入。検索汚染を完全防止。
+✅ 解析不可動画のYouTube手動確認用プレイリスト自動送致 ＆ クローズ隔離配備（2026-10-06）:
+  - `/api/youtube/queue`: `close_to_playlist` アクション実装。YouTube Data APIでプレイリストへ自動挿入し `manually_closed` へ更新。
+  - `/api/youtube/oauth` & `/callback`: リフレッシュトークン発行用の認可フローを05に配備。
+  - `/admin/youtube`: 一括操作バーおよび各アイテムに「📋 プレイリストへ送る」ボタンを配備。URLクリップボードコピー＆プレイリスト直通リンクのフォールバック付き。
 
 **04の役目終了前に05へ移す裏方**（2026-10-04 判断: 今は移さない。移すきっかけ＝04停止が決まった／04障害で05のソロQ機能が止まった／自動振り返りの中身を大きく直す時）（今は04上で動いており05はデータを読むだけ）:
 `soloq-coach-poll.yml`→04 `/api/cron/soloq-coach`、`soloq-history-sync.yml`→04、04のVercel Cron `soloq-trends` `freshness-check` `dict-review-check`、ワーカー通知の送り先 04 `/api/push/notify-admin`（`edge-cloud-worker.yml` `absorber.yml` の `PORTAL_URL`）

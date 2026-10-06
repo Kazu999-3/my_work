@@ -22,6 +22,37 @@ export const QUEUE_STATUSES = [
 const ERROR_STATUSES = ['error_generation', 'error_no_transcript', 'failed'];
 const PRIORITIES = ['high', 'medium', 'low'];
 
+// YouTube Data API (プレイリスト書き込み)用のアクセストークンを
+// 保存済みのリフレッシュトークンから動的に発行
+async function getYoutubeAccessToken(): Promise<string | null> {
+  const clientId = process.env.YOUTUBE_OAUTH_CLIENT_ID;
+  const clientSecret = process.env.YOUTUBE_OAUTH_CLIENT_SECRET;
+  const refreshToken = process.env.YOUTUBE_OAUTH_REFRESH_TOKEN;
+  if (!clientId || !clientSecret || !refreshToken) return null;
+
+  try {
+    const res = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+        grant_type: 'refresh_token',
+      }),
+    });
+    if (!res.ok) {
+      console.warn('⚠️ [YouTube API] アクセストークン更新失敗:', await res.text());
+      return null;
+    }
+    const data = await res.json();
+    return data.access_token || null;
+  } catch (err) {
+    console.warn('⚠️ [YouTube API] アクセストークン更新エラー:', err);
+    return null;
+  }
+}
+
 // 1. キュー一覧取得
 // 一覧はサーバー側で絞り込み・ページ送りする（全1,300件超を毎回送らない）。
 // 件数(counts)は絞り込みと無関係に全件から数える。以前は先頭100件だけで集計しており不正確だった。
@@ -325,6 +356,86 @@ export async function PATCH(req: NextRequest) {
         .from('youtube_queue').update({ status: 'manually_closed' }).in('id', ids).select('id');
       if (error) throw error;
       return NextResponse.json({ success: true, count: data?.length || 0, message: `${data?.length || 0}件をクローズしました。` });
+    }
+
+    if (action === 'close_to_playlist') {
+      const ids: string[] = Array.isArray(body.ids) ? body.ids.map(String).slice(0, 500) : [];
+      if (ids.length === 0) {
+        return NextResponse.json({ error: '対象の動画が指定されていません' }, { status: 400 });
+      }
+
+      const { data: items, error: fetchError } = await supabase
+        .from('youtube_queue')
+        .select('id, title, url')
+        .in('id', ids);
+
+      if (fetchError) throw fetchError;
+      if (!items || items.length === 0) {
+        return NextResponse.json({ error: '対象の動画が見つかりません' }, { status: 404 });
+      }
+
+      let addedToPlaylist = 0;
+      const playlistId = process.env.YOUTUBE_MANUAL_REVIEW_PLAYLIST_ID;
+      let isConfigured = false;
+
+      try {
+        const accessToken = await getYoutubeAccessToken();
+        if (accessToken && playlistId) {
+          isConfigured = true;
+          for (const item of items) {
+            try {
+              const insertRes = await fetch(
+                'https://www.googleapis.com/youtube/v3/playlistItems?part=snippet',
+                {
+                  method: 'POST',
+                  headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    snippet: {
+                      playlistId,
+                      resourceId: { kind: 'youtube#video', videoId: item.id },
+                    },
+                  }),
+                }
+              );
+              if (insertRes.ok) {
+                addedToPlaylist++;
+              } else {
+                console.warn(`⚠️ [YouTube API] プレイリスト追加失敗 (${item.id}):`, await insertRes.text());
+              }
+            } catch (itemErr) {
+              console.warn(`⚠️ [YouTube API] プレイリスト追加中にエラー (${item.id}):`, itemErr);
+            }
+          }
+        }
+      } catch (playlistErr) {
+        console.warn('⚠️ [YouTube API] プレイリスト追加処理エラー:', playlistErr);
+      }
+
+      // キュー上のステータスを manually_closed にして安全に隔離
+      const { error: closeError } = await supabase
+        .from('youtube_queue')
+        .update({ status: 'manually_closed' })
+        .in('id', ids);
+
+      if (closeError) throw closeError;
+
+      const urls = items.map((i: any) => i.url);
+      const msg = isConfigured
+        ? `${items.length}件をクローズしました（YouTubeプレイリストへ ${addedToPlaylist}/${items.length}件 追加完了）。`
+        : `${items.length}件をクローズしました（YouTubeプレイリストIDまたはOAuth未設定のため、URLを手動コピー用として取得しました）。`;
+
+      return NextResponse.json({
+        success: true,
+        count: items.length,
+        addedToPlaylist,
+        isConfigured,
+        urls,
+        playlistId: playlistId || null,
+        message: msg,
+      });
     }
 
     const { id, status, resetRetries } = body;

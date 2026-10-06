@@ -33,6 +33,9 @@ League of Legends のリサーチ、記事生成、ソロキュー監視を統�
    - Python (PyQt6) による最前面・透過HUD (`03_SYSTEMS/v2_CORE/_LOL/overlay/`)。
    - **Live Client Data API連携**: 試合開始を自動検知し、対面自動判別、ポータル辞典メモ3行表示、2:40〜3:30の敵JG危険ガンクタイマー、リアルタイムCS/分メーター、1stリコール目標ゴールドをインゲーム描画。
    - **完全合法・規約準拠設計**: Riot Games の Third-Party Policies に100%準拠。
+7. **YouTube解析センター ＆ 解析不可動画プレイリスト送致 (`close_to_playlist`) [NEW]**:
+   - 字幕なし・音声なし・AI制限等で自動解析できなかった動画を、YouTube Data API経由で指定の「手動確認用プレイリスト（YouTube再生リスト）」へワンクリックで自動転送。
+   - 転送後はキューから安全にクローズ隔離（`manually_closed`）し、再検出・重複登録を完全防止。OAuth未設定時でもURL一括コピーのフォールバックを完備。
 
 
 ---

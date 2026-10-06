@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   Search, Plus, RefreshCw, RotateCcw, ExternalLink, CheckCircle2, AlertTriangle,
-  Play, Sparkles, Pause, XCircle,
+  Play, Sparkles, Pause, XCircle, ListVideo,
 } from 'lucide-react';
 
 interface QueueItem {
@@ -83,11 +83,11 @@ export default function QueueTab() {
   const [submitting, setSubmitting] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error'; link?: { url: string; label: string } } | null>(null);
 
-  const showMessage = (text: string, type: 'success' | 'error') => {
-    setMessage({ text, type });
-    setTimeout(() => setMessage(null), 5000);
+  const showMessage = (text: string, type: 'success' | 'error', link?: { url: string; label: string }) => {
+    setMessage({ text, type, link });
+    setTimeout(() => setMessage(null), 8000);
   };
 
   const buildQuery = useCallback((offset: number, meta: boolean) => {
@@ -185,6 +185,34 @@ export default function QueueTab() {
     if (json) { showMessage(json.message, 'success'); load(true); }
   };
 
+  const closeToPlaylist = async (ids: string[]) => {
+    if (ids.length === 0) return;
+    const isMultiple = ids.length > 1;
+    const confirmMsg = isMultiple
+      ? `選択した${ids.length}件の動画をYouTubeプレイリストへ追加し、キューからクローズしますか？`
+      : 'この動画をYouTubeプレイリストへ追加し、キューからクローズしますか？';
+    if (!confirm(confirmMsg)) return;
+
+    const json = await callApi('close_to_playlist', {
+      method: 'PATCH',
+      body: JSON.stringify({ action: 'close_to_playlist', ids }),
+    });
+
+    if (json) {
+      if (json.urls && Array.isArray(json.urls) && json.urls.length > 0) {
+        try {
+          await navigator.clipboard.writeText(json.urls.join('\n'));
+        } catch (_) {}
+      }
+      const playlistLink = json.playlistId
+        ? { url: `https://www.youtube.com/playlist?list=${json.playlistId}`, label: 'YouTubeプレイリストを開く ↗' }
+        : undefined;
+      showMessage(json.message, 'success', playlistLink);
+      if (isMultiple) setSelected(new Set());
+      load(true);
+    }
+  };
+
   const toggleSelect = (id: string) => setSelected((prev) => {
     const next = new Set(prev);
     if (next.has(id)) next.delete(id); else next.add(id);
@@ -198,11 +226,23 @@ export default function QueueTab() {
   return (
     <div className="space-y-4">
       {message && (
-        <div className={`p-3 rounded-xl border text-xs font-semibold flex items-center gap-2 ${
+        <div className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-between gap-3 ${
           message.type === 'success' ? 'bg-emerald-950/30 border-emerald-800/60 text-emerald-400' : 'bg-rose-950/30 border-rose-800/60 text-rose-400'
         }`}>
-          {message.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
-          {message.text}
+          <div className="flex items-center gap-2 min-w-0">
+            {message.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
+            <span className="break-words">{message.text}</span>
+          </div>
+          {message.link && (
+            <a
+              href={message.link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-bold flex items-center gap-1 transition"
+            >
+              {message.link.label}
+            </a>
+          )}
         </div>
       )}
 
@@ -286,13 +326,23 @@ export default function QueueTab() {
             </button>
           )}
           {selected.size > 0 && (
-            <button
-              onClick={closeSelected}
-              disabled={busy !== null}
-              className="px-3 py-2 rounded-lg bg-rose-950/30 border border-rose-800/60 text-xs font-bold text-rose-400 hover:bg-rose-950/60 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-            >
-              <XCircle className="w-3.5 h-3.5" /> 選択した{selected.size}件をクローズ
-            </button>
+            <>
+              <button
+                onClick={() => closeToPlaylist(Array.from(selected))}
+                disabled={busy !== null}
+                className="px-3 py-2 rounded-lg bg-indigo-950/60 border border-indigo-700/60 text-xs font-bold text-indigo-300 hover:bg-indigo-900/60 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                title="選択した動画をYouTube手動確認用プレイリストへ追加してクローズします"
+              >
+                <ListVideo className="w-3.5 h-3.5" /> 選択した{selected.size}件をプレイリストへ送る
+              </button>
+              <button
+                onClick={closeSelected}
+                disabled={busy !== null}
+                className="px-3 py-2 rounded-lg bg-rose-950/30 border border-rose-800/60 text-xs font-bold text-rose-400 hover:bg-rose-950/60 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <XCircle className="w-3.5 h-3.5" /> 選択した{selected.size}件をクローズ
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -386,17 +436,27 @@ export default function QueueTab() {
                     </button>
                   )}
                   {closable && (
-                    <button
-                      onClick={async () => {
-                        if (!confirm('この動画をクローズしますか？（記録は残り、監視で再登録されなくなります）')) return;
-                        const json = await callApi(`cl_${item.id}`, { method: 'PATCH', body: JSON.stringify({ action: 'close', ids: [item.id] }) });
-                        if (json) { showMessage('クローズしました', 'success'); load(true); }
-                      }}
-                      disabled={busy !== null}
-                      className="px-2.5 py-1 rounded-md bg-slate-950 border border-slate-800 text-rose-400 text-[10px] font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                    >
-                      <XCircle className="w-3 h-3" /> クローズ
-                    </button>
+                    <>
+                      <button
+                        onClick={() => closeToPlaylist([item.id])}
+                        disabled={busy !== null}
+                        className="px-2.5 py-1 rounded-md bg-indigo-950/40 border border-indigo-800/60 text-indigo-300 text-[10px] font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50 hover:bg-indigo-900/50"
+                        title="YouTubeの確認用プレイリストへ追加してクローズ"
+                      >
+                        <ListVideo className="w-3 h-3" /> プレイリストへ送る
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!confirm('この動画をクローズしますか？（記録は残り、監視で再登録されなくなります）')) return;
+                          const json = await callApi(`cl_${item.id}`, { method: 'PATCH', body: JSON.stringify({ action: 'close', ids: [item.id] }) });
+                          if (json) { showMessage('クローズしました', 'success'); load(true); }
+                        }}
+                        disabled={busy !== null}
+                        className="px-2.5 py-1 rounded-md bg-slate-950 border border-slate-800 text-rose-400 text-[10px] font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                      >
+                        <XCircle className="w-3 h-3" /> クローズ
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
