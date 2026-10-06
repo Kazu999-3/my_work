@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
+import { calculateFreshness } from '@/lib/patchFreshness';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,30 +40,38 @@ export async function GET(req: NextRequest) {
     const champion = searchParams.get('champion') || '';
     const category = searchParams.get('category') || 'lol'; // 'lol' | 'general' | 'all'
     const channel = searchParams.get('channel') || '';
-    const sort = searchParams.get('sort') || 'date_desc'; // 'date_desc' | 'date_asc' | 'volume_desc' | 'title_asc'
+    const sort = searchParams.get('sort') || 'date_desc'; // 'date_desc' | 'date_asc' | 'published_desc' | 'published_asc' | 'volume_desc' | 'title_asc'
     const limit = parseInt(searchParams.get('limit') || '60', 10);
     const offset = parseInt(searchParams.get('offset') || '0', 10);
     // 元動画URLで記事を特定する（動画解析センターの「記事を見る」から詳細を直接開くため）
     const source = searchParams.get('source') || '';
 
-    // チャンネル名辞書を youtube_queue からロード（URL → channel_name、および 動画ID → channel_name）
+    // チャンネル名および公開日辞書を youtube_queue からロード
     const { data: queueRows } = await supabase
       .from('youtube_queue')
-      .select('url, channel_name')
-      .not('channel_name', 'is', null)
-      .limit(2000);
+      .select('url, channel_name, published_at')
+      .limit(3000);
 
     const channelMap: Record<string, string> = {};
     const videoIdMap: Record<string, string> = {};
+    const publishedMap: Record<string, string> = {};
+    const videoIdPublishedMap: Record<string, string> = {};
+
     if (queueRows) {
       for (const qr of queueRows) {
-        if (qr.url && qr.channel_name) {
+        if (qr.url) {
           const trimmedUrl = qr.url.trim();
-          const trimmedCh = qr.channel_name.trim();
-          channelMap[trimmedUrl] = trimmedCh;
           const vid = extractYoutubeId(trimmedUrl);
-          if (vid) {
-            videoIdMap[vid] = trimmedCh;
+
+          if (qr.channel_name) {
+            const trimmedCh = qr.channel_name.trim();
+            channelMap[trimmedUrl] = trimmedCh;
+            if (vid) videoIdMap[vid] = trimmedCh;
+          }
+
+          if (qr.published_at) {
+            publishedMap[trimmedUrl] = qr.published_at;
+            if (vid) videoIdPublishedMap[vid] = qr.published_at;
           }
         }
       }
@@ -96,12 +105,14 @@ export async function GET(req: NextRequest) {
     let lolCount = 0;
     let generalCount = 0;
 
-    // 各記事のチャンネル名と文字数を解決（URL一致 ➔ 動画ID一致 ➔ 本文メタデータ ➔ 本文URL動画ID の順でフォールバック）
+    // 各記事のチャンネル名、公開日、鮮度、文字数を解決
     const enrichedRows = allRows.map((r: any) => {
       let ch = '';
+      let pubDate: string | null = null;
       const src = (r.source_url || '').trim();
       const srcVid = extractYoutubeId(src);
 
+      // チャンネル特定
       if (src && channelMap[src]) {
         ch = channelMap[src];
       } else if (srcVid && videoIdMap[srcVid]) {
@@ -118,11 +129,27 @@ export async function GET(req: NextRequest) {
         }
       }
 
+      // 公開日時特定 (YouTubeキュー ➔ 本文メタデータ ➔ 取込日 created_at)
+      if (src && publishedMap[src]) {
+        pubDate = publishedMap[src];
+      } else if (srcVid && videoIdPublishedMap[srcVid]) {
+        pubDate = videoIdPublishedMap[srcVid];
+      } else if (r.content) {
+        const mPub = r.content.match(/>\s*-\s*\*\*公開日\*\*:\s*([^\n\r]+)/);
+        if (mPub) {
+          pubDate = mPub[1].trim();
+        }
+      }
+
       // チャンネル名正規化（Kireiの表記揺れ統一など）
       if (ch.toLowerCase() === 'kireilol') ch = 'Coach Kirei';
       if (ch.toLowerCase() === 'coach kirei') ch = 'Coach Kirei';
 
       const charCount = (r.content || '').length;
+
+      // 鮮度・パッチ情報の計算
+      const effectiveDate = pubDate || r.created_at;
+      const freshnessInfo = calculateFreshness(r.title, r.content || '', effectiveDate);
 
       // レスポンス軽量化のため一覧では content 本文を削る
       const { content, ...rest } = r;
@@ -132,6 +159,14 @@ export async function GET(req: NextRequest) {
         tags: (r.tags || []).filter((t: string) => !/^__.+__$/.test(t)),
         channel: ch || 'その他・一般',
         char_count: charCount,
+        published_at: freshnessInfo.publishedAt || (r.created_at ? r.created_at.split('T')[0] : null),
+        patch: freshnessInfo.estimatedPatch,
+        is_explicit_patch: freshnessInfo.isExplicitPatch,
+        freshness: freshnessInfo.freshness,
+        is_old_patch: freshnessInfo.isOldPatch,
+        days_ago: freshnessInfo.daysAgo,
+        freshness_label: freshnessInfo.label,
+        freshness_color: freshnessInfo.badgeColor,
       };
     });
 
@@ -167,6 +202,18 @@ export async function GET(req: NextRequest) {
       filtered.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     } else if (sort === 'date_asc') {
       filtered.sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    } else if (sort === 'published_desc') {
+      filtered.sort((a: any, b: any) => {
+        const timeA = a.published_at ? new Date(a.published_at).getTime() : new Date(a.created_at).getTime();
+        const timeB = b.published_at ? new Date(b.published_at).getTime() : new Date(b.created_at).getTime();
+        return timeB - timeA;
+      });
+    } else if (sort === 'published_asc') {
+      filtered.sort((a: any, b: any) => {
+        const timeA = a.published_at ? new Date(a.published_at).getTime() : new Date(a.created_at).getTime();
+        const timeB = b.published_at ? new Date(b.published_at).getTime() : new Date(b.created_at).getTime();
+        return timeA - timeB;
+      });
     } else if (sort === 'volume_desc') {
       filtered.sort((a: any, b: any) => (b.char_count || 0) - (a.char_count || 0));
     } else if (sort === 'title_asc') {
@@ -216,7 +263,32 @@ export async function POST(req: NextRequest) {
 
     if (error) throw error;
 
-    return NextResponse.json({ success: true, article: data });
+    let pubDate: string | null = null;
+    if (data?.source_url) {
+      const { data: qRow } = await supabase
+        .from('youtube_queue')
+        .select('published_at')
+        .eq('url', data.source_url)
+        .maybeSingle();
+      if (qRow?.published_at) {
+        pubDate = qRow.published_at;
+      }
+    }
+
+    const freshnessInfo = calculateFreshness(data.title, data.content || '', pubDate || data.created_at);
+    const enrichedArticle = {
+      ...data,
+      published_at: freshnessInfo.publishedAt || (data.created_at ? data.created_at.split('T')[0] : null),
+      patch: freshnessInfo.estimatedPatch,
+      is_explicit_patch: freshnessInfo.isExplicitPatch,
+      freshness: freshnessInfo.freshness,
+      is_old_patch: freshnessInfo.isOldPatch,
+      days_ago: freshnessInfo.daysAgo,
+      freshness_label: freshnessInfo.label,
+      freshness_color: freshnessInfo.badgeColor,
+    };
+
+    return NextResponse.json({ success: true, article: enrichedArticle });
   } catch (e: any) {
     console.error('library 単一記事取得エラー:', e);
     return NextResponse.json({ error: e.message || '内部エラー' }, { status: 500 });

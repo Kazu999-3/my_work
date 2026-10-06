@@ -20,6 +20,14 @@ interface ArticleItem {
   tags?: string[];
   created_at: string;
   updated_at: string;
+  published_at?: string | null;
+  patch?: string;
+  is_explicit_patch?: boolean;
+  freshness?: 'fresh' | 'moderate' | 'stale';
+  is_old_patch?: boolean;
+  days_ago?: number;
+  freshness_label?: string;
+  freshness_color?: { bg: string; text: string; border: string };
 }
 
 interface ArticleDetail {
@@ -31,6 +39,14 @@ interface ArticleDetail {
   content?: string;
   raw_content?: string;
   created_at: string;
+  published_at?: string | null;
+  patch?: string;
+  is_explicit_patch?: boolean;
+  freshness?: 'fresh' | 'moderate' | 'stale';
+  is_old_patch?: boolean;
+  days_ago?: number;
+  freshness_label?: string;
+  freshness_color?: { bg: string; text: string; border: string };
 }
 
 function LibraryApp() {
@@ -53,7 +69,7 @@ function LibraryApp() {
   // 📺 チャンネル絞り込み ＆ ⇅ ソート
   const [channels, setChannels] = useState<{ name: string; count: number }[]>([]);
   const [selectedChannel, setSelectedChannel] = useState<string>("");
-  const [selectedSort, setSelectedSort] = useState<'date_desc' | 'volume_desc' | 'date_asc' | 'title_asc'>('date_desc');
+  const [selectedSort, setSelectedSort] = useState<'date_desc' | 'published_desc' | 'volume_desc' | 'date_asc' | 'title_asc'>('date_desc');
 
   // 選択中記事の詳細モーダル
   const [selectedId, setSelectedId] = useState<number | string | null>(initialId);
@@ -411,7 +427,8 @@ function LibraryApp() {
               onChange={(e) => handleSortChange(e.target.value as any)}
               className="bg-zinc-900 text-zinc-200 border border-zinc-700/80 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-amber-500/80 cursor-pointer"
             >
-              <option value="date_desc">📅 新しい順 (最新メタ)</option>
+              <option value="date_desc">📅 取り込み順 (最新)</option>
+              <option value="published_desc">📺 動画公開順 (最新)</option>
               <option value="volume_desc">📚 ボリューム順 (文字数)</option>
               <option value="date_asc">⏳ 古い順 (時系列)</option>
               <option value="title_asc">🔤 タイトル順 (五十音)</option>
@@ -437,6 +454,28 @@ function LibraryApp() {
                     className="p-3.5 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-amber-500/50 transition cursor-pointer flex flex-col justify-between gap-3 shadow-xs hover:bg-zinc-850"
                   >
                     <div className="space-y-2">
+                      {/* 🏷️ パッチ ＆ 鮮度バッジ */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {a.patch && (
+                          <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-amber-300 font-mono text-[10px] font-bold border border-zinc-700">
+                            🏷️ Patch {a.patch}
+                          </span>
+                        )}
+                        {a.is_old_patch ? (
+                          <span className="px-2 py-0.5 rounded-md bg-rose-950/70 text-rose-300 border border-rose-500/50 text-[10px] font-bold flex items-center gap-1">
+                            ⚠️ 旧パッチ {a.days_ago ? `(${Math.floor(a.days_ago / 30)}ヶ月前)` : ''}
+                          </span>
+                        ) : a.freshness === 'fresh' ? (
+                          <span className="px-2 py-0.5 rounded-md bg-emerald-950/70 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold">
+                            🟢 現行メタ
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-md bg-amber-950/60 text-amber-300 border border-amber-500/40 text-[10px] font-bold">
+                            🟡 1〜2パッチ前
+                          </span>
+                        )}
+                      </div>
+
                       <div className="flex items-start justify-between gap-2">
                         <h3 className="font-bold text-xs text-zinc-100 line-clamp-2 leading-snug hover:text-amber-300 transition">
                           {a.title}
@@ -506,7 +545,15 @@ function LibraryApp() {
                     </div>
 
                     <div className="flex items-center justify-between text-[10px] text-zinc-500 border-t border-zinc-800/80 pt-2">
-                      <span>{a.created_at ? a.created_at.split("T")[0] : "-"}</span>
+                      <div className="flex items-center gap-2">
+                        {a.published_at ? (
+                          <span className="text-zinc-400 font-mono" title={`YouTube公開日: ${a.published_at}`}>
+                            📺 公開: {a.published_at}
+                          </span>
+                        ) : (
+                          <span title="取込日">📅 取込: {a.created_at ? a.created_at.split("T")[0] : "-"}</span>
+                        )}
+                      </div>
                       <span className="flex items-center gap-0.5 text-amber-400 font-bold">
                         詳細を読む <ChevronRight size={12} />
                       </span>
@@ -579,9 +626,34 @@ function LibraryApp() {
           <div className="relative w-full max-w-3xl bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between p-4 border-b border-zinc-800 bg-zinc-950/80">
               <div className="min-w-0 flex-1 pr-3">
-                <span className="text-[10px] text-amber-400 font-black uppercase tracking-wider block mb-0.5">
-                  ARTICLE DETAIL
-                </span>
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <span className="text-[10px] text-amber-400 font-black uppercase tracking-wider">
+                    ARTICLE DETAIL
+                  </span>
+                  {detailArticle?.patch && (
+                    <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-amber-300 font-mono text-[10px] font-bold border border-zinc-700">
+                      🏷️ Patch {detailArticle.patch}
+                    </span>
+                  )}
+                  {detailArticle?.is_old_patch ? (
+                    <span className="px-2 py-0.5 rounded-md bg-rose-950/70 text-rose-300 border border-rose-500/50 text-[10px] font-bold">
+                      ⚠️ 旧パッチ {detailArticle.days_ago ? `(${Math.floor(detailArticle.days_ago / 30)}ヶ月前)` : ''}
+                    </span>
+                  ) : detailArticle?.freshness === 'fresh' ? (
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-950/70 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold">
+                      🟢 現行メタ
+                    </span>
+                  ) : detailArticle?.freshness === 'moderate' ? (
+                    <span className="px-2 py-0.5 rounded-md bg-amber-950/60 text-amber-300 border border-amber-500/40 text-[10px] font-bold">
+                      🟡 1〜2パッチ前
+                    </span>
+                  ) : null}
+                  {detailArticle?.published_at && (
+                    <span className="text-[10px] text-zinc-400 font-mono">
+                      📺 {detailArticle.published_at} 公開
+                    </span>
+                  )}
+                </div>
                 <h2 className="text-sm sm:text-base font-black text-zinc-100 truncate">
                   {detailArticle?.title || "記事読み込み中..."}
                 </h2>
@@ -618,6 +690,21 @@ function LibraryApp() {
                 <div className="py-20 text-center text-zinc-500">記事データを取得中...</div>
               ) : detailArticle ? (
                 <>
+                  {/* ⚠️ 旧パッチ警告バナー */}
+                  {detailArticle.is_old_patch && (
+                    <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-200 text-xs flex items-start gap-2.5">
+                      <span className="text-base shrink-0">⚠️</span>
+                      <div className="space-y-0.5">
+                        <div className="font-bold text-rose-300">
+                          旧パッチ・過去環境のアーカイブです (推定 Patch {detailArticle.patch} / 公開: {detailArticle.published_at || '不明'})
+                        </div>
+                        <p className="text-[11px] text-rose-300/80 leading-snug">
+                          アイテム・ルーンの数値仕様やジャングルペットの仕様など、現在の最新シーズン仕様と乖離している可能性があります。普遍的なマクロや判断原則を中心に参考にしてください。
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* 双方向連携バナー */}
                   {detailArticle.champion && detailArticle.champion !== "Unknown" ? (
                     <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-xs">

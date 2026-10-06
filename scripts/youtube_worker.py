@@ -8,6 +8,40 @@
 import os, re, json, glob, math, subprocess, sys, time
 import urllib.request, urllib.error
 from pathlib import Path
+from datetime import datetime, timezone
+
+def check_video_freshness(published_at_str, title=""):
+    """動画の公開日およびタイトルから鮮度・旧パッチ判定を行う（検索汚染防止・ジョージぱぱ原則）。
+    60日以上前の動画、または前シーズン以前の動画は旧パッチとして扱う。
+    """
+    days_ago = None
+    is_stale = False
+    pub_date_display = None
+
+    if published_at_str:
+        try:
+            clean_str = str(published_at_str).replace("Z", "+00:00")
+            dt = datetime.fromisoformat(clean_str)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            now = datetime.now(timezone.utc)
+            delta = now - dt
+            days_ago = max(0, delta.days)
+            pub_date_display = dt.strftime("%Y-%m-%d")
+            if days_ago > 60 or dt.year < 2026:
+                is_stale = True
+        except Exception:
+            pass
+
+    # タイトルに明示的に古いシーズン表記がある場合 (Season 14, 15, S14, S15, パッチ14.xなど)
+    if re.search(r"\b(s1[0-5]|season\s*1[0-5]|パッチ\s*1[0-5]\.)", title or "", re.IGNORECASE):
+        is_stale = True
+
+    return {
+        "is_stale": is_stale,
+        "days_ago": days_ago,
+        "pub_date_display": pub_date_display,
+    }
 
 # Windowsのコンソール(cp932)では絵文字や記号で UnicodeEncodeError になるため。
 # 元々GitHub Actions(Linux/UTF-8)専用だったのでこの手当てが無かった。
@@ -919,15 +953,37 @@ def main():
                     a = gemini_summarize_short(it.get("title") or "YouTube Shorts", it.get("channel_name") or "", transcript)
                 else:
                     a = gemini_summarize(it.get("title") or "YouTube Video", it.get("channel_name") or "", transcript)
-            # 元動画情報を記事の先頭に必ず明記する（2026-08-17、ユーザー指示）
-            video_title = a.get("title") or it.get("title") or "YouTube攻略メモ"
+
+            # 🏷️ 鮮度ガード（検索汚染防止＆アーカイブ分離原則 / ジョージぱぱ原則）
+            freshness = check_video_freshness(it.get("published_at"), it.get("title") or "")
+            raw_title = a.get("title") or it.get("title") or "YouTube攻略メモ"
+            
+            # 旧パッチ動画の場合はタイトル先頭に必ず [旧] を付与して現行バイブルと隔離
+            if freshness["is_stale"]:
+                if not raw_title.startswith("[旧]"):
+                    video_title = f"[旧] {raw_title}"
+                else:
+                    video_title = raw_title
+                print(f"  ⚠️ 旧パッチ動画を検知（公開: {freshness['pub_date_display']}、約{freshness['days_ago']}日前）: [旧] プレフィックスを付与")
+            else:
+                video_title = raw_title
+
             channel_name = it.get("channel_name") or "YouTube Channel"
             summary_content = a.get("summary") or ""
+            pub_date_line = f"> - **公開日**: {freshness['pub_date_display']}\n" if freshness['pub_date_display'] else ""
+            stale_warning_line = (
+                f"> ⚠️ **【旧パッチ・過去環境注意】**: 本動画は公開から日数が経過した過去バージョン（推定公開: {freshness['pub_date_display']}）の解説です。現在の最新仕様・パッチと乖離している可能性があるため、普遍的なマクロや判断原則を中心に活用してください。\n\n"
+                if freshness["is_stale"] else ""
+            )
+
+            # 元動画情報を記事の先頭に必ず明記する（2026-08-17、ユーザー指示）
             video_meta_header = (
                 f"> 📺 **元動画情報**\n"
-                f"> - **動画タイトル**: {video_title}\n"
+                f"> - **動画タイトル**: {raw_title}\n"
                 f"> - **チャンネル**: {channel_name}\n"
+                f"{pub_date_line}"
                 f"> - **動画リンク**: [{url}]({url})\n\n"
+                f"{stale_warning_line}"
                 f"---\n\n"
             )
             if "元動画情報" not in summary_content and url not in summary_content:
@@ -938,6 +994,8 @@ def main():
             tags = a.get("tags") or []
             if is_short and "Shorts" not in tags:
                 tags.append("Shorts")
+            if freshness["is_stale"] and "旧パッチ" not in tags:
+                tags.append("旧パッチ")
 
             # 完全自動(人間の確認なし)でチャンピオン辞典生成にそのまま使われていたため、
             # 手動登録(knowledge/add→confirm)と同じくreview_status='pending'で保存し、
