@@ -8,6 +8,7 @@ import {
   syncPlayersDiscordRoles,
   ROLE_DEFINITIONS,
   PLAYSTYLE_ROLE_DEFINITIONS,
+  BEGINNER_LOUNGE_ROLE_DEFINITION,
 } from '../../../../lib/discordRoleSync';
 
 export const dynamic = 'force-dynamic';
@@ -39,6 +40,7 @@ export async function GET(req: Request) {
     config,
     definitions: ROLE_DEFINITIONS,
     playstyleDefinitions: PLAYSTYLE_ROLE_DEFINITIONS,
+    beginnerLoungeDefinition: BEGINNER_LOUNGE_ROLE_DEFINITION,
   });
 }
 

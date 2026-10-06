@@ -21,7 +21,25 @@ export interface DiscordRoleConfig {
     casual: string;   // ☕ エンジョイ・まったり
     learner: string;  // 📖 教わりたい
   };
+  beginner_lounge_role?: string; // 🌱 初中級交流 (限定部屋アクセス用)
   updated_at?: string;
+}
+
+export const BEGINNER_LOUNGE_ROLE_DEFINITION = {
+  name: '🌱 初中級交流',
+  color: 0x1abc9c, // ターコイズ
+  description: '初参加・ライト・復帰勢かつアイアン〜ゴールド帯の限定部屋アクセス用ロール',
+};
+
+/**
+ * ランクが「アイアン〜ゴールド（初中級帯）」または未登録かどうかを判定する
+ */
+export function isLowRank(rank?: string | null): boolean {
+  if (!rank) return true; // 未登録・未入力は初級者・ビギナー扱いとして許可
+  const lower = rank.toLowerCase();
+  // プラチナ以上（上位帯）を検出
+  const highTiers = ['plat', 'プラチナ', 'emerald', 'エメラルド', 'dia', 'ダイヤ', 'master', 'マスター', 'grandmaster', 'グランドマスター', 'challenger', 'チャレンジャー'];
+  return !highTiers.some((t) => lower.includes(t));
 }
 
 export const ROLE_DEFINITIONS: Record<ExperienceTier, { name: string; color: number; description: string }> = {
@@ -170,6 +188,7 @@ export async function setupDiscordRoles(): Promise<{
   success: boolean;
   roles: DiscordRoleConfig['roles'];
   playstyle_roles?: DiscordRoleConfig['playstyle_roles'];
+  beginner_lounge_role?: string;
   message: string;
 }> {
   const token = process.env.DISCORD_BOT_TOKEN;
@@ -279,11 +298,37 @@ export async function setupDiscordRoles(): Promise<{
       playstyleRoleIds[key] = newRole.id;
     }
 
-    // 3. 設定を保存
+    // 3. 🌱 初中級交流ロールの作成（または再利用）
+    let beginnerLoungeRoleId = '';
+    const foundLounge = existingRoles.find((r) => r.name === BEGINNER_LOUNGE_ROLE_DEFINITION.name);
+    if (foundLounge) {
+      beginnerLoungeRoleId = foundLounge.id;
+    } else {
+      const createLoungeRes = await discordFetch(`https://discord.com/api/v10/guilds/${guildId}/roles`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bot ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: BEGINNER_LOUNGE_ROLE_DEFINITION.name,
+          color: BEGINNER_LOUNGE_ROLE_DEFINITION.color,
+          hoist: false,
+          mentionable: true,
+        }),
+      });
+      if (createLoungeRes.ok) {
+        const newLoungeRole = await createLoungeRes.json();
+        beginnerLoungeRoleId = newLoungeRole.id;
+      }
+    }
+
+    // 4. 設定を保存
     const newConfig: DiscordRoleConfig = {
       enabled: true,
       roles: roleIds,
       playstyle_roles: playstyleRoleIds,
+      beginner_lounge_role: beginnerLoungeRoleId,
     };
     await saveRoleSyncConfig(newConfig);
 
@@ -291,7 +336,8 @@ export async function setupDiscordRoles(): Promise<{
       success: true,
       roles: roleIds,
       playstyle_roles: playstyleRoleIds,
-      message: '経験度5種 ＆ プレイスタイル5種のロール（計10種）を正常にセットアップしました。',
+      beginner_lounge_role: beginnerLoungeRoleId,
+      message: '経験度5種・プレイスタイル5種・初中級交流ロール（計11種）を正常にセットアップしました。',
     };
   } catch (err: any) {
     console.error('[discordRoleSync] セットアップエラー:', err);
@@ -310,7 +356,8 @@ export async function syncMemberDiscordRole(
   discordId: string,
   targetTier: ExperienceTier,
   config?: DiscordRoleConfig,
-  existingRoles?: Set<string>
+  existingRoles?: Set<string>,
+  highestRank?: string | null
 ): Promise<{ success: boolean; changed: boolean; message?: string }> {
   const token = process.env.DISCORD_BOT_TOKEN;
   const guildId = process.env.DISCORD_GUILD_ID;
@@ -392,6 +439,38 @@ export async function syncMemberDiscordRole(
       }
     }
 
+    // 3. 🌱 初中級交流ロール（beginner_lounge_role）の同期（合致なら付与、非合致なら剥奪）
+    const loungeRoleId = roleConfig.beginner_lounge_role;
+    if (loungeRoleId) {
+      const isEligibleForLounge =
+        (targetTier === 'new' || targetTier === 'light' || targetTier === 'returning') &&
+        isLowRank(highestRank);
+
+      if (isEligibleForLounge) {
+        if (!currentRoles.has(loungeRoleId)) {
+          const addLounge = await discordFetch(
+            `https://discord.com/api/v10/guilds/${guildId}/members/${discordId}/roles/${loungeRoleId}`,
+            {
+              method: 'PUT',
+              headers: { Authorization: `Bot ${token}` },
+            }
+          );
+          if (addLounge.ok) changed = true;
+        }
+      } else {
+        if (currentRoles.has(loungeRoleId)) {
+          const removeLounge = await discordFetch(
+            `https://discord.com/api/v10/guilds/${guildId}/members/${discordId}/roles/${loungeRoleId}`,
+            {
+              method: 'DELETE',
+              headers: { Authorization: `Bot ${token}` },
+            }
+          );
+          if (removeLounge.ok) changed = true;
+        }
+      }
+    }
+
     return { success: true, changed };
   } catch (err: any) {
     console.error(`[discordRoleSync] 同期エラー (${discordId}):`, err);
@@ -433,7 +512,7 @@ export async function syncPlayersDiscordRoles(options?: {
   // 1. プレイヤー情報と試合参加実績を並行取得
   let query = supabaseAdmin
     .from('ktm_players')
-    .select('id, name, discord_id, metadata')
+    .select('id, name, discord_id, highest_rank, metadata')
     .not('discord_id', 'is', null)
     .not('discord_id', 'eq', '');
 
@@ -558,10 +637,18 @@ export async function syncPlayersDiscordRoles(options?: {
       continue;
     }
 
-    // 既に目標ロールが付いており、余分な管理ロールも付いていない場合は完全スキップ（APIコール0回！）
+    // 初中級交流ロールの要件判定
+    const loungeRoleId = config.beginner_lounge_role;
+    const isEligibleForLounge =
+      (tierInfo.tier === 'new' || tierInfo.tier === 'light' || tierInfo.tier === 'returning') &&
+      isLowRank(player.highest_rank);
+
+    // 既に目標ロールが付いており、余分な管理ロールも付いておらず、初中級交流ロールの状態も一致していれば完全スキップ
     if (currentRoles && targetRoleId && currentRoles.has(targetRoleId)) {
       const hasOtherManagedRole = allManagedRoleIds.some((rId) => rId !== targetRoleId && currentRoles.has(rId));
-      if (!hasOtherManagedRole) {
+      const loungeStatusMismatch = loungeRoleId ? currentRoles.has(loungeRoleId) !== isEligibleForLounge : false;
+
+      if (!hasOtherManagedRole && !loungeStatusMismatch) {
         synced++;
         results.push({ name: player.name, tier: tierInfo.tier, changed: false });
         continue;
@@ -569,7 +656,7 @@ export async function syncPlayersDiscordRoles(options?: {
     }
 
     // 変更が必要な場合のみ同期APIを実行
-    const syncRes = await syncMemberDiscordRole(dId, tierInfo.tier, config, currentRoles);
+    const syncRes = await syncMemberDiscordRole(dId, tierInfo.tier, config, currentRoles, player.highest_rank);
 
     if (syncRes.success) {
       synced++;
