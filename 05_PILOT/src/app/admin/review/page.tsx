@@ -114,6 +114,7 @@ export default function ReviewPage() {
   const [previewTab, setPreviewTab] = useState<'facts' | 'strategy' | 'lane'>('strategy');
   const [factsViewMode, setFactsViewMode] = useState<'highlight' | 'split'>('highlight');
   const [laneViewMode, setLaneViewMode] = useState<'highlight' | 'split' | 'edit'>('highlight');
+  const [selectedFactFields, setSelectedFactFields] = useState<Record<string, boolean>>({});
   const [editedLaneSectionText, setEditedLaneSectionText] = useState<string>('');
   const [modalError, setModalError] = useState<string | null>(null);
 
@@ -232,6 +233,21 @@ export default function ReviewPage() {
       includeFactMerge: true,
     };
 
+    // モーダルでプレビュー表示中の場合、各フィールドの選択状態（反映/スキップ）を辞書化
+    let customFactOverrides: Record<string, Record<string, string>> | undefined = undefined;
+    if (previewModalItem?.id === item.id && previewData?.factPreviews) {
+      customFactOverrides = {};
+      for (const fp of previewData.factPreviews) {
+        customFactOverrides[fp.champion] = {};
+        for (const diff of fp.diffs) {
+          const key = `${fp.champion}::${diff.key}`;
+          const isSelected = selectedFactFields[key] ?? diff.isChanged;
+          // 選択されていれば追記テキスト(after)、外されていれば既存テキスト(before)を採用
+          customFactOverrides[fp.champion][diff.key] = isSelected ? diff.after : diff.before;
+        }
+      }
+    }
+
     const payload = {
       id: item.id,
       action: 'approve',
@@ -242,6 +258,7 @@ export default function ReviewPage() {
       includeLaneGuide: edit.includeLaneGuide,
       includeFactMerge: edit.includeFactMerge,
       customLaneSectionText: (previewModalItem?.id === item.id && editedLaneSectionText) ? editedLaneSectionText : undefined,
+      customFactOverrides,
     };
 
     const result = await post(payload);
@@ -317,6 +334,19 @@ export default function ReviewPage() {
       }
       setPreviewData(json);
       setEditedLaneSectionText(json.laneGuidePreview?.sectionText || '');
+
+      // 各フィールドの選択ステート初期化（更新がある項目はデフォルトでチェックON）
+      const initialFieldSelection: Record<string, boolean> = {};
+      if (Array.isArray(json.factPreviews)) {
+        for (const fp of json.factPreviews) {
+          if (Array.isArray(fp.diffs)) {
+            for (const diff of fp.diffs) {
+              initialFieldSelection[`${fp.champion}::${diff.key}`] = !!diff.isChanged;
+            }
+          }
+        }
+      }
+      setSelectedFactFields(initialFieldSelection);
 
       // 初期タブの決定（教本優先、無ければレーン）
       if (json.championPreviews?.length > 0) {
@@ -984,6 +1014,39 @@ export default function ReviewPage() {
                                   <Dna size={14} />
                                   <span>{fp.championNameJa}（{fp.champion}）の各項目マージ予定</span>
                                 </span>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedFactFields((prev) => {
+                                        const next = { ...prev };
+                                        fp.diffs.forEach((d) => {
+                                          next[`${fp.champion}::${d.key}`] = !!d.isChanged;
+                                        });
+                                        return next;
+                                      });
+                                    }}
+                                    className="text-[10px] text-purple-400 hover:text-purple-300 underline cursor-pointer"
+                                  >
+                                    変更分を全選択
+                                  </button>
+                                  <span className="text-zinc-600 text-[10px]">|</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedFactFields((prev) => {
+                                        const next = { ...prev };
+                                        fp.diffs.forEach((d) => {
+                                          next[`${fp.champion}::${d.key}`] = false;
+                                        });
+                                        return next;
+                                      });
+                                    }}
+                                    className="text-[10px] text-zinc-500 hover:text-zinc-300 underline cursor-pointer"
+                                  >
+                                    すべて解除
+                                  </button>
+                                </div>
                               </div>
 
                               {/* AI生成の失敗（設定漏れ等）は知見と混ぜずにエラーとして出す */}
@@ -1015,6 +1078,9 @@ export default function ReviewPage() {
                                   const beforeSet = new Set(beforeLines);
                                   const afterLines = after.split('\n');
 
+                                  const fieldKeyId = `${fp.champion}::${diff.key}`;
+                                  const isFieldSelected = selectedFactFields[fieldKeyId] ?? diff.isChanged;
+
                                   // 新規追加行のカウント
                                   let newlyAddedCount = 0;
                                   if (diff.isChanged && before.trim()) {
@@ -1024,57 +1090,137 @@ export default function ReviewPage() {
                                   }
 
                                   return (
-                                    <div key={diff.key} className="p-3 rounded-xl bg-zinc-900/80 border border-zinc-800 text-xs space-y-2">
-                                      <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
+                                    <div
+                                      key={diff.key}
+                                      className={`p-3 rounded-xl border text-xs space-y-2 transition ${
+                                        !isFieldSelected && diff.isChanged
+                                          ? 'bg-zinc-900/40 border-zinc-800/60'
+                                          : 'bg-zinc-900/80 border-zinc-800'
+                                      }`}
+                                    >
+                                      {/* ヘッダー: チェックボックス ＆ ラベル ＆ 反映ステータス */}
+                                      <div className="flex items-center justify-between gap-2">
+                                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                                          <input
+                                            type="checkbox"
+                                            checked={isFieldSelected}
+                                            onChange={() => {
+                                              setSelectedFactFields((prev) => ({
+                                                ...prev,
+                                                [fieldKeyId]: !isFieldSelected,
+                                              }));
+                                            }}
+                                            className="w-4 h-4 accent-purple-500 rounded cursor-pointer shrink-0"
+                                          />
                                           <span className="font-bold text-amber-300 text-xs">{diff.label}</span>
                                           {diff.isChanged && newlyAddedCount > 0 && (
                                             <span className="text-[10px] px-1.5 py-0.2 rounded font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
                                               +{newlyAddedCount}行を新規追記
                                             </span>
                                           )}
+                                        </label>
+                                        <div className="flex items-center gap-1.5">
+                                          {diff.isChanged ? (
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setSelectedFactFields((prev) => ({
+                                                  ...prev,
+                                                  [fieldKeyId]: !isFieldSelected,
+                                                }));
+                                              }}
+                                              className={`text-[10px] px-2 py-0.5 rounded font-bold border transition cursor-pointer ${
+                                                isFieldSelected
+                                                  ? 'bg-purple-500/20 text-purple-300 border-purple-500/40 shadow-sm'
+                                                  : 'bg-zinc-800 text-zinc-500 border-zinc-700 hover:text-zinc-400'
+                                              }`}
+                                            >
+                                              {isFieldSelected ? '✓ 反映する' : '✕ スキップ（反映しない）'}
+                                            </button>
+                                          ) : (
+                                            <span className="text-[10px] px-2 py-0.5 rounded font-bold text-zinc-500 bg-zinc-950/60 border border-zinc-800">
+                                              変更なし（既存維持）
+                                            </span>
+                                          )}
                                         </div>
-                                        <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${
-                                          diff.isChanged ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'text-zinc-500 bg-zinc-950/60'
-                                        }`}>
-                                          {diff.isChanged ? '✨ 更新あり' : '変更なし（既存維持）'}
-                                        </span>
                                       </div>
 
+                                      {/* スキップ時の注意通知 */}
+                                      {!isFieldSelected && diff.isChanged && (
+                                        <div className="p-2 rounded-lg bg-zinc-950/90 border border-zinc-800 text-[10px] text-zinc-400 flex items-center justify-between">
+                                          <span className="text-zinc-400 font-semibold">
+                                            ※ 反映しない設定です（承認時、既存データがそのまま維持されます）
+                                          </span>
+                                          <button
+                                            type="button"
+                                            onClick={() => setSelectedFactFields((prev) => ({ ...prev, [fieldKeyId]: true }))}
+                                            className="text-purple-400 hover:text-purple-300 underline font-bold cursor-pointer"
+                                          >
+                                            反映する
+                                          </button>
+                                        </div>
+                                      )}
+
                                       {/* コンテンツ表示エリア */}
-                                      {!diff.isChanged || !after.trim() ? (
-                                        <div className="p-2.5 rounded-lg bg-zinc-950/80 border border-zinc-800 text-[11px] text-zinc-400 whitespace-pre-wrap leading-relaxed max-h-36 overflow-y-auto font-sans">
-                                          {after.trim() || '（未記入）'}
-                                        </div>
-                                      ) : !before.trim() ? (
-                                        /* 初回登録（Beforeが空）の場合 */
-                                        <div className="p-2.5 rounded-lg bg-zinc-950 border border-emerald-900/60 text-[11px] space-y-1.5 max-h-60 overflow-y-auto font-sans">
-                                          <div className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
-                                            <span className="px-1.5 py-0.5 bg-emerald-500/20 rounded border border-emerald-500/40">
-                                              ✨ 初回登録（全行が新規追記）
-                                            </span>
+                                      <div className={!isFieldSelected && diff.isChanged ? 'opacity-40 pointer-events-none' : ''}>
+                                        {!diff.isChanged || !after.trim() ? (
+                                          <div className="p-2.5 rounded-lg bg-zinc-950/80 border border-zinc-800 text-[11px] text-zinc-400 whitespace-pre-wrap leading-relaxed max-h-36 overflow-y-auto font-sans">
+                                            {after.trim() || '（未記入）'}
                                           </div>
-                                          <div className="space-y-1">
-                                            {afterLines.map((line, idx) => (
-                                              <div key={idx} className="bg-emerald-950/40 text-emerald-200 px-2 py-0.5 rounded border-l-2 border-emerald-400">
-                                                {line || '\u00A0'}
+                                        ) : !before.trim() ? (
+                                          /* 初回登録（Beforeが空）の場合 */
+                                          <div className="p-2.5 rounded-lg bg-zinc-950 border border-emerald-900/60 text-[11px] space-y-1.5 max-h-60 overflow-y-auto font-sans">
+                                            <div className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                                              <span className="px-1.5 py-0.5 bg-emerald-500/20 rounded border border-emerald-500/40">
+                                                ✨ 初回登録（全行が新規追記）
+                                              </span>
+                                            </div>
+                                            <div className="space-y-1">
+                                              {afterLines.map((line, idx) => (
+                                                <div key={idx} className="bg-emerald-950/40 text-emerald-200 px-2 py-0.5 rounded border-l-2 border-emerald-400">
+                                                  {line || '\u00A0'}
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        ) : factsViewMode === 'split' ? (
+                                          /* 2カラム比較モード */
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] font-sans">
+                                            <div className="p-2.5 rounded-lg bg-zinc-950 border border-zinc-800/80 text-zinc-400 space-y-1 max-h-60 overflow-y-auto">
+                                              <span className="text-[10px] font-bold text-zinc-500 block border-b border-zinc-800/80 pb-1">
+                                                変更前（既存データ）
+                                              </span>
+                                              <div className="whitespace-pre-wrap leading-relaxed">{before}</div>
+                                            </div>
+                                            <div className="p-2.5 rounded-lg bg-zinc-950 border border-purple-900/40 space-y-1 max-h-60 overflow-y-auto">
+                                              <span className="text-[10px] font-bold text-emerald-400 block border-b border-zinc-800/80 pb-1">
+                                                マージ後（+新知見ハイライト）
+                                              </span>
+                                              <div className="space-y-1">
+                                                {afterLines.map((line, idx) => {
+                                                  const isAdded = isLineNewlyAdded(line, before, beforeSet);
+                                                  if (isAdded) {
+                                                    return (
+                                                      <div
+                                                        key={idx}
+                                                        className="bg-emerald-950/70 text-emerald-200 font-medium px-2 py-0.5 rounded border-l-2 border-emerald-400"
+                                                      >
+                                                        {line}
+                                                      </div>
+                                                    );
+                                                  }
+                                                  return (
+                                                    <div key={idx} className="text-zinc-400 px-1 py-0.5">
+                                                      {line || '\u00A0'}
+                                                    </div>
+                                                  );
+                                                })}
                                               </div>
-                                            ))}
+                                            </div>
                                           </div>
-                                        </div>
-                                      ) : factsViewMode === 'split' ? (
-                                        /* 2カラム比較モード */
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] font-sans">
-                                          <div className="p-2.5 rounded-lg bg-zinc-950 border border-zinc-800/80 text-zinc-400 space-y-1 max-h-60 overflow-y-auto">
-                                            <span className="text-[10px] font-bold text-zinc-500 block border-b border-zinc-800/80 pb-1">
-                                              変更前（既存データ）
-                                            </span>
-                                            <div className="whitespace-pre-wrap leading-relaxed">{before}</div>
-                                          </div>
-                                          <div className="p-2.5 rounded-lg bg-zinc-950 border border-purple-900/40 space-y-1 max-h-60 overflow-y-auto">
-                                            <span className="text-[10px] font-bold text-emerald-400 block border-b border-zinc-800/80 pb-1">
-                                              マージ後（+新知見ハイライト）
-                                            </span>
+                                        ) : (
+                                          /* ハイライト強調表示モード（デフォルト） */
+                                          <div className="p-2.5 rounded-lg bg-zinc-950 border border-zinc-800/90 text-[11px] space-y-1 max-h-60 overflow-y-auto font-sans leading-relaxed">
                                             <div className="space-y-1">
                                               {afterLines.map((line, idx) => {
                                                 const isAdded = isLineNewlyAdded(line, before, beforeSet);
@@ -1082,49 +1228,25 @@ export default function ReviewPage() {
                                                   return (
                                                     <div
                                                       key={idx}
-                                                      className="bg-emerald-950/70 text-emerald-200 font-medium px-2 py-0.5 rounded border-l-2 border-emerald-400"
+                                                      className="bg-emerald-950/80 text-emerald-200 font-medium px-2.5 py-1.5 rounded-md border-l-4 border-emerald-400 shadow-sm flex items-start gap-2 my-1.5"
                                                     >
-                                                      {line}
+                                                      <span className="text-[9px] font-black uppercase px-1.5 py-0.2 bg-emerald-500/30 text-emerald-300 rounded border border-emerald-500/50 shrink-0 mt-0.5 shadow-sm">
+                                                        + 今回の追記
+                                                      </span>
+                                                      <span className="flex-1 break-words">{line}</span>
                                                     </div>
                                                   );
                                                 }
                                                 return (
-                                                  <div key={idx} className="text-zinc-400 px-1 py-0.5">
+                                                  <div key={idx} className="text-zinc-400 px-1 py-0.5 opacity-90 break-words">
                                                     {line || '\u00A0'}
                                                   </div>
                                                 );
                                               })}
                                             </div>
                                           </div>
-                                        </div>
-                                      ) : (
-                                        /* ハイライト強調表示モード（デフォルト） */
-                                        <div className="p-2.5 rounded-lg bg-zinc-950 border border-zinc-800/90 text-[11px] space-y-1 max-h-60 overflow-y-auto font-sans leading-relaxed">
-                                          <div className="space-y-1">
-                                            {afterLines.map((line, idx) => {
-                                              const isAdded = isLineNewlyAdded(line, before, beforeSet);
-                                              if (isAdded) {
-                                                return (
-                                                  <div
-                                                    key={idx}
-                                                    className="bg-emerald-950/80 text-emerald-200 font-medium px-2.5 py-1.5 rounded-md border-l-4 border-emerald-400 shadow-sm flex items-start gap-2 my-1.5"
-                                                  >
-                                                    <span className="text-[9px] font-black uppercase px-1.5 py-0.2 bg-emerald-500/30 text-emerald-300 rounded border border-emerald-500/50 shrink-0 mt-0.5 shadow-sm">
-                                                      + 今回の追記
-                                                    </span>
-                                                    <span className="flex-1 break-words">{line}</span>
-                                                  </div>
-                                                );
-                                              }
-                                              return (
-                                                <div key={idx} className="text-zinc-400 px-1 py-0.5 opacity-90 break-words">
-                                                  {line || '\u00A0'}
-                                                </div>
-                                              );
-                                            })}
-                                          </div>
-                                        </div>
-                                      )}
+                                        )}
+                                      </div>
                                     </div>
                                   );
                                 })}

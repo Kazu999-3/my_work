@@ -4,7 +4,7 @@ import { getRoster, resolveRosterChampions, getChampionNameJa } from '@/lib/cham
 import { integrateArticles, formatChampionArticleSection } from '@/lib/knowledgeIntegrate';
 import { detectArticleLane, LANE_CONFIG, LaneKey } from '@/lib/laneDetector';
 import { formatLaneGuideSection, mergeArticleToLaneGuide, appendSectionToLaneGuide } from '@/lib/laneGuideIntegrate';
-import { previewChampionFactsMerge, executeChampionFactsMerge } from '@/lib/championFactsMerge';
+import { previewChampionFactsMerge, executeChampionFactsMerge, FactFieldKey } from '@/lib/championFactsMerge';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -358,6 +358,7 @@ export async function POST(req: NextRequest) {
     let explicitIncludeLaneGuide: boolean | null = null;
     let explicitIncludeFactMerge: boolean = true;
     let customLaneSectionText: string | undefined = undefined;
+    let customFactOverrides: Record<string, Partial<Record<FactFieldKey, string>>> | undefined = undefined;
 
     // 単一記事承認時の手動修正パラメータ
     if (ids.length === 1) {
@@ -378,6 +379,9 @@ export async function POST(req: NextRequest) {
       }
       if (typeof body.customLaneSectionText === 'string' && body.customLaneSectionText.trim()) {
         customLaneSectionText = body.customLaneSectionText.trim();
+      }
+      if (body.customFactOverrides && typeof body.customFactOverrides === 'object') {
+        customFactOverrides = body.customFactOverrides;
       }
 
       if (typeof body.champion === 'string') {
@@ -434,12 +438,14 @@ export async function POST(req: NextRequest) {
           if (champList.length > 0 && articleText.length >= 100) {
             for (const champId of champList) {
               try {
+                const champOverride = customFactOverrides ? customFactOverrides[champId] : undefined;
                 const factRes = await executeChampionFactsMerge(
                   db,
                   champId,
                   row.title || '(無題)',
                   articleText,
-                  row.id
+                  row.id,
+                  champOverride
                 );
                 if (factRes.success && factRes.updatedFields.length > 0) {
                   factUpdatedChamps++;
