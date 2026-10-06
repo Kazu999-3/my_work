@@ -63,7 +63,13 @@ export async function POST(req: Request) {
       if (!result.success) {
         return NextResponse.json({ error: result.message }, { status: 500 });
       }
-      return NextResponse.json({ success: true, message: result.message, roles: result.roles });
+      return NextResponse.json({
+        success: true,
+        message: result.message,
+        roles: result.roles,
+        playstyle_roles: result.playstyle_roles,
+        beginner_lounge_role: result.beginner_lounge_role,
+      });
     }
 
     // 2. 全員一括同期

@@ -137,7 +137,7 @@ export default function DiscordRoleSyncModal({ onClose }: { onClose: () => void 
   };
 
   const tierKeys: Array<keyof RoleSyncConfig["roles"]> = ["new", "light", "regular", "experienced", "returning"];
-  const playstyleKeys = ["soloq", "flex", "lane_practice", "champ_practice", "learner"];
+  const playstyleKeys = ["soloq", "flex", "aram", "casual", "learner"];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">

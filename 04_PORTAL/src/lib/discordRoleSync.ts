@@ -113,6 +113,14 @@ export async function getRoleSyncConfig(): Promise<DiscordRoleConfig> {
       experienced: process.env.DISCORD_ROLE_EXPERIENCED || '',
       returning: process.env.DISCORD_ROLE_RETURNING || '',
     },
+    playstyle_roles: {
+      soloq: '',
+      flex: '',
+      aram: '',
+      casual: '',
+      learner: '',
+    },
+    beginner_lounge_role: '',
   };
 
   if (!supabaseAdmin) return fallbackConfig;
@@ -137,10 +145,11 @@ export async function getRoleSyncConfig(): Promise<DiscordRoleConfig> {
         playstyle_roles: data.value.playstyle_roles || {
           soloq: '',
           flex: '',
-          lane_practice: '',
-          champ_practice: '',
+          aram: '',
+          casual: '',
           learner: '',
         },
+        beginner_lounge_role: data.value.beginner_lounge_role || '',
         updated_at: data.value.updated_at,
       };
     }
