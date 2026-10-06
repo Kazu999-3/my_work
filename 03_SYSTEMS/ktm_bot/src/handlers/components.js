@@ -2,7 +2,7 @@ import { CONFIG } from '../config.js';
 import { patchInteractionResponse, sendDiscordMessage, sendInteractionFollowup } from '../utils/api.js';
 import { fetchSupabase } from '../utils/supabase.js';
 import { handleLaneCommand, handleStatsCommand } from './commands.js';
-import { createMessageContent, createRecruitButtons, createRecruitEmbed, extractPlayersFromEmbed, getPortalComponents, getPortalEmbed, handleHelpPage, applyDayCardState } from '../ui/embeds.js';
+import { createMessageContent, createRecruitButtons, createRecruitEmbed, extractPlayersFromEmbed, getPortalComponents, getPortalEmbed, getPlaystyleEmbed, getPlaystyleComponents, handleHelpPage, applyDayCardState } from '../ui/embeds.js';
 import { parseMessageData, handleAutoMatchEnd } from '../utils/helpers.js';
 import { getAdminDiscordIds, markRecruitmentStatus } from '../utils/recruitPermission.js';
 import { getKtmRank, getHighestLaneMmr, getPlayerExperienceBadge, getPlayerActiveMark } from '../utils/ktmRank.js';
@@ -437,6 +437,89 @@ export async function handleButtonInteraction(interaction, env, ctx) {
           { type: 1, components: [{ type: 4, custom_id: "memo", label: "一言メモ", style: 1, placeholder: "初心者歓迎！ VCあり", required: false }] }
         ]
       }
+    });
+  }
+
+  // 🎯 プレイスタイル設定パネルの表示（エフェメラル）
+  if (customId === 'portal_playstyle') {
+    return Response.json({
+      type: 4,
+      data: {
+        embeds: [getPlaystyleEmbed()],
+        components: getPlaystyleComponents(),
+        flags: 64 // 押した本人のみに表示
+      }
+    });
+  }
+
+  // 🎯 プレイスタイル・志向性ロールのトグル付与/解除
+  if (customId.startsWith('playstyle_role:')) {
+    const roleKey = customId.split(':')[1];
+    const guildId = interaction.guild_id;
+    if (!guildId) {
+      return Response.json({ type: 4, data: { content: "⚠️ サーバーIDが取得できませんでした。", flags: 64 } });
+    }
+
+    const PLAYSTYLE_NAMES = {
+      soloq: '🥊 ソロキュー奮闘中',
+      flex: '🤝 フレックス希望',
+      lane_practice: '🛡️ 不慣れレーン練習中',
+      champ_practice: '🧪 キャラ練習中',
+      learner: '📖 教わりたい'
+    };
+    const roleLabel = PLAYSTYLE_NAMES[roleKey] || roleKey;
+
+    ctx.waitUntil((async () => {
+      try {
+        // DB (ktm_settings) から playstyle_roles を取得
+        const settings = await fetchSupabase(env, 'ktm_settings', 'key=eq.discord_role_sync');
+        const config = settings?.[0]?.value;
+        const roleId = config?.playstyle_roles?.[roleKey];
+
+        if (!roleId) {
+          await patchInteractionResponse(appId, token, {
+            content: `⚠️ ロール『${roleLabel}』のIDがまだ設定されていません。\nポータルの管理画面（🎭 ロール連携）から作成・同期を実行してください。`
+          });
+          return;
+        }
+
+        const userRoles = interaction.member?.roles || [];
+        const hasRole = userRoles.includes(roleId);
+
+        if (hasRole) {
+          // 解除 (DELETE)
+          const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${userId}/roles/${roleId}`, {
+            method: "DELETE",
+            headers: { "Authorization": `Bot ${botToken}` }
+          });
+          if (!res.ok) throw new Error(`Role removal failed: ${res.status} ${await res.text()}`);
+          await patchInteractionResponse(appId, token, {
+            content: `🗑️ **『${roleLabel}』を解除しました。**\nいつでもボタンから再度付与できます。`
+          });
+        } else {
+          // 付与 (PUT)
+          const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${userId}/roles/${roleId}`, {
+            method: "PUT",
+            headers: { "Authorization": `Bot ${botToken}`, "Content-Length": "0" }
+          });
+          if (!res.ok) throw new Error(`Role assignment failed: ${res.status} ${await res.text()}`);
+          await patchInteractionResponse(appId, token, {
+            content: `✅ **『${roleLabel}』を付与しました！**\n名簿やプロフィールに反映されます。`
+          });
+        }
+      } catch (err) {
+        console.error("[playstyle_role] Error:", err);
+        try {
+          await patchInteractionResponse(appId, token, {
+            content: `❌ **ロール操作エラー**: ${err.message}\nBotのロール権限の順位を確認してください。`
+          });
+        } catch (_) {}
+      }
+    })());
+
+    return Response.json({
+      type: 5,
+      data: { flags: 64 }
     });
   }
 

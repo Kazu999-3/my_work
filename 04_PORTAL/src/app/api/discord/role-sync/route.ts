@@ -7,6 +7,7 @@ import {
   setupDiscordRoles,
   syncPlayersDiscordRoles,
   ROLE_DEFINITIONS,
+  PLAYSTYLE_ROLE_DEFINITIONS,
 } from '../../../../lib/discordRoleSync';
 
 export const dynamic = 'force-dynamic';
@@ -37,6 +38,7 @@ export async function GET(req: Request) {
   return NextResponse.json({
     config,
     definitions: ROLE_DEFINITIONS,
+    playstyleDefinitions: PLAYSTYLE_ROLE_DEFINITIONS,
   });
 }
 

@@ -387,6 +387,17 @@ export async function handlePortalPanel(interaction, env, ctx) {
   });
 }
 
+export async function handleRolesCommand(interaction, env, ctx) {
+  const { getPlaystyleEmbed, getPlaystyleComponents } = await import('../ui/embeds.js');
+  return Response.json({
+    type: 4,
+    data: {
+      embeds: [getPlaystyleEmbed()],
+      components: getPlaystyleComponents()
+    }
+  });
+}
+
 
 
 // ⚠️ 2026-09-29: handleMemoCommand（/memo）を削除した（ユーザー判断で不要と確定）。

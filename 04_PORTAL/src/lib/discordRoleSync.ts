@@ -3,6 +3,8 @@ import { discordFetch } from './discordFetch';
 import { fetchAllRows } from './fetchAll';
 import { getPlayerTier, ExperienceTier } from './playerTier';
 
+export type PlaystyleRoleKey = 'soloq' | 'flex' | 'lane_practice' | 'champ_practice' | 'learner';
+
 export interface DiscordRoleConfig {
   enabled: boolean;
   roles: {
@@ -11,6 +13,13 @@ export interface DiscordRoleConfig {
     regular: string;      // 👑 常連
     experienced: string;  // 🎖️ 経験者
     returning: string;    // ⏳ 復帰勢
+  };
+  playstyle_roles?: {
+    soloq: string;          // 🥊 ソロキュー奮闘中
+    flex: string;           // 🤝 フレックス希望
+    lane_practice: string;  // 🛡️ 不慣れレーン練習中
+    champ_practice: string; // 🧪 キャラ練習中
+    learner: string;        // 📖 教わりたい
   };
   updated_at?: string;
 }
@@ -40,6 +49,34 @@ export const ROLE_DEFINITIONS: Record<ExperienceTier, { name: string; color: num
     name: '⏳ 復帰勢',
     color: 0x95a5a6, // シルバー
     description: '内戦通算5戦以上かつブランク60日以上の復帰メンバー',
+  },
+};
+
+export const PLAYSTYLE_ROLE_DEFINITIONS: Record<PlaystyleRoleKey, { name: string; color: number; description: string }> = {
+  soloq: {
+    name: '🥊 ソロキュー奮闘中',
+    color: 0xe74c3c, // レッド
+    description: 'ソロランクを回したい・デュオ募集中のメンバー',
+  },
+  flex: {
+    name: '🤝 フレックス希望',
+    color: 0x9b59b6, // パープル
+    description: 'フレックス（3〜5人）で遊びたいメンバー',
+  },
+  lane_practice: {
+    name: '🛡️ 不慣れレーン練習中',
+    color: 0xe67e22, // オレンジ
+    description: 'メイン以外の新レーンを練習したいメンバー',
+  },
+  champ_practice: {
+    name: '🧪 キャラ練習中',
+    color: 0x1abc9c, // ターコイズ
+    description: '不慣れな新チャンピオンを練習したいメンバー',
+  },
+  learner: {
+    name: '📖 教わりたい',
+    color: 0x3498db, // ブルー
+    description: '立ち回りやアドバイスを教えてもらいたいメンバー',
   },
 };
 
@@ -78,6 +115,13 @@ export async function getRoleSyncConfig(): Promise<DiscordRoleConfig> {
           regular: data.value.roles?.regular || fallbackConfig.roles.regular,
           experienced: data.value.roles?.experienced || fallbackConfig.roles.experienced,
           returning: data.value.roles?.returning || fallbackConfig.roles.returning,
+        },
+        playstyle_roles: data.value.playstyle_roles || {
+          soloq: '',
+          flex: '',
+          lane_practice: '',
+          champ_practice: '',
+          learner: '',
         },
         updated_at: data.value.updated_at,
       };
@@ -125,6 +169,7 @@ export async function saveRoleSyncConfig(config: DiscordRoleConfig): Promise<boo
 export async function setupDiscordRoles(): Promise<{
   success: boolean;
   roles: DiscordRoleConfig['roles'];
+  playstyle_roles?: DiscordRoleConfig['playstyle_roles'];
   message: string;
 }> {
   const token = process.env.DISCORD_BOT_TOKEN;
@@ -193,17 +238,60 @@ export async function setupDiscordRoles(): Promise<{
       roleIds[tier] = newRole.id;
     }
 
-    // 2. 設定を保存
+    // 2. プレイスタイル志向性ロールの作成（または再利用）
+    const playstyleRoleIds: Record<PlaystyleRoleKey, string> = {
+      soloq: '',
+      flex: '',
+      lane_practice: '',
+      champ_practice: '',
+      learner: '',
+    };
+    const playstyleKeys: PlaystyleRoleKey[] = ['soloq', 'flex', 'lane_practice', 'champ_practice', 'learner'];
+
+    for (const key of playstyleKeys) {
+      const def = PLAYSTYLE_ROLE_DEFINITIONS[key];
+      const found = existingRoles.find((r) => r.name === def.name);
+      if (found) {
+        playstyleRoleIds[key] = found.id;
+        continue;
+      }
+
+      const createRes = await discordFetch(`https://discord.com/api/v10/guilds/${guildId}/roles`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bot ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: def.name,
+          color: def.color,
+          hoist: false,
+          mentionable: true,
+        }),
+      });
+
+      if (!createRes.ok) {
+        const errText = await createRes.text();
+        throw new Error(`ロール「${def.name}」の作成失敗: ${createRes.status} ${errText}`);
+      }
+
+      const newRole = await createRes.json();
+      playstyleRoleIds[key] = newRole.id;
+    }
+
+    // 3. 設定を保存
     const newConfig: DiscordRoleConfig = {
       enabled: true,
       roles: roleIds,
+      playstyle_roles: playstyleRoleIds,
     };
     await saveRoleSyncConfig(newConfig);
 
     return {
       success: true,
       roles: roleIds,
-      message: '5種類のロールを正常にセットアップしました。',
+      playstyle_roles: playstyleRoleIds,
+      message: '経験度5種 ＆ プレイスタイル5種のロール（計10種）を正常にセットアップしました。',
     };
   } catch (err: any) {
     console.error('[discordRoleSync] セットアップエラー:', err);

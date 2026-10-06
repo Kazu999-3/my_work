@@ -67,6 +67,10 @@ export const COMMAND_DEFINITIONS = [
     name: 'tip',
     description: '他のメンバーにKTMコインを贈ります（送る相手と金額を指定）',
   },
+  {
+    name: 'roles',
+    description: 'プレイスタイル・志向性ロール（ソロキュー中、練習中等）の付与パネルを表示します',
+  },
 ];
 
 /** Discordの制限: コマンド名は1〜32文字の小文字英数字とハイフン・アンダースコア */

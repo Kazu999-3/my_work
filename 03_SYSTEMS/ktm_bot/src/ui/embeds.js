@@ -223,6 +223,7 @@ export function getPortalEmbed() {
       "📊 **マイ戦績確認** … 自分の勝率・レーン別MMR・ライバルを表示\n" +
       "⚡ **クイック即募集** … 「ノーマル5人」「カスタム10人」をワンタップで即投下\n" +
       "📝 **サモナー名変更** / 📍 **レーン設定変更** … 登録内容の変更はこちら\n" +
+      "🎯 **プレイスタイル設定** … ソロキュー中・キャラ練習中・教わりたい等のロール設定\n" +
       "📖 **ガイド** / 🌐 **Webポータル** … 個人スタッツ、リーダーボード、初心者ガイド、師弟ハブ",
     color: 0xc2650f, 
     footer: { text: "KTM Sovereign OS | プレイヤーズハブ" },
@@ -231,6 +232,44 @@ export function getPortalEmbed() {
 }
 
 // ⚠️ 2026-09-29: getWelcomeEmbed() を削除（getPortalEmbed() をそのまま返すだけの別名だった）。
+
+export function getPlaystyleEmbed() {
+  return {
+    title: "🎯 プレイスタイル ＆ 志向性ロール設定",
+    description:
+      "今の気分やプレイスタイルに合わせて、自由にロールをON/OFFできます。\n" +
+      "ボタンを押すたびに **付与 / 解除** が切り替わります（複数選択OK・何度でも変更可）。\n\n" +
+      "**【選べるロール一覧】**\n" +
+      "🥊 **ソロキュー奮闘中** … ソロランク回し中・デュオ募集中の意思表示\n" +
+      "🤝 **フレックス希望** … 3〜5人のフレックス募集・参加をしたい時\n" +
+      "🛡️ **不慣れレーン練習中** … メイン以外の新レーンを練習したい時（温かい目で見守り）\n" +
+      "🧪 **キャラ練習中** … 新チャンプや練習中ピックを出す時（気兼ねなく練習）\n" +
+      "📖 **教わりたい** … 立ち回りやアドバイスを気軽に教えてもらいたい時",
+    color: 0x3498db,
+    footer: { text: "ボタンを押すと即時反映されます ｜ いつでも付け外し自由" },
+    timestamp: new Date().toISOString()
+  };
+}
+
+export function getPlaystyleComponents() {
+  return [
+    {
+      type: 1,
+      components: [
+        { type: 2, label: "🥊 ソロキュー奮闘中", style: 2, custom_id: "playstyle_role:soloq" },
+        { type: 2, label: "🤝 フレックス希望", style: 2, custom_id: "playstyle_role:flex" },
+        { type: 2, label: "🛡️ 不慣れレーン練習中", style: 2, custom_id: "playstyle_role:lane_practice" }
+      ]
+    },
+    {
+      type: 1,
+      components: [
+        { type: 2, label: "🧪 キャラ練習中", style: 2, custom_id: "playstyle_role:champ_practice" },
+        { type: 2, label: "📖 教わりたい", style: 2, custom_id: "playstyle_role:learner" }
+      ]
+    }
+  ];
+}
 
 export function getPortalComponents(userId, portalUrl = CONFIG.PORTAL_URL) {
   // Row 1: メインアクション（一括登録・募集作成・マイ戦績）
@@ -246,8 +285,9 @@ export function getPortalComponents(userId, portalUrl = CONFIG.PORTAL_URL) {
     { type: 2, label: "⚡ カスタム10 即募集", style: 2, custom_id: "quick_recruit:カスタム:10" }
   ];
 
-  // Row 3: 個別設定・通知
+  // Row 3: 個別設定・通知・プレイスタイル
   const rowSettings = [
+    { type: 2, label: "🎯 プレイスタイル設定", style: 1, custom_id: "portal_playstyle" },
     { type: 2, label: "📝 サモナー名変更", style: 2, custom_id: "portal_ign" },
     { type: 2, label: "📍 レーン設定変更", style: 2, custom_id: "portal_lane" },
     { type: 2, label: "🔔 募集通知 (ON/OFF)", style: 2, custom_id: "toggle_recruit_notification" }
@@ -443,14 +483,30 @@ export function applyDayCardState(embed, dayKey, entryLines) {
     fieldTitle = `👥 参加者 (${status.joined}/${status.capacity}名)`;
   }
 
+  const rulesValue = dayKey === 'sat'
+    ? '・**21:00〜**: カスタム3戦程度（1戦目 21:40頃終了目安）\n・**24時前後〜**: 締めのメイヘムカスタム✨（自由参加）\n・**20人以上**: 上位部屋と初中級部屋の2部屋同時開催！\n・**10〜19人**: 1ティア差以内で戦力五分五分のチーム分け'
+    : '・**21:00〜**: お祭りカスタム（特殊ルール・オフメタ・ARAM等）\n・**レート変動なし・ランク不問**！普段使わないチャンプの練習大歓迎✨';
+
+  const legendValue = '🔘 **ボタン**: 🟢フル参加 ｜ ⏱️1戦のみ (即抜けOK) ｜ 🌙途中参加 ｜ ❌辞退\n🏷️ **名簿**: 🔰初参加 ｜ 🌱ライト(1〜4戦) ｜ 👑常連 ｜ 🎖️経験者 ｜ ⏳復帰勢';
+
   embed.fields = [
     {
       name: fieldTitle,
       value: renderEntryList(lines, status),
       inline: false,
     },
+    {
+      name: '🕒 当日の流れ ＆ ルール',
+      value: rulesValue,
+      inline: false,
+    },
+    {
+      name: '💡 ボタン ＆ アイコン凡例',
+      value: legendValue,
+      inline: false,
+    },
   ];
-  embed.footer = { text: '土曜・日曜は別々エントリー ｜ 途中参加・1戦のみ歓迎' };
+  embed.footer = { text: '土曜・日曜は別々エントリー ｜ 途中参加・1戦のみ大歓迎' };
 
   return { embed, status, dominantTierText };
 }

@@ -1,5 +1,5 @@
 import { verifySignature } from './utils/security.js';
-import { handleAnnounceMatch, handleLaneCommand, handleRecruitDirect, handleSetIgn, handleStatsCommand, handlePortalPanel } from './handlers/commands.js';
+import { handleAnnounceMatch, handleLaneCommand, handleRecruitDirect, handleSetIgn, handleStatsCommand, handlePortalPanel, handleRolesCommand } from './handlers/commands.js';
 import { handleButtonInteraction } from './handlers/components.js';
 import { handleModalSubmit } from './handlers/modals.js';
 import { handleScheduledEvent } from './handlers/scheduled.js';
@@ -173,6 +173,9 @@ export default {
         }
         if (name === 'portal') {
           return await handlePortalPanel(interaction, context, ctx);
+        }
+        if (name === 'roles') {
+          return await handleRolesCommand(interaction, context, ctx);
         }
       }
 

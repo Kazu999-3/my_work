@@ -38,7 +38,7 @@ const GHOST_COMMANDS = ['anchan_chat'];
 const TARGETS = [...REMOVED_FEATURES, ...REMOVED_ALIASES, ...GHOST_COMMANDS];
 
 /** 現在も使うコマンド。誤って消さないための安全ネット。 */
-const KEEP = ['portal', 'ign', 'lane', 'recruit', 'stats', 'ranking', 'coins', 'casino', 'tip'];
+const KEEP = ['portal', 'ign', 'lane', 'recruit', 'stats', 'ranking', 'coins', 'casino', 'tip', 'roles'];
 
 function readTokenFromFile(file, keys) {
   try {

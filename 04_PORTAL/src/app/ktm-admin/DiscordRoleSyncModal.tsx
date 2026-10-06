@@ -32,6 +32,7 @@ interface SyncSummary {
 export default function DiscordRoleSyncModal({ onClose }: { onClose: () => void }) {
   const [config, setConfig] = useState<RoleSyncConfig | null>(null);
   const [definitions, setDefinitions] = useState<Record<string, RoleDefinition>>({});
+  const [playstyleDefinitions, setPlaystyleDefinitions] = useState<Record<string, RoleDefinition>>({});
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
@@ -56,6 +57,7 @@ export default function DiscordRoleSyncModal({ onClose }: { onClose: () => void 
       if (res.ok) {
         setConfig(data.config);
         setDefinitions(data.definitions || {});
+        setPlaystyleDefinitions(data.playstyleDefinitions || {});
       } else {
         setMessage({ type: "error", text: data.error || "設定の取得に失敗しました。" });
       }
@@ -131,6 +133,7 @@ export default function DiscordRoleSyncModal({ onClose }: { onClose: () => void 
   };
 
   const tierKeys: Array<keyof RoleSyncConfig["roles"]> = ["new", "light", "regular", "experienced", "returning"];
+  const playstyleKeys = ["soloq", "flex", "lane_practice", "champ_practice", "learner"];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
@@ -184,7 +187,7 @@ export default function DiscordRoleSyncModal({ onClose }: { onClose: () => void 
               className="flex items-center justify-center gap-2 px-4 py-3 bg-[#5865F2] hover:bg-[#4752c4] text-white rounded-xl font-bold shadow-sm transition disabled:opacity-50 text-xs"
             >
               <Sparkles className="h-4 w-4" />
-              {acting ? "処理中..." : "✨ 5種類のロールを自動作成"}
+              {acting ? "処理中..." : "✨ 10種類のロールを自動作成"}
             </button>
 
             <button
@@ -199,55 +202,106 @@ export default function DiscordRoleSyncModal({ onClose }: { onClose: () => void 
           </div>
 
           {/* ロール設定カード一覧 */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-bold text-foreground-subtle uppercase tracking-wider">
-              登録されているロール一覧
-            </h3>
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-xs font-bold text-foreground-subtle uppercase tracking-wider mb-2">
+                🏆 経験度・参加頻度ロール (自動付与 / 5種)
+              </h3>
 
-            {loading ? (
-              <div className="py-8 text-center text-xs text-faint">設定を読み込み中...</div>
-            ) : (
-              <div className="space-y-2">
-                {tierKeys.map((key) => {
-                  const def = definitions[key] || { name: key, description: "" };
-                  const roleId = config?.roles?.[key] || "";
-                  const isSet = Boolean(roleId);
+              {loading ? (
+                <div className="py-4 text-center text-xs text-faint">設定を読み込み中...</div>
+              ) : (
+                <div className="space-y-2">
+                  {tierKeys.map((key) => {
+                    const def = definitions[key] || { name: key, description: "" };
+                    const roleId = config?.roles?.[key] || "";
+                    const isSet = Boolean(roleId);
 
-                  return (
-                    <div
-                      key={key}
-                      className="p-3 bg-surface-raised border border-border rounded-xl flex items-center justify-between gap-3 text-xs"
-                    >
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-foreground">{def.name}</span>
+                    return (
+                      <div
+                        key={key}
+                        className="p-3 bg-surface-raised border border-border rounded-xl flex items-center justify-between gap-3 text-xs"
+                      >
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-foreground">{def.name}</span>
+                            {isSet ? (
+                              <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-success-100 text-success-800 border border-success-edge">
+                                連携済み
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-surface text-faint border border-border">
+                                未作成
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-faint">{def.description}</p>
+                        </div>
+
+                        <div className="text-right shrink-0">
                           {isSet ? (
-                            <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-success-100 text-success-800 border border-success-edge">
-                              連携済み
+                            <span className="font-mono text-[11px] text-faint bg-background px-2 py-1 rounded border border-border select-all">
+                              ID: {roleId}
                             </span>
                           ) : (
-                            <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-surface text-faint border border-border">
-                              未作成
-                            </span>
+                            <span className="text-[11px] text-faint italic">「自動作成」で生成されます</span>
                           )}
                         </div>
-                        <p className="text-[11px] text-faint">{def.description}</p>
                       </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
-                      <div className="text-right shrink-0">
-                        {isSet ? (
-                          <span className="font-mono text-[11px] text-faint bg-background px-2 py-1 rounded border border-border select-all">
-                            ID: {roleId}
-                          </span>
-                        ) : (
-                          <span className="text-[11px] text-faint italic">「自動作成」で生成されます</span>
-                        )}
+            <div>
+              <h3 className="text-xs font-bold text-foreground-subtle uppercase tracking-wider mb-2">
+                🎭 プレイスタイル・志向性ロール (メンバーがボタンでON/OFF / 5種)
+              </h3>
+
+              {!loading && (
+                <div className="space-y-2">
+                  {playstyleKeys.map((key) => {
+                    const def = playstyleDefinitions[key] || { name: key, description: "" };
+                    const roleId = (config as any)?.playstyle_roles?.[key] || "";
+                    const isSet = Boolean(roleId);
+
+                    return (
+                      <div
+                        key={key}
+                        className="p-3 bg-surface-raised border border-border rounded-xl flex items-center justify-between gap-3 text-xs"
+                      >
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-foreground">{def.name}</span>
+                            {isSet ? (
+                              <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-primary-100 text-primary-800 border border-primary-edge">
+                                連携済み
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-surface text-faint border border-border">
+                                未作成
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-faint">{def.description}</p>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          {isSet ? (
+                            <span className="font-mono text-[11px] text-faint bg-background px-2 py-1 rounded border border-border select-all">
+                              ID: {roleId}
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-faint italic">「自動作成」で生成されます</span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* 直近の同期サマリー */}
