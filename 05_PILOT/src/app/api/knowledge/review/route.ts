@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { getRoster, resolveRosterChampions, getChampionNameJa } from '@/lib/championRoster';
 import { integrateArticles, formatChampionArticleSection } from '@/lib/knowledgeIntegrate';
 import { detectArticleLane, LANE_CONFIG, LaneKey } from '@/lib/laneDetector';
-import { formatLaneGuideSection, mergeArticleToLaneGuide } from '@/lib/laneGuideIntegrate';
+import { formatLaneGuideSection, mergeArticleToLaneGuide, appendSectionToLaneGuide } from '@/lib/laneGuideIntegrate';
 import { previewChampionFactsMerge, executeChampionFactsMerge } from '@/lib/championFactsMerge';
 
 export const dynamic = 'force-dynamic';
@@ -289,22 +289,36 @@ export async function POST(req: NextRequest) {
         let laneError: string | null = null;
         try {
           laneSectionText = await formatLaneGuideSection(
-          {
-            id: 0,
-            title: cleanTitle,
-            content: cleanContent,
-            champion: resolvedChamps.join(', ') || null,
-            source_url: source_url || null,
-          },
-          targetLane
-        );
+            {
+              id: 0,
+              title: cleanTitle,
+              content: cleanContent,
+              champion: resolvedChamps.join(', ') || null,
+              source_url: source_url || null,
+            },
+            targetLane
+          );
         } catch (e: any) {
           laneError = e?.message || String(e);
         }
+
+        // 既存のレーンガイド本文を取得
+        const { data: guideRow } = await db
+          .from('lane_guides')
+          .select('title, body, source_count')
+          .eq('lane', targetLane)
+          .maybeSingle();
+
+        const existingBody = guideRow?.body || '';
+        const mergedBody = laneSectionText ? appendSectionToLaneGuide(existingBody, laneSectionText) : existingBody;
+
         laneGuidePreview = {
           lane: targetLane,
           laneLabel: LANE_CONFIG[targetLane]?.label || targetLane,
           sectionText: laneSectionText,
+          existingBody: existingBody,
+          mergedBody: mergedBody,
+          sourceCount: guideRow?.source_count || 0,
           error: laneError,
         };
       }
