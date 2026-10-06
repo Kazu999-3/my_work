@@ -10,32 +10,71 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 
+function extractYoutubeId(url: string): string | null {
+  if (!url) return null;
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
 const NO_CHAMPION = 'Unknown';
-const PAGE_SIZE = 30;
+const DEFAULT_PAGE_SIZE = 50;
 
 export async function GET(req: NextRequest) {
   try {
     if (!supabase) return NextResponse.json({ error: 'Supabaseクライアントが未初期化です' }, { status: 500 });
     const { searchParams } = new URL(req.url);
     const offset = Math.max(0, parseInt(searchParams.get('offset') || '0', 10) || 0);
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || String(DEFAULT_PAGE_SIZE), 10)));
     const champion = searchParams.get('champion') || '';
     const type = searchParams.get('type') || ''; // 'video' | 'atomic'
+    const channelFilter = searchParams.get('channel') || '';
+    const laneFilter = searchParams.get('lane') || ''; // 'COMMON' | 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP'
+    const queryKeyword = (searchParams.get('q') || '').trim().toLowerCase();
+    const sort = searchParams.get('sort') || 'created_asc'; // 'created_asc' | 'created_desc' | 'channel_asc' | 'volume_desc' | 'title_asc'
 
-    let query = supabase
+    // 1. youtube_queue からチャンネル名辞書をロード
+    const { data: queueRows } = await supabase
+      .from('youtube_queue')
+      .select('url, channel_name')
+      .limit(3000);
+
+    const channelMap: Record<string, string> = {};
+    const videoIdMap: Record<string, string> = {};
+
+    if (queueRows) {
+      for (const qr of queueRows) {
+        if (qr.url) {
+          const trimmedUrl = qr.url.trim();
+          const vid = extractYoutubeId(trimmedUrl);
+          if (qr.channel_name) {
+            const trimmedCh = qr.channel_name.trim();
+            channelMap[trimmedUrl] = trimmedCh;
+            if (vid) videoIdMap[vid] = trimmedCh;
+          }
+        }
+      }
+    }
+
+    // 2. 未承認記事（pending）全件を取得
+    let baseQuery = supabase
       .from('personal_knowledge')
-      .select('id, title, content, champion, parent_id, is_atomic, source_url, tags, created_at', { count: 'exact' })
+      .select('id, title, content, champion, parent_id, is_atomic, source_url, tags, created_at')
       .eq('review_status', 'pending')
-      .or('tags.is.null,tags.not.cs.{__DELETED__}');
-    if (champion) query = query.eq('champion', champion);
-    if (type === 'atomic') query = query.eq('is_atomic', true);
-    if (type === 'video') query = query.eq('is_atomic', false);
-    query = query.order('created_at', { ascending: true }).range(offset, offset + PAGE_SIZE - 1);
+      .or('tags.is.null,tags.not.cs.{__DELETED__}')
+      .order('created_at', { ascending: true })
+      .limit(1000);
 
-    const { data, error, count } = await query;
+    if (champion) baseQuery = baseQuery.eq('champion', champion);
+    if (type === 'atomic') baseQuery = baseQuery.eq('is_atomic', true);
+    if (type === 'video') baseQuery = baseQuery.eq('is_atomic', false);
+
+    const { data, error } = await baseQuery;
     if (error) throw error;
 
-    // 分割知見は親記事タイトルを付与
-    const parentIds = Array.from(new Set((data || []).map((r: any) => r.parent_id).filter(Boolean)));
+    const rawRows = data || [];
+
+    // 親記事タイトルのマッピング
+    const parentIds = Array.from(new Set(rawRows.map((r: any) => r.parent_id).filter(Boolean)));
     let parentTitles: Record<string, string> = {};
     if (parentIds.length > 0) {
       const { data: parents } = await supabase.from('personal_knowledge').select('id, title').in('id', parentIds);
@@ -44,9 +83,34 @@ export async function GET(req: NextRequest) {
 
     const roster = await getRoster().catch(() => []);
 
-    // 各記事のレーン・マクロ知見・複数チャンピオンを自動判定
-    const items = await Promise.all(
-      (data || []).map(async (r: any) => {
+    // 3. 各記事のチャンネル名、レーン判定、文字数を解決
+    const enrichedItems = await Promise.all(
+      rawRows.map(async (r: any) => {
+        // チャンネル特定
+        let ch = '';
+        const src = (r.source_url || '').trim();
+        const srcVid = extractYoutubeId(src);
+
+        if (src && channelMap[src]) {
+          ch = channelMap[src];
+        } else if (srcVid && videoIdMap[srcVid]) {
+          ch = videoIdMap[srcVid];
+        } else if (r.content) {
+          const m = r.content.match(/>\s*-\s*\*\*チャンネル\*\*:\s*([^\n\r]+)/);
+          if (m) {
+            ch = m[1].trim();
+          } else {
+            const vidMatch = r.content.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([a-zA-Z0-9_-]{11})/);
+            if (vidMatch && videoIdMap[vidMatch[1]]) {
+              ch = videoIdMap[vidMatch[1]];
+            }
+          }
+        }
+
+        // 表記揺れ統一
+        if (ch.toLowerCase() === 'kireilol') ch = 'Coach Kirei';
+        if (ch.toLowerCase() === 'coach kirei') ch = 'Coach Kirei';
+
         const detection = await detectArticleLane({
           title: r.title,
           content: r.content,
@@ -59,7 +123,7 @@ export async function GET(req: NextRequest) {
           detection.detectedChampions.map((c) => getChampionNameJa(c))
         );
 
-        // 既存の champion カラムを解決した日本語名（複数対応）
+        // 既存の champion カラムを解決した日本語名
         const currentChampParts = String(r.champion || '')
           .split(/[,、/|]\s*|\s+/)
           .filter(Boolean);
@@ -67,8 +131,12 @@ export async function GET(req: NextRequest) {
           currentChampParts.map((c) => getChampionNameJa(c))
         );
 
+        const charCount = (r.content || '').length;
+
         return {
           ...r,
+          channel: ch || '不明',
+          char_count: charCount,
           parentTitle: r.parent_id ? parentTitles[String(r.parent_id)] || null : null,
           isLaneGeneral: !r.champion || r.champion === NO_CHAMPION,
           currentChampNamesJa: currentChampNamesJa.join(', '),
@@ -82,10 +150,88 @@ export async function GET(req: NextRequest) {
       })
     );
 
+    // 4. チャンネル一覧＆件数の集計（全件ベース）
+    const channelCounts: Record<string, number> = {};
+    const laneCounts: Record<string, number> = {
+      ALL: enrichedItems.length,
+      COMMON: 0,
+      TOP: 0,
+      JG: 0,
+      MID: 0,
+      ADC: 0,
+      SUP: 0,
+    };
+
+    for (const item of enrichedItems) {
+      const chName = item.channel || '不明';
+      channelCounts[chName] = (channelCounts[chName] || 0) + 1;
+      const l = item.detectedLane as LaneKey;
+      if (laneCounts[l] !== undefined) {
+        laneCounts[l]++;
+      }
+    }
+
+    const channels = Object.entries(channelCounts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => {
+        // 不明は末尾に配置、それ以外は件数降順
+        if (a.name === '不明') return 1;
+        if (b.name === '不明') return -1;
+        return b.count - a.count;
+      });
+
+    // 5. フィルタリング適用
+    let filtered = enrichedItems;
+
+    // チャンネルフィルター
+    if (channelFilter) {
+      filtered = filtered.filter((item) => item.channel === channelFilter);
+    }
+
+    // レーンフィルター
+    if (laneFilter && laneFilter !== 'ALL') {
+      filtered = filtered.filter((item) => item.detectedLane === laneFilter);
+    }
+
+    // キーワード検索（タイトル、本文、チャンネル名、チャンピオン名）
+    if (queryKeyword) {
+      filtered = filtered.filter((item) => {
+        const titleMatch = (item.title || '').toLowerCase().includes(queryKeyword);
+        const contentMatch = (item.content || '').toLowerCase().includes(queryKeyword);
+        const channelMatch = (item.channel || '').toLowerCase().includes(queryKeyword);
+        const champMatch = (item.currentChampNamesJa || '').toLowerCase().includes(queryKeyword) ||
+          (item.detectedChampionsJa || '').toLowerCase().includes(queryKeyword);
+        return titleMatch || contentMatch || channelMatch || champMatch;
+      });
+    }
+
+    // 6. ソート適用
+    filtered.sort((a, b) => {
+      switch (sort) {
+        case 'created_desc':
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case 'channel_asc':
+          return a.channel.localeCompare(b.channel, 'ja') || (new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        case 'volume_desc':
+          return (b.char_count || 0) - (a.char_count || 0);
+        case 'title_asc':
+          return (a.title || '').localeCompare(b.title || '', 'ja');
+        case 'created_asc':
+        default:
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      }
+    });
+
+    // 7. ページネーション切り出し
+    const pagedItems = filtered.slice(offset, offset + limit);
+
     return NextResponse.json({
       success: true,
-      total: count ?? 0,
-      items,
+      total: filtered.length,
+      totalAll: enrichedItems.length,
+      items: pagedItems,
+      channels,
+      laneCounts,
       roster,
       laneConfig: LANE_CONFIG,
     });

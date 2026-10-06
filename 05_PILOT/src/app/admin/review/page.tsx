@@ -4,7 +4,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   CheckCircle2, XCircle, RefreshCw, ExternalLink, AlertTriangle,
-  ClipboardCheck, Eye, Layers, Compass, BookOpen, Edit3, Dna, Sparkles, Check
+  ClipboardCheck, Eye, Layers, Compass, BookOpen, Edit3, Dna, Sparkles, Check,
+  Tv, Search, ArrowUpDown, Filter
 } from 'lucide-react';
 
 type LaneKey = 'JG' | 'TOP' | 'MID' | 'ADC' | 'SUP' | 'COMMON';
@@ -17,6 +18,8 @@ interface ReviewItem {
   currentChampNamesJa?: string;
   is_atomic: boolean;
   source_url: string | null;
+  channel: string;
+  char_count: number;
   created_at: string;
   parentTitle: string | null;
   isLaneGeneral: boolean;
@@ -85,9 +88,16 @@ const LANE_OPTIONS: { key: LaneKey; label: string; icon: string }[] = [
 export default function ReviewPage() {
   const [items, setItems] = useState<ReviewItem[]>([]);
   const [total, setTotal] = useState(0);
+  const [totalAll, setTotalAll] = useState(0);
   const [roster, setRoster] = useState<RosterChampion[]>([]);
   const [loading, setLoading] = useState(true);
   const [type, setType] = useState<'' | 'video' | 'atomic'>('');
+  const [channel, setChannel] = useState<string>('');
+  const [lane, setLane] = useState<LaneKey | 'ALL'>('ALL');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [sort, setSort] = useState<string>('created_asc');
+  const [channels, setChannels] = useState<{ name: string; count: number }[]>([]);
+  const [laneCounts, setLaneCounts] = useState<Record<string, number>>({});
   const [edits, setEdits] = useState<Record<number, ItemEditState>>({});
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
@@ -112,6 +122,11 @@ export default function ReviewPage() {
     try {
       const qs = new URLSearchParams();
       if (type) qs.set('type', type);
+      if (channel) qs.set('channel', channel);
+      if (lane && lane !== 'ALL') qs.set('lane', lane);
+      if (searchQuery.trim()) qs.set('q', searchQuery.trim());
+      if (sort) qs.set('sort', sort);
+
       const res = await fetch(`/api/knowledge/review?${qs.toString()}`);
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || '取得に失敗しました');
@@ -119,6 +134,9 @@ export default function ReviewPage() {
       const loadedItems: ReviewItem[] = json.items || [];
       setItems(loadedItems);
       setTotal(json.total || 0);
+      setTotalAll(json.totalAll ?? json.total ?? 0);
+      if (json.channels) setChannels(json.channels);
+      if (json.laneCounts) setLaneCounts(json.laneCounts);
       if (json.roster?.length) setRoster(json.roster);
       setSelected(new Set());
 
@@ -140,7 +158,7 @@ export default function ReviewPage() {
     } finally {
       setLoading(false);
     }
-  }, [type]);
+  }, [type, channel, lane, searchQuery, sort]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -357,25 +375,138 @@ export default function ReviewPage() {
         )}
 
         {/* コントロールバー */}
-        <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            {([['', 'すべて'], ['video', '動画解析の記事'], ['atomic', '分割知見']] as const).map(([k, l]) => (
+        <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
+          {/* 上段: 種別タブ ＆ チャンネル ＆ ソート ＆ 検索 */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            {/* 左側: 種別タブ */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {([['', 'すべて'], ['video', '動画解析'], ['atomic', '分割知見']] as const).map(([k, l]) => (
+                <button
+                  key={k}
+                  onClick={() => setType(k)}
+                  className={`px-2.5 py-1.5 rounded-lg border text-xs font-bold cursor-pointer transition ${
+                    type === k ? 'bg-amber-500/10 border-amber-500/60 text-white' : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+
+            {/* 右側: チャンネル絞り込み ＆ ソート ＆ 検索 */}
+            <div className="flex flex-wrap items-center gap-2">
+              {/* 📺 チャンネル絞り込み */}
+              <div className="relative flex items-center">
+                <Tv className="w-3.5 h-3.5 text-red-400 absolute left-2.5 pointer-events-none" />
+                <select
+                  value={channel}
+                  onChange={(e) => setChannel(e.target.value)}
+                  className={`pl-8 pr-3 py-1.5 rounded-lg text-xs font-bold border transition appearance-none cursor-pointer ${
+                    channel ? 'bg-amber-500/15 border-amber-500/60 text-amber-200 shadow-sm' : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
+                  }`}
+                  aria-label="チャンネル絞り込み"
+                >
+                  <option value="">全チャンネル ({totalAll}件)</option>
+                  {channels.map((ch) => (
+                    <option key={ch.name} value={ch.name}>
+                      {ch.name} ({ch.count}件)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* ⇅ ソートセレクター */}
+              <div className="relative flex items-center">
+                <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none" />
+                <select
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value)}
+                  className="pl-8 pr-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-300 font-medium hover:border-slate-700 transition appearance-none cursor-pointer"
+                  aria-label="並び替え"
+                >
+                  <option value="created_asc">⏳ 登録古い順</option>
+                  <option value="created_desc">📅 登録新しい順</option>
+                  <option value="channel_asc">📺 チャンネル順</option>
+                  <option value="volume_desc">📚 ボリューム順</option>
+                  <option value="title_asc">🔤 タイトル順</option>
+                </select>
+              </div>
+
+              {/* 🔍 検索ボックス */}
+              <div className="relative flex items-center">
+                <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="タイトル/本文/チャンプ検索..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 pr-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-amber-500/60 w-44 md:w-52 transition"
+                />
+              </div>
+
+              {/* 更新ボタン */}
               <button
-                key={k}
-                onClick={() => setType(k)}
-                className={`px-3 py-1.5 rounded-lg border text-xs font-bold cursor-pointer ${
-                  type === k ? 'bg-amber-500/10 border-amber-500/60 text-white' : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                onClick={load}
+                disabled={loading}
+                title="最新に更新"
+                className="px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-300 hover:text-white flex items-center gap-1 cursor-pointer transition disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+          </div>
+
+          {/* 下段: レーン絞り込みタブ ＆ 件数サマリー */}
+          <div className="pt-2 border-t border-slate-800/60 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-1">
+              <button
+                onClick={() => setLane('ALL')}
+                className={`px-2.5 py-1 rounded-md text-xs font-bold cursor-pointer transition ${
+                  lane === 'ALL' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50' : 'bg-slate-950/40 text-slate-400 hover:text-slate-200'
                 }`}
               >
-                {l}
+                全レーン ({laneCounts.ALL || 0})
               </button>
-            ))}
-            <span className="text-xs text-slate-400">承認待ち <b className="text-amber-300 font-mono">{total}</b>件</span>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button onClick={load} disabled={loading} className="px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-300 flex items-center gap-1 cursor-pointer">
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> 最新に更新
-            </button>
+              {LANE_OPTIONS.map((opt) => {
+                const count = laneCounts[opt.key] || 0;
+                const isSelected = lane === opt.key;
+                return (
+                  <button
+                    key={opt.key}
+                    onClick={() => setLane(isSelected ? 'ALL' : opt.key)}
+                    className={`px-2 py-1 rounded-md text-xs font-semibold flex items-center gap-1 cursor-pointer transition ${
+                      isSelected
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50'
+                        : 'bg-slate-950/40 text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    <span>{opt.icon}</span>
+                    <span>{opt.label.replace(/^.+?\s/, '')}</span>
+                    <span className="text-[10px] opacity-70">({count})</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* 件数サマリー & フィルターリセット */}
+            <div className="flex items-center gap-2 text-xs">
+              {(channel || lane !== 'ALL' || searchQuery || type) && (
+                <button
+                  onClick={() => {
+                    setChannel('');
+                    setLane('ALL');
+                    setSearchQuery('');
+                    setType('');
+                  }}
+                  className="text-amber-400/80 hover:text-amber-300 text-[11px] underline cursor-pointer"
+                >
+                  フィルター解除
+                </button>
+              )}
+              <span className="text-slate-400 text-xs">
+                表示中: <b className="text-amber-300 font-mono">{total}</b>件 / 全体: <span className="font-mono">{totalAll}</span>件
+              </span>
+            </div>
           </div>
         </div>
 
@@ -386,7 +517,7 @@ export default function ReviewPage() {
               <input
                 type="checkbox"
                 className="accent-amber-500"
-                checked={selected.size === items.length}
+                checked={selected.size === items.length && items.length > 0}
                 onChange={() => setSelected(selected.size === items.length ? new Set() : new Set(items.map((i) => i.id)))}
               />
               表示中を全選択（{selected.size}/{items.length}）
@@ -453,6 +584,28 @@ export default function ReviewPage() {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
+                      {/* 📺 チャンネル名バッジ（クリックでそのチャンネルにワンクリック絞り込み） */}
+                      {item.channel && (
+                        <button
+                          type="button"
+                          onClick={() => setChannel(channel === item.channel ? '' : item.channel)}
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold border transition cursor-pointer ${
+                            channel === item.channel
+                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/60 shadow-sm'
+                              : 'bg-slate-800/80 text-slate-300 border-slate-700/80 hover:bg-slate-700 hover:text-white'
+                          }`}
+                          title={channel === item.channel ? 'チャンネル絞り込みを解除' : `「${item.channel}」で絞り込む`}
+                        >
+                          <Tv className="w-3 h-3 text-red-400" />
+                          {item.channel}
+                        </button>
+                      )}
+
+                      {/* 📚 文字数バッジ */}
+                      <span className="text-[11px] text-slate-400 font-mono">
+                        📚 {(item.char_count || item.content?.length || 0).toLocaleString()}文字
+                      </span>
+
                       <span>{new Date(item.created_at).toLocaleDateString('ja-JP')} 生成</span>
                       {item.parentTitle && <span>元記事: {item.parentTitle}</span>}
                       {item.source_url && (
