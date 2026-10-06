@@ -3,7 +3,7 @@ import { discordFetch } from './discordFetch';
 import { fetchAllRows } from './fetchAll';
 import { getPlayerTier, ExperienceTier } from './playerTier';
 
-export type PlaystyleRoleKey = 'soloq' | 'flex' | 'lane_practice' | 'champ_practice' | 'learner';
+export type PlaystyleRoleKey = 'soloq' | 'flex' | 'aram' | 'casual' | 'learner';
 
 export interface DiscordRoleConfig {
   enabled: boolean;
@@ -15,11 +15,11 @@ export interface DiscordRoleConfig {
     returning: string;    // ⏳ 復帰勢
   };
   playstyle_roles?: {
-    soloq: string;          // 🥊 ソロキュー奮闘中
-    flex: string;           // 🤝 フレックス希望
-    lane_practice: string;  // 🛡️ 不慣れレーン練習中
-    champ_practice: string; // 🧪 キャラ練習中
-    learner: string;        // 📖 教わりたい
+    soloq: string;    // 🥊 ソロキュー奮闘中
+    flex: string;     // 🤝 フレックス希望
+    aram: string;     // ❄️ ARAM・サクッと勢
+    casual: string;   // ☕ エンジョイ・まったり
+    learner: string;  // 📖 教わりたい
   };
   updated_at?: string;
 }
@@ -63,20 +63,20 @@ export const PLAYSTYLE_ROLE_DEFINITIONS: Record<PlaystyleRoleKey, { name: string
     color: 0x9b59b6, // パープル
     description: 'フレックス（3〜5人）で遊びたいメンバー',
   },
-  lane_practice: {
-    name: '🛡️ 不慣れレーン練習中',
-    color: 0xe67e22, // オレンジ
-    description: 'メイン以外の新レーンを練習したいメンバー',
+  aram: {
+    name: '❄️ ARAM・サクッと勢',
+    color: 0x00b4d8, // シアン・水色
+    description: '平日夜や短時間で気軽に1〜2戦回したいメンバー',
   },
-  champ_practice: {
-    name: '🧪 キャラ練習中',
-    color: 0x1abc9c, // ターコイズ
-    description: '不慣れな新チャンピオンを練習したいメンバー',
+  casual: {
+    name: '☕ エンジョイ・まったり',
+    color: 0x2ecc71, // グリーン
+    description: '勝ち負け気にせずミスも笑って雑談しながら楽しみたいメンバー',
   },
   learner: {
     name: '📖 教わりたい',
     color: 0x3498db, // ブルー
-    description: '立ち回りやアドバイスを教えてもらいたいメンバー',
+    description: '立ち回りやアドバイスを気軽に教えてもらいたいメンバー',
   },
 };
 
@@ -242,11 +242,11 @@ export async function setupDiscordRoles(): Promise<{
     const playstyleRoleIds: Record<PlaystyleRoleKey, string> = {
       soloq: '',
       flex: '',
-      lane_practice: '',
-      champ_practice: '',
+      aram: '',
+      casual: '',
       learner: '',
     };
-    const playstyleKeys: PlaystyleRoleKey[] = ['soloq', 'flex', 'lane_practice', 'champ_practice', 'learner'];
+    const playstyleKeys: PlaystyleRoleKey[] = ['soloq', 'flex', 'aram', 'casual', 'learner'];
 
     for (const key of playstyleKeys) {
       const def = PLAYSTYLE_ROLE_DEFINITIONS[key];

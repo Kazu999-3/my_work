@@ -476,8 +476,8 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     const PLAYSTYLE_NAMES = {
       soloq: '🥊 ソロキュー奮闘中',
       flex: '🤝 フレックス希望',
-      lane_practice: '🛡️ 不慣れレーン練習中',
-      champ_practice: '🧪 キャラ練習中',
+      aram: '❄️ ARAM・サクッと勢',
+      casual: '☕ エンジョイ・まったり',
       learner: '📖 教わりたい'
     };
     const roleLabel = PLAYSTYLE_NAMES[roleKey] || roleKey;

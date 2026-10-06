@@ -312,8 +312,8 @@ export function getPlaystyleEmbed() {
       "**【選べるロール一覧】**\n" +
       "🥊 **ソロキュー奮闘中** … ソロランク回し中・デュオ募集中の意思表示\n" +
       "🤝 **フレックス希望** … 3〜5人のフレックス募集・参加をしたい時\n" +
-      "🛡️ **不慣れレーン練習中** … メイン以外の新レーンを練習したい時（温かい目で見守り）\n" +
-      "🧪 **キャラ練習中** … 新チャンプや練習中ピックを出す時（気兼ねなく練習）\n" +
+      "❄️ **ARAM・サクッと勢** … 平日夜や短時間で気軽に1〜2戦回したい時\n" +
+      "☕ **エンジョイ・まったり** … 勝ち負け気にせずミスも笑って雑談しながら楽しむ\n" +
       "📖 **教わりたい** … 立ち回りやアドバイスを気軽に教えてもらいたい時",
     color: 0x3498db,
     footer: { text: "ボタンを押すと即時反映されます ｜ いつでも付け外し自由" },
@@ -328,13 +328,13 @@ export function getPlaystyleComponents() {
       components: [
         { type: 2, label: "🥊 ソロキュー奮闘中", style: 2, custom_id: "playstyle_role:soloq" },
         { type: 2, label: "🤝 フレックス希望", style: 2, custom_id: "playstyle_role:flex" },
-        { type: 2, label: "🛡️ 不慣れレーン練習中", style: 2, custom_id: "playstyle_role:lane_practice" }
+        { type: 2, label: "❄️ ARAM・サクッと勢", style: 2, custom_id: "playstyle_role:aram" }
       ]
     },
     {
       type: 1,
       components: [
-        { type: 2, label: "🧪 キャラ練習中", style: 2, custom_id: "playstyle_role:champ_practice" },
+        { type: 2, label: "☕ エンジョイ・まったり", style: 2, custom_id: "playstyle_role:casual" },
         { type: 2, label: "📖 教わりたい", style: 2, custom_id: "playstyle_role:learner" }
       ]
     }
