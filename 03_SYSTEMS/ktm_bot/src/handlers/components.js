@@ -440,6 +440,19 @@ export async function handleButtonInteraction(interaction, env, ctx) {
     });
   }
 
+  // 👑 全機能ポータルパネルの表示（エフェメラル）
+  if (customId === 'portal_hub') {
+    const portalUrl = CONFIG.PORTAL_URL;
+    return Response.json({
+      type: 4,
+      data: {
+        embeds: [getPortalEmbed()],
+        components: getPortalComponents(userId, portalUrl),
+        flags: 64 // 押した本人のみに表示
+      }
+    });
+  }
+
   // 🎯 プレイスタイル設定パネルの表示（エフェメラル）
   if (customId === 'portal_playstyle') {
     return Response.json({

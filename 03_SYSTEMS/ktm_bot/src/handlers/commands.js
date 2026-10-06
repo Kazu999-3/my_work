@@ -398,6 +398,18 @@ export async function handleRolesCommand(interaction, env, ctx) {
   });
 }
 
+export async function handleWelcomeCommand(interaction, env, ctx) {
+  const { getWelcomeContent, getWelcomeComponents } = await import('../ui/embeds.js');
+  const portalUrl = getPortalUrl(env);
+  return Response.json({
+    type: 4,
+    data: {
+      content: getWelcomeContent(),
+      components: getWelcomeComponents(portalUrl)
+    }
+  });
+}
+
 
 
 // ⚠️ 2026-09-29: handleMemoCommand（/memo）を削除した（ユーザー判断で不要と確定）。

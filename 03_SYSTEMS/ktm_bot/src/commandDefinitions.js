@@ -71,6 +71,10 @@ export const COMMAND_DEFINITIONS = [
     name: 'roles',
     description: 'プレイスタイル・志向性ロール（ソロキュー中、練習中等）の付与パネルを表示します',
   },
+  {
+    name: 'welcome',
+    description: '新メンバー向け利用案内（はじめの3ステップ・ルール・設定ボタン）を投稿します',
+  },
 ];
 
 /** Discordの制限: コマンド名は1〜32文字の小文字英数字とハイフン・アンダースコア */

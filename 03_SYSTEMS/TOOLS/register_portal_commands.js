@@ -23,6 +23,14 @@ async function main() {
     {
       name: 'portal',
       description: 'KTM プレイヤーズハブ ＆ 統合コントロールパネルを表示します'
+    },
+    {
+      name: 'welcome',
+      description: '新メンバー向け利用案内（はじめの3ステップ・ルール・設定ボタン）を投稿します'
+    },
+    {
+      name: 'roles',
+      description: 'プレイスタイル・志向性ロール（ソロキュー中、練習中等）の付与パネルを表示します'
     }
   ];
 

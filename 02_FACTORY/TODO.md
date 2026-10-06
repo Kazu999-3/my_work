@@ -96,6 +96,40 @@
 
 ---
 
+## 🧱 保守性向上・全量リファクタリング計画（統合・分割・部品化）
+
+> 2026-10-06 策定: 全量静的解析に基づき、500〜2,700行の巨大モノリスおよび重複コード（約3,300行）を段階的に解消するマスター計画。
+
+### フェーズ1: 【重複統合】04 ↔ 05 間のコード重複解消 ＆ SSoT化
+- [ ] **1-1. セッション分析ロジックの統合 (`sessionAnalyticsCalculator.ts` 1,651行 × 2)**: 04と05で完全複製されている計算エンジンを共通化し、約1,650行の重複を削減
+- [ ] **1-2. ライブマッチAPI等の重複解消 (`live-match/route.ts` 約710行 × 2)**: 04・05間の重複エンドポイントを精査・統合
+
+### フェーズ2: 【05_PILOT】個人向け新ポータルの画面分割・部品化
+- [ ] **2-1. チャンピオン辞典メイン (`app/page.tsx` 2,667行 ➔ 300行以下へ圧縮)**:
+  - フィルターバー (`ChampionFilterBar.tsx`)、一覧グリッド (`ChampionGrid.tsx`)、詳細モーダル (`ChampionDetailModal.tsx`) へ分割
+  - Tierスコア・レーン別メタ算出エンジンを `lib/tierScoreCalculator.ts` へ完全SSoT分離
+- [ ] **2-2. 知識レビュー画面 (`app/admin/review/page.tsx` 1,587行 ➔ 400行以下へ圧縮)**:
+  - `ReviewFilterBar.tsx` (絞り込み/検索)、`FactsDiffPreview.tsx` (文単位選択/宛先振分/Git風Diff)、`LaneGuideDiffPreview.tsx` (第8章追記強調/2カラム比較/手直し) へ分割
+- [ ] **2-3. 攻略ライブラリ (`app/library/page.tsx` 751行)**: 記事カード・パッチ鮮度バッジ・詳細表示の独立部品化
+
+### フェーズ3: 【04_PORTAL】コミュニティ・内戦管理のモノリス解体
+- [ ] **3-1. 内戦バランサー (`app/balancer/page.tsx` 2,762行 ➔ 500行以下へ圧縮)**:
+  - `BalancerPlayerPool.tsx` (参加者プール)、`TeamCompositionBoard.tsx` (配置ボード・D&D)、`BalanceResultModal.tsx` (勝率予測) へ分割
+  - MMR・適性計算ロジックを `lib/balancer/` 配下に純粋関数として抽出
+- [ ] **3-2. 管理ポータル (`app/ktm-admin/page.tsx` 1,730行)**: プレイヤー管理、内戦履歴、ロール連携、システム設定をタブ別コンポーネント化
+- [ ] **3-3. プレイヤー外部分析 (`app/analyzer/page.tsx` 1,932行) ＆ カジノ (`app/casino/page.tsx` 1,504行)**: チャート・比較・おみくじUIのサブコンポーネント化
+
+### フェーズ4: 【03_SYSTEMS】Discord Bot ＆ バックエンドの責務分離
+- [ ] **4-1. Botボタンハンドラ (`handlers/components.js` 1,283行 ➔ ルーター化)**:
+  - `interactions/` 配下へプレイスタイル (`playstyleHandler.js`)、定期カスタム (`periodicRecruitHandler.js`)、突発募集 (`casualRecruitHandler.js`)、モーダル返却 (`portalModalHandler.js`)、クイック募集 (`quickRecruitHandler.js`) に分離
+- [ ] **4-2. Bot定期バッチ (`handlers/scheduled.js` 1,317行 ➔ ジョブ分割)**:
+  - `jobs/` 配下へリマインダー通知、定期カスタムカード生成、ステータス同期を分離
+- [ ] **4-3. ロール管理API・定数定義の共通化**:
+  - `discordRoles.js` へBot側のPUT/DELETE通信ヘルパーを部品化、Tier/プレイスタイルロールメタデータをSSoT化
+- [ ] **4-4. PCデーモン (`edge_worker_daemon.py` 912行)**: タスクディスパッチャと各種ワーカーの分離
+
+---
+
 ## 🚧 技術的負債バックログ
 
 - [ ] **Python側の沈黙失敗**（2026-10-04 一次対応）: 本番で動く19ファイルの `except` 握りつぶし42か所を仕分け、実害のある4か所を修正（再解析ローテーションの安全弁が件数取得失敗で開く／受信箱・ナレッジ点検の読み込み失敗が無音／デーモン停止検知の日時解釈失敗が無音／マッチアップ同期の既存取得失敗が無音）。残り38か所は import の予備処理・後片付け・数値読み取りの予備値で対応不要。**`edge_worker_daemon.py` の修正はPCデーモン再起動後に反映**。print のみの失敗153件は、タスク失敗が `edge_tasks`(運用ダッシュボード) と GitHub Actions の失敗通知で見えるため個別対応は保留
