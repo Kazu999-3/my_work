@@ -221,7 +221,8 @@ export async function setupDiscordRoles(): Promise<{
 export async function syncMemberDiscordRole(
   discordId: string,
   targetTier: ExperienceTier,
-  config?: DiscordRoleConfig
+  config?: DiscordRoleConfig,
+  existingRoles?: Set<string>
 ): Promise<{ success: boolean; changed: boolean; message?: string }> {
   const token = process.env.DISCORD_BOT_TOKEN;
   const guildId = process.env.DISCORD_GUILD_ID;
@@ -244,22 +245,26 @@ export async function syncMemberDiscordRole(
   const allManagedRoleIds = Object.values(roleConfig.roles).filter(Boolean);
 
   try {
-    // メンバーの現在情報を取得
-    const memberRes = await discordFetch(
-      `https://discord.com/api/v10/guilds/${guildId}/members/${discordId}`,
-      { headers: { Authorization: `Bot ${token}` } }
-    );
+    let currentRoles = existingRoles;
 
-    if (memberRes.status === 404) {
-      return { success: false, changed: false, message: 'サーバーにユーザーが存在しません。' };
-    }
-    if (!memberRes.ok) {
-      const errText = await memberRes.text();
-      return { success: false, changed: false, message: `メンバー取得失敗: ${memberRes.status} ${errText}` };
-    }
+    // 既存ロールが渡されていない場合のみ個別取得
+    if (!currentRoles) {
+      const memberRes = await discordFetch(
+        `https://discord.com/api/v10/guilds/${guildId}/members/${discordId}`,
+        { headers: { Authorization: `Bot ${token}` } }
+      );
 
-    const memberData: { roles: string[] } = await memberRes.json();
-    const currentRoles = new Set(memberData.roles || []);
+      if (memberRes.status === 404) {
+        return { success: false, changed: false, message: 'サーバーにユーザーが存在しません。' };
+      }
+      if (!memberRes.ok) {
+        const errText = await memberRes.text();
+        return { success: false, changed: false, message: `メンバー取得失敗: ${memberRes.status} ${errText}` };
+      }
+
+      const memberData: { roles: string[] } = await memberRes.json();
+      currentRoles = new Set(memberData.roles || []);
+    }
 
     let changed = false;
 
@@ -308,6 +313,8 @@ export async function syncMemberDiscordRole(
 
 /**
  * 指定プレイヤー（または全プレイヤー）の戦績を元にDiscordロールを一括同期する
+ * N+1問題を根絶するため、Discordサーバーメンバー一覧を一括取得してローカルで突合し、
+ * 変更が必要なメンバーのみ最小限のAPIコールで超高速同期する。
  */
 export async function syncPlayersDiscordRoles(options?: {
   playerIds?: number[];
@@ -321,6 +328,13 @@ export async function syncPlayersDiscordRoles(options?: {
 }> {
   if (!supabaseAdmin) {
     return { total: 0, synced: 0, changed: 0, errors: 0, details: [] };
+  }
+
+  const token = process.env.DISCORD_BOT_TOKEN;
+  const guildId = process.env.DISCORD_GUILD_ID;
+
+  if (!token || !guildId) {
+    return { total: 0, synced: 0, changed: 0, errors: 1, details: [] };
   }
 
   const config = await getRoleSyncConfig();
@@ -341,7 +355,12 @@ export async function syncPlayersDiscordRoles(options?: {
     query = query.in('discord_id', options.discordIds);
   }
 
-  const [{ data: players, error: pError }, { data: participants, error: mError }] = await Promise.all([
+  // サーバーメンバー一覧・DBプレイヤー・試合参加実績の3つを一気に並行取得！
+  const [
+    { data: players, error: pError },
+    { data: participants, error: mError },
+    guildMembersRes,
+  ] = await Promise.all([
     query,
     fetchAllRows((from, to) =>
       supabaseAdmin
@@ -349,11 +368,29 @@ export async function syncPlayersDiscordRoles(options?: {
         .select('player_name, discord_id, created_at')
         .range(from, to)
     ),
+    discordFetch(`https://discord.com/api/v10/guilds/${guildId}/members?limit=1000`, {
+      headers: { Authorization: `Bot ${token}` },
+    }).catch(() => null),
   ]);
 
   if (pError || !players) {
     console.error('[discordRoleSync] プレイヤー一覧取得失敗:', pError);
     return { total: 0, synced: 0, changed: 0, errors: 1, details: [] };
+  }
+
+  // Discord サーバーメンバー一覧のマップ作成 (discord_id -> Set of role IDs)
+  const guildMembersMap = new Map<string, Set<string>>();
+  if (guildMembersRes && guildMembersRes.ok) {
+    try {
+      const members: Array<{ user: { id: string }; roles: string[] }> = await guildMembersRes.json();
+      for (const m of members) {
+        if (m.user?.id) {
+          guildMembersMap.set(m.user.id, new Set(m.roles || []));
+        }
+      }
+    } catch (e: any) {
+      console.warn('[discordRoleSync] メンバー一覧パース例外:', e?.message);
+    }
   }
 
   // 2. 参加実績の集計（通算・直近30日・最終参加日）
@@ -399,12 +436,15 @@ export async function syncPlayersDiscordRoles(options?: {
   let changedCount = 0;
   let errors = 0;
 
-  // Discord レート制限を避けるため、1人ずつ少しインターバルを挟んで処理
+  const allManagedRoleIds = Object.values(config.roles).filter(Boolean);
+
+  // 3. 各プレイヤーの処理（変更不要な人はAPI呼び出しゼロ！）
   for (const player of players) {
+    const dId = String(player.discord_id).trim();
     let historyStat: PlayerHistoryStats = { total: 0, recent30d: 0, lastPlayedAt: null };
 
-    if (player.discord_id && statsByDiscord.has(String(player.discord_id).trim())) {
-      historyStat = statsByDiscord.get(String(player.discord_id).trim())!;
+    if (statsByDiscord.has(dId)) {
+      historyStat = statsByDiscord.get(dId)!;
     } else if (player.name && statsByNameLower.has(String(player.name).trim().toLowerCase())) {
       historyStat = statsByNameLower.get(String(player.name).trim().toLowerCase())!;
     }
@@ -421,7 +461,27 @@ export async function syncPlayersDiscordRoles(options?: {
     };
 
     const tierInfo = getPlayerTier(enrichedStats);
-    const syncRes = await syncMemberDiscordRole(player.discord_id, tierInfo.tier, config);
+    const targetRoleId = config.roles[tierInfo.tier];
+
+    // 一括取得できた場合、Discordサーバー内に存在するか確認
+    const currentRoles = guildMembersMap.get(dId);
+    if (guildMembersMap.size > 0 && !currentRoles) {
+      results.push({ name: player.name, tier: tierInfo.tier, changed: false, error: 'サーバーに不在' });
+      continue;
+    }
+
+    // 既に目標ロールが付いており、余分な管理ロールも付いていない場合は完全スキップ（APIコール0回！）
+    if (currentRoles && targetRoleId && currentRoles.has(targetRoleId)) {
+      const hasOtherManagedRole = allManagedRoleIds.some((rId) => rId !== targetRoleId && currentRoles.has(rId));
+      if (!hasOtherManagedRole) {
+        synced++;
+        results.push({ name: player.name, tier: tierInfo.tier, changed: false });
+        continue;
+      }
+    }
+
+    // 変更が必要な場合のみ同期APIを実行
+    const syncRes = await syncMemberDiscordRole(dId, tierInfo.tier, config, currentRoles);
 
     if (syncRes.success) {
       synced++;
@@ -432,8 +492,10 @@ export async function syncPlayersDiscordRoles(options?: {
       results.push({ name: player.name, tier: tierInfo.tier, changed: false, error: syncRes.message });
     }
 
-    // 短いディレイ（100ms）
-    await new Promise((r) => setTimeout(r, 100));
+    // 変更実行時のみ短時間ディレイ
+    if (syncRes.changed) {
+      await new Promise((r) => setTimeout(r, 60));
+    }
   }
 
   return {

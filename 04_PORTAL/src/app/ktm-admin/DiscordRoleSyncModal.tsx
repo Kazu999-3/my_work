@@ -37,12 +37,22 @@ export default function DiscordRoleSyncModal({ onClose }: { onClose: () => void 
   const [message, setMessage] = useState<{ type: "success" | "error" | "info"; text: string } | null>(null);
   const [syncSummary, setSyncSummary] = useState<SyncSummary | null>(null);
 
+  // レスポンスの安全なJSONパース（Safariの非JSON例外防止）
+  const parseSafeJson = async (res: Response) => {
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      throw new Error(`サーバーエラー (HTTP ${res.status})`);
+    }
+  };
+
   // 設定読み込み
   const fetchConfig = async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/discord/role-sync", { credentials: "include" });
-      const data = await res.json();
+      const data = await parseSafeJson(res);
       if (res.ok) {
         setConfig(data.config);
         setDefinitions(data.definitions || {});
@@ -74,7 +84,7 @@ export default function DiscordRoleSyncModal({ onClose }: { onClose: () => void 
         credentials: "include",
         body: JSON.stringify({ action: "setup" }),
       });
-      const data = await res.json();
+      const data = await parseSafeJson(res);
       if (res.ok) {
         setMessage({ type: "success", text: "✨ " + data.message });
         await fetchConfig();
@@ -103,7 +113,7 @@ export default function DiscordRoleSyncModal({ onClose }: { onClose: () => void 
         credentials: "include",
         body: JSON.stringify({ action: "sync_all" }),
       });
-      const data = await res.json();
+      const data = await parseSafeJson(res);
       if (res.ok) {
         setSyncSummary(data.summary);
         setMessage({
