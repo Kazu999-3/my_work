@@ -286,9 +286,11 @@ def run_bulk_update():
         # ボタンや健康ダッシュボードの一括更新（champion_trend_worker.py）と処理内容が
         # 食い違っていた（勝率/ピック率/プロビルド/フルクリア時間等が一括更新側では
         # 収集されない）。2026-08-08、同じエンジンに統合。
-        # このOSはジャングル中心のため、ロールはJungle基準で統一してリサーチする。
+        # ロールはチャンピオンごとの主なロールで調べる（ジャングル以外はジャングラー目線の要点を含める）。
+        # 2026-10-07: 以前は全チャンピオンを Jungle で調べており、ミッドやADCのチャンピオンに
+        # 「ジャングル運用のデータは確認できません」という文章が入っていた。
         success = collect_and_save_champion_trend(
-            champ_id, "Jungle", client=batch_client,
+            champ_id, None, client=batch_client,
             on_phase=lambda phase: report_phase(queue_data, phase)
         )
 

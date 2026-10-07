@@ -425,11 +425,12 @@ class EdgeWorkerDaemon:
                 
             elif task_type == "champion_trend":
                 champion = payload.get("champion")
-                role = payload.get("role", "Jungle")
-                logger.info(f"🏆 [champion_trend] チャンピオントレンド取得を実行 ({champion} / {role})...")
+                # role 未指定なら worker 側で主なロールを自動判定する（以前は "Jungle" 固定。2026-10-07）
+                role = payload.get("role") or ""
+                logger.info(f"🏆 [champion_trend] チャンピオントレンド取得を実行 ({champion} / {role or '自動判定'})...")
                 result = self._run_subprocess_task(
                     "03_SYSTEMS/v2_CORE/_LOL/champion_trend_worker.py",
-                    args=[champion, role],
+                    args=[champion, role] if role else [champion],
                     timeout=600
                 )
                 self.update_task_status(task_id, "completed", result=result)

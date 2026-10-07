@@ -201,16 +201,18 @@ async function processSingleArticle(article: any): Promise<{
           .order('rank', { ascending: true });
         const detectedRole = (laneRoleRows && laneRoleRows.length > 0) ? (laneRoleRows[0].role === 'ADC' ? 'BOT' : laneRoleRows[0].role) : 'GLOBAL';
 
+        // champion_facts の主キーは champion のみ。以前は role でも絞っていたため、role が違う既存行を
+        // 見落として空として扱い、追記ではなく上書きになっていた（しかも onConflict 'champion,role' に
+        // 対応する制約が無く upsert 自体が毎回失敗していた）。2026-10-07
         const { data: existingFact } = await supabase
           .from('champion_facts')
           .select('*')
           .eq('champion', championName)
-          .ilike('role', detectedRole)
           .maybeSingle();
 
         const updates: Record<string, any> = {
           champion: championName,
-          role: detectedRole,
+          role: existingFact?.role || detectedRole,
           updated_at: new Date().toISOString(),
         };
 
@@ -222,7 +224,23 @@ async function processSingleArticle(article: any): Promise<{
           }
         }
 
-        await supabase.from('champion_facts').upsert(updates, { onConflict: 'champion,role' });
+        const { error: factErr } = await supabase.from('champion_facts').upsert(updates, { onConflict: 'champion' });
+        if (factErr) {
+          console.error(`[batch-smart-merge] champion_facts 保存失敗 (${championName}):`, factErr.message);
+        } else {
+          for (const fKey of Object.keys(updates)) {
+            if (['champion', 'role', 'updated_at'].includes(fKey)) continue;
+            await recordRevision({
+              targetType: 'champion_fact',
+              targetKey: championName,
+              field: fKey,
+              before: existingFact ? existingFact[fKey] : null,
+              after: updates[fKey],
+              sourceTitle: title,
+              sourceId: articleId,
+            });
+          }
+        }
       }
 
       // 4-c. champion_notes

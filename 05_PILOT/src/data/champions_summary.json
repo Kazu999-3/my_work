@@ -392,7 +392,7 @@
     "hasBible": true,
     "videoBibleCount": 4,
     "libraryKnowledgeCount": 14,
-    "tier": "Tier 3",
+    "tier": "Tier 2",
     "winRate": 50
   },
   {
@@ -471,7 +471,7 @@
     "hasBible": true,
     "videoBibleCount": 4,
     "libraryKnowledgeCount": 5,
-    "tier": "Tier 3",
+    "tier": "Tier 4",
     "winRate": 47
   },
   {
@@ -1268,7 +1268,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 1",
+    "tier": "Tier 2",
     "winRate": 50
   },
   {
@@ -1346,7 +1346,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 16,
-    "libraryKnowledgeCount": 11,
+    "libraryKnowledgeCount": 9,
     "tier": "Tier 4",
     "winRate": 48
   },
@@ -1504,7 +1504,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 7,
-    "libraryKnowledgeCount": 25,
+    "libraryKnowledgeCount": 26,
     "tier": "Tier 3",
     "winRate": 49
   },
@@ -1752,9 +1752,9 @@
     "jpName": "ヴェル＝コズ",
     "title": "ヴォイドの瞳",
     "roles": [
-      "BOT",
+      "MID",
       "SUP",
-      "MID"
+      "BOT"
     ],
     "skills": {
       "passive": {
@@ -1824,8 +1824,8 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 4",
-    "winRate": 52
+    "tier": "Tier 3",
+    "winRate": 51
   },
   {
     "id": "Udyr",
@@ -1909,7 +1909,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 2,
-    "tier": "Tier 3",
+    "tier": "Tier 4",
     "winRate": 51
   },
   {
@@ -1989,7 +1989,7 @@
     "hasBible": true,
     "videoBibleCount": 3,
     "libraryKnowledgeCount": 14,
-    "tier": "Tier 1",
+    "tier": "Tier 2",
     "winRate": 50
   },
   {
@@ -2546,7 +2546,7 @@
     "hasBible": true,
     "videoBibleCount": 2,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 3",
+    "tier": "Tier 4",
     "winRate": 46
   },
   {
@@ -2555,8 +2555,8 @@
     "jpName": "オレリオン・ソル",
     "title": "星を創りし者",
     "roles": [
-      "BOT",
-      "MID"
+      "MID",
+      "BOT"
     ],
     "skills": {
       "passive": {
@@ -2626,8 +2626,8 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 4",
-    "winRate": 52
+    "tier": "Tier 2",
+    "winRate": 50
   },
   {
     "id": "KSante",
@@ -2783,7 +2783,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 14,
-    "libraryKnowledgeCount": 29,
+    "libraryKnowledgeCount": 30,
     "tier": "Tier 3",
     "winRate": 49
   },
@@ -3101,7 +3101,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 7,
-    "tier": "Tier 4",
+    "tier": "Tier 5",
     "winRate": 50
   },
   {
@@ -3110,8 +3110,8 @@
     "jpName": "カタリナ",
     "title": "凶兆の刃",
     "roles": [
-      "BOT",
-      "MID"
+      "MID",
+      "BOT"
     ],
     "skills": {
       "passive": {
@@ -3181,8 +3181,8 @@
     "hasBible": true,
     "videoBibleCount": 3,
     "libraryKnowledgeCount": 2,
-    "tier": "Tier 4",
-    "winRate": 51
+    "tier": "Tier 1",
+    "winRate": 50
   },
   {
     "id": "Camille",
@@ -3261,7 +3261,7 @@
     "hasBible": true,
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 1",
+    "tier": "Tier 2",
     "winRate": 51
   },
   {
@@ -3270,8 +3270,8 @@
     "jpName": "ガリオ",
     "title": "伝説の巨像",
     "roles": [
-      "SUP",
-      "MID"
+      "MID",
+      "SUP"
     ],
     "skills": {
       "passive": {
@@ -3341,8 +3341,8 @@
     "hasBible": true,
     "videoBibleCount": 3,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 3",
-    "winRate": 51
+    "tier": "Tier 2",
+    "winRate": 50
   },
   {
     "id": "Kalista",
@@ -3589,8 +3589,7 @@
     "jpName": "ガングプランク",
     "title": "大海原の大災厄",
     "roles": [
-      "TOP",
-      "MID"
+      "TOP"
     ],
     "skills": {
       "passive": {
@@ -4624,8 +4623,8 @@
     "jpName": "コグ＝マウ",
     "title": "深淵のアギト",
     "roles": [
-      "BOT",
-      "MID"
+      "MID",
+      "BOT"
     ],
     "skills": {
       "passive": {
@@ -4696,7 +4695,7 @@
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
     "tier": "Tier 3",
-    "winRate": 52
+    "winRate": 50
   },
   {
     "id": "Zaahen",
@@ -4783,8 +4782,7 @@
     "jpName": "サイオン",
     "title": "不死身の重戦車",
     "roles": [
-      "TOP",
-      "MID"
+      "TOP"
     ],
     "skills": {
       "passive": {
@@ -4943,9 +4941,10 @@
     "jpName": "サイラス",
     "title": "解き放たれし者",
     "roles": [
+      "TOP",
       "JG",
-      "SUP",
-      "MID"
+      "MID",
+      "SUP"
     ],
     "skills": {
       "passive": {
@@ -5015,7 +5014,7 @@
     "hasBible": true,
     "videoBibleCount": 3,
     "libraryKnowledgeCount": 7,
-    "tier": "Tier 2",
+    "tier": "Tier 3",
     "winRate": 50
   },
   {
@@ -5095,7 +5094,7 @@
     "hasBible": true,
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 3",
+    "tier": "Tier 4",
     "winRate": 52
   },
   {
@@ -5581,8 +5580,8 @@
     "jpName": "ジグス",
     "title": "ヘクス爆薬のエキスパート",
     "roles": [
-      "BOT",
-      "MID"
+      "MID",
+      "BOT"
     ],
     "skills": {
       "passive": {
@@ -5652,8 +5651,8 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 4",
-    "winRate": 51
+    "tier": "Tier 3",
+    "winRate": 50
   },
   {
     "id": "JarvanIV",
@@ -5890,7 +5889,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 1,
-    "libraryKnowledgeCount": 3,
+    "libraryKnowledgeCount": 2,
     "tier": "Tier 2",
     "winRate": 49
   },
@@ -6366,7 +6365,7 @@
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 1,
     "tier": "Tier 2",
-    "winRate": 52
+    "winRate": 51
   },
   {
     "id": "Syndra",
@@ -6374,8 +6373,8 @@
     "jpName": "シンドラ",
     "title": "暗黒の女王",
     "roles": [
-      "BOT",
-      "MID"
+      "MID",
+      "BOT"
     ],
     "skills": {
       "passive": {
@@ -6445,8 +6444,8 @@
     "hasBible": true,
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 7,
-    "tier": "Tier 4",
-    "winRate": 51
+    "tier": "Tier 1",
+    "winRate": 50
   },
   {
     "id": "Swain",
@@ -6454,9 +6453,9 @@
     "jpName": "スウェイン",
     "title": "ノクサス帝国元帥",
     "roles": [
-      "BOT",
+      "MID",
       "SUP",
-      "MID"
+      "BOT"
     ],
     "skills": {
       "passive": {
@@ -6527,7 +6526,7 @@
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
     "tier": "Tier 4",
-    "winRate": 52
+    "winRate": 50
   },
   {
     "id": "Skarner",
@@ -7089,9 +7088,9 @@
     "jpName": "ゼラス",
     "title": "超越魔神",
     "roles": [
-      "BOT",
+      "MID",
       "SUP",
-      "MID"
+      "BOT"
     ],
     "skills": {
       "passive": {
@@ -7161,8 +7160,8 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 4",
-    "winRate": 52
+    "tier": "Tier 1",
+    "winRate": 51
   },
   {
     "id": "Seraphine",
@@ -7170,8 +7169,8 @@
     "jpName": "セラフィーン",
     "title": "希望のメロディー",
     "roles": [
-      "BOT",
-      "SUP"
+      "SUP",
+      "BOT"
     ],
     "skills": {
       "passive": {
@@ -7241,7 +7240,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 5",
+    "tier": "Tier 2",
     "winRate": 50
   },
   {
@@ -7329,8 +7328,8 @@
     "jpName": "ゾーイ",
     "title": "超常の遊び",
     "roles": [
-      "SUP",
-      "MID"
+      "MID",
+      "SUP"
     ],
     "skills": {
       "passive": {
@@ -7400,8 +7399,8 @@
     "hasBible": true,
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 4",
-    "winRate": 49
+    "tier": "Tier 2",
+    "winRate": 50
   },
   {
     "id": "Sona",
@@ -7718,7 +7717,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 3",
+    "tier": "Tier 4",
     "winRate": 49
   },
   {
@@ -9307,7 +9306,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 3,
-    "libraryKnowledgeCount": 10,
+    "libraryKnowledgeCount": 11,
     "tier": "Tier 3",
     "winRate": 51
   },
@@ -9542,7 +9541,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 5,
-    "libraryKnowledgeCount": 14,
+    "libraryKnowledgeCount": 15,
     "tier": "Tier 4",
     "winRate": 49
   },
@@ -9780,7 +9779,7 @@
     "hasBible": true,
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 1,
-    "tier": "Tier 3",
+    "tier": "Tier 4",
     "winRate": 50
   },
   {
@@ -9790,8 +9789,8 @@
     "title": "砕けぬ槍",
     "roles": [
       "TOP",
-      "SUP",
-      "MID"
+      "MID",
+      "SUP"
     ],
     "skills": {
       "passive": {
@@ -10189,9 +10188,9 @@
     "jpName": "フェイ",
     "title": "夢想家",
     "roles": [
-      "BOT",
+      "MID",
       "SUP",
-      "MID"
+      "BOT"
     ],
     "skills": {
       "passive": {
@@ -10261,8 +10260,8 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 3",
-    "winRate": 53
+    "tier": "Tier 1",
+    "winRate": 51
   },
   {
     "id": "Briar",
@@ -10429,8 +10428,8 @@
     "title": "真紅の死神",
     "roles": [
       "TOP",
-      "BOT",
-      "MID"
+      "MID",
+      "BOT"
     ],
     "skills": {
       "passive": {
@@ -10509,9 +10508,9 @@
     "jpName": "ブランド",
     "title": "復讐の炎",
     "roles": [
-      "BOT",
+      "MID",
       "SUP",
-      "MID"
+      "BOT"
     ],
     "skills": {
       "passive": {
@@ -10580,9 +10579,9 @@
     },
     "hasBible": true,
     "videoBibleCount": 4,
-    "libraryKnowledgeCount": 4,
-    "tier": "Tier 5",
-    "winRate": 52
+    "libraryKnowledgeCount": 3,
+    "tier": "Tier 3",
+    "winRate": 50
   },
   {
     "id": "Blitzcrank",
@@ -10669,8 +10668,8 @@
     "jpName": "ベイガー",
     "title": "小さき大魔王",
     "roles": [
-      "BOT",
-      "MID"
+      "MID",
+      "BOT"
     ],
     "skills": {
       "passive": {
@@ -10740,8 +10739,8 @@
     "hasBible": true,
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 3,
-    "tier": "Tier 3",
-    "winRate": 52
+    "tier": "Tier 2",
+    "winRate": 50
   },
   {
     "id": "Hecarim",
@@ -11139,7 +11138,7 @@
     "videoBibleCount": 2,
     "libraryKnowledgeCount": 4,
     "tier": "Tier 5",
-    "winRate": 51
+    "winRate": 50
   },
   {
     "id": "MasterYi",
@@ -11147,7 +11146,6 @@
     "jpName": "マスター・イー",
     "title": "ウージューの剣客",
     "roles": [
-      "TOP",
       "JG"
     ],
     "skills": {
@@ -11218,8 +11216,8 @@
     "hasBible": true,
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 4,
-    "tier": "Tier 5",
-    "winRate": 48
+    "tier": "Tier 2",
+    "winRate": 51
   },
   {
     "id": "Malzahar",
@@ -11379,7 +11377,7 @@
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 2,
     "tier": "Tier 1",
-    "winRate": 52
+    "winRate": 51
   },
   {
     "id": "MissFortune",
@@ -11545,6 +11543,7 @@
     "jpName": "メル",
     "title": "魂の反照",
     "roles": [
+      "MID",
       "BOT",
       "SUP"
     ],
@@ -11616,8 +11615,8 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 5",
-    "winRate": 47
+    "tier": "Tier 4",
+    "winRate": 45
   },
   {
     "id": "Morgana",
@@ -12093,7 +12092,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 0,
-    "libraryKnowledgeCount": 3,
+    "libraryKnowledgeCount": 4,
     "tier": "Tier 1",
     "winRate": 50
   },
@@ -12182,8 +12181,7 @@
     "jpName": "ライズ",
     "title": "ルーンの魔導師",
     "roles": [
-      "MID",
-      "TOP"
+      "MID"
     ],
     "skills": {
       "passive": {
@@ -12341,9 +12339,9 @@
     "jpName": "ラックス",
     "title": "光の才女",
     "roles": [
-      "BOT",
+      "MID",
       "SUP",
-      "MID"
+      "BOT"
     ],
     "skills": {
       "passive": {
@@ -12413,8 +12411,8 @@
     "hasBible": true,
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 4",
-    "winRate": 52
+    "tier": "Tier 1",
+    "winRate": 51
   },
   {
     "id": "Rammus",
@@ -12573,7 +12571,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 4",
+    "tier": "Tier 5",
     "winRate": 48
   },
   {
@@ -12811,7 +12809,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 2,
-    "tier": "Tier 3",
+    "tier": "Tier 4",
     "winRate": 51
   },
   {
@@ -12889,7 +12887,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 8,
-    "libraryKnowledgeCount": 18,
+    "libraryKnowledgeCount": 19,
     "tier": "Tier 2",
     "winRate": 51
   },
@@ -12978,8 +12976,8 @@
     "jpName": "ルブラン",
     "title": "幻惑の奇術師",
     "roles": [
-      "SUP",
-      "MID"
+      "MID",
+      "SUP"
     ],
     "skills": {
       "passive": {
@@ -13049,8 +13047,8 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 2,
-    "tier": "Tier 4",
-    "winRate": 49
+    "tier": "Tier 1",
+    "winRate": 51
   },
   {
     "id": "Lulu",
@@ -13678,7 +13676,7 @@
     },
     "hasBible": true,
     "videoBibleCount": 0,
-    "libraryKnowledgeCount": 5,
+    "libraryKnowledgeCount": 4,
     "tier": "Tier 1",
     "winRate": 50
   },

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { callGeminiWithRetry } from './geminiClient';
 import { getChampionNameJa } from './championRoster';
+import { recordLibraryClaim } from './championFactClaims';
 
 export const FACT_FIELDS = [
   { key: 'strengths', label: '強み' },
@@ -225,6 +226,15 @@ export async function executeChampionFactsMerge(
       } catch (revErr) {
         console.warn(`[championFactsMerge] 履歴記録失敗 (${fieldKey}):`, revErr);
       }
+      // 足された部分を出典付きで champion_fact_claims にも残す（2026-10-07）
+      await recordLibraryClaim(sb, {
+        champion,
+        field: fieldKey,
+        before: existing[fieldKey] || null,
+        after: payload[fieldKey],
+        articleId: articleId ?? null,
+        sourceTitle: title,
+      });
     }
 
     return {

@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       const { enqueueEdgeTask } = await import('../../../../../lib/edgeTask');
       const inserted = await enqueueEdgeTask('champion_trend', {
         champion,
-        role: role || 'Jungle'
+        role: role || 'GLOBAL' // 未指定は worker 側で主なロールを自動判定（以前は Jungle 固定。2026-10-07）
       });
       return NextResponse.json({ 
         success: true, 

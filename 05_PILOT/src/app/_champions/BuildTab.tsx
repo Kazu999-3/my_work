@@ -87,6 +87,17 @@ export default function BuildTab({ buildPreset, setBuildPreset, setIsItemDictMod
                     </button>
                   </div>
 
+                  {/* 2026-10-07: ビルドの根拠を明示する。おすすめアイテム・ルーンは出典の無い AI 推定のことが多く、
+                      無い時は型ごとの一般例（lib/archetype.ts の固定値）で埋めているため */}
+                  <p className="text-[10px] text-zinc-500 mb-2 leading-relaxed">
+                    {(selectedDetail.facts?.trendItems?.length || 0) > 0
+                      ? ((selectedDetail.facts?.buildSourceCount || 0) > 0
+                        ? `標準コアのアイテム・ルーンは検索結果${selectedDetail.facts?.buildSourceCount}件をもとにした自動収集です。`
+                        : "標準コアのアイテム・ルーンはAI推定（出典なし）です。")
+                      : "このチャンピオン固有のビルド統計は未登録のため、型ごとの一般的な例を表示しています。"}
+                    対タンク・対バーストは型ごとの一般的な例です。
+                  </p>
+
                   {/* ビルド詳細3カラムカード */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                     <div className="p-3.5 rounded-xl bg-zinc-950/80 border border-zinc-800 hover:border-amber-500/40 transition">

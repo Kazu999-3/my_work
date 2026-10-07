@@ -46,6 +46,7 @@ Riot APIのチャンピオンID表記揺れ（大文字小文字、アポスト�
 ### 7. 蓄積型テキスト列への上書き upsert（本人メモの消失）
 `matchup_sentinel.strategy` のように複数の経路（本人の振り返り・自動取り込み・記事統合）が少しずつ書き足していく列に対して、ある経路が `upsert({strategy: 自分の生成文})` をすると、他経路が書いた内容が丸ごと消える。履歴を残していない・`error` を見ていないと、消えたことにも誰も気づかない。
 - **該当した実例（2026-10-06発覚）**: 04 `merge-article` が記事から抽出した対策文で個別対面メモを upsert しており、`Shyvana_vs_Kayn` の本人メモが2026-08-18に記事の文章へ置き換わっていた。既存行の上書きは計63件あり、履歴が無いため元の内容は復元不能。同時期に 05 `/api/soloq/reflections` も存在しない制約(`onConflict: 'champion,enemy'`)で upsert して毎回失敗していたが、戻り値の `error` を見ておらず気づかれなかった。
+- **該当した実例2（2026-10-07発覚）**: 辞典の毎週更新(`champion_trend_worker.py`)が `champion_facts` の強み・弱み・パワースパイク等を毎回AIの応答で上書きしており、ライブラリ承認で書き足された内容が84体・425項目で消えていた。こちらは `knowledge_revisions` に追記の履歴が残っていたため、追記部分だけを取り出して出典付きで `champion_fact_claims`(migration 89)に復元できた。同時に、未使用の `batch-smart-merge` が存在しない制約(`onConflict: 'champion,role'`。実際の主キーは champion のみ)で upsert していたことも見つかった。以後、辞典の記述は出典付きで1件ずつ記録する（`.claude/rules/knowledge-sources.md`）。
 - **対処**: 蓄積型の列は「既存を読む → 節を追記/同じ出典の節だけ置換 → update」の形にし（05 `lib/matchupMemo.ts`、04 `merge-article` の `mergeContent`）、変更前後を `knowledge_revisions` に残す。supabase-js は失敗しても例外を投げず `{ error }` を返すため、書き込みの戻り値は必ず確認する。`onConflict` に指定する列には、実際にユニーク制約があることを確かめる（`supabase-migration-lint` の対象）。
 
 ## 使い方

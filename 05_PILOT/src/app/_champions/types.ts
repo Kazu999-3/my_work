@@ -60,6 +60,10 @@ export interface ChampionDetail {
     gameplayGuide?: string;
     powerSpikes?: string;
     skillOrder?: string[];
+    /** 項目ごとの出典付き記述（champion_fact_claims）。無い項目は従来の文字列だけを表示する */
+    claims?: Partial<Record<'strengths' | 'weaknesses' | 'counters' | 'mustBan' | 'powerSpikes', FactClaim[]>>;
+    /** おすすめアイテム・ルーンの根拠になった検索結果の件数（0 なら出典なしの AI 推定） */
+    buildSourceCount?: number;
   };
   bible?: {
     playstyleSummary?: string;
@@ -147,4 +151,14 @@ export interface KnowledgeDetail {
   source_url?: string;
   tags?: string[];
   created_at?: string;
+}
+
+/** 辞典の記述1件と、その出典 */
+export interface FactClaim {
+  text: string;
+  origin: 'library' | 'library_mixed' | 'web_search' | 'manual' | 'ai_estimate';
+  sourceTitle?: string;
+  sourceUrl?: string;
+  needsReview: boolean;
+  date: string;
 }

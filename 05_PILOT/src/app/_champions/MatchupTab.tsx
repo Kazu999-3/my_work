@@ -2,12 +2,15 @@
 
 import { ShieldAlert, Swords, Skull, CheckCircle2 } from "lucide-react";
 import type { ChampionDetail } from "./types";
+import FactClaimList from "./FactClaimList";
 
 // タブ2: 対面相性 ＆ キルライン
 // 2026-10-07: app/page.tsx（2,840行）から分割。表示内容・動作は分割前と同じ。状態は page.tsx が持ち、ここは props で受け取って描画するだけ。
 export default function MatchupTab({ selectedDetail }: {
   selectedDetail: ChampionDetail;
 }) {
+  // 2026-10-07: 出典付きの記述（champion_fact_claims）がある項目は、記述ごとに出典を表示する
+  const claims = selectedDetail.facts?.claims;
   return (
               <div className="space-y-4">
                 {/* 即死キルライン・コンボ */}
@@ -33,7 +36,9 @@ export default function MatchupTab({ selectedDetail }: {
                           🟢 有利な展開 ＆ 活かすべき強み
                         </h3>
                       </div>
-                      {selectedDetail.facts?.strengths && selectedDetail.facts.strengths.length > 0 ? (
+                      {claims?.strengths ? (
+                        <FactClaimList claims={claims.strengths} marker="✓" markerClass="text-emerald-400" />
+                      ) : selectedDetail.facts?.strengths && selectedDetail.facts.strengths.length > 0 ? (
                         <div className="space-y-2 text-xs">
                           {selectedDetail.facts.strengths.map((s, idx) => (
                             <div key={idx} className="flex items-start gap-2 bg-zinc-950 p-2.5 rounded-xl border border-zinc-800/80 text-zinc-300 leading-relaxed">
@@ -59,7 +64,12 @@ export default function MatchupTab({ selectedDetail }: {
                       </div>
 
                       {/* マストBAN */}
-                      {selectedDetail.facts?.mustBan && selectedDetail.facts.mustBan.length > 0 && (
+                      {claims?.mustBan ? (
+                        <div>
+                          <span className="font-black block text-[10px] text-rose-400 uppercase mb-1">🚨 マストBAN推奨</span>
+                          <FactClaimList claims={claims.mustBan} marker="🚨" markerClass="text-rose-400" />
+                        </div>
+                      ) : selectedDetail.facts?.mustBan && selectedDetail.facts.mustBan.length > 0 && (
                         <div className="bg-rose-950/40 p-2.5 rounded-xl border border-rose-500/50 text-rose-200">
                           <span className="font-black block text-[10px] text-rose-400 uppercase mb-0.5">🚨 マストBAN推奨</span>
                           <span className="font-bold leading-relaxed">{selectedDetail.facts.mustBan.join(" / ")}</span>
@@ -67,7 +77,9 @@ export default function MatchupTab({ selectedDetail }: {
                       )}
 
                       {/* 警戒すべきカウンタータイプ */}
-                      {selectedDetail.facts?.counters && selectedDetail.facts.counters.length > 0 && (
+                      {claims?.counters ? (
+                        <FactClaimList claims={claims.counters} marker="✕" markerClass="text-rose-400" />
+                      ) : selectedDetail.facts?.counters && selectedDetail.facts.counters.length > 0 && (
                         <div className="space-y-1.5">
                           {selectedDetail.facts.counters.map((c, idx) => (
                             <div key={idx} className="flex items-start gap-2 bg-zinc-950 p-2.5 rounded-xl border border-rose-500/20 text-zinc-300 leading-relaxed">
@@ -79,7 +91,12 @@ export default function MatchupTab({ selectedDetail }: {
                       )}
 
                       {/* 弱点・脆さ */}
-                      {selectedDetail.facts?.weaknesses && selectedDetail.facts.weaknesses.length > 0 && (
+                      {claims?.weaknesses ? (
+                        <div className="mt-2">
+                          <span className="text-amber-400 font-bold block mb-1 text-[11px]">⚠️ 立ち回りの注意点・弱点</span>
+                          <FactClaimList claims={claims.weaknesses} marker="⚠" markerClass="text-amber-400" />
+                        </div>
+                      ) : selectedDetail.facts?.weaknesses && selectedDetail.facts.weaknesses.length > 0 && (
                         <div className="mt-2 bg-zinc-950/60 p-2.5 rounded-xl border border-zinc-800/80 text-zinc-400 text-[11px] leading-relaxed">
                           <span className="text-amber-400 font-bold block mb-0.5">⚠️ 立ち回りの注意点・弱点</span>
                           {selectedDetail.facts.weaknesses.join(" ")}

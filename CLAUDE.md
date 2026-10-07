@@ -68,6 +68,7 @@
 @.claude/rules/database.md
 @.claude/rules/ui-conventions.md
 @.claude/rules/llm-health.md
+@.claude/rules/knowledge-sources.md
 
 **`04_PORTAL` (Next.js) 固有のルール（インポートパス制限等）は `04_PORTAL/CLAUDE.md` を参照してください。** 04_PORTAL内で作業する際は自動的に読み込まれます。
 

@@ -266,7 +266,65 @@ def fetch_pro_trend_notes(champ_id: str) -> str:
     return ""
 
 
-def collect_and_save_champion_trend(champion: str, role: str, client=None, on_phase=None) -> bool:
+def _record_web_claims(champion: str, texts: dict, sources: list, supabase_url: str, headers: dict) -> None:
+    """検索結果を根拠に生成した文章を、出典URL付きで champion_fact_claims に1件ずつ記録する。
+    出典の無いものは記録しない（テーブル側の CHECK 制約でも web_search は URL 必須）。失敗しても更新処理は止めない。"""
+    uris = [s for s in sources if s.get("uri")]
+    if not uris:
+        return
+    title = " / ".join([s.get("title") or s["uri"] for s in uris[:3]])
+    rows = [
+        {
+            "champion": champion,
+            "field": col,
+            "body": str(text).strip(),
+            "origin": "web_search",
+            "source_url": uris[0]["uri"],
+            "source_title": f"検索: {title}",
+            "needs_review": False,
+        }
+        for col, text in texts.items()
+        if text and str(text).strip() and not re.search(r"情報不足|判断できません", str(text))
+    ]
+    if not rows:
+        return
+    try:
+        h = headers.copy()
+        h["Prefer"] = "resolution=ignore-duplicates"
+        r = httpx.post(f"{supabase_url}/rest/v1/champion_fact_claims?on_conflict=champion,field,body_hash", headers=h, json=rows, timeout=15)
+        if r.status_code not in (200, 201, 204):
+            logger.warning(f"⚠️ [{champion}] 出典の記録に失敗: {r.status_code} - {r.text}")
+    except Exception as e:
+        logger.warning(f"⚠️ [{champion}] 出典の記録で例外: {e}")
+
+
+_LANE_ROLE_LABEL = {"TOP": "Top", "JG": "Jungle", "MID": "Mid", "ADC": "ADC", "SUP": "Support"}
+
+
+def resolve_research_role(champion: str) -> str:
+    """調べるロールを champion_lane_roles（OP.GG 由来のロール別一覧）から決める。
+    ジャングルの一覧に載っていれば Jungle、無ければ一覧内の順位が最も高いロール。どこにも無ければ GLOBAL。
+    ★ 2026-10-07: 以前は一括更新が全チャンピオンを Jungle で調べており、Ahri や Jinx でも
+    「ジャングル運用のデータは確認できません」という文章が辞典に入っていた。使用者がジャングルメインなので
+    ジャングラー目線の情報が欲しいという意図で、無理にジャングルとして扱う意図は無かった。"""
+    try:
+        h = {"apikey": settings.SUPABASE_KEY, "Authorization": f"Bearer {settings.SUPABASE_KEY}"}
+        r = httpx.get(
+            f"{settings.SUPABASE_URL}/rest/v1/champion_lane_roles?champion=ilike.{champion}&select=role,rank&order=rank.asc",
+            headers=h, timeout=10,
+        )
+        rows = r.json() if r.status_code == 200 else []
+    except Exception as e:
+        logger.warning(f"[{champion}] ロールの取得に失敗（GLOBAL で調べます）: {e}")
+        rows = []
+    if any(x.get("role") == "JG" for x in rows):
+        return "Jungle"
+    if rows:
+        return _LANE_ROLE_LABEL.get(rows[0].get("role"), "GLOBAL")
+    return "GLOBAL"
+
+
+def collect_and_save_champion_trend(champion: str, role: str | None = None, client=None, on_phase=None) -> bool:
     """1チャンピオン分のAIトレンド収集〜保存を行う共通エンジン。
 
     辞典の「最新トレンド取得」ボタン(CLI経由のmain)と、champ_db_bulk_updater.pyの
@@ -291,6 +349,9 @@ def collect_and_save_champion_trend(champion: str, role: str, client=None, on_ph
                 pass
 
     champion = normalize_champion_id(champion)
+    # ロール未指定（一括更新）の時はこのチャンピオンの主なロールで調べる。明示指定（個別の更新ボタン等）はそのまま使う
+    if not role or role.lower() in ("auto", "global"):
+        role = resolve_research_role(champion)
     logger.info(f"Starting trend collection for {champion} ({role})")
 
     if client is None:
@@ -324,7 +385,7 @@ def collect_and_save_champion_trend(champion: str, role: str, client=None, on_ph
     # だと無関係な訂正が拾われることを確認したため)。
     try:
         similar_insights = fetch_similar_insights(
-            client, f"{champion} {role} ジャングル運用の注意点", threshold=0.82
+            client, f"{champion} {role} {'ジャングル運用' if role.lower() == 'jungle' else 'レーン戦'}の注意点", threshold=0.82
         )
     except Exception as e:
         logger.warning(f"Failed to fetch similar insights for {champion}: {e}")
@@ -341,6 +402,12 @@ def collect_and_save_champion_trend(champion: str, role: str, client=None, on_ph
         notes_context = f"{notes_context}\n\n{insights_context}" if notes_context else insights_context
         log_knowledge_usage("evolved_insights", [i["id"] for i in similar_insights if i.get("id")], champion)
     
+    # 使用者はジャングルメイン。ジャングル以外のチャンピオンも本来のロールとして調べたうえで、ジャングラーから見た要点を含める
+    jungler_view = "" if role.lower() == "jungle" else f"""
+- 【使用者の視点】使用者はジャングルメインです。このチャンピオンは主に{role}で使われるため、{role}としての実態を調べたうえで、
+  強み・弱み・パワースパイク・カウンターの説明には、ジャングラーから見た要点（味方にいる時に合わせやすい時間帯・ガンクやダイブへの
+  合わせやすさ、敵にいる時にガンクが通りやすい/通りにくい時間帯、レーン主導権の強さ）を含めてください。
+  ジャングルで使えるかどうかは書かないでください（このチャンピオンをジャングルで使う前提ではありません）。"""
     jg_instructions = ""
     jg_json_schema = ""
     if role.lower() == "jungle":
@@ -381,7 +448,7 @@ google_search grounding で実際にこのチャンピオンの2026年情報が�
 
 League of Legendsの最新パッチにおける、チャンピオン「{champion}」のロール「{role}」の統計データおよびプロプレイヤーの最新ビルド情報をリサーチしてください。
 - ※ 同キャラ対決（ミラーマッチ）の試合データは勝率が50%に強制固定されるため必ず除外して、異対面における純粋な対戦勝率・ピック率・BAN率のみを集計してください。
-- 同ロール( {role} )における現状の立ち位置、強み、弱み、パワースパイク、推奨ビルド・ルーン、有利な対面/苦手な対面を分析してください。
+- 同ロール( {role} )における現状の立ち位置、強み、弱み、パワースパイク、推奨ビルド・ルーン、有利な対面/苦手な対面を分析してください。{jungler_view}
 - 【最新パッチに統計データが無い場合の注意】パッチがリリースされた直後などで、最新パッチの
   勝率・ピック率・バン率・ティア・トレンドがまだ検索結果に十分出てこない場合、それらしい
   数値や傾向を推測・創作しないこと。その場合は直近で実際にデータが存在する1つ前のパッチの
@@ -458,6 +525,12 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
         _mark_if_quota_related(e)
         _grounding_unavailable_this_run = True
         logger.warning(f"⏸️ [{champion}] 検索で裏付けが取れないため今回の更新は見送ります（既存データを維持）: {e}")
+        return False
+
+    # 検索付きで呼べても、出典(引用元URL)が1件も返らなければ記憶ベースの回答と区別できない。
+    # 辞典には出典の無い自動生成を書き込まないルール(.claude/rules/knowledge-sources.md)のため見送る。
+    if not research_sources:
+        logger.warning(f"⏸️ [{champion}] 検索結果の出典が返らなかったため今回の更新は見送ります（既存データを維持）")
         return False
 
     _phase("辞典データベースへ保存中...")
@@ -543,12 +616,11 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
         }
     
     # 攻略情報の上書き
-    raw_data["strengths"] = trend_data.get("strengths") or raw_data.get("strengths") or ""
-    raw_data["weaknesses"] = trend_data.get("weaknesses") or raw_data.get("weaknesses") or ""
-    raw_data["powerSpikes"] = trend_data.get("powerSpikes") or raw_data.get("powerSpikes") or ""
-    raw_data["buildRunes"] = trend_data.get("buildRunes") or raw_data.get("buildRunes") or ""
-    raw_data["counterChampions"] = trend_data.get("counterChampions") or raw_data.get("counterChampions") or ""
-    raw_data["pickRecommendation"] = trend_data.get("pickRecommendation") or raw_data.get("pickRecommendation") or ""
+    # ★ 2026-10-07: 文章の項目は「空欄を埋める」だけにする。以前は毎回この応答で上書きしており、
+    # ライブラリ(動画・記事)の承認で書き足された内容が84体・425項目で消えていた(known-regression-patterns #7)。
+    # 新しい文章は出典付きで champion_fact_claims に記録する(下の _record_web_claims)。
+    for _k in ("strengths", "weaknesses", "powerSpikes", "buildRunes", "counterChampions", "pickRecommendation"):
+        raw_data[_k] = raw_data.get(_k) or trend_data.get(_k) or ""
     
     title = existing.get("title") or f"{champion} 基本戦略・トレンド"
     strategy = existing.get("strategy") or ""
@@ -589,15 +661,27 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
     # 日次の dict-migrate cron を待たず、トレンド取得直後に champion_facts を最新化する。
     jg_style_data = raw_data.get("jg_style") if isinstance(raw_data.get("jg_style"), dict) else {}
     patch_meta_data = raw_data.get("patch_meta") if isinstance(raw_data.get("patch_meta"), dict) else {}
+    # champion_facts 側の文章も空欄を埋めるだけ（既存の文章は、記事由来でも人の編集でも残す）
+    existing_fact = {}
+    try:
+        ef_res = httpx.get(
+            f"{supabase_url}/rest/v1/champion_facts?champion=eq.{champion}&select=strengths,weaknesses,power_spikes,build_runes,counter_champions,pick_recommendation",
+            headers=headers, timeout=10,
+        )
+        if ef_res.status_code == 200 and ef_res.json():
+            existing_fact = ef_res.json()[0]
+    except Exception as e:
+        logger.error(f"Failed to fetch existing champion_facts record: {e}")
+        return False
+    text_fields = {
+        "strengths": "strengths", "weaknesses": "weaknesses", "power_spikes": "powerSpikes",
+        "build_runes": "buildRunes", "counter_champions": "counterChampions", "pick_recommendation": "pickRecommendation",
+    }
+    _record_web_claims(champion, {col: trend_data.get(key) for col, key in text_fields.items()}, research_sources, supabase_url, headers)
     facts_payload = {
         "champion": champion,
-        "strengths": raw_data.get("strengths") or None,
-        "weaknesses": raw_data.get("weaknesses") or None,
-        "power_spikes": raw_data.get("powerSpikes") or None,
-        "build_runes": raw_data.get("buildRunes") or None,
+        **{col: (existing_fact.get(col) or trend_data.get(key) or None) for col, key in text_fields.items()},
         "full_clear_time": raw_data.get("fullClearTime") or None,
-        "counter_champions": raw_data.get("counterChampions") or None,
-        "pick_recommendation": raw_data.get("pickRecommendation") or None,
         "jg_type": jg_style_data.get("type") or None,
         "jg_description": jg_style_data.get("description") or None,
         "jg_blind_pickable": jg_style_data.get("blind_pickable"),
@@ -631,12 +715,12 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
 
 
 def main():
-    if len(sys.argv) < 3:
-        logger.error("Usage: python champion_trend_worker.py <champion> <role>")
+    if len(sys.argv) < 2:
+        logger.error("Usage: python champion_trend_worker.py <champion> [role]  (role 省略時は主なロールを自動判定)")
         sys.exit(1)
 
     champion = sys.argv[1]
-    role = sys.argv[2]
+    role = sys.argv[2] if len(sys.argv) >= 3 else None
     success = collect_and_save_champion_trend(champion, role)
 
     # 辞典ページの一括更新(champ_db_bulk_updater.py)と処理内容を合わせるため、トレンド収集に

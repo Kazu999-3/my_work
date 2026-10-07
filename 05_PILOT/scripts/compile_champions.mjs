@@ -383,6 +383,7 @@ async function main() {
 
   // Supabase からデータ取得
   const factsMap = {};
+  const claimsMap = {}; // champion(lower) -> field -> champion_fact_claims[]
   const matchupsMap = {};
   const powerSpikesMap = {};
   const jungleTimingMap = {};
@@ -410,6 +411,23 @@ async function main() {
         supabase.from('personal_knowledge').select('id, champion, title, content, tags, source_url, created_at').order('created_at', { ascending: false }).limit(2000),
         supabase.from('matchup_sentinel').select('id, champion, enemy, title, strategy, raw_data, created_at').eq('enemy', 'GLOBAL'),
       ]);
+
+      // 辞典の各記述の出典（champion_fact_claims、migration 89）。2,000件を超えるため1000件ずつ取る
+      for (let from = 0; ; from += 1000) {
+        const { data: claimRows, error: claimErr } = await supabase
+          .from('champion_fact_claims')
+          .select('champion, field, body, origin, source_url, source_title, needs_review, created_at')
+          .is('archived_at', null)
+          .order('id', { ascending: true })
+          .range(from, from + 999);
+        if (claimErr) { console.warn('⚠️ champion_fact_claims 取得エラー:', claimErr.message); break; }
+        for (const row of claimRows || []) {
+          const k = String(row.champion || '').toLowerCase();
+          ((claimsMap[k] ||= {})[row.field] ||= []).push(row);
+        }
+        if (!claimRows || claimRows.length < 1000) break;
+      }
+      console.log(`✅ champion_fact_claims 取得成功: ${Object.keys(claimsMap).length} 体`);
 
       if (factsErr) {
         console.warn('⚠️ champion_facts 取得エラー:', factsErr.message);
@@ -577,6 +595,27 @@ async function main() {
     }
   }
 
+  const CLAIM_VIEW_FIELDS = { strengths: 'strengths', weaknesses: 'weaknesses', counter_champions: 'counters', must_ban_champions: 'mustBan', power_spikes: 'powerSpikes' };
+  const buildClaimsView = (byField) => {
+    if (!byField) return undefined;
+    const out = {};
+    for (const [field, key] of Object.entries(CLAIM_VIEW_FIELDS)) {
+      const rows = (byField[field] || []).slice().sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+      const sourced = rows.filter((r) => r.origin !== 'ai_estimate').slice(0, 5);
+      const ai = rows.filter((r) => r.origin === 'ai_estimate').slice(0, 2);
+      const list = [...sourced, ...ai].map((r) => ({
+        text: r.body,
+        origin: r.origin,
+        sourceTitle: r.source_title || undefined,
+        sourceUrl: r.source_url || undefined,
+        needsReview: !!r.needs_review,
+        date: String(r.created_at || '').slice(0, 10),
+      }));
+      if (list.length) out[key] = list;
+    }
+    return Object.keys(out).length ? out : undefined;
+  };
+
   const translateTrendItem = (name) => {
     if (!name) return '';
     const trimmed = String(name).trim();
@@ -741,6 +780,10 @@ async function main() {
         gameplayGuide: dbFact?.strategy || '',
         powerSpikes: dbFact?.power_spikes || '',
         skillOrder: dbFact?.patch_meta?.skill_order || ['Q', 'E', 'W'],
+        // 各項目の出典。出典のある記述（新しい順に5件）→ 出典の無い AI 推定（2件まで）の順
+        claims: buildClaimsView(claimsMap[lowerId]),
+        // おすすめアイテム・ルーンの根拠になった検索結果の件数（0 なら出典なしの AI 推定）
+        buildSourceCount: Array.isArray(dbFact?.research_sources) ? dbFact.research_sources.length : 0,
       },
       bible: bibleData ? {
         playstyleSummary: bibleData.summary,

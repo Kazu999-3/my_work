@@ -172,7 +172,8 @@ class DictSynthesizer:
                 logger.info(f"🔄 {champion_name} のパッチトレンドが古い、または存在しないため自動更新します...")
                 try:
                     from v2_CORE._LOL.champion_trend_worker import collect_and_save_champion_trend
-                    role = updated_raw_data.get("role") or "Jungle"
+                    # ロール未登録なら主なロールを自動判定（以前は "Jungle" 固定。2026-10-07）
+                    role = updated_raw_data.get("role") or None
                     trend_success = collect_and_save_champion_trend(champion_name, role)
                     if trend_success:
                         fresh = httpx.get(
