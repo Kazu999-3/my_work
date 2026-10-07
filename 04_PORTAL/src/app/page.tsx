@@ -8,7 +8,6 @@ import {
   ChevronRight, 
   Coins, 
   HeartHandshake, 
-  ScrollText, 
   Sparkles,
   ShieldAlert
 } from 'lucide-react';
@@ -193,7 +192,7 @@ export default function HomePage() {
             <span className="text-sm font-black text-foreground dark:text-white">⚡ コミュニティ ＆ 統計情報</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {[
               {
                 title: '順位表 ＆ 名簿',
@@ -215,13 +214,6 @@ export default function HomePage() {
                 href: '/guide',
                 icon: <BookOpen className="w-5 h-5 text-success-600 dark:text-success-400" />,
                 borderHover: 'hover:border-success-edge',
-              },
-              {
-                title: '更新情報ログ',
-                sub: '最新アップデート履歴',
-                href: '/changelog',
-                icon: <ScrollText className="w-5 h-5 text-secondary-600 dark:text-secondary-400" />,
-                borderHover: 'hover:border-secondary-edge',
               },
             ].map((item) => (
               <Link

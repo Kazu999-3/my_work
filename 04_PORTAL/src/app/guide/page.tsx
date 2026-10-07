@@ -8,7 +8,6 @@ import {
   Search, 
   Bot, 
   Globe, 
-  ScrollText, 
   Zap,
   HelpCircle,
   BookOpen
@@ -16,7 +15,6 @@ import {
 import GuideQuickStartTab from './tabs/GuideQuickStartTab';
 import GuideBotTab from './tabs/GuideBotTab';
 import GuidePortalTab from './tabs/GuidePortalTab';
-import GuideUpdatesTab from './tabs/GuideUpdatesTab';
 import GuideRulesTab from './tabs/GuideRulesTab';
 
 function GuideContent() {
@@ -29,7 +27,7 @@ function GuideContent() {
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam && ['quickstart', 'rules', 'bot', 'portal', 'updates'].includes(tabParam)) {
+    if (tabParam && ['quickstart', 'rules', 'bot', 'portal'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
@@ -79,14 +77,6 @@ function GuideContent() {
       color: 'text-secondary-700',
       activeBg: 'bg-secondary-500/15 border-secondary-edge-strong/40 text-secondary-900',
     },
-    {
-      id: 'updates',
-      label: '🚀 アップデート情報',
-      shortLabel: '更新情報',
-      icon: ScrollText,
-      color: 'text-primary-700',
-      activeBg: 'bg-primary-500/15 border-primary-edge-strong/40 text-primary-900',
-    },
   ];
 
   return (
@@ -107,7 +97,7 @@ function GuideContent() {
               </span>
             </div>
             <p className="text-[11px] text-muted-strong font-medium mt-0.5">
-              Botコマンド・ポータル機能・カスタム参加手順から最新の更新情報まで網羅
+              Botコマンド・ポータル機能・カスタム参加手順をまとめています
             </p>
           </div>
         </div>
@@ -164,7 +154,6 @@ function GuideContent() {
         {activeTab === 'rules' && <GuideRulesTab />}
         {activeTab === 'bot' && <GuideBotTab />}
         {activeTab === 'portal' && <GuidePortalTab />}
-        {activeTab === 'updates' && <GuideUpdatesTab />}
       </div>
     </div>
   );

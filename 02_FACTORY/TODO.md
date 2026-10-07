@@ -85,7 +85,7 @@
 
 ## 🧹 データ掃除（次の作業候補）
 
-- [ ] **Supabase 上の Edge Function `stats-collector`・`memory-encoder` をダッシュボードから削除**（2026-10-07: どこからも呼ばれておらず、リポジトリのソースは削除済み）
+- [x] **Supabase 上の Edge Function `stats-collector`・`memory-encoder` をダッシュボードから削除**（2026-10-08 確認: Edge Function は0本）（2026-10-07: どこからも呼ばれておらず、リポジトリのソースは削除済み）
 - [ ] **承認待ちの Wild Rift 記事（id 37501）を05承認画面で却下**（2026-10-07 DBからの削除は実行時確認で止まったため、画面から却下が必要）（統合済み2件はSQLで除去済み・`knowledge_revisions` に履歴あり）
 
 ## 🛠️ 新規機能（未着手）

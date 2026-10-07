@@ -200,7 +200,7 @@ const GENERAL_MENU_ITEMS: MenuItem[] = [
   // コミュニティ・戦績
   { id: 'leaderboard', label: '順位表 ＆ 名簿', shortLabel: '順位・名簿', icon: Trophy, href: '/leaderboard', color: 'text-primary-600', activeBg: 'bg-primary-500/15', section: 'コミュニティ' },
   // ガイド
-  { id: 'guide', label: '使い方 ＆ 更新情報', shortLabel: 'ガイド', icon: BookOpen, href: '/guide', color: 'text-success-600', activeBg: 'bg-success-500/15', section: 'ガイド' },
+  { id: 'guide', label: '使い方ガイド', shortLabel: 'ガイド', icon: BookOpen, href: '/guide', color: 'text-success-600', activeBg: 'bg-success-500/15', section: 'ガイド' },
 ];
 
 // 🛡️ 管理者向け追加メニュー（大会管理・運用）。05（戦術パイロット）へのリンクはユーザー判断で 2026-10-07 に削除

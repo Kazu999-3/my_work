@@ -23,7 +23,6 @@ export default function BackButton() {
     '/lane-guides',
     '/champions',
     '/synergy',
-    '/changelog',
   ];
 
   if (
