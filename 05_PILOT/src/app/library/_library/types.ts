@@ -21,6 +21,8 @@ export interface ArticleItem {
   days_ago?: number;
   freshness_label?: string;
   freshness_color?: { bg: string; text: string; border: string };
+  /** レーンガイド・辞典に統合済み（2026-10-07） */
+  integrated?: boolean;
 }
 
 export interface ArticleDetail {

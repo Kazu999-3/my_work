@@ -99,25 +99,32 @@ export const RANK_SHORT_JP_MAP = {
   UNRANKED: '未',
 };
 
-const RANK_LINE_PATTERN = /【(アイアン|アイ|ブロンズ|ブロ|シルバー|シル|ゴールド|ゴル|プラチナ|プラ|エメラルド|エメ|ダイヤ|マスター|マス|チャレンジャー|チャレ|グランドマスター|グラマス|未ランク|未|IRON|BRONZE|SILVER|GOLD|PLATINUM|EMERALD|DIAMOND|MASTER|GRANDMASTER|CHALLENGER|UNRANKED)/i;
+// 正規化先の4大ランク（英語キー → 4区分）。ランク語彙はこの表と RANK_JP_MAP / RANK_SHORT_JP_MAP だけに持つ
+// （2026-10-07: 以前は正規表現と判定用の配列にも同じ語を手書きしており、表を変えると一致しなくなっていた）
+const TIER_GROUP = {
+  CHALLENGER: 'プラチナ', GRANDMASTER: 'プラチナ', MASTER: 'プラチナ', DIAMOND: 'プラチナ', EMERALD: 'プラチナ', PLATINUM: 'プラチナ',
+  GOLD: 'ゴールド',
+  SILVER: 'シルバー',
+  BRONZE: 'ブロンズ', IRON: 'ブロンズ', UNRANKED: 'ブロンズ',
+};
+
+// 表記（英語・日本語・短縮）→ 英語キー
+const RANK_WORD_TO_KEY = Object.fromEntries(
+  Object.keys(TIER_GROUP).flatMap((key) => [[key, key], [RANK_JP_MAP[key], key], [RANK_SHORT_JP_MAP[key], key]])
+);
+
+// 長い語を先に並べる（「アイアン」より先に「アイ」が当たらないように）
+const RANK_LINE_PATTERN = new RegExp(
+  `【(${Object.keys(RANK_WORD_TO_KEY).sort((a, b) => b.length - a.length).join('|')})`,
+  'i'
+);
 
 /** 行から正規化した4大ランク（ブロンズ・シルバー・ゴールド・プラチナ）を取得 */
 export function getNormalizedTier(line) {
   const match = (line || '').match(RANK_LINE_PATTERN);
   if (!match) return 'シルバー';
-  const raw = match[1].toUpperCase();
-  const jp = RANK_JP_MAP[raw] || match[1];
-
-  if (['チャレンジャー', 'チャレ', 'グランドマスター', 'グラマス', 'マスター', 'マス', 'ダイヤ', 'エメラルド', 'エメ', 'プラチナ', 'プラ'].includes(jp)) {
-    return 'プラチナ';
-  } else if (['アイアン', 'アイ', '未ランク', '未', 'ブロンズ', 'ブロ'].includes(jp)) {
-    return 'ブロンズ';
-  } else if (['ゴールド', 'ゴル'].includes(jp)) {
-    return 'ゴールド';
-  } else if (['シルバー', 'シル'].includes(jp)) {
-    return 'シルバー';
-  }
-  return 'シルバー';
+  const key = RANK_WORD_TO_KEY[match[1]] || RANK_WORD_TO_KEY[match[1].toUpperCase()];
+  return TIER_GROUP[key] || 'シルバー';
 }
 
 export function isSingleMatch(line) {

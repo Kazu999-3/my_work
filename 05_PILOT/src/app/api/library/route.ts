@@ -80,9 +80,10 @@ export async function GET(req: NextRequest) {
     let query = supabase
       .from('personal_knowledge')
       .select('id, title, champion, source_url, tags, genre, created_at, content')
-      // 削除済み(__DELETED__)は出さない。以前は除外しておらず、旧ポータルで辞典統合時に
-      // 「ライブラリから削除」された643件(2026-10-06時点)が一覧に出続けていた
-      .or('tags.is.null,tags.not.cs.{__DELETED__}')
+      // 削除済み(__DELETED__)は出さない。ただしタグが ['__DELETED__'] だけの行は、旧ポータルの統合処理
+      // （レーンガイド・辞典への統合）がタグを丸ごと置き換えて片付けた記事なので「統合済み」として出す（2026-10-07 ユーザー要望）。
+      // 人が削除した記事は __USER_DELETED__ も付く（下の setDeleted）ため、ここには含まれない
+      .or('tags.is.null,tags.not.cs.{__DELETED__},tags.eq.{__DELETED__}')
       .order('created_at', { ascending: false });
 
     if (q) {
@@ -157,6 +158,7 @@ export async function GET(req: NextRequest) {
         ...rest,
         // __DELETED__ / __INTEGRATED__ 等の内部状態タグは画面に出さない
         tags: (r.tags || []).filter((t: string) => !/^__.+__$/.test(t)),
+        integrated: isIntegratedTags(r.tags),
         channel: ch || 'その他・一般',
         char_count: charCount,
         published_at: freshnessInfo.publishedAt || (r.created_at ? r.created_at.split('T')[0] : null),
@@ -296,6 +298,14 @@ export async function POST(req: NextRequest) {
 }
 
 const DELETED_TAG = '__DELETED__';
+const USER_DELETED_TAG = '__USER_DELETED__';
+const INTEGRATED_TAG = '__INTEGRATED__';
+
+/** レーンガイド・辞典に統合済みの記事か（現行の __INTEGRATED__ と、旧ポータルが ['__DELETED__'] に置き換えたもの） */
+function isIntegratedTags(tags: unknown): boolean {
+  if (!Array.isArray(tags)) return false;
+  return tags.includes(INTEGRATED_TAG) || (tags.length === 1 && tags[0] === DELETED_TAG);
+}
 
 // 記事の削除（2026-10-06）。既存の運用に合わせ、行は消さず __DELETED__ タグを付ける論理削除にする。
 // 辞典・レーンガイドに統合済みの記事は knowledge_revisions 等から出典として参照されているため、物理削除しない。
@@ -307,9 +317,12 @@ async function setDeleted(id: unknown, deleted: boolean) {
   if (selErr) throw selErr;
   if (!row) throw Object.assign(new Error('記事が見つかりません'), { status: 404 });
   const current: string[] = Array.isArray(row.tags) ? row.tags : [];
-  const tags = deleted
-    ? (current.includes(DELETED_TAG) ? current : [...current, DELETED_TAG])
-    : current.filter((t) => t !== DELETED_TAG);
+  // 削除には __USER_DELETED__ も付け、旧ポータルの「統合で片付けた ['__DELETED__']」と区別する（2026-10-07）。
+  // 旧形式の統合済み記事を消す時は __INTEGRATED__ に置き換えておく（元に戻した時に統合済みのまま残り、3時間おきの自動統合で二重に統合されない）
+  const base = current.length === 1 && current[0] === DELETED_TAG
+    ? [INTEGRATED_TAG]
+    : current.filter((t) => t !== DELETED_TAG && t !== USER_DELETED_TAG);
+  const tags = deleted ? [...base, DELETED_TAG, USER_DELETED_TAG] : base;
   const { error } = await supabase.from('personal_knowledge').update({ tags }).eq('id', id);
   if (error) throw error;
   return row.title as string;

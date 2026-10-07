@@ -24,6 +24,11 @@ export default function ArticleCard({ article: a, onOpen }: { article: ArticleIt
                           </span>
                         )}
                         <FreshnessBadge isOldPatch={a.is_old_patch} daysAgo={a.days_ago} freshness={a.freshness} showUnknownAsModerate />
+                        {a.integrated && (
+                          <span className="px-2 py-0.5 rounded-md bg-teal-500/10 text-teal-300 text-[10px] font-bold border border-teal-500/30" title="この記事の内容はレーンガイド・チャンピオン辞典に統合済みです">
+                            📘 統合済み
+                          </span>
+                        )}
                       </div>
 
                       <div className="flex items-start justify-between gap-2">
