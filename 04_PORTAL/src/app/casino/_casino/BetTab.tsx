@@ -330,7 +330,7 @@ export default function BetTab({ user, betStats, setTipToPlayer, setIsTipModalOp
                             <input
                               type="number"
                               min="1"
-                              max={user?.coins ?? 1000}
+                              max={user?.coins ?? 0}
                               value={betAmount}
                               onChange={(e) => setBetAmount(Number(e.target.value))}
                               className="w-full bg-surface border border-border rounded-xl px-4 py-2.5 text-sm font-black text-foreground focus:outline-none focus:border-primary-edge-strong font-mono"
@@ -439,7 +439,7 @@ export default function BetTab({ user, betStats, setTipToPlayer, setIsTipModalOp
                     <div className="flex items-center gap-2">
                       <div className="text-right">
                         <span className="text-xs font-black text-primary-600 font-mono">
-                          🪙 {(p.coins ?? 1000).toLocaleString()}
+                          🪙 {p.coins != null ? p.coins.toLocaleString() : '—'}
                         </span>
                       </div>
                       {user && p.name !== activePlayerName && (

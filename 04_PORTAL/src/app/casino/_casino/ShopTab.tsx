@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2, ShoppingBag } from 'lucide-react';
-import { SHOP_ITEMS } from './shopItems';
+import { SHOP_ITEM_LIST } from '../../../lib/shopItems';
 
 // タブ5: KTMショップ
 // 2026-10-07: app/casino/page.tsx（1,635行）から分割。表示内容・動作は分割前と同じ。
@@ -32,7 +32,7 @@ export default function ShopTab({ shopMessage, handleBuyItem }: {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {SHOP_ITEMS.map((item) => (
+              {SHOP_ITEM_LIST.map((item) => (
                 <div
                   key={item.id}
                   className="p-5 rounded-3xl bg-background border-2 border-border/80 hover:border-primary-edge transition-all flex flex-col justify-between space-y-4 group shadow-xs"

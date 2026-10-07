@@ -1,6 +1,9 @@
-// KTMショップの商品一覧（価格・説明）。サーバー側の価格は /api/bet/shop が持つ。
-// 2026-10-07: app/casino/page.tsx から分離。
-export const SHOP_ITEMS = [
+// KTMショップの商品一覧（価格・説明）。カジノ画面の表示と /api/bet/shop の購入処理の両方がここを読む。
+// 2026-10-07: 以前は app/casino と app/api/bet/shop/route.ts に同じ11品が別々に定義されていた（価格がずれると表示と請求額が食い違う）。
+
+export interface ShopItem { id: string; name: string; price: number; icon: string; badge: string; desc: string }
+
+export const SHOP_ITEM_LIST: ShopItem[] = [
   {
     id: 'force_champ_pick',
     name: '👑 下剋上キャラ指定権 (高レート使用キャラ強制)',
@@ -90,3 +93,6 @@ export const SHOP_ITEMS = [
     desc: '【毎週日曜22:00抽選】🥇1等: ジャックポット総取り(8%抽選・キャリーオーバー制) / 🥈2等: 1,000コイン確約当選 / 🥉3等: 参加賞(1口30コイン還元)！'
   }
 ];
+
+/** 購入処理用: id から商品を引く表 */
+export const SHOP_ITEMS: Record<string, ShopItem> = Object.fromEntries(SHOP_ITEM_LIST.map((item) => [item.id, item]));

@@ -79,7 +79,7 @@ export default function TipModal({ user, setTipToPlayer, setIsTipModalOpen, acti
                     🪙 チップ金額 (コイン)
                   </label>
                   <span className="text-[10px] text-muted-strong font-bold">
-                    所持: {(user?.coins ?? 1000).toLocaleString()}pt
+                    所持: {user?.coins != null ? user.coins.toLocaleString() : '—'}pt
                   </span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
@@ -101,7 +101,7 @@ export default function TipModal({ user, setTipToPlayer, setIsTipModalOpen, acti
                 <input
                   type="number"
                   min="1"
-                  max={user?.coins ?? 1000}
+                  max={user?.coins ?? 0}
                   value={tipAmount}
                   onChange={(e) => setTipAmount(Number(e.target.value))}
                   className="w-full bg-surface border border-border rounded-xl px-3 py-2 text-sm font-black text-foreground focus:outline-none focus:border-primary-edge-strong font-mono"

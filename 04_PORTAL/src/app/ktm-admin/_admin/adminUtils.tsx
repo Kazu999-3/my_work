@@ -83,15 +83,23 @@ export const RoleIcon = ({ role, className = "w-3.5 h-3.5" }: { role: string; cl
 /** ランク表示のMMRバッジ。クリックで数値を直接編集 */
 export const MmrBadgeInput = ({ value, onChange }: { value: number, onChange: (v: number) => void }) => {
   const [editing, setEditing] = useState(false);
+  // ★ 2026-10-07: 入力中は手元に持ち、確定（フォーカスが外れる / Enter）した時だけ保存する。以前は1文字ごとに保存していた
+  const [draft, setDraft] = useState<string>(String(value));
   const rank = getRankFromMMR(value);
+  const commit = () => {
+    setEditing(false);
+    const next = parseInt(draft) || 0;
+    if (next !== value) onChange(next);
+  };
 
   if (editing) {
     return (
       <input
         type="number"
-        value={value}
-        onChange={(e) => onChange(parseInt(e.target.value) || 0)}
-        onBlur={() => setEditing(false)}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') { setDraft(String(value)); setEditing(false); } }}
         autoFocus
         className="bg-background border border-primary-edge-strong rounded px-1 py-0.5 outline-none w-14 text-center font-mono text-xs text-foreground"
       />
@@ -99,7 +107,7 @@ export const MmrBadgeInput = ({ value, onChange }: { value: number, onChange: (v
   }
   return (
     <div
-      onClick={() => setEditing(true)}
+      onClick={() => { setDraft(String(value)); setEditing(true); }}
       className={`cursor-pointer text-[10px] font-bold ${rank.color} hover:opacity-80 px-1 py-0.5 rounded border border-current/20 text-center w-14 overflow-hidden text-ellipsis`}
       title={`MMR: ${value} (クリックで編集)`}
     >

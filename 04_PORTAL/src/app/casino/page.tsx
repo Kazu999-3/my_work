@@ -315,7 +315,7 @@ export default function CasinoPage() {
         {activeTab === 'slot' && (
           <div className="space-y-6 animate-in fade-in duration-200">
             <KtmSlotGame
-              userCoins={user?.coins ?? 1000}
+              userCoins={user?.coins ?? 0}
               onBalanceChange={(newBalance) => {
                 fetchBetData();
                 refreshUser();
@@ -329,7 +329,7 @@ export default function CasinoPage() {
         {activeTab === 'mines' && (
           <div className="space-y-6 animate-in fade-in duration-200">
             <KtmMinesGame
-              userCoins={user?.coins ?? 1000}
+              userCoins={user?.coins ?? 0}
               onBalanceChange={() => {
                 fetchBetData();
                 refreshUser();
@@ -345,7 +345,7 @@ export default function CasinoPage() {
               <KtmBaccaratGame
                 userDiscordId={user?.discordId}
                 userDisplayName={user?.displayName || user?.username}
-                userCoins={user?.coins ?? 1000}
+                userCoins={user?.coins ?? 0}
                 onBalanceChange={(newBalance) => {
                   fetchBetData();
                   refreshUser();

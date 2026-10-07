@@ -387,7 +387,7 @@ TODOの大型タスク（保守性向上計画）を A→B→C→D の順で進�
 - **都度募集の欠員アラート（`sendRecruitStatusNotification`）を削除**（ユーザー判断）: 1時間おきの cron が `ba4fb2b1` で消えて止まっていた。1時間おきに動かせる枠が無い（Cloudflare 5枠満杯・GitHub Actions は1〜5時間遅れる）。
 - **Bot のエラー通知が送られていなかった不具合を修正**: `index.js` で `interaction` が try の中で宣言され、catch 側の管理者通知で参照エラーになっていた。
 - **ジャックポット総取りを記録画面へ移設し、04 `/api/riot/match-sync` を削除**（ユーザー判断 b）: 総取りの判定は match-sync にしか無く、match-sync が一度も呼ばれないため積み立てられるだけで当たらなかった。記録画面の詳細スタッツに「💎 ペンタキル」入力を追加し、`/api/match/record` が保存（`ktm_match_participants.penta_kills`）・判定（勝利チームのペンタで総取り、お祭りカスタムは対象外、`ktm_matches.jackpot_claimed` で二重払い防止）・Discord通知を行う。
-- 呼び出し元の無い `/api/bet/settle`（精算は `/api/match/record` が行う）を削除（ユーザー判断）。使われていない `pending_match_sync` テーブル（0行）の削除は migration 91 を作成済みだが、**本番DBへの適用は未実施**（2026-10-07 時点。TODO参照）。
+- 呼び出し元の無い `/api/bet/settle`（精算は `/api/match/record` が行う）を削除（ユーザー判断）。使われていない `pending_match_sync` テーブル（0行）も削除（migration 91。ツールからの適用が自動で拒否されたため、ユーザーが Supabase の SQL エディタで実行）。
 
 ## 🗺️ 3. システム構造 ＆ ディレクトリマップ
 

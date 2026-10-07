@@ -37,7 +37,7 @@ export default function UserStatusPanel({ user, lastRescueMonth, userStreak, use
                   </div>
                   <div className="text-xs font-bold text-primary-800 flex items-center gap-1.5 mt-0.5">
                     <span>🪙 あなたの残高:</span>
-                    <strong className="font-mono text-base text-primary-600">{(user.coins ?? 1000).toLocaleString()}</strong>
+                    <strong className="font-mono text-base text-primary-600">{user.coins != null ? user.coins.toLocaleString() : '—'}</strong>
                     <span>コイン</span>
                   </div>
                 </div>
@@ -55,7 +55,8 @@ export default function UserStatusPanel({ user, lastRescueMonth, userStreak, use
                   <span>デイリーおみくじ (最大+300pt)</span>
                 </button>
 
-                {(user.coins ?? 1000) < 100 && (
+                {/* 残高が取れていない時は出さない */}
+                {user.coins != null && user.coins < 100 && (
                   (() => {
                     const currentMonthStr = new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit' }).format(new Date()).replace(/\//g, '-');
                     const isRescueClaimedThisMonth = lastRescueMonth === currentMonthStr;

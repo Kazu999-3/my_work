@@ -15,6 +15,9 @@ export function useAdminRoster(enabled: boolean, setMessage: (m: AdminMessage) =
   const [flashingPlayerIds, setFlashingPlayerIds] = useState<Array<string | number>>([]);
   const [integrityData, setIntegrityData] = useState<any>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // ★ 2026-10-07: 変更したプレイヤーだけを保存する。以前は1項目変えるたびに名簿の全員分を送っており、
+  // その間に別の端末（メンバーがバランサーで希望レーンを変える等）が保存した値を、管理画面の古い値で上書きしうる状態だった。
+  const dirtyIdsRef = useRef<Set<string | number>>(new Set());
 
   const triggerRowFlash = (uid: string | number) => {
     setFlashingPlayerIds(prev => [...prev, uid]);
@@ -80,7 +83,10 @@ export function useAdminRoster(enabled: boolean, setMessage: (m: AdminMessage) =
     setSaving(true);
     setMessage({ type: "", text: "" });
     try {
-      const targetPlayers = currentPlayers || players;
+      const dirty = dirtyIdsRef.current;
+      // 既存プレイヤーは変更したものだけ、新規（idなし）は常に送る
+      const targetPlayers = (currentPlayers || players).filter(p => !p.id || dirty.has(p.id));
+      if (targetPlayers.length === 0) return;
       // ktm_players はRLSで名前・MMR・weight等がanon直書き不可になったため(migration 12)、
       // 管理者フルカラム書き込みは /api/admin/players/save（サービスロール）に集約する。
       const toRow = (p: any) => ({
@@ -118,6 +124,7 @@ export function useAdminRoster(enabled: boolean, setMessage: (m: AdminMessage) =
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '保存に失敗しました');
+      targetPlayers.forEach(p => { if (p.id) dirty.delete(p.id); });
 
       // 自動保存時は全体リロード(fetchPlayers)をせずチラつきを防ぐ
       checkIntegrity();
@@ -130,6 +137,7 @@ export function useAdminRoster(enabled: boolean, setMessage: (m: AdminMessage) =
 
   // 単にローカルの players ステートを更新する関数（テキスト入力中。保存はフォーカスアウト時）
   const handleInputChange = (uid: string, field: string, value: any) => {
+    dirtyIdsRef.current.add(uid);
     setPlayers(prevPlayers => prevPlayers.map(p => {
       if ((p.id || p.discord_id) !== uid) return p;
       if (field === "primary_role") return { ...p, role_preferences: { ...p.role_preferences, primary: value } };
@@ -141,6 +149,7 @@ export function useAdminRoster(enabled: boolean, setMessage: (m: AdminMessage) =
 
   // 即時セーブをトリガーする関数 (Select, Checkbox, MmrBadgeInput 用)
   const handleInputSave = async (uid: string, field: string, value: any) => {
+    dirtyIdsRef.current.add(uid);
     setPlayers(prevPlayers => {
       const nextPlayers = prevPlayers.map(p => {
         if ((p.id || p.discord_id) !== uid) return p;
@@ -177,6 +186,7 @@ export function useAdminRoster(enabled: boolean, setMessage: (m: AdminMessage) =
     setSaving(true);
     try {
       const nextPlayers = players.map(p => ({ ...p, is_active: false }));
+      nextPlayers.forEach(p => { if (p.id) dirtyIdsRef.current.add(p.id); });
       setPlayers(nextPlayers);
       await handleSave(nextPlayers);
       setMessage({ type: "success", text: "全員を非アクティブに設定しました。" });
