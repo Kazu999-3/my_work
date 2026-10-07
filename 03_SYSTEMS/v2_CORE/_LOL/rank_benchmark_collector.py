@@ -176,6 +176,8 @@ def extract_builds(detail: dict, timeline: dict | None, sample_tier: str) -> lis
             "patch": patch,
             "game_start": game_start,
             "win": bool(p.get("win")),
+            # 試合時間（秒）。05 辞典の「パワースパイク推移」を試合時間帯別の勝率にする（migration 92、2026-10-07）
+            "game_duration_sec": int(info.get("gameDuration") or 0) or None,
             "core_items": core,
             "boots": boots,
             "keystone": perks[0] if perks else None,

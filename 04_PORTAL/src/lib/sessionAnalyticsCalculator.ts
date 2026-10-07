@@ -31,6 +31,9 @@ export interface RawMatchRecord {
   firstDragon?: boolean;     // 初手ドラゴン確保フラグ
   teamEpicKills?: number;    // ドラゴン+バロン+ヘラルドの獲得数
   enemyEpicKills?: number;
+  firstBloodInvolved?: boolean;      // ファーストブラッドを取った/アシストした
+  turretTakedowns?: number | null;   // タワー破壊に関与した数（Riotの値が無ければ null）
+  laningAhead?: boolean | null;      // レーン戦終了時にゴールド・経験値で対面に勝っていたか
 }
 
 // ==========================================
@@ -237,21 +240,24 @@ export function calculateTargetRankGap(
   };
 }
 
+// ★ 2026-10-07: 実測していない値（初デス時刻・Obj直前デス・孤立デス率・プレート影響「+○%」は
+//   平均デスやダメージ割合からの換算式だった）を削除し、Riotの試合データにある値に置き換えた。
 export interface EarlyTimelineImpact {
-  firstBloodRate: number;
-  firstDeathAvgMinute: string;
+  /** ファーストブラッドに関与した試合の割合（%）。記録のある試合が無ければ null */
+  firstBloodRate: number | null;
   objLabel: string;
   voidgrubWinRate: number | null;
   voidgrubLossWinRate: number | null;
-  plateGoldImpact: string;
+  /** 1試合あたりのタワー破壊関与数の平均。記録が無ければ null */
+  avgTurretTakedowns: number | null;
   roleObjectiveFocus: string;
 }
 
 export interface FatalDeathAnalytics {
-  objPreSpawnDeathsCount: number;
-  objPreSpawnDeathsRate: number;
-  isolatedDeathsPercent: number;
-  avgFirstDeathSec: number;
+  /** 3デス以下に抑えた試合の割合（%） */
+  lowDeathGamesPercent: number;
+  /** 5デス以上だった試合の割合（%） */
+  highDeathGamesPercent: number;
   fatalThrowRating: string;
 }
 
@@ -293,26 +299,27 @@ export interface PlaystyleMbti {
 export interface TiltTriggerMatrix {
   invadeResistanceRating: string;
   teammateDeathResistance: string;
-  snowballDeathAvoidanceRate: number;
-  mentalResilienceScore: number;
   tiltInsight: string;
 }
 
 export interface GoldEfficiency {
   damagePerGoldRating: string;
   goldStashRating: string;
-  spikeUtilizationPercent: number;
   efficiencyVerdict: string;
 }
 
 export interface AdversityBehavior {
   archetype: string;
-  behindComebackWinRate: number;
+  /** レーン戦でゴールド・経験値が負けていた試合の勝率（%）。該当が無ければ null */
+  behindComebackWinRate: number | null;
+  /** 上の勝率の母数 */
+  behindGames: number;
   behaviorVerdict: string;
   recommendedMindset: string;
 }
 
 export interface CognitiveBiases {
+  /** 実測値の条件に当てはまった時だけ入る（当てはまらなければ空文字） */
   recallHabitBias: string;
   mapAttentionBias: string;
   actionPrescription: string;
@@ -787,8 +794,15 @@ export function calculateRealSessionAnalytics(
   const avgDmgShare = Math.round(totalDmgShare / totalG);
 
   // 1. 序盤因果・オブジェクト実測（ロール別の主戦場オブジェクトを自動切替）
-  const estimatedFbRate = Math.min(65, Math.max(15, Math.round(kp15Actual * 0.7 + (kdaActual >= 4 ? 12 : 0))));
-  const firstDeathMin = Math.max(4, Math.min(14, Number((12 - avgDeathsOverall * 1.5).toFixed(1))));
+  // ファーストブラッド関与率・タワー破壊関与数は Riot の試合データの実測値（2026-10-07 推定式から置き換え）
+  const fbKnown = sorted.filter((m) => m.firstBloodInvolved !== undefined);
+  const firstBloodRate = fbKnown.length > 0
+    ? Math.round((fbKnown.filter((m) => m.firstBloodInvolved).length / fbKnown.length) * 100)
+    : null;
+  const towersKnown = sorted.filter((m) => typeof m.turretTakedowns === 'number');
+  const avgTurretTakedowns = towersKnown.length > 0
+    ? Number((towersKnown.reduce((s, m) => s + (m.turretTakedowns as number), 0) / towersKnown.length).toFixed(1))
+    : null;
 
   const isBotSide = detectedRole === 'UTILITY' || detectedRole === 'SUPPORT' || detectedRole === 'BOTTOM' || detectedRole === 'BOT' || detectedRole === 'ADC';
   
@@ -831,14 +845,11 @@ export function calculateRealSessionAnalytics(
     : null;
 
   const earlyTimelineImpact: EarlyTimelineImpact = {
-    firstBloodRate: estimatedFbRate,
-    firstDeathAvgMinute: `${Math.floor(firstDeathMin)}分${Math.round((firstDeathMin % 1) * 60)}秒 (${avgDeathsOverall <= 3.5 ? '序盤の安全性極めて高' : '序盤やや被ガンク注意'})`,
+    firstBloodRate,
     objLabel: isBotSide ? '初手ドラゴン確保時勝率' : 'グラブ優位時勝率 (3匹以上)',
     voidgrubWinRate: objWinRate,
     voidgrubLossWinRate: objLossWinRate,
-    plateGoldImpact: isBotSide
-      ? `下半身主導権によるタワープレート奪取 +${Math.max(10, Math.round(avgDmgShare * 1.1))}% で中盤リード構築`
-      : `グラブ効果による14分タワー破壊力 +${Math.max(10, Math.round(avgDmgShare * 1.1))}% でリード拡大`,
+    avgTurretTakedowns,
     roleObjectiveFocus: isBotSide
       ? 'BOT/サポートは「ドラゴン優先」。下半身レーンのプッシュ主導権と湧き前視界で1匹目ドラゴンを先取することが勝利の絶対条件です。'
       : 'TOP/JG/MIDは「ヴォイドグラブ優先」。序盤リバー主導権を取り3匹以上確保することで、タワー破壊とマップ開放が一気に加速します。',
@@ -846,10 +857,10 @@ export function calculateRealSessionAnalytics(
 
   // 2. 致命的デス分析（実測被デス数・勝敗から動的算出）
   let lowDeathCount = 0;
-  let isolatedDeathEst = 0;
+  let highDeathCount = 0;
   sorted.forEach((m) => {
     if (m.deaths <= 3) lowDeathCount += 1;
-    if (m.deaths >= 5) isolatedDeathEst += 1;
+    if (m.deaths >= 5) highDeathCount += 1;
   });
   const fatalThrowRating = lowDeathCount >= sorted.length * 0.6
     ? '極めて低い (自制心 Sランク)'
@@ -858,10 +869,8 @@ export function calculateRealSessionAnalytics(
     : '要改善 (Bランク)';
 
   const fatalDeathAnalytics: FatalDeathAnalytics = {
-    objPreSpawnDeathsCount: Math.max(0, Math.round(avgDeathsOverall * 0.45 * (sorted.length / 10))),
-    objPreSpawnDeathsRate: Math.max(5, Math.min(30, Math.round(avgDeathsOverall * 3.8))),
-    isolatedDeathsPercent: Math.max(8, Math.min(40, Math.round((isolatedDeathEst / totalG) * 50 + 10))),
-    avgFirstDeathSec: Math.round(firstDeathMin * 60),
+    lowDeathGamesPercent: Math.round((lowDeathCount / totalG) * 100),
+    highDeathGamesPercent: Math.round((highDeathCount / totalG) * 100),
     fatalThrowRating,
   };
 
@@ -1049,7 +1058,7 @@ export function calculateRealSessionAnalytics(
       additions = filterAdditions([
         { championName: 'Renekton (レネクトン)', role: 'TOP', archetype: '序盤レーン圧倒ファイター', synergyReason: '強化Wスタンによる序盤のトレード完勝と、タワーダイブ主導力。' },
         { championName: 'Aatrox (エートロックス)', role: 'TOP', archetype: '集団戦前線破壊＆大回復', synergyReason: 'Q3段先端ヒットとR世界の終わりによる集団戦フロントラインの崩壊。' },
-        { championName: 'Ornn (オーン)', role: 'TOP', archetype: '味方アイテム強化＆広域エンゲージ', synergyReason: '味方の神話アイテムを無料アップグレードし、超長距離Rで集団戦を制覇。' },
+        { championName: 'Ornn (オーン)', role: 'TOP', archetype: '味方アイテム強化＆広域エンゲージ', synergyReason: '味方のアイテムをアップグレードでき、超長距離Rで集団戦を仕掛けられる。' },
         { championName: 'Jax (ジャックス)', role: 'TOP', archetype: 'スプリット無双＆後半タイマン最強', synergyReason: 'Eカウンターストライクによる通常攻撃無効化とサイドレーン破壊力。' },
       ]);
     }
@@ -1150,12 +1159,9 @@ export function calculateRealSessionAnalytics(
   };
 
   // 4. メンタル・ティルトトリガー（実測即キュー勝率差・連敗時スタッツから動的算出）
-  const snowballAvoidRate = Math.min(95, Math.max(35, Math.round(100 - avgDeathsOverall * 8.5)));
+  // ★ 2026-10-07: 「雪だるま連続デス防止率」(100-平均デス×8.5) と、それを使った「メンタル耐性指数」は実測ではないため削除
   const tiltWinRateImpact = requeueTiltStats.tiltWinRateDropPercent;
   const isTiltProne = requeueTiltStats.hasData && requeueTiltStats.immediateRequeueGames >= 2 && requeueTiltStats.tiltWinRateDropPercent >= 8;
-  const mentalScore = Math.min(98, Math.max(40, Math.round(
-    safetyScore * 0.4 + snowballAvoidRate * 0.4 + (isTiltProne ? 0 : 20)
-  )));
 
   const tiltInsightText = requeueTiltStats.hasData && requeueTiltStats.immediateRequeueGames >= 1
     ? (isTiltProne
@@ -1163,13 +1169,11 @@ export function calculateRealSessionAnalytics(
         : requeueTiltStats.immediateRequeueWinRate >= requeueTiltStats.restedRequeueWinRate
           ? `即キュー時勝率 ${requeueTiltStats.immediateRequeueWinRate}%（休憩後勝率 ${requeueTiltStats.restedRequeueWinRate}% に対し +${requeueTiltStats.immediateRequeueWinRate - requeueTiltStats.restedRequeueWinRate}%）。連戦でも集中力と冷静さを保てており、リズムに乗った連勝を作りやすいメンタルタフネスを持っています。`
           : `即キュー時勝率 ${requeueTiltStats.immediateRequeueWinRate}%・休憩後勝率 ${requeueTiltStats.restedRequeueWinRate}%。即キューによる大きなティルト崩れは見られず、平均被デス ${avgDeathsOverall.toFixed(1)} と安定した精神状態を維持できています。`)
-    : `平均被デス ${avgDeathsOverall.toFixed(1)}・デス連続発生率の抑制率 ${snowballAvoidRate}%。安定したメンタル自制心を維持できています。`;
+    : `敗北直後の即キューの記録がないため、ティルトの傾向はまだ判定できません（平均被デス ${avgDeathsOverall.toFixed(1)}）。`;
 
   const tiltTriggerMatrix: TiltTriggerMatrix = {
     invadeResistanceRating: avgDeathsOverall <= 3.5 ? 'Sランク (不利対面や荒らしにも動じず冷静に対処)' : avgDeathsOverall <= 5.0 ? 'Aランク (標準的・安定)' : 'Bランク (連続ガンク時にやや被デスが増加)',
     teammateDeathResistance: kp15Actual >= 45 ? 'Aランク (味方の動きに柔軟に追従)' : 'Bランク (他レーン崩壊時に孤立しやすい傾向)',
-    snowballDeathAvoidanceRate: snowballAvoidRate,
-    mentalResilienceScore: mentalScore,
     tiltInsight: tiltInsightText,
   };
 
@@ -1182,20 +1186,28 @@ export function calculateRealSessionAnalytics(
     goldStashRating: isSup
       ? '視界アイテム＆ピンクワード優先循環'
       : (csPerMinActual >= 7.5 ? '高ファーム維持（1300G〜1500Gでの計画的パワースパイク帰還を推奨）' : csPerMinActual >= 6.0 ? '適正リコール循環' : 'ファーム機会損失警戒（リコール時のウェーブ管理要調整）'),
-    spikeUtilizationPercent: Math.min(92, Math.max(50, Math.round(55 + kdaActual * 2.8 + (dmgPerGold * 20)))),
     efficiencyVerdict: isSup
       ? `実測1Gあたり${dmgPerGold}ダメージ。視界アイテムとサポートコアの完成タイミングが勝率に直結しています。毎リコールでのピンクワード補充を徹底しましょう。`
       : `実測1Gあたり${dmgPerGold}ダメージ（${dmgRating}）。獲得したゴールドのアイテム変換効率は${dmgPerGold >= 0.6 ? '極めて良好' : '改善の余地あり'}です。コアアイテム完成直前のリコールでパワースパイクを確定させると集団戦勝率が向上します。`,
   };
 
   // 6. 逆境耐性
-  const behindWinRateEst = Math.max(12, Math.min(48, Math.round(overallWinRate * 0.52)));
+  // ★ 2026-10-07: 以前は「総合勝率×0.52」を「逆転勝率 実測推計」と表示していた。
+  //   レーン戦終了時にゴールド・経験値で対面に負けていた試合（Riot challenges）の実際の勝率に置き換えた
+  const behindMatches = sorted.filter((m) => m.laningAhead === false);
+  const behindWinRate = behindMatches.length > 0
+    ? Math.round((behindMatches.filter((m) => m.win).length / behindMatches.length) * 100)
+    : null;
+  const behindText = behindWinRate != null
+    ? `（レーン戦で負けていた${behindMatches.length}試合の勝率 ${behindWinRate}%）`
+    : '（レーン戦で負けていた試合の記録がありません）';
   const adversityBehavior: AdversityBehavior = {
     archetype: safetyScore >= 60 ? '🐢 相手のミス待ち亀型 (Patient Counter-Puncher)' : '🦅 逆転ワンチャンス強襲型 (Opportunistic Punisher)',
-    behindComebackWinRate: behindWinRateEst,
+    behindComebackWinRate: behindWinRate,
+    behindGames: behindMatches.length,
     behaviorVerdict: safetyScore >= 60
-      ? `劣勢時でも自爆特攻を避け、防衛ワードとタワー下ファームで相手の慢心ダイブを誘う粘り強さを持っています（逆転勝率 実測推計${behindWinRateEst}%）。`
-      : `劣勢時でも積極的なキャッチや奇襲を狙い、ワンチャンスの集団戦勝利から巻き返す勝負強さを持っています（逆転勝率 実測推計${behindWinRateEst}%）。`,
+      ? `平均被デスが少なく、劣勢でも無理をしない傾向です${behindText}。`
+      : `平均被デスが多めで、劣勢でも仕掛けにいく傾向です${behindText}。`,
     recommendedMindset: isSup
       ? 'ビハインド時は敵陣への単独ワードを避け、味方タワー周囲の防衛視界を固めて敵の甘えたダイブをカウンターするのが最大の勝ち筋です。'
       : (detectedRole === 'JUNGLE'
@@ -1219,24 +1231,16 @@ export function calculateRealSessionAnalytics(
       recallHabitBias = `【即座リベンジ・ティルトバイアス】敗北直後の感情的な即キューにより、通常時より勝率が${requeueTiltStats.tiltWinRateDropPercent}%低下する悪循環。`;
     } else if (avgDeathsOverall >= 5.5) {
       recallHabitBias = '【リスク過小評価バイアス】「まだ生き残れる」「あと1発殴れる」と敵のスキルクールダウンや援軍を見誤り、限界を超えて前線に残りすぎる傾向。';
-    } else if (normRole === 'UTILITY' || normRole === 'SUPPORT') {
-      recallHabitBias = '【視界設置過信バイアス】「もう1箇所だけワードを刺してから帰ろう」と単独で敵陣深くに入った瞬間にキャッチされる傾向。';
-    } else {
-      recallHabitBias = '【リコール遅延・ゴールド抱え込みバイアス】アイテム完成用の所持ゴールドが溜まっているにもかかわらず、リコールを先延ばしにしてパワースパイクを逃す傾向。';
     }
+    // ★ 2026-10-07: 上の実測条件に当てはまらない人にも「視界設置過信」「リコール遅延」をロールだけで一律に表示していたため削除
 
     // マップ・意識に関するバイアス判定
     if (visionPerMinActual < 0.6 && normRole !== 'SUPPORT' && normRole !== 'UTILITY') {
       mapAttentionBias = `【暗黒レーン盲信バイアス】分間視界スコア ${visionPerMinActual}。周辺の視界が取れていない状態で敵JGやMIDのロームを警戒せず前線を押し引きする傾向。`;
     } else if (kp15Actual < 40) {
       mapAttentionBias = `【トンネルビジョン・孤立バイアス】キル関与率 ${kp15Actual}%。自身の目の前のミニオンや対面に集中するあまり、川や隣レーンで発生した小規模戦への意識が薄れがち。`;
-    } else if (normRole === 'JUNGLE') {
-      mapAttentionBias = '【対角アクション放棄バイアス】敵JGが反対サイドでアクションを起こした際に対角の敵キャンプ奪取や逆オブジェクトを逃しがち。';
-    } else if (normRole === 'UTILITY' || normRole === 'SUPPORT') {
-      mapAttentionBias = '【ADC依存バイアス】BOTレーンに張り付きすぎ、MIDの孤立やヘラルド/グラブ戦への合流を見落としがち。';
-    } else {
-      mapAttentionBias = '【敵消失無警戒バイアス】敵のマップ消失を確認せず不用意に相手タワー下へハラスやプッシュを継続する傾向。';
     }
+    // ★ 2026-10-07: 同上。ロールだけで決めていた文（対角アクション放棄・ADC依存・敵消失無警戒）は削除
 
     // 個別処方箋の動的生成
     if (isTiltProne) {
@@ -1377,21 +1381,18 @@ function getFallbackSessionAnalytics(targetTier: string = 'Emerald IV', detected
       '【データ収集中】ソロQを3試合以上プレイすると、あなたの実測データから黄金律が自動算出されます。',
     ],
     earlyTimelineImpact: {
-      firstBloodRate: 0,
-      firstDeathAvgMinute: 'データ収集中',
+      firstBloodRate: null,
       objLabel: isSup ? '初手ドラゴン確保時勝率' : 'グラブ優位時勝率 (3匹以上)',
       voidgrubWinRate: 0,
       voidgrubLossWinRate: 0,
-      plateGoldImpact: '実戦データからタワープレート影響度を分析します',
+      avgTurretTakedowns: null,
       roleObjectiveFocus: isSup
         ? 'BOT/サポートは「ドラゴン優先」。下半身レーンのプッシュ主導権と湧き前視界で1匹目ドラゴンを先取することが勝利の鍵です。'
         : 'TOP/JG/MIDは「ヴォイドグラブ優先」。序盤リバー主導権を取り3匹以上確保することで、タワー破壊とマップ開放が加速します。',
     },
     fatalDeathAnalytics: {
-      objPreSpawnDeathsCount: 0,
-      objPreSpawnDeathsRate: 0,
-      isolatedDeathsPercent: 0,
-      avgFirstDeathSec: 0,
+      lowDeathGamesPercent: 0,
+      highDeathGamesPercent: 0,
       fatalThrowRating: 'データ収集中',
     },
     gameOutcomeBreakdown: {
@@ -1424,19 +1425,17 @@ function getFallbackSessionAnalytics(targetTier: string = 'Emerald IV', detected
     tiltTriggerMatrix: {
       invadeResistanceRating: '未計測',
       teammateDeathResistance: '未計測',
-      snowballDeathAvoidanceRate: 0,
-      mentalResilienceScore: 0,
       tiltInsight: '対戦データが蓄積されると、あなたのメンタル傾向とティルトトリガーを分析します。',
     },
     goldEfficiency: {
       damagePerGoldRating: '未計測',
       goldStashRating: '未計測',
-      spikeUtilizationPercent: 0,
       efficiencyVerdict: '実戦データからゴールド効率とパワースパイク活用度を診断します。',
     },
     adversityBehavior: {
       archetype: '分析準備中',
-      behindComebackWinRate: 0,
+      behindComebackWinRate: null,
+      behindGames: 0,
       behaviorVerdict: '劣勢時の粘り強さを実測値から判定します。',
       recommendedMindset: '冷静なファームとオブジェクト管理を心がけましょう。',
     },

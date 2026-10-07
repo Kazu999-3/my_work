@@ -29,7 +29,7 @@ export default function PsychologyTab({ report }: {
                         {report.sessionAnalytics.playstyleMbti.tagline}
                       </p>
                       <p className="text-[10px] text-muted-strong font-medium mt-0.5">
-                        ※LoLの実測スタッツ（KDA・CS・被デス・視界）から算出した独自の4軸プレイスタイル分類です
+                        ※LoLの実測スタッツ（KDA・CS・被デス・視界）から算出した独自の4軸プレイスタイル分類です（各軸の％は独自の計算式による目安で、統計的に検証した値ではありません）
                       </p>
                     </div>
                   </div>
@@ -99,9 +99,6 @@ export default function PsychologyTab({ report }: {
                         <Flame size={15} className="text-danger-600" />
                         <span>メンタル耐久度 ＆ ティルト誘発トリガー</span>
                       </h4>
-                      <span className="text-xs font-black text-danger-700 font-mono">
-                        耐性指数: {report.sessionAnalytics.tiltTriggerMatrix.mentalResilienceScore}点
-                      </span>
                     </div>
 
                     <div className="space-y-2 text-xs text-foreground-soft">
@@ -112,12 +109,6 @@ export default function PsychologyTab({ report }: {
                       <div className="p-3 bg-surface rounded-2xl border border-danger-edge-soft space-y-1">
                         <div className="text-[10px] text-faint font-bold">味方序盤崩壊時のメンタル</div>
                         <div className="font-bold text-foreground">{report.sessionAnalytics.tiltTriggerMatrix.teammateDeathResistance}</div>
-                      </div>
-                      <div className="p-3 bg-surface rounded-2xl border border-danger-edge-soft space-y-1">
-                        <div className="text-[10px] text-faint font-bold">雪だるま連続デス防止率</div>
-                        <div className="font-bold text-success-700">
-                          {report.sessionAnalytics.tiltTriggerMatrix.snowballDeathAvoidanceRate}% (デス後も冷静さを維持)
-                        </div>
                       </div>
                     </div>
 
@@ -144,12 +135,6 @@ export default function PsychologyTab({ report }: {
                         <div className="text-[10px] text-faint font-bold">ゴールド死蔵率 (リコール遅延)</div>
                         <div className="font-bold text-foreground">{report.sessionAnalytics.goldEfficiency.goldStashRating}</div>
                       </div>
-                      <div className="p-3 bg-surface rounded-2xl border border-primary-edge-soft space-y-1">
-                        <div className="text-[10px] text-faint font-bold">1コア完成直後のアクション率</div>
-                        <div className="font-bold text-primary-800">
-                          {report.sessionAnalytics.goldEfficiency.spikeUtilizationPercent}% (完成直後に即戦力化)
-                        </div>
-                      </div>
                     </div>
 
                     <p className="text-[11px] text-foreground-subtle leading-relaxed font-medium bg-surface p-3 rounded-2xl border border-primary-edge-soft/80">
@@ -167,8 +152,10 @@ export default function PsychologyTab({ report }: {
                         <ShieldAlert size={15} className="text-primary-600" />
                         <span>逆境・ビハインド時の人間性</span>
                       </h4>
-                      <span className="text-xs font-black text-primary-700">
-                        逆境勝率 {report.sessionAnalytics.adversityBehavior.behindComebackWinRate}%
+                      <span className="text-xs font-black text-primary-700" title="レーン戦終了時にゴールド・経験値で対面に負けていた試合の勝率（Riotの試合データ）">
+                        {report.sessionAnalytics.adversityBehavior.behindComebackWinRate != null
+                          ? `レーン負け試合の勝率 ${report.sessionAnalytics.adversityBehavior.behindComebackWinRate}%（${report.sessionAnalytics.adversityBehavior.behindGames}試合）`
+                          : 'レーン負け試合の記録なし'}
                       </span>
                     </div>
 
@@ -196,13 +183,23 @@ export default function PsychologyTab({ report }: {
                       </h4>
                     </div>
 
+                    {/* 2026-10-07: 実測値の条件に当てはまった時だけ表示（以前はロールだけで一律の文を出していた） */}
                     <div className="space-y-2 text-xs">
-                      <div className="p-3 bg-surface rounded-2xl border border-primary-edge-soft">
-                        <div className="font-bold text-foreground">{report.sessionAnalytics.cognitiveBiases.recallHabitBias}</div>
-                      </div>
-                      <div className="p-3 bg-surface rounded-2xl border border-primary-edge-soft">
-                        <div className="font-bold text-foreground">{report.sessionAnalytics.cognitiveBiases.mapAttentionBias}</div>
-                      </div>
+                      {report.sessionAnalytics.cognitiveBiases.recallHabitBias && (
+                        <div className="p-3 bg-surface rounded-2xl border border-primary-edge-soft">
+                          <div className="font-bold text-foreground">{report.sessionAnalytics.cognitiveBiases.recallHabitBias}</div>
+                        </div>
+                      )}
+                      {report.sessionAnalytics.cognitiveBiases.mapAttentionBias && (
+                        <div className="p-3 bg-surface rounded-2xl border border-primary-edge-soft">
+                          <div className="font-bold text-foreground">{report.sessionAnalytics.cognitiveBiases.mapAttentionBias}</div>
+                        </div>
+                      )}
+                      {!report.sessionAnalytics.cognitiveBiases.recallHabitBias && !report.sessionAnalytics.cognitiveBiases.mapAttentionBias && (
+                        <div className="p-3 bg-surface rounded-2xl border border-primary-edge-soft text-muted-strong font-medium">
+                          実測値（デス数・キル関与率・視界・即キュー）から、目立つ偏りは見つかりませんでした。
+                        </div>
+                      )}
                     </div>
 
                     <div className="p-3.5 bg-surface rounded-2xl border border-primary-edge-soft space-y-1">

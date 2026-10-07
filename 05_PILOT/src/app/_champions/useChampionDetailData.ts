@@ -100,7 +100,10 @@ export function useChampionDetailData({ rawChampParam, vsEnemyId, customRoles, c
     );
   }, [vsEnemyDetail, currentRole]);
 
-  // パワースパイク推定値
+  // 試合時間帯別の実測勝率（あれば「パワースパイク推移」はこちらを表示。2026-10-07）
+  const measuredSpikes = selectedDetail?.facts?.measuredSpikes?.[currentRole === "ADC" ? "BOT" : currentRole] || null;
+
+  // パワースパイク推定値（型ごとの手書きの目安。実測が無い時に「型ごとの目安」と明記して表示する）
   const spikeValues = useMemo(() => {
     switch (archetype) {
       case "ad_assassin": return { early: 8, mid: 9, late: 5 };
@@ -171,6 +174,6 @@ export function useChampionDetailData({ rawChampParam, vsEnemyId, customRoles, c
 
   return {
     selectedDetail, vsEnemyDetail, availableRoles, currentRole, setCurrentRole, currentLaneMeta,
-    archetype, currentBuild, measuredBuild, vsEnemyArchetype, spikeValues, laneTempo, stageTactics, dynamicPickGuide, matchedVsNote,
+    archetype, currentBuild, measuredBuild, vsEnemyArchetype, spikeValues, measuredSpikes, laneTempo, stageTactics, dynamicPickGuide, matchedVsNote,
   };
 }

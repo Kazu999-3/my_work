@@ -36,6 +36,14 @@ interface ParticipantStats {
   goldEarned?: number;
   /** ペンタキル数（Riot Match-V5）。※ジャックポット総取りの判定は 04 の記録画面で入力した値で行う（2026-10-07） */
   pentaKills?: number;
+  /** ファーストブラッドを取った / アシストした（外部分析の実測値に使う。2026-10-07） */
+  firstBloodKill?: boolean;
+  firstBloodAssist?: boolean;
+  /** タワー破壊に関与した数（participant.turretTakedowns）。※challenges.turretPlatesTaken は1試合32枚など
+   *  実際のプレート数（1チーム最大15枚）と合わない値が返るため使わない（2026-10-07 実測） */
+  turretTakedowns?: number | null;
+  /** レーン戦終了時にゴールド・経験値で対面に勝っていたか（challenges.laningPhaseGoldExpAdvantage、1/0）。無い試合は null */
+  laningPhaseGoldExpAdvantage?: number | null;
   win: boolean;
   lane: string; // TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY
 }
@@ -69,7 +77,7 @@ export async function fetchRecentCustomMatchId(puuid: string, apiKey: string): P
     throw new Error(`Riot API: 試合履歴の取得に失敗しました。(${res.statusText})`);
   }
 
-  let data = await res.json();
+  const data = await res.json();
 
   if (data.length === 0) {
     throw new Error("Riot API: 試合履歴がありません。");
@@ -184,6 +192,10 @@ export async function fetchMatchDetails(matchId: string, apiKey: string): Promis
     // Riot Match-V5 の participant.pentaKills。ここでマッピングし忘れると
     // ジャックポットの総取り判定が永久に発火しない（2026-09-22に実際そうなっていた）。
     pentaKills: p.pentaKills || 0,
+    firstBloodKill: !!p.firstBloodKill,
+    firstBloodAssist: !!p.firstBloodAssist,
+    turretTakedowns: typeof p.turretTakedowns === 'number' ? p.turretTakedowns : null,
+    laningPhaseGoldExpAdvantage: typeof p.challenges?.laningPhaseGoldExpAdvantage === 'number' ? p.challenges.laningPhaseGoldExpAdvantage : null,
     win: p.win,
     lane: detectPosition(p) // TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY
   }));

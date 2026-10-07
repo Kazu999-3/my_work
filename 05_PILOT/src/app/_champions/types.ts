@@ -64,6 +64,8 @@ export interface ChampionDetail {
     claims?: Partial<Record<'strengths' | 'weaknesses' | 'counters' | 'mustBan' | 'powerSpikes', FactClaim[]>>;
     /** 実測ビルド（champion_build_samples の集計）。キーは TOP/JG/MID/BOT/SUP */
     measuredBuilds?: Partial<Record<string, MeasuredBuild>>;
+    /** 試合時間帯別の勝率（ロール別、migration 92） */
+    measuredSpikes?: Partial<Record<string, MeasuredSpikes>>;
     /** おすすめアイテム・ルーンの根拠になった検索結果の件数（0 なら出典なしの AI 推定） */
     buildSourceCount?: number;
   };
@@ -166,6 +168,13 @@ export interface FactClaim {
 }
 
 /** 実測ビルド（直近30日・同じロールの試合から集計。rate は %） */
+/** 序盤・中盤・終盤（25分未満 / 25〜32分 / 32分以上で終わった試合）の勝率 */
+export interface MeasuredSpikes {
+  early: { games: number; winRate: number };
+  mid: { games: number; winRate: number };
+  late: { games: number; winRate: number };
+}
+
 export interface MeasuredBuild {
   samples: number;
   winRate: number;

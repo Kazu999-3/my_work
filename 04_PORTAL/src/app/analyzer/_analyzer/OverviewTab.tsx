@@ -468,19 +468,20 @@ export default function OverviewTab({ report, targetTier }: {
                       <div className="rounded-3xl border border-border bg-surface p-5 shadow-xs space-y-2.5">
                         <div className="text-xs font-black text-foreground flex items-center gap-1.5 border-b border-stone-100 pb-2">
                           <Skull size={14} className="text-danger-600" />
-                          <span>致命的デス (Throw) 検知</span>
+                          <span>デスの傾向</span>
                         </div>
+                        {/* 2026-10-07: 「Obj直前デス」「孤立被キャッチ率」は平均デスからの換算式で実測ではなかったため削除。試合ごとのデス数の分布に置き換えた */}
                         <div className="space-y-1.5 text-xs text-foreground-subtle">
                           <div className="flex justify-between font-bold">
-                            <span>Obj直前デス:</span>
+                            <span>3デス以下の試合:</span>
                             <span className="font-mono text-foreground">
-                              {report.sessionAnalytics.fatalDeathAnalytics.objPreSpawnDeathsCount}回 ({report.sessionAnalytics.fatalDeathAnalytics.objPreSpawnDeathsRate}%)
+                              {report.sessionAnalytics.fatalDeathAnalytics.lowDeathGamesPercent}%
                             </span>
                           </div>
                           <div className="flex justify-between font-bold">
-                            <span>孤立被キャッチ率:</span>
+                            <span>5デス以上の試合:</span>
                             <span className="font-mono text-foreground">
-                              {report.sessionAnalytics.fatalDeathAnalytics.isolatedDeathsPercent}%
+                              {report.sessionAnalytics.fatalDeathAnalytics.highDeathGamesPercent}%
                             </span>
                           </div>
                           <div className="flex justify-between font-bold pt-1 border-t border-stone-100">
@@ -497,13 +498,20 @@ export default function OverviewTab({ report, targetTier }: {
                       <div className="rounded-3xl border border-border bg-surface p-5 shadow-xs space-y-2.5">
                         <div className="text-xs font-black text-foreground flex items-center gap-1.5 border-b border-stone-100 pb-2">
                           <Timer size={14} className="text-primary-600" />
-                          <span>序盤14分 タイムライン因果</span>
+                          <span>序盤・オブジェクトの実測</span>
                         </div>
+                        {/* 2026-10-07: 「初デス平均時間」「プレート +○%」は換算式だったため、Riotの試合データの値に置き換えた */}
                         <div className="space-y-1.5 text-xs text-foreground-subtle">
                           <div className="flex justify-between font-bold">
-                            <span>初デス平均時間:</span>
+                            <span>ファーストブラッド関与率:</span>
                             <span className="font-mono text-foreground">
-                              {report.sessionAnalytics.earlyTimelineImpact.firstDeathAvgMinute}
+                              {report.sessionAnalytics.earlyTimelineImpact.firstBloodRate != null ? `${report.sessionAnalytics.earlyTimelineImpact.firstBloodRate}%` : '記録なし'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between font-bold">
+                            <span>タワー破壊関与 (1試合平均):</span>
+                            <span className="font-mono text-foreground">
+                              {report.sessionAnalytics.earlyTimelineImpact.avgTurretTakedowns != null ? `${report.sessionAnalytics.earlyTimelineImpact.avgTurretTakedowns}本` : '記録なし'}
                             </span>
                           </div>
                           <div className="flex justify-between font-bold">
@@ -515,7 +523,6 @@ export default function OverviewTab({ report, targetTier }: {
                             </span>
                           </div>
                           <div className="text-[11px] text-muted-strong pt-1 border-t border-stone-100 font-medium space-y-1">
-                            <div>{report.sessionAnalytics.earlyTimelineImpact.plateGoldImpact}</div>
                             <div className="text-[10px] text-faint">
                               ※試合優位チームがオブジェクトを確保しやすい相関を含みます
                             </div>

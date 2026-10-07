@@ -149,6 +149,9 @@ export async function POST(request: NextRequest) {
                 firstDragon,
                 teamEpicKills,
                 enemyEpicKills,
+                firstBloodInvolved: !!(p.firstBloodKill || p.firstBloodAssist),
+                turretTakedowns: p.turretTakedowns ?? null,
+                laningAhead: p.laningPhaseGoldExpAdvantage == null ? null : p.laningPhaseGoldExpAdvantage > 0,
               };
               return record;
             } catch (e: any) {

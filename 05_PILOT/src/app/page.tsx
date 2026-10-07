@@ -95,7 +95,7 @@ function PilotApp() {
   // 選択中チャンピオンの詳細・レーン・アーキタイプ・ビルド・テンポ指標・ピック判断
   const {
     selectedDetail, vsEnemyDetail, availableRoles, currentRole, setCurrentRole, currentLaneMeta,
-    archetype, currentBuild, measuredBuild, vsEnemyArchetype, spikeValues, laneTempo, stageTactics, dynamicPickGuide, matchedVsNote,
+    archetype, currentBuild, measuredBuild, vsEnemyArchetype, spikeValues, measuredSpikes, laneTempo, stageTactics, dynamicPickGuide, matchedVsNote,
   } = useChampionDetailData({ rawChampParam, vsEnemyId, customRoles, customItemDict, buildPreset, opggMeta });
 
   // カスタムレーン設定を反映したチャンピオン一覧
@@ -195,7 +195,7 @@ function PilotApp() {
             )}
 
             {/* 2. ⏱️⚡ レーン別実戦指標 ＆ パワースパイク推移ミニHUD */}
-            <LaneTempoHud currentRole={currentRole} spikeValues={spikeValues} laneTempo={laneTempo} />
+            <LaneTempoHud currentRole={currentRole} spikeValues={spikeValues} measuredSpikes={measuredSpikes} laneTempo={laneTempo} />
 
             {/* 🎯 ピック判断ガイド (先出し / 後出し / 構成マッチング) */}
             {dynamicPickGuide && (

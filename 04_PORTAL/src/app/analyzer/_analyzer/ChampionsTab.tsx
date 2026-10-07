@@ -252,6 +252,11 @@ export default function ChampionsTab({ report, selectedChampion, setSelectedCham
                       </span>
                     </div>
 
+                    {/* 2026-10-07: 候補はロールとAP/AD/タンク比率ごとの固定の一覧（試合データからの推薦ではない） */}
+                    <p className="text-[10px] text-muted-strong font-medium">
+                      <span className="px-1.5 py-0.5 rounded bg-background border border-border font-bold mr-1">一般的な候補</span>
+                      ロールと使用チャンピオンのAP/AD/タンク比率から選んだ固定の候補で、勝率などのデータに基づく推薦ではありません。
+                    </p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       {report.sessionAnalytics.championPoolDiagnosis.recommendedAdditions?.map((rec: any, idx: number) => (
                         <div key={idx} className="p-3.5 bg-surface rounded-2xl border border-primary-edge-soft/80 space-y-1 shadow-2xs">

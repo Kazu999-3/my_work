@@ -2,12 +2,14 @@
 
 import { Swords, Zap, Shield, Clock, Activity } from "lucide-react";
 import { getLaneTempoMetrics } from "@/lib/tempoMetrics";
+import type { MeasuredSpikes } from "./types";
 
 // ⏱️⚡ レーン別実戦指標 ＆ パワースパイク推移ミニHUD
 // 2026-10-07: app/page.tsx（2,840行）から分割。表示内容・動作は分割前と同じ。状態は page.tsx が持ち、ここは props で受け取って描画するだけ。
-export default function LaneTempoHud({ currentRole, spikeValues, laneTempo }: {
+export default function LaneTempoHud({ currentRole, spikeValues, measuredSpikes, laneTempo }: {
   currentRole: string;
   spikeValues: { early: number; mid: number; late: number };
+  measuredSpikes: MeasuredSpikes | null;
   laneTempo: ReturnType<typeof getLaneTempoMetrics> | null;
 }) {
   return (
@@ -74,55 +76,41 @@ export default function LaneTempoHud({ currentRole, spikeValues, laneTempo }: {
                 </div>
               </div>
 
-              {/* パワースパイク推移 */}
+              {/* パワースパイク推移
+                  2026-10-07: 実測（試合時間帯別の勝率）があればそれを出す。無ければ型ごとの手書きの目安を「型ごとの目安」と明記して出す
+                  （以前は目安の数字を「10段階指標」として、同じ型のチャンピオン全員に同じ値を表示していた） */}
               <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-3.5 shadow-sm flex flex-col justify-center gap-1.5">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
                   <div className="flex items-center gap-2">
                     <Activity size={15} className="text-amber-400" />
                     <span className="text-xs font-black text-zinc-100">パワースパイク推移</span>
                   </div>
-                  <span className="text-[10px] text-zinc-400 font-bold">10段階指標</span>
+                  <span className="text-[10px] text-zinc-400 font-bold">
+                    {measuredSpikes ? "実測: 試合時間別の勝率" : "型ごとの目安（実測データ収集中）"}
+                  </span>
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 text-center pt-1">
-                  <div className="bg-zinc-950 p-1.5 rounded-lg border border-zinc-800">
-                    <div className="flex justify-between items-center text-[10px] text-zinc-400 mb-1 px-0.5">
-                      <span>序盤</span>
-                      <span className="font-bold text-amber-400">{spikeValues.early}/10</span>
-                    </div>
-                    <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
-                      <div 
-                        className="bg-amber-500 h-full rounded-full transition-all duration-500" 
-                        style={{ width: `${(spikeValues.early / 10) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="bg-zinc-950 p-1.5 rounded-lg border border-zinc-800">
-                    <div className="flex justify-between items-center text-[10px] text-zinc-400 mb-1 px-0.5">
-                      <span>中盤</span>
-                      <span className="font-bold text-emerald-400">{spikeValues.mid}/10</span>
-                    </div>
-                    <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
-                      <div 
-                        className="bg-emerald-500 h-full rounded-full transition-all duration-500" 
-                        style={{ width: `${(spikeValues.mid / 10) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="bg-zinc-950 p-1.5 rounded-lg border border-zinc-800">
-                    <div className="flex justify-between items-center text-[10px] text-zinc-400 mb-1 px-0.5">
-                      <span>終盤</span>
-                      <span className="font-bold text-cyan-400">{spikeValues.late}/10</span>
-                    </div>
-                    <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
-                      <div 
-                        className="bg-cyan-500 h-full rounded-full transition-all duration-500" 
-                        style={{ width: `${(spikeValues.late / 10) * 100}%` }}
-                      />
-                    </div>
-                  </div>
+                  {([
+                    { key: "early", label: "序盤", sub: "〜25分", bar: "bg-amber-500", text: "text-amber-400" },
+                    { key: "mid", label: "中盤", sub: "25〜32分", bar: "bg-emerald-500", text: "text-emerald-400" },
+                    { key: "late", label: "終盤", sub: "32分〜", bar: "bg-teal-500", text: "text-teal-400" },
+                  ] as const).map((ph) => {
+                    const m = measuredSpikes?.[ph.key];
+                    const width = m ? m.winRate : (spikeValues[ph.key] / 10) * 100;
+                    return (
+                      <div key={ph.key} className="bg-zinc-950 p-1.5 rounded-lg border border-zinc-800">
+                        <div className="flex justify-between items-center text-[10px] text-zinc-400 mb-1 px-0.5">
+                          <span>{ph.label}</span>
+                          <span className={`font-bold ${ph.text}`}>{m ? `${Math.round(m.winRate)}%` : `${spikeValues[ph.key]}/10`}</span>
+                        </div>
+                        <div className="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                          <div className={`${ph.bar} h-full rounded-full transition-all duration-500`} style={{ width: `${width}%` }} />
+                        </div>
+                        {m && <div className="text-[9px] text-zinc-500 mt-1">{ph.sub}で終わった{m.games}試合</div>}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>

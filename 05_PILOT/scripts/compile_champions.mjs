@@ -385,6 +385,7 @@ async function main() {
   const factsMap = {};
   const claimsMap = {}; // champion(lower) -> field -> champion_fact_claims[]
   const buildSummaryMap = {}; // champion(lower) -> champion_build_summary の行[]
+  const durationMap = {}; // champion(lower) -> champion_duration_winrates の行[]
   const matchupsMap = {};
   const powerSpikesMap = {};
   const jungleTimingMap = {};
@@ -440,6 +441,18 @@ async function main() {
           (buildSummaryMap[k] ||= []).push(row);
         }
         console.log(`✅ 実測ビルド取得成功: ${(buildRows || []).length} 件（チャンピオン×ロール）`);
+      }
+
+      // 試合時間帯別の勝率（migration 92）。パワースパイク推移を実測にする。各時間帯15試合以上のものだけ返る
+      const { data: durRows, error: durErr } = await supabase.rpc('champion_duration_winrates', { p_days: 60, p_min: 15 });
+      if (durErr) {
+        console.warn('⚠️ champion_duration_winrates 取得エラー:', durErr.message);
+      } else {
+        for (const row of durRows || []) {
+          const k = String(row.champion || '').toLowerCase();
+          (durationMap[k] ||= []).push(row);
+        }
+        console.log(`✅ 試合時間帯別勝率 取得成功: ${(durRows || []).length} 件（チャンピオン×ロール×時間帯）`);
       }
 
       if (factsErr) {
@@ -622,6 +635,21 @@ async function main() {
   const STYLE_JA = { 8000: '栄華', 8100: '覇道', 8200: '魔道', 8300: '天啓', 8400: '不滅' };
   const ROLE_KEY = { TOP: 'TOP', JUNGLE: 'JG', MIDDLE: 'MID', BOTTOM: 'BOT', UTILITY: 'SUP' };
   const SKILL_SLOT = { Q: 'Q', W: 'W', E: 'E' };
+  // 序盤・中盤・終盤（25分未満 / 25〜32分 / 32分以上で終わった試合）の勝率。3区分そろったロールだけ出す
+  const buildSpikeView = (rows) => {
+    if (!rows || !rows.length) return undefined;
+    const byRole = {};
+    for (const r of rows) {
+      const role = ROLE_KEY[r.role];
+      if (!role || !['early', 'mid', 'late'].includes(r.phase)) continue;
+      (byRole[role] ||= {})[r.phase] = { games: r.games, winRate: Number(r.win_rate) };
+    }
+    const out = {};
+    for (const [role, v] of Object.entries(byRole)) {
+      if (v.early && v.mid && v.late) out[role] = v;
+    }
+    return Object.keys(out).length ? out : undefined;
+  };
   const buildMeasuredView = (rows) => {
     if (!rows || !rows.length) return undefined;
     const out = {};
@@ -837,6 +865,8 @@ async function main() {
         claims: buildClaimsView(claimsMap[lowerId]),
         // 実測ビルド（ロール別）。あるロールでは「標準コア」をこちらで置き換える
         measuredBuilds: buildMeasuredView(buildSummaryMap[lowerId]),
+        // 試合時間帯別の勝率（ロール別）。あるロールでは「パワースパイク推移」をこちらで表示する
+        measuredSpikes: buildSpikeView(durationMap[lowerId]),
         // おすすめアイテム・ルーンの根拠になった検索結果の件数（0 なら出典なしの AI 推定）
         buildSourceCount: Array.isArray(dbFact?.research_sources) ? dbFact.research_sources.length : 0,
       },
