@@ -41,6 +41,13 @@ interface ParticipantStats {
   goldEarned?: number;
   /** ペンタキル数（Riot Match-V5）。※ジャックポット総取りの判定は 04 の記録画面で入力した値で行う（2026-10-07） */
   pentaKills?: number;
+  /** ファーストブラッドを取った / アシストした（スタッツ分析の実測値に使う。04 と同じ。2026-10-08） */
+  firstBloodKill?: boolean;
+  firstBloodAssist?: boolean;
+  /** タワー破壊に関与した数。※challenges.turretPlatesTaken は実際と合わない値が返るため使わない */
+  turretTakedowns?: number | null;
+  /** レーン戦終了時にゴールド・経験値で対面に勝っていたか（challenges.laningPhaseGoldExpAdvantage、1/0） */
+  laningPhaseGoldExpAdvantage?: number | null;
   /** 試合後詳細分析で対面と並べて比較する視界系の実測値 */
   wardsPlaced?: number;
   wardsKilled?: number;
@@ -228,6 +235,10 @@ export async function fetchMatchDetails(matchId: string, apiKey: string): Promis
     // Riot Match-V5 の participant.pentaKills。ここでマッピングし忘れると
     // ジャックポットの総取り判定が永久に発火しない（2026-09-22に実際そうなっていた）。
     pentaKills: p.pentaKills || 0,
+    firstBloodKill: !!p.firstBloodKill,
+    firstBloodAssist: !!p.firstBloodAssist,
+    turretTakedowns: typeof p.turretTakedowns === 'number' ? p.turretTakedowns : null,
+    laningPhaseGoldExpAdvantage: typeof p.challenges?.laningPhaseGoldExpAdvantage === 'number' ? p.challenges.laningPhaseGoldExpAdvantage : null,
     wardsPlaced: p.wardsPlaced || 0,
     wardsKilled: p.wardsKilled || 0,
     visionWardsBoughtInGame: p.visionWardsBoughtInGame || 0,

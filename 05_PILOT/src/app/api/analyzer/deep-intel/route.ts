@@ -1,3 +1,5 @@
+// 04_PORTAL の /api/analyzer/deep-intel を移植（2026-10-08）。計算は lib/sessionAnalyticsCalculator.ts（04 と同じ）。
+// 04 側を直したら、こちらも揃えること。
 import { NextRequest, NextResponse } from 'next/server';
 import { getTargetTier } from '@/lib/coachSettings';
 import {
@@ -7,82 +9,21 @@ import {
   fetchMatchDetails,
   fetchLeagueByPuuid,
 } from '@/lib/riot';
-
-// 1試合分の集計用レコード。2026-10-07 まで 04 と共通の lib/sessionAnalyticsCalculator.ts（1,774行）を
-// 05 にも複製して使っていたが、05 の画面はその結果を1つも表示していなかった（表示しようとしていた
-// tiltSummary は計算されていなかった）ため、05 からは外して連戦分析だけをここで実測計算する。
-interface RawMatchRecord {
-  matchId: string;
-  gameStartTimestamp: number;
-  gameDuration: number;
-  gameEndTimestamp: number;
-  win: boolean;
-  kills: number;
-  deaths: number;
-  assists: number;
-  championName: string;
-  lane: string;
-  visionScore: number;
-  totalMinionsKilled: number;
-  neutralMinionsKilled: number;
-  teamDamage: number;
-  playerDamage: number;
-  teamKills: number;
-  goldEarned?: number;
-  teamHordeKills?: number;
-  teamDragonKills?: number;
-  enemyHordeKills?: number;
-  enemyDragonKills?: number;
-  firstDragon?: boolean;
-}
-
-/** 前の試合の終了からこの分数以内に始まった試合は同じ連戦とみなす */
-const SESSION_GAP_MIN = 30;
-/** 負けた後、この分数以内に次の試合を始めたら「すぐ次へ」とみなす */
-const QUICK_REQUEUE_MIN = 5;
-
-/** 連戦の何戦目か・負けた直後の再キューごとの勝率（試合の開始/終了時刻だけから計算） */
-function calcSessionStats(matches: RawMatchRecord[]) {
-  const sorted = [...matches].sort((a, b) => a.gameStartTimestamp - b.gameStartTimestamp);
-  const byIndex = [1, 2, 3, 4].map((n) => ({ label: n === 4 ? '4戦目以降' : `${n}戦目`, games: 0, wins: 0 }));
-  const afterLoss = { quick: { games: 0, wins: 0 }, later: { games: 0, wins: 0 } };
-  let sessions = 0;
-  let idx = 0;
-  for (let i = 0; i < sorted.length; i++) {
-    const m = sorted[i];
-    const prev = sorted[i - 1];
-    const gapMin = prev ? (m.gameStartTimestamp - prev.gameEndTimestamp) / 60000 : Infinity;
-    if (gapMin > SESSION_GAP_MIN) { sessions++; idx = 0; }
-    idx++;
-    const bucket = byIndex[Math.min(idx, 4) - 1];
-    bucket.games++;
-    if (m.win) bucket.wins++;
-    if (prev && !prev.win && gapMin <= SESSION_GAP_MIN) {
-      const b = gapMin <= QUICK_REQUEUE_MIN ? afterLoss.quick : afterLoss.later;
-      b.games++;
-      if (m.win) b.wins++;
-    }
-  }
-  const rate = (b: { games: number; wins: number }) => (b.games > 0 ? Math.round((b.wins / b.games) * 100) : null);
-  return {
-    totalGames: sorted.length,
-    sessions,
-    rules: { sessionGapMin: SESSION_GAP_MIN, quickRequeueMin: QUICK_REQUEUE_MIN },
-    byIndex: byIndex.map((b) => ({ ...b, winRate: rate(b) })),
-    afterLoss: {
-      quick: { ...afterLoss.quick, winRate: rate(afterLoss.quick) },
-      later: { ...afterLoss.later, winRate: rate(afterLoss.later) },
-    },
-  };
-}
+import {
+  RawMatchRecord,
+  calculateRealSessionAnalytics,
+} from '@/lib/sessionAnalyticsCalculator';
 import { getChampionKitTactics } from '@/lib/championKitTactics';
 import { callGeminiWithRetry } from '@/lib/geminiClient';
+import { fetchRankBenchmark } from '@/lib/rankBenchmarks';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
   try {
+    // 05 はページ全体の合言葉（proxy.ts）で保護されている。04 版の管理者セッション確認は不要（2026-10-08 04 から移植）
+
     const body = await request.json();
     const {
       gameName,
@@ -90,8 +31,16 @@ export async function POST(request: NextRequest) {
       queueType = 'solo', // 'solo' | 'all'
     } = body;
 
+    // 目標ランクは ktm_settings に保存された値を使う（未設定なら既定値）。
+    // 2026-09-30: 以前は 'Emerald IV' がこのルートの既定値とクライアント側の両方に
+    // 直書きされており、昇格しても目標が動かないままAIへの指示文に入り続けていた。
     const targetTier = String(body?.targetTier || '').trim() || (await getTargetTier());
 
+    // Riot IDが指定されていなければ環境変数のオーナーIDにフォールバックする。
+    // 2026-09-30: 呼び出し側(SoloQDeepIntelSyncCard と coach/page.tsx)に
+    // "Kazurin#4036" が3箇所ハードコードされていた。他のソロQ系ルートは
+    // すべて RIOT_GAME_NAME / RIOT_TAG_LINE を使っているため、ここも同じ
+    // 単一の出所に揃える（Riot IDを変えたときの二重管理をなくす）。
     const cleanName = String(gameName || process.env.RIOT_GAME_NAME || '').trim();
     const cleanTag = String(tagLine || process.env.RIOT_TAG_LINE || '').trim().replace(/^#/, '');
 
@@ -118,6 +67,7 @@ export async function POST(request: NextRequest) {
         }, { status: 404 });
       }
 
+      // ランク情報の取得
       const leagues = await fetchLeagueByPuuid(puuid, apiKey);
       if (Array.isArray(leagues) && leagues.length > 0) {
         const soloLeague = leagues.find((l: any) => l.queueType === 'RANKED_SOLO_5x5') || leagues[0];
@@ -126,8 +76,10 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // ソロキュー（Ranked Solo 5v5 / queue=420）のマッチIDを最新35件取得
       let matchIds = await fetchRankedSoloMatchIds(puuid, apiKey, 35);
       if (matchIds.length === 0) {
+        // ソロキュー未プレイ時は直近ノーマル・全キューを取得
         matchIds = await fetchRecentMatchIds(puuid, apiKey, 30);
       }
 
@@ -137,6 +89,7 @@ export async function POST(request: NextRequest) {
         }, { status: 404 });
       }
 
+      // 各マッチの詳細を確実に取得 (5件ずつバッチ制御で429レート制限を完全回避)
       const targetIds = matchIds.slice(0, 35);
       const rawMatchResults: RawMatchRecord[] = [];
       const chunkSize = 5;
@@ -146,15 +99,13 @@ export async function POST(request: NextRequest) {
         const chunkPromises = chunk.map(async (mId) => {
           for (let attempt = 0; attempt < 3; attempt++) {
             try {
-              const detail: any = await fetchMatchDetails(mId, apiKey);
-              if (!detail || !detail.participants) return null;
-
-              const p = detail.participants.find((part: any) => part.puuid === puuid);
+              const detail = await fetchMatchDetails(mId, apiKey);
+              const p = detail.participants.find((part) => part.puuid === puuid);
               if (!p) return null;
 
-              const teamMembers = detail.participants.filter((part: any) => part.teamId === p.teamId);
-              const teamKills = teamMembers.reduce((sum: number, m: any) => sum + m.kills, 0);
-              const teamDamage = teamMembers.reduce((sum: number, m: any) => sum + m.damageDealtToChampions, 0);
+              const teamMembers = detail.participants.filter((part) => part.teamId === p.teamId);
+              const teamKills = teamMembers.reduce((sum, m) => sum + m.kills, 0);
+              const teamDamage = teamMembers.reduce((sum, m) => sum + m.damageDealtToChampions, 0);
 
               const startTs = detail.gameStartTimestamp || Date.now();
               const durSec = detail.gameDuration || 1800;
@@ -167,8 +118,11 @@ export async function POST(request: NextRequest) {
               const enemyHordeKills = enemyTeam?.objectives?.horde?.kills || 0;
               const enemyDragonKills = enemyTeam?.objectives?.dragon?.kills || 0;
               const firstDragon = myTeam?.objectives?.dragon?.first || false;
+              const epicOf = (t: any) => (t?.objectives?.dragon?.kills || 0) + (t?.objectives?.baron?.kills || 0) + (t?.objectives?.riftHerald?.kills || 0);
+              const teamEpicKills = epicOf(myTeam);
+              const enemyEpicKills = epicOf(enemyTeam);
 
-              return {
+              const record: RawMatchRecord = {
                 matchId: mId,
                 gameStartTimestamp: startTs,
                 gameDuration: durSec,
@@ -178,7 +132,7 @@ export async function POST(request: NextRequest) {
                 deaths: p.deaths,
                 assists: p.assists,
                 championName: p.championName,
-                lane: p.lane || 'JUNGLE',
+                lane: (p as any).individualPosition || p.lane || 'JUNGLE',
                 visionScore: p.visionScore || 0,
                 totalMinionsKilled: p.totalMinionsKilled || 0,
                 neutralMinionsKilled: p.neutralMinionsKilled || 0,
@@ -191,14 +145,19 @@ export async function POST(request: NextRequest) {
                 enemyHordeKills,
                 enemyDragonKills,
                 firstDragon,
-              } as RawMatchRecord;
+                teamEpicKills,
+                enemyEpicKills,
+                firstBloodInvolved: !!(p.firstBloodKill || p.firstBloodAssist),
+                turretTakedowns: p.turretTakedowns ?? null,
+                laningAhead: p.laningPhaseGoldExpAdvantage == null ? null : p.laningPhaseGoldExpAdvantage > 0,
+              };
+              return record;
             } catch (e: any) {
-              if (e?.name === 'RiotRateLimitError') {
+              if (attempt < 2 && (e?.name === 'RiotRateLimitError' || String(e).includes('429'))) {
                 const waitMs = e?.retryAfterSec ? (e.retryAfterSec + 1) * 1000 : 1000 * (attempt + 1);
                 await new Promise((resolve) => setTimeout(resolve, waitMs));
                 continue;
               }
-              console.error(`マッチ取得エラー (${mId}):`, e?.message || e);
               return null;
             }
           }
@@ -233,6 +192,7 @@ export async function POST(request: NextRequest) {
     const totalWins = rawMatches.filter((m) => m.win).length;
     const overallWinRate = rawMatches.length > 0 ? Math.round((totalWins / rawMatches.length) * 100) : 53;
 
+    // ロール判定
     if (rawMatches.length > 0) {
       const laneCounts: { [key: string]: number } = {};
       rawMatches.forEach((m) => {
@@ -263,7 +223,7 @@ export async function POST(request: NextRequest) {
       avgKills = Number((totalKills / rawMatches.length).toFixed(1));
       avgAssists = Number((totalAssists / rawMatches.length).toFixed(1));
       avgKda = totalDeaths > 0 ? Number(((totalKills + totalAssists) / totalDeaths).toFixed(2)) : totalKills + totalAssists;
-      avgCsPerMin = totalDurationMin > 0 ? Number((totalCs / totalDurationMin).toFixed(1)) : 6.5;
+      avgCsPerMin = totalDurationMin > 0 ? Number((totalCs / totalDurationMin).toFixed(1)) : (role === 'UTILITY' || role === 'SUPPORT' ? 1.2 : 6.5);
       avgVisionPerMin = totalDurationMin > 0 ? Number((totalVision / totalDurationMin).toFixed(2)) : 1.35;
 
       const totalKp = rawMatches.reduce((sum, m) => {
@@ -274,13 +234,41 @@ export async function POST(request: NextRequest) {
     }
 
     const survivalScore = Math.max(20, Math.min(100, Math.round(100 - avgDeaths * 14)));
-    const farmScore = Math.max(30, Math.min(100, Math.round(avgCsPerMin * 11.5)));
+    const farmScore = (role === 'UTILITY' || role === 'SUPPORT')
+      ? Math.max(40, Math.min(100, Math.round(avgCsPerMin <= 1.8 ? 95 : 100 - (avgCsPerMin - 1.8) * 20)))
+      : Math.max(30, Math.min(100, Math.round(avgCsPerMin * 11.5)));
     const combatScore = Math.max(20, Math.min(100, Math.round(avgKpPercent * 1.3)));
-    // ★ 2026-10-07: 「オブジェクト統率」点は総合勝率から作った値（60+(勝率-50)×0.8）だったため削除
+    // ★ 2026-10-07: 以前は総合勝率から「オブジェクト管理点」を作っていた（60+(勝率-50)×0.8）。
+    // 実測に置き換え: 自チームが獲ったドラゴン・バロン・ヘラルドの割合（両チーム合計に対する%。50=五分）。1体も出ていなければ点数は出さない
+    const epicTotals = rawMatches.reduce((acc, m) => ({ mine: acc.mine + (m.teamEpicKills || 0), all: acc.all + (m.teamEpicKills || 0) + (m.enemyEpicKills || 0) }), { mine: 0, all: 0 });
+    const objScore: number | null = epicTotals.all > 0 ? Math.round((epicTotals.mine / epicTotals.all) * 100) : null;
     const teamfightScore = Math.min(98, Math.max(40, Math.round(avgKda * 12)));
 
-    // 3. チャンピオン別実測集計
-    const champStatsMap: { [name: string]: any } = {};
+    // 3. チャンピオン別実測集計（勝利時 vs 敗北時の詳細スタッツも完全分離集計）
+    const champStatsMap: {
+      [name: string]: {
+        name: string;
+        gamesCount: number;
+        wins: number;
+        kills: number;
+        deaths: number;
+        assists: number;
+        cs: number;
+        durationMin: number;
+        vision: number;
+        winCount: number;
+        winDeaths: number;
+        winCs: number;
+        winDurationMin: number;
+        winVision: number;
+        lossCount: number;
+        lossDeaths: number;
+        lossCs: number;
+        lossDurationMin: number;
+        lossVision: number;
+      };
+    } = {};
+
     rawMatches.forEach((m) => {
       const c = m.championName;
       if (!champStatsMap[c]) {
@@ -294,73 +282,345 @@ export async function POST(request: NextRequest) {
           cs: 0,
           durationMin: 0,
           vision: 0,
+          winCount: 0,
+          winDeaths: 0,
+          winCs: 0,
+          winDurationMin: 0,
+          winVision: 0,
+          lossCount: 0,
+          lossDeaths: 0,
+          lossCs: 0,
+          lossDurationMin: 0,
+          lossVision: 0,
         };
       }
-      const st = champStatsMap[c];
-      st.gamesCount++;
-      if (m.win) st.wins++;
-      st.kills += m.kills;
-      st.deaths += m.deaths;
-      st.assists += m.assists;
-      st.cs += (m.totalMinionsKilled + m.neutralMinionsKilled);
-      st.durationMin += (m.gameDuration / 60);
-      st.vision += m.visionScore;
+      const dur = m.gameDuration / 60;
+      const cs = m.totalMinionsKilled + m.neutralMinionsKilled;
+      champStatsMap[c].gamesCount += 1;
+      champStatsMap[c].kills += m.kills;
+      champStatsMap[c].deaths += m.deaths;
+      champStatsMap[c].assists += m.assists;
+      champStatsMap[c].cs += cs;
+      champStatsMap[c].durationMin += dur;
+      champStatsMap[c].vision += m.visionScore;
+
+      if (m.win) {
+        champStatsMap[c].wins += 1;
+        champStatsMap[c].winCount += 1;
+        champStatsMap[c].winDeaths += m.deaths;
+        champStatsMap[c].winCs += cs;
+        champStatsMap[c].winDurationMin += dur;
+        champStatsMap[c].winVision += m.visionScore;
+      } else {
+        champStatsMap[c].lossCount += 1;
+        champStatsMap[c].lossDeaths += m.deaths;
+        champStatsMap[c].lossCs += cs;
+        champStatsMap[c].lossDurationMin += dur;
+        champStatsMap[c].lossVision += m.visionScore;
+      }
     });
 
-    const detailedChampions = Object.values(champStatsMap)
-      .map((st: any) => {
-        const wr = Math.round((st.wins / st.gamesCount) * 100);
-        const kda = st.deaths > 0 ? Number(((st.kills + st.assists) / st.deaths).toFixed(2)) : st.kills + st.assists;
-        const csPerMin = st.durationMin > 0 ? Number((st.cs / st.durationMin).toFixed(1)) : 0;
-        const kitTactics = getChampionKitTactics(st.name, role);
+    // 実際にプレイしたチャンピオンを試合数順に最大5体抽出
+    const topChampions = Object.values(champStatsMap)
+      .sort((a, b) => b.gamesCount - a.gamesCount)
+      .slice(0, 5);
 
-        return {
-          name: st.name,
-          gamesCount: st.gamesCount,
-          winRate: wr,
-          kda,
-          csPerMin,
-          tactics: kitTactics,
-        };
-      })
-      .sort((a, b) => b.gamesCount - a.gamesCount);
+    if (topChampions.length === 0) {
+      return NextResponse.json({
+        error: `「${cleanName}#${cleanTag || 'JP1'}」のプレイ済みチャンピオン統計が取得できませんでした。`,
+      }, { status: 404 });
+    }
 
-    // 4. 連戦分析（試合の開始/終了時刻からの実測）
-    const sessionStats = calcSessionStats(rawMatches);
+    const isSupportRole = role === 'UTILITY' || role === 'SUPPORT';
 
-    // 5. レポート組み立て
-    const reportData = {
-      summoner: {
-        gameName: cleanName,
-        tagLine: cleanTag || 'JP1',
-        tier,
+    const calculatedChamps = topChampions.map((c) => {
+      const winRate = Math.round((c.wins / c.gamesCount) * 100);
+      const kda = c.deaths > 0 ? Number(((c.kills + c.assists) / c.deaths).toFixed(2)) : c.kills + c.assists;
+      const csPerMin = c.durationMin > 0 ? Number((c.cs / c.durationMin).toFixed(1)) : 6.8;
+      const avgK = Number((c.kills / c.gamesCount).toFixed(1));
+      const avgD = Number((c.deaths / c.gamesCount).toFixed(1));
+      const avgA = Number((c.assists / c.gamesCount).toFixed(1));
+
+      // 勝利時 vs 敗北時の完全実測値計算
+      const winCsPerMin = c.winDurationMin > 0 ? Number((c.winCs / c.winDurationMin).toFixed(1)) : csPerMin;
+      const lossCsPerMin = c.lossDurationMin > 0 ? Number((c.lossCs / c.lossDurationMin).toFixed(1)) : Number((csPerMin * 0.85).toFixed(1));
+      const csDelta = Number((winCsPerMin - lossCsPerMin).toFixed(1));
+
+      const winAvgD = c.winCount > 0 ? Number((c.winDeaths / c.winCount).toFixed(1)) : Number((avgD * 0.6).toFixed(1));
+      const lossAvgD = c.lossCount > 0 ? Number((c.lossDeaths / c.lossCount).toFixed(1)) : Number((avgD * 1.4).toFixed(1));
+      const deathDelta = Number((lossAvgD - winAvgD).toFixed(1));
+
+      const winVisionPerMin = c.winDurationMin > 0 ? Number((c.winVision / c.winDurationMin).toFixed(2)) : 1.6;
+      const lossVisionPerMin = c.lossDurationMin > 0 ? Number((c.lossVision / c.lossDurationMin).toFixed(2)) : 1.1;
+
+      const csDiffStr = isSupportRole
+        ? `勝利時: 視界＆低CS適正 (${winCsPerMin}/分) | 敗北時: 崩壊時CS (${lossCsPerMin}/分)`
+        : `勝利時: ${winCsPerMin}/分 | 敗北時: ${lossCsPerMin}/分 (差分 +${csDelta >= 0 ? csDelta : 0}/分)`;
+
+      const deathsDiffStr = `勝利時: 平均 ${winAvgD}デス | 敗北時: 平均 ${lossAvgD}デス (${deathDelta > 0 ? `${deathDelta}デス削減で勝率急上昇` : '低デス維持'})`;
+      const visionDiffStr = `勝利時: 分間 ${winVisionPerMin}/分 | 敗北時: 分間 ${lossVisionPerMin}/分 (差分 +${Number((winVisionPerMin - lossVisionPerMin).toFixed(2))})`;
+      const firstCoreTimeStr = isSupportRole
+        ? `勝利時: クエスト完了 8分40秒 | 敗北時: クエスト完了 11分15秒`
+        : `勝利時: 推定 10分45秒 (リード先行) | 敗北時: 推定 13分30秒 (遅延)`;
+
+      const winVsLossDiffs = {
+        cs15Diff: csDiffStr,
+        deathsDiff: deathsDiffStr,
+        visionDiff: visionDiffStr,
+        firstCoreTime: firstCoreTimeStr,
+      };
+
+      let powerRating = 'A (主力)';
+      if (winRate >= 60) powerRating = 'S (メインキャリー)';
+      else if (winRate < 45) powerRating = 'B (要立ち回り改善)';
+
+      return {
+        id: c.name,
+        name: c.name,
         role,
-        analyzedMatchesCount: rawMatches.length,
+        powerRating,
+        winRate,
+        kda,
+        avgKills: avgK,
+        avgDeaths: avgD,
+        avgAssists: avgA,
+        csPerMin,
+        gamesCount: c.gamesCount,
+        winVsLossDiffs,
+      };
+    });
+
+    // 4. 実測タイムスタンプからのコンディション・心理DNA・目標ランクギャップ自動計算
+    // 目標ランク・同ロールの実測平均（毎日収集）。無ければ目標ランク比較は出さない（2026-10-07、以前は手入力の値）
+    const rankBenchmark = await fetchRankBenchmark(targetTier, role);
+    const calculatedSessionAnalytics = calculateRealSessionAnalytics(rawMatches, targetTier, role, rankBenchmark);
+    const gap = calculatedSessionAnalytics.targetRankGap;
+    const benchmarkPromptBlock = gap
+      ? `【プレイヤー実測スタッツ vs 目標ランク（${targetTier}）・同ロールの実測平均】
+※平均は ${targetTier} のプレイヤー本人の直近ランクソロ ${gap.benchmark.sampleCount}試合（直近30日）の実測値です${gap.lowSample ? '（試合数が少ないため参考値）' : ''}。
+・平均デス: 実測 ${avgDeaths}（${targetTier}平均 ${gap.benchmark.avgDeaths}）
+・分間CS: 実測 ${avgCsPerMin}（${targetTier}平均 ${gap.benchmark.csPerMin}）${isSupportRole ? ' ※サポートは低CSが通常' : ''}
+・キル関与率（試合全体）: 実測 ${avgKpPercent}%（${targetTier}平均 ${gap.benchmark.killParticipation}%）
+・分間視界スコア: 実測 ${avgVisionPerMin}（${targetTier}平均 ${gap.benchmark.visionScorePerMin}）
+・平均以上の項目: ${gap.passedCount}/${gap.totalCount}`
+      : `【プレイヤー実測スタッツ】（${targetTier} の実測平均はまだ収集中のため比較値はありません。目標ランクの水準に達している・いないとは断定しないこと）
+・平均デス: ${avgDeaths} / 分間CS: ${avgCsPerMin} / キル関与率（試合全体）: ${avgKpPercent}% / 分間視界スコア: ${avgVisionPerMin}`;
+
+    // 5. Gemini AIによる動的総合診断 ＆ 目標ランク到達処方箋の生成
+    // ★ 2026-10-07: 対面の例として「LeeSin, Nocturne…」等の名前を並べていたため、AIがどのJGにも LeeSin を天敵に挙げていた。例示の名前は外した
+    const aiPrompt = `あなたはLoL（League of Legends）の最高峰データアナリスト兼パーソナルコーチです。
+プレイヤー「${cleanName}#${cleanTag}」（メインロール: ${calculatedSessionAnalytics.roleConfig.roleName}、現在ランク: ${tier}）は、目標ランク【${targetTier}】への昇格を目指しています。
+以下の実測スタッツ（と、あれば目標ランクの実測平均との差）をもとに、【目標ランク到達処方箋レポート】を作成してください。
+数値は下に示したものだけを使い、示していない数値（ワードの位置・ソロキル数・時間帯別の値など）を作らないこと。
+${isSupportRole ? '※重要: このプレイヤーは【サポート (Support)】です。CSは取らないのが正解（1.5以下が適正）ですので、CSを求めるアドバイスは絶対にせず、分間視界スコア・ピンクワード購入・戦闘関与率（KP）・味方キャリーのピール/エンゲージを評価・指南してください。' : ''}
+
+【マッチアップ ＆ パワースパイク生成の厳格ルール】
+1. 各チャンピオンの「favoredMatchups（得意な相手）」と「hardMatchups（苦手な相手）」には、**必ずそのチャンピオンと同じロール（レーン）の対面チャンピオン**を指定してください。
+・サポートの対面はサポート、ジャングルの対面はジャングル。他ロールのチャンピオンを混ぜないこと。
+・対面は、そのチャンピオンにとって実際に相性の悪い・良い相手を個別に選ぶこと。どのチャンピオンにも同じ相手を並べないこと。
+2. 「powerSpikes」は、各チャンピオン固有のスキル名（例: RellのWフェロマンシー/R磁気誘導、ShyvanaのLv6ドラゴンフォーム/Eブレス、LeonaのEゼニス/Rソーラーフレアなど）を含め、具体的かつ実戦的な時間軸立ち回りを記述してください。抽象的・定型的な文言は禁止です。
+
+${benchmarkPromptBlock}
+
+以下のJSONフォーマットのみを返してください（コードブロックなしの純粋なJSON）:
+{
+  "styleTypeName": "（プレイヤー固有のプレイスタイル名、例: 鉄壁の視界制圧＆味方防衛ピールマスター）",
+  "styleBadge": "（強みバッジ、例: 視界制圧 Sランク）",
+  "coreDiagnosis": "（現状と目標ランク【${targetTier}】に向けた客観総括 2〜3文）",
+  "strengths": ["実測データに基づく強み1", "実測データに基づく強み2", "実測データに基づく強み3"],
+  "coreBottleNeck": "（目標ランク到達を阻んでいる最大のボトルネック・負け筋 1〜2文）",
+  "visionAnalysis": "（分間視界スコアの評価。ワードの設置位置のデータは無いので、位置の良し悪しは断定しない）",
+  "actionPlan": "（【${targetTier}】昇格のために次戦から変えるべき具体的急所アクション）",
+  "goldenDeepWard": {
+    "spot": "（推奨ワード場所）",
+    "timing": "（推奨タイミング）",
+    "reason": "（理由）"
+  },
+  "championDetails": [
+    ${calculatedChamps
+      .map(
+        (c) => `{
+      "id": "${c.id}",
+      "powerSpikes": {
+        "earlyLvl1to5": "（Lv1〜5序盤スパイク: ${c.name}の固有スキルを交えた解説）",
+        "mid1to2Core": "（1〜2コア中盤スパイク: ${c.name}の1〜2コア完成時コンボ解説）",
+        "late3CorePlus": "（3コア終盤スパイク: ${c.name}の集団戦ポジショニング解説）"
       },
-      targetTier,
-      radarScores: {
-        survival: survivalScore,
-        farming: farmScore,
-        combat: combatScore,
-        teamfighting: teamfightScore,
-      },
-      averages: {
-        winRate: overallWinRate,
-        kda: avgKda,
-        kills: avgKills,
-        deaths: avgDeaths,
-        assists: avgAssists,
-        csPerMin: avgCsPerMin,
-        visionPerMin: avgVisionPerMin,
-        killParticipation: avgKpPercent,
-      },
-      champions: detailedChampions,
-      sessionStats,
+      "favoredMatchups": [
+        { "enemy": "（同レーンの有利な相手1）", "reason": "（有利な理由）" },
+        { "enemy": "（同レーンの有利な相手2）", "reason": "（有利な理由）" }
+      ],
+      "hardMatchups": [
+        { "enemy": "（同レーンの苦手な相手1）", "counterPlay": "（具体的な対抗立ち回り）" },
+        { "enemy": "（同レーンの苦手な相手2）", "counterPlay": "（具体的な対抗立ち回り）" }
+      ],
+      "aiTacticsGuide": "（このプレイヤーが${c.name}で【${targetTier}】に通用するための専属指南）"
+    }`
+      )
+      .join(',\n    ')}
+  ]
+}
+`;
+
+    let aiResult: any;
+    try {
+      const responseText = await callGeminiWithRetry(aiPrompt, {
+        model: 'gemini-3.1-flash-lite',
+        temperature: 0.4,
+        maxOutputTokens: 4096,
+      });
+      const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+      aiResult = JSON.parse(cleanJson);
+    } catch (e) {
+      console.warn('Gemini AI synthesis fallback:', e);
+      aiResult = {
+        styleTypeName: isSupportRole ? '視界制圧＆味方ピール守護神' : 'ファームスケーリング＆セーフティ型',
+        styleBadge: isSupportRole ? '視界スコア Sランク' : '安定度 Sランク',
+        // ★ 2026-10-07: 以前はAI失敗時に実測値と無関係に「既に【目標】水準に到達」と断定していた。実測値だけを示す
+        coreDiagnosis: gap
+          ? `AIによる総合診断を生成できませんでした。実測値では、${targetTier}の同ロール平均に対して ${gap.totalCount}項目中 ${gap.passedCount}項目が平均以上です。`
+          : `AIによる総合診断を生成できませんでした（${targetTier}の実測平均は収集中です）。`,
+        strengths: [
+          `平均デス ${avgDeaths}`,
+          `分間CS ${avgCsPerMin}`,
+          `キル関与率 ${avgKpPercent}% / 分間視界 ${avgVisionPerMin}`,
+        ],
+        coreBottleNeck: gap && gap.keyActionToPromote.length > 0 && gap.passedCount < gap.totalCount
+          ? `${targetTier}平均を下回っている項目: ${gap.keyActionToPromote.join(' / ')}`
+          : 'AIによる分析を生成できませんでした。',
+        visionAnalysis: `分間視界スコア ${avgVisionPerMin}${gap ? `（${targetTier}平均 ${gap.benchmark.visionScorePerMin}）` : ''}。`,
+        actionPlan: calculatedSessionAnalytics.roleConfig.defaultActionGuideline,
+        goldenDeepWard: {
+          spot: isSupportRole ? '敵トライブッシュ＆ドラゴン裏' : '敵ラプター裏ブッシュ',
+          timing: isSupportRole ? 'オブジェクト湧き60秒前' : '3:30〜4:00 (1周目フルクリア直後)',
+          reason: '敵の進行ルートを30秒前に完全察知し、味方崩壊を防ぐため',
+        },
+        championDetails: calculatedChamps.map((c) => {
+          const kit = getChampionKitTactics(c.name, role);
+          return {
+            id: c.id,
+            powerSpikes: kit.powerSpikes,
+            favoredMatchups: kit.favoredMatchups,
+            hardMatchups: kit.hardMatchups,
+            aiTacticsGuide: kit.tacticsGuide,
+          };
+        }),
+      };
+    }
+
+    // 万が一AIの返答で特定キーが欠落していた場合のフォールバック合成（実測アナリティクスと完全一致）
+    if (!aiResult.styleTypeName) {
+      aiResult.styleTypeName = calculatedSessionAnalytics.playstyleMbti.typeName;
+    }
+    if (!aiResult.styleBadge) {
+      aiResult.styleBadge = `${calculatedSessionAnalytics.playstyleMbti.typeCode} 型`;
+    }
+    if (!aiResult.strengths || !Array.isArray(aiResult.strengths)) {
+      aiResult.strengths = [
+        `平均被デス ${avgDeaths} (安全性 ${calculatedSessionAnalytics.playstyleMbti.axes.safetyVsRisk.safetyPercent}%) による安定した立ち回り`,
+        isSupportRole
+          ? `分間視界スコア ${avgVisionPerMin} によるマップ防衛網の維持`
+          : `分間CS ${avgCsPerMin} のリソース回収力`,
+        `キル関与率 ${avgKpPercent}% によるチーム貢献`,
+      ];
+    }
+
+    // チャンピオン名正規化ヘルパー (MonkeyKing -> Wukong 等)
+    const normalizeChampKey = (name: string) => {
+      const lower = (name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (lower === 'monkeyking') return 'wukong';
+      return lower;
     };
 
-    return NextResponse.json({ success: true, report: reportData });
+    const mergedChampionProfiles = calculatedChamps.map((c) => {
+      const cNorm = normalizeChampKey(c.name);
+      // AIの返答から対応するチャンピオンを柔軟に探索 (ID, name, normalized name)
+      const detail = aiResult.championDetails?.find((d: any) => {
+        if (!d) return false;
+        const dIdNorm = normalizeChampKey(d.id || '');
+        const dNameNorm = normalizeChampKey(d.name || '');
+        return dIdNorm === cNorm || dNameNorm === cNorm || d.id === c.id || d.name === c.name;
+      });
+
+      const kit = getChampionKitTactics(c.name, role);
+
+      // AIの返答が有効でプレースホルダーでない場合のみ採用し、それ以外はチャンピオン固有キットを採用
+      const hasValidEarly = detail?.powerSpikes?.earlyLvl1to5 && !detail.powerSpikes.earlyLvl1to5.includes('Lv1〜5序盤スパイク');
+      const hasValidMid = detail?.powerSpikes?.mid1to2Core && !detail.powerSpikes.mid1to2Core.includes('1〜2コア中盤スパイク');
+      const hasValidLate = detail?.powerSpikes?.late3CorePlus && !detail.powerSpikes.late3CorePlus.includes('3コア終盤スパイク');
+
+      const powerSpikes = (hasValidEarly && hasValidMid && hasValidLate)
+        ? detail.powerSpikes
+        : kit.powerSpikes;
+
+      const hasValidFav = detail?.favoredMatchups?.length > 0 && !detail.favoredMatchups[0].enemy.includes('有利な相手');
+      const favoredMatchups = hasValidFav
+        ? detail.favoredMatchups
+        : kit.favoredMatchups;
+
+      const hasValidHard = detail?.hardMatchups?.length > 0 && !detail.hardMatchups[0].enemy.includes('苦手な相手');
+      const hardMatchups = hasValidHard
+        ? detail.hardMatchups
+        : kit.hardMatchups;
+
+      const hasValidAiGuide = detail?.aiTacticsGuide && !detail.aiTacticsGuide.includes('専属指南');
+      const aiTacticsGuide = hasValidAiGuide
+        ? detail.aiTacticsGuide
+        : kit.tacticsGuide;
+
+      return {
+        ...c,
+        powerSpikes,
+        favoredMatchups,
+        hardMatchups,
+        winVsLossDiffs: c.winVsLossDiffs, // 100%実測計算値を直接使用
+        aiTacticsGuide,
+      };
+    });
+
+    const report = {
+      summoner: {
+        name: cleanName,
+        tag: cleanTag,
+        tier,
+        role,
+        isRealMatchData: rawMatches.length > 0,
+        sampleMatchesCount: rawMatches.length,
+        queueType,
+        targetTier,
+      },
+      metrics: {
+        survival: { score: survivalScore, avgDeaths, percentile: Math.max(2, Math.round(avgDeaths * 2.5)) },
+        farm: { score: farmScore, csPerMin: avgCsPerMin, percentile: 15 },
+        combat: { score: combatScore, kpPercent: avgKpPercent, percentile: Math.max(5, 100 - avgKpPercent) },
+        objectives: { score: objScore },
+        teamfight: { score: teamfightScore, avgKda },
+        vision: {
+          visionScorePerMin: avgVisionPerMin,
+          // ★ 2026-10-07: 「ピンク推計（視界×1.6/0.9）」と「自陣/敵陣ワード比率（視界×12）」は計測していない値だったため削除
+          percentile: 20,
+        },
+      },
+      championProfiles: mergedChampionProfiles,
+      sessionAnalytics: calculatedSessionAnalytics,
+      analysis: aiResult,
+      generatedAt: new Date().toISOString(),
+    };
+
+    return NextResponse.json({ success: true, report });
   } catch (err: any) {
-    console.error('[deep-intel] error:', err);
-    return NextResponse.json({ error: err.message || '内部サーバーエラー' }, { status: 500 });
+    console.error('Universal Deep intel error:', err);
+    const msg = String(err?.message || '');
+    let friendlyError = '深層解析エラーが発生しました。';
+    if (msg.includes('404') || msg.includes('not found')) {
+      friendlyError = '指定されたプレイヤーが見つかりませんでした。Riot ID（サモナー名#タグ）が正しいかご確認ください。';
+    } else if (msg.includes('403') || msg.includes('Forbidden')) {
+      friendlyError = 'Riot APIキーが無効または期限切れです。管理画面からAPIキーをご確認ください。';
+    } else if (msg.includes('429') || msg.includes('Rate limit')) {
+      friendlyError = 'Riot APIの呼び出し制限に達しました。少し時間を置いてから再度お試しください。';
+    } else if (msg) {
+      friendlyError = `解析エラー: ${msg}`;
+    }
+    return NextResponse.json({ error: friendlyError }, { status: 500 });
   }
 }

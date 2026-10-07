@@ -1,5 +1,86 @@
 @import "tailwindcss";
 
+/* 04_PORTAL のデザイントークン（ダーク値）。04 の外部分析の画面部品を 05 でそのまま使うため（2026-10-08）。
+   05 は常にダーク表示なので、04 の html.dark の値を既定値として持つ。値を変える時は 04 の globals.css と揃えること。 */
+@variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-background: #1e1f22;
+  --color-foreground: #f2f3f5;
+  --color-foreground-soft: #f2f3f5;
+  --color-foreground-subtle: #f2f3f5;
+  --color-primary: #e07a1e;
+  --color-primary-glow: rgba(224, 122, 30, 0.35);
+  --color-accent: #f59e0b;
+  --color-gold: #d4af37;
+  --color-gold-glow: rgba(212, 175, 55, 0.35);
+  --color-success: #10b981;
+  --color-danger: #ef4444;
+  --color-surface: #2b2d31;
+  --color-surface-subtle: #1e1f22;
+  --color-surface-hover: #35373c;
+  --color-border: #3f4147;
+  --color-muted-strong: #e2e8f0;
+  --color-muted: #e2e8f0;
+  --color-faint: #cbd5e1;
+  --color-primary-50: #35373c;
+  --color-primary-100: #35373c;
+  --color-primary-200: #35373c;
+  --color-primary-600: #fbbf24;
+  --color-primary-700: #fbbf24;
+  --color-primary-800: #fcd34d;
+  --color-primary-900: #fcd34d;
+  --color-success-50: #35373c;
+  --color-success-100: #35373c;
+  --color-success-200: #35373c;
+  --color-success-600: #34d399;
+  --color-success-700: #34d399;
+  --color-success-800: #6ee7b7;
+  --color-success-900: #6ee7b7;
+  --color-danger-50: #35373c;
+  --color-danger-100: #35373c;
+  --color-danger-200: #35373c;
+  --color-danger-600: #fb7185;
+  --color-danger-700: #fb7185;
+  --color-danger-800: #fda4af;
+  --color-danger-900: #fda4af;
+  --color-secondary-50: #35373c;
+  --color-secondary-100: #35373c;
+  --color-secondary-200: #35373c;
+  --color-secondary-600: #2dd4bf;
+  --color-secondary-700: #2dd4bf;
+  --color-secondary-800: #5eead4;
+  --color-secondary-900: #5eead4;
+  --color-primary-300: #fcd34d;
+  --color-primary-400: #fbbf24;
+  --color-primary-500: #f59e0b;
+  --color-primary-950: #fcd34d;
+  --color-success-300: #6ee7b7;
+  --color-success-400: #34d399;
+  --color-success-500: #10b981;
+  --color-success-950: #6ee7b7;
+  --color-danger-300: #fda4af;
+  --color-danger-400: #fb7185;
+  --color-danger-500: #f43f5e;
+  --color-danger-950: #fda4af;
+  --color-secondary-300: #5eead4;
+  --color-secondary-400: #2dd4bf;
+  --color-secondary-500: #14b8a6;
+  --color-secondary-950: #5eead4;
+  --color-primary-edge-soft: rgba(245, 158, 11, 0.25);
+  --color-primary-edge: rgba(245, 158, 11, 0.4);
+  --color-primary-edge-strong: rgba(245, 158, 11, 0.55);
+  --color-success-edge-soft: rgba(16, 185, 129, 0.25);
+  --color-success-edge: rgba(16, 185, 129, 0.4);
+  --color-success-edge-strong: rgba(16, 185, 129, 0.55);
+  --color-danger-edge-soft: rgba(244, 63, 94, 0.25);
+  --color-danger-edge: rgba(244, 63, 94, 0.4);
+  --color-danger-edge-strong: rgba(244, 63, 94, 0.55);
+  --color-secondary-edge-soft: rgba(20, 184, 166, 0.25);
+  --color-secondary-edge: rgba(20, 184, 166, 0.4);
+  --color-secondary-edge-strong: rgba(20, 184, 166, 0.55);
+}
+
 @layer base {
   :root {
     --background: #0a0d14;
