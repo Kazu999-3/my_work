@@ -1268,7 +1268,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 2",
+    "tier": "Tier 1",
     "winRate": 50
   },
   {
@@ -1909,7 +1909,7 @@
     "hasBible": true,
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 2,
-    "tier": "Tier 4",
+    "tier": "Tier 3",
     "winRate": 51
   },
   {
@@ -1989,7 +1989,7 @@
     "hasBible": true,
     "videoBibleCount": 3,
     "libraryKnowledgeCount": 14,
-    "tier": "Tier 2",
+    "tier": "Tier 1",
     "winRate": 50
   },
   {
@@ -2310,7 +2310,7 @@
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 1,
     "tier": "Tier 4",
-    "winRate": 51
+    "winRate": 50
   },
   {
     "id": "Ornn",
@@ -3261,7 +3261,7 @@
     "hasBible": true,
     "videoBibleCount": 1,
     "libraryKnowledgeCount": 0,
-    "tier": "Tier 2",
+    "tier": "Tier 1",
     "winRate": 51
   },
   {
@@ -4061,7 +4061,7 @@
     "videoBibleCount": 2,
     "libraryKnowledgeCount": 2,
     "tier": "Tier 2",
-    "winRate": 50
+    "winRate": 51
   },
   {
     "id": "Graves",
@@ -6365,7 +6365,7 @@
     "videoBibleCount": 0,
     "libraryKnowledgeCount": 1,
     "tier": "Tier 2",
-    "winRate": 51
+    "winRate": 52
   },
   {
     "id": "Syndra",
@@ -10898,7 +10898,7 @@
     "videoBibleCount": 3,
     "libraryKnowledgeCount": 10,
     "tier": "Tier 3",
-    "winRate": 51
+    "winRate": 50
   },
   {
     "id": "Poppy",
