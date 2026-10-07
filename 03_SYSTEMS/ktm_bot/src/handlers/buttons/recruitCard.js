@@ -356,9 +356,9 @@ async function sendOnboardingIfNeeded(env, userId) {
     // **矛盾していた**。実際は緑の「🎮 サモナー名 ＆ 希望レーン登録」を押せば自分で完結する。
     // 管理者待ちだと思わせて止めてしまうのを避け、自分で進める案内に統一した。
     const missing = [];
-    if (!p) missing.push('・名簿への登録 → `/portal` を実行し、緑の「🎮 サモナー名 ＆ 希望レーン登録」を押すだけで自動登録されます（管理者を待つ必要はありません）');
-    if (!p || !p.role_preferences?.primary) missing.push('・**希望レーンの設定** → `/lane` コマンド、または `/portal` の「📍 レーン設定変更」ボタン');
-    if (p && !p.ign) missing.push('・Riot IDの登録 → `/portal` の「📝 サモナー名変更」ボタン（任意。ソロQ戦績と連携できます）');
+    if (!p) missing.push('・名簿への登録 → 案内メッセージ（`/welcome`）の緑「🎮 サモナー名 ＆ 希望レーン登録」を押すだけで自動登録されます（管理者を待つ必要はありません）');
+    if (!p || !p.role_preferences?.primary) missing.push('・**希望レーンの設定** → `/lane` コマンド、または案内メッセージの「📍 レーン設定変更」ボタン');
+    if (p && !p.ign) missing.push('・Riot IDの登録 → `/ign` コマンド（任意。ソロQ戦績と連携できます）');
 
     const dmRes = await fetch('https://discord.com/api/v10/users/@me/channels', {
       method: 'POST',

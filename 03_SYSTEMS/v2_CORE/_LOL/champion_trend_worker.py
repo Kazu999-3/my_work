@@ -512,7 +512,9 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
         res_text = generate_content_safe(
             client,
             prompt,
-            model_id="gemini-3.1-flash-lite",
+            # ★ 2026-10-07: 検索付き(google_search)は gemini-2.5-flash なら無料枠で通る（実測: 出典3〜5件・最新パッチ26.20を回答）。
+            # gemini-3.1-flash-lite / 3.5 / 3.6 は通常の生成は通るが、検索付きだけ 429 で拒否される（GEMINI_API_KEY / _FREE とも）。
+            model_id="gemini-2.5-flash",
             config=config,
             feature_name="oracle",
             on_grounding=lambda s: research_sources.extend(s)

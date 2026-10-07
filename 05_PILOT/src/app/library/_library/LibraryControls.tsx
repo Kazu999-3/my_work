@@ -1,11 +1,10 @@
 "use client";
 
 import type React from "react";
-import { Search, Sparkles } from "lucide-react";
-import { enqueueYoutubeFromClipboard } from "./enqueueYoutube";
+import { Search } from "lucide-react";
 import type { LibraryCategory, LibrarySort } from "./types";
 
-// カテゴリ切り替え（LoL戦術 / 一般ナレッジ）・検索・URL投函・チャンネル絞り込み・並び替え
+// カテゴリ切り替え（LoL戦術 / 一般ナレッジ）・検索・チャンネル絞り込み・並び替え（URL投函はユーザー判断で 2026-10-07 に削除）
 // 2026-10-07: app/library/page.tsx（796行）から分割。表示内容・動作は分割前と同じ。
 export default function LibraryControls({ activeCategory, counts, search, setSearch, totalCount, channels, selectedChannel, selectedSort, onCategoryChange, onSearchSubmit, onChannelChange, onSortChange }: {
   activeCategory: LibraryCategory;
@@ -98,15 +97,6 @@ export default function LibraryControls({ activeCategory, counts, search, setSea
           </form>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <button
-              type="button"
-              onClick={enqueueYoutubeFromClipboard}
-              className="px-3 py-1.5 rounded-xl bg-indigo-900/60 hover:bg-indigo-800 border border-indigo-700/60 text-indigo-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
-              title="コピーしたYouTubeのURLを解析キューに即追加"
-            >
-              <Sparkles size={13} className="text-indigo-400" />
-              <span>📋 URL投函</span>
-            </button>
             <div className="text-xs text-zinc-400 font-bold px-1">
               全 <strong className="text-amber-400">{totalCount}</strong> 件の戦術アーカイブ
             </div>

@@ -521,16 +521,6 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
                     サイド交代 (BLUE ⇄ RED)
                   </button>
 
-                  <a
-                    href="https://ktm-pilot.vercel.app/coach?tab=live"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-gradient-to-r from-secondary-600 to-success-600 hover:from-secondary-500 hover:to-success-500 text-white px-5 py-3 rounded-xl font-black transition flex items-center justify-center gap-2 shadow-lg cursor-pointer text-xs sm:text-sm"
-                    title="新鋭パイロットの5v5シミュレータ・勝ち筋診断へ直結（別タブ）"
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    5v5ドラフト診断 🎯
-                  </a>
                 </div>
               </div>
             </div>

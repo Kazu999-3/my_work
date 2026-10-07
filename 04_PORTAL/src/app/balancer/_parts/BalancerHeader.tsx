@@ -16,7 +16,7 @@ import { RoleIcon, getPlayerCasinoBadges, MAX_VISIBLE_BADGES, CasinoBadges, getG
 
 // ヘッダー（タイトル・操作ボタン群）
 // 2026-10-07: app/balancer/page.tsx（3,029行）から分割。表示内容・動作は分割前と同じ。状態は page.tsx が持ち、ここは props で受け取って描画するだけ。
-export default function BalancerHeader({ players, setPlayers, saving, announcingStats, isAdmin, setShowAdminPanel, integrityData, balancing, balanceResult, showResultModal, setShowResultModal, searchDepth, setSearchDepth, selectedTable, setSelectedTable, bo3State, handleResetBo3, handleAnnounceStats, handleSwitchToMatch2, handleBalance, handleFestivalRandomBalance, activeCount, spectatorCount, inactiveCount, canBalance }: {
+export default function BalancerHeader({ players, setPlayers, saving, announcingStats, isAdmin, setShowAdminPanel, integrityData, balancing, balanceResult, showResultModal, setShowResultModal, searchDepth, setSearchDepth, selectedTable, setSelectedTable, bo3State, handleResetBo3, handleAnnounceStats, handleBalance, handleFestivalRandomBalance, activeCount, spectatorCount, inactiveCount, canBalance }: {
   players: any[];
   setPlayers: React.Dispatch<React.SetStateAction<any[]>>;
   saving: boolean;
@@ -35,7 +35,6 @@ export default function BalancerHeader({ players, setPlayers, saving, announcing
   bo3State: any;
   handleResetBo3: () => any;
   handleAnnounceStats: () => any;
-  handleSwitchToMatch2: () => any;
   handleBalance: () => any;
   handleFestivalRandomBalance: () => any;
   activeCount: number;
@@ -172,30 +171,9 @@ export default function BalancerHeader({ players, setPlayers, saving, announcing
               <span className="bg-surface border border-primary-edge/60 px-2 py-0.5 rounded-md font-bold text-[11px] text-primary-900">
                 👑 ゴルプラ: <strong>ドラフトピック (MMRあり)</strong>
               </span>
-              {/* スタイル別集計チップ */}
-              <div className="flex items-center gap-1.5 ml-auto text-[11px] font-bold">
-                <span className="bg-success-100 text-success-800 border border-success-edge px-2 py-0.5 rounded-md">
-                  🟢 フル: {players.filter(p => p.participation_style === 'full').length}名
-                </span>
-                <span className="bg-secondary-100 text-secondary-800 border border-secondary-edge px-2 py-0.5 rounded-md">
-                  ⏱️ 1戦のみ: {players.filter(p => p.participation_style === 'single').length}名
-                </span>
-                <span className="bg-primary-100 text-primary-800 border border-primary-edge px-2 py-0.5 rounded-md">
-                  🌙 途中参加: {players.filter(p => p.participation_style === 'late').length}名
-                </span>
-              </div>
             </div>
 
             <div className="flex items-center gap-2 ml-auto flex-wrap">
-              {/* 🔄 2戦目移行ボタン */}
-              <button
-                type="button"
-                onClick={handleSwitchToMatch2}
-                className="px-3 py-2 rounded-xl bg-gradient-to-r from-primary-600 to-primary-600 hover:from-primary-500 hover:to-primary-500 text-white font-bold text-xs shadow-xs transition flex items-center gap-1"
-                title="1戦のみのメンバーを待機にし、途中参加メンバーを参加ONに一括交代します"
-              >
-                🔄 2戦目メンバーへ交代
-              </button>
 
               {/* 一括参加切り替えボタン */}
               <button

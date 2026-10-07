@@ -29,6 +29,8 @@ export interface RawMatchRecord {
   enemyHordeKills?: number;
   enemyDragonKills?: number;
   firstDragon?: boolean;     // 初手ドラゴン確保フラグ
+  teamEpicKills?: number;    // ドラゴン+バロン+ヘラルドの獲得数
+  enemyEpicKills?: number;
 }
 
 // ==========================================

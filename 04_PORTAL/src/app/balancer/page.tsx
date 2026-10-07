@@ -144,31 +144,6 @@ export default function BalancerPage() {
     }
   };
 
-  // 🔄 2戦目へのメンバー交代（1戦のみ抜け ➔ 途中参加メンバー参戦）
-  const handleSwitchToMatch2 = () => {
-    let singleCount = 0;
-    let lateCount = 0;
-    const updated = players.map(p => {
-      if (p.participation_style === 'single') {
-        singleCount++;
-        return { ...p, is_active: false, is_fixed: false };
-      }
-      if (p.participation_style === 'late') {
-        lateCount++;
-        return { ...p, is_active: true };
-      }
-      return p;
-    });
-    setPlayers(updated);
-    try {
-      localStorage.setItem('balancer_active_ids', JSON.stringify(updated.filter(p => p.is_active).map(p => p.id)));
-    } catch {}
-    setMessage({
-      type: "success",
-      text: `🔄 2戦目メンバーに交代しました！（1戦のみ ${singleCount}名を待機にし、途中参加 ${lateCount}名を参加ONにしました）`
-    });
-  };
-
   const handleBalance = async () => {
     // 卓分割(#B): 20人以上いる場合、選択中の卓のメンバーだけをチーム分け対象にする
     const allActive = players.filter((p: any) => p.is_active);
@@ -361,7 +336,7 @@ export default function BalancerPage() {
           setShowAdminPanel={setShowAdminPanel} integrityData={integrityData} balancing={balancing} balanceResult={balanceResult}
           showResultModal={showResultModal} setShowResultModal={setShowResultModal} searchDepth={searchDepth} setSearchDepth={setSearchDepth}
           selectedTable={selectedTable} setSelectedTable={setSelectedTable} bo3State={bo3.bo3State} handleResetBo3={bo3.handleResetBo3}
-          handleAnnounceStats={actions.handleAnnounceStats} handleSwitchToMatch2={handleSwitchToMatch2} handleBalance={handleBalance}
+          handleAnnounceStats={actions.handleAnnounceStats} handleBalance={handleBalance}
           handleFestivalRandomBalance={handleFestivalRandomBalance} activeCount={activeCount} spectatorCount={spectatorCount}
           inactiveCount={inactiveCount} canBalance={canBalance}
         />

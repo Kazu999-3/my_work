@@ -34,46 +34,46 @@ export default function OverviewTab({ report, targetTier }: {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 text-xs">
                     {/* 1. ハードキャリー勝利 */}
-                    <div className="p-4 rounded-2xl bg-primary-50/90 border border-primary-edge-soft/90 flex flex-col justify-between space-y-3 shadow-2xs">
+                    <div className="p-4 rounded-2xl bg-success-50/90 border border-success-edge-soft/90 flex flex-col justify-between space-y-3 shadow-2xs">
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-black text-primary-950 flex items-center gap-1">
+                          <span className="text-[11px] font-black text-success-950 flex items-center gap-1">
                             👑 ハードキャリー勝利
                           </span>
-                          <span className="text-[9.5px] font-black text-primary-800 bg-primary-200/70 px-1.5 py-0.5 rounded">自力主導</span>
+                          <span className="text-[9.5px] font-black text-success-800 bg-success-200/70 px-1.5 py-0.5 rounded">自力主導</span>
                         </div>
-                        <div className="text-2xl font-black text-primary-950 font-mono">
+                        <div className="text-2xl font-black text-success-950 font-mono">
                           {report.sessionAnalytics.gameOutcomeBreakdown.hardCarryWins.percent}%{' '}
-                          <span className="text-xs font-bold text-primary-800">({report.sessionAnalytics.gameOutcomeBreakdown.hardCarryWins.count}戦)</span>
+                          <span className="text-xs font-bold text-success-800">({report.sessionAnalytics.gameOutcomeBreakdown.hardCarryWins.count}戦)</span>
                         </div>
-                        <p className="text-[11px] text-primary-950 font-medium leading-relaxed">
+                        <p className="text-[11px] text-success-950 font-medium leading-relaxed">
                           <strong>【どういう試合？】</strong> 自身が高いキル・大ダメージ・CCで試合を動かし、圧倒的なリードを作って自らチームを勝利に導いた試合。
                         </p>
                       </div>
-                      <div className="pt-2 border-t border-primary-edge-soft/70 text-[10px] text-primary-900/80 space-y-0.5">
+                      <div className="pt-2 border-t border-success-edge-soft/70 text-[10px] text-success-900/80 space-y-0.5">
                         <div>📊 <strong>判定基準:</strong> 勝利 ＋ KDA 5.0以上 または ダメージシェア24%以上</div>
                         <div>💡 <strong>意味:</strong> あなたの勝ちパターン。再現性を高めることが昇格の最短ルート。</div>
                       </div>
                     </div>
 
                     {/* 2. チーム協調勝利 */}
-                    <div className="p-4 rounded-2xl bg-success-50/90 border border-success-edge-soft/90 flex flex-col justify-between space-y-3 shadow-2xs">
+                    <div className="p-4 rounded-2xl bg-primary-50/90 border border-primary-edge-soft/90 flex flex-col justify-between space-y-3 shadow-2xs">
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-black text-success-950 flex items-center gap-1">
+                          <span className="text-[11px] font-black text-primary-950 flex items-center gap-1">
                             🛡️ チーム協調勝利
                           </span>
-                          <span className="text-[9.5px] font-black text-success-800 bg-success-200/70 px-1.5 py-0.5 rounded">堅実連携</span>
+                          <span className="text-[9.5px] font-black text-primary-800 bg-primary-200/70 px-1.5 py-0.5 rounded">堅実連携</span>
                         </div>
-                        <div className="text-2xl font-black text-success-950 font-mono">
+                        <div className="text-2xl font-black text-primary-950 font-mono">
                           {report.sessionAnalytics.gameOutcomeBreakdown.teamSupportedWins.percent}%{' '}
-                          <span className="text-xs font-bold text-success-800">({report.sessionAnalytics.gameOutcomeBreakdown.teamSupportedWins.count}戦)</span>
+                          <span className="text-xs font-bold text-primary-800">({report.sessionAnalytics.gameOutcomeBreakdown.teamSupportedWins.count}戦)</span>
                         </div>
-                        <p className="text-[11px] text-success-950 font-medium leading-relaxed">
+                        <p className="text-[11px] text-primary-950 font-medium leading-relaxed">
                           <strong>【どういう試合？】</strong> 無理なキルを追わず低デスを維持。視界管理・味方キャリーの防衛（ピール）・オブジェクト確保で手堅く掴んだ勝利。
                         </p>
                       </div>
-                      <div className="pt-2 border-t border-success-edge-soft/70 text-[10px] text-success-900/80 space-y-0.5">
+                      <div className="pt-2 border-t border-primary-edge-soft/70 text-[10px] text-primary-900/80 space-y-0.5">
                         <div>📊 <strong>判定基準:</strong> 勝利 ＋ 安定した低被デス・視界貢献・アシスト中心</div>
                         <div>💡 <strong>意味:</strong> 「自分が育たなくても勝てる」高い安定性とチーム貢献力の証拠。</div>
                       </div>
@@ -214,7 +214,7 @@ export default function OverviewTab({ report, targetTier }: {
                             {
                               label: '④ オブジェクト先制視界管理',
                               score: report.metrics.objectives.score,
-                              valueText: `${report.sessionAnalytics?.earlyTimelineImpact?.objLabel || 'ドラゴン確保時勝率'}: ${report.sessionAnalytics?.earlyTimelineImpact?.voidgrubWinRate != null ? `${report.sessionAnalytics.earlyTimelineImpact.voidgrubWinRate}%` : '未計測'}`,
+                              valueText: `ドラゴン・バロン・ヘラルド獲得率 ${report.metrics.objectives.score != null ? `${report.metrics.objectives.score}%` : '未計測'} ／ ${report.sessionAnalytics?.earlyTimelineImpact?.objLabel || 'ドラゴン確保時勝率'}: ${report.sessionAnalytics?.earlyTimelineImpact?.voidgrubWinRate != null ? `${report.sessionAnalytics.earlyTimelineImpact.voidgrubWinRate}%` : '未計測'}`,
                               barBg: 'bg-primary-500',
                               textColor: 'text-primary-700',
                               subTextColor: 'text-primary-700',
@@ -263,7 +263,7 @@ export default function OverviewTab({ report, targetTier }: {
                             {
                               label: '④ オブジェクト確保 (Obj Control)',
                               score: report.metrics.objectives.score,
-                              valueText: `グラブ/ドラゴン優位時勝率 ${report.sessionAnalytics?.earlyTimelineImpact?.voidgrubWinRate != null ? `${report.sessionAnalytics.earlyTimelineImpact.voidgrubWinRate}%` : '未計測'}`,
+                              valueText: `ドラゴン・バロン・ヘラルド獲得率 ${report.metrics.objectives.score != null ? `${report.metrics.objectives.score}%` : '未計測'} ／ グラブ/ドラゴン優位時勝率 ${report.sessionAnalytics?.earlyTimelineImpact?.voidgrubWinRate != null ? `${report.sessionAnalytics.earlyTimelineImpact.voidgrubWinRate}%` : '未計測'}`,
                               barBg: 'bg-primary-500',
                               textColor: 'text-primary-700',
                               subTextColor: 'text-primary-700',
@@ -312,7 +312,7 @@ export default function OverviewTab({ report, targetTier }: {
                             {
                               label: '④ リバー・オブジェクト主導権',
                               score: report.metrics.objectives.score,
-                              valueText: `オブジェクト優位時勝率 ${report.sessionAnalytics?.earlyTimelineImpact?.voidgrubWinRate != null ? `${report.sessionAnalytics.earlyTimelineImpact.voidgrubWinRate}%` : '未計測'}`,
+                              valueText: `ドラゴン・バロン・ヘラルド獲得率 ${report.metrics.objectives.score != null ? `${report.metrics.objectives.score}%` : '未計測'} ／ オブジェクト優位時勝率 ${report.sessionAnalytics?.earlyTimelineImpact?.voidgrubWinRate != null ? `${report.sessionAnalytics.earlyTimelineImpact.voidgrubWinRate}%` : '未計測'}`,
                               barBg: 'bg-primary-500',
                               textColor: 'text-primary-700',
                               subTextColor: 'text-primary-700',
@@ -361,7 +361,7 @@ export default function OverviewTab({ report, targetTier }: {
                             {
                               label: '④ オブジェクトバースト力',
                               score: report.metrics.objectives.score,
-                              valueText: `ドラゴン確保時勝率 ${report.sessionAnalytics?.earlyTimelineImpact?.voidgrubWinRate != null ? `${report.sessionAnalytics.earlyTimelineImpact.voidgrubWinRate}%` : '未計測'}`,
+                              valueText: `ドラゴン・バロン・ヘラルド獲得率 ${report.metrics.objectives.score != null ? `${report.metrics.objectives.score}%` : '未計測'} ／ ドラゴン確保時勝率 ${report.sessionAnalytics?.earlyTimelineImpact?.voidgrubWinRate != null ? `${report.sessionAnalytics.earlyTimelineImpact.voidgrubWinRate}%` : '未計測'}`,
                               barBg: 'bg-primary-500',
                               textColor: 'text-primary-700',
                               subTextColor: 'text-primary-700',
@@ -411,7 +411,7 @@ export default function OverviewTab({ report, targetTier }: {
                             {
                               label: '④ スプリットプッシュ圧力 ＆ グラブ確保',
                               score: report.metrics.objectives.score,
-                              valueText: `グラブ確保時勝率 ${report.sessionAnalytics?.earlyTimelineImpact?.voidgrubWinRate != null ? `${report.sessionAnalytics.earlyTimelineImpact.voidgrubWinRate}%` : '未計測'}`,
+                              valueText: `ドラゴン・バロン・ヘラルド獲得率 ${report.metrics.objectives.score != null ? `${report.metrics.objectives.score}%` : '未計測'} ／ グラブ確保時勝率 ${report.sessionAnalytics?.earlyTimelineImpact?.voidgrubWinRate != null ? `${report.sessionAnalytics.earlyTimelineImpact.voidgrubWinRate}%` : '未計測'}`,
                               barBg: 'bg-primary-500',
                               textColor: 'text-primary-700',
                               subTextColor: 'text-primary-700',

@@ -204,26 +204,6 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                               );
                             })()}
 
-                            {/* ⏱️/🌙 参加スタイルバッジ */}
-                            {p.participation_style && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const nextStyle = p.participation_style === 'full' ? 'single' : (p.participation_style === 'single' ? 'late' : 'full');
-                                  handleInputChange(p.id, 'participation_style', nextStyle);
-                                }}
-                                className={`text-[10px] font-black px-1.5 py-0.5 rounded border transition-transform hover:scale-105 cursor-pointer shadow-2xs ${
-                                  p.participation_style === 'single'
-                                    ? 'bg-secondary-100 text-secondary-900 border-secondary-edge'
-                                    : p.participation_style === 'late'
-                                    ? 'bg-primary-100 text-primary-900 border-primary-edge'
-                                    : 'bg-success-100 text-success-900 border-success-edge'
-                                }`}
-                                title="クリックで参加スタイルを切り替え (フル ➔ 1戦のみ ➔ 途中参加)"
-                              >
-                                {p.participation_style === 'single' ? '⏱️ 1戦のみ' : p.participation_style === 'late' ? '🌙 途中参加' : '🟢 フル'}
-                              </button>
-                            )}
 
                             {/* 🪙 所持コイン */}
                             {(p.coins > 0 || (p.metadata?.coins && p.metadata.coins > 0)) && (
@@ -406,11 +386,6 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                             </span>
                           );
                         })()}
-                        {p.participation_style && (
-                          <span className="text-[9px] font-black px-1.5 py-0.2 rounded border bg-primary-100 text-primary-900 border-primary-edge">
-                            {p.participation_style === 'single' ? '⏱️1戦のみ' : p.participation_style === 'late' ? '🌙途中参加' : '🟢フル'}
-                          </span>
-                        )}
                         <span className={`text-xs font-semibold ${getColorFromRankName(p.highest_rank)}`}>{p.highest_rank ? p.highest_rank.split(' ')[0] : 'UNR'}</span>
                         
                         {/* MMR ＆ KTMランクバッジ */}

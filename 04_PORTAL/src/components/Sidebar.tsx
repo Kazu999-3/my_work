@@ -14,7 +14,6 @@ import {
   HeartHandshake,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
   Menu as MenuIcon,
   X as XIcon,
   TrendingUp,
@@ -204,9 +203,8 @@ const GENERAL_MENU_ITEMS: MenuItem[] = [
   { id: 'guide', label: '使い方 ＆ 更新情報', shortLabel: 'ガイド', icon: BookOpen, href: '/guide', color: 'text-success-600', activeBg: 'bg-success-500/15', section: 'ガイド' },
 ];
 
-// 🛡️ 管理者向け追加メニュー（新鋭戦術パイロット・大会管理・運用）
+// 🛡️ 管理者向け追加メニュー（大会管理・運用）。05（戦術パイロット）へのリンクはユーザー判断で 2026-10-07 に削除
 const ADMIN_EXTRA_ITEMS: MenuItem[] = [
-  { id: 'ktm-pilot', label: '🚀 戦術パイロット (新コックピット)', shortLabel: 'Pilot', icon: Sparkles, href: 'https://ktm-pilot.vercel.app', color: 'text-amber-500 font-bold', activeBg: 'bg-amber-500/15', section: '新戦術コックピット' },
   { id: 'ktm-admin', label: 'KTM大会管理', shortLabel: '大会管理', icon: Shield, href: '/ktm-admin', color: 'text-primary-600', activeBg: 'bg-primary-500/15', section: '大会・運用' },
   { id: 'analyzer', label: 'プレイヤー外部分析', shortLabel: '外部解析', icon: Globe, href: '/analyzer', color: 'text-secondary-600', activeBg: 'bg-secondary-500/15', section: '大会・運用' },
   { id: 'admin-guide', label: 'システム全貌仕様ガイド', shortLabel: '仕様ガイド', icon: BookOpen, href: '/admin/guide', color: 'text-primary-600', activeBg: 'bg-primary-500/15', section: '大会・運用' },

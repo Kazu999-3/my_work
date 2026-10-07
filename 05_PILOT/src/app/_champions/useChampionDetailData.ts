@@ -78,7 +78,8 @@ export function useChampionDetailData({ rawChampParam, vsEnemyId, customRoles, c
 
   // シチュエーション別ビルド（アイテム辞書翻訳をリアルタイム適用）
   // 選択中ロールの実測ビルド（あれば「標準コア」をこちらで置き換える。2026-10-07）
-  const measuredBuild = selectedDetail?.facts?.measuredBuilds?.[currentRole] || null;
+  // 実測ビルドのキーは BOT。レーン設定（DB の champion_lane_roles）由来だと ADC で来るため揃える（本番で Jinx 等が出ていなかった）
+  const measuredBuild = selectedDetail?.facts?.measuredBuilds?.[currentRole === "ADC" ? "BOT" : currentRole] || null;
 
   const currentBuild = useMemo(() => {
     const rawItems = measuredBuild?.core.length ? measuredBuild.core.map((c) => c.name) : (selectedDetail?.facts?.trendItems || []);

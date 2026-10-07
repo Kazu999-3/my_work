@@ -120,6 +120,9 @@ export async function POST(request: NextRequest) {
               const enemyHordeKills = enemyTeam?.objectives?.horde?.kills || 0;
               const enemyDragonKills = enemyTeam?.objectives?.dragon?.kills || 0;
               const firstDragon = myTeam?.objectives?.dragon?.first || false;
+              const epicOf = (t: any) => (t?.objectives?.dragon?.kills || 0) + (t?.objectives?.baron?.kills || 0) + (t?.objectives?.riftHerald?.kills || 0);
+              const teamEpicKills = epicOf(myTeam);
+              const enemyEpicKills = epicOf(enemyTeam);
 
               const record: RawMatchRecord = {
                 matchId: mId,
@@ -144,6 +147,8 @@ export async function POST(request: NextRequest) {
                 enemyHordeKills,
                 enemyDragonKills,
                 firstDragon,
+                teamEpicKills,
+                enemyEpicKills,
               };
               return record;
             } catch (e: any) {
@@ -232,8 +237,10 @@ export async function POST(request: NextRequest) {
       ? Math.max(40, Math.min(100, Math.round(avgCsPerMin <= 1.8 ? 95 : 100 - (avgCsPerMin - 1.8) * 20)))
       : Math.max(30, Math.min(100, Math.round(avgCsPerMin * 11.5)));
     const combatScore = Math.max(20, Math.min(100, Math.round(avgKpPercent * 1.3)));
-    // ★ 2026-10-07: 以前は総合勝率から「オブジェクト管理点」を作っていた（60+(勝率-50)×0.8）。計測していないため点数は出さない
-    const objScore: number | null = null;
+    // ★ 2026-10-07: 以前は総合勝率から「オブジェクト管理点」を作っていた（60+(勝率-50)×0.8）。
+    // 実測に置き換え: 自チームが獲ったドラゴン・バロン・ヘラルドの割合（両チーム合計に対する%。50=五分）。1体も出ていなければ点数は出さない
+    const epicTotals = rawMatches.reduce((acc, m) => ({ mine: acc.mine + (m.teamEpicKills || 0), all: acc.all + (m.teamEpicKills || 0) + (m.enemyEpicKills || 0) }), { mine: 0, all: 0 });
+    const objScore: number | null = epicTotals.all > 0 ? Math.round((epicTotals.mine / epicTotals.all) * 100) : null;
     const teamfightScore = Math.min(98, Math.max(40, Math.round(avgKda * 12)));
 
     // 3. チャンピオン別実測集計（勝利時 vs 敗北時の詳細スタッツも完全分離集計）
@@ -313,7 +320,7 @@ export async function POST(request: NextRequest) {
     });
 
     // 実際にプレイしたチャンピオンを試合数順に最大5体抽出
-    let topChampions = Object.values(champStatsMap)
+    const topChampions = Object.values(champStatsMap)
       .sort((a, b) => b.gamesCount - a.gamesCount)
       .slice(0, 5);
 
@@ -399,6 +406,7 @@ export async function POST(request: NextRequest) {
 ・平均デス: ${avgDeaths} / 分間CS: ${avgCsPerMin} / キル関与率（試合全体）: ${avgKpPercent}% / 分間視界スコア: ${avgVisionPerMin}`;
 
     // 5. Gemini AIによる動的総合診断 ＆ 目標ランク到達処方箋の生成
+    // ★ 2026-10-07: 対面の例として「LeeSin, Nocturne…」等の名前を並べていたため、AIがどのJGにも LeeSin を天敵に挙げていた。例示の名前は外した
     const aiPrompt = `あなたはLoL（League of Legends）の最高峰データアナリスト兼パーソナルコーチです。
 プレイヤー「${cleanName}#${cleanTag}」（メインロール: ${calculatedSessionAnalytics.roleConfig.roleName}、現在ランク: ${tier}）は、目標ランク【${targetTier}】への昇格を目指しています。
 以下の実測スタッツ（と、あれば目標ランクの実測平均との差）をもとに、【目標ランク到達処方箋レポート】を作成してください。
@@ -407,8 +415,8 @@ ${isSupportRole ? '※重要: このプレイヤーは【サポート (Support)�
 
 【マッチアップ ＆ パワースパイク生成の厳格ルール】
 1. 各チャンピオンの「favoredMatchups（得意な相手）」と「hardMatchups（苦手な相手）」には、**必ずそのチャンピオンと同じロール（レーン）の対面チャンピオン**を指定してください。
-・サポートキャラ（Rell, Leona, Thresh, Nautilus, Lulu等）の対面は【Blitzcrank, Morgana, Leona, Yuumi, Sona, Pyke, Janna】などのサポートキャラにすること。JGやTOPのキャラを絶対に混ぜないこと。
-・ジャングルキャラ（Zyra JG, Shyvana, Viego, Lillia等）の対面は【LeeSin, Nocturne, XinZhao, Amumu, Sejuani, Graves】などのジャングルキャラにすること。
+・サポートの対面はサポート、ジャングルの対面はジャングル。他ロールのチャンピオンを混ぜないこと。
+・対面は、そのチャンピオンにとって実際に相性の悪い・良い相手を個別に選ぶこと。どのチャンピオンにも同じ相手を並べないこと。
 2. 「powerSpikes」は、各チャンピオン固有のスキル名（例: RellのWフェロマンシー/R磁気誘導、ShyvanaのLv6ドラゴンフォーム/Eブレス、LeonaのEゼニス/Rソーラーフレアなど）を含め、具体的かつ実戦的な時間軸立ち回りを記述してください。抽象的・定型的な文言は禁止です。
 
 ${benchmarkPromptBlock}

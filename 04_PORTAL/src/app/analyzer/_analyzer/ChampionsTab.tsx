@@ -95,6 +95,11 @@ export default function ChampionsTab({ report, selectedChampion, setSelectedCham
                 </div>
 
                 {/* 2. 得意・天敵 相性マトリクス */}
+                {/* 2026-10-07: 相性は試合データの集計ではなく AI の一般論（失敗時は固定の表）。出典が無いことを明示する（.claude/rules/knowledge-sources.md） */}
+                <p className="text-[10px] text-muted-strong font-medium pt-2">
+                  <span className="px-1.5 py-0.5 rounded bg-background border border-border font-bold mr-1">AI推定・出典なし</span>
+                  下の相性はAIによる一般的な目安で、あなたの試合データから集計したものではありません。
+                </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
                   <div className="space-y-3">
                     <h4 className="font-black text-xs text-success-900 flex items-center gap-1.5">
