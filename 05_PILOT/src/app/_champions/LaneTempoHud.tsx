@@ -15,8 +15,8 @@ export default function LaneTempoHud({ currentRole, spikeValues, measuredSpikes,
   return (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
               {/* レーン別実戦指標 */}
-              <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-3.5 shadow-sm flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
+              <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-3.5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+                <div className="flex items-center gap-3 min-w-0">
                   <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
                     {currentRole === "JG" ? <Clock size={16} /> :
                      currentRole === "SUP" ? <Shield size={16} /> :
@@ -25,7 +25,7 @@ export default function LaneTempoHud({ currentRole, spikeValues, measuredSpikes,
                      <Activity size={16} />}
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="text-xs font-black text-zinc-100">
                         {laneTempo?.title || (
                           currentRole === "JG" ? "🌲 JG周回実戦基準" :
@@ -51,18 +51,18 @@ export default function LaneTempoHud({ currentRole, spikeValues, measuredSpikes,
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 text-right">
+                <div className="flex items-center gap-2 text-right shrink-0 self-end sm:self-auto">
                   {laneTempo ? (
                     <>
                       <div className="bg-zinc-950 px-2.5 py-1.5 rounded-xl border border-zinc-800">
                         <span className="text-[10px] text-zinc-400 block font-bold">{laneTempo.metric1.label}</span>
-                        <span className={`text-xs font-black ${laneTempo.metric1.color} font-mono`}>
+                        <span className={`text-xs font-black ${laneTempo.metric1.color} font-mono whitespace-nowrap`}>
                           {laneTempo.metric1.value}
                         </span>
                       </div>
                       <div className="bg-zinc-950 px-2.5 py-1.5 rounded-xl border border-zinc-800">
                         <span className="text-[10px] text-zinc-400 block font-bold">{laneTempo.metric2.label}</span>
-                        <span className={`text-xs font-black ${laneTempo.metric2.color} font-mono`}>
+                        <span className={`text-xs font-black ${laneTempo.metric2.color} font-mono whitespace-nowrap`}>
                           {laneTempo.metric2.value}
                         </span>
                       </div>

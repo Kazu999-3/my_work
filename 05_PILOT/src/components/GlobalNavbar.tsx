@@ -35,12 +35,12 @@ export default function GlobalNavbar() {
   return (
     <>
       {/* 👑 トップ固定グローバルメニューバー */}
-      <header className="sticky top-0 z-50 bg-slate-950/95 backdrop-blur-md border-b border-slate-800/80 px-4 py-2.5">
+      <header className="sticky top-0 z-50 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800/80 px-4 py-2.5">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           
           {/* ロゴ */}
           <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-            <div className="w-8 h-8 rounded-xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 group-hover:scale-105 transition-transform shadow-inner">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/40 flex items-center justify-center text-amber-400 group-hover:scale-105 transition-transform shadow-inner">
               <Crown className="w-4 h-4 text-amber-400" />
             </div>
             <div>
@@ -48,11 +48,11 @@ export default function GlobalNavbar() {
                 <span className="font-black text-sm tracking-wide text-white">
                   SOVEREIGN PILOT
                 </span>
-                <span className="px-1.5 py-0.2 rounded bg-indigo-950 text-indigo-300 text-[10px] font-bold border border-indigo-800/60 hidden sm:inline-block">
+                <span className="px-1.5 py-0.2 rounded bg-amber-950/60 text-amber-300 text-[10px] font-bold border border-amber-800/60 hidden sm:inline-block">
                   v2.0
                 </span>
               </div>
-              <p className="text-[10px] text-slate-400 hidden xl:block">
+              <p className="text-[10px] text-zinc-400 hidden xl:block">
                 LoL 戦術バイブル ＆ リアルタイムHUD連動コクピット
               </p>
             </div>
@@ -72,11 +72,11 @@ export default function GlobalNavbar() {
                   title={item.name}
                   className={`flex items-center gap-1.5 px-2.5 xl:px-3 py-1.5 rounded-xl transition-all whitespace-nowrap shrink-0 ${
                     isActive
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-950/50'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-900 border border-transparent hover:border-slate-800'
+                      ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-950/40'
+                      : 'text-zinc-400 hover:text-white hover:bg-zinc-900 border border-transparent hover:border-zinc-800'
                   }`}
                 >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-zinc-950' : 'text-zinc-400'}`} />
                   <span className={isActive ? '' : 'hidden xl:inline'}>{item.name}</span>
                 </Link>
               );
@@ -93,13 +93,13 @@ export default function GlobalNavbar() {
               title="URLやメモからAIで戦術を自動取込"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>📥 戦術取込</span>
+              <span className="hidden sm:inline">📥 戦術取込</span>
             </button>
 
             {/* スマホ用ハンバーガーボタン */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white transition-colors"
+              className="md:hidden p-2 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white transition-colors"
               aria-label="メニューを開く"
             >
               {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -111,8 +111,8 @@ export default function GlobalNavbar() {
 
       {/* 📱 スマホ用全画面ドロワーメニュー */}
       {isMobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-40 bg-slate-950/95 backdrop-blur-xl pt-16 px-4 pb-20 space-y-4 animate-in fade-in slide-in-from-top-4 duration-150 overflow-y-auto">
-          <div className="text-xs font-bold text-slate-500 uppercase tracking-wider px-2">
+        <div className="md:hidden fixed inset-0 z-40 bg-zinc-950/95 backdrop-blur-xl pt-16 px-4 pb-20 space-y-4 animate-in fade-in slide-in-from-top-4 duration-150 overflow-y-auto">
+          <div className="text-xs font-bold text-zinc-500 uppercase tracking-wider px-2">
             ナビゲーションメニュー
           </div>
           <div className="space-y-1.5">
@@ -126,12 +126,12 @@ export default function GlobalNavbar() {
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`flex items-center justify-between p-3 rounded-2xl transition-all ${
                     isActive
-                      ? 'bg-indigo-600 text-white font-black shadow-md'
-                      : 'bg-slate-900/80 border border-slate-800/80 text-slate-300 hover:text-white hover:bg-slate-800'
+                      ? 'bg-amber-500 text-zinc-950 font-black shadow-md'
+                      : 'bg-zinc-900/80 border border-zinc-800/80 text-zinc-300 hover:text-white hover:bg-zinc-800'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-xl ${isActive ? 'bg-indigo-700' : 'bg-slate-950 border border-slate-800'}`}>
+                    <div className={`p-2 rounded-xl ${isActive ? 'bg-amber-600/80' : 'bg-zinc-950 border border-zinc-800'}`}>
                       <Icon className="w-4 h-4" />
                     </div>
                     <span className="text-sm">{item.name}</span>
@@ -142,7 +142,7 @@ export default function GlobalNavbar() {
             })}
           </div>
 
-          <div className="pt-4 border-t border-slate-800/80">
+          <div className="pt-4 border-t border-zinc-800/80">
             <button
               onClick={() => {
                 setIsMobileMenuOpen(false);
@@ -158,11 +158,11 @@ export default function GlobalNavbar() {
       )}
 
       {/* 📱 スマホ用下部固定ボトムナビ (親指で1タップ切り替え) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-md border-t border-slate-800/80 px-2 py-1.5 flex items-center justify-around shadow-2xl">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800/80 px-2 py-1.5 flex items-center justify-around shadow-2xl">
         <Link
           href="/"
           className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded-xl text-[10px] font-bold transition-colors ${
-            pathname === '/' ? 'text-indigo-400' : 'text-slate-400 hover:text-slate-200'
+            pathname === '/' ? 'text-amber-400' : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
           <Crown className="w-4 h-4" />
@@ -172,7 +172,7 @@ export default function GlobalNavbar() {
         <Link
           href="/coach"
           className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded-xl text-[10px] font-bold transition-colors ${
-            pathname === '/coach' ? 'text-indigo-400' : 'text-slate-400 hover:text-slate-200'
+            pathname === '/coach' ? 'text-amber-400' : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
           <Bot className="w-4 h-4" />
@@ -182,7 +182,7 @@ export default function GlobalNavbar() {
         <Link
           href="/lane-guides"
           className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded-xl text-[10px] font-bold transition-colors ${
-            pathname === '/lane-guides' ? 'text-indigo-400' : 'text-slate-400 hover:text-slate-200'
+            pathname === '/lane-guides' ? 'text-amber-400' : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
           <BookOpen className="w-4 h-4" />
@@ -192,7 +192,7 @@ export default function GlobalNavbar() {
         <Link
           href="/library"
           className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded-xl text-[10px] font-bold transition-colors ${
-            pathname === '/library' ? 'text-indigo-400' : 'text-slate-400 hover:text-slate-200'
+            pathname === '/library' ? 'text-amber-400' : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
           <Library className="w-4 h-4" />
@@ -202,7 +202,7 @@ export default function GlobalNavbar() {
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded-xl text-[10px] font-bold transition-colors ${
-            isMobileMenuOpen ? 'text-indigo-400' : 'text-slate-400 hover:text-slate-200'
+            isMobileMenuOpen ? 'text-amber-400' : 'text-zinc-400 hover:text-zinc-200'
           }`}
         >
           <Menu className="w-4 h-4" />
