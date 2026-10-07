@@ -320,7 +320,7 @@ function KnowledgeBaseContent() {
       {activeTab === 'input' && (
         <div className="space-y-4">
           <div className="bg-surface border border-border/90 rounded-2xl p-5 sm:p-6 shadow-xs space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-surface-subtle pb-3">
               <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
                 <span className="p-1.5 bg-primary-50 rounded-lg text-primary-600 border border-primary-edge-soft/60">
                   <Plus size={15} />

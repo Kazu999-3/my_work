@@ -67,7 +67,7 @@ export default function GuideUpdatesTab() {
             key={entry.date + entry.title}
             className="bg-surface border border-border rounded-3xl p-6 relative overflow-hidden shadow-xs hover:border-primary-edge transition group"
           >
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-4 pb-3 border-b border-stone-100">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-4 pb-3 border-b border-surface-subtle">
               <div className="space-y-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-mono font-bold text-muted bg-surface-subtle px-2.5 py-0.5 rounded-lg flex items-center gap-1">

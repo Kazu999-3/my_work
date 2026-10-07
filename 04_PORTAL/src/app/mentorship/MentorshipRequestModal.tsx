@@ -262,7 +262,7 @@ export function MentorshipRequestModal({
           </div>
 
           {/* フッターアクション */}
-          <div className="pt-2 flex items-center justify-end gap-2 border-t border-stone-100 shrink-0">
+          <div className="pt-2 flex items-center justify-end gap-2 border-t border-surface-subtle shrink-0">
             <button
               type="button"
               onClick={onClose}

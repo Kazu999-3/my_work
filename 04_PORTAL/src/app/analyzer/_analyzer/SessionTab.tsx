@@ -12,7 +12,7 @@ export default function SessionTab({ report }: {
             <div className="space-y-6">
               {/* 1. 時間帯別パフォーマンス */}
               <div className="rounded-3xl border border-border bg-surface p-6 shadow-xs space-y-4">
-                <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                <div className="flex items-center justify-between border-b border-surface-subtle pb-3">
                   <h3 className="font-black text-sm text-foreground flex items-center gap-2">
                     <Clock size={16} className="text-primary-600" />
                     <span>時間帯別勝率カーブ ＆ 集中力ピーク (実測タイムスタンプ集計)</span>
@@ -61,7 +61,7 @@ export default function SessionTab({ report }: {
               {/* 2. 連戦疲労度 ＆ 即キューティルト判定 */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <div className="lg:col-span-7 rounded-3xl border border-border bg-surface p-6 shadow-xs space-y-4">
-                  <div className="border-b border-stone-100 pb-3">
+                  <div className="border-b border-surface-subtle pb-3">
                     <h3 className="font-black text-sm text-foreground flex items-center gap-2">
                       <Activity size={16} className="text-primary-600" />
                       <span>連続試合数による疲労度・勝率低下分析 (実測セッション)</span>
@@ -180,7 +180,7 @@ export default function SessionTab({ report }: {
                       </div>
                     </div>
                     {report.sessionAnalytics.requeueTiltStats.tiltWinRateDropPercent > 0 && (
-                      <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs font-black">
+                      <div className="pt-2 border-t border-surface-subtle flex items-center justify-between text-xs font-black">
                         <span className="text-primary-900">ティルトによる勝率低下</span>
                         <span className="text-danger-600 bg-danger-100 px-2 py-0.5 rounded font-mono">
                           -{report.sessionAnalytics.requeueTiltStats.tiltWinRateDropPercent}% ドロップ
@@ -188,7 +188,7 @@ export default function SessionTab({ report }: {
                       </div>
                     )}
                     {report.sessionAnalytics.requeueTiltStats.tiltWinRateDropPercent < 0 && (
-                      <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs font-black">
+                      <div className="pt-2 border-t border-surface-subtle flex items-center justify-between text-xs font-black">
                         <span className="text-primary-900">即キュー時の勢い維持</span>
                         <span className="text-success-700 bg-success-100 px-2 py-0.5 rounded font-mono">
                           +{Math.abs(report.sessionAnalytics.requeueTiltStats.tiltWinRateDropPercent)}% 勝率アップ

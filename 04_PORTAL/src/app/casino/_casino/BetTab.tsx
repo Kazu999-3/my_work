@@ -36,7 +36,7 @@ export default function BetTab({ user, betStats, setTipToPlayer, setIsTipModalOp
   return (
     <>
           <div className="bg-surface rounded-3xl p-6 md:p-8 border border-black/10 shadow-sm space-y-6">
-            <div className="flex items-center justify-between border-b border-stone-100 pb-4">
+            <div className="flex items-center justify-between border-b border-surface-subtle pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-primary-50 text-primary-600 border border-primary-edge-soft flex items-center justify-center font-bold">
                   <Flame size={20} />
@@ -393,7 +393,7 @@ export default function BetTab({ user, betStats, setTipToPlayer, setIsTipModalOp
             )}
 
             {/* 勝敗予想の下に常時表示される長者番付 */}
-            <div className="pt-6 border-t border-stone-100 space-y-4">
+            <div className="pt-6 border-t border-surface-subtle space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-xl bg-primary-50 text-primary-600 flex items-center justify-center font-bold">

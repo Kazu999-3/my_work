@@ -138,7 +138,7 @@ export default function CoinsRankingPanel() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-2">
           {/* 🥈 2位 */}
           {top2 && (
-            <div className="order-2 md:order-1 bg-gradient-to-b from-stone-100/90 to-white/90 border-2 border-border rounded-3xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-between">
+            <div className="order-2 md:order-1 bg-gradient-to-b from-surface-subtle/90 to-white/90 border-2 border-border rounded-3xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-between">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-2xl">🥈</span>
                 <span className="text-[10px] font-black tracking-widest uppercase px-2.5 py-0.5 rounded-full bg-surface-hover text-foreground-subtle">

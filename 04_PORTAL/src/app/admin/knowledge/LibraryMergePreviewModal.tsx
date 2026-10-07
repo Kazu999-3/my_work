@@ -567,7 +567,7 @@ export default function LibraryMergePreviewModal({
 
             {trendAnalyses.map((analysis) => (
               <div key={analysis.champion} className="bg-surface border border-border rounded-2xl p-4 shadow-sm space-y-3">
-                <div className="flex items-center justify-between border-b border-stone-100 pb-2">
+                <div className="flex items-center justify-between border-b border-surface-subtle pb-2">
                   <div className="flex items-center justify-between w-full flex-wrap gap-2">
                     <div className="flex items-center gap-2.5">
                       {getChampIcon(analysis.champion) && (

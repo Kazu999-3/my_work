@@ -167,7 +167,7 @@ export default function GuideRulesTab() {
 
       {/* 2. スタイル別エントリー ＆ 途中参加システム */}
       <div className="bg-surface/80 border border-border/90 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
-        <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
+        <div className="flex items-center gap-3 border-b border-surface-subtle pb-4">
           <div className="p-2.5 rounded-xl bg-success-500/10 text-success-700">
             <Clock size={22} />
           </div>
@@ -224,7 +224,7 @@ export default function GuideRulesTab() {
 
       {/* 3. 特殊ルール（アラームカスタム・ハンディキャップ） */}
       <div className="bg-surface/80 border border-border/90 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
-        <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
+        <div className="flex items-center gap-3 border-b border-surface-subtle pb-4">
           <div className="p-2.5 rounded-xl bg-danger-500/10 text-danger-700">
             <Flame size={22} />
           </div>

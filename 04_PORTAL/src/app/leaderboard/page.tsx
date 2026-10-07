@@ -522,7 +522,7 @@ function LeaderboardContent() {
                     key={role}
                     className="bg-surface rounded-2xl border border-border/90 overflow-hidden shadow-xs flex flex-col"
                   >
-                    <div className="bg-gradient-to-r from-stone-50 to-stone-100/60 border-b border-border p-3.5 flex items-center justify-between">
+                    <div className="bg-gradient-to-r from-stone-50 to-surface-subtle/60 border-b border-border p-3.5 flex items-center justify-between">
                       <span className="font-black text-sm text-foreground tracking-wider uppercase flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-primary-500"></span>
                         {role}

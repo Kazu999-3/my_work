@@ -14,7 +14,7 @@ export default function OverviewTab({ report, targetTier }: {
               {/* 試合展開4タイプ分類 */}
               {report.sessionAnalytics?.gameOutcomeBreakdown && (
                 <div className="rounded-3xl border border-border bg-surface p-5 md:p-6 shadow-xs space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-stone-100 pb-3 gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-surface-subtle pb-3 gap-2">
                     <div>
                       <h3 className="font-black text-sm text-foreground flex items-center gap-2">
                         <PieChart size={16} className="text-primary-600" />
@@ -142,7 +142,7 @@ export default function OverviewTab({ report, targetTier }: {
                 <div className="lg:col-span-7 flex flex-col gap-6">
                   {/* 5大レーダー解析スコアカード */}
                   <div className="rounded-3xl border border-border bg-surface p-5 md:p-6 shadow-xs space-y-4">
-                    <div className="flex items-center justify-between border-b border-stone-100 pb-3 flex-wrap gap-2">
+                    <div className="flex items-center justify-between border-b border-surface-subtle pb-3 flex-wrap gap-2">
                       <div className="flex items-center gap-2">
                         <TrendingUp size={16} className="text-primary-600" />
                         <h3 className="font-black text-sm text-foreground">
@@ -466,7 +466,7 @@ export default function OverviewTab({ report, targetTier }: {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {report.sessionAnalytics?.fatalDeathAnalytics && (
                       <div className="rounded-3xl border border-border bg-surface p-5 shadow-xs space-y-2.5">
-                        <div className="text-xs font-black text-foreground flex items-center gap-1.5 border-b border-stone-100 pb-2">
+                        <div className="text-xs font-black text-foreground flex items-center gap-1.5 border-b border-surface-subtle pb-2">
                           <Skull size={14} className="text-danger-600" />
                           <span>デスの傾向</span>
                         </div>
@@ -484,7 +484,7 @@ export default function OverviewTab({ report, targetTier }: {
                               {report.sessionAnalytics.fatalDeathAnalytics.highDeathGamesPercent}%
                             </span>
                           </div>
-                          <div className="flex justify-between font-bold pt-1 border-t border-stone-100">
+                          <div className="flex justify-between font-bold pt-1 border-t border-surface-subtle">
                             <span>スロー危険度:</span>
                             <span className="font-black text-success-700">
                               {report.sessionAnalytics.fatalDeathAnalytics.fatalThrowRating}
@@ -496,7 +496,7 @@ export default function OverviewTab({ report, targetTier }: {
 
                     {report.sessionAnalytics?.earlyTimelineImpact && (
                       <div className="rounded-3xl border border-border bg-surface p-5 shadow-xs space-y-2.5">
-                        <div className="text-xs font-black text-foreground flex items-center gap-1.5 border-b border-stone-100 pb-2">
+                        <div className="text-xs font-black text-foreground flex items-center gap-1.5 border-b border-surface-subtle pb-2">
                           <Timer size={14} className="text-primary-600" />
                           <span>序盤・オブジェクトの実測</span>
                         </div>
@@ -522,7 +522,7 @@ export default function OverviewTab({ report, targetTier }: {
                                 : '未計測 (データ不足)'}
                             </span>
                           </div>
-                          <div className="text-[11px] text-muted-strong pt-1 border-t border-stone-100 font-medium space-y-1">
+                          <div className="text-[11px] text-muted-strong pt-1 border-t border-surface-subtle font-medium space-y-1">
                             <div className="text-[10px] text-faint">
                               ※試合優位チームがオブジェクトを確保しやすい相関を含みます
                             </div>
@@ -539,7 +539,7 @@ export default function OverviewTab({ report, targetTier }: {
 
                   {/* 視界客観データ */}
                   <div className="rounded-3xl border border-border bg-surface p-5 md:p-6 shadow-xs space-y-4">
-                    <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                    <div className="flex items-center justify-between border-b border-surface-subtle pb-3">
                       <h3 className="font-black text-sm text-foreground flex items-center gap-2">
                         <Eye size={16} className="text-primary-600" />
                         <span>視界・コントロール客観解析 (League of Graphs / Riot API連動)</span>

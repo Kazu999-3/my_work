@@ -177,7 +177,7 @@ export default function InventoryAuditPanel() {
   return (
     <div className="bg-surface border border-border rounded-3xl p-6 space-y-6 shadow-sm">
       {/* タイトル ＆ アクション */}
-      <div className="flex items-center justify-between border-b border-stone-100 pb-4 flex-wrap gap-3">
+      <div className="flex items-center justify-between border-b border-surface-subtle pb-4 flex-wrap gap-3">
         <div>
           <h2 className="text-lg font-black text-foreground flex items-center gap-2">
             🧹 ナレッジ ＆ チャンピオン辞典 全自動棚卸しハブ

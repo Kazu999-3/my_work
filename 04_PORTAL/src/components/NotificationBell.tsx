@@ -398,7 +398,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
                           )}
                         </div>
 
-                        <div className="mt-2 flex items-center justify-between gap-2 pt-1 border-t border-stone-100">
+                        <div className="mt-2 flex items-center justify-between gap-2 pt-1 border-t border-surface-subtle">
                           {action ? (
                             <a
                               href={action.url}

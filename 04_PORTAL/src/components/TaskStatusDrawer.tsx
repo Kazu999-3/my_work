@@ -313,7 +313,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
               </span>
             </div>
             {runningTasks.length === 0 ? (
-              <p className="text-[11px] text-faint py-2 italic text-center bg-background rounded-xl border border-stone-100">現在実行中のタスクはありません</p>
+              <p className="text-[11px] text-faint py-2 italic text-center bg-background rounded-xl border border-surface-subtle">現在実行中のタスクはありません</p>
             ) : (
               <div className="space-y-1.5">
                 {runningTasks.map((t) => (
@@ -342,7 +342,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
               <span>待機中キュー ({pendingTasks.length}件)</span>
             </div>
             {pendingTasks.length === 0 ? (
-              <p className="text-[11px] text-faint py-2 italic text-center bg-background rounded-xl border border-stone-100">順番待ちタスクはありません</p>
+              <p className="text-[11px] text-faint py-2 italic text-center bg-background rounded-xl border border-surface-subtle">順番待ちタスクはありません</p>
             ) : (
               <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
                 {pendingTasks.map((t, idx) => (

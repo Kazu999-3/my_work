@@ -78,7 +78,7 @@ export default function AnalyzerSearchPanel({ targetTier, setTargetTier, summone
         </form>
 
         {/* 入力補助（最近検索したサモナー履歴 ＆ サンプル候補） */}
-        <div className="space-y-2 pt-2 border-t border-stone-100">
+        <div className="space-y-2 pt-2 border-t border-surface-subtle">
           {recentSearches.length > 0 && (
             <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
               <span className="text-muted-strong font-bold flex items-center gap-1">

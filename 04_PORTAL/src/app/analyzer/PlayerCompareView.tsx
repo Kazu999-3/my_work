@@ -156,8 +156,8 @@ export function PlayerCompareView({ recentSearches, onSaveRecent }: PlayerCompar
           {/* Player 1 入力 */}
           <div className="flex-1 w-full space-y-1.5">
             <div className="flex items-center justify-between text-xs font-black">
-              <span className="text-blue-500 flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block animate-pulse"></span>
+              <span className="text-secondary-500 flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-secondary-500 inline-block animate-pulse"></span>
                 プレイヤー 1（生徒 / 自分）
               </span>
               {p1Input && (
@@ -175,7 +175,7 @@ export function PlayerCompareView({ recentSearches, onSaveRecent }: PlayerCompar
               value={p1Input}
               onChange={(e) => setP1Input(e.target.value)}
               placeholder="例: Kazurin#4036 または 生徒名#JP1"
-              className="w-full px-4 py-2.5 bg-background border border-blue-500/30 rounded-2xl text-xs font-bold text-foreground placeholder:text-stone-400 focus:outline-none focus:border-blue-500 transition"
+              className="w-full px-4 py-2.5 bg-background border border-secondary-500/30 rounded-2xl text-xs font-bold text-foreground placeholder:text-stone-400 focus:outline-none focus:border-secondary-500 transition"
             />
           </div>
 
@@ -253,7 +253,7 @@ export function PlayerCompareView({ recentSearches, onSaveRecent }: PlayerCompar
                 <button
                   type="button"
                   onClick={() => setP1Input(item)}
-                  className="text-[9px] text-blue-600 dark:text-blue-400 hover:underline font-black ml-1"
+                  className="text-[9px] text-secondary-600 dark:text-secondary-400 hover:underline font-black ml-1"
                   title="Player 1にセット"
                 >
                   P1
@@ -300,12 +300,12 @@ export function PlayerCompareView({ recentSearches, onSaveRecent }: PlayerCompar
           {/* VS プロファイルカード */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Player 1 カード */}
-            <div className="p-5 rounded-3xl bg-surface border-2 border-blue-500/30 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 right-0 px-3 py-1 bg-blue-500 text-white text-[10px] font-black rounded-bl-xl">
+            <div className="p-5 rounded-3xl bg-surface border-2 border-secondary-500/30 shadow-sm relative overflow-hidden">
+              <div className="absolute top-0 right-0 px-3 py-1 bg-secondary-500 text-white text-[10px] font-black rounded-bl-xl">
                 PLAYER 1
               </div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-500/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-black text-lg">
+                <div className="w-12 h-12 rounded-2xl bg-secondary-50 dark:bg-secondary-950/40 border border-secondary-500/30 flex items-center justify-center text-secondary-600 dark:text-secondary-400 font-black text-lg">
                   {result.player1.riotId.slice(0, 1).toUpperCase()}
                 </div>
                 <div>
@@ -315,7 +315,7 @@ export function PlayerCompareView({ recentSearches, onSaveRecent }: PlayerCompar
                       {result.player1.tier} ({result.player1.lp} LP)
                     </span>
                     <span>•</span>
-                    <span className="text-blue-600 dark:text-blue-400 font-bold">{result.player1.mainRole}</span>
+                    <span className="text-secondary-600 dark:text-secondary-400 font-bold">{result.player1.mainRole}</span>
                   </div>
                 </div>
               </div>
@@ -332,7 +332,7 @@ export function PlayerCompareView({ recentSearches, onSaveRecent }: PlayerCompar
                 </div>
                 <div className="p-2 rounded-xl bg-stone-50 dark:bg-stone-900">
                   <div className="text-[10px] text-stone-400 font-bold">KDA</div>
-                  <div className="text-sm font-black text-blue-600 dark:text-blue-400">
+                  <div className="text-sm font-black text-secondary-600 dark:text-secondary-400">
                     {result.player1.kda}
                     <span className="text-[10px] text-stone-400 block font-normal">
                       {result.player1.avgKills}/{result.player1.avgDeaths}/{result.player1.avgAssists}
@@ -467,7 +467,7 @@ export function PlayerCompareView({ recentSearches, onSaveRecent }: PlayerCompar
                 <span>重要メトリクス直接対決 (Head-to-Head)</span>
               </h3>
               <div className="flex items-center gap-4 text-[11px] font-black">
-                <span className="text-blue-500">● {result.player1.riotId}</span>
+                <span className="text-secondary-500">● {result.player1.riotId}</span>
                 <span className="text-rose-500">● {result.player2.riotId}</span>
               </div>
             </div>
@@ -618,8 +618,8 @@ export function PlayerCompareView({ recentSearches, onSaveRecent }: PlayerCompar
 
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         {/* P1 */}
-                        <div className="p-2.5 rounded-xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-500/20 space-y-1">
-                          <div className="text-[10px] font-black text-blue-600 dark:text-blue-400 truncate">
+                        <div className="p-2.5 rounded-xl bg-secondary-50/60 dark:bg-secondary-950/30 border border-secondary-500/20 space-y-1">
+                          <div className="text-[10px] font-black text-secondary-600 dark:text-secondary-400 truncate">
                             {result.player1.riotId}
                           </div>
                           <div className="font-black text-foreground">
@@ -653,7 +653,7 @@ export function PlayerCompareView({ recentSearches, onSaveRecent }: PlayerCompar
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* P1 トップピック */}
               <div className="p-5 rounded-3xl bg-surface border border-border shadow-sm space-y-3">
-                <h4 className="text-xs font-black text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
+                <h4 className="text-xs font-black text-secondary-600 dark:text-secondary-400 flex items-center gap-1.5">
                   <span>●</span>
                   <span>{result.player1.riotId} の主力ピック</span>
                 </h4>
@@ -667,7 +667,7 @@ export function PlayerCompareView({ recentSearches, onSaveRecent }: PlayerCompar
                       <div className="flex items-center gap-3 font-bold text-[11px]">
                         <span className="text-stone-500">{c.games}戦</span>
                         <span className="text-foreground">{c.winRate}%</span>
-                        <span className="text-blue-600 dark:text-blue-400 font-black">KDA {c.kda}</span>
+                        <span className="text-secondary-600 dark:text-secondary-400 font-black">KDA {c.kda}</span>
                       </div>
                     </div>
                   ))}
@@ -731,7 +731,7 @@ function MetricComparisonBar({
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-xs font-black">
-        <span className={`flex items-center gap-1 ${p1Wins ? 'text-blue-600 dark:text-blue-400 font-black' : 'text-stone-500'}`}>
+        <span className={`flex items-center gap-1 ${p1Wins ? 'text-secondary-600 dark:text-secondary-400 font-black' : 'text-stone-500'}`}>
           {p1Wins && <span>👑</span>}
           <span>{v1Label}</span>
         </span>
@@ -747,7 +747,7 @@ function MetricComparisonBar({
         <div
           style={{ width: `${p1Ratio}%` }}
           className={`h-full transition-all duration-500 ${
-            p1Wins ? 'bg-blue-500' : 'bg-blue-300 dark:bg-blue-800'
+            p1Wins ? 'bg-secondary-500' : 'bg-secondary-300 dark:bg-secondary-800'
           }`}
         />
         <div
@@ -768,7 +768,7 @@ function ScoreCard({ label, s1, s2 }: { label: string; s1: number; s2: number })
     <div className="p-3 rounded-2xl bg-stone-50 dark:bg-stone-900 border border-border text-center space-y-1.5">
       <div className="text-[11px] font-black text-stone-500 truncate">{label}</div>
       <div className="flex items-center justify-center gap-2 text-xs font-black">
-        <span className={s1 >= s2 ? 'text-blue-600 dark:text-blue-400' : 'text-stone-400'}>
+        <span className={s1 >= s2 ? 'text-secondary-600 dark:text-secondary-400' : 'text-stone-400'}>
           {s1}
         </span>
         <span className="text-stone-300 text-[10px]">vs</span>
@@ -778,7 +778,7 @@ function ScoreCard({ label, s1, s2 }: { label: string; s1: number; s2: number })
       </div>
       <div className="text-[10px] font-bold">
         {diff > 0 ? (
-          <span className="text-blue-600 dark:text-blue-400">P1が+{diff}優位</span>
+          <span className="text-secondary-600 dark:text-secondary-400">P1が+{diff}優位</span>
         ) : diff < 0 ? (
           <span className="text-rose-600 dark:text-rose-400">P2が+{Math.abs(diff)}優位</span>
         ) : (

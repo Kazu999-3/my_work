@@ -157,7 +157,7 @@ export default function GuideBotTab() {
           </button>
 
           {openSection === 'recruit' && (
-            <div className="p-6 pt-0 border-t border-stone-100 space-y-5">
+            <div className="p-6 pt-0 border-t border-surface-subtle space-y-5">
               <div className="bg-background rounded-2xl p-4 border border-border text-xs text-foreground-subtle space-y-2">
                 <div className="font-bold text-foreground flex items-center gap-1.5">
                   <Sparkles size={14} className="text-primary-600" />
@@ -255,7 +255,7 @@ export default function GuideBotTab() {
           </button>
 
           {openSection === 'periodic' && (
-            <div className="p-6 pt-0 border-t border-stone-100 space-y-5">
+            <div className="p-6 pt-0 border-t border-surface-subtle space-y-5">
               <div className="bg-background rounded-2xl p-4 border border-border text-xs text-foreground-subtle space-y-2">
                 <div className="font-bold text-foreground flex items-center gap-1.5">
                   <Sparkles size={14} className="text-primary-600" />
@@ -326,7 +326,7 @@ export default function GuideBotTab() {
           </button>
 
           {openSection === 'lane' && (
-            <div className="p-6 pt-0 border-t border-stone-100 space-y-5">
+            <div className="p-6 pt-0 border-t border-surface-subtle space-y-5">
               <p className="text-xs text-muted leading-relaxed">
                 チーム分けAIはあなたの設定した希望レーンとNGレーンを参照し、全員が納得できる配置を自動計算します。ポータルの <strong className="text-foreground font-bold">マイページ</strong> からも同一設定が可能です。
               </p>
@@ -378,7 +378,7 @@ export default function GuideBotTab() {
           </button>
 
           {openSection === 'balance' && (
-            <div className="p-6 pt-0 border-t border-stone-100 space-y-4">
+            <div className="p-6 pt-0 border-t border-surface-subtle space-y-4">
               <p className="text-xs text-muted leading-relaxed">
                 定員に達した募集パネルから「🏆 チーム分け実行」を押すか、ボイスチャンネルに入った状態で <code className="bg-surface-subtle px-1 py-0.5 rounded font-mono font-bold text-success-900">/balance</code> を実行すると、AIが以下の3案を同時に提案します。
               </p>
@@ -431,7 +431,7 @@ export default function GuideBotTab() {
           </button>
 
           {openSection === 'mentorship' && (
-            <div className="p-6 pt-0 border-t border-stone-100 space-y-4">
+            <div className="p-6 pt-0 border-t border-surface-subtle space-y-4">
               <p className="text-xs text-muted leading-relaxed">
                 Discordの <code>#🤝師弟募集</code> チャンネルに常設されているピン留めメッセージから、Webポータルを開かずにワンタップでエントリーできます。
               </p>

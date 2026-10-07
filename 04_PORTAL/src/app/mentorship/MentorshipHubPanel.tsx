@@ -821,7 +821,7 @@ export default function MentorshipHubPanel() {
 
         {/* 🎯 レーン別クイックフィルターピル ＆ 単発お試しフィルター */}
         {activeTab !== 'MATCHES' && (
-          <div className="flex items-center justify-between gap-2 overflow-x-auto pt-1 border-t border-stone-100 scrollbar-none flex-wrap">
+          <div className="flex items-center justify-between gap-2 overflow-x-auto pt-1 border-t border-surface-subtle scrollbar-none flex-wrap">
             <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
               <span className="text-[11px] font-bold text-faint shrink-0 mr-1">レーン:</span>
               {LANE_FILTERS.map((f) => (
@@ -918,7 +918,7 @@ export default function MentorshipHubPanel() {
                     )}
                   </div>
 
-                  <div className="flex items-center justify-end gap-2 pt-1 border-t border-stone-100">
+                  <div className="flex items-center justify-end gap-2 pt-1 border-t border-surface-subtle">
                     <button
                       type="button"
                       disabled={Boolean(acceptingMatchId)}

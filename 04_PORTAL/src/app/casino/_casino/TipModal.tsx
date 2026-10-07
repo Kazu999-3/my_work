@@ -22,7 +22,7 @@ export default function TipModal({ user, setTipToPlayer, setIsTipModalOpen, acti
     <>
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
           <div className="bg-surface rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl border border-border space-y-5">
-            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+            <div className="flex items-center justify-between border-b border-surface-subtle pb-3">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-2xl bg-primary-50 text-primary-600 border border-primary-edge-soft flex items-center justify-center font-bold">
                   <Gift size={18} />

@@ -41,7 +41,7 @@ export default function ChampionsTab({ report, selectedChampion, setSelectedCham
 
               {/* チャンピオン詳細カード */}
               <div className="rounded-3xl border border-border bg-surface p-6 md:p-8 shadow-xs space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-stone-100 gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-surface-subtle gap-3">
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="text-xl font-black text-foreground">{selectedChampion.name}</h3>
@@ -262,7 +262,7 @@ export default function ChampionsTab({ report, selectedChampion, setSelectedCham
                         <div key={idx} className="p-3.5 bg-surface rounded-2xl border border-primary-edge-soft/80 space-y-1 shadow-2xs">
                           <div className="text-xs font-black text-foreground">{rec.championName}</div>
                           <div className="text-[10px] font-bold text-primary-700">{rec.archetype}</div>
-                          <p className="text-[11px] text-muted font-medium leading-relaxed pt-1 border-t border-stone-100">
+                          <p className="text-[11px] text-muted font-medium leading-relaxed pt-1 border-t border-surface-subtle">
                             {rec.synergyReason}
                           </p>
                         </div>

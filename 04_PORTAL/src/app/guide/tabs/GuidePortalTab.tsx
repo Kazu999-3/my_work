@@ -67,7 +67,7 @@ export default function GuidePortalTab() {
               <p>・他プレイヤーへの感謝コイン送金（チップ機能）</p>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-stone-100">
+          <div className="mt-4 pt-3 border-t border-surface-subtle">
             <Link
               href="/mypage"
               className="text-xs font-black text-primary-700 hover:text-primary-900 flex items-center gap-1 group-hover:translate-x-1 transition"
@@ -102,7 +102,7 @@ export default function GuidePortalTab() {
               <p>・確定した対戦カードはポータルトップの<strong>スタジアムビュー</strong>にリアルタイム掲示</p>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-stone-100">
+          <div className="mt-4 pt-3 border-t border-surface-subtle">
             <Link
               href="/balancer"
               className="text-xs font-black text-secondary-700 hover:text-secondary-900 flex items-center gap-1 group-hover:translate-x-1 transition"
@@ -137,7 +137,7 @@ export default function GuidePortalTab() {
               <p>・<strong className="text-foreground-soft">全員ブレイバリー権</strong>（全員ランダムビルド発動）</p>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-stone-100">
+          <div className="mt-4 pt-3 border-t border-surface-subtle">
             <Link
               href="/casino"
               className="text-xs font-black text-primary-700 hover:text-primary-900 flex items-center gap-1 group-hover:translate-x-1 transition"
@@ -172,7 +172,7 @@ export default function GuidePortalTab() {
               <p>・個人の「宿敵＆カモ」プレイヤー分析</p>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-stone-100">
+          <div className="mt-4 pt-3 border-t border-surface-subtle">
             <Link
               href="/synergy"
               className="text-xs font-black text-primary-700 hover:text-primary-900 flex items-center gap-1 group-hover:translate-x-1 transition"
@@ -232,7 +232,7 @@ export default function GuidePortalTab() {
               </div>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-stone-100">
+          <div className="mt-4 pt-3 border-t border-surface-subtle">
             <Link
               href="/leaderboard"
               className="text-xs font-black text-success-700 hover:text-success-900 flex items-center gap-1 group-hover:translate-x-1 transition"
@@ -286,7 +286,7 @@ export default function GuidePortalTab() {
               </div>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between">
+          <div className="mt-4 pt-3 border-t border-surface-subtle flex items-center justify-between">
             <span className="text-[11px] text-muted-strong font-medium">
               ポータルのトップページですぐに最新号外を読めます！
             </span>
@@ -373,7 +373,7 @@ export default function GuidePortalTab() {
               </p>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between">
+          <div className="mt-4 pt-3 border-t border-surface-subtle flex items-center justify-between">
             <span className="text-[11px] text-muted-strong font-medium">
               カードを登録して相性の良いバディを探してみましょう！
             </span>

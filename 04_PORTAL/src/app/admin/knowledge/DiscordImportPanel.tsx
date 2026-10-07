@@ -112,7 +112,7 @@ export default function DiscordImportPanel() {
 
   return (
     <div className="bg-surface border border-border rounded-3xl p-6 space-y-6 shadow-sm">
-      <div className="flex items-center justify-between border-b border-stone-100 pb-4 flex-wrap gap-2">
+      <div className="flex items-center justify-between border-b border-surface-subtle pb-4 flex-wrap gap-2">
         <div className="flex items-center gap-2.5">
           <div className="p-2 rounded-2xl bg-primary-50 border border-primary-edge-soft text-primary-700">
             <MessageSquare size={20} />
@@ -238,7 +238,7 @@ export default function DiscordImportPanel() {
                 </div>
 
                 {editingIdx === idx ? (
-                  <div className="space-y-2 mt-3 pt-3 border-t border-stone-100">
+                  <div className="space-y-2 mt-3 pt-3 border-t border-surface-subtle">
                     <input
                       type="text"
                       value={item.title}
@@ -260,7 +260,7 @@ export default function DiscordImportPanel() {
                     </button>
                   </div>
                 ) : (
-                  <div className="text-xs text-foreground-subtle bg-background/80 p-3 rounded-xl border border-stone-100 leading-relaxed whitespace-pre-wrap mt-2">
+                  <div className="text-xs text-foreground-subtle bg-background/80 p-3 rounded-xl border border-surface-subtle leading-relaxed whitespace-pre-wrap mt-2">
                     {item.summary}
                   </div>
                 )}

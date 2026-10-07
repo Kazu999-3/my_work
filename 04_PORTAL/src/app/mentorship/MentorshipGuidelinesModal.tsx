@@ -93,7 +93,7 @@ export function MentorshipGuidelinesModal({
         </div>
 
         {/* フッター */}
-        <div className="p-4 bg-background border-t border-stone-100 flex items-center justify-end gap-2 shrink-0">
+        <div className="p-4 bg-background border-t border-surface-subtle flex items-center justify-end gap-2 shrink-0">
           <button
             type="button"
             onClick={onClose}

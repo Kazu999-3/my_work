@@ -298,7 +298,7 @@ export default function PlayerReputationCard({
               </div>
 
               {/* アクション */}
-              <div className="pt-2 flex items-center justify-end gap-2 border-t border-stone-100">
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-surface-subtle">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}

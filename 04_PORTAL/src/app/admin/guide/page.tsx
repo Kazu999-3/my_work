@@ -63,7 +63,7 @@ export default function AdminGuidePage() {
         </div>
 
         {/* タブ切り替えバー */}
-        <div className="flex items-center gap-2 pt-6 mt-6 border-t border-stone-100 overflow-x-auto">
+        <div className="flex items-center gap-2 pt-6 mt-6 border-t border-surface-subtle overflow-x-auto">
           {[
             { id: 'all', label: '🌟 全体循環ループ' },
             { id: 'pipeline', label: '📥 3大データ収集パイプライン' },
@@ -89,7 +89,7 @@ export default function AdminGuidePage() {
       {/* 🔄 1. 全体循環モデル (The Sovereign Victory Loop) */}
       {(activeTab === 'all' || activeTab === 'pipeline') && (
         <section className="bg-surface border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
-          <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
+          <div className="flex items-center gap-3 border-b border-surface-subtle pb-4">
             <span className="p-2 bg-primary-50 text-primary-600 rounded-xl font-bold border border-primary-edge-soft/60">
               🔄
             </span>
@@ -170,7 +170,7 @@ export default function AdminGuidePage() {
       {/* 📥 2. 3大データ収集パイプラインの詳細 */}
       {(activeTab === 'all' || activeTab === 'pipeline') && (
         <section className="bg-surface border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
-          <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
+          <div className="flex items-center gap-3 border-b border-surface-subtle pb-4">
             <span className="p-2 bg-danger-50 text-danger-600 rounded-xl font-bold border border-danger-edge-soft/60">
               📥
             </span>
@@ -266,7 +266,7 @@ export default function AdminGuidePage() {
       {/* 👑 3. チャンピオン辞典 ＆ 攻略ライブラリ */}
       {(activeTab === 'all' || activeTab === 'dict') && (
         <section className="bg-surface border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
-          <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
+          <div className="flex items-center gap-3 border-b border-surface-subtle pb-4">
             <span className="p-2 bg-primary-50 text-primary-600 rounded-xl font-bold border border-primary-edge-soft/60">
               👑
             </span>
@@ -352,7 +352,7 @@ export default function AdminGuidePage() {
       {/* 🎮 4. AIコーチ ＆ リアルタイムHUDオーバーレイ連携 */}
       {(activeTab === 'all' || activeTab === 'coach') && (
         <section className="bg-surface border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
-          <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
+          <div className="flex items-center gap-3 border-b border-surface-subtle pb-4">
             <span className="p-2 bg-primary-50 text-primary-600 rounded-xl font-bold border border-primary-edge-soft/60">
               🎮
             </span>
@@ -406,7 +406,7 @@ export default function AdminGuidePage() {
       {/* ⚡ 5. 日常運用 ＆ エラーリカバリ */}
       {(activeTab === 'all' || activeTab === 'ops') && (
         <section className="bg-surface border border-border/90 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
-          <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
+          <div className="flex items-center gap-3 border-b border-surface-subtle pb-4">
             <span className="p-2 bg-success-50 text-success-600 rounded-xl font-bold border border-success-edge-soft/60">
               ⚡
             </span>

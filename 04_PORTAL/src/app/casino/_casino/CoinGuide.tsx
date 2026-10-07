@@ -7,7 +7,7 @@ export default function CoinGuide() {
   return (
     <>
         <div className="bg-surface/95 text-foreground-soft rounded-3xl p-6 md:p-8 border border-border shadow-sm space-y-6">
-          <div className="flex items-center gap-3 border-b border-stone-100 pb-4">
+          <div className="flex items-center gap-3 border-b border-surface-subtle pb-4">
             <div className="w-10 h-10 rounded-2xl bg-primary-100 text-primary-700 border border-primary-edge flex items-center justify-center text-xl font-bold">
               🪙
             </div>

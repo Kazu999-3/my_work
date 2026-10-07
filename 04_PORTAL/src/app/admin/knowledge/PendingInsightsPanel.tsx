@@ -444,7 +444,7 @@ export default function PendingInsightsPanel() {
 
               <p className="text-xs text-foreground-subtle leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto">{item.content}</p>
 
-              <div className="flex items-end justify-between gap-4 pt-3 border-t border-stone-100 flex-wrap">
+              <div className="flex items-end justify-between gap-4 pt-3 border-t border-surface-subtle flex-wrap">
                 <div className="flex flex-col gap-1 min-w-[220px]">
                   <label className="text-[10px] font-bold text-faint uppercase tracking-widest">
                     チャンピオン(空欄＝レーン一般論として保存)

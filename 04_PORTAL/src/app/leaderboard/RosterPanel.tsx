@@ -174,7 +174,7 @@ export default function RosterPanel() {
                 </div>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between text-[11px] text-muted-strong font-medium">
+              <div className="mt-4 pt-3 border-t border-surface-subtle flex items-center justify-between text-[11px] text-muted-strong font-medium">
                 <span>カルテを見る</span>
                 <span className="text-primary-600 font-black group-hover:translate-x-1 transition">→</span>
               </div>

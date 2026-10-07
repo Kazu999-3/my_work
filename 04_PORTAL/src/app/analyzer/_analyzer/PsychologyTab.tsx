@@ -147,7 +147,7 @@ export default function PsychologyTab({ report }: {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {report.sessionAnalytics.adversityBehavior && (
                   <div className="rounded-3xl border border-border bg-surface p-6 shadow-xs space-y-3">
-                    <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                    <div className="flex items-center justify-between border-b border-surface-subtle pb-3">
                       <h4 className="font-black text-xs text-foreground flex items-center gap-1.5">
                         <ShieldAlert size={15} className="text-primary-600" />
                         <span>逆境・ビハインド時の人間性</span>

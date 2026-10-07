@@ -12,7 +12,7 @@ export default function ShopTab({ shopMessage, handleBuyItem }: {
   return (
     <>
           <div className="bg-surface rounded-3xl p-6 md:p-8 border border-black/10 shadow-sm space-y-6">
-            <div className="flex items-center justify-between border-b border-stone-100 pb-4">
+            <div className="flex items-center justify-between border-b border-surface-subtle pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center font-bold">
                   <ShoppingBag size={20} />

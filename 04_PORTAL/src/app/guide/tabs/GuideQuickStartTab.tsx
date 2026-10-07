@@ -71,7 +71,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
               <p>・初期 <strong className="text-primary-700 font-bold">1,000コイン</strong> の自動受取</p>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-stone-100">
+          <div className="mt-4 pt-3 border-t border-surface-subtle">
             <Link
               href="/mypage"
               className="text-xs font-black text-primary-700 hover:text-primary-900 flex items-center gap-1 group-hover:translate-x-1 transition"
@@ -106,7 +106,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
               <p>・<strong className="text-foreground-soft">NGレーン</strong>（絶対に避けたい位置）</p>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-stone-100">
+          <div className="mt-4 pt-3 border-t border-surface-subtle">
             <button
               type="button"
               onClick={() => onSelectTab && onSelectTab('bot')}
@@ -142,7 +142,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
               <p>3. 試合終了後に勝敗が自動反映！</p>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-stone-100">
+          <div className="mt-4 pt-3 border-t border-surface-subtle">
             <button
               type="button"
               onClick={() => onSelectTab && onSelectTab('bot')}
