@@ -289,7 +289,7 @@ export default function CasinoPage() {
   };
 
   return (
-    <div className="min-h-screen pb-16 bg-[#eae4d4] dark:bg-[#1e1f22] text-[#201c2b] dark:text-[#f2f3f5]">
+    <div className="min-h-screen pb-16 bg-[#eae4d4] dark:bg-background text-[#201c2b] dark:text-foreground">
       <CasinoHero betStats={betStats} />
 
       <div className="max-w-[1200px] w-full mx-auto px-4 md:px-8 py-8 space-y-6">

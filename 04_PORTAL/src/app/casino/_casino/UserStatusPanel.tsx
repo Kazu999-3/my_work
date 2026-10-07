@@ -112,7 +112,7 @@ export default function UserStatusPanel({ user, lastRescueMonth, userStreak, use
                       ? 'bg-danger-500/20 text-danger-600 dark:text-danger-400 border border-danger-edge-strong/40'
                       : userStreak >= 1
                         ? 'bg-primary-500/20 text-primary-700 dark:text-primary-300 border border-primary-edge-strong/40'
-                        : 'bg-surface-hover/60 dark:bg-[#1e1f22] text-muted-strong'
+                        : 'bg-surface-hover/60 dark:bg-background text-muted-strong'
                 }`}>
                   <Flame size={14} className={userStreak > 0 ? 'text-primary-400 animate-bounce' : ''} />
                   <span>{userStreak > 0 ? `🔥 予想 ${userStreak} 連勝中！` : '連勝ストリーク: 0戦'}</span>

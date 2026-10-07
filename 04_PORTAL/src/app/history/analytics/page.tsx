@@ -13,7 +13,7 @@ export default function MatchAnalyticsRedirectPage() {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-[#eae4d4] dark:bg-[#1e1f22] text-[#201c2b] dark:text-[#f2f3f5] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#eae4d4] dark:bg-background text-[#201c2b] dark:text-foreground flex items-center justify-center p-4">
       <div className="text-center max-w-md bg-surface/95 border border-border/80 rounded-3xl p-8 shadow-xl space-y-4">
         <div className="w-12 h-12 rounded-2xl bg-primary-500/10 border border-primary-edge-strong/30 flex items-center justify-center text-2xl mx-auto">
           👑

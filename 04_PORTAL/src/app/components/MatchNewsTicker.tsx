@@ -99,8 +99,8 @@ export default function MatchNewsTicker() {
               key={item.id}
               className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
                 isExpanded
-                  ? 'bg-surface/95 dark:bg-[#2b2d31]/95 border-primary-edge dark:border-primary-edge-strong/40 shadow-md'
-                  : 'bg-surface/60 dark:bg-[#2b2d31]/60 border-border/80 dark:border-[#3f4147] hover:border-primary-edge'
+                  ? 'bg-surface/95 dark:bg-surface/95 border-primary-edge dark:border-primary-edge-strong/40 shadow-md'
+                  : 'bg-surface/60 dark:bg-surface/60 border-border/80 dark:border-border hover:border-primary-edge'
               }`}
             >
               {/* ヘッドラインバー（クリックで展開・折りたたみ） */}
@@ -146,7 +146,7 @@ export default function MatchNewsTicker() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {/* MVP寸評 */}
                     {art.mvp && (
-                      <div className="p-3 rounded-xl bg-background dark:bg-[#1e1f22] border border-border dark:border-stone-700 space-y-1">
+                      <div className="p-3 rounded-xl bg-background border border-border dark:border-stone-700 space-y-1">
                         <div className="flex items-center gap-1.5 font-black text-primary-700 dark:text-primary-400">
                           <Trophy className="w-3.5 h-3.5" />
                           <span>本日のMVP: {art.mvp.name} 選手 ({art.mvp.role})</span>
@@ -161,7 +161,7 @@ export default function MatchNewsTicker() {
                     )}
 
                     {/* ターニングポイント */}
-                    <div className="p-3 rounded-xl bg-background dark:bg-[#1e1f22] border border-border dark:border-stone-700 space-y-1">
+                    <div className="p-3 rounded-xl bg-background border border-border dark:border-stone-700 space-y-1">
                       <div className="flex items-center gap-1.5 font-black text-danger-700 dark:text-danger-400">
                         <Flame className="w-3.5 h-3.5" />
                         <span>勝負の分水嶺</span>

@@ -319,11 +319,11 @@ export default function Sidebar() {
     <>
       {/* 💻 デスクトップ用 サイドバー */}
       <aside
-        className={`hidden md:flex flex-col h-screen sticky top-0 bg-[#f7f5f0] dark:bg-[#1e1f22] border-r border-border/80 dark:border-[#3f4147] transition-all duration-300 z-30 ${
+        className={`hidden md:flex flex-col h-screen sticky top-0 bg-[#f7f5f0] dark:bg-background border-r border-border/80 dark:border-border transition-all duration-300 z-30 ${
           isCollapsed ? 'w-20' : 'w-64'
         }`}
       >
-        <div className="flex items-center justify-between p-4 border-b border-border/80 dark:border-[#3f4147]">
+        <div className="flex items-center justify-between p-4 border-b border-border/80 dark:border-border">
           {!isCollapsed && (
             <Link href="/" className="flex items-center gap-2">
               <span className="font-extrabold text-lg text-foreground dark:text-white tracking-tight">KTM PORTAL</span>
@@ -333,7 +333,7 @@ export default function Sidebar() {
             {!isCollapsed && <ThemeToggle variant="compact" />}
             <button
               onClick={toggleSidebar}
-              className="p-2 rounded-xl hover:bg-surface-hover/60 dark:hover:bg-[#35373c] text-muted transition cursor-pointer"
+              className="p-2 rounded-xl hover:bg-surface-hover/60 dark:hover:bg-surface-hover text-muted transition cursor-pointer"
             >
               {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
             </button>
@@ -342,12 +342,12 @@ export default function Sidebar() {
 
         {/* 🛡️ 管理者の場合のみ表示されるタブ切り替え */}
         {isAdminUser && !isCollapsed && (
-          <div className="p-3 border-b border-border/80 dark:border-[#3f4147]">
-            <div className="flex bg-surface-hover/60 dark:bg-[#2b2d31] p-1 rounded-xl">
+          <div className="p-3 border-b border-border/80 dark:border-border">
+            <div className="flex bg-surface-hover/60 dark:bg-surface p-1 rounded-xl">
               <button
                 onClick={() => handleTabChange('general')}
                 className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
-                  activeTab === 'general' ? 'bg-surface dark:bg-[#1e1f22] text-foreground dark:text-white shadow-sm' : 'text-muted hover:text-foreground dark:hover:text-white'
+                  activeTab === 'general' ? 'bg-surface dark:bg-background text-foreground dark:text-white shadow-sm' : 'text-muted hover:text-foreground dark:hover:text-white'
                 }`}
               >
                 一般
@@ -355,7 +355,7 @@ export default function Sidebar() {
               <button
                 onClick={() => handleTabChange('admin')}
                 className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
-                  activeTab === 'admin' ? 'bg-surface dark:bg-[#1e1f22] text-foreground dark:text-white shadow-sm' : 'text-muted hover:text-foreground dark:hover:text-white'
+                  activeTab === 'admin' ? 'bg-surface dark:bg-background text-foreground dark:text-white shadow-sm' : 'text-muted hover:text-foreground dark:hover:text-white'
                 }`}
               >
                 管理者
@@ -383,7 +383,7 @@ export default function Sidebar() {
                 <Link
                   href={itemHref}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition ${
-                    isActive ? `${item.activeBg} ${item.color}` : 'text-muted hover:bg-surface-hover/50 dark:hover:bg-[#2b2d31] hover:text-foreground dark:hover:text-white'
+                    isActive ? `${item.activeBg} ${item.color}` : 'text-muted hover:bg-surface-hover/50 dark:hover:bg-surface hover:text-foreground dark:hover:text-white'
                   }`}
                   title={isCollapsed ? (isMentorship && mentorshipCount > 0 ? `${item.label} (${mentorshipCount}名募集中)` : item.label) : undefined}
                 >
@@ -413,7 +413,7 @@ export default function Sidebar() {
         </div>
 
         {/* 下部ウィジェット */}
-        <div className="p-3 border-t border-border/80 dark:border-[#3f4147] space-y-2">
+        <div className="p-3 border-t border-border/80 dark:border-border space-y-2">
           {isCollapsed && (
             <div className="flex justify-center pb-1">
               <ThemeToggle variant="compact" />
@@ -432,7 +432,7 @@ export default function Sidebar() {
       </aside>
 
       {/* 📱 スマホ用 ボトム固定ナビゲーションバー (5項目) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#f7f5f0]/95 dark:bg-[#1e1f22]/95 backdrop-blur-md border-t border-border dark:border-[#3f4147] z-40 px-1 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] flex items-center justify-around shadow-lg">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#f7f5f0]/95 dark:bg-background/95 backdrop-blur-md border-t border-border dark:border-border z-40 px-1 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] flex items-center justify-around shadow-lg">
         {mobileBottomBarItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
@@ -480,10 +480,10 @@ export default function Sidebar() {
             className="fixed inset-0"
             onClick={() => setShowMobileDrawer(false)}
           />
-          <div className="relative bg-[#f7f5f0] dark:bg-[#1e1f22] rounded-t-3xl p-5 border-t border-border dark:border-[#3f4147] max-h-[85vh] overflow-y-auto shadow-2xl z-10 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+          <div className="relative bg-[#f7f5f0] dark:bg-background rounded-t-3xl p-5 border-t border-border dark:border-border max-h-[85vh] overflow-y-auto shadow-2xl z-10 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
             
             {/* ドロワーヘッダー */}
-            <div className="flex justify-between items-center mb-4 pb-3 border-b border-border dark:border-[#3f4147]">
+            <div className="flex justify-between items-center mb-4 pb-3 border-b border-border dark:border-border">
               <Link
                 href="/"
                 onClick={() => setShowMobileDrawer(false)}
@@ -498,7 +498,7 @@ export default function Sidebar() {
                 <ThemeToggle variant="compact" />
                 <button
                   onClick={() => setShowMobileDrawer(false)}
-                  className="p-2 rounded-full bg-surface-hover/60 dark:bg-[#2b2d31] text-muted hover:bg-stone-300 dark:hover:bg-[#35373c] transition"
+                  className="p-2 rounded-full bg-surface-hover/60 dark:bg-surface text-muted hover:bg-stone-300 dark:hover:bg-surface-hover transition"
                   aria-label="閉じる"
                 >
                   <XIcon size={18} />
@@ -513,11 +513,11 @@ export default function Sidebar() {
 
             {/* 🛡️ 管理者の場合のみ表示する切り替えスイッチ */}
             {isAdminUser && (
-              <div className="mb-4 bg-surface-hover/60 dark:bg-[#2b2d31] p-1 rounded-xl flex">
+              <div className="mb-4 bg-surface-hover/60 dark:bg-surface p-1 rounded-xl flex">
                 <button
                   onClick={() => handleTabChange('general')}
                   className={`flex-1 py-2 text-xs font-bold rounded-lg transition ${
-                    activeTab === 'general' ? 'bg-surface dark:bg-[#1e1f22] text-foreground dark:text-white shadow-sm' : 'text-muted'
+                    activeTab === 'general' ? 'bg-surface dark:bg-background text-foreground dark:text-white shadow-sm' : 'text-muted'
                   }`}
                 >
                   一般メニュー
@@ -525,7 +525,7 @@ export default function Sidebar() {
                 <button
                   onClick={() => handleTabChange('admin')}
                   className={`flex-1 py-2 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1 ${
-                    activeTab === 'admin' ? 'bg-surface dark:bg-[#1e1f22] text-primary-600 dark:text-primary-400 shadow-sm' : 'text-muted'
+                    activeTab === 'admin' ? 'bg-surface dark:bg-background text-primary-600 dark:text-primary-400 shadow-sm' : 'text-muted'
                   }`}
                 >
                   <Shield size={13} />
@@ -555,7 +555,7 @@ export default function Sidebar() {
                         className={`flex items-center gap-2.5 p-3 rounded-2xl border transition-all ${
                           isActive
                             ? `${item.activeBg} ${item.color} border-current font-black shadow-sm`
-                            : 'bg-surface dark:bg-[#2b2d31] border-border/80 dark:border-[#3f4147] text-foreground-subtle dark:text-stone-200 hover:border-primary-edge-strong/40 font-bold'
+                            : 'bg-surface dark:bg-surface border-border/80 dark:border-border text-foreground-subtle dark:text-stone-200 hover:border-primary-edge-strong/40 font-bold'
                         }`}
                       >
                         <div className={`p-1.5 rounded-xl shrink-0 ${isActive ? 'bg-surface/20' : item.activeBg}`}>
@@ -578,7 +578,7 @@ export default function Sidebar() {
 
               {/* 🛡️ 管理者専用セクション (管理者かつAdminタブ選択時のみ表示) */}
               {isAdminUser && activeTab === 'admin' && (
-                <div className="pt-2 border-t border-border dark:border-[#3f4147]">
+                <div className="pt-2 border-t border-border dark:border-border">
                   <div className="text-[11px] font-extrabold uppercase tracking-wider text-primary-500 dark:text-primary-400 mb-2 px-1 flex items-center gap-1">
                     <Shield size={12} />
                     <span>管理者コントロール</span>
@@ -595,7 +595,7 @@ export default function Sidebar() {
                           className={`flex items-center gap-2.5 p-3 rounded-2xl border transition-all ${
                             isActive
                               ? `${item.activeBg} ${item.color} border-current font-black shadow-sm`
-                              : 'bg-surface dark:bg-[#2b2d31] border-primary-edge-soft/60 dark:border-primary-edge-strong/40 text-foreground-subtle dark:text-stone-200 hover:border-primary-edge-strong font-bold'
+                              : 'bg-surface dark:bg-surface border-primary-edge-soft/60 dark:border-primary-edge-strong/40 text-foreground-subtle dark:text-stone-200 hover:border-primary-edge-strong font-bold'
                           }`}
                         >
                           <div className={`p-1.5 rounded-xl ${item.activeBg}`}>

@@ -149,7 +149,7 @@ export function MentorshipCard({
   };
 
   return (
-    <div className={`relative rounded-3xl border transition-all duration-200 overflow-hidden flex flex-col justify-between bg-surface/95 dark:bg-[#2b2d31] dark:border-[#3f4147] backdrop-blur-sm shadow-md ${
+    <div className={`relative rounded-3xl border transition-all duration-200 overflow-hidden flex flex-col justify-between bg-surface/95 dark:bg-surface dark:border-border backdrop-blur-sm shadow-md ${
       matchScore && matchScore >= 80
         ? 'ring-2 ring-primary-400 shadow-lg scale-[1.01]'
         : ''
@@ -207,7 +207,7 @@ export function MentorshipCard({
             {/* コース希望バッジ */}
             {preferredDuration && MENTORSHIP_DURATIONS[preferredDuration] && (
               <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black border shadow-2xs ${
-                MENTORSHIP_DURATIONS[preferredDuration].badgeColor || 'bg-surface-subtle dark:bg-[#1e1f22] text-foreground-soft dark:text-stone-200 border-border dark:border-[#3f4147]'
+                MENTORSHIP_DURATIONS[preferredDuration].badgeColor || 'bg-surface-subtle dark:bg-background text-foreground-soft dark:text-stone-200 border-border dark:border-border'
               }`}>
                 {MENTORSHIP_DURATIONS[preferredDuration].shortLabel}
               </span>
@@ -252,11 +252,11 @@ export function MentorshipCard({
 
           {/* 編集・削除ボタン（本人または管理者の場合） */}
           {(isMine || isAdmin) && (
-            <div className="flex items-center gap-1 bg-surface-subtle dark:bg-[#1e1f22] p-0.5 rounded-lg border border-border dark:border-[#3f4147]">
+            <div className="flex items-center gap-1 bg-surface-subtle dark:bg-background p-0.5 rounded-lg border border-border dark:border-border">
               {isMine && onEdit && (
                 <button
                   onClick={() => onEdit(profile)}
-                  className="px-2 py-1 text-xs text-muted hover:text-foreground dark:hover:text-white hover:bg-surface dark:hover:bg-[#2b2d31] rounded transition cursor-pointer"
+                  className="px-2 py-1 text-xs text-muted hover:text-foreground dark:hover:text-white hover:bg-surface rounded transition cursor-pointer"
                   title="編集"
                 >
                   ✏️
@@ -336,7 +336,7 @@ export function MentorshipCard({
               {reviewSummary.topTags.map((t) => (
                 <span
                   key={t.tag}
-                  className="px-2 py-0.5 rounded-lg bg-surface dark:bg-[#1e1f22] border border-primary-edge dark:border-primary-edge-strong text-[10px] font-bold text-primary-950 dark:text-primary-200 shadow-2xs"
+                  className="px-2 py-0.5 rounded-lg bg-surface dark:bg-background border border-primary-edge dark:border-primary-edge-strong text-[10px] font-bold text-primary-950 dark:text-primary-200 shadow-2xs"
                 >
                   {t.tag} <strong className="text-primary-600 dark:text-primary-400">×{t.count}</strong>
                 </span>
@@ -351,7 +351,7 @@ export function MentorshipCard({
             {profile.lanes.map((lane) => (
               <span
                 key={lane}
-                className="px-2.5 py-1 bg-surface-subtle dark:bg-[#1e1f22] border border-border dark:border-[#3f4147] rounded-lg text-xs font-bold text-foreground-subtle dark:text-stone-200"
+                className="px-2.5 py-1 bg-surface-subtle dark:bg-background border border-border rounded-lg text-xs font-bold text-foreground-subtle dark:text-stone-200"
               >
                 {LANE_ICONS[lane] || lane}
               </span>
@@ -370,7 +370,7 @@ export function MentorshipCard({
               return (
                 <div
                   key={champName}
-                  className="flex items-center gap-1 px-2 py-0.5 bg-background dark:bg-[#1e1f22] border border-border/90 dark:border-[#3f4147] rounded-lg text-xs font-bold text-foreground-soft dark:text-stone-200 shadow-2xs"
+                  className="flex items-center gap-1 px-2 py-0.5 bg-background border border-border/90 dark:border-border rounded-lg text-xs font-bold text-foreground-soft dark:text-stone-200 shadow-2xs"
                 >
                   <img
                     src={getChampIcon(champName)}
@@ -414,7 +414,7 @@ export function MentorshipCard({
 
         {/* 自己紹介文 (シンプル化: 2行折りたたみ) */}
         {profile.bio && (
-          <div className="p-3 bg-background/90 dark:bg-[#1e1f22] rounded-2xl border border-border dark:border-[#3f4147] text-xs text-foreground-soft dark:text-stone-100 leading-relaxed font-medium">
+          <div className="p-3 bg-background/90 dark:bg-background rounded-2xl border border-border text-xs text-foreground-soft dark:text-stone-100 leading-relaxed font-medium">
             <p className={`whitespace-pre-wrap ${!isBioExpanded ? 'line-clamp-2' : ''}`}>
               {profile.bio}
             </p>
@@ -494,11 +494,11 @@ export function MentorshipCard({
           onClick={() => setShowComments(false)}
         >
           <div
-            className="bg-surface dark:bg-[#2b2d31] border border-border dark:border-[#3f4147] rounded-3xl p-5 max-w-lg w-full shadow-2xl space-y-4 max-h-[85vh] flex flex-col"
+            className="bg-surface dark:bg-surface border border-border rounded-3xl p-5 max-w-lg w-full shadow-2xl space-y-4 max-h-[85vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* モーダルヘッダー */}
-            <div className="flex items-center justify-between border-b border-border/80 dark:border-[#3f4147] pb-3 shrink-0">
+            <div className="flex items-center justify-between border-b border-border/80 dark:border-border pb-3 shrink-0">
               <div className="flex items-center gap-2">
                 <MessageSquare className="w-4 h-4 text-secondary-600 dark:text-secondary-400" />
                 <h3 className="font-black text-sm text-foreground dark:text-white">
@@ -530,7 +530,7 @@ export function MentorshipCard({
                   return (
                     <div
                       key={comment.id}
-                      className="p-3 rounded-2xl bg-surface-subtle dark:bg-[#1e1f22] border border-border/80 dark:border-[#3f4147] text-xs space-y-1 shadow-2xs"
+                      className="p-3 rounded-2xl bg-surface-subtle dark:bg-background border border-border/80 dark:border-border text-xs space-y-1 shadow-2xs"
                     >
                       <div className="flex items-center justify-between text-[11px]">
                         <span className="font-bold text-foreground dark:text-white flex items-center gap-1">
@@ -573,14 +573,14 @@ export function MentorshipCard({
             </div>
 
             {/* コメント投稿フォーム */}
-            <form onSubmit={handlePostComment} className="flex gap-2 pt-2 border-t border-border/80 dark:border-[#3f4147] shrink-0">
+            <form onSubmit={handlePostComment} className="flex gap-2 pt-2 border-t border-border/80 dark:border-border shrink-0">
               <input
                 type="text"
                 value={commentInput}
                 onChange={(e) => setCommentInput(e.target.value)}
                 placeholder="質問・アドバイス・一言応援を書く..."
                 maxLength={300}
-                className="flex-1 px-3.5 py-2 text-xs rounded-xl border border-border dark:border-[#3f4147] bg-surface dark:bg-[#1e1f22] focus:outline-none focus:ring-2 focus:ring-secondary-500 text-foreground dark:text-white placeholder-stone-400"
+                className="flex-1 px-3.5 py-2 text-xs rounded-xl border border-border bg-surface dark:bg-background focus:outline-none focus:ring-2 focus:ring-secondary-500 text-foreground dark:text-white placeholder-stone-400"
               />
               <button
                 type="submit"

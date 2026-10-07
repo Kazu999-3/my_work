@@ -969,7 +969,7 @@ export default function MentorshipHubPanel() {
                     🎯 あなたと相性抜群のバディ（AI相性分析）
                   </h3>
                 </div>
-                <span className="text-[10px] font-bold bg-surface/90 dark:bg-[#2b2d31] text-primary-900 dark:text-primary-300 border border-primary-edge dark:border-primary-edge-strong px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold bg-surface/90 dark:bg-surface text-primary-900 dark:text-primary-300 border border-primary-edge dark:border-primary-edge-strong px-2 py-0.5 rounded-full">
                   リアルタイムマッチング
                 </span>
               </div>

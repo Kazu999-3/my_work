@@ -101,7 +101,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
       </div>
 
       {/* サモナーネーム（IGN）入力 */}
-      <div className="bg-background dark:bg-[#2b2d31] border border-border dark:border-[#3f4147] rounded-2xl p-4 sm:p-5 space-y-2">
+      <div className="bg-background dark:bg-surface border border-border rounded-2xl p-4 sm:p-5 space-y-2">
         <label className="block text-xs font-black text-foreground-subtle uppercase tracking-wider">
           ゲーム内サモナーネーム (IGN#TAG)
         </label>
@@ -110,7 +110,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
           value={ign}
           onChange={(e) => setIgn(e.target.value)}
           placeholder="例: Hide on bush#KR1"
-          className="w-full bg-surface dark:bg-[#1e1f22] border border-border dark:border-[#3f4147] rounded-xl px-4 py-2.5 text-sm text-foreground dark:text-white font-mono placeholder:text-faint focus:outline-none focus:border-primary-edge-strong focus:ring-1 focus:ring-primary-500 shadow-xs"
+          className="w-full bg-surface dark:bg-background border border-border rounded-xl px-4 py-2.5 text-sm text-foreground dark:text-white font-mono placeholder:text-faint focus:outline-none focus:border-primary-edge-strong focus:ring-1 focus:ring-primary-500 shadow-xs"
         />
         <p className="text-[11px] text-faint font-medium">
           ※ LoLクライアント内の Riot ID と タグライン（#JP1など）を入力すると、OP.GGやカルテへの自動連携が有効になります。
@@ -135,7 +135,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
                 className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border text-center transition-all cursor-pointer ${
                   isSelected
                     ? "bg-primary-500 text-stone-950 font-black shadow-md border-primary-edge-strong scale-[1.02]"
-                    : "bg-surface dark:bg-[#2b2d31] border-border dark:border-[#3f4147] text-muted hover:border-border hover:bg-background dark:hover:bg-[#313338] font-bold"
+                    : "bg-surface dark:bg-surface border-border dark:border-border text-muted hover:border-border hover:bg-background dark:hover:bg-[#313338] font-bold"
                 }`}
               >
                 <Icon className="w-6 h-6 mb-1.5" />
@@ -164,7 +164,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
                 className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border text-center transition-all cursor-pointer ${
                   isSelected
                     ? "bg-stone-800 dark:bg-stone-100 text-white dark:text-stone-900 font-black shadow-md border-stone-900 dark:border-stone-200 scale-[1.02]"
-                    : "bg-surface dark:bg-[#2b2d31] border-border dark:border-[#3f4147] text-muted hover:border-border hover:bg-background dark:hover:bg-[#313338] font-bold"
+                    : "bg-surface dark:bg-surface border-border dark:border-border text-muted hover:border-border hover:bg-background dark:hover:bg-[#313338] font-bold"
                 }`}
               >
                 <Icon className="w-6 h-6 mb-1.5" />
@@ -176,7 +176,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
       </div>
 
       {/* NGレーン設定 */}
-      <div className="space-y-3 pt-4 border-t border-border dark:border-[#3f4147]">
+      <div className="space-y-3 pt-4 border-t border-border dark:border-border">
         <label className="block text-xs font-black text-danger-700 dark:text-danger-400 uppercase tracking-wider flex items-center justify-between">
           <span className="flex items-center gap-1.5">
             <Ban className="w-4 h-4" />
@@ -198,7 +198,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
                 className={`flex items-center justify-center gap-2 p-3 rounded-2xl border text-center transition-all cursor-pointer ${
                   isNg
                     ? "bg-danger-500 text-white font-black shadow-md border-danger-edge-strong scale-[1.02]"
-                    : "bg-surface dark:bg-[#2b2d31] border-border dark:border-[#3f4147] text-muted hover:border-border hover:bg-background dark:hover:bg-[#313338] font-bold"
+                    : "bg-surface dark:bg-surface border-border dark:border-border text-muted hover:border-border hover:bg-background dark:hover:bg-[#313338] font-bold"
                 }`}
               >
                 <Ban className={`w-4 h-4 ${isNg ? "text-white" : "text-faint"}`} />
@@ -216,7 +216,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
       </div>
 
       {/* 🌙 外観・ダークモード設定 */}
-      <div className="bg-background/80 dark:bg-[#2b2d31]/80 border border-border/80 dark:border-[#3f4147] rounded-3xl p-6 shadow-xs space-y-4">
+      <div className="bg-background/80 dark:bg-surface/80 border border-border/80 dark:border-border rounded-3xl p-6 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-2xl bg-primary-500/10 dark:bg-primary-500/20 text-primary-600 dark:text-primary-400 flex items-center justify-center font-black">
@@ -232,7 +232,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
       </div>
 
       {/* 保存ボタン & 通知 */}
-      <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border dark:border-[#3f4147]">
+      <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border dark:border-border">
         <div>
           {saveSuccess && (
             <div className="flex items-center gap-2 text-success-700 dark:text-success-400 text-xs font-black animate-fade-in">

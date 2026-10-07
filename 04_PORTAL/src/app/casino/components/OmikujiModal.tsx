@@ -85,7 +85,7 @@ export default function OmikujiModal({ isOpen, onClose, omikujiData, onClaimFini
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="relative w-full max-w-sm rounded-3xl bg-[#fdfcf9] dark:bg-[#2b2d31] border-2 border-primary-edge/60 shadow-2xl p-6 text-center space-y-5 overflow-hidden">
+      <div className="relative w-full max-w-sm rounded-3xl bg-[#fdfcf9] dark:bg-surface border-2 border-primary-edge/60 shadow-2xl p-6 text-center space-y-5 overflow-hidden">
         
         {/* 背景の光彩演出 */}
         <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-48 h-48 bg-gradient-to-b from-primary-400/20 to-transparent rounded-full blur-2xl pointer-events-none" />
@@ -94,7 +94,7 @@ export default function OmikujiModal({ isOpen, onClose, omikujiData, onClaimFini
         {!isSpinning && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 rounded-full text-faint hover:text-foreground-subtle dark:hover:text-stone-200 hover:bg-surface-subtle dark:hover:bg-[#35373c] transition"
+            className="absolute top-4 right-4 p-2 rounded-full text-faint hover:text-foreground-subtle dark:hover:text-stone-200 hover:bg-surface-subtle dark:hover:bg-surface-hover transition"
           >
             <X size={18} />
           </button>
@@ -116,7 +116,7 @@ export default function OmikujiModal({ isOpen, onClose, omikujiData, onClaimFini
           <div
             className={`w-28 h-28 mx-auto rounded-3xl flex items-center justify-center text-5xl shadow-xl transition-all duration-300 ${
               isSpinning
-                ? 'bg-gradient-to-br from-stone-100 to-stone-200 dark:from-[#1e1f22] dark:to-[#35373c] animate-bounce-short border-2 border-border dark:border-[#3f4147]'
+                ? 'bg-gradient-to-br from-stone-100 to-stone-200 dark:from-background dark:to-surface-hover animate-bounce-short border-2 border-border dark:border-border'
                 : `bg-gradient-to-br ${style.bg} ${style.glow} text-white scale-110`
             }`}
           >
@@ -125,7 +125,7 @@ export default function OmikujiModal({ isOpen, onClose, omikujiData, onClaimFini
 
           {!isSpinning && (
             <div className="mt-3">
-              <span className="inline-block px-3 py-0.5 rounded-full text-[11px] font-black bg-surface/90 dark:bg-[#1e1f22] text-foreground dark:text-white shadow-sm border border-border dark:border-[#3f4147]">
+              <span className="inline-block px-3 py-0.5 rounded-full text-[11px] font-black bg-surface/90 dark:bg-background text-foreground dark:text-white shadow-sm border border-border dark:border-border">
                 {style.badge}
               </span>
             </div>

@@ -40,8 +40,8 @@ export default function GuideRulesTab() {
       </div>
 
       {/* 1. 定期カスタム 人数決め ＆ 開催優先度ルール */}
-      <div className="bg-surface/80 dark:bg-[#2b2d31]/80 border border-border/90 dark:border-[#3f4147] rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
-        <div className="flex items-center gap-3 border-b border-stone-100 dark:border-[#3f4147] pb-4">
+      <div className="bg-surface/80 dark:bg-surface/80 border border-border/90 dark:border-border rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+        <div className="flex items-center gap-3 border-b border-stone-100 dark:border-border pb-4">
           <div className="p-2.5 rounded-xl bg-primary-500/10 text-primary-700 dark:text-primary-400">
             <Users size={22} />
           </div>
@@ -103,8 +103,8 @@ export default function GuideRulesTab() {
       </div>
 
       {/* 2. 週末定期カスタムの基本フォーマット */}
-      <div className="bg-surface/80 dark:bg-[#2b2d31]/80 border border-border/90 dark:border-[#3f4147] rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
-        <div className="flex items-center gap-3 border-b border-stone-100 dark:border-[#3f4147] pb-4">
+      <div className="bg-surface/80 dark:bg-surface/80 border border-border/90 dark:border-border rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+        <div className="flex items-center gap-3 border-b border-stone-100 dark:border-border pb-4">
           <div className="p-2.5 rounded-xl bg-primary-500/10 text-primary-700 dark:text-primary-400">
             <Swords size={22} />
           </div>

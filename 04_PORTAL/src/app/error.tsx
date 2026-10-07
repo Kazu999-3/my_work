@@ -30,7 +30,7 @@ export default function Error({
 
   return (
     <div className="min-h-[70vh] flex items-center justify-center p-4">
-      <div className="max-w-md w-full p-6 rounded-3xl bg-surface/95 dark:bg-[#2b2d31] border border-border dark:border-[#3f4147] shadow-xl text-center space-y-4">
+      <div className="max-w-md w-full p-6 rounded-3xl bg-surface/95 dark:bg-surface border border-border shadow-xl text-center space-y-4">
         <div className="w-14 h-14 mx-auto rounded-2xl bg-danger-500/10 dark:bg-danger-500/20 text-danger-600 dark:text-danger-400 flex items-center justify-center">
           <AlertTriangle size={32} />
         </div>
@@ -45,7 +45,7 @@ export default function Error({
         </div>
 
         {error?.message && (
-          <div className="p-3 rounded-xl bg-surface-subtle dark:bg-[#1e1f22] border border-border dark:border-[#3f4147] text-left">
+          <div className="p-3 rounded-xl bg-surface-subtle dark:bg-background border border-border text-left">
             <div className="text-[10px] font-bold text-faint uppercase tracking-wider mb-1">エラー詳細</div>
             <p className="text-xs font-mono text-danger-600 dark:text-danger-400 break-all line-clamp-3">
               {error.message}
@@ -63,7 +63,7 @@ export default function Error({
           </button>
           <Link
             href="/"
-            className="flex-1 py-2.5 px-4 rounded-xl bg-surface-subtle dark:bg-[#1e1f22] hover:bg-surface-hover dark:hover:bg-[#35373c] text-foreground-subtle dark:text-stone-200 font-bold text-xs transition flex items-center justify-center gap-1.5 border border-border dark:border-[#3f4147]"
+            className="flex-1 py-2.5 px-4 rounded-xl bg-surface-subtle dark:bg-background hover:bg-surface-hover text-foreground-subtle dark:text-stone-200 font-bold text-xs transition flex items-center justify-center gap-1.5 border border-border dark:border-border"
           >
             <Home size={14} />
             <span>トップへ戻る</span>

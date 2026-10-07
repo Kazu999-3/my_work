@@ -74,7 +74,7 @@ function LoginContent() {
 
   if (checking) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#eae4d4] dark:bg-[#1e1f22]">
+      <div className="flex items-center justify-center min-h-screen bg-[#eae4d4] dark:bg-background">
         <div className="w-10 h-10 border-3 border-stone-800/10 border-t-amber-600 rounded-full animate-spin" />
       </div>
     );
@@ -168,7 +168,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center min-h-screen bg-[#eae4d4] dark:bg-[#1e1f22]">
+        <div className="flex items-center justify-center min-h-screen bg-[#eae4d4] dark:bg-background">
           <div className="w-10 h-10 border-3 border-stone-800/10 border-t-amber-600 rounded-full animate-spin" />
         </div>
       }
