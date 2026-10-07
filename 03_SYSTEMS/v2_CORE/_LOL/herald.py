@@ -331,14 +331,7 @@ class SovereignHerald:
         if success:
             logger.info("[Herald] 日次成果報告の送信に成功しました。")
 
-    def collect_outbox(self):
-        """02_FACTORY/outbox/ フォルダをスキャンし、未処理の投稿パッケージをリストアップする"""
-        outbox_dir = Path("d:/my_work/02_FACTORY/INFRA/outbox")
-        if not outbox_dir.exists():
-            return []
-        
-        packages = list(outbox_dir.glob("*.json"))
-        return packages
+    # ★ 2026-10-07: collect_outbox を削除（呼び出し元が無く、Path を import していないため呼ぶと NameError だった）
 
 # インスタンス提供
 herald = SovereignHerald()

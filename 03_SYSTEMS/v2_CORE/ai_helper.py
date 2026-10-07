@@ -3,7 +3,6 @@ import logging
 import random
 import os
 import json
-from filelock import FileLock
 from google.genai.errors import APIError
 from .settings import settings
 from .quota_manager import quota_manager
@@ -13,23 +12,8 @@ logger = logging.getLogger("AIHelper")
 # APIGateway のインポート
 from .api_gateway import APIGateway
 
-def _get_last_request_time():
-    try:
-        if THROTTLE_STATE_FILE.exists():
-            with open(THROTTLE_STATE_FILE, "r") as f:
-                data = json.load(f)
-                return data.get("last_request_time", 0.0)
-    except Exception:
-        pass
-    return 0.0
-
-def _set_last_request_time(t):
-    try:
-        os.makedirs(settings.FORGE_DIR, exist_ok=True)
-        with open(THROTTLE_STATE_FILE, "w") as f:
-            json.dump({"last_request_time": t}, f)
-    except Exception as e:
-        logger.error(f"[AIHelper] スロットル状態の保存に失敗: {e}")
+# ★ 2026-10-07: _get_last_request_time / _set_last_request_time を削除。呼び出し元が無く、参照していた
+#   THROTTLE_STATE_FILE も定義されていなかった（プロセス間スロットルの名残り）
 
 def _extract_grounding_sources(response) -> list:
     """google_searchグラウンディング使用時、応答に添付される引用元URLを抽出する。
