@@ -181,33 +181,32 @@ interface MenuItem {
   href: string;
   color: string;
   activeBg: string;
-  section?: string;
   adminOnly?: boolean;
 }
 
 // 🌐 一般ユーザー向けメニュー（7大機能）
 const GENERAL_MENU_ITEMS: MenuItem[] = [
   // メイン
-  { id: 'home', label: 'ホーム / トップ', shortLabel: 'ホーム', icon: Home, href: '/', color: 'text-primary-500', activeBg: 'bg-primary-500/15', section: 'メイン' },
+  { id: 'home', label: 'ホーム / トップ', shortLabel: 'ホーム', icon: Home, href: '/', color: 'text-primary-500', activeBg: 'bg-primary-500/15' },
   // ユーザー・師弟
-  { id: 'mypage', label: 'マイページ / 希望レーン', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-primary-500', activeBg: 'bg-primary-500/15', section: 'ユーザー' },
-  { id: 'mentorship', label: '師弟自己紹介掲示板', shortLabel: '師弟掲示板', icon: HeartHandshake, href: '/mentorship', color: 'text-success-500', activeBg: 'bg-success-500/15', section: 'ユーザー' },
+  { id: 'mypage', label: 'マイページ / 希望レーン', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-primary-500', activeBg: 'bg-primary-500/15' },
+  { id: 'mentorship', label: '師弟自己紹介掲示板', shortLabel: '師弟掲示板', icon: HeartHandshake, href: '/mentorship', color: 'text-success-500', activeBg: 'bg-success-500/15' },
   // 対戦・大会
-  { id: 'balancer', label: 'チーム分けバランサー', shortLabel: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-danger-600', activeBg: 'bg-danger-500/15', section: '対戦 ＆ 大会' },
-  { id: 'casino', label: '勝敗予想 (カジノ)', shortLabel: '勝敗予想', icon: Coins, href: '/casino', color: 'text-primary-600', activeBg: 'bg-primary-500/15', section: '対戦 ＆ 大会' },
+  { id: 'balancer', label: 'チーム分けバランサー', shortLabel: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-danger-600', activeBg: 'bg-danger-500/15' },
+  { id: 'casino', label: '勝敗予想 (カジノ)', shortLabel: '勝敗予想', icon: Coins, href: '/casino', color: 'text-primary-600', activeBg: 'bg-primary-500/15' },
   // 2026-09-23: サイドメニューからは外した（バランサーの「過去の試合」ボタンから開く導線に一本化）。
   // ページ自体は /history に残っており、一般メンバーも閲覧できる。
   // コミュニティ・戦績
-  { id: 'leaderboard', label: '順位表 ＆ 名簿', shortLabel: '順位・名簿', icon: Trophy, href: '/leaderboard', color: 'text-primary-600', activeBg: 'bg-primary-500/15', section: 'コミュニティ' },
+  { id: 'leaderboard', label: '順位表 ＆ 名簿', shortLabel: '順位・名簿', icon: Trophy, href: '/leaderboard', color: 'text-primary-600', activeBg: 'bg-primary-500/15' },
   // ガイド
-  { id: 'guide', label: '使い方ガイド', shortLabel: 'ガイド', icon: BookOpen, href: '/guide', color: 'text-success-600', activeBg: 'bg-success-500/15', section: 'ガイド' },
+  { id: 'guide', label: '使い方ガイド', shortLabel: 'ガイド', icon: BookOpen, href: '/guide', color: 'text-success-600', activeBg: 'bg-success-500/15' },
 ];
 
 // 🛡️ 管理者向け追加メニュー（大会管理・運用）。05（戦術パイロット）へのリンクはユーザー判断で 2026-10-07 に削除
 const ADMIN_EXTRA_ITEMS: MenuItem[] = [
-  { id: 'ktm-admin', label: 'KTM大会管理', shortLabel: '大会管理', icon: Shield, href: '/ktm-admin', color: 'text-primary-600', activeBg: 'bg-primary-500/15', section: '大会・運用' },
-  { id: 'analyzer', label: 'プレイヤー外部分析', shortLabel: '外部解析', icon: Globe, href: '/analyzer', color: 'text-secondary-600', activeBg: 'bg-secondary-500/15', section: '大会・運用' },
-  { id: 'admin-guide', label: 'システム全貌仕様ガイド', shortLabel: '仕様ガイド', icon: BookOpen, href: '/admin/guide', color: 'text-primary-600', activeBg: 'bg-primary-500/15', section: '大会・運用' },
+  { id: 'ktm-admin', label: 'KTM大会管理', shortLabel: '大会管理', icon: Shield, href: '/ktm-admin', color: 'text-primary-600', activeBg: 'bg-primary-500/15' },
+  { id: 'analyzer', label: 'プレイヤー外部分析', shortLabel: '外部解析', icon: Globe, href: '/analyzer', color: 'text-secondary-600', activeBg: 'bg-secondary-500/15' },
+  { id: 'admin-guide', label: 'システム全貌仕様ガイド', shortLabel: '仕様ガイド', icon: BookOpen, href: '/admin/guide', color: 'text-primary-600', activeBg: 'bg-primary-500/15' },
 ];
 
 export default function Sidebar() {
@@ -366,20 +365,14 @@ export default function Sidebar() {
 
         {/* メニューリスト */}
         <div className="flex-1 overflow-y-auto p-3 space-y-1">
-          {desktopItems.map((item: MenuItem, idx) => {
+          {desktopItems.map((item: MenuItem) => {
             const Icon = item.icon;
             const itemHref = resolveItemHref(item);
             const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href)) || (item.id === 'mypage' && pathname.startsWith('/player/'));
-            const showSection = !isCollapsed && item.section && (idx === 0 || desktopItems[idx - 1]?.section !== item.section);
             const isMentorship = item.id === 'mentorship';
 
             return (
               <React.Fragment key={item.id}>
-                {showSection && (
-                  <div className="px-3 pt-3.5 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-faint">
-                    {item.section}
-                  </div>
-                )}
                 <Link
                   href={itemHref}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition ${

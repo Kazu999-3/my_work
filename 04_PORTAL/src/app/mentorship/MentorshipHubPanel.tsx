@@ -831,7 +831,7 @@ export default function MentorshipHubPanel() {
                   onClick={() => setLaneFilter(f.id)}
                   className={`px-2.5 py-1 rounded-lg text-xs font-black transition shrink-0 cursor-pointer ${
                     laneFilter === f.id
-                      ? 'bg-stone-900 text-white shadow-xs'
+                      ? 'bg-stone-900 text-white dark:bg-primary-600 shadow-xs'
                       : 'bg-surface-subtle hover:bg-surface-hover text-muted'
                   }`}
                 >

@@ -758,7 +758,7 @@ export default function PlayerMyPage() {
                 onClick={() => setActiveTab('settings')}
                 className={`px-4 py-2.5 rounded-2xl text-xs font-black flex items-center gap-1.5 transition border cursor-pointer ${
                   activeTab === 'settings'
-                    ? 'bg-stone-900 text-white border-stone-800'
+                    ? 'bg-stone-900 text-white border-stone-800 dark:bg-primary-600 dark:border-primary-edge-strong'
                     : 'bg-surface/90 hover:bg-surface text-foreground-soft border-border'
                 }`}
               >

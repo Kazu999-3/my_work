@@ -179,8 +179,8 @@ function LeaderboardContent() {
                 onClick={() => handleTabChange(['ranking', 'coins'].includes(activeTab) ? activeTab : 'ranking')}
                 className={`flex items-center gap-1.5 px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
                   ['ranking', 'coins'].includes(activeTab)
-                    ? 'bg-surface dark:bg-stone-800 text-foreground dark:text-stone-100 shadow-xs font-black'
-                    : 'text-muted hover:text-foreground dark:hover:text-stone-200 hover:bg-surface-hover/60 dark:hover:bg-stone-800/60'
+                    ? 'bg-surface dark:bg-primary-500/20 text-foreground dark:text-primary-300 dark:ring-1 dark:ring-primary-edge-strong shadow-xs font-black'
+                    : 'text-muted dark:text-stone-400 hover:text-foreground dark:hover:text-stone-200 hover:bg-surface-hover/60 dark:hover:bg-stone-800/60'
                 }`}
               >
                 <Trophy className="w-4 h-4 text-primary-500" />
@@ -193,8 +193,8 @@ function LeaderboardContent() {
                 onClick={() => handleTabChange('roster')}
                 className={`flex items-center gap-1.5 px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
                   activeTab === 'roster'
-                    ? 'bg-surface dark:bg-stone-800 text-foreground dark:text-stone-100 shadow-xs font-black'
-                    : 'text-muted hover:text-foreground dark:hover:text-stone-200 hover:bg-surface-hover/60 dark:hover:bg-stone-800/60'
+                    ? 'bg-surface dark:bg-primary-500/20 text-foreground dark:text-primary-300 dark:ring-1 dark:ring-primary-edge-strong shadow-xs font-black'
+                    : 'text-muted dark:text-stone-400 hover:text-foreground dark:hover:text-stone-200 hover:bg-surface-hover/60 dark:hover:bg-stone-800/60'
                 }`}
               >
                 <Users className="w-4 h-4 text-primary-500" />
@@ -207,8 +207,8 @@ function LeaderboardContent() {
                 onClick={() => handleTabChange(['synergy', 'meta', 'winrate'].includes(activeTab) ? activeTab : 'synergy')}
                 className={`flex items-center gap-1.5 px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
                   ['synergy', 'meta', 'winrate'].includes(activeTab)
-                    ? 'bg-surface dark:bg-stone-800 text-foreground dark:text-stone-100 shadow-xs font-black'
-                    : 'text-muted hover:text-foreground dark:hover:text-stone-200 hover:bg-surface-hover/60 dark:hover:bg-stone-800/60'
+                    ? 'bg-surface dark:bg-primary-500/20 text-foreground dark:text-primary-300 dark:ring-1 dark:ring-primary-edge-strong shadow-xs font-black'
+                    : 'text-muted dark:text-stone-400 hover:text-foreground dark:hover:text-stone-200 hover:bg-surface-hover/60 dark:hover:bg-stone-800/60'
                 }`}
               >
                 <Activity className="w-4 h-4 text-secondary-500" />
@@ -226,8 +226,8 @@ function LeaderboardContent() {
                   onClick={() => handleTabChange('ranking')}
                   className={`px-3 py-1 rounded-lg font-bold transition cursor-pointer ${
                     activeTab === 'ranking'
-                      ? 'bg-surface dark:bg-stone-900 text-foreground dark:text-white shadow-2xs font-extrabold'
-                      : 'text-muted hover:text-foreground'
+                      ? 'bg-surface dark:bg-primary-500/20 text-foreground dark:text-primary-300 dark:ring-1 dark:ring-primary-edge-strong shadow-2xs font-extrabold'
+                      : 'text-muted dark:text-stone-400 hover:text-foreground'
                   }`}
                 >
                   ⚔️ ロール別順位
@@ -237,8 +237,8 @@ function LeaderboardContent() {
                   onClick={() => handleTabChange('coins')}
                   className={`px-3 py-1 rounded-lg font-bold transition cursor-pointer flex items-center gap-1 ${
                     activeTab === 'coins'
-                      ? 'bg-surface dark:bg-stone-900 text-foreground dark:text-white shadow-2xs font-extrabold'
-                      : 'text-muted hover:text-foreground'
+                      ? 'bg-surface dark:bg-primary-500/20 text-foreground dark:text-primary-300 dark:ring-1 dark:ring-primary-edge-strong shadow-2xs font-extrabold'
+                      : 'text-muted dark:text-stone-400 hover:text-foreground'
                   }`}
                 >
                   <span>🪙 コイン番付</span>
@@ -255,8 +255,8 @@ function LeaderboardContent() {
                   onClick={() => handleTabChange('synergy')}
                   className={`px-3 py-1 rounded-lg font-bold transition cursor-pointer ${
                     activeTab === 'synergy'
-                      ? 'bg-surface dark:bg-stone-900 text-foreground dark:text-white shadow-2xs font-extrabold'
-                      : 'text-muted hover:text-foreground'
+                      ? 'bg-surface dark:bg-primary-500/20 text-foreground dark:text-primary-300 dark:ring-1 dark:ring-primary-edge-strong shadow-2xs font-extrabold'
+                      : 'text-muted dark:text-stone-400 hover:text-foreground'
                   }`}
                 >
                   🤝 デュオ相性
@@ -266,8 +266,8 @@ function LeaderboardContent() {
                   onClick={() => handleTabChange('meta')}
                   className={`px-3 py-1 rounded-lg font-bold transition cursor-pointer ${
                     activeTab === 'meta'
-                      ? 'bg-surface dark:bg-stone-900 text-foreground dark:text-white shadow-2xs font-extrabold'
-                      : 'text-muted hover:text-foreground'
+                      ? 'bg-surface dark:bg-primary-500/20 text-foreground dark:text-primary-300 dark:ring-1 dark:ring-primary-edge-strong shadow-2xs font-extrabold'
+                      : 'text-muted dark:text-stone-400 hover:text-foreground'
                   }`}
                 >
                   📊 メタ統計
@@ -277,8 +277,8 @@ function LeaderboardContent() {
                   onClick={() => handleTabChange('winrate')}
                   className={`px-3 py-1 rounded-lg font-bold transition cursor-pointer ${
                     activeTab === 'winrate'
-                      ? 'bg-surface dark:bg-stone-900 text-foreground dark:text-white shadow-2xs font-extrabold'
-                      : 'text-muted hover:text-foreground'
+                      ? 'bg-surface dark:bg-primary-500/20 text-foreground dark:text-primary-300 dark:ring-1 dark:ring-primary-edge-strong shadow-2xs font-extrabold'
+                      : 'text-muted dark:text-stone-400 hover:text-foreground'
                   }`}
                 >
                   🎯 レーン別勝率
@@ -474,7 +474,7 @@ function LeaderboardContent() {
                     onClick={() => setSortMetric(metric)}
                     className={`px-3 py-1 rounded-xl text-xs font-black transition cursor-pointer ${
                       sortMetric === metric
-                        ? 'bg-stone-800 text-white'
+                        ? 'bg-stone-800 text-white dark:bg-primary-600'
                         : 'bg-surface-subtle hover:bg-surface-hover text-muted'
                     }`}
                   >
