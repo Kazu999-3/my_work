@@ -57,7 +57,7 @@ export default function EarlyJunglePathingCard({
     step3Text = `スカトル確保後、HP8割以上ならガンク、削られていれば即リコール。`;
   }
 
-  const fmtSec = (sec?: number | null) => (sec ? `${Math.floor(sec / 60)}分${String(sec % 60).padStart(2, '0')}秒` : '約3分15秒（目安推測）');
+  const fmtSec = (sec?: number | null) => (sec ? `${Math.floor(sec / 60)}分${String(sec % 60).padStart(2, '0')}秒` : 'データなし');
 
   return (
     <div className="bg-slate-900/90 text-white rounded-2xl p-4 border border-slate-800 space-y-3 shadow-md">

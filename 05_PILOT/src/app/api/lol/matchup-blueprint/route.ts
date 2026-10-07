@@ -2,148 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 import { normalizeChampionName } from '@/lib/championNames';
 
-// 主要チャンピオンのLv6時フルコンボ推定バーストプロファイル
-interface BurstProfile {
-  baseLvl6: number;
-  adScale: number;
-  apScale: number;
-  type: 'physical' | 'magic' | 'mixed' | 'true_hybrid';
-  ignite: boolean;
-}
-
-const BURST_PROFILES: Record<string, BurstProfile> = {
-  // Bruisers & Juggernauts
-  Darius: { baseLvl6: 480, adScale: 2.4, apScale: 0.0, type: 'physical', ignite: true },
-  Aatrox: { baseLvl6: 510, adScale: 2.6, apScale: 0.0, type: 'physical', ignite: false },
-  Renekton: { baseLvl6: 540, adScale: 2.7, apScale: 0.0, type: 'physical', ignite: true },
-  Riven: { baseLvl6: 520, adScale: 3.0, apScale: 0.0, type: 'physical', ignite: true },
-  Garen: { baseLvl6: 460, adScale: 2.2, apScale: 0.0, type: 'true_hybrid', ignite: true },
-  Jax: { baseLvl6: 490, adScale: 2.0, apScale: 1.4, type: 'mixed', ignite: true },
-  Fiora: { baseLvl6: 480, adScale: 2.5, apScale: 0.0, type: 'true_hybrid', ignite: true },
-  Camille: { baseLvl6: 470, adScale: 2.6, apScale: 0.0, type: 'true_hybrid', ignite: true },
-  Irelia: { baseLvl6: 530, adScale: 2.5, apScale: 0.0, type: 'physical', ignite: true },
-  Sett: { baseLvl6: 500, adScale: 2.4, apScale: 0.0, type: 'true_hybrid', ignite: true },
-  Mordekaiser: { baseLvl6: 490, adScale: 0.0, apScale: 2.2, type: 'magic', ignite: true },
-  Illaoi: { baseLvl6: 560, adScale: 2.8, apScale: 0.0, type: 'physical', ignite: false },
-  Yorick: { baseLvl6: 470, adScale: 2.3, apScale: 0.0, type: 'physical', ignite: false },
-  KSante: { baseLvl6: 440, adScale: 1.8, apScale: 0.0, type: 'true_hybrid', ignite: false },
-
-  // Assassins
-  Zed: { baseLvl6: 550, adScale: 2.8, apScale: 0.0, type: 'physical', ignite: true },
-  Talon: { baseLvl6: 560, adScale: 2.9, apScale: 0.0, type: 'physical', ignite: true },
-  Katarina: { baseLvl6: 540, adScale: 2.2, apScale: 2.4, type: 'mixed', ignite: true },
-  Akali: { baseLvl6: 530, adScale: 1.8, apScale: 2.5, type: 'magic', ignite: true },
-  Qiyana: { baseLvl6: 540, adScale: 2.8, apScale: 0.0, type: 'physical', ignite: true },
-  Fizz: { baseLvl6: 520, adScale: 0.0, apScale: 2.6, type: 'magic', ignite: true },
-  LeBlanc: { baseLvl6: 510, adScale: 0.0, apScale: 2.5, type: 'magic', ignite: true },
-  Ekko: { baseLvl6: 500, adScale: 0.0, apScale: 2.4, type: 'magic', ignite: true },
-
-  // Mages
-  Ahri: { baseLvl6: 490, adScale: 0.0, apScale: 2.1, type: 'magic', ignite: true },
-  Syndra: { baseLvl6: 550, adScale: 0.0, apScale: 2.6, type: 'magic', ignite: true },
-  Orianna: { baseLvl6: 460, adScale: 0.0, apScale: 2.0, type: 'magic', ignite: false },
-  Viktor: { baseLvl6: 480, adScale: 0.0, apScale: 2.3, type: 'magic', ignite: false },
-  Veigar: { baseLvl6: 520, adScale: 0.0, apScale: 2.5, type: 'magic', ignite: false },
-  Lux: { baseLvl6: 510, adScale: 0.0, apScale: 2.4, type: 'magic', ignite: true },
-  Vex: { baseLvl6: 500, adScale: 0.0, apScale: 2.3, type: 'magic', ignite: true },
-
-  // Tanks
-  Malphite: { baseLvl6: 420, adScale: 0.0, apScale: 1.8, type: 'magic', ignite: false },
-  Ornn: { baseLvl6: 440, adScale: 1.2, apScale: 0.0, type: 'magic', ignite: false },
-  Sion: { baseLvl6: 450, adScale: 1.8, apScale: 0.0, type: 'physical', ignite: false },
-  ChoGath: { baseLvl6: 480, adScale: 0.0, apScale: 1.8, type: 'true_hybrid', ignite: true },
-
-  // ADCs & Marksmen
-  Jinx: { baseLvl6: 420, adScale: 2.0, apScale: 0.0, type: 'physical', ignite: false },
-  Kaisa: { baseLvl6: 510, adScale: 1.8, apScale: 2.0, type: 'mixed', ignite: false },
-  Ezreal: { baseLvl6: 460, adScale: 2.2, apScale: 1.6, type: 'mixed', ignite: false },
-  Lucian: { baseLvl6: 520, adScale: 2.6, apScale: 0.0, type: 'physical', ignite: true },
-  Samira: { baseLvl6: 540, adScale: 2.8, apScale: 0.0, type: 'physical', ignite: true },
-
-  // Junglers
-  LeeSin: { baseLvl6: 530, adScale: 2.6, apScale: 0.0, type: 'physical', ignite: false },
-  JarvanIV: { baseLvl6: 480, adScale: 2.3, apScale: 0.0, type: 'physical', ignite: false },
-  Viego: { baseLvl6: 490, adScale: 2.4, apScale: 0.0, type: 'physical', ignite: false },
-  Nocturne: { baseLvl6: 470, adScale: 2.2, apScale: 0.0, type: 'physical', ignite: false },
-  XinZhao: { baseLvl6: 490, adScale: 2.3, apScale: 0.0, type: 'physical', ignite: false },
-  MasterYi: { baseLvl6: 460, adScale: 2.2, apScale: 0.0, type: 'true_hybrid', ignite: true },
-};
-
-function calculateKillLine(
-  enemyChamp: string,
-  myChamp: string,
-  enemyLevel = 6,
-  enemyBonusAd = 25.0,
-  enemyBonusAp = 0.0,
-  myMaxHp = 1150.0,
-  myArmor = 45.0,
-  myMr = 36.0
-) {
-  const profile: BurstProfile = BURST_PROFILES[enemyChamp] || {
-    baseLvl6: 460.0,
-    adScale: 2.0,
-    apScale: 1.8,
-    type: 'physical',
-    ignite: true,
-  };
-
-  const baseDmg = profile.baseLvl6 * (0.6 + enemyLevel * 0.066);
-  const rawBurst = baseDmg + (enemyBonusAd * profile.adScale) + (enemyBonusAp * profile.apScale);
-
-  let reducedBurst = 0;
-  if (profile.type === 'physical') {
-    reducedBurst = rawBurst * (100 / (100 + myArmor));
-  } else if (profile.type === 'magic') {
-    reducedBurst = rawBurst * (100 / (100 + myMr));
-  } else if (profile.type === 'mixed') {
-    const phys = (rawBurst * 0.5) * (100 / (100 + myArmor));
-    const mag = (rawBurst * 0.5) * (100 / (100 + myMr));
-    reducedBurst = phys + mag;
-  } else {
-    const trueDmg = rawBurst * 0.3;
-    const phys = (rawBurst * 0.7) * (100 / (100 + myArmor));
-    reducedBurst = trueDmg + phys;
-  }
-
-  const hasIgnite = profile.ignite;
-  const igniteDmg = hasIgnite ? 70 + enemyLevel * 20 : 0;
-  const totalLethal = Math.round(reducedBurst + igniteDmg);
-  const killHpPercent = Math.min(100, Math.round((totalLethal / myMaxHp) * 100));
-  const safeHpThreshold = totalLethal;
-
-  let dangerBadge = '安全圏 🟢';
-  let dangerColor = '#10b981';
-  let advice = `HP余裕あり。敵のスキル空振りに反撃を合わせましょう。`;
-
-  if (killHpPercent >= 65) {
-    dangerBadge = '極限警戒 💀';
-    dangerColor = '#dc2626';
-    advice = `HP ${killHpPercent}% (${totalLethal}以下) で即死警戒ライン！ Flashなしでの不用意な接近は厳禁。`;
-  } else if (killHpPercent >= 50) {
-    dangerBadge = '超危険 🔴';
-    dangerColor = '#ef4444';
-    advice = `HP ${killHpPercent}% (${totalLethal}以下) で即死圏内。タワー下でも甘えた居残りはリコール推奨！`;
-  } else if (killHpPercent >= 35) {
-    dangerBadge = '警戒 🟡';
-    dangerColor = '#f59e0b';
-    advice = `HP ${killHpPercent}% (${totalLethal}以下) でバースト警戒。敵主要スキルのCDを見てトレード。`;
-  }
-
-  return {
-    enemy_champion: enemyChamp,
-    enemy_level: enemyLevel,
-    has_ignite: hasIgnite,
-    total_lethal_damage: totalLethal,
-    raw_burst_damage: Math.round(rawBurst),
-    ignite_damage: igniteDmg,
-    kill_hp_percent: killHpPercent,
-    my_max_hp: myMaxHp,
-    safe_hp_threshold: safeHpThreshold,
-    danger_badge: dangerBadge,
-    danger_color: dangerColor,
-    advice,
-  };
-}
+// 2026-10-08: 「Lv6 推定致死量バースト」を削除（ユーザー判断）。敵のダメージは約45体分の手書きの係数、
+// 自分の体力は誰でも1150・防御も固定で、根拠の無い数字を「409 DMG」と実測のように出していた。
 
 const BLUEPRINTS: Record<string, any[]> = {
   Darius: [
@@ -257,15 +117,27 @@ async function buildRejectedIntel(myChamp: string, enemyChamp: string) {
   return result;
 }
 
+async function fetchClearTimes(myChamp: string, enemyChamp: string): Promise<{ my: number | null; enemy: number | null }> {
+  if (!supabase) return { my: null, enemy: null };
+  try {
+    const { data } = await supabase
+      .from('champion_jungle_timing_agg')
+      .select('champion, external_fastest_clear_sec')
+      .in('champion', [myChamp, enemyChamp]);
+    const find = (c: string) => (data || []).find((r: any) => String(r.champion).toLowerCase() === c.toLowerCase())?.external_fastest_clear_sec ?? null;
+    return { my: find(myChamp), enemy: find(enemyChamp) };
+  } catch {
+    return { my: null, enemy: null };
+  }
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const myChamp = searchParams.get('my') || 'JarvanIV';
   const enemyChamp = searchParams.get('enemy') || 'LeeSin';
 
-  // 1. 即死キルライン推定計算
-  const killLine = calculateKillLine(enemyChamp, myChamp);
-
-  // 2. 3段階手順書
+  // 1. 3段階手順書（個別に書いてあるのは BLUEPRINTS の数体だけ。それ以外は全員共通の一般的な流れ）
+  const phasesAreGeneric = !BLUEPRINTS[enemyChamp];
   const phases = BLUEPRINTS[enemyChamp] || [
     {
       phase: "Phase 1 (Lv1〜2)",
@@ -297,10 +169,13 @@ export async function GET(request: NextRequest) {
     success: true,
     my_champion: myChamp,
     enemy_champion: enemyChamp,
-    kill_line: killLine,
     blueprint: {
-      phases
+      phases,
+      phases_are_generic: phasesAreGeneric,
     },
+    // 初動ルート用の最速フルクリア時間（champion_jungle_timing_agg、junglepedia 由来の実測。無ければ null）
+    // 2026-10-08: 以前はどこからも渡しておらず、画面は誰でも「約3分15秒（目安推測）」だった
+    jungle_clear: await fetchClearTimes(myChamp, enemyChamp),
     rejected_intel: rejectedIntel
   });
 }

@@ -36,7 +36,8 @@ export default function GlobalNavbar() {
     <>
       {/* 👑 トップ固定グローバルメニューバー */}
       <header className="sticky top-0 z-50 bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800/80 px-4 py-2.5">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+        {/* 2026-10-08: ヘッダーは画面幅いっぱいを使う（max-w-7xl=1280px の枠では、名前つきメニュー8個と左右の部品が入りきらず重なっていた） */}
+        <div className="mx-auto flex items-center justify-between gap-4">
           
           {/* ロゴ */}
           <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
@@ -52,7 +53,7 @@ export default function GlobalNavbar() {
                   v2.0
                 </span>
               </div>
-              <p className="text-[10px] text-zinc-400 hidden xl:block">
+              <p className="text-[10px] text-zinc-400 hidden 2xl:block">
                 LoL 戦術バイブル ＆ リアルタイムHUD連動コクピット
               </p>
             </div>
@@ -60,7 +61,8 @@ export default function GlobalNavbar() {
 
           {/* PC向けメニューバー (横並びタブ)
               2026-10-08: 8項目を名前つきで並べると 768〜1279px で入りきらず、名前が1文字ずつ折り返していた。
-              1280px未満はアイコンのみ（表示中のページだけ名前も出す。名前はマウスを乗せると出る） */}
+              1536px未満はアイコンのみ（表示中のページだけ名前も出す。名前はマウスを乗せると出る）。
+              2026-10-08: 1280px で切り替えると 1,325px 前後で右端のボタンと重なったため 1536px に変更 */}
           <nav className="hidden md:flex items-center gap-1 text-xs font-bold min-w-0">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
@@ -70,14 +72,14 @@ export default function GlobalNavbar() {
                   key={item.href}
                   href={item.href}
                   title={item.name}
-                  className={`flex items-center gap-1.5 px-2.5 xl:px-3 py-1.5 rounded-xl transition-all whitespace-nowrap shrink-0 ${
+                  className={`flex items-center gap-1.5 px-2.5 2xl:px-3 py-1.5 rounded-xl transition-all whitespace-nowrap shrink-0 ${
                     isActive
                       ? 'bg-amber-500 text-zinc-950 shadow-md shadow-amber-950/40'
                       : 'text-zinc-400 hover:text-white hover:bg-zinc-900 border border-transparent hover:border-zinc-800'
                   }`}
                 >
                   <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-zinc-950' : 'text-zinc-400'}`} />
-                  <span className={isActive ? '' : 'hidden xl:inline'}>{item.name}</span>
+                  <span className={isActive ? '' : 'hidden 2xl:inline'}>{item.name}</span>
                 </Link>
               );
             })}

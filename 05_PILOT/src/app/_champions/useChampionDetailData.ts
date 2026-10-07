@@ -115,10 +115,21 @@ export function useChampionDetailData({ rawChampParam, vsEnemyId, customRoles, c
     }
   }, [archetype]);
 
+  // 目標ランク×ロールの実測平均（/api/coach/rank-benchmark）。「目標CS」をこれで置き換える（2026-10-08）
+  const [roleBench, setRoleBench] = useState<{ tier: string; roles: Record<string, any> } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/coach/rank-benchmark', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (!cancelled && d?.roles) setRoleBench({ tier: d.targetTier, roles: d.roles }); })
+      .catch(() => { /* 取れなければ従来の表示のまま */ });
+    return () => { cancelled = true; };
+  }, []);
+
   // ⚡ レーン別・チャンピオン固有のテンポ指標（動的算出）
   const laneTempo = useMemo(() => {
     if (!selectedDetail) return null;
-    return getLaneTempoMetrics({
+    const base = getLaneTempoMetrics({
       id: selectedDetail.id,
       jpName: selectedDetail.jpName,
       archetype,
@@ -127,7 +138,31 @@ export function useChampionDetailData({ rawChampParam, vsEnemyId, customRoles, c
       powerSpikesText: selectedDetail.facts?.powerSpikes,
       earlyStageText: selectedDetail.bible?.stages?.early,
     });
-  }, [selectedDetail, archetype, currentRole, spikeValues]);
+    if (!base) return base;
+    // ★ 2026-10-08: 「最速フルクリア」「1stコア平均」「目標CS」は型ごとの固定値（全員 02:45〜02:50 / 11:20 / 8.5+ など）だった。
+    //   実測（jungleTiming / 目標ランク平均）があれば置き換え、JGで実測が無い時は「データなし」にする
+    const mmss = (sec: number) => `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(Math.round(sec % 60)).padStart(2, '0')}`;
+    const jt = selectedDetail.jungleTiming;
+    const ROLE_TO_BENCH: Record<string, string> = { TOP: 'TOP', JG: 'JUNGLE', MID: 'MIDDLE', BOT: 'BOTTOM', ADC: 'BOTTOM', SUP: 'UTILITY' };
+    const bench = roleBench?.roles?.[ROLE_TO_BENCH[currentRole] || ''];
+    const benchCs = bench?.values?.cs_per_min;
+    const fix = (m: any) => {
+      if (!m) return m;
+      if (m.label === '最速フルクリア') {
+        return { ...m, value: jt?.fastestClearSec ? mmss(jt.fastestClearSec) : 'データなし', label: '最速フルクリア（実測）' };
+      }
+      if (m.label === '1stコア平均') {
+        return jt?.avgFirstCoreSec
+          ? { ...m, value: mmss(jt.avgFirstCoreSec), label: `1stコア平均（${jt.sampleCount ?? '?'}試合）` }
+          : { ...m, value: 'データなし' };
+      }
+      if (m.label === '目標CS' && typeof benchCs === 'number') {
+        return { ...m, value: `${benchCs.toFixed(1)} /分`, label: `目標CS（${roleBench?.tier}平均）` };
+      }
+      return m;
+    };
+    return { ...base, metric1: fix(base.metric1), metric2: fix(base.metric2) };
+  }, [selectedDetail, archetype, currentRole, spikeValues, roleBench]);
 
   // 📖 序盤・中盤・終盤の立ち回り指南（動的生成）
   const stageTactics = useMemo(() => {

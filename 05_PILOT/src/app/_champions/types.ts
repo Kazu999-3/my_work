@@ -29,6 +29,8 @@ export interface MatchupItem {
 }
 
 export interface ChampionDetail {
+  /** JGのタイミング実測（compile_champions.mjs が付与） */
+  jungleTiming?: JungleTiming | null;
   id: string;
   jpName: string;
   title: string;
@@ -169,6 +171,15 @@ export interface FactClaim {
 
 /** 実測ビルド（直近30日・同じロールの試合から集計。rate は %） */
 /** 序盤・中盤・終盤（25分未満 / 25〜32分 / 32分以上で終わった試合）の勝率 */
+/** JGのタイミング実測（champion_jungle_timing_agg。最速クリアは junglepedia、コア完成は収集した試合の平均） */
+export interface JungleTiming {
+  sampleCount?: number | null;
+  avgFirstCoreSec?: number | null;
+  avgSecondCoreSec?: number | null;
+  tier?: string | null;
+  fastestClearSec?: number | null;
+}
+
 export interface MeasuredSpikes {
   early: { games: number; winRate: number };
   mid: { games: number; winRate: number };

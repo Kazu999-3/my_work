@@ -16,21 +16,6 @@ interface Phase {
   badge: string;
 }
 
-interface KillLineData {
-  enemy_champion: string;
-  enemy_level: number;
-  has_ignite: boolean;
-  total_lethal_damage: number;
-  raw_burst_damage: number;
-  ignite_damage: number;
-  kill_hp_percent: number;
-  my_max_hp: number;
-  safe_hp_threshold: number;
-  danger_badge: string;
-  danger_color: string;
-  advice: string;
-}
-
 interface RejectedIntel {
   weaknesses: string | null;
   counter_champions: string | null;
@@ -44,9 +29,10 @@ interface BlueprintResponse {
   success: boolean;
   my_champion: string;
   enemy_champion: string;
-  kill_line?: KillLineData;
+  jungle_clear?: { my: number | null; enemy: number | null };
   blueprint: {
     phases: Phase[];
+    phases_are_generic?: boolean;
   };
   rejected_intel?: RejectedIntel;
 }
@@ -110,8 +96,7 @@ export default function MatchupBlueprintCard({
     );
   }
 
-  const blueprint = data?.blueprint || { phases: [] };
-  const killLine = data?.kill_line;
+  const blueprint: { phases: Phase[]; phases_are_generic?: boolean } = data?.blueprint || { phases: [] };
   const rejected = data?.rejected_intel;
 
   return (
@@ -196,37 +181,9 @@ export default function MatchupBlueprintCard({
               </Link>
             )}
 
-            {killLine && (
-              <div className="flex items-center gap-3 bg-slate-950 px-4 py-2.5 rounded-xl border border-slate-800 text-right">
-                <div>
-                  <div className="text-[10px] text-slate-400 font-medium">Lv6 推定致死量バースト</div>
-                  <div className="text-lg font-black text-rose-400">
-                    {killLine.total_lethal_damage} <span className="text-xs font-normal text-slate-500">DMG</span>
-                  </div>
-                </div>
-                <span className="px-2.5 py-1 rounded-full text-xs font-extrabold bg-rose-950/80 border border-rose-800 text-rose-300">
-                  {killLine.danger_badge}
-                </span>
-              </div>
-            )}
           </div>
         </div>
 
-        {/* キルライン・アドバイス */}
-        {killLine && (
-          <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800/80 flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-            <div className="space-y-1 text-xs">
-              <p className="font-bold text-slate-200">{killLine.advice}</p>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-400">
-                <span>敵Lv: {killLine.enemy_level}</span>
-                <span>イグナイト込み: {killLine.has_ignite ? 'あり' : 'なし'}</span>
-                <span>即死HP警戒割合: <strong className="text-rose-400">{killLine.kill_hp_percent}% 以下</strong></span>
-                <span>安全ライン: <strong className="text-emerald-400">&gt; {killLine.safe_hp_threshold} HP</strong></span>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* 2. 3段階フェーズ別 戦術手順書 */}
@@ -238,7 +195,9 @@ export default function MatchupBlueprintCard({
               ⚔️ 3段階レーン戦術手順書（{enemyChamp} 対策）
             </h3>
           </div>
-          <span className="text-[11px] text-slate-400">時系列アクション</span>
+          <span className="text-[11px] text-slate-400">
+            {blueprint.phases_are_generic ? '一般的な流れ（この対面専用の手順は未登録）' : '時系列アクション'}
+          </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -270,7 +229,7 @@ export default function MatchupBlueprintCard({
       </div>
 
       {/* 3. 初動ジャングルルート予測 */}
-      <EarlyJunglePathingCard myChampion={myChamp} enemyChampion={enemyChamp} />
+      <EarlyJunglePathingCard myChampion={myChamp} enemyChampion={enemyChamp} myFastestClearSec={data?.jungle_clear?.my ?? null} enemyFastestClearSec={data?.jungle_clear?.enemy ?? null} />
 
       {/* 4. 実戦の罠・没理由・苦手な相手（champion_facts連動） */}
       {rejected && (rejected.weaknesses || rejected.counter_champions || rejected.matchup_memo) && (
