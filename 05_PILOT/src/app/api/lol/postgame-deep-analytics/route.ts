@@ -7,7 +7,6 @@ import {
   fetchMatchTimeline,
 } from '@/lib/riot';
 import { supabase } from '@/lib/supabaseClient';
-import { extractFights, FIGHT_RULES } from '@/lib/matchFights';
 import { analyzePostgameTempo, loadItemMeta, type PostgameTempoReport } from '@/lib/postgameTempo';
 
 export const dynamic = 'force-dynamic';
@@ -271,9 +270,6 @@ export async function GET(request: NextRequest) {
       control_ward_times: controlWardTimes.map(fmtTs),
       role_recent,
       auto_review,
-      // 集団戦レビュー（以前は別API /api/lol/match-fights が試合詳細とタイムラインを取り直していた）
-      fights: timeline ? extractFights(match, timeline, puuid) : null,
-      fight_rules: FIGHT_RULES,
       timeline_error: timelineError,
       tempo,
       tempo_error,

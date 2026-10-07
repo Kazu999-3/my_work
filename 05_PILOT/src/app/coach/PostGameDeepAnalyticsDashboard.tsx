@@ -1,5 +1,6 @@
 'use client';
 
+import LiteMarkdown from "@/components/LiteMarkdown";
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { getChampIcon } from '@/lib/ddragonClient';
@@ -8,7 +9,6 @@ import type { PostgameTempoReport } from '@/lib/postgameTempo';
 import PostGameTempoSections from './PostGameTempoSections';
 import TargetComparisonCard from './TargetComparisonCard';
 import PostGameReflectionForm from './PostGameReflectionForm';
-import MatchFightsAnalyticsCard, { type FightsData } from './MatchFightsAnalyticsCard';
 
 // 試合後: 詳細分析（2026-10-05 全面見直し）
 // 旧版はリコールのテンポ損失・ワード監査の採点・ランク水準ラベル・「最重要改善アクション」など、
@@ -78,8 +78,6 @@ interface PostGameData {
   tempo_error: string | null;
   timeline_error: string | null;
   auto_review: { weaknesses: string[]; focus: string | null; advice: string; created_at: string } | null;
-  fights: FightsData | null;
-  fight_rules: { fight_gap_sec: number; objective_attach_sec: number };
   role_recent: {
     count: number;
     avg: Record<'cs_per_min' | 'deaths' | 'vision_per_min' | 'kill_participation' | 'damage_share' | 'control_wards_bought', number | null>;
@@ -126,7 +124,8 @@ export default function PostGameDeepAnalyticsDashboard({
   const [error, setError] = useState<string | null>(null);
 
   const currentMatchId = controlledMatchId || internalMatchId;
-  const [reviewExpanded, setReviewExpanded] = useState(false);
+  // 2026-10-08: ユーザー要望で最初から開いた状態にする（以前は閉じた状態で始まっていた）
+  const [reviewExpanded, setReviewExpanded] = useState(true);
 
   const fetchAnalytics = async (matchId?: string) => {
     setSwitching(true);
@@ -326,9 +325,10 @@ export default function PostGameDeepAnalyticsDashboard({
           {data.auto_review.focus && (
             <p className="text-[11px]"><span className="font-bold text-amber-300">次に意識すること: </span><span className="text-stone-300">{data.auto_review.focus}</span></p>
           )}
-          <p className={`text-[11px] text-stone-300 leading-relaxed whitespace-pre-wrap ${reviewExpanded ? '' : 'line-clamp-4'}`}>
-            {data.auto_review.advice}
-          </p>
+          <LiteMarkdown
+            text={data.auto_review.advice}
+            className={`text-[11px] text-stone-300 leading-relaxed space-y-0.5 ${reviewExpanded ? '' : 'max-h-20 overflow-hidden'}`}
+          />
           <button
             type="button"
             onClick={() => setReviewExpanded((v) => !v)}
@@ -489,8 +489,7 @@ export default function PostGameDeepAnalyticsDashboard({
         </div>
       )}
 
-      {/* 集団戦レビュー（同じタイムラインから計算） */}
-      <MatchFightsAnalyticsCard data={data.fights} rules={data.fight_rules} error={data.timeline_error} />
+      {/* 2026-10-08: 集団戦レビューはユーザー判断で外した */}
 
       {/* この試合の振り返り（旧「振り返りノート」タブ） */}
       <PostGameReflectionForm

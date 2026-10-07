@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
+import { PORTAL_NOTIFICATION_TYPES } from '../../../../../lib/notificationScope';
 
 // 通知を既読にする。{id: number} で1件、{all: true} で全件。
 export async function POST(req: NextRequest) {
@@ -13,7 +14,7 @@ export async function POST(req: NextRequest) {
     const { id, all } = await req.json().catch(() => ({}));
     let query = supabase.from('admin_notifications').update({ read: true });
     if (all) {
-      query = query.eq('read', false);
+      query = query.eq('read', false).in('type', [...PORTAL_NOTIFICATION_TYPES]);
     } else if (id) {
       query = query.eq('id', id);
     } else {

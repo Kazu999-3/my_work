@@ -280,8 +280,11 @@ export async function POST(req: Request) {
       enemyJg = enemyParticipants[0];
     }
 
-    const enemyName = enemyJg.riotIdGameName || enemyJg.summonerName || 'Unknown';
-    const enemyTag = enemyJg.riotIdTagline || '';
+    // ★ 2026-10-08: Spectator v5 は名前を riotId（"名前#タグ"）1項目で返す。summonerName / riotIdGameName は廃止済みで、
+    //   以前は全員の名前が空（敵JGは "Unknown#"）になっていた
+    const [enemyRiotName, enemyRiotTag] = String(enemyJg.riotId || '').split('#');
+    const enemyName = enemyRiotName || enemyJg.riotIdGameName || enemyJg.summonerName || 'Unknown';
+    const enemyTag = enemyRiotTag || enemyJg.riotIdTagline || '';
     const enemyChampName = await getChampionNameById(enemyJg.championId);
     // 偵察結果から自動でマッチアップ分析(自分 vs 対面)を走らせられるよう、自分の
     // チャンピオンも解決しておく(#① マッチアップタブ廃止に伴う自動化)。
@@ -416,7 +419,8 @@ export async function POST(req: Request) {
     for (const p of activeGame.participants) {
       const result = await (async () => {
         const isEnemy = p.teamId !== myTeamId;
-        const role = p.puuid === enemyJg.puuid ? 'JG' : (p.teamId === myTeamId ? (p.puuid === myPuuid ? 'JG' : 'LANER') : 'LANER');
+        // ★ 2026-10-08: 味方側は「検索した本人＝JG」と決め打ちしていた（ミッドで検索すると本人がJG扱い）。スマイト所持で判定する
+        const role = p.puuid === enemyJg.puuid || p.spell1Id === 11 || p.spell2Id === 11 ? 'JG' : 'LANER';
         
         let winRate: number | null = null;
         let pIsOtp = false;
@@ -509,7 +513,7 @@ export async function POST(req: Request) {
         }
 
         return {
-          name: p.riotIdGameName || p.summonerName,
+          name: (p.riotId ? String(p.riotId).split('#')[0] : '') || p.riotIdGameName || p.summonerName,
           championId: p.championId,
           // フロント側(ScoutTab.tsx)が独自の19体だけのハードコードマップでchampionIdを
           // 名前へ変換しており、それ以外のチャンピオンは全部LeeSin表示になっていた。

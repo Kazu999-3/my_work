@@ -13,7 +13,8 @@ import { useCoachRiotId } from './riotIdContext';
 // Riot ID は他のタブと同じ端末保存の値（coach_riot_id）を使う。
 
 function Collapsible({ title, children }: { title: string; children: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
+  // 2026-10-08: ユーザー要望で最初から開いた状態にする（以前は閉じた状態で始まっていた）
+  const [open, setOpen] = useState(true);
   return (
     <section className="rounded-2xl border border-slate-800 bg-slate-900/60">
       <button type="button" onClick={() => setOpen((v) => !v)}

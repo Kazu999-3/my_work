@@ -322,6 +322,9 @@ export async function runPostGameReview(opts: { matchId?: string; focus?: string
   let myJungleCsAt5Min: number | null = null;
   let worstDeath: WorstDeathInfo | null = null;
   let recallEfficiency: RecallEfficiencyInfo | null = null;
+  // ★ 2026-10-08: チーム状況。以前は自分と対面の数字しか渡しておらず、「味方のどのレーンが負けていたか」を AI が知らなかった
+  const laneGoldAt15: { role: string; ally: string; enemy: string; diff: number; isMe: boolean }[] = [];
+  let laneGoldMinute: number | null = null;
 
   try {
     const timeline = await fetchMatchTimeline(targetMatchId, apiKey);
@@ -581,6 +584,32 @@ export async function runPostGameReview(opts: { matchId?: string; focus?: string
 
       worstDeath = topWorstDeath;
 
+      // レーン別の対面ゴールド差（15分。15分前に終わった試合は最後のフレーム）
+      const goldFrame = frames.find((f: any) => Math.floor(f.timestamp / 60000) === 15) || frames[frames.length - 1];
+      if (goldFrame?.participantFrames) {
+        laneGoldMinute = Math.floor(goldFrame.timestamp / 60000);
+        const pidByPuuid = new Map<string, number>();
+        participants.forEach((tp: any) => pidByPuuid.set(tp.puuid, tp.participantId));
+        const goldOf = (mp: any) => {
+          const pid = pidByPuuid.get(mp.puuid);
+          return pid ? (goldFrame.participantFrames[String(pid)]?.totalGold ?? null) : null;
+        };
+        const ROLE_JA: Record<string, string> = { TOP: 'TOP', JUNGLE: 'JG', MIDDLE: 'MID', BOTTOM: 'ADC', UTILITY: 'SUP' };
+        for (const ally of match.participants.filter((mp: any) => mp.teamId === me.teamId)) {
+          const opp = match.participants.find((mp: any) => mp.teamId !== me.teamId && mp.lane === ally.lane);
+          const ag = goldOf(ally);
+          const eg = opp ? goldOf(opp) : null;
+          if (ag === null || eg === null || !opp) continue;
+          laneGoldAt15.push({
+            role: ROLE_JA[String(ally.lane).toUpperCase()] || String(ally.lane),
+            ally: ally.championName,
+            enemy: opp.championName,
+            diff: ag - eg,
+            isMe: ally.puuid === me.puuid,
+          });
+        }
+      }
+
       // リコール効率 ＆ 1500G抱え落ち診断の集計
       const unspent1500Events: { min: number; gold: number; summary: string }[] = [];
       const recallGoldList: number[] = [];
@@ -711,8 +740,27 @@ export async function runPostGameReview(opts: { matchId?: string; focus?: string
   const focus = opts.focus;
   const isJungle = lane === 'JUNGLE';
 
+  // ★ 2026-10-08: チーム状況のブロック。数値はすべて試合データ（match / timeline）から
+  const allies = match.participants.filter((mp: any) => mp.teamId === me.teamId);
+  const enemies = match.participants.filter((mp: any) => mp.teamId !== me.teamId);
+  const sum = (arr: any[], k: string) => arr.reduce((t, x) => t + (Number(x[k]) || 0), 0);
+  const myTeamObj = match.teams?.find((t: any) => t.teamId === me.teamId)?.objectives || {};
+  const enemyTeamObj = match.teams?.find((t: any) => t.teamId !== me.teamId)?.objectives || {};
+  const objLine = (key: string, label: string) =>
+    `${label} ${myTeamObj?.[key]?.kills ?? 0}-${enemyTeamObj?.[key]?.kills ?? 0}`;
+  const teamBlock = [
+    `・チームのキル/デス: 味方 ${sum(allies, 'kills')}キル・${sum(allies, 'deaths')}デス / 敵 ${sum(enemies, 'kills')}キル・${sum(enemies, 'deaths')}デス`,
+    `・オブジェクト（味方-敵）: ${[objLine('dragon', 'ドラゴン'), objLine('horde', 'グラブ'), objLine('riftHerald', 'ヘラルド'), objLine('baron', 'バロン'), objLine('tower', 'タワー')].join(' / ')}`,
+    laneGoldAt15.length
+      ? `・${laneGoldMinute}分時点の各レーンの対面とのゴールド差: ` +
+        laneGoldAt15.map((l) => `${l.role} ${l.ally}${l.isMe ? '(自分)' : ''} vs ${l.enemy} ${l.diff >= 0 ? '+' : ''}${l.diff}G`).join(' / ')
+      : '',
+    `・味方の成績: ` + allies.map((a: any) => `${a.championName}${a.puuid === me.puuid ? '(自分)' : ''} ${a.kills}/${a.deaths}/${a.assists}`).join(' / '),
+  ].filter(Boolean).join('\n');
+
   const prompt = `あなたはLoLプロフェッショナルコーチです。特にジャングル（JG）の戦術理論、最序盤のルート選択、パワースパイク、オブジェクト判断、および連敗防止メンタルに精通しています。
 以下の客観データを元に、抽象論を排して具体的に振り返り・添削を行ってください。
+【数値のルール】数値（%・秒・ゴールド・CS等）は下に示したものだけを使うこと。示していない指標（KP@15、ワード数、時間帯別の値など）を作らないこと。
 
 【プレイヤー情報】
 ・ロール: ${lane} ${isJungle ? '（※JGメインプレイヤー）' : ''}
@@ -722,6 +770,9 @@ export async function runPostGameReview(opts: { matchId?: string; focus?: string
 ・CS/min: ${csPerMin} (JG基準: 5.5〜6.5/min) | Vision/min: ${visionPerMin} (JG目標: 0.8以上)
 
 ${getPlayerStylePromptContext()}
+
+【チーム状況（試合データの実測）】
+${teamBlock}
 
 【弱点・課題特定】
 ${weaknesses.length > 0 ? weaknesses.map((w) => `・${w}`).join('\n') : '・特になし'}
@@ -744,7 +795,8 @@ ${focus ? `\n=== この試合で意識すると宣言した「今日の焦点」
 
 【コーチング指示】
 以下の構成で日本語600字程度でアドバイスし、最後に必ずJSONブロックを出力してください:
-1. 試合が崩れた根本要因・テンポの分析: ${isJungle ? 'JG視点での最序盤(Lv1〜6)のルート・スカトル争奪・ガンク成否、および【チャンピオン辞典の基準タイム（フルクリアや1コア完成時間）との比較】を踏まえたテンポ評価' : '序盤のレーン主導権とターニングポイント、アイテム完成テンポ'}。
+0. ${me.win ? 'この試合は【勝利】です。「崩れた」「敗北した」とは書かず、勝因と「もっと楽に・早く勝てた点」を述べること。' : 'この試合は【敗北】です。'}【チーム状況】を見て、結果が自分の動きによるものか、他レーンの負け（対面とのゴールド差・デス数）によるものかを分けて評価すること。他レーンが大きく負けていた場合は、それを前提に「自分がどう助けられたか／どう被害を減らせたか」を述べる。
+1. ${me.win ? '勝因' : '負けた根本要因'}・テンポの分析: ${isJungle ? 'JG視点での最序盤(Lv1〜6)のルート・スカトル争奪・ガンク成否、および【チャンピオン辞典の基準タイム（フルクリアや1コア完成時間）との比較】を踏まえたテンポ評価' : '序盤のレーン主導権とターニングポイント、アイテム完成テンポ'}。
 2. 対面JGとのパワースパイク比較: 自分と相手のどちらがどの時間帯に強かったか、無理な戦闘を仕掛けていなかったか。
 3. 次戦の修正アクション（1〜2点）: 次の試合ですぐ実践できる具体的な行動。
 ${focus ? `4. 今日の焦点の達成度: 「${focus}」を【達成】または【未達成】と明記した上で根拠を述べる。` : ''}

@@ -1,5 +1,6 @@
 'use client';
 
+import LiteMarkdown from "@/components/LiteMarkdown";
 import { useState, useEffect, useCallback } from 'react';
 
 // ============================================================
@@ -37,7 +38,8 @@ export default function CoachReviewPanel({ summonerName }: { summonerName?: stri
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [expanded, setExpanded] = useState<string | null>(null);
+  // 2026-10-08: ユーザー要望で全件を開いた状態で始める。閉じたものだけを覚える（以前は1件だけ開く作り）
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
 
   const [trendSummary, setTrendSummary] = useState<string>('');
   const [trendLoading, setTrendLoading] = useState(false);
@@ -132,7 +134,7 @@ export default function CoachReviewPanel({ summonerName }: { summonerName?: stri
         <div className="space-y-2">
           <div className="text-[11px] text-slate-500">直近{analyses.length}件</div>
           {analyses.map((a) => {
-            const open = expanded === a.matchId;
+            const open = !collapsed.has(a.matchId);
             return (
               <div
                 key={a.matchId}
@@ -140,7 +142,7 @@ export default function CoachReviewPanel({ summonerName }: { summonerName?: stri
               >
                 <button
                   type="button"
-                  onClick={() => setExpanded(open ? null : a.matchId)}
+                  onClick={() => setCollapsed((prev) => { const next = new Set(prev); if (open) next.add(a.matchId); else next.delete(a.matchId); return next; })}
                   className="w-full flex flex-wrap items-center gap-2 px-3.5 py-2.5 text-left hover:bg-slate-950 dark:hover:bg-stone-800/40 transition-colors cursor-pointer"
                 >
                   <span
@@ -187,9 +189,10 @@ export default function CoachReviewPanel({ summonerName }: { summonerName?: stri
                       </div>
                     )}
                     {a.advice && (
-                      <div className="rounded-lg bg-slate-900 dark:bg-stone-800/60 px-3 py-2 text-xs text-slate-200 dark:text-stone-200 whitespace-pre-wrap leading-relaxed">
-                        {a.advice}
-                      </div>
+                      <LiteMarkdown
+                        text={a.advice}
+                        className="rounded-lg bg-slate-900 dark:bg-stone-800/60 px-3 py-2 text-xs text-slate-200 dark:text-stone-200 leading-relaxed space-y-0.5"
+                      />
                     )}
                   </div>
                 )}

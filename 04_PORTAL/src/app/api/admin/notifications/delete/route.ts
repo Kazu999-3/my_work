@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
 import { verifyAdminSession } from '../../../../../lib/adminAuth';
+import { PORTAL_NOTIFICATION_TYPES } from '../../../../../lib/notificationScope';
 
 // 通知を削除する。{id: number} で1件、{allRead: true} で既読全件を削除。
 export async function POST(req: NextRequest) {
@@ -14,7 +15,7 @@ export async function POST(req: NextRequest) {
     let query = supabase.from('admin_notifications').delete();
 
     if (allRead) {
-      query = query.eq('read', true);
+      query = query.eq('read', true).in('type', [...PORTAL_NOTIFICATION_TYPES]);
     } else if (id) {
       query = query.eq('id', id);
     } else {

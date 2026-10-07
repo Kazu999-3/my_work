@@ -13,7 +13,8 @@ import { useCoachRiotId } from './riotIdContext';
 // 手動の振り返りフォームは05では「📝 ソロQ反省ノート」タブが担当するため移していない。
 
 function Collapsible({ title, children }: { title: string; children: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
+  // 2026-10-08: ユーザー要望で最初から開いた状態にする（以前は閉じた状態で始まっていた）
+  const [open, setOpen] = useState(true);
   return (
     <section className="rounded-2xl border border-stone-800 bg-stone-900/60">
       <button
@@ -42,7 +43,7 @@ export default function PostGameTab({ initialMatchId }: { initialMatchId?: strin
 
       {!riotId ? (
         <p className="text-xs text-stone-400 p-4 rounded-xl bg-slate-900/60 border border-slate-800">
-          画面上部の「自分のRiot ID」を入力すると、直近のソロQ試合の詳細分析・集団戦レビュー・自動振り返りの履歴を表示します。
+          画面上部の「自分のRiot ID」を入力すると、直近のソロQ試合の詳細分析・自動振り返りの履歴を表示します。
         </p>
       ) : (
         // Riot ID を変えたら部品ごと作り直して、前の人のデータが残らないようにする

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
+import { PORTAL_TYPES_FILTER } from '@/lib/notificationScope';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +13,7 @@ export async function GET() {
     const { data, error } = await supabase
       .from('admin_notifications')
       .select('*')
+      .not('type', 'in', PORTAL_TYPES_FILTER)
       .order('created_at', { ascending: false })
       .limit(30);
 
@@ -20,6 +22,7 @@ export async function GET() {
     const { count: unreadCount } = await supabase
       .from('admin_notifications')
       .select('id', { count: 'exact', head: true })
+      .not('type', 'in', PORTAL_TYPES_FILTER)
       .eq('read', false);
 
     return NextResponse.json({
@@ -45,6 +48,7 @@ export async function POST(req: NextRequest) {
       const { error } = await supabase
         .from('admin_notifications')
         .update({ read: true })
+        .not('type', 'in', PORTAL_TYPES_FILTER)
         .eq('read', false);
       if (error) throw error;
       return NextResponse.json({ success: true, message: 'All notifications marked as read' });
@@ -79,7 +83,7 @@ export async function DELETE(req: NextRequest) {
       const { error } = await supabase
         .from('admin_notifications')
         .delete()
-        .neq('id', -1);
+        .not('type', 'in', PORTAL_TYPES_FILTER);
       if (error) throw error;
       return NextResponse.json({ success: true, message: 'All notifications deleted' });
     }
