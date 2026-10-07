@@ -20,6 +20,12 @@ on:
   workflow_dispatch:
     # 参照・検証用の手動実行
 
+# pg_cron（migration 93）が pending タスクのある時に workflow_dispatch で起動する。
+# 起動が重なっても同時に1本だけ動かす（後から来た分は1本だけ待機し、前の実行の後に動く）
+concurrency:
+  group: edge-cloud-worker
+  cancel-in-progress: false
+
 jobs:
   run-worker:
     runs-on: ubuntu-latest

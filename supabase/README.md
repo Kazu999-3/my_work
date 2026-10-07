@@ -24,8 +24,8 @@ npx supabase secrets set RIOT_IDS="[YOUR_RIOT_ID_1,YOUR_RIOT_ID_2]"
 ### 3. 関数のデプロイ
 作成したエッジ関数をそれぞれデプロイします。
 ```bash
-npx supabase functions deploy pulse-patches --no-verify-jwt
-npx supabase functions deploy match-importer --no-verify-jwt
+# 2026-10-07: pulse-patches / match-importer は削除済み（壊れていた・毎回0件だったため。migration 94 で定期実行も停止）
+npx supabase functions deploy stats-collector --no-verify-jwt
 ```
 ※ `--no-verify-jwt` は、Cronトリガーから直接呼び出せるようにするための設定です。
 
