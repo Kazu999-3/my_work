@@ -40,7 +40,9 @@ export async function POST(req: Request) {
     if (role && role !== 'GLOBAL') {
       query = query.ilike('role', role);
     }
-    let { data: existingFact, error: factErr } = await query.maybeSingle();
+    const factRes = await query.maybeSingle();
+    let existingFact = factRes.data;
+    const factErr = factRes.error;
     if (factErr) throw factErr;
 
     // champion_facts がない場合、matchup_sentinel からフォールバック取得

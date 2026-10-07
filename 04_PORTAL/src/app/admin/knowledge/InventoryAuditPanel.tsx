@@ -155,7 +155,8 @@ export default function InventoryAuditPanel() {
   const verifiedCount = facts.filter((f) => f.human_verified).length;
   const unverifiedCount = totalCount - verifiedCount;
   
-  const nowSec = Date.now() / 1000;
+  // 画面を開いた時刻で判定する（描画のたびに Date.now() を呼ぶと React の純粋性ルールに反する）
+  const [nowSec] = useState(() => Date.now() / 1000);
   const outdatedCount = facts.filter((f) => {
     if (!f.patch_meta_updated_at) return true;
     const updatedSec = new Date(f.patch_meta_updated_at).getTime() / 1000;

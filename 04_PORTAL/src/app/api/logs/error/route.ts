@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { notifyPortalError } from '@/lib/discordNotify';
+import { notifyPortalError } from '../../../../lib/discordNotify';
 
 export async function POST(req: NextRequest) {
   try {

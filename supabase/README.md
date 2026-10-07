@@ -1,38 +1,11 @@
-# Supabase Edge Functions デプロイマニュアル
+# Supabase Edge Functions（現在は無し）
 
-このディレクトリ（`supabase/functions`）には、Antigravity Sovereign OS の「完全サーバーレス化（Phase 1）」のためのエッジ関数群が格納されています。
-ローカルPCに依存せず、24時間無料でシステムを稼働させるための中核となります。
+2026-10-07 時点で、このリポジトリが管理する Edge Function はありません。
 
-## 🚀 デプロイ手順
+- 2026-06 に作った4本（`pulse-patches` / `match-importer` / `stats-collector` / `memory-encoder`）はすべて削除した。
+  - `pulse-patches`・`match-importer` は pg_cron から呼ばれていたが、毎回「パッチが見つからない」「取り込み0件」を返していた（migration 94 で定期実行を停止）。
+  - `stats-collector`・`memory-encoder` はどこからも呼ばれていなかった。
+- DB から外部を定期的に呼ぶ処理は pg_cron ＋ pg_net で行っている（`04_PORTAL/supabase/migrations/93_pg_cron_pollers.sql`）。鍵は Vault に置く。
+- 稼働の確認は毎朝の健康診断（`scripts/production_health_report.py` の `check_pg_cron`）が行う。
 
-### 1. Supabase CLI のインストールとログイン
-まだインストールしていない場合は、公式の案内に従ってインストールしてください（NPM経由など）。
-```bash
-npx supabase login
-```
-
-### 2. 環境変数の設定 (Secrets)
-エッジ関数がデータベースや外部API（Discord, Riot API等）へアクセスできるように、クラウド上に環境変数を設定します。
-```bash
-npx supabase secrets set PROJECT_URL="https://[YOUR_PROJECT_REF].supabase.co"
-npx supabase secrets set PROJECT_SERVICE_KEY="[YOUR_SERVICE_ROLE_KEY]"
-npx supabase secrets set DISCORD_WEBHOOK="[YOUR_DISCORD_WEBHOOK_URL]"
-npx supabase secrets set RIOT_API_KEY="[YOUR_RIOT_API_KEY]"
-npx supabase secrets set RIOT_IDS="[YOUR_RIOT_ID_1,YOUR_RIOT_ID_2]"
-```
-
-### 3. 関数のデプロイ
-作成したエッジ関数をそれぞれデプロイします。
-```bash
-# 2026-10-07: pulse-patches / match-importer は削除済み（壊れていた・毎回0件だったため。migration 94 で定期実行も停止）
-npx supabase functions deploy stats-collector --no-verify-jwt
-```
-※ `--no-verify-jwt` は、Cronトリガーから直接呼び出せるようにするための設定です。
-
-### 4. Cronトリガー（スケジュール）の設定
-デプロイ後、Supabaseのダッシュボード（Edge Functions設定画面）または `pg_cron` (Database) を使用して、関数を定期的に呼び出すように設定してください。
-- **推奨**: 30分に1回 ( `*/30 * * * *` )
-- HTTP GET ではなく **POST** メソッドで呼び出すようにしてください。
-
----
-*Antigravity V4 Architecture - Event-Driven Empire*
+マイグレーションは `04_PORTAL/supabase/migrations/` にあり、push 時に `.github/workflows/migrate.yml` が自動適用する。

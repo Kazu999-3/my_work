@@ -305,8 +305,8 @@ export async function GET() {
     });
 
     // 2. ログインユーザー宛の受信申請 / 送信申請 (PENDING)
-    let pendingReceived: any[] = [];
-    let pendingSent: any[] = [];
+    const pendingReceived: any[] = [];
+    const pendingSent: any[] = [];
 
     if (myDiscordId) {
       const { data: pendingData } = await supabase

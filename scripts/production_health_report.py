@@ -269,6 +269,42 @@ def check_soloq_coach(r: Report, cur):
         r.add(OK, "ソロQ自動振り返り", f"最新の試合 {fmt_age(newest_game)}・最新の振り返り {fmt_age(newest_analysis)}")
 
 
+# pg_cron（migration 93）で動かしている定期呼び出し。消えた・止まった・呼び出し先がエラーを返す、を検知する。
+# 2026-10-07: 6月に手で登録された pg_cron 2本が毎回「0件」「見つからない」を返したまま数か月誰にも気づかれていなかった。
+EXPECTED_CRON_JOBS = ("poll-soloq-coach", "dispatch-edge-cloud-worker")
+
+
+def check_pg_cron(r: Report, cur):
+    cur.execute("select jobname, active from cron.job")
+    jobs = dict(cur.fetchall())
+    missing = [j for j in EXPECTED_CRON_JOBS if not jobs.get(j)]
+    failed_runs, last_fail = q1(cur, """
+        select count(*) filter (where d.status <> 'succeeded'),
+               max(left(d.return_message, 120)) filter (where d.status <> 'succeeded')
+        from cron.job_run_details d
+        where d.start_time > now() - interval '24 hours'
+    """)
+    # pg_net の応答は約6時間しか残らないため、残っている分で判定する
+    bad_http, total_http, sample = q1(cur, """
+        select count(*) filter (where status_code is null or status_code >= 300),
+               count(*),
+               max(coalesce(status_code::text, 'timeout') || ' ' || left(coalesce(content::text, error_msg, ''), 80))
+                 filter (where status_code is null or status_code >= 300)
+        from net._http_response
+    """)
+    problems = []
+    if missing:
+        problems.append(f"登録が無い・停止中: {', '.join(missing)}")
+    if failed_runs:
+        problems.append(f"24時間の実行失敗 {failed_runs}件（{last_fail}）")
+    if bad_http:
+        problems.append(f"呼び出し先がエラー {bad_http}/{total_http}件（{sample}）")
+    if problems:
+        r.add(WARN, "DBの定期実行（pg_cron）", " / ".join(problems))
+    else:
+        r.add(OK, "DBの定期実行（pg_cron）", f"{len(EXPECTED_CRON_JOBS)}本とも稼働・直近の呼び出し {total_http}件すべて正常")
+
+
 def check_db_size(r: Report, cur):
     size_mb = q1(cur, "select pg_database_size(current_database()) / 1048576.0")[0]
     rev_mb = q1(cur, "select pg_total_relation_size('public.knowledge_revisions') / 1048576.0")[0]
@@ -366,7 +402,7 @@ def main():
     with psycopg.connect(os.environ["DATABASE_URL"], autocommit=False) as conn:
         with conn.cursor() as cur:
             for fn in (check_pc_daemon, check_edge_tasks, check_youtube_queue, check_integration_backlog,
-                       check_soloq_coach, check_db_size, check_rls_regressions):
+                       check_soloq_coach, check_pg_cron, check_db_size, check_rls_regressions):
                 try:
                     fn(report, cur)
                     conn.commit()

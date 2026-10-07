@@ -333,7 +333,7 @@ export async function GET(request: NextRequest) {
         .join(' / ');
 
       // 最大ボトルネック
-      let biggest_bottleneck = {
+      const biggest_bottleneck = {
         metric: Number(avgD) > 4.5 ? "中盤の孤立デス削減" : csScore < 75 ? "15分CSペースの安定化" : "視界制圧＆ディープワード",
         advice: Number(avgD) > 4.5
           ? `直近${totalValid}試合の平均デスが ${avgD}回。無理な1v1や視界のないサイド孤立を減らすことで勝率が跳ね上がります！`

@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
     // B. matchup_sentinel への二重書き（移行期間中のみ維持）
     // =============================================
     // 容量削減対策①：note_draftをSupabase Storageへ退避させる
-    let updatedRawData = { ...(rd) };
+    const updatedRawData = { ...(rd) };
     if (updatedRawData.note_draft) {
       try {
         const draftContent = updatedRawData.note_draft;

@@ -151,7 +151,7 @@ ${content.slice(0, 10000)}
       maxRetries: 2,
     });
 
-    let cleaned = (raw || '').trim().replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
+    const cleaned = (raw || '').trim().replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
     const s = cleaned.indexOf('{'), e = cleaned.lastIndexOf('}');
     if (s >= 0 && e > s) {
       const parsed = JSON.parse(cleaned.slice(s, e + 1));
@@ -382,8 +382,8 @@ export async function POST(req: Request) {
         .maybeSingle();
 
       // raw_data & customFields の更新
-      let rawData = existingSentinel?.raw_data || {};
-      let customFields = rawData.customFields || {};
+      const rawData = existingSentinel?.raw_data || {};
+      const customFields = rawData.customFields || {};
 
       if (title.includes('HONKI_BIBLE') || title.includes('ARTICLE')) {
         rawData.note_draft = mergeContent(rawData.note_draft || '', content, title);

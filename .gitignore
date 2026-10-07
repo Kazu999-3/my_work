@@ -97,3 +97,6 @@ scratch/
 .secrets/
 # PCデーモンの多重起動防止ロック（起動中のみ存在）
 03_SYSTEMS/v2_CORE/edge_worker_daemon.lock
+
+# TypeScript のビルドキャッシュ（ビルドのたびに書き換わる。2026-10-07 管理対象から外した）
+*.tsbuildinfo

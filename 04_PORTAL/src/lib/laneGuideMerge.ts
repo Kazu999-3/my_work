@@ -84,7 +84,7 @@ ${String(body).slice(0, 8000)}
       }
       throw aiErr;
   }
-  let cleaned = (raw || '').trim().replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
+  const cleaned = (raw || '').trim().replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
   const s = cleaned.indexOf('{'), e = cleaned.lastIndexOf('}');
   if (s < 0 || e <= s) throw new Error('AI出力の解析に失敗しました。');
   const result = JSON.parse(cleaned.slice(s, e + 1));

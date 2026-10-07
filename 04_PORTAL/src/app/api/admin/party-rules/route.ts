@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminSession } from "@/lib/adminAuth";
+import { verifyAdminSession } from "../../../../lib/adminAuth";
 import { 
   PartyChaosRule, 
   DEFAULT_PARTY_RULES, 
   getPartyRules, 
   savePartyRules 
-} from "@/lib/partyRules";
+} from "../../../../lib/partyRules";
 
 // GET: ルール一覧取得（誰でも取得可能）
 export async function GET() {

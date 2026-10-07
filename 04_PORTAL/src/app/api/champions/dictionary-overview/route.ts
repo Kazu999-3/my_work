@@ -68,7 +68,7 @@ export async function GET(req: Request) {
       pending[aliasKey] = isPending;
 
       // patch_meta（JSONBカラムから直接取得）
-      let patchMetaObj = row.patch_meta ? { ...row.patch_meta } : {};
+      const patchMetaObj = row.patch_meta ? { ...row.patch_meta } : {};
       if (!patchMetaObj.updated_at && rawUpdatedAt) {
         patchMetaObj.updated_at = Math.floor(new Date(rawUpdatedAt).getTime() / 1000);
       }

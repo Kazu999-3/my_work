@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin';
-import { getAuthSession } from '@/lib/authGuard';
-import { findOrCreatePlayer } from '@/lib/playerCoins';
-import { fetchAllRows } from '@/lib/fetchAll';
-import { normalizeRole } from '@/lib/roleUtils';
+import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
+import { getAuthSession } from '../../../../lib/authGuard';
+import { findOrCreatePlayer } from '../../../../lib/playerCoins';
+import { fetchAllRows } from '../../../../lib/fetchAll';
+import { normalizeRole } from '../../../../lib/roleUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,7 +34,7 @@ export async function GET() {
     }
 
     // 名簿データ連携: ktm_match_participants からリアルタイム集計
-    let dynamicStats = {
+    const dynamicStats = {
       total: { g: 0, w: 0 },
       roles: {
         TOP: { g: 0, w: 0 },

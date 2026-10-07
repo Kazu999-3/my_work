@@ -317,7 +317,7 @@ export async function runPostGameReview(opts: { matchId?: string; focus?: string
   const turningPoints: { min: number; deltaGold: number; summary: string }[] = [];
   const recallTrips: { min: number; items: string[]; goldSpent: number }[] = [];
   const mapEvents: SpatialEvent[] = [];
-  let earlyLv1to6Events: string[] = [];
+  const earlyLv1to6Events: string[] = [];
   const myItemPurchases: { timestamp: number; sec: number; min: number; itemId: number; itemName: string }[] = [];
   let myJungleCsAt5Min: number | null = null;
   let worstDeath: WorstDeathInfo | null = null;
@@ -539,8 +539,8 @@ export async function runPostGameReview(opts: { matchId?: string; focus?: string
 
         // ワースト1デスのスコアリング (1〜100点)
         let impactScore = 20;
-        let reasons: string[] = [];
-        let lessons: string[] = [];
+        const reasons: string[] = [];
+        const lessons: string[] = [];
 
         if (d.spatialInfo?.isolationLevel === 'ISOLATED') {
           impactScore += 30;

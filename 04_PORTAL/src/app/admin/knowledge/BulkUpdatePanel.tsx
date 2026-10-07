@@ -48,7 +48,7 @@ export default function BulkUpdatePanel() {
 
   useEffect(() => {
     loadChampions();
-    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+     
   }, []);
 
   // dict-status(どのチャンピオンが更新済みか)だけを軽量に再取得する。DDragonのチャンピオン
@@ -196,7 +196,7 @@ export default function BulkUpdatePanel() {
   }, [isBulkRunning, bulkStatus.status]);
 
   // 進捗ゲージの「最終更新: n秒前」表示用ティッカー（実行中のみ回す）
-  const [nowTick, setNowTick] = useState(Date.now());
+  const [nowTick, setNowTick] = useState(() => Date.now());
   useEffect(() => {
     if (!isBulkRunning && bulkStatus.status !== 'running') return;
     const t = setInterval(() => setNowTick(Date.now()), 1000);

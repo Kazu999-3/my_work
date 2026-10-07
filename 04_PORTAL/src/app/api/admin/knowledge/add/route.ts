@@ -38,7 +38,7 @@ async function analyzeXPostImagesWithGemini(photos: any[], videos: any[], tweetT
   const apiKey = process.env.GEMINI_API_KEY_FREE || process.env.GEMINI_API_KEY;
   if (!apiKey) return '';
 
-  let combinedAnalysis: string[] = [];
+  const combinedAnalysis: string[] = [];
 
   for (let idx = 0; idx < Math.min(mediaList.length, 4); idx++) {
     const item = mediaList[idx];
@@ -127,7 +127,7 @@ async function analyzeXPostImagesWithGemini(photos: any[], videos: any[], tweetT
 // 単一のX投稿またはスレッド(ツリー)を全自動抽出・全メディア回収
 // ============================================================
 async function extractXPostOrThread(url: string, tweetId: string): Promise<{ title: string; textContent: string; authorKey: string | null }> {
-  let tweets: { text: string; authorName: string; authorScreenName: string; photos: any[]; videos: any[] }[] = [];
+  const tweets: { text: string; authorName: string; authorScreenName: string; photos: any[]; videos: any[] }[] = [];
   let author = 'X(Twitter) ユーザー';
   let authorScreenName = '';
 
@@ -282,9 +282,9 @@ async function extractXPostOrThread(url: string, tweetId: string): Promise<{ tit
   }
 
   // 動画および画像のAI視覚・動画解析
-  let aiVisualAnalysis = await analyzeXPostImagesWithGemini(allPhotos, allVideos, combinedTweetBody || url);
+  const aiVisualAnalysis = await analyzeXPostImagesWithGemini(allPhotos, allVideos, combinedTweetBody || url);
 
-  let mediaDesc = [];
+  const mediaDesc = [];
   if (allPhotos.length > 0) mediaDesc.push(`添付画像 ${allPhotos.length} 枚`);
   if (allVideos.length > 0) mediaDesc.push(`添付動画 ${allVideos.length} 本`);
   const mediaString = mediaDesc.length > 0 ? ` [メディア: ${mediaDesc.join(', ')}]` : '';
@@ -336,7 +336,7 @@ async function extractSingleUrlContent(url: string): Promise<{ title: string; te
 
     const html = await res.text();
 
-    let cleaned = html
+    const cleaned = html
       .replace(/<script[\s\S]*?<\/script>/gi, '')
       .replace(/<style[\s\S]*?<\/style>/gi, '')
       .replace(/<nav[\s\S]*?<\/nav>/gi, '')

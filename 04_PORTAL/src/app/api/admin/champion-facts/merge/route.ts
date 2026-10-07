@@ -71,7 +71,7 @@ ${String(body).slice(0, 8000)}
 {"strengths":"...","weaknesses":"...","power_spikes":"...","build_runes":"...","added":["<今回追記した内容の要約を最大3つ>"]}`;
 
         const raw = await callGeminiWithRetry(prompt, { temperature: 0.3, maxOutputTokens: 2048, maxRetries: 2 });
-        let cleaned = (raw || '').trim().replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
+        const cleaned = (raw || '').trim().replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
         const s = cleaned.indexOf('{'), e = cleaned.lastIndexOf('}');
         if (s < 0 || e <= s) throw new Error('AI出力の解析に失敗');
         const merged = JSON.parse(cleaned.slice(s, e + 1));

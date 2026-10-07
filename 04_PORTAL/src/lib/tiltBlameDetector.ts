@@ -106,8 +106,8 @@ export function calculateIntegratedTiltScore({
   }
 
   // 2. 戦績・連敗数スコア (30%重み付け)
-  let streakBlameScore = Math.min(100, lossStreak * 30);
-  let streakCalmScore = Math.max(0, 100 - lossStreak * 25);
+  const streakBlameScore = Math.min(100, lossStreak * 30);
+  const streakCalmScore = Math.max(0, 100 - lossStreak * 25);
   if (lossStreak >= 2) {
     reasons.push(`直近戦績: ${lossStreak}連敗中 (メンタル圧迫)`);
   }

@@ -33,7 +33,7 @@ async function analyzeXPostImagesWithGemini(photos: any[], videos: any[], tweetT
   const apiKey = process.env.GEMINI_API_KEY_FREE || process.env.GEMINI_API_KEY;
   if (!apiKey) return '';
 
-  let combinedAnalysis: string[] = [];
+  const combinedAnalysis: string[] = [];
 
   for (let idx = 0; idx < Math.min(mediaList.length, 4); idx++) {
     const item = mediaList[idx];
@@ -199,9 +199,9 @@ async function extractUrlContent(url: string): Promise<{ title: string; textCont
           }
         }
 
-        let aiVisualAnalysis = await analyzeXPostImagesWithGemini(photos, videos, tweetText || url);
+        const aiVisualAnalysis = await analyzeXPostImagesWithGemini(photos, videos, tweetText || url);
 
-        let mediaDesc = [];
+        const mediaDesc = [];
         if (photos.length > 0) mediaDesc.push(`添付画像 ${photos.length} 枚`);
         if (videos.length > 0) mediaDesc.push(`添付動画 ${videos.length} 本`);
         const mediaString = mediaDesc.length > 0 ? ` [メディア: ${mediaDesc.join(', ')}]` : '';
@@ -226,7 +226,7 @@ async function extractUrlContent(url: string): Promise<{ title: string; textCont
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const html = await res.text();
-    let cleaned = html
+    const cleaned = html
       .replace(/<script[\s\S]*?<\/script>/gi, '')
       .replace(/<style[\s\S]*?<\/style>/gi, '')
       .replace(/<nav[\s\S]*?<\/nav>/gi, '')

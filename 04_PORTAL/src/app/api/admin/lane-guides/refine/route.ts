@@ -85,7 +85,7 @@ ${baseBody}
 ※余計な挨拶やコードブロック解説は一切出力せず、Markdown本文のみを出力してください。`;
 
     const refinedRaw = await callGeminiWithRetry(generateGuidePrompt, { temperature: 0.2, maxOutputTokens: 8192 });
-    let refinedBody = refinedRaw.replace(/```(?:markdown)?/g, '').replace(/```/g, '').trim();
+    const refinedBody = refinedRaw.replace(/```(?:markdown)?/g, '').replace(/```/g, '').trim();
 
     // 🎯 ステップ2: 元の生文章に対する朱入れマップ（移動先・削除理由・2026更新）の抽出
     const auditPrompt = `あなたはLeague of Legendsの編集デスクです。

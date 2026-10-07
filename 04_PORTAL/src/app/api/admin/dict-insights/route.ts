@@ -49,7 +49,7 @@ export async function POST(req: Request) {
 ${memoText.slice(0, 12000)}`;
 
       const raw = await callGeminiWithRetry(prompt, { temperature: 0.3, maxOutputTokens: 2048, maxRetries: 2 });
-      let cleaned = (raw || '').trim().replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
+      const cleaned = (raw || '').trim().replace(/^```[a-z]*\n?/, '').replace(/```$/, '').trim();
       const s = cleaned.indexOf('{'), e = cleaned.lastIndexOf('}');
       if (s < 0 || e <= s) throw new Error('AI出力の解析に失敗しました');
       return NextResponse.json({ success: true, champion, memoCount: memos.length, ...JSON.parse(cleaned.slice(s, e + 1)) });

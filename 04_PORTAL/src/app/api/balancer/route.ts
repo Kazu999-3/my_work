@@ -168,7 +168,7 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    let selectedPatterns: { selected: Player[]; spectators: Player[] }[] = [];
+    const selectedPatterns: { selected: Player[]; spectators: Player[] }[] = [];
 
     if (balanceCandidates.length <= 10) {
       selectedPatterns.push({ selected: balanceCandidates, spectators: forcedSpectators });

@@ -59,7 +59,7 @@ export default function RevisionsPanel() {
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [filterType]);
+  useEffect(() => { load();   }, [filterType]);
 
   const openDetail = async (id: number) => {
     if (openId === id) { setOpenId(null); setDetail(null); return; }

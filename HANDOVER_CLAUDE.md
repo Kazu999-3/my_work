@@ -389,6 +389,22 @@ TODOの大型タスク（保守性向上計画）を A→B→C→D の順で進�
 - **ジャックポット総取りを記録画面へ移設し、04 `/api/riot/match-sync` を削除**（ユーザー判断 b）: 総取りの判定は match-sync にしか無く、match-sync が一度も呼ばれないため積み立てられるだけで当たらなかった。記録画面の詳細スタッツに「💎 ペンタキル」入力を追加し、`/api/match/record` が保存（`ktm_match_participants.penta_kills`）・判定（勝利チームのペンタで総取り、お祭りカスタムは対象外、`ktm_matches.jackpot_claimed` で二重払い防止）・Discord通知を行う。
 - 呼び出し元の無い `/api/bet/settle`（精算は `/api/match/record` が行う）を削除（ユーザー判断）。使われていない `pending_match_sync` テーブル（0行）も削除（migration 91。ツールからの適用が自動で拒否されたため、ユーザーが Supabase の SQL エディタで実行）。
 
+### 🧭 (K) 後半: 実測化・自動化の見直し・ダークモード完了（2026-10-07 夕〜夜）
+
+- **05 辞典の実測ビルドが本番の下レーンで出ていなかった**: 実測ビルドのキーは `BOT`、本番のレーン設定（DB `champion_lane_roles`）は `ADC`。ローカルはタグが `BOT` なので出ていて気づけなかった。`useChampionDetailData.ts` で `ADC→BOT` に揃えた。
+- **04 外部分析（管理者専用）の推定値を実測へ**: ファーストブラッド関与率・タワー破壊関与（`turretTakedowns`）・レーン負け試合の勝率（`challenges.laningPhaseGoldExpAdvantage`）を Riot の試合データから算出。初デス時刻・Obj直前デス・孤立デス・スノーボール回避率・メンタル耐性指数・スパイク活用率、ロールだけで決めた認知バイアス文は削除。オブジェクト確保はドラゴン・バロン・ヘラルドの獲得割合。天敵相性はAIの一般論なので「AI推定・出典なし」表示（プロンプトの例示名 LeeSin 先頭で偏っていたのも除去）。
+  - ⚠️ `challenges.turretPlatesTaken` は1試合32枚など実際（1チーム最大15枚）と合わない値が返るため使わない。
+- **05 パワースパイク推移**: 型ごとの手書き値だった。migration 92 で `champion_build_samples.game_duration_sec` と `champion_duration_winrates()` を追加し、収集（`rank_benchmark_collector.py`）が試合時間を記録。各時間帯15試合そろったロールから実測（25分未満/25〜32分/32分以上の勝率）、それまでは「型ごとの目安」と明記。
+- **05 ライブラリ**: 旧ポータルの統合処理5か所はすべて tags を `['__DELETED__']` に置換していたため、タグがそれだけの644件を「📘 統合済み」として表示（442→1086件）。人の削除は `__USER_DELETED__` を併記して区別。
+- **Bot**: 廃止済みの `/portal` を案内していた7か所を `/welcome`・`/ign`・`/lane`・`/stats` に修正。ランク語彙を `RANK_JP_MAP` から生成するよう一本化。
+- **本番Pythonの機械点検**: 入口（Actions 16本＋デーモン起動12本）から import をたどった47ファイル・15,105行。構文エラー0・存在しないテーブル参照0。未定義名4件は呼び出し元の無い残骸で削除。
+- **GitHub Actions の高頻度 schedule は大きく間引かれる**: `*/15`・`*/5` 指定が実際は1日4〜5回だった。**pg_cron へ移行**（migration 93）: `poll-soloq-coach`（15分おき、Vercel `/api/cron/soloq-coach`）・`dispatch-edge-cloud-worker`（5分おき、対象タスクが pending の時だけ `edge-cloud-worker.yml` を workflow_dispatch）。鍵は Vault（`vercel_cron_secret` / `github_dispatch_token`＝このリポジトリの Actions: Read and write のみの fine-grained token）。`edge-cloud-worker.yml` は concurrency で同時1本。
+  - **CRON_SECRET を入れ替えた**（旧値は Vercel の sensitive 型で読み出せないため）: Vercel `CRON_SECRET`・GitHub `VERCEL_CRON_SECRET`・Vault の3か所が同じ値。ローカルの `.env.local` の値は古いまま（開発用のみ）。
+  - 毎朝の健康診断に `check_pg_cron`（ジョブの有無・24時間の実行失敗・呼び出し先の非200）を追加。
+- **役に立っていなかった pg_cron 2本を停止**（migration 94）: `invoke-pulse-patches`（毎回 No patch found）・`invoke-match-importer`（毎回 imported 0）。Edge Function 4本（他に呼ばれていない `stats-collector`・`memory-encoder`）のソースを削除。Supabase 上の本体はダッシュボードから削除（2本はユーザー削除済み、残り2本は要削除）。
+- **04 ダークモード完了**: 6A ダーク用HEX121か所をトークン化 / 6B ログイン画面のダーク背景・禁止色 / 6C ライト専用の淡い中立色64・禁止色の青36 / D 効いていない `html.dark` 列挙288セレクタを撤去（globals.css 769→469行）。
+- **CI に lint を追加**: それまで未実行でエラー40件（`@/` import 禁止違反8件を含む）が溜まっていた。0件にしてから `npx eslint src` を CI に入れた（警告は通す）。`*.tsbuildinfo` を gitignore。
+
 ## 🗺️ 3. システム構造 ＆ ディレクトリマップ
 
 ```text
@@ -432,6 +448,7 @@ my_work/
 - **`start_all.ps1` の簡素化 (2026-07-26)**: `-Mode all`（ポータル/Bot/Ollama/Core APIのローカル重複起動＋`sre_daemon.py`）を廃止し、Edge Worker Daemon単独起動のみに一本化した。`sre_daemon.py`はGatewayバイパス問題とクラウド側との重複巡回タスクを抱えていたため削除。唯一有用だった「字幕なし動画(youtube_absorb)の15分おき自動起票」ロジックは `edge_worker_daemon.py` 自身（`youtube_absorb_scheduler_loop`）に統合済み。
 - **2026-09-20時点の追加確認**: ローカル常駐`edge_worker_daemon.py`自体が41時間以上起票停止していたことが判明（PC起動依存という構造上、気づかれず止まり続けるリスクが現在進行形）。`scripts/ops_health_check.py`に`check_youtube_automation_freshness()`を追加済みだが動作確認は未実施（`TODO.md`のPhase2節参照）。
 - **2026-10-02時点の実態**: YouTube解析（pending処理）はPCの`edge_worker_daemon.py`のみが担当（GitHub Actionsの`youtube`ジョブは2026-07-31から手動のみ）。デーモンはスタートアップ登録済みで、稼働状況は05_PILOT `/admin/youtube` 上部で確認できる。辞典統合（dict-sync）は05_PILOTの`/api/knowledge/integrate`を3時間おきに呼ぶ。
+- **2026-10-07時点の定期実行**: GitHub Actions の高頻度 schedule は実際1日4〜5回に間引かれる。15分/5分おきが必要なもの（ソロQ振り返り検知・クラウドワーカー起動）は Supabase の pg_cron（migration 93、鍵は Vault）が担当。pg_cron の一覧は `select * from cron.job`、稼働は毎朝の健康診断が見る。
 - 詳細な移行経緯・落とし穴は `AI_HANDOFF.md` を参照。同ファイルの方が本書より新しい場合がある。
 
 ---

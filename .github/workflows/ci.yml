@@ -35,6 +35,9 @@ jobs:
           cache-dependency-path: 04_PORTAL/package-lock.json
       - run: npm ci
       - run: npx tsc --noEmit
+      # 2026-10-07: lint を追加。それまで CI で実行しておらず、エラー40件（04の @/ import 禁止違反8件を含む）が溜まっていた。
+      # エラーのみで失敗させる（警告は通す）
+      - run: npx eslint src
       - run: npm test
 
   bot-syntax:

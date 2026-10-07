@@ -36,7 +36,7 @@ export default function ArticleRevisionHistory({ articleId }: Props) {
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [articleId]);
+  useEffect(() => { load();   }, [articleId]);
 
   const openDetail = async (id: number) => {
     if (openId === id) { setOpenId(null); setDetail(null); return; }
