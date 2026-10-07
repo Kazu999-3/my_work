@@ -1,5 +1,6 @@
 'use client';
 
+import InlineBold from "@/components/InlineBold";
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { 
@@ -116,8 +117,8 @@ function LaneGuidesApp() {
       {/* 📖 メインコンテンツ */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 space-y-4">
         {/* レーンセレクターバー */}
-        <div className="flex items-center justify-between gap-3 bg-zinc-900/90 p-2.5 rounded-2xl border border-zinc-800 shadow-sm overflow-x-auto">
-          <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-zinc-900/90 p-2.5 rounded-2xl border border-zinc-800 shadow-sm">
+          <div className="flex flex-wrap items-center gap-1.5">
             {lanes.map((l) => (
               <button
                 key={l.key}
@@ -249,7 +250,7 @@ function LaneGuidesApp() {
                   </div>
 
                   <div className="text-xs sm:text-sm text-zinc-200 leading-relaxed whitespace-pre-wrap font-sans space-y-3">
-                    {sec.content}
+                    <InlineBold text={sec.content} />
                   </div>
                 </section>
               ))}

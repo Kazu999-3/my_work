@@ -11,7 +11,7 @@ export default function DetailTabsNav({ activeTab, setActiveTab, selectedDetail 
   selectedDetail: ChampionDetail;
 }) {
   return (
-            <div id="champ-tabs-nav" className="flex items-center gap-1.5 p-1 bg-zinc-900 rounded-xl border border-zinc-800 overflow-x-auto scroll-mt-4">
+            <div id="champ-tabs-nav" className="flex flex-wrap items-center gap-1.5 p-1 bg-zinc-900 rounded-xl border border-zinc-800 scroll-mt-4">
               <button
                 onClick={() => setActiveTab("build")}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-black transition cursor-pointer whitespace-nowrap ${

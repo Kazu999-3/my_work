@@ -277,7 +277,7 @@ export default function ReviewPage() {
               各項目（強み・弱み・スパイク等）のAI差分マージと編集履歴の完全追従に対応しています。
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0 whitespace-nowrap">
             <Link href="/lane-guides" target="_blank" className="text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 font-bold">
               <Compass className="w-3.5 h-3.5" /> レーン攻略バイブル
             </Link>

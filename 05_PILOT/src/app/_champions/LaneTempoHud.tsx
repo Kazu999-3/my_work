@@ -13,7 +13,7 @@ export default function LaneTempoHud({ currentRole, spikeValues, measuredSpikes,
   laneTempo: ReturnType<typeof getLaneTempoMetrics> | null;
 }) {
   return (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
               {/* レーン別実戦指標 */}
               <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-3.5 shadow-sm flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
