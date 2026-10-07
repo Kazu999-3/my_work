@@ -62,6 +62,8 @@ export interface ChampionDetail {
     skillOrder?: string[];
     /** 項目ごとの出典付き記述（champion_fact_claims）。無い項目は従来の文字列だけを表示する */
     claims?: Partial<Record<'strengths' | 'weaknesses' | 'counters' | 'mustBan' | 'powerSpikes', FactClaim[]>>;
+    /** 実測ビルド（champion_build_samples の集計）。キーは TOP/JG/MID/BOT/SUP */
+    measuredBuilds?: Partial<Record<string, MeasuredBuild>>;
     /** おすすめアイテム・ルーンの根拠になった検索結果の件数（0 なら出典なしの AI 推定） */
     buildSourceCount?: number;
   };
@@ -161,4 +163,21 @@ export interface FactClaim {
   sourceUrl?: string;
   needsReview: boolean;
   date: string;
+}
+
+/** 実測ビルド（直近30日・同じロールの試合から集計。rate は %） */
+export interface MeasuredBuild {
+  samples: number;
+  winRate: number;
+  core: { name: string; rate: number }[];
+  boots?: { name: string; rate: number };
+  keystone?: { name: string; rate: number };
+  primaryStyle?: string;
+  subStyle?: string;
+  perks: string[];
+  perksRate?: number;
+  skillOrder?: string[];
+  skillRate?: number;
+  patches: string[];
+  tiers: string[];
 }

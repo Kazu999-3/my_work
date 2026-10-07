@@ -77,12 +77,15 @@ export function useChampionDetailData({ rawChampParam, vsEnemyId, customRoles, c
   }, [selectedDetail, currentRole]);
 
   // シチュエーション別ビルド（アイテム辞書翻訳をリアルタイム適用）
+  // 選択中ロールの実測ビルド（あれば「標準コア」をこちらで置き換える。2026-10-07）
+  const measuredBuild = selectedDetail?.facts?.measuredBuilds?.[currentRole] || null;
+
   const currentBuild = useMemo(() => {
-    const rawItems = selectedDetail?.facts?.trendItems || [];
+    const rawItems = measuredBuild?.core.length ? measuredBuild.core.map((c) => c.name) : (selectedDetail?.facts?.trendItems || []);
     const trendItems = rawItems.map((it) => translateItem(it, customItemDict));
-    const trendKeystone = selectedDetail?.facts?.trendRunes?.keystone || "";
+    const trendKeystone = measuredBuild?.keystone?.name || selectedDetail?.facts?.trendRunes?.keystone || "";
     return getPresetBuildDetails(archetype, buildPreset, trendItems, trendKeystone, customItemDict, selectedDetail?.id);
-  }, [archetype, buildPreset, selectedDetail, customItemDict]);
+  }, [archetype, buildPreset, selectedDetail, customItemDict, measuredBuild]);
 
   // 対戦相手（VS）のアーキタイプ判定
   const vsEnemyArchetype: ChampionArchetype = useMemo(() => {
@@ -167,6 +170,6 @@ export function useChampionDetailData({ rawChampParam, vsEnemyId, customRoles, c
 
   return {
     selectedDetail, vsEnemyDetail, availableRoles, currentRole, setCurrentRole, currentLaneMeta,
-    archetype, currentBuild, vsEnemyArchetype, spikeValues, laneTempo, stageTactics, dynamicPickGuide, matchedVsNote,
+    archetype, currentBuild, measuredBuild, vsEnemyArchetype, spikeValues, laneTempo, stageTactics, dynamicPickGuide, matchedVsNote,
   };
 }

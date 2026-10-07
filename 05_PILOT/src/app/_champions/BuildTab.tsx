@@ -3,11 +3,12 @@
 import { getPresetBuildDetails, type ChampionArchetype } from "@/lib/archetype";
 import { Zap, BookOpen, Edit3 } from "lucide-react";
 import { getStageTactics } from "@/lib/tempoMetrics";
-import type { ChampionDetail, BuildPreset } from "./types";
+import type { ChampionDetail, BuildPreset, MeasuredBuild } from "./types";
+import MeasuredBuildCard from "./MeasuredBuildCard";
 
 // タブ1: 戦略・シチュエーション別ビルド
 // 2026-10-07: app/page.tsx（2,840行）から分割。表示内容・動作は分割前と同じ。状態は page.tsx が持ち、ここは props で受け取って描画するだけ。
-export default function BuildTab({ buildPreset, setBuildPreset, setIsItemDictModalOpen, setDictFocusKey, setDictFocusValue, selectedDetail, archetype, currentBuild, stageTactics }: {
+export default function BuildTab({ buildPreset, setBuildPreset, setIsItemDictModalOpen, setDictFocusKey, setDictFocusValue, selectedDetail, archetype, currentBuild, measuredBuild, currentRole, stageTactics }: {
   buildPreset: BuildPreset;
   setBuildPreset: (v: BuildPreset) => void;
   setIsItemDictModalOpen: (v: boolean) => void;
@@ -16,8 +17,12 @@ export default function BuildTab({ buildPreset, setBuildPreset, setIsItemDictMod
   selectedDetail: ChampionDetail;
   archetype: ChampionArchetype;
   currentBuild: ReturnType<typeof getPresetBuildDetails>;
+  measuredBuild: MeasuredBuild | null;
+  currentRole: string;
   stageTactics: ReturnType<typeof getStageTactics> | null;
 }) {
+  // 実測ビルドがある時、「標準コア」は実測カードで表示する（対タンク・対バーストは型ごとの一般例のまま）
+  const showMeasured = !!measuredBuild && buildPreset === "standard";
   return (
               <div className="space-y-4">
                 <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 shadow-sm">
@@ -90,7 +95,9 @@ export default function BuildTab({ buildPreset, setBuildPreset, setIsItemDictMod
                   {/* 2026-10-07: ビルドの根拠を明示する。おすすめアイテム・ルーンは出典の無い AI 推定のことが多く、
                       無い時は型ごとの一般例（lib/archetype.ts の固定値）で埋めているため */}
                   <p className="text-[10px] text-zinc-500 mb-2 leading-relaxed">
-                    {(selectedDetail.facts?.trendItems?.length || 0) > 0
+                    {measuredBuild
+                      ? `標準コアは${currentRole}での実測（直近30日・${measuredBuild.samples}試合）です。`
+                      : (selectedDetail.facts?.trendItems?.length || 0) > 0
                       ? ((selectedDetail.facts?.buildSourceCount || 0) > 0
                         ? `標準コアのアイテム・ルーンは検索結果${selectedDetail.facts?.buildSourceCount}件をもとにした自動収集です。`
                         : "標準コアのアイテム・ルーンはAI推定（出典なし）です。")
@@ -99,6 +106,9 @@ export default function BuildTab({ buildPreset, setBuildPreset, setIsItemDictMod
                   </p>
 
                   {/* ビルド詳細3カラムカード */}
+                  {showMeasured && measuredBuild ? (
+                    <MeasuredBuildCard build={measuredBuild} />
+                  ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                     <div className="p-3.5 rounded-xl bg-zinc-950/80 border border-zinc-800 hover:border-amber-500/40 transition">
                       <span className="text-[10px] font-black text-amber-400 uppercase block mb-1">
@@ -162,6 +172,7 @@ export default function BuildTab({ buildPreset, setBuildPreset, setIsItemDictMod
                       </span>
                     </div>
                   </div>
+                  )}
                 </div>
 
                 {/* 時間帯別パワースパイク分析 */}

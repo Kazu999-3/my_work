@@ -384,6 +384,7 @@ async function main() {
   // Supabase からデータ取得
   const factsMap = {};
   const claimsMap = {}; // champion(lower) -> field -> champion_fact_claims[]
+  const buildSummaryMap = {}; // champion(lower) -> champion_build_summary の行[]
   const matchupsMap = {};
   const powerSpikesMap = {};
   const jungleTimingMap = {};
@@ -428,6 +429,18 @@ async function main() {
         if (!claimRows || claimRows.length < 1000) break;
       }
       console.log(`✅ champion_fact_claims 取得成功: ${Object.keys(claimsMap).length} 体`);
+
+      // 実測ビルド（champion_build_samples の集計、migration 90）。直近30日・20試合以上のチャンピオン×ロールだけ返る
+      const { data: buildRows, error: buildErr } = await supabase.rpc('champion_build_summary', { p_days: 30, p_min: 20 });
+      if (buildErr) {
+        console.warn('⚠️ champion_build_summary 取得エラー:', buildErr.message);
+      } else {
+        for (const row of buildRows || []) {
+          const k = String(row.champion || '').toLowerCase();
+          (buildSummaryMap[k] ||= []).push(row);
+        }
+        console.log(`✅ 実測ビルド取得成功: ${(buildRows || []).length} 件（チャンピオン×ロール）`);
+      }
 
       if (factsErr) {
         console.warn('⚠️ champion_facts 取得エラー:', factsErr.message);
@@ -594,6 +607,46 @@ async function main() {
       console.warn('⚠️ opgg_lane_meta.json パース失敗:', e.message);
     }
   }
+
+  // 実測ビルドの表示用。アイテム名は Data Dragon 最新版の日本語名（取れなければ同梱の辞書、それも無ければID）
+  let liveItemNames = {};
+  try {
+    const ver = (await (await fetch('https://ddragon.leagueoflegends.com/api/versions.json')).json())[0];
+    const j = await (await fetch(`https://ddragon.leagueoflegends.com/cdn/${ver}/data/ja_JP/item.json`)).json();
+    for (const [id, it] of Object.entries(j.data || {})) liveItemNames[id] = it.name;
+  } catch (e) {
+    console.warn('⚠️ Data Dragon のアイテム名取得に失敗（同梱の辞書を使います）:', e.message);
+  }
+  const itemName = (id) => (id == null ? null : (liveItemNames[String(id)] || masterDict.items?.[String(id)]?.name_ja || `アイテム#${id}`));
+  const runeName = (id) => (id == null ? null : (masterDict.runes?.[String(id)]?.name_ja || `ルーン#${id}`));
+  const STYLE_JA = { 8000: '栄華', 8100: '覇道', 8200: '魔道', 8300: '天啓', 8400: '不滅' };
+  const ROLE_KEY = { TOP: 'TOP', JUNGLE: 'JG', MIDDLE: 'MID', BOTTOM: 'BOT', UTILITY: 'SUP' };
+  const SKILL_SLOT = { Q: 'Q', W: 'W', E: 'E' };
+  const buildMeasuredView = (rows) => {
+    if (!rows || !rows.length) return undefined;
+    const out = {};
+    for (const r of rows) {
+      const role = ROLE_KEY[r.role];
+      if (!role) continue;
+      out[role] = {
+        samples: r.samples,
+        winRate: Number(r.win_rate),
+        core: [[r.core1, r.core1_rate], [r.core2, r.core2_rate], [r.core3, r.core3_rate]]
+          .filter(([id]) => id != null).map(([id, rate]) => ({ name: itemName(id), rate: Number(rate) })),
+        boots: r.boots != null ? { name: itemName(r.boots), rate: Number(r.boots_rate) } : undefined,
+        keystone: r.keystone != null ? { name: runeName(r.keystone), rate: Number(r.keystone_rate) } : undefined,
+        primaryStyle: STYLE_JA[r.primary_style] || undefined,
+        subStyle: STYLE_JA[r.sub_style] || undefined,
+        perks: (r.perks || []).map(runeName),
+        perksRate: r.perks_rate != null ? Number(r.perks_rate) : undefined,
+        skillOrder: r.skill_max_order ? r.skill_max_order.split('').map((c) => SKILL_SLOT[c] || c) : undefined,
+        skillRate: r.skill_rate != null ? Number(r.skill_rate) : undefined,
+        patches: r.patches || [],
+        tiers: r.tiers || [],
+      };
+    }
+    return Object.keys(out).length ? out : undefined;
+  };
 
   const CLAIM_VIEW_FIELDS = { strengths: 'strengths', weaknesses: 'weaknesses', counter_champions: 'counters', must_ban_champions: 'mustBan', power_spikes: 'powerSpikes' };
   const buildClaimsView = (byField) => {
@@ -782,6 +835,8 @@ async function main() {
         skillOrder: dbFact?.patch_meta?.skill_order || ['Q', 'E', 'W'],
         // 各項目の出典。出典のある記述（新しい順に5件）→ 出典の無い AI 推定（2件まで）の順
         claims: buildClaimsView(claimsMap[lowerId]),
+        // 実測ビルド（ロール別）。あるロールでは「標準コア」をこちらで置き換える
+        measuredBuilds: buildMeasuredView(buildSummaryMap[lowerId]),
         // おすすめアイテム・ルーンの根拠になった検索結果の件数（0 なら出典なしの AI 推定）
         buildSourceCount: Array.isArray(dbFact?.research_sources) ? dbFact.research_sources.length : 0,
       },

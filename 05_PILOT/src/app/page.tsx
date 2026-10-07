@@ -95,7 +95,7 @@ function PilotApp() {
   // 選択中チャンピオンの詳細・レーン・アーキタイプ・ビルド・テンポ指標・ピック判断
   const {
     selectedDetail, vsEnemyDetail, availableRoles, currentRole, setCurrentRole, currentLaneMeta,
-    archetype, currentBuild, vsEnemyArchetype, spikeValues, laneTempo, stageTactics, dynamicPickGuide, matchedVsNote,
+    archetype, currentBuild, measuredBuild, vsEnemyArchetype, spikeValues, laneTempo, stageTactics, dynamicPickGuide, matchedVsNote,
   } = useChampionDetailData({ rawChampParam, vsEnemyId, customRoles, customItemDict, buildPreset, opggMeta });
 
   // カスタムレーン設定を反映したチャンピオン一覧
@@ -209,7 +209,7 @@ function PilotApp() {
 
             {/* タブ 1: 戦略・シチュエーション別ビルド */}
             {activeTab === "build" && (
-              <BuildTab buildPreset={buildPreset} setBuildPreset={setBuildPreset} setIsItemDictModalOpen={setIsItemDictModalOpen} setDictFocusKey={setDictFocusKey} setDictFocusValue={setDictFocusValue} selectedDetail={selectedDetail} archetype={archetype} currentBuild={currentBuild} stageTactics={stageTactics} />
+              <BuildTab buildPreset={buildPreset} setBuildPreset={setBuildPreset} setIsItemDictModalOpen={setIsItemDictModalOpen} setDictFocusKey={setDictFocusKey} setDictFocusValue={setDictFocusValue} selectedDetail={selectedDetail} archetype={archetype} currentBuild={currentBuild} measuredBuild={measuredBuild} currentRole={currentRole} stageTactics={stageTactics} />
             )}
 
             {/* タブ 2: 対面相性 ＆ キルライン */}

@@ -21,6 +21,11 @@ rank_benchmark_averages が直近30日分から計算する。
 キー失効・プレイヤー取得失敗・新規サンプル0件・保存失敗のいずれでも終了コード1にして
 GitHub Actions を赤くする。
 
+【ビルドの記録（2026-10-07追加、migration 90）】
+同じ試合詳細＋タイムラインから、10人全員の完成アイテムの購入順・靴・ルーン・スキルの上げ順を
+champion_build_samples に記録する（05 辞典の「標準コア」を実測にするため。Riot API の呼び出しは増えない）。
+本人の成績サンプルが除外になった試合（ポジション不明等）でも、ランクソロで5分以上ならビルドは記録する。
+
 実行: python rank_benchmark_collector.py
 """
 import os
@@ -71,6 +76,131 @@ DEDUP_WINDOW_DAYS = 35    # 平均の対象(30日)より少し長めに、収集
 
 class KeyExpired(Exception):
     pass
+
+
+# --- ビルド記録用の静的データ（Data Dragon 最新版） ---
+_STATIC: dict = {}
+
+
+def load_static() -> dict:
+    """完成アイテム・靴のID集合と、championId → Data Dragon ID の対応表。1回の実行で1度だけ取る"""
+    if _STATIC:
+        return _STATIC
+    ver = requests.get("https://ddragon.leagueoflegends.com/api/versions.json", timeout=15).json()[0]
+    items = requests.get(f"https://ddragon.leagueoflegends.com/cdn/{ver}/data/en_US/item.json", timeout=30).json()["data"]
+    champs = requests.get(f"https://ddragon.leagueoflegends.com/cdn/{ver}/data/en_US/champion.json", timeout=30).json()["data"]
+    core, boots = set(), set()
+    for iid, it in items.items():
+        if not it.get("maps", {}).get("11") or it.get("inStore") is False or it.get("requiredChampion") or it.get("requiredAlly"):
+            continue
+        tags = set(it.get("tags", []))
+        gold = it.get("gold", {})
+        if "Boots" in tags:
+            # 1段階目のブーツ(1001)から作る2段階目を「靴」とする（3段階目への強化は2段階目の購入後に起きるため）
+            if "1001" in (it.get("from") or []):
+                boots.add(int(iid))
+            continue
+        if tags & {"Consumable", "Trinket"} or not gold.get("purchasable", True):
+            continue
+        # 完成アイテム: これ以上の上位アイテムが無く、2,000G以上（素材・サポートクエスト系の安価な完成品を除く）
+        if not it.get("into") and gold.get("total", 0) >= 2000:
+            core.add(int(iid))
+    _STATIC.update({
+        "version": ver,
+        "core": core,
+        "boots": boots,
+        "champ_by_key": {c["key"]: c["id"] for c in champs.values()},
+    })
+    logger.info(f"Data Dragon {ver}: 完成アイテム{len(core)}種 / 靴{len(boots)}種 / チャンピオン{len(champs)}体")
+    return _STATIC
+
+
+def extract_builds(detail: dict, timeline: dict | None, sample_tier: str) -> list[dict]:
+    """同じ試合の10人のビルドを取り出す。タイムラインが無い試合は記録しない（購入順が分からないため）"""
+    info = detail.get("info", {})
+    if info.get("queueId") != 420 or int(info.get("gameDuration") or 0) < MIN_DURATION_SEC or not timeline:
+        return []
+    participants = info.get("participants", [])
+    if any(p.get("gameEndedInEarlySurrender") for p in participants):
+        return []
+    st = load_static()
+    purchases: dict[int, list[int]] = {}
+    skill_counts: dict[int, dict[int, int]] = {}
+    skill_max: dict[int, str] = {}
+    for frame in timeline.get("info", {}).get("frames", []):
+        for ev in frame.get("events", []):
+            t = ev.get("type")
+            pid = ev.get("participantId")
+            if t == "ITEM_PURCHASED":
+                purchases.setdefault(pid, []).append(int(ev.get("itemId") or 0))
+            elif t == "ITEM_UNDO":
+                before = int(ev.get("beforeId") or 0)
+                lst = purchases.get(pid, [])
+                if before and before in lst:
+                    lst.reverse(); lst.remove(before); lst.reverse()  # 最後の購入を取り消す
+            elif t == "SKILL_LEVEL_UP" and ev.get("levelUpType", "NORMAL") == "NORMAL":
+                slot = int(ev.get("skillSlot") or 0)
+                if slot in (1, 2, 3):
+                    c = skill_counts.setdefault(pid, {})
+                    c[slot] = c.get(slot, 0) + 1
+                    if c[slot] == 5:
+                        skill_max[pid] = skill_max.get(pid, "") + "QWE"[slot - 1]
+    version = str(info.get("gameVersion") or "")
+    patch = ".".join(version.split(".")[:2]) if version else ""
+    game_start = datetime.fromtimestamp((info.get("gameStartTimestamp") or info.get("gameCreation")) / 1000, timezone.utc).isoformat()
+    rows = []
+    for p in participants:
+        role = str(p.get("teamPosition") or "").upper()
+        champ = st["champ_by_key"].get(str(p.get("championId")))
+        pid = p.get("participantId")
+        if role not in VALID_ROLES or not champ or not pid or not patch:
+            continue
+        bought = purchases.get(pid, [])
+        core: list[int] = []
+        for iid in bought:
+            if iid in st["core"] and iid not in core:
+                core.append(iid)
+            if len(core) == 3:
+                break
+        boots = next((iid for iid in bought if iid in st["boots"]), None)
+        styles = (p.get("perks") or {}).get("styles") or []
+        prim = styles[0] if len(styles) > 0 else {}
+        sub = styles[1] if len(styles) > 1 else {}
+        perks = [s.get("perk") for s in prim.get("selections", [])] + [s.get("perk") for s in sub.get("selections", [])]
+        rows.append({
+            "match_id": detail.get("metadata", {}).get("matchId"),
+            "participant_id": pid,
+            "champion": champ,
+            "role": role,
+            "sample_tier": sample_tier,
+            "patch": patch,
+            "game_start": game_start,
+            "win": bool(p.get("win")),
+            "core_items": core,
+            "boots": boots,
+            "keystone": perks[0] if perks else None,
+            "primary_style": prim.get("style"),
+            "sub_style": sub.get("style"),
+            "perks": [x for x in perks if x],
+            "skill_max_order": skill_max.get(pid) or None,
+            "summoner_spells": [p.get("summoner1Id"), p.get("summoner2Id")],
+        })
+    return [r for r in rows if r["match_id"]]
+
+
+def save_builds(rows: list[dict]) -> bool:
+    if not rows:
+        return True
+    headers = sb_headers(write=True)
+    headers["Prefer"] = "resolution=ignore-duplicates,return=minimal"
+    r = requests.post(
+        f"{SUPABASE_URL}/rest/v1/champion_build_samples?on_conflict=match_id,participant_id",
+        headers=headers, json=rows, timeout=20,
+    )
+    if r.status_code >= 300:
+        logger.error(f"ビルド保存失敗 {rows[0]['match_id']}: {r.status_code} {r.text[:200]}")
+        return False
+    return True
 
 
 def riot_get(url: str, max_retries: int = 5):
@@ -224,6 +354,7 @@ def collect_tier(tier: str, division: str) -> tuple[int, int, int, dict]:
     logger.info(f"[{label}] 候補プレイヤー: {len(pool)}人（うち最大{PLAYER_BUDGET}人を処理）")
 
     saved, skipped, failed = 0, 0, 0
+    builds_saved, builds_failed = 0, 0
     by_role: dict[str, int] = {}
     start_time = int((datetime.now(timezone.utc) - timedelta(days=RECENT_DAYS)).timestamp())
     for i, puuid in enumerate(pool[:PLAYER_BUDGET], start=1):
@@ -240,6 +371,11 @@ def collect_tier(tier: str, division: str) -> tuple[int, int, int, dict]:
             skipped += 1
             continue
         timeline = riot_get(f"https://{REGION}.api.riotgames.com/lol/match/v5/matches/{match_id}/timeline")
+        builds = extract_builds(detail, timeline, label)
+        if save_builds(builds):
+            builds_saved += len(builds)
+        else:
+            builds_failed += 1
         sample = extract_sample(detail, timeline, puuid)
         if not sample:
             skipped += 1
@@ -254,7 +390,9 @@ def collect_tier(tier: str, division: str) -> tuple[int, int, int, dict]:
         if i % 50 == 0:
             logger.info(f"  [{label}] 進捗 {i}人: 保存{saved} / 除外{skipped} / 失敗{failed}")
     logger.info(f"[{label}] 完了: 保存{saved}件 / 除外{skipped}件 / 保存失敗{failed}件 / ロール別 {by_role}")
-    return saved, skipped, failed, by_role
+    logger.info(f"[{label}] ビルド: 記録{builds_saved}人分 / 保存失敗{builds_failed}試合")
+    # ビルドの保存失敗も止まった自動化として気づけるよう、保存失敗に数える
+    return saved, skipped, failed + builds_failed, by_role
 
 
 def split_tier(raw: str) -> tuple[str, str]:
