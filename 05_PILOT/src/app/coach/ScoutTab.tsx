@@ -557,7 +557,10 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                                       />
                                       <div>
                                         <div className="font-black text-slate-100">{p.name}</div>
-                                        <div className="text-[10px] text-teal-400 font-bold">{champName}</div>
+                                        <div className="text-[10px] text-teal-400 font-bold">
+                                          {champName}
+                                          {p.rank && <span className="ml-1.5 text-amber-300">{p.rank}</span>}
+                                        </div>
                                       </div>
                                     </td>
                                     <td className="py-3 text-center font-mono font-bold text-slate-500">

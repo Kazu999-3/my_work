@@ -341,33 +341,23 @@ export async function POST(request: NextRequest) {
       const avgD = Number((c.deaths / c.gamesCount).toFixed(1));
       const avgA = Number((c.assists / c.gamesCount).toFixed(1));
 
-      // 勝利時 vs 敗北時の完全実測値計算
-      const winCsPerMin = c.winDurationMin > 0 ? Number((c.winCs / c.winDurationMin).toFixed(1)) : csPerMin;
-      const lossCsPerMin = c.lossDurationMin > 0 ? Number((c.lossCs / c.lossDurationMin).toFixed(1)) : Number((csPerMin * 0.85).toFixed(1));
-      const csDelta = Number((winCsPerMin - lossCsPerMin).toFixed(1));
-
-      const winAvgD = c.winCount > 0 ? Number((c.winDeaths / c.winCount).toFixed(1)) : Number((avgD * 0.6).toFixed(1));
-      const lossAvgD = c.lossCount > 0 ? Number((c.lossDeaths / c.lossCount).toFixed(1)) : Number((avgD * 1.4).toFixed(1));
-      const deathDelta = Number((lossAvgD - winAvgD).toFixed(1));
-
-      const winVisionPerMin = c.winDurationMin > 0 ? Number((c.winVision / c.winDurationMin).toFixed(2)) : 1.6;
-      const lossVisionPerMin = c.lossDurationMin > 0 ? Number((c.lossVision / c.lossDurationMin).toFixed(2)) : 1.1;
-
-      const csDiffStr = isSupportRole
-        ? `勝利時: 視界＆低CS適正 (${winCsPerMin}/分) | 敗北時: 崩壊時CS (${lossCsPerMin}/分)`
-        : `勝利時: ${winCsPerMin}/分 | 敗北時: ${lossCsPerMin}/分 (差分 +${csDelta >= 0 ? csDelta : 0}/分)`;
-
-      const deathsDiffStr = `勝利時: 平均 ${winAvgD}デス | 敗北時: 平均 ${lossAvgD}デス (${deathDelta > 0 ? `${deathDelta}デス削減で勝率急上昇` : '低デス維持'})`;
-      const visionDiffStr = `勝利時: 分間 ${winVisionPerMin}/分 | 敗北時: 分間 ${lossVisionPerMin}/分 (差分 +${Number((winVisionPerMin - lossVisionPerMin).toFixed(2))})`;
-      const firstCoreTimeStr = isSupportRole
-        ? `勝利時: クエスト完了 8分40秒 | 敗北時: クエスト完了 11分15秒`
-        : `勝利時: 推定 10分45秒 (リード先行) | 敗北時: 推定 13分30秒 (遅延)`;
+      // 勝利時 vs 敗北時（試合データの実測）。★ 2026-10-08: 片方が0試合の時に「全体×0.85」「全体×0.6」「1.6 / 1.1」で
+      // 埋めていたのをやめ、データなしと表示する。第1コア完成時間は全員に同じ固定文字（推定 10分45秒 / 13分30秒）だったため削除
+      // （実測にはタイムラインが試合数分必要で、Riot API の回数制限に当たる）
+      const winCsPerMin = c.winCount > 0 && c.winDurationMin > 0 ? Number((c.winCs / c.winDurationMin).toFixed(1)) : null;
+      const lossCsPerMin = c.lossCount > 0 && c.lossDurationMin > 0 ? Number((c.lossCs / c.lossDurationMin).toFixed(1)) : null;
+      const winAvgD = c.winCount > 0 ? Number((c.winDeaths / c.winCount).toFixed(1)) : null;
+      const lossAvgD = c.lossCount > 0 ? Number((c.lossDeaths / c.lossCount).toFixed(1)) : null;
+      const winVisionPerMin = c.winCount > 0 && c.winDurationMin > 0 ? Number((c.winVision / c.winDurationMin).toFixed(2)) : null;
+      const lossVisionPerMin = c.lossCount > 0 && c.lossDurationMin > 0 ? Number((c.lossVision / c.lossDurationMin).toFixed(2)) : null;
+      const fmt = (v: number | null, unit = '') => (v === null ? 'データなし' : `${v}${unit}`);
+      const diffNote = (a: number | null, b: number | null, digits: number) =>
+        a !== null && b !== null ? ` (差 ${a - b >= 0 ? '+' : ''}${Number((a - b).toFixed(digits))})` : '';
 
       const winVsLossDiffs = {
-        cs15Diff: csDiffStr,
-        deathsDiff: deathsDiffStr,
-        visionDiff: visionDiffStr,
-        firstCoreTime: firstCoreTimeStr,
+        cs15Diff: `勝利時: ${fmt(winCsPerMin, '/分')} | 敗北時: ${fmt(lossCsPerMin, '/分')}${diffNote(winCsPerMin, lossCsPerMin, 1)}`,
+        deathsDiff: `勝利時: 平均 ${fmt(winAvgD, 'デス')} | 敗北時: 平均 ${fmt(lossAvgD, 'デス')}${diffNote(winAvgD, lossAvgD, 1)}`,
+        visionDiff: `勝利時: ${fmt(winVisionPerMin, '/分')} | 敗北時: ${fmt(lossVisionPerMin, '/分')}${diffNote(winVisionPerMin, lossVisionPerMin, 2)}`,
       };
 
       let powerRating = 'A (主力)';

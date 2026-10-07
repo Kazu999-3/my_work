@@ -166,9 +166,9 @@ export default function ChampionsTab({ report, selectedChampion, setSelectedCham
                     <Swords size={14} className="text-foreground-subtle" />
                     <span>勝利時 vs 敗北時のスタッツ差分（勝敗を分ける境界線）</span>
                   </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                     <div className="p-3 bg-surface rounded-2xl border border-border/80">
-                      <div className="text-[10px] text-faint font-bold">15分CS差</div>
+                      <div className="text-[10px] text-faint font-bold">分間CS</div>
                       <div className="font-black text-foreground mt-0.5">
                         {selectedChampion.winVsLossDiffs?.cs15Diff}
                       </div>
@@ -183,12 +183,6 @@ export default function ChampionsTab({ report, selectedChampion, setSelectedCham
                       <div className="text-[10px] text-faint font-bold">視界・コントロール</div>
                       <div className="font-black text-foreground mt-0.5">
                         {selectedChampion.winVsLossDiffs?.visionDiff}
-                      </div>
-                    </div>
-                    <div className="p-3 bg-surface rounded-2xl border border-border/80">
-                      <div className="text-[10px] text-faint font-bold">第1コア完成時間</div>
-                      <div className="font-black text-foreground mt-0.5">
-                        {selectedChampion.winVsLossDiffs?.firstCoreTime}
                       </div>
                     </div>
                   </div>

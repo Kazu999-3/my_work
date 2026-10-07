@@ -1,6 +1,6 @@
 // 05移植(2026-10-04): 旧ポータルから移植。認証は 05 の proxy.ts（全API保護）が担うため管理者チェックは外した。
 import { NextResponse } from 'next/server';
-import { fetchPuuidByRiotId, fetchActiveGameByPuuid, fetchRecentMatchIds, fetchMatchDetails, fetchMatchTimeline } from '@/lib/riot';
+import { fetchPuuidByRiotId, fetchActiveGameByPuuid, fetchRecentMatchIds, fetchMatchDetails, fetchMatchTimeline, fetchLeagueByPuuid } from '@/lib/riot';
 import { calculatePlaystyle } from '@/lib/playstyle';
 import { supabase as supabaseClient } from '@/lib/supabaseClient';
 const supabase = supabaseClient!;
@@ -432,6 +432,15 @@ export async function POST(req: Request) {
         // 実データが1件も取れずwinRate/fbRateが固定値のままの場合に立てる。
         // 以前はこの状態でも「勝率50%」「特記事項なし」を本物のように表示していた。
         let dataInsufficient = false;
+        // 敵のソロランク（2026-10-08 追加。以前は取得処理が無く、表示欄だけがあった）。取れなければ null
+        let rankLabel: string | null = null;
+        if (isEnemy && apiKey) {
+          try {
+            const entries = await fetchLeagueByPuuid(p.puuid, apiKey);
+            const solo = Array.isArray(entries) ? entries.find((e: any) => e.queueType === 'RANKED_SOLO_5x5') : null;
+            rankLabel = solo ? `${solo.tier} ${solo.rank} ${solo.leaguePoints}LP` : 'ソロランクなし';
+          } catch { rankLabel = null; }
+        }
 
         if (isEnemy && apiKey) {
           try {
@@ -523,6 +532,7 @@ export async function POST(req: Request) {
           isEnemy,
           role,
           winRate,
+          rank: rankLabel,
           isOtp: pIsOtp,
           otpChampion: pOtpChamp,
           consecutiveLosses: pConsecutiveLosses,
