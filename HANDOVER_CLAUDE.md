@@ -334,6 +334,31 @@ TODOの大型タスク（保守性向上計画）を A→B→C→D の順で進�
 - 未使用の `pick_guide_generator.py`・`overlay/match_feedback_sync.py` を削除、手動一括処理3本を `99_ARCHIVE/v2_CORE_unused/bible_batches_20261002/` へ。
 - ワークフロー19本・PCデーモンのタスクは実測で概ね正常（`champ-dict-update.yml` は本体ステップが `continue-on-error` で常に緑表示になる点に注意）。
 
+### 📚 (E) 辞典の記憶ベースのデータを真偽確認して整理・出典の記録（`74bafc4c` `5a261823`）
+
+- **ライブラリ由来の追記が上書きで消えていた**: 毎週更新(`champion_trend_worker.py`)が `champion_facts` の強み・弱み等を毎回AIの応答で丸ごと上書きしており、動画・記事承認で書き足された内容が84体・425項目で消えていた（known-regression-patterns #7 の実例2）。`knowledge_revisions` の追記差分から取り出して復元。調査レポート: `02_FACTORY/DICT_FACT_AUDIT_20261007.md`。
+- **`champion_fact_claims`（migration 89）**: 辞典の記述を1件ずつ「本文＋origin＋出典」で持つ。origin は library / library_mixed / web_search / manual / ai_estimate。library は記事ID・URL・タイトル、web_search はURLが無いと保存できない（CHECK制約）。`champion_facts` の列は参照箇所が多いため残し、claims から組んだ表示用文章を入れる（ライブラリ由来は新しい順5件、無ければAI推定）。
+- 登録: ライブラリ1,263件・AI推定805件・混在69件。混在は見直して非表示5／記事部分だけ切り出し20／混在のまま44。「情報不足」等140項目・プロのビルド11体・JG秒数36体・AI記憶の勝率/Tierを削除。さらに全員Jungle固定で調べていた時期の「ジャングル運用前提」のAI推定150件（ジャングル以外の90体）を非表示にし、119項目が空欄に。戻す時は `champion_facts_backup_20261007`（整理前）、`champion_fact_claims_backup_20261007b` / `champion_facts_backup_20261007b`（見直し前）。
+- **出典を記録する作りに**: 04 `recordRevision`（記事統合の全経路が通る）と 05 `championFactsMerge` で、足された部分を `recordLibraryClaim` が出典付きで記録。毎週更新は文章を「空欄を埋めるだけ」にし、引用元URLが返らない応答は保存しない、新しい文章は web_search として記録。ルール `.claude/rules/knowledge-sources.md` を新設（CLAUDE.md から読込）。
+- **調べるロール**: 一括更新・辞典整理・デーモン・04個別更新ボタンが全員 "Jungle" 固定で調べており、ミッドやADCに「ジャングル運用のデータは確認できません」が入っていた。使用者はJGメインなのでJG目線の情報が欲しいだけで、無理にJGとして扱う意図は無かった（ユーザー確認）。`resolve_research_role`（`champion_lane_roles` にJGがあれば Jungle、無ければ最上位ロール）＋ジャングル以外はジャングラー目線の要点を含めるプロンプトに変更。
+- 04 `batch-smart-merge`（画面からは未使用）が存在しない制約 `onConflict: 'champion,role'`（主キーは champion のみ）で毎回失敗し、role で絞った既存行の見落としで上書きになる作りだったのを修正。
+- 05辞典の対面タブで記述ごとに出典/「AI推定・出典なし」/要確認を表示（`_champions/FactClaimList.tsx`）、ビルドタブに根拠の一文。
+
+### 📊 (F) 辞典の標準コアをランク戦の実測ビルドに（`9e98ee85` `eee9604f`）
+
+- `rank_benchmark_collector.py` が取得済みの試合詳細＋タイムラインから、同じ試合の10人分の完成アイテム購入順（UNDO反映、2,000G以上・上位アイテム無し）・靴・ルーン6つ・スキルを上げきる順を `champion_build_samples`（migration 90）に記録。Riot API の呼び出しは増えない。ランク平均は従来どおり本人1人だけ。
+- 集計 `champion_build_summary(p_days, p_min)`（直近30日・20試合以上、2/3コア目は前のコアと重複しない最多）。05 `compile_champions.mjs` が `facts.measuredBuilds[TOP/JG/MID/BOT/SUP]` に入れ、ビルドタブの「標準コア」を実測カード（`_champions/MeasuredBuildCard.tsx`）に置き換え。アイテム名は Data Dragon 最新版の日本語名。
+- 初回手動実行で298試合・2,980人分、41組。毎日約300試合ずつ増える。
+
+### 🧩 (G) 05知識レビュー画面の分割＋一括操作の不具合（`f8ba7071`）
+
+- `app/admin/review/page.tsx` 1,691行 → 386行。`_review/` に絞り込みバー・記事カード・プレビューモーダル（教本/項目差分/レーンガイドの3タブ）・型、文の振り分けと承認データの組み立てを `factRouting.ts`（JSXは元の行をそのまま移設）。
+- 一括承認・却下は `post()` が常にオブジェクトを返すのに `if (await post(...))` で判定しており、失敗しても一覧から消えていた（データは残っていた）。`result.ok` で判定するよう修正。
+
+### 🔒 (H) その他
+
+- Dependabot 高リスク3件（04 sharp 0.35.5 / source-map-js 1.2.2、ktm_bot は wrangler が sharp 0.35.4 を固定しているため overrides で指定）を修正、GitHub上も fixed（`78b3401f`）。
+
 ## 🗺️ 3. システム構造 ＆ ディレクトリマップ
 
 ```text
