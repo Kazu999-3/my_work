@@ -7,8 +7,8 @@ import {
 } from "lucide-react";
 import { 
   RotationPlayer, RotationResult, calculateNextRotation, advanceRotationState, splitIntoBalancedTeams 
-} from "@/lib/rotationEngine";
-import { PartyChaosRule, DEFAULT_PARTY_RULES } from "@/lib/partyRules";
+} from "../../lib/rotationEngine";
+import { PartyChaosRule, DEFAULT_PARTY_RULES } from "../../lib/partyRules";
 
 interface AramRotationPanelProps {
   availablePlayers: any[];

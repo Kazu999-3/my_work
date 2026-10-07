@@ -110,10 +110,10 @@
 - [x] **2-3. 攻略ライブラリ (`app/library/page.tsx` 796行 ➔ 309行)**（2026-10-07 完了）: `_library/` に絞り込み・検索・URL投函・記事カード・詳細モーダル・パッチ鮮度バッジ、3回コピーされていたURL投函処理を `enqueueYoutube.ts` に集約。開くボタンの無かった KnowledgeIngestModal の重複を削除（取り込みは共通ナビから）
 
 ### フェーズ3: 【04_PORTAL】コミュニティ・内戦管理のモノリス解体
-- [x] **3-1. 内戦バランサー (`app/balancer/page.tsx` 3,029行 ➔ 414行)**（2026-10-07 完了）: 1回目で1,140行（`82168c14`）、2回目で参加者リスト（取得・Realtime・自動保存）・BO3・結果の入れ替え・共有操作・初期レーン編集をフック化（`_parts/use*.ts`）、モード切替タブ（2か所の重複）・使い方・経験層集計・用語解説を `PageSections.tsx` に。未使用の状態 selectedHandicaps / showRecordPanel を削除。【別件・既存】`AramRotationPanel.tsx` が04で禁止の `@/` インポート2件、`balancer/record/page.tsx` に lint エラー（描画中の ref 更新）
+- [x] **3-1. 内戦バランサー (`app/balancer/page.tsx` 3,029行 ➔ 414行)**（2026-10-07 完了）: 1回目で1,140行（`82168c14`）、2回目で参加者リスト（取得・Realtime・自動保存）・BO3・結果の入れ替え・共有操作・初期レーン編集をフック化（`_parts/use*.ts`）、モード切替タブ（2か所の重複）・使い方・経験層集計・用語解説を `PageSections.tsx` に。未使用の状態 selectedHandicaps / showRecordPanel を削除。（同日、ARAMローテーションの `@/` インポート2件と記録画面の描画中の ref 更新も修正）
   - `BalancerPlayerPool.tsx` (参加者プール)、`TeamCompositionBoard.tsx` (配置ボード・D&D)、`BalanceResultModal.tsx` (勝率予測) へ分割
   - MMR・適性計算ロジックを `lib/balancer/` 配下に純粋関数として抽出
-- [ ] **3-2. 管理ポータル (`app/ktm-admin/page.tsx` 1,730行)**: プレイヤー管理、内戦履歴、ロール連携、システム設定をタブ別コンポーネント化
+- [x] **3-2. 管理ポータル (`app/ktm-admin/page.tsx` 1,885行 ➔ 275行)**（2026-10-07 完了）: `_admin/` に名簿フック（取得・Realtime・保存・整合性・Rebuild）・同期フック（Discord確認→実行→Riot同期、Riot IDエラー修正）、見出しと操作ボタン・同期確認モーダル・Riotエラーパネル・整合性・経験層・絞り込み・スマホ用カード・デスクトップ用の表。あわせて修正: 管理者以外で開くと読み込み中のまま進まなかった／MMR計算ロジックの説明が実装と食い違っていた（K=48・ランク収束引力など）／ボタンの無い一括オート同期・全員Riot同期を削除
 - [ ] **3-3. プレイヤー外部分析 (`app/analyzer/page.tsx` 1,932行) ＆ カジノ (`app/casino/page.tsx` 1,504行)**: チャート・比較・おみくじUIのサブコンポーネント化
 
 ### フェーズ4: 【03_SYSTEMS】Discord Bot ＆ バックエンドの責務分離

@@ -68,7 +68,8 @@ function CustomRecordPageContent() {
   const [balanceSatisfaction, setBalanceSatisfaction] = useState<'good' | 'normal' | 'bad' | null>(null);
   const [championsList, setChampionsList] = useState<{ id: string, name: string }[]>([]);
   const championsListRef = useRef(championsList);
-  championsListRef.current = championsList;
+  // 画像解析の非同期処理から最新の一覧を読むための参照。描画中に ref を書き換えない（react-hooks/refs）
+  useEffect(() => { championsListRef.current = championsList; }, [championsList]);
   const [activeChampSelector, setActiveChampSelector] = useState<{ team: 'BLUE' | 'RED', role: Role, slotIndex: number } | null>(null);
   const [champSearchQuery, setChampSearchQuery] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
