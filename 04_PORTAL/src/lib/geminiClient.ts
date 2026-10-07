@@ -3,7 +3,7 @@ import { supabase } from './supabaseClient';
 
 // ============================
 // Gemini共通クライアント
-// 全ルート（coach/analyze, admin/live-match, admin/knowledge/add,
+// 全ルート（coach/analyze, admin/knowledge/add,
 // player/junglepedia/advice, match/analyze-image）はこれ経由でGeminiを呼ぶこと。
 // リトライ・バックオフ・任意キャッシュをここに一本化する。
 // ============================
