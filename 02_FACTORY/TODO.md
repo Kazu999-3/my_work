@@ -72,6 +72,7 @@
 
 ## 🙋 ユーザー判断・ユーザー作業待ち
 
+- [ ] **【要判断・孤立した自動化】内戦の試合結果のRiot取り込み（`processPendingMatchSyncs`）が 2026-09-13 から呼ばれていない**（2026-10-07 発見）: 試合終了時に `pending_match_sync` へ予約は書かれる（`utils/helpers.js` handleAutoMatchEnd）が、処理していた「10分おき」cron の分岐が `ba4fb2b1` で cron 枠整理と一緒に消えた。取り込まれないと KDA・MMR・ペンタキル判定が反映されない。Cloudflare の cron は5枠満杯のため、GitHub Actions から mode 指定で起動する等の起動元を決める。同時に `sendRecruitStatusNotification`（募集状況の通知）も呼ばれなくなっている（要否を判断）。`createWeeklyEvents` は未完成のため意図的に未登録
 - [ ] **【要判断・セキュリティ】`POST /api/balancer/pending` に認証が無い**（2026-10-07 発見）: 誰でも架空のチーム分けを送れ、①カジノの勝敗予想の対象試合が差し替わる ②観戦・待機メンバーの pity が +10 される（ktm_players 書き込み）③予測勝率の記録が増える。内戦バランサーは管理者以外のメンバーも使うため管理者限定にはできない。ログイン中のメンバー限定・送信元の制限・pity加算を記録画面へ移す等の案から選ぶ
 - [ ] **GitHub Actions からの Discord 通知が全部スキップされている**（2026-10-04 発見）: `DISCORD_WEBHOOK` / `DISCORD_BOT_TOKEN` が GitHub Secrets に未登録で、パッチ速報・動画監視・Pulse 等の Discord 通知は無音で飛ばされている（ワークフロー自体は成功）。登録するか、通知を通知ベル（毎朝の健康診断）に一本化して参照を消すかを決める
 
@@ -118,10 +119,8 @@
 - [x] **3-3. プレイヤー外部分析 ＆ カジノ**（2026-10-07 完了）: 外部分析 1,939行 ➔ 286行（`_analyzer/`）、カジノ 1,635行 ➔ 384行（`_casino/` にデータフック・ヒーロー・タブ・ログイン状態・勝敗予想・ショップ・コインの貯め方・チップ送金）。カジノはボタンの無い模擬対戦の生成処理と、ジャックポットの仮の表示値 12,800 を削除
 
 ### フェーズ4: 【03_SYSTEMS】Discord Bot ＆ バックエンドの責務分離
-- [ ] **4-1. Botボタンハンドラ (`handlers/components.js` 1,283行 ➔ ルーター化)**:
-  - `interactions/` 配下へプレイスタイル (`playstyleHandler.js`)、定期カスタム (`periodicRecruitHandler.js`)、突発募集 (`casualRecruitHandler.js`)、モーダル返却 (`portalModalHandler.js`)、クイック募集 (`quickRecruitHandler.js`) に分離
-- [ ] **4-2. Bot定期バッチ (`handlers/scheduled.js` 1,317行 ➔ ジョブ分割)**:
-  - `jobs/` 配下へリマインダー通知、定期カスタムカード生成、ステータス同期を分離
+- [x] **4-1. Botボタンハンドラ (`handlers/components.js` 1,486行 ➔ 132行の振り分け)**（2026-10-07 完了）: `handlers/buttons/` に6グループ（登録・師弟／ポータル基本／通知・代打／定期募集／管理・クイック／募集カード）。元の判定順のまま順に呼び、応答を返した時点で終了
+- [x] **4-2. Bot定期バッチ (`handlers/scheduled.js` 1,441行 ➔ 101行の振り分け)**（2026-10-07 完了）: `handlers/jobs/` に6ファイル（定期募集カード／開催判定・リマインド／週間レポート／掃除／募集状況通知／イベント作成）
 - [ ] **4-3. ロール管理API・定数定義の共通化**:
   - `discordRoles.js` へBot側のPUT/DELETE通信ヘルパーを部品化、Tier/プレイスタイルロールメタデータをSSoT化
 - [ ] **4-4. PCデーモン (`edge_worker_daemon.py` 912行)**: タスクディスパッチャと各種ワーカーの分離
