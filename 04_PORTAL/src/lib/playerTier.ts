@@ -40,8 +40,8 @@ export function getPlayerTier(p: PlayerStatsForTier): PlayerTierInfo {
     };
   }
 
-  // 2. ライト層（通算1〜4戦）
-  if (totalG <= 4) {
+  // 2. ライト層（通算1〜14戦）
+  if (totalG <= 14) {
     return {
       tier: 'light',
       label: '🌱 ライト',
@@ -50,7 +50,7 @@ export function getPlayerTier(p: PlayerStatsForTier): PlayerTierInfo {
     };
   }
 
-  // 3. 通算5戦以上だが直近参加がない（30日以上ブランク）
+  // 3. 通算15戦以上だが直近参加がない（30日以上ブランク）
   if (daysAgo !== null && daysAgo > 30) {
     if (daysAgo >= 60) {
       return {

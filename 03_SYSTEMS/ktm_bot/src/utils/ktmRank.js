@@ -123,8 +123,8 @@ export function getPlayerExperienceBadge(p) {
       tip: '通算0戦：初参加のプレイヤーです！大歓迎✨'
     };
   }
-  // 2. ライト層（通算1〜4戦）
-  if (totalG <= 4) {
+  // 2. ライト層（通算1〜14戦）
+  if (totalG <= 14) {
     return {
       tier: 'light',
       label: '🌱 ライト',
@@ -132,7 +132,7 @@ export function getPlayerExperienceBadge(p) {
       tip: `通算${totalG}戦：参加回数がまだ浅いライトプレイヤーです`
     };
   }
-  // 3. 通算5戦以上だが直近参加がない（30日以上ブランク）
+  // 3. 通算15戦以上だが直近参加がない（30日以上ブランク）
   if (daysAgo !== null && daysAgo > 30) {
     if (daysAgo >= 60) {
       return {
@@ -143,7 +143,7 @@ export function getPlayerExperienceBadge(p) {
       };
     }
     return {
-      tier: 'returning',
+      tier: 'experienced',
       label: '🎖️ 経験者',
       short: '🎖️経験者',
       tip: `通算${totalG}戦（最終参加: ${daysAgo}日前）：久しぶりに参加の経験者プレイヤーです`

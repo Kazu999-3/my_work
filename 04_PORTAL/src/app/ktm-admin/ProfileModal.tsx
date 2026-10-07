@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { X, RefreshCw, Swords, Shield, Star, Crosshair, Zap, Activity, Info } from "lucide-react";
 import Image from "next/image";
 import { getChampIcon, getChampNameById } from "../../lib/ddragonClient";
+import { getPlayerTier } from "../../lib/playerTier";
 import ScoutingReport from "../../components/ScoutingReport";
 
 interface ProfileModalProps {
@@ -86,28 +87,18 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                 {(() => {
                   const totalG = player.total_games ?? player.games ?? player.metadata?.games ?? stats?.totalMatches ?? 0;
                   const daysAgo = player.days_since_last_match;
-                  let label = '👑 常連';
-                  let color = 'bg-primary-100 text-primary-900 border-primary-edge';
-
-                  if (totalG === 0) {
-                    label = '🔰 初参加';
-                    color = 'bg-success-100 text-success-900 border-success-edge';
-                  } else if (totalG <= 4) {
-                    label = '🌱 ライト';
-                    color = 'bg-secondary-100 text-secondary-900 border-secondary-edge';
-                  } else if (daysAgo !== null && daysAgo > 30) {
-                    if (daysAgo >= 60) {
-                      label = '⏳ 復帰勢';
-                      color = 'bg-primary-100 text-primary-900 border-primary-edge';
-                    } else {
-                      label = '🎖️ 経験者';
-                      color = 'bg-secondary-100 text-secondary-900 border-secondary-edge';
-                    }
-                  }
+                  const tierInfo = getPlayerTier({
+                    ...player,
+                    total_games: totalG,
+                    days_since_last_match: daysAgo,
+                  });
 
                   return (
-                    <span className={`px-2 py-0.5 rounded text-xs font-black border ${color}`}>
-                      {label} (通算{totalG}戦{daysAgo !== null && daysAgo > 30 ? ` / ${daysAgo}日前` : ''})
+                    <span 
+                      title={tierInfo.tip}
+                      className={`px-2 py-0.5 rounded text-xs font-black border ${tierInfo.colorClass}`}
+                    >
+                      {tierInfo.label} (通算{totalG}戦{daysAgo !== null && daysAgo !== undefined && daysAgo > 30 ? ` / ${daysAgo}日前` : ''})
                     </span>
                   );
                 })()}
