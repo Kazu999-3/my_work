@@ -1,3 +1,4 @@
+import { addMemberRole, removeMemberRole } from '../../utils/discordRoles.js';
 import { CONFIG } from '../../config.js';
 import { patchInteractionResponse, sendDiscordMessage } from '../../utils/api.js';
 
@@ -23,24 +24,11 @@ export async function handleNotifySubstituteButtons(interaction, env, ctx, { cus
       try {
         if (hasRole) {
           // ロール削除
-          const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${userId}/roles/${roleId}`, {
-            method: "DELETE",
-            headers: {
-              "Authorization": `Bot ${botToken}`
-            }
-          });
-          if (!res.ok) throw new Error(`Role removal failed: ${res.status} ${await res.text()}`);
+          await removeMemberRole(guildId, userId, roleId, botToken);
           await patchInteractionResponse(appId, token, { content: "🔔 **募集通知ロールを解除しました。**\n以降、メンバー募集時の通知は届きません。" });
         } else {
           // ロール付与
-          const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${userId}/roles/${roleId}`, {
-            method: "PUT",
-            headers: {
-              "Authorization": `Bot ${botToken}`,
-              "Content-Length": "0"
-            }
-          });
-          if (!res.ok) throw new Error(`Role assignment failed: ${res.status} ${await res.text()}`);
+          await addMemberRole(guildId, userId, roleId, botToken);
           await patchInteractionResponse(appId, token, { content: "🔔 **募集通知ロールを付与しました！**\n以降、メンバー募集時に通知（メンション）が届くようになります。" });
         }
       } catch (err) {

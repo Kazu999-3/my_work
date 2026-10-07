@@ -1,3 +1,4 @@
+import { addMemberRole, removeMemberRole, PLAYSTYLE_ROLE_NAMES } from '../../utils/discordRoles.js';
 import { CONFIG } from '../../config.js';
 import { patchInteractionResponse } from '../../utils/api.js';
 import { fetchSupabase } from '../../utils/supabase.js';
@@ -162,14 +163,7 @@ export async function handlePortalBasicsButtons(interaction, env, ctx, { customI
       return Response.json({ type: 4, data: { content: "⚠️ サーバーIDが取得できませんでした。", flags: 64 } });
     }
 
-    const PLAYSTYLE_NAMES = {
-      soloq: '🥊 ソロキュー奮闘中',
-      flex: '🤝 フレックス希望',
-      aram: '❄️ ARAM・サクッと勢',
-      casual: '☕ エンジョイ・まったり',
-      learner: '📖 教わりたい'
-    };
-    const roleLabel = PLAYSTYLE_NAMES[roleKey] || roleKey;
+    const roleLabel = PLAYSTYLE_ROLE_NAMES[roleKey] || roleKey;
 
     ctx.waitUntil((async () => {
       try {
@@ -190,21 +184,13 @@ export async function handlePortalBasicsButtons(interaction, env, ctx, { customI
 
         if (hasRole) {
           // 解除 (DELETE)
-          const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${userId}/roles/${roleId}`, {
-            method: "DELETE",
-            headers: { "Authorization": `Bot ${botToken}` }
-          });
-          if (!res.ok) throw new Error(`Role removal failed: ${res.status} ${await res.text()}`);
+          await removeMemberRole(guildId, userId, roleId, botToken);
           await patchInteractionResponse(appId, token, {
             content: `🗑️ **『${roleLabel}』を解除しました。**\nいつでもボタンから再度付与できます。`
           });
         } else {
           // 付与 (PUT)
-          const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${userId}/roles/${roleId}`, {
-            method: "PUT",
-            headers: { "Authorization": `Bot ${botToken}`, "Content-Length": "0" }
-          });
-          if (!res.ok) throw new Error(`Role assignment failed: ${res.status} ${await res.text()}`);
+          await addMemberRole(guildId, userId, roleId, botToken);
           await patchInteractionResponse(appId, token, {
             content: `✅ **『${roleLabel}』を付与しました！**\n名簿やプロフィールに反映されます。`
           });

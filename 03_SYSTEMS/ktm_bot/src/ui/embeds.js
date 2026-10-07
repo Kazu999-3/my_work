@@ -3,6 +3,7 @@ import {
   RECRUITMENT_COLORS, getDayDef, buildDayBanner, replaceBanner,
   computeDayStatus, computeDominantTier, parseEntryBreakdown, cleanEntryLine,
 } from '../utils/recruitmentStatus.js';
+import { PLAYSTYLE_ROLE_NAMES } from '../utils/discordRoles.js';
 
 function renderProgressBar(current, max) {
   const totalBlocks = 10;
@@ -326,16 +327,16 @@ export function getPlaystyleComponents() {
     {
       type: 1,
       components: [
-        { type: 2, label: "🥊 ソロキュー奮闘中", style: 2, custom_id: "playstyle_role:soloq" },
-        { type: 2, label: "🤝 フレックス希望", style: 2, custom_id: "playstyle_role:flex" },
-        { type: 2, label: "❄️ ARAM・サクッと勢", style: 2, custom_id: "playstyle_role:aram" }
+        { type: 2, label: PLAYSTYLE_ROLE_NAMES.soloq, style: 2, custom_id: "playstyle_role:soloq" },
+        { type: 2, label: PLAYSTYLE_ROLE_NAMES.flex, style: 2, custom_id: "playstyle_role:flex" },
+        { type: 2, label: PLAYSTYLE_ROLE_NAMES.aram, style: 2, custom_id: "playstyle_role:aram" }
       ]
     },
     {
       type: 1,
       components: [
-        { type: 2, label: "☕ エンジョイ・まったり", style: 2, custom_id: "playstyle_role:casual" },
-        { type: 2, label: "📖 教わりたい", style: 2, custom_id: "playstyle_role:learner" }
+        { type: 2, label: PLAYSTYLE_ROLE_NAMES.casual, style: 2, custom_id: "playstyle_role:casual" },
+        { type: 2, label: PLAYSTYLE_ROLE_NAMES.learner, style: 2, custom_id: "playstyle_role:learner" }
       ]
     }
   ];
