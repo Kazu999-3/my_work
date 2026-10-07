@@ -52,14 +52,16 @@ export default function GlobalNavbar() {
                   v2.0
                 </span>
               </div>
-              <p className="text-[10px] text-slate-400 hidden sm:block">
+              <p className="text-[10px] text-slate-400 hidden xl:block">
                 LoL 戦術バイブル ＆ リアルタイムHUD連動コクピット
               </p>
             </div>
           </Link>
 
-          {/* PC向けメニューバー (横並びタブ) */}
-          <nav className="hidden md:flex items-center gap-1 text-xs font-bold">
+          {/* PC向けメニューバー (横並びタブ)
+              2026-10-08: 8項目を名前つきで並べると 768〜1279px で入りきらず、名前が1文字ずつ折り返していた。
+              1280px未満はアイコンのみ（表示中のページだけ名前も出す。名前はマウスを乗せると出る） */}
+          <nav className="hidden md:flex items-center gap-1 text-xs font-bold min-w-0">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
@@ -67,26 +69,27 @@ export default function GlobalNavbar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all ${
+                  title={item.name}
+                  className={`flex items-center gap-1.5 px-2.5 xl:px-3 py-1.5 rounded-xl transition-all whitespace-nowrap shrink-0 ${
                     isActive
                       ? 'bg-indigo-600 text-white shadow-md shadow-indigo-950/50'
                       : 'text-slate-400 hover:text-white hover:bg-slate-900 border border-transparent hover:border-slate-800'
                   }`}
                 >
                   <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-                  <span>{item.name}</span>
+                  <span className={isActive ? '' : 'hidden xl:inline'}>{item.name}</span>
                 </Link>
               );
             })}
           </nav>
 
           {/* 右端アクション（通知ベル ＋ 戦術取込 ＋ スマホハンバーガー） */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <NotificationBell />
 
             <button
               onClick={() => setIsIngestModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-xs font-bold transition border border-amber-500/40 cursor-pointer shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 text-xs font-bold transition border border-amber-500/40 cursor-pointer shadow-sm whitespace-nowrap"
               title="URLやメモからAIで戦術を自動取込"
             >
               <Plus className="w-3.5 h-3.5" />

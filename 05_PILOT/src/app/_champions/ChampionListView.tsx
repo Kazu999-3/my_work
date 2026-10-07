@@ -31,9 +31,9 @@ export default function ChampionListView({ search, setSearch, roleFilter, setRol
   return (
           <div className="space-y-3">
             {/* 検索 ＆ フィルターバー */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 bg-zinc-900/90 p-2.5 rounded-2xl border border-zinc-800 shadow-sm relative">
-              <div className="flex items-center gap-2 w-full sm:w-auto flex-1">
-                <div className="relative w-full sm:w-80">
+            <div className="flex flex-col xl:flex-row items-center justify-between gap-2.5 bg-zinc-900/90 p-2.5 rounded-2xl border border-zinc-800 shadow-sm relative">
+              <div className="flex items-center gap-2 w-full xl:w-auto flex-1">
+                <div className="relative w-full xl:w-80">
                   <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
                   <input
                     type="text"
@@ -98,7 +98,7 @@ export default function ChampionListView({ search, setSearch, roleFilter, setRol
               </div>
 
               {/* ロールタブ ＆ ソートセレクター */}
-              <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto">
+              <div className="flex items-center justify-between gap-2 overflow-x-auto w-full xl:w-auto">
                 <div className="flex items-center gap-1 p-1 bg-zinc-950 rounded-xl border border-zinc-800">
                   {["ALL", "TOP", "JG", "MID", "ADC", "SUP"].map((r) => (
                     <button
