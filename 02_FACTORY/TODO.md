@@ -72,7 +72,7 @@
 
 ## 🙋 ユーザー判断・ユーザー作業待ち
 
-- [ ] **【要判断】04 `/api/riot/match-sync` と `pending_match_sync` テーブルを消すか（ジャックポット総取りの扱い）**（2026-10-07）: Bot側の Riot 取り込み経路（勝敗ボタンの受け口・handleAutoMatchEnd・予約の処理）はユーザー判断で削除済み。残る 04 の API に「ペンタキルでジャックポット総取り」の判定があり、消すとジャックポットは積み立て（試合記録ごと+100）だけで当たらない仕組みになる（実際は今も一度も呼ばれておらず当たっていない）。カジノ画面は「ペンタキルで総取り！」と表示中。あわせて `/api/bet/settle` も呼び出し元が無くなった（精算は `/api/match/record` が行う）
+- [ ] **`pending_match_sync` テーブルの削除（migration 91）を本番に適用する**（2026-10-07）: ユーザー承認済みだが、適用のツール実行が拒否され未実施。中身は0行で、参照するコードは全て削除済み。`04_PORTAL/supabase/migrations/91_drop_pending_match_sync.sql`
 - [ ] **GitHub Actions からの Discord 通知が全部スキップされている**（2026-10-04 発見）: `DISCORD_WEBHOOK` / `DISCORD_BOT_TOKEN` が GitHub Secrets に未登録で、パッチ速報・動画監視・Pulse 等の Discord 通知は無音で飛ばされている（ワークフロー自体は成功）。登録するか、通知を通知ベル（毎朝の健康診断）に一本化して参照を消すかを決める
 
 

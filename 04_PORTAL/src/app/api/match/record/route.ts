@@ -63,6 +63,12 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: `${p.name}の${key}が不正な値です。` }, { status: 400 });
         }
       }
+      if (p.penta_kills !== undefined) {
+        const v = Number(p.penta_kills);
+        if (!Number.isInteger(v) || v < 0 || v > 5) {
+          return NextResponse.json({ error: `${p.name}のペンタキル数が不正な値です（0〜5）。` }, { status: 400 });
+        }
+      }
     }
     // 各チーム5ロールが重複なく揃っているかの検証(2026-08-05発覚)。以前は無かったため、
     // 同ロールが片チームに重複投稿されると対面特定(line 105のfind)が失敗してopponentMmrが
@@ -292,6 +298,7 @@ export async function POST(request: Request) {
       damage_taken: r.damage_taken || 0,
       objective_damage: r.objective_damage || 0,
       heal_shield: r.heal_shield || 0,
+      penta_kills: Number(r.penta_kills) || 0, // 記録画面で入力（2026-10-07）。ジャックポット総取りの判定に使う
       kda_score: r.kdaScore,
       mmr_delta: r.mmrDelta,
       mmr_breakdown: r.mmrBreakdown || null, // M-03: 変動の内訳
@@ -381,7 +388,7 @@ export async function POST(request: Request) {
         metadata: { ...currentMeta, coins: newCoins }
       };
 
-      let { error: uError } = await supabase
+      const { error: uError } = await supabase
         .from('ktm_players')
         .update(baseUpdate)
         .eq('name', r.name);
@@ -492,7 +499,7 @@ export async function POST(request: Request) {
           // 保存済みoddsは必ずクランプしてから使う。2026-09-22以前に作られたレコードは
           // クライアント申告値がそのまま入っている可能性があるため（任意倍率払い戻しの防止）。
           const { sanitizeStoredOdds } = await import('../../../../lib/betOdds');
-          let multiplier = sanitizeStoredOdds(bet.odds);
+          const multiplier = sanitizeStoredOdds(bet.odds);
 
           const pPlayer = await findOrCreatePlayer({
             discordId: bet.discord_id,
@@ -566,22 +573,44 @@ export async function POST(request: Request) {
       console.warn('[match/record] 勝敗予想の自動精算エラー（続行）:', e);
     }
 
-    // (4.7) 💎 サーバー共有ジャックポット金庫（試合開催ボーナスの積立）
+    // (4.7) 💎 サーバー共有ジャックポット金庫（試合開催ボーナスの積立 ＋ ペンタキルでの総取り）
     //
-    // ⚠️ 2026-09-22 是正:
-    // ここには以前「ペンタキルで総取り」の判定があったが、**一度も発火しないデッドコード**
-    // だった。理由は2つ:
-    //   ①ktm_match_participants に penta_kills 列が存在しなかった
-    //   ②このエンドポイントはKTM Botが試合終了直後に呼ぶもので、その時点では
-    //     kills/deaths/assists が全員0埋め。実データを埋めるのは3分後に走る
-    //     riot/match-sync であり、判定のタイミングが根本的に早すぎた
-    // 判定は riot/match-sync 側（Riot APIの実データが揃った後）へ移設した。
-    // ここでは試合開催ボーナスの積立だけを行う（JACKPOT_CAP に達していれば加算されない）。
+    // ★ 2026-10-07: 総取りの判定をここへ戻した。2026-09-22 に「Botが試合直後に呼ぶ時点ではKDAが0埋め」
+    // という理由で riot/match-sync（Riot APIの実データ取得）側へ移していたが、その経路は Discord の勝敗ボタンが
+    // Bot の書き直しで無くなって一度も動いておらず、ジャックポットは積み立てられるだけで誰も当てられなかった。
+    // 現在の記録は 04 の記録画面から行い、ペンタキル数も記録画面で入力する（ktm_match_participants.penta_kills）。
+    // 【条件】ペンタキルを達成し、かつその試合に勝利していること（負け試合の帳尻ペンタでは払い出さない）。
+    // お祭りカスタム（戦績ノーカウント）は対象外。二重払い出しは ktm_matches.jackpot_claimed で防ぐ。
+    let jackpotWinner: { name: string; payout: number } | null = null;
     try {
-      const { addToJackpot } = await import('../../../../lib/jackpot');
+      const { addToJackpot, claimJackpot } = await import('../../../../lib/jackpot');
+      // 積み立てを先に行い、この試合の分も総取りの対象に含める（JACKPOT_CAP に達していれば加算されない）
       await addToJackpot(100);
+
+      const pentaWinner = isExhibition
+        ? null
+        : results.find((r: any) => Number(r.penta_kills) > 0 && r.team === winningTeam);
+      if (pentaWinner) {
+        const { data: matchRow } = await supabase
+          .from('ktm_matches')
+          .select('id, jackpot_claimed')
+          .eq('id', newMatchId)
+          .maybeSingle();
+        if (matchRow && matchRow.jackpot_claimed === false) {
+          const jRes = await claimJackpot(pentaWinner.name, pentaWinner.dbPlayer?.discord_id || null);
+          if (jRes.success && jRes.payout > 0) {
+            jackpotWinner = { name: pentaWinner.name, payout: jRes.payout };
+            await supabase.from('ktm_matches').update({ jackpot_claimed: true }).eq('id', newMatchId);
+            const { sendShopNotification } = await import('../../../../lib/discordNotify');
+            await sendShopNotification({
+              content: `🚨 **【JACKPOT 炸裂！！】** \`${pentaWinner.name}\` 選手がペンタキルを達成し、そのまま勝利！ ジャックポット金庫 **${jRes.payout.toLocaleString()}コイン** を総取りしました！！ 🚨`,
+            }).catch(() => {});
+          }
+        }
+      }
     } catch (jErr) {
-      console.warn('[match/record] ジャックポット積立エラー（続行）:', jErr);
+      // 金庫処理の失敗で試合の記録そのものを失敗させない
+      console.warn('[match/record] ジャックポット積立・判定エラー（続行）:', jErr);
     }
 
     // 5. Discordへ試合結果を速報通知 (非同期で送信して待たないか、待つか。エラーになっても保存は完了させる)
@@ -671,7 +700,7 @@ export async function POST(request: Request) {
           }
         ];
 
-        // ペンタキル総取りの通知は riot/match-sync 側（実データ取得後）で行う
+        // ペンタキル総取りの通知は上の (4.7) で送る（2026-10-07 に riot/match-sync から移設）
 
         const payload = isExhibition ? {
           content: "🎪 **【KTMお祭りカスタム速報】エキシビション対決が終了しました！** 🎪\n🛡️ **完全戦績保護適用**: 全員の公式MMR・通算勝率はノーカウント（±0）で保護されました！\n🪙 参加賞（+100pt）＆勝利ボーナス（+150pt）および勝敗予想配当を付与しました！",
@@ -813,7 +842,7 @@ export async function POST(request: Request) {
       console.warn('[match/record] Discordロール同期呼び出し失敗（続行）:', roleErr?.message);
     }
 
-    return NextResponse.json({ success: true, matchId: newMatchId, updates: results });
+    return NextResponse.json({ success: true, matchId: newMatchId, updates: results, jackpotWinner });
 
   } catch (error: any) {
     console.error('Record Match Error:', error);

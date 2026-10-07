@@ -25,6 +25,8 @@ interface PlayerStat {
   heal_shield: number;
   objective_damage: number;
   cs: number;
+  /** ペンタキル数。勝利チームの選手が1以上ならジャックポット総取り（/api/match/record が判定。2026-10-07） */
+  penta_kills?: number;
 }
 
 const OCR_ALIAS_STORAGE_KEY = 'ktm_ocr_player_aliases_v1';
@@ -613,7 +615,8 @@ function CustomRecordPageContent() {
             damage_taken: s.damage_taken,
             heal_shield: s.heal_shield,
             objective_damage: s.objective_damage,
-            cs: s.cs
+            cs: s.cs,
+            penta_kills: s.penta_kills || 0
           }))
         })
       });
@@ -814,7 +817,7 @@ function CustomRecordPageContent() {
 
                       {/* 詳細入力アコーディオン */}
                       {openDetails[index] && (
-                        <div className="mt-1 ml-18 grid grid-cols-2 sm:grid-cols-4 gap-2 bg-black/5 p-3 rounded-lg border border-border transition shadow-inner">
+                        <div className="mt-1 ml-18 grid grid-cols-2 sm:grid-cols-5 gap-2 bg-black/5 p-3 rounded-lg border border-border transition shadow-inner">
                           <div>
                             <label className="text-[10px] text-muted-strong font-bold block mb-1 text-center">CS</label>
                             <input type="number" value={s.cs || 0} onChange={e => handleStatChangeByIndex(index, 'cs', e.target.value)} className="w-full bg-surface border border-border text-foreground rounded px-2 py-1 text-xs text-center" />
@@ -830,6 +833,10 @@ function CustomRecordPageContent() {
                           <div>
                             <label className="text-[10px] text-muted-strong font-bold block mb-1 text-center">視界スコア</label>
                             <input type="number" value={s.vision || 0} onChange={e => handleStatChangeByIndex(index, 'vision', e.target.value)} className="w-full bg-surface border border-border text-foreground rounded px-2 py-1 text-xs text-center" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-primary-700 font-bold block mb-1 text-center" title="勝利チームの選手がペンタキルを達成するとジャックポットを総取り">💎 ペンタキル</label>
+                            <input type="number" min={0} max={5} value={s.penta_kills || 0} onChange={e => handleStatChangeByIndex(index, 'penta_kills', e.target.value)} className="w-full bg-surface border border-primary-edge text-foreground rounded px-2 py-1 text-xs text-center" />
                           </div>
                         </div>
                       )}
@@ -902,7 +909,7 @@ function CustomRecordPageContent() {
 
                       {/* 詳細入力アコーディオン */}
                       {openDetails[index] && (
-                        <div className="mt-1 ml-18 grid grid-cols-2 sm:grid-cols-4 gap-2 bg-black/5 p-3 rounded-lg border border-border transition shadow-inner">
+                        <div className="mt-1 ml-18 grid grid-cols-2 sm:grid-cols-5 gap-2 bg-black/5 p-3 rounded-lg border border-border transition shadow-inner">
                           <div>
                             <label className="text-[10px] text-muted-strong font-bold block mb-1 text-center">CS</label>
                             <input type="number" value={s.cs || 0} onChange={e => handleStatChangeByIndex(index, 'cs', e.target.value)} className="w-full bg-surface border border-border text-foreground rounded px-2 py-1 text-xs text-center" />
@@ -918,6 +925,10 @@ function CustomRecordPageContent() {
                           <div>
                             <label className="text-[10px] text-muted-strong font-bold block mb-1 text-center">視界スコア</label>
                             <input type="number" value={s.vision || 0} onChange={e => handleStatChangeByIndex(index, 'vision', e.target.value)} className="w-full bg-surface border border-border text-foreground rounded px-2 py-1 text-xs text-center" />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-primary-700 font-bold block mb-1 text-center" title="勝利チームの選手がペンタキルを達成するとジャックポットを総取り">💎 ペンタキル</label>
+                            <input type="number" min={0} max={5} value={s.penta_kills || 0} onChange={e => handleStatChangeByIndex(index, 'penta_kills', e.target.value)} className="w-full bg-surface border border-primary-edge text-foreground rounded px-2 py-1 text-xs text-center" />
                           </div>
                         </div>
                       )}

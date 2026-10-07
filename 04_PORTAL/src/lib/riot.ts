@@ -34,7 +34,7 @@ interface ParticipantStats {
   totalHeal: number;
   damageSelfMitigated: number;
   goldEarned?: number;
-  /** ペンタキル数。ジャックポット金庫の総取り判定に使う（riot/match-sync が保存） */
+  /** ペンタキル数（Riot Match-V5）。※ジャックポット総取りの判定は 04 の記録画面で入力した値で行う（2026-10-07） */
   pentaKills?: number;
   win: boolean;
   lane: string; // TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY
