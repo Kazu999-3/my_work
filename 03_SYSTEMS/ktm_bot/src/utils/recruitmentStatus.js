@@ -545,12 +545,19 @@ export function buildRecruitmentContent(target, notificationRoleId) {
   const mention = notificationRoleId ? `<@&${notificationRoleId}>` : '';
 
   if (target.dayKey === 'sat') {
+    const mention = notificationRoleId ? `<@&${notificationRoleId}>` : '';
     return `📢 **【${def.shortName}】${label} 21:00〜** ${mention}
-🔰 **初心者・低ランク大歓迎！** チーム戦力は自動で五分五分に調整されます。
-⏱️ **1戦のみ即抜け・途中参加もOK！** 気軽に下のボタンからエントリーしてね👇`.trim();
+⚔️ **実力伯仲の真剣勝負！** 初心者・低ランク大歓迎（チーム戦力は五分五分に自動調整）
+🕒 **ルール**: 21:00〜 3戦程度（24時頃〜自由参加メイヘム） / 20人以上で2部屋開催
+
+💡 **ボタン ＆ アイコン凡例（土日共通）**
+🔘 **ボタン**: 🟢フル ｜ ⏱️1戦のみ (即抜けOK) ｜ 🌙2戦目〜合流 ｜ ❌辞退
+🏷️ **名簿**: 🔰初参加 ｜ 🌱ライト(1〜14戦) ｜ 👑常連 ｜ 🎖️経験者 ｜ ⏳復帰勢`.trim();
   }
 
-  return `📢 **【${def.shortName}】${label} 21:00〜** ${mention}
-🎪 **レート変動なし・ランク不問！** ARAMや新キャラ・不慣れレーンの練習大歓迎✨
-⏱️ **1戦のみ即抜けOK！** 気軽に下のボタンからエントリーしてね👇`.trim();
+  // 日曜は通知二重鳴り防止のためメンションを省き、被る凡例もカット
+  return `📢 **【${def.shortName}】${label} 21:00〜**
+🎪 **勝敗気にせず楽しむお祭り！** レート変動なし・ランク不問✨
+🕒 **ルール**: 不慣れなキャラ・レーンの練習や特殊ルール・ARAM等のワイワイ枠
+（※ボタン・名簿の操作方法は土曜カードと共通です）`.trim();
 }

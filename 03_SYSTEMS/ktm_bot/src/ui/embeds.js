@@ -553,26 +553,12 @@ export function applyDayCardState(embed, dayKey, entryLines) {
     fieldTitle = `👥 参加者 (${status.joined}/${status.capacity}名)`;
   }
 
-  const rulesValue = dayKey === 'sat'
-    ? '・**21:00〜**: 3戦程度（24時頃〜自由参加メイヘム✨）\n・**20人以上**: 上位・初中級の2部屋同時開催 / 戦力は五分五分に自動調整'
-    : '・**21:00〜**: レート変動なし・ランク不問！特殊ルールやARAM等のワイワイ枠✨';
-
-  const legendValue = '🔘 **ボタン**: 🟢フル ｜ ⏱️1戦のみ (即抜けOK) ｜ 🌙2戦目〜合流 ｜ ❌辞退\n🏷️ **名簿**: 🔰初参加 ｜ 🌱ライト(1〜14戦) ｜ 👑常連 ｜ 🎖️経験者 ｜ ⏳復帰勢';
-
+  // ルール・凡例などの固定情報は埋め込み外（メッセージ本文）に出したため、
+  // 埋め込みカードは純粋に可変な「参加者名簿・状況」のみを表示する。
   embed.fields = [
     {
       name: fieldTitle,
       value: renderEntryList(lines, status),
-      inline: false,
-    },
-    {
-      name: '🕒 当日の流れ ＆ ルール',
-      value: rulesValue,
-      inline: false,
-    },
-    {
-      name: '💡 ボタン ＆ アイコン凡例',
-      value: legendValue,
       inline: false,
     },
   ];
