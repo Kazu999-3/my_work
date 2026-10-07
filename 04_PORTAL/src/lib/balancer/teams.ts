@@ -133,7 +133,15 @@ export function applyManualSwap(balanceResult: any, players: any[], targetTeam: 
   newResult.totalMmrBlue = totalBlue;
   newResult.totalMmrRed = totalRed;
   newResult.diff = Math.abs(totalBlue - totalRed);
-  newResult.predictedBlueWinProb = calculateBlueWinProbability(totalBlue, totalRed);
+  // ★ 2026-10-07: 結果画面の「MMR差・合計MMR・戦力差の判定」、コピー用テキスト、Discord通知は
+  // teamBlueMMR / teamRedMMR / mmrDiff を読むのに、以前はここで更新しておらず入れ替え前の数字が残っていた
+  newResult.teamBlueMMR = totalBlue;
+  newResult.teamRedMMR = totalRed;
+  newResult.mmrDiff = Math.abs(totalBlue - totalRed);
+  // calculateBlueWinProbability は平均MMRを受け取る（Elo式・400点差で約10倍）。以前は合計を渡しており差が5倍に膨らんでいた
+  const blueAvg = totalBlue / ((newResult.teamBlue || []).length || 1);
+  const redAvg = totalRed / ((newResult.teamRed || []).length || 1);
+  newResult.predictedBlueWinProb = calculateBlueWinProbability(blueAvg, redAvg);
 
   return newResult;
 }
