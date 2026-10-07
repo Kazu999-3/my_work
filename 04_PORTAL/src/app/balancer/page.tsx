@@ -240,6 +240,11 @@ export default function BalancerPage() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ balanceResult: activeResult }),
+          }).then((r) => {
+            // 2026-10-07: 保存はログイン中のメンバー限定になった。未ログインでもチーム分けは使えるが、カジノには連携されない
+            if (r.status === 401) {
+              setMessage({ type: "error", text: "ℹ️ ログインしていないため、このチーム分けは保存されず、カジノの勝敗予想にも連携されません（サイドバーの「Discordでログイン」からログインできます）。" });
+            }
           }).catch(pErr => console.warn('[balancer] Auto-save pending match failed:', pErr));
         }
       } catch (e) {

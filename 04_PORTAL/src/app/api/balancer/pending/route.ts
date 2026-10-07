@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { calculateBlueWinProbability } from '../../../../lib/mmr';
+import { getAuthSession } from '../../../../lib/authGuard';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 // 以前はプロセス内メモリ(Map)に保存していたが、Vercelはリクエストごとに別インスタンス
 // (別プロセス)で実行されうるため、POSTしたインスタンスとGETしたインスタンスが異なると
@@ -12,6 +14,20 @@ const EXPIRE_MS = 3 * 60 * 60 * 1000; // 3時間有効（以前のインメモ�
 
 export async function POST(request: Request) {
   try {
+    // ★ 2026-10-07: 保存はログイン中のメンバー（Discordログイン）か管理者に限定し、誰が保存したかを残す。
+    // 以前は認証なしで、誰でも架空のチーム分けを送れた（カジノの勝敗予想の対象試合の差し替え、
+    // 観戦・待機メンバーの pity +10、予測勝率の記録が起きる）。2026-08-13 の監査では「仲間内で気軽に
+    // 使える方針に反する」としてログイン必須を見送っていたが、ユーザー判断でメンバー限定＋履歴で追える形にした。
+    // 未ログインでもバランサーのチーム分け自体は使える（保存されずカジノに連携されないだけ）。
+    const member = await getAuthSession();
+    const admin = member ? null : await verifyAdminSession(request);
+    if (!member && !admin?.ok) {
+      return NextResponse.json({ error: 'チーム分けの保存にはDiscordログインが必要です。', requireLogin: true }, { status: 401 });
+    }
+    const submittedBy = member
+      ? { discordId: member.discordId, name: member.displayName || member.username, isAdmin: member.isAdmin }
+      : { discordId: null, name: '管理者（パスワードログイン）', isAdmin: true };
+
     const { balanceResult } = await request.json();
     if (!balanceResult) {
       return NextResponse.json({ error: 'チーム分け結果がありません。' }, { status: 400 });
@@ -27,7 +43,7 @@ export async function POST(request: Request) {
 
     const { data: inserted, error: insertError } = await supabase
       .from('edge_tasks')
-      .insert({ task_type: TASK_TYPE, payload: { balanceResult }, status: 'pending' })
+      .insert({ task_type: TASK_TYPE, payload: { balanceResult, submittedBy, submittedAt: new Date().toISOString() }, status: 'pending' })
       .select('id')
       .single();
     if (insertError) throw insertError;
@@ -60,11 +76,9 @@ export async function POST(request: Request) {
     // 以前はSELECT→計算→UPDATEの非アトミック処理で、同時リクエスト時に加算が
     // 失われる競合状態があったため、DB側で加算するRPC(increment_ktm_pity)に置き換えた。
     //
-    // このAPI自体は認証なし・spectatorsはリクエストボディの値をそのまま使っていたため、
-    // 実在しない名前や同名の重複を含む配列を送りつけて任意にpityを水増しできた
-    // (2026-08-13、コーチ/対戦シミュレーター監査#23で発覚)。balancer/pending自体を
-    // ログイン必須にする変更はこのツールの「仲間内で気軽に使える」設計方針に反するため、
-    // 実在するktm_players.nameかどうかの照合と重複排除だけを追加する。
+    // spectatorsはリクエストボディの値をそのまま使っていたため、実在しない名前や同名の重複を含む配列を
+    // 送りつけて任意にpityを水増しできた(2026-08-13、監査#23)。実在するktm_players.nameとの照合と重複排除を行う。
+    // （2026-10-07 からはこのAPI自体もログイン中のメンバー限定。保存者は payload.submittedBy に残る）
     if (balanceResult.spectators && balanceResult.spectators.length > 0) {
       const uniqueSpectators = Array.from(new Set(
         (balanceResult.spectators as any[]).map((s) => String(s).trim()).filter(Boolean)

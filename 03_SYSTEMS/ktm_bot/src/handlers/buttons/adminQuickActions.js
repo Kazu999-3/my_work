@@ -2,7 +2,6 @@ import { CONFIG } from '../../config.js';
 import { patchInteractionResponse, sendDiscordMessage, sendInteractionFollowup } from '../../utils/api.js';
 import { handleLaneCommand, handleStatsCommand } from '../commands.js';
 import { createMessageContent, createRecruitButtons, createRecruitEmbed, extractPlayersFromEmbed, handleHelpPage } from '../../ui/embeds.js';
-import { handleAutoMatchEnd } from '../../utils/helpers.js';
 import { notifyAdminError } from '../../utils/alert.js';
 
 // 管理メニュー・クイック募集・MMR初期化・勝敗ボタン・OP.GG偵察
@@ -142,12 +141,6 @@ export async function handleAdminQuickButtons(interaction, env, ctx, { customId,
       }
     })());
     return Response.json({ type: 7, data: { content: "⌛ 処理を開始しました。少々お待ちください...", components: [] } });
-  }
-
-  if (customId.startsWith('win_blue:') || customId.startsWith('win_red:')) {
-    const winner = customId.startsWith('win_blue') ? "BLUE" : "RED";
-    const players = extractPlayersFromEmbed(interaction.message.embeds[0]);
-    return await handleAutoMatchEnd(interaction, players, winner, env, ctx);
   }
 
   if (customId === 'opgg_scout') {

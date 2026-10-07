@@ -124,8 +124,11 @@ export default {
     const isVerified = await verifySignature(body, signature, timestamp, DISCORD_PUBLIC_KEY);
     if (!isVerified) return new Response('Invalid signature', { status: 401 });
 
+    // ★ 2026-10-07: catch 側の管理者通知でも参照するため try の外で宣言する。以前は try の中の const で、
+    // catch から参照すると ReferenceError になり（内側の catch に吸収され）、エラー通知が一度も送られていなかった。
+    let interaction = null;
     try {
-      const interaction = JSON.parse(body);
+      interaction = JSON.parse(body);
       
       // Ping
       if (interaction.type === 1) {

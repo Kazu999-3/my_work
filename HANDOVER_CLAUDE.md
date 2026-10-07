@@ -359,6 +359,35 @@ TODOの大型タスク（保守性向上計画）を A→B→C→D の順で進�
 
 - Dependabot 高リスク3件（04 sharp 0.35.5 / source-map-js 1.2.2、ktm_bot は wrangler が sharp 0.35.4 を固定しているため overrides で指定）を修正、GitHub上も fixed（`78b3401f`）。
 
+### 🧱 (I) 保守性向上計画の残りをすべて完了（画面・Bot・デーモンの分割）
+
+方針はどれも「処理を書き換えず、元のコード（JSXは元の行）をそのまま部品・フックへ移す」。分割中に見つけた不具合だけ直した。
+
+| 対象 | 分割前 → 後 | 分けた先 | コミット |
+|---|---|---|---|
+| 05 攻略ライブラリ | 796 → 309 | `app/library/_library/` | `5c0941f8` |
+| 04 内戦バランサー | 1,140 → 414 | `app/balancer/_parts/use*.ts`・`PageSections.tsx` | `d5ea0034` |
+| 04 管理画面 | 1,885 → 275 | `app/ktm-admin/_admin/` | `d06d3b46` |
+| 04 外部分析 | 1,939 → 286 | `app/analyzer/_analyzer/` | `23156c04` |
+| 04 カジノ | 1,635 → 384 | `app/casino/_casino/` | `de4a5831` |
+| Bot ボタン処理 | 1,486 → 132（振り分け） | `handlers/buttons/`（6グループ、元の判定順のまま順に呼ぶ） | `d7a537f4` |
+| Bot 定期処理 | 1,441 → 101（cron振り分け） | `handlers/jobs/`（6ファイル） | `d7a537f4` |
+| Bot ロール操作 | — | `utils/discordRoles.js`（付与/解除・プレイスタイルロール名） | `329c473a` |
+| PCデーモン | 976 → 485 | `v2_CORE/edge_daemon/`（タスク実行・定期ループのミックスイン） | `1c4e72c7` |
+
+- 04 の使われていない `/api/admin/live-match`（05へ移植後の古い版。9分差分を実測しない試合に0を入れて平均に混ぜる誤りも残っていた）を削除（`aec9481c`）。
+- 分割中に直した不具合: 04管理画面で管理者以外が開くと「読み込み中」のまま進まなかった（読み込み判定が認証判定より先）／「MMR計算ロジック」の説明が実装（`lib/mmr.ts`）とほぼ全項目食い違っていた（K=48・ランク収束引力・3.0倍等。収束引力は実装されておらず対面回数倍率は廃止済み）／05知識レビューの一括承認・却下が失敗しても一覧から消えていた（`post()` の戻り値を真偽で判定）／カジノのジャックポットが取得前に仮の 12,800 を表示（サーバー側は修正済みだった）。
+- ボタンが外れて呼ばれていなかった処理を削除: 管理画面の一括オート同期・全員Riot同期（2026-07-22 `cd92e25f` でボタン撤去）、カジノの模擬対戦生成（本番の pending に架空の試合を書く）、ライブラリの開けない KnowledgeIngestModal の重複。
+- Bot の分割は自動テストが無く、push で本番に自動デプロイされるため、`node --check`・ESLint の `no-undef` だけの検査・`wrangler deploy --dry-run` を通してから push した。**動的 `import()` の相対パスはフォルダを移すとずれ、`ctx.waitUntil` 内だと本番で黙って失敗する**（今回9か所を修正）。`...handleHelpPage()` のようなスプレッドの中の関数名は自動のimport抽出で漏れやすい。
+
+### 🚨 (J) 判断して対応した問題・削除した機能
+
+- **`POST /api/balancer/pending` をログイン中のメンバー（Discordログイン）か管理者に限定**し、保存者を `payload.submittedBy` に残すようにした（ユーザー判断: 履歴で追えるように）。以前は誰でも架空のチーム分けを送れ、カジノの対象試合の差し替え・観戦/待機メンバーの pity +10・予測勝率の記録が起きた。未ログインでもバランサーは使え、保存されない旨を表示する。
+- **内戦の試合結果のRiot取り込み（Bot側）を削除**（ユーザー判断）: Discordの勝敗ボタン（`win_blue`/`win_red`）を作る処理は旧Bot（`99_ARCHIVE/v3_rewrite_backups/worker_backup.js`）にしか無く、受け口の `handleAutoMatchEnd`→`pending_match_sync` の予約→`processPendingMatchSyncs` は一度も動いていなかった（予約0件。処理側の cron は `ba4fb2b1` で消えていた）。試合の記録とベットの精算は 04 の記録画面→`/api/match/record` が行う。
+- **都度募集の欠員アラート（`sendRecruitStatusNotification`）を削除**（ユーザー判断）: 1時間おきの cron が `ba4fb2b1` で消えて止まっていた。1時間おきに動かせる枠が無い（Cloudflare 5枠満杯・GitHub Actions は1〜5時間遅れる）。
+- **Bot のエラー通知が送られていなかった不具合を修正**: `index.js` で `interaction` が try の中で宣言され、catch 側の管理者通知で参照エラーになっていた。
+- 残る判断: 04 `/api/riot/match-sync`（ジャックポット総取りの判定を含む）と `pending_match_sync` テーブル、呼び出し元の無くなった `/api/bet/settle` をどうするか（TODO）。
+
 ## 🗺️ 3. システム構造 ＆ ディレクトリマップ
 
 ```text
