@@ -307,6 +307,16 @@ def run_bulk_update():
                 generate_power_spike(champ_id, role="GLOBAL", patch=patch_version)
             except Exception as e:
                 logging.warning(f"⚠️ [{champ_id}] パワースパイク生成でエラーが発生しましたが処理を継続します: {e}")
+        elif trend_worker._grounding_unavailable_this_run:
+            # 検索付き呼び出しが使えない（2026-10-07時点でこのアカウントのキーは利用枠なし）。残りも同じ結果に
+            # なるため、この回は止める。検索なしの記憶ベースで作り直すことはしない（既存データは保持）。
+            logging.warning(f"⏸️ 検索(グラウンディング)が使えないため、今回の一括更新を見送ります（{champ_name} 以降は未処理・既存データは保持）。")
+            queue[champ_id]["status"] = "pending"
+            queue[champ_id]["error"] = None
+            queue_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+            save_queue(queue_data)
+            suspended = True
+            break
         elif trend_worker._quota_hit_this_run:
             # クォータ切れによる安全なスキップは、本物のバグ(DB書き込み失敗等)と違い
             # 既存データを一切壊していない。これまでは両方を"failed"として扱っており、

@@ -55,6 +55,8 @@ def _mark_insight_synced() -> None:
 # 表示すべきなのに"Failed"という不正確な見出しになっていた(2026-08-10発覚)。実際に429/
 # RESOURCE_EXHAUSTED等の兆候が出たかをその場でモジュール変数に記録する方式に変更する。
 _quota_hit_this_run = False
+# 検索付き呼び出しが使えず、更新を見送った（2026-10-07）。一括更新はこれを見て残りも止める
+_grounding_unavailable_this_run = False
 
 
 def _mark_if_quota_related(text) -> None:
@@ -277,8 +279,9 @@ def collect_and_save_champion_trend(champion: str, role: str, client=None, on_ph
     on_phase: 1体あたり数十秒〜数分かかる処理の途中経過を呼び出し元(進捗ゲージ)へ
     伝えるための任意コールバック(phase: str) -> None。未指定なら何もしない。
     """
-    global _quota_hit_this_run
+    global _quota_hit_this_run, _grounding_unavailable_this_run
     _quota_hit_this_run = False
+    _grounding_unavailable_this_run = False
 
     def _phase(text: str) -> None:
         if on_phase:
@@ -430,6 +433,12 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
     # (2026-08-12、note記事群のEvidence追跡可能性の考え方を参考に追加)。
     research_sources: list = []
 
+    # ★ 2026-10-07: 検索(google_search グラウンディング)で裏付けが取れない時は、更新せず既存データを残す。
+    # 以前はここで「検索なしの Gemini」→「ローカル Ollama」へフォールバックしていたが、このアカウントの
+    # キーは検索付き呼び出しの利用枠が無く(GEMINI_API_KEY / _FREE とも 429、2026-10-07実測)、
+    # 毎週ほぼ全チャンピオンが検索なしで作り直されていた（10/4 は173体中164体。出典が残った行は176体中0体）。
+    # 検索なしの Gemini は「最新パッチは 14.24」と答える（実際は 26.20 前後）約2年前の知識で、
+    # 勝率・Tier・ビルド・ルーン・プロのビルドを「最新トレンド」として書き込んでいた（known-regression-patterns #5）。
     try:
         logger.info("Calling Gemini API...")
         _phase("Gemini APIで検索リサーチ中...")
@@ -441,58 +450,16 @@ League of Legendsの最新パッチにおける、チャンピオン「{champion
             feature_name="oracle",
             on_grounding=lambda s: research_sources.extend(s)
         )
-
         if not res_text or res_text.startswith("⚠️") or res_text.startswith("❌"):
-            # ツール無しで標準再試行
-            # feature_nameを分けているのは意図的(2026-09-30)。グラウンディング有りの
-            # 呼び出しで出た429は、直前に error_429:oracle を閾値超えまで押し上げ、
-            # last_ts も「今」になる。同じ名前でここを呼ぶとサーキットブレーカーの
-            # 15分クールダウンが効いた状態になり、この再試行は必ず
-            # 「本日のAPI利用上限に達しました」で弾かれていた(=一度も実行されない)。
-            logger.warning(f"Retrying Gemini API without search tools: {res_text}")
-            _phase("Gemini APIへ再試行中（検索ツールなし）...")
-            res_text = generate_content_safe(
-                client,
-                prompt,
-                model_id="gemini-3.1-flash-lite",
-                config=None,
-                feature_name="oracle_nosearch"
-            )
-
-        if not res_text or res_text.startswith("⚠️") or res_text.startswith("❌"):
-            _mark_if_quota_related(res_text)
-            raise RuntimeError(f"Gemini API returned error: {res_text}")
-
-        # JSON部分の抽出
+            raise RuntimeError(f"検索付きの Gemini 呼び出しに失敗: {res_text}")
         res_text = extract_json_object(res_text)
         trend_data = json.loads(res_text)
     except Exception as e:
         _mark_if_quota_related(e)
-        logger.warning(f"⚠️ Gemini API with search failed: {e}. Retrying without search tools...")
-        _phase("Gemini APIへ再試行中（検索ツールなし）...")
-        try:
-            # 上と同じ理由で "oracle_nosearch" を使う（グラウンディング由来の429で
-            # このフォールバックが即ブロックされるのを防ぐ）。
-            res_text = generate_content_safe(client, prompt, model_id="gemini-3.1-flash-lite", config=None, feature_name="oracle_nosearch")
-            _mark_if_quota_related(res_text)
-            res_text = extract_json_object(res_text)
-            trend_data = json.loads(res_text)
-            logger.info("✅ Successfully generated trend data using standard Gemini API fallback.")
-        except Exception as retry_e:
-            _mark_if_quota_related(retry_e)
-            logger.warning(f"⚠️ Standard Gemini API retry failed: {retry_e}. Falling back to local Ollama...")
-            _phase("ローカルAI(Ollama)へフォールバック中...")
-            try:
-                from v2_CORE.ai_helper import _generate_with_ollama
-                res_text = _generate_with_ollama(prompt, model="gemma3:12b")
-                res_text = extract_json_object(res_text)
-                trend_data = json.loads(res_text)
-                logger.info("✅ Successfully generated trend data using local Ollama model fallback.")
-            except Exception as ollama_e:
-                _quota_hit_this_run = True
-                logger.warning(f"⚠️ API制限のため今回の定期更新は安全にスキップされました (既存データを維持します): {ollama_e}")
-                return False
-        
+        _grounding_unavailable_this_run = True
+        logger.warning(f"⏸️ [{champion}] 検索で裏付けが取れないため今回の更新は見送ります（既存データを維持）: {e}")
+        return False
+
     _phase("辞典データベースへ保存中...")
 
     # Supabase 接続準備

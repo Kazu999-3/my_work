@@ -103,6 +103,10 @@ GEMINI_KEY = os.environ["GEMINI_API_KEY"]
 # gemini-2.5-flash はこのキーで日次上限を超過した実績があるため使わない。
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.1-flash-lite")
 MAX_ITEMS = int(os.environ.get("MAX_ITEMS", "3"))
+# 1回の実行で新しい動画に着手してよい時間（秒）。PCデーモンはこのスクリプトを2400秒で強制終了するため、
+# 3本目の途中で切られて再試行を繰り返さないよう、経過したら残りは次の実行（10分おき）に回す。
+# 2026-10-05 に9月から残っていた長尺動画をまとめて処理した際、40分の強制終了が8回連続した
+RUN_TIME_BUDGET_SEC = int(os.environ.get("RUN_TIME_BUDGET_SEC", "1500"))
 # 字幕が無い動画をWhisperで文字起こしするか。CPUで走るため1本あたり数分かかる。
 ENABLE_WHISPER = os.environ.get("ENABLE_WHISPER", "1") not in ("0", "false", "False")
 WHISPER_MODEL = os.environ.get("WHISPER_MODEL", "base")
@@ -867,8 +871,12 @@ def main():
 
     done, failed = [], []   # 通知用の結果集計
     processed = 0
+    run_started = time.time()
     for it in items:
         vid, url = it["id"], it["url"]
+        if processed > 0 and time.time() - run_started > RUN_TIME_BUDGET_SEC:
+            print(f"⏱ 実行開始から{int(time.time() - run_started)}秒経過したため、残り{len(items) - processed}本は次回に回します")
+            break
         # ⚠️ 2026-09-23: 連続アクセスでYouTubeの字幕APIが429を返すため間隔を空ける。
         # extract_video_tactics.py では 2026-09-21 の実測（間隔なしで28本中6本が429）を
         # 受けて既に5秒待っていたが、このワーカーには入っていなかった。
