@@ -111,8 +111,7 @@
 - [x] **2-1. チャンピオン辞典メイン (`app/page.tsx` 2,667行 ➔ 300行以下へ圧縮)**: → 2026-10-07 約300行に分割（`b927226f`）
   - フィルターバー (`ChampionFilterBar.tsx`)、一覧グリッド (`ChampionGrid.tsx`)、詳細モーダル (`ChampionDetailModal.tsx`) へ分割
   - Tierスコア・レーン別メタ算出エンジンを `lib/tierScoreCalculator.ts` へ完全SSoT分離
-- [ ] **2-2. 知識レビュー画面 (`app/admin/review/page.tsx` 1,587行 ➔ 400行以下へ圧縮)**:
-  - `ReviewFilterBar.tsx` (絞り込み/検索)、`FactsDiffPreview.tsx` (文単位選択/宛先振分/Git風Diff)、`LaneGuideDiffPreview.tsx` (第8章追記強調/2カラム比較/手直し) へ分割
+- [x] **2-2. 知識レビュー画面 (`app/admin/review/page.tsx` 1,691行 ➔ 386行)**（2026-10-07 完了）: `_review/` に絞り込みバー・記事カード・プレビューモーダル（教本/項目差分/レーンガイドの3タブ）、文の振り分けと承認データの組み立てを `factRouting.ts` に分離。あわせて一括承認・却下が失敗しても一覧から消えていた不具合を修正
 - [ ] **2-3. 攻略ライブラリ (`app/library/page.tsx` 751行)**: 記事カード・パッチ鮮度バッジ・詳細表示の独立部品化
 
 ### フェーズ3: 【04_PORTAL】コミュニティ・内戦管理のモノリス解体

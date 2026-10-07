@@ -2,92 +2,18 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { CheckCircle2, XCircle, AlertTriangle, ClipboardCheck, Compass } from 'lucide-react';
+import ReviewControlBar from './_review/ReviewControlBar';
+import ReviewItemCard from './_review/ReviewItemCard';
+import PreviewModal from './_review/PreviewModal';
+import { buildFactOverrides, initialSelections, routedLinesBlock, type RoutedLaneLine } from './_review/factRouting';
 import {
-  CheckCircle2, XCircle, RefreshCw, ExternalLink, AlertTriangle,
-  ClipboardCheck, Eye, Layers, Compass, BookOpen, Edit3, Dna, Sparkles, Check,
-  Tv, Search, ArrowUpDown, Filter
-} from 'lucide-react';
+  defaultEdit,
+  type ItemEditState, type LaneKey, type LineDestination, type PreviewResult, type ReviewItem, type RosterChampion,
+} from './_review/types';
 
-type LaneKey = 'JG' | 'TOP' | 'MID' | 'ADC' | 'SUP' | 'COMMON';
-
-interface ReviewItem {
-  id: number;
-  title: string;
-  content: string;
-  champion: string | null;
-  currentChampNamesJa?: string;
-  is_atomic: boolean;
-  source_url: string | null;
-  channel: string;
-  char_count: number;
-  created_at: string;
-  parentTitle: string | null;
-  isLaneGeneral: boolean;
-  tags?: string[];
-  detectedLane: LaneKey;
-  laneLabel: string;
-  isLaneMacro: boolean;
-  macroReason: string;
-  detectedChampions: string[];
-  detectedChampionsJa: string;
-}
-
-interface RosterChampion { id: string; name: string }
-
-interface ItemEditState {
-  champion: string;
-  title: string;
-  content: string;
-  lane: LaneKey;
-  includeLaneGuide: boolean;
-  includeFactMerge: boolean;
-}
-
-interface FactFieldDiff {
-  key: string;
-  label: string;
-  before: string;
-  after: string;
-  isChanged: boolean;
-}
-
-interface ChampionFactPreview {
-  champion: string;
-  championNameJa: string;
-  diffs: FactFieldDiff[];
-  addedHighlights: string[];
-  error?: string;
-}
-
-interface PreviewResult {
-  championPreviews: {
-    id: string;
-    name: string;
-    matchupId: string;
-    sectionText: string;
-  }[];
-  factPreviews?: ChampionFactPreview[];
-  laneGuidePreview: {
-    lane: LaneKey;
-    laneLabel: string;
-    sectionText: string;
-    existingBody?: string;
-    mergedBody?: string;
-    sourceCount?: number;
-    /** AI抽出の失敗理由（2026-10-06）。全文の流用はせず、空欄のまま承認すると承認時に再抽出を試みる */
-    error?: string | null;
-  } | null;
-}
-
-const LANE_OPTIONS: { key: LaneKey; label: string; icon: string }[] = [
-  { key: 'COMMON', label: '🌐 共通マクロ', icon: '🌐' },
-  { key: 'TOP', label: '⚔️ TOP', icon: '⚔️' },
-  { key: 'JG', label: '🌲 JG', icon: '🌲' },
-  { key: 'MID', label: '⚡ MID', icon: '⚡' },
-  { key: 'ADC', label: '🏹 ADC/BOT', icon: '🏹' },
-  { key: 'SUP', label: '🛡️ SUP', icon: '🛡️' },
-];
-
+// 生成記事の承認画面。状態と通信だけをここに置き、表示は _review/ の部品が持つ。
+// 2026-10-07: 1,691行から分割（表示・動作は分割前と同じ。一括操作の失敗時に一覧から消えていた不具合のみ修正）。
 export default function ReviewPage() {
   const [items, setItems] = useState<ReviewItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -112,24 +38,11 @@ export default function ReviewPage() {
   const [previewData, setPreviewData] = useState<PreviewResult | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewTab, setPreviewTab] = useState<'facts' | 'strategy' | 'lane'>('strategy');
-  const [factsViewMode, setFactsViewMode] = useState<'highlight' | 'split'>('highlight');
-  const [laneViewMode, setLaneViewMode] = useState<'highlight' | 'split' | 'edit'>('highlight');
   const [selectedFactFields, setSelectedFactFields] = useState<Record<string, boolean>>({});
   // 文単位の宛先管理: `${champId}::${diffKey}::${lineIdx}` -> 'champion' | 'lane' | 'skip'
-  const [lineDestinations, setLineDestinations] = useState<Record<string, 'champion' | 'lane' | 'skip'>>({});
+  const [lineDestinations, setLineDestinations] = useState<Record<string, LineDestination>>({});
   const [editedLaneSectionText, setEditedLaneSectionText] = useState<string>('');
   const [modalError, setModalError] = useState<string | null>(null);
-
-  /** 項目マージ差分で行が新規追加されたかを判定 */
-  const isLineNewlyAdded = (line: string, before: string, beforeSet: Set<string>): boolean => {
-    const trimmed = line.trim();
-    if (!trimmed) return false;
-    if (beforeSet.has(trimmed)) return false;
-    // 箇条書きプレフィックスや見出し記号を除去した中身で判定
-    const core = trimmed.replace(/^[-*・•\d.()（）:：【】\[\]]+\s*/, '').trim();
-    if (core.length >= 6 && before.includes(core)) return false;
-    return true;
-  };
 
   const showMessage = (text: string, t: 'success' | 'error') => {
     setMessage({ text, type: t });
@@ -225,88 +138,25 @@ export default function ReviewPage() {
   const approveOne = async (item: ReviewItem | null) => {
     if (!item) return;
     setModalError(null);
-
-    const edit = edits[item.id] || {
-      champion: item.currentChampNamesJa || '',
-      title: item.title,
-      content: item.content,
-      lane: item.detectedLane,
-      includeLaneGuide: item.isLaneMacro,
-      includeFactMerge: true,
-    };
+    const edit = edits[item.id] || defaultEdit(item);
+    const isPreviewing = previewModalItem?.id === item.id;
 
     // モーダルでプレビュー表示中の場合、各行（文）の宛先（辞典/レーン/スキップ）に応じてテキストを合成
-    let customFactOverrides: Record<string, Record<string, string>> | undefined = undefined;
-    const routedToLaneLines: Array<{ champion: string; fieldLabel: string; text: string }> = [];
-
-    if (previewModalItem?.id === item.id && previewData?.factPreviews) {
-      customFactOverrides = {};
-      for (const fp of previewData.factPreviews) {
-        customFactOverrides[fp.champion] = {};
-        for (const diff of fp.diffs) {
-          const fieldKeyId = `${fp.champion}::${diff.key}`;
-          const isFieldActive = selectedFactFields[fieldKeyId] ?? diff.isChanged;
-
-          // フィールド全体がスキップの場合、既存テキスト(before)を維持
-          if (!isFieldActive || !diff.isChanged) {
-            customFactOverrides[fp.champion][diff.key] = diff.before || '';
-            continue;
-          }
-
-          const before = diff.before || '';
-          const beforeLines = before.split('\n').map((l) => l.trim()).filter(Boolean);
-          const beforeSet = new Set(beforeLines);
-          const afterLines = (diff.after || '').split('\n');
-
-          // 新規追加行のうち、destination に応じて振り分け
-          const keptNewLinesForChamp: string[] = [];
-
-          afterLines.forEach((line, idx) => {
-            const isAdded = isLineNewlyAdded(line, before, beforeSet);
-            if (isAdded) {
-              const lineKey = `${fp.champion}::${diff.key}::${idx}`;
-              const dest = lineDestinations[lineKey] || 'champion';
-              if (dest === 'champion') {
-                keptNewLinesForChamp.push(line);
-              } else if (dest === 'lane') {
-                routedToLaneLines.push({
-                  champion: fp.championNameJa || fp.champion,
-                  fieldLabel: diff.label,
-                  text: line,
-                });
-              }
-              // dest === 'skip' は除外
-            }
-          });
-
-          // チャンピオン辞典用テキストの組み立て（既存＋champion宛ての新規行）
-          if (keptNewLinesForChamp.length > 0) {
-            customFactOverrides[fp.champion][diff.key] = before.trim()
-              ? `${before.trim()}\n${keptNewLinesForChamp.join('\n')}`
-              : keptNewLinesForChamp.join('\n');
-          } else {
-            // 新規行が1つもチャンピオン宛てに残らなかった場合は既存テキストそのまま
-            customFactOverrides[fp.champion][diff.key] = before;
-          }
-        }
-      }
+    let customFactOverrides: Record<string, Record<string, string>> | undefined;
+    let routedToLaneLines: RoutedLaneLine[] = [];
+    if (isPreviewing && previewData?.factPreviews) {
+      ({ customFactOverrides, routedToLaneLines } = buildFactOverrides(previewData, selectedFactFields, lineDestinations));
     }
 
-    // レーンガイドへ振り分けられた文があれば、レーンガイドテキスト末尾へ合流
-    let finalLaneSectionText = (previewModalItem?.id === item.id && editedLaneSectionText) ? editedLaneSectionText : undefined;
+    // レーンガイドへ振り分けられた文があれば、レーンガイドテキスト末尾へ合流（その場合はレーンガイド統合を自動でON）
+    let finalLaneSectionText = (isPreviewing && editedLaneSectionText) ? editedLaneSectionText : undefined;
     let shouldIncludeLaneGuide = edit.includeLaneGuide;
-
     if (routedToLaneLines.length > 0) {
-      shouldIncludeLaneGuide = true; // レーン宛ての行があるなら自動でレーンガイド統合をON
-      const appendedLaneBlock = [
-        `\n\n#### 💡 【各項目から振り分けられた戦術・マクロ知見】`,
-        ...routedToLaneLines.map((r) => `- **[${r.champion} / ${r.fieldLabel}]**: ${r.text.replace(/^[-*・•\d.()（）:：【】\[\]]+\s*/, '')}`),
-      ].join('\n');
-
-      finalLaneSectionText = (finalLaneSectionText || (previewData?.laneGuidePreview?.sectionText || '')) + appendedLaneBlock;
+      shouldIncludeLaneGuide = true;
+      finalLaneSectionText = (finalLaneSectionText || (previewData?.laneGuidePreview?.sectionText || '')) + routedLinesBlock(routedToLaneLines);
     }
 
-    const payload = {
+    const result = await post({
       id: item.id,
       action: 'approve',
       champion: edit.champion,
@@ -317,14 +167,10 @@ export default function ReviewPage() {
       includeFactMerge: edit.includeFactMerge,
       customLaneSectionText: finalLaneSectionText,
       customFactOverrides,
-    };
-
-    const result = await post(payload);
+    });
     if (result.ok) {
       removeFromList([item.id]);
-      if (previewModalItem?.id === item.id) {
-        setPreviewModalItem(null);
-      }
+      if (isPreviewing) setPreviewModalItem(null);
     } else {
       setModalError(result.error || '承認統合に失敗しました');
     }
@@ -336,9 +182,7 @@ export default function ReviewPage() {
     const result = await post({ id: item.id, action: 'reject' });
     if (result.ok) {
       removeFromList([item.id]);
-      if (previewModalItem?.id === item.id) {
-        setPreviewModalItem(null);
-      }
+      if (previewModalItem?.id === item.id) setPreviewModalItem(null);
     }
   };
 
@@ -349,7 +193,9 @@ export default function ReviewPage() {
     if (!confirm(action === 'approve'
       ? `選択した${ids.length}件を承認して統合しますか？（AIが判定した複数チャンプ・レーンガイド・各項目へ自動分配されます）`
       : `選択した${ids.length}件を却下して削除しますか？`)) return;
-    if (await post({ ids, action })) removeFromList(ids);
+    // ★ 2026-10-07: post() は常にオブジェクトを返すため、以前の `if (await post(...))` は失敗しても一覧から消していた
+    const result = await post({ ids, action });
+    if (result.ok) removeFromList(ids);
   };
 
   // プレビューの読み込み
@@ -359,15 +205,7 @@ export default function ReviewPage() {
     setPreviewData(null);
     setModalError(null);
     try {
-      const edit = edits[item.id] || {
-        champion: item.currentChampNamesJa || '',
-        title: item.title,
-        content: item.content,
-        lane: item.detectedLane,
-        includeLaneGuide: item.isLaneMacro,
-        includeFactMerge: true,
-      };
-
+      const edit = edits[item.id] || defaultEdit(item);
       const res = await fetch('/api/knowledge/review', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -394,40 +232,14 @@ export default function ReviewPage() {
       setEditedLaneSectionText(json.laneGuidePreview?.sectionText || '');
 
       // 各フィールドの選択ステート初期化（更新がある項目はデフォルトでチェックON）
-      const initialFieldSelection: Record<string, boolean> = {};
-      const initialLineDests: Record<string, 'champion' | 'lane' | 'skip'> = {};
-
-      if (Array.isArray(json.factPreviews)) {
-        for (const fp of json.factPreviews) {
-          if (Array.isArray(fp.diffs)) {
-            for (const diff of fp.diffs) {
-              initialFieldSelection[`${fp.champion}::${diff.key}`] = !!diff.isChanged;
-              if (diff.isChanged) {
-                const before = diff.before || '';
-                const beforeLines = before.split('\n').map((l: string) => l.trim()).filter(Boolean);
-                const beforeSet = new Set<string>(beforeLines);
-                const afterLines = (diff.after || '').split('\n');
-                afterLines.forEach((line: string, idx: number) => {
-                  if (isLineNewlyAdded(line, before, beforeSet)) {
-                    initialLineDests[`${fp.champion}::${diff.key}::${idx}`] = 'champion';
-                  }
-                });
-              }
-            }
-          }
-        }
-      }
-      setSelectedFactFields(initialFieldSelection);
-      setLineDestinations(initialLineDests);
+      const init = initialSelections(Array.isArray(json.factPreviews) ? json.factPreviews : []);
+      setSelectedFactFields(init.fields);
+      setLineDestinations(init.lines);
 
       // 初期タブの決定（教本優先、無ければレーン）
-      if (json.championPreviews?.length > 0) {
-        setPreviewTab('strategy');
-      } else if (json.laneGuidePreview) {
-        setPreviewTab('lane');
-      } else {
-        setPreviewTab('facts');
-      }
+      if (json.championPreviews?.length > 0) setPreviewTab('strategy');
+      else if (json.laneGuidePreview) setPreviewTab('lane');
+      else setPreviewTab('facts');
     } catch (e: any) {
       showMessage(e.message, 'error');
     } finally {
@@ -439,14 +251,7 @@ export default function ReviewPage() {
     setEdits((prev) => ({
       ...prev,
       [id]: {
-        ...(prev[id] || {
-          champion: '',
-          title: '',
-          content: '',
-          lane: 'COMMON',
-          includeLaneGuide: false,
-          includeFactMerge: true,
-        }),
+        ...(prev[id] || { champion: '', title: '', content: '', lane: 'COMMON', includeLaneGuide: false, includeFactMerge: true }),
         ...patch,
       },
     }));
@@ -492,141 +297,11 @@ export default function ReviewPage() {
           </div>
         )}
 
-        {/* コントロールバー */}
-        <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
-          {/* 上段: 種別タブ ＆ チャンネル ＆ ソート ＆ 検索 */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-            {/* 左側: 種別タブ */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              {([['', 'すべて'], ['video', '動画解析'], ['atomic', '分割知見']] as const).map(([k, l]) => (
-                <button
-                  key={k}
-                  onClick={() => setType(k)}
-                  className={`px-2.5 py-1.5 rounded-lg border text-xs font-bold cursor-pointer transition ${
-                    type === k ? 'bg-amber-500/10 border-amber-500/60 text-white' : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white'
-                  }`}
-                >
-                  {l}
-                </button>
-              ))}
-            </div>
-
-            {/* 右側: チャンネル絞り込み ＆ ソート ＆ 検索 */}
-            <div className="flex flex-wrap items-center gap-2">
-              {/* 📺 チャンネル絞り込み */}
-              <div className="relative flex items-center">
-                <Tv className="w-3.5 h-3.5 text-red-400 absolute left-2.5 pointer-events-none" />
-                <select
-                  value={channel}
-                  onChange={(e) => setChannel(e.target.value)}
-                  className={`pl-8 pr-3 py-1.5 rounded-lg text-xs font-bold border transition appearance-none cursor-pointer ${
-                    channel ? 'bg-amber-500/15 border-amber-500/60 text-amber-200 shadow-sm' : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
-                  }`}
-                  aria-label="チャンネル絞り込み"
-                >
-                  <option value="">全チャンネル ({totalAll}件)</option>
-                  {channels.map((ch) => (
-                    <option key={ch.name} value={ch.name}>
-                      {ch.name} ({ch.count}件)
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* ⇅ ソートセレクター */}
-              <div className="relative flex items-center">
-                <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none" />
-                <select
-                  value={sort}
-                  onChange={(e) => setSort(e.target.value)}
-                  className="pl-8 pr-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-300 font-medium hover:border-slate-700 transition appearance-none cursor-pointer"
-                  aria-label="並び替え"
-                >
-                  <option value="created_asc">⏳ 登録古い順</option>
-                  <option value="created_desc">📅 登録新しい順</option>
-                  <option value="channel_asc">📺 チャンネル順</option>
-                  <option value="volume_desc">📚 ボリューム順</option>
-                  <option value="title_asc">🔤 タイトル順</option>
-                </select>
-              </div>
-
-              {/* 🔍 検索ボックス */}
-              <div className="relative flex items-center">
-                <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="タイトル/本文/チャンプ検索..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8 pr-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-amber-500/60 w-44 md:w-52 transition"
-                />
-              </div>
-
-              {/* 更新ボタン */}
-              <button
-                onClick={load}
-                disabled={loading}
-                title="最新に更新"
-                className="px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-300 hover:text-white flex items-center gap-1 cursor-pointer transition disabled:opacity-50"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-              </button>
-            </div>
-          </div>
-
-          {/* 下段: レーン絞り込みタブ ＆ 件数サマリー */}
-          <div className="pt-2 border-t border-slate-800/60 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-1">
-              <button
-                onClick={() => setLane('ALL')}
-                className={`px-2.5 py-1 rounded-md text-xs font-bold cursor-pointer transition ${
-                  lane === 'ALL' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50' : 'bg-slate-950/40 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                全レーン ({laneCounts.ALL || 0})
-              </button>
-              {LANE_OPTIONS.map((opt) => {
-                const count = laneCounts[opt.key] || 0;
-                const isSelected = lane === opt.key;
-                return (
-                  <button
-                    key={opt.key}
-                    onClick={() => setLane(isSelected ? 'ALL' : opt.key)}
-                    className={`px-2 py-1 rounded-md text-xs font-semibold flex items-center gap-1 cursor-pointer transition ${
-                      isSelected
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50'
-                        : 'bg-slate-950/40 text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    <span>{opt.icon}</span>
-                    <span>{opt.label.replace(/^.+?\s/, '')}</span>
-                    <span className="text-[10px] opacity-70">({count})</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* 件数サマリー & フィルターリセット */}
-            <div className="flex items-center gap-2 text-xs">
-              {(channel || lane !== 'ALL' || searchQuery || type) && (
-                <button
-                  onClick={() => {
-                    setChannel('');
-                    setLane('ALL');
-                    setSearchQuery('');
-                    setType('');
-                  }}
-                  className="text-amber-400/80 hover:text-amber-300 text-[11px] underline cursor-pointer"
-                >
-                  フィルター解除
-                </button>
-              )}
-              <span className="text-slate-400 text-xs">
-                表示中: <b className="text-amber-300 font-mono">{total}</b>件 / 全体: <span className="font-mono">{totalAll}</span>件
-              </span>
-            </div>
-          </div>
-        </div>
+        <ReviewControlBar
+          type={type} setType={setType} channel={channel} setChannel={setChannel} channels={channels}
+          totalAll={totalAll} total={total} sort={sort} setSort={setSort} searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+          lane={lane} setLane={setLane} laneCounts={laneCounts} loading={loading} onReload={load}
+        />
 
         {/* 一括操作バー */}
         {items.length > 0 && (
@@ -664,1026 +339,46 @@ export default function ReviewPage() {
             <p className="text-xs text-slate-500 text-center py-12 bg-slate-900/40 border border-slate-800 rounded-xl">承認待ちの記事はありません</p>
           )}
 
-          {items.map((item) => {
-            const edit = edits[item.id] || {
-              champion: item.currentChampNamesJa || '',
-              title: item.title,
-              content: item.content,
-              lane: item.detectedLane,
-              includeLaneGuide: item.isLaneMacro,
-              includeFactMerge: true,
-            };
-            const isOpen = expanded.has(item.id);
-
-            return (
-              <div
-                key={item.id}
-                className={`p-4 md:p-5 rounded-2xl border space-y-3 transition ${
-                  selected.has(item.id) ? 'bg-amber-500/5 border-amber-500/40' : 'bg-slate-900/80 border-slate-800'
-                }`}
-              >
-                {/* タイトル ＆ メタデータ行 */}
-                <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    checked={selected.has(item.id)}
-                    onChange={() => setSelected((s) => toggle(s, item.id))}
-                    className="mt-1 accent-amber-500 shrink-0"
-                    aria-label="選択"
-                  />
-                  <div className="min-w-0 flex-1 space-y-1.5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-sm font-bold text-white break-words">{item.title}</h3>
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
-                        item.is_atomic ? 'text-teal-300 border-teal-800/60 bg-teal-950/40' : 'text-amber-300 border-amber-800/60 bg-amber-950/40'
-                      }`}>
-                        {item.is_atomic ? '分割知見' : '動画解析'}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
-                      {/* 📺 チャンネル名バッジ（クリックでそのチャンネルにワンクリック絞り込み） */}
-                      {item.channel && (
-                        <button
-                          type="button"
-                          onClick={() => setChannel(channel === item.channel ? '' : item.channel)}
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold border transition cursor-pointer ${
-                            channel === item.channel
-                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/60 shadow-sm'
-                              : 'bg-slate-800/80 text-slate-300 border-slate-700/80 hover:bg-slate-700 hover:text-white'
-                          }`}
-                          title={channel === item.channel ? 'チャンネル絞り込みを解除' : `「${item.channel}」で絞り込む`}
-                        >
-                          <Tv className="w-3 h-3 text-red-400" />
-                          {item.channel}
-                        </button>
-                      )}
-
-                      {/* 📚 文字数バッジ */}
-                      <span className="text-[11px] text-slate-400 font-mono">
-                        📚 {(item.char_count || item.content?.length || 0).toLocaleString()}文字
-                      </span>
-
-                      <span>{new Date(item.created_at).toLocaleDateString('ja-JP')} 生成</span>
-                      {item.parentTitle && <span>元記事: {item.parentTitle}</span>}
-                      {item.source_url && (
-                        <a href={item.source_url} target="_blank" rel="noopener noreferrer" className="text-amber-400 hover:text-amber-300 inline-flex items-center gap-1 font-medium">
-                          <ExternalLink className="w-3 h-3" /> 元動画
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* 🤖 自動判定＆統合先プレビューバッジ */}
-                <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">統合予定:</span>
-                    {/* チャンピオン教本バッジ */}
-                    {edit.champion.trim() ? (
-                      <span className="px-2 py-0.5 rounded-md bg-blue-950/60 border border-blue-800/70 text-blue-300 text-[11px] font-bold flex items-center gap-1">
-                        <BookOpen className="w-3 h-3" /> 教本: {edit.champion}
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-md bg-slate-800/60 text-slate-400 text-[11px]">
-                        教本: なし（一般論）
-                      </span>
-                    )}
-
-                    {/* レーンガイドバッジ */}
-                    {edit.includeLaneGuide ? (
-                      <span className="px-2 py-0.5 rounded-md bg-emerald-950/60 border border-emerald-800/70 text-emerald-300 text-[11px] font-bold flex items-center gap-1">
-                        <Compass className="w-3 h-3" /> レーンガイド: {edit.lane}（第8章）
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded-md bg-slate-800/60 text-slate-500 text-[11px]">
-                        レーンガイド: なし
-                      </span>
-                    )}
-
-                    {/* 各項目マージバッジ */}
-                    {edit.champion.trim() && edit.includeFactMerge && (
-                      <span className="px-2 py-0.5 rounded-md bg-purple-950/60 border border-purple-800/70 text-purple-300 text-[11px] font-bold flex items-center gap-1">
-                        <Dna className="w-3 h-3" /> 項目マージ: ON
-                      </span>
-                    )}
-                  </div>
-
-                  <button
-                    onClick={() => openPreview(item)}
-                    className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-[11px] font-bold flex items-center gap-1 border border-amber-500/30 transition cursor-pointer"
-                  >
-                    <Eye className="w-3.5 h-3.5" /> 統合プレビュー＆修正
-                  </button>
-                </div>
-
-                {/* 本文プレビュー */}
-                <p className={`text-xs text-slate-300 leading-relaxed whitespace-pre-wrap ${isOpen ? '' : 'line-clamp-4'}`}>
-                  {item.content}
-                </p>
-                {item.content.length > 250 && (
-                  <button onClick={() => setExpanded((s) => toggle(s, item.id))} className="text-[11px] text-amber-400 hover:text-amber-300 cursor-pointer">
-                    {isOpen ? '折りたたむ' : '本文全文を表示'}
-                  </button>
-                )}
-
-                {/* 🛠️ インライン編集＆承認コントローラー */}
-                <div className="pt-3 border-t border-slate-800/80 flex flex-col lg:flex-row lg:items-end justify-between gap-3">
-                  <div className="flex flex-wrap items-center gap-3 flex-1">
-                    {/* チャンピオン入力欄 */}
-                    <label className="flex flex-col gap-1 text-[10px] text-slate-400 font-bold min-w-[200px] flex-1">
-                      <span>対象チャンピオン（カンマ区切りで複数可 / 空欄＝一般論）</span>
-                      <input
-                        list="roster-champions"
-                        value={edit.champion}
-                        onChange={(e) => updateEditField(item.id, { champion: e.target.value })}
-                        placeholder="例: ノクターン, シン・ジャオ"
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-amber-500"
-                      />
-                    </label>
-
-                    {/* レーン選択セレクト */}
-                    <label className="flex flex-col gap-1 text-[10px] text-slate-400 font-bold w-36">
-                      <span>統合先レーン</span>
-                      <select
-                        value={edit.lane}
-                        onChange={(e) => updateEditField(item.id, { lane: e.target.value as LaneKey })}
-                        className="w-full px-2 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-amber-500 cursor-pointer"
-                      >
-                        {LANE_OPTIONS.map((l) => (
-                          <option key={l.key} value={l.key}>{l.label}</option>
-                        ))}
-                      </select>
-                    </label>
-
-                    {/* トグル群 */}
-                    <div className="flex items-center gap-3 pt-4">
-                      <label className="flex items-center gap-1.5 text-xs font-bold text-slate-300 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={edit.includeLaneGuide}
-                          onChange={(e) => updateEditField(item.id, { includeLaneGuide: e.target.checked })}
-                          className="accent-amber-500 w-4 h-4"
-                        />
-                        <span>🗺️ レーンガイド</span>
-                      </label>
-                      <label className="flex items-center gap-1.5 text-xs font-bold text-slate-300 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={edit.includeFactMerge}
-                          onChange={(e) => updateEditField(item.id, { includeFactMerge: e.target.checked })}
-                          className="accent-amber-500 w-4 h-4"
-                        />
-                        <span>🧬 項目マージ</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* アクションボタン */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() => rejectOne(item)}
-                      disabled={busy}
-                      className="px-3 py-1.5 rounded-lg bg-rose-950/30 border border-rose-800/60 text-rose-400 text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                    >
-                      <XCircle className="w-3.5 h-3.5" /> 却下
-                    </button>
-                    <button
-                      onClick={() => openPreview(item)}
-                      disabled={busy}
-                      className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-sm"
-                      title="統合先をプレビュー確認してから承認を実行します"
-                    >
-                      <Eye className="w-3.5 h-3.5" /> プレビューして承認統合
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {items.map((item) => (
+            <ReviewItemCard
+              key={item.id}
+              item={item}
+              edit={edits[item.id] || defaultEdit(item)}
+              isOpen={expanded.has(item.id)}
+              isSelected={selected.has(item.id)}
+              channel={channel}
+              busy={busy}
+              onToggleSelect={() => setSelected((s) => toggle(s, item.id))}
+              onToggleExpand={() => setExpanded((s) => toggle(s, item.id))}
+              setChannel={setChannel}
+              onEdit={(patch) => updateEditField(item.id, patch)}
+              onPreview={() => openPreview(item)}
+              onReject={() => rejectOne(item)}
+            />
+          ))}
         </div>
 
         {/* 👁️ 統合先プレビュー＆修正モーダル */}
         {previewModalItem && (
-          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-150">
-            <div className="bg-[#141418] border border-zinc-700/80 rounded-2xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
-              {/* モーダルヘッダー */}
-              <div className="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/80">
-                <div className="flex items-center gap-2">
-                  <Eye className="w-5 h-5 text-amber-400" />
-                  <div>
-                    <h2 className="text-sm font-black text-white">実際の統合文面プレビュー ＆ 内容の修正</h2>
-                    <p className="text-[11px] text-zinc-400">
-                      実際に各データベースに書き込まれる完全な文面です。確認・手直しの上で承認統合を実行できます。
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setPreviewModalItem(null)}
-                  className="text-zinc-400 hover:text-white text-sm font-bold p-1 cursor-pointer"
-                >
-                  ✕ 閉じる
-                </button>
-              </div>
-
-              {/* モーダルコンテンツ */}
-              <div className="p-4 sm:p-5 overflow-y-auto space-y-4 text-xs flex-1">
-                {modalError && (
-                  <div className="p-3 rounded-xl bg-rose-950/80 border border-rose-600 text-rose-200 text-xs flex items-start gap-2 shadow-sm animate-in fade-in">
-                    <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                    <div>
-                      <strong className="block text-rose-300 font-bold">承認・統合エラー</strong>
-                      <span>{modalError}</span>
-                    </div>
-                  </div>
-                )}
-
-                {previewLoading ? (
-                  <div className="py-20 text-center text-amber-400 flex items-center justify-center gap-2">
-                    <RefreshCw className="w-5 h-5 animate-spin" />
-                    <span>AIによる各項目マージと統合文面を生成中...</span>
-                  </div>
-                ) : (
-                  <>
-                    {/* タイトル・本文の微調整フォーム */}
-                    <div className="space-y-3 p-3.5 rounded-xl bg-zinc-950 border border-zinc-800">
-                      <span className="text-[11px] font-bold text-amber-400 flex items-center gap-1">
-                        <Edit3 className="w-3.5 h-3.5" /> 記事情報の調整（統合前に修正できます）
-                      </span>
-                      <label className="block space-y-1">
-                        <span className="text-[10px] text-zinc-400 font-bold">記事タイトル</span>
-                        <input
-                          type="text"
-                          value={edits[previewModalItem.id]?.title || ''}
-                          onChange={(e) => updateEditField(previewModalItem.id, { title: e.target.value })}
-                          className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-white"
-                        />
-                      </label>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <label className="block space-y-1">
-                          <span className="text-[10px] text-zinc-400 font-bold">対象チャンピオン（カンマ区切り）</span>
-                          <input
-                            list="roster-champions"
-                            value={edits[previewModalItem.id]?.champion || ''}
-                            onChange={(e) => updateEditField(previewModalItem.id, { champion: e.target.value })}
-                            className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-white"
-                          />
-                        </label>
-                        <label className="block space-y-1">
-                          <span className="text-[10px] text-zinc-400 font-bold">統合先レーン</span>
-                          <select
-                            value={edits[previewModalItem.id]?.lane || 'COMMON'}
-                            onChange={(e) => updateEditField(previewModalItem.id, { lane: e.target.value as LaneKey })}
-                            className="w-full px-2 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-white"
-                          >
-                            {LANE_OPTIONS.map((l) => (
-                              <option key={l.key} value={l.key}>{l.label}</option>
-                            ))}
-                          </select>
-                        </label>
-                        <div className="flex items-center gap-3 pt-3">
-                          <label className="flex items-center gap-1.5 text-xs font-bold text-zinc-300 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={edits[previewModalItem.id]?.includeLaneGuide || false}
-                              onChange={(e) => updateEditField(previewModalItem.id, { includeLaneGuide: e.target.checked })}
-                              className="accent-amber-500 w-4 h-4"
-                            />
-                            <span>レーンガイド</span>
-                          </label>
-                          <label className="flex items-center gap-1.5 text-xs font-bold text-zinc-300 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={edits[previewModalItem.id]?.includeFactMerge ?? true}
-                              onChange={(e) => updateEditField(previewModalItem.id, { includeFactMerge: e.target.checked })}
-                              className="accent-amber-500 w-4 h-4"
-                            />
-                            <span>項目マージ</span>
-                          </label>
-                        </div>
-                      </div>
-                      <div className="flex justify-end pt-1">
-                        <button
-                          onClick={() => openPreview(previewModalItem)}
-                          className="px-3 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-[11px] font-bold cursor-pointer"
-                        >
-                          プレビューを再計算
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* プレビュー表示タブバー */}
-                    <div className="flex items-center gap-2 border-b border-zinc-800 pb-2">
-                      <button
-                        onClick={() => setPreviewTab('strategy')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                          previewTab === 'strategy'
-                            ? 'bg-blue-600 text-white shadow-sm'
-                            : 'text-zinc-400 hover:text-white bg-zinc-900'
-                        }`}
-                      >
-                        <BookOpen size={13} />
-                        <span>📖 チャンピオン教本プレビュー</span>
-                        <span className="text-[10px] opacity-80">({previewData?.championPreviews?.length || 0}体)</span>
-                      </button>
-
-                      {edits[previewModalItem.id]?.includeFactMerge && (
-                        <button
-                          onClick={() => setPreviewTab('facts')}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                            previewTab === 'facts'
-                              ? 'bg-purple-600 text-white shadow-sm'
-                              : 'text-zinc-400 hover:text-white bg-zinc-900'
-                          }`}
-                        >
-                          <Dna size={13} />
-                          <span>🧬 各項目マージ差分プレビュー</span>
-                          <span className="text-[10px] opacity-80">({previewData?.factPreviews?.length || 0}体)</span>
-                        </button>
-                      )}
-
-                      <button
-                        onClick={() => setPreviewTab('lane')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                          previewTab === 'lane'
-                            ? 'bg-emerald-600 text-white shadow-sm'
-                            : 'text-zinc-400 hover:text-white bg-zinc-900'
-                        }`}
-                      >
-                        <Compass size={13} />
-                        <span>🗺️ レーンガイドプレビュー</span>
-                        {previewData?.laneGuidePreview && <span className="text-[10px] opacity-80">(ON)</span>}
-                      </button>
-                    </div>
-
-                    {/* 1. チャンピオン教本プレビュー */}
-                    {previewTab === 'strategy' && (
-                      <div className="space-y-3">
-                        <div className="text-[11px] text-zinc-400">
-                          マスター教本（`matchup_sentinel`）の末尾に、以下の節見出しとともに追記されます。
-                        </div>
-                        {previewData?.championPreviews && previewData.championPreviews.length > 0 ? (
-                          previewData.championPreviews.map((cp) => (
-                            <div key={cp.id} className="p-4 rounded-xl bg-zinc-950 border border-blue-900/50 space-y-2">
-                              <div className="flex items-center justify-between text-xs text-blue-300 font-bold border-b border-zinc-800 pb-2">
-                                <span className="flex items-center gap-1.5">
-                                  <BookOpen size={14} />
-                                  <span>対象: {cp.name}（ID: {cp.id}）</span>
-                                </span>
-                                <span className="font-mono text-[10px] text-zinc-500">{cp.matchupId}</span>
-                              </div>
-                              <div className="p-3 bg-[#111115] rounded-lg border border-zinc-800/80 max-h-72 overflow-y-auto font-sans leading-relaxed text-zinc-200 text-xs whitespace-pre-wrap select-text">
-                                {cp.sectionText}
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="p-4 rounded-xl bg-zinc-950 text-zinc-500 text-xs border border-zinc-800">
-                            対象チャンピオンが指定されていないため、チャンピオン教本への追記は行われません（ライブラリに残ります）。
-                          </p>
-                        )}
-                      </div>
-                    )}
-
-                    {/* 2. 各項目マージ差分プレビュー */}
-                    {previewTab === 'facts' && (
-                      <div className="space-y-3">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-zinc-800/80">
-                          <div className="text-[11px] text-zinc-400">
-                            AI（Gemini）が記事から抽出した「強み・弱み・スパイク等」の新知見です。既存記述を保持したまま安全に追記マージされます。
-                          </div>
-                          <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded-lg border border-zinc-800 shrink-0 self-start sm:self-auto">
-                            <button
-                              type="button"
-                              onClick={() => setFactsViewMode('highlight')}
-                              className={`px-2.5 py-1 rounded-md text-[11px] font-bold cursor-pointer transition ${
-                                factsViewMode === 'highlight'
-                                  ? 'bg-purple-600 text-white shadow-sm'
-                                  : 'text-zinc-400 hover:text-white'
-                              }`}
-                            >
-                              ✨ 追記箇所を強調
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setFactsViewMode('split')}
-                              className={`px-2.5 py-1 rounded-md text-[11px] font-bold cursor-pointer transition ${
-                                factsViewMode === 'split'
-                                  ? 'bg-purple-600 text-white shadow-sm'
-                                  : 'text-zinc-400 hover:text-white'
-                              }`}
-                            >
-                              ⇄ 変更前・後を比較
-                            </button>
-                          </div>
-                        </div>
-
-                        {previewData?.factPreviews && previewData.factPreviews.length > 0 ? (
-                          previewData.factPreviews.map((fp) => (
-                            <div key={fp.champion} className="p-4 rounded-xl bg-zinc-950 border border-purple-900/50 space-y-3">
-                              <div className="flex items-center justify-between text-xs text-purple-300 font-bold border-b border-zinc-800 pb-2">
-                                <span className="flex items-center gap-1.5">
-                                  <Dna size={14} />
-                                  <span>{fp.championNameJa}（{fp.champion}）の各項目マージ予定</span>
-                                </span>
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setSelectedFactFields((prev) => {
-                                        const next = { ...prev };
-                                        fp.diffs.forEach((d) => {
-                                          next[`${fp.champion}::${d.key}`] = !!d.isChanged;
-                                        });
-                                        return next;
-                                      });
-                                    }}
-                                    className="text-[10px] text-purple-400 hover:text-purple-300 underline cursor-pointer"
-                                  >
-                                    変更分を全選択
-                                  </button>
-                                  <span className="text-zinc-600 text-[10px]">|</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setSelectedFactFields((prev) => {
-                                        const next = { ...prev };
-                                        fp.diffs.forEach((d) => {
-                                          next[`${fp.champion}::${d.key}`] = false;
-                                        });
-                                        return next;
-                                      });
-                                    }}
-                                    className="text-[10px] text-zinc-500 hover:text-zinc-300 underline cursor-pointer"
-                                  >
-                                    すべて解除
-                                  </button>
-                                </div>
-                              </div>
-
-                              {/* AI生成の失敗（設定漏れ等）は知見と混ぜずにエラーとして出す */}
-                              {fp.error && (
-                                <div className="p-2.5 rounded-lg bg-rose-950/30 border border-rose-800/60 text-[11px] text-rose-400">
-                                  <span className="font-bold">AIによる項目マージ案を作れませんでした。既存の内容は変更されません。</span>
-                                  <span className="block text-rose-300/80 mt-0.5">理由: {fp.error}</span>
-                                </div>
-                              )}
-
-                              {/* ハイライト */}
-                              {fp.addedHighlights.length > 0 && (
-                                <div className="p-2.5 rounded-lg bg-purple-950/30 border border-purple-800/40 text-[11px] text-purple-200 space-y-1">
-                                  <span className="font-bold flex items-center gap-1 text-purple-300">
-                                    <Sparkles size={12} /> 今回新たに追記される知見のサマリー:
-                                  </span>
-                                  <ul className="list-disc list-inside space-y-0.5 pl-1 text-zinc-300">
-                                    {fp.addedHighlights.map((h, i) => <li key={i}>{h}</li>)}
-                                  </ul>
-                                </div>
-                              )}
-
-                              {/* 各フィールド差分 */}
-                              <div className="space-y-3">
-                                {fp.diffs.map((diff) => {
-                                  const before = diff.before || '';
-                                  const after = diff.after || '';
-                                  const beforeLines = before.split('\n').map((l) => l.trim()).filter(Boolean);
-                                  const beforeSet = new Set(beforeLines);
-                                  const afterLines = after.split('\n');
-
-                                  const fieldKeyId = `${fp.champion}::${diff.key}`;
-                                  const isFieldSelected = selectedFactFields[fieldKeyId] ?? diff.isChanged;
-
-                                  // 新規追加行のカウント
-                                  let newlyAddedCount = 0;
-                                  if (diff.isChanged) {
-                                    afterLines.forEach((l) => {
-                                      if (isLineNewlyAdded(l, before, beforeSet)) newlyAddedCount++;
-                                    });
-                                  }
-
-                                   // 文ごとの行レンダラー（新規追記行なら反映/除外チェック＋宛先切り替えボタンを表示）
-                                   const renderFactLine = (line: string, idx: number, isAdded: boolean) => {
-                                     if (!isAdded) {
-                                       return (
-                                         <div key={idx} className="text-zinc-400 px-1 py-0.5 opacity-90 break-words font-sans">
-                                           {line || '\u00A0'}
-                                         </div>
-                                       );
-                                     }
-
-                                     const lineKey = `${fp.champion}::${diff.key}::${idx}`;
-                                     const dest = lineDestinations[lineKey] || 'champion';
-                                     const isSkip = dest === 'skip';
-                                     const isChamp = dest === 'champion';
-                                     const isLane = dest === 'lane';
-
-                                     return (
-                                       <div
-                                         key={idx}
-                                         className={`p-2 rounded-lg border transition space-y-1.5 my-1.5 ${
-                                           isSkip
-                                             ? 'bg-zinc-950/40 border-zinc-800/60 opacity-50'
-                                             : isLane
-                                             ? 'bg-emerald-950/40 border-emerald-500/60 shadow-sm'
-                                             : 'bg-purple-950/30 border-purple-500/60 shadow-sm'
-                                         }`}
-                                       >
-                                         <div className="flex items-center justify-between gap-2 flex-wrap">
-                                           {/* 反映 / スキップ チェックボックス */}
-                                           <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                                             <input
-                                               type="checkbox"
-                                               checked={!isSkip}
-                                               onChange={() => {
-                                                 setLineDestinations((prev) => ({
-                                                   ...prev,
-                                                   [lineKey]: isSkip ? 'champion' : 'skip',
-                                                 }));
-                                               }}
-                                               className="w-3.5 h-3.5 accent-purple-500 rounded cursor-pointer"
-                                             />
-                                             <span className={`text-[10px] font-bold ${!isSkip ? 'text-zinc-200' : 'text-zinc-500'}`}>
-                                               {!isSkip ? '反映' : 'スキップ（除外）'}
-                                             </span>
-                                             <span
-                                               className={`text-[9px] px-1.5 py-0.2 rounded font-black uppercase border ${
-                                                 isSkip
-                                                   ? 'bg-zinc-800 text-zinc-500 border-zinc-700'
-                                                   : isLane
-                                                   ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                                                   : 'bg-purple-500/20 text-purple-300 border-purple-500/40'
-                                               }`}
-                                             >
-                                               {isSkip ? '✕ 除外' : isLane ? '🗺️ レーンガイドへ' : '🏆 辞典へ'}
-                                             </span>
-                                           </label>
-
-                                           {/* 宛先切り替えボタン */}
-                                           <div className="flex items-center gap-1">
-                                             <button
-                                               type="button"
-                                               onClick={() => {
-                                                 setLineDestinations((prev) => ({ ...prev, [lineKey]: 'champion' }));
-                                               }}
-                                               className={`px-2 py-0.5 rounded text-[10px] font-bold border transition cursor-pointer flex items-center gap-1 ${
-                                                 isChamp
-                                                   ? 'bg-purple-600 text-white border-purple-400 shadow-sm'
-                                                   : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-purple-300'
-                                               }`}
-                                               title="チャンピオン辞典の該当項目へマージ"
-                                             >
-                                               <span>🏆 辞典へ</span>
-                                             </button>
-
-                                             <button
-                                               type="button"
-                                               onClick={() => {
-                                                 setLineDestinations((prev) => ({ ...prev, [lineKey]: 'lane' }));
-                                               }}
-                                               className={`px-2 py-0.5 rounded text-[10px] font-bold border transition cursor-pointer flex items-center gap-1 ${
-                                                 isLane
-                                                   ? 'bg-emerald-600 text-white border-emerald-400 shadow-sm'
-                                                   : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-emerald-300'
-                                               }`}
-                                               title="レーンガイド（攻略バイブル）の第8章へマクロ知見として合流"
-                                             >
-                                               <span>🗺️ レーンガイドへ</span>
-                                             </button>
-                                           </div>
-                                         </div>
-
-                                         {/* テキスト行 */}
-                                         <div
-                                           className={`text-xs pl-5 break-words font-sans ${
-                                             isSkip
-                                               ? 'line-through text-zinc-500'
-                                               : isLane
-                                               ? 'text-emerald-200 font-medium'
-                                               : 'text-purple-200 font-medium'
-                                           }`}
-                                         >
-                                           {line}
-                                         </div>
-                                       </div>
-                                     );
-                                   };
-
-                                  return (
-                                    <div
-                                      key={diff.key}
-                                      className={`p-3 rounded-xl border text-xs space-y-2 transition ${
-                                        !isFieldSelected && diff.isChanged
-                                          ? 'bg-zinc-900/40 border-zinc-800/60'
-                                          : 'bg-zinc-900/80 border-zinc-800'
-                                      }`}
-                                    >
-                                      {/* ヘッダー: チェックボックス ＆ ラベル ＆ 反映ステータス */}
-                                      <div className="flex items-center justify-between gap-2">
-                                        <label className="flex items-center gap-2 cursor-pointer select-none">
-                                          <input
-                                            type="checkbox"
-                                            checked={isFieldSelected}
-                                            onChange={() => {
-                                              setSelectedFactFields((prev) => ({
-                                                ...prev,
-                                                [fieldKeyId]: !isFieldSelected,
-                                              }));
-                                            }}
-                                            className="w-4 h-4 accent-purple-500 rounded cursor-pointer shrink-0"
-                                          />
-                                          <span className="font-bold text-amber-300 text-xs">{diff.label}</span>
-                                          {diff.isChanged && newlyAddedCount > 0 && (
-                                            <span className="text-[10px] px-1.5 py-0.2 rounded font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                                              +{newlyAddedCount}行を新規追記
-                                            </span>
-                                          )}
-                                        </label>
-
-                                        {/* 一括設定ボタン */}
-                                        {diff.isChanged && newlyAddedCount > 0 && isFieldSelected && (
-                                          <div className="flex items-center gap-1 text-[10px] pl-2 border-l border-zinc-800">
-                                            <span className="text-zinc-500 text-[9px]">一括:</span>
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                setLineDestinations((prev) => {
-                                                  const next = { ...prev };
-                                                  afterLines.forEach((l, i) => {
-                                                    if (isLineNewlyAdded(l, before, beforeSet)) {
-                                                      next[`${fp.champion}::${diff.key}::${i}`] = 'champion';
-                                                    }
-                                                  });
-                                                  return next;
-                                                });
-                                              }}
-                                              className="px-1.5 py-0.5 rounded bg-purple-950/60 text-purple-300 border border-purple-800/80 hover:bg-purple-900/60 transition cursor-pointer text-[9px] font-bold"
-                                              title="新規行をすべてチャンピオン辞典へ"
-                                            >
-                                              全行🏆辞典
-                                            </button>
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                setLineDestinations((prev) => {
-                                                  const next = { ...prev };
-                                                  afterLines.forEach((l, i) => {
-                                                    if (isLineNewlyAdded(l, before, beforeSet)) {
-                                                      next[`${fp.champion}::${diff.key}::${i}`] = 'lane';
-                                                    }
-                                                  });
-                                                  return next;
-                                                });
-                                              }}
-                                              className="px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-800/80 hover:bg-emerald-900/60 transition cursor-pointer text-[9px] font-bold"
-                                              title="新規行をすべてレーンガイドへ"
-                                            >
-                                              全行🗺️レーン
-                                            </button>
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                setLineDestinations((prev) => {
-                                                  const next = { ...prev };
-                                                  afterLines.forEach((l, i) => {
-                                                    if (isLineNewlyAdded(l, before, beforeSet)) {
-                                                      next[`${fp.champion}::${diff.key}::${i}`] = 'skip';
-                                                    }
-                                                  });
-                                                  return next;
-                                                });
-                                              }}
-                                              className="px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-400 border border-zinc-800 hover:text-zinc-200 transition cursor-pointer text-[9px] font-bold"
-                                              title="新規行をすべて除外"
-                                            >
-                                              全行✕除外
-                                            </button>
-                                          </div>
-                                        )}
-                                        <div className="flex items-center gap-1.5">
-                                          {diff.isChanged ? (
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                setSelectedFactFields((prev) => ({
-                                                  ...prev,
-                                                  [fieldKeyId]: !isFieldSelected,
-                                                }));
-                                              }}
-                                              className={`text-[10px] px-2 py-0.5 rounded font-bold border transition cursor-pointer ${
-                                                isFieldSelected
-                                                  ? 'bg-purple-500/20 text-purple-300 border-purple-500/40 shadow-sm'
-                                                  : 'bg-zinc-800 text-zinc-500 border-zinc-700 hover:text-zinc-400'
-                                              }`}
-                                            >
-                                              {isFieldSelected ? '✓ 反映する' : '✕ スキップ（反映しない）'}
-                                            </button>
-                                          ) : (
-                                            <span className="text-[10px] px-2 py-0.5 rounded font-bold text-zinc-500 bg-zinc-950/60 border border-zinc-800">
-                                              変更なし（既存維持）
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-
-                                      {/* スキップ時の注意通知 */}
-                                      {!isFieldSelected && diff.isChanged && (
-                                        <div className="p-2 rounded-lg bg-zinc-950/90 border border-zinc-800 text-[10px] text-zinc-400 flex items-center justify-between">
-                                          <span className="text-zinc-400 font-semibold">
-                                            ※ 反映しない設定です（承認時、既存データがそのまま維持されます）
-                                          </span>
-                                          <button
-                                            type="button"
-                                            onClick={() => setSelectedFactFields((prev) => ({ ...prev, [fieldKeyId]: true }))}
-                                            className="text-purple-400 hover:text-purple-300 underline font-bold cursor-pointer"
-                                          >
-                                            反映する
-                                          </button>
-                                        </div>
-                                      )}
-
-                                      {/* コンテンツ表示エリア */}
-                                      <div className={!isFieldSelected && diff.isChanged ? 'opacity-40 pointer-events-none' : ''}>
-                                        {!diff.isChanged || !after.trim() ? (
-                                          <div className="p-2.5 rounded-lg bg-zinc-950/80 border border-zinc-800 text-[11px] text-zinc-400 whitespace-pre-wrap leading-relaxed max-h-36 overflow-y-auto font-sans">
-                                            {after.trim() || '（未記入）'}
-                                          </div>
-                                        ) : !before.trim() ? (
-                                          /* 初回登録（Beforeが空）の場合 */
-                                          <div className="p-2.5 rounded-lg bg-zinc-950 border border-emerald-900/60 text-[11px] space-y-1.5 max-h-60 overflow-y-auto font-sans">
-                                            <div className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
-                                              <span className="px-1.5 py-0.5 bg-emerald-500/20 rounded border border-emerald-500/40">
-                                                ✨ 初回登録（全行が新規追記）
-                                              </span>
-                                            </div>
-                                            <div className="space-y-1">
-                                              {afterLines.map((line, idx) =>
-                                                renderFactLine(line, idx, isLineNewlyAdded(line, before, beforeSet))
-                                              )}
-                                            </div>
-                                          </div>
-                                        ) : factsViewMode === 'split' ? (
-                                          /* 2カラム比較モード */
-                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] font-sans">
-                                            <div className="p-2.5 rounded-lg bg-zinc-950 border border-zinc-800/80 text-zinc-400 space-y-1 max-h-60 overflow-y-auto">
-                                              <span className="text-[10px] font-bold text-zinc-500 block border-b border-zinc-800/80 pb-1">
-                                                変更前（既存データ）
-                                              </span>
-                                              <div className="whitespace-pre-wrap leading-relaxed">{before}</div>
-                                            </div>
-                                            <div className="p-2.5 rounded-lg bg-zinc-950 border border-purple-900/40 space-y-1 max-h-60 overflow-y-auto">
-                                              <span className="text-[10px] font-bold text-emerald-400 block border-b border-zinc-800/80 pb-1">
-                                                マージ後（+新知見ハイライト）
-                                              </span>
-                                              <div className="space-y-1">
-                                                {afterLines.map((line, idx) =>
-                                                  renderFactLine(line, idx, isLineNewlyAdded(line, before, beforeSet))
-                                                )}
-                                              </div>
-                                            </div>
-                                          </div>
-                                        ) : (
-                                          /* ハイライト強調表示モード（デフォルト） */
-                                          <div className="p-2.5 rounded-lg bg-zinc-950 border border-zinc-800/90 text-[11px] space-y-1 max-h-60 overflow-y-auto font-sans leading-relaxed">
-                                            <div className="space-y-1">
-                                              {afterLines.map((line, idx) =>
-                                                renderFactLine(line, idx, isLineNewlyAdded(line, before, beforeSet))
-                                              )}
-                                            </div>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="p-4 rounded-xl bg-zinc-950 text-zinc-500 text-xs border border-zinc-800">
-                            対象チャンピオンが指定されていないか、項目マージがオフになっています。
-                          </p>
-                        )}
-                      </div>
-                    )}
-
-                    {/* 3. レーンガイドプレビュー */}
-                    {previewTab === 'lane' && (
-                      <div className="space-y-3">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1 border-b border-zinc-800/80">
-                          <div className="text-[11px] text-zinc-400">
-                            AI（Gemini）が記事から抽出した本質的なマクロ知見です。攻略バイブル（`lane_guides`）の第8章に追記されます。
-                          </div>
-                          {previewData?.laneGuidePreview && (
-                            <div className="flex items-center gap-1 bg-zinc-900 p-0.5 rounded-lg border border-zinc-800 shrink-0 self-start sm:self-auto">
-                              <button
-                                type="button"
-                                onClick={() => setLaneViewMode('highlight')}
-                                className={`px-2.5 py-1 rounded-md text-[11px] font-bold cursor-pointer transition ${
-                                  laneViewMode === 'highlight'
-                                    ? 'bg-emerald-600 text-white shadow-sm'
-                                    : 'text-zinc-400 hover:text-white'
-                                }`}
-                              >
-                                ✨ 追記箇所を強調
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setLaneViewMode('split')}
-                                className={`px-2.5 py-1 rounded-md text-[11px] font-bold cursor-pointer transition ${
-                                  laneViewMode === 'split'
-                                    ? 'bg-emerald-600 text-white shadow-sm'
-                                    : 'text-zinc-400 hover:text-white'
-                                }`}
-                              >
-                                ⇄ 統合前・後を比較
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setLaneViewMode('edit')}
-                                className={`px-2.5 py-1 rounded-md text-[11px] font-bold cursor-pointer transition ${
-                                  laneViewMode === 'edit'
-                                    ? 'bg-emerald-600 text-white shadow-sm'
-                                    : 'text-zinc-400 hover:text-white'
-                                }`}
-                              >
-                                ✏️ 文面を手直し
-                              </button>
-                            </div>
-                          )}
-                        </div>
-
-                        {previewData?.laneGuidePreview ? (
-                          <div className="p-4 rounded-xl bg-zinc-950 border border-emerald-900/50 space-y-3">
-                            <div className="flex items-center justify-between text-xs text-emerald-300 font-bold border-b border-zinc-800 pb-2">
-                              <span className="flex items-center gap-1.5">
-                                <Compass size={14} />
-                                <span>統合先: {previewData.laneGuidePreview.laneLabel} 攻略バイブル</span>
-                              </span>
-                              <span className="text-[10px] text-zinc-400 font-normal">
-                                （現在収録: <b className="text-emerald-300">{previewData.laneGuidePreview.sourceCount ?? 0}</b> 件の知見アーカイブ）
-                              </span>
-                            </div>
-
-                            {previewData.laneGuidePreview.error && (
-                              <div className="p-2.5 rounded-lg bg-rose-950/30 border border-rose-800/60 text-[11px] text-rose-400">
-                                <span className="font-bold">AIによる知見の抽出に失敗しました。記事の全文は統合しません。</span>
-                                <span className="block text-rose-300/80 mt-0.5">理由: {previewData.laneGuidePreview.error}</span>
-                                <span className="block text-zinc-400 mt-0.5">少し待ってプレビューを開き直すか、「✏️ 文面を手直し」タブで統合したい文面を書いてから承認してください。</span>
-                              </div>
-                            )}
-
-                            {/* 表示コンテンツ */}
-                            {(() => {
-                              const displaySection = editedLaneSectionText || previewData.laneGuidePreview.sectionText || '';
-                              const existingBody = previewData.laneGuidePreview.existingBody || '';
-                              const chapterRegex = /##\s*(?:8\.\s*)?実戦動画・プロ解説からの最新マクロ知見/;
-                              const chapterMatch = existingBody.search(chapterRegex);
-                              const hasChapter8 = chapterMatch >= 0;
-                              const existingChapter8Text = hasChapter8 ? existingBody.slice(chapterMatch).trim() : '';
-
-                              // 1. 手直しエディタモード
-                              if (laneViewMode === 'edit') {
-                                return (
-                                  <div className="space-y-1.5">
-                                    <div className="flex items-center justify-between text-[10px] font-bold text-zinc-400">
-                                      <span>統合するマクロ知見（Markdown形式で直接編集可能）</span>
-                                      <span className="text-emerald-400">※編集内容はリアルタイムにプレビュー・承認へ反映されます</span>
-                                    </div>
-                                    <textarea
-                                      value={editedLaneSectionText}
-                                      onChange={(e) => setEditedLaneSectionText(e.target.value)}
-                                      rows={14}
-                                      className="w-full p-3 bg-[#111115] rounded-lg border border-zinc-800 text-zinc-200 text-xs font-mono leading-relaxed focus:border-emerald-500 focus:outline-none resize-y"
-                                      placeholder="レーンガイドに統合する知見文面..."
-                                    />
-                                  </div>
-                                );
-                              }
-
-                              // 2. 比較モード（Before / After）
-                              if (laneViewMode === 'split') {
-                                return (
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-sans">
-                                    {/* 左: 統合前（既存の第8章） */}
-                                    <div className="p-3 rounded-xl bg-zinc-900/80 border border-zinc-800 space-y-2 max-h-96 overflow-y-auto">
-                                      <div className="text-[11px] font-bold text-zinc-400 border-b border-zinc-800 pb-1.5 flex items-center justify-between">
-                                        <span>統合前（現在の第8章アーカイブ）</span>
-                                        <span className="text-[10px] text-zinc-500">{hasChapter8 ? '既存知見あり' : '未新設'}</span>
-                                      </div>
-                                      <div className="text-[11px] text-zinc-400 whitespace-pre-wrap leading-relaxed font-sans">
-                                        {hasChapter8 ? existingChapter8Text : '（まだ第8章アーカイブは存在しません。今回の承認で新設されます）'}
-                                      </div>
-                                    </div>
-
-                                    {/* 右: 統合後（マージ後完全体） */}
-                                    <div className="p-3 rounded-xl bg-zinc-900/80 border border-emerald-900/50 space-y-2 max-h-96 overflow-y-auto">
-                                      <div className="text-[11px] font-bold text-emerald-400 border-b border-zinc-800 pb-1.5 flex items-center justify-between">
-                                        <span>統合後（新セクションが末尾に追加）</span>
-                                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-bold">+新知見マージ</span>
-                                      </div>
-                                      {hasChapter8 && (
-                                        <div className="text-[11px] text-zinc-500 whitespace-pre-wrap leading-relaxed font-sans line-clamp-6 opacity-75">
-                                          {existingChapter8Text}
-                                        </div>
-                                      )}
-                                      {hasChapter8 && (
-                                        <div className="text-center text-[10px] text-emerald-400 font-bold py-1 border-t border-b border-emerald-900/60 my-2">
-                                          ⬇️ 以下のセクションが末尾に新規追記されます
-                                        </div>
-                                      )}
-                                      <div className="p-3 bg-emerald-950/70 border-2 border-emerald-500/70 rounded-lg text-emerald-100 text-[11px] space-y-2 whitespace-pre-wrap leading-relaxed font-sans shadow-sm">
-                                        {displaySection}
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              }
-
-                              // 3. ハイライト強調表示モード（デフォルト）
-                              return (
-                                <div className="space-y-3 font-sans">
-                                  {/* 既存ガイド文脈 */}
-                                  {hasChapter8 ? (
-                                    <div className="p-2.5 rounded-lg bg-zinc-900/70 border border-zinc-800/80 text-[11px] text-zinc-400 space-y-1">
-                                      <div className="flex items-center justify-between text-[10px] text-zinc-500 font-bold border-b border-zinc-800/80 pb-1">
-                                        <span>📜 現在の第8章（実戦動画・プロ解説からの最新マクロ知見）</span>
-                                        <span>この直後に追記マージされます</span>
-                                      </div>
-                                      <p className="line-clamp-3 text-zinc-500 italic">
-                                        {existingChapter8Text.slice(0, 300)}...
-                                      </p>
-                                    </div>
-                                  ) : (
-                                    <div className="p-2 rounded-lg bg-blue-950/30 border border-blue-900/50 text-[11px] text-blue-300 flex items-center gap-1.5">
-                                      <span>🆕 このレーンガイドにはまだ第8章（マクロ知見アーカイブ）がありません。今回の承認で自動新設されます。</span>
-                                    </div>
-                                  )}
-
-                                  {/* 🟢 今回新しく追記されるブロックの鮮烈ハイライト */}
-                                  <div className="p-4 rounded-xl bg-emerald-950/70 border-2 border-emerald-400 shadow-md space-y-2.5">
-                                    <div className="flex items-center justify-between pb-2 border-b border-emerald-800/70">
-                                      <span className="text-[11px] font-black uppercase px-2 py-0.5 bg-emerald-500/30 text-emerald-300 rounded border border-emerald-500/50 flex items-center gap-1 shadow-sm">
-                                        <Sparkles size={12} /> + 今回の新規追記セクション（レーンガイド第8章へ追加）
-                                      </span>
-                                      <span className="text-[10px] text-emerald-400 font-mono font-bold">
-                                        📚 {displaySection.length.toLocaleString()}文字
-                                      </span>
-                                    </div>
-
-                                    {/* 追記される知見本文（見出しや箇条書きを美しくフォーマット表示） */}
-                                    <div className="text-xs text-emerald-100 whitespace-pre-wrap leading-relaxed max-h-80 overflow-y-auto p-2.5 bg-black/40 rounded-lg border border-emerald-900/60 font-sans selection:bg-emerald-700">
-                                      {displaySection}
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })()}
-                          </div>
-                        ) : (
-                          <p className="p-4 rounded-xl bg-zinc-950 text-zinc-500 text-xs border border-zinc-800">
-                            「レーンガイドへも統合」がオフのため、レーンガイドへの追記は行われません。
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-
-              {/* モーダルフッター */}
-              <div className="p-4 border-t border-zinc-800 bg-zinc-950 flex items-center justify-between gap-3">
-                <button
-                  onClick={() => setPreviewModalItem(null)}
-                  disabled={busy}
-                  className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold cursor-pointer transition disabled:opacity-50"
-                >
-                  キャンセル
-                </button>
-                <button
-                  onClick={() => previewModalItem && approveOne(previewModalItem)}
-                  disabled={busy || previewLoading}
-                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-md transition"
-                >
-                  {busy ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin text-amber-300" />
-                      <span>二系統統合 ＆ AI差分マージを実行中...</span>
-                    </>
-                  ) : previewLoading ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin text-amber-300" />
-                      <span>プレビュー生成中...</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>この完全な文面で承認して統合を実行</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
+          <PreviewModal
+            edit={edits[previewModalItem.id]}
+            previewData={previewData}
+            previewLoading={previewLoading}
+            previewTab={previewTab}
+            setPreviewTab={setPreviewTab}
+            modalError={modalError}
+            busy={busy}
+            selectedFactFields={selectedFactFields}
+            setSelectedFactFields={setSelectedFactFields}
+            lineDestinations={lineDestinations}
+            setLineDestinations={setLineDestinations}
+            editedLaneSectionText={editedLaneSectionText}
+            setEditedLaneSectionText={setEditedLaneSectionText}
+            onClose={() => setPreviewModalItem(null)}
+            onEdit={(patch) => updateEditField(previewModalItem.id, patch)}
+            onRecalculate={() => openPreview(previewModalItem)}
+            onApprove={() => approveOne(previewModalItem)}
+          />
         )}
       </div>
     </div>
