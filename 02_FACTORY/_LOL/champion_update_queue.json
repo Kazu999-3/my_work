@@ -1,14 +1,14 @@
 {
-  "patch_version": "26.19",
-  "updated_at": "2026-10-04T21:50:36.734148+00:00",
+  "patch_version": "16.20.1",
+  "updated_at": "2026-10-07T01:35:49.203027+00:00",
   "status": "completed",
   "queue": {
     "Aatrox": {
       "name": "エイトロックス",
-      "status": "completed",
+      "status": "review_needed",
       "updated_at": "2026-10-04T20:41:18.115704+00:00",
       "error": null,
-      "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
+      "note": "Patch 16.20.1 core monitoring."
     },
     "Ahri": {
       "name": "アーリ",
@@ -138,9 +138,10 @@
     },
     "Cassiopeia": {
       "name": "カシオペア",
-      "status": "completed",
+      "status": "review_needed",
       "updated_at": "2026-10-04T20:51:49.767288+00:00",
-      "error": null
+      "error": null,
+      "note": "Patch 16.20.1 modified: ['hp', 'mp']"
     },
     "Chogath": {
       "name": "チョ＝ガス",
@@ -156,10 +157,10 @@
     },
     "Darius": {
       "name": "ダリウス",
-      "status": "completed",
+      "status": "review_needed",
       "updated_at": "2026-10-04T20:53:20.965942+00:00",
       "error": null,
-      "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
+      "note": "Patch 16.20.1 core monitoring."
     },
     "Diana": {
       "name": "ダイアナ",
@@ -211,10 +212,10 @@
     },
     "Fiora": {
       "name": "フィオラ",
-      "status": "completed",
+      "status": "review_needed",
       "updated_at": "2026-10-04T20:56:43.118124+00:00",
       "error": null,
-      "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
+      "note": "Patch 16.20.1 core monitoring."
     },
     "Fizz": {
       "name": "フィズ",
@@ -308,17 +309,17 @@
     },
     "JarvanIV": {
       "name": "ジャーヴァンⅣ",
-      "status": "completed",
+      "status": "review_needed",
       "updated_at": "2026-10-04T21:03:24.175992+00:00",
       "error": null,
-      "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
+      "note": "Patch 16.20.1 core monitoring."
     },
     "Jax": {
       "name": "ジャックス",
-      "status": "completed",
+      "status": "review_needed",
       "updated_at": "2026-10-04T21:03:49.129550+00:00",
       "error": null,
-      "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
+      "note": "Patch 16.20.1 core monitoring."
     },
     "Jayce": {
       "name": "ジェイス",
@@ -430,10 +431,10 @@
     },
     "LeeSin": {
       "name": "リー・シン",
-      "status": "completed",
+      "status": "review_needed",
       "updated_at": "2026-10-04T21:11:00.804839+00:00",
       "error": null,
-      "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
+      "note": "Patch 16.20.1 core monitoring."
     },
     "Leona": {
       "name": "レオナ",
@@ -443,10 +444,10 @@
     },
     "Lillia": {
       "name": "リリア",
-      "status": "completed",
+      "status": "review_needed",
       "updated_at": "2026-10-04T21:11:47.843543+00:00",
       "error": null,
-      "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
+      "note": "Patch 16.20.1 core monitoring."
     },
     "Lissandra": {
       "name": "リサンドラ",
@@ -582,10 +583,10 @@
     },
     "Nocturne": {
       "name": "ノクターン",
-      "status": "completed",
+      "status": "review_needed",
       "updated_at": "2026-10-04T21:21:07.456491+00:00",
       "error": null,
-      "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
+      "note": "Patch 16.20.1 core monitoring."
     },
     "Nunu": {
       "name": "ヌヌ＆ウィルンプ",
@@ -793,9 +794,10 @@
     },
     "Swain": {
       "name": "スウェイン",
-      "status": "completed",
+      "status": "review_needed",
       "updated_at": "2026-10-04T21:34:36.272984+00:00",
-      "error": null
+      "error": null,
+      "note": "Patch 16.20.1 modified: ['armor', 'spellblock']"
     },
     "Sylas": {
       "name": "サイラス",
@@ -895,9 +897,10 @@
     },
     "Vayne": {
       "name": "ヴェイン",
-      "status": "completed",
+      "status": "review_needed",
       "updated_at": "2026-10-04T21:41:03.981610+00:00",
-      "error": null
+      "error": null,
+      "note": "Patch 16.20.1 modified: ['hpregen', 'hpregenperlevel']"
     },
     "Veigar": {
       "name": "ベイガー",
@@ -925,10 +928,10 @@
     },
     "Viego": {
       "name": "ヴィエゴ",
-      "status": "completed",
+      "status": "review_needed",
       "updated_at": "2026-10-04T21:42:56.203645+00:00",
       "error": null,
-      "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
+      "note": "Patch 16.20.1 core monitoring."
     },
     "Viktor": {
       "name": "ビクター",
@@ -968,10 +971,10 @@
     },
     "XinZhao": {
       "name": "シン・ジャオ",
-      "status": "completed",
+      "status": "review_needed",
       "updated_at": "2026-10-04T21:45:30.033296+00:00",
       "error": null,
-      "note": "Patch 16.18.1 detected. Need stats & matchup re-verification."
+      "note": "Patch 16.20.1 core monitoring."
     },
     "Yasuo": {
       "name": "ヤスオ",

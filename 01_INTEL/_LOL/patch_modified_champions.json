@@ -1,62 +1,52 @@
 {
-  "old_patch": "16.18.1",
-  "new_patch": "16.19.1",
-  "detected_at": "2026-09-30T01:19:13.505615+00:00",
+  "old_patch": "16.19.1",
+  "new_patch": "16.20.1",
+  "detected_at": "2026-10-07T01:35:49.202272+00:00",
   "total_champions": 173,
-  "modified_count": 5,
+  "modified_count": 3,
   "champions": [
     {
-      "id": "Draven",
-      "name": "ドレイヴン",
+      "id": "Cassiopeia",
+      "name": "カシオペア",
       "type": "stats_changed",
       "diffs": {
-        "attackdamage": {
-          "old": 62,
-          "new": 64
+        "hp": {
+          "old": 630,
+          "new": 610
+        },
+        "mp": {
+          "old": 480,
+          "new": 450
         }
       }
     },
     {
-      "id": "Fiora",
-      "name": "フィオラ",
-      "type": "stats_changed",
-      "diffs": {
-        "hpperlevel": {
-          "old": 99,
-          "new": 105
-        }
-      }
-    },
-    {
-      "id": "Lillia",
-      "name": "リリア",
+      "id": "Swain",
+      "name": "スウェイン",
       "type": "stats_changed",
       "diffs": {
         "armor": {
-          "old": 22,
-          "new": 24
+          "old": 25,
+          "new": 23
+        },
+        "spellblock": {
+          "old": 31,
+          "new": 34
         }
       }
     },
     {
-      "id": "Ryze",
-      "name": "ライズ",
+      "id": "Vayne",
+      "name": "ヴェイン",
       "type": "stats_changed",
       "diffs": {
-        "armorperlevel": {
-          "old": 4.2,
-          "new": 4.7
-        }
-      }
-    },
-    {
-      "id": "Vi",
-      "name": "ヴァイ",
-      "type": "stats_changed",
-      "diffs": {
-        "attackdamage": {
-          "old": 63,
-          "new": 61
+        "hpregen": {
+          "old": 4,
+          "new": 5.5
+        },
+        "hpregenperlevel": {
+          "old": 0.5,
+          "new": 0.4
         }
       }
     }
