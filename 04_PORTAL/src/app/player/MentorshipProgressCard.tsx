@@ -251,7 +251,7 @@ export default function MentorshipProgressCard({
         return (
           <div
             key={match.id}
-            className="bg-surface dark:bg-[#202225] border border-border dark:border-stone-800 rounded-3xl p-5 md:p-6 shadow-sm space-y-5"
+            className="bg-surface dark:bg-background border border-border dark:border-stone-800 rounded-3xl p-5 md:p-6 shadow-sm space-y-5"
           >
             {/* ヘッダー: 役職 ＆ パートナー情報 */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 dark:border-stone-800 pb-4">

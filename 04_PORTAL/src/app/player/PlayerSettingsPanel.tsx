@@ -89,7 +89,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
   };
 
   return (
-    <div className="bg-surface/80 dark:bg-[#232428]/80 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-3xl p-6 sm:p-8 shadow-xl space-y-8">
+    <div className="bg-surface/80 dark:bg-background/80 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-3xl p-6 sm:p-8 shadow-xl space-y-8">
       <div>
         <h2 className="text-xl font-black text-foreground dark:text-white flex items-center gap-2">
           <Shield className="w-5 h-5 text-primary-600" />
@@ -135,7 +135,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
                 className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border text-center transition-all cursor-pointer ${
                   isSelected
                     ? "bg-primary-500 text-stone-950 font-black shadow-md border-primary-edge-strong scale-[1.02]"
-                    : "bg-surface dark:bg-surface border-border dark:border-border text-muted hover:border-border hover:bg-background dark:hover:bg-[#313338] font-bold"
+                    : "bg-surface dark:bg-surface border-border dark:border-border text-muted hover:border-border hover:bg-background dark:hover:bg-surface-hover font-bold"
                 }`}
               >
                 <Icon className="w-6 h-6 mb-1.5" />
@@ -164,7 +164,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
                 className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border text-center transition-all cursor-pointer ${
                   isSelected
                     ? "bg-stone-800 dark:bg-stone-100 text-white dark:text-stone-900 font-black shadow-md border-stone-900 dark:border-stone-200 scale-[1.02]"
-                    : "bg-surface dark:bg-surface border-border dark:border-border text-muted hover:border-border hover:bg-background dark:hover:bg-[#313338] font-bold"
+                    : "bg-surface dark:bg-surface border-border dark:border-border text-muted hover:border-border hover:bg-background dark:hover:bg-surface-hover font-bold"
                 }`}
               >
                 <Icon className="w-6 h-6 mb-1.5" />
@@ -198,7 +198,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
                 className={`flex items-center justify-center gap-2 p-3 rounded-2xl border text-center transition-all cursor-pointer ${
                   isNg
                     ? "bg-danger-500 text-white font-black shadow-md border-danger-edge-strong scale-[1.02]"
-                    : "bg-surface dark:bg-surface border-border dark:border-border text-muted hover:border-border hover:bg-background dark:hover:bg-[#313338] font-bold"
+                    : "bg-surface dark:bg-surface border-border dark:border-border text-muted hover:border-border hover:bg-background dark:hover:bg-surface-hover font-bold"
                 }`}
               >
                 <Ban className={`w-4 h-4 ${isNg ? "text-white" : "text-faint"}`} />

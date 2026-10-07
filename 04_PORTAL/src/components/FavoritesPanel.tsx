@@ -197,9 +197,9 @@ export default function FavoritesPanel({ isCollapsed = false, isAdmin = false }:
               <Link
                 href={`/library?article=${article.id}`}
                 prefetch={false}
-                className="flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] text-faint hover:text-[#a78bfa] hover:bg-black/3 transition-all truncate"
+                className="flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg text-[11px] text-faint hover:text-primary-500 hover:bg-black/3 transition-all truncate"
               >
-                <BookOpen size={12} className="shrink-0 text-[#a78bfa]/50" />
+                <BookOpen size={12} className="shrink-0 text-primary-500/50" />
                 <span className="truncate">{article.title.replace(/_/g, " ")}</span>
               </Link>
               <button

@@ -266,12 +266,12 @@ export default function DesignEditor() {
                 components={{
                   h1: ({node, ...props}) => <h1 className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-gold to-primary mb-8 pb-4 border-b border-black/10 mt-2" {...props} />,
                   h2: ({node, ...props}) => <h2 className="text-xl font-bold text-primary-800 mt-8 mb-4 pb-2 border-b border-black/10 flex items-center gap-2" {...props} />,
-                  h3: ({node, ...props}) => <h3 className="text-lg font-bold text-[#00cfef] mt-6 mb-3" {...props} />,
+                  h3: ({node, ...props}) => <h3 className="text-lg font-bold text-secondary-600 mt-6 mb-3" {...props} />,
                   p: ({node, ...props}) => <p className="text-foreground-subtle leading-relaxed mb-4 text-xs md:text-sm" {...props} />,
                   ul: ({node, ...props}) => <ul className="list-disc list-inside pl-4 mb-4 text-foreground-subtle space-y-1.5 text-xs md:text-sm" {...props} />,
                   ol: ({node, ...props}) => <ol className="list-decimal list-inside pl-4 mb-4 text-foreground-subtle space-y-1.5 text-xs md:text-sm" {...props} />,
                   li: ({node, ...props}) => <li className="mb-1 text-foreground-subtle" {...props} />,
-                  a: ({node, ...props}) => <a className="text-[#00cfef] hover:underline font-bold" target="_blank" rel="noopener noreferrer" {...props} />,
+                  a: ({node, ...props}) => <a className="text-secondary-600 hover:underline font-bold" target="_blank" rel="noopener noreferrer" {...props} />,
                   blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-[#c89b3c] bg-[#c89b3c]/5 pl-4 py-2 my-4 rounded-r-xl italic text-muted" {...props} />,
                   code: ({node, className, children, ...props}) => {
                     const match = /language-(\w+)/.exec(className || '');

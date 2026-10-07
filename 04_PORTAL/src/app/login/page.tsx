@@ -81,7 +81,7 @@ function LoginContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#f5f1e6] via-[#eae4d4] to-[#ded5be] text-foreground">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#f5f1e6] via-[#eae4d4] to-[#ded5be] dark:from-background dark:via-background dark:to-surface text-foreground">
       <div className="w-full max-w-md bg-surface/80 backdrop-blur-xl border border-black/10 rounded-3xl p-8 shadow-2xl space-y-6 text-center">
         
         {/* ロゴ ＆ タイトル */}
