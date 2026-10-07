@@ -307,6 +307,33 @@ DBを直接見ると自動再開は正常に動作していた（毎時再起票
 - 運用ダッシュボード「要対応」のYouTubeチャンネル登録失敗は、`?si=` 付きURLの失敗が ?si 無しURLの成功と別物として比較されていたため消えなかった。比較・再実行ともURLを正規化（`lib/youtubeUrl.ts`）。
 - 動画管理の「エラーを全件再試行」が字幕・Whisperとも3回失敗した動画まで pending に戻しており（10/03に16件）、PCワーカーが同じ処理を繰り返していた。対象を時間で解消し得るエラーに限定。16件はクローズ済み。
 
+## 📜 2.14. Claude Code期間 (2026-10-07) での主な実装・修正
+
+TODOの大型タスク（保守性向上計画）を A→B→C→D の順で進めた日。分割作業の途中で、画面に出ている数字のバグと、辞典の毎週更新が古い知識で上書きしていた問題が見つかった。
+
+### 🎯 (A) 04外部分析の目標ランク比較を実測平均に・05分析エンジンの重複解消（`0f9784d4`）
+
+- 04 `/analyzer` の「目標ランクとの差」は手入力の `ROLE_RANK_BENCHMARKS`（コードに「手入力」と明記）を「目標基準」として画面と Gemini に渡していた。`rank_benchmark_averages`（毎日収集の実測平均）に置き換え（`lib/rankBenchmarks.ts`）。比較は平均デス・CS/分・キル関与率・視界/分の4項目、「平均以上 n/4」、30試合未満は参考値、未収集は「収集中」。
+- 収集（`rank_benchmark_collector.py`）を外部分析の選択肢 GOLD/PLATINUM/EMERALD/DIAMOND IV にも拡大（初回: 53/61/55/147件）。ワークフローの制限時間60分。
+- 計測していない値を削除: 敵陣ディープ視界比率（視界×12）とワード比率の帯、ピンク推計（視界×1.6/0.9）、勝率から作ったオブジェクト点、KP の40%補完、「15分キル関与」表記（実際は試合全体）、AI失敗時の「既に目標水準に到達」断定文。
+- 05 スタッツ分析は `sessionAnalyticsCalculator.ts`（04と同一1,774行）の結果を画面で1つも使っておらず（表示しようとした `tiltSummary` は計算されていない）、ファイルを削除。連戦の何戦目・負け直後の再キュー別の勝率を実測で表示。
+
+### 🧩 (B) 05チャンピオン辞典画面の分割（`b927226f`）
+
+`app/page.tsx` 2,840行 → 約300行。`app/_champions/` に画面部品12個とフック3個（`usePilotSettings` / `useKnowledgeModal` / `useChampionDetailData`）、`lib/tierScoreCalculator.ts`・`lib/champAliases.ts`。JSXは無変更で移設。
+
+### ⚔️ (C) 04内戦バランサー画面の分割＋入れ替え後の数字のバグ（`82168c14` `b0d2c45d`）
+
+- `app/balancer/page.tsx` 3,029行 → 1,140行。`app/balancer/_parts/` に画面部品7個・共通小部品・管理者集計フック、`lib/balancer/`（diagnosis / playerList / teams）に純粋関数。500行以下までは未達（残りは取得・保存・チーム分け実行・BO3・ドラッグ操作で状態共有が多い）。
+- 結果画面で手動入れ替えした後、`teamBlueMMR` / `teamRedMMR` / `mmrDiff` を更新しておらず、結果画面の「MMR差・合計・戦力差判定」、コピー文、Discord通知が入れ替え前の値だった。入れ替え後の勝率も平均ではなく合計MMRを渡しており差が5倍になっていた。両方修正。
+
+### 🔍 (D) 03_SYSTEMS の点検（`cbfa6c2c`）
+
+- **辞典の毎週更新が約2年前の知識で上書きしていた**: `champion_trend_worker.py` は検索(google_search)付き呼び出しの失敗時に「検索なしGemini→Ollama」へフォールバックしていた。キー（GEMINI_API_KEY / _FREE）は検索付きの利用枠が無く 429（実測）、検索なしは「最新パッチは14.24」と回答。10/4 は173体中164体がこの経路で勝率・Tier・ビルド・ルーン・プロのビルドを上書き、出典が残った行は176体中0体だった。検索の裏付けが無い時は更新を見送り既存データを維持、一括更新もその回を中断するよう変更。`known-regression-patterns` #5 に実例追記。
+- 動画解析の40分強制終了: 10/5 に8連続（9月から残っていた長尺動画のまとめ処理）。TODO の「failed なし」確認記録は誤りだったので訂正。`youtube_worker.py` に1回の時間予算（既定25分、`RUN_TIME_BUDGET_SEC`）を追加。
+- 未使用の `pick_guide_generator.py`・`overlay/match_feedback_sync.py` を削除、手動一括処理3本を `99_ARCHIVE/v2_CORE_unused/bible_batches_20261002/` へ。
+- ワークフロー19本・PCデーモンのタスクは実測で概ね正常（`champ-dict-update.yml` は本体ステップが `continue-on-error` で常に緑表示になる点に注意）。
+
 ## 🗺️ 3. システム構造 ＆ ディレクトリマップ
 
 ```text
