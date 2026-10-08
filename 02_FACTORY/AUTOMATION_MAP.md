@@ -90,7 +90,6 @@ grep -A12 "\[triggers\]" 03_SYSTEMS/ktm_bot/wrangler.toml
 
 | プロセス | 頻度 | 役割 | 停止方法 |
 |---|---|---|---|
-| **試合終了監視デーモン**<br>(`auto_match_recorder.py`) | 10秒ポーリング | LoLクライアント起動中の試合終了を検知し、戦術バイブルへ試合結果を同期 | `Ctrl+C` / タスクマネージャー |
 | **エッジワーカーデモン**<br>(`edge_worker_daemon.py`) | タスクポーリング<br>＋15分おきに起票 | `edge_tasks` のローカル実行タスクを処理。15分おきに `youtube_absorb` を自動起票し、`youtube_absorber.py` が Whisper(GPU) で字幕なし動画を文字起こし | `Ctrl+C` / タスクマネージャー |
 
 ---
