@@ -3,6 +3,7 @@ import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { fetchPuuidByRiotId, fetchLeagueByPuuid } from '../../../../lib/riot';
 import { higherRank, rankScore } from '../../../../lib/mmr';
 import { sendRankUpgradeNotification } from '../../../../lib/discordNotify';
+import { updateMemberDiscordRankRole } from '../../../../lib/discordRoleSync';
 import { verifyBotSecret } from '../../../../lib/botAuth';
 
 export async function POST(req: Request) {
@@ -45,7 +46,9 @@ export async function POST(req: Request) {
     // 既存(highest)と現在ランクの高い方を保持する。現在未ランクなら既存をそのまま維持。
     const rankStr = higherRank(player.highest_rank, currentRank);
     const oldRank = player.highest_rank || 'UNRANKED';
-    const isPromoted = oldRank !== 'UNRANKED' && rankStr !== 'UNRANKED' && rankScore(rankStr) > rankScore(oldRank);
+    const isUpgraded = oldRank !== 'UNRANKED' && rankStr !== 'UNRANKED' && rankScore(rankStr) > rankScore(oldRank);
+    const isFirstRank = oldRank === 'UNRANKED' && rankStr !== 'UNRANKED';
+    const isPromoted = isUpgraded || isFirstRank;
 
     // DB更新（変化がある時だけでも良いが、冪等なので常時更新）
     const { error: updateError } = await supabase
@@ -55,7 +58,7 @@ export async function POST(req: Request) {
 
     if (updateError) throw new Error(`DB Update failed: ${updateError.message}`);
 
-    // 🏆 最高ランク昇格通知を送信
+    // 🏆 最高ランク昇格または初回ランク認定通知を送信
     if (isPromoted) {
       sendRankUpgradeNotification({
         playerName: player.name || discordName,
@@ -64,6 +67,13 @@ export async function POST(req: Request) {
         newRank: rankStr,
         ign: player.ign,
       }).catch((e) => console.warn('[sync-ranks] Notification send failed:', e));
+    }
+
+    // 🎖️ Discordのランクロールを最新ランクに合わせて全自動付与・剥奪！
+    if (player.discord_id && rankStr !== 'UNRANKED') {
+      updateMemberDiscordRankRole(player.discord_id, rankStr).catch((rErr) =>
+        console.warn(`[sync-ranks] Role update error (${player.name}):`, rErr)
+      );
     }
 
     return NextResponse.json({

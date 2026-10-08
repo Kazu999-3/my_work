@@ -78,25 +78,30 @@ export async function sendRankUpgradeNotification(params: {
 }): Promise<boolean> {
   const { playerName, discordId, oldRank, newRank, ign } = params;
 
-  // 新規登録時（oldRankが未設定またはUNRANKED）および newRankがUNRANKEDの場合は通知しない
+  // newRankが未設定またはUNRANKED、あるいは変動なしの場合は通知しない
   const cleanOld = (oldRank || '').toUpperCase().trim();
   const cleanNew = (newRank || '').toUpperCase().trim();
-  if (!cleanOld || cleanOld === 'UNRANKED' || !cleanNew || cleanNew === 'UNRANKED') {
+  if (!cleanNew || cleanNew === 'UNRANKED' || cleanOld === cleanNew) {
     return false;
   }
 
-  const oldRankDisplay = oldRank || 'UNRANKED';
+  const isFirstRank = !cleanOld || cleanOld === 'UNRANKED';
+  const oldRankDisplay = cleanOld || '未ランク';
 
   const mention = discordId ? `<@${discordId}>` : `**${playerName}**`;
-  const content = `🎉 **【最高ランク更新速報！】** ${mention} さんが最高ランクを更新しました！`;
+  const content = isFirstRank
+    ? `🎉 **【ランク認定速報！】** ${mention} さんのSoloQランクが認定されました！`
+    : `🎉 **【最高ランク更新速報！】** ${mention} さんが最高ランクを更新しました！`;
 
   const embed = {
-    title: '🏆 最高ランク更新（昇格）おめでとうございます！',
-    description: `${mention} さんのSoloQ最高ランクが **${newRank}** に到達しました！✨\n次回カスタムでのキャリー・大活躍に期待しています！`,
+    title: isFirstRank ? '🏆 祝・SoloQランク認定！' : '🏆 最高ランク更新（昇格）おめでとうございます！',
+    description: isFirstRank
+      ? `${mention} さんのSoloQランクが **${newRank}** に認定されました！✨\n次回カスタムでのキャリー・大活躍に期待しています！`
+      : `${mention} さんのSoloQ最高ランクが **${newRank}** に到達しました！✨\n次回カスタムでのキャリー・大活躍に期待しています！`,
     color: 0xF59E0B, // Amber/Gold
     fields: [
       { name: '👤 プレイヤー', value: playerName, inline: true },
-      { name: '📈 ランク変動', value: `\`${oldRankDisplay}\` ➔ **🔥 ${newRank}**`, inline: true },
+      { name: '📈 ランク', value: isFirstRank ? `**🔥 ${newRank}**` : `\`${oldRankDisplay}\` ➔ **🔥 ${newRank}**`, inline: true },
       ...(ign ? [{ name: '🎮 Riot ID', value: `\`${ign}\``, inline: true }] : []),
     ],
     footer: { text: 'KTM ポータル | ランク自動同期' },

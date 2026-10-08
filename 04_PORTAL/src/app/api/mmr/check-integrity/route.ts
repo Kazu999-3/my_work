@@ -20,8 +20,9 @@ export async function GET(request: Request) {
     const playersMap = new Map();
     const playersByDiscord = new Map();
     for (const p of allPlayers) {
-      // Rebuildと同じく、初期値計算には凍結済みの initial_prefs を優先して使う
+      // Rebuildと同じく、初期値計算には凍結済みの initial_prefs / initial_highest_rank を優先して使う
       const prefs = p.initial_prefs || p.role_preferences || { primary: 'ALL', secondary: '-' };
+      const initialRank = p.metadata?.initial_highest_rank || p.highest_rank || 'UNRANKED';
       const memObj = {
         id: p.id, name: p.name, discord_id: p.discord_id || null, highest_rank: p.highest_rank, role_preferences: prefs,
         currentTop: p.mmr_top || 1200,
@@ -30,11 +31,11 @@ export async function GET(request: Request) {
         currentAdc: p.mmr_adc || 1200,
         currentSup: p.mmr_sup || 1200,
         currentTotal: p.mmr || 1200,
-        expectedTop: calculateInitialMmr(p.highest_rank, 'TOP', prefs),
-        expectedJg: calculateInitialMmr(p.highest_rank, 'JG', prefs),
-        expectedMid: calculateInitialMmr(p.highest_rank, 'MID', prefs),
-        expectedAdc: calculateInitialMmr(p.highest_rank, 'ADC', prefs),
-        expectedSup: calculateInitialMmr(p.highest_rank, 'SUP', prefs),
+        expectedTop: calculateInitialMmr(initialRank, 'TOP', prefs),
+        expectedJg: calculateInitialMmr(initialRank, 'JG', prefs),
+        expectedMid: calculateInitialMmr(initialRank, 'MID', prefs),
+        expectedAdc: calculateInitialMmr(initialRank, 'ADC', prefs),
+        expectedSup: calculateInitialMmr(initialRank, 'SUP', prefs),
         totalGames: 0, totalWins: 0, laneGames: { TOP: 0, JG: 0, MID: 0, ADC: 0, SUP: 0 }
       };
       playersMap.set(p.name, memObj);

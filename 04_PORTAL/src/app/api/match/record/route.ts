@@ -143,9 +143,10 @@ export async function POST(request: Request) {
 
       const roleMmrKey = `mmr_${input.role.toLowerCase()}` as keyof typeof dbP;
       const dbMmr = dbP[roleMmrKey];
+      const initialRank = dbP.metadata?.initial_highest_rank || dbP.highest_rank;
       const currentMmr = (dbMmr !== null && dbMmr !== undefined)
         ? Number(dbMmr)
-        : calculateInitialMmr(dbP.highest_rank, input.role, dbP.initial_prefs || dbP.role_preferences);
+        : calculateInitialMmr(initialRank, input.role, dbP.initial_prefs || dbP.role_preferences);
 
       // 対面相手のMMRを探す
       const opponent = participants.find((p: any) => p.role === input.role && p.team !== input.team);
@@ -154,9 +155,10 @@ export async function POST(request: Request) {
       if (oppDbP && opponent) {
         const oppMmrKey = `mmr_${opponent.role.toLowerCase()}` as keyof typeof oppDbP;
         const oppMmr = oppDbP[oppMmrKey];
+        const oppInitialRank = oppDbP.metadata?.initial_highest_rank || oppDbP.highest_rank;
         opponentMmr = (oppMmr !== null && oppMmr !== undefined)
           ? Number(oppMmr)
-          : calculateInitialMmr(oppDbP.highest_rank, opponent.role, oppDbP.role_preferences);
+          : calculateInitialMmr(oppInitialRank, opponent.role, oppDbP.initial_prefs || oppDbP.role_preferences);
       }
 
       // スタッツ計算用データ準備

@@ -54,6 +54,76 @@ export function getRankFromDiscordRoles(roles?: Set<string> | string[]): string 
 }
 
 /**
+ * メンバーのDiscordランクロール（プラチナ、ゴールド等）を最新ランクに合わせて自動付与・剥奪する
+ */
+export async function updateMemberDiscordRankRole(
+  discordId: string,
+  rankTier: string
+): Promise<{ success: boolean; changed: boolean; message?: string }> {
+  const token = process.env.DISCORD_BOT_TOKEN;
+  const guildId = process.env.DISCORD_GUILD_ID;
+  if (!token || !guildId || !discordId || !rankTier) {
+    return { success: false, changed: false, message: '必要なパラメータが不足しています' };
+  }
+
+  // rankTier の大文字正規化（例: "PLATINUM 4" -> "PLATINUM"）
+  const cleanRank = rankTier.split(' ')[0].toUpperCase().trim();
+  
+  // 対応するロールIDを検索
+  const targetEntry = Object.entries(DISCORD_RANK_ROLES).find(([, name]) => name === cleanRank);
+  const targetRoleId = targetEntry ? targetEntry[0] : null;
+
+  try {
+    const memberRes = await discordFetch(
+      `https://discord.com/api/v10/guilds/${guildId}/members/${discordId}`,
+      { headers: { Authorization: `Bot ${token}` } }
+    );
+    if (!memberRes.ok) {
+      return { success: false, changed: false, message: `メンバー取得失敗 (${memberRes.status})` };
+    }
+    const memberData: { roles: string[] } = await memberRes.json();
+    const currentRoles = new Set(memberData.roles || []);
+    let changed = false;
+
+    // 1. 目標ランクロールを付与
+    if (targetRoleId && !currentRoles.has(targetRoleId)) {
+      const addRes = await discordFetch(
+        `https://discord.com/api/v10/guilds/${guildId}/members/${discordId}/roles/${targetRoleId}`,
+        { method: 'PUT', headers: { Authorization: `Bot ${token}` } }
+      );
+      if (addRes.ok) changed = true;
+    }
+
+    // 2. 他のランクロールを剥奪
+    for (const [rId] of Object.entries(DISCORD_RANK_ROLES)) {
+      if (rId !== targetRoleId && currentRoles.has(rId)) {
+        const removeRes = await discordFetch(
+          `https://discord.com/api/v10/guilds/${guildId}/members/${discordId}/roles/${rId}`,
+          { method: 'DELETE', headers: { Authorization: `Bot ${token}` } }
+        );
+        if (removeRes.ok) changed = true;
+      }
+    }
+
+    // 3. プラチナ・エメラルド等（上位）に昇格した場合は、初中級交流ロールも自動剥奪
+    const isHigh = ['PLATINUM', 'EMERALD', 'DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER'].includes(cleanRank);
+    const loungeRoleId = '1557006452261126194';
+    if (isHigh && currentRoles.has(loungeRoleId)) {
+      const removeLounge = await discordFetch(
+        `https://discord.com/api/v10/guilds/${guildId}/members/${discordId}/roles/${loungeRoleId}`,
+        { method: 'DELETE', headers: { Authorization: `Bot ${token}` } }
+      );
+      if (removeLounge.ok) changed = true;
+    }
+
+    return { success: true, changed };
+  } catch (err: any) {
+    console.error(`[updateMemberDiscordRankRole] エラー (${discordId}):`, err);
+    return { success: false, changed: false, message: err?.message };
+  }
+}
+
+/**
  * ランクが「アイアン〜ゴールド（初中級帯）」または未登録かどうかを判定する。
  * currentRoles が渡されている場合、Discord上のランクロールも二重検証する。
  */

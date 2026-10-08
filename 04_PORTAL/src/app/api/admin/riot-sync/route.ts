@@ -2,15 +2,20 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { fetchPuuidByRiotId, fetchChampionMasteryByPuuid, fetchRiotIdByPuuid, fetchLeagueByPuuid } from '../../../../lib/riot';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
+import { verifyBotSecretStrict } from '../../../../lib/botAuth';
 import { higherRank, rankScore } from '../../../../lib/mmr';
 import { sendRankUpgradeNotification } from '../../../../lib/discordNotify';
+import { updateMemberDiscordRankRole } from '../../../../lib/discordRoleSync';
 
 export async function POST(request: Request) {
   try {
-  // ===== 管理者セッション確認 =====
+  // ===== 管理者セッション または Bot Secret 確認 =====
   const authResult = await verifyAdminSession(request);
   if (!authResult.ok) {
-    return NextResponse.json({ error: authResult.error }, { status: 401 });
+    const botAuth = verifyBotSecretStrict(request);
+    if (!botAuth.ok) {
+      return NextResponse.json({ error: authResult.error }, { status: 401 });
+    }
   }
   // =================================
     const apiKey = process.env.RIOT_API_KEY;
@@ -81,9 +86,12 @@ export async function POST(request: Request) {
           console.warn(`[Riot Sync] ランク取得に失敗しました (${currentIgn}): ${rankErr.message}`);
         }
 
-        // 🏆 最高ランクの更新（昇格）を検知してDiscordに速報通知！
+        // 🏆 最高ランクの更新（昇格）または初回ランク認定を検知してDiscordに速報通知！
         const oldRank = player.highest_rank || 'UNRANKED';
-        if (oldRank !== 'UNRANKED' && highestRank !== 'UNRANKED' && rankScore(highestRank) > rankScore(oldRank)) {
+        const isUpgraded = oldRank !== 'UNRANKED' && highestRank !== 'UNRANKED' && rankScore(highestRank) > rankScore(oldRank);
+        const isFirstRank = oldRank === 'UNRANKED' && highestRank !== 'UNRANKED';
+
+        if (isUpgraded || isFirstRank) {
           promotions.push({
             name: player.name,
             oldRank,
@@ -97,6 +105,13 @@ export async function POST(request: Request) {
             newRank: highestRank,
             ign: currentIgn,
           }).catch((notifyErr) => console.warn('[Riot Sync] Rank upgrade notify error:', notifyErr));
+        }
+
+        // 🎖️ Discordのランクロールを最新ランクに合わせて全自動付与・剥奪！
+        if (player.discord_id && highestRank !== 'UNRANKED') {
+          updateMemberDiscordRankRole(player.discord_id, highestRank).catch((rErr) =>
+            console.warn(`[Riot Sync] Role update error (${player.name}):`, rErr)
+          );
         }
 
         // (C) チャンピオンマスタリー (得意チャンピオンTOP3) を取得

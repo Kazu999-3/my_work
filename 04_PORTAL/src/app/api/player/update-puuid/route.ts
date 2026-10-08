@@ -80,7 +80,10 @@ export async function POST(req: Request) {
         const newRank = higherRank(oldRank, rankTier);
         updateData.highest_rank = newRank;
 
-        if (oldRank !== 'UNRANKED' && newRank !== 'UNRANKED' && rankScore(newRank) > rankScore(oldRank)) {
+        const isUpgraded = oldRank !== 'UNRANKED' && newRank !== 'UNRANKED' && rankScore(newRank) > rankScore(oldRank);
+        const isFirstRank = oldRank === 'UNRANKED' && newRank !== 'UNRANKED';
+
+        if (isUpgraded || isFirstRank) {
           const { sendRankUpgradeNotification } = await import('../../../../lib/discordNotify');
           sendRankUpgradeNotification({
             playerName: existing.name,
@@ -89,6 +92,13 @@ export async function POST(req: Request) {
             newRank,
             ign,
           }).catch((notifyErr) => console.warn('[update-puuid] Rank upgrade notify error:', notifyErr));
+        }
+
+        if (existing.discord_id && newRank !== 'UNRANKED') {
+          const { updateMemberDiscordRankRole } = await import('../../../../lib/discordRoleSync');
+          updateMemberDiscordRankRole(existing.discord_id, newRank).catch((rErr) =>
+            console.warn('[update-puuid] Role update error:', rErr)
+          );
         }
       }
       const { error } = await supabase

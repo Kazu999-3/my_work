@@ -380,6 +380,11 @@ export async function processSingleIntroMessage(msg: {
       is_active: true,
       highest_rank: rankTier,
       role_preferences: newPrefs,
+      initial_prefs: newPrefs,
+      metadata: {
+        joined_at: new Date().toISOString(),
+        initial_highest_rank: rankTier,
+      },
       mmr: initialMmr,
       mmr_top: initialMmr,
       mmr_jg: initialMmr,
