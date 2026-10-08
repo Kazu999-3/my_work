@@ -31,10 +31,41 @@ export const BEGINNER_LOUNGE_ROLE_DEFINITION = {
   description: '初参加・ライト・復帰勢かつアイアン〜ゴールド帯の限定部屋アクセス用ロール',
 };
 
+/** Discordサーバー上のランクロールIDと正規化ランク名（大文字）の対応表 */
+export const DISCORD_RANK_ROLES: Record<string, string> = {
+  '1545721318597599272': 'EMERALD',
+  '1485995862260711554': 'PLATINUM',
+  '1485997510563467355': 'GOLD',
+  '1485997637239963688': 'SILVER',
+  '1485997717791445012': 'BRONZE',
+  '1485998032259645490': 'IRON',
+};
+
 /**
- * ランクが「アイアン〜ゴールド（初中級帯）」または未登録かどうかを判定する
+ * メンバーの所持ロール一覧から最新のランクロールを検出する
  */
-export function isLowRank(rank?: string | null): boolean {
+export function getRankFromDiscordRoles(roles?: Set<string> | string[]): string | null {
+  if (!roles) return null;
+  const roleSet = roles instanceof Set ? roles : new Set(roles);
+  for (const [roleId, rankName] of Object.entries(DISCORD_RANK_ROLES)) {
+    if (roleSet.has(roleId)) return rankName;
+  }
+  return null;
+}
+
+/**
+ * ランクが「アイアン〜ゴールド（初中級帯）」または未登録かどうかを判定する。
+ * currentRoles が渡されている場合、Discord上のランクロールも二重検証する。
+ */
+export function isLowRank(rank?: string | null, currentRoles?: Set<string> | string[]): boolean {
+  // Discordの現行ロールにプラチナ・エメラルド等が付いていれば確実に初中級対象外
+  if (currentRoles) {
+    const roleRank = getRankFromDiscordRoles(currentRoles);
+    if (roleRank && ['PLATINUM', 'EMERALD', 'DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER'].includes(roleRank)) {
+      return false;
+    }
+  }
+
   if (!rank) return true; // 未登録・未入力は初級者・ビギナー扱いとして許可
   const lower = rank.toLowerCase();
   // プラチナ以上（上位帯）を検出
@@ -448,12 +479,28 @@ export async function syncMemberDiscordRole(
       }
     }
 
+    // ★ DiscordのランクロールとDBの highest_rank の自動双方向同期
+    let effectiveRank = highestRank;
+    const detectedDiscordRank = getRankFromDiscordRoles(currentRoles);
+    if (detectedDiscordRank && detectedDiscordRank !== highestRank && supabaseAdmin) {
+      try {
+        await supabaseAdmin
+          .from('ktm_players')
+          .update({ highest_rank: detectedDiscordRank })
+          .eq('discord_id', discordId);
+        effectiveRank = detectedDiscordRank;
+        console.log(`[discordRoleSync] DB highest_rank を自動更新: ${discordId} -> ${detectedDiscordRank}`);
+      } catch (dbErr: any) {
+        console.warn(`[discordRoleSync] DB highest_rank 自動更新失敗 (${discordId}):`, dbErr?.message);
+      }
+    }
+
     // 3. 🌱 初中級交流ロール（beginner_lounge_role）の同期（合致なら付与、非合致なら剥奪）
     const loungeRoleId = roleConfig.beginner_lounge_role;
     if (loungeRoleId) {
       const isEligibleForLounge =
         (targetTier === 'new' || targetTier === 'light' || targetTier === 'returning') &&
-        isLowRank(highestRank);
+        isLowRank(effectiveRank, currentRoles);
 
       if (isEligibleForLounge) {
         if (!currentRoles.has(loungeRoleId)) {
@@ -646,11 +693,28 @@ export async function syncPlayersDiscordRoles(options?: {
       continue;
     }
 
+    // Discord上のランクロールを検知し、DBと不一致ならDBを自動更新
+    const detectedDiscordRank = currentRoles ? getRankFromDiscordRoles(currentRoles) : null;
+    let effectiveRank = player.highest_rank;
+    if (detectedDiscordRank && detectedDiscordRank !== player.highest_rank && supabaseAdmin) {
+      try {
+        await supabaseAdmin
+          .from('ktm_players')
+          .update({ highest_rank: detectedDiscordRank })
+          .eq('discord_id', dId);
+        effectiveRank = detectedDiscordRank;
+        player.highest_rank = detectedDiscordRank;
+        console.log(`[discordRoleSync:bulk] DB highest_rank を自動更新: ${player.name} (${dId}) -> ${detectedDiscordRank}`);
+      } catch (err: any) {
+        console.warn(`[discordRoleSync:bulk] DB更新失敗 (${dId}):`, err?.message);
+      }
+    }
+
     // 初中級交流ロールの要件判定
     const loungeRoleId = config.beginner_lounge_role;
     const isEligibleForLounge =
       (tierInfo.tier === 'new' || tierInfo.tier === 'light' || tierInfo.tier === 'returning') &&
-      isLowRank(player.highest_rank);
+      isLowRank(effectiveRank, currentRoles);
 
     // 既に目標ロールが付いており、余分な管理ロールも付いておらず、初中級交流ロールの状態も一致していれば完全スキップ
     if (currentRoles && targetRoleId && currentRoles.has(targetRoleId)) {
