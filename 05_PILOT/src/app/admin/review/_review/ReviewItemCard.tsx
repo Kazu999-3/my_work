@@ -1,11 +1,11 @@
 'use client';
 
-import { XCircle, ExternalLink, Eye, Compass, BookOpen, Dna, Tv } from 'lucide-react';
+import { XCircle, ExternalLink, Eye, Compass, BookOpen, Dna, Tv, Scissors } from 'lucide-react';
 import { LANE_OPTIONS, type ItemEditState, type LaneKey, type ReviewItem } from './types';
 
-// 承認待ちの記事カード（統合予定バッジ・本文・インライン編集・却下/プレビュー）
+// 承認待ちの記事カード（統合予定バッジ・本文・インライン編集・却下/プレビュー・ナレッジ分解）
 // 2026-10-07: app/admin/review/page.tsx（1,691行）から分割。表示内容・動作は分割前と同じ。
-export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel, busy, onToggleSelect, onToggleExpand, setChannel, onEdit, onPreview, onReject }: {
+export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel, busy, onToggleSelect, onToggleExpand, setChannel, onEdit, onPreview, onReject, onDecompose }: {
   item: ReviewItem;
   edit: ItemEditState;
   isOpen: boolean;
@@ -18,6 +18,7 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
   onEdit: (patch: Partial<ItemEditState>) => void;
   onPreview: () => void;
   onReject: () => void;
+  onDecompose?: () => void;
 }) {
   return (
               <div
@@ -42,6 +43,11 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
                       }`}>
                         {item.is_atomic ? '分割知見' : '動画解析'}
                       </span>
+                      {Array.isArray(item.tags) && item.tags.includes('__DECOMPOSED__') && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-indigo-300 border-indigo-800/60 bg-indigo-950/40 flex items-center gap-1">
+                          <Scissors className="w-2.5 h-2.5" /> 分解済み
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
@@ -112,12 +118,25 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
                     )}
                   </div>
 
-                  <button
-                    onClick={() => onPreview()}
-                    className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-[11px] font-bold flex items-center gap-1 border border-amber-500/30 transition cursor-pointer"
-                  >
-                    <Eye className="w-3.5 h-3.5" /> 統合プレビュー＆修正
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {onDecompose && !item.is_atomic && (
+                      <button
+                        type="button"
+                        onClick={() => onDecompose()}
+                        disabled={busy}
+                        className="px-2.5 py-1 rounded-lg bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 text-[11px] font-bold flex items-center gap-1 border border-teal-500/30 transition cursor-pointer"
+                        title="記事内の複数チャンピオン・マクロ知見を個別の分割知見へ分解します"
+                      >
+                        <Scissors className="w-3.5 h-3.5" /> 複数チャンプにナレッジ分解
+                      </button>
+                    )}
+                    <button
+                      onClick={() => onPreview()}
+                      className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-[11px] font-bold flex items-center gap-1 border border-amber-500/30 transition cursor-pointer"
+                    >
+                      <Eye className="w-3.5 h-3.5" /> 統合プレビュー＆修正
+                    </button>
+                  </div>
                 </div>
 
                 {/* 本文プレビュー */}
@@ -184,6 +203,17 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
 
                   {/* アクションボタン */}
                   <div className="flex items-center gap-2 shrink-0">
+                    {onDecompose && !item.is_atomic && (
+                      <button
+                        type="button"
+                        onClick={() => onDecompose()}
+                        disabled={busy}
+                        className="px-3 py-1.5 rounded-lg bg-teal-950/40 border border-teal-700/60 text-teal-300 text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50 hover:bg-teal-900/50 transition shadow-sm"
+                        title="記事内の複数チャンピオン・マクロ知見を個別の分割知見へ分解します"
+                      >
+                        <Scissors className="w-3.5 h-3.5" /> ✂️ ナレッジ分解
+                      </button>
+                    )}
                     <button
                       onClick={() => onReject()}
                       disabled={busy}

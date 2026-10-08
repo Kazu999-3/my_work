@@ -5,6 +5,7 @@ import { integrateArticles, formatChampionArticleSection } from '@/lib/knowledge
 import { detectArticleLane, LANE_CONFIG, LaneKey } from '@/lib/laneDetector';
 import { formatLaneGuideSection, mergeArticleToLaneGuide, appendSectionToLaneGuide } from '@/lib/laneGuideIntegrate';
 import { previewChampionFactsMerge, executeChampionFactsMerge, FactFieldKey } from '@/lib/championFactsMerge';
+import { decomposeArticle, saveDecomposedInsights, DecomposedInsight } from '@/lib/knowledgeDecompose';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -247,6 +248,58 @@ export async function POST(req: NextRequest) {
     const db = supabase;
     const body = await req.json();
     const { action } = body;
+
+    // ──────────────────────────────────────────
+    // 0. 複数チャンピオンへのナレッジ分解アクション
+    // ──────────────────────────────────────────
+    if (action === 'decompose_preview') {
+      const { id, title, content, source_url } = body;
+      let targetTitle = title;
+      let targetContent = content;
+      let targetUrl = source_url;
+
+      if (id && (!targetContent || !targetTitle)) {
+        const { data: row, error: fetchErr } = await db
+          .from('personal_knowledge')
+          .select('title, content, raw_content, source_url')
+          .eq('id', id)
+          .single();
+        if (fetchErr || !row) {
+          return NextResponse.json({ error: '記事の取得に失敗しました' }, { status: 404 });
+        }
+        targetTitle = row.title;
+        targetContent = row.content || row.raw_content || '';
+        targetUrl = row.source_url;
+      }
+
+      const insights = await decomposeArticle({
+        id,
+        title: targetTitle,
+        content: targetContent,
+        source_url: targetUrl,
+      });
+
+      return NextResponse.json({
+        success: true,
+        parentTitle: targetTitle,
+        insights,
+      });
+    }
+
+    if (action === 'decompose_save') {
+      const { parentId, insights, source_url } = body;
+      if (!parentId || !Array.isArray(insights) || insights.length === 0) {
+        return NextResponse.json({ error: 'parentId と insights（配列）が必要です' }, { status: 400 });
+      }
+
+      const saveRes = await saveDecomposedInsights(db, Number(parentId), insights as DecomposedInsight[], source_url);
+      return NextResponse.json({
+        success: true,
+        message: `${saveRes.count}件の分割知見を登録しました（未承認リストに反映されます）`,
+        count: saveRes.count,
+        savedIds: saveRes.savedIds,
+      });
+    }
 
     // ──────────────────────────────────────────
     // 1. プレビュー生成アクション

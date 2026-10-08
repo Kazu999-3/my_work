@@ -6,6 +6,8 @@ import { CheckCircle2, XCircle, AlertTriangle, ClipboardCheck, Compass } from 'l
 import ReviewControlBar from './_review/ReviewControlBar';
 import ReviewItemCard from './_review/ReviewItemCard';
 import PreviewModal from './_review/PreviewModal';
+import DecomposeModal from './_review/DecomposeModal';
+import type { DecomposedInsight } from '@/lib/knowledgeDecompose';
 import { buildFactOverrides, initialSelections, routedLinesBlock, type RoutedLaneLine } from './_review/factRouting';
 import {
   defaultEdit,
@@ -43,6 +45,12 @@ export default function ReviewPage() {
   const [lineDestinations, setLineDestinations] = useState<Record<string, LineDestination>>({});
   const [editedLaneSectionText, setEditedLaneSectionText] = useState<string>('');
   const [modalError, setModalError] = useState<string | null>(null);
+
+  // ✂️ ナレッジ分解モーダル用ステート
+  const [decomposeModalItem, setDecomposeModalItem] = useState<ReviewItem | null>(null);
+  const [decomposeInsights, setDecomposeInsights] = useState<DecomposedInsight[]>([]);
+  const [decomposeLoading, setDecomposeLoading] = useState(false);
+  const [decomposeError, setDecomposeError] = useState<string | null>(null);
 
   const showMessage = (text: string, t: 'success' | 'error') => {
     setMessage({ text, type: t });
@@ -247,6 +255,74 @@ export default function ReviewPage() {
     }
   };
 
+  // ✂️ ナレッジ分解プレビューの読み込み
+  const openDecompose = async (item: ReviewItem) => {
+    setDecomposeModalItem(item);
+    setDecomposeLoading(true);
+    setDecomposeError(null);
+    setDecomposeInsights([]);
+    try {
+      const res = await fetch('/api/knowledge/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'decompose_preview',
+          id: item.id,
+          title: item.title,
+          content: item.content,
+          source_url: item.source_url,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        if (res.status === 401) {
+          window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname);
+          return;
+        }
+        throw new Error(json.error || 'ナレッジ分解に失敗しました');
+      }
+      setDecomposeInsights(json.insights || []);
+    } catch (e: any) {
+      setDecomposeError(e.message || 'ナレッジ分解中にエラーが発生しました');
+    } finally {
+      setDecomposeLoading(false);
+    }
+  };
+
+  // ✂️ 分割知見の保存実行
+  const saveDecomposed = async (selectedInsights: DecomposedInsight[]) => {
+    if (!decomposeModalItem || selectedInsights.length === 0) return;
+    setBusy(true);
+    try {
+      const res = await fetch('/api/knowledge/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'decompose_save',
+          parentId: decomposeModalItem.id,
+          insights: selectedInsights,
+          source_url: decomposeModalItem.source_url,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        if (res.status === 401) {
+          window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname);
+          return;
+        }
+        throw new Error(json.error || '分割知見の保存に失敗しました');
+      }
+      showMessage(json.message || `${selectedInsights.length}件の分割知見を登録しました`, 'success');
+      setDecomposeModalItem(null);
+      // 未承認一覧を再読み込み
+      load();
+    } catch (e: any) {
+      setDecomposeError(e.message || '保存中にエラーが発生しました');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const updateEditField = (id: number, patch: Partial<ItemEditState>) => {
     setEdits((prev) => ({
       ...prev,
@@ -354,6 +430,7 @@ export default function ReviewPage() {
               onEdit={(patch) => updateEditField(item.id, patch)}
               onPreview={() => openPreview(item)}
               onReject={() => rejectOne(item)}
+              onDecompose={() => openDecompose(item)}
             />
           ))}
         </div>
@@ -378,6 +455,22 @@ export default function ReviewPage() {
             onEdit={(patch) => updateEditField(previewModalItem.id, patch)}
             onRecalculate={() => openPreview(previewModalItem)}
             onApprove={() => approveOne(previewModalItem)}
+          />
+        )}
+
+        {/* ✂️ 複数チャンピオンへのナレッジ分解モーダル */}
+        {decomposeModalItem && (
+          <DecomposeModal
+            parentTitle={decomposeModalItem.title}
+            parentId={decomposeModalItem.id}
+            sourceUrl={decomposeModalItem.source_url}
+            loading={decomposeLoading}
+            insights={decomposeInsights}
+            error={decomposeError}
+            busy={busy}
+            onClose={() => setDecomposeModalItem(null)}
+            onSave={(selectedInsights) => saveDecomposed(selectedInsights)}
+            onRetry={() => openDecompose(decomposeModalItem)}
           />
         )}
       </div>
