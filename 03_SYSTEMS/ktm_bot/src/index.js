@@ -13,7 +13,12 @@ export default {
     const DISCORD_TOKEN = env.DISCORD_TOKEN;
     
     // チャンネル上の既存募集メッセージの本文を最新化するワンショットエンドポイント
+    // 2026-10-08: 認証が無く誰でも呼べたため、他の内部用エンドポイントと同じ x-gas-secret を必須にした
     if (url.pathname === '/sync-periodic-content') {
+      const expectedSecret = env.INTERNAL_GAS_SECRET;
+      if (!expectedSecret || request.headers.get('x-gas-secret') !== expectedSecret) {
+        return new Response('Unauthorized', { status: 401 });
+      }
       try {
         const results = await syncPeriodicCardContents({ ...env, DISCORD_TOKEN });
         return new Response(JSON.stringify({ ok: true, results }, null, 2), {

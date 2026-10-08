@@ -38,4 +38,5 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          PORTAL_BOT_SECRET: ${{ secrets.PORTAL_BOT_SECRET }}
         run: python scripts/production_health_report.py ${{ inputs.dry_run && '--dry-run' || '' }}

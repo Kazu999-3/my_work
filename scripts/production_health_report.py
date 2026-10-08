@@ -373,8 +373,12 @@ def send_fail_to_error_log(report: Report):
         "message": "毎朝の健康診断で異常を検知\n" + report.markdown().replace("**", "")[:1500],
         "path": "health-report",
     }).encode()
+    secret = os.environ.get("PORTAL_BOT_SECRET", "").strip()
+    if not secret:
+        print("PORTAL_BOT_SECRET 未設定のため #エラーログ へは送りません")
+        return
     req = urllib.request.Request(f"{portal}/api/logs/error", data=body, method="POST",
-                                 headers={"Content-Type": "application/json"})
+                                 headers={"Content-Type": "application/json", "x-bot-secret": secret})
     try:
         urllib.request.urlopen(req, timeout=20)
     except Exception as e:

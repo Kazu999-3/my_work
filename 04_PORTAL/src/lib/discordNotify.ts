@@ -286,6 +286,8 @@ export async function notifyPortalError(params: PortalErrorLogParams): Promise<b
   const payload = {
     content: `⚠️ **【${appLabel}】** \`${path}\` で失敗が発生しました`,
     embeds: [embed],
+    // エラー文には外部から送られた文字列が入るため、@everyone 等のメンションを一切鳴らさない
+    allowed_mentions: { parse: [] },
   };
 
   const botToken = process.env.DISCORD_BOT_TOKEN;

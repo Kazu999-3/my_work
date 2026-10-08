@@ -10,7 +10,8 @@ export const onRequestError: Instrumentation.onRequestError = async (err, reques
     const e = err instanceof Error ? err : new Error(String(err));
     await fetch(`${PORTAL_ORIGIN}/api/logs/error`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      // 04側は Origin のある送信を 04/05 のものだけ受け付ける（鍵の無いサーバー間送信のため名乗る）
+      headers: { 'Content-Type': 'application/json', Origin: 'https://ktm-pilot.vercel.app' },
       body: JSON.stringify({
         app: '05',
         source: context.routeType === 'action' ? 'SERVER_ACTION' : 'API',
