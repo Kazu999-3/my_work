@@ -603,21 +603,24 @@ export async function processPendingIntros(options: {
   return { processed, skipped, errors, details };
 }
 
+
+// ─── 退出メンバーの個別案内チャンネルの掃除（2026-10-08 追加） ───
+// Botは応答専用(Cloudflare Worker)で退出イベントを受け取れず、チャンネルIDもDBに残していないため、
+// 「🤝 個別案内」カテゴリ内のチャンネルの閲覧権限から持ち主を割り出す。
+// 放置するとカテゴリ上限(10×48)とサーバー全体の上限(500)に近づき、新メンバーの部屋が作れなくなる。
+// 大会管理の「Discord & Riot同期」で、プレビュー → 実行の流れに乗せている。
+
+export interface OnboardingChannel {
+  channelId: string;
+  name: string;
+  userId: string;
+}
+
 /**
- * サーバーを抜けたメンバーの個別案内チャンネルを削除する（2026-10-08 追加）。
- * Botは応答専用(Cloudflare Worker)で退出イベントを受け取れず、チャンネルIDもDBに残していないため、
- * 「🤝 個別案内」カテゴリ内のチャンネルの閲覧権限から持ち主を割り出し、サーバーにいるかを都度確認する。
- * 放置するとカテゴリ上限(10×48)とサーバー全体の上限(500)に近づき、新メンバーの部屋が作れなくなる。
- *
- * 誤削除の防止:
- * - 対象は個別案内カテゴリ直下のテキストチャンネルで、管理者以外のメンバー権限がちょうど1人分のものだけ
- * - Discordが「Unknown Member (10007)」と返した時だけ削除する。権限不足・障害などそれ以外の応答は何もしない
+ * 個別案内カテゴリ直下のテキストチャンネルと、その持ち主を返す。
+ * 管理者以外のメンバー権限がちょうど1人分のものだけを対象にする（持ち主が特定できないものは触らない）。
  */
-export async function cleanupDepartedMemberChannels(options: { dryRun?: boolean } = {}): Promise<{
-  checked: number;
-  deleted: { channelId: string; name: string; userId: string }[];
-  skipped: number;
-}> {
+export async function listOnboardingChannels(): Promise<OnboardingChannel[]> {
   const headers = getBotHeaders();
   const res = await discordFetch(`https://discord.com/api/v10/guilds/${GUILD_ID}/channels`, { headers });
   if (!res.ok) throw new Error(`Discord channel list failed: ${res.status}`);
@@ -629,39 +632,54 @@ export async function cleanupDepartedMemberChannels(options: { dryRun?: boolean 
       .filter((c: any) => c.type === 4 && typeof c.name === 'string' && c.name.startsWith(ONBOARDING_CATEGORY_NAME))
       .map((c: any) => c.id)
   );
-  const targets = channels.filter((c: any) => c.type === 0 && categoryIds.has(c.parent_id));
 
-  const deleted: { channelId: string; name: string; userId: string }[] = [];
-  let skipped = 0;
-
-  for (const ch of targets) {
+  const result: OnboardingChannel[] = [];
+  for (const ch of channels) {
+    if (ch.type !== 0 || !categoryIds.has(ch.parent_id)) continue;
     const memberOverwrites = (ch.permission_overwrites || []).filter(
       (o: any) => o.type === 1 && o.id !== SERVER_ADMIN_USER_ID
     );
-    if (memberOverwrites.length !== 1) {
+    if (memberOverwrites.length !== 1) continue;
+    result.push({ channelId: ch.id, name: ch.name, userId: memberOverwrites[0].id });
+  }
+  return result;
+}
+
+/**
+ * 指定された個別案内チャンネルのうち、持ち主がサーバーにいないものを削除する。
+ * 画面のプレビューから実行までの間に戻ってきた人を消さないよう、1件ずつ在籍を確認し直す。
+ * Discordが「Unknown Member (10007)」と返した時だけ削除し、権限不足・障害などそれ以外は何もしない。
+ */
+export async function deleteDepartedMemberChannels(channelIds: string[]): Promise<{
+  deleted: OnboardingChannel[];
+  skipped: number;
+}> {
+  const headers = getBotHeaders();
+  const wanted = new Set(channelIds);
+  const targets = (await listOnboardingChannels()).filter((c) => wanted.has(c.channelId));
+
+  const deleted: OnboardingChannel[] = [];
+  let skipped = channelIds.length - targets.length;
+
+  for (const ch of targets) {
+    const memberRes = await discordFetch(`https://discord.com/api/v10/guilds/${GUILD_ID}/members/${ch.userId}`, { headers });
+    if (memberRes.ok) {
       skipped++;
       continue;
     }
-    const userId = memberOverwrites[0].id;
-
-    const memberRes = await discordFetch(`https://discord.com/api/v10/guilds/${GUILD_ID}/members/${userId}`, { headers });
-    if (memberRes.ok) continue;
     const body = await memberRes.json().catch(() => null);
     if (memberRes.status !== 404 || body?.code !== 10007) {
       skipped++;
       continue;
     }
-
-    if (!options.dryRun) {
-      const delRes = await discordFetch(`https://discord.com/api/v10/channels/${ch.id}`, { method: 'DELETE', headers });
-      if (!delRes.ok) {
-        console.error('[cleanupDepartedMemberChannels] delete failed:', ch.id, delRes.status);
-        skipped++;
-        continue;
-      }
+    const delRes = await discordFetch(`https://discord.com/api/v10/channels/${ch.channelId}`, { method: 'DELETE', headers });
+    if (!delRes.ok) {
+      console.error('[deleteDepartedMemberChannels] delete failed:', ch.channelId, delRes.status);
+      skipped++;
+      continue;
     }
-    deleted.push({ channelId: ch.id, name: ch.name, userId });
+    deleted.push(ch);
   }
 
-  return { checked: targets.length, deleted, skipped };
+  return { deleted, skipped };
 }

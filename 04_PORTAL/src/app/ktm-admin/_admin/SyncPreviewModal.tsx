@@ -176,6 +176,22 @@ export default function SyncPreviewModal({ syncData, setSyncData, syncingDiscord
                       </div>
                     )}
 
+                    {syncData.channelsToDelete && syncData.channelsToDelete.length > 0 && (
+                      <div className="bg-danger-100 border border-danger-edge-soft rounded-lg p-4">
+                        <h3 className="text-danger-700 font-bold mb-1 flex items-center gap-2">
+                          <AlertCircle className="h-4 w-4" /> 削除される個別案内チャンネル ({syncData.channelsToDelete.length}件)
+                        </h3>
+                        <p className="text-[11px] text-danger-700/80 mb-3">サーバーを抜けた人の部屋です。実行時に1件ずつ在籍を確認し直し、戻ってきた人の部屋は残します。</p>
+                        <div className="flex flex-wrap gap-2">
+                          {syncData.channelsToDelete.map((c: any) => (
+                            <span key={c.channelId} className="bg-danger-100 text-danger-700 px-2 py-1 rounded text-xs border border-danger-edge-soft line-through break-all">
+                              {c.name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {syncData.toUpdateName && syncData.toUpdateName.length > 0 && (
                       <div className="bg-primary-100 border border-primary-edge-soft rounded-lg p-4">
                         <h3 className="text-primary-700 font-bold mb-3 flex items-center gap-2">
@@ -193,7 +209,7 @@ export default function SyncPreviewModal({ syncData, setSyncData, syncingDiscord
                       </div>
                     )}
 
-                    {syncData.toAdd.length === 0 && syncData.toDeactivate.length === 0 && (!syncData.toUpdateName || syncData.toUpdateName.length === 0) && (
+                    {syncData.toAdd.length === 0 && syncData.toDeactivate.length === 0 && (!syncData.toUpdateName || syncData.toUpdateName.length === 0) && (!syncData.channelsToDelete || syncData.channelsToDelete.length === 0) && (
                       <div className="bg-primary-100 border border-primary-edge-soft rounded-lg p-6 text-center text-primary-700">
                         メンバーの増減や名前の変更はありませんが、参加日時などの隠しデータ（メタデータ）を最新に更新するため「同期を実行する」を押してください。
                       </div>

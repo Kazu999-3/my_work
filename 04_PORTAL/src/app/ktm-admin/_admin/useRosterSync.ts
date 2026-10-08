@@ -165,11 +165,18 @@ export function useRosterSync({ players, fetchPlayers, checkIntegrity, setMessag
       const res = await fetchWithTimeout('/api/discord/members', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ add: processedAdd, deactivate: syncData.toDeactivate, update_metadata: syncData.activeSync }),
+        body: JSON.stringify({
+          add: processedAdd, deactivate: syncData.toDeactivate, update_metadata: syncData.activeSync,
+          delete_channels: (syncData.channelsToDelete || []).map((c: any) => c.channelId),
+        }),
         timeout: 25000 // POST は少し長めに25秒タイムアウト
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '同期処理に失敗しました');
+      const requestedChannels = (syncData.channelsToDelete || []).length;
+      const channelNote = requestedChannels > 0
+        ? `\n退出者の個別案内チャンネル: ${data.channelsDeleted ?? 0}件を削除（予定${requestedChannels}件。戻ってきた人・確認できなかったものは残しています）`
+        : '';
 
       // 3. 複合機能：Riot同期も自動で連続実行（新規追加・Riot情報未取得プレイヤーのみに絞り、タイムアウトを防止）
       const addedDiscordIds = syncData.toAdd.map((p: any) => p.discord_id).filter(Boolean);
@@ -193,13 +200,13 @@ export function useRosterSync({ players, fetchPlayers, checkIntegrity, setMessag
         const errorDetails = riotErrors.slice(0, 10).join('\n') + (riotErrors.length > 10 ? `\n...他 ${riotErrors.length - 10} 件` : '');
         setMessage({
           type: "success",
-          text: `✅ Discord & Riot情報の同期が完了しました（※Riot APIで一部エラーあり: ${riotErrors.length}件）。\n新規プレイヤーの初期MMR計算値を反映させるため、名簿上部の「🔄 Rebuild」を実行してください。\n\n【エラー詳細（サモナー名不一致など）】\n${errorDetails}`
+          text: `✅ Discord & Riot情報の同期が完了しました（※Riot APIで一部エラーあり: ${riotErrors.length}件）。${channelNote}\n新規プレイヤーの初期MMR計算値を反映させるため、名簿上部の「🔄 Rebuild」を実行してください。\n\n【エラー詳細（サモナー名不一致など）】\n${errorDetails}`
         });
         parseRiotErrors(riotErrors);
       } else {
         setMessage({
           type: "success",
-          text: `✅ Discord & Riot情報の同期がすべて正常に完了しました！\n新規プレイヤーの初期MMR計算値を反映させるため、名簿上部の「🔄 Rebuild」を実行してください。`
+          text: `✅ Discord & Riot情報の同期がすべて正常に完了しました！${channelNote}\n新規プレイヤーの初期MMR計算値を反映させるため、名簿上部の「🔄 Rebuild」を実行してください。`
         });
         setRiotSyncErrors([]);
       }

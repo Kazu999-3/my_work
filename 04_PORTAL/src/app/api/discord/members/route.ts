@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { resolveDisplayName } from '../../../../lib/discordName';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
+import { listOnboardingChannels, deleteDepartedMemberChannels, type OnboardingChannel } from '../../../../lib/onboardingProcessor';
 
 
 
@@ -119,11 +120,24 @@ export async function GET(request: Request) {
       }
     });
 
+    // 4. サーバーを抜けた人の個別案内チャンネル（プレビュー用。実際の削除は POST で1件ずつ在籍を確認し直してから行う）
+    // メンバー一覧は limit=1000 で取っているため、上限に達していたら一覧が欠けている可能性があり判定しない
+    let channelsToDelete: OnboardingChannel[] = [];
+    if (discordMembers.length < 1000) {
+      try {
+        const memberIds = new Set(discordMembers.map((m: any) => m.user.id));
+        channelsToDelete = (await listOnboardingChannels()).filter((c) => !memberIds.has(c.userId));
+      } catch (e: any) {
+        console.warn('[Discord Sync GET] onboarding channel scan failed:', e.message);
+      }
+    }
+
     return NextResponse.json({
       toAdd,
       toDeactivate,
       activeSync,
       toUpdateName,
+      channelsToDelete,
       totalDiscordMembers: humanMembers.length,
     });
   } catch (error: any) {
@@ -141,7 +155,7 @@ export async function POST(request: Request) {
   }
   // =================================
   try {
-    const { add, deactivate, update_metadata } = await request.json();
+    const { add, deactivate, update_metadata, delete_channels } = await request.json();
     
     // 追加・削除処理を FastAPI (Sovereign Core API) へ委譲 (Proxy)
     if ((add && add.length > 0) || (deactivate && deactivate.length > 0)) {
@@ -286,7 +300,18 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({ success: true, message: `Added ${add?.length || 0}, Deactivated ${deactivate?.length || 0}, Updated ${update_metadata?.length || 0}` });
+    // 退出済みメンバーの個別案内チャンネル削除（名簿の同期が終わってから。失敗しても名簿同期は成功扱い）
+    let channelsDeleted = 0;
+    if (Array.isArray(delete_channels) && delete_channels.length > 0) {
+      try {
+        const result = await deleteDepartedMemberChannels(delete_channels.map(String));
+        channelsDeleted = result.deleted.length;
+      } catch (e: any) {
+        console.error('[Discord Sync POST] onboarding channel cleanup failed:', e.message);
+      }
+    }
+
+    return NextResponse.json({ success: true, channelsDeleted, message: `Added ${add?.length || 0}, Deactivated ${deactivate?.length || 0}, Updated ${update_metadata?.length || 0}, ChannelsDeleted ${channelsDeleted}` });
   } catch (error: any) {
     console.error('Discord Sync POST Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
