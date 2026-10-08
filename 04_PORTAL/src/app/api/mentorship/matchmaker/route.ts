@@ -99,6 +99,7 @@ export async function POST(req: Request) {
           let notes: any = {};
           try { notes = JSON.parse(m.notes || '{}'); } catch (_) {}
           notes.pupilStatus = 'DECLINED';
+          notes.dismissedAt = new Date().toISOString();
           await supabase
             .from('mentorship_matches')
             .update({ status: 'DISMISSED', notes: JSON.stringify(notes) })
@@ -129,6 +130,7 @@ export async function POST(req: Request) {
         if (decision === 'DECLINE') {
           if (isMentor) notes.mentorStatus = 'DECLINED';
           if (isPupil) notes.pupilStatus = 'DECLINED';
+          notes.dismissedAt = new Date().toISOString();
           await supabase
             .from('mentorship_matches')
             .update({ status: 'DISMISSED', notes: JSON.stringify(notes) })
@@ -563,6 +565,7 @@ export async function POST(req: Request) {
       if (decision === 'DECLINE') {
         if (isMentor) notes.mentorStatus = 'DECLINED';
         if (isPupil) notes.pupilStatus = 'DECLINED';
+        notes.dismissedAt = new Date().toISOString();
 
         await supabase
           .from('mentorship_matches')

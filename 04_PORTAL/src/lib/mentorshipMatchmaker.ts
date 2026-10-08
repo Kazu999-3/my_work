@@ -318,6 +318,8 @@ export const TIER_ROLE_IDS: Record<string, { tier: ExperienceTier; label: string
   '1556958875973066882': { tier: 'returning', label: '⏳ 復帰勢' },
 };
 
+export const DECLINE_COOLDOWN_DAYS = 21; // 見送り後の再提案クールダウン日数（3週間）
+
 /**
  * 🔒 シークレットお見合い便の候補ペアを全自動生成（未登録メンバーを含む）
  */
@@ -458,15 +460,52 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
       };
     };
 
-    // 5. 既存のお見合いオファー状態を取得
+    // 5. 既存のお見合いオファー状態を取得（見送りクールダウン判定用）
     const { data: existingMatches } = await supabase
       .from('mentorship_matches')
-      .select('mentor_discord_id, pupil_discord_id, status, notes');
+      .select('mentor_discord_id, pupil_discord_id, status, notes, started_at');
 
-    const offerMap = new Map<string, string>();
+    interface ExistingOfferInfo {
+      status: string;
+      isCooldown: boolean;
+      daysRemaining?: number;
+    }
+    const offerMap = new Map<string, ExistingOfferInfo>();
+
     (existingMatches || []).forEach((m: any) => {
       const key = `${m.mentor_discord_id}_${m.pupil_discord_id}`;
-      offerMap.set(key, m.status);
+      let isCooldown = false;
+      let daysRemaining = 0;
+
+      if (m.status === 'DISMISSED') {
+        let dismissedAtTime: number | null = null;
+        try {
+          const notes = JSON.parse(m.notes || '{}');
+          if (notes.dismissedAt) {
+            dismissedAtTime = new Date(notes.dismissedAt).getTime();
+          }
+        } catch (_) {}
+        if (!dismissedAtTime && m.started_at) {
+          dismissedAtTime = new Date(m.started_at).getTime();
+        }
+
+        if (dismissedAtTime) {
+          const elapsedDays = Math.floor((now - dismissedAtTime) / (24 * 60 * 60 * 1000));
+          if (elapsedDays < DECLINE_COOLDOWN_DAYS) {
+            isCooldown = true;
+            daysRemaining = Math.max(DECLINE_COOLDOWN_DAYS - elapsedDays, 1);
+          }
+        } else {
+          isCooldown = true;
+          daysRemaining = DECLINE_COOLDOWN_DAYS;
+        }
+      }
+
+      offerMap.set(key, {
+        status: m.status,
+        isCooldown,
+        daysRemaining,
+      });
     });
 
     // 6. 後輩候補リストを統合（登録済み + 名簿初中級者）
@@ -638,8 +677,16 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
         const finalScore = Math.min(Math.max(score, 0), 98);
         if (finalScore >= 60) {
           const pairKey = `${mentor.discord_id}_${pupil.discordId}`;
-          const currentOfferStatus = offerMap.get(pairKey) || 'NONE';
+          const offerInfo = offerMap.get(pairKey);
 
+          // 【A. クールダウン制 ＆ C. 先輩交代優先】
+          // 見送りから21日以内の先輩は候補から除外（クールダウン中）！
+          // これにより、この先輩は除外され、別の先輩（相性2番手・3番手）が自動的に繰り上がって候補に選ばれる。
+          if (offerInfo?.isCooldown) {
+            continue;
+          }
+
+          const currentOfferStatus = offerInfo?.status || 'NONE';
           const mentorTierResult = resolveTier(mentor.discord_id, mentor.player_name);
 
           // 相性理由にプレイヤー属性の補足を自然に追加
