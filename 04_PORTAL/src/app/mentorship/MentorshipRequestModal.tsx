@@ -69,14 +69,14 @@ export function MentorshipRequestModal({
             <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-xl shadow-2xs ${
               isTargetMentor ? 'bg-primary-100 border border-primary-edge' : 'bg-success-100 border border-success-edge'
             }`}>
-              {isTargetMentor ? '🙋' : '🤝'}
+              {isTargetMentor ? '💬' : '🤝'}
             </div>
             <div>
               <h2 className="text-base font-black text-foreground">
-                {isTargetMentor ? '弟子入りを申請する' : '師匠オファーを送る'}
+                {isTargetMentor ? '先輩に相談してみる' : '相談に乗るよ！の声をかける'}
               </h2>
               <p className="text-xs text-muted-strong font-bold">
-                相手が承認すると正式に師弟ペアが結成されます (+300🪙)
+                相手が承認するとDiscordに専用の相談スレッドが作られます (+300🪙)
               </p>
             </div>
           </div>
@@ -93,7 +93,7 @@ export function MentorshipRequestModal({
           <div className="p-3.5 bg-background rounded-2xl border border-border space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black text-foreground-soft flex items-center gap-1.5">
-                <span>👤 申請相手:</span>
+                <span>👤 お相手:</span>
                 <span className="text-sm font-black text-foreground">{targetProfile.player_name}</span>
               </span>
               <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-surface-hover/80 text-foreground-soft">
@@ -109,81 +109,24 @@ export function MentorshipRequestModal({
             )}
           </div>
 
-          {/* 期間設定 (Duration) */}
-          <div className="space-y-2.5">
-            <label className="block text-xs font-black text-foreground-subtle flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
-                <Clock size={14} className="text-primary-600" />
-                <span>希望するペア活動・指導の期間</span>
+          {/* 相談期間の目安 (2週間) */}
+          <div className="p-3 bg-secondary-50/70 border border-secondary-edge-soft rounded-2xl space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-black text-secondary-900">
+              <Clock size={14} className="text-secondary-600" />
+              <span>相談期間の目安: 約2週間</span>
+              <span className="text-[10px] text-secondary-700 bg-surface px-1.5 py-0.2 rounded border border-secondary-edge font-bold ml-auto">
+                自然消滅防止Botつき
               </span>
-              <span className="text-[10px] text-primary-700 font-bold bg-primary-50 px-2 py-0.5 rounded-md border border-primary-edge-soft">
-                1試合だけでも大歓迎！
-              </span>
-            </label>
-
-            {/* 気軽な1回・お試しコース */}
-            <div className="space-y-1">
-              <span className="text-[10px] font-black text-muted-strong uppercase tracking-wider">✨ 気軽な1回・お試しコース</span>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
-                {Object.entries(MENTORSHIP_DURATIONS)
-                  .filter(([_, item]) => item.isLight)
-                  .map(([key, item]) => {
-                    const isSelected = durationKey === key;
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => setDurationKey(key)}
-                        className={`p-2.5 rounded-xl text-left border text-xs font-bold transition flex flex-col justify-between gap-1 cursor-pointer ${
-                          isSelected
-                            ? 'bg-gradient-to-br from-secondary-50 to-primary-50 border-secondary-edge text-foreground shadow-2xs ring-2 ring-secondary-300'
-                            : 'bg-background border-border text-foreground-subtle hover:bg-secondary-50/50 hover:border-secondary-edge'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-extrabold">{item.shortLabel}</span>
-                          {isSelected && <span className="text-secondary-600 text-xs font-black">✓</span>}
-                        </div>
-                        <span className="text-[10px] text-muted-strong font-medium leading-tight">{item.label.split('（')[0]}</span>
-                      </button>
-                    );
-                  })}
-              </div>
             </div>
-
-            {/* しっかり継続コース */}
-            <div className="space-y-1 pt-1">
-              <span className="text-[10px] font-black text-muted-strong uppercase tracking-wider">🔥 しっかり継続コース</span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                {Object.entries(MENTORSHIP_DURATIONS)
-                  .filter(([_, item]) => !item.isLight)
-                  .map(([key, item]) => {
-                    const isSelected = durationKey === key;
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => setDurationKey(key)}
-                        className={`p-2 rounded-xl text-left border text-xs font-bold transition flex items-center justify-between cursor-pointer ${
-                          isSelected
-                            ? 'bg-primary-50 border-primary-edge text-primary-950 shadow-2xs'
-                            : 'bg-background border-border text-foreground-subtle hover:bg-surface-subtle'
-                        }`}
-                      >
-                        <span>{item.label}</span>
-                        {isSelected && <span className="text-primary-600 text-xs">✓</span>}
-                      </button>
-                    );
-                  })}
-              </div>
-            </div>
+            <p className="text-[11px] text-secondary-800 leading-relaxed font-medium">
+              2週間経つとDiscord Botから継続・完了の確認通知が届きます。いつでも気軽に終了・延長が可能です。
+            </p>
           </div>
 
-
-          {/* 希望するやりとりの形（2026-09-30追加。従来はUIが無く全員VC_ACTIVE固定だった） */}
+          {/* 希望するやりとりの形 */}
           <div className="space-y-2">
             <label className="block text-xs font-black text-foreground-subtle">
-              希望するやりとりの形
+              希望する通話・やりとりの形
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {Object.entries(COMMUNICATION_STYLES).map(([key, item]) => {
@@ -205,30 +148,6 @@ export function MentorshipRequestModal({
                 );
               })}
             </div>
-          </div>
-
-          {/* 期間切れ後の自動継続（そのまま実行）設定 */}
-          <div className="p-3 bg-background rounded-2xl border border-border flex items-center justify-between gap-3">
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-1.5 text-xs font-black text-foreground">
-                <RefreshCw size={13} className="text-success-600" />
-                <span>期間満了時の設定</span>
-              </div>
-              <p className="text-[11px] text-muted-strong font-medium">
-                {autoRenew ? '期間終了後もワンクリックまたは自動でそのまま継続します' : '期間終了時に卒業手続きまたは延長を選択します'}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setAutoRenew(!autoRenew)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-black transition cursor-pointer border shrink-0 ${
-                autoRenew
-                  ? 'bg-success-100 border-success-edge text-success-800'
-                  : 'bg-surface-hover border-border text-muted'
-              }`}
-            >
-              {autoRenew ? '⚡ そのまま継続' : '🎓 終了時に相談'}
-            </button>
           </div>
 
           {/* ひと言メッセージ入力 */}
@@ -280,7 +199,7 @@ export function MentorshipRequestModal({
               }`}
             >
               <Send size={13} />
-              <span>{isSubmitting ? '送信中...' : '申請を送信する'}</span>
+              <span>{isSubmitting ? '送信中...' : isTargetMentor ? '💬 相談をお願いする' : '🤝 相談に乗る！'}</span>
             </button>
           </div>
         </form>

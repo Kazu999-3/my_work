@@ -693,37 +693,37 @@ export async function createMentorshipForumThread(
     }
   }
 
-  const threadTitle = `【師弟指導】${mentorName}(師匠) × ${pupilName}(弟子)`.slice(0, 100);
+  const threadTitle = `【相談・交流】${mentorName}(先輩) × ${pupilName}(後輩)`.slice(0, 100);
 
   const mentorMention = mentorDiscordId ? `<@${mentorDiscordId}>` : `**${mentorName}**`;
   const pupilMention = pupilDiscordId ? `<@${pupilDiscordId}>` : `**${pupilName}**`;
 
   const commStyleText =
     commStyle === 'VC_ACTIVE'
-      ? '🎙️ VC重視（通話しながらのリアルタイム指導歓迎）'
+      ? '🎙️ VC重視（通話しながらのプレイ・相談OK）'
       : commStyle === 'TEXT_ONLY'
-      ? '💬 テキストチャット重視（空き時間の質問・添削中心）'
-      : '⚖️ VC・テキスト柔軟対応';
+      ? '💬 テキストチャット重視（空き時間の質問・相談中心）'
+      : '🎧 聞き専OK・柔軟対応';
 
   const embed = {
-    title: '🤝 師弟専用指導ルームへようこそ！',
+    title: '🎒 先輩・後輩の相談ルームへようこそ！',
     description:
-      `師弟マッチングの成立、おめでとうございます！🎉\n` +
-      `こちらは **${mentorName} 師匠** と **${pupilName} 弟子** の専用指導チャットです。\n` +
+      `相談ペアの成立、おめでとうございます！🎉\n` +
+      `こちらは **${mentorName} 先輩** と **${pupilName} 後輩** の専用相談チャットです。\n` +
       `日々の質問やアドバイス、試合の振り返り、VC予定の調整などにご自由にお使いください！\n\n` +
-      `⏱️ **活動期間:** ${durationLabel}\n` +
+      `⏱️ **活動目安:** ${durationLabel}（いつでも完了・延長OK）\n` +
       `🗣️ **希望スタイル:** ${commStyleText}\n\n` +
-      `🎯 **おすすめのキックオフ手順:**\n` +
-      `1. まずはご挨拶 ＆ プレイ可能時間帯のすり合わせ 🤝\n` +
-      `2. 目標ランクや克服したい課題（CS精度、リコール判断、視界、集団戦等）のヒアリング 📝\n` +
-      `3. Discord画面共有でのリプレイ鑑賞やKTMカスタムでの同チーム参加 🎮\n\n` +
+      `🎯 **おすすめの進め方:**\n` +
+      `1. まずはご挨拶 ＆ 活動しやすい時間帯のすり合わせ 🤝\n` +
+      `2. 気になるチャンプの立ち回りや悩み（レーン戦、ビルド、集団戦等）の相談 📝\n` +
+      `3. Discord画面共有での観戦やKTMカスタムでの同チーム参加 🎮\n\n` +
       `🔗 **便利なポータルツール:**\n` +
-      `• [マイページ（目標進捗・指導メモ共有）](${PORTAL_BASE_URL}/mypage)\n` +
+      `• [マイページ（目標進捗・メモ共有）](${PORTAL_BASE_URL}/mypage)\n` +
       `• [戦績コーチング・リプレイ監査](${PORTAL_BASE_URL}/coach)`,
     color: 0x10b981, // エメラルドグリーン
     fields: [
-      { name: '👑 師匠', value: `${mentorName} (${mentorMention})`, inline: true },
-      { name: '🌱 弟子', value: `${pupilName} (${pupilMention})`, inline: true },
+      { name: '🧑‍🏫 先輩', value: `${mentorName} (${mentorMention})`, inline: true },
+      { name: '🙋‍♂️ 後輩', value: `${pupilName} (${pupilMention})`, inline: true },
     ],
     footer: {
       text: 'KTM 師弟マッチングシステム | 🎓コーチング・質問',

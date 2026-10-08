@@ -110,10 +110,10 @@ export function MentorshipReviewModal({
             </div>
             <div>
               <h2 className="text-base font-black text-foreground flex items-center gap-1.5">
-                師弟の匿名評価 ＆ 感謝フィードバック
+                相談ペアのフィードバック（任意）
               </h2>
               <p className="text-[11px] text-muted font-medium">
-                完全匿名で集約され、相手の自己紹介カードの信頼指標に反映されます
+                コミュニティ健全化のためのアンケートです。送信しなくても問題ありません
               </p>
             </div>
           </div>
@@ -129,16 +129,27 @@ export function MentorshipReviewModal({
         {/* ボディ */}
         <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-5 text-sm">
           
+          {/* 🔒 完全非公開・安心バナー */}
+          <div className="p-3.5 bg-blue-50/80 dark:bg-blue-950/30 rounded-2xl border border-blue-200 dark:border-blue-800 space-y-1">
+            <div className="flex items-center gap-1.5 text-xs font-black text-blue-900 dark:text-blue-300">
+              <Shield size={14} className="text-blue-600 dark:text-blue-400" />
+              <span>評価された相手には一切見えません（完全非公開）</span>
+            </div>
+            <p className="text-[11px] text-blue-800 dark:text-blue-300/90 leading-relaxed font-medium">
+              入力した星の数やコメント、あなたの名前は<strong>お相手の画面には一切表示されません</strong>。全体の集計やコミュニティ指標としてのみ安全に活用されます。
+            </p>
+          </div>
+
           {/* 相手情報バナー */}
           <div className="p-3 bg-background rounded-2xl border border-border flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-lg">{isMyMentor ? '🌱' : '👑'}</span>
               <div>
                 <div className="text-xs font-black text-foreground">
-                  {partner?.player_name || 'お相手'} さん（{partnerRoleLabel}）への評価
+                  {partner?.player_name || 'お相手'} さんへのアンケート
                 </div>
                 <div className="text-[10px] text-muted-strong font-medium">
-                  🔒 あなたの個人名やDiscord IDは相手に公開されません
+                  回答するとボーナスコインが付与されます
                 </div>
               </div>
             </div>
@@ -223,13 +234,13 @@ export function MentorshipReviewModal({
           </div>
 
           {/* フッターアクション */}
-          <div className="pt-2 flex items-center justify-end gap-2 border-t border-surface-subtle">
+          <div className="pt-2 flex items-center justify-between gap-2 border-t border-surface-subtle">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-surface-subtle hover:bg-surface-hover text-foreground-subtle rounded-xl text-xs font-black transition cursor-pointer"
+              className="px-4 py-2 bg-surface-subtle hover:bg-surface-hover text-muted-strong hover:text-foreground rounded-xl text-xs font-bold transition cursor-pointer"
             >
-              キャンセル
+              今回は評価しない（スキップ）
             </button>
             <button
               type="submit"
@@ -237,7 +248,7 @@ export function MentorshipReviewModal({
               className="px-5 py-2 rounded-xl font-black text-xs bg-success-600 hover:bg-success-500 text-white shadow-sm transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <Sparkles size={14} />
-              <span>{isSubmitting ? '送信中...' : '匿名評価を送信 (+100🪙)'}</span>
+              <span>{isSubmitting ? '送信中...' : '評価を送信 (+100🪙)'}</span>
             </button>
           </div>
         </form>

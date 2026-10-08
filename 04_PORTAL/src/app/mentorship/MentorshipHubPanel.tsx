@@ -454,7 +454,7 @@ export default function MentorshipHubPanel() {
           });
         } catch (_) {}
 
-        toast.success(data.message || '🎓 卒業完了しました！(+200コイン獲得)');
+        toast.success(data.message || '🎓 相談完了しました！(+200コイン獲得)');
         fetchProfiles();
         fetchMatches();
       } else {
@@ -485,7 +485,7 @@ export default function MentorshipHubPanel() {
       });
       const data = await res.json();
       if (data.ok) {
-        toast.success(data.message || '🍃 師弟ペアを円満解散しました。');
+        toast.success(data.message || '🍃 相談ペアを円満解散しました。');
         fetchProfiles();
         fetchMatches();
       } else {
@@ -678,13 +678,13 @@ export default function MentorshipHubPanel() {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-success-500/20 text-success-800 text-xs font-black border border-success-edge-strong/30">
               <HeartHandshake size={14} className="text-success-600" />
-              KTM 師弟マッチング ＆ 自己紹介ハブ
+              🎒 気軽に質問・相談できるコミュニティ企画
             </div>
             <h2 className="text-xl md:text-2xl font-black text-foreground">
-              弟子入り ＆ メンター自己紹介掲示板
+              🎒 教えて先輩！ 掲示板
             </h2>
             <p className="text-foreground-subtle text-xs md:text-sm max-w-2xl font-medium leading-relaxed">
-              「もっと上手くなりたい弟子」と「優しく教えたい師匠（メンター）」を結ぶ掲示板です。弟子用・師匠用でそれぞれ自己紹介カードを登録できます！
+              「ちょっと誰かにコツを聞いてみたい」後輩と、「得意なチャンプやレーンのコツをシェアしたい」先輩をつなぐ掲示板です。自己紹介カードを登録して、気軽に先輩・後輩と相談を始めましょう！
             </p>
           </div>
 
@@ -693,7 +693,7 @@ export default function MentorshipHubPanel() {
               href="https://discord.com/channels/1485636149379858567/1550159520687325205"
               target="_blank"
               rel="noopener noreferrer"
-              title="Discordの師弟募集チャンネルを新しいタブで開きます"
+              title="Discordの相談募集チャンネルを新しいタブで開きます"
               className="px-3 py-2.5 rounded-xl bg-[#5865F2]/10 hover:bg-[#5865F2]/20 text-[#5865F2] font-bold text-xs transition border border-[#5865F2]/30 flex items-center gap-1.5 cursor-pointer shadow-2xs"
             >
               <ExternalLink size={13} />
@@ -715,12 +715,12 @@ export default function MentorshipHubPanel() {
 
             <button
               type="button"
-              title="指導・受講のガイドライン（褒めて伸ばす / 1試合1課題 など）を表示します"
+              title="相談のガイドライン（褒めて伸ばす / 1試合1課題 など）を表示します"
               onClick={() => setIsGuidelinesModalOpen(true)}
               className="px-3.5 py-2.5 rounded-xl bg-surface border border-border hover:bg-surface-subtle text-foreground-subtle font-bold text-xs transition shadow-2xs flex items-center gap-1.5 cursor-pointer"
             >
               <BookOpen size={14} className="text-primary-600" />
-              <span>📜 師弟の心得</span>
+              <span>📜 相談の心得</span>
             </button>
 
             <button
@@ -735,15 +735,15 @@ export default function MentorshipHubPanel() {
               <span>
                 {activeTab === 'PUPIL'
                   ? myPupilProfile
-                    ? '🌱 自分の弟子カードを編集'
-                    : '🌱 弟子として自己紹介'
+                    ? '🙋‍♂️ 自分のカードを編集'
+                    : '🙋‍♂️ 後輩としてカードを作成'
                   : activeTab === 'MENTOR'
                   ? myMentorProfile
-                    ? '👑 自分の師匠カードを編集'
-                    : '👑 師匠として自己紹介'
+                    ? '🧑‍🏫 自分のカードを編集'
+                    : '🧑‍🏫 先輩としてカードを作成'
                   : (myPupilProfile || myMentorProfile)
                   ? '自分のカードを編集'
-                  : '自己紹介カードを投稿'}
+                  : 'カードを投稿'}
               </span>
             </button>
           </div>
@@ -757,7 +757,7 @@ export default function MentorshipHubPanel() {
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
             <button
               type="button"
-              title="教わりたい人の自己紹介カード一覧に切り替えます"
+              title="教えてほしい人のカード一覧に切り替えます"
               onClick={() => setActiveTab('PUPIL')}
               className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === 'PUPIL'
@@ -765,7 +765,7 @@ export default function MentorshipHubPanel() {
                   : 'bg-surface-subtle hover:bg-surface-hover text-foreground-subtle'
               }`}
             >
-              <span>🌱 弟子募集・希望者</span>
+              <span>🙋‍♂️ 教えて！ (後輩)</span>
               <span className="text-[10px] bg-surface/20 px-1.5 py-0.2 rounded-full">
                 {profiles.filter((p) => p.role_type === 'PUPIL').length}
               </span>
@@ -773,7 +773,7 @@ export default function MentorshipHubPanel() {
 
             <button
               type="button"
-              title="教えられる人の自己紹介カード一覧に切り替えます"
+              title="教えるよ！という先輩のカード一覧に切り替えます"
               onClick={() => setActiveTab('MENTOR')}
               className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === 'MENTOR'
@@ -781,7 +781,7 @@ export default function MentorshipHubPanel() {
                   : 'bg-surface-subtle hover:bg-surface-hover text-foreground-subtle'
               }`}
             >
-              <span>👑 師匠（メンター）一覧</span>
+              <span>🧑‍🏫 教えるよ！ (先輩)</span>
               <span className="text-[10px] bg-surface/20 px-1.5 py-0.2 rounded-full">
                 {profiles.filter((p) => p.role_type === 'MENTOR').length}
               </span>
@@ -789,7 +789,7 @@ export default function MentorshipHubPanel() {
 
             <button
               type="button"
-              title="成立済みのペアと現在の活動状況を表示します"
+              title="成立済みの相談ペアと現在の活動状況を表示します"
               onClick={() => setActiveTab('MATCHES')}
               className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === 'MATCHES'
@@ -797,7 +797,7 @@ export default function MentorshipHubPanel() {
                   : 'bg-surface-subtle hover:bg-surface-hover text-foreground-subtle'
               }`}
             >
-              <span>🤝 師弟ペア・活動状況</span>
+              <span>🤝 相談ペア・活動状況</span>
               <span className="text-[10px] bg-surface/20 px-1.5 py-0.2 rounded-full">
                 {matches.length}
               </span>
@@ -1069,7 +1069,7 @@ export default function MentorshipHubPanel() {
                     <div className="flex items-center gap-2">
                       <span className="text-base">{isCompleted ? '🎓' : isExpired ? '⏳' : '🤝'}</span>
                       <span className="text-xs font-black text-foreground">
-                        {isCompleted ? '卒業済みペア' : isExpired ? '期間満了（延長・完了待ち）' : '共闘中の師弟ペア'}
+                        {isCompleted ? '完了した相談ペア' : isExpired ? '期間満了（延長・完了待ち）' : '活動中の相談ペア'}
                       </span>
                     </div>
 
@@ -1095,7 +1095,7 @@ export default function MentorshipHubPanel() {
                           type="button"
                           onClick={() => handleAdminDeleteMatch(match.id)}
                           className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-danger-100 hover:bg-danger-200 text-danger-800 border border-danger-edge transition cursor-pointer"
-                          title="管理者権限でこの師弟ペアを強制解散・削除します"
+                          title="管理者権限でこの相談ペアを強制解散・削除します"
                         >
                           🗑️ 管理者削除
                         </button>
@@ -1105,9 +1105,9 @@ export default function MentorshipHubPanel() {
 
                   {/* ペア名 */}
                   <div className="text-sm font-black text-foreground flex items-center gap-2">
-                    <span>👑 {match.mentor?.player_name || '師匠'}</span>
+                    <span>🧑‍🏫 {match.mentor?.player_name || '先輩'} (先輩)</span>
                     <span className="text-faint">×</span>
-                    <span>🌱 {match.pupil?.player_name || '弟子'}</span>
+                    <span>🙋‍♂️ {match.pupil?.player_name || '後輩'} (後輩)</span>
                   </div>
 
                   {/* 期間情報 */}
@@ -1134,7 +1134,7 @@ export default function MentorshipHubPanel() {
                         className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-black text-primary-700 bg-primary-50 hover:bg-primary-100 border border-primary-edge-soft transition"
                       >
                         <MessageSquare size={12} className="text-primary-600" />
-                        <span>💬 🎓コーチング専用スレッドを開く ➔</span>
+                        <span>💬 相談専用スレッドを開く ➔</span>
                       </a>
                     </div>
                   )}
@@ -1156,7 +1156,7 @@ export default function MentorshipHubPanel() {
                           className="px-2.5 py-1.5 rounded-xl font-black text-xs bg-primary-50 hover:bg-primary-100 text-primary-900 transition flex items-center gap-1 cursor-pointer border border-primary-edge shadow-2xs"
                         >
                           <Star size={13} className="text-primary-600 fill-primary-400" />
-                          <span>⭐ 匿名評価を送る (+100🪙)</span>
+                          <span>⭐ フィードバックを送る (+100🪙)</span>
                         </button>
 
                         {!isCompleted && (

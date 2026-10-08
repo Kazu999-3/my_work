@@ -91,7 +91,7 @@ export default function HomePage() {
             </div>
           </Link>
 
-          {/* 2. 師弟自己紹介掲示板 */}
+          {/* 2. 教えて先輩！掲示板 */}
           <Link
             href="/mentorship"
             className="group relative bg-surface/90 backdrop-blur-md border-2 border-success-edge/80 hover:border-success-edge-strong dark:border-success-edge-strong/30 dark:hover:border-success-edge-strong p-6 rounded-3xl transition-all duration-300 shadow-xs hover:shadow-lg hover:shadow-success-500/10 flex flex-col justify-between space-y-5 cursor-pointer"
@@ -99,7 +99,7 @@ export default function HomePage() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="w-12 h-12 rounded-2xl bg-success-500/15 border border-success-edge-strong/30 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                  🤝
+                  🎒
                 </div>
                 <span className="text-[11px] font-black text-success-800 dark:text-success-300 bg-success-100 dark:bg-success-500/20 border border-success-edge dark:border-success-edge-strong/30 px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1">
                   <HeartHandshake className="w-3 h-3 text-success-600 dark:text-success-400" />
@@ -108,16 +108,16 @@ export default function HomePage() {
               </div>
               <div>
                 <h2 className="text-lg sm:text-xl font-black text-foreground dark:text-white group-hover:text-success-600 dark:group-hover:text-success-400 transition-colors">
-                  師弟自己紹介掲示板
+                  🎒 教えて先輩！ 掲示板
                 </h2>
                 <p className="text-xs text-muted leading-relaxed mt-1 font-medium">
-                  「もっと上達したい弟子」と「優しく教えたい師匠」を結ぶ掲示板。自己紹介カードの作成・オファー申請が可能です。
+                  「誰かにコツを聞いてみたい」後輩と「得意なチャンプをシェアしたい」先輩をつなぐ掲示板。気軽な相談カード登録や交流が可能です。
                 </p>
               </div>
             </div>
 
             <div className="flex items-center justify-between text-xs font-black text-success-700 dark:text-success-400 group-hover:translate-x-1 transition-transform border-t border-border/80 dark:border-border pt-3">
-              <span>師弟掲示板を見る</span>
+              <span>教えて先輩！掲示板を見る</span>
               <ChevronRight className="w-4 h-4" />
             </div>
           </Link>

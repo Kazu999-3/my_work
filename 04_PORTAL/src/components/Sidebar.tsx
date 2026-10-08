@@ -190,7 +190,7 @@ const GENERAL_MENU_ITEMS: MenuItem[] = [
   { id: 'home', label: 'ホーム / トップ', shortLabel: 'ホーム', icon: Home, href: '/', color: 'text-primary-500', activeBg: 'bg-primary-500/15' },
   // ユーザー・師弟
   { id: 'mypage', label: 'マイページ / 希望レーン', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-primary-500', activeBg: 'bg-primary-500/15' },
-  { id: 'mentorship', label: '師弟自己紹介掲示板', shortLabel: '師弟掲示板', icon: HeartHandshake, href: '/mentorship', color: 'text-success-500', activeBg: 'bg-success-500/15' },
+  { id: 'mentorship', label: '🎒 教えて先輩！掲示板', shortLabel: '教えて先輩', icon: HeartHandshake, href: '/mentorship', color: 'text-success-500', activeBg: 'bg-success-500/15' },
   // 対戦・大会
   { id: 'balancer', label: 'チーム分けバランサー', shortLabel: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-danger-600', activeBg: 'bg-danger-500/15' },
   { id: 'casino', label: '勝敗予想 (カジノ)', shortLabel: '勝敗予想', icon: Coins, href: '/casino', color: 'text-primary-600', activeBg: 'bg-primary-500/15' },
@@ -310,7 +310,7 @@ export default function Sidebar() {
   const mobileBottomBarItems: MenuItem[] = [
     { id: 'home', label: 'ホーム', shortLabel: 'ホーム', icon: Home, href: '/', color: 'text-primary-500', activeBg: 'bg-primary-500/15' },
     { id: 'mypage', label: 'マイページ', shortLabel: 'マイページ', icon: Users, href: '/mypage', color: 'text-primary-500', activeBg: 'bg-primary-500/15' },
-    { id: 'mentorship', label: '師弟掲示板', shortLabel: '師弟掲示板', icon: HeartHandshake, href: '/mentorship', color: 'text-success-500', activeBg: 'bg-success-500/15' },
+    { id: 'mentorship', label: '教えて先輩', shortLabel: '教えて先輩', icon: HeartHandshake, href: '/mentorship', color: 'text-success-500', activeBg: 'bg-success-500/15' },
     { id: 'balancer', label: 'チーム分け', shortLabel: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-danger-600', activeBg: 'bg-danger-500/15' },
   ];
 
