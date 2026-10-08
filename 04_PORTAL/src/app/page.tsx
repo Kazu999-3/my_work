@@ -54,7 +54,7 @@ export default function HomePage() {
           </div>
         </header>
 
-        {/* 📰 月刊KTMスポーツ速報 (直近内戦のAIハイライト実況ニュース) */}
+        {/* 📰 月刊KTMスポーツ速報 (直近カスタムのAIハイライト実況ニュース) */}
         <MatchNewsTicker />
 
         {/* 4大コア機能カード */}

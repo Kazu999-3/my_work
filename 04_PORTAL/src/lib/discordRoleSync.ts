@@ -147,27 +147,27 @@ export const ROLE_DEFINITIONS: Record<ExperienceTier, { name: string; color: num
   new: {
     name: '🔰 初参加',
     color: 0x2ecc71, // エメラルドグリーン
-    description: '内戦通算0戦の初参加メンバー',
+    description: 'カスタム通算0戦の初参加メンバー',
   },
   light: {
     name: '🌱 ライト',
     color: 0x1abc9c, // ターコイズ
-    description: '内戦通算1〜14戦のライトメンバー',
+    description: 'カスタム通算1〜14戦のライトメンバー',
   },
   regular: {
     name: '👑 常連',
     color: 0xf1c40f, // ゴールド
-    description: '内戦通算15戦以上かつ直近30日以内に参加しているアクティブメンバー',
+    description: 'カスタム通算15戦以上かつ直近30日以内に参加しているアクティブメンバー',
   },
   experienced: {
     name: '🎖️ 経験者',
     color: 0x3498db, // ブルー
-    description: '内戦通算15戦以上かつブランク31〜59日の経験者メンバー',
+    description: 'カスタム通算15戦以上かつブランク31〜59日の経験者メンバー',
   },
   returning: {
     name: '⏳ 復帰勢',
     color: 0x95a5a6, // シルバー
-    description: '内戦通算15戦以上かつブランク60日以上の復帰メンバー',
+    description: 'カスタム通算15戦以上かつブランク60日以上の復帰メンバー',
   },
 };
 

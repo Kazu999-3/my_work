@@ -150,7 +150,7 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
                     <span>最低: <strong className="text-foreground font-mono">{analysis.minMMR}</strong></span>
                     <span>最高: <strong className="text-foreground font-mono">{analysis.maxMMR}</strong></span>
                     <span>差: <strong className={`font-mono ${analysis.level === 'HIGH_DIFFERENCE' ? 'text-primary-700' : 'text-foreground'}`}>{analysis.mmrRange}</strong></span>
-                    <span className="text-[10px] text-muted-strong font-normal">※SoloQではなくKTM内戦独自のランクMMR基準です</span>
+                    <span className="text-[10px] text-muted-strong font-normal">※SoloQではなくKTMカスタム独自のランクMMR基準です</span>
                   </div>
                 </div>
               )}

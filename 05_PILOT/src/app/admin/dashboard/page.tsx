@@ -160,7 +160,7 @@ export default function OpsDashboardPage() {
               <Shield className="w-6 h-6 text-amber-400" /> 運用ダッシュボード
             </h1>
             <p className="text-xs text-slate-400 mt-1">
-              PCワーカー・クラウドワーカー・内戦Botの稼働と、要対応タスクを実測値で一覧します（60秒ごとに自動更新）。
+              PCワーカー・クラウドワーカー・KTM Botの稼働と、要対応タスクを実測値で一覧します（60秒ごとに自動更新）。
             </p>
           </div>
           <button
@@ -266,9 +266,9 @@ export default function OpsDashboardPage() {
               </div>
             </Card>
 
-            {/* 内戦・カジノ（04側の機能なのでリンクは旧ポータルへ） */}
+            {/* 定期カスタム・カジノ（04側の機能なのでリンクは旧ポータルへ） */}
             <Card
-              title="内戦 ＆ カジノ"
+              title="定期カスタム ＆ カジノ"
               icon={<Trophy className="w-4 h-4 text-amber-400" />}
               action={
                 <a href={`${LEGACY_PORTAL_URL}/ktm-admin`} target="_blank" rel="noopener noreferrer" className="text-[11px] font-bold text-amber-400 flex items-center gap-1">

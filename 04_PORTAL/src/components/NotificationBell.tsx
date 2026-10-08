@@ -224,7 +224,7 @@ export default function NotificationBell({ collapsed = false, align = 'left' }: 
       return { icon: '👤', label: '新メンバー', bg: 'bg-primary-100 text-primary-800 border-primary-edge-soft' };
     }
     if (type.includes('match') || title.includes('内戦') || title.includes('試合')) {
-      return { icon: '🏆', label: '大会・内戦', bg: 'bg-success-100 text-success-800 border-success-edge-soft' };
+      return { icon: '🏆', label: '大会・カスタム', bg: 'bg-success-100 text-success-800 border-success-edge-soft' };
     }
     if (type.includes('error') || title.includes('エラー') || title.includes('失敗')) {
       return { icon: '⚠️', label: 'アラート', bg: 'bg-danger-100 text-danger-800 border-danger-edge-soft' };

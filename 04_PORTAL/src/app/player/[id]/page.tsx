@@ -821,7 +821,7 @@ export default function PlayerMyPage() {
                     )}
                   </div>
 
-                  {/* ⚔️ KTMカスタム内戦情報 */}
+                  {/* ⚔️ KTMカスタム情報 */}
                   <div className="flex items-center gap-1.5 bg-primary-950/40 backdrop-blur-md px-2.5 py-1 rounded-xl border border-primary-edge-strong/30 text-xs">
                     <span className="text-[10px] font-black text-primary-400 flex items-center gap-1">
                       <span>⚔️ KTMカスタム:</span>
@@ -875,7 +875,7 @@ export default function PlayerMyPage() {
               <div className="h-8 w-[1px] bg-black/5 hidden md:block"></div>
 
               <div className="space-y-1">
-                <div className="text-[10px] text-faint font-black tracking-wider uppercase">内戦ステータス</div>
+                <div className="text-[10px] text-faint font-black tracking-wider uppercase">カスタムステータス</div>
                 <div className={`flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-black border ${
                   player.is_active 
                     ? 'bg-success-100 text-success-700 border-success-edge-soft'
@@ -888,13 +888,13 @@ export default function PlayerMyPage() {
               <div className="h-8 w-[1px] bg-black/5 hidden md:block"></div>
               <div className="flex gap-4 sm:gap-6">
                 <div className="flex flex-col">
-                  <span className="text-[10px] text-faint font-black tracking-wider uppercase mb-1">内戦第一希望</span>
+                  <span className="text-[10px] text-faint font-black tracking-wider uppercase mb-1">カスタム第一希望</span>
                   <span className="text-foreground font-bold text-sm bg-black/5 px-2 py-0.5 rounded border border-black/10 text-center min-w-[36px]">
                     {player.role_preferences?.primary || "ALL"}
                   </span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[10px] text-faint font-black tracking-wider uppercase mb-1">内戦第二希望</span>
+                  <span className="text-[10px] text-faint font-black tracking-wider uppercase mb-1">カスタム第二希望</span>
                   <span className="text-foreground-subtle font-bold text-sm bg-black/5 px-2 py-0.5 rounded border border-black/10 text-center min-w-[36px]">
                     {player.role_preferences?.secondary || "ALL"}
                   </span>
@@ -924,7 +924,7 @@ export default function PlayerMyPage() {
                 🏆
               </div>
               <div>
-                <div className="text-[10px] font-black text-faint uppercase tracking-wider">KTM内戦レート ＆ Tier</div>
+                <div className="text-[10px] font-black text-faint uppercase tracking-wider">KTMカスタムレート ＆ Tier</div>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="text-xl font-black font-mono text-foreground">{player.mmr || 1200}</span>
                   <span className="text-xs font-black text-primary-800 bg-primary-100 px-2 py-0.5 rounded border border-primary-edge-soft">
@@ -1788,7 +1788,7 @@ export default function PlayerMyPage() {
                       </div>
                     ) : (
                       <div className="text-center text-muted-strong py-12 border border-dashed border-black/10 rounded-2xl">
-                        まだKTMでの試合記録がありません。内戦に参加してデータを集めましょう！
+                        まだKTMでの試合記録がありません。カスタムに参加してデータを集めましょう！
                       </div>
                     )}
                   </div>
@@ -1798,7 +1798,7 @@ export default function PlayerMyPage() {
                     <h3 className="text-lg font-black flex items-center gap-2 mb-6 border-b border-black/10 pb-3">
                       <Crosshair className="w-5 h-5 text-danger-500" />
                       <span>⚔️ KTMカスタム 対面マッチアップ勝率</span>
-                      <span className="text-xs text-muted-strong font-bold ml-1">（内戦での直接対決データ）</span>
+                      <span className="text-xs text-muted-strong font-bold ml-1">（カスタムでの直接対決データ）</span>
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[460px] overflow-y-auto pr-1">
                       {matchups.length > 0 ? matchups.map((m, idx) => (
@@ -1825,7 +1825,7 @@ export default function PlayerMyPage() {
                         </div>
                       )) : (
                         <div className="col-span-full text-muted-strong text-sm py-12 text-center border border-dashed border-black/10 rounded-2xl">
-                          まだKTM内戦の対面データがありません
+                          まだKTMカスタムの対面データがありません
                         </div>
                       )}
                     </div>

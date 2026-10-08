@@ -602,3 +602,66 @@ export async function processPendingIntros(options: {
 
   return { processed, skipped, errors, details };
 }
+
+/**
+ * サーバーを抜けたメンバーの個別案内チャンネルを削除する（2026-10-08 追加）。
+ * Botは応答専用(Cloudflare Worker)で退出イベントを受け取れず、チャンネルIDもDBに残していないため、
+ * 「🤝 個別案内」カテゴリ内のチャンネルの閲覧権限から持ち主を割り出し、サーバーにいるかを都度確認する。
+ * 放置するとカテゴリ上限(10×48)とサーバー全体の上限(500)に近づき、新メンバーの部屋が作れなくなる。
+ *
+ * 誤削除の防止:
+ * - 対象は個別案内カテゴリ直下のテキストチャンネルで、管理者以外のメンバー権限がちょうど1人分のものだけ
+ * - Discordが「Unknown Member (10007)」と返した時だけ削除する。権限不足・障害などそれ以外の応答は何もしない
+ */
+export async function cleanupDepartedMemberChannels(options: { dryRun?: boolean } = {}): Promise<{
+  checked: number;
+  deleted: { channelId: string; name: string; userId: string }[];
+  skipped: number;
+}> {
+  const headers = getBotHeaders();
+  const res = await discordFetch(`https://discord.com/api/v10/guilds/${GUILD_ID}/channels`, { headers });
+  if (!res.ok) throw new Error(`Discord channel list failed: ${res.status}`);
+  const channels = await res.json();
+  if (!Array.isArray(channels)) throw new Error('Discord channel list returned non-array');
+
+  const categoryIds = new Set(
+    channels
+      .filter((c: any) => c.type === 4 && typeof c.name === 'string' && c.name.startsWith(ONBOARDING_CATEGORY_NAME))
+      .map((c: any) => c.id)
+  );
+  const targets = channels.filter((c: any) => c.type === 0 && categoryIds.has(c.parent_id));
+
+  const deleted: { channelId: string; name: string; userId: string }[] = [];
+  let skipped = 0;
+
+  for (const ch of targets) {
+    const memberOverwrites = (ch.permission_overwrites || []).filter(
+      (o: any) => o.type === 1 && o.id !== SERVER_ADMIN_USER_ID
+    );
+    if (memberOverwrites.length !== 1) {
+      skipped++;
+      continue;
+    }
+    const userId = memberOverwrites[0].id;
+
+    const memberRes = await discordFetch(`https://discord.com/api/v10/guilds/${GUILD_ID}/members/${userId}`, { headers });
+    if (memberRes.ok) continue;
+    const body = await memberRes.json().catch(() => null);
+    if (memberRes.status !== 404 || body?.code !== 10007) {
+      skipped++;
+      continue;
+    }
+
+    if (!options.dryRun) {
+      const delRes = await discordFetch(`https://discord.com/api/v10/channels/${ch.id}`, { method: 'DELETE', headers });
+      if (!delRes.ok) {
+        console.error('[cleanupDepartedMemberChannels] delete failed:', ch.id, delRes.status);
+        skipped++;
+        continue;
+      }
+    }
+    deleted.push({ channelId: ch.id, name: ch.name, userId });
+  }
+
+  return { checked: targets.length, deleted, skipped };
+}
