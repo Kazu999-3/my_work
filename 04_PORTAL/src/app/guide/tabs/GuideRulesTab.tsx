@@ -77,7 +77,7 @@ export default function GuideRulesTab() {
             <h4 className="text-sm font-black text-foreground dark:text-white">🎯 2ランク格差防止（1ランク差以内で10名選出）</h4>
             <p className="text-xs text-muted leading-relaxed">
               「シルバー対プラチナ」のような2ランク差対戦を防ぐため、最多層に合わせて<strong>実力差が1ランク差以内の10名</strong>を自動選出！<br />
-              （例：ゴールド最多なら「シルバー＋ゴールド」または「ゴールド＋プラチナ」のどちらかで開催し、シルバー対プラチナは同室になりません）<br />
+              （例：初中級者優先のため、ゴールド最多のときは「シルバー＋ゴールド」を最優先で編成。同数の場合も下のレートを優先し、シルバー対プラチナは同室になりません）<br />
               <span className="font-bold text-primary-900 dark:text-primary-200">※選考外となった方は「観戦・配信応援」または「2戦目に最優先で交代参加」となります。20名集まれば2部屋同時開催で全員出場可能です。</span>
             </p>
             <div className="mt-2 pt-2 border-t border-primary-edge-soft/60 text-[11px] text-primary-900 dark:text-primary-300 space-y-0.5">

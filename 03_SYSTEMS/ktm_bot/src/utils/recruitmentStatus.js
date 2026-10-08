@@ -215,8 +215,14 @@ export function computeDominantTierInfo(lines) {
   let bestKey = '';
   let maxCount = 0;
   for (const [tier, count] of Object.entries(tierCounts)) {
+    const order = TIER_ORDER[tier] ?? 99;
+    const bestOrder = bestKey ? (TIER_ORDER[bestKey] ?? 99) : 99;
+
     if (count > maxCount) {
       maxCount = count;
+      bestKey = tier;
+    } else if (count === maxCount && order < bestOrder) {
+      // ★ 同数の時は下のレート（初中級側）を最優先！
       bestKey = tier;
     }
   }
@@ -275,22 +281,52 @@ export function parseEntryBreakdown(lines, dominantTierKey = null) {
   const eligible = [];
   const spectatorCandidates = [];
 
-  for (const rawLine of entries) {
-    const cleaned = cleanEntryLine(rawLine);
-    if (!dominantOrder) {
-      // 日曜などランク不問の場合は全員出場対象
-      eligible.push({ raw: rawLine, line: cleaned });
-      continue;
+  if (!dominantOrder) {
+    // 日曜などランク不問の場合は全員出場対象
+    for (const rawLine of entries) {
+      eligible.push({ raw: rawLine, line: cleanEntryLine(rawLine) });
+    }
+  } else {
+    // 1. 各ティアごとのエントリーを分類
+    const tierEntries = {
+      same: [],    // dominantOrder と同ティア（最多帯）
+      lower: [],   // dominantOrder - 1 (1ランク下、例: シルバー)
+      higher: [],  // dominantOrder + 1 (1ランク上、例: プラチナ)
+      outlier: [], // 2ランク差以上離れた外れ値
+    };
+
+    for (const rawLine of entries) {
+      const cleaned = cleanEntryLine(rawLine);
+      const tier = getNormalizedTier(rawLine);
+      const tierOrder = TIER_ORDER[tier] || 2;
+      const diff = tierOrder - dominantOrder;
+
+      if (diff === 0) {
+        tierEntries.same.push({ raw: rawLine, line: cleaned, tier });
+      } else if (diff === -1) {
+        tierEntries.lower.push({ raw: rawLine, line: cleaned, tier });
+      } else if (diff === 1) {
+        tierEntries.higher.push({ raw: rawLine, line: cleaned, tier });
+      } else {
+        tierEntries.outlier.push({ raw: rawLine, line: cleaned, tier });
+      }
     }
 
-    const tier = getNormalizedTier(rawLine);
-    const tierOrder = TIER_ORDER[tier] || 2;
-    // 最多ランク帯から1ティア差以内なら出場対象、2ティア差以上なら観戦枠候補
-    if (Math.abs(tierOrder - dominantOrder) <= 1) {
-      eligible.push({ raw: rawLine, line: cleaned, tier });
-    } else {
-      spectatorCandidates.push({ raw: rawLine, line: cleaned, tier });
+    // 2. シルバー対プラチナ等の2ランク格差防止 ＆ 初中級・下位レート優先ポリシー:
+    //    最多帯と同室にする隣接ティアは、下位側（初中級: lower）がいれば下位側を最優先！
+    //    同数の場合も下のレート優先。下位側が0名の場合のみ上位側（higher）を採用。
+    let acceptedAdjacent = [];
+    let rejectedAdjacent = [];
+
+    if (tierEntries.lower.length > 0) {
+      acceptedAdjacent = tierEntries.lower;
+      rejectedAdjacent = tierEntries.higher; // 上位側は観戦・交代枠へ
+    } else if (tierEntries.higher.length > 0) {
+      acceptedAdjacent = tierEntries.higher;
     }
+
+    eligible.push(...tierEntries.same, ...acceptedAdjacent);
+    spectatorCandidates.push(...tierEntries.outlier, ...rejectedAdjacent);
   }
 
   // ★ 人数不足時の対面ミラー救済:
@@ -559,7 +595,7 @@ export function buildRecruitmentContent(target, notificationRoleId) {
 
 ⚖️ **10人前後（1部屋）のときの参加基準（KTM MMR基準）**:
 「シルバー対プラチナ」のような2ランク格差を防ぐため、**実力差が1ランク差以内の10名**を選出して開催します！
-・最多の層に合わせて「シルバー＋ゴールド」または「ゴールド＋プラチナ」のどちらかで開催（※2ランク差離れた方は観戦・交代枠）
+・初中級者優先のため、ゴールド最多のときは**【シルバー＋ゴールド】を最優先**（同数の場合も下のレート優先）で部屋を組みます！（※プラチナ以上の方は観戦・交代枠）
 ・ソロQランクではなく「KTM MMR（独自レート）」で公平に判定されます
 ※20名集まれば「初中級部屋」「上級部屋」の2部屋同時開催となり、全員が出場できます！
 
