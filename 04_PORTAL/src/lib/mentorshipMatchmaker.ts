@@ -244,3 +244,304 @@ export async function findBestSeniorMentor(
   }
 }
 
+export interface SecretMatchProposal {
+  id: string;
+  mentor: {
+    profileId: string;
+    discordId: string;
+    name: string;
+    rank: string;
+    lanes: string[];
+    champions: string[];
+  };
+  pupil: {
+    profileId?: string | null;
+    playerId?: number | null;
+    discordId: string;
+    name: string;
+    rank: string;
+    primaryLane: string;
+    secondaryLane?: string;
+    isRegistered: boolean;
+    hasLearnRole: boolean;
+  };
+  matchScore: number;
+  reasons: string[];
+  offerStatus?: 'NONE' | 'PENDING' | 'PROPOSAL_PENDING' | 'ACCEPTED' | 'DECLINED' | 'MATCHED' | 'ACTIVE';
+}
+
+const LEARN_ROLE_ID = '1556976007234330634'; // 📖 教わりたい
+
+/**
+ * 🔒 シークレットお見合い便の候補ペアを全自動生成（未登録メンバーを含む）
+ */
+export async function generateSecretMatchmakerPairs(): Promise<SecretMatchProposal[]> {
+  try {
+    // 1. 登録済み先輩（MENTOR / OPEN）を取得
+    const { data: mentors, error: mErr } = await supabase
+      .from('mentorship_profiles')
+      .select('*')
+      .eq('role_type', 'MENTOR')
+      .eq('status', 'OPEN');
+
+    if (mErr || !mentors || mentors.length === 0) return [];
+
+    // 2. 登録済み後輩（PUPIL / OPEN）を取得
+    const { data: allProfiles } = await supabase
+      .from('mentorship_profiles')
+      .select('id, discord_id, role_type, status, player_name, current_rank, lanes, champions, player_id');
+
+    const registeredPupils = (allProfiles || []).filter((p: any) => p.role_type === 'PUPIL' && p.status === 'OPEN');
+    // すでに成立済み・指導中のDiscord ID一覧
+    const busyDiscordIds = new Set<string>(
+      (allProfiles || [])
+        .filter((p: any) => p.status === 'MATCHED' || p.status === 'CLOSED')
+        .map((p: any) => p.discord_id)
+        .filter(Boolean)
+    );
+
+    // 3. 名簿（ktm_players）から初中級プレイヤーを取得
+    const { data: allPlayers, error: pErr } = await supabase
+      .from('ktm_players')
+      .select('id, name, ign, discord_id, highest_rank, is_active, role_preferences, main_champions');
+
+    if (pErr) {
+      console.warn('[mentorshipMatchmaker] Failed to fetch ktm_players:', pErr);
+    }
+
+    // 4. Discordから「📖 教わりたい」ロール所持者のID一覧を取得
+    const token = process.env.DISCORD_BOT_TOKEN;
+    const guildId = process.env.DISCORD_GUILD_ID;
+    const learnUserIds = new Set<string>();
+
+    if (token && guildId) {
+      try {
+        const mRes = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members?limit=1000`, {
+          headers: { Authorization: `Bot ${token}` },
+        });
+        if (mRes.ok) {
+          const mList: any[] = await mRes.json();
+          for (const mem of mList) {
+            if (Array.isArray(mem.roles) && mem.roles.includes(LEARN_ROLE_ID)) {
+              learnUserIds.add(mem.user?.id);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('[mentorshipMatchmaker] Failed to fetch discord members:', e);
+      }
+    }
+
+    // 5. 既存のお見合いオファー状態を取得
+    const { data: existingMatches } = await supabase
+      .from('mentorship_matches')
+      .select('mentor_discord_id, pupil_discord_id, status, notes');
+
+    const offerMap = new Map<string, string>();
+    (existingMatches || []).forEach((m: any) => {
+      const key = `${m.mentor_discord_id}_${m.pupil_discord_id}`;
+      offerMap.set(key, m.status);
+    });
+
+    // 6. 後輩候補リストを統合（登録済み + 名簿初中級者）
+    const pupilCandidates: Array<{
+      profileId?: string | null;
+      playerId?: number | null;
+      discordId: string;
+      name: string;
+      rank: string;
+      primaryLane: string;
+      secondaryLane?: string;
+      champions: string[];
+      isRegistered: boolean;
+      hasLearnRole: boolean;
+    }> = [];
+
+    const addedDiscordIds = new Set<string>(busyDiscordIds);
+
+    // 6-a. 登録済み後輩
+    for (const rp of registeredPupils || []) {
+      if (!rp.discord_id) continue;
+      addedDiscordIds.add(rp.discord_id);
+      pupilCandidates.push({
+        profileId: rp.id,
+        playerId: rp.player_id,
+        discordId: rp.discord_id,
+        name: rp.player_name,
+        rank: rp.current_rank || 'SILVER',
+        primaryLane: (rp.lanes?.[0] || 'SUPPORT').toUpperCase(),
+        secondaryLane: rp.lanes?.[1]?.toUpperCase(),
+        champions: rp.champions || [],
+        isRegistered: true,
+        hasLearnRole: learnUserIds.has(rp.discord_id),
+      });
+    }
+
+    // 6-b. 名簿（ktm_players）の未登録初中級者
+    const targetRanks = new Set(['IRON', 'BRONZE', 'SILVER', 'UNRANKED']);
+    for (const player of allPlayers || []) {
+      if (!player.discord_id || addedDiscordIds.has(player.discord_id)) continue;
+
+      // 先輩として登録されている人は除外
+      if (mentors.some((m: any) => m.discord_id === player.discord_id)) continue;
+
+      const pRank = (player.highest_rank || 'UNRANKED').toUpperCase().split(' ')[0];
+      const hasLearn = learnUserIds.has(player.discord_id);
+
+      // 初中級ランク、または「教わりたい」ロール持ち
+      if (targetRanks.has(pRank) || hasLearn) {
+        const roles = player.role_preferences || {};
+        const primary = (roles.primary || roles.main || 'ALL').toUpperCase();
+        const secondary = (roles.secondary || roles.sub || '').toUpperCase();
+        const champs = Array.isArray(player.main_champions) ? player.main_champions : [];
+
+        pupilCandidates.push({
+          profileId: null,
+          playerId: player.id,
+          discordId: player.discord_id,
+          name: player.name || player.ign || 'KTMメンバー',
+          rank: pRank,
+          primaryLane: primary,
+          secondaryLane: secondary,
+          champions: champs,
+          isRegistered: false,
+          hasLearnRole: hasLearn,
+        });
+      }
+    }
+
+    // 7. ペアリング評価
+    const proposals: SecretMatchProposal[] = [];
+
+    // レーン名の正規化ヘルパー
+    const normalizeLane = (l: string) => {
+      if (!l) return '';
+      const u = l.toUpperCase();
+      if (u === 'ADC' || u === 'BOT') return 'BOT';
+      if (u === 'JUNGLE' || u === 'JG') return 'JUNGLE';
+      if (u === 'SUPPORT' || u === 'SUP') return 'SUPPORT';
+      return u;
+    };
+
+    for (const mentor of mentors) {
+      const mentorRankKey = (mentor.current_rank || 'PLATINUM').toUpperCase().split(' ')[0];
+      const mentorTier = RANK_ORDER[mentorRankKey] || 5;
+      const mentorLanes = (mentor.lanes || []).map(normalizeLane);
+
+      for (const pupil of pupilCandidates) {
+        if (mentor.discord_id === pupil.discordId) continue;
+
+        const pupilRankKey = pupil.rank.toUpperCase().split(' ')[0];
+        const pupilTier = RANK_ORDER[pupilRankKey] || 3;
+
+        let score = 0;
+        const reasons: string[] = [];
+
+        // レーン一致判定
+        const pNorm = normalizeLane(pupil.primaryLane);
+        const pSecNorm = normalizeLane(pupil.secondaryLane || '');
+
+        const isMainMatch = mentorLanes.some((ml: string) => ml === pNorm || ml === 'ALL' || pNorm === 'ALL');
+        const isSubMatch = !isMainMatch && mentorLanes.some((ml: string) => ml === pSecNorm);
+
+        if (isMainMatch) {
+          score += 45;
+          reasons.push(`同レーン（${pNorm}）完全合致`);
+        } else if (isSubMatch) {
+          score += 30;
+          reasons.push(`サブ担当レーン（${pSecNorm}）合致`);
+        } else {
+          // DUOシナジー (BOT x SUP, JG x MID)
+          const isDuo =
+            (mentorLanes.includes('BOT') && pNorm === 'SUPPORT') ||
+            (mentorLanes.includes('SUPPORT') && pNorm === 'BOT') ||
+            (mentorLanes.includes('JUNGLE') && pNorm === 'MID') ||
+            (mentorLanes.includes('MID') && pNorm === 'JUNGLE');
+          if (isDuo) {
+            score += 25;
+            reasons.push('連携レーンシナジー（Botライン/Mid-Jg）');
+          } else {
+            // レーンがまったく合わない場合は候補から外すか大幅減点
+            continue;
+          }
+        }
+
+        // ランク差（先輩が1〜3ティア上なら最高）
+        const tierDiff = mentorTier - pupilTier;
+        if (tierDiff >= 1 && tierDiff <= 3) {
+          score += 30;
+          reasons.push(`教わるのに最適な実力差（${mentor.current_rank} ✕ ${pupil.rank}）`);
+        } else if (tierDiff >= 4) {
+          score += 20;
+          reasons.push(`上位ティアの先輩（+${tierDiff}ティア）`);
+        } else if (tierDiff === 0) {
+          score += 10;
+          reasons.push('同格マッチアップ');
+        } else {
+          // 先輩よりランクが高い場合は除外
+          continue;
+        }
+
+        // 「📖 教わりたい」ロール所持ボーナス
+        if (pupil.hasLearnRole) {
+          score += 20;
+          reasons.push('Discordで「📖 教わりたい」表明中');
+        }
+
+        // チャンプ合致
+        const mChamps = (mentor.champions || []).map((c: string) => c.toLowerCase());
+        const pChamps = (pupil.champions || []).map((c: string) => c.toLowerCase());
+        const shared = pChamps.filter((c: string) => mChamps.includes(c));
+        if (shared.length > 0) {
+          score += 15;
+          reasons.push(`得意チャンプ一致（${shared.slice(0, 2).join(', ')}）`);
+        }
+
+        const finalScore = Math.min(Math.max(score, 0), 98);
+        if (finalScore >= 60) {
+          const pairKey = `${mentor.discord_id}_${pupil.discordId}`;
+          const currentOfferStatus = offerMap.get(pairKey) || 'NONE';
+
+          proposals.push({
+            id: `${mentor.id}_${pupil.discordId}`,
+            mentor: {
+              profileId: mentor.id,
+              discordId: mentor.discord_id,
+              name: mentor.player_name,
+              rank: mentor.current_rank || 'PLATINUM',
+              lanes: mentor.lanes || [],
+              champions: mentor.champions || [],
+            },
+            pupil: {
+              profileId: pupil.profileId,
+              playerId: pupil.playerId,
+              discordId: pupil.discordId,
+              name: pupil.name,
+              rank: pupil.rank,
+              primaryLane: pupil.primaryLane,
+              secondaryLane: pupil.secondaryLane,
+              isRegistered: pupil.isRegistered,
+              hasLearnRole: pupil.hasLearnRole,
+            },
+            matchScore: finalScore,
+            reasons,
+            offerStatus: (currentOfferStatus as any) || 'NONE',
+          });
+        }
+      }
+    }
+
+    // スコア降順（同点なら教わりたいロール優先）
+    return proposals.sort((a, b) => {
+      if (b.pupil.hasLearnRole !== a.pupil.hasLearnRole) {
+        return b.pupil.hasLearnRole ? 1 : -1;
+      }
+      return b.matchScore - a.matchScore;
+    });
+  } catch (err) {
+    console.error('[mentorshipMatchmaker] generateSecretMatchmakerPairs error:', err);
+    return [];
+  }
+}
+
+

@@ -8,6 +8,7 @@ import { MentorshipRequestModal } from './MentorshipRequestModal';
 import { MentorshipKickoffModal } from './MentorshipKickoffModal';
 import { MentorshipGuidelinesModal } from './MentorshipGuidelinesModal';
 import { MentorshipReviewModal } from './MentorshipReviewModal';
+import { SecretMatchmakerModal } from './SecretMatchmakerModal';
 import { MentorshipReviewSummary } from '../api/mentorship/reviews/route';
 import { toast } from '../../components/Toaster';
 import { HeartHandshake, Sparkles, Plus, Search, Shield, Award, Users, Swords, BookOpen, MessageSquare, Rocket, Leaf, Star, ExternalLink, RefreshCw } from 'lucide-react';
@@ -55,6 +56,11 @@ export default function MentorshipHubPanel() {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [selectedReviewMatch, setSelectedReviewMatch] = useState<any | null>(null);
 
+  // 🤖 シークレットお見合い便モーダル管理
+  const [isSecretMatchmakerOpen, setIsSecretMatchmakerOpen] = useState(false);
+  const [myProposal, setMyProposal] = useState<any | null>(null);
+  const [isRespondingProposal, setIsRespondingProposal] = useState(false);
+
   // 💬 Discord同期ステート
   const [isSyncingDiscord, setIsSyncingDiscord] = useState(false);
 
@@ -62,6 +68,46 @@ export default function MentorshipHubPanel() {
   const [acceptingMatchId, setAcceptingMatchId] = useState<string | null>(null);
   // 🎓 フォーラム専用スレッド作成中ステート
   const [creatingThreadMatchId, setCreatingThreadMatchId] = useState<string | null>(null);
+
+  // お見合い回答処理（承諾 / 見送り）
+  const handleRespondProposal = async (decision: 'ACCEPT' | 'DECLINE') => {
+    if (!myProposal) return;
+    if (decision === 'DECLINE') {
+      if (!confirm('このお見合いを見送りますか？\n※見送っても相手には一切通知されません。')) return;
+    }
+
+    setIsRespondingProposal(true);
+    try {
+      const res = await fetch('/api/mentorship/matchmaker', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'RESPOND_OFFER',
+          matchId: myProposal.matchId,
+          decision,
+        }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        if (decision === 'DECLINE') {
+          toast.success('見送りを記録しました（相手には通知されません）');
+        } else if (data.isBothAccepted) {
+          toast.success('🎉 お見合い成立！双方が話してみたいを選びました！');
+          if (data.threadUrl) window.open(data.threadUrl, '_blank');
+        } else {
+          toast.success('👍 「話してみたい」を記録しました！相手も選ぶとマッチング成立します');
+        }
+        setMyProposal(null);
+        fetchMatches();
+      } else {
+        toast.error(data.error || '処理に失敗しました');
+      }
+    } catch {
+      toast.error('通信エラーが発生しました');
+    } finally {
+      setIsRespondingProposal(false);
+    }
+  };
 
   // 専用Discordスレッドの作成
   const handleCreateThread = async (matchId: string) => {
@@ -160,10 +206,24 @@ export default function MentorshipHubPanel() {
     }
   };
 
+  // 自分宛てのお見合いオファー取得
+  const fetchMyProposal = async () => {
+    try {
+      const res = await fetch('/api/mentorship/matchmaker');
+      const data = await res.json();
+      if (data.ok && data.myProposal) {
+        setMyProposal(data.myProposal);
+      }
+    } catch (err) {
+      // ログイン前等の場合はスキップ
+    }
+  };
+
   useEffect(() => {
     fetchProfiles();
     fetchMatches();
     fetchReviewSummaries();
+    fetchMyProposal();
   }, []);
 
   // 🛠️ 管理者専用: 任意の師弟マッチ・申請を強制削除
@@ -701,16 +761,28 @@ export default function MentorshipHubPanel() {
             </a>
 
             {isAdmin && (
-              <button
-                type="button"
-                onClick={handleSyncDiscord}
-                disabled={isSyncingDiscord}
-                className="px-2.5 py-2.5 rounded-xl bg-surface-subtle hover:bg-surface-hover text-foreground-subtle font-bold text-xs transition border border-border flex items-center gap-1 cursor-pointer disabled:opacity-50 shadow-2xs"
-                title="Discordの常駐ダッシュボードを即座に再同期します"
-              >
-                <RefreshCw size={13} className={isSyncingDiscord ? 'animate-spin text-primary-600' : ''} />
-                <span className="hidden sm:inline">Discord同期</span>
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsSecretMatchmakerOpen(true)}
+                  className="px-3 py-2.5 rounded-xl bg-secondary-500/15 hover:bg-secondary-500/25 text-secondary-700 font-bold text-xs transition border border-secondary-500/30 flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  title="未登録メンバーを含むお見合い候補を自動算出し、双方向案内をテスト送信します"
+                >
+                  <Sparkles size={13} className="text-secondary-600" />
+                  <span>🤖 お見合い便 (MVP)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSyncDiscord}
+                  disabled={isSyncingDiscord}
+                  className="px-2.5 py-2.5 rounded-xl bg-surface-subtle hover:bg-surface-hover text-foreground-subtle font-bold text-xs transition border border-border flex items-center gap-1 cursor-pointer disabled:opacity-50 shadow-2xs"
+                  title="Discordの常駐ダッシュボードを即座に再同期します"
+                >
+                  <RefreshCw size={13} className={isSyncingDiscord ? 'animate-spin text-primary-600' : ''} />
+                  <span className="hidden sm:inline">Discord同期</span>
+                </button>
+              </>
             )}
 
             <button
@@ -750,6 +822,61 @@ export default function MentorshipHubPanel() {
         </div>
       </div>
 
+      {/* 🎒 届いたお見合い便バナー（ダブルオプトイン） */}
+      {myProposal && (
+        <div className="bg-gradient-to-r from-secondary-500/15 via-success-500/10 to-secondary-500/15 border-2 border-secondary-500/30 rounded-3xl p-5 md:p-6 shadow-sm space-y-3.5 animate-in fade-in duration-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-secondary-500/20 text-secondary-800 text-xs font-black">
+                <Sparkles size={13} className="text-secondary-600" />
+                あなたへのお見合い便が届いています！
+              </div>
+              <h3 className="text-base md:text-lg font-black text-foreground">
+                {myProposal.isMentor ? '後輩候補' : 'おすすめの先輩'}：<strong>{myProposal.partnerName}</strong> さん
+                <span className="text-xs font-bold text-foreground-subtle ml-2">
+                  (🛡️ {myProposal.lane} / 相性スコア: <span className="text-secondary-600 font-black">{myProposal.matchScore}%</span>)
+                </span>
+              </h3>
+              {myProposal.reasons && myProposal.reasons.length > 0 && (
+                <div className="flex items-center gap-1.5 flex-wrap pt-1 text-xs text-foreground-subtle">
+                  {myProposal.reasons.map((r: string, i: number) => (
+                    <span key={i} className="px-2 py-0.5 rounded-md bg-surface text-foreground-subtle border border-border/60">
+                      {r}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+              <button
+                type="button"
+                onClick={() => handleRespondProposal('ACCEPT')}
+                disabled={isRespondingProposal}
+                className="px-4 py-2.5 rounded-xl bg-success-600 hover:bg-success-500 text-white font-black text-xs transition shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <HeartHandshake size={14} />
+                <span>🤝 ちょっと話してみたい</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRespondProposal('DECLINE')}
+                disabled={isRespondingProposal}
+                className="px-3 py-2.5 rounded-xl bg-surface hover:bg-surface-subtle text-foreground-subtle font-bold text-xs transition border border-border cursor-pointer disabled:opacity-50"
+              >
+                <span>🍃 今回は見送る</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-border/50 flex items-center gap-2 text-xs text-emerald-800 font-medium">
+            <Shield size={14} className="text-emerald-600 shrink-0" />
+            <span>
+              <strong>🔒 安心ルール:</strong> 「今回は見送る」を選んでも、相手には一切通知されません。双方が「話してみたい」を選んだ時だけ専用チャットが開きます。
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* タブ切り替えバー */}
       <div className="space-y-3 bg-surface/90 p-4 rounded-2xl border border-border/90 shadow-2xs">
@@ -1346,6 +1473,12 @@ export default function MentorshipHubPanel() {
         match={selectedReviewMatch}
         myDiscordId={myDiscordId}
         onSubmitted={() => fetchReviewSummaries()}
+      />
+
+      {/* 🤖 シークレットお見合い便モーダル */}
+      <SecretMatchmakerModal
+        isOpen={isSecretMatchmakerOpen}
+        onClose={() => setIsSecretMatchmakerOpen(false)}
       />
     </div>
   );
