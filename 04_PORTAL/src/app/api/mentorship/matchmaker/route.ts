@@ -10,6 +10,12 @@ export const dynamic = 'force-dynamic';
 
 const PORTAL_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://my-work-8jbd.vercel.app';
 
+// 相性候補リストの閲覧とオファー送信は管理者だけ（2026-10-08: ログインしていれば誰でも
+// 候補リストを読めて、Bot経由で任意のメンバーへDMを送れる状態だった）。判定は profiles API と同じ。
+function isMatchmakerAdmin(session: { discordId?: string; isAdmin?: boolean } | null): boolean {
+  return Boolean(session?.isAdmin || session?.discordId === '697220229964759130');
+}
+
 /**
  * GET: お見合い便の候補リストを取得（ペア一覧 ＆ まとめ便バッチ一覧）
  */
@@ -55,6 +61,10 @@ export async function GET(req: Request) {
     }
 
     // 2. 管理者向け相性推薦候補リスト（ペア一覧 ＆ まとめ便バッチ一覧）
+    // 管理者以外には自分宛てのオファーだけ返す
+    if (!isMatchmakerAdmin(session)) {
+      return NextResponse.json({ ok: true, proposals: [], batches: [], myProposal });
+    }
     const proposals = await generateSecretMatchmakerPairs();
     const batches = await generateSecretMatchmakerBatches();
 
@@ -78,6 +88,10 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     const { action } = body;
+
+    if ((action === 'SEND_OFFER' || action === 'SEND_BATCH_OFFER') && !isMatchmakerAdmin(session)) {
+      return NextResponse.json({ error: 'この操作は管理者のみ実行できます。' }, { status: 403 });
+    }
 
     // 0. Botからの回答処理（Discordボタン押下時）
     if (action === 'RESPOND_OFFER_BOT') {
