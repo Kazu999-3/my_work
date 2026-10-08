@@ -361,6 +361,26 @@ def notify(cur, report: Report):
     return title
 
 
+def send_fail_to_error_log(report: Report):
+    """異常(FAIL)がある時だけ、04のエラー受付API経由で Discord の #エラーログ へ送る。
+    このワークフローはDiscordの鍵を持たないため04経由にしている（2026-10-08: 失敗の集約先を #エラーログ に統一）。"""
+    if report.worst != FAIL:
+        return
+    portal = os.environ.get("PORTAL_URL", "https://my-work-8jbd.vercel.app").rstrip("/")
+    body = json.dumps({
+        "app": "health",
+        "source": "CRON",
+        "message": "毎朝の健康診断で異常を検知\n" + report.markdown().replace("**", "")[:1500],
+        "path": "health-report",
+    }).encode()
+    req = urllib.request.Request(f"{portal}/api/logs/error", data=body, method="POST",
+                                 headers={"Content-Type": "application/json"})
+    try:
+        urllib.request.urlopen(req, timeout=20)
+    except Exception as e:
+        print(f"#エラーログ への送信に失敗: {e}")
+
+
 def open_issue(report: Report):
     """FAIL があれば GitHub Issue を立てる（同じタイトルが開いていれば追記）"""
     token = os.environ.get("GITHUB_TOKEN")
@@ -428,6 +448,7 @@ def main():
         with open(summary, "a", encoding="utf-8") as f:
             f.write(f"## 🩺 毎朝の健康診断\n\n{md}\n")
     if report.worst == FAIL and not args.dry_run:
+        send_fail_to_error_log(report)
         try:
             open_issue(report)
         except Exception as e:

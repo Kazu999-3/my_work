@@ -1126,8 +1126,17 @@ def main():
                          else "再試行待ち")
                 lines.append(f"・{t}（{label}）")
         color = COLOR_WARN if failed else COLOR_OK
-        status = "warn" if failed else "ok"
-        notify("🎬 YouTube解析ワーカー", lines, color=color, worker_name="youtube_worker", status=status, components=components)
+        # #エラーログ へ送るのは、再試行しても直らないと確定した失敗（字幕なし・生成失敗）がある時だけ。
+        # 「再試行待ち」「利用上限・レート制限」は次の回に自動でやり直して大半が成功するため、
+        # 失敗として流すと同じ動画が何度も載る（2026-10-04〜08に1本が12回載っていた）。
+        final_failures = [t for t, st, _ in failed if st in ("error_no_transcript", "error_generation")]
+        status = "error" if final_failures else ("warn" if failed else "ok")
+        if final_failures:
+            notify("🎬 YouTube解析ワーカー: 解析できなかった動画",
+                   [f"**❌ 解析失敗: {len(final_failures)}本**（再試行しても直らないもの）"] + [f"・{t}" for t in final_failures],
+                   color=color, worker_name="youtube_worker", status=status)
+        else:
+            notify("🎬 YouTube解析ワーカー", lines, color=color, worker_name="youtube_worker", status=status, components=components)
 
     # 全滅かつ全て字幕なし＝データセンターIPがブロックされている疑いが濃い
     if failed and not done and all(st == "error_no_transcript" for _, st, _ in failed):

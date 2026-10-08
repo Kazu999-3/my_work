@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { notifyPortalError } from '../../../../lib/discordNotify';
+import { notifyPortalError, type ErrorLogApp } from '../../../../lib/discordNotify';
+
+// 04のブラウザ側エラーに加え、05(KTM Pilot)のサーバー/画面エラーと毎朝の健康診断の異常もここで受けて
+// #エラーログ へ集約する（05はDiscordの鍵を持たないため、04経由で送る）。
+const EXTERNAL_APPS: ErrorLogApp[] = ['05', 'health'];
+const SOURCES = ['API', 'CLIENT', 'CRON', 'SERVER_ACTION', 'TASK'] as const;
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,6 +17,9 @@ export async function POST(req: NextRequest) {
       userId,
       userName,
       componentStack,
+      app,
+      source,
+      method,
     } = body || {};
 
     if (!message && !stack) {
@@ -21,7 +29,9 @@ export async function POST(req: NextRequest) {
     // Discordへエラーを転送
     await notifyPortalError({
       error: message || 'Client Unhandled Exception',
-      source: 'CLIENT',
+      app: EXTERNAL_APPS.includes(app) ? app : '04',
+      source: SOURCES.includes(source) ? source : 'CLIENT',
+      method: typeof method === 'string' ? method.slice(0, 10) : undefined,
       path: path || 'Browser UI',
       userId,
       userName,

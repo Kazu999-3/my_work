@@ -166,9 +166,20 @@ export async function sendRankUpgradeNotification(params: {
 
 export const DEFAULT_ERROR_LOG_CHANNEL_ID = '1550118540038774865';
 
+// エラーログ(#エラーログ)は失敗だけを集める場所（2026-10-08 ユーザー判断: 成功報告は流さない）。
+// 04・05・ワーカー・健康診断の失敗をここへ集約するため、どこで起きたかを app で示す。
+export type ErrorLogApp = '04' | '05' | 'worker' | 'health';
+const ERROR_LOG_APP_LABEL: Record<ErrorLogApp, string> = {
+  '04': '04 ポータル',
+  '05': '05 Pilot',
+  worker: 'ワーカー',
+  health: '健康診断',
+};
+
 export interface PortalErrorLogParams {
   error: Error | string | unknown;
-  source?: 'API' | 'CLIENT' | 'CRON' | 'SERVER_ACTION';
+  app?: ErrorLogApp;
+  source?: 'API' | 'CLIENT' | 'CRON' | 'SERVER_ACTION' | 'TASK';
   path?: string;
   method?: string;
   statusCode?: number;
@@ -185,7 +196,8 @@ const ERROR_DEBOUNCE_MS = 30000; // 30秒間は同一エラーの再送を抑制
  * 🚨 ポータルで発生した例外・クラッシュを Discord 監視チャンネル (1550118540038774865) へ通知
  */
 export async function notifyPortalError(params: PortalErrorLogParams): Promise<boolean> {
-  const { error, source = 'API', path = 'UNKNOWN', method, statusCode, userId, userName, context } = params;
+  const { error, app = '04', source = 'API', path = 'UNKNOWN', method, statusCode, userId, userName, context } = params;
+  const appLabel = ERROR_LOG_APP_LABEL[app] ?? ERROR_LOG_APP_LABEL['04'];
 
   let errMsg = '';
   let errStack = '';
@@ -204,7 +216,7 @@ export async function notifyPortalError(params: PortalErrorLogParams): Promise<b
   }
 
   // デバウンス判定
-  const debounceKey = `${source}:${path}:${errMsg.slice(0, 100)}`;
+  const debounceKey = `${app}:${source}:${path}:${errMsg.slice(0, 100)}`;
   const now = Date.now();
   const lastSent = recentErrorsMap.get(debounceKey) || 0;
   if (now - lastSent < ERROR_DEBOUNCE_MS) {
@@ -264,7 +276,7 @@ export async function notifyPortalError(params: PortalErrorLogParams): Promise<b
   }
 
   const embed = {
-    title: `🚨 【KTM ポータル】${source} エラー検知`,
+    title: `🚨 【${appLabel}】${source} エラー検知`,
     color: 0xED4245, // 赤色
     fields,
     footer: { text: `KTM Portal Error Watcher | ${process.env.NODE_ENV || 'production'}` },
@@ -272,7 +284,7 @@ export async function notifyPortalError(params: PortalErrorLogParams): Promise<b
   };
 
   const payload = {
-    content: `⚠️ **【ポータルエラー検知】** \`${path}\` にてエラーが発生しました`,
+    content: `⚠️ **【${appLabel}】** \`${path}\` で失敗が発生しました`,
     embeds: [embed],
   };
 

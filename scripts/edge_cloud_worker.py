@@ -171,6 +171,8 @@ def notify_portal(task_type, payload, success, detail="", task_id=None):
         "title": title,
         "body": body,
         "url": url_path,
+        # 失敗はポータル側で #エラーログ にも送られる（成功は通知ベルのみ）
+        "level": None if success else "error",
     }).encode()
     req = urllib.request.Request(f"{PORTAL_URL}/api/push/notify-admin", data=req_body, method="POST")
     req.add_header("Content-Type", "application/json")

@@ -1,5 +1,6 @@
 import { supabaseAdmin as supabase } from './supabaseAdmin';
 import { sendPushToScope } from '../app/api/push/send/route';
+import { notifyPortalError } from './discordNotify';
 
 /**
  * 管理者向けポータル通知の共通作成関数。
@@ -17,6 +18,8 @@ export interface AdminNotificationInput {
   url?: string;
   icon?: string;
   data?: Record<string, any>;
+  /** 'error' の時だけ Discord の #エラーログ にも送る（失敗の集約先。成功はベルのみ） */
+  level?: 'error';
 }
 
 export async function createAdminNotification(input: AdminNotificationInput) {
@@ -73,6 +76,20 @@ export async function createAdminNotification(input: AdminNotificationInput) {
     } catch (e: any) {
       console.warn('[notify] Push通知送信に失敗（履歴には記録済み）:', e);
       pushResult = { error: e?.message || String(e) };
+    }
+  }
+
+  if (input.level === 'error') {
+    try {
+      await notifyPortalError({
+        error: [input.title, input.body].filter(Boolean).join('\n'),
+        app: 'worker',
+        source: 'TASK',
+        path: input.url || input.type,
+        context: { type: input.type },
+      });
+    } catch (e) {
+      console.warn('[notify] エラーログへの送信に失敗（履歴には記録済み）:', e);
     }
   }
 

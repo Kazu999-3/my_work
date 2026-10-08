@@ -13,11 +13,13 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { type, title, body, url, icon, data } = await req.json();
+    const { type, title, body, url, icon, data, level } = await req.json();
     if (!type || !title) {
       return NextResponse.json({ error: 'type と title は必須です。' }, { status: 400 });
     }
-    const row = await createAdminNotification({ type, title, body, url, icon, data });
+    // 失敗は #エラーログ にも送る。level を送らない古い送り元(PCデーモン・herald)は「❌」始まりの見出しで判定する
+    const isError = level === 'error' || String(title).startsWith('❌');
+    const row = await createAdminNotification({ type, title, body, url, icon, data, level: isError ? 'error' : undefined });
     return NextResponse.json({ success: true, notification: row });
   } catch (err: any) {
     console.error('[push/notify-admin] POST error:', err);

@@ -97,6 +97,12 @@ def notify(title, lines=None, color=0x5865F2, worker_name=None, status="ok", com
     if worker_name:
         record_worker_log(worker_name, status, title, lines)
 
+    # Discord(#エラーログ)へは失敗だけを送る（2026-10-08 ユーザー判断）。
+    # 以前は成功の完了報告まで送っており、#エラーログ の直近100件がすべてYouTube解析の報告で
+    # 本物のエラーが埋もれていた。成功・注意はSupabaseのワーカーログ(05運用ダッシュボード)で見る。
+    if status != "error":
+        return
+
     description = "\n".join(lines) if lines else ""
     if len(description) > 3900:
         description = description[:3900] + "\n…(以下省略)"
