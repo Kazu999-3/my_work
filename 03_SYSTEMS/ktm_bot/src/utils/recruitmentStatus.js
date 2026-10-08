@@ -270,9 +270,10 @@ export function hasCommonLane(rawA, rawB) {
 }
 
 /**
- * 参加者行から「1ティア差以内の出場対象枠」と「2ティア差離れた観戦・2部屋目待ち枠」を分離し、
+ * 参加者行から「出場対象枠」と「観戦・2部屋目待ち枠」を分離し、
  * 出場対象枠の中だけで各試合の実働人数を集計する。
- * ★ 人数不足時（10名未満）は、特定レーンで同レート同士の対面（ミラー）が組めるペアを出場枠へ昇格。
+ * 人数に関わらず、最多MMR帯および初中級最優先ポリシー（同数時は下のレート優先）に基づき、
+ * 2ランク格差が出ないよう公平に分離する。
  */
 export function parseEntryBreakdown(lines, dominantTierKey = null) {
   const entries = (lines || []).filter((l) => l && l.startsWith('- '));
@@ -281,14 +282,13 @@ export function parseEntryBreakdown(lines, dominantTierKey = null) {
   const eligible = [];
   const spectator = [];
 
-  // ① ランク不問（日曜など）、または 参加者が10名未満（募集中）の場合:
-  // 10名集まる前に誰かを観戦枠に弾くことはせず、全員をエントリーとして並べる（案A）
-  if (!dominantOrder || entries.length < DAY_CAPACITY) {
+  // ① ランク不問（日曜など）の場合: 全員を出場対象枠へ
+  if (!dominantOrder) {
     for (const rawLine of entries) {
       eligible.push({ raw: rawLine, line: cleanEntryLine(rawLine) });
     }
   } else {
-    // ② 10名以上集まった場合: 最多層ルールに基づき10名選出・観戦枠を分離
+    // ② ランク制限あり（土曜など）: 最多層ルールに基づき出場対象・観戦枠を分離
     const tierEntries = {
       same: [],    // dominantOrder と同ティア（最多帯）
       lower: [],   // dominantOrder - 1 (1ランク下、例: シルバー)
