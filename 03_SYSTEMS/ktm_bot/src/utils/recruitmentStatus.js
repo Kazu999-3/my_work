@@ -279,15 +279,16 @@ export function parseEntryBreakdown(lines, dominantTierKey = null) {
   const dominantOrder = dominantTierKey ? TIER_ORDER[dominantTierKey] : null;
 
   const eligible = [];
-  const spectatorCandidates = [];
+  const spectator = [];
 
-  if (!dominantOrder) {
-    // 日曜などランク不問の場合は全員出場対象
+  // ① ランク不問（日曜など）、または 参加者が10名未満（募集中）の場合:
+  // 10名集まる前に誰かを観戦枠に弾くことはせず、全員をエントリーとして並べる（案A）
+  if (!dominantOrder || entries.length < DAY_CAPACITY) {
     for (const rawLine of entries) {
       eligible.push({ raw: rawLine, line: cleanEntryLine(rawLine) });
     }
   } else {
-    // 1. 各ティアごとのエントリーを分類
+    // ② 10名以上集まった場合: 最多層ルールに基づき10名選出・観戦枠を分離
     const tierEntries = {
       same: [],    // dominantOrder と同ティア（最多帯）
       lower: [],   // dominantOrder - 1 (1ランク下、例: シルバー)
@@ -312,77 +313,24 @@ export function parseEntryBreakdown(lines, dominantTierKey = null) {
       }
     }
 
-    // 2. シルバー対プラチナ等の2ランク格差防止 ＆ 初中級・下位レート優先ポリシー:
-    //    最多帯と同室にする隣接ティアは、下位側（初中級: lower）がいれば下位側を最優先！
-    //    同数の場合も下のレート優先。下位側が0名の場合のみ上位側（higher）を採用。
+    // 初中級最優先ポリシー:
+    // 下位側（lower: 初中級）がいれば下位側を最優先採用（同数の場合も下のレート優先）
+    // 下位側が0名の場合のみ上位側（higher）を採用
     let acceptedAdjacent = [];
     let rejectedAdjacent = [];
 
     if (tierEntries.lower.length > 0) {
       acceptedAdjacent = tierEntries.lower;
-      rejectedAdjacent = tierEntries.higher; // 上位側は観戦・交代枠へ
+      rejectedAdjacent = tierEntries.higher;
     } else if (tierEntries.higher.length > 0) {
       acceptedAdjacent = tierEntries.higher;
     }
 
     eligible.push(...tierEntries.same, ...acceptedAdjacent);
-    spectatorCandidates.push(...tierEntries.outlier, ...rejectedAdjacent);
+    spectator.push(...tierEntries.outlier, ...rejectedAdjacent);
   }
 
-  // ★ 人数不足時の対面ミラー救済:
-  // 出場対象が定員(10名)に満たない場合、特定レーンで同レート同士の対面（ミラー）が組めるペアを出場枠へ昇格
-  let promotedPairsCount = 0;
-  const spectator = [];
-
-  if (dominantOrder && eligible.length < DAY_CAPACITY && spectatorCandidates.length >= 2) {
-    const promotedIndices = new Set();
-
-    // 試合別（第1戦・第2戦）に、参加可能な候補者同士で同ティア・共通レーンのペアを探索
-    function findMatchPairs(candidates, matchFilter) {
-      const matchCands = candidates.filter((c) => matchFilter(c.raw));
-      const pairedInMatch = new Set();
-      for (let i = 0; i < matchCands.length; i++) {
-        const c1 = matchCands[i];
-        if (pairedInMatch.has(c1.idx)) continue;
-
-        for (let j = i + 1; j < matchCands.length; j++) {
-          const c2 = matchCands[j];
-          if (pairedInMatch.has(c2.idx)) continue;
-
-          if (c1.tier === c2.tier && hasCommonLane(c1.raw, c2.raw)) {
-            pairedInMatch.add(c1.idx);
-            pairedInMatch.add(c2.idx);
-            promotedIndices.add(c1.idx);
-            promotedIndices.add(c2.idx);
-            promotedPairsCount += 1;
-            break;
-          }
-        }
-      }
-    }
-
-    const indexedCands = spectatorCandidates.map((c, idx) => ({ ...c, idx }));
-    // 第1戦（フル or 1戦のみ）の対面ペアを判定
-    findMatchPairs(indexedCands, (raw) => !isLateJoin(raw));
-    // 第2戦（フル or 途中参加）の対面ペアを判定
-    findMatchPairs(indexedCands, (raw) => !isSingleMatch(raw));
-
-    for (let i = 0; i < spectatorCandidates.length; i++) {
-      const cand = spectatorCandidates[i];
-      if (promotedIndices.has(i)) {
-        if (!cand.line.includes('🤝対面枠')) {
-          cand.line += ' 🤝対面枠';
-        }
-        eligible.push(cand);
-      } else {
-        spectator.push(cand);
-      }
-    }
-  } else {
-    spectator.push(...spectatorCandidates);
-  }
-
-  // ★ カウントは出場対象枠（eligible: 1ティア差 ＋ 昇格した対面枠）で集計！
+  // カウントは出場対象枠（eligible）で集計
   const eligibleFull = eligible.filter((e) => !isSingleMatch(e.raw) && !isLateJoin(e.raw));
   const eligibleSingle = eligible.filter((e) => isSingleMatch(e.raw));
   const eligibleLate = eligible.filter((e) => isLateJoin(e.raw));
@@ -390,7 +338,7 @@ export function parseEntryBreakdown(lines, dominantTierKey = null) {
   const match1Count = eligibleFull.length + eligibleSingle.length;
   const match2Count = eligibleFull.length + eligibleLate.length;
 
-  // 試合別の行一覧（案1：第1戦出場メンバーと2戦目合流メンバー）
+  // 試合別の行一覧（第1戦出場メンバーと2戦目合流メンバー）
   const match1Lines = eligible
     .filter((e) => !isLateJoin(e.raw))
     .map((e) => e.line);
@@ -407,8 +355,8 @@ export function parseEntryBreakdown(lines, dominantTierKey = null) {
     match1Lines,
     match2LateLines,
     dominantTierKey,
-    promotedPairsCount,
-    hasBreakdown: eligibleSingle.length > 0 || eligibleLate.length > 0 || spectator.length > 0 || promotedPairsCount > 0,
+    promotedPairsCount: 0,
+    hasBreakdown: eligibleSingle.length > 0 || eligibleLate.length > 0 || spectator.length > 0,
     hasSpectator: spectator.length > 0,
     match1Count,
     match2Count,

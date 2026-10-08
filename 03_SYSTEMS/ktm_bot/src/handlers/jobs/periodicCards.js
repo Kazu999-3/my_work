@@ -1,7 +1,7 @@
 import { CONFIG } from '../../config.js';
 import { fetchSupabase } from '../../utils/supabase.js';
 import { fetchWithRetry, fetchPortalAPI } from '../../utils/api.js';
-import { buildDayRecruitEmbed, buildDayRecruitComponents } from '../../ui/embeds.js';
+import { buildDayRecruitEmbed, buildDayRecruitComponents, applyDayCardState } from '../../ui/embeds.js';
 import { createRecruitment, markRecruitmentStatus } from '../../utils/recruitPermission.js';
 import { notifyAdminError } from '../../utils/alert.js';
 import { computeDayStatus, getDayDef, detectDayKey, extractEntryLines, DAY_CAPACITY, DAY_DEFS, resolveWeekendTargets, buildRecruitmentContent } from '../../utils/recruitmentStatus.js';
@@ -619,6 +619,13 @@ export async function syncPeriodicCardContents(env) {
     }
 
     const newContent = buildRecruitmentContent(target, CONFIG.NOTIFICATION_ROLE_ID);
+
+    // Embedカードも最新ロジック（案A: 10名未満は全員エントリー）で再計算！
+    const currentEmbed = card.embeds?.[0] || {};
+    const rawLines = extractEntryLines(currentEmbed.fields?.[0]?.value);
+    const updatedEmbed = { ...currentEmbed };
+    applyDayCardState(updatedEmbed, target.dayKey, rawLines);
+
     const patchRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages/${card.id}`, {
       method: 'PATCH',
       headers: {
@@ -627,6 +634,7 @@ export async function syncPeriodicCardContents(env) {
       },
       body: JSON.stringify({
         content: newContent,
+        embeds: [updatedEmbed],
         allowed_mentions: { parse: [] } // サイレント更新
       }),
     });
