@@ -55,6 +55,38 @@ export default function KtmAdminPage() {
   const [showMmrInfo, setShowMmrInfo] = useState(false);
   const [showRoleSyncModal, setShowRoleSyncModal] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
+  const [processingIntros, setProcessingIntros] = useState(false);
+
+  const handleProcessIntros = async () => {
+    setProcessingIntros(true);
+    setMessage({ type: "info", text: "⏳ 自己紹介チャンネルの新着を確認しています..." });
+    try {
+      const res = await fetch('/api/onboarding/process-intro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+      if (!res.ok || data.status === 'ERROR') {
+        throw new Error(data.message || data.error || '取り込み処理に失敗しました');
+      }
+      if (data.processed > 0) {
+        setMessage({
+          type: "success",
+          text: `🎉 新メンバー ${data.processed} 名の自己紹介を取り込み、名簿登録・ロール付与・個別案内部屋を開通しました！`
+        });
+        roster.fetchPlayers();
+      } else {
+        setMessage({
+          type: "info",
+          text: `ℹ️ 未処理の新着自己紹介はありませんでした（スキップ: ${data.skipped}件）。`
+        });
+      }
+    } catch (err: any) {
+      setMessage({ type: "error", text: `❌ エラー: ${err.message}` });
+    } finally {
+      setProcessingIntros(false);
+    }
+  };
 
   // タブ（URLクエリ ?tab=history / ?tab=players と同期）
   const [activeTab, setActiveTab] = useState<'players' | 'history'>('players');
@@ -216,6 +248,8 @@ export default function KtmAdminPage() {
               onSyncCheck={sync.handleSyncCheck}
               onOpenRoleSync={() => setShowRoleSyncModal(true)}
               onRebuild={roster.handleRebuildMmr}
+              onProcessIntros={handleProcessIntros}
+              processingIntros={processingIntros}
             />
 
             {showRoleSyncModal && <DiscordRoleSyncModal onClose={() => setShowRoleSyncModal(false)} />}

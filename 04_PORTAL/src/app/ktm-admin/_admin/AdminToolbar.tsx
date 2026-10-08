@@ -4,7 +4,7 @@ import { Info, Users, RefreshCw, Filter, X, Sparkles } from "lucide-react";
 
 // 名簿タブの見出し・検索・自動保存の状態・各種操作ボタン（全員非アクティブ / Discord & Riot同期 / ロール連携 / Rebuild / MMR説明）
 // 2026-10-07: app/ktm-admin/page.tsx（1,885行）から分割。表示内容・動作は分割前と同じ。
-export default function AdminToolbar({ searchQuery, setSearchQuery, saving, loading, syncingDiscord, syncData, showMmrInfo, setShowMmrInfo, onDeactivateAll, onForceReset, onSyncCheck, onOpenRoleSync, onRebuild }: {
+export default function AdminToolbar({ searchQuery, setSearchQuery, saving, loading, syncingDiscord, syncData, showMmrInfo, setShowMmrInfo, onDeactivateAll, onForceReset, onSyncCheck, onOpenRoleSync, onRebuild, onProcessIntros, processingIntros }: {
   searchQuery: string;
   setSearchQuery: (v: string) => void;
   saving: boolean;
@@ -18,6 +18,8 @@ export default function AdminToolbar({ searchQuery, setSearchQuery, saving, load
   onSyncCheck: () => void;
   onOpenRoleSync: () => void;
   onRebuild: () => void;
+  onProcessIntros?: () => void;
+  processingIntros?: boolean;
 }) {
   return (
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-border pb-6 gap-4">
@@ -97,11 +99,23 @@ export default function AdminToolbar({ searchQuery, setSearchQuery, saving, load
                 <button
                   onClick={onOpenRoleSync}
                   className="flex items-center gap-2 bg-[#5865F2]/10 hover:bg-[#5865F2]/20 text-[#5865F2] border border-[#5865F2]/40 px-3 py-2 rounded-lg font-bold transition text-xs shadow-sm"
-                  title="内戦の通算試合数に応じた5種類のDiscordロール（初参加/ライト/常連/経験者/復帰勢）を作成・同期します"
+                  title="定期カスタムの通算試合数に応じたDiscordロール（初参加/ライト/常連/経験者/復帰勢）を作成・同期します"
                 >
                   <Sparkles className="h-4 w-4 text-[#5865F2]" />
                   🎭 ロール連携
                 </button>
+
+                {onProcessIntros && (
+                  <button
+                    onClick={onProcessIntros}
+                    disabled={processingIntros}
+                    className="flex items-center gap-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 border border-emerald-500/40 px-3 py-2 rounded-lg font-bold transition text-xs shadow-sm disabled:opacity-50"
+                    title="自己紹介チャンネルの新着投稿を検知し、名簿登録・ロール付与・個別案内部屋の開通を一括実行します"
+                  >
+                    <RefreshCw className={`h-4 w-4 text-emerald-600 ${processingIntros ? 'animate-spin' : ''}`} />
+                    {processingIntros ? "取り込み中..." : "📝 自己紹介取り込み"}
+                  </button>
+                )}
 
                 <button
                   onClick={onRebuild}

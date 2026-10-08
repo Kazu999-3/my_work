@@ -317,15 +317,34 @@ def ensure_local_daemon_healthy():
         "local_daemon_down",
         "🔴 PCの常駐デーモンが応答していません",
         f"edge_worker_daemon.py のハートビートが{round(age_minutes)}分以上更新されていません。"
-        f"PCがオフ/スリープか、デーモンだけが落ちている可能性があります。"
-        f"PCを使っているのにこの通知が来たら、Sovereign Edge Worker を起動し直してください。",
     )
+
+
+def check_onboarding_intros():
+    """新メンバーの自己紹介チャンネル投稿を検知し、名簿登録・ロール付与・個別部屋開通をキック"""
+    if not PORTAL_URL:
+        return
+    try:
+        url = f"{PORTAL_URL}/api/onboarding/process-intro"
+        headers = {"Content-Type": "application/json"}
+        if PORTAL_BOT_SECRET:
+            headers["x-bot-secret"] = PORTAL_BOT_SECRET
+        req = urllib.request.Request(url, method="POST", headers=headers, data=b"{}")
+        with urllib.request.urlopen(req, timeout=20) as r:
+            res = json.loads(r.read().decode())
+            processed = res.get("processed", 0)
+            if processed > 0:
+                print(f"🎉 [Onboarding] 新メンバー自己紹介を検知・自動登録完了: {processed}件")
+    except Exception as e:
+        # オンボーディングの通信失敗で他のクラウドワーカー全体を止めない安全設計
+        print(f"⚠️ [Onboarding] 自己紹介チェック失敗 (次回再試行): {e}")
 
 
 def main():
     ensure_channel_monitor_scheduled()
     ensure_bulk_update_resumed()
     ensure_local_daemon_healthy()
+    check_onboarding_intros()
 
     types_str = ",".join(TASK_MAP.keys())
     status, tasks = sb(
