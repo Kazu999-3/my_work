@@ -7,6 +7,7 @@ import { isLowRank } from './discordRoleSync';
 export const INTRO_CHANNEL_ID = '1485646578621616209'; // #📝自己紹介
 export const GUILD_ID = '1485636149379858567';
 export const ADMIN_ROLE_ID = '1486000799711625307'; // KTM 運営ロール
+export const SERVER_ADMIN_USER_ID = '697220229964759130'; // かずき (サーバー管理者)
 
 export const ONBOARDING_ROLES = {
   NEW_MEMBER: '1556958870486777976',     // 🔰 初参加
@@ -125,7 +126,7 @@ function getBotHeaders(): Record<string, string> {
 }
 
 /**
- * 指定カテゴリーを取得（無ければ作成）
+ * 空きのある個別案内カテゴリーを取得（50チャンネル上限に達していたら自動で連番作成）
  */
 export async function getOrCreateOnboardingCategory(): Promise<string | null> {
   const headers = getBotHeaders();
@@ -133,22 +134,48 @@ export async function getOrCreateOnboardingCategory(): Promise<string | null> {
     const res = await discordFetch(`https://discord.com/api/v10/guilds/${GUILD_ID}/channels`, { headers });
     if (!res.ok) return null;
     const channels = await res.json();
-    const existing = channels.find((c: any) => c.type === 4 && c.name === ONBOARDING_CATEGORY_NAME);
-    if (existing) return existing.id;
+    if (!Array.isArray(channels)) return null;
 
-    // 作成
-    const createRes = await discordFetch(`https://discord.com/api/v10/guilds/${GUILD_ID}/channels`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        name: ONBOARDING_CATEGORY_NAME,
-        type: 4, // GUILD_CATEGORY
-      }),
-    });
-    if (createRes.ok) {
-      const created = await createRes.json();
-      return created.id;
+    // カテゴリー一覧 (type === 4)
+    const categories = channels.filter((c: any) => c.type === 4);
+    
+    // 各カテゴリーの配下チャンネル数を集計
+    const childCounts = new Map<string, number>();
+    for (const c of channels) {
+      if (c.parent_id) {
+        childCounts.set(c.parent_id, (childCounts.get(c.parent_id) || 0) + 1);
+      }
     }
+
+    // "🤝 個別案内" で始まるカテゴリーを番号順（①, ②, ③...）にチェック
+    const numSymbols = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩'];
+    for (let i = 0; i < numSymbols.length; i++) {
+      const targetName = `🤝 個別案内${numSymbols[i]}`;
+      const existing = categories.find((c: any) => c.name === targetName);
+
+      if (existing) {
+        const count = childCounts.get(existing.id) || 0;
+        // Discordの上限は50。安全マージンとして48未満ならこのカテゴリーに割り当て
+        if (count < 48) {
+          return existing.id;
+        }
+      } else {
+        // まだ存在しない連番カテゴリーを作成
+        const createRes = await discordFetch(`https://discord.com/api/v10/guilds/${GUILD_ID}/channels`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            name: targetName,
+            type: 4, // GUILD_CATEGORY
+          }),
+        });
+        if (createRes.ok) {
+          const created = await createRes.json();
+          return created.id;
+        }
+      }
+    }
+
     return null;
   } catch (err) {
     console.warn('[getOrCreateOnboardingCategory] error:', err);
@@ -169,7 +196,7 @@ export async function createPrivateWelcomeChannel(params: {
 
   // Permission Overwrites:
   // 1. @everyone: VIEW_CHANNEL (1024) DENY
-  // 2. KTM (運営ロール): VIEW_CHANNEL (1024) + SEND_MESSAGES (2048) ALLOW
+  // 2. サーバー管理者個人: VIEW_CHANNEL (1024) + SEND_MESSAGES (2048) ALLOW
   // 3. 対象メンバー: VIEW_CHANNEL (1024) + SEND_MESSAGES (2048) ALLOW
   const permissionOverwrites = [
     {
@@ -179,9 +206,9 @@ export async function createPrivateWelcomeChannel(params: {
       allow: '0',
     },
     {
-      id: ADMIN_ROLE_ID, // KTM運営ロール
-      type: 0,           // Role
-      allow: '3072',     // VIEW + SEND
+      id: SERVER_ADMIN_USER_ID, // サーバー管理者 (個人)
+      type: 1,                  // Member
+      allow: '3072',            // VIEW + SEND
       deny: '0',
     },
     {
@@ -424,7 +451,7 @@ export async function processSingleIntroMessage(msg: {
     const headers = getBotHeaders();
     const rankDisplay = rankTier !== 'UNRANKED' ? `${rankTier} ${rankDiv}`.trim() : 'UNRANKED (未認定)';
     const welcomeText = [
-      `👋 **<@${discordId}> さん、KTMサーバーへようこそ！**（<@&${ADMIN_ROLE_ID}>）`,
+      `👋 **<@${discordId}> さん、KTMサーバーへようこそ！**`,
       '',
       `自己紹介をいただき、KTM名簿への登録が完了しました！✨`,
       '',
