@@ -5,12 +5,12 @@ import { discordFetch } from './discordFetch';
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const DISCORD_GUILD_ID = process.env.DISCORD_GUILD_ID;
 const GAME_CATEGORY_ID = '1485646715716632787'; // 🎮 【Game】 カスタム・ゲーム
-const CHANNEL_NAME = '🤝師弟募集';
+const CHANNEL_NAME = '🎒-教えて先輩-相談募集';
 export const DEFAULT_MENTORSHIP_CHANNEL_ID = '1550159520687325205';
 export const DEFAULT_MENTORSHIP_FORUM_CHANNEL_ID = '1524740558550073496';
 const PORTAL_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://my-work-8jbd.vercel.app';
 
-const DASHBOARD_TITLE = '🎯 KTM 師弟募集リアルタイム掲示板';
+const DASHBOARD_TITLE = '🎒 KTM 教えて先輩！リアルタイム相談掲示板';
 
 /**
  * 師弟募集用チャンネルを取得、存在しなければ自動作成
@@ -37,7 +37,7 @@ export async function ensureMentorshipChannel(): Promise<string | null> {
 
     const channels: any[] = await res.json();
     const existing = channels.find(
-      (c: any) => (c.name === CHANNEL_NAME || c.name === '師弟募集' || c.name === '🤝-師弟募集') && c.type === 0
+      (c: any) => (c.name === CHANNEL_NAME || c.name === '教えて先輩' || c.name === '🎒-教えて先輩-相談募集' || c.name === '🤝師弟募集' || c.name === '師弟募集') && c.type === 0
     );
 
     if (existing) {
@@ -55,7 +55,7 @@ export async function ensureMentorshipChannel(): Promise<string | null> {
         name: CHANNEL_NAME,
         type: 0, // GUILD_TEXT
         parent_id: GAME_CATEGORY_ID,
-        topic: '🤝 KTMポータルの師弟マッチング募集板です。募集の確認やオファー申請はWebポータルから行えます。',
+        topic: '🎒 KTMポータル「教えて先輩！」相談掲示板です。先輩・後輩の相談カード確認や声かけはWebポータルから行えます。',
       }),
     });
 
@@ -92,10 +92,10 @@ export async function syncMentorshipDashboard(): Promise<boolean> {
     const mentors = (profiles || []).filter((p: any) => p.role_type === 'MENTOR');
     const pupils = (profiles || []).filter((p: any) => p.role_type === 'PUPIL');
 
-    // 2. 師匠リストのテキスト整形（シンプル化: ランク ➔ レーン ＆ 得意チャンプ）
+    // 2. 先輩リストのテキスト整形
     let mentorFieldText = '';
     if (mentors.length === 0) {
-      mentorFieldText = '現在募集中の師匠はいません。指導希望者はぜひポータルから立候補を！';
+      mentorFieldText = '現在受付中の先輩はいません。得意なチャンプがある方はぜひポータルからカード登録を！';
     } else {
       mentorFieldText = mentors
         .slice(0, 15) // 最大15件
@@ -109,30 +109,29 @@ export async function syncMentorshipDashboard(): Promise<boolean> {
         })
         .join('\n');
       if (mentors.length > 15) {
-        mentorFieldText += `\n*他 ${mentors.length - 15} 名の師匠が募集中*`;
+        mentorFieldText += `\n*他 ${mentors.length - 15} 名の先輩が受付中*`;
       }
     }
 
-    // 3. 弟子リストのテキスト整形（シンプル化: ランク ➔ レーン ＆ 練習チャンプ）
+    // 3. 後輩リストのテキスト整形
     let pupilFieldText = '';
     if (pupils.length === 0) {
-      pupilFieldText = '現在募集中の弟子はいません。向上心あふれる弟子の参加を待っています！';
+      pupilFieldText = '現在教えてほしい後輩はいません。気になるチャンプや質問がある方はポータルからカード登録を！';
     } else {
       pupilFieldText = pupils
         .slice(0, 15) // 最大15件
         .map((p: any) => {
           const lanes = Array.isArray(p.lanes) && p.lanes.length > 0 ? p.lanes.join('/') : 'ALL';
           const rank = p.current_rank || 'UNRANKED';
-          const target = p.target_rank ? ` ➔ 目標:**${p.target_rank}**` : '';
           const champs = Array.isArray(p.champions) && p.champions.length > 0
             ? ` (${p.champions.slice(0, 2).join(', ')})`
             : '';
-          return `• **${p.player_name}** (${rank}${target}) ➔ 🛡️ \`${lanes}\`${champs}`;
+          return `• **${p.player_name}** (${rank}) ➔ 🛡️ \`${lanes}\`${champs}`;
         })
         .join('\n');
 
       if (pupils.length > 15) {
-        pupilFieldText += `\n*他 ${pupils.length - 15} 名の弟子が募集中*`;
+        pupilFieldText += `\n*他 ${pupils.length - 15} 名の後輩が募集中*`;
       }
     }
 
@@ -149,25 +148,25 @@ export async function syncMentorshipDashboard(): Promise<boolean> {
     const dashboardEmbed = {
       title: DASHBOARD_TITLE,
       description:
-        `👑 **KTMコミュニティ 師弟マッチングへようこそ！**\n` +
-        `ランク向上を目指す弟子と、指導やコツを伝授する師匠をつなぐ常駐掲示板です。\n\n` +
-        `👉 **[Webポータルで詳細を見る・オファーを送る](${PORTAL_BASE_URL}/mentorship)**\n` +
-        `（ポータルから「オファー送信」を行うと、相手のDiscordへ自動DMが届きます）`,
-      color: 0x6366f1, // Indigo
+        `🎒 **KTMコミュニティ 「教えて先輩！」へようこそ！**\n` +
+        `「ちょっと誰かにコツを聞いてみたい」後輩と、「得意なチャンプを教えたい」先輩をつなぐ掲示板です。\n\n` +
+        `👉 **[Webポータルで相談カードを見る・声をかける](${PORTAL_BASE_URL}/mentorship)**\n` +
+        `（カードを作成すると初回+500コイン獲得！ポータルから気軽に相談できます）`,
+      color: 0x10b981, // Emerald
       fields: [
         {
-          name: `🥋 指導受付中の師匠 (${mentors.length}名)`,
+          name: `🧑‍🏫 相談受付中の先輩 (${mentors.length}名)`,
           value: mentorFieldText,
           inline: false,
         },
         {
-          name: `🌱 修行・指導希望の弟子 (${pupils.length}名)`,
+          name: `🙋‍♂️ 教えてほしい後輩 (${pupils.length}名)`,
           value: pupilFieldText,
           inline: false,
         },
       ],
       footer: {
-        text: `🔄 最終更新: ${nowJst} (JST) | KTM Mentorship Hub`,
+        text: `🔄 最終更新: ${nowJst} (JST) | KTM 教えて先輩！`,
       },
     };
 
@@ -180,13 +179,13 @@ export async function syncMentorshipDashboard(): Promise<boolean> {
             {
               type: 2, // Button
               style: 3, // Success (Green)
-              label: '🌱 弟子入りしたい (修行希望)',
+              label: '🙋‍♂️ 教えてほしい (後輩)',
               custom_id: 'mentorship_apply_pupil',
             },
             {
               type: 2, // Button
               style: 1, // Primary (Blurple)
-              label: '🥋 弟子を取りたい (指導者)',
+              label: '🧑‍🏫 教えるよ (先輩)',
               custom_id: 'mentorship_apply_mentor',
             },
             {
