@@ -337,6 +337,7 @@ export async function sendDiscordDirectMessage(
   payload: {
     content?: string;
     embeds?: any[];
+    components?: any[];
   }
 ): Promise<boolean> {
   const botToken = process.env.DISCORD_BOT_TOKEN;

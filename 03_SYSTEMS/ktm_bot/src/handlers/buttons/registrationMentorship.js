@@ -261,5 +261,81 @@ export async function handleRegistrationMentorshipButtons(interaction, env, ctx,
   }
 
 
+  // 💌 シークレットお見合い便：話してみたい（承諾）
+  if (customId.startsWith('secret_match_accept:')) {
+    const matchId = customId.split(':')[1];
+    ctx.waitUntil((async () => {
+      try {
+        const { fetchPortalAPI } = await import('../../utils/api.js');
+        await fetchPortalAPI(env, '/api/mentorship/matchmaker', {
+          action: 'RESPOND_OFFER_BOT',
+          matchId,
+          decision: 'ACCEPT',
+          userDiscordId: userId,
+        });
+      } catch (err) {
+        console.error('[secret_match_accept] error:', err);
+      }
+    })());
+
+    return Response.json({
+      type: 4,
+      data: {
+        content: '🤝 **「話してみたい」をお伝えしました！**\nお相手もOKされた場合、自動的に専用スレッドが作成されます✨\n（※相手が見送った場合や辞退された場合でも何も通知されませんのでご安心ください）',
+        flags: 64, // 非公開
+      },
+    });
+  }
+
+  // 🍃 シークレットお見合い便：今回はすべて見送る（一括見送り）
+  if (customId.startsWith('secret_match_decline_all:')) {
+    ctx.waitUntil((async () => {
+      try {
+        const { fetchPortalAPI } = await import('../../utils/api.js');
+        await fetchPortalAPI(env, '/api/mentorship/matchmaker', {
+          action: 'RESPOND_OFFER_BOT',
+          decision: 'DECLINE_ALL',
+          userDiscordId: userId,
+        });
+      } catch (err) {
+        console.error('[secret_match_decline_all] error:', err);
+      }
+    })());
+
+    return Response.json({
+      type: 4,
+      data: {
+        content: '🍃 **見送りを記録しました。**\n相手には一切通知されませんのでご安心ください。また次回良いタイミングがあればお届けします！',
+        flags: 64, // 非公開
+      },
+    });
+  }
+
+  // 🍃 シークレットお見合い便：単一見送り（先輩側）
+  if (customId.startsWith('secret_match_decline:')) {
+    const matchId = customId.split(':')[1];
+    ctx.waitUntil((async () => {
+      try {
+        const { fetchPortalAPI } = await import('../../utils/api.js');
+        await fetchPortalAPI(env, '/api/mentorship/matchmaker', {
+          action: 'RESPOND_OFFER_BOT',
+          matchId,
+          decision: 'DECLINE',
+          userDiscordId: userId,
+        });
+      } catch (err) {
+        console.error('[secret_match_decline] error:', err);
+      }
+    })());
+
+    return Response.json({
+      type: 4,
+      data: {
+        content: '🍃 **見送りを記録しました。**\n相手には一切通知されませんのでご安心ください。',
+        flags: 64, // 非公開
+      },
+    });
+  }
+
   return undefined;
 }

@@ -270,6 +270,32 @@ export interface SecretMatchProposal {
   offerStatus?: 'NONE' | 'PENDING' | 'PROPOSAL_PENDING' | 'ACCEPTED' | 'DECLINED' | 'MATCHED' | 'ACTIVE';
 }
 
+export interface SecretMatchBatchProposal {
+  pupil: {
+    profileId?: string | null;
+    playerId?: number | null;
+    discordId: string;
+    name: string;
+    rank: string;
+    primaryLane: string;
+    secondaryLane?: string;
+    isRegistered: boolean;
+    hasLearnRole: boolean;
+  };
+  mentors: Array<{
+    profileId: string;
+    discordId: string;
+    name: string;
+    rank: string;
+    lanes: string[];
+    champions: string[];
+    matchScore: number;
+    reasons: string[];
+    offerStatus?: string;
+    matchId?: string;
+  }>;
+}
+
 const LEARN_ROLE_ID = '1556976007234330634'; // 📖 教わりたい
 
 /**
@@ -543,5 +569,51 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
     return [];
   }
 }
+
+/**
+ * 📦 後輩（弟子候補）ごとに、相性の良い先輩を最大2〜3名グルーピングした「まとめ便」データを生成
+ */
+export async function generateSecretMatchmakerBatches(): Promise<SecretMatchBatchProposal[]> {
+  const pairs = await generateSecretMatchmakerPairs();
+  const pupilMap = new Map<string, SecretMatchBatchProposal>();
+
+  for (const pair of pairs) {
+    const pupilId = pair.pupil.discordId;
+    if (!pupilMap.has(pupilId)) {
+      pupilMap.set(pupilId, {
+        pupil: pair.pupil,
+        mentors: [],
+      });
+    }
+
+    const batch = pupilMap.get(pupilId)!;
+    // 後輩1人につき最大3名（基本2名）まで紐付け
+    if (batch.mentors.length < 3) {
+      batch.mentors.push({
+        profileId: pair.mentor.profileId,
+        discordId: pair.mentor.discordId,
+        name: pair.mentor.name,
+        rank: pair.mentor.rank,
+        lanes: pair.mentor.lanes,
+        champions: pair.mentor.champions,
+        matchScore: pair.matchScore,
+        reasons: pair.reasons,
+        offerStatus: pair.offerStatus,
+      });
+    }
+  }
+
+  // 「教わりたい」ロール所持者を最優先、次いで最高スコア順にソート
+  const batches = Array.from(pupilMap.values());
+  return batches.sort((a, b) => {
+    if (b.pupil.hasLearnRole !== a.pupil.hasLearnRole) {
+      return b.pupil.hasLearnRole ? 1 : -1;
+    }
+    const maxScoreA = Math.max(...a.mentors.map((m) => m.matchScore), 0);
+    const maxScoreB = Math.max(...b.mentors.map((m) => m.matchScore), 0);
+    return maxScoreB - maxScoreA;
+  });
+}
+
 
 

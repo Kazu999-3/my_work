@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { getAuthSession } from '../../../../lib/authGuard';
-import { generateSecretMatchmakerPairs, SecretMatchProposal } from '../../../../lib/mentorshipMatchmaker';
+import { verifyBotSecret } from '../../../../lib/botAuth';
+import { generateSecretMatchmakerPairs, generateSecretMatchmakerBatches, SecretMatchProposal, SecretMatchBatchProposal } from '../../../../lib/mentorshipMatchmaker';
 import { sendDiscordDirectMessage } from '../../../../lib/discordNotify';
 import { createMentorshipForumThread } from '../../../../lib/discordMentorship';
 
@@ -10,7 +11,7 @@ export const dynamic = 'force-dynamic';
 const PORTAL_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://my-work-8jbd.vercel.app';
 
 /**
- * GET: お見合い便の候補リストを取得
+ * GET: お見合い便の候補リストを取得（ペア一覧 ＆ まとめ便バッチ一覧）
  */
 export async function GET(req: Request) {
   try {
@@ -53,10 +54,11 @@ export async function GET(req: Request) {
       }
     }
 
-    // 2. 管理者向け相性推薦候補リスト
+    // 2. 管理者向け相性推薦候補リスト（ペア一覧 ＆ まとめ便バッチ一覧）
     const proposals = await generateSecretMatchmakerPairs();
+    const batches = await generateSecretMatchmakerBatches();
 
-    return NextResponse.json({ ok: true, proposals, myProposal });
+    return NextResponse.json({ ok: true, proposals, batches, myProposal });
   } catch (err: any) {
     console.error('[matchmaker GET] error:', err);
     return NextResponse.json({ error: err.message || '内部エラー' }, { status: 500 });
@@ -68,13 +70,138 @@ export async function GET(req: Request) {
  */
 export async function POST(req: Request) {
   try {
-    const session = await getAuthSession();
-    if (!session?.discordId) {
+    const isBotAuth = verifyBotSecret(req).ok;
+    const session = isBotAuth ? null : await getAuthSession();
+    if (!isBotAuth && !session?.discordId) {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }
 
     const body = await req.json();
     const { action } = body;
+
+    // 0. Botからの回答処理（Discordボタン押下時）
+    if (action === 'RESPOND_OFFER_BOT') {
+      if (!isBotAuth) {
+        return NextResponse.json({ error: 'Bot認証が必要です' }, { status: 401 });
+      }
+
+      const { matchId, decision, userDiscordId } = body;
+
+      // 全て見送りの場合
+      if (decision === 'DECLINE_ALL' && userDiscordId) {
+        const { data: list } = await supabase
+          .from('mentorship_matches')
+          .select('id, notes, pupil_discord_id')
+          .eq('status', 'PROPOSAL_PENDING')
+          .eq('pupil_discord_id', userDiscordId);
+
+        for (const m of list || []) {
+          let notes: any = {};
+          try { notes = JSON.parse(m.notes || '{}'); } catch (_) {}
+          notes.pupilStatus = 'DECLINED';
+          await supabase
+            .from('mentorship_matches')
+            .update({ status: 'DISMISSED', notes: JSON.stringify(notes) })
+            .eq('id', m.id);
+        }
+
+        return NextResponse.json({ ok: true, status: 'DISMISSED_ALL' });
+      }
+
+      // 単一マッチの回答処理
+      if (matchId && userDiscordId) {
+        const { data: match } = await supabase
+          .from('mentorship_matches')
+          .select('*')
+          .eq('id', matchId)
+          .single();
+
+        if (!match) {
+          return NextResponse.json({ error: 'マッチが見つかりません' }, { status: 404 });
+        }
+
+        let notes: any = {};
+        try { notes = JSON.parse(match.notes || '{}'); } catch (_) {}
+
+        const isMentor = match.mentor_discord_id === userDiscordId;
+        const isPupil = match.pupil_discord_id === userDiscordId;
+
+        if (decision === 'DECLINE') {
+          if (isMentor) notes.mentorStatus = 'DECLINED';
+          if (isPupil) notes.pupilStatus = 'DECLINED';
+          await supabase
+            .from('mentorship_matches')
+            .update({ status: 'DISMISSED', notes: JSON.stringify(notes) })
+            .eq('id', matchId);
+          return NextResponse.json({ ok: true, status: 'DISMISSED' });
+        }
+
+        if (decision === 'ACCEPT') {
+          if (isMentor) notes.mentorStatus = 'ACCEPTED';
+          if (isPupil) notes.pupilStatus = 'ACCEPTED';
+
+          const isBothAccepted = notes.mentorStatus === 'ACCEPTED' && notes.pupilStatus === 'ACCEPTED';
+          if (isBothAccepted) {
+            const updatedNotes = {
+              ...notes,
+              durationKey: '14_DAYS',
+              durationLabel: 'お見合い成立（14日間）',
+              commStyle: 'VC_ACTIVE',
+              autoRenew: true,
+              matchedAt: new Date().toISOString(),
+            };
+
+            await supabase
+              .from('mentorship_matches')
+              .update({ status: 'ACTIVE', notes: JSON.stringify(updatedNotes) })
+              .eq('id', matchId);
+
+            // 専用スレッド作成
+            let threadUrl = '';
+            try {
+              const threadRes = await createMentorshipForumThread({
+                mentorName: notes.mentorName || '先輩',
+                pupilName: notes.pupilName || '後輩',
+                durationLabel: 'お見合い成立（14日間）',
+                mentorDiscordId: match.mentor_discord_id,
+                pupilDiscordId: match.pupil_discord_id,
+                lanes: [notes.lane || 'ALL'],
+                commStyle: 'VC_ACTIVE',
+              });
+              if (threadRes?.threadUrl) {
+                threadUrl = threadRes.threadUrl;
+                updatedNotes.threadUrl = threadUrl;
+                await supabase
+                  .from('mentorship_matches')
+                  .update({ notes: JSON.stringify(updatedNotes) })
+                  .eq('id', matchId);
+              }
+            } catch (tErr) {
+              console.warn('[matchmaker] Bot thread creation error:', tErr);
+            }
+
+            const notifyContent =
+              `🎉 **【お見合い成立！】**\n` +
+              `双方が「話してみたい」を選択されたため、マッチングが成立しました！✨\n` +
+              (threadUrl ? `👉 [専用相談スレッドはこちら](${threadUrl})\n` : '') +
+              `気軽に挨拶や質問をしてみてくださいね！`;
+
+            await sendDiscordDirectMessage(match.mentor_discord_id, { content: notifyContent });
+            await sendDiscordDirectMessage(match.pupil_discord_id, { content: notifyContent });
+
+            return NextResponse.json({ ok: true, status: 'MATCHED', threadUrl });
+          } else {
+            await supabase
+              .from('mentorship_matches')
+              .update({ notes: JSON.stringify(notes) })
+              .eq('id', matchId);
+            return NextResponse.json({ ok: true, status: 'PENDING_PARTNER' });
+          }
+        }
+      }
+
+      return NextResponse.json({ error: '無効なリクエストです' }, { status: 400 });
+    }
 
     // 1. オファー送信 (管理者操作またはテスト送信)
     if (action === 'SEND_OFFER') {
@@ -206,10 +333,209 @@ export async function POST(req: Request) {
       });
     }
 
+    // 1-b. 複数候補まとめ便の送信 (パターンA: 後輩宛てに上位2〜3名の先輩を並列提示)
+    if (action === 'SEND_BATCH_OFFER') {
+      const { batch } = body;
+      if (!batch || !batch.pupil || !batch.mentors || batch.mentors.length === 0) {
+        return NextResponse.json({ error: '無効なバッチデータです' }, { status: 400 });
+      }
+
+      const pupil = batch.pupil;
+      const mentors = batch.mentors;
+      const createdMatches: Array<{ matchId: string; mentor: any }> = [];
+
+      for (const mentor of mentors) {
+        const mentorDiscordId = mentor.discordId;
+        const pupilDiscordId = pupil.discordId;
+
+        const { data: existing } = await supabase
+          .from('mentorship_matches')
+          .select('*')
+          .eq('mentor_discord_id', mentorDiscordId)
+          .eq('pupil_discord_id', pupilDiscordId)
+          .maybeSingle();
+
+        const initialNotes = {
+          isSecretProposal: true,
+          mentorStatus: 'PENDING',
+          pupilStatus: 'PENDING',
+          proposedAt: new Date().toISOString(),
+          matchScore: mentor.matchScore,
+          reasons: mentor.reasons,
+          mentorName: mentor.name,
+          pupilName: pupil.name,
+          lane: mentor.lanes?.[0] || pupil.primaryLane,
+        };
+
+        let matchId = existing?.id;
+        if (existing) {
+          await supabase
+            .from('mentorship_matches')
+            .update({
+              status: 'PROPOSAL_PENDING',
+              notes: JSON.stringify(initialNotes),
+            })
+            .eq('id', existing.id);
+        } else {
+          const { data: inserted, error: insErr } = await supabase
+            .from('mentorship_matches')
+            .insert({
+              mentor_profile_id: mentor.profileId || null,
+              pupil_profile_id: pupil.profileId || null,
+              mentor_discord_id: mentorDiscordId,
+              pupil_discord_id: pupilDiscordId,
+              status: 'PROPOSAL_PENDING',
+              notes: JSON.stringify(initialNotes),
+              started_at: new Date().toISOString(),
+            })
+            .select('id')
+            .single();
+
+          if (!insErr && inserted) {
+            matchId = inserted.id;
+          }
+        }
+
+        if (matchId) {
+          createdMatches.push({ matchId, mentor });
+        }
+      }
+
+      // 後輩宛てDMの作成（パターンA: 2〜3名並列Embed）
+      let pupilDmSent = false;
+      if (pupil.discordId && createdMatches.length > 0) {
+        const mentorBlocks = createdMatches.map((cm, idx) => {
+          const numIcons = ['①', '②', '③'];
+          const num = numIcons[idx] || `${idx + 1}.`;
+          const m = cm.mentor;
+          const champs = m.champions?.length > 0 ? `🛡️ **得意**: ${m.champions.slice(0, 4).join(', ')}\n` : '';
+          const reasons = m.reasons?.map((r: string) => `・${r}`).join('\n');
+          return (
+            `━━━━━━━━━━━━━━━━━━━━\n` +
+            `**${num} ${m.name} 先輩** (${m.lanes.join('/')} / ${m.rank}) ★相性 **${m.matchScore}%**\n` +
+            champs +
+            `💡 **相性理由**:\n${reasons}`
+          );
+        }).join('\n\n');
+
+        const pupilEmbed = {
+          title: `🎒 【教えて先輩！】あなたへのお見合い便が届きました`,
+          description:
+            `こんにちは、**${pupil.name}** さん！\n` +
+            `ポータルの名簿データに合わせて、今週相談に乗ってくれる先輩を**${createdMatches.length}名**ご紹介します！✨\n\n` +
+            mentorBlocks +
+            `\n\n━━━━━━━━━━━━━━━━━━━━\n` +
+            `🔒 **安心ルール（完全非公開）**:\n` +
+            `**「見送る」を押しても、相手には一切通知されません。**\n` +
+            `気になる先輩がいたら、下のボタンからワンタップで繋がれます！`,
+          color: 0x10b981, // Emerald
+          footer: {
+            text: 'KTM シークレットお見合い便 • 完全ダブルオプトイン・見送り無通知',
+          },
+        };
+
+        // ボタンの生成
+        const mentorButtons = createdMatches.map((cm, idx) => {
+          const numIcons = ['①', '②', '③'];
+          const num = numIcons[idx] || `${idx + 1}`;
+          return {
+            type: 2, // Button
+            style: 3, // Green (Success)
+            label: `🤝 ${num} ${cm.mentor.name}先輩と話す`,
+            custom_id: `secret_match_accept:${cm.matchId}`,
+          };
+        });
+
+        const actionRow2 = {
+          type: 1,
+          components: [
+            {
+              type: 2,
+              style: 2, // Grey
+              label: '🍃 今回はすべて見送る',
+              custom_id: `secret_match_decline_all:${pupil.discordId}`,
+            },
+            {
+              type: 2,
+              style: 5, // Link
+              label: '🌐 ポータルで見る',
+              url: `${PORTAL_BASE_URL}/mentorship`,
+            },
+          ],
+        };
+
+        pupilDmSent = await sendDiscordDirectMessage(pupil.discordId, {
+          embeds: [pupilEmbed],
+          components: [
+            { type: 1, components: mentorButtons },
+            actionRow2,
+          ],
+        });
+      }
+
+      // 各先輩側へもDMを送信
+      for (const cm of createdMatches) {
+        const m = cm.mentor;
+        const mentorEmbed = {
+          title: `🎒 【教えて先輩！】マッチする後輩候補のご紹介`,
+          description:
+            `**${m.name}** さん、いつもありがとうございます！\n` +
+            `あなたが担当するレーンで、ぴったりの後輩候補がいます！✨\n\n` +
+            `**👤 後輩候補**: **${pupil.name}** さん (${pupil.rank})\n` +
+            `**🛡️ レーン**: \`${pupil.primaryLane}\`${pupil.secondaryLane ? ` (サブ: ${pupil.secondaryLane})` : ''}\n` +
+            `**🎯 相性スコア**: **${m.matchScore}%**\n` +
+            `**💡 おすすめ理由**:\n` +
+            m.reasons.map((r: string) => `・${r}`).join('\n') +
+            `\n\n---\n` +
+            `声をかけてみますか？\n` +
+            `🔒 **安心ルール（完全非公開）**:\n` +
+            `**「見送る」を選んでも、相手には一切通知されません。**`,
+          color: 0x8b5cf6, // Purple
+          footer: {
+            text: 'KTM シークレットお見合い便 • 完全ダブルオプトイン・見送り無通知',
+          },
+        };
+
+        const mentorComponents = [
+          {
+            type: 1,
+            components: [
+              {
+                type: 2,
+                style: 1, // Blurple
+                label: `🤝 ${pupil.name}さんに声をかける`,
+                custom_id: `secret_match_accept:${cm.matchId}`,
+              },
+              {
+                type: 2,
+                style: 2, // Grey
+                label: '🍃 見送る',
+                custom_id: `secret_match_decline:${cm.matchId}`,
+              },
+            ],
+          },
+        ];
+
+        sendDiscordDirectMessage(m.discordId, {
+          embeds: [mentorEmbed],
+          components: mentorComponents,
+        }).catch(() => {});
+      }
+
+      return NextResponse.json({
+        ok: true,
+        pupilDmSent,
+        matchCount: createdMatches.length,
+      });
+    }
+
     // 2. オファーへの回答（承諾 / 見送り）
     if (action === 'RESPOND_OFFER') {
       const { matchId, decision } = body; // decision: 'ACCEPT' | 'DECLINE'
-      const userDiscordId = session.discordId; // Discord ID
+      const userDiscordId = session?.discordId;
+      if (!userDiscordId) {
+        return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+      }
 
       const { data: match, error: mErr } = await supabase
         .from('mentorship_matches')
