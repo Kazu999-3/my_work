@@ -66,7 +66,7 @@ export default function GuideRulesTab() {
             </p>
           </div>
 
-          {/* ② 10名以上の場合は1ティア差グループ */}
+          {/* ② 10名以上の場合は2ランク格差防止（1ランク差選出） */}
           <div className="p-5 rounded-2xl bg-primary-50/50 dark:bg-primary-950/20 border border-primary-edge-soft/80 dark:border-primary-edge-strong/40 space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="px-2.5 py-1 rounded-lg bg-primary-500 text-stone-950 text-xs font-black">
@@ -74,15 +74,15 @@ export default function GuideRulesTab() {
               </span>
               <span className="text-xs font-bold text-primary-800 dark:text-primary-300">⚔️ 1部屋 開催</span>
             </div>
-            <h4 className="text-sm font-black text-foreground dark:text-white">🎯 1ティア差グループで10名選出</h4>
+            <h4 className="text-sm font-black text-foreground dark:text-white">🎯 2ランク格差防止（1ランク差以内で10名選出）</h4>
             <p className="text-xs text-muted leading-relaxed">
-              参加者の中で最も実力差が密集している（1ティア差以内の）10名を自動選出！<br />
-              <span className="font-bold text-primary-900 dark:text-primary-200">※選考外となった方は「観戦・配信応援」または「2戦目に最優先で交代参加」となります。</span>
+              「シルバー対プラチナ」のような2ランク差対戦を防ぐため、最多層に合わせて<strong>実力差が1ランク差以内の10名</strong>を自動選出！<br />
+              （例：ゴールド最多なら「シルバー＋ゴールド」または「ゴールド＋プラチナ」のどちらかで開催し、シルバー対プラチナは同室になりません）<br />
+              <span className="font-bold text-primary-900 dark:text-primary-200">※選考外となった方は「観戦・配信応援」または「2戦目に最優先で交代参加」となります。20名集まれば2部屋同時開催で全員出場可能です。</span>
             </p>
             <div className="mt-2 pt-2 border-t border-primary-edge-soft/60 text-[11px] text-primary-900 dark:text-primary-300 space-y-0.5">
-              <p className="font-bold">📊 最多ランク帯（基準）の集計ルール：</p>
-              <p>・<strong>エメラルド以上</strong>（エメラルド/ダイヤ/マスター等）はすべて<strong>「プラチナ」</strong>として合算カウント</p>
-              <p>・<strong>アイアン・未ランク</strong>はすべて<strong>「ブロンズ」</strong>として合算カウント</p>
+              <p className="font-bold">📊 判定基準：</p>
+              <p>・ソロQランクではなく<strong>KTM MMR（内戦レート）</strong>を基準に公平に判定されます</p>
             </div>
           </div>
 
