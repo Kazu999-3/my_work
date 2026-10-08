@@ -40,12 +40,17 @@ const TARGET_STUDENT_RANKS = [
   'ダイヤ以下歓迎',
 ];
 
-// 通話・コミュニケーションスタイル（3択）
-export const VOICE_STYLES = [
-  { id: 'VC可能', label: '🎙️ VCで通話可能', desc: 'Discord通話しながらプレイ・相談OK' },
-  { id: '聞き専OK', label: '🎧 聞き専OK', desc: '先輩の話を聞きながらチャットで返答' },
-  { id: 'テキストのみ', label: '💬 テキストチャットのみ', desc: '通話なし・文字のやり取りで相談' },
+// 通話・指導・コミュニケーションスタイル（複数選択可能）
+export const COMMUNICATION_STYLES = [
+  { id: 'VC通話', label: '🎙️ VC通話', desc: 'Discord通話しながらプレイ・相談OK' },
+  { id: '聞き専OK', label: '🎧 聞き専OK', desc: '話を聞きながらチャットで返答' },
+  { id: 'テキスト', label: '💬 テキストチャット', desc: '文字・チャットのみで相談' },
+  { id: '画面共有', label: '📺 画面共有', desc: '画面共有でリプレイ添削や実戦観戦' },
 ];
+
+// 後方互換性エイリアス
+export const VOICE_STYLES = COMMUNICATION_STYLES;
+
 
 // 1クリック自己紹介テンプレート
 const TEMPLATES_PUPIL = [
@@ -99,6 +104,7 @@ export function MentorshipProfileModal({
   const [isChampDropdownOpen, setIsChampDropdownOpen] = useState(false);
   const [currentRank, setCurrentRank] = useState('SILVER');
   const [targetRank, setTargetRank] = useState('GOLD');
+  const [selectedCommStyles, setSelectedCommStyles] = useState<string[]>(['VC通話']);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [preferredDuration, setPreferredDuration] = useState<string>('14_DAYS');
   const [bio, setBio] = useState('');
@@ -118,7 +124,31 @@ export function MentorshipProfileModal({
       setSelectedChampions(profile.champions || []);
       setCurrentRank(profile.current_rank || 'SILVER');
       setTargetRank(profile.target_rank || (targetRole === 'PUPIL' ? 'GOLD' : '全ランク・初心者歓迎'));
-      setSelectedTags(profile.tags || []);
+      
+      // コミュニケーションスタイルとその他タグの分離・正規化
+      const rawTags = profile.tags || [];
+      const extractedStyles = new Set<string>();
+      const otherTags: string[] = [];
+
+      rawTags.forEach((t) => {
+        if (t === 'VC通話' || t === 'VC可能' || t === 'VC指導対応') {
+          extractedStyles.add('VC通話');
+        } else if (t === '聞き専OK' || t === '聞き専') {
+          extractedStyles.add('聞き専OK');
+        } else if (t === 'テキスト' || t === 'テキストのみ' || t === 'テキストチャット') {
+          extractedStyles.add('テキスト');
+        } else if (t === '画面共有' || t === '画面共有ライブコーチング' || t === '画面共有ライブ指導') {
+          extractedStyles.add('画面共有');
+        } else {
+          otherTags.push(t);
+        }
+      });
+
+      if (extractedStyles.size === 0) {
+        extractedStyles.add('VC通話');
+      }
+      setSelectedCommStyles(Array.from(extractedStyles));
+      setSelectedTags(otherTags);
       
       // preferred_duration 判定（profile.preferred_duration または tags から復元）
       const profDuration = (profile as any).preferred_duration;
@@ -147,7 +177,8 @@ export function MentorshipProfileModal({
       setCurrentRank(RANKS.includes(userRank) ? userRank : 'SILVER');
       setTargetRank(targetRole === 'PUPIL' ? 'GOLD' : '全ランク・初心者歓迎');
       setPreferredDuration('14_DAYS');
-      setSelectedTags(['VC可能']);
+      setSelectedCommStyles(['VC通話']);
+      setSelectedTags([]);
       setBio('');
       setActiveHours('平日 21:00〜24:00 / 休日');
       setMaxPupils(2);
@@ -167,6 +198,18 @@ export function MentorshipProfileModal({
     if (newRole === roleType) return;
     const existing = myProfiles ? myProfiles[newRole] : null;
     loadProfileData(newRole, existing);
+  };
+
+  // 通話・指導スタイルのトグル選択（複数選択可・最低1つ選択）
+  const toggleCommStyle = (styleId: string) => {
+    setSelectedCommStyles((prev) => {
+      if (prev.includes(styleId)) {
+        if (prev.length <= 1) return prev; // 最低1つは残す
+        return prev.filter((id) => id !== styleId);
+      } else {
+        return [...prev, styleId];
+      }
+    });
   };
 
   // チャンピオン検索のフィルタリング (日本語名 / 英語名 / 読み)
@@ -207,20 +250,24 @@ export function MentorshipProfileModal({
     e.preventDefault();
     setIsSaving(true);
     try {
+      // 通話・指導スタイルと他のタグを統合
+      const finalTags = Array.from(new Set([...selectedCommStyles, ...selectedTags]));
+
       await onSave({
+        id: initialProfile?.id,
         role_type: roleType,
         lanes,
         champions: selectedChampions,
         current_rank: currentRank,
         target_rank: targetRank || undefined,
-        tags: selectedTags,
+        tags: finalTags,
         bio,
         active_hours: activeHours,
         status: 'OPEN',
         preferred_duration: preferredDuration,
         max_pupils: roleType === 'MENTOR' ? maxPupils : 1,
-        discord_id: user?.discordId,
-        player_name: user?.displayName || user?.username,
+        discord_id: initialProfile?.discord_id || user?.discordId,
+        player_name: initialProfile?.player_name || user?.displayName || user?.username,
       });
       onClose();
     } catch (err) {
@@ -322,18 +369,18 @@ export function MentorshipProfileModal({
                       <span>{isMentor ? '🧑‍🏫' : '🙋‍♂️'}</span>
                       <span>{isMentor ? '教えるよ (先輩)' : '教えてほしい (後輩)'}</span>
                     </div>
-                    {selectedTags.length > 0 && (
-                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black border bg-surface-subtle text-foreground-soft border-border">
-                        🎙️ {selectedTags[0]}
+                    {selectedCommStyles.map((st) => (
+                      <span key={st} className="px-2.5 py-0.5 rounded-full text-[11px] font-black border bg-surface-subtle text-foreground-soft border-border">
+                        {st === 'VC通話' ? '🎙️ VC通話' : st === '聞き専OK' ? '🎧 聞き専' : st === 'テキスト' ? '💬 テキスト' : '📺 画面共有'}
                       </span>
-                    )}
+                    ))}
                   </div>
                   <span className="text-xs text-success-700 font-black bg-success-50 px-2 py-0.5 rounded-full border border-success-edge-soft">🟢 募集中</span>
                 </div>
 
                 <div className="space-y-1">
                   <h3 className="text-base font-black text-foreground flex items-center gap-2">
-                    {user?.displayName || user?.username || 'あなたのプレイヤー名'}
+                    {initialProfile?.player_name || user?.displayName || user?.username || 'あなたのプレイヤー名'}
                     <span className="text-xs font-mono font-bold text-primary-700 bg-primary-100 px-2 py-0.5 rounded-lg border border-primary-edge">
                       🏆 {currentRank}
                     </span>
@@ -639,29 +686,38 @@ export function MentorshipProfileModal({
                 </div>
               </div>
 
-              {/* 5. 通話・相談スタイル (3択) */}
+              {/* 5. 通話・相談スタイル (複数選択可能) */}
               <div className="space-y-2">
-                <label className="block text-xs font-black text-foreground-subtle flex items-center gap-1.5">
-                  <span className="w-4.5 h-4.5 rounded-full bg-primary-500 text-white text-[11px] flex items-center justify-center font-black">5</span>
-                  通話・相談スタイル (1つ選択)
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {VOICE_STYLES.map((style) => {
-                    const isSelected = selectedTags.includes(style.id);
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-black text-foreground-subtle flex items-center gap-1.5">
+                    <span className="w-4.5 h-4.5 rounded-full bg-primary-500 text-white text-[11px] flex items-center justify-center font-black">5</span>
+                    通話・相談スタイル (複数選択OK)
+                  </label>
+                  <span className="text-[11px] text-muted-strong font-bold">
+                    {selectedCommStyles.length}個 選択中
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                  {COMMUNICATION_STYLES.map((style) => {
+                    const isSelected = selectedCommStyles.includes(style.id);
                     return (
                       <button
                         key={style.id}
                         type="button"
-                        onClick={() => setSelectedTags([style.id])}
+                        onClick={() => toggleCommStyle(style.id)}
                         className={`p-3 rounded-2xl border text-left transition cursor-pointer flex flex-col justify-between ${
                           isSelected
-                            ? 'bg-primary-50 border-primary-edge-strong text-primary-950 ring-2 ring-primary-500/30 shadow-xs'
+                            ? 'bg-primary-50 dark:bg-primary-950/40 border-primary-edge-strong text-primary-950 dark:text-primary-200 ring-2 ring-primary-500/30 shadow-xs'
                             : 'bg-background border-border text-foreground-subtle hover:bg-surface-subtle'
                         }`}
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-black">{style.label}</span>
-                          {isSelected && <span className="text-primary-600 text-xs font-black">✓</span>}
+                          <span className={`w-4 h-4 rounded-md flex items-center justify-center text-[10px] font-black border transition ${
+                            isSelected ? 'bg-primary-600 border-primary-600 text-white' : 'border-border bg-surface'
+                          }`}>
+                            {isSelected ? '✓' : ''}
+                          </span>
                         </div>
                         <span className="text-[10px] text-muted mt-1 leading-snug">
                           {style.desc}

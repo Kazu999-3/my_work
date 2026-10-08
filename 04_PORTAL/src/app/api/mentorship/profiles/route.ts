@@ -135,6 +135,7 @@ export async function POST(request: Request) {
     session = await getAuthSession();
     const body = await request.json();
     const {
+      id: bodyProfileId,
       role_type,
       lanes = [],
       champions = [],
@@ -150,30 +151,62 @@ export async function POST(request: Request) {
       player_name: bodyPlayerName,
     } = body;
 
-    // 🛡️ なりすまし防止ガード:
-    // 1. ログインユーザーは必ず自身のセッションIDで登録（他人名義作成を遮断）
-    // 2. セッションが無い場合は Bot からの正当な代理登録（verifyBotSecret）のみ許可
-    // 3. それ以外（未認証の外部リクエスト）は 401 拒否
+    // 🛡️ なりすまし防止ガード ＆ 管理者メンテナンス支援:
+    // 1. 管理者（かずき・ADMIN）は他ユーザーのプロフィールの代理メンテナンス更新を許可
+    // 2. 一般ログインユーザーは必ず自身のセッションIDで登録（他人名義作成を遮断）
+    // 3. セッションが無い場合は Bot からの正当な代理登録（verifyBotSecret）のみ許可
     const isBotAuthorized = verifyBotSecret(request).ok;
+    const isKazuki = session?.discordId === '697220229964759130';
+    const isAdmin = Boolean(session?.isAdmin || isKazuki);
 
     let effectiveDiscordId: string | null = null;
     let effectivePlayerName: string = 'Player';
+    let isAdminProxyEdit = false;
+    let proxyTargetProfile: any = null;
 
-    if (session?.discordId) {
-      effectiveDiscordId = session.discordId;
-      effectivePlayerName = session.displayName || session.username || 'Player';
-    } else if (isBotAuthorized && bodyDiscordId) {
-      effectiveDiscordId = bodyDiscordId;
-      effectivePlayerName = bodyPlayerName || 'Player';
-    } else {
-      return NextResponse.json(
-        { ok: false, error: 'プロフィールを登録するにはDiscordログインが必要です。' },
-        { status: 401 }
-      );
+    if (isAdmin && (bodyProfileId || (bodyDiscordId && bodyDiscordId !== session?.discordId))) {
+      // 管理者による代理メンテナンス
+      if (bodyProfileId) {
+        const { data } = await supabase
+          .from('mentorship_profiles')
+          .select('*')
+          .eq('id', bodyProfileId)
+          .maybeSingle();
+        proxyTargetProfile = data;
+      } else if (bodyDiscordId) {
+        const { data } = await supabase
+          .from('mentorship_profiles')
+          .select('*')
+          .eq('discord_id', bodyDiscordId)
+          .eq('role_type', role_type)
+          .maybeSingle();
+        proxyTargetProfile = data;
+      }
+
+      if (proxyTargetProfile) {
+        isAdminProxyEdit = true;
+        effectiveDiscordId = proxyTargetProfile.discord_id;
+        effectivePlayerName = bodyPlayerName || proxyTargetProfile.player_name || 'Player';
+      }
+    }
+
+    if (!isAdminProxyEdit) {
+      if (session?.discordId) {
+        effectiveDiscordId = session.discordId;
+        effectivePlayerName = session.displayName || session.username || 'Player';
+      } else if (isBotAuthorized && bodyDiscordId) {
+        effectiveDiscordId = bodyDiscordId;
+        effectivePlayerName = bodyPlayerName || 'Player';
+      } else {
+        return NextResponse.json(
+          { ok: false, error: 'プロフィールを登録するにはDiscordログインが必要です。' },
+          { status: 401 }
+        );
+      }
     }
 
     const player = await findOrCreatePlayer({
-      discordId: effectiveDiscordId,
+      discordId: effectiveDiscordId!,
       name: effectivePlayerName,
     });
 
@@ -188,13 +221,17 @@ export async function POST(request: Request) {
     const finalCurrentRank = current_rank || player?.highest_rank || 'UNRANKED';
     const finalMaxPupils = role_type === 'MENTOR' ? Math.min(Math.max(Number(max_pupils) || 3, 1), 5) : 1;
 
-    // 既存のプロフィール（同一role_type）があるか確認
-    const { data: existing } = await supabase
-      .from('mentorship_profiles')
-      .select('id')
-      .eq('discord_id', effectiveDiscordId)
-      .eq('role_type', role_type)
-      .maybeSingle();
+    // 既存のプロフィール（同一role_typeまたは代理編集対象）があるか確認
+    let existing = proxyTargetProfile;
+    if (!existing) {
+      const { data } = await supabase
+        .from('mentorship_profiles')
+        .select('id')
+        .eq('discord_id', effectiveDiscordId)
+        .eq('role_type', role_type)
+        .maybeSingle();
+      existing = data;
+    }
 
     let resultData;
     let isFirstTimeBonus = false;
@@ -309,8 +346,8 @@ export async function POST(request: Request) {
       if (error) throw error;
       resultData = data;
 
-      // 初回作成ボーナス（+500pt）を付与
-      if (isFirstCreationEver && player) {
+      // 初回作成ボーナス（+500pt）を付与（管理者の代理編集時は除外）
+      if (!isAdminProxyEdit && isFirstCreationEver && player) {
         const { getPlayerCoins, updatePlayerCoinsAndInventory } = await import('../../../../lib/playerCoins');
         const currentCoins = getPlayerCoins(player);
         const newCoins = currentCoins + 500;
@@ -324,9 +361,11 @@ export async function POST(request: Request) {
     }
 
     // 📢 Discord連携（新着速報カード送信 ＆ 常駐ダッシュボード自動同期）
-    notifyNewMentorshipProfile({ profile: resultData, isUpdate: !!existing?.id }).catch((e) =>
-      console.warn('[mentorship/profiles] Discord notify failed:', e)
-    );
+    if (!isAdminProxyEdit) {
+      notifyNewMentorshipProfile({ profile: resultData, isUpdate: !!existing?.id }).catch((e) =>
+        console.warn('[mentorship/profiles] Discord notify failed:', e)
+      );
+    }
     syncMentorshipDashboard().catch((e) =>
       console.warn('[mentorship/profiles] Discord dashboard sync failed:', e)
     );

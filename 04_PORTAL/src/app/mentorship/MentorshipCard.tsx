@@ -244,13 +244,16 @@ export function MentorshipCard({
           {/* 編集・削除ボタン（本人または管理者の場合） */}
           {(isMine || isAdmin) && (
             <div className="flex items-center gap-1 bg-surface-subtle dark:bg-background p-0.5 rounded-lg border border-border dark:border-border">
-              {isMine && onEdit && (
+              {(isMine || isAdmin) && onEdit && (
                 <button
                   onClick={() => onEdit(profile)}
-                  className="px-2 py-1 text-xs text-muted hover:text-foreground dark:hover:text-white hover:bg-surface rounded transition cursor-pointer"
-                  title="編集"
+                  className="px-2 py-1 text-xs text-muted hover:text-foreground dark:hover:text-white hover:bg-surface rounded transition cursor-pointer flex items-center gap-0.5"
+                  title={isAdmin && !isMine ? '管理者権限で代理編集（メンテ）' : '編集'}
                 >
-                  ✏️
+                  <span>✏️</span>
+                  {isAdmin && !isMine && (
+                    <span className="text-[10px] font-black text-primary-700 dark:text-primary-400">メンテ</span>
+                  )}
                 </button>
               )}
               {onDelete && (
@@ -383,25 +386,71 @@ export function MentorshipCard({
           </div>
         )}
 
-        {/* タグ一覧（通話スタイル / 相談テーマ） */}
-        {profile.tags && profile.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {profile.tags.map((tag) => (
-              <span
-                key={tag}
-                className={`px-2.5 py-0.5 rounded-lg text-xs font-semibold border ${
-                  tag.includes('VC') || tag.includes('通話') || tag.includes('聞き専') || tag.includes('テキスト')
-                    ? 'bg-secondary-50 dark:bg-secondary-950/40 text-secondary-900 dark:text-secondary-300 border-secondary-edge dark:border-secondary-edge-strong font-bold'
-                    : isMentor
-                      ? 'bg-primary-50 dark:bg-primary-950/40 text-primary-900 dark:text-primary-300 border-primary-edge-soft dark:border-primary-edge-strong'
-                      : 'bg-success-50 dark:bg-success-950/40 text-success-900 dark:text-success-300 border-success-edge-soft dark:border-success-edge-strong'
-                }`}
-              >
-                #{tag}
-              </span>
-            ))}
-          </div>
-        )}
+        {/* コミュニケーションスタイル ＆ 相談テーマ */}
+        {profile.tags && profile.tags.length > 0 && (() => {
+          const styleTags: { raw: string; label: string; icon: string }[] = [];
+          const otherTags: string[] = [];
+
+          profile.tags.forEach((tag) => {
+            if (tag.includes('VC') || tag.includes('通話')) {
+              styleTags.push({ raw: tag, label: 'VC通話', icon: '🎙️' });
+            } else if (tag.includes('聞き専')) {
+              styleTags.push({ raw: tag, label: '聞き専OK', icon: '🎧' });
+            } else if (tag.includes('テキスト')) {
+              styleTags.push({ raw: tag, label: 'テキスト', icon: '💬' });
+            } else if (tag.includes('画面共有')) {
+              styleTags.push({ raw: tag, label: '画面共有', icon: '📺' });
+            } else {
+              otherTags.push(tag);
+            }
+          });
+
+          // 重複除外したユニークスタイル
+          const uniqueStyles = Array.from(new Map(styleTags.map(s => [s.label, s])).values());
+
+          return (
+            <div className="space-y-1.5">
+              {/* スタイル一覧バッジ */}
+              {uniqueStyles.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[10px] font-bold text-muted-strong">やり方:</span>
+                  {uniqueStyles.map((st) => (
+                    <span
+                      key={st.label}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-bold bg-secondary-50 dark:bg-secondary-950/40 text-secondary-900 dark:text-secondary-300 border border-secondary-edge dark:border-secondary-edge-strong shadow-2xs"
+                    >
+                      <span>{st.icon}</span>
+                      <span>{st.label}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* テーマタグ一覧（最大4件 + 残り件数） */}
+              {otherTags.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1">
+                  {otherTags.slice(0, 4).map((tag) => (
+                    <span
+                      key={tag}
+                      className={`px-2 py-0.5 rounded-md text-[11px] font-medium border ${
+                        isMentor
+                          ? 'bg-primary-50/70 dark:bg-primary-950/30 text-primary-900 dark:text-primary-300 border-primary-edge-soft dark:border-primary-edge-strong'
+                          : 'bg-success-50/70 dark:bg-success-950/30 text-success-900 dark:text-success-300 border-success-edge-soft dark:border-success-edge-strong'
+                      }`}
+                    >
+                      #{tag}
+                    </span>
+                  ))}
+                  {otherTags.length > 4 && (
+                    <span className="text-[10px] text-muted font-bold bg-surface-subtle px-1.5 py-0.5 rounded-md border border-border">
+                      +{otherTags.length - 4}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* 自己紹介文 (シンプル化: 2行折りたたみ) */}
         {profile.bio && (
