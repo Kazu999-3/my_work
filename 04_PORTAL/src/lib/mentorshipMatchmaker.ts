@@ -3,6 +3,8 @@
  */
 
 import { supabaseAdmin as supabase } from './supabaseAdmin';
+import { getPlayerTier, ExperienceTier } from './playerTier';
+import { fetchAllRows } from './fetchAll';
 
 export const RANK_ORDER: Record<string, number> = {
   IRON: 1,
@@ -253,6 +255,8 @@ export interface SecretMatchProposal {
     rank: string;
     lanes: string[];
     champions: string[];
+    tier?: ExperienceTier;
+    tierLabel?: string;
   };
   pupil: {
     profileId?: string | null;
@@ -264,6 +268,9 @@ export interface SecretMatchProposal {
     secondaryLane?: string;
     isRegistered: boolean;
     hasLearnRole: boolean;
+    tier?: ExperienceTier;
+    tierLabel?: string;
+    totalGames?: number;
   };
   matchScore: number;
   reasons: string[];
@@ -281,6 +288,9 @@ export interface SecretMatchBatchProposal {
     secondaryLane?: string;
     isRegistered: boolean;
     hasLearnRole: boolean;
+    tier?: ExperienceTier;
+    tierLabel?: string;
+    totalGames?: number;
   };
   mentors: Array<{
     profileId: string;
@@ -293,10 +303,20 @@ export interface SecretMatchBatchProposal {
     reasons: string[];
     offerStatus?: string;
     matchId?: string;
+    tier?: ExperienceTier;
+    tierLabel?: string;
   }>;
 }
 
 const LEARN_ROLE_ID = '1556976007234330634'; // 📖 教わりたい
+
+export const TIER_ROLE_IDS: Record<string, { tier: ExperienceTier; label: string }> = {
+  '1556958870486777976': { tier: 'new', label: '🔰 初参加' },
+  '1556958871904583770': { tier: 'light', label: '🌱 ライト' },
+  '1556958873150292078': { tier: 'regular', label: '👑 常連' },
+  '1556958874618175568': { tier: 'experienced', label: '🎖️ 経験者' },
+  '1556958875973066882': { tier: 'returning', label: '⏳ 復帰勢' },
+};
 
 /**
  * 🔒 シークレットお見合い便の候補ペアを全自動生成（未登録メンバーを含む）
@@ -335,10 +355,48 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
       console.warn('[mentorshipMatchmaker] Failed to fetch ktm_players:', pErr);
     }
 
-    // 4. Discordから「📖 教わりたい」ロール所持者のID一覧を取得
+    // 3.5 戦績データ（ktm_match_participants）から通算試合数・ブランクを集計してTierを判定
+    const { data: participants } = await fetchAllRows((from, to) =>
+      supabase
+        .from('ktm_match_participants')
+        .select('discord_id, player_name, created_at')
+        .range(from, to)
+    );
+
+    const now = Date.now();
+    const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+
+    interface PlayerHistoryStats {
+      total: number;
+      recent30d: number;
+      lastPlayedAt: number | null;
+    }
+    const statsByDiscord = new Map<string, PlayerHistoryStats>();
+    const statsByNameLower = new Map<string, PlayerHistoryStats>();
+
+    (participants || []).forEach((row: any) => {
+      const matchTime = row.created_at ? new Date(row.created_at).getTime() : 0;
+      const update = (map: Map<string, PlayerHistoryStats>, key: string) => {
+        let stat = map.get(key);
+        if (!stat) {
+          stat = { total: 0, recent30d: 0, lastPlayedAt: null };
+          map.set(key, stat);
+        }
+        stat.total += 1;
+        if (matchTime >= thirtyDaysAgo) stat.recent30d += 1;
+        if (!stat.lastPlayedAt || matchTime > stat.lastPlayedAt) {
+          stat.lastPlayedAt = matchTime;
+        }
+      };
+      if (row.discord_id) update(statsByDiscord, String(row.discord_id).trim());
+      if (row.player_name) update(statsByNameLower, String(row.player_name).trim().toLowerCase());
+    });
+
+    // 4. Discordから「📖 教わりたい」およびTierロール所持者の情報を取得
     const token = process.env.DISCORD_BOT_TOKEN;
     const guildId = process.env.DISCORD_GUILD_ID;
     const learnUserIds = new Set<string>();
+    const discordMemberRolesMap = new Map<string, string[]>();
 
     if (token && guildId) {
       try {
@@ -348,8 +406,12 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
         if (mRes.ok) {
           const mList: any[] = await mRes.json();
           for (const mem of mList) {
+            const uid = mem.user?.id;
+            if (uid) {
+              discordMemberRolesMap.set(uid, mem.roles || []);
+            }
             if (Array.isArray(mem.roles) && mem.roles.includes(LEARN_ROLE_ID)) {
-              learnUserIds.add(mem.user?.id);
+              learnUserIds.add(uid);
             }
           }
         }
@@ -357,6 +419,44 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
         console.warn('[mentorshipMatchmaker] Failed to fetch discord members:', e);
       }
     }
+
+    // Tier（ライト/常連/経験者/復帰勢/初参加）判定ヘルパー
+    const resolveTier = (discordId?: string | null, playerName?: string | null) => {
+      const dId = String(discordId || '').trim();
+      const nLow = String(playerName || '').trim().toLowerCase();
+
+      // 1. Discordロールから判定（サーバー上で設定されているロールを最優先）
+      if (dId && discordMemberRolesMap.has(dId)) {
+        const roles = discordMemberRolesMap.get(dId) || [];
+        for (const rId of roles) {
+          if (TIER_ROLE_IDS[rId]) {
+            const rInfo = TIER_ROLE_IDS[rId];
+            const stat = statsByDiscord.get(dId) || (nLow ? statsByNameLower.get(nLow) : null);
+            return {
+              tier: rInfo.tier,
+              tierLabel: rInfo.label,
+              totalGames: stat?.total ?? (rInfo.tier === 'new' ? 0 : 1),
+            };
+          }
+        }
+      }
+
+      // 2. ktm_match_participants の実戦績から getPlayerTier で算出（SSoT）
+      const stat = (dId && statsByDiscord.get(dId)) || (nLow && statsByNameLower.get(nLow)) || { total: 0, recent30d: 0, lastPlayedAt: null };
+      const daysAgo = stat.lastPlayedAt ? Math.floor((now - stat.lastPlayedAt) / (24 * 60 * 60 * 1000)) : null;
+
+      const info = getPlayerTier({
+        total_games: stat.total,
+        recent_games_30d: stat.recent30d,
+        days_since_last_match: daysAgo,
+      });
+
+      return {
+        tier: info.tier,
+        tierLabel: info.label,
+        totalGames: stat.total,
+      };
+    };
 
     // 5. 既存のお見合いオファー状態を取得
     const { data: existingMatches } = await supabase
@@ -381,6 +481,9 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
       champions: string[];
       isRegistered: boolean;
       hasLearnRole: boolean;
+      tier: ExperienceTier;
+      tierLabel: string;
+      totalGames: number;
     }> = [];
 
     const addedDiscordIds = new Set<string>(busyDiscordIds);
@@ -389,6 +492,7 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
     for (const rp of registeredPupils || []) {
       if (!rp.discord_id) continue;
       addedDiscordIds.add(rp.discord_id);
+      const tierResult = resolveTier(rp.discord_id, rp.player_name);
       pupilCandidates.push({
         profileId: rp.id,
         playerId: rp.player_id,
@@ -400,6 +504,9 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
         champions: rp.champions || [],
         isRegistered: true,
         hasLearnRole: learnUserIds.has(rp.discord_id),
+        tier: tierResult.tier,
+        tierLabel: tierResult.tierLabel,
+        totalGames: tierResult.totalGames,
       });
     }
 
@@ -420,18 +527,23 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
         const primary = (roles.primary || roles.main || 'ALL').toUpperCase();
         const secondary = (roles.secondary || roles.sub || '').toUpperCase();
         const champs = Array.isArray(player.main_champions) ? player.main_champions : [];
+        const pName = player.name || player.ign || 'KTMメンバー';
+        const tierResult = resolveTier(player.discord_id, pName);
 
         pupilCandidates.push({
           profileId: null,
           playerId: player.id,
           discordId: player.discord_id,
-          name: player.name || player.ign || 'KTMメンバー',
+          name: pName,
           rank: pRank,
           primaryLane: primary,
           secondaryLane: secondary,
           champions: champs,
           isRegistered: false,
           hasLearnRole: hasLearn,
+          tier: tierResult.tier,
+          tierLabel: tierResult.tierLabel,
+          totalGames: tierResult.totalGames,
         });
       }
     }
@@ -528,6 +640,14 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
           const pairKey = `${mentor.discord_id}_${pupil.discordId}`;
           const currentOfferStatus = offerMap.get(pairKey) || 'NONE';
 
+          const mentorTierResult = resolveTier(mentor.discord_id, mentor.player_name);
+
+          // 相性理由にプレイヤー属性の補足を自然に追加
+          const enrichedReasons = [...reasons];
+          if (pupil.tierLabel) {
+            enrichedReasons.push(`後輩属性: ${pupil.tierLabel}${pupil.totalGames !== undefined ? ` (通算${pupil.totalGames}戦)` : ''}`);
+          }
+
           proposals.push({
             id: `${mentor.id}_${pupil.discordId}`,
             mentor: {
@@ -537,6 +657,8 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
               rank: mentor.current_rank || 'PLATINUM',
               lanes: mentor.lanes || [],
               champions: mentor.champions || [],
+              tier: mentorTierResult.tier,
+              tierLabel: mentorTierResult.tierLabel,
             },
             pupil: {
               profileId: pupil.profileId,
@@ -548,9 +670,12 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
               secondaryLane: pupil.secondaryLane,
               isRegistered: pupil.isRegistered,
               hasLearnRole: pupil.hasLearnRole,
+              tier: pupil.tier,
+              tierLabel: pupil.tierLabel,
+              totalGames: pupil.totalGames,
             },
             matchScore: finalScore,
-            reasons,
+            reasons: enrichedReasons,
             offerStatus: (currentOfferStatus as any) || 'NONE',
           });
         }
@@ -599,6 +724,8 @@ export async function generateSecretMatchmakerBatches(): Promise<SecretMatchBatc
         matchScore: pair.matchScore,
         reasons: pair.reasons,
         offerStatus: pair.offerStatus,
+        tier: pair.mentor.tier,
+        tierLabel: pair.mentor.tierLabel,
       });
     }
   }

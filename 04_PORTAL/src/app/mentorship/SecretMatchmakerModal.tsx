@@ -10,6 +10,23 @@ interface SecretMatchmakerModalProps {
   onClose: () => void;
 }
 
+const getTierBadgeStyle = (tier?: string) => {
+  switch (tier) {
+    case 'light':
+      return 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30';
+    case 'new':
+      return 'bg-green-500/15 text-green-700 border-green-500/30';
+    case 'regular':
+      return 'bg-amber-500/15 text-amber-700 border-amber-500/30';
+    case 'experienced':
+      return 'bg-blue-500/15 text-blue-700 border-blue-500/30';
+    case 'returning':
+      return 'bg-purple-500/15 text-purple-700 border-purple-500/30';
+    default:
+      return 'bg-surface-subtle text-foreground-subtle border-border/50';
+  }
+};
+
 export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModalProps) {
   const [viewMode, setViewMode] = useState<'BATCH' | 'PAIR'>('BATCH');
   const [proposals, setProposals] = useState<SecretMatchProposal[]>([]);
@@ -218,8 +235,16 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
                         <div className="text-xs font-black text-foreground-subtle px-2 py-0.5 rounded-lg bg-surface-subtle">
                           #{bIdx + 1}
                         </div>
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-sm font-black text-foreground">{batch.pupil.name}</span>
+                          {batch.pupil.tierLabel && (
+                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${getTierBadgeStyle(batch.pupil.tier)}`}>
+                              {batch.pupil.tierLabel}
+                              {batch.pupil.totalGames !== undefined && (
+                                <span className="ml-1 opacity-70 font-normal">({batch.pupil.totalGames}戦)</span>
+                              )}
+                            </span>
+                          )}
                           <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-surface-subtle text-foreground-subtle">
                             {batch.pupil.rank}
                           </span>
@@ -275,9 +300,14 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
                             className="p-3 rounded-xl bg-surface-subtle/50 border border-border/60 space-y-2 text-xs"
                           >
                             <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-1.5 font-black text-foreground">
+                              <div className="flex items-center gap-1.5 font-black text-foreground flex-wrap">
                                 <span className="text-secondary-600">{numIcons[mIdx]}</span>
                                 <span>{m.name} 先輩</span>
+                                {m.tierLabel && (
+                                  <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded border ${getTierBadgeStyle(m.tier)}`}>
+                                    {m.tierLabel}
+                                  </span>
+                                )}
                                 <span className="text-[10px] font-normal text-foreground-subtle">({m.rank} / {m.lanes.join('/')})</span>
                               </div>
                               <div className="text-secondary-600 font-black text-xs">
@@ -333,8 +363,13 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
                             先輩
                           </div>
                           <div>
-                            <div className="text-xs font-black text-foreground flex items-center gap-1.5">
+                            <div className="text-xs font-black text-foreground flex items-center gap-1.5 flex-wrap">
                               {proposal.mentor.name}
+                              {proposal.mentor.tierLabel && (
+                                <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded border ${getTierBadgeStyle(proposal.mentor.tier)}`}>
+                                  {proposal.mentor.tierLabel}
+                                </span>
+                              )}
                               <span className="text-[10px] font-normal px-1.5 py-0.2 rounded bg-surface-subtle text-foreground-subtle">
                                 {proposal.mentor.rank}
                               </span>
@@ -350,8 +385,16 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
                             後輩
                           </div>
                           <div>
-                            <div className="text-xs font-black text-foreground flex items-center gap-1.5">
+                            <div className="text-xs font-black text-foreground flex items-center gap-1.5 flex-wrap">
                               {proposal.pupil.name}
+                              {proposal.pupil.tierLabel && (
+                                <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded border ${getTierBadgeStyle(proposal.pupil.tier)}`}>
+                                  {proposal.pupil.tierLabel}
+                                  {proposal.pupil.totalGames !== undefined && (
+                                    <span className="ml-0.5 opacity-70 font-normal">({proposal.pupil.totalGames}戦)</span>
+                                  )}
+                                </span>
+                              )}
                               <span className="text-[10px] font-normal px-1.5 py-0.2 rounded bg-surface-subtle text-foreground-subtle">
                                 {proposal.pupil.rank}
                               </span>

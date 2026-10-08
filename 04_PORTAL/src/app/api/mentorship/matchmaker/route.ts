@@ -274,7 +274,7 @@ export async function POST(req: Request) {
           description:
             `こんにちは、**${proposal.pupil.name}** さん！\n` +
             `ポータル名簿のレーン情報をもとに、ぴったりの先輩をご紹介します！✨\n\n` +
-            `**👤 おすすめの先輩**: **${proposal.mentor.name}** さん (${proposal.mentor.rank})\n` +
+            `**👤 おすすめの先輩**: **${proposal.mentor.name}** さん (${proposal.mentor.rank}${proposal.mentor.tierLabel ? ` / ${proposal.mentor.tierLabel}` : ''})\n` +
             `**🛡️ レーン**: \`${proposal.mentor.lanes.join('/')}\`\n` +
             `**🎯 相性スコア**: **${proposal.matchScore}%**\n` +
             `**💡 おすすめ理由**:\n` +
@@ -304,7 +304,7 @@ export async function POST(req: Request) {
           description:
             `**${proposal.mentor.name}** さん、いつもありがとうございます！\n` +
             `あなたが担当するレーンで、ぴったりの後輩候補がいます！✨\n\n` +
-            `**👤 後輩候補**: **${proposal.pupil.name}** さん (${proposal.pupil.rank})\n` +
+            `**👤 後輩候補**: **${proposal.pupil.name}** さん (${proposal.pupil.rank}${proposal.pupil.tierLabel ? ` / ${proposal.pupil.tierLabel}` : ''})\n` +
             `**🛡️ レーン**: \`${proposal.pupil.primaryLane}\`\n` +
             `**🎯 相性スコア**: **${proposal.matchScore}%**\n` +
             `**💡 おすすめ理由**:\n` +
@@ -412,7 +412,7 @@ export async function POST(req: Request) {
           const reasons = m.reasons?.map((r: string) => `・${r}`).join('\n');
           return (
             `━━━━━━━━━━━━━━━━━━━━\n` +
-            `**${num} ${m.name} 先輩** (${m.lanes.join('/')} / ${m.rank}) ★相性 **${m.matchScore}%**\n` +
+            `**${num} ${m.name} 先輩** (${m.lanes.join('/')} / ${m.rank}${m.tierLabel ? ` / ${m.tierLabel}` : ''}) ★相性 **${m.matchScore}%**\n` +
             champs +
             `💡 **相性理由**:\n${reasons}`
           );
