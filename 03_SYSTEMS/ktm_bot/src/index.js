@@ -3,6 +3,7 @@ import { handleAnnounceMatch, handleLaneCommand, handleRecruitDirect, handleSetI
 import { handleButtonInteraction } from './handlers/components.js';
 import { handleModalSubmit } from './handlers/modals.js';
 import { handleScheduledEvent } from './handlers/scheduled.js';
+import { syncPeriodicCardContents } from './handlers/jobs/periodicCards.js';
 import { notifyAdminError } from './utils/alert.js';
 
 
@@ -11,6 +12,21 @@ export default {
     const url = new URL(request.url);
     const DISCORD_TOKEN = env.DISCORD_TOKEN;
     
+    // チャンネル上の既存募集メッセージの本文を最新化するワンショットエンドポイント
+    if (url.pathname === '/sync-periodic-content') {
+      try {
+        const results = await syncPeriodicCardContents({ ...env, DISCORD_TOKEN });
+        return new Response(JSON.stringify({ ok: true, results }, null, 2), {
+          headers: { 'Content-Type': 'application/json' },
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ ok: false, error: e.message }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     // GAS からのプロキシ通知リクエストを処理
     if (url.pathname === '/announce-match' && request.method === 'POST') {
       const gasSecret = request.headers.get('x-gas-secret');

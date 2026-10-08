@@ -599,3 +599,47 @@ export async function cleanupOldReminderMessages(env, channelId) {
     console.warn('[Cleanup] リマインドメッセージ掃除エラー:', err);
   }
 }
+
+/**
+ * チャンネル上の現在の定期カスタム募集カード（土曜・日曜）のメッセージ本文（content）を、
+ * 最新の buildRecruitmentContent() に同期・更新する。
+ * （※サイレント更新: allowed_mentions: { parse: [] } で不要な通知音を防止）
+ */
+export async function syncPeriodicCardContents(env) {
+  const channelId = CONFIG.PERIODIC_RECRUIT_CHANNEL_ID || CONFIG.RECRUIT_CHANNEL_ID;
+  const messages = await fetchRecentBotMessages(env, channelId);
+  const targets = resolveWeekendTargets();
+  const results = [];
+
+  for (const target of targets) {
+    const card = findDayCard(messages, target);
+    if (!card) {
+      results.push({ dayKey: target.dayKey, status: 'not_found', label: target.label });
+      continue;
+    }
+
+    const newContent = buildRecruitmentContent(target, CONFIG.NOTIFICATION_ROLE_ID);
+    const patchRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages/${card.id}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bot ${env.DISCORD_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        content: newContent,
+        allowed_mentions: { parse: [] } // サイレント更新
+      }),
+    });
+
+    if (!patchRes.ok) {
+      const errText = await patchRes.text().catch(() => '');
+      console.error(`[SyncContent] ${target.label} の本文更新に失敗: ${patchRes.status} ${errText}`);
+      results.push({ dayKey: target.dayKey, status: 'error', code: patchRes.status, detail: errText });
+    } else {
+      console.log(`[SyncContent] ${target.label} の本文を最新化しました (msg ${card.id})`);
+      results.push({ dayKey: target.dayKey, status: 'updated', messageId: card.id });
+    }
+  }
+
+  return results;
+}

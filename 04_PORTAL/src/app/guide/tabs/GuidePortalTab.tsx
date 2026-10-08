@@ -257,7 +257,7 @@ export default function GuidePortalTab() {
               月刊KTMスポーツ速報（試合終了直後のAI実況ハイライトニュース）
             </h3>
             <p className="text-muted text-xs leading-relaxed">
-              内戦カスタムの試合結果が記録されると、Geminiがスポーツ新聞（東スポ・Number風）のユーモアと熱狂あふれる号外ダイジェストを自動執筆！Discord速報通知およびポータルトップに即座に掲示されます。
+              定期カスタムの試合結果が記録されると、Geminiがスポーツ新聞（東スポ・Number風）のユーモアと熱狂あふれる号外ダイジェストを自動執筆！Discord速報通知およびポータルトップに即座に掲示されます。
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
               <div className="bg-background rounded-2xl p-3 border border-border/80 text-xs text-foreground-subtle space-y-1">
@@ -387,7 +387,7 @@ export default function GuidePortalTab() {
         </div>
 
 
-        {/* 📊 MMR ＆ KTM内戦レートの説明（2026-09-23 追加） */}
+        {/* 📊 MMR ＆ KTMカスタムレートの説明（2026-09-23 追加） */}
         <div className="md:col-span-2 bg-surface rounded-3xl p-5 md:p-6 border border-border shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-primary-edge-soft flex items-center justify-center text-primary-600 font-bold text-2xl">
@@ -397,9 +397,9 @@ export default function GuidePortalTab() {
               レート ＆ ランク
             </span>
           </div>
-          <h3 className="text-base font-black text-foreground">MMR（KTM内戦レート）の見方</h3>
+          <h3 className="text-base font-black text-foreground">MMR（KTMカスタムレート）の見方</h3>
           <p className="text-muted text-xs leading-relaxed">
-            MMRは<strong>KTM内戦の成績だけ</strong>で動く独自レートです。ソロQのランクとは別物で、
+            MMRは<strong>KTMカスタムの成績だけ</strong>で動く独自レートです。ソロQのランクとは別物で、
             全員1200からスタートします。<strong>レーンごとに別々</strong>に管理されるので、
             JGとTOPで違う数字を持ちます。カルテに出る「総合MMR」は、実際にプレイしたレーンの試合数で
             重み付けした平均です。

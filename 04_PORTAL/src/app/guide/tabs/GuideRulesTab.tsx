@@ -82,7 +82,7 @@ export default function GuideRulesTab() {
             </p>
             <div className="mt-2 pt-2 border-t border-primary-edge-soft/60 text-[11px] text-primary-900 dark:text-primary-300 space-y-0.5">
               <p className="font-bold">📊 判定基準：</p>
-              <p>・ソロQランクではなく<strong>KTM MMR（内戦レート）</strong>を基準に公平に判定されます</p>
+              <p>・ソロQランクではなく<strong>KTM MMR（独自レート）</strong>を基準に公平に判定されます</p>
             </div>
           </div>
 
