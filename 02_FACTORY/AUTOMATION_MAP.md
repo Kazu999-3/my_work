@@ -66,7 +66,7 @@ grep -A12 "\[triggers\]" 03_SYSTEMS/ktm_bot/wrangler.toml
 | `/api/cron/sync-matches` | 毎日 09:00 | `0 0 * * *` |
 | `/api/cron/freshness-check` | 毎日 00:00 | `0 15 * * *` |
 | `/api/cron/soloq-trends` | 毎週日 07:00 | `0 22 * * 6` |
-| `/api/cron/dict-review-check` | 毎週水 08:00 | `0 23 * * 2` |
+| ~~`/api/cron/dict-review-check`~~ | 2026-10-08 停止・削除 | （出典の無いAI判定で、対応する画面も無かったため） |
 | `/api/cron/lottery` | 毎週日 22:00 | `0 13 * * 0` |
 
 ---

@@ -46,10 +46,9 @@ export async function GET() {
   try {
     if (!supabase) return NextResponse.json({ error: 'Supabaseクライアントが未初期化です' }, { status: 500 });
     const since24h = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-    const since8d = new Date(Date.now() - 8 * 24 * 3600 * 1000).toISOString();
 
     const [
-      recentTasks, ytErrors, metricsRow, dictReviewNotif, dictFacts,
+      recentTasks, ytErrors, metricsRow, dictFacts,
       players, matches, pendingBets, tasks24h,
       factsCount, libraryCount, laneGuidesCount, memosCount, matchupLogCount,
       lastRecruitment,
@@ -60,8 +59,6 @@ export async function GET() {
       supabase.from('youtube_queue').select('id', { count: 'exact', head: true })
         .in('status', ['error_generation', 'error_no_transcript', 'failed']),
       supabase.from('matchup_sentinel').select('raw_data').eq('matchup_id', 'SYSTEM_METRICS').maybeSingle(),
-      supabase.from('admin_notifications').select('data, created_at').eq('type', 'dict_review').eq('read', false)
-        .gt('created_at', since8d).order('created_at', { ascending: false }).limit(1).maybeSingle(),
       supabase.from('champion_facts').select('confidence, patch, strengths'),
       supabase.from('ktm_players').select('id, name, highest_rank, coins, role_preferences, metadata, is_active'),
       supabase.from('ktm_matches').select('id, created_at').order('created_at', { ascending: false }).limit(200),
@@ -123,7 +120,6 @@ export async function GET() {
       needsAttention: {
         failedTasks,
         youtubeErrorCount: ytErrors.count ?? 0,
-        dictReviewCount: (dictReviewNotif.data?.data as any)?.needsAttention ?? 0,
       },
       tasks24h: taskCounts,
       cloudWorkers: (metricsRow.data?.raw_data as any)?.cloud_workers || {},

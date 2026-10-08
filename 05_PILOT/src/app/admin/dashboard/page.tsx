@@ -13,7 +13,7 @@ const LEGACY_PORTAL_URL = 'https://my-work-8jbd.vercel.app';
 interface FailedTask { id: string; task_type: string; payload: any; error_message: string | null; updated_at: string }
 interface CloudWorker { status?: string; summary?: string; details?: string[]; updated_at?: string }
 interface Stats {
-  needsAttention: { failedTasks: FailedTask[]; youtubeErrorCount: number; dictReviewCount: number };
+  needsAttention: { failedTasks: FailedTask[]; youtubeErrorCount: number };
   tasks24h: { completed: number; failed: number; pending: number; running: number };
   cloudWorkers: Record<string, CloudWorker>;
   bot: { lastRecruitmentAt: string | null };
@@ -146,7 +146,7 @@ export default function OpsDashboardPage() {
   };
 
   const na = stats?.needsAttention;
-  const hasAttention = !!na && (na.failedTasks.length > 0 || na.youtubeErrorCount > 0 || na.dictReviewCount > 0);
+  const hasAttention = !!na && (na.failedTasks.length > 0 || na.youtubeErrorCount > 0);
   const bet = stats?.casino.pendingBet;
   const betTotal = bet ? bet.blueAmount + bet.redAmount : 0;
   const bluePct = betTotal > 0 && bet ? Math.round((bet.blueAmount / betTotal) * 100) : 50;
@@ -213,12 +213,6 @@ export default function OpsDashboardPage() {
                   <Link href="/admin/youtube" className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-rose-800/40 hover:border-rose-700 text-xs">
                     <span className="font-bold text-white">YouTube動画キューのエラー（{na!.youtubeErrorCount}件）</span>
                     <span className="font-bold text-rose-400">YouTube解析へ →</span>
-                  </Link>
-                )}
-                {na!.dictReviewCount > 0 && (
-                  <Link href="/admin/dict-health" className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-rose-800/40 hover:border-rose-700 text-xs">
-                    <span className="font-bold text-white">辞典の鮮度レビュー（{na!.dictReviewCount}件）</span>
-                    <span className="font-bold text-rose-400">辞典ヘルスへ →</span>
                   </Link>
                 )}
               </div>
