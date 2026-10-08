@@ -26,7 +26,6 @@ const LANE_FILTERS = [
 export default function MentorshipHubPanel() {
   const [activeTab, setActiveTab] = useState<'PUPIL' | 'MENTOR' | 'MATCHES'>('PUPIL');
   const [laneFilter, setLaneFilter] = useState('ALL');
-  const [lightOnlyFilter, setLightOnlyFilter] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [profiles, setProfiles] = useState<MentorshipProfile[]>([]);
   const [matches, setMatches] = useState<any[]>([]);
@@ -711,12 +710,6 @@ export default function MentorshipHubPanel() {
   const filteredProfiles = profiles.filter((p) => {
     if (activeTab !== 'MATCHES' && p.role_type !== activeTab) return false;
     if (laneFilter !== 'ALL' && !(p.lanes || []).includes(laneFilter)) return false;
-    if (lightOnlyFilter) {
-      const pDur = (p as any).preferred_duration;
-      const isLight = pDur === '1_MATCH' || pDur === 'REPLAY' || pDur === '3_DAYS' ||
-        p.tags?.some((t) => t.includes('1試合') || t.includes('カスタム') || t.includes('単発') || t.includes('リプレイ') || t.includes('添削') || t.includes('3日') || t.includes('お試し'));
-      if (!isLight) return false;
-    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const matchName = (p.player_name || '').toLowerCase().includes(q);
@@ -974,23 +967,6 @@ export default function MentorshipHubPanel() {
                   {f.label}
                 </button>
               ))}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setLightOnlyFilter(!lightOnlyFilter)}
-                className={`px-3 py-1 rounded-lg text-xs font-black transition shrink-0 cursor-pointer flex items-center gap-1.5 border ${
-                  lightOnlyFilter
-                    ? 'bg-secondary-500 text-white border-secondary-edge-strong shadow-xs ring-2 ring-secondary-300'
-                    : 'bg-surface hover:bg-secondary-50 text-foreground-subtle border-secondary-edge-soft hover:border-secondary-edge'
-                }`}
-                title="1試合のみやリプレイ添削など、気軽に参加できる単発お試しコースのみを表示します"
-              >
-                <span>⚡</span>
-                <span>お試し・単発OKのみ</span>
-                {lightOnlyFilter && <span className="text-[10px] bg-surface/20 px-1 rounded-full">ON</span>}
-              </button>
             </div>
           </div>
         )}

@@ -8,7 +8,6 @@ import { CHAMPION_JA } from '../../components/ChampSelect';
 import { getChampIcon } from '../../lib/ddragonClient';
 import { Clock, MessageSquare, Send, Sparkles, Trash2, Zap, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { MentorshipReviewSummary } from '../api/mentorship/reviews/route';
-import { MENTORSHIP_DURATIONS } from '../../lib/mentorshipConstants';
 
 export interface MentorshipComment {
   id: string;
@@ -69,13 +68,6 @@ export function MentorshipCard({
   const [commentInput, setCommentInput] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isBioExpanded, setIsBioExpanded] = useState(false);
-
-  // ライトコース（1試合、リプレイ、3日間）判定
-  const preferredDuration = (profile as any).preferred_duration;
-  const is1Match = preferredDuration === '1_MATCH' || profile.tags?.some(t => t.includes('1試合') || t.includes('カスタム') || t.includes('単発'));
-  const isReplay = preferredDuration === 'REPLAY' || profile.tags?.some(t => t.includes('リプレイ') || t.includes('添削'));
-  const is3Days = preferredDuration === '3_DAYS' || profile.tags?.some(t => t.includes('3日') || t.includes('お試し'));
-  const isLightCourse = is1Match || isReplay || is3Days;
 
   // コメント一覧の取得
   const loadComments = async () => {
@@ -154,31 +146,10 @@ export function MentorshipCard({
         ? 'ring-2 ring-primary-400 shadow-lg scale-[1.01]'
         : ''
     } ${
-      isLightCourse
-        ? 'border-secondary-edge/60 ring-1 ring-secondary-300/40 hover:border-secondary-edge-strong shadow-secondary-900/5 hover:shadow-xl'
-        : isMentor
-          ? 'border-primary-edge/40 hover:border-primary-edge-strong shadow-primary-900/5 hover:shadow-lg'
-          : 'border-success-edge/40 hover:border-success-edge-strong shadow-success-900/5 hover:shadow-lg'
+      isMentor
+        ? 'border-primary-edge/40 hover:border-primary-edge-strong shadow-primary-900/5 hover:shadow-lg'
+        : 'border-success-edge/40 hover:border-success-edge-strong shadow-success-900/5 hover:shadow-lg'
     }`}>
-      {/* 🚀 案1: 1試合・単発・ライトコースのアイキャッチ強調バナー（パッと見でわかるデザイン） */}
-      {isLightCourse && (
-        <div className="bg-gradient-to-r from-secondary-500 via-secondary-500 to-primary-500 text-white px-3.5 py-1.5 flex items-center justify-between text-xs font-black shadow-inner tracking-tight">
-          <div className="flex items-center gap-1.5">
-            <Zap size={14} className="text-primary-300 animate-pulse fill-primary-300" />
-            <span>
-              {is1Match
-                ? '🎮 1試合カスタム完結OK！ 気軽なお試し歓迎'
-                : isReplay
-                  ? '📺 1試合リプレイ添削！ 気軽にアドバイス'
-                  : '☕ 3日間お試しバディ！ 初心者・単発歓迎'}
-            </span>
-          </div>
-          <span className="bg-surface/20 backdrop-blur-xs text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
-            Light Course
-          </span>
-        </div>
-      )}
-
       {/* AI相性おすすめリボン */}
       {matchScore !== undefined && matchScore > 0 && (
         <div className="bg-gradient-to-r from-primary-500 via-primary-500 to-primary-500 text-stone-950 px-3 py-1 flex items-center justify-between text-[11px] font-black tracking-tight">
@@ -273,9 +244,9 @@ export function MentorshipCard({
         {/* プレイヤー情報 */}
         <div className="flex items-center gap-3">
           <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center text-xl font-black shrink-0 shadow-2xs ${
-            isLightCourse
-              ? 'bg-gradient-to-br from-secondary-100 to-primary-100 border-secondary-edge text-secondary-900'
-              : 'bg-gradient-to-br from-primary-100 to-primary-200 border-primary-edge/80 text-primary-900'
+            isMentor
+              ? 'bg-gradient-to-br from-primary-100 to-primary-200 border-primary-edge/80 text-primary-900'
+              : 'bg-gradient-to-br from-success-100 to-success-200 border-success-edge/80 text-success-900'
           }`}>
             {profile.player_name.slice(0, 1).toUpperCase()}
           </div>

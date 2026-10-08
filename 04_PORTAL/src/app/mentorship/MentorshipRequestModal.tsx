@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { MentorshipProfile } from '../api/mentorship/profiles/route';
-import { MENTORSHIP_DURATIONS, COMMUNICATION_STYLES } from '../../lib/mentorshipConstants';
+import { COMMUNICATION_STYLES } from '../../lib/mentorshipConstants';
 import { Send, X, Clock, RefreshCw } from 'lucide-react';
 
 interface MentorshipRequestModalProps {

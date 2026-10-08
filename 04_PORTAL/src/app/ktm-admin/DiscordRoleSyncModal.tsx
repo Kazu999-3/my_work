@@ -150,7 +150,7 @@ export default function DiscordRoleSyncModal({ onClose }: { onClose: () => void 
             </div>
             <div>
               <h2 className="text-lg font-bold text-foreground">Discord メンバーロール連携</h2>
-              <p className="text-xs text-faint">内戦の通算試合数・ブランク日数から5段階のDiscordロールを自動管理</p>
+              <p className="text-xs text-faint">定期カスタムの通算試合数・ブランク日数から5段階のDiscordロールを自動管理</p>
             </div>
           </div>
           <button
@@ -386,7 +386,7 @@ export default function DiscordRoleSyncModal({ onClose }: { onClose: () => void 
               運用のポイント
             </p>
             <ul className="list-disc list-inside space-y-0.5 text-faint text-[11px] leading-relaxed">
-              <li>試合記録時（内戦終了時）に、参加者10名のロールが自動で最新のTierに更新されます。</li>
+              <li>試合記録時（カスタム終了時）に、参加者10名のロールが自動で最新のTierに更新されます。</li>
               <li>Discordサーバー側で、<strong>KTM Bot の役職が上記ロールよりも上にあること</strong>をご確認ください。</li>
               <li>「全員同期」を押すと、ブランク期間（30日/60日）による常連・経験者・復帰勢の入れ替えも全員分一括反映されます。</li>
             </ul>

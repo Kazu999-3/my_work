@@ -43,7 +43,7 @@ const GAP_THRESHOLD = 250;
 // ハンデ参加時にチーム分けの計算上で差し引くMMR（実際の戦績・MMRは変わらない）
 const HANDICAP_MMR_PENALTY = 150;
 
-// 内戦バランサー。状態の大半は _parts/ のフック（参加者リスト・BO3・入れ替え・共有操作・初期レーン編集）が持ち、
+// カスタムバランサー。状態の大半は _parts/ のフック（参加者リスト・BO3・入れ替え・共有操作・初期レーン編集）が持ち、
 // ここはチーム分けの実行と画面の組み立てだけを担う。
 // 2026-10-07: 3,029行 → 1,140行（82168c14）→ 本ファイル。使われていなかった状態(selectedHandicaps / showRecordPanel)を削除。
 export default function BalancerPage() {

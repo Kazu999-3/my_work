@@ -6,7 +6,6 @@ import { ALL_CHAMPIONS, CHAMPION_JA } from '../../components/ChampSelect';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { getKtmRank, RANKS as MMR_RANKS } from '../../lib/mmr';
 import { getChampIcon } from '../../lib/ddragonClient';
-import { MENTORSHIP_DURATIONS } from '../../lib/mentorshipConstants';
 import { Search, Plus, X, Sparkles, Volume2, Video, Swords, BookOpen, Clock, Shield, Check } from 'lucide-react';
 
 interface MentorshipProfileModalProps {
@@ -110,7 +109,6 @@ export function MentorshipProfileModal({
   const [targetRank, setTargetRank] = useState('GOLD');
   const [selectedCommStyles, setSelectedCommStyles] = useState<string[]>(['VC通話']);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [preferredDuration, setPreferredDuration] = useState<string>('14_DAYS');
   const [bio, setBio] = useState('');
   const [activeHours, setActiveHours] = useState('');
   const [maxPupils, setMaxPupils] = useState<number>(3);
@@ -144,7 +142,24 @@ export function MentorshipProfileModal({
         } else if (t === '画面共有' || t === '画面共有ライブコーチング' || t === '画面共有ライブ指導') {
           extractedStyles.add('画面共有');
         } else {
-          otherTags.push(t);
+          // 旧ジャンクタグや期間タグは除外
+          const isJunkOrDuration = [
+            '優しく丁寧に教えます', 'チャンピオン使い方講座', 'ノーマル/カスタム同伴プレイ',
+            '1on1マッチアップ特訓', '初心者大歓迎', 'ゴールド以下歓迎', '全ランク・初心者歓迎',
+            'エメラルド以下歓迎', 'プラチナ以下歓迎', '1試合カスタム歓迎', 'リプレイ添削歓迎',
+            '3日間お試し歓迎', '単発指導OK', 'エンゲージ・仕掛け判断の指導', 'ピール・キャリー保護の指導',
+            '集団戦フォーカス優先度', 'ガンク警戒・ディープワード', 'オブジェクト周りの陣形・マクロ',
+            'ジャングルルート・ガンク判断', 'サポートローム・視界支配', 'リプレイ添削・ミスの言語化',
+            '対面マッチアップ勝ち方・トレード', 'トレード・キルライン見極め', '単発相談OK',
+            'オブジェクト戦の陣形・視界', 'タワーダイブ・シージ・防衛', 'サポートのローム基準',
+            'キー配置・カメラ操作見直し', 'ウェーブ管理・フリーズ', 'ローム・寄りの判断',
+            '有利な試合の終わらせ方', 'リプレイ自己分析のコツ', '画面共有ライブコーチング',
+            '画面共有ライブ指導', 'VC指導対応', 'VC可能', 'テキストのみ',
+            '1試合カスタム', 'リプレイ添削', '3日間お試し', '2週間育成', '1ヶ月特訓', '長期指導'
+          ].includes(t);
+          if (!isJunkOrDuration) {
+            otherTags.push(t);
+          }
         }
       });
 
@@ -153,20 +168,6 @@ export function MentorshipProfileModal({
       }
       setSelectedCommStyles(Array.from(extractedStyles));
       setSelectedTags(otherTags);
-      
-      // preferred_duration 判定（profile.preferred_duration または tags から復元）
-      const profDuration = (profile as any).preferred_duration;
-      if (profDuration && MENTORSHIP_DURATIONS[profDuration]) {
-        setPreferredDuration(profDuration);
-      } else if (profile.tags?.some(t => t.includes('1試合') || t.includes('カスタム') || t.includes('単発'))) {
-        setPreferredDuration('1_MATCH');
-      } else if (profile.tags?.some(t => t.includes('リプレイ') || t.includes('添削'))) {
-        setPreferredDuration('REPLAY');
-      } else if (profile.tags?.some(t => t.includes('3日') || t.includes('お試し'))) {
-        setPreferredDuration('3_DAYS');
-      } else {
-        setPreferredDuration(targetRole === 'PUPIL' ? '1_MATCH' : '14_DAYS');
-      }
 
       setBio(profile.bio || '');
       setActiveHours(profile.active_hours || '');
@@ -180,7 +181,6 @@ export function MentorshipProfileModal({
       setSelectedChampions([]);
       setCurrentRank(RANKS.includes(userRank) ? userRank : 'SILVER');
       setTargetRank(targetRole === 'PUPIL' ? 'GOLD' : '全ランク・初心者歓迎');
-      setPreferredDuration('14_DAYS');
       setSelectedCommStyles(['VC通話']);
       setSelectedTags([]);
       setBio('');
@@ -268,7 +268,6 @@ export function MentorshipProfileModal({
         bio,
         active_hours: activeHours,
         status: 'OPEN',
-        preferred_duration: preferredDuration,
         max_pupils: roleType === 'MENTOR' ? maxPupils : 1,
         discord_id: initialProfile?.discord_id || user?.discordId,
         player_name: initialProfile?.player_name || user?.displayName || user?.username,

@@ -36,6 +36,26 @@ export interface MentorshipProfile {
   total_games?: number;
 }
 
+export const JUNK_MENTORSHIP_TAGS = new Set([
+  '優しく丁寧に教えます', 'チャンピオン使い方講座', 'ノーマル/カスタム同伴プレイ',
+  '1on1マッチアップ特訓', '初心者大歓迎', 'ゴールド以下歓迎', '全ランク・初心者歓迎',
+  'エメラルド以下歓迎', 'プラチナ以下歓迎', '1試合カスタム歓迎', 'リプレイ添削歓迎',
+  '3日間お試し歓迎', '単発指導OK', 'エンゲージ・仕掛け判断の指導', 'ピール・キャリー保護の指導',
+  '集団戦フォーカス優先度', 'ガンク警戒・ディープワード', 'オブジェクト周りの陣形・マクロ',
+  'ジャングルルート・ガンク判断', 'サポートローム・視界支配', 'リプレイ添削・ミスの言語化',
+  '対面マッチアップ勝ち方・トレード', 'トレード・キルライン見極め', '単発相談OK',
+  'オブジェクト戦の陣形・視界', 'タワーダイブ・シージ・防衛', 'サポートのローム基準',
+  'キー配置・カメラ操作見直し', 'ウェーブ管理・フリーズ', 'ローム・寄りの判断',
+  '有利な試合の終わらせ方', 'リプレイ自己分析のコツ', '画面共有ライブコーチング',
+  '画面共有ライブ指導', 'VC指導対応', 'VC可能', 'テキストのみ',
+  '1試合カスタム', 'リプレイ添削', '3日間お試し', '2週間育成', '1ヶ月特訓', '長期指導'
+]);
+
+export function sanitizeMentorshipTags(tags?: string[] | null): string[] {
+  if (!Array.isArray(tags)) return [];
+  return tags.filter((t) => typeof t === 'string' && t.trim() && !JUNK_MENTORSHIP_TAGS.has(t.trim()));
+}
+
 /**
  * プレイヤーの経験度Tier（常連・経験者・ライト等）および通算試合数を解決する
  */
@@ -159,6 +179,7 @@ export async function GET(request: Request) {
         }
         return {
           ...p,
+          tags: sanitizeMentorshipTags(p.tags),
           max_pupils: maxPupils,
           active_pupils_count: activePupils.length,
           active_pupil_names: activePupils,
@@ -337,40 +358,8 @@ export async function POST(request: Request) {
         ? [lanes.trim()]
         : ['MID'];
 
-    // タグのサニタイズ（通話・相談スタイルのみを厳密に残し、入力してないゴミタグを完全排除）
-    let normalizedTags = Array.isArray(tags) ? [...tags] : [];
-    normalizedTags = normalizedTags.filter((t: string) => {
-      const isJunk = [
-        '優しく丁寧に教えます', 'チャンピオン使い方講座', 'ノーマル/カスタム同伴プレイ',
-        '1on1マッチアップ特訓', '初心者大歓迎', 'ゴールド以下歓迎', '全ランク・初心者歓迎',
-        'エメラルド以下歓迎', 'プラチナ以下歓迎', '1試合カスタム歓迎', 'リプレイ添削歓迎',
-        '3日間お試し歓迎', '単発指導OK', 'エンゲージ・仕掛け判断の指導', 'ピール・キャリー保護の指導',
-        '集団戦フォーカス優先度', 'ガンク警戒・ディープワード', 'オブジェクト周りの陣形・マクロ',
-        'ジャングルルート・ガンク判断', 'サポートローム・視界支配', 'リプレイ添削・ミスの言語化',
-        '対面マッチアップ勝ち方・トレード', 'トレード・キルライン見極め', '単発相談OK',
-        'オブジェクト戦の陣形・視界', 'タワーダイブ・シージ・防衛', 'サポートのローム基準',
-        'キー配置・カメラ操作見直し', 'ウェーブ管理・フリーズ', 'ローム・寄りの判断',
-        '有利な試合の終わらせ方', 'リプレイ自己分析のコツ', '画面共有ライブコーチング',
-        '画面共有ライブ指導', 'VC指導対応', 'VC可能', 'テキストのみ'
-      ].includes(t);
-      return !isJunk;
-    });
-
-    // 既存の期間系タグを除去して再設定
-    normalizedTags = normalizedTags.filter((t: string) => 
-      !['1試合カスタム', 'リプレイ添削', '3日間お試し', '2週間育成', '1ヶ月特訓', '長期指導'].includes(t)
-    );
-    if (preferred_duration === '1_MATCH') {
-      normalizedTags.unshift('1試合カスタム');
-    } else if (preferred_duration === 'REPLAY') {
-      normalizedTags.unshift('リプレイ添削');
-    } else if (preferred_duration === '3_DAYS') {
-      normalizedTags.unshift('3日間お試し');
-    } else if (preferred_duration === '14_DAYS') {
-      normalizedTags.unshift('2週間育成');
-    } else if (preferred_duration === '30_DAYS') {
-      normalizedTags.unshift('1ヶ月特訓');
-    }
+    // タグのサニタイズ（通話・相談スタイルのみを厳密に残し、旧期間タグや入力してないゴミタグを完全排除）
+    const normalizedTags = sanitizeMentorshipTags(tags);
 
     const basePayload: Record<string, any> = {
       player_name: playerName,

@@ -171,7 +171,7 @@ export default function ProfileModal({ player, onClose }: ProfileModalProps) {
                       AI プレイスタイル分析
                     </h4>
                     <p className="text-faint text-sm">
-                      過去のKTM内戦の勝率、プレイ回数、選択レーン、そして現在のMMRから算出されたプレイスタイル指標です。
+                      過去のKTMカスタムの勝率、プレイ回数、選択レーン、そして現在のMMRから算出されたプレイスタイル指標です。
                     </p>
                     <div className="grid grid-cols-2 gap-4 mt-2">
                       <div className="bg-surface p-3 rounded border border-border">
