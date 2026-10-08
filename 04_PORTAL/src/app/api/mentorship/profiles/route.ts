@@ -6,6 +6,8 @@ import { findOrCreatePlayer } from '../../../../lib/playerCoins';
 import { sendErrorNotification } from '../../../../lib/discordNotify';
 import { notifyNewMentorshipProfile, syncMentorshipDashboard } from '../../../../lib/discordMentorship';
 
+import { getPlayerTier, ExperienceTier } from '../../../../lib/playerTier';
+
 export const dynamic = 'force-dynamic';
 
 export interface MentorshipProfile {
@@ -29,6 +31,63 @@ export interface MentorshipProfile {
   created_at: string;
   updated_at: string;
   avatar_url?: string;
+  tier?: ExperienceTier;
+  tier_label?: string;
+  total_games?: number;
+}
+
+/**
+ * プレイヤーの経験度Tier（常連・経験者・ライト等）および通算試合数を解決する
+ */
+export async function resolvePlayerTier(discordId: string, playerName?: string) {
+  const { data: player } = await supabase
+    .from('ktm_players')
+    .select('id, name, games_top, games_jg, games_mid, games_adc, games_sup, metadata')
+    .eq('discord_id', discordId)
+    .maybeSingle();
+
+  let totalGames = 0;
+  if (player) {
+    totalGames =
+      (player.games_top || 0) +
+      (player.games_jg || 0) +
+      (player.games_mid || 0) +
+      (player.games_adc || 0) +
+      (player.games_sup || 0);
+  }
+  if (totalGames === 0) {
+    const { count } = await supabase
+      .from('ktm_match_participants')
+      .select('*', { count: 'exact', head: true })
+      .eq('discord_id', discordId);
+    totalGames = count || 0;
+  }
+
+  // 直近参加日時の取得
+  const { data: lastMatch } = await supabase
+    .from('ktm_match_participants')
+    .select('created_at')
+    .eq('discord_id', discordId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  let daysAgo: number | null = null;
+  if (lastMatch?.created_at) {
+    daysAgo = Math.floor((Date.now() - new Date(lastMatch.created_at).getTime()) / (24 * 60 * 60 * 1000));
+  }
+
+  const tierInfo = getPlayerTier({
+    total_games: totalGames,
+    recent_games_30d: daysAgo !== null && daysAgo <= 30 ? 1 : 0,
+    days_since_last_match: daysAgo,
+  });
+
+  return {
+    ...tierInfo,
+    totalGames,
+    isEligibleMentor: tierInfo.tier === 'regular' || tierInfo.tier === 'experienced',
+  };
 }
 
 /**
@@ -89,27 +148,47 @@ export async function GET(request: Request) {
       });
     }
 
-    const profiles: MentorshipProfile[] = (rawProfiles || []).map((p: any) => {
-      const activePupils = mentorActiveMap[p.id] || [];
-      const maxPupils = p.max_pupils !== undefined && p.max_pupils !== null ? p.max_pupils : 3;
-      return {
-        ...p,
-        max_pupils: maxPupils,
-        active_pupils_count: activePupils.length,
-        active_pupil_names: activePupils,
-      };
-    });
+    // 各プレイヤーのTier情報を非同期で並列解決
+    const profilesWithTier: MentorshipProfile[] = await Promise.all(
+      (rawProfiles || []).map(async (p: any) => {
+        const activePupils = mentorActiveMap[p.id] || [];
+        const maxPupils = p.max_pupils !== undefined && p.max_pupils !== null ? p.max_pupils : 3;
+        let pTierInfo = null;
+        if (p.discord_id) {
+          pTierInfo = await resolvePlayerTier(p.discord_id, p.player_name);
+        }
+        return {
+          ...p,
+          max_pupils: maxPupils,
+          active_pupils_count: activePupils.length,
+          active_pupil_names: activePupils,
+          tier: pTierInfo?.tier,
+          tier_label: pTierInfo?.label,
+          total_games: pTierInfo?.totalGames,
+        };
+      })
+    );
 
     // セッション情報があれば自分のプロフィールIDおよび管理者権限も返す
     const session = await getAuthSession();
     myDiscordId = session?.discordId;
-    const isAdmin = !!session?.isAdmin;
+    const isKazuki = session?.discordId === '697220229964759130';
+    const isAdmin = Boolean(session?.isAdmin || isKazuki);
+
+    let canBeMentor = isAdmin; // 管理者は常に先輩可能
+    let currentUserTier = null;
+    if (myDiscordId) {
+      currentUserTier = await resolvePlayerTier(myDiscordId);
+      canBeMentor = currentUserTier.isEligibleMentor || isAdmin;
+    }
 
     return NextResponse.json({
       ok: true,
-      profiles,
+      profiles: profilesWithTier,
       myDiscordId: myDiscordId || null,
       isAdmin,
+      canBeMentor,
+      userTier: currentUserTier,
     });
   } catch (err: any) {
     console.error('[mentorship/profiles] GET error:', err);
@@ -217,6 +296,20 @@ export async function POST(request: Request) {
       );
     }
 
+    // 👑 先輩（MENTOR）資格チェック: 常連（regular）または経験者（experienced）のみ
+    if (role_type === 'MENTOR' && !isAdminProxyEdit) {
+      const userTier = await resolvePlayerTier(effectiveDiscordId!, effectivePlayerName);
+      if (!userTier.isEligibleMentor && !isAdmin) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: `先輩カードを登録できるのは、定期カスタムに15戦以上参加した「👑 常連」または「🎖️ 経験者」メンバー限定です（現在の参加状況: ${userTier.label} / 通算${userTier.totalGames}戦）。まずは後輩として相談したり、定期カスタムへの参加経験を重ねましょう！`,
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     const playerName = effectivePlayerName || player?.name || 'Player';
     const finalCurrentRank = current_rank || player?.highest_rank || 'UNRANKED';
     const finalMaxPupils = role_type === 'MENTOR' ? Math.min(Math.max(Number(max_pupils) || 3, 1), 5) : 1;
@@ -244,8 +337,25 @@ export async function POST(request: Request) {
         ? [lanes.trim()]
         : ['MID'];
 
-    // preferred_duration に基づくタグの同期（既存DBカラムが無い場合でも互換性を担保）
+    // タグのサニタイズ（通話・相談スタイルのみを厳密に残し、入力してないゴミタグを完全排除）
     let normalizedTags = Array.isArray(tags) ? [...tags] : [];
+    normalizedTags = normalizedTags.filter((t: string) => {
+      const isJunk = [
+        '優しく丁寧に教えます', 'チャンピオン使い方講座', 'ノーマル/カスタム同伴プレイ',
+        '1on1マッチアップ特訓', '初心者大歓迎', 'ゴールド以下歓迎', '全ランク・初心者歓迎',
+        'エメラルド以下歓迎', 'プラチナ以下歓迎', '1試合カスタム歓迎', 'リプレイ添削歓迎',
+        '3日間お試し歓迎', '単発指導OK', 'エンゲージ・仕掛け判断の指導', 'ピール・キャリー保護の指導',
+        '集団戦フォーカス優先度', 'ガンク警戒・ディープワード', 'オブジェクト周りの陣形・マクロ',
+        'ジャングルルート・ガンク判断', 'サポートローム・視界支配', 'リプレイ添削・ミスの言語化',
+        '対面マッチアップ勝ち方・トレード', 'トレード・キルライン見極め', '単発相談OK',
+        'オブジェクト戦の陣形・視界', 'タワーダイブ・シージ・防衛', 'サポートのローム基準',
+        'キー配置・カメラ操作見直し', 'ウェーブ管理・フリーズ', 'ローム・寄りの判断',
+        '有利な試合の終わらせ方', 'リプレイ自己分析のコツ', '画面共有ライブコーチング',
+        '画面共有ライブ指導', 'VC指導対応', 'VC可能', 'テキストのみ'
+      ].includes(t);
+      return !isJunk;
+    });
+
     // 既存の期間系タグを除去して再設定
     normalizedTags = normalizedTags.filter((t: string) => 
       !['1試合カスタム', 'リプレイ添削', '3日間お試し', '2週間育成', '1ヶ月特訓', '長期指導'].includes(t)

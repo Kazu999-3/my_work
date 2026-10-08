@@ -68,6 +68,9 @@ export default function MentorshipHubPanel() {
   const [acceptingMatchId, setAcceptingMatchId] = useState<string | null>(null);
   // 🎓 フォーラム専用スレッド作成中ステート
   const [creatingThreadMatchId, setCreatingThreadMatchId] = useState<string | null>(null);
+  // 👑 先輩資格ステート（常連・経験者判定）
+  const [canBeMentor, setCanBeMentor] = useState(true);
+  const [userTier, setUserTier] = useState<any>(null);
 
   // お見合い回答処理（承諾 / 見送り）
   const handleRespondProposal = async (decision: 'ACCEPT' | 'DECLINE') => {
@@ -166,6 +169,12 @@ export default function MentorshipHubPanel() {
         setMyDiscordId(data.myDiscordId || null);
         if (data.isAdmin !== undefined) {
           setIsAdmin(Boolean(data.isAdmin));
+        }
+        if (data.canBeMentor !== undefined) {
+          setCanBeMentor(Boolean(data.canBeMentor));
+        }
+        if (data.userTier !== undefined) {
+          setUserTier(data.userTier);
         }
       }
     } catch (err) {
@@ -1151,13 +1160,29 @@ export default function MentorshipHubPanel() {
             <button
               type="button"
               onClick={() => {
+                if (activeTab === 'MENTOR' && !canBeMentor) {
+                  alert(
+                    `先輩カードを登録できるのは、定期カスタムに15戦以上参加した「👑 常連」または「🎖️ 経験者」メンバー限定です。\n（現在のステータス: ${userTier?.label || 'ライト層'} / 通算${userTier?.totalGames || 0}戦）\nまずは「弟子カード」を登録して相談したり、定期カスタムへの参加経験を重ねましょう！`
+                  );
+                  return;
+                }
                 setEditingProfile(null);
                 setIsModalOpen(true);
               }}
-              className="px-4 py-2 rounded-xl bg-success-600 hover:bg-success-500 text-white font-black text-xs transition shadow-sm shrink-0 flex items-center gap-1.5 cursor-pointer active:scale-95"
+              className={`px-4 py-2 rounded-xl text-white font-black text-xs transition shadow-sm shrink-0 flex items-center gap-1.5 cursor-pointer active:scale-95 ${
+                activeTab === 'MENTOR' && !canBeMentor
+                  ? 'bg-stone-500 hover:bg-stone-600'
+                  : 'bg-success-600 hover:bg-success-500'
+              }`}
             >
               <Plus size={14} />
-              <span>{activeTab === 'PUPIL' ? '弟子カードを登録' : '師匠カードを登録'}</span>
+              <span>
+                {activeTab === 'PUPIL'
+                  ? '弟子カードを登録'
+                  : !canBeMentor
+                  ? '師匠カード（👑常連・経験者限定）'
+                  : '師匠カードを登録'}
+              </span>
             </button>
           </div>
         )
@@ -1433,6 +1458,8 @@ export default function MentorshipHubPanel() {
           PUPIL: myPupilProfile,
           MENTOR: myMentorProfile,
         }}
+        canBeMentor={canBeMentor}
+        userTier={userTier}
         onSave={handleSaveProfile}
       />
 

@@ -601,6 +601,12 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
     };
 
     for (const mentor of mentors) {
+      // 👑 先輩資格判定: 常連（regular）または経験者（experienced）のみをお見合い候補とする
+      const mentorTierInfo = resolveTier(mentor.discord_id, mentor.player_name);
+      if (mentorTierInfo.tier !== 'regular' && mentorTierInfo.tier !== 'experienced') {
+        continue;
+      }
+
       const mentorRankKey = (mentor.current_rank || 'PLATINUM').toUpperCase().split(' ')[0];
       const mentorTier = RANK_ORDER[mentorRankKey] || 5;
       const mentorLanes = (mentor.lanes || []).map(normalizeLane);

@@ -19,6 +19,8 @@ interface MentorshipProfileModalProps {
     PUPIL?: MentorshipProfile | null;
     MENTOR?: MentorshipProfile | null;
   };
+  canBeMentor?: boolean;
+  userTier?: { tier: string; label: string; totalGames: number } | null;
 }
 
 const AVAILABLE_LANES = [
@@ -94,6 +96,8 @@ export function MentorshipProfileModal({
   initialProfile,
   defaultRole = 'PUPIL',
   myProfiles,
+  canBeMentor = true,
+  userTier,
 }: MentorshipProfileModalProps) {
   const { user } = useCurrentUser();
 
@@ -492,24 +496,43 @@ export function MentorshipProfileModal({
 
                   <button
                     type="button"
-                    onClick={() => handleRoleChange('MENTOR')}
+                    onClick={() => {
+                      if (!canBeMentor && !initialProfile) {
+                        alert(
+                          `先輩カードを登録できるのは、定期カスタムに15戦以上参加した「👑 常連」または「🎖️ 経験者」メンバー限定です。\n（現在のステータス: ${userTier?.label || 'ライト層'} / 通算${userTier?.totalGames || 0}戦）\nまずは「教えてほしい (後輩)」として相談したり、定期カスタムへの参加経験を重ねましょう！`
+                        );
+                        return;
+                      }
+                      handleRoleChange('MENTOR');
+                    }}
                     className={`p-3.5 rounded-2xl border text-left transition relative overflow-hidden cursor-pointer ${
                       roleType === 'MENTOR'
                         ? 'bg-primary-50 border-primary-edge-strong text-primary-950 ring-2 ring-primary-500/30 shadow-md'
                         : 'bg-background border-border text-muted hover:bg-surface-subtle'
-                    }`}
+                    } ${!canBeMentor && !initialProfile ? 'opacity-70' : ''}`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="text-base font-black text-primary-800 flex items-center gap-1.5">
                         <span>🧑‍🏫</span> 教えるよ (先輩)
                       </div>
                       {roleType === 'MENTOR' && <Check size={16} className="text-primary-600 font-bold" />}
+                      {!canBeMentor && !initialProfile && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-md bg-secondary-100 text-secondary-900 border border-secondary-edge">
+                          👑常連・経験者限定
+                        </span>
+                      )}
                     </div>
                     <div className="text-[11px] font-medium text-muted mt-1">
                       得意なレーンやチャンプのコツをシェアしたい・相談に乗れる
                     </div>
                   </button>
                 </div>
+                {!canBeMentor && !initialProfile && (
+                  <p className="text-[11px] text-muted-strong font-medium mt-2 flex items-center gap-1">
+                    <span>💡</span>
+                    <span>先輩カード（教えるよ）は、定期カスタムに15戦以上参加した「👑 常連」または「🎖️ 経験者」のみ登録可能です。</span>
+                  </p>
+                )}
               </div>
 
               {/* 2. レーン選択 */}
@@ -762,6 +785,47 @@ export function MentorshipProfileModal({
                   className="w-full bg-background border border-border rounded-2xl p-3 text-foreground text-xs focus:border-primary-edge-strong focus:bg-surface focus:outline-hidden leading-relaxed font-medium"
                 />
               </div>
+
+              {/* 7. 登録中のテーマタグ（不要なタグの消去・全削除） */}
+              {selectedTags.length > 0 && (
+                <div className="space-y-2 p-3.5 bg-background border border-border rounded-2xl">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black text-foreground-subtle flex items-center gap-1.5">
+                      <span>🏷️</span>
+                      <span>登録中のテーマタグ ({selectedTags.length}件)</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTags([])}
+                      className="text-[11px] font-bold text-danger-600 hover:text-danger-700 hover:underline cursor-pointer flex items-center gap-0.5"
+                    >
+                      <span>🗑️</span>
+                      <span>すべてのテーマタグを削除</span>
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-muted leading-tight">
+                    不要なタグは「✕」を押して個別に削除できます。空にすると通話・相談スタイルのみのスマート表示になります。
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {selectedTags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-surface border border-border text-foreground shadow-2xs"
+                      >
+                        <span>#{tag}</span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedTags(selectedTags.filter((t) => t !== tag))}
+                          className="w-4 h-4 rounded-full flex items-center justify-center text-muted hover:text-danger-600 hover:bg-surface-subtle transition cursor-pointer text-[10px]"
+                          title="このタグを削除"
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </form>
           )}
         </div>

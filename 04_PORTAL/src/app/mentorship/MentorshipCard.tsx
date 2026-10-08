@@ -281,7 +281,12 @@ export function MentorshipCard({
           </div>
           <div className="min-w-0 flex-1">
             <h3 className="text-base font-black text-foreground dark:text-stone-100 truncate flex items-center gap-2">
-              {profile.player_name}
+              <span>{profile.player_name}</span>
+              {isMentor && (profile.tier === 'regular' || profile.tier === 'experienced') && (
+                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-md bg-secondary-100 dark:bg-secondary-950/40 text-secondary-900 dark:text-secondary-300 border border-secondary-edge shrink-0">
+                  {profile.tier === 'regular' ? '👑 常連' : '🎖️ 経験者'}
+                </span>
+              )}
             </h3>
             <div className="flex items-center gap-2 text-xs mt-0.5 flex-wrap">
               <span className={`px-2 py-0.5 rounded-md text-[11px] font-black ${rankBadge.bg} ${rankBadge.color} border ${rankBadge.border} shadow-2xs`}>
@@ -401,7 +406,22 @@ export function MentorshipCard({
             } else if (tag.includes('画面共有')) {
               styleTags.push({ raw: tag, label: '画面共有', icon: '📺' });
             } else {
-              otherTags.push(tag);
+              const isJunk = [
+                '優しく丁寧に教えます', 'チャンピオン使い方講座', 'ノーマル/カスタム同伴プレイ',
+                '1on1マッチアップ特訓', '初心者大歓迎', 'ゴールド以下歓迎', '全ランク・初心者歓迎',
+                'エメラルド以下歓迎', 'プラチナ以下歓迎', '1試合カスタム歓迎', 'リプレイ添削歓迎',
+                '3日間お試し歓迎', '単発指導OK', 'エンゲージ・仕掛け判断の指導', 'ピール・キャリー保護の指導',
+                '集団戦フォーカス優先度', 'ガンク警戒・ディープワード', 'オブジェクト周りの陣形・マクロ',
+                'ジャングルルート・ガンク判断', 'サポートローム・視界支配', 'リプレイ添削・ミスの言語化',
+                '対面マッチアップ勝ち方・トレード', 'トレード・キルライン見極め', '単発相談OK',
+                'オブジェクト戦の陣形・視界', 'タワーダイブ・シージ・防衛', 'サポートのローム基準',
+                'キー配置・カメラ操作見直し', 'ウェーブ管理・フリーズ', 'ローム・寄りの判断',
+                '有利な試合の終わらせ方', 'リプレイ自己分析のコツ', '画面共有ライブコーチング',
+                '画面共有ライブ指導', 'VC指導対応', 'VC可能', 'テキストのみ', '1試合カスタム', 'リプレイ添削', '3日間お試し', '2週間育成', '1ヶ月特訓'
+              ].includes(tag);
+              if (!isJunk) {
+                otherTags.push(tag);
+              }
             }
           });
 
