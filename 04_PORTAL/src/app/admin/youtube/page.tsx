@@ -1,21 +1,8 @@
-'use client';
+import { redirect } from 'next/navigation';
+import { buildPilotUrl } from '@/lib/pilotRedirect';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-
+// 動画キュー管理は05(KTM Pilot)の /admin/youtube へ移植済み（2026-10-02）。
+// 以前は旧辞典ページのタブ(/champions?scope=knowledge&tab=video)へ飛ばしていたが、そこも05へ転送になったため直接送る。
 export default function YoutubeAdminRedirect() {
-  const router = useRouter();
-
-  useEffect(() => {
-    router.replace('/champions?scope=knowledge&tab=video');
-  }, [router]);
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background text-muted text-sm">
-      <div className="flex items-center gap-2">
-        <div className="w-5 h-5 border-2 border-primary-edge-strong border-t-transparent rounded-full animate-spin" />
-        <span>攻略ナレッジハブ（動画キュー）へ移動中...</span>
-      </div>
-    </div>
-  );
+  redirect(buildPilotUrl('/admin/youtube', {}));
 }
