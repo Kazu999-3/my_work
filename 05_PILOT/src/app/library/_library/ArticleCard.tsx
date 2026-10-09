@@ -29,6 +29,28 @@ export default function ArticleCard({ article: a, onOpen }: { article: ArticleIt
                             📘 統合済み
                           </span>
                         )}
+                        {/* 🗺️ レーンバッジ */}
+                        {a.lane && a.lane !== 'COMMON' && (
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border ${
+                            a.lane === 'TOP' ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' :
+                            a.lane === 'JG' ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' :
+                            a.lane === 'MID' ? 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30' :
+                            a.lane === 'ADC' ? 'bg-purple-500/15 text-purple-300 border-purple-500/30' :
+                            'bg-teal-500/15 text-teal-300 border-teal-500/30'
+                          }`}>
+                            {a.lane === 'TOP' ? '⚔️ TOP' :
+                             a.lane === 'JG' ? '🌲 JG' :
+                             a.lane === 'MID' ? '⚡ MID' :
+                             a.lane === 'ADC' ? '🏹 ADC' :
+                             '🛡️ SUP'}
+                          </span>
+                        )}
+                        {/* ⚔️ 対面バッジ */}
+                        {a.isMatchup && a.matchupLabel && (
+                          <span className="px-2 py-0.5 rounded-md bg-rose-500/15 text-rose-300 border border-rose-500/30 text-[10px] font-black">
+                            ⚔️ {a.matchupLabel}
+                          </span>
+                        )}
                       </div>
 
                       <div className="flex items-start justify-between gap-2">

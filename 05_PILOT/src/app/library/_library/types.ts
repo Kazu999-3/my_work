@@ -23,6 +23,14 @@ export interface ArticleItem {
   freshness_color?: { bg: string; text: string; border: string };
   /** レーンガイド・辞典に統合済み（2026-10-07） */
   integrated?: boolean;
+  /** 自動判定されたレーン (TOP, JG, MID, ADC, SUP, COMMON) */
+  lane?: string;
+  laneLabel?: string;
+  /** 対面・VS記事フラグ */
+  isMatchup?: boolean;
+  enemyChampion?: string | null;
+  enemyChampionJa?: string | null;
+  matchupLabel?: string | null;
 }
 
 export interface ArticleDetail {
@@ -42,7 +50,14 @@ export interface ArticleDetail {
   days_ago?: number;
   freshness_label?: string;
   freshness_color?: { bg: string; text: string; border: string };
+  lane?: string;
+  laneLabel?: string;
+  isMatchup?: boolean;
+  enemyChampion?: string | null;
+  enemyChampionJa?: string | null;
+  matchupLabel?: string | null;
 }
 
 export type LibraryCategory = 'lol' | 'general';
 export type LibrarySort = 'date_desc' | 'published_desc' | 'volume_desc' | 'date_asc' | 'title_asc';
+export type LibraryLane = 'ALL' | 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP' | 'COMMON';

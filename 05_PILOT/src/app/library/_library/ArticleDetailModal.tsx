@@ -32,6 +32,18 @@ export default function ArticleDetailModal({ detailArticle, detailLoading, copie
                     </span>
                   )}
                   <FreshnessBadge isOldPatch={detailArticle?.is_old_patch} daysAgo={detailArticle?.days_ago} freshness={detailArticle?.freshness} />
+                  {/* 🗺️ レーンバッジ */}
+                  {detailArticle?.lane && detailArticle.lane !== 'COMMON' && (
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-black border bg-zinc-800 text-amber-300 border-zinc-700">
+                      {detailArticle.laneLabel || detailArticle.lane}
+                    </span>
+                  )}
+                  {/* ⚔️ 対面バッジ */}
+                  {detailArticle?.isMatchup && detailArticle.matchupLabel && (
+                    <span className="px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-black">
+                      ⚔️ {detailArticle.matchupLabel}
+                    </span>
+                  )}
                   {detailArticle?.published_at && (
                     <span className="text-[10px] text-zinc-400 font-mono">
                       📺 {detailArticle.published_at} 公開

@@ -6,7 +6,7 @@ import { RefreshCw, X, Undo2 } from "lucide-react";
 import LibraryControls from "./_library/LibraryControls";
 import ArticleCard from "./_library/ArticleCard";
 import ArticleDetailModal from "./_library/ArticleDetailModal";
-import type { ArticleDetail, ArticleItem, LibraryCategory, LibrarySort } from "./_library/types";
+import type { ArticleDetail, ArticleItem, LibraryCategory, LibrarySort, LibraryLane } from "./_library/types";
 
 // 攻略ライブラリ。状態と通信だけをここに置き、表示は _library/ の部品が持つ。
 // 2026-10-07: 796行から分割（表示・動作は分割前と同じ）。使われていなかった KnowledgeIngestModal の重複
@@ -17,6 +17,8 @@ function LibraryApp() {
   const initialId = searchParams?.get("id") || null;
   // ?src=<元動画URL> … その動画から作られた記事の詳細を直接開く
   const initialSrc = searchParams?.get("src") || null;
+  const initialLane = (searchParams?.get("lane")?.toUpperCase() as LibraryLane) || "ALL";
+  const initialMatchup = searchParams?.get("matchup") === "1" || searchParams?.get("matchup") === "true";
 
   const [articles, setArticles] = useState<ArticleItem[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -26,6 +28,13 @@ function LibraryApp() {
   // 🧭 カテゴリ切り替え ('lol' | 'general')
   const [activeCategory, setActiveCategory] = useState<LibraryCategory>('lol');
   const [counts, setCounts] = useState({ lol: 0, general: 0, all: 0 });
+
+  // 🗺️ レーン絞り込み ＆ ⚔️ 対面記事絞り込み
+  const [selectedLane, setSelectedLane] = useState<LibraryLane>(initialLane);
+  const [matchupOnly, setMatchupOnly] = useState<boolean>(initialMatchup);
+  const [laneCounts, setLaneCounts] = useState<Record<string, number>>({
+    ALL: 0, TOP: 0, JG: 0, MID: 0, ADC: 0, SUP: 0, COMMON: 0, MATCHUP: 0
+  });
 
   // 📺 チャンネル絞り込み ＆ ⇅ ソート
   const [channels, setChannels] = useState<{ name: string; count: number }[]>([]);
@@ -49,12 +58,14 @@ function LibraryApp() {
     chan = selectedChannel,
     sort: LibrarySort = selectedSort,
     append = false,
-    offset = 0
+    offset = 0,
+    lane: LibraryLane = selectedLane,
+    matchup: boolean = matchupOnly
   ) => {
     if (append) setLoadingMore(true); else setLoading(true);
     try {
       const res = await fetch(
-        `/api/library?q=${encodeURIComponent(query)}&category=${cat}&channel=${encodeURIComponent(chan)}&sort=${sort}&limit=60&offset=${offset}`
+        `/api/library?q=${encodeURIComponent(query)}&category=${cat}&channel=${encodeURIComponent(chan)}&sort=${sort}&limit=60&offset=${offset}&lane=${lane}&matchupOnly=${matchup}`
       );
       const data = await res.json();
       if (res.ok && data.articles) {
@@ -63,6 +74,7 @@ function LibraryApp() {
         setTotalCount(data.total || data.articles.length);
         if (data.counts) setCounts(data.counts);
         if (data.channels) setChannels(data.channels);
+        if (data.laneCounts) setLaneCounts(data.laneCounts);
       }
     } catch (e) {
       console.error("ライブラリ取得エラー:", e);
@@ -73,31 +85,43 @@ function LibraryApp() {
 
   const handleLoadMore = () => {
     if (loadingMore || loading || articles.length >= totalCount) return;
-    fetchArticles(search, activeCategory, selectedChannel, selectedSort, true, articles.length);
+    fetchArticles(search, activeCategory, selectedChannel, selectedSort, true, articles.length, selectedLane, matchupOnly);
   };
 
   const handleCategoryChange = (cat: LibraryCategory) => {
     setActiveCategory(cat);
     setSelectedChannel(""); // カテゴリ変更時はチャンネルリセット
-    fetchArticles(search, cat, "", selectedSort, false, 0);
+    setSelectedLane("ALL");
+    setMatchupOnly(false);
+    fetchArticles(search, cat, "", selectedSort, false, 0, "ALL", false);
+  };
+
+  const handleLaneChange = (lane: LibraryLane) => {
+    setSelectedLane(lane);
+    fetchArticles(search, activeCategory, selectedChannel, selectedSort, false, 0, lane, matchupOnly);
+  };
+
+  const handleMatchupToggle = (v: boolean) => {
+    setMatchupOnly(v);
+    fetchArticles(search, activeCategory, selectedChannel, selectedSort, false, 0, selectedLane, v);
   };
 
   const handleChannelChange = (chan: string) => {
     setSelectedChannel(chan);
-    fetchArticles(search, activeCategory, chan, selectedSort, false, 0);
+    fetchArticles(search, activeCategory, chan, selectedSort, false, 0, selectedLane, matchupOnly);
   };
 
   const handleSortChange = (sort: LibrarySort) => {
     setSelectedSort(sort);
-    fetchArticles(search, activeCategory, selectedChannel, sort, false, 0);
+    fetchArticles(search, activeCategory, selectedChannel, sort, false, 0, selectedLane, matchupOnly);
   };
 
   useEffect(() => {
     if (initialQ) {
       setSearch(initialQ);
-      fetchArticles(initialQ, "lol", "", "date_desc");
+      fetchArticles(initialQ, "lol", "", "date_desc", false, 0, initialLane, initialMatchup);
     } else {
-      fetchArticles("", "lol", "", "date_desc");
+      fetchArticles("", "lol", "", "date_desc", false, 0, initialLane, initialMatchup);
     }
 
     if (initialId) {
@@ -203,10 +227,15 @@ function LibraryApp() {
           channels={channels}
           selectedChannel={selectedChannel}
           selectedSort={selectedSort}
+          selectedLane={selectedLane}
+          matchupOnly={matchupOnly}
+          laneCounts={laneCounts}
           onCategoryChange={handleCategoryChange}
           onSearchSubmit={handleSearchSubmit}
           onChannelChange={handleChannelChange}
           onSortChange={handleSortChange}
+          onLaneChange={handleLaneChange}
+          onMatchupToggle={handleMatchupToggle}
         />
 
         {/* 記事一覧グリッド */}

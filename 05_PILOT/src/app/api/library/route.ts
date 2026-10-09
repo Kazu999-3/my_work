@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 import { calculateFreshness } from '@/lib/patchFreshness';
+import { detectArticleLane, LANE_CONFIG, LaneKey } from '@/lib/laneDetector';
+import { detectArticleMatchup } from '@/lib/matchupDetector';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,6 +42,8 @@ export async function GET(req: NextRequest) {
     const champion = searchParams.get('champion') || '';
     const category = searchParams.get('category') || 'lol'; // 'lol' | 'general' | 'all'
     const channel = searchParams.get('channel') || '';
+    const laneFilter = (searchParams.get('lane') || 'ALL').toUpperCase(); // 'ALL' | 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP' | 'COMMON'
+    const matchupOnly = searchParams.get('matchupOnly') === 'true' || searchParams.get('matchupOnly') === '1';
     const sort = searchParams.get('sort') || 'date_desc'; // 'date_desc' | 'date_asc' | 'published_desc' | 'published_asc' | 'volume_desc' | 'title_asc'
     const limit = parseInt(searchParams.get('limit') || '60', 10);
     const offset = parseInt(searchParams.get('offset') || '0', 10);
@@ -106,71 +110,94 @@ export async function GET(req: NextRequest) {
     let lolCount = 0;
     let generalCount = 0;
 
-    // 各記事のチャンネル名、公開日、鮮度、文字数を解決
-    const enrichedRows = allRows.map((r: any) => {
-      let ch = '';
-      let pubDate: string | null = null;
-      const src = (r.source_url || '').trim();
-      const srcVid = extractYoutubeId(src);
+    // 各記事のチャンネル名、公開日、鮮度、レーン、対面情報を解決
+    const enrichedRows = await Promise.all(
+      allRows.map(async (r: any) => {
+        let ch = '';
+        let pubDate: string | null = null;
+        const src = (r.source_url || '').trim();
+        const srcVid = extractYoutubeId(src);
 
-      // チャンネル特定
-      if (src && channelMap[src]) {
-        ch = channelMap[src];
-      } else if (srcVid && videoIdMap[srcVid]) {
-        ch = videoIdMap[srcVid];
-      } else if (r.content) {
-        const m = r.content.match(/>\s*-\s*\*\*チャンネル\*\*:\s*([^\n\r]+)/);
-        if (m) {
-          ch = m[1].trim();
-        } else {
-          const vidMatch = r.content.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([a-zA-Z0-9_-]{11})/);
-          if (vidMatch && videoIdMap[vidMatch[1]]) {
-            ch = videoIdMap[vidMatch[1]];
+        // チャンネル特定
+        if (src && channelMap[src]) {
+          ch = channelMap[src];
+        } else if (srcVid && videoIdMap[srcVid]) {
+          ch = videoIdMap[srcVid];
+        } else if (r.content) {
+          const m = r.content.match(/>\s*-\s*\*\*チャンネル\*\*:\s*([^\n\r]+)/);
+          if (m) {
+            ch = m[1].trim();
+          } else {
+            const vidMatch = r.content.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([a-zA-Z0-9_-]{11})/);
+            if (vidMatch && videoIdMap[vidMatch[1]]) {
+              ch = videoIdMap[vidMatch[1]];
+            }
           }
         }
-      }
 
-      // 公開日時特定 (YouTubeキュー ➔ 本文メタデータ ➔ 取込日 created_at)
-      if (src && publishedMap[src]) {
-        pubDate = publishedMap[src];
-      } else if (srcVid && videoIdPublishedMap[srcVid]) {
-        pubDate = videoIdPublishedMap[srcVid];
-      } else if (r.content) {
-        const mPub = r.content.match(/>\s*-\s*\*\*公開日\*\*:\s*([^\n\r]+)/);
-        if (mPub) {
-          pubDate = mPub[1].trim();
+        // 公開日時特定 (YouTubeキュー ➔ 本文メタデータ ➔ 取込日 created_at)
+        if (src && publishedMap[src]) {
+          pubDate = publishedMap[src];
+        } else if (srcVid && videoIdPublishedMap[srcVid]) {
+          pubDate = videoIdPublishedMap[srcVid];
+        } else if (r.content) {
+          const mPub = r.content.match(/>\s*-\s*\*\*公開日\*\*:\s*([^\n\r]+)/);
+          if (mPub) {
+            pubDate = mPub[1].trim();
+          }
         }
-      }
 
-      // チャンネル名正規化（Kireiの表記揺れ統一など）
-      if (ch.toLowerCase() === 'kireilol') ch = 'Coach Kirei';
-      if (ch.toLowerCase() === 'coach kirei') ch = 'Coach Kirei';
+        // チャンネル名正規化（Kireiの表記揺れ統一など）
+        if (ch.toLowerCase() === 'kireilol') ch = 'Coach Kirei';
+        if (ch.toLowerCase() === 'coach kirei') ch = 'Coach Kirei';
 
-      const charCount = (r.content || '').length;
+        const charCount = (r.content || '').length;
 
-      // 鮮度・パッチ情報の計算
-      const effectiveDate = pubDate || r.created_at;
-      const freshnessInfo = calculateFreshness(r.title, r.content || '', effectiveDate);
+        // 鮮度・パッチ情報の計算
+        const effectiveDate = pubDate || r.created_at;
+        const freshnessInfo = calculateFreshness(r.title, r.content || '', effectiveDate);
 
-      // レスポンス軽量化のため一覧では content 本文を削る
-      const { content, ...rest } = r;
-      return {
-        ...rest,
-        // __DELETED__ / __INTEGRATED__ 等の内部状態タグは画面に出さない
-        tags: (r.tags || []).filter((t: string) => !/^__.+__$/.test(t)),
-        integrated: isIntegratedTags(r.tags),
-        channel: ch || 'その他・一般',
-        char_count: charCount,
-        published_at: freshnessInfo.publishedAt || (r.created_at ? r.created_at.split('T')[0] : null),
-        patch: freshnessInfo.estimatedPatch,
-        is_explicit_patch: freshnessInfo.isExplicitPatch,
-        freshness: freshnessInfo.freshness,
-        is_old_patch: freshnessInfo.isOldPatch,
-        days_ago: freshnessInfo.daysAgo,
-        freshness_label: freshnessInfo.label,
-        freshness_color: freshnessInfo.badgeColor,
-      };
-    });
+        // レーン判定＆対面（VS）判定
+        const laneInfo = await detectArticleLane({
+          title: r.title,
+          content: r.content,
+          tags: r.tags,
+          champion: r.champion,
+        });
+
+        const matchupInfo = await detectArticleMatchup({
+          title: r.title,
+          content: r.content,
+          tags: r.tags,
+          champion: r.champion,
+        });
+
+        // レスポンス軽量化のため一覧では content 本文を削る
+        const { content, ...rest } = r;
+        return {
+          ...rest,
+          // __DELETED__ / __INTEGRATED__ 等の内部状態タグは画面に出さない
+          tags: (r.tags || []).filter((t: string) => !/^__.+__$/.test(t)),
+          integrated: isIntegratedTags(r.tags),
+          channel: ch || 'その他・一般',
+          char_count: charCount,
+          published_at: freshnessInfo.publishedAt || (r.created_at ? r.created_at.split('T')[0] : null),
+          patch: freshnessInfo.estimatedPatch,
+          is_explicit_patch: freshnessInfo.isExplicitPatch,
+          freshness: freshnessInfo.freshness,
+          is_old_patch: freshnessInfo.isOldPatch,
+          days_ago: freshnessInfo.daysAgo,
+          freshness_label: freshnessInfo.label,
+          freshness_color: freshnessInfo.badgeColor,
+          lane: laneInfo.lane,
+          laneLabel: laneInfo.laneLabel,
+          isMatchup: matchupInfo.isMatchup,
+          enemyChampion: matchupInfo.enemyChampion,
+          enemyChampionJa: matchupInfo.enemyChampionJa,
+          matchupLabel: matchupInfo.label,
+        };
+      })
+    );
 
     for (const r of enrichedRows) {
       if (isLolRecord(r)) lolCount++;
@@ -182,6 +209,27 @@ export async function GET(req: NextRequest) {
       filtered = enrichedRows.filter(isLolRecord);
     } else if (category === 'general') {
       filtered = enrichedRows.filter((r: any) => !isLolRecord(r));
+    }
+
+    // レーン件数＆対面件数の集計（カテゴリ内ベース）
+    const laneCounts: Record<string, number> = {
+      ALL: filtered.length,
+      TOP: 0,
+      JG: 0,
+      MID: 0,
+      ADC: 0,
+      SUP: 0,
+      COMMON: 0,
+      MATCHUP: 0,
+    };
+    for (const r of filtered) {
+      const l = (r.lane || 'COMMON').toUpperCase();
+      if (laneCounts[l] !== undefined) {
+        laneCounts[l]++;
+      }
+      if (r.isMatchup) {
+        laneCounts.MATCHUP++;
+      }
     }
 
     // チャンネル集計（フィルタ前/カテゴリ内のチャンネル一覧と件数）
@@ -197,6 +245,16 @@ export async function GET(req: NextRequest) {
     // チャンネル指定フィルタ
     if (channel) {
       filtered = filtered.filter((r: any) => r.channel === channel);
+    }
+
+    // レーン指定フィルタ
+    if (laneFilter && laneFilter !== 'ALL') {
+      filtered = filtered.filter((r: any) => (r.lane || '').toUpperCase() === laneFilter);
+    }
+
+    // 対面記事のみフィルタ
+    if (matchupOnly) {
+      filtered = filtered.filter((r: any) => r.isMatchup);
     }
 
     // ソート処理
@@ -234,6 +292,7 @@ export async function GET(req: NextRequest) {
         general: generalCount,
         all: allRows.length,
       },
+      laneCounts,
       limit,
       offset,
     });
@@ -278,6 +337,19 @@ export async function POST(req: NextRequest) {
     }
 
     const freshnessInfo = calculateFreshness(data.title, data.content || '', pubDate || data.created_at);
+    const laneInfo = await detectArticleLane({
+      title: data.title,
+      content: data.content,
+      tags: data.tags,
+      champion: data.champion,
+    });
+    const matchupInfo = await detectArticleMatchup({
+      title: data.title,
+      content: data.content,
+      tags: data.tags,
+      champion: data.champion,
+    });
+
     const enrichedArticle = {
       ...data,
       published_at: freshnessInfo.publishedAt || (data.created_at ? data.created_at.split('T')[0] : null),
@@ -288,6 +360,12 @@ export async function POST(req: NextRequest) {
       days_ago: freshnessInfo.daysAgo,
       freshness_label: freshnessInfo.label,
       freshness_color: freshnessInfo.badgeColor,
+      lane: laneInfo.lane,
+      laneLabel: laneInfo.laneLabel,
+      isMatchup: matchupInfo.isMatchup,
+      enemyChampion: matchupInfo.enemyChampion,
+      enemyChampionJa: matchupInfo.enemyChampionJa,
+      matchupLabel: matchupInfo.label,
     };
 
     return NextResponse.json({ success: true, article: enrichedArticle });

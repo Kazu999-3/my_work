@@ -1,12 +1,39 @@
 "use client";
 
 import type React from "react";
-import { Search } from "lucide-react";
-import type { LibraryCategory, LibrarySort } from "./types";
+import type { LibraryCategory, LibrarySort, LibraryLane } from "./types";
+import { Search, Swords } from "lucide-react";
 
-// カテゴリ切り替え（LoL戦術 / 一般ナレッジ）・検索・チャンネル絞り込み・並び替え（URL投函はユーザー判断で 2026-10-07 に削除）
-// 2026-10-07: app/library/page.tsx（796行）から分割。表示内容・動作は分割前と同じ。
-export default function LibraryControls({ activeCategory, counts, search, setSearch, totalCount, channels, selectedChannel, selectedSort, onCategoryChange, onSearchSubmit, onChannelChange, onSortChange }: {
+const LANES: { key: LibraryLane; label: string; icon: string }[] = [
+  { key: 'ALL', label: '全レーン', icon: '🌐' },
+  { key: 'TOP', label: 'TOP', icon: '⚔️' },
+  { key: 'JG', label: 'JG', icon: '🌲' },
+  { key: 'MID', label: 'MID', icon: '⚡' },
+  { key: 'ADC', label: 'ADC', icon: '🏹' },
+  { key: 'SUP', label: 'SUP', icon: '🛡️' },
+  { key: 'COMMON', label: '共通マクロ', icon: '🧭' },
+];
+
+// カテゴリ切り替え（LoL戦術 / 一般ナレッジ）・レーン切り替え・対面フィルター・検索・チャンネル絞り込み・並び替え
+export default function LibraryControls({
+  activeCategory,
+  counts,
+  search,
+  setSearch,
+  totalCount,
+  channels,
+  selectedChannel,
+  selectedSort,
+  selectedLane,
+  matchupOnly,
+  laneCounts,
+  onCategoryChange,
+  onSearchSubmit,
+  onChannelChange,
+  onSortChange,
+  onLaneChange,
+  onMatchupToggle,
+}: {
   activeCategory: LibraryCategory;
   counts: { lol: number; general: number; all: number };
   search: string;
@@ -15,10 +42,15 @@ export default function LibraryControls({ activeCategory, counts, search, setSea
   channels: { name: string; count: number }[];
   selectedChannel: string;
   selectedSort: LibrarySort;
+  selectedLane: LibraryLane;
+  matchupOnly: boolean;
+  laneCounts: Record<string, number>;
   onCategoryChange: (c: LibraryCategory) => void;
   onSearchSubmit: (e: React.FormEvent) => void;
   onChannelChange: (c: string) => void;
   onSortChange: (s: LibrarySort) => void;
+  onLaneChange: (l: LibraryLane) => void;
+  onMatchupToggle: (v: boolean) => void;
 }) {
   return (
     <>
@@ -102,6 +134,68 @@ export default function LibraryControls({ activeCategory, counts, search, setSea
             </div>
           </div>
         </div>
+
+        {/* 🗺️ レーン別割り振り ＆ ⚔️ 対面記事フィルター（LoL戦術時のみ表示） */}
+        {activeCategory === 'lol' && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-zinc-900/60 p-2 rounded-2xl border border-zinc-800/80">
+            {/* レーンピルタブ */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+              {LANES.map((lane) => {
+                const count = laneCounts[lane.key] ?? 0;
+                const isSelected = selectedLane === lane.key;
+                return (
+                  <button
+                    key={lane.key}
+                    type="button"
+                    onClick={() => onLaneChange(lane.key)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition shrink-0 cursor-pointer ${
+                      isSelected
+                        ? 'bg-amber-500 text-zinc-950 font-black shadow-sm'
+                        : 'bg-zinc-950 text-zinc-300 hover:text-white hover:bg-zinc-800 border border-zinc-800'
+                    }`}
+                  >
+                    <span>{lane.icon}</span>
+                    <span>{lane.label}</span>
+                    {count > 0 && (
+                      <span
+                        className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
+                          isSelected ? 'bg-zinc-950/20 text-zinc-950' : 'bg-zinc-800 text-zinc-400'
+                        }`}
+                      >
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* ⚔️ 対面記事（VS）のみトグル */}
+            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+              <button
+                type="button"
+                onClick={() => onMatchupToggle(!matchupOnly)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                  matchupOnly
+                    ? 'bg-rose-500/20 text-rose-300 border-rose-500/50 shadow-sm'
+                    : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:text-zinc-200 hover:border-zinc-700'
+                }`}
+              >
+                <Swords size={13} className={matchupOnly ? 'text-rose-400' : 'text-zinc-500'} />
+                <span>対面(VS)記事のみ</span>
+                {laneCounts.MATCHUP > 0 && (
+                  <span
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
+                      matchupOnly ? 'bg-rose-500/30 text-rose-200' : 'bg-zinc-800 text-zinc-400'
+                    }`}
+                  >
+                    {laneCounts.MATCHUP}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* 📺 チャンネル絞り込み ＆ ⇅ ソートバー */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 bg-zinc-950/80 p-2.5 rounded-2xl border border-zinc-800/80 shadow-xs">
