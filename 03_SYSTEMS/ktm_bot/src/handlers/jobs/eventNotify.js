@@ -122,27 +122,65 @@ export async function sendEventUsersNotification(env, options = {}) {
     const messageBody = { embeds: [embed] };
 
     const roleId = CONFIG.NOTIFICATION_ROLE_ID;
-    if (roleId) {
-      const shortText = summaries
-        .filter((s) => !s.status.isReady)
-        .map((s) => {
-          const def = getDayDef(s.target.dayKey);
-          let targetNote = '';
-          if (s.target.dayKey === 'sat' && s.status.dominantTierInfo?.rangeText) {
-            targetNote = ` [${s.status.dominantTierInfo.rangeText}歓迎]`;
-          }
-          if (s.status.breakdown?.hasBreakdown) {
-            const b = s.status.breakdown;
-            const parts = [];
-            if (!b.isMatch1Ready) parts.push(`第1戦あと${b.match1Remaining}名`);
-            if (!b.isMatch2Ready) parts.push(`第2戦あと${b.match2Remaining}名`);
-            return `${def.label}${targetNote} ${parts.join('・')}`;
-          }
-          return `${def.label}${targetNote} あと${s.status.remaining}名`;
-        })
-        .join(' / ');
-      messageBody.content = `<@&${roleId}> 📢 **【${shortText}】** 参加できる方はエントリーをお願いします！`;
-      messageBody.allowed_mentions = { roles: [roleId] };
+    const prefix = roleId ? `<@&${roleId}> ` : '';
+
+    const shortText = summaries
+      .filter((s) => !s.status.isReady)
+      .map((s) => {
+        const def = getDayDef(s.target.dayKey);
+        let targetNote = '';
+        if (s.target.dayKey === 'sat' && s.status.dominantTierInfo?.rangeText) {
+          targetNote = ` [${s.status.dominantTierInfo.rangeText}歓迎]`;
+        }
+        if (s.status.breakdown?.hasBreakdown) {
+          const b = s.status.breakdown;
+          const parts = [];
+          if (!b.isMatch1Ready) parts.push(`第1戦あと${b.match1Remaining}名`);
+          if (!b.isMatch2Ready) parts.push(`第2戦あと${b.match2Remaining}名`);
+          return `${def.label}${targetNote} ${parts.join('・')}`;
+        }
+        return `${def.label}${targetNote} あと${s.status.remaining}名`;
+      })
+      .join(' / ');
+
+    const cardLinks = summaries
+      .filter((s) => s.messageId && s.channelId)
+      .map((s) => {
+        const def = getDayDef(s.target.dayKey);
+        const url = `https://discord.com/channels/${guildId}/${s.channelId}/${s.messageId}`;
+        return `・${def.emoji} **${def.label}**: [募集カードを開く](${url})`;
+      })
+      .join('\n');
+
+    const contentLines = [
+      `${prefix}📢 **【${shortText}】** 参加できる方はエントリーをお願いします！`
+    ];
+    if (cardLinks) {
+      contentLines.push('', '👉 **募集カードを開く:**', cardLinks);
+    }
+
+    messageBody.content = contentLines.join('\n');
+    messageBody.allowed_mentions = { parse: ['roles'] };
+
+    const linkButtons = summaries
+      .filter((s) => s.messageId && s.channelId)
+      .map((s) => {
+        const def = getDayDef(s.target.dayKey);
+        return {
+          type: 2,
+          style: 5,
+          label: `👉 ${def.name} カードへ`,
+          url: `https://discord.com/channels/${guildId}/${s.channelId}/${s.messageId}`
+        };
+      });
+
+    if (linkButtons.length > 0) {
+      messageBody.components = [
+        {
+          type: 1,
+          components: linkButtons
+        }
+      ];
     }
 
     const sendRes = await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}/messages`, {

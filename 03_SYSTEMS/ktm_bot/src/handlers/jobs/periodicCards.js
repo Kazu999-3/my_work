@@ -542,14 +542,15 @@ export async function loadDayRecruitmentSummary(env, target, messages) {
 
 /** チャンネルIDから Guild ID を解決する（メッセージリンクの組み立て用） */
 export async function resolveGuildId(env, channelId) {
+  const fallbackGuildId = (env && env.DISCORD_GUILD_ID) || CONFIG.GUILD_ID || '1485636149379858567';
   try {
     const res = await fetchWithRetry(`https://discord.com/api/v10/channels/${channelId}`, {
       headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}` }
     });
-    if (!res.ok) return null;
-    return (await res.json()).guild_id || null;
+    if (!res.ok) return fallbackGuildId;
+    return (await res.json()).guild_id || fallbackGuildId;
   } catch (e) {
-    return null;
+    return fallbackGuildId;
   }
 }
 
