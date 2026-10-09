@@ -4,7 +4,8 @@ import { getAuthSession } from '../../../../lib/authGuard';
 import { verifyBotSecret } from '../../../../lib/botAuth';
 import { generateSecretMatchmakerPairs, generateSecretMatchmakerBatches, SecretMatchProposal, SecretMatchBatchProposal } from '../../../../lib/mentorshipMatchmaker';
 import { sendDiscordDirectMessage } from '../../../../lib/discordNotify';
-import { createMentorshipForumThread } from '../../../../lib/discordMentorship';
+import { createMentorshipForumThread, syncMentorshipDashboard } from '../../../../lib/discordMentorship';
+import { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } from '../../../../lib/playerCoins';
 
 export const dynamic = 'force-dynamic';
 
@@ -80,7 +81,301 @@ async function sendMentorRequestDm(params: {
 }
 
 /**
- * GET: お見合い便の候補リストを取得（ペア一覧 ＆ まとめ便バッチ一覧）
+ * 共通お見合い回答ハンドラ（Web / Discord Bot 共通）
+ * 1. プロフィール更新（弟子: MATCHED / 師匠: 枠数チェック）
+ * 2. コイン付与 (+300コイン)
+ * 3. 専用スレッド作成 & 双方DM通知
+ * 4. 同一まとめ便の他先輩オファーの自動クリーンアップ
+ * 5. 募集ダッシュボード同期
+ */
+async function executeOfferResponse(params: {
+  matchId?: string;
+  decision: 'ACCEPT' | 'DECLINE' | 'DECLINE_ALL';
+  userDiscordId: string;
+}): Promise<{
+  ok: boolean;
+  status: 'MATCHED' | 'PENDING_PARTNER' | 'DISMISSED' | 'DISMISSED_ALL' | 'ALREADY_ACTIVE';
+  isBothAccepted?: boolean;
+  threadUrl?: string;
+  message?: string;
+  error?: string;
+  httpStatus?: number;
+}> {
+  const { matchId, decision, userDiscordId } = params;
+
+  if (!userDiscordId) {
+    return { ok: false, error: '認証情報（Discord ID）が見つかりません', httpStatus: 401, status: 'DISMISSED' };
+  }
+
+  // 1. 全て見送り (DECLINE_ALL)
+  if (decision === 'DECLINE_ALL') {
+    const { data: list } = await supabase
+      .from('mentorship_matches')
+      .select('id, notes, pupil_discord_id')
+      .eq('status', 'PENDING')
+      .eq('pupil_discord_id', userDiscordId);
+
+    for (const m of list || []) {
+      let notes: any = {};
+      try { notes = JSON.parse(m.notes || '{}'); } catch (_) {}
+      if (!notes.isSecretProposal) continue;
+      notes.pupilStatus = 'DECLINED';
+      notes.dismissedAt = new Date().toISOString();
+      await supabase
+        .from('mentorship_matches')
+        .update({ status: 'REJECTED', notes: JSON.stringify(notes) })
+        .eq('id', m.id);
+    }
+
+    return {
+      ok: true,
+      status: 'DISMISSED_ALL',
+      message: 'すべて見送りを記録しました。相手には一切通知されません。',
+    };
+  }
+
+  // 2. 単一マッチの回答処理
+  if (!matchId) {
+    return { ok: false, error: 'マッチIDが指定されていません', httpStatus: 400, status: 'DISMISSED' };
+  }
+
+  const { data: match, error: mErr } = await supabase
+    .from('mentorship_matches')
+    .select('*')
+    .eq('id', matchId)
+    .single();
+
+  if (mErr || !match) {
+    return { ok: false, error: '対象のお見合いが見つかりません', httpStatus: 404, status: 'DISMISSED' };
+  }
+
+  let notes: any = {};
+  try {
+    notes = JSON.parse(match.notes || '{}');
+  } catch (_) {}
+
+  const isMentor = match.mentor_discord_id === userDiscordId;
+  const isPupil = match.pupil_discord_id === userDiscordId;
+
+  if (!isMentor && !isPupil) {
+    return { ok: false, error: '回答権限がありません', httpStatus: 403, status: 'DISMISSED' };
+  }
+
+  // 既に成立済みの場合のガード
+  if (match.status === 'ACTIVE') {
+    return {
+      ok: true,
+      status: 'ALREADY_ACTIVE',
+      isBothAccepted: true,
+      threadUrl: notes.threadUrl || '',
+      message: '既にこの師弟ペアは成立しています。',
+    };
+  }
+
+  // 【見送りの場合】
+  if (decision === 'DECLINE') {
+    if (isMentor) notes.mentorStatus = 'DECLINED';
+    if (isPupil) notes.pupilStatus = 'DECLINED';
+    notes.dismissedAt = new Date().toISOString();
+
+    await supabase
+      .from('mentorship_matches')
+      .update({
+        status: 'REJECTED',
+        notes: JSON.stringify(notes),
+      })
+      .eq('id', matchId);
+
+    return {
+      ok: true,
+      status: 'DISMISSED',
+      message: '見送りを記録しました。相手には一切通知されません。',
+    };
+  }
+
+  // 【承諾（話してみたい）の場合】
+  if (isMentor) notes.mentorStatus = 'ACCEPTED';
+  if (isPupil) notes.pupilStatus = 'ACCEPTED';
+
+  const isBothAccepted = notes.mentorStatus === 'ACCEPTED' && notes.pupilStatus === 'ACCEPTED';
+
+  if (isBothAccepted) {
+    // 双方承諾 ➔ マッチング正式成立！
+    const updatedNotes = {
+      ...notes,
+      durationKey: '14_DAYS',
+      durationLabel: 'お見合い成立（14日間）',
+      commStyle: 'VC_ACTIVE',
+      autoRenew: true,
+      matchedAt: new Date().toISOString(),
+    };
+
+    await supabase
+      .from('mentorship_matches')
+      .update({
+        status: 'ACTIVE',
+        started_at: new Date().toISOString(),
+        notes: JSON.stringify(updatedNotes),
+      })
+      .eq('id', matchId);
+
+    // ①-a 弟子のプロフィールステータスを MATCHED に更新
+    if (match.pupil_profile_id) {
+      await supabase
+        .from('mentorship_profiles')
+        .update({ status: 'MATCHED' })
+        .eq('id', match.pupil_profile_id);
+    }
+
+    // ①-b 師匠の枠数チェックとステータス更新
+    if (match.mentor_profile_id) {
+      const { data: mentorProf } = await supabase
+        .from('mentorship_profiles')
+        .select('max_pupils')
+        .eq('id', match.mentor_profile_id)
+        .single();
+
+      const mentorMaxPupils = mentorProf?.max_pupils ?? 3;
+      const { count: activeCount } = await supabase
+        .from('mentorship_matches')
+        .select('id', { count: 'exact', head: true })
+        .eq('mentor_profile_id', match.mentor_profile_id)
+        .eq('status', 'ACTIVE');
+
+      const currentActive = activeCount || 1;
+      const newMentorStatus = currentActive >= mentorMaxPupils ? 'MATCHED' : 'OPEN';
+      await supabase
+        .from('mentorship_profiles')
+        .update({ status: newMentorStatus })
+        .eq('id', match.mentor_profile_id);
+    }
+
+    // ①-c 成立ボーナス (+300コイン) を双方に付与
+    try {
+      const mentorPlayer = await findOrCreatePlayer({ discordId: match.mentor_discord_id });
+      const pupilPlayer = await findOrCreatePlayer({ discordId: match.pupil_discord_id });
+      if (mentorPlayer) {
+        await updatePlayerCoinsAndInventory({
+          player: mentorPlayer,
+          newCoins: getPlayerCoins(mentorPlayer) + 300,
+        });
+      }
+      if (pupilPlayer) {
+        await updatePlayerCoinsAndInventory({
+          player: pupilPlayer,
+          newCoins: getPlayerCoins(pupilPlayer) + 300,
+        });
+      }
+    } catch (coinErr) {
+      console.warn('[matchmaker] Bonus coin reward warning:', coinErr);
+    }
+
+    // ①-d 専用フォーラムスレッドの作成
+    let threadUrl = '';
+    try {
+      const threadRes = await createMentorshipForumThread({
+        mentorName: notes.mentorName || '先輩',
+        pupilName: notes.pupilName || '後輩',
+        durationLabel: 'お見合い成立（14日間）',
+        mentorDiscordId: match.mentor_discord_id,
+        pupilDiscordId: match.pupil_discord_id,
+        lanes: [notes.lane || 'ALL'],
+        commStyle: 'VC_ACTIVE',
+      });
+      if (threadRes?.threadUrl) {
+        threadUrl = threadRes.threadUrl;
+        updatedNotes.threadUrl = threadUrl;
+        await supabase
+          .from('mentorship_matches')
+          .update({ notes: JSON.stringify(updatedNotes) })
+          .eq('id', matchId);
+      }
+    } catch (tErr) {
+      console.warn('[matchmaker] Failed to create forum thread:', tErr);
+    }
+
+    // ①-e 双方へマッチング成立通知DMを送信
+    const notifyContent =
+      `🎉 **【お見合い成立！】**\n` +
+      `双方が「話してみたい」を選択されたため、マッチングが成立しました！✨\n` +
+      (threadUrl ? `👉 [専用相談スレッドはこちら](${threadUrl})\n` : '') +
+      `お互いに挨拶や質問をしてみてくださいね！\n` +
+      `（成立ボーナス **+300コイン** を獲得しました！🪙）`;
+
+    await sendDiscordDirectMessage(match.mentor_discord_id, { content: notifyContent });
+    await sendDiscordDirectMessage(match.pupil_discord_id, { content: notifyContent });
+
+    // ①-f 募集ダッシュボード同期
+    syncMentorshipDashboard().catch(() => {});
+
+    // ② 同一まとめ便（同一後輩宛て）の他の保留中オファーを自動クリーンアップ
+    try {
+      const { data: otherOffers } = await supabase
+        .from('mentorship_matches')
+        .select('id, notes')
+        .eq('pupil_discord_id', match.pupil_discord_id)
+        .eq('status', 'PENDING')
+        .neq('id', matchId);
+
+      for (const other of otherOffers || []) {
+        let otherNotes: any = {};
+        try { otherNotes = JSON.parse(other.notes || '{}'); } catch (_) {}
+        if (!otherNotes.isSecretProposal) continue;
+
+        otherNotes.cancelReason = '同一まとめ便内の他候補とマッチング成立のため終了';
+        otherNotes.closedAt = new Date().toISOString();
+        await supabase
+          .from('mentorship_matches')
+          .update({
+            status: 'CANCELLED',
+            notes: JSON.stringify(otherNotes),
+          })
+          .eq('id', other.id);
+      }
+    } catch (cleanupErr) {
+      console.warn('[matchmaker] Other offers cleanup warning:', cleanupErr);
+    }
+
+    return {
+      ok: true,
+      status: 'MATCHED',
+      isBothAccepted: true,
+      threadUrl,
+      message: 'お見合いが成立しました！専用スレッドを作成しました。',
+    };
+  } else {
+    // 片方のみ承諾（相手の回答待ち）
+    await supabase
+      .from('mentorship_matches')
+      .update({
+        notes: JSON.stringify(notes),
+      })
+      .eq('id', matchId);
+
+    // 【後輩ファースト】後輩が「話す」を選んだ場合、指名された先輩へリクエストDMを送信
+    if (isPupil && match.mentor_discord_id && notes.mentorStatus !== 'ACCEPTED') {
+      await sendMentorRequestDm({
+        matchId,
+        mentorDiscordId: match.mentor_discord_id,
+        mentorName: notes.mentorName || '先輩',
+        pupilName: notes.pupilName || '後輩',
+        lane: notes.lane,
+        matchScore: notes.matchScore,
+        reasons: notes.reasons,
+      });
+    }
+
+    return {
+      ok: true,
+      status: 'PENDING_PARTNER',
+      isBothAccepted: false,
+      message: '回答を受け付けました。先輩へ相談リクエストを届けました！',
+    };
+  }
+}
+
+/**
+ * GET: お見合い便の候補リストを取得（ペア一覧 ＆ まとめ便バッチ一覧 ＆ ログインユーザー宛てオファー）
  */
 export async function GET(req: Request) {
   try {
@@ -91,8 +386,8 @@ export async function GET(req: Request) {
 
     const discordId = session.discordId;
 
-    // 1. 自分宛てのアクティブなお見合いオファー（未回答）を検索
-    let myProposal: any = null;
+    // 1. 自分宛てのアクティブなお見合いオファー（未回答）を全件取得
+    const myProposals: any[] = [];
     if (discordId) {
       const { data: incomingList } = await supabase
         .from('mentorship_matches')
@@ -109,31 +404,33 @@ export async function GET(req: Request) {
             const isMentor = m.mentor_discord_id === discordId;
             const myStatus = isMentor ? notes.mentorStatus : notes.pupilStatus;
             if (myStatus === 'PENDING') {
-              myProposal = {
+              myProposals.push({
                 matchId: m.id,
                 isMentor,
                 partnerName: isMentor ? notes.pupilName : notes.mentorName,
+                partnerDiscordId: isMentor ? m.pupil_discord_id : m.mentor_discord_id,
                 lane: notes.lane,
                 matchScore: notes.matchScore,
                 reasons: notes.reasons || [],
                 proposedAt: notes.proposedAt || m.started_at || null,
-              };
-              break;
+              });
             }
           } catch (_) {}
         }
       }
     }
 
+    const myProposal = myProposals.length > 0 ? myProposals[0] : null;
+
     // 2. 管理者向け相性推薦候補リスト（ペア一覧 ＆ まとめ便バッチ一覧）
     // 管理者以外には自分宛てのオファーだけ返す
     if (!isMatchmakerAdmin(session)) {
-      return NextResponse.json({ ok: true, proposals: [], batches: [], myProposal });
+      return NextResponse.json({ ok: true, proposals: [], batches: [], myProposal, myProposals });
     }
     const proposals = await generateSecretMatchmakerPairs();
     const batches = await generateSecretMatchmakerBatches();
 
-    return NextResponse.json({ ok: true, proposals, batches, myProposal });
+    return NextResponse.json({ ok: true, proposals, batches, myProposal, myProposals });
   } catch (err: any) {
     console.error('[matchmaker GET] error:', err);
     return NextResponse.json({ error: err.message || '内部エラー' }, { status: 500 });
@@ -165,138 +462,17 @@ export async function POST(req: Request) {
       }
 
       const { matchId, decision, userDiscordId } = body;
+      const result = await executeOfferResponse({
+        matchId,
+        decision,
+        userDiscordId,
+      });
 
-      // 全て見送りの場合
-      if (decision === 'DECLINE_ALL' && userDiscordId) {
-        const { data: list } = await supabase
-          .from('mentorship_matches')
-          .select('id, notes, pupil_discord_id')
-          .eq('status', 'PENDING')
-          .eq('pupil_discord_id', userDiscordId);
-
-        for (const m of list || []) {
-          let notes: any = {};
-          try { notes = JSON.parse(m.notes || '{}'); } catch (_) {}
-          if (!notes.isSecretProposal) continue;
-          notes.pupilStatus = 'DECLINED';
-          notes.dismissedAt = new Date().toISOString();
-          await supabase
-            .from('mentorship_matches')
-            .update({ status: 'REJECTED', notes: JSON.stringify(notes) })
-            .eq('id', m.id);
-        }
-
-        return NextResponse.json({ ok: true, status: 'DISMISSED_ALL' });
+      if (!result.ok) {
+        return NextResponse.json({ error: result.error || '処理に失敗しました' }, { status: result.httpStatus || 400 });
       }
 
-      // 単一マッチの回答処理
-      if (matchId && userDiscordId) {
-        const { data: match } = await supabase
-          .from('mentorship_matches')
-          .select('*')
-          .eq('id', matchId)
-          .single();
-
-        if (!match) {
-          return NextResponse.json({ error: 'マッチが見つかりません' }, { status: 404 });
-        }
-
-        let notes: any = {};
-        try { notes = JSON.parse(match.notes || '{}'); } catch (_) {}
-
-        const isMentor = match.mentor_discord_id === userDiscordId;
-        const isPupil = match.pupil_discord_id === userDiscordId;
-
-        if (decision === 'DECLINE') {
-          if (isMentor) notes.mentorStatus = 'DECLINED';
-          if (isPupil) notes.pupilStatus = 'DECLINED';
-          notes.dismissedAt = new Date().toISOString();
-          await supabase
-            .from('mentorship_matches')
-            .update({ status: 'REJECTED', notes: JSON.stringify(notes) })
-            .eq('id', matchId);
-          return NextResponse.json({ ok: true, status: 'DISMISSED' });
-        }
-
-        if (decision === 'ACCEPT') {
-          if (isMentor) notes.mentorStatus = 'ACCEPTED';
-          if (isPupil) notes.pupilStatus = 'ACCEPTED';
-
-          const isBothAccepted = notes.mentorStatus === 'ACCEPTED' && notes.pupilStatus === 'ACCEPTED';
-          if (isBothAccepted) {
-            const updatedNotes = {
-              ...notes,
-              durationKey: '14_DAYS',
-              durationLabel: 'お見合い成立（14日間）',
-              commStyle: 'VC_ACTIVE',
-              autoRenew: true,
-              matchedAt: new Date().toISOString(),
-            };
-
-            await supabase
-              .from('mentorship_matches')
-              .update({ status: 'ACTIVE', notes: JSON.stringify(updatedNotes) })
-              .eq('id', matchId);
-
-            // 専用スレッド作成
-            let threadUrl = '';
-            try {
-              const threadRes = await createMentorshipForumThread({
-                mentorName: notes.mentorName || '先輩',
-                pupilName: notes.pupilName || '後輩',
-                durationLabel: 'お見合い成立（14日間）',
-                mentorDiscordId: match.mentor_discord_id,
-                pupilDiscordId: match.pupil_discord_id,
-                lanes: [notes.lane || 'ALL'],
-                commStyle: 'VC_ACTIVE',
-              });
-              if (threadRes?.threadUrl) {
-                threadUrl = threadRes.threadUrl;
-                updatedNotes.threadUrl = threadUrl;
-                await supabase
-                  .from('mentorship_matches')
-                  .update({ notes: JSON.stringify(updatedNotes) })
-                  .eq('id', matchId);
-              }
-            } catch (tErr) {
-              console.warn('[matchmaker] Bot thread creation error:', tErr);
-            }
-
-            const notifyContent =
-              `🎉 **【お見合い成立！】**\n` +
-              `双方が「話してみたい」を選択されたため、マッチングが成立しました！✨\n` +
-              (threadUrl ? `👉 [専用相談スレッドはこちら](${threadUrl})\n` : '') +
-              `気軽に挨拶や質問をしてみてくださいね！`;
-
-            await sendDiscordDirectMessage(match.mentor_discord_id, { content: notifyContent });
-            await sendDiscordDirectMessage(match.pupil_discord_id, { content: notifyContent });
-
-            return NextResponse.json({ ok: true, status: 'MATCHED', threadUrl });
-          } else {
-            await supabase
-              .from('mentorship_matches')
-              .update({ notes: JSON.stringify(notes) })
-              .eq('id', matchId);
-
-            // 【後輩ファースト】後輩が「話す」を選んだ場合、指名された先輩へリクエストDMを送信
-            if (isPupil && match.mentor_discord_id && notes.mentorStatus !== 'ACCEPTED') {
-              await sendMentorRequestDm({
-                matchId,
-                mentorDiscordId: match.mentor_discord_id,
-                mentorName: notes.mentorName || '先輩',
-                pupilName: notes.pupilName || '後輩',
-                lane: notes.lane,
-                matchScore: notes.matchScore,
-                reasons: notes.reasons,
-              });
-            }
-
-            return NextResponse.json({ ok: true, status: 'PENDING_PARTNER' });
-          }
-        }
-      }
-
-      return NextResponse.json({ error: '無効なリクエストです' }, { status: 400 });
+      return NextResponse.json(result);
     }
 
     // 1. オファー送信 (管理者操作またはテスト送信)
@@ -567,152 +743,25 @@ export async function POST(req: Request) {
       });
     }
 
-    // 2. オファーへの回答（承諾 / 見送り）
+    // 2. オファーへの回答（承諾 / 見送り / 全て見送り）
     if (action === 'RESPOND_OFFER') {
-      const { matchId, decision } = body; // decision: 'ACCEPT' | 'DECLINE'
+      const { matchId, decision } = body; // decision: 'ACCEPT' | 'DECLINE' | 'DECLINE_ALL'
       const userDiscordId = session?.discordId;
       if (!userDiscordId) {
         return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
       }
 
-      const { data: match, error: mErr } = await supabase
-        .from('mentorship_matches')
-        .select('*')
-        .eq('id', matchId)
-        .single();
+      const result = await executeOfferResponse({
+        matchId,
+        decision,
+        userDiscordId,
+      });
 
-      if (mErr || !match) {
-        return NextResponse.json({ error: '対象のお見合いが見つかりません' }, { status: 404 });
+      if (!result.ok) {
+        return NextResponse.json({ error: result.error || '処理に失敗しました' }, { status: result.httpStatus || 400 });
       }
 
-      let notes: any = {};
-      try {
-        notes = JSON.parse(match.notes || '{}');
-      } catch (_) {}
-
-      const isMentor = match.mentor_discord_id === userDiscordId;
-      const isPupil = match.pupil_discord_id === userDiscordId;
-
-      if (!isMentor && !isPupil) {
-        return NextResponse.json({ error: '回答権限がありません' }, { status: 403 });
-      }
-
-      // 【見送りの場合】: 相手には一切通知せず、静かに終了
-      if (decision === 'DECLINE') {
-        if (isMentor) notes.mentorStatus = 'DECLINED';
-        if (isPupil) notes.pupilStatus = 'DECLINED';
-        notes.dismissedAt = new Date().toISOString();
-
-        await supabase
-          .from('mentorship_matches')
-          .update({
-            status: 'REJECTED',
-            notes: JSON.stringify(notes),
-          })
-          .eq('id', matchId);
-
-        return NextResponse.json({
-          ok: true,
-          status: 'DISMISSED',
-          message: '見送りを記録しました。相手には一切通知されません。',
-        });
-      }
-
-      // 【承諾（話してみたい）の場合】
-      if (isMentor) notes.mentorStatus = 'ACCEPTED';
-      if (isPupil) notes.pupilStatus = 'ACCEPTED';
-
-      const isBothAccepted = notes.mentorStatus === 'ACCEPTED' && notes.pupilStatus === 'ACCEPTED';
-
-      if (isBothAccepted) {
-        // 双方が承諾！ ➔ マッチング成立
-        const updatedNotes = {
-          ...notes,
-          durationKey: '14_DAYS',
-          durationLabel: 'お見合い成立（14日間）',
-          commStyle: 'VC_ACTIVE',
-          autoRenew: true,
-          matchedAt: new Date().toISOString(),
-        };
-
-        await supabase
-          .from('mentorship_matches')
-          .update({
-            status: 'ACTIVE',
-            notes: JSON.stringify(updatedNotes),
-          })
-          .eq('id', matchId);
-
-        // 専用スレッドの作成
-        let threadUrl = '';
-        try {
-          const threadRes = await createMentorshipForumThread({
-            mentorName: notes.mentorName || '先輩',
-            pupilName: notes.pupilName || '後輩',
-            durationLabel: 'お見合い成立（14日間）',
-            mentorDiscordId: match.mentor_discord_id,
-            pupilDiscordId: match.pupil_discord_id,
-            lanes: [notes.lane || 'ALL'],
-            commStyle: 'VC_ACTIVE',
-          });
-          if (threadRes?.threadUrl) {
-            threadUrl = threadRes.threadUrl;
-            updatedNotes.threadUrl = threadUrl;
-            await supabase
-              .from('mentorship_matches')
-              .update({ notes: JSON.stringify(updatedNotes) })
-              .eq('id', matchId);
-          }
-        } catch (tErr) {
-          console.warn('[matchmaker] Failed to create thread:', tErr);
-        }
-
-        // 双方にマッチング成立の祝賀DM
-        const notifyContent =
-          `🎉 **【お見合い成立！】**\n` +
-          `双方が「話してみたい」を選択されたため、マッチングが成立しました！✨\n` +
-          (threadUrl ? `👉 [専用相談スレッドはこちら](${threadUrl})\n` : '') +
-          `気軽に挨拶や質問をしてみてくださいね！`;
-
-        await sendDiscordDirectMessage(match.mentor_discord_id, { content: notifyContent });
-        await sendDiscordDirectMessage(match.pupil_discord_id, { content: notifyContent });
-
-        return NextResponse.json({
-          ok: true,
-          status: 'MATCHED',
-          isBothAccepted: true,
-          threadUrl,
-          message: 'お見合いが成立しました！専用スレッドを作成しました。',
-        });
-      } else {
-        // 片方のみ承諾（相手の回答待ち）
-        await supabase
-          .from('mentorship_matches')
-          .update({
-            notes: JSON.stringify(notes),
-          })
-          .eq('id', matchId);
-
-        // 【後輩ファースト】後輩が「話す」を選んだ場合、指名された先輩へリクエストDMを送信
-        if (isPupil && match.mentor_discord_id && notes.mentorStatus !== 'ACCEPTED') {
-          await sendMentorRequestDm({
-            matchId,
-            mentorDiscordId: match.mentor_discord_id,
-            mentorName: notes.mentorName || '先輩',
-            pupilName: notes.pupilName || '後輩',
-            lane: notes.lane,
-            matchScore: notes.matchScore,
-            reasons: notes.reasons,
-          });
-        }
-
-        return NextResponse.json({
-          ok: true,
-          status: 'PENDING_PARTNER',
-          isBothAccepted: false,
-          message: '回答を受け付けました。先輩へ相談リクエストを届けました！',
-        });
-      }
+      return NextResponse.json(result);
     }
 
     return NextResponse.json({ error: '不明なアクションです' }, { status: 400 });

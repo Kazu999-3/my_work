@@ -57,7 +57,7 @@ export default function MentorshipHubPanel() {
 
   // 🤖 シークレットお見合い便モーダル管理
   const [isSecretMatchmakerOpen, setIsSecretMatchmakerOpen] = useState(false);
-  const [myProposal, setMyProposal] = useState<any | null>(null);
+  const [myProposals, setMyProposals] = useState<any[]>([]);
   const [isRespondingProposal, setIsRespondingProposal] = useState(false);
 
   // 💬 Discord同期ステート
@@ -71,12 +71,16 @@ export default function MentorshipHubPanel() {
   const [canBeMentor, setCanBeMentor] = useState(true);
   const [userTier, setUserTier] = useState<any>(null);
 
-  // お見合い回答処理（承諾 / 見送り）
-  const handleRespondProposal = async (decision: 'ACCEPT' | 'DECLINE') => {
-    if (!myProposal) return;
+  // お見合い回答処理（承諾 / 個別見送り / 全て見送り）
+  const handleRespondProposal = async (decision: 'ACCEPT' | 'DECLINE' | 'DECLINE_ALL', targetMatchId?: string) => {
     if (decision === 'DECLINE') {
       if (!confirm('このお見合いを見送りますか？\n※見送っても相手には一切通知されません。')) return;
+    } else if (decision === 'DECLINE_ALL') {
+      if (!confirm('今回届いたお見合い便をすべて見送りますか？\n※見送っても相手には一切通知されません。')) return;
     }
+
+    const matchIdToUse = targetMatchId || (myProposals.length === 1 ? myProposals[0].matchId : undefined);
+    if (decision !== 'DECLINE_ALL' && !matchIdToUse) return;
 
     setIsRespondingProposal(true);
     try {
@@ -85,22 +89,23 @@ export default function MentorshipHubPanel() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'RESPOND_OFFER',
-          matchId: myProposal.matchId,
+          matchId: matchIdToUse,
           decision,
         }),
       });
       const data = await res.json();
       if (data.ok) {
-        if (decision === 'DECLINE') {
+        if (decision === 'DECLINE' || decision === 'DECLINE_ALL') {
           toast.success('見送りを記録しました（相手には通知されません）');
         } else if (data.isBothAccepted) {
           toast.success('🎉 お見合い成立！双方が話してみたいを選びました！');
           if (data.threadUrl) window.open(data.threadUrl, '_blank');
         } else {
-          toast.success('👍 「話してみたい」を記録しました！相手も選ぶとマッチング成立します');
+          toast.success('👍 「話してみたい」を記録しました！先輩へリクエストを届けました');
         }
-        setMyProposal(null);
+        setMyProposals([]);
         fetchMatches();
+        fetchMyProposal();
       } else {
         toast.error(data.error || '処理に失敗しました');
       }
@@ -219,8 +224,14 @@ export default function MentorshipHubPanel() {
     try {
       const res = await fetch('/api/mentorship/matchmaker');
       const data = await res.json();
-      if (data.ok && data.myProposal) {
-        setMyProposal(data.myProposal);
+      if (data.ok) {
+        if (Array.isArray(data.myProposals) && data.myProposals.length > 0) {
+          setMyProposals(data.myProposals);
+        } else if (data.myProposal) {
+          setMyProposals([data.myProposal]);
+        } else {
+          setMyProposals([]);
+        }
       }
     } catch (err) {
       // ログイン前等の場合はスキップ
@@ -824,18 +835,20 @@ export default function MentorshipHubPanel() {
         </div>
       </div>
 
-      {/* 🎒 届いたお見合い便バナー（ダブルオプトイン） */}
-      {myProposal && (
-        <div className="bg-gradient-to-r from-secondary-500/15 via-success-500/10 to-secondary-500/15 border-2 border-secondary-500/30 rounded-3xl p-5 md:p-6 shadow-sm space-y-3.5 animate-in fade-in duration-200">
+      {/* 🎒 届いたお見合い便バナー（ダブルオプトイン・まとめ便対応） */}
+      {myProposals.length > 0 && (
+        <div className="bg-gradient-to-r from-secondary-500/15 via-success-500/10 to-secondary-500/15 border-2 border-secondary-500/30 rounded-3xl p-5 md:p-6 shadow-sm space-y-4 animate-in fade-in duration-200">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-secondary-500/20 text-secondary-800 text-xs font-black">
                   <Sparkles size={13} className="text-secondary-600" />
-                  あなたへのお見合い便が届いています！
+                  {myProposals.length > 1
+                    ? `あなたへのお見合い便が届いています！（${myProposals.length}名の先輩をご紹介）`
+                    : 'あなたへのお見合い便が届いています！'}
                 </div>
-                {myProposal.proposedAt && (() => {
-                  const dateInfo = formatOfferDate(myProposal.proposedAt);
+                {myProposals[0]?.proposedAt && (() => {
+                  const dateInfo = formatOfferDate(myProposals[0].proposedAt);
                   if (!dateInfo) return null;
                   return (
                     <span className="text-[11px] font-bold text-foreground-subtle px-2 py-0.5 rounded-md bg-surface border border-border/60">
@@ -845,42 +858,120 @@ export default function MentorshipHubPanel() {
                 })()}
               </div>
               <h3 className="text-base md:text-lg font-black text-foreground">
-                {myProposal.isMentor ? '後輩候補' : 'おすすめの先輩'}：<strong>{myProposal.partnerName}</strong> さん
-                <span className="text-xs font-bold text-foreground-subtle ml-2">
-                  (🛡️ {myProposal.lane} / 相性スコア: <span className="text-secondary-600 font-black">{myProposal.matchScore}%</span>)
-                </span>
+                {myProposals.length > 1
+                  ? '相性の良い先輩がピックアップされました！気になる先輩を選んでみてください✨'
+                  : `${myProposals[0].isMentor ? '後輩候補' : 'おすすめの先輩'}：${myProposals[0].partnerName} さん`}
               </h3>
-              {myProposal.reasons && myProposal.reasons.length > 0 && (
-                <div className="flex items-center gap-1.5 flex-wrap pt-1 text-xs text-foreground-subtle">
-                  {myProposal.reasons.map((r: string, i: number) => (
-                    <span key={i} className="px-2 py-0.5 rounded-md bg-surface text-foreground-subtle border border-border/60">
-                      {r}
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
 
-            <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+            {myProposals.length > 1 && (
               <button
                 type="button"
-                onClick={() => handleRespondProposal('ACCEPT')}
+                onClick={() => handleRespondProposal('DECLINE_ALL')}
                 disabled={isRespondingProposal}
-                className="px-4 py-2.5 rounded-xl bg-success-600 hover:bg-success-500 text-white font-black text-xs transition shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className="px-3.5 py-2 rounded-xl bg-surface hover:bg-surface-subtle text-foreground-subtle font-bold text-xs transition border border-border cursor-pointer self-start sm:self-auto disabled:opacity-50"
               >
-                <HeartHandshake size={14} />
-                <span>🤝 ちょっと話してみたい</span>
+                🍃 今回はすべて見送る
               </button>
-              <button
-                type="button"
-                onClick={() => handleRespondProposal('DECLINE')}
-                disabled={isRespondingProposal}
-                className="px-3 py-2.5 rounded-xl bg-surface hover:bg-surface-subtle text-foreground-subtle font-bold text-xs transition border border-border cursor-pointer disabled:opacity-50"
-              >
-                <span>🍃 今回は見送る</span>
-              </button>
-            </div>
+            )}
           </div>
+
+          {/* 先輩候補カードリスト */}
+          {myProposals.length === 1 ? (
+            /* 単一ペア表示 */
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface/80 p-4 rounded-2xl border border-border/60">
+              <div className="space-y-1.5">
+                <div className="text-sm font-black text-foreground">
+                  🛡️ 担当: <span className="text-secondary-600 font-bold">{myProposals[0].lane}</span>
+                  <span className="text-xs text-foreground-subtle ml-2">
+                    相性スコア: <span className="text-secondary-600 font-black">{myProposals[0].matchScore}%</span>
+                  </span>
+                </div>
+                {myProposals[0].reasons && myProposals[0].reasons.length > 0 && (
+                  <div className="flex items-center gap-1.5 flex-wrap text-xs text-foreground-subtle">
+                    {myProposals[0].reasons.map((r: string, i: number) => (
+                      <span key={i} className="px-2 py-0.5 rounded-md bg-surface-subtle text-foreground-subtle border border-border/60">
+                        {r}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleRespondProposal('ACCEPT', myProposals[0].matchId)}
+                  disabled={isRespondingProposal}
+                  className="px-4 py-2.5 rounded-xl bg-success-600 hover:bg-success-500 text-white font-black text-xs transition shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <HeartHandshake size={14} />
+                  <span>🤝 ちょっと話してみたい</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRespondProposal('DECLINE', myProposals[0].matchId)}
+                  disabled={isRespondingProposal}
+                  className="px-3 py-2.5 rounded-xl bg-surface hover:bg-surface-subtle text-foreground-subtle font-bold text-xs transition border border-border cursor-pointer disabled:opacity-50"
+                >
+                  <span>🍃 今回は見送る</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* まとめ便（複数候補カードグリッド） */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {myProposals.map((p: any) => (
+                <div
+                  key={p.matchId}
+                  className="bg-surface/90 border border-border/80 rounded-2xl p-4 flex flex-col justify-between gap-3 shadow-2xs hover:border-secondary-500/50 transition"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-black text-sm text-foreground">
+                        {p.partnerName} 先輩
+                      </span>
+                      <span className="px-2 py-0.5 rounded-md bg-secondary-500/15 text-secondary-800 text-[11px] font-black">
+                        ★ {p.matchScore}%
+                      </span>
+                    </div>
+                    <div className="text-xs text-foreground-subtle">
+                      🛡️ レーン: <strong className="text-foreground">{p.lane}</strong>
+                    </div>
+                    {p.reasons && p.reasons.length > 0 && (
+                      <div className="flex flex-wrap gap-1 text-[11px] text-foreground-subtle pt-1">
+                        {p.reasons.map((r: string, i: number) => (
+                          <span key={i} className="px-1.5 py-0.5 rounded bg-surface-subtle border border-border/50">
+                            {r}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-2 border-t border-border/50 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleRespondProposal('ACCEPT', p.matchId)}
+                      disabled={isRespondingProposal}
+                      className="flex-1 py-2 rounded-xl bg-success-600 hover:bg-success-500 text-white font-black text-xs transition shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    >
+                      <HeartHandshake size={13} />
+                      <span>🤝 話してみたい</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRespondProposal('DECLINE', p.matchId)}
+                      disabled={isRespondingProposal}
+                      className="px-2.5 py-2 rounded-xl bg-surface-subtle hover:bg-surface-hover text-foreground-subtle font-bold text-xs transition border border-border/60 cursor-pointer disabled:opacity-50"
+                      title="この先輩を見送る"
+                    >
+                      <span>🍃</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="pt-2 border-t border-border/50 flex items-center gap-2 text-xs text-emerald-800 font-medium">
             <Shield size={14} className="text-emerald-600 shrink-0" />
