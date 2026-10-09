@@ -23,12 +23,17 @@ export interface ReviewItem {
   macroReason: string;
   detectedChampions: string[];
   detectedChampionsJa: string;
+  isMatchup?: boolean;
+  enemyChampion?: string | null;
+  enemyChampionJa?: string | null;
+  matchupLabel?: string | null;
 }
 
 export interface RosterChampion { id: string; name: string }
 
 export interface ItemEditState {
   champion: string;
+  enemyChampion: string;
   title: string;
   content: string;
   lane: LaneKey;
@@ -57,6 +62,15 @@ export interface PreviewResult {
     id: string;
     name: string;
     matchupId: string;
+    sectionText: string;
+  }[];
+  matchupPreviews?: {
+    matchupId: string;
+    champion: string;
+    championJa: string;
+    enemy: string;
+    enemyJa: string;
+    lane: LaneKey;
     sectionText: string;
   }[];
   factPreviews?: ChampionFactPreview[];
@@ -88,6 +102,7 @@ export const LANE_OPTIONS: { key: LaneKey; label: string; icon: string }[] = [
 export function defaultEdit(item: ReviewItem): ItemEditState {
   return {
     champion: item.currentChampNamesJa || '',
+    enemyChampion: item.enemyChampionJa || item.enemyChampion || '',
     title: item.title,
     content: item.content,
     lane: item.detectedLane,

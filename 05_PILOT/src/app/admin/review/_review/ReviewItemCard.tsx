@@ -1,6 +1,6 @@
 'use client';
 
-import { XCircle, ExternalLink, Eye, Compass, BookOpen, Dna, Tv, Scissors } from 'lucide-react';
+import { XCircle, ExternalLink, Eye, Compass, BookOpen, Dna, Tv, Scissors, Swords } from 'lucide-react';
 import { LANE_OPTIONS, type ItemEditState, type LaneKey, type ReviewItem } from './types';
 
 // 承認待ちの記事カード（統合予定バッジ・本文・インライン編集・却下/プレビュー・ナレッジ分解）
@@ -99,6 +99,17 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
                       </span>
                     )}
 
+                    {/* 対面DBバッジ */}
+                    {edit.enemyChampion.trim() ? (
+                      <span className="px-2 py-0.5 rounded-md bg-rose-950/60 border border-rose-800/70 text-rose-300 text-[11px] font-bold flex items-center gap-1">
+                        <Swords className="w-3 h-3 text-rose-400" /> 対面DB: vs {edit.enemyChampion} [{edit.lane}]
+                      </span>
+                    ) : item.isMatchup && item.matchupLabel ? (
+                      <span className="px-2 py-0.5 rounded-md bg-rose-950/40 border border-rose-800/40 text-rose-300/80 text-[11px] font-bold flex items-center gap-1">
+                        <Swords className="w-3 h-3 text-rose-400" /> {item.matchupLabel}
+                      </span>
+                    ) : null}
+
                     {/* レーンガイドバッジ */}
                     {edit.includeLaneGuide ? (
                       <span className="px-2 py-0.5 rounded-md bg-emerald-950/60 border border-emerald-800/70 text-emerald-300 text-[11px] font-bold flex items-center gap-1">
@@ -153,13 +164,25 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
                 <div className="pt-3 border-t border-slate-800/80 flex flex-col lg:flex-row lg:items-end justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-3 flex-1">
                     {/* チャンピオン入力欄 */}
-                    <label className="flex flex-col gap-1 text-[10px] text-slate-400 font-bold min-w-[200px] flex-1">
+                    <label className="flex flex-col gap-1 text-[10px] text-slate-400 font-bold min-w-[180px] flex-1">
                       <span>対象チャンピオン（カンマ区切りで複数可 / 空欄＝一般論）</span>
                       <input
                         list="roster-champions"
                         value={edit.champion}
                         onChange={(e) => onEdit({ champion: e.target.value })}
                         placeholder="例: ノクターン, シン・ジャオ"
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-amber-500"
+                      />
+                    </label>
+
+                    {/* 対面相手入力欄 */}
+                    <label className="flex flex-col gap-1 text-[10px] text-slate-400 font-bold min-w-[140px] w-40">
+                      <span>対面相手（空欄＝対面なし）</span>
+                      <input
+                        list="roster-champions"
+                        value={edit.enemyChampion}
+                        onChange={(e) => onEdit({ enemyChampion: e.target.value })}
+                        placeholder="例: トリンダメア"
                         className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-amber-500"
                       />
                     </label>

@@ -11,6 +11,40 @@
 
 ## 🗓️ 2026-10-09（金）
 
+### ⚔️ 記事承認・取り込み画面（`/admin/review`）での対面相手・レーン自動検出 ＆ 対面DB（`matchup_sentinel`）への自動統合（Step 3 完了）
+
+**概要**:
+1. **背景と目的**:
+   - ユーザーからの要望「対〇〇の記事がそれぞれのレーン毎とかに割り振れるようにしたい」の三位一体開発における最終ステップ（Step 3）。
+   - 記事承認時に、タイトルや本文から対面相手（Enemy）とレーン（Lane）を自動検出し、全体の教本（`champ_${champ}_global`）だけでなく、個別対面DB（`matchup_sentinel` の `${champ}_vs_${enemy}` 行）にもレーン属性付きで自動統合するパイプラインを構築。
+2. **実施内容**:
+   - **対面統合処理の共通化 (`05_PILOT/src/lib/matchupMemo.ts`)**:
+     - `integrateMatchupArticle` 関数を新設。
+     - 二重追記防止ロジック（`upsertArticleSection` 同等）により、同じ記事の節を置換または末尾に追記。
+     - `raw_data` に `{ source: 'library_article', lane: targetLane, role: targetLane }` を保存し、辞書の更新日反映用に `created_at` も更新。
+     - 変更履歴（`knowledge_revisions`）に確実に差分記録。
+   - **レビューAPIの拡張 (`05_PILOT/src/app/api/knowledge/review/route.ts`)**:
+     - GET: 各未承認アイテムに対して `detectArticleMatchup` を呼び出し、`isMatchup`, `enemyChampion`, `enemyChampionJa`, `matchupLabel` を同梱して返却。
+     - POST (preview): `enemyChampion` が指定または検出された場合、`matchupPreviews`（`${myChamp}_vs_${enemy}` スロットへの統合文面・レーン属性）を生成。
+     - POST (approve): 単一・一括承認時にトラックD（対面DB統合タスク）を実行し、該当マッチアップ行へ自動統合。完了メッセージに「⚔️ 対面DB（...）へ統合」を表示。
+   - **UI拡張 (`types.ts`, `ReviewItemCard.tsx`, `PreviewModal.tsx`, `MatchupPreviewTab.tsx`, `page.tsx`)**:
+     - `ReviewItemCard`: 統合予定バッジに「⚔️ 対面DB: vs {enemy} [{lane}]」を表示し、インライン編集に対面相手（`datalist="roster-champions"`）入力欄を配備。
+     - `PreviewModal`: 記事調整フォームに対面相手入力欄を新設し、タブバーに「⚔️ 対面DBプレビュー」タブを追加。
+     - `MatchupPreviewTab`: 新規作成。対象のマッチアップID、レーン属性、完全な統合文面をインラインプレビュー表示。
+     - `page.tsx`: プレビュー・承認時の payload に `enemyChampion` を連携。
+   - **ビルド・型チェック検証**:
+     - `npx tsc --noEmit` エラー0件 PASS。`npm run build` 全24ルート正常生成 PASS。
+3. **3行ナレッジ**:
+   - **「知識のインジェストパイプラインは、取り込みの瞬間（Review承認時）に『全般教本』『レーンガイド』『個別対面DB』の3つのレイヤーへ自動分配・正規化保存することで、閲覧側（辞典・ライブラリ・コーチ）が常に0ms・追加検索不要で最適な知見を引き出せる」**: 書き込み時の構造化徹底が、ユーザー体験の圧倒的向上とクエリ負荷ゼロを両立する。
+4. **思考トリガー**:
+   - 「YouTubeから動画解析された対面知見が、管理者の1タップ承認だけでチャンピオン辞典の該当レーンの対面タブに即座に並ぶ導線が完成したが、ユーザーが実戦のバンピック画面でこれを見る時の表示順は『勝率の低い苦手対面順』か『最近更新順』のどちらが最も刺さるか？」
+5. **拾い上げ（Harvest）**:
+   - `[要検証]`: 実際の新着動画レビュー承認時に、対面DBへの追記と辞書の対面タブ表示がリアルタイムに正しく連動することの実機確認。
+   - `[継続ウォッチ]`: 複数チャンピオンを含む長文記事の対面検出精度（ナレッジ分解機能との組み合わせ運用）。
+   - `[発信候補]`: 「LoLの対面対策ノートを自動生成・レーン別に自動仕分けするAIアーキテクチャ」（noteネタ）。
+
+---
+
 ### 🥊 チャンピオン辞典（`/`）対面タブでのレーン別切り替え ＆ 対面攻略記事バイブルの統合表示（Step 2 完了）
 
 **概要**:

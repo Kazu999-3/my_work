@@ -39,7 +39,7 @@ export default function ReviewPage() {
   const [previewModalItem, setPreviewModalItem] = useState<ReviewItem | null>(null);
   const [previewData, setPreviewData] = useState<PreviewResult | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
-  const [previewTab, setPreviewTab] = useState<'facts' | 'strategy' | 'lane'>('strategy');
+  const [previewTab, setPreviewTab] = useState<'facts' | 'strategy' | 'lane' | 'matchup'>('strategy');
   const [selectedFactFields, setSelectedFactFields] = useState<Record<string, boolean>>({});
   // 文単位の宛先管理: `${champId}::${diffKey}::${lineIdx}` -> 'champion' | 'lane' | 'skip'
   const [lineDestinations, setLineDestinations] = useState<Record<string, LineDestination>>({});
@@ -85,6 +85,7 @@ export default function ReviewPage() {
       for (const item of loadedItems) {
         initialEdits[item.id] = {
           champion: item.currentChampNamesJa || item.detectedChampionsJa || (item.isLaneGeneral ? '' : item.champion || ''),
+          enemyChampion: item.enemyChampionJa || item.enemyChampion || '',
           title: item.title || '',
           content: item.content || '',
           lane: item.detectedLane || 'COMMON',
@@ -168,6 +169,7 @@ export default function ReviewPage() {
       id: item.id,
       action: 'approve',
       champion: edit.champion,
+      enemyChampion: edit.enemyChampion,
       title: edit.title,
       content: edit.content,
       lane: edit.lane,
@@ -222,6 +224,7 @@ export default function ReviewPage() {
           title: edit.title,
           content: edit.content,
           champion: edit.champion,
+          enemyChampion: edit.enemyChampion,
           lane: edit.lane,
           includeLaneGuide: edit.includeLaneGuide,
           includeFactMerge: edit.includeFactMerge,
@@ -244,10 +247,16 @@ export default function ReviewPage() {
       setSelectedFactFields(init.fields);
       setLineDestinations(init.lines);
 
-      // 初期タブの決定（教本優先、無ければレーン）
-      if (json.championPreviews?.length > 0) setPreviewTab('strategy');
-      else if (json.laneGuidePreview) setPreviewTab('lane');
-      else setPreviewTab('facts');
+      // 初期タブの決定（対面記事指定時は対面優先、それ以外は教本優先）
+      if (json.matchupPreviews?.length > 0 && edit.enemyChampion) {
+        setPreviewTab('matchup');
+      } else if (json.championPreviews?.length > 0) {
+        setPreviewTab('strategy');
+      } else if (json.laneGuidePreview) {
+        setPreviewTab('lane');
+      } else {
+        setPreviewTab('facts');
+      }
     } catch (e: any) {
       showMessage(e.message, 'error');
     } finally {

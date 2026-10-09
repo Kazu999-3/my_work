@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, type Dispatch, type SetStateAction } from 'react';
-import { CheckCircle2, RefreshCw, AlertTriangle, Eye, Compass, BookOpen, Edit3, Dna } from 'lucide-react';
+import { CheckCircle2, RefreshCw, AlertTriangle, Eye, Compass, BookOpen, Edit3, Dna, Swords } from 'lucide-react';
 import StrategyPreviewTab from './StrategyPreviewTab';
+import MatchupPreviewTab from './MatchupPreviewTab';
 import FactsPreviewTab from './FactsPreviewTab';
 import LanePreviewTab from './LanePreviewTab';
 import { LANE_OPTIONS, type ItemEditState, type LaneKey, type LineDestination, type PreviewResult } from './types';
@@ -13,8 +14,8 @@ export default function PreviewModal({ edit, previewData, previewLoading, previe
   edit: ItemEditState | undefined;
   previewData: PreviewResult | null;
   previewLoading: boolean;
-  previewTab: 'facts' | 'strategy' | 'lane';
-  setPreviewTab: (v: 'facts' | 'strategy' | 'lane') => void;
+  previewTab: 'facts' | 'strategy' | 'lane' | 'matchup';
+  setPreviewTab: (v: 'facts' | 'strategy' | 'lane' | 'matchup') => void;
   modalError: string | null;
   busy: boolean;
   selectedFactFields: Record<string, boolean>;
@@ -86,13 +87,24 @@ export default function PreviewModal({ edit, previewData, previewLoading, previe
                           className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-white"
                         />
                       </label>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                         <label className="block space-y-1">
-                          <span className="text-[10px] text-zinc-400 font-bold">対象チャンピオン（カンマ区切り）</span>
+                          <span className="text-[10px] text-zinc-400 font-bold">対象チャンピオン</span>
                           <input
                             list="roster-champions"
                             value={edit?.champion || ''}
                             onChange={(e) => onEdit({ champion: e.target.value })}
+                            placeholder="例: ノクターン"
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-white"
+                          />
+                        </label>
+                        <label className="block space-y-1">
+                          <span className="text-[10px] text-zinc-400 font-bold">対面相手（空欄＝なし）</span>
+                          <input
+                            list="roster-champions"
+                            value={edit?.enemyChampion || ''}
+                            onChange={(e) => onEdit({ enemyChampion: e.target.value })}
+                            placeholder="例: トリンダメア"
                             className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-white"
                           />
                         </label>
@@ -140,7 +152,7 @@ export default function PreviewModal({ edit, previewData, previewLoading, previe
                     </div>
 
                     {/* プレビュー表示タブバー */}
-                    <div className="flex items-center gap-2 border-b border-zinc-800 pb-2">
+                    <div className="flex flex-wrap items-center gap-2 border-b border-zinc-800 pb-2">
                       <button
                         onClick={() => setPreviewTab('strategy')}
                         className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
@@ -150,9 +162,24 @@ export default function PreviewModal({ edit, previewData, previewLoading, previe
                         }`}
                       >
                         <BookOpen size={13} />
-                        <span>📖 チャンピオン教本プレビュー</span>
+                        <span>📖 教本プレビュー</span>
                         <span className="text-[10px] opacity-80">({previewData?.championPreviews?.length || 0}体)</span>
                       </button>
+
+                      {((previewData?.matchupPreviews && previewData.matchupPreviews.length > 0) || edit?.enemyChampion) && (
+                        <button
+                          onClick={() => setPreviewTab('matchup')}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                            previewTab === 'matchup'
+                              ? 'bg-rose-600 text-white shadow-sm'
+                              : 'text-zinc-400 hover:text-white bg-zinc-900'
+                          }`}
+                        >
+                          <Swords size={13} />
+                          <span>⚔️ 対面DBプレビュー</span>
+                          <span className="text-[10px] opacity-80">({previewData?.matchupPreviews?.length || 0}件)</span>
+                        </button>
+                      )}
 
                       {edit?.includeFactMerge && (
                         <button
@@ -164,7 +191,7 @@ export default function PreviewModal({ edit, previewData, previewLoading, previe
                           }`}
                         >
                           <Dna size={13} />
-                          <span>🧬 各項目マージ差分プレビュー</span>
+                          <span>🧬 項目マージ差分</span>
                           <span className="text-[10px] opacity-80">({previewData?.factPreviews?.length || 0}体)</span>
                         </button>
                       )}
@@ -184,6 +211,7 @@ export default function PreviewModal({ edit, previewData, previewLoading, previe
                     </div>
 
                     {previewTab === 'strategy' && <StrategyPreviewTab previewData={previewData} />}
+                    {previewTab === 'matchup' && <MatchupPreviewTab previewData={previewData} />}
                     {previewTab === 'facts' && (
                       <FactsPreviewTab
                         previewData={previewData}

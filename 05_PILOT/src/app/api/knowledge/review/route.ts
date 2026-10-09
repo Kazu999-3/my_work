@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
-import { getRoster, resolveRosterChampions, getChampionNameJa } from '@/lib/championRoster';
+import { getRoster, resolveRosterChampions, resolveRosterChampion, getChampionNameJa } from '@/lib/championRoster';
 import { integrateArticles, formatChampionArticleSection } from '@/lib/knowledgeIntegrate';
 import { detectArticleLane, LANE_CONFIG, LaneKey } from '@/lib/laneDetector';
+import { detectArticleMatchup } from '@/lib/matchupDetector';
+import { integrateMatchupArticle } from '@/lib/matchupMemo';
 import { formatLaneGuideSection, mergeArticleToLaneGuide, appendSectionToLaneGuide } from '@/lib/laneGuideIntegrate';
 import { previewChampionFactsMerge, executeChampionFactsMerge, FactFieldKey } from '@/lib/championFactsMerge';
 import { decomposeArticle, saveDecomposedInsights, DecomposedInsight } from '@/lib/knowledgeDecompose';
@@ -119,6 +121,14 @@ export async function GET(req: NextRequest) {
           champion: r.champion,
         });
 
+        // 対面判定（VS記事・相手チャンピオン検出）
+        const matchupDetection = await detectArticleMatchup({
+          title: r.title,
+          content: r.content,
+          tags: r.tags,
+          champion: r.champion,
+        });
+
         // 検出されたチャンピオンの日本語表示名
         const detectedChampsJa = await Promise.all(
           detection.detectedChampions.map((c) => getChampionNameJa(c))
@@ -147,6 +157,10 @@ export async function GET(req: NextRequest) {
           macroReason: detection.macroReason,
           detectedChampions: detection.detectedChampions,
           detectedChampionsJa: detectedChampsJa.join(', '),
+          isMatchup: matchupDetection.isMatchup,
+          enemyChampion: matchupDetection.enemyChampion,
+          enemyChampionJa: matchupDetection.enemyChampionJa,
+          matchupLabel: matchupDetection.label,
         };
       })
     );
@@ -305,7 +319,7 @@ export async function POST(req: NextRequest) {
     // 1. プレビュー生成アクション
     // ──────────────────────────────────────────
     if (action === 'preview') {
-      const { title, content, champion, lane, includeLaneGuide, includeFactMerge, source_url } = body;
+      const { title, content, champion, enemyChampion, lane, includeLaneGuide, includeFactMerge, source_url } = body;
       const cleanTitle = String(title || '(無題)').trim();
       const cleanContent = String(content || '').trim();
       const targetLane = (lane || 'COMMON') as LaneKey;
@@ -323,6 +337,38 @@ export async function POST(req: NextRequest) {
           };
         })
       );
+
+      // 対面DBプレビュー
+      let matchupPreviews: any[] = [];
+      let resolvedEnemy: string | null = null;
+      if (enemyChampion && typeof enemyChampion === 'string' && enemyChampion.trim()) {
+        resolvedEnemy = await resolveRosterChampion(enemyChampion.trim());
+      }
+      if (!resolvedEnemy && resolvedChamps.length > 0) {
+        const matchupDetection = await detectArticleMatchup({
+          title: cleanTitle,
+          content: cleanContent,
+          champion: resolvedChamps[0],
+        });
+        if (matchupDetection.isMatchup && matchupDetection.enemyChampion) {
+          resolvedEnemy = matchupDetection.enemyChampion;
+        }
+      }
+
+      if (resolvedEnemy && resolvedChamps.length > 0) {
+        const myChamp = resolvedChamps[0];
+        const myChampJa = await getChampionNameJa(myChamp);
+        const enemyJa = await getChampionNameJa(resolvedEnemy);
+        matchupPreviews.push({
+          matchupId: `${myChamp}_vs_${resolvedEnemy}`,
+          champion: myChamp,
+          championJa: myChampJa,
+          enemy: resolvedEnemy,
+          enemyJa,
+          lane: targetLane,
+          sectionText: formatChampionArticleSection(cleanTitle, cleanContent),
+        });
+      }
 
       // 各項目（champion_facts: 強み・弱み等）のマージプレビュー
       let factPreviews: any[] = [];
@@ -379,6 +425,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         championPreviews,
+        matchupPreviews,
         factPreviews,
         laneGuidePreview,
       });
@@ -402,12 +449,13 @@ export async function POST(req: NextRequest) {
     }
 
     // ──────────────────────────────────────────
-    // 3. 承認 ＆ 二系統統合（＋各項目マージ）アクション
+    // 3. 承認 ＆ 統合（教本・対面DB・項目マージ・レーンガイド）
     // ──────────────────────────────────────────
     if (action !== 'approve') return NextResponse.json({ error: '無効な action です' }, { status: 400 });
 
     const update: Record<string, any> = { review_status: 'approved' };
     let explicitLane: LaneKey | null = null;
+    let explicitEnemy: string | null = null;
     let explicitIncludeLaneGuide: boolean | null = null;
     let explicitIncludeFactMerge: boolean = true;
     let customLaneSectionText: string | undefined = undefined;
@@ -423,6 +471,9 @@ export async function POST(req: NextRequest) {
       }
       if (typeof body.lane === 'string' && body.lane in LANE_CONFIG) {
         explicitLane = body.lane as LaneKey;
+      }
+      if (typeof body.enemyChampion === 'string') {
+        explicitEnemy = body.enemyChampion.trim() || null;
       }
       if (typeof body.includeLaneGuide === 'boolean') {
         explicitIncludeLaneGuide = body.includeLaneGuide;
@@ -476,13 +527,13 @@ export async function POST(req: NextRequest) {
     // トラックA: チャンピオン教本（matchup_sentinel & champion_notes）へ統合
     const champResult = await integrateArticles(db, targetRows);
 
-    // トラックB（各項目AI差分マージ）とトラックC（レーンガイド統合）を並行実行して高速化
+    // トラックB（各項目AI差分マージ）、トラックC（レーンガイド統合）、トラックD（対面DB統合）を並行実行
     let factUpdatedChamps = 0;
     let laneIntegratedCount = 0;
-    // 以前は項目マージ・レーンガイド統合の失敗を console.warn だけで捨て、画面には「承認しました」と
-    // だけ出ていた（本番に GEMINI_API_KEY が無く全件失敗していても気づけなかった。2026-10-06）
+    let matchupIntegratedCount = 0;
     const subErrors: string[] = [];
     const laneDetails: string[] = [];
+    const matchupDetails: string[] = [];
 
     const factTasks = explicitIncludeFactMerge
       ? targetRows.map(async (row) => {
@@ -560,7 +611,58 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    await Promise.all([...factTasks, ...laneTasks]);
+    // トラックD: 対面DB（matchup_sentinel の ${myChamp}_vs_${enemy} 行）への統合
+    const matchupTasks = targetRows.map(async (row) => {
+      try {
+        const champList = await resolveRosterChampions(row.champion);
+        const myChamp = champList[0];
+        if (!myChamp) return;
+
+        let enemyToIntegrate = explicitEnemy && ids.length === 1 ? explicitEnemy : null;
+        if (!enemyToIntegrate) {
+          const detection = await detectArticleMatchup({
+            title: row.title,
+            content: row.content,
+            tags: row.tags,
+            champion: myChamp,
+          });
+          if (detection.isMatchup && detection.enemyChampion) {
+            enemyToIntegrate = detection.enemyChampion;
+          }
+        }
+
+        if (enemyToIntegrate) {
+          const resolvedEnemy = await resolveRosterChampion(enemyToIntegrate);
+          if (resolvedEnemy && resolvedEnemy.toLowerCase() !== myChamp.toLowerCase()) {
+            const laneForMatchup = (explicitLane !== null && ids.length === 1)
+              ? explicitLane
+              : (await detectArticleLane({ title: row.title, content: row.content, champion: myChamp })).lane;
+
+            const res = await integrateMatchupArticle({
+              myChampion: myChamp,
+              enemyChampion: resolvedEnemy,
+              title: row.title || '(無題)',
+              content: row.content || row.raw_content || '',
+              lane: laneForMatchup,
+              sourceUrl: row.source_url,
+            });
+
+            if (res.ok) {
+              matchupIntegratedCount++;
+              const label = `${myChamp} vs ${resolvedEnemy} [${laneForMatchup}]`;
+              if (!matchupDetails.includes(label)) matchupDetails.push(label);
+            } else {
+              subErrors.push(`対面DB統合失敗 (${myChamp} vs ${resolvedEnemy}): ${res.error}`);
+            }
+          }
+        }
+      } catch (matchupErr: any) {
+        console.warn(`[knowledge/review] 対面DBマージ失敗:`, matchupErr);
+        subErrors.push(`対面DB統合失敗: ${matchupErr?.message || matchupErr}`);
+      }
+    });
+
+    await Promise.all([...factTasks, ...laneTasks, ...matchupTasks]);
 
     const totalCount = targetRows.length;
     const champCount = champResult.integrated.length;
@@ -569,16 +671,17 @@ export async function POST(req: NextRequest) {
     const message = [
       `${totalCount}件を承認しました。`,
       champCount > 0 ? `📖 教本へ${champCount}件統合` : '',
+      matchupIntegratedCount > 0 ? `⚔️ 対面DB（${matchupDetails.join(', ')}）へ${matchupIntegratedCount}件統合` : '',
       factUpdatedChamps > 0 ? `🧬 辞典各項目（強み・弱み等）を更新・履歴保存` : '',
       laneIntegratedCount > 0 ? `🗺️ レーンガイド（${laneDetails.join(', ')}）へ${laneIntegratedCount}件マージ` : '',
       champResult.skippedNoChampion.length > 0 && laneIntegratedCount === 0 ? `（チャンピオン無しはライブラリに保持）` : '',
     ].filter(Boolean).join('、');
 
-
     return NextResponse.json({
       success: errors.length === 0,
       count: totalCount,
       integratedChampions: champCount,
+      integratedMatchups: matchupIntegratedCount,
       integratedLaneGuides: laneIntegratedCount,
       errors,
       message: message + (errors.length ? `。エラー: ${errors.join(' / ')}` : ''),

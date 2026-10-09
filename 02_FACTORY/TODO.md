@@ -56,7 +56,10 @@
 ✅ チャンピオン辞典の対面タブ（`/`）でレーン毎に対面記事・相性を切り替え表示（2026-10-09 Step 2完了）:
   - `MatchupTab.tsx`: レーンセレクター（TOP/JG/MID/ADC/SUP）、相手インクリメンタル検索バー、対面攻略記事バイブルの統合表示、Matchup Sentinel実戦メモのレーン別絞り込みを完備。
   - `DetailTabsNav.tsx`: 対面タブバッジに実戦メモ＋対面記事の合算数を表示。
-- [ ] **【Step 3】記事承認画面（`/admin/review`）で検出した対面相手・レーンを対面DBへ自動統合**
+✅ 記事承認画面（`/admin/review`）で検出した対面相手・レーンを対面DB（matchup_sentinel）へ自動統合（2026-10-09 Step 3完了）:
+  - `matchupMemo.ts`: `integrateMatchupArticle` 新設。二重書き込み防止 `upsertArticleSection` ＆ 履歴記録（`knowledge_revisions`）＆ `raw_data.lane` 自動保存。
+  - `/api/knowledge/review`: GETでの `detectArticleMatchup`（対面相手・日本語名）同梱、POSTでのプレビュー生成（`matchupPreviews`）、承認時の対面DB自動統合（単一・一括対応）。
+  - `/admin/review`: `ReviewItemCard` への「⚔️ 対面DB: vs {enemy} [{lane}]」バッジ・対面相手入力フォーム、`PreviewModal` への対面調整入力・「⚔️ 対面DBプレビュー」タブ配備。
 
 **04の役目終了前に05へ移す裏方**（2026-10-04 判断: 今は移さない。移すきっかけ＝04停止が決まった／04障害で05のソロQ機能が止まった／自動振り返りの中身を大きく直す時）（今は04上で動いており05はデータを読むだけ）:
 `soloq-coach-poll.yml`→04 `/api/cron/soloq-coach`、`soloq-history-sync.yml`→04、04のVercel Cron `soloq-trends` `freshness-check`（`dict-review-check` は2026-10-08に停止・削除）、ワーカー通知の送り先 04 `/api/push/notify-admin`（`edge-cloud-worker.yml` `absorber.yml` の `PORTAL_URL`）
