@@ -101,6 +101,43 @@ export function getDeclineLabel(declineReason?: string, pupilStatus?: string, me
   return { text: '見送り', who: 'unknown' };
 }
 
+/**
+ * 回答進捗（誰がOK済で誰の返事待ちか）のラベルとスタイル
+ */
+export function getPendingProgressInfo(mentorStatus?: string, pupilStatus?: string): {
+  type: 'MENTOR_ACCEPTED' | 'PUPIL_ACCEPTED' | 'BOTH_PENDING';
+  label: string;
+  subLabel: string;
+  badgeClass: string;
+  icon: string;
+} {
+  if (mentorStatus === 'ACCEPTED' && pupilStatus !== 'ACCEPTED') {
+    return {
+      type: 'MENTOR_ACCEPTED',
+      label: '先輩OK済',
+      subLabel: '後輩の返事待ち',
+      badgeClass: 'bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-500/30',
+      icon: '👍',
+    };
+  }
+  if (pupilStatus === 'ACCEPTED' && mentorStatus !== 'ACCEPTED') {
+    return {
+      type: 'PUPIL_ACCEPTED',
+      label: '後輩リクエスト中',
+      subLabel: '先輩の返事待ち',
+      badgeClass: 'bg-blue-500/20 text-blue-800 dark:text-blue-300 border-blue-500/30',
+      icon: '🎒',
+    };
+  }
+  return {
+    type: 'BOTH_PENDING',
+    label: '双方未回答',
+    subLabel: '回答待ち',
+    badgeClass: 'bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/30',
+    icon: '🕒',
+  };
+}
+
 export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModalProps) {
   const [viewMode, setViewMode] = useState<'BATCH' | 'PAIR'>('BATCH');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'DECLINED' | 'UNSENT'>('ALL');
@@ -542,12 +579,47 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
                           </span>
                         ) : hasPending ? (
                           <div className="flex flex-col items-end gap-0.5">
-                            <span className="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-700 text-xs font-black flex items-center gap-1">
-                              <Clock size={13} />
-                              回答待ち
-                            </span>
+                            {(() => {
+                              const acceptedMentor = batch.mentors.find((m) => m.mentorStatus === 'ACCEPTED');
+                              const isPupilReq = batch.mentors.some((m) => m.pupilStatus === 'ACCEPTED');
+                              if (acceptedMentor) {
+                                return (
+                                  <>
+                                    <span className="px-3 py-1 rounded-xl bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs font-black flex items-center gap-1 border border-emerald-500/30">
+                                      <span>👍 {acceptedMentor.name}先輩OK済</span>
+                                    </span>
+                                    <span className="text-[10px] text-foreground-subtle font-medium">
+                                      後輩の回答待ち
+                                    </span>
+                                  </>
+                                );
+                              }
+                              if (isPupilReq) {
+                                return (
+                                  <>
+                                    <span className="px-3 py-1 rounded-xl bg-blue-500/20 text-blue-800 dark:text-blue-300 text-xs font-black flex items-center gap-1 border border-blue-500/30">
+                                      <span>🎒 後輩リクエスト中</span>
+                                    </span>
+                                    <span className="text-[10px] text-foreground-subtle font-medium">
+                                      先輩の回答待ち
+                                    </span>
+                                  </>
+                                );
+                              }
+                              return (
+                                <>
+                                  <span className="px-3 py-1 rounded-xl bg-amber-500/20 text-amber-800 dark:text-amber-300 text-xs font-black flex items-center gap-1 border border-amber-500/30">
+                                    <Clock size={12} />
+                                    <span>双方未回答</span>
+                                  </span>
+                                  <span className="text-[10px] text-foreground-subtle font-medium">
+                                    回答待ち
+                                  </span>
+                                </>
+                              );
+                            })()}
                             {batch.lastOfferedAt && formatOfferDate(batch.lastOfferedAt) && (
-                              <span className="text-[10px] text-foreground-subtle font-medium">
+                              <span className="text-[9px] text-foreground-subtle font-normal">
                                 {formatOfferDate(batch.lastOfferedAt)?.text} 送信 ({formatOfferDate(batch.lastOfferedAt)?.relative})
                               </span>
                             )}
@@ -636,6 +708,20 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
                                   <div className="text-secondary-600 font-black text-xs">
                                     ★ {m.matchScore}%
                                   </div>
+                                  {/* 先輩ごとの進捗バッジ */}
+                                  {m.mentorStatus === 'ACCEPTED' ? (
+                                    <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-[9px] font-black border border-emerald-500/30 inline-block mt-0.5">
+                                      👍 先輩OK済
+                                    </span>
+                                  ) : m.pupilStatus === 'ACCEPTED' ? (
+                                    <span className="px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-800 dark:text-blue-300 text-[9px] font-black border border-blue-500/30 inline-block mt-0.5">
+                                      🎒 後輩リクエスト
+                                    </span>
+                                  ) : (m.offerStatus === 'PENDING' || m.offerStatus === 'PROPOSAL_PENDING') ? (
+                                    <span className="px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-400 text-[9px] font-bold border border-amber-500/20 inline-block mt-0.5">
+                                      🕒 未回答
+                                    </span>
+                                  ) : null}
                                   {mOfferDate && (
                                     <div className="text-[9px] text-foreground-subtle font-normal mt-0.5">
                                       送信: {mOfferDate.text}
@@ -802,12 +888,22 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
                           </span>
                         ) : isPending ? (
                           <div className="flex flex-col items-end gap-0.5">
-                            <span className="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-700 text-xs font-black flex items-center gap-1">
-                              <Clock size={13} />
-                              回答待ち
-                            </span>
+                            {(() => {
+                              const progress = getPendingProgressInfo(proposal.mentorStatus, proposal.pupilStatus);
+                              return (
+                                <>
+                                  <span className={`px-3 py-1 rounded-xl text-xs font-black flex items-center gap-1 border ${progress.badgeClass}`}>
+                                    <span>{progress.icon}</span>
+                                    <span>{progress.label}</span>
+                                  </span>
+                                  <span className="text-[10px] text-foreground-subtle font-medium">
+                                    {progress.subLabel}
+                                  </span>
+                                </>
+                              );
+                            })()}
                             {proposal.lastOfferedAt && formatOfferDate(proposal.lastOfferedAt) && (
-                              <span className="text-[10px] text-foreground-subtle font-medium">
+                              <span className="text-[9px] text-foreground-subtle font-normal">
                                 {formatOfferDate(proposal.lastOfferedAt)?.text} 送信 ({formatOfferDate(proposal.lastOfferedAt)?.relative})
                               </span>
                             )}
