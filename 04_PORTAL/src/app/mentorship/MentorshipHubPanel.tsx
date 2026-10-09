@@ -8,7 +8,7 @@ import { MentorshipRequestModal } from './MentorshipRequestModal';
 import { MentorshipKickoffModal } from './MentorshipKickoffModal';
 import { MentorshipGuidelinesModal } from './MentorshipGuidelinesModal';
 import { MentorshipReviewModal } from './MentorshipReviewModal';
-import { SecretMatchmakerModal } from './SecretMatchmakerModal';
+import { SecretMatchmakerModal, formatOfferDate } from './SecretMatchmakerModal';
 import { MentorshipReviewSummary } from '../api/mentorship/reviews/route';
 import { toast } from '../../components/Toaster';
 import { HeartHandshake, Sparkles, Plus, Search, Shield, Award, Users, Swords, BookOpen, MessageSquare, Rocket, Leaf, Star, ExternalLink, RefreshCw } from 'lucide-react';
@@ -829,9 +829,20 @@ export default function MentorshipHubPanel() {
         <div className="bg-gradient-to-r from-secondary-500/15 via-success-500/10 to-secondary-500/15 border-2 border-secondary-500/30 rounded-3xl p-5 md:p-6 shadow-sm space-y-3.5 animate-in fade-in duration-200">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="space-y-1">
-              <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-secondary-500/20 text-secondary-800 text-xs font-black">
-                <Sparkles size={13} className="text-secondary-600" />
-                あなたへのお見合い便が届いています！
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-secondary-500/20 text-secondary-800 text-xs font-black">
+                  <Sparkles size={13} className="text-secondary-600" />
+                  あなたへのお見合い便が届いています！
+                </div>
+                {myProposal.proposedAt && (() => {
+                  const dateInfo = formatOfferDate(myProposal.proposedAt);
+                  if (!dateInfo) return null;
+                  return (
+                    <span className="text-[11px] font-bold text-foreground-subtle px-2 py-0.5 rounded-md bg-surface border border-border/60">
+                      📨 {dateInfo.text} 受信 ({dateInfo.relative})
+                    </span>
+                  );
+                })()}
               </div>
               <h3 className="text-base md:text-lg font-black text-foreground">
                 {myProposal.isMentor ? '後輩候補' : 'おすすめの先輩'}：<strong>{myProposal.partnerName}</strong> さん

@@ -52,6 +52,7 @@ export async function GET(req: Request) {
                 lane: notes.lane,
                 matchScore: notes.matchScore,
                 reasons: notes.reasons || [],
+                proposedAt: notes.proposedAt || m.started_at || null,
               };
               break;
             }

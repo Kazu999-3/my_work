@@ -275,6 +275,7 @@ export interface SecretMatchProposal {
   matchScore: number;
   reasons: string[];
   offerStatus?: 'NONE' | 'PENDING' | 'PROPOSAL_PENDING' | 'ACCEPTED' | 'DECLINED' | 'MATCHED' | 'ACTIVE';
+  lastOfferedAt?: string | null;
 }
 
 export interface SecretMatchBatchProposal {
@@ -292,6 +293,7 @@ export interface SecretMatchBatchProposal {
     tierLabel?: string;
     totalGames?: number;
   };
+  lastOfferedAt?: string | null;
   mentors: Array<{
     profileId: string;
     discordId: string;
@@ -305,6 +307,7 @@ export interface SecretMatchBatchProposal {
     matchId?: string;
     tier?: ExperienceTier;
     tierLabel?: string;
+    lastOfferedAt?: string | null;
   }>;
 }
 
@@ -469,6 +472,7 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
       status: string;
       isCooldown: boolean;
       daysRemaining?: number;
+      lastOfferedAt?: string | null;
     }
     const offerMap = new Map<string, ExistingOfferInfo>();
 
@@ -476,6 +480,17 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
       const key = `${m.mentor_discord_id}_${m.pupil_discord_id}`;
       let isCooldown = false;
       let daysRemaining = 0;
+      let offeredAt: string | null = null;
+
+      try {
+        const notes = JSON.parse(m.notes || '{}');
+        if (notes.proposedAt) {
+          offeredAt = notes.proposedAt;
+        }
+      } catch (_) {}
+      if (!offeredAt && m.started_at) {
+        offeredAt = m.started_at;
+      }
 
       if (m.status === 'DISMISSED') {
         let dismissedAtTime: number | null = null;
@@ -505,6 +520,7 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
         status: m.status,
         isCooldown,
         daysRemaining,
+        lastOfferedAt: offeredAt,
       });
     });
 
@@ -730,6 +746,7 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
             matchScore: finalScore,
             reasons: enrichedReasons,
             offerStatus: (currentOfferStatus as any) || 'NONE',
+            lastOfferedAt: offerInfo?.lastOfferedAt || null,
           });
         }
       }
@@ -760,11 +777,19 @@ export async function generateSecretMatchmakerBatches(): Promise<SecretMatchBatc
     if (!pupilMap.has(pupilId)) {
       pupilMap.set(pupilId, {
         pupil: pair.pupil,
+        lastOfferedAt: pair.lastOfferedAt || null,
         mentors: [],
       });
     }
 
     const batch = pupilMap.get(pupilId)!;
+    // 後輩の最新送信日時を更新（いずれかの先輩ペアでより新しい送信日時があれば反映）
+    if (pair.lastOfferedAt) {
+      if (!batch.lastOfferedAt || new Date(pair.lastOfferedAt).getTime() > new Date(batch.lastOfferedAt).getTime()) {
+        batch.lastOfferedAt = pair.lastOfferedAt;
+      }
+    }
+
     // 後輩1人につき最大3名（基本2名）まで紐付け
     if (batch.mentors.length < 3) {
       batch.mentors.push({
@@ -777,6 +802,7 @@ export async function generateSecretMatchmakerBatches(): Promise<SecretMatchBatc
         matchScore: pair.matchScore,
         reasons: pair.reasons,
         offerStatus: pair.offerStatus,
+        lastOfferedAt: pair.lastOfferedAt || null,
         tier: pair.mentor.tier,
         tierLabel: pair.mentor.tierLabel,
       });

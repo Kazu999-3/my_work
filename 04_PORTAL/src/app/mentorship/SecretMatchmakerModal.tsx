@@ -27,6 +27,38 @@ const getTierBadgeStyle = (tier?: string) => {
   }
 };
 
+/**
+ * 送信日時のフォーマット ＆ 連投判定（48時間以内）
+ */
+export function formatOfferDate(isoString?: string | null): { text: string; relative: string; isRecent: boolean } | null {
+  if (!isoString) return null;
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return null;
+
+  const now = Date.now();
+  const diffMs = now - d.getTime();
+  const diffMinutes = Math.floor(diffMs / (60 * 1000));
+  const diffHours = Math.floor(diffMs / (60 * 60 * 1000));
+  const diffDays = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+
+  const month = d.getMonth() + 1;
+  const day = d.getDate();
+  const hours = String(d.getHours()).padStart(2, '0');
+  const mins = String(d.getMinutes()).padStart(2, '0');
+  const text = `${month}/${day} ${hours}:${mins}`;
+
+  let relative = '';
+  if (diffMinutes < 1) relative = 'たった今';
+  else if (diffMinutes < 60) relative = `${diffMinutes}分前`;
+  else if (diffHours < 24) relative = `${diffHours}時間前`;
+  else if (diffDays === 1) relative = '昨日';
+  else relative = `${diffDays}日前`;
+
+  const isRecent = diffHours < 48; // 48時間以内は連投注意
+
+  return { text, relative, isRecent };
+}
+
 export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModalProps) {
   const [viewMode, setViewMode] = useState<'BATCH' | 'PAIR'>('BATCH');
   const [proposals, setProposals] = useState<SecretMatchProposal[]>([]);
@@ -60,7 +92,17 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
 
   // 単一ペア送信
   const handleSendSingleOffer = async (proposal: SecretMatchProposal) => {
+    const offerDate = formatOfferDate(proposal.lastOfferedAt);
+    let warningPrefix = '';
+    if (offerDate?.isRecent) {
+      warningPrefix =
+        `⚠️【連投注意】\n` +
+        `このペアには ${offerDate.text} (${offerDate.relative}) に送信済みです。\n` +
+        `短期間での再送信（重複DM）となりますが、本当に送信しますか？\n\n`;
+    }
+
     const confirmMsg =
+      warningPrefix +
       `【お見合い案内を送信】\n\n` +
       `先輩: ${proposal.mentor.name} (${proposal.mentor.rank})\n` +
       `後輩: ${proposal.pupil.name} (${proposal.pupil.rank})\n\n` +
@@ -84,8 +126,11 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
       const data = await res.json();
       if (data.ok) {
         toast.success(`💌 ${proposal.pupil.name} さんと ${proposal.mentor.name} さんへお見合い便を届けました！`);
+        const nowIso = new Date().toISOString();
         setProposals((prev) =>
-          prev.map((p) => (p.id === proposal.id ? { ...p, offerStatus: 'PENDING' } : p))
+          prev.map((p) =>
+            p.id === proposal.id ? { ...p, offerStatus: 'PENDING', lastOfferedAt: nowIso } : p
+          )
         );
       } else {
         toast.error(data.error || '送信に失敗しました');
@@ -99,8 +144,18 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
 
   // 複数まとめ便送信（パターンA）
   const handleSendBatchOffer = async (batch: SecretMatchBatchProposal) => {
+    const offerDate = formatOfferDate(batch.lastOfferedAt);
+    let warningPrefix = '';
+    if (offerDate?.isRecent) {
+      warningPrefix =
+        `⚠️【連投注意】\n` +
+        `この後輩（${batch.pupil.name} さん）には ${offerDate.text} (${offerDate.relative}) に送信済みです。\n` +
+        `短期間での再送信（重複DM）となりますが、本当に送信しますか？\n\n`;
+    }
+
     const mentorNames = batch.mentors.map((m, i) => `${i + 1}. ${m.name} (${m.lanes.join('/')} / ★${m.matchScore}%)`).join('\n');
     const confirmMsg =
+      warningPrefix +
       `【まとめ便（パターンA）を送信】\n\n` +
       `後輩: ${batch.pupil.name} さん (${batch.pupil.rank} / ${batch.pupil.primaryLane})\n\n` +
       `ご紹介する先輩（${batch.mentors.length}名）:\n${mentorNames}\n\n` +
@@ -122,6 +177,18 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
       const data = await res.json();
       if (data.ok) {
         toast.success(`💌 ${batch.pupil.name} さんへ先輩${batch.mentors.length}名のまとめ便を届けました！`);
+        const nowIso = new Date().toISOString();
+        setBatches((prev) =>
+          prev.map((b) =>
+            b.pupil.discordId === batch.pupil.discordId
+              ? {
+                  ...b,
+                  lastOfferedAt: nowIso,
+                  mentors: b.mentors.map((m) => ({ ...m, offerStatus: 'PENDING', lastOfferedAt: nowIso })),
+                }
+              : b
+          )
+        );
         fetchProposals();
       } else {
         toast.error(data.error || '送信に失敗しました');
@@ -262,30 +329,79 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
                             名簿（カード未登録）
                           </span>
                         )}
+
+                        {/* 送信履歴バッジ */}
+                        {(() => {
+                          const offerDate = formatOfferDate(batch.lastOfferedAt);
+                          if (offerDate) {
+                            return (
+                              <span
+                                className={`text-[10px] font-black px-2 py-0.5 rounded-full border flex items-center gap-1 ${
+                                  offerDate.isRecent
+                                    ? 'bg-amber-500/20 text-amber-800 border-amber-500/40'
+                                    : 'bg-surface-subtle text-foreground-subtle border-border/60'
+                                }`}
+                                title={offerDate.isRecent ? '48時間以内に送信済みです（連投にご注意ください）' : '過去の送信履歴'}
+                              >
+                                <Send size={10} className={offerDate.isRecent ? 'text-amber-600' : 'text-foreground-subtle'} />
+                                <span>{offerDate.isRecent ? '⚠️ 直近送信: ' : '📨 送信済: '}{offerDate.text} ({offerDate.relative})</span>
+                              </span>
+                            );
+                          }
+                          return (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface-subtle/60 text-foreground-subtle/70 border border-border/40">
+                              未送信
+                            </span>
+                          );
+                        })()}
                       </div>
 
-                      {/* 送信ボタン */}
-                      <div className="flex items-center gap-2 self-end sm:self-auto">
+                      {/* 送信ボタンエリア */}
+                      <div className="flex flex-col sm:items-end gap-1 self-end sm:self-auto shrink-0">
                         {hasMatched ? (
                           <span className="px-3 py-1.5 rounded-xl bg-success-500/20 text-success-700 text-xs font-black flex items-center gap-1">
                             <CheckCircle2 size={13} />
                             成立済み
                           </span>
                         ) : hasPending ? (
-                          <span className="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-700 text-xs font-black flex items-center gap-1">
-                            <Clock size={13} />
-                            回答待ち
-                          </span>
+                          <div className="flex flex-col items-end gap-0.5">
+                            <span className="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-700 text-xs font-black flex items-center gap-1">
+                              <Clock size={13} />
+                              回答待ち
+                            </span>
+                            {batch.lastOfferedAt && formatOfferDate(batch.lastOfferedAt) && (
+                              <span className="text-[10px] text-foreground-subtle font-medium">
+                                {formatOfferDate(batch.lastOfferedAt)?.text} 送信 ({formatOfferDate(batch.lastOfferedAt)?.relative})
+                              </span>
+                            )}
+                          </div>
                         ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleSendBatchOffer(batch)}
-                            disabled={isSending}
-                            className="px-4 py-2 rounded-xl bg-secondary-600 hover:bg-secondary-500 text-white font-black text-xs transition shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                          >
-                            <Send size={12} />
-                            <span>{isSending ? '送信中...' : `まとめ便を送信 (${batch.mentors.length}名分)`}</span>
-                          </button>
+                          <div className="flex flex-col items-end gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleSendBatchOffer(batch)}
+                              disabled={isSending}
+                              className={`px-4 py-2 rounded-xl text-white font-black text-xs transition shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50 ${
+                                formatOfferDate(batch.lastOfferedAt)?.isRecent
+                                  ? 'bg-amber-600 hover:bg-amber-500'
+                                  : 'bg-secondary-600 hover:bg-secondary-500'
+                              }`}
+                            >
+                              <Send size={12} />
+                              <span>
+                                {isSending
+                                  ? '送信中...'
+                                  : formatOfferDate(batch.lastOfferedAt)?.isRecent
+                                  ? `まとめ便を再送信 (${batch.mentors.length}名)`
+                                  : `まとめ便を送信 (${batch.mentors.length}名分)`}
+                              </span>
+                            </button>
+                            {formatOfferDate(batch.lastOfferedAt) && (
+                              <span className="text-[10px] text-foreground-subtle font-medium">
+                                前回: {formatOfferDate(batch.lastOfferedAt)?.text}
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -294,6 +410,7 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                       {batch.mentors.map((m, mIdx) => {
                         const numIcons = ['①', '②', '③'];
+                        const mOfferDate = formatOfferDate(m.lastOfferedAt);
                         return (
                           <div
                             key={m.profileId}
@@ -310,8 +427,15 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
                                 )}
                                 <span className="text-[10px] font-normal text-foreground-subtle">({m.rank} / {m.lanes.join('/')})</span>
                               </div>
-                              <div className="text-secondary-600 font-black text-xs">
-                                ★ {m.matchScore}%
+                              <div className="text-right">
+                                <div className="text-secondary-600 font-black text-xs">
+                                  ★ {m.matchScore}%
+                                </div>
+                                {mOfferDate && (
+                                  <div className="text-[9px] text-foreground-subtle font-normal mt-0.5">
+                                    送信: {mOfferDate.text}
+                                  </div>
+                                )}
                               </div>
                             </div>
 
@@ -408,6 +532,31 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
                                   名簿（未登録）
                                 </span>
                               )}
+
+                              {/* 送信履歴バッジ */}
+                              {(() => {
+                                const pairDate = formatOfferDate(proposal.lastOfferedAt);
+                                if (pairDate) {
+                                  return (
+                                    <span
+                                      className={`text-[9px] font-black px-1.5 py-0.5 rounded-full border flex items-center gap-1 ${
+                                        pairDate.isRecent
+                                          ? 'bg-amber-500/20 text-amber-800 border-amber-500/40'
+                                          : 'bg-surface-subtle text-foreground-subtle border-border/60'
+                                      }`}
+                                      title={pairDate.isRecent ? '48時間以内に送信済みです（連投注意）' : '過去の送信履歴'}
+                                    >
+                                      <Send size={9} className={pairDate.isRecent ? 'text-amber-600' : 'text-foreground-subtle'} />
+                                      <span>{pairDate.isRecent ? '⚠️ 直近送信: ' : '📨 送信済: '}{pairDate.text} ({pairDate.relative})</span>
+                                    </span>
+                                  );
+                                }
+                                return (
+                                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-surface-subtle/60 text-foreground-subtle/70 border border-border/40">
+                                    未送信
+                                  </span>
+                                );
+                              })()}
                             </div>
                             <div className="text-[11px] text-foreground-subtle">
                               🛡️ {proposal.pupil.primaryLane}
@@ -430,20 +579,44 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
                             成立済み
                           </span>
                         ) : isPending ? (
-                          <span className="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-700 text-xs font-black flex items-center gap-1">
-                            <Clock size={13} />
-                            回答待ち
-                          </span>
+                          <div className="flex flex-col items-end gap-0.5">
+                            <span className="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-700 text-xs font-black flex items-center gap-1">
+                              <Clock size={13} />
+                              回答待ち
+                            </span>
+                            {proposal.lastOfferedAt && formatOfferDate(proposal.lastOfferedAt) && (
+                              <span className="text-[10px] text-foreground-subtle font-medium">
+                                {formatOfferDate(proposal.lastOfferedAt)?.text} 送信 ({formatOfferDate(proposal.lastOfferedAt)?.relative})
+                              </span>
+                            )}
+                          </div>
                         ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleSendSingleOffer(proposal)}
-                            disabled={isSending}
-                            className="px-3.5 py-2 rounded-xl bg-secondary-600 hover:bg-secondary-500 text-white font-black text-xs transition shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                          >
-                            <Send size={12} />
-                            <span>{isSending ? '送信中...' : 'お見合い便を送る'}</span>
-                          </button>
+                          <div className="flex flex-col items-end gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleSendSingleOffer(proposal)}
+                              disabled={isSending}
+                              className={`px-3.5 py-2 rounded-xl text-white font-black text-xs transition shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50 ${
+                                formatOfferDate(proposal.lastOfferedAt)?.isRecent
+                                  ? 'bg-amber-600 hover:bg-amber-500'
+                                  : 'bg-secondary-600 hover:bg-secondary-500'
+                              }`}
+                            >
+                              <Send size={12} />
+                              <span>
+                                {isSending
+                                  ? '送信中...'
+                                  : formatOfferDate(proposal.lastOfferedAt)?.isRecent
+                                  ? 'お見合い便を再送信'
+                                  : 'お見合い便を送る'}
+                              </span>
+                            </button>
+                            {formatOfferDate(proposal.lastOfferedAt) && (
+                              <span className="text-[10px] text-foreground-subtle font-medium">
+                                前回: {formatOfferDate(proposal.lastOfferedAt)?.text}
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
