@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { buildPilotUrl } from '@/lib/pilotRedirect';
+import { buildPilotUrl } from '../../lib/pilotRedirect';
 
 // レーン別攻略ガイドは新鋭戦術パイロット(05: KTM Pilot)へ完全移行済み。クエリを保持して05へ転送する。
 export default async function LaneGuidesRedirect({

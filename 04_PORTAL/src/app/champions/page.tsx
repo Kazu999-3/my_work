@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { buildPilotUrl } from '@/lib/pilotRedirect';
+import { buildPilotUrl } from '../../lib/pilotRedirect';
 
 // チャンピオン辞典は新鋭戦術パイロット(05: KTM Pilot)へ完全移行済み。
 // 旧クエリ(?select= / ?champ=)は05の ?c= へ読み替える。

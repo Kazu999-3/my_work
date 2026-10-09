@@ -1633,27 +1633,58 @@ export default function PlayerMyPage() {
                           </div>
                         )}
 
-                        {/* 凡例 */}
-                        <div className="flex items-center justify-center gap-6 mt-3 text-[10px] text-muted-strong">
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-2.5 h-2.5 rounded-full bg-success-500"></div>
-                            <span>勝利</span>
+                        {/* 凡例 & レーンクイック切り替え */}
+                        <div className="space-y-2 mt-3 pt-3 border-t border-black/10">
+                          <div className="flex flex-wrap items-center justify-center gap-2 text-[10px]">
+                            {([
+                              ['TOTAL', '👑 総合', '#06b6d4'],
+                              ['TOP', '⚔️ TOP', '#3b82f6'],
+                              ['JG', '🌲 JG', '#10b981'],
+                              ['MID', '⚡ MID', '#f59e0b'],
+                              ['ADC', '🏹 ADC', '#f43f5e'],
+                              ['SUP', '🛡️ SUP', '#a855f7'],
+                            ] as const).map(([l, name, col]) => {
+                              const isSelected = activeLane === l;
+                              const laneMmr = l === 'TOTAL' ? player?.mmr : player?.[`mmr_${l.toLowerCase()}`];
+                              return (
+                                <button
+                                  key={l}
+                                  type="button"
+                                  onClick={() => setActiveLane(l)}
+                                  className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg transition-all ${
+                                    isSelected
+                                      ? 'bg-black/10 font-black shadow-sm ring-1 ring-black/20 text-foreground'
+                                      : 'text-muted-strong hover:text-foreground opacity-75 hover:opacity-100 hover:bg-black/5'
+                                  }`}
+                                  title={`${name}の推移を強調表示します`}
+                                >
+                                  <span className="w-3 h-1 rounded-full inline-block" style={{ backgroundColor: col }} />
+                                  <span>{name}</span>
+                                  {laneMmr && (
+                                    <span className="text-[9px] opacity-75 font-normal">({laneMmr})</span>
+                                  )}
+                                </button>
+                              );
+                            })}
                           </div>
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-2.5 h-2.5 rounded-full bg-danger-500"></div>
-                            <span>敗北</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-6 border-t-2 border-dashed border-primary-edge/50"></div>
-                            <span>現在のMMR</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-6 border-t-2 border-dashed border-primary-edge-strong"></div>
-                            <span>5戦移動平均</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-2.5 h-2.5 rounded-full bg-surface/80 border border-border"></div>
-                            <span>大勝/大敗(±30)</span>
+
+                          <div className="flex flex-wrap items-center justify-center gap-4 text-[9px] text-muted-strong">
+                            <div className="flex items-center gap-1">
+                              <div className="w-2 h-2 rounded-full bg-success-500"></div>
+                              <span>勝利</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <div className="w-2 h-2 rounded-full bg-danger-500"></div>
+                              <span>敗北</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <div className="w-4 border-t border-dashed border-primary-edge"></div>
+                              <span>現在MMR</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <div className="w-4 border-t border-dashed border-amber-500"></div>
+                              <span>5戦移動平均</span>
+                            </div>
                           </div>
                         </div>
                       </div>

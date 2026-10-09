@@ -92,6 +92,20 @@ export async function syncMentorshipDashboard(): Promise<boolean> {
     const mentors = (profiles || []).filter((p: any) => p.role_type === 'MENTOR');
     const pupils = (profiles || []).filter((p: any) => p.role_type === 'PUPIL');
 
+    // レーンに応じたアイコンを判定（TOP: ⚔️, JG: 🌲, MID: ⚡, ADC/BOT: 🏹, SUP: 🛡️, ALL: 🧭）
+    const getLaneEmoji = (rawLanes: any): string => {
+      if (!rawLanes) return '🧭';
+      const first = Array.isArray(rawLanes) ? rawLanes[0] : String(rawLanes);
+      if (!first) return '🧭';
+      const upper = String(first).toUpperCase();
+      if (upper.includes('TOP')) return '⚔️';
+      if (upper.includes('JUNGLE') || upper.includes('JG')) return '🌲';
+      if (upper.includes('MID')) return '⚡';
+      if (upper.includes('BOT') || upper.includes('ADC')) return '🏹';
+      if (upper.includes('SUP')) return '🛡️';
+      return '🧭';
+    };
+
     // 2. 先輩リストのテキスト整形
     let mentorFieldText = '';
     if (mentors.length === 0) {
@@ -105,7 +119,8 @@ export async function syncMentorshipDashboard(): Promise<boolean> {
           const champs = Array.isArray(m.champions) && m.champions.length > 0
             ? ` (${m.champions.slice(0, 2).join(', ')})`
             : '';
-          return `• **${m.player_name}** (${rank}) ➔ 🛡️ \`${lanes}\`${champs}`;
+          const emoji = getLaneEmoji(m.lanes);
+          return `• **${m.player_name}** (${rank}) ➔ ${emoji} \`${lanes}\`${champs}`;
         })
         .join('\n');
       if (mentors.length > 15) {
@@ -126,7 +141,8 @@ export async function syncMentorshipDashboard(): Promise<boolean> {
           const champs = Array.isArray(p.champions) && p.champions.length > 0
             ? ` (${p.champions.slice(0, 2).join(', ')})`
             : '';
-          return `• **${p.player_name}** (${rank}) ➔ 🛡️ \`${lanes}\`${champs}`;
+          const emoji = getLaneEmoji(p.lanes);
+          return `• **${p.player_name}** (${rank}) ➔ ${emoji} \`${lanes}\`${champs}`;
         })
         .join('\n');
 

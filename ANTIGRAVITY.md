@@ -46,6 +46,15 @@ League of Legends のリサーチ、記事生成、ソロキュー監視を統�
      5. 管理者 ✕ 新メンバー限定のプライベートテキストチャンネル（`🔒・{メンバー名}-案内`）の自動作成と歓迎メッセージ送信
    - **技術スタック**: Discord REST API v10, Next.js (`04_PORTAL`), Supabase (`ktm_players`, `ktm_config`), Riot Games API
    - **現在のステップ**: Step 1（実装・検証中）
+9. **レーン別MMR推移重ね合わせ ＆ 選択強調エンジン (Per-Lane MMR Overlay & Highlight Engine) [NEW]**:
+   - **目的**: プレイヤーが全レーン（TOP/JG/MID/ADC/SUP）のMMR格差・バランスを1画面で比較でき、見たいレーンをワンタップでハイライト（強調表示）できるようにする。
+   - **MVPの範囲**:
+     1. マイページ（`/player/[id]`）のMMR推移グラフに全レーンの推移線（TOP: 青, JG: 緑, MID: 黄, ADC: 赤, SUP: 紫, 総合: シアン）を同時描画
+     2. 選択中レーンを太線（3.5px）＆不透明度100%で前面強調、他レーンを細線（1px）＆半透明（15%）にフェード表示
+     3. ツールチップでの全レーンMMR一覧および選択中レーンのハイライト表示
+     4. 師弟募集掲示板（Discord）でのレーンアイコン動的判定（TOP: ⚔️, JG: 🌲, MID: ⚡, ADC/BOT: 🏹, SUP: 🛡️）
+   - **技術スタック**: Next.js, React, Recharts, TailwindCSS
+   - **現在のステップ**: Step 1（完了・稼働中）
 
 ---
 

@@ -172,13 +172,24 @@ export function MainMmrChart({
                     </span>
                   </div>
                   {d.allMmr && (
-                    <div className="text-[9px] text-muted-strong grid grid-cols-2 gap-x-2 gap-y-0.5 pt-1.5 border-t border-black/10 mt-1">
-                      <div>総合: {d.allMmr.TOTAL}</div>
-                      <div>TOP: {d.allMmr.TOP}</div>
-                      <div>JG: {d.allMmr.JG}</div>
-                      <div>MID: {d.allMmr.MID}</div>
-                      <div>ADC: {d.allMmr.ADC}</div>
-                      <div>SUP: {d.allMmr.SUP}</div>
+                    <div className="text-[9px] grid grid-cols-3 gap-x-1.5 gap-y-1 pt-1.5 border-t border-black/10 mt-1">
+                      {(['TOTAL', 'TOP', 'JG', 'MID', 'ADC', 'SUP'] as const).map(l => {
+                        const isCur = activeLane === l;
+                        const laneColors: Record<string, string> = {
+                          TOTAL: '#06b6d4', TOP: '#3b82f6', JG: '#10b981', MID: '#f59e0b', ADC: '#f43f5e', SUP: '#a855f7'
+                        };
+                        return (
+                          <div
+                            key={l}
+                            className={`px-1 py-0.5 rounded text-[8px] flex items-center justify-between ${
+                              isCur ? 'font-black bg-primary-500/15 border border-primary-500/30 text-foreground' : 'text-muted-strong'
+                            }`}
+                          >
+                            <span style={{ color: laneColors[l] }}>● {l}:</span>
+                            <span className="font-bold">{d.allMmr[l] ?? '-'}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -200,46 +211,121 @@ export function MainMmrChart({
         ))}
         <ReferenceLine
           y={currentLaneMmr}
-          stroke="#06b6d4"
+          stroke={activeLane === 'TOP' ? '#3b82f6' : activeLane === 'JG' ? '#10b981' : activeLane === 'MID' ? '#f59e0b' : activeLane === 'ADC' ? '#f43f5e' : activeLane === 'SUP' ? '#a855f7' : '#06b6d4'}
           strokeDasharray="6 4"
           strokeOpacity={0.5}
-          label={{ value: `現在 ${currentLaneMmr}`, position: 'right', fill: '#06b6d4', fontSize: 10 }}
+          label={{ value: `現在 ${currentLaneMmr}`, position: 'right', fill: activeLane === 'TOP' ? '#3b82f6' : activeLane === 'JG' ? '#10b981' : activeLane === 'MID' ? '#f59e0b' : activeLane === 'ADC' ? '#f43f5e' : activeLane === 'SUP' ? '#a855f7' : '#06b6d4', fontSize: 10 }}
         />
-        <Area
-          type="monotone"
-          dataKey="mmr"
-          stroke="#06b6d4"
-          strokeWidth={2.5}
-          fill="url(#mmrGradient)"
-          dot={(props: any) => {
-            const { cx, cy, payload } = props;
-            // 大勝/大敗(MMR変動±30以上)は大きめ＆リング付きで強調（#49）
-            const big = payload.bigSwing;
-            return (
-              <circle
-                key={`dot-${payload.game}`}
-                cx={cx}
-                cy={cy}
-                r={big ? 6.5 : 4.5}
-                fill={payload.isWin ? '#10b981' : '#f43f5e'}
-                stroke={big ? '#fff' : (payload.isWin ? '#047857' : '#be123c')}
-                strokeWidth={big ? 2 : 1.5}
-              />
-            );
-          }}
-          activeDot={{ r: 6, stroke: '#06b6d4', strokeWidth: 2 }}
-        />
-        {/* 5戦移動平均線（#49）: 調子の波を滑らかに可視化 */}
-        <Line
-          type="monotone"
-          dataKey="ma"
-          stroke="#f59e0b"
-          strokeWidth={2}
-          strokeDasharray="5 3"
-          dot={false}
-          activeDot={false}
-          isAnimationActive={false}
-        />
+
+        {/* 総合 (TOTAL) MMR エリア/ライン */}
+        {activeLane === 'TOTAL' ? (
+          <Area
+            type="monotone"
+            dataKey="mmr"
+            stroke="#06b6d4"
+            strokeWidth={3}
+            fill="url(#mmrGradient)"
+            dot={(props: any) => {
+              const { cx, cy, payload } = props;
+              const big = payload.bigSwing;
+              return (
+                <circle
+                  key={`dot-total-${payload.game}`}
+                  cx={cx}
+                  cy={cy}
+                  r={big ? 6 : 4}
+                  fill={payload.isWin ? '#10b981' : '#f43f5e'}
+                  stroke={big ? '#fff' : (payload.isWin ? '#047857' : '#be123c')}
+                  strokeWidth={big ? 2 : 1.5}
+                />
+              );
+            }}
+            activeDot={{ r: 6.5, stroke: '#06b6d4', strokeWidth: 2 }}
+          />
+        ) : (
+          <Line
+            type="monotone"
+            dataKey="mmr"
+            stroke="#06b6d4"
+            strokeWidth={activeLane === 'ALL' ? 1.8 : 1}
+            strokeOpacity={activeLane === 'ALL' ? 0.6 : 0.15}
+            strokeDasharray={activeLane === 'ALL' ? undefined : '3 3'}
+            dot={false}
+            activeDot={false}
+          />
+        )}
+
+        {/* 各レーンの推移線（B案: 選択レーン強調ハイライト） */}
+        {(['TOP', 'JG', 'MID', 'ADC', 'SUP'] as const).map((l) => {
+          const laneColors: Record<string, string> = {
+            TOP: '#3b82f6', JG: '#10b981', MID: '#f59e0b', ADC: '#f43f5e', SUP: '#a855f7'
+          };
+          const color = laneColors[l];
+          const isSelected = activeLane === l;
+          const isAll = activeLane === 'ALL';
+          const isTotal = activeLane === 'TOTAL';
+
+          let strokeWidth = 1;
+          let strokeOpacity = 0.15;
+          if (isSelected) {
+            strokeWidth = 3.5;
+            strokeOpacity = 1;
+          } else if (isAll) {
+            strokeWidth = 2.2;
+            strokeOpacity = 0.85;
+          } else if (isTotal) {
+            strokeWidth = 1;
+            strokeOpacity = 0.2;
+          }
+
+          return (
+            <Line
+              key={l}
+              type="monotone"
+              dataKey={l}
+              stroke={color}
+              strokeWidth={strokeWidth}
+              strokeOpacity={strokeOpacity}
+              dot={
+                isSelected || isAll
+                  ? (props: any) => {
+                      const { cx, cy, payload } = props;
+                      const playedThis = (payload.role || '').toUpperCase() === l;
+                      if (!isSelected && !playedThis) return null;
+                      return (
+                        <circle
+                          key={`dot-${l}-${payload.game}`}
+                          cx={cx}
+                          cy={cy}
+                          r={isSelected ? (playedThis ? 5.5 : 3.5) : 3.5}
+                          fill={playedThis ? (payload.isWin ? '#10b981' : '#f43f5e') : color}
+                          stroke={isSelected ? '#fff' : color}
+                          strokeWidth={isSelected ? 1.5 : 0.5}
+                          opacity={strokeOpacity}
+                        />
+                      );
+                    }
+                  : false
+              }
+              activeDot={isSelected ? { r: 6.5, stroke: '#fff', strokeWidth: 2 } : false}
+            />
+          );
+        })}
+
+        {/* 5戦移動平均線（総合または選択レーンの波） */}
+        {(activeLane === 'TOTAL' || activeLane === 'ALL') && (
+          <Line
+            type="monotone"
+            dataKey="ma"
+            stroke="#f59e0b"
+            strokeWidth={1.8}
+            strokeDasharray="5 3"
+            strokeOpacity={0.7}
+            dot={false}
+            activeDot={false}
+            isAnimationActive={false}
+          />
+        )}
       </ComposedChart>
     </ResponsiveContainer>
   );

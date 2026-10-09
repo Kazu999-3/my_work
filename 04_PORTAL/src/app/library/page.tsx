@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { buildPilotUrl } from '@/lib/pilotRedirect';
+import { buildPilotUrl } from '../../lib/pilotRedirect';
 
 // 攻略ライブラリは新鋭戦術パイロット(05: KTM Pilot)へ完全移行済み。
 // 旧クエリ ?article= は05の ?id= へ読み替える。

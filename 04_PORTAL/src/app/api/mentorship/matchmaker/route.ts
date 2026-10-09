@@ -575,7 +575,7 @@ export async function POST(req: Request) {
       }
 
       // 【後輩ファースト】先輩へは後輩が「話す」を選択した時点でリクエストDMを送信するため、初期送信は行わない
-      let mentorDmSent = false;
+      const mentorDmSent = false;
 
       return NextResponse.json({
         ok: true,
