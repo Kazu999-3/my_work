@@ -695,7 +695,7 @@ export default function PlayerMyPage() {
   ] as const;
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 md:p-8 font-sans selection:bg-primary-300/40 overflow-x-hidden">
+    <div className="min-h-screen bg-background text-foreground p-4 md:p-8 font-sans selection:bg-primary-300/40">
       {/* 背景ネオンデコレーション */}
       <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary-500/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
       <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-primary-500/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
@@ -704,18 +704,18 @@ export default function PlayerMyPage() {
         
         {/* 👑 ログイン中の自分自身のカルテを開いている場合のマイページ案内 ＆ デイリーボーナスバナー */}
         {isMe && (
-          <div className="bg-gradient-to-r from-primary-500/20 via-primary-500/10 to-transparent border border-primary-edge/50 rounded-3xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-md animate-fade-in">
-            <div className="flex items-center gap-3.5">
+          <div className="bg-gradient-to-r from-primary-500/20 via-primary-500/10 to-transparent border border-primary-edge/50 rounded-3xl p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-md animate-fade-in">
+            <div className="flex items-center gap-3.5 min-w-0 flex-1">
               <div className="w-12 h-12 rounded-2xl bg-primary-500 text-stone-950 flex items-center justify-center font-black text-2xl shadow-sm shrink-0">
                 👑
               </div>
-              <div className="space-y-0.5">
+              <div className="space-y-0.5 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h4 className="text-sm font-black text-primary-950">
+                  <h4 className="text-sm font-black text-primary-950 whitespace-nowrap">
                     あなたのマイページ（公式カルテ）
                   </h4>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary-400 text-stone-950 font-black">YOU</span>
-                  <span className="text-xs font-bold text-primary-800 flex items-center gap-1 bg-primary-100/80 px-2.5 py-0.5 rounded-lg">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary-400 text-stone-950 font-black whitespace-nowrap">YOU</span>
+                  <span className="text-xs font-bold text-primary-800 flex items-center gap-1 bg-primary-100/80 px-2.5 py-0.5 rounded-lg whitespace-nowrap">
                     <Coins size={13} className="text-primary-600" />
                     <span>所持コイン: <strong>{(player.coins ?? 1000).toLocaleString()}</strong> pt</span>
                   </span>
@@ -731,7 +731,7 @@ export default function PlayerMyPage() {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto shrink-0">
+            <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto shrink-0">
               {/* 🎁 デイリーボーナス受取ボタン */}
               <button
                 type="button"
@@ -782,8 +782,8 @@ export default function PlayerMyPage() {
           <div className="absolute inset-0 bg-gradient-to-r from-stone-900/92 via-stone-900/80 to-stone-800/55 z-0"></div>
           <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-primary-500/20 to-primary-600/20 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
           
-          <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6">
-            <div className="flex items-center gap-4 sm:gap-5 min-w-0 w-full md:w-auto">
+          <div className="relative z-10 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 md:gap-6">
+            <div className="flex items-center gap-4 sm:gap-5 min-w-0 w-full xl:w-auto">
               <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center text-2xl sm:text-3xl font-black border-2 border-black/15 shadow-md shrink-0">
                 {player.ign ? player.ign.charAt(0).toUpperCase() : player.name.charAt(0)}
               </div>
@@ -793,14 +793,14 @@ export default function PlayerMyPage() {
                     {player.name}
                   </h1>
                   {mainDisplayTag && mainDisplayTag !== 'Unknown' && mainDisplayTag !== 'unknown' && (
-                    <span className="bg-primary-100 border border-primary-edge text-primary-800 text-[10px] font-black px-2.5 py-0.5 rounded-full backdrop-blur-md">
+                    <span className="bg-primary-100 border border-primary-edge text-primary-800 text-[10px] font-black px-2.5 py-0.5 rounded-full backdrop-blur-md whitespace-nowrap">
                       Main: {mainDisplayTag}
                     </span>
                   )}
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 pt-1 flex-wrap">
                   {/* 🎮 ソロキュー情報 */}
-                  <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/10 text-xs">
+                  <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/10 text-xs whitespace-nowrap shrink-0">
                     <span className="text-[10px] font-black text-secondary-400 flex items-center gap-1">
                       <span>🎮 ソロキュー:</span>
                     </span>
@@ -822,7 +822,7 @@ export default function PlayerMyPage() {
                   </div>
 
                   {/* ⚔️ KTMカスタム情報 */}
-                  <div className="flex items-center gap-1.5 bg-primary-950/40 backdrop-blur-md px-2.5 py-1 rounded-xl border border-primary-edge-strong/30 text-xs">
+                  <div className="flex items-center gap-1.5 bg-primary-950/40 backdrop-blur-md px-2.5 py-1 rounded-xl border border-primary-edge-strong/30 text-xs whitespace-nowrap shrink-0">
                     <span className="text-[10px] font-black text-primary-400 flex items-center gap-1">
                       <span>⚔️ KTMカスタム:</span>
                     </span>
@@ -843,7 +843,7 @@ export default function PlayerMyPage() {
             </div>
 
             {/* Participation Status & Recent Form */}
-            <div className="bg-surface/70 border border-black/10 backdrop-blur-md rounded-2xl p-3 sm:p-4 w-full md:w-auto flex items-center justify-between md:justify-start gap-x-4 gap-y-3 sm:gap-6 shadow-xl flex-wrap">
+            <div className="bg-surface/70 border border-black/10 backdrop-blur-md rounded-2xl p-3 sm:p-4 w-full xl:w-auto flex items-center justify-between xl:justify-start gap-x-4 gap-y-3 sm:gap-6 shadow-xl flex-wrap shrink-0">
               <div className="space-y-1">
                 <div className="text-[10px] text-faint font-black tracking-wider uppercase">直近コンディション</div>
                 <div className="flex items-center gap-1.5">

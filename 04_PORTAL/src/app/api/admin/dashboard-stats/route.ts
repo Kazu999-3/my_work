@@ -51,19 +51,18 @@ export async function GET(req: NextRequest) {
       supabase.from('lane_guides').select('id', { count: 'exact', head: true }),
       supabase.from('matchup_sentinel').select('matchup_id', { count: 'exact', head: true }).neq('enemy', 'GLOBAL'),
       supabase.from('matchup_log').select('id', { count: 'exact', head: true }),
-      // 「要対応」パネル用: 直近の失敗/完了タスク
+      // 「要対応」パネル用: 直近の失敗/完了タスク（04ポータル管轄のみ）
       supabase.from('edge_tasks')
         .select('id, task_type, payload, status, error_message, updated_at, executor')
         .in('status', ['failed', 'completed'])
         .in('task_type', [
-          'champion_trend', 'resolve_youtube_channel',
-          'resolve_youtube_playlist', 'youtube_channel_monitor', 'reddit_scout',
+          'champion_trend', 'reddit_scout',
           'lol_trend_collect', 'dict_synthesizer', 'champion_db_bulk_update',
         ])
         .order('updated_at', { ascending: false })
         .limit(200),
-      // 「要対応」パネル用: 手動対応が必要な動画キューのエラー件数
-      supabase.from('youtube_queue').select('id', { count: 'exact', head: true }).in('status', ['error_generation', 'error_no_transcript', 'failed']),
+      // YouTubeキューは05管轄のため04ではカウント除外（0件固定）
+      Promise.resolve({ count: 0 }),
       // クラウドワーカー実行ログ
       supabase.from('matchup_sentinel').select('raw_data').eq('matchup_id', 'SYSTEM_METRICS').maybeSingle(),
       // 鮮度レビュー通知

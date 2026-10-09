@@ -33,8 +33,7 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
 
   // champion_trend以外で再実行可能なタスク種別（/api/admin/tasks/retryが対応）
   const RETRYABLE_TASK_TYPES = new Set([
-    'resolve_youtube_channel', 'resolve_youtube_playlist',
-    'youtube_channel_monitor', 'reddit_scout', 'lol_trend_collect', 'dict_synthesizer',
+    'reddit_scout', 'lol_trend_collect', 'dict_synthesizer', 'champion_db_bulk_update',
   ]);
 
   const fetchTaskStatus = async () => {
