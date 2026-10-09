@@ -59,8 +59,51 @@ export function formatOfferDate(isoString?: string | null): { text: string; rela
   return { text, relative, isRecent };
 }
 
+/**
+ * 見送り日時のフォーマット
+ */
+export function formatDismissedDate(isoString?: string | null): { text: string; relative: string } | null {
+  if (!isoString) return null;
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return null;
+
+  const now = Date.now();
+  const diffMs = now - d.getTime();
+  const diffDays = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+
+  const month = d.getMonth() + 1;
+  const day = d.getDate();
+  const hours = String(d.getHours()).padStart(2, '0');
+  const mins = String(d.getMinutes()).padStart(2, '0');
+  const text = `${month}/${day} ${hours}:${mins}`;
+
+  let relative = '';
+  if (diffDays === 0) relative = '本日';
+  else if (diffDays === 1) relative = '昨日';
+  else relative = `${diffDays}日前`;
+
+  return { text, relative };
+}
+
+/**
+ * 見送り理由の日本語ラベル
+ */
+export function getDeclineLabel(declineReason?: string, pupilStatus?: string, mentorStatus?: string): { text: string; who: 'pupil' | 'mentor' | 'both' | 'unknown' } {
+  if (declineReason === 'PUPIL_DECLINED' || pupilStatus === 'DECLINED') {
+    return { text: '後輩が見送り', who: 'pupil' };
+  }
+  if (declineReason === 'MENTOR_DECLINED' || mentorStatus === 'DECLINED') {
+    return { text: '先輩が見送り', who: 'mentor' };
+  }
+  if (declineReason === 'BOTH_DECLINED') {
+    return { text: '双方見送り', who: 'both' };
+  }
+  return { text: '見送り', who: 'unknown' };
+}
+
 export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModalProps) {
   const [viewMode, setViewMode] = useState<'BATCH' | 'PAIR'>('BATCH');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'DECLINED' | 'UNSENT'>('ALL');
   const [proposals, setProposals] = useState<SecretMatchProposal[]>([]);
   const [batches, setBatches] = useState<SecretMatchBatchProposal[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -200,6 +243,56 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
     }
   };
 
+  // BATCH 各ステータス件数
+  const batchCounts = {
+    all: batches.length,
+    pending: batches.filter((b) => b.mentors.some((m) => m.offerStatus === 'PENDING' || m.offerStatus === 'PROPOSAL_PENDING')).length,
+    declined: batches.filter((b) => b.hasDeclined || b.mentors.some((m) => m.offerStatus === 'DECLINED')).length,
+    unsent: batches.filter((b) => {
+      const hasPending = b.mentors.some((m) => m.offerStatus === 'PENDING' || m.offerStatus === 'PROPOSAL_PENDING');
+      const hasMatched = b.mentors.some((m) => m.offerStatus === 'ACTIVE' || m.offerStatus === 'MATCHED');
+      const hasDeclined = b.hasDeclined || b.mentors.some((m) => m.offerStatus === 'DECLINED');
+      return !hasPending && !hasMatched && !hasDeclined;
+    }).length,
+  };
+
+  // PAIR 各ステータス件数
+  const pairCounts = {
+    all: proposals.length,
+    pending: proposals.filter((p) => p.offerStatus === 'PENDING' || p.offerStatus === 'PROPOSAL_PENDING').length,
+    declined: proposals.filter((p) => p.offerStatus === 'DECLINED').length,
+    unsent: proposals.filter((p) => {
+      const isPending = p.offerStatus === 'PENDING' || p.offerStatus === 'PROPOSAL_PENDING';
+      const isMatched = p.offerStatus === 'ACTIVE' || p.offerStatus === 'MATCHED';
+      const isDeclined = p.offerStatus === 'DECLINED';
+      return !isPending && !isMatched && !isDeclined;
+    }).length,
+  };
+
+  const currentCounts = viewMode === 'BATCH' ? batchCounts : pairCounts;
+
+  const filteredBatches = batches.filter((b) => {
+    const hasPending = b.mentors.some((m) => m.offerStatus === 'PENDING' || m.offerStatus === 'PROPOSAL_PENDING');
+    const hasMatched = b.mentors.some((m) => m.offerStatus === 'ACTIVE' || m.offerStatus === 'MATCHED');
+    const hasDeclined = b.hasDeclined || b.mentors.some((m) => m.offerStatus === 'DECLINED');
+
+    if (statusFilter === 'PENDING') return hasPending;
+    if (statusFilter === 'DECLINED') return hasDeclined;
+    if (statusFilter === 'UNSENT') return !hasPending && !hasMatched && !hasDeclined;
+    return true;
+  });
+
+  const filteredProposals = proposals.filter((p) => {
+    const isPending = p.offerStatus === 'PENDING' || p.offerStatus === 'PROPOSAL_PENDING';
+    const isMatched = p.offerStatus === 'ACTIVE' || p.offerStatus === 'MATCHED';
+    const isDeclined = p.offerStatus === 'DECLINED';
+
+    if (statusFilter === 'PENDING') return isPending;
+    if (statusFilter === 'DECLINED') return isDeclined;
+    if (statusFilter === 'UNSENT') return !isPending && !isMatched && !isDeclined;
+    return true;
+  });
+
   if (!isOpen) return null;
 
   return (
@@ -271,6 +364,73 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
           </div>
         </div>
 
+        {/* ステータス絞り込みフィルターバー */}
+        <div className="px-6 py-2 bg-surface-subtle/80 border-b border-border flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-bold text-foreground-subtle mr-1">状態絞り込み:</span>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('ALL')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                statusFilter === 'ALL'
+                  ? 'bg-foreground text-background shadow-2xs'
+                  : 'bg-surface hover:bg-surface-hover text-foreground-subtle border border-border/60'
+              }`}
+            >
+              <span>すべて</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-white/10 font-mono">
+                {currentCounts.all}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('PENDING')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                statusFilter === 'PENDING'
+                  ? 'bg-amber-600 text-white shadow-2xs'
+                  : 'bg-surface hover:bg-surface-hover text-amber-700 dark:text-amber-400 border border-amber-500/30'
+              }`}
+            >
+              <Clock size={11} />
+              <span>回答待ち</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-white/10 font-mono">
+                {currentCounts.pending}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('DECLINED')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                statusFilter === 'DECLINED'
+                  ? 'bg-slate-700 text-white shadow-2xs'
+                  : 'bg-surface hover:bg-surface-hover text-slate-700 dark:text-slate-300 border border-slate-500/30'
+              }`}
+            >
+              <span>🍃 見送り</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-white/10 font-mono">
+                {currentCounts.declined}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('UNSENT')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                statusFilter === 'UNSENT'
+                  ? 'bg-secondary-600 text-white shadow-2xs'
+                  : 'bg-surface hover:bg-surface-hover text-foreground-subtle border border-border/60'
+              }`}
+            >
+              <span>未送信</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-white/10 font-mono">
+                {currentCounts.unsent}
+              </span>
+            </button>
+          </div>
+          <div className="text-[11px] text-foreground-subtle font-medium">
+            表示中: <strong className="text-foreground">{viewMode === 'BATCH' ? filteredBatches.length : filteredProposals.length}</strong> 件
+          </div>
+        </div>
+
         {/* リストエリア */}
         <div className="p-6 overflow-y-auto flex-1 space-y-4">
           {isLoading ? (
@@ -282,11 +442,15 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
             /* パターンA: 後輩ごとのまとめ便一覧 */
             <div className="space-y-4">
               <div className="flex items-center justify-between text-xs text-foreground-subtle px-1">
-                <span>後輩候補: <strong>{batches.length}名</strong>（相性上位の先輩を最大2〜3名紐付け）</span>
+                <span>後輩候補: <strong>{filteredBatches.length}名</strong>（相性上位の先輩を最大2〜3名紐付け）</span>
                 <span>※「📖 教わりたい」ロール所持者を最優先表示</span>
               </div>
 
-              {batches.slice(0, 10).map((batch, bIdx) => {
+              {filteredBatches.length === 0 ? (
+                <div className="py-12 text-center text-foreground-subtle text-xs bg-surface-subtle/40 rounded-2xl border border-dashed border-border">
+                  該当するまとめ便候補はありません
+                </div>
+              ) : filteredBatches.slice(0, 15).map((batch, bIdx) => {
                 const isSending = sendingId === batch.pupil.discordId;
                 const hasPending = batch.mentors.some((m) => m.offerStatus === 'PENDING' || m.offerStatus === 'PROPOSAL_PENDING');
                 const hasMatched = batch.mentors.some((m) => m.offerStatus === 'ACTIVE' || m.offerStatus === 'MATCHED');
@@ -327,6 +491,19 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
                         {!batch.pupil.isRegistered && (
                           <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700">
                             名簿（カード未登録）
+                          </span>
+                        )}
+
+                        {/* 見送りありバッジ */}
+                        {batch.hasDeclined && (
+                          <span
+                            className="text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-500/15 text-slate-700 dark:text-slate-300 border border-slate-500/30 flex items-center gap-1"
+                            title={batch.dismissedAt ? `${formatDismissedDate(batch.dismissedAt)?.text} に見送りがありました` : '見送り履歴あり'}
+                          >
+                            <span>🍃 見送りあり</span>
+                            {batch.dismissedAt && formatDismissedDate(batch.dismissedAt) && (
+                              <span className="opacity-80">({formatDismissedDate(batch.dismissedAt)?.relative})</span>
+                            )}
                           </span>
                         )}
 
@@ -411,14 +588,24 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
                       {batch.mentors.map((m, mIdx) => {
                         const numIcons = ['①', '②', '③'];
                         const mOfferDate = formatOfferDate(m.lastOfferedAt);
+                        const isMentorDeclined = m.offerStatus === 'DECLINED';
+                        const mDecline = getDeclineLabel(m.declineReason, m.pupilStatus, m.mentorStatus);
+                        const mDismissedDate = formatDismissedDate(m.dismissedAt);
+
                         return (
                           <div
                             key={m.profileId}
-                            className="p-3 rounded-xl bg-surface-subtle/50 border border-border/60 space-y-2 text-xs"
+                            className={`p-3 rounded-xl border space-y-2 text-xs transition ${
+                              isMentorDeclined
+                                ? 'bg-surface-subtle/30 border-border/50 opacity-80'
+                                : 'bg-surface-subtle/50 border-border/60'
+                            }`}
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-1.5 font-black text-foreground flex-wrap">
-                                <span className="text-secondary-600">{numIcons[mIdx]}</span>
+                                <span className={isMentorDeclined ? 'text-foreground-subtle' : 'text-secondary-600'}>
+                                  {numIcons[mIdx]}
+                                </span>
                                 <span>{m.name} 先輩</span>
                                 {m.tierLabel && (
                                   <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded border ${getTierBadgeStyle(m.tier)}`}>
@@ -427,16 +614,35 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
                                 )}
                                 <span className="text-[10px] font-normal text-foreground-subtle">({m.rank} / {m.lanes.join('/')})</span>
                               </div>
-                              <div className="text-right">
-                                <div className="text-secondary-600 font-black text-xs">
-                                  ★ {m.matchScore}%
+
+                              {isMentorDeclined ? (
+                                <div className="text-right">
+                                  <span className="px-1.5 py-0.5 rounded bg-slate-500/20 text-slate-700 dark:text-slate-300 text-[10px] font-black border border-slate-500/30 inline-block">
+                                    🍃 {mDecline.text}
+                                  </span>
+                                  {mDismissedDate && (
+                                    <div className="text-[9px] text-foreground-subtle font-medium mt-0.5">
+                                      {mDismissedDate.text} ({mDismissedDate.relative})
+                                    </div>
+                                  )}
+                                  {m.daysRemaining !== undefined && m.daysRemaining > 0 && (
+                                    <div className="text-[9px] text-slate-500 dark:text-slate-400">
+                                      残り{m.daysRemaining}日
+                                    </div>
+                                  )}
                                 </div>
-                                {mOfferDate && (
-                                  <div className="text-[9px] text-foreground-subtle font-normal mt-0.5">
-                                    送信: {mOfferDate.text}
+                              ) : (
+                                <div className="text-right">
+                                  <div className="text-secondary-600 font-black text-xs">
+                                    ★ {m.matchScore}%
                                   </div>
-                                )}
-                              </div>
+                                  {mOfferDate && (
+                                    <div className="text-[9px] text-foreground-subtle font-normal mt-0.5">
+                                      送信: {mOfferDate.text}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
 
                             {m.champions && m.champions.length > 0 && (
@@ -464,18 +670,27 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
             /* 個別ペア一覧表示 */
             <div className="space-y-3.5">
               <div className="flex items-center justify-between text-xs text-foreground-subtle px-1">
-                <span>算出したおすすめペア: <strong>{proposals.length}組</strong></span>
+                <span>算出したおすすめペア: <strong>{filteredProposals.length}組</strong></span>
               </div>
 
-              {proposals.slice(0, 15).map((proposal, idx) => {
+              {filteredProposals.length === 0 ? (
+                <div className="py-12 text-center text-foreground-subtle text-xs bg-surface-subtle/40 rounded-2xl border border-dashed border-border">
+                  該当する個別ペア候補はありません
+                </div>
+              ) : filteredProposals.slice(0, 20).map((proposal, idx) => {
                 const isPending = proposal.offerStatus === 'PENDING' || proposal.offerStatus === 'PROPOSAL_PENDING';
                 const isMatched = proposal.offerStatus === 'ACTIVE' || proposal.offerStatus === 'MATCHED';
+                const isDeclined = proposal.offerStatus === 'DECLINED';
                 const isSending = sendingId === proposal.id;
 
                 return (
                   <div
                     key={proposal.id}
-                    className="p-4 md:p-5 rounded-2xl bg-surface border border-border hover:border-secondary-500/40 transition shadow-2xs space-y-3"
+                    className={`p-4 md:p-5 rounded-2xl bg-surface border transition shadow-2xs space-y-3 ${
+                      isDeclined
+                        ? 'border-border/60 hover:border-slate-500/40 opacity-85'
+                        : 'border-border hover:border-secondary-500/40'
+                    }`}
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="flex items-center gap-3 md:gap-4 flex-wrap">
@@ -533,6 +748,13 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
                                 </span>
                               )}
 
+                              {/* 見送りバッジ */}
+                              {isDeclined && (
+                                <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-slate-500/20 text-slate-700 dark:text-slate-300 border border-slate-500/30 flex items-center gap-0.5">
+                                  <span>🍃 見送り</span>
+                                </span>
+                              )}
+
                               {/* 送信履歴バッジ */}
                               {(() => {
                                 const pairDate = formatOfferDate(proposal.lastOfferedAt);
@@ -568,7 +790,7 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
                       <div className="flex items-center gap-3 self-end sm:self-auto">
                         <div className="text-right">
                           <div className="text-xs text-foreground-subtle font-medium">相性スコア</div>
-                          <div className="text-base font-black text-secondary-600">
+                          <div className={`text-base font-black ${isDeclined ? 'text-foreground-subtle' : 'text-secondary-600'}`}>
                             {proposal.matchScore}%
                           </div>
                         </div>
@@ -589,6 +811,37 @@ export function SecretMatchmakerModal({ isOpen, onClose }: SecretMatchmakerModal
                                 {formatOfferDate(proposal.lastOfferedAt)?.text} 送信 ({formatOfferDate(proposal.lastOfferedAt)?.relative})
                               </span>
                             )}
+                          </div>
+                        ) : isDeclined ? (
+                          <div className="flex flex-col items-end gap-1">
+                            {(() => {
+                              const decline = getDeclineLabel(proposal.declineReason, proposal.pupilStatus, proposal.mentorStatus);
+                              const disDate = formatDismissedDate(proposal.dismissedAt);
+                              return (
+                                <>
+                                  <span className="px-3 py-1 rounded-xl bg-slate-500/20 text-slate-700 dark:text-slate-300 text-xs font-black flex items-center gap-1 border border-slate-500/30">
+                                    <span>🍃 {decline.text}</span>
+                                  </span>
+                                  <div className="text-[10px] text-foreground-subtle text-right">
+                                    {disDate && <span>{disDate.text} ({disDate.relative})</span>}
+                                    {proposal.daysRemaining !== undefined && proposal.daysRemaining > 0 && (
+                                      <span className="ml-1 text-slate-500 dark:text-slate-400 font-medium">
+                                        • 残り{proposal.daysRemaining}日
+                                      </span>
+                                    )}
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSendSingleOffer(proposal)}
+                                    disabled={isSending}
+                                    className="px-2.5 py-1 rounded-lg text-foreground-subtle hover:text-foreground text-[10px] font-bold border border-border/60 hover:bg-surface-hover transition cursor-pointer mt-0.5"
+                                    title="見送り状態ですが、管理者が再度打診（再送信）できます"
+                                  >
+                                    {isSending ? '送信中...' : '🔄 見送りを解除して再送信'}
+                                  </button>
+                                </>
+                              );
+                            })()}
                           </div>
                         ) : (
                           <div className="flex flex-col items-end gap-1">

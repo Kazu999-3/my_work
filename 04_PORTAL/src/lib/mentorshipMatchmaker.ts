@@ -274,8 +274,13 @@ export interface SecretMatchProposal {
   };
   matchScore: number;
   reasons: string[];
-  offerStatus?: 'NONE' | 'PENDING' | 'PROPOSAL_PENDING' | 'ACCEPTED' | 'DECLINED' | 'MATCHED' | 'ACTIVE';
+  offerStatus?: 'NONE' | 'PENDING' | 'PROPOSAL_PENDING' | 'ACCEPTED' | 'DECLINED' | 'MATCHED' | 'ACTIVE' | 'REJECTED';
   lastOfferedAt?: string | null;
+  dismissedAt?: string | null;
+  mentorStatus?: string;
+  pupilStatus?: string;
+  declineReason?: 'PUPIL_DECLINED' | 'MENTOR_DECLINED' | 'BOTH_DECLINED' | 'DECLINED';
+  daysRemaining?: number;
 }
 
 export interface SecretMatchBatchProposal {
@@ -294,6 +299,9 @@ export interface SecretMatchBatchProposal {
     totalGames?: number;
   };
   lastOfferedAt?: string | null;
+  dismissedAt?: string | null;
+  pupilStatus?: string;
+  hasDeclined?: boolean;
   mentors: Array<{
     profileId: string;
     discordId: string;
@@ -308,6 +316,11 @@ export interface SecretMatchBatchProposal {
     tier?: ExperienceTier;
     tierLabel?: string;
     lastOfferedAt?: string | null;
+    dismissedAt?: string | null;
+    mentorStatus?: string;
+    pupilStatus?: string;
+    declineReason?: 'PUPIL_DECLINED' | 'MENTOR_DECLINED' | 'BOTH_DECLINED' | 'DECLINED';
+    daysRemaining?: number;
   }>;
 }
 
@@ -473,6 +486,10 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
       isCooldown: boolean;
       daysRemaining?: number;
       lastOfferedAt?: string | null;
+      dismissedAt?: string | null;
+      mentorStatus?: string;
+      pupilStatus?: string;
+      declineReason?: 'PUPIL_DECLINED' | 'MENTOR_DECLINED' | 'BOTH_DECLINED' | 'DECLINED';
     }
     const offerMap = new Map<string, ExistingOfferInfo>();
 
@@ -492,9 +509,26 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
         offeredAt = m.started_at;
       }
 
-      // 見送り（REJECTED / DISMISSED / notes.dismissedAt）のクールダウン判定
-      const isDeclined = m.status === 'REJECTED' || m.status === 'DISMISSED' || Boolean(notes.dismissedAt);
+      // 見送り（REJECTED / DISMISSED / notes.dismissedAt / DECLINED）の判定
+      let declineReason: 'PUPIL_DECLINED' | 'MENTOR_DECLINED' | 'BOTH_DECLINED' | 'DECLINED' | undefined = undefined;
+      const isDeclined =
+        m.status === 'REJECTED' ||
+        m.status === 'DISMISSED' ||
+        Boolean(notes.dismissedAt) ||
+        notes.pupilStatus === 'DECLINED' ||
+        notes.mentorStatus === 'DECLINED';
+
       if (isDeclined) {
+        if (notes.pupilStatus === 'DECLINED' && notes.mentorStatus === 'DECLINED') {
+          declineReason = 'BOTH_DECLINED';
+        } else if (notes.pupilStatus === 'DECLINED') {
+          declineReason = 'PUPIL_DECLINED';
+        } else if (notes.mentorStatus === 'DECLINED') {
+          declineReason = 'MENTOR_DECLINED';
+        } else {
+          declineReason = 'DECLINED';
+        }
+
         let dismissedAtTime: number | null = null;
         if (notes.dismissedAt) {
           dismissedAtTime = new Date(notes.dismissedAt).getTime();
@@ -519,6 +553,10 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
         isCooldown,
         daysRemaining,
         lastOfferedAt: offeredAt,
+        dismissedAt: notes.dismissedAt || null,
+        mentorStatus: notes.mentorStatus || 'PENDING',
+        pupilStatus: notes.pupilStatus || 'PENDING',
+        declineReason,
       });
     });
 
@@ -699,20 +737,32 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
           const pairKey = `${mentor.discord_id}_${pupil.discordId}`;
           const offerInfo = offerMap.get(pairKey);
 
-          // 【A. クールダウン制 ＆ C. 先輩交代優先】
-          // 見送りから21日以内の先輩は候補から除外（クールダウン中）！
-          // これにより、この先輩は除外され、別の先輩（相性2番手・3番手）が自動的に繰り上がって候補に選ばれる。
-          if (offerInfo?.isCooldown) {
-            continue;
+          let currentOfferStatus = 'NONE';
+          if (offerInfo) {
+            if (offerInfo.declineReason || offerInfo.status === 'REJECTED' || offerInfo.status === 'DISMISSED') {
+              currentOfferStatus = 'DECLINED';
+            } else if (offerInfo.status === 'ACTIVE') {
+              currentOfferStatus = 'ACTIVE';
+            } else if (offerInfo.status === 'PENDING') {
+              currentOfferStatus = 'PENDING';
+            }
           }
 
-          const currentOfferStatus = offerInfo?.status || 'NONE';
           const mentorTierResult = resolveTier(mentor.discord_id, mentor.player_name);
 
           // 相性理由にプレイヤー属性の補足を自然に追加
           const enrichedReasons = [...reasons];
           if (pupil.tierLabel) {
             enrichedReasons.push(`後輩属性: ${pupil.tierLabel}${pupil.totalGames !== undefined ? ` (通算${pupil.totalGames}戦)` : ''}`);
+          }
+          if (currentOfferStatus === 'DECLINED') {
+            const declineWho =
+              offerInfo?.declineReason === 'PUPIL_DECLINED'
+                ? '後輩が見送り'
+                : offerInfo?.declineReason === 'MENTOR_DECLINED'
+                ? '先輩が見送り'
+                : '見送り済み';
+            enrichedReasons.unshift(`🍃 ${declineWho}${offerInfo?.daysRemaining ? `（残り${offerInfo.daysRemaining}日クールダウン）` : ''}`);
           }
 
           proposals.push({
@@ -745,13 +795,23 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
             reasons: enrichedReasons,
             offerStatus: (currentOfferStatus as any) || 'NONE',
             lastOfferedAt: offerInfo?.lastOfferedAt || null,
+            dismissedAt: offerInfo?.dismissedAt || null,
+            mentorStatus: offerInfo?.mentorStatus,
+            pupilStatus: offerInfo?.pupilStatus,
+            declineReason: offerInfo?.declineReason,
+            daysRemaining: offerInfo?.daysRemaining,
           });
         }
       }
     }
 
-    // スコア降順（同点なら教わりたいロール優先）
+    // スコア降順（見送り済みは下位に回し、同点なら教わりたいロール優先）
     return proposals.sort((a, b) => {
+      const aDeclined = a.offerStatus === 'DECLINED';
+      const bDeclined = b.offerStatus === 'DECLINED';
+      if (aDeclined !== bDeclined) {
+        return aDeclined ? 1 : -1;
+      }
       if (b.pupil.hasLearnRole !== a.pupil.hasLearnRole) {
         return b.pupil.hasLearnRole ? 1 : -1;
       }
@@ -776,15 +836,26 @@ export async function generateSecretMatchmakerBatches(): Promise<SecretMatchBatc
       pupilMap.set(pupilId, {
         pupil: pair.pupil,
         lastOfferedAt: pair.lastOfferedAt || null,
+        dismissedAt: null,
+        pupilStatus: pair.pupilStatus,
+        hasDeclined: false,
         mentors: [],
       });
     }
 
     const batch = pupilMap.get(pupilId)!;
-    // 後輩の最新送信日時を更新（いずれかの先輩ペアでより新しい送信日時があれば反映）
+    // 後輩の最新送信日時を更新
     if (pair.lastOfferedAt) {
       if (!batch.lastOfferedAt || new Date(pair.lastOfferedAt).getTime() > new Date(batch.lastOfferedAt).getTime()) {
         batch.lastOfferedAt = pair.lastOfferedAt;
+      }
+    }
+
+    // 後輩が見送った履歴を更新
+    if (pair.declineReason === 'PUPIL_DECLINED' || pair.declineReason === 'BOTH_DECLINED') {
+      batch.hasDeclined = true;
+      if (pair.dismissedAt && (!batch.dismissedAt || new Date(pair.dismissedAt).getTime() > new Date(batch.dismissedAt).getTime())) {
+        batch.dismissedAt = pair.dismissedAt;
       }
     }
 
@@ -801,6 +872,11 @@ export async function generateSecretMatchmakerBatches(): Promise<SecretMatchBatc
         reasons: pair.reasons,
         offerStatus: pair.offerStatus,
         lastOfferedAt: pair.lastOfferedAt || null,
+        dismissedAt: pair.dismissedAt || null,
+        mentorStatus: pair.mentorStatus,
+        pupilStatus: pair.pupilStatus,
+        declineReason: pair.declineReason,
+        daysRemaining: pair.daysRemaining,
         tier: pair.mentor.tier,
         tierLabel: pair.mentor.tierLabel,
       });
