@@ -17,6 +17,69 @@ function isMatchmakerAdmin(session: { discordId?: string; isAdmin?: boolean } | 
 }
 
 /**
+ * 【後輩ファースト】後輩が「話す」を選んだ際、指名された先輩へリクエストDMを送信
+ */
+async function sendMentorRequestDm(params: {
+  matchId: string;
+  mentorDiscordId: string;
+  mentorName: string;
+  pupilName: string;
+  lane?: string;
+  matchScore?: number;
+  reasons?: string[];
+}) {
+  const { matchId, mentorDiscordId, mentorName, pupilName, lane, matchScore, reasons } = params;
+  if (!mentorDiscordId) return false;
+
+  const mentorEmbed = {
+    title: `🎒 【教えて先輩！】後輩から相談リクエストが届きました！`,
+    description:
+      `**${mentorName}** さん、いつもありがとうございます！\n` +
+      `お見合い便で、後輩の **${pupilName}** さん（${lane || '担当レーン'}）が、\n` +
+      `「**${mentorName} 先輩に教えてほしい！**」と相談リクエストを送ってくれました！✨\n\n` +
+      (matchScore ? `**🎯 相性スコア**: **${matchScore}%**\n` : '') +
+      (reasons && reasons.length > 0 ? `**💡 マッチ理由**:\n${reasons.slice(0, 2).map((r: string) => `・${r}`).join('\n')}\n\n` : '\n') +
+      `一度チャットでお話ししてみませんか？\n\n` +
+      `🔒 **安心ルール（完全非公開）**:\n` +
+      `**「今回は見送る」を選んでも、相手には一切通知されません。**`,
+    color: 0x8b5cf6, // Purple
+    footer: {
+      text: 'KTM シークレットお見合い便 • 完全ダブルオプトイン・見送り無通知',
+    },
+  };
+
+  const mentorComponents = [
+    {
+      type: 1,
+      components: [
+        {
+          type: 2,
+          style: 1, // Blurple
+          label: `🤝 ${pupilName}さんと話す`,
+          custom_id: `secret_match_accept:${matchId}`,
+        },
+        {
+          type: 2,
+          style: 2, // Grey
+          label: '🍃 今回は見送る',
+          custom_id: `secret_match_decline:${matchId}`,
+        },
+      ],
+    },
+  ];
+
+  try {
+    return await sendDiscordDirectMessage(mentorDiscordId, {
+      embeds: [mentorEmbed],
+      components: mentorComponents,
+    });
+  } catch (err) {
+    console.warn('[sendMentorRequestDm error]:', err);
+    return false;
+  }
+}
+
+/**
  * GET: お見合い便の候補リストを取得（ペア一覧 ＆ まとめ便バッチ一覧）
  */
 export async function GET(req: Request) {
@@ -214,6 +277,20 @@ export async function POST(req: Request) {
               .from('mentorship_matches')
               .update({ notes: JSON.stringify(notes) })
               .eq('id', matchId);
+
+            // 【後輩ファースト】後輩が「話す」を選んだ場合、指名された先輩へリクエストDMを送信
+            if (isPupil && match.mentor_discord_id && notes.mentorStatus !== 'ACCEPTED') {
+              await sendMentorRequestDm({
+                matchId,
+                mentorDiscordId: match.mentor_discord_id,
+                mentorName: notes.mentorName || '先輩',
+                pupilName: notes.pupilName || '後輩',
+                lane: notes.lane,
+                matchScore: notes.matchScore,
+                reasons: notes.reasons,
+              });
+            }
+
             return NextResponse.json({ ok: true, status: 'PENDING_PARTNER' });
           }
         }
@@ -321,34 +398,8 @@ export async function POST(req: Request) {
         });
       }
 
-      // 先輩側へDM送信
+      // 【後輩ファースト】先輩へは後輩が「話す」を選択した時点でリクエストDMを送信するため、初期送信は行わない
       let mentorDmSent = false;
-      if (sendToMentor && mentorDiscordId) {
-        const mentorEmbed = {
-          title: `🎒 【教えて先輩！】マッチする後輩候補のご紹介`,
-          description:
-            `**${proposal.mentor.name}** さん、いつもありがとうございます！\n` +
-            `あなたが担当するレーンで、ぴったりの後輩候補がいます！✨\n\n` +
-            `**👤 後輩候補**: **${proposal.pupil.name}** さん (${proposal.pupil.rank}${proposal.pupil.tierLabel ? ` / ${proposal.pupil.tierLabel}` : ''})\n` +
-            `**🛡️ レーン**: \`${proposal.pupil.primaryLane}\`\n` +
-            `**🎯 相性スコア**: **${proposal.matchScore}%**\n` +
-            `**💡 おすすめ理由**:\n` +
-            proposal.reasons.map((r: string) => `・${r}`).join('\n') +
-            `\n\n---\n` +
-            `声をかけてみますか？\n` +
-            `👉 **[Webポータルでお見合いに回答する](${PORTAL_BASE_URL}/mentorship)**\n\n` +
-            `🔒 **安心ルール（完全非公開）**:\n` +
-            `**「今回は見送る」を選んでも、相手には一切通知されません。**`,
-          color: 0x8b5cf6, // Purple
-          footer: {
-            text: 'KTM シークレットお見合い便 • 完全ダブルオプトイン・見送り無通知',
-          },
-        };
-
-        mentorDmSent = await sendDiscordDirectMessage(mentorDiscordId, {
-          embeds: [mentorEmbed],
-        });
-      }
 
       return NextResponse.json({
         ok: true,
@@ -507,54 +558,7 @@ export async function POST(req: Request) {
         });
       }
 
-      // 各先輩側へもDMを送信
-      for (const cm of createdMatches) {
-        const m = cm.mentor;
-        const mentorEmbed = {
-          title: `🎒 【教えて先輩！】マッチする後輩候補のご紹介`,
-          description:
-            `**${m.name}** さん、いつもありがとうございます！\n` +
-            `あなたが担当するレーンで、ぴったりの後輩候補がいます！✨\n\n` +
-            `**👤 後輩候補**: **${pupil.name}** さん (${pupil.rank})\n` +
-            `**🛡️ レーン**: \`${pupil.primaryLane}\`${pupil.secondaryLane ? ` (サブ: ${pupil.secondaryLane})` : ''}\n` +
-            `**🎯 相性スコア**: **${m.matchScore}%**\n` +
-            `**💡 おすすめ理由**:\n` +
-            m.reasons.map((r: string) => `・${r}`).join('\n') +
-            `\n\n---\n` +
-            `声をかけてみますか？\n` +
-            `🔒 **安心ルール（完全非公開）**:\n` +
-            `**「見送る」を選んでも、相手には一切通知されません。**`,
-          color: 0x8b5cf6, // Purple
-          footer: {
-            text: 'KTM シークレットお見合い便 • 完全ダブルオプトイン・見送り無通知',
-          },
-        };
-
-        const mentorComponents = [
-          {
-            type: 1,
-            components: [
-              {
-                type: 2,
-                style: 1, // Blurple
-                label: `🤝 ${pupil.name}さんに声をかける`,
-                custom_id: `secret_match_accept:${cm.matchId}`,
-              },
-              {
-                type: 2,
-                style: 2, // Grey
-                label: '🍃 見送る',
-                custom_id: `secret_match_decline:${cm.matchId}`,
-              },
-            ],
-          },
-        ];
-
-        sendDiscordDirectMessage(m.discordId, {
-          embeds: [mentorEmbed],
-          components: mentorComponents,
-        }).catch(() => {});
-      }
+      // 【後輩ファースト】先輩へは後輩が「話す」を選択した時点でリクエストDMを送信するため、初期一斉送信は行わない
 
       return NextResponse.json({
         ok: true,
@@ -689,11 +693,24 @@ export async function POST(req: Request) {
           })
           .eq('id', matchId);
 
+        // 【後輩ファースト】後輩が「話す」を選んだ場合、指名された先輩へリクエストDMを送信
+        if (isPupil && match.mentor_discord_id && notes.mentorStatus !== 'ACCEPTED') {
+          await sendMentorRequestDm({
+            matchId,
+            mentorDiscordId: match.mentor_discord_id,
+            mentorName: notes.mentorName || '先輩',
+            pupilName: notes.pupilName || '後輩',
+            lane: notes.lane,
+            matchScore: notes.matchScore,
+            reasons: notes.reasons,
+          });
+        }
+
         return NextResponse.json({
           ok: true,
           status: 'PENDING_PARTNER',
           isBothAccepted: false,
-          message: '回答を受け付けました。相手も「話してみたい」を選択した場合に成立します。',
+          message: '回答を受け付けました。先輩へ相談リクエストを届けました！',
         });
       }
     }
