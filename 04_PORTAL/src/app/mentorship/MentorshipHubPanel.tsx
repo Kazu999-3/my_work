@@ -1368,6 +1368,48 @@ export default function MentorshipHubPanel() {
                       </a>
                     </div>
                   )}
+
+                  {/* 🌱 成長カルテ（中間チェックイン） */}
+                  {match.meta?.checkins && match.meta.checkins.length > 0 && (
+                    <div className="mt-2 p-3 rounded-2xl bg-success-500/10 border border-success-edge/30 space-y-2 text-xs">
+                      <div className="flex items-center justify-between font-black text-foreground">
+                        <span className="flex items-center gap-1.5 text-success-800">
+                          <Sparkles size={13} className="text-success-600" />
+                          <span>🌱 成長カルテ（中間チェックイン）</span>
+                        </span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                          match.meta.checkins[0].status === 'COMPLETED'
+                            ? 'bg-success-200 text-success-900'
+                            : 'bg-primary-100 text-primary-800 animate-pulse'
+                        }`}>
+                          {match.meta.checkins[0].status === 'COMPLETED' ? '✅ カルテ完成' : '⏳ 入力受付中'}
+                        </span>
+                      </div>
+
+                      {match.meta.checkins[0].pupilFeedback && (
+                        <div className="bg-surface/70 rounded-xl p-2 space-y-0.5 border border-border/50 text-[11px]">
+                          <div className="font-bold text-success-800 flex items-center gap-1">
+                            <span>🌱 弟子の実感:</span>
+                            <span>{'⭐'.repeat(match.meta.checkins[0].pupilFeedback.rating || 5)}</span>
+                          </div>
+                          <p className="text-foreground font-medium pl-1">{match.meta.checkins[0].pupilFeedback.growthNote}</p>
+                          {match.meta.checkins[0].pupilFeedback.challenges && (
+                            <p className="text-muted text-[10px] pl-1">🎯 次の課題: {match.meta.checkins[0].pupilFeedback.challenges}</p>
+                          )}
+                        </div>
+                      )}
+
+                      {match.meta.checkins[0].mentorFeedback && (
+                        <div className="bg-surface/70 rounded-xl p-2 space-y-0.5 border border-border/50 text-[11px]">
+                          <div className="font-bold text-primary-800">👑 師匠のアドバイス:</div>
+                          <p className="text-foreground font-medium pl-1">{match.meta.checkins[0].mentorFeedback.advice}</p>
+                          {match.meta.checkins[0].mentorFeedback.praise && (
+                            <p className="text-muted text-[10px] pl-1">✨ 褒めポイント: {match.meta.checkins[0].mentorFeedback.praise}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* 自分のペアである場合のアクション（レビュー送信 / 期間延長 / 卒業完了 / キックオフ / Discord連絡 / 円満解散） */}

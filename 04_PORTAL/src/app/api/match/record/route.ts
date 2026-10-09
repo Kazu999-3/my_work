@@ -844,6 +844,21 @@ export async function POST(request: Request) {
       console.warn('[match/record] Discordロール同期呼び出し失敗（続行）:', roleErr?.message);
     }
 
+    // 🎒 師弟中間チェックイン自動判定: 試合終了時に条件を満たした師弟ペアを検知・Discord通知
+    try {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      fetch(`${appUrl}/api/mentorship/checkin`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-bot-secret': process.env.BOT_SHARED_SECRET || '',
+        },
+        body: JSON.stringify({ action: 'trigger_check' }),
+      }).catch((chkErr) => {
+        console.warn('[match/record] 師弟チェックイン判定エラー（続行）:', chkErr?.message);
+      });
+    } catch (_) {}
+
     return NextResponse.json({ success: true, matchId: newMatchId, updates: results, jackpotWinner });
 
   } catch (error: any) {

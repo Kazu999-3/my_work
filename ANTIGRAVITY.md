@@ -55,6 +55,15 @@ League of Legends のリサーチ、記事生成、ソロキュー監視を統�
      4. 師弟募集掲示板（Discord）でのレーンアイコン動的判定（TOP: ⚔️, JG: 🌲, MID: ⚡, ADC/BOT: 🏹, SUP: 🛡️）
    - **技術スタック**: Next.js, React, Recharts, TailwindCSS
    - **現在のステップ**: Step 1（完了・稼働中）
+10. **師弟マイルストーン中間チェックイン ＆ 成長カルテ (Mentorship Milestone Check-in & Growth Card) [NEW]**:
+    - **目的**: 師弟成立後の関係継続と弟子の成長実感を最大化するため、7日経過またはKTMカスタム3戦消化時にDiscord上で1分クイック振り返りを発火し、マイページ・ペアカードへ成長カルテとして蓄積する。
+    - **MVPの範囲**:
+      1. 発火条件: 師弟結成（ACTIVE）から「7日経過」または「KTMカスタム3戦消化」のどちらか早い方を自動判定
+      2. Discord入力導線: 専用スレッドまたはDMへのチェックインEmbed送信、および弟子・師匠別のDiscordモーダル（1分クイック入力）
+      3. 成長カルテサマリー: 両者の入力完了時にスレッドへサマリーEmbedを自動投稿し、継続ボーナス+100コインを進呈
+      4. ポータル連携: 師弟ハブ（`/mentorship`）のペアカードに「成長カルテ」タブ/モーダルを配備
+    - **技術スタック**: Discord REST API v10, Next.js (`04_PORTAL`), Discord.js (`ktm_bot`), Supabase (`mentorship_matches`)
+    - **現在のステップ**: Step 1（実装中）
 
 ---
 

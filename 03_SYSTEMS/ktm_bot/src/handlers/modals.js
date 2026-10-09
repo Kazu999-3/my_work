@@ -387,6 +387,79 @@ export async function handleModalSubmit(interaction, env, ctx) {
     return Response.json({ type: 5, data: { flags: 64 } });
   }
 
+  // 🎒 師弟中間チェックイン：弟子の振り返り送信
+  if (customId.startsWith('mentorship_checkin_pupil_modal:')) {
+    const [, matchId] = customId.split(':');
+    const getVal = (cid) => {
+      const row = interaction.data.components.find(c => c.components[0].custom_id === cid);
+      return row ? row.components[0].value.trim() : "";
+    };
+    const rating = parseInt(getVal('rating'), 10) || 5;
+    const growthNote = getVal('growthNote');
+    const challenges = getVal('challenges');
+    const mAppId = interaction.application_id;
+    const mToken = interaction.token;
+
+    ctx.waitUntil((async () => {
+      const { fetchPortalAPI, patchInteractionResponse } = await import('../utils/api.js');
+      try {
+        const res = await fetchPortalAPI(env, '/api/mentorship/checkin', {
+          matchId,
+          role: 'pupil',
+          feedback: { rating, growthNote, challenges },
+        });
+        await patchInteractionResponse(mAppId, mToken, {
+          content: res.completed
+            ? '🎉 **第1回中間チェックインが完了しました！**\nお互いの振り返りが出揃い、成長カルテがスレッドに記録されました。+100コインを進呈しました！🪙'
+            : '✅ **振り返りを記録しました！**\n師匠側のアドバイス入力が完了すると、スレッドに成長カルテが生成されます！✨'
+        });
+      } catch (err) {
+        console.error('[MentorshipCheckinModal] Error saving pupil checkin:', err);
+        await patchInteractionResponse(mAppId, mToken, {
+          content: `❌ **振り返りの保存に失敗しました**: ${err.message}`
+        }).catch(() => {});
+      }
+    })());
+
+    return Response.json({ type: 5, data: { flags: 64 } });
+  }
+
+  // 🧑‍🏫 師弟中間チェックイン：師匠のアドバイス送信
+  if (customId.startsWith('mentorship_checkin_mentor_modal:')) {
+    const [, matchId] = customId.split(':');
+    const getVal = (cid) => {
+      const row = interaction.data.components.find(c => c.components[0].custom_id === cid);
+      return row ? row.components[0].value.trim() : "";
+    };
+    const praise = getVal('praise');
+    const advice = getVal('advice');
+    const mAppId = interaction.application_id;
+    const mToken = interaction.token;
+
+    ctx.waitUntil((async () => {
+      const { fetchPortalAPI, patchInteractionResponse } = await import('../utils/api.js');
+      try {
+        const res = await fetchPortalAPI(env, '/api/mentorship/checkin', {
+          matchId,
+          role: 'mentor',
+          feedback: { praise, advice },
+        });
+        await patchInteractionResponse(mAppId, mToken, {
+          content: res.completed
+            ? '🎉 **第1回中間チェックインが完了しました！**\nお互いの振り返りが出揃い、成長カルテがスレッドに記録されました。+100コインを進呈しました！🪙'
+            : '✅ **アドバイスを記録しました！**\n弟子側の振り返り入力が完了すると、スレッドに成長カルテが生成されます！✨'
+        });
+      } catch (err) {
+        console.error('[MentorshipCheckinModal] Error saving mentor checkin:', err);
+        await patchInteractionResponse(mAppId, mToken, {
+          content: `❌ **アドバイスの保存に失敗しました**: ${err.message}`
+        }).catch(() => {});
+      }
+    })());
+
+    return Response.json({ type: 5, data: { flags: 64 } });
+  }
+
   if (customId.startsWith('edit_recruit_modal:')) {
     const getVal = (cid) => interaction.data.components.find(c => c.components[0].custom_id === cid).components[0].value;
     const metadata = parseMessageData(interaction.message);

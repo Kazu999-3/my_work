@@ -337,5 +337,109 @@ export async function handleRegistrationMentorshipButtons(interaction, env, ctx,
     });
   }
 
+  // 🎒 師弟中間チェックイン：弟子の振り返りボタン
+  if (customId.startsWith('mentorship_checkin_pupil_')) {
+    const parts = customId.replace('mentorship_checkin_pupil_', '').split('_');
+    const matchId = parts[0];
+    const checkinId = parts.slice(1).join('_');
+
+    return Response.json({
+      type: 9,
+      data: {
+        title: "🌱 弟子の1分振り返り（成長カルテ）",
+        custom_id: `mentorship_checkin_pupil_modal:${matchId}:${checkinId}`,
+        components: [
+          {
+            type: 1,
+            components: [
+              {
+                type: 4,
+                custom_id: "rating",
+                label: "教わった手応え・満足度（1〜5の半角数字）",
+                style: 1,
+                placeholder: "5（大満足）/ 4（満足）/ 3（普通）",
+                required: true,
+                max_length: 1,
+              }
+            ]
+          },
+          {
+            type: 1,
+            components: [
+              {
+                type: 4,
+                custom_id: "growthNote",
+                label: "実感した上達ポイント・教わって良かったこと",
+                style: 2,
+                placeholder: "例: レーン戦でのCS意識が上がり、デスが減りました！",
+                required: true,
+                max_length: 300,
+              }
+            ]
+          },
+          {
+            type: 1,
+            components: [
+              {
+                type: 4,
+                custom_id: "challenges",
+                label: "今の悩み・次の目標",
+                style: 2,
+                placeholder: "例: 集団戦での立ち位置がまだ不安なので、次回のカスタムで意識したいです。",
+                required: true,
+                max_length: 300,
+              }
+            ]
+          }
+        ]
+      }
+    });
+  }
+
+  // 🧑‍🏫 師弟中間チェックイン：師匠のアドバイスボタン
+  if (customId.startsWith('mentorship_checkin_mentor_')) {
+    const parts = customId.replace('mentorship_checkin_mentor_', '').split('_');
+    const matchId = parts[0];
+    const checkinId = parts.slice(1).join('_');
+
+    return Response.json({
+      type: 9,
+      data: {
+        title: "👑 師匠の1分アドバイス（成長カルテ）",
+        custom_id: `mentorship_checkin_mentor_modal:${matchId}:${checkinId}`,
+        components: [
+          {
+            type: 1,
+            components: [
+              {
+                type: 4,
+                custom_id: "praise",
+                label: "弟子の成長を感じた点（褒めポイント）",
+                style: 2,
+                placeholder: "例: 以前よりマップを見る頻度が増えて、ガンク回避が上手くなっています！",
+                required: true,
+                max_length: 300,
+              }
+            ]
+          },
+          {
+            type: 1,
+            components: [
+              {
+                type: 4,
+                custom_id: "advice",
+                label: "次の一歩への助言・意識してほしい点",
+                style: 2,
+                placeholder: "例: 序盤の有利をオブジェクト（ドラゴン等）へ繋げる意識を持つとさらに勝率が上がります！",
+                required: true,
+                max_length: 300,
+              }
+            ]
+          }
+        ]
+      }
+    });
+  }
+
   return undefined;
 }

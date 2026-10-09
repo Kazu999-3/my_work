@@ -10,6 +10,29 @@ import { syncMentorshipDashboard, createMentorshipForumThread } from '../../../.
 export const dynamic = 'force-dynamic';
 
 
+export interface MentorshipCheckin {
+  id: string;
+  trigger: 'DAYS_7' | 'MATCHES_3';
+  triggeredAt: string;
+  status: 'PENDING' | 'COMPLETED';
+  pupilFeedback?: {
+    rating: number; // 1-5
+    growthNote: string; // 教わって上達した手応え
+    challenges: string; // 今の悩み・次の目標
+    submittedAt: string;
+  };
+  mentorFeedback?: {
+    praise: string; // 見ていて上達を感じた点
+    advice: string; // 次の一歩への助言
+    submittedAt: string;
+  };
+  statsSnapshot?: {
+    matchesPlayed: number;
+    winRate: number;
+    soloqRank?: string;
+  };
+}
+
 export interface MatchMeta {
   durationKey: string;
   durationLabel: string;
@@ -23,6 +46,7 @@ export interface MatchMeta {
   targetRank?: string;
   threadId?: string;
   threadUrl?: string;
+  checkins?: MentorshipCheckin[];
 }
 
 export function parseNotesMeta(notes: string | null): MatchMeta {
@@ -38,6 +62,7 @@ export function parseNotesMeta(notes: string | null): MatchMeta {
     targetRank: '',
     threadId: '',
     threadUrl: '',
+    checkins: [],
   };
 
   if (!notes) return defaultMeta;
@@ -91,6 +116,7 @@ export function encodeNotesMeta(meta: Partial<MatchMeta>): string {
     targetRank: meta.targetRank || '',
     threadId: meta.threadId || '',
     threadUrl: meta.threadUrl || '',
+    checkins: meta.checkins || [],
   };
   return JSON.stringify(fullMeta);
 }
