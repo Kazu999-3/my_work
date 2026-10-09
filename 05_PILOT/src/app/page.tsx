@@ -214,7 +214,13 @@ function PilotApp() {
 
             {/* タブ 2: 対面相性 ＆ キルライン */}
             {activeTab === "matchup" && (
-              <MatchupTab selectedDetail={selectedDetail} />
+              <MatchupTab
+                selectedDetail={selectedDetail}
+                currentRole={currentRole}
+                setCurrentRole={setCurrentRole}
+                availableRoles={availableRoles}
+                openKnowledgeModal={openKnowledgeModal}
+              />
             )}
 
             {/* タブ 3: 実戦バイブル ＆ 統合マスター戦術書 */}

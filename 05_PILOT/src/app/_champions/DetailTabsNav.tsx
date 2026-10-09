@@ -31,11 +31,16 @@ export default function DetailTabsNav({ activeTab, setActiveTab, selectedDetail 
                 }`}
               >
                 <ShieldAlert size={14} /> 🥊 対面相性 ＆ キルライン
-                {selectedDetail.matchups && selectedDetail.matchups.length > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full bg-zinc-800 text-amber-300 text-[10px]">
-                    {selectedDetail.matchups.length}
-                  </span>
-                )}
+                {(() => {
+                  const memoCount = selectedDetail.matchups?.length || 0;
+                  const articleCount = selectedDetail.libraryKnowledge?.filter(k => /vs|対面/i.test(k.title))?.length || 0;
+                  const total = memoCount + articleCount;
+                  return total > 0 ? (
+                    <span className="px-1.5 py-0.2 rounded-full bg-zinc-800 text-amber-300 text-[10px]">
+                      {total}
+                    </span>
+                  ) : null;
+                })()}
               </button>
               <button
                 onClick={() => setActiveTab("bible")}
