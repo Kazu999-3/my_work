@@ -481,9 +481,9 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
       let isCooldown = false;
       let daysRemaining = 0;
       let offeredAt: string | null = null;
-
+      let notes: any = {};
       try {
-        const notes = JSON.parse(m.notes || '{}');
+        notes = JSON.parse(m.notes || '{}');
         if (notes.proposedAt) {
           offeredAt = notes.proposedAt;
         }
@@ -492,15 +492,13 @@ export async function generateSecretMatchmakerPairs(): Promise<SecretMatchPropos
         offeredAt = m.started_at;
       }
 
-      if (m.status === 'DISMISSED') {
+      // 見送り（REJECTED / DISMISSED / notes.dismissedAt）のクールダウン判定
+      const isDeclined = m.status === 'REJECTED' || m.status === 'DISMISSED' || Boolean(notes.dismissedAt);
+      if (isDeclined) {
         let dismissedAtTime: number | null = null;
-        try {
-          const notes = JSON.parse(m.notes || '{}');
-          if (notes.dismissedAt) {
-            dismissedAtTime = new Date(notes.dismissedAt).getTime();
-          }
-        } catch (_) {}
-        if (!dismissedAtTime && m.started_at) {
+        if (notes.dismissedAt) {
+          dismissedAtTime = new Date(notes.dismissedAt).getTime();
+        } else if (m.started_at) {
           dismissedAtTime = new Date(m.started_at).getTime();
         }
 

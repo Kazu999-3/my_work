@@ -34,7 +34,7 @@ export async function GET(req: Request) {
       const { data: incomingList } = await supabase
         .from('mentorship_matches')
         .select('*')
-        .eq('status', 'PROPOSAL_PENDING')
+        .eq('status', 'PENDING')
         .or(`mentor_discord_id.eq.${discordId},pupil_discord_id.eq.${discordId}`)
         .order('started_at', { ascending: false });
 
@@ -42,6 +42,7 @@ export async function GET(req: Request) {
         for (const m of incomingList) {
           try {
             const notes = JSON.parse(m.notes || '{}');
+            if (!notes.isSecretProposal) continue;
             const isMentor = m.mentor_discord_id === discordId;
             const myStatus = isMentor ? notes.mentorStatus : notes.pupilStatus;
             if (myStatus === 'PENDING') {
@@ -107,17 +108,18 @@ export async function POST(req: Request) {
         const { data: list } = await supabase
           .from('mentorship_matches')
           .select('id, notes, pupil_discord_id')
-          .eq('status', 'PROPOSAL_PENDING')
+          .eq('status', 'PENDING')
           .eq('pupil_discord_id', userDiscordId);
 
         for (const m of list || []) {
           let notes: any = {};
           try { notes = JSON.parse(m.notes || '{}'); } catch (_) {}
+          if (!notes.isSecretProposal) continue;
           notes.pupilStatus = 'DECLINED';
           notes.dismissedAt = new Date().toISOString();
           await supabase
             .from('mentorship_matches')
-            .update({ status: 'DISMISSED', notes: JSON.stringify(notes) })
+            .update({ status: 'REJECTED', notes: JSON.stringify(notes) })
             .eq('id', m.id);
         }
 
@@ -148,7 +150,7 @@ export async function POST(req: Request) {
           notes.dismissedAt = new Date().toISOString();
           await supabase
             .from('mentorship_matches')
-            .update({ status: 'DISMISSED', notes: JSON.stringify(notes) })
+            .update({ status: 'REJECTED', notes: JSON.stringify(notes) })
             .eq('id', matchId);
           return NextResponse.json({ ok: true, status: 'DISMISSED' });
         }
@@ -254,13 +256,18 @@ export async function POST(req: Request) {
 
       if (existing) {
         // 既存更新
-        await supabase
+        const { error: updErr } = await supabase
           .from('mentorship_matches')
           .update({
-            status: 'PROPOSAL_PENDING',
+            status: 'PENDING',
             notes: JSON.stringify(initialNotes),
           })
           .eq('id', existing.id);
+
+        if (updErr) {
+          console.error('[SEND_OFFER update error]:', updErr);
+          return NextResponse.json({ error: 'DB更新に失敗しました: ' + updErr.message }, { status: 500 });
+        }
       } else {
         // 新規作成
         const { data: inserted, error: insErr } = await supabase
@@ -270,7 +277,7 @@ export async function POST(req: Request) {
             pupil_profile_id: proposal.pupil.profileId || null,
             mentor_discord_id: mentorDiscordId,
             pupil_discord_id: pupilDiscordId,
-            status: 'PROPOSAL_PENDING',
+            status: 'PENDING',
             notes: JSON.stringify(initialNotes),
             started_at: new Date().toISOString(),
           })
@@ -278,7 +285,8 @@ export async function POST(req: Request) {
           .single();
 
         if (insErr) {
-          throw insErr;
+          console.error('[SEND_OFFER insert error]:', insErr);
+          return NextResponse.json({ error: 'DB保存に失敗しました: ' + insErr.message }, { status: 500 });
         }
         matchId = inserted.id;
       }
@@ -386,13 +394,16 @@ export async function POST(req: Request) {
 
         let matchId = existing?.id;
         if (existing) {
-          await supabase
+          const { error: updErr } = await supabase
             .from('mentorship_matches')
             .update({
-              status: 'PROPOSAL_PENDING',
+              status: 'PENDING',
               notes: JSON.stringify(initialNotes),
             })
             .eq('id', existing.id);
+          if (updErr) {
+            console.error('[SEND_BATCH_OFFER update error]:', updErr);
+          }
         } else {
           const { data: inserted, error: insErr } = await supabase
             .from('mentorship_matches')
@@ -401,14 +412,16 @@ export async function POST(req: Request) {
               pupil_profile_id: pupil.profileId || null,
               mentor_discord_id: mentorDiscordId,
               pupil_discord_id: pupilDiscordId,
-              status: 'PROPOSAL_PENDING',
+              status: 'PENDING',
               notes: JSON.stringify(initialNotes),
               started_at: new Date().toISOString(),
             })
             .select('id')
             .single();
 
-          if (!insErr && inserted) {
+          if (insErr) {
+            console.error('[SEND_BATCH_OFFER insert error]:', insErr);
+          } else if (inserted) {
             matchId = inserted.id;
           }
         }
@@ -416,6 +429,10 @@ export async function POST(req: Request) {
         if (matchId) {
           createdMatches.push({ matchId, mentor });
         }
+      }
+
+      if (createdMatches.length === 0) {
+        return NextResponse.json({ error: 'マッチング情報の保存に失敗しました' }, { status: 500 });
       }
 
       // 後輩宛てDMの作成（パターンA: 2〜3名並列Embed）
@@ -585,7 +602,7 @@ export async function POST(req: Request) {
         await supabase
           .from('mentorship_matches')
           .update({
-            status: 'DISMISSED',
+            status: 'REJECTED',
             notes: JSON.stringify(notes),
           })
           .eq('id', matchId);
