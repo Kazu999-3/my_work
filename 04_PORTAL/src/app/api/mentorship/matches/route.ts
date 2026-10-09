@@ -321,6 +321,14 @@ export async function GET() {
 
       if (pendingData) {
         pendingData.forEach((m: any) => {
+          // シークレットお見合い便は通常オファー枠ではなく専用お見合いバナーで処理するため除外
+          let isSecret = false;
+          try {
+            const raw = JSON.parse(m.notes || '{}');
+            if (raw.isSecretProposal) isSecret = true;
+          } catch (_) {}
+          if (isSecret) return;
+
           const meta = parseNotesMeta(m.notes);
           const item = { ...m, meta };
           if (meta.fromDiscordId === myDiscordId) {
