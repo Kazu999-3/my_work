@@ -60,6 +60,12 @@
   - `matchupMemo.ts`: `integrateMatchupArticle` 新設。二重書き込み防止 `upsertArticleSection` ＆ 履歴記録（`knowledge_revisions`）＆ `raw_data.lane` 自動保存。
   - `/api/knowledge/review`: GETでの `detectArticleMatchup`（対面相手・日本語名）同梱、POSTでのプレビュー生成（`matchupPreviews`）、承認時の対面DB自動統合（単一・一括対応）。
   - `/admin/review`: `ReviewItemCard` への「⚔️ 対面DB: vs {enemy} [{lane}]」バッジ・対面相手入力フォーム、`PreviewModal` への対面調整入力・「⚔️ 対面DBプレビュー」タブ配備。
+✅ カスタム募集エントリー・辞退履歴監査エンジン（Module 11）＆ 運用ダッシュボード可視化配備（2026-10-10完了）:
+  - `recruitment_activity_logs`: 監査テーブル新設（migration 95）、RLS遮断。
+  - `03_SYSTEMS/ktm_bot`: 定期募集（`periodicRecruit.js`）および突発募集（`recruitCard.js`）での参加・辞退・スタイル変更・代理追加を非同期ログ記録。
+  - `04_PORTAL`: `/api/admin/recruitment-activity` 管理者API新設。
+  - `05_PILOT`: `/admin/dashboard` に「📋 カスタム募集 エントリー ＆ 辞退履歴」カードを配備（すべて/辞退のみ/参加のみフィルター付き）。
+  - シークレットお見合い便: けいろん・ましゃる宛てのDMを本日12:00 JSTに自動送信するタイマーをセット。
 
 **04の役目終了前に05へ移す裏方**（2026-10-04 判断: 今は移さない。移すきっかけ＝04停止が決まった／04障害で05のソロQ機能が止まった／自動振り返りの中身を大きく直す時）（今は04上で動いており05はデータを読むだけ）:
 `soloq-coach-poll.yml`→04 `/api/cron/soloq-coach`、`soloq-history-sync.yml`→04、04のVercel Cron `soloq-trends` `freshness-check`（`dict-review-check` は2026-10-08に停止・削除）、ワーカー通知の送り先 04 `/api/push/notify-admin`（`edge-cloud-worker.yml` `absorber.yml` の `PORTAL_URL`）

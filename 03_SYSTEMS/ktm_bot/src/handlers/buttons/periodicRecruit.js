@@ -7,6 +7,7 @@ import { getKtmRank, getHighestLaneMmr, getPlayerExperienceBadge } from '../../u
 import { detectDayKey, getDayDef, extractEntryLines, resolveWeekendTargets, buildRecruitmentContent, computeDayStatus, DAY_CAPACITY, RANK_SHORT_JP_MAP, RANK_JP_MAP } from '../../utils/recruitmentStatus.js';
 import { cleanupOldReminderMessages } from '../scheduled.js';
 import { notifyAdminError } from '../../utils/alert.js';
+import { recordRecruitmentActivity } from '../../utils/recruitmentAudit.js';
 
 // 定期募集（土日カード）への参加・代理追加
 // 2026-10-07: handlers/components.js（1,486行）のボタン処理から分割。処理は分割前と同じ（元の判定順のまま）。
@@ -121,8 +122,17 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
         const existingLine = currentLines.find((l) => l.includes(userMention));
         const nextLines = currentLines.filter((l) => !l.includes(userMention));
 
-        if (participationStyle !== 'leave') {
-          if (!existingLine || !existingLine.includes(styleBadge)) {
+        let activityAction = null;
+        if (participationStyle === 'leave') {
+          if (existingLine) {
+            activityAction = 'LEAVE';
+          }
+        } else {
+          if (!existingLine) {
+            activityAction = 'JOIN';
+            nextLines.push(entryLine);
+          } else if (!existingLine.includes(styleBadge)) {
+            activityAction = 'SWITCH_STYLE';
             nextLines.push(entryLine);
           }
         }
@@ -139,6 +149,24 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
           components: interaction.message.components,
           allowed_mentions: { roles: [] }
         });
+
+        // 監査ログを記録（管理者向け履歴）
+        if (activityAction) {
+          const userName = interaction.member?.nick || interaction.member?.user?.global_name || interaction.member?.user?.username || playerRow?.name || 'Unknown';
+          recordRecruitmentActivity(env, {
+            messageId: msgId,
+            recruitmentType: dayKey === 'sun' ? 'periodic_sun' : 'periodic_sat',
+            channelId,
+            userId,
+            userName,
+            action: activityAction,
+            style: participationStyle === 'leave' ? null : participationStyle,
+            metadata: {
+              rank: rankStr.trim(),
+              lanePref: lanePrefStr.trim()
+            }
+          }).catch((e) => console.warn('Activity log error:', e));
+        }
 
         // ★ あと1名になった瞬間にラストワン促進の返信を自動投稿
         // ⚠️ この行は2026-09-26〜09-29の間、未定義の識別子3つ(computeDayStatus /
@@ -224,6 +252,20 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
           await sendDiscordMessage(`channels/${interaction.channel_id}/messages/${origMsgId}`, botToken, "PATCH", {
             content: createMessageContent(metadata), embeds: [createRecruitEmbed(metadata)], components: createRecruitButtons(metadata)
           });
+
+          // 代理追加ログの記録
+          for (const tId of targetUserIds) {
+            const tName = resolvedUsers[tId]?.global_name || resolvedUsers[tId]?.username || "Unknown";
+            recordRecruitmentActivity(env, {
+              messageId: origMsgId,
+              recruitmentType: 'spontaneous',
+              channelId: interaction.channel_id,
+              userId: tId,
+              userName: tName,
+              action: 'PROXY_ADD',
+              metadata: { addedBy: userId }
+            }).catch(() => {});
+          }
           // 完了通知（フォローアップ）
           await sendInteractionFollowup(appId, token, { content: `✅ <@${userId}> がメンバーを ${addedCount} 名追加しました。`, flags: 0 });
         }

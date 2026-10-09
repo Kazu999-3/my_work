@@ -5,6 +5,7 @@ import { parseMessageData } from '../../utils/helpers.js';
 import { getAdminDiscordIds, markRecruitmentStatus } from '../../utils/recruitPermission.js';
 import { getPlayerActiveMark } from '../../utils/ktmRank.js';
 import { notifyAdminError } from '../../utils/alert.js';
+import { recordRecruitmentActivity } from '../../utils/recruitmentAudit.js';
 
 // 募集カードの操作（参加・ロール参加・観戦・離脱・締切・削除・編集・代理追加・10人化）。どのボタンにも該当しなかった場合の最後の処理
 // 2026-10-07: handlers/components.js（1,486行）のボタン処理から分割。処理は分割前と同じ（元の判定順のまま）。
@@ -87,6 +88,9 @@ export async function handleRecruitCardButtons(interaction, env, ctx, { customId
     }
   };
 
+  let auditAction = null;
+  let auditStyle = null;
+
   if (customId.startsWith('upgrade_to_10')) {
     if (!canManageRecruitment) return Response.json({ type: 4, data: { content: "⚠️ 募集主または管理者のみ拡張可能です。", flags: 64 } });
     metadata.mode = 'カスタム'; metadata.maxCount = 10;
@@ -95,11 +99,14 @@ export async function handleRecruitCardButtons(interaction, env, ctx, { customId
     if (metadata.joined.includes(userId) && !Object.values(metadata.roles).includes(userId)) {
       // 二度押しで離脱
       metadata.joined = metadata.joined.filter(id => id !== userId);
+      auditAction = 'LEAVE';
     } else if (metadata.joined.length < metadata.maxCount) {
       if (!metadata.joined.includes(userId)) {
         metadata.joined.push(userId);
         // 初参加(レーン未設定)ならセットアップ案内をDM
         ctx.waitUntil(sendOnboardingIfNeeded(env, userId));
+        auditAction = 'JOIN';
+        auditStyle = 'any';
       }
       metadata.names[userId] = userName;
       metadata.spectating = metadata.spectating.filter(id => id !== userId);
@@ -112,12 +119,15 @@ export async function handleRecruitCardButtons(interaction, env, ctx, { customId
       // 二度押しで離脱
       metadata.roles[role] = null;
       metadata.joined = metadata.joined.filter(id => id !== userId);
+      auditAction = 'LEAVE';
     } else {
       Object.keys(metadata.roles).forEach(r => { if (metadata.roles[r] === userId) metadata.roles[r] = null; });
       if (!metadata.roles[role] && metadata.joined.length < metadata.maxCount) {
         metadata.roles[role] = userId; metadata.names[userId] = userName;
         if (!metadata.joined.includes(userId)) metadata.joined.push(userId);
         metadata.spectating = metadata.spectating.filter(id => id !== userId);
+        auditAction = 'JOIN';
+        auditStyle = role;
       }
     }
   } else if (customId.startsWith('toggle_spectate')) {
@@ -125,19 +135,43 @@ export async function handleRecruitCardButtons(interaction, env, ctx, { customId
     if (!metadata.spectating) metadata.spectating = [];
     if (metadata.spectating.includes(userId)) {
       metadata.spectating = metadata.spectating.filter(id => id !== userId);
+      auditAction = 'LEAVE';
+      auditStyle = 'spectate';
     } else {
       metadata.spectating.push(userId);
       metadata.joined = metadata.joined.filter(id => id !== userId);
       Object.keys(metadata.roles).forEach(r => { if (metadata.roles[r] === userId) metadata.roles[r] = null; });
       metadata.names[userId] = userName;
+      auditAction = 'JOIN';
+      auditStyle = 'spectate';
     }
   } else if (customId.startsWith('leave_recruit')) {
     await refreshJoinMetadata();
+    const wasIn = (metadata.joined || []).includes(userId) || (metadata.spectating || []).includes(userId) || Object.values(metadata.roles || {}).includes(userId);
     metadata.joined = metadata.joined.filter(id => id !== userId);
     if (metadata.spectating) {
       metadata.spectating = metadata.spectating.filter(id => id !== userId);
     }
     Object.keys(metadata.roles).forEach(r => { if (metadata.roles[r] === userId) metadata.roles[r] = null; });
+    if (wasIn) {
+      auditAction = 'LEAVE';
+    }
+  }
+
+  // 監査ログを非同期記録
+  if (auditAction) {
+    ctx.waitUntil(
+      recordRecruitmentActivity(env, {
+        messageId: interaction.message.id,
+        recruitmentType: 'spontaneous',
+        channelId: interaction.channel_id,
+        userId,
+        userName,
+        action: auditAction,
+        style: auditStyle,
+        metadata: { mode: metadata.mode, maxCount: metadata.maxCount }
+      })
+    );
   }
 
   // 参加者・見学者のアクティブマーク（👑、🔰、🌱、⏳等）を補完

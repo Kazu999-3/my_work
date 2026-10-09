@@ -51,7 +51,7 @@ export async function GET() {
       recentTasks, ytErrors, metricsRow, dictFacts,
       players, matches, pendingBets, tasks24h,
       factsCount, libraryCount, laneGuidesCount, memosCount, matchupLogCount,
-      lastRecruitment,
+      lastRecruitment, recruitmentLogs,
     ] = await Promise.all([
       supabase.from('edge_tasks').select('id, task_type, payload, status, error_message, updated_at')
         .in('status', ['failed', 'completed']).in('task_type', ATTENTION_TASK_TYPES)
@@ -73,6 +73,7 @@ export async function GET() {
       supabase.from('matchup_sentinel').select('matchup_id', { count: 'exact', head: true }).neq('enemy', 'GLOBAL'),
       supabase.from('matchup_log').select('id', { count: 'exact', head: true }),
       supabase.from('recruitments').select('created_at').order('created_at', { ascending: false }).limit(1).maybeSingle(),
+      supabase.from('recruitment_activity_logs').select('*').order('created_at', { ascending: false }).limit(40),
     ]);
 
     // (task_type, payload) ごとに最新の1件だけを見て、それが失敗のままのものを「要対応」とする。
@@ -146,6 +147,7 @@ export async function GET() {
         matchupLog: matchupLogCount.count ?? 0,
       },
       dictHealth,
+      recruitmentActivities: (recruitmentLogs.data || []) as any[],
       generatedAt: new Date().toISOString(),
     });
   } catch (e: any) {

@@ -64,6 +64,15 @@ League of Legends のリサーチ、記事生成、ソロキュー監視を統�
       4. ポータル連携: 師弟ハブ（`/mentorship`）のペアカードに「成長カルテ」タブ/モーダルを配備
     - **技術スタック**: Discord REST API v10, Next.js (`04_PORTAL`), Discord.js (`ktm_bot`), Supabase (`mentorship_matches`)
     - **現在のステップ**: Step 1（実装中）
+11. **カスタム募集エントリー・辞退履歴監査エンジン (Recruitment Activity Audit Tracker) [NEW]**:
+    - **目的**: メンバーが気軽にエントリー・辞退できる「心理的ハードルの低さ（静かなキャンセル）」を保ったまま、管理者限定で「誰がいつ参加し、いつ辞退・変更したか」の完全なタイムライン履歴を可視化する。
+    - **MVPの範囲**:
+      1. DB設計: `recruitment_activity_logs` テーブル（募集メッセージID、募集種別[土曜/日曜/突発]、ユーザーID、ユーザー名、操作種別[JOIN/LEAVE/SWITCH_STYLE/PROXY_ADD]、参加スタイル[full/single/late/null]、実行日時）
+      2. Discord Bot記録フック: 定期カスタム（`periodicRecruit.js`）および突発募集（`recruitCard.js`）のボタン押下時に非同期でDBへログ追記
+      3. ポータル管理API: `/api/admin/recruitment-activity`（管理者権限限定、直近ログ取得・フィルタリング）
+      4. 運用ダッシュボードUI: `/admin/dashboard` に「📋 カスタム募集エントリー＆辞退履歴」セクションを新設し、直近の参加・辞退タイムラインを表示
+    - **技術スタック**: Next.js (`04_PORTAL`), Discord Bot (`ktm_bot`), Supabase (`recruitment_activity_logs`)
+    - **現在のステップ**: Step 1（実装中）
 
 ---
 

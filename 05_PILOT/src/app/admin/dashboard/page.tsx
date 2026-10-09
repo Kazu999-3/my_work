@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Shield, RefreshCw, ShieldAlert, Cloud, Trophy, Coins, Database, ExternalLink } from 'lucide-react';
+import { Shield, RefreshCw, ShieldAlert, Cloud, Trophy, Coins, Database, ExternalLink, Users, UserX, UserCheck } from 'lucide-react';
 import WorkerStatusPanel from '../youtube/WorkerStatusPanel';
 
 // 運用ダッシュボード（旧ポータル /admin/dashboard の移植）。2026-10-04
@@ -12,6 +12,19 @@ const LEGACY_PORTAL_URL = 'https://my-work-8jbd.vercel.app';
 
 interface FailedTask { id: string; task_type: string; payload: any; error_message: string | null; updated_at: string }
 interface CloudWorker { status?: string; summary?: string; details?: string[]; updated_at?: string }
+export interface RecruitmentActivity {
+  id: string;
+  message_id: string;
+  recruitment_type: string;
+  channel_id: string | null;
+  user_id: string;
+  user_name: string;
+  action: 'JOIN' | 'LEAVE' | 'SWITCH_STYLE' | 'PROXY_ADD';
+  style: string | null;
+  metadata?: any;
+  created_at: string;
+}
+
 interface Stats {
   needsAttention: { failedTasks: FailedTask[]; youtubeErrorCount: number };
   tasks24h: { completed: number; failed: number; pending: number; running: number };
@@ -25,6 +38,7 @@ interface Stats {
   };
   knowledge: { facts: number; library: number; laneGuides: number; matchupMemos: number; matchupLog: number };
   dictHealth: { verified: number; aiGenerated: number; stale: number };
+  recruitmentActivities?: RecruitmentActivity[];
   generatedAt: string;
 }
 
@@ -97,6 +111,7 @@ export default function OpsDashboardPage() {
   const [loading, setLoading] = useState(false);
   const [retrying, setRetrying] = useState(false);
   const [retryMessage, setRetryMessage] = useState('');
+  const [activityFilter, setActivityFilter] = useState<'all' | 'leave' | 'join'>('all');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -302,6 +317,131 @@ export default function OpsDashboardPage() {
                   ))}
                 </div>
               )}
+            </Card>
+
+            {/* カスタム募集エントリー＆辞退履歴（管理者限定） */}
+            <Card
+              title="カスタム募集 エントリー ＆ 辞退履歴（管理者監査）"
+              icon={<Users className="w-4 h-4 text-emerald-400" />}
+              action={
+                <div className="flex items-center gap-1.5 text-[11px]">
+                  <button
+                    type="button"
+                    onClick={() => setActivityFilter('all')}
+                    className={`px-2 py-0.5 rounded-lg border font-bold transition ${
+                      activityFilter === 'all'
+                        ? 'bg-slate-700 text-white border-slate-600'
+                        : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:text-white'
+                    }`}
+                  >
+                    すべて ({stats.recruitmentActivities?.length || 0})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActivityFilter('leave')}
+                    className={`px-2 py-0.5 rounded-lg border font-bold transition ${
+                      activityFilter === 'leave'
+                        ? 'bg-rose-900/40 text-rose-300 border-rose-700'
+                        : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:text-rose-300'
+                    }`}
+                  >
+                    ❌ 辞退のみ ({stats.recruitmentActivities?.filter((a) => a.action === 'LEAVE').length || 0})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActivityFilter('join')}
+                    className={`px-2 py-0.5 rounded-lg border font-bold transition ${
+                      activityFilter === 'join'
+                        ? 'bg-emerald-900/40 text-emerald-300 border-emerald-700'
+                        : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:text-emerald-300'
+                    }`}
+                  >
+                    🟢 参加のみ ({stats.recruitmentActivities?.filter((a) => a.action === 'JOIN').length || 0})
+                  </button>
+                </div>
+              }
+            >
+              {(() => {
+                const logs = (stats.recruitmentActivities || []).filter((act) => {
+                  if (activityFilter === 'leave') return act.action === 'LEAVE';
+                  if (activityFilter === 'join') return act.action === 'JOIN';
+                  return true;
+                });
+
+                if (logs.length === 0) {
+                  return (
+                    <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-center text-xs text-slate-500">
+                      記録された参加・辞退ログはありません（Discord募集でボタンが押されると自動的にここに蓄積されます）。
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="divide-y divide-slate-800/80 border border-slate-800 rounded-xl overflow-hidden bg-slate-950">
+                    <div className="max-h-80 overflow-y-auto">
+                      {logs.map((log) => {
+                        const typeBadge =
+                          log.recruitment_type === 'periodic_sat'
+                            ? { label: '土曜本戦', cls: 'bg-amber-950/40 text-amber-300 border-amber-800/60' }
+                            : log.recruitment_type === 'periodic_sun'
+                            ? { label: '日曜お祭り', cls: 'bg-emerald-950/40 text-emerald-300 border-emerald-800/60' }
+                            : { label: '突発募集', cls: 'bg-sky-950/40 text-sky-300 border-sky-800/60' };
+
+                        const actionBadge =
+                          log.action === 'LEAVE'
+                            ? { label: '❌ 辞退', cls: 'bg-rose-950/50 text-rose-300 border-rose-800/80 font-bold' }
+                            : log.action === 'JOIN'
+                            ? { label: '🟢 参加', cls: 'bg-emerald-950/50 text-emerald-300 border-emerald-800/80' }
+                            : log.action === 'SWITCH_STYLE'
+                            ? { label: '🔄 変更', cls: 'bg-amber-950/50 text-amber-300 border-amber-800/80' }
+                            : { label: '👤 代理追加', cls: 'bg-purple-950/50 text-purple-300 border-purple-800/80' };
+
+                        const styleText =
+                          log.style === 'full'
+                            ? 'フル参加'
+                            : log.style === 'single'
+                            ? '1戦のみ'
+                            : log.style === 'late'
+                            ? '途中参加'
+                            : log.style || null;
+
+                        return (
+                          <div
+                            key={log.id}
+                            className={`p-2.5 flex items-center justify-between gap-3 text-xs hover:bg-slate-900/60 transition ${
+                              log.action === 'LEAVE' ? 'bg-rose-950/10' : ''
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold border shrink-0 ${typeBadge.cls}`}>
+                                {typeBadge.label}
+                              </span>
+                              <span className="font-bold text-white truncate max-w-[140px] sm:max-w-[200px]" title={log.user_name}>
+                                {log.user_name}
+                              </span>
+                              {log.metadata?.rank && (
+                                <span className="text-[10px] text-slate-400 shrink-0">
+                                  {log.metadata.rank}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className={`px-2 py-0.5 rounded text-[11px] border flex items-center gap-1 ${actionBadge.cls}`}>
+                                {actionBadge.label}
+                                {styleText && <span className="text-[10px] opacity-80">({styleText})</span>}
+                              </span>
+                              <span className="text-[10px] text-slate-500 font-mono w-16 text-right shrink-0" title={log.created_at}>
+                                {ago(log.created_at)}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
             </Card>
 
             {/* ナレッジ */}
