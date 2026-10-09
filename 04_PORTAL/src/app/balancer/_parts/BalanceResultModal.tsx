@@ -1,11 +1,11 @@
 "use client";
 
-import React, { Fragment } from "react";
+import React, { Fragment, useState, useEffect } from "react";
 import { toast } from '../../../components/Toaster';
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../../lib/supabaseClient";
-import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Settings, Sparkles, Coins, Copy, Check, Shuffle } from "lucide-react";
+import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Settings, Sparkles, Coins, Copy, Check, Shuffle, Flame } from "lucide-react";
 import { getColorFromRankName, calculateBlueWinProbability, getKtmRank, getRankBadgeStyle, getHighestLaneMmr } from "../../../lib/mmr";
 import { getPlayerTier } from "../../../lib/playerTier";
 import { BalancerVcManager, updateVcStatus } from "../components/BalancerVcManager";
@@ -50,6 +50,30 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
   renderSwapSelect: (team: 'teamBlue' | 'teamRed' | 'spectators', role: string, currentPlayerName: string) => any;
   handicapNames: Set<any>;
 }) {
+  const [clashData, setClashData] = useState<any>(null);
+  const [loadingClash, setLoadingClash] = useState(false);
+
+  useEffect(() => {
+    if (!balanceResult?.teamBlue?.length || !balanceResult?.teamRed?.length) return;
+    setLoadingClash(true);
+    fetch('/api/balancer/clash', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        teamBlue: balanceResult.teamBlue,
+        teamRed: balanceResult.teamRed,
+      }),
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setClashData(data);
+        }
+      })
+      .catch(err => console.error('[NemesisClash] fetch error:', err))
+      .finally(() => setLoadingClash(false));
+  }, [balanceResult]);
+
   return (
         <div
           className="fixed inset-0 z-50 flex items-start justify-center bg-black/75 backdrop-blur-sm p-2 md:p-4 overflow-y-auto"
@@ -216,6 +240,94 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
                 );
               })()}
 
+              {/* ⚔️ 因縁マッチアップ ＆ 黄金デュオ速報（Nemesis Clash） */}
+              {(loadingClash || clashData?.featuredClash || (clashData?.goldenDuos && clashData.goldenDuos.length > 0)) && (
+                <div className="p-4 rounded-2xl border border-primary-edge-soft/70 bg-gradient-to-br from-primary-50/50 via-surface to-surface shadow-xs space-y-3">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">⚔️</span>
+                      <h3 className="text-xs font-black text-foreground flex items-center gap-1.5">
+                        本日の因縁・ライバル対決速報
+                        <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-primary-100 text-primary-800 border border-primary-edge">
+                          Nemesis Clash
+                        </span>
+                      </h3>
+                    </div>
+                    {loadingClash && (
+                      <span className="text-[10px] text-muted-strong flex items-center gap-1">
+                        <RefreshCw className="h-3 w-3 animate-spin text-primary-600" />
+                        対戦履歴を照合中…
+                      </span>
+                    )}
+                  </div>
+
+                  {/* ハイライト因縁カード */}
+                  {clashData?.featuredClash && (
+                    <div className="p-3 rounded-xl bg-surface border border-border shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                            clashData.featuredClash.type === 'NEMESIS'
+                              ? 'bg-danger-100 text-danger-900 border border-danger-edge'
+                              : 'bg-primary-100 text-primary-900 border border-primary-edge'
+                          }`}>
+                            {clashData.featuredClash.type === 'NEMESIS' ? '💥 最大の因縁' : '🔥 好敵手'}
+                          </span>
+                          <strong className="text-xs font-black text-foreground">
+                            {clashData.featuredClash.headline}
+                          </strong>
+                        </div>
+                        <p className="text-[11px] text-foreground-soft leading-relaxed">
+                          {clashData.featuredClash.subtext}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0 self-end md:self-center font-mono">
+                        <span className="text-xs font-bold text-secondary-700 bg-secondary-100 px-2 py-1 rounded-lg border border-secondary-edge">
+                          {clashData.featuredClash.bluePlayer} ({clashData.featuredClash.blueWins}勝)
+                        </span>
+                        <span className="text-[10px] font-black text-muted-strong">vs</span>
+                        <span className="text-xs font-bold text-danger-700 bg-danger-100 px-2 py-1 rounded-lg border border-danger-edge">
+                          {clashData.featuredClash.redPlayer} ({clashData.featuredClash.redWins}勝)
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 黄金デュオ一覧 */}
+                  {clashData?.goldenDuos && clashData.goldenDuos.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
+                      {clashData.goldenDuos.map((duo: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 text-xs ${
+                            duo.teamSide === 'BLUE'
+                              ? 'bg-secondary-50/70 border-secondary-edge-soft text-secondary-900'
+                              : 'bg-danger-50/70 border-danger-edge-soft text-danger-900'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">🤝</span>
+                            <div>
+                              <span className="font-black block text-xs">
+                                {duo.player1} ＆ {duo.player2}
+                              </span>
+                              <span className="text-[10px] opacity-80 font-medium">
+                                {duo.label}
+                              </span>
+                            </div>
+                          </div>
+                          <span className={`text-[10px] font-mono font-black px-2 py-0.5 rounded-md ${
+                            duo.teamSide === 'BLUE' ? 'bg-secondary-100 text-secondary-800' : 'bg-danger-100 text-danger-800'
+                          }`}>
+                            {duo.teamSide} TEAM
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* 案タブ */}
               {proposals.length > 1 && (
                 <div className="flex border-b border-border gap-2 overflow-x-auto pb-1">
@@ -372,7 +484,19 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
                       </div>
                       <div className="col-span-1 flex flex-col items-center py-1">
                         <div className="w-8 h-8 rounded-full bg-surface-subtle border border-border flex items-center justify-center shadow-lg"><RoleIcon role={role} className="w-4 h-4" /></div>
-                        <span className={`text-[10px] font-mono mt-1 font-extrabold ${diff>0?'text-secondary-700':diff<0?'text-danger-700':'text-muted-strong'}`}>{diff>0?`+${diff}`:diff<0?diff:'±0'}</span>
+                        <span className={`text-[10px] font-mono mt-0.5 font-extrabold ${diff>0?'text-secondary-700':diff<0?'text-danger-700':'text-muted-strong'}`}>{diff>0?`+${diff}`:diff<0?diff:'±0'}</span>
+                        {(() => {
+                          const clash = clashData?.laneClashes?.find((c: any) => c.role === role);
+                          if (!clash || clash.games === 0) return null;
+                          return (
+                            <span
+                              className="text-[8px] font-mono font-bold text-muted-strong bg-surface border border-border px-1 py-0.2 rounded mt-0.5 shadow-2xs whitespace-nowrap cursor-help"
+                              title={`過去の直接対決: ${clash.bluePlayer} ${clash.blueWins}勝 - ${clash.redWins}勝 ${clash.redPlayer} (${clash.headline})`}
+                            >
+                              {clash.blueWins}勝-{clash.redWins}勝
+                            </span>
+                          );
+                        })()}
                       </div>
                       <div draggable={!!pR?.name} onDragStart={e => handleDragStart(e,'teamRed',role,pR?.name||'')} onDragOver={e => handleDragOver(e,rKey)} onDragLeave={handleDragLeave} onDrop={e => handleDropPlayer(e,'teamRed',role)}
                         className={`col-span-5 flex items-center gap-2 p-2 rounded-xl border transition cursor-grab active:cursor-grabbing ${dragOverSlot===rKey?'border-danger-edge-strong bg-danger-100 border-dashed':'bg-danger-50 border-danger-edge-soft hover:bg-danger-100'} ${swapSource?.name === pR?.name ? 'border-primary-edge-strong bg-primary-100 animate-pulse' : ''}`}>
