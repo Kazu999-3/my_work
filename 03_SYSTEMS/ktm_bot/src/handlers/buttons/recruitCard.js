@@ -174,21 +174,40 @@ export async function handleRecruitCardButtons(interaction, env, ctx, { customId
     );
   }
 
-  // 参加者・見学者のアクティブマーク（👑、🔰、🌱、⏳等）を補完
+  // 参加者・見学者のアクティブマーク（👑、🔰、🌱、⏳等）および希望レーンを補完
   if (!metadata.badges) metadata.badges = {};
+  if (!metadata.lanes) metadata.lanes = {};
   const allParticipantIds = [...new Set([...(metadata.joined || []), ...(metadata.spectating || [])])];
-  const missingBadgeIds = allParticipantIds.filter(id => !metadata.badges[id]);
-  if (missingBadgeIds.length > 0) {
+  const missingInfoIds = allParticipantIds.filter(id => !metadata.badges[id] || !metadata.lanes[id]);
+  if (missingInfoIds.length > 0) {
     try {
-      const idsStr = missingBadgeIds.map(i => `"${i}"`).join(',');
-      const pRows = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${idsStr})&select=discord_id,games_top,games_jg,games_mid,games_adc,games_sup,total_games,metadata,days_since_last_match`);
+      const idsStr = missingInfoIds.map(i => `"${i}"`).join(',');
+      const pRows = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${idsStr})&select=discord_id,games_top,games_jg,games_mid,games_adc,games_sup,total_games,metadata,days_since_last_match,role_preferences`);
       const pMap = new Map((pRows || []).map(p => [String(p.discord_id), p]));
-      for (const id of missingBadgeIds) {
-        metadata.badges[id] = getPlayerActiveMark(pMap.get(String(id)));
+      for (const id of missingInfoIds) {
+        const p = pMap.get(String(id));
+        if (!metadata.badges[id]) metadata.badges[id] = getPlayerActiveMark(p);
+        if (!metadata.lanes[id]) {
+          let pr = p?.role_preferences?.primary;
+          if (typeof p?.role_preferences === 'string') {
+            try { pr = JSON.parse(p.role_preferences)?.primary; } catch {}
+          }
+          metadata.lanes[id] = (pr && pr !== '指定なし' && pr !== 'なし') ? pr.toUpperCase() : 'ALL';
+        }
       }
     } catch (e) {
-      console.warn('badges fetch error:', e);
+      console.warn('badges/lanes fetch error:', e);
     }
+  }
+
+  // カスタム募集の場合、参加者一覧（metadata.joined）を希望レーン順にソート
+  if (metadata.mode === 'カスタム' && Array.isArray(metadata.joined) && metadata.joined.length > 1) {
+    const lanePriority = { TOP: 1, JG: 2, MID: 3, ADC: 4, BOT: 4, SUP: 5, ALL: 6 };
+    metadata.joined.sort((a, b) => {
+      const lA = lanePriority[metadata.lanes?.[a]] || 6;
+      const lB = lanePriority[metadata.lanes?.[b]] || 6;
+      return lA - lB;
+    });
   }
 
   if (customId.startsWith('close_silent') || customId.startsWith('close')) {

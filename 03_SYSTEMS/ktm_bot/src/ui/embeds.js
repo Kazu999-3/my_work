@@ -2,6 +2,7 @@ import { CONFIG } from '../config.js';
 import {
   RECRUITMENT_COLORS, getDayDef, buildDayBanner, replaceBanner,
   computeDayStatus, computeDominantTier, parseEntryBreakdown, cleanEntryLine,
+  sortEntryLinesByLane,
 } from '../utils/recruitmentStatus.js';
 import { PLAYSTYLE_ROLE_NAMES } from '../utils/discordRoles.js';
 
@@ -89,7 +90,11 @@ export function renderRoles(data) {
     }
   } else {
     lines.push(`👥 **参加メンバー一覧 (${data.joined.length}/${data.maxCount || (isCustom ? 10 : 5)}人)**`);
-    data.joined.forEach((id, i) => lines.push(`\`${String(i + 1).padStart(2, '0')}.\` <@${id}>${getMark(id)}`));
+    const getLaneBadge = (id) => {
+      if (!isCustom || !data.lanes || !data.lanes[id] || data.lanes[id] === 'ALL') return '';
+      return ` 【${data.lanes[id]}】`;
+    };
+    data.joined.forEach((id, i) => lines.push(`\`${String(i + 1).padStart(2, '0')}.\` <@${id}>${getMark(id)}${getLaneBadge(id)}`));
     const targetMax = data.maxCount || (isCustom ? 10 : 5);
     for (let i = data.joined.length + 1; i <= targetMax; i++) {
       lines.push(`\`${String(i).padStart(2, '0')}.\` ◽ *(募集中)*`);
@@ -522,8 +527,8 @@ function renderEntryList(lines, status) {
     }
   }
 
-  // 変則参加も観戦枠もいない場合はシンプルに全行（フル参加表記除去・アイコン化済み）を表示
-  const cleaned = (b?.eligibleLines || lines).map(cleanEntryLine);
+  // 変則参加も観戦枠もいない場合はシンプルに全行（フル参加表記除去・アイコン化済み）をレーン順にソートして表示
+  const cleaned = sortEntryLinesByLane((b?.eligibleLines || lines).map(cleanEntryLine));
   return formatLinesSafe(cleaned);
 }
 

@@ -234,28 +234,38 @@ export function computeDominantTierInfo(lines) {
   };
 }
 
-/** 行から希望レーンを抽出（新形式 【TOP/JG】 と 旧形式 【第1: TOP / 第2: JG】 の両対応） */
-export function extractPlayerLanes(rawLine) {
-  const set = new Set();
-  const line = rawLine || '';
+const ROLE_SORT_ORDER = {
+  TOP: 1,
+  JG: 2,
+  JUNGLE: 2,
+  MID: 3,
+  MIDDLE: 3,
+  BOT: 4,
+  ADC: 4,
+  SUP: 5,
+  SUPPORT: 5,
+};
 
+/** 行から第一希望レーンのソート順を取得（TOP:1, JG:2, MID:3, ADC/BOT:4, SUP:5, おまかせ:6） */
+export function getLaneOrder(rawLine) {
+  const line = rawLine || '';
   // 新形式 【TOP/JG】 または 【TOP】
   const shortMatch = line.match(/【([A-Za-z]+)(?:\/([A-Za-z]+))?】/);
   if (shortMatch) {
     const r1 = shortMatch[1]?.toUpperCase();
-    const r2 = shortMatch[2]?.toUpperCase();
-    const validRoles = new Set(['TOP', 'JG', 'MID', 'BOT', 'ADC', 'SUP']);
-    if (validRoles.has(r1)) set.add(r1);
-    if (validRoles.has(r2)) set.add(r2);
-    if (set.size > 0) return set;
+    if (ROLE_SORT_ORDER[r1]) return ROLE_SORT_ORDER[r1];
   }
-
-  // 旧形式 【第1: TOP / 第2: JG】
+  // 旧形式 【第1: TOP ...】
   const p1 = line.match(/第1:\s*([A-Za-z]+)/)?.[1]?.toUpperCase();
-  const p2 = line.match(/第2:\s*([A-Za-z]+)/)?.[1]?.toUpperCase();
-  if (p1 && p1 !== '指定なし') set.add(p1);
-  if (p2 && p2 !== '指定なし') set.add(p2);
-  return set;
+  if (p1 && ROLE_SORT_ORDER[p1]) return ROLE_SORT_ORDER[p1];
+
+  return 6; // 未設定、指定なし、おまかせ等は末尾
+}
+
+/** 参加者行配列をレーン順（TOP ➔ JG ➔ MID ➔ ADC ➔ SUP ➔ おまかせ）に安定ソート */
+export function sortEntryLinesByLane(lines) {
+  if (!Array.isArray(lines)) return [];
+  return [...lines].sort((a, b) => getLaneOrder(a) - getLaneOrder(b));
 }
 
 /** 2人が共通の希望レーンを持っているか（指定なし・おまかせ含む） */
@@ -338,20 +348,24 @@ export function parseEntryBreakdown(lines, dominantTierKey = null) {
   const match1Count = eligibleFull.length + eligibleSingle.length;
   const match2Count = eligibleFull.length + eligibleLate.length;
 
-  // 試合別の行一覧（第1戦出場メンバーと2戦目合流メンバー）
-  const match1Lines = eligible
-    .filter((e) => !isLateJoin(e.raw))
-    .map((e) => e.line);
-  const match2LateLines = eligible
-    .filter((e) => isLateJoin(e.raw))
-    .map((e) => e.line);
+  // 試合別の行一覧（第1戦出場メンバーと2戦目合流メンバー）をレーン順にソート
+  const match1Lines = sortEntryLinesByLane(
+    eligible
+      .filter((e) => !isLateJoin(e.raw))
+      .map((e) => e.line)
+  );
+  const match2LateLines = sortEntryLinesByLane(
+    eligible
+      .filter((e) => isLateJoin(e.raw))
+      .map((e) => e.line)
+  );
 
   return {
     total: entries.length,
     eligibleTotal: eligible.length,
     spectatorTotal: spectator.length,
-    eligibleLines: eligible.map((e) => e.line),
-    spectatorLines: spectator.map((e) => e.line),
+    eligibleLines: sortEntryLinesByLane(eligible.map((e) => e.line)),
+    spectatorLines: sortEntryLinesByLane(spectator.map((e) => e.line)),
     match1Lines,
     match2LateLines,
     dominantTierKey,
