@@ -30,7 +30,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
               誰でもすぐ参加できる！KTMカスタム入門
             </h2>
             <p className="text-foreground-subtle text-xs md:text-sm max-w-2xl font-medium leading-relaxed">
-              登録は3ステップで完了！一度設定すれば、Discordの募集ボタンを1タップするだけで公平なチーム分けに参加できます。
+              Discordの「#自己紹介」にテンプレを貼るだけで名簿・希望レーン登録が自動完了！カスタム試合はDiscordだけでも全機能参加できます。ポータルは通算戦績分析や勝敗予想カジノを楽しみたいときの便利マイページです。
             </p>
           </div>
           <div className="flex flex-wrap gap-2 shrink-0">
@@ -38,7 +38,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
               href="/mypage"
               className="px-4 py-2.5 rounded-xl bg-primary-600 hover:bg-primary-500 text-white font-black text-xs transition shadow-md flex items-center gap-1.5 cursor-pointer"
             >
-              マイページで設定する <ArrowRight size={14} />
+              マイページで確認する <ArrowRight size={14} />
             </Link>
           </div>
         </div>
@@ -57,18 +57,18 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
                 STEP 1
               </span>
             </div>
-            <h3 className="text-base font-black text-foreground">Riot ID（サモナー名）登録</h3>
+            <h3 className="text-base font-black text-foreground">LoL ID（自己紹介）登録</h3>
             <p className="text-muted text-xs leading-relaxed">
-              ポータル右上の <strong className="text-foreground font-bold">「Discordログイン」</strong> から連携するか、マイページでゲーム内の <code className="bg-surface-subtle text-primary-900 px-1.5 py-0.5 rounded font-mono font-bold">名前#TAG</code> を入力します。
+              Discordの <strong className="text-foreground font-bold">「#📝自己紹介」</strong> にテンプレを貼るだけで、Botが自動でID・ランク・希望レーン・NGレーンを全自動登録！ポータル右上からDiscordログインすればマイページでいつでも確認・変更できます。
             </p>
             <div className="bg-background border border-border/80 rounded-xl p-3 text-[11px] text-muted space-y-1">
               <div className="font-bold text-foreground-soft flex items-center gap-1">
                 <CheckCircle2 size={13} className="text-success-600" />
                 登録するとできること
               </div>
-              <p>・過去のソロQランク自動取得</p>
-              <p>・カスタム勝率・MMRの自動集計</p>
-              <p>・初期 <strong className="text-primary-700 font-bold">1,000コイン</strong> の自動受取</p>
+              <p>・過去のソロQランク自動取得＆初期MMR設定</p>
+              <p>・カスタムNGレーンを考慮した公平なチーム分け</p>
+              <p>・初期 <strong className="text-primary-700 font-bold">1,000コイン</strong> の自動付与</p>
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-surface-subtle">
@@ -162,6 +162,15 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-4 rounded-2xl bg-background border border-border/80 space-y-1.5">
+            <h4 className="text-xs font-black text-foreground flex items-center gap-1.5">
+              <span>🌐</span> ポータル（Webサイト）にログインしなくてもカスタムに参加できますか？
+            </h4>
+            <p className="text-[11px] text-muted leading-relaxed">
+              はい、参加できます！Discordの「#自己紹介」で投稿していれば、募集スタンプを押すだけで自動的にチーム分けに組み込まれます。ポータルは自分の詳細な戦績分析や、勝敗予想カジノ・ガチャ・ショップを楽しみたい方向けのお楽しみ便利ツールです。
+            </p>
+          </div>
+
           <div className="p-4 rounded-2xl bg-background border border-border/80 space-y-1.5">
             <h4 className="text-xs font-black text-foreground flex items-center gap-1.5">
               <span>💡</span> 1戦だけのスポット参加や途中抜けはできますか？

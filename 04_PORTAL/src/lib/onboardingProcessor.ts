@@ -502,6 +502,9 @@ export async function processSingleIntroMessage(msg: {
   if (channelId) {
     const headers = getBotHeaders();
     const rankDisplay = rankTier !== 'UNRANKED' ? `${rankTier} ${rankDiv}`.trim() : 'UNRANKED (未認定)';
+    const ngList = [parsed.ngLane1, parsed.ngLane2].filter(Boolean).join(', ');
+    const ngDisplay = ngList ? `\`${ngList}\`` : '`なし`';
+
     const welcomeText = [
       `👋 **<@${discordId}> さん、KTMサーバーへようこそ！**`,
       '',
@@ -511,13 +514,22 @@ export async function processSingleIntroMessage(msg: {
       `・**LoL ID**: \`${parsed.ign}\``,
       `・**現在のランク**: \`${rankDisplay}\`（初期KTM MMR: \`${initialMmr}\`）`,
       `・**希望レーン**: メイン \`${parsed.mainLane}\` / サブ \`${parsed.subLane}\``,
+      `・**カスタムNGレーン**: ${ngDisplay}（バランサーが配慮します）`,
       `・**初期所持コイン**: \`1,000 🪙\``,
       '',
       `🎉 **付与されたロール**:`,
       `・\`🔰 初参加\`${isLowRank(rankTier) ? '、`🌱 初中級交流`' : ''}`,
       '',
+      `🚀 **次の一歩！カスタム参加の目安**:`,
+      `1️⃣ **週末定期カスタム（毎週土日 21:00〜）**:`,
+      `   ・<#1528646515533287497> に募集案内が出ます。参加したい日のリアクション（スタンプ）を押すだけでエントリー完了！`,
+      `   ・**初参加におすすめ**: 日曜日の「お祭りカスタム（戦績ノーカウント保護・練習歓迎）」や、土曜の「1戦だけ参加（⏱️）」から体験するのが気楽でおすすめです！`,
+      `   ・チーム分けはバランサーが実力五分五分に自動調整するので「足を引っ張ったらどうしよう…」の心配は一切不要です👍`,
+      `2️⃣ **Webポータル（戦績・カジノ・ショップ）**:`,
+      `   ・Discordだけで試合はフル参加できます！試合の観戦中や合間には、ポータルで勝敗予想カジノやガチャも楽しめます。`,
+      '',
       `💡 **ここは運営との個別案内チャットです**`,
-      `Discordの使い方、週末カスタムの参加手順、質問や相談など、分からないことがあれば何でもこの部屋でお気軽にメッセージしてくださいね！🤝`,
+      `「当日の流れが分からない」「VC聞き専でもいい？」など、疑問や不安があれば何でもこの部屋でお気軽にメッセージしてくださいね！🤝`,
     ].join('\n');
 
     await discordFetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
