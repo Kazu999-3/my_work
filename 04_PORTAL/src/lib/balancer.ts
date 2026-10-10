@@ -77,6 +77,14 @@ export interface BalanceResult {
   teamRed: AssignedPlayer[];
   spectators: string[];
   balanceReport: string[];
+  unallowedHigherMatchups?: {
+    role: Role;
+    weakerName: string;
+    weakerMmr: number;
+    strongerName: string;
+    strongerMmr: number;
+    diff: number;
+  }[];
   banProtect?: {
     targetName: string;
   } | null;
@@ -172,10 +180,20 @@ export function selectPlayersWithPity(allPlayers: Player[]): { selected: Player[
   });
 
   // 3. 選抜順序:
-  // ① 基準レートからの近接度（ボリュームゾーンに近い人を優先選抜）
-  // ② 同等レート帯内では Spectator Pity > レーンPity > ランダム
-  // ※ これにより、ゴールド中心の部屋で1人だけシルバーやダイヤが混ざった場合、外れ値が自動で観戦枠に回る。
+  // ① 格上許可がOFF (allowHigher === false) かつ 基準レートより大幅に低い人（MMR差200以上離れている）は
+  //    格上対面で一方的な展開になるのを防ぐため、優先的に観戦枠（ベンチ）へ回す。
+  // ② 基準レートからの近接度（ボリュームゾーンに近い人を優先選抜）
+  // ③ 同等レート帯内では Spectator Pity > レーンPity > ランダム
   candidateInfo.sort((a, b) => {
+    // 格上未許可保護: 全体中央値より200以上低く、かつ allowHigher が false の場合は選抜優先度を下げる（後ろへ回す）
+    const aMmr = getPlayerRepresentativeMmr(a.player);
+    const bMmr = getPlayerRepresentativeMmr(b.player);
+    const aIsUnallowedLow = !a.player.allowHigher && (medianMmr - aMmr >= 200);
+    const bIsUnallowedLow = !b.player.allowHigher && (medianMmr - bMmr >= 200);
+    if (aIsUnallowedLow !== bIsUnallowedLow) {
+      return aIsUnallowedLow ? 1 : -1; // 未許可の格下は後ろ（観戦枠側）へ
+    }
+
     const diffGap = Math.abs(a.diffFromMedian - b.diffFromMedian);
     if (diffGap > 180) {
       return a.diffFromMedian - b.diffFromMedian; // 基準レートに近い順
@@ -513,15 +531,15 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
           const checkOpponent = (p: Player, opp: Player, currentRole: Role) => {
              const oppMmr = opp.rates[currentRole];
              const mmrDiff = oppMmr - p.rates[currentRole];
-             // 600超は格差禁止(上記)で先に弾かれ実質発動しなかったため、現実的な300超に是正
-             const isHigherOpp = mmrDiff > 300;
+             // 格上対面判定 (MMR差200以上)
+             const isHigherOpp = mmrDiff >= 200;
              const isMainLane = (currentRole === p.pref1);
              
              if (isHigherOpp) {
                if (!isMainLane) penalty += Math.pow(mmrDiff, 2) * 2; 
                if (p.allowHigher === false) {
-                 penalty += Math.pow(mmrDiff, 2) * 10;
-                 penalty += 5000;
+                 // 未許可の格上対面は最優先でブロック（他の妥協案があれば絶対に選ばれないペナルティ）
+                 penalty += 2000000 + Math.pow(mmrDiff, 2) * 20;
                }
              }
 
@@ -797,10 +815,34 @@ function buildBalanceResult(
     balanceReport.push(`**調整の背景**: 全員が希望通りの完璧な構成です！`);
   }
 
+  // ⚠️ 未許可の格上対面を監査・抽出 (MMR差200以上かつ allowHigher === false)
+  const unallowedHigherMatchups: BalanceResult['unallowedHigherMatchups'] = [];
+  ROLES.forEach(role => {
+    const pB = teamBlue.find(p => p.currentRole === role);
+    const pR = teamRed.find(p => p.currentRole === role);
+    if (pB && pR) {
+      const diff = Math.abs(pB.mmr - pR.mmr);
+      if (diff >= 200) {
+        const weaker = pB.mmr < pR.mmr ? pB : pR;
+        const stronger = pB.mmr < pR.mmr ? pR : pB;
+        if (!weaker.allowHigher) {
+          unallowedHigherMatchups.push({
+            role,
+            weakerName: weaker.name,
+            weakerMmr: weaker.mmr,
+            strongerName: stronger.name,
+            strongerMmr: stronger.mmr,
+            diff
+          });
+        }
+      }
+    }
+  });
+
   const outlierLowPlayer = allAssigned.find(p => p.isOutlierLow);
   const banProtect = outlierLowPlayer ? { targetName: outlierLowPlayer.name } : null;
 
-  return { teamBlue, teamRed, spectators: [], balanceReport, banProtect };
+  return { teamBlue, teamRed, spectators: [], balanceReport, unallowedHigherMatchups, banProtect };
 }
 
 // ==========================================

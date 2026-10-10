@@ -158,6 +158,37 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
             </div>
 
             <div className="p-4 md:p-6 space-y-4">
+              {/* ⚠️ 未許可の格上対面警告（管理者確認バナー） */}
+              {balanceResult.unallowedHigherMatchups && balanceResult.unallowedHigherMatchups.length > 0 && (
+                <div className="p-3.5 rounded-xl border border-danger-500 bg-danger-50 text-danger-900 shadow-sm space-y-2">
+                  <div className="flex items-center gap-2 font-bold text-sm text-danger-800">
+                    <AlertTriangle className="h-5 w-5 text-danger-600 shrink-0 animate-pulse" />
+                    <span>⚠️ 【管理者確認】格上対面が許可されていないプレイヤーが含まれています</span>
+                  </div>
+                  <p className="text-xs text-danger-800/90 leading-relaxed">
+                    以下の対面はMMR差が200以上（シルバーvsプラチナ等）ありますが、下位側プレイヤーの「格上許可」チェックが入っていません。10人構成の都合上やむを得ずマッチングされた可能性があります。
+                  </p>
+                  <div className="space-y-1 bg-white/80 p-2.5 rounded-lg border border-danger-200 text-xs">
+                    {balanceResult.unallowedHigherMatchups.map((m: any, idx: number) => (
+                      <div key={idx} className="flex items-center justify-between flex-wrap gap-1">
+                        <span className="font-bold text-danger-700">[{m.role}]</span>
+                        <span>
+                          <strong className="text-danger-900">{m.weakerName}</strong> ({m.weakerMmr})
+                          <span className="text-faint mx-1 font-mono">VS</span>
+                          <strong className="text-foreground">{m.strongerName}</strong> ({m.strongerMmr})
+                        </span>
+                        <span className="font-mono font-bold text-danger-600 bg-danger-100 px-1.5 py-0.5 rounded text-[11px]">
+                          MMR差: +{m.diff}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-[11px] text-danger-700 flex items-center justify-between pt-1">
+                    <span>※ このまま対戦を実施するか、下部のレーン入れ替え（⇄）やハンデ設定で調整してください。</span>
+                  </div>
+                </div>
+              )}
+
               {/* 環境分析 */}
               {analysis && (
                 <div className={`p-3 rounded-xl border text-sm flex flex-col gap-2 ${analysis.level === 'HIGH_DIFFERENCE' ? 'bg-primary-100 border-primary-edge-soft text-primary-700' : analysis.level === 'CLOSE' ? 'bg-success-100 border-success-edge-soft text-success-700' : 'bg-primary-100 border-primary-edge-soft text-primary-700'}`}>

@@ -71,7 +71,7 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
           fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${msgId}`, {
             headers: { "Authorization": `Bot ${botToken}` }
           }),
-          fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup,role_preferences,name,games_top,games_jg,games_mid,games_adc,games_sup,metadata`)
+          fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup,role_preferences,name,games_top,games_jg,games_mid,games_adc,games_sup,metadata,allow_higher`)
             .then((rows) => (rows && rows.length > 0 ? rows[0] : null))
             .catch((e) => { console.warn('join_periodic: 名簿取得に失敗:', e); return null; }),
         ]);
@@ -166,6 +166,39 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
               lanePref: lanePrefStr.trim()
             }
           }).catch((e) => console.warn('Activity log error:', e));
+
+          // ⚠️ 格上対面リスクの事前警告（本人限定エフェメラル通知）
+          if (activityAction === 'JOIN' && playerRow && playerRow.allow_higher === false) {
+            try {
+              const myMmr = getHighestLaneMmr(playerRow) || playerRow.mmr || 1200;
+              // 現在のエントリー者（自分以外）の Discord ID を抽出
+              const otherUserIds = nextLines
+                .map(line => {
+                  const m = line.match(/<@(\d+)>/);
+                  return m ? m[1] : null;
+                })
+                .filter(id => id && id !== userId);
+
+              if (otherUserIds.length > 0) {
+                const otherRows = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${otherUserIds.join(',')})&select=name,mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup`)
+                  .catch(() => []);
+                const higherOpponents = (otherRows || []).filter(opp => {
+                  const oppMmr = getHighestLaneMmr(opp) || opp.mmr || 1200;
+                  return oppMmr - myMmr >= 200;
+                });
+
+                if (higherOpponents.length >= 2) {
+                  const oppSample = higherOpponents.slice(0, 3).map(o => o.name).join('さん、') + 'さん';
+                  await sendInteractionFollowup(appId, token, {
+                    content: `⚠️ **【格上マッチングに関する事前のご案内】**\n現在エントリー中のメンバーに、あなたと実力・MMR差が大きい方（${oppSample} 等）が含まれています。\n\n現在あなたの設定は **【格上対面：未許可（OFF）】** になっているため、対面の組み合わせ次第では **観戦枠（待機ベンチ）に回る可能性** があります。\n（※「格上相手でも胸を借りるつもりで対戦したい！」という場合は、Webポータルから「格上許可」にチェックを付けるか運営までお伝えください🙏）`,
+                    flags: 64
+                  }).catch(e => console.warn('Followup warn error:', e));
+                }
+              }
+            } catch (warnErr) {
+              console.warn('Higher MMR warning check failed:', warnErr);
+            }
+          }
         }
 
         // ★ あと1名になった瞬間にラストワン促進の返信を自動投稿

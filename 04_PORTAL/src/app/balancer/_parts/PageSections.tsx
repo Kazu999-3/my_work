@@ -134,7 +134,7 @@ export function MatchingGlossary() {
         </div>
         <div className="bg-surface-subtle p-4 rounded border border-border">
           <span className="font-bold text-danger-700 mb-1 block">格上許可 (ON/OFF)</span>
-          <p className="text-faint">自分よりMMRが高い相手と対面することを許容するかどうかの設定です。</p>
+          <p className="text-faint">自分より実力・MMR差が大きい相手（差200以上、シルバーvsプラチナ等）との対面を許容する設定です。OFFの場合は極力対面がブロックされ、11人以上の選抜時は観戦枠へ優先送致されます。</p>
         </div>
         <div className="bg-surface-subtle p-4 rounded border border-border">
           <span className="font-bold text-success-700 mb-1 block">PITY (ピティ)</span>

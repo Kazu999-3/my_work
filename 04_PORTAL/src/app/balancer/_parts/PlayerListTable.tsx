@@ -290,7 +290,7 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                             {[1,2,3].map(n => <option key={n} value={n}>{n}</option>)}
                           </select>
                         </td>
-                        <td className="px-1.5 py-1.5 text-center">
+                        <td className="px-1.5 py-1.5 text-center" title="格上許可 (ON: MMR差200以上/シルバーvsプラチナ等の対面を許容する)">
                           <input type="checkbox" checked={!!p.allow_higher} onChange={e => handleInputChange(p.id,'allow_higher',e.target.checked)} className="w-4 h-4 rounded border-border bg-surface-subtle text-danger-700 focus:ring-danger-500/50 cursor-pointer transition-transform hover:scale-110" />
                         </td>
                         <td className="px-1.5 py-1.5 text-center">
