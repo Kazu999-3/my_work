@@ -537,8 +537,13 @@ export async function processSingleIntroMessage(msg: {
     const rankDisplay = rankTier !== 'UNRANKED'
       ? `${rankTier} ${rankDiv}`.trim() + (isDeclaredOnly ? '（自己申告）' : '')
       : 'UNRANKED (未認定)';
+    const portalUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://my-work-8jbd.vercel.app';
+    const mypageUrl = `${portalUrl}/mypage`;
+
     const ngList = [parsed.ngLane1, parsed.ngLane2].filter(Boolean).join(', ');
-    const ngDisplay = ngList ? `\`${ngList}\`` : '`なし`';
+    const ngLine = ngList
+      ? `・**カスタムNGレーン**: \`${ngList}\`（チーム分け時にこのレーンへ配置されません）`
+      : `・**カスタムNGレーン**: \`なし\`（※もし苦手・避けたいレーンがあれば、[マイページ](${mypageUrl}) からいつでも設定できます！）`;
 
     const welcomeText = [
       `👋 **<@${discordId}> さん、KTMサーバーへようこそ！**`,
@@ -549,7 +554,7 @@ export async function processSingleIntroMessage(msg: {
       `・**LoL ID**: \`${parsed.ign}\``,
       `・**現在のランク**: \`${rankDisplay}\`（初期KTM MMR: \`${initialMmr}\`）`,
       `・**希望レーン**: メイン \`${parsed.mainLane}\` / サブ \`${parsed.subLane}\``,
-      `・**カスタムNGレーン**: ${ngDisplay}（バランサーが配慮します）`,
+      ngLine,
       `・**初期所持コイン**: \`1,000 🪙\``,
       '',
       `🎉 **付与されたロール**:`,
@@ -562,6 +567,8 @@ export async function processSingleIntroMessage(msg: {
       `   ・チーム分けはバランサーが実力五分五分に自動調整するので「足を引っ張ったらどうしよう…」の心配は一切不要です👍`,
       `2️⃣ **Webポータル（戦績・カジノ・ショップ）**:`,
       `   ・Discordだけで試合はフル参加できます！試合の観戦中や合間には、ポータルで勝敗予想カジノやガチャも楽しめます。`,
+      `   ・🌐 **KTMポータル**: ${portalUrl}`,
+      `   ・👤 **マイページ（レーン変更・所持コイン確認）**: ${mypageUrl}`,
       '',
       `💡 **ここは運営との個別案内チャットです**`,
       `「当日の流れが分からない」「VC聞き専でもいい？」など、疑問や不安があれば何でもこの部屋でお気軽にメッセージしてくださいね！🤝`,
