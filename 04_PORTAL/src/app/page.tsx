@@ -13,8 +13,8 @@ import {
 } from 'lucide-react';
 
 export const metadata = {
-  title: 'KTM カスタムポータル | チーム分けバランサー ＆ 師弟掲示板・公式カルテ',
-  description: '週末定期カスタム対戦のチーム分けバランサー、師弟マッチング自己紹介掲示板、MMR個人戦績カルテ、勝敗予想ポータル',
+  title: 'KTM カスタムポータル',
+  description: 'KTM LoL週末定期カスタム公式Web。マイカルテ（希望レーン登録）、チーム分けバランサー、師弟掲示板。',
 };
 
 export default function HomePage() {

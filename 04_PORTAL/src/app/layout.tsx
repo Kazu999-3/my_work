@@ -11,23 +11,23 @@ import { ThemeProvider } from "../context/ThemeContext";
 
 export const metadata: Metadata = {
   title: {
-    default: "KTM ポータル | LoL対戦バランサー＆攻略辞典・パーソナルコーチ",
-    template: "%s | KTM ポータル",
+    default: "KTM カスタムポータル",
+    template: "%s | KTM カスタムポータル",
   },
-  description: "KTMカスタム対戦の公平なチーム分けバランサー、最新パッチ対面攻略辞典、MMR個人分析・パーソナルコーチングポータル。",
+  description: "KTM LoL週末定期カスタム公式Web。マイカルテ（希望レーン登録）、チーム分けバランサー、師弟掲示板。",
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "KTM" },
   openGraph: {
-    title: "KTM ポータル | LoL対戦バランサー＆攻略辞典",
-    description: "KTMカスタム対戦のチーム分けバランサー、最新パッチ攻略辞典、個人分析ポータル。",
-    siteName: "KTM ポータル",
+    title: "KTM カスタムポータル",
+    description: "KTM LoL週末定期カスタム公式Web。マイカルテ（希望レーン登録）、チーム分けバランサー、師弟掲示板。",
+    siteName: "KTM カスタムポータル",
     locale: "ja_JP",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "KTM ポータル | LoL対戦バランサー＆攻略辞典",
-    description: "KTMカスタム対戦のチーム分けバランサー、最新パッチ攻略辞典、個人分析ポータル。",
+    title: "KTM カスタムポータル",
+    description: "KTM LoL週末定期カスタム公式Web。マイカルテ（希望レーン登録）、チーム分けバランサー、師弟掲示板。",
   },
 };
 
