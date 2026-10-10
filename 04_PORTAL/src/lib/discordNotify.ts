@@ -408,5 +408,42 @@ export async function sendDiscordDirectMessage(
   }
 }
 
+/**
+ * カスタムの試合進行状況に合わせて、指定のボイスチャットチャンネル名を自動更新する
+ * （例: 「１戦目進行中・交代歓迎」「インターバル・交代募集中」など）
+ */
+export async function updateCustomVoiceChannelStatus(statusText: string): Promise<boolean> {
+  const botToken = process.env.DISCORD_BOT_TOKEN;
+  const channelId = process.env.DISCORD_CUSTOM_STATUS_VC_ID || '1548675524086472796';
+
+  if (!botToken || !channelId) {
+    console.warn('[discordNotify] Cannot update VC channel: DISCORD_BOT_TOKEN or channelId not set');
+    return false;
+  }
+
+  try {
+    const res = await discordFetch(`https://discord.com/api/v10/channels/${channelId}`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bot ${botToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name: statusText }),
+    });
+
+    if (res.ok) {
+      console.log(`[discordNotify] VC channel name updated to: "${statusText}"`);
+      return true;
+    } else {
+      const errText = await res.text();
+      console.warn(`[discordNotify] Failed to update VC channel name (${res.status}):`, errText);
+      return false;
+    }
+  } catch (err) {
+    console.warn('[discordNotify] Exception during updateCustomVoiceChannelStatus:', err);
+    return false;
+  }
+}
+
 
 

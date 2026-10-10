@@ -102,6 +102,21 @@ export async function POST(request: Request) {
       }
     }
 
+    // 🔊 Discord VCチャンネル名を「〇戦目進行中・交代歓迎」に自動更新
+    try {
+      const { updateCustomVoiceChannelStatus } = await import('../../../../lib/discordNotify');
+      // 本日（直近15時間以内）の試合数を取得して何試合目かを算出
+      const todayCutoff = new Date(Date.now() - 15 * 60 * 60 * 1000).toISOString();
+      const { count } = await supabase
+        .from('ktm_matches')
+        .select('*', { count: 'exact', head: true })
+        .gte('played_at', todayCutoff);
+      const matchNum = (count || 0) + 1;
+      await updateCustomVoiceChannelStatus(`${matchNum}戦目進行中・交代歓迎`);
+    } catch (vcErr) {
+      console.warn('[balancer/pending] VC名更新エラー（続行）:', vcErr);
+    }
+
     return NextResponse.json({ success: true, pendingId });
   } catch (error: any) {
     console.error('Pending Match Save Error:', error);

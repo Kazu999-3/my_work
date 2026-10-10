@@ -664,6 +664,7 @@ export async function POST(request: Request) {
               kills: r.kills || 0,
               deaths: r.deaths || 0,
               assists: r.assists || 0,
+              penta_kills: Number(r.penta_kills) || 0,
               mmrDelta: r.mmrDelta || 0,
             })),
           });
@@ -682,11 +683,24 @@ export async function POST(request: Request) {
           console.warn('[match/record] AIニュース生成スキップ（続行）:', newsErr);
         }
 
+        const newsDetails: string[] = [];
+        if (newsArticle) {
+          newsDetails.push(`**${newsArticle.subheadline}**`);
+          newsDetails.push(newsArticle.lead);
+          newsDetails.push(`\n👑 **本日のMVP**: **${newsArticle.mvp?.name}** (${newsArticle.mvp?.champion || ''} / ${newsArticle.mvp?.role} / KDA: ${newsArticle.mvp?.kda})\n📝 **寸評**: ${newsArticle.mvp?.comment || ''}`);
+          if (newsArticle.fighterOfTheMatch) {
+            newsDetails.push(`🛡️ **敢闘賞 (敗軍の将)**: **${newsArticle.fighterOfTheMatch.name}** (${newsArticle.fighterOfTheMatch.champion || ''} / ${newsArticle.fighterOfTheMatch.role} / KDA: ${newsArticle.fighterOfTheMatch.kda})\n📝 **寸評**: ${newsArticle.fighterOfTheMatch.comment}`);
+          }
+          if (newsArticle.turningPoint) {
+            newsDetails.push(`🎯 **勝負の決め手**: ${newsArticle.turningPoint}`);
+          }
+        }
+
         const fieldsList = [
           ...(newsArticle ? [
             {
               name: `📰 【KTMスポーツ号外】${newsArticle.headline}`,
-              value: `**${newsArticle.subheadline}**\n${newsArticle.lead}\n\n👑 **本日のMVP**: **${newsArticle.mvp?.name}** (${newsArticle.mvp?.role} / KDA: ${newsArticle.mvp?.kda})\n💬 *（※AI演出コメント）「${newsArticle.interviewQuote}」*`,
+              value: newsDetails.join('\n'),
               inline: false
             }
           ] : []),
@@ -858,6 +872,14 @@ export async function POST(request: Request) {
         console.warn('[match/record] 師弟チェックイン判定エラー（続行）:', chkErr?.message);
       });
     } catch (_) {}
+
+    // 🔊 Discord VCチャンネル名を「インターバル・交代募集中」に自動更新
+    try {
+      const { updateCustomVoiceChannelStatus } = await import('../../../../lib/discordNotify');
+      await updateCustomVoiceChannelStatus('インターバル・交代募集中');
+    } catch (vcErr) {
+      console.warn('[match/record] VC名更新エラー（続行）:', vcErr);
+    }
 
     return NextResponse.json({ success: true, matchId: newMatchId, updates: results, jackpotWinner });
 

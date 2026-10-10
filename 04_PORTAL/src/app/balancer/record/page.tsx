@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { RefreshCw, Trophy, Target, Search, Settings, ArrowLeftRight } from 'lucide-react';
+import { RefreshCw, Trophy, Target, Search, ArrowLeftRight } from 'lucide-react';
 import Image from 'next/image';
 import { getChampIcon } from '../../../lib/ddragonClient';
 
@@ -76,11 +76,7 @@ function CustomRecordPageContent() {
   const [champSearchQuery, setChampSearchQuery] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [openDetails, setOpenDetails] = useState<Record<number, boolean>>({});
   const [savedMatchSummary, setSavedMatchSummary] = useState<{ matchId?: any; winningTeam: 'BLUE' | 'RED'; isExhibition: boolean; playersCount: number } | null>(null);
-  const toggleDetails = (index: number) => {
-    setOpenDetails(prev => ({ ...prev, [index]: !prev[index] }));
-  };
   
   // 10人分のステートを初期化
   const [stats, setStats] = useState<PlayerStat[]>(() => {
@@ -806,40 +802,22 @@ function CustomRecordPageContent() {
                           <input type="number" value={s.assists} onChange={e => handleStatChangeByIndex(index, 'assists', e.target.value)} className="w-11 bg-surface border border-border text-foreground text-center rounded py-1 text-sm" placeholder="A" />
                           <button
                             type="button"
-                            onClick={() => toggleDetails(index)}
-                            className={`ml-2 p-1.5 rounded transition ${openDetails[index] ? 'bg-secondary-600 text-white' : 'bg-black/5 text-muted-strong hover:text-foreground'}`}
-                            title="詳細スタッツ（CS・ダメージなど）"
+                            onClick={() => {
+                              const cur = s.penta_kills || 0;
+                              const next = cur >= 2 ? 0 : cur + 1;
+                              handleStatChangeByIndex(index, 'penta_kills', String(next));
+                            }}
+                            className={`ml-1.5 px-2 py-1 rounded text-xs font-bold transition flex items-center gap-1 ${
+                              (s.penta_kills || 0) > 0
+                                ? 'bg-amber-500 text-white shadow-md shadow-amber-500/30'
+                                : 'bg-black/5 text-muted-strong hover:text-foreground border border-border'
+                            }`}
+                            title="ペンタキル達成（ジャックポット総取り対象）"
                           >
-                            <Settings className="h-4 w-4" />
+                            💎 {(s.penta_kills || 0) > 0 ? `${s.penta_kills}` : '0'}
                           </button>
                         </div>
                       </div>
-
-                      {/* 詳細入力アコーディオン */}
-                      {openDetails[index] && (
-                        <div className="mt-1 ml-18 grid grid-cols-2 sm:grid-cols-5 gap-2 bg-black/5 p-3 rounded-lg border border-border transition shadow-inner">
-                          <div>
-                            <label className="text-[10px] text-muted-strong font-bold block mb-1 text-center">CS</label>
-                            <input type="number" value={s.cs || 0} onChange={e => handleStatChangeByIndex(index, 'cs', e.target.value)} className="w-full bg-surface border border-border text-foreground rounded px-2 py-1 text-xs text-center" />
-                          </div>
-                          <div>
-                            <label className="text-[10px] text-muted-strong font-bold block mb-1 text-center">与ダメージ</label>
-                            <input type="number" value={s.damage_dealt || 0} onChange={e => handleStatChangeByIndex(index, 'damage_dealt', e.target.value)} className="w-full bg-surface border border-border text-foreground rounded px-2 py-1 text-xs text-center" />
-                          </div>
-                          <div>
-                            <label className="text-[10px] text-muted-strong font-bold block mb-1 text-center">被ダメージ</label>
-                            <input type="number" value={s.damage_taken || 0} onChange={e => handleStatChangeByIndex(index, 'damage_taken', e.target.value)} className="w-full bg-surface border border-border text-foreground rounded px-2 py-1 text-xs text-center" />
-                          </div>
-                          <div>
-                            <label className="text-[10px] text-muted-strong font-bold block mb-1 text-center">視界スコア</label>
-                            <input type="number" value={s.vision || 0} onChange={e => handleStatChangeByIndex(index, 'vision', e.target.value)} className="w-full bg-surface border border-border text-foreground rounded px-2 py-1 text-xs text-center" />
-                          </div>
-                          <div>
-                            <label className="text-[10px] text-primary-700 font-bold block mb-1 text-center" title="勝利チームの選手がペンタキルを達成するとジャックポットを総取り">💎 ペンタキル</label>
-                            <input type="number" min={0} max={5} value={s.penta_kills || 0} onChange={e => handleStatChangeByIndex(index, 'penta_kills', e.target.value)} className="w-full bg-surface border border-primary-edge text-foreground rounded px-2 py-1 text-xs text-center" />
-                          </div>
-                        </div>
-                      )}
                     </div>
                   );
                 })}
@@ -898,40 +876,22 @@ function CustomRecordPageContent() {
                           <input type="number" value={s.assists} onChange={e => handleStatChangeByIndex(index, 'assists', e.target.value)} className="w-11 bg-surface border border-border text-foreground text-center rounded py-1 text-sm" placeholder="A" />
                           <button
                             type="button"
-                            onClick={() => toggleDetails(index)}
-                            className={`ml-2 p-1.5 rounded transition ${openDetails[index] ? 'bg-danger-600 text-white' : 'bg-black/5 text-muted-strong hover:text-foreground'}`}
-                            title="詳細スタッツ（CS・ダメージなど）"
+                            onClick={() => {
+                              const cur = s.penta_kills || 0;
+                              const next = cur >= 2 ? 0 : cur + 1;
+                              handleStatChangeByIndex(index, 'penta_kills', String(next));
+                            }}
+                            className={`ml-1.5 px-2 py-1 rounded text-xs font-bold transition flex items-center gap-1 ${
+                              (s.penta_kills || 0) > 0
+                                ? 'bg-amber-500 text-white shadow-md shadow-amber-500/30'
+                                : 'bg-black/5 text-muted-strong hover:text-foreground border border-border'
+                            }`}
+                            title="ペンタキル達成（ジャックポット総取り対象）"
                           >
-                            <Settings className="h-4 w-4" />
+                            💎 {(s.penta_kills || 0) > 0 ? `${s.penta_kills}` : '0'}
                           </button>
                         </div>
                       </div>
-
-                      {/* 詳細入力アコーディオン */}
-                      {openDetails[index] && (
-                        <div className="mt-1 ml-18 grid grid-cols-2 sm:grid-cols-5 gap-2 bg-black/5 p-3 rounded-lg border border-border transition shadow-inner">
-                          <div>
-                            <label className="text-[10px] text-muted-strong font-bold block mb-1 text-center">CS</label>
-                            <input type="number" value={s.cs || 0} onChange={e => handleStatChangeByIndex(index, 'cs', e.target.value)} className="w-full bg-surface border border-border text-foreground rounded px-2 py-1 text-xs text-center" />
-                          </div>
-                          <div>
-                            <label className="text-[10px] text-muted-strong font-bold block mb-1 text-center">与ダメージ</label>
-                            <input type="number" value={s.damage_dealt || 0} onChange={e => handleStatChangeByIndex(index, 'damage_dealt', e.target.value)} className="w-full bg-surface border border-border text-foreground rounded px-2 py-1 text-xs text-center" />
-                          </div>
-                          <div>
-                            <label className="text-[10px] text-muted-strong font-bold block mb-1 text-center">被ダメージ</label>
-                            <input type="number" value={s.damage_taken || 0} onChange={e => handleStatChangeByIndex(index, 'damage_taken', e.target.value)} className="w-full bg-surface border border-border text-foreground rounded px-2 py-1 text-xs text-center" />
-                          </div>
-                          <div>
-                            <label className="text-[10px] text-muted-strong font-bold block mb-1 text-center">視界スコア</label>
-                            <input type="number" value={s.vision || 0} onChange={e => handleStatChangeByIndex(index, 'vision', e.target.value)} className="w-full bg-surface border border-border text-foreground rounded px-2 py-1 text-xs text-center" />
-                          </div>
-                          <div>
-                            <label className="text-[10px] text-primary-700 font-bold block mb-1 text-center" title="勝利チームの選手がペンタキルを達成するとジャックポットを総取り">💎 ペンタキル</label>
-                            <input type="number" min={0} max={5} value={s.penta_kills || 0} onChange={e => handleStatChangeByIndex(index, 'penta_kills', e.target.value)} className="w-full bg-surface border border-primary-edge text-foreground rounded px-2 py-1 text-xs text-center" />
-                          </div>
-                        </div>
-                      )}
                     </div>
                   );
                 })}

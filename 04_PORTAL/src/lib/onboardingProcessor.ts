@@ -27,11 +27,13 @@ export interface ParsedIntro {
   tagLine: string;
   mainLane: 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP' | 'ALL';
   subLane: 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP' | '-';
+  ngLane1?: 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP' | null;
+  ngLane2?: 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP' | null;
   rawSelfIntro?: string;
 }
 
 /**
- * 自己紹介テキストから LoL ID (名前#タグ) と 希望レーン2つ を抽出する
+ * 自己紹介テキストから LoL ID (名前#タグ) と 希望レーン2つ、およびカスタムNGレーンを抽出する
  */
 export function parseIntroMessage(content: string): ParsedIntro | null {
   if (!content) return null;
@@ -67,7 +69,7 @@ export function parseIntroMessage(content: string): ParsedIntro | null {
   let mainLane: ParsedIntro['mainLane'] = 'ALL';
   let subLane: ParsedIntro['subLane'] = '-';
 
-  const laneLineMatch = /(?:得意なレーン|希望レーン|メインレーン|レーン)[\s:：]*([^\n\r]+)/i.exec(content);
+  const laneLineMatch = /(?:得意なレーン|希望レーン|メインレーン)[\s:：]*([^\n\r]+)/i.exec(content);
   const textToScan = laneLineMatch ? laneLineMatch[1] : content;
 
   const foundLanes: Array<'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP'> = [];
@@ -103,12 +105,51 @@ export function parseIntroMessage(content: string): ParsedIntro | null {
   if (foundLanes.length >= 1) mainLane = foundLanes[0];
   if (foundLanes.length >= 2) subLane = foundLanes[1];
 
+  // 3. カスタムNGレーンの抽出
+  // 例: "・カスタムNGレーン（2つまで）: sup ad", "NGレーン: JG,SUP"
+  let ngLane1: ParsedIntro['ngLane1'] = null;
+  let ngLane2: ParsedIntro['ngLane2'] = null;
+
+  const ngMatch = /(?:ngレーン|カスタムng|ng)[\s:：]*([^\n\r]+)/i.exec(content);
+  if (ngMatch) {
+    const ngRaw = ngMatch[1].trim().toLowerCase();
+    const isNoNg = ngRaw.includes('なし') || ngRaw.includes('none') || ngRaw.includes('no') || ngRaw.includes('特にない') || ngRaw.includes('大丈夫') || ngRaw.includes('下手でも');
+    if (!isNoNg) {
+      const ngPositions: Array<{ role: 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP'; index: number }> = [];
+      const checkNg = (role: 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP', regexes: RegExp[]) => {
+        for (const r of regexes) {
+          const m = r.exec(ngRaw);
+          if (m) {
+            ngPositions.push({ role, index: m.index });
+            break;
+          }
+        }
+      };
+
+      checkNg('TOP', [/\btop\b/, /トップ/]);
+      checkNg('JG', [/\bjg\b/, /\bjungle\b/, /ジャングル/]);
+      checkNg('MID', [/\bmid\b/, /ミッド/]);
+      checkNg('ADC', [/\badc\b/, /\bad\b/, /\bbot\b/, /ボット/]);
+      checkNg('SUP', [/\bsup\b/, /\bsp\b/, /\bsupport\b/, /サポート/]);
+
+      ngPositions.sort((a, b) => a.index - b.index);
+      const foundNgs: Array<'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP'> = [];
+      for (const pos of ngPositions) {
+        if (!foundNgs.includes(pos.role)) foundNgs.push(pos.role);
+      }
+      if (foundNgs.length >= 1) ngLane1 = foundNgs[0];
+      if (foundNgs.length >= 2) ngLane2 = foundNgs[1];
+    }
+  }
+
   return {
     ign,
     gameName,
     tagLine,
     mainLane,
     subLane,
+    ngLane1,
+    ngLane2,
     rawSelfIntro: content,
   };
 }
@@ -356,6 +397,8 @@ export async function processSingleIntroMessage(msg: {
       highest_rank: rankTier,
       role_preferences: updatedPrefs,
       is_active: true,
+      ...(parsed.ngLane1 ? { ng_lane_1: parsed.ngLane1 } : {}),
+      ...(parsed.ngLane2 ? { ng_lane_2: parsed.ngLane2 } : {}),
     };
     const { data: updated, error: uErr } = await supabase
       .from('ktm_players')
@@ -371,6 +414,8 @@ export async function processSingleIntroMessage(msg: {
       secondary: parsed.subLane,
       coins: 1000,
       inventory: [],
+      ignore_role: parsed.ngLane1 || '-',
+      ng_roles: [parsed.ngLane1, parsed.ngLane2].filter(Boolean),
     };
     const newPlayerData: any = {
       discord_id: discordId,
@@ -381,6 +426,8 @@ export async function processSingleIntroMessage(msg: {
       highest_rank: rankTier,
       role_preferences: newPrefs,
       initial_prefs: newPrefs,
+      ng_lane_1: parsed.ngLane1 || null,
+      ng_lane_2: parsed.ngLane2 || null,
       metadata: {
         joined_at: new Date().toISOString(),
         initial_highest_rank: rankTier,

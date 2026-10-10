@@ -18,8 +18,15 @@ export interface MatchNewsArticle {
     role: string;
     comment: string;
   };
+  fighterOfTheMatch?: {
+    name: string;
+    champion?: string;
+    kda: string;
+    role: string;
+    comment: string;
+  };
   turningPoint: string;
-  interviewQuote: string;
+  keyMatchup: string;
   sideStory: string;
 }
 
@@ -38,59 +45,95 @@ export async function generateMatchNews(matchData: {
     kills: number;
     deaths: number;
     assists: number;
+    penta_kills?: number;
     mmrDelta?: number;
   }>;
 }): Promise<MatchNewsArticle> {
   const { winningTeam, gameDuration, participants } = matchData;
-  const minutes = gameDuration ? Math.round(gameDuration / 60) : 25;
 
   const winnerParts = participants.filter((p) => p.team === winningTeam);
   const loserParts = participants.filter((p) => p.team !== winningTeam);
 
-  // MVP候補（最高KDA or キル関与）
-  const sortedByKda = [...winnerParts].sort((a, b) => {
-    const kdaA = (a.kills + a.assists) / Math.max(1, a.deaths);
-    const kdaB = (b.kills + b.assists) / Math.max(1, b.deaths);
-    return kdaB - kdaA;
-  });
-  const bestPlayer = sortedByKda[0] || winnerParts[0];
+  // チーム総キル数
+  const winnerTotalKills = winnerParts.reduce((s, p) => s + (p.kills || 0), 0);
+  const loserTotalKills = loserParts.reduce((s, p) => s + (p.kills || 0), 0);
+
+  // MVP候補（最高KDA or キル関与率 or ペンタキル達成）
+  const scorePlayer = (p: typeof participants[0], totalKills: number) => {
+    const kda = (p.kills + p.assists) / Math.max(1, p.deaths);
+    const kp = totalKills > 0 ? (p.kills + p.assists) / totalKills : 0;
+    const penta = (p.penta_kills || 0) * 10;
+    return kda * 2 + kp * 5 + penta;
+  };
+
+  const sortedWinners = [...winnerParts].sort((a, b) => scorePlayer(b, winnerTotalKills) - scorePlayer(a, winnerTotalKills));
+  const bestWinner = sortedWinners[0] || winnerParts[0];
+
+  // 敗戦側の敢闘賞（Fighter of the Match: 敗軍の中で最も高いKDAやキル関与）
+  const sortedLosers = [...loserParts].sort((a, b) => scorePlayer(b, loserTotalKills) - scorePlayer(a, loserTotalKills));
+  const bestLoser = sortedLosers[0] || loserParts[0];
+
+  // 各レーンの対面比較サマリー（KDA・チャンピオン対面）
+  const roles = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
+  const matchupSummary = roles.map((role) => {
+    const w = winnerParts.find((p) => p.role === role);
+    const l = loserParts.find((p) => p.role === role);
+    if (!w || !l) return null;
+    return `・${role}: 【勝】${w.name} (${w.champion_name || '未定'} / ${w.kills}/${w.deaths}/${w.assists}) vs 【負】${l.name} (${l.champion_name || '未定'} / ${l.kills}/${l.deaths}/${l.assists})`;
+  }).filter(Boolean).join('\n');
 
   const participantSummary = participants
     .map((p) => {
       const delta = p.mmrDelta ? (p.mmrDelta > 0 ? `+${p.mmrDelta}` : `${p.mmrDelta}`) : '±0';
-      return `- [${p.team}] [${p.role}] ${p.name} (${p.champion_name || 'チャンプ未定'}) KDA: ${p.kills}/${p.deaths}/${p.assists} (MMR変動: ${delta})`;
+      const extraStats = p.penta_kills ? ` [🔥ペンタキル:${p.penta_kills}回]` : '';
+      return `- [${p.team}] [${p.role}] ${p.name} (${p.champion_name || '未定'}) KDA: ${p.kills}/${p.deaths}/${p.assists}${extraStats} (MMR変動: ${delta})`;
     })
     .join('\n');
 
-  const prompt = `あなたは「月刊KTMスポーツ」「東スポ風eスポーツ速報」の敏腕デスクです。
-以下のLoLカスタム（KTM公式マッチ）の試合結果データをもとに、ユーモアと熱狂あふれる面白いスポーツ新聞の1面風ダイジェスト記事を作成してください。
+  const durationText = gameDuration && gameDuration > 0 ? `・試合時間: 約${Math.round(gameDuration / 60)}分` : '';
+
+  const prompt = `あなたは「月刊KTMスポーツ」の戦術デスク兼eスポーツ実況解説者です。
+以下のLoLカスタム（KTM公式マッチ）の【実数値スコアボード】に基づき、プロ解説者（LJL実況）の視点を取り入れた、熱狂的で解像度の高いスポーツ新聞風ダイジェスト号外を作成してください。
+
+【厳格な執筆ルール（捏造厳禁・ファクト至上主義）】
+1. **架空のセリフ（捏造インタビュー）は絶対に禁止**です。「〇〇と叫んだ」「〜とコメント」等の本人が言っていない発言は作らないでください。
+2. **提供されたスコアデータ（KDA、チャンプ名、ロール、勝敗、ペンタキル、MMR増減）にない出来事（神Ult、バロン強奪等）を勝手に創作しないでください**。
+3. 称賛・分析はすべて【実数値の根拠】に基づいて行ってください（例: 「デスを〇に抑えたレーン戦の盤石さ」「キル関与率〇%を誇るキャリー」「敗戦側でも孤軍奮闘の〇キル」「怒涛のペンタキル達成」など）。
+4. **【最重要】試合時間に関する捏造禁止**: 試合情報の欄に「試合時間: 約〇分」が明記されていない場合は、見出しや本文、寸評に「25分」「25分決着」「スピード決着」など試合時間に関する単語・数字を一切出さないでください。
+5. 勝者側MVPだけでなく、敗戦側で最も輝いていた奮闘選手（敢闘賞）の健闘も称えてください。
+6. すべて日本語、以下のJSONオブジェクト【のみ】を出力してください（Markdownコードブロックや前置きは厳禁）。
 
 【試合情報】
-・勝利陣営: ${winningTeam} TEAM
-・試合時間: 約${minutes}分
-・参加者スコアボード:
+・勝利陣営: ${winningTeam} TEAM（総キル: ${winnerTotalKills} vs ${loserTotalKills}）
+${durationText}
+
+【対面マッチアップ比較】
+${matchupSummary}
+
+【全参加者スタッツ】
 ${participantSummary}
 
-【記事作成のルール】
-1. スポーツ報知や東スポ、Number風のキャッチーで大げさな見出しをつけてください。
-2. 活躍した選手（${bestPlayer?.name}選手など）を「豪快なプレイ」「神がかりなガンク/集団戦」として称賛。
-3. 惜しくも敗れた側の奮闘や、珍プレイ・ドラマチックな展開も温かいユーモアを交えて拾ってください。
-4. すべて日本語、以下のJSONオブジェクト【のみ】を出力してください（Markdownコードブロックや前置きは厳禁）。
-
 {
-  "headline": "思わず二度見する大見出し（35文字以内、例: 【KTMカスタム】〇〇が神Ult炸裂！〇分決着でBLUE軍団を粉砕）",
-  "subheadline": "緊迫感を伝える小見出し（30文字以内）",
-  "lead": "試合全体の流れをドラマチックかつ面白くまとめたリード文（100〜140文字程度）",
+  "headline": "実数値に基づくキャッチーな1面大見出し（35文字以内、例: 【KTM速報】〇〇の〇〇が驚異の〇キル！〇〇TEAMが快勝）",
+  "subheadline": "勝負の分かれ目となったレーンや数値を要約した小見出し（30文字以内）",
+  "lead": "スコアボードの実数値（KDAやキル数、ロール対決の差）を交え、試合の流れと勝者を的確に解説するリード文（100〜140文字程度）",
   "mvp": {
-    "name": "${bestPlayer?.name || '注目選手'}",
-    "champion": "${bestPlayer?.champion_name || 'メインチャンプ'}",
-    "kda": "${bestPlayer?.kills || 0}/${bestPlayer?.deaths || 0}/${bestPlayer?.assists || 0}",
-    "role": "${bestPlayer?.role || 'MID'}",
-    "comment": "MVP選出の寸評・称賛コメント（60文字以内）"
+    "name": "${bestWinner?.name || '注目選手'}",
+    "champion": "${bestWinner?.champion_name || 'メインチャンプ'}",
+    "kda": "${bestWinner?.kills || 0}/${bestWinner?.deaths || 0}/${bestWinner?.assists || 0}",
+    "role": "${bestWinner?.role || 'MID'}",
+    "comment": "スタッツ（KDAやキル関与率等）に基づくMVP選出寸評（60文字以内）"
   },
-  "turningPoint": "勝負を決定づけた運命の集団戦やターニングポイント（80文字以内）",
-  "interviewQuote": "試合直後のMVP選手または敗軍の将の架空の熱いコメント（「〜〜！」と叫んだ、等、50文字以内）",
-  "sideStory": "対面マッチアップの小ネタや、MMR急上昇/急降下の裏話（60文字以内）"
+  "fighterOfTheMatch": {
+    "name": "${bestLoser?.name || '奮闘選手'}",
+    "champion": "${bestLoser?.champion_name || 'チャンプ'}",
+    "kda": "${bestLoser?.kills || 0}/${bestLoser?.deaths || 0}/${bestLoser?.assists || 0}",
+    "role": "${bestLoser?.role || 'TOP'}",
+    "comment": "敗戦側で孤軍奮闘した選手を称える敢闘寸評（60文字以内）"
+  },
+  "turningPoint": "対面マッチアップやダメージ差から読み取れる試合の決定打（80文字以内）",
+  "keyMatchup": "最も激戦となった対面レーンのスタッツ比較と寸評（70文字以内）",
+  "sideStory": "MMR変動（大幅UPや悔しい降格）やサポートの視界・タンクの被ダメ等の隠れた貢献（60文字以内）"
 }`;
 
   const raw = await callGeminiWithRetry(prompt, {
