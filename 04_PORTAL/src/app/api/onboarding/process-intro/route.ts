@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { processPendingIntros, parseIntroMessage, INTRO_CHANNEL_ID } from '../../../../lib/onboardingProcessor';
 import { verifyBotSecret } from '../../../../lib/botAuth';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { discordFetch } from '../../../../lib/discordFetch';
 
 /**
@@ -62,10 +63,19 @@ export async function GET(req: Request) {
  */
 export async function POST(req: Request) {
   try {
-    // 外部からの安全なキックのためBot共有シークレット確認（未設定時は通過）
-    const authResult = verifyBotSecret(req);
-    if (!authResult.ok) {
-      return NextResponse.json({ error: authResult.error }, { status: 401 });
+    // 認証: 1. CRON_SECRET (pg_cron/Vercel Cron), 2. Bot共有シークレット, 3. 管理者Cookieセッション
+    const authHeader = req.headers.get('authorization') || '';
+    const cronSecret = process.env.CRON_SECRET;
+    const isCronOk = !!cronSecret && authHeader === `Bearer ${cronSecret}`;
+
+    if (!isCronOk) {
+      const authResult = verifyBotSecret(req);
+      if (!authResult.ok) {
+        const isAdmin = await verifyAdminSession(req);
+        if (!isAdmin) {
+          return NextResponse.json({ error: authResult.error || 'Unauthorized' }, { status: 401 });
+        }
+      }
     }
 
     let options = {};

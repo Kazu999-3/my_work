@@ -25,11 +25,47 @@ export interface ParsedIntro {
   ign: string;          // Name#Tag
   gameName: string;
   tagLine: string;
+  declaredRank?: string;
   mainLane: 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP' | 'ALL';
   subLane: 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP' | '-';
   ngLane1?: 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP' | null;
   ngLane2?: 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP' | null;
   rawSelfIntro?: string;
+}
+
+/**
+ * 自己紹介内のランク表記（例: "B1", "G2", "P4", "シルバー3", "プラチナ", "エメラルド"）から
+ * 正規化された Tier と Division（例: "BRONZE", "I"）を抽出する
+ */
+export function parseDeclaredRank(rankStr?: string | null): { tier: string; division: string } {
+  if (!rankStr) return { tier: 'UNRANKED', division: '' };
+  const s = rankStr.trim().toLowerCase();
+
+  // Tier検出
+  let tier = 'UNRANKED';
+  if (s.includes('challenger') || s.includes('チャレンジャー')) tier = 'CHALLENGER';
+  else if (s.includes('grandmaster') || s.includes('グランドマスター')) tier = 'GRANDMASTER';
+  else if (s.includes('master') || s.includes('マスター')) tier = 'MASTER';
+  else if (s.includes('dia') || s.includes('ダイヤ') || s.startsWith('d')) tier = 'DIAMOND';
+  else if (s.includes('eme') || s.includes('エメラルド') || s.startsWith('e')) tier = 'EMERALD';
+  else if (s.includes('plat') || s.includes('プラチナ') || s.startsWith('p')) tier = 'PLATINUM';
+  else if (s.includes('gold') || s.includes('ゴールド') || s.startsWith('g')) tier = 'GOLD';
+  else if (s.includes('silver') || s.includes('シルバー') || s.startsWith('s')) tier = 'SILVER';
+  else if (s.includes('bronze') || s.includes('ブロンズ') || s.startsWith('b')) tier = 'BRONZE';
+  else if (s.includes('iron') || s.includes('アイアン') || s.startsWith('i')) tier = 'IRON';
+
+  // Division検出 (1-4, I-IV)
+  let division = '';
+  const numMatch = s.match(/[1-4ivx]+/);
+  if (numMatch) {
+    const rawNum = numMatch[0];
+    if (rawNum === '1' || rawNum === 'i') division = 'I';
+    else if (rawNum === '2' || rawNum === 'ii') division = 'II';
+    else if (rawNum === '3' || rawNum === 'iii') division = 'III';
+    else if (rawNum === '4' || rawNum === 'iv') division = 'IV';
+  }
+
+  return { tier, division };
 }
 
 /**
@@ -142,10 +178,19 @@ export function parseIntroMessage(content: string): ParsedIntro | null {
     }
   }
 
+  // 4. 自己申告ランクの抽出
+  // 例: "・最高ランク:B1", "最高ランク: P2", "ランク: ゴールド3", "最高ランク：エメラルド"
+  let declaredRank: string | undefined = undefined;
+  const rankMatch = /(?:最高ランク|現在のランク|現ランク|ランク)[\s:：]*([^\n\r]+)/i.exec(content);
+  if (rankMatch) {
+    declaredRank = rankMatch[1].trim();
+  }
+
   return {
     ign,
     gameName,
     tagLine,
+    declaredRank,
     mainLane,
     subLane,
     ngLane1,
@@ -339,34 +384,38 @@ export async function processSingleIntroMessage(msg: {
   }
 
   const apiKey = process.env.RIOT_API_KEY;
-  if (!apiKey) {
-    throw new Error('RIOT_API_KEY is not configured.');
-  }
 
   const discordId = msg.author.id;
   const discordName = msg.author.global_name || msg.author.username;
 
-  // 1. Riot APIからPUUID取得
+  // 1. Riot APIからPUUID取得（キー失効・障害時もオンボーディング全体を止めない多重防壁）
   let puuid = '';
-  try {
-    puuid = await fetchPuuidByRiotId(parsed.gameName, parsed.tagLine, apiKey);
-  } catch (e: any) {
-    console.warn(`[processSingleIntroMessage] PUUID fetch failed for ${parsed.ign}:`, e.message);
-    return { success: false, reason: `RIOT_PUUID_ERROR: ${e.message}` };
+  let riotFetchSuccess = false;
+  if (apiKey) {
+    try {
+      puuid = await fetchPuuidByRiotId(parsed.gameName, parsed.tagLine, apiKey);
+      riotFetchSuccess = true;
+    } catch (e: any) {
+      console.warn(`[processSingleIntroMessage] PUUID fetch failed for ${parsed.ign} (continuing with fallback):`, e.message);
+    }
   }
 
-  // 2. ソロQランク取得
-  let rankTier = 'UNRANKED';
-  let rankDiv = '';
-  try {
-    const leagues = await fetchLeagueByPuuid(puuid, apiKey);
-    const soloQ = leagues.find((l: any) => l.queueType === 'RANKED_SOLO_5x5');
-    if (soloQ) {
-      rankTier = soloQ.tier;
-      rankDiv = soloQ.rank;
+  // 2. ランクの決定（Riot API優先、取得失敗時は自己紹介テキストの自己申告ランクを採用）
+  const parsedDeclared = parseDeclaredRank(parsed.declaredRank);
+  let rankTier = parsedDeclared.tier;
+  let rankDiv = parsedDeclared.division;
+
+  if (puuid && apiKey) {
+    try {
+      const leagues = await fetchLeagueByPuuid(puuid, apiKey);
+      const soloQ = leagues.find((l: any) => l.queueType === 'RANKED_SOLO_5x5');
+      if (soloQ) {
+        rankTier = soloQ.tier;
+        rankDiv = soloQ.rank;
+      }
+    } catch (e: any) {
+      console.warn('[processSingleIntroMessage] Rank fetch failed (using declared rank):', e.message);
     }
-  } catch (e) {
-    console.warn('[processSingleIntroMessage] Rank fetch failed:', e);
   }
 
   // 3. 初期MMR計算
@@ -438,24 +487,7 @@ export async function processSingleIntroMessage(msg: {
       mmr_mid: initialMmr,
       mmr_adc: initialMmr,
       mmr_sup: initialMmr,
-      mmrs: {
-        TOP: initialMmr,
-        JG: initialMmr,
-        MID: initialMmr,
-        ADC: initialMmr,
-        SUP: initialMmr,
-      },
-      stats: {
-        total: { g: 0, w: 0 },
-        roles: {
-          TOP: { g: 0, w: 0 },
-          JG: { g: 0, w: 0 },
-          MID: { g: 0, w: 0 },
-          ADC: { g: 0, w: 0 },
-          SUP: { g: 0, w: 0 },
-        },
-        recent: [],
-      },
+      coins: 1000,
     };
     const { data: inserted, error: iErr } = await supabase
       .from('ktm_players')
@@ -501,7 +533,10 @@ export async function processSingleIntroMessage(msg: {
   // 7. 個別チャンネルへ歓迎案内を投稿
   if (channelId) {
     const headers = getBotHeaders();
-    const rankDisplay = rankTier !== 'UNRANKED' ? `${rankTier} ${rankDiv}`.trim() : 'UNRANKED (未認定)';
+    const isDeclaredOnly = !riotFetchSuccess;
+    const rankDisplay = rankTier !== 'UNRANKED'
+      ? `${rankTier} ${rankDiv}`.trim() + (isDeclaredOnly ? '（自己申告）' : '')
+      : 'UNRANKED (未認定)';
     const ngList = [parsed.ngLane1, parsed.ngLane2].filter(Boolean).join(', ');
     const ngDisplay = ngList ? `\`${ngList}\`` : '`なし`';
 

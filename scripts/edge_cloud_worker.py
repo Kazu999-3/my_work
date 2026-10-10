@@ -300,10 +300,10 @@ def ensure_local_daemon_healthy():
 
     # 最後のハートビート以降に通知済みなら、同じ停止についてはもう送らない
     # (PCを切っている間に3時間おきに通知が積み上がるのを防ぐ)
-    from urllib.parse import quote
+    ts_str = updated_at.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     status, existing = sb(
         "GET",
-        f"edge_tasks?task_type=eq.local_daemon_down_alert&created_at=gt.{quote(updated_at.isoformat())}&select=id&limit=1",
+        f"edge_tasks?task_type=eq.local_daemon_down_alert&created_at=gt.{ts_str}&select=id&limit=1",
     )
     if status == 200 and existing:
         print("🔧 [LocalDaemonWatchdog] この停止については通知済みのためスキップします。")
@@ -335,8 +335,14 @@ def check_onboarding_intros():
         with urllib.request.urlopen(req, timeout=20) as r:
             res = json.loads(r.read().decode())
             processed = res.get("processed", 0)
+            skipped = res.get("skipped", 0)
+            errors = res.get("errors", 0)
             if processed > 0:
                 print(f"🎉 [Onboarding] 新メンバー自己紹介を検知・自動登録完了: {processed}件")
+            elif errors > 0:
+                print(f"⚠️ [Onboarding] 自己紹介処理でエラーが発生しました: errors={errors}, details={res.get('details')}")
+            else:
+                print(f"ℹ️ [Onboarding] 自己紹介チェック完了 (新着未処理なし: skipped={skipped})")
     except Exception as e:
         # オンボーディングの通信失敗で他のクラウドワーカー全体を止めない安全設計
         print(f"⚠️ [Onboarding] 自己紹介チェック失敗 (次回再試行): {e}")
