@@ -26,6 +26,8 @@
      - `selectPlayersWithPity`: 11人以上の選抜時、`allowHigher === false` かつ全体中央値より200以上離れた格下プレイヤーを、優先的に観戦枠（待機ベンチ）へ回すソートロジックを配備。
      - `runBalanceSearch`: MMR差200以上かつ `allowHigher === false` の対面が発生した際のペナルティを天文学的数値（2,000,000+）に引き上げ、他の組み合わせがあれば絶対に選ばれないよう強力ブロック。
      - `buildBalanceResult`: MMR差200以上かつ `allowHigher === false` の対面を検出し、チーム分け結果に `unallowedHigherMatchups` 配列を同梱。
+   - **全員の格上許可リセット（チェック外し）実施**:
+     - 仕様変更に伴い、登録プレイヤー全46名（チェックONだった全員）の `allow_higher` を `false`（未許可）へ一括リセット完了（残存 0件）。
    - **管理者確認バナー ＆ UI解説の強化 (`BalanceResultModal.tsx`, `PlayerListTable.tsx`, `PageSections.tsx`)**:
      - チーム分け結果モーダルに「⚠️ 【管理者確認】格上対面が許可されていないプレイヤーが含まれています」の警告バナー（赤枠・対象対面・MMR差明記）を配備。
      - 用語集および参加者一覧の「格上」チェックボックスに「MMR差200以上（シルバーvsプラチナ等）との対面を許容するか」の詳細ツールチップ・説明を明記。
