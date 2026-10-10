@@ -135,13 +135,17 @@ export function isLateJoin(line) {
   return /途中参加|2戦目/.test(line || '');
 }
 
+export function isSpectatorMatch(line) {
+  return /観戦/.test(line || '');
+}
+
 /**
  * 参加者行をスッキリ整形する：
  * 1. 通常参加である「🟢フル」の表示を除去
  * 2. 経験バッジをアイコンのみ（👑、🔰、🌱、⏳）にスリム化
  * 3. ランク表記を短縮（案B: 【プラ】【ゴル】等）
  * 4. レーン希望表記を短縮（第1・第2を撤去して 【TOP/JG】 形式へ）
- * 5. 変則参加（1戦のみ・途中参加）を行頭タグ化して見落としを防止
+ * 5. 変則参加（1戦のみ・途中参加・観戦）を行頭タグ化して見落としを防止
  */
 export function cleanEntryLine(line) {
   let s = (line || '').replace(/\s*🟢\s*フル/g, '');
@@ -183,16 +187,21 @@ export function cleanEntryLine(line) {
   // 変則参加バッジを判定（既にタグ化されている場合も含む）
   const hasSingle = isSingleMatch(s);
   const hasLate = isLateJoin(s);
+  const hasSpectator = isSpectatorMatch(s);
 
   // 既存タグの多重付加を防止するため、まずは変則参加タグ・対面枠タグを完全に剥がす
   s = s.replace(/(?:⏱️\s*)?【?1戦のみ】?/g, '')
        .replace(/(?:🌙\s*)?【?2戦目〜?】?/g, '')
        .replace(/\s*🌙\s*途中参加(?:\([^)]*\))?/g, '')
+       .replace(/(?:👀\s*)?【?観戦(?:希望)?】?/g, '')
+       .replace(/\s*👀\s*観戦(?:希望)?/g, '')
        .replace(/\s*🤝\s*対面枠/g, '')
        .replace(/^- \s*/, '- ')
        .trim();
 
-  if (hasSingle) {
+  if (hasSpectator) {
+    s = s.replace(/^- /, '- 👀【観戦】');
+  } else if (hasSingle) {
     s = s.replace(/^- /, '- ⏱️【1戦のみ】');
   } else if (hasLate) {
     s = s.replace(/^- /, '- 🌙【2戦目〜】');
@@ -201,9 +210,9 @@ export function cleanEntryLine(line) {
   return s;
 }
 
-/** 最多ランク帯と対象レンジ情報を計算 */
+/** 最多ランク帯と対象レンジ情報を計算（観戦希望者は最多帯の判定母数から除外） */
 export function computeDominantTierInfo(lines) {
-  const entries = (lines || []).filter((l) => l && l.startsWith('- '));
+  const entries = (lines || []).filter((l) => l && l.startsWith('- ') && !isSpectatorMatch(l));
   if (entries.length === 0) return { key: '', text: '', rangeText: '' };
 
   const tierCounts = {};
@@ -292,10 +301,14 @@ export function parseEntryBreakdown(lines, dominantTierKey = null) {
   const eligible = [];
   const spectator = [];
 
-  // ① ランク不問（日曜など）の場合: 全員を出場対象枠へ
+  // ① ランク不問（日曜など）の場合: 観戦希望者以外を出場対象枠へ
   if (!dominantOrder) {
     for (const rawLine of entries) {
-      eligible.push({ raw: rawLine, line: cleanEntryLine(rawLine) });
+      if (isSpectatorMatch(rawLine)) {
+        spectator.push({ raw: rawLine, line: cleanEntryLine(rawLine) });
+      } else {
+        eligible.push({ raw: rawLine, line: cleanEntryLine(rawLine) });
+      }
     }
   } else {
     // ② ランク制限あり（土曜など）: 最多層ルールに基づき出場対象・観戦枠を分離
@@ -308,6 +321,11 @@ export function parseEntryBreakdown(lines, dominantTierKey = null) {
 
     for (const rawLine of entries) {
       const cleaned = cleanEntryLine(rawLine);
+      if (isSpectatorMatch(rawLine)) {
+        spectator.push({ raw: rawLine, line: cleaned });
+        continue;
+      }
+
       const tier = getNormalizedTier(rawLine);
       const tierOrder = TIER_ORDER[tier] || 2;
       const diff = tierOrder - dominantOrder;

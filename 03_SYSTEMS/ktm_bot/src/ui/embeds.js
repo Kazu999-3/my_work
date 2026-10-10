@@ -595,7 +595,7 @@ export function buildDayRecruitEmbed(target, entryLines = []) {
   return embed;
 }
 
-/** 1日分の参加ボタン（フル / 1戦のみ / 途中参加 / 辞退）を組み立てる */
+/** 1日分の参加ボタン（フル / 1戦のみ / 途中参加 / 観戦希望 / 辞退）を組み立てる */
 export function buildDayRecruitComponents(dayKey) {
   const def = getDayDef(dayKey);
   return [
@@ -605,6 +605,7 @@ export function buildDayRecruitComponents(dayKey) {
         { type: 2, label: `${def.emoji} フル参加`, style: def.buttonStyle, custom_id: `${def.joinPrefix}:full` },
         { type: 2, label: '⏱️ 1戦のみ (21:00〜)', style: 2, custom_id: `${def.joinPrefix}:single` },
         { type: 2, label: '🌙 途中参加 (2戦目〜)', style: 2, custom_id: `${def.joinPrefix}:late` },
+        { type: 2, label: '👀 観戦希望', style: 2, custom_id: `${def.joinPrefix}:spectator` },
         { type: 2, label: '❌ 辞退', style: 4, custom_id: `${def.joinPrefix}:leave` },
       ],
     },

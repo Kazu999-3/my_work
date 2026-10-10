@@ -49,6 +49,7 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
     let styleBadge = " 🟢フル";
     if (participationStyle === 'single') styleBadge = " ⏱️1戦のみ";
     else if (participationStyle === 'late') styleBadge = " 🌙途中参加(2戦目〜)";
+    else if (participationStyle === 'spectator') styleBadge = " 👀観戦希望";
 
     const userMention = `<@${userId}>`;
 

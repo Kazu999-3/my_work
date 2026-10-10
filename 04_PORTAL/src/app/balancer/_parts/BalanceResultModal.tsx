@@ -113,47 +113,84 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
               <div className="flex items-center gap-2">
                 {proposals.length > 1 && (
                   <button onClick={handleSendProposals} disabled={sendingProposals}
-                    className="flex items-center gap-1.5 bg-primary-600 hover:bg-primary-500 text-white px-3 py-1.5 rounded-lg font-bold transition text-xs md:text-sm"
+                    className="flex items-center gap-1.5 bg-primary-600 hover:bg-primary-500 text-white px-3 py-1.5 rounded-xl font-bold transition text-xs shadow-xs cursor-pointer"
                     title="全候補をDiscordに投稿してリアクション投票してもらう">
                     {sendingProposals ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <>🗳️</>}
-                    <span className="hidden sm:inline">{proposals.length}案を投稿</span>
+                    <span className="hidden sm:inline">{proposals.length}案をDiscord投票</span>
                   </button>
                 )}
-                <button onClick={handleSendDiscord} disabled={sendingDiscord}
-                  className="flex items-center gap-1.5 bg-[#5865F2] hover:bg-[#4752C4] text-white px-3 py-1.5 rounded-lg font-bold transition text-xs md:text-sm">
-                  {sendingDiscord ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <MessageSquare className="h-3.5 w-3.5" />}
-                  Discord通知
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const res = await updateVcStatus('game1');
-                    if (res.success) {
-                      setMessage({ type: 'success', text: `🔊 ${res.message}` });
-                      toast.info(`🔊 ${res.message}`);
-                    } else {
-                      toast.error(`VC更新エラー: ${res.error}`);
-                    }
-                  }}
-                  className="flex items-center gap-1.5 bg-primary-600 hover:bg-primary-500 text-white px-3 py-1.5 rounded-lg font-bold transition text-xs md:text-sm cursor-pointer"
-                  title="DiscordのVCチャンネル名を「1戦目進行中・途中交代歓迎」に更新"
-                >
-                  <span>🔊 VC更新 (1戦目)</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleCopyResultText}
-                  className="flex items-center gap-1.5 bg-surface-subtle hover:bg-surface-hover border border-border text-foreground-soft px-3 py-1.5 rounded-lg font-bold transition text-xs md:text-sm cursor-pointer"
-                  title="チャットやメモに貼り付け可能な整形テキストをコピー"
-                >
-                  {copiedResult ? <Check className="h-3.5 w-3.5 text-success-600" /> : <Copy className="h-3.5 w-3.5 text-muted" />}
-                  <span>{copiedResult ? 'コピー完了！' : 'テキストコピー'}</span>
-                </button>
                 <button onClick={() => setShowResultModal(false)}
-                  className="p-1.5 rounded-lg bg-surface-subtle hover:bg-surface-hover text-faint hover:text-foreground transition" title="閉じる (ESC)">
+                  className="p-1.5 rounded-xl bg-surface-subtle hover:bg-surface-hover text-faint hover:text-foreground transition cursor-pointer" title="閉じる (ESC)">
                   <X className="h-5 w-5" />
                 </button>
+              </div>
+            </div>
+
+            {/* 🏁 進行ナビゲーションバー（1➔2➔3で迷わないガイド） */}
+            <div className="bg-surface-subtle/80 border-b border-border px-4 md:px-6 py-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-foreground flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-primary-500 animate-pulse"></span>
+                    🏁 カスタム進行の流れ:
+                  </span>
+                  <span className="text-[11px] text-muted hidden md:inline">
+                    ①結果共有 ➔ ②VC設定 ➔ ③試合後に勝敗記録
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Step 1: Discord通知 */}
+                  <button
+                    onClick={handleSendDiscord}
+                    disabled={sendingDiscord}
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-[#5865F2] hover:bg-[#4752C4] text-white px-3 py-1.5 rounded-xl font-bold transition text-xs shadow-xs cursor-pointer"
+                    title="チーム分け結果をDiscordの#定期カスタムへ送信してメンバーに周知します"
+                  >
+                    {sendingDiscord ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <MessageSquare className="h-3.5 w-3.5" />}
+                    <span>① Discordに結果送信</span>
+                  </button>
+
+                  {/* Step 2: VC更新 */}
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const res = await updateVcStatus('game1');
+                      if (res.success) {
+                        setMessage({ type: 'success', text: `🔊 ${res.message}` });
+                        toast.info(`🔊 ${res.message}`);
+                      } else {
+                        toast.error(`VC更新エラー: ${res.error}`);
+                      }
+                    }}
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-primary-600 hover:bg-primary-500 text-white px-3 py-1.5 rounded-xl font-bold transition text-xs shadow-xs cursor-pointer"
+                    title="DiscordのVCチャンネル名を「1戦目進行中」に更新します"
+                  >
+                    <span>🔊 ② VC更新 (1戦目)</span>
+                  </button>
+
+                  {/* Step 3: 結果記録への誘導 */}
+                  <button
+                    onClick={handleRecordNavigate}
+                    disabled={savingPending}
+                    type="button"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-success-600 hover:bg-success-500 disabled:bg-success-800 text-white px-3.5 py-1.5 rounded-xl font-black transition text-xs shadow-xs cursor-pointer"
+                    title="試合終了後、勝敗やスコアを記録してMMRを更新する画面へ進みます"
+                  >
+                    <Trophy className="h-3.5 w-3.5" />
+                    <span>③ 試合後に結果記録</span>
+                  </button>
+
+                  {/* コピーボタン */}
+                  <button
+                    type="button"
+                    onClick={handleCopyResultText}
+                    className="p-1.5 bg-surface hover:bg-surface-hover border border-border text-foreground-soft rounded-xl font-bold transition text-xs cursor-pointer shrink-0"
+                    title="結果テキストをクリップボードにコピー"
+                  >
+                    {copiedResult ? <Check className="h-3.5 w-3.5 text-success-600" /> : <Copy className="h-3.5 w-3.5 text-muted" />}
+                  </button>
+                </div>
               </div>
             </div>
 
