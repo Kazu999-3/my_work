@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../lib/supabaseAdmin';
+import { calculateNemesisClash } from '../../../lib/nemesisClash';
 
 export async function POST(request: Request) {
   try {
@@ -127,6 +128,60 @@ export async function POST(request: Request) {
         }
       ]
     };
+
+    // ⚔️ 因縁・ライバル対決 ＆ 黄金デュオ速報（Nemesis Clash）を算出
+    try {
+      const clashData = await calculateNemesisClash(teamBlue, teamRed);
+      const clashFields: any[] = [];
+
+      // 1. 注目因縁（Featured Clash）
+      if (clashData.featuredClash) {
+        const fc = clashData.featuredClash;
+        const icon = fc.type === 'NEMESIS' ? '💥' : '🔥';
+        const typeLabel = fc.type === 'NEMESIS' ? '因縁リベンジマッチ' : '好敵手ライバル対決';
+        clashFields.push({
+          name: `${icon} 【${typeLabel}】${fc.bluePlayer} 🆚 ${fc.redPlayer}`,
+          value: `> **${fc.headline}**\n> ${fc.subtext}\n> （通算対戦: \`${fc.bluePlayer} ${fc.blueWins}勝\` 🆚 \`${fc.redWins}勝 ${fc.redPlayer}\`）`,
+          inline: false
+        });
+      }
+
+      // 2. レーン直接対決（3戦以上または勝ち越し）
+      const notableLaneClashes = (clashData.laneClashes || []).filter(c => c.games >= 2);
+      if (notableLaneClashes.length > 0) {
+        const lines = notableLaneClashes.map(c => 
+          `・**[${c.role}]** \`${c.bluePlayer}\` (${c.blueWins}勝) 🆚 (${c.redWins}勝) \`${c.redPlayer}\` ➔ ${c.headline}`
+        );
+        clashFields.push({
+          name: "📍 レーン別 直接対決レコード",
+          value: lines.join('\n'),
+          inline: false
+        });
+      }
+
+      // 3. チーム内の黄金デュオ
+      if (clashData.goldenDuos && clashData.goldenDuos.length > 0) {
+        const duoLines = clashData.goldenDuos.map(d => 
+          `・${d.teamSide === 'BLUE' ? '🟦' : '🟥'} **${d.player1}** ＆ **${d.player2}**: ${d.label}`
+        );
+        clashFields.push({
+          name: "🤝 注目の名コンビ・黄金デュオ",
+          value: duoLines.join('\n'),
+          inline: false
+        });
+      }
+
+      if (clashFields.length > 0) {
+        payload.embeds.push({
+          title: "⚔️ 本日の因縁・ライバル対決速報",
+          description: "過去のKTMカスタム対戦データから算出した直接対決＆シナジー情報です！",
+          color: 0xe056fd, // 鮮やかなパープル・ピンク系
+          fields: clashFields,
+        });
+      }
+    } catch (clashErr) {
+      console.warn('[discord route] Failed to calculate nemesis clash:', clashErr);
+    }
 
     if (balanceReport && Array.isArray(balanceReport)) {
       payload.embeds.push({
