@@ -184,7 +184,25 @@ export async function POST(request: Request) {
         rand: Math.random()
       }));
 
+      // 基準レート（中央値）の算出
+      const allCandidateMmrs = candidatesPool.map(p => {
+        const main = p.pref1 as Role;
+        return (main && ['TOP', 'JG', 'MID', 'ADC', 'SUP'].includes(main)) ? p.rates[main] : (Object.values(p.rates).reduce((s, v) => s + v, 0) / 5);
+      }).sort((a, b) => a - b);
+      const medianMmr = allCandidateMmrs.length > 0 ? allCandidateMmrs[Math.floor(allCandidateMmrs.length / 2)] : 1200;
+
       candidateInfo.sort((a, b) => {
+        // 格上未許可保護: 全体中央値より200以上低く、かつ allowHigher が false の場合は選抜優先度を下げる（後ろへ回す）
+        const aMain = a.player.pref1 as Role;
+        const bMain = b.player.pref1 as Role;
+        const aMmr = (aMain && ['TOP', 'JG', 'MID', 'ADC', 'SUP'].includes(aMain)) ? a.player.rates[aMain] : (Object.values(a.player.rates).reduce((s, v) => s + v, 0) / 5);
+        const bMmr = (bMain && ['TOP', 'JG', 'MID', 'ADC', 'SUP'].includes(bMain)) ? b.player.rates[bMain] : (Object.values(b.player.rates).reduce((s, v) => s + v, 0) / 5);
+        const aIsUnallowedLow = !a.player.allowHigher && (medianMmr - aMmr >= 200);
+        const bIsUnallowedLow = !b.player.allowHigher && (medianMmr - bMmr >= 200);
+        if (aIsUnallowedLow !== bIsUnallowedLow) {
+          return aIsUnallowedLow ? 1 : -1;
+        }
+
         if (b.spectator_pity !== a.spectator_pity) return b.spectator_pity - a.spectator_pity;
         if (b.pity !== a.pity) return b.pity - a.pity;
         return b.rand - a.rand;
@@ -203,7 +221,7 @@ export async function POST(request: Request) {
         const spectators = [...forcedSpectators, ...balanceCandidates.filter(p => !selectedNames.has(p.name))];
         selectedPatterns.push({ selected, spectators });
       } else {
-        // 残り枠を otherCandidates から選ぶ組み合わせを生成する（最大20通りに制限するため上位候補に絞る）
+        // 残り枠を otherCandidates から選ぶ組み合わせを生成する（最大2通りに制限して爆速化）
         const poolToChooseFrom = otherCandidates.slice(0, Math.min(otherCandidates.length, needed + 4));
         
         const getCombinations = (array: Player[], r: number): Player[][] => {
@@ -225,8 +243,8 @@ export async function POST(request: Request) {
 
         const combos = getCombinations(poolToChooseFrom, needed);
 
-        // 各組み合わせに対してパターンを作成（最大20パターン）
-        for (const combo of combos.slice(0, 20)) {
+        // 各組み合わせに対してパターンを作成（最大2パターンに制限し、計算時間の爆発・タイムアウトを防止）
+        for (const combo of combos.slice(0, 2)) {
           const selected = [...fixedPlayers, ...highPityCandidates, ...combo];
           const selectedNames = new Set(selected.map(p => p.name));
           const spectators = [...forcedSpectators, ...balanceCandidates.filter(p => !selectedNames.has(p.name))];

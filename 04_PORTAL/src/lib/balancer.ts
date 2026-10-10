@@ -404,9 +404,144 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
 
   screenResults.sort((a, b) => a.quickScore - b.quickScore);
   // BL-02: 探索強度（精密探索する分割候補数）。多いほど高精度・低速。ctx.searchDepthで調整可能。
-  // テスト環境(NODE_ENV===test)では高速モード(5候補)にして計算爆発・ハングを防ぐ。本番は100候補を維持。
-  const defaultDepth = process.env.NODE_ENV === 'test' ? 5 : 100;
+  // テスト環境(NODE_ENV===test)では高速モード(5候補)にして計算爆発・ハングを防ぐ。本番は35候補を維持。
+  const defaultDepth = process.env.NODE_ENV === 'test' ? 5 : 35;
   const topCandidates = screenResults.slice(0, ctx.searchDepth || defaultDepth);
+
+  // チーム単体の順列評価（事前計算用インターフェース）
+  interface TeamAssignmentEval {
+    perm: number[];
+    rolePlayers: Player[];
+    roleMmrs: number[];
+    roleEffs: number[];
+    roleWeightedEffs: number[];
+    totalEffWeighted: number;
+    teamSpreadPenalty: number;
+    internalRolePenalty: number;
+    mainCount: number;
+    highRankCount: number;
+  }
+
+  const evaluateTeamPermutations = (team: Player[]): TeamAssignmentEval[] => {
+    const results: TeamAssignmentEval[] = [];
+
+    const evaluatePerm = (p: number[], allowNg: boolean) => {
+      // 1. 固定枠チェック
+      for (let i = 0; i < 5; i++) {
+        const role = ROLES[p[i]];
+        if (team[i].isFixed && team[i].fixedRole && team[i].fixedRole !== role) {
+          return null;
+        }
+        if (!allowNg && (role === team[i].ng1 || role === team[i].ng2)) {
+          return null;
+        }
+      }
+
+      const rolePlayers: Player[] = new Array(5);
+      const roleMmrs: number[] = new Array(5);
+      const roleEffs: number[] = new Array(5);
+      const roleWeightedEffs: number[] = new Array(5);
+      let totalEffWeighted = 0;
+      let mainCount = 0;
+      let highRankCount = 0;
+      let internalRolePenalty = 0;
+
+      for (let rIdx = 0; rIdx < 5; rIdx++) {
+        const role = ROLES[rIdx];
+        const playerIdx = p.indexOf(rIdx);
+        const player = team[playerIdx];
+        rolePlayers[rIdx] = player;
+
+        const mmr = player.rates[role];
+        const eff = player.effectiveRates![role];
+        roleMmrs[rIdx] = mmr;
+        roleEffs[rIdx] = eff;
+        const weighted = eff * (ROLE_IMPACT_WEIGHTS[role] || 1.0);
+        roleWeightedEffs[rIdx] = weighted;
+        totalEffWeighted += weighted;
+
+        if (HIGH_RANKS.includes(player.rank)) highRankCount++;
+
+        const isSpecialist = ['JG', 'SUP', 'ADC'].includes(player.pref1);
+        const w = effectiveWeight.get(player) ?? player.weight;
+        let rolePenalty = 0;
+
+        if (role === player.ng1 || role === player.ng2) {
+          rolePenalty = 1000000;
+          if (w === 1) rolePenalty *= 10;
+          else if (w === 2) rolePenalty *= 2;
+        } else if (player.isFixed || player.pref1 === 'ALL' || player.pref1 === role) {
+          rolePenalty = player.isNewbie ? -30000 : 0;
+          mainCount++;
+        } else if (player.pref2 === role) {
+          rolePenalty = 500 + (player.pity * 10000);
+          if (player.isNewbie) rolePenalty += 80000;
+          if (player.pity >= 4) rolePenalty += 40000;
+          if (isSpecialist) rolePenalty *= 2;
+          if (w === 1) rolePenalty *= 10;
+          if (w === 3) rolePenalty *= 0.5;
+          rolePenalty += player.off_role_pity * 30000;
+        } else {
+          rolePenalty = 5000 + (player.pity * 20000);
+          if (player.isNewbie) rolePenalty += 120000;
+          if (player.pity >= 4) rolePenalty += 60000;
+          if (isSpecialist) rolePenalty *= 3;
+          if (w === 1) rolePenalty *= 20;
+          if (w === 3) rolePenalty *= 0.2;
+          rolePenalty += player.off_role_pity * 50000;
+        }
+
+        if ((player.isNewbie || player.isOutlierLow) && (role === 'JG' || role === 'MID') && player.pref1 !== role) {
+          rolePenalty += 15000;
+        }
+
+        if (player.isOutlierLow) {
+          if (role !== player.pref1 && player.pref1 !== 'ALL' && player.pref1 !== '-') {
+            rolePenalty += (role === player.pref2) ? 50000 : 150000;
+          }
+        }
+
+        internalRolePenalty += rolePenalty;
+      }
+
+      // チーム内格差
+      const minMmr = Math.min(...roleMmrs);
+      const maxMmr = Math.max(...roleMmrs);
+      const spread = maxMmr - minMmr;
+      let teamSpreadPenalty = 0;
+      if (spread >= 500) teamSpreadPenalty = 300000;
+      else if (spread >= 400) teamSpreadPenalty = 80000;
+
+      return {
+        perm: [...p],
+        rolePlayers,
+        roleMmrs,
+        roleEffs,
+        roleWeightedEffs,
+        totalEffWeighted,
+        teamSpreadPenalty,
+        internalRolePenalty,
+        mainCount,
+        highRankCount,
+      };
+    };
+
+    // 1st pass: NGロール除外
+    for (const p of perms) {
+      const res = evaluatePerm(p, false);
+      if (res) results.push(res);
+    }
+
+    // 2nd pass: もしNG除外で解が0件の場合はNG許可でフォールバック
+    if (results.length === 0) {
+      for (const p of perms) {
+        const res = evaluatePerm(p, true);
+        if (res) results.push(res);
+      }
+    }
+
+    return results;
+  };
 
   // フェーズ2：精密探索
   const allCandidates: RawBalanceCandidate[] = [];
@@ -425,20 +560,17 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
           const key = [names[x], names[y]].sort().join("<=>");
           const count = ctx.teammateHistory.get(key) || 0;
           if (count >= 3) {
-            compositionPenalty += (count - 2) * 12000; // ペナルティを8000から12000に強化
+            compositionPenalty += (count - 2) * 12000;
           } else if (count === 2) {
-            compositionPenalty += 4000; // 2回連続で同チームの場合も軽微なペナルティで抑制
+            compositionPenalty += 4000;
           }
 
-          // ② 過去の共闘勝率相性 (Duo Synergy)
           if (ctx.duoSynergyMap && ctx.duoSynergyMap.has(key)) {
             const syn = ctx.duoSynergyMap.get(key)!;
             if (syn.games >= 3) {
               if (syn.winRate >= 75) {
-                // 黄金ペア（勝率75%以上）が同チームに入る場合は戦力偏りペナルティ
                 compositionPenalty += 8000;
               } else if (syn.winRate <= 25) {
-                // 不仲・機能不全ペア（勝率25%以下）
                 compositionPenalty += 6000;
               }
             }
@@ -459,62 +591,52 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
       }
     }
 
-    for (const pA of perms) {
-      let validA = true;
-      for (let i = 0; i < 5; i++) {
-        const role = ROLES[pA[i]];
-        if (teamA[i].isFixed && teamA[i].fixedRole && teamA[i].fixedRole !== role) {
-          validA = false; break;
-        }
-      }
-      if (!validA) continue;
-      
-      for (const pB of perms) {
-        let validB = true;
-        for (let i = 0; i < 5; i++) {
-          const role = ROLES[pB[i]];
-          if (teamB[i].isFixed && teamB[i].fixedRole && teamB[i].fixedRole !== role) {
-            validB = false; break;
-          }
-        }
-        if (!validB) continue;
+    // チーム単体の順列評価（事前計算済みキャッシュ）
+    const evalsA = evaluateTeamPermutations(teamA);
+    const evalsB = evaluateTeamPermutations(teamB);
 
-        let penalty = compositionPenalty, totalA = 0, totalB = 0;
+    const totalWRA = teamAIndices.reduce((sum, idx) => sum + (players[idx].winRate - 50.0) * Math.min(1.0, players[idx].games / 10), 0);
+    const totalWRB = teamBIndices.reduce((sum, idx) => sum + (players[idx].winRate - 50.0) * Math.min(1.0, players[idx].games / 10), 0);
+    const wrPenalty = Math.abs(totalWRA - totalWRB) * 400;
+
+    const worstWRInA = teamAIndices.some(idx => players[idx].name === worstWRPlayerName);
+    let baseHandicap = 0;
+    if (worstWRPlayerName) baseHandicap += (worstWRInA ? 100 : -100);
+    const newbieCountA = teamAIndices.filter(idx => players[idx].isNewbie).length;
+    const newbieCountB = (players.filter(p => p.isNewbie).length) - newbieCountA;
+    baseHandicap += (newbieCountA * 300) - (newbieCountB * 300);
+    baseHandicap += (totalWRB - totalWRA) * 30;
+
+    for (const eA of evalsA) {
+      for (const eB of evalsB) {
+        let penalty = compositionPenalty + eA.teamSpreadPenalty + eB.teamSpreadPenalty + eA.internalRolePenalty + eB.internalRolePenalty + wrPenalty;
 
         let lanesAdvantagedA = 0, lanesAdvantagedB = 0;
-        let highRankCountA = 0, highRankCountB = 0;
         let laneAdvantageScoreA = 0, laneAdvantageScoreB = 0;
-        let mainCount = 0;
 
         for (let rIdx = 0; rIdx < 5; rIdx++) {
           const role = ROLES[rIdx];
-          const aIdx = pA.indexOf(rIdx);
-          const bIdx = pB.indexOf(rIdx);
-          const pLayerA = teamA[aIdx];
-          const pLayerB = teamB[bIdx];
-          const mmrA = pLayerA.rates[role];
-          const mmrB = pLayerB.rates[role];
-          const effA = pLayerA.effectiveRates![role];
-          const effB = pLayerB.effectiveRates![role];
+          const pLayerA = eA.rolePlayers[rIdx];
+          const pLayerB = eB.rolePlayers[rIdx];
+          const mmrA = eA.roleMmrs[rIdx];
+          const mmrB = eB.roleMmrs[rIdx];
+          const effA = eA.roleEffs[rIdx];
+          const effB = eB.roleEffs[rIdx];
 
-          // ① キャリーレーン影響力重み付け (JG/MIDの対面格差を重く評価)
-          const roleImpact = ROLE_IMPACT_WEIGHTS[role] || 1.0;
           const roleGapMultiplier = (role === 'JG' || role === 'MID') ? 1.4 : (role === 'ADC' ? 1.15 : 1.0);
 
-          // ★ 対面MMRの格差チェック (シルバー vs プラチナなどの格差対面を強力に抑制)
           const laneMmrDiff = Math.abs(mmrA - mmrB);
           const weakerSide = mmrA < mmrB ? pLayerA : pLayerB;
           const gapScale = weakerSide.allowHigher ? 0.15 : 1;
           if (laneMmrDiff >= 300) {
-            penalty += 60000 * gapScale * roleGapMultiplier; // 超格差（許可なしは強い抑制）
+            penalty += 60000 * gapScale * roleGapMultiplier;
           } else if (laneMmrDiff >= 200) {
-            penalty += 25000 * gapScale * roleGapMultiplier; // 中格差（抑止）
+            penalty += 25000 * gapScale * roleGapMultiplier;
           } else if (laneMmrDiff >= 150) {
-            penalty += 8000 * gapScale * roleGapMultiplier;  // 軽微な格差（ソフト抑制）
+            penalty += 8000 * gapScale * roleGapMultiplier;
           }
 
-          penalty += (Math.pow(Math.abs(effA - effB), 2) / 2.5) * roleGapMultiplier; // 対面のレーン格差ペナルティ
-          totalA += effA * roleImpact; totalB += effB * roleImpact; // チーム合計もロール影響力で重み付け評価
+          penalty += (Math.pow(Math.abs(effA - effB), 2) / 2.5) * roleGapMultiplier;
 
           laneAdvantageScoreA += Math.max(0, effA - effB);
           laneAdvantageScoreB += Math.max(0, effB - effA);
@@ -522,136 +644,51 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
           if (effA > effB + 150) lanesAdvantagedA++;
           if (effB > effA + 150) lanesAdvantagedB++;
 
-          if (HIGH_RANKS.includes(pLayerA.rank)) highRankCountA++;
-          if (HIGH_RANKS.includes(pLayerB.rank)) highRankCountB++;
-
           const matchupHistKey = [pLayerA.name, pLayerB.name].sort().join("<=>") + ":" + role;
           if (ctx.history.has(matchupHistKey)) { penalty += 15000; }
 
-          const checkOpponent = (p: Player, opp: Player, currentRole: Role) => {
-             const oppMmr = opp.rates[currentRole];
-             const mmrDiff = oppMmr - p.rates[currentRole];
-             // 格上対面判定 (MMR差200以上)
-             const isHigherOpp = mmrDiff >= 200;
-             const isMainLane = (currentRole === p.pref1);
-             
-             if (isHigherOpp) {
-               if (!isMainLane) penalty += Math.pow(mmrDiff, 2) * 2; 
-               if (p.allowHigher === false) {
-                 // 未許可の格上対面は最優先でブロック（他の妥協案があれば絶対に選ばれないペナルティ）
-                 penalty += 2000000 + Math.pow(mmrDiff, 2) * 20;
-               }
-             }
-
-             // 初参加者保護: 初参加者の対面に格上・突出強者が来るのを強力に抑制
-             if (p.isNewbie && (opp.isOutlierHigh || mmrDiff > 200 || HIGH_RANKS.includes(opp.rank))) {
-               penalty += 45000;
-             }
-
-             if (p.isOutlierLow && (opp.isOutlierHigh || mmrDiff > 1200)) {
-               penalty += 20000; 
-             }
-          };
-          checkOpponent(pLayerA, pLayerB, role);
-          checkOpponent(pLayerB, pLayerA, role);
-
-          const checkRolePenalty = (p: Player, currentRole: Role) => {
-            const isSpecialist = ['JG', 'SUP', 'ADC'].includes(p.pref1);
-            const w = effectiveWeight.get(p) ?? p.weight; // 実効weight(B3)
-            let rolePenalty = 0;
-            if (currentRole === p.ng1 || currentRole === p.ng2) {
-              rolePenalty = 1000000;
-              if (w === 1) rolePenalty *= 10;
-              else if (w === 2) rolePenalty *= 2;
-            } else if (p.isFixed || p.pref1 === 'ALL' || p.pref1 === currentRole) {
-              // 初参加バフ: 初参加者が第一希望に配属されたら大幅な歓迎ボーナス
-              rolePenalty = p.isNewbie ? -30000 : 0;
-            } else if (p.pref2 === currentRole) {
-              rolePenalty = 500 + (p.pity * 10000);
-              if (p.isNewbie) rolePenalty += 80000; // 初参加者のオフロールは強く回避
-              if (p.pity >= 4) rolePenalty += 40000;
-              if (isSpecialist) rolePenalty *= 2;
-              if (w === 1) rolePenalty *= 10;
-              if (w === 3) rolePenalty *= 0.5;
-              rolePenalty += p.off_role_pity * 30000;
-            } else {
-              rolePenalty = 5000 + (p.pity * 20000);
-              if (p.isNewbie) rolePenalty += 120000; // 初参加者のオフロールは強力にブロック
-              if (p.pity >= 4) rolePenalty += 60000;
-              if (isSpecialist) rolePenalty *= 3;
-              if (w === 1) rolePenalty *= 20;
-              if (w === 3) rolePenalty *= 0.2;
-              rolePenalty += p.off_role_pity * 50000;
+          // 格上対面判定 (A vs B)
+          const diffB = mmrB - mmrA;
+          if (diffB >= 200) {
+            if (role !== pLayerA.pref1) penalty += Math.pow(diffB, 2) * 2;
+            if (pLayerA.allowHigher === false) {
+              penalty += 2000000 + Math.pow(diffB, 2) * 20;
             }
-            if ((p.isNewbie || p.isOutlierLow) && (currentRole === 'JG' || currentRole === 'MID') && p.pref1 !== currentRole) {
-              rolePenalty += 15000; 
-            }
-
-            if (p.isOutlierLow) {
-              if (currentRole !== p.pref1 && p.pref1 !== 'ALL' && p.pref1 !== '-') {
-                if (currentRole === p.pref2) {
-                  rolePenalty += 50000;
-                } else {
-                  rolePenalty += 150000;
-                }
-              }
-            }
-
-            penalty += rolePenalty;
-          };
-          checkRolePenalty(pLayerA, role);
-          checkRolePenalty(pLayerB, role);
-
-          const applyOutlierRelief = (p: Player, oppMmr: number, currentRole: Role) => {
-            if (p.isOutlierHigh && currentRole !== p.pref1 && currentRole !== p.ng1 && currentRole !== p.ng2) {
-              const myMmr = p.rates[currentRole];
-              const mmrDiff = myMmr - oppMmr;
-              if (mmrDiff > 600) {
-                penalty -= Math.min(mmrDiff * 5, 30000);
-              }
-            }
-          };
-          applyOutlierRelief(pLayerA, mmrB, role);
-          applyOutlierRelief(pLayerB, mmrA, role);
-
-          if (pLayerA.isFixed || pLayerA.pref1 === 'ALL' || pLayerA.pref1 === role) mainCount++;
-          if (pLayerB.isFixed || pLayerB.pref1 === 'ALL' || pLayerB.pref1 === role) mainCount++;
-        }
-        
-        // ★ 追加: チーム内格差チェック（1チーム内に極端に強い人と弱い人が同居するのを抑制）
-        const calcTeamSpreadPenalty = (team: Player[], assignedRoles: number[]) => {
-          const teamMmrs = team.map((p, i) => p.rates[ROLES[assignedRoles[i]]]);
-          const minMmr = Math.min(...teamMmrs);
-          const maxMmr = Math.max(...teamMmrs);
-          const spread = maxMmr - minMmr;
-          
-          if (spread >= 500) {
-            return 300000; // 超格差（極度のキャリー/非キャリー同居を強力に排除）
-          } else if (spread >= 400) {
-            return 80000;  // 中格差（極力避ける）
           }
-          return 0;
-        };
+          if (pLayerA.isNewbie && (pLayerB.isOutlierHigh || diffB > 200 || HIGH_RANKS.includes(pLayerB.rank))) {
+            penalty += 45000;
+          }
+          if (pLayerA.isOutlierLow && (pLayerB.isOutlierHigh || diffB > 1200)) {
+            penalty += 20000;
+          }
 
-        penalty += calcTeamSpreadPenalty(teamA, pA);
-        penalty += calcTeamSpreadPenalty(teamB, pB);
+          // 格上対面判定 (B vs A)
+          const diffA = mmrA - mmrB;
+          if (diffA >= 200) {
+            if (role !== pLayerB.pref1) penalty += Math.pow(diffA, 2) * 2;
+            if (pLayerB.allowHigher === false) {
+              penalty += 2000000 + Math.pow(diffA, 2) * 20;
+            }
+          }
+          if (pLayerB.isNewbie && (pLayerA.isOutlierHigh || diffA > 200 || HIGH_RANKS.includes(pLayerA.rank))) {
+            penalty += 45000;
+          }
+          if (pLayerB.isOutlierLow && (pLayerA.isOutlierHigh || diffA > 1200)) {
+            penalty += 20000;
+          }
 
-        // ★ レーン対面格差（対面同士の実力差）の極小化ペナルティ
-        let maxLaneDiff = 0;
-        let sumLaneDiffSq = 0;
-        for (let r = 0; r < 5; r++) {
-          const role = ROLES[r];
-          const diff = Math.abs(teamA[r].rates[role] - teamB[r].rates[role]);
-          if (diff > maxLaneDiff) maxLaneDiff = diff;
-          sumLaneDiffSq += Math.pow(diff, 2);
-          if (diff >= 600) {
-            penalty += 150000; // 対面で超格差（レーン崩壊）
-          } else if (diff >= 400) {
-            penalty += 40000;  // 対面で中格差
+          // 格差救済
+          if (pLayerA.isOutlierHigh && role !== pLayerA.pref1 && role !== pLayerA.ng1 && role !== pLayerA.ng2) {
+            const diffRelief = mmrA - mmrB;
+            if (diffRelief > 600) penalty -= Math.min(diffRelief * 5, 30000);
+          }
+          if (pLayerB.isOutlierHigh && role !== pLayerB.pref1 && role !== pLayerB.ng1 && role !== pLayerB.ng2) {
+            const diffRelief = mmrB - mmrA;
+            if (diffRelief > 600) penalty -= Math.min(diffRelief * 5, 30000);
           }
         }
-        penalty += sumLaneDiffSq * 0.05; // 対面差二乗和による連続ペナルティ
 
+        const mainCount = eA.mainCount + eB.mainCount;
         const mainShortfall = 10 - mainCount;
         penalty += mainShortfall * 80000;
 
@@ -661,43 +698,25 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
         const laneAdvantageGap = Math.abs(laneAdvantageScoreA - laneAdvantageScoreB);
         penalty += laneAdvantageGap * 3.0;
 
-        const rankGap = Math.abs(highRankCountA - highRankCountB);
+        const rankGap = Math.abs(eA.highRankCount - eB.highRankCount);
         if (rankGap >= 2) penalty += Math.pow(rankGap, 2) * 5000;
 
-        const totalWRA = teamAIndices.reduce((sum, idx) => sum + (players[idx].winRate - 50.0) * Math.min(1.0, players[idx].games / 10), 0);
-        const totalWRB = teamBIndices.reduce((sum, idx) => sum + (players[idx].winRate - 50.0) * Math.min(1.0, players[idx].games / 10), 0);
-        
-        // N4: WR偏りは合計差ベースのこのペナルティに一本化。
-        // 以前あった「最高WRと最低WRが別チームなら+8000」は同じ意図の粗い重複だったため撤去。
-        penalty += Math.abs(totalWRA - totalWRB) * 400;
+        const totalA = eA.totalEffWeighted;
+        const totalB = eB.totalEffWeighted;
 
-        const worstWRInA = teamAIndices.some(idx => players[idx].name === worstWRPlayerName);
+        const score = penalty + Math.abs(totalA - totalB - baseHandicap);
+        const mmrDiffVal = Math.abs(totalA - totalB - baseHandicap);
 
-        let handicap = 0;
-        if (worstWRPlayerName) handicap += (worstWRInA ? 100 : -100);
-        
-        const newbieCountA = teamAIndices.filter(idx => players[idx].isNewbie).length;
-        const newbieCountB = (players.filter(p => p.isNewbie).length) - newbieCountA;
-        handicap += (newbieCountA * 300) - (newbieCountB * 300);
-
-        handicap += (totalWRB - totalWRA) * 30;
-
-        // MMR差および総合スコアの決定
-        const score = penalty + Math.abs(totalA - totalB - handicap);
-        const mmrDiffVal = Math.abs(totalA - totalB - handicap);
-
-        // 重複チェック用の一意なシグネチャを生成
-        // (メンバーの組み合わせとそれぞれの配置レーン)
-        const teamANames = teamAIndices.map((idx, i) => `${players[idx].name}:${ROLES[pA[i]]}`).sort().join(',');
-        const teamBNames = teamBIndices.map((idx, i) => `${players[idx].name}:${ROLES[pB[i]]}`).sort().join(',');
+        const teamANames = teamAIndices.map((idx, i) => `${players[idx].name}:${ROLES[eA.perm[i]]}`).sort().join(',');
+        const teamBNames = teamBIndices.map((idx, i) => `${players[idx].name}:${ROLES[eB.perm[i]]}`).sort().join(',');
         const signature = [teamANames, teamBNames].sort().join('|');
 
         allCandidates.push({
           score,
           mmrDiffVal,
           mainCount,
-          pA: [...pA],
-          pB: [...pB],
+          pA: [...eA.perm],
+          pB: [...eB.perm],
           teamAIndices,
           teamBIndices,
           signature
