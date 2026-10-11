@@ -296,6 +296,21 @@ export async function POST(request: Request) {
       console.warn('[balancer] 同チーム固定ペア設定の読み込みに失敗（制約なしで続行）:', e);
     }
 
+    // 指定メンター設定をDB設定(ktm_settings)から読み込む（初参加者との同チーム優先配置用）。
+    try {
+      const { data: mentorSetting } = await supabase
+        .from('ktm_settings')
+        .select('value')
+        .eq('key', 'onboarding_mentors')
+        .maybeSingle();
+      const mentors = mentorSetting?.value;
+      if (Array.isArray(mentors)) {
+        ctx.designatedMentors = mentors.map((m: any) => String(m).trim()).filter(Boolean);
+      }
+    } catch (e) {
+      console.warn('[balancer] 指定メンター設定の読み込みに失敗（制約なしで続行）:', e);
+    }
+
     try {
       // 直近15試合を取得（サイド履歴用には広く、対面履歴用には直近のみ使うため）
       const { data: recentMatches } = await supabase

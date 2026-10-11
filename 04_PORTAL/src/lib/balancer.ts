@@ -61,6 +61,8 @@ export interface BalanceContext {
   // ギャップを解消）。各要素は [名前1, 名前2]。forbiddenPairsと同名ペアが両方に含まれる場合は
   // 競合のため、探索時にforbiddenPairs側を優先する（同一チーム分割が0件になるのを避ける）。
   requiredPairs?: [string, string][];
+  // 指定メンター名一覧（新メンバーと同一チーム配置を優先するための大会運用設定）
+  designatedMentors?: string[];
   // BL-02: 精密探索する候補数（40=速い / 100=標準 / 200=精密）。未指定は100。
   searchDepth?: number;
 }
@@ -588,6 +590,28 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
       const setsEqual = (a: Set<string>, b: Set<string>) => a.size === b.size && [...a].every(v => b.has(v));
       if (setsEqual(teamASet, ctx.winStreakTeam) || setsEqual(teamBSet, ctx.winStreakTeam)) {
         compositionPenalty += 150000;
+      }
+    }
+
+    // 🤝 大会・カスタム運用: 初参加者（通算3戦未満）と指定メンターの同チーム優先配置
+    // 初参加者がいる場合、同じチームに指定メンターが1人以上同居している分割を大幅に優遇する
+    if (ctx.designatedMentors && ctx.designatedMentors.length > 0) {
+      const mentorSet = new Set(ctx.designatedMentors.map(m => m.toLowerCase().trim()));
+      const teamANewbies = teamA.filter(p => p.isNewbie);
+      const teamBNewbies = teamB.filter(p => p.isNewbie);
+      const teamAMentors = teamA.filter(p => mentorSet.has(p.name.toLowerCase().trim()));
+      const teamBMentors = teamB.filter(p => mentorSet.has(p.name.toLowerCase().trim()));
+
+      const hasMentorsInMatch = teamAMentors.length > 0 || teamBMentors.length > 0;
+      if (hasMentorsInMatch) {
+        // Team Aに初心者がいるのにメンターが1人もいない場合
+        if (teamANewbies.length > 0 && teamAMentors.length === 0 && teamBMentors.length > 0) {
+          compositionPenalty += 45000 * teamANewbies.length;
+        }
+        // Team Bに初心者がいるのにメンターが1人もいない場合
+        if (teamBNewbies.length > 0 && teamBMentors.length === 0 && teamAMentors.length > 0) {
+          compositionPenalty += 45000 * teamBNewbies.length;
+        }
       }
     }
 
