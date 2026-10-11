@@ -751,6 +751,7 @@ function CapturePreviewModal({
   onClose: () => void;
 }) {
   const [copiedPool, setCopiedPool] = useState(false);
+  const [scaleMode, setScaleMode] = useState<"auto" | "compact" | "tiny">("auto");
 
   // ピック可能なチャンピオンのみを抽出
   const pool = useMemo(() => {
@@ -766,7 +767,6 @@ function CapturePreviewModal({
       list.push(c);
       map.set(c.region, list);
     });
-    // チャンピオンが1体以上いる地域だけ抽出
     return Array.from(map.entries()).filter(([_, list]) => list.length > 0);
   }, [pool]);
 
@@ -800,30 +800,37 @@ function CapturePreviewModal({
     SUP: { label: "SUP", icon: "✨" },
   };
 
+  // 候補数に応じた自動スケール判定
+  const effectiveSize = useMemo(() => {
+    if (scaleMode !== "auto") return scaleMode;
+    if (pool.length > 80) return "tiny";
+    return "compact";
+  }, [scaleMode, pool.length]);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="bg-[#0f1115] text-[#f1f3f5] border-2 border-primary-500/50 rounded-2xl max-w-6xl w-full shadow-2xl relative flex flex-col my-auto max-h-[96vh]">
-        {/* モーダル上部操作バー（キャプチャ外） */}
-        <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-surface/90 border-b border-border/80 rounded-t-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-md animate-fade-in select-none">
+      <div className="bg-[#0b0d13] text-[#f1f3f5] border-2 border-primary-500/60 rounded-2xl w-full max-w-[1400px] h-[96vh] shadow-2xl flex flex-col overflow-hidden">
+        {/* モーダル上部操作バー（キャプチャ外コントロール） */}
+        <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-[#141822] border-b border-stone-800 text-xs shrink-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-black flex items-center gap-1 text-primary-500">
+            <span className="font-black flex items-center gap-1.5 text-primary-400">
               <Camera className="w-4 h-4" /> 1枚キャプチャ用プレビュー
             </span>
-            <span className="text-[11px] text-muted-strong bg-surface-subtle px-2 py-0.5 rounded-md border border-border">
-              この画面全体をスクショ・クリップしてDiscord等に共有できます
+            <span className="text-[11px] text-stone-400 hidden sm:inline">
+              （スクロール不要で1画面に全収まるように縮小配置しています）
             </span>
           </div>
 
           <div className="flex items-center gap-2">
             {/* 切り替えボタングループ */}
-            <div className="flex items-center gap-1 bg-surface-subtle p-0.5 rounded-lg border border-border text-xs">
+            <div className="flex items-center gap-1 bg-stone-900/80 p-0.5 rounded-lg border border-stone-800">
               <button
                 type="button"
                 onClick={() => setCaptureGroupBy("region")}
-                className={`px-2 py-1 rounded-md font-bold transition cursor-pointer text-xs ${
+                className={`px-2 py-0.5 rounded text-[11px] font-bold transition cursor-pointer ${
                   captureGroupBy === "region"
-                    ? "bg-primary-600 text-white"
-                    : "text-muted hover:text-foreground"
+                    ? "bg-primary-600 text-white shadow-xs"
+                    : "text-stone-400 hover:text-white"
                 }`}
               >
                 🌸 地域別
@@ -831,10 +838,10 @@ function CapturePreviewModal({
               <button
                 type="button"
                 onClick={() => setCaptureGroupBy("role")}
-                className={`px-2 py-1 rounded-md font-bold transition cursor-pointer text-xs ${
+                className={`px-2 py-0.5 rounded text-[11px] font-bold transition cursor-pointer ${
                   captureGroupBy === "role"
-                    ? "bg-primary-600 text-white"
-                    : "text-muted hover:text-foreground"
+                    ? "bg-primary-600 text-white shadow-xs"
+                    : "text-stone-400 hover:text-white"
                 }`}
               >
                 ⚔️ ロール別
@@ -842,59 +849,91 @@ function CapturePreviewModal({
               <button
                 type="button"
                 onClick={() => setCaptureGroupBy("flat")}
-                className={`px-2 py-1 rounded-md font-bold transition cursor-pointer text-xs ${
+                className={`px-2 py-0.5 rounded text-[11px] font-bold transition cursor-pointer ${
                   captureGroupBy === "flat"
-                    ? "bg-primary-600 text-white"
-                    : "text-muted hover:text-foreground"
+                    ? "bg-primary-600 text-white shadow-xs"
+                    : "text-stone-400 hover:text-white"
                 }`}
               >
                 🔤 コンパクト全一覧
               </button>
             </div>
 
+            {/* サイズ調整 */}
+            <div className="flex items-center gap-1 bg-stone-900/80 p-0.5 rounded-lg border border-stone-800 text-[11px]">
+              <span className="text-stone-500 pl-1 text-[10px]">サイズ:</span>
+              <button
+                type="button"
+                onClick={() => setScaleMode("auto")}
+                className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                  scaleMode === "auto" ? "bg-stone-700 text-white" : "text-stone-400"
+                }`}
+              >
+                自動
+              </button>
+              <button
+                type="button"
+                onClick={() => setScaleMode("compact")}
+                className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                  scaleMode === "compact" ? "bg-stone-700 text-white" : "text-stone-400"
+                }`}
+              >
+                中
+              </button>
+              <button
+                type="button"
+                onClick={() => setScaleMode("tiny")}
+                className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                  scaleMode === "tiny" ? "bg-stone-700 text-white" : "text-stone-400"
+                }`}
+              >
+                極小
+              </button>
+            </div>
+
             <button
               type="button"
               onClick={handleCopyTextPool}
-              className="px-2.5 py-1 rounded-lg bg-surface hover:bg-surface-hover text-xs font-bold border border-border flex items-center gap-1 transition text-foreground-soft cursor-pointer"
+              className="px-2 py-1 rounded-lg bg-stone-800 hover:bg-stone-700 text-[11px] font-bold border border-stone-700 flex items-center gap-1 text-stone-200 cursor-pointer"
             >
-              {copiedPool ? <Check className="w-3.5 h-3.5 text-success-500" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>テキストコピー</span>
+              {copiedPool ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+              <span>コピー</span>
             </button>
 
             <button
               type="button"
               onClick={onClose}
-              className="p-1 rounded-lg hover:bg-surface-hover text-muted hover:text-foreground text-sm cursor-pointer ml-1"
+              className="p-1 rounded-lg hover:bg-stone-800 text-stone-400 hover:text-white text-sm cursor-pointer ml-1"
             >
               ✕
             </button>
           </div>
         </div>
 
-        {/* ── 📸 キャプチャ対象エリア（1枚に美しく収まるLoLボード） ── */}
+        {/* ── 📸 キャプチャ対象エリア（はみ出さず1画面に完全収まる16:9比率風ボード） ── */}
         <div
           id="capture-board-area"
-          className="p-4 sm:p-6 bg-gradient-to-b from-[#12151c] to-[#0a0c10] overflow-y-auto rounded-b-2xl flex flex-col gap-4"
+          className="flex-1 p-3 sm:p-4 bg-gradient-to-b from-[#0f121a] via-[#090b0f] to-[#06070a] flex flex-col justify-between overflow-hidden"
         >
           {/* ボードヘッダー */}
-          <div className="flex items-center justify-between border-b border-primary-500/30 pb-3">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-amber-500 to-rose-600 rounded-xl text-white shadow-md">
-                <Sparkles className="w-5 h-5" />
+          <div className="flex items-center justify-between border-b border-primary-500/40 pb-2 shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 bg-gradient-to-br from-amber-500 to-rose-600 rounded-lg text-white shadow-md">
+                <Sparkles className="w-4 h-4" />
               </div>
               <div>
-                <h2 className="text-lg sm:text-xl font-black tracking-wider text-white flex items-center gap-2">
+                <h2 className="text-base sm:text-lg font-black tracking-wider text-white flex items-center gap-2">
                   KTM お祭りカスタム ピック可能チャンピオン
                 </h2>
-                <p className="text-[11px] text-stone-400">
+                <p className="text-[10px] text-stone-400">
                   ※ 赤い❌で除外されたチャンピオンを除いた【有効ピック候補】です
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 bg-[#1a1e27] border border-primary-500/40 px-3.5 py-1.5 rounded-xl shadow-inner">
-              <span className="text-xs text-stone-400 font-bold">候補プール:</span>
-              <span className="text-xl font-black font-mono text-emerald-400 leading-none">
+            <div className="flex items-center gap-2 bg-[#141824] border border-primary-500/40 px-3 py-1 rounded-xl shadow-inner">
+              <span className="text-[11px] text-stone-400 font-bold">候補プール:</span>
+              <span className="text-lg sm:text-xl font-black font-mono text-emerald-400 leading-none">
                 {pool.length}
               </span>
               <span className="text-[10px] text-stone-400">体</span>
@@ -903,78 +942,83 @@ function CapturePreviewModal({
 
           {/* ピック可能プールが0体の場合 */}
           {pool.length === 0 && (
-            <div className="py-12 text-center text-stone-400 text-sm">
+            <div className="flex-1 flex items-center justify-center text-stone-400 text-sm">
               ピック可能なチャンピオンがいません（すべてのチャンピオンが除外されています）
             </div>
           )}
 
-          {/* ① 地域別グループ表示 */}
-          {captureGroupBy === "region" && pool.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {poolByRegion.map(([regKey, champs]) => (
-                <div
-                  key={regKey}
-                  className="bg-[#151922]/90 border border-stone-800/80 rounded-xl p-2.5 flex flex-col gap-1.5 shadow-sm"
-                >
-                  <div className="flex items-center justify-between border-b border-stone-800 pb-1 text-xs">
-                    <span className="font-bold flex items-center gap-1.5 text-stone-200">
-                      <span>{REGIONS[regKey]?.icon}</span>
-                      <span>{REGIONS[regKey]?.name || regKey}</span>
-                    </span>
-                    <span className="text-[10px] font-mono text-stone-400 bg-stone-900/60 px-1.5 py-0.2 rounded border border-stone-800">
-                      {champs.length}体
-                    </span>
-                  </div>
+          {/* ── メイン配置コンテナ（flex-1 で余白に合わせて等分配置・縦スクロールなし） ── */}
+          {pool.length > 0 && (
+            <div className="flex-1 my-2 overflow-hidden flex flex-col justify-center">
+              {/* ① 地域別グループ表示 */}
+              {captureGroupBy === "region" && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-1.5 h-full content-start overflow-hidden">
+                  {poolByRegion.map(([regKey, champs]) => (
+                    <div
+                      key={regKey}
+                      className="bg-[#121622]/90 border border-stone-800/90 rounded-lg p-1.5 flex flex-col gap-1 shadow-2xs overflow-hidden"
+                    >
+                      <div className="flex items-center justify-between border-b border-stone-800 pb-0.5 text-[10px]">
+                        <span className="font-bold flex items-center gap-1 text-stone-200 truncate">
+                          <span className="text-xs">{REGIONS[regKey]?.icon}</span>
+                          <span className="truncate">{REGIONS[regKey]?.name || regKey}</span>
+                        </span>
+                        <span className="font-mono text-[9px] text-stone-400 bg-stone-900 px-1 rounded shrink-0">
+                          {champs.length}
+                        </span>
+                      </div>
 
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {champs.map((c) => (
-                      <CompactCaptureIcon key={c.id} meta={c} />
-                    ))}
-                  </div>
+                      <div className="flex flex-wrap gap-1 content-start overflow-hidden">
+                        {champs.map((c) => (
+                          <CompactCaptureIcon key={c.id} meta={c} size={effectiveSize} />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
+              )}
 
-          {/* ② ロール別グループ表示 */}
-          {captureGroupBy === "role" && pool.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {poolByRole.map(([role, champs]) => (
-                <div
-                  key={role}
-                  className="bg-[#151922]/90 border border-stone-800/80 rounded-xl p-2.5 flex flex-col gap-1.5 shadow-sm"
-                >
-                  <div className="flex items-center justify-between border-b border-stone-800 pb-1 text-xs">
-                    <span className="font-bold flex items-center gap-1.5 text-stone-200">
-                      <span>{roleLabelMap[role]?.icon}</span>
-                      <span>{roleLabelMap[role]?.label || role}</span>
-                    </span>
-                    <span className="text-[10px] font-mono text-stone-400 bg-stone-900/60 px-1.5 py-0.2 rounded border border-stone-800">
-                      {champs.length}体
-                    </span>
-                  </div>
+              {/* ② ロール別グループ表示 */}
+              {captureGroupBy === "role" && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 h-full content-start overflow-hidden">
+                  {poolByRole.map(([role, champs]) => (
+                    <div
+                      key={role}
+                      className="bg-[#121622]/90 border border-stone-800/90 rounded-lg p-2 flex flex-col gap-1.5 shadow-2xs overflow-hidden"
+                    >
+                      <div className="flex items-center justify-between border-b border-stone-800 pb-1 text-xs">
+                        <span className="font-bold flex items-center gap-1.5 text-stone-200">
+                          <span>{roleLabelMap[role]?.icon}</span>
+                          <span>{roleLabelMap[role]?.label || role}</span>
+                        </span>
+                        <span className="font-mono text-[10px] text-stone-400 bg-stone-900 px-1.5 py-0.2 rounded border border-stone-800">
+                          {champs.length}体
+                        </span>
+                      </div>
 
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {champs.map((c) => (
-                      <CompactCaptureIcon key={`${role}-${c.id}`} meta={c} />
-                    ))}
-                  </div>
+                      <div className="flex flex-wrap gap-1 content-start overflow-hidden">
+                        {champs.map((c) => (
+                          <CompactCaptureIcon key={`${role}-${c.id}`} meta={c} size={effectiveSize} showName />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
+
+              {/* ③ コンパクト全一覧（名簿形式・画面にギッシリ整列） */}
+              {captureGroupBy === "flat" && (
+                <div className="bg-[#121622]/90 border border-stone-800/90 rounded-xl p-2.5 flex flex-wrap gap-1 sm:gap-1.5 content-start overflow-hidden h-full">
+                  {pool.map((c) => (
+                    <CompactCaptureIcon key={c.id} meta={c} size={effectiveSize} showName />
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
-          {/* ③ コンパクト全一覧（名簿形式） */}
-          {captureGroupBy === "flat" && pool.length > 0 && (
-            <div className="bg-[#151922]/90 border border-stone-800/80 rounded-xl p-3 flex flex-wrap gap-1.5 sm:gap-2">
-              {pool.map((c) => (
-                <CompactCaptureIcon key={c.id} meta={c} showName />
-              ))}
-            </div>
-          )}
-
-          {/* フッターフッター情報 */}
-          <div className="flex items-center justify-between text-[10px] text-stone-500 border-t border-stone-800/80 pt-2 px-1">
+          {/* フッター情報（キャプチャ用クレジット） */}
+          <div className="flex items-center justify-between text-[9px] text-stone-500 border-t border-stone-800/80 pt-1 px-1 shrink-0">
             <span>KTM Weekend Custom Official Portal</span>
             <span>https://ktm-portal.vercel.app/festival/pick</span>
           </div>
@@ -987,29 +1031,42 @@ function CapturePreviewModal({
 // ── キャプチャ用コンパクトアイコン ──
 function CompactCaptureIcon({
   meta,
+  size = "compact",
   showName = false,
 }: {
   meta: ChampionMeta;
+  size?: "compact" | "tiny";
   showName?: boolean;
 }) {
+  const isTiny = size === "tiny";
+
   return (
     <div
-      className={`flex items-center gap-1 bg-[#1a1f2c] border border-stone-700/60 rounded-lg p-0.5 px-1 shadow-2xs ${
-        showName ? "min-w-[70px]" : ""
+      className={`flex items-center gap-1 bg-[#181d2a] border border-stone-700/60 rounded-md p-0.5 px-1 shadow-2xs shrink-0 select-none ${
+        showName ? (isTiny ? "min-w-[55px]" : "min-w-[68px]") : ""
       }`}
       title={`${meta.name} (${REGIONS[meta.region]?.name || meta.region})`}
     >
-      <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-md overflow-hidden border border-stone-600/80 shrink-0">
+      <div
+        className={`${
+          isTiny ? "w-5 h-5 rounded" : "w-6 h-6 rounded-md"
+        } overflow-hidden border border-stone-600/80 shrink-0`}
+      >
         <img
           src={getChampIcon(meta.id)}
           alt={meta.name}
           className="w-full h-full object-cover"
         />
       </div>
-      <span className="text-[10px] font-bold text-stone-200 truncate max-w-[65px] px-0.5">
+      <span
+        className={`${
+          isTiny ? "text-[8.5px] max-w-[45px]" : "text-[9.5px] max-w-[58px]"
+        } font-bold text-stone-200 truncate leading-none px-0.5`}
+      >
         {meta.name}
       </span>
     </div>
   );
 }
+
 
