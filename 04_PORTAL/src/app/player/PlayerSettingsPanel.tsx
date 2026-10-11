@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { 
   Shield, Trees, Zap, Target, Heart, Shuffle, Ban, 
   Save, CheckCircle2, AlertTriangle, RefreshCw, Moon,
-  Swords, Users, Snowflake, Coffee, BookOpen, Sparkles
+  Swords, Users, Snowflake, Coffee, BookOpen, Sparkles,
+  Coins, X
 } from "lucide-react";
 import ThemeToggle from "../../components/ThemeToggle";
 
@@ -81,6 +82,34 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 初参加（通算0戦）判定 & ウェルカムバナー表示状態
+  const isNewPlayer = (player?.total_games ?? 0) === 0 && (player?.stats?.total?.g ?? 0) === 0;
+  const [showWelcome, setShowWelcome] = useState(false);
+
+  useEffect(() => {
+    if (isNewPlayer && player?.id) {
+      try {
+        const dismissed = localStorage.getItem(`ktm_welcome_dismissed_${player.id}`);
+        if (!dismissed) {
+          setShowWelcome(true);
+        }
+      } catch {
+        setShowWelcome(true);
+      }
+    }
+  }, [isNewPlayer, player?.id]);
+
+  const handleDismissWelcome = () => {
+    setShowWelcome(false);
+    if (player?.id) {
+      try {
+        localStorage.setItem(`ktm_welcome_dismissed_${player.id}`, "true");
+      } catch {
+        // local storage unavailable
+      }
+    }
+  };
 
   useEffect(() => {
     if (player) {
@@ -189,6 +218,74 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
 
   return (
     <div className="bg-surface/80 dark:bg-background/80 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-3xl p-6 sm:p-8 shadow-xl space-y-8">
+      {/* 🔰 初参加メンバー限定ウェルカムバナー */}
+      {showWelcome && (
+        <div className="relative overflow-hidden rounded-2xl border-2 border-primary-500/40 bg-gradient-to-br from-primary-500/15 via-secondary-500/10 to-transparent p-5 sm:p-6 shadow-lg shadow-primary-500/5 animate-fade-in">
+          <button
+            type="button"
+            onClick={handleDismissWelcome}
+            aria-label="バナーを閉じる"
+            className="absolute top-3.5 right-3.5 p-1.5 rounded-xl text-muted hover:text-foreground dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+
+          <div className="flex items-start gap-3.5 sm:gap-4">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-stone-950 font-black text-xl shrink-0 shadow-md shadow-primary-500/20">
+              🔰
+            </div>
+
+            <div className="space-y-3 flex-1 pr-6">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-base sm:text-lg font-black text-foreground dark:text-white">
+                    KTM LoL部へようこそ！🎉
+                  </h3>
+                  <span className="text-[11px] font-black px-2 py-0.5 rounded-full bg-primary-500/20 text-primary-700 dark:text-primary-300 border border-primary-500/30">
+                    初参加ウェルカム
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-foreground-soft font-medium mt-1 leading-relaxed">
+                  サーバーへのご参加ありがとうございます！KTMは初心者から上級者まで、誰でも対等に楽しめるコミュニティです。
+                </p>
+              </div>
+
+              {/* 3大安心ハイライト */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                <div className="flex items-center gap-2.5 bg-surface/90 dark:bg-background/90 border border-black/5 dark:border-white/10 rounded-xl px-3 py-2 text-xs">
+                  <Coins className="w-4 h-4 text-amber-500 shrink-0" />
+                  <div>
+                    <span className="font-black text-foreground dark:text-white block">1,000 KTMコイン</span>
+                    <span className="text-[10px] text-muted block">参加ボーナス配布済み🪙</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 bg-surface/90 dark:bg-background/90 border border-black/5 dark:border-white/10 rounded-xl px-3 py-2 text-xs">
+                  <Shield className="w-4 h-4 text-primary-500 shrink-0" />
+                  <div>
+                    <span className="font-black text-foreground dark:text-white block">AIチームバランサー</span>
+                    <span className="text-[10px] text-muted block">実力差を自動均等化⚡</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 bg-surface/90 dark:bg-background/90 border border-black/5 dark:border-white/10 rounded-xl px-3 py-2 text-xs">
+                  <Sparkles className="w-4 h-4 text-secondary-500 shrink-0" />
+                  <div>
+                    <span className="font-black text-foreground dark:text-white block">足引っ張り心配ゼロ</span>
+                    <span className="text-[10px] text-muted block">全員エンジョイ推奨🍵</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 最初のアクション案内 */}
+              <div className="pt-1 flex items-center gap-2 text-xs text-primary-800 dark:text-primary-300 font-bold">
+                <span>👉 まずは下の画面で「希望レーン」と「プレイスタイル」を設定してみましょう！</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div>
         <h2 className="text-xl font-black text-foreground dark:text-white flex items-center gap-2">
           <Shield className="w-5 h-5 text-primary-600" />
