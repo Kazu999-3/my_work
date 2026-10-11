@@ -14,6 +14,7 @@ for (const line of envText.split('\n')) {
 
 const channelId = '1485646544043642964';
 const messageId = '1556984079570960386';
+const portalUrl = 'https://my-work-8jbd.vercel.app';
 
 const newContent = `# 👑 KTM LoL部 へようこそ！
 > 仕事終わりのLoLに「心地よい熱狂」と「大人の語らい」を。
@@ -25,7 +26,7 @@ const newContent = `# 👑 KTM LoL部 へようこそ！
 1️⃣ **自己紹介をする（これだけで準備完了！）**
    <#1485646578621616209> でテンプレに沿って投稿するだけでOK！
    Botが自動で **LoL ID・ランク・希望レーン・NGレーン** を解析・登録し、あなた専用の個別案内チャットを作成します✨
-   *(※登録後にレーンを変更したい場合は、下の「📍 レーン設定変更」ボタンからいつでも変更可能です)*
+   *(※登録後にレーンやNG設定を変更したい場合は、下の「👤 マイページ」からいつでも変更可能です)*
 
 2️⃣ **カスタム・募集に参加する（スタンプを押すだけ！）**
    - **週末定期カスタム**: 毎週土日 21:00〜 <#1528646515533287497> にて開催！募集にリアクション（スタンプ）するだけでエントリー完了！
@@ -58,6 +59,27 @@ const newContent = `# 👑 KTM LoL部 へようこそ！
 - **ミスや不慣れプレイも笑ってナイスファイト！**（誰でも最初は初心者です✨）
 - **試合後は「次はどうすれば楽しく勝てるか」を建設的に**（社会人の良識を持って楽しむ）`;
 
+const newComponents = [
+  // Row 1: Discord内ワンタップ設定・募集
+  {
+    type: 1,
+    components: [
+      { type: 2, label: "🔔 募集通知 (ON/OFF)", style: 2, custom_id: "toggle_recruit_notification" },
+      { type: 2, label: "🎯 プレイスタイル設定", style: 1, custom_id: "portal_playstyle" },
+      { type: 2, label: "⚔️ メンバー募集開始", style: 1, custom_id: "portal_recruit" }
+    ]
+  },
+  // Row 2: ポータル・マイページ・ガイド（Web直リンク）
+  {
+    type: 1,
+    components: [
+      { type: 2, label: "👤 マイページ (レーン・NG設定)", style: 5, url: `${portalUrl}/mypage` },
+      { type: 2, label: "📖 初心者・機能ガイド", style: 5, url: `${portalUrl}/guide` },
+      { type: 2, label: "🌐 KTMポータル", style: 5, url: portalUrl }
+    ]
+  }
+];
+
 async function updateMessage() {
   const res = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${messageId}`, {
     method: 'PATCH',
@@ -65,11 +87,14 @@ async function updateMessage() {
       Authorization: 'Bot ' + env.DISCORD_BOT_TOKEN,
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ content: newContent })
+    body: JSON.stringify({
+      content: newContent,
+      components: newComponents
+    })
   });
 
   if (res.ok) {
-    console.log('✅ #📍はじめに のメッセージを更新しました！');
+    console.log('✅ #📍はじめに のメッセージとボタンを更新しました！');
   } else {
     console.error('❌ 更新エラー:', res.status, await res.text());
   }
