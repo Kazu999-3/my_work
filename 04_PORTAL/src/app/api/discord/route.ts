@@ -17,13 +17,22 @@ export async function POST(request: Request) {
     // 完全にクライアント任せで、実在しない名前でも自由記述で投稿できてしまっていたため、
     // 実在の登録プレイヤー名かどうかだけは検証する(2026-08-05発覚)。
     const allNames = [...teamBlue, ...teamRed, ...(spectators || [])].map((p: any) => typeof p === 'string' ? p : p.name).filter(Boolean);
+    let newPlayerNames: string[] = [];
     if (allNames.length > 0) {
-      const { data: knownPlayers } = await supabase.from('ktm_players').select('name').in('name', allNames);
+      const { data: knownPlayers } = await supabase
+        .from('ktm_players')
+        .select('name, total_games, stats')
+        .in('name', allNames);
       const knownSet = new Set((knownPlayers || []).map((p: any) => p.name));
       const unknown = allNames.filter((n) => !knownSet.has(n));
       if (unknown.length > 0) {
         return NextResponse.json({ error: `登録されていないプレイヤー名が含まれています: ${unknown.join(', ')}` }, { status: 400 });
       }
+
+      // 初参加（通算0戦）プレイヤーを特定
+      newPlayerNames = (knownPlayers || [])
+        .filter((p: any) => (p.total_games ?? 0) === 0 && (p.stats?.total?.g ?? 0) === 0)
+        .map((p: any) => p.name);
     }
 
     // ⚠️ 2026-09-29 追加: 連投対策のクールダウン。
@@ -66,6 +75,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'サーバーにWebhook URLが設定されていません。(.env.local を確認してください)' }, { status: 500 });
     }
 
+    const newPlayerSet = new Set(newPlayerNames);
+
     const formatMatchup = (role: string) => {
       const icons: Record<string, string> = {
         TOP: '🛡️', JG: '🌲', MID: '🔥', ADC: '🏹', SUP: '✨'
@@ -73,8 +84,13 @@ export async function POST(request: Request) {
       const pBlue = teamBlue.find((p: any) => p.currentRole === role);
       const pRed = teamRed.find((p: any) => p.currentRole === role);
       
-      // ハンデ参加者には🎗️を付けて、制約付き参加であることを全員に分かるようにする
-      const mark = (n: string) => (handicapSet.has(n) ? `${n} 🎗️` : n);
+      // ハンデ参加者には🎗️、初参加者には🔰を付けて全員に分かるようにする
+      const mark = (n: string) => {
+        let res = n;
+        if (newPlayerSet.has(n)) res += ' 🔰';
+        if (handicapSet.has(n)) res += ' 🎗️';
+        return res;
+      };
       const blueName = pBlue ? mark(pBlue.name) : "-";
       const redName = pRed ? mark(pRed.name) : "-";
       
@@ -100,8 +116,13 @@ export async function POST(request: Request) {
       ? `\n🎗️ 格差ハンデ適用: ` + body.handicaps.map((h: any) => `${h.targetName}選手（${h.rule} / -${h.mmrPenalty}MMR）`).join('、')
       : '';
 
+    // 初参加者がいる場合のウェルカムメッセージ
+    const welcomeHeader = newPlayerNames.length > 0
+      ? `✨ **本日初参加のメンバーが参戦しています（🔰 ${newPlayerNames.join('さん、')}さん）！VCに入ったら温かく迎えてあげてください🎉**\n`
+      : '';
+
     const payload: any = {
-      content: "🔥 **KTM チーム分けが完了しました！** 🔥\n準備ができたらロビーに参加してください。",
+      content: `${welcomeHeader}🔥 **KTM チーム分けが完了しました！** 🔥\n準備ができたらロビーに参加してください。`,
       embeds: [
         {
           title: "⚔️ 本日のマッチアップ",
@@ -121,6 +142,7 @@ export async function POST(request: Request) {
           ],
           footer: {
             text: `👀 観戦: ${spectators && spectators.length > 0 ? spectators.join(', ') : 'なし'}`
+              + (newPlayerNames.length > 0 ? ` ｜ 🔰初参加: ${newPlayerNames.join(', ')}` : '')
               + (handicapSet.size > 0 ? `\n🎗️ ハンデ参加(オフロール等の制約付き): ${Array.from(handicapSet).join(', ')}` : '')
               + handicapText
           },

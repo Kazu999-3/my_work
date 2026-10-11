@@ -571,6 +571,7 @@ export function buildRecruitmentContent(target, notificationRoleId) {
     const mention = notificationRoleId ? `<@&${notificationRoleId}>` : '';
     return `📢 **【${def.shortName}】${label} 21:00〜** ${mention}
 ⚔️ **実力伯仲の真剣勝負！** 初心者・低ランク大歓迎（チーム戦力は五分五分に自動調整）
+🔰 **初参加枠あり！**: 初めて参加される方は優先的に枠を確保します。遠慮なくご参加ください✨
 🕒 **時間**: 21:00〜 3戦程度（24時頃〜自由参加メイヘム）
 
 ⚖️ **10人前後（1部屋）のときの参加基準（KTM MMR基準）**:
@@ -585,6 +586,7 @@ export function buildRecruitmentContent(target, notificationRoleId) {
   // 日曜は通知二重鳴り防止のためメンションを省き、被る凡例もカット
   return `📢 **【${def.shortName}】${label} 21:00〜**
 🎪 **勝敗気にせず楽しむお祭り！** レート変動なし・ランク不問✨
+🔰 **初参加大歓迎！**: 最初のカスタム体験にも最適です。気軽にご参加ください！
 🕒 **ルール**: 不慣れなキャラ・レーンの練習や特殊ルール・ARAM等のワイワイ枠
 （※名簿アイコンの意味は土曜カードと共通です）`.trim();
 }

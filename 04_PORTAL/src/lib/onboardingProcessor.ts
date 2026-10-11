@@ -648,7 +648,32 @@ export async function processSingleIntroMessage(msg: {
     });
   }
 
-  // 8. 自己紹介メッセージに「✅」リアクションを付与（完了マーク）
+  // 8. #🌱初参加・ライト・復帰交流 への自動歓迎メッセージ投稿
+  // 新メンバーが発言しやすくなるよう、Botが部屋に歓迎メッセージを添えてコミュニティの輪を広げる
+  try {
+    const beginnerWelcomeContent = [
+      `👋 **<@${discordId}> さんがKTMに参加されました！ようこそ！🎉**`,
+      `ここは **初参加・ライト・復帰勢** のための交流部屋です✨`,
+      `「週末カスタムの雰囲気はどう？」「今日サクッとARAMやノーマル行きませんか？」など、疑問や気軽なお誘いはいつでもここでどうぞ！`,
+      `みんなで温かく迎えましょう🙌`
+    ].join('\n');
+
+    await discordFetch(`https://discord.com/api/v10/channels/${BEGINNER_CHANNEL_ID}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bot ${process.env.DISCORD_BOT_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        content: beginnerWelcomeContent,
+        allowed_mentions: { users: [discordId] },
+      }),
+    });
+  } catch (bwErr) {
+    console.warn('[onboarding] 初中級部屋への歓迎投稿に失敗（オンボーディング自体は続行）:', bwErr);
+  }
+
+  // 9. 自己紹介メッセージに「✅」リアクションを付与（完了マーク）
   await addReactionToMessage(INTRO_CHANNEL_ID, msg.id, '✅');
 
   return {
