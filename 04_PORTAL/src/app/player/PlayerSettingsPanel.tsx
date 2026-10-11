@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { 
   Shield, Trees, Zap, Target, Heart, Shuffle, Ban, 
-  Save, CheckCircle2, AlertTriangle, RefreshCw, Moon
+  Save, CheckCircle2, AlertTriangle, RefreshCw, Moon,
+  Swords, Users, Snowflake, Coffee, BookOpen, Sparkles
 } from "lucide-react";
 import ThemeToggle from "../../components/ThemeToggle";
 
@@ -21,12 +22,61 @@ const ROLES = [
   { id: "FILL", name: "おまかせ(FILL)", icon: Shuffle, color: "text-muted border-stone-500/40 bg-stone-500/10" },
 ];
 
+const PLAYSTYLE_ITEMS = [
+  {
+    key: "soloq",
+    label: "🥊 ソロキュー奮闘中",
+    desc: "ソロランク回し中・デュオ募集中の意思表示",
+    icon: Swords,
+    activeColor: "bg-danger-500/15 border-danger-500 text-danger-700 dark:text-danger-400 shadow-danger-500/10",
+  },
+  {
+    key: "flex",
+    label: "🤝 フレックス希望",
+    desc: "3〜5人のフレックス募集・参加をしたい時",
+    icon: Users,
+    activeColor: "bg-secondary-500/15 border-secondary-500 text-secondary-700 dark:text-secondary-400 shadow-secondary-500/10",
+  },
+  {
+    key: "aram",
+    label: "❄️ ARAM・サクッと勢",
+    desc: "平日夜や短時間で気軽に1〜2戦回したい時",
+    icon: Snowflake,
+    activeColor: "bg-cyan-500/15 border-cyan-500 text-cyan-700 dark:text-cyan-400 shadow-cyan-500/10",
+  },
+  {
+    key: "casual",
+    label: "☕ エンジョイ・まったり",
+    desc: "勝ち負け気にせずミスも笑って雑談しながら楽しむ",
+    icon: Coffee,
+    activeColor: "bg-success-500/15 border-success-500 text-success-700 dark:text-success-400 shadow-success-500/10",
+  },
+  {
+    key: "learner",
+    label: "📖 教わりたい",
+    desc: "立ち回りやアドバイスを気軽に教えてもらいたい時",
+    icon: BookOpen,
+    activeColor: "bg-primary-500/15 border-primary-500 text-primary-700 dark:text-primary-400 shadow-primary-500/10",
+  },
+];
+
 export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsPanelProps) {
   const prefs = player?.role_preferences || {};
   const [primaryRole, setPrimaryRole] = useState<string>(prefs.primary || "FILL");
   const [secondaryRole, setSecondaryRole] = useState<string>(prefs.secondary || "FILL");
   const [ngRoles, setNgRoles] = useState<string[]>(prefs.ng_roles || [player?.ng_lane_1, player?.ng_lane_2].filter(Boolean));
   const [ign, setIgn] = useState<string>(player?.ign || "");
+
+  // プレイスタイルロール状態
+  const [playstyles, setPlaystyles] = useState<Record<string, boolean>>({
+    soloq: false,
+    flex: false,
+    aram: false,
+    casual: false,
+    learner: false,
+  });
+  const [loadingPlaystyle, setLoadingPlaystyle] = useState(false);
+  const [togglingPlaystyle, setTogglingPlaystyle] = useState<string | null>(null);
 
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -41,6 +91,55 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
       setIgn(player.ign || "");
     }
   }, [player]);
+
+  // プレイスタイルのロード
+  useEffect(() => {
+    async function loadPlaystyles() {
+      try {
+        setLoadingPlaystyle(true);
+        const res = await fetch("/api/player/playstyle", { credentials: "include" });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.ok && data.playstyles) {
+            setPlaystyles(data.playstyles);
+          }
+        }
+      } catch (err) {
+        console.warn("[PlayerSettingsPanel] プレイスタイル取得失敗:", err);
+      } finally {
+        setLoadingPlaystyle(false);
+      }
+    }
+    loadPlaystyles();
+  }, []);
+
+  const togglePlaystyle = async (key: string) => {
+    if (togglingPlaystyle) return;
+    const current = !!playstyles[key];
+    // 楽観的UI更新
+    setPlaystyles((prev) => ({ ...prev, [key]: !current }));
+    setTogglingPlaystyle(key);
+    try {
+      const res = await fetch("/api/player/playstyle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ roleKey: key }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        // ロールバック
+        setPlaystyles((prev) => ({ ...prev, [key]: current }));
+      } else {
+        setPlaystyles((prev) => ({ ...prev, [key]: !!data.active }));
+      }
+    } catch (err) {
+      // ロールバック
+      setPlaystyles((prev) => ({ ...prev, [key]: current }));
+    } finally {
+      setTogglingPlaystyle(null);
+    }
+  };
 
   const toggleNgRole = (roleId: string) => {
     if (roleId === "FILL") return;
@@ -213,6 +312,60 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
             現在設定中のNGレーン: {ngRoles.join(", ")}
           </p>
         )}
+      </div>
+
+      {/* 🎯 プレイスタイル設定 */}
+      <div className="space-y-3 pt-4 border-t border-border dark:border-border">
+        <label className="block text-xs font-black text-secondary-700 dark:text-secondary-400 uppercase tracking-wider flex items-center justify-between">
+          <span className="flex items-center gap-1.5">
+            <Sparkles className="w-4 h-4 text-secondary-500" />
+            <span>🎯 プレイスタイル ＆ 志向性ロール設定（複数選択OK）</span>
+          </span>
+          <span className="text-[11px] text-muted-strong normal-case font-bold">
+            タップで即時反映・Discordロールが自動で切り替わります
+          </span>
+        </label>
+        <p className="text-[11px] text-muted-strong">
+          今の気分や参加スタイルに合わせて自由にON/OFFできます。Discordサーバー内の募集や交流でアイコンが表示されます。
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+          {PLAYSTYLE_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const isActive = !!playstyles[item.key];
+            const isToggling = togglingPlaystyle === item.key;
+            return (
+              <button
+                key={`ps-${item.key}`}
+                type="button"
+                onClick={() => togglePlaystyle(item.key)}
+                disabled={isToggling}
+                className={`flex items-start gap-3 p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                  isActive
+                    ? `${item.activeColor} border font-black shadow-md scale-[1.01]`
+                    : "bg-surface dark:bg-surface border-border dark:border-border text-muted hover:border-border hover:bg-background dark:hover:bg-surface-hover font-bold opacity-75 hover:opacity-100"
+                }`}
+              >
+                <div className={`p-2 rounded-xl mt-0.5 shrink-0 ${isActive ? "bg-black/10 dark:bg-white/10" : "bg-black/5 dark:bg-white/5 text-faint"}`}>
+                  <Icon className="w-4 h-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-xs font-black tracking-tight">{item.label}</span>
+                    {isActive ? (
+                      <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-black/10 dark:bg-white/10 text-foreground dark:text-white">ON</span>
+                    ) : (
+                      <span className="text-[10px] text-faint font-bold">OFF</span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-muted-strong mt-0.5 leading-snug line-clamp-2">
+                    {item.desc}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* 🌙 外観・ダークモード設定 */}
