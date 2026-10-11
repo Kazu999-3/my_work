@@ -12,6 +12,7 @@ export const SERVER_ADMIN_USER_ID = '697220229964759130'; // かずき (サー�
 export const ONBOARDING_ROLES = {
   NEW_MEMBER: '1556958870486777976',     // 🔰 初参加
   BEGINNER_LOUNGE: '1557006452261126194',// 🌱 初中級交流
+  RECRUIT_NOTICE: '1513531261950492833', // 🔔 募集通知
   LANE_TOP: '1486761227064705256',
   LANE_JG: '1486761458233770144',
   LANE_MID: '1486761575191806074',
@@ -19,6 +20,7 @@ export const ONBOARDING_ROLES = {
   LANE_SUP: '1486761816980979722',
 };
 
+export const BEGINNER_CHANNEL_ID = '1557013003407200346'; // #🌱初参加・ライト・復帰交流
 export const ONBOARDING_CATEGORY_NAME = '🤝 個別案内';
 
 export interface ParsedIntro {
@@ -502,6 +504,9 @@ export async function processSingleIntroMessage(msg: {
   // 🔰 初参加
   await addMemberRole(discordId, ONBOARDING_ROLES.NEW_MEMBER);
 
+  // 🔔 募集通知（初期状態で通知ON、週末カスタムの見落としを防止）
+  await addMemberRole(discordId, ONBOARDING_ROLES.RECRUIT_NOTICE);
+
   // 🎖️ ランクロール（エメラルド、プラチナ、ゴールド、シルバー、ブロンズ、アイアン&アンレート）
   const rankRoleName = getRankRoleName(rankTier);
   try {
@@ -566,6 +571,16 @@ export async function processSingleIntroMessage(msg: {
     if (parsed.subLane in laneRoleMap && parsed.subLane !== parsed.mainLane) {
       grantedRoles.push(`\`${parsed.subLane}\``);
     }
+    grantedRoles.push('`🔔 募集通知`');
+
+    const loungeGuide = isLowRank(rankTier)
+      ? [
+          '',
+          `3️⃣ **初中級・初参加限定の交流チャット**:`,
+          `   ・<#${BEGINNER_CHANNEL_ID}>`,
+          `   ・アイアン〜ゴールド帯や初参加メンバー限定の安心スペースです！雑談や挨拶、カスタムの疑問など何でも気軽に書き込んでみてくださいね🌱`,
+        ].join('\n')
+      : '';
 
     const welcomeText = [
       `👋 **<@${discordId}> さん、KTMサーバーへようこそ！**`,
@@ -587,20 +602,47 @@ export async function processSingleIntroMessage(msg: {
       `   ・<#1528646515533287497> に募集案内が出ます。参加したい日のリアクション（スタンプ）を押すだけでエントリー完了！`,
       `   ・**初参加におすすめ**: 日曜日の「お祭りカスタム（戦績ノーカウント保護・練習歓迎）」や、土曜の「1戦だけ参加（⏱️）」から体験するのが気楽でおすすめです！`,
       `   ・チーム分けはバランサーが実力五分五分に自動調整するので「足を引っ張ったらどうしよう…」の心配は一切不要です👍`,
+      `   *(※通知が不要になった場合は、<#1485646544043642964> の「🔔 募集通知」ボタンからいつでもOFFにできます)*`,
       `2️⃣ **Webポータル（戦績・設定・カジノ）**:`,
       `   ・Discordだけで試合はフル参加できます！マイページから希望レーン変更や「🥊 ソロキュー」「❄️ ARAM」「☕ エンジョイ」等のプレイスタイル設定、勝敗予想カジノも楽しめます。`,
-      `   ・🌐 **KTMポータル**: <${portalUrl}>`,
-      `   ・👤 **マイページ（レーン・NG・プレイスタイル設定）**: <${mypageUrl}>`,
+      loungeGuide,
       '',
       `💡 **ここは運営との個別案内チャットです**`,
       `「当日の流れが分からない」「VC聞き専でもいい？」など、疑問や不安があれば何でもこの部屋でお気軽にメッセージしてくださいね！🤝`,
-    ].join('\n');
+    ].filter(Boolean).join('\n');
+
+    const welcomeButtons = [
+      {
+        type: 1,
+        components: [
+          {
+            type: 2,
+            style: 5, // LINK
+            label: '👤 マイページを開く',
+            url: mypageUrl,
+          },
+          {
+            type: 2,
+            style: 5, // LINK
+            label: '📖 初心者・機能ガイド',
+            url: `${portalUrl}/guide`,
+          },
+          {
+            type: 2,
+            style: 5, // LINK
+            label: '🌐 KTMポータル',
+            url: portalUrl,
+          },
+        ],
+      },
+    ];
 
     await discordFetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
       method: 'POST',
       headers,
       body: JSON.stringify({
         content: welcomeText,
+        components: welcomeButtons,
         flags: 4, // 埋め込みリンクカードを完全非表示化
       }),
     });
