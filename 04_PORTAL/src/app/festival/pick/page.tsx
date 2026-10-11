@@ -12,6 +12,8 @@ import {
   ChampionRole,
   ChampionClass,
   ChampionMeta,
+  FESTIVAL_THEMES,
+  FestivalTheme,
 } from "../../../lib/championMetadata";
 import { getChampIcon } from "../../../lib/ddragonClient";
 import {
@@ -31,10 +33,11 @@ import {
   Check,
   Camera,
   Maximize2,
+  Flame,
 } from "lucide-react";
 import { toast } from "../../../components/Toaster";
 
-type ViewMode = "region" | "role" | "class" | "all";
+type ViewMode = "region" | "role" | "class" | "theme" | "all";
 
 export default function FestivalPickPage() {
   const [viewMode, setViewMode] = useState<ViewMode>("region");
@@ -86,6 +89,19 @@ export default function FestivalPickPage() {
       champIds.forEach((id) => next.delete(id));
       return next;
     });
+  }, []);
+
+  // 特定テーマのみ残して他を全除外（❌）
+  const handleKeepOnlyTheme = useCallback((targetChampIds: string[]) => {
+    const keepSet = new Set(targetChampIds);
+    const newExcluded = new Set<string>();
+    ALL_METADATA_CHAMPIONS.forEach((c) => {
+      if (!keepSet.has(c.id)) {
+        newExcluded.add(c.id);
+      }
+    });
+    setExcludedIds(newExcluded);
+    toast.success(`このテーマの${targetChampIds.length}体のみを残して他を全除外（❌）しました！`);
   }, []);
 
   // 検索フィルタ済みの全チャンピオン
@@ -307,6 +323,17 @@ export default function FestivalPickPage() {
               }`}
             >
               🛡️ クラス別
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("theme")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+                viewMode === "theme"
+                  ? "bg-gradient-to-r from-amber-600 to-rose-600 text-white shadow-sm"
+                  : "bg-surface-subtle hover:bg-surface-hover text-foreground-soft border border-border"
+              }`}
+            >
+              🎭 特殊テーマ（縛り）
             </button>
             <button
               type="button"
@@ -563,7 +590,106 @@ export default function FestivalPickPage() {
           </div>
         )}
 
-        {/* ④ 五十音順（全種一覧）モード */}
+        {/* ④ 🎭 特殊テーマ（縛り）モード */}
+        {viewMode === "theme" && (
+          <div className="space-y-6">
+            <div className="bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-purple-500/10 border border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+              <div>
+                <h2 className="text-base font-black text-foreground flex items-center gap-2">
+                  <Flame className="w-5 h-5 text-amber-500" />
+                  お祭りカスタム 特殊縛りテーマ一覧
+                </h2>
+                <p className="text-xs text-muted mt-0.5">
+                  「このテーマのみ残す」を押すと、対象チャンピオン以外が一発で全除外（❌）され、即座にお祭りピックプールが完成します！
+                </p>
+              </div>
+            </div>
+
+            {FESTIVAL_THEMES.map((theme) => {
+              // テーマに属するチャンピオンのうち、現在の検索クエリに合致するもの
+              const themeChamps = theme.champIds
+                .map((id) => CHAMPION_METADATA[id])
+                .filter(Boolean)
+                .filter((c) => {
+                  const q = searchQuery.trim().toLowerCase();
+                  if (!q) return true;
+                  return (
+                    c.name.toLowerCase().includes(q) ||
+                    c.ruby.toLowerCase().includes(q) ||
+                    c.id.toLowerCase().includes(q)
+                  );
+                });
+
+              if (themeChamps.length === 0) return null;
+              const champIds = themeChamps.map((c) => c.id);
+              const excludedCount = champIds.filter((id) => excludedIds.has(id)).length;
+              const activeThemeCount = champIds.length - excludedCount;
+
+              return (
+                <div
+                  key={theme.id}
+                  className="bg-surface rounded-2xl border border-border p-4 shadow-xs"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3 mb-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-2xl">{theme.icon}</span>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-base font-black text-foreground">
+                            {theme.name}
+                          </h3>
+                          <span className="text-[11px] text-muted-strong bg-surface-subtle px-2 py-0.5 rounded-full border border-border">
+                            {activeThemeCount} / {themeChamps.length} 体
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted">{theme.description}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 self-end sm:self-center flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => handleKeepOnlyTheme(theme.champIds)}
+                        className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-white text-xs font-black shadow-xs transition cursor-pointer flex items-center gap-1"
+                        title="このテーマのチャンピオンだけを残して他をすべて❌除外します"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>このテーマのみ残す 🎯</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleExcludeGroup(champIds)}
+                        className="px-2.5 py-1.5 rounded-xl bg-surface-subtle hover:bg-danger-500/10 text-danger-600 hover:text-danger-700 text-xs font-bold border border-border transition cursor-pointer"
+                      >
+                        一括 ❌
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleClearGroup(champIds)}
+                        className="px-2.5 py-1.5 rounded-xl bg-surface-subtle hover:bg-success-500/10 text-success-600 hover:text-success-700 text-xs font-bold border border-border transition cursor-pointer"
+                      >
+                        一括解除
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2 sm:gap-2.5">
+                    {themeChamps.map((champ) => (
+                      <ChampionCard
+                        key={`${theme.id}-${champ.id}`}
+                        meta={champ}
+                        isExcluded={excludedIds.has(champ.id)}
+                        onClick={() => toggleExclude(champ.id)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ⑤ 五十音順（全種一覧）モード */}
         {viewMode === "all" && (
           <div className="bg-surface rounded-2xl border border-border p-4 shadow-xs">
             <div className="flex items-center justify-between border-b border-border/60 pb-3 mb-3">

@@ -245,3 +245,128 @@ export function getChampionMetadata(id: string): ChampionMeta {
 
 export const ALL_METADATA_CHAMPIONS: ChampionMeta[] = Object.values(CHAMPION_METADATA);
 
+export interface FestivalTheme {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  category: 'mechanics' | 'theme' | 'ktm';
+  champIds: string[];
+}
+
+export const FESTIVAL_THEMES: FestivalTheme[] = [
+  // ⚔️ 1. 戦闘スタイル・メカニクス系
+  {
+    id: 'hook',
+    name: 'オール・フック＆キャッチ祭り',
+    icon: '🪝',
+    description: '誰かが引っ張られたら即集団戦！視界とステップ勝負の牽制戦',
+    category: 'mechanics',
+    champIds: [
+      'Blitzcrank', 'Thresh', 'Nautilus', 'Pyke', 'Amumu',
+      'Swain', 'Morgana', 'Lux', 'Skarner', 'Darius', 'Sett'
+    ]
+  },
+  {
+    id: 'knockup',
+    name: '打ち上げドカン！ヤスオシナジー',
+    icon: '🌀',
+    description: '全員で打ち上げて全員で特大コンボを合わせる爽快感MAX構成',
+    category: 'mechanics',
+    champIds: [
+      'Yasuo', 'Malphite', 'Diana', 'Alistar', 'Zac',
+      'Orianna', 'Wukong', 'Nautilus', 'Rakan', 'Chogath',
+      'Yone', 'Gragas', 'Janna', 'Rell', 'Ornn'
+    ]
+  },
+  {
+    id: 'global',
+    name: '全体・超長距離Ult（グローバル砲）',
+    icon: '🌍',
+    description: 'どこにいようが空からUltが飛んでくる弾幕＆爆撃カスタム',
+    category: 'mechanics',
+    champIds: [
+      'Karthus', 'Jinx', 'Ezreal', 'Gangplank', 'Draven',
+      'Senna', 'Ashe', 'Ziggs', 'Pantheon', 'TwistedFate',
+      'Shen', 'Briar', 'Vex', 'Soraka'
+    ]
+  },
+  {
+    id: 'nowall',
+    name: '徒歩勢ガチ相撲（ブリンク禁止）',
+    icon: '💨',
+    description: 'ブリンクで逃げる軟弱者はお断り！泥臭いステゴロ真っ向勝負',
+    category: 'mechanics',
+    champIds: [
+      'Garen', 'Darius', 'DrMundo', 'Nasus', 'Udyr',
+      'Olaf', 'Sett', 'Brand', 'Ashe', 'Mordekaiser',
+      'Illaoi', 'Trundle', 'Singed', 'Sion', 'Annie'
+    ]
+  },
+
+  // 🐾 2. テーマ・種族・ビジュアル系
+  {
+    id: 'yordle',
+    name: 'ヨードル軍団（ちびっこ大行進）',
+    icon: '🍄',
+    description: '全員ちっちゃいのに全員嫌がらせ性能がカンストしている混沌戦',
+    category: 'theme',
+    champIds: [
+      'Teemo', 'Tristana', 'Lulu', 'Poppy', 'Heimerdinger',
+      'Corki', 'Veigar', 'Vex', 'Kled', 'Gnar',
+      'Kennen', 'Ziggs', 'Fizz', 'Rumble', 'Amumu'
+    ]
+  },
+  {
+    id: 'monster',
+    name: '人外・モンスター・怪獣大決戦',
+    icon: '🐲',
+    description: '人間キャラ完全禁止！サモナーズリフトが怪獣映画の舞台に',
+    category: 'theme',
+    champIds: [
+      'Chogath', 'RekSai', 'KogMaw', 'Anivia', 'Volibear',
+      'Renekton', 'Skarner', 'Ornn', 'Malphite', 'Velkoz',
+      'Gnar', 'Khazix', 'Hecarim', 'Naafiri', 'AurelionSol',
+      'Belveth', 'Rammus', 'Warwick', 'Zac'
+    ]
+  },
+  {
+    id: 'cyborg',
+    name: 'メカ・サイボーグ・鋼鉄の進歩',
+    icon: '🤖',
+    description: 'ピルトーヴァーとゾウンの科学技術の結晶縛り',
+    category: 'theme',
+    champIds: [
+      'Blitzcrank', 'Viktor', 'Orianna', 'Camille', 'Urgot',
+      'Jayce', 'Heimerdinger'
+    ]
+  },
+
+  // 🔰 5. KTMカスタム・身内おもしろ枠
+  {
+    id: 'beginner',
+    name: '初心者おすすめ・操作かんたん枠',
+    icon: '🌱',
+    description: '操作で迷わない！初心者やお久しぶりの方でも安心活躍プール',
+    category: 'ktm',
+    champIds: [
+      'Garen', 'Malphite', 'Annie', 'Ashe', 'Amumu',
+      'Warwick', 'Sona', 'Leona', 'MissFortune', 'Morgana',
+      'Lux', 'MasterYi', 'DrMundo', 'Volibear', 'Nunu'
+    ]
+  },
+  {
+    id: 'veteran_handicap',
+    name: '上級者・師匠ハンデ枠（超高難易度）',
+    icon: '👑',
+    description: '高レート勢や師匠がこれを引いたら腕前が試される鬼縛り',
+    category: 'ktm',
+    champIds: [
+      'LeeSin', 'Yasuo', 'Riven', 'Azir', 'Aphelios',
+      'Nidalee', 'Kalista', 'Draven', 'KSante', 'Gangplank',
+      'Qiyana', 'Hwei', 'Bard', 'Irelia', 'Fiora'
+    ]
+  }
+];
+
+
