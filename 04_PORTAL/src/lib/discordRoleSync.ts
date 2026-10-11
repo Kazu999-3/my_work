@@ -41,6 +41,28 @@ export const DISCORD_RANK_ROLES: Record<string, string> = {
   '1485998032259645490': 'IRON',
 };
 
+export const DISCORD_RANK_NAMES: Record<string, string> = {
+  EMERALD: 'エメラルド',
+  PLATINUM: 'プラチナ',
+  GOLD: 'ゴールド',
+  SILVER: 'シルバー',
+  BRONZE: 'ブロンズ',
+  IRON: 'アイアン&アンレート',
+  UNRANKED: 'アイアン&アンレート',
+};
+
+/**
+ * ランク名（例: "BRONZE", "GOLD 2", "UNRANKED"）から日本語ロール名を取得する
+ */
+export function getRankRoleName(rankTier?: string | null): string | null {
+  if (!rankTier) return null;
+  const cleanRank = rankTier.split(' ')[0].toUpperCase().trim();
+  if (['DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER'].includes(cleanRank)) {
+    return 'エメラルド';
+  }
+  return DISCORD_RANK_NAMES[cleanRank] || null;
+}
+
 /**
  * メンバーの所持ロール一覧から最新のランクロールを検出する
  */
@@ -61,16 +83,25 @@ export async function updateMemberDiscordRankRole(
   rankTier: string
 ): Promise<{ success: boolean; changed: boolean; message?: string }> {
   const token = process.env.DISCORD_BOT_TOKEN;
-  const guildId = process.env.DISCORD_GUILD_ID;
+  const guildId = process.env.DISCORD_GUILD_ID || '1485636149379858567';
   if (!token || !guildId || !discordId || !rankTier) {
     return { success: false, changed: false, message: '必要なパラメータが不足しています' };
   }
 
   // rankTier の大文字正規化（例: "PLATINUM 4" -> "PLATINUM"）
-  const cleanRank = rankTier.split(' ')[0].toUpperCase().trim();
+  let cleanRank = rankTier.split(' ')[0].toUpperCase().trim();
   
+  // UNRANKED は「アイアン&アンレート」にマップ
+  let lookupRank = cleanRank;
+  if (cleanRank === 'UNRANKED') {
+    lookupRank = 'IRON';
+  } else if (['DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER'].includes(cleanRank)) {
+    // サーバー上の最上位ロールはエメラルド
+    lookupRank = 'EMERALD';
+  }
+
   // 対応するロールIDを検索
-  const targetEntry = Object.entries(DISCORD_RANK_ROLES).find(([, name]) => name === cleanRank);
+  const targetEntry = Object.entries(DISCORD_RANK_ROLES).find(([, name]) => name === lookupRank);
   const targetRoleId = targetEntry ? targetEntry[0] : null;
 
   try {

@@ -2,7 +2,7 @@ import { supabaseAdmin as supabase } from './supabaseAdmin';
 import { discordFetch } from './discordFetch';
 import { fetchPuuidByRiotId, fetchLeagueByPuuid } from './riot';
 import { RANKS } from './mmr';
-import { isLowRank } from './discordRoleSync';
+import { isLowRank, updateMemberDiscordRankRole, getRankRoleName } from './discordRoleSync';
 
 export const INTRO_CHANNEL_ID = '1485646578621616209'; // #📝自己紹介
 export const GUILD_ID = '1485636149379858567';
@@ -502,6 +502,14 @@ export async function processSingleIntroMessage(msg: {
   // 🔰 初参加
   await addMemberRole(discordId, ONBOARDING_ROLES.NEW_MEMBER);
 
+  // 🎖️ ランクロール（エメラルド、プラチナ、ゴールド、シルバー、ブロンズ、アイアン&アンレート）
+  const rankRoleName = getRankRoleName(rankTier);
+  try {
+    await updateMemberDiscordRankRole(discordId, rankTier);
+  } catch (rErr: any) {
+    console.warn(`[processSingleIntroMessage] ランクロール付与エラー (${discordName}):`, rErr?.message);
+  }
+
   // 🌱 初中級交流 (アイアン〜ゴールド)
   if (isLowRank(rankTier)) {
     await addMemberRole(discordId, ONBOARDING_ROLES.BEGINNER_LOUNGE);
@@ -545,6 +553,20 @@ export async function processSingleIntroMessage(msg: {
       ? `・**カスタムNGレーン**: \`${ngList}\`（チーム分け時にこのレーンへ配置されません）`
       : `・**カスタムNGレーン**: \`なし\`（※もし苦手・避けたいレーンがあれば、[マイページ](<${mypageUrl}>) からいつでも設定できます！）`;
 
+    const grantedRoles: string[] = ['`🔰 初参加`'];
+    if (rankRoleName) {
+      grantedRoles.push(`\`${rankRoleName}\``);
+    }
+    if (isLowRank(rankTier)) {
+      grantedRoles.push('`🌱 初中級交流`');
+    }
+    if (parsed.mainLane in laneRoleMap) {
+      grantedRoles.push(`\`${parsed.mainLane}\``);
+    }
+    if (parsed.subLane in laneRoleMap && parsed.subLane !== parsed.mainLane) {
+      grantedRoles.push(`\`${parsed.subLane}\``);
+    }
+
     const welcomeText = [
       `👋 **<@${discordId}> さん、KTMサーバーへようこそ！**`,
       '',
@@ -558,7 +580,7 @@ export async function processSingleIntroMessage(msg: {
       `・**初期所持コイン**: \`1,000 🪙\``,
       '',
       `🎉 **付与されたロール**:`,
-      `・\`🔰 初参加\`${isLowRank(rankTier) ? '、`🌱 初中級交流`' : ''}`,
+      `・${grantedRoles.join('、')}`,
       '',
       `🚀 **次の一歩！カスタム参加の目安**:`,
       `1️⃣ **週末定期カスタム（毎週土日 21:00〜）**:`,
