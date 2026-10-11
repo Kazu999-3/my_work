@@ -29,6 +29,8 @@ import {
   ArrowLeft,
   Copy,
   Check,
+  Camera,
+  Maximize2,
 } from "lucide-react";
 import { toast } from "../../../components/Toaster";
 
@@ -43,6 +45,11 @@ export default function FestivalPickPage() {
   const [rouletteResults, setRouletteResults] = useState<ChampionMeta[]>([]);
   const [isRouletteRolling, setIsRouletteRolling] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // 📸 キャプチャ用1枚プレビューモーダル
+  const [showCaptureModal, setShowCaptureModal] = useState(false);
+  const [captureGroupBy, setCaptureGroupBy] = useState<"region" | "role" | "flat">("region");
+  const [copiedPool, setCopiedPool] = useState(false);
 
   // チャンピオンクリックで ❌ のトグル
   const toggleExclude = useCallback((id: string) => {
@@ -222,7 +229,7 @@ export default function FestivalPickPage() {
             </p>
           </div>
 
-          {/* クイック統計 ＆ リセット */}
+          {/* クイック統計 ＆ プレビュー ＆ リセット */}
           <div className="flex items-center gap-2 sm:self-end flex-wrap">
             <div className="px-3 py-1.5 rounded-xl bg-surface border border-border text-xs flex items-center gap-2 font-bold shadow-xs">
               <span className="text-muted">残り候補:</span>
@@ -236,6 +243,19 @@ export default function FestivalPickPage() {
                 </span>
               )}
             </div>
+
+            {/* 📸 キャプチャ用1枚プレビューボタン */}
+            <button
+              type="button"
+              onClick={() => setShowCaptureModal(true)}
+              disabled={activeCount === 0}
+              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-black flex items-center gap-1.5 shadow-md transition disabled:opacity-50 cursor-pointer"
+              title="最終的にピック可能なチャンピオンを1画面にまとめてキャプチャ用表示"
+            >
+              <Camera className="w-3.5 h-3.5" />
+              <span>📸 1枚プレビュー</span>
+            </button>
+
             {excludedIds.size > 0 && (
               <button
                 type="button"
@@ -648,6 +668,18 @@ export default function FestivalPickPage() {
           </div>
         </div>
       )}
+
+      {/* ── 📸 キャプチャ用1枚プレビューモーダル ── */}
+      {showCaptureModal && (
+        <CapturePreviewModal
+          filteredChamps={filteredChamps}
+          excludedIds={excludedIds}
+          activeCount={activeCount}
+          captureGroupBy={captureGroupBy}
+          setCaptureGroupBy={setCaptureGroupBy}
+          onClose={() => setShowCaptureModal(false)}
+        />
+      )}
     </div>
   );
 }
@@ -701,3 +733,283 @@ function ChampionCard({
     </button>
   );
 }
+
+// ── 📸 キャプチャ用1枚プレビューモーダル ──
+function CapturePreviewModal({
+  filteredChamps,
+  excludedIds,
+  activeCount,
+  captureGroupBy,
+  setCaptureGroupBy,
+  onClose,
+}: {
+  filteredChamps: ChampionMeta[];
+  excludedIds: Set<string>;
+  activeCount: number;
+  captureGroupBy: "region" | "role" | "flat";
+  setCaptureGroupBy: React.Dispatch<React.SetStateAction<"region" | "role" | "flat">>;
+  onClose: () => void;
+}) {
+  const [copiedPool, setCopiedPool] = useState(false);
+
+  // ピック可能なチャンピオンのみを抽出
+  const pool = useMemo(() => {
+    return filteredChamps.filter((c) => !excludedIds.has(c.id));
+  }, [filteredChamps, excludedIds]);
+
+  // 出身地別グループ（有効なもののみ）
+  const poolByRegion = useMemo(() => {
+    const map = new Map<RegionKey, ChampionMeta[]>();
+    (Object.keys(REGIONS) as RegionKey[]).forEach((k) => map.set(k, []));
+    pool.forEach((c) => {
+      const list = map.get(c.region) || [];
+      list.push(c);
+      map.set(c.region, list);
+    });
+    // チャンピオンが1体以上いる地域だけ抽出
+    return Array.from(map.entries()).filter(([_, list]) => list.length > 0);
+  }, [pool]);
+
+  // ロール別グループ（有効なもののみ）
+  const poolByRole = useMemo(() => {
+    const map = new Map<ChampionRole, ChampionMeta[]>();
+    ROLES_LIST.forEach((r) => map.set(r, []));
+    pool.forEach((c) => {
+      c.roles.forEach((r) => {
+        const list = map.get(r) || [];
+        list.push(c);
+        map.set(r, list);
+      });
+    });
+    return Array.from(map.entries()).filter(([_, list]) => list.length > 0);
+  }, [pool]);
+
+  const handleCopyTextPool = () => {
+    const text = pool.map((c) => c.name).join("、");
+    navigator.clipboard.writeText(`【KTM お祭りピック可能プール (${pool.length}体)】\n${text}`);
+    setCopiedPool(true);
+    toast.success("ピック可能チャンピオン一覧をコピーしました！");
+    setTimeout(() => setCopiedPool(false), 2000);
+  };
+
+  const roleLabelMap: Record<ChampionRole, { label: string; icon: string }> = {
+    TOP: { label: "TOP", icon: "🛡️" },
+    JG: { label: "JG", icon: "🌲" },
+    MID: { label: "MID", icon: "⚡" },
+    ADC: { label: "ADC", icon: "🏹" },
+    SUP: { label: "SUP", icon: "✨" },
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto">
+      <div className="bg-[#0f1115] text-[#f1f3f5] border-2 border-primary-500/50 rounded-2xl max-w-6xl w-full shadow-2xl relative flex flex-col my-auto max-h-[96vh]">
+        {/* モーダル上部操作バー（キャプチャ外） */}
+        <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-surface/90 border-b border-border/80 rounded-t-2xl">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-black flex items-center gap-1 text-primary-500">
+              <Camera className="w-4 h-4" /> 1枚キャプチャ用プレビュー
+            </span>
+            <span className="text-[11px] text-muted-strong bg-surface-subtle px-2 py-0.5 rounded-md border border-border">
+              この画面全体をスクショ・クリップしてDiscord等に共有できます
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* 切り替えボタングループ */}
+            <div className="flex items-center gap-1 bg-surface-subtle p-0.5 rounded-lg border border-border text-xs">
+              <button
+                type="button"
+                onClick={() => setCaptureGroupBy("region")}
+                className={`px-2 py-1 rounded-md font-bold transition cursor-pointer text-xs ${
+                  captureGroupBy === "region"
+                    ? "bg-primary-600 text-white"
+                    : "text-muted hover:text-foreground"
+                }`}
+              >
+                🌸 地域別
+              </button>
+              <button
+                type="button"
+                onClick={() => setCaptureGroupBy("role")}
+                className={`px-2 py-1 rounded-md font-bold transition cursor-pointer text-xs ${
+                  captureGroupBy === "role"
+                    ? "bg-primary-600 text-white"
+                    : "text-muted hover:text-foreground"
+                }`}
+              >
+                ⚔️ ロール別
+              </button>
+              <button
+                type="button"
+                onClick={() => setCaptureGroupBy("flat")}
+                className={`px-2 py-1 rounded-md font-bold transition cursor-pointer text-xs ${
+                  captureGroupBy === "flat"
+                    ? "bg-primary-600 text-white"
+                    : "text-muted hover:text-foreground"
+                }`}
+              >
+                🔤 コンパクト全一覧
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleCopyTextPool}
+              className="px-2.5 py-1 rounded-lg bg-surface hover:bg-surface-hover text-xs font-bold border border-border flex items-center gap-1 transition text-foreground-soft cursor-pointer"
+            >
+              {copiedPool ? <Check className="w-3.5 h-3.5 text-success-500" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>テキストコピー</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1 rounded-lg hover:bg-surface-hover text-muted hover:text-foreground text-sm cursor-pointer ml-1"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        {/* ── 📸 キャプチャ対象エリア（1枚に美しく収まるLoLボード） ── */}
+        <div
+          id="capture-board-area"
+          className="p-4 sm:p-6 bg-gradient-to-b from-[#12151c] to-[#0a0c10] overflow-y-auto rounded-b-2xl flex flex-col gap-4"
+        >
+          {/* ボードヘッダー */}
+          <div className="flex items-center justify-between border-b border-primary-500/30 pb-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-amber-500 to-rose-600 rounded-xl text-white shadow-md">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-lg sm:text-xl font-black tracking-wider text-white flex items-center gap-2">
+                  KTM お祭りカスタム ピック可能チャンピオン
+                </h2>
+                <p className="text-[11px] text-stone-400">
+                  ※ 赤い❌で除外されたチャンピオンを除いた【有効ピック候補】です
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 bg-[#1a1e27] border border-primary-500/40 px-3.5 py-1.5 rounded-xl shadow-inner">
+              <span className="text-xs text-stone-400 font-bold">候補プール:</span>
+              <span className="text-xl font-black font-mono text-emerald-400 leading-none">
+                {pool.length}
+              </span>
+              <span className="text-[10px] text-stone-400">体</span>
+            </div>
+          </div>
+
+          {/* ピック可能プールが0体の場合 */}
+          {pool.length === 0 && (
+            <div className="py-12 text-center text-stone-400 text-sm">
+              ピック可能なチャンピオンがいません（すべてのチャンピオンが除外されています）
+            </div>
+          )}
+
+          {/* ① 地域別グループ表示 */}
+          {captureGroupBy === "region" && pool.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {poolByRegion.map(([regKey, champs]) => (
+                <div
+                  key={regKey}
+                  className="bg-[#151922]/90 border border-stone-800/80 rounded-xl p-2.5 flex flex-col gap-1.5 shadow-sm"
+                >
+                  <div className="flex items-center justify-between border-b border-stone-800 pb-1 text-xs">
+                    <span className="font-bold flex items-center gap-1.5 text-stone-200">
+                      <span>{REGIONS[regKey]?.icon}</span>
+                      <span>{REGIONS[regKey]?.name || regKey}</span>
+                    </span>
+                    <span className="text-[10px] font-mono text-stone-400 bg-stone-900/60 px-1.5 py-0.2 rounded border border-stone-800">
+                      {champs.length}体
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {champs.map((c) => (
+                      <CompactCaptureIcon key={c.id} meta={c} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ② ロール別グループ表示 */}
+          {captureGroupBy === "role" && pool.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {poolByRole.map(([role, champs]) => (
+                <div
+                  key={role}
+                  className="bg-[#151922]/90 border border-stone-800/80 rounded-xl p-2.5 flex flex-col gap-1.5 shadow-sm"
+                >
+                  <div className="flex items-center justify-between border-b border-stone-800 pb-1 text-xs">
+                    <span className="font-bold flex items-center gap-1.5 text-stone-200">
+                      <span>{roleLabelMap[role]?.icon}</span>
+                      <span>{roleLabelMap[role]?.label || role}</span>
+                    </span>
+                    <span className="text-[10px] font-mono text-stone-400 bg-stone-900/60 px-1.5 py-0.2 rounded border border-stone-800">
+                      {champs.length}体
+                    </span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {champs.map((c) => (
+                      <CompactCaptureIcon key={`${role}-${c.id}`} meta={c} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ③ コンパクト全一覧（名簿形式） */}
+          {captureGroupBy === "flat" && pool.length > 0 && (
+            <div className="bg-[#151922]/90 border border-stone-800/80 rounded-xl p-3 flex flex-wrap gap-1.5 sm:gap-2">
+              {pool.map((c) => (
+                <CompactCaptureIcon key={c.id} meta={c} showName />
+              ))}
+            </div>
+          )}
+
+          {/* フッターフッター情報 */}
+          <div className="flex items-center justify-between text-[10px] text-stone-500 border-t border-stone-800/80 pt-2 px-1">
+            <span>KTM Weekend Custom Official Portal</span>
+            <span>https://ktm-portal.vercel.app/festival/pick</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── キャプチャ用コンパクトアイコン ──
+function CompactCaptureIcon({
+  meta,
+  showName = false,
+}: {
+  meta: ChampionMeta;
+  showName?: boolean;
+}) {
+  return (
+    <div
+      className={`flex items-center gap-1 bg-[#1a1f2c] border border-stone-700/60 rounded-lg p-0.5 px-1 shadow-2xs ${
+        showName ? "min-w-[70px]" : ""
+      }`}
+      title={`${meta.name} (${REGIONS[meta.region]?.name || meta.region})`}
+    >
+      <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-md overflow-hidden border border-stone-600/80 shrink-0">
+        <img
+          src={getChampIcon(meta.id)}
+          alt={meta.name}
+          className="w-full h-full object-cover"
+        />
+      </div>
+      <span className="text-[10px] font-bold text-stone-200 truncate max-w-[65px] px-0.5">
+        {meta.name}
+      </span>
+    </div>
+  );
+}
+
