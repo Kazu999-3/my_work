@@ -543,7 +543,7 @@ export async function processSingleIntroMessage(msg: {
     const ngList = [parsed.ngLane1, parsed.ngLane2].filter(Boolean).join(', ');
     const ngLine = ngList
       ? `・**カスタムNGレーン**: \`${ngList}\`（チーム分け時にこのレーンへ配置されません）`
-      : `・**カスタムNGレーン**: \`なし\`（※もし苦手・避けたいレーンがあれば、[マイページ](${mypageUrl}) からいつでも設定できます！）`;
+      : `・**カスタムNGレーン**: \`なし\`（※もし苦手・避けたいレーンがあれば、[マイページ](<${mypageUrl}>) からいつでも設定できます！）`;
 
     const welcomeText = [
       `👋 **<@${discordId}> さん、KTMサーバーへようこそ！**`,
@@ -567,8 +567,8 @@ export async function processSingleIntroMessage(msg: {
       `   ・チーム分けはバランサーが実力五分五分に自動調整するので「足を引っ張ったらどうしよう…」の心配は一切不要です👍`,
       `2️⃣ **Webポータル（戦績・カジノ・ショップ）**:`,
       `   ・Discordだけで試合はフル参加できます！試合の観戦中や合間には、ポータルで勝敗予想カジノやガチャも楽しめます。`,
-      `   ・🌐 **KTMポータル**: ${portalUrl}`,
-      `   ・👤 **マイページ（レーン変更・所持コイン確認）**: ${mypageUrl}`,
+      `   ・🌐 **KTMポータル**: <${portalUrl}>`,
+      `   ・👤 **マイページ（レーン変更・所持コイン確認）**: <${mypageUrl}>`,
       '',
       `💡 **ここは運営との個別案内チャットです**`,
       `「当日の流れが分からない」「VC聞き専でもいい？」など、疑問や不安があれば何でもこの部屋でお気軽にメッセージしてくださいね！🤝`,
@@ -579,6 +579,7 @@ export async function processSingleIntroMessage(msg: {
       headers,
       body: JSON.stringify({
         content: welcomeText,
+        flags: 4, // 埋め込みリンクカードを完全非表示化
       }),
     });
   }

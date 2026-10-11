@@ -82,6 +82,10 @@ export default function PlayerMyPage() {
   const [activeLane, setActiveLane] = useState<'TOTAL' | 'ALL' | 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP'>('TOTAL');
   const [chemistry, setChemistry] = useState<any[]>([]);
   const [rivals, setRivals] = useState<any[]>([]);
+  const [laneRivals, setLaneRivals] = useState<any[]>([]);
+  const [rivalMode, setRivalMode] = useState<'lane' | 'team'>('lane');
+  const [rivalSort, setRivalSort] = useState<'winRate_desc' | 'winRate_asc' | 'games'>('winRate_desc');
+  const [rivalMinGames, setRivalMinGames] = useState<number>(1);
   const [overall, setOverall] = useState<any>(null);
   
   // プレイスタイル関連State
@@ -603,6 +607,7 @@ export default function PlayerMyPage() {
         if (cData.success) {
           setChemistry(cData.chemistry || []);
           setRivals(cData.rivals || []);
+          setLaneRivals(cData.laneRivals || []);
         }
 
         // 3. マスタリーの解決
@@ -2067,49 +2072,165 @@ export default function PlayerMyPage() {
                     )}
                   </div>
 
-                  {/* 好敵手（対戦相手） */}
-                  <div className="bg-surface/60 backdrop-blur-xl border border-black/10 rounded-3xl p-4 sm:p-6 shadow-xl">
-                    <h3 className="text-base sm:text-lg font-black flex items-center gap-2 mb-4 border-b border-black/10 pb-3">
-                      <Swords className="w-5 h-5 text-danger-500 shrink-0" />
-                      <span className="min-w-0">好敵手（敵チームで3戦以上）</span>
-                    </h3>
-                    {(rivals || []).filter((r: any) => r.games >= 3).length === 0 ? (
-                      <p className="text-sm text-muted-strong py-6 text-center">
-                        まだデータが足りません。敵チームとして3戦以上当たると表示されます。
-                      </p>
-                    ) : (
-                      <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-                        <table className="w-full min-w-[420px] text-sm">
-                          <thead>
-                            <tr className="text-left text-[11px] uppercase tracking-wide text-muted-strong">
-                              <th className="py-2 pr-3 font-black">相手</th>
-                              <th className="py-2 pr-3 font-black text-right">対戦数</th>
-                              <th className="py-2 pr-3 font-black text-right">勝利</th>
-                              <th className="py-2 font-black text-right">勝率</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(rivals || [])
-                              .filter((r: any) => r.games >= 3)
-                              .sort((a: any, b: any) => a.winRate - b.winRate || b.games - a.games)
-                              .map((r: any) => (
-                                <tr key={r.name} className="border-t border-black/5">
-                                  <td className="py-2 pr-3 font-bold text-foreground-soft truncate max-w-[160px]">{r.name}</td>
-                                  <td className="py-2 pr-3 text-right tabular-nums text-muted">{r.games}</td>
-                                  <td className="py-2 pr-3 text-right tabular-nums text-muted">{r.wins}</td>
-                                  <td className={`py-2 text-right tabular-nums font-black ${
+                  {/* 好敵手・対面対決 */}
+                  <div className="bg-surface/60 backdrop-blur-xl border border-black/10 rounded-3xl p-4 sm:p-6 shadow-xl space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-black/10 pb-3">
+                      <div className="flex items-center gap-2">
+                        <Swords className="w-5 h-5 text-danger-500 shrink-0" />
+                        <h3 className="text-base sm:text-lg font-black text-foreground">
+                          {rivalMode === 'lane' ? '⚔️ レーン直接対面（同じロール対決）' : '🛡️ 敵チーム全体での対戦相手'}
+                        </h3>
+                      </div>
+
+                      {/* モード切替タブ */}
+                      <div className="flex items-center gap-1 bg-black/5 p-1 rounded-xl self-start sm:self-auto text-xs font-bold">
+                        <button
+                          type="button"
+                          onClick={() => setRivalMode('lane')}
+                          className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                            rivalMode === 'lane'
+                              ? 'bg-danger-600 text-white shadow-sm'
+                              : 'text-muted-strong hover:text-foreground'
+                          }`}
+                        >
+                          ⚔️ レーン直接対面
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setRivalMode('team')}
+                          className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                            rivalMode === 'team'
+                              ? 'bg-danger-600 text-white shadow-sm'
+                              : 'text-muted-strong hover:text-foreground'
+                          }`}
+                        >
+                          🛡️ 敵チーム全体
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* コントロール（ソート＆フィルター） */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-muted-strong font-bold">並び替え:</span>
+                        <button
+                          type="button"
+                          onClick={() => setRivalSort('winRate_desc')}
+                          className={`px-2.5 py-1 rounded-lg border font-bold transition cursor-pointer ${
+                            rivalSort === 'winRate_desc'
+                              ? 'bg-success-600 text-white border-success-600'
+                              : 'bg-surface border-border text-muted-strong hover:text-foreground'
+                          }`}
+                        >
+                          勝率が高い順 🟢
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setRivalSort('winRate_asc')}
+                          className={`px-2.5 py-1 rounded-lg border font-bold transition cursor-pointer ${
+                            rivalSort === 'winRate_asc'
+                              ? 'bg-danger-600 text-white border-danger-600'
+                              : 'bg-surface border-border text-muted-strong hover:text-foreground'
+                          }`}
+                        >
+                          勝率が低い順 🔴
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setRivalSort('games')}
+                          className={`px-2.5 py-1 rounded-lg border font-bold transition cursor-pointer ${
+                            rivalSort === 'games'
+                              ? 'bg-primary-600 text-white border-primary-600'
+                              : 'bg-surface border-border text-muted-strong hover:text-foreground'
+                          }`}
+                        >
+                          対戦数順 ⚔️
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-muted-strong font-bold">絞り込み:</span>
+                        {[1, 2, 3].map((g) => (
+                          <button
+                            key={g}
+                            type="button"
+                            onClick={() => setRivalMinGames(g)}
+                            className={`px-2 py-0.5 rounded text-[11px] font-bold border transition cursor-pointer ${
+                              rivalMinGames === g
+                                ? 'bg-foreground text-background border-foreground'
+                                : 'bg-surface border-border text-muted-strong hover:text-foreground'
+                            }`}
+                          >
+                            {g}戦以上
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {(() => {
+                      const sourceList = rivalMode === 'lane' ? (laneRivals || []) : (rivals || []);
+                      const filtered = sourceList.filter((r: any) => r.games >= rivalMinGames);
+                      const sorted = [...filtered].sort((a: any, b: any) => {
+                        if (rivalSort === 'winRate_desc') {
+                          return b.winRate - a.winRate || b.games - a.games;
+                        } else if (rivalSort === 'winRate_asc') {
+                          return a.winRate - b.winRate || b.games - a.games;
+                        } else {
+                          return b.games - a.games || b.winRate - a.winRate;
+                        }
+                      });
+
+                      if (sorted.length === 0) {
+                        return (
+                          <p className="text-sm text-muted-strong py-8 text-center bg-black/5 rounded-2xl">
+                            条件に一致する対面データがありません（{rivalMinGames}戦以上の対戦後に表示されます）。
+                          </p>
+                        );
+                      }
+
+                      return (
+                        <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+                          <table className="w-full min-w-[420px] text-sm">
+                            <thead>
+                              <tr className="text-left text-[11px] uppercase tracking-wide text-muted-strong border-b border-black/10">
+                                <th className="py-2.5 pr-3 font-black">対面相手</th>
+                                {rivalMode === 'lane' && <th className="py-2.5 pr-3 font-black">対面レーン</th>}
+                                <th className="py-2.5 pr-3 font-black text-right">対戦数</th>
+                                <th className="py-2.5 pr-3 font-black text-right">勝利</th>
+                                <th className="py-2.5 font-black text-right">対面勝率</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {sorted.map((r: any) => (
+                                <tr key={r.name} className="border-t border-black/5 hover:bg-black/5 transition">
+                                  <td className="py-2.5 pr-3 font-bold text-foreground-soft truncate max-w-[160px]">
+                                    <Link href={`/player/${encodeURIComponent(r.name)}`} className="hover:underline hover:text-primary-600">
+                                      {r.name}
+                                    </Link>
+                                  </td>
+                                  {rivalMode === 'lane' && (
+                                    <td className="py-2.5 pr-3 text-xs text-muted-strong">
+                                      <span className="px-1.5 py-0.5 rounded bg-black/5 font-mono font-bold">
+                                        {r.roles || '-'}
+                                      </span>
+                                    </td>
+                                  )}
+                                  <td className="py-2.5 pr-3 text-right tabular-nums text-muted">{r.games}戦</td>
+                                  <td className="py-2.5 pr-3 text-right tabular-nums text-muted">{r.wins}勝</td>
+                                  <td className={`py-2.5 text-right tabular-nums font-black ${
                                     r.winRate >= 60 ? 'text-success-600'
-                                      : r.winRate >= 50 ? 'text-muted'
+                                      : r.winRate >= 50 ? 'text-foreground'
                                       : 'text-danger-500'
                                   }`}>
                                     {Math.round(r.winRate)}%
                                   </td>
                                 </tr>
                               ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
+                            </tbody>
+                          </table>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               )}

@@ -28,7 +28,8 @@ import {
   History,
   Library,
   Download,
-  Inbox
+  Inbox,
+  Sparkles
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import FavoritesPanel from './FavoritesPanel';
@@ -193,6 +194,7 @@ const GENERAL_MENU_ITEMS: MenuItem[] = [
   { id: 'mentorship', label: '🎒 教えて先輩！掲示板', shortLabel: '教えて先輩', icon: HeartHandshake, href: '/mentorship', color: 'text-success-500', activeBg: 'bg-success-500/15' },
   // 対戦・大会
   { id: 'balancer', label: 'チーム分けバランサー', shortLabel: 'チーム分け', icon: Swords, href: '/balancer', color: 'text-danger-600', activeBg: 'bg-danger-500/15' },
+  { id: 'festival-pick', label: '🎲 お祭りピック候補', shortLabel: 'お祭りピック', icon: Sparkles, href: '/festival/pick', color: 'text-amber-500', activeBg: 'bg-amber-500/15' },
   { id: 'casino', label: '勝敗予想 (カジノ)', shortLabel: '勝敗予想', icon: Coins, href: '/casino', color: 'text-primary-600', activeBg: 'bg-primary-500/15' },
   // 2026-09-23: サイドメニューからは外した（バランサーの「過去の試合」ボタンから開く導線に一本化）。
   // ページ自体は /history に残っており、一般メンバーも閲覧できる。

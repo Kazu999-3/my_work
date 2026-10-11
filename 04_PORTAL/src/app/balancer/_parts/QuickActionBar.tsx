@@ -52,6 +52,15 @@ export default function QuickActionBar({ balancing, balanceResult, setShowResult
                 <Globe className="w-3.5 h-3.5 text-primary-600" /> <span className="hidden sm:inline">結果表示</span>
               </button>
             )}
+            <Link
+              href="/festival/pick"
+              className="px-2.5 py-2 rounded-xl bg-surface-subtle hover:bg-surface-hover text-foreground-soft font-bold text-xs border border-border transition flex items-center gap-1 cursor-pointer shrink-0"
+              title="お祭りカスタム用のチャンピオンピック候補・出身地一覧を開く"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span className="hidden md:inline">ピック候補</span>
+            </Link>
+
             <button
               type="button"
               onClick={handleFestivalRandomBalance}

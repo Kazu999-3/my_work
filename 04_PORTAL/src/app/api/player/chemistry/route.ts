@@ -23,14 +23,14 @@ export async function GET(request: Request) {
     const { data: myMatches, error: myError } = await fetchAllRows((from, to) =>
       supabase
         .from('ktm_match_participants')
-        .select('match_id, team')
+        .select('match_id, team, role')
         .eq('player_name', playerName)
         .range(from, to)
     );
 
     if (myError) throw myError;
     if (!myMatches || myMatches.length === 0) {
-      return NextResponse.json({ success: true, chemistry: [], rivals: [] });
+      return NextResponse.json({ success: true, chemistry: [], rivals: [], laneRivals: [] });
     }
 
     const matchIds = Array.from(new Set(myMatches.map((m: any) => m.match_id)));
@@ -50,7 +50,7 @@ export async function GET(request: Request) {
     const { data: allParticipants, error: allError } = await fetchAllRows((from, to) =>
       supabase
         .from('ktm_match_participants')
-        .select('match_id, player_name, team')
+        .select('match_id, player_name, team, role')
         .in('match_id', matchIds)
         .neq('player_name', playerName)
         .range(from, to)
@@ -60,11 +60,12 @@ export async function GET(request: Request) {
     if (!allParticipants) throw new Error('同席プレイヤーのデータ取得に失敗しました。');
 
     // 3. マップ化
-    const myMatchesMap: Record<string, { team: string, isWin: boolean }> = {};
+    const myMatchesMap: Record<string, { team: string, role: string, isWin: boolean }> = {};
     myMatches.forEach((m: any) => {
       const winningTeam = winMap.get(String(m.match_id));
       myMatchesMap[String(m.match_id)] = {
         team: m.team,
+        role: m.role,
         isWin: m.team === winningTeam
       };
     });
@@ -78,6 +79,7 @@ export async function GET(request: Request) {
 
     const chemistry: Record<string, { games: number, wins: number }> = {};
     const rivals: Record<string, { games: number, wins: number }> = {};
+    const laneRivals: Record<string, { games: number, wins: number, roles: Record<string, number> }> = {};
 
     // 参加者レコードをループして集計
     allParticipants.forEach((p: any) => {
@@ -102,6 +104,16 @@ export async function GET(request: Request) {
         }
         rivals[partnerName].games += 1;
         if (isWin) rivals[partnerName].wins += 1; // 自分が勝った場合
+
+        // ★ 真のレーン直接対面（同じロール同士の対決）
+        if (myMatch.role && p.role && myMatch.role === p.role) {
+          if (!laneRivals[partnerName]) {
+            laneRivals[partnerName] = { games: 0, wins: 0, roles: {} };
+          }
+          laneRivals[partnerName].games += 1;
+          if (isWin) laneRivals[partnerName].wins += 1;
+          laneRivals[partnerName].roles[myMatch.role] = (laneRivals[partnerName].roles[myMatch.role] || 0) + 1;
+        }
       }
     });
 
@@ -114,7 +126,6 @@ export async function GET(request: Request) {
         winRate: Math.round((data.wins / data.games) * 100)
       }))
       .sort((a, b) => {
-        // 勝率順（降順）、同率なら試合数順
         if (b.winRate !== a.winRate) return b.winRate - a.winRate;
         return b.games - a.games;
       });
@@ -124,18 +135,31 @@ export async function GET(request: Request) {
         name,
         games: data.games,
         wins: data.wins,
-        winRate: Math.round((data.wins / data.games) * 100) // 自分が相手に勝った確率
+        winRate: Math.round((data.wins / data.games) * 100)
       }))
       .sort((a, b) => {
-        // 宿敵（勝率が低い＝自分が負けている）を先頭にするため昇順ソート、同率なら試合数順
-        if (a.winRate !== b.winRate) return a.winRate - b.winRate;
+        if (b.winRate !== a.winRate) return b.winRate - a.winRate;
+        return b.games - a.games;
+      });
+
+    const formattedLaneRivals = Object.entries(laneRivals)
+      .map(([name, data]) => ({
+        name,
+        games: data.games,
+        wins: data.wins,
+        winRate: Math.round((data.wins / data.games) * 100),
+        roles: Object.keys(data.roles).join(', ')
+      }))
+      .sort((a, b) => {
+        if (b.winRate !== a.winRate) return b.winRate - a.winRate;
         return b.games - a.games;
       });
 
     const result = {
       success: true,
       chemistry: formattedChemistry,
-      rivals: formattedRivals
+      rivals: formattedRivals,
+      laneRivals: formattedLaneRivals
     };
 
     cache.set(playerName, { data: result, expiry: Date.now() + CACHE_TTL_MS });
