@@ -16,11 +16,11 @@ function Collapsible({ title, children }: { title: string; children: React.React
   // 2026-10-08: ユーザー要望で最初から開いた状態にする（以前は閉じた状態で始まっていた）
   const [open, setOpen] = useState(true);
   return (
-    <section className="rounded-2xl border border-slate-800 bg-slate-900/60">
+    <section className="rounded-2xl border border-zinc-800 bg-zinc-900/60">
       <button type="button" onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center justify-between gap-2 px-4 py-3 text-sm font-black text-white cursor-pointer">
         <span>{title}</span>
-        {open ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+        {open ? <ChevronUp className="w-4 h-4 text-zinc-400" /> : <ChevronDown className="w-4 h-4 text-zinc-400" />}
       </button>
       {open && <div className="px-4 pb-4">{children}</div>}
     </section>
@@ -32,7 +32,7 @@ export function PreGameTop() {
   return (
     <div className="space-y-3">
       <OverlayLauncherButton />
-      <section className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
+      <section className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800 space-y-3">
         <h3 className="text-sm font-black text-white">🚦 次の試合に行くべきか</h3>
         {riotId ? <PlayRecommendationCard riotId={riotId} /> : <NeedRiotId />}
       </section>
@@ -57,7 +57,7 @@ export function PreGameBottom() {
 
 function NeedRiotId() {
   return (
-    <p className="text-xs text-slate-400">
+    <p className="text-xs text-zinc-400">
       画面上部の「自分のRiot ID」を入力すると、ここに直近の戦績から判定を表示します。
     </p>
   );

@@ -88,10 +88,10 @@ export default function MatchupBlueprintCard({
 
   if (loading && !data) {
     return (
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 animate-pulse space-y-4">
-        <div className="h-6 bg-slate-800 rounded w-1/3"></div>
-        <div className="h-20 bg-slate-950 rounded-xl"></div>
-        <div className="h-32 bg-slate-950 rounded-xl"></div>
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 animate-pulse space-y-4">
+        <div className="h-6 bg-zinc-800 rounded w-1/3"></div>
+        <div className="h-20 bg-zinc-950 rounded-xl"></div>
+        <div className="h-32 bg-zinc-950 rounded-xl"></div>
       </div>
     );
   }
@@ -103,19 +103,19 @@ export default function MatchupBlueprintCard({
     <div className="space-y-6">
       
       {/* 1. 対面セレクター ＆ キルライン判定バナー */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-5 shadow-lg space-y-4">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-zinc-800 pb-4">
           <div className="flex items-center gap-4 w-full sm:w-auto justify-center sm:justify-start">
             {/* 自分 */}
             <div className="flex items-center gap-2">
               <img
                 src={getChampIcon(myChamp)}
                 alt={myChamp}
-                className="w-10 h-10 rounded-xl object-cover border-2 border-indigo-500 shadow"
+                className="w-10 h-10 rounded-xl object-cover border-2 border-amber-500 shadow"
               />
               <div>
                 <div className="flex items-center justify-between gap-1">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">自チャンプ</span>
+                  <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">自チャンプ</span>
                   {myChamp && (
                     <Link
                       href={`/?c=${encodeURIComponent(myChamp)}`}
@@ -131,12 +131,12 @@ export default function MatchupBlueprintCard({
                   value={myChamp}
                   onChange={(e) => handleMyChange(e.target.value)}
                   placeholder="自チャンピオン"
-                  className="w-28 px-2 py-1 rounded bg-slate-950 border border-slate-800 text-xs font-bold text-indigo-300 focus:outline-none focus:border-indigo-500"
+                  className="w-28 px-2 py-1 rounded bg-zinc-950 border border-zinc-800 text-xs font-bold text-amber-300 focus:outline-none focus:border-amber-500"
                 />
               </div>
             </div>
 
-            <div className="text-slate-600 font-black text-lg px-1">VS</div>
+            <div className="text-zinc-600 font-black text-lg px-1">VS</div>
 
             {/* 敵 */}
             <div className="flex items-center gap-2">
@@ -147,7 +147,7 @@ export default function MatchupBlueprintCard({
               />
               <div>
                 <div className="flex items-center justify-between gap-1">
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">対面相手</span>
+                  <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">対面相手</span>
                   {enemyChamp && (
                     <Link
                       href={`/?c=${encodeURIComponent(enemyChamp)}`}
@@ -163,7 +163,7 @@ export default function MatchupBlueprintCard({
                   value={enemyChamp}
                   onChange={(e) => handleEnemyChange(e.target.value)}
                   placeholder="敵チャンピオン"
-                  className="w-28 px-2 py-1 rounded bg-slate-950 border border-slate-800 text-xs font-bold text-rose-300 focus:outline-none focus:border-rose-500"
+                  className="w-28 px-2 py-1 rounded bg-zinc-950 border border-zinc-800 text-xs font-bold text-rose-300 focus:outline-none focus:border-rose-500"
                 />
               </div>
             </div>
@@ -187,15 +187,15 @@ export default function MatchupBlueprintCard({
       </div>
 
       {/* 2. 3段階フェーズ別 戦術手順書 */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+      <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-5 shadow-lg space-y-4">
+        <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
           <div className="flex items-center gap-2">
-            <Swords className="w-5 h-5 text-indigo-400" />
+            <Swords className="w-5 h-5 text-amber-400" />
             <h3 className="text-sm font-black text-white uppercase tracking-wider">
               ⚔️ 3段階レーン戦術手順書（{enemyChamp} 対策）
             </h3>
           </div>
-          <span className="text-[11px] text-slate-400">
+          <span className="text-[11px] text-zinc-400">
             {blueprint.phases_are_generic ? '一般的な流れ（この対面専用の手順は未登録）' : '時系列アクション'}
           </span>
         </div>
@@ -204,22 +204,22 @@ export default function MatchupBlueprintCard({
           {blueprint.phases.map((p, idx) => (
             <div
               key={p.phase}
-              className="p-4 rounded-xl bg-slate-950 border border-slate-800/90 hover:border-indigo-800/60 transition-colors flex flex-col justify-between space-y-3"
+              className="p-4 rounded-xl bg-zinc-950 border border-zinc-800/90 hover:border-amber-800/60 transition-colors flex flex-col justify-between space-y-3"
             >
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-mono font-bold text-indigo-400 bg-indigo-950/50 px-2 py-0.5 rounded border border-indigo-900/40">
+                  <span className="text-[11px] font-mono font-bold text-amber-400 bg-amber-950/40 px-2 py-0.5 rounded border border-amber-900/40">
                     {p.phase}
                   </span>
-                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-slate-800 text-slate-300">
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-zinc-800 text-zinc-300">
                     {p.badge}
                   </span>
                 </div>
                 <h4 className="text-xs font-bold text-white leading-snug">{p.title}</h4>
-                <p className="text-[11px] text-slate-400 leading-relaxed">{p.action}</p>
+                <p className="text-[11px] text-zinc-400 leading-relaxed">{p.action}</p>
               </div>
 
-              <div className="pt-2 border-t border-slate-900 text-[10px] text-emerald-400 font-medium flex items-start gap-1.5">
+              <div className="pt-2 border-t border-zinc-900 text-[10px] text-emerald-400 font-medium flex items-start gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                 <span><strong>成功基準:</strong> {p.win_trigger}</span>
               </div>
@@ -233,14 +233,14 @@ export default function MatchupBlueprintCard({
 
       {/* 4. 実戦の罠・没理由・苦手な相手（champion_facts連動） */}
       {rejected && (rejected.weaknesses || rejected.counter_champions || rejected.matchup_memo) && (
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-3">
-          <div className="flex items-center gap-2 border-b border-slate-800 pb-2.5">
+        <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-5 shadow-lg space-y-3">
+          <div className="flex items-center gap-2 border-b border-zinc-800 pb-2.5">
             <Shield className="w-5 h-5 text-amber-400" />
             <h3 className="text-sm font-black text-white tracking-wide">
               🛡️ 実戦の罠・自陣弱み ＆ 対面特化メモ
             </h3>
             {rejected.source_patch && (
-              <span className="text-[10px] font-mono text-slate-500 ml-auto">
+              <span className="text-[10px] font-mono text-zinc-500 ml-auto">
                 Patch {rejected.source_patch}
               </span>
             )}
@@ -248,22 +248,22 @@ export default function MatchupBlueprintCard({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
             {rejected.weaknesses && (
-              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
+              <div className="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 space-y-1.5">
                 <span className="font-bold text-amber-400 flex items-center gap-1.5 text-[11px]">
                   <AlertTriangle className="w-3.5 h-3.5" /> {myChamp} の主な弱み・隙
                 </span>
-                <p className="text-slate-300 text-[11px] leading-relaxed whitespace-pre-wrap">
+                <p className="text-zinc-300 text-[11px] leading-relaxed whitespace-pre-wrap">
                   {rejected.weaknesses}
                 </p>
               </div>
             )}
 
             {rejected.counter_champions && (
-              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
+              <div className="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 space-y-1.5">
                 <span className="font-bold text-rose-400 flex items-center gap-1.5 text-[11px]">
                   <Target className="w-3.5 h-3.5" /> 苦手なカウンターチャンピオン
                 </span>
-                <p className="text-slate-300 text-[11px] leading-relaxed">
+                <p className="text-zinc-300 text-[11px] leading-relaxed">
                   {rejected.counter_champions}
                 </p>
                 {rejected.is_enemy_counter && (
@@ -276,12 +276,12 @@ export default function MatchupBlueprintCard({
           </div>
 
           {rejected.matchup_memo && (
-            <div className="p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-800/60 space-y-1 text-xs">
-              <span className="font-bold text-indigo-300 flex items-center gap-1.5 text-[11px]">
-                <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+            <div className="p-3.5 rounded-xl bg-amber-950/20 border border-amber-800/40 space-y-1 text-xs">
+              <span className="font-bold text-amber-300 flex items-center gap-1.5 text-[11px]">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                 対面特化メモ（Matchup Sentinel SSoT）
               </span>
-              <p className="text-slate-200 text-[11px] leading-relaxed whitespace-pre-wrap">
+              <p className="text-zinc-200 text-[11px] leading-relaxed whitespace-pre-wrap">
                 {rejected.matchup_memo}
               </p>
             </div>

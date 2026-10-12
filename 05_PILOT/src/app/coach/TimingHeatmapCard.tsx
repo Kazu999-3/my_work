@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Loader2 } from 'lucide-react';
 
 function Spinner({ label = '読み込み中...' }: { label?: string }) {
-  return <div className="flex items-center gap-2 text-xs text-slate-400 py-6 justify-center"><Loader2 className="w-4 h-4 animate-spin" />{label}</div>;
+  return <div className="flex items-center gap-2 text-xs text-zinc-400 py-6 justify-center"><Loader2 className="w-4 h-4 animate-spin" />{label}</div>;
 }
 
 // ============================================================
@@ -175,7 +175,7 @@ export default function TimingHeatmapCard({ riotId }: { riotId: string }) {
           className={`rounded-xl border px-3.5 py-2 text-xs ${
             isStale
               ? 'bg-rose-950/30 text-rose-400 border-rose-700'
-              : 'bg-slate-900 dark:bg-stone-800/60 text-slate-400 border-slate-800 dark:border-stone-700/60'
+              : 'bg-zinc-900 text-zinc-400 border-zinc-800'
           }`}
         >
           <span className="font-bold">
@@ -202,12 +202,12 @@ export default function TimingHeatmapCard({ riotId }: { riotId: string }) {
           : totalGames > 0 ? `🔄 履歴を再同期 (現在${totalGames}試合分)` : '🔄 直近300試合を同期'}
       </button>
 
-      {error && <p className="text-sm text-rose-400 dark:text-rose-400">❌ {error}</p>}
+      {error && <p className="text-sm text-rose-400">❌ {error}</p>}
 
       {loading ? (
         <Spinner />
       ) : totalGames === 0 ? (
-        <p className="text-sm text-slate-400 py-6 text-center">まだ同期されたデータがありません。上のボタンで同期してください。</p>
+        <p className="text-sm text-zinc-400 py-6 text-center">まだ同期されたデータがありません。上のボタンで同期してください。</p>
       ) : (
         <div className="space-y-3">
           {(best || worst) && (
@@ -216,20 +216,20 @@ export default function TimingHeatmapCard({ riotId }: { riotId: string }) {
                 <div className="rounded-xl border border-emerald-700 bg-emerald-950/30 p-3">
                   <div className="text-[10px] font-bold text-emerald-400">👍 最も勝率が良い時間帯</div>
                   <div className="text-sm font-bold text-stone-100">{HEATMAP_DAYS[best.day]}曜 {best.hour}時台</div>
-                  <div className="text-xs text-slate-500">{best.winRate}% ({best.wins}/{best.games}勝)</div>
+                  <div className="text-xs text-zinc-500">{best.winRate}% ({best.wins}/{best.games}勝)</div>
                 </div>
               )}
               {worst && (
                 <div className="rounded-xl border border-rose-700 bg-rose-950/30 p-3">
                   <div className="text-[10px] font-bold text-rose-400">👎 最も勝率が悪い時間帯</div>
                   <div className="text-sm font-bold text-stone-100">{HEATMAP_DAYS[worst.day]}曜 {worst.hour}時台</div>
-                  <div className="text-xs text-slate-500">{worst.winRate}% ({worst.wins}/{worst.games}勝)</div>
+                  <div className="text-xs text-zinc-500">{worst.winRate}% ({worst.wins}/{worst.games}勝)</div>
                 </div>
               )}
             </div>
           )}
 
-          <div className="min-h-10 rounded-xl border border-slate-800 dark:border-stone-700/60 bg-slate-900/60 dark:bg-stone-900/60 px-3.5 py-2 text-xs flex items-center justify-between gap-2 shadow-xs">
+          <div className="min-h-10 rounded-xl border border-zinc-800 bg-zinc-900/60 px-3.5 py-2 text-xs flex items-center justify-between gap-2 shadow-xs">
             {activeCell ? (() => {
               const c = cellMap.get(`${activeCell.day}-${activeCell.hour}`);
               const games = c?.games || 0;
@@ -237,12 +237,12 @@ export default function TimingHeatmapCard({ riotId }: { riotId: string }) {
               const isBad = games >= 3 && (c?.winRate || 0) < 45;
               return (
                 <div className="flex items-center justify-between w-full flex-wrap gap-2">
-                  <span className="font-bold text-slate-100 dark:text-stone-100">
+                  <span className="font-bold text-zinc-100">
                     {HEATMAP_DAYS[activeCell.day]}曜 {activeCell.hour}時台:{' '}
                     {games > 0 ? (
-                      <span className="font-extrabold text-slate-300">{c!.winRate}% ({c!.wins}/{games}勝)</span>
+                      <span className="font-extrabold text-zinc-300">{c!.winRate}% ({c!.wins}/{games}勝)</span>
                     ) : (
-                      <span className="font-normal text-slate-500">データなし</span>
+                      <span className="font-normal text-zinc-500">データなし</span>
                     )}
                   </span>
                   {isGood && (
@@ -258,7 +258,7 @@ export default function TimingHeatmapCard({ riotId }: { riotId: string }) {
                 </div>
               );
             })() : (
-              <span className="text-slate-500">マスにカーソルを合わせる（スマホはタップ）と詳細がここに表示されます</span>
+              <span className="text-zinc-500">マスにカーソルを合わせる（スマホはタップ）と詳細がここに表示されます</span>
             )}
           </div>
 
@@ -268,7 +268,7 @@ export default function TimingHeatmapCard({ riotId }: { riotId: string }) {
           <div className="w-full overflow-x-auto -mx-1 px-1">
             <div className="min-w-[560px]">
             {/* 時間ヘッダー */}
-            <div className="grid grid-cols-[1.25rem_repeat(24,1fr)] gap-px text-[9px] text-slate-500 text-center mb-1">
+            <div className="grid grid-cols-[1.25rem_repeat(24,1fr)] gap-px text-[9px] text-zinc-500 text-center mb-1">
               <div className="w-5"></div>
               {Array.from({ length: 24 }, (_, h) => (
                 <div key={h} className="leading-none">
@@ -281,7 +281,7 @@ export default function TimingHeatmapCard({ riotId }: { riotId: string }) {
             <div className="space-y-0.5" onMouseLeave={() => setActiveCell(null)}>
               {HEATMAP_DAYS.map((dayLabel, day) => (
                 <div key={day} className="grid grid-cols-[1.25rem_repeat(24,1fr)] gap-px items-center">
-                  <div className="text-[10px] font-bold text-slate-400 text-center leading-none pr-0.5">
+                  <div className="text-[10px] font-bold text-zinc-400 text-center leading-none pr-0.5">
                     {dayLabel}
                   </div>
                   {Array.from({ length: 24 }, (_, hour) => {
@@ -307,7 +307,7 @@ export default function TimingHeatmapCard({ riotId }: { riotId: string }) {
             </div>
             </div>
           </div>
-          <p className="text-[10px] text-slate-500">※ グレーは3試合未満のためサンプル不足。マスを選択・タップすると詳細が表示されます（横スクロールできます）。</p>
+          <p className="text-[10px] text-zinc-500">※ グレーは3試合未満のためサンプル不足。マスを選択・タップすると詳細が表示されます（横スクロールできます）。</p>
         </div>
       )}
     </div>

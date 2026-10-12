@@ -110,13 +110,13 @@ export default function RankGoalCard({ riotId }: { riotId: string }) {
     <div className="space-y-3">
       {/* 目標ランクの表示・変更 */}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="text-xs text-slate-400">
-          目標: <span className="font-black text-slate-100 dark:text-stone-100">{targetTier || '—'}</span>
+        <div className="text-xs text-zinc-400">
+          目標: <span className="font-black text-zinc-100">{targetTier || '—'}</span>
         </div>
         {!editing ? (
           <button
             onClick={() => setEditing(true)}
-            className="text-[11px] px-2.5 py-1 rounded-lg border border-slate-800 dark:border-stone-700 text-slate-400 hover:bg-slate-900 dark:hover:bg-stone-800 transition-colors cursor-pointer"
+            className="text-[11px] px-2.5 py-1 rounded-lg border border-zinc-800 text-zinc-400 hover:bg-zinc-900 transition-colors cursor-pointer"
           >
             目標を変更
           </button>
@@ -126,7 +126,7 @@ export default function RankGoalCard({ riotId }: { riotId: string }) {
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               placeholder="例: EMERALD IV / MASTER"
-              className="px-2 py-1 text-xs rounded-lg border border-slate-800 dark:border-stone-700 bg-slate-900/60 dark:bg-stone-900 text-slate-100 dark:text-stone-100 w-44"
+              className="px-2 py-1 text-xs rounded-lg border border-zinc-800 bg-zinc-900/60 text-zinc-100 w-44"
             />
             <button
               onClick={saveTarget}
@@ -137,27 +137,27 @@ export default function RankGoalCard({ riotId }: { riotId: string }) {
             </button>
             <button
               onClick={() => { setEditing(false); setDraft(targetTier); setSaveError(''); }}
-              className="text-[11px] px-2 py-1 rounded-lg text-slate-400 hover:text-slate-200 cursor-pointer"
+              className="text-[11px] px-2.5 py-1 rounded-lg text-zinc-400 hover:text-zinc-200 cursor-pointer"
             >
               取消
             </button>
           </div>
         )}
       </div>
-      {saveError && <p className="text-xs text-rose-400 dark:text-rose-400">❌ {saveError}</p>}
+      {saveError && <p className="text-xs text-rose-400">❌ {saveError}</p>}
 
       {loading ? (
-        <div className="py-5 text-center text-xs text-slate-500">読み込み中…</div>
+        <div className="py-5 text-center text-xs text-zinc-500">読み込み中…</div>
       ) : error ? (
-        <p className="text-sm text-rose-400 dark:text-rose-400">❌ {error}</p>
+        <p className="text-sm text-rose-400">❌ {error}</p>
       ) : !data?.ranked ? (
-        <p className="text-sm text-slate-400">{data?.message || 'ランク情報を取得できませんでした。'}</p>
+        <p className="text-sm text-zinc-400">{data?.message || 'ランク情報を取得できませんでした。'}</p>
       ) : (
         <div className="space-y-2.5">
           <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="rounded-xl border border-slate-800 dark:border-stone-700/60 bg-slate-900/60 dark:bg-stone-900/60 px-3 py-2">
-              <div className="text-[10px] font-bold text-slate-400">現在</div>
-              <div className="font-black text-slate-100 dark:text-stone-100 mt-0.5">{data.current?.label}</div>
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 px-3 py-2">
+              <div className="text-[10px] font-bold text-zinc-400">現在</div>
+              <div className="font-black text-zinc-100 mt-0.5">{data.current?.label}</div>
             </div>
             <div className="rounded-xl border border-amber-700 bg-amber-950/30 px-3 py-2">
               <div className="text-[10px] font-bold text-amber-400">目標</div>
@@ -165,17 +165,17 @@ export default function RankGoalCard({ riotId }: { riotId: string }) {
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-800 dark:border-stone-700/60 bg-slate-900/60 dark:bg-stone-900/60 px-3.5 py-2.5 text-xs space-y-1">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 px-3.5 py-2.5 text-xs space-y-1">
             {typeof data.gap === 'number' && (
               <div>
-                <span className="text-slate-400">目標までの差: </span>
-                <span className="font-bold text-slate-100 dark:text-stone-100">{data.gap} LP相当</span>
+                <span className="text-zinc-400">目標までの差: </span>
+                <span className="font-bold text-zinc-100">{data.gap} LP相当</span>
               </div>
             )}
             {data.projection?.reached ? (
               <div className="font-bold text-emerald-400">🎉 目標に到達しています。</div>
             ) : data.projection?.insufficientTrend ? (
-              <div className="text-slate-400">
+              <div className="text-zinc-400">
                 到達見込みを出すにはLP推移の記録が足りません（記録 {data.snapshots ?? 0}日分）。
                 このカードを開くたびに当日のスナップショットが貯まります。
               </div>
@@ -183,19 +183,19 @@ export default function RankGoalCard({ riotId }: { riotId: string }) {
               <>
                 {typeof data.lpPerDay === 'number' && (
                   <div>
-                    <span className="text-slate-400">直近の伸び: </span>
-                    <span className="font-bold text-slate-100 dark:text-stone-100">
+                    <span className="text-zinc-400">直近の伸び: </span>
+                    <span className="font-bold text-zinc-100">
                       {data.lpPerDay > 0 ? '+' : ''}{data.lpPerDay} LP/日
                     </span>
                     {typeof data.daySpan === 'number' && (
-                      <span className="text-slate-500 ml-1.5">（{data.daySpan}日間の記録から）</span>
+                      <span className="text-zinc-500 ml-1.5">（{data.daySpan}日間の記録から）</span>
                     )}
                   </div>
                 )}
                 {data.projection?.reachDate && (
                   <div>
-                    <span className="text-slate-400">到達見込み: </span>
-                    <span className="font-bold text-slate-100 dark:text-stone-100">
+                    <span className="text-zinc-400">到達見込み: </span>
+                    <span className="font-bold text-zinc-100">
                       {data.projection.reachDate}
                       {typeof data.projection.days === 'number' ? `（約${data.projection.days}日後）` : ''}
                     </span>
@@ -203,12 +203,12 @@ export default function RankGoalCard({ riotId }: { riotId: string }) {
                 )}
                 {typeof data.projection?.gamesNeeded === 'number' && (
                   <div>
-                    <span className="text-slate-400">必要な勝ち数の目安: </span>
-                    <span className="font-bold text-slate-100 dark:text-stone-100">約{data.projection.gamesNeeded}勝</span>
+                    <span className="text-zinc-400">必要な勝ち数の目安: </span>
+                    <span className="font-bold text-zinc-100">約{data.projection.gamesNeeded}勝</span>
                   </div>
                 )}
                 {data.projection?.note && (
-                  <div className="text-[10px] text-slate-500 pt-0.5">{data.projection.note}</div>
+                  <div className="text-[10px] text-zinc-500 pt-0.5">{data.projection.note}</div>
                 )}
               </>
             )}

@@ -56,14 +56,14 @@ export function CoachRiotIdBar() {
   return (
     <form
       onSubmit={(e) => { e.preventDefault(); if (valid) setRiotId(draft); }}
-      className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 flex flex-col sm:flex-row sm:items-center gap-2"
+      className="p-3 rounded-xl bg-zinc-900/60 border border-zinc-800 flex flex-col sm:flex-row sm:items-center gap-2"
     >
-      <label className="text-[11px] font-bold text-slate-400 shrink-0">自分のRiot ID</label>
+      <label className="text-[11px] font-bold text-zinc-400 shrink-0">自分のRiot ID</label>
       <input
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         placeholder="名前#JP1"
-        className="flex-1 px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500/60"
+        className="flex-1 px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-amber-500/60"
       />
       <button
         type="submit"

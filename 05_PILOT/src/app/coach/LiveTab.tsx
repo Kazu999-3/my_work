@@ -20,19 +20,19 @@ export default function LiveTab({ onLiveMatchDetected }: {
 
   return (
     <div className="space-y-4">
-      <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+      <div className="p-3 rounded-xl bg-zinc-900/60 border border-zinc-800">
         <div className="text-xs font-black text-amber-400">Sovereign HUD（デスクトップ版）の使い方</div>
-        <p className="text-[11px] text-slate-400 mt-0.5">
+        <p className="text-[11px] text-zinc-400 mt-0.5">
           HUDを起動していると、<span className="text-amber-300 font-bold">TABキー</span>で対面キルラインが表示され、チャットから敵スペル・Ultを自動検知します。
         </p>
       </div>
 
-      <section className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
+      <section className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800 space-y-3">
         <h3 className="text-sm font-black text-white">🧭 リアルタイム偵察（敵10人スキャン ＆ ガンク優先ターゲット）</h3>
         <ScoutTab onLiveMatchDetected={handleDetected} />
       </section>
 
-      <section className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
+      <section className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800 space-y-3">
         <h3 className="text-sm font-black text-white">⚔️ チーム構成 ＆ 勝ち筋シミュレーター</h3>
         <FiveVFiveSimTab liveRoster={liveRoster} />
       </section>

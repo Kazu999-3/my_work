@@ -60,52 +60,52 @@ export default function EarlyJunglePathingCard({
   const fmtSec = (sec?: number | null) => (sec ? `${Math.floor(sec / 60)}分${String(sec % 60).padStart(2, '0')}秒` : 'データなし');
 
   return (
-    <div className="bg-slate-900/90 text-white rounded-2xl p-4 border border-slate-800 space-y-3 shadow-md">
-      <div className="flex items-center justify-between flex-wrap gap-2 border-b border-slate-800 pb-2.5">
+    <div className="bg-zinc-900/90 text-white rounded-2xl p-4 border border-zinc-800 space-y-3 shadow-md">
+      <div className="flex items-center justify-between flex-wrap gap-2 border-b border-zinc-800 pb-2.5">
         <div className="flex items-center gap-2">
-          <Compass className="w-4 h-4 text-indigo-400 animate-pulse" />
-          <h4 className="text-xs font-black text-indigo-300 uppercase tracking-wider">
+          <Compass className="w-4 h-4 text-amber-400 animate-pulse" />
+          <h4 className="text-xs font-black text-amber-300 uppercase tracking-wider">
             初動3分ルートの方針（{myChampion} vs {enemyChampion}）
           </h4>
         </div>
         <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
           planType === 'contest'
             ? 'bg-rose-950/80 text-rose-300 border-rose-700/60'
-            : 'bg-indigo-950/80 text-indigo-300 border-indigo-700/60'
+            : 'bg-amber-950/80 text-amber-300 border-amber-700/60'
         }`}>
           {planType === 'contest' ? '⚔️ 2:55 スカトル勝負型' : '🛡️ 逆サイド回避・ファーム型'}
         </span>
       </div>
 
       {/* テンポ・戦闘力比較ミニバー */}
-      <div className="grid grid-cols-2 gap-2 text-[11px] bg-slate-950/70 p-2 rounded-xl border border-slate-800">
+      <div className="grid grid-cols-2 gap-2 text-[11px] bg-zinc-950/70 p-2 rounded-xl border border-zinc-800">
         <div className="flex justify-between items-center px-1">
-          <span className="text-slate-400 font-bold">自クリア基準 ({myChampion})</span>
-          <span className="font-mono font-black text-indigo-300">{fmtSec(myFastestClearSec)}</span>
+          <span className="text-zinc-400 font-bold">自クリア基準 ({myChampion})</span>
+          <span className="font-mono font-black text-amber-300">{fmtSec(myFastestClearSec)}</span>
         </div>
-        <div className="flex justify-between items-center px-1 border-l border-slate-800">
-          <span className="text-slate-400 font-bold">敵クリア基準 ({enemyChampion})</span>
+        <div className="flex justify-between items-center px-1 border-l border-zinc-800">
+          <span className="text-zinc-400 font-bold">敵クリア基準 ({enemyChampion})</span>
           <span className="font-mono font-black text-rose-300">{fmtSec(enemyFastestClearSec)}</span>
         </div>
       </div>
 
-      <p className="text-xs text-slate-300 leading-relaxed font-medium">
-        💡 <strong className="text-indigo-400">戦術要約:</strong> {planSummary}
+      <p className="text-xs text-zinc-300 leading-relaxed font-medium">
+        💡 <strong className="text-amber-400">戦術要約:</strong> {planSummary}
       </p>
 
       {/* 3ステップ手順 */}
       <div className="space-y-1.5 pt-1 text-xs">
-        <div className="flex items-start gap-2 bg-slate-950/50 p-2 rounded-lg border border-slate-800/80">
-          <span className="font-mono font-black text-indigo-400 text-[11px] shrink-0">STEP 1</span>
-          <span className="text-slate-300">{step1Text}</span>
+        <div className="flex items-start gap-2 bg-zinc-950/50 p-2 rounded-lg border border-zinc-800/80">
+          <span className="font-mono font-black text-amber-400 text-[11px] shrink-0">STEP 1</span>
+          <span className="text-zinc-300">{step1Text}</span>
         </div>
-        <div className="flex items-start gap-2 bg-slate-950/50 p-2 rounded-lg border border-slate-800/80">
+        <div className="flex items-start gap-2 bg-zinc-950/50 p-2 rounded-lg border border-zinc-800/80">
           <span className="font-mono font-black text-amber-400 text-[11px] shrink-0">STEP 2</span>
-          <span className="text-slate-300">{step2Text}</span>
+          <span className="text-zinc-300">{step2Text}</span>
         </div>
-        <div className="flex items-start gap-2 bg-slate-950/50 p-2 rounded-lg border border-slate-800/80">
+        <div className="flex items-start gap-2 bg-zinc-950/50 p-2 rounded-lg border border-zinc-800/80">
           <span className="font-mono font-black text-emerald-400 text-[11px] shrink-0">STEP 3</span>
-          <span className="text-slate-300">{step3Text}</span>
+          <span className="text-zinc-300">{step3Text}</span>
         </div>
       </div>
     </div>

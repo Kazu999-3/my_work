@@ -14,7 +14,10 @@ name: Database Backup
 
 on:
   schedule:
-    - cron: '0 18 * * *'  # 毎日 UTC18:00 = JST 03:00
+    # 2026-10-12: Supabase無料プランのEgressクォータ(5GB/月)超過を防ぐため、
+    # 毎日(月間5.5GB消費)から「週1回(日曜UTC18:00 = 月曜JST03:00、月間約740MB)」へ変更。
+    # 手動実行(workflow_dispatch)は常時可能。
+    - cron: '0 18 * * 0'
   workflow_dispatch:
 
 permissions:
