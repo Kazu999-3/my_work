@@ -223,23 +223,23 @@ export default function BalancerHeader({ players, setPlayers, saving, isAdmin, s
           <details className="mt-3 bg-primary-500/10 border border-primary-edge-strong/20 rounded-2xl p-3 text-xs">
             <summary className="font-bold text-primary-900 cursor-pointer select-none flex items-center justify-between">
               <span className="flex items-center gap-2">
-                <span>🛒 発動中の特権・ハンデを確認する</span>
+                <span>🛒 発動中のブースター・特権を確認する</span>
                 <span className="text-[10px] bg-primary-200 text-primary-900 px-2 py-0.5 rounded-full font-bold">KTMショップ連動</span>
               </span>
               <span className="text-[10px] text-primary-700">▼</span>
             </summary>
             <div className="mt-2.5 pt-2.5 border-t border-primary-edge-strong/20 space-y-2 text-foreground-subtle">
               <p className="text-[11px] text-muted">
-                参加者がKTMショップで購入した特権（下剋上キャラ指定、特定レーンBAN、お祭りマッチ等）がある場合は、ここで確認しながらドラフトや試合記録を行えます。
+                参加者がKTMショップで購入したブースターや特権（激闘チケット等）がある場合は、ここで確認しながらドラフトや試合記録を行えます。
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
                 <div className="p-2 rounded-xl bg-surface border border-primary-edge-soft">
-                  <span className="font-bold text-primary-900">👑 下剋上キャラ指定:</span>
-                  <span className="ml-1 text-muted">対象の高レートに苦手チャンプを指定 (実効MMR -400)</span>
+                  <span className="font-bold text-primary-900">⚔️ 勝利ボーナス激闘チケット:</span>
+                  <span className="ml-1 text-muted">所持者が勝利時、自動でボーナスが+600ptに爆増（試合記録時に自動精算）</span>
                 </div>
                 <div className="p-2 rounded-xl bg-surface border border-primary-edge-soft">
                   <span className="font-bold text-primary-900">🎪 お祭りカスタム:</span>
-                  <span className="ml-1 text-muted">結果記録時に「戦績ノーカウント保護」をONにする</span>
+                  <span className="ml-1 text-muted">結果記録時に「戦績ノーカウント保護」をONにする（公式戦績・MMR保護）</span>
                 </div>
               </div>
             </div>
