@@ -943,14 +943,14 @@ export default function PlayerMyPage() {
                     </span>
                   )}
                 </div>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 pt-1 flex-wrap">
+                <div className="grid grid-cols-1 sm:flex sm:items-center gap-2 pt-1">
                   {/* 🎮 ソロキュー情報 */}
-                  <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/10 text-xs whitespace-nowrap shrink-0">
-                    <span className="text-[10px] font-black text-secondary-400 flex items-center gap-1">
-                      <span>🎮 ソロキュー:</span>
+                  <div className="flex items-center justify-between sm:justify-start gap-1.5 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 text-xs">
+                    <span className="text-[10px] font-black text-secondary-400 flex items-center gap-1 shrink-0">
+                      <span>🎮 ソロ:</span>
                     </span>
-                    <span className="text-white font-bold font-mono text-xs">{player.ign || "IGN未登録"}</span>
-                    <span className="text-primary-300 font-extrabold text-[11px] bg-primary-400/20 px-1.5 py-0.5 rounded border border-primary-edge/30">
+                    <span className="text-white font-bold font-mono text-xs truncate max-w-[120px] sm:max-w-none">{player.ign || "未登録"}</span>
+                    <span className="text-primary-300 font-extrabold text-[10px] bg-primary-400/20 px-1.5 py-0.5 rounded border border-primary-edge/30 shrink-0">
                       {player.highest_rank || "UNRANKED"}
                     </span>
                     {opggUrl && (
@@ -958,7 +958,7 @@ export default function PlayerMyPage() {
                         href={opggUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#5383e8] hover:bg-[#4168c4] text-white rounded-lg text-[10px] font-black transition-all shadow-xs hover:scale-105"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#5383e8] hover:bg-[#4168c4] text-white rounded-lg text-[10px] font-black transition-all shadow-xs hover:scale-105 shrink-0 ml-auto sm:ml-0"
                         title="OP.GGで戦績を確認"
                       >
                         <span>OP.GG ↗</span>
@@ -967,19 +967,19 @@ export default function PlayerMyPage() {
                   </div>
 
                   {/* ⚔️ KTMカスタム情報 */}
-                  <div className="flex items-center gap-1.5 bg-primary-950/40 backdrop-blur-md px-2.5 py-1 rounded-xl border border-primary-edge-strong/30 text-xs whitespace-nowrap shrink-0">
-                    <span className="text-[10px] font-black text-primary-400 flex items-center gap-1">
-                      <span>⚔️ KTMカスタム:</span>
+                  <div className="flex items-center justify-between sm:justify-start gap-1.5 bg-primary-950/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-primary-edge-strong/30 text-xs">
+                    <span className="text-[10px] font-black text-primary-400 flex items-center gap-1 shrink-0">
+                      <span>⚔️ KTM:</span>
                     </span>
-                    <span className="text-white font-black font-mono">
+                    <span className="text-white font-black font-mono shrink-0">
                       MMR {player.mmr || 1200}
                     </span>
-                    <span className="text-[10px] font-bold text-primary-300 bg-primary-500/20 px-1.5 py-0.5 rounded border border-primary-edge-strong/30">
+                    <span className="text-[10px] font-bold text-primary-300 bg-primary-500/20 px-1.5 py-0.5 rounded border border-primary-edge-strong/30 shrink-0">
                       {getKtmRank(player.mmr || 1200).name}
                     </span>
                     {overallStats.total > 0 && (
-                      <span className="text-success-400 font-extrabold text-[11px] ml-1">
-                        勝率 {overallStats.winRate}% ({overallStats.wins}勝{overallStats.losses}敗)
+                      <span className="text-success-400 font-extrabold text-[10px] shrink-0 ml-auto sm:ml-0">
+                        {overallStats.winRate}% ({overallStats.wins}W{overallStats.losses}L)
                       </span>
                     )}
                   </div>
@@ -1603,15 +1603,16 @@ export default function PlayerMyPage() {
                   )}
 
                   {/* 🎮 Hextech 5軸能力パラメーター (レーダーチャート) */}
-                  <div className="bg-surface/60 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-xl lg:col-span-1 flex flex-col justify-between">
+                  <div className="bg-gradient-to-br from-surface/90 via-surface/70 to-surface/80 backdrop-blur-2xl border border-primary-edge-strong/30 rounded-3xl p-6 shadow-xl lg:col-span-1 flex flex-col justify-between relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary-500/10 rounded-full blur-2xl pointer-events-none -mr-10 -mt-10"></div>
                     <div>
-                      <h3 className="text-base font-black flex items-center justify-between gap-2 mb-4 border-b border-black/10 pb-3">
+                      <h3 className="text-base font-black flex items-center justify-between gap-2 mb-4 border-b border-black/10 dark:border-white/10 pb-3">
                         <span className="flex items-center gap-2">
-                          <Zap className="w-5 h-5 text-primary-700" />
-                          <span>Hextech 5軸能力</span>
+                          <Zap className="w-5 h-5 text-primary-600" />
+                          <span className="font-extrabold tracking-tight">Hextech 5軸能力</span>
                         </span>
-                        <span className="text-[10px] bg-primary-100 text-primary-800 px-2 py-0.5 rounded-full border border-primary-edge font-bold">
-                          平均 3.0 基準 (1〜5)
+                        <span className="text-[10px] bg-primary-100 text-primary-800 dark:bg-primary-950/60 dark:text-primary-300 px-2.5 py-0.5 rounded-full border border-primary-edge font-mono font-bold">
+                          基準 3.0 (1〜5)
                         </span>
                       </h3>
                       {hextechRadarData ? (
@@ -1619,17 +1620,17 @@ export default function PlayerMyPage() {
                           <div className="w-full h-56 relative">
                             <HextechRadarChart data={hextechRadarData} playerName={player.name} />
                           </div>
-                          <div className="grid grid-cols-2 gap-2 text-[10px] pt-2 border-t border-black/10 text-muted-strong font-bold">
+                          <div className="grid grid-cols-2 gap-2 text-[10px] pt-3 border-t border-black/10 dark:border-white/10 text-muted-strong font-bold">
                             {hextechRadarData.map((d, index) => (
                               <div
                                 key={d.subject}
-                                className={`flex justify-between items-center bg-black/5 px-2.5 py-1.5 rounded-xl border border-black/5 ${
+                                className={`flex justify-between items-center bg-black/5 dark:bg-white/5 px-3 py-2 rounded-xl border border-black/5 dark:border-white/5 ${
                                   index === 4 ? 'col-span-2' : ''
                                 }`}
                               >
                                 <span className="text-muted">{d.subject}:</span>
-                                <span className={`font-black text-xs ${
-                                  d.value >= 4.0 ? 'text-primary-800' : d.value >= 3.0 ? 'text-foreground' : 'text-danger-600'
+                                <span className={`font-black text-xs font-mono ${
+                                  d.value >= 4.0 ? 'text-primary-700 dark:text-primary-400' : d.value >= 3.0 ? 'text-foreground' : 'text-danger-600'
                                 }`}>
                                   {d.value} <span className="text-[9px] font-normal text-faint">/ 5.0</span>
                                 </span>
@@ -1648,30 +1649,35 @@ export default function PlayerMyPage() {
 
                   {/* 📊 勝ちパターン分析 (Victory Blueprint) */}
                   {victoryBlueprint && (
-                    <div className="bg-gradient-to-br from-stone-900/30 via-stone-900/40 to-stone-800/30 backdrop-blur-xl border border-primary-edge-strong/20 rounded-3xl p-6 shadow-xl lg:col-span-2 flex flex-col justify-between">
+                    <div className="bg-gradient-to-br from-surface/90 via-surface/80 to-surface/70 backdrop-blur-2xl border border-primary-edge-strong/30 rounded-3xl p-6 shadow-xl lg:col-span-2 flex flex-col justify-between relative overflow-hidden group">
+                      <div className="absolute -top-12 -right-12 w-48 h-48 bg-primary-500/15 rounded-full blur-3xl pointer-events-none"></div>
                       <div>
-                        <h3 className="text-base font-black flex items-center justify-between gap-2 mb-3 border-b border-black/10 pb-3">
-                          <span className="flex items-center gap-2">
+                        <div className="flex items-center justify-between gap-2 mb-4 border-b border-black/10 dark:border-white/10 pb-3">
+                          <h3 className="text-base font-black flex items-center gap-2">
                             <Trophy className="w-5 h-5 text-primary-600" />
-                            <span className="bg-gradient-to-r from-primary-700 via-primary-600 to-primary-700 bg-clip-text text-transparent">勝ちパターン分析 (Victory Blueprint)</span>
+                            <span className="bg-gradient-to-r from-primary-700 via-primary-600 to-primary-700 bg-clip-text text-transparent">
+                              勝ちパターン分析 (Victory Blueprint)
+                            </span>
+                          </h3>
+                          <span className="text-[10px] bg-primary-100 text-primary-700 dark:bg-primary-950/60 dark:text-primary-300 px-2.5 py-0.5 rounded-full border border-primary-edge-soft font-mono font-black">
+                            勝率 {victoryBlueprint.winRate}% ({victoryBlueprint.bestChamp})
                           </span>
-                          <span className="text-[10px] bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full border border-primary-edge-soft font-bold">
-                            通算勝率 {victoryBlueprint.winRate}%
-                          </span>
-                        </h3>
-                        <div className="space-y-3">
-                          <div className="inline-block bg-primary-100 border border-primary-edge-soft text-primary-700 text-sm font-black px-3.5 py-1 rounded-xl">
-                            {victoryBlueprint.archetype}
+                        </div>
+                        <div className="space-y-3.5">
+                          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary-500/15 via-primary-500/10 to-transparent border border-primary-edge-strong/40 text-primary-800 dark:text-primary-300 text-sm font-black px-4 py-1.5 rounded-xl shadow-xs">
+                            <span>{victoryBlueprint.archetype}</span>
                           </div>
-                          <p className="text-xs text-foreground-subtle leading-relaxed font-medium">
+                          <p className="text-xs sm:text-sm text-foreground-soft leading-relaxed font-medium">
                             {victoryBlueprint.desc}
                           </p>
                         </div>
                       </div>
-                      <div className="mt-4 bg-black/5 border border-black/10 p-3.5 rounded-2xl flex items-center gap-3">
-                        <Flame className="w-5 h-5 text-danger-600 shrink-0" />
-                        <div className="text-xs">
-                          <span className="text-muted-strong font-bold">勝率最大化のカギ: </span>
+                      <div className="mt-5 bg-black/5 dark:bg-white/5 border border-primary-edge-soft/40 p-4 rounded-2xl flex items-center gap-3.5">
+                        <div className="w-9 h-9 rounded-xl bg-danger-500/10 border border-danger-edge-strong/30 flex items-center justify-center shrink-0">
+                          <Flame className="w-5 h-5 text-danger-600" />
+                        </div>
+                        <div className="text-xs space-y-0.5">
+                          <span className="text-muted-strong font-black block">勝率最大化のカギ:</span>
                           <span className="text-foreground font-bold">{victoryBlueprint.keyFactor}</span>
                         </div>
                       </div>
