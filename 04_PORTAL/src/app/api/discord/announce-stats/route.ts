@@ -16,14 +16,18 @@ export async function POST(request: Request) {
 
     // 意図的な公開API(api/players/saveと同じ方針)。本番Discordチャンネルへの投稿内容が
     // 完全にクライアント任せだったため、実在の登録プレイヤー名かどうかだけは検証する
-    // (2026-08-05発覚)。
+    // 未登録プレイヤーの有無を確認（外部ゲストや突発参加者でもエラーで止めず許容）
     const allNames = players.map((p: any) => p.name).filter(Boolean);
     if (allNames.length > 0) {
-      const { data: knownPlayers } = await supabase.from('ktm_players').select('name').in('name', allNames);
-      const knownSet = new Set((knownPlayers || []).map((p: any) => p.name));
-      const unknown = allNames.filter((n: string) => !knownSet.has(n));
-      if (unknown.length > 0) {
-        return NextResponse.json({ error: `登録されていないプレイヤー名が含まれています: ${Array.from(new Set(unknown)).join(', ')}` }, { status: 400 });
+      try {
+        const { data: knownPlayers } = await supabase.from('ktm_players').select('name').in('name', allNames);
+        const knownSet = new Set((knownPlayers || []).map((p: any) => p.name));
+        const unknown = allNames.filter((n: string) => !knownSet.has(n));
+        if (unknown.length > 0) {
+          console.warn('[discord/announce-stats] 未登録プレイヤーが含まれています（ゲスト許容）:', unknown);
+        }
+      } catch (err) {
+        console.warn('[discord/announce-stats] プレイヤー照合エラー（続行）:', err);
       }
     }
 

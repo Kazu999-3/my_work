@@ -72,17 +72,21 @@ export function renderProgressBar(current, max = DAY_CAPACITY) {
 }
 
 export const TIER_ORDER = {
+  'アイアン': 0,
   'ブロンズ': 1,
   'シルバー': 2,
   'ゴールド': 3,
   'プラチナ': 4,
+  'エメラルド': 5,
 };
 
 export const TIER_RANGE_TEXT = {
+  'エメラルド': 'プラチナ〜エメラルド',
   'プラチナ': 'ゴールド〜プラチナ',
   'ゴールド': 'シルバー〜プラチナ',
   'シルバー': 'ブロンズ〜ゴールド',
   'ブロンズ': 'アイアン〜シルバー',
+  'アイアン': 'アイアン〜ブロンズ',
 };
 
 export const RANK_JP_MAP = {
@@ -99,13 +103,13 @@ export const RANK_SHORT_JP_MAP = {
   UNRANKED: '未',
 };
 
-// 正規化先の4大ランク（英語キー → 4区分）。ランク語彙はこの表と RANK_JP_MAP / RANK_SHORT_JP_MAP だけに持つ
-// （2026-10-07: 以前は正規表現と判定用の配列にも同じ語を手書きしており、表を変えると一致しなくなっていた）
+// 正規化先の主要ランク（英語キー → 区分）。ランク語彙はこの表と RANK_JP_MAP / RANK_SHORT_JP_MAP だけに持つ
 const TIER_GROUP = {
-  CHALLENGER: 'プラチナ', GRANDMASTER: 'プラチナ', MASTER: 'プラチナ', DIAMOND: 'プラチナ', EMERALD: 'プラチナ', PLATINUM: 'プラチナ',
+  CHALLENGER: 'エメラルド', GRANDMASTER: 'エメラルド', MASTER: 'エメラルド', DIAMOND: 'エメラルド', EMERALD: 'エメラルド',
+  PLATINUM: 'プラチナ',
   GOLD: 'ゴールド',
   SILVER: 'シルバー',
-  BRONZE: 'ブロンズ', IRON: 'ブロンズ', UNRANKED: 'ブロンズ',
+  BRONZE: 'ブロンズ', IRON: 'アイアン', UNRANKED: 'ブロンズ',
 };
 
 // 表記（英語・日本語・短縮）→ 英語キー

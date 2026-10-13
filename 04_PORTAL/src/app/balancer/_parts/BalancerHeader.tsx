@@ -169,7 +169,7 @@ export default function BalancerHeader({ players, setPlayers, saving, announcing
                 🛡️ シルバー以下: <strong>ブラインドピック (MMRあり)</strong>
               </span>
               <span className="bg-surface border border-primary-edge/60 px-2 py-0.5 rounded-md font-bold text-[11px] text-primary-900">
-                👑 ゴルプラ: <strong>ドラフトピック (MMRあり)</strong>
+                👑 ゴールド以上: <strong>ドラフトピック (MMRあり)</strong>
               </span>
             </div>
 

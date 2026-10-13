@@ -115,8 +115,8 @@ export async function calculateNemesisClash(
   const laneClashes: LaneClash[] = [];
 
   ROLES.forEach(role => {
-    const b = bluePlayers.find(p => p.currentRole === role);
-    const r = redPlayers.find(p => p.currentRole === role);
+    const b = bluePlayers.find(p => (p.currentRole || (p as any).role) === role);
+    const r = redPlayers.find(p => (p.currentRole || (p as any).role) === role);
     if (!b || !r) return;
 
     let games = 0;
