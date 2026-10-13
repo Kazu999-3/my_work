@@ -18,10 +18,12 @@
    - Karpathy氏のLLM Wiki（知識の事前コンパイル・Lint点検）、Lumi Sparkの予定実績乖離フィードバック（完了の再定義）、ハシのサンドイッチアプローチ、TOMOの3層編集長フレームワーク、Shiba Aki氏のエージェント4レイヤー、60代男子氏の自動堆積パイプラインを統合した最上位ナレッジ規範。
 2. **[知識自走とハルシネーション根絶の5大設計原則 (ai_knowledge_agent_architecture_5principles.md)](file:///d:/my_work/01_INTEL/ai_knowledge_agent_architecture_5principles.md)**:
    - 受動的本棚の自走化（エージェント4レイヤー）、習慣に頼らない自動堆積（/seed ➔ /reduce ➔ /reflect）、オープンブック試験（RAG）、空欄を作らない子の脱却（「わかりません」の信用）、Evidence紐付けと数字捏造ガード（柵作り）の5大原則集約。
-3. **SSoT（単一の真実）の確定**: Riot公式DataDragon・実戦ログを「正本（不変）」とし、AI要約は「派生データ（再生成可能）」として扱う。
-4. **判断の経緯を残す**: 成果物だけでなく「なぜその仕様にしたか」「落とした選択肢」を理由付きで記録する。
-5. **訂正は上書きせず追加**: 知識の更新は上書き消去ではなく、訂正履歴（`dict_known_corrections`）として追加する。
-6. **適用条件の明示**: 指示やルールには必ず適用場面・非適用場面を添える。
+3. **[自立型AIエージェント協働 ＆ ゴール委任プロトコル (autonomous_task_delegation_protocol.md)](file:///d:/my_work/01_INTEL/autonomous_task_delegation_protocol.md)**:
+   - 「質問するAI」から「任せるAI」へ。目標提示（Goal-oriented）と非同期自律処理、Human-in-the-Loop境界設計、退勤前放置タスクの制式化。
+4. **SSoT（単一の真実）の確定**: Riot公式DataDragon・実戦ログを「正本（不変）」とし、AI要約は「派生データ（再生成可能）」として扱う。
+5. **判断の経緯を残す**: 成果物だけでなく「なぜその仕様にしたか」「落とした選択肢」を理由付きで記録する。
+6. **訂正は上書きせず追加**: 知識の更新は上書き消去ではなく、訂正履歴（`dict_known_corrections`）として追加する。
+7. **適用条件の明示**: 指示やルールには必ず適用場面・非適用場面を添える。
 
 ---
 
