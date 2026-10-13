@@ -19,8 +19,15 @@ import { RoleIcon, getPlayerCasinoBadges, MAX_VISIBLE_BADGES, CasinoBadges, getG
 export default function TableSplitPanel({ selectedTable, setSelectedTable, tableSplit }: {
   selectedTable: { label: string; ids: any[] } | null;
   setSelectedTable: React.Dispatch<React.SetStateAction<{ label: string; ids: any[] } | null>>;
-  tableSplit: { upper: { label: string; members: any[]; ids: any[] }; lower: { label: string; members: any[]; ids: any[] }; total: number };
+  tableSplit: {
+    upper: { label: string; members: any[]; ids: any[] };
+    lower: { label: string; members: any[]; ids: any[] };
+    spectators?: { label: string; members: any[]; ids: any[] };
+    total: number;
+  };
 }) {
+  const hasSpectators = (tableSplit.spectators?.members?.length ?? 0) > 0;
+
   return (
           <div className="bg-surface border border-primary-edge-soft rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2 flex-wrap">
@@ -31,7 +38,7 @@ export default function TableSplitPanel({ selectedTable, setSelectedTable, table
               {[tableSplit.upper, tableSplit.lower].map((t: any) => (
                 <div key={t.label} className={`rounded-xl border p-3 ${selectedTable?.label === t.label ? 'border-primary-edge-strong bg-primary-100' : 'border-border bg-black/[0.03]'}`}>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-black text-foreground">{t.label}</span>
+                    <span className="text-xs font-black text-foreground">{t.label} (10名)</span>
                     <button
                       onClick={() => setSelectedTable({ label: t.label, ids: t.ids })}
                       className={`text-[10px] font-black px-3 py-1.5 rounded-lg transition ${selectedTable?.label === t.label ? 'bg-primary-600 text-white' : 'bg-surface-subtle text-foreground-subtle hover:bg-surface-hover'}`}>
@@ -49,6 +56,25 @@ export default function TableSplitPanel({ selectedTable, setSelectedTable, table
                 </div>
               ))}
             </div>
+
+            {hasSpectators && (
+              <div className="rounded-xl border border-border bg-black/[0.02] p-3 text-xs space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-foreground flex items-center gap-1.5 text-xs">
+                    <span>⏳</span> 待機・観戦枠（次戦交代候補）: {tableSplit.spectators!.members.length}名
+                  </span>
+                  <span className="text-[10px] text-muted-strong">※上位卓・下位卓の選考外となった中位メンバー</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {tableSplit.spectators!.members.map((m: any) => (
+                    <span key={m.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface border border-border text-[11px] text-foreground-subtle font-medium">
+                      <span>{m.name}</span>
+                      <span className="font-mono text-muted-strong text-[10px]">({m.mmr || 1200})</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
   );
 }

@@ -18,6 +18,7 @@ import {
   type Role,
   type BalanceContext,
 } from '../balancer';
+import { splitTables } from '../balancer/diagnosis';
 
 function makePlayer(name: string, pref1: Role | 'ALL', pref2: Role | '-', mmr = 1200, overrides: Partial<Player> = {}): Player {
   const rates: Record<Role, number> = { TOP: mmr, JG: mmr, MID: mmr, ADC: mmr, SUP: mmr };
@@ -343,3 +344,41 @@ test('実データ相当（予測勝率0.35〜0.64・的中率53.8%）でも誤�
   assert.ok(q.accuracy < 0.55, `旧基準なら警告される水準: accuracy=${q.accuracy}`);
   assert.ok(q.brier <= 0.25 + 0.01, `新基準では警告されない: brier=${q.brier}`);
 });
+
+// ============ splitTables (卓分割) ============
+test('splitTables: 20名未満はnullを返す', () => {
+  const players = Array.from({ length: 19 }, (_, i) => ({ id: `p${i}`, name: `P${i}`, mmr: 1000 + i * 50, is_active: true }));
+  assert.equal(splitTables(players), null);
+});
+
+test('splitTables: 20名ピッタリ時は上位10名と下位10名に分割され、待機枠は0名', () => {
+  const players = Array.from({ length: 20 }, (_, i) => ({ id: `p${i}`, name: `P${i}`, mmr: 1000 + i * 50, is_active: true }));
+  const split = splitTables(players)!;
+  assert.equal(split.total, 20);
+  assert.equal(split.upper.members.length, 10);
+  assert.equal(split.lower.members.length, 10);
+  assert.equal(split.spectators.members.length, 0);
+  // 上位卓の最小MMR >= 下位卓の最大MMR
+  const minUpperMmr = Math.min(...split.upper.members.map((m: any) => m.mmr));
+  const maxLowerMmr = Math.max(...split.lower.members.map((m: any) => m.mmr));
+  assert.ok(minUpperMmr >= maxLowerMmr, '上位卓と下位卓のMMRが正しく分離されていること');
+});
+
+test('splitTables: 22名時は上位10名・最下位10名・待機枠2名に正しく分離される（境界ズレ防止）', () => {
+  // P0(1000) 〜 P21(2050)
+  const players = Array.from({ length: 22 }, (_, i) => ({ id: `p${i}`, name: `P${i}`, mmr: 1000 + i * 50, is_active: true }));
+  const split = splitTables(players)!;
+  assert.equal(split.total, 22);
+  assert.equal(split.upper.members.length, 10);
+  assert.equal(split.lower.members.length, 10);
+  assert.equal(split.spectators.members.length, 2);
+
+  // 最上位のP21(2050)は上位卓に含まれる
+  assert.ok(split.upper.members.some((m: any) => m.name === 'P21'), 'P21が上位卓に含まれること');
+  // 最下位のP0(1000)は下位卓に含まれる（以前のバグでは漏れていた）
+  assert.ok(split.lower.members.some((m: any) => m.name === 'P0'), 'P0が下位卓に含まれること');
+  // 中間の2名（P10, P11）が待機枠に含まれる
+  assert.ok(split.spectators.members.some((m: any) => m.name === 'P10'), 'P10が待機枠に含まれること');
+  assert.ok(split.spectators.members.some((m: any) => m.name === 'P11'), 'P11が待機枠に含まれること');
+});
+

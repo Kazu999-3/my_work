@@ -29,18 +29,21 @@ export function diagnoseMmrGaps(players: any[], GAP_THRESHOLD: number): GapDiagn
 /**
  * 卓分割: 参加者が20人以上のとき、代表MMR順で「上位卓/下位卓」に自動分割する。
  * 卓分け=代表MMR(ktm_players.mmr)、卓の中のチーム分け=レーン別MMR、という役割分担。
+ * 20人超の場合は上位10名（上位卓）と最下位10名（初中級卓）を確実に抽出し、中間層を待機枠（観戦・次戦交代候補）とする。
  */
 export function splitTables(players: any[]) {
   const act = players.filter((p: any) => p.is_active);
   if (act.length < 20) return null;
   const sorted = [...act].sort((a: any, b: any) => (b.mmr || 1200) - (a.mmr || 1200));
-  const half = Math.floor(sorted.length / 2);
-  // 10人単位で切り出す（20人なら10/10、24人なら12人ずつではなく上位10/下位10＋残りは待機）
+  // 上位10名と最下位10名を確実に抽出
   const upper = sorted.slice(0, 10);
-  const lower = sorted.slice(half, half + 10);
+  const lower = sorted.slice(sorted.length - 10);
+  // どちらにも入らなかった中間層は待機・観戦枠（20名ピッタリ時は0名）
+  const spectators = sorted.slice(10, sorted.length - 10);
   return {
     upper: { label: '上位卓', members: upper, ids: upper.map((p: any) => p.id) },
     lower: { label: '下位卓', members: lower, ids: lower.map((p: any) => p.id) },
+    spectators: { label: '待機枠', members: spectators, ids: spectators.map((p: any) => p.id) },
     total: act.length,
   };
 }
