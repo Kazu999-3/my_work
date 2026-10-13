@@ -58,40 +58,58 @@ export default function GuideBotTab() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {[
             {
-              cmd: '/recruit',
-              desc: 'カスタムやノーマルの募集パネルをチャットに投下します',
-              example: '/recruit mode:カスタム time:21:30 memo:初心者歓迎！',
-              tag: '募集主',
+              cmd: '/ign',
+              desc: 'Riot ID（名前#JP1）を登録・変更します。ランクが自動で同期されます',
+              example: '/ign riot_id:Hide on bush#JP1',
+              tag: '初回必須',
             },
             {
               cmd: '/lane',
-              desc: '希望レーン・NGレーン・こだわり度を設定します（初回必須）',
-              example: '/lane main:JG sub:TOP ng1:SUP weight:1',
+              desc: '希望レーン・NGレーン・こだわり度を設定します（チーム分けに反映）',
+              example: '/lane main:JG sub:TOP ng1:SUP weight:2',
               tag: '参加者全員',
             },
             {
-              cmd: '/balance',
-              desc: 'ボイスチャンネルや募集参加者をもとに公平なチーム分けを生成します',
-              example: '/balance',
-              tag: '進行役',
-            },
-            {
-              cmd: '/tip',
-              desc: '活躍した味方や対戦相手に感謝のKTMコインをプレゼントします',
-              example: '/tip user:@相手 amount:100 memo:ナイスキャリー！',
-              tag: '全員',
-            },
-            {
-              cmd: '/patch',
-              desc: '最新LoLパッチのメタ激変ポイントや強いチャンプを即座に要約表示します',
-              example: '/patch',
-              tag: '全員',
+              cmd: '/recruit',
+              desc: 'カスタムやノーマル、ARAMの募集パネルをチャットに投下します',
+              example: '/recruit memo:21:30 カスタム 初心者歓迎！',
+              tag: '募集主',
             },
             {
               cmd: '/stats',
               desc: '自分または指定プレイヤーの直近戦績・勝率・MMRを表示します',
               example: '/stats user:@プレイヤー',
               tag: '全員',
+            },
+            {
+              cmd: '/coins',
+              desc: '自分のKTMコイン残高と、コインの貯め方を確認します',
+              example: '/coins',
+              tag: '全員',
+            },
+            {
+              cmd: '/ranking',
+              desc: 'カスタムのリーダーボード（最多勝・勝率・参加数トップ）を表示します',
+              example: '/ranking',
+              tag: '全員',
+            },
+            {
+              cmd: '/casino',
+              desc: 'コイン所持数の上位10名（長者番付リーダーボード）を表示します',
+              example: '/casino',
+              tag: '全員',
+            },
+            {
+              cmd: '/tip',
+              desc: '活躍した味方や対戦相手に感謝のKTMコインをプレゼントします',
+              example: '/tip target:@相手 amount:100 memo:ナイスキャリー！',
+              tag: '全員',
+            },
+            {
+              cmd: '/welcome',
+              desc: '新メンバー向け利用案内（はじめの3ステップ・ルール）を投稿します',
+              example: '/welcome',
+              tag: '運営・案内',
             },
           ].map((item) => (
             <div
@@ -356,7 +374,7 @@ export default function GuideBotTab() {
           )}
         </div>
 
-        {/* 3. /balance 詳細 */}
+        {/* 3. チーム分け実行 & プリセット詳細 */}
         <div className="bg-surface rounded-3xl border border-border shadow-xs overflow-hidden">
           <button
             type="button"
@@ -369,7 +387,7 @@ export default function GuideBotTab() {
               </div>
               <div>
                 <h3 className="text-base font-black text-foreground">
-                  3. チーム分けコマンド <code className="font-mono text-success-700">/balance</code> と3つのプリセット
+                  3. チーム分け実行（🏆 ボタン）と3つのプリセット
                 </h3>
                 <p className="text-xs text-muted-strong">AIが提案する3タイプのチーム分け案と投票の仕組み</p>
               </div>
@@ -380,7 +398,7 @@ export default function GuideBotTab() {
           {openSection === 'balance' && (
             <div className="p-6 pt-0 border-t border-surface-subtle space-y-4">
               <p className="text-xs text-muted leading-relaxed">
-                定員に達した募集パネルから「🏆 チーム分け実行」を押すか、ボイスチャンネルに入った状態で <code className="bg-surface-subtle px-1 py-0.5 rounded font-mono font-bold text-success-900">/balance</code> を実行すると、AIが以下の3案を同時に提案します。
+                定員（10名）に達した募集パネルで募集主が「🏆 チーム分け実行」ボタンを押すと、AIが参加者のレーン希望と直近MMRを解析し、以下の3案を同時に提案します。
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
