@@ -914,6 +914,23 @@ async function main() {
     fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   }
 
+  // 🛡️ キャッシュ保護安全ガード:
+  // Supabase 側の障害（Egress制限、ネットワークエラー等）で facts / matchups が 0 件だった場合、
+  // 既にローカルに存在する充実したキャッシュファイル（8万行以上）を空データで破壊上書きしない。
+  const fetchedDbCount = Object.keys(factsMap).length + Object.keys(matchupsMap).length;
+  if (supabase && fetchedDbCount === 0 && fs.existsSync(DETAILS_FILE)) {
+    try {
+      const existingDetails = JSON.parse(fs.readFileSync(DETAILS_FILE, 'utf-8'));
+      const existingKeys = Object.keys(existingDetails || {});
+      if (existingKeys.length > 50) {
+        console.warn(`⚠️ [Cache Guard] DBからの取得結果が 0 件のため、既存の詳細キャッシュ(${existingKeys.length}件)を保護して上書きをスキップします。`);
+        return;
+      }
+    } catch {
+      // 既存ファイルが壊れていた場合は新規作成へ進む
+    }
+  }
+
   // 出力（TurbopackのJSON破損防止のためtoWellFormedを適用）
   const summaryJson = JSON.stringify(summaries, null, 2);
   const detailsJson = JSON.stringify(detailMap, null, 2);
