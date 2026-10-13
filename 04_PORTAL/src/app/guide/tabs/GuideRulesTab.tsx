@@ -86,17 +86,17 @@ export default function GuideRulesTab() {
             </div>
           </div>
 
-          {/* ③ 当日19時までに7名以下なら中止 */}
+          {/* ③ 当日20:00時点で10名未満なら中止（代替募集へ移行） */}
           <div className="p-5 rounded-2xl bg-background/80 dark:bg-stone-800/30 border border-border/80 dark:border-stone-700/50 space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="px-2.5 py-1 rounded-lg bg-stone-500 text-white text-xs font-black">
-                ③ 7名以下
+                ③ 10名未満
               </span>
-              <span className="text-xs font-bold text-muted">💤 開催見送り（中止）</span>
+              <span className="text-xs font-bold text-muted">💤 開催見送り（代替募集）</span>
             </div>
-            <h4 className="text-sm font-black text-foreground dark:text-white">⏰ 当日19:00で確定判断</h4>
+            <h4 className="text-sm font-black text-foreground dark:text-white">⏰ 当日20:00で確定判断</h4>
             <p className="text-xs text-muted leading-relaxed">
-              当日19:00の時点で参加希望が7名以下の場合は開催中止とし、参加予定の方がソロキューや他の予定に切り替えられるようにします。
+              当日20:00の時点で10名に満たない場合はカスタム開催中止となり、ワンクリックで「ノーマル5人」や「ARAM」の代替募集へスムーズに切り替えられます。（※8〜9名集まっている場合は「助っ人急募」通知が自動投稿されます）
             </p>
           </div>
         </div>

@@ -314,7 +314,7 @@ export default function GuideQuickStartTab({ onSelectTab }: { onSelectTab?: (tab
               <span>⏰</span> 開催判断は何時に行われますか？
             </h4>
             <p className="text-[11px] text-muted leading-relaxed">
-              当日19:00の時点で参加希望が7名以下の場合は中止（他の予定に切り替えられるよう配慮）となります。また20:00時点で1〜2名不足している場合は「助っ人急募通知」が自動投稿されます。
+              当日20:00の時点で参加希望が10名未満の場合は開催中止（ワンクリックでノーマルやARAMの代替募集へ切り替え）となります。また8〜9名集まっている場合は「助っ人急募通知」が自動投稿されます。
             </p>
           </div>
 

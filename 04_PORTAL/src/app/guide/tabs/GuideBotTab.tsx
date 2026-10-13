@@ -280,10 +280,9 @@ export default function GuideBotTab() {
                   定期カスタムの開催日程 ＆ 通知スケジュール
                 </div>
                 <ul className="space-y-1 text-muted">
-                  <li>・<strong className="text-foreground-soft">毎週月曜 12:00:</strong> 土日分の募集カードが自動投下されます。</li>
-                  <li>・<strong className="text-foreground-soft">毎週水曜 12:00:</strong> 中間人数アナウンス（あと◯名で確定）。</li>
-                  <li>・<strong className="text-foreground-soft">毎週金曜 19:00:</strong> 前日最終アナウンス（土曜開催の直前確認）。</li>
-                  <li>・<strong className="text-foreground-soft">当日 20:00:</strong> 開催可否の最終判定。10名未満の部門は自動中止となり、ワンクリックで「ノーマル」「ARAM/メイヘム」の代替募集へ切り替わります。</li>
+                  <li>・<strong className="text-foreground-soft">毎週水曜 12:00:</strong> 土日分の募集カードが自動投下されます。</li>
+                  <li>・<strong className="text-foreground-soft">毎週金曜 19:00 ＆ 土日 17:00:</strong> 中間人数アナウンス（残り枠状況のお知らせ）。</li>
+                  <li>・<strong className="text-foreground-soft">当日 20:00:</strong> 開催可否の最終判定。10名未満の部門は自動中止となり、ワンクリックで「ノーマル」「ARAM」の代替募集へ切り替わります（※8〜9名時は助っ人急募通知が自動投稿）。</li>
                 </ul>
               </div>
 
@@ -335,7 +334,7 @@ export default function GuideBotTab() {
               </div>
               <div>
                 <h3 className="text-base font-black text-foreground">
-                  2. レーン設定コマンド <code className="font-mono text-primary-700">/lane</code> とこだわり度
+                  3. レーン設定コマンド <code className="font-mono text-primary-700">/lane</code> とこだわり度
                 </h3>
                 <p className="text-xs text-muted-strong">希望ロール・NGロール・対面格上許可の設定方法</p>
               </div>
@@ -387,7 +386,7 @@ export default function GuideBotTab() {
               </div>
               <div>
                 <h3 className="text-base font-black text-foreground">
-                  3. チーム分け実行（🏆 ボタン）と3つのプリセット
+                  4. チーム分け実行（🏆 ボタン）と3つのプリセット
                 </h3>
                 <p className="text-xs text-muted-strong">AIが提案する3タイプのチーム分け案と投票の仕組み</p>
               </div>
@@ -440,7 +439,7 @@ export default function GuideBotTab() {
               </div>
               <div>
                 <h3 className="text-base font-black text-foreground">
-                  4. 師弟募集チャンネルのワンポチ登録 ＆ 先輩スカウト機能
+                  5. 師弟募集チャンネルのワンポチ登録 ＆ 先輩スカウト機能
                 </h3>
                 <p className="text-xs text-muted-strong">#🤝師弟募集 チャンネルからWebログイン不要で即エントリー</p>
               </div>
