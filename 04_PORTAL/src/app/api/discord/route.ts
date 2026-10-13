@@ -289,15 +289,25 @@ export async function POST(request: Request) {
           .in('name', playingNames);
       }
 
-      // 2. 観戦者の spectator_pity を +10
-      // 以前はSELECT→計算→UPDATEの非アトミック処理で、同時リクエスト時に加算が
-      // 失われる競合状態があったため、DB側で加算するRPC(increment_ktm_spectator_pity)に置き換えた。
+      // 2. 観戦者の spectator_pity を +10（見学固定および非アクティブなメンバーは除外）
       if (spectators && spectators.length > 0) {
-        const { error: pityError } = await supabase.rpc('increment_ktm_spectator_pity', {
-          p_names: spectators,
-          p_amount: 10,
-        });
-        if (pityError) console.warn('[discord] spectator_pity加算に失敗（続行）:', pityError);
+        const rawSpecNames = Array.from(new Set(spectators.map((s: any) => typeof s === 'string' ? s : s?.name).filter(Boolean)));
+        const { data: specPlayers } = await supabase
+          .from('ktm_players')
+          .select('name, is_spectator_fixed, is_active')
+          .in('name', rawSpecNames);
+
+        const eligibleSpecs = (specPlayers || [])
+          .filter((p: any) => p.is_spectator_fixed !== true && p.is_active !== false)
+          .map((p: any) => p.name);
+
+        if (eligibleSpecs.length > 0) {
+          const { error: pityError } = await supabase.rpc('increment_ktm_spectator_pity', {
+            p_names: eligibleSpecs,
+            p_amount: 10,
+          });
+          if (pityError) console.warn('[discord] spectator_pity加算に失敗（続行）:', pityError);
+        }
       }
     } catch (dbError) {
       console.error('Spectator Pity Update Error:', dbError);

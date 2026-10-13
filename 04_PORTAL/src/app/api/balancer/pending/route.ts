@@ -94,11 +94,11 @@ export async function POST(request: Request) {
         .map((p: any) => p.name);
 
       if (eligibleNames.length > 0) {
-        const { error: pityError } = await supabase.rpc('increment_ktm_pity', {
+        const { error: pityError } = await supabase.rpc('increment_ktm_spectator_pity', {
           p_names: eligibleNames,
           p_amount: 10,
         });
-        if (pityError) console.warn('[balancer/pending] pity加算に失敗（続行）:', pityError);
+        if (pityError) console.warn('[balancer/pending] spectator_pity加算に失敗（続行）:', pityError);
       }
     }
 

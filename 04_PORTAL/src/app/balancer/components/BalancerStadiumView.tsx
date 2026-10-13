@@ -33,11 +33,13 @@ export default function BalancerStadiumView({
   const red = result.teamRed || [];
   const spectators = result.spectators || [];
 
+  const getPlayerRole = (p: any) => p?.currentRole || p?.role || p?.assignedRole || null;
+
   // 自分がどちらのチームにいるか判定
   const myBlueEntry = currentUserName ? blue.find((p: any) => p.name === currentUserName) : null;
   const myRedEntry = currentUserName ? red.find((p: any) => p.name === currentUserName) : null;
   const mySide = myBlueEntry ? 'BLUE' : myRedEntry ? 'RED' : null;
-  const myRole = myBlueEntry?.assignedRole || myRedEntry?.assignedRole || null;
+  const myRole = getPlayerRole(myBlueEntry) || getPlayerRole(myRedEntry) || null;
 
   const roles = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
 
@@ -117,8 +119,8 @@ export default function BalancerStadiumView({
       {/* ⚔️ 5レーン対面スタジアムグリッド */}
       <div className="space-y-2">
         {roles.map((role) => {
-          const blueP = blue.find((p: any) => p.assignedRole === role) || blue[roles.indexOf(role)];
-          const redP = red.find((p: any) => p.assignedRole === role) || red[roles.indexOf(role)];
+          const blueP = blue.find((p: any) => getPlayerRole(p) === role) || blue[roles.indexOf(role)];
+          const redP = red.find((p: any) => getPlayerRole(p) === role) || red[roles.indexOf(role)];
 
           const isMyBlue = currentUserName && blueP?.name === currentUserName;
           const isMyRed = currentUserName && redP?.name === currentUserName;

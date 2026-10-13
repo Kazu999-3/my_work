@@ -127,11 +127,11 @@ export default function BalancerHeader({ players, setPlayers, saving, announcing
                     BO3 シリーズ進行中 [第{bo3State.gameNumber}戦]
                   </span>
                   <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-secondary-100 text-secondary-900 border border-secondary-edge">
-                    🔵 {bo3State.team1IsCurrentlyBlue ? bo3State.team1Name : bo3State.team2Name}: {bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins}勝
+                    🔵 {bo3State.team1IsCurrentlyBlue ? (bo3State.team1Name || 'Blue') : (bo3State.team2Name || 'Red')}: {bo3State.team1IsCurrentlyBlue ? Number(bo3State.team1Wins || 0) : Number(bo3State.team2Wins || 0)}勝
                   </span>
                   <span className="text-xs font-black text-muted-strong">VS</span>
                   <span className="text-xs font-black px-2.5 py-1 rounded-lg bg-danger-100 text-danger-900 border border-danger-edge">
-                    🔴 {!bo3State.team1IsCurrentlyBlue ? bo3State.team1Name : bo3State.team2Name}: {!bo3State.team1IsCurrentlyBlue ? bo3State.team1Wins : bo3State.team2Wins}勝
+                    🔴 {!bo3State.team1IsCurrentlyBlue ? (bo3State.team1Name || 'Blue') : (bo3State.team2Name || 'Red')}: {!bo3State.team1IsCurrentlyBlue ? Number(bo3State.team1Wins || 0) : Number(bo3State.team2Wins || 0)}勝
                   </span>
                   {bo3State.gameNumber === 3 && (
                     <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-danger-600 text-white animate-pulse">
