@@ -1,11 +1,11 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
-import { applyManualSwap } from "../../../lib/balancer/teams";
+import { applyManualSwap, swapWholeTeams } from "../../../lib/balancer/teams";
 
 type Team = 'teamBlue' | 'teamRed' | 'spectators';
 
 /**
- * チーム分け結果画面での手動入れ替え（ドラッグ＆ドロップ / タップで2人選ぶ / プルダウン）。
- * 入れ替え後のMMR差・勝率の再計算は lib/balancer/teams.ts の applyManualSwap が行う。
+ * チーム分け結果画面での手動入れ替え（ドラッグ＆ドロップ / タップで2人選ぶ / プルダウン / 陣営一括反転）。
+ * 入れ替え後のMMR差・勝率の再計算は lib/balancer/teams.ts の applyManualSwap, swapWholeTeams が行う。
  * 2026-10-07: app/balancer/page.tsx から分離（処理は分離前と同じ）。
  */
 export function useResultSwap({ balanceResult, setBalanceResult, setProposals, selectedProposalIdx, players }: {
@@ -18,6 +18,15 @@ export function useResultSwap({ balanceResult, setBalanceResult, setProposals, s
   // タップスワップ用State
   const [swapSource, setSwapSource] = useState<{ team: string; role: string; name: string } | null>(null);
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
+
+  // 陣営（Blue ⇄ Red）の丸ごと反転
+  const handleSwapWholeTeams = () => {
+    if (!balanceResult) return;
+    const newResult = swapWholeTeams(balanceResult);
+    if (!newResult) return;
+    setBalanceResult(newResult);
+    setProposals(prev => prev.map((p, idx) => idx === selectedProposalIdx ? newResult : p));
+  };
 
   const handleSwapPlayer = (targetTeam: Team, targetRole: string, newPlayerName: string) => {
     if (!balanceResult) return;
@@ -115,5 +124,6 @@ export function useResultSwap({ balanceResult, setBalanceResult, setProposals, s
   return {
     swapSource, dragOverSlot,
     handleDragStart, handleDragOver, handleDragLeave, handleDropPlayer, handleSelectSwapPlayer, renderSwapSelect,
+    handleSwapWholeTeams,
   };
 }

@@ -433,7 +433,7 @@ function CustomRecordPageContent() {
       const initial: PlayerStat[] = [];
       
       ROLES.forEach(role => {
-        const pb = br.teamBlue?.find((p: any) => p.currentRole === role);
+        const pb = br.teamBlue?.find((p: any) => (p.currentRole || p.role) === role);
         initial.push({
           name: pb ? pb.name : '',
           team: 'BLUE',
@@ -445,7 +445,7 @@ function CustomRecordPageContent() {
       });
       
       ROLES.forEach(role => {
-        const pr = br.teamRed?.find((p: any) => p.currentRole === role);
+        const pr = br.teamRed?.find((p: any) => (p.currentRole || p.role) === role);
         initial.push({
           name: pr ? pr.name : '',
           team: 'RED',
@@ -534,6 +534,7 @@ function CustomRecordPageContent() {
       return next;
     });
     setWinningTeam(prev => (prev === 'BLUE' ? 'RED' : prev === 'RED' ? 'BLUE' : prev));
+    setMessage({ type: 'success', text: '🔁 BLUE陣営とRED陣営を丸ごと入れ替えました！' });
   };
 
   const handleStatChangeByIndex = (index: number, field: string, value: string) => {
@@ -650,15 +651,26 @@ function CustomRecordPageContent() {
             <Trophy className="h-7 w-7 md:h-8 md:w-8 text-success-600" />
             カスタム試合を手動記録
           </h1>
-          <button
-            type="button"
-            onClick={handleRestoreCachedBalancer}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-bold text-xs shadow-xs transition cursor-pointer"
-            title="直前にバランサーで決定した10人の編成（BLUE/REDとレーン）をこの入力欄へ一括自動入力します"
-          >
-            <RefreshCw className="h-3.5 w-3.5" />
-            <span>⚡ 直前のチーム分け構成（10人）を反映</span>
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={handleSwapTeams}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-subtle hover:bg-surface-hover text-foreground-soft font-bold text-xs border border-border transition cursor-pointer"
+              title="Blue側5人とRed側5人のプレイヤー・スコア・勝敗選択を丸ごと反転します"
+            >
+              <ArrowLeftRight className="h-3.5 w-3.5 text-primary-600" />
+              <span>🔁 陣営入替 (Blue ⇄ Red)</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleRestoreCachedBalancer}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-bold text-xs shadow-xs transition cursor-pointer"
+              title="直前にバランサーで決定した10人の編成（BLUE/REDとレーン）をこの入力欄へ一括自動入力します"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+              <span>⚡ 直前のチーム分け構成（10人）を反映</span>
+            </button>
+          </div>
         </div>
 
         <div className="bg-surface border border-border rounded-xl p-6 shadow-2xl">

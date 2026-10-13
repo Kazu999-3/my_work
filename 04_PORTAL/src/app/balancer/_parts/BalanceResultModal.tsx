@@ -5,7 +5,7 @@ import { toast } from '../../../components/Toaster';
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../../../lib/supabaseClient";
-import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Settings, Sparkles, Coins, Copy, Check, Shuffle, Flame } from "lucide-react";
+import { Users, RefreshCw, Swords, X, Activity, Globe, MessageSquare, Info, Crown, Trophy, History, Shield, AlertTriangle, ChevronDown, Trees, Zap, Target, Heart, Settings, Sparkles, Coins, Copy, Check, Shuffle, Flame, ArrowLeftRight } from "lucide-react";
 import { getColorFromRankName, calculateBlueWinProbability, getKtmRank, getRankBadgeStyle, getHighestLaneMmr } from "../../../lib/mmr";
 import { getPlayerTier } from "../../../lib/playerTier";
 import { BalancerVcManager, updateVcStatus } from "../components/BalancerVcManager";
@@ -16,7 +16,7 @@ import { RoleIcon, getPlayerCasinoBadges, MAX_VISIBLE_BADGES, CasinoBadges, getG
 
 // ★ チーム分け結果モーダル
 // 2026-10-07: app/balancer/page.tsx（3,029行）から分割。表示内容・動作は分割前と同じ。状態は page.tsx が持ち、ここは props で受け取って描画するだけ。
-export default function BalanceResultModal({ players, savingPending, copiedResult, setMessage, balanceResult, setBalanceResult, proposals, selectedProposalIdx, setSelectedProposalIdx, analysis, swapSource, sendingDiscord, setShowResultModal, selectedTable, sendingProposals, dragOverSlot, bo3State, handleStartBo3, handleRecordBo3Win, handleNextBo3Game, handleResetBo3, handleRecordNavigate, handleSendProposals, handleSendDiscord, handleCopyResultText, handleDragStart, handleDragOver, handleDragLeave, handleDropPlayer, handleSelectSwapPlayer, renderSwapSelect, handicapNames }: {
+export default function BalanceResultModal({ players, savingPending, copiedResult, setMessage, balanceResult, setBalanceResult, proposals, selectedProposalIdx, setSelectedProposalIdx, analysis, swapSource, sendingDiscord, setShowResultModal, selectedTable, sendingProposals, dragOverSlot, bo3State, handleStartBo3, handleRecordBo3Win, handleNextBo3Game, handleResetBo3, handleRecordNavigate, handleSendProposals, handleSendDiscord, handleCopyResultText, handleDragStart, handleDragOver, handleDragLeave, handleDropPlayer, handleSelectSwapPlayer, renderSwapSelect, handicapNames, handleSwapWholeTeams }: {
   players: any[];
   savingPending: boolean;
   copiedResult: boolean;
@@ -49,6 +49,7 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
   handleSelectSwapPlayer: (team: string, role: string, name: string) => any;
   renderSwapSelect: (team: 'teamBlue' | 'teamRed' | 'spectators', role: string, currentPlayerName: string) => any;
   handicapNames: Set<any>;
+  handleSwapWholeTeams?: () => any;
 }) {
   const [clashData, setClashData] = useState<any>(null);
   const [loadingClash, setLoadingClash] = useState(false);
@@ -141,6 +142,14 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
                 })()}
               </div>
               <div className="flex items-center gap-2">
+                {handleSwapWholeTeams && (
+                  <button onClick={handleSwapWholeTeams}
+                    className="flex items-center gap-1.5 bg-surface-subtle hover:bg-surface-hover text-foreground-soft px-3 py-1.5 rounded-xl font-bold transition text-xs border border-border shadow-2xs cursor-pointer"
+                    title="BlueチームとRedチームの陣営を丸ごと反転入れ替えします">
+                    <ArrowLeftRight className="h-3.5 w-3.5 text-primary-600" />
+                    <span className="hidden sm:inline">陣営入替 (Blue ⇄ Red)</span>
+                  </button>
+                )}
                 {proposals.length > 1 && (
                   <button onClick={handleSendProposals} disabled={sendingProposals}
                     className="flex items-center gap-1.5 bg-primary-600 hover:bg-primary-500 text-white px-3 py-1.5 rounded-xl font-bold transition text-xs shadow-xs cursor-pointer"

@@ -176,3 +176,34 @@ export function buildResultCopyText(balanceResult: any): string {
 
   return text;
 }
+
+/**
+ * 陣営の丸ごと反転（Blue ⇄ Red）。
+ * 両チームのメンバー、合計MMR、予測勝率を反転して返す。
+ */
+export function swapWholeTeams(balanceResult: any): any {
+  if (!balanceResult || !balanceResult.teamBlue || !balanceResult.teamRed) return balanceResult;
+
+  const swapped = { ...balanceResult };
+  const oldBlue = balanceResult.teamBlue;
+  const oldRed = balanceResult.teamRed;
+
+  swapped.teamBlue = oldRed;
+  swapped.teamRed = oldBlue;
+
+  const totalBlue = (swapped.teamBlue || []).reduce((sum: number, p: any) => sum + (Number(p.mmr) || 1200), 0);
+  const totalRed = (swapped.teamRed || []).reduce((sum: number, p: any) => sum + (Number(p.mmr) || 1200), 0);
+  swapped.totalMmrBlue = totalBlue;
+  swapped.totalMmrRed = totalRed;
+  swapped.teamBlueMMR = totalBlue;
+  swapped.teamRedMMR = totalRed;
+  swapped.diff = Math.abs(totalBlue - totalRed);
+  swapped.mmrDiff = Math.abs(totalBlue - totalRed);
+
+  const blueAvg = totalBlue / ((swapped.teamBlue || []).length || 1);
+  const redAvg = totalRed / ((swapped.teamRed || []).length || 1);
+  swapped.predictedBlueWinProb = calculateBlueWinProbability(blueAvg, redAvg);
+
+  return swapped;
+}
+

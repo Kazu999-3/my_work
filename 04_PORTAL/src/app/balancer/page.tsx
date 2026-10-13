@@ -310,6 +310,7 @@ export default function BalancerPage() {
           handleDragStart={swap.handleDragStart} handleDragOver={swap.handleDragOver} handleDragLeave={swap.handleDragLeave}
           handleDropPlayer={swap.handleDropPlayer} handleSelectSwapPlayer={swap.handleSelectSwapPlayer}
           renderSwapSelect={swap.renderSwapSelect} handicapNames={handicapNames}
+          handleSwapWholeTeams={swap.handleSwapWholeTeams}
         />
       )}
 
