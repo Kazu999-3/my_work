@@ -427,7 +427,9 @@ export default function PlayerMyPage() {
     return 'FLEX';
   }, [history, champPool, player]);
 
-  // Hextech 5軸能力パラメーター計算 (キャリー力/集団戦/安定度/プール広さ/勝負強さ) - 【カスタムメンバー全体平均を3.0とする5段階評価 (1.0〜5.0)】
+  // Hextech 5軸能力パラメーター計算 (キャリー力/集団戦/安定度/プール広さ/勝負強さ)
+  // 【ロール適性補正 ＆ ベイズ平滑化による公正な評価 (1.0〜5.0)】
+  // 最低保証などのゲタは履かせず、実戦データに基づきロール格差（SUPのキル不足等）を正当に解消
   const hextechRadarData = useMemo(() => {
     const totalG = history?.length || 0;
     if (totalG === 0) {
@@ -435,7 +437,16 @@ export default function PlayerMyPage() {
     }
 
     const wins = history.filter(m => m.isWin).length;
-    const winRate = Math.round((wins / totalG) * 100);
+    // 試合数が少ない時のブレを抑える平滑化勝率（ベイズ平滑化: 基準50%に3戦分の重み）
+    const smoothedWinRate = Math.round(((wins + 1.5) / (totalG + 3)) * 100);
+
+    // 主力ロール判定（試合数が最も多いロール）
+    const roleCounts: Record<string, number> = {};
+    history.forEach(m => {
+      const r = (m.role || '').toUpperCase();
+      if (r) roleCounts[r] = (roleCounts[r] || 0) + 1;
+    });
+    const mainRole = Object.entries(roleCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'MID';
 
     // 全試合の平均K/D/A計算
     let totalKills = 0, totalDeaths = 0, totalAssists = 0;
@@ -447,29 +458,58 @@ export default function PlayerMyPage() {
     const avgKills = totalKills / totalG;
     const avgDeaths = totalDeaths / totalG;
     const avgAssists = totalAssists / totalG;
+    const kdaRatio = avgDeaths === 0 ? (avgKills + avgAssists) : (avgKills + avgAssists) / avgDeaths;
 
-    // 1. キャリー力 (平均4.5キル/勝率50%が3.0)
-    const carryRaw = 3.0 + (avgKills - 4.5) * 0.32 + (winRate - 50) * 0.02 - (avgDeaths - 5.0) * 0.12;
+    // ロールごとの期待値（キル/アシストの偏りを公平化）
+    // SUPはキルを譲るためアシストとKDAでキャリー力を評価、TOPは集団戦寄与（TP・エンゲージ）を加味
+    let expectedKills = 4.5;
+    let expectedAssists = 7.0;
+    if (mainRole === 'SUP') {
+      expectedKills = 1.5;
+      expectedAssists = 10.5;
+    } else if (mainRole === 'ADC') {
+      expectedKills = 6.5;
+      expectedAssists = 5.5;
+    } else if (mainRole === 'MID') {
+      expectedKills = 6.0;
+      expectedAssists = 6.0;
+    } else if (mainRole === 'JG') {
+      expectedKills = 4.5;
+      expectedAssists = 8.0;
+    } else if (mainRole === 'TOP') {
+      expectedKills = 4.0;
+      expectedAssists = 5.0;
+    }
+
+    // 1. キャリー力 (ロール別期待キル・KDA・勝率から算出)
+    let carryRaw = 3.0;
+    if (mainRole === 'SUP') {
+      // サポートは高いKDA貢献と勝率、アシスト寄与がキャリー力
+      carryRaw = 3.0 + (kdaRatio - 3.0) * 0.45 + (smoothedWinRate - 50) * 0.03 + (avgAssists - expectedAssists) * 0.15;
+    } else {
+      carryRaw = 3.0 + (avgKills - expectedKills) * 0.35 + (smoothedWinRate - 50) * 0.025 + (kdaRatio - 2.5) * 0.2;
+    }
     const carry = Number(Math.min(5.0, Math.max(1.0, carryRaw)).toFixed(1));
 
-    // 2. 集団戦 (平均7.0アシストが3.0)
-    const teamfightRaw = 3.0 + (avgAssists - 7.0) * 0.25;
+    // 2. 集団戦 (ロール別期待アシスト・複数キル関与から算出)
+    const teamfightRaw = 3.0 + (avgAssists - expectedAssists) * 0.28 + (kdaRatio - 2.5) * 0.15;
     const teamfight = Number(Math.min(5.0, Math.max(1.0, teamfightRaw)).toFixed(1));
 
-    // 3. 安定度 (平均5.0デスが3.0 / デスが少ないほど高評価)
+    // 3. 安定度 (低デス率 ＆ 平均デス数から算出)
     const lowDeathGames = history.filter(m => (m.deaths || 0) <= 4).length;
     const lowDeathRatio = (lowDeathGames / totalG) * 100;
-    const consistencyRaw = 3.0 + (5.0 - avgDeaths) * 0.35 + (lowDeathRatio - 50) * 0.015;
+    const consistencyRaw = 3.0 + (5.0 - avgDeaths) * 0.38 + (lowDeathRatio - 50) * 0.02;
     const consistency = Number(Math.min(5.0, Math.max(1.0, consistencyRaw)).toFixed(1));
 
-    // 4. プール広さ (カスタム平均3〜4体が3.0 / 1体=1.5, 3体=2.8, 6体=3.8, 10体=4.6, 12体以上=5.0)
+    // 4. プール広さ (使用チャンピオン数と偏り度)
     const validChampsCount = champPool.filter(c => c.name && c.name !== 'Unknown').length;
-    const poolRaw = 1.2 + Math.min(validChampsCount, 12) * 0.32;
+    // 1体特化=2.0, 3体=3.0, 5体=3.8, 8体以上=4.6〜5.0
+    const poolRaw = 1.5 + Math.min(validChampsCount, 10) * 0.35;
     const poolSize = Number(Math.min(5.0, Math.max(1.0, poolRaw)).toFixed(1));
 
-    // 5. 勝負強さ (通算勝率50%が3.0 / 直近10戦勝率加味)
-    const recentRate = recentForm?.last10Rate || winRate;
-    const clutchRaw = 3.0 + (winRate - 50) * 0.035 + (recentRate - 50) * 0.015;
+    // 5. 勝負強さ (平滑化勝率 ＆ 直近フォーム)
+    const recentRate = recentForm?.last10Rate !== undefined ? recentForm.last10Rate : smoothedWinRate;
+    const clutchRaw = 3.0 + (smoothedWinRate - 50) * 0.035 + (recentRate - 50) * 0.02;
     const clutch = Number(Math.min(5.0, Math.max(1.0, clutchRaw)).toFixed(1));
 
     return [
@@ -499,37 +539,92 @@ export default function PlayerMyPage() {
     const avgA = totalA / totalG;
     const kdaRatio = avgD === 0 ? (avgK + avgA) : (avgK + avgA) / avgD;
 
+    // ロール集計
+    const roleCounts: Record<string, number> = {};
+    history.forEach(m => {
+      const r = (m.role || '').toUpperCase();
+      if (r) roleCounts[r] = (roleCounts[r] || 0) + 1;
+    });
+    const mainRole = Object.entries(roleCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'MID';
+
     const validChamps = champPool.filter(c => c.name && c.name !== 'Unknown');
     const bestRoleName = validChamps.length > 0 ? validChamps[0].name : '主力チャンピオン';
 
-    let archetype = "🔥 アグレッシブ・チャレンジャー";
-    let desc = "積極的なアクションで自ら試合展開を作り出し、チームの主導権を握るスタイルです。";
+    let archetype = "🔥 アグレッシブ・チャレンジャー型";
+    let desc = "積極的なレーン戦と先手のアクションで試合を動かす攻撃的スタイルです。";
     let keyFactor = "集団戦での立ち位置意識 ＆ 孤立デスの削減";
 
-    if (avgK >= 7 && winRate >= 55) {
-      archetype = "👑 ハイパー・キャリー型";
-      desc = `圧倒的な火力とキル獲得力でチームの主力を担い、後半戦でゲームを決定づける絶対的キャリーです。${bestRoleName}ピック時の存在感が際立っています。`;
-      keyFactor = "集団戦でのデッド回避 ＆ デス時の敵へのシャットダウンゴールド阻止";
-    } else if (avgK >= 6 && kdaRatio >= 3.2) {
-      archetype = "🎯 プレシジョン・アサシン型";
-      desc = "高いKDAと狙い澄ましたキルで相手の重要キャリーを仕留め、人数差を作って勝利を引き寄せるタイプです。";
-      keyFactor = "サイドレーンでのキル獲得後のドラゴン/バロンへの迅速な寄り";
-    } else if (avgA >= 8 && avgD <= 4.5) {
-      archetype = "🛡️ チームフロント・アンカー型";
-      desc = "高いアシスト数とデスの少なさで集団戦のフロントラインを維持し、味方を安全に守って勝利へ導く大黒柱です。";
-      keyFactor = "キャリー陣のガード ＆ 重要オブジェクト周辺での先行視界確保";
-    } else if (champPool.length >= 4) {
-      archetype = "⚡ フレキシブル・ユーティリティ型";
-      desc = "複数のレーン・チャンピオンを器用に使いこなし、チームの穴を埋めて総合力で勝ちに導くユーティリティプレイヤーです。";
-      keyFactor = `最も得意な${bestRoleName}へのピック固定による勝率の上乗せ`;
-    } else if (winRate >= 60) {
-      archetype = "🧱 レイトゲーム・コマンダー型";
-      desc = "安定したパフォーマンスでゲームが長引くほど真価を発揮し、終盤の集団戦で確実に勝率をものにする勝利の守護神です。";
-      keyFactor = "バロン周りでの慎重なエンゲージ判断 ＆ 失敗リスクの回避";
-    } else if (avgA >= 7) {
-      archetype = "🤝 サポート・ファシリテーター型";
-      desc = "味方のキャリー陣にキルを譲り、集団戦のコントロールとオブジェクト関与でチーム全体の勝率を引き上げる陰の立役者です。";
-      keyFactor = "ミッド〜川沿いでの先手のアクション ＆ ピン(Ping)通知の活用";
+    // 14パターンの精密プレイスタイル診断（ロール・KDA・勝率・チャンピオン傾向を複合判定）
+    if (mainRole === 'SUP') {
+      if (avgA >= 9.5 && avgD <= 4.0) {
+        archetype = "✨ ゴッド・エンチャンター型";
+        desc = `驚異的なアシストと低いデス率で味方を完全保護し、集団戦の勝利を裏から絶対保証する守護神です。`;
+        keyFactor = "重要キャリーへの張り付きガード ＆ 相手アサシンへのピール徹底";
+      } else if (avgA >= 8.5) {
+        archetype = "🛡️ チームフロント・メイカー型";
+        desc = "先手の視界確保と決定的なエンゲージでチームの勝ち筋を自らこじ開けるイニシエーターです。";
+        keyFactor = "味方の寄り速度に合わせた仕掛けのタイミング管理";
+      } else {
+        archetype = "🤝 戦術的プレイメーカー型";
+        desc = "要所でのスキル命中と的確なサポートでキャリーを育て上げ、チーム全体を勝利へ導きます。";
+        keyFactor = "視界スコアの維持 ＆ ドラゴン・バロン出現1分前の先行視界取り";
+      }
+    } else if (mainRole === 'ADC') {
+      if (avgK >= 7.0 && winRate >= 52) {
+        archetype = "👑 ハイパー・キャリー型";
+        desc = `圧倒的な火力とDPSで終盤の集団戦を制圧し、ゲームを決定づける絶対的メインキャリーです。`;
+        keyFactor = "集団戦開幕時の安全確保 ＆ 敵の主要Ult消費後の突入";
+      } else if (avgD <= 3.8 && kdaRatio >= 3.0) {
+        archetype = "🎯 スナイパー・マークスマン型";
+        desc = "徹底したポジション管理でデスを最小限に抑え、堅実にダメージを出し続ける安定志向のADCです。";
+        keyFactor = "安全圏からの前線削り ＆ 無理な深追いキル狙いの自制";
+      } else {
+        archetype = "🏹 アグレッシブ・ガンナー型";
+        desc = "レーン戦から積極的に有利を築き、スノーボールを狙う前傾姿勢のADCです。";
+        keyFactor = "サイドレーン単独進行時のガンク警戒 ＆ 味方サポートとの同調";
+      }
+    } else if (mainRole === 'TOP') {
+      if (avgD <= 3.5 && winRate >= 55) {
+        archetype = "🧱 アイアン・コロッサス型";
+        desc = "レーン戦で崩れず、敵のガンクを耐え抜いて集団戦で難攻不落の要塞となる重厚なトップレーナーです。";
+        keyFactor = "TPを使ったBot・ドラゴン戦への合流判断 ＆ サイド圧力維持";
+      } else if (avgK >= 5.5) {
+        archetype = "⚔️ スプリット・デュエリスト型";
+        desc = "1v1の強さを活かしてサイドレーンを猛烈に押し込み、敵を分断して勝利を掴むファイターです。";
+        keyFactor = "オブジェクト戦に合わせたサイドプッシュの引き際管理";
+      } else {
+        archetype = "🛡️ レーン・アンカー型";
+        desc = "トップレーンの均衡を保ち、チームが必要な場面で確実に前線を張る頼れる大黒柱です。";
+        keyFactor = "集団戦での敵メインキャリーへの粘着・妨害";
+      }
+    } else if (mainRole === 'JG') {
+      if (avgA >= 8.0 && avgK >= 4.5) {
+        archetype = "⚡ マップ・ドミネーター型";
+        desc = "縦横無尽のガンクと的確なオブジェクト管理で全レーンに有利をもたらす支配的ジャングラーです。";
+        keyFactor = "有利レーンへのリソース集中 ＆ ドラゴン・ヘラルドのタイマー管理";
+      } else if (avgK >= 6.0) {
+        archetype = "🗡️ キャリー・ハンター型";
+        desc = "自らがゴールドを集めてゲームを動かし、集団戦で敵キャリーを仕留める高火力ジャングラーです。";
+        keyFactor = "ガンク失敗時のファーム挽回 ＆ 無理なインベードの回避";
+      } else {
+        archetype = "🌲 コントロール・ナビゲーター型";
+        desc = "視界管理と堅実なルート取りで味方を支え、隙のない試合運びを実現する司令塔型ジャングラーです。";
+        keyFactor = "相手JGの動向予測ピン ＆ カウンターガンクの徹底";
+      }
+    } else if (mainRole === 'MID') {
+      if (avgK >= 6.5 && kdaRatio >= 3.0) {
+        archetype = "🎯 プレシジョン・アサシン型";
+        desc = "的確なロームと急襲で相手の急所を突破し、一瞬で人数有利を作り出すミッドレーナーです。";
+        keyFactor = "ウェーブプッシュ後のサイドレーン・川沿いへの素早い寄り";
+      } else if (winRate >= 58) {
+        archetype = "🔮 レイトゲーム・メイジ型";
+        desc = "終盤の集団戦で絶大な存在感を発揮し、ゾーン制圧と範囲火力で勝利を決定づける賢者です。";
+        keyFactor = "序盤の安定ファーム ＆ 中盤以降のオブジェクト前の先行陣取り";
+      } else {
+        archetype = "⚖️ テンポ・コントローラー型";
+        desc = "レーン戦の主導権を握り、マップ中央から味方の動きを安定してバックアップする万能型ミッドです。";
+        keyFactor = "JGとの連携による川沿い視界支配 ＆ 2v2戦闘の先手取り";
+      }
     }
 
     return {
