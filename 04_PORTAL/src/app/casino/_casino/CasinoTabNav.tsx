@@ -10,7 +10,7 @@ export default function CasinoTabNav({ activeTab, setActiveTab }: {
 }) {
   return (
     <>
-        <div className="flex items-center justify-center gap-1.5 p-1.5 rounded-2xl bg-surface-hover/80 text-foreground-subtle max-w-xl mx-auto shadow-sm border border-border overflow-x-auto scrollbar-none">
+        <div className="flex items-center justify-center gap-1.5 p-1.5 rounded-2xl bg-surface/80 dark:bg-stone-900/90 text-foreground-subtle max-w-2xl mx-auto shadow-md border border-border/80 overflow-x-auto scrollbar-none backdrop-blur-md">
           {[
             { id: 'bet', label: '🎯 勝敗予想' },
             { id: 'slot', label: '🎰 KTMスロット' },
@@ -21,10 +21,10 @@ export default function CasinoTabNav({ activeTab, setActiveTab }: {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap text-center ${
+              className={`flex-1 py-2.5 px-3.5 rounded-xl text-xs font-black transition-all cursor-pointer whitespace-nowrap text-center ${
                 activeTab === tab.id
-                  ? 'bg-surface text-foreground shadow-sm scale-102 border border-border'
-                  : 'text-muted hover:text-foreground hover:bg-surface/50'
+                  ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-md scale-102 font-extrabold'
+                  : 'text-muted-strong hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 font-bold'
               }`}
             >
               {tab.label}

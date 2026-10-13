@@ -59,32 +59,48 @@ export default function BetTab({ user, betStats, setTipToPlayer, setIsTipModalOp
             {activeMatch ? (
               <div className="space-y-6">
                 {/* 📊 リアルタイム投票比率バー */}
-                <div className="p-4 rounded-2xl bg-surface/95 text-foreground space-y-2 border border-border shadow-sm">
+                <div className="p-4 sm:p-5 rounded-3xl bg-surface/95 dark:bg-stone-900/95 text-foreground space-y-3 border border-border shadow-md">
                   <div className="flex items-center justify-between text-xs font-black">
-                    <span className="text-primary-600 flex items-center gap-1">
-                      <span>🟦 BLUE:</span>
-                      <span className="font-mono">{betStats.blueRatio}%</span>
+                    <span className="text-primary-600 dark:text-primary-400 flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-primary-500 animate-pulse"></span>
+                      <span>BLUE:</span>
+                      <span className="font-mono text-sm">{betStats.blueRatio}%</span>
                       <span className="text-[10px] text-muted-strong font-normal">({betStats.blueAmount.toLocaleString()}pt / {betStats.blueCount}人)</span>
                     </span>
-                    <span className="text-primary-700 font-mono text-[11px] font-black">
-                      総プール: {betStats.totalAmount.toLocaleString()}pt
+
+                    {/* 形勢バッジ */}
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-black border border-primary-edge bg-primary-100 dark:bg-primary-950/60 text-primary-800 dark:text-primary-300">
+                      {betStats.blueRatio > betStats.redRatio + 15 
+                        ? '🔥 BLUE 圧倒的人気' 
+                        : betStats.redRatio > betStats.blueRatio + 15 
+                        ? '🔥 RED 圧倒的人気' 
+                        : '⚖️ 互角の白熱投票'}
                     </span>
-                    <span className="text-danger-600 flex items-center gap-1">
+
+                    <span className="text-danger-600 dark:text-danger-400 flex items-center gap-1.5">
                       <span className="text-[10px] text-muted-strong font-normal">({betStats.redAmount.toLocaleString()}pt / {betStats.redCount}人)</span>
-                      <span className="font-mono">{betStats.redRatio}%</span>
-                      <span>:RED 🟥</span>
+                      <span className="font-mono text-sm">{betStats.redRatio}%</span>
+                      <span>:RED</span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-danger-500 animate-pulse"></span>
                     </span>
                   </div>
-                  {/* プログレスバー */}
-                  <div className="w-full h-3 bg-surface-hover rounded-full overflow-hidden flex border border-border">
+
+                  {/* ネオンプログレスバー */}
+                  <div className="w-full h-3.5 bg-black/10 dark:bg-black/40 rounded-full overflow-hidden flex border border-border p-0.5 shadow-inner">
                     <div
                       style={{ width: `${betStats.blueRatio}%` }}
-                      className="h-full bg-gradient-to-r from-primary-500 to-primary-600 transition-all duration-500"
+                      className="h-full rounded-l-full bg-gradient-to-r from-primary-600 via-primary-500 to-primary-400 transition-all duration-500 shadow-[0_0_12px_rgba(59,130,246,0.5)]"
                     ></div>
                     <div
                       style={{ width: `${betStats.redRatio}%` }}
-                      className="h-full bg-gradient-to-r from-danger-400 to-danger-600 transition-all duration-500"
+                      className="h-full rounded-r-full bg-gradient-to-r from-danger-400 via-danger-500 to-danger-600 transition-all duration-500 shadow-[0_0_12px_rgba(244,63,94,0.5)]"
                     ></div>
+                  </div>
+
+                  <div className="text-center">
+                    <span className="text-[11px] text-muted-strong font-mono font-bold">
+                      総投票プール: <strong className="text-primary-700 dark:text-primary-400 font-black">{betStats.totalAmount.toLocaleString()} pt</strong> ({betStats.blueCount + betStats.redCount} 名参加中)
+                    </span>
                   </div>
                 </div>
 

@@ -35,20 +35,23 @@ export default function CasinoHero({ betStats }: {
           </Link>
 
           {/* ジャックポット金庫バナー */}
-          <div className="mt-4 inline-flex flex-col items-center justify-center gap-1.5 px-4 md:px-6 py-2.5 rounded-2xl bg-primary-100/90 border-2 border-primary-edge/60 text-primary-950 text-xs font-black text-center max-w-full shadow-sm">
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <span className="text-base animate-bounce">💎</span>
-              <span>サーバー共有ジャックポット金庫:</span>
-              <span className="text-primary-700 font-mono text-base font-black">
+          <div className="mt-4 inline-flex flex-col items-center justify-center gap-2 px-5 md:px-8 py-3.5 rounded-3xl bg-gradient-to-br from-amber-500/15 via-amber-400/25 to-amber-600/15 border-2 border-amber-500/50 text-amber-950 dark:text-amber-100 text-xs font-black text-center max-w-full shadow-lg shadow-amber-500/10 relative overflow-hidden group">
+            <div className="absolute -top-10 -right-10 w-28 h-28 bg-amber-400/20 rounded-full blur-2xl pointer-events-none group-hover:scale-125 transition-transform duration-700"></div>
+            <div className="flex flex-wrap items-center justify-center gap-2.5 relative z-10">
+              <span className="text-xl animate-bounce">💎</span>
+              <span className="tracking-wide">サーバー共有ジャックポット金庫:</span>
+              <span className="text-amber-700 dark:text-amber-300 font-mono text-lg md:text-xl font-black drop-shadow-xs">
                 {betStats.jackpot ? `${betStats.jackpot.amount.toLocaleString()} コイン` : '—'}
               </span>
-              <span className="text-[10px] text-primary-800 font-bold bg-primary-500/20 px-2 py-0.5 rounded-full border border-primary-edge-strong/30">
+              <span className="text-[10px] text-amber-900 dark:text-amber-200 font-bold bg-amber-500/25 px-2.5 py-0.5 rounded-full border border-amber-500/40 shadow-xs animate-pulse">
                 🔥 ペンタキルで総取り！
               </span>
             </div>
             {betStats.jackpot?.lastWinner && (
-              <div className="text-[10px] text-muted font-medium">
-                👑 直近の総取り当選者: <strong className="text-primary-700">{betStats.jackpot.lastWinner}</strong> さん（+{betStats.jackpot.lastPayout.toLocaleString()}🪙）
+              <div className="text-[10px] text-muted-strong font-medium relative z-10 flex items-center gap-1">
+                <span>👑 直近の総取り当選者:</span>
+                <strong className="text-amber-700 dark:text-amber-300 font-black">{betStats.jackpot.lastWinner}</strong>
+                <span>（+{betStats.jackpot.lastPayout.toLocaleString()}🪙）</span>
               </div>
             )}
           </div>
