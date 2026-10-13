@@ -539,15 +539,21 @@ function LeaderboardContent() {
                           <Link
                             key={player.name + idx}
                             href={`/player/${encodeURIComponent(player.name)}`}
-                            className={`p-3 flex items-center justify-between gap-2 hover:bg-primary-50/40 transition group ${
-                              idx === 0 ? 'bg-primary-50/30' : ''
+                            className={`p-3 flex items-center justify-between gap-2 transition group ${
+                              idx === 0 
+                                ? 'bg-amber-500/10 hover:bg-amber-500/15 border-l-2 border-l-amber-500' 
+                                : idx === 1 
+                                ? 'bg-slate-500/10 hover:bg-slate-500/15 border-l-2 border-l-slate-400' 
+                                : idx === 2 
+                                ? 'bg-amber-700/10 hover:bg-amber-700/15 border-l-2 border-l-amber-700' 
+                                : 'hover:bg-primary-50/40 dark:hover:bg-white/5'
                             }`}
                           >
                             <div className="flex items-center gap-2.5 min-w-0">
                               <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${
-                                idx === 0 ? 'bg-primary-500 text-white shadow-xs' :
-                                idx === 1 ? 'bg-stone-400 text-white' :
-                                idx === 2 ? 'bg-primary-700 text-white' : 'bg-surface-subtle text-muted border border-border'
+                                idx === 0 ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-stone-950 shadow-xs' :
+                                idx === 1 ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-stone-900 shadow-xs' :
+                                idx === 2 ? 'bg-gradient-to-br from-amber-600 to-amber-800 text-white shadow-xs' : 'bg-surface-subtle text-muted border border-border'
                               }`}>
                                 {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}
                               </span>
@@ -556,8 +562,8 @@ function LeaderboardContent() {
                                   {player.name}
                                 </div>
                                 <div className="text-[10px] text-muted-strong font-medium flex items-center gap-1.5">
-                                  <span>{player.games}戦</span>
-                                  <span className={`font-bold ${
+                                  <span className="font-mono">{player.games}戦</span>
+                                  <span className={`font-bold font-mono ${
                                     winRateNum >= 60 ? 'text-success-600' : winRateNum <= 40 ? 'text-danger-600' : 'text-muted'
                                   }`}>
                                     {player.winRate}%
@@ -567,10 +573,10 @@ function LeaderboardContent() {
                             </div>
 
                             <div className="text-right shrink-0">
-                              <div className="text-xs sm:text-sm font-black font-mono text-primary-800">
+                              <div className="text-xs sm:text-sm font-black font-mono text-primary-800 dark:text-primary-400">
                                 {player.mmr}
                               </div>
-                              <div className="text-[9px] font-bold text-faint">
+                              <div className="inline-block px-1.5 py-0.5 rounded text-[9px] font-mono font-black border border-primary-edge-soft/60 bg-primary-100/60 dark:bg-primary-950/40 text-primary-900 dark:text-primary-300">
                                 {player.rankBadge?.name || 'UNRANKED'}
                               </div>
                             </div>

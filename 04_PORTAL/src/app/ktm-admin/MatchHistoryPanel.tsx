@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { toast } from '../../components/Toaster';
 import { History, Swords, Trophy, Calendar, RefreshCw, Edit, Trash2, Search, AlertCircle, X, Target, GripVertical } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { getChampIcon } from '../../lib/ddragonClient';
 import type { MmrBreakdown } from '../../lib/mmr';
 
@@ -90,6 +91,9 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
   const [champSearchQuery, setChampSearchQuery] = useState('');
   const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [playerFilter, setPlayerFilter] = useState('');
+  // アコーディオン開閉状態（デフォルトで直近3試合を展開）
+  const [expandedMatchIds, setExpandedMatchIds] = useState<Set<string>>(new Set());
 
   const fetchMatches = async () => {
     try {
@@ -98,10 +102,32 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
       if (!res.ok) throw new Error(data.error || '取得に失敗しました');
 
       setMatches(data.matches);
+      // 直近3試合をデフォルトで展開
+      if (data.matches && data.matches.length > 0) {
+        const top3Ids = data.matches.slice(0, 3).map((m: Match) => m.id);
+        setExpandedMatchIds(new Set(top3Ids));
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const toggleAccordion = (id: string) => {
+    setExpandedMatchIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAllAccordions = (expand: boolean) => {
+    if (expand) {
+      setExpandedMatchIds(new Set(matches.map(m => m.id)));
+    } else {
+      setExpandedMatchIds(new Set());
     }
   };
 
@@ -291,8 +317,57 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
         </div>
       )}
 
-      <div className="space-y-6">
-        {matches.map(match => {
+      {/* 検索・アコーディオン一括開閉コントロールバー */}
+      <div className="bg-surface/80 backdrop-blur-md border border-border/80 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2 flex-1 max-w-md">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={playerFilter}
+              onChange={(e) => setPlayerFilter(e.target.value)}
+              placeholder="参加プレイヤー名で試合を検索..."
+              className="w-full bg-background border border-border rounded-xl pl-9 pr-8 py-2 text-xs font-bold text-foreground placeholder:text-faint focus:outline-none focus:border-primary-edge-strong transition"
+            />
+            {playerFilter && (
+              <button
+                type="button"
+                onClick={() => setPlayerFilter('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-faint hover:text-foreground text-xs p-0.5"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 self-end sm:self-auto text-xs">
+          <button
+            type="button"
+            onClick={() => toggleAllAccordions(true)}
+            className="px-3 py-1.5 rounded-xl bg-surface-subtle hover:bg-surface-hover border border-border font-bold text-foreground-subtle transition cursor-pointer"
+          >
+            すべて展開
+          </button>
+          <button
+            type="button"
+            onClick={() => toggleAllAccordions(false)}
+            className="px-3 py-1.5 rounded-xl bg-surface-subtle hover:bg-surface-hover border border-border font-bold text-foreground-subtle transition cursor-pointer"
+          >
+            すべて畳む
+          </button>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {matches
+          .filter(match => {
+            if (!playerFilter.trim()) return true;
+            const q = playerFilter.trim().toLowerCase();
+            return match.participants.some(p => p.player_name.toLowerCase().includes(q));
+          })
+          .map(match => {
+          const isExpanded = expandedMatchIds.has(match.id);
           const blueTeam = match.participants.filter(p => p.team === 'BLUE');
           const redTeam = match.participants.filter(p => p.team === 'RED');
 
@@ -301,139 +376,190 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
           const blueSorted = sortByRole(blueTeam);
           const redSorted = sortByRole(redTeam);
 
+          // チーム合計キル
+          const blueKills = blueTeam.reduce((sum, p) => sum + (p.kills || 0), 0);
+          const redKills = redTeam.reduce((sum, p) => sum + (p.kills || 0), 0);
+
           const dateObj = new Date(match.created_at);
           const dateStr = `${dateObj.getFullYear()}/${String(dateObj.getMonth()+1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')} ${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
 
           return (
-            <div key={match.id} className="bg-surface border border-border rounded-xl overflow-hidden shadow-xl">
-              {/* Header */}
-              <div className={`p-4 flex items-center justify-between border-b ${
-                match.winning_team === 'BLUE' ? 'bg-secondary-900/20 border-secondary-edge-strong/50' : 'bg-danger-900/20 border-danger-edge-strong/50'
-              }`}>
+            <div key={match.id} className="bg-surface border border-border rounded-2xl overflow-hidden shadow-md transition-all">
+              {/* Header (タップで開閉可能なアコーディオンヘッダー) */}
+              <div 
+                onClick={() => toggleAccordion(match.id)}
+                className={`p-3.5 sm:p-4 flex items-center justify-between border-b cursor-pointer transition select-none ${
+                  match.winning_team === 'BLUE' 
+                    ? 'bg-secondary-950/20 hover:bg-secondary-950/30 border-secondary-edge-strong/30' 
+                    : 'bg-danger-950/20 hover:bg-danger-950/30 border-danger-edge-strong/30'
+                }`}
+              >
                 <div className="flex items-center gap-3">
-                  <Trophy className={`h-5 w-5 ${match.winning_team === 'BLUE' ? 'text-secondary-400' : 'text-danger-400'}`} />
-                  <span className={`font-black tracking-wider text-lg ${match.winning_team === 'BLUE' ? 'text-secondary-400' : 'text-danger-400'}`}>
-                    {match.winning_team} WIN
-                  </span>
-                </div>
-                <div className="flex items-center gap-4 text-faint text-sm font-bold">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    {dateStr}
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black shrink-0 ${
+                    match.winning_team === 'BLUE' ? 'bg-secondary-500/20 text-secondary-400' : 'bg-danger-500/20 text-danger-400'
+                  }`}>
+                    <Trophy className="h-4 w-4" />
                   </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`font-black tracking-wider text-base sm:text-lg ${
+                      match.winning_team === 'BLUE' ? 'text-secondary-400' : 'text-danger-400'
+                    }`}>
+                      {match.winning_team} WIN
+                    </span>
+                    <span className="text-xs font-mono font-bold text-faint px-2 py-0.5 rounded-md bg-black/20">
+                      Score: <span className="text-secondary-400">{blueKills}</span> - <span className="text-danger-400">{redKills}</span>
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 sm:gap-4 text-faint text-xs font-bold shrink-0">
+                  <div className="flex items-center gap-1.5 font-mono">
+                    <Calendar className="h-3.5 w-3.5" />
+                    <span>{dateStr}</span>
+                  </div>
+
                   {isAdmin && (
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => setEditingMatch(JSON.parse(JSON.stringify(match)))}
-                        className="p-1.5 bg-black/5 hover:bg-black/8 border border-border text-primary-700 hover:text-foreground rounded transition cursor-pointer"
+                        className="p-1.5 bg-black/10 hover:bg-black/20 border border-border text-primary-600 rounded-lg transition cursor-pointer"
                         title="試合履歴を編集"
                       >
-                        <Edit className="h-4 w-4" />
+                        <Edit className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => handleDeleteMatch(match.id)}
-                        className="p-1.5 bg-black/5 hover:bg-danger-100 border border-border text-danger-700 hover:text-foreground rounded transition cursor-pointer"
+                        className="p-1.5 bg-black/10 hover:bg-danger-100 border border-border text-danger-600 rounded-lg transition cursor-pointer"
                         title="試合履歴を削除"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   )}
+
+                  {/* 開閉インジケーター */}
+                  <span className="text-xs text-muted-strong font-mono px-2 py-1 rounded-lg bg-black/10">
+                    {isExpanded ? '▲ 閉じる' : '▼ 詳細'}
+                  </span>
                 </div>
               </div>
 
-              {/* Body */}
-              <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-border">
-                {/* BLUE TEAM */}
-                <div className="flex-1 p-4 bg-black/3">
-                  <div className="space-y-3">
-                    {blueSorted.map(p => (
-                      <div key={p.player_name} className="flex items-center gap-3 bg-surface/70 p-2.5 rounded-xl border border-border/50 hover:bg-black/5 transition">
-                        <div className="w-8 text-center text-xs font-black text-muted-strong flex-shrink-0">{p.role}</div>
-                        {p.champion_name ? (
-                          <Image
-                            src={getChampIcon(p.champion_name)}
-                            alt={p.champion_name}
-                            width={40}
-                            height={40}
-                            className="w-10 h-10 rounded-full border border-border flex-shrink-0 object-cover shadow-2xs"
-                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-black/5 flex-shrink-0 border border-border flex items-center justify-center text-[10px] text-muted-strong">?</div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="font-black text-foreground truncate text-sm">{p.player_name}</div>
-                          <div className="text-xs font-bold text-muted-strong mt-0.5">
-                            {p.champion_name || 'Champion'}
+              {/* Body (アコーディオン展開時のみ描画) */}
+              {isExpanded && (
+                <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-border animate-fade-in">
+                  {/* BLUE TEAM */}
+                  <div className={`flex-1 p-3 sm:p-4 ${match.winning_team === 'BLUE' ? 'bg-secondary-950/5' : 'bg-black/2'}`}>
+                    <div className="flex items-center justify-between mb-3 px-1">
+                      <span className="text-xs font-black text-secondary-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-secondary-500"></span>
+                        BLUE チーム {match.winning_team === 'BLUE' && '👑 勝利'}
+                      </span>
+                      <span className="text-xs font-mono font-bold text-muted">
+                        計 {blueKills} キル
+                      </span>
+                    </div>
+                    <div className="space-y-2.5">
+                      {blueSorted.map(p => (
+                        <div key={p.player_name} className="flex items-center gap-2.5 bg-surface/80 p-2 sm:p-2.5 rounded-xl border border-border/60 hover:bg-black/5 transition">
+                          <div className="w-8 text-center text-[11px] font-black text-muted-strong flex-shrink-0">{p.role}</div>
+                          {p.champion_name ? (
+                            <Image
+                              src={getChampIcon(p.champion_name)}
+                              alt={p.champion_name}
+                              width={36}
+                              height={36}
+                              className="w-9 h-9 rounded-full border border-border flex-shrink-0 object-cover shadow-2xs"
+                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            />
+                          ) : (
+                            <div className="w-9 h-9 rounded-full bg-black/5 flex-shrink-0 border border-border flex items-center justify-center text-[10px] text-muted-strong">?</div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <Link href={`/player/${encodeURIComponent(p.player_name)}`} className="font-black text-foreground truncate text-xs sm:text-sm hover:underline hover:text-primary-600 block">
+                              {p.player_name}
+                            </Link>
+                            <div className="text-[10px] font-bold text-muted-strong">
+                              {p.champion_name || 'Champion'}
+                            </div>
                           </div>
-                        </div>
-                        
-                        <div className="flex flex-col items-end justify-center flex-shrink-0">
-                          <div className="text-xs font-bold text-foreground-subtle">
-                            {p.kills} / <span className="text-danger-700">{p.deaths}</span> / {p.assists}
+                          
+                          <div className="flex flex-col items-end justify-center flex-shrink-0">
+                            <div className="text-xs font-bold text-foreground-subtle font-mono">
+                              {p.kills} / <span className="text-danger-700">{p.deaths}</span> / {p.assists}
+                            </div>
+                            <div className="text-[10px] font-mono text-faint">
+                              KDA {p.kda_score ? p.kda_score.toFixed(2) : ((p.kills + p.assists) / Math.max(1, p.deaths)).toFixed(2)}
+                            </div>
                           </div>
-                          <div className="text-[10px] font-mono text-faint">
-                            KDA {p.kda_score ? p.kda_score.toFixed(2) : ((p.kills + p.assists) / Math.max(1, p.deaths)).toFixed(2)}
-                          </div>
-                        </div>
 
-                        <div
-                          title={formatMmrBreakdown(p.mmr_breakdown, p.mmr_delta)}
-                          className={`w-14 text-right font-black text-sm flex-shrink-0 cursor-help ${p.mmr_delta > 0 ? 'text-success-700' : p.mmr_delta < 0 ? 'text-danger-700' : 'text-muted-strong'}`}
-                        >
-                          {p.mmr_delta > 0 ? '+' : ''}{p.mmr_delta}
+                          <div
+                            title={formatMmrBreakdown(p.mmr_breakdown, p.mmr_delta)}
+                            className={`w-12 text-right font-black font-mono text-xs sm:text-sm flex-shrink-0 cursor-help ${p.mmr_delta > 0 ? 'text-success-700' : p.mmr_delta < 0 ? 'text-danger-700' : 'text-muted-strong'}`}
+                          >
+                            {p.mmr_delta > 0 ? '+' : ''}{p.mmr_delta}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* RED TEAM */}
+                  <div className={`flex-1 p-3 sm:p-4 ${match.winning_team === 'RED' ? 'bg-danger-950/5' : 'bg-black/2'}`}>
+                    <div className="flex items-center justify-between mb-3 px-1">
+                      <span className="text-xs font-black text-danger-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-danger-500"></span>
+                        RED チーム {match.winning_team === 'RED' && '👑 勝利'}
+                      </span>
+                      <span className="text-xs font-mono font-bold text-muted">
+                        計 {redKills} キル
+                      </span>
+                    </div>
+                    <div className="space-y-2.5">
+                      {redSorted.map(p => (
+                        <div key={p.player_name} className="flex items-center gap-2.5 bg-surface/80 p-2 sm:p-2.5 rounded-xl border border-border/60 hover:bg-black/5 transition">
+                          <div className="w-8 text-center text-[11px] font-black text-muted-strong flex-shrink-0">{p.role}</div>
+                          {p.champion_name ? (
+                            <Image
+                              src={getChampIcon(p.champion_name)}
+                              alt={p.champion_name}
+                              width={36}
+                              height={36}
+                              className="w-9 h-9 rounded-full border border-border flex-shrink-0 object-cover shadow-2xs"
+                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            />
+                          ) : (
+                            <div className="w-9 h-9 rounded-full bg-black/5 flex-shrink-0 border border-border flex items-center justify-center text-[10px] text-muted-strong">?</div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <Link href={`/player/${encodeURIComponent(p.player_name)}`} className="font-black text-foreground truncate text-xs sm:text-sm hover:underline hover:text-primary-600 block">
+                              {p.player_name}
+                            </Link>
+                            <div className="text-[10px] font-bold text-muted-strong">
+                              {p.champion_name || 'Champion'}
+                            </div>
+                          </div>
+                          
+                          <div className="flex flex-col items-end justify-center flex-shrink-0">
+                            <div className="text-xs font-bold text-foreground-subtle font-mono">
+                              {p.kills} / <span className="text-danger-700">{p.deaths}</span> / {p.assists}
+                            </div>
+                            <div className="text-[10px] font-mono text-faint">
+                              KDA {p.kda_score ? p.kda_score.toFixed(2) : ((p.kills + p.assists) / Math.max(1, p.deaths)).toFixed(2)}
+                            </div>
+                          </div>
+
+                          <div
+                            title={formatMmrBreakdown(p.mmr_breakdown, p.mmr_delta)}
+                            className={`w-12 text-right font-black font-mono text-xs sm:text-sm flex-shrink-0 cursor-help ${p.mmr_delta > 0 ? 'text-success-700' : p.mmr_delta < 0 ? 'text-danger-700' : 'text-muted-strong'}`}
+                          >
+                            {p.mmr_delta > 0 ? '+' : ''}{p.mmr_delta}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-
-                {/* RED TEAM */}
-                <div className="flex-1 p-4 bg-black/3">
-                  <div className="space-y-3">
-                    {redSorted.map(p => (
-                      <div key={p.player_name} className="flex items-center gap-3 bg-surface/70 p-2.5 rounded-xl border border-border/50 hover:bg-black/5 transition">
-                        <div className="w-8 text-center text-xs font-black text-muted-strong flex-shrink-0">{p.role}</div>
-                        {p.champion_name ? (
-                          <Image
-                            src={getChampIcon(p.champion_name)}
-                            alt={p.champion_name}
-                            width={40}
-                            height={40}
-                            className="w-10 h-10 rounded-full border border-border flex-shrink-0 object-cover shadow-2xs"
-                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-black/5 flex-shrink-0 border border-border flex items-center justify-center text-[10px] text-muted-strong">?</div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="font-black text-foreground truncate text-sm">{p.player_name}</div>
-                          <div className="text-xs font-bold text-muted-strong mt-0.5">
-                            {p.champion_name || 'Champion'}
-                          </div>
-                        </div>
-                        
-                        <div className="flex flex-col items-end justify-center flex-shrink-0">
-                          <div className="text-xs font-bold text-foreground-subtle">
-                            {p.kills} / <span className="text-danger-700">{p.deaths}</span> / {p.assists}
-                          </div>
-                          <div className="text-[10px] font-mono text-faint">
-                            KDA {p.kda_score ? p.kda_score.toFixed(2) : ((p.kills + p.assists) / Math.max(1, p.deaths)).toFixed(2)}
-                          </div>
-                        </div>
-
-                        <div
-                          title={formatMmrBreakdown(p.mmr_breakdown, p.mmr_delta)}
-                          className={`w-14 text-right font-black text-sm flex-shrink-0 cursor-help ${p.mmr_delta > 0 ? 'text-success-700' : p.mmr_delta < 0 ? 'text-danger-700' : 'text-muted-strong'}`}
-                        >
-                          {p.mmr_delta > 0 ? '+' : ''}{p.mmr_delta}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
           );
         })}
