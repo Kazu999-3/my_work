@@ -48,6 +48,7 @@
 - **[JG意思決定ツリー ＆ ダウンテンポ哲学（天狐ハク監修・4択ツリーとガンク3条件）](file:///D:/my_work/01_INTEL/concepts/jg_macro_decision_tree.md)**
 - **[Linear Jungle Tech（raaaaaq/Tarzaned・4キャンプ同期循環と先行リコール）](file:///D:/my_work/01_INTEL/concepts/jg_linear_jungle_tech.md)**
 - **[10,000試合実証：対面JG相対指標と勝率相関（FORESTER・15分74%勝利ボーダー）](file:///D:/my_work/01_INTEL/concepts/jg_relative_advantage_metrics.md)**
+- **[テンポの本質とフルクリア法則（ほけんじじ5要素 × FORESTER Lv9境界線・3.7万試合実証）](file:///D:/my_work/01_INTEL/concepts/jg_tempo_and_clearing_law.md)**
 
 ## 📚 1. LoL 戦略 ＆ 攻略バイブル (Intel Domain)
 動画解析やプロ追跡から得られた最新の LoL メタ・攻略知識です。

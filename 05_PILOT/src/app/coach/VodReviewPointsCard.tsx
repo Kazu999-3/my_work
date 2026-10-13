@@ -73,12 +73,20 @@ export default function VodReviewPointsCard({ points }: VodReviewPointsCardProps
                     className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
                       isGood
                         ? 'bg-emerald-900/40 text-emerald-300 border-emerald-700'
+                        : p.type === 'FARM_LOSS_GANK'
+                        ? 'bg-amber-950/60 text-amber-300 border-amber-600'
                         : isHigh
                         ? 'bg-rose-900/40 text-rose-300 border-rose-700'
                         : 'bg-amber-900/40 text-amber-300 border-amber-700'
                     }`}
                   >
-                    {isGood ? '好テンポ' : isHigh ? '要重点検証' : '注意'}
+                    {isGood
+                      ? '好テンポ'
+                      : p.type === 'FARM_LOSS_GANK'
+                      ? 'Lv9境界ファームロス'
+                      : isHigh
+                      ? '要重点検証'
+                      : '注意'}
                   </span>
 
                   <h5 className="text-xs font-bold text-stone-100">{p.title}</h5>

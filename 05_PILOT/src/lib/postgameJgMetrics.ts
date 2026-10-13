@@ -60,11 +60,38 @@ export interface JgRelativeSnapshot {
   };
 }
 
+export interface JgBenchmark {
+  firstClearTimeSec: number | null; // 1周目フルクリア完了秒（例: 205秒 = 3:25）
+  firstClearTimeStr: string | null;
+  firstClearGrade: 'S' | 'A' | 'SLOW' | null;
+  firstClearTargetStr: string; // "3:15〜3:30 (プロ/OTP基準)"
+  tenMinCsTarget: {
+    actual: number;
+    target: number; // 72 CS (FORESTER 10分0/0/0 勝率50.9%維持ライン)
+    ratioPercent: number; // actual / target * 100
+    isMaintained: boolean; // actual >= 72
+  };
+  tenMinGoldBorder: {
+    diff: number;
+    tier: 'SUPER_DOMINANT' | 'DOMINANT' | 'LEAD' | 'SLIGHT_LEAD' | 'EVEN' | 'BEHIND';
+    expectedWinRate: string; // "72.01%" etc
+    title: string;
+    description: string;
+  };
+  farmComebackLead: {
+    enemyEarlyKpLead: boolean; // 敵が先にK+A獲得
+    myCsDiff: number;
+    comebackAchieved: boolean; // CS差 +11以上 (勝率53.0%)
+    highComebackAchieved: boolean; // CS差 +21以上 (勝率65.2%)
+    message: string | null;
+  };
+}
+
 export interface VodReviewPoint {
   id: string;
   timestampMs: number;
   timeStr: string;
-  type: 'OBJECTIVE_DEATH' | 'KILL_TO_OBJECTIVE' | 'RAPID_DEATH' | 'HEAVY_GOLD_SWING';
+  type: 'OBJECTIVE_DEATH' | 'KILL_TO_OBJECTIVE' | 'RAPID_DEATH' | 'HEAVY_GOLD_SWING' | 'FARM_LOSS_GANK';
   importance: 'HIGH' | 'MEDIUM' | 'GOOD';
   title: string;
   description: string;
@@ -78,6 +105,7 @@ export interface PostgameJgAnalysisReport {
   tenMinSnapshot: JgRelativeSnapshot | null;
   fifteenMinSnapshot: JgRelativeSnapshot | null;
   history15m: JgMinuteSnapshot[];
+  benchmark: JgBenchmark | null;
   vodReviewPoints: VodReviewPoint[];
 }
 
@@ -117,6 +145,7 @@ export function analyzePostgameJgMetrics(
       tenMinSnapshot: null,
       fifteenMinSnapshot: null,
       history15m: [],
+      benchmark: null,
       vodReviewPoints: [],
     };
   }
@@ -385,6 +414,164 @@ export function analyzePostgameJgMetrics(
     }
   }
 
+  // 3. プロ・OTP直接比較 ＆ 10分ベンチマーク算出
+  const skillLevelUps = allEvents.filter(
+    (ev) => ev.type === 'SKILL_LEVEL_UP' && ev.participantId === myPIdx,
+  );
+  // 4回目 = Lv4到達（1周目フルクリアの指標）
+  const level4Ev = skillLevelUps[3];
+  let firstClearTimeSec: number | null = null;
+  let firstClearTimeStr: string | null = null;
+  let firstClearGrade: 'S' | 'A' | 'SLOW' | null = null;
+
+  if (level4Ev && level4Ev.timestamp <= 300_000) {
+    firstClearTimeSec = Math.floor(level4Ev.timestamp / 1000);
+    firstClearTimeStr = fmtMs(level4Ev.timestamp);
+    if (firstClearTimeSec <= 205) {
+      firstClearGrade = 'S'; // 3:25以内
+    } else if (firstClearTimeSec <= 215) {
+      firstClearGrade = 'A'; // 3:35以内（スカトル3:30に間に合う）
+    } else {
+      firstClearGrade = 'SLOW'; // 3:35超
+    }
+  }
+
+  // 10分ファーム目標 (72〜80CS = FORESTER 10分0/0/0 勝率50.9%維持)
+  const tenCs = tenMinSnapshot?.me.cs || 0;
+  const tenMinCsTarget = {
+    actual: tenCs,
+    target: 72,
+    ratioPercent: Math.round((tenCs / 72) * 100),
+    isMaintained: tenCs >= 72,
+  };
+
+  // 10分ゴールド格差ボーダー (FORESTER 3.7万試合データ)
+  const goldDiff10 = tenMinSnapshot?.diff.goldDiff || 0;
+  let gTier: JgBenchmark['tenMinGoldBorder']['tier'] = 'EVEN';
+  let gExpectedWinRate = '51.85%';
+  let gTitle = 'ゴールド均衡（ほぼ五分）';
+  let gDescription = '200G未満の差は統計上ほぼ五分(51.85%)です。焦る必要はありません。';
+
+  if (goldDiff10 >= 1000) {
+    gTier = 'SUPER_DOMINANT';
+    gExpectedWinRate = '72.01%';
+    gTitle = '勝率72.01% 最高勝利ボーダー';
+    gDescription = '10分時点で+1,000G以上の圧倒的リード。3.7万試合実証で勝率72%を超える支配的状況です。';
+  } else if (goldDiff10 >= 600) {
+    gTier = 'DOMINANT';
+    gExpectedWinRate = '63.53%';
+    gTitle = '勝率63.53% 主導権掌握ゾーン';
+    gDescription = '10分時点で+600G以上のリード。装備先行によりドラゴン・交戦権を握っています。';
+  } else if (goldDiff10 >= 400) {
+    gTier = 'LEAD';
+    gExpectedWinRate = '59.17%';
+    gTitle = '勝率59.17% 安定リード';
+    gDescription = 'キル1個分(+400G)の差を構築。手堅い進行です。';
+  } else if (goldDiff10 >= 200) {
+    gTier = 'SLIGHT_LEAD';
+    gExpectedWinRate = '54.99%';
+    gTitle = '勝率54.99% わずかなリード';
+    gDescription = 'わずかにリードしていますが、1回の交戦で逆転されうる僅差です。';
+  } else if (goldDiff10 <= -1000) {
+    gTier = 'BEHIND';
+    gExpectedWinRate = '27.99%';
+    gTitle = '勝率27.99% 重度ビハインド';
+    gDescription = '敵JGに1,000G以上のリードを許しています。無理なファイトを避け、味方の受けに回りましょう。';
+  } else if (goldDiff10 < -200) {
+    gTier = 'BEHIND';
+    gExpectedWinRate = '40.83%';
+    gTitle = 'ゴールド劣勢';
+    gDescription = '敵JGがゴールド先行しています。カウンタージャングル警戒と確実な自陣ファームが必要です。';
+  }
+
+  // 敵先行K+A時のファーム逆転判定
+  const enemyKp10 = tenMinSnapshot?.enemy.kp || 0;
+  const myKp10 = tenMinSnapshot?.me.kp || 0;
+  const csDiff10 = tenMinSnapshot?.diff.csDiff || 0;
+  const enemyEarlyKpLead = enemyKp10 > myKp10;
+  let comebackAchieved = false;
+  let highComebackAchieved = false;
+  let comebackMessage: string | null = null;
+
+  if (enemyEarlyKpLead) {
+    if (csDiff10 >= 21) {
+      comebackAchieved = true;
+      highComebackAchieved = true;
+      comebackMessage = '【勝率65.2%逆転ゾーン達成】敵JGがキル先行しましたが、死なずに+21CS以上の差を広げて大幅逆転に成功しました！';
+    } else if (csDiff10 >= 11) {
+      comebackAchieved = true;
+      comebackMessage = '【勝率53.0%逆転ゾーン達成】敵のキル有利を、自陣のファームリード(+11CS以上)で跳ね返しました。';
+    } else if (csDiff10 >= 0) {
+      comebackMessage = '敵のキル先行に対しファームで追従していますが、キル有利を覆すには+11CS以上の差が必要です。';
+    } else {
+      comebackMessage = '敵JGにキルもファームも先行されています。まずはデスせず自陣キャンプを回し切りましょう。';
+    }
+  }
+
+  const benchmark: JgBenchmark = {
+    firstClearTimeSec,
+    firstClearTimeStr,
+    firstClearGrade,
+    firstClearTargetStr: '3:15〜3:30 (プロ/OTP基準)',
+    tenMinCsTarget,
+    tenMinGoldBorder: {
+      diff: goldDiff10,
+      tier: gTier,
+      expectedWinRate: gExpectedWinRate,
+      title: gTitle,
+      description: gDescription,
+    },
+    farmComebackLead: {
+      enemyEarlyKpLead,
+      myCsDiff: csDiff10,
+      comebackAchieved,
+      highComebackAchieved,
+      message: comebackMessage,
+    },
+  };
+
+  // (4) Lv9未満キル後のファームロス・XP損失検証（FORESTER Lv9境界線モデル）
+  const level9Ev = skillLevelUps[8];
+  const lv9CutoffMs = level9Ev ? level9Ev.timestamp : 540_000; // Lv9未満 (最大9分)
+
+  const getCsAtMs = (ms: number, pId: number) => {
+    const m = Math.min(Math.max(0, Math.floor(ms / 60_000)), frames.length - 1);
+    const pf = frames[m]?.participantFrames?.[String(pId)];
+    return (pf?.minionsKilled || 0) + (pf?.jungleMinionsKilled || 0);
+  };
+
+  for (const kEv of championKillEvents) {
+    if (kEv.timestamp < lv9CutoffMs) {
+      const isMyInvolvement =
+        kEv.killerId === myPIdx ||
+        (kEv.assistingParticipantIds && kEv.assistingParticipantIds.includes(myPIdx));
+      if (isMyInvolvement) {
+        const myCsNow = getCsAtMs(kEv.timestamp, myPIdx);
+        const myCsNext = getCsAtMs(kEv.timestamp + 60_000, myPIdx);
+        const enemyCsNow = getCsAtMs(kEv.timestamp, enemyPIdx);
+        const enemyCsNext = getCsAtMs(kEv.timestamp + 60_000, enemyPIdx);
+
+        const myGained = myCsNext - myCsNow;
+        const enemyGained = enemyCsNext - enemyCsNow;
+
+        // 自分のCSが1以下かつ敵が4以上（1キャンプ以上）ファーム
+        if (myGained <= 1 && enemyGained >= 4) {
+          const kLv = skillLevelUps.filter((ev) => ev.timestamp <= kEv.timestamp).length + 1;
+          vodReviewPoints.push({
+            id: `farm-loss-${kEv.timestamp}`,
+            timestampMs: kEv.timestamp,
+            timeStr: fmtMs(kEv.timestamp),
+            type: 'FARM_LOSS_GANK',
+            importance: 'HIGH',
+            title: `Lv${kLv} キル成功後のファームロス（XP逆転リスク）`,
+            description: `キルに関与（+300G）しましたが、Lv9未満のためデスタイマーが短くウェーブを焼き切れませんでした。その間に対面JGがキャンプを回り続け(+${enemyGained}CS)、XPで差を詰められた・逆転された可能性があります。`,
+            vodTip: `VODで「キル後に敵タワーへウェーブを押し込む余地があったか」「無理にガンクせずフルクリアを先行すべきだったか」を確認してください。`,
+          });
+        }
+      }
+    }
+  }
+
   // 時間順にソート＆重複排除
   vodReviewPoints.sort((a, b) => a.timestampMs - b.timestampMs);
 
@@ -395,6 +582,7 @@ export function analyzePostgameJgMetrics(
     tenMinSnapshot,
     fifteenMinSnapshot,
     history15m,
+    benchmark,
     vodReviewPoints,
   };
 }

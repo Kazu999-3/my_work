@@ -271,6 +271,18 @@ class ToastAlertWidget(QWidget):
                 "text": f"{item_name} ({price}G) 帰城推奨",
             })
 
+        # 6. ⏱️ 天狐ハク×ほけんじじ ダウンテンポ＆リコール警報 (60s前/45s前)
+        downtempo = state.get("downtempo_alerts", [])
+        for dt in downtempo:
+            is_limit = dt.get("type") == "RECALL_LIMIT"
+            # ダウンテンポ警報は最重要のため最前面に挿入
+            events.insert(0, {
+                "type": "downtempo",
+                "badge": "⚠️ リコール限界" if is_limit else "⏱️ ダウンテンポ",
+                "badge_bg": "rgba(225, 29, 72, 0.90)" if is_limit else "rgba(217, 119, 6, 0.90)",
+                "text": dt.get("message", ""),
+            })
+
         if not events:
             self.hide()
             return

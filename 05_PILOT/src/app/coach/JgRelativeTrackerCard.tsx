@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { getChampIcon } from '@/lib/ddragonClient';
-import { Swords, Trophy, AlertTriangle, ShieldCheck, Flame, ChevronRight, Activity } from 'lucide-react';
+import { Swords, Trophy, AlertTriangle, ShieldCheck, Flame, ChevronRight, Activity, Timer, Target, Sparkles, TrendingUp } from 'lucide-react';
 import type { PostgameJgAnalysisReport } from '@/lib/postgameJgMetrics';
 
 interface JgRelativeTrackerCardProps {
@@ -248,6 +248,129 @@ export default function JgRelativeTrackerCard({ report }: JgRelativeTrackerCardP
               );
             })}
           </div>
+        </div>
+      )}
+      {/* プロ・OTP基準 10分ベンチマーク直接比較（raaaaaq氏 × FORESTER 3.7万試合モデル） */}
+      {report.benchmark && (
+        <div className="pt-3 border-t border-stone-800/80 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <h5 className="text-xs font-black text-stone-100 uppercase tracking-wider">
+                プロ・OTP基準 序盤ベンチマーク（raaaaaq × FORESTER 3.7万試合）
+              </h5>
+            </div>
+            <span className="text-[10px] text-stone-400">黄金タイムラインとの直接比較</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {/* 1. 1周目フルクリア完了タイム */}
+            <div className="p-3.5 rounded-xl bg-stone-950/70 border border-stone-800/80 space-y-2">
+              <div className="flex items-center justify-between text-stone-400">
+                <span className="text-xs font-bold flex items-center gap-1.5 text-stone-300">
+                  <Timer className="w-3.5 h-3.5 text-cyan-400" /> 1周目フルクリア (Lv4)
+                </span>
+                {report.benchmark.firstClearGrade && (
+                  <span
+                    className={`px-2 py-0.5 rounded text-[10px] font-black border ${
+                      report.benchmark.firstClearGrade === 'S'
+                        ? 'bg-emerald-950/60 border-emerald-600 text-emerald-300'
+                        : report.benchmark.firstClearGrade === 'A'
+                        ? 'bg-cyan-950/60 border-cyan-600 text-cyan-300'
+                        : 'bg-rose-950/60 border-rose-600 text-rose-300'
+                    }`}
+                  >
+                    {report.benchmark.firstClearGrade === 'S'
+                      ? 'S (爆速)'
+                      : report.benchmark.firstClearGrade === 'A'
+                      ? 'A (標準)'
+                      : '遅延 (要改善)'}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-lg font-mono font-black text-stone-100">
+                  {report.benchmark.firstClearTimeStr || '測定外'}
+                </span>
+                <span className="text-[11px] text-stone-500 font-mono">
+                  目標: {report.benchmark.firstClearTargetStr}
+                </span>
+              </div>
+              <p className="text-[10px] text-stone-400 leading-relaxed">
+                3:30のカニ湧き前に狩り終えることで、対面JGに対して視界・ファイトの絶対的先手（テンポ）を握れます。
+              </p>
+            </div>
+
+            {/* 2. 10分ファーム維持目標 */}
+            <div className="p-3.5 rounded-xl bg-stone-950/70 border border-stone-800/80 space-y-2">
+              <div className="flex items-center justify-between text-stone-400">
+                <span className="text-xs font-bold flex items-center gap-1.5 text-stone-300">
+                  <Target className="w-3.5 h-3.5 text-amber-400" /> 10分ファーム目標
+                </span>
+                <span
+                  className={`px-2 py-0.5 rounded text-[10px] font-black border ${
+                    report.benchmark.tenMinCsTarget.isMaintained
+                      ? 'bg-emerald-950/60 border-emerald-600 text-emerald-300'
+                      : 'bg-amber-950/60 border-amber-600 text-amber-300'
+                  }`}
+                >
+                  {report.benchmark.tenMinCsTarget.ratioPercent}% 達成
+                </span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-lg font-mono font-black text-stone-100">
+                  {report.benchmark.tenMinCsTarget.actual} CS
+                </span>
+                <span className="text-[11px] text-stone-500 font-mono">
+                  目標: {report.benchmark.tenMinCsTarget.target} CS（上限帯）
+                </span>
+              </div>
+              <p className="text-[10px] text-stone-400 leading-relaxed">
+                0キル0アシストでも0デスで72CS以上を回せば、3.7万試合実証で勝率50.9%（イーブン）を維持できます。
+              </p>
+            </div>
+
+            {/* 3. 10分ゴールド格差ボーダー */}
+            <div className="p-3.5 rounded-xl bg-stone-950/70 border border-stone-800/80 space-y-2">
+              <div className="flex items-center justify-between text-stone-400">
+                <span className="text-xs font-bold flex items-center gap-1.5 text-stone-300">
+                  <TrendingUp className="w-3.5 h-3.5 text-emerald-400" /> 10分ゴールド格差
+                </span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                  期待勝率: {report.benchmark.tenMinGoldBorder.expectedWinRate}
+                </span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className={`text-lg font-mono font-black ${diffColor(report.benchmark.tenMinGoldBorder.diff)}`}>
+                  {signed(report.benchmark.tenMinGoldBorder.diff)} G
+                </span>
+                <span className="text-[11px] text-stone-300 font-bold">
+                  {report.benchmark.tenMinGoldBorder.title}
+                </span>
+              </div>
+              <p className="text-[10px] text-stone-400 leading-relaxed">
+                {report.benchmark.tenMinGoldBorder.description}
+              </p>
+            </div>
+          </div>
+
+          {/* 敵先行K+A時のファーム逆転ハイライト */}
+          {report.benchmark.farmComebackLead.message && (
+            <div
+              className={`p-3 rounded-xl border flex items-center gap-2.5 text-xs ${
+                report.benchmark.farmComebackLead.highComebackAchieved
+                  ? 'bg-emerald-950/40 border-emerald-700/60 text-emerald-200'
+                  : report.benchmark.farmComebackLead.comebackAchieved
+                  ? 'bg-cyan-950/40 border-cyan-700/60 text-cyan-200'
+                  : 'bg-stone-950 border-stone-800 text-stone-300'
+              }`}
+            >
+              <Trophy className="w-4 h-4 text-amber-400 shrink-0" />
+              <span className="leading-relaxed">
+                {report.benchmark.farmComebackLead.message}
+              </span>
+            </div>
+          )}
         </div>
       )}
     </section>

@@ -234,3 +234,83 @@ def calculate_player_effective_gold(
         return 0
 
     return ItemPriceManager.calculate_player_item_gold(player_obj.get("items", []))
+
+
+def calculate_objective_downtempo_alerts(game_time_sec: float, events: list = None) -> list:
+    """
+    Sovereign HUD - ダウンテンポ ＆ オブジェクト事前整列警報
+    （天狐ハク氏『ダウンテンポ哲学』 × ほけんじじ氏『テンポの5大要素』実証モデル）
+    
+    ドラゴン・グラブ・ヘラルド・バロンの出現60秒前・45秒前にアラートを発報。
+    「湧いてからリコールする」テンポ死を物理的に根絶する。
+    """
+    alerts = []
+    if game_time_sec <= 0:
+        return alerts
+
+    last_dragon_kill = 0.0
+    dragon_count = 0
+    last_grub_kill = 0.0
+    grub_spawns = 0
+    herald_killed = False
+    last_baron_kill = 0.0
+
+    if events:
+        for ev in events:
+            ev_name = ev.get("EventName", "")
+            if ev_name == "DragonKill":
+                last_dragon_kill = float(ev.get("EventTime", 0.0))
+                dragon_count += 1
+            elif ev_name == "HordeKill":
+                last_grub_kill = float(ev.get("EventTime", 0.0))
+                grub_spawns += 1
+            elif ev_name == "HeraldKill":
+                herald_killed = True
+            elif ev_name == "BaronKill":
+                last_baron_kill = float(ev.get("EventTime", 0.0))
+
+    next_dragon_spawn = 300.0 if dragon_count == 0 else (last_dragon_kill + 300.0)
+    
+    next_grub_spawn = None
+    if game_time_sec < 840.0:
+        if grub_spawns == 0:
+            next_grub_spawn = 360.0
+        elif grub_spawns == 1 and (last_grub_kill + 240.0) < 840.0:
+            next_grub_spawn = last_grub_kill + 240.0
+
+    next_herald_spawn = 840.0 if (game_time_sec < 1200.0 and not herald_killed) else None
+    next_baron_spawn = 1200.0 if last_baron_kill == 0.0 else (last_baron_kill + 360.0)
+
+    tracked_objs = [
+        ("ドラゴン", next_dragon_spawn),
+        ("ヴォイドグラブ", next_grub_spawn),
+        ("リフトヘラルド", next_herald_spawn),
+        ("バロン", next_baron_spawn),
+    ]
+
+    for obj_name, spawn_time in tracked_objs:
+        if spawn_time is None or spawn_time <= game_time_sec:
+            continue
+        remain = spawn_time - game_time_sec
+        # 60秒前通知 (50〜65秒)
+        if 50.0 <= remain <= 65.0:
+            alerts.append({
+                "type": "DOWNTEMPO_START",
+                "importance": "HIGH",
+                "obj_name": obj_name,
+                "remain_sec": int(remain),
+                "title": f"⏱️【60s前】ダウンテンポ開始（{obj_name}）",
+                "message": f"{obj_name}出現まで{int(remain)}秒。ファームを切り上げて即リコールし、換金＆視界先手を取れ。"
+            })
+        # 45秒前通知 (35〜49秒)
+        elif 35.0 <= remain < 50.0:
+            alerts.append({
+                "type": "RECALL_LIMIT",
+                "importance": "CRITICAL",
+                "obj_name": obj_name,
+                "remain_sec": int(remain),
+                "title": f"⚠️【45s前】リコール最終限界点（{obj_name}）",
+                "message": f"今リコールしないと{obj_name}戦に遅参（テンポ死）します。寄るか捨てるかの判断を確定せよ。"
+            })
+
+    return alerts

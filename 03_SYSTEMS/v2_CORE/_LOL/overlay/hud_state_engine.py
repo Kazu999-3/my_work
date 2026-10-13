@@ -60,6 +60,7 @@ from v2_CORE._LOL.overlay.macro_analytics import (
     estimate_player_gold,
     analyze_grievous_wounds,
     calculate_player_effective_gold,
+    calculate_objective_downtempo_alerts,
     HEAL_HEAVY_CHAMPIONS,
     HEAVY_CC_CHAMPIONS,
     GRIEVOUS_WOUNDS_ITEMS,
@@ -790,6 +791,9 @@ class HudStateEngine:
             "forbidden_warning": "× 防具前のタワーダイブ禁止 (CC即死トリガー)"
         }
 
+        # --- 19. 【天狐ハク×ほけんじじ】60秒前オブジェクト・ダウンテンポ警報 ---
+        downtempo_alerts = calculate_objective_downtempo_alerts(game_time_sec, events)
+
         # 時間フォーマット
         min_part = int(game_time_sec // 60)
         sec_part = int(game_time_sec % 60)
@@ -854,4 +858,5 @@ class HudStateEngine:
             "ward_stats": ward_stats,
             "gold_estimates": gold_estimates,
             "pregame_briefing": pregame_briefing,
+            "downtempo_alerts": downtempo_alerts,
         }
