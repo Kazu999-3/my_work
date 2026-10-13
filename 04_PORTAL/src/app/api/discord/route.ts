@@ -138,12 +138,16 @@ export async function POST(request: Request) {
               name: `🔮 勝利予想: BLUE ${bluePct}% 🆚 RED ${redPct}%`,
               value: `${winBar}\n※MMRベースのElo予測（50%に近いほど接戦）`,
               inline: false
-            }
+            },
+            ...(spectators && spectators.length > 0 ? [{
+              name: `👀 観戦・待機枠 (${spectators.length}名)`,
+              value: spectators.map((s: any) => typeof s === 'string' ? s : s.name).join('、'),
+              inline: false
+            }] : [])
           ],
           footer: {
-            text: `👀 観戦: ${spectators && spectators.length > 0 ? spectators.join(', ') : 'なし'}`
-              + (newPlayerNames.length > 0 ? ` ｜ 🔰初参加: ${newPlayerNames.join(', ')}` : '')
-              + (handicapSet.size > 0 ? `\n🎗️ ハンデ参加(オフロール等の制約付き): ${Array.from(handicapSet).join(', ')}` : '')
+            text: (newPlayerNames.length > 0 ? `🔰初参加: ${newPlayerNames.join(', ')}` : '')
+              + (handicapSet.size > 0 ? ` ｜ 🎗️ ハンデ参加: ${Array.from(handicapSet).join(', ')}` : '')
               + handicapText
           },
           timestamp: new Date().toISOString()

@@ -83,14 +83,33 @@ export async function POST(request: Request) {
     // 2. Player インタフェースへマッピング
     // 名簿未登録の参加者が1人でも混ざると即例外でリクエスト全体が失敗し、しかも
     // 最初に見つかった1人分の名前しかエラーに出ないため管理者が原因を特定しづらかった
-    // (2026-08-08発覚)。未登録者を全員集めてから、まとめて分かりやすい400エラーで返す。
+    // ★ 項目3: 名簿未登録者が混ざっていても400即死させず、仮プレイヤー（1200 / ALL）として自動補完
     const missingNames = participants
       .map(input => input.name)
       .filter(name => !playersData.some((p: any) => p.name === name));
     if (missingNames.length > 0) {
-      return NextResponse.json({
-        error: `名簿に登録されていないプレイヤーがいます: ${missingNames.join(', ')}（管理ダッシュボードで登録してから再度実行してください）`
-      }, { status: 400 });
+      console.warn(`[Balancer] 未登録プレイヤーを仮レコードとして自動補完: ${missingNames.join(', ')}`);
+      missingNames.forEach(mName => {
+        playersData.push({
+          name: mName,
+          discord_id: null,
+          highest_rank: 'UNRANKED',
+          role_preferences: { primary: 'ALL', secondary: 'ALL' },
+          ng_lane_1: '',
+          ng_lane_2: '',
+          pity: 0,
+          spectator_pity: 0,
+          off_role_pity: 0,
+          weight: 2,
+          allow_higher: false,
+          mmr_top: 1200,
+          mmr_jg: 1200,
+          mmr_mid: 1200,
+          mmr_adc: 1200,
+          mmr_sup: 1200,
+          metadata: { is_temporary: true }
+        });
+      });
     }
 
     const allPlayers: Player[] = participants.map(input => {

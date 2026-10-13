@@ -521,6 +521,15 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
           rolePenalty += 15000;
         }
 
+        // ★ 項目2: JGオフロール時のセーフティ（初心者のJG配属防止 & 高ランクJG担当優遇）
+        if (role === 'JG' && player.pref1 !== 'JG' && player.pref2 !== 'JG') {
+          if (player.isNewbie || player.isOutlierLow) {
+            rolePenalty += 45000;
+          } else if (HIGH_RANKS.includes((player.rank || '').trim().toUpperCase().split(/\s+/)[0])) {
+            rolePenalty -= 15000;
+          }
+        }
+
         if (player.isOutlierLow) {
           if (role !== player.pref1 && player.pref1 !== 'ALL' && player.pref1 !== '-') {
             rolePenalty += (role === player.pref2) ? 50000 : 150000;

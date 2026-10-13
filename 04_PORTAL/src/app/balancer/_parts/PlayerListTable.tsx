@@ -397,17 +397,28 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                         </div>
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <div className="flex items-center gap-0.5 bg-surface-subtle border border-border rounded px-1.5 py-0.5">
-                          <RoleIcon role={prefs.primary || 'ALL'} className="w-3 h-3" />
+                        {/* 第1希望 */}
+                        <div className="flex items-center gap-1 bg-surface-subtle border border-border rounded px-1.5 py-0.5">
+                          <span className="text-[10px] text-faint font-bold">1st:</span>
+                          <RoleIcon role={prefs.primary || 'ALL'} className="w-3.5 h-3.5" />
                           <select value={prefs.primary || 'ALL'} onChange={e => handleInputChange(p.id,'primary_role',e.target.value)} className="bg-transparent text-foreground outline-none cursor-pointer text-[11px] font-bold">
                             {['ALL','TOP','JG','MID','ADC','SUP'].map(r => <option key={r} value={r} className="bg-surface-subtle">{r}</option>)}
                           </select>
                         </div>
+                        {/* 第2希望 */}
+                        <div className="flex items-center gap-1 bg-surface-subtle border border-border rounded px-1.5 py-0.5">
+                          <span className="text-[10px] text-faint font-bold">2nd:</span>
+                          <RoleIcon role={prefs.secondary || '-'} className="w-3.5 h-3.5" />
+                          <select value={prefs.secondary || '-'} disabled={prefs.primary === 'ALL'} onChange={e => handleInputChange(p.id,'secondary_role',e.target.value)} className="bg-transparent text-foreground outline-none cursor-pointer text-[11px] disabled:opacity-40">
+                            {['-','ALL','TOP','JG','MID','ADC','SUP'].map(r => <option key={r} value={r} className="bg-surface-subtle">{r}</option>)}
+                          </select>
+                        </div>
+                        {/* NGレーン */}
                         {(p.ng_lane_1 || p.ng_lane_2) && (
-                          <div className="flex items-center gap-1 text-danger-700 text-xs font-bold">
-                            <span className="opacity-60">NG:</span>
-                            {p.ng_lane_1 && <span className="bg-danger-50 border border-danger-edge-soft px-1.5 rounded">{p.ng_lane_1}</span>}
-                            {p.ng_lane_2 && <span className="bg-danger-50 border border-danger-edge-soft px-1.5 rounded">{p.ng_lane_2}</span>}
+                          <div className="flex items-center gap-1 text-danger-700 text-xs font-bold bg-danger-50 border border-danger-edge-soft/60 px-1.5 py-0.5 rounded">
+                            <span className="text-[10px] font-black opacity-70">NG:</span>
+                            {p.ng_lane_1 && <span className="flex items-center gap-0.5"><RoleIcon role={p.ng_lane_1} className="w-3 h-3" />{p.ng_lane_1}</span>}
+                            {p.ng_lane_2 && <span className="flex items-center gap-0.5"><RoleIcon role={p.ng_lane_2} className="w-3 h-3" />{p.ng_lane_2}</span>}
                           </div>
                         )}
                         <div className="flex items-center gap-0.5 ml-auto">

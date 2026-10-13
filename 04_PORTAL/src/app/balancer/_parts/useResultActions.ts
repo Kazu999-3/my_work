@@ -109,8 +109,14 @@ export function useResultActions({ balanceResult, proposals, players, handicapNa
       const res = await fetch('/api/discord', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // ハンデ参加者を通知にも明示する
-        body: JSON.stringify({ ...balanceResult, handicaps: Array.from(handicapNames) })
+        // ★ 項目1: スワップ後の最新チーム分けデータを確実に送信
+        body: JSON.stringify({
+          ...balanceResult,
+          teamBlue: balanceResult.teamBlue,
+          teamRed: balanceResult.teamRed,
+          spectators: balanceResult.spectators,
+          handicaps: Array.from(handicapNames)
+        })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Discord通知に失敗しました');
