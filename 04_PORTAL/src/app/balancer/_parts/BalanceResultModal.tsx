@@ -435,16 +435,47 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
                 </div>
               )}
 
-              {/* 案タブ */}
+              {/* 案タブ（MMR差・希望満足度プレビュー付き） */}
               {proposals.length > 1 && (
                 <div className="flex border-b border-border gap-2 overflow-x-auto pb-1">
-                  {proposals.map((prop, idx) => (
-                    <button key={prop.id || idx} onClick={() => { setBalanceResult(prop); setSelectedProposalIdx(idx); }}
-                      className={`px-4 py-2 text-sm font-bold border-b-2 transition whitespace-nowrap ${selectedProposalIdx === idx ? 'border-primary-edge-strong text-primary-700 font-black' : 'border-transparent text-muted-strong hover:text-foreground-subtle'}`}>
-                      {prop.title || `案${prop.id || idx}`}
-                      {prop.id === 'E' && <span className="ml-1 text-[10px] bg-primary-200 text-primary-900 px-1.5 py-0.2 rounded-full">🎗️ルール設定</span>}
-                    </button>
-                  ))}
+                  {proposals.map((prop, idx) => {
+                    const diff = prop.mmrDiff ?? Math.abs((prop.teamBlueMMR || 0) - (prop.teamRedMMR || 0));
+                    const allP = [...(prop.teamBlue || []), ...(prop.teamRed || [])];
+                    let mainC = 0, subC = 0;
+                    allP.forEach((p: any) => {
+                      const r = p.currentRole || p.role;
+                      const m = p.mainLane || p.pref1;
+                      const s = p.subLane || p.pref2;
+                      if (p.isFixed || m === 'ALL' || m === r) mainC++;
+                      else if (s === r) subC++;
+                    });
+                    const satRate = allP.length > 0 ? Math.round(((mainC + subC * 0.5) / allP.length) * 100) : 0;
+
+                    return (
+                      <button
+                        key={prop.id || idx}
+                        onClick={() => { setBalanceResult(prop); setSelectedProposalIdx(idx); }}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer border ${
+                          selectedProposalIdx === idx
+                            ? 'bg-primary-600 text-white border-primary-500 shadow-xs'
+                            : 'bg-surface-subtle hover:bg-surface-hover text-foreground-soft border-border'
+                        }`}
+                      >
+                        <span>{prop.title || `案${prop.id || idx + 1}`}</span>
+                        <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-md ${
+                          selectedProposalIdx === idx ? 'bg-black/20 text-white' : 'bg-surface text-muted'
+                        }`}>
+                          差:{diff}
+                        </span>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-md ${
+                          selectedProposalIdx === idx ? 'bg-black/20 text-white' : 'bg-surface text-success-600'
+                        }`}>
+                          {satRate}%
+                        </span>
+                        {prop.id === 'E' && <span className="text-[10px] bg-amber-400 text-amber-950 px-1 py-0.2 rounded font-black">ハンデ</span>}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 
@@ -565,9 +596,10 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
                   return (
                     <div key={role} className="grid grid-cols-1 md:grid-cols-11 gap-2 items-center bg-black/[0.03] p-2 md:p-3 rounded-2xl border border-black/5">
                       <div draggable={!!pB?.name} onDragStart={e => handleDragStart(e,'teamBlue',role,pB?.name||'')} onDragOver={e => handleDragOver(e,bKey)} onDragLeave={handleDragLeave} onDrop={e => handleDropPlayer(e,'teamBlue',role)}
-                        className={`col-span-5 flex items-center gap-2 p-2 rounded-xl border transition cursor-grab active:cursor-grabbing ${dragOverSlot===bKey?'border-secondary-edge-strong bg-secondary-100 border-dashed':'bg-secondary-50 border-secondary-edge-soft hover:bg-secondary-100'} ${swapSource?.name === pB?.name ? 'border-primary-edge-strong bg-primary-100 animate-pulse' : ''}`}>
+                        onClick={() => { if (pB?.name) handleSelectSwapPlayer('teamBlue', role, pB.name); }}
+                        className={`col-span-5 flex items-center gap-2 p-2 rounded-xl border transition cursor-pointer select-none ${dragOverSlot===bKey?'border-secondary-edge-strong bg-secondary-100 border-dashed':'bg-secondary-50 border-secondary-edge-soft hover:bg-secondary-100'} ${swapSource?.name === pB?.name ? 'ring-2 ring-primary-500 bg-primary-100 animate-pulse' : ''}`}>
                         {/* 名前は行の主役なので、バッジがいくつ増えても潰れないよう最低幅を確保する */}
-                        <div className="flex-1 min-w-[5.5rem]">{renderSwapSelect('teamBlue',role,pB?.name||'')}</div>
+                        <div className="flex-1 min-w-[5.5rem]" onClick={e => e.stopPropagation()}>{renderSwapSelect('teamBlue',role,pB?.name||'')}</div>
                         {pB?.name && (
                           <button
                             type="button"
@@ -606,7 +638,8 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
                         })()}
                       </div>
                       <div draggable={!!pR?.name} onDragStart={e => handleDragStart(e,'teamRed',role,pR?.name||'')} onDragOver={e => handleDragOver(e,rKey)} onDragLeave={handleDragLeave} onDrop={e => handleDropPlayer(e,'teamRed',role)}
-                        className={`col-span-5 flex items-center gap-2 p-2 rounded-xl border transition cursor-grab active:cursor-grabbing ${dragOverSlot===rKey?'border-danger-edge-strong bg-danger-100 border-dashed':'bg-danger-50 border-danger-edge-soft hover:bg-danger-100'} ${swapSource?.name === pR?.name ? 'border-primary-edge-strong bg-primary-100 animate-pulse' : ''}`}>
+                        onClick={() => { if (pR?.name) handleSelectSwapPlayer('teamRed', role, pR.name); }}
+                        className={`col-span-5 flex items-center gap-2 p-2 rounded-xl border transition cursor-pointer select-none ${dragOverSlot===rKey?'border-danger-edge-strong bg-danger-100 border-dashed':'bg-danger-50 border-danger-edge-soft hover:bg-danger-100'} ${swapSource?.name === pR?.name ? 'ring-2 ring-primary-500 bg-primary-100 animate-pulse' : ''}`}>
                         <span className="font-mono text-xs font-bold text-danger-700 shrink-0 bg-danger-100 px-2 py-0.5 rounded border border-danger-edge">{rMMR}</span>
                         {offR && <span className="text-[9px] bg-danger-100 border border-danger-edge text-danger-700 px-1.5 py-0.5 rounded font-black shrink-0">⚠️OFF</span>}
                         {pR?.name && handicapNames.has(pR.name) && <span className="text-[9px] bg-primary-100 border border-primary-edge text-primary-700 px-1.5 py-0.5 rounded font-black shrink-0" title="ハンデ参加（オフロール等の制約付き）">🎗️ハンデ</span>}
@@ -628,7 +661,7 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
                           </button>
                         )}
                         {/* 名前は行の主役なので、バッジがいくつ増えても潰れないよう最低幅を確保する */}
-                        <div className="flex-1 min-w-[5.5rem]">{renderSwapSelect('teamRed',role,pR?.name||'')}</div>
+                        <div className="flex-1 min-w-[5.5rem]" onClick={e => e.stopPropagation()}>{renderSwapSelect('teamRed',role,pR?.name||'')}</div>
                       </div>
                     </div>
                   );
