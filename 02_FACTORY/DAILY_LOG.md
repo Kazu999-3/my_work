@@ -11,6 +11,39 @@
 
 ## 🗓️ 2026-10-13（火）
 
+### 📁 神7設計 Step 3：機能別フォルダ構成（Feature-Driven Architecture）規約の制定 ＆ 05_PILOT自己完結化
+
+**概要**:
+1. **背景と目的**:
+   - note記事（あすらぼ氏『アプリ個人開発で「最初からやっておけばよかった」設計7選』）の「機能別フォルダ構成（教科別お道具箱）」思想を適用。
+   - 水平レイヤー（`components/` や `models/`）に散らばったファイルを探し回るファイル迷子を撲滅し、機能ごとに画面・部品・フック・型・計算関数を1つの箱に閉じるカプセル化規約を導入。
+2. **実施内容**:
+   - **アーキテクチャ標準規約の制定 (`01_INTEL/feature_driven_architecture_guidelines.md`)**:
+     - 水平レイヤー分割の破綻と機能別自己完結（Feature-Driven）の原則。
+     - Next.js App Router 制式フォルダ規約（`src/core/` 共有層 vs 各ルート配下の完全閉鎖お道具箱 `_parts/`）。
+     - 新規ファイル配置の自動判定フローチャートの策定。
+     - 帝国総合索引（`01_INTEL/NEXUS_INDEX.md`）へ統合。
+   - **05_PILOT 実践パイロット（モーダルの機能別自己完結化）**:
+     - `LaneGuideOptimizeModal.tsx` を `src/components/` から `src/app/lane-guides/_parts/` へ移動。
+     - `LaneMaintenanceModal.tsx` および `ItemDictionaryModal.tsx` を `src/app/_champions/` へ移動。
+     - `src/components/` を真の全画面共通部品（`GlobalNavbar`, `NotificationBell`, `InlineBold` 等）のみにスリム化。
+3. **機械的実値検証**:
+   - `05_PILOT` TypeScript 型チェック: **0 errors PASS**
+   - `05_PILOT` Next.js Turbopack プロダクションビルド（24ルート）: **0 errors PASS**
+   - `05_PILOT` 単体テスト（`npm test`）: **全5件 PASS**
+4. **3行ナレッジ**:
+   - **「特定画面でしか使わない部品やモーダルは、componentsに置かずその画面の『_parts』に閉じよ」**: 共有フォルダの肥大化を防ぎ、使わなくなった時のファイル迷子・消し忘れを根本から遮断する。
+   - **「Next.js App Router ではアンダースコア付きプライベートフォルダ（_parts / _champions）を『機能のお道具箱』として活用せよ」**: URLルーティングから除外されつつ、画面と部品を最短距離で結合できる。
+   - **「ファイル移動時は git mv を徹底してコミット履歴を完全維持せよ」**: 過去のコミット履歴や作成経緯が途切れず、保守性を保ち続けられる。
+5. **思考トリガー**:
+   - 「いま作成しているコンポーネントは、本当に複数の画面で共有される部品か？ それとも特定の機能フォルダにカプセル化すべき専用部品か？」
+6. **拾い上げ（Harvest / kame原則）**:
+   - `[要検証]`: 04ポータル側（`/balancer` や `/casino`）における同様のモーダル・部品集約の横展開。
+   - `[継続ウォッチ]`: 新機能開発時のFeature-Driven配置ルールの遵守度。
+   - `[発信候補]`: 「個人開発Next.jsで画面が増えても破綻しない『_parts』フォルダ設計術」（note記事ネタ）。
+
+---
+
 ### 🧪 神7設計 Step 2：計算ロジック単体テスト基盤（04/05）の拡充 ＆ package:checks思想の具現化
 
 **概要**:

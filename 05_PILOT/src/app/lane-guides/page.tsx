@@ -7,7 +7,7 @@ import {
   BookOpen, Sparkles, RefreshCw, ChevronRight, Layers, 
   Clock, ArrowLeft, ExternalLink, Compass, Swords, Shield, Zap, Filter
 } from 'lucide-react';
-import LaneGuideOptimizeModal from '@/components/LaneGuideOptimizeModal';
+import LaneGuideOptimizeModal from './_parts/LaneGuideOptimizeModal';
 
 interface LaneGuide {
   lane: string;
