@@ -341,30 +341,33 @@ export async function POST(request: Request) {
       };
       const newTotalMmr = isExhibition ? (r.dbPlayer.mmr || 1200) : computeRepresentativeMmr({ TOP: top, JG: jg, MID: mid, ADC: adc, SUP: sup }, newGames);
 
-      // Pity（通常の選抜漏れ・配置Pity）の計算
+      // Pity（希望優先権）の計算
       const primary = r.dbPlayer.role_preferences?.primary || 'ALL';
       const secondary = r.dbPlayer.role_preferences?.secondary || 'ALL';
+      const ng1 = r.dbPlayer.ng_lane_1 || '';
+      const ng2 = r.dbPlayer.ng_lane_2 || '';
       const playedRole = r.role;
       let newPity = Number(r.dbPlayer.pity) || 0;
-
-      if (primary === 'ALL' || primary === 'FILL') {
-        newPity = 0;
-      } else if (playedRole === primary) {
-        newPity = 0;
-      } else if (playedRole === secondary || secondary === 'ALL' || secondary === 'FILL') {
-        newPity += 2;
-      } else {
-        newPity += 5;
-      }
-
       let newOffRolePity = Number(r.dbPlayer.off_role_pity) || 0;
+
+      const isNgRole = (playedRole === ng1 || playedRole === ng2);
+
       if (primary === 'ALL' || primary === 'FILL') {
+        newPity = 0;
         newOffRolePity = 0;
       } else if (playedRole === primary) {
+        // ★ 項目4: Pity消費制化（一律0リセットではなく-2消費）
+        newPity = Math.max(0, newPity - 2);
         newOffRolePity = 0;
+      } else if (isNgRole) {
+        // ★ 項目5: NGレーン配属時の特大救済（次回確実に第1希望を保証）
+        newPity += 3;
+        newOffRolePity += 2;
       } else if (playedRole === secondary || secondary === 'ALL' || secondary === 'FILL') {
-        // 維持
+        newPity += 1;
       } else {
+        // 完全オフロール（第3〜5希望）配属
+        newPity += 2;
         newOffRolePity += 1;
       }
 

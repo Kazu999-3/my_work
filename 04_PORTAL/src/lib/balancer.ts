@@ -485,14 +485,19 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
         let rolePenalty = 0;
 
         const isFixed = effectiveFixed.get(player) ?? player.isFixed;
+        const targetFixedRole = player.fixedRole || (player.pref1 !== 'ALL' ? player.pref1 : null);
+
         if (role === player.ng1 || role === player.ng2) {
           rolePenalty = 1000000;
           if (w === 1) rolePenalty *= 10;
           else if (w === 2) rolePenalty *= 2;
+        } else if (isFixed && targetFixedRole && role !== targetFixedRole) {
+          // ★ 項目1: 固定ロール指定されているのに別のロールに配属された場合は完全除外
+          rolePenalty = 2000000;
         } else if (isFixed || player.pref1 === 'ALL' || player.pref1 === role) {
           rolePenalty = player.isNewbie ? -30000 : 0;
           mainCount++;
-        } else if (player.pref2 === role) {
+        } else if (player.pref2 && player.pref2 !== 'なし' && player.pref2 !== '-' && player.pref2 === role) {
           rolePenalty = 500 + (player.pity * 10000);
           if (player.isNewbie) rolePenalty += 80000;
           if (player.pity >= 4) rolePenalty += 40000;
@@ -501,7 +506,9 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
           if (w === 3) rolePenalty *= 0.5;
           rolePenalty += player.off_role_pity * 30000;
         } else {
-          rolePenalty = 5000 + (player.pity * 20000);
+          // pref2が未設定のプレイヤーは、pref2設定者と比べて過度にペナルティが跳ね上がらないよう基準を微調整
+          const hasPref2 = !!(player.pref2 && player.pref2 !== 'なし' && player.pref2 !== '-');
+          rolePenalty = (hasPref2 ? 5000 : 3000) + (player.pity * 20000);
           if (player.isNewbie) rolePenalty += 120000;
           if (player.pity >= 4) rolePenalty += 60000;
           if (isSpecialist) rolePenalty *= 3;
@@ -879,6 +886,27 @@ function buildBalanceResult(
   // --- 事後分析レポートの作成 ---
   const allAssigned = [...teamBlue, ...teamRed];
   const balanceReport: string[] = [];
+
+  // ★ 項目7: 2ティア差以上の対面が残った場合の診断アラート
+  const TIER_MAP: Record<string, number> = {
+    IRON: 0, BRONZE: 1, SILVER: 2, GOLD: 3, PLATINUM: 4,
+    EMERALD: 5, DIAMOND: 6, MASTER: 7, GRANDMASTER: 8, CHALLENGER: 9,
+  };
+  const tierDisparities: string[] = [];
+  ROLES.forEach(r => {
+    const pB = teamBlue.find(p => p.currentRole === r);
+    const pR = teamRed.find(p => p.currentRole === r);
+    if (pB && pR) {
+      const tB = TIER_MAP[(pB.rank || '').trim().toUpperCase().split(/\s+/)[0]];
+      const tR = TIER_MAP[(pR.rank || '').trim().toUpperCase().split(/\s+/)[0]];
+      if (tB !== undefined && tR !== undefined && Math.abs(tB - tR) >= 2) {
+        tierDisparities.push(`${r}（${pB.name}【${pB.rank}】 vs ${pR.name}【${pR.rank}】）`);
+      }
+    }
+  });
+  if (tierDisparities.length > 0) {
+    balanceReport.push(`⚠️ **【実力格差アラート】**: 人数構成の制約上、2ティア差以上の対面が発生しています: ${tierDisparities.join('、')}。対面同士の合意確認またはハンデ設定をお勧めします。`);
+  }
   
   // 🎗️ ポイント消費型ハンデ縛りのレポート
   const handicappedPlayers = allAssigned.filter(p => p.handicapMmrPenalty && p.handicapRule);

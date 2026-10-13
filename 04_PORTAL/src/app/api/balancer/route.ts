@@ -150,7 +150,8 @@ export async function POST(request: Request) {
         winRate: pWinRate,
         isFixed: input.isFixed,
         isSpectatorFixed: input.isSpectatorFixed,
-        fixedRole: input.fixedRole
+        fixedRole: input.fixedRole,
+        todayStreak: input.todayStreak !== undefined ? Number(input.todayStreak) : (dbPlayer.metadata?.today_streak || 0)
       };
     });
 
