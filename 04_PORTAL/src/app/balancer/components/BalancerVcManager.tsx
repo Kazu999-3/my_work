@@ -120,6 +120,23 @@ export const BalancerVcManager = memo(function BalancerVcManager({ onMessage }: 
         </button>
         <button
           type="button"
+          onClick={() => handleUpdate('game4')}
+          disabled={updatingVc}
+          className="px-2.5 py-1 rounded-xl bg-surface-subtle hover:bg-surface-hover border border-border text-foreground-soft font-bold text-[11px] transition cursor-pointer"
+        >
+          4戦目
+        </button>
+        <button
+          type="button"
+          onClick={() => handleUpdate('mayhem')}
+          disabled={updatingVc}
+          className="px-2.5 py-1 rounded-xl bg-primary-100 hover:bg-primary-200 border border-primary-edge text-primary-950 font-black text-[11px] transition cursor-pointer shadow-2xs"
+          title="締めメイヘム中！"
+        >
+          🎪 締めメイヘム中
+        </button>
+        <button
+          type="button"
           onClick={() => handleUpdate('reset')}
           disabled={updatingVc}
           className="px-2 py-1 rounded-xl text-faint hover:text-foreground text-[11px] transition cursor-pointer"

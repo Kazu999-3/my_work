@@ -227,7 +227,7 @@ export async function GET(request: Request) {
         opponentName: opp?.player_name || null,
         mmrHistory: matchMmr
       };
-    }).slice(0, 20); // 履歴表示用に直近20件を返す
+    }).slice(0, 50); // 履歴表示およびレーダー・プレイスタイル分析用に直近50件を返す
 
     // KTMカスタム戦はCS・ファーストブラッドを取得できないため、それらに依存する指標は算出しない
     const customPlaystyle = calculatePlaystyle(playerMatches, { reliableCsAndFb: false });

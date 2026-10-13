@@ -31,6 +31,12 @@ export async function POST(req: Request) {
     } else if (status === 'game3') {
       newStatusText = '🔥 3戦目進行中 (最終決戦)';
       fallbackChannelName = '🔊 🎮カスタムVC (3戦目)';
+    } else if (status === 'game4') {
+      newStatusText = '⚔️ 4戦目進行中 (延長戦)';
+      fallbackChannelName = '🔊 🎮カスタムVC (4戦目)';
+    } else if (status === 'mayhem') {
+      newStatusText = '🎪 締めメイヘム中！';
+      fallbackChannelName = '🔊 🎮カスタムVC (メイヘム)';
     } else if (status === 'reset') {
       newStatusText = '';
       fallbackChannelName = defaultName || '🔊 🎮カスタムVC';
