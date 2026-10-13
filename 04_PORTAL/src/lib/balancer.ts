@@ -660,6 +660,17 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
             penalty += 8000 * gapScale * roleGapMultiplier;
           }
 
+          // ★ 2ティア差以上の対面禁止ガード (例: エメラルド vs シルバー、プラチナ vs ブロンズ等)
+          const TIER_ORDER_MAP: Record<string, number> = {
+            IRON: 0, BRONZE: 1, SILVER: 2, GOLD: 3, PLATINUM: 4,
+            EMERALD: 5, DIAMOND: 6, MASTER: 7, GRANDMASTER: 8, CHALLENGER: 9,
+          };
+          const tierA = TIER_ORDER_MAP[(pLayerA.rank || '').trim().toUpperCase().split(/\s+/)[0]];
+          const tierB = TIER_ORDER_MAP[(pLayerB.rank || '').trim().toUpperCase().split(/\s+/)[0]];
+          if (tierA !== undefined && tierB !== undefined && Math.abs(tierA - tierB) >= 2) {
+            penalty += 500000;
+          }
+
           penalty += (Math.pow(Math.abs(effA - effB), 2) / 2.5) * roleGapMultiplier;
 
           laneAdvantageScoreA += Math.max(0, effA - effB);
