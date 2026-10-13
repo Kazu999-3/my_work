@@ -16,11 +16,11 @@ import { RoleIcon, getPlayerCasinoBadges, MAX_VISIBLE_BADGES, CasinoBadges, getG
 
 // ヘッダー（タイトル・操作ボタン群）
 // 2026-10-07: app/balancer/page.tsx（3,029行）から分割。表示内容・動作は分割前と同じ。状態は page.tsx が持ち、ここは props で受け取って描画するだけ。
-export default function BalancerHeader({ players, setPlayers, saving, announcingStats, isAdmin, setShowAdminPanel, integrityData, balancing, balanceResult, showResultModal, setShowResultModal, searchDepth, setSearchDepth, selectedTable, setSelectedTable, bo3State, handleResetBo3, handleAnnounceStats, handleBalance, handleFestivalRandomBalance, activeCount, spectatorCount, inactiveCount, canBalance }: {
+export default function BalancerHeader({ players, setPlayers, saving, isAdmin, setShowAdminPanel, integrityData, balancing, balanceResult, showResultModal, setShowResultModal, selectedTable, setSelectedTable, bo3State, handleResetBo3, handleBalance, handleFestivalRandomBalance, activeCount, spectatorCount, inactiveCount, canBalance }: {
   players: any[];
   setPlayers: React.Dispatch<React.SetStateAction<any[]>>;
   saving: boolean;
-  announcingStats: boolean;
+  announcingStats?: boolean;
   isAdmin: boolean;
   setShowAdminPanel: React.Dispatch<React.SetStateAction<boolean>>;
   integrityData: any;
@@ -28,13 +28,13 @@ export default function BalancerHeader({ players, setPlayers, saving, announcing
   balanceResult: any;
   showResultModal: boolean;
   setShowResultModal: React.Dispatch<React.SetStateAction<boolean>>;
-  searchDepth: number;
-  setSearchDepth: React.Dispatch<React.SetStateAction<number>>;
+  searchDepth?: number;
+  setSearchDepth?: React.Dispatch<React.SetStateAction<number>>;
   selectedTable: { label: string; ids: any[] } | null;
   setSelectedTable: React.Dispatch<React.SetStateAction<{ label: string; ids: any[] } | null>>;
   bo3State: any;
   handleResetBo3: () => any;
-  handleAnnounceStats: () => any;
+  handleAnnounceStats?: () => any;
   handleBalance: () => any;
   handleFestivalRandomBalance: () => any;
   activeCount: number;
@@ -52,39 +52,26 @@ export default function BalancerHeader({ players, setPlayers, saving, announcing
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {saving && <span className="flex items-center gap-1 text-primary-700 text-xs"><RefreshCw className="h-3 w-3 animate-spin" /> 保存中...</span>}
-              {/* 2026-09-23: 飛び先を /ktm-admin?tab=history（管理者専用）から一般公開の /history へ変更。
-                  リンク自体は isAdmin の外にあり全員に見えていたため、一般メンバーが押すと
-                  管理者パスコードを求められて行き止まりになっていた。 */}
-              <Link href="/history" className="flex items-center gap-1.5 bg-surface-subtle hover:bg-surface-hover text-primary-700 px-3 py-1.5 rounded-lg font-bold transition text-xs border border-primary-edge-soft whitespace-nowrap shrink-0">
-                <History className="h-3.5 w-3.5" /> 過去の試合
+              <Link href="/history" className="flex items-center gap-1.5 bg-surface-subtle hover:bg-surface-hover text-foreground-soft hover:text-foreground px-2.5 py-1.5 rounded-lg font-bold transition text-xs border border-border whitespace-nowrap shrink-0" title="過去の試合結果を確認">
+                <History className="h-3.5 w-3.5 text-muted" /> 過去の試合
               </Link>
               {isAdmin && (
                 <button
                   onClick={() => setShowAdminPanel(v => !v)}
-                  title="管理者専用操作"
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition text-xs border whitespace-nowrap shrink-0 ${
+                  title="管理者専用操作パネルの開閉"
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg font-bold transition text-xs border whitespace-nowrap shrink-0 ${
                     integrityData?.hasDiscrepancy
-                      ? 'bg-danger-100 hover:bg-danger-100 border-danger-edge-soft text-danger-700'
-                      : 'bg-primary-100 hover:bg-primary-100 border-primary-edge-soft text-primary-700'
+                      ? 'bg-danger-100 hover:bg-danger-200 border-danger-edge-soft text-danger-700'
+                      : 'bg-surface-subtle hover:bg-surface-hover border-border text-foreground-soft'
                   }`}
                 >
-                  <Shield className="h-3.5 w-3.5" /> 管理者パネル
+                  <Shield className="h-3.5 w-3.5 text-primary-600" />
+                  <span>管理設定</span>
                   {integrityData?.hasDiscrepancy && (
                     <span className="bg-danger-500 text-white rounded-full px-1.5 text-[10px] font-black">{integrityData.discrepancyCount}</span>
                   )}
                 </button>
               )}
-              <Link href="/ktm-admin" prefetch={false} className="flex items-center gap-1.5 bg-surface-subtle hover:bg-surface-hover border border-border text-foreground-subtle px-3 py-1.5 rounded-lg font-bold transition text-xs whitespace-nowrap shrink-0">
-                <Shield className="h-3.5 w-3.5" /> {isAdmin ? '詳細管理へ' : '管理者 🔑'}
-              </Link>
-              <button
-                onClick={handleAnnounceStats}
-                disabled={announcingStats}
-                className="flex items-center gap-1.5 bg-primary-100 hover:bg-primary-100 border border-primary-edge-soft text-primary-700 px-3 py-1.5 rounded-lg font-bold transition text-xs disabled:opacity-50 whitespace-nowrap shrink-0"
-              >
-                <MessageSquare className="h-3.5 w-3.5" />
-                {announcingStats ? '通知中...' : '募集状況を通知 📢'}
-              </button>
             </div>
           </div>
 
@@ -159,66 +146,46 @@ export default function BalancerHeader({ players, setPlayers, saving, announcing
               </div>
             )}
 
-            {/* 📢 KTMカスタム新方針・ルール案内チップ */}
-            <div className="w-full flex flex-wrap items-center gap-2 text-xs bg-primary-50/80 border border-primary-edge-soft/80 rounded-xl p-2.5 text-primary-950">
-              <span className="font-black flex items-center gap-1 text-primary-900">
-                <Info className="h-3.5 w-3.5 text-primary-700" />
-                カスタム方針:
-              </span>
-              <span className="bg-surface border border-primary-edge/60 px-2 py-0.5 rounded-md font-bold text-[11px] text-secondary-900">
-                🛡️ シルバー以下: <strong>ブラインドピック (MMRあり)</strong>
-              </span>
-              <span className="bg-surface border border-primary-edge/60 px-2 py-0.5 rounded-md font-bold text-[11px] text-primary-900">
-                👑 ゴールド以上: <strong>ドラフトピック (MMRあり)</strong>
-              </span>
-            </div>
-
             <div className="flex items-center gap-2 ml-auto flex-wrap">
-
-              {/* 一括参加切り替えボタン */}
-              <button
-                type="button"
-                onClick={() => {
-                  const updated = players.map(p => p.is_spectator_fixed ? p : { ...p, is_active: true });
-                  setPlayers(updated);
-                  try { localStorage.setItem('balancer_active_ids', JSON.stringify(updated.filter(p => p.is_active).map(p => p.id))); } catch {}
-                }}
-                className="px-3 py-2 rounded-xl bg-success-100 hover:bg-success-200 border border-success-edge-soft text-success-800 font-bold text-xs transition"
-                title="観戦固定メンバーを除く全員の参加チェックをONにします"
-              >
-                ✅ 全員参加ON
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const updated = players.map(p => p.is_spectator_fixed ? p : { ...p, is_active: false });
-                  setPlayers(updated);
-                  try { localStorage.setItem('balancer_active_ids', JSON.stringify(updated.filter(p => p.is_active).map(p => p.id))); } catch {}
-                }}
-                className="px-3 py-2 rounded-xl bg-surface-hover hover:bg-stone-300 border border-border text-foreground-subtle font-bold text-xs transition"
-                title="観戦固定メンバーを除く全員の参加チェックをクリアします"
-              >
-                ❌ 全員解除
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  try {
-                    const savedIds = JSON.parse(localStorage.getItem('balancer_active_ids') || '[]');
-                    if (Array.isArray(savedIds) && savedIds.length > 0) {
-                      setPlayers(prev => prev.map(p => ({ ...p, is_active: savedIds.includes(p.id) })));
-                    } else {
-                      toast.info('保存された前回のメンバー構成が見つかりません。');
+              {/* 一括操作セレクター（ON/解除/復元を1つに集約） */}
+              <div className="relative">
+                <select
+                  value=""
+                  onChange={(e) => {
+                    const action = e.target.value;
+                    if (action === 'all_on') {
+                      const updated = players.map(p => p.is_spectator_fixed ? p : { ...p, is_active: true });
+                      setPlayers(updated);
+                      try { localStorage.setItem('balancer_active_ids', JSON.stringify(updated.filter(p => p.is_active).map(p => p.id))); } catch {}
+                      toast.success('全員参加ONにしました');
+                    } else if (action === 'all_off') {
+                      const updated = players.map(p => p.is_spectator_fixed ? p : { ...p, is_active: false });
+                      setPlayers(updated);
+                      try { localStorage.setItem('balancer_active_ids', JSON.stringify(updated.filter(p => p.is_active).map(p => p.id))); } catch {}
+                      toast.info('全員解除しました');
+                    } else if (action === 'restore') {
+                      try {
+                        const savedIds = JSON.parse(localStorage.getItem('balancer_active_ids') || '[]');
+                        if (Array.isArray(savedIds) && savedIds.length > 0) {
+                          setPlayers(prev => prev.map(p => ({ ...p, is_active: savedIds.includes(p.id) })));
+                          toast.success('前回構成を復元しました');
+                        } else {
+                          toast.info('保存された前回のメンバー構成が見つかりません。');
+                        }
+                      } catch {
+                        toast.error('復元に失敗しました。');
+                      }
                     }
-                  } catch {
-                    toast.error('復元に失敗しました。');
-                  }
-                }}
-                className="px-3 py-2 rounded-xl bg-primary-100 hover:bg-primary-200 border border-primary-edge text-primary-900 font-bold text-xs transition"
-                title="前回のチーム分け時に参加していたメンバー構成を一元復元します"
-              >
-                ⏪ 前回構成を復元
-              </button>
+                  }}
+                  aria-label="一括操作メニュー"
+                  className="bg-surface-subtle hover:bg-surface-hover border border-border text-foreground-soft text-xs font-bold rounded-xl px-3 py-2 outline-none cursor-pointer transition shadow-2xs"
+                >
+                  <option value="" disabled>⚙️ メンバー一括操作 ▾</option>
+                  <option value="all_on">✅ 全員参加ON</option>
+                  <option value="all_off">❌ 全員解除</option>
+                  <option value="restore">⏪ 前回構成を復元</option>
+                </select>
+              </div>
 
               {/* 卓分割の選択状態表示 */}
               {selectedTable && (
@@ -227,34 +194,26 @@ export default function BalancerHeader({ players, setPlayers, saving, announcing
                   <button onClick={() => setSelectedTable(null)} className="text-primary-700/70 hover:text-foreground">✕</button>
                 </span>
               )}
-              {/* BL-02: 探索強度 */}
-              <select value={searchDepth} onChange={e => setSearchDepth(Number(e.target.value))}
-                title="精密ほど良い組み合わせを探すが計算が遅くなる"
-                className="bg-surface border border-border text-foreground-subtle text-xs font-bold rounded-lg px-2 py-2 outline-none">
-                <option value={40}>⚡ 速い</option>
-                <option value={100}>⚖️ 標準</option>
-                <option value={200}>🔬 精密</option>
-              </select>
-              {/* 🎪 日曜お祭りランダムシャッフル */}
+
+              {/* 🎪 日曜お祭りランダム（控えめなサブボタン化） */}
               <button
                 type="button"
                 onClick={handleFestivalRandomBalance}
                 disabled={balancing || !canBalance}
-                className={`flex items-center justify-center gap-1.5 px-3 py-2 md:px-4 md:py-2.5 rounded-xl font-black transition text-xs md:text-sm border ${
-                  balancing || !canBalance
-                    ? 'bg-surface-subtle text-faint border-border cursor-not-allowed'
-                    : 'bg-gradient-to-r from-primary-600 to-danger-600 hover:from-primary-500 hover:to-danger-500 text-white border-primary-edge shadow-md shadow-primary-500/20 cursor-pointer'
-                }`}
-                title="MMRやレーン希望に関係なく、10名を完全ランダムにBlue/Redへ振り分けます（公式MMR変動なし）"
+                className="px-3 py-2 rounded-xl text-xs font-bold text-foreground-soft hover:text-foreground bg-surface-subtle hover:bg-surface-hover border border-border disabled:opacity-40 disabled:cursor-not-allowed transition"
+                title="MMRを無視して完全ランダムにチーム分け（日曜お祭り用）"
               >
-                <span>🎲 お祭りランダム</span>
+                🎲 お祭り
               </button>
 
+              {/* メインアクション：チーム分け実行 */}
               <button onClick={handleBalance} disabled={balancing || !canBalance}
-                className={`flex items-center justify-center gap-2 px-5 py-2.5 md:px-8 md:py-3 rounded-xl font-black transition text-sm md:text-base ${
-                  balancing || !canBalance ? 'bg-surface-subtle text-muted-strong cursor-not-allowed' : 'bg-gradient-to-r from-primary-600 to-primary-600 hover:from-primary-500 hover:to-primary-500 text-white shadow-[0_0_20px_rgba(217,119,6,0.4)]'
+                className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-black transition text-sm ${
+                  balancing || !canBalance
+                    ? 'bg-surface-subtle text-muted-strong border border-border cursor-not-allowed'
+                    : 'bg-primary-600 hover:bg-primary-500 text-white shadow-md shadow-primary-500/20 cursor-pointer'
                 }`}>
-                {balancing ? <RefreshCw className="h-5 w-5 animate-spin" /> : <Swords className="h-5 w-5" />}
+                {balancing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Swords className="h-4 w-4" />}
                 {balancing ? 'AIが編成中...' : 'チーム分け実行'}
               </button>
             </div>
