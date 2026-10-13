@@ -6,6 +6,7 @@ import confetti from 'canvas-confetti';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { calculateBetOdds } from '../../lib/betOdds';
 import OmikujiModal, { OmikujiData } from './components/OmikujiModal';
+import ScratchModal, { ScratchResultData } from './components/ScratchModal';
 import KtmSlotGame from './components/KtmSlotGame';
 import KtmBaccaratGame from './components/KtmBaccaratGame';
 import KtmMinesGame from './components/KtmMinesGame';
@@ -40,6 +41,10 @@ export default function CasinoPage() {
   // 🎰 おみくじモーダル用ステート
   const [isOmikujiOpen, setIsOmikujiOpen] = useState<boolean>(false);
   const [omikujiData, setOmikujiData] = useState<OmikujiData | null>(null);
+
+  // 🥠 スクラッチくじモーダル用ステート
+  const [isScratchOpen, setIsScratchOpen] = useState<boolean>(false);
+  const [scratchData, setScratchData] = useState<ScratchResultData | null>(null);
 
   // 🪙 チップ送金モーダル用ステート
   const [isTipModalOpen, setIsTipModalOpen] = useState<boolean>(false);
@@ -252,6 +257,36 @@ export default function CasinoPage() {
       }
       return;
     }
+
+    // 🥠 スクラッチくじの場合は即時削りAPIを呼び出し
+    if (itemId === 'scratch_card') {
+      if (!confirm(`「${itemName}」を ${price}コイン で購入して今すぐ削りますか？`)) {
+        return;
+      }
+      try {
+        const res = await fetch('/api/bet/scratch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            discordId: user.discordId,
+            playerName: activePlayerName.trim() || user.username,
+          }),
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setScratchData(data);
+          setIsScratchOpen(true);
+          fetchBetData();
+          refreshUser();
+        } else {
+          toast.error(data.error || 'スクラッチくじの購入に失敗しました。');
+        }
+      } catch (e: any) {
+        toast.error('エラー: ' + e.message);
+      }
+      return;
+    }
+
     const totalPrice = price * quantity;
     const confirmMsg = quantity > 1
       ? `「${itemName}」を ${quantity}口（合計: ${totalPrice.toLocaleString()}コイン）でまとめ買いしますか？`
@@ -374,6 +409,17 @@ export default function CasinoPage() {
         onClose={() => setIsOmikujiOpen(false)}
         omikujiData={omikujiData}
         onClaimFinished={() => {
+          fetchBetData();
+          refreshUser();
+        }}
+      />
+
+      {/* 🥠 スクラッチくじ削り演出モーダル */}
+      <ScratchModal
+        isOpen={isScratchOpen}
+        onClose={() => setIsScratchOpen(false)}
+        resultData={scratchData}
+        onFinished={() => {
           fetchBetData();
           refreshUser();
         }}

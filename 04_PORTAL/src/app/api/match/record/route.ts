@@ -374,7 +374,22 @@ export async function POST(request: Request) {
       // コイン付与計算: 参加賞 +100コイン、勝利チーム +150コイン (お祭りマッチでもコインは満額付与！)
       const currentRolePrefs = typeof r.dbPlayer.role_preferences === 'object' && r.dbPlayer.role_preferences !== null ? r.dbPlayer.role_preferences : {};
       const currentCoins = Number(currentRolePrefs.coins ?? r.dbPlayer.coins ?? r.dbPlayer.metadata?.coins) || 1000;
-      const coinReward = (r.team === winningTeam) ? 250 : 100;
+      let coinReward = (r.team === winningTeam) ? 250 : 100;
+
+      // ⚔️ 勝利ボーナス激闘チケット（victory_bonus_doubler）の判定
+      let updatedInventory = Array.isArray(currentRolePrefs.inventory) ? [...currentRolePrefs.inventory] : (Array.isArray(r.dbPlayer.metadata?.inventory) ? [...r.dbPlayer.metadata.inventory] : []);
+      let hasVictoryDoubler = false;
+
+      if (r.team === winningTeam) {
+        const doublerIdx = updatedInventory.findIndex((it: any) => it.id === 'victory_bonus_doubler');
+        if (doublerIdx !== -1) {
+          // チケットを1枚消費して +600pt（通常250 + ブースト350）に爆増！
+          updatedInventory.splice(doublerIdx, 1);
+          coinReward = 600;
+          hasVictoryDoubler = true;
+        }
+      }
+
       const newCoins = currentCoins + coinReward;
       const currentMeta = typeof r.dbPlayer.metadata === 'object' && r.dbPlayer.metadata !== null ? r.dbPlayer.metadata : {};
 
@@ -390,9 +405,12 @@ export async function POST(request: Request) {
         off_role_pity: newOffRolePity,
         spectator_pity: 0, // ★ 出場したため観戦Pityを確実に0リセット
         coins: newCoins,
-        role_preferences: { ...currentRolePrefs, coins: newCoins },
-        metadata: { ...currentMeta, coins: newCoins }
+        role_preferences: { ...currentRolePrefs, coins: newCoins, inventory: updatedInventory },
+        metadata: { ...currentMeta, coins: newCoins, inventory: updatedInventory }
       };
+
+      (r as any).coinReward = coinReward;
+      (r as any).hasVictoryDoubler = hasVictoryDoubler;
 
       const { error: uError } = await supabase
         .from('ktm_players')
@@ -481,7 +499,7 @@ export async function POST(request: Request) {
     // 4. 勝敗予想（ベット）の自動精算 ＆ 的中配当払い戻し
     const payoutWinners: Array<{ name: string; payout: number; multiplier: number; streak?: number }> = [];
     try {
-      const { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } = await import('../../../../lib/playerCoins');
+      const { findOrCreatePlayer, getPlayerCoins, getPlayerInventory, updatePlayerCoinsAndInventory } = await import('../../../../lib/playerCoins');
       const { data: allOpenBetTasks } = await supabase
         .from('edge_tasks')
         .select('id, payload')
@@ -547,14 +565,54 @@ export async function POST(request: Request) {
               });
             }
           } else {
-            // 不的中：連勝リセット
+            // 不的中：全損保険（bet_insurance）の所持チェック
             if (pPlayer) {
-              await updatePlayerCoinsAndInventory({
-                player: pPlayer,
-                rolePreferencesUpdate: {
-                  betStreak: 0,
-                },
-              });
+              const currentInv = getPlayerInventory(pPlayer);
+              const insuranceIdx = currentInv.findIndex((it: any) => it.id === 'bet_insurance');
+              let insuranceRefund = 0;
+
+              if (insuranceIdx !== -1) {
+                // 保険チケットを1枚消費して50%キャッシュバック
+                currentInv.splice(insuranceIdx, 1);
+                insuranceRefund = Math.floor((bet.amount || 0) * 0.5);
+                const cur = getPlayerCoins(pPlayer);
+                const refundedCoins = cur + insuranceRefund;
+
+                await updatePlayerCoinsAndInventory({
+                  player: pPlayer,
+                  newCoins: refundedCoins,
+                  newInventory: currentInv,
+                  reason: 'bet_insurance_payout',
+                  reasonMetadata: { betAmount: bet.amount, refund: insuranceRefund },
+                  rolePreferencesUpdate: {
+                    betStreak: 0,
+                  },
+                });
+
+                // Discordへ保険発動通知
+                try {
+                  const { sendShopNotification } = await import('../../../../lib/discordNotify');
+                  await sendShopNotification({
+                    embeds: [{
+                      title: `💎【全損保険発動】${bet.player_name} さんの保険が適用されました！`,
+                      description: `勝敗予想は不的中でしたが、**💎 全損保険チケット** により賭け金（${(bet.amount || 0).toLocaleString()}🪙）の **50%（+${insuranceRefund.toLocaleString()}🪙）** がキャッシュバックされました！\n現在の残高: ${refundedCoins.toLocaleString()}🪙`,
+                      color: 0x06b6d4,
+                      footer: { text: 'KTM Sovereign Insurance' },
+                      timestamp: new Date().toISOString()
+                    }]
+                  });
+                } catch (insErr) {
+                  console.warn('[match/record] Insurance notify failed:', insErr);
+                }
+              } else {
+                // 通常の不的中：連勝リセット
+                await updatePlayerCoinsAndInventory({
+                  player: pPlayer,
+                  rolePreferencesUpdate: {
+                    betStreak: 0,
+                  },
+                });
+              }
             }
           }
 
@@ -630,7 +688,9 @@ export async function POST(request: Request) {
           const delta = isExhibition ? `±0 (お祭り保護)` : (p.mmrDelta > 0 ? `+${p.mmrDelta}` : `${p.mmrDelta}`);
           const kda = `${p.kills}/${p.deaths}/${p.assists}`;
           const champ = p.champion_name ? p.champion_name : 'Unknown';
-          const coinsEarned = p.team === winningTeam ? '+250🪙' : '+100🪙';
+          const coinsEarned = p.hasVictoryDoubler
+            ? '🔥+600🪙(激闘ボーナス!)'
+            : (p.team === winningTeam ? '+250🪙' : '+100🪙');
           return `\`${p.name}\` (${champ}) - **${kda}** (MMR: ${delta} | ${coinsEarned})`;
         };
 

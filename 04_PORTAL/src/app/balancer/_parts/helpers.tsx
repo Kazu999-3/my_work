@@ -29,8 +29,9 @@ export function getPlayerCasinoBadges(player: any): Array<{ id: string; icon: st
   const gameItems = inv.filter(item => {
     const id = String(item.id || '');
     const name = String(item.name || '');
-    if (id.includes('lottery')) return false;
-    if (name.includes('宝くじ')) return false;
+    if (id.includes('lottery') || name.includes('宝くじ')) return false;
+    if (id.includes('insurance') || name.includes('全損保険')) return false;
+    if (id.includes('scratch') || name.includes('スクラッチ')) return false;
     return true;
   });
 
@@ -46,7 +47,8 @@ export function getPlayerCasinoBadges(player: any): Array<{ id: string; icon: st
     if (!itemMap[id]) {
       let label = (item.name || '').replace(/^[^\s]+\s*/, '').slice(0, 5) || 'アイテム';
       let icon = item.icon || '👑';
-      if (id === 'force_champ_pick') { icon = '👑'; label = '下剋上'; }
+      if (id === 'victory_bonus_doubler') { icon = '⚔️'; label = '激闘'; }
+      else if (id === 'force_champ_pick') { icon = '👑'; label = '下剋上'; }
       else if (id === 'lane_heavy_ban') { icon = '🚫'; label = '集中BAN'; }
       else if (id === 'champ_protect') { icon = '🛡️'; label = '保護'; }
       else if (id === 'force_enemy_roles') { icon = '🔀'; label = 'ロール指定'; }

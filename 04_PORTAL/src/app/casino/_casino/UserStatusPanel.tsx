@@ -154,6 +154,16 @@ export default function UserStatusPanel({ user, lastRescueMonth, userStreak, use
                           <span>⏳</span>
                           <span>日曜22:00 自動抽選エントリー中</span>
                         </div>
+                      ) : item.id === 'bet_insurance' ? (
+                        <div className="w-full py-1.5 px-2 rounded-xl bg-secondary-500/10 border border-secondary-400/30 text-secondary-800 font-bold text-[11px] flex items-center justify-center gap-1">
+                          <span>💎</span>
+                          <span>予想不的中時に50%自動返還</span>
+                        </div>
+                      ) : item.id === 'victory_bonus_doubler' ? (
+                        <div className="w-full py-1.5 px-2 rounded-xl bg-primary-500/15 border border-primary-edge-strong/30 text-primary-950 font-bold text-[11px] flex items-center justify-center gap-1">
+                          <span>⚔️</span>
+                          <span>次回勝利時 +600pt 自動適用</span>
+                        </div>
                       ) : (
                         <button
                           type="button"

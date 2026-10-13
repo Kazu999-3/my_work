@@ -29,6 +29,8 @@ export type CoinReason =
   | 'tip_send'           // チップ送金（送り手・マイナス）
   | 'tip_receive'        // チップ送金（受け手）
   | 'lottery_prize'      // 宝くじの当選・還元
+  | 'scratch_card'       // 闇のスクラッチくじ
+  | 'bet_insurance_payout' // 勝敗予想・全損保険キャッシュバック
   | 'jackpot_claim'      // ジャックポット総取り
   | 'mentorship_checkin' // 師弟中間チェックイン完了ボーナス
   | 'admin_adjust';      // 管理者による手動調整

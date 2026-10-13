@@ -47,7 +47,7 @@ export default function ShopTab({ shopMessage, handleBuyItem }: {
                     <h3 className="font-black text-foreground text-sm group-hover:text-primary-700 transition-colors">
                       {item.name}
                     </h3>
-                    <p className="text-xs text-muted-strong leading-relaxed">
+                    <p className="text-xs text-muted-strong leading-relaxed whitespace-pre-line">
                       {item.desc}
                     </p>
                   </div>
@@ -80,6 +80,14 @@ export default function ShopTab({ shopMessage, handleBuyItem }: {
                           10口
                         </button>
                       </div>
+                    ) : item.id === 'scratch_card' ? (
+                      <button
+                        onClick={() => handleBuyItem(item.id, item.name, item.price, 1)}
+                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-500 hover:to-primary-400 text-white text-xs font-black transition-colors cursor-pointer shadow-sm flex items-center gap-1"
+                      >
+                        <span>🥠</span>
+                        <span>今すぐ削る！</span>
+                      </button>
                     ) : (
                       <button
                         onClick={() => handleBuyItem(item.id, item.name, item.price, 1)}
