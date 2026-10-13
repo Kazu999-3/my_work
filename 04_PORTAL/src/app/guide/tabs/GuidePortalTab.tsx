@@ -125,16 +125,17 @@ export default function GuidePortalTab() {
             </div>
             <h3 className="text-base font-black text-foreground">勝敗予想ベット ＆ KTMショップ</h3>
             <p className="text-muted text-xs leading-relaxed">
-              チーム分けが出たら [BLUE] か [RED] にコインを賭けて観戦！オッズは賭け金比率でリアルタイム変動します。貯めたコインはショップで特権チケットと交換可能！
+              チーム分けが出たら [BLUE] か [RED] にコインを賭けて観戦！オッズは賭け金比率でリアルタイム変動します。貯めたコインはショップで宝くじやくじ、激闘ブースターと交換可能！
             </p>
             <div className="bg-background rounded-2xl p-3.5 border border-border/80 text-xs text-foreground-subtle space-y-1.5">
               <div className="font-bold text-foreground-soft flex items-center gap-1.5 text-[11px]">
                 <ShoppingBag size={13} className="text-primary-600" />
-                コインで交換できる特権
+                ショップのおすすめアイテム
               </div>
-              <p>・<strong className="text-foreground-soft">第一希望確約チケット</strong>（次回必ず希望レーンへ）</p>
-              <p>・<strong className="text-foreground-soft">賞金首ターゲット指定権</strong>（特定プレイヤー撃破でボーナス）</p>
-              <p>・<strong className="text-foreground-soft">全員ブレイバリー権</strong>（全員ランダムビルド発動）</p>
+              <p>・🎟️ <strong className="text-foreground-soft">週末メガ宝くじ</strong>（日曜22時抽選！ジャックポット総取り）</p>
+              <p>・🥠 <strong className="text-foreground-soft">闇のスクラッチくじ</strong>（その場で即削り！最大5,000🪙当選）</p>
+              <p>・💎 <strong className="text-foreground-soft">全損保険チケット</strong>（勝敗予想ハズレ時に50%キャッシュバック）</p>
+              <p>・⚔️ <strong className="text-foreground-soft">勝利ボーナス激闘チケット</strong>（カスタム勝利時+600ptへ爆増）</p>
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-surface-subtle">

@@ -73,6 +73,14 @@ const OMIKUJI_ROWS = [
   { label: '🍀 小吉', prob: '25%', coins: '+100' },
 ];
 
+const SCRATCH_ROWS = [
+  { label: '🥇 特等（ジャックポット）', prob: '1.0%', coins: '+5,000🪙', mult: '×33.3倍' },
+  { label: '🥈 1等', prob: '4.0%', coins: '+1,000🪙', mult: '×6.6倍' },
+  { label: '🥉 2等', prob: '15.0%', coins: '+300🪙', mult: '×2.0倍' },
+  { label: '🎖️ 3等', prob: '40.0%', coins: '+100🪙', mult: '×0.66倍' },
+  { label: '🍃 参加賞（ハズレ）', prob: '40.0%', coins: '+30🪙', mult: '×0.2倍' },
+];
+
 export default function CasinoRulesPage() {
   return (
     <div className="min-h-screen pb-16 bg-[#eae4d4] dark:bg-background text-[#201c2b] dark:text-foreground">
@@ -303,6 +311,58 @@ export default function CasinoRulesPage() {
           <p className="text-[11px] text-muted-strong mt-2">
             💸 <strong>破産救済保険</strong>: 残高が100コイン未満のとき、月1回だけ +300コインを受け取れます。
           </p>
+        </section>
+
+        {/* 闇のスクラッチくじ */}
+        <section className={CARD}>
+          <h2 className={H2}>
+            🥠 闇のスクラッチくじ <RtpBadge rtp={0.897} />
+          </h2>
+          <p className="text-xs text-muted mb-3">
+            ショップにて1回150コインで購入し、その場で銀色の膜を削る即時抽選スピードくじです。
+            特等・1等に当選した場合はDiscordへ自動祝賀アナウンスが送信されます。
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs md:text-sm border-collapse">
+              <thead>
+                <tr className="bg-surface-subtle">
+                  <th className={TH}>等級</th>
+                  <th className={TH}>確率</th>
+                  <th className={TH}>賞金</th>
+                  <th className={TH}>倍率</th>
+                </tr>
+              </thead>
+              <tbody>
+                {SCRATCH_ROWS.map((r) => (
+                  <tr key={r.label}>
+                    <td className={TD}>{r.label}</td>
+                    <td className={`${TD} font-mono`}>{r.prob}</td>
+                    <td className={`${TD} font-mono font-black`}>{r.coins}</td>
+                    <td className={`${TD} font-mono`}>{r.mult}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-[11px] text-muted-strong mt-2">
+            期待値は 1枚あたり約 134.5コイン（理論RTP: 89.7%）。外れても参加賞30コインが確実に還元されます。
+          </p>
+        </section>
+
+        {/* KTMショップ特権アイテム */}
+        <section className={CARD}>
+          <h2 className={H2}>🛒 ショップアイテム＆ブースター</h2>
+          <p className="text-xs text-muted mb-3">
+            貯めたコインを使って勝敗予想やカスタム試合を有利に進められるアイテム一覧です。
+          </p>
+          <ul className="text-xs md:text-sm text-foreground-subtle space-y-2 list-disc list-inside leading-relaxed">
+            <li>
+              <strong>💎 全損保険チケット（100🪙）</strong>: 次回の勝敗予想が不的中になった際、インベントリから自動消費されて<strong>賭け金の50%を即時キャッシュバック</strong>します。
+            </li>
+            <li>
+              <strong>⚔️ 勝利ボーナス激闘チケット（150🪙）</strong>: 次回カスタムに選手として出場し勝利した際、通常ボーナス（+250pt）が<strong>【合計+600pt】へ大幅爆増</strong>します（差引純増 +450pt）。
+            </li>
+          </ul>
         </section>
 
         {/* 宝くじ */}
