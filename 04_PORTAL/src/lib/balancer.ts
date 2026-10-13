@@ -738,7 +738,8 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
           if (effB > effA + 150) lanesAdvantagedB++;
 
           const matchupHistKey = [pLayerA.name, pLayerB.name].sort().join("<=>") + ":" + role;
-          if (ctx.history.has(matchupHistKey)) { penalty += 15000; }
+          // ★ A-9: 直前対面ペナルティの強化（2戦連続同対面の防止）
+          if (ctx.history.has(matchupHistKey)) { penalty += 50000; }
 
           // 格上対面判定 (A vs B)
           const diffB = mmrB - mmrA;

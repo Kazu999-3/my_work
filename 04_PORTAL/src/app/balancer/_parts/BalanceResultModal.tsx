@@ -109,6 +109,36 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
                     </span>
                   );
                 })()}
+
+                {/* ★ A-10: 希望満足度バッジ */}
+                {(() => {
+                  const allPlayers = [...(balanceResult.teamBlue || []), ...(balanceResult.teamRed || [])];
+                  if (allPlayers.length === 0) return null;
+                  let mainCount = 0, subCount = 0, offCount = 0;
+                  allPlayers.forEach((p: any) => {
+                    const role = p.currentRole || p.role;
+                    const main = p.mainLane || p.pref1;
+                    const sub = p.subLane || p.pref2;
+                    if (p.isFixed || main === 'ALL' || main === role) {
+                      mainCount++;
+                    } else if (sub === role) {
+                      subCount++;
+                    } else {
+                      offCount++;
+                    }
+                  });
+                  const satisfactionRate = Math.round(((mainCount * 1.0 + subCount * 0.5) / allPlayers.length) * 100);
+                  return (
+                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border flex items-center gap-1 shadow-xs ${
+                      offCount === 0
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-700/50'
+                        : 'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-700/50'
+                    }`}>
+                      <span>🎉 希望満足度: <strong>{satisfactionRate}%</strong></span>
+                      <span className="opacity-75">（第1希望:{mainCount} / 第2希望:{subCount}{offCount > 0 ? ` / オフ:${offCount}` : ''}）</span>
+                    </span>
+                  );
+                })()}
               </div>
               <div className="flex items-center gap-2">
                 {proposals.length > 1 && (
