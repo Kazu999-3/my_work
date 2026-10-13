@@ -11,6 +11,44 @@
 
 ## 🗓️ 2026-10-13（火）
 
+### 🛡️ システム全量調査 ＆ 潜在不具合解消（復旧スクリプト依存ゼロ化・ゲストDiscord通知許容・試合コイン台帳記録）
+
+**概要**:
+1. **背景と目的**:
+   - ユーザーからの「改めてバグや不具合、改善点など無いか全量調査して」という要求に基づき、リポジトリ全体（04_PORTAL, 05_PILOT, scripts, SQL）を横断調査。
+   - 明日（10/14 DB制限リセット時）に運用者が即時実行を予定している補填・返還スクリプトの依存関係クラッシュやカラム名不整合を先手で根絶。
+   - バランサー運用における突発・未登録参加者のDiscord通知失敗や、試合精算時のコイン台帳記録漏れを解消。
+2. **実施内容**:
+   - **明日実行スクリプトの外部依存ゼロ化 ＆ カラム整合性修正 (`scripts/`)**:
+     - `grant_maintenance_compensation.mjs`: ルート `package.json` に存在せず `ERR_MODULE_NOT_FOUND` となっていた `@supabase/supabase-js` を完全排除し、Node.js 組み込み `fetch` へ書き換え。`coin_transactions` のカラム名を `meta` ➔ `metadata` に修正し、二重付与照合とINSERTの失敗を防止。
+     - `refund_deprecated_tickets.mjs`: `coin_transactions` のカラム名を `amount` ➔ `delta`, `meta` ➔ `metadata` に修正。
+     - 両スクリプトに `safe_runner.mjs` の共通引数パーサー（`parseRunMode()`）を配備し、Dry-Run・Live-Run・402ガードの挙動を統一。
+   - **バランサーDiscord決定通知のゲスト許容 (`04_PORTAL/src/app/api/discord/route.ts`)**:
+     - チーム分け決定通知時に、未登録プレイヤーが存在すると `unknown.length > 0` で 400 Bad Request を返し通知全体が失敗していた問題を改修。候補案投票と同様に警告ログ出力にとどめ、初参加🔰として表示を継続できるようフォールバック。
+   - **試合精算コイン増減の台帳記録 (`04_PORTAL/src/app/api/match/record/route.ts`)**:
+     - 試合終了時にプロファイル上のコイン残高を直接更新するだけでなく、`recordCoinTransaction` を呼び出して10名全員のコイン増減（参加賞・勝利・激闘チケットボーナス）を `coin_transactions`（`match_settle`）へ正式台帳記録。
+   - **Discord交流ロールIDの動的フォールバック化 (`04_PORTAL/src/lib/discordRoleSync.ts`)**:
+     - 初中級交流ロールID（141行目）のハードコードを `roleConfig.beginner_lounge_role || '1557006452261126194'` に改修。
+3. **機械的実値検証**:
+   - `04_PORTAL` TypeScript 型チェック (`npx tsc --noEmit`): **0 errors PASS**
+   - `04_PORTAL` 単体テスト (`npm test`): **全89件 PASS (100%)**
+   - `05_PILOT` TypeScript 型チェック & 単体テスト: **0 errors / 全5件 PASS (100%)**
+   - `04_PORTAL` Turbopack プロダクションビルド（97ルート）: **0 errors PASS**
+   - `05_PILOT` Turbopack プロダクションビルド（24ルート）: **0 errors PASS**
+   - `scripts` Dry-Run 実行確認: 両スクリプトともバナー表示および 402 安全待機処理の通過を確認
+4. **3行ナレッジ**:
+   - **「ルート実行スクリプトは外部npmパッケージ（@supabase等）に依存させず、ネイティブfetchで自立させよ」**: ワークスペース間の node_modules 不在による実行時クラッシュをゼロにできる。
+   - **「台帳テーブル（coin_transactions）はSQLマイグレーション正本（delta/metadata）とコード上のカラム名を常に突合せよ」**: 残高の二重更新や集計クエリの暗黙的失敗を防止する。
+   - **「外部通知（Discord Webhook）はマスタ未登録エンティティで処理を中断させず、ゲストフォールバックで継続させよ」**: 一部の例外データによる業務フロー全体の停止を防ぐ。
+5. **思考トリガー**:
+   - 「この通知APIやバッチ処理は、マスターに存在しない突発的なゲスト参加者や新旧データの揺らぎが混ざっても、400エラーで落とさずに業務を継続できるか？」
+6. **拾い上げ（Harvest / kame原則）**:
+   - `[要検証]`: 10/14 DBリセット直後のスクリプト実稼働（`--live` 実行）と残高反映。
+   - `[継続ウォッチ]`: Discord通知におけるゲスト参加者の表示スタイルとロール付与ログ。
+   - `[発信候補]`: 「個人開発の運用バッチでやってはいけない3つの罠（依存モジュール欠落・DBカラム不整合・通知の中断）」（note記事ネタ）。
+
+---
+
 ### 📁 神7設計 Step 3：機能別フォルダ構成（Feature-Driven Architecture）規約の制定 ＆ 05_PILOT自己完結化
 
 **概要**:

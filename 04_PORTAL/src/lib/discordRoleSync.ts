@@ -138,7 +138,8 @@ export async function updateMemberDiscordRankRole(
 
     // 3. プラチナ・エメラルド等（上位）に昇格した場合は、初中級交流ロールも自動剥奪
     const isHigh = ['PLATINUM', 'EMERALD', 'DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER'].includes(cleanRank);
-    const loungeRoleId = '1557006452261126194';
+    const roleConfig = await getRoleSyncConfig();
+    const loungeRoleId = roleConfig.beginner_lounge_role || '1557006452261126194';
     if (isHigh && currentRoles.has(loungeRoleId)) {
       const removeLounge = await discordFetch(
         `https://discord.com/api/v10/guilds/${guildId}/members/${discordId}/roles/${loungeRoleId}`,

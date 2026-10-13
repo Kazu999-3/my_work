@@ -14,6 +14,7 @@
  *      node scripts/grant_maintenance_compensation.mjs --execute
  *
  * 【安全機能】
+ *   - 外部依存ゼロ: @supabase/supabase-js 不要（Node組み込みfetchによるゼロ依存設計）
  *   - 二重付与防止: coin_transactions の一意タグ（maintenance_compensation_20261012）を照合
  *   - 希望レーン保護: role_preferences 内の primary/secondary 等の設定を破壊せずマージ
  *   - 台帳記録: coin_transactions へ admin_adjust として正式に記録
@@ -21,7 +22,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { createClient } from '@supabase/supabase-js';
+import { parseRunMode } from './lib/safe_runner.mjs';
 
 const COMPENSATION_TAG = 'maintenance_compensation_20261012';
 const BONUS_AMOUNT = 400; // 2日分（200コイン × 2日）
@@ -63,11 +64,13 @@ if (!supabaseUrl || !supabaseKey) {
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: { persistSession: false }
-});
+const headers = {
+  apikey: supabaseKey,
+  Authorization: `Bearer ${supabaseKey}`,
+  'Content-Type': 'application/json',
+};
 
-const isExecute = process.argv.includes('--execute');
+const { isExecute, printBanner } = parseRunMode();
 
 function getPlayerCoins(player) {
   if (!player) return 1000;
@@ -79,40 +82,39 @@ function getPlayerCoins(player) {
 }
 
 async function main() {
-  console.log('====================================================');
-  console.log(`🎁 KTM メンテナンス補填（2日分ログボ: +${BONUS_AMOUNT}コイン一括付与）`);
-  console.log(`モード: ${isExecute ? '🚨 【本番実行モード (DB更新)】' : '🔍 【Dry-Run プレビューモード (DB変更なし)】'}`);
-  console.log('====================================================\n');
+  printBanner(`KTM メンテナンス補填（2日分ログボ: +${BONUS_AMOUNT}コイン一括付与）`);
+  console.log('');
 
   // 1. 全プレイヤー取得
   console.log('1. プレイヤー一覧を取得中...');
-  const { data: players, error: pErr } = await supabase
-    .from('ktm_players')
-    .select('id, name, discord_id, coins, role_preferences, metadata, is_active')
-    .order('name', { ascending: true });
+  const res = await fetch(`${supabaseUrl}/rest/v1/ktm_players?select=id,name,discord_id,coins,role_preferences,metadata,is_active&order=name.asc`, {
+    headers,
+  });
 
-  if (pErr) {
-    console.error('❌ プレイヤー取得失敗:', pErr.message);
-    if (pErr.message.includes('402') || pErr.message.includes('quota')) {
+  if (!res.ok) {
+    const errText = await res.text();
+    console.error('❌ プレイヤー取得失敗:', res.status, errText);
+    if (res.status === 402 || errText.includes('quota')) {
       console.error('👉 現在Supabaseが制限モード(402)です。10/14のリセット後に実行してください。');
     }
     process.exit(1);
   }
 
+  const players = await res.json();
   console.log(`   ➔ 取得完了: ${players.length}名\n`);
 
   // 2. 過去の付与台帳をチェック (二重付与防止)
   console.log('2. 付与履歴（二重付与防止）を照合中...');
   let alreadyGrantedIds = new Set();
   try {
-    const { data: existingTxs } = await supabase
-      .from('coin_transactions')
-      .select('player_name, discord_id, meta')
-      .eq('reason', 'admin_adjust');
+    const txRes = await fetch(`${supabaseUrl}/rest/v1/coin_transactions?select=player_name,discord_id,metadata&reason=eq.admin_adjust`, {
+      headers,
+    });
 
-    if (existingTxs) {
+    if (txRes.ok) {
+      const existingTxs = await txRes.json();
       for (const tx of existingTxs) {
-        if (tx.meta?.tag === COMPENSATION_TAG) {
+        if (tx.metadata?.tag === COMPENSATION_TAG) {
           alreadyGrantedIds.add(tx.discord_id || tx.player_name);
         }
       }
@@ -181,34 +183,40 @@ async function main() {
         lastCompensationGrantedAt: new Date().toISOString(),
       };
 
-      // A. ktm_players 更新
-      const { error: upErr } = await supabase
-        .from('ktm_players')
-        .update({
+      // A. ktm_players 更新 (PATCH)
+      const upRes = await fetch(`${supabaseUrl}/rest/v1/ktm_players?id=eq.${player.id}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({
           coins: newCoins,
           role_preferences: updatedPrefs,
-        })
-        .eq('name', player.name);
+        }),
+      });
 
-      if (upErr) throw upErr;
+      if (!upRes.ok) {
+        const upErr = await upRes.text();
+        throw new Error(upErr);
+      }
 
-      // B. coin_transactions 台帳記録
+      // B. coin_transactions 台帳記録 (POST)
       try {
-        await supabase
-          .from('coin_transactions')
-          .insert({
+        await fetch(`${supabaseUrl}/rest/v1/coin_transactions`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
             player_name: player.name,
             discord_id: player.discord_id || null,
             delta: BONUS_AMOUNT,
             balance_after: newCoins,
             reason: 'admin_adjust',
-            meta: {
+            metadata: {
               tag: COMPENSATION_TAG,
               description: '2026-10-12〜14 メンテナンス補填（2日分ログインボーナス）',
               days: 2,
               grantedAt: new Date().toISOString(),
-            }
-          });
+            },
+          }),
+        });
       } catch (txErr) {
         console.warn(`  ⚠️ 台帳記録スキップ (${player.name}):`, txErr.message);
       }

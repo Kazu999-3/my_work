@@ -26,13 +26,14 @@ export async function POST(request: Request) {
       const knownSet = new Set((knownPlayers || []).map((p: any) => p.name));
       const unknown = allNames.filter((n) => !knownSet.has(n));
       if (unknown.length > 0) {
-        return NextResponse.json({ error: `登録されていないプレイヤー名が含まれています: ${unknown.join(', ')}` }, { status: 400 });
+        console.warn('[discord route] 未登録プレイヤーが含まれています（ゲスト許容）:', unknown);
       }
 
-      // 初参加（通算0戦）プレイヤーを特定
-      newPlayerNames = (knownPlayers || [])
+      // 初参加（通算0戦）プレイヤーを特定（未登録ゲストも初参加扱い）
+      const zeroGamePlayers = (knownPlayers || [])
         .filter((p: any) => (p.total_games ?? 0) === 0 && (p.stats?.total?.g ?? 0) === 0)
         .map((p: any) => p.name);
+      newPlayerNames = [...zeroGamePlayers, ...unknown];
     }
 
     // ⚠️ 2026-09-29 追加: 連投対策のクールダウン。

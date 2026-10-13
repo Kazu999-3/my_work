@@ -428,6 +428,31 @@ export async function POST(request: Request) {
           throw new Error(`Player ${r.name} の更新エラー: ${retryRes.error.message}`);
         }
       }
+
+      // 試合精算コインの台帳記録（coin_transactions へ match_settle として正式記録）
+      try {
+        const { recordCoinTransaction } = await import('../../../../lib/coinLedger');
+        await recordCoinTransaction({
+          player: {
+            id: r.dbPlayer?.id,
+            name: r.name,
+            discord_id: r.dbPlayer?.discord_id || null,
+          },
+          delta: coinReward,
+          balanceAfter: newCoins,
+          reason: 'match_settle',
+          metadata: {
+            matchId: newMatchId,
+            role: r.role,
+            team: r.team,
+            isWin: r.team === winningTeam,
+            isExhibition,
+            hasVictoryDoubler,
+          },
+        });
+      } catch (txErr) {
+        console.warn(`[match/record] 台帳記録スキップ (${r.name}):`, txErr);
+      }
     }
 
     // (4) 待機プレイヤーの Pity 加算はチーム確定時（pending保存時）に行うようにライフサイクルを分離・移動したため、ここでは行わない。

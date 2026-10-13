@@ -22,6 +22,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import { parseRunMode } from './lib/safe_runner.mjs';
 
 // 撤去アイテムの定価マップ
 const DEPRECATED_PRICES = {
@@ -79,7 +80,7 @@ const headers = {
   'Content-Type': 'application/json',
 };
 
-const isExecute = process.argv.includes('--execute');
+const { isExecute, printBanner } = parseRunMode();
 
 function getPlayerCoins(player) {
   if (!player) return 1000;
@@ -98,10 +99,8 @@ function getPlayerInventory(player) {
 }
 
 async function main() {
-  console.log('====================================================');
-  console.log('🪙 KTM 撤去チケット自動換金スクリプト');
-  console.log(`モード: ${isExecute ? '🚨 【本番実行モード (DB更新)】' : '🔍 【Dry-Run プレビューモード (DB変更なし)】'}`);
-  console.log('====================================================\n');
+  printBanner('KTM 撤去チケット自動換金スクリプト');
+  console.log('');
 
   console.log('1. プレイヤー一覧を取得中...');
   const res = await fetch(`${supabaseUrl}/rest/v1/ktm_players?select=id,name,discord_id,coins,role_preferences,metadata,is_active&order=name.asc`, {
@@ -238,10 +237,10 @@ async function main() {
           body: JSON.stringify({
             player_name: p.name,
             discord_id: p.discord_id || null,
-            amount: t.refundAmount,
+            delta: t.refundAmount,
             balance_after: t.newCoins,
             reason: 'admin_adjust',
-            meta: {
+            metadata: {
               tag: 'deprecated_ticket_refund_20261013',
               removed_tickets: t.removedTickets,
             },
