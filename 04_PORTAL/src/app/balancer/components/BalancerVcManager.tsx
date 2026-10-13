@@ -84,82 +84,51 @@ export const BalancerVcManager = memo(function BalancerVcManager({ onMessage }: 
 
 
   return (
-    <div className="p-4 rounded-2xl bg-gradient-to-br from-primary-500/10 via-primary-500/5 to-transparent border border-primary-edge-strong/30 flex flex-col justify-between gap-3 shadow-xs">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">🔊</span>
-          <div>
-            <h4 className="text-xs font-black text-primary-950">Discord VCチャンネル名の動的更新</h4>
-            <p className="text-[10px] text-muted">登録したチャンネル名をクリックしてVC名を即座に変更できます</p>
-          </div>
+    <div className="p-3 rounded-2xl bg-surface border border-border flex flex-wrap items-center justify-between gap-2.5 shadow-2xs">
+      <div className="flex items-center gap-2">
+        <span className="text-base">🔊</span>
+        <div>
+          <h4 className="text-xs font-bold text-foreground">VCステータス</h4>
+          <p className="text-[10px] text-muted">DiscordのVC横に吹き出しで進行状況を表示</p>
         </div>
-        {updatingVc && <span className="text-[10px] font-bold text-primary-700 animate-pulse">更新中...</span>}
       </div>
 
-      {/* 登録済みプリセット一覧 */}
       <div className="flex items-center gap-1.5 flex-wrap">
-        {vcPresets.map((preset, idx) => (
-          <div key={idx} className="inline-flex items-center rounded-xl bg-surface/90 border border-primary-edge-soft shadow-2xs overflow-hidden group">
-            <button
-              type="button"
-              disabled={updatingVc}
-              onClick={() => handleUpdate(preset)}
-              className="px-2.5 py-1.5 text-[11px] font-black text-primary-950 hover:bg-primary-50 transition cursor-pointer disabled:opacity-50"
-              title={`VC名を「${preset}」に変更`}
-            >
-              {preset}
-            </button>
-            {vcPresets.length > 1 && (
-              <button
-                type="button"
-                onClick={() => handleDeleteVcPreset(preset)}
-                className="px-1.5 py-1.5 text-faint hover:text-danger-600 hover:bg-danger-50 border-l border-primary-edge-soft text-[10px] transition cursor-pointer"
-                title="このプリセットを削除"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* 新しいチャンネル名の追加・即時送信フォーム */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleAddVcPreset();
-        }}
-        className="flex items-center gap-1.5 pt-2 border-t border-primary-edge-strong/20"
-      >
-        <input
-          type="text"
-          value={newPresetText}
-          onChange={(e) => setNewPresetText(e.target.value)}
-          placeholder="例: 🔊 カスタム【お祭りマッチ開催中！】"
-          className="flex-1 bg-surface/90 border border-primary-edge-soft text-foreground rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:border-primary-edge-strong shadow-inner"
-        />
         <button
-          type="submit"
-          disabled={!newPresetText.trim()}
-          className="px-3 py-1.5 rounded-xl bg-primary-600 hover:bg-primary-500 text-white font-black text-xs transition shadow-xs cursor-pointer disabled:opacity-40"
-          title="新しいチャンネル名をプリセットに保存"
+          type="button"
+          onClick={() => handleUpdate('game1')}
+          disabled={updatingVc}
+          className="px-2.5 py-1 rounded-xl bg-surface-subtle hover:bg-surface-hover border border-border text-foreground-soft font-bold text-[11px] transition cursor-pointer"
         >
-          ＋ 追加保存
+          1戦目
         </button>
         <button
           type="button"
-          disabled={!newPresetText.trim() || updatingVc}
-          onClick={() => {
-            const text = newPresetText.trim();
-            if (text) handleUpdate(text);
-
-          }}
-          className="px-3 py-1.5 rounded-xl bg-primary-600 hover:bg-primary-500 text-white font-black text-xs transition shadow-xs cursor-pointer disabled:opacity-40"
-          title="入力した名前で今すぐVC名を更新"
+          onClick={() => handleUpdate('game2')}
+          disabled={updatingVc}
+          className="px-2.5 py-1 rounded-xl bg-surface-subtle hover:bg-surface-hover border border-border text-foreground-soft font-bold text-[11px] transition cursor-pointer"
         >
-          即時更新
+          2戦目
         </button>
-      </form>
+        <button
+          type="button"
+          onClick={() => handleUpdate('game3')}
+          disabled={updatingVc}
+          className="px-2.5 py-1 rounded-xl bg-surface-subtle hover:bg-surface-hover border border-border text-foreground-soft font-bold text-[11px] transition cursor-pointer"
+        >
+          3戦目
+        </button>
+        <button
+          type="button"
+          onClick={() => handleUpdate('reset')}
+          disabled={updatingVc}
+          className="px-2 py-1 rounded-xl text-faint hover:text-foreground text-[11px] transition cursor-pointer"
+          title="ステータスをクリア"
+        >
+          クリア ✕
+        </button>
+        {updatingVc && <span className="text-[10px] text-primary-600 animate-pulse font-bold">更新中...</span>}
+      </div>
     </div>
   );
 });

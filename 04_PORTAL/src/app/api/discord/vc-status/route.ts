@@ -19,58 +19,84 @@ export async function POST(req: Request) {
       }, { status: 500 });
     }
 
-    let newChannelName = '';
+    let newStatusText = '';
+    let fallbackChannelName = '';
+
     if (status === 'game1') {
-      newChannelName = '🔊 カスタム【1戦目進行中・途中交代歓迎】';
+      newStatusText = '🎮 1戦目進行中 (途中交代歓迎)';
+      fallbackChannelName = '🔊 🎮カスタムVC (1戦目)';
     } else if (status === 'game2') {
-      newChannelName = '🔊 カスタム【2戦目進行中・途中交代歓迎】';
+      newStatusText = '🎮 2戦目進行中 (途中交代歓迎)';
+      fallbackChannelName = '🔊 🎮カスタムVC (2戦目)';
     } else if (status === 'game3') {
-      newChannelName = '🔊 カスタム【3戦目進行中・最終決戦】';
+      newStatusText = '🔥 3戦目進行中 (最終決戦)';
+      fallbackChannelName = '🔊 🎮カスタムVC (3戦目)';
     } else if (status === 'reset') {
-      newChannelName = defaultName || '🔊 🎮カスタムVC';
+      newStatusText = '';
+      fallbackChannelName = defaultName || '🔊 🎮カスタムVC';
     } else if (typeof status === 'string' && status.trim()) {
-      newChannelName = status.trim();
+      newStatusText = status.trim();
+      fallbackChannelName = status.trim();
     } else {
       return NextResponse.json({ error: '有効なステータスを指定してください。' }, { status: 400 });
     }
 
-    // Discord REST API を呼び出してチャンネル名を更新 (PATCH /channels/{channel_id})
-    const discordRes = await fetch(`https://discord.com/api/v10/channels/${channelId}`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bot ${botToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        name: newChannelName
-      })
-    });
-
-    if (!discordRes.ok) {
-      const errData = await discordRes.json().catch(() => ({}));
-      console.error('[vc-status POST] Discord API error:', errData);
-      
-      // Discordのレートリミット (10分に2回まで) の場合
-      if (discordRes.status === 429) {
-        return NextResponse.json({
-          success: false,
-          error: 'Discordのチャンネル名変更レートリミット（10分間に2回まで）に達しました。少し時間を置いてから再度お試しください。'
-        }, { status: 429 });
+    // 1. Discord公式の「ボイスステータス（VC内のステータスコメント）」を設定 (PUT /channels/{channel_id}/voice-status)
+    // チャンネル名をリネームせず、VC横・参加者上の吹き出しにステータスを表示するため、チャンネル幅を圧迫しない。
+    let voiceStatusSuccess = false;
+    try {
+      const vsRes = await fetch(`https://discord.com/api/v10/channels/${channelId}/voice-status`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bot ${botToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          status: newStatusText
+        })
+      });
+      if (vsRes.ok) {
+        voiceStatusSuccess = true;
       }
-
-      return NextResponse.json({
-        success: false,
-        error: errData.message || 'Discordチャンネル名の変更に失敗しました。'
-      }, { status: discordRes.status });
+    } catch (vsErr) {
+      console.warn('[vc-status PUT] voice-status error:', vsErr);
     }
 
-    const updatedChannel = await discordRes.json();
+    // 2. ボイスステータスAPIが利用できない場合のフォールバック（またはリセット時）
+    // ステータス設定が成功していればチャンネル名のリネーム（レート制限10分2回・幅圧迫）はスキップする
+    if (!voiceStatusSuccess) {
+      const discordRes = await fetch(`https://discord.com/api/v10/channels/${channelId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bot ${botToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: fallbackChannelName
+        })
+      });
+
+      if (!discordRes.ok) {
+        const errData = await discordRes.json().catch(() => ({}));
+        console.error('[vc-status POST] Discord API error:', errData);
+        if (discordRes.status === 429) {
+          return NextResponse.json({
+            success: false,
+            error: 'Discordのレートリミット（10分間に2回まで）に達しました。'
+          }, { status: 429 });
+        }
+        return NextResponse.json({
+          success: false,
+          error: errData.message || 'Discord VCステータスの更新に失敗しました。'
+        }, { status: discordRes.status });
+      }
+    }
 
     return NextResponse.json({
       success: true,
       channelId,
-      channelName: updatedChannel.name,
-      message: `VCチャンネル名を「${updatedChannel.name}」に更新しました！`
+      statusText: newStatusText,
+      message: newStatusText ? `Discord VCステータスを「${newStatusText}」に設定しました！` : 'Discord VCステータスをクリアしました！'
     });
   } catch (error: any) {
     console.error('[vc-status POST] Error:', error);
