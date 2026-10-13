@@ -16,10 +16,11 @@ name: Edge Cloud Worker
 
 on:
   schedule:
-    # 2026-10-12: Supabase無料枠のLog Ingestion(1GB/月)およびEgress超過防止のため、
-    # 5分おき(月8,640回)から「30分おき(月1,440回)」へ変更。
+    # 2026-10-12: 5分おき(月8,640回)から「30分おき(月1,440回)」へ緩和。
+    # 2026-10-14: Supabase Log Ingestion(1GB/月)超過の完全再発防止のため、
+    # 「1時間おき(月720回)」へさらに緩和(月間ログ量 約0.4GBへ抑制)。
     # なおタスク発生時は pg_cron(migration 93) から workflow_dispatch が即時発火可能。
-    - cron: '*/30 * * * *'
+    - cron: '0 * * * *'
   workflow_dispatch:
     # 参照・検証用の手動実行
 
