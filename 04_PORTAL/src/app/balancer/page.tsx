@@ -79,8 +79,8 @@ export default function BalancerPage() {
   const [sortConfig, setSortConfig] = useState({ key: "no", direction: "asc" });
   const [selectedPlayer, setSelectedPlayer] = useState<any>(null);
 
-  // BL-02: 探索強度（40=速い/100=標準/200=精密）
-  const [searchDepth, setSearchDepth] = useState(40);
+  // BL-02: 探索強度（常に200=精密で固定）
+  const [searchDepth, setSearchDepth] = useState(200);
 
   // 格差診断: 参加者をMMR順に2人ずつペアにし、「近い実力の相手がいない人」を検出する。
   // チーム全体のMMR幅より「レーン対面の格差」が体験に効くため、対面を組めない外れ値を警告する。
