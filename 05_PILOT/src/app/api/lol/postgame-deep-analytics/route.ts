@@ -8,6 +8,7 @@ import {
 } from '@/lib/riot';
 import { supabase } from '@/lib/supabaseClient';
 import { analyzePostgameTempo, loadItemMeta, type PostgameTempoReport } from '@/lib/postgameTempo';
+import { analyzePostgameJgMetrics, type PostgameJgAnalysisReport } from '@/lib/postgameJgMetrics';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 45;
@@ -241,6 +242,7 @@ export async function GET(request: NextRequest) {
     // テンポ解析はタイムラインが必須。失敗しても詳細分析の残りは返す
     let tempo: PostgameTempoReport | null = null;
     let tempo_error: string | null = null;
+    let jg_analysis: PostgameJgAnalysisReport | null = null;
     if (timeline && itemMeta) {
       try {
         tempo = analyzePostgameTempo(match, timeline, puuid, itemMeta);
@@ -249,6 +251,14 @@ export async function GET(request: NextRequest) {
       }
     } else {
       tempo_error = timeline ? 'アイテム辞書(DDragon)を取得できませんでした' : (timelineError || 'タイムラインを取得できませんでした');
+    }
+
+    if (timeline) {
+      try {
+        jg_analysis = analyzePostgameJgMetrics(match, timeline, puuid);
+      } catch (e: any) {
+        console.warn('[postgame-deep-analytics] jg metrics error:', e);
+      }
     }
 
     return NextResponse.json({
@@ -273,6 +283,7 @@ export async function GET(request: NextRequest) {
       timeline_error: timelineError,
       tempo,
       tempo_error,
+      jg_analysis,
     });
   } catch (error: any) {
     console.error('[postgame-deep-analytics] Error:', error);

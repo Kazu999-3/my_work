@@ -45,6 +45,9 @@
 - **[スロープッシュ戦術論（ビッグウェーブ構築・ダイブプレッシャー・安全なリコール）](file:///D:/my_work/01_INTEL/concepts/slow_push.md)**
 - **[レーンプライオリティ論（先手合流権・プッシュ主導権・JG支援）](file:///D:/my_work/01_INTEL/concepts/lane_priority.md)**
 - **[ディープワード戦術論（敵JG深部視界・ルート早期察知・ガンク無力化）](file:///D:/my_work/01_INTEL/concepts/deep_ward.md)**
+- **[JG意思決定ツリー ＆ ダウンテンポ哲学（天狐ハク監修・4択ツリーとガンク3条件）](file:///D:/my_work/01_INTEL/concepts/jg_macro_decision_tree.md)**
+- **[Linear Jungle Tech（raaaaaq/Tarzaned・4キャンプ同期循環と先行リコール）](file:///D:/my_work/01_INTEL/concepts/jg_linear_jungle_tech.md)**
+- **[10,000試合実証：対面JG相対指標と勝率相関（FORESTER・15分74%勝利ボーダー）](file:///D:/my_work/01_INTEL/concepts/jg_relative_advantage_metrics.md)**
 
 ## 📚 1. LoL 戦略 ＆ 攻略バイブル (Intel Domain)
 動画解析やプロ追跡から得られた最新の LoL メタ・攻略知識です。

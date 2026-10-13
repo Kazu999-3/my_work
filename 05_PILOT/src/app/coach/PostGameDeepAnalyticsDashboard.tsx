@@ -9,6 +9,9 @@ import type { PostgameTempoReport } from '@/lib/postgameTempo';
 import PostGameTempoSections from './PostGameTempoSections';
 import TargetComparisonCard from './TargetComparisonCard';
 import PostGameReflectionForm from './PostGameReflectionForm';
+import JgRelativeTrackerCard from './JgRelativeTrackerCard';
+import VodReviewPointsCard from './VodReviewPointsCard';
+import type { PostgameJgAnalysisReport } from '@/lib/postgameJgMetrics';
 
 // 試合後: 詳細分析（2026-10-05 全面見直し）
 // 旧版はリコールのテンポ損失・ワード監査の採点・ランク水準ラベル・「最重要改善アクション」など、
@@ -82,6 +85,7 @@ interface PostGameData {
     count: number;
     avg: Record<'cs_per_min' | 'deaths' | 'vision_per_min' | 'kill_participation' | 'damage_share' | 'control_wards_bought', number | null>;
   };
+  jg_analysis?: PostgameJgAnalysisReport | null;
 }
 
 interface PostGameDashboardProps {
@@ -354,6 +358,16 @@ export default function PostGameDeepAnalyticsDashboard({
         recentAvg={data.role_recent.avg}
         recentCount={data.role_recent.count}
       />
+
+      {/* 対面JG相対トラッカー（FORESTER 10,000試合モデル） */}
+      {data.jg_analysis && (
+        <JgRelativeTrackerCard report={data.jg_analysis} />
+      )}
+
+      {/* VODピンポイント検証リスト（raaaaaq × small_turnsモデル） */}
+      {data.jg_analysis && data.jg_analysis.vodReviewPoints && data.jg_analysis.vodReviewPoints.length > 0 && (
+        <VodReviewPointsCard points={data.jg_analysis.vodReviewPoints} />
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* 1. レーン戦 */}
