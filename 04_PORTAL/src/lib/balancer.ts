@@ -187,6 +187,14 @@ export function selectPlayersWithPity(allPlayers: Player[]): { selected: Player[
   // ② 基準レートからの近接度（ボリュームゾーンに近い人を優先選抜）
   // ③ 同等レート帯内では Spectator Pity > レーンPity > ランダム
   candidateInfo.sort((a, b) => {
+    // ★ A-1: 2連続見学（ベンチ送り）の100%絶対禁止
+    // 直前に見学した人（spectator_pity >= 1）は、中央値乖離に関わらず最優先でスタメン選抜
+    const aHadSpec = (a.spectator_pity || 0) >= 1;
+    const bHadSpec = (b.spectator_pity || 0) >= 1;
+    if (aHadSpec !== bHadSpec) {
+      return aHadSpec ? -1 : 1;
+    }
+
     // 格上未許可保護: 全体中央値より200以上低く、かつ allowHigher が false の場合は選抜優先度を下げる（後ろへ回す）
     const aMmr = getPlayerRepresentativeMmr(a.player);
     const bMmr = getPlayerRepresentativeMmr(b.player);
@@ -257,6 +265,14 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
         effectiveWeight.set(strictCandidates[i], 2); // 通常に格下げ（実効値のみ・入力は不変）
       }
     }
+  });
+
+  // ★ A-5: ロール手動固定の人数の上限設定（最大2名まで）
+  // 3名以上の固定指定は残りのプレイヤーの希望を大幅に破壊するため、Pityが高い上位2名のみを有効化
+  const effectiveFixed = new Map<Player, boolean>();
+  const fixedCandidates = players.filter(p => p.isFixed).sort((a, b) => b.pity - a.pity);
+  fixedCandidates.forEach((p, idx) => {
+    effectiveFixed.set(p, idx < 2);
   });
 
   // 代表MMRをメインロール（pref1）基準で算出
@@ -468,11 +484,12 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
         const w = effectiveWeight.get(player) ?? player.weight;
         let rolePenalty = 0;
 
+        const isFixed = effectiveFixed.get(player) ?? player.isFixed;
         if (role === player.ng1 || role === player.ng2) {
           rolePenalty = 1000000;
           if (w === 1) rolePenalty *= 10;
           else if (w === 2) rolePenalty *= 2;
-        } else if (player.isFixed || player.pref1 === 'ALL' || player.pref1 === role) {
+        } else if (isFixed || player.pref1 === 'ALL' || player.pref1 === role) {
           rolePenalty = player.isNewbie ? -30000 : 0;
           mainCount++;
         } else if (player.pref2 === role) {
@@ -591,6 +608,47 @@ function runBalanceSearch(players: Player[], ctx: BalanceContext): RawBalanceCan
       if (setsEqual(teamASet, ctx.winStreakTeam) || setsEqual(teamBSet, ctx.winStreakTeam)) {
         compositionPenalty += 150000;
       }
+    }
+
+    // ★ A-3: チーム間の高ランク枚数均等化
+    // 両チームの HIGH_RANKS (プラチナ以上) の枚数差が2枚以上開いた場合に均等分配ペナルティ
+    const highA = teamA.filter(p => HIGH_RANKS.includes((p.rank || '').trim().toUpperCase().split(/\s+/)[0])).length;
+    const highB = teamB.filter(p => HIGH_RANKS.includes((p.rank || '').trim().toUpperCase().split(/\s+/)[0])).length;
+    const highDiff = Math.abs(highA - highB);
+    if (highDiff >= 2) {
+      compositionPenalty += Math.pow(highDiff - 1, 2) * 60000;
+    }
+
+    // ★ A-4: 連敗者同士の同チーム集中（お通夜チーム）防止
+    // 当日連敗中 (todayStreak <= -1) のプレイヤーが片方に3人以上偏るのを防ぐ
+    const losingA = teamA.filter(p => (p.todayStreak || 0) <= -1).length;
+    const losingB = teamB.filter(p => (p.todayStreak || 0) <= -1).length;
+    const losingDiff = Math.abs(losingA - losingB);
+    if (Math.max(losingA, losingB) >= 3 && losingDiff >= 2) {
+      compositionPenalty += (losingDiff - 1) * 45000;
+    }
+
+    // ★ A-2: 2戦目のシャッフル保証（1戦目と同チームの重複ペナルティ）
+    // 直前試合で同じチームだった人同士が2戦目でも再び同チームになるペア数が多いほどペナルティ
+    const countRecentTeammates = (teamIndices: number[]) => {
+      let recentDuplicates = 0;
+      const names = teamIndices.map(i => players[i].name);
+      for (let x = 0; x < names.length; x++) {
+        for (let y = x + 1; y < names.length; y++) {
+          const key = [names[x], names[y]].sort().join("<=>");
+          const count = ctx.teammateHistory.get(key) || 0;
+          if (count >= 1) {
+            recentDuplicates++;
+          }
+        }
+      }
+      return recentDuplicates;
+    };
+    const dupA = countRecentTeammates(teamAIndices);
+    const dupB = countRecentTeammates(teamBIndices);
+    if (dupA + dupB >= 6) {
+      // 5人中3〜4人以上が前回と同じ味方の場合に強いシャッフル圧力をかける
+      compositionPenalty += (dupA + dupB - 5) * 15000;
     }
 
     // 🤝 大会・カスタム運用: 初参加者（通算3戦未満）と指定メンターの同チーム優先配置
