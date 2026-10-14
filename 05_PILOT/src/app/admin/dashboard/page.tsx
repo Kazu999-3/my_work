@@ -396,14 +396,56 @@ export default function OpsDashboardPage() {
                             ? { label: '🔄 変更', cls: 'bg-amber-950/50 text-amber-300 border-amber-800/80' }
                             : { label: '👤 代理追加', cls: 'bg-purple-950/50 text-purple-300 border-purple-800/80' };
 
-                        const styleText =
+                        const styleDisplay =
                           log.style === 'full'
-                            ? 'フル参加'
+                            ? { icon: '🌕', label: 'フル参加' }
                             : log.style === 'single'
-                            ? '1戦のみ'
+                            ? { icon: '⚡', label: '1戦のみ' }
                             : log.style === 'late'
-                            ? '途中参加'
-                            : log.style || null;
+                            ? { icon: '⏳', label: '途中参加' }
+                            : log.style
+                            ? { icon: '📝', label: String(log.style) }
+                            : null;
+
+                        const rawRole = (log.metadata?.role || log.metadata?.lane || '').toUpperCase();
+                        const roleInfo = rawRole.includes('TOP')
+                          ? { icon: '⚔️', label: 'TOP' }
+                          : rawRole.includes('JG') || rawRole.includes('JUNGLE')
+                          ? { icon: '🌲', label: 'JG' }
+                          : rawRole.includes('MID')
+                          ? { icon: '🧙', label: 'MID' }
+                          : rawRole.includes('ADC') || rawRole.includes('BOT')
+                          ? { icon: '🏹', label: 'ADC' }
+                          : rawRole.includes('SUP')
+                          ? { icon: '🛡️', label: 'SUP' }
+                          : rawRole.includes('ALL') || rawRole.includes('FILL')
+                          ? { icon: '🌟', label: 'ALL' }
+                          : null;
+
+                        const rankStr = log.metadata?.rank ? String(log.metadata.rank).toUpperCase() : null;
+                        const rankCls = !rankStr
+                          ? 'bg-slate-800/60 text-slate-400 border-slate-700/60'
+                          : rankStr.includes('CHALLENGER')
+                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold'
+                          : rankStr.includes('MASTER')
+                          ? 'bg-purple-500/20 text-purple-300 border-purple-500/40 font-bold'
+                          : rankStr.includes('DIAMOND')
+                          ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
+                          : rankStr.includes('EMERALD')
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                          : rankStr.includes('PLATINUM')
+                          ? 'bg-teal-500/20 text-teal-300 border-teal-500/40'
+                          : rankStr.includes('GOLD')
+                          ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40'
+                          : rankStr.includes('SILVER')
+                          ? 'bg-slate-400/20 text-slate-300 border-slate-400/40'
+                          : rankStr.includes('BRONZE')
+                          ? 'bg-amber-900/30 text-amber-400 border-amber-800/40'
+                          : rankStr.includes('IRON')
+                          ? 'bg-zinc-700/30 text-zinc-400 border-zinc-600/40'
+                          : 'bg-slate-800/60 text-slate-400 border-slate-700/60';
+
+                        const reasonText = log.metadata?.reason || log.metadata?.note;
 
                         return (
                           <div
@@ -412,16 +454,27 @@ export default function OpsDashboardPage() {
                               log.action === 'LEAVE' ? 'bg-rose-950/10' : ''
                             }`}
                           >
-                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap sm:flex-nowrap">
                               <span className={`px-2 py-0.5 rounded text-[10px] font-bold border shrink-0 ${typeBadge.cls}`}>
                                 {typeBadge.label}
                               </span>
-                              <span className="font-bold text-white truncate max-w-[140px] sm:max-w-[200px]" title={log.user_name}>
+                              <span className="font-bold text-white truncate max-w-[120px] sm:max-w-[180px]" title={log.user_name}>
                                 {log.user_name}
                               </span>
-                              {log.metadata?.rank && (
-                                <span className="text-[10px] text-slate-400 shrink-0">
+                              {rankStr && (
+                                <span className={`px-1.5 py-0.2 rounded text-[10px] border shrink-0 font-medium ${rankCls}`}>
                                   {log.metadata.rank}
+                                </span>
+                              )}
+                              {roleInfo && (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded bg-sky-950/40 border border-sky-800/50 text-[10px] text-sky-300 shrink-0 font-medium">
+                                  <span>{roleInfo.icon}</span>
+                                  <span>{roleInfo.label}</span>
+                                </span>
+                              )}
+                              {reasonText && (
+                                <span className="text-[10px] text-rose-300/80 bg-rose-950/30 px-1.5 py-0.2 rounded border border-rose-900/40 truncate max-w-[140px]" title={String(reasonText)}>
+                                  💬 {String(reasonText)}
                                 </span>
                               )}
                             </div>
@@ -429,7 +482,12 @@ export default function OpsDashboardPage() {
                             <div className="flex items-center gap-2 shrink-0">
                               <span className={`px-2 py-0.5 rounded text-[11px] border flex items-center gap-1 ${actionBadge.cls}`}>
                                 {actionBadge.label}
-                                {styleText && <span className="text-[10px] opacity-80">({styleText})</span>}
+                                {styleDisplay && (
+                                  <span className="text-[10px] opacity-90 font-normal flex items-center gap-0.5">
+                                    <span>{styleDisplay.icon}</span>
+                                    <span>{styleDisplay.label}</span>
+                                  </span>
+                                )}
                               </span>
                               <span className="text-[10px] text-slate-500 font-mono w-16 text-right shrink-0" title={log.created_at}>
                                 {ago(log.created_at)}
