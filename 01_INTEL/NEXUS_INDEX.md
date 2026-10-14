@@ -8,6 +8,7 @@
 > - **[業務ダッシュボード (TODO.md)](file:///d:/my_work/02_FACTORY/TODO.md)**: 進行中タスク・完了タスク一覧。
 > - **[ナレッジ訂正インボックス (FEEDBACK_INBOX.md)](file:///d:/my_work/02_FACTORY/FEEDBACK_INBOX.md)**: 誤り・古い情報の単一投函ポスト。
 > - **[Webクリップ制式雛形 (template_web_clip.md)](file:///d:/my_work/01_INTEL/template_web_clip.md)**: 外部情報・パッチノートの標準取込フォーマット。
+> - **[参考記事 ＆ 発信ネタ書庫 (reference_articles_vault.md)](file:///d:/my_work/01_INTEL/reference_articles_vault.md)**: 3.7万試合データ・テンポ論・神7設計などの元ネタ・ファクト・切り口マスター書庫。
 > - **[帝国インボックス (00_INBOX/)](file:///d:/my_work/01_INTEL/00_INBOX/README.md)**: 未整理メモ・Webクリップの自動仕分け投函ポスト。
 
 

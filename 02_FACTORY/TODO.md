@@ -14,6 +14,7 @@
 > 「プレイ前 ➔ プレイ中 ➔ プレイ後 ➔ ナレッジ蓄積」の循環を維持する。不確定情報（AI推測）は使わず、Riot公式 / DataDragon / 実戦データのみを使う。
 
 - [ ] **🔥【最優先 (10/14 DB復旧時)】定期カスタム2部屋化・しきい値分析 ＆ メンテナンス補填実行**:
+  - 💡 **復旧時ワンライナー**: `node scripts/run_recovery_sequence.mjs --execute`（疎通確認 ➔ 補填付与 ➔ チケット換金 ➔ 参加者分析を一括全自動実行。配備完了✅）
   - [ ] 1. **Supabase復旧確認**: 402解除およびポータル・Botの疎通確認。
   - [ ] 2. **お詫びログボ一括付与**: `node scripts/grant_maintenance_compensation.mjs --execute` で全プレイヤーへ+400コインを安全付与（準備完了✅）。
   - [ ] 3. **撤去チケット自動換金**: `node scripts/refund_deprecated_tickets.mjs --execute` で旧チケットを満額換金（準備完了✅）。
