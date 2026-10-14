@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Shield, AlertTriangle, Zap, CheckCircle2, XCircle, HelpCircle, ArrowRight, Swords } from 'lucide-react';
-import { JG_MATCHUP_PROFILES, EnemyJgProfile, MatchupAdvice } from '../data/jg_matchups';
+import { JG_MATCHUP_PROFILES, EnemyJgProfile, MatchupAdvice } from '@/data/jg_matchups';
 
 interface MatchupPickerProps {
   onSelectMyChampion: (champId: string) => void;

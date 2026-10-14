@@ -77,8 +77,32 @@ class NotificationCard(QFrame):
         self.icon_right.setFixedSize(28, 28)
         self.icon_right.setScaledContents(True)
         self.icon_right.setStyleSheet("background: transparent; border: none;")
-        self.icon_right.setVisible(False)
         layout.addWidget(self.icon_right)
+
+    def set_card_style(self, border_color: str = "rgba(200, 155, 60, 0.45)", bg_color: str = "rgba(11, 19, 33, 0.90)"):
+        self.setStyleSheet(f"""
+            QFrame {{
+                background-color: {bg_color};
+                border: 1px solid {border_color};
+                border-radius: 6px;
+                padding: 0px;
+            }}
+        """)
+
+    def set_icon_left_content(self, pixmap: QPixmap = None, emoji: str = None, bg_color: str = "transparent"):
+        if pixmap and not pixmap.isNull():
+            self.icon_left.setText("")
+            self.icon_left.setPixmap(pixmap)
+            self.icon_left.setStyleSheet("background: transparent; border: none;")
+            self.icon_left.setVisible(True)
+        elif emoji:
+            self.icon_left.setPixmap(QPixmap())
+            self.icon_left.setText(emoji)
+            self.icon_left.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.icon_left.setStyleSheet(f"background: {bg_color}; border-radius: 6px; font-size: 14px; border: none;")
+            self.icon_left.setVisible(True)
+        else:
+            self.icon_left.setVisible(False)
 
 
 class ToastAlertWidget(QWidget):
@@ -223,6 +247,8 @@ class ToastAlertWidget(QWidget):
                 "champion": enemy_jg,
                 "badge": badge,
                 "badge_bg": "rgba(220, 38, 38, 0.90)",
+                "border_color": "rgba(220, 38, 38, 0.75)",
+                "bg_color": "rgba(32, 12, 14, 0.92)",
                 "text": detail_text,
             })
 
@@ -236,6 +262,9 @@ class ToastAlertWidget(QWidget):
                     "type": "cannon",
                     "badge": "💣 大砲波",
                     "badge_bg": "rgba(14, 165, 233, 0.85)",
+                    "border_color": "rgba(14, 165, 233, 0.65)",
+                    "bg_color": "rgba(10, 22, 32, 0.92)",
+                    "emoji": "💣",
                     "text": "現在大砲ウェーブ交戦中",
                 })
             elif sec_left <= 15:
@@ -243,6 +272,9 @@ class ToastAlertWidget(QWidget):
                     "type": "cannon",
                     "badge": "💣 大砲接近",
                     "badge_bg": "rgba(2, 132, 199, 0.85)",
+                    "border_color": "rgba(2, 132, 199, 0.65)",
+                    "bg_color": "rgba(10, 22, 32, 0.92)",
+                    "emoji": "💣",
                     "text": f"あと {sec_left}s (プッシュ/リコール)",
                 })
 
@@ -250,11 +282,15 @@ class ToastAlertWidget(QWidget):
         buffs = state.get("buff_status", [])
         for b in buffs:
             badge_text = "🟣 バロン" if "バロン" in b else ("🐉 エルダー" if "エルダー" in b else "👁️ 瞳")
+            emoji = "🟣" if "バロン" in b else ("🐉" if "エルダー" in b else "👁️")
             sec_part = b.split(":")[-1].strip() if ":" in b else b
             events.append({
                 "type": "buff",
                 "badge": badge_text,
                 "badge_bg": "rgba(147, 51, 234, 0.85)",
+                "border_color": "rgba(147, 51, 234, 0.65)",
+                "bg_color": "rgba(22, 12, 32, 0.92)",
+                "emoji": emoji,
                 "text": f"残り {sec_part}",
             })
 
@@ -268,6 +304,8 @@ class ToastAlertWidget(QWidget):
                 "item_name": item_name,
                 "badge": "✅ 購入可能",
                 "badge_bg": "rgba(22, 163, 74, 0.85)",
+                "border_color": "rgba(22, 163, 74, 0.65)",
+                "bg_color": "rgba(10, 28, 18, 0.92)",
                 "text": f"{item_name} ({price}G) 帰城推奨",
             })
 
@@ -275,11 +313,17 @@ class ToastAlertWidget(QWidget):
         downtempo = state.get("downtempo_alerts", [])
         for dt in downtempo:
             is_limit = dt.get("type") == "RECALL_LIMIT"
+            obj_name = dt.get("obj_name", "")
+            emoji = "🐉" if "ドラゴン" in obj_name else ("🐛" if "グラブ" in obj_name else ("👁️" if "ヘラルド" in obj_name else "🟣"))
             # ダウンテンポ警報は最重要のため最前面に挿入
             events.insert(0, {
                 "type": "downtempo",
                 "badge": "⚠️ リコール限界" if is_limit else "⏱️ ダウンテンポ",
-                "badge_bg": "rgba(225, 29, 72, 0.90)" if is_limit else "rgba(217, 119, 6, 0.90)",
+                "badge_bg": "rgba(225, 29, 72, 0.95)" if is_limit else "rgba(217, 119, 6, 0.95)",
+                "border_color": "rgba(225, 29, 72, 0.85)" if is_limit else "rgba(217, 119, 6, 0.75)",
+                "bg_color": "rgba(35, 12, 19, 0.95)" if is_limit else "rgba(30, 20, 10, 0.95)",
+                "emoji": emoji,
+                "emoji_bg": "rgba(225, 29, 72, 0.25)" if is_limit else "rgba(217, 119, 6, 0.25)",
                 "text": dt.get("message", ""),
             })
 
@@ -291,6 +335,12 @@ class ToastAlertWidget(QWidget):
         for i, card in enumerate(self.cards):
             if i < len(events):
                 ev = events[i]
+                # カード全体の枠線・背景スタイル
+                card.set_card_style(
+                    ev.get("border_color", "rgba(200, 155, 60, 0.45)"),
+                    ev.get("bg_color", "rgba(11, 19, 33, 0.90)")
+                )
+
                 # バッジ設定
                 card.badge_label.setText(ev.get("badge", "NOTICE"))
                 card.badge_label.setStyleSheet(f"""
@@ -305,34 +355,35 @@ class ToastAlertWidget(QWidget):
                 """)
                 card.text_label.setText(ev.get("text", ""))
 
-                # 左アイコン（チャンピオン顔またはアイテム画像）
+                # 左アイコン（チャンピオン顔、アイテム画像、または絵文字バッジ）
                 champ = ev.get("champion")
                 item_id = ev.get("item_id")
                 item_name = ev.get("item_name")
+                emoji = ev.get("emoji")
                 if not item_id and item_name:
                     item_id = ItemPriceManager.find_item_id_by_name(item_name)
 
                 if champ:
                     pix = SpellAssetManager.get_champion_icon(champ)
                     if not pix.isNull():
-                        card.icon_left.setPixmap(SpellAssetManager.create_rounded_icon(
+                        card.set_icon_left_content(pixmap=SpellAssetManager.create_rounded_icon(
                             pix, size=28, radius=6, border_color=QColor(200, 155, 60, 180)
                         ))
-                        card.icon_left.setVisible(True)
                     else:
-                        card.icon_left.setVisible(False)
+                        card.set_icon_left_content(emoji="⚔️", bg_color="rgba(200, 155, 60, 0.25)")
                 elif item_id:
                     pix = SpellAssetManager.get_item_icon(item_id)
                     if not pix.isNull():
                         b_col = QColor(34, 197, 94, 200) if ev.get("type") == "shop" else QColor(200, 155, 60, 180)
-                        card.icon_left.setPixmap(SpellAssetManager.create_rounded_icon(
+                        card.set_icon_left_content(pixmap=SpellAssetManager.create_rounded_icon(
                             pix, size=28, radius=6, border_color=b_col
                         ))
-                        card.icon_left.setVisible(True)
                     else:
-                        card.icon_left.setVisible(False)
+                        card.set_icon_left_content(emoji="💰" if ev.get("type") == "shop" else "⚡", bg_color="rgba(34, 197, 94, 0.25)")
+                elif emoji:
+                    card.set_icon_left_content(emoji=emoji, bg_color=ev.get("emoji_bg", "rgba(255, 255, 255, 0.10)"))
                 else:
-                    card.icon_left.setVisible(False)
+                    card.set_icon_left_content()
 
                 # 右アイテムアイコン（スパイク完成アイテムなど）
                 if ev.get("type") == "spike" and item_id:

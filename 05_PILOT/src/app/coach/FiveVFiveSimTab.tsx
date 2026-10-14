@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { getChampIcon } from '@/lib/ddragonClient';
 import { Swords, Zap, AlertCircle, RefreshCw, History, Save, Activity, Target, Award } from 'lucide-react';
-import ChampSelect from '@/components/ChampSelect';
+import ChampSelect from './ChampSelect';
 import type { LiveRosterEntry } from './ScoutTab';
 
 export default function FiveVFiveSimTab({ liveRoster }: { liveRoster?: LiveRosterEntry[] | null }) {

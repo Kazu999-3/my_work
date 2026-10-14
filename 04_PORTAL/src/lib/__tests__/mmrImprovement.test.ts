@@ -5,8 +5,9 @@
  *
  * 【目的】
  *   2026-10-14 DB復旧後の実測データ投入に先立ち、
- *   MMR収束加速・連勝ボーナス・全レーンリップル波及・ベイズ勝率平滑化・Pity傾斜付与
- *   の5大改善計算式の期待値を純関数レベルで先行検証（TDD）する。
+ *   MMR収束加速・連勝ボーナス・全レーンリップル波及・ベイズ勝率平滑化・Pity傾斜付与・
+ *   早期投了緩和・第2希望連続救済・ALL参加者ボーナス
+ *   の全改善計算式の期待値を純関数レベルで先行検証（TDD）する。
  *
  * 【実行方法】
  *   npm test (04_PORTAL ディレクトリ内)
@@ -15,16 +16,20 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import {
+  calculateAdaptiveKFactor,
+  calculateStreakMultiplier,
+  calculateRippleMmrDeltas,
+  calculateSmoothedWinRate,
+  calculateOffRolePityDelta,
+  calculateSurrenderMmrMitigation,
+  calculateConsecutiveSecondaryPity,
+  calculateAllRoleBonus,
+} from '../balancer/mmrImprovement';
 
 // ------------------------------------------------------------------------------
 // 1. 少試合プレイヤーの収束加速（K値アダプティブダンパー）
 // ------------------------------------------------------------------------------
-export function calculateAdaptiveKFactor(games: number): number {
-  if (games < 5) return 48; // 初期プレースメント（高速収束）
-  if (games < 15) return 32; // 安定移行期
-  return 24; // ベテラン（安定期）
-}
-
 test('K-Factor: 5試合未満は初期加速（K=48）で素早く実力帯へ収束する', () => {
   assert.equal(calculateAdaptiveKFactor(0), 48);
   assert.equal(calculateAdaptiveKFactor(4), 48);
@@ -43,13 +48,6 @@ test('K-Factor: 15試合以上は安定期（K=24）で急激なブレを抑え�
 // ------------------------------------------------------------------------------
 // 2. 連勝ボーナス（Streak Multiplier）
 // ------------------------------------------------------------------------------
-export function calculateStreakMultiplier(winStreak: number): number {
-  if (winStreak >= 5) return 1.30; // 5連勝以上: +30%（上限）
-  if (winStreak === 4) return 1.20; // 4連勝: +20%
-  if (winStreak === 3) return 1.10; // 3連勝: +10%
-  return 1.00; // 2連勝以下: 通常
-}
-
 test('Streak Multiplier: 2連勝以下は等倍（1.00）', () => {
   assert.equal(calculateStreakMultiplier(0), 1.00);
   assert.equal(calculateStreakMultiplier(1), 1.00);
@@ -66,25 +64,6 @@ test('Streak Multiplier: 3連勝で1.10倍、4連勝で1.20倍、5連勝以上�
 // ------------------------------------------------------------------------------
 // 3. 全レーン波及効果（リップルMMR 20%）
 // ------------------------------------------------------------------------------
-export function calculateRippleMmrDeltas(
-  playedRole: string,
-  delta: number,
-  rippleRatio: number = 0.20
-): Record<string, number> {
-  const ROLES = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
-  const result: Record<string, number> = {};
-  const rippleDelta = Math.round(delta * rippleRatio);
-
-  for (const r of ROLES) {
-    if (r === playedRole) {
-      result[r] = delta;
-    } else {
-      result[r] = rippleDelta;
-    }
-  }
-  return result;
-}
-
 test('Ripple MMR: プレイしたレーンの変動が他4レーンへ20%波及する', () => {
   const deltas = calculateRippleMmrDeltas('TOP', 30, 0.20);
   assert.equal(deltas.TOP, 30);
@@ -106,13 +85,6 @@ test('Ripple MMR: 敗北時（マイナス変動）も他レーンへ20%波及�
 // ------------------------------------------------------------------------------
 // 4. 少試合プレイヤーの勝率ベイズ平滑化（ラプラス平滑化）
 // ------------------------------------------------------------------------------
-export function calculateSmoothedWinRate(wins: number, totalGames: number): number {
-  if (totalGames === 0) return 50.0;
-  // 事前分布に仮想の1勝1敗（重み2）を加えるベイズ平滑化: (wins + 1) / (total + 2)
-  const smoothed = ((wins + 1) / (totalGames + 2)) * 100;
-  return Math.round(smoothed * 10) / 10;
-}
-
 test('Bayesian Win Rate: 0試合時は安全な50.0%を返す', () => {
   assert.equal(calculateSmoothedWinRate(0, 0), 50.0);
 });
@@ -133,19 +105,6 @@ test('Bayesian Win Rate: 試合数が十分多い（100戦60勝）場合は実�
 // ------------------------------------------------------------------------------
 // 5. オフロールPityの傾斜付与（サブ+1 / 完全オフ+3）
 // ------------------------------------------------------------------------------
-export type AssignmentType = 'PRIMARY' | 'SECONDARY' | 'OFF_ROLE';
-
-export function calculateOffRolePityDelta(type: AssignmentType): number {
-  switch (type) {
-    case 'PRIMARY':
-      return -999; // メイン希望に行けたらPityは0へ完全リセット
-    case 'SECONDARY':
-      return 1; // 第2希望なら +1
-    case 'OFF_ROLE':
-      return 3; // 完全な希望外なら +3（次戦最優先救済）
-  }
-}
-
 test('Off-Role Pity: メイン希望配置時はPityリセット（-999フラグ）', () => {
   assert.equal(calculateOffRolePityDelta('PRIMARY'), -999);
 });
@@ -153,4 +112,53 @@ test('Off-Role Pity: メイン希望配置時はPityリセット（-999フラグ
 test('Off-Role Pity: サブ希望配置時は +1、完全オフロール時は +3 加算される', () => {
   assert.equal(calculateOffRolePityDelta('SECONDARY'), 1);
   assert.equal(calculateOffRolePityDelta('OFF_ROLE'), 3);
+});
+
+// ------------------------------------------------------------------------------
+// 6. 早期投了（18分未満）時の敗北MMR減少緩和
+// ------------------------------------------------------------------------------
+test('Surrender Mitigation: 18分未満の敗北時はMMR減少幅が50%緩和される', () => {
+  // -20 の場合 ➔ -10
+  assert.equal(calculateSurrenderMmrMitigation(-20, 15), -10);
+  // -15 の場合 ➔ -7 (Math.round(-7.5) = -7)
+  assert.equal(calculateSurrenderMmrMitigation(-15, 12), -7);
+});
+
+test('Surrender Mitigation: 18分未満でも勝利時は減額されず通常通り獲得できる', () => {
+  assert.equal(calculateSurrenderMmrMitigation(20, 15), 20);
+});
+
+test('Surrender Mitigation: 18分以上の通常終了時は敗北でも緩和されない', () => {
+  assert.equal(calculateSurrenderMmrMitigation(-20, 25), -20);
+});
+
+test('Surrender Mitigation: 緩和後でも最低 -2 は下がる安全ガードが機能する', () => {
+  assert.equal(calculateSurrenderMmrMitigation(-3, 10), -2);
+});
+
+// ------------------------------------------------------------------------------
+// 7. 第2希望連続救済（Consecutive Secondary Protection）
+// ------------------------------------------------------------------------------
+test('Consecutive Secondary: 1回目は通常（追加ボーナス0）', () => {
+  assert.equal(calculateConsecutiveSecondaryPity(1), 0);
+});
+
+test('Consecutive Secondary: 2回連続で第2希望になった場合は完全オフ相当（+2追加）の救済を付与', () => {
+  assert.equal(calculateConsecutiveSecondaryPity(2), 2);
+  assert.equal(calculateConsecutiveSecondaryPity(3), 2);
+});
+
+// ------------------------------------------------------------------------------
+// 8. ALL（どこでも）参加者ボーナス
+// ------------------------------------------------------------------------------
+test('ALL Role Bonus: ALL選択参加者には +50コイン と Pity +1 が付与される', () => {
+  const bonus = calculateAllRoleBonus(true);
+  assert.equal(bonus.coinBonus, 50);
+  assert.equal(bonus.pityBonus, 1);
+});
+
+test('ALL Role Bonus: 通常ロール希望者にはボーナスなし', () => {
+  const bonus = calculateAllRoleBonus(false);
+  assert.equal(bonus.coinBonus, 0);
+  assert.equal(bonus.pityBonus, 0);
 });

@@ -10,6 +10,48 @@
 
 ## 🗓️ 2026-10-14（水）
 
+### ⚡ DB停止期間の先手仕込み：次世代MMR改善モジュール化 ＆ 05お道具箱化 ＆ インゲームHUD Toast通知磨き込み
+
+**概要**:
+1. **背景と目的**:
+   - Supabase（DB）の復旧・更新待ち期間を活用し、DB非依存で進められる3大タスク（①MMRアルゴリズムの正式モジュール化・TDD完備、②05_PILOTのFeature-Drivenフォルダ集約、③インゲームHUDのToast通知視認性・絵文字アイコン向上）を実施。
+   - 明日のDB復旧後に即座にバランサーと連携し、実測データ検証に移れるロケットスタート体制を完全確立。
+2. **実施内容**:
+   - **次世代MMR ＆ Pity改善モジュール化 (`04_PORTAL/src/lib/balancer/mmrImprovement.ts`)**:
+     - 昨夜先行配備したテストコード内の計算式を、単独の純粋関数ライブラリとして正式カプセル化。
+     - K値アダプティブダンパー（少試合48 / 安定期24）、連勝ボーナス（3連勝+10%〜5連勝+30%）、全レーン波及リップルMMR（20%）、勝率ベイズ平滑化（ラプラス法）、オフロールPity傾斜（サブ+1 / 完全オフ+3 / メイン配置リセット）を実装。
+     - 追加計算式として「早期投了（18分未満）時の敗北MMR減少50%緩和（安全下限-2）」、「第2希望連続時の救済ボーナス（+2追加）」、「ALL参加者ボーナス（+50コイン・Pity+1）」を新設。
+     - `mmrImprovement.test.ts` を新設モジュールからのインポート形式へ同期し、全21テストケースを完備（全件PASS）。
+   - **05_PILOT コンポーネントの Feature-Driven（お道具箱）化**:
+     - `src/components/` に残っていた画面固有コンポーネントを `git mv` で各機能フォルダへ移管：
+       - `ChampSelect.tsx` ➔ `src/app/coach/ChampSelect.tsx`（5v5シミュレーション専用）
+       - `MatchupPicker.tsx` ➔ `src/app/_champions/MatchupPicker.tsx`（辞典トップ専用）
+       - `RevisionHistoryModal.tsx` ➔ `src/app/_champions/RevisionHistoryModal.tsx`（辞典改訂履歴専用）
+     - `src/components/` を真の全画面共通部品（`GlobalNavbar`, `NotificationBell`, `KnowledgeIngestModal` 等）のみに純化。
+   - **インゲームHUD Toast通知ウィジェットの視認性・絵文字アイコン磨き込み (`toast_alert_widget.py`)**:
+     - `NotificationCard` に動的スタイル適用メソッド（`set_card_style`）と絵文字・アイコン描画メソッド（`set_icon_left_content`）を新設。
+     - ダウンテンポ警報時に、対象オブジェクトに応じた絵文字（🐉/🐛/👁️/🟣）を表示し、リコール最終限界点（45秒前）は緊急ローズレッド枠線（`rgba(225, 29, 72, 0.85)`）＋赤系背景ハイライトを適用。
+     - 大砲ミニオン（💣）、バフタイマー（🟣/🐉/👁️）、ショップ満額（✅/💰）、ガンク警戒（🚨）のアイコンと枠線色を鮮明化。
+3. **機械的実値検証**:
+   - `04_PORTAL` 単体テスト (`npm test`): **全113件 PASS (100%)**
+   - `04_PORTAL` TypeScript 型チェック (`npx tsc --noEmit`): **0 errors PASS**
+   - `05_PILOT` 単体テスト (`npm test`): **全5件 PASS (100%)**
+   - `05_PILOT` TypeScript 型チェック (`npx tsc --noEmit`): **0 errors PASS**
+   - `05_PILOT` Next.js Turbopack プロダクションビルド (`npm run build`): **全24ルート 0 errors PASS**（※DB停止時のCache Guard正常稼働確認）
+   - Python HUD オーバーレイ自動テストスイート (`test_overlay_suite.py`): **全20テスト合格 PASS (100%)**
+4. **3行ナレッジ**:
+   - **「DBが使えないダウンタイムこそ、純粋関数化とTDD（単体テスト駆動開発）でアルゴリズムを煮詰める最高の機会である」**: 外部接続がないからこそ、ミリ秒単位の高速テストで境界値・エッジケースを徹底的に洗い出せる。
+   - **「共有コンポーネントフォルダ（components/）は放置するとゴミ箱化するため、特定画面専用の部品は容赦なく画面配下のプライベートフォルダへ閉じ込めよ」**: 画面単位のカプセル化（Feature-Driven）により、コードの認知負荷と影響範囲を局所化できる。
+   - **「インゲームHUDの重要アラートは、文字情報だけでなく『色（アンバー vs 緊急ローズ）』と『アイコン/絵文字』の2重情報で瞬時に脳に叩き込め」**: プレイ中の周辺視野でも、リコールすべきかファーム続行かを0秒で直感判断できる。
+5. **思考トリガー**:
+   - 「明日DBが復旧して実データを投入した際、早期投了（18分未満）緩和や第2希望連続救済の計算式は、プレイヤーの心理的納得感と美しく合致するか？」
+6. **拾い上げ（Harvest / kame原則）**:
+   - `[要検証]`: 明日のDB復旧直後、`scripts/analyze_custom_participants.mjs --save` で実測データを抽出し、新モジュール `mmrImprovement.ts` を用いたシミュレーション結果の確認。
+   - `[継続ウォッチ]`: 05_PILOTのビルド時に発動した `[Cache Guard]` が、DB復旧後に正常に解除され最新DBデータを再キャッシュするか。
+   - `[発信候補]`: 「DBが落ちていても開発を止めない：Next.js × TDDで進める純粋ロジック開発とCache Guard設計」（note/技術ネタ）。
+
+---
+
 ### 🤖 Geminiモデル刷新：gemini-3.6-flash主力化 ＆ 3.5-flash-liteセーフティネット構成への移行
 
 **概要**:
