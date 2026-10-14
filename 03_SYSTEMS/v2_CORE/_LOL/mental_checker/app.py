@@ -232,9 +232,8 @@ class MentalCheckerAPI:
             }]
         }
 
-        # gemini-2.5-flashはこのプロジェクトのアカウントでは無料枠0/0(割り当てなし)と判明済み
-        # (ai_helper.pyのbase_modelsと同じ、実リクエストで動作確認済みの順序)
-        MODEL_CHAIN = ["gemini-3.1-flash-lite", "gemini-3.5-flash-lite"]
+        # 安定・高品質なgemini-3.6-flashを最優先とし、制限時は3.5-lite / 3.1-liteへフォールバック
+        MODEL_CHAIN = ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"]
         last_error = None
         for model in MODEL_CHAIN:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"

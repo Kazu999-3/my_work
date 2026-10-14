@@ -72,18 +72,13 @@ def generate_content_safe(client, prompt, model_id=None, config=None, feature_na
         return "⚠️ Gemini API クライアントが初期化されていません。"
 
     # 試行するモデルの優先順リスト。
-    # gemini-2.0-flash / gemini-2.0-flash-lite は、このアカウントのAI Studioクォータ画面上
-    # 「0/0」(RPM/TPM/RPDすべてゼロ)になっており、無料枠の割り当てそのものが存在しない
-    # (待っても増えない、日付が変わっても0/0のまま)。ポータル側(TS)は既にgemini-3.1-flash-lite
-    # を使って正常に動いており(15RPM/500RPD相当の実クォータあり)、こちらに揃える
-    # (2026-08-10発覚)。
-    # gemini-2.5-flash-liteはAI Studioの表示上はクォータがあるように見えるが、実際の
-    # APIリクエストでは404 NOT_FOUND(モデルID自体が呼び出せない)とgemini-model-health-check
-    # スキルで判明したため、実リクエストで動作確認済みのgemini-3.5-flash-liteに置き換えた
-    # (2026-08-10)。
+    # 高精度かつ安定稼働する gemini-3.6-flash を第1優先とし、レート制限(429)や混雑時は
+    # 最も無料枠クォータに強い gemini-3.5-flash-lite および gemini-3.1-flash-lite へ退避する
+    # (2026-10-14 実測検証済み)。
     base_models = [
-        "gemini-3.1-flash-lite",
+        "gemini-3.6-flash",
         "gemini-3.5-flash-lite",
+        "gemini-3.1-flash-lite",
     ]
     # settings.DEFAULT_MODEL 等の "ollama/..." はローカルOllama用の名前で、Gemini APIに
     # 送ると毎回404になり1リクエスト無駄撃ちしていた(2026-10-05、Pulseのログで発覚)。

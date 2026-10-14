@@ -33,10 +33,10 @@ export interface GeminiCallOptions {
   translateProperNouns?: boolean;
 }
 
-// Google AI Studioの最新クォータ実績に基づき、最大容量 (500 RPD / 15 RPM) を誇る
-// 'gemini-3.5-flash-lite' をデフォルトとし、429制限時は 'gemini-3.1-flash-lite', 'gemini-3.6-flash' へフォールバックします。
-const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
-const FALLBACK_MODELS = ['gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'];
+// 安定性と高精度を両立する 'gemini-3.6-flash' をデフォルトとし、
+// 429制限や混雑時は最もクォータに強い 'gemini-3.5-flash-lite' や 'gemini-3.1-flash-lite' へ自動フォールバックします。
+const DEFAULT_MODEL = 'gemini-3.6-flash';
+const FALLBACK_MODELS = ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-3.5-flash', 'gemini-2.5-flash'];
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000;
 
 /**
