@@ -29,6 +29,7 @@
     - ⑧ 新規登録時のRiot APIソロQランク優先化 ＆ 辞退時のPity温存防止
   - [x] 6. **【先行実装完了（バランサー公平性・事故防止ガード ＆ 運用性向上・ガイド同期）】**: 2026-10-13 完了。詳細は [`TODO_ARCHIVE.md`](file:///d:/my_work/02_FACTORY/TODO_ARCHIVE.md) を参照。
   - [x] 7. **【先行実装完了（05_PILOT お道具箱化 ＆ HUD Toast通知視認性・絵文字強化）】**: 2026-10-14 完了。ChampSelect/MatchupPicker/RevisionHistoryModal を機能フォルダへ完全カプセル化、Toast通知をオブジェクト別アイコン・緊急ローズ枠線化。
+  - [x] 8. **【先行実装完了（試合記録APIへの早期投了緩和 ＆ ALLボーナス先行結合・結合テスト完備）】**: 2026-10-14 完了。`match/record/route.ts` に18分未満の敗北MMR半減緩和、ALL/FILL参加者への+50コイン還元・Pity+1を結合配備（結合テスト全件PASS）。
 - [ ] **【候補3】note記事・戦術発信パイプライン（Sovereign ADO Engine）の再起動**（保留中: ストック224本あり、執筆タイミング待ち）
 
 ---

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { calculateNewMMRDetailed, calculateKdaScore, MmrCalcContext, calculateInitialMmr, computeRepresentativeMmr, propagateCrossLaneMmr } from '../../../../lib/mmr';
+import { calculateSurrenderMmrMitigation, calculateAllRoleBonus, calculateConsecutiveSecondaryPity } from '../../../../lib/balancer/mmrImprovement';
 import { fetchAllRows } from '../../../../lib/fetchAll';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { verifyBotSecret } from '../../../../lib/botAuth';
@@ -224,6 +225,20 @@ export async function POST(request: Request) {
         const mmrResult = calculateNewMMRDetailed(ctx);
         mmrDelta = mmrResult.delta;
         mmrBreakdown = mmrResult.breakdown;
+
+        // 早期投了（18分未満）の敗北MMR減少緩和
+        const durationSec = Number(gameDuration) || 0;
+        const durationMinutes = durationSec > 0 ? durationSec / 60 : 30;
+        if (!isWin && durationMinutes < 18) {
+          const originalDelta = mmrDelta;
+          mmrDelta = calculateSurrenderMmrMitigation(mmrDelta, durationMinutes);
+          if (mmrBreakdown) {
+            (mmrBreakdown as any).isSurrenderMitigated = true;
+            (mmrBreakdown as any).originalDelta = originalDelta;
+            (mmrBreakdown as any).finalDelta = mmrDelta;
+            (mmrBreakdown as any).note = `早期投了(${Math.round(durationMinutes)}分)による敗北ペナルティ半減緩和`;
+          }
+        }
       } else {
         mmrBreakdown = {
           baseDelta: 0,
@@ -352,9 +367,12 @@ export async function POST(request: Request) {
 
       const isNgRole = (playedRole === ng1 || playedRole === ng2);
 
+      let allRoleBonusCoins = 0;
       if (primary === 'ALL' || primary === 'FILL') {
-        newPity = 0;
+        const allBonus = calculateAllRoleBonus(true);
+        newPity = allBonus.pityBonus; // どこでも枠として参加した貢献に対してPity+1還元
         newOffRolePity = 0;
+        allRoleBonusCoins = allBonus.coinBonus; // +50コイン還元
       } else if (playedRole === primary) {
         // ★ 項目4: Pity消費制化（一律0リセットではなく-2消費）
         newPity = Math.max(0, newPity - 2);
@@ -371,10 +389,10 @@ export async function POST(request: Request) {
         newOffRolePity += 1;
       }
 
-      // コイン付与計算: 参加賞 +100コイン、勝利チーム +150コイン (お祭りマッチでもコインは満額付与！)
+      // コイン付与計算: 参加賞 +100コイン、勝利チーム +150コイン、ALL参加ボーナス +50コイン
       const currentRolePrefs = typeof r.dbPlayer.role_preferences === 'object' && r.dbPlayer.role_preferences !== null ? r.dbPlayer.role_preferences : {};
       const currentCoins = Number(currentRolePrefs.coins ?? r.dbPlayer.coins ?? r.dbPlayer.metadata?.coins) || 1000;
-      let coinReward = (r.team === winningTeam) ? 250 : 100;
+      let coinReward = ((r.team === winningTeam) ? 250 : 100) + allRoleBonusCoins;
 
       // ⚔️ 勝利ボーナス激闘チケット（victory_bonus_doubler）の判定
       const updatedInventory = Array.isArray(currentRolePrefs.inventory) ? [...currentRolePrefs.inventory] : (Array.isArray(r.dbPlayer.metadata?.inventory) ? [...r.dbPlayer.metadata.inventory] : []);

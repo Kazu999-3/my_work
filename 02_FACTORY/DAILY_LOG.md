@@ -10,6 +10,41 @@
 
 ## 🗓️ 2026-10-14（水）
 
+### 🔗 試合記録APIへの次世代MMR先行結合 ＆ 早期投了緩和・ALLボーナス結合テスト配備
+
+**概要**:
+1. **背景と目的**:
+   - 先ほど完成した `mmrImprovement.ts` の改善ロジックを、実際の試合記録エンドポイント（`04_PORTAL/src/app/api/match/record/route.ts`）に先行結合。
+   - DB停止中であっても、試合時間による早期投了判定やALLボーナスの還元が100%意図通り連動することを結合テスト網で担保。
+2. **実施内容**:
+   - **試合記録APIへの早期投了緩和組み込み (`04_PORTAL/src/app/api/match/record/route.ts`)**:
+     - 試合時間 `gameDuration`（秒）から分数（`durationMinutes`）を算出し、18分未満（`< 1080s`）の敗北時に `calculateSurrenderMmrMitigation` を自動適用。
+     - 敗北ペナルティを50%緩和（例: -20 ➔ -10、最低 -2 保証）。`mmrBreakdown` に `isSurrenderMitigated: true`、元の `originalDelta`、緩和後の `finalDelta`、理由コメントを記録。
+   - **ALL/FILL参加者へのボーナス還元同期**:
+     - `primary === 'ALL' || primary === 'FILL'` のプレイヤーに対し、`calculateAllRoleBonus(true)` を連動。
+     - 試合終了時に +50コインを還元（勝利時は250+50=300、敗北時は100+50=150）し、Pity +1 を付与。
+   - **結合テストの配備 (`04_PORTAL/src/lib/__tests__/matchRecordMmrIntegration.test.ts`)**:
+     - 通常試合（25分）での非緩和、12分早期投了での50%緩和、安全ガード（-3 ➔ -2）、ALL参加者の勝敗コイン・Pity計算の全6テストケースを新設（全件PASS）。
+   - **共有コンポーネントの規約準拠監査**:
+     - `ChampSelect.tsx` が `admin/knowledge` と `mentorship` の2画面から使われている実態を確認し、教科別お道具箱規約（2つ以上の独立ドメインから参照される部品は共有層に配置）に基づき `src/components/ChampSelect.tsx` に正しく維持しつつ、定数依存（`@/lib/championConstants`）を直接参照へ純化。
+3. **機械的実値検証**:
+   - `04_PORTAL` 結合単体テスト: **全6件 PASS (184ms)**
+   - `04_PORTAL` 全体単体テスト (`npm test`): **全113件 PASS (100%)**
+   - `04_PORTAL` TypeScript 型チェック (`npx tsc --noEmit`): **0 errors PASS**
+   - `04_PORTAL` Next.js Turbopack プロダクションビルド (`npm run build`): **全97ルート 0 errors PASS**
+4. **3行ナレッジ**:
+   - **「API本体への結合時は、dry_runフラグと結合テスト（Integration Test）を先行させてDB停止中でも完全検証せよ」**: 実DBへの書き込みを行わずとも、入力 ➔ 計算 ➔ 返却値の整合性を100%機械的に証明できる。
+   - **「ルールは盲目的に適用せず、実使用ドメイン数（単一画面専用か2画面以上共有か）を機械監査して配置を決定せよ」**: あすらぼ氏の教科別お道具箱原則に則り、複数画面共有ならcomponents、単一なら_partsと明確に峻別する。
+   - **「早期投了の緩和ログは、単に数値を上書きするだけでなく originalDelta と note をブレークダウンに残せ」**: プレイヤーが戦績を見たときの納得感と、運営者の監査容易性を両立できる。
+5. **思考トリガー**:
+   - 「明日DBが復旧して実戦データが流れた際、早期投了の18分しきい値やALLボーナス50コインはコミュニティ内でどう受け止められるか？」
+6. **拾い上げ（Harvest / kame原則）**:
+   - `[要検証]`: 明日のDB復旧後、KTM Bot経由での試合終了記録時に `isSurrenderMitigated` とALLボーナスがDiscord速報や戦績画面に正しく表示されるかの確認。
+   - `[継続ウォッチ]`: ALL希望者の参加頻度と、ロール固定化の解消度合いの定点観測。
+   - `[発信候補]`: 「身内カスタムの早期降伏によるMMR事故を数学的に防ぐ『Surrender Mitigation』設計」（note技術ネタ）。
+
+---
+
 ### ⚡ DB停止期間の先手仕込み：次世代MMR改善モジュール化 ＆ 05お道具箱化 ＆ インゲームHUD Toast通知磨き込み
 
 **概要**:

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { MentorshipProfile } from '../api/mentorship/profiles/route';
-import { ALL_CHAMPIONS, CHAMPION_JA } from '../../components/ChampSelect';
+import { ALL_CHAMPIONS, CHAMPION_JA } from '@/lib/championConstants';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { getKtmRank, RANKS as MMR_RANKS } from '../../lib/mmr';
 import { getChampIcon } from '../../lib/ddragonClient';
