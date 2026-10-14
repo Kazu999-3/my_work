@@ -3,10 +3,6 @@ import { NextResponse } from 'next/server';
 export const maxDuration = 30; // 30秒でタイムアウト
 
 export async function GET(request: Request) {
-  // RenderにデプロイしたAntigravity APIのURL
-  // （本番環境では環境変数 process.env.API_SERVER_URL にする）
-  const API_SERVER_URL = process.env.API_SERVER_URL || 'https://antigravity-api-nzo3.onrender.com';
-  
   // 認証キー（Cronからのリクエストであることを証明する）
   const authHeader = request.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
@@ -24,16 +20,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    // 1. レンダリングサーバーへの発火
-    fetch(`${API_SERVER_URL}/api/monetize`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Antigravity-Key': process.env.ANTIGRAVITY_API_KEY || 'local-dev-key'
-      }
-    }).catch(e => console.warn('Monetize trigger warning:', e));
-
-    // 以下、ナレッジ整備系のfire-and-forget呼び出し。
+    // ナレッジ整備系のfire-and-forget呼び出し。
     // 2026-07-31発覚: これまでAuthorizationヘッダーを一切付けずに叩いていたため、
     // 呼び出し先が要求するCRON_SECRET/管理者セッション認証に全て401で弾かれ、
     // 「自動発火した」と表示されつつ実際には10日以上何も実行されていなかった。
