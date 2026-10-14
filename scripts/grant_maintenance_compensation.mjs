@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
- * 🎁 メンテナンス補填（2日分ログインボーナス一括付与スクリプト）
+ * 🎁 メンテナンス補填（3日分ログインボーナス一括付与スクリプト）
  *
  * 【目的】
- * 2026-10-12〜10-14のSupabase停止（Egress上限超過による一時制限）に伴い、
- * ログインボーナスを受け取れなかった全プレイヤーへ2日分（一律 +400コイン）を安全に補填・付与する。
+ * 2026-10-12〜10-15のSupabase停止（Egress上限超過による一時制限）に伴い、
+ * ログインボーナスを受け取れなかった全プレイヤーへ3日分（一律 +600コイン）を安全に補填・付与する。
  *
  * 【実行方法】
  *   1. プレビュー（安全確認・DB変更なし）:
  *      node scripts/grant_maintenance_compensation.mjs
  *
- *   2. 本番実行（10/14 DB復旧後に実行）:
+ *   2. 本番実行（10/15 DB復旧後に実行）:
  *      node scripts/grant_maintenance_compensation.mjs --execute
  *
  * 【安全機能】
@@ -25,7 +25,7 @@ import path from 'path';
 import { parseRunMode } from './lib/safe_runner.mjs';
 
 const COMPENSATION_TAG = 'maintenance_compensation_20261012';
-const BONUS_AMOUNT = 400; // 2日分（200コイン × 2日）
+const BONUS_AMOUNT = 600; // 3日分（200コイン × 3日）
 
 // 1. 環境変数のロード (04_PORTAL/.env.local または OS環境変数)
 function loadEnv() {

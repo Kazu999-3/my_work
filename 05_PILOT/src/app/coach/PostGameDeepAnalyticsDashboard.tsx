@@ -12,6 +12,7 @@ import PostGameReflectionForm from './PostGameReflectionForm';
 import JgRelativeTrackerCard from './JgRelativeTrackerCard';
 import VodReviewPointsCard from './VodReviewPointsCard';
 import type { PostgameJgAnalysisReport } from '@/lib/postgameJgMetrics';
+import type { TrollAnalysisResult } from '@/lib/trollDetector';
 
 // 試合後: 詳細分析（2026-10-05 全面見直し）
 // 旧版はリコールのテンポ損失・ワード監査の採点・ランク水準ラベル・「最重要改善アクション」など、
@@ -26,6 +27,12 @@ interface RecentMatchMeta {
   kdaStr: string;
   gameDurationStr: string;
   gameStartTimestamp: number;
+  trollSignal?: {
+    detected: boolean;
+    severity: 'severe' | 'moderate';
+    trollChampion: string | null;
+    reason: string | null;
+  } | null;
 }
 
 interface LaneSide { cs: number; gold: number; xp: number; level: number }
@@ -86,6 +93,7 @@ interface PostGameData {
     avg: Record<'cs_per_min' | 'deaths' | 'vision_per_min' | 'kill_participation' | 'damage_share' | 'control_wards_bought', number | null>;
   };
   jg_analysis?: PostgameJgAnalysisReport | null;
+  allies_troll_analysis?: TrollAnalysisResult | null;
 }
 
 interface PostGameDashboardProps {
@@ -229,10 +237,17 @@ export default function PostGameDeepAnalyticsDashboard({
                       : 'bg-rose-950/30 border-rose-800/60 hover:border-rose-600/60'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className={`text-[9px] font-black px-1.5 rounded font-mono text-white ${m.isWin ? 'bg-emerald-600' : 'bg-rose-600'}`}>
-                      {m.isWin ? 'WIN' : 'LOSS'}
-                    </span>
+                  <div className="flex items-center justify-between gap-1">
+                    <div className="flex items-center gap-1">
+                      <span className={`text-[9px] font-black px-1.5 rounded font-mono text-white ${m.isWin ? 'bg-emerald-600' : 'bg-rose-600'}`}>
+                        {m.isWin ? 'WIN' : 'LOSS'}
+                      </span>
+                      {m.trollSignal?.detected && (
+                        <span className="text-[9px] font-bold px-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40" title={m.trollSignal.reason || '事故マッチ'}>
+                          ⚠️ 事故
+                        </span>
+                      )}
+                    </div>
                     <span className="text-[9px] font-mono text-stone-500">{timeStr}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -310,6 +325,60 @@ export default function PostGameDeepAnalyticsDashboard({
           <RefreshCw size={13} />
         </button>
       </div>
+
+      {/* 味方トロール・事故マッチ検知カード */}
+      {data.allies_troll_analysis?.detected && (
+        <div className={`p-4 rounded-xl border space-y-3 ${
+          data.allies_troll_analysis.severity === 'severe'
+            ? 'bg-rose-950/40 border-rose-800/80 ring-1 ring-rose-700/50'
+            : 'bg-amber-950/40 border-amber-800/80 ring-1 ring-amber-700/50'
+        }`}>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className={`px-2 py-0.5 rounded text-[10px] font-black tracking-wide ${
+                data.allies_troll_analysis.severity === 'severe'
+                  ? 'bg-rose-600 text-white'
+                  : 'bg-amber-600 text-white'
+              }`}>
+                {data.allies_troll_analysis.verdictTitle}
+              </span>
+              <span className="text-xs font-bold text-stone-200">
+                不可抗力の事故マッチ（メンタル保護判定）
+              </span>
+            </div>
+            {data.allies_troll_analysis.trollPlayer && (
+              <div className="flex items-center gap-1.5 text-xs bg-black/50 px-2.5 py-1 rounded-lg border border-white/10">
+                <Image
+                  src={getChampIcon(data.allies_troll_analysis.trollPlayer.championName)}
+                  alt={data.allies_troll_analysis.trollPlayer.championName}
+                  width={18}
+                  height={18}
+                  className="w-4.5 h-4.5 rounded-full"
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+                <span className="font-bold text-stone-200">
+                  {data.allies_troll_analysis.trollPlayer.championName} ({data.allies_troll_analysis.trollPlayer.lane})
+                </span>
+                <span className="font-mono text-rose-300 font-bold ml-1">
+                  KDA {data.allies_troll_analysis.trollPlayer.kdaStr}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2 text-xs">
+            <p className="text-stone-300 leading-relaxed font-medium">
+              {data.allies_troll_analysis.verdictDescription}
+            </p>
+            <div className="p-2.5 rounded-lg bg-black/30 border border-white/5 text-[11px] text-amber-200/90 flex items-start gap-2">
+              <span className="text-base shrink-0">🛡️</span>
+              <span className="leading-relaxed font-medium">
+                {data.allies_troll_analysis.cheerMessage}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 自動振り返り（ソロQ試合後の通知と同じ内容） */}
       {data.auto_review && (

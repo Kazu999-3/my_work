@@ -9,6 +9,7 @@ import {
 import { supabase } from '@/lib/supabaseClient';
 import { analyzePostgameTempo, loadItemMeta, type PostgameTempoReport } from '@/lib/postgameTempo';
 import { analyzePostgameJgMetrics, type PostgameJgAnalysisReport } from '@/lib/postgameJgMetrics';
+import { detectAlliesTroll } from '@/lib/trollDetector';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 45;
@@ -69,6 +70,7 @@ export async function GET(request: NextRequest) {
         const d = detailsList[idx];
         const me = d?.participants.find((p) => p.puuid === puuid);
         if (!d || !me) return null;
+        const trollAnalysis = detectAlliesTroll(d.participants, puuid, d.gameDuration);
         return {
           matchId: mId,
           championName: me.championName,
@@ -82,6 +84,12 @@ export async function GET(request: NextRequest) {
           gameDurationStr: fmtDuration(d.gameDuration),
           gameDurationSec: d.gameDuration,
           gameStartTimestamp: d.gameStartTimestamp,
+          trollSignal: trollAnalysis.detected ? {
+            detected: true,
+            severity: trollAnalysis.severity,
+            trollChampion: trollAnalysis.trollPlayer?.championName || null,
+            reason: trollAnalysis.reasons[0] || null,
+          } : null,
         };
       })
       .filter((m): m is NonNullable<typeof m> => m !== null);
@@ -261,6 +269,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    const allies_troll_analysis = detectAlliesTroll(match.participants, puuid, match.gameDuration);
+
     return NextResponse.json({
       success: true,
       selected_match_id: targetMatchId,
@@ -284,6 +294,7 @@ export async function GET(request: NextRequest) {
       tempo,
       tempo_error,
       jg_analysis,
+      allies_troll_analysis,
     });
   } catch (error: any) {
     console.error('[postgame-deep-analytics] Error:', error);

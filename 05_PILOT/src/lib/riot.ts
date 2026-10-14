@@ -52,6 +52,15 @@ interface ParticipantStats {
   wardsPlaced?: number;
   wardsKilled?: number;
   visionWardsBoughtInGame?: number;
+  champLevel?: number;
+  item0?: number;
+  item1?: number;
+  item2?: number;
+  item3?: number;
+  item4?: number;
+  item5?: number;
+  item6?: number;
+  gameEndedInEarlySurrender?: boolean;
   win: boolean;
   lane: string; // TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY
 }
@@ -242,6 +251,15 @@ export async function fetchMatchDetails(matchId: string, apiKey: string): Promis
     wardsPlaced: p.wardsPlaced || 0,
     wardsKilled: p.wardsKilled || 0,
     visionWardsBoughtInGame: p.visionWardsBoughtInGame || 0,
+    champLevel: p.champLevel || 1,
+    item0: p.item0 || 0,
+    item1: p.item1 || 0,
+    item2: p.item2 || 0,
+    item3: p.item3 || 0,
+    item4: p.item4 || 0,
+    item5: p.item5 || 0,
+    item6: p.item6 || 0,
+    gameEndedInEarlySurrender: !!p.gameEndedInEarlySurrender,
     win: p.win,
     lane: detectPosition(p) // TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY
   }));

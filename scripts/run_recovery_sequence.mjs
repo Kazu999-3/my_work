@@ -146,8 +146,8 @@ async function main() {
   // Step 0: 疎通チェック
   await checkSupabaseConnectivity();
 
-  // Step 1: お詫びログボ一括付与 (+400コイン)
-  runSubScript(1, 'お詫びログボ（+400コイン）安全一括付与', 'grant_maintenance_compensation.mjs');
+  // Step 1: お詫びログボ一括付与 (+600コイン)
+  runSubScript(1, 'お詫びログボ（+600コイン / 3日分）安全一括付与', 'grant_maintenance_compensation.mjs');
 
   // Step 2: 撤去チケット自動換金
   runSubScript(2, '撤去チケット（旧仕様アイテム）自動満額換金', 'refund_deprecated_tickets.mjs');
