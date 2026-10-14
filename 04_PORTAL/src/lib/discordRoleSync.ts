@@ -89,7 +89,7 @@ export async function updateMemberDiscordRankRole(
   }
 
   // rankTier の大文字正規化（例: "PLATINUM 4" -> "PLATINUM"）
-  let cleanRank = rankTier.split(' ')[0].toUpperCase().trim();
+  const cleanRank = rankTier.split(' ')[0].toUpperCase().trim();
   
   // UNRANKED は「アイアン&アンレート」にマップ
   let lookupRank = cleanRank;

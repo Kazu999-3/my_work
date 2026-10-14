@@ -377,7 +377,7 @@ export async function POST(request: Request) {
       let coinReward = (r.team === winningTeam) ? 250 : 100;
 
       // ⚔️ 勝利ボーナス激闘チケット（victory_bonus_doubler）の判定
-      let updatedInventory = Array.isArray(currentRolePrefs.inventory) ? [...currentRolePrefs.inventory] : (Array.isArray(r.dbPlayer.metadata?.inventory) ? [...r.dbPlayer.metadata.inventory] : []);
+      const updatedInventory = Array.isArray(currentRolePrefs.inventory) ? [...currentRolePrefs.inventory] : (Array.isArray(r.dbPlayer.metadata?.inventory) ? [...r.dbPlayer.metadata.inventory] : []);
       let hasVictoryDoubler = false;
 
       if (r.team === winningTeam) {
