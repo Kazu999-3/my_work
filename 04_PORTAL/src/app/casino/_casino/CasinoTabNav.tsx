@@ -14,6 +14,7 @@ export default function CasinoTabNav({ activeTab, setActiveTab }: {
           {[
             { id: 'bet', label: '🎯 勝敗予想' },
             { id: 'slot', label: '🎰 KTMスロット' },
+            { id: 'plinko', label: '💣 ジグスPlinko' },
             { id: 'mines', label: '🌿 ブッシュ・スカウト' },
             { id: 'baccarat', label: '🃏 バカラ' },
             { id: 'shop', label: '🛒 ショップ' },

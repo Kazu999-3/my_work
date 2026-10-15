@@ -10,6 +10,7 @@ import ScratchModal, { ScratchResultData } from './components/ScratchModal';
 import KtmSlotGame from './components/KtmSlotGame';
 import KtmBaccaratGame from './components/KtmBaccaratGame';
 import KtmMinesGame from './components/KtmMinesGame';
+import KtmPlinkoGame from './components/KtmPlinkoGame';
 import { useCasinoData } from './_casino/useCasinoData';
 import type { CasinoTab } from './_casino/types';
 import CasinoHero from './_casino/CasinoHero';
@@ -352,6 +353,19 @@ export default function CasinoPage() {
             <KtmSlotGame
               userCoins={user?.coins ?? 0}
               onBalanceChange={(newBalance) => {
+                fetchBetData();
+                refreshUser();
+              }}
+            />
+          </div>
+        )}
+
+        {/* タブ: 💣 ジグスPlinko */}
+        {activeTab === 'plinko' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            <KtmPlinkoGame
+              userCoins={user?.coins ?? 0}
+              onBalanceChange={() => {
                 fetchBetData();
                 refreshUser();
               }}

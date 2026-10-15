@@ -1,1 +1,1 @@
-export type CasinoTab = 'bet' | 'slot' | 'mines' | 'baccarat' | 'shop';
+export type CasinoTab = 'bet' | 'slot' | 'plinko' | 'mines' | 'baccarat' | 'shop';

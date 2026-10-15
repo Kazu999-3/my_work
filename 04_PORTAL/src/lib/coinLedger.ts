@@ -24,6 +24,7 @@ export type CoinReason =
   | 'crash'              // ポロ・クラッシュ（2026-09-23 にゲームを削除。過去データが残るため型は維持）
   | 'baccarat'           // バカラ
   | 'mines'              // ブッシュ・スカウト（ベット投入と利確の2回に分けて記録する）
+  | 'plinko'             // ジグスPlinko（バウンド爆弾）
   | 'shop_purchase'      // ショップ購入
   | 'handicap'           // ハンデ発動
   | 'tip_send'           // チップ送金（送り手・マイナス）
