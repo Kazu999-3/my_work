@@ -18,6 +18,28 @@ function isMatchmakerAdmin(session: { discordId?: string; isAdmin?: boolean } | 
 }
 
 /**
+ * お見合いのプロフィールIDを、渡された値が無ければ Discord ID から引き直す。
+ * 2026-10-15: 一括送信で画面から届く profileId が空のまま保存され、成立後も埋め直されなかったため、
+ * yukizo×けいろんのペアが掲示板に出ず、先輩の弟子数（max_pupils判定）からも漏れていた。
+ */
+async function resolveProfileId(
+  discordId: string | null | undefined,
+  roleType: 'MENTOR' | 'PUPIL',
+  given?: string | null
+): Promise<string | null> {
+  if (given) return given;
+  if (!discordId) return null;
+  const { data } = await supabase
+    .from('mentorship_profiles')
+    .select('id')
+    .eq('discord_id', discordId)
+    .eq('role_type', roleType)
+    .limit(1)
+    .maybeSingle();
+  return data?.id ?? null;
+}
+
+/**
  * 【後輩ファースト】後輩が「話す」を選んだ際、指名された先輩へリクエストDMを送信
  */
 async function sendMentorRequestDm(params: {
@@ -210,12 +232,18 @@ async function executeOfferResponse(params: {
       matchedAt: new Date().toISOString(),
     };
 
+    // 紐づけが抜けていると以降の弟子/師匠ステータス更新が丸ごと飛ぶため、ここで埋め直す
+    match.mentor_profile_id = await resolveProfileId(match.mentor_discord_id, 'MENTOR', match.mentor_profile_id);
+    match.pupil_profile_id = await resolveProfileId(match.pupil_discord_id, 'PUPIL', match.pupil_profile_id);
+
     await supabase
       .from('mentorship_matches')
       .update({
         status: 'ACTIVE',
         started_at: new Date().toISOString(),
         notes: JSON.stringify(updatedNotes),
+        mentor_profile_id: match.mentor_profile_id,
+        pupil_profile_id: match.pupil_profile_id,
       })
       .eq('id', matchId);
 
@@ -506,6 +534,8 @@ export async function POST(req: Request) {
       };
 
       let matchId = existing?.id;
+      const mentorProfileId = await resolveProfileId(mentorDiscordId, 'MENTOR', existing?.mentor_profile_id || proposal.mentor.profileId);
+      const pupilProfileId = await resolveProfileId(pupilDiscordId, 'PUPIL', existing?.pupil_profile_id || proposal.pupil.profileId);
 
       if (existing) {
         // 既存更新
@@ -514,6 +544,8 @@ export async function POST(req: Request) {
           .update({
             status: 'PENDING',
             notes: JSON.stringify(initialNotes),
+            mentor_profile_id: mentorProfileId,
+            pupil_profile_id: pupilProfileId,
           })
           .eq('id', existing.id);
 
@@ -526,8 +558,8 @@ export async function POST(req: Request) {
         const { data: inserted, error: insErr } = await supabase
           .from('mentorship_matches')
           .insert({
-            mentor_profile_id: proposal.mentor.profileId || null,
-            pupil_profile_id: proposal.pupil.profileId || null,
+            mentor_profile_id: mentorProfileId,
+            pupil_profile_id: pupilProfileId,
             mentor_discord_id: mentorDiscordId,
             pupil_discord_id: pupilDiscordId,
             status: 'PENDING',
@@ -620,12 +652,16 @@ export async function POST(req: Request) {
         };
 
         let matchId = existing?.id;
+        const mentorProfileId = await resolveProfileId(mentorDiscordId, 'MENTOR', existing?.mentor_profile_id || mentor.profileId);
+        const pupilProfileId = await resolveProfileId(pupilDiscordId, 'PUPIL', existing?.pupil_profile_id || pupil.profileId);
         if (existing) {
           const { error: updErr } = await supabase
             .from('mentorship_matches')
             .update({
               status: 'PENDING',
               notes: JSON.stringify(initialNotes),
+              mentor_profile_id: mentorProfileId,
+              pupil_profile_id: pupilProfileId,
             })
             .eq('id', existing.id);
           if (updErr) {
@@ -635,8 +671,8 @@ export async function POST(req: Request) {
           const { data: inserted, error: insErr } = await supabase
             .from('mentorship_matches')
             .insert({
-              mentor_profile_id: mentor.profileId || null,
-              pupil_profile_id: pupil.profileId || null,
+              mentor_profile_id: mentorProfileId,
+              pupil_profile_id: pupilProfileId,
               mentor_discord_id: mentorDiscordId,
               pupil_discord_id: pupilDiscordId,
               status: 'PENDING',
