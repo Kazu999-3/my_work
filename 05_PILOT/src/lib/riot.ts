@@ -75,7 +75,15 @@ interface MatchResult {
   gameType?: string;
 }
 
-export async function fetchPuuidByRiotId(gameName: string, tagLine: string, apiKey: string): Promise<string> {
+// コピペで混入する不可視文字（方向制御 U+2066〜2069・U+202A〜202E、ゼロ幅 U+200B〜200F、BOM）を除く。
+// 2026-10-15: 「Veylith⁩#⁦Sae⁩」のように混入したRiot IDが、同期のたびに Not Found で失敗し続けていた。
+export function stripInvisibleChars(s: string): string {
+  return s.replace(/[\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g, '').trim();
+}
+
+export async function fetchPuuidByRiotId(rawGameName: string, rawTagLine: string, apiKey: string): Promise<string> {
+  const gameName = stripInvisibleChars(rawGameName);
+  const tagLine = stripInvisibleChars(rawTagLine);
   const url = `${RIOT_API_BASE_ASIA}/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}?api_key=${apiKey}`;
   const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) {

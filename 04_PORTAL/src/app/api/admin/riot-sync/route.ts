@@ -142,10 +142,16 @@ export async function POST(request: Request) {
         await new Promise(resolve => setTimeout(resolve, 250));
 
       } catch (err: any) {
-        console.error(`Player ${player.ign} sync error:`, err);
+        const errMsg = err.message || '';
+        // Not Found は名簿のRiot IDが古い（改名済み等）だけでシステム異常ではないので warn に留める。
+        // 2026-10-15: もうどうしてだよ#0706・vqxlf#6743 が同期のたびに error 扱いで残り続けていた。
+        if (errMsg.includes('Not Found')) {
+          console.warn(`Player ${player.ign} sync skipped (Riot ID not found):`, errMsg);
+        } else {
+          console.error(`Player ${player.ign} sync error:`, err);
+        }
         errors.push(`[${player.ign}] ${err.message}`);
 
-        const errMsg = err.message || '';
         if (errMsg.includes('403') || errMsg.includes('429') || errMsg.includes('Forbidden') || errMsg.includes('Too Many Requests')) {
           console.warn("⚠️ [Riot Sync] APIキーのエラー (403/429) を検知したため、同期処理を安全に中断します。");
           errors.push(`[SYSTEM] APIキーエラー（403/429）のため、処理を安全に中断しました。APIキーを確認してください。`);
