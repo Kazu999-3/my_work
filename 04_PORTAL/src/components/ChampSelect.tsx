@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { getChampIcon } from '@/lib/ddragonClient';
-import { ALL_CHAMPIONS, CHAMPION_JA } from '@/lib/championConstants';
+import { getChampIcon } from '../lib/ddragonClient';
+import { ALL_CHAMPIONS, CHAMPION_JA } from '../lib/championConstants';
 
 export { ALL_CHAMPIONS, CHAMPION_JA };
 

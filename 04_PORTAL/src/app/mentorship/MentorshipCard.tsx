@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from '../../components/Toaster';
 import { MentorshipProfile } from '../api/mentorship/profiles/route';
 import { getRankBadgeStyle } from '../../lib/mmr';
-import { CHAMPION_JA } from '@/lib/championConstants';
+import { CHAMPION_JA } from '../../lib/championConstants';
 import { getChampIcon } from '../../lib/ddragonClient';
 import { Clock, MessageSquare, Send, Sparkles, Trash2, Zap, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { MentorshipReviewSummary } from '../api/mentorship/reviews/route';
