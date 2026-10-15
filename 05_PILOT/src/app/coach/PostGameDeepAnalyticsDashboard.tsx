@@ -4,7 +4,7 @@ import LiteMarkdown from "@/components/LiteMarkdown";
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { getChampIcon } from '@/lib/ddragonClient';
-import { AlertCircle, RefreshCw, Layers, Activity, Zap, BarChart3, Eye, Info, Bot, ChevronDown, ChevronUp } from 'lucide-react';
+import { AlertCircle, RefreshCw, Layers, Zap, BarChart3, Info, Bot, ChevronDown, ChevronUp } from 'lucide-react';
 import type { PostgameTempoReport } from '@/lib/postgameTempo';
 import PostGameTempoSections from './PostGameTempoSections';
 import TargetComparisonCard from './TargetComparisonCard';
@@ -13,7 +13,6 @@ import JgRelativeTrackerCard from './JgRelativeTrackerCard';
 import VodReviewPointsCard from './VodReviewPointsCard';
 import type { PostgameJgAnalysisReport } from '@/lib/postgameJgMetrics';
 import type { TrollAnalysisResult } from '@/lib/trollDetector';
-import WhatIfAnalyzerCard from './WhatIfAnalyzerCard';
 import type { WhatIfAnalysisReport } from '@/lib/whatIfAnalyzer';
 
 // 試合後: 詳細分析（2026-10-05 全面見直し）
@@ -21,6 +20,10 @@ import type { WhatIfAnalysisReport } from '@/lib/whatIfAnalyzer';
 // 実データを見ていない数値や定型文を表示していた。ここでは試合データに実在する数値だけを
 // 対面と並べて出し、良し悪しの判断はプレイヤーに委ねる。
 // 2026-10-06: 「試合後: テンポ」タブを統合し、15分テンポ逆再生・帰還・ビルド監査もこの下に表示する。
+// 2026-10-15: 17ブロックが縦一列で「ごちゃごちゃ」していたため整理（ユーザー判断）。
+//   常時表示 = 試合選択（直近の通算を見出しに吸収）・試合ヘッダー・事故マッチ・「この試合の要点」
+//   （AI自動振り返り＋What-Ifの敗因分岐点を1枚に統合。What-Ifの得た/失った2列表は省いた）。
+//   詳細は小タブ（対面比較〔CW購入時刻を吸収〕/ 目標ランク比較 / テンポ・ビルド / JG分析 / 振り返りメモ）に分けた。
 
 interface RecentMatchMeta {
   matchId: string;
@@ -123,6 +126,8 @@ const COMPARE_ROWS: { key: keyof MatchStats; label: string; unit?: string; lower
   { key: 'control_wards_bought', label: 'コントロールワード購入' },
 ];
 
+type DetailTab = 'lane' | 'target' | 'tempo' | 'jg' | 'note';
+
 const signed = (v: number) => (v > 0 ? `+${v.toLocaleString()}` : v.toLocaleString());
 const diffColor = (v: number | null) => (v == null || v === 0 ? 'text-stone-300' : v > 0 ? 'text-emerald-400' : 'text-rose-400');
 
@@ -141,6 +146,7 @@ export default function PostGameDeepAnalyticsDashboard({
   const currentMatchId = controlledMatchId || internalMatchId;
   // 2026-10-08: ユーザー要望で最初から開いた状態にする（以前は閉じた状態で始まっていた）
   const [reviewExpanded, setReviewExpanded] = useState(true);
+  const [detailTab, setDetailTab] = useState<DetailTab>('lane');
 
   const fetchAnalytics = async (matchId?: string) => {
     setSwitching(true);
@@ -211,16 +217,41 @@ export default function PostGameDeepAnalyticsDashboard({
   const sm = data.match_stats;
   const pos = POSITION_LABEL[data.my_position] || data.my_position;
   const cms = data.cross_match_summary;
+  const tp = data.what_if_analysis?.turningPoint ?? null;
+  const review = data.auto_review;
+
+  const detailTabs: { key: DetailTab; label: string }[] = [
+    { key: 'lane', label: '⚔️ 対面比較' },
+    { key: 'target', label: '🎯 目標ランク比較' },
+    { key: 'tempo', label: '⏱️ テンポ・ビルド' },
+    ...(data.jg_analysis ? [{ key: 'jg' as const, label: '🌲 JG分析' }] : []),
+    { key: 'note', label: '📝 振り返りメモ' },
+  ];
+  // JGの試合からJG以外の試合へ切り替えた時に、存在しないタブのままにしない
+  const activeTab: DetailTab = detailTabs.some((t) => t.key === detailTab) ? detailTab : 'lane';
 
   return (
     <div className="bg-stone-900/60 border border-stone-800 rounded-2xl p-5 md:p-6 text-stone-100 space-y-6">
       {/* 直近の試合選択 */}
       {data.recent_matches.length > 0 && (
         <div className="space-y-2.5">
-          <h4 className="text-xs font-black text-stone-200 flex items-center gap-1.5">
-            <Layers className="w-4 h-4 text-amber-400" />
-            <span>直近のソロQ（{data.recent_matches.length}試合）</span>
-          </h4>
+          <div className="flex items-center gap-x-3 gap-y-1 flex-wrap">
+            <h4 className="text-xs font-black text-stone-200 flex items-center gap-1.5">
+              <Layers className="w-4 h-4 text-amber-400" />
+              <span>直近のソロQ（{data.recent_matches.length}試合）</span>
+            </h4>
+            {cms.total_matches > 1 && (
+              <span className="text-[11px] font-mono text-stone-400 flex items-center gap-x-2.5 gap-y-0.5 flex-wrap">
+                <span>
+                  {cms.wins}勝{cms.total_matches - cms.wins}敗（
+                  <strong className={cms.win_rate >= 50 ? 'text-emerald-400' : 'text-rose-400'}>{cms.win_rate}%</strong>）
+                </span>
+                <span>KDA {cms.avg_kda}</span>
+                <span>CS/分 {cms.avg_cs_per_min}</span>
+                <span>視界 {cms.avg_vision_score}</span>
+              </span>
+            )}
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
             {data.recent_matches.map((m, idx) => {
               const isSelected = data.selected_match_id === m.matchId;
@@ -273,23 +304,6 @@ export default function PostGameDeepAnalyticsDashboard({
               );
             })}
           </div>
-        </div>
-      )}
-
-      {/* 直近の通算 */}
-      {cms.total_matches > 1 && (
-        <div className="bg-stone-950/60 border border-stone-800 rounded-xl p-3 flex items-center gap-x-4 gap-y-1 flex-wrap text-[11px]">
-          <span className="font-black text-stone-200 flex items-center gap-1.5">
-            <Activity className="w-4 h-4 text-amber-400" />
-            直近{cms.total_matches}試合
-          </span>
-          <span className="text-stone-300 font-mono">
-            {cms.wins}勝{cms.total_matches - cms.wins}敗（
-            <strong className={cms.win_rate >= 50 ? 'text-emerald-400' : 'text-rose-400'}>{cms.win_rate}%</strong>）
-          </span>
-          <span className="text-stone-300 font-mono">平均KDA {cms.avg_kda}</span>
-          <span className="text-stone-300 font-mono">平均CS/分 {cms.avg_cs_per_min}</span>
-          <span className="text-stone-300 font-mono">平均視界 {cms.avg_vision_score}</span>
         </div>
       )}
 
@@ -383,69 +397,111 @@ export default function PostGameDeepAnalyticsDashboard({
         </div>
       )}
 
-      {/* 🌪️ もしもの世界（What-If）敗因分岐点アナライザー */}
-      {data.what_if_analysis && (
-        <WhatIfAnalyzerCard report={data.what_if_analysis} isWin={data.is_win} />
-      )}
-
-      {/* 自動振り返り（ソロQ試合後の通知と同じ内容） */}
-      {data.auto_review && (
-        <div className="bg-stone-950 border border-amber-800/60 rounded-xl p-4 space-y-2">
+      {/* この試合の要点: AI自動振り返り（通知と同じ内容）＋ What-If の敗因分岐点 */}
+      {(review || tp) && (
+        <div className="bg-stone-950 border border-amber-800/60 rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <span className="text-xs font-black text-stone-100 flex items-center gap-1.5">
               <Bot className="w-4 h-4 text-amber-400" />
-              AIの自動振り返り
+              この試合の要点
             </span>
-            <span className="text-[10px] text-stone-500">
-              {new Date(data.auto_review.created_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })} 作成（通知と同じ内容）
-            </span>
+            {review && (
+              <span className="text-[10px] text-stone-500">
+                AI振り返り {new Date(review.created_at).toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })} 作成（通知と同じ内容）
+              </span>
+            )}
           </div>
-          {data.auto_review.weaknesses.length > 0 && (
-            <p className="text-[11px]"><span className="font-bold text-rose-400">弱点: </span><span className="text-stone-300">{data.auto_review.weaknesses.join(' / ')}</span></p>
+
+          {review && (
+            <div className="space-y-1.5">
+              {review.weaknesses.length > 0 && (
+                <p className="text-[11px]"><span className="font-bold text-rose-400">弱点: </span><span className="text-stone-300">{review.weaknesses.join(' / ')}</span></p>
+              )}
+              {review.focus && (
+                <p className="text-[11px]"><span className="font-bold text-amber-300">次に意識すること: </span><span className="text-stone-300">{review.focus}</span></p>
+              )}
+              <LiteMarkdown
+                text={review.advice}
+                className={`text-[11px] text-stone-300 leading-relaxed space-y-0.5 ${reviewExpanded ? '' : 'max-h-20 overflow-hidden'}`}
+              />
+              <button
+                type="button"
+                onClick={() => setReviewExpanded((v) => !v)}
+                className="text-[11px] font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 cursor-pointer"
+              >
+                {reviewExpanded ? <><ChevronUp className="w-3 h-3" /> 折りたたむ</> : <><ChevronDown className="w-3 h-3" /> 全文を表示</>}
+              </button>
+            </div>
           )}
-          {data.auto_review.focus && (
-            <p className="text-[11px]"><span className="font-bold text-amber-300">次に意識すること: </span><span className="text-stone-300">{data.auto_review.focus}</span></p>
+
+          {tp && (
+            <div className={`space-y-1 text-[11px] ${review ? 'border-t border-stone-800 pt-3' : ''}`}>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold text-stone-200">🌪️ 試合の分かれ目: {tp.timeFormatted}</span>
+                <span className="font-mono font-bold text-rose-300">{tp.goldSwing.toLocaleString()}G 急落</span>
+                <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
+                  tp.tradeoffVerdict === 'CRITICAL_SPLIT_FAULT'
+                    ? 'bg-amber-950/40 text-amber-300 border-amber-800/60'
+                    : tp.tradeoffVerdict === 'WORTHWHILE_TRADE'
+                    ? 'bg-emerald-950/30 text-emerald-400 border-emerald-800/60'
+                    : 'bg-stone-900 text-stone-300 border-stone-700'
+                }`}>
+                  {tp.verdictTitle}
+                </span>
+              </div>
+              <p className="text-stone-300 leading-relaxed">{tp.verdictAdvice}</p>
+            </div>
           )}
-          <LiteMarkdown
-            text={data.auto_review.advice}
-            className={`text-[11px] text-stone-300 leading-relaxed space-y-0.5 ${reviewExpanded ? '' : 'max-h-20 overflow-hidden'}`}
-          />
-          <button
-            type="button"
-            onClick={() => setReviewExpanded((v) => !v)}
-            className="text-[11px] font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 cursor-pointer"
-          >
-            {reviewExpanded ? <><ChevronUp className="w-3 h-3" /> 折りたたむ</> : <><ChevronDown className="w-3 h-3" /> 全文を表示</>}
-          </button>
         </div>
       )}
 
-      {/* 目標ランク平均との比較 */}
-      <TargetComparisonCard
-        role={data.my_position}
-        thisMatch={{
-          cs_per_min: sm.me.cs_per_min,
-          cs_at_15: lane && lane.minute === 15 ? lane.me.cs : null,
-          deaths: sm.me.deaths,
-          vision_per_min: sm.me.vision_per_min,
-          kill_participation: sm.me.kill_participation,
-          damage_share: sm.me.damage_share,
-          control_wards_bought: sm.me.control_wards_bought,
-        }}
-        recentAvg={data.role_recent.avg}
-        recentCount={data.role_recent.count}
-      />
+      {/* 詳細は小タブで切り替える */}
+      <div className="flex gap-1.5 overflow-x-auto border-b border-stone-800 pb-2 -mx-1 px-1">
+        {detailTabs.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setDetailTab(t.key)}
+            className={`shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
+              activeTab === t.key
+                ? 'bg-amber-500/15 text-amber-300 border border-amber-700/60'
+                : 'text-stone-400 border border-transparent hover:text-stone-100 hover:bg-stone-800'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-      {/* 対面JG相対トラッカー（FORESTER 10,000試合モデル） */}
-      {data.jg_analysis && (
-        <JgRelativeTrackerCard report={data.jg_analysis} />
+      {activeTab === 'target' && (
+        <TargetComparisonCard
+          role={data.my_position}
+          thisMatch={{
+            cs_per_min: sm.me.cs_per_min,
+            cs_at_15: lane && lane.minute === 15 ? lane.me.cs : null,
+            deaths: sm.me.deaths,
+            vision_per_min: sm.me.vision_per_min,
+            kill_participation: sm.me.kill_participation,
+            damage_share: sm.me.damage_share,
+            control_wards_bought: sm.me.control_wards_bought,
+          }}
+          recentAvg={data.role_recent.avg}
+          recentCount={data.role_recent.count}
+        />
       )}
 
-      {/* VODピンポイント検証リスト（raaaaaq × small_turnsモデル） */}
-      {data.jg_analysis && data.jg_analysis.vodReviewPoints && data.jg_analysis.vodReviewPoints.length > 0 && (
-        <VodReviewPointsCard points={data.jg_analysis.vodReviewPoints} />
+      {activeTab === 'jg' && data.jg_analysis && (
+        <div className="space-y-4">
+          {/* 対面JG相対トラッカー（FORESTER 10,000試合モデル） */}
+          <JgRelativeTrackerCard report={data.jg_analysis} />
+          {/* VODピンポイント検証リスト（raaaaaq × small_turnsモデル） */}
+          {data.jg_analysis.vodReviewPoints && data.jg_analysis.vodReviewPoints.length > 0 && (
+            <VodReviewPointsCard points={data.jg_analysis.vodReviewPoints} />
+          )}
+        </div>
       )}
 
+      {activeTab === 'lane' && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* 1. レーン戦 */}
         <div className="bg-stone-950 border border-stone-800 rounded-xl p-4 space-y-3">
@@ -545,53 +601,49 @@ export default function PostGameDeepAnalyticsDashboard({
             </table>
           </div>
           {!sm.enemy && <p className="text-[10px] text-stone-500">敵チームに同じポジションのプレイヤーが見つからなかったため、自分の値のみ表示しています。</p>}
-        </div>
-
-        {/* 3. コントロールワード購入時刻 */}
-        <div className="bg-stone-950 border border-stone-800 rounded-xl p-4 space-y-2">
-          <span className="text-xs font-black text-stone-100 flex items-center gap-1.5">
-            <Eye className="w-4 h-4 text-amber-400" />
-            コントロールワードの購入時刻
-          </span>
-          {data.control_ward_times.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
-              {data.control_ward_times.map((t, i) => (
-                <span key={i} className="text-[11px] font-mono font-bold bg-stone-900 text-stone-200 px-2 py-0.5 rounded border border-stone-800">
+          {/* コントロールワード購入時刻（2026-10-15: 独立ブロックからここへ吸収） */}
+          <p className="text-[11px] text-stone-400 border-t border-stone-800/60 pt-2 flex items-center gap-1.5 flex-wrap">
+            <span className="font-bold">CWの購入時刻:</span>
+            {data.control_ward_times.length > 0 ? (
+              data.control_ward_times.map((t, i) => (
+                <span key={i} className="font-mono font-bold bg-stone-900 text-stone-200 px-1.5 py-0.5 rounded border border-stone-800">
                   {t}
                 </span>
-              ))}
-            </div>
-          ) : (
-            <p className="text-[11px] text-stone-400">
-              {data.timeline_available ? 'この試合ではコントロールワードを購入していません。' : 'タイムラインを取得できなかったため不明です（上のレーン戦の欄に理由を表示）。'}
-            </p>
-          )}
+              ))
+            ) : (
+              <span>{data.timeline_available ? '購入なし' : '不明（タイムラインを取得できませんでした）'}</span>
+            )}
+          </p>
         </div>
 
       </div>
+      )}
 
       {/* 15分テンポ逆再生・帰還テンポ・ビルド監査（旧「テンポ」タブ） */}
-      {data.tempo ? (
+      {activeTab === 'tempo' && (data.tempo ? (
         <PostGameTempoSections report={data.tempo} />
       ) : (
         <div className="p-3 rounded-xl bg-stone-950 border border-stone-800 text-[11px] text-stone-400 flex items-center gap-2">
           <Info className="w-4 h-4 shrink-0" />
           テンポ逆再生・帰還・ビルド監査を表示できません（{data.tempo_error || '理由不明'}）。
         </div>
-      )}
+      ))}
 
       {/* 2026-10-08: 集団戦レビューはユーザー判断で外した */}
 
-      {/* この試合の振り返り（旧「振り返りノート」タブ） */}
-      <PostGameReflectionForm
-        matchId={data.selected_match_id}
-        champion={data.my_champion}
-        enemyChampion={data.enemy_champion}
-        isWin={data.is_win}
-        kda={data.kda_str}
-        cs={data.my_cs}
-        gameDurationSec={data.game_duration_sec}
-      />
+      {/* この試合の振り返り（旧「振り返りノート」タブ）。
+          タブ切り替えで書きかけの内容が消えないよう、外さずに隠すだけにする */}
+      <div className={activeTab === 'note' ? '' : 'hidden'}>
+        <PostGameReflectionForm
+          matchId={data.selected_match_id}
+          champion={data.my_champion}
+          enemyChampion={data.enemy_champion}
+          isWin={data.is_win}
+          kda={data.kda_str}
+          cs={data.my_cs}
+          gameDurationSec={data.game_duration_sec}
+        />
+      </div>
     </div>
   );
 }
