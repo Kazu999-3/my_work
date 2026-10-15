@@ -156,26 +156,73 @@ export default function OverlayPage() {
         )}
       </div>
 
-      {/* 画面右上: オブジェクト・警告フロートカード */}
+      {/* 画面右上: 対面の癖 (Habit Radar) ＆ 戦術タイマー */}
       <div className="absolute top-4 right-4 space-y-2">
-        <div className="rounded-xl border border-white/10 bg-black/75 p-3 shadow-xl backdrop-blur-lg w-56">
-          <div className="flex items-center justify-between text-[11px] font-bold text-zinc-400 border-b border-white/10 pb-1.5">
-            <span className="flex items-center gap-1 text-rose-400">
-              <Target className="h-3.5 w-3.5" /> 戦術ガイド
+        <div className="rounded-xl border border-rose-500/30 bg-black/85 p-3 shadow-2xl backdrop-blur-xl w-64 space-y-2.5">
+          <div className="flex items-center justify-between text-[11px] font-bold text-zinc-300 border-b border-white/10 pb-1.5">
+            <span className="flex items-center gap-1.5 text-rose-400">
+              <Eye className="h-3.5 w-3.5" /> 対面の癖 (Habit Radar)
             </span>
-            <span className="text-[9px] font-mono text-zinc-500">Live Client</span>
-          </div>
-          <div className="mt-2 space-y-1.5 text-xs text-zinc-200">
-            <div className="flex justify-between items-center">
-              <span className="text-zinc-400">視界スコア:</span>
-              <span className="font-mono font-bold text-sky-400">{me?.wardScore || 0} pt</span>
-            </div>
-            {data.gameTimeSec && data.gameTimeSec < 600 && (
-              <div className="rounded-lg bg-rose-500/10 border border-rose-500/20 p-1.5 text-[10px] text-rose-300">
-                ⚠️ 序盤フェーズ: ガンク・初手ワード切れに注意
-              </div>
+            {enemy && (
+              <span className="text-[10px] font-mono text-zinc-400">
+                vs {enemy.championName}
+              </span>
             )}
           </div>
+
+          {/* リアルタイムカウントダウン */}
+          {data.gameTimeSec !== undefined && data.gameTimeSec < 600 ? (
+            <div className="space-y-2">
+              {/* 1. 初手ワード切れタイマー */}
+              {data.gameTimeSec < 168 ? (
+                <div className="rounded-lg bg-sky-950/40 border border-sky-500/30 p-2">
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-sky-300 font-bold">👁️ 敵初手ワード切れ:</span>
+                    <span className="font-mono font-black text-sky-400">
+                      あと {formatTime(168 - data.gameTimeSec)}
+                    </span>
+                  </div>
+                  <div className="mt-1 text-[10px] text-zinc-400">
+                    2:48以降に川草むらの視界消失 ➔ ガンク好機
+                  </div>
+                </div>
+              ) : data.gameTimeSec < 240 ? (
+                <div className="rounded-lg bg-emerald-950/50 border border-emerald-500/40 p-2 animate-pulse">
+                  <div className="flex items-center gap-1 text-[11px] font-black text-emerald-300">
+                    <Sparkles className="h-3.5 w-3.5" /> 敵の視界切れ中！（2:48経過）
+                  </div>
+                  <div className="text-[10px] text-zinc-300">
+                    河川ワード切れ。JGガンクまたは仕掛け推奨！
+                  </div>
+                </div>
+              ) : null}
+
+              {/* 2. 1stリコール予測タイマー */}
+              {data.gameTimeSec >= 210 && data.gameTimeSec < 315 ? (
+                <div className="rounded-lg bg-amber-950/40 border border-amber-500/30 p-2">
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-amber-300 font-bold">🛒 敵リコール予測 (5:15):</span>
+                    <span className="font-mono font-black text-amber-400">
+                      あと {formatTime(315 - data.gameTimeSec)}
+                    </span>
+                  </div>
+                  <div className="mt-1 text-[10px] text-zinc-400">
+                    直前ウェーブをタワーへ押し込み、有利リコールへ
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <div className="text-[11px] text-zinc-400 space-y-1">
+              <div className="flex justify-between">
+                <span>視界スコア:</span>
+                <span className="font-mono text-sky-400 font-bold">{me?.wardScore || 0} pt</span>
+              </div>
+              <div className="text-[10px] text-zinc-500">
+                10分経過: 中盤マクロ・オブジェクト主導権重視
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -49,6 +49,26 @@ export async function GET() {
     const activeSummonerName = activePlayer?.summonerName || '';
     const myPlayer = allPlayers.find((p: any) => p.summonerName === activeSummonerName) || allPlayers[0];
 
+    const myTeam = myPlayer?.team;
+    const myPos = myPlayer?.position;
+    const enemyPlayer = allPlayers.find((p: any) => p.team !== myTeam && p.position === myPos && myPos && myPos !== 'NONE') ||
+                        allPlayers.find((p: any) => p.team !== myTeam);
+
+    // 敵対面の癖情報 (Habit Radar)
+    let enemyHabits: any = null;
+    if (enemyPlayer) {
+      // チャンピオン名またはサモナー名から大まかな初期予測（試合開始時のデフォルト値）
+      // 一般的な平均: ワード設置 1:18 (78s) ➔ 視界切れ 2:48 (168s) / 1stリコール 5:15 (315s)
+      enemyHabits = {
+        championName: enemyPlayer.championName,
+        summonerName: enemyPlayer.summonerName,
+        position: enemyPlayer.position,
+        estimatedWardExpireSec: 168, // 2:48
+        estimatedFirstRecallSec: 315, // 5:15
+        estimatedEarlyDeathSec: 250, // 4:10
+      };
+    }
+
     return NextResponse.json({
       inGame: true,
       gameTimeSec: Math.floor(gameData.gameTime || 0),
@@ -63,6 +83,16 @@ export async function GET() {
         cs: myPlayer?.scores?.creepScore || 0,
         wardScore: myPlayer?.scores?.wardScore || 0,
       },
+      enemyPlayer: enemyPlayer ? {
+        championName: enemyPlayer.championName,
+        summonerName: enemyPlayer.summonerName,
+        position: enemyPlayer.position,
+        kills: enemyPlayer.scores?.kills || 0,
+        deaths: enemyPlayer.scores?.deaths || 0,
+        assists: enemyPlayer.scores?.assists || 0,
+        cs: enemyPlayer.scores?.creepScore || 0,
+        habits: enemyHabits
+      } : null,
       allPlayers: allPlayers.map((p: any) => ({
         championName: p.championName,
         team: p.team, // 'ORDER' (Blue) | 'CHAOS' (Red)
