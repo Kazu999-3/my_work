@@ -82,7 +82,7 @@ function getPlayerCoins(player) {
 }
 
 async function main() {
-  printBanner(`KTM メンテナンス補填（2日分ログボ: +${BONUS_AMOUNT}コイン一括付与）`);
+  printBanner(`KTM メンテナンス補填（3日分ログボ: +${BONUS_AMOUNT}コイン一括付与）`);
   console.log('');
 
   // 1. 全プレイヤー取得

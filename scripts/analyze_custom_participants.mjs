@@ -130,7 +130,7 @@ async function main() {
 
   // 1. プレイヤーデータの取得
   console.log('1. プレイヤー一覧を取得中...');
-  const playerUrl = `${supabaseUrl}/rest/v1/ktm_players?select=id,name,discord_id,highest_rank,current_rank,total_games,representative_mmr,mmr,is_active,stats&order=total_games.desc`;
+  const playerUrl = `${supabaseUrl}/rest/v1/ktm_players?select=id,name,discord_id,highest_rank,mmr,is_active,games_top,games_jg,games_mid,games_adc,games_sup,metadata&order=name.asc`;
   const res = await fetch(playerUrl, { headers });
 
   if (!res.ok) {
@@ -145,16 +145,23 @@ async function main() {
   const allPlayers = await res.json();
   console.log(`   ➔ 全登録プレイヤー: ${allPlayers.length}名`);
 
+  function getPlayerGames(p) {
+    const laneGames = (p.games_top || 0) + (p.games_jg || 0) + (p.games_mid || 0) + (p.games_adc || 0) + (p.games_sup || 0);
+    if (laneGames > 0) return laneGames;
+    if (typeof p.metadata?.total_games === 'number') return p.metadata.total_games;
+    return 0;
+  }
+
   // 対象プレイヤーの抽出
   // デフォルト: 試合数1回以上（またはアクティブ）の参加者
   // --all: 全アクティブプレイヤー
   const targetPlayers = allPlayers.filter((p) => {
     if (isAll) return p.is_active !== false;
-    const games = p.total_games || p.stats?.total?.g || 0;
+    const games = getPlayerGames(p);
     return games > 0 || p.is_active !== false;
   });
 
-  const activeExperienced = targetPlayers.filter((p) => (p.total_games || p.stats?.total?.g || 0) > 0);
+  const activeExperienced = targetPlayers.filter((p) => getPlayerGames(p) > 0);
   console.log(`   ➔ 分析対象プレイヤー: ${targetPlayers.length}名 (通算1戦以上: ${activeExperienced.length}名)\n`);
 
   if (targetPlayers.length === 0) {
@@ -164,14 +171,14 @@ async function main() {
 
   // 2. プレイヤーごとの実効MMRとティアの算出
   const playerStats = targetPlayers.map((p) => {
-    const tier = parseTier(p.highest_rank || p.current_rank);
-    const games = p.total_games || p.stats?.total?.g || 0;
+    const tier = parseTier(p.highest_rank);
+    const games = getPlayerGames(p);
     // 代表MMRが存在すれば優先、無ければティア推定値
-    const effectiveMmr = p.representative_mmr || (typeof p.mmr === 'number' ? p.mmr : TIER_ESTIMATED_MMR[tier] || 1200);
+    const effectiveMmr = typeof p.mmr === 'number' && p.mmr > 0 ? p.mmr : TIER_ESTIMATED_MMR[tier] || 1200;
     return {
       name: p.name,
       tier,
-      highestRank: p.highest_rank || p.current_rank || 'UNRANKED',
+      highestRank: p.highest_rank || 'UNRANKED',
       games,
       mmr: Math.round(effectiveMmr),
       isBeginner: games <= 5 || tier === 'IRON' || tier === 'BRONZE' || tier === 'SILVER',
