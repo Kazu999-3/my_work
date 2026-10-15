@@ -17,6 +17,8 @@ export async function POST(request: Request) {
     return NextResponse.json(result);
   } catch (error: any) {
     console.error('Rebuild Error:', error);
+    const { reportApiError } = await import('../../../../lib/apiHandler');
+    reportApiError({ route: '/api/mmr/rebuild', error });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

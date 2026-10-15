@@ -98,6 +98,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, result });
   } catch (err: any) {
     console.error('[api/bet/plinko] Error:', err);
+    const { reportApiError } = await import('../../../../lib/apiHandler');
+    reportApiError({ route: '/api/bet/plinko', error: err });
     return NextResponse.json({ ok: false, error: err.message || '内部エラーが発生しました' }, { status: 500 });
   }
 }

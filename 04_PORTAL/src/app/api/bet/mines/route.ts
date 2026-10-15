@@ -146,6 +146,8 @@ export async function POST(req: Request) {
     }
   } catch (e: any) {
     console.error('[api/bet/mines] Error:', e);
+    const { reportApiError } = await import('../../../../lib/apiHandler');
+    reportApiError({ route: '/api/bet/mines', error: e });
     return NextResponse.json({ ok: false, error: e?.message || '内部エラーが発生しました' }, { status: 500 });
   }
 }
