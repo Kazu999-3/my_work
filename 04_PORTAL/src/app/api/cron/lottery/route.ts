@@ -37,6 +37,6 @@ export async function GET(request: NextRequest) {
     console.error('[cron/lottery] Error:', err);
     const { reportApiError } = await import('../../../../lib/apiHandler');
     reportApiError({ route: '/api/cron/lottery', error: err });
-    return NextResponse.json({ error: err?.message || 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

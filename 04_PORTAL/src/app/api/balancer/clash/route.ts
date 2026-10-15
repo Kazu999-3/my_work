@@ -19,6 +19,6 @@ export async function POST(request: Request) {
     console.error('[balancer/clash] Error:', error);
     const { reportApiError } = await import('../../../../lib/apiHandler');
     reportApiError({ route: '/api/balancer/clash', error });
-    return NextResponse.json({ error: error.message || '因縁データの取得に失敗しました。' }, { status: 500 });
+    return NextResponse.json({ error: '因縁データの取得に失敗しました。' }, { status: 500 });
   }
 }

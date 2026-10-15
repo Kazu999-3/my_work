@@ -148,7 +148,7 @@ export async function POST(req: Request) {
     console.error('[api/bet/mines] Error:', e);
     const { reportApiError } = await import('../../../../lib/apiHandler');
     reportApiError({ route: '/api/bet/mines', error: e });
-    return NextResponse.json({ ok: false, error: e?.message || '内部エラーが発生しました' }, { status: 500 });
+    return NextResponse.json({ ok: false, error: '内部エラーが発生しました' }, { status: 500 });
   }
 }
 

@@ -1,5 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { notifyPortalError } from './discordNotify';
+
+/**
+ * Discord通知をレスポンス返却後も最後まで実行させる。
+ * 単なる fire-and-forget だと、Vercel ではレスポンス返却時点で関数が止まり送信が消えることがある。
+ * after() はリクエストのスコープ外（スクリプト・テスト等）では例外になるため、その場合は従来通り投げっぱなしにする。
+ */
+function runAfterResponse(task: () => Promise<unknown>) {
+  try {
+    after(task);
+  } catch {
+    void task();
+  }
+}
 
 /**
  * Next.js App Router API Route 用のグローバルエラーハンドラー
@@ -17,8 +30,8 @@ export function withApiErrorLogging<T extends any[]>(
     } catch (error: any) {
       console.error(`[API Error] ${routeName}:`, error);
 
-      // 非同期でDiscord通知（レスポンスをブロックしない）
-      notifyPortalError({
+      // レスポンス返却後にDiscord通知（レスポンスはブロックしない）
+      runAfterResponse(() => notifyPortalError({
         error,
         app: '04',
         source: 'API',
@@ -31,13 +44,11 @@ export function withApiErrorLogging<T extends any[]>(
         },
       }).catch((notifyErr) => {
         console.warn(`[withApiErrorLogging] Discord通知送信エラー (${routeName}):`, notifyErr);
-      });
+      }));
 
       return NextResponse.json(
-        {
-          error: 'Internal Server Error',
-          message: error?.message || 'サーバー内部でエラーが発生しました。',
-        },
+        // 内部エラーの文面は利用者に返さない（詳細は #エラーログ 側で確認する）
+        { error: 'サーバー内部でエラーが発生しました。' },
         { status: 500 }
       );
     }
@@ -58,7 +69,7 @@ export function reportApiError(params: {
 }) {
   const { route, error, req, userId, userName, statusCode = 500, context } = params;
 
-  notifyPortalError({
+  runAfterResponse(() => notifyPortalError({
     error,
     app: '04',
     source: 'API',
@@ -73,5 +84,5 @@ export function reportApiError(params: {
     },
   }).catch((notifyErr) => {
     console.warn(`[reportApiError] Discord通知送信エラー (${route}):`, notifyErr);
-  });
+  }));
 }

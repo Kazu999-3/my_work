@@ -180,6 +180,6 @@ export async function POST(req: Request) {
     console.error('[api/bet/slot] Error:', err);
     const { reportApiError } = await import('../../../../lib/apiHandler');
     reportApiError({ route: '/api/bet/slot', error: err });
-    return NextResponse.json({ ok: false, error: err.message || '内部エラーが発生しました' }, { status: 500 });
+    return NextResponse.json({ ok: false, error: '内部エラーが発生しました' }, { status: 500 });
   }
 }

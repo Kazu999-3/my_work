@@ -137,6 +137,6 @@ export async function POST(req: Request) {
     console.error('Shop API error:', error);
     const { reportApiError } = await import('../../../../lib/apiHandler');
     reportApiError({ route: '/api/bet/shop', error });
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: '内部エラーが発生しました。' }, { status: 500 });
   }
 }

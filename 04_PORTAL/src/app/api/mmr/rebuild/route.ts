@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     console.error('Rebuild Error:', error);
     const { reportApiError } = await import('../../../../lib/apiHandler');
     reportApiError({ route: '/api/mmr/rebuild', error });
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'MMRの再計算中にエラーが発生しました。' }, { status: 500 });
   }
 }
 

@@ -994,6 +994,6 @@ export async function POST(request: Request) {
     console.error('Record Match Error:', error);
     const { reportApiError } = await import('../../../../lib/apiHandler');
     reportApiError({ route: '/api/match/record', error });
-    return NextResponse.json({ error: error.message || '試合の記録中にエラーが発生しました。' }, { status: 500 });
+    return NextResponse.json({ error: '試合の記録中にエラーが発生しました。' }, { status: 500 });
   }
 }

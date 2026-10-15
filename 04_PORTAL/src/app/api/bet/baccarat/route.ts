@@ -261,6 +261,6 @@ export async function POST(req: Request) {
     console.error('[baccarat POST] error:', error);
     const { reportApiError } = await import('../../../../lib/apiHandler');
     reportApiError({ route: '/api/bet/baccarat', error });
-    return NextResponse.json({ error: error.message || '内部エラーが発生しました。' }, { status: 500 });
+    return NextResponse.json({ error: '内部エラーが発生しました。' }, { status: 500 });
   }
 }
