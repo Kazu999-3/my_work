@@ -315,10 +315,15 @@ export async function updatePlayerCoinsAndInventory(params: {
     if (upErr) {
       console.warn('[playerCoins] Full update failed, falling back to role_preferences only:', upErr.message);
       // coins/inventory カラムが存在しない場合のフォールバック更新
-      await supabase
+      const { error: fbErr } = await supabase
         .from('ktm_players')
         .update({ role_preferences: updatedPrefs })
         .eq('name', player.name);
+
+      if (fbErr) {
+        console.error('[playerCoins] Both full update and fallback update failed:', fbErr.message);
+        return { success: false, coins: previousCoins, inventory: getPlayerInventory(player), error: fbErr.message };
+      }
     }
 
     // コイン増減の台帳記録。失敗してもコイン更新自体は成立しているので握りつぶす。
@@ -340,6 +345,6 @@ export async function updatePlayerCoinsAndInventory(params: {
     };
   } catch (e: any) {
     console.error('[playerCoins] Exception in updatePlayerCoinsAndInventory:', e);
-    return { success: true, coins: targetCoins, inventory: targetInventory };
+    return { success: false, coins: previousCoins, inventory: getPlayerInventory(player), error: e.message };
   }
 }
