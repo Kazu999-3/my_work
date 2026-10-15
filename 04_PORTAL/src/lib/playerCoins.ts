@@ -231,22 +231,10 @@ export async function findOrCreatePlayer(params: {
       };
     }
 
-    return {
-      name: newPlayerName,
-      discord_id: cleanDiscordId,
-      coins: 1000,
-      inventory: [],
-      highest_rank: defaultRank,
-    };
+    return null;
   } catch (e) {
     console.error('[playerCoins] Exception during findOrCreatePlayer:', e);
-    return {
-      name: newPlayerName,
-      discord_id: cleanDiscordId,
-      coins: 1000,
-      inventory: [],
-      highest_rank: defaultRank,
-    };
+    return null;
   }
 }
 

@@ -6,6 +6,7 @@ import type { Role } from './balancer';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import rawKtmTiers from '../shared/ktm_tiers.json';
 import { fetchAllRows } from './fetchAll';
+import { calculateSmoothedWinRate } from './balancer/mmrImprovement';
 
 
 // BRONZEが以前UNRANKEDと同値(1200)になっていた(2026-08-08発覚)。自己申告でBRONZEを
@@ -151,7 +152,7 @@ export function calculateInitialMmr(highestRank: string | null, role: string, pr
   const COMPRESSION_RATE = 0.8;
   const baseMmr = Math.round(1200 + (originalRankMmr - 1200) * COMPRESSION_RATE);
 
-  if (!prefs) return baseMmr - 200;
+  if (!prefs) return baseMmr - 120;
 
   // 表記揺れ吸収
   const norm = (r: string) => {
@@ -169,15 +170,15 @@ export function calculateInitialMmr(highestRank: string | null, role: string, pr
   if (p === r) {
     return baseMmr; // メインレーンは減衰なし
   }
-  // ALL/FILL/- の場合はすべてサブレーン扱いとする（メインほど上手くない）
+  // ALL/FILL/- の場合はすべてサブレーン扱いとする（実測勝率49.7%に合わせて適正化）
   if (p === 'ALL' || p === 'FILL' || p === '-') {
-    return baseMmr - 100;
+    return baseMmr - 80;
   }
   if (s === r || s === 'ALL' || s === 'FILL' || s === '-') {
-    return baseMmr - 100; // サブレーン
+    return baseMmr - 80; // サブレーン（旧-100から緩和）
   }
   
-  return baseMmr - 200; // それ以外のレーン
+  return baseMmr - 120; // 完全オフロール（旧-200から実測勝率53.6%に合わせて-120に大幅緩和）
 }
 
 export interface MmrCalcContext {
@@ -231,11 +232,18 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
     eloBonus = Math.max(-10, mmrDiff / 20);
   }
 
+  // 勝率のベイズ平滑化（試合数10未満の極端な偏りによるインフレペナルティ誤爆を防止）
+  const numG = ctx.numGames ?? 0;
+  const rawWr = ctx.totalWinRate ?? 50;
+  const effectiveWinRate = numG > 0 && numG < 10
+    ? calculateSmoothedWinRate(Math.round((rawWr / 100) * numG), numG)
+    : rawWr;
+
   if (isWin) {
     baseDelta += eloBonus; // 格上に勝てば爆上がり、格下に勝っても少し上がり幅が減る程度
     // 高勝率(60%超)プレイヤーは勝ち幅も抑える(N6: M2の対称。インフレをより効かせる)
-    if (ctx.totalWinRate > 60) {
-      const winGainPenalty = Math.min(8, (ctx.totalWinRate - 60) * 0.5);
+    if (effectiveWinRate > 60) {
+      const winGainPenalty = Math.min(8, (effectiveWinRate - 60) * 0.5);
       baseDelta -= winGainPenalty;
     }
   } else {
@@ -243,8 +251,8 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
     baseDelta = Math.min(-2, baseDelta + eloBonus);
 
     // ★ 追加: 高勝率プレイヤー(60%以上)のインフレ抑制ペナルティ
-    if (ctx.totalWinRate > 60) {
-      const winRatePenalty = Math.min(8, (ctx.totalWinRate - 60) * 0.5);
+    if (effectiveWinRate > 60) {
+      const winRatePenalty = Math.min(8, (effectiveWinRate - 60) * 0.5);
       baseDelta -= winRatePenalty;
     }
   }
@@ -332,7 +340,12 @@ export function calculateNewMMRDetailed(ctx: MmrCalcContext): { delta: number; b
   if (mmrDiff > 0) elo = Math.min(15, mmrDiff / 15);
   else if (mmrDiff < 0) elo = Math.max(-10, mmrDiff / 20);
   let wrAdjust = 0;
-  if (ctx.totalWinRate > 60) wrAdjust = -Math.min(8, (ctx.totalWinRate - 60) * 0.5);
+  const numG = ctx.numGames ?? 0;
+  const rawWr = ctx.totalWinRate ?? 50;
+  const effectiveWinRate = numG > 0 && numG < 10
+    ? calculateSmoothedWinRate(Math.round((rawWr / 100) * numG), numG)
+    : rawWr;
+  if (effectiveWinRate > 60) wrAdjust = -Math.min(8, (effectiveWinRate - 60) * 0.5);
   let kdaScore = ctx.deaths === 0 ? (ctx.kills + ctx.assists) * 1.2 : (ctx.kills + ctx.assists) / ctx.deaths;
   if (ctx.role === 'SUP') kdaScore += 0.8;
   const kda = Math.max(0, Math.min(15, (kdaScore - 2.0) * 5));

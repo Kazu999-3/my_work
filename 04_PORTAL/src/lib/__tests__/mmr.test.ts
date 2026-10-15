@@ -54,25 +54,25 @@ test('calculateInitialMmr: SILVER + メインレーン一致は圧縮後のベ�
   assert.equal(v, 1320);
 });
 
-test('calculateInitialMmr: prefs無しはベースから-200', () => {
-  assert.equal(calculateInitialMmr('SILVER 2', 'TOP', null), 1120);
+test('calculateInitialMmr: prefs無しはベースから-120', () => {
+  assert.equal(calculateInitialMmr('SILVER 2', 'TOP', null), 1200);
 });
 
-test('calculateInitialMmr: primary=ALL はサブ扱いで-100', () => {
-  assert.equal(calculateInitialMmr('SILVER 2', 'TOP', { primary: 'ALL' }), 1220);
+test('calculateInitialMmr: primary=ALL はサブ扱いで-80', () => {
+  assert.equal(calculateInitialMmr('SILVER 2', 'TOP', { primary: 'ALL' }), 1240);
 });
 
-test('calculateInitialMmr: セカンダリ一致は-100', () => {
-  assert.equal(calculateInitialMmr('SILVER 2', 'MID', { primary: 'TOP', secondary: 'MID' }), 1220);
+test('calculateInitialMmr: セカンダリ一致は-80', () => {
+  assert.equal(calculateInitialMmr('SILVER 2', 'MID', { primary: 'TOP', secondary: 'MID' }), 1240);
 });
 
-test('calculateInitialMmr: メインもサブも外れは-200', () => {
-  assert.equal(calculateInitialMmr('SILVER 2', 'JG', { primary: 'TOP', secondary: 'MID' }), 1120);
+test('calculateInitialMmr: メインもサブも外れは-120', () => {
+  assert.equal(calculateInitialMmr('SILVER 2', 'JG', { primary: 'TOP', secondary: 'MID' }), 1200);
 });
 
-test('calculateInitialMmr: UNRANKED は基準1200 / prefs無しは1000', () => {
+test('calculateInitialMmr: UNRANKED は基準1200 / prefs無しは1080', () => {
   assert.equal(calculateInitialMmr('UNRANKED', 'TOP', { primary: 'TOP' }), 1200);
-  assert.equal(calculateInitialMmr(null, 'TOP', null), 1000);
+  assert.equal(calculateInitialMmr(null, 'TOP', null), 1080);
 });
 
 test('calculateInitialMmr: JUNGLE/SUPPORTの表記揺れを吸収する', () => {
