@@ -20,3 +20,15 @@ tags: [LoL, Tactics, Corki]
 
 ### 📌 [vs Warwick] 🚨 AIコーチの事後分析 (2026-05-24)
 - **立ち回り**: 分析中に一時的なエラーが発生した。次はもっとうまくやってみせるよ。
+
+---
+
+## 🎯 主要対面特化ミクロ (Matchup Tips)
+
+<!-- DB_MATCHUP_SENTINEL_START -->
+### vs GLOBAL
+情報不足のため判断できません
+
+### vs Warwick
+分析中に一時的なエラーが発生した。次はもっとうまくやってみせるよ。
+<!-- DB_MATCHUP_SENTINEL_END -->

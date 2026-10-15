@@ -17,3 +17,12 @@ tags: [LoL, Tactics, Smolder]
 
 ### 📌 スモルダー 基本戦略・トレンド (2026-09-28)
 - **立ち回り**: ranged offense and strategic positioningに加え、序盤は無理な戦闘を避け、Qスキルを用いたラストヒット獲得とスタック蓄積に集中する。マナ管理を意識しながら慎重に立ち回り、中盤以降はチームの集団戦に合流し安全な位置から継続的かつ広範囲に火力を出し続ける。
+
+---
+
+## 🎯 主要対面特化ミクロ (Matchup Tips)
+
+<!-- DB_MATCHUP_SENTINEL_START -->
+### vs GLOBAL
+ranged offense and strategic positioningに加え、序盤は無理な戦闘を避け、Qスキルを用いたラストヒット獲得とスタック蓄積に集中する。マナ管理を意識しながら慎重に立ち回り、中盤以降はチームの集団戦に合流し安全な位置から継続的かつ広範囲に火力を出し続ける。
+<!-- DB_MATCHUP_SENTINEL_END -->
