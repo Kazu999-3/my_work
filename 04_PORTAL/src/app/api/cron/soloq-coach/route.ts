@@ -19,7 +19,9 @@ import { createAdminNotification } from '../../../../lib/notify';
 // ============================================================
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
+// 未分析の試合を順にGeminiで分析するため、複数試合が溜まると60秒では足りずに打ち切られていた（2026-10-15、
+// Vercel の 60秒タイムアウトとして記録）。待ち時間は課金対象のCPU時間にほぼならないので上限を広げる。
+export const maxDuration = 300;
 
 async function getSetting(key: string): Promise<any> {
   const { data } = await supabase.from('ktm_settings').select('value').eq('key', key).maybeSingle();
@@ -114,8 +116,15 @@ export async function GET(req: Request) {
 
         await setSetting('soloq_last_analyzed_match', targetMatchId);
         analyzedList.push(targetMatchId);
-      } catch (matchErr) {
+      } catch (matchErr: any) {
         console.error(`[soloq-coach] Match ${targetMatchId} processing error:`, matchErr);
+        // 一時的な失敗（Gemini/Riotのレート制限・高負荷）なら、ここで打ち切って次回この試合から再試行する。
+        // 2026-10-15: 続行すると後ろの試合の成功で soloq_last_analyzed_match が先へ進み、
+        // 失敗した試合が二度と分析されなくなっていた（10/12〜14 にレート制限で3回失敗）。
+        // 恒久的な失敗（試合データ不正等）は打ち切ると毎回詰まるので、従来通り飛ばす。
+        if (/レート制限|高負荷|429|503|Too Many Requests|RESOURCE_EXHAUSTED|fetch failed|timeout/i.test(matchErr?.message || '')) {
+          break;
+        }
       }
     }
 
