@@ -51,6 +51,12 @@ WATCHED_WORKFLOWS = {
     "champ-dict-update.yml": "辞典一括更新(週次)",
     "lane-role-update.yml": "レーン所属更新(週次)",
     "riot-jungle-timing-update.yml": "JG周回タイム更新(週次)",
+    # 2026-10-15 追加: 監視対象から漏れていた。CI は @/ import の lint エラーで 10/14〜15 に
+    # 約2日落ち続けていたが誰も気づかず、目標ランク平均の収集も3日連続失敗していた。
+    "ci.yml": "CI（型・lint・テスト）",
+    "rank-benchmark-update.yml": "目標ランク平均の収集",
+    "ktm-bot-cron-backup.yml": "Bot定期実行のバックアップ経路",
+    "ktm-bot-deploy.yml": "Botデプロイ",
 }
 # 「成功」扱いでも、ログにこの文言があれば実際には何もしていない（鍵の未登録など）。
 # 2026-10-04: sync.yml（Sovereign DB Sync）が「同期スキップ」のまま毎日成功していたのを検出→ユーザー判断で削除。
@@ -157,7 +163,7 @@ def check_workflows(r: Report):
     problems, checked = [], 0
     for wf, label in WATCHED_WORKFLOWS.items():
         try:
-            runs = gh_get(f"/actions/workflows/{wf}/runs?per_page=5&status=completed").get("workflow_runs", [])
+            runs = gh_get(f"/actions/workflows/{wf}/runs?per_page=5&status=completed&branch=master").get("workflow_runs", [])
         except Exception as e:
             problems.append(f"{label}: 実行履歴を取得できず（{e}）")
             continue
