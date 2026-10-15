@@ -438,6 +438,24 @@ TODOの大型タスク（保守性向上計画）を A→B→C→D の順で進�
 ### 🗑️ (7) #lol-戦績ログ の廃止（`3daf375c`）
 - 投稿は9/18の1件のみ。投稿元 `auto_match_recorder.py` は自動起動が無く、試合の振り返りは05「試合後」タブが担っているため、スクリプト2本を削除。チャンネルはユーザーが削除。#テスト は10/8にDiscord公式「コミュニティ更新」の受け取り先になった。
 
+## 📜 2.16. Claude Code期間 (2026-10-15) での主な実装・修正
+
+同日の日中は別セッションで3大コアテーマ（HUD Habit Radar・DB→Git同期・APIエラー集約）を実装している（`02_FACTORY/DAILY_LOG.md` の 2026-10-15）。以下はその後の点検と運用修正。
+
+### 📮 (1) APIエラー通知が届かない可能性と、内部エラー文面の露出（`7028522d`）
+- `04_PORTAL/src/lib/apiHandler.ts` の `reportApiError` は Discord 送信を待たずに500を返していた。Vercel はレスポンス返却で関数を止めることがあり、通知が消え得る → `after()`（`next/server`）で包んだ。リクエスト外（スクリプト等）では例外になるため、その時だけ投げっぱなしに戻す。
+- 主要9ルートが500応答に `error.message`（DBのエラー文等）をそのまま返していた → 固定文言に変更。原因は #エラーログ で確認する（管理画面の試合記録失敗も画面には出なくなった）。
+- `withApiErrorLogging` はどこからも使われていない（統一するかは未決定）。
+
+### 🖥️ (2) PCデーモンが 10/12〜10/15 の約3日止まっていた（`1050b920`）
+- 原因: スタートアップの `Sovereign_Edge_Worker.lnk` と `Sovereign_HUD_Overlay.lnk` が消えていた。10/11 15:45 の起動時は自動起動していたので、消えたのはその後。同時間帯に **Advanced SystemCare（IObit）** が動いており、5月にも `start_sovereign.bat` / `start_all.bat` をスタートアップから無効化した記録（`C:\ProgramData\IObit\Advanced SystemCare\smBootTime\DisableItemInfo.ini`）がある。直接の削除記録は無いが最有力。
+- 2つのショートカットを再登録済み（HUD用の `install_overlay_autostart.bat` は入力待ちとHUD起動を伴うため、ショートカット作成だけ同じ設定で直接行った）。
+- 毎朝のヘルスレポートは停止を WARN で出していたが、何日でも WARN のままで埋もれた → 24時間超（またはハートビート無し）で FAIL（#エラーログ通知・Issue起票）に格上げ（`scripts/production_health_report.py`）。
+- **デーモンが止まったら、まずスタートアップフォルダにショートカットが残っているかを見ること。**
+
+### 🧭 (3) Antigravity から `/dev-edge` `/dev-portal` を呼べるように（`47106146`）
+- `.agent/workflows/` に `.claude/commands/` と同じ内容を置いた。**手順を変える時は両方を直すこと。**
+
 ## 🗺️ 3. システム構造 ＆ ディレクトリマップ
 
 ```text
