@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { analyzePostgameTempo, loadItemMeta, type PostgameTempoReport } from '@/lib/postgameTempo';
 import { analyzePostgameJgMetrics, type PostgameJgAnalysisReport } from '@/lib/postgameJgMetrics';
 import { detectAlliesTroll } from '@/lib/trollDetector';
+import { analyzeWhatIfTimeline } from '@/lib/whatIfAnalyzer';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 45;
@@ -271,6 +272,12 @@ export async function GET(request: NextRequest) {
 
     const allies_troll_analysis = detectAlliesTroll(match.participants, puuid, match.gameDuration);
 
+    const what_if_analysis = timeline ? analyzeWhatIfTimeline({
+      timelineData: timeline,
+      targetPuuid: puuid,
+      matchDetails: match
+    }) : null;
+
     return NextResponse.json({
       success: true,
       selected_match_id: targetMatchId,
@@ -295,6 +302,7 @@ export async function GET(request: NextRequest) {
       tempo_error,
       jg_analysis,
       allies_troll_analysis,
+      what_if_analysis,
     });
   } catch (error: any) {
     console.error('[postgame-deep-analytics] Error:', error);

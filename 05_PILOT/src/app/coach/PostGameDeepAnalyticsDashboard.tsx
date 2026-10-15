@@ -13,6 +13,8 @@ import JgRelativeTrackerCard from './JgRelativeTrackerCard';
 import VodReviewPointsCard from './VodReviewPointsCard';
 import type { PostgameJgAnalysisReport } from '@/lib/postgameJgMetrics';
 import type { TrollAnalysisResult } from '@/lib/trollDetector';
+import WhatIfAnalyzerCard from './WhatIfAnalyzerCard';
+import type { WhatIfAnalysisReport } from '@/lib/whatIfAnalyzer';
 
 // 試合後: 詳細分析（2026-10-05 全面見直し）
 // 旧版はリコールのテンポ損失・ワード監査の採点・ランク水準ラベル・「最重要改善アクション」など、
@@ -94,6 +96,7 @@ interface PostGameData {
   };
   jg_analysis?: PostgameJgAnalysisReport | null;
   allies_troll_analysis?: TrollAnalysisResult | null;
+  what_if_analysis?: WhatIfAnalysisReport | null;
 }
 
 interface PostGameDashboardProps {
@@ -378,6 +381,11 @@ export default function PostGameDeepAnalyticsDashboard({
             </div>
           </div>
         </div>
+      )}
+
+      {/* 🌪️ もしもの世界（What-If）敗因分岐点アナライザー */}
+      {data.what_if_analysis && (
+        <WhatIfAnalyzerCard report={data.what_if_analysis} isWin={data.is_win} />
       )}
 
       {/* 自動振り返り（ソロQ試合後の通知と同じ内容） */}
