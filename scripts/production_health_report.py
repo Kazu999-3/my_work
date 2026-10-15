@@ -197,6 +197,12 @@ def check_pc_daemon(r: Report, cur):
     last = row[0] if row else None
     if last and datetime.now(timezone.utc) - last <= timedelta(hours=6):
         r.add(OK, "PCデーモン", f"最終ハートビート {fmt_age(last)}（{row[1] or '状態不明'}）")
+    elif not last or datetime.now(timezone.utc) - last > timedelta(hours=24):
+        # 2026-10-12〜15: Advanced SystemCare がスタートアップ登録を消し、約3日止まっていたのに
+        # WARN のまま埋もれて気づけなかった。丸1日止まっていたら FAIL（#エラーログ通知・Issue起票）にする。
+        r.add(FAIL, "PCデーモン",
+              f"最終ハートビート {fmt_age(last)}。24時間以上止まっている（動画解析が止まる）。"
+              "スタートアップの Sovereign_Edge_Worker.lnk が消えていないか確認し、/dev-edge で起動する")
     else:
         r.add(WARN, "PCデーモン",
               f"最終ハートビート {fmt_age(last)}。PCが止まっているか、デーモンが落ちている（動画解析が止まる）")
