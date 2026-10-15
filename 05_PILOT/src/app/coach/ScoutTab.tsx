@@ -19,6 +19,7 @@ import {
 import Image from "next/image";
 import { getChampIcon } from "../../lib/ddragonClient";
 import { useCoachRiotId } from './riotIdContext';
+import HabitRadarCard from './HabitRadarCard';
 
 // 5v5シミュレータの自動反映(リアルタイム連携)用に、ライブ試合の参加者10人を
 // {champion, isEnemy, isJungle}のシンプルな形へ整形して呼び出し元へ渡す型。
@@ -250,6 +251,13 @@ export default function ScoutTab({ onLiveMatchDetected }: {
                       </div>
                     </div>
                   </div>
+
+                  {/* 🎯 対面無意識の癖 暴露スカウター (Habit Radar) */}
+                  <HabitRadarCard
+                    puuid={result.enemyJgPuuid || result.puuid}
+                    riotId={result.enemyJgName || riotId}
+                    championName={result.championName}
+                  />
 
                   {/* Sovereign Advisor タクティカルパネル */}
                   <div className="bg-black/3 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
