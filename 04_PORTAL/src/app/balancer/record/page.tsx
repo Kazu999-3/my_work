@@ -56,6 +56,16 @@ const saveOcrAlias = (ocrExtractedName: string, registeredName: string) => {
   }
 };
 
+/** "28:14" / "28" → 秒。空・不正・現実的でない値（3分未満・2時間超）は undefined（＝送らない） */
+const parseDurationText = (text: string): number | undefined => {
+  const t = text.trim();
+  if (!t) return undefined;
+  const m = t.match(/^(\d{1,3})(?::(\d{1,2}))?$/);
+  if (!m) return undefined;
+  const sec = Number(m[1]) * 60 + (m[2] ? Number(m[2]) : 0);
+  return sec >= 180 && sec <= 7200 ? sec : undefined;
+};
+
 function CustomRecordPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -66,6 +76,9 @@ function CustomRecordPageContent() {
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error' | '', text: string }>({ type: '', text: '' });
   const [winningTeam, setWinningTeam] = useState<'BLUE' | 'RED' | null>(null);
+  // 試合時間（"28:14" 形式で入力・表示）。スクショ解析で自動入力され、手で直せる。
+  // 18分未満の敗北の MMR 減少緩和に使う（2026-10-16 追加。それまで未送信で緩和が一度も効いていなかった）。
+  const [durationText, setDurationText] = useState('');
   const [isExhibition, setIsExhibition] = useState<boolean>(false); // 🎪 お祭りカスタム（MMRノーカウント保護）
   const [balanceSatisfaction, setBalanceSatisfaction] = useState<'good' | 'normal' | 'bad' | null>(null);
   const [championsList, setChampionsList] = useState<{ id: string, name: string }[]>([]);
@@ -242,6 +255,12 @@ function CustomRecordPageContent() {
               }
 
               setWinningTeam(resolvedWinner);
+
+              // 試合時間（読み取れた時だけ自動入力。読めなければ空欄のまま＝緩和なし）
+              const durSec = Number(data.gameDurationSec);
+              if (Number.isFinite(durSec) && durSec >= 180 && durSec <= 7200) {
+                setDurationText(`${Math.floor(durSec / 60)}:${String(Math.round(durSec % 60)).padStart(2, '0')}`);
+              }
 
               const bluePlayers = resolvedWinner === 'BLUE' ? winnerBlock : loserBlock;
               const redPlayers = resolvedWinner === 'RED' ? winnerBlock : loserBlock;
@@ -595,6 +614,7 @@ function CustomRecordPageContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           winningTeam,
+          gameDuration: parseDurationText(durationText), // 秒。未入力・不正なら送らない（緩和なし）
           isExhibition, // 🎪 お祭りカスタム（MMRノーカウント保護）
           balanceSatisfaction, // チーム分けの満足度（管理者が入力時に記録）
           riotMatchId: null, // 手動入力のため常にnull
@@ -631,6 +651,7 @@ function CustomRecordPageContent() {
         playersCount: stats.filter(s => s.name).length
       });
       setMessage({ type: 'success', text: '✅ 試合結果を記録し、MMRを更新しました！（OCR誤認識学習も更新されました）' });
+      setDurationText(''); // 次の試合に前の試合時間を持ち越さない
     } catch (err: any) {
       setMessage({ type: 'error', text: `保存エラー: ${err.message}` });
     } finally {
@@ -946,6 +967,24 @@ function CustomRecordPageContent() {
                 RED WIN
               </button>
             </div>
+
+            {/* 試合時間（スクショ解析で自動入力。18分未満の敗北は MMR 減少が半分になる） */}
+            <label className="flex items-center gap-2 bg-black/3 p-2 rounded-lg border border-border">
+              <span className="font-bold text-muted-strong px-1 text-sm">試合時間</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={durationText}
+                onChange={(e) => setDurationText(e.target.value)}
+                placeholder="28:14"
+                className="w-20 px-2 py-1.5 rounded-md bg-surface border border-border text-sm font-mono text-foreground"
+              />
+              <span className="text-[10px] text-muted-strong max-w-44 leading-tight">
+                {durationText && parseDurationText(durationText) === undefined
+                  ? '「分:秒」で入力（例 28:14）'
+                  : '任意。18分未満の敗北は減少が半分'}
+              </span>
+            </label>
 
             <button
               onClick={handleSubmit}
