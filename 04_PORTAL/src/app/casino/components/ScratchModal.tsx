@@ -36,10 +36,10 @@ export default function ScratchModal({ isOpen, onClose, resultData, onFinished }
       setScratchedCount(3);
       setIsScratching(false);
 
-      if (resultData.prize >= 300) {
+      if (resultData.prize >= 250) {
         try {
           confetti({
-            particleCount: resultData.prize >= 1000 ? 120 : 60,
+            particleCount: resultData.prize >= 800 ? 120 : 60,
             spread: 80,
             origin: { y: 0.6 },
             colors: ['#f59e0b', '#ec4899', '#3b82f6', '#10b981'],
@@ -58,8 +58,8 @@ export default function ScratchModal({ isOpen, onClose, resultData, onFinished }
 
   if (!isOpen || !resultData) return null;
 
-  const isWin = resultData.prize >= 300;
-  const isJackpot = resultData.prize >= 1000;
+  const isWin = resultData.prize >= 250; // 2等以上（2026-10-17 当選額変更に合わせた）
+  const isJackpot = resultData.prize >= 800; // 1等以上
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">

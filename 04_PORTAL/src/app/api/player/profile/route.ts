@@ -3,7 +3,7 @@ import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { calculatePlaystyle } from '../../../../lib/playstyle';
 import { fetchAllRows } from '../../../../lib/fetchAll';
 import { normalizeRole } from '../../../../lib/roleUtils';
-import { CROSS_LANE_RIPPLE_RATIO } from '../../../../lib/mmr';
+import { CROSS_LANE_RIPPLE_RATIO, receivesRipple } from '../../../../lib/mmr';
 
 const cache = new Map<string, { data: any; expiry: number }>();
 const CACHE_TTL_MS = 30000; // 30 seconds TTL
@@ -203,17 +203,19 @@ export async function GET(request: Request) {
 
       const role = row.role?.toUpperCase();
       const delta = row.mmr_delta || 0;
-      // 出たレーンは delta、他4レーンは全レーン波及（記録・リビルドと同じ割合）を引き戻す。
+      // まずこの試合の分の試合数を戻す（＝この試合「前」の各レーン試合数になる）
+      if (laneG[role] !== undefined && laneG[role] > 0) laneG[role] -= 1;
+      // 出たレーンは delta、他レーンは「この試合前で10試合未満」だったレーンだけ波及分を引き戻す（記録・リビルドと同じ規則）。
       // 2026-10-16: 以前は出たレーンしか戻しておらず、グラフ上で他レーンが過去から横ばいに見えていた。
       const ripple = Math.round(delta * CROSS_LANE_RIPPLE_RATIO);
+      const back = (lane: string) => (role === lane ? delta : receivesRipple(laneG[lane]) ? ripple : 0);
       if (['TOP', 'JG', 'MID', 'ADC', 'SUP'].includes(role)) {
-        currentTop -= role === 'TOP' ? delta : ripple;
-        currentJg  -= role === 'JG'  ? delta : ripple;
-        currentMid -= role === 'MID' ? delta : ripple;
-        currentAdc -= role === 'ADC' ? delta : ripple;
-        currentSup -= role === 'SUP' ? delta : ripple;
+        currentTop -= back('TOP');
+        currentJg  -= back('JG');
+        currentMid -= back('MID');
+        currentAdc -= back('ADC');
+        currentSup -= back('SUP');
       }
-      if (laneG[role] !== undefined && laneG[role] > 0) laneG[role] -= 1;
 
       const parts = partsMap.get(mKey) || [];
       const opp = parts.find((p: any) => p.role?.toUpperCase() === role && p.team !== row.team);

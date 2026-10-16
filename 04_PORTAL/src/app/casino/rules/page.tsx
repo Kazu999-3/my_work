@@ -74,10 +74,10 @@ const OMIKUJI_ROWS = [
 ];
 
 const SCRATCH_ROWS = [
-  { label: '🥇 特等（ジャックポット）', prob: '1.0%', coins: '+5,000🪙', mult: '×33.3倍' },
-  { label: '🥈 1等', prob: '4.0%', coins: '+1,000🪙', mult: '×6.6倍' },
-  { label: '🥉 2等', prob: '15.0%', coins: '+300🪙', mult: '×2.0倍' },
-  { label: '🎖️ 3等', prob: '40.0%', coins: '+100🪙', mult: '×0.66倍' },
+  { label: '🥇 特等（ジャックポット）', prob: '1.0%', coins: '+3,000🪙', mult: '×20.0倍' },
+  { label: '🥈 1等', prob: '4.0%', coins: '+800🪙', mult: '×5.3倍' },
+  { label: '🥉 2等', prob: '15.0%', coins: '+250🪙', mult: '×1.7倍' },
+  { label: '🎖️ 3等', prob: '40.0%', coins: '+80🪙', mult: '×0.53倍' },
   { label: '🍃 参加賞（ハズレ）', prob: '40.0%', coins: '+30🪙', mult: '×0.2倍' },
 ];
 
@@ -345,7 +345,7 @@ export default function CasinoRulesPage() {
             </table>
           </div>
           <p className="text-[11px] text-muted-strong mt-2">
-            期待値は 1枚あたり約 134.5コイン（理論RTP: 89.7%）。外れても参加賞30コインが確実に還元されます。
+            期待値は 1枚あたり約 143.5コイン（理論RTP: 95.7%）。外れても参加賞30コインが確実に還元されます。
           </p>
         </section>
 

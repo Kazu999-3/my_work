@@ -7,6 +7,7 @@ import Toaster from "../components/Toaster";
 import BackButton from "../components/BackButton";
 import BackToTop from "../components/BackToTop";
 import OfflineNotifier from "../components/OfflineNotifier";
+import ApiErrorWatcher from "../components/ApiErrorWatcher";
 import { ThemeProvider } from "../context/ThemeContext";
 
 export const metadata: Metadata = {
@@ -87,6 +88,7 @@ export default function RootLayout({
           <PwaRegister />
           <Toaster />
           <OfflineNotifier />
+          <ApiErrorWatcher />
           <Sidebar />
           <div className="flex-1 min-w-0 pb-20 md:pb-0">
             <BackButton />

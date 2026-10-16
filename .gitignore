@@ -21,6 +21,9 @@ Dropbox/
 .obsidian/
 00_LOGS/
 scratch/
+# ↑作業用フォルダ用。2026-10-17: 「闇のスクラッチくじ」の API フォルダ（api/bet/scratch）まで巻き込んで
+# 一度もコミット・デプロイされず本番で404になっていたため、ここだけ除外を外す
+!04_PORTAL/src/app/api/bet/scratch/
 .gemini/
 **/chroma/
 *.mp3

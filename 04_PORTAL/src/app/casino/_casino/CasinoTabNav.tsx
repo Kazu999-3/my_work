@@ -10,7 +10,10 @@ export default function CasinoTabNav({ activeTab, setActiveTab }: {
 }) {
   return (
     <>
-        <div className="flex items-center justify-center gap-1.5 p-1.5 rounded-2xl bg-surface/80 dark:bg-stone-900/90 text-foreground-subtle max-w-2xl mx-auto shadow-md border border-border/80 overflow-x-auto scrollbar-none backdrop-blur-md">
+        {/* 2026-10-17: 中央寄せと横スクロールを同じ箱に付けていたため、タブが6つに増えて幅を超えると
+            左端が切れてスクロールでも戻れなかった。スクロールする外箱と、中央寄せする内側（中身と箱の大きい方の幅）を分ける */}
+        <div className="rounded-2xl bg-surface/80 dark:bg-stone-900/90 text-foreground-subtle max-w-4xl mx-auto shadow-md border border-border/80 overflow-x-auto scrollbar-none backdrop-blur-md">
+        <div className="flex w-max min-w-full items-center justify-center gap-1.5 p-1.5">
           {[
             { id: 'bet', label: '🎯 勝敗予想' },
             { id: 'slot', label: '🎰 KTMスロット' },
@@ -31,6 +34,7 @@ export default function CasinoTabNav({ activeTab, setActiveTab }: {
               {tab.label}
             </button>
           ))}
+        </div>
         </div>
     </>
   );

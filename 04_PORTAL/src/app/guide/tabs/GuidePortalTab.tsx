@@ -133,7 +133,7 @@ export default function GuidePortalTab() {
                 ショップのおすすめアイテム
               </div>
               <p>・🎟️ <strong className="text-foreground-soft">週末メガ宝くじ</strong>（日曜22時抽選！ジャックポット総取り）</p>
-              <p>・🥠 <strong className="text-foreground-soft">闇のスクラッチくじ</strong>（その場で即削り！最大5,000🪙当選）</p>
+              <p>・🥠 <strong className="text-foreground-soft">闇のスクラッチくじ</strong>（その場で即削り！最大3,000🪙当選）</p>
               <p>・💎 <strong className="text-foreground-soft">全損保険チケット</strong>（勝敗予想ハズレ時に50%キャッシュバック）</p>
               <p>・⚔️ <strong className="text-foreground-soft">勝利ボーナス激闘チケット</strong>（カスタム勝利時+600ptへ爆増）</p>
             </div>

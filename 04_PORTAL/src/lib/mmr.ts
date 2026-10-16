@@ -295,18 +295,31 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
 
 /** 他4レーンへの波及率。記録・リビルド・MMR推移グラフの逆算で同じ値を使う（2026-10-16 定数化） */
 export const CROSS_LANE_RIPPLE_RATIO = 0.25;
+/**
+ * 波及を受けるのは「そのレーンの試合数がこれ未満」のレーンだけ（2026-10-17 ユーザー判断、10試合）。
+ * 実績のあるレーンまで、他レーンの勝敗で毎試合上下するのは根拠が弱いため。
+ */
+export const CROSS_LANE_RIPPLE_MAX_GAMES = 10;
+
+export type LaneKey = 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP';
+
+/** そのレーンが波及を受けるか（試合前の、そのレーンの試合数で判定） */
+export const receivesRipple = (laneGamesBefore: number | null | undefined) =>
+  (Number(laneGamesBefore) || 0) < CROSS_LANE_RIPPLE_MAX_GAMES;
 
 /**
- * ⑤ レーン間MMRの連動・底上げ (Cross-Lane MMR Propagation)
- * メインのレーンで実力が上がった際、ゲーム全体のマクロ理解度・ファーム力向上を
- * 他4レーンにも25%波及させて底上げし、オフロール時の初狩り事故を防止する。
+ * ⑤ レーン間MMRの連動 (Cross-Lane MMR Propagation)
+ * 出たレーンは delta、他のレーンは「まだ実績の少ない（10試合未満の）レーン」だけ delta の25%を波及させ、
+ * 慣れていないレーンも大まかな実力に寄せてオフロール時の初狩り事故を防ぐ。
+ * laneGamesBefore はこの試合より前の各レーン試合数。省略時は全レーンに波及（旧挙動）。
  */
 export function propagateCrossLaneMmr(
   currentRates: { TOP: number; JG: number; MID: number; ADC: number; SUP: number },
   playedRole: string,
-  primaryDelta: number
+  primaryDelta: number,
+  laneGamesBefore?: Partial<Record<LaneKey, number>> | null
 ): { TOP: number; JG: number; MID: number; ADC: number; SUP: number } {
-  const roles: ('TOP' | 'JG' | 'MID' | 'ADC' | 'SUP')[] = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
+  const roles: LaneKey[] = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
   const newRates = { ...currentRates };
   const normRole = (playedRole || '').toUpperCase();
   const subDelta = Math.round(primaryDelta * CROSS_LANE_RIPPLE_RATIO);
@@ -314,7 +327,7 @@ export function propagateCrossLaneMmr(
   for (const r of roles) {
     if (r === normRole) {
       newRates[r] = Math.max(800, Math.min(3000, currentRates[r] + primaryDelta));
-    } else {
+    } else if (!laneGamesBefore || receivesRipple(laneGamesBefore[r])) {
       newRates[r] = Math.max(800, Math.min(3000, currentRates[r] + subDelta));
     }
   }
@@ -589,11 +602,13 @@ export async function replayMmrHistory(supabase: SupabaseClient) {
       const memPlayer = resolveMember({ discord_id: d.discordId, player_name: d.playerName });
       if (!memPlayer) continue;
 
-      // 記録時と同じく、出たレーンに delta、他4レーンに 25% を波及させる（800〜3000 のクランプも同じ）
+      // 記録時と同じく、出たレーンに delta、他レーンは「この試合前で10試合未満」のレーンだけ 25% を波及させる
+      // （laneGames はこの下で加算するので、ここではまだこの試合を含まない＝試合前の数）
       const propagated = propagateCrossLaneMmr(
         { TOP: memPlayer.mmr_top, JG: memPlayer.mmr_jg, MID: memPlayer.mmr_mid, ADC: memPlayer.mmr_adc, SUP: memPlayer.mmr_sup },
         d.role,
-        d.delta
+        d.delta,
+        memPlayer.laneGames
       );
       memPlayer.mmr_top = propagated.TOP;
       memPlayer.mmr_jg = propagated.JG;

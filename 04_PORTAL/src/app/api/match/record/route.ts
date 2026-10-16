@@ -354,7 +354,14 @@ export async function POST(request: Request) {
         ADC: r.dbPlayer.mmr_adc || 1200,
         SUP: r.dbPlayer.mmr_sup || 1200,
       };
-      const propagated = propagateCrossLaneMmr(currentLaneMmrs, r.role, r.mmrDelta);
+      // 他レーンへの波及は「この試合前で10試合未満」のレーンだけ（dbPlayer の games_* は試合前の値）
+      const propagated = propagateCrossLaneMmr(currentLaneMmrs, r.role, r.mmrDelta, {
+        TOP: r.dbPlayer.games_top || 0,
+        JG:  r.dbPlayer.games_jg  || 0,
+        MID: r.dbPlayer.games_mid || 0,
+        ADC: r.dbPlayer.games_adc || 0,
+        SUP: r.dbPlayer.games_sup || 0,
+      });
       const top = isExhibition ? currentLaneMmrs.TOP : propagated.TOP;
       const jg  = isExhibition ? currentLaneMmrs.JG  : propagated.JG;
       const mid = isExhibition ? currentLaneMmrs.MID : propagated.MID;

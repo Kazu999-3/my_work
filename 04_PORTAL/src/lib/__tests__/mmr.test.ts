@@ -16,6 +16,7 @@ import {
   getKtmRank,
   computeRepresentativeMmr,
   RANKS,
+  propagateCrossLaneMmr,
   type MmrCalcContext,
 } from '../mmr';
 
@@ -172,4 +173,20 @@ test('getKtmRank: しきい値どおりにティアを返す（上位ティア�
   assert.equal(getKtmRank(1349).name, 'SILVER I');  // 1350未満はSILVER I(下限1310)
   assert.equal(getKtmRank(1200).name, 'SILVER IV');
   assert.equal(getKtmRank(0).name, 'UNRANKED');
+});
+
+// 2026-10-17: 他レーンへの波及は「試合前で10試合未満」のレーンだけ（ユーザー判断）
+test('全レーン波及: 10試合以上のレーンは他レーンの結果で動かない', () => {
+  const rates = { TOP: 1400, JG: 1500, MID: 1300, ADC: 1300, SUP: 1300 };
+  const games = { TOP: 3, JG: 86, MID: 9, ADC: 10, SUP: 0 };
+  const r = propagateCrossLaneMmr(rates, 'TOP', -20, games);
+  assert.equal(r.TOP, 1380); // 出たレーンは delta
+  assert.equal(r.JG, 1500);  // 86試合 → 波及なし
+  assert.equal(r.MID, 1295); // 9試合 → 25% 波及
+  assert.equal(r.ADC, 1300); // ちょうど10試合 → 波及なし
+  assert.equal(r.SUP, 1295); // 0試合 → 波及
+});
+test('全レーン波及: 試合数を渡さない時は従来どおり全レーン', () => {
+  const r = propagateCrossLaneMmr({ TOP: 1400, JG: 1500, MID: 1300, ADC: 1300, SUP: 1300 }, 'TOP', 20);
+  assert.equal(r.JG, 1505);
 });
