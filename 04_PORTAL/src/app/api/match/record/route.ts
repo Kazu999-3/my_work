@@ -300,6 +300,18 @@ export async function POST(request: Request) {
 
     const newMatchId = matchData.id;
 
+    // 試合を記録したら、それまでに作られたチーム分けの承認待ちはまとめて消す（2026-10-17 ユーザー判断）。
+    // 記録画面は使った1件しか消さないため、作り直したチーム分けが溜まり続けていた（10/16 夜だけで11件）。
+    {
+      const { error: pendErr } = await supabase
+        .from('edge_tasks')
+        .delete()
+        .eq('task_type', 'balancer_pending')
+        .eq('status', 'pending')
+        .lte('created_at', new Date().toISOString());
+      if (pendErr) console.warn('[match/record] チーム分けの承認待ちの掃除に失敗（続行）:', pendErr.message);
+    }
+
     // (2) ktm_match_participants に10人分INSERT
     const participantInserts = results.map(r => ({
       match_id: newMatchId,

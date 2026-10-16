@@ -2,8 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Zap, RefreshCw, Cpu, Activity, AlertTriangle, CheckCircle2, X } from 'lucide-react';
+import { Zap, RefreshCw, Activity, AlertTriangle, CheckCircle2, X } from 'lucide-react';
 import Link from 'next/link';
+
+/** 04 ポータルが扱う edge_tasks の種類（これ以外は 05 の機能。2026-10-17） */
+const PORTAL_TASK_TYPES = new Set(['balancer_pending', 'custom_bet', 'ktm_match_news']);
 
 interface TaskStatusDrawerProps {
   collapsed?: boolean;
@@ -154,24 +157,21 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
     }
   };
 
-  const runningTasks = systemData.queue.filter((t) => t.status === 'running');
-  const pendingTasks = systemData.queue.filter((t) => t.status === 'pending');
-  const failedTasks = systemData.needsAttention.failedTasks;
-  const isWorkerActive = systemData.worker.active;
+  // 2026-10-17: 04 で扱う処理だけを表示する（ユーザー判断）。辞典の一括更新・YouTube解析・PCデーモンの稼働などは
+  // 05 の機能で、05 の運用ダッシュボード（/admin/dashboard）で見る。
+  const isPortalTask = (t: { task_type: string }) => PORTAL_TASK_TYPES.has(t.task_type);
+  const runningTasks = systemData.queue.filter((t) => t.status === 'running' && isPortalTask(t));
+  const pendingTasks = systemData.queue.filter((t) => t.status === 'pending' && isPortalTask(t));
+  const failedTasks = systemData.needsAttention.failedTasks.filter(isPortalTask);
+  const historyTasks = systemData.history.filter(isPortalTask);
 
   const badgeCount = runningTasks.length + failedTasks.length;
   const badgeColor = failedTasks.length > 0 ? 'bg-danger-500 text-white' : runningTasks.length > 0 ? 'bg-primary-500 text-white animate-pulse' : 'bg-surface-hover text-foreground-subtle';
 
   const TASK_LABELS: Record<string, string> = {
-    champion_trend: 'チャンピオントレンド更新',
-    resolve_youtube_channel: 'YouTubeチャンネル登録',
-    resolve_youtube_playlist: 'YouTubeプレイリスト登録',
-    youtube_channel_monitor: 'YouTubeチャンネル監視',
-    reddit_scout: 'Redditスカウト',
-    lol_trend_collect: 'LoLトレンド収集',
-    dict_synthesizer: '辞典シンセサイザー',
-    champion_db_bulk_update: 'チャンピオン辞典一括更新',
-    youtube_absorb: 'YouTube動画解析',
+    balancer_pending: 'チーム分けの承認待ち',
+    custom_bet: '勝敗予想（ベット）',
+    ktm_match_news: '試合速報（号外）',
   };
 
   return (
@@ -220,23 +220,12 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
             </div>
           </div>
 
-          {/* 1. ワーカー稼働状況 */}
-          <div className="flex items-center justify-between p-2.5 rounded-xl border border-border bg-background">
-            <div className="flex items-center gap-2">
-              <Cpu size={16} className={isWorkerActive ? 'text-success-600' : 'text-danger-500'} />
-              <div>
-                <span className="font-bold text-foreground block">エッジワーカー</span>
-                <span className="text-[10px] text-muted-strong">
-                  {systemData.worker.last_active ? `最終動作: ${new Date(systemData.worker.last_active).toLocaleTimeString()}` : '未起動'}
-                </span>
-              </div>
-            </div>
-            <span className={`px-2 py-0.5 rounded-full border text-[10px] font-black ${
-              isWorkerActive ? 'bg-success-100 border-success-edge text-success-700' : 'bg-danger-100 border-danger-edge text-danger-700'
-            }`}>
-              {isWorkerActive ? '🟢 稼働中' : '🔴 未起動'}
-            </span>
-          </div>
+          {/* PC デーモン（エッジワーカー）の稼働状況は 05 の運用ダッシュボードで見る（2026-10-17 に 04 から外した） */}
+          {runningTasks.length === 0 && pendingTasks.length === 0 && failedTasks.length === 0 && historyTasks.length === 0 && (
+            <p className="text-[11px] text-muted-strong p-2.5 rounded-xl border border-border bg-background">
+              04 の処理（チーム分けの承認待ち・勝敗予想・試合速報）はありません。辞典や動画解析の状況は 05 の運用ダッシュボードで確認できます。
+            </p>
+          )}
 
           {/* 2. 要対応・失敗したタスク */}
           {failedTasks.length > 0 && (
@@ -357,11 +346,11 @@ export default function TaskStatusDrawer({ collapsed = false, align = 'left' }: 
           </div>
 
           {/* 5. 直近実行履歴 */}
-          {systemData.history.length > 0 && (
+          {historyTasks.length > 0 && (
             <div className="space-y-2 pt-2 border-t border-border">
               <span className="font-bold text-muted text-xs block">直近の実行履歴</span>
               <div className="space-y-1 max-h-36 overflow-y-auto pr-1">
-                {systemData.history.slice(0, 5).map((h) => (
+                {historyTasks.slice(0, 5).map((h) => (
                   <div key={h.id} className="p-2 rounded-lg border border-border bg-background flex justify-between items-center text-[10px]">
                     <div className="flex items-center gap-1.5 min-w-0">
                       {h.status === 'completed' ? (
