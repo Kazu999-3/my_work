@@ -216,46 +216,22 @@ export async function calculateNemesisClash(
 
   let featuredClash: FeaturedClash | null = null;
   if (allClashPairs.length > 0) {
-    const nemesisCandidates = allClashPairs
-      .filter(p => p.games >= 3 && (p.blueWins === 0 || p.redWins === 0 || p.imbalance >= 0.6))
-      .sort((a, b) => b.games - a.games);
-
-    if (nemesisCandidates.length > 0) {
-      const top = nemesisCandidates[0];
-      const victimIsBlue = top.blueWins < top.redWins;
-      const winner = victimIsBlue ? top.r.name : top.b.name;
-      const loser = victimIsBlue ? top.b.name : top.r.name;
-      const wWins = victimIsBlue ? top.redWins : top.blueWins;
-      const lWins = victimIsBlue ? top.blueWins : top.redWins;
-
-      featuredClash = {
-        bluePlayer: top.b.name,
-        redPlayer: top.r.name,
-        blueRole: top.b.currentRole,
-        redRole: top.r.currentRole,
-        games: top.games,
-        blueWins: top.blueWins,
-        redWins: top.redWins,
-        headline: `💥 因縁勃発！ ${loser} のリベンジなるか！？`,
-        subtext: `${winner} が通算 ${top.games} 戦中 ${wWins} 勝 (${lWins} 敗) で大きく勝ち越し中！`,
-        type: 'NEMESIS',
-      };
-    } else {
-      const sortedByGames = [...allClashPairs].sort((a, b) => b.games - a.games);
-      const top = sortedByGames[0];
-      featuredClash = {
-        bluePlayer: top.b.name,
-        redPlayer: top.r.name,
-        blueRole: top.b.currentRole,
-        redRole: top.r.currentRole,
-        games: top.games,
-        blueWins: top.blueWins,
-        redWins: top.redWins,
-        headline: `⚔️ 運命のライバル対決（通算 ${top.games} 試合目）`,
-        subtext: `BLUE側 ${top.b.name} (${top.blueWins}勝) vs RED側 ${top.r.name} (${top.redWins}勝) の熱い直接対決！`,
-        type: 'RIVALRY',
-      };
-    }
+    // 2026-10-16: 「因縁リベンジマッチ」（大きく勝ち越されている相手を煽る NEMESIS カード）はユーザー判断で削除。
+    // 注目カードは常に、通算の直接対決が最も多い好敵手ライバルにする。
+    const sortedByGames = [...allClashPairs].sort((a, b) => b.games - a.games);
+    const top = sortedByGames[0];
+    featuredClash = {
+      bluePlayer: top.b.name,
+      redPlayer: top.r.name,
+      blueRole: top.b.currentRole,
+      redRole: top.r.currentRole,
+      games: top.games,
+      blueWins: top.blueWins,
+      redWins: top.redWins,
+      headline: `⚔️ 運命のライバル対決（通算 ${top.games} 試合目）`,
+      subtext: `BLUE側 ${top.b.name} (${top.blueWins}勝) vs RED側 ${top.r.name} (${top.redWins}勝) の熱い直接対決！`,
+      type: 'RIVALRY',
+    };
   }
 
   // 6. チーム内の黄金デュオ（Golden Duo）

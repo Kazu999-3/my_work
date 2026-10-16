@@ -396,7 +396,13 @@ export function calculateKdaScore(kills: number, deaths: number, assists: number
   return Number(((kills + assists) / deaths).toFixed(2));
 }
 
-export async function performFullMmrRebuild(supabase: SupabaseClient) {
+/**
+ * 全試合を古い順に再生して、各選手のレーン別 MMR・試合数と、参加者行の delta/内訳を計算する（DB には書かない）。
+ * 2026-10-16: performFullMmrRebuild から切り出し、整合性チェック（/api/mmr/check-integrity）も同じ計算を使う。
+ * それまで整合性チェックは計算を別に持っており、リビルドに「全レーン波及・早期投了の緩和・エキシビション除外」を
+ * 入れた後もそれが反映されず、リビルド直後でも全員「ズレあり」と表示され続けていた。
+ */
+export async function replayMmrHistory(supabase: SupabaseClient) {
   const { data: allPlayers, error: pError } = await supabase.from('ktm_players').select('*');
   if (pError || !allPlayers) throw pError;
 
@@ -605,6 +611,12 @@ export async function performFullMmrRebuild(supabase: SupabaseClient) {
     }
   }
 
+  return { playersMap, participantUpdates, matchCount: allMatches.length };
+}
+
+export async function performFullMmrRebuild(supabase: SupabaseClient) {
+  const { playersMap, participantUpdates, matchCount } = await replayMmrHistory(supabase);
+
   // 参加者テーブルのKDA等一括更新 (タイムアウトを回避するためupsertを用いたバルク更新に変更)
   if (participantUpdates.length > 0) {
     const chunkSize = 100; // 100件ずつまとめてupsertを実行
@@ -693,7 +705,7 @@ export async function performFullMmrRebuild(supabase: SupabaseClient) {
     }
   }
 
-  return { success: true, message: `Rebuild completed for ${playersMap.size} players over ${allMatches.length} matches.` };
+  return { success: true, message: `Rebuild completed for ${playersMap.size} players over ${matchCount} matches.` };
 }
 
 /**

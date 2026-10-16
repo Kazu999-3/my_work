@@ -20,7 +20,7 @@ export default function IntegrityStatus({ integrityData, onRebuild }: { integrit
                       <h4 className="font-bold text-sm">MMR整合性ステータス</h4>
                       <p className="text-xs text-faint mt-0.5">
                         {integrityData.hasDiscrepancy 
-                          ? `⚠️ ${integrityData.discrepancyCount}名のプレイヤーのMMRに過去の対戦履歴（累積値）とのズレが発生しています。Rebuildを実行して再計算してください。` 
+                          ? `⚠️ ${integrityData.discrepancyCount}名のプレイヤーのMMRに過去の対戦履歴（累積値）とのズレが発生しています。「MMRを再計算（全試合）」を押してください。` 
                           : '✅ すべてのプレイヤーのMMRは過去の対戦履歴と完全に一致しています。'
                         }
                       </p>
@@ -31,7 +31,7 @@ export default function IntegrityStatus({ integrityData, onRebuild }: { integrit
                       onClick={onRebuild}
                       className="px-4 py-2 bg-primary-600 hover:bg-primary-500 text-black font-black text-xs rounded-lg transition shadow-md shadow-primary-900/20"
                     >
-                      🔄 Rebuildを実行
+                      🔄 MMRを再計算（全試合）
                     </button>
                   )}
                 </div>

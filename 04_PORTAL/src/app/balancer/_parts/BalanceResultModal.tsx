@@ -354,7 +354,7 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
                     <div className="flex items-center gap-2">
                       <span className="text-base">⚔️</span>
                       <h3 className="text-xs font-black text-foreground flex items-center gap-1.5">
-                        本日の因縁・ライバル対決速報
+                        対戦データ（ライバル・直接対決・名コンビ）
                         <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-primary-100 text-primary-800 border border-primary-edge">
                           Nemesis Clash
                         </span>

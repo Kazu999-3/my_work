@@ -173,8 +173,8 @@ export async function POST(request: Request) {
       // 1. 注目因縁（Featured Clash）
       if (clashData.featuredClash) {
         const fc = clashData.featuredClash;
-        const icon = fc.type === 'NEMESIS' ? '💥' : '🔥';
-        const typeLabel = fc.type === 'NEMESIS' ? '因縁リベンジマッチ' : '好敵手ライバル対決';
+        const icon = '🔥';
+        const typeLabel = '好敵手ライバル対決';
         clashFields.push({
           name: `${icon} 【${typeLabel}】${fc.bluePlayer} 🆚 ${fc.redPlayer}`,
           value: `> **${fc.headline}**\n> ${fc.subtext}\n> （通算対戦: \`${fc.bluePlayer} ${fc.blueWins}勝\` 🆚 \`${fc.redWins}勝 ${fc.redPlayer}\`）`,
@@ -209,7 +209,7 @@ export async function POST(request: Request) {
 
       if (clashFields.length > 0) {
         payload.embeds.push({
-          title: "⚔️ 本日の因縁・ライバル対決速報",
+          title: "⚔️ 対戦データ（ライバル・直接対決・名コンビ）",
           description: "過去のKTMカスタム対戦データから算出した直接対決＆シナジー情報です！",
           color: 0xe056fd, // 鮮やかなパープル・ピンク系
           fields: clashFields,

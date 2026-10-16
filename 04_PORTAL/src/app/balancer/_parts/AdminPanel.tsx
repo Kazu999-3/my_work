@@ -67,7 +67,7 @@ export default function AdminPanel({ players, integrityData, checkingIntegrity, 
                   className="flex items-center gap-1.5 bg-danger-100 hover:bg-danger-200 text-danger-700 border border-danger-edge px-3 py-1.5 rounded-lg font-bold transition text-xs disabled:opacity-50"
                   title="過去のすべての試合履歴を元にMMRを再計算し、全員のデータを上書きします"
                 >
-                  <RefreshCw className={`h-3.5 w-3.5 ${rebuildingMmr ? 'animate-spin' : ''}`} /> 🔄 Rebuild
+                  <RefreshCw className={`h-3.5 w-3.5 ${rebuildingMmr ? 'animate-spin' : ''}`} /> 🔄 MMRを再計算（全試合）
                 </button>
               </div>
             </div>
