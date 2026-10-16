@@ -6,7 +6,7 @@ import type { Role } from './balancer';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import rawKtmTiers from '../shared/ktm_tiers.json';
 import { fetchAllRows } from './fetchAll';
-import { calculateSmoothedWinRate } from './balancer/mmrImprovement';
+import { calculateSmoothedWinRate, calculateSurrenderMmrMitigation } from './balancer/mmrImprovement';
 
 
 // BRONZEが以前UNRANKEDと同値(1200)になっていた(2026-08-08発覚)。自己申告でBRONZEを
@@ -431,7 +431,10 @@ export async function performFullMmrRebuild(supabase: SupabaseClient) {
   // マッチ内スナップショット/対戦履歴のキー（discord_idがあればそれ、無ければ名前）
   const keyOf = (part: any) => part.discord_id || part.player_name;
 
-  const { data: allMatches, error: mError } = await supabase.from('ktm_matches').select('id, winning_team').order('created_at', { ascending: true });
+  // 2026-10-16: 試合記録（/api/match/record）と同じ計算にそろえるため、試合時間とエキシビション判定も読む。
+  // それまでリビルドは「全レーン波及(25%)」「早期投了の緩和」「エキシビション除外」を行っておらず、
+  // リビルドすると記録時に付いた分が消えて値が変わる状態だった。
+  const { data: allMatches, error: mError } = await supabase.from('ktm_matches').select('id, winning_team, game_duration, riot_match_id').order('created_at', { ascending: true });
   if (mError || !allMatches) throw mError;
 
   // すべての参加者データを一括ロードして match_id ごとにマッピング (N+1問題の解消)
@@ -456,6 +459,9 @@ export async function performFullMmrRebuild(supabase: SupabaseClient) {
   for (const match of allMatches) {
     const participants = participantsByMatch.get(match.id) || [];
     if (!participants || participants.length === 0) continue;
+    // エキシビション（お祭りカスタム）は記録時と同じく MMR も試合数も動かさない
+    if (match.riot_match_id === 'EXHIBITION') continue;
+    const durationSec = Number(match.game_duration) || 0;
     const blueTeam = participants.filter((p: any) => p.team === 'BLUE');
     const redTeam = participants.filter((p: any) => p.team === 'RED');
 
@@ -530,7 +536,19 @@ export async function performFullMmrRebuild(supabase: SupabaseClient) {
       };
 
       // M-03: 内訳も一緒に算出し、過去試合にも遡って保存する
-      const { delta, breakdown } = calculateNewMMRDetailed(ctx);
+      const detailed = calculateNewMMRDetailed(ctx);
+      let delta = detailed.delta;
+      const breakdown: any = detailed.breakdown;
+      // 早期投了（18分未満）の敗北は記録時と同じく減少を半減する。試合時間が記録されている試合のみ
+      // （記録時は未入力を30分扱いにしており、ここでも未入力なら緩和しない）
+      if (!isWin && durationSec > 0 && durationSec / 60 < 18) {
+        const originalDelta = delta;
+        delta = calculateSurrenderMmrMitigation(delta, durationSec / 60);
+        breakdown.isSurrenderMitigated = true;
+        breakdown.originalDelta = originalDelta;
+        breakdown.finalDelta = delta;
+        breakdown.note = `早期投了(${Math.round(durationSec / 60)}分)による敗北ペナルティ半減緩和`;
+      }
       const kdaScore = calculateKdaScore(p.kills || 0, p.deaths || 0, p.assists || 0);
 
       matchDeltas.push({
@@ -562,8 +580,17 @@ export async function performFullMmrRebuild(supabase: SupabaseClient) {
       const memPlayer = resolveMember({ discord_id: d.discordId, player_name: d.playerName });
       if (!memPlayer) continue;
 
-      const mmrKey = `mmr_${d.role.toLowerCase()}`;
-      memPlayer[mmrKey] += d.delta;
+      // 記録時と同じく、出たレーンに delta、他4レーンに 25% を波及させる（800〜3000 のクランプも同じ）
+      const propagated = propagateCrossLaneMmr(
+        { TOP: memPlayer.mmr_top, JG: memPlayer.mmr_jg, MID: memPlayer.mmr_mid, ADC: memPlayer.mmr_adc, SUP: memPlayer.mmr_sup },
+        d.role,
+        d.delta
+      );
+      memPlayer.mmr_top = propagated.TOP;
+      memPlayer.mmr_jg = propagated.JG;
+      memPlayer.mmr_mid = propagated.MID;
+      memPlayer.mmr_adc = propagated.ADC;
+      memPlayer.mmr_sup = propagated.SUP;
       memPlayer.totalGames += 1;
       if (d.isWin) memPlayer.totalWins += 1;
       if (memPlayer.laneGames[d.role] !== undefined) memPlayer.laneGames[d.role] += 1;
