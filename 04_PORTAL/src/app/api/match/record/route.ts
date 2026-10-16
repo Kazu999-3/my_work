@@ -367,26 +367,39 @@ export async function POST(request: Request) {
 
       const isNgRole = (playedRole === ng1 || playedRole === ng2);
 
+      // 第2希望に連続で回された回数（metadata に保持）。2戦連続でメインに行けなかったら追加救済する。
+      const prevMetaForPity = typeof r.dbPlayer.metadata === 'object' && r.dbPlayer.metadata !== null ? r.dbPlayer.metadata : {};
+      let consecutiveSecondary = Number(prevMetaForPity.consecutive_secondary) || 0;
+
       let allRoleBonusCoins = 0;
       if (primary === 'ALL' || primary === 'FILL') {
         const allBonus = calculateAllRoleBonus(true);
-        newPity = allBonus.pityBonus; // どこでも枠として参加した貢献に対してPity+1還元
+        // どこでも枠として参加した貢献に対してPity+1還元。
+        // 2026-10-16: 以前は `newPity = allBonus.pityBonus` で、溜まっていたPityが毎試合1に戻っていた。
+        newPity += allBonus.pityBonus;
         newOffRolePity = 0;
         allRoleBonusCoins = allBonus.coinBonus; // +50コイン還元
+        consecutiveSecondary = 0;
       } else if (playedRole === primary) {
         // ★ 項目4: Pity消費制化（一律0リセットではなく-2消費）
         newPity = Math.max(0, newPity - 2);
         newOffRolePity = 0;
+        consecutiveSecondary = 0;
       } else if (isNgRole) {
         // ★ 項目5: NGレーン配属時の特大救済（次回確実に第1希望を保証）
         newPity += 3;
         newOffRolePity += 2;
+        consecutiveSecondary = 0;
       } else if (playedRole === secondary || secondary === 'ALL' || secondary === 'FILL') {
-        newPity += 1;
+        // 第2希望 +1。2戦連続なら完全オフロール相当の救済（+2追加）を足す（2026-10-16 配線。
+        // それまで calculateConsecutiveSecondaryPity は import されているだけで呼ばれていなかった）
+        consecutiveSecondary += 1;
+        newPity += 1 + calculateConsecutiveSecondaryPity(consecutiveSecondary);
       } else {
         // 完全オフロール（第3〜5希望）配属
         newPity += 2;
         newOffRolePity += 1;
+        consecutiveSecondary = 0;
       }
 
       // コイン付与計算: 参加賞 +100コイン、勝利チーム +150コイン、ALL参加ボーナス +50コイン
@@ -424,7 +437,7 @@ export async function POST(request: Request) {
         spectator_pity: 0, // ★ 出場したため観戦Pityを確実に0リセット
         coins: newCoins,
         role_preferences: { ...currentRolePrefs, coins: newCoins, inventory: updatedInventory },
-        metadata: { ...currentMeta, coins: newCoins, inventory: updatedInventory }
+        metadata: { ...currentMeta, coins: newCoins, inventory: updatedInventory, consecutive_secondary: consecutiveSecondary }
       };
 
       (r as any).coinReward = coinReward;
