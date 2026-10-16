@@ -44,7 +44,7 @@ export async function generateMatchNews(matchData: {
     penta_kills?: number;
     mmrDelta?: number;
   }>;
-}): Promise<MatchNewsArticle> {
+}, options: { maxRetries?: number } = {}): Promise<MatchNewsArticle> {
   const { winningTeam, gameDuration, participants } = matchData;
 
   const winnerParts = participants.filter((p) => p.team === winningTeam);
@@ -136,7 +136,8 @@ ${participantSummary}
     model: 'gemini-3.5-flash-lite',
     temperature: 0.7,
     maxOutputTokens: 1024,
-    maxRetries: 2,
+    // 記録時は応答を待たせないよう2回まで。失敗時の後追い生成（match/record の after）は多めに試す
+    maxRetries: options.maxRetries ?? 2,
   });
 
   let cleaned = (raw || '').trim();
@@ -150,4 +151,23 @@ ${participantSummary}
   }
 
   return JSON.parse(cleaned.slice(s, e + 1));
+}
+
+/** 試合結果 Embed に載せる「📰 KTMスポーツ号外」フィールドを組み立てる（記録時と後追いで共通） */
+export function buildMatchNewsField(article: MatchNewsArticle) {
+  const lines: string[] = [];
+  lines.push(`**${article.subheadline}**`);
+  lines.push(article.lead);
+  lines.push(`\n👑 **本日のMVP**: **${article.mvp?.name}** (${article.mvp?.champion || ''} / ${article.mvp?.role} / KDA: ${article.mvp?.kda})\n📝 **寸評**: ${article.mvp?.comment || ''}`);
+  if (article.fighterOfTheMatch) {
+    lines.push(`🛡️ **敢闘賞 (敗軍の将)**: **${article.fighterOfTheMatch.name}** (${article.fighterOfTheMatch.champion || ''} / ${article.fighterOfTheMatch.role} / KDA: ${article.fighterOfTheMatch.kda})\n📝 **寸評**: ${article.fighterOfTheMatch.comment}`);
+  }
+  if (article.turningPoint) {
+    lines.push(`🎯 **勝負の決め手**: ${article.turningPoint}`);
+  }
+  return {
+    name: `📰 【KTMスポーツ号外】${article.headline}`.slice(0, 256),
+    value: lines.join('\n').slice(0, 1024),
+    inline: false,
+  };
 }

@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { calculateNewMMRDetailed, calculateKdaScore, MmrCalcContext, calculateInitialMmr, computeRepresentativeMmr, propagateCrossLaneMmr } from '../../../../lib/mmr';
 import { calculateSurrenderMmrMitigation, calculateAllRoleBonus, calculateConsecutiveSecondaryPity } from '../../../../lib/balancer/mmrImprovement';
@@ -769,61 +769,40 @@ export async function POST(request: Request) {
           : '的中者なし (または受付中のベットなし)';
 
         // 📰 AIハイライト実況ニュース（スポーツ報知風ダイジェスト）の自動生成
-        let newsArticle: any = null;
-        try {
-          const { generateMatchNews } = await import('../../../../lib/matchNews');
-          newsArticle = await generateMatchNews({
-            matchId: newMatchId,
-            winningTeam,
-            gameDuration,
-            participants: results.map((r: any) => ({
-              name: r.name,
-              team: r.team,
-              role: r.role,
-              champion_name: r.champion_name,
-              kills: r.kills || 0,
-              deaths: r.deaths || 0,
-              assists: r.assists || 0,
-              penta_kills: Number(r.penta_kills) || 0,
-              mmrDelta: r.mmrDelta || 0,
-            })),
-          });
-
-          // edge_tasks へ保存（ポータルトップや履歴での閲覧用）
-          await supabase.from('edge_tasks').insert({
+        const { generateMatchNews, buildMatchNewsField } = await import('../../../../lib/matchNews');
+        const newsInput = {
+          matchId: newMatchId,
+          winningTeam,
+          gameDuration,
+          participants: results.map((r: any) => ({
+            name: r.name,
+            team: r.team,
+            role: r.role,
+            champion_name: r.champion_name,
+            kills: r.kills || 0,
+            deaths: r.deaths || 0,
+            assists: r.assists || 0,
+            penta_kills: Number(r.penta_kills) || 0,
+            mmrDelta: r.mmrDelta || 0,
+          })),
+        };
+        const saveNews = (article: any) =>
+          supabase.from('edge_tasks').insert({
             task_type: 'ktm_match_news',
-            payload: {
-              matchId: newMatchId,
-              winningTeam,
-              article: newsArticle,
-            },
+            payload: { matchId: newMatchId, winningTeam, article },
             status: 'completed',
           });
+        let newsArticle: any = null;
+        try {
+          newsArticle = await generateMatchNews(newsInput);
+          // edge_tasks へ保存（履歴での閲覧用）
+          await saveNews(newsArticle);
         } catch (newsErr) {
-          console.warn('[match/record] AIニュース生成スキップ（続行）:', newsErr);
-        }
-
-        const newsDetails: string[] = [];
-        if (newsArticle) {
-          newsDetails.push(`**${newsArticle.subheadline}**`);
-          newsDetails.push(newsArticle.lead);
-          newsDetails.push(`\n👑 **本日のMVP**: **${newsArticle.mvp?.name}** (${newsArticle.mvp?.champion || ''} / ${newsArticle.mvp?.role} / KDA: ${newsArticle.mvp?.kda})\n📝 **寸評**: ${newsArticle.mvp?.comment || ''}`);
-          if (newsArticle.fighterOfTheMatch) {
-            newsDetails.push(`🛡️ **敢闘賞 (敗軍の将)**: **${newsArticle.fighterOfTheMatch.name}** (${newsArticle.fighterOfTheMatch.champion || ''} / ${newsArticle.fighterOfTheMatch.role} / KDA: ${newsArticle.fighterOfTheMatch.kda})\n📝 **寸評**: ${newsArticle.fighterOfTheMatch.comment}`);
-          }
-          if (newsArticle.turningPoint) {
-            newsDetails.push(`🎯 **勝負の決め手**: ${newsArticle.turningPoint}`);
-          }
+          console.warn('[match/record] AIニュース生成スキップ（続行・応答後に再試行）:', newsErr);
         }
 
         const fieldsList = [
-          ...(newsArticle ? [
-            {
-              name: `📰 【KTMスポーツ号外】${newsArticle.headline}`,
-              value: newsDetails.join('\n'),
-              inline: false
-            }
-          ] : []),
+          ...(newsArticle ? [buildMatchNewsField(newsArticle)] : []),
           {
             name: `${blueTitle}  🆚  ${redTitle}`,
             value: matchupsText,
@@ -877,6 +856,30 @@ export async function POST(request: Request) {
           // 結果メッセージIDだけは参照用に紐付けておく。
           try {
             const msg = whRes && whRes.ok ? await whRes.json() : null;
+
+            // 号外が間に合わなかった時（Gemini のレート制限など）は、応答を返した後に少し待って作り直し、
+            // 元の試合結果メッセージの先頭に号外を書き足す（2026-10-16: 10/16 の2試合目で号外が出なかった）。
+            if (!newsArticle && msg?.id) {
+              const resultEmbed = payload.embeds[0];
+              after(async () => {
+                try {
+                  await new Promise((r) => setTimeout(r, 20_000));
+                  const article = await generateMatchNews(newsInput, { maxRetries: 4 });
+                  await saveNews(article);
+                  const editRes = await fetch(`${webhookUrl}/messages/${msg.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      embeds: [{ ...resultEmbed, fields: [buildMatchNewsField(article), ...resultEmbed.fields] }],
+                    }),
+                  });
+                  if (!editRes.ok) console.warn('[match/record] 号外の追記に失敗:', editRes.status, await editRes.text());
+                } catch (retryErr) {
+                  console.warn('[match/record] 号外の後追い生成にも失敗（号外なし）:', retryErr);
+                }
+              });
+            }
+
             if (msg?.id && msg?.channel_id) {
               const { error: linkDbErr } = await supabase
                 .from('balancer_predictions')
