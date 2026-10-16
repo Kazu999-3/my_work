@@ -65,6 +65,31 @@ export async function PUT(
       throw new Error(`参加者データの更新に失敗: ${partError.message}`);
     }
 
+    // 名前を差し替えた行の discord_id も新しい名前の人に合わせる。
+    // 2026-10-17: 上の一括更新は player_name しか書かず discord_id が元の人のまま残っていた。リビルドは
+    // discord_id を優先して人を引くため、名前を「エマ*fam」に直しても MMR・試合数は「ﾀﾛｽ」に付いたままだった。
+    // 名簿に無い名前（ゲスト）は discord_id を外す（元の人に紐づけたままにしない）。
+    const names = Array.from(new Set(participants.map((p: any) => p.player_name).filter(Boolean)));
+    const { data: rosterRows, error: rosterErr } = await supabase
+      .from('ktm_players')
+      .select('name, discord_id')
+      .in('name', names);
+    if (rosterErr) {
+      throw new Error(`名簿の取得に失敗: ${rosterErr.message}`);
+    }
+    const discordByName = new Map((rosterRows || []).map((r: any) => [r.name, r.discord_id || null]));
+    for (const p of participants) {
+      const { error: idErr } = await supabase
+        .from('ktm_match_participants')
+        .update({ discord_id: discordByName.get(p.player_name) ?? null })
+        .eq('match_id', matchId)
+        .eq('role', p.role)
+        .eq('team', p.team);
+      if (idErr) {
+        throw new Error(`参加者の紐付け更新に失敗: ${idErr.message}`);
+      }
+    }
+
     // #28: 試合内容の編集でMMRがズレるため、編集後に自動Rebuild（保存値＝導出値を維持）
     await performFullMmrRebuild(supabase);
 
