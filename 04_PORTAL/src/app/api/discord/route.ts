@@ -19,21 +19,30 @@ export async function POST(request: Request) {
     const allNames = [...teamBlue, ...teamRed, ...(spectators || [])].map((p: any) => typeof p === 'string' ? p : p.name).filter(Boolean);
     let newPlayerNames: string[] = [];
     if (allNames.length > 0) {
-      const { data: knownPlayers } = await supabase
+      const { data: knownPlayers, error: knownErr } = await supabase
         .from('ktm_players')
-        .select('name, total_games, stats')
+        .select('name, games_top, games_jg, games_mid, games_adc, games_sup')
         .in('name', allNames);
+      if (knownErr) {
+        // 名簿を読めない時に「全員初参加」と誤表示しない（🔰は付けずに投稿を続ける）
+        console.warn('[discord route] 名簿の取得に失敗したため🔰判定をスキップします:', knownErr.message);
+      }
       const knownSet = new Set((knownPlayers || []).map((p: any) => p.name));
       const unknown = allNames.filter((n) => !knownSet.has(n));
-      if (unknown.length > 0) {
+      if (!knownErr && unknown.length > 0) {
         console.warn('[discord route] 未登録プレイヤーが含まれています（ゲスト許容）:', unknown);
       }
 
-      // 初参加（通算0戦）プレイヤーを特定（未登録ゲストも初参加扱い）
+      // 初参加（通算0戦）プレイヤーを特定（未登録ゲストも初参加扱い）。
+      // 2026-10-16: 以前は存在しない列（total_games / stats）を select しておりクエリ自体が失敗、
+      // 全員が「名簿に無い＝初参加」扱いになってマッチアップ通知の全員に🔰が付いていた。
+      // 通算試合数はレーン別試合数の合計（ktm_match_participants の件数と一致することを確認済み）。
+      const totalGames = (p: any) =>
+        (p.games_top || 0) + (p.games_jg || 0) + (p.games_mid || 0) + (p.games_adc || 0) + (p.games_sup || 0);
       const zeroGamePlayers = (knownPlayers || [])
-        .filter((p: any) => (p.total_games ?? 0) === 0 && (p.stats?.total?.g ?? 0) === 0)
+        .filter((p: any) => totalGames(p) === 0)
         .map((p: any) => p.name);
-      newPlayerNames = [...zeroGamePlayers, ...unknown];
+      newPlayerNames = knownErr ? [] : [...zeroGamePlayers, ...unknown];
     }
 
     // ⚠️ 2026-09-29 追加: 連投対策のクールダウン。
