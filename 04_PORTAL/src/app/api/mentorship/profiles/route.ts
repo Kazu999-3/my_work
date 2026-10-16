@@ -460,7 +460,10 @@ export async function POST(request: Request) {
     }
 
     // 📢 Discord連携（新着速報カード送信 ＆ 常駐ダッシュボード自動同期）
-    if (!isAdminProxyEdit) {
+    // 2026-10-16: 速報カードは新規登録の時だけ。更新のたびにも「新着募集！」が投稿され
+    // （けいろんさんは3分で2回、sutaroさんは更新だけで2回）、ピン留めの掲示板が埋もれていた。
+    // 更新内容はピン留めの掲示板（下の syncMentorshipDashboard）に反映される。
+    if (!isAdminProxyEdit && !existing?.id) {
       notifyNewMentorshipProfile({ profile: resultData, isUpdate: !!existing?.id }).catch((e) =>
         console.warn('[mentorship/profiles] Discord notify failed:', e)
       );

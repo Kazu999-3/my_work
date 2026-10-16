@@ -650,13 +650,13 @@ export async function processSingleIntroMessage(msg: {
 
   // 8. #🌱初参加・ライト・復帰交流 への自動歓迎メッセージ投稿
   // 新メンバーが発言しやすくなるよう、Botが部屋に歓迎メッセージを添えてコミュニティの輪を広げる
+  // 2026-10-16: 部屋に入れるロール（🌱 初中級交流）を付けた人だけを歓迎する。以前は全員に投稿しており、
+  // プラチナ以上の新メンバーは自分が入れない部屋でメンションされていた。部屋の説明はピン留め済みなので、
+  // 毎回の長文（4行）は1行にし、同時に何人も入った時にチャンネルが埋まらないようにする。
+  if (isLowRank(rankTier)) {
   try {
-    const beginnerWelcomeContent = [
-      `👋 **<@${discordId}> さんがKTMに参加されました！ようこそ！🎉**`,
-      `ここは **初参加・ライト・復帰勢** のための交流部屋です✨`,
-      `「週末カスタムの雰囲気はどう？」「今日サクッとARAMやノーマル行きませんか？」など、疑問や気軽なお誘いはいつでもここでどうぞ！`,
-      `みんなで温かく迎えましょう🙌`
-    ].join('\n');
+    const beginnerWelcomeContent =
+      `👋 <@${discordId}> さん、ようこそ！🎉 気軽に話しかけてください（部屋の使い方は📌ピン留めにあります）`;
 
     await discordFetch(`https://discord.com/api/v10/channels/${BEGINNER_CHANNEL_ID}/messages`, {
       method: 'POST',
@@ -671,6 +671,7 @@ export async function processSingleIntroMessage(msg: {
     });
   } catch (bwErr) {
     console.warn('[onboarding] 初中級部屋への歓迎投稿に失敗（オンボーディング自体は続行）:', bwErr);
+  }
   }
 
   // 9. 自己紹介メッセージに「✅」リアクションを付与（完了マーク）
