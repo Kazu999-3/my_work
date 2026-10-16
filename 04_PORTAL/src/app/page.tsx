@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import MatchNewsTicker from './components/MatchNewsTicker';
 import { 
   Swords, 
   Users, 
@@ -54,8 +53,7 @@ export default function HomePage() {
           </div>
         </header>
 
-        {/* 📰 月刊KTMスポーツ速報 (直近カスタムのAIハイライト実況ニュース) */}
-        <MatchNewsTicker />
+        {/* 2026-10-16: 「月刊KTMスポーツ速報」(MatchNewsTicker) はユーザー判断で非表示。AI記事は Discord の試合結果投稿で引き続き使う */}
 
         {/* 4大コア機能カード */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

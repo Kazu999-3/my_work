@@ -243,62 +243,7 @@ export default function GuidePortalTab() {
           </div>
         </div>
 
-        {/* 6. 📰 月刊KTMスポーツ速報（AIハイライト実況ニュース） */}
-        <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-primary-edge transition-all group col-span-1 md:col-span-2">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-primary-edge-soft flex items-center justify-center text-primary-600 font-bold text-2xl group-hover:scale-105 transition">
-                📰
-              </div>
-              <span className="text-[11px] font-bold text-danger-700 bg-danger-100 px-2.5 py-1 rounded-full border border-danger-edge-soft animate-pulse">
-                号外配信中 ⚡
-              </span>
-            </div>
-            <h3 className="text-base md:text-lg font-black text-foreground">
-              月刊KTMスポーツ速報（試合終了直後のAI実況ハイライトニュース）
-            </h3>
-            <p className="text-muted text-xs leading-relaxed">
-              定期カスタムの試合結果が記録されると、Geminiがスポーツ新聞（東スポ・Number風）のユーモアと熱狂あふれる号外ダイジェストを自動執筆！Discord速報通知およびポータルトップに即座に掲示されます。
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-              <div className="bg-background rounded-2xl p-3 border border-border/80 text-xs text-foreground-subtle space-y-1">
-                <div className="font-bold text-foreground flex items-center gap-1 text-[11px]">
-                  <span>🏆</span> 本日のMVP寸評
-                </div>
-                <p className="text-[11px] text-muted">
-                  キルレや集団戦の貢献度から、その試合で最も輝いたプレイヤーをピックアップして絶賛。
-                </p>
-              </div>
-              <div className="bg-background rounded-2xl p-3 border border-border/80 text-xs text-foreground-subtle space-y-1">
-                <div className="font-bold text-foreground flex items-center gap-1 text-[11px]">
-                  <span>🔥</span> 勝負の分水嶺
-                </div>
-                <p className="text-[11px] text-muted">
-                  バロン争奪戦や逆転の集団戦など、勝敗を決定づけた運命のターニングポイントを解説。
-                </p>
-              </div>
-              <div className="bg-background rounded-2xl p-3 border border-border/80 text-xs text-foreground-subtle space-y-1">
-                <div className="font-bold text-foreground flex items-center gap-1 text-[11px]">
-                  <span>💬</span> 試合後コメント ＆ 小ネタ
-                </div>
-                <p className="text-[11px] text-muted">
-                  選手の叫びや対面因縁の裏話など、VCで思わずツッコミたくなるクスッと笑えるエピソード。
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="mt-4 pt-3 border-t border-surface-subtle flex items-center justify-between">
-            <span className="text-[11px] text-muted-strong font-medium">
-              ポータルのトップページですぐに最新号外を読めます！
-            </span>
-            <Link
-              href="/"
-              className="text-xs font-black text-primary-700 hover:text-primary-900 flex items-center gap-1 group-hover:translate-x-1 transition"
-            >
-              トップの速報を見る <ArrowRight size={13} />
-            </Link>
-          </div>
-        </div>
+        {/* 2026-10-16: 「月刊KTMスポーツ速報」はユーザー判断でポータルから外した（Discordの試合結果の号外欄は継続） */}
 
         {/* 7. 師弟マッチングハブ */}
         <div className="bg-surface rounded-3xl p-6 border border-border shadow-xs flex flex-col justify-between hover:border-primary-edge transition-all group col-span-1 md:col-span-2">
