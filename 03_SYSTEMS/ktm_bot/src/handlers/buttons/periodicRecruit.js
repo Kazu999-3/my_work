@@ -28,6 +28,66 @@ function readDayEntryLines(embed) {
   return extractEntryLines(embed?.fields?.[0]?.value);
 }
 
+const PLAYER_SELECT = 'discord_id,mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup,role_preferences,name,games_top,games_jg,games_mid,games_adc,games_sup,metadata,allow_higher';
+
+/** 名簿行の「経験バッジ・ランク（土曜のみ）・希望レーン」部分。playerRow が無い（未登録）時は 🔰 だけ */
+function buildEntrySuffix(playerRow, def) {
+  const expBadgeStr = ` ${getPlayerExperienceBadge(playerRow).short}`;
+
+  // ランク表記は土曜（最多ランク帯を基準にチーム分けする）でのみ意味を持つ。
+  // 日曜はランク不問・MMR変動なしなので出さない。
+  let rankStr = "";
+  if (def.showRank && playerRow) {
+    const tier = getKtmRank(getHighestLaneMmr(playerRow) ?? 0);
+    if (tier && tier.name) {
+      const shortName = RANK_SHORT_JP_MAP[tier.name] || RANK_JP_MAP[tier.name] || tier.name;
+      rankStr = ` 【${shortName}】`;
+    }
+  }
+
+  let lanePrefStr = "";
+  try {
+    let pref = playerRow?.role_preferences;
+    if (typeof pref === 'string') {
+      try { pref = JSON.parse(pref); } catch (e) {}
+    }
+    if (pref && (pref.primary || pref.secondary)) {
+      const p1 = pref.primary && pref.primary !== '指定なし' && pref.primary !== 'なし' ? pref.primary : '';
+      const p2 = pref.secondary && pref.secondary !== '指定なし' && pref.secondary !== 'なし' ? pref.secondary : '';
+      if (p1 && p2) {
+        lanePrefStr = ` 【${p1}/${p2}】`;
+      } else if (p1 || p2) {
+        lanePrefStr = ` 【${p1 || p2}】`;
+      }
+    }
+  } catch (e) {
+    console.warn("role_preferences parse error:", e);
+  }
+  return { expBadgeStr, rankStr, lanePrefStr };
+}
+
+/**
+ * ランクもレーンも無い「🔰」だけの行を名簿から引き直して付け直す（2026-10-17）。
+ * 名簿の読み込みに失敗した時（10/14 の Supabase 停止中など）に、登録済みの人まで 🔰 で書き込まれ、
+ * カードの行は書き直されないため残り続けていた（かずきさん107戦・けんちさん15戦が 🔰）。
+ * 本当に未登録の人は名簿に行が無いので 🔰 のまま。
+ */
+async function healStaleBeginnerLines(env, lines, def) {
+  const staleRe = /<@(\d+)>\s*🔰(?:初参加)?\s*$/;
+  const ids = [...new Set(lines.map((l) => l.match(staleRe)?.[1]).filter(Boolean))];
+  if (ids.length === 0) return lines;
+  const rows = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${ids.join(',')})&select=${PLAYER_SELECT}`).catch(() => null);
+  if (!rows || rows.length === 0) return lines;
+  const byId = new Map(rows.map((r) => [r.discord_id, r]));
+  return lines.map((l) => {
+    const id = l.match(staleRe)?.[1];
+    const row = id && byId.get(id);
+    if (!row) return l;
+    const { expBadgeStr, rankStr, lanePrefStr } = buildEntrySuffix(row, def);
+    return l.replace(staleRe, `<@${id}>${expBadgeStr}${rankStr}${lanePrefStr}`);
+  });
+}
+
 /** 該当するボタンなら応答を返し、該当しなければ undefined（次の処理へ）を返す */
 export async function handlePeriodicRecruitButtons(interaction, env, ctx, { customId, userId, appId, token, botToken }) {
   if (customId.startsWith('join_periodic')) {
@@ -72,10 +132,12 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
           fetch(`https://discord.com/api/v10/channels/${channelId}/messages/${msgId}`, {
             headers: { "Authorization": `Bot ${botToken}` }
           }),
-          fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=mmr,mmr_top,mmr_jg,mmr_mid,mmr_adc,mmr_sup,role_preferences,name,games_top,games_jg,games_mid,games_adc,games_sup,metadata,allow_higher`)
+          fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}&select=${PLAYER_SELECT}`)
             .then((rows) => (rows && rows.length > 0 ? rows[0] : null))
-            .catch((e) => { console.warn('join_periodic: 名簿取得に失敗:', e); return null; }),
+            // 読み込み失敗は undefined（未登録の null と区別し、🔰 を書き込まない）
+            .catch((e) => { console.warn('join_periodic: 名簿取得に失敗:', e); return undefined; }),
         ]);
+        const lookupFailed = playerRow === undefined;
 
         if (!msgRes.ok) throw new Error("メッセージ取得失敗");
         const msg = await msgRes.json();
@@ -83,38 +145,11 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
 
         const targetEmbed = { ...msg.embeds[0] };
 
-        // --- 参加者行のバッジを組み立てる ---
-        const expBadgeStr = ` ${getPlayerExperienceBadge(playerRow).short}`;
-
-        // ランク表記は土曜（最多ランク帯を基準にチーム分けする）でのみ意味を持つ。
-        // 日曜はランク不問・MMR変動なしなので出さない。
-        let rankStr = "";
-        if (def.showRank && playerRow) {
-          const tier = getKtmRank(getHighestLaneMmr(playerRow) ?? 0);
-          if (tier && tier.name) {
-            const shortName = RANK_SHORT_JP_MAP[tier.name] || RANK_JP_MAP[tier.name] || tier.name;
-            rankStr = ` 【${shortName}】`;
-          }
-        }
-
-        let lanePrefStr = "";
-        try {
-          let pref = playerRow?.role_preferences;
-          if (typeof pref === 'string') {
-            try { pref = JSON.parse(pref); } catch (e) {}
-          }
-          if (pref && (pref.primary || pref.secondary)) {
-            const p1 = pref.primary && pref.primary !== '指定なし' && pref.primary !== 'なし' ? pref.primary : '';
-            const p2 = pref.secondary && pref.secondary !== '指定なし' && pref.secondary !== 'なし' ? pref.secondary : '';
-            if (p1 && p2) {
-              lanePrefStr = ` 【${p1}/${p2}】`;
-            } else if (p1 || p2) {
-              lanePrefStr = ` 【${p1 || p2}】`;
-            }
-          }
-        } catch (e) {
-          console.warn("role_preferences parse error:", e);
-        }
+        // --- 参加者行のバッジを組み立てる（名簿の読み込みに失敗した時はバッジ無し。誤って 🔰 と書くより空の方がよい。
+        //     本人がもう一度押せば付く） ---
+        const { expBadgeStr, rankStr, lanePrefStr } = lookupFailed
+          ? { expBadgeStr: '', rankStr: '', lanePrefStr: '' }
+          : buildEntrySuffix(playerRow, def);
 
         const entryLine = `- ${userMention}${styleBadge}${expBadgeStr}${rankStr}${lanePrefStr}`;
 
@@ -138,7 +173,9 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
           }
         }
 
-        const { status: nextStatus } = applyDayCardState(targetEmbed, dayKey, nextLines);
+        // 名簿を読めずに 🔰 で書かれてしまった登録者の行を、この機会に直す
+        const healedLines = await healStaleBeginnerLines(env, nextLines, def);
+        const { status: nextStatus } = applyDayCardState(targetEmbed, dayKey, healedLines);
 
         const [satTarget, sunTarget] = resolveWeekendTargets();
         const currentTarget = dayKey === 'sun' ? sunTarget : satTarget;
