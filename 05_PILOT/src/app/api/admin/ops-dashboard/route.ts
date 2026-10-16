@@ -131,9 +131,11 @@ export async function GET() {
         recentMatches: matchList.filter((m: any) => new Date(m.created_at).getTime() >= weekAgo).length,
         latestMatchAt: matchList[0]?.created_at || null,
       },
+      // コインの集計は全員を対象にする（2026-10-16: is_active は「今回のカスタム参加」フラグで、
+      // これで絞ると不参加の保有者（1位を含む）が総流通・上位から漏れていた。04 の dashboard-stats と同じ修正）
       casino: {
-        totalCirculatingCoins: activePlayers.reduce((acc: number, p: any) => acc + getPlayerCoins(p), 0),
-        topPlayers: activePlayers
+        totalCirculatingCoins: (players.data || []).reduce((acc: number, p: any) => acc + getPlayerCoins(p), 0),
+        topPlayers: (players.data || [])
           .map((p: any) => ({ id: p.id, name: p.name, coins: getPlayerCoins(p) }))
           .sort((a, b) => b.coins - a.coins)
           .slice(0, 5),

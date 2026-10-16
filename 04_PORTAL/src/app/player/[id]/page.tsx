@@ -1078,11 +1078,11 @@ export default function PlayerMyPage() {
                 </div>
               </div>
             </div>
-            {(player.coins > 0 || (player.metadata?.coins && player.metadata.coins > 0)) && (
+            {typeof (typeof player.coins === 'number' ? player.coins : player.role_preferences?.coins) === 'number' && (
               <div className="text-right">
                 <div className="text-[10px] font-bold text-faint">所持コイン</div>
                 <div className="text-xs font-black font-mono text-primary-700 bg-primary-50 px-2 py-0.5 rounded border border-primary-edge-soft mt-0.5">
-                  🪙 {player.coins || player.metadata?.coins}
+                  🪙 {(typeof player.coins === 'number' ? player.coins : player.role_preferences?.coins)}
                 </div>
               </div>
             )}
