@@ -35,7 +35,7 @@
     - ⑤ 早期投了（18分未満）時の敗北MMR減少緩和（match/record に結合済み）✅
     - ⑥ オフロールPityの傾斜付与（実装はサブ+1 / 完全オフ+2 / NG+3）✅ ＆ 第2希望連続救済 ✅（2026-10-16 配線。それまで import のみで未使用だった。回数は `metadata.consecutive_secondary`）
     - ⑦ ALL（どこでも）参加者へのコイン還元（+50コイン・Pity+1）✅（2026-10-16 修正: Pity が「+1」ではなく「1に上書き」になっていた）
-    - ⑧ 新規登録時のRiot APIソロQランク優先化 ＆ 辞退時のPity温存防止✅（2026-10-16 時点で配線は未確認）
+    - ⑧ 新規登録時のRiot APIソロQランク優先化 ＆ 辞退時のPity温存防止（2026-10-16 確認: ランク優先は `onboardingProcessor.ts` で稼働中 ✅。辞退時のPityリセットは未実装だったため Bot `periodicRecruit.js` に配線 ✅ ＝開催確定(isReady)後の辞退で pity=0、本人にだけ通知）
   - [x] 6. **【先行実装完了（バランサー公平性・事故防止ガード ＆ 運用性向上・ガイド同期）】**: 2026-10-13 完了。詳細は [`TODO_ARCHIVE.md`](file:///d:/my_work/02_FACTORY/TODO_ARCHIVE.md) を参照。
   - [x] 7. **【先行実装完了（05_PILOT お道具箱化 ＆ HUD Toast通知視認性・絵文字強化）】**: 2026-10-14 完了。ChampSelect/MatchupPicker/RevisionHistoryModal を機能フォルダへ完全カプセル化、Toast通知をオブジェクト別アイコン・緊急ローズ枠線化。
   - [x] 8. **【先行実装完了（試合記録APIへの早期投了緩和 ＆ ALLボーナス先行結合・結合テスト完備）】**: 2026-10-14 完了。`match/record/route.ts` に18分未満の敗北MMR半減緩和、ALL/FILL参加者への+50コイン還元・Pity+1を結合配備（結合テスト全件PASS）。

@@ -151,6 +151,20 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
           allowed_mentions: { roles: [] }
         });
 
+        // ⑭ 開催確定後の辞退は Pity（希望レーン優先権）をリセットする（2026-10-16 配線。
+        // TODO では「完了」扱いだったが未実装だった）。「確定」は辞退前のカードが開催確定(isReady)だったか。
+        if (activityAction === 'LEAVE' && playerRow && computeDayStatus(currentLines, DAY_CAPACITY, dayKey).isReady) {
+          try {
+            await fetchSupabase(env, 'ktm_players', `discord_id=eq.${userId}`, 'PATCH', { pity: 0 });
+            await sendInteractionFollowup(appId, token, {
+              content: 'ℹ️ 開催確定後の辞退のため、希望レーンの優先権（Pity）を0に戻しました。',
+              flags: 64,
+            });
+          } catch (pityErr) {
+            console.warn('Pity reset on confirmed leave failed:', pityErr);
+          }
+        }
+
         // 監査ログを記録（管理者向け履歴）
         if (activityAction) {
           const userName = interaction.member?.nick || interaction.member?.user?.global_name || interaction.member?.user?.username || playerRow?.name || 'Unknown';
