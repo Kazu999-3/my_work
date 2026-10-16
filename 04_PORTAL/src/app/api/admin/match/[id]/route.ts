@@ -4,6 +4,65 @@ import { verifyAdminSession } from '../../../../../lib/adminAuth';
 import { performFullMmrRebuild } from '../../../../../lib/mmr';
 import { computePityAfterMatch, computeSettleCoins } from '../../../../../lib/matchSettlement';
 import { getPlayerCoins, updatePlayerCoinsAndInventory } from '../../../../../lib/playerCoins';
+import { buildMatchupField, isMatchupField, resultEmbedColor } from '../../../../../lib/matchResultMessage';
+
+/**
+ * 編集後の内容（名前・勝敗・リビルド後の MMR 増減）で Discord の試合結果メッセージを書き換える（2026-10-17）。
+ * 対戦表フィールドは作り直し、号外など他のフィールドは差し替えた名前だけ置き換える。
+ * 結果メッセージ ID が分からない試合（2026-10-17 より前で予測行も無いもの）は何もしない。
+ */
+async function refreshResultMessage(matchId: string, renamed: Map<string, string>) {
+  const webhookUrl = process.env.DISCORD_KTM_WEBHOOK_URL;
+  if (!webhookUrl) return 'Webhook 未設定';
+  const { data: match } = await supabase
+    .from('ktm_matches').select('winning_team, riot_match_id, result_message_id').eq('id', matchId).maybeSingle();
+  let messageId: string | null = match?.result_message_id || null;
+  if (!messageId) {
+    const { data: pred } = await supabase
+      .from('balancer_predictions').select('result_message_id').eq('match_id', matchId).maybeSingle();
+    messageId = pred?.result_message_id || null;
+  }
+  if (!match || !messageId) return '結果メッセージが特定できないため未更新';
+
+  const [{ data: rows }, { data: ledger }] = await Promise.all([
+    supabase.from('ktm_match_participants')
+      .select('player_name, team, role, champion_name, kills, deaths, assists, mmr_delta').eq('match_id', matchId),
+    supabase.from('coin_transactions').select('player_name, metadata')
+      .eq('reason', 'match_settle').eq('metadata->>matchId', matchId),
+  ]);
+  const doublers = new Set((ledger || []).filter((t: any) => t.metadata?.hasVictoryDoubler === true).map((t: any) => t.player_name));
+
+  const msgUrl = `${webhookUrl}/messages/${messageId}`;
+  const res = await fetch(msgUrl);
+  if (!res.ok) return `結果メッセージの取得に失敗（${res.status}）`;
+  const msg = await res.json();
+  const embed = msg.embeds?.[0];
+  if (!embed) return '結果メッセージに Embed が無いため未更新';
+
+  const renameText = (s: string) => {
+    let out = s;
+    renamed.forEach((to, from) => { out = out.split(from).join(to); });
+    return out;
+  };
+  const matchupField = buildMatchupField(
+    (rows || []).map((r: any) => ({
+      name: r.player_name, team: r.team, role: r.role, champion_name: r.champion_name,
+      kills: r.kills || 0, deaths: r.deaths || 0, assists: r.assists || 0, mmrDelta: r.mmr_delta || 0,
+      hasVictoryDoubler: doublers.has(r.player_name),
+    })),
+    match.winning_team,
+    match.riot_match_id === 'EXHIBITION'
+  );
+  const fields = (embed.fields || []).map((f: any) =>
+    isMatchupField(f) ? matchupField : { ...f, name: renameText(f.name), value: renameText(f.value) }
+  );
+  const patch = await fetch(msgUrl, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ embeds: [{ ...embed, color: resultEmbedColor(match.winning_team), fields }] }),
+  });
+  return patch.ok ? '結果メッセージも更新' : `結果メッセージの更新に失敗（${patch.status}）`;
+}
 
 type Slot = { role: string; team: string; player_name: string; discord_id: string | null };
 
@@ -216,10 +275,25 @@ export async function PUT(
     // #28: 試合内容の編集でMMRがズレるため、編集後に自動Rebuild（保存値＝導出値を維持）
     await performFullMmrRebuild(supabase);
 
+    // Discord の試合結果メッセージも編集後の内容に合わせる（失敗しても編集は確定させる）
+    let messageNote = '';
+    try {
+      const renamed = new Map<string, string>();
+      for (const p of participants) {
+        const old = (oldRows || []).find((o: any) => o.role === p.role && o.team === p.team);
+        if (old?.player_name && p.player_name && old.player_name !== p.player_name) renamed.set(old.player_name, p.player_name);
+      }
+      messageNote = await refreshResultMessage(matchId, renamed);
+    } catch (msgErr) {
+      console.error('[admin/match] 結果メッセージの更新に失敗（編集は確定）:', msgErr);
+      messageNote = '結果メッセージの更新に失敗';
+    }
+
     return NextResponse.json({
       success: true,
       message: '試合結果を更新し、MMRを再計算しました。' +
-        (settlementSummary.length ? `（精算の訂正: ${settlementSummary.join(' / ')}）` : ''),
+        (settlementSummary.length ? `（精算の訂正: ${settlementSummary.join(' / ')}）` : '') +
+        (messageNote ? `［${messageNote}］` : ''),
     });
   } catch (error: any) {
     console.error('Update Match Error:', error);

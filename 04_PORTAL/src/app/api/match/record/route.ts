@@ -3,6 +3,7 @@ import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { calculateNewMMRDetailed, calculateKdaScore, MmrCalcContext, calculateInitialMmr, computeRepresentativeMmr, propagateCrossLaneMmr } from '../../../../lib/mmr';
 import { calculateSurrenderMmrMitigation } from '../../../../lib/balancer/mmrImprovement';
 import { computePityAfterMatch } from '../../../../lib/matchSettlement';
+import { buildMatchupField, resultEmbedColor } from '../../../../lib/matchResultMessage';
 import { fetchAllRows } from '../../../../lib/fetchAll';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { verifyBotSecret } from '../../../../lib/botAuth';
@@ -715,32 +716,8 @@ export async function POST(request: Request) {
     try {
       const webhookUrl = process.env.DISCORD_KTM_WEBHOOK_URL;
       if (webhookUrl) {
-        const blueTeam = results.filter((r: any) => r.team === 'BLUE');
-        const redTeam = results.filter((r: any) => r.team === 'RED');
-        
-        const formatPlayer = (p: any) => {
-          const delta = isExhibition ? `±0 (お祭り保護)` : (p.mmrDelta > 0 ? `+${p.mmrDelta}` : `${p.mmrDelta}`);
-          const kda = `${p.kills}/${p.deaths}/${p.assists}`;
-          const champ = p.champion_name ? p.champion_name : 'Unknown';
-          const coinsEarned = p.hasVictoryDoubler
-            ? '🔥+600🪙(激闘ボーナス!)'
-            : (p.team === winningTeam ? '+250🪙' : '+100🪙');
-          return `\`${p.name}\` (${champ}) - **${kda}** (MMR: ${delta} | ${coinsEarned})`;
-        };
-
-        const roles = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
-        const icons: Record<string, string> = { TOP: '🛡️', JG: '🌲', MID: '🔥', ADC: '🏹', SUP: '✨' };
-        
-        const matchupsText = roles.map((role: any) => {
-          const pb = blueTeam.find((p: any) => p.role === role);
-          const pr = redTeam.find((p: any) => p.role === role);
-          const bText = pb ? formatPlayer(pb) : '-';
-          const rText = pr ? formatPlayer(pr) : '-';
-          return `${icons[role]} **${role}**: ${bText} 🆚 ${rText}`;
-        }).join('\n\n');
-
-        const blueTitle = winningTeam === 'BLUE' ? '🏆 🟦 BLUE TEAM (WIN)' : '💀 🟦 BLUE TEAM';
-        const redTitle = winningTeam === 'RED' ? '🏆 🟥 RED TEAM (WIN)' : '💀 🟥 RED TEAM';
+        // 対戦表は lib/matchResultMessage.ts（試合の編集で結果メッセージを書き換える時も同じ書き方にするため）
+        const matchupField = buildMatchupField(results as any, winningTeam, !!isExhibition);
 
         const betPayoutSummary = payoutWinners.length > 0
           ? payoutWinners.map(w => `・\`${w.name}\`: **+${w.payout.toLocaleString()}🪙** 獲得！(x${w.multiplier}倍)`).join('\n')
@@ -781,11 +758,7 @@ export async function POST(request: Request) {
 
         const fieldsList = [
           ...(newsArticle ? [buildMatchNewsField(newsArticle)] : []),
-          {
-            name: `${blueTitle}  🆚  ${redTitle}`,
-            value: matchupsText,
-            inline: false
-          },
+          matchupField,
           {
             name: "💰 勝敗予想カジノ 配当結果",
             value: betPayoutSummary,
@@ -811,7 +784,7 @@ export async function POST(request: Request) {
           embeds: [
             {
               title: "⚔️ 試合リザルト",
-              color: winningTeam === 'BLUE' ? 3447003 : 15158332,
+              color: resultEmbedColor(winningTeam),
               fields: fieldsList
             }
           ]
@@ -856,6 +829,15 @@ export async function POST(request: Request) {
                   console.warn('[match/record] 号外の後追い生成にも失敗（号外なし）:', retryErr);
                 }
               });
+            }
+
+            // 試合そのものに結果メッセージIDを持たせる（試合の編集で結果メッセージを書き換えるため。2026-10-17）
+            if (msg?.id) {
+              const { error: msgIdErr } = await supabase
+                .from('ktm_matches')
+                .update({ result_message_id: msg.id })
+                .eq('id', newMatchId);
+              if (msgIdErr) console.warn('[match/record] 結果メッセージIDの保存に失敗（続行）:', msgIdErr.message);
             }
 
             if (msg?.id && msg?.channel_id) {
