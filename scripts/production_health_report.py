@@ -57,6 +57,7 @@ WATCHED_WORKFLOWS = {
     "rank-benchmark-update.yml": "目標ランク平均の収集",
     "ktm-bot-cron-backup.yml": "Bot定期実行のバックアップ経路",
     "ktm-bot-deploy.yml": "Botデプロイ",
+    "smoke-test.yml": "本番画面のスモークテスト",
 }
 # 「成功」扱いでも、ログにこの文言があれば実際には何もしていない（鍵の未登録など）。
 # 2026-10-04: sync.yml（Sovereign DB Sync）が「同期スキップ」のまま毎日成功していたのを検出→ユーザー判断で削除。

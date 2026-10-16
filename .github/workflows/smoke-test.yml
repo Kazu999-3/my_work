@@ -1,0 +1,54 @@
+name: Production Smoke Test
+
+# 本番の画面が「普通に開けるか」を実際のブラウザで確認する（2026-10-16 新設）。
+# 中身は scripts/smoke_test.mjs を参照。失敗時は #エラーログ へ通知し、毎朝の健康診断でも拾う。
+#
+# いつ動くか:
+#   - Vercel の本番デプロイが成功した直後（04・05 どちらのデプロイでも。push ごとに2回届くため、
+#     concurrency で前の実行を取り消し、最後の1回だけ走らせる）
+#   - 毎日 JST 06:10（健康診断 06:30 の前。デプロイが無い日でも、Supabase 停止など外部要因の故障を拾う）
+#   - 手動実行
+
+on:
+  deployment_status:
+  schedule:
+    - cron: '10 21 * * *'   # 毎日 UTC21:10 = JST 06:10
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-smoke-test
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    # デプロイ起点の時は「本番デプロイの成功」だけを対象にする（プレビューや失敗・進行中は無視）
+    if: >-
+      github.event_name != 'deployment_status' ||
+      (github.event.deployment_status.state == 'success' &&
+       startsWith(github.event.deployment.environment, 'Production'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
+      - name: Install Playwright (Chromium)
+        run: |
+          npm install --no-save playwright@1
+          npx playwright install --with-deps chromium
+
+      - name: Wait for production alias
+        if: github.event_name == 'deployment_status'
+        # デプロイ成功の通知から本番ドメインの切り替えまで少し遅れることがある
+        run: sleep 30
+
+      - name: Run smoke test
+        env:
+          PORTAL_BOT_SECRET: ${{ secrets.PORTAL_BOT_SECRET }}
+        run: node scripts/smoke_test.mjs
