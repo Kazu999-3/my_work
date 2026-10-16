@@ -3,7 +3,14 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { getChampIcon } from "@/lib/ddragonClient";
-import { Shield, Swords, Coins, Eye, Activity, Sparkles, Clock, Target } from "lucide-react";
+import { Shield, Swords, Coins, Eye, Activity, Clock, Target } from "lucide-react";
+import type { HabitRadarSummary } from "@/lib/habitRadar";
+
+// 対面の癖は /api/lol/habit-radar（対面の直近試合のタイムライン実測）から、試合ごとに1回だけ取る。
+// 2026-10-16: 以前は全対面に同じ固定時刻（2:48・5:15）を出していた。実測が無い時は何も推測しない。
+type HabitState =
+  | { status: 'idle' | 'loading' | 'none' }
+  | { status: 'ready'; radar: HabitRadarSummary };
 
 interface LiveGameData {
   inGame: boolean;
@@ -29,6 +36,10 @@ interface LiveGameData {
     cs: number;
     items: number[];
   }>;
+  enemyPlayer?: {
+    championName: string;
+    riotId: string | null;
+  } | null;
 }
 
 export default function OverlayPage() {
@@ -60,6 +71,31 @@ export default function OverlayPage() {
       clearInterval(timer);
     };
   }, []);
+
+  // 対面が決まったら、その人の直近試合の実測（初手ワード・1stリコール）を1回だけ取得する
+  const enemyRiotId = data.inGame ? data.enemyPlayer?.riotId || null : null;
+  const [habit, setHabit] = useState<HabitState>({ status: 'idle' });
+  useEffect(() => {
+    if (!enemyRiotId) {
+      setHabit({ status: 'idle' });
+      return;
+    }
+    let cancelled = false;
+    setHabit({ status: 'loading' });
+    fetch(`/api/lol/habit-radar?riotId=${encodeURIComponent(enemyRiotId)}&count=5`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (cancelled) return;
+        const radar: HabitRadarSummary | undefined = json?.radar;
+        setHabit(radar && radar.sampleGames > 0 ? { status: 'ready', radar } : { status: 'none' });
+      })
+      .catch(() => {
+        if (!cancelled) setHabit({ status: 'none' });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [enemyRiotId]);
 
   const formatTime = (sec?: number) => {
     if (!sec) return '00:00';
@@ -170,53 +206,65 @@ export default function OverlayPage() {
             )}
           </div>
 
-          {/* リアルタイムカウントダウン */}
+          {/* リアルタイムカウントダウン（対面の直近試合の実測平均が取れた時だけ） */}
           {data.gameTimeSec !== undefined && data.gameTimeSec < 600 ? (
-            <div className="space-y-2">
-              {/* 1. 初手ワード切れタイマー */}
-              {data.gameTimeSec < 168 ? (
-                <div className="rounded-lg bg-sky-950/40 border border-sky-500/30 p-2">
-                  <div className="flex justify-between items-center text-[11px]">
-                    <span className="text-sky-300 font-bold">👁️ 敵初手ワード切れ:</span>
-                    <span className="font-mono font-black text-sky-400">
-                      あと {formatTime(168 - data.gameTimeSec)}
-                    </span>
-                  </div>
-                  <div className="mt-1 text-[10px] text-zinc-400">
-                    2:48以降に川草むらの視界消失 ➔ ガンク好機
-                  </div>
-                </div>
-              ) : data.gameTimeSec < 240 ? (
-                <div className="rounded-lg bg-emerald-950/50 border border-emerald-500/40 p-2 animate-pulse">
-                  <div className="flex items-center gap-1 text-[11px] font-black text-emerald-300">
-                    <Sparkles className="h-3.5 w-3.5" /> 敵の視界切れ中！（2:48経過）
-                  </div>
-                  <div className="text-[10px] text-zinc-300">
-                    河川ワード切れ。JGガンクまたは仕掛け推奨！
-                  </div>
-                </div>
-              ) : null}
+            habit.status === 'ready' ? (
+              <div className="space-y-2">
+                {/* 1. 初手ワードの平均設置時刻 */}
+                {habit.radar.earlyWard.placementRate > 0 && habit.radar.earlyWard.averageTimeSec > 0 && (
+                  data.gameTimeSec < habit.radar.earlyWard.averageTimeSec ? (
+                    <div className="rounded-lg bg-teal-950/40 border border-teal-500/30 p-2">
+                      <div className="flex justify-between items-center text-[11px]">
+                        <span className="text-teal-300 font-bold">👁️ 初手ワード平均 {habit.radar.earlyWard.averageTimeFormatted}:</span>
+                        <span className="font-mono font-black text-teal-400">
+                          あと {formatTime(habit.radar.earlyWard.averageTimeSec - data.gameTimeSec)}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-[10px] text-zinc-400">
+                        よく置く場所: {habit.radar.earlyWard.dominantArea}（設置率 {Math.round(habit.radar.earlyWard.placementRate * 100)}%）
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-lg bg-black/40 border border-white/10 p-2 text-[10px] text-zinc-400">
+                      👁️ 初手ワードの平均設置時刻（{habit.radar.earlyWard.averageTimeFormatted}）を過ぎました。よく置く場所: {habit.radar.earlyWard.dominantArea}
+                    </div>
+                  )
+                )}
 
-              {/* 2. 1stリコール予測タイマー */}
-              {data.gameTimeSec >= 210 && data.gameTimeSec < 315 ? (
-                <div className="rounded-lg bg-amber-950/40 border border-amber-500/30 p-2">
-                  <div className="flex justify-between items-center text-[11px]">
-                    <span className="text-amber-300 font-bold">🛒 敵リコール予測 (5:15):</span>
-                    <span className="font-mono font-black text-amber-400">
-                      あと {formatTime(315 - data.gameTimeSec)}
-                    </span>
+                {/* 2. 1stリコールの平均時刻 */}
+                {habit.radar.firstRecall.averageTimeSec > 0 &&
+                  data.gameTimeSec < habit.radar.firstRecall.averageTimeSec + 30 && (
+                  <div className="rounded-lg bg-amber-950/40 border border-amber-500/30 p-2">
+                    <div className="flex justify-between items-center text-[11px]">
+                      <span className="text-amber-300 font-bold">🛒 1stリコール平均 {habit.radar.firstRecall.averageTimeFormatted}:</span>
+                      <span className="font-mono font-black text-amber-400">
+                        {data.gameTimeSec < habit.radar.firstRecall.averageTimeSec
+                          ? `あと ${formatTime(habit.radar.firstRecall.averageTimeSec - data.gameTimeSec)}`
+                          : 'そろそろ'}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-[10px] text-zinc-400">
+                      平均 Lv{habit.radar.firstRecall.averageLevel} で帰還
+                    </div>
                   </div>
-                  <div className="mt-1 text-[10px] text-zinc-400">
-                    直前ウェーブをタワーへ押し込み、有利リコールへ
-                  </div>
+                )}
+
+                <div className="text-[9px] text-zinc-500">
+                  対面の直近{habit.radar.sampleGames}試合の実測（{habit.radar.analyzedChampion}）
                 </div>
-              ) : null}
-            </div>
+              </div>
+            ) : (
+              <div className="text-[10px] text-zinc-500">
+                {habit.status === 'loading'
+                  ? '対面の直近試合を集計中…'
+                  : '対面の実測データがありません（Riot ID 不明・試合履歴なし）'}
+              </div>
+            )
           ) : (
             <div className="text-[11px] text-zinc-400 space-y-1">
               <div className="flex justify-between">
                 <span>視界スコア:</span>
-                <span className="font-mono text-sky-400 font-bold">{me?.wardScore || 0} pt</span>
+                <span className="font-mono text-teal-400 font-bold">{me?.wardScore || 0} pt</span>
               </div>
               <div className="text-[10px] text-zinc-500">
                 10分経過: 中盤マクロ・オブジェクト主導権重視

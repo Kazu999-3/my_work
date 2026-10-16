@@ -54,20 +54,15 @@ export async function GET() {
     const enemyPlayer = allPlayers.find((p: any) => p.team !== myTeam && p.position === myPos && myPos && myPos !== 'NONE') ||
                         allPlayers.find((p: any) => p.team !== myTeam);
 
-    // 敵対面の癖情報 (Habit Radar)
-    let enemyHabits: any = null;
-    if (enemyPlayer) {
-      // チャンピオン名またはサモナー名から大まかな初期予測（試合開始時のデフォルト値）
-      // 一般的な平均: ワード設置 1:18 (78s) ➔ 視界切れ 2:48 (168s) / 1stリコール 5:15 (315s)
-      enemyHabits = {
-        championName: enemyPlayer.championName,
-        summonerName: enemyPlayer.summonerName,
-        position: enemyPlayer.position,
-        estimatedWardExpireSec: 168, // 2:48
-        estimatedFirstRecallSec: 315, // 5:15
-        estimatedEarlyDeathSec: 250, // 4:10
-      };
-    }
+    // 対面の Riot ID。HUD 側がこれで /api/lol/habit-radar（直近試合の実測）を引く。
+    // 2026-10-16: 以前はここで全対面に同じ固定値（ワード切れ2:48・リコール5:15・初デス4:10）を入れて
+    // 「対面の癖」と表示していた。出典の無い秒数で、スカウターの実測とも繋がっていなかったため廃止。
+    const enemyRiotId: string | null = enemyPlayer
+      ? (enemyPlayer.riotId ||
+         (enemyPlayer.riotIdGameName && enemyPlayer.riotIdTagLine
+           ? `${enemyPlayer.riotIdGameName}#${enemyPlayer.riotIdTagLine}`
+           : (String(enemyPlayer.summonerName || '').includes('#') ? enemyPlayer.summonerName : null)))
+      : null;
 
     return NextResponse.json({
       inGame: true,
@@ -91,7 +86,7 @@ export async function GET() {
         deaths: enemyPlayer.scores?.deaths || 0,
         assists: enemyPlayer.scores?.assists || 0,
         cs: enemyPlayer.scores?.creepScore || 0,
-        habits: enemyHabits
+        riotId: enemyRiotId,
       } : null,
       allPlayers: allPlayers.map((p: any) => ({
         championName: p.championName,

@@ -1,0 +1,52 @@
+name: Tactics DB → Git Sync
+
+# DB正本（matchup_sentinel の対面メモ）を 01_INTEL/tactics/*_tactics_bible.md へ毎晩同期してコミットする。
+# スクリプト本体: scripts/sync_db_to_git_tactics.mjs（原本非破壊・冪等。差分が無ければコミットしない）。
+#
+# 2026-10-16 新設。10/15 に「自動同期」として記録されていたが、実際は手動で1回実行しただけで
+# どこからも定期実行されていなかった。1回の読み出しは約5MB（月150MB程度で egress 枠の約3%）。
+#
+# 注意: このリポジトリは公開。同期されるのは対面の戦術メモ（strategy）のみ。
+
+on:
+  schedule:
+    - cron: '30 18 * * *'   # 毎日 UTC18:30 = JST 03:30
+  workflow_dispatch:
+
+permissions:
+  contents: write   # 同期結果をコミット・プッシュする
+
+concurrency:
+  group: tactics-db-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Sync DB → Markdown and commit
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_SERVICE_KEY || secrets.SUPABASE_KEY }}
+        run: node scripts/sync_db_to_git_tactics.mjs --execute --commit
+
+      - name: Push if committed
+        run: |
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/master)" ]; then
+            git pull --rebase origin master
+            git push origin HEAD:master
+          else
+            echo "差分なし（コミット無し）"
+          fi

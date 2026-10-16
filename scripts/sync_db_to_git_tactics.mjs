@@ -72,6 +72,10 @@ function loadEnv() {
       }
     }
   }
+  // GitHub Actions（.env が無い）では環境変数から読む（2026-10-16: 夜間の自動実行用に追加）
+  for (const k of ['NEXT_PUBLIC_SUPABASE_URL', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_KEY']) {
+    if (!env[k] && process.env[k]) env[k] = process.env[k];
+  }
   return env;
 }
 

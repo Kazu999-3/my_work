@@ -43,7 +43,7 @@ src/
 ├── core/ (または shared/)          ➔ 全機能で使い回す真の共通層
 │    ├── components/               ➔ 汎用ボタン、モーダル基盤、NavBar等
 │    ├── constants/                ➔ 全社定数・用語集 (VOCABULARY)
-│    └── lib/                      ➔ 統一ロガー (logger.ts), Supabaseクライアント
+│    └── lib/                      ➔ Supabaseクライアント等（統一ロガー logger.ts は未使用のため 2026-10-16 に削除）
 │
 └── app/
      ├── <機能ルート名>/ (例: balancer, lane-guides, coach)
