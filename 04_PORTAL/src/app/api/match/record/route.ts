@@ -771,7 +771,7 @@ export async function POST(request: Request) {
         // 📰 AIハイライト実況ニュース（スポーツ報知風ダイジェスト）の自動生成
         let newsArticle: any = null;
         try {
-          const { generateMatchNews } = await import('../news/route');
+          const { generateMatchNews } = await import('../../../../lib/matchNews');
           newsArticle = await generateMatchNews({
             matchId: newMatchId,
             winningTeam,
