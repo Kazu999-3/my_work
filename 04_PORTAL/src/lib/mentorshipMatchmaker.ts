@@ -5,6 +5,7 @@
 import { supabaseAdmin as supabase } from './supabaseAdmin';
 import { getPlayerTier, ExperienceTier } from './playerTier';
 import { fetchAllRows } from './fetchAll';
+import { normalizeRole } from './roleUtils';
 
 export const RANK_ORDER: Record<string, number> = {
   IRON: 1,
@@ -174,14 +175,28 @@ export async function findBestSeniorMentor(
     const pupilTier = RANK_ORDER[pupilRankKey] || 3;
     const pupilLanes: string[] = Array.isArray(pupilProfile.lanes) ? pupilProfile.lanes : [];
 
-    // 1. ktm_players からアクティブなプレイヤーを取得
-    const { data: players, error } = await supabase
+    // 1. 候補: 「直近60日以内にカスタムに出た人」または「今回のカスタムに参加予定（is_active）の人」。
+    // 2026-10-17: 以前は is_active（今回の参加予定）だけで、73人中約19人からしか選んでいなかった（ユーザー判断で拡大）。
+    // 名簿にはサーバーを抜けた人も残っており印も無いため、全員ではなく最近の参加で絞って DM が届かない事故を避ける。
+    const since = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: recentMatches } = await supabase.from('ktm_matches').select('id').gte('created_at', since);
+    const recentIds = (recentMatches || []).map((m: any) => m.id);
+    const recentParts = recentIds.length
+      ? (await supabase.from('ktm_match_participants').select('discord_id, player_name').in('match_id', recentIds)).data || []
+      : [];
+    const recentDiscord = new Set(recentParts.map((p: any) => p.discord_id).filter(Boolean));
+    const recentNames = new Set(recentParts.map((p: any) => p.player_name).filter(Boolean));
+
+    const { data: allPlayers, error } = await supabase
       .from('ktm_players')
       .select('id, name, ign, discord_id, highest_rank, is_active, role_preferences')
-      .eq('is_active', true)
       .neq('discord_id', pupilProfile.discord_id);
 
-    if (error || !players || players.length === 0) return null;
+    if (error || !allPlayers) return null;
+    const players = allPlayers.filter((p: any) =>
+      p.is_active === true || (p.discord_id && recentDiscord.has(p.discord_id)) || recentNames.has(p.name)
+    );
+    if (players.length === 0) return null;
 
     let bestSenior: any = null;
     let bestScore = -1;
@@ -211,11 +226,13 @@ export async function findBestSeniorMentor(
       }
 
       // レーン一致（role_preferences の main/sub チェック）
-      const mainLane = (player.role_preferences?.main || '').toUpperCase();
-      const subLane = (player.role_preferences?.sub || '').toUpperCase();
-      const playerLanes = [mainLane, subLane].filter(Boolean);
+      // 名簿の項目名は primary / secondary（2026-10-17: main / sub を見ていたためレーン一致が一度も効いていなかった）
+      const mainLane = (player.role_preferences?.primary || player.role_preferences?.main || '').toUpperCase();
+      const subLane = (player.role_preferences?.secondary || player.role_preferences?.sub || '').toUpperCase();
+      // 後輩のプロフィールは "SUPPORT" / "JUNGLE"、名簿は "SUP" / "JG" と書き方が違うので揃えてから比べる
+      const playerLanes = [mainLane, subLane].map((l) => normalizeRole(l)).filter(Boolean);
 
-      const hasSharedLane = pupilLanes.some((pl) => playerLanes.includes(pl) || pl === 'ALL');
+      const hasSharedLane = pupilLanes.some((pl) => pl.toUpperCase() === 'ALL' || playerLanes.includes(normalizeRole(pl)));
       if (hasSharedLane) {
         score += 35;
         reasons.push(`メイン/得意レーン一致（${mainLane || subLane}）`);
