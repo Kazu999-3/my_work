@@ -18,6 +18,7 @@ export type CoinReason =
   | 'daily_omikuji'      // デイリーおみくじ
   | 'rescue_insurance'   // 破産救済保険（月1回）
   | 'match_settle'       // 試合精算（参加賞・勝利・MVP・各種賞）
+  | 'match_settle_correction' // 試合の編集（勝敗・参加者の差し替え）に伴う精算の訂正（2026-10-17）
   | 'bet_place'          // 勝敗予想ベットの投入（マイナス）
   | 'bet_payout'         // 勝敗予想ベットの的中払い戻し
   | 'slot'               // スロット（1スピンの純増減）

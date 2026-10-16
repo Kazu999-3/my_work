@@ -1,7 +1,8 @@
 import { NextResponse, after } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { calculateNewMMRDetailed, calculateKdaScore, MmrCalcContext, calculateInitialMmr, computeRepresentativeMmr, propagateCrossLaneMmr } from '../../../../lib/mmr';
-import { calculateSurrenderMmrMitigation, calculateAllRoleBonus, calculateConsecutiveSecondaryPity } from '../../../../lib/balancer/mmrImprovement';
+import { calculateSurrenderMmrMitigation } from '../../../../lib/balancer/mmrImprovement';
+import { computePityAfterMatch } from '../../../../lib/matchSettlement';
 import { fetchAllRows } from '../../../../lib/fetchAll';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { verifyBotSecret } from '../../../../lib/botAuth';
@@ -365,42 +366,19 @@ export async function POST(request: Request) {
       let newPity = Number(r.dbPlayer.pity) || 0;
       let newOffRolePity = Number(r.dbPlayer.off_role_pity) || 0;
 
-      const isNgRole = (playedRole === ng1 || playedRole === ng2);
-
       // 第2希望に連続で回された回数（metadata に保持）。2戦連続でメインに行けなかったら追加救済する。
       const prevMetaForPity = typeof r.dbPlayer.metadata === 'object' && r.dbPlayer.metadata !== null ? r.dbPlayer.metadata : {};
-      let consecutiveSecondary = Number(prevMetaForPity.consecutive_secondary) || 0;
-
-      let allRoleBonusCoins = 0;
-      if (primary === 'ALL' || primary === 'FILL') {
-        const allBonus = calculateAllRoleBonus(true);
-        // どこでも枠として参加した貢献に対してPity+1還元。
-        // 2026-10-16: 以前は `newPity = allBonus.pityBonus` で、溜まっていたPityが毎試合1に戻っていた。
-        newPity += allBonus.pityBonus;
-        newOffRolePity = 0;
-        allRoleBonusCoins = allBonus.coinBonus; // +50コイン還元
-        consecutiveSecondary = 0;
-      } else if (playedRole === primary) {
-        // ★ 項目4: Pity消費制化（一律0リセットではなく-2消費）
-        newPity = Math.max(0, newPity - 2);
-        newOffRolePity = 0;
-        consecutiveSecondary = 0;
-      } else if (isNgRole) {
-        // ★ 項目5: NGレーン配属時の特大救済（次回確実に第1希望を保証）
-        newPity += 3;
-        newOffRolePity += 2;
-        consecutiveSecondary = 0;
-      } else if (playedRole === secondary || secondary === 'ALL' || secondary === 'FILL') {
-        // 第2希望 +1。2戦連続なら完全オフロール相当の救済（+2追加）を足す（2026-10-16 配線。
-        // それまで calculateConsecutiveSecondaryPity は import されているだけで呼ばれていなかった）
-        consecutiveSecondary += 1;
-        newPity += 1 + calculateConsecutiveSecondaryPity(consecutiveSecondary);
-      } else {
-        // 完全オフロール（第3〜5希望）配属
-        newPity += 2;
-        newOffRolePity += 1;
-        consecutiveSecondary = 0;
-      }
+      // 規則は lib/matchSettlement.ts（試合の編集でも同じ規則で付け替えるため 2026-10-17 に共通化）
+      const pityResult = computePityAfterMatch({
+        primary, secondary, ng1, ng2, playedRole,
+        pity: newPity,
+        offRolePity: newOffRolePity,
+        consecutiveSecondary: Number(prevMetaForPity.consecutive_secondary) || 0,
+      });
+      newPity = pityResult.pity;
+      newOffRolePity = pityResult.offRolePity;
+      const consecutiveSecondary = pityResult.consecutiveSecondary;
+      const allRoleBonusCoins = pityResult.allRoleBonusCoins;
 
       // コイン付与計算: 参加賞 +100コイン、勝利チーム +150コイン、ALL参加ボーナス +50コイン
       const currentRolePrefs = typeof r.dbPlayer.role_preferences === 'object' && r.dbPlayer.role_preferences !== null ? r.dbPlayer.role_preferences : {};
