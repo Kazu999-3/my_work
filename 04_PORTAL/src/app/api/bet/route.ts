@@ -16,13 +16,14 @@ export async function GET(req: Request) {
     try {
       const { data: allPlayers, error: pErr } = await supabase
         .from('ktm_players')
-        .select('name, discord_id, highest_rank, role_preferences, metadata, is_active');
+        .select('name, discord_id, highest_rank, coins, role_preferences, metadata');
 
       if (pErr) throw pErr;
 
-      const activeList = (allPlayers || []).filter((p: any) => p.is_active !== false);
-
-      ranking = activeList
+      // 2026-10-16: 以前は is_active !== false で絞っていたが、is_active は「今回のカスタムに参加するか」の
+      // フラグで退会ではない（73人中54人が false）。そのため1位のなつみさん等が番付から消え、
+      // 参加予定者だけで繰り上げた順位になっていた。/api/leaderboard/coins と同じく全員を対象にする。
+      ranking = (allPlayers || [])
         .map((p: any) => ({
           name: p.name,
           discordId: p.discord_id,

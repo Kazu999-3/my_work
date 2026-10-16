@@ -29,6 +29,7 @@ interface PlinkoBall {
   vy: number;
   targetCol: number; // 現在の段における目標列インデックス
   path: number[]; // [0, 1, 0, 1...]
+  slotIndex: number; // サーバーが決めた最終ポケット（着弾位置はこれを正とする）
   multiplier: number;
   winCoins: number;
   betAmount: number;
@@ -163,7 +164,7 @@ export default function KtmPlinkoGame({ userCoins, onBalanceChange }: KtmPlinkoG
       const height = 480;
 
       // 背景クリア (ダークネオンカジノ調)
-      ctx.fillStyle = '#0f172a';
+      ctx.fillStyle = '#1c1917';
       ctx.fillRect(0, 0, width, height);
 
       // グリッド背景の装飾
@@ -192,7 +193,7 @@ export default function KtmPlinkoGame({ userCoins, onBalanceChange }: KtmPlinkoG
 
           ctx.beginPath();
           ctx.arc(pin.x, pin.y, 3, 0, Math.PI * 2);
-          ctx.fillStyle = pin.lit > 0 ? '#fbbf24' : '#64748b';
+          ctx.fillStyle = pin.lit > 0 ? '#fbbf24' : '#78716c';
           ctx.fill();
         }
       }
@@ -211,9 +212,9 @@ export default function KtmPlinkoGame({ userCoins, onBalanceChange }: KtmPlinkoG
         const sb = slotBouncesRef.current[s] || { scale: 1, lit: 0 };
 
         // 倍率ごとの色分け
-        let bgGrad = '#1e293b';
-        let textCol = '#94a3b8';
-        let borderCol = '#334155';
+        let bgGrad = '#292524';
+        let textCol = '#a8a29e';
+        let borderCol = '#44403c';
 
         if (mult >= 20.0) {
           bgGrad = sb.lit > 0 ? '#ef4444' : '#7f1d1d';
@@ -224,13 +225,13 @@ export default function KtmPlinkoGame({ userCoins, onBalanceChange }: KtmPlinkoG
           textCol = '#fffbeb';
           borderCol = '#d97706';
         } else if (mult >= 1.2) {
-          bgGrad = sb.lit > 0 ? '#3b82f6' : '#1e3a8a';
-          textCol = '#eff6ff';
-          borderCol = '#2563eb';
+          bgGrad = sb.lit > 0 ? '#14b8a6' : '#134e4a';
+          textCol = '#f0fdfa';
+          borderCol = '#0d9488';
         } else {
-          bgGrad = sb.lit > 0 ? '#334155' : '#1e293b';
-          textCol = '#cbd5e1';
-          borderCol = '#475569';
+          bgGrad = sb.lit > 0 ? '#44403c' : '#292524';
+          textCol = '#d6d3d1';
+          borderCol = '#57534e';
         }
 
         ctx.save();
@@ -271,9 +272,12 @@ export default function KtmPlinkoGame({ userCoins, onBalanceChange }: KtmPlinkoG
           b.progress = 0;
           b.currentStep++;
 
-          // ピン衝突判定
+          // ピン衝突判定。段 s-1 → s の移動には path[s-1] を使う（path[0]〜path[8] で最下段まで、
+          // 最後の path[9] は最下段からポケットへの1回）。
+          // 2026-10-16: 以前は path[b.currentStep] を使っていたため path[0] が一度も反映されず、
+          // 1段目が「左」の落下（全体の半分）で、見た目のポケットがサーバー結果より1つ右にずれていた。
           if (b.currentStep < PLINKO_ROWS) {
-            const nextChoice = b.path[b.currentStep];
+            const nextChoice = b.path[b.currentStep - 1] || 0;
             b.targetCol += nextChoice;
 
             const targetPin = pins[b.currentStep]?.[b.targetCol];
@@ -286,9 +290,11 @@ export default function KtmPlinkoGame({ userCoins, onBalanceChange }: KtmPlinkoG
 
         // 座標計算
         if (b.currentStep < PLINKO_ROWS) {
-          const fromRow = Math.max(0, b.currentStep - 1);
           const toRow = b.currentStep;
-          const fromPin = pins[fromRow]?.[Math.max(0, b.targetCol - (b.path[toRow] || 0))] || { x: width / 2, y: 15 };
+          // 投下直後（段0）は上空から頂点のピンへ、それ以降は直前の段のピンから
+          const fromPin = toRow === 0
+            ? { x: width / 2, y: 15 }
+            : pins[toRow - 1]?.[Math.max(0, b.targetCol - (b.path[toRow - 1] || 0))] || { x: width / 2, y: 15 };
           const toPin = pins[toRow]?.[b.targetCol] || { x: width / 2, y: 40 + toRow * 36 };
 
           // 放物線状のバウンド移動
@@ -299,7 +305,9 @@ export default function KtmPlinkoGame({ userCoins, onBalanceChange }: KtmPlinkoG
         } else {
           // 最下部ポケットへ吸い込まれる
           const lastPin = pins[PLINKO_ROWS - 1]?.[b.targetCol] || { x: width / 2, y: 380 };
-          const targetSlotX = slotStartX + b.targetCol * (slotWidth + slotSpacing) + slotWidth / 2;
+          // 着弾ポケットはサーバーの slotIndex を正とする（= 最下段の列 - 1 + path[9] と一致する）
+          const landingSlot = Math.min(PLINKO_SLOT_COUNT - 1, Math.max(0, b.slotIndex));
+          const targetSlotX = slotStartX + landingSlot * (slotWidth + slotSpacing) + slotWidth / 2;
           const t = Math.min(1.0, b.progress * 1.5);
 
           b.x = lastPin.x + (targetSlotX - lastPin.x) * t;
@@ -307,8 +315,7 @@ export default function KtmPlinkoGame({ userCoins, onBalanceChange }: KtmPlinkoG
 
           // 着弾！
           if (t >= 1.0) {
-            const slotIdx = Math.min(PLINKO_SLOT_COUNT - 1, Math.max(0, b.targetCol));
-            const sb = slotBouncesRef.current[slotIdx];
+            const sb = slotBouncesRef.current[landingSlot];
             if (sb) {
               sb.scale = 1.35;
               sb.lit = 1.0;
@@ -322,7 +329,7 @@ export default function KtmPlinkoGame({ userCoins, onBalanceChange }: KtmPlinkoG
                   particleCount: 70,
                   spread: 60,
                   origin: { y: 0.7 },
-                  colors: ['#ef4444', '#f59e0b', '#3b82f6', '#ec4899'],
+                  colors: ['#ef4444', '#f59e0b', '#14b8a6', '#ec4899'],
                 });
               } catch {}
               toast.success(`💥 【JACKPOT】${b.multiplier}倍直撃！ (+${b.winCoins}🪙)`);
@@ -347,7 +354,7 @@ export default function KtmPlinkoGame({ userCoins, onBalanceChange }: KtmPlinkoG
         // 黒い球体
         ctx.beginPath();
         ctx.arc(b.x, b.y, 5.5, 0, Math.PI * 2);
-        ctx.fillStyle = '#1e1b4b';
+        ctx.fillStyle = '#451a03';
         ctx.fill();
         ctx.strokeStyle = b.isJackpot ? '#ef4444' : '#f59e0b';
         ctx.lineWidth = 1.5;
@@ -412,6 +419,7 @@ export default function KtmPlinkoGame({ userCoins, onBalanceChange }: KtmPlinkoG
         vy: 0,
         targetCol: 1, // 頂点ピン(3本)の中央
         path: r.path,
+        slotIndex: r.slotIndex,
         multiplier: r.multiplier,
         winCoins: r.winCoins,
         betAmount: r.betAmount,
@@ -455,7 +463,7 @@ export default function KtmPlinkoGame({ userCoins, onBalanceChange }: KtmPlinkoG
       </div>
 
       {/* ゲームエリア (Canvas) */}
-      <div className="flex justify-center bg-slate-950 rounded-2xl p-2 border border-slate-800 shadow-inner overflow-hidden">
+      <div className="flex justify-center bg-stone-950 rounded-2xl p-2 border border-stone-800 shadow-inner overflow-hidden">
         <canvas ref={canvasRef} className="rounded-xl shadow-2xl max-w-full h-auto cursor-pointer" onClick={handleDrop} />
       </div>
 
@@ -472,8 +480,8 @@ export default function KtmPlinkoGame({ userCoins, onBalanceChange }: KtmPlinkoG
                   : w.mult >= 4.0
                   ? 'bg-amber-950/50 text-amber-300 border-amber-800'
                   : w.mult >= 1.0
-                  ? 'bg-blue-950/50 text-blue-300 border-blue-800'
-                  : 'bg-slate-800/50 text-slate-400 border-slate-700'
+                  ? 'bg-teal-950/50 text-teal-300 border-teal-800'
+                  : 'bg-stone-800/50 text-stone-400 border-stone-700'
               }`}
             >
               {w.mult}x (+{w.coins})
@@ -521,7 +529,7 @@ export default function KtmPlinkoGame({ userCoins, onBalanceChange }: KtmPlinkoG
                 onClick={() => setBetAmount(amt)}
                 className={`py-2 rounded-xl border text-xs font-mono font-bold transition cursor-pointer ${
                   betAmount === amt
-                    ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md font-black'
+                    ? 'bg-amber-500 text-stone-950 border-amber-400 shadow-md font-black'
                     : 'bg-surface-subtle border-border text-muted-strong hover:text-foreground'
                 }`}
               >
@@ -538,7 +546,7 @@ export default function KtmPlinkoGame({ userCoins, onBalanceChange }: KtmPlinkoG
           disabled={userCoins < betAmount}
           className={`w-full py-3.5 rounded-xl font-black text-sm tracking-wider uppercase transition shadow-lg flex items-center justify-center gap-2 cursor-pointer ${
             userCoins < betAmount
-              ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+              ? 'bg-stone-800 text-stone-500 cursor-not-allowed'
               : 'bg-gradient-to-r from-red-600 via-amber-600 to-red-600 hover:from-red-500 hover:to-amber-500 text-white shadow-red-900/30 active:scale-98'
           }`}
         >

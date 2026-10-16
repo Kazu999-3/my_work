@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
       // 辞典ヘルス
       supabase.from('champion_facts').select('confidence, patch, strengths'),
       // 🏆 大会メトリクス用: 登録プレイヤー
-      supabase.from('ktm_players').select('id, name, highest_rank, role_preferences, metadata, is_active'),
+      supabase.from('ktm_players').select('id, name, highest_rank, coins, role_preferences, metadata, is_active'),
       // 🏆 大会メトリクス用: 試合履歴
       supabase.from('ktm_matches').select('id, created_at').order('created_at', { ascending: false }).limit(200),
       // 🪙 カジノメトリクス用: 未精算ベットタスク
@@ -166,12 +166,14 @@ export async function GET(req: NextRequest) {
     }).length;
 
     // 🪙 カジノメトリクス集計
-    const totalCirculatingCoins = playersList.reduce((acc: number, p: any) => {
+    // 2026-10-16: コインの集計は全員を対象にする。is_active は「今回のカスタム参加」フラグで、
+    // これで絞ると不参加の保有者（1位を含む）が総流通・長者番付から漏れていた。
+    const totalCirculatingCoins = allPlayersList.reduce((acc: number, p: any) => {
       return acc + getPlayerCoins(p);
     }, 0);
 
     // 🏆 長者番付 TOP 10
-    const topPlayers = playersList
+    const topPlayers = allPlayersList
       .map((p: any) => ({
         id: p.id,
         name: p.name,
