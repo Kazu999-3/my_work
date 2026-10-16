@@ -151,7 +151,9 @@ def check_backup(r: Report):
         if x.get("conclusion") == "success":
             break
         fails += 1
-    if last_ok and datetime.now(timezone.utc) - last_ok <= timedelta(hours=30):
+    # 2026-10-12 に db-backup.yml を毎日→週1回（egress 節約）へ変えたため、7日＋余裕1日で判定する。
+    # 30時間のままだと週の大半で FAIL が出続けていた（2026-10-16 #エラーログ）。
+    if last_ok and datetime.now(timezone.utc) - last_ok <= timedelta(days=8):
         r.add(OK, "DBバックアップ", f"最終成功 {fmt_age(last_ok)}")
     else:
         r.add(FAIL, "DBバックアップ",
