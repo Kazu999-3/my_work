@@ -3,6 +3,7 @@ import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { calculatePlaystyle } from '../../../../lib/playstyle';
 import { fetchAllRows } from '../../../../lib/fetchAll';
 import { normalizeRole } from '../../../../lib/roleUtils';
+import { CROSS_LANE_RIPPLE_RATIO } from '../../../../lib/mmr';
 
 const cache = new Map<string, { data: any; expiry: number }>();
 const CACHE_TTL_MS = 30000; // 30 seconds TTL
@@ -202,11 +203,16 @@ export async function GET(request: Request) {
 
       const role = row.role?.toUpperCase();
       const delta = row.mmr_delta || 0;
-      if (role === 'TOP') currentTop -= delta;
-      else if (role === 'JG') currentJg -= delta;
-      else if (role === 'MID') currentMid -= delta;
-      else if (role === 'ADC') currentAdc -= delta;
-      else if (role === 'SUP') currentSup -= delta;
+      // 出たレーンは delta、他4レーンは全レーン波及（記録・リビルドと同じ割合）を引き戻す。
+      // 2026-10-16: 以前は出たレーンしか戻しておらず、グラフ上で他レーンが過去から横ばいに見えていた。
+      const ripple = Math.round(delta * CROSS_LANE_RIPPLE_RATIO);
+      if (['TOP', 'JG', 'MID', 'ADC', 'SUP'].includes(role)) {
+        currentTop -= role === 'TOP' ? delta : ripple;
+        currentJg  -= role === 'JG'  ? delta : ripple;
+        currentMid -= role === 'MID' ? delta : ripple;
+        currentAdc -= role === 'ADC' ? delta : ripple;
+        currentSup -= role === 'SUP' ? delta : ripple;
+      }
       if (laneG[role] !== undefined && laneG[role] > 0) laneG[role] -= 1;
 
       const parts = partsMap.get(mKey) || [];

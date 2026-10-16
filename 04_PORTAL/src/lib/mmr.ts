@@ -293,6 +293,9 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
   return delta;
 }
 
+/** 他4レーンへの波及率。記録・リビルド・MMR推移グラフの逆算で同じ値を使う（2026-10-16 定数化） */
+export const CROSS_LANE_RIPPLE_RATIO = 0.25;
+
 /**
  * ⑤ レーン間MMRの連動・底上げ (Cross-Lane MMR Propagation)
  * メインのレーンで実力が上がった際、ゲーム全体のマクロ理解度・ファーム力向上を
@@ -306,7 +309,7 @@ export function propagateCrossLaneMmr(
   const roles: ('TOP' | 'JG' | 'MID' | 'ADC' | 'SUP')[] = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
   const newRates = { ...currentRates };
   const normRole = (playedRole || '').toUpperCase();
-  const subDelta = Math.round(primaryDelta * 0.25);
+  const subDelta = Math.round(primaryDelta * CROSS_LANE_RIPPLE_RATIO);
 
   for (const r of roles) {
     if (r === normRole) {
