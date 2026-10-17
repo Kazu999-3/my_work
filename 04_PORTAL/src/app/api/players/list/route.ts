@@ -38,7 +38,8 @@ export async function GET(request: Request) {
         // ⚠️ 2026-09-23 修正: NG設定・こだわり・格上許可・Pity の6列が select から漏れており、
         // バランサーの一覧でこれらが常に空（初期値）として表示されていた。
         // DBには値が入っている（NG設定3名・こだわり7名など）ので、取得漏れが原因。
-        .select('id, name, ign, discord_id, is_active, mmr, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup, highest_rank, role_preferences, ng_lane_1, ng_lane_2, weight, allow_higher, pity, off_role_pity, spectator_pity')
+        // joined_at: Discord サーバー参加日時（バランサーの No. の並び順）。以前は取得しておらず、No. が名前順になっていた（2026-10-17）
+        .select('id, name, ign, discord_id, is_active, mmr, mmr_top, mmr_jg, mmr_mid, mmr_adc, mmr_sup, highest_rank, role_preferences, ng_lane_1, ng_lane_2, weight, allow_higher, pity, off_role_pity, spectator_pity, joined_at:metadata->>joined_at')
         .order('is_active', { ascending: false })
         .order('name', { ascending: true }),
       lite ? Promise.resolve([] as any[]) : loadParticipants(),

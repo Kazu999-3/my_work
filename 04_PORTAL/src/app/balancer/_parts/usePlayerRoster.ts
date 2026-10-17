@@ -54,8 +54,11 @@ export function usePlayerRoster(isAdmin: boolean, setMessage: SetMessage) {
 
       // No順にソートして保持。ローカル用フラグ is_fixed も初期化
       const playersWithNo = (data || []).sort((a: any, b: any) => {
-        const timeA = a.metadata?.joined_at ? new Date(a.metadata.joined_at).getTime() : Infinity;
-        const timeB = b.metadata?.joined_at ? new Date(b.metadata.joined_at).getTime() : Infinity;
+        // Discord サーバー参加日時の順（/api/players/list は joined_at、DB直読みの予備経路は metadata.joined_at）
+        const joinedA = a.joined_at || a.metadata?.joined_at;
+        const joinedB = b.joined_at || b.metadata?.joined_at;
+        const timeA = joinedA ? new Date(joinedA).getTime() : Infinity;
+        const timeB = joinedB ? new Date(joinedB).getTime() : Infinity;
         return timeA - timeB;
       }).map((p: any, index: number) => ({
         ...p,
