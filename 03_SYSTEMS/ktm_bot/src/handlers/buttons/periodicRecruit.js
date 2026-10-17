@@ -67,24 +67,33 @@ function buildEntrySuffix(playerRow, def) {
 }
 
 /**
- * ランクもレーンも無い「🔰」だけの行を名簿から引き直して付け直す（2026-10-17）。
+ * 参加者行のバッジ・ランク・希望レーンを名簿から引き直して付け直す。
+ * 最初（2026-10-17）は、ランクもレーンも無い「🔰」だけの行が対象だった。
  * 名簿の読み込みに失敗した時（10/14 の Supabase 停止中など）に、登録済みの人まで 🔰 で書き込まれ、
  * カードの行は書き直されないため残り続けていた（かずきさん107戦・けんちさん15戦が 🔰）。
  * 本当に未登録の人は名簿に行が無いので 🔰 のまま。
  */
-async function healStaleBeginnerLines(env, lines, def) {
-  const staleRe = /<@(\d+)>\s*🔰(?:初参加)?\s*$/;
-  const ids = [...new Set(lines.map((l) => l.match(staleRe)?.[1]).filter(Boolean))];
+//
+// 2026-10-17: 🔰だけの行に限らず、押下のたびに全員の「経験バッジ・ランク・希望レーン」を名簿から付け直すよう広げた。
+// ランクは参加ボタンを押した時点のMMRで書かれて固定されていたため、MMRの再計算や試合の後も古い帯のまま残り、
+// 部屋分け（最多の帯を基準に出場対象・観戦を分ける）が古い値で行われていた。
+// 参加形態のタグ（⏱️【1戦のみ】等）は行頭にあり、ここでは <@id> より後ろだけを書き換えるので消えない。
+// 押した本人の行（「🟢フル」等が <@id> の直後に付いた組み立て直後の行）は最新なので触らない。
+async function refreshEntryLines(env, lines, def) {
+  const tailRe = /<@(\d+)>(.*)$/;
+  const ids = [...new Set(lines.map((l) => l.match(tailRe)?.[1]).filter(Boolean))];
   if (ids.length === 0) return lines;
   const rows = await fetchSupabase(env, 'ktm_players', `discord_id=in.(${ids.join(',')})&select=${PLAYER_SELECT}`).catch(() => null);
-  if (!rows || rows.length === 0) return lines;
+  if (!rows || rows.length === 0) return lines; // 読めなければ今の表記のまま
   const byId = new Map(rows.map((r) => [r.discord_id, r]));
   return lines.map((l) => {
-    const id = l.match(staleRe)?.[1];
-    const row = id && byId.get(id);
-    if (!row) return l;
+    const m = l.match(tailRe);
+    if (!m) return l;
+    if (/フル|1戦のみ|途中参加|観戦/.test(m[2])) return l;
+    const row = byId.get(m[1]);
+    if (!row) return l; // 未登録の人は 🔰 のまま
     const { expBadgeStr, rankStr, lanePrefStr } = buildEntrySuffix(row, def);
-    return l.replace(staleRe, `<@${id}>${expBadgeStr}${rankStr}${lanePrefStr}`);
+    return l.replace(tailRe, `<@${m[1]}>${expBadgeStr}${rankStr}${lanePrefStr}`);
   });
 }
 
@@ -173,8 +182,8 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
           }
         }
 
-        // 名簿を読めずに 🔰 で書かれてしまった登録者の行を、この機会に直す
-        const healedLines = await healStaleBeginnerLines(env, nextLines, def);
+        // 全員のバッジ・ランク・希望レーンを名簿の最新値で付け直す（🔰で書かれてしまった登録者の行もここで直る）
+        const healedLines = await refreshEntryLines(env, nextLines, def);
         const { status: nextStatus } = applyDayCardState(targetEmbed, dayKey, healedLines);
 
         const [satTarget, sunTarget] = resolveWeekendTargets();

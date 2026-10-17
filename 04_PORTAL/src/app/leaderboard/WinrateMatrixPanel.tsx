@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Trophy, TrendingUp, TrendingDown, Minus, Swords, Activity } from 'lucide-react';
 import { Spinner, ErrorState } from '../../components/Feedback';
+import { getKtmRank, getRankBadgeStyle } from '../../lib/mmr';
 
 interface LaneStats {
   games: number;
@@ -256,6 +257,10 @@ export default function WinrateMatrixPanel() {
           <tbody>
             {sortedData.map((player, idx) => {
               const overallWr = player.totalGames > 0 ? (player.totalWins / player.totalGames) * 100 : 0;
+              // KTMランクは募集カードの部屋分け・バランサーと同じ「一番高いレーンのMMR」で決める（2026-10-17）
+              const highestLaneMmr = Math.max(...Object.values(player.lanes).map(l => l.mmr));
+              const ktmTier = getKtmRank(highestLaneMmr);
+              const tierStyle = getRankBadgeStyle(ktmTier.name);
               return (
                 <tr key={player.name} className="group hover:bg-black/2 transition-colors rounded-2xl">
                   <td className="px-4 py-3 align-middle rounded-l-2xl border-y border-l border-black/10 bg-surface sticky left-0 z-10">
@@ -291,6 +296,12 @@ export default function WinrateMatrixPanel() {
                       </div>
                       <div className="text-xs font-mono font-bold text-foreground-subtle bg-black/5 px-2 py-0.5 rounded border border-black/10">
                         {player.overallMmr.toLocaleString()} <span className="text-[10px] text-muted-strong font-normal">MMR</span>
+                      </div>
+                      <div
+                        className={`mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded border whitespace-nowrap ${tierStyle.bg} ${tierStyle.color} ${tierStyle.border}`}
+                        title={`KTMランク（最高レーンMMR ${highestLaneMmr} 基準。募集カードの部屋分けと同じ）`}
+                      >
+                        {ktmTier.name}
                       </div>
                     </div>
                   </td>

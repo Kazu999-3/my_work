@@ -510,9 +510,32 @@ export function computeDominantTier(lines) {
   return computeDominantTierInfo(lines).text;
 }
 
-/** 埋め込みの参加者フィールドから参加者行だけを取り出す */
+/**
+ * 埋め込みの参加者フィールドから参加者行だけを取り出す。
+ *
+ * ⚠️ カードの表示テキストがそのまま参加データを兼ねている（押下のたびにここで読み戻して組み直す）。
+ * 2026-10-17 に表示を整理し、「🌙 2戦目から合流」見出しの下の行から 🌙【2戦目〜】 を、
+ * 観戦を選んだ人の行頭の 👀【観戦】 を消して行末の（観戦希望）にした。読み戻す時はここで元のタグに戻す。
+ * 戻さないと、次の押下で途中参加の人がフル参加扱いになり、観戦希望の行には「（）」が溜まっていく。
+ */
 export function extractEntryLines(fieldValue) {
-  return (fieldValue || '').split('\n').filter((l) => l.startsWith('- '));
+  let inLateSection = false;
+  const out = [];
+  for (const raw of (fieldValue || '').split('\n')) {
+    if (!raw.startsWith('- ')) {
+      // 見出し行。区分が変わるたびに判定し直す（旧形式「【🌙 2戦目〜合流」も含む）
+      if (raw.trim()) inLateSection = /2戦目(?:から|〜)合流/.test(raw);
+      continue;
+    }
+    let line = raw.replace(/（）/g, '');
+    if (/（観戦希望）\s*$/.test(line)) {
+      line = line.replace(/（観戦希望）\s*$/, '').replace(/^- (?:👀【観戦】)?/, '- 👀【観戦】');
+    } else if (inLateSection && !isLateJoin(line)) {
+      line = line.replace(/^- /, '- 🌙【2戦目〜】');
+    }
+    out.push(line.trimEnd());
+  }
+  return out;
 }
 
 /**
