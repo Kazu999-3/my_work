@@ -473,6 +473,15 @@ export async function processSingleIntroMessage(msg: {
       ignore_role: parsed.ngLane1 || '-',
       ng_roles: [parsed.ngLane1, parsed.ngLane2].filter(Boolean),
     };
+    // 参加日は Discord サーバーに参加した日時にする（バランサーの No. = Discord 参加順。大会管理の同期も同じ値で上書きする）。
+    // 以前は自己紹介を処理した時刻を入れており、次の同期まで並びがずれていた（2026-10-17）
+    let discordJoinedAt: string | null = null;
+    try {
+      const memberRes = await discordFetch(`https://discord.com/api/v10/guilds/${GUILD_ID}/members/${discordId}`, { headers: getBotHeaders() });
+      if (memberRes.ok) discordJoinedAt = (await memberRes.json())?.joined_at || null;
+    } catch {
+      // 取れなければ処理時刻のまま
+    }
     const newPlayerData: any = {
       discord_id: discordId,
       name: discordName,
@@ -489,7 +498,7 @@ export async function processSingleIntroMessage(msg: {
       weight: 2,
       allow_higher: false,
       metadata: {
-        joined_at: new Date().toISOString(),
+        joined_at: discordJoinedAt || new Date().toISOString(),
         initial_highest_rank: rankTier,
       },
       mmr: initialMmr,
