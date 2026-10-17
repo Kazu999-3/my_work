@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { syncOnboardingChannels } from '../../../../lib/onboardingChannels';
+import { loadNextPeriodicCustomEntries } from '../../../../lib/periodicCustomCard';
 
 // 管理画面「個別案内」タブの一覧。開いた時点の最新状態に更新してから返す（2026-10-17）。
 export const dynamic = 'force-dynamic';
@@ -30,7 +31,12 @@ export async function GET(req: Request) {
       playerName: nameOf.get(c.ownerUserId) || null,
       lastPlayedAt: lastPlayed.get(c.ownerUserId) || null,
     }));
-    return NextResponse.json({ success: true, channels: rows });
+    // 次の定期カスタムのエントリー者・観戦希望（フィルタ用）。読めなくても一覧は返す
+    const nextCustom = await loadNextPeriodicCustomEntries().catch((e) => {
+      console.warn('[admin/onboarding-channels] 次の定期カスタムの読み込みに失敗:', e);
+      return null;
+    });
+    return NextResponse.json({ success: true, channels: rows, nextCustom });
   } catch (err: any) {
     console.error('[admin/onboarding-channels] error:', err);
     return NextResponse.json({ error: '個別案内チャンネルの取得に失敗しました。' }, { status: 500 });
