@@ -937,7 +937,7 @@ function CustomRecordPageContent() {
                             />
                           )}
                         </button>
-                        <div className="flex-1 flex gap-1 justify-end items-center">
+                        <div className="flex-1 flex flex-wrap gap-1 justify-end items-center">
                           <input type="number" value={s.kills} onChange={e => handleStatChangeByIndex(index, 'kills', e.target.value)} className="w-11 bg-surface border border-border text-foreground text-center rounded py-1 text-sm" placeholder="K" />
                           <span className="text-muted-strong self-center text-xs">/</span>
                           <input type="number" value={s.deaths} onChange={e => handleStatChangeByIndex(index, 'deaths', e.target.value)} className="w-11 bg-surface border border-danger-edge-soft text-danger-700 text-center rounded py-1 text-sm" placeholder="D" />
@@ -959,6 +959,9 @@ function CustomRecordPageContent() {
                           >
                             💎 {(s.penta_kills || 0) > 0 ? `${s.penta_kills}` : '0'}
                           </button>
+                          {/* CS・ゴールドの手入力（スコアボード画像が無い時・読み違えた時用。2026-10-18） */}
+                          <input type="number" min={0} value={s.cs || ''} onChange={e => handleStatChangeByIndex(index, 'cs', e.target.value)} className="ml-1.5 w-14 bg-surface border border-border text-foreground text-center rounded py-1 text-xs" placeholder="CS" title="CS" />
+                          <input type="number" min={0} value={s.gold || ''} onChange={e => handleStatChangeByIndex(index, 'gold', e.target.value)} className="w-16 bg-surface border border-primary-edge-soft text-primary-700 text-center rounded py-1 text-xs" placeholder="ゴールド" title="獲得ゴールド" />
                         </div>
                       </div>
                     </div>
@@ -1011,7 +1014,7 @@ function CustomRecordPageContent() {
                             />
                           )}
                         </button>
-                        <div className="flex-1 flex gap-1 justify-end items-center">
+                        <div className="flex-1 flex flex-wrap gap-1 justify-end items-center">
                           <input type="number" value={s.kills} onChange={e => handleStatChangeByIndex(index, 'kills', e.target.value)} className="w-11 bg-surface border border-border text-foreground text-center rounded py-1 text-sm" placeholder="K" />
                           <span className="text-muted-strong self-center text-xs">/</span>
                           <input type="number" value={s.deaths} onChange={e => handleStatChangeByIndex(index, 'deaths', e.target.value)} className="w-11 bg-surface border border-danger-edge-soft text-danger-700 text-center rounded py-1 text-sm" placeholder="D" />
@@ -1033,6 +1036,9 @@ function CustomRecordPageContent() {
                           >
                             💎 {(s.penta_kills || 0) > 0 ? `${s.penta_kills}` : '0'}
                           </button>
+                          {/* CS・ゴールドの手入力（スコアボード画像が無い時・読み違えた時用。2026-10-18） */}
+                          <input type="number" min={0} value={s.cs || ''} onChange={e => handleStatChangeByIndex(index, 'cs', e.target.value)} className="ml-1.5 w-14 bg-surface border border-border text-foreground text-center rounded py-1 text-xs" placeholder="CS" title="CS" />
+                          <input type="number" min={0} value={s.gold || ''} onChange={e => handleStatChangeByIndex(index, 'gold', e.target.value)} className="w-16 bg-surface border border-primary-edge-soft text-primary-700 text-center rounded py-1 text-xs" placeholder="ゴールド" title="獲得ゴールド" />
                         </div>
                       </div>
                     </div>
