@@ -5,6 +5,7 @@ import { calculateSurrenderMmrMitigation } from '../../../../lib/balancer/mmrImp
 import { computePityAfterMatch } from '../../../../lib/matchSettlement';
 import { buildMatchupField, resultEmbedColor } from '../../../../lib/matchResultMessage';
 import { fetchAllRows } from '../../../../lib/fetchAll';
+import { getPlayerInventory as readInventory } from '../../../../lib/playerCoins';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { verifyBotSecret } from '../../../../lib/botAuth';
 import { syncPlayersDiscordRoles } from '../../../../lib/discordRoleSync';
@@ -408,7 +409,9 @@ export async function POST(request: Request) {
       let coinReward = ((r.team === winningTeam) ? 250 : 100) + allRoleBonusCoins;
 
       // ⚔️ 勝利ボーナス激闘チケット（victory_bonus_doubler）の判定
-      const updatedInventory = Array.isArray(currentRolePrefs.inventory) ? [...currentRolePrefs.inventory] : (Array.isArray(r.dbPlayer.metadata?.inventory) ? [...r.dbPlayer.metadata.inventory] : []);
+      // 持ち物は inventory 列が正（playerCoins の getPlayerInventory）。以前は role_preferences から読んで列を書き換えておらず、
+      // 次のコイン操作で列から書き戻されて、使ったチケットが復活していた（2026-10-18）
+      const updatedInventory = [...readInventory(r.dbPlayer)];
       let hasVictoryDoubler = false;
 
       if (r.team === winningTeam) {
@@ -436,6 +439,7 @@ export async function POST(request: Request) {
         off_role_pity: newOffRolePity,
         spectator_pity: 0, // ★ 出場したため観戦Pityを確実に0リセット
         coins: newCoins,
+        inventory: updatedInventory,
         role_preferences: { ...currentRolePrefs, coins: newCoins, inventory: updatedInventory },
         metadata: { ...currentMeta, coins: newCoins, inventory: updatedInventory, consecutive_secondary: consecutiveSecondary }
       };
