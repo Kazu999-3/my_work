@@ -29,7 +29,7 @@ export const DAY_DEFS = {
     label: '土曜',
     name: '土曜・本戦カスタム',
     shortName: '土曜本戦カスタム',
-    rule: 'ランク差を作らない実力伯仲マッチ。最多MMR帯から1ティア差以内を基準に選出（1つ下と1つ上の両方がいれば下を優先、2ティア以上離れた人は観戦・交代枠。エメラルド以上はプラチナと同じ枠。MMR変動あり）',
+    rule: 'ランク差を作らない実力伯仲マッチ。最多MMR帯から1ティア差以内を基準に選出（1つ下と1つ上の両方がいれば下を優先、2ティア以上離れた人は観戦・交代枠。ただし同じ帯・同じレーン希望の2人は🤝対面枠として出場。エメラルド以上はプラチナ、アイアン・未ランクはブロンズと同じ枠。MMR変動あり）',
     joinPrefix: 'join_periodic_auto',
     showRank: true,   // 参加者行にランク表記を出すか（日曜はランク不問なので出さない）
     buttonStyle: 1,   // Primary (Blue)
@@ -288,15 +288,72 @@ export function sortEntryLinesByLane(lines) {
   return [...lines].sort((a, b) => getLaneOrder(a) - getLaneOrder(b));
 }
 
+const LANE_ALIAS = { TOP: 'TOP', JG: 'JG', JUNGLE: 'JG', MID: 'MID', MIDDLE: 'MID', ADC: 'ADC', BOT: 'ADC', SUP: 'SUP', SUPPORT: 'SUP' };
+
+/** 行の希望レーン（【TOP/JG】形式・旧【第1: TOP / 第2: JG】形式）。ALL/FILL/指定なしは空（どのレーンでも可） */
+export function extractPlayerLanes(rawLine) {
+  const line = rawLine || '';
+  const lanes = new Set();
+  const add = (v) => { const k = LANE_ALIAS[(v || '').trim().toUpperCase()]; if (k) lanes.add(k); };
+  const old = line.match(/第1:\s*([A-Za-z]+)[^】]*?第2:\s*([A-Za-z]+)/);
+  if (old) { add(old[1]); add(old[2]); return lanes; }
+  for (const m of line.matchAll(/【([A-Za-z]+)(?:\/([A-Za-z]+))?】/g)) { add(m[1]); add(m[2]); }
+  return lanes;
+}
+
+/** 2人の共通の希望レーン（無ければ null）。片方がALL等なら相手の第1希望、両方ALLなら 'ALL' */
+export function commonLane(rawA, rawB) {
+  const a = [...extractPlayerLanes(rawA)];
+  const b = [...extractPlayerLanes(rawB)];
+  if (a.length === 0 && b.length === 0) return 'ALL';
+  if (a.length === 0) return b[0];
+  if (b.length === 0) return a[0];
+  return a.find((l) => b.includes(l)) || null;
+}
+
 /** 2人が共通の希望レーンを持っているか（指定なし・おまかせ含む） */
 export function hasCommonLane(rawA, rawB) {
-  const lanesA = extractPlayerLanes(rawA);
-  const lanesB = extractPlayerLanes(rawB);
-  if (lanesA.size === 0 || lanesB.size === 0) return true;
-  for (const lane of lanesA) {
-    if (lanesB.has(lane)) return true;
+  return commonLane(rawA, rawB) !== null;
+}
+
+// 参加形態ごとに出る試合（フル=第1・2戦 / 1戦のみ=第1戦 / 途中参加=第2戦）
+const STYLE_MATCHES = { full: [1, 2], single: [1], late: [2] };
+const styleOf = (raw) => (isSingleMatch(raw) ? 'single' : isLateJoin(raw) ? 'late' : 'full');
+const styleFromMatches = (ms) => (ms.length === 2 ? 'full' : ms[0] === 1 ? 'single' : ms[0] === 2 ? 'late' : null);
+
+/**
+ * 🤝 対面枠（2026-10-17、ユーザー判断）: 基準の帯から2つ以上離れて観戦・2部屋目待ちになる人でも、
+ * 同じ帯で同じレーン希望の2人がいれば、その2人を対面させる前提で出場対象に入れる。
+ * （例: プラチナ基準の回のシルバーSUP 2人。対面同士は同じ帯なのでレーン戦の差は出ない）
+ * 2人とも出られる試合だけ出場扱いにする（フル＋途中参加なら、2人とも第2戦から）。
+ * 自分で観戦を選んだ人は対象外。
+ */
+function promoteLanePairs(candidates) {
+  const promoted = [];
+  const rest = [];
+  const used = new Set();
+  for (let i = 0; i < candidates.length; i++) {
+    if (used.has(i)) continue;
+    const a = candidates[i];
+    let paired = false;
+    for (let j = i + 1; j < candidates.length; j++) {
+      if (used.has(j)) continue;
+      const b = candidates[j];
+      if (a.tier !== b.tier) continue;
+      const lane = commonLane(a.raw, b.raw);
+      if (!lane) continue;
+      const shared = STYLE_MATCHES[styleOf(a.raw)].filter((m) => STYLE_MATCHES[styleOf(b.raw)].includes(m));
+      const effStyle = styleFromMatches(shared);
+      if (!effStyle) continue;
+      used.add(i); used.add(j);
+      const tag = `（🤝${lane}対面枠）`;
+      promoted.push({ ...a, line: `${a.line}${tag}`, effStyle, pair: true }, { ...b, line: `${b.line}${tag}`, effStyle, pair: true });
+      paired = true;
+      break;
+    }
+    if (!paired) rest.push(a);
   }
-  return false;
+  return { promoted, rest };
 }
 
 /**
@@ -311,6 +368,7 @@ export function parseEntryBreakdown(lines, dominantTierKey = null) {
 
   const eligible = [];
   const spectator = [];
+  let promotedPairsCount = 0;
 
   // ① ランク不問（日曜など）の場合: 観戦希望者以外を出場対象枠へ
   if (!dominantOrder) {
@@ -366,13 +424,18 @@ export function parseEntryBreakdown(lines, dominantTierKey = null) {
     }
 
     eligible.push(...tierEntries.same, ...acceptedAdjacent);
-    spectator.push(...tierEntries.outlier, ...rejectedAdjacent);
+    // 離れた帯の人のうち、同じ帯・同じレーン希望の2人は対面枠として出場対象へ
+    const { promoted, rest } = promoteLanePairs([...tierEntries.outlier, ...rejectedAdjacent]);
+    eligible.push(...promoted);
+    spectator.push(...rest);
+    promotedPairsCount = promoted.length / 2;
   }
 
-  // カウントは出場対象枠（eligible）で集計
-  const eligibleFull = eligible.filter((e) => !isSingleMatch(e.raw) && !isLateJoin(e.raw));
-  const eligibleSingle = eligible.filter((e) => isSingleMatch(e.raw));
-  const eligibleLate = eligible.filter((e) => isLateJoin(e.raw));
+  // カウントは出場対象枠（eligible）で集計。対面枠は「2人とも出られる試合」の形態（effStyle）で数える
+  const eff = (e) => e.effStyle || styleOf(e.raw);
+  const eligibleFull = eligible.filter((e) => eff(e) === 'full');
+  const eligibleSingle = eligible.filter((e) => eff(e) === 'single');
+  const eligibleLate = eligible.filter((e) => eff(e) === 'late');
 
   const match1Count = eligibleFull.length + eligibleSingle.length;
   const match2Count = eligibleFull.length + eligibleLate.length;
@@ -380,12 +443,12 @@ export function parseEntryBreakdown(lines, dominantTierKey = null) {
   // 試合別の行一覧（第1戦出場メンバーと2戦目合流メンバー）をレーン順にソート
   const match1Lines = sortEntryLinesByLane(
     eligible
-      .filter((e) => !isLateJoin(e.raw))
+      .filter((e) => eff(e) !== 'late')
       .map((e) => e.line)
   );
   const match2LateLines = sortEntryLinesByLane(
     eligible
-      .filter((e) => isLateJoin(e.raw))
+      .filter((e) => eff(e) === 'late')
       .map((e) => e.line)
   );
 
@@ -398,7 +461,7 @@ export function parseEntryBreakdown(lines, dominantTierKey = null) {
     match1Lines,
     match2LateLines,
     dominantTierKey,
-    promotedPairsCount: 0,
+    promotedPairsCount,
     hasBreakdown: eligibleSingle.length > 0 || eligibleLate.length > 0 || spectator.length > 0,
     hasSpectator: spectator.length > 0,
     match1Count,
@@ -528,9 +591,17 @@ export function extractEntryLines(fieldValue) {
       continue;
     }
     let line = raw.replace(/（）/g, '');
-    if (/（観戦希望）\s*$/.test(line)) {
-      line = line.replace(/（観戦希望）\s*$/, '').replace(/^- (?:👀【観戦】)?/, '- 👀【観戦】');
-    } else if (inLateSection && !isLateJoin(line)) {
+    // 対面枠の印は毎回計算し直すので捨てる。対面枠の行は見出しの位置が本来の参加形態と違うことがある
+    const isPair = /（🤝[^）]*）/.test(line);
+    line = line.replace(/（🤝[^）]*）/g, '');
+    // 行末の短い表記（観戦枠・対面枠で使う）を行頭のタグに戻す
+    const suffixTag = /（観戦希望）/.test(line) ? '- 👀【観戦】'
+      : /（1戦のみ）/.test(line) ? '- ⏱️【1戦のみ】'
+      : /（2戦目〜）/.test(line) ? '- 🌙【2戦目〜】' : null;
+    line = line.replace(/（(?:観戦希望|1戦のみ|2戦目〜)）/g, '');
+    if (suffixTag) {
+      line = line.replace(/^- (?:👀【観戦】|⏱️【1戦のみ】|🌙【2戦目〜】)?/, suffixTag);
+    } else if (inLateSection && !isPair && !isLateJoin(line)) {
       line = line.replace(/^- /, '- 🌙【2戦目〜】');
     }
     out.push(line.trimEnd());
