@@ -152,7 +152,7 @@ export async function GET() {
         ign: player.ign || '',
         highest_rank: player.highest_rank || 'UNRANKED',
         coins: player.coins ?? player.role_preferences?.coins ?? 1000,
-        role_preferences: player.role_preferences || { primary: 'FILL', secondary: 'FILL', ng_roles: [] },
+        role_preferences: player.role_preferences || { primary: 'ALL', secondary: 'ALL', ng_roles: [] },
         ng_lane_1: player.ng_lane_1 || null,
         ng_lane_2: player.ng_lane_2 || null,
         stats: dynamicStats,
@@ -200,10 +200,12 @@ export async function POST(req: Request) {
     }
 
     const currentPrefs = player.role_preferences || {};
+    // FILL は ALL に統一して保存する（チーム分けは ALL だけを「どこでもOK」として扱う。2026-10-17）
+    const unifyAll = (v: any) => (typeof v === 'string' && ['FILL', 'ANY'].includes(v.toUpperCase()) ? 'ALL' : v);
     const updatedPrefs = {
       ...currentPrefs,
-      primary: primary || currentPrefs.primary || 'FILL',
-      secondary: secondary || currentPrefs.secondary || 'FILL',
+      primary: unifyAll(primary || currentPrefs.primary || 'ALL'),
+      secondary: unifyAll(secondary || currentPrefs.secondary || 'ALL'),
       ng_roles: Array.isArray(ng_roles) ? ng_roles : (currentPrefs.ng_roles || []),
       ...(mentorship !== undefined ? { mentorship } : {}),
     };

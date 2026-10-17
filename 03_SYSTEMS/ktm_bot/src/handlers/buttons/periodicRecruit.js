@@ -52,8 +52,15 @@ function buildEntrySuffix(playerRow, def) {
       try { pref = JSON.parse(pref); } catch (e) {}
     }
     if (pref && (pref.primary || pref.secondary)) {
-      const p1 = pref.primary && pref.primary !== '指定なし' && pref.primary !== 'なし' ? pref.primary : '';
-      const p2 = pref.secondary && pref.secondary !== '指定なし' && pref.secondary !== 'なし' ? pref.secondary : '';
+      // FILL・ANY は ALL と同じ意味なので ALL に統一して表示する（2026-10-17。ALL と FILL が混ざって見えていた）
+      const lane = (v) => {
+        if (!v || v === '指定なし' || v === 'なし' || v === '-') return '';
+        const u = String(v).toUpperCase();
+        return u === 'FILL' || u === 'ANY' ? 'ALL' : v;
+      };
+      const p1 = lane(pref.primary);
+      let p2 = lane(pref.secondary);
+      if (p2 === p1) p2 = '';
       if (p1 && p2) {
         lanePrefStr = ` 【${p1}/${p2}】`;
       } else if (p1 || p2) {

@@ -20,7 +20,7 @@ const ROLES = [
   { id: "MID", name: "ミッド", icon: Zap, color: "text-secondary-600 border-secondary-edge-strong/40 bg-secondary-500/10" },
   { id: "ADC", name: "ボット(ADC)", icon: Target, color: "text-danger-600 border-danger-edge-strong/40 bg-danger-500/10" },
   { id: "SUP", name: "サポート", icon: Heart, color: "text-primary-600 border-primary-edge-strong/40 bg-primary-500/10" },
-  { id: "FILL", name: "おまかせ(FILL)", icon: Shuffle, color: "text-muted border-stone-500/40 bg-stone-500/10" },
+  { id: "ALL", name: "おまかせ(ALL)", icon: Shuffle, color: "text-muted border-stone-500/40 bg-stone-500/10" },
 ];
 
 const PLAYSTYLE_ITEMS = [
@@ -63,8 +63,10 @@ const PLAYSTYLE_ITEMS = [
 
 export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsPanelProps) {
   const prefs = player?.role_preferences || {};
-  const [primaryRole, setPrimaryRole] = useState<string>(prefs.primary || "FILL");
-  const [secondaryRole, setSecondaryRole] = useState<string>(prefs.secondary || "FILL");
+  // 旧データの FILL は ALL と同じ意味（2026-10-17 統一）
+  const toAll = (v?: string) => (!v || v === "FILL" ? "ALL" : v);
+  const [primaryRole, setPrimaryRole] = useState<string>(toAll(prefs.primary));
+  const [secondaryRole, setSecondaryRole] = useState<string>(toAll(prefs.secondary));
   const [ngRoles, setNgRoles] = useState<string[]>(prefs.ng_roles || [player?.ng_lane_1, player?.ng_lane_2].filter(Boolean));
   const [ign, setIgn] = useState<string>(player?.ign || "");
   // こだわり度（1:絶対 / 2:通常 / 3:柔軟）と格上許可。チーム分けで使う（2026-10-17 マイページから設定可能に）
@@ -117,8 +119,8 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
   useEffect(() => {
     if (player) {
       const p = player.role_preferences || {};
-      setPrimaryRole(p.primary || "FILL");
-      setSecondaryRole(p.secondary || "FILL");
+      setPrimaryRole(toAll(p.primary));
+      setSecondaryRole(toAll(p.secondary));
       setNgRoles(p.ng_roles || [player.ng_lane_1, player.ng_lane_2].filter(Boolean));
       setIgn(player.ign || "");
       setWeight([1, 2, 3].includes(Number(player.weight)) ? Number(player.weight) : 2);
@@ -176,7 +178,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
   };
 
   const toggleNgRole = (roleId: string) => {
-    if (roleId === "FILL") return;
+    if (roleId === "ALL") return;
     if (ngRoles.includes(roleId)) {
       setNgRoles(ngRoles.filter((r) => r !== roleId));
     } else {
@@ -390,7 +392,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
           </span>
         </label>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-          {ROLES.filter((r) => r.id !== "FILL").map((r) => {
+          {ROLES.filter((r) => r.id !== "ALL").map((r) => {
             const Icon = r.icon;
             const isNg = ngRoles.includes(r.id);
             return (

@@ -121,7 +121,10 @@ export async function POST(request: Request) {
         'TOP': 'TOP',
         'MID': 'MID',
         'ADC': 'ADC',
-        'ALL': 'ALL'
+        'ALL': 'ALL',
+        // FILL も「どこでもOK」。以前は未対応で、FILL の人はどのレーンでも希望外として扱われていた（2026-10-17）
+        'FILL': 'ALL',
+        'ANY': 'ALL'
       };
 
       const rawPref1 = dbPlayer.role_preferences?.primary || 'ALL';
