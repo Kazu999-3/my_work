@@ -85,6 +85,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
 
   // 編集・削除用の追加ステート
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
+  const [tapSwapIndex, setTapSwapIndex] = useState<number | null>(null);
   const [draggedParticipantIndex, setDraggedParticipantIndex] = useState<number | null>(null);
   const [playersPool, setPlayersPool] = useState<{ name: string }[]>([]);
   const [championsList, setChampionsList] = useState<{ id: string, name: string }[]>([]);
@@ -241,8 +242,18 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
     e.preventDefault();
     const rawIndex = e.dataTransfer.getData('text/plain');
     if (!rawIndex) return;
-    const sourceIndex = parseInt(rawIndex, 10);
+    swapParticipants(parseInt(rawIndex, 10), targetIndex);
+  };
 
+  // 「⠿ を押す → 入れ替えたい相手の ⠿ を押す」で入れ替える（2026-10-18）。
+  // 行の大半が入力欄でドラッグを始めにくく、スマホではドラッグ自体が動かないため。
+  const handleTapSwap = (index: number) => {
+    if (tapSwapIndex === null) { setTapSwapIndex(index); return; }
+    if (tapSwapIndex !== index) swapParticipants(tapSwapIndex, index);
+    setTapSwapIndex(null);
+  };
+
+  const swapParticipants = (sourceIndex: number, targetIndex: number) => {
     if (isNaN(sourceIndex) || sourceIndex === targetIndex) return;
     if (!editingMatch) return;
 
@@ -427,7 +438,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                   {isAdmin && (
                     <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                       <button
-                        onClick={() => setEditingMatch(JSON.parse(JSON.stringify(match)))}
+                        onClick={() => { setTapSwapIndex(null); setEditingMatch(JSON.parse(JSON.stringify(match))); }}
                         className="p-1.5 bg-black/10 hover:bg-black/20 border border-border text-primary-600 rounded-lg transition cursor-pointer"
                         title="試合履歴を編集"
                       >
@@ -591,6 +602,12 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
               </button>
             </div>
 
+            <p className="text-xs text-muted-strong -mt-3 mb-4">
+              {tapSwapIndex === null
+                ? '入れ替え: ⠿ を押してから、入れ替えたい相手の ⠿ を押します（同じチーム内。ドラッグでも可）'
+                : '入れ替える相手の ⠿ を押してください（同じ ⠿ をもう一度押すと取り消し）'}
+            </p>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6">
               {/* BLUE TEAM INPUT */}
               <div>
@@ -601,21 +618,28 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                     if (idx === -1) return null;
                     const p = editingMatch.participants[idx];
                     const isDragging = draggedParticipantIndex === idx;
+                    const isTapSelected = tapSwapIndex === idx;
                     return (
                       <div 
                         key={`edit-BLUE-${role}`} 
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, idx)}
                         onDragOver={handleDragOver}
                         onDrop={(e) => handleDrop(e, idx)}
                         onDragEnd={() => setDraggedParticipantIndex(null)}
-                        className={`flex flex-wrap items-center gap-2 bg-black/5 p-3 rounded-lg border border-border cursor-grab active:cursor-grabbing hover:bg-black/8 hover:border-border transition-all ${
-                          isDragging ? 'opacity-40 border-dashed border-primary-edge-strong bg-surface' : ''
+                        className={`flex flex-wrap items-center gap-2 bg-black/5 p-3 rounded-lg border border-border hover:bg-black/8 hover:border-border transition-all ${
+                          isDragging ? 'opacity-40 border-dashed border-primary-edge-strong bg-surface' : isTapSelected ? 'ring-2 ring-primary-500 border-primary-edge-strong' : ''
                         }`}
                       >
-                        <div className="text-muted-strong hover:text-foreground-subtle transition cursor-grab shrink-0">
-                          <GripVertical className="h-4 w-4" />
-                        </div>
+                        <button
+                          type="button"
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, idx)}
+                          onDragEnd={() => setDraggedParticipantIndex(null)}
+                          onClick={() => handleTapSwap(idx)}
+                          title="押してから、入れ替えたい相手の ⠿ を押すと入れ替わります（同じチーム内）"
+                          className={`p-1 -m-1 rounded transition shrink-0 cursor-grab active:cursor-grabbing ${isTapSelected ? 'bg-primary-500 text-white' : 'text-muted-strong hover:text-foreground-subtle hover:bg-black/10'}`}
+                        >
+                          <GripVertical className="h-5 w-5" />
+                        </button>
                         <div className="w-8 text-center font-bold text-muted-strong text-xs">{role}</div>
                         <select
                           value={p.player_name}
@@ -680,21 +704,28 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                     if (idx === -1) return null;
                     const p = editingMatch.participants[idx];
                     const isDragging = draggedParticipantIndex === idx;
+                    const isTapSelected = tapSwapIndex === idx;
                     return (
                       <div 
                         key={`edit-RED-${role}`} 
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, idx)}
                         onDragOver={handleDragOver}
                         onDrop={(e) => handleDrop(e, idx)}
                         onDragEnd={() => setDraggedParticipantIndex(null)}
-                        className={`flex flex-wrap items-center gap-2 bg-black/5 p-3 rounded-lg border border-border cursor-grab active:cursor-grabbing hover:bg-black/8 hover:border-border transition-all ${
-                          isDragging ? 'opacity-40 border-dashed border-danger-edge-strong bg-surface' : ''
+                        className={`flex flex-wrap items-center gap-2 bg-black/5 p-3 rounded-lg border border-border hover:bg-black/8 hover:border-border transition-all ${
+                          isDragging ? 'opacity-40 border-dashed border-danger-edge-strong bg-surface' : isTapSelected ? 'ring-2 ring-primary-500 border-primary-edge-strong' : ''
                         }`}
                       >
-                        <div className="text-muted-strong hover:text-foreground-subtle transition cursor-grab shrink-0">
-                          <GripVertical className="h-4 w-4" />
-                        </div>
+                        <button
+                          type="button"
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, idx)}
+                          onDragEnd={() => setDraggedParticipantIndex(null)}
+                          onClick={() => handleTapSwap(idx)}
+                          title="押してから、入れ替えたい相手の ⠿ を押すと入れ替わります（同じチーム内）"
+                          className={`p-1 -m-1 rounded transition shrink-0 cursor-grab active:cursor-grabbing ${isTapSelected ? 'bg-primary-500 text-white' : 'text-muted-strong hover:text-foreground-subtle hover:bg-black/10'}`}
+                        >
+                          <GripVertical className="h-5 w-5" />
+                        </button>
                         <div className="w-8 text-center font-bold text-muted-strong text-xs">{role}</div>
                         <select
                           value={p.player_name}
