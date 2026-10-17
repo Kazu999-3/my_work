@@ -29,7 +29,7 @@ export const DAY_DEFS = {
     label: '土曜',
     name: '土曜・本戦カスタム',
     shortName: '土曜本戦カスタム',
-    rule: 'ランク差を作らない実力伯仲マッチ。最多MMR帯から1ティア差以内を基準に選出（1つ下と1つ上の両方がいれば下を優先、2ティア以上離れた人は観戦・交代枠。ただし同じ帯・同じレーン希望の2人は🤝対面枠として出場。エメラルド以上はプラチナ、アイアン・未ランクはブロンズと同じ枠。MMR変動あり）',
+    rule: '実力伯仲の真剣勝負。参加者は全員出場が基本で、チームはMMRで五分五分に調整。格上と対面したくない人はマイページの設定で保護、希望レーンはこだわり度で守ります（MMR変動あり）',
     joinPrefix: 'join_periodic_auto',
     showRank: true,   // 参加者行にランク表記を出すか（日曜はランク不問なので出さない）
     buttonStyle: 1,   // Primary (Blue)
@@ -479,11 +479,13 @@ export function parseEntryBreakdown(lines, dominantTierKey = null) {
  */
 export function computeDayStatus(countOrLines, capacity = DAY_CAPACITY, dayKey = 'sat') {
   if (Array.isArray(countOrLines)) {
-    const dominantTierInfo = (dayKey === 'sat')
-      ? computeDominantTierInfo(countOrLines)
-      : { key: '', text: '', rangeText: '' };
+    // 2026-10-17: ランク（最多の帯）で出場対象を絞るのをやめ、土曜も全員出場を基本にした（ユーザー判断）。
+    // 実際の参加は毎回10〜15人で、帯で絞ると「人はいるのに第1戦が足りず中止」になっていたため。
+    // 格差への配慮はポータルのバランサー（格上との対面の保護・こだわり度・出る人の選び方）で行う。
+    // 観戦・2部屋目待ちは自分で観戦を選んだ人だけ。帯で分ける処理（parseEntryBreakdown の第2引数）は使わない。
+    const dominantTierInfo = { key: '', text: '', rangeText: '' };
 
-    const breakdown = parseEntryBreakdown(countOrLines, dominantTierInfo.key);
+    const breakdown = parseEntryBreakdown(countOrLines, null);
     // ★ カウント・プログレスバーは出場対象枠（eligibleTotal）を基準にする
     const joined = breakdown.eligibleTotal;
     const remaining = Math.max(0, capacity - joined);
@@ -672,10 +674,9 @@ export function buildRecruitmentContent(target, notificationRoleId) {
 ⚔️ 実力伯仲の真剣勝負（チームは五分五分に自動調整）。初参加・初心者も歓迎です🔰
 🕒 21:00〜3戦ほど（24時頃から自由参加のメイヘム）
 
-⚖️ **参加の基準（KTM MMR）**
-・一番多い帯と、その隣の帯の人で部屋を組みます（隣が上下両方いたら下を優先）
-・2つ以上離れた人は観戦・2部屋目待ち。同じ帯で同じレーン希望の2人は🤝対面枠で出場
-・20人集まれば2部屋に分けて全員出場
+⚖️ **チーム分け**
+・参加者は全員出場が基本。11人以上の回は試合ごとに交代します
+・格上と同じレーンで当たりたくない人は保護されます（マイページの「格上との対面」で変更可）
 
 🏷️ 🔰初参加 ｜ 🌱ライト(1〜14戦) ｜ 👑常連 ｜ 🎖️経験者 ｜ ⏳復帰勢`.trim();
   }

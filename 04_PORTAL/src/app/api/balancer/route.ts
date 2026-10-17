@@ -211,7 +211,20 @@ export async function POST(request: Request) {
       }).sort((a, b) => a - b);
       const medianMmr = allCandidateMmrs.length > 0 ? allCandidateMmrs[Math.floor(allCandidateMmrs.length / 2)] : 1200;
 
+      // 11人以上の時に出る人の選び方（バランサー画面で主催者が選ぶ。2026-10-17）
+      // fair: 休んだ回数（待機Pity）順（従来どおり）/ low: MMRの低い人から出る / high: MMRの高い人から出る
+      const selectionMode: 'fair' | 'low' | 'high' = ['low', 'high'].includes(body.selectionMode) ? body.selectionMode : 'fair';
+      const repMmr = (p: Player) => {
+        const main = p.pref1 as Role;
+        return (main && ['TOP', 'JG', 'MID', 'ADC', 'SUP'].includes(main)) ? p.rates[main] : (Object.values(p.rates).reduce((s, v) => s + v, 0) / 5);
+      };
+
       candidateInfo.sort((a, b) => {
+        if (selectionMode !== 'fair') {
+          const diff = repMmr(a.player) - repMmr(b.player);
+          if (diff !== 0) return selectionMode === 'low' ? diff : -diff;
+          return b.spectator_pity - a.spectator_pity;
+        }
         // 格上未許可保護: 全体中央値より200以上低く、かつ allowHigher が false の場合は選抜優先度を下げる（後ろへ回す）
         const aMain = a.player.pref1 as Role;
         const bMain = b.player.pref1 as Role;
@@ -229,8 +242,9 @@ export async function POST(request: Request) {
       });
 
       // 待機Pity（spectator_pity）が高い人を「強制選出」にする
-      const highPityCandidates = candidateInfo.filter(c => c.spectator_pity >= 10).map(c => c.player);
-      const otherCandidates = candidateInfo.filter(c => c.spectator_pity < 10).map(c => c.player);
+      // 低レート優先・高レート優先は主催者の明示的な選択なので、待機Pityによる強制選出はしない
+      const highPityCandidates = selectionMode === 'fair' ? candidateInfo.filter(c => c.spectator_pity >= 10).map(c => c.player) : [];
+      const otherCandidates = candidateInfo.filter(c => !highPityCandidates.includes(c.player)).map(c => c.player);
 
       // 対面に必要な残り人数
       const needed = Math.max(0, 10 - fixedPlayers.length - highPityCandidates.length);

@@ -138,7 +138,7 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                   <th className="px-1.5 py-3 font-medium text-center text-danger-700">NG 1</th>
                   <th className="px-1.5 py-3 font-medium text-center text-danger-700">NG 2</th>
                   <SortableHeader label="こだわり" sortKey="weight" className="px-1.5 text-center" />
-                  <SortableHeader label="格上" sortKey="allow_higher" className="px-1.5 text-center" />
+                  <SortableHeader label="格上OK" sortKey="allow_higher" className="px-1.5 text-center" />
                   <th className="px-2 py-3 font-medium text-center">Pity (正/負/観)</th>
                   <th className="px-2 py-3 font-medium">備考</th>
                 </tr>
@@ -387,6 +387,10 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                           );
                         })()}
                         <span className={`text-xs font-semibold ${getColorFromRankName(p.highest_rank)}`}>{p.highest_rank ? p.highest_rank.split(' ')[0] : 'UNR'}</span>
+                        {/* 格上との対面OKの人だけ印を付ける（保護ありが大多数のため。2026-10-17） */}
+                        {p.allow_higher && (
+                          <span className="text-[9px] font-black px-1.5 py-0.2 rounded border bg-danger-100 text-danger-700 border-danger-edge-soft" title="格上との対面OK（保護なし）">⚔️格上OK</span>
+                        )}
                         
                         {/* MMR ＆ KTMランクバッジ */}
                         <div className="ml-auto flex items-center gap-1" title={tooltip}>

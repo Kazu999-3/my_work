@@ -81,6 +81,8 @@ export default function BalancerPage() {
 
   // BL-02: 探索強度（常に200=精密で固定）
   const [searchDepth, setSearchDepth] = useState(200);
+  // 11人以上の時に出る人の選び方（公平 / 低レート優先 / 高レート優先）
+  const [selectionMode, setSelectionMode] = useState<'fair' | 'low' | 'high'>('fair');
 
   // 格差診断: 参加者をMMR順に2人ずつペアにし、「近い実力の相手がいない人」を検出する。
   // チーム全体のMMR幅より「レーン対面の格差」が体験に効くため、対面を組めない外れ値を警告する。
@@ -194,6 +196,7 @@ export default function BalancerPage() {
             };
           }),
           searchDepth, // BL-02: 探索強度
+          selectionMode,
           handicapPenalty: HANDICAP_MMR_PENALTY,
         })
       });
@@ -335,7 +338,7 @@ export default function BalancerPage() {
         <BalancerHeader
           players={players} setPlayers={setPlayers} saving={saving} announcingStats={actions.announcingStats} isAdmin={isAdmin}
           setShowAdminPanel={setShowAdminPanel} integrityData={integrityData} balancing={balancing} balanceResult={balanceResult}
-          showResultModal={showResultModal} setShowResultModal={setShowResultModal} searchDepth={searchDepth} setSearchDepth={setSearchDepth}
+          showResultModal={showResultModal} setShowResultModal={setShowResultModal} searchDepth={searchDepth} setSearchDepth={setSearchDepth} selectionMode={selectionMode} setSelectionMode={setSelectionMode}
           selectedTable={selectedTable} setSelectedTable={setSelectedTable} bo3State={bo3.bo3State} handleResetBo3={bo3.handleResetBo3}
           handleAnnounceStats={actions.handleAnnounceStats} handleBalance={handleBalance}
           handleFestivalRandomBalance={handleFestivalRandomBalance} activeCount={activeCount} spectatorCount={spectatorCount}

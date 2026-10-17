@@ -479,6 +479,10 @@ export async function processSingleIntroMessage(msg: {
       initial_prefs: newPrefs,
       ng_lane_1: parsed.ngLane1 || null,
       ng_lane_2: parsed.ngLane2 || null,
+      // 新しい人は「こだわり: 通常」「格上との対面: 避けたい（保護あり）」で始める（2026-10-17）。
+      // 以前はここで指定しておらず DB の初期値（格上OK）になり、保護したい新しい人ほど保護が外れていた
+      weight: 2,
+      allow_higher: false,
       metadata: {
         joined_at: new Date().toISOString(),
         initial_highest_rank: rankTier,
@@ -592,6 +596,7 @@ export async function processSingleIntroMessage(msg: {
       `・**現在のランク**: \`${rankDisplay}\`（初期KTM MMR: \`${initialMmr}\`）`,
       `・**希望レーン**: メイン \`${parsed.mainLane}\` / サブ \`${parsed.subLane}\``,
       ngLine,
+      `・**チーム分けの設定**: こだわり \`通常\` / 格上との対面 \`避けたい（保護あり）\`（[マイページ](<${mypageUrl}>) の設定からいつでも変えられます）`,
       `・**初期所持コイン**: \`1,000 🪙\``,
       '',
       `🎉 **付与されたロール**:`,

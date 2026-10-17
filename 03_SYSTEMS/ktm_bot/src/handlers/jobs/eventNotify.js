@@ -348,7 +348,7 @@ export async function checkCustomStatusAt2000(env) {
       return;
     }
 
-    // A-3. 観戦・2部屋目待ちの人まで含めれば第1戦が10名になる → 観戦の人へ参加のお願い（中止にしない。2026-10-17）
+    // A-3. 観戦希望の人まで含めれば第1戦が10名になる → 観戦の人へ参加のお願い（中止にしない。2026-10-17）
     const spectatorLinesForMatch1 = (breakdown?.spectatorLines || []).filter((l) => !/2戦目/.test(l));
     if (breakdown && firstMatchCount + spectatorLinesForMatch1.length >= DAY_CAPACITY) {
       const spectatorIds = idsIn(spectatorLinesForMatch1);
@@ -358,7 +358,7 @@ export async function checkCustomStatusAt2000(env) {
         body: JSON.stringify({
           content: `🙋 **【参加のお願い】${def.name}**\n` +
             `第1戦の出場対象は ${firstMatchCount}/${DAY_CAPACITY}名 で、あと **${shortfall}名** 足りません。\n` +
-            `観戦・2部屋目待ちの方が入ってくれれば開催できます。ランク差ありでも参加OKな方は、このメッセージに ✅ で返事をお願いします🙏\n` +
+            `観戦希望の方が入ってくれれば開催できます。出られそうな方は、このメッセージに ✅ で返事をお願いします🙏\n` +
             `（集まり次第、主催者が開催を判断します）` +
             (spectatorIds.length ? `\n\n${spectatorIds.map((id) => `<@${id}>`).join(' ')}` : ''),
           allowed_mentions: { users: spectatorIds },

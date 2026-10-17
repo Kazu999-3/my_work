@@ -16,7 +16,7 @@ import { RoleIcon, getPlayerCasinoBadges, MAX_VISIBLE_BADGES, CasinoBadges, getG
 
 // ヘッダー（タイトル・操作ボタン群）
 // 2026-10-07: app/balancer/page.tsx（3,029行）から分割。表示内容・動作は分割前と同じ。状態は page.tsx が持ち、ここは props で受け取って描画するだけ。
-export default function BalancerHeader({ players, setPlayers, saving, isAdmin, setShowAdminPanel, integrityData, balancing, balanceResult, showResultModal, setShowResultModal, selectedTable, setSelectedTable, bo3State, handleResetBo3, handleBalance, handleFestivalRandomBalance, activeCount, spectatorCount, inactiveCount, canBalance }: {
+export default function BalancerHeader({ players, setPlayers, saving, isAdmin, setShowAdminPanel, integrityData, balancing, balanceResult, showResultModal, setShowResultModal, selectedTable, setSelectedTable, bo3State, handleResetBo3, handleBalance, handleFestivalRandomBalance, activeCount, spectatorCount, inactiveCount, canBalance, selectionMode, setSelectionMode }: {
   players: any[];
   setPlayers: React.Dispatch<React.SetStateAction<any[]>>;
   saving: boolean;
@@ -41,6 +41,8 @@ export default function BalancerHeader({ players, setPlayers, saving, isAdmin, s
   spectatorCount: number;
   inactiveCount: number;
   canBalance: boolean;
+  selectionMode?: 'fair' | 'low' | 'high';
+  setSelectionMode?: React.Dispatch<React.SetStateAction<'fair' | 'low' | 'high'>>;
 }) {
   return (
         <div className="flex flex-col gap-3 border-b border-border pb-4">
@@ -193,6 +195,23 @@ export default function BalancerHeader({ players, setPlayers, saving, isAdmin, s
                   {selectedTable.label}でチーム分け
                   <button onClick={() => setSelectedTable(null)} className="text-primary-700/70 hover:text-foreground">✕</button>
                 </span>
+              )}
+
+              {/* 11人以上の時に出る人の選び方（2026-10-17） */}
+              {activeCount > 10 && setSelectionMode && (
+                <label className="flex items-center gap-1.5 text-xs font-bold text-foreground-soft">
+                  出る人:
+                  <select
+                    value={selectionMode}
+                    onChange={(e) => setSelectionMode(e.target.value as 'fair' | 'low' | 'high')}
+                    className="px-2 py-2 rounded-xl text-xs font-bold bg-surface border border-border text-foreground"
+                    title="参加者が11人以上の時、この試合に出る10人をどう選ぶか"
+                  >
+                    <option value="fair">公平（休んだ回数順）</option>
+                    <option value="low">低レート優先</option>
+                    <option value="high">高レート優先</option>
+                  </select>
+                </label>
               )}
 
               {/* 🎪 日曜お祭りランダム（控えめなサブボタン化） */}

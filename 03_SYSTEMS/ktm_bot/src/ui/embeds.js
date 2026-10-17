@@ -528,9 +528,9 @@ function renderEntryList(lines, status) {
       sections.push(`**🌙 2戦目から合流（${b.match2LateLines.length}名）**\n${b.match2LateLines.map(stripLate).join('\n')}`);
     }
 
-    // 3. 観戦・2部屋目待ち（2ティア差離れたメンバー等）
+    // 3. 観戦希望（自分で観戦を選んだ人。2026-10-17 から帯で回される人はいない）
     if (b.spectatorLines && b.spectatorLines.length > 0) {
-      sections.push(`**👀 観戦・2部屋目待ち（${b.spectatorTotal}名）**\n${b.spectatorLines.map(toSuffix).join('\n')}`);
+      sections.push(`**👀 観戦希望（${b.spectatorTotal}名）**\n${b.spectatorLines.map(toSuffix).join('\n')}`);
     }
 
     if (sections.length > 0) {
@@ -559,7 +559,8 @@ export function applyDayCardState(embed, dayKey, entryLines) {
   const lines = entryLines || [];
   const status = computeDayStatus(lines, undefined, dayKey);
   // 最多ランク帯は土曜（チーム分け基準あり）でのみ意味を持つ。
-  const dominantTierText = def.showRank ? computeDominantTier(lines) : '';
+  // 2026-10-17: 帯で出場対象を絞らなくなったので「〇〇基準」は出さない（computeDayStatus 参照）
+  const dominantTierText = '';
   const banner = buildDayBanner(def.key, status, dominantTierText);
 
   // description は純粋にバナー（状況表示）のみとし、ルール等の解説は埋め込み外（メッセージ本文）に任せる
