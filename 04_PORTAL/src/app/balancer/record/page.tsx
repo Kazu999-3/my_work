@@ -960,8 +960,15 @@ function CustomRecordPageContent() {
                             💎 {(s.penta_kills || 0) > 0 ? `${s.penta_kills}` : '0'}
                           </button>
                           {/* CS・ゴールドの手入力（スコアボード画像が無い時・読み違えた時用。2026-10-18） */}
-                          <input type="number" min={0} value={s.cs || ''} onChange={e => handleStatChangeByIndex(index, 'cs', e.target.value)} className="ml-1.5 w-14 bg-surface border border-border text-foreground text-center rounded py-1 text-xs" placeholder="CS" title="CS" />
-                          <input type="number" min={0} value={s.gold || ''} onChange={e => handleStatChangeByIndex(index, 'gold', e.target.value)} className="w-16 bg-surface border border-primary-edge-soft text-primary-700 text-center rounded py-1 text-xs" placeholder="ゴールド" title="獲得ゴールド" />
+                          {/* 数字が入るとプレースホルダーが消えて何の欄か分からなくなるので、見出しを常に出す */}
+                          <label className="ml-1.5 flex items-center gap-0.5 text-[10px] font-bold text-muted-strong">
+                            CS
+                            <input type="number" min={0} value={s.cs || ''} onChange={e => handleStatChangeByIndex(index, 'cs', e.target.value)} className="w-14 bg-surface border border-border text-foreground text-center rounded py-1 text-xs" placeholder="-" title="CS" />
+                          </label>
+                          <label className="flex items-center gap-0.5 text-[10px] font-bold text-primary-700">
+                            G
+                            <input type="number" min={0} value={s.gold || ''} onChange={e => handleStatChangeByIndex(index, 'gold', e.target.value)} className="w-16 bg-surface border border-primary-edge-soft text-primary-700 text-center rounded py-1 text-xs" placeholder="-" title="獲得ゴールド" />
+                          </label>
                         </div>
                       </div>
                     </div>
@@ -1037,8 +1044,15 @@ function CustomRecordPageContent() {
                             💎 {(s.penta_kills || 0) > 0 ? `${s.penta_kills}` : '0'}
                           </button>
                           {/* CS・ゴールドの手入力（スコアボード画像が無い時・読み違えた時用。2026-10-18） */}
-                          <input type="number" min={0} value={s.cs || ''} onChange={e => handleStatChangeByIndex(index, 'cs', e.target.value)} className="ml-1.5 w-14 bg-surface border border-border text-foreground text-center rounded py-1 text-xs" placeholder="CS" title="CS" />
-                          <input type="number" min={0} value={s.gold || ''} onChange={e => handleStatChangeByIndex(index, 'gold', e.target.value)} className="w-16 bg-surface border border-primary-edge-soft text-primary-700 text-center rounded py-1 text-xs" placeholder="ゴールド" title="獲得ゴールド" />
+                          {/* 数字が入るとプレースホルダーが消えて何の欄か分からなくなるので、見出しを常に出す */}
+                          <label className="ml-1.5 flex items-center gap-0.5 text-[10px] font-bold text-muted-strong">
+                            CS
+                            <input type="number" min={0} value={s.cs || ''} onChange={e => handleStatChangeByIndex(index, 'cs', e.target.value)} className="w-14 bg-surface border border-border text-foreground text-center rounded py-1 text-xs" placeholder="-" title="CS" />
+                          </label>
+                          <label className="flex items-center gap-0.5 text-[10px] font-bold text-primary-700">
+                            G
+                            <input type="number" min={0} value={s.gold || ''} onChange={e => handleStatChangeByIndex(index, 'gold', e.target.value)} className="w-16 bg-surface border border-primary-edge-soft text-primary-700 text-center rounded py-1 text-xs" placeholder="-" title="獲得ゴールド" />
+                          </label>
                         </div>
                       </div>
                     </div>

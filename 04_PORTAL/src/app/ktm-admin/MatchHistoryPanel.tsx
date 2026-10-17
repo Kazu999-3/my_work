@@ -25,6 +25,7 @@ interface Participant {
   mmr_breakdown?: MmrBreakdown | null;
   champion_name?: string;
   cs?: number;
+  gold?: number | null;
   damage_dealt?: number;
   vision_score?: number;
 }
@@ -214,8 +215,11 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
     setEditingMatch(prev => {
       if (!prev) return null;
       const nextParticipants = [...prev.participants];
-      if (field === 'kills' || field === 'deaths' || field === 'assists') {
+      if (field === 'kills' || field === 'deaths' || field === 'assists' || field === 'cs') {
         nextParticipants[index] = { ...nextParticipants[index], [field]: parseInt(value) || 0 };
+      } else if (field === 'gold') {
+        // 空欄は「記録なし」（null）。0 とは区別する
+        nextParticipants[index] = { ...nextParticipants[index], gold: value === '' ? null : (parseInt(value) || 0) };
       } else {
         nextParticipants[index] = { ...nextParticipants[index], [field]: value };
       }
@@ -264,6 +268,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
         mmr_delta: pTarget.mmr_delta,
         mmr_breakdown: pTarget.mmr_breakdown,
         cs: pTarget.cs,
+        gold: pTarget.gold,
         damage_dealt: pTarget.damage_dealt,
         vision_score: pTarget.vision_score
       };
@@ -279,6 +284,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
         mmr_delta: pStart.mmr_delta,
         mmr_breakdown: pStart.mmr_breakdown,
         cs: pStart.cs,
+        gold: pStart.gold,
         damage_dealt: pStart.damage_dealt,
         vision_score: pStart.vision_score
       };
@@ -603,7 +609,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                         onDragOver={handleDragOver}
                         onDrop={(e) => handleDrop(e, idx)}
                         onDragEnd={() => setDraggedParticipantIndex(null)}
-                        className={`flex items-center gap-2 bg-black/5 p-3 rounded-lg border border-border cursor-grab active:cursor-grabbing hover:bg-black/8 hover:border-border transition-all ${
+                        className={`flex flex-wrap items-center gap-2 bg-black/5 p-3 rounded-lg border border-border cursor-grab active:cursor-grabbing hover:bg-black/8 hover:border-border transition-all ${
                           isDragging ? 'opacity-40 border-dashed border-primary-edge-strong bg-surface' : ''
                         }`}
                       >
@@ -615,7 +621,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                           value={p.player_name}
                           onChange={e => handleEditingParticipantChange(idx, 'player_name', e.target.value)}
                           onDragStart={e => e.stopPropagation()}
-                          className="w-28 bg-surface border border-border rounded px-2 py-1 text-foreground outline-none focus:border-secondary-edge-strong text-xs"
+                          className="flex-1 min-w-0 bg-surface border border-border rounded px-2 py-1 text-foreground outline-none focus:border-secondary-edge-strong text-xs"
                         >
                           <option value="">選択...</option>
                           {p.player_name && !playersPool.some(pl => pl.name === p.player_name) && (
@@ -643,12 +649,21 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                             />
                           )}
                         </button>
-                        <div className="flex-1 flex gap-1 justify-end" onDragStart={e => e.stopPropagation()}>
+                        {/* 2段目: K/D/A・CS・ゴールド（1行に詰めると枠からはみ出していた。2026-10-18） */}
+                        <div className="basis-full flex flex-wrap gap-1 justify-end items-center" onDragStart={e => e.stopPropagation()}>
                           <input type="number" value={p.kills} onChange={e => handleEditingParticipantChange(idx, 'kills', e.target.value)} className="w-10 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="K" />
                           <span className="text-muted-strong text-xs self-center">/</span>
                           <input type="number" value={p.deaths} onChange={e => handleEditingParticipantChange(idx, 'deaths', e.target.value)} className="w-10 bg-surface border border-danger-edge-soft text-danger-700 text-center rounded text-xs py-0.5" placeholder="D" />
                           <span className="text-muted-strong text-xs self-center">/</span>
                           <input type="number" value={p.assists} onChange={e => handleEditingParticipantChange(idx, 'assists', e.target.value)} className="w-10 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="A" />
+                          <label className="ml-1.5 flex items-center gap-0.5 text-[10px] font-bold text-muted-strong">
+                            CS
+                            <input type="number" min={0} value={p.cs ?? ''} onChange={e => handleEditingParticipantChange(idx, 'cs', e.target.value)} className="w-12 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="-" />
+                          </label>
+                          <label className="flex items-center gap-0.5 text-[10px] font-bold text-primary-700">
+                            G
+                            <input type="number" min={0} value={p.gold ?? ''} onChange={e => handleEditingParticipantChange(idx, 'gold', e.target.value)} className="w-14 bg-surface border border-primary-edge-soft text-primary-700 text-center rounded text-xs py-0.5" placeholder="-" />
+                          </label>
                         </div>
                       </div>
                     );
@@ -673,7 +688,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                         onDragOver={handleDragOver}
                         onDrop={(e) => handleDrop(e, idx)}
                         onDragEnd={() => setDraggedParticipantIndex(null)}
-                        className={`flex items-center gap-2 bg-black/5 p-3 rounded-lg border border-border cursor-grab active:cursor-grabbing hover:bg-black/8 hover:border-border transition-all ${
+                        className={`flex flex-wrap items-center gap-2 bg-black/5 p-3 rounded-lg border border-border cursor-grab active:cursor-grabbing hover:bg-black/8 hover:border-border transition-all ${
                           isDragging ? 'opacity-40 border-dashed border-danger-edge-strong bg-surface' : ''
                         }`}
                       >
@@ -685,7 +700,7 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                           value={p.player_name}
                           onChange={e => handleEditingParticipantChange(idx, 'player_name', e.target.value)}
                           onDragStart={e => e.stopPropagation()}
-                          className="w-28 bg-surface border border-border rounded px-2 py-1 text-foreground outline-none focus:border-danger-edge-strong text-xs"
+                          className="flex-1 min-w-0 bg-surface border border-border rounded px-2 py-1 text-foreground outline-none focus:border-danger-edge-strong text-xs"
                         >
                           <option value="">選択...</option>
                           {p.player_name && !playersPool.some(pl => pl.name === p.player_name) && (
@@ -713,12 +728,21 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                             />
                           )}
                         </button>
-                        <div className="flex-1 flex gap-1 justify-end" onDragStart={e => e.stopPropagation()}>
+                        {/* 2段目: K/D/A・CS・ゴールド（1行に詰めると枠からはみ出していた。2026-10-18） */}
+                        <div className="basis-full flex flex-wrap gap-1 justify-end items-center" onDragStart={e => e.stopPropagation()}>
                           <input type="number" value={p.kills} onChange={e => handleEditingParticipantChange(idx, 'kills', e.target.value)} className="w-10 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="K" />
                           <span className="text-muted-strong text-xs self-center">/</span>
                           <input type="number" value={p.deaths} onChange={e => handleEditingParticipantChange(idx, 'deaths', e.target.value)} className="w-10 bg-surface border border-danger-edge-soft text-danger-700 text-center rounded text-xs py-0.5" placeholder="D" />
                           <span className="text-muted-strong text-xs self-center">/</span>
                           <input type="number" value={p.assists} onChange={e => handleEditingParticipantChange(idx, 'assists', e.target.value)} className="w-10 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="A" />
+                          <label className="ml-1.5 flex items-center gap-0.5 text-[10px] font-bold text-muted-strong">
+                            CS
+                            <input type="number" min={0} value={p.cs ?? ''} onChange={e => handleEditingParticipantChange(idx, 'cs', e.target.value)} className="w-12 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="-" />
+                          </label>
+                          <label className="flex items-center gap-0.5 text-[10px] font-bold text-primary-700">
+                            G
+                            <input type="number" min={0} value={p.gold ?? ''} onChange={e => handleEditingParticipantChange(idx, 'gold', e.target.value)} className="w-14 bg-surface border border-primary-edge-soft text-primary-700 text-center rounded text-xs py-0.5" placeholder="-" />
+                          </label>
                         </div>
                       </div>
                     );

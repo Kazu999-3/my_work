@@ -222,6 +222,8 @@ export async function PUT(
       champion_name: p.champion_name || null,
       kda_score: Number(p.deaths) === 0 ? (Number(p.kills) + Number(p.assists)) * 1.2 : Number(((Number(p.kills) + Number(p.assists)) / Number(p.deaths)).toFixed(2)),
       cs: p.cs !== undefined ? Number(p.cs) : null,
+      // 0・空欄は「記録なし」（null）。記録画面と同じ扱い（2026-10-18）
+      gold: Number(p.gold) > 0 && Number(p.gold) < 100000 ? Math.round(Number(p.gold)) : null,
       damage_dealt: p.damage_dealt !== undefined ? Number(p.damage_dealt) : null,
       vision_score: p.vision_score !== undefined ? Number(p.vision_score) : null,
       mmr_delta: p.mmr_delta !== undefined ? Number(p.mmr_delta) : 0,
