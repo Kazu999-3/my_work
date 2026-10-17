@@ -21,6 +21,7 @@ export default function CasinoTabNav({ activeTab, setActiveTab }: {
             { id: 'mines', label: '🌿 ブッシュ・スカウト' },
             { id: 'baccarat', label: '🃏 バカラ' },
             { id: 'shop', label: '🛒 ショップ' },
+            { id: 'profit', label: '📊 収支ランキング' },
           ].map((tab) => (
             <button
               key={tab.id}

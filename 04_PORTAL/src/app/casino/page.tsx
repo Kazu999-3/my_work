@@ -19,6 +19,7 @@ import LuckyDayBanner from './_casino/LuckyDayBanner';
 import UserStatusPanel from './_casino/UserStatusPanel';
 import BetTab from './_casino/BetTab';
 import ShopTab from './_casino/ShopTab';
+import ProfitRankingTab from './_casino/ProfitRankingTab';
 import CoinGuide from './_casino/CoinGuide';
 import TipModal from './_casino/TipModal';
 
@@ -407,6 +408,7 @@ export default function CasinoPage() {
         )}
 
         {activeTab === 'shop' && <ShopTab shopMessage={shopMessage} handleBuyItem={handleBuyItem} />}
+        {activeTab === 'profit' && <ProfitRankingTab myDiscordId={user?.discordId} />}
 
         <CoinGuide />
       </div>
