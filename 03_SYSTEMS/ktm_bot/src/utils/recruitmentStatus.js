@@ -29,7 +29,7 @@ export const DAY_DEFS = {
     label: '土曜',
     name: '土曜・本戦カスタム',
     shortName: '土曜本戦カスタム',
-    rule: 'ランク差を作らない実力伯仲マッチ。最多MMR帯から1ティア差以内を基準に選出（1つ下と1つ上の両方がいれば下を優先、2ティア以上離れた人は観戦・交代枠。MMR変動あり）',
+    rule: 'ランク差を作らない実力伯仲マッチ。最多MMR帯から1ティア差以内を基準に選出（1つ下と1つ上の両方がいれば下を優先、2ティア以上離れた人は観戦・交代枠。エメラルド以上はプラチナと同じ枠。MMR変動あり）',
     joinPrefix: 'join_periodic_auto',
     showRank: true,   // 参加者行にランク表記を出すか（日曜はランク不問なので出さない）
     buttonStyle: 1,   // Primary (Blue)
@@ -64,6 +64,12 @@ export function detectDayKey(text) {
   return null;
 }
 
+/** 人数表記なしのバーだけ（試合ごとの行で使う） */
+export function renderMiniBar(current, max = DAY_CAPACITY) {
+  const filled = Math.min(10, Math.max(0, Math.round((current / max) * 10)));
+  return `${'■'.repeat(filled)}${'□'.repeat(10 - filled)}`;
+}
+
 export function renderProgressBar(current, max = DAY_CAPACITY) {
   const totalBlocks = 10;
   const filled = Math.min(totalBlocks, Math.max(0, Math.round((current / max) * totalBlocks)));
@@ -81,12 +87,10 @@ export const TIER_ORDER = {
 };
 
 export const TIER_RANGE_TEXT = {
-  'エメラルド': 'プラチナ〜エメラルド',
-  'プラチナ': 'ゴールド〜プラチナ',
-  'ゴールド': 'シルバー〜プラチナ',
+  'プラチナ': 'ゴールド〜プラチナ・エメ以上',
+  'ゴールド': 'シルバー〜プラチナ・エメ以上',
   'シルバー': 'ブロンズ〜ゴールド',
   'ブロンズ': 'アイアン〜シルバー',
-  'アイアン': 'アイアン〜ブロンズ',
 };
 
 export const RANK_JP_MAP = {
@@ -104,12 +108,15 @@ export const RANK_SHORT_JP_MAP = {
 };
 
 // 正規化先の主要ランク（英語キー → 区分）。ランク語彙はこの表と RANK_JP_MAP / RANK_SHORT_JP_MAP だけに持つ
+// 2026-10-17: エメラルド以上は人数が少ないため、プラチナと同じ枠にまとめる（ユーザー判断）。
+// 別枠だと、プラチナ基準の回にエメの人が「1つ上」扱いになり、下の帯がいると観戦・2部屋目待ちへ回されていた。
 const TIER_GROUP = {
-  CHALLENGER: 'エメラルド', GRANDMASTER: 'エメラルド', MASTER: 'エメラルド', DIAMOND: 'エメラルド', EMERALD: 'エメラルド',
+  CHALLENGER: 'プラチナ', GRANDMASTER: 'プラチナ', MASTER: 'プラチナ', DIAMOND: 'プラチナ', EMERALD: 'プラチナ',
   PLATINUM: 'プラチナ',
   GOLD: 'ゴールド',
   SILVER: 'シルバー',
-  BRONZE: 'ブロンズ', IRON: 'アイアン', UNRANKED: 'ブロンズ',
+  // アイアン・未ランクも人数が少ないためブロンズと同じ枠（2026-10-17、ユーザー判断）
+  BRONZE: 'ブロンズ', IRON: 'ブロンズ', UNRANKED: 'ブロンズ',
 };
 
 // 表記（英語・日本語・短縮）→ 英語キー
@@ -468,23 +475,16 @@ export function buildDayBanner(dayKey, status, dominantTierText = '') {
       header = `🔥 **募集中${tierLabel}**`;
     }
 
-    // バーは開幕（第1戦）の実働人数を基準に表示（第1戦がなければ第2戦）
-    const activeCount = b.match1Count > 0 ? b.match1Count : b.match2Count;
-    const bar = renderProgressBar(activeCount, status.capacity);
+    // 2026-10-17: 1行に「バー・第1戦・第2戦」を詰め、さらに観戦人数の行もあって読みにくかったため、
+    // 試合ごとに1行へ分けた。観戦・2部屋目待ちの人数は参加者一覧の見出しに出るので、ここでは繰り返さない。
+    const matchLine = (label, count, ready, remaining) =>
+      `${label} \`${renderMiniBar(count, status.capacity)}\` ${count}/${status.capacity}名 → ${ready ? '**開催確定！**' : `あと${remaining}名`}`;
 
-    const m1State = b.isMatch1Ready ? '第1戦: 開催確定！' : `第1戦: あと${b.match1Remaining}名`;
-    const m2State = b.isMatch2Ready ? '第2戦: 開催確定！' : `第2戦: あと${b.match2Remaining}名`;
-
-    const lines = [
+    return [
       header,
-      `\`${bar}\` ${m1State} ｜ ${m2State}`,
-    ];
-
-    if (b.hasSpectator) {
-      lines.push(`（※観戦・2部屋目待ち: ${b.spectatorTotal}名）`);
-    }
-
-    return lines.join('\n');
+      matchLine('第1戦', b.match1Count, b.isMatch1Ready, b.match1Remaining),
+      matchLine('第2戦', b.match2Count, b.isMatch2Ready, b.match2Remaining),
+    ].join('\n');
   }
 
   // 全員フルの場合（シンプル表示）

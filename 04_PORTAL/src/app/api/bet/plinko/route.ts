@@ -9,6 +9,7 @@ import {
   type PlinkoDropResult,
   type PlinkoRisk,
 } from '../../../../lib/plinkoMath';
+import { applyLuckyBonus } from '../../../../lib/luckyDay';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,7 +56,9 @@ export async function POST(req: Request) {
     }
 
     // 抽選実行 (サーバー側で公正に乱数生成)
-    const outcome = calculatePlinkoDrop(betAmount, risk);
+    const rawOutcome = calculatePlinkoDrop(betAmount, risk);
+    // 🍀 ラッキーデー（7・17・27日）は払い戻し+3%
+    const outcome = { ...rawOutcome, winCoins: applyLuckyBonus(rawOutcome.winCoins) };
     const newBalance = currentCoins - betAmount + outcome.winCoins;
 
     // コイン残高の保存

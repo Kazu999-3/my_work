@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } from '../../../../lib/playerCoins';
 import { verifyUserOrAdmin } from '../../../../lib/authGuard';
 import { sendShopNotification } from '../../../../lib/discordNotify';
+import { applyLuckyBonus } from '../../../../lib/luckyDay';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,7 +73,9 @@ export async function POST(req: Request) {
     }
 
     // スクラッチ抽選
-    const resultTier = drawScratchTier();
+    const drawnTier = drawScratchTier();
+    // 🍀 ラッキーデー（7・17・27日）は当選額+3%
+    const resultTier = { ...drawnTier, prize: applyLuckyBonus(drawnTier.prize) };
     const netChange = resultTier.prize - SCRATCH_PRICE;
     const newCoins = currentCoins - SCRATCH_PRICE + resultTier.prize;
 

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getAuthSession } from '../../../../lib/authGuard';
 import { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } from '../../../../lib/playerCoins';
 import { sendShopNotification } from '../../../../lib/discordNotify';
+import { applyLuckyBonus } from '../../../../lib/luckyDay';
 
 export const dynamic = 'force-dynamic';
 
@@ -136,7 +137,8 @@ export async function POST(req: Request) {
 
     // 抽選実行
     const outcome = spinReels();
-    const winCoins = Math.floor(betAmount * outcome.multiplier);
+    // 🍀 ラッキーデー（7・17・27日）は払い戻し+3%
+    const winCoins = applyLuckyBonus(Math.floor(betAmount * outcome.multiplier));
     const newBalance = currentCoins - betAmount + winCoins;
 
     // コイン残高の保存

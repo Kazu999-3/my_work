@@ -502,19 +502,24 @@ function renderEntryList(lines, status) {
   if (b && (b.hasBreakdown || b.hasSpectator)) {
     const sections = [];
 
-    // 1. 第1戦 出場メンバー（フル参加者 ＋ 1戦のみ参加者）
+    // 2026-10-17: 見出しで区分が分かるので、行頭の「🌙【2戦目〜】」「👀【観戦】」は消す（同じ情報が2回出て読みにくかった）。
+    // 観戦枠のうち自分で観戦を選んだ人だけは、ランクで回された人と区別できるよう行末に（観戦希望）を残す。
+    const stripLate = (l) => l.replace(/^- 🌙【2戦目〜】/, '- ');
+    const stripSpectator = (l) => (/^- 👀【観戦】/.test(l) ? `${l.replace(/^- 👀【観戦】/, '- ')}（観戦希望）` : l);
+
+    // 1. 第1戦から（フル参加者 ＋ 1戦のみ参加者）
     if (b.match1Lines && b.match1Lines.length > 0) {
-      sections.push(`**【⚔️ 第1戦 出場メンバー（${b.match1Count}/${status.capacity}名）】**\n${b.match1Lines.join('\n')}`);
+      sections.push(`**⚔️ 第1戦から（${b.match1Count}/${status.capacity}名）**\n${b.match1Lines.join('\n')}`);
     }
 
-    // 2. 2戦目〜合流メンバー（途中参加者）
+    // 2. 2戦目から合流（途中参加者）
     if (b.match2LateLines && b.match2LateLines.length > 0) {
-      sections.push(`**【🌙 2戦目〜合流（${b.match2LateLines.length}名）】**\n${b.match2LateLines.join('\n')}`);
+      sections.push(`**🌙 2戦目から合流（${b.match2LateLines.length}名）**\n${b.match2LateLines.map(stripLate).join('\n')}`);
     }
 
-    // 3. 観戦・2部屋目待ち枠（2ティア差離れたメンバー等）
+    // 3. 観戦・2部屋目待ち（2ティア差離れたメンバー等）
     if (b.spectatorLines && b.spectatorLines.length > 0) {
-      sections.push(`**【👀 観戦・2部屋目待ち枠（${b.spectatorTotal}名）】**\n${b.spectatorLines.join('\n')}`);
+      sections.push(`**👀 観戦・2部屋目待ち（${b.spectatorTotal}名）**\n${b.spectatorLines.map(stripSpectator).join('\n')}`);
     }
 
     if (sections.length > 0) {
@@ -552,7 +557,8 @@ export function applyDayCardState(embed, dayKey, entryLines) {
 
   let fieldTitle;
   if (status.breakdown?.hasSpectator) {
-    fieldTitle = `👥 参加者（計${status.total}名 / 出場対象: ${status.breakdown.eligibleTotal}名・観戦待ち: ${status.breakdown.spectatorTotal}名）`;
+    // 内訳は各見出しに人数が出ているので、ここは合計だけ（2026-10-17）
+    fieldTitle = `👥 参加者（計${status.total}名）`;
   } else {
     fieldTitle = `👥 参加者 (${status.joined}/${status.capacity}名)`;
   }

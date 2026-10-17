@@ -14,6 +14,10 @@ import {
   payoutCoins,
   payoutMultiplier,
 } from '../../../../lib/minesMath';
+import { applyLuckyBonus } from '../../../../lib/luckyDay';
+
+// 🍀 ラッキーデー（7・17・27日）は払い戻し+3%。表示（今引き返せば○🪙）と精算で同じ値にする
+const luckyPayout = (bet: number, mines: number, reveals: number) => applyLuckyBonus(payoutCoins(bet, mines, reveals));
 
 export const dynamic = 'force-dynamic';
 
@@ -102,7 +106,7 @@ function buildPendingState(row: MinesRow, balance: number, message: string): Min
     revealCount: row.reveal_count,
     status: 'pending',
     multiplier: payoutMultiplier(row.mine_count, row.reveal_count),
-    payout: row.reveal_count > 0 ? payoutCoins(row.bet_amount, row.mine_count, row.reveal_count) : 0,
+    payout: row.reveal_count > 0 ? luckyPayout(row.bet_amount, row.mine_count, row.reveal_count) : 0,
     nextMultiplier: canRevealMore ? payoutMultiplier(row.mine_count, row.reveal_count + 1) : null,
     maxReveal: max,
     balance,
@@ -386,11 +390,11 @@ async function handleReveal(discordId: string, player: any, body: any) {
     revealCount: nextCount,
     status: 'pending',
     multiplier: payoutMultiplier(row.mine_count, nextCount),
-    payout: payoutCoins(row.bet_amount, row.mine_count, nextCount),
+    payout: luckyPayout(row.bet_amount, row.mine_count, nextCount),
     nextMultiplier: payoutMultiplier(row.mine_count, nextCount + 1),
     maxReveal: max,
     balance,
-    message: `👁️ 安全！ 今引き返せば ${payoutCoins(row.bet_amount, row.mine_count, nextCount).toLocaleString()}🪙`,
+    message: `👁️ 安全！ 今引き返せば ${luckyPayout(row.bet_amount, row.mine_count, nextCount).toLocaleString()}🪙`,
   };
   return NextResponse.json({ ok: true, state });
 }
@@ -432,7 +436,7 @@ async function settleRound(params: {
   const { row, player, verdict, autoMessage } = params;
 
   const multiplier = payoutMultiplier(row.mine_count, row.reveal_count);
-  const payout = payoutCoins(row.bet_amount, row.mine_count, row.reveal_count);
+  const payout = luckyPayout(row.bet_amount, row.mine_count, row.reveal_count);
 
   const { data: settledRows } = await supabaseAdmin!
     .from('mines_sessions')

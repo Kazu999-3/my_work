@@ -17,6 +17,8 @@ import {
   computeRepresentativeMmr,
   RANKS,
   propagateCrossLaneMmr,
+  calculateKdaBonus,
+  KDA_BONUS_MAX,
   type MmrCalcContext,
 } from '../mmr';
 
@@ -189,4 +191,21 @@ test('全レーン波及: 10試合以上のレーンは他レーンの結果で�
 test('全レーン波及: 試合数を渡さない時は従来どおり全レーン', () => {
   const r = propagateCrossLaneMmr({ TOP: 1400, JG: 1500, MID: 1300, ADC: 1300, SUP: 1300 }, 'TOP', 20);
   assert.equal(r.JG, 1505);
+});
+
+// 2026-10-17: KDAボーナスは最大 +7.5（半減）。基準はロール別（TOP 1.8 / JG 3.0 / MID 2.2 / ADC 3.1 / SUP 2.5）
+test('KDAボーナス: 上限7.5・ロールの基準で0・基準+3.0で上限', () => {
+  assert.equal(KDA_BONUS_MAX, 7.5);
+  assert.equal(calculateKdaBonus(1.8, 'TOP'), 0);
+  assert.ok(Math.abs(calculateKdaBonus(2.8, 'TOP') - 2.5) < 1e-9);
+  assert.equal(calculateKdaBonus(3.0, 'JG'), 0);
+  assert.equal(calculateKdaBonus(5.5, 'SUP'), 7.5);
+  assert.equal(calculateKdaBonus(12, 'ADC'), 7.5);
+  // ロール不明は 2.5 基準
+  assert.equal(calculateKdaBonus(3.5), 2.5);
+});
+
+test('KDAボーナス: 同じKDA 3.0 でもトップは加点が大きく、ADCは加点なし', () => {
+  assert.ok(calculateKdaBonus(3.0, 'TOP') > calculateKdaBonus(3.0, 'SUP'));
+  assert.equal(calculateKdaBonus(3.0, 'ADC'), 0);
 });

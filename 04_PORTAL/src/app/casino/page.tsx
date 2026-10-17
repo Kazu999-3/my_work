@@ -15,6 +15,7 @@ import { useCasinoData } from './_casino/useCasinoData';
 import type { CasinoTab } from './_casino/types';
 import CasinoHero from './_casino/CasinoHero';
 import CasinoTabNav from './_casino/CasinoTabNav';
+import LuckyDayBanner from './_casino/LuckyDayBanner';
 import UserStatusPanel from './_casino/UserStatusPanel';
 import BetTab from './_casino/BetTab';
 import ShopTab from './_casino/ShopTab';
@@ -330,6 +331,7 @@ export default function CasinoPage() {
 
       <div className="max-w-[1200px] w-full mx-auto px-4 md:px-8 py-8 space-y-6">
         <CasinoTabNav activeTab={activeTab} setActiveTab={setActiveTab} />
+        <LuckyDayBanner />
 
         <UserStatusPanel
           user={user} lastRescueMonth={lastRescueMonth} userStreak={userStreak} userMaxStreak={userMaxStreak} inventory={inventory}

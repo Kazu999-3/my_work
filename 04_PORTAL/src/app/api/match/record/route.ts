@@ -325,6 +325,8 @@ export async function POST(request: Request) {
       champion_name: r.champion_name || null,
       vision_score: r.vision_score || 0,
       cs: r.cs || 0,
+      // スコアボード画像から読み取れた時だけ。読めなかった試合は NULL（2026-10-17）
+      gold: Number(r.gold) > 0 && Number(r.gold) < 100000 ? Math.round(Number(r.gold)) : null,
       damage_dealt: r.damage_dealt || 0,
       damage_taken: r.damage_taken || 0,
       objective_damage: r.objective_damage || 0,

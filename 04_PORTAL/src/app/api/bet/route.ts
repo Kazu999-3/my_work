@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../lib/supabaseAdmin';
 import { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } from '../../../lib/playerCoins';
+import { isLuckyDay, LUCKY_OMIKUJI_MULTIPLIER } from '../../../lib/luckyDay';
 
 export const dynamic = 'force-dynamic';
 
@@ -199,8 +200,11 @@ export async function PUT(req: Request) {
         };
       }
 
-      addedCoins = omikujiData.coins;
-      successMessage = `${omikujiData.icon} 【${omikujiData.tier}】+${addedCoins}コイン を獲得しました！ ${omikujiData.comment}`;
+      // 🍀 ラッキーデー（7・17・27日）はおみくじの報酬2倍（2026-10-17）
+      const lucky = isLuckyDay();
+      addedCoins = omikujiData.coins * (lucky ? LUCKY_OMIKUJI_MULTIPLIER : 1);
+      omikujiData.coins = addedCoins; // 画面のおみくじ演出にも2倍後の額を出す
+      successMessage = `${omikujiData.icon} 【${omikujiData.tier}】+${addedCoins}コイン を獲得しました！${lucky ? '（🍀ラッキーデーで2倍）' : ''} ${omikujiData.comment}`;
     } else if (type === 'rescue') {
       const lastRescue = player.role_preferences?.lastRescueMonth;
       if (lastRescue === currentMonth) {

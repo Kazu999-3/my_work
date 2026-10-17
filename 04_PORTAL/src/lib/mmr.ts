@@ -210,6 +210,20 @@ export interface MmrCalcContext {
   csd15?: number; // 15分時点での対面とのCS差
 }
 
+/** KDAボーナスの上限（2026-10-17: 15→7.5） */
+export const KDA_BONUS_MAX = 7.5;
+/**
+ * ロールごとの基準KDA（2026-10-17、KDAのある69試合のロール別中央値）。
+ * 以前は全ロール 2.0 基準＋サポートだけ +0.8 で、1試合あたりのボーナスがトップ 2.2・サポート 3.8 と
+ * ロールで偏っていた（30試合で約50点差）。中央値基準にすると 2.3〜2.9 に揃う。予測精度はほぼ同じ。
+ */
+export const KDA_BASELINE_BY_ROLE: Record<string, number> = { TOP: 1.8, JG: 3.0, MID: 2.2, ADC: 3.1, SUP: 2.5 };
+const KDA_BASELINE_DEFAULT = 2.5;
+export const kdaBaseline = (role?: string) => KDA_BASELINE_BY_ROLE[(role || '').toUpperCase()] ?? KDA_BASELINE_DEFAULT;
+/** ロールの基準KDAからの加点。基準+3.0で上限 */
+export const calculateKdaBonus = (kdaScore: number, role?: string) =>
+  Math.max(0, Math.min(KDA_BONUS_MAX, (kdaScore - kdaBaseline(role)) * 2.5));
+
 export function calculateNewMMR(ctx: MmrCalcContext): number {
   const { currentMmr, opponentMmr, isWin, kills, deaths, assists, role, matchupCount } = ctx;
 
@@ -258,17 +272,17 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
   }
 
   // ③ KDAボーナス (手動入力パラメータのキル・デス・アシストから実力を正しく評価)
-  let kdaScore = deaths === 0 ? (kills + assists) * 1.2 : (kills + assists) / deaths;
-  if (role === 'SUP') {
-    kdaScore += 0.8; // サポート補正
-  }
-  
-  // 基準KDA 2.0から加点 (最大+15点のボーナス)
-  const kdaBonus = Math.max(0, Math.min(15, (kdaScore - 2.0) * 5));
+  const kdaScore = deaths === 0 ? (kills + assists) * 1.2 : (kills + assists) / deaths;
+
+  // ロールの基準KDAから加点（最大 +KDA_BONUS_MAX）。サポートの +0.8 補正はロール別基準に置き換えて廃止。
+  // 2026-10-17: 最大+15→+7.5に半減（ユーザー判断）。勝敗ベース(+18/-20)に近い大きさで、KDAはチャンピオンや
+  // ロール差が大きくノイズになりやすい。バックテストでも半減の方が予測・ソロQランクとの相関ともにわずかに良かった。
+  const kdaBonus = calculateKdaBonus(kdaScore, role);
 
   // ③-B ジャイアントキリング加点 (格上対面 MMR+200以上に勝利・高KDAを達成した際の快挙ボーナス)
+  // 高KDA = ロールの基準 +1.0 以上（旧: 一律 3.0 = 当時の基準 2.0 +1.0）
   let giantKillingBonus = 0;
-  if (mmrDiff >= 200 && (isWin || kdaScore >= 3.0)) {
+  if (mmrDiff >= 200 && (isWin || kdaScore >= kdaBaseline(role) + 1.0)) {
     giantKillingBonus = Math.min(6, Math.max(2, Math.round(mmrDiff / 80)));
   }
 
@@ -362,9 +376,8 @@ export function calculateNewMMRDetailed(ctx: MmrCalcContext): { delta: number; b
     ? calculateSmoothedWinRate(Math.round((rawWr / 100) * numG), numG)
     : rawWr;
   if (effectiveWinRate > 60) wrAdjust = -Math.min(8, (effectiveWinRate - 60) * 0.5);
-  let kdaScore = ctx.deaths === 0 ? (ctx.kills + ctx.assists) * 1.2 : (ctx.kills + ctx.assists) / ctx.deaths;
-  if (ctx.role === 'SUP') kdaScore += 0.8;
-  const kda = Math.max(0, Math.min(15, (kdaScore - 2.0) * 5));
+  const kdaScore = ctx.deaths === 0 ? (ctx.kills + ctx.assists) * 1.2 : (ctx.kills + ctx.assists) / ctx.deaths;
+  const kda = calculateKdaBonus(kdaScore, ctx.role);
   const dampener = 1.0;
   const delta = calculateNewMMR(ctx); // 最終値は本体ロジックで算出（挙動の一貫性を保証）
   return {

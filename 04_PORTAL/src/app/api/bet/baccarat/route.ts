@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } from '../../../../lib/playerCoins';
+import { applyLuckyBonus } from '../../../../lib/luckyDay';
 
 export const dynamic = 'force-dynamic';
 
@@ -213,7 +214,7 @@ export async function POST(req: Request) {
     let resultMessage: string;
 
     if (isTieWin) {
-      payout = Math.floor(cleanAmount * PAYOUTS.TIE);
+      payout = applyLuckyBonus(Math.floor(cleanAmount * PAYOUTS.TIE)); // 🍀 ラッキーデーは+3%
       newCoins = currentCoins - cleanAmount + payout;
       resultMessage = `🎊 TIE！ ${cleanAmount}コイン → +${payout}コイン 獲得！`;
     } else if (isPush) {
@@ -222,7 +223,7 @@ export async function POST(req: Request) {
       newCoins = currentCoins; // 変動なし
       resultMessage = `🤝 TIE（引き分け）！ 掛け金 ${cleanAmount}コインを返還します。`;
     } else if (isWin) {
-      payout = Math.floor(cleanAmount * PAYOUTS[cleanBet]);
+      payout = applyLuckyBonus(Math.floor(cleanAmount * PAYOUTS[cleanBet])); // 🍀 ラッキーデーは+3%
       newCoins = currentCoins - cleanAmount + payout;
       resultMessage = `🎉 ${result} 勝利！ ${cleanAmount}コイン → +${payout}コイン 獲得！`;
     } else {
