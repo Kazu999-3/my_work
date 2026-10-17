@@ -54,6 +54,8 @@ export default function OnboardingChannelsPanel() {
   const [filter, setFilter] = useState<FilterKey>('all');
   const [sortKey, setSortKey] = useState<SortKey>('status');
   const [query, setQuery] = useState('');
+  // 「直近60日」などの判定の基準時刻。描画中に Date.now() を呼ばないよう、読み込んだ時点の時刻を使う
+  const [loadedAt, setLoadedAt] = useState(0);
 
   const load = async () => {
     setLoading(true);
@@ -64,6 +66,7 @@ export default function OnboardingChannelsPanel() {
       if (!res.ok) throw new Error(data.error || '取得に失敗しました');
       setRows(data.channels || []);
       setNextCustom(data.nextCustom || null);
+      setLoadedAt(Date.now());
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -81,8 +84,8 @@ export default function OnboardingChannelsPanel() {
     { key: 'needsReply', label: '要返信', test: (r) => r.needsReply },
     { key: 'nextSpectator', label: '次の定期カスタム: 観戦希望', test: (r) => spectatorSet.has(r.ownerUserId) },
     { key: 'nextEntry', label: '次の定期カスタム: エントリー', test: (r) => entrySet.has(r.ownerUserId) },
-    { key: 'recent60', label: '直近60日に試合参加', test: (r) => !!r.lastPlayedAt && Date.now() - new Date(r.lastPlayedAt).getTime() <= 60 * DAY },
-    { key: 'silent30', label: '30日以上発言なし', test: (r) => !r.lastMessageAt || Date.now() - new Date(r.lastMessageAt).getTime() > 30 * DAY },
+    { key: 'recent60', label: '直近60日に試合参加', test: (r) => !!r.lastPlayedAt && loadedAt - new Date(r.lastPlayedAt).getTime() <= 60 * DAY },
+    { key: 'silent30', label: '30日以上発言なし', test: (r) => !r.lastMessageAt || loadedAt - new Date(r.lastMessageAt).getTime() > 30 * DAY },
   ];
   const activeFilter = FILTERS.find((f) => f.key === filter) || FILTERS[0];
 
