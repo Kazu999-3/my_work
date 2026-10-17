@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { RefreshCw, Trophy, Target, Search, ArrowLeftRight } from 'lucide-react';
 import Image from 'next/image';
 import { getChampIcon } from '../../../lib/ddragonClient';
-import { mergeScoreboard } from '../../../lib/scoreboardMerge';
 
 type Role = 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP';
 const ROLES: Role[] = ['TOP', 'JG', 'MID', 'ADC', 'SUP'];
@@ -92,9 +91,6 @@ function CustomRecordPageContent() {
   const [champSearchQuery, setChampSearchQuery] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  // 1枚目（リザルト画面）の解析が済んだら、次に貼った画像は2枚目（スコアボード）として扱う
-  const mainAnalyzedRef = useRef(false);
-  const statsRef = useRef<PlayerStat[]>([]);
   const [savedMatchSummary, setSavedMatchSummary] = useState<{ matchId?: any; winningTeam: 'BLUE' | 'RED'; isExhibition: boolean; playersCount: number } | null>(null);
   
   // 10人分のステートを初期化
@@ -176,81 +172,11 @@ function CustomRecordPageContent() {
     return '';
   };
 
-  useEffect(() => { statsRef.current = stats; }, [stats]);
-
-  // 送信前に最大幅1280pxのJPEGへ縮める（429対策。1枚目と同じ処理）
-  const compressImage = (file: File) => new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new window.Image();
-      img.onload = () => {
-        const maxW = 1280;
-        const w = Math.min(img.width, maxW);
-        const h = Math.round((img.height * w) / img.width);
-        const canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        canvas.getContext('2d')?.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', 0.7).split(',')[1]);
-      };
-      img.onerror = () => reject(new Error('画像のデコードに失敗しました。'));
-      img.src = e.target?.result as string;
-    };
-    reader.onerror = () => reject(new Error('ファイルの読み込みに失敗しました。'));
-    reader.readAsDataURL(file);
-  });
-
-  // 2枚目（任意）: 試合履歴のスコアボード画面から CS・ゴールドを読み、K/D/A が一致する行に入れる（2026-10-17）。
-  // 名前・チャンピオンは1枚目のまま触らない（スコアボード画面は名前が省略され誤認識しやすいため）。
-  const handleScoreboardUpload = async (file: File) => {
-    setAnalyzing(true);
-    setMessage({ type: '', text: '' });
-    try {
-      const base64Content = await compressImage(file);
-      const res = await fetch('/api/match/analyze-image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64: base64Content, mimeType: 'image/jpeg', kind: 'scoreboard' }),
-      });
-      const resData = await res.json();
-      if (!res.ok || resData.status !== 'SUCCESS') throw new Error(resData.error || 'スコアボードの解析に失敗しました。');
-      const data = resData.data || {};
-      const current = statsRef.current;
-      const merged = mergeScoreboard(current, data.team1, data.team2);
-      setStats(prev => prev.map((st, i) => {
-        const row = merged.rows[i];
-        if (!row) return st;
-        return {
-          ...st,
-          cs: row.cs !== null && row.cs >= 0 ? row.cs : st.cs,
-          gold: row.gold !== null && row.gold > 0 ? row.gold : st.gold,
-        };
-      }));
-      const durSec = Number(data.gameDurationSec);
-      if (Number.isFinite(durSec) && durSec >= 180 && durSec <= 7200) {
-        setDurationText(prev => prev || `${Math.floor(durSec / 60)}:${String(Math.round(durSec % 60)).padStart(2, '0')}`);
-      }
-      const missing = current.length - merged.matched;
-      setMessage({
-        type: missing > 0 ? 'error' : 'success',
-        text: `スコアボードから CS・ゴールドを反映しました（${current.length}名中 ${merged.matched} 名）。`
-          + (missing > 0 ? ` ⚠️ ${missing} 名は K/D/A が一致せず反映していません（1枚目の K/D/A を確認してください）。` : ''),
-      });
-    } catch (err: any) {
-      setMessage({ type: 'error', text: `スコアボード解析エラー: ${err.message}` });
-    } finally {
-      setAnalyzing(false);
-    }
-  };
-
   // 画像アップロード・解析
-  const handleImageUpload = async (file: File, target: 'auto' | 'main' | 'scoreboard' = 'auto') => {
+  const handleImageUpload = async (file: File) => {
     if (!file.type.startsWith('image/')) {
       setMessage({ type: 'error', text: '画像ファイルのみアップロード可能です。' });
       return;
-    }
-    if (target === 'scoreboard' || (target === 'auto' && mainAnalyzedRef.current)) {
-      return handleScoreboardUpload(file);
     }
     
     setAnalyzing(true);
@@ -380,18 +306,13 @@ function CustomRecordPageContent() {
                       champion_name: matchedChamp,
                       kills: Number(found.kills) || 0,
                       deaths: Number(found.deaths) || 0,
-                      assists: Number(found.assists) || 0,
-                      // 画面に数値がある時だけ解析が返す。以前はここで捨てていて、記録が全部0だった
-                      cs: Number(found.minionsKilled) || 0,
-                      gold: Number(found.gold) || undefined,
-                      damage_dealt: Number(found.damageDealt) || 0
+                      assists: Number(found.assists) || 0
                     };
                   }
                   return currentStat;
                 });
               });
 
-              mainAnalyzedRef.current = true;
               let msgText = `画像の解析結果を反映しました（10名中 ${resolvedCount} 名照合完了）。`;
               if (aliasHitCount > 0) {
                 msgText += ` 💡 過去の誤認識学習辞書から ${aliasHitCount} 名を自動補正しました。`;
@@ -535,7 +456,6 @@ function CustomRecordPageContent() {
   // バランサー結果を10名のロースターに適用する共通関数
   const applyBalancerResult = (br: any) => {
     if (!br || (!br.teamBlue && !br.teamRed)) return false;
-    mainAnalyzedRef.current = false; // 新しい試合の名簿。次に貼る画像は1枚目
     setStats(() => {
       const initial: PlayerStat[] = [];
       
@@ -721,14 +641,12 @@ function CustomRecordPageContent() {
             heal_shield: s.heal_shield,
             objective_damage: s.objective_damage,
             cs: s.cs,
-            gold: s.gold,
             penta_kills: s.penta_kills || 0
           }))
         })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '保存に失敗しました');
-      mainAnalyzedRef.current = false;
       
       if (pendingId) {
         await fetch(`/api/balancer/pending?id=${pendingId}`, { method: 'DELETE' }).catch(() => {});
@@ -820,7 +738,7 @@ function CustomRecordPageContent() {
                   input.accept = 'image/*';
                   input.onchange = (e) => {
                     const file = (e.target as HTMLInputElement).files?.[0];
-                    if (file) handleImageUpload(file, 'main');
+                    if (file) handleImageUpload(file);
                   };
                   input.click();
                 }}
@@ -838,25 +756,6 @@ function CustomRecordPageContent() {
             )}
           </div>
 
-          {/* 2枚目（任意）: スコアボード画面から CS・ゴールドを読む */}
-          <div
-            className="-mt-5 mb-8 p-3 border border-dashed border-border rounded-xl text-center cursor-pointer hover:bg-black/5 transition-all"
-            onClick={() => {
-              const input = document.createElement('input');
-              input.type = 'file';
-              input.accept = 'image/*';
-              input.onchange = (e) => {
-                const file = (e.target as HTMLInputElement).files?.[0];
-                if (file) handleImageUpload(file, 'scoreboard');
-              };
-              input.click();
-            }}
-          >
-            <p className="text-xs font-bold text-foreground">＋ 2枚目（任意）: 試合履歴の「スコアボード」画像で CS・ゴールドを記録</p>
-            <p className="text-[11px] text-muted-strong mt-0.5">
-              1枚目を貼ったあとにもう一度 Ctrl+V するか、ここをクリックして選択。名前・チャンピオンは1枚目のまま変わりません
-            </p>
-          </div>
 
           {/* 🎪 お祭りカスタム（戦績ノーカウント）トグル */}
           <div className="mb-6 p-4 rounded-xl bg-primary-500/10 border border-primary-edge-strong/30 flex items-center justify-between">
@@ -959,16 +858,6 @@ function CustomRecordPageContent() {
                           >
                             💎 {(s.penta_kills || 0) > 0 ? `${s.penta_kills}` : '0'}
                           </button>
-                          {/* CS・ゴールドの手入力（スコアボード画像が無い時・読み違えた時用。2026-10-18） */}
-                          {/* 数字が入るとプレースホルダーが消えて何の欄か分からなくなるので、見出しを常に出す */}
-                          <label className="ml-1.5 flex items-center gap-0.5 text-[10px] font-bold text-muted-strong">
-                            CS
-                            <input type="number" min={0} value={s.cs || ''} onChange={e => handleStatChangeByIndex(index, 'cs', e.target.value)} className="w-14 bg-surface border border-border text-foreground text-center rounded py-1 text-xs" placeholder="-" title="CS" />
-                          </label>
-                          <label className="flex items-center gap-0.5 text-[10px] font-bold text-primary-700">
-                            G
-                            <input type="number" min={0} value={s.gold || ''} onChange={e => handleStatChangeByIndex(index, 'gold', e.target.value)} className="w-16 bg-surface border border-primary-edge-soft text-primary-700 text-center rounded py-1 text-xs" placeholder="-" title="獲得ゴールド" />
-                          </label>
                         </div>
                       </div>
                     </div>
@@ -1043,16 +932,6 @@ function CustomRecordPageContent() {
                           >
                             💎 {(s.penta_kills || 0) > 0 ? `${s.penta_kills}` : '0'}
                           </button>
-                          {/* CS・ゴールドの手入力（スコアボード画像が無い時・読み違えた時用。2026-10-18） */}
-                          {/* 数字が入るとプレースホルダーが消えて何の欄か分からなくなるので、見出しを常に出す */}
-                          <label className="ml-1.5 flex items-center gap-0.5 text-[10px] font-bold text-muted-strong">
-                            CS
-                            <input type="number" min={0} value={s.cs || ''} onChange={e => handleStatChangeByIndex(index, 'cs', e.target.value)} className="w-14 bg-surface border border-border text-foreground text-center rounded py-1 text-xs" placeholder="-" title="CS" />
-                          </label>
-                          <label className="flex items-center gap-0.5 text-[10px] font-bold text-primary-700">
-                            G
-                            <input type="number" min={0} value={s.gold || ''} onChange={e => handleStatChangeByIndex(index, 'gold', e.target.value)} className="w-16 bg-surface border border-primary-edge-soft text-primary-700 text-center rounded py-1 text-xs" placeholder="-" title="獲得ゴールド" />
-                          </label>
                         </div>
                       </div>
                     </div>

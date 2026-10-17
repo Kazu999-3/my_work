@@ -673,21 +673,13 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                             />
                           )}
                         </button>
-                        {/* 2段目: K/D/A・CS・ゴールド（1行に詰めると枠からはみ出していた。2026-10-18） */}
+                        {/* 2段目: K/D/A（1行に詰めると枠からはみ出していた。2026-10-18） */}
                         <div className="basis-full flex flex-wrap gap-1 justify-end items-center" onDragStart={e => e.stopPropagation()}>
                           <input type="number" value={p.kills} onChange={e => handleEditingParticipantChange(idx, 'kills', e.target.value)} className="w-10 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="K" />
                           <span className="text-muted-strong text-xs self-center">/</span>
                           <input type="number" value={p.deaths} onChange={e => handleEditingParticipantChange(idx, 'deaths', e.target.value)} className="w-10 bg-surface border border-danger-edge-soft text-danger-700 text-center rounded text-xs py-0.5" placeholder="D" />
                           <span className="text-muted-strong text-xs self-center">/</span>
                           <input type="number" value={p.assists} onChange={e => handleEditingParticipantChange(idx, 'assists', e.target.value)} className="w-10 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="A" />
-                          <label className="ml-1.5 flex items-center gap-0.5 text-[10px] font-bold text-muted-strong">
-                            CS
-                            <input type="number" min={0} value={p.cs ?? ''} onChange={e => handleEditingParticipantChange(idx, 'cs', e.target.value)} className="w-12 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="-" />
-                          </label>
-                          <label className="flex items-center gap-0.5 text-[10px] font-bold text-primary-700">
-                            G
-                            <input type="number" min={0} value={p.gold ?? ''} onChange={e => handleEditingParticipantChange(idx, 'gold', e.target.value)} className="w-14 bg-surface border border-primary-edge-soft text-primary-700 text-center rounded text-xs py-0.5" placeholder="-" />
-                          </label>
                         </div>
                       </div>
                     );
@@ -759,21 +751,13 @@ export default function MatchHistoryPanel({ isAdmin: propIsAdmin }: MatchHistory
                             />
                           )}
                         </button>
-                        {/* 2段目: K/D/A・CS・ゴールド（1行に詰めると枠からはみ出していた。2026-10-18） */}
+                        {/* 2段目: K/D/A（1行に詰めると枠からはみ出していた。2026-10-18） */}
                         <div className="basis-full flex flex-wrap gap-1 justify-end items-center" onDragStart={e => e.stopPropagation()}>
                           <input type="number" value={p.kills} onChange={e => handleEditingParticipantChange(idx, 'kills', e.target.value)} className="w-10 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="K" />
                           <span className="text-muted-strong text-xs self-center">/</span>
                           <input type="number" value={p.deaths} onChange={e => handleEditingParticipantChange(idx, 'deaths', e.target.value)} className="w-10 bg-surface border border-danger-edge-soft text-danger-700 text-center rounded text-xs py-0.5" placeholder="D" />
                           <span className="text-muted-strong text-xs self-center">/</span>
                           <input type="number" value={p.assists} onChange={e => handleEditingParticipantChange(idx, 'assists', e.target.value)} className="w-10 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="A" />
-                          <label className="ml-1.5 flex items-center gap-0.5 text-[10px] font-bold text-muted-strong">
-                            CS
-                            <input type="number" min={0} value={p.cs ?? ''} onChange={e => handleEditingParticipantChange(idx, 'cs', e.target.value)} className="w-12 bg-surface border border-border text-foreground text-center rounded text-xs py-0.5" placeholder="-" />
-                          </label>
-                          <label className="flex items-center gap-0.5 text-[10px] font-bold text-primary-700">
-                            G
-                            <input type="number" min={0} value={p.gold ?? ''} onChange={e => handleEditingParticipantChange(idx, 'gold', e.target.value)} className="w-14 bg-surface border border-primary-edge-soft text-primary-700 text-center rounded text-xs py-0.5" placeholder="-" />
-                          </label>
                         </div>
                       </div>
                     );

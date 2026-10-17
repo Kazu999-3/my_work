@@ -2,35 +2,9 @@ import { NextResponse } from 'next/server';
 import { callGeminiWithRetry } from '../../../../lib/geminiClient';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 
-// 2枚目（任意）: 試合履歴の「スコアボード」画面から数値だけを読む（2026-10-17）。
-// この画面は名前が省略され、チャンピオンの顔も小さいため、名前・チャンピオンは1枚目（リザルト画面）から取る。
-// 行の対応は記録画面側で「チーム＋K/D/A」で突き合わせるので、ここでは名前を読ませない。
-const SCOREBOARD_PROMPT = `
-これは League of Legends の試合履歴の「スコアボード」画面のスクリーンショットです。
-上に「チーム1」の5行、下に「チーム2」の5行があります。各行を左から右へ読み、同じ行の数値だけを取り出してください。
-名前やチャンピオンは読まなくて構いません。
-
-各行で読む数値:
-- "kills" / "deaths" / "assists": 「4 / 9 / 6」の形の K/D/A
-- "cs": K/D/A の右の数値（ミニオンのアイコンの列。例 228）
-- "gold": いちばん右の数値（コインのアイコンの列。例「12,281」なら 12281）
-
-画面上部の試合時間（例「33:53」）は秒の整数にして "gameDurationSec" に入れてください（見当たらなければ null）。
-読めない数値は推測せず null にしてください。
-
-厳密な JSON だけを返してください（markdown の修飾は不要）:
-{
-  "gameDurationSec": 2033,
-  "team1": [ { "kills": 4, "deaths": 9, "assists": 6, "cs": 228, "gold": 12281 }, ... 5行 ],
-  "team2": [ { "kills": 3, "deaths": 7, "assists": 10, "cs": 200, "gold": 12018 }, ... 5行 ]
-}
-`;
-
 export async function POST(req: Request) {
   try {
-    const { imageBase64, mimeType, champions, kind } = await req.json();
-    // 'scoreboard' = 試合履歴のスコアボード画面（2枚目・任意）。数値だけを読む
-    const isScoreboard = kind === 'scoreboard';
+    const { imageBase64, mimeType, champions } = await req.json();
     if (!imageBase64) {
       return NextResponse.json({ error: '画像データがありません。' }, { status: 400 });
     }
@@ -43,7 +17,7 @@ export async function POST(req: Request) {
     const { data: lastRun } = await supabase
       .from('edge_tasks')
       .select('created_at')
-      .eq('task_type', isScoreboard ? 'match_analyze_scoreboard_cooldown' : 'match_analyze_image_cooldown')
+      .eq('task_type', 'match_analyze_image_cooldown')
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -53,7 +27,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: `画像解析は${Math.ceil((COOLDOWN_MS - elapsed) / 1000)}秒後に再試行してください。` }, { status: 429 });
       }
     }
-    await supabase.from('edge_tasks').insert({ task_type: isScoreboard ? 'match_analyze_scoreboard_cooldown' : 'match_analyze_image_cooldown', status: 'completed', payload: {} });
+    await supabase.from('edge_tasks').insert({ task_type: 'match_analyze_image_cooldown', status: 'completed', payload: {} });
 
     // APIキーの検証・複数キーのローテーション・429/5xxのリトライは
     // すべて callGeminiWithRetry 側に集約している。
@@ -62,7 +36,7 @@ export async function POST(req: Request) {
       ? champions.map((c: any) => `${c.name} (${c.id})`).join(', ')
       : 'Aatrox, Ahri, Akali, LeeSin, Ezreal, Threshなど';
 
-    const prompt = isScoreboard ? SCOREBOARD_PROMPT : `
+    const prompt = `
 これはLeague of Legends (LoL) のカスタムゲームの対戦結果（リザルト画面、詳細統計画面）のスクリーンショットです。
 この画像から以下の情報を抽出し、**厳密なJSON形式のみ**で出力してください。JSONの周りに markdown の \`\`\`json などの修飾は一切付けず、生のプレーンテキストのJSONデータだけを返してください。
 
@@ -117,9 +91,6 @@ ${championsText}
    - "kills": キル数（数値）
    - "deaths": デス数（数値）
    - "assists": アシスト数（数値）
-   - "damageDealt": 与ダメージ（画像内に与ダメージの数値が存在する場合のみ。存在しないタイプの場合は0またはnull）
-   - "minionsKilled": CS（画像内にCSの数値が存在する場合のみ。存在しないタイプの場合は0またはnull）
-   - "gold": 獲得ゴールド（画像内にゴールドの数値が存在する場合のみ。例「12,281」なら 12281。存在しない場合は null）
    - "champion_analysis_notes": 上記観点による顔アイコンの分析と思考プロセス
    - "champion_name": マスターリストに書かれている正確な「英語名ID（例: Aatrox, Ahri, LeeSin）」の文字列を厳密に抽出して出力してください（日本語名は含めないでください）。
 
@@ -135,9 +106,6 @@ ${championsText}
       "kills": 3,
       "deaths": 2,
       "assists": 8,
-      "damageDealt": 19915,
-      "minionsKilled": 224,
-      "gold": 12281,
       "champion_analysis_notes": "緑色の光を纏った大剣を持つ女性戦士 ➔ Riven",
       "champion_name": "Riven"
     },
