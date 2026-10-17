@@ -71,8 +71,10 @@ export async function POST(req: Request) {
     if (!isCronOk) {
       const authResult = verifyBotSecret(req);
       if (!authResult.ok) {
-        const isAdmin = await verifyAdminSession(req);
-        if (!isAdmin) {
+        // verifyAdminSession は { ok } を返す。以前は戻り値をそのまま真偽値として見ており、
+        // オブジェクトは常に真なので誰でもこの処理を起動できた（2026-10-17 修正）
+        const adminResult = await verifyAdminSession(req);
+        if (!adminResult.ok) {
           return NextResponse.json({ error: authResult.error || 'Unauthorized' }, { status: 401 });
         }
       }

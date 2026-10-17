@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import MatchHistoryPanel from "./MatchHistoryPanel";
+import OnboardingChannelsPanel from "./OnboardingChannelsPanel";
 import ProfileModal from "./ProfileModal";
 import DiscordRoleSyncModal from "./DiscordRoleSyncModal";
-import { Users, RefreshCw, AlertCircle, History, Shield } from "lucide-react";
+import { Users, RefreshCw, AlertCircle, History, Shield, MessageCircle } from "lucide-react";
 import { useAdminRoster, type AdminMessage } from "./_admin/useAdminRoster";
 import { useRosterSync } from "./_admin/useRosterSync";
 import AdminToolbar from "./_admin/AdminToolbar";
@@ -89,12 +90,12 @@ export default function KtmAdminPage() {
   };
 
   // タブ（URLクエリ ?tab=history / ?tab=players と同期）
-  const [activeTab, setActiveTab] = useState<'players' | 'history'>('players');
+  const [activeTab, setActiveTab] = useState<'players' | 'history' | 'onboarding'>('players');
   useEffect(() => {
     const tabParam = new URLSearchParams(window.location.search).get('tab');
-    if (tabParam === 'history' || tabParam === 'players') setActiveTab(tabParam);
+    if (tabParam === 'history' || tabParam === 'players' || tabParam === 'onboarding') setActiveTab(tabParam);
   }, []);
-  const handleTabChange = (tab: 'players' | 'history') => {
+  const handleTabChange = (tab: 'players' | 'history' | 'onboarding') => {
     setActiveTab(tab);
     const url = new URL(window.location.href);
     url.searchParams.set('tab', tab);
@@ -208,7 +209,7 @@ export default function KtmAdminPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-border mb-6">
+        <div className="flex border-b border-border mb-6 overflow-x-auto">
           <button
             onClick={() => handleTabChange('players')}
             className={`px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 cursor-pointer ${
@@ -229,9 +230,20 @@ export default function KtmAdminPage() {
           >
             <History className="h-4 w-4" /> ⚔️ 戦績履歴・勝敗登録
           </button>
+          <button
+            onClick={() => handleTabChange('onboarding')}
+            className={`px-6 py-3 font-bold text-sm flex items-center gap-2 transition border-b-2 cursor-pointer whitespace-nowrap ${
+              activeTab === 'onboarding'
+                ? 'border-primary-edge-strong text-primary-700 bg-primary-500/5'
+                : 'border-transparent text-muted-strong hover:text-foreground-subtle hover:bg-black/5'
+            }`}
+          >
+            <MessageCircle className="h-4 w-4" /> 🤝 個別案内
+          </button>
         </div>
 
         {activeTab === 'history' && <MatchHistoryPanel />}
+        {activeTab === 'onboarding' && <OnboardingChannelsPanel />}
 
         {activeTab === 'players' && (
           <div className="space-y-6">

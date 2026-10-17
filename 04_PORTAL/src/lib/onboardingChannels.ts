@@ -1,0 +1,169 @@
+/**
+ * 個別案内チャンネルの発言状況の管理と、本人からの新着通知（2026-10-17）。
+ *
+ * Bot は応答専用（Cloudflare Workers）で Discord のメッセージイベントを受け取れないため、
+ * チャンネル一覧の last_message_id の変化から新着を見つける。変化したチャンネルだけ最新1件を取りに行くので、
+ * 70チャンネルあっても普段の Discord API 呼び出しは一覧の1回だけ。
+ * 呼び出し元: pg_cron（5分おき /api/onboarding/channels/poll）と、管理画面の一覧表示。
+ */
+import { supabaseAdmin as supabase } from './supabaseAdmin';
+import { discordFetch } from './discordFetch';
+import { listOnboardingChannels, SERVER_ADMIN_USER_ID, GUILD_ID } from './onboardingProcessor';
+import { createAdminNotification } from './notify';
+
+export type AuthorKind = 'member' | 'admin' | 'bot' | 'other';
+
+export interface ChannelActivity {
+  channelId: string;
+  channelName: string;
+  ownerUserId: string;
+  lastMessageAt: string | null;
+  lastAuthorKind: AuthorKind | null;
+  /** 本人が最後に話していて、まだ誰も返していない */
+  needsReply: boolean;
+  url: string;
+}
+
+const botHeaders = () => {
+  const token = process.env.DISCORD_BOT_TOKEN;
+  if (!token) throw new Error('DISCORD_BOT_TOKEN is not set.');
+  return { Authorization: `Bot ${token}`, 'Content-Type': 'application/json' };
+};
+
+/** Discord の ID（snowflake）から作成時刻を取り出す */
+const snowflakeTime = (id: string) => new Date(Number((BigInt(id) >> BigInt(22)) + BigInt(1420070400000))).toISOString();
+
+export const channelUrl = (channelId: string) => `https://discord.com/channels/${GUILD_ID}/${channelId}`;
+
+function kindOf(author: any, ownerUserId: string): AuthorKind {
+  if (!author) return 'other';
+  if (author.id === ownerUserId) return 'member';
+  if (author.bot) return 'bot';
+  if (author.id === SERVER_ADMIN_USER_ID) return 'admin';
+  return 'other';
+}
+
+/**
+ * チャンネル一覧を取り直して状態テーブルを更新し、本人からの新着があれば管理者へ通知する。
+ * 状態テーブルが空の初回は、過去の発言で一斉に通知しないよう記録だけする。
+ */
+export async function syncOnboardingChannels(): Promise<{ channels: ChannelActivity[]; notified: number }> {
+  const headers = botHeaders();
+  const list = await listOnboardingChannels();
+  const { data: stateRows, error } = await supabase.from('onboarding_channel_state').select('*');
+  if (error) throw new Error(`onboarding_channel_state の読み込みに失敗: ${error.message}`);
+  const states = new Map<string, any>((stateRows || []).map((r: any) => [String(r.channel_id), r]));
+  const isFirstRun = states.size === 0;
+
+  const upserts: any[] = [];
+  const newMemberMessages: { channelId: string; channelName: string; ownerUserId: string; messageId: string; content: string }[] = [];
+
+  for (const ch of list) {
+    const prev: any = states.get(ch.channelId);
+    const row: any = {
+      channel_id: ch.channelId,
+      owner_user_id: ch.userId,
+      channel_name: ch.name,
+      last_message_id: prev?.last_message_id ?? null,
+      last_message_at: prev?.last_message_at ?? null,
+      last_author_id: prev?.last_author_id ?? null,
+      last_author_kind: prev?.last_author_kind ?? null,
+      notified_message_id: prev?.notified_message_id ?? null,
+      updated_at: new Date().toISOString(),
+    };
+    if (ch.lastMessageId && ch.lastMessageId !== prev?.last_message_id) {
+      // 変化したチャンネルだけ最新1件を取りに行く（発言者の判定のため）
+      const res = await discordFetch(`https://discord.com/api/v10/channels/${ch.channelId}/messages?limit=1`, { headers });
+      const msgs = res.ok ? await res.json().catch(() => []) : [];
+      const msg = Array.isArray(msgs) ? msgs[0] : null;
+      if (msg) {
+        const kind = kindOf(msg.author, ch.userId);
+        row.last_message_id = msg.id;
+        row.last_message_at = msg.timestamp || snowflakeTime(msg.id);
+        row.last_author_id = msg.author?.id ?? null;
+        row.last_author_kind = kind;
+        if (kind === 'member' && !isFirstRun && prev?.notified_message_id !== msg.id) {
+          newMemberMessages.push({ channelId: ch.channelId, channelName: ch.name, ownerUserId: ch.userId, messageId: msg.id, content: String(msg.content || '') });
+        }
+        if (kind === 'member' && isFirstRun) row.notified_message_id = msg.id;
+      } else {
+        // 取れなかった時は ID と時刻だけ進める（次回また最新1件を取りに行かないよう）
+        row.last_message_id = ch.lastMessageId;
+        row.last_message_at = snowflakeTime(ch.lastMessageId);
+      }
+    }
+    upserts.push(row);
+  }
+
+  if (upserts.length > 0) {
+    const { error: upErr } = await supabase.from('onboarding_channel_state').upsert(upserts, { onConflict: 'channel_id' });
+    if (upErr) throw new Error(`onboarding_channel_state の更新に失敗: ${upErr.message}`);
+  }
+  // 消えたチャンネル（退会者の部屋の削除など）の行は片付ける
+  const alive = new Set(list.map((c) => c.channelId));
+  const gone = [...states.keys()].filter((id) => !alive.has(id));
+  if (gone.length > 0) await supabase.from('onboarding_channel_state').delete().in('channel_id', gone);
+
+  // 本人からの新着を管理者へ通知（ベルの履歴＋アプリのプッシュ）
+  let notified = 0;
+  if (newMemberMessages.length > 0) {
+    const ownerIds = [...new Set(newMemberMessages.map((m) => m.ownerUserId))];
+    const { data: players } = await supabase.from('ktm_players').select('name,discord_id').in('discord_id', ownerIds);
+    const nameOf = new Map((players || []).map((p: any) => [p.discord_id, p.name]));
+    for (const m of newMemberMessages) {
+      const who = nameOf.get(m.ownerUserId) || m.channelName;
+      const snippet = m.content.replace(/\s+/g, ' ').trim();
+      await createAdminNotification({
+        type: 'onboarding_message',
+        title: `💬 ${who} さんから個別案内に新着`,
+        body: snippet ? (snippet.length > 80 ? `${snippet.slice(0, 80)}…` : snippet) : '新しいメッセージがあります',
+        url: channelUrl(m.channelId),
+        data: { channelId: m.channelId, messageId: m.messageId },
+      });
+      await supabase.from('onboarding_channel_state').update({ notified_message_id: m.messageId }).eq('channel_id', m.channelId);
+      notified++;
+    }
+  }
+
+  const channels: ChannelActivity[] = upserts.map((r) => ({
+    channelId: r.channel_id,
+    channelName: r.channel_name,
+    ownerUserId: r.owner_user_id,
+    lastMessageAt: r.last_message_at,
+    lastAuthorKind: r.last_author_kind,
+    needsReply: r.last_author_kind === 'member',
+    url: channelUrl(r.channel_id),
+  }));
+  return { channels, notified };
+}
+
+/**
+ * 指定した個別案内チャンネルへ同じ文面を投稿する。個別案内カテゴリのチャンネル以外には送らない。
+ * mention=true なら先頭で持ち主にメンションする（その人だけ通知が鳴る）。
+ */
+export async function broadcastToOnboardingChannels(
+  channelIds: string[],
+  content: string,
+  mention: boolean
+): Promise<{ sent: number; failed: { channelId: string; status: number }[] }> {
+  const headers = botHeaders();
+  const owners = new Map((await listOnboardingChannels()).map((c) => [c.channelId, c.userId]));
+  let sent = 0;
+  const failed: { channelId: string; status: number }[] = [];
+  for (const id of [...new Set(channelIds)]) {
+    const owner = owners.get(id);
+    if (!owner) { failed.push({ channelId: id, status: 0 }); continue; }
+    const res = await discordFetch(`https://discord.com/api/v10/channels/${id}/messages`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        content: mention ? `<@${owner}>\n${content}` : content,
+        allowed_mentions: mention ? { users: [owner] } : { parse: [] },
+      }),
+    });
+    if (res.ok) sent++; else failed.push({ channelId: id, status: res.status });
+    // Discord の送信制限に余裕を持たせる
+    await new Promise((r) => setTimeout(r, 300));
+  }
+  return { sent, failed };
+}

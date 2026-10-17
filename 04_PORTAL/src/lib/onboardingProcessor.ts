@@ -806,6 +806,8 @@ export interface OnboardingChannel {
   channelId: string;
   name: string;
   userId: string;
+  /** チャンネルの最後のメッセージID（発言が無ければ null）。新着の検知に使う */
+  lastMessageId?: string | null;
 }
 
 /**
@@ -832,7 +834,7 @@ export async function listOnboardingChannels(): Promise<OnboardingChannel[]> {
       (o: any) => o.type === 1 && o.id !== SERVER_ADMIN_USER_ID
     );
     if (memberOverwrites.length !== 1) continue;
-    result.push({ channelId: ch.id, name: ch.name, userId: memberOverwrites[0].id });
+    result.push({ channelId: ch.id, name: ch.name, userId: memberOverwrites[0].id, lastMessageId: ch.last_message_id || null });
   }
   return result;
 }
