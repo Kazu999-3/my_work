@@ -204,12 +204,6 @@ export async function POST(request: Request) {
         rand: Math.random()
       }));
 
-      // 基準レート（中央値）の算出
-      const allCandidateMmrs = candidatesPool.map(p => {
-        const main = p.pref1 as Role;
-        return (main && ['TOP', 'JG', 'MID', 'ADC', 'SUP'].includes(main)) ? p.rates[main] : (Object.values(p.rates).reduce((s, v) => s + v, 0) / 5);
-      }).sort((a, b) => a - b);
-      const medianMmr = allCandidateMmrs.length > 0 ? allCandidateMmrs[Math.floor(allCandidateMmrs.length / 2)] : 1200;
 
       // 11人以上の時に出る人の選び方（バランサー画面で主催者が選ぶ。2026-10-17）
       // fair: 休んだ回数（待機Pity）順（従来どおり）/ low: MMRの低い人から出る / high: MMRの高い人から出る
@@ -225,16 +219,9 @@ export async function POST(request: Request) {
           if (diff !== 0) return selectionMode === 'low' ? diff : -diff;
           return b.spectator_pity - a.spectator_pity;
         }
-        // 格上未許可保護: 全体中央値より200以上低く、かつ allowHigher が false の場合は選抜優先度を下げる（後ろへ回す）
-        const aMain = a.player.pref1 as Role;
-        const bMain = b.player.pref1 as Role;
-        const aMmr = (aMain && ['TOP', 'JG', 'MID', 'ADC', 'SUP'].includes(aMain)) ? a.player.rates[aMain] : (Object.values(a.player.rates).reduce((s, v) => s + v, 0) / 5);
-        const bMmr = (bMain && ['TOP', 'JG', 'MID', 'ADC', 'SUP'].includes(bMain)) ? b.player.rates[bMain] : (Object.values(b.player.rates).reduce((s, v) => s + v, 0) / 5);
-        const aIsUnallowedLow = !a.player.allowHigher && (medianMmr - aMmr >= 200);
-        const bIsUnallowedLow = !b.player.allowHigher && (medianMmr - bMmr >= 200);
-        if (aIsUnallowedLow !== bIsUnallowedLow) {
-          return aIsUnallowedLow ? 1 : -1;
-        }
+        // 2026-10-17: 以前は「格上との対面=守ってほしい」で中央値より200以上低い人を後ろへ回して（先に休ませて）いた。
+        // 全員が平等に出られる方針に合わないため廃止。保護はレーンの割り当て（balancer.ts の対面ペナルティ）で行い、
+        // 低い人を優先して出したい試合は selectionMode=low を選ぶ。
 
         if (b.spectator_pity !== a.spectator_pity) return b.spectator_pity - a.spectator_pity;
         if (b.pity !== a.pity) return b.pity - a.pity;

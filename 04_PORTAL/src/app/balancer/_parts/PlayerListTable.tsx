@@ -138,7 +138,7 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                   <th className="px-1.5 py-3 font-medium text-center text-danger-700">NG 1</th>
                   <th className="px-1.5 py-3 font-medium text-center text-danger-700">NG 2</th>
                   <SortableHeader label="こだわり" sortKey="weight" className="px-1.5 text-center" />
-                  <SortableHeader label="格上OK" sortKey="allow_higher" className="px-1.5 text-center" />
+                  <SortableHeader label="⚔️挑戦" sortKey="allow_higher" className="px-1.5 text-center" />
                   <th className="px-2 py-3 font-medium text-center">Pity (正/負/観)</th>
                   <th className="px-2 py-3 font-medium">備考</th>
                 </tr>
@@ -286,11 +286,11 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                           </div>
                         </td>
                         <td className="px-1.5 py-1.5 text-center">
-                          <select value={p.weight || 2} disabled={!isAdmin} onChange={e => handleInputChange(p.id,'weight',parseInt(e.target.value))} title={isAdmin ? '' : 'こだわり度の変更は管理者のみ可能です'} className="bg-surface-subtle border border-border rounded px-1.5 py-0.5 text-primary-700 font-bold outline-none focus:border-primary-edge-strong w-12 cursor-pointer text-xs disabled:opacity-40 disabled:cursor-not-allowed">
-                            {[1,2,3].map(n => <option key={n} value={n}>{n}</option>)}
+                          <select value={p.weight || 2} disabled={!isAdmin} onChange={e => handleInputChange(p.id,'weight',parseInt(e.target.value))} title={isAdmin ? '希望レーンの強さ（絶対このレーン / できれば / どこでもOK）' : '希望レーンの強さの変更は管理者のみ可能です'} className="bg-surface-subtle border border-border rounded px-1.5 py-0.5 text-primary-700 font-bold outline-none focus:border-primary-edge-strong w-12 cursor-pointer text-xs disabled:opacity-40 disabled:cursor-not-allowed">
+                            {([[1, '絶対'], [2, 'できれば'], [3, 'どこでも']] as const).map(([n, l]) => <option key={n} value={n}>{l}</option>)}
                           </select>
                         </td>
-                        <td className="px-1.5 py-1.5 text-center" title="格上許可 (ON: MMR差200以上/シルバーvsプラチナ等の対面を許容する)">
+                        <td className="px-1.5 py-1.5 text-center" title="格上との対面: チェックあり=⚔️挑戦したい（MMR差200以上の相手ともレーンで当たってよい）/ なし=🛡️守ってほしい">
                           <input type="checkbox" checked={!!p.allow_higher} onChange={e => handleInputChange(p.id,'allow_higher',e.target.checked)} className="w-4 h-4 rounded border-border bg-surface-subtle text-danger-700 focus:ring-danger-500/50 cursor-pointer transition-transform hover:scale-110" />
                         </td>
                         <td className="px-1.5 py-1.5 text-center">
@@ -389,7 +389,7 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                         <span className={`text-xs font-semibold ${getColorFromRankName(p.highest_rank)}`}>{p.highest_rank ? p.highest_rank.split(' ')[0] : 'UNR'}</span>
                         {/* 格上との対面OKの人だけ印を付ける（保護ありが大多数のため。2026-10-17） */}
                         {p.allow_higher && (
-                          <span className="text-[9px] font-black px-1.5 py-0.2 rounded border bg-danger-100 text-danger-700 border-danger-edge-soft" title="格上との対面OK（保護なし）">⚔️格上OK</span>
+                          <span className="text-[9px] font-black px-1.5 py-0.2 rounded border bg-danger-100 text-danger-700 border-danger-edge-soft" title="格上との対面: ⚔️挑戦したい（保護なし）">⚔️挑戦</span>
                         )}
                         
                         {/* MMR ＆ KTMランクバッジ */}

@@ -61,7 +61,7 @@ export default function GuidePortalTab() {
                 <Sparkles size={13} className="text-primary-600" />
                 主な機能
               </div>
-              <p>・希望レーン（Main/Sub/NG/こだわり度）の柔軟な変更</p>
+              <p>・希望レーン（Main/Sub/NG）・希望レーンの強さ・格上との対面の変更</p>
               <p>・🎁 <strong>デイリーログインボーナス</strong>（毎日アクセスでコインGET）</p>
               <p>・ロール勝率 ＆ 得意チャンプ戦績の統合カルテ表示</p>
               <p>・他プレイヤーへの感謝コイン送金（チップ機能）</p>

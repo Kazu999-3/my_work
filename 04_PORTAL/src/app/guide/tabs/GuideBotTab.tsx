@@ -65,7 +65,7 @@ export default function GuideBotTab() {
             },
             {
               cmd: '/lane',
-              desc: '希望レーン・NGレーン・こだわり度を設定します（チーム分けに反映）',
+              desc: '希望レーン・NGレーン・希望レーンの強さを設定します（チーム分けに反映）',
               example: '/lane main:JG sub:TOP ng1:SUP weight:2',
               tag: '参加者全員',
             },
@@ -334,9 +334,9 @@ export default function GuideBotTab() {
               </div>
               <div>
                 <h3 className="text-base font-black text-foreground">
-                  3. レーン設定コマンド <code className="font-mono text-primary-700">/lane</code> とこだわり度
+                  3. レーン設定コマンド <code className="font-mono text-primary-700">/lane</code> と希望レーンの強さ
                 </h3>
-                <p className="text-xs text-muted-strong">希望ロール・NGロール・対面格上許可の設定方法</p>
+                <p className="text-xs text-muted-strong">希望ロール・NGロール・格上との対面の設定方法（マイページの設定からも変えられます）</p>
               </div>
             </div>
             {openSection === 'lane' ? <ChevronUp size={20} className="text-faint" /> : <ChevronDown size={20} className="text-faint" />}
@@ -355,17 +355,17 @@ export default function GuideBotTab() {
                     <li>・<strong className="text-foreground-soft">main:</strong> メインレーン（TOP / JG / MID / ADC / SUP / ALL）</li>
                     <li>・<strong className="text-foreground-soft">sub:</strong> サブレーン（2番目に得意な位置）</li>
                     <li>・<strong className="text-foreground-soft">ng1 / ng2:</strong> NGレーン（絶対に行きたくない位置）</li>
-                    <li>・<strong className="text-foreground-soft">weight:</strong> こだわり度（1〜3）</li>
-                    <li>・<strong className="text-foreground-soft">allow_higher:</strong> 格上との対面を許容するか</li>
+                    <li>・<strong className="text-foreground-soft">weight:</strong> 希望レーンの強さ（1〜3）</li>
+                    <li>・<strong className="text-foreground-soft">allow_higher:</strong> 格上との対面（true=⚔️挑戦したい / false=🛡️守ってほしい）</li>
                   </ul>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-background border border-border/80 space-y-2">
-                  <h4 className="text-xs font-black text-foreground">こだわり度（weight）の目安</h4>
+                  <h4 className="text-xs font-black text-foreground">希望レーンの強さ（weight）の目安</h4>
                   <ul className="text-xs text-muted space-y-1.5">
-                    <li>・<strong className="text-foreground-soft">1 (絶対):</strong> 何が何でも希望レーンでプレイしたい</li>
-                    <li>・<strong className="text-foreground-soft">2 (通常):</strong> なるべく希望レーンに行きたい（標準）</li>
-                    <li>・<strong className="text-foreground-soft">3 (柔軟):</strong> チームバランス優先。他レーンでもOK</li>
+                    <li>・<strong className="text-foreground-soft">1 (絶対このレーン):</strong> 何が何でも希望レーンでプレイしたい</li>
+                    <li>・<strong className="text-foreground-soft">2 (できれば):</strong> なるべく希望レーンに行きたい（標準）</li>
+                    <li>・<strong className="text-foreground-soft">3 (どこでもOK):</strong> チームバランス優先。他レーンでもOK</li>
                   </ul>
                 </div>
               </div>

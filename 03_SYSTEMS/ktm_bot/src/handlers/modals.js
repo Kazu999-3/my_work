@@ -236,7 +236,7 @@ export async function handleModalSubmit(interaction, env, ctx) {
           discordId: userId, discordName, main, sub, ng1, ng2, weight,
         });
         await patchInteractionResponse(appId, token, {
-          content: `✅ **レーン設定を保存しました**\nメイン: \`${main}\` / サブ: \`${sub || '-'}\` / NG1: \`${ng1 || '-'}\` / NG2: \`${ng2 || '-'}\`${weight ? ` / こだわり度: \`${weight}\`` : ''}\nチーム分けの際にこの希望が考慮されます。`
+          content: `✅ **レーン設定を保存しました**\nメイン: \`${main}\` / サブ: \`${sub || '-'}\` / NG1: \`${ng1 || '-'}\` / NG2: \`${ng2 || '-'}\`${weight ? ` / 希望レーンの強さ: \`${({ 1: '絶対このレーン', 2: 'できれば', 3: 'どこでもOK' })[weight] || weight}\`` : ''}\nチーム分けの際にこの希望が考慮されます。`
         });
       } catch (err) {
         // ⚠️ 2026-09-29 是正: 以前はここが console.error だけで、**保存に失敗しても

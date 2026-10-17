@@ -21,6 +21,8 @@ export interface ChannelActivity {
   lastAuthorKind: AuthorKind | null;
   /** 本人が最後に話していて、まだ誰も返していない */
   needsReply: boolean;
+  /** 要返信のうち、管理画面の「開く」でまだ見ていない（Discord の既読は Bot から読めないため独自に記録） */
+  unread: boolean;
   url: string;
 }
 
@@ -69,6 +71,8 @@ export async function syncOnboardingChannels(): Promise<{ channels: ChannelActiv
       last_author_id: prev?.last_author_id ?? null,
       last_author_kind: prev?.last_author_kind ?? null,
       notified_message_id: prev?.notified_message_id ?? null,
+      read_message_id: prev?.read_message_id ?? null,
+      reply_dismissed_message_id: prev?.reply_dismissed_message_id ?? null,
       updated_at: new Date().toISOString(),
     };
     if (ch.lastMessageId && ch.lastMessageId !== prev?.last_message_id) {
@@ -117,7 +121,8 @@ export async function syncOnboardingChannels(): Promise<{ channels: ChannelActiv
         type: 'onboarding_message',
         title: `💬 ${who} さんから個別案内に新着`,
         body: snippet ? (snippet.length > 80 ? `${snippet.slice(0, 80)}…` : snippet) : '新しいメッセージがあります',
-        url: channelUrl(m.channelId),
+        // タップで既読を記録してから Discord へ移る（/api/admin/onboarding-channels/read の GET）
+        url: `/api/admin/onboarding-channels/read?channelId=${m.channelId}`,
         data: { channelId: m.channelId, messageId: m.messageId },
       });
       await supabase.from('onboarding_channel_state').update({ notified_message_id: m.messageId }).eq('channel_id', m.channelId);
@@ -131,7 +136,9 @@ export async function syncOnboardingChannels(): Promise<{ channels: ChannelActiv
     ownerUserId: r.owner_user_id,
     lastMessageAt: r.last_message_at,
     lastAuthorKind: r.last_author_kind,
-    needsReply: r.last_author_kind === 'member',
+    // 「返信不要」にした発言のままなら要返信から外す（本人が新しく発言すれば戻る）
+    needsReply: r.last_author_kind === 'member' && r.reply_dismissed_message_id !== r.last_message_id,
+    unread: r.last_author_kind === 'member' && r.reply_dismissed_message_id !== r.last_message_id && r.read_message_id !== r.last_message_id,
     url: channelUrl(r.channel_id),
   }));
   return { channels, notified };
@@ -166,4 +173,20 @@ export async function broadcastToOnboardingChannels(
     await new Promise((r) => setTimeout(r, 300));
   }
   return { sent, failed };
+}
+
+/** 管理画面の「開く」を押した時点の最新メッセージを既読にする */
+export async function markOnboardingChannelRead(channelId: string): Promise<void> {
+  const { data } = await supabase.from('onboarding_channel_state').select('last_message_id').eq('channel_id', channelId).maybeSingle();
+  if (!data) return;
+  await supabase.from('onboarding_channel_state').update({ read_message_id: data.last_message_id }).eq('channel_id', channelId);
+}
+
+/** 今の最新メッセージまでを「返信不要」にする（既読にもする） */
+export async function dismissOnboardingChannelReply(channelId: string): Promise<void> {
+  const { data } = await supabase.from('onboarding_channel_state').select('last_message_id').eq('channel_id', channelId).maybeSingle();
+  if (!data) return;
+  await supabase.from('onboarding_channel_state')
+    .update({ reply_dismissed_message_id: data.last_message_id, read_message_id: data.last_message_id })
+    .eq('channel_id', channelId);
 }

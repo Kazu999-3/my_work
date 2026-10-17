@@ -55,10 +55,10 @@ export function normalizeWeightInput(raw) {
   if (!s) return { value: undefined, error: null };
   const n = parseInt(s, 10);
   if (Number.isNaN(n)) {
-    return { value: undefined, error: `こだわり度は数字で入力してください（1=絶対 / 2=通常 / 3=柔軟）。入力値: 「${raw}」` };
+    return { value: undefined, error: `希望レーンの強さは数字で入力してください（1=絶対このレーン / 2=できれば / 3=どこでもOK）。入力値: 「${raw}」` };
   }
   if (n < 1 || n > 3) {
-    return { value: undefined, error: `こだわり度は 1〜3 で入力してください（1=絶対 / 2=通常 / 3=柔軟）。入力値: ${n}` };
+    return { value: undefined, error: `希望レーンの強さは 1〜3 で入力してください（1=絶対このレーン / 2=できれば / 3=どこでもOK）。入力値: ${n}` };
   }
   return { value: n, error: null };
 }

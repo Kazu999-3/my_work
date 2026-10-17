@@ -242,7 +242,7 @@ export default function BalanceResultModal({ players, savingPending, copiedResul
                     <span>⚠️ 【管理者確認】格上対面が許可されていないプレイヤーが含まれています</span>
                   </div>
                   <p className="text-xs text-danger-800/90 leading-relaxed">
-                    以下の対面はMMR差が200以上（シルバーvsプラチナ等）ありますが、下位側プレイヤーの「格上許可」チェックが入っていません。10人構成の都合上やむを得ずマッチングされた可能性があります。
+                    以下の対面はMMR差が200以上（シルバーvsプラチナ等）ありますが、下位側プレイヤーの「格上との対面」が「🛡️守ってほしい」になっています。10人構成の都合上やむを得ずマッチングされた可能性があります。
                   </p>
                   <div className="space-y-1 bg-white/80 p-2.5 rounded-lg border border-danger-200 text-xs">
                     {balanceResult.unallowedHigherMatchups.map((m: any, idx: number) => (

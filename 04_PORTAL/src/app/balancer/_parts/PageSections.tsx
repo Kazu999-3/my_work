@@ -129,12 +129,12 @@ export function MatchingGlossary() {
       </summary>
       <div className="px-4 pb-4 grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
         <div className="bg-surface-subtle p-4 rounded border border-border">
-          <span className="font-bold text-primary-700 mb-1 block">こだわり (1～3)</span>
-          <p className="text-faint">メインレーンをどれくらいやりたいかの度合い。1(絶対やりたい) ～ 3(どこでもいい)。</p>
+          <span className="font-bold text-primary-700 mb-1 block">希望レーンの強さ</span>
+          <p className="text-faint">メインレーンをどれくらいやりたいか。「絶対このレーン」「できれば」「どこでもOK」の3段階。</p>
         </div>
         <div className="bg-surface-subtle p-4 rounded border border-border">
-          <span className="font-bold text-danger-700 mb-1 block">格上許可 (ON/OFF)</span>
-          <p className="text-faint">自分より実力・MMR差が大きい相手（差200以上、シルバーvsプラチナ等）との対面を許容する設定です。OFFの場合は極力対面がブロックされ、11人以上の選抜時は観戦枠へ優先送致されます。</p>
+          <span className="font-bold text-danger-700 mb-1 block">格上との対面（🛡️守ってほしい / ⚔️挑戦したい）</span>
+          <p className="text-faint">MMR差が大きい相手（差200以上、シルバーvsプラチナ等）とレーンで当たってよいか。「🛡️守ってほしい」の人は、チーム分けでなるべくMMRの近い相手と対面させます。</p>
         </div>
         <div className="bg-surface-subtle p-4 rounded border border-border">
           <span className="font-bold text-success-700 mb-1 block">PITY (ピティ)</span>

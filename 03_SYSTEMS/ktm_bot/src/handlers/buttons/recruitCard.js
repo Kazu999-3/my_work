@@ -426,7 +426,7 @@ async function sendOnboardingIfNeeded(env, userId) {
       body: JSON.stringify({
         embeds: [{
           title: '👋 KTMカスタムへの参加ありがとうございます！',
-          description: `より良いチーム分けのために、以下の設定をお願いします：\n\n${missing.join('\n')}\n\n設定しておくと、あなたの希望レーンや「こだわり度」「格上許可」がチーム分けに反映されます。`,
+          description: `より良いチーム分けのために、以下の設定をお願いします：\n\n${missing.join('\n')}\n\n設定しておくと、あなたの希望レーンや「希望レーンの強さ」「格上との対面」がチーム分けに反映されます。`,
           // 0x00cfef（シアン）は `.claude/rules/ui-conventions.md` の「寒色系ネオン禁止」に反するため
           // Hextechゴールド（#C89B3C 系）へ変更（2026-09-29）
           color: 0xc2650f,

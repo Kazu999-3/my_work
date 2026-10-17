@@ -14,6 +14,7 @@ interface Row {
   lastMessageAt: string | null;
   lastAuthorKind: 'member' | 'admin' | 'bot' | 'other' | null;
   needsReply: boolean;
+  unread: boolean;
   lastPlayedAt: string | null;
   url: string;
 }
@@ -29,7 +30,7 @@ function ago(iso: string | null): string {
 }
 
 const KIND_LABEL: Record<string, { text: string; cls: string }> = {
-  member: { text: '本人（要返信）', cls: 'bg-danger-100 text-danger-700 border-danger-edge-soft' },
+  member: { text: '本人', cls: 'bg-black/5 text-muted-strong border-border' },
   admin: { text: '管理者', cls: 'bg-success-100 text-success-700 border-success-edge' },
   bot: { text: 'Bot', cls: 'bg-black/5 text-muted-strong border-border' },
   other: { text: 'その他', cls: 'bg-black/5 text-muted-strong border-border' },
@@ -61,13 +62,36 @@ export default function OnboardingChannelsPanel() {
   };
   useEffect(() => { load(); }, []);
 
-  // 要返信を先頭に、あとは最後の発言が新しい順
+  // 未読 → 既読・未返信 → それ以外。同じ中では最後の発言が新しい順
+  const rank = (r: Row) => (r.unread ? 0 : r.needsReply ? 1 : 2);
   const sorted = useMemo(() => [...rows].sort((a, b) => {
-    if (a.needsReply !== b.needsReply) return a.needsReply ? -1 : 1;
+    if (rank(a) !== rank(b)) return rank(a) - rank(b);
     return (b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0) - (a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0);
   }), [rows]);
 
-  const needsReplyCount = rows.filter((r) => r.needsReply).length;
+  const unreadCount = rows.filter((r) => r.unread).length;
+  const readNoReplyCount = rows.filter((r) => r.needsReply && !r.unread).length;
+
+  // 「返信不要」: この発言には返さなくてよいので要返信から外す（本人が新しく発言すれば戻る）
+  const dismissReply = (id: string) => {
+    setRows((prev) => prev.map((r) => (r.channelId === id ? { ...r, unread: false, needsReply: false } : r)));
+    fetch('/api/admin/onboarding-channels/read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channelId: id, dismiss: true }),
+    }).catch(() => {});
+  };
+
+  // 「開く」で既読にする（Discord の既読は読めないため、ここで開いたことを既読とみなす）
+  const markRead = (id: string) => {
+    setRows((prev) => prev.map((r) => (r.channelId === id ? { ...r, unread: false } : r)));
+    fetch('/api/admin/onboarding-channels/read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channelId: id }),
+      keepalive: true,
+    }).catch(() => {});
+  };
 
   const selectBy = (pred: (r: Row) => boolean) => setSelected(new Set(rows.filter(pred).map((r) => r.channelId)));
   const toggle = (id: string) => setSelected((prev) => {
@@ -107,7 +131,7 @@ export default function OnboardingChannelsPanel() {
         <div>
           <h2 className="text-lg font-bold text-foreground">🤝 個別案内（{rows.length}件）</h2>
           <p className="text-xs text-muted-strong mt-0.5">
-            要返信 <span className="font-bold text-danger-700">{needsReplyCount}件</span>。本人からの新着は5分おきに確認し、アプリにも通知します
+            未読 <span className="font-bold text-danger-700">{unreadCount}件</span> ／ 既読・未返信 <span className="font-bold text-primary-700">{readNoReplyCount}件</span>。「開く」で既読になります。本人からの新着は5分おきに確認し、アプリにも通知します
           </p>
         </div>
         <button onClick={load} disabled={loading} className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold rounded-lg border border-border bg-black/5 text-foreground hover:bg-black/5 disabled:opacity-50">
@@ -123,7 +147,7 @@ export default function OnboardingChannelsPanel() {
           <button onClick={() => selectBy(() => true)} className="px-2.5 py-1 rounded-full border border-border hover:bg-black/5">全員</button>
           <button onClick={() => selectBy((r) => !!r.lastPlayedAt && Date.now() - new Date(r.lastPlayedAt).getTime() <= 60 * DAY)} className="px-2.5 py-1 rounded-full border border-border hover:bg-black/5">直近60日に試合参加</button>
           <button onClick={() => selectBy((r) => !r.lastMessageAt || Date.now() - new Date(r.lastMessageAt).getTime() > 30 * DAY)} className="px-2.5 py-1 rounded-full border border-border hover:bg-black/5">30日以上発言なし</button>
-          <button onClick={() => selectBy((r) => r.needsReply)} className="px-2.5 py-1 rounded-full border border-border hover:bg-black/5">要返信</button>
+          <button onClick={() => selectBy((r) => r.needsReply)} title="未読と既読・未返信の両方" className="px-2.5 py-1 rounded-full border border-border hover:bg-black/5">要返信</button>
           <button onClick={() => setSelected(new Set())} className="px-2.5 py-1 rounded-full border border-border hover:bg-black/5">選択解除</button>
         </div>
         <textarea
@@ -158,12 +182,13 @@ export default function OnboardingChannelsPanel() {
 
       {/* 一覧 */}
       <div className="overflow-x-auto rounded-xl border border-border">
-        <table className="w-full text-sm min-w-[560px]">
+        <table className="w-full text-sm min-w-[640px]">
           <thead className="bg-black/5 text-xs text-muted-strong">
             <tr>
               <th className="p-2 w-8"></th>
               <th className="p-2 text-left">メンバー</th>
               <th className="p-2 text-left">最後の発言</th>
+              <th className="p-2 text-left">状態</th>
               <th className="p-2 text-left">話した人</th>
               <th className="p-2 text-left">最後の試合</th>
               <th className="p-2"></th>
@@ -171,7 +196,7 @@ export default function OnboardingChannelsPanel() {
           </thead>
           <tbody>
             {loading && rows.length === 0 ? (
-              <tr><td colSpan={6} className="p-6 text-center text-muted-strong">読み込み中…</td></tr>
+              <tr><td colSpan={7} className="p-6 text-center text-muted-strong">読み込み中…</td></tr>
             ) : sorted.map((r) => {
               const kind = r.lastAuthorKind ? KIND_LABEL[r.lastAuthorKind] : null;
               return (
@@ -185,11 +210,29 @@ export default function OnboardingChannelsPanel() {
                   </td>
                   <td className="p-2 text-foreground-subtle whitespace-nowrap">{ago(r.lastMessageAt)}</td>
                   <td className="p-2">
+                    {r.unread ? (
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded border whitespace-nowrap bg-danger-100 text-danger-700 border-danger-edge-soft">● 未読</span>
+                    ) : r.needsReply ? (
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded border whitespace-nowrap bg-primary-100 text-primary-700 border-primary-edge-soft">既読・未返信</span>
+                    ) : (
+                      <span className="text-faint text-xs">-</span>
+                    )}
+                    {r.needsReply && (
+                      <button
+                        onClick={() => dismissReply(r.channelId)}
+                        className="ml-1.5 text-[11px] text-muted-strong underline hover:text-foreground whitespace-nowrap"
+                        title="この発言には返信しなくてよいので、要返信から外します（本人が新しく発言すれば戻ります）"
+                      >
+                        返信不要
+                      </button>
+                    )}
+                  </td>
+                  <td className="p-2">
                     {kind ? <span className={`text-[11px] font-bold px-2 py-0.5 rounded border whitespace-nowrap ${kind.cls}`}>{kind.text}</span> : <span className="text-faint">-</span>}
                   </td>
                   <td className="p-2 text-muted-strong whitespace-nowrap">{r.lastPlayedAt ? ago(r.lastPlayedAt) : '未参加'}</td>
                   <td className="p-2 text-right">
-                    <a href={r.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-secondary-700 hover:underline whitespace-nowrap">
+                    <a href={r.url} target="_blank" rel="noopener noreferrer" onClick={() => markRead(r.channelId)} className="inline-flex items-center gap-1 text-xs text-secondary-700 hover:underline whitespace-nowrap">
                       開く <ExternalLink className="h-3 w-3" />
                     </a>
                   </td>

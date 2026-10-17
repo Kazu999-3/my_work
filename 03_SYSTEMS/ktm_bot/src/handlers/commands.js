@@ -300,7 +300,7 @@ export function handleLaneCommand(interaction, env, ctx) {
         await fetchPortalAPI(env, '/api/player/update-lane', {
           discordId: userId, discordName, main, sub, ng1, ng2, weight, allowHigher,
         });
-        await patchInteractionResponse(appId, token, { content: `✅ **引数からレーン設定を完了しました**\nメイン:${main} / サブ:${sub} / こだわり:${weight || "未指定"} / 格上許可:${allowHigher !== undefined ? allowHigher : "未指定"}` });
+        await patchInteractionResponse(appId, token, { content: `✅ **引数からレーン設定を完了しました**\nメイン:${main} / サブ:${sub} / 希望レーンの強さ:${({ 1: '絶対このレーン', 2: 'できれば', 3: 'どこでもOK' })[weight] || weight || "未指定"} / 格上との対面:${allowHigher === undefined ? "未指定" : (String(allowHigher) === 'true' ? '⚔️挑戦したい' : '🛡️守ってほしい')}` });
       } catch (err) { 
         console.error("Lane Update Error:", err); 
         await patchInteractionResponse(appId, token, { content: `❌ **エラーが発生しました:** ${err.message}` }).catch(e => console.error("Error reporting failed:", e));
@@ -317,7 +317,7 @@ export function handleLaneCommand(interaction, env, ctx) {
       components: [
         { type: 1, components: [{ type: 4, custom_id: "main", label: "メインレーン", style: 1, placeholder: "TOP/JG/MID/ADC/SUP/ALL", required: true }] },
         { type: 1, components: [{ type: 4, custom_id: "sub", label: "サブレーン", style: 1, required: false }] },
-        { type: 1, components: [{ type: 4, custom_id: "weight", label: "こだわり度 (1:絶対, 2:通常, 3:柔軟)", style: 1, placeholder: "1, 2, or 3", required: false }] },
+        { type: 1, components: [{ type: 4, custom_id: "weight", label: "希望レーンの強さ (1:絶対このレーン 2:できれば 3:どこでもOK)", style: 1, placeholder: "1, 2, 3（未入力は2）", required: false }] },
         { type: 1, components: [{ type: 4, custom_id: "ng1", label: "NGレーン1", style: 1, required: false }] },
         { type: 1, components: [{ type: 4, custom_id: "ng2", label: "NGレーン2", style: 1, required: false }] }
       ]

@@ -60,7 +60,7 @@ export async function handleRegistrationMentorshipButtons(interaction, env, ctx,
               {
                 type: 4,
                 custom_id: "weight",
-                label: "こだわり度 (1:絶対, 2:通常, 3:柔軟)",
+                label: "希望レーンの強さ (1:絶対このレーン 2:できれば 3:どこでもOK)",
                 style: 1,
                 placeholder: "1, 2, または 3 (未入力は2)",
                 required: false,

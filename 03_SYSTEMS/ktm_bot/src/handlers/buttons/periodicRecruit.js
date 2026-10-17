@@ -251,7 +251,8 @@ export async function handlePeriodicRecruitButtons(interaction, env, ctx, { cust
                 if (higherOpponents.length >= 2) {
                   const oppSample = higherOpponents.slice(0, 3).map(o => o.name).join('さん、') + 'さん';
                   await sendInteractionFollowup(appId, token, {
-                    content: `⚠️ **【格上マッチングに関する事前のご案内】**\n現在エントリー中のメンバーに、あなたと実力・MMR差が大きい方（${oppSample} 等）が含まれています。\n\n現在あなたの設定は **【格上対面：未許可（OFF）】** になっているため、対面の組み合わせ次第では **観戦枠（待機ベンチ）に回る可能性** があります。\n（※「格上相手でも胸を借りるつもりで対戦したい！」という場合は、Webポータルから「格上許可」にチェックを付けるか運営までお伝えください🙏）`,
+                    // 2026-10-17: 全員出場が基本になり観戦枠へ回すことは無くなったため、保護される旨の案内に変更
+                    content: `🛡️ **【格上との対面について】**\n今回のエントリーには、あなたよりMMRが大きく上の方（${oppSample} 等）がいます。\nあなたの設定は **「🛡️守ってほしい」** なので、チーム分けではなるべくMMRの近い人とレーンで当たるように調整します。\n（格上とも戦ってみたい場合は、マイページの「格上との対面」を「⚔️挑戦したい」に変えられます）`,
                     flags: 64
                   }).catch(e => console.warn('Followup warn error:', e));
                 }

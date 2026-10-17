@@ -422,13 +422,13 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
       <div className="space-y-4 pt-4 border-t border-border dark:border-border">
         <div className="space-y-2">
           <label className="block text-xs font-black text-foreground-subtle uppercase tracking-wider">
-            🎚️ 希望レーンへのこだわり
+            🎚️ 希望レーンの強さ
           </label>
           <div className="grid grid-cols-3 gap-2">
             {[
-              { v: 1, title: "絶対", desc: "希望レーン以外はできるだけ避けたい" },
-              { v: 2, title: "通常", desc: "なるべく希望レーン（標準）" },
-              { v: 3, title: "柔軟", desc: "チームのためならどこでもOK" },
+              { v: 1, title: "絶対このレーン", desc: "希望レーン以外はできるだけ避けたい" },
+              { v: 2, title: "できれば", desc: "なるべく希望レーン（標準）" },
+              { v: 3, title: "どこでもOK", desc: "チームのためならどこでも入ります" },
             ].map((o) => (
               <button
                 key={`w-${o.v}`}
@@ -453,8 +453,8 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {[
-              { v: false, title: "避けたい（保護あり）", desc: "MMRが大きく上の人とはなるべく同じレーンで当たらないようにします" },
-              { v: true, title: "OK（腕試ししたい）", desc: "格上の人とも対面になってかまいません" },
+              { v: false, title: "🛡️ 守ってほしい", desc: "MMRが大きく上の人とは、なるべくレーンで当たらないようにします" },
+              { v: true, title: "⚔️ 挑戦したい", desc: "格上の人ともレーンで当たってかまいません" },
             ].map((o) => (
               <button
                 key={`ah-${String(o.v)}`}
