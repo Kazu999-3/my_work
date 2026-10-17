@@ -8,7 +8,7 @@
  */
 import { supabaseAdmin as supabase } from './supabaseAdmin';
 import { discordFetch } from './discordFetch';
-import { listOnboardingChannels, SERVER_ADMIN_USER_ID, GUILD_ID } from './onboardingProcessor';
+import { listOnboardingChannels, onboardingChannelName, SERVER_ADMIN_USER_ID, GUILD_ID } from './onboardingProcessor';
 import { createAdminNotification } from './notify';
 
 export type AuthorKind = 'member' | 'admin' | 'bot' | 'other';
@@ -189,4 +189,55 @@ export async function dismissOnboardingChannelReply(channelId: string): Promise<
   await supabase.from('onboarding_channel_state')
     .update({ reply_dismissed_message_id: data.last_message_id, read_message_id: data.last_message_id })
     .eq('channel_id', channelId);
+}
+
+// 記号や大文字小文字を無視した比較用（Discord がチャンネル名を自動で書き換える分を吸収する）
+const looseKey = (v: string) => v.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+
+/**
+ * 個別案内チャンネルの名前を、持ち主の今の表示名（サーバーのニックネーム → 表示名 → ユーザー名）に付け直す。
+ * 「どの表示名から付けたか」（name_source）を記録し、表示名が変わった人だけ改名する。
+ * 記録が無い初回は、今のチャンネル名がすでに今の表示名と同じなら記録だけする。
+ */
+export async function renameOnboardingChannels(): Promise<{ checked: number; renamed: number }> {
+  const headers = botHeaders();
+  const list = await listOnboardingChannels();
+  const res = await discordFetch(`https://discord.com/api/v10/guilds/${GUILD_ID}/members?limit=1000`, { headers });
+  if (!res.ok) throw new Error(`メンバー一覧の取得に失敗: ${res.status}`);
+  const members: any[] = await res.json();
+  const displayOf = new Map<string, string>(
+    members.map((m) => [String(m.user?.id), String(m.nick || m.user?.global_name || m.user?.username || '')])
+  );
+  const { data: rows } = await supabase.from('onboarding_channel_state').select('channel_id,name_source');
+  const sourceOf = new Map<string, string | null>((rows || []).map((r: any) => [String(r.channel_id), r.name_source]));
+
+  let renamed = 0;
+  for (const ch of list) {
+    const display = displayOf.get(ch.userId);
+    if (!display || !sourceOf.has(ch.channelId)) continue; // 退出者・まだ状態の無いチャンネルは次回
+    const prevSource = sourceOf.get(ch.channelId);
+    if (prevSource === display) continue;
+    const expected = onboardingChannelName(display);
+    if (prevSource == null && looseKey(ch.name) === looseKey(expected)) {
+      await supabase.from('onboarding_channel_state').update({ name_source: display }).eq('channel_id', ch.channelId);
+      continue;
+    }
+    const patch = await discordFetch(`https://discord.com/api/v10/channels/${ch.channelId}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ name: expected }),
+    }, 1);
+    if (patch.status === 429) break; // 改名は回数制限が厳しいので、残りは次回へ
+    if (!patch.ok) {
+      console.warn('[renameOnboardingChannels] 改名に失敗:', ch.channelId, patch.status);
+      continue;
+    }
+    const updated = await patch.json().catch(() => null);
+    await supabase.from('onboarding_channel_state')
+      .update({ name_source: display, channel_name: updated?.name || expected })
+      .eq('channel_id', ch.channelId);
+    renamed++;
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  return { checked: list.length, renamed };
 }

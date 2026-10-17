@@ -60,7 +60,8 @@ function buildEntrySuffix(playerRow, def) {
       };
       const p1 = lane(pref.primary);
       let p2 = lane(pref.secondary);
-      if (p2 === p1) p2 = '';
+      // 第1希望が ALL ならどのレーンでも希望どおり扱いで、第2希望はチーム分けで使われないので出さない
+      if (p2 === p1 || p1 === 'ALL') p2 = '';
       if (p1 && p2) {
         lanePrefStr = ` 【${p1}/${p2}】`;
       } else if (p1 || p2) {

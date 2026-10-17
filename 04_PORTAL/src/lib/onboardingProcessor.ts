@@ -274,13 +274,18 @@ export async function getOrCreateOnboardingCategory(): Promise<string | null> {
 /**
  * 個別プライベート案内チャンネルを作成する
  */
+/** 個別案内チャンネルの名前（作成時と、表示名が変わった時の付け直しで共通。2026-10-17） */
+export function onboardingChannelName(userName: string): string {
+  return `🔒・${userName.slice(0, 20).toLowerCase().replace(/[\s_]+/g, '-')}-案内`;
+}
+
 export async function createPrivateWelcomeChannel(params: {
   userId: string;
   userName: string;
   categoryId?: string | null;
 }): Promise<string | null> {
   const headers = getBotHeaders();
-  const safeName = `🔒・${params.userName.slice(0, 20).toLowerCase().replace(/[\s_]+/g, '-')}-案内`;
+  const safeName = onboardingChannelName(params.userName);
 
   // Permission Overwrites:
   // 1. @everyone: VIEW_CHANNEL (1024) DENY
