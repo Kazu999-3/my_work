@@ -210,6 +210,10 @@ export async function sendEventUsersNotification(env, options = {}) {
  *   「最新1件」は常に日曜カード（後に投稿した方）を指してしまい、土曜の判定が
  *   日曜の人数で行われる。start_at で当日のカードを直接引くよう改めた。
  */
+// 20:00 判定で人数が足りなくても「中止」の告知を出さない日（JST、YYYY-MM-DD）。主催者が個別に判断する日用。
+// 2026-10-17: プラチナ基準で第1戦が足りない見込みだが、観戦の人も含めて開催を検討するため（ユーザー指示）
+const NO_CANCEL_NOTICE_DATES = ['2026-10-17'];
+
 export async function checkCustomStatusAt2000(env) {
   try {
     // ★ 2026-09-21修正: ここだけが他の全関数と違い、CONFIGのフォールバックを持たない
@@ -322,6 +326,49 @@ export async function checkCustomStatusAt2000(env) {
       return;
     }
 
+    const idsIn = (lines) => [...new Set((lines || []).flatMap((l) => [...l.matchAll(/<@!?(\d+)>/g)].map((m) => m[1])))].slice(0, 100);
+    const replyTo = summary.messageId ? { message_reference: { message_id: summary.messageId, fail_if_not_exists: false } } : {};
+    const postChannelId = summary.channelId || channelId;
+
+    // A-2. 第1戦は足りないが第2戦は10名そろう → 第2戦から開催で確定（2026-10-17、ユーザー判断）
+    if (breakdown?.isMatch2Ready) {
+      // 第2戦に出る人 = 第1戦欄のうち「1戦のみ」以外 ＋ 2戦目から合流
+      const match2Ids = idsIn([...(breakdown.match1Lines || []).filter((l) => !/1戦のみ/.test(l)), ...(breakdown.match2LateLines || [])]);
+      await fetchWithRetry(`https://discord.com/api/v10/channels/${postChannelId}/messages`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: `🎉 **【本日20:00 判定: 第2戦から開催確定！】**\n${def.emoji} **${def.name}** は第1戦が ${firstMatchCount}/${DAY_CAPACITY}名 のため、**第2戦から**開催します（第2戦は ${breakdown.match2Count}名）。開始時刻は主催者からの案内をお待ちください。` +
+            (match2Ids.length ? `\n\n集合をお願いします 🎮 ${match2Ids.map((id) => `<@${id}>`).join(' ')}` : ''),
+          allowed_mentions: { users: match2Ids },
+          ...replyTo,
+        })
+      });
+      console.log(`[Check2000] 第2戦から開催確定を投稿しました（${breakdown.match2Count}名）`);
+      return;
+    }
+
+    // A-3. 観戦・2部屋目待ちの人まで含めれば第1戦が10名になる → 観戦の人へ参加のお願い（中止にしない。2026-10-17）
+    const spectatorLinesForMatch1 = (breakdown?.spectatorLines || []).filter((l) => !/2戦目/.test(l));
+    if (breakdown && firstMatchCount + spectatorLinesForMatch1.length >= DAY_CAPACITY) {
+      const spectatorIds = idsIn(spectatorLinesForMatch1);
+      await fetchWithRetry(`https://discord.com/api/v10/channels/${postChannelId}/messages`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bot ${env.DISCORD_TOKEN}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: `🙋 **【参加のお願い】${def.name}**\n` +
+            `第1戦の出場対象は ${firstMatchCount}/${DAY_CAPACITY}名 で、あと **${shortfall}名** 足りません。\n` +
+            `観戦・2部屋目待ちの方が入ってくれれば開催できます。ランク差ありでも参加OKな方は、このメッセージに ✅ で返事をお願いします🙏\n` +
+            `（集まり次第、主催者が開催を判断します）` +
+            (spectatorIds.length ? `\n\n${spectatorIds.map((id) => `<@${id}>`).join(' ')}` : ''),
+          allowed_mentions: { users: spectatorIds },
+          ...replyTo,
+        })
+      });
+      console.log(`[Check2000] 観戦枠への参加依頼を投稿しました（第1戦 ${firstMatchCount}名 + 観戦枠 ${spectatorLinesForMatch1.length}名）`);
+      return;
+    }
+
     // B. あと1〜2名 かつ 途中参加者がいる場合は、1戦だけの助っ人をピンポイント募集（募集カードへの返信）
     if (firstMatchCount >= 8 && lateCount >= 1) {
       const helpComponents = [
@@ -365,6 +412,13 @@ export async function checkCustomStatusAt2000(env) {
     }
 
     // C. 中止
+    // 主催者の判断で中止の告知を出さない日（JSTの日付）。カードも締め切らない。
+    const todayJst = nowJst.toISOString().slice(0, 10);
+    if (NO_CANCEL_NOTICE_DATES.includes(todayJst)) {
+      console.log(`[Check2000] ${todayJst} は中止告知を出さない日のためスキップ（第1戦 ${firstMatchCount}名）`);
+      return;
+    }
+
     // 2026-10-03: 以前は「21:00まで参加枠を開放しています／別モードで遊ぶことも可能です」という
     // 状況案内とノーマル・ARAMのクイック募集ボタンだったが、開催するのかしないのかが曖昧だった。
     // ユーザー指示により「中止」と明言し、遊びたい人向けに通常募集を立てるボタンだけを付ける。
