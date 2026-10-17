@@ -210,19 +210,28 @@ export interface MmrCalcContext {
   csd15?: number; // 15分時点での対面とのCS差
 }
 
-/** KDAボーナスの上限（2026-10-17: 15→7.5） */
-export const KDA_BONUS_MAX = 7.5;
 /**
- * ロールごとの基準KDA（2026-10-17、KDAのある69試合のロール別中央値）。
- * 以前は全ロール 2.0 基準＋サポートだけ +0.8 で、1試合あたりのボーナスがトップ 2.2・サポート 3.8 と
- * ロールで偏っていた（30試合で約50点差）。中央値基準にすると 2.3〜2.9 に揃う。予測精度はほぼ同じ。
+ * KDAボーナス（2026-10-17 改訂）。
+ * 位置づけ: 勝ち負けはチーム次第でどうしようもない場合があるので、その救済。
+ * - 負けた試合: 負けた人の普通より活躍していれば減点を軽くする（最低 -3 は下がる。calculateNewMMR の下限）
+ * - 勝った試合: 勝った人の普通より上回った時だけ上乗せ（キャリーした人が報われ、運ばれた人には付かない）
+ *
+ * 経緯: 以前は勝ち負け共通の基準 2.0（サポート +0.8）・最大 +15 だったが、勝った側の KDA は中央値 5.25 と
+ * 自然に高く（77% が KDA 3 以上）、勝者のほぼ全員が満額を受け取り MMR 全体が膨らんでいた。いったん最大 +7.5 に
+ * 半減したが、救済として弱くなりすぎるためユーザー判断で +15 に戻し、基準を「勝ち負け×ロール」の中央値に分けた。
+ * バックテスト（133試合）では、予測のずれ 0.7061（旧 0.7098 / 半減 0.7080）で3方式のうち最も良かった。
  */
-export const KDA_BASELINE_BY_ROLE: Record<string, number> = { TOP: 1.8, JG: 3.0, MID: 2.2, ADC: 3.1, SUP: 2.5 };
-const KDA_BASELINE_DEFAULT = 2.5;
-export const kdaBaseline = (role?: string) => KDA_BASELINE_BY_ROLE[(role || '').toUpperCase()] ?? KDA_BASELINE_DEFAULT;
-/** ロールの基準KDAからの加点。基準+3.0で上限 */
-export const calculateKdaBonus = (kdaScore: number, role?: string) =>
-  Math.max(0, Math.min(KDA_BONUS_MAX, (kdaScore - kdaBaseline(role)) * 2.5));
+export const KDA_BONUS_MAX = 15;
+/** 勝ち負け×ロールごとの基準KDA（2026-10-17、KDAのある69試合の中央値） */
+export const KDA_BASELINE_WIN: Record<string, number> = { TOP: 3.5, JG: 7.0, MID: 4.5, ADC: 5.8, SUP: 5.7 };
+export const KDA_BASELINE_LOSS: Record<string, number> = { TOP: 1.2, JG: 1.6, MID: 1.0, ADC: 1.4, SUP: 1.1 };
+const KDA_BASELINE_DEFAULT = { win: 5.25, loss: 1.3 }; // 勝ち・負け全体の中央値（ロール不明時）
+export const kdaBaseline = (role: string | undefined, isWin: boolean) =>
+  (isWin ? KDA_BASELINE_WIN : KDA_BASELINE_LOSS)[(role || '').toUpperCase()]
+  ?? (isWin ? KDA_BASELINE_DEFAULT.win : KDA_BASELINE_DEFAULT.loss);
+/** 同じロール・同じ結果の基準KDAからの加点。基準 +3.0 で上限 */
+export const calculateKdaBonus = (kdaScore: number, role: string | undefined, isWin: boolean) =>
+  Math.max(0, Math.min(KDA_BONUS_MAX, (kdaScore - kdaBaseline(role, isWin)) * 5));
 
 export function calculateNewMMR(ctx: MmrCalcContext): number {
   const { currentMmr, opponentMmr, isWin, kills, deaths, assists, role, matchupCount } = ctx;
@@ -274,15 +283,13 @@ export function calculateNewMMR(ctx: MmrCalcContext): number {
   // ③ KDAボーナス (手動入力パラメータのキル・デス・アシストから実力を正しく評価)
   const kdaScore = deaths === 0 ? (kills + assists) * 1.2 : (kills + assists) / deaths;
 
-  // ロールの基準KDAから加点（最大 +KDA_BONUS_MAX）。サポートの +0.8 補正はロール別基準に置き換えて廃止。
-  // 2026-10-17: 最大+15→+7.5に半減（ユーザー判断）。勝敗ベース(+18/-20)に近い大きさで、KDAはチャンピオンや
-  // ロール差が大きくノイズになりやすい。バックテストでも半減の方が予測・ソロQランクとの相関ともにわずかに良かった。
-  const kdaBonus = calculateKdaBonus(kdaScore, role);
+  // 同じロール・同じ結果（勝ち／負け）の基準KDAから加点（最大 +KDA_BONUS_MAX）。考え方は calculateKdaBonus の説明を参照
+  const kdaBonus = calculateKdaBonus(kdaScore, role, isWin);
 
   // ③-B ジャイアントキリング加点 (格上対面 MMR+200以上に勝利・高KDAを達成した際の快挙ボーナス)
-  // 高KDA = ロールの基準 +1.0 以上（旧: 一律 3.0 = 当時の基準 2.0 +1.0）
+  // 負けた時の高KDA = 負けた時の基準 +1.0 以上（旧: 一律 3.0 = 当時の基準 2.0 +1.0）
   let giantKillingBonus = 0;
-  if (mmrDiff >= 200 && (isWin || kdaScore >= kdaBaseline(role) + 1.0)) {
+  if (mmrDiff >= 200 && (isWin || kdaScore >= kdaBaseline(role, false) + 1.0)) {
     giantKillingBonus = Math.min(6, Math.max(2, Math.round(mmrDiff / 80)));
   }
 
@@ -377,7 +384,7 @@ export function calculateNewMMRDetailed(ctx: MmrCalcContext): { delta: number; b
     : rawWr;
   if (effectiveWinRate > 60) wrAdjust = -Math.min(8, (effectiveWinRate - 60) * 0.5);
   const kdaScore = ctx.deaths === 0 ? (ctx.kills + ctx.assists) * 1.2 : (ctx.kills + ctx.assists) / ctx.deaths;
-  const kda = calculateKdaBonus(kdaScore, ctx.role);
+  const kda = calculateKdaBonus(kdaScore, ctx.role, ctx.isWin);
   const dampener = 1.0;
   const delta = calculateNewMMR(ctx); // 最終値は本体ロジックで算出（挙動の一貫性を保証）
   return {

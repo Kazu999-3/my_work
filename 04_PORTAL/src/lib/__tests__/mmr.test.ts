@@ -193,19 +193,19 @@ test('全レーン波及: 試合数を渡さない時は従来どおり全レー
   assert.equal(r.JG, 1505);
 });
 
-// 2026-10-17: KDAボーナスは最大 +7.5（半減）。基準はロール別（TOP 1.8 / JG 3.0 / MID 2.2 / ADC 3.1 / SUP 2.5）
-test('KDAボーナス: 上限7.5・ロールの基準で0・基準+3.0で上限', () => {
-  assert.equal(KDA_BONUS_MAX, 7.5);
-  assert.equal(calculateKdaBonus(1.8, 'TOP'), 0);
-  assert.ok(Math.abs(calculateKdaBonus(2.8, 'TOP') - 2.5) < 1e-9);
-  assert.equal(calculateKdaBonus(3.0, 'JG'), 0);
-  assert.equal(calculateKdaBonus(5.5, 'SUP'), 7.5);
-  assert.equal(calculateKdaBonus(12, 'ADC'), 7.5);
-  // ロール不明は 2.5 基準
-  assert.equal(calculateKdaBonus(3.5), 2.5);
+// 2026-10-17: KDAボーナスは最大 +15。基準は勝ち負け×ロールの中央値（救済＋勝利への影響力）
+test('KDAボーナス: 上限15・同じロール同じ結果の基準で0・基準+3.0で上限', () => {
+  assert.equal(KDA_BONUS_MAX, 15);
+  assert.equal(calculateKdaBonus(1.2, 'TOP', false), 0);
+  assert.ok(Math.abs(calculateKdaBonus(2.2, 'TOP', false) - 5) < 1e-9);
+  assert.equal(calculateKdaBonus(4.2, 'TOP', false), 15);
+  assert.equal(calculateKdaBonus(7.0, 'JG', true), 0);
+  assert.equal(calculateKdaBonus(20, 'ADC', true), 15);
+  // ロール不明は勝ち 5.25 / 負け 1.3 基準
+  assert.equal(calculateKdaBonus(5.25, undefined, true), 0);
 });
 
-test('KDAボーナス: 同じKDA 3.0 でもトップは加点が大きく、ADCは加点なし', () => {
-  assert.ok(calculateKdaBonus(3.0, 'TOP') > calculateKdaBonus(3.0, 'SUP'));
-  assert.equal(calculateKdaBonus(3.0, 'ADC'), 0);
+test('KDAボーナス: 同じKDA 3.0 でも、負けなら救済され、勝ちなら付かない', () => {
+  assert.ok(calculateKdaBonus(3.0, 'MID', false) > 0);
+  assert.equal(calculateKdaBonus(3.0, 'MID', true), 0);
 });
