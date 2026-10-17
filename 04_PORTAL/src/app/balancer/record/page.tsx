@@ -425,6 +425,12 @@ function CustomRecordPageContent() {
   };
 
   // ペースト監視 (画面全体のイベント)
+  // 貼り付けの受け口は画面を開いた時に1回だけ登録するため、そこから handleImageUpload を直接呼ぶと
+  // 「開いた瞬間の状態」（空のチャンピオン一覧・空の名簿・空の参加者表）のまま解析結果を照合してしまう。
+  // 2026-10-17: これでチャンピオンが空になっていた。常に最新の処理を ref 経由で呼ぶ
+  const handleImageUploadRef = useRef(handleImageUpload);
+  useEffect(() => { handleImageUploadRef.current = handleImageUpload; });
+
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
       let isImage = false;
@@ -434,7 +440,7 @@ function CustomRecordPageContent() {
       if (files && files.length > 0) {
         for (let i = 0; i < files.length; i++) {
           if (files[i].type.startsWith('image/')) {
-            handleImageUpload(files[i]);
+            handleImageUploadRef.current(files[i]);
             isImage = true;
             break;
           }
@@ -449,7 +455,7 @@ function CustomRecordPageContent() {
             if (items[i].type.indexOf('image') !== -1) {
               const file = items[i].getAsFile();
               if (file) {
-                handleImageUpload(file);
+                handleImageUploadRef.current(file);
                 isImage = true;
                 break;
               }
