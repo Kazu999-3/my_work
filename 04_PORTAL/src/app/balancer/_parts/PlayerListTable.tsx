@@ -133,13 +133,13 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                   <SortableHeader label="プレイヤー名" sortKey="name" className="px-2" />
                   <SortableHeader label="SoloQランク" sortKey="highest_rank" className="px-2" />
                   <SortableHeader label="KTMカスタムMMR" sortKey="mmr" className="px-2" />
-                  <th className="px-2 py-3 font-medium text-center">第1希望</th>
+                  <SortableHeader label="第1希望" sortKey="primary_lane" className="px-2 text-center" />
                   <th className="px-2 py-3 font-medium text-center">第2希望</th>
                   <th className="px-1.5 py-3 font-medium text-center text-danger-700">NG 1</th>
                   <th className="px-1.5 py-3 font-medium text-center text-danger-700">NG 2</th>
-                  <SortableHeader label="こだわり" sortKey="weight" className="px-1.5 text-center" />
+                  <SortableHeader label="希望の強さ" sortKey="weight" className="px-1.5 text-center" />
                   <SortableHeader label="⚔️挑戦" sortKey="allow_higher" className="px-1.5 text-center" />
-                  <th className="px-2 py-3 font-medium text-center">Pity (正/負/観)</th>
+                  <SortableHeader label="Pity (正/負/観)" sortKey="pity" className="px-2 text-center" />
                   <th className="px-2 py-3 font-medium">備考</th>
                 </tr>
               </thead>
@@ -268,7 +268,7 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                           </div>
                         </td>
                         <td className="px-1.5 py-1.5 text-center">
-                          <div className="flex items-center gap-1 bg-surface-subtle border border-border rounded px-1 py-0.5 w-16 mx-auto">
+                          <div className="flex items-center gap-1 bg-surface-subtle border border-border rounded px-1 py-0.5 w-20 mx-auto">
                             <RoleIcon role={p.ng_lane_1 || ''} className="w-2.5 h-2.5 flex-shrink-0" />
                             <select value={p.ng_lane_1 || ''} onChange={e => handleInputChange(p.id,'ng_lane_1',e.target.value)} className="bg-transparent text-danger-700 font-bold outline-none cursor-pointer w-full text-[10px]">
                               <option value="" className="bg-surface-subtle text-faint">なし</option>
@@ -277,7 +277,7 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                           </div>
                         </td>
                         <td className="px-1.5 py-1.5 text-center">
-                          <div className="flex items-center gap-1 bg-surface-subtle border border-border rounded px-1 py-0.5 w-16 mx-auto">
+                          <div className="flex items-center gap-1 bg-surface-subtle border border-border rounded px-1 py-0.5 w-20 mx-auto">
                             <RoleIcon role={p.ng_lane_2 || ''} className="w-2.5 h-2.5 flex-shrink-0" />
                             <select value={p.ng_lane_2 || ''} onChange={e => handleInputChange(p.id,'ng_lane_2',e.target.value)} className="bg-transparent text-danger-700 font-bold outline-none cursor-pointer w-full text-[10px]">
                               <option value="" className="bg-surface-subtle text-faint">なし</option>
@@ -286,7 +286,7 @@ export default function PlayerListTable({ isAdmin, searchQuery, setSearchQuery, 
                           </div>
                         </td>
                         <td className="px-1.5 py-1.5 text-center">
-                          <select value={p.weight || 2} disabled={!isAdmin} onChange={e => handleInputChange(p.id,'weight',parseInt(e.target.value))} title={isAdmin ? '希望レーンの強さ（絶対このレーン / できれば / どこでもOK）' : '希望レーンの強さの変更は管理者のみ可能です'} className="bg-surface-subtle border border-border rounded px-1.5 py-0.5 text-primary-700 font-bold outline-none focus:border-primary-edge-strong w-12 cursor-pointer text-xs disabled:opacity-40 disabled:cursor-not-allowed">
+                          <select value={p.weight || 2} disabled={!isAdmin} onChange={e => handleInputChange(p.id,'weight',parseInt(e.target.value))} title={isAdmin ? '希望レーンの強さ（絶対このレーン / できれば / どこでもOK）' : '希望レーンの強さの変更は管理者のみ可能です'} className="bg-surface-subtle border border-border rounded px-1.5 py-0.5 text-primary-700 font-bold outline-none focus:border-primary-edge-strong w-24 cursor-pointer text-xs disabled:opacity-40 disabled:cursor-not-allowed">
                             {([[1, '絶対'], [2, 'できれば'], [3, 'どこでも']] as const).map(([n, l]) => <option key={n} value={n}>{l}</option>)}
                           </select>
                         </td>
