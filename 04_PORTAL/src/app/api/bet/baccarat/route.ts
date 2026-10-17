@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } from '../../../../lib/playerCoins';
-import { applyLuckyBonus } from '../../../../lib/luckyDay';
 
 export const dynamic = 'force-dynamic';
 
@@ -214,7 +213,9 @@ export async function POST(req: Request) {
     let resultMessage: string;
 
     if (isTieWin) {
-      payout = applyLuckyBonus(Math.floor(cleanAmount * PAYOUTS.TIE)); // 🍀 ラッキーデーは+3%
+      // 🍀 ラッキーデーの+3%はバカラには付けない（2026-10-17）。PLAYER/BANKER のハウスエッジは約1.1〜1.2%しか無く、
+      // +3%すると還元率が約101.5%になり「賭けるほど得」になっていた（10/17 に実際に集中して賭けられた）
+      payout = Math.floor(cleanAmount * PAYOUTS.TIE);
       newCoins = currentCoins - cleanAmount + payout;
       resultMessage = `🎊 TIE！ ${cleanAmount}コイン → +${payout}コイン 獲得！`;
     } else if (isPush) {
@@ -223,7 +224,7 @@ export async function POST(req: Request) {
       newCoins = currentCoins; // 変動なし
       resultMessage = `🤝 TIE（引き分け）！ 掛け金 ${cleanAmount}コインを返還します。`;
     } else if (isWin) {
-      payout = applyLuckyBonus(Math.floor(cleanAmount * PAYOUTS[cleanBet])); // 🍀 ラッキーデーは+3%
+      payout = Math.floor(cleanAmount * PAYOUTS[cleanBet]); // ラッキーデー対象外（上の TIE の説明を参照）
       newCoins = currentCoins - cleanAmount + payout;
       resultMessage = `🎉 ${result} 勝利！ ${cleanAmount}コイン → +${payout}コイン 獲得！`;
     } else {

@@ -12,7 +12,7 @@ export default function LuckyDayBanner() {
   return (
     <div className="max-w-4xl mx-auto rounded-2xl border border-success-edge bg-success-100/70 dark:bg-emerald-950/30 px-4 py-3 text-center">
       <p className="text-sm font-black text-success-700 dark:text-emerald-400">
-        🍀 本日はラッキーデー！ カジノの払い戻しが +3%、デイリーおみくじの報酬が 2 倍です
+        🍀 本日はラッキーデー！ カジノの払い戻しが +3%（バカラを除く）、デイリーおみくじの報酬が 2 倍です
       </p>
       <p className="text-[11px] text-muted-strong mt-0.5">毎月 {LUCKY_DAYS.join('・')} 日に開催（日本時間）</p>
     </div>
