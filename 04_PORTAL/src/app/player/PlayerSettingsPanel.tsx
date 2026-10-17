@@ -67,6 +67,9 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
   const [secondaryRole, setSecondaryRole] = useState<string>(prefs.secondary || "FILL");
   const [ngRoles, setNgRoles] = useState<string[]>(prefs.ng_roles || [player?.ng_lane_1, player?.ng_lane_2].filter(Boolean));
   const [ign, setIgn] = useState<string>(player?.ign || "");
+  // こだわり度（1:絶対 / 2:通常 / 3:柔軟）と格上許可。チーム分けで使う（2026-10-17 マイページから設定可能に）
+  const [weight, setWeight] = useState<number>([1, 2, 3].includes(Number(player?.weight)) ? Number(player?.weight) : 2);
+  const [allowHigher, setAllowHigher] = useState<boolean>(!!player?.allow_higher);
 
   // プレイスタイルロール状態
   const [playstyles, setPlaystyles] = useState<Record<string, boolean>>({
@@ -118,6 +121,8 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
       setSecondaryRole(p.secondary || "FILL");
       setNgRoles(p.ng_roles || [player.ng_lane_1, player.ng_lane_2].filter(Boolean));
       setIgn(player.ign || "");
+      setWeight([1, 2, 3].includes(Number(player.weight)) ? Number(player.weight) : 2);
+      setAllowHigher(!!player.allow_higher);
     }
   }, [player]);
 
@@ -198,6 +203,8 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
           secondary: secondaryRole,
           ng_roles: ngRoles,
           ign: ign,
+          weight,
+          allow_higher: allowHigher,
         }),
       });
 
@@ -409,6 +416,62 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
             現在設定中のNGレーン: {ngRoles.join(", ")}
           </p>
         )}
+      </div>
+
+      {/* 🎚️ こだわり度・格上許可（チーム分けに反映） */}
+      <div className="space-y-4 pt-4 border-t border-border dark:border-border">
+        <div className="space-y-2">
+          <label className="block text-xs font-black text-foreground-subtle uppercase tracking-wider">
+            🎚️ 希望レーンへのこだわり
+          </label>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { v: 1, title: "絶対", desc: "希望レーン以外はできるだけ避けたい" },
+              { v: 2, title: "通常", desc: "なるべく希望レーン（標準）" },
+              { v: 3, title: "柔軟", desc: "チームのためならどこでもOK" },
+            ].map((o) => (
+              <button
+                key={`w-${o.v}`}
+                type="button"
+                onClick={() => setWeight(o.v)}
+                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                  weight === o.v
+                    ? "bg-primary-500 text-stone-950 border-primary-edge-strong font-black shadow-md"
+                    : "bg-surface border-border text-muted hover:bg-background font-bold"
+                }`}
+              >
+                <div className="text-sm">{o.title}</div>
+                <div className={`text-[10px] mt-0.5 leading-snug ${weight === o.v ? "text-stone-900" : "text-muted-strong"}`}>{o.desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-xs font-black text-foreground-subtle uppercase tracking-wider">
+            ⚔️ 格上との対面
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {[
+              { v: false, title: "避けたい（保護あり）", desc: "MMRが大きく上の人とはなるべく同じレーンで当たらないようにします" },
+              { v: true, title: "OK（腕試ししたい）", desc: "格上の人とも対面になってかまいません" },
+            ].map((o) => (
+              <button
+                key={`ah-${String(o.v)}`}
+                type="button"
+                onClick={() => setAllowHigher(o.v)}
+                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                  allowHigher === o.v
+                    ? "bg-primary-500 text-stone-950 border-primary-edge-strong font-black shadow-md"
+                    : "bg-surface border-border text-muted hover:bg-background font-bold"
+                }`}
+              >
+                <div className="text-sm">{o.title}</div>
+                <div className={`text-[10px] mt-0.5 leading-snug ${allowHigher === o.v ? "text-stone-900" : "text-muted-strong"}`}>{o.desc}</div>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* 🎯 プレイスタイル設定 */}

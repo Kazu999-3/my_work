@@ -363,9 +363,9 @@ export default function GuideBotTab() {
                 <div className="p-4 rounded-2xl bg-background border border-border/80 space-y-2">
                   <h4 className="text-xs font-black text-foreground">こだわり度（weight）の目安</h4>
                   <ul className="text-xs text-muted space-y-1.5">
-                    <li>・<strong className="text-foreground-soft">1 (柔軟):</strong> チームバランス優先。他レーンでもOK</li>
-                    <li>・<strong className="text-foreground-soft">2 (普通):</strong> なるべく希望レーンに行きたい（標準）</li>
-                    <li>・<strong className="text-foreground-soft">3 (絶対):</strong> 何が何でも希望レーンでプレイしたい</li>
+                    <li>・<strong className="text-foreground-soft">1 (絶対):</strong> 何が何でも希望レーンでプレイしたい</li>
+                    <li>・<strong className="text-foreground-soft">2 (通常):</strong> なるべく希望レーンに行きたい（標準）</li>
+                    <li>・<strong className="text-foreground-soft">3 (柔軟):</strong> チームバランス優先。他レーンでもOK</li>
                   </ul>
                 </div>
               </div>

@@ -182,6 +182,9 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     const { primary, secondary, ng_roles, ign, mentorship } = body;
+    // こだわり度（1:絶対 / 2:通常 / 3:柔軟）と格上許可。チーム分けに使う（2026-10-17 マイページから設定可能に）
+    const weight = [1, 2, 3].includes(Number(body.weight)) ? Number(body.weight) : undefined;
+    const allowHigher = typeof body.allow_higher === 'boolean' ? body.allow_higher : undefined;
 
     // プレイヤーを取得
     const player = await findOrCreatePlayer({
@@ -215,6 +218,8 @@ export async function POST(req: Request) {
         ng_lane_1: ng1,
         ng_lane_2: ng2,
         ...(ign !== undefined ? { ign: ign.trim() } : {}),
+        ...(weight !== undefined ? { weight } : {}),
+        ...(allowHigher !== undefined ? { allow_higher: allowHigher } : {}),
       })
       .eq('id', player.id);
 
@@ -232,6 +237,8 @@ export async function POST(req: Request) {
         role_preferences: updatedPrefs,
         ng_lane_1: ng1,
         ng_lane_2: ng2,
+        ...(weight !== undefined ? { weight } : {}),
+        ...(allowHigher !== undefined ? { allow_higher: allowHigher } : {}),
       },
     });
   } catch (err: any) {
