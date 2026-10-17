@@ -199,7 +199,7 @@ const looseKey = (v: string) => v.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
  * 「どの表示名から付けたか」（name_source）を記録し、表示名が変わった人だけ改名する。
  * 記録が無い初回は、今のチャンネル名がすでに今の表示名と同じなら記録だけする。
  */
-export async function renameOnboardingChannels(): Promise<{ checked: number; renamed: number }> {
+export async function renameOnboardingChannels(maxRenames = 20): Promise<{ checked: number; renamed: number; remaining: number }> {
   const headers = botHeaders();
   const list = await listOnboardingChannels();
   const res = await discordFetch(`https://discord.com/api/v10/guilds/${GUILD_ID}/members?limit=1000`, { headers });
@@ -212,6 +212,7 @@ export async function renameOnboardingChannels(): Promise<{ checked: number; ren
   const sourceOf = new Map<string, string | null>((rows || []).map((r: any) => [String(r.channel_id), r.name_source]));
 
   let renamed = 0;
+  let remaining = 0;
   for (const ch of list) {
     const display = displayOf.get(ch.userId);
     if (!display || !sourceOf.has(ch.channelId)) continue; // 退出者・まだ状態の無いチャンネルは次回
@@ -222,12 +223,14 @@ export async function renameOnboardingChannels(): Promise<{ checked: number; ren
       await supabase.from('onboarding_channel_state').update({ name_source: display }).eq('channel_id', ch.channelId);
       continue;
     }
+    // 1回の同期で改名する数に上限（画面の待ち時間内に収める）。残りは次の同期で
+    if (renamed >= maxRenames) { remaining++; continue; }
     const patch = await discordFetch(`https://discord.com/api/v10/channels/${ch.channelId}`, {
       method: 'PATCH',
       headers,
       body: JSON.stringify({ name: expected }),
     }, 1);
-    if (patch.status === 429) break; // 改名は回数制限が厳しいので、残りは次回へ
+    if (patch.status === 429) { remaining++; break; } // 改名は回数制限が厳しいので、残りは次回へ
     if (!patch.ok) {
       console.warn('[renameOnboardingChannels] 改名に失敗:', ch.channelId, patch.status);
       continue;
@@ -237,7 +240,7 @@ export async function renameOnboardingChannels(): Promise<{ checked: number; ren
       .update({ name_source: display, channel_name: updated?.name || expected })
       .eq('channel_id', ch.channelId);
     renamed++;
-    await new Promise((r) => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 200));
   }
-  return { checked: list.length, renamed };
+  return { checked: list.length, renamed, remaining };
 }

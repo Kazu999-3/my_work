@@ -3,6 +3,7 @@ import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { resolveDisplayName } from '../../../../lib/discordName';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { listOnboardingChannels, deleteDepartedMemberChannels, type OnboardingChannel } from '../../../../lib/onboardingProcessor';
+import { renameOnboardingChannels } from '../../../../lib/onboardingChannels';
 
 
 
@@ -311,7 +312,18 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({ success: true, channelsDeleted, message: `Added ${add?.length || 0}, Deactivated ${deactivate?.length || 0}, Updated ${update_metadata?.length || 0}, ChannelsDeleted ${channelsDeleted}` });
+    // 個別案内チャンネルの名前を今の表示名へ付け直す（2026-10-17。名前が変わった人だけ、1回最大20件）
+    let channelsRenamed = 0;
+    let channelsRenameRemaining = 0;
+    try {
+      const r = await renameOnboardingChannels(20);
+      channelsRenamed = r.renamed;
+      channelsRenameRemaining = r.remaining;
+    } catch (e: any) {
+      console.error('[Discord Sync POST] onboarding channel rename failed:', e.message);
+    }
+
+    return NextResponse.json({ success: true, channelsDeleted, channelsRenamed, channelsRenameRemaining, message: `Added ${add?.length || 0}, Deactivated ${deactivate?.length || 0}, Updated ${update_metadata?.length || 0}, ChannelsDeleted ${channelsDeleted}, ChannelsRenamed ${channelsRenamed}` });
   } catch (error: any) {
     console.error('Discord Sync POST Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

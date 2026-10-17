@@ -174,9 +174,12 @@ export function useRosterSync({ players, fetchPlayers, checkIntegrity, setMessag
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '同期処理に失敗しました');
       const requestedChannels = (syncData.channelsToDelete || []).length;
-      const channelNote = requestedChannels > 0
+      const channelNote = (requestedChannels > 0
         ? `\n退出者の個別案内チャンネル: ${data.channelsDeleted ?? 0}件を削除（予定${requestedChannels}件。戻ってきた人・確認できなかったものは残しています）`
-        : '';
+        : '')
+        + (data.channelsRenamed > 0 || data.channelsRenameRemaining > 0
+          ? `\n個別案内チャンネル名を今の名前に変更: ${data.channelsRenamed ?? 0}件${data.channelsRenameRemaining > 0 ? `（残り${data.channelsRenameRemaining}件は次回の同期で）` : ''}`
+          : '');
 
       // 3. 複合機能：Riot同期も自動で連続実行（新規追加・Riot情報未取得プレイヤーのみに絞り、タイムアウトを防止）
       const addedDiscordIds = syncData.toAdd.map((p: any) => p.discord_id).filter(Boolean);
