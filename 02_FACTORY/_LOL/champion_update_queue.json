@@ -1,6 +1,6 @@
 {
   "patch_version": "26.20",
-  "updated_at": "2026-10-11T21:38:07.767281+00:00",
+  "updated_at": "2026-10-18T19:59:33.413189+00:00",
   "status": "suspended",
   "queue": {
     "Aatrox": {
@@ -102,26 +102,26 @@
     },
     "Blitzcrank": {
       "name": "ブリッツクランク",
-      "status": "pending",
-      "updated_at": "2026-10-04T20:49:22.970335+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-18T19:54:31.242084+00:00",
       "error": null
     },
     "Brand": {
       "name": "ブランド",
-      "status": "pending",
-      "updated_at": "2026-10-04T20:49:48.911133+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-18T19:55:40.471417+00:00",
       "error": null
     },
     "Braum": {
       "name": "ブラウム",
-      "status": "pending",
-      "updated_at": "2026-10-04T20:50:10.826364+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-18T19:57:33.943063+00:00",
       "error": null
     },
     "Briar": {
       "name": "ブライアー",
-      "status": "pending",
-      "updated_at": "2026-10-04T20:50:37.077414+00:00",
+      "status": "completed",
+      "updated_at": "2026-10-18T19:58:40.073586+00:00",
       "error": null
     },
     "Caitlyn": {
