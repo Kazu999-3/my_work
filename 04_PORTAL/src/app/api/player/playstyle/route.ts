@@ -46,8 +46,17 @@ export async function GET() {
       { headers: { Authorization: `Bot ${token}` } }
     );
 
+    // サーバーにいない（退出済み・未参加）のは異常ではないので 404 にしない。
+    // 以前は 404 を返し、画面の API エラー通知（ApiErrorWatcher）に毎回エラーとして届いていた（2026-10-18）
+    if (memberRes.status === 404) {
+      return NextResponse.json({
+        ok: true,
+        notInServer: true,
+        playstyles: { soloq: false, flex: false, aram: false, casual: false, learner: false },
+      });
+    }
     if (!memberRes.ok) {
-      return NextResponse.json({ ok: false, error: 'Discordサーバーのメンバー情報の取得に失敗しました。' }, { status: 404 });
+      return NextResponse.json({ ok: false, error: 'Discordサーバーのメンバー情報の取得に失敗しました。' }, { status: 502 });
     }
 
     const memberData: { roles: string[] } = await memberRes.json();

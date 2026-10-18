@@ -82,6 +82,8 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
     learner: false,
   });
   const [loadingPlaystyle, setLoadingPlaystyle] = useState(false);
+  // KTM の Discord サーバーにいない時は、プレイスタイル（Discord のロール）を付けられない
+  const [notInServer, setNotInServer] = useState(false);
   const [togglingPlaystyle, setTogglingPlaystyle] = useState<string | null>(null);
 
   const [saving, setSaving] = useState(false);
@@ -138,6 +140,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
           const data = await res.json();
           if (data.ok && data.playstyles) {
             setPlaystyles(data.playstyles);
+            setNotInServer(!!data.notInServer);
           }
         }
       } catch (err) {
@@ -490,6 +493,11 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
         <p className="text-[11px] text-muted-strong">
           今の気分や参加スタイルに合わせて自由にON/OFFできます。Discordサーバー内の募集や交流でアイコンが表示されます。
         </p>
+        {notInServer && (
+          <p className="text-[11px] font-bold rounded-lg border px-3 py-2 bg-danger-100 text-danger-700 border-danger-edge-soft">
+            KTM の Discord サーバーに参加していないため、プレイスタイルは設定できません（サーバーに参加すると使えます）
+          </p>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
           {PLAYSTYLE_ITEMS.map((item) => {
@@ -501,7 +509,7 @@ export default function PlayerSettingsPanel({ player, onSaved }: PlayerSettingsP
                 key={`ps-${item.key}`}
                 type="button"
                 onClick={() => togglePlaystyle(item.key)}
-                disabled={isToggling}
+                disabled={isToggling || notInServer}
                 className={`flex items-start gap-3 p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
                   isActive
                     ? `${item.activeColor} border font-black shadow-md scale-[1.01]`
