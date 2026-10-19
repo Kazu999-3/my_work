@@ -4,6 +4,7 @@ import { getAuthSession } from '../../../../lib/authGuard';
 import { findOrCreatePlayer } from '../../../../lib/playerCoins';
 import { fetchAllRows } from '../../../../lib/fetchAll';
 import { normalizeRole } from '../../../../lib/roleUtils';
+import { reportApiError } from '../../../../lib/apiHandler';
 
 export const dynamic = 'force-dynamic';
 
@@ -163,6 +164,11 @@ export async function GET() {
     });
   } catch (err: any) {
     console.error('[player/preferences GET] error:', err);
+    reportApiError({
+      route: '/api/player/preferences',
+      error: err,
+      statusCode: 500,
+    });
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
 }
@@ -256,6 +262,11 @@ export async function POST(req: Request) {
     });
   } catch (err: any) {
     console.error('[player/preferences POST] error:', err);
+    reportApiError({
+      route: '/api/player/preferences',
+      error: err,
+      statusCode: 500,
+    });
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
 }

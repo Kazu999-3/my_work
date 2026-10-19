@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
+import { reportApiError } from '../../../../lib/apiHandler';
 
 // player/[id]/page.tsx 用: discord_id / name / ign / id のいずれかで柔軟照合してプレイヤー
 // 1件を返す読み取り専用API。従来は全プレイヤーをブラウザへ丸ごと転送して照合していた。
@@ -47,6 +48,10 @@ export async function GET(req: Request) {
     return NextResponse.json({ player: null });
   } catch (err: any) {
     console.error('[player/lookup] error:', err);
+    reportApiError({
+      route: '/api/player/lookup',
+      error: err,
+    });
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

@@ -7,6 +7,7 @@ import {
   coreBalanceProposals
 } from '../../../lib/balancer';
 import { fetchAllRows } from '../../../lib/fetchAll';
+import { reportApiError } from '../../../lib/apiHandler';
 
 export async function POST(request: Request) {
   try {
@@ -542,6 +543,11 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     console.error('Balancer API Error:', error);
+    reportApiError({
+      route: '/api/balancer',
+      error,
+      statusCode: 500,
+    });
     return NextResponse.json({ error: error.message || '内部エラーが発生しました。' }, { status: 500 });
   }
 }

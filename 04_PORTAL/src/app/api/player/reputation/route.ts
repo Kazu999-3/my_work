@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { getAuthSession } from '../../../../lib/authGuard';
 import { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } from '../../../../lib/playerCoins';
+import { reportApiError } from '../../../../lib/apiHandler';
 
 export const dynamic = 'force-dynamic';
 
@@ -85,6 +86,10 @@ export async function GET(request: Request) {
     });
   } catch (err: any) {
     console.error('[player/reputation] GET error:', err);
+    reportApiError({
+      route: '/api/player/reputation (GET)',
+      error: err,
+    });
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
 }
@@ -190,6 +195,10 @@ export async function POST(request: Request) {
     });
   } catch (err: any) {
     console.error('[player/reputation] POST error:', err);
+    reportApiError({
+      route: '/api/player/reputation (POST)',
+      error: err,
+    });
     return NextResponse.json({ ok: false, error: err.message }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { fetchAllRows } from '../../../../lib/fetchAll';
+import { reportApiError } from '../../../../lib/apiHandler';
 
 // ktm_players の軽量一覧（プレイヤー検索・選択ドロップダウン用の読み取り専用API）。
 // 各プレイヤーの通算試合数（total_games）、直近30日参加数（recent_games_30d）、最終参加日（last_played_at）を集計してマージする。
@@ -116,6 +117,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ players: enrichedPlayers });
   } catch (err: any) {
     console.error('[players/list] error:', err);
+    reportApiError({
+      route: '/api/players/list',
+      error: err,
+    });
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

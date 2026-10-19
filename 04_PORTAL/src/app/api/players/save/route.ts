@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { patchPlayerPrefs } from '../../../../lib/playerCoins';
+import { reportApiError } from '../../../../lib/apiHandler';
 
 // ============================================================
 // 一般ユーザー用: ktm_players の非センシティブ列だけを更新するAPI
@@ -115,6 +116,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, updated: targets.length });
   } catch (err: any) {
     console.error('[players/save] error:', err);
+    reportApiError({
+      route: '/api/players/save',
+      error: err,
+      statusCode: 500,
+    });
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

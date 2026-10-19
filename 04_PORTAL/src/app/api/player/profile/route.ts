@@ -4,6 +4,7 @@ import { calculatePlaystyle } from '../../../../lib/playstyle';
 import { fetchAllRows } from '../../../../lib/fetchAll';
 import { normalizeRole } from '../../../../lib/roleUtils';
 import { CROSS_LANE_RIPPLE_RATIO, receivesRipple } from '../../../../lib/mmr';
+import { reportApiError } from '../../../../lib/apiHandler';
 
 const cache = new Map<string, { data: any; expiry: number }>();
 const CACHE_TTL_MS = 30000; // 30 seconds TTL
@@ -293,6 +294,10 @@ export async function GET(request: Request) {
 
   } catch (error: any) {
     console.error('Profile Fetch Error:', error);
+    reportApiError({
+      route: '/api/player/profile',
+      error,
+    });
     return NextResponse.json({ error: error.message || 'データ取得に失敗しました。' }, { status: 500 });
   }
 }

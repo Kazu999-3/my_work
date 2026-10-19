@@ -172,7 +172,7 @@
 ---
 
 - [ ] **お見合い便の自動送信**（2026-10-08 保留）: 今は管理者が画面から手動で送る。自動化するなら頻度・1人あたりの上限・送信前の運営確認の有無を先に決める
-- [ ] **04のAPIで握りつぶしている500を #エラーログ へ**（2026-10-08 保留）: `instrumentation.ts` の onRequestError は未捕捉の例外だけを拾う。各ルートの try/catch で500を返すものは届かないため、拾うならルートごとに `notifyPortalError` を呼ぶ
+- [x] **【完了 (2026-10-19)】04のAPIで握りつぶしている500を #エラーログ へ**: `balancer`, `bet`, `player/preferences`, `players/save`, `player/reputation`, `player/profile`, `player/lookup`, `players/list` 等の主要APIルートに `reportApiError`（`notifyPortalError` 経由で Discord の #エラーログ 通知）を配備✅
 
 ## 🧱 保守性向上・全量リファクタリング計画（統合・分割・部品化）
 

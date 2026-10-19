@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../lib/supabaseAdmin';
 import { findOrCreatePlayer, getPlayerCoins, updatePlayerCoinsAndInventory } from '../../../lib/playerCoins';
 import { isLuckyDay, LUCKY_OMIKUJI_MULTIPLIER } from '../../../lib/luckyDay';
+import { reportApiError } from '../../../lib/apiHandler';
 
 export const dynamic = 'force-dynamic';
 
@@ -111,6 +112,11 @@ export async function GET(req: Request) {
     });
   } catch (error: any) {
     console.error('Bet API GET error:', error);
+    reportApiError({
+      route: '/api/bet',
+      error,
+      statusCode: 500,
+    });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -267,6 +273,11 @@ export async function PUT(req: Request) {
     });
   } catch (error: any) {
     console.error('Bonus claim error:', error);
+    reportApiError({
+      route: '/api/bet',
+      error,
+      statusCode: 500,
+    });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -451,6 +462,11 @@ export async function POST(req: Request) {
     });
   } catch (error: any) {
     console.error('Bet API POST error:', error);
+    reportApiError({
+      route: '/api/bet',
+      error,
+      statusCode: 500,
+    });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
