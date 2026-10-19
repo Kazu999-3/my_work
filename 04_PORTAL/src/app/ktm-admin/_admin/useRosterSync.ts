@@ -17,6 +17,7 @@ export function useRosterSync({ players, fetchPlayers, checkIntegrity, setMessag
   triggerRowFlash: (uid: string | number) => void;
 }) {
   const [syncingDiscord, setSyncingDiscord] = useState(false);
+  const [syncingMaintenance, setSyncingMaintenance] = useState(false);
   const [syncData, setSyncData] = useState<any>(null);
   const [riotSyncErrors, setRiotSyncErrors] = useState<RiotSyncError[]>([]);
   const [reSyncingPlayerId, setReSyncingPlayerId] = useState<number | null>(null);
@@ -41,21 +42,26 @@ export function useRosterSync({ players, fetchPlayers, checkIntegrity, setMessag
     setRiotSyncErrors(parsed);
   };
 
-  const runRiotSyncInChunks = async (playerIds: number[], onProgress: (msg: string) => void) => {
-    const chunkSize = 5;
+  const runRiotSyncInChunks = async (
+    playerIds: number[],
+    onProgress: (msg: string) => void,
+    options?: { rankOnly?: boolean }
+  ) => {
+    const chunkSize = options?.rankOnly ? 8 : 5;
     const allErrors: string[] = [];
     const allPromotions: Array<{ name: string; oldRank: string; newRank: string; ign?: string }> = [];
     let totalUpdated = 0;
 
     for (let i = 0; i < playerIds.length; i += chunkSize) {
       const chunk = playerIds.slice(i, i + chunkSize);
-      onProgress(`Riot APIから最新情報を同期中 (${i + chunk.length}/${playerIds.length}人)...`);
+      const currentCount = Math.min(i + chunk.length, playerIds.length);
+      onProgress(`Riot APIから最新情報を同期中 (${currentCount}/${playerIds.length}人)...`);
 
       const res = await fetchWithTimeout('/api/admin/riot-sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ playerIds: chunk }),
-        timeout: 20000 // 5人分の同期なので20秒タイムアウト
+        body: JSON.stringify({ playerIds: chunk, rankOnly: options?.rankOnly }),
+        timeout: 25000 // タイムアウト安全マージン
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Riot同期処理に失敗しました');
@@ -224,15 +230,97 @@ export function useRosterSync({ players, fetchPlayers, checkIntegrity, setMessag
     }
   };
 
+  /**
+   * ⚡ 全員メンテ:
+   * 1. 全プレイヤーの最新SoloQランクをRiot APIから一括取得し、最高ランク(higherRank)を更新
+   * 2. Discordのランクロールを最新ランクへ付与・剥奪
+   * 3. Discordの参加歴ロール（常連/ライト/初参加等）および初中級交流ロールを一括同期
+   * 4. 昇格検知時は初期MMRを自動再計算
+   */
+  const handleSyncAllMaintenance = async () => {
+    if (syncingMaintenance || syncingDiscord) return;
+    if (!confirm('【⚡ 全員メンテの実行】\n全プレイヤーの最新SoloQランク（Riot API）を取得し、最高ランクの更新・Discordランクロールおよび参加歴ロール（常連/ライト/初参加等）を一括同期します。\n\n実行しますか？（所要時間: 約15〜20秒）')) return;
+
+    setSyncingMaintenance(true);
+    setMessage({ type: "info", text: "⚡ 全員メンテ開始: プレイヤー名簿を確認中..." });
+
+    try {
+      // 1. 最新の全プレイヤーIDを取得
+      const listRes = await fetchWithTimeout('/api/admin/players/list', { timeout: 15000 });
+      if (!listRes.ok) throw new Error('名簿データの取得に失敗しました');
+      const { players: allPlayers } = await listRes.json();
+      const targetPlayerIds = (allPlayers || [])
+        .map((p: any) => p.id)
+        .filter((id: any) => typeof id === 'number');
+
+      if (targetPlayerIds.length === 0) {
+        setMessage({ type: "info", text: "同期対象のプレイヤーが見つかりませんでした。" });
+        return;
+      }
+
+      // 2. Riot最新ランクの同期 (高速軽量モード: 1人1通信)
+      const riotRes = await runRiotSyncInChunks(
+        targetPlayerIds,
+        (msg) => setMessage({ type: "info", text: `⚡ 全員メンテ中: ${msg}` }),
+        { rankOnly: true }
+      );
+
+      // 3. Discordロール（参加歴・初中級交流）の一括同期
+      setMessage({ type: "info", text: "⚡ 全員メンテ中: Discordの参加歴・初中級交流ロールを一括同期中..." });
+      let roleSyncMsg = '';
+      try {
+        const roleSyncRes = await fetchWithTimeout('/api/discord/role-sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'sync_all' }),
+          timeout: 30000,
+        });
+        if (roleSyncRes.ok) {
+          const roleData = await roleSyncRes.json();
+          roleSyncMsg = `（Discordロール更新: ${roleData.summary?.updatedCount ?? 0}名）`;
+        }
+      } catch (roleErr: any) {
+        console.warn('Discordロール一括同期エラー（続行）:', roleErr?.message);
+      }
+
+      // 4. 昇格検知時は初期MMR自動Rebuild
+      if (riotRes.promotions && riotRes.promotions.length > 0) {
+        try {
+          setMessage({ type: "info", text: "⚡ 昇格プレイヤーを検知したため、初期MMRを再計算中..." });
+          await fetchWithTimeout('/api/mmr/rebuild', { method: 'POST', timeout: 30000 });
+        } catch (e) {
+          console.warn('自動Rebuild失敗:', e);
+        }
+      }
+
+      const promoSummary = riotRes.promotions && riotRes.promotions.length > 0
+        ? `\n🎉 最高ランク昇格 (${riotRes.promotions.length}名): ` + riotRes.promotions.map((p: any) => `${p.name} (${p.oldRank} ➔ ${p.newRank})`).join(', ')
+        : '\n（最高ランクの昇格者なし）';
+
+      setMessage({
+        type: "success",
+        text: `✅ 全員メンテが完了しました！\n全${targetPlayerIds.length}名のRiotランク＆Discordロールを最新化しました。${roleSyncMsg}${promoSummary}`
+      });
+
+      fetchPlayers();
+      checkIntegrity();
+    } catch (err: any) {
+      setMessage({ type: "error", text: "❌ 全員メンテ実行エラー: " + err.message });
+    } finally {
+      setSyncingMaintenance(false);
+    }
+  };
+
   /** 通信が詰まってローディング表示が終わらない時の強制解除 */
   const resetSyncFlags = () => {
     setSyncingDiscord(false);
+    setSyncingMaintenance(false);
   };
 
   const cancelSyncPreview = () => { setSyncData(null); setSyncingDiscord(false); };
 
   return {
-    syncingDiscord, syncData, setSyncData, riotSyncErrors, setRiotSyncErrors, reSyncingPlayerId,
-    handleResolveRiotError, handleSyncCheck, executeSync, resetSyncFlags, cancelSyncPreview,
+    syncingDiscord, syncingMaintenance, syncData, setSyncData, riotSyncErrors, setRiotSyncErrors, reSyncingPlayerId,
+    handleResolveRiotError, handleSyncCheck, executeSync, resetSyncFlags, cancelSyncPreview, handleSyncAllMaintenance,
   };
 }

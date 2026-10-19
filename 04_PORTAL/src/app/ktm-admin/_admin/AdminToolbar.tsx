@@ -1,15 +1,16 @@
 "use client";
 
-import { Info, Users, RefreshCw, Filter, X, Sparkles } from "lucide-react";
+import { Info, Users, RefreshCw, Filter, X, Sparkles, Zap } from "lucide-react";
 
-// 名簿タブの見出し・検索・自動保存の状態・各種操作ボタン（全員非アクティブ / Discord & Riot同期 / ロール連携 / Rebuild / MMR説明）
+// 名簿タブの見出し・検索・自動保存の状態・各種操作ボタン（全員非アクティブ / Discord & Riot同期 / 全員メンテ / ロール連携 / Rebuild / MMR説明）
 // 2026-10-07: app/ktm-admin/page.tsx（1,885行）から分割。表示内容・動作は分割前と同じ。
-export default function AdminToolbar({ searchQuery, setSearchQuery, saving, loading, syncingDiscord, syncData, showMmrInfo, setShowMmrInfo, onDeactivateAll, onForceReset, onSyncCheck, onOpenRoleSync, onRebuild, onProcessIntros, processingIntros }: {
+export default function AdminToolbar({ searchQuery, setSearchQuery, saving, loading, syncingDiscord, syncingMaintenance, syncData, showMmrInfo, setShowMmrInfo, onDeactivateAll, onForceReset, onSyncCheck, onOpenRoleSync, onSyncAllMaintenance, onRebuild, onProcessIntros, processingIntros }: {
   searchQuery: string;
   setSearchQuery: (v: string) => void;
   saving: boolean;
   loading: boolean;
   syncingDiscord: boolean;
+  syncingMaintenance?: boolean;
   syncData: any;
   showMmrInfo: boolean;
   setShowMmrInfo: (v: boolean) => void;
@@ -17,6 +18,7 @@ export default function AdminToolbar({ searchQuery, setSearchQuery, saving, load
   onForceReset: () => void;
   onSyncCheck: () => void;
   onOpenRoleSync: () => void;
+  onSyncAllMaintenance?: () => void;
   onRebuild: () => void;
   onProcessIntros?: () => void;
   processingIntros?: boolean;
@@ -87,7 +89,7 @@ export default function AdminToolbar({ searchQuery, setSearchQuery, saving, load
                 
                 <button
                   onClick={onSyncCheck}
-                  disabled={syncingDiscord}
+                  disabled={syncingDiscord || syncingMaintenance}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition border text-xs ${
                     syncingDiscord ? 'bg-[#404eed]/50 border-[#404eed]/50 text-faint cursor-not-allowed' : 'bg-[#5865F2]/20 border-[#5865F2] text-[#5865F2] hover:bg-[#5865F2] hover:text-white'
                   }`}
@@ -96,9 +98,26 @@ export default function AdminToolbar({ searchQuery, setSearchQuery, saving, load
                   {syncingDiscord && !syncData ? "同期確認中..." : "👤 Discord & Riot同期"}
                 </button>
 
+                {onSyncAllMaintenance && (
+                  <button
+                    onClick={onSyncAllMaintenance}
+                    disabled={syncingMaintenance || syncingDiscord || loading}
+                    className={`flex items-center gap-2 px-3.5 py-2 rounded-lg font-bold transition border text-xs shadow-sm ${
+                      syncingMaintenance
+                        ? 'bg-amber-500/20 border-amber-500/50 text-amber-600 cursor-not-allowed'
+                        : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border border-amber-500/40 hover:border-amber-500/60'
+                    }`}
+                    title="全プレイヤーの最新SoloQランクをRiot APIから取得し、最高ランク更新・Discordロール（ランク＆参加歴）を一括メンテします"
+                  >
+                    <Zap className={`h-4 w-4 text-amber-500 ${syncingMaintenance ? 'animate-bounce' : ''}`} />
+                    {syncingMaintenance ? "メンテ中..." : "⚡ 全員メンテ"}
+                  </button>
+                )}
+
                 <button
                   onClick={onOpenRoleSync}
-                  className="flex items-center gap-2 bg-[#5865F2]/10 hover:bg-[#5865F2]/20 text-[#5865F2] border border-[#5865F2]/40 px-3 py-2 rounded-lg font-bold transition text-xs shadow-sm"
+                  disabled={syncingMaintenance}
+                  className="flex items-center gap-2 bg-[#5865F2]/10 hover:bg-[#5865F2]/20 text-[#5865F2] border border-[#5865F2]/40 px-3 py-2 rounded-lg font-bold transition text-xs shadow-sm disabled:opacity-50"
                   title="定期カスタムの通算試合数に応じたDiscordロール（初参加/ライト/常連/経験者/復帰勢）を作成・同期します"
                 >
                   <Sparkles className="h-4 w-4 text-[#5865F2]" />

@@ -23,12 +23,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'RIOT_API_KEY が設定されていません。' }, { status: 500 });
     }
 
-    // リクエストボディから playerIds を取得（部分同期用）
+    // リクエストボディから playerIds を取得（部分同期用）および rankOnly オプション
     let playerIds: number[] | undefined;
+    let rankOnly = false;
     try {
       const body = await request.json();
-      if (body && Array.isArray(body.playerIds)) {
-        playerIds = body.playerIds;
+      if (body) {
+        if (Array.isArray(body.playerIds)) {
+          playerIds = body.playerIds;
+        }
+        if (body.rankOnly) {
+          rankOnly = true;
+        }
       }
     } catch (e) {
       // ボディがない、またはJSONパース失敗の場合は無視して全員取得
@@ -60,8 +66,8 @@ export async function POST(request: Request) {
           if (!currentIgn || !currentIgn.includes('#')) continue;
           const [gameName, tagLine] = currentIgn.split('#');
           puuid = await fetchPuuidByRiotId(gameName, tagLine, apiKey);
-        } else {
-          // (A-2) すでに puuid がある場合は、Riot ID（改名）の自動同期を試みる
+        } else if (!rankOnly) {
+          // (A-2) すでに puuid がある場合は、Riot ID（改名）の自動同期を試みる（rankOnly時はスキップ）
           try {
             const latestRiotId = await fetchRiotIdByPuuid(puuid, apiKey);
             const latestIgn = `${latestRiotId.gameName}#${latestRiotId.tagLine}`;
@@ -114,21 +120,23 @@ export async function POST(request: Request) {
           );
         }
 
-        // (C) チャンピオンマスタリー (得意チャンピオンTOP3) を取得
-        const masteries = await fetchChampionMasteryByPuuid(puuid, apiKey, 3);
-        const topChampions = masteries.map((m: any) => ({
-          championId: m.championId,
-          championLevel: m.championLevel,
-          championPoints: m.championPoints
-        }));
-
-        // DBを更新 (ign, puuid, highest_rank, main_champions)
+        // DB更新オブジェクトの作成
         const updateData: any = {
           ign: currentIgn,
           puuid,
           highest_rank: highestRank,
-          main_champions: topChampions
         };
+
+        // (C) チャンピオンマスタリー (得意チャンピオンTOP3) を取得（rankOnly時はスキップして超高速化）
+        if (!rankOnly) {
+          const masteries = await fetchChampionMasteryByPuuid(puuid, apiKey, 3);
+          const topChampions = masteries.map((m: any) => ({
+            championId: m.championId,
+            championLevel: m.championLevel,
+            championPoints: m.championPoints
+          }));
+          updateData.main_champions = topChampions;
+        }
 
         const { error: updateError } = await supabase
           .from('ktm_players')
@@ -138,8 +146,8 @@ export async function POST(request: Request) {
         if (updateError) throw updateError;
         updatedCount++;
         
-        // レートリミット対策で少し待機 (例: 250ms)
-        await new Promise(resolve => setTimeout(resolve, 250));
+        // レートリミット対策で少し待機 (rankOnlyなら100ms、フル同期なら250ms)
+        await new Promise(resolve => setTimeout(resolve, rankOnly ? 100 : 250));
 
       } catch (err: any) {
         const errMsg = err.message || '';

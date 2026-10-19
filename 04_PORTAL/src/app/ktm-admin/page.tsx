@@ -249,7 +249,7 @@ export default function KtmAdminPage() {
           <div className="space-y-6">
             <AdminToolbar
               searchQuery={searchQuery} setSearchQuery={setSearchQuery} saving={saving} loading={loading}
-              syncingDiscord={sync.syncingDiscord} syncData={sync.syncData} showMmrInfo={showMmrInfo} setShowMmrInfo={setShowMmrInfo}
+              syncingDiscord={sync.syncingDiscord} syncingMaintenance={sync.syncingMaintenance} syncData={sync.syncData} showMmrInfo={showMmrInfo} setShowMmrInfo={setShowMmrInfo}
               onDeactivateAll={roster.handleDeactivateAll}
               onForceReset={() => {
                 sync.resetSyncFlags();
@@ -259,6 +259,7 @@ export default function KtmAdminPage() {
               }}
               onSyncCheck={sync.handleSyncCheck}
               onOpenRoleSync={() => setShowRoleSyncModal(true)}
+              onSyncAllMaintenance={sync.handleSyncAllMaintenance}
               onRebuild={roster.handleRebuildMmr}
               onProcessIntros={handleProcessIntros}
               processingIntros={processingIntros}
