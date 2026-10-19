@@ -360,6 +360,23 @@ export async function addMemberRole(userId: string, roleId: string): Promise<boo
 }
 
 /**
+ * メンバーからロールを剥奪する
+ */
+export async function removeMemberRole(userId: string, roleId: string): Promise<boolean> {
+  const headers = getBotHeaders();
+  try {
+    const res = await discordFetch(
+      `https://discord.com/api/v10/guilds/${GUILD_ID}/members/${userId}/roles/${roleId}`,
+      { method: 'DELETE', headers }
+    );
+    return res.ok || res.status === 204;
+  } catch (err) {
+    console.warn(`[removeMemberRole] Failed to remove role ${roleId} from user ${userId}:`, err);
+    return false;
+  }
+}
+
+/**
  * メッセージにリアクションを追加する
  */
 export async function addReactionToMessage(channelId: string, messageId: string, emoji: string): Promise<boolean> {
@@ -541,7 +558,19 @@ export async function processSingleIntroMessage(msg: {
     await addMemberRole(discordId, ONBOARDING_ROLES.BEGINNER_LOUNGE);
   }
 
-  // 希望レーンロール
+  // メンバーの現在のDiscordロールを取得（旧レーンロールの剥奪用）
+  let currentRoles = new Set<string>();
+  try {
+    const memberRes = await discordFetch(`https://discord.com/api/v10/guilds/${GUILD_ID}/members/${discordId}`, { headers: getBotHeaders() });
+    if (memberRes.ok) {
+      const memberData = await memberRes.json();
+      currentRoles = new Set<string>(memberData?.roles || []);
+    }
+  } catch (mErr) {
+    console.warn(`[processSingleIntroMessage] メンバーロール取得失敗 (${discordName}):`, mErr);
+  }
+
+  // 希望レーンロール（ユーザー方針: 第1優先の1つのみ付与し、他レーンロールが付いていれば排他制御で剥奪）
   const laneRoleMap: Record<string, string> = {
     TOP: ONBOARDING_ROLES.LANE_TOP,
     JG: ONBOARDING_ROLES.LANE_JG,
@@ -549,11 +578,15 @@ export async function processSingleIntroMessage(msg: {
     ADC: ONBOARDING_ROLES.LANE_ADC,
     SUP: ONBOARDING_ROLES.LANE_SUP,
   };
-  if (parsed.mainLane in laneRoleMap) {
-    await addMemberRole(discordId, laneRoleMap[parsed.mainLane]);
+  const targetLaneRole = laneRoleMap[parsed.mainLane];
+  if (targetLaneRole) {
+    await addMemberRole(discordId, targetLaneRole);
   }
-  if (parsed.subLane in laneRoleMap && parsed.subLane !== parsed.mainLane) {
-    await addMemberRole(discordId, laneRoleMap[parsed.subLane]);
+  // 第1優先以外のレーンロールが付いている場合は剥奪して第1優先1つだけに整える
+  for (const roleId of Object.values(laneRoleMap)) {
+    if (roleId !== targetLaneRole && currentRoles.has(roleId)) {
+      await removeMemberRole(discordId, roleId);
+    }
   }
 
   // 6. 個別プライベートチャンネルの作成
