@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
+import { takePostCooldown } from '../../../../lib/postCooldown';
 
 // チーム分け4案(A/B/C/D)をまとめてDiscordへ投稿する(#77)。
 // メンバーは🇦🇧🇨🇩リアクションで希望を表明→管理者がポータルで採用案を確定して「Discord通知」する運用。
@@ -9,6 +10,9 @@ export async function POST(request: Request) {
     if (!Array.isArray(proposals) || proposals.length === 0) {
       return NextResponse.json({ error: '案データがありません。' }, { status: 400 });
     }
+    // 無認証の公開APIなので、チャンネルを埋め尽くせないよう連投を止める（2026-10-19）
+    const wait = await takePostCooldown('discord_proposals_cooldown', 30 * 1000);
+    if (wait !== null) return NextResponse.json({ error: `連続投稿を防ぐため${wait}秒ほどお待ちください。` }, { status: 429 });
 
     // 意図的な公開API(api/players/saveと同じ方針)。本番Discordチャンネルへの投稿内容が
     // 完全にクライアント任せだったため、実在の登録プレイヤー名かどうかだけは検証する

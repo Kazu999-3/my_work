@@ -1,4 +1,5 @@
 import { supabaseAdmin as supabase } from './supabaseAdmin';
+import { fetchAllRows } from './fetchAll';
 
 /**
  * コイン増減の台帳（coin_transactions）への記録。
@@ -81,10 +82,16 @@ export async function summarizeCoinFlow(days = 30): Promise<
   if (!supabase) return [];
   const since = new Date(Date.now() - days * 86400_000).toISOString();
 
-  const { data, error } = await supabase
-    .from('coin_transactions')
-    .select('reason, delta')
-    .gte('created_at', since);
+  // 30日分でも数千件（プリンコだけで5,000件超）あるので全件をページングで読む。
+  // 以前は先頭1000件だけを集計しており、コインの流れが実際より大幅に小さく出ていた（2026-10-19）
+  const { data, error } = await fetchAllRows((from, to) =>
+    supabase
+      .from('coin_transactions')
+      .select('reason, delta')
+      .gte('created_at', since)
+      .order('id', { ascending: true })
+      .range(from, to)
+  );
 
   if (error || !data) return [];
 

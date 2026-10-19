@@ -78,6 +78,13 @@ export async function POST(req: Request) {
     const results = await Promise.all(
       targets.map(async (p) => {
         const payload = pick(p, ALLOWED_FIELDS);
+        // metadata には MMR の再計算で使う初期ランク（initial_highest_rank）・参加日（joined_at）・
+        // Pity の連続カウントなども入っている。無認証APIのため、画面が実際に送る備考（notes）だけを受け付ける
+        // （以前は任意のキーを書き込めた。initial_highest_rank を書き換えて再計算すると MMR が上がる。2026-10-19）
+        if (payload.metadata !== undefined && payload.metadata !== null) {
+          payload.metadata = typeof payload.metadata?.notes === 'string' ? { notes: payload.metadata.notes.slice(0, 500) } : undefined;
+          if (payload.metadata === undefined) delete payload.metadata;
+        }
         const hasPrefs = payload.role_preferences !== undefined && payload.role_preferences !== null;
         const hasMeta = payload.metadata !== undefined && payload.metadata !== null;
         if (hasPrefs || hasMeta) {

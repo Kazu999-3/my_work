@@ -569,11 +569,31 @@ export async function POST(request: Request) {
       // このラウンドに属するベットだけを精算する。settledRoundId が特定できなかった場合は
       // 従来どおり全件（filterBetsByRound が roundId=null で全件返す）。round_id を持たない
       // レガシーbet は常に含まれる（filterBetsByRound の仕様）。
-      const { filterBetsByRound } = await import('../../../../lib/betOdds');
-      const openBetTasks = filterBetsByRound(
-        (allOpenBetTasks || []).map((t: any) => ({ round_id: t?.payload?.round_id ?? null, task: t })),
-        settledRoundId
-      ).map((x: any) => x.task);
+      // 2026-10-19: ベットは「賭けた時点で最新の予測」をラウンドとして持つが、精算は「実際の顔ぶれと一致する予測」で
+      // 行う。賭けた後にチーム分けをやり直すと新しい予測ができ、古いラウンドのベットが永久に精算されず
+      // （賭け金だけ引かれたまま）残っていた（10/17 のラウンド72・76の4件）。
+      // そこで「前の試合の予測より後〜今回の予測まで」の範囲のラウンドを、この試合のベットとして精算する。
+      // 範囲の間にある予測はやり直しで置き換わったもの（試合と結び付かない）なので、巻き込んで問題ない。
+      let roundFloor: number | null = null;
+      if (typeof settledRoundId === 'number') {
+        const { data: prevMatched } = await supabase
+          .from('balancer_predictions')
+          .select('id')
+          .not('match_id', 'is', null)
+          .lt('id', settledRoundId)
+          .order('id', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        roundFloor = prevMatched?.id ?? 0;
+      }
+      const openBetTasks = (allOpenBetTasks || []).filter((t: any) => {
+        const rid = t?.payload?.round_id ?? null;
+        if (settledRoundId === null || rid === null) return true; // ラウンドを特定できない・紐付け前のベットは従来どおり
+        if (roundFloor !== null && typeof rid === 'number' && typeof settledRoundId === 'number') {
+          return rid > roundFloor && rid <= settledRoundId;
+        }
+        return rid === settledRoundId;
+      });
 
       if (openBetTasks && openBetTasks.length > 0) {
         for (const task of openBetTasks) {

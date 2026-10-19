@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
+import { fetchAllRows } from '../../../../lib/fetchAll';
 import { getPlayerCoins } from '../../../../lib/playerCoins';
 import { getKtmRank } from '../../../../lib/mmr';
 
@@ -73,9 +74,10 @@ export async function GET() {
 
     // 2. 過去の試合参加者（ktm_match_participants）にのみ存在するユーザーも名寄せ
     try {
-      const { data: participants } = await supabase
-        .from('ktm_match_participants')
-        .select('player_name, discord_id');
+      // 1000件を超えているので全件をページングで読む（以前は先頭1000件だけだった。2026-10-19）
+      const { data: participants } = await fetchAllRows((from, to) =>
+        supabase.from('ktm_match_participants').select('player_name, discord_id').order('id', { ascending: true }).range(from, to)
+      );
 
       if (participants) {
         for (const pt of participants) {

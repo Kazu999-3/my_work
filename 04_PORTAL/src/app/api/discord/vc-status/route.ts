@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { takePostCooldown } from '../../../../lib/postCooldown';
 
 export const dynamic = 'force-dynamic';
 
@@ -6,11 +7,17 @@ export const dynamic = 'force-dynamic';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { status, channelId: customChannelId, defaultName } = body;
+    const { status, defaultName } = body;
 
     // ステータス指定（例: 'game1' | 'game2' | 'reset' | カスタム文字列）
     const botToken = process.env.DISCORD_BOT_TOKEN;
-    const channelId = customChannelId || process.env.DISCORD_CUSTOM_VC_ID || process.env.DISCORD_VOICE_CHANNEL_ID || '1548675524086472796';
+    // 2026-10-19: 以前は body の channelId を受け付けており、無認証で任意のチャンネルの名前を Bot 権限で書き換えられた。
+    // 画面は channelId を送っていないので、設定済みのカスタムVCだけに固定する
+    const channelId = process.env.DISCORD_CUSTOM_VC_ID || process.env.DISCORD_VOICE_CHANNEL_ID || '1548675524086472796';
+
+    // 連打で Discord の制限（チャンネル名の変更は10分に2回）を使い切らないよう、短い間隔の連続実行を止める
+    const wait = await takePostCooldown('discord_vc_status_cooldown', 10 * 1000);
+    if (wait !== null) return NextResponse.json({ success: false, error: `${wait}秒ほど待ってから試してください。` }, { status: 429 });
 
     if (!botToken) {
       return NextResponse.json({
@@ -39,10 +46,11 @@ export async function POST(req: Request) {
       fallbackChannelName = '🔊 🎮カスタムVC (メイヘム)';
     } else if (status === 'reset') {
       newStatusText = '';
-      fallbackChannelName = defaultName || '🔊 🎮カスタムVC';
+      fallbackChannelName = (typeof defaultName === 'string' && defaultName.trim() ? defaultName.trim().slice(0, 40) : '') || '🔊 🎮カスタムVC';
     } else if (typeof status === 'string' && status.trim()) {
-      newStatusText = status.trim();
-      fallbackChannelName = status.trim();
+      // 自由入力は短く制限する（無認証の公開APIのため）
+      newStatusText = status.trim().slice(0, 40);
+      fallbackChannelName = newStatusText;
     } else {
       return NextResponse.json({ error: '有効なステータスを指定してください。' }, { status: 400 });
     }

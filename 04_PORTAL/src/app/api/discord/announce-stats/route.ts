@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
+import { takePostCooldown } from '../../../../lib/postCooldown';
 
 export async function POST(request: Request) {
   try {
@@ -9,6 +10,9 @@ export async function POST(request: Request) {
     if (!webhookUrl) {
       return NextResponse.json({ error: 'Discord Webhook URLが設定されていません。' }, { status: 500 });
     }
+    // 無認証の公開APIなので、チャンネルを埋め尽くせないよう連投を止める（2026-10-19）
+    const wait = await takePostCooldown('discord_announce_stats_cooldown', 30 * 1000);
+    if (wait !== null) return NextResponse.json({ error: `連続投稿を防ぐため${wait}秒ほどお待ちください。` }, { status: 429 });
 
     if (!players || !Array.isArray(players) || players.length === 0) {
       return NextResponse.json({ error: 'プレイヤーリストが空です。' }, { status: 400 });

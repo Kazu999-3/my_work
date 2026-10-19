@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
 import { normalizeChampionName } from '../../../../lib/championNames';
 import { recordRevision } from '../../../../lib/knowledgeRevisions';
+import { verifyAdminSession } from '../../../../lib/adminAuth';
 
 /**
  * 試合後ディープ解析で得た教訓を、対面ナレッジ(matchup_sentinel)へ追記する。
@@ -18,6 +19,12 @@ import { recordRevision } from '../../../../lib/knowledgeRevisions';
  * (matchup_id の命名、既存行への追記、変更履歴の記録)。
  */
 export async function POST(request: NextRequest) {
+  // 呼び出し元は手元PCのオーバーレイ（localhost の開発サーバー）だけ。本番（Vercel）では認証なしで
+  // 対面メモに任意の文章を追記できてしまうため、管理者ログイン時だけ受け付ける（2026-10-19）
+  if (process.env.VERCEL) {
+    const auth = await verifyAdminSession(request);
+    if (!auth.ok) return NextResponse.json({ success: false, error: auth.error || 'Unauthorized' }, { status: 401 });
+  }
   try {
     const body = await request.json();
     const { myChampion, enemyChampion, keyLearning, bottleneck } = body;
