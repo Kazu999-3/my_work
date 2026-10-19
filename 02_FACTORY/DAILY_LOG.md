@@ -43,10 +43,13 @@
      - ユーザー判断に基づき、Riot ID未特定の「ソー」「べる」（L131）および「お見合い便の自動送信」（L174）をクローズ（現状維持）として完了整理。
    - **【テーマ10: チーム分け・MMR計算結果の実戦データ評価】(`scripts/audit_balancer_mmr.py`)**:
      - 通算139試合・参加者延べ1390人・登録77人の本番データを全量監査。BLUE勝利51.1% vs RED48.9%の極めて美しい50:50バランス、18分未満サレンダー0.0%、平均試合時間31.6分、76.4%が互角マッチ（予測勝率45〜55%）に収まっている健全性を機械実証。MMR変動（勝+29.7/負-24.5）と正規分布（中央値1376、標準偏差136.4）を確認。
+   - **【テーマ11: レーン戦の勝敗分岐点アナライザー新設】(`05_PILOT/src/lib/laneDiffAnalyzer.ts`, `api/lol/lane-diff/route.ts`, `LaneDiffCard.tsx`, `PostGameTab.tsx`)**:
+     - 0〜14分のMatch Timelineから、対面との差が開き始めた「最初のきっかけ（ソロデス、ガンク被弾、リコールCSロスト、プレート献上等）」を機械抽出し客観的教訓を言語化する `laneDiffAnalyzer.ts` エンジンを開発。
+     - 単体テスト `laneDiffAnalyzer.test.ts` 配備（全件PASS）。10分キャッシュ付きAPI `/api/lol/lane-diff` を新設し、試合後レビュー画面に `LaneDiffCard.tsx` をマウント。
 3. **機械的実値検証**:
    - `04_PORTAL` 単体テスト (`npm test`): **全142件 PASS (100%)**
    - `04_PORTAL` TypeScript 型チェック (`npx tsc --noEmit`): **0 errors PASS**
-   - `05_PILOT` 単体テスト (`npm test`): **全35件 PASS (100%)**
+   - `05_PILOT` 単体テスト (`npm test`): **全40件 PASS (100%)**
    - `05_PILOT` TypeScript 型チェック (`npx tsc --noEmit`): **0 errors PASS**
    - `05_PILOT` Turbopack 本番ビルド (`npm run build`): **全25ルート 0 errors PASS**
    - `ktm_bot` ドライフラン (`dry_run_recruitment_status.mjs`): **Exit Code 0 PASS**

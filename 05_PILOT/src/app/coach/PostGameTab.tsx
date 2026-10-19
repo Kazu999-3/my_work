@@ -6,6 +6,7 @@ import PostGameDeepAnalyticsDashboard from './PostGameDeepAnalyticsDashboard';
 import CoachReviewPanel from './CoachReviewPanel';
 import MySoloQDashboard from './MySoloQDashboard';
 import MissionCard from './MissionCard';
+import LaneDiffCard from './LaneDiffCard';
 import { useCoachRiotId } from './riotIdContext';
 
 // 試合後タブ（旧ポータル /coach「3. 試合後」の移植）。2026-10-04
@@ -52,6 +53,8 @@ export default function PostGameTab({ initialMatchId }: { initialMatchId?: strin
         <div key={riotId} className="space-y-4">
           {/* 2026-10-19: 試合後に開くと、課題の達成を判定して次の課題を出す */}
           <MissionCard riotId={riotId} />
+          {/* 2026-10-19: 序盤0〜14分のレーン戦の勝敗分岐点アナライザー */}
+          <LaneDiffCard riotId={riotId} matchId={matchId || undefined} />
           <PostGameDeepAnalyticsDashboard summonerName={riotId} controlledMatchId={matchId || undefined} onSelectMatchId={setMatchId} />
           <Collapsible title="📂 履歴（自動振り返りの傾向・過去の振り返りメモ）">
             <div className="space-y-5">
