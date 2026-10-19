@@ -20,8 +20,8 @@ import { fetchAllRows } from '../../../../lib/fetchAll';
 // (週次の鮮度レビュー)はchampion_factsの方を見て判定するため、matchup_sentinelに
 // 日々ingestされる新しい知見がchampion_factsへ一切反映されず、レビューが実際に
 // 表示されている辞典内容とズレたスナップショットを見続ける状態になっていた。
-// /api/cron (日次) から毎日呼び出すことで、champion_factsをmatchup_sentinelに
-// 追従させ続けるようにした。
+// 以前は /api/cron (日次) から毎日呼び出す想定だったが、その /api/cron は定期実行の配線が無いまま残っており、
+// 辞典が05の機能になったため 2026-10-19 に削除した。今はこの API を手動で呼んだ時だけ動く。
 // ============================================================
 
 export const dynamic = 'force-dynamic';
