@@ -4,10 +4,13 @@ import { findOrCreatePlayer, getPlayerInventory, consumeInventoryItems } from '.
 
 export const dynamic = 'force-dynamic';
 
+// 自動で効く物（宝くじ・保険・激闘チケット等）は発動宣言の対象外。宣言で消費されると効果が無くなる
+const AUTO_APPLIED_ITEM_IDS = new Set(['lottery_ticket', 'scratch_card', 'bet_insurance', 'victory_bonus_doubler']);
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { discordId, playerName, itemId, itemName, itemIcon, itemDesc } = body;
+    const { discordId, playerName, itemId, itemName } = body;
 
     if (!playerName && !discordId) {
       return NextResponse.json({ error: 'プレイヤー情報が不足しています。' }, { status: 400 });
@@ -36,7 +39,12 @@ export async function POST(req: Request) {
     }
 
     const currentInventory = getPlayerInventory(player);
-    const targetIndex = currentInventory.findIndex(item => item.id === itemId || item.name === itemName);
+    if (itemId && AUTO_APPLIED_ITEM_IDS.has(itemId)) {
+      return NextResponse.json({ error: 'このアイテムは自動で適用されるため、発動宣言は不要です。' }, { status: 400 });
+    }
+    const targetIndex = currentInventory.findIndex(
+      item => (itemId ? item.id === itemId : item.name === itemName) && !AUTO_APPLIED_ITEM_IDS.has(item.id)
+    );
 
     if (targetIndex === -1) {
       return NextResponse.json({
@@ -53,12 +61,18 @@ export async function POST(req: Request) {
       }, { status: 409 });
     }
 
+    // 通知に出す名前・アイコンは、画面から送られた文字ではなく実際に消費した持ち物のものを使う。
+    // 以前は送られた itemName / itemDesc をそのまま載せており、1枚あれば任意の文面を「公式発動宣言」として流せた（2026-10-19）
+    const usedItem = currentInventory[targetIndex];
+    const shownName = usedItem.name || itemName;
+    const shownIcon = usedItem.icon || '🎟️';
+
     // Discordへ公式発動アナウンス送信（指定チャンネル: 1545806575770276061 / #ショップ通知 へ送信）
     const { sendShopNotification } = await import('../../../../../lib/discordNotify');
     await sendShopNotification({
       embeds: [{
-        title: `📣【特権発動宣言】${playerName || player?.name} さんが発動しました！`,
-        description: `**${itemIcon || '🎟️'} ${itemName}**\n${itemDesc || '次回カスタム試合でこの特権が適用されます！'}\n\n進行役・対戦相手の皆様はルールのご確認をお願いします🔥`,
+        title: `📣【特権発動宣言】${player?.name || playerName} さんが発動しました！`,
+        description: `**${shownIcon} ${shownName}**\n次回カスタム試合でこの特権が適用されます！\n\n進行役・対戦相手の皆様はルールのご確認をお願いします🔥`,
         color: 0xec4899,
         footer: { text: 'KTM Sovereign Shop' },
         timestamp: new Date().toISOString()
@@ -67,7 +81,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `📢 **【発動完了】** 「${itemName}」の発動をDiscordに宣言しました！次回の試合でルールが適用されます！`
+      message: `📢 **【発動完了】** 「${shownName}」の発動をDiscordに宣言しました！次回の試合でルールが適用されます！`
     });
   } catch (error: any) {
     console.error('Announce API error:', error);

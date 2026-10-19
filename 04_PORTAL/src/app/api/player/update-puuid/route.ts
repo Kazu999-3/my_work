@@ -66,7 +66,6 @@ export async function POST(req: Request) {
         coins: typeof currentPrefs.coins === 'number' ? currentPrefs.coins : 1000,
         inventory: Array.isArray(currentPrefs.inventory) ? currentPrefs.inventory : [],
       };
-      updateData.role_preferences = updatedPrefs;
       if (ng1 !== undefined) updateData.ng_lane_1 = ng1;
       if (ng2 !== undefined) updateData.ng_lane_2 = ng2;
       if (weight !== undefined && weight !== null && weight !== '') {
@@ -107,6 +106,10 @@ export async function POST(req: Request) {
         .eq('id', existing.id);
 
       if (error) throw error;
+      // 希望レーンは role_preferences に DB 上で重ねる（丸ごと書き戻すとコイン・受取印が古い値に戻るため。2026-10-19）
+      const { patchPlayerPrefs } = await import('../../../../lib/playerCoins');
+      const prefsRes = await patchPlayerPrefs(existing.id, { primary: updatedPrefs.primary, secondary: updatedPrefs.secondary });
+      if (!prefsRes.ok) throw new Error(prefsRes.error);
     } else {
       // 新規プレイヤーの自動作成 (Upsert)
       const defaultName = discordName || gameName || `User_${String(discordId).slice(-4)}`;

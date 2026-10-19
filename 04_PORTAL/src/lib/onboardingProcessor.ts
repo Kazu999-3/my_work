@@ -451,11 +451,14 @@ export async function processSingleIntroMessage(msg: {
       ign: parsed.ign,
       puuid: puuid,
       highest_rank: rankTier,
-      role_preferences: updatedPrefs,
       is_active: true,
       ...(parsed.ngLane1 ? { ng_lane_1: parsed.ngLane1 } : {}),
       ...(parsed.ngLane2 ? { ng_lane_2: parsed.ngLane2 } : {}),
     };
+    // 希望レーンは role_preferences に DB 上で重ねる（丸ごと書き戻すとコイン・受取印が古い値に戻るため。2026-10-19）
+    const { patchPlayerPrefs } = await import('./playerCoins');
+    const prefsRes = await patchPlayerPrefs(existing.id, { primary: updatedPrefs.primary, secondary: updatedPrefs.secondary });
+    if (!prefsRes.ok) throw new Error(prefsRes.error);
     const { data: updated, error: uErr } = await supabase
       .from('ktm_players')
       .update(updateData)

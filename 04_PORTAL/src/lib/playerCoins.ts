@@ -423,3 +423,29 @@ export async function consumeInventoryItems(player: PlayerRecord, itemId: string
     .eq('name', player.name);
   return upErr ? 0 : removed;
 }
+
+/** サーバーだけが書く role_preferences のキー（patch_player_prefs、migration 111 と同じ並び） */
+const SERVER_OWNED_PREF_KEYS = ['coins', 'inventory', 'lastDailyClaim', 'lastRescueMonth', 'betStreak', 'maxBetStreak'];
+
+/**
+ * 希望レーン等の設定を role_preferences に「渡したキーだけ」DB 上で重ねる（patch_player_prefs、migration 111）。
+ * 読んだ role_preferences を丸ごと書き戻すと、その間に変わったコイン・受取印・連勝数が古い値に戻るため（2026-10-19）、
+ * 設定の保存ではこれを使う。コイン・持ち物・受取印・連勝数は渡しても変わらない。
+ */
+export async function patchPlayerPrefs(playerId: number, patch: Record<string, any>): Promise<{ ok: boolean; error?: string }> {
+  if (!supabase) return { ok: false, error: 'Supabase admin is not configured' };
+  const { error } = await supabase.rpc('patch_player_prefs', { p_id: playerId, p_patch: patch });
+  const rpcMissing = !!error && (error.code === 'PGRST202' || /patch_player_prefs/.test(error.message || ''));
+  if (!rpcMissing) return error ? { ok: false, error: error.message } : { ok: true };
+
+  // ── 関数がまだ無い（マイグレーション適用前）時の従来方式: 直前に読み直して重ねる ──
+  const { data: cur } = await supabase.from('ktm_players').select('role_preferences').eq('id', playerId).maybeSingle();
+  const safePatch = { ...patch };
+  for (const k of SERVER_OWNED_PREF_KEYS) delete safePatch[k];
+  const base = cur?.role_preferences && typeof cur.role_preferences === 'object' ? cur.role_preferences : {};
+  const { error: upErr } = await supabase
+    .from('ktm_players')
+    .update({ role_preferences: { ...base, ...safePatch } })
+    .eq('id', playerId);
+  return upErr ? { ok: false, error: upErr.message } : { ok: true };
+}

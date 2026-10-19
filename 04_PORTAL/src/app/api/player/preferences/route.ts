@@ -216,7 +216,6 @@ export async function POST(req: Request) {
     const { error: updateError } = await supabase
       .from('ktm_players')
       .update({
-        role_preferences: updatedPrefs,
         ng_lane_1: ng1,
         ng_lane_2: ng2,
         ...(ign !== undefined ? { ign: ign.trim() } : {}),
@@ -228,6 +227,18 @@ export async function POST(req: Request) {
     if (updateError) {
       console.error('[player/preferences POST] updateError:', updateError);
       return NextResponse.json({ ok: false, error: updateError.message }, { status: 500 });
+    }
+    // 希望レーン等は role_preferences に DB 上で重ねる（丸ごと書き戻すとコイン・受取印が古い値に戻るため。2026-10-19）
+    const { patchPlayerPrefs } = await import('../../../../lib/playerCoins');
+    const prefsRes = await patchPlayerPrefs(player.id as number, {
+      primary: updatedPrefs.primary,
+      secondary: updatedPrefs.secondary,
+      ng_roles: updatedPrefs.ng_roles,
+      ...(mentorship !== undefined ? { mentorship } : {}),
+    });
+    if (!prefsRes.ok) {
+      console.error('[player/preferences POST] prefs patch error:', prefsRes.error);
+      return NextResponse.json({ ok: false, error: prefsRes.error }, { status: 500 });
     }
 
     return NextResponse.json({

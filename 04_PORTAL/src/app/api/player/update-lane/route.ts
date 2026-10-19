@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
 import { verifyBotSecret } from '../../../../lib/botAuth';
+import { patchPlayerPrefs } from '../../../../lib/playerCoins';
 
 // レーン希望・NG・こだわり度・格上許可の更新。未登録プレイヤーの初回実行時も自動で安全に名簿登録する。
 export const dynamic = 'force-dynamic';
@@ -47,8 +48,8 @@ export async function POST(req: Request) {
 
     if (existingPlayer) {
       // ===== 既存プレイヤーの更新 =====
+      // 希望レーンは role_preferences に DB 上で重ねる（読んだ値を丸ごと書き戻すと、その間に変わったコイン・受取印が戻るため。2026-10-19）
       const updatePayload: any = {
-        role_preferences: updatedPrefs,
         discord_id: discordId,
       };
 
@@ -68,14 +69,10 @@ export async function POST(req: Request) {
         .eq('id', existingPlayer.id);
 
       if (upError) {
-        console.warn('[update-lane] standard update failed, retrying minimal update:', upError.message);
-        const { error: fbError } = await supabase
-          .from('ktm_players')
-          .update({ role_preferences: updatedPrefs })
-          .eq('id', existingPlayer.id);
-
-        if (fbError) throw new Error(fbError.message);
+        console.warn('[update-lane] standard update failed, continuing with lane prefs only:', upError.message);
       }
+      const prefsRes = await patchPlayerPrefs(existingPlayer.id, { primary: updatedPrefs.primary, secondary: updatedPrefs.secondary });
+      if (!prefsRes.ok) throw new Error(prefsRes.error);
 
       return NextResponse.json({ status: 'SUCCESS', mode: 'UPDATED', name: existingPlayer.name });
     } else {

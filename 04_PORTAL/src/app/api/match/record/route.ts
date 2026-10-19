@@ -282,6 +282,29 @@ export async function POST(request: Request) {
       });
     }
 
+    // 同じ試合の二重記録を防ぐ（2026-10-19）。保存は通ったのに画面がタイムアウト等でエラーになり、もう一度押すと
+    // MMR・コイン・チケット消費がすべて2回分かかる。直近30分に「同じ10人・同じ陣営・同じK/D/A」の試合があれば断る。
+    {
+      const sig = (rows: Array<{ player_name?: string; name?: string; team: string; kills: any; deaths: any; assists: any }>) =>
+        rows
+          .map((p) => `${p.player_name ?? p.name}|${p.team}|${Number(p.kills) || 0}/${Number(p.deaths) || 0}/${Number(p.assists) || 0}`)
+          .sort()
+          .join(',');
+      const since = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+      const { data: recentMatches } = await supabase
+        .from('ktm_matches')
+        .select('id, ktm_match_participants(player_name, team, kills, deaths, assists)')
+        .gte('created_at', since);
+      const mySig = sig(results);
+      const dup = (recentMatches || []).find((m: any) => sig(m.ktm_match_participants || []) === mySig);
+      if (dup) {
+        return NextResponse.json(
+          { error: `この試合は既に記録されています（試合ID: ${dup.id}）。二重に記録されないよう保存を止めました。`, matchId: dup.id },
+          { status: 409 }
+        );
+      }
+    }
+
     // 4. DBへのトランザクション書き込み
     // (1) ktm_matches レコード作成
     const effectiveRiotMatchId = isExhibition ? 'EXHIBITION' : (riotMatchId || null);

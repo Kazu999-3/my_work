@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../lib/supabaseAdmin';
+import { patchPlayerPrefs } from '../../../../lib/playerCoins';
 
 // ============================================================
 // 一般ユーザー用: ktm_players の非センシティブ列だけを更新するAPI
@@ -93,12 +94,18 @@ export async function POST(req: Request) {
           // 参照する)が同居している。無認証APIのため、送られてきた値は捨てて常にDBの現在値を残す
           // (任意のコイン額・宝くじチケットを書き込めてしまっていた、2026-09-29発覚)。
           if (hasPrefs) {
-            payload.role_preferences = preserveEconomyKeys(payload.role_preferences, current?.role_preferences);
+            // 2026-10-19: 送られた role_preferences は画面を開いた時点の値なので、丸ごと書くと
+            // その後に変わったコイン・おみくじの受取印・連勝数が戻る（受取印が戻ると同じ日にもう一度受け取れた）。
+            // DB 上で「送られたキーだけ」重ね、サーバーだけが書くキーは変えない（patch_player_prefs、migration 111）
+            const prefsRes = await patchPlayerPrefs(p.id, payload.role_preferences);
+            if (!prefsRes.ok) return { error: { message: prefsRes.error || 'role_preferences の保存に失敗' } };
+            delete payload.role_preferences;
           }
           if (hasMeta) {
             payload.metadata = preserveEconomyKeys({ ...(current?.metadata || {}), ...payload.metadata }, current?.metadata);
           }
         }
+        if (Object.keys(payload).length === 0) return { error: null };
         return supabase.from('ktm_players').update(payload).eq('id', p.id);
       })
     );
