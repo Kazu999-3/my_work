@@ -257,12 +257,17 @@ async function handleStart(discordId: string, player: any, body: any) {
   }
 
   const balanceAfterBet = currentCoins - betAmount;
-  await updatePlayerCoinsAndInventory({
+  const coinRes = await updatePlayerCoinsAndInventory({
     player,
     newCoins: balanceAfterBet,
     reason: 'mines',
     reasonMetadata: { phase: 'bet', betAmount, mineCount, gameId },
   });
+  // 残高が足りない（同時に別の賭けで減った等）とコインは動かない。結果を返すと「負けたのに減らない」になるので止める（2026-10-19）
+  if (!coinRes.success) {
+    await supabaseAdmin!.from('mines_sessions').delete().eq('game_id', gameId);
+    return err(coinRes.error || 'コインの更新に失敗しました。', 409);
+  }
 
   const max = maxRevealCount(mineCount, betAmount);
   const state: MinesPublicState = {

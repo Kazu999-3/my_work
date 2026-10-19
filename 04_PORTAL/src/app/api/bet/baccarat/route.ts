@@ -235,12 +235,16 @@ export async function POST(req: Request) {
 
     // ── コイン更新 ──
     if (!isPush) {
-      await updatePlayerCoinsAndInventory({
+      const coinRes = await updatePlayerCoinsAndInventory({
         player,
         newCoins,
         reason: 'baccarat',
         reasonMetadata: { bet: cleanBet, result, amount: cleanAmount, payout },
       });
+      // 残高が足りない（同時に別の賭けで減った等）とコインは動かない。結果を返すと「負けたのに減らない」になるので止める（2026-10-19）
+      if (!coinRes.success) {
+        return NextResponse.json({ error: coinRes.error || 'コインの更新に失敗しました。' }, { status: 409 });
+      }
     }
 
     return NextResponse.json({

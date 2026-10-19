@@ -266,6 +266,44 @@ export async function updatePlayerCoinsAndInventory(params: {
   }
 
   try {
+    // 2026-10-19: コインは DB 上の足し算（apply_player_coin_delta、migration 106）で更新する。
+    // 以前は「呼び出し側が読んだ残高から計算した値」で上書きしており、同じ人の処理が同時に走ると
+    // 後から書いた1回分だけが残っていた（プリンコ連打で負けが消え、台帳と残高が +24,842 ずれていた）。
+    // 呼び出し側の newCoins は「読んだ時点の残高からの増減」として扱う。
+    const delta = targetCoins - previousCoins;
+    const { data: rpcRows, error: rpcErr } = await supabase.rpc('apply_player_coin_delta', {
+      p_name: player.name,
+      p_delta: delta,
+      p_inventory: Array.isArray(newInventory) ? newInventory : null,
+      p_prefs_patch: rolePreferencesUpdate || null,
+    });
+    // 関数がまだ無い（マイグレーション適用前）時だけ、従来の上書き方式で続ける
+    const rpcMissing = !!rpcErr && (rpcErr.code === 'PGRST202' || /apply_player_coin_delta/.test(rpcErr.message || ''));
+    if (!rpcMissing) {
+      if (rpcErr) {
+        console.error('[playerCoins] apply_player_coin_delta failed:', rpcErr.message);
+        return { success: false, coins: previousCoins, inventory: getPlayerInventory(player), error: rpcErr.message };
+      }
+      const row = Array.isArray(rpcRows) ? rpcRows[0] : rpcRows;
+      if (!row) {
+        // 減らす時に残高が足りない（同時に別の賭けで減った等）、またはプレイヤーが見つからない
+        return { success: false, coins: previousCoins, inventory: getPlayerInventory(player), error: 'コインが不足しています。' };
+      }
+      const appliedCoins = Number(row.new_coins);
+      if (reason && delta !== 0) {
+        const { recordCoinTransaction } = await import('./coinLedger');
+        await recordCoinTransaction({
+          player,
+          delta,
+          balanceAfter: appliedCoins,
+          reason,
+          metadata: reasonMetadata,
+        });
+      }
+      return { success: true, coins: appliedCoins, inventory: targetInventory };
+    }
+
+    // ── 以下は apply_player_coin_delta が無い時の従来方式 ──
     // 1. DBから最新の role_preferences を取得（希望レーンの破壊を完全防止）
     let currentDbPrefs: Record<string, any> = {};
     const { data: dbCurrent } = await supabase

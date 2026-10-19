@@ -86,12 +86,16 @@ export async function POST(req: Request) {
 
     // コインを控除
     const remaining = currentCoins - handicap.cost;
-    await updatePlayerCoinsAndInventory({
+    const coinRes = await updatePlayerCoinsAndInventory({
       player: user,
       newCoins: remaining,
       reason: 'handicap',
       reasonMetadata: { level: handicap.level, title: handicap.title, cost: handicap.cost },
     });
+    // 残高が足りない（同時に別の賭けで減った等）とコインは動かない。結果を返すと「負けたのに減らない」になるので止める（2026-10-19）
+    if (!coinRes.success) {
+      return NextResponse.json({ error: coinRes.error || 'コインの更新に失敗しました。' }, { status: 409 });
+    }
 
     // Discord速報通知
     const webhookUrl = process.env.DISCORD_KTM_WEBHOOK_URL || process.env.DISCORD_WEBHOOK_URL;

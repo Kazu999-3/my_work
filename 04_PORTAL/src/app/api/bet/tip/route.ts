@@ -68,12 +68,16 @@ export async function POST(req: Request) {
     const newSenderCoins = senderCoins - cleanAmount;
     const newReceiverCoins = getPlayerCoins(receiver) + cleanAmount;
 
-    await updatePlayerCoinsAndInventory({
+    const sendRes = await updatePlayerCoinsAndInventory({
       player: sender,
       newCoins: newSenderCoins,
       reason: 'tip_send',
       reasonMetadata: { to: receiver.name },
     });
+    // 送る側から引けなかった時は、受け取る側にも渡さない（コインが湧かないように。2026-10-19）
+    if (!sendRes.success) {
+      return NextResponse.json({ error: sendRes.error || 'コインの更新に失敗しました。' }, { status: 409 });
+    }
 
     await updatePlayerCoinsAndInventory({
       player: receiver,
