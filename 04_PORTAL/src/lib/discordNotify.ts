@@ -69,98 +69,14 @@ export const DEFAULT_RANK_CHANNEL_ID = '1485995428548972595';
  * 🏆 最高ランク更新（昇格）時の祝賀通知をDiscordへ送信
  * 通知先: チャンネルID 1485995428548972595
  */
-export async function sendRankUpgradeNotification(params: {
+export async function sendRankUpgradeNotification(_params: {
   playerName: string;
   discordId?: string | null;
   oldRank?: string | null;
   newRank: string;
   ign?: string | null;
 }): Promise<boolean> {
-  const { playerName, discordId, oldRank, newRank, ign } = params;
-
-  // newRankが未設定またはUNRANKED、あるいは変動なしの場合は通知しない
-  const cleanOld = (oldRank || '').toUpperCase().trim();
-  const cleanNew = (newRank || '').toUpperCase().trim();
-  if (!cleanNew || cleanNew === 'UNRANKED' || cleanOld === cleanNew) {
-    return false;
-  }
-
-  const isFirstRank = !cleanOld || cleanOld === 'UNRANKED';
-  const oldRankDisplay = cleanOld || '未ランク';
-
-  const mention = discordId ? `<@${discordId}>` : `**${playerName}**`;
-  const content = isFirstRank
-    ? `🎉 **【ランク認定速報！】** ${mention} さんのSoloQランクが認定されました！`
-    : `🎉 **【最高ランク更新速報！】** ${mention} さんが最高ランクを更新しました！`;
-
-  const embed = {
-    title: isFirstRank ? '🏆 祝・SoloQランク認定！' : '🏆 最高ランク更新（昇格）おめでとうございます！',
-    description: isFirstRank
-      ? `${mention} さんのSoloQランクが **${newRank}** に認定されました！✨\n次回カスタムでのキャリー・大活躍に期待しています！`
-      : `${mention} さんのSoloQ最高ランクが **${newRank}** に到達しました！✨\n次回カスタムでのキャリー・大活躍に期待しています！`,
-    color: 0xF59E0B, // Amber/Gold
-    fields: [
-      { name: '👤 プレイヤー', value: playerName, inline: true },
-      { name: '📈 ランク', value: isFirstRank ? `**🔥 ${newRank}**` : `\`${oldRankDisplay}\` ➔ **🔥 ${newRank}**`, inline: true },
-      ...(ign ? [{ name: '🎮 Riot ID', value: `\`${ign}\``, inline: true }] : []),
-    ],
-    footer: { text: 'KTM ポータル | ランク自動同期' },
-    timestamp: new Date().toISOString(),
-  };
-
-  const payload = { content, embeds: [embed] };
-  const botToken = process.env.DISCORD_BOT_TOKEN;
-  const rankChannelId = process.env.DISCORD_RANK_CHANNEL_ID || DEFAULT_RANK_CHANNEL_ID;
-  const rankWebhookUrl = process.env.DISCORD_RANK_WEBHOOK_URL;
-
-  // 1. 専用Webhookがある場合はWebhookで送信
-  if (rankWebhookUrl) {
-    try {
-      const res = await discordFetch(rankWebhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (res.ok) return true;
-    } catch (e) {
-      console.warn('[discordNotify] Rank webhook send failed:', e);
-    }
-  }
-
-  // 2. 指定チャンネル (1485995428548972595) へBot Tokenで直接送信
-  if (botToken && rankChannelId) {
-    try {
-      const res = await discordFetch(`https://discord.com/api/v10/channels/${rankChannelId}/messages`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bot ${botToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-      if (res.ok) return true;
-      const errText = await res.text();
-      console.warn(`[discordNotify] Rank channel (${rankChannelId}) message send failed (${res.status}):`, errText);
-    } catch (e) {
-      console.warn('[discordNotify] Bot channel send error for rank notification:', e);
-    }
-  }
-
-  // 3. フォールバック (メイン大会・試合速報Webhook)
-  const fallbackWebhook = process.env.DISCORD_KTM_WEBHOOK_URL || process.env.DISCORD_WEBHOOK_URL;
-  if (fallbackWebhook) {
-    try {
-      const res = await discordFetch(fallbackWebhook, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      return res.ok;
-    } catch (e) {
-      console.warn('[discordNotify] Rank upgrade fallback webhook send failed:', e);
-    }
-  }
-
+  // ユーザー方針（2026-10-20）: 昇格時の通知・ボーナス挙動は不要のため常時スキップ
   return false;
 }
 
