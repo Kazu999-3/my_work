@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin as supabase } from '../../../../../lib/supabaseAdmin';
-import { findOrCreatePlayer, getPlayerInventory, updatePlayerCoinsAndInventory } from '../../../../../lib/playerCoins';
+import { findOrCreatePlayer, getPlayerInventory, consumeInventoryItems } from '../../../../../lib/playerCoins';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,11 +44,14 @@ export async function POST(req: Request) {
       }, { status: 400 });
     }
 
-    currentInventory.splice(targetIndex, 1); // 1枚消費
-    await updatePlayerCoinsAndInventory({
-      player,
-      newInventory: currentInventory,
-    });
+    // 1枚消費は DB 上で行い、実際に減らせた時だけ発動する。以前は読んだ持ち物から抜いて上書きしており、
+    // 2回連続で押すと同じ1枚で2回発動（通知も2回）し、同時に買った物も消えていた（2026-10-19）
+    const consumed = await consumeInventoryItems(player, currentInventory[targetIndex].id, 1);
+    if (consumed < 1) {
+      return NextResponse.json({
+        error: `「${itemName}」を所持していません（既に使用済みの可能性があります）。`
+      }, { status: 409 });
+    }
 
     // Discordへ公式発動アナウンス送信（指定チャンネル: 1545806575770276061 / #ショップ通知 へ送信）
     const { sendShopNotification } = await import('../../../../../lib/discordNotify');

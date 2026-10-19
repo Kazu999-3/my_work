@@ -379,3 +379,47 @@ export async function updatePlayerCoinsAndInventory(params: {
     return { success: false, coins: previousCoins, inventory: getPlayerInventory(player), error: e.message };
   }
 }
+
+/**
+ * 持ち物から指定 id の物を最大 count 枚、DB 上で減らし、実際に減らせた枚数を返す（consume_player_items、migration 110）。
+ * 以前は各所で「読んだ持ち物から抜いた配列」を丸ごと書いており、同時に買った物が消えたり、
+ * 特権を2回連続で押すと1枚で2回発動したりしていた（2026-10-19）。
+ * 0 が返ったら「持っていない（もう使われた）」として扱うこと。
+ */
+export async function consumeInventoryItems(player: PlayerRecord, itemId: string, count = 1): Promise<number> {
+  if (!supabase || count <= 0) return 0;
+  const { data, error } = await supabase.rpc('consume_player_items', {
+    p_name: player.name,
+    p_item_id: itemId,
+    p_count: count,
+  });
+  const rpcMissing = !!error && (error.code === 'PGRST202' || /consume_player_items/.test(error.message || ''));
+  if (!rpcMissing) {
+    if (error) {
+      console.error('[playerCoins] consume_player_items failed:', error.message);
+      return 0;
+    }
+    return Number(data) || 0;
+  }
+
+  // ── 関数がまだ無い（マイグレーション適用前）時の従来方式: 読み直して抜いた配列で上書き ──
+  const { data: fresh } = await supabase
+    .from('ktm_players')
+    .select('inventory, role_preferences, metadata')
+    .eq('name', player.name)
+    .limit(1)
+    .maybeSingle();
+  const inv = [...getPlayerInventory(fresh || player)];
+  let removed = 0;
+  const next = inv.filter((it: any) => {
+    if (removed < count && it?.id === itemId) { removed++; return false; }
+    return true;
+  });
+  if (removed === 0) return 0;
+  const prefs = fresh?.role_preferences && typeof fresh.role_preferences === 'object' ? fresh.role_preferences : {};
+  const { error: upErr } = await supabase
+    .from('ktm_players')
+    .update({ inventory: next, role_preferences: { ...prefs, inventory: next } })
+    .eq('name', player.name);
+  return upErr ? 0 : removed;
+}

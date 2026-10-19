@@ -5,7 +5,7 @@ import { calculateSurrenderMmrMitigation } from '../../../../lib/balancer/mmrImp
 import { computePityAfterMatch } from '../../../../lib/matchSettlement';
 import { buildMatchupField, resultEmbedColor } from '../../../../lib/matchResultMessage';
 import { fetchAllRows } from '../../../../lib/fetchAll';
-import { getPlayerInventory as readInventory } from '../../../../lib/playerCoins';
+import { getPlayerInventory as readInventory, consumeInventoryItems } from '../../../../lib/playerCoins';
 import { verifyAdminSession } from '../../../../lib/adminAuth';
 import { verifyBotSecret } from '../../../../lib/botAuth';
 import { syncPlayersDiscordRoles } from '../../../../lib/discordRoleSync';
@@ -411,14 +411,13 @@ export async function POST(request: Request) {
       // ⚔️ 勝利ボーナス激闘チケット（victory_bonus_doubler）の判定
       // 持ち物は inventory 列が正（playerCoins の getPlayerInventory）。以前は role_preferences から読んで列を書き換えておらず、
       // 次のコイン操作で列から書き戻されて、使ったチケットが復活していた（2026-10-18）
-      const updatedInventory = [...readInventory(r.dbPlayer)];
+      // 2026-10-19: 消費は DB 上で行う（consume_player_items、migration 110）。読んだ持ち物から抜いて上書きすると、
+      // 記録中にショップで買った物が消えていた
       let hasVictoryDoubler = false;
 
-      if (r.team === winningTeam) {
-        const doublerIdx = updatedInventory.findIndex((it: any) => it.id === 'victory_bonus_doubler');
-        if (doublerIdx !== -1) {
-          // チケットを1枚消費して +600pt（通常250 + ブースト350）に爆増！
-          updatedInventory.splice(doublerIdx, 1);
+      if (r.team === winningTeam && readInventory(r.dbPlayer).some((it: any) => it.id === 'victory_bonus_doubler')) {
+        // チケットを1枚消費して +600pt（通常250 + ブースト350）に爆増！
+        if ((await consumeInventoryItems(r.dbPlayer, 'victory_bonus_doubler', 1)) === 1) {
           coinReward = 600;
           hasVictoryDoubler = true;
         }
@@ -444,8 +443,7 @@ export async function POST(request: Request) {
       // 以前はここで「読んだ残高 + 報酬」を上書きしており、記録中にその人がカジノで遊ぶとどちらかが消えていた（2026-10-19）
       const legacyCoinFields = {
         coins: newCoins,
-        inventory: updatedInventory,
-        role_preferences: { ...currentRolePrefs, coins: newCoins, inventory: updatedInventory },
+        role_preferences: { ...currentRolePrefs, coins: newCoins },
       };
 
       (r as any).coinReward = coinReward;
@@ -463,7 +461,7 @@ export async function POST(request: Request) {
       const { data: coinRows, error: coinErr } = await supabase.rpc('apply_player_coin_delta', {
         p_name: r.name,
         p_delta: coinReward,
-        p_inventory: hasVictoryDoubler ? updatedInventory : null,
+        p_inventory: null,
         p_prefs_patch: null,
       });
       if (coinErr && (coinErr.code === 'PGRST202' || /apply_player_coin_delta/.test(coinErr.message || ''))) {
@@ -660,13 +658,12 @@ export async function POST(request: Request) {
           } else {
             // 不的中：全損保険（bet_insurance）の所持チェック
             if (pPlayer) {
-              const currentInv = getPlayerInventory(pPlayer);
-              const insuranceIdx = currentInv.findIndex((it: any) => it.id === 'bet_insurance');
+              const hasInsurance = getPlayerInventory(pPlayer).some((it: any) => it.id === 'bet_insurance');
               let insuranceRefund = 0;
 
-              if (insuranceIdx !== -1) {
-                // 保険チケットを1枚消費して50%キャッシュバック
-                currentInv.splice(insuranceIdx, 1);
+              // 保険チケットを1枚消費して50%キャッシュバック。消費は DB 上で行い、実際に減らせた時だけ払う
+              // （以前は読んだ持ち物から抜いて上書きしており、同時に買った物が消えていた。2026-10-19）
+              if (hasInsurance && (await consumeInventoryItems(pPlayer, 'bet_insurance', 1)) === 1) {
                 insuranceRefund = Math.floor((bet.amount || 0) * 0.5);
                 const cur = getPlayerCoins(pPlayer);
                 const refundedCoins = cur + insuranceRefund;
@@ -674,7 +671,6 @@ export async function POST(request: Request) {
                 await updatePlayerCoinsAndInventory({
                   player: pPlayer,
                   newCoins: refundedCoins,
-                  newInventory: currentInv,
                   reason: 'bet_insurance_payout',
                   reasonMetadata: { betAmount: bet.amount, refund: insuranceRefund },
                   rolePreferencesUpdate: {

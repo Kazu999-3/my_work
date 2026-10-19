@@ -1,6 +1,6 @@
 import { supabaseAdmin as supabase } from './supabaseAdmin';
 import { getJackpotPool, addToJackpot, deductFromJackpot } from './jackpot';
-import { getPlayerCoins, getPlayerInventory, updatePlayerCoinsAndInventory } from './playerCoins';
+import { getPlayerCoins, getPlayerInventory, updatePlayerCoinsAndInventory, consumeInventoryItems } from './playerCoins';
 import { sendShopNotification } from './discordNotify';
 
 export interface LotteryResult {
@@ -20,7 +20,6 @@ export interface LotteryResult {
 interface LotteryParticipant {
   player: any;
   ticketCount: number;
-  remainingInventory: any[];
 }
 
 /** 宝くじ1口の価格。shop/route.ts の lottery_ticket.price と一致させること */
@@ -57,20 +56,18 @@ export async function executeLotteryDraw(): Promise<LotteryResult> {
   const flatTickets: Array<{ player: any; ticketIdx: number }> = [];
 
   for (const p of players) {
-    const inv = getPlayerInventory(p);
-    const tickets = inv.filter((item: any) => item.id === 'lottery_ticket');
-    const nonTickets = inv.filter((item: any) => item.id !== 'lottery_ticket');
+    const seen = getPlayerInventory(p).filter((item: any) => item.id === 'lottery_ticket').length;
+    if (seen === 0) continue;
 
-    if (tickets.length > 0) {
-      participants.push({
-        player: p,
-        ticketCount: tickets.length,
-        remainingInventory: nonTickets,
-      });
+    // 抽選の前にチケットを DB 上で回収し、実際に回収できた枚数だけ抽選に入れる（consume_player_items、migration 110）。
+    // 以前は抽選後に「チケットを除いた持ち物」で丸ごと上書きしており、抽選中にショップで買った物
+    // （宝くじチケット自体も含む。コインは引かれたまま）が消えていた。読んだ後に買われたチケットは来週へ持ち越す（2026-10-19）
+    const ticketCount = await consumeInventoryItems(p, 'lottery_ticket', seen);
+    if (ticketCount === 0) continue;
 
-      for (let i = 0; i < tickets.length; i++) {
-        flatTickets.push({ player: p, ticketIdx: i });
-      }
+    participants.push({ player: p, ticketCount });
+    for (let i = 0; i < ticketCount; i++) {
+      flatTickets.push({ player: p, ticketIdx: i });
     }
   }
 
@@ -188,7 +185,6 @@ export async function executeLotteryDraw(): Promise<LotteryResult> {
     await updatePlayerCoinsAndInventory({
       player: pt.player,
       newCoins,
-      newInventory: pt.remainingInventory,
       reason: 'lottery_prize',
       reasonMetadata: {
         tickets: pt.ticketCount,
