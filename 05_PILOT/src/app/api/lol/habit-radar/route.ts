@@ -54,11 +54,18 @@ export async function GET(request: NextRequest) {
     const cacheKey = `${puuid}_${count}`;
     const cached = habitCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
-      return NextResponse.json({
-        success: true,
-        source: 'cache',
-        radar: cached.data
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          source: 'cache',
+          radar: cached.data
+        },
+        {
+          headers: {
+            'Cache-Control': 'private, max-age=300, stale-while-revalidate=600',
+          },
+        }
+      );
     }
 
     // 1. 直近マッチIDを取得（ソロQ優先）
@@ -109,11 +116,18 @@ export async function GET(request: NextRequest) {
       expiresAt: Date.now() + CACHE_TTL_MS
     });
 
-    return NextResponse.json({
-      success: true,
-      source: 'live',
-      radar
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        source: 'live',
+        radar
+      },
+      {
+        headers: {
+          'Cache-Control': 'private, max-age=300, stale-while-revalidate=600',
+        },
+      }
+    );
   } catch (error: any) {
     console.error('[HabitRadar API Error]:', error);
     return NextResponse.json({ error: error.message || '内部エラーが発生しました。' }, { status: 500 });

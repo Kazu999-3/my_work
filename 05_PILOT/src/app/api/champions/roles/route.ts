@@ -45,7 +45,14 @@ export async function GET() {
             customRoles[row.champion].push(role);
           }
         }
-        return NextResponse.json({ success: true, customRoles });
+        return NextResponse.json(
+          { success: true, customRoles },
+          {
+            headers: {
+              'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+            },
+          }
+        );
       }
     }
   } catch (err) {
@@ -54,7 +61,14 @@ export async function GET() {
 
   // 2. DB未接続または空の場合のローカルファイルフォールバック
   const fileData = loadLocalCustomRoles();
-  return NextResponse.json({ success: true, customRoles: fileData });
+  return NextResponse.json(
+    { success: true, customRoles: fileData },
+    {
+      headers: {
+        'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+      },
+    }
+  );
 }
 
 export async function POST(req: Request) {

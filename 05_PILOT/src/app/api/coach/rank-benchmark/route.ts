@@ -34,7 +34,14 @@ export async function GET() {
       };
     }
 
-    return NextResponse.json({ targetTier: `${tierRaw}${division ? ` ${division}` : ''}`, windowDays: BENCHMARK_WINDOW_DAYS, roles });
+    return NextResponse.json(
+      { targetTier: `${tierRaw}${division ? ` ${division}` : ''}`, windowDays: BENCHMARK_WINDOW_DAYS, roles },
+      {
+        headers: {
+          'Cache-Control': 'private, max-age=1800, stale-while-revalidate=3600',
+        },
+      }
+    );
   } catch (e: any) {
     console.error('[coach/rank-benchmark]', e);
     return NextResponse.json({ error: e.message || '目標ランク平均の取得に失敗しました' }, { status: 500 });

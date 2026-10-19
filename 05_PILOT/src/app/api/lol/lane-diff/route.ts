@@ -58,11 +58,18 @@ export async function GET(request: NextRequest) {
     const cacheKey = `${puuid}_${matchId}`;
     const cached = diffCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
-      return NextResponse.json({
-        success: true,
-        source: 'cache',
-        report: cached.data,
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          source: 'cache',
+          report: cached.data,
+        },
+        {
+          headers: {
+            'Cache-Control': 'private, max-age=300, stale-while-revalidate=600',
+          },
+        }
+      );
     }
 
     // Match 詳細と Timeline を並行取得
@@ -82,11 +89,18 @@ export async function GET(request: NextRequest) {
 
     diffCache.set(cacheKey, { data: report, expiresAt: Date.now() + CACHE_TTL_MS });
 
-    return NextResponse.json({
-      success: true,
-      source: 'live',
-      report,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        source: 'live',
+        report,
+      },
+      {
+        headers: {
+          'Cache-Control': 'private, max-age=300, stale-while-revalidate=600',
+        },
+      }
+    );
   } catch (error: any) {
     console.error('Lane Diff API Error:', error);
     return NextResponse.json({ error: error.message || '内部エラーが発生しました。' }, { status: 500 });
