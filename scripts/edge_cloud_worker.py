@@ -51,6 +51,7 @@ TASK_LABELS = {
     "lol_trend_collect": ("LoLトレンド収集", "/champions"),
     "dict_synthesizer": ("辞典シンセサイザー", "/champions"),
     "champion_db_bulk_update": ("チャンピオン辞典一括更新", "/admin/dict-health"),
+    "article_reanalyze": ("記事の再解析", "/admin/review"),
 }
 
 
@@ -98,6 +99,10 @@ def build_no_args(_p):
     return []
 
 
+def build_reanalyze_args(p):
+    return [json.dumps(p, ensure_ascii=False)]
+
+
 # task_type -> (スクリプトパス, 引数ビルダー, タイムアウト秒)
 TASK_MAP = {
     # champion_trend は google_search グラウンディング付きのGemini呼び出しを行うため、
@@ -111,6 +116,9 @@ TASK_MAP = {
     "reddit_scout": ("03_SYSTEMS/v2_CORE/_LOL/reddit_scout.py", build_no_args, 280),
     "lol_trend_collect": ("03_SYSTEMS/v2_CORE/_LOL/lol_trend_collector.py", build_no_args, 280),
     "dict_synthesizer": ("03_SYSTEMS/v2_CORE/_LOL/dict_synthesizer.py", build_no_args, 280),
+    # 承認画面の「🔁 再解析」（2026-10-19）。保存済みの字幕から2回 Gemini を呼ぶ。字幕が無い記事は
+    # 映像解析になり数分かかることがあるため長めにする。PC の常駐デーモン（task_dispatch.py）も同じ処理を持つ
+    "article_reanalyze": ("scripts/reanalyze_article.py", build_reanalyze_args, 1200),
     # 注意: champion_db_bulk_updateはここのTASK_MAPに加えない。
     # champ_db_bulk_updater.pyはd:/my_work/...を直接ハードコードしており、champ-dict-update.yml
     # 側は"Setup d:/my_work path"ステップでシンボリックリンクを張って対処しているが、

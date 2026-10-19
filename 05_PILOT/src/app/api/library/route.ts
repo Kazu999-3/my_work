@@ -88,6 +88,8 @@ export async function GET(req: NextRequest) {
       // （レーンガイド・辞典への統合）がタグを丸ごと置き換えて片付けた記事なので「統合済み」として出す（2026-10-07 ユーザー要望）。
       // 人が削除した記事は __USER_DELETED__ も付く（下の setDeleted）ため、ここには含まれない
       .or('tags.is.null,tags.not.cs.{__DELETED__},tags.eq.{__DELETED__}')
+      // 承認画面の「再解析」で作った版は、採用（承認）されるまでライブラリに出さない（元の記事と二重に見えるため。2026-10-19）
+      .or('reanalysis_of.is.null,review_status.eq.approved')
       .order('created_at', { ascending: false });
 
     if (q) {
@@ -316,9 +318,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'idが必要です' }, { status: 400 });
     }
 
+    // 2026-10-19: transcript（字幕の全文、最大3万字）を画面へ送らないよう列を指定する
     const { data, error } = await supabase
       .from('personal_knowledge')
-      .select('*')
+      .select('id, created_at, title, content, raw_content, source_url, genre, tags, champion, author, parent_id, is_atomic, review_status, reanalysis_of')
       .eq('id', id)
       .single();
 

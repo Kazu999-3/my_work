@@ -5,7 +5,7 @@ import { LANE_OPTIONS, type LaneKey } from './types';
 
 // 種別タブ・チャンネル・並び替え・検索・レーン絞り込み・件数
 // 2026-10-07: app/admin/review/page.tsx（1,691行）から分割。表示内容・動作は分割前と同じ。
-export default function ReviewControlBar({ type, setType, channel, setChannel, channels, totalAll, total, sort, setSort, searchQuery, setSearchQuery, lane, setLane, laneCounts, loading, onReload }: {
+export default function ReviewControlBar({ type, setType, channel, setChannel, channels, totalAll, total, sort, setSort, searchQuery, setSearchQuery, lane, setLane, laneCounts, loading, onReload, quality, setQuality, qualityCounts }: {
   type: '' | 'video' | 'atomic';
   setType: (v: '' | 'video' | 'atomic') => void;
   channel: string;
@@ -22,6 +22,10 @@ export default function ReviewControlBar({ type, setType, channel, setChannel, c
   laneCounts: Record<string, number>;
   loading: boolean;
   onReload: () => void;
+  /** 2026-10-19: '' | 'thin'（薄い可能性） | 'reanalyzed'（再解析版） */
+  quality: string;
+  setQuality: (v: string) => void;
+  qualityCounts: { thin?: number; reanalyzed?: number };
 }) {
   return (
         <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
@@ -38,6 +42,19 @@ export default function ReviewControlBar({ type, setType, channel, setChannel, c
                   }`}
                 >
                   {l}
+                </button>
+              ))}
+              <span className="w-px h-5 bg-slate-800 mx-0.5" aria-hidden />
+              {([['thin', '⚠️ 薄い可能性', qualityCounts.thin], ['reanalyzed', '🔁 再解析版', qualityCounts.reanalyzed]] as const).map(([k, l, n]) => (
+                <button
+                  key={k}
+                  onClick={() => setQuality(quality === k ? '' : k)}
+                  className={`px-2.5 py-1.5 rounded-lg border text-xs font-bold cursor-pointer transition ${
+                    quality === k ? 'bg-amber-500/15 border-amber-500/60 text-amber-200' : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                  title={k === 'thin' ? '数値・条件などの具体的な記述が少ない記事だけを表示' : '再解析で作り直した版だけを表示'}
+                >
+                  {l}（{n ?? 0}）
                 </button>
               ))}
             </div>

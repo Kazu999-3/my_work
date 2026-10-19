@@ -6,6 +6,7 @@ import PlayRecommendationCard from './PlayRecommendationCard';
 import TimingHeatmapCard from './TimingHeatmapCard';
 import RankGoalCard from './RankGoalCard';
 import OverlayLauncherButton from './OverlayLauncherButton';
+import MissionCard from './MissionCard';
 import { useCoachRiotId } from './riotIdContext';
 
 // 試合前タブの補助カード（旧ポータル /coach「1. 試合前」の残り部品の移植）。2026-10-04
@@ -32,6 +33,8 @@ export function PreGameTop() {
   return (
     <div className="space-y-3">
       <OverlayLauncherButton />
+      {/* 2026-10-19: 1試合1課題ループ（次の試合で狙うことを1つだけ） */}
+      {riotId && <MissionCard riotId={riotId} />}
       <section className="p-4 rounded-2xl bg-zinc-900/60 border border-zinc-800 space-y-3">
         <h3 className="text-sm font-black text-white">🚦 次の試合に行くべきか</h3>
         {riotId ? <PlayRecommendationCard riotId={riotId} /> : <NeedRiotId />}

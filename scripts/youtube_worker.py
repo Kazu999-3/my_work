@@ -73,6 +73,9 @@ except ImportError:
 
 from notify import notify, COLOR_OK, COLOR_WARN
 from video_filter import is_shorts_video
+# 字幕→記事の2段階パイプライン（2026-10-19。旧 gemini_summarize の「7章固定・5,000字以上」を置き換え）
+from article_pipeline import (generate_article, vtt_to_timestamped_text, link_timestamps,
+                              GeminiQuotaError)
 
 # チャンピオン判定モジュール（DDragon公式173体＋タイトル照合）
 _lol_core_dir = Path(__file__).resolve().parent.parent / "03_SYSTEMS" / "v2_CORE" / "_LOL"
@@ -313,17 +316,14 @@ def fetch_subtitles(url, vid):
             continue
         print(f"  ⚠️ IP制限が解消しません（YouTubeがbot判定）: {vid}", file=sys.stderr)
         raise RateLimited(tail)
-    text_lines, seen = [], set()
-    for line in open(files[0], encoding="utf-8", errors="ignore"):
-        line = line.strip()
-        if not line or "-->" in line or line.startswith(("WEBVTT", "Kind:", "Language:", "NOTE")): continue
-        line = re.sub(r"<[^>]+>", "", line)
-        if line and line not in seen:
-            seen.add(line); text_lines.append(line)
+    # 2026-10-19: 時刻を残す（[MM:SS] を20秒おきに付ける）。記事の各記述に「動画の何分何秒の話か」を
+    # 付けられるようにするため。以前は時刻を捨てて本文だけにしていた。
+    with open(files[0], encoding="utf-8", errors="ignore") as fh:
+        text = vtt_to_timestamped_text(fh.read())
     for f in glob.glob(f"{out}*"):
         try: os.remove(f)
         except Exception: pass
-    return "\n".join(text_lines)[:30000] or None
+    return text
 
 VIDEO_PROMPT = """あなたはLoLのコーチです。この動画から、**視聴者が自分の試合で再現できる判断ルール**を抜き出してください。
 
@@ -340,6 +340,12 @@ VIDEO_PROMPT = """あなたはLoLのコーチです。この動画から、**視
 
 【実演タイムスタンプの記録】
 各判断ルールやコンボ、重要なテクニックが動画内の「何分何秒」で実演・解説されているかを必ず記録してください（例: "02:15"）。
+
+【動画に無いことは書かない】（2026-10-19 追加）
+- 現在のパッチでの強さ・勝率・流行のビルドなど、動画で語られていない知識で埋めないこと
+- 動画で扱っていない見出しは作らないこと（下の構成のうち該当しない節は省く）。文字数の目安は無い
+- 聞き取り・読み取りに自信の無い固有名詞（チャンピオン名・アイテム名）には直後に [要確認] を付ける
+- 出力前に、各文が動画の内容に根拠を持つか確認し、根拠の無い文を削除すること
 
 【優先順位】
 「何を差し置いても先にやること」だけを**最大5件**。話題の羅列にしないこと。
@@ -387,10 +393,11 @@ SHORTS_PROMPT = """あなたはLoL(League of Legends)の最高峰戦術アナリ
 【厳格ルール】
 - 存在しない長文の試合展開や架空のルーン・アイテムビルドを捏造（ハルシネーション）することは【絶対厳禁】です。
 - 動画内で実際に解説・実演されている「小技」「コンボ手順」「隠れた仕様」「特定の対面対策」だけに集中して、高密度かつ端的に言語化してください。
+- 動画で触れていない節は作らないこと。聞き取りに自信の無い固有名詞には直後に [要確認] を付けること。
 
 【出力】純粋なJSONのみ（コードブロック不要）:
 {"title":"【1分Tips】<具体的で分かりやすい日本語タイトル>",
- "summary":"<下記のMarkdown構成で本文（500〜1,200文字程度）>",
+ "summary":"<下記のMarkdown構成で本文。動画が扱った内容だけを書く（文字数の目安は無い）>",
  "genre":"LoL攻略",
  "tags":["Shorts", "Tips", "<チャンピオン名英語>", "<関連タグ最大2つ>"],
  "champion":"<主題のチャンピオン英語ID。無ければUnknown>"}
@@ -475,7 +482,7 @@ def enrich_summary_with_timestamps(summary, key_clips, video_url):
     return enriched
 
 
-def gemini_analyze_video(url, title, channel, is_short=False, duration_sec=None):
+def gemini_analyze_video(url, title, channel, is_short=False, duration_sec=None, extra_instructions=""):
     """YouTube URL を Gemini に直接渡して解析する。
 
     字幕も音声も無い動画（テロップのみ・実況なし）でも中身を読み取れる。
@@ -493,6 +500,9 @@ def gemini_analyze_video(url, title, channel, is_short=False, duration_sec=None)
 
     client = genai.Client(api_key=GEMINI_KEY)
     head = f"動画タイトル: {title}\nチャンネル: {channel}\n\n"
+    if extra_instructions:
+        # 承認画面の「再解析」から呼ばれた時の追加指示（理由・深掘りしたい観点・前回の記事）
+        head += extra_instructions.strip() + "\n\n"
     prompt_text = SHORTS_PROMPT if is_short else VIDEO_PROMPT
     known = bool(duration_sec) and duration_sec < DURATION_UNKNOWN
 
@@ -672,180 +682,25 @@ def validate_article_json(data):
         return False
     return True
 
-def gemini_summarize(title, channel, transcript):
-    prompt = f"""あなたはLoL(League of Legends)最高峰の戦術アナリスト・プロコーチAIです。
-以下のYouTube動画の全文字起こし（字幕）から、一切の要約・省略を排除し、3,000文字〜5,000文字以上の【超長文・完全網羅の究極攻略バイブル(Markdown)】を作成してください。
-
-動画タイトル: {title}
-チャンネル: {channel}
-
-【極重要命令（超長文・完全書き起こし指示）】:
-短くまとめることは【絶対厳禁】です。
-プロやチャレンジャーが話している思考プロセス、些細な判断理由、アイテム選びの細かい比較、ウェーブやキャンプの1秒単位の判断、失敗時のリカバリー策、発言のニュアンスまで、すべてを逃さず圧倒的な文字数と深さで徹底的に解説してください。
-
-【必須の全7章構成（各章とも超詳細・長文で記述すること）】:
-# 🏆 {title} 究極完全攻略バイブル
-
-## 1. 📌 本質テーマ＆戦術コンセプト（なぜこの立ち回り/ビルドが強いのか）
-- 動画の核心的テーマ、根本的な勝率ロジック、現パッチでの立ち位置
-- なぜ従来の一般的な立ち回りではなく、この戦術を選択するのかの論理的根拠
-
-## 2. 🛡️ ルーン・アイテムビルドの完全解剖（理由・分岐・パワースパイク）
-- メインルーン・サブルーン・シャードの選定理由（対面や構成による派生ルーンも詳述）
-- スタートアイテム、ファーストリコール、1コア・2コア・3コア以降のアイテム選択ロジック
-- 状況別（敵の脅威度、AD/AP偏り、回復阻害等）のビルド派生と完成タイミングのパワースパイク
-
-## 3. ⚔️ スキルオーダー＆コンボ・微細操作テクニック
-- レベル1〜3および最大化のスキルオーダーとその理由
-- 基本コンボ、バーストコンボ、逃げ/追撃時のスキル活用、アニメーションキャンセルや距離管理のコツ
-
-## 4. ⏱️ 序盤・中盤・終盤の完全タイムライン攻略
-- **【序盤（0〜10分）】**: スタート位置、ジャングルルート/ウェーブ管理、レベル先行の仕掛け、最初のリコール判断
-- **【中盤（10〜20分）】**: ドラゴン/ヘラルド/ヴォイドグラブのオブジェクト優先順位、サイドレーン管理、ロームの判断基準
-- **【終盤（20分以降）】**: バロン戦のポジショニング、視界管理、キャッチからのエンドゲームへの詰め方
-
-## 5. 🎯 対面マッチアップ＆構成別対策
-- 有利なマッチアップ（どうやってスノーボールするか）
-- 不利・要注意なマッチアップ（どう耐えて逆転するか、ガンクの合わせ方）
-- 敵味方の構成に応じた役割の変化（エンゲージ役、ピール役、アサシン役など）
-
-## 6. 💥 集団戦・スプリットプッシュの立ち回りとターゲット優先順位
-- 集団戦前のポジショニング（フランク、フロントライン、ブッシュ待機）
-- 誰から倒すべきか（ターゲットプライオリティ）と、スキルを吐くタイミング
-- スプリットプッシュ時の押し引きの引き際とTP/寄りの判断
-
-## 7. 🧠 プロ/チャレンジャーのリアルタイム思考プロセス＆実践Tips（全書き出し）
-- 動画内でプレイヤーが口にしていた細かな判断・気付き・アドバイスの全書き起こし
-- 一般プレイヤーがやりがちな「NG行動・典型的なミス」と、その回避方法
-- 不利・事故った時の具体的なメンタルとリカバリー戦略
-
-【出力言語の絶対条件】: 字幕が英語でも出力は必ず日本語にすること。チャンピオン名・アイテム名・ルーン名などの固有名詞のみ英語表記（または一般的な日本語併記）にすること。
-
-必ず以下のJSONフォーマットのみを出力してください（Markdownコードブロック不要、純粋なJSONのみ）:
-{{"title":"<具体的で分かりやすい日本語記事タイトル>","summary":"<3,000〜5,000文字超の圧倒的ボリュームを持つMarkdownコンテンツ全文>","genre":"<LoL攻略/ビルド/マクロ/その他 から1つ>","tags":["<関連タグ最大5つ>"],"champion":"<主題のチャンピオン英語ID。無ければUnknown>"}}
-
-字幕:
-{transcript}"""
-    body = {"contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {"temperature": 0.3, "maxOutputTokens": 8192}}
-
-    last_err = None
-    for attempt in range(3):
-        try:
-            req = urllib.request.Request(
-                f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_KEY}",
-                data=json.dumps(body).encode(), method="POST")
-            req.add_header("Content-Type", "application/json")
-            with urllib.request.urlopen(req, timeout=240) as r:
-                res = json.loads(r.read().decode())
-            text = res["candidates"][0]["content"]["parts"][0]["text"].strip()
-            text = re.sub(r"^```[a-z]*\n?|```$", "", text).strip()
-            s, e = text.find("{"), text.rfind("}")
-            parsed = json.loads(text[s:e+1])
-            if validate_article_json(parsed):
-                return parsed
-            else:
-                print(f"[gemini_summarize] キー欠落または形式不整合。再試行 ({attempt+1}/3)")
-        except urllib.error.HTTPError as err:
-            last_err = err
-            if err.code == 429:
-                wait_sec = 20 * (attempt + 1)
-                print(f"[gemini_summarize] 429 (レート制限)。{wait_sec}秒待機して再試行 ({attempt+1}/3)")
-                time.sleep(wait_sec)
-            else:
-                print(f"[gemini_summarize] HTTPエラー: {err} ({attempt+1}/3)")
-                time.sleep(2)
-        except Exception as err:
-            last_err = err
-            print(f"[gemini_summarize] JSONパース失敗/エラー: {err} ({attempt+1}/3)")
-            time.sleep(2)
-
-    if last_err is not None and _is_quota_error(last_err):
-        raise GeminiQuotaExceeded(f"Gemini 429 (3回待機しても回復せず): {last_err}")
-    raise RuntimeError(f"Gemini出力の構造化バリデーションに失敗しました: {last_err}")
+def summarize_transcript(title, channel, transcript, is_short=False):
+    """字幕 → 記事（article_pipeline の2段階）。上限エラーはこのワーカーの例外に読み替える。"""
+    try:
+        return generate_article(title, channel, transcript, GEMINI_KEY, GEMINI_MODEL, is_short=is_short)
+    except GeminiQuotaError as e:
+        raise GeminiQuotaExceeded(str(e)[:200]) from e
 
 
-def gemini_summarize_short(title, channel, transcript):
-    """Shorts動画（60秒未満）の文字起こしから、ワンポイントTipsを抽出する。"""
-    prompt = f"""あなたはLoL(League of Legends)の最高峰戦術アナリスト・プロコーチAIです。
-以下のショート動画（Shorts）の文字起こしから、1分間で凝縮された核心テクニック・ワンポイントTipsを漏れなく抽出してください。
-
-動画タイトル: {title}
-チャンネル: {channel}
-
-【厳格ルール】
-- 存在しない長文の試合展開や架空のルーン・アイテムビルドを捏造（ハルシネーション）することは【絶対厳禁】です。
-- 動画内で実際に解説・実演されている「小技」「コンボ手順」「隠れた仕様」「特定の対面対策」だけに集中して、高密度かつ端的に言語化してください。
-
-【出力】純粋なJSONのみ（コードブロック不要）:
-{{"title":"【1分Tips】<具体的で分かりやすい日本語タイトル>",
- "summary":"<下記のMarkdown構成で本文（500〜1,200文字程度）>",
- "genre":"LoL攻略",
- "tags":["Shorts", "Tips", "<チャンピオン名英語>", "<関連タグ最大2つ>"],
- "champion":"<主題のチャンピオン英語ID。無ければUnknown>"}}
-
-summary は次の構成にすること:
-# 💡 【1分Tips】<タイトル>
-
-## 🎯 核心ポイント（何ができるテクニックか）
-- このショート動画が教えているテクニック・小技の要点
-- なぜこれが実戦で強いのか（ダメージ最大化、相手の反応不能、視界外からの強襲など）
-
-## ⌨️ スキル操作・コンボ手順（キー入力順）
-- **キー入力順**: 例: `E ➔ Flash ➔ Q ➔ AA`
-- **操作のコツ・タイミング**: アニメーションキャンセル、入力受付時間、ブッシュ・壁の利用など
-
-## ⚠️ 注意点・知っておくべき仕様
-- 失敗しやすいポイント、仕様上の注意（敵がフラッシュを持っている時の挙動など）
-- 反対にこの技を使わない方がいい状況（敵のCCが残っている時など）
-
-## 🏆 実戦での活用シーン
-- レーン戦でのキルライン、集団戦でのエンゲージ、ローム時など、どこで狙うべきか
-
-## 🤔 実戦への問いかけ（思考トリガー）
-- このTipsを実戦で発動するための、具体的状況に関する1行の問いかけ（汎用的な問いは禁止）
-
-日本語で書くこと。チャンピオン名・アイテム名・スキルキーなどの固有名詞のみ英語可。
-
-文字起こし:
-{transcript}"""
-    body = {"contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {"temperature": 0.2, "maxOutputTokens": 4096}}
-
-    last_err = None
-    for attempt in range(3):
-        try:
-            req = urllib.request.Request(
-                f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={GEMINI_KEY}",
-                data=json.dumps(body).encode(), method="POST")
-            req.add_header("Content-Type", "application/json")
-            with urllib.request.urlopen(req, timeout=180) as r:
-                res = json.loads(r.read().decode())
-            text = res["candidates"][0]["content"]["parts"][0]["text"].strip()
-            text = re.sub(r"^```[a-z]*\n?|```$", "", text).strip()
-            s, e = text.find("{"), text.rfind("}")
-            parsed = json.loads(text[s:e+1])
-            if validate_article_json(parsed):
-                return parsed
-            else:
-                print(f"[gemini_summarize_short] キー欠落または形式不整合。再試行 ({attempt+1}/3)")
-        except urllib.error.HTTPError as err:
-            last_err = err
-            if err.code == 429:
-                wait_sec = 20 * (attempt + 1)
-                print(f"[gemini_summarize_short] 429 (レート制限)。{wait_sec}秒待機して再試行 ({attempt+1}/3)")
-                time.sleep(wait_sec)
-            else:
-                print(f"[gemini_summarize_short] HTTPエラー: {err} ({attempt+1}/3)")
-                time.sleep(2)
-        except Exception as err:
-            last_err = err
-            print(f"[gemini_summarize_short] JSONパース失敗/エラー: {err} ({attempt+1}/3)")
-            time.sleep(2)
-
-    if last_err is not None and _is_quota_error(last_err):
-        raise GeminiQuotaExceeded(f"Gemini 429 (3回待機しても回復せず): {last_err}")
-    raise RuntimeError(f"Gemini出力の構造化バリデーションに失敗しました: {last_err}")
+def insert_knowledge(row):
+    """personal_knowledge へ保存する。新しい列（transcript / analysis_meta、migration 115）がまだ
+    本番に無い間は、その2列を外して保存し直す（コードの反映とマイグレーション適用の順番がずれても止めない）。"""
+    try:
+        return sb("POST", "personal_knowledge", [row], prefer="return=representation")
+    except Exception as e:
+        if not any(k in str(e) for k in ("transcript", "analysis_meta", "PGRST204")):
+            raise
+        print(f"  ⚠️ 新しい列が未作成のため transcript / analysis_meta を外して保存します: {e}", file=sys.stderr)
+        slim = {k: v for k, v in row.items() if k not in ("transcript", "analysis_meta")}
+        return sb("POST", "personal_knowledge", [slim], prefer="return=representation")
 
 
 def main():
@@ -957,10 +812,16 @@ def main():
             if a is None:
                 if not transcript:
                     raise NoTranscript("字幕を取得できませんでした（字幕なし or IP制限の可能性）")
-                if is_short:
-                    a = gemini_summarize_short(it.get("title") or "YouTube Shorts", it.get("channel_name") or "", transcript)
-                else:
-                    a = gemini_summarize(it.get("title") or "YouTube Video", it.get("channel_name") or "", transcript)
+                try:
+                    a = summarize_transcript(it.get("title") or ("YouTube Shorts" if is_short else "YouTube Video"),
+                                             it.get("channel_name") or "", transcript, is_short=is_short)
+                    a["summary"] = link_timestamps(a.get("summary") or "", url)
+                except ValueError as ve:
+                    # 字幕はあるが使える事実が無い（雑談・BGMのみ等）。映像なら読める可能性があるので映像解析へ
+                    if not ENABLE_VIDEO_ANALYSIS:
+                        raise NoTranscript(str(ve)) from ve
+                    print(f"  ⚠️ {ve}。映像解析で読み直します", file=sys.stderr)
+                    a = gemini_analyze_video(url, it.get("title") or "", it.get("channel_name") or "", is_short=is_short, duration_sec=it.get("duration_sec"))
 
             # 🏷️ 鮮度ガード（検索汚染防止＆アーカイブ分離原則 / ジョージぱぱ原則）
             freshness = check_video_freshness(it.get("published_at"), it.get("title") or "")
@@ -1017,16 +878,20 @@ def main():
                 final_champ = determine_champion(it.get("title"), raw_champ)
 
             # personal_knowledge へ保存 (review_status='pending')
-            created_row = sb("POST", "personal_knowledge", [{
+            # transcript: 字幕の全文（時刻付き）。承認画面の「再解析」が字幕を取り直さずに使う（2026-10-19）。
+            # raw_content は従来どおり先頭8,000字（他の処理が読んでいるため形を変えない）
+            created_row = insert_knowledge({
                 "title": video_title,
                 "content": final_content,
                 "raw_content": transcript[:8000] if transcript else f"映像直接解析による自動抽出 (ID: {vid})",
+                "transcript": transcript or None,
+                "analysis_meta": a.get("analysis_meta") or {"prompt_version": "video-v1", "model": VIDEO_MODEL},
                 "source_url": url,
                 "genre": a.get("genre") or "LoL攻略",
                 "tags": tags,
                 "champion": final_champ,
                 "review_status": "pending",
-            }], prefer="return=representation")
+            })
             created_id = created_row[0].get("id") if (created_row and isinstance(created_row, list)) else None
             # 以前の失敗で付いた「[エラー: …]」を外す（成功しても残っていたため、失敗したように見えていた）
             clean_title = re.sub(r"\s*\[エラー:.*\]", "", it.get("title") or "").strip()

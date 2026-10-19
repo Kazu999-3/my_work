@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import PostGameDeepAnalyticsDashboard from './PostGameDeepAnalyticsDashboard';
 import CoachReviewPanel from './CoachReviewPanel';
 import MySoloQDashboard from './MySoloQDashboard';
+import MissionCard from './MissionCard';
 import { useCoachRiotId } from './riotIdContext';
 
 // 試合後タブ（旧ポータル /coach「3. 試合後」の移植）。2026-10-04
@@ -49,6 +50,8 @@ export default function PostGameTab({ initialMatchId }: { initialMatchId?: strin
       ) : (
         // Riot ID を変えたら部品ごと作り直して、前の人のデータが残らないようにする
         <div key={riotId} className="space-y-4">
+          {/* 2026-10-19: 試合後に開くと、課題の達成を判定して次の課題を出す */}
+          <MissionCard riotId={riotId} />
           <PostGameDeepAnalyticsDashboard summonerName={riotId} controlledMatchId={matchId || undefined} onSelectMatchId={setMatchId} />
           <Collapsible title="📂 履歴（自動振り返りの傾向・過去の振り返りメモ）">
             <div className="space-y-5">

@@ -27,6 +27,68 @@ export interface ReviewItem {
   enemyChampion?: string | null;
   enemyChampionJa?: string | null;
   matchupLabel?: string | null;
+  /** 再解析で作った版なら元の記事の ID（2026-10-19） */
+  reanalysis_of?: number | null;
+  analysis_meta?: AnalysisMeta | null;
+  /** 中身の濃さの目印（lib/articleDensity.ts） */
+  density?: DensityInfo;
+  /** 進行中・失敗した再解析の依頼 */
+  reanalysisTask?: { status: string; error: string | null; createdAt: string } | null;
+  /** 再解析版の元の記事（新旧比較用） */
+  reanalysisOriginal?: { id: number; title: string; content: string; density: DensityInfo } | null;
+}
+
+export interface DensityInfo {
+  level: 'thin' | 'ok';
+  specificPer1k: number;
+  genericPer1k: number;
+  bodyChars: number;
+  reasons: string[];
+  legacyTemplate: boolean;
+  factCount: number | null;
+}
+
+export interface AnalysisMeta {
+  prompt_version?: string;
+  model?: string;
+  video_type?: string;
+  fact_count?: number;
+  facts_with_reason?: number;
+  facts_with_numbers?: number;
+  facts_with_ts?: number;
+  uncertain_count?: number;
+  categories?: Record<string, number>;
+  not_covered?: string[];
+  reanalysis?: { reason?: string; focus?: string[]; note?: string; source?: string; requested_model?: string };
+}
+
+/** 再解析の理由（scripts/article_pipeline.py の REASONS と同じキー） */
+export const REANALYZE_REASONS: { key: string; label: string }[] = [
+  { key: 'thin', label: '全体的に薄い（一般論ばかり）' },
+  { key: 'focus', label: '特定の観点をもっと深く' },
+  { key: 'generic', label: '動画と関係ない内容が混じっている' },
+  { key: 'wrong', label: '誤り・聞き間違いがある' },
+  { key: 'other', label: 'その他（メモに書く）' },
+];
+
+/** 深掘りしたい観点（scripts/article_pipeline.py の CATEGORIES と同じキー） */
+export const REANALYZE_FOCUS: { key: string; label: string }[] = [
+  { key: 'build', label: 'ビルド・ルーン' },
+  { key: 'skill', label: 'スキル・コンボ' },
+  { key: 'laning', label: 'レーン戦' },
+  { key: 'jungle', label: 'JGの周回・ガンク' },
+  { key: 'objective', label: 'オブジェクト・視界' },
+  { key: 'macro', label: '試合運び' },
+  { key: 'teamfight', label: '集団戦' },
+  { key: 'matchup', label: '対面・相性' },
+  { key: 'mindset', label: '考え方・ミス' },
+];
+
+export interface ReanalyzeRequest {
+  reason: string;
+  focus: string[];
+  note: string;
+  model: 'standard' | 'high';
 }
 
 export interface RosterChampion { id: string; name: string }

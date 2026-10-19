@@ -1,11 +1,12 @@
 'use client';
 
-import { XCircle, ExternalLink, Eye, Compass, BookOpen, Dna, Tv, Scissors, Swords } from 'lucide-react';
+import { XCircle, ExternalLink, Eye, Compass, BookOpen, Dna, Tv, Scissors, Swords, RotateCcw, Loader2, Undo2, AlertTriangle } from 'lucide-react';
 import { LANE_OPTIONS, type ItemEditState, type LaneKey, type ReviewItem } from './types';
 
 // 承認待ちの記事カード（統合予定バッジ・本文・インライン編集・却下/プレビュー・ナレッジ分解）
 // 2026-10-07: app/admin/review/page.tsx（1,691行）から分割。表示内容・動作は分割前と同じ。
-export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel, busy, onToggleSelect, onToggleExpand, setChannel, onEdit, onPreview, onReject, onDecompose }: {
+// 2026-10-19: 「薄い可能性」の目印・🔁 再解析・再解析版の 🆚 比較 / 元の記事に戻す を追加。
+export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel, busy, onToggleSelect, onToggleExpand, setChannel, onEdit, onPreview, onReject, onDecompose, onReanalyze, onCompare, onDiscardReanalysis, onReload }: {
   item: ReviewItem;
   edit: ItemEditState;
   isOpen: boolean;
@@ -19,7 +20,17 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
   onPreview: () => void;
   onReject: () => void;
   onDecompose?: () => void;
+  onReanalyze?: () => void;
+  onCompare?: () => void;
+  onDiscardReanalysis?: () => void;
+  onReload?: () => void;
 }) {
+  const isDraft = item.reanalysis_of != null;
+  const task = item.reanalysisTask;
+  const taskActive = task && (task.status === 'pending' || task.status === 'running');
+  const canReanalyze = !!onReanalyze && !item.is_atomic && /youtu/.test(item.source_url || '') && !taskActive;
+  const thin = item.density?.level === 'thin';
+  const factCount = item.analysis_meta?.fact_count;
   return (
               <div
                 className={`p-4 md:p-5 rounded-2xl border space-y-3 transition ${
@@ -43,6 +54,19 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
                       }`}>
                         {item.is_atomic ? '分割知見' : '動画解析'}
                       </span>
+                      {isDraft && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-emerald-300 border-emerald-800/60 bg-emerald-950/40">
+                          🔁 再解析版{typeof factCount === 'number' ? `（事実 ${factCount}件）` : ''}
+                        </span>
+                      )}
+                      {thin && (
+                        <span
+                          className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-amber-200 border-amber-700/60 bg-amber-950/40"
+                          title={item.density?.reasons.join('\n')}
+                        >
+                          ⚠️ 薄い可能性
+                        </span>
+                      )}
                       {Array.isArray(item.tags) && item.tags.includes('__DECOMPOSED__') && (
                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border text-indigo-300 border-indigo-800/60 bg-indigo-950/40 flex items-center gap-1">
                           <Scissors className="w-2.5 h-2.5" /> 分解済み
@@ -83,6 +107,40 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
                     </div>
                   </div>
                 </div>
+
+                {/* 🔁 再解析の状態・薄いと判断した理由（2026-10-19） */}
+                {(taskActive || task?.status === 'failed' || (thin && !isDraft) || isDraft) && (
+                  <div className="space-y-1.5">
+                    {taskActive && (
+                      <div className="p-2 rounded-lg bg-amber-950/30 border border-amber-800/50 text-[11px] text-amber-200 flex flex-wrap items-center gap-2">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        再解析中（{task!.status === 'pending' ? '順番待ち' : '解析中'}・{new Date(task!.createdAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })} 依頼）。終わると新しい版がこの記事と入れ替わって届きます
+                        {onReload && (
+                          <button type="button" onClick={onReload} className="underline cursor-pointer">最新の状態を読み込む</button>
+                        )}
+                      </div>
+                    )}
+                    {task?.status === 'failed' && (
+                      <div className="p-2 rounded-lg bg-rose-950/30 border border-rose-800/60 text-[11px] text-rose-300 flex items-start gap-1.5">
+                        <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                        <span className="break-words">再解析に失敗しました: {(task.error || '理由不明').split('\n')[0].slice(0, 200)}</span>
+                      </div>
+                    )}
+                    {thin && !isDraft && item.density && item.density.reasons.length > 0 && (
+                      <p className="text-[11px] text-amber-200/80">⚠️ {item.density.reasons.join(' ／ ')}</p>
+                    )}
+                    {isDraft && (
+                      <div className="p-2 rounded-lg bg-emerald-950/30 border border-emerald-800/60 text-[11px] text-emerald-200 flex flex-wrap items-center gap-2">
+                        <span>元の記事 #{item.reanalysis_of} を作り直した版です。</span>
+                        {onCompare && (
+                          <button type="button" onClick={onCompare} className="px-2 py-0.5 rounded-md bg-emerald-600/80 hover:bg-emerald-500 text-white font-bold cursor-pointer">
+                            🆚 元の記事と比べる
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* 🤖 自動判定＆統合先プレビューバッジ */}
                 <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
@@ -225,7 +283,7 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
                   </div>
 
                   {/* アクションボタン */}
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
                     {onDecompose && !item.is_atomic && (
                       <button
                         type="button"
@@ -237,13 +295,37 @@ export default function ReviewItemCard({ item, edit, isOpen, isSelected, channel
                         <Scissors className="w-3.5 h-3.5" /> ✂️ ナレッジ分解
                       </button>
                     )}
-                    <button
-                      onClick={() => onReject()}
-                      disabled={busy}
-                      className="px-3 py-1.5 rounded-lg bg-rose-950/30 border border-rose-800/60 text-rose-400 text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                    >
-                      <XCircle className="w-3.5 h-3.5" /> 却下
-                    </button>
+                    {canReanalyze && (
+                      <button
+                        type="button"
+                        onClick={() => onReanalyze!()}
+                        disabled={busy}
+                        className={`px-3 py-1.5 rounded-lg border text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50 transition ${
+                          thin ? 'bg-amber-600/80 hover:bg-amber-500 border-amber-500 text-white' : 'bg-amber-950/30 border-amber-700/60 text-amber-300 hover:bg-amber-900/40'
+                        }`}
+                        title="理由や深掘りしたい観点を付けて、この記事を作り直します（元の記事は残ります）"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" /> {isDraft ? 'もう一度再解析' : '再解析'}
+                      </button>
+                    )}
+                    {isDraft && onDiscardReanalysis ? (
+                      <button
+                        onClick={() => onDiscardReanalysis()}
+                        disabled={busy}
+                        className="px-3 py-1.5 rounded-lg bg-stone-900 border border-stone-600 text-stone-200 text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                        title="この再解析版は使わず、元の記事を承認待ちに戻します"
+                      >
+                        <Undo2 className="w-3.5 h-3.5" /> 元の記事に戻す
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => onReject()}
+                        disabled={busy}
+                        className="px-3 py-1.5 rounded-lg bg-rose-950/30 border border-rose-800/60 text-rose-400 text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                      >
+                        <XCircle className="w-3.5 h-3.5" /> 却下
+                      </button>
+                    )}
                     <button
                       onClick={() => onPreview()}
                       disabled={busy}

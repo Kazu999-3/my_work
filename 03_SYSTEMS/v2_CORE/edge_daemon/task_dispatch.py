@@ -124,6 +124,21 @@ class TaskDispatchMixin:
                 result = self._run_subprocess_task("scripts/extract_video_tactics.py", args=args, timeout=1200)
                 self.update_task_status(task_id, "completed" if result.get("success") else "failed", result=result)
 
+            elif task_type == "article_reanalyze":
+                # 05 承認画面の「🔁 再解析」（2026-10-19）。クラウドワーカー(edge_cloud_worker.py)と同じスクリプトを使う。
+                # PC の IP なら字幕の取り直しが通りやすいので、こちらが先に拾っても問題ない
+                import json as _json
+                logger.info(f"🔁 [article_reanalyze] 記事 #{payload.get('article_id')} を再解析")
+                result = self._run_subprocess_task("scripts/reanalyze_article.py",
+                                                   args=[_json.dumps(payload, ensure_ascii=False)], timeout=1200)
+                # 失敗は _run_subprocess_task が例外にする。利用上限だけは skipped で返るので、
+                # 承認画面に理由が出るよう failed にして message を残す
+                if result.get("success"):
+                    self.update_task_status(task_id, "completed", result=result)
+                else:
+                    self.update_task_status(task_id, "failed", result=result,
+                                            error_message=str(result.get("message") or "再解析に失敗しました")[:1500])
+
             elif task_type == "youtube_rotation":
                 # 完了済み動画を少数ずつ再解析キューへ戻すローテーション(2026-09-21新設)。
                 # 実処理は既存のyoutube_queue_process(youtube_worker.py)が拾うため、

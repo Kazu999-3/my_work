@@ -7,11 +7,14 @@ import ReviewControlBar from './_review/ReviewControlBar';
 import ReviewItemCard from './_review/ReviewItemCard';
 import PreviewModal from './_review/PreviewModal';
 import DecomposeModal from './_review/DecomposeModal';
+import ReanalyzeModal from './_review/ReanalyzeModal';
+import CompareModal from './_review/CompareModal';
+import { useVisiblePolling } from '@/lib/useVisiblePolling';
 import type { DecomposedInsight } from '@/lib/knowledgeDecompose';
 import { buildFactOverrides, initialSelections, routedLinesBlock, type RoutedLaneLine } from './_review/factRouting';
 import {
   defaultEdit,
-  type ItemEditState, type LaneKey, type LineDestination, type PreviewResult, type ReviewItem, type RosterChampion,
+  type ItemEditState, type LaneKey, type LineDestination, type PreviewResult, type ReanalyzeRequest, type ReviewItem, type RosterChampion,
 } from './_review/types';
 
 // 生成記事の承認画面。状態と通信だけをここに置き、表示は _review/ の部品が持つ。
@@ -29,6 +32,11 @@ export default function ReviewPage() {
   const [sort, setSort] = useState<string>('created_asc');
   const [channels, setChannels] = useState<{ name: string; count: number }[]>([]);
   const [laneCounts, setLaneCounts] = useState<Record<string, number>>({});
+  // 2026-10-19: 薄い可能性・再解析版の絞り込み
+  const [quality, setQuality] = useState<string>('');
+  const [qualityCounts, setQualityCounts] = useState<{ thin?: number; reanalyzed?: number }>({});
+  const [reanalyzeItem, setReanalyzeItem] = useState<ReviewItem | null>(null);
+  const [compareItem, setCompareItem] = useState<ReviewItem | null>(null);
   const [edits, setEdits] = useState<Record<number, ItemEditState>>({});
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
@@ -57,8 +65,9 @@ export default function ReviewPage() {
     setTimeout(() => setMessage(null), 7000);
   };
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  // silent: 再解析の完了待ちの自動更新。読み込み表示を出さず、編集中の内容と選択は残す
+  const load = useCallback(async (opts: { silent?: boolean } = {}) => {
+    if (!opts.silent) setLoading(true);
     try {
       const qs = new URLSearchParams();
       if (type) qs.set('type', type);
@@ -66,6 +75,7 @@ export default function ReviewPage() {
       if (lane && lane !== 'ALL') qs.set('lane', lane);
       if (searchQuery.trim()) qs.set('q', searchQuery.trim());
       if (sort) qs.set('sort', sort);
+      if (quality) qs.set('quality', quality);
 
       const res = await fetch(`/api/knowledge/review?${qs.toString()}`);
       const json = await res.json();
@@ -77,8 +87,9 @@ export default function ReviewPage() {
       setTotalAll(json.totalAll ?? json.total ?? 0);
       if (json.channels) setChannels(json.channels);
       if (json.laneCounts) setLaneCounts(json.laneCounts);
+      if (json.qualityCounts) setQualityCounts(json.qualityCounts);
       if (json.roster?.length) setRoster(json.roster);
-      setSelected(new Set());
+      if (!opts.silent) setSelected(new Set());
 
       // 各アイテムの初期編集ステートを自動判定値から構築
       const initialEdits: Record<number, ItemEditState> = {};
@@ -93,15 +104,38 @@ export default function ReviewPage() {
           includeFactMerge: true, // デフォルトで項目マージも実行
         };
       }
-      setEdits(initialEdits);
+      // 自動更新では、すでに編集中の記事の入力を上書きしない（新しく届いた記事だけ初期値を入れる）
+      setEdits((prev) => (opts.silent ? { ...initialEdits, ...prev } : initialEdits));
     } catch (e: any) {
-      showMessage(e.message, 'error');
+      if (!opts.silent) showMessage(e.message, 'error');
     } finally {
-      setLoading(false);
+      if (!opts.silent) setLoading(false);
     }
-  }, [type, channel, lane, searchQuery, sort]);
+  }, [type, channel, lane, searchQuery, sort, quality]);
 
   useEffect(() => { load(); }, [load]);
+
+  // 再解析の依頼中は1分おきに一覧を更新し、新しい版が届いたら入れ替える（画面が見えている時だけ）
+  const hasActiveReanalysis = items.some((i) => i.reanalysisTask && ['pending', 'running'].includes(i.reanalysisTask.status));
+  useVisiblePolling(() => { load({ silent: true }); }, 60_000, hasActiveReanalysis);
+
+  const requestReanalysis = async (item: ReviewItem, req: ReanalyzeRequest) => {
+    const result = await post({ action: 'reanalyze', id: item.id, ...req });
+    if (result.ok) {
+      setReanalyzeItem(null);
+      setCompareItem(null);
+      load({ silent: true });
+    }
+  };
+
+  const discardReanalysis = async (item: ReviewItem) => {
+    if (!confirm('この再解析版は使わず、元の記事に戻しますか？（再解析版は履歴として残ります）')) return;
+    const result = await post({ action: 'discard_reanalysis', id: item.id });
+    if (result.ok) {
+      setCompareItem(null);
+      load({ silent: true });
+    }
+  };
 
   const post = async (payload: Record<string, any>): Promise<{ ok: boolean; message?: string; error?: string }> => {
     setBusy(true);
@@ -385,7 +419,8 @@ export default function ReviewPage() {
         <ReviewControlBar
           type={type} setType={setType} channel={channel} setChannel={setChannel} channels={channels}
           totalAll={totalAll} total={total} sort={sort} setSort={setSort} searchQuery={searchQuery} setSearchQuery={setSearchQuery}
-          lane={lane} setLane={setLane} laneCounts={laneCounts} loading={loading} onReload={load}
+          lane={lane} setLane={setLane} laneCounts={laneCounts} loading={loading} onReload={() => load()}
+          quality={quality} setQuality={setQuality} qualityCounts={qualityCounts}
         />
 
         {/* 一括操作バー */}
@@ -440,6 +475,10 @@ export default function ReviewPage() {
               onPreview={() => openPreview(item)}
               onReject={() => rejectOne(item)}
               onDecompose={() => openDecompose(item)}
+              onReanalyze={() => setReanalyzeItem(item)}
+              onCompare={() => setCompareItem(item)}
+              onDiscardReanalysis={() => discardReanalysis(item)}
+              onReload={() => load({ silent: true })}
             />
           ))}
         </div>
@@ -464,6 +503,28 @@ export default function ReviewPage() {
             onEdit={(patch) => updateEditField(previewModalItem.id, patch)}
             onRecalculate={() => openPreview(previewModalItem)}
             onApprove={() => approveOne(previewModalItem)}
+          />
+        )}
+
+        {/* 🔁 再解析の依頼 */}
+        {reanalyzeItem && (
+          <ReanalyzeModal
+            item={reanalyzeItem}
+            busy={busy}
+            onClose={() => setReanalyzeItem(null)}
+            onSubmit={(req) => requestReanalysis(reanalyzeItem, req)}
+          />
+        )}
+
+        {/* 🆚 再解析版と元の記事の比較 */}
+        {compareItem && (
+          <CompareModal
+            item={compareItem}
+            busy={busy}
+            onClose={() => setCompareItem(null)}
+            onAdopt={() => { const it = compareItem; setCompareItem(null); openPreview(it); }}
+            onDiscard={() => discardReanalysis(compareItem)}
+            onReanalyzeAgain={() => { setReanalyzeItem(compareItem); setCompareItem(null); }}
           />
         )}
 

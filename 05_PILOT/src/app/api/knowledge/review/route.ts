@@ -8,6 +8,7 @@ import { integrateMatchupArticle } from '@/lib/matchupMemo';
 import { formatLaneGuideSection, mergeArticleToLaneGuide, appendSectionToLaneGuide } from '@/lib/laneGuideIntegrate';
 import { previewChampionFactsMerge, executeChampionFactsMerge, FactFieldKey } from '@/lib/championFactsMerge';
 import { decomposeArticle, saveDecomposedInsights, DecomposedInsight } from '@/lib/knowledgeDecompose';
+import { assessArticleDensity } from '@/lib/articleDensity';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -22,6 +23,16 @@ function extractYoutubeId(url: string): string | null {
 const NO_CHAMPION = 'Unknown';
 const DEFAULT_PAGE_SIZE = 50;
 
+// 再解析（2026-10-19）: 採用しなかった版に付けるタグ。行は消さず、ライブラリ・承認待ちから隠す
+const SUPERSEDED_TAGS = ['__DELETED__', '__SUPERSEDED__'];
+const REANALYZE_REASONS = ['thin', 'focus', 'generic', 'wrong', 'other'];
+const REANALYZE_FOCUS = ['build', 'skill', 'laning', 'jungle', 'objective', 'macro', 'teamfight', 'matchup', 'mindset'];
+
+function withTags(tags: string[] | null | undefined, add: string[]): string[] {
+  const base = Array.isArray(tags) ? tags : [];
+  return Array.from(new Set([...base, ...add]));
+}
+
 export async function GET(req: NextRequest) {
   try {
     if (!supabase) return NextResponse.json({ error: 'Supabaseクライアントが未初期化です' }, { status: 500 });
@@ -34,6 +45,7 @@ export async function GET(req: NextRequest) {
     const laneFilter = searchParams.get('lane') || ''; // 'COMMON' | 'TOP' | 'JG' | 'MID' | 'ADC' | 'SUP'
     const queryKeyword = (searchParams.get('q') || '').trim().toLowerCase();
     const sort = searchParams.get('sort') || 'created_asc'; // 'created_asc' | 'created_desc' | 'channel_asc' | 'volume_desc' | 'title_asc'
+    const quality = searchParams.get('quality') || ''; // 'thin'（薄い可能性） | 'reanalyzed'（再解析版）
 
     // 1. youtube_queue からチャンネル名辞書をロード
     const { data: queueRows } = await supabase
@@ -61,7 +73,7 @@ export async function GET(req: NextRequest) {
     // 2. 未承認記事（pending）全件を取得
     let baseQuery = supabase
       .from('personal_knowledge')
-      .select('id, title, content, champion, parent_id, is_atomic, source_url, tags, created_at')
+      .select('id, title, content, champion, parent_id, is_atomic, source_url, tags, created_at, reanalysis_of, analysis_meta')
       .eq('review_status', 'pending')
       .or('tags.is.null,tags.not.cs.{__DELETED__}')
       .order('created_at', { ascending: true })
@@ -74,7 +86,44 @@ export async function GET(req: NextRequest) {
     const { data, error } = await baseQuery;
     if (error) throw error;
 
-    const rawRows = data || [];
+    // 再解析（2026-10-19）: 再解析版がある記事は元の記事を一覧から外し、再解析版のカードで新旧を比べる
+    const allRows = data || [];
+    const draftByOriginal = new Map<number, any>();
+    for (const r of allRows) {
+      if (r.reanalysis_of == null) continue;
+      const cur = draftByOriginal.get(r.reanalysis_of);
+      if (!cur || new Date(r.created_at) > new Date(cur.created_at)) draftByOriginal.set(r.reanalysis_of, r);
+    }
+    const rowById = new Map<number, any>(allRows.map((r: any) => [r.id, r]));
+    const rawRows = allRows.filter((r: any) => !draftByOriginal.has(r.id));
+
+    // 元の記事が承認済み等で一覧に無い場合も比較できるよう取ってくる
+    const missingOriginalIds = Array.from(draftByOriginal.keys()).filter((id) => !rowById.has(id));
+    if (missingOriginalIds.length > 0) {
+      const { data: origRows } = await supabase
+        .from('personal_knowledge')
+        .select('id, title, content, created_at, analysis_meta, tags, is_atomic')
+        .in('id', missingOriginalIds);
+      for (const o of origRows || []) rowById.set(o.id, o);
+    }
+
+    // 進行中・失敗した再解析の依頼（直近3日）
+    const reanalysisTasks: Record<number, { status: string; error: string | null; createdAt: string }> = {};
+    {
+      const since = new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString();
+      const { data: taskRows } = await supabase
+        .from('edge_tasks')
+        .select('status, payload, error_message, created_at')
+        .eq('task_type', 'article_reanalyze')
+        .gte('created_at', since)
+        .order('created_at', { ascending: true })
+        .limit(500);
+      for (const t of taskRows || []) {
+        const aid = Number((t as any).payload?.article_id);
+        if (!aid) continue;
+        reanalysisTasks[aid] = { status: t.status, error: t.error_message, createdAt: t.created_at };
+      }
+    }
 
     // 親記事タイトルのマッピング
     const parentIds = Array.from(new Set(rawRows.map((r: any) => r.parent_id).filter(Boolean)));
@@ -143,9 +192,30 @@ export async function GET(req: NextRequest) {
         );
 
         const charCount = (r.content || '').length;
+        const isShort = Array.isArray(r.tags) && r.tags.includes('Shorts');
+        const density = assessArticleDensity(r.content || '', r.analysis_meta, { isShort, isAtomic: !!r.is_atomic });
+
+        // 再解析版なら元の記事（比較用）、元の記事なら進行中・失敗した再解析の依頼
+        const rootId: number = r.reanalysis_of ?? r.id;
+        const original = r.reanalysis_of != null ? rowById.get(r.reanalysis_of) : null;
+        const task = reanalysisTasks[rootId];
+        const taskForCard = task && (task.status === 'pending' || task.status === 'running'
+          || (task.status === 'failed' && new Date(task.createdAt) > new Date(r.created_at)))
+          ? task : null;
 
         return {
           ...r,
+          analysis_meta: r.analysis_meta || null,
+          density,
+          reanalysisTask: taskForCard,
+          reanalysisOriginal: original
+            ? {
+                id: original.id,
+                title: original.title,
+                content: original.content,
+                density: assessArticleDensity(original.content || '', original.analysis_meta, { isShort, isAtomic: !!original.is_atomic }),
+              }
+            : null,
           channel: ch || '不明',
           char_count: charCount,
           parentTitle: r.parent_id ? parentTitles[String(r.parent_id)] || null : null,
@@ -195,8 +265,15 @@ export async function GET(req: NextRequest) {
         return b.count - a.count;
       });
 
+    const qualityCounts = {
+      thin: enrichedItems.filter((i) => i.density.level === 'thin').length,
+      reanalyzed: enrichedItems.filter((i) => i.reanalysis_of != null).length,
+    };
+
     // 5. フィルタリング適用
     let filtered = enrichedItems;
+    if (quality === 'thin') filtered = filtered.filter((i) => i.density.level === 'thin');
+    if (quality === 'reanalyzed') filtered = filtered.filter((i) => i.reanalysis_of != null);
 
     // チャンネルフィルター
     if (channelFilter) {
@@ -247,6 +324,7 @@ export async function GET(req: NextRequest) {
       items: pagedItems,
       channels,
       laneCounts,
+      qualityCounts,
       roster,
       laneConfig: LANE_CONFIG,
     });
@@ -438,6 +516,74 @@ export async function POST(req: NextRequest) {
       .map(Number).filter((n: number) => Number.isFinite(n) && n > 0).slice(0, 200);
     if (ids.length === 0) return NextResponse.json({ error: '対象の id / ids が必要です' }, { status: 400 });
 
+    // ──────────────────────────────────────────
+    // 再解析（2026-10-19）: 依頼・旧版のまま（再解析版を破棄）
+    // ──────────────────────────────────────────
+    if (action === 'reanalyze') {
+      const id = Number(body.id);
+      if (!id) return NextResponse.json({ error: 'id が必要です' }, { status: 400 });
+      const reason = REANALYZE_REASONS.includes(body.reason) ? body.reason : 'thin';
+      const focus = Array.isArray(body.focus) ? body.focus.filter((f: string) => REANALYZE_FOCUS.includes(f)) : [];
+      const note = typeof body.note === 'string' ? body.note.trim().slice(0, 500) : '';
+      const model = body.model === 'high' ? 'high' : 'standard';
+
+      const { data: row, error: rowErr } = await db
+        .from('personal_knowledge')
+        .select('id, source_url, review_status, reanalysis_of, is_atomic, tags')
+        .eq('id', id)
+        .maybeSingle();
+      if (rowErr) throw rowErr;
+      if (!row || row.review_status !== 'pending' || (row.tags || []).includes('__DELETED__')) {
+        return NextResponse.json({ error: '承認待ちの記事が見つかりません（承認・却下済みの可能性）' }, { status: 404 });
+      }
+      if (row.is_atomic || !/youtu/.test(row.source_url || '')) {
+        return NextResponse.json({ error: '再解析できるのは YouTube 動画の記事だけです' }, { status: 400 });
+      }
+      // 再解析版をさらに作り直す時は、元の記事を基準にし、今の版を「前回の記事」として渡す
+      const rootId: number = row.reanalysis_of ?? row.id;
+
+      const { data: running } = await db
+        .from('edge_tasks')
+        .select('id')
+        .eq('task_type', 'article_reanalyze')
+        .in('status', ['pending', 'running'])
+        .contains('payload', { article_id: rootId })
+        .limit(1);
+      if (running && running.length > 0) {
+        return NextResponse.json({ error: 'この記事は再解析中です。完了までお待ちください' }, { status: 409 });
+      }
+
+      const { error: insErr } = await db.from('edge_tasks').insert({
+        task_type: 'article_reanalyze',
+        status: 'pending',
+        payload: { article_id: rootId, base_id: row.id, reason, focus, note, model },
+      });
+      if (insErr) throw insErr;
+      return NextResponse.json({
+        success: true,
+        message: '再解析を依頼しました。数分で新しい版が届きます（届いたら通知ベルでお知らせします）',
+      });
+    }
+
+    if (action === 'discard_reanalysis') {
+      const id = Number(body.id);
+      const { data: row, error: rowErr } = await db
+        .from('personal_knowledge')
+        .select('id, tags, reanalysis_of, review_status')
+        .eq('id', id)
+        .maybeSingle();
+      if (rowErr) throw rowErr;
+      if (!row || row.reanalysis_of == null || row.review_status !== 'pending') {
+        return NextResponse.json({ error: '承認待ちの再解析版が見つかりません' }, { status: 404 });
+      }
+      const { error: upErr } = await db
+        .from('personal_knowledge')
+        .update({ tags: withTags(row.tags, SUPERSEDED_TAGS) })
+        .eq('id', id);
+      if (upErr) throw upErr;
+      return NextResponse.json({ success: true, message: '再解析版を使わず、元の記事に戻しました（再解析版は履歴として残しています）' });
+    }
+
     if (action === 'reject') {
       const { error, count } = await supabase
         .from('personal_knowledge')
@@ -516,10 +662,24 @@ export async function POST(req: NextRequest) {
       .update(update)
       .in('id', ids)
       .eq('review_status', 'pending')
-      .select('id, title, content, raw_content, champion, tags, source_url');
+      .select('id, title, content, raw_content, champion, tags, source_url, reanalysis_of');
     if (error) throw error;
 
     const targetRows = rows || [];
+
+    // 再解析版を承認した時は、元の記事（と同じ元から作った他の版）を履歴として隠す（2026-10-19）
+    const supersededRoots = targetRows.map((r: any) => r.reanalysis_of).filter((v: any) => v != null);
+    if (supersededRoots.length > 0) {
+      const approvedIds = targetRows.map((r: any) => r.id);
+      const { data: olds } = await db
+        .from('personal_knowledge')
+        .select('id, tags')
+        .or(`id.in.(${supersededRoots.join(',')}),reanalysis_of.in.(${supersededRoots.join(',')})`);
+      for (const o of olds || []) {
+        if (approvedIds.includes(o.id)) continue;
+        await db.from('personal_knowledge').update({ tags: withTags(o.tags, SUPERSEDED_TAGS) }).eq('id', o.id);
+      }
+    }
     if (targetRows.length === 0) {
       return NextResponse.json({ success: true, count: 0, message: '対象記事がありませんでした' });
     }
