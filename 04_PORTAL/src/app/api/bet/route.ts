@@ -219,6 +219,28 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: '不正なボーナスタイプです。' }, { status: 400 });
     }
 
+    // 受取の印を1回の UPDATE で付け、付けられた時だけ報酬を渡す（同時に2回送ると2回もらえていた。migration 108、2026-10-19）
+    {
+      const claimKey = type === 'daily' ? 'lastDailyClaim' : 'lastRescueMonth';
+      const claimValue = type === 'daily' ? todayStr : currentMonth;
+      const { data: claimed, error: claimErr } = await supabase.rpc('claim_player_once', {
+        p_name: player.name,
+        p_key: claimKey,
+        p_value: claimValue,
+      });
+      const claimMissing = !!claimErr && (claimErr.code === 'PGRST202' || /claim_player_once/.test(claimErr.message || ''));
+      if (claimErr && !claimMissing) {
+        return NextResponse.json({ error: '受取処理に失敗しました。時間をおいて試してください。' }, { status: 500 });
+      }
+      if (!claimMissing && claimed !== true) {
+        return NextResponse.json({
+          error: type === 'daily'
+            ? '本日のデイリーボーナスは受取済みです！明日またお越しください🎁'
+            : '破産救済保険の受取は月1回までです。今月分はすでに利用済みです。',
+        }, { status: 400 });
+      }
+    }
+
     const newCoins = currentCoins + addedCoins;
     const rolePreferencesUpdate = {
       ...(type === 'daily' ? { lastDailyClaim: todayStr } : {}),
